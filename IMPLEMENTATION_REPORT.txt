@@ -1,0 +1,35 @@
+AI Advokat v1.3 implementation report
+Date: 2026-09-26
+
+Implemented:
+- Public Zenodo draft/editor URLs removed from the public portal.
+- ORCID retained and linked.
+- GitHub Pages frontend configured to call the Cloudflare Worker API origin.
+- Controlled CORS for the AI Advokat production origins.
+- D1 public legal-corpus search endpoint.
+- Retrieval-only legal research endpoint with Human Gate checklist.
+- Citation / DOI audit endpoint.
+- Instrument version lookup / comparison readiness endpoint.
+- Curated official legal-source directory.
+- Browser-only Document Studio working skeletons.
+- Secure Upload and Case Workspace intentionally locked pending auth/security controls.
+- Privacy, Terms, Security and Governance pages.
+- Security headers for assets served through the Worker.
+- Public-source and publication-metadata D1 seed migration.
+- Public-corpus intake templates.
+- Private/internal folders excluded from Worker static assets.
+
+Validation:
+- src/index.js: node --check PASS
+- index.html inline JavaScript: node --check PASS
+- SQLite baseline + v1.3 seed: PASS
+- PRAGMA quick_check: ok
+- PRAGMA foreign_key_check: no violations
+- Private Zenodo /uploads URLs in public index: none
+- ORCID present: 0009-0001-0702-2371
+- Reserved DOI metadata retained:
+  10.5281/zenodo.22981554
+  10.5281/zenodo.22981744
+
+Deployment dependency:
+The currently connected GitHub integration has read/pull permission but no push permission for ai-advokat/ai-advokat.github.io. Therefore this package is fully prepared and validated locally but has not been committed to GitHub by the assistant.
