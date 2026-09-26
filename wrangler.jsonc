@@ -3,9 +3,18 @@
   "name": "ai-advokat-github-io",
   "main": "./src/index.js",
   "compatibility_date": "2026-09-26",
+
   "assets": {
     "directory": "./",
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
-  }
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ai-advokat-db",
+      "database_id": "12ece285-74bb-4f27-a025-2dbd1be6c59a"
+    }
+  ]
 }
