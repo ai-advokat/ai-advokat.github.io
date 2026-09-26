@@ -1,11 +1,13 @@
 {
   "name": "ai-advokat",
-  "version": "1.1.0",
+  "version": "1.3.1",
   "private": true,
-  "description": "AI Advokat legal information and AI research portal",
+  "description": "AI Advokat legal information and source-first research portal",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "db:status": "wrangler d1 execute ai-advokat-db --remote --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\"",
+    "db:seed:v1.3": "wrangler d1 execute ai-advokat-db --remote --file=./migrations/0002_public_source_seed.sql"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
