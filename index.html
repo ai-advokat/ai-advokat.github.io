@@ -1203,9 +1203,7 @@
 
           <a
             class="btn light"
-            href="#publications"
-            target="_self"
-            rel="noopener noreferrer">
+            href="#publications">
             Zenodo · 2 draft records
           </a>
 
@@ -1313,10 +1311,7 @@
         <a href="mailto:aiadvokat16@gmail.com">Gmail</a>
         <a href="mailto:aiadvokat@outlook.com">Outlook</a>
 
-        <a
-          href="#publications"
-          target="_self"
-          rel="noopener noreferrer">
+        <a href="#publications">
           Zenodo · DOI records
         </a>
 
@@ -1359,9 +1354,10 @@
     <p>
       Zenodo профилот на Zoran Stojankich / AI Advokat е активен.
       За „Кочани – Пулс“ и „СИНЏИР“ се прикажуваат само реално
-      резервирани DOI. Додека записите се Draft, тие немаат јавен
-      Zenodo record линк. Директните DOI-врски ќе се активираат
-      по финалното објавување. Автоматска API синхронизација сè уште
+      резервирани DOI. Додека записите се Draft, нивните копчиња
+      отвораат директно во Zenodo Draft за сопственикот на профилот.
+      За јавните посетители трајните DOI-врски ќе се активираат по
+      финалното објавување. Автоматска API синхронизација сè уште
       не е вклучена.
     </p>
 
@@ -1457,6 +1453,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       doi:"10.5281/zenodo.22981554",
       badge:"ZENODO DRAFT · DOI RESERVED",
       published:false,
+      draftUrl:"https://zenodo.org/uploads/22981554",
       zenodoUrl:ZENODO_AUTHOR_URL,
       tags:[
         "кривично право",
@@ -1472,6 +1469,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       doi:"10.5281/zenodo.22981744",
       badge:"ZENODO DRAFT · DOI RESERVED",
       published:false,
+      draftUrl:"https://zenodo.org/uploads/22981744",
       zenodoUrl:ZENODO_AUTHOR_URL,
       tags:[
         "кривично право",
@@ -1488,6 +1486,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       doi:"DOI pending",
       badge:"ZENODO READY · DOI PENDING",
       published:false,
+      draftUrl:"",
       zenodoUrl:ZENODO_AUTHOR_URL,
       tags:[
         "legal research",
@@ -1959,16 +1958,30 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
         : pub.doi;
 
 
-    const actionText =
+    const action =
       pub.published
-        ? 'Open on Zenodo'
-        : 'Zenodo draft · public link after publication';
-
-
-    const actionUrl =
-      pub.published
-        ? `https://doi.org/${pub.doi}`
-        : pub.zenodoUrl;
+        ? `<a
+             class="btn light"
+             href="https://doi.org/${pub.doi}"
+             target="_blank"
+             rel="noopener noreferrer">
+             Open on Zenodo
+           </a>`
+        : pub.draftUrl
+          ? `<a
+               class="btn light"
+               href="${pub.draftUrl}"
+               target="_blank"
+               rel="noopener noreferrer">
+               Open Zenodo draft (owner)
+             </a>`
+          : `<button
+               class="btn light"
+               type="button"
+               disabled
+               aria-disabled="true">
+               Zenodo record pending
+             </button>`;
 
 
     el.innerHTML = `
@@ -1992,13 +2005,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
           .join('')}
       </div>
 
-      <a
-        class="btn light"
-        href="${actionUrl}"
-        target="_blank"
-        rel="noopener noreferrer">
-        ${actionText}
-      </a>
+      ${action}
     `;
 
     $('#publicationGrid').appendChild(el);
