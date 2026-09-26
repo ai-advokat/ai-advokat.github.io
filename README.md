@@ -1,4 +1,4 @@
-# AI Advokat portal — Worker + Static Assets v1.1
+# AI Advokat portal — Worker + Static Assets v1.2
 
 AI Advokat is a legal information and AI-research portal with source-first research, visible provenance and a mandatory human-review gate.
 
@@ -9,6 +9,7 @@ AI Advokat is a legal information and AI-research portal with source-first resea
 - Cloudflare configuration: `wrangler.jsonc`
 - Static asset allow/deny control: `.assetsignore`
 - Production branch: `main`
+- Cloudflare D1 database: bound and operational
 
 Cloudflare Workers Builds settings:
 
@@ -18,20 +19,66 @@ Cloudflare Workers Builds settings:
 
 ## API scaffold
 
-The Worker exposes safe scaffold endpoints:
+The Worker exposes:
 
 - `/api/health` — live Worker health
 - `/api/capabilities` — current capability state
+- `/api/db-status` — D1 binding, reachability and schema status
 - `/api/search` — reserved, not enabled yet
 - `/api/assistant` — reserved, not enabled yet
 - `/api/documents` — reserved, not enabled yet
 - `/api/zenodo` — reserved, not enabled yet
 
-No legal AI output or DOI is fabricated. D1, R2, Vectorize and Workers AI remain unbound until configured deliberately.
+D1 is active. R2, Vectorize and external AI research remain deliberately disabled until their respective implementation and governance stages are completed.
+
+No legal AI output or DOI is fabricated.
 
 ## Zenodo
 
-Zenodo is intentionally pending. Once Zoran Stojankic's real Zenodo account and records exist, the production integration can store real record IDs/DOIs and expose them through `/api/zenodo`.
+The Zenodo profile for **Zoran Stojankich / AI Advokat** is active.
+
+Two publication records currently exist as unpublished Zenodo drafts with reserved DOI identifiers:
+
+### Кочани – „Пулс“
+
+**Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност**
+
+- Resource type: Journal article
+- Status: Draft
+- Reserved DOI: `10.5281/zenodo.22981554`
+- Publisher: World Protocol Academy
+- Creator: Stojankich, Zoran (AI Advokat)
+
+### „СИНЏИР“
+
+**„СИНЏИР“ — Спогодување со обвинителството, признавање вина и границите на казнената правда**
+
+- Resource type: Working paper
+- Status: Draft
+- Reserved DOI: `10.5281/zenodo.22981744`
+- Publisher: World Protocol Academy
+- Creator: Stojankich, Zoran (AI Advokat)
+
+The reserved DOI identifiers are displayed as draft metadata only. They must not be represented as published records until the corresponding Zenodo deposits are formally published.
+
+The public portal therefore links to the author's Zenodo search/profile view while each record remains in draft status.
+
+Direct DOI links can be activated after publication.
+
+## Publication governance
+
+Publication workflow:
+
+1. Source and factual verification
+2. AI review / research-assistance cycle where applicable
+3. Citation and reference audit
+4. Professional legal review
+5. Human Gate approval
+6. Final publication metadata
+7. Zenodo publication
+8. Persistent DOI link activation
+
+AI-assisted review does not replace independent academic peer review, professional legal responsibility or authorial approval.
 
 ## Contact
 
@@ -40,4 +87,6 @@ Zenodo is intentionally pending. Once Zoran Stojankic's real Zenodo account and 
 
 ## Legal integrity
 
-AI output is research assistance only. Final legal judgment, citation verification and publication remain subject to professional human review.
+AI output is research assistance only.
+
+Final legal judgment, citation verification, interpretation, authorship approval and publication remain subject to professional human review.
