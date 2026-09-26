@@ -1203,10 +1203,10 @@
 
           <a
             class="btn light"
-            href="https://zenodo.org/search?q=metadata.creators.person_or_org.name:%22Stojankich,%20Zoran%22"
-            target="_blank"
+            href="#publications"
+            target="_self"
             rel="noopener noreferrer">
-            Zenodo
+            Zenodo · 2 draft records
           </a>
 
         </div>
@@ -1314,10 +1314,10 @@
         <a href="mailto:aiadvokat@outlook.com">Outlook</a>
 
         <a
-          href="https://zenodo.org/search?q=metadata.creators.person_or_org.name:%22Stojankich,%20Zoran%22"
-          target="_blank"
+          href="#publications"
+          target="_self"
           rel="noopener noreferrer">
-          Zenodo · Zoran Stojankich
+          Zenodo · DOI records
         </a>
 
       </nav>
@@ -1359,8 +1359,8 @@
     <p>
       Zenodo профилот на Zoran Stojankich / AI Advokat е активен.
       За „Кочани – Пулс“ и „СИНЏИР“ се прикажуваат само реално
-      резервирани DOI. Додека записите се Draft, порталот води кон
-      авторскиот Zenodo преглед. Директните DOI-врски ќе се активираат
+      резервирани DOI. Додека записите се Draft, тие немаат јавен
+      Zenodo record линк. Директните DOI-врски ќе се активираат
       по финалното објавување. Автоматска API синхронизација сè уште
       не е вклучена.
     </p>
@@ -1388,7 +1388,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     zenodoApi: "/api/zenodo",
 
     zenodoAuthorUrl:
-      "https://zenodo.org/search?q=metadata.creators.person_or_org.name:%22Stojankich,%20Zoran%22",
+      "#publications",
 
     contactEmails: [
       "aiadvokat16@gmail.com",
@@ -1400,7 +1400,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
 
   const ZENODO_AUTHOR_URL =
-    "https://zenodo.org/search?q=metadata.creators.person_or_org.name:%22Stojankich,%20Zoran%22";
+    "#publications";
 
 
   const data = [
@@ -1962,7 +1962,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     const actionText =
       pub.published
         ? 'Open on Zenodo'
-        : 'Zenodo · Zoran Stojankich';
+        : 'Zenodo draft · public link after publication';
 
 
     const actionUrl =
