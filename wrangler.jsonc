@@ -18,5 +18,17 @@
     }
   ],
 
-  "previews": {}
+  "previews": {},
+
+  "env": {
+    "staging": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "ai-advokat-db-staging",
+          "database_id": "eb560e98-9fc0-408e-9c81-9b823ffde44d"
+        }
+      ]
+    }
+  }
 }
