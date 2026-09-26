@@ -98,7 +98,7 @@
 <header class="header">
   <div class="container nav">
     <a class="brand" href="#top" aria-label="AI Advokat почетна">
-      <span class="brandmark">AI</span>
+      <span class="brandmark" aria-hidden="true">AI</span>
       <span class="brandtext"><strong>AI Advokat</strong><span data-i18n="brandSub">Правен информациски и AI портал</span></span>
     </a>
     <nav class="links" aria-label="Главна навигација">
@@ -108,7 +108,7 @@
       <a href="#author" data-i18n="navAuthor">Автор</a>
       <a href="#about" data-i18n="navAbout">За порталот</a>
     </nav>
-    <button class="menuBtn" id="menuBtn" aria-expanded="false" aria-controls="mobileMenu">☰</button>
+    <button class="menuBtn" id="menuBtn" aria-expanded="false" aria-controls="mobileMenu" aria-label="Отвори мени">☰</button>
   </div>
   <div id="mobileMenu" class="container" hidden style="padding-bottom:14px">
     <div style="display:grid;gap:8px">
@@ -233,9 +233,22 @@
 <footer>
   <div class="container">
     <div class="footerGrid">
-      <div><div class="brand"><span class="brandmark">AI</span><span class="brandtext"><strong>AI Advokat</strong><span>Legal information & AI research portal</span></span></div><p style="max-width:500px;color:#94a8ba;margin-top:16px">Правни извори, авторски анализи и AI-поддржано истражување со проверливи извори и човечка финална контрола.</p></div>
-      <div><h4>Навигација</h4><a href="#sources">Правни извори</a><a href="#research">AI Истражувач</a><a href="#publications">Трудови</a><a href="#author">Автор</a></div>
-      <div><h4>Интегритет</h4><a href="#about">Методологија</a><a href="#about">Правна напомена</a><a href="mailto:aiadvokat16@gmail.com">Gmail</a><a href="mailto:aiadvokat@outlook.com">Outlook</a><a href="#publications">Zenodo / DOI</a></div>
+      <div><div class="brand"><span class="brandmark" aria-hidden="true">AI</span><span class="brandtext"><strong>AI Advokat</strong><span>Legal information & AI research portal</span></span></div><p style="max-width:500px;color:#94a8ba;margin-top:16px">Правни извори, авторски анализи и AI-поддржано истражување со проверливи извори и човечка финална контрола.</p></div>
+      <nav aria-label="Навигација во подножје">
+        <h4>Навигација</h4>
+        <a href="#sources">Правни извори</a>
+        <a href="#research">AI Истражувач</a>
+        <a href="#publications">Трудови</a>
+        <a href="#author">Автор</a>
+      </nav>
+      <nav aria-label="Интегритет и контакти">
+        <h4>Интегритет</h4>
+        <a href="#about">Методологија</a>
+        <a href="#about">Правна напомена</a>
+        <a href="mailto:aiadvokat16@gmail.com">Gmail</a>
+        <a href="mailto:aiadvokat@outlook.com">Outlook</a>
+        <a href="#publications">Zenodo / DOI</a>
+      </nav>
     </div>
     <div class="footerBottom"><span>© <span id="year"></span> AI Advokat. Сите права задржани.</span><span>Production shell · Cloudflare-ready · No hard-coded domain</span></div>
   </div>

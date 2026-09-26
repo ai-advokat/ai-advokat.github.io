@@ -1,46 +1,43 @@
-# AI Advokat portal — static production shell
+# AI Advokat portal — Worker + Static Assets v1.1
 
-This package is a self-contained HTML front end for the AI Advokat legal information and AI research portal.
+AI Advokat is a legal information and AI-research portal with source-first research, visible provenance and a mandatory human-review gate.
 
-## Run locally
-Open `index.html` directly or serve the folder with any static server.
+## Current architecture
 
-## Portrait
-The HTML expects the supplied professional portrait of Adv. Zoran Stojankic at:
+- Static front end: `index.html` + `assets/`
+- Worker entry point: `src/index.js`
+- Cloudflare configuration: `wrangler.jsonc`
+- Static asset allow/deny control: `.assetsignore`
+- Production branch: `main`
 
-`assets/zoran-stojankic.png`
+Cloudflare Workers Builds settings:
 
-Save the photograph supplied in the ChatGPT conversation under that filename. If it is absent, the portal automatically shows an initials fallback instead of a broken-image icon.
+- Build command: **None**
+- Deploy command: `npx wrangler deploy`
+- Root directory: `/`
 
-## Cloudflare-ready backend hooks
-The front end reserves these endpoints:
+## API scaffold
 
-- `/api/search`
-- `/api/assistant`
-- `/api/documents`
-- `/api/zenodo`
+The Worker exposes safe scaffold endpoints:
 
-Recommended future stack:
+- `/api/health` — live Worker health
+- `/api/capabilities` — current capability state
+- `/api/search` — reserved, not enabled yet
+- `/api/assistant` — reserved, not enabled yet
+- `/api/documents` — reserved, not enabled yet
+- `/api/zenodo` — reserved, not enabled yet
 
-- Cloudflare Pages or Workers Static Assets — front end
-- Cloudflare Worker — API and authentication logic
-- D1 — structured legal metadata
-- R2 — PDFs and source documents
-- Vectorize — semantic retrieval
-- Turnstile — public forms / abuse prevention
-- GitHub Actions — controlled deploy from `main`
-
-No domain is hard-coded.
+No legal AI output or DOI is fabricated. D1, R2, Vectorize and Workers AI remain unbound until configured deliberately.
 
 ## Zenodo
-`zenodoEnabled` is intentionally `false`. No DOI is fabricated. When the real Zenodo account and records exist, populate record IDs/DOIs or connect `/api/zenodo`.
 
-## Legal integrity model
-The UI deliberately separates official sources, case law, professional analysis and AI-generated research assistance. AI output should not be treated as final legal advice without human professional review.
+Zenodo is intentionally pending. Once Zoran Stojankic's real Zenodo account and records exist, the production integration can store real record IDs/DOIs and expose them through `/api/zenodo`.
 
+## Contact
 
-## Contact emails
 - aiadvokat16@gmail.com
 - aiadvokat@outlook.com
 
-The supplied portrait is included at `assets/zoran-stojankic.png`.
+## Legal integrity
+
+AI output is research assistance only. Final legal judgment, citation verification and publication remain subject to professional human review.
