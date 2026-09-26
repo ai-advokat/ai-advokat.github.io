@@ -37,7 +37,7 @@ No legal AI output or DOI is fabricated.
 
 The Zenodo profile for **Zoran Stojankich / AI Advokat** is active.
 
-Two publication records currently exist as unpublished Zenodo drafts with reserved DOI identifiers:
+Two publication records currently exist as unpublished Zenodo drafts with reserved DOI identifiers.
 
 ### Кочани – „Пулс“
 
@@ -61,9 +61,9 @@ Two publication records currently exist as unpublished Zenodo drafts with reserv
 
 The reserved DOI identifiers are displayed as draft metadata only. They must not be represented as published records until the corresponding Zenodo deposits are formally published.
 
-The public portal therefore links to the author's Zenodo search/profile view while each record remains in draft status.
+While the records remain in Draft status, the public AI Advokat portal does not expose private Zenodo upload URLs or rely on a public author-search result. It displays the verified reserved DOI metadata and the current publication status only.
 
-Direct DOI links can be activated after publication.
+Direct DOI links will be activated after formal Zenodo publication.
 
 ## Publication governance
 
