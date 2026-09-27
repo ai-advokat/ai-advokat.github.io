@@ -1,0 +1,87 @@
+name: AI Advokat activation safety
+
+on:
+  push:
+    branches:
+      - activate-public-search-v1.3.3-clean
+  pull_request:
+    paths:
+      - "src/**"
+      - "migrations/**"
+      - "ingest/**"
+      - "scripts/**"
+      - "wrangler*.jsonc"
+      - "package.json"
+      - ".assetsignore"
+      - ".github/workflows/activation-safety.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: JavaScript syntax
+        run: node --check src/index.js
+
+      - name: Structural safety verification
+        run: npm run verify
+
+      - name: Migration smoke test
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import sqlite3
+          from pathlib import Path
+
+          db = sqlite3.connect(":memory:")
+          for migration in [
+              Path("migrations/0001_initial_schema.sql"),
+              Path("migrations/0002_public_source_seed.sql"),
+          ]:
+              db.executescript(migration.read_text(encoding="utf-8"))
+
+          versions = {
+              row[0]
+              for row in db.execute("SELECT version FROM schema_migrations")
+          }
+          assert versions == {"1", "2"}, versions
+
+          source_count = db.execute("SELECT COUNT(*) FROM sources").fetchone()[0]
+          publication_count = db.execute("SELECT COUNT(*) FROM publications").fetchone()[0]
+          assert source_count >= 6, source_count
+          assert publication_count == 2, publication_count
+
+          drafts = db.execute(
+              "SELECT doi, publication_status, canonical_url FROM publications ORDER BY doi"
+          ).fetchall()
+          assert all(status == "draft" for _, status, _ in drafts), drafts
+          assert all(url is None for _, _, url in drafts), drafts
+
+          print("Migration smoke test: PASS")
+          PY
+
+      - name: Public-data boundary checks
+        shell: bash
+        run: |
+          if grep -R "zenodo.org/uploads/" index.html assets 2>/dev/null; then
+            echo "Private Zenodo upload URL exposed"
+            exit 1
+          fi
+          grep -q 'publicMode: "read_only"' src/index.js
+          grep -q 'documentUpload: "locked"' src/index.js
+          grep -q 'caseWorkspace: "locked"' src/index.js
+          grep -q 'workersAI: "not_bound"' src/index.js
+          grep -q 'vectorize: "not_bound"' src/index.js
+          echo "Public-data boundary checks: PASS"

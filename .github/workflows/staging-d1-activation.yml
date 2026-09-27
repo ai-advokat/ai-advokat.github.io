@@ -1,0 +1,125 @@
+name: AI Advokat staging D1 activation
+
+on:
+  push:
+    branches:
+      - activate-public-search-v1.3.3-clean
+    paths:
+      - ".github/workflows/staging-d1-activation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-staging-d1-activation
+  cancel-in-progress: false
+
+jobs:
+  staging-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      PREVIEW_URL: https://activate-public-search-v1-3-3-clean-ai-advokat-github-io.aiadvokat16.workers.dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Fail closed if Cloudflare secrets are missing
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Verify repository safety invariants
+        run: |
+          node --check src/index.js
+          npm run verify
+
+      - name: Verify staging target before any remote write
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const prod = JSON.parse(fs.readFileSync("wrangler.jsonc", "utf8"));
+          const preview = JSON.parse(fs.readFileSync("wrangler.preview-migrations.jsonc", "utf8"));
+          const prodDb = prod.d1_databases[0];
+          const previewDb = preview.d1_databases[0];
+
+          if (prodDb.database_name !== "ai-advokat-db") throw new Error("Unexpected production database name.");
+          if (previewDb.binding !== "PREVIEW_DB") throw new Error("Migration binding must be PREVIEW_DB.");
+          if (previewDb.database_name !== "ai-advokat-db-staging") throw new Error("Migration target is not staging.");
+          if (previewDb.database_id !== "eb560e98-9fc0-408e-9c81-9b823ffde44d") throw new Error("Unexpected staging database ID.");
+          if (prodDb.database_id === previewDb.database_id) throw new Error("Staging and production IDs must differ.");
+          console.log("Staging target guard: PASS");
+          NODE
+
+      - name: Apply migrations to staging D1 only
+        run: npm run db:migrate:staging
+
+      - name: Verify staging migration ledger
+        run: npm run db:status:staging
+
+      - name: Verify staging seed counts
+        shell: bash
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS source_count FROM sources;"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS publication_count FROM publications;"
+
+      - name: Verify Preview health and read-only search
+        shell: bash
+        run: |
+          curl -fsS --retry 8 --retry-delay 5 "$PREVIEW_URL/api/health" -o /tmp/health.json
+          curl -fsS --retry 8 --retry-delay 5 "$PREVIEW_URL/api/db-status" -o /tmp/db.json
+          curl -fsS --retry 8 --retry-delay 5 "$PREVIEW_URL/api/capabilities" -o /tmp/capabilities.json
+          curl -fsS --retry 8 --retry-delay 5 "$PREVIEW_URL/api/search?q=Official&limit=10" -o /tmp/search-en.json
+          curl -fsS --retry 8 --retry-delay 5 "$PREVIEW_URL/api/search?q=%D0%9A%D0%BE%D1%87%D0%B0%D0%BD%D0%B8&limit=10" -o /tmp/search-mk.json
+
+          node <<'NODE'
+          const fs = require("fs");
+          const read = p => JSON.parse(fs.readFileSync(p, "utf8"));
+          const health = read("/tmp/health.json");
+          const db = read("/tmp/db.json");
+          const caps = read("/tmp/capabilities.json");
+          const en = read("/tmp/search-en.json");
+          const mk = read("/tmp/search-mk.json");
+
+          if (!health.ok || health.publicMode !== "read_only") throw new Error("Preview health/read-only gate failed.");
+          if (!health.database?.schemaReady || health.database?.schemaVersion !== "2") throw new Error("Preview schema is not ready at v2.");
+          if (!db.ok || !db.database?.schemaReady) throw new Error("DB status gate failed.");
+          if (caps.capabilities?.publicSearch !== "live_read_only") throw new Error("Public search is not live_read_only.");
+          if (caps.capabilities?.documentUpload !== "locked") throw new Error("Document upload unexpectedly unlocked.");
+          if (caps.capabilities?.caseWorkspace !== "locked") throw new Error("Case workspace unexpectedly unlocked.");
+          if (caps.capabilities?.workersAI !== "not_bound") throw new Error("Workers AI unexpectedly enabled.");
+          if (caps.capabilities?.vectorize !== "not_bound") throw new Error("Vectorize unexpectedly enabled.");
+          if (!en.ok || en.mode !== "read_only_public_corpus") throw new Error("English public search gate failed.");
+          if (!mk.ok || mk.mode !== "read_only_public_corpus") throw new Error("Macedonian public search gate failed.");
+          console.log("Preview health/search gate: PASS");
+          NODE
+
+      - name: Verify governed endpoints remain locked
+        shell: bash
+        run: |
+          for path in assistant citation-audit versions documents cases; do
+            code=$(curl -sS -o "/tmp/$path.json" -w "%{http_code}" "$PREVIEW_URL/api/$path")
+            test "$code" = "503"
+            node -e "const x=require('/tmp/$path.json'); if(x.status!=='governed_preview') process.exit(1)"
+          done
+          echo "Governed endpoint lock gate: PASS"
+
+      - name: Staging activation result
+        run: |
+          echo "STAGING ONLY: PASS"
+          echo "Production D1 was not targeted by this workflow."
+          echo "No production deployment or merge was performed."

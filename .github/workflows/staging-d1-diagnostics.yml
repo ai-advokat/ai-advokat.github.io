@@ -1,0 +1,78 @@
+name: AI Advokat staging D1 diagnostics
+
+on:
+  push:
+    branches:
+      - activate-public-search-v1.3.3-clean
+    paths:
+      - ".github/workflows/staging-d1-diagnostics.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify staging config locally
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const cfg = JSON.parse(fs.readFileSync("wrangler.preview-migrations.jsonc", "utf8"));
+          const db = cfg.d1_databases?.[0];
+          if (!db) throw new Error("Missing preview D1 config.");
+          if (db.binding !== "PREVIEW_DB") throw new Error("Unexpected binding.");
+          if (db.database_name !== "ai-advokat-db-staging") throw new Error("Unexpected database.");
+          if (db.database_id !== "eb560e98-9fc0-408e-9c81-9b823ffde44d") throw new Error("Unexpected staging DB ID.");
+          console.log("Local staging config: PASS");
+          NODE
+
+      - name: Cloudflare identity diagnostic
+        shell: bash
+        run: |
+          set +e
+          npx wrangler whoami > whoami.log 2>&1
+          code=$?
+          sed -E 's/[A-Za-z0-9_-]{30,}/[REDACTED]/g' whoami.log
+          exit $code
+
+      - name: Read-only staging D1 probe
+        shell: bash
+        run: |
+          set +e
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT 1 AS ok;" > d1-read.log 2>&1
+          code=$?
+          sed -E 's/[A-Za-z0-9_-]{30,}/[REDACTED]/g' d1-read.log
+          exit $code
+
+      - name: Read-only migration inventory
+        shell: bash
+        run: |
+          set +e
+          npx wrangler d1 migrations list PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc > migration-list.log 2>&1
+          code=$?
+          sed -E 's/[A-Za-z0-9_-]{30,}/[REDACTED]/g' migration-list.log
+          exit $code
+
+      - name: Diagnostic result
+        run: |
+          echo "READ-ONLY STAGING DIAGNOSTICS: PASS"
+          echo "No D1 migrations, writes, deployments, or production operations were performed."
