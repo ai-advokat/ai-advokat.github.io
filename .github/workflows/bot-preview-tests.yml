@@ -1,0 +1,145 @@
+name: AI Advokat bot adversarial preview tests
+
+on:
+  push:
+    branches:
+      - retrieval-bot-v1.4.0-clean
+    paths:
+      - ".github/workflows/bot-preview-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  bot-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      PREVIEW_URL: https://retrieval-bot-v1-4-0-clean-ai-advokat-github-io.aiadvokat16.workers.dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for Preview
+        shell: bash
+        run: |
+          for i in {1..24}; do
+            code=$(curl -sS -o /tmp/health.json -w "%{http_code}" "$PREVIEW_URL/api/health" || true)
+            if [ "$code" = "200" ]; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Preview did not become healthy in time."
+          exit 1
+
+      - name: Verify retrieval capability
+        shell: bash
+        run: |
+          curl -fsS "$PREVIEW_URL/api/capabilities" -o /tmp/caps.json
+          node <<'NODE'
+          const fs=require("fs");
+          const x=JSON.parse(fs.readFileSync("/tmp/caps.json","utf8"));
+          if(x.version!=="1.4.0") throw new Error("Unexpected bot version.");
+          if(x.capabilities?.retrievalAssistant!=="live_retrieval_only") throw new Error("Retrieval assistant is not live_retrieval_only.");
+          if(x.capabilities?.documentUpload!=="locked") throw new Error("Document upload must remain locked.");
+          if(x.capabilities?.caseWorkspace!=="locked") throw new Error("Case workspace must remain locked.");
+          if(x.capabilities?.workersAI!=="not_bound") throw new Error("Workers AI must remain unbound.");
+          if(x.capabilities?.vectorize!=="not_bound") throw new Error("Vectorize must remain unbound.");
+          console.log("Capability gate: PASS");
+          NODE
+
+      - name: Verify POST CORS from GitHub Pages
+        shell: bash
+        run: |
+          curl -fsS -X OPTIONS "$PREVIEW_URL/api/assistant"             -H "Origin: https://ai-advokat.github.io"             -H "Access-Control-Request-Method: POST"             -D /tmp/cors.headers -o /dev/null
+          grep -i "^access-control-allow-origin: https://ai-advokat.github.io" /tmp/cors.headers
+          grep -i "^access-control-allow-methods: .*POST" /tmp/cors.headers
+          echo "CORS gate: PASS"
+
+      - name: Verify official Macedonian retrieval only
+        shell: bash
+        run: |
+          curl -fsS "$PREVIEW_URL/api/assistant"             -H "Origin: https://ai-advokat.github.io"             -H "Content-Type: application/json"             --data '{"question":"Official Gazette North Macedonia","jurisdiction":"MK","mode":"source","language":"en"}'             -o /tmp/mk.json
+          node <<'NODE'
+          const fs=require("fs");
+          const x=JSON.parse(fs.readFileSync("/tmp/mk.json","utf8"));
+          if(!x.ok) throw new Error("MK retrieval failed.");
+          if(x.answerPolicy!=="no_source_no_answer") throw new Error("Missing no-source-no-answer policy.");
+          if(x.evidencePolicy!=="official_then_verified_no_pending") throw new Error("Wrong evidence policy.");
+          if(x.answerStatus!=="verified_sources_found") throw new Error("Expected verified source result.");
+          if(!Array.isArray(x.sources) || x.sources.length<1) throw new Error("Expected at least one source.");
+          for(const s of x.sources){
+            if(!["official","verified"].includes(s.status)) throw new Error("Pending/unverified record leaked into bot answer.");
+            if(s.jurisdiction!=="MK") throw new Error("Wrong jurisdiction leaked into MK scope.");
+          }
+          console.log("MK official retrieval gate: PASS");
+          NODE
+
+      - name: Verify unknown question fails closed
+        shell: bash
+        run: |
+          curl -fsS "$PREVIEW_URL/api/assistant"             -H "Origin: https://ai-advokat.github.io"             -H "Content-Type: application/json"             --data '{"question":"zxqv fictional statute 998877 impossible authority","jurisdiction":"MK","mode":"source","language":"en"}'             -o /tmp/unknown.json
+          node <<'NODE'
+          const fs=require("fs");
+          const x=JSON.parse(fs.readFileSync("/tmp/unknown.json","utf8"));
+          if(!x.ok) throw new Error("Unknown-query request itself failed.");
+          if(x.answerStatus!=="insufficient_verified_evidence") throw new Error("Unknown query did not fail closed.");
+          if((x.sources||[]).length!==0) throw new Error("Unknown query unexpectedly returned authority.");
+          if(!String(x.statement||"").toLowerCase().includes("cannot verify")) throw new Error("Unknown query did not disclose uncertainty.");
+          console.log("No-source-no-answer gate: PASS");
+          NODE
+
+      - name: Verify Common Law scope remains comparative
+        shell: bash
+        run: |
+          curl -fsS "$PREVIEW_URL/api/assistant"             -H "Content-Type: application/json"             --data '{"question":"judicial precedent","jurisdiction":"COMMONLAW","mode":"source","language":"en"}'             -o /tmp/commonlaw.json
+          node <<'NODE'
+          const fs=require("fs");
+          const x=JSON.parse(fs.readFileSync("/tmp/commonlaw.json","utf8"));
+          if(x.scope?.code!=="COMMONLAW") throw new Error("Wrong Common Law scope.");
+          const allowed=new Set(["UK","US","CA","AU"]);
+          for(const d of x.officialDirectories||[]){
+            if(!allowed.has(d.jurisdiction)) throw new Error("Non-Common-Law directory leaked into scope.");
+          }
+          for(const s of x.sources||[]){
+            if(!allowed.has(s.jurisdiction)) throw new Error("Non-Common-Law authority leaked into scope.");
+            if(!["official","verified"].includes(s.status)) throw new Error("Unverified Common Law authority leaked.");
+          }
+          console.log("Common Law separation gate: PASS");
+          NODE
+
+      - name: Verify international-law scope separation
+        shell: bash
+        run: |
+          curl -fsS "$PREVIEW_URL/api/assistant"             -H "Content-Type: application/json"             --data '{"question":"treaty interpretation","jurisdiction":"INTL","mode":"source","language":"en"}'             -o /tmp/intl.json
+          node <<'NODE'
+          const fs=require("fs");
+          const x=JSON.parse(fs.readFileSync("/tmp/intl.json","utf8"));
+          if(x.scope?.code!=="INTL") throw new Error("Wrong international-law scope.");
+          for(const d of x.officialDirectories||[]){
+            if(d.jurisdiction!=="INTL") throw new Error("Wrong directory leaked into INTL scope.");
+          }
+          for(const s of x.sources||[]){
+            if(s.jurisdiction!=="INTL") throw new Error("Wrong authority leaked into INTL scope.");
+            if(!["official","verified"].includes(s.status)) throw new Error("Unverified international authority leaked.");
+          }
+          console.log("International-law separation gate: PASS");
+          NODE
+
+      - name: Verify UI safety controls statically
+        shell: bash
+        run: |
+          grep -F 'x.jurisdiction || "—"' index.html
+          grep -F 'new AbortController()' index.html
+          grep -F 'requestSeq !== assistantRequestSeq' index.html
+          grep -F 'Knowledge boundary' index.html
+          echo "UI safety-control gate: PASS"
+
+      - name: Bot Preview safety result
+        run: |
+          echo "BOT PREVIEW ADVERSARIAL TESTS: PASS"
+          echo "No production mutation was performed."
