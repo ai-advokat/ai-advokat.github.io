@@ -275,35 +275,32 @@ function assistantDirectories(scope) {
   return PUBLIC_WEB_SOURCES.filter((source) => allowed.has(source.jurisdiction));
 }
 
-async function queryAssistantScope(env, { q, type, status, scope, limit }) {
-  if (!scope.jurisdictions) {
-    return queryPublicCorpus(env, {
-      q,
-      type,
-      status,
-      jurisdiction: null,
-      limit
-    });
-  }
-
+async function queryAssistantScope(env, { q, type, scope, limit }) {
   const results = [];
   const seen = new Set();
+  const jurisdictions = scope.jurisdictions || [null];
 
-  for (const jurisdiction of scope.jurisdictions) {
-    const partial = await queryPublicCorpus(env, {
-      q,
-      type,
-      status,
-      jurisdiction,
-      limit
-    });
+  // Fail-closed evidence policy:
+  // 1) official sources first;
+  // 2) then human-verified material;
+  // 3) never use pending/draft rows as legal authority.
+  for (const status of ["official", "verified"]) {
+    for (const jurisdiction of jurisdictions) {
+      const partial = await queryPublicCorpus(env, {
+        q,
+        type,
+        status,
+        jurisdiction,
+        limit
+      });
 
-    for (const item of partial) {
-      const key = `${item.entityType}:${item.id}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      results.push(item);
-      if (results.length >= limit) return results;
+      for (const item of partial) {
+        const key = `${item.entityType}:${item.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        results.push(item);
+        if (results.length >= limit) return results;
+      }
     }
   }
 
@@ -692,7 +689,6 @@ async function handleAssistant(request, env) {
   let results = await queryAssistantScope(env, {
     q: question,
     type,
-    status: "all",
     scope,
     limit: 8
   });
@@ -705,7 +701,6 @@ async function handleAssistant(request, env) {
       const partial = await queryAssistantScope(env, {
         q: term,
         type,
-        status: "all",
         scope,
         limit: 4
       });
@@ -733,11 +728,11 @@ async function handleAssistant(request, env) {
   const found = results.length > 0;
   const statement = language === "en"
     ? (found
-        ? `Retrieved ${results.length} source record(s) from the verified public corpus. No generative legal conclusion was produced.`
-        : "No matching indexed source was found in the current corpus. Official starting points are provided below; no legal conclusion was produced.")
+        ? `Retrieved ${results.length} official or human-verified source record(s). This is a source report, not a generated legal conclusion.`
+        : "I cannot verify an answer from the current official/verified corpus. I will not guess or invent one. Official starting points are provided below.")
     : (found
-        ? `Пронајдени се ${results.length} изворни записи од проверениот јавен корпус. Не е генериран автоматски конечен правен заклучок.`
-        : "Во тековниот корпус не е пронајден соодветен индексиран извор. Подолу се дадени официјални појдовни извори; не е генериран правен заклучок.");
+        ? `Пронајдени се ${results.length} официјални или човечки проверени изворни записи. Ова е изворен извештај, а не автоматски генериран правен заклучок.`
+        : "Не можам да потврдам одговор од тековниот официјален/проверен корпус. Нема да погодувам или измислувам. Подолу се дадени официјални појдовни извори.");
 
   const humanGate = language === "en"
     ? [
@@ -745,6 +740,7 @@ async function handleAssistant(request, env) {
         "Open and read every primary source before relying on a proposition.",
         "Check jurisdiction, procedural posture and finality of every cited decision.",
         "Keep Macedonian, ECHR/EU, international and comparative Common Law authorities legally distinct.",
+        "If a proposition is not supported by an official or human-verified source, treat it as unverified and do not state it as fact.",
         "A qualified human lawyer must approve any final legal conclusion, advice or filing."
       ]
     : [
@@ -752,6 +748,7 @@ async function handleAssistant(request, env) {
         "Отворете го и прочитајте го секој примарен извор пред да се потпрете на правно тврдење.",
         "Проверете ја јурисдикцијата, процесната положба и правосилноста на секоја цитирана одлука.",
         "Македонските, ЕСПЧ/ЕУ, меѓународните и компаративните Common Law извори мора правно да останат разграничени.",
+        "Ако тврдењето не е поткрепено со официјален или човечки проверен извор, третирајте го како непотврдено и не прикажувајте го како факт.",
         "Конечниот правен заклучок, совет или поднесок мора да го одобри квалификуван адвокат."
       ];
 
@@ -759,6 +756,12 @@ async function handleAssistant(request, env) {
     ok: true,
     mode: "retrieval_only",
     sourcePolicy: "macedonian_law_first",
+    evidencePolicy: "official_then_verified_no_pending",
+    answerPolicy: "no_source_no_answer",
+    answerStatus: found ? "verified_sources_found" : "insufficient_verified_evidence",
+    knowledgeBoundary: found
+      ? "Only retrieved source records are reported; no unsupported proposition is generated."
+      : "No verified answer is available from the current corpus.",
     question,
     researchMode,
     scope: {
