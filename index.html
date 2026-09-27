@@ -1837,7 +1837,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
         ? `<a class="btn light" href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${lang==="en"?"Open source":"Отвори извор"}</a>`
         : "";
       return `<div class="resultItem" style="margin-top:10px">
-        <div class="meta">${i+1}. ${escapeHtml(x.entityType || "source")} · ${escapeHtml(x.status || "pending")}</div>
+        <div class="meta">${i+1}. ${escapeHtml(x.entityType || "source")} · ${escapeHtml(x.jurisdiction || "—")} · ${escapeHtml(x.status || "pending")}</div>
         <h4>${escapeHtml(x.title || "")}</h4>
         <p>${escapeHtml(x.snippet || "")}</p>
         ${link}
@@ -1884,9 +1884,16 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   $("#searchBtn").addEventListener("click",renderResults);
   $("#globalSearch").addEventListener("keydown",e=>{ if(e.key==="Enter") renderResults(); });
 
+  let assistantRequestController = null;
+  let assistantRequestSeq = 0;
+
   $("#askBtn").addEventListener("click", async ()=>{
     const q=$("#legalQuestion").value.trim();
     $("#answerBox").classList.add("show");
+
+    if(assistantRequestController) assistantRequestController.abort();
+    assistantRequestController = new AbortController();
+    const requestSeq = ++assistantRequestSeq;
 
     if(!q){
       $("#answerText").textContent=lang==="en" ? " Enter a legal question." : " Внесете правно прашање.";
@@ -1904,11 +1911,16 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
           jurisdiction:$("#jurisdiction").value,
           mode:$("#researchMode").value,
           language:lang
-        })
+        }),
+        signal:assistantRequestController.signal
       });
+
+      if(requestSeq !== assistantRequestSeq) return;
 
       const scopeLabel=escapeHtml(payload.scope?.label || $("#jurisdiction").selectedOptions[0].text);
       const statement=escapeHtml(payload.statement || "");
+      const answerStatus=escapeHtml(payload.answerStatus || "");
+      const knowledgeBoundary=escapeHtml(payload.knowledgeBoundary || "");
       const sourceHtml=renderAssistantSources(payload.sources || []);
       const directoryHtml=(payload.officialDirectories || []).length
         ? `<div class="resultItem" style="margin-top:10px"><div class="meta">${lang==="en"?"Official starting points":"Официјални појдовни извори"}</div>${
@@ -1922,11 +1934,14 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
       $("#answerText").innerHTML=
         `<div class="meta">${lang==="en"?"Scope":"Правен слој"}: ${scopeLabel}</div>`+
+        `<div class="meta">${lang==="en"?"Evidence status":"Статус на доказите"}: ${answerStatus}</div>`+
         `<p>${statement}</p>`+
+        `<p><b>${lang==="en"?"Knowledge boundary":"Граница на знаењето"}:</b> ${knowledgeBoundary}</p>`+
         sourceHtml+
         directoryHtml+
         `<div class="notice" style="margin-top:12px"><b>Human Gate</b><ul>${gate}</ul></div>`;
     }catch(error){
+      if(error?.name === "AbortError" || requestSeq !== assistantRequestSeq) return;
       $("#answerText").textContent=(lang==="en" ? " Assistant unavailable: " : " Асистентот е недостапен: ")+error.message;
     }
   });
