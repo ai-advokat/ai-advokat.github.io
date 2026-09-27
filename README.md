@@ -1,4 +1,4 @@
-# AI Advokat portal — Worker + Static Assets v1.2
+# AI Advokat portal — production baseline v1.3.4 UI / v1.3.3 Worker
 
 AI Advokat is a legal information and AI-research portal with source-first research, visible provenance and a mandatory human-review gate.
 
@@ -24,12 +24,12 @@ The Worker exposes:
 - `/api/health` — live Worker health
 - `/api/capabilities` — current capability state
 - `/api/db-status` — D1 binding, reachability and schema status
-- `/api/search` — reserved, not enabled yet
-- `/api/assistant` — reserved, not enabled yet
-- `/api/documents` — reserved, not enabled yet
-- `/api/zenodo` — reserved, not enabled yet
+- `/api/search` — live read-only public-corpus search
+- `/api/assistant` — governed preview / not enabled in production
+- `/api/documents` — locked pending authentication, authorization and secure-storage controls
+- `/api/zenodo` — publication metadata scaffold; no private draft/editor URL is exposed publicly
 
-D1 is active. R2, Vectorize and external AI research remain deliberately disabled until their respective implementation and governance stages are completed.
+D1 is active and the public-search layer is operational. R2, Vectorize, confidential document upload, case workspace and external/generative AI research remain deliberately disabled until their respective implementation, security and governance stages are completed.
 
 No legal AI output or DOI is fabricated.
 
@@ -64,6 +64,17 @@ The reserved DOI identifiers are displayed as draft metadata only. They must not
 While the records remain in Draft status, the public AI Advokat portal does not expose private Zenodo upload URLs or rely on a public author-search result. It displays the verified reserved DOI metadata and the current publication status only.
 
 Direct DOI links will be activated after formal Zenodo publication.
+
+
+### Future publication drafts — review pending
+
+The following author manuscripts are listed on the portal only as **future drafts under review**. They are **not Zenodo records**, have **no reserved DOI**, and must not be represented as published or accepted until the review and Human Gate process is completed.
+
+- **Електронските и AI генерираните докази во судската постапка** — Professional scholarly paper; future draft; review pending; DOI not reserved.
+- **Претресот на мобилен телефон и заштитата на адвокатската тајна** — Professional scholarly paper; future draft; review pending; DOI not reserved.
+- **Вештачката интелигенција во адвокатурата и судството** — Professional scholarly paper; future draft; review pending; DOI not reserved.
+
+The manuscript files themselves are not published by this metadata update. Only bibliographic/status metadata is displayed until review is completed and the author expressly approves publication.
 
 ## Publication governance
 
