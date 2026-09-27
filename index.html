@@ -1722,6 +1722,20 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
   ];
 
 
+  const promptsEn = [
+    ["Find the law currently in force","Find the current text, amendments, effective date and official source."],
+    ["Compare two versions of a provision","Show what changed, when it changed and the legal consequence."],
+    ["Summarize a judgment","Separate the facts, legal issue, applicable rules, reasoning and outcome."],
+    ["Build a case-law matrix","Compare decisions by legal issue, applicable rule and outcome."],
+    ["Build a legal chronology","Extract dates, acts, authorities, deadlines and procedural steps."],
+    ["Audit citations and footnotes","Check whether each citation supports the sentence and whether the source is primary."],
+    ["Prepare a legal memo","Issue · Rule · Authority · Application · Counterarguments · Conclusion · Sources."],
+    ["Extract deadlines and obligations","List deadlines, responsible actors, consequences and source provisions."],
+    ["Build an evidence map","Separate established facts, allegations, disputed facts and missing evidence."],
+    ["Run the Human Gate check","List what the lawyer must personally verify before the document is used."]
+  ];
+
+
   const i18n = {
 
     mk:{
@@ -2018,11 +2032,150 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
     [...document.querySelectorAll(s)];
 
 
+
+  function localizedText(selector, english, index = 0){
+    const elements = $(selector);
+    const el = elements[index];
+    if(!el) return;
+    if(el.dataset.mkText === undefined) el.dataset.mkText = el.textContent;
+    el.textContent = lang === 'en' ? english : el.dataset.mkText;
+  }
+
+  function localizedTexts(selector, englishValues){
+    $(selector).forEach((el,i)=>{
+      if(el.dataset.mkText === undefined) el.dataset.mkText = el.textContent;
+      el.textContent = lang === 'en' ? (englishValues[i] ?? el.dataset.mkText) : el.dataset.mkText;
+    });
+  }
+
+  function localizedAttr(selector, attr, english, index = 0){
+    const elements = $(selector);
+    const el = elements[index];
+    if(!el) return;
+    const key = 'mk' + attr.replace(/[^a-z0-9]/gi,'');
+    if(el.dataset[key] === undefined) el.dataset[key] = el.getAttribute(attr) || '';
+    el.setAttribute(attr, lang === 'en' ? english : el.dataset[key]);
+  }
+
+  function applyExtendedLanguage(){
+    document.title = lang === 'en'
+      ? 'AI Advokat — Legal Information & AI Portal'
+      : 'AI Advokat — Правен информациски и AI портал';
+
+    const meta = document.querySelector('meta[name="description"]');
+    if(meta){
+      if(meta.dataset.mkContent === undefined) meta.dataset.mkContent = meta.getAttribute('content') || '';
+      meta.setAttribute('content', lang === 'en'
+        ? 'AI Advokat — legal information and AI research portal with verifiable sources, case law, analysis and mandatory human review.'
+        : meta.dataset.mkContent);
+    }
+
+    localizedText('.skip','Skip to main content');
+    localizedAttr('#langBtn','aria-label','Change language');
+    localizedAttr('#themeBtn','aria-label','Change theme');
+    localizedAttr('#a11yBtn','aria-label','Increase text size');
+    localizedAttr('.brand','aria-label','AI Advokat home');
+    localizedAttr('.links','aria-label','Main navigation');
+    localizedAttr('#menuBtn','aria-label','Open menu');
+    localizedText('.links a[href="#tools"]','Legal tools');
+    localizedTexts('#mobileMenu a',['Legal sources','AI Research','Legal tools','Publications','Author','About']);
+
+    localizedAttr('.trustGrid','aria-label','Core principles');
+    localizedAttr('.searchPanel','aria-label','Search');
+    localizedAttr('#globalSearch','placeholder','Search a law, provision, judgment, concept or publication...');
+    localizedAttr('#globalSearch','aria-label','Global search');
+    localizedAttr('#typeFilter','aria-label','Type');
+    localizedAttr('#statusFilter','aria-label','Status');
+    localizedTexts('#typeFilter option',['All sources','Laws & regulations','Case law','Publications','Official sources','Guides']);
+    localizedTexts('#statusFilter option',['Any status','Official','Verified','Pending']);
+    localizedText('#searchBtn','Search');
+    localizedTexts('.searchBox .chips .chip',['Constitutional law','Criminal law','Law of obligations','Administrative law','ECHR','Mediation','AI & Law']);
+
+    localizedAttr('#legalQuestion','placeholder','Example: What are the conditions for institutional responsibility and how does it differ from individual criminal liability?');
+    localizedTexts('#jurisdiction option',['North Macedonia','European Court of Human Rights','European Union','Comparative law']);
+    localizedText('#askBtn','Analyze');
+
+    localizedText('#tools .sectionHead h2','Legal tools');
+    localizedText('#tools .sectionHead p','Live D1 search, citation checking, version review, official-source access and safe working templates.');
+    const toolCards = $('#tools .toolCard');
+    if(toolCards[0]){
+      localizedText('#tools .toolCard h3','Citation / DOI audit',0);
+      localizedText('#tools .toolCard p','Checks reserved DOIs and records in the local citation registry. A draft DOI is never represented as published.',0);
+    }
+    localizedText('#auditCitationBtn','Check');
+    localizedText('#citationResult','Enter a DOI or citation.');
+
+    if(toolCards[1]){
+      localizedText('#tools .toolCard p','Shows stored versions of a legal instrument with dates, checksum and Human Gate status.',1);
+    }
+    localizedAttr('#versionQuery','placeholder','Law / regulation title');
+    localizedText('#versionBtn','Find versions');
+    localizedText('#versionResult','At least two stored versions are required for comparison.');
+
+    if(toolCards[2]){
+      localizedText('#tools .toolCard p','Generates a working structure in the browser. Nothing is sent to an external AI service.',2);
+    }
+    localizedAttr('#documentTitle','placeholder','Title / matter');
+    localizedAttr('#documentContext','placeholder','Enter only public or non-confidential working notes. Do not enter client secrets on the public site.');
+    localizedText('#generateDocumentBtn','Generate');
+    localizedText('#copyDocumentBtn','Copy');
+    localizedText('#printDocumentBtn','Print / PDF');
+    localizedAttr('#documentOutput','placeholder','Draft output');
+    localizedText('#tools .toolCard .micro','Working template, not a final legal filing.',0);
+
+    if(toolCards[3]){
+      localizedText('#tools .toolCard h3','Official legal sources',3);
+      localizedText('#tools .toolCard p','Curated starting points. AI Advokat does not replace official publications.',3);
+    }
+    localizedTexts('#tools .resourceLinks a',['Official Gazette of North Macedonia','LDBIS - Ministry of Justice','Constitutional Court','Supreme Court','HUDOC / ECHR','EUR-Lex']);
+
+    if(toolCards[4]){
+      localizedText('#tools .toolCard p','Intentionally locked. Confidential documents are not accepted until authentication, secure storage, retention controls and an audit trail are active.',4);
+    }
+    if(toolCards[5]){
+      localizedText('#tools .toolCard h3','My matters / Case Workspace',5);
+      localizedText('#tools .toolCard p','Matters, deadlines, evidence maps and documents will be enabled only after role-based access and secure storage are in place.',5);
+    }
+
+    localizedTexts('#tools .statusBoard .micro',[
+      'Searches the public legal corpus.',
+      'Retrieval-only; no automated final legal conclusion.',
+      'DOI + local citation registry.',
+      'Available when D1 contains at least two versions.',
+      'Curated source directory.',
+      'Browser-only working structures.',
+      'Locked pending security controls.',
+      'Locked pending authentication/RBAC.'
+    ]);
+
+    localizedText('.authorMeta .tag','AUTHOR');
+    localizedText('.authorMeta h2','Attorney Zoran Stojankich');
+    localizedAttr('#authorPortrait','alt','Professional portrait of attorney Zoran Stojankich');
+    localizedText('.authorMeta .fact:first-child span','Law · institutional accountability · security · mediation');
+
+    localizedText('#about .dangerNotice b','Confidential data');
+    localizedText('#about .dangerNotice span','The public portal is not currently authorized to receive client secrets, health data, identification data or other sensitive information. Secure Upload and Case Workspace remain locked until the security architecture is complete.');
+
+    localizedText('footer .brandtext span','Legal information & AI research portal');
+    localizedText('footer .footerGrid > div:first-child p','Legal sources, author analysis and AI-assisted research with verifiable evidence and final human control.');
+    localizedAttr('footer .footerGrid nav','aria-label','Footer navigation',0);
+    localizedText('footer .footerGrid nav h4','Navigation',0);
+    localizedTexts('footer .footerGrid nav:first-of-type a',['Legal sources','AI Research','Legal tools','Publications','Author']);
+    localizedAttr('footer .footerGrid nav','aria-label','Integrity and contacts',1);
+    localizedText('footer .footerGrid nav h4','Integrity',1);
+    localizedText('footer .footerBottom > span:first-child','© '+new Date().getFullYear()+' AI Advokat. All rights reserved.');
+
+    localizedText('#zenodoInfo','Zenodo status');
+    localizedText('#modalTitle','Zenodo integration');
+    localizedAttr('#closeModal','aria-label','Close');
+    localizedText('#infoModal .modalBox > p','The Zoran Stojankich / AI Advokat Zenodo profile is active. For “Kočani – Puls” and “SINDZIR”, the portal displays only genuinely reserved DOIs. While the records remain drafts, private Zenodo editor/upload URLs are not exposed. Direct DOI links will be activated after final Zenodo publication. Automatic API synchronization is not yet enabled.');
+  }
+
   function applyLanguage(){
 
     document.documentElement.lang = lang;
 
-    $$('[data-i18n]').forEach(el=>{
+    $('[data-i18n]').forEach(el=>{
 
       const k = el.dataset.i18n;
 
@@ -2031,6 +2184,10 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
       }
 
     });
+
+    applyExtendedLanguage();
+    renderPrompts();
+    renderPublications();
 
   }
 
@@ -2081,97 +2238,72 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
   });
 
 
-  prompts.forEach((p,i)=>{
+  function renderPrompts(){
+    const activePrompts = lang === 'en' ? promptsEn : prompts;
+    $('#promptGrid').innerHTML = '';
 
-    const el =
-      document.createElement('div');
+    activePrompts.forEach((p,i)=>{
+      const el = document.createElement('div');
+      el.className = 'prompt';
+      el.innerHTML =
+        '<span class="n">'+(i+1)+'</span>'+
+        '<span><b>'+p[0]+'</b><small>'+p[1]+'</small></span>'+
+        '<button type="button">'+(lang === 'en' ? 'Use' : 'Користи')+'</button>';
 
-    el.className =
-      'prompt';
-
-    el.innerHTML =
-      `<span class="n">${i+1}</span>
-       <span>
-         <b>${p[0]}</b>
-         <small>${p[1]}</small>
-       </span>
-       <button type="button">Користи</button>`;
-
-    el
-      .querySelector('button')
-      .addEventListener('click',()=>{
-
+      el.querySelector('button').addEventListener('click',()=>{
         $('#legalQuestion').value = p[1];
-
         $('#legalQuestion').focus();
-
       });
 
-    $('#promptGrid').appendChild(el);
-
-  });
-
-
-  publications.forEach(pub=>{
-
-    const el =
-      document.createElement('article');
-
-    el.className =
-      'card pubCard';
+      $('#promptGrid').appendChild(el);
+    });
+  }
 
 
-    const doiText =
-      pub.doi.startsWith('10.')
-        ? `DOI reserved: ${pub.doi}`
+  function renderPublications(){
+    $('#publicationGrid').innerHTML = '';
+
+    const enTitles = [
+      'Kočani – “Puls”: Individual Criminal, Institutional and Political Responsibility',
+      '“SINDZIR” — Plea Bargaining with the Prosecution, Admission of Guilt and the Limits of Criminal Justice',
+      'AI Advokat Research Notes'
+    ];
+
+    const enTags = [
+      ['criminal law','institutional accountability','ECHR'],
+      ['criminal law','plea bargaining','financial crime','confiscation'],
+      ['legal research','evidence','AI']
+    ];
+
+    publications.forEach((pub,index)=>{
+      const el = document.createElement('article');
+      el.className = 'card pubCard';
+
+      const doiText = pub.doi.startsWith('10.')
+        ? (lang === 'en' ? 'DOI reserved: ' : 'Резервиран DOI: ') + pub.doi
         : pub.doi;
 
+      const action = pub.published
+        ? '<a class="btn light" href="https://doi.org/'+pub.doi+'" target="_blank" rel="noopener noreferrer">'+(lang === 'en' ? 'Open on Zenodo' : 'Отвори на Zenodo')+'</a>'
+        : '<button class="btn light" type="button" disabled aria-disabled="true">'+
+          (pub.doi.startsWith('10.')
+            ? (lang === 'en' ? 'Zenodo Draft · DOI reserved' : 'Zenodo Draft · DOI резервиран')
+            : (lang === 'en' ? 'Zenodo record pending' : 'Zenodo запис во подготовка'))+
+          '</button>';
 
-    const action =
-      pub.published
-        ? `<a
-             class="btn light"
-             href="https://doi.org/${pub.doi}"
-             target="_blank"
-             rel="noopener noreferrer">
-             Open on Zenodo
-           </a>`
-        : `<button
-             class="btn light"
-             type="button"
-             disabled
-             aria-disabled="true">
-             ${pub.doi.startsWith('10.') ? 'Zenodo Draft · DOI reserved' : 'Zenodo record pending'}
-           </button>`;
+      const title = lang === 'en' ? enTitles[index] : pub.title;
+      const tags = lang === 'en' ? enTags[index] : pub.tags;
 
+      el.innerHTML =
+        '<span class="badge pending">'+pub.badge+'</span>'+
+        '<div><h3>'+title+'</h3><p>'+pub.kind+' · '+pub.version+'</p></div>'+
+        '<div class="doi">'+doiText+'</div>'+
+        '<div class="chips">'+tags.map(t=>'<span class="chip">'+t+'</span>').join('')+'</div>'+
+        action;
 
-    el.innerHTML = `
-
-      <span class="badge pending">
-        ${pub.badge}
-      </span>
-
-      <div>
-        <h3>${pub.title}</h3>
-        <p>${pub.kind} · ${pub.version}</p>
-      </div>
-
-      <div class="doi">
-        ${doiText}
-      </div>
-
-      <div class="chips">
-        ${pub.tags
-          .map(t=>`<span class="chip">${t}</span>`)
-          .join('')}
-      </div>
-
-      ${action}
-    `;
-
-    $('#publicationGrid').appendChild(el);
-
-  });
+      $('#publicationGrid').appendChild(el);
+    });
+  }
 
 
 
@@ -2201,7 +2333,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
 
   function renderApiItems(items){
     if(!items?.length){
-      return `<div class="resultItem">Нема совпаѓање во тековниот јавен corpus.</div>`;
+      return `<div class="resultItem">${lang === 'en' ? 'No match in the current public corpus.' : 'Нема совпаѓање во тековниот јавен corpus.'}</div>`;
     }
     return items.map(x=>{
       const title = escapeHtml(x.title);
@@ -2210,7 +2342,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
       const status = escapeHtml((x.status || 'pending').toUpperCase());
       const safeUrl = safeExternalUrl(x.url);
       const link = safeUrl
-        ? `<a class="btn light" href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">Open source</a>`
+        ? `<a class="btn light" href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${lang === 'en' ? 'Open source' : 'Отвори извор'}</a>`
         : '';
       return `<div class="resultItem">
         <div class="resultTop"><div><h4>${title}</h4><div class="meta">${meta}</div></div><span class="badge">${status}</span></div>
@@ -2258,11 +2390,11 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
     const s = $('#statusFilter').value;
 
     if(q.length < 2){
-      $('#searchResults').innerHTML = `<div class="resultItem">Внеси најмалку 2 знаци.</div>`;
+      $('#searchResults').innerHTML = `<div class="resultItem">${lang === 'en' ? 'Enter at least 2 characters.' : 'Внеси најмалку 2 знаци.'}</div>`;
       return;
     }
 
-    $('#searchResults').innerHTML = `<div class="resultItem">Searching verified/public corpus...</div>`;
+    $('#searchResults').innerHTML = `<div class="resultItem">${lang === 'en' ? 'Searching the verified/public corpus...' : 'Пребарување на проверениот/јавниот corpus...'}</div>`;
 
     try{
       const params = new URLSearchParams({q,type:t,status:s,limit:'18'});
@@ -2284,8 +2416,8 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
         (t === 'all' || x.type === t) &&
         (s === 'all' || x.status === s)
       );
-      $('#searchResults').innerHTML = `<div class="notice" style="margin-bottom:10px"><b>API unavailable</b><span>Local public fallback only: ${escapeHtml(error.message)}</span></div>` +
-        (hits.length ? hits.map(x=>`<div class="resultItem"><h4>${escapeHtml(x.title)}</h4><div class="meta">${escapeHtml(x.meta)}</div><p>${escapeHtml(x.text)}</p></div>`).join('') : `<div class="resultItem">Нема локален резултат.</div>`);
+      $('#searchResults').innerHTML = `<div class="notice" style="margin-bottom:10px"><b>${lang === 'en' ? 'API unavailable' : 'API недостапен'}</b><span>${lang === 'en' ? 'Local public fallback only' : 'Само локален јавен fallback'}: ${escapeHtml(error.message)}</span></div>` +
+        (hits.length ? hits.map(x=>`<div class="resultItem"><h4>${escapeHtml(x.title)}</h4><div class="meta">${escapeHtml(x.meta)}</div><p>${escapeHtml(x.text)}</p></div>`).join('') : `<div class="resultItem">${lang === 'en' ? 'No local result.' : 'Нема локален резултат.'}</div>`);
     }
   }
 
@@ -2311,11 +2443,11 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
     const q = $('#legalQuestion').value.trim();
     $('#answerBox').classList.add('show');
     if(!q){
-      $('#answerText').textContent = ' Внеси правно прашање.';
+      $('#answerText').textContent = lang === 'en' ? ' Enter a legal question.' : ' Внеси правно прашање.';
       return;
     }
 
-    $('#answerText').textContent = ' Retrieving sources...';
+    $('#answerText').textContent = lang === 'en' ? ' Retrieving sources...' : ' Преземање извори...';
     try{
       const payload = await fetchJson(apiUrl(window.AI_ADVOCAT_CONFIG.api.assistant), {
         method:'POST',
@@ -2328,21 +2460,21 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
       });
 
       const sources = payload.sources || [];
-      const lines = [payload.statement || '', '', 'SOURCES:'];
+      const lines = [payload.statement || '', '', lang === 'en' ? 'SOURCES:' : 'ИЗВОРИ:'];
       sources.forEach((s,i)=>lines.push(`${i+1}. ${s.title}${s.url ? ' | ' + s.url : ''}`));
       lines.push('', 'HUMAN GATE:');
       (payload.humanGate || []).forEach((x,i)=>lines.push(`${i+1}. ${x}`));
       $('#answerText').textContent = ' ' + lines.join('\n');
     }catch(error){
-      $('#answerText').textContent = ` API unavailable: ${error.message}. No legal conclusion was generated.`;
+      $('#answerText').textContent = lang === 'en' ? ` API unavailable: ${error.message}. No legal conclusion was generated.` : ` API недостапен: ${error.message}. Не е генериран конечен правен заклучок.`;
     }
   });
 
   $('#auditCitationBtn').addEventListener('click', async ()=>{
     const q = $('#citationInput').value.trim();
     const box = $('#citationResult');
-    if(q.length < 3){ box.textContent = 'Внеси DOI или цитат.'; return; }
-    box.textContent = 'Checking...';
+    if(q.length < 3){ box.textContent = lang === 'en' ? 'Enter a DOI or citation.' : 'Внеси DOI или цитат.'; return; }
+    box.textContent = lang === 'en' ? 'Checking...' : 'Проверка...';
     try{
       const payload = await fetchJson(apiUrl(`${window.AI_ADVOCAT_CONFIG.api.citationAudit}?q=${encodeURIComponent(q)}`));
       box.textContent = JSON.stringify(payload.result, null, 2);
@@ -2352,15 +2484,15 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
   $('#versionBtn').addEventListener('click', async ()=>{
     const q = $('#versionQuery').value.trim();
     const box = $('#versionResult');
-    if(q.length < 2){ box.textContent = 'Внеси наслов на пропис.'; return; }
-    box.textContent = 'Checking stored versions...';
+    if(q.length < 2){ box.textContent = lang === 'en' ? 'Enter the title of a law or regulation.' : 'Внеси наслов на пропис.'; return; }
+    box.textContent = lang === 'en' ? 'Checking stored versions...' : 'Проверка на зачувани верзии...';
     try{
       const payload = await fetchJson(apiUrl(`${window.AI_ADVOCAT_CONFIG.api.versions}?q=${encodeURIComponent(q)}`));
-      if(!payload.instrument){ box.textContent = 'Не е пронајден инструмент во D1.'; return; }
+      if(!payload.instrument){ box.textContent = lang === 'en' ? 'No instrument was found in D1.' : 'Не е пронајден инструмент во D1.'; return; }
       const lines = [payload.instrument.title, payload.note || '', ''];
       (payload.versions || []).forEach(v=>lines.push(`${v.version_label} | ${v.valid_from || '?'} - ${v.valid_to || 'current'} | ${v.human_review_status}`));
       box.textContent = lines.join('\n');
-    }catch(error){ box.textContent = `Version service unavailable: ${error.message}`; }
+    }catch(error){ box.textContent = lang === 'en' ? `Version service unavailable: ${error.message}` : `Сервисот за верзии е недостапен: ${error.message}`; }
   });
 
   const documentSkeletons = {
@@ -2416,7 +2548,7 @@ HUMAN GATE`
 
   $('#generateDocumentBtn').addEventListener('click',()=>{
     const kind = $('#documentTemplate').value;
-    const title = $('#documentTitle').value.trim() || 'Untitled working draft';
+    const title = $('#documentTitle').value.trim() || (lang === 'en' ? 'Untitled working draft' : 'Работен нацрт без наслов');
     const context = $('#documentContext').value.trim();
     const base = documentSkeletons[kind]?.(title) || documentSkeletons['legal-memo'](title);
     $('#documentOutput').value = `${base}
@@ -2485,10 +2617,6 @@ NOTICE: Working structure only. Verify facts, law, citations, current versions a
     }
 
   });
-
-
-  $('#year').textContent =
-    new Date().getFullYear();
 
 
   applyLanguage();
