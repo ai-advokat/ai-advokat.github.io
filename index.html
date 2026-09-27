@@ -786,7 +786,7 @@
 
 <body>
 
-<a class="skip" href="#main">Прескокни до главната содржина</a>
+<a class="skip" href="#main" data-i18n="skipLink">Прескокни до главната содржина</a>
 
 <div class="topbar">
   <div class="container">
@@ -795,11 +795,11 @@
     </div>
 
     <div class="utility">
-      <button type="button" id="langBtn" aria-label="Промени јазик">MK / EN</button>
-      <button type="button" id="themeBtn" aria-label="Промени тема">
+      <button type="button" id="langBtn" aria-label="Промени јазик" data-i18n-aria="changeLanguage">MK / EN</button>
+      <button type="button" id="themeBtn" aria-label="Промени тема" data-i18n-aria="changeTheme">
         ◐ <span data-i18n="theme">Тема</span>
       </button>
-      <button type="button" id="a11yBtn" aria-label="Зголеми текст">A+</button>
+      <button type="button" id="a11yBtn" aria-label="Зголеми текст" data-i18n-aria="increaseText">A+</button>
     </div>
   </div>
 </div>
@@ -807,7 +807,7 @@
 <header class="header">
   <div class="container nav">
 
-    <a class="brand" href="#top" aria-label="AI Advokat почетна">
+    <a class="brand" href="#top" aria-label="AI Advokat почетна" data-i18n-aria="brandHome">
       <span class="brandmark" aria-hidden="true">AI</span>
       <span class="brandtext">
         <strong>AI Advokat</strong>
@@ -815,7 +815,7 @@
       </span>
     </a>
 
-    <nav class="links" aria-label="Главна навигација">
+    <nav class="links" aria-label="Главна навигација" data-i18n-aria="mainNav">
       <a href="#sources" data-i18n="navSources">Правни извори</a>
       <a href="#research" data-i18n="navResearch">AI Истражувач</a>
       <a href="#publications" data-i18n="navPublications">Трудови</a>
@@ -828,7 +828,8 @@
       id="menuBtn"
       aria-expanded="false"
       aria-controls="mobileMenu"
-      aria-label="Отвори мени">
+      aria-label="Отвори мени"
+      data-i18n-aria="openMenu">
       ☰
     </button>
 
@@ -836,11 +837,11 @@
 
   <div id="mobileMenu" class="container" hidden style="padding-bottom:14px">
     <div style="display:grid;gap:8px">
-      <a href="#sources">Правни извори</a>
-      <a href="#research">AI Истражувач</a>
-      <a href="#publications">Трудови</a>
-      <a href="#author">Автор</a>
-      <a href="#about">За порталот</a>
+      <a href="#sources" data-i18n="navSources">Правни извори</a>
+      <a href="#research" data-i18n="navResearch">AI Истражувач</a>
+      <a href="#publications" data-i18n="navPublications">Трудови</a>
+      <a href="#author" data-i18n="navAuthor">Автор</a>
+      <a href="#about" data-i18n="navAbout">За порталот</a>
     </div>
   </div>
 </header>
@@ -877,22 +878,22 @@
 
       <div class="trustGrid" aria-label="Основни принципи">
         <div class="trustCard">
-          <b>Source-first</b>
+          <b data-i18n="trustLabel1">Изворот прв</b>
           <span data-i18n="trust1">Одговорите треба да покажуваат на што се потпираат.</span>
         </div>
 
         <div class="trustCard">
-          <b>Human Gate</b>
+          <b data-i18n="trustLabel2">Човечка порта</b>
           <span data-i18n="trust2">AI не ја заменува професионалната правна проценка.</span>
         </div>
 
         <div class="trustCard">
-          <b>Version-aware</b>
+          <b data-i18n="trustLabel3">Проверка на верзија</b>
           <span data-i18n="trust3">Правниот текст се чита со датум, верзија и важност.</span>
         </div>
 
         <div class="trustCard">
-          <b>Zenodo-linked</b>
+          <b data-i18n="trustLabel4">Поврзано со Zenodo</b>
           <span data-i18n="trust4">Авторските трудови имаат проверлив Zenodo статус и резервирани DOI каде што се достапни.</span>
         </div>
       </div>
@@ -909,38 +910,40 @@
           id="globalSearch"
           type="search"
           placeholder="Пребарај закон, член, пресуда, поим или труд..."
+          data-i18n-placeholder="searchPlaceholder"
           aria-label="Глобално пребарување"
+          data-i18n-aria="searchAria"
         />
 
-        <select id="typeFilter" aria-label="Тип">
-          <option value="all">Сите извори</option>
-          <option value="law">Прописи</option>
-          <option value="case">Судска практика</option>
-          <option value="paper">Трудови</option>
-          <option value="guide">Водичи</option>
+        <select id="typeFilter" aria-label="Тип" data-i18n-aria="typeAria">
+          <option value="all" data-i18n="typeAll">Сите извори</option>
+          <option value="law" data-i18n="typeLaw">Прописи</option>
+          <option value="case" data-i18n="typeCase">Судска практика</option>
+          <option value="paper" data-i18n="typePaper">Трудови</option>
+          <option value="guide" data-i18n="typeGuide">Водичи</option>
         </select>
 
-        <select id="statusFilter" aria-label="Статус">
-          <option value="all">Секој статус</option>
-          <option value="official">Официјален</option>
-          <option value="verified">Проверен</option>
-          <option value="pending">Во подготовка</option>
+        <select id="statusFilter" aria-label="Статус" data-i18n-aria="statusAria">
+          <option value="all" data-i18n="statusAll">Секој статус</option>
+          <option value="official" data-i18n="statusOfficial">Официјален</option>
+          <option value="verified" data-i18n="statusVerified">Проверен</option>
+          <option value="pending" data-i18n="statusPending">Во подготовка</option>
         </select>
 
-        <button class="btn primary" id="searchBtn">
+        <button class="btn primary" id="searchBtn" data-i18n="searchButton">
           Пребарај
         </button>
 
       </div>
 
       <div class="chips">
-        <span class="chip">Уставно право</span>
-        <span class="chip">Кривично право</span>
-        <span class="chip">Облигации</span>
-        <span class="chip">Управно право</span>
-        <span class="chip">ЕСПЧ</span>
-        <span class="chip">Медијација</span>
-        <span class="chip">AI & Law</span>
+        <span class="chip" data-i18n="chipConstitutional">Уставно право</span>
+        <span class="chip" data-i18n="chipCriminal">Кривично право</span>
+        <span class="chip" data-i18n="chipObligations">Облигации</span>
+        <span class="chip" data-i18n="chipAdministrative">Управно право</span>
+        <span class="chip" data-i18n="chipEchr">ЕСПЧ</span>
+        <span class="chip" data-i18n="chipMediation">Медијација</span>
+        <span class="chip" data-i18n="chipAiLaw">AI и право</span>
       </div>
 
       <div
@@ -1024,7 +1027,7 @@
 
       <div class="sectionHead">
         <div>
-          <span class="tag">AI LEGAL RESEARCH</span>
+          <span class="tag" data-i18n="researchTag">AI ПРАВНО ИСТРАЖУВАЊЕ</span>
           <h2 data-i18n="researchTitle">AI Истражувач со доказна трага</h2>
           <p data-i18n="researchText">
             Интерфејсот е подготвен за Cloudflare Worker/D1/R2/Vectorize. Во оваа статичка верзија работи како безбеден demo и не испраќа податоци на надворешен AI сервис.
@@ -1042,38 +1045,38 @@
 
           <textarea
             id="legalQuestion"
-            placeholder="Пример: Кои се условите за институционална одговорност и како се разликува од индивидуалната кривична одговорност?"></textarea>
+            placeholder="Пример: Кои се условите за институционална одговорност и како се разликува од индивидуалната кривична одговорност?" data-i18n-placeholder="questionPlaceholder"></textarea>
 
           <div class="fieldGrid">
 
             <select id="jurisdiction">
-              <option>Северна Македонија</option>
-              <option>Европски суд за човекови права</option>
-              <option>Европска унија</option>
-              <option>Компаративно право</option>
+              <option data-i18n="jurisdictionMk">Северна Македонија</option>
+              <option data-i18n="jurisdictionEchr">Европски суд за човекови права</option>
+              <option data-i18n="jurisdictionEu">Европска унија</option>
+              <option data-i18n="jurisdictionComparative">Компаративно право</option>
             </select>
 
             <select id="researchMode">
-              <option value="source">Source-first research</option>
-              <option value="memo">Legal memo</option>
-              <option value="case">Case-law matrix</option>
-              <option value="citations">Citation audit</option>
+              <option value="source" data-i18n="modeSource">Истражување со примарни извори</option>
+              <option value="memo" data-i18n="modeMemo">Правно мислење</option>
+              <option value="case" data-i18n="modeCase">Матрица на судска практика</option>
+              <option value="citations" data-i18n="modeCitations">Проверка на цитати</option>
             </select>
 
           </div>
 
           <div class="assistantFoot">
-            <span class="sourceRule">
-              ✓ Official sources first · ✓ citations visible · ✓ no invented DOI
+            <span class="sourceRule" data-i18n="sourceRule">
+              ✓ Прво официјални извори · ✓ видливи цитати · ✓ без измислен DOI
             </span>
 
-            <button class="btn primary" id="askBtn">
+            <button class="btn primary" id="askBtn" data-i18n="analyzeButton">
               Анализирај
             </button>
           </div>
 
           <div class="answer" id="answerBox">
-            <strong>Demo режим</strong>
+            <strong data-i18n="demoMode">Демо-режим</strong>
             <span id="answerText"></span>
           </div>
 
@@ -1106,7 +1109,7 @@
 
       <div class="sectionHead">
         <div>
-          <span class="tag">PUBLICATIONS</span>
+          <span class="tag" data-i18n="pubTag">ПУБЛИКАЦИИ</span>
 
           <h2 data-i18n="pubTitle">
             Трудови и стручни анализи
@@ -1117,8 +1120,8 @@
           </p>
         </div>
 
-        <button class="btn light" id="zenodoInfo">
-          Zenodo status
+        <button class="btn light" id="zenodoInfo" data-i18n="zenodoStatus">
+          Статус на Zenodo
         </button>
       </div>
 
@@ -1145,9 +1148,9 @@
 
       <div class="authorMeta">
 
-        <span class="tag">AUTHOR / АВТОР</span>
+        <span class="tag" data-i18n="authorTag">АВТОР</span>
 
-        <h2>Адвокат Зоран Стојанкиќ</h2>
+        <h2 data-i18n="authorName">Адвокат Зоран Стојанкиќ</h2>
 
         <p data-i18n="authorBio">
           Порталот е замислен како професионална правна платформа за систематизирање на прописи, судска практика, стручни анализи и AI-поддржано истражување. Zenodo профилот е активен, а авторските трудови се поврзуваат со нивните резервирани DOI и трајни записи по објавувањето.
@@ -1157,13 +1160,13 @@
 
           <div class="fact">
             <b data-i18n="focus">Фокус</b>
-            <span>
+            <span data-i18n="focusText">
               Право · институционална одговорност · безбедност · медијација
             </span>
           </div>
 
           <div class="fact">
-            <b>Research ID</b>
+            <b data-i18n="researchIds">Истражувачки идентификатори</b>
             <span>
               <a
                 href="https://orcid.org/0009-0001-0702-2371"
@@ -1172,7 +1175,7 @@
                 ORCID · 0009-0001-0702-2371
               </a>
               <br>
-              Zenodo · 2 reserved DOI
+              <span data-i18n="zenodoReserved">Zenodo · 2 резервирани DOI-записи</span>
             </span>
           </div>
 
@@ -1221,7 +1224,7 @@
           <a
             class="btn light"
             href="#publications">
-            Zenodo · 2 draft records
+            <span data-i18n="zenodoDraftRecords">Zenodo · 2 записи во подготовка</span>
           </a>
 
         </div>
@@ -1235,7 +1238,7 @@
 
       <div class="sectionHead">
         <div>
-          <span class="tag">GOVERNANCE</span>
+          <span class="tag" data-i18n="aboutTag">УПРАВУВАЊЕ</span>
           <h2 data-i18n="aboutTitle">
             Како порталот ја чува доказната дисциплина
           </h2>
@@ -1245,28 +1248,28 @@
       <div class="integrity">
 
         <div class="card">
-          <b>1. Source</b>
+          <b data-i18n="intLabel1">1. Извор</b>
           <small data-i18n="int1">
             Официјалниот документ се чува одделно од толкувањето.
           </small>
         </div>
 
         <div class="card">
-          <b>2. Provenance</b>
+          <b data-i18n="intLabel2">2. Доказно потекло</b>
           <small data-i18n="int2">
             Се бележат орган, датум, верзија и потекло.
           </small>
         </div>
 
         <div class="card">
-          <b>3. AI Draft</b>
+          <b data-i18n="intLabel3">3. AI нацрт</b>
           <small data-i18n="int3">
             AI може да сумира и споредува, но мора да покаже извори.
           </small>
         </div>
 
         <div class="card">
-          <b>4. Human Gate</b>
+          <b data-i18n="intLabel4">4. Човечка порта</b>
           <small data-i18n="int4">
             Конечната правна проценка и објавување остануваат човечки.
           </small>
@@ -1302,29 +1305,29 @@
 
           <span class="brandtext">
             <strong>AI Advokat</strong>
-            <span>Legal information & AI research portal</span>
+            <span data-i18n="footerSub">Правен информациски портал и AI истражување</span>
           </span>
         </div>
 
-        <p style="max-width:500px;color:#94a8ba;margin-top:16px">
+        <p style="max-width:500px;color:#94a8ba;margin-top:16px" data-i18n="footerText">
           Правни извори, авторски анализи и AI-поддржано истражување со проверливи извори и човечка финална контрола.
         </p>
       </div>
 
-      <nav aria-label="Навигација во подножје">
-        <h4>Навигација</h4>
-        <a href="#sources">Правни извори</a>
-        <a href="#research">AI Истражувач</a>
-        <a href="#publications">Трудови</a>
-        <a href="#author">Автор</a>
+      <nav aria-label="Навигација во подножје" data-i18n-aria="footerNavAria">
+        <h4 data-i18n="footerNavTitle">Навигација</h4>
+        <a href="#sources" data-i18n="navSources">Правни извори</a>
+        <a href="#research" data-i18n="navResearch">AI Истражувач</a>
+        <a href="#publications" data-i18n="navPublications">Трудови</a>
+        <a href="#author" data-i18n="navAuthor">Автор</a>
       </nav>
 
-      <nav aria-label="Интегритет и контакти">
+      <nav aria-label="Интегритет и контакти" data-i18n-aria="footerIntegrityAria">
 
-        <h4>Интегритет</h4>
+        <h4 data-i18n="footerIntegrityTitle">Интегритет</h4>
 
-        <a href="#about">Методологија</a>
-        <a href="#about">Правна напомена</a>
+        <a href="#about" data-i18n="methodology">Методологија</a>
+        <a href="#about" data-i18n="legalNotice">Правна напомена</a>
         <a href="mailto:aiadvokat16@gmail.com">Gmail</a>
         <a href="mailto:aiadvokat@outlook.com">Outlook</a>
         <a
@@ -1335,7 +1338,7 @@
         </a>
 
         <a href="#publications">
-          Zenodo · DOI records
+          <span data-i18n="zenodoDoiRecords">Zenodo · DOI-записи</span>
         </a>
 
       </nav>
@@ -1343,11 +1346,11 @@
 
     <div class="footerBottom">
       <span>
-        © <span id="year"></span> AI Advokat. Сите права задржани.
+        © <span id="year"></span> AI Advokat. <span data-i18n="rights">Сите права задржани.</span>
       </span>
 
-      <span>
-        Production shell · Cloudflare-ready · Human Gate
+      <span data-i18n="footerStatus">
+        Продукциска основа · подготвено за Cloudflare · Човечка порта
       </span>
     </div>
 
@@ -1366,22 +1369,16 @@
     <div class="modalHead">
       <div>
         <span class="tag">ZENODO</span>
-        <h3 id="modalTitle">Zenodo интеграција</h3>
+        <h3 id="modalTitle" data-i18n="modalTitle">Zenodo интеграција</h3>
       </div>
 
-      <button id="closeModal" aria-label="Затвори">
+      <button id="closeModal" aria-label="Затвори" data-i18n-aria="closeModal">
         ×
       </button>
     </div>
 
-    <p>
-      Zenodo профилот на Zoran Stojankich / AI Advokat е активен.
-      За „Кочани – Пулс“ и „СИНЏИР“ се прикажуваат само реално
-      резервирани DOI. Додека записите се Draft, нивните копчиња
-      отвораат директно во Zenodo Draft за сопственикот на профилот.
-      За јавните посетители трајните DOI-врски ќе се активираат по
-      финалното објавување. Автоматска API синхронизација сè уште
-      не е вклучена.
+    <p data-i18n="modalText">
+      Zenodo-профилот на Зоран Стојанкиќ / AI Advokat е активен. За „Кочани – Пулс“ и „СИНЏИР“ се прикажуваат само реално резервирани DOI. Додека записите се во подготовка, нивните копчиња го отвораат соодветниот Zenodo нацрт за сопственикот на профилот. За јавните посетители трајните DOI-врски ќе се активираат по финалното објавување. Автоматската API-синхронизација сè уште не е вклучена.
     </p>
 
     <pre style="white-space:pre-wrap;background:var(--surface-2);padding:14px;border-radius:12px;border:1px solid var(--line)">window.AI_ADVOCAT_CONFIG.zenodoEnabled = false;
