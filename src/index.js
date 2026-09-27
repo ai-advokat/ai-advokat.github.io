@@ -272,6 +272,9 @@ async function queryPublicCorpus(env, { q, type = "all", status = "all", limit =
 
   const needle = `%${normalizeText(q)}%`;
   const perTable = Math.max(4, Math.ceil(limit / 2));
+  const queryLimit = status === "all"
+    ? perTable
+    : Math.max(80, Math.min(250, perTable * 20));
   const results = [];
 
   const include = (kind) => type === "all" || type === kind;
@@ -292,7 +295,7 @@ async function queryPublicCorpus(env, { q, type = "all", status = "all", limit =
       WHERE lower(title || ' ' || COALESCE(issuing_body,'') || ' ' || COALESCE(notes,'')) LIKE ?
       ORDER BY CASE source_status WHEN 'official' THEN 0 WHEN 'verified' THEN 1 ELSE 2 END, updated_at DESC
       LIMIT ?
-    `).bind(needle, perTable);
+    `).bind(needle, queryLimit);
     const rows = await stmt.all();
     results.push(...(rows.results ?? []));
   }
@@ -314,7 +317,7 @@ async function queryPublicCorpus(env, { q, type = "all", status = "all", limit =
       WHERE lower(li.title || ' ' || COALESCE(li.short_title,'') || ' ' || COALESCE(li.gazette_reference,'') || ' ' || COALESCE(li.notes,'')) LIKE ?
       ORDER BY li.updated_at DESC
       LIMIT ?
-    `).bind(needle, perTable);
+    `).bind(needle, queryLimit);
     const rows = await stmt.all();
     results.push(...(rows.results ?? []));
   }
@@ -336,7 +339,7 @@ async function queryPublicCorpus(env, { q, type = "all", status = "all", limit =
       WHERE lower(cl.case_title || ' ' || COALESCE(cl.case_number,'') || ' ' || COALESCE(cl.legal_area,'') || ' ' || COALESCE(cl.reasoning_summary,'') || ' ' || COALESCE(cl.outcome_summary,'')) LIKE ?
       ORDER BY cl.decision_date DESC, cl.updated_at DESC
       LIMIT ?
-    `).bind(needle, perTable);
+    `).bind(needle, queryLimit);
     const rows = await stmt.all();
     results.push(...(rows.results ?? []));
   }
@@ -357,7 +360,7 @@ async function queryPublicCorpus(env, { q, type = "all", status = "all", limit =
       WHERE lower(title || ' ' || COALESCE(subtitle,'') || ' ' || author_name || ' ' || COALESCE(abstract,'') || ' ' || COALESCE(keywords,'')) LIKE ?
       ORDER BY updated_at DESC
       LIMIT ?
-    `).bind(needle, perTable);
+    `).bind(needle, queryLimit);
     const rows = await stmt.all();
     results.push(...(rows.results ?? []));
   }
@@ -622,6 +625,19 @@ async function handleVersions(request, env, url) {
       WHERE lower(title || ' ' || COALESCE(short_title,'')) LIKE ?
       ORDER BY updated_at DESC LIMIT 1
     `).bind(`%${q.toLowerCase()}%`).first();
+
+    if (!instrument) {
+      const candidates = await env.DB.prepare(`
+        SELECT id, title, short_title, jurisdiction, gazette_reference, current_status, human_review_status
+        FROM legal_instruments
+        ORDER BY updated_at DESC
+        LIMIT 250
+      `).all();
+      const target = normalizeText(q);
+      instrument = (candidates.results ?? []).find((row) =>
+        normalizeText(`${row.title} ${row.short_title ?? ""}`).includes(target)
+      ) ?? null;
+    }
   } else {
     return json(request, { ok: false, error: "instrument_required" }, 400);
   }
