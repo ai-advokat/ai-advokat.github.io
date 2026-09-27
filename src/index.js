@@ -354,17 +354,20 @@ async function dbStatus(env) {
 }
 
 function normalizeRow(row) {
+  // D1 row values are normalized to JSON-safe primitives before they cross
+  // the API boundary. IDs are strings intentionally: database identity is
+  // opaque to clients and must never depend on JavaScript numeric coercion.
   return {
-    entityType: row.entity_type,
-    id: row.id,
-    title: row.title,
-    meta: row.meta || "",
-    snippet: row.snippet || "",
-    url: row.url || null,
-    jurisdiction: row.jurisdiction || null,
+    entityType: String(row.entity_type ?? ""),
+    id: row.id == null ? null : String(row.id),
+    title: String(row.title ?? ""),
+    meta: String(row.meta ?? ""),
+    snippet: String(row.snippet ?? ""),
+    url: row.url == null ? null : String(row.url),
+    jurisdiction: row.jurisdiction == null ? null : String(row.jurisdiction),
     status: mapStatus(row.entity_type, row.raw_status),
-    rawStatus: row.raw_status || null,
-    date: row.item_date || null
+    rawStatus: row.raw_status == null ? null : String(row.raw_status),
+    date: row.item_date == null ? null : String(row.item_date)
   };
 }
 
