@@ -630,19 +630,12 @@ async function handleCitationAudit(request, env, url) {
     }
   }
 
-  let citationMatches = (await env.DB.prepare(`
-    SELECT id, citing_type, citing_id, locator, support_status, verified_by, verified_at
-    FROM citations
-    WHERE lower(COALESCE(locator,'')) LIKE ? OR lower(COALESCE(quotation,'')) LIKE ?
-    ORDER BY verified_at DESC, created_at DESC
-    LIMIT 10
-  `).bind(`%${q.toLowerCase()}%`, `%${q.toLowerCase()}%`).all()).results ?? [];
+  let citationMatches = [];
 
-  if (citationMatches.length < 10) {
+  if (/[^\u0000-\u007F]/u.test(q)) {
     const target = normalizeText(q);
     const pageSize = 250;
     let offset = 0;
-    const seen = new Set(citationMatches.map((row) => row.id));
 
     while (citationMatches.length < 10) {
       const pageResult = await env.DB.prepare(`
@@ -655,13 +648,9 @@ async function handleCitationAudit(request, env, url) {
       const page = pageResult.results ?? [];
       for (const row of page) {
         if (
-          !seen.has(row.id) &&
-          (
-            normalizeText(row.locator).includes(target) ||
-            normalizeText(row.quotation).includes(target)
-          )
+          normalizeText(row.locator).includes(target) ||
+          normalizeText(row.quotation).includes(target)
         ) {
-          seen.add(row.id);
           const { quotation, ...publicRow } = row;
           citationMatches.push(publicRow);
           if (citationMatches.length >= 10) break;
@@ -671,6 +660,14 @@ async function handleCitationAudit(request, env, url) {
       if (page.length < pageSize) break;
       offset += pageSize;
     }
+  } else {
+    citationMatches = (await env.DB.prepare(`
+      SELECT id, citing_type, citing_id, locator, support_status, verified_by, verified_at
+      FROM citations
+      WHERE lower(COALESCE(locator,'')) LIKE ? OR lower(COALESCE(quotation,'')) LIKE ?
+      ORDER BY verified_at DESC, created_at DESC
+      LIMIT 10
+    `).bind(`%${q.toLowerCase()}%`, `%${q.toLowerCase()}%`).all()).results ?? [];
   }
 
   return json(request, {
