@@ -1725,11 +1725,11 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       const k=el.dataset.i18nAria;
       if(i18n[lang][k] !== undefined) el.setAttribute("aria-label",i18n[lang][k]);
     });
-    $("[data-i18n-placeholder]").forEach(el=>{
+    $$("[data-i18n-placeholder]").forEach(el=>{
       const k=el.dataset.i18nPlaceholder;
       if(i18n[lang][k] !== undefined) el.setAttribute("placeholder",i18n[lang][k]);
     });
-    $("[data-i18n-alt]").forEach(el=>{
+    $$("[data-i18n-alt]").forEach(el=>{
       const k=el.dataset.i18nAlt;
       if(i18n[lang][k] !== undefined) el.setAttribute("alt",i18n[lang][k]);
     });
