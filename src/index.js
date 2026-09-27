@@ -314,18 +314,6 @@ async function queryAssistantScope(env, { q, type, scope, limit }) {
     .slice(0, limit);
 }
 
-function assistantTerms(question) {
-  const stop = new Set([
-    "кои","која","кој","како","дали","што","што","ова","оваа","кога","каде","при","или","има","може",
-    "what","which","when","where","with","from","the","and","for","are","this","that","does","can","law","legal"
-  ]);
-
-  return normalizeText(question)
-    .split(/[^\p{L}\p{N}]+/u)
-    .filter((term) => term.length >= 4 && !stop.has(term))
-    .slice(0, 1);
-}
-
 async function dbStatus(env) {
   if (!env.DB) {
     return {
@@ -725,34 +713,11 @@ async function handleAssistant(request, env) {
     limit: 8
   });
 
-  if (!results.length) {
-    const seen = new Set();
-    const combined = [];
 
-    for (const term of assistantTerms(question)) {
-      const partial = await queryAssistantScope(env, {
-        q: term,
-        type,
-        scope,
-        limit: 4
-      });
+  // Fail closed after one trusted retrieval pass. If the corpus cannot
+  // verify the question directly, do not spend additional D1 budget trying
+  // to infer a match from looser terms; report insufficient evidence instead.
 
-      for (const item of partial) {
-        const key = `${item.entityType}:${item.id}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        combined.push(item);
-        if (combined.length >= 8) break;
-      }
-
-      // Bounded retrieval: once a trusted fallback term yields authority,
-      // stop expanding the query. If none of the small fixed term budget
-      // yields authority, fail closed rather than exhausting Worker/D1 budget.
-      if (combined.length > 0 || combined.length >= 8) break;
-    }
-
-    results = combined;
-  }
 
   const directories = assistantDirectories(scope).map((source) => ({
     title: source.title,
@@ -796,7 +761,7 @@ async function handleAssistant(request, env) {
     sourcePolicy: "macedonian_law_first",
     evidencePolicy: "official_then_verified_no_pending",
     answerPolicy: "no_source_no_answer",
-    retrievalPolicy: "bounded_full_query_plus_max_1_term",
+    retrievalPolicy: "single_trusted_pass_fail_closed",
     answerStatus: found ? "verified_sources_found" : "insufficient_verified_evidence",
     knowledgeBoundary: found
       ? "Only retrieved source records are reported; no unsupported proposition is generated."
