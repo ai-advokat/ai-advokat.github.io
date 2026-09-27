@@ -1,92 +1,78 @@
-# AI Advokat portal — Worker + Static Assets v1.2
+# AI Advokat portal - Worker + Static Assets v1.3.2
 
-AI Advokat is a legal information and AI-research portal with source-first research, visible provenance and a mandatory human-review gate.
+AI Advokat is an independent, source-first legal-information and research-assistance portal with visible provenance and a mandatory Human Gate.
 
-## Current architecture
+## Architecture
 
-- Static front end: `index.html` + `assets/`
-- Worker entry point: `src/index.js`
-- Cloudflare configuration: `wrangler.jsonc`
-- Static asset allow/deny control: `.assetsignore`
+- Public static portal: `index.html` + `assets/`
+- Worker API: `src/index.js`
+- Production D1: `ai-advokat-db`
+- Preview/staging D1: `ai-advokat-db-staging`
 - Production branch: `main`
-- Cloudflare D1 database: bound and operational
+- Preview repair branch: `ai-advokat-v1.3.2-repair`
 
-Cloudflare Workers Builds settings:
+The production and Preview D1 databases are intentionally separate. Preview configuration points only to the staging database.
 
-- Build command: **None**
-- Deploy command: `npx wrangler deploy`
-- Root directory: `/`
+## Safety posture
 
-## API scaffold
+Sensitive client/case storage, confidential uploads, R2, Vectorize and generative legal synthesis remain disabled until authentication, authorization, retention/deletion, encryption, access logging and incident controls are in place.
 
-The Worker exposes:
+AI output is research assistance only. Final legal interpretation, citation verification, filing, authorship approval and publication remain subject to professional human review.
 
-- `/api/health` — live Worker health
-- `/api/capabilities` — current capability state
-- `/api/db-status` — D1 binding, reachability and schema status
-- `/api/search` — reserved, not enabled yet
-- `/api/assistant` — reserved, not enabled yet
-- `/api/documents` — reserved, not enabled yet
-- `/api/zenodo` — reserved, not enabled yet
+## API
 
-D1 is active. R2, Vectorize and external AI research remain deliberately disabled until their respective implementation and governance stages are completed.
+Public/limited endpoints:
 
-No legal AI output or DOI is fabricated.
+- `/api/health`
+- `/api/capabilities`
+- `/api/db-status`
+- `/api/search`
+- `/api/assistant` - retrieval only
+- `/api/citation-audit`
+- `/api/versions`
+- `/api/templates`
+- `/api/web-sources`
+- `/api/zenodo`
+- `/api/orcid`
+
+Governed/locked endpoints:
+
+- `/api/documents`
+- `/api/cases`
+
+## D1 migrations
+
+Schema:
+- `migrations/0001_initial_schema.sql`
+
+Verified public-source and draft-publication seed:
+- `migrations/0002_public_source_seed.sql`
+
+Apply to staging/Preview first:
+
+```bash
+npm install
+npm run verify
+npm run db:migrate:staging
+npm run db:status:staging
+npm run preview
+```
+
+Do not apply migrations to production until the Preview deploy and endpoint checks pass.
 
 ## Zenodo
 
-The Zenodo profile for **Zoran Stojankich / AI Advokat** is active.
+The two DOI identifiers in the portal are unpublished reserved Zenodo draft metadata:
+- `10.5281/zenodo.22981554`
+- `10.5281/zenodo.22981744`
 
-Two publication records currently exist as unpublished Zenodo drafts with reserved DOI identifiers.
+Private Zenodo editor/upload URLs are intentionally not exposed. Public DOI links remain inactive until formal publication.
 
-### Кочани – „Пулс“
+## ORCID
 
-**Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност**
-
-- Resource type: Journal article
-- Status: Draft
-- Reserved DOI: `10.5281/zenodo.22981554`
-- Publisher: World Protocol Academy
-- Creator: Stojankich, Zoran (AI Advokat)
-
-### „СИНЏИР“
-
-**„СИНЏИР“ — Спогодување со обвинителството, признавање вина и границите на казнената правда**
-
-- Resource type: Working paper
-- Status: Draft
-- Reserved DOI: `10.5281/zenodo.22981744`
-- Publisher: World Protocol Academy
-- Creator: Stojankich, Zoran (AI Advokat)
-
-The reserved DOI identifiers are displayed as draft metadata only. They must not be represented as published records until the corresponding Zenodo deposits are formally published.
-
-While the records remain in Draft status, the public AI Advokat portal does not expose private Zenodo upload URLs or rely on a public author-search result. It displays the verified reserved DOI metadata and the current publication status only.
-
-Direct DOI links will be activated after formal Zenodo publication.
-
-## Publication governance
-
-Publication workflow:
-
-1. Source and factual verification
-2. AI review / research-assistance cycle where applicable
-3. Citation and reference audit
-4. Professional legal review
-5. Human Gate approval
-6. Final publication metadata
-7. Zenodo publication
-8. Persistent DOI link activation
-
-AI-assisted review does not replace independent academic peer review, professional legal responsibility or authorial approval.
+Zoran Stojankich: `0009-0001-0702-2371`
 
 ## Contact
 
 - aiadvokat16@gmail.com
 - aiadvokat@outlook.com
-
-## Legal integrity
-
-AI output is research assistance only.
-
-Final legal judgment, citation verification, interpretation, authorship approval and publication remain subject to professional human review.
