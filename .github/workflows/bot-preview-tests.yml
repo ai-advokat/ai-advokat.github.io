@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - retrieval-bot-v1.4.0-clean
+      - main
+  pull_request:
+    branches:
+      - main
     paths:
       - ".github/workflows/bot-preview-tests.yml"
       - "src/index.js"
@@ -24,18 +28,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Wait for Preview
+      - name: Wait for Preview built from current commit
         shell: bash
         run: |
-          for i in {1..24}; do
+          for i in {1..30}; do
             code=$(curl -sS -o /tmp/health.json -w "%{http_code}" "$PREVIEW_URL/api/health" || true)
             if [ "$code" = "200" ]; then
-              cat /tmp/health.json
-              exit 0
+              build=$(node -e 'const x=require("/tmp/health.json"); process.stdout.write(String(x.buildCommit||""))')
+              if [ "$build" = "$GITHUB_SHA" ]; then
+                cat /tmp/health.json
+                echo "Exact-commit Preview gate: PASS"
+                exit 0
+              fi
+              echo "Preview is healthy but still on $build; waiting for $GITHUB_SHA"
             fi
             sleep 5
           done
-          echo "Preview did not become healthy in time."
+          echo "Preview for exact current commit did not become ready in time."
+          cat /tmp/health.json 2>/dev/null || true
           exit 1
 
       - name: Verify retrieval capability
@@ -98,10 +108,10 @@ jobs:
           console.log("No-source-no-answer gate: PASS");
           NODE
 
-      - name: Verify Common Law scope remains comparative
+      - name: Verify Common Law scope excludes known MK authority
         shell: bash
         run: |
-          curl -fsS "$PREVIEW_URL/api/assistant"             -H "Content-Type: application/json"             --data '{"question":"judicial precedent","jurisdiction":"COMMONLAW","mode":"source","language":"en"}'             -o /tmp/commonlaw.json
+          curl -fsS "$PREVIEW_URL/api/assistant"             -H "Content-Type: application/json"             --data '{"question":"Official Gazette North Macedonia","jurisdiction":"COMMONLAW","mode":"source","language":"en"}'             -o /tmp/commonlaw.json
           node <<'NODE'
           const fs=require("fs");
           const x=JSON.parse(fs.readFileSync("/tmp/commonlaw.json","utf8"));
@@ -111,16 +121,17 @@ jobs:
             if(!allowed.has(d.jurisdiction)) throw new Error("Non-Common-Law directory leaked into scope.");
           }
           for(const s of x.sources||[]){
-            if(!allowed.has(s.jurisdiction)) throw new Error("Non-Common-Law authority leaked into scope.");
+            if(!allowed.has(s.jurisdiction)) throw new Error("MK/EU/ECHR authority leaked into Common Law scope.");
             if(!["official","verified"].includes(s.status)) throw new Error("Unverified Common Law authority leaked.");
           }
-          console.log("Common Law separation gate: PASS");
+          if((x.sources||[]).some(s=>s.jurisdiction==="MK")) throw new Error("Known MK source leaked into Common Law scope.");
+          console.log("Common Law negative-separation gate: PASS");
           NODE
 
-      - name: Verify international-law scope separation
+      - name: Verify international-law scope excludes known MK authority
         shell: bash
         run: |
-          curl -fsS "$PREVIEW_URL/api/assistant"             -H "Content-Type: application/json"             --data '{"question":"treaty interpretation","jurisdiction":"INTL","mode":"source","language":"en"}'             -o /tmp/intl.json
+          curl -fsS "$PREVIEW_URL/api/assistant"             -H "Content-Type: application/json"             --data '{"question":"Official Gazette North Macedonia","jurisdiction":"INTL","mode":"source","language":"en"}'             -o /tmp/intl.json
           node <<'NODE'
           const fs=require("fs");
           const x=JSON.parse(fs.readFileSync("/tmp/intl.json","utf8"));
@@ -129,10 +140,11 @@ jobs:
             if(d.jurisdiction!=="INTL") throw new Error("Wrong directory leaked into INTL scope.");
           }
           for(const s of x.sources||[]){
-            if(s.jurisdiction!=="INTL") throw new Error("Wrong authority leaked into INTL scope.");
+            if(s.jurisdiction!=="INTL") throw new Error("Non-INTL authority leaked into INTL scope.");
             if(!["official","verified"].includes(s.status)) throw new Error("Unverified international authority leaked.");
           }
-          console.log("International-law separation gate: PASS");
+          if((x.sources||[]).some(s=>s.jurisdiction==="MK")) throw new Error("Known MK source leaked into INTL scope.");
+          console.log("International-law negative-separation gate: PASS");
           NODE
 
       - name: Verify UI safety controls statically
