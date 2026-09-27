@@ -1050,10 +1050,12 @@
           <div class="fieldGrid">
 
             <select id="jurisdiction">
-              <option data-i18n="jurisdictionMk">Северна Македонија</option>
-              <option data-i18n="jurisdictionEchr">Европски суд за човекови права</option>
-              <option data-i18n="jurisdictionEu">Европска унија</option>
-              <option data-i18n="jurisdictionComparative">Компаративно право</option>
+              <option value="MK" data-i18n="jurisdictionMk">Северна Македонија</option>
+              <option value="ECHR" data-i18n="jurisdictionEchr">Европски суд за човекови права / Совет на Европа</option>
+              <option value="EU" data-i18n="jurisdictionEu">Европска унија</option>
+              <option value="INTL" data-i18n="jurisdictionIntl">Меѓународно право</option>
+              <option value="COMMONLAW" data-i18n="jurisdictionCommonLaw">Common Law / англо-американско право</option>
+              <option value="COMPARATIVE" data-i18n="jurisdictionComparative">Компаративно право</option>
             </select>
 
             <select id="researchMode">
@@ -1392,7 +1394,13 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
   window.AI_ADVOCAT_CONFIG = Object.freeze({
     portal: "AI Advokat",
-    demoMode: true,
+    demoMode: false,
+    apiBase:
+      (window.location.hostname.endsWith(".workers.dev") ||
+       window.location.hostname === "localhost" ||
+       window.location.hostname === "127.0.0.1")
+        ? ""
+        : "https://ai-advokat-github-io.aiadvokat16.workers.dev",
 
     api: {
       search: "/api/search",
@@ -1611,7 +1619,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       skipLink:"Прескокни до главната содржина", changeLanguage:"Промени јазик", changeTheme:"Промени тема", increaseText:"Зголеми текст", brandHome:"AI Advokat почетна", mainNav:"Главна навигација", openMenu:"Отвори мени", trustGridAria:"Основни принципи", searchPanelAria:"Пребарување", authorPortraitAlt:"Професионален портрет на адвокат Зоран Стојанкиќ", footerNavAria:"Навигација во подножје", footerIntegrityAria:"Интегритет и контакти", closeModal:"Затвори",
       searchPlaceholder:"Пребарај закон, член, пресуда, поим или труд...", searchAria:"Глобално пребарување", typeAria:"Тип", statusAria:"Статус", typeAll:"Сите извори", typeLaw:"Прописи", typeCase:"Судска практика", typePaper:"Трудови", typeGuide:"Водичи", statusAll:"Секој статус", statusOfficial:"Официјален", statusVerified:"Проверен", statusPending:"Во подготовка", searchButton:"Пребарај",
       chipConstitutional:"Уставно право", chipCriminal:"Кривично право", chipObligations:"Облигации", chipAdministrative:"Управно право", chipEchr:"ЕСПЧ", chipMediation:"Медијација", chipAiLaw:"AI и право",
-      questionPlaceholder:"Пример: Кои се условите за институционална одговорност и како се разликува од индивидуалната кривична одговорност?", jurisdictionMk:"Северна Македонија", jurisdictionEchr:"Европски суд за човекови права", jurisdictionEu:"Европска унија", jurisdictionComparative:"Компаративно право", modeSource:"Истражување со примарни извори", modeMemo:"Правно мислење", modeCase:"Матрица на судска практика", modeCitations:"Проверка на цитати", sourceRule:"✓ Прво официјални извори · ✓ видливи цитати · ✓ без измислен DOI", analyzeButton:"Анализирај", demoMode:"Демо-режим",
+      questionPlaceholder:"Пример: Кои се условите за институционална одговорност и како се разликува од индивидуалната кривична одговорност?", jurisdictionMk:"Северна Македонија", jurisdictionEchr:"Европски суд за човекови права / Совет на Европа", jurisdictionEu:"Европска унија", jurisdictionIntl:"Меѓународно право", jurisdictionCommonLaw:"Common Law / англо-американско право", jurisdictionComparative:"Компаративно право", modeSource:"Истражување со примарни извори", modeMemo:"Правно мислење", modeCase:"Матрица на судска практика", modeCitations:"Проверка на цитати", sourceRule:"✓ Прво официјални извори · ✓ видливи цитати · ✓ без измислен DOI", analyzeButton:"Анализирај", demoMode:"RETRIEVAL MODE",
       usePrompt:"Користи", doiReserved:"DOI резервиран", openZenodo:"Отвори на Zenodo", openDraft:"Отвори Zenodo нацрт (сопственик)", zenodoPending:"Zenodo-запис во подготовка", noResults:"Нема резултат во демо-регистарот. Во продукција пребарувањето ќе користи D1/Vectorize и официјални извори.", statusOfficialBadge:"ОФИЦИЈАЛЕН", statusVerifiedBadge:"ПРОВЕРЕН", statusPendingBadge:"ВО ПОДГОТОВКА",
       askReady:"Прашањето е подготвено за {mode} во јурисдикција: {jurisdiction}. Во оваа статичка верзија не се повикува надворешен AI. Продукцискиот Worker треба да врати: (1) листа на извори, (2) применливи норми, (3) анализа, (4) контрааргументи и (5) контролна листа за Човечката порта.",
       askEmpty:"Внесете правно прашање. Порталот намерно не генерира правни заклучоци без прашање и извори."
@@ -1647,7 +1655,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       skipLink:"Skip to main content", changeLanguage:"Change language", changeTheme:"Change theme", increaseText:"Increase text size", brandHome:"AI Advokat home", mainNav:"Main navigation", openMenu:"Open menu", trustGridAria:"Core principles", searchPanelAria:"Search", authorPortraitAlt:"Professional portrait of Attorney Zoran Stojankich", footerNavAria:"Footer navigation", footerIntegrityAria:"Integrity and contacts", closeModal:"Close",
       searchPlaceholder:"Search law, article, judgment, term or publication...", searchAria:"Global search", typeAria:"Type", statusAria:"Status", typeAll:"All sources", typeLaw:"Legislation", typeCase:"Case law", typePaper:"Publications", typeGuide:"Guides", statusAll:"Any status", statusOfficial:"Official", statusVerified:"Verified", statusPending:"In preparation", searchButton:"Search",
       chipConstitutional:"Constitutional law", chipCriminal:"Criminal law", chipObligations:"Law of obligations", chipAdministrative:"Administrative law", chipEchr:"ECHR", chipMediation:"Mediation", chipAiLaw:"AI & Law",
-      questionPlaceholder:"Example: What are the conditions for institutional accountability and how does it differ from individual criminal responsibility?", jurisdictionMk:"North Macedonia", jurisdictionEchr:"European Court of Human Rights", jurisdictionEu:"European Union", jurisdictionComparative:"Comparative law", modeSource:"Source-first research", modeMemo:"Legal memo", modeCase:"Case-law matrix", modeCitations:"Citation audit", sourceRule:"✓ official sources first · ✓ visible citations · ✓ no invented DOI", analyzeButton:"Analyze", demoMode:"Demo mode",
+      questionPlaceholder:"Example: What are the conditions for institutional accountability and how does it differ from individual criminal responsibility?", jurisdictionMk:"North Macedonia", jurisdictionEchr:"European Court of Human Rights / Council of Europe", jurisdictionEu:"European Union", jurisdictionIntl:"Public international law", jurisdictionCommonLaw:"Common Law / Anglo-American law", jurisdictionComparative:"Comparative law", modeSource:"Source-first research", modeMemo:"Legal memo", modeCase:"Case-law matrix", modeCitations:"Citation audit", sourceRule:"✓ official sources first · ✓ visible citations · ✓ no invented DOI", analyzeButton:"Analyze", demoMode:"RETRIEVAL MODE",
       usePrompt:"Use", doiReserved:"DOI reserved", openZenodo:"Open on Zenodo", openDraft:"Open Zenodo draft (owner)", zenodoPending:"Zenodo record in preparation", noResults:"No result in the demo registry. In production, search will use D1/Vectorize and official sources.", statusOfficialBadge:"OFFICIAL", statusVerifiedBadge:"VERIFIED", statusPendingBadge:"IN PREPARATION",
       askReady:"The question is prepared for {mode} in the jurisdiction: {jurisdiction}. This static version does not call an external AI service. The production Worker should return: (1) source list, (2) applicable rules, (3) analysis, (4) counterarguments and (5) a Human Gate checklist.",
       askEmpty:"Enter a legal question. The portal deliberately does not generate legal conclusions without a question and sources."
@@ -1788,6 +1796,55 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     return i18n[lang].statusPendingBadge;
   }
 
+  function apiUrl(path){
+    const base = window.AI_ADVOCAT_CONFIG.apiBase || "";
+    return `${base}${path}`;
+  }
+
+  function escapeHtml(value){
+    return String(value ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function safeExternalUrl(value){
+    if(!value) return null;
+    try{
+      const u = new URL(String(value), window.location.href);
+      return (u.protocol === "https:" || u.protocol === "http:") ? u.href : null;
+    }catch{
+      return null;
+    }
+  }
+
+  async function fetchJson(url, options){
+    const response = await fetch(url, options);
+    const payload = await response.json().catch(()=>({ok:false,error:"invalid_json_response"}));
+    if(!response.ok || payload.ok === false){
+      throw new Error(payload.message || payload.error || `HTTP ${response.status}`);
+    }
+    return payload;
+  }
+
+  function renderAssistantSources(items){
+    if(!items?.length) return "";
+    return items.map((x,i)=>{
+      const safeUrl=safeExternalUrl(x.url);
+      const link=safeUrl
+        ? `<a class="btn light" href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${lang==="en"?"Open source":"Отвори извор"}</a>`
+        : "";
+      return `<div class="resultItem" style="margin-top:10px">
+        <div class="meta">${i+1}. ${escapeHtml(x.entityType || "source")} · ${escapeHtml(x.status || "pending")}</div>
+        <h4>${escapeHtml(x.title || "")}</h4>
+        <p>${escapeHtml(x.snippet || "")}</p>
+        ${link}
+      </div>`;
+    }).join("");
+  }
+
   function renderResults(){
     const locale=lang==="mk" ? "mk" : "en";
     const q=$("#globalSearch").value.toLocaleLowerCase(locale);
@@ -1827,15 +1884,50 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   $("#searchBtn").addEventListener("click",renderResults);
   $("#globalSearch").addEventListener("keydown",e=>{ if(e.key==="Enter") renderResults(); });
 
-  $("#askBtn").addEventListener("click",()=>{
+  $("#askBtn").addEventListener("click", async ()=>{
     const q=$("#legalQuestion").value.trim();
     $("#answerBox").classList.add("show");
-    if(q){
-      $("#answerText").textContent=" "+i18n[lang].askReady
-        .replace("{mode}",$("#researchMode").selectedOptions[0].text)
-        .replace("{jurisdiction}",$("#jurisdiction").selectedOptions[0].text);
-    }else{
-      $("#answerText").textContent=" "+i18n[lang].askEmpty;
+
+    if(!q){
+      $("#answerText").textContent=lang==="en" ? " Enter a legal question." : " Внесете правно прашање.";
+      return;
+    }
+
+    $("#answerText").textContent=lang==="en" ? " Retrieving verified sources..." : " Пребарување на проверени извори...";
+
+    try{
+      const payload=await fetchJson(apiUrl(window.AI_ADVOCAT_CONFIG.api.assistant),{
+        method:"POST",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({
+          question:q,
+          jurisdiction:$("#jurisdiction").value,
+          mode:$("#researchMode").value,
+          language:lang
+        })
+      });
+
+      const scopeLabel=escapeHtml(payload.scope?.label || $("#jurisdiction").selectedOptions[0].text);
+      const statement=escapeHtml(payload.statement || "");
+      const sourceHtml=renderAssistantSources(payload.sources || []);
+      const directoryHtml=(payload.officialDirectories || []).length
+        ? `<div class="resultItem" style="margin-top:10px"><div class="meta">${lang==="en"?"Official starting points":"Официјални појдовни извори"}</div>${
+            payload.officialDirectories.map(x=>{
+              const u=safeExternalUrl(x.url);
+              return u ? `<p><a href="${escapeHtml(u)}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.title)}</a></p>` : "";
+            }).join("")
+          }</div>`
+        : "";
+      const gate=(payload.humanGate || []).map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+
+      $("#answerText").innerHTML=
+        `<div class="meta">${lang==="en"?"Scope":"Правен слој"}: ${scopeLabel}</div>`+
+        `<p>${statement}</p>`+
+        sourceHtml+
+        directoryHtml+
+        `<div class="notice" style="margin-top:12px"><b>Human Gate</b><ul>${gate}</ul></div>`;
+    }catch(error){
+      $("#answerText").textContent=(lang==="en" ? " Assistant unavailable: " : " Асистентот е недостапен: ")+error.message;
     }
   });
 
