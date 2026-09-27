@@ -316,7 +316,7 @@ function assistantTerms(question) {
   return normalizeText(question)
     .split(/[^\p{L}\p{N}]+/u)
     .filter((term) => term.length >= 4 && !stop.has(term))
-    .slice(0, 8);
+    .slice(0, 3);
 }
 
 async function dbStatus(env) {
@@ -712,7 +712,11 @@ async function handleAssistant(request, env) {
         combined.push(item);
         if (combined.length >= 8) break;
       }
-      if (combined.length >= 8) break;
+
+      // Bounded retrieval: once a trusted fallback term yields authority,
+      // stop expanding the query. If none of the small fixed term budget
+      // yields authority, fail closed rather than exhausting Worker/D1 budget.
+      if (combined.length > 0 || combined.length >= 8) break;
     }
 
     results = combined;
@@ -760,6 +764,7 @@ async function handleAssistant(request, env) {
     sourcePolicy: "macedonian_law_first",
     evidencePolicy: "official_then_verified_no_pending",
     answerPolicy: "no_source_no_answer",
+    retrievalPolicy: "bounded_full_query_plus_max_3_terms",
     answerStatus: found ? "verified_sources_found" : "insufficient_verified_evidence",
     knowledgeBoundary: found
       ? "Only retrieved source records are reported; no unsupported proposition is generated."
