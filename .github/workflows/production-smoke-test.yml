@@ -79,4 +79,6 @@ jobs:
           echo "Production governed-lock gate: PASS"
 
       - name: Production smoke result
-        run: echo "PRODUCTION SMOKE TEST: PASS"
+        shell: bash
+        run: |
+          echo "PRODUCTION SMOKE TEST: PASS"
