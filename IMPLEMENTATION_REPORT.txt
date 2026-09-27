@@ -1,0 +1,21 @@
+AI Advokat v1.3.2 repair report
+Date: 2026-09-27
+
+Scope:
+- Independent AI Advokat repository only.
+- No WPA repository or infrastructure changes.
+
+Repair changes:
+- Rebuilt from current production main to avoid carrying a diverged PR history.
+- Added explicit Cloudflare Worker Preview D1 binding to ai-advokat-db-staging.
+- Added dedicated wrangler.preview-migrations.jsonc.
+- Restored the missing D1 schema and public-source seed migrations expected by the Worker.
+- Added public-corpus intake templates.
+- Added structural verification script.
+- Updated Worker database readiness handling so an empty D1 database is reported as schema_missing rather than live.
+- Retained private/sensitive document and case features in governed/locked state.
+- Retained reserved Zenodo DOI identifiers as unpublished draft metadata only.
+- No production D1 migration is performed by this branch.
+
+Human Gate:
+Production migration and merge should occur only after staging migration, Preview deployment, endpoint validation and a final human review.
