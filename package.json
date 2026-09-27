@@ -5,10 +5,11 @@
   "description": "AI Advokat source-first legal information portal",
   "scripts": {
     "dev": "wrangler dev",
+    "preview": "wrangler preview --name safe-public-search",
     "deploy": "wrangler deploy",
     "verify": "node scripts/verify.mjs",
-    "db:migrate:staging": "wrangler d1 migrations apply PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc",
-    "db:status:staging": "wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\"",
+    "db:migrate:staging": "wrangler d1 migrations apply ai-advokat-db-staging --remote --config wrangler.preview-migrations.jsonc",
+    "db:status:staging": "wrangler d1 execute ai-advokat-db-staging --remote --config wrangler.preview-migrations.jsonc --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\"",
     "db:status:production": "wrangler d1 execute ai-advokat-db --remote --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\""
   },
   "devDependencies": {
