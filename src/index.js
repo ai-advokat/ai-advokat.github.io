@@ -661,13 +661,20 @@ async function handleCitationAudit(request, env, url) {
       offset += pageSize;
     }
   } else {
+    const escaped = q.toLowerCase()
+      .replaceAll("\\", "\\\\")
+      .replaceAll("%", "\\%")
+      .replaceAll("_", "\\_");
+    const pattern = `%${escaped}%`;
+
     citationMatches = (await env.DB.prepare(`
       SELECT id, citing_type, citing_id, locator, support_status, verified_by, verified_at
       FROM citations
-      WHERE lower(COALESCE(locator,'')) LIKE ? OR lower(COALESCE(quotation,'')) LIKE ?
+      WHERE lower(COALESCE(locator,'')) LIKE ? ESCAPE '\\'
+         OR lower(COALESCE(quotation,'')) LIKE ? ESCAPE '\\'
       ORDER BY verified_at DESC, created_at DESC
       LIMIT 10
-    `).bind(`%${q.toLowerCase()}%`, `%${q.toLowerCase()}%`).all()).results ?? [];
+    `).bind(pattern, pattern).all()).results ?? [];
   }
 
   return json(request, {
