@@ -1,4 +1,4 @@
-const VERSION = "1.3.3";
+const VERSION = "1.4.0";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -10,6 +10,22 @@ const ALLOWED_ORIGINS = new Set([
 const VALID_TYPES = new Set(["all", "source", "law", "case", "paper"]);
 const VALID_STATUSES = new Set(["all", "official", "verified", "pending"]);
 const VALID_JURISDICTIONS = new Set(["MK", "ECHR", "EU"]);
+const ASSISTANT_SCOPE_MAP = Object.freeze({
+  MK: ["MK"],
+  ECHR: ["ECHR"],
+  EU: ["EU"],
+  INTL: ["INTL"],
+  COMMONLAW: ["UK", "US", "CA", "AU"],
+  COMPARATIVE: null
+});
+const ASSISTANT_SCOPE_LABELS = Object.freeze({
+  MK: "North Macedonia",
+  ECHR: "European Court of Human Rights / Council of Europe",
+  EU: "European Union law",
+  INTL: "Public international law",
+  COMMONLAW: "Common Law / Anglo-American comparative law",
+  COMPARATIVE: "Cross-jurisdiction comparative law"
+});
 const MAX_QUERY_LENGTH = 120;
 const MAX_SEARCH_LIMIT = 20;
 const UNICODE_SCAN_PAGE = 250;
@@ -57,6 +73,69 @@ const PUBLIC_WEB_SOURCES = Object.freeze([
     url: "https://eur-lex.europa.eu/",
     category: "international_organization",
     jurisdiction: "EU"
+  },
+  {
+    id: "un-treaty-collection",
+    title: "United Nations Treaty Collection",
+    url: "https://treaties.un.org/",
+    category: "international_treaties",
+    jurisdiction: "INTL"
+  },
+  {
+    id: "icj",
+    title: "International Court of Justice",
+    url: "https://www.icj-cij.org/",
+    category: "international_court",
+    jurisdiction: "INTL"
+  },
+  {
+    id: "ohchr-juris",
+    title: "OHCHR JURIS - UN Treaty Body Jurisprudence",
+    url: "https://juris.ohchr.org/",
+    category: "international_human_rights",
+    jurisdiction: "INTL"
+  },
+  {
+    id: "uk-legislation",
+    title: "legislation.gov.uk",
+    url: "https://www.legislation.gov.uk/",
+    category: "official_legislation",
+    jurisdiction: "UK"
+  },
+  {
+    id: "uk-supreme-court",
+    title: "UK Supreme Court - Cases",
+    url: "https://www.supremecourt.uk/cases",
+    category: "court",
+    jurisdiction: "UK"
+  },
+  {
+    id: "us-supreme-court",
+    title: "Supreme Court of the United States - Opinions",
+    url: "https://www.supremecourt.gov/opinions/opinions.aspx",
+    category: "court",
+    jurisdiction: "US"
+  },
+  {
+    id: "canada-justice-laws",
+    title: "Justice Laws Website - Canada",
+    url: "https://laws-lois.justice.gc.ca/eng/",
+    category: "official_legislation",
+    jurisdiction: "CA"
+  },
+  {
+    id: "australia-legislation",
+    title: "Federal Register of Legislation - Australia",
+    url: "https://www.legislation.gov.au/",
+    category: "official_legislation",
+    jurisdiction: "AU"
+  },
+  {
+    id: "high-court-australia",
+    title: "High Court of Australia - Judgments",
+    url: "https://www.hcourt.gov.au/cases-and-judgments/judgments",
+    category: "court",
+    jurisdiction: "AU"
   }
 ]);
 
@@ -84,7 +163,7 @@ const ORCID = Object.freeze({
 function corsHeaders(request) {
   const origin = request.headers.get("Origin");
   const headers = {
-    "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS",
+    "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin"
@@ -161,6 +240,86 @@ function mapStatus(entityType, rawStatus) {
   if (s === "official") return "official";
   if (["approved", "reviewed", "current", "final", "verified"].includes(s)) return "verified";
   return "pending";
+}
+
+function resolveAssistantScope(value) {
+  const raw = cleanQuery(value || "MK", 80);
+  const upper = raw.toUpperCase();
+
+  if (ASSISTANT_SCOPE_MAP[upper] !== undefined) {
+    return {
+      code: upper,
+      label: ASSISTANT_SCOPE_LABELS[upper],
+      jurisdictions: ASSISTANT_SCOPE_MAP[upper]
+    };
+  }
+
+  const normalized = normalizeText(raw);
+  let code = "MK";
+  if (normalized.includes("европски суд") || normalized.includes("echr") || normalized.includes("human rights")) code = "ECHR";
+  else if (normalized.includes("европска унија") || normalized.includes("european union")) code = "EU";
+  else if (normalized.includes("меѓународ") || normalized.includes("international")) code = "INTL";
+  else if (normalized.includes("common law") || normalized.includes("англо") || normalized.includes("anglo")) code = "COMMONLAW";
+  else if (normalized.includes("компаратив") || normalized.includes("comparative")) code = "COMPARATIVE";
+
+  return {
+    code,
+    label: ASSISTANT_SCOPE_LABELS[code],
+    jurisdictions: ASSISTANT_SCOPE_MAP[code]
+  };
+}
+
+function assistantDirectories(scope) {
+  if (!scope.jurisdictions) return PUBLIC_WEB_SOURCES;
+  const allowed = new Set(scope.jurisdictions);
+  return PUBLIC_WEB_SOURCES.filter((source) => allowed.has(source.jurisdiction));
+}
+
+async function queryAssistantScope(env, { q, type, status, scope, limit }) {
+  if (!scope.jurisdictions) {
+    return queryPublicCorpus(env, {
+      q,
+      type,
+      status,
+      jurisdiction: null,
+      limit
+    });
+  }
+
+  const results = [];
+  const seen = new Set();
+
+  for (const jurisdiction of scope.jurisdictions) {
+    const partial = await queryPublicCorpus(env, {
+      q,
+      type,
+      status,
+      jurisdiction,
+      limit
+    });
+
+    for (const item of partial) {
+      const key = `${item.entityType}:${item.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      results.push(item);
+      if (results.length >= limit) return results;
+    }
+  }
+
+  return results;
+}
+
+function assistantTerms(question) {
+  const stop = new Set([
+    "кои","која","кој","како","дали","што","што","ова","оваа","кога","каде","при","или","има","може",
+    "what","which","when","where","with","from","the","and","for","are","this","that","does","can","law","legal"
+  ]);
+
+  return normalizeText(question)
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((term) => term.length >= 4 && !stop.has(term))
+    .slice(0, 8);
 }
 
 async function dbStatus(env) {
@@ -501,6 +660,119 @@ async function handleSearch(request, env, url) {
   });
 }
 
+async function handleAssistant(request, env) {
+  if (request.method !== "POST") return methodNotAllowed(request);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json(request, { ok: false, error: "invalid_json" }, 400);
+  }
+
+  const question = cleanQuery(body?.question, 1200);
+  const researchMode = cleanQuery(body?.mode || "source", 40);
+  const language = cleanQuery(body?.language || "mk", 8).toLowerCase() === "en" ? "en" : "mk";
+  const scope = resolveAssistantScope(body?.jurisdiction || "MK");
+
+  if (question.length < 4) {
+    return json(request, {
+      ok: false,
+      error: "question_too_short",
+      message: language === "en" ? "Enter a longer legal question." : "Внесете подолго правно прашање."
+    }, 400);
+  }
+
+  const database = await dbStatus(env);
+  if (!database.reachable || !database.schemaReady) {
+    return json(request, { ok: false, error: "database_unavailable", database }, 503);
+  }
+
+  const type = researchMode === "case" ? "case" : "all";
+  let results = await queryAssistantScope(env, {
+    q: question,
+    type,
+    status: "all",
+    scope,
+    limit: 8
+  });
+
+  if (!results.length) {
+    const seen = new Set();
+    const combined = [];
+
+    for (const term of assistantTerms(question)) {
+      const partial = await queryAssistantScope(env, {
+        q: term,
+        type,
+        status: "all",
+        scope,
+        limit: 4
+      });
+
+      for (const item of partial) {
+        const key = `${item.entityType}:${item.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        combined.push(item);
+        if (combined.length >= 8) break;
+      }
+      if (combined.length >= 8) break;
+    }
+
+    results = combined;
+  }
+
+  const directories = assistantDirectories(scope).map((source) => ({
+    title: source.title,
+    url: source.url,
+    category: source.category,
+    jurisdiction: source.jurisdiction
+  }));
+
+  const found = results.length > 0;
+  const statement = language === "en"
+    ? (found
+        ? `Retrieved ${results.length} source record(s) from the verified public corpus. No generative legal conclusion was produced.`
+        : "No matching indexed source was found in the current corpus. Official starting points are provided below; no legal conclusion was produced.")
+    : (found
+        ? `Пронајдени се ${results.length} изворни записи од проверениот јавен корпус. Не е генериран автоматски конечен правен заклучок.`
+        : "Во тековниот корпус не е пронајден соодветен индексиран извор. Подолу се дадени официјални појдовни извори; не е генериран правен заклучок.");
+
+  const humanGate = language === "en"
+    ? [
+        "Verify the current legal text, amendment history and effective date.",
+        "Open and read every primary source before relying on a proposition.",
+        "Check jurisdiction, procedural posture and finality of every cited decision.",
+        "Keep Macedonian, ECHR/EU, international and comparative Common Law authorities legally distinct.",
+        "A qualified human lawyer must approve any final legal conclusion, advice or filing."
+      ]
+    : [
+        "Проверете го важечкиот текст, историјата на измените и датумот на важност.",
+        "Отворете го и прочитајте го секој примарен извор пред да се потпрете на правно тврдење.",
+        "Проверете ја јурисдикцијата, процесната положба и правосилноста на секоја цитирана одлука.",
+        "Македонските, ЕСПЧ/ЕУ, меѓународните и компаративните Common Law извори мора правно да останат разграничени.",
+        "Конечниот правен заклучок, совет или поднесок мора да го одобри квалификуван адвокат."
+      ];
+
+  return json(request, {
+    ok: true,
+    mode: "retrieval_only",
+    sourcePolicy: "macedonian_law_first",
+    question,
+    researchMode,
+    scope: {
+      code: scope.code,
+      label: scope.label,
+      jurisdictions: scope.jurisdictions
+    },
+    statement,
+    sources: results,
+    officialDirectories: directories,
+    humanGate
+  });
+}
+
 function handleWebSources(request) {
   if (request.method !== "GET" && request.method !== "HEAD") return methodNotAllowed(request);
 
@@ -549,7 +821,7 @@ async function handleCapabilities(request, env) {
       officialSourceDirectory: "live_read_only",
       zenodo: "metadata_only",
       orcid: "live_read_only",
-      retrievalAssistant: "governed_preview",
+      retrievalAssistant: database.reachable && database.schemaReady ? "live_retrieval_only" : "blocked",
       citationAudit: "governed_preview",
       versionCompare: "governed_preview",
       documentUpload: "locked",
@@ -625,13 +897,7 @@ export default {
     if (url.pathname === "/api/zenodo") return handleZenodo(request);
     if (url.pathname === "/api/orcid") return handleOrcid(request);
 
-    if (url.pathname === "/api/assistant") {
-      return governedPreview(
-        request,
-        "retrieval_assistant",
-        "The assistant remains locked until public search passes staging and production validation."
-      );
-    }
+    if (url.pathname === "/api/assistant") return handleAssistant(request, env);
 
     if (url.pathname === "/api/citation-audit") {
       return governedPreview(
