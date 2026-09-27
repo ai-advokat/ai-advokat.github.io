@@ -208,26 +208,47 @@ async function unicodeFallbackRows(env, { q, type = "all", status = "all", juris
   const include = (kind) => type === "all" || type === kind;
   const keep = (items) => items.filter((row) => {
     if (!normalizeText(row.search_blob).includes(target)) return false;
-    if (jurisdiction && row.jurisdiction !== jurisdiction) return false;
     if (status !== "all" && mapStatus(row.entity_type, row.raw_status) !== status) return false;
     return true;
   });
-  const scanLimit = Math.max(80, Math.min(250, perTable * 20));
+  const pageSize = 250;
+
+  const scan = async (sql, bindings = []) => {
+    const matches = [];
+    let offset = 0;
+
+    while (matches.length < perTable) {
+      const result = await env.DB.prepare(sql).bind(...bindings, pageSize, offset).all();
+      const page = result.results ?? [];
+
+      for (const row of keep(page)) {
+        matches.push(row);
+        if (matches.length >= perTable) break;
+      }
+
+      if (page.length < pageSize) break;
+      offset += pageSize;
+    }
+
+    return matches;
+  };
 
   if (include("source")) {
-    const r = await env.DB.prepare(`
+    rows.push(...await scan(`
       SELECT 'source' AS entity_type, id, title,
              COALESCE(issuing_body, source_type, '') AS meta,
              COALESCE(notes, '') AS snippet, url, jurisdiction,
              source_status AS raw_status, publication_date AS item_date,
              title || ' ' || COALESCE(issuing_body,'') || ' ' || COALESCE(notes,'') AS search_blob
-      FROM sources ORDER BY updated_at DESC LIMIT ?
-    `).bind(scanLimit).all();
-    rows.push(...keep(r.results ?? []).slice(0, perTable));
+      FROM sources
+      WHERE (? IS NULL OR jurisdiction = ?)
+      ORDER BY updated_at DESC
+      LIMIT ? OFFSET ?
+    `, [jurisdiction, jurisdiction]));
   }
 
   if (include("law")) {
-    const r = await env.DB.prepare(`
+    rows.push(...await scan(`
       SELECT 'law' AS entity_type, li.id, li.title,
              trim(COALESCE(li.instrument_type,'') || CASE WHEN li.gazette_reference IS NOT NULL THEN ' | ' || li.gazette_reference ELSE '' END) AS meta,
              COALESCE(li.notes, '') AS snippet, s.url AS url, li.jurisdiction,
@@ -235,13 +256,14 @@ async function unicodeFallbackRows(env, { q, type = "all", status = "all", juris
              COALESCE(li.effective_date, li.adopted_date) AS item_date,
              li.title || ' ' || COALESCE(li.short_title,'') || ' ' || COALESCE(li.gazette_reference,'') || ' ' || COALESCE(li.notes,'') AS search_blob
       FROM legal_instruments li LEFT JOIN sources s ON s.id = li.canonical_source_id
-      ORDER BY li.updated_at DESC LIMIT ?
-    `).bind(scanLimit).all();
-    rows.push(...keep(r.results ?? []).slice(0, perTable));
+      WHERE (? IS NULL OR li.jurisdiction = ?)
+      ORDER BY li.updated_at DESC
+      LIMIT ? OFFSET ?
+    `, [jurisdiction, jurisdiction]));
   }
 
   if (include("case")) {
-    const r = await env.DB.prepare(`
+    rows.push(...await scan(`
       SELECT 'case' AS entity_type, cl.id, cl.case_title AS title,
              trim(cl.court || CASE WHEN cl.case_number IS NOT NULL THEN ' | ' || cl.case_number ELSE '' END) AS meta,
              COALESCE(cl.reasoning_summary, cl.outcome_summary, '') AS snippet,
@@ -250,13 +272,14 @@ async function unicodeFallbackRows(env, { q, type = "all", status = "all", juris
              cl.decision_date AS item_date,
              cl.case_title || ' ' || COALESCE(cl.case_number,'') || ' ' || COALESCE(cl.legal_area,'') || ' ' || COALESCE(cl.reasoning_summary,'') || ' ' || COALESCE(cl.outcome_summary,'') AS search_blob
       FROM case_law cl LEFT JOIN sources s ON s.id = cl.source_id
-      ORDER BY cl.decision_date DESC, cl.updated_at DESC LIMIT ?
-    `).bind(scanLimit).all();
-    rows.push(...keep(r.results ?? []).slice(0, perTable));
+      WHERE (? IS NULL OR cl.jurisdiction = ?)
+      ORDER BY cl.decision_date DESC, cl.updated_at DESC
+      LIMIT ? OFFSET ?
+    `, [jurisdiction, jurisdiction]));
   }
 
-  if (include("paper")) {
-    const r = await env.DB.prepare(`
+  if (include("paper") && (!jurisdiction || jurisdiction === "MK")) {
+    rows.push(...await scan(`
       SELECT 'paper' AS entity_type, id, title,
              trim(author_name || CASE WHEN venue IS NOT NULL THEN ' | ' || venue ELSE '' END) AS meta,
              COALESCE(abstract, '') AS snippet,
@@ -264,9 +287,10 @@ async function unicodeFallbackRows(env, { q, type = "all", status = "all", juris
              'MK' AS jurisdiction, publication_status AS raw_status,
              publication_date AS item_date,
              title || ' ' || COALESCE(subtitle,'') || ' ' || author_name || ' ' || COALESCE(abstract,'') || ' ' || COALESCE(keywords,'') AS search_blob
-      FROM publications ORDER BY updated_at DESC LIMIT ?
-    `).bind(scanLimit).all();
-    rows.push(...keep(r.results ?? []).slice(0, perTable));
+      FROM publications
+      ORDER BY updated_at DESC
+      LIMIT ? OFFSET ?
+    `));
   }
 
   return rows;
@@ -373,11 +397,7 @@ async function queryPublicCorpus(env, { q, type = "all", status = "all", jurisdi
     results.push(...(rows.results ?? []));
   }
 
-  if (!results.length && q) {
-    results.push(...await unicodeFallbackRows(env, { q, type, status, jurisdiction, perTable }));
-  }
-
-  const normalized = results.map((row) => ({
+  const normalizeRow = (row) => ({
     entityType: row.entity_type,
     id: row.id,
     title: row.title,
@@ -388,11 +408,34 @@ async function queryPublicCorpus(env, { q, type = "all", status = "all", jurisdi
     status: mapStatus(row.entity_type, row.raw_status),
     rawStatus: row.raw_status || null,
     date: row.item_date || null
-  }));
+  });
 
-  const filtered = status === "all"
+  const normalized = results.map(normalizeRow);
+  let filtered = status === "all"
     ? normalized
     : normalized.filter((item) => item.status === status);
+
+  const needsUnicodeFallback = Boolean(q) && /[^\u0000-\u007F]/u.test(q);
+  if (needsUnicodeFallback && filtered.length < limit) {
+    const fallbackRows = await unicodeFallbackRows(env, {
+      q,
+      type,
+      status,
+      jurisdiction,
+      perTable: Math.max(perTable, limit)
+    });
+    const seen = new Set(filtered.map((item) => `${item.entityType}:${item.id}`));
+
+    for (const row of fallbackRows) {
+      const item = normalizeRow(row);
+      if (status !== "all" && item.status !== status) continue;
+      const key = `${item.entityType}:${item.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      filtered.push(item);
+      if (filtered.length >= limit) break;
+    }
+  }
 
   return filtered.slice(0, limit);
 }
@@ -595,10 +638,11 @@ async function handleCitationAudit(request, env, url) {
     LIMIT 10
   `).bind(`%${q.toLowerCase()}%`, `%${q.toLowerCase()}%`).all()).results ?? [];
 
-  if (!citationMatches.length) {
+  if (citationMatches.length < 10) {
     const target = normalizeText(q);
     const pageSize = 250;
     let offset = 0;
+    const seen = new Set(citationMatches.map((row) => row.id));
 
     while (citationMatches.length < 10) {
       const pageResult = await env.DB.prepare(`
@@ -611,9 +655,13 @@ async function handleCitationAudit(request, env, url) {
       const page = pageResult.results ?? [];
       for (const row of page) {
         if (
-          normalizeText(row.locator).includes(target) ||
-          normalizeText(row.quotation).includes(target)
+          !seen.has(row.id) &&
+          (
+            normalizeText(row.locator).includes(target) ||
+            normalizeText(row.quotation).includes(target)
+          )
         ) {
+          seen.add(row.id);
           const { quotation, ...publicRow } = row;
           citationMatches.push(publicRow);
           if (citationMatches.length >= 10) break;
