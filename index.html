@@ -6,6 +6,8 @@
   <meta name="description" content="AI Advokat — правен информациски и AI портал со проверливи извори, судска практика, анализи и човечка контрола." />
   <meta name="theme-color" content="#0c2038" />
   <meta name="color-scheme" content="light dark" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev; object-src 'none'; base-uri 'self'; form-action 'self' mailto:" />
   <title>AI Advokat — Правен информациски и AI портал</title>
 
   <style>
@@ -750,7 +752,8 @@
       .heroGrid,.researchGrid,.authorWrap{grid-template-columns:1fr}
       .hero{padding-top:64px}
       .trustGrid{max-width:720px}
-      .grid3{grid-template-columns:repeat(2,1fr)}
+      .grid3,.toolGrid{grid-template-columns:repeat(2,1fr)}
+      .statusBoard{grid-template-columns:repeat(2,1fr)}
       .integrity{grid-template-columns:repeat(2,1fr)}
       .searchRow{grid-template-columns:1fr 1fr}
       .searchRow input{grid-column:1/-1}
@@ -764,7 +767,7 @@
       .topbar .label{display:none}
       .hero{padding:50px 0 58px}
       .hero h1{font-size:2.65rem}
-      .grid3,.integrity,.fieldGrid,.facts,.footerGrid,.searchRow{grid-template-columns:1fr}
+      .grid3,.integrity,.fieldGrid,.facts,.footerGrid,.searchRow,.toolGrid,.statusBoard{grid-template-columns:1fr}
       .searchRow input{grid-column:auto}
       .trustGrid{grid-template-columns:1fr}
       .sectionHead{align-items:flex-start;flex-direction:column}
@@ -773,6 +776,29 @@
       .authorWrap{gap:24px}
       section{padding:56px 0}
     }
+
+
+    .toolGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+    .toolCard{display:flex;flex-direction:column;gap:12px}
+    .toolCard input,.toolCard select,.toolCard textarea{
+      width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);
+      border-radius:11px;padding:11px 12px;outline:none
+    }
+    .toolCard textarea{min-height:120px;resize:vertical}
+    .toolActions{display:flex;gap:8px;flex-wrap:wrap}
+    .toolResult{min-height:52px;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:12px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+    .statusPill{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;border:1px solid var(--line);font-size:.72rem;font-weight:800;letter-spacing:.04em;width:max-content}
+    .statusLive{color:var(--ok)}
+    .statusLimited{color:var(--warn)}
+    .statusPreview{color:var(--muted)}
+    .resourceLinks{display:grid;gap:8px}
+    .resourceLinks a{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px 12px;font-weight:700}
+    .statusBoard{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
+    .statusBoard .card{padding:16px}
+    .statusBoard b{display:block;margin-bottom:7px}
+    .micro{font-size:.82rem;color:var(--muted)}
+    .dangerNotice{border-color:color-mix(in srgb,var(--danger) 38%,var(--line));background:color-mix(in srgb,var(--danger) 8%,var(--surface))}
+    .btn[disabled]{opacity:.55;cursor:not-allowed}
 
     @media print{
       .topbar,.header,.heroActions,.searchPanel,.btn,.menuBtn,.utility,.modal{display:none!important}
@@ -818,6 +844,7 @@
     <nav class="links" aria-label="Главна навигација">
       <a href="#sources" data-i18n="navSources">Правни извори</a>
       <a href="#research" data-i18n="navResearch">AI Истражувач</a>
+      <a href="#tools">Правни алатки</a>
       <a href="#publications" data-i18n="navPublications">Трудови</a>
       <a href="#author" data-i18n="navAuthor">Автор</a>
       <a href="#about" data-i18n="navAbout">За порталот</a>
@@ -838,6 +865,7 @@
     <div style="display:grid;gap:8px">
       <a href="#sources">Правни извори</a>
       <a href="#research">AI Истражувач</a>
+      <a href="#tools">Правни алатки</a>
       <a href="#publications">Трудови</a>
       <a href="#author">Автор</a>
       <a href="#about">За порталот</a>
@@ -917,6 +945,7 @@
           <option value="law">Прописи</option>
           <option value="case">Судска практика</option>
           <option value="paper">Трудови</option>
+          <option value="source">Официјални извори</option>
           <option value="guide">Водичи</option>
         </select>
 
@@ -1027,7 +1056,7 @@
           <span class="tag">AI LEGAL RESEARCH</span>
           <h2 data-i18n="researchTitle">AI Истражувач со доказна трага</h2>
           <p data-i18n="researchText">
-            Интерфејсот е подготвен за Cloudflare Worker/D1/R2/Vectorize. Во оваа статичка верзија работи како безбеден demo и не испраќа податоци на надворешен AI сервис.
+            Истражувачот е поврзан со Cloudflare Worker + D1 и враќа реални записи од јавниот правен corpus. Во оваа фаза работи во retrieval-only режим: извори и доказна трага, без автоматски конечен правен заклучок.
           </p>
         </div>
       </div>
@@ -1073,7 +1102,7 @@
           </div>
 
           <div class="answer" id="answerBox">
-            <strong>Demo режим</strong>
+            <strong>LIMITED PRODUCTION</strong>
             <span id="answerText"></span>
           </div>
 
@@ -1097,6 +1126,99 @@
           <div class="promptGrid" id="promptGrid"></div>
         </div>
 
+      </div>
+    </div>
+  </section>
+
+
+  <section id="tools">
+    <div class="container">
+      <div class="sectionHead">
+        <div>
+          <span class="tag">LEGAL WORKBENCH</span>
+          <h2>Правни алатки</h2>
+          <p>Реални D1 пребарувања, проверка на цитати, верзии, официјални извори и безбедни работни шаблони.</p>
+        </div>
+      </div>
+
+      <div class="toolGrid">
+        <article class="card toolCard">
+          <span class="statusPill statusLimited">LIMITED PRODUCTION</span>
+          <h3>Проверка на цитат / DOI</h3>
+          <p>Проверува резервиран DOI и записи во локалниот citation registry. Не прогласува draft DOI за објавен.</p>
+          <input id="citationInput" placeholder="10.5281/zenodo... or citation text" />
+          <div class="toolActions"><button class="btn primary" id="auditCitationBtn" type="button">Провери</button></div>
+          <div class="toolResult" id="citationResult">Внеси DOI или цитат.</div>
+        </article>
+
+        <article class="card toolCard">
+          <span class="statusPill statusLimited">LIMITED PRODUCTION</span>
+          <h3>Version Compare</h3>
+          <p>Ги прикажува зачуваните верзии на правен инструмент со датуми, checksum и Human Gate статус.</p>
+          <input id="versionQuery" placeholder="Наслов на закон / пропис" />
+          <div class="toolActions"><button class="btn primary" id="versionBtn" type="button">Пронајди верзии</button></div>
+          <div class="toolResult" id="versionResult">Потребни се најмалку две зачувани верзии за споредба.</div>
+        </article>
+
+        <article class="card toolCard">
+          <span class="statusPill statusLive">LIVE LOCAL</span>
+          <h3>Document Studio</h3>
+          <p>Генерира работен скелет во прелистувачот. Ништо не се испраќа на надворешен AI.</p>
+          <select id="documentTemplate">
+            <option value="legal-memo">Legal memo</option>
+            <option value="chronology">Case chronology</option>
+            <option value="evidence-map">Evidence map</option>
+            <option value="submission-outline">Submission outline</option>
+          </select>
+          <input id="documentTitle" placeholder="Наслов / предмет" />
+          <textarea id="documentContext" placeholder="Внеси само јавни или недоверливи работни белешки. Не внесувај клиентски тајни на јавната страна."></textarea>
+          <div class="toolActions">
+            <button class="btn primary" id="generateDocumentBtn" type="button">Генерирај</button>
+            <button class="btn light" id="copyDocumentBtn" type="button">Copy</button>
+            <button class="btn light" id="printDocumentBtn" type="button">Print / PDF</button>
+          </div>
+          <textarea id="documentOutput" readonly placeholder="Draft output"></textarea>
+          <span class="micro">Работен шаблон, не конечен правен поднесок.</span>
+        </article>
+
+        <article class="card toolCard">
+          <span class="statusPill statusLive">LIVE DIRECTORY</span>
+          <h3>Официјални правни извори</h3>
+          <p>Курирани појдовни точки. AI Advokat не ги заменува официјалните објави.</p>
+          <div class="resourceLinks">
+            <a href="https://slvesnik.com.mk/" target="_blank" rel="noopener noreferrer">Службен весник на РСМ</a>
+            <a href="https://ldbis.pravda.gov.mk/Prebaruvanje.aspx" target="_blank" rel="noopener noreferrer">LDBIS - Министерство за правда</a>
+            <a href="https://ustavensud.mk/" target="_blank" rel="noopener noreferrer">Уставен суд</a>
+            <a href="https://www.vrhoven.sud.mk/" target="_blank" rel="noopener noreferrer">Врховен суд</a>
+            <a href="https://hudoc.echr.coe.int/" target="_blank" rel="noopener noreferrer">HUDOC / ECHR</a>
+            <a href="https://eur-lex.europa.eu/" target="_blank" rel="noopener noreferrer">EUR-Lex</a>
+          </div>
+        </article>
+
+        <article class="card toolCard dangerNotice">
+          <span class="statusPill statusPreview">GOVERNED PREVIEW</span>
+          <h3>Upload & Analyze</h3>
+          <p>Намерно е заклучен. Не се прифаќаат доверливи документи додека не се активираат authentication, secure storage, retention controls и audit trail.</p>
+          <button class="btn light" type="button" disabled>Secure upload not enabled</button>
+        </article>
+
+        <article class="card toolCard dangerNotice">
+          <span class="statusPill statusPreview">GOVERNED PREVIEW</span>
+          <h3>Мои предмети / Case Workspace</h3>
+          <p>Предмети, рокови, evidence map и документи ќе се активираат дури по role-based access и безбедно складирање.</p>
+          <button class="btn light" type="button" disabled>Case workspace not enabled</button>
+        </article>
+      </div>
+
+      <div class="statusBoard" aria-label="Operational status">
+        <div class="card"><b>D1 Public Search</b><span class="statusPill statusLive">LIVE</span><div class="micro">Пребарува public legal corpus.</div></div>
+        <div class="card"><b>Research Brief</b><span class="statusPill statusLimited">LIMITED</span><div class="micro">Retrieval-only; без автоматски конечен заклучок.</div></div>
+        <div class="card"><b>Citation Audit</b><span class="statusPill statusLimited">LIMITED</span><div class="micro">DOI + local citation registry.</div></div>
+        <div class="card"><b>Version Compare</b><span class="statusPill statusLimited">LIMITED</span><div class="micro">Работи кога во D1 има >=2 верзии.</div></div>
+        <div class="card"><b>Official Sources</b><span class="statusPill statusLive">LIVE</span><div class="micro">Curated source directory.</div></div>
+        <div class="card"><b>Document Studio</b><span class="statusPill statusLive">LOCAL</span><div class="micro">Browser-only working skeletons.</div></div>
+        <div class="card"><b>Secure Upload</b><span class="statusPill statusPreview">PREVIEW</span><div class="micro">Заклучено до security controls.</div></div>
+        <div class="card"><b>Case Workspace</b><span class="statusPill statusPreview">PREVIEW</span><div class="micro">Заклучено до authentication/RBAC.</div></div>
       </div>
     </div>
   </section>
@@ -1274,6 +1396,12 @@
 
       </div>
 
+
+      <div class="notice dangerNotice" style="margin-top:14px">
+        <b>Доверливи податоци</b>
+        <span>Јавниот портал моментално не е овластен за прием на клиентски тајни, здравствени, идентификациски или други чувствителни податоци. Сигурниот upload и Case Workspace се заклучени до завршување на безбедносната архитектура.</span>
+      </div>
+
       <div class="notice" style="margin-top:24px">
 
         <b data-i18n="disclaimerTitle">
@@ -1315,6 +1443,7 @@
         <h4>Навигација</h4>
         <a href="#sources">Правни извори</a>
         <a href="#research">AI Истражувач</a>
+        <a href="#tools">Правни алатки</a>
         <a href="#publications">Трудови</a>
         <a href="#author">Автор</a>
       </nav>
@@ -1323,8 +1452,10 @@
 
         <h4>Интегритет</h4>
 
-        <a href="#about">Методологија</a>
-        <a href="#about">Правна напомена</a>
+        <a href="governance.html">Governance / Human Gate</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="security.html">Security</a>
         <a href="mailto:aiadvokat16@gmail.com">Gmail</a>
         <a href="mailto:aiadvokat@outlook.com">Outlook</a>
         <a
@@ -1347,7 +1478,7 @@
       </span>
 
       <span>
-        Production shell · Cloudflare-ready · Human Gate
+        Operational v1.3.2 · D1 source retrieval · Human Gate
       </span>
     </div>
 
@@ -1377,15 +1508,14 @@
     <p>
       Zenodo профилот на Zoran Stojankich / AI Advokat е активен.
       За „Кочани – Пулс“ и „СИНЏИР“ се прикажуваат само реално
-      резервирани DOI. Додека записите се Draft, нивните копчиња
-      отвораат директно во Zenodo Draft за сопственикот на профилот.
-      За јавните посетители трајните DOI-врски ќе се активираат по
-      финалното објавување. Автоматска API синхронизација сè уште
+      резервирани DOI. Додека записите се Draft, јавниот портал не изложува
+      приватни Zenodo editor/upload URL. Директните DOI-врски ќе се активираат по
+      финалното Zenodo објавување. Автоматска API синхронизација сè уште
       не е вклучена.
     </p>
 
     <pre style="white-space:pre-wrap;background:var(--surface-2);padding:14px;border-radius:12px;border:1px solid var(--line)">window.AI_ADVOCAT_CONFIG.zenodoEnabled = false;
-window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
+window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.workers.dev/api/zenodo";</pre>
 
   </div>
 </div>
@@ -1394,12 +1524,18 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
   window.AI_ADVOCAT_CONFIG = Object.freeze({
     portal: "AI Advokat",
-    demoMode: true,
+    demoMode: false,
+    apiBase: "https://ai-advokat-github-io.aiadvokat16.workers.dev",
 
     api: {
       search: "/api/search",
       assistant: "/api/assistant",
-      documents: "/api/documents"
+      documents: "/api/documents",
+      citationAudit: "/api/citation-audit",
+      versions: "/api/versions",
+      templates: "/api/templates",
+      webSources: "/api/web-sources",
+      capabilities: "/api/capabilities"
     },
 
     zenodoEnabled: false,
@@ -1481,7 +1617,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       doi:"10.5281/zenodo.22981554",
       badge:"ZENODO DRAFT · DOI RESERVED",
       published:false,
-      draftUrl:"https://zenodo.org/uploads/22981554",
+      draftUrl:"",
       zenodoUrl:ZENODO_AUTHOR_URL,
       tags:[
         "кривично право",
@@ -1497,7 +1633,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       doi:"10.5281/zenodo.22981744",
       badge:"ZENODO DRAFT · DOI RESERVED",
       published:false,
-      draftUrl:"https://zenodo.org/uploads/22981744",
+      draftUrl:"",
       zenodoUrl:ZENODO_AUTHOR_URL,
       tags:[
         "кривично право",
@@ -1814,7 +1950,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
         "AI Research with an evidence trail",
 
       researchText:
-        "Ready for Cloudflare Worker/D1/R2/Vectorize. This static build operates in safe demo mode and sends no data to an external AI service.",
+        "Connected to Cloudflare Worker + D1 for public-corpus retrieval. This phase is retrieval-only: sources and evidence trail without an automated final legal conclusion.",
 
       question:
         "Legal question",
@@ -1995,21 +2131,13 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
              rel="noopener noreferrer">
              Open on Zenodo
            </a>`
-        : pub.draftUrl
-          ? `<a
-               class="btn light"
-               href="${pub.draftUrl}"
-               target="_blank"
-               rel="noopener noreferrer">
-               Open Zenodo draft (owner)
-             </a>`
-          : `<button
-               class="btn light"
-               type="button"
-               disabled
-               aria-disabled="true">
-               Zenodo record pending
-             </button>`;
+        : `<button
+             class="btn light"
+             type="button"
+             disabled
+             aria-disabled="true">
+             ${pub.doi.startsWith('10.') ? 'Zenodo Draft · DOI reserved' : 'Zenodo record pending'}
+           </button>`;
 
 
     el.innerHTML = `
@@ -2041,84 +2169,88 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   });
 
 
-  function renderResults(){
 
-    const q =
-      $('#globalSearch')
-        .value
-        .toLocaleLowerCase('mk');
-
-    const t =
-      $('#typeFilter').value;
-
-    const s =
-      $('#statusFilter').value;
-
-
-    const hits =
-      data.filter(x=>
-
-        (
-          !q ||
-          `${x.title} ${x.text} ${x.meta}`
-            .toLocaleLowerCase('mk')
-            .includes(q)
-        )
-
-        &&
-
-        (
-          t === 'all' ||
-          x.type === t
-        )
-
-        &&
-
-        (
-          s === 'all' ||
-          x.status === s
-        )
-
-      );
-
-
-    $('#searchResults').innerHTML =
-      hits.length
-
-        ? hits.map(x=>`
-
-          <div class="resultItem">
-
-            <div class="resultTop">
-
-              <div>
-
-                <h4>${x.title}</h4>
-
-                <div class="meta">
-                  ${x.meta}
-                </div>
-
-              </div>
-
-              <span class="badge ${x.status === 'official' ? 'ok' : ''}">
-                ${x.status.toUpperCase()}
-              </span>
-
-            </div>
-
-            <p>${x.text}</p>
-
-          </div>
-
-        `).join('')
-
-        : `<div class="resultItem">
-             Нема резултат во demo-регистарот. Во production ова ќе пребарува D1/Vectorize и официјални извори.
-           </div>`;
-
+  function apiUrl(path){
+    const base = window.AI_ADVOCAT_CONFIG.apiBase || "";
+    return `${base}${path}`;
   }
 
+  function escapeHtml(value){
+    return String(value ?? "")
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#039;');
+  }
+
+  function safeExternalUrl(value){
+    if(!value) return null;
+    try{
+      const u = new URL(String(value), window.location.href);
+      return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : null;
+    }catch{
+      return null;
+    }
+  }
+
+  function renderApiItems(items){
+    if(!items?.length){
+      return `<div class="resultItem">Нема совпаѓање во тековниот јавен corpus.</div>`;
+    }
+    return items.map(x=>{
+      const title = escapeHtml(x.title);
+      const meta = escapeHtml(x.meta || x.entityType || '');
+      const snippet = escapeHtml(x.snippet || '');
+      const status = escapeHtml((x.status || 'pending').toUpperCase());
+      const safeUrl = safeExternalUrl(x.url);
+      const link = safeUrl
+        ? `<a class="btn light" href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">Open source</a>`
+        : '';
+      return `<div class="resultItem">
+        <div class="resultTop"><div><h4>${title}</h4><div class="meta">${meta}</div></div><span class="badge">${status}</span></div>
+        <p>${snippet}</p>${link}
+      </div>`;
+    }).join('');
+  }
+
+  async function fetchJson(url, options){
+    const response = await fetch(url, options);
+    const payload = await response.json().catch(()=>({ok:false,error:'invalid_json_response'}));
+    if(!response.ok || payload.ok === false){
+      const message = payload.message || payload.error || `HTTP ${response.status}`;
+      throw new Error(message);
+    }
+    return payload;
+  }
+
+  async function renderResults(){
+    const q = $('#globalSearch').value.trim();
+    const t = $('#typeFilter').value;
+    const s = $('#statusFilter').value;
+
+    if(q.length < 2){
+      $('#searchResults').innerHTML = `<div class="resultItem">Внеси најмалку 2 знаци.</div>`;
+      return;
+    }
+
+    $('#searchResults').innerHTML = `<div class="resultItem">Searching verified/public corpus...</div>`;
+
+    try{
+      const params = new URLSearchParams({q,type:t,status:s,limit:'18'});
+      const payload = await fetchJson(apiUrl(`${window.AI_ADVOCAT_CONFIG.api.search}?${params}`));
+      $('#searchResults').innerHTML = renderApiItems(payload.results);
+    }catch(error){
+      const ql = q.toLocaleLowerCase('mk');
+      const hits = data.filter(x =>
+        `${x.title} ${x.text} ${x.meta}`.toLocaleLowerCase('mk').includes(ql) &&
+        (t === 'all' || x.type === t) &&
+        (s === 'all' || x.status === s)
+      );
+      $('#searchResults').innerHTML = `<div class="notice" style="margin-bottom:10px"><b>API unavailable</b><span>Local public fallback only: ${escapeHtml(error.message)}</span></div>` +
+        (hits.length ? hits.map(x=>`<div class="resultItem"><h4>${escapeHtml(x.title)}</h4><div class="meta">${escapeHtml(x.meta)}</div><p>${escapeHtml(x.text)}</p></div>`).join('') : `<div class="resultItem">Нема локален резултат.</div>`);
+    }
+  }
 
   $('#searchBtn').addEventListener(
     'click',
@@ -2138,26 +2270,141 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   );
 
 
-  $('#askBtn').addEventListener('click',()=>{
+  $('#askBtn').addEventListener('click', async ()=>{
+    const q = $('#legalQuestion').value.trim();
+    $('#answerBox').classList.add('show');
+    if(!q){
+      $('#answerText').textContent = ' Внеси правно прашање.';
+      return;
+    }
 
-    const q =
-      $('#legalQuestion').value.trim();
+    $('#answerText').textContent = ' Retrieving sources...';
+    try{
+      const payload = await fetchJson(apiUrl(window.AI_ADVOCAT_CONFIG.api.assistant), {
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({
+          question:q,
+          jurisdiction:$('#jurisdiction').value,
+          mode:$('#researchMode').value
+        })
+      });
 
-
-    $('#answerBox')
-      .classList
-      .add('show');
-
-
-    $('#answerText').textContent =
-      q
-
-      ? ` Прашањето е подготвено за ${$('#researchMode').selectedOptions[0].text} во јурисдикција: ${$('#jurisdiction').value}. Во оваа статичка верзија не се повикува надворешен AI. Production Worker треба да врати: (1) изворна листа, (2) применливи норми, (3) анализа, (4) контрааргументи, (5) Human Gate checklist.`
-
-      : ' Внеси правно прашање. Порталот намерно не генерира правни заклучоци без прашање и извори.';
-
+      const sources = payload.sources || [];
+      const lines = [payload.statement || '', '', 'SOURCES:'];
+      sources.forEach((s,i)=>lines.push(`${i+1}. ${s.title}${s.url ? ' | ' + s.url : ''}`));
+      lines.push('', 'HUMAN GATE:');
+      (payload.humanGate || []).forEach((x,i)=>lines.push(`${i+1}. ${x}`));
+      $('#answerText').textContent = ' ' + lines.join('\n');
+    }catch(error){
+      $('#answerText').textContent = ` API unavailable: ${error.message}. No legal conclusion was generated.`;
+    }
   });
 
+  $('#auditCitationBtn').addEventListener('click', async ()=>{
+    const q = $('#citationInput').value.trim();
+    const box = $('#citationResult');
+    if(q.length < 3){ box.textContent = 'Внеси DOI или цитат.'; return; }
+    box.textContent = 'Checking...';
+    try{
+      const payload = await fetchJson(apiUrl(`${window.AI_ADVOCAT_CONFIG.api.citationAudit}?q=${encodeURIComponent(q)}`));
+      box.textContent = JSON.stringify(payload.result, null, 2);
+    }catch(error){ box.textContent = `Audit unavailable: ${error.message}`; }
+  });
+
+  $('#versionBtn').addEventListener('click', async ()=>{
+    const q = $('#versionQuery').value.trim();
+    const box = $('#versionResult');
+    if(q.length < 2){ box.textContent = 'Внеси наслов на пропис.'; return; }
+    box.textContent = 'Checking stored versions...';
+    try{
+      const payload = await fetchJson(apiUrl(`${window.AI_ADVOCAT_CONFIG.api.versions}?q=${encodeURIComponent(q)}`));
+      if(!payload.instrument){ box.textContent = 'Не е пронајден инструмент во D1.'; return; }
+      const lines = [payload.instrument.title, payload.note || '', ''];
+      (payload.versions || []).forEach(v=>lines.push(`${v.version_label} | ${v.valid_from || '?'} - ${v.valid_to || 'current'} | ${v.human_review_status}`));
+      box.textContent = lines.join('\n');
+    }catch(error){ box.textContent = `Version service unavailable: ${error.message}`; }
+  });
+
+  const documentSkeletons = {
+    'legal-memo': title => `LEGAL MEMO
+${title}
+
+ISSUE
+
+FACTS / ASSUMPTIONS
+
+AUTHORITIES
+
+ANALYSIS
+
+COUNTERARGUMENTS
+
+CONCLUSION
+
+SOURCES
+
+HUMAN GATE CHECK`,
+    'chronology': title => `CASE CHRONOLOGY
+${title}
+
+DATE | EVENT | ACTOR | DOCUMENT | SOURCE | STATUS
+`,
+    'evidence-map': title => `EVIDENCE MAP
+${title}
+
+FACT | ESTABLISHED/ALLEGED/DISPUTED | SOURCE | SUPPORT | CONFLICT | HUMAN REVIEW
+`,
+    'submission-outline': title => `SUBMISSION OUTLINE
+${title}
+
+AUTHORITY / COURT
+
+PARTIES
+
+ISSUE
+
+LEGAL BASIS
+
+FACTUAL BASIS
+
+REQUESTED ACTION
+
+ATTACHMENTS
+
+CITATION CHECK
+
+HUMAN GATE`
+  };
+
+  $('#generateDocumentBtn').addEventListener('click',()=>{
+    const kind = $('#documentTemplate').value;
+    const title = $('#documentTitle').value.trim() || 'Untitled working draft';
+    const context = $('#documentContext').value.trim();
+    const base = documentSkeletons[kind]?.(title) || documentSkeletons['legal-memo'](title);
+    $('#documentOutput').value = `${base}
+
+WORKING CONTEXT
+${context}
+
+NOTICE: Working structure only. Verify facts, law, citations, current versions and procedural requirements before use.`;
+  });
+
+  $('#copyDocumentBtn').addEventListener('click', async ()=>{
+    const text = $('#documentOutput').value;
+    if(!text) return;
+    try{ await navigator.clipboard.writeText(text); }catch{}
+  });
+
+  $('#printDocumentBtn').addEventListener('click',()=>{
+    const text = $('#documentOutput').value;
+    if(!text) return;
+    const w = window.open('', '_blank', 'noopener,noreferrer');
+    if(!w) return;
+    w.document.write(`<pre style="white-space:pre-wrap;font:14px/1.5 system-ui;padding:32px">${escapeHtml(text)}</pre>`);
+    w.document.close();
+    w.print();
+  });
 
   $('#zenodoInfo').addEventListener('click',()=>{
 
