@@ -120,7 +120,7 @@ jobs:
       - name: Verify official Macedonian retrieval only
         shell: bash
         run: |
-          curl -fsS "$TEST_URL/api/assistant"             -H "Origin: https://ai-advokat.github.io"             -H "Content-Type: application/json"             --data '{"question":"Official Gazette North Macedonia","jurisdiction":"MK","mode":"source","language":"en"}'             -o /tmp/mk.json
+          curl -fsS "$TEST_URL/api/assistant"             -H "Origin: https://ai-advokat.github.io"             -H "Content-Type: application/json"             --data '{"question":"Official Gazette of the Republic of North Macedonia","jurisdiction":"MK","mode":"source","language":"en"}'             -o /tmp/mk.json
           node <<'NODE'
           const fs=require("fs");
           const x=JSON.parse(fs.readFileSync("/tmp/mk.json","utf8"));
@@ -156,7 +156,7 @@ jobs:
       - name: Verify Common Law scope excludes known MK authority
         shell: bash
         run: |
-          curl -fsS "$TEST_URL/api/assistant"             -H "Content-Type: application/json"             --data '{"question":"Official Gazette North Macedonia","jurisdiction":"COMMONLAW","mode":"source","language":"en"}'             -o /tmp/commonlaw.json
+          curl -fsS "$TEST_URL/api/assistant"             -H "Content-Type: application/json"             --data '{"question":"Official Gazette of the Republic of North Macedonia","jurisdiction":"COMMONLAW","mode":"source","language":"en"}'             -o /tmp/commonlaw.json
           node <<'NODE'
           const fs=require("fs");
           const x=JSON.parse(fs.readFileSync("/tmp/commonlaw.json","utf8"));
@@ -176,7 +176,7 @@ jobs:
       - name: Verify international-law scope excludes known MK authority
         shell: bash
         run: |
-          curl -fsS "$TEST_URL/api/assistant"             -H "Content-Type: application/json"             --data '{"question":"Official Gazette North Macedonia","jurisdiction":"INTL","mode":"source","language":"en"}'             -o /tmp/intl.json
+          curl -fsS "$TEST_URL/api/assistant"             -H "Content-Type: application/json"             --data '{"question":"Official Gazette of the Republic of North Macedonia","jurisdiction":"INTL","mode":"source","language":"en"}'             -o /tmp/intl.json
           node <<'NODE'
           const fs=require("fs");
           const x=JSON.parse(fs.readFileSync("/tmp/intl.json","utf8"));
