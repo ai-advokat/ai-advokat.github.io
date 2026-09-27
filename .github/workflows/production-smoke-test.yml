@@ -1,0 +1,82 @@
+name: AI Advokat production smoke test
+
+on:
+  push:
+    branches:
+      - activate-public-search-v1.3.3-clean
+    paths:
+      - ".github/workflows/production-smoke-test.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    env:
+      PROD_URL: https://ai-advokat-github-io.aiadvokat16.workers.dev
+
+    steps:
+      - name: Wait for production deployment
+        shell: bash
+        run: |
+          for i in {1..20}; do
+            code=$(curl -sS -o /tmp/health.json -w "%{http_code}" "$PROD_URL/api/health" || true)
+            if [ "$code" = "200" ]; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Production health did not become ready in time."
+          exit 1
+
+      - name: Verify production health, database and capabilities
+        shell: bash
+        run: |
+          curl -fsS "$PROD_URL/api/health" -o /tmp/health.json
+          curl -fsS "$PROD_URL/api/db-status" -o /tmp/db.json
+          curl -fsS "$PROD_URL/api/capabilities" -o /tmp/caps.json
+          node <<'NODE'
+          const fs=require("fs");
+          const read=p=>JSON.parse(fs.readFileSync(p,"utf8"));
+          const h=read("/tmp/health.json"), d=read("/tmp/db.json"), c=read("/tmp/caps.json");
+          if(!h.ok || h.version!=="1.3.3" || h.publicMode!=="read_only") throw new Error("Production health/version gate failed.");
+          if(!h.database?.schemaReady || h.database?.schemaVersion!=="2") throw new Error("Production schema gate failed.");
+          if(!d.ok || !d.database?.schemaReady) throw new Error("Production db-status gate failed.");
+          if(c.capabilities?.publicSearch!=="live_read_only") throw new Error("Public search not live_read_only.");
+          if(c.capabilities?.documentUpload!=="locked") throw new Error("Document upload unlocked.");
+          if(c.capabilities?.caseWorkspace!=="locked") throw new Error("Case workspace unlocked.");
+          if(c.capabilities?.workersAI!=="not_bound") throw new Error("Workers AI unexpectedly bound.");
+          if(c.capabilities?.vectorize!=="not_bound") throw new Error("Vectorize unexpectedly bound.");
+          console.log("Production health/capability gate: PASS");
+          NODE
+
+      - name: Verify English and Macedonian public search
+        shell: bash
+        run: |
+          curl -fsS "$PROD_URL/api/search?q=Official&limit=10" -o /tmp/en.json
+          curl -fsS "$PROD_URL/api/search?q=%D0%9A%D0%BE%D1%87%D0%B0%D0%BD%D0%B8&limit=10" -o /tmp/mk.json
+          node <<'NODE'
+          const fs=require("fs");
+          const en=JSON.parse(fs.readFileSync("/tmp/en.json","utf8"));
+          const mk=JSON.parse(fs.readFileSync("/tmp/mk.json","utf8"));
+          if(!en.ok || en.mode!=="read_only_public_corpus") throw new Error("English search failed.");
+          if(!mk.ok || mk.mode!=="read_only_public_corpus") throw new Error("Macedonian search failed.");
+          console.log("Production bilingual search gate: PASS");
+          NODE
+
+      - name: Verify governed endpoints remain locked
+        shell: bash
+        run: |
+          for path in assistant citation-audit versions documents cases; do
+            code=$(curl -sS -o "/tmp/$path.json" -w "%{http_code}" "$PROD_URL/api/$path")
+            test "$code" = "503"
+            node -e "const x=require('/tmp/$path.json'); if(x.status!=='governed_preview') process.exit(1)"
+          done
+          echo "Production governed-lock gate: PASS"
+
+      - name: Production smoke result
+        run: echo "PRODUCTION SMOKE TEST: PASS"
