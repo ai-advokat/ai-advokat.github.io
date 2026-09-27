@@ -276,35 +276,42 @@ function assistantDirectories(scope) {
 }
 
 async function queryAssistantScope(env, { q, type, scope, limit }) {
-  const results = [];
-  const seen = new Set();
-  const jurisdictions = scope.jurisdictions || [null];
-
-  // Fail-closed evidence policy:
-  // 1) official sources first;
-  // 2) then human-verified material;
-  // 3) never use pending/draft rows as legal authority.
-  for (const status of ["official", "verified"]) {
-    for (const jurisdiction of jurisdictions) {
-      const partial = await queryPublicCorpus(env, {
-        q,
-        type,
-        status,
-        jurisdiction,
-        limit
-      });
-
-      for (const item of partial) {
-        const key = `${item.entityType}:${item.id}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        results.push(item);
-        if (results.length >= limit) return results;
-      }
-    }
+  // One trusted retrieval pass per question. This avoids duplicating all D1
+  // queries for separate official/verified passes and keeps the Worker budget bounded.
+  if (!scope.jurisdictions) {
+    return queryPublicCorpus(env, {
+      q,
+      type,
+      status: "trusted",
+      jurisdiction: null,
+      limit
+    });
   }
 
-  return results;
+  if (scope.jurisdictions.length === 1) {
+    return queryPublicCorpus(env, {
+      q,
+      type,
+      status: "trusted",
+      jurisdiction: scope.jurisdictions[0],
+      limit
+    });
+  }
+
+  // Multi-jurisdiction scopes (currently Common Law) use one broader trusted
+  // scan, followed by an allow-list filter. This is bounded and fail-closed.
+  const allowed = new Set(scope.jurisdictions);
+  const candidates = await queryPublicCorpus(env, {
+    q,
+    type,
+    status: "trusted",
+    jurisdiction: null,
+    limit: Math.max(30, limit * 4)
+  });
+
+  return candidates
+    .filter((item) => allowed.has(item.jurisdiction))
+    .slice(0, limit);
 }
 
 function assistantTerms(question) {
@@ -316,7 +323,7 @@ function assistantTerms(question) {
   return normalizeText(question)
     .split(/[^\p{L}\p{N}]+/u)
     .filter((term) => term.length >= 4 && !stop.has(term))
-    .slice(0, 3);
+    .slice(0, 1);
 }
 
 async function dbStatus(env) {
@@ -373,8 +380,13 @@ function normalizeRow(row) {
   };
 }
 
+function isTrustedStatus(status) {
+  return status === "official" || status === "verified";
+}
+
 function matchesStatus(row, status) {
-  return status === "all" || mapStatus(row.entity_type, row.raw_status) === status;
+  const mapped = mapStatus(row.entity_type, row.raw_status);
+  return status === "all" || (status === "trusted" ? isTrustedStatus(mapped) : mapped === status);
 }
 
 async function boundedUnicodeScan(env, { q, type, status, jurisdiction, limit }) {
@@ -431,7 +443,10 @@ async function boundedUnicodeScan(env, { q, type, status, jurisdiction, limit })
               trim(COALESCE(li.instrument_type,'') ||
                 CASE WHEN li.gazette_reference IS NOT NULL THEN ' | ' || li.gazette_reference ELSE '' END) AS meta,
               COALESCE(li.notes, '') AS snippet, s.url, li.jurisdiction,
-              CASE WHEN s.source_status = 'official' THEN 'official' ELSE li.human_review_status END AS raw_status,
+              CASE
+                WHEN li.human_review_status IN ('approved','reviewed') AND s.source_status = 'official' THEN 'official'
+                ELSE li.human_review_status
+              END AS raw_status,
               COALESCE(li.effective_date, li.adopted_date) AS item_date,
               li.title || ' ' || COALESCE(li.short_title,'') || ' ' ||
               COALESCE(li.gazette_reference,'') || ' ' || COALESCE(li.notes,'') AS search_blob
@@ -451,7 +466,10 @@ async function boundedUnicodeScan(env, { q, type, status, jurisdiction, limit })
                 CASE WHEN cl.case_number IS NOT NULL THEN ' | ' || cl.case_number ELSE '' END) AS meta,
               COALESCE(cl.reasoning_summary, cl.outcome_summary, '') AS snippet,
               COALESCE(cl.source_url, s.url) AS url, cl.jurisdiction,
-              CASE WHEN s.source_status = 'official' THEN 'official' ELSE cl.human_review_status END AS raw_status,
+              CASE
+                WHEN cl.human_review_status IN ('approved','reviewed') AND s.source_status = 'official' THEN 'official'
+                ELSE cl.human_review_status
+              END AS raw_status,
               cl.decision_date AS item_date,
               cl.case_title || ' ' || COALESCE(cl.case_number,'') || ' ' ||
               COALESCE(cl.legal_area,'') || ' ' || COALESCE(cl.reasoning_summary,'') || ' ' ||
@@ -472,7 +490,11 @@ async function boundedUnicodeScan(env, { q, type, status, jurisdiction, limit })
                 CASE WHEN venue IS NOT NULL THEN ' | ' || venue ELSE '' END) AS meta,
               COALESCE(abstract, '') AS snippet,
               CASE WHEN publication_status = 'published' THEN canonical_url ELSE NULL END AS url,
-              'MK' AS jurisdiction, publication_status AS raw_status,
+              'MK' AS jurisdiction,
+              CASE
+                WHEN publication_status = 'published' AND human_review_status IN ('approved','reviewed') THEN 'published'
+                ELSE human_review_status
+              END AS raw_status,
               publication_date AS item_date,
               title || ' ' || COALESCE(subtitle,'') || ' ' || author_name || ' ' ||
               COALESCE(abstract,'') || ' ' || COALESCE(keywords,'') AS search_blob
@@ -514,7 +536,10 @@ async function queryPublicCorpus(env, { q, type, status, jurisdiction, limit }) 
               trim(COALESCE(li.instrument_type,'') ||
                 CASE WHEN li.gazette_reference IS NOT NULL THEN ' | ' || li.gazette_reference ELSE '' END) AS meta,
               COALESCE(li.notes, '') AS snippet, s.url, li.jurisdiction,
-              CASE WHEN s.source_status = 'official' THEN 'official' ELSE li.human_review_status END AS raw_status,
+              CASE
+                WHEN li.human_review_status IN ('approved','reviewed') AND s.source_status = 'official' THEN 'official'
+                ELSE li.human_review_status
+              END AS raw_status,
               COALESCE(li.effective_date, li.adopted_date) AS item_date
          FROM legal_instruments li
          LEFT JOIN sources s ON s.id = li.canonical_source_id
@@ -535,7 +560,10 @@ async function queryPublicCorpus(env, { q, type, status, jurisdiction, limit }) 
                 CASE WHEN cl.case_number IS NOT NULL THEN ' | ' || cl.case_number ELSE '' END) AS meta,
               COALESCE(cl.reasoning_summary, cl.outcome_summary, '') AS snippet,
               COALESCE(cl.source_url, s.url) AS url, cl.jurisdiction,
-              CASE WHEN s.source_status = 'official' THEN 'official' ELSE cl.human_review_status END AS raw_status,
+              CASE
+                WHEN cl.human_review_status IN ('approved','reviewed') AND s.source_status = 'official' THEN 'official'
+                ELSE cl.human_review_status
+              END AS raw_status,
               cl.decision_date AS item_date
          FROM case_law cl
          LEFT JOIN sources s ON s.id = cl.source_id
@@ -557,7 +585,11 @@ async function queryPublicCorpus(env, { q, type, status, jurisdiction, limit }) 
                 CASE WHEN venue IS NOT NULL THEN ' | ' || venue ELSE '' END) AS meta,
               COALESCE(abstract, '') AS snippet,
               CASE WHEN publication_status = 'published' THEN canonical_url ELSE NULL END AS url,
-              'MK' AS jurisdiction, publication_status AS raw_status,
+              'MK' AS jurisdiction,
+              CASE
+                WHEN publication_status = 'published' AND human_review_status IN ('approved','reviewed') THEN 'published'
+                ELSE human_review_status
+              END AS raw_status,
               publication_date AS item_date
          FROM publications
         WHERE lower(title || ' ' || COALESCE(subtitle,'') || ' ' || author_name || ' ' ||
@@ -571,7 +603,7 @@ async function queryPublicCorpus(env, { q, type, status, jurisdiction, limit }) 
 
   const normalized = rows
     .map(normalizeRow)
-    .filter((item) => status === "all" || item.status === status)
+    .filter((item) => status === "all" || (status === "trusted" ? isTrustedStatus(item.status) : item.status === status))
     .slice(0, limit);
 
   if (normalized.length >= limit || !/[^\u0000-\u007F]/u.test(q)) {
@@ -764,7 +796,7 @@ async function handleAssistant(request, env) {
     sourcePolicy: "macedonian_law_first",
     evidencePolicy: "official_then_verified_no_pending",
     answerPolicy: "no_source_no_answer",
-    retrievalPolicy: "bounded_full_query_plus_max_3_terms",
+    retrievalPolicy: "bounded_full_query_plus_max_1_term",
     answerStatus: found ? "verified_sources_found" : "insufficient_verified_evidence",
     knowledgeBoundary: found
       ? "Only retrieved source records are reported; no unsupported proposition is generated."
