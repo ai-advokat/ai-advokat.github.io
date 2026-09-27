@@ -6,6 +6,8 @@ on:
       - retrieval-bot-v1.4.0-clean
     paths:
       - ".github/workflows/bot-preview-tests.yml"
+      - "src/index.js"
+      - "index.html"
 
 permissions:
   contents: read
@@ -82,7 +84,10 @@ jobs:
       - name: Verify unknown question fails closed
         shell: bash
         run: |
-          curl -fsS "$PREVIEW_URL/api/assistant"             -H "Origin: https://ai-advokat.github.io"             -H "Content-Type: application/json"             --data '{"question":"zxqv fictional statute 998877 impossible authority","jurisdiction":"MK","mode":"source","language":"en"}'             -o /tmp/unknown.json
+          code=$(curl -sS "$PREVIEW_URL/api/assistant"             -H "Origin: https://ai-advokat.github.io"             -H "Content-Type: application/json"             --data '{"question":"zxqv fictional statute 998877 impossible authority","jurisdiction":"MK","mode":"source","language":"en"}'             -o /tmp/unknown.json -w "%{http_code}")
+          echo "Unknown-query HTTP status: $code"
+          cat /tmp/unknown.json
+          test "$code" = "200"
           node <<'NODE'
           const fs=require("fs");
           const x=JSON.parse(fs.readFileSync("/tmp/unknown.json","utf8"));
