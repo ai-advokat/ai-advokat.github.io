@@ -1649,7 +1649,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       focus:"Areas of interest", focusText:"Law · institutional accountability · security · mediation", researchIds:"Research identifiers", zenodoReserved:"Zenodo · 2 reserved DOI records", contact:"Contact", publication:"Publications", zenodoDraftRecords:"Zenodo · 2 records in preparation",
       aboutTag:"GOVERNANCE", aboutTitle:"How the portal protects evidence discipline", intLabel1:"1. Source", intLabel2:"2. Provenance", intLabel3:"3. AI Draft", intLabel4:"4. Human Gate",
       int1:"Official documents stay separate from interpretation.", int2:"Authority, date, version and provenance are recorded.", int3:"AI may summarize and compare, but must expose sources.", int4:"Final legal judgment and publication remain human.",
-      disclaimerTitle:"Legal notice", disclaimerText:"AI Advokat is an information and research platform. Content does not create an attorney-client relationship and is not an automatic substitute for individualized legal advice, current-law verification or professional representation.",
+      disclaimerTitle:"Legal notice", disclaimerText:"AI Advokat is an information and research platform. Content does not create an attorney-client relationship and is not an automatic substitute for individualized legal advice, current-law verification or professional representation.", copyrightTitle:"Copyright and source use", copyrightText:"AI Advokat displays short excerpts only for identification and verification. It should not reproduce substantial portions of protected works, paid legal databases or third-party publications. Full text should be accessed and credited at the original source.",
       footerSub:"Legal information & AI research portal", footerText:"Legal sources, author analyses and AI-assisted research with verifiable sources and final human control.", footerNavTitle:"Navigation", footerIntegrityTitle:"Integrity", methodology:"Methodology", legalNotice:"Legal notice", zenodoDoiRecords:"Zenodo · DOI records", rights:"All rights reserved.", footerStatus:"Production foundation · Cloudflare-ready · Human Gate",
       modalTitle:"Zenodo integration", modalText:"The Zenodo profile of Zoran Stojankich / AI Advokat is active. Only genuinely reserved DOIs are displayed for “Kocani – Puls” and “SINDZIR”. While the records are in preparation, the public portal does not expose private Zenodo editor/upload links. Permanent DOI links for public visitors will become active after final publication. Automatic API synchronization is not yet enabled.",
       skipLink:"Skip to main content", changeLanguage:"Change language", changeTheme:"Change theme", increaseText:"Increase text size", brandHome:"AI Advokat home", mainNav:"Main navigation", openMenu:"Open menu", trustGridAria:"Core principles", searchPanelAria:"Search", authorPortraitAlt:"Professional portrait of Attorney Zoran Stojankich", footerNavAria:"Footer navigation", footerIntegrityAria:"Integrity and contacts", closeModal:"Close",
@@ -1931,6 +1931,9 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
           }</div>`
         : "";
       const gate=(payload.humanGate || []).map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+      const legalDisclaimer=escapeHtml(payload.legalDisclaimer || "");
+      const reliabilityNotice=escapeHtml(payload.reliabilityNotice || "");
+      const copyrightPolicy=escapeHtml(payload.copyrightPolicy || "");
 
       $("#answerText").innerHTML=
         `<div class="meta">${lang==="en"?"Scope":"Правен слој"}: ${scopeLabel}</div>`+
@@ -1939,6 +1942,9 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
         `<p><b>${lang==="en"?"Knowledge boundary":"Граница на знаењето"}:</b> ${knowledgeBoundary}</p>`+
         sourceHtml+
         directoryHtml+
+        `<div class="notice" style="margin-top:12px"><b>${lang==="en"?"Reliability notice":"Напомена за сигурност"}</b><span>${reliabilityNotice}</span></div>`+
+        `<div class="notice" style="margin-top:12px"><b>${lang==="en"?"Legal disclaimer":"Правен дисклејмер"}</b><span>${legalDisclaimer}</span></div>`+
+        `<div class="notice" style="margin-top:12px"><b>${lang==="en"?"Copyright / source-use policy":"Авторски права / користење извори"}</b><span>${copyrightPolicy}</span></div>`+
         `<div class="notice" style="margin-top:12px"><b>Human Gate</b><ul>${gate}</ul></div>`;
     }catch(error){
       if(error?.name === "AbortError" || requestSeq !== assistantRequestSeq) return;
