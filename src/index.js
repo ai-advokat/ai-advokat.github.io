@@ -741,6 +741,7 @@ async function handleAssistant(request, env) {
         "Check jurisdiction, procedural posture and finality of every cited decision.",
         "Keep Macedonian, ECHR/EU, international and comparative Common Law authorities legally distinct.",
         "If a proposition is not supported by an official or human-verified source, treat it as unverified and do not state it as fact.",
+        "Respect copyright and database rights: quote only what is necessary for verification and direct users to the original source for full text.",
         "A qualified human lawyer must approve any final legal conclusion, advice or filing."
       ]
     : [
@@ -749,6 +750,7 @@ async function handleAssistant(request, env) {
         "Проверете ја јурисдикцијата, процесната положба и правосилноста на секоја цитирана одлука.",
         "Македонските, ЕСПЧ/ЕУ, меѓународните и компаративните Common Law извори мора правно да останат разграничени.",
         "Ако тврдењето не е поткрепено со официјален или човечки проверен извор, третирајте го како непотврдено и не прикажувајте го како факт.",
+        "Почитувајте ги авторските и базните права: цитирајте само колку што е нужно за проверка и упатете на оригиналниот извор за целосниот текст.",
         "Конечниот правен заклучок, совет или поднесок мора да го одобри квалификуван адвокат."
       ];
 
@@ -770,8 +772,20 @@ async function handleAssistant(request, env) {
       jurisdictions: scope.jurisdictions
     },
     statement,
-    sources: results,
+    sources: results.map((item) => ({
+      ...item,
+      snippet: String(item.snippet || "").slice(0, 600)
+    })),
     officialDirectories: directories,
+    legalDisclaimer: language === "en"
+      ? "AI Advokat is a legal information and research tool. It does not create an attorney-client relationship, provide legal representation, or replace individualized advice from a qualified lawyer."
+      : "AI Advokat е алатка за правни информации и истражување. Не создава однос адвокат-клиент, не обезбедува правно застапување и не го заменува индивидуализираниот совет од квалификуван адвокат.",
+    reliabilityNotice: language === "en"
+      ? "Only official or human-verified records may be used as authority. If the corpus cannot verify a proposition, the assistant must say so and must not guess."
+      : "Како правен авторитет смеат да се користат само официјални или човечки проверени записи. Ако корпусот не може да потврди тврдење, асистентот мора тоа да го каже и не смее да погодува.",
+    copyrightPolicy: language === "en"
+      ? "Use short excerpts only for identification and verification. Do not reproduce substantial protected text or paywalled/database content. Link to and credit the original source for full text."
+      : "Користете само кратки изводи за идентификација и проверка. Не репродуцирајте значителни делови од заштитени текстови или содржина од платени/затворени бази. За целосниот текст упатете и наведете го оригиналниот извор.",
     humanGate
   });
 }
