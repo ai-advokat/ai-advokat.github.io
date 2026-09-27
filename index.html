@@ -2568,8 +2568,9 @@ NOTICE: Working structure only. Verify facts, law, citations, current versions a
   $('#printDocumentBtn').addEventListener('click',()=>{
     const text = $('#documentOutput').value;
     if(!text) return;
-    const w = window.open('', '_blank', 'noopener,noreferrer');
+    const w = window.open('', '_blank');
     if(!w) return;
+    try{ w.opener = null; }catch{}
     w.document.write(`<pre style="white-space:pre-wrap;font:14px/1.5 system-ui;padding:32px">${escapeHtml(text)}</pre>`);
     w.document.close();
     w.print();
