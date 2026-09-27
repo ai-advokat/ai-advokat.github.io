@@ -8,8 +8,10 @@ node_modules/**
 src/**
 migrations/**
 ingest/**
+scripts/**
 
 wrangler.jsonc
+wrangler.preview-migrations.jsonc
 package.json
 package-lock.json
 bun.lock
