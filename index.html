@@ -1525,7 +1525,12 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
   window.AI_ADVOCAT_CONFIG = Object.freeze({
     portal: "AI Advokat",
     demoMode: false,
-    apiBase: "https://ai-advokat-github-io.aiadvokat16.workers.dev",
+    apiBase:
+      (window.location.hostname.endsWith(".workers.dev") ||
+       window.location.hostname === "localhost" ||
+       window.location.hostname === "127.0.0.1")
+        ? ""
+        : "https://ai-advokat-github-io.aiadvokat16.workers.dev",
 
     api: {
       search: "/api/search",
@@ -2224,6 +2229,29 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
     return payload;
   }
 
+  function localGuideResults(q, type, status){
+    if(type !== 'all' && type !== 'guide') return [];
+    const ql = q.toLocaleLowerCase('mk');
+    return data
+      .filter(x =>
+        x.type === 'guide' &&
+        `${x.title} ${x.text} ${x.meta}`.toLocaleLowerCase('mk').includes(ql) &&
+        (status === 'all' || x.status === status)
+      )
+      .map(x => ({
+        entityType: 'guide',
+        id: `local-guide:${x.title}`,
+        title: x.title,
+        meta: x.meta,
+        snippet: x.text,
+        url: null,
+        jurisdiction: 'MK',
+        status: x.status,
+        rawStatus: x.status,
+        date: null
+      }));
+  }
+
   async function renderResults(){
     const q = $('#globalSearch').value.trim();
     const t = $('#typeFilter').value;
@@ -2239,7 +2267,16 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "https://ai-advokat-github-io.aiadvokat16.w
     try{
       const params = new URLSearchParams({q,type:t,status:s,limit:'18'});
       const payload = await fetchJson(apiUrl(`${window.AI_ADVOCAT_CONFIG.api.search}?${params}`));
-      $('#searchResults').innerHTML = renderApiItems(payload.results);
+      const apiItems = Array.isArray(payload.results) ? payload.results : [];
+      const guideItems = localGuideResults(q, t, s);
+      const seen = new Set();
+      const combined = [...apiItems, ...guideItems].filter(item => {
+        const key = `${item.entityType || ''}:${item.id || item.title || ''}`;
+        if(seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      $('#searchResults').innerHTML = renderApiItems(combined);
     }catch(error){
       const ql = q.toLocaleLowerCase('mk');
       const hits = data.filter(x =>
