@@ -8,3 +8,4 @@ Disallow: /ingest/
 Disallow: /.github/
 
 Sitemap: https://ai-advokat.github.io/sitemap.xml
+Sitemap: https://ai-advokat.github.io/sitemap.txt
