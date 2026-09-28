@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /src/
+Disallow: /scripts/
+Disallow: /migrations/
+Disallow: /ingest/
+Disallow: /.github/
+
+Sitemap: https://ai-advokat.github.io/sitemap.xml
