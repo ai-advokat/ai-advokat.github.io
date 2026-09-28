@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 const required = [
   "index.html",
+  "assets/analytics.js",
   "scholar/ai-legal-practice-judiciary/index.html",
   "scholar/mobile-phone-privilege/index.html",
   "scholar/electronic-ai-evidence/index.html",
@@ -36,6 +37,7 @@ const robots = fs.readFileSync("robots.txt", "utf8");
 const sitemap = fs.readFileSync("sitemap.xml", "utf8");
 const sitemapTxt = fs.readFileSync("sitemap.txt", "utf8");
 const securityTxt = fs.readFileSync(".well-known/security.txt", "utf8");
+const analytics = fs.readFileSync("assets/analytics.js", "utf8");
 
 const prod = wrangler.d1_databases?.[0];
 const preview = wrangler.previews?.d1_databases?.[0];
@@ -57,6 +59,25 @@ if (!html.includes('rel="canonical" href="https://ai-advokat.github.io/"')) {
 }
 if (!html.includes('http-equiv="Content-Security-Policy"')) {
   throw new Error("HTML CSP fallback is missing.");
+}
+if (!analytics.includes("G-4F0STVL2EF")) {
+  throw new Error("Google Analytics measurement ID is missing.");
+}
+if (!analytics.includes('analytics_storage: initialConsent === "granted" ? "granted" : "denied"')) {
+  throw new Error("Analytics consent default is missing.");
+}
+for (const path of [
+  "index.html",
+  "scholar/index.html",
+  "scholar/sindzir/index.html",
+  "scholar/electronic-ai-evidence/index.html",
+  "scholar/mobile-phone-privilege/index.html",
+  "scholar/ai-legal-practice-judiciary/index.html"
+]) {
+  const page = fs.readFileSync(path, "utf8");
+  if (!page.includes('/assets/analytics.js')) {
+    throw new Error(`Analytics loader missing in ${path}`);
+  }
 }
 if (!robots.includes("Sitemap: https://ai-advokat.github.io/sitemap.xml")) {
   throw new Error("robots.txt must advertise the canonical sitemap.");
@@ -94,6 +115,9 @@ if (!worker.includes('"Strict-Transport-Security"')) {
 }
 if (!worker.includes('"Content-Security-Policy"')) {
   throw new Error("Static asset security headers must include CSP.");
+}
+if (!worker.includes("https://www.googletagmanager.com") || !worker.includes("https://www.google-analytics.com")) {
+  throw new Error("Worker CSP must allow consented Google Analytics traffic.");
 }
 
 if (!worker.includes('publicMode: "read_only"')) {

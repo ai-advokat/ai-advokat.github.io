@@ -13,6 +13,7 @@ on:
       - "wrangler*.jsonc"
       - "package.json"
       - "index.html"
+      - "assets/**"
       - "robots.txt"
       - "sitemap.xml"
       - "sitemap.txt"
