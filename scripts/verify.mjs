@@ -2,6 +2,11 @@ import fs from "node:fs";
 
 const required = [
   "index.html",
+  "scholar/ai-legal-practice-judiciary/index.html",
+  "scholar/mobile-phone-privilege/index.html",
+  "scholar/electronic-ai-evidence/index.html",
+  "scholar/sindzir/index.html",
+  "scholar/index.html",
   "robots.txt",
   "sitemap.xml",
   "sitemap.txt",
@@ -61,6 +66,22 @@ if (!sitemap.includes("<loc>https://ai-advokat.github.io/</loc>")) {
 }
 if (!sitemapTxt.split(/\r?\n/).includes("https://ai-advokat.github.io/")) {
   throw new Error("Text sitemap must include the canonical portal URL.");
+}
+const scholarUrls = [
+  "https://ai-advokat.github.io/scholar/",
+  "https://ai-advokat.github.io/scholar/sindzir/",
+  "https://ai-advokat.github.io/scholar/electronic-ai-evidence/",
+  "https://ai-advokat.github.io/scholar/mobile-phone-privilege/",
+  "https://ai-advokat.github.io/scholar/ai-legal-practice-judiciary/"
+];
+if (!scholarUrls.every((url) => sitemap.includes(`<loc>${url}</loc>`) && sitemapTxt.split(/\r?\n/).includes(url))) {
+  throw new Error("Scholar sitemap URLs are incomplete.");
+}
+for (const path of scholarUrls.slice(1).map((url) => url.replace("https://ai-advokat.github.io/", "") + "index.html")) {
+  const scholarHtml = fs.readFileSync(path, "utf8");
+  if (!scholarHtml.includes('name="citation_title"') || !scholarHtml.includes('name="citation_author"')) {
+    throw new Error(`Scholar metadata missing in ${path}`);
+  }
 }
 if (!securityTxt.includes("Canonical: https://ai-advokat.github.io/.well-known/security.txt")) {
   throw new Error("security.txt canonical URL is invalid.");
