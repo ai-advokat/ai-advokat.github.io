@@ -15,6 +15,7 @@ on:
       - "index.html"
       - "robots.txt"
       - "sitemap.xml"
+      - "sitemap.txt"
       - ".well-known/security.txt"
       - ".assetsignore"
       - ".github/workflows/activation-safety.yml"
