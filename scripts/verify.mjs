@@ -104,6 +104,13 @@ for (const path of scholarUrls.slice(1).map((url) => url.replace("https://ai-adv
     throw new Error(`Scholar metadata missing in ${path}`);
   }
 }
+const mobileScholar = fs.readFileSync("scholar/mobile-phone-privilege/index.html", "utf8");
+if (!mobileScholar.includes("10.5281/zenodo.23021388") || !mobileScholar.includes("https://zenodo.org/records/23021388")) {
+  throw new Error("Published mobile-phone Scholar record is not fully linked.");
+}
+if (!mobileScholar.includes('name="citation_pdf_url"')) {
+  throw new Error("Published mobile-phone Scholar record must expose citation_pdf_url.");
+}
 if (!securityTxt.includes("Canonical: https://ai-advokat.github.io/.well-known/security.txt")) {
   throw new Error("security.txt canonical URL is invalid.");
 }
