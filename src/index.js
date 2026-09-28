@@ -565,10 +565,15 @@ function withSecurityHeaders(response) {
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   headers.set("X-Frame-Options", "DENY");
-  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()");
+  headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  headers.set("X-Permitted-Cross-Domain-Policies", "none");
+  headers.set("Origin-Agent-Cluster", "?1");
   headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' mailto:"
+    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev; font-src 'self' data:; object-src 'none'; media-src 'none'; frame-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self' mailto:; upgrade-insecure-requests"
   );
 
   return new Response(response.body, {

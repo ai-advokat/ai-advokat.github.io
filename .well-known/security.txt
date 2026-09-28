@@ -1,0 +1,5 @@
+Contact: mailto:aiadvokat16@gmail.com
+Contact: mailto:aiadvokat@outlook.com
+Expires: 2027-09-28T23:59:59Z
+Preferred-Languages: mk, en
+Canonical: https://ai-advokat.github.io/.well-known/security.txt

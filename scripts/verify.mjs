@@ -2,6 +2,9 @@ import fs from "node:fs";
 
 const required = [
   "index.html",
+  "robots.txt",
+  "sitemap.xml",
+  ".well-known/security.txt",
   "src/index.js",
   "migrations/0001_initial_schema.sql",
   "migrations/0002_public_source_seed.sql",
@@ -23,6 +26,9 @@ const previewMigrations = JSON.parse(fs.readFileSync("wrangler.preview-migration
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 const worker = fs.readFileSync("src/index.js", "utf8");
 const html = fs.readFileSync("index.html", "utf8");
+const robots = fs.readFileSync("robots.txt", "utf8");
+const sitemap = fs.readFileSync("sitemap.xml", "utf8");
+const securityTxt = fs.readFileSync(".well-known/security.txt", "utf8");
 
 const prod = wrangler.d1_databases?.[0];
 const preview = wrangler.previews?.d1_databases?.[0];
@@ -38,6 +44,30 @@ if (pkg.version !== "1.3.3") throw new Error("package.json version must be 1.3.3
 
 if (html.includes("zenodo.org/uploads/")) {
   throw new Error("Private Zenodo upload URL exposed in public index.html.");
+}
+if (!html.includes('rel="canonical" href="https://ai-advokat.github.io/"')) {
+  throw new Error("Canonical URL is missing.");
+}
+if (!html.includes('http-equiv="Content-Security-Policy"')) {
+  throw new Error("HTML CSP fallback is missing.");
+}
+if (!robots.includes("Sitemap: https://ai-advokat.github.io/sitemap.xml")) {
+  throw new Error("robots.txt must advertise the canonical sitemap.");
+}
+if (!sitemap.includes("<loc>https://ai-advokat.github.io/</loc>")) {
+  throw new Error("Sitemap must include the canonical portal URL.");
+}
+if (!securityTxt.includes("Canonical: https://ai-advokat.github.io/.well-known/security.txt")) {
+  throw new Error("security.txt canonical URL is invalid.");
+}
+if (wrangler.assets?.run_worker_first !== true) {
+  throw new Error("Worker must run before static assets so security headers are applied.");
+}
+if (!worker.includes('"Strict-Transport-Security"')) {
+  throw new Error("Static asset security headers must include HSTS.");
+}
+if (!worker.includes('"Content-Security-Policy"')) {
+  throw new Error("Static asset security headers must include CSP.");
 }
 
 if (!worker.includes('publicMode: "read_only"')) {
