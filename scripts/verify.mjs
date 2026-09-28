@@ -104,6 +104,10 @@ for (const path of scholarUrls.slice(1).map((url) => url.replace("https://ai-adv
     throw new Error(`Scholar metadata missing in ${path}`);
   }
 }
+const aiLegalScholar = fs.readFileSync("scholar/ai-legal-practice-judiciary/index.html", "utf8");
+if (!aiLegalScholar.includes("10.5281/zenodo.23023442") || !aiLegalScholar.includes("https://zenodo.org/records/23023442")) {
+  throw new Error("Published AI legal-practice Scholar record is not fully linked.");
+}
 const mobileScholar = fs.readFileSync("scholar/mobile-phone-privilege/index.html", "utf8");
 if (!mobileScholar.includes("10.5281/zenodo.23021388") || !mobileScholar.includes("https://zenodo.org/records/23021388")) {
   throw new Error("Published mobile-phone Scholar record is not fully linked.");
