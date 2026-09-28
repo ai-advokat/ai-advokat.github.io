@@ -12,6 +12,10 @@ on:
       - "scripts/**"
       - "wrangler*.jsonc"
       - "package.json"
+      - "index.html"
+      - "robots.txt"
+      - "sitemap.xml"
+      - ".well-known/security.txt"
       - ".assetsignore"
       - ".github/workflows/activation-safety.yml"
 
