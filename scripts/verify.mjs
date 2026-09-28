@@ -4,6 +4,7 @@ const required = [
   "index.html",
   "robots.txt",
   "sitemap.xml",
+  "sitemap.txt",
   ".well-known/security.txt",
   "src/index.js",
   "migrations/0001_initial_schema.sql",
@@ -28,6 +29,7 @@ const worker = fs.readFileSync("src/index.js", "utf8");
 const html = fs.readFileSync("index.html", "utf8");
 const robots = fs.readFileSync("robots.txt", "utf8");
 const sitemap = fs.readFileSync("sitemap.xml", "utf8");
+const sitemapTxt = fs.readFileSync("sitemap.txt", "utf8");
 const securityTxt = fs.readFileSync(".well-known/security.txt", "utf8");
 
 const prod = wrangler.d1_databases?.[0];
@@ -56,6 +58,9 @@ if (!robots.includes("Sitemap: https://ai-advokat.github.io/sitemap.xml")) {
 }
 if (!sitemap.includes("<loc>https://ai-advokat.github.io/</loc>")) {
   throw new Error("Sitemap must include the canonical portal URL.");
+}
+if (!sitemapTxt.split(/\r?\n/).includes("https://ai-advokat.github.io/")) {
+  throw new Error("Text sitemap must include the canonical portal URL.");
 }
 if (!securityTxt.includes("Canonical: https://ai-advokat.github.io/.well-known/security.txt")) {
   throw new Error("security.txt canonical URL is invalid.");
