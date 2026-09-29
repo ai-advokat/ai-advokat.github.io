@@ -14,7 +14,8 @@
     "test:legal-parser": "node --test scripts/test-legal-parser.mjs",
     "check:legal-parser": "node --check scripts/parse-mk-legal-text.mjs && node --check scripts/legal-ndjson-to-sql.mjs",
     "test:amendment-parser": "node --test scripts/test-mk-amendment-parser.mjs",
-    "check:amendment-parser": "node --check scripts/parse-mk-amendment-text.mjs"
+    "check:amendment-parser": "node --check scripts/parse-mk-amendment-text.mjs",
+    "check:amendment-importer": "node --check scripts/amendment-ndjson-to-sql.mjs && node --check scripts/extract-zro-amendment-act.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
