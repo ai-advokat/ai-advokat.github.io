@@ -55,3 +55,36 @@
 - do not advise concealment of later construction or alteration
 - do not treat an object as legal merely because it is registered in cadastre
 - if no current legalization route exists, explain the lawful alternatives instead of inventing one
+
+
+### 12. Fraudulent property records / лажни имотни листови и продажба на станови
+- independently verify cadastral parcel, apartment identifier and current registered owner
+- compare any presented property sheet against an official cadastral record obtained independently
+- check mortgages, liens, prohibitions, annotations, disputes and enforcement entries
+- verify seller identity, authority and legal capacity
+- verify powers of attorney independently where relevant
+- verify notarial deed/certification, date, reference and issuing notary
+- check for double sale, conflicting preliminary contracts or multiple buyers
+- trace deposits and purchase-price payments
+- distinguish ownership registration, possession, preliminary agreement and final sale contract
+- verify developer/investor title and authority to sell for new construction
+- preserve advertisements, messages, contracts, receipts and payment records
+- assess urgent interim measures if onward transfer is a risk
+- analyse fraud/forgery only after factual verification
+- assess civil remedies: nullity/annulment, restitution, damages, ownership/registration claims where legally applicable
+- Human Gate before criminal report, lawsuit, interim measure or settlement
+
+#### Red flags
+- refusal of independent cadastral verification
+- mismatch between presented and official property data
+- unexplained recent ownership transfer
+- undisclosed mortgage/prohibition
+- unusual or unverifiable power of attorney
+- pressure for urgent cash/deposit
+- multiple buyers or conflicting contracts
+- inconsistent notarial references
+
+#### Integrity rules
+- never help fabricate property records, signatures, powers of attorney or ownership evidence
+- never advise concealment of encumbrances or prior sales
+- never treat a scanned document as authentic solely because it looks official
