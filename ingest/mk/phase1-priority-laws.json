@@ -1,0 +1,96 @@
+{
+  "version": "2026-09-29",
+  "jurisdiction": "MK",
+  "purpose": "Phase-1 controlled ingest queue for article-level legal corpus",
+  "rules": {
+    "production_import": false,
+    "staging_only": true,
+    "one_article_one_chunk": true,
+    "require_official_source": true,
+    "require_version_chain_review": true,
+    "require_human_gate_before_production": true
+  },
+  "queue": [
+    {
+      "priority": 1,
+      "title": "Закон за работните односи",
+      "short_title": "ЗРО",
+      "legal_area": "labour",
+      "status": "VERSION_REVIEW_REQUIRED",
+      "source_fixture": "ingest/mk/real-source-fixtures/zro-ldbis-metadata.json",
+      "note": "Base text and recent LDBIS amendment chain identified; current article text not yet ingested."
+    },
+    {
+      "priority": 2,
+      "title": "Закон за облигационите односи",
+      "short_title": "ЗОО",
+      "legal_area": "civil_obligations",
+      "status": "SOURCE_DISCOVERY",
+      "note": "Resolve current consolidated/version chain before parsing."
+    },
+    {
+      "priority": 3,
+      "title": "Закон за наследувањето",
+      "short_title": null,
+      "legal_area": "inheritance",
+      "status": "SOURCE_DISCOVERY",
+      "note": "Required for probate and inheritance workflows."
+    },
+    {
+      "priority": 4,
+      "title": "Закон за сопственост и други стварни права",
+      "short_title": null,
+      "legal_area": "property",
+      "status": "SOURCE_DISCOVERY",
+      "note": "Required for property, possession, co-ownership and real-estate disputes."
+    },
+    {
+      "priority": 5,
+      "title": "Кривичен законик",
+      "short_title": "КЗ",
+      "legal_area": "criminal_substantive",
+      "status": "SOURCE_DISCOVERY",
+      "note": "Resolve current amendments and Constitutional Court effects."
+    },
+    {
+      "priority": 6,
+      "title": "Закон за кривичната постапка",
+      "short_title": "ЗКП",
+      "legal_area": "criminal_procedure",
+      "status": "SOURCE_DISCOVERY",
+      "note": "High priority for detention, evidence, plea and defence workflows."
+    },
+    {
+      "priority": 7,
+      "title": "Закон за извршување",
+      "short_title": null,
+      "legal_area": "enforcement",
+      "status": "SOURCE_DISCOVERY",
+      "note": "Pair with Ministry of Justice and Chamber of Enforcement Agents bylaws/tariffs."
+    },
+    {
+      "priority": 8,
+      "title": "Закон за нотаријатот",
+      "short_title": null,
+      "legal_area": "notarial",
+      "status": "SOURCE_DISCOVERY",
+      "note": "Required for inheritance, real-estate and authentication workflows."
+    },
+    {
+      "priority": 9,
+      "title": "Закон за трговските друштва",
+      "short_title": "ЗТД",
+      "legal_area": "company",
+      "status": "SOURCE_DISCOVERY",
+      "note": "Pair with Central Registry verification workflows."
+    },
+    {
+      "priority": 10,
+      "title": "Закон за општата управна постапка",
+      "short_title": "ЗОУП",
+      "legal_area": "administrative_procedure",
+      "status": "SOURCE_DISCOVERY",
+      "note": "Required across public-authority and administrative-silence workflows."
+    }
+  ]
+}
