@@ -123,7 +123,7 @@ function parseStructure(bodyLines) {
 }
 
 export function parseLegalText(text, meta) {
-  const required=["instrument_id","instrument_title","version_id","source_url","source_sha256"];
+  const required=["instrument_key","instrument_title","version_id","source_url","source_sha256"];
   for (const key of required) {
     if (meta[key]===undefined || meta[key]===null || meta[key]==="") {
       throw new Error("Missing required metadata: "+key);
@@ -156,7 +156,7 @@ export function parseLegalText(text, meta) {
     const {heading,paragraphs}=parseStructure(raw.bodyLines);
     const canonicalSeed=[
       "MK",
-      String(meta.instrument_id),
+      String(meta.instrument_key),
       String(meta.version_id),
       "ART",
       numberNorm,
@@ -166,7 +166,8 @@ export function parseLegalText(text, meta) {
 
     records.push({
       canonical_id,
-      instrument_id:Number(meta.instrument_id),
+      instrument_key:String(meta.instrument_key),
+      instrument_id:meta.instrument_id===undefined || meta.instrument_id===null ? null : Number(meta.instrument_id),
       instrument_title:String(meta.instrument_title),
       version_id:String(meta.version_id),
       instrument_version_id:meta.instrument_version_id ?? null,
@@ -194,7 +195,8 @@ export function parseLegalText(text, meta) {
 
   return {
     parser_version:PARSER_VERSION,
-    instrument_id:Number(meta.instrument_id),
+    instrument_key:String(meta.instrument_key),
+    instrument_id:meta.instrument_id===undefined || meta.instrument_id===null ? null : Number(meta.instrument_id),
     instrument_title:String(meta.instrument_title),
     version_id:String(meta.version_id),
     source_url:String(meta.source_url),
