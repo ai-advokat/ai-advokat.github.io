@@ -97,3 +97,50 @@ AI Advokat policy:
 - re-verify current status through Official Gazette/LDBIS;
 - re-verify court decisions through the originating court when possible;
 - label historical acts with the correct temporal validity.
+
+
+## ENER regulatory pipeline
+
+Classification: official proposal / consultation / regulatory-impact source.
+
+Public ENER functions to track:
+- proposed regulations;
+- latest proposed regulations;
+- consultation-expiry monitoring;
+- public comments;
+- most-commented regulations;
+- opinions on draft regulatory-impact-assessment reports;
+- documents;
+- initiatives;
+- forum material;
+- analyses.
+
+### AI Advokat use
+ENER feeds a PRE-LAW / CHANGE-DETECTION layer.
+
+Status model:
+- PROPOSED
+- CONSULTATION_OPEN
+- CONSULTATION_CLOSING
+- CONSULTATION_CLOSED
+- OPINION_PUBLISHED
+- ADOPTED_PENDING_PUBLICATION
+- PUBLISHED_IN_GAZETTE
+- ABANDONED_OR_SUPERSEDED
+
+Rules:
+- a proposal from ENER is NEVER treated as law in force;
+- no answer about current law may rely on a proposal as controlling authority;
+- when an ENER proposal later appears in the Official Gazette, link proposal history to the enacted instrument;
+- preserve ministry/issuer, consultation dates, comments/opinions and proposal versions;
+- use ENER to alert version engine that a law may soon change;
+- current-law status changes only after authoritative enactment/publication and effective-date verification.
+
+### Useful output
+For every current-law answer, where relevant:
+- CURRENT LAW
+- PENDING/PROPOSED CHANGE
+- consultation deadline
+- issuing ministry
+- official ENER link
+- publication/adoption status
