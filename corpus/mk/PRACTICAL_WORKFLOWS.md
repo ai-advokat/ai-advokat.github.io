@@ -88,3 +88,28 @@
 - never help fabricate property records, signatures, powers of attorney or ownership evidence
 - never advise concealment of encumbrances or prior sales
 - never treat a scanned document as authentic solely because it looks official
+
+
+### 13. Drug-related detention — Albanian-language access / притвор за дрога со албански јазичен пристап
+This is not an ethnicity-based offence category. The legal analysis is identical regardless of ethnicity. The workflow adds language-access and anti-discrimination safeguards where relevant.
+
+- immediate right-to-counsel workflow
+- identify interpreter / translation needs at intake
+- Albanian-language explanation of detention rights and procedural steps
+- Albanian-language intake form and client summary
+- verify detention decision, legal grounds, deadlines and review route
+- verify search, seizure, expert examination and chain-of-custody documentation
+- distinguish possession, trafficking, facilitation and other legal qualifications only from verified facts and current law
+- record whether statements were taken with adequate language access
+- medical-safety and medication needs
+- family/consular notification where legally applicable
+- assess unequal-treatment or discrimination claims only from evidence, never from ethnicity alone
+- draft challenge / appeal only after current-law verification
+- Human Gate before filing or legal conclusion
+
+#### Safety boundary
+- lawful defence and procedural-rights support only
+- no concealment or destruction of drugs/evidence
+- no witness coordination or intimidation
+- no false statements
+- no advice for evading police, prosecution or court
