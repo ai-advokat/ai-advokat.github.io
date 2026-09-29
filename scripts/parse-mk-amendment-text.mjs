@@ -17,7 +17,10 @@ function sha256(value) {
 const ACT_ARTICLE_RE=/^\s*Член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s*\.?\s*$/imu;
 const TARGET_RE=/Во\s+член(?:от)?\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)/giu;
 const AFTER_RE=/По\s+член(?:от)?\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+додава/giu;
-const HEADING_TARGET_RE=/Насловот\s+на\s+член(?:от)?\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)/giu;\nconst DIRECT_CHANGE_RE=/Член(?:от)?\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+менува/giu;\nconst INSERTED_ARTICLE_RE=/нов(?:\s+наслов\s+и\s+нов)?\s+член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)/giu;\nconst DELETE_RE=/член(?:от)?\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+брише/giu;
+const HEADING_TARGET_RE=/Насловот\s+на\s+член(?:от)?\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)/giu;
+const DIRECT_CHANGE_RE=/Член(?:от)?\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+менува/giu;
+const INSERTED_ARTICLE_RE=/нов(?:\s+наслов\s+и\s+нов)?\s+член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)/giu;
+const DELETE_RE=/член(?:от)?\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+брише/giu;
 
 function normalizeArticleNumber(raw="") {
   return compact(raw).toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"");
