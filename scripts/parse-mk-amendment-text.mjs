@@ -55,7 +55,7 @@ function classifyEvent(text) {
 }
 
 export function parseAmendmentText(text,meta) {
-  const required=["instrument_id","instrument_title","amendment_title","source_url","source_sha256"];
+  const required=["instrument_key","instrument_title","amendment_title","source_url","source_sha256"];
   for(const key of required){
     if(meta[key]===undefined || meta[key]===null || meta[key]==="") throw new Error("Missing required metadata: "+key);
   }
@@ -80,8 +80,9 @@ export function parseAmendmentText(text,meta) {
     if(!targets.size){
       warnings.push(`No target article detected in amendment act article ${art.amendment_article_number}`);
       events.push({
-        event_id:"MKAM:"+sha256([meta.source_sha256,art.amendment_article_number,"unresolved"].join(":")).slice(0,32),
-        instrument_id:Number(meta.instrument_id),
+        event_id:"MKAM:"+sha256([meta.instrument_key,meta.source_sha256,art.amendment_article_number,"unresolved"].join(":")).slice(0,32),
+        instrument_key:String(meta.instrument_key),
+        instrument_id:meta.instrument_id===undefined || meta.instrument_id===null ? null : Number(meta.instrument_id),
         instrument_title:String(meta.instrument_title),
         amendment_title:String(meta.amendment_title),
         amendment_article_number:art.amendment_article_number,
@@ -102,8 +103,9 @@ export function parseAmendmentText(text,meta) {
 
     for(const target of targets){
       events.push({
-        event_id:"MKAM:"+sha256([meta.source_sha256,art.amendment_article_number,target].join(":")).slice(0,32),
-        instrument_id:Number(meta.instrument_id),
+        event_id:"MKAM:"+sha256([meta.instrument_key,meta.source_sha256,art.amendment_article_number,target].join(":")).slice(0,32),
+        instrument_key:String(meta.instrument_key),
+        instrument_id:meta.instrument_id===undefined || meta.instrument_id===null ? null : Number(meta.instrument_id),
         instrument_title:String(meta.instrument_title),
         amendment_title:String(meta.amendment_title),
         amendment_article_number:art.amendment_article_number,
@@ -124,7 +126,8 @@ export function parseAmendmentText(text,meta) {
 
   return {
     parser_version:AMENDMENT_PARSER_VERSION,
-    instrument_id:Number(meta.instrument_id),
+    instrument_key:String(meta.instrument_key),
+    instrument_id:meta.instrument_id===undefined || meta.instrument_id===null ? null : Number(meta.instrument_id),
     amendment_title:String(meta.amendment_title),
     source_url:String(meta.source_url),
     source_sha256:String(meta.source_sha256).toLowerCase(),
