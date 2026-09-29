@@ -1,0 +1,89 @@
+name: Paragraf migration staging gate
+
+on:
+  push:
+    branches:
+      - paragraf-migration-phase-a-29sep2026
+    paths:
+      - "migrations/0004_paragraf_import_landing.sql"
+      - "migrations/0005_paragraf_corpus_gate.sql"
+      - "migrations/0006_official_legal_source_registry.sql"
+      - "migrations/0007_publication_zenodo_alignment.sql"
+      - "migrations/0008_kocani_wpa_journal_issue1.sql"
+      - "scripts/validate-paragraf-import.mjs"
+      - "migration/paragraf/**"
+      - ".github/workflows/paragraf-migration-staging.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paragraf-migration-staging
+  cancel-in-progress: false
+
+jobs:
+  staging-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Fail closed if Cloudflare secrets are missing
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Verify repository and import validator
+        run: |
+          node --check scripts/validate-paragraf-import.mjs
+          node scripts/validate-paragraf-import.mjs migration/paragraf/public-manifest.sample.jsonl
+          npm run verify
+
+      - name: Verify staging target only
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(!d || d.binding!=="PREVIEW_DB" || d.database_name!=="ai-advokat-db-staging" || d.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") {
+            throw new Error("Unexpected staging D1 target");
+          }
+          NODE
+
+      - name: Apply migration to staging D1 only
+        run: npm run db:migrate:staging
+
+      - name: Verify migration v4 and empty landing zone
+        shell: bash
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT version, description FROM schema_migrations WHERE version IN ('4','5','6','7','8') ORDER BY version;"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "PRAGMA table_info(legacy_documents);"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS batch_count FROM legacy_import_batches;"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS document_count FROM legacy_documents;"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS private_documents FROM legacy_documents WHERE visibility='private';"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS official_source_count FROM sources WHERE source_status='official';"
+
+      - name: Verify existing five publications remain intact
+        shell: bash
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS publication_count FROM publications WHERE author_name='Zoran Stojankich';"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS published_publication_count FROM publications WHERE author_name='Zoran Stojankich' AND publication_status='published';"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT title, venue, publication_status, doi, canonical_url, human_review_status FROM publications WHERE author_name='Zoran Stojankich' ORDER BY id;"
+
+      - name: Result
+        run: |
+          echo "PARAGRAF STAGING LANDING ZONE: PASS"
+          echo "Production D1 was not targeted."
+          echo "No bot activation, redirect, or private-data import occurred."

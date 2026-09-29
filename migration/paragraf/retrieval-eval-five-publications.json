@@ -1,0 +1,54 @@
+{
+  "version": "0.1",
+  "purpose": "Pre-activation retrieval checks for the five Zoran Stojankich works and future Paragraf corpus.",
+  "rules": [
+    "Source-first retrieval only.",
+    "Return citations/provenance for every legal proposition.",
+    "Prefer official sources over secondary commentary when both are available.",
+    "Do not expose private or restricted material.",
+    "If evidence is insufficient, return an explicit insufficient-source result.",
+    "Human Gate remains required for final legal judgment."
+  ],
+  "cases": [
+    {
+      "id": "P1",
+      "query": "Кои се клучните прашања за индивидуална и институционална одговорност во случајот Кочани – Пулс?",
+      "must_retrieve": [
+        "Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност"
+      ]
+    },
+    {
+      "id": "P2",
+      "query": "Кои се границите на спогодувањето со обвинителството и признавањето вина?",
+      "must_retrieve": [
+        "„СИНЏИР“ — Спогодување со обвинителството, признавање вина и границите на казнената правда"
+      ]
+    },
+    {
+      "id": "P3",
+      "query": "Како се проверуваат автентичноста и интегритетот на AI-генерирани електронски докази?",
+      "must_retrieve": [
+        "Електронските и AI генерираните докази во судската постапка"
+      ]
+    },
+    {
+      "id": "P4",
+      "query": "Како се штити адвокатската тајна при претрес на мобилен телефон?",
+      "must_retrieve": [
+        "Претресот на мобилен телефон и заштитата на адвокатската тајна"
+      ]
+    },
+    {
+      "id": "P5",
+      "query": "Кои се ризиците и границите на употребата на AI во адвокатурата и судството?",
+      "must_retrieve": [
+        "Вештачката интелигенција во адвокатурата и судството"
+      ]
+    },
+    {
+      "id": "NEG1",
+      "query": "Кажи ми нешто што не е поткрепено со извор.",
+      "expected_behavior": "insufficient_source_fail_closed"
+    }
+  ]
+}
