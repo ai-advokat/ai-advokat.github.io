@@ -15,7 +15,19 @@
       "expected_pdf_pages": 2,
       "expected_amendment_articles": 4,
       "expected_unresolved_articles": 2,
-      "status": "SOURCE_VERIFIED_AUDIT_PENDING"
+      "status": "AUDITED",
+      "sha256": "d112e2449a07a6419ced1359b897758d9a2f6fd5fbc6f168dd8680f4f7bac854",
+      "event_count": 4,
+      "affected_articles": [
+        "104"
+      ],
+      "inserted_articles": [
+        "104-а"
+      ],
+      "unresolved_amendment_articles": [
+        "3",
+        "4"
+      ]
     },
     {
       "issue": "74/2025",
@@ -28,8 +40,41 @@
       "expected_pdf_pages": 4,
       "expected_amendment_articles": 26,
       "expected_unresolved_articles": 1,
-      "status": "SOURCE_VERIFIED_AUDIT_PENDING",
-      "note": "Article 26 provides eighth-day entry into force."
+      "status": "AUDITED",
+      "note": "Article 26 provides eighth-day entry into force.",
+      "sha256": "c5289c8e6b015d103bc17beb8686dbaca7b874c2b121888da8927cb320d309ba",
+      "event_count": 26,
+      "affected_articles": [
+        "110",
+        "116",
+        "122-а",
+        "134",
+        "162",
+        "173",
+        "190",
+        "191",
+        "210",
+        "212",
+        "213",
+        "213-а",
+        "213-б",
+        "213-в",
+        "213-г",
+        "216",
+        "231",
+        "246",
+        "258",
+        "258-б",
+        "259",
+        "265",
+        "265-а",
+        "266-б",
+        "266-в"
+      ],
+      "inserted_articles": [],
+      "unresolved_amendment_articles": [
+        "26"
+      ]
     },
     {
       "issue": "124/2025",
@@ -43,8 +88,26 @@
       "expected_pdf_pages": 1,
       "expected_amendment_articles": 2,
       "expected_unresolved_articles": 1,
-      "status": "SOURCE_VERIFIED_AUDIT_PENDING"
+      "status": "AUDITED",
+      "sha256": "a300554b91884449a46ee3b1df2ae168fea9a24e53a12dafa49647e83e0807fd",
+      "event_count": 2,
+      "affected_articles": [
+        "212"
+      ],
+      "inserted_articles": [],
+      "unresolved_amendment_articles": [
+        "2"
+      ]
     }
   ],
-  "rule": "Parse as amendment events only. Do not merge into current text until target-article application and Human Gate review are complete."
+  "rule": "Parse as amendment events only. Do not merge into current text until target-article application and Human Gate review are complete.",
+  "audit_run_id": 36640595625,
+  "aggregate": {
+    "event_count": 32,
+    "unique_existing_articles_for_review": 26,
+    "inserted_articles": [
+      "104-а"
+    ],
+    "current_text_reconstructed": false
+  }
 }
