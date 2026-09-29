@@ -29,7 +29,23 @@
     "MCP client",
     "OAuth 2.1/API-key access",
     "multi-jurisdiction support",
-    "security/access-control claims"
+    "security/access-control claims",
+    "primary-source-only answer preference",
+    "current consolidated text as research starting point",
+    "visible amendment history",
+    "multi-jurisdiction comparison in one answer",
+    "EU law alongside national law",
+    "user-language query with traceable enacted source",
+    "source-class separation between legislation, case law and web"
   ],
-  "ai_advokat_rule": "Implement clean-room equivalents from primary sources; never ingest proprietary Factum corpus."
+  "ai_advokat_rule": "Implement clean-room equivalents from primary sources; never ingest proprietary Factum corpus.",
+  "public_claimed_jurisdictions": 28,
+  "ai_advokat_acceptance_criteria": [
+    "controlling rule grounded in verified primary article when available",
+    "current article version preferred over historical text",
+    "amendment lineage visible",
+    "jurisdiction-specific citations in comparative answers",
+    "EU and national sources labelled separately",
+    "authoritative source language remains identifiable"
+  ]
 }
