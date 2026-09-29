@@ -38,3 +38,22 @@ One authoritative source package is still required for non-public content:
 - database dump + uploads/storage archive.
 
 Public web crawling alone cannot recover authenticated LexAI corpus, user accounts, private matters, uploaded files or server-side configuration.
+
+
+## Verified public surface (2026-09-29)
+Read-only public-web inventory confirms:
+- MK landing page redirects to /mk.
+- LexAI legal assistant for Macedonian law.
+- Legal document generator with Word/PDF export claims.
+- Outcome/risk predictor.
+- File/document upload is described publicly.
+- Public product tiers: FREE, BASIC, PRO, Enterprise.
+- PRO advertises a "Cases" feature and web search.
+- Separate authentication/chat surface at chat.paragraf.mk.
+- Public sections include use cases, security, pricing, blog, FAQ, documentation, about, terms, privacy and careers.
+- The public site claims GDPR alignment, SSL/TLS and EU hosting.
+
+These are inventory observations only. They do not prove backend implementation details, corpus completeness, security controls, or recoverability.
+
+## Read-only source limitation
+The public chat surface was not retrievable through the read-only web snapshot. No attempt was made to authenticate, bypass access controls, enumerate users, or inspect private endpoints.
