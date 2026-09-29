@@ -6,6 +6,7 @@ on:
       - paragraf-migration-phase-a-29sep2026
     paths:
       - "migrations/0004_paragraf_import_landing.sql"
+      - "migrations/0005_paragraf_corpus_gate.sql"
       - "scripts/validate-paragraf-import.mjs"
       - "migration/paragraf/**"
       - ".github/workflows/paragraf-migration-staging.yml"
@@ -64,7 +65,8 @@ jobs:
       - name: Verify migration v4 and empty landing zone
         shell: bash
         run: |
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT version, description FROM schema_migrations WHERE version='4';"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT version, description FROM schema_migrations WHERE version IN ('4','5') ORDER BY version;"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "PRAGMA table_info(legacy_documents);"
           npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS batch_count FROM legacy_import_batches;"
           npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS document_count FROM legacy_documents;"
           npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS private_documents FROM legacy_documents WHERE visibility='private';"
