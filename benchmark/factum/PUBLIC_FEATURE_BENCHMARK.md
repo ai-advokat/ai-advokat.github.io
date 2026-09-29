@@ -155,3 +155,78 @@ AI Advokat target:
 
 ## Competitive principle
 AI Advokat should not clone Factum. It should independently implement equivalent problem-solving capabilities using authoritative source provenance, Human Gate governance and transparent version history.
+
+
+## Additional public signals captured on 2026-09-29
+
+Factum publicly describes the following additional product principles:
+
+### Primary-source answer rule
+- when a controlling legal article exists, the answer should come from the primary legal text rather than general model memory;
+- each legal proposition should resolve to the supporting article;
+- legislation, case law and web evidence should remain distinguishable source classes.
+
+**AI Advokat acceptance criterion:**  
+If a verified current article exists for a proposition, the system must ground the answer in that article and must not rely on uncited model memory for the controlling rule.
+
+### Current consolidated text as starting point
+- current consolidated text is presented as the starting point for research;
+- amendments are incorporated into the version in force;
+- the user can inspect the amendment history.
+
+**AI Advokat acceptance criterion:**  
+Research starts from the verified current article version, with full amendment lineage available separately. Historical versions remain accessible by date.
+
+### Visible amendment history
+- public product text emphasizes visible amendment history.
+
+**AI Advokat acceptance criterion:**  
+Every current article should expose:
+- source enactment;
+- amendment events;
+- effective/application dates;
+- Constitutional Court effects;
+- predecessor/successor version links;
+- current verification status.
+
+### Multi-jurisdiction comparison
+- one or multiple jurisdictions can be selected;
+- multiple jurisdictions can be compared in one answer;
+- EU law can be read alongside national law.
+
+**AI Advokat acceptance criterion:**  
+Comparative answers must return parallel jurisdiction blocks, each with:
+- jurisdiction;
+- controlling instrument;
+- article;
+- effective version/date;
+- official source;
+- short comparison note.
+
+No cross-jurisdiction rule may be silently transplanted into North Macedonian law.
+
+### User-language interface
+- users can ask in their own language while the cited article remains traceable to the enacted text.
+
+**AI Advokat acceptance criterion:**  
+The explanation may be translated/localized, but the authoritative source text and language must remain identifiable.
+
+### Jurisdiction scale benchmark
+Factum publicly states coverage of 28 jurisdictions.
+
+This is a **coverage benchmark**, not a corpus source. AI Advokat should expand in phases:
+1. North Macedonia;
+2. Balkans / former Yugoslav jurisdictions;
+3. EU + ECHR;
+4. common-law jurisdictions;
+5. wider international/comparative law.
+
+## Retrieval acceptance tests inspired by the public benchmark
+
+The legislation engine should fail evaluation if:
+- a current answer cites only a historical version when a verified current version exists;
+- an article citation does not open to the supporting article;
+- amendment history is unavailable for a changed article;
+- national law and EU law are merged without source labels;
+- a comparative answer omits jurisdiction-specific sources;
+- a controlling rule is produced from general model memory despite an available verified primary source.
