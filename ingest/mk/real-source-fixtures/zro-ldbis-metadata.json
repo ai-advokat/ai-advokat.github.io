@@ -43,5 +43,38 @@
   "current_text_status": "VERSION_REVIEW_REQUIRED",
   "article_text_ingested": false,
   "rule": "Do not mark current_consolidated until all later amendments and Constitutional Court effects are resolved article-by-article.",
-  "verified_on": "2026-09-29"
+  "verified_on": "2026-09-30",
+  "ldbis_chain_verified_from_latest_record": {
+    "latest_record_url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=70756",
+    "latest_record_version": "Текст измена/дополна",
+    "latest_record_gazette_issue": "124/2025",
+    "latest_record_publication_date": "2025-06-19",
+    "latest_record_effective_date": "2025-06-19",
+    "latest_record_application_date": "2025-06-19",
+    "active_signal": true,
+    "linked_recent_amendments": [
+      {
+        "gazette_issue": "111/2023",
+        "publication_date": "2023-05-30",
+        "kind": "amend_and_supplement"
+      },
+      {
+        "gazette_issue": "39/2025",
+        "publication_date": "2025-02-20",
+        "kind": "amend_and_supplement"
+      },
+      {
+        "gazette_issue": "74/2025",
+        "publication_date": "2025-04-08",
+        "kind": "amend"
+      },
+      {
+        "gazette_issue": "124/2025",
+        "publication_date": "2025-06-19",
+        "kind": "amend"
+      }
+    ],
+    "constitutional_court_effects_present": true,
+    "note": "The latest LDBIS record links the base act, amendment chain and multiple Constitutional Court effects. These must be resolved article-by-article before marking the 2026 text current."
+  }
 }
