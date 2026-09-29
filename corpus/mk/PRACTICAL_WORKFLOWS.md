@@ -113,3 +113,98 @@ This is not an ethnicity-based offence category. The legal analysis is identical
 - no witness coordination or intimidation
 - no false statements
 - no advice for evading police, prosecution or court
+
+
+### 14. Municipality - City of Skopje - Cadastre - Ministry of Transport
+Working label: institutional urban/property triangle (operationally a four-node chain).
+
+Use cases:
+- legalization / treatment of unauthorized construction
+- urban-plan status and plan extracts
+- building permits and approvals
+- cadastral registration and correction
+- ownership / parcel / apartment identification
+- infrastructure and construction-land issues
+- expropriation and public-interest procedures
+- conflict between planning documentation and cadastral state
+- appeal / administrative-silence / competence routing
+
+#### Node A — Municipality
+- identify the territorially competent municipality
+- verify DUP/local planning documentation and municipal acts
+- verify local building/urbanism file and submitted applications
+- obtain decisions, notices, supplementation requests and proof of delivery
+- do not assume municipal competence where the law assigns the matter to City/Ministry
+
+#### Node B — City of Skopje
+- GUP / city-level planning context
+- planning and spatial-development competences
+- construction-land and infrastructure context where applicable
+- expropriation / city property issues where applicable
+- city-level approvals/permits only where legally competent
+- preserve the exact city act, date, file number and legal basis
+
+#### Node C — Agency for Real Estate Cadastre
+- independently verify cadastral municipality, parcel and special part of building
+- current registered right-holder
+- property sheet / encumbrances / annotations
+- cadastral map and survey data where publicly or lawfully available
+- registration history where legally obtainable
+- distinguish cadastral registration from legality of construction
+- record discrepancies between planning/building documentation and cadastral record
+
+#### Node D — Ministry of Transport
+- verify national urban-planning / construction legal framework
+- state-level planning and urbanism materials
+- ministry regulations, rulebooks and official guidance
+- identify state-significance planning/building matters where applicable
+- use e-urbanism / ministry publication trail where legally available
+- do not route ordinary municipal matters to the Ministry without a verified legal basis
+
+#### Cross-institution case graph
+For every case create a four-column matrix:
+1. institution
+2. document / act / file number
+3. legal effect
+4. next required action / deadline
+
+Also record:
+- who currently holds the file;
+- whether another authority must provide consent/data;
+- date of every submission and receipt;
+- administrative silence;
+- contradictory records;
+- appeal/remedy path;
+- official-source link;
+- Human Gate status.
+
+#### Conflict rules
+- cadastral registration does not by itself prove a building is legally constructed;
+- an urban plan does not by itself prove ownership;
+- municipal approval does not replace cadastral registration;
+- cadastral data do not replace planning/building approvals;
+- the controlling authority and remedy must be determined from current law, not from institutional habit.
+
+#### Draft outputs
+- institutional routing memo
+- municipality request
+- City of Skopje request
+- Cadastre correction / registration request
+- Ministry request / petition
+- request for file access / copy
+- supplementation response
+- administrative-silence reminder
+- appeal / objection draft
+- four-institution chronology
+- discrepancy matrix
+- client document checklist
+
+#### Human Gate
+Before filing, verify:
+- current competent authority;
+- current law and bylaw;
+- exact parcel/object identity;
+- current cadastral status;
+- applicable urban plan;
+- delivery/service date;
+- remedy and deadline.
