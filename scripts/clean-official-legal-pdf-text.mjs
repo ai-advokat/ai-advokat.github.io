@@ -11,6 +11,7 @@ const raw=fs.readFileSync(inputPath,"utf8").normalize("NFKC").replace(/\r\n?/g,"
 const lines=raw.split("\n");
 const removed=[];
 const kept=[];
+let appendixStartLine=null;
 
 const noisePatterns=[
   /^\s*Службен весник на Република Северна Македонија\s+Редакциски пречистени текстови\s*$/iu,
@@ -20,6 +21,11 @@ const noisePatterns=[
 
 for (let i=0;i<lines.length;i++) {
   const line=lines[i].replace(/\f/g,"").trimEnd();
+
+  if (/ОДРЕДБИ\s+ОД\s+ЗАКОНИ\s+ЗА\s+ИЗМЕНУВАЊЕ/iu.test(line)) {
+    appendixStartLine=i+1;
+    break;
+  }
   if (!line.trim()) {
     kept.push("");
     continue;
@@ -59,10 +65,14 @@ const report={
   raw_line_count:lines.length,
   cleaned_line_count:clean.split("\n").length,
   removed_noise_line_count:removed.length,
+  appendix_start_line:appendixStartLine,
+  appendix_truncated:appendixStartLine!==null,
   article_header_count:articleHeaders.length,
   duplicate_article_headers:duplicates,
   suspicious_markers:suspicious,
-  status: duplicates.length ? "FAIL_DUPLICATE_ARTICLES" : "EXTRACTION_REVIEW_REQUIRED"
+  status: duplicates.length
+    ? "FAIL_DUPLICATE_ARTICLES"
+    : (appendixStartLine===null ? "REVIEW_NO_APPENDIX_BOUNDARY" : "EXTRACTION_REVIEW_REQUIRED")
 };
 
 fs.writeFileSync(reportPath,JSON.stringify(report,null,2)+"\n","utf8");
