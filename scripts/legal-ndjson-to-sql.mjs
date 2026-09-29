@@ -28,7 +28,6 @@ const instrumentIdExpr=(key,fallbackId=null)=>{
 const runKey=`legal:${manifest.instrument_key}:${manifest.version_id}:${manifest.source_sha256.slice(0,16)}`;
 const sql=[];
 sql.push("PRAGMA foreign_keys=ON;");
-sql.push("BEGIN TRANSACTION;");
 sql.push(`INSERT OR REPLACE INTO corpus_ingest_runs
 (run_key,source_url,source_sha256,instrument_id,input_kind,parser_version,article_count,warning_count,status,notes)
 VALUES (${sqlString(runKey)},${sqlString(manifest.source_url)},${sqlString(manifest.source_sha256)},${instrumentIdExpr(manifest.instrument_key,manifest.instrument_id)},'article_ndjson',${sqlString(manifest.parser_version)},${articles.length},${Number(manifest.warning_count||0)},'staged',${sqlString((manifest.warnings||[]).join(" | "))});`);
@@ -58,6 +57,5 @@ VALUES ((SELECT id FROM legal_article_paragraphs WHERE article_version_id=(SELEC
   }
 }
 sql.push(`UPDATE corpus_ingest_runs SET status='validated' WHERE run_key=${sqlString(runKey)};`);
-sql.push("COMMIT;");
 fs.writeFileSync(outSqlPath,sql.join("\n")+"\n","utf8");
 console.error(`Generated SQL for ${articles.length} articles -> ${outSqlPath}`);
