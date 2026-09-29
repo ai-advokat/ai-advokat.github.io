@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS legacy_documents (
 CREATE INDEX IF NOT EXISTS idx_legacy_documents_title ON legacy_documents(title);
 CREATE INDEX IF NOT EXISTS idx_legacy_documents_type ON legacy_documents(document_type);
 CREATE INDEX IF NOT EXISTS idx_legacy_documents_visibility ON legacy_documents(visibility);
+CREATE INDEX IF NOT EXISTS idx_legacy_documents_knowledge ON legacy_documents(knowledge_eligible, corpus_role);
 CREATE INDEX IF NOT EXISTS idx_legacy_documents_review ON legacy_documents(provenance_status, human_review_status);
 
 INSERT OR IGNORE INTO schema_migrations(version, description)
