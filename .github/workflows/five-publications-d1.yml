@@ -1,0 +1,86 @@
+name: AI Advokat five-publication D1 migration
+
+on:
+  push:
+    branches:
+      - add-five-publications-d1-29sep2026
+    paths:
+      - "migrations/0003_five_publications.sql"
+      - ".github/workflows/five-publications-d1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-five-publications-d1
+  cancel-in-progress: false
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Fail closed if secrets are missing
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+      - name: Verify repository safety invariants
+        run: |
+          node --check src/index.js
+          npm run verify
+      - name: Verify staging target
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(!d || d.binding!=="PREVIEW_DB" || d.database_name!=="ai-advokat-db-staging" || d.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") throw new Error("Unexpected staging target");
+          NODE
+      - name: Apply staging migrations
+        run: npm run db:migrate:staging
+      - name: Verify exact five records in staging
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT title, publication_status, doi, human_review_status FROM publications WHERE author_name='Zoran Stojankich' ORDER BY id;"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS exact_five FROM publications WHERE author_name='Zoran Stojankich' AND title IN ('Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност','„СИНЏИР“ — Спогодување со обвинителството, признавање вина и границите на казнената правда','Електронските и AI генерираните докази во судската постапка','Претресот на мобилен телефон и заштитата на адвокатската тајна','Вештачката интелигенција во адвокатурата и судството');"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS private_draft_urls FROM publications WHERE canonical_url LIKE '%zenodo.org/uploads/%';"
+
+  production:
+    needs: staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Verify exact production target
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production target");
+          NODE
+      - name: Production preflight
+        run: |
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS publication_count_before FROM publications;"
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc
+      - name: Apply idempotent migrations to production
+        run: npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc
+      - name: Verify five records and safety constraints in production
+        run: |
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT title, publication_status, doi, human_review_status FROM publications WHERE author_name='Zoran Stojankich' ORDER BY id;"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS exact_five FROM publications WHERE author_name='Zoran Stojankich' AND title IN ('Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност','„СИНЏИР“ — Спогодување со обвинителството, признавање вина и границите на казнената правда','Електронските и AI генерираните докази во судската постапка','Претресот на мобилен телефон и заштитата на адвокатската тајна','Вештачката интелигенција во адвокатурата и судството');"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS future_drafts_without_doi FROM publications WHERE author_name='Zoran Stojankich' AND publication_status='future_draft' AND doi IS NULL;"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS private_draft_urls FROM publications WHERE canonical_url LIKE '%zenodo.org/uploads/%';"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT version, applied_at, description FROM schema_migrations WHERE version='3';"
