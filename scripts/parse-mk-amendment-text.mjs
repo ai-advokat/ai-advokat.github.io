@@ -15,9 +15,9 @@ function sha256(value) {
 }
 
 const ACT_ARTICLE_RE=/^\s*Член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s*\.?\s*$/imu;
-const TARGET_RE=/Во\s+член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)/giu;
-const AFTER_RE=/По\s+член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+додава/giu;
-const DELETE_RE=/член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+брише/giu;
+const TARGET_RE=/Во\s+член(?:от)?\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)/giu;
+const AFTER_RE=/По\s+член(?:от)?\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+додава/giu;
+const INSERTED_ARTICLE_RE=/нов(?:\s+наслов\s+и\s+нов)?\s+член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)/giu;\nconst DELETE_RE=/член(?:от)?\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+брише/giu;
 
 function normalizeArticleNumber(raw="") {
   return compact(raw).toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"");
@@ -26,14 +26,22 @@ function normalizeArticleNumber(raw="") {
 function splitAmendmentActArticles(text) {
   const lines=norm(text).split("\n");
   const starts=[];
+  let expected=1;
   for(let i=0;i<lines.length;i++){
     const m=lines[i].match(ACT_ARTICLE_RE);
-    if(m) starts.push({line:i,number:m[1]});
+    if(!m) continue;
+    const raw=compact(m[1]);
+    if(!/^\d+$/u.test(raw)) continue;
+    const n=Number(raw);
+    if(n===expected){
+      starts.push({line:i,number:raw});
+      expected++;
+    }
   }
-  if(!starts.length) throw new Error("No amendment-act article headers detected.");
-  return starts.map((s,idx)=>({
-    amendment_article_number:compact(s.number),
-    text:compact(lines.slice(s.line+1, idx+1<starts.length?starts[idx+1].line:lines.length).join("\n"))
+  if(!starts.length || starts[0].number!=="1") throw new Error("No sequential amendment-act article headers detected.");
+  return starts.map((start,idx)=>({
+    amendment_article_number:start.number,
+    text:compact(lines.slice(start.line+1, idx+1<starts.length?starts[idx+1].line:lines.length).join("\n"))
   }));
 }
 
@@ -61,6 +69,9 @@ export function parseAmendmentText(text,meta) {
     if(!art.text) throw new Error("Empty amendment-act article body: "+art.amendment_article_number);
 
     const targets=new Set();
+    const insertedArticles=new Set();
+    INSERTED_ARTICLE_RE.lastIndex=0;
+    for(const m of art.text.matchAll(INSERTED_ARTICLE_RE)) insertedArticles.add(normalizeArticleNumber(m[1]));
     for(const re of [TARGET_RE,AFTER_RE,DELETE_RE]){
       re.lastIndex=0;
       for(const m of art.text.matchAll(re)) targets.add(normalizeArticleNumber(m[1]));
@@ -75,6 +86,7 @@ export function parseAmendmentText(text,meta) {
         amendment_title:String(meta.amendment_title),
         amendment_article_number:art.amendment_article_number,
         target_article_number:null,
+        inserted_article_numbers:[...insertedArticles],
         event_type:"other",
         event_text:art.text,
         source_issue_number:meta.source_issue_number||null,
@@ -96,6 +108,7 @@ export function parseAmendmentText(text,meta) {
         amendment_title:String(meta.amendment_title),
         amendment_article_number:art.amendment_article_number,
         target_article_number:target,
+        inserted_article_numbers:[...insertedArticles],
         event_type:classifyEvent(art.text),
         event_text:art.text,
         source_issue_number:meta.source_issue_number||null,
