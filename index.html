@@ -406,6 +406,10 @@
 
     .card h3{margin:8px 0 9px}
     .card p{color:var(--muted);margin:0}
+    .actionCard{cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+    .actionCard:hover,.actionCard:focus-visible{transform:translateY(-2px);border-color:var(--gold);box-shadow:0 14px 32px rgba(12,32,56,.10);outline:none}
+    .cardAction{margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.82rem;font-weight:750}
+    .cardState{padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ok)}
 
     .icon{
       width:42px;
@@ -976,12 +980,13 @@
 
       <div class="grid3">
 
-        <article class="card">
+        <article class="card actionCard" role="button" tabindex="0" id="lawsCard" aria-label="Отвори регистар на закони и прописи">
           <div class="icon">§</div>
           <h3 data-i18n="cardLaws">Закони и прописи</h3>
           <p data-i18n="cardLawsText">
             Регистар со важечки текст, изменувања, датум на важност и врска до официјален извор.
           </p>
+          <div class="cardAction"><span>Отвори регистар →</span><span class="cardState">LIVE</span></div>
         </article>
 
         <article class="card">
@@ -1851,6 +1856,30 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
   $("#searchBtn").addEventListener("click",renderResults);
   $("#globalSearch").addEventListener("keydown",e=>{ if(e.key==="Enter") renderResults(); });
+
+  async function openLawsRegistry(){
+    $("#typeFilter").value="law";
+    $("#statusFilter").value="all";
+    const q=$("#globalSearch").value.trim() || (lang==="mk" ? "закон" : "law");
+    $("#globalSearch").value=q;
+    document.querySelector(".searchPanel").scrollIntoView({behavior:"smooth",block:"center"});
+    $("#searchResults").innerHTML=`<div class="resultItem">${lang==="mk"?"Се вчитува регистарот на закони од проверениот D1 корпус...":"Loading the legislation registry from the verified D1 corpus..."}</div>`;
+    try{
+      const response=await fetch("/api/search?q="+encodeURIComponent(q)+"&type=law&limit=12",{headers:{accept:"application/json"}});
+      const data=await response.json();
+      if(!response.ok || !data.ok) throw new Error(data?.error || "search_failed");
+      $("#searchResults").innerHTML=data.results?.length
+        ? data.results.map(x=>`<div class="resultItem"><div class="resultTop"><div><h4>${x.title}</h4><div class="meta">${[x.meta,x.date,x.jurisdiction].filter(Boolean).join(" · ")}</div></div><span class="badge ${x.status==="official"?"ok":""}">${statusLabel(x.status)}</span></div><p>${x.snippet||""}</p>${x.url?`<p><a href="${x.url}" target="_blank" rel="noopener noreferrer">${lang==="mk"?"Отвори официјален извор":"Open official source"} ↗</a></p>`:""}</div>`).join("")
+        : `<div class="resultItem">${lang==="mk"?"Нема пронајден проверен пропис за ова пребарување.":"No verified legislation found for this query."}</div>`;
+    }catch{
+      $("#searchResults").innerHTML=`<div class="resultItem">${lang==="mk"?"Регистарот моментално не е достапен. Системот останува затворен наместо да прикаже непроверени податоци.":"The registry is temporarily unavailable. The system remains fail-closed rather than showing unverified data."}</div>`;
+    }
+  }
+
+  $("#lawsCard").addEventListener("click",openLawsRegistry);
+  $("#lawsCard").addEventListener("keydown",e=>{
+    if(e.key==="Enter" || e.key===" "){e.preventDefault();openLawsRegistry();}
+  });
 
   $("#askBtn").addEventListener("click",()=>{
     const q=$("#legalQuestion").value.trim();
