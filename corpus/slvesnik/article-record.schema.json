@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI Advokat Legal Article Record",
+  "type": "object",
+  "required": [
+    "canonical_id",
+    "instrument_id",
+    "instrument_title",
+    "version_id",
+    "article_number",
+    "article_text",
+    "source"
+  ],
+  "properties": {
+    "canonical_id": {"type": "string"},
+    "instrument_id": {"type": "string"},
+    "instrument_title": {"type": "string"},
+    "version_id": {"type": "string"},
+    "article_number": {"type": "string"},
+    "article_heading": {"type": ["string","null"]},
+    "article_text": {"type": "string"},
+    "paragraphs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["paragraph_number","text"],
+        "properties": {
+          "paragraph_number": {"type": "string"},
+          "text": {"type": "string"},
+          "items": {"type": "array"}
+        }
+      }
+    },
+    "status": {
+      "enum": ["source_text","verified","needs_version_review","current_consolidated","repealed"]
+    },
+    "source": {
+      "type": "object",
+      "required": ["issue_number","issue_date","pdf_url","sha256"],
+      "properties": {
+        "issue_number": {"type": "string"},
+        "issue_date": {"type": "string"},
+        "pdf_url": {"type": "string"},
+        "page_start": {"type": ["integer","null"]},
+        "page_end": {"type": ["integer","null"]},
+        "sha256": {"type": "string"}
+      }
+    }
+  }
+}
