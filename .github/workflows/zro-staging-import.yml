@@ -6,6 +6,10 @@ on:
       - slvesnik-public-corpus-collector-29sep2026
     paths:
       - ".github/workflows/zro-staging-import.yml"
+      - "scripts/legal-ndjson-to-sql.mjs"
+      - "scripts/parse-mk-legal-text.mjs"
+      - "scripts/clean-official-legal-pdf-text.mjs"
+      - "migrations/0014_stable_instrument_keys.sql"
   workflow_dispatch:
 
 permissions:
