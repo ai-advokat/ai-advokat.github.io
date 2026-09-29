@@ -27,13 +27,21 @@ for (let i=0;i<lines.length;i++) {
     .replace(/\s+/g," ")
     .trim();
 
-  if (/^\s*Член\s+273\s*\.?\s*$/iu.test(line)) {
+  const articleMatch=line.match(/^\s*Член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s*\.?\s*$/iu);
+
+  if (articleMatch && articleMatch[1].replace(/\s+/g,"")==="273") {
     seenFinalArticle=true;
+  } else if (seenFinalArticle && articleMatch) {
+    appendixStartLine=i+1;
+    break;
   }
 
   if (
     seenFinalArticle &&
-    /ОДРЕДБИ\s+ОД\s+ЗАКОНИ\s+ЗА\s+ИЗМЕНУВАЊЕ(?:\s+И\/ИЛИ\s+ДОПОЛНУВАЊЕ)?/iu.test(lookahead)
+    (
+      /ОДРЕДБИ\s+ОД\s+ЗАКОНИ\s+ЗА\s+ИЗМЕНУВАЊЕ/iu.test(lookahead) ||
+      /ЗАКОН\s+ЗА\s+ИЗМЕНУВАЊЕ(?:\s+И\s+ДОПОЛНУВАЊЕ)?\s+НА\s+ЗАКОНОТ\s+ЗА\s+РАБОТНИТЕ\s+ОДНОСИ/iu.test(lookahead)
+    )
   ) {
     appendixStartLine=i+1;
     break;
