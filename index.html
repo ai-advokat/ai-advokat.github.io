@@ -410,6 +410,17 @@
     .actionCard:hover,.actionCard:focus-visible{transform:translateY(-2px);border-color:var(--gold);box-shadow:0 14px 32px rgba(12,32,56,.10);outline:none}
     .cardAction{margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.82rem;font-weight:750}
     .cardState{padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ok)}
+    .sourceWorkspace{margin-top:22px;padding:22px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}
+    .sourceWorkspace[hidden]{display:none}
+    .workspaceHead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px}
+    .workspaceHead h3{margin:0 0 4px}
+    .workspaceHead p{margin:0;color:var(--muted)}
+    .sourceLinkGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .sourceLink{display:block;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+    .sourceLink:hover,.sourceLink:focus-visible{border-color:var(--gold);outline:none}
+    .sourceLink b{display:block;margin-bottom:5px}
+    .sourceLink small{color:var(--muted)}
+    @media (max-width:760px){.sourceLinkGrid{grid-template-columns:1fr}}
 
     .icon{
       width:42px;
@@ -1030,6 +1041,18 @@
           </p>
         </article>
 
+      </div>
+
+      <div class="sourceWorkspace" id="sourceWorkspace" hidden aria-live="polite">
+        <div class="workspaceHead">
+          <div>
+            <span class="tag" id="workspaceTag">LIVE · OFFICIAL SOURCES</span>
+            <h3 id="workspaceTitle">Правен работен простор</h3>
+            <p id="workspaceText">Изберете секција за да ги отворите проверените официјални извори.</p>
+          </div>
+          <button type="button" class="btn light" id="closeWorkspace">Затвори</button>
+        </div>
+        <div class="sourceLinkGrid" id="workspaceLinks"></div>
       </div>
     </div>
   </section>
@@ -1681,6 +1704,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
   let lang = "mk";
 
+  const API_BASE = "https://ai-advokat-github-io.aiadvokat16.workers.dev";
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
 
@@ -1858,53 +1882,69 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   $("#searchBtn").addEventListener("click",renderResults);
   $("#globalSearch").addEventListener("keydown",e=>{ if(e.key==="Enter") renderResults(); });
 
-  async function openLawsRegistry(){
-    $("#typeFilter").value="law";
-    $("#statusFilter").value="all";
-    const q=$("#globalSearch").value.trim() || (lang==="mk" ? "закон" : "law");
-    $("#globalSearch").value=q;
-    document.querySelector(".searchPanel").scrollIntoView({behavior:"smooth",block:"center"});
-    $("#searchResults").innerHTML=`<div class="resultItem">${lang==="mk"?"Се вчитува регистарот на закони од проверениот D1 корпус...":"Loading the legislation registry from the verified D1 corpus..."}</div>`;
+  const FALLBACK_OFFICIAL_SOURCES = [
+    {title:"Службен весник на Република Северна Македонија",url:"https://slvesnik.com.mk/",category:"official_gazette",jurisdiction:"MK"},
+    {title:"Министерство за правда — LDBIS",url:"https://ldbis.pravda.gov.mk/",category:"ministry_database",jurisdiction:"MK"},
+    {title:"Уставен суд на Република Северна Македонија",url:"https://ustavensud.mk/",category:"court",jurisdiction:"MK"},
+    {title:"Врховен суд на Република Северна Македонија",url:"https://www.vrhoven.sud.mk/",category:"court",jurisdiction:"MK"},
+    {title:"European Court of Human Rights — HUDOC",url:"https://hudoc.echr.coe.int/",category:"international_court",jurisdiction:"ECHR"},
+    {title:"EUR-Lex",url:"https://eur-lex.europa.eu/",category:"international_organization",jurisdiction:"EU"}
+  ];
+
+  async function getOfficialSources(){
     try{
-      const response=await fetch("/api/search?q="+encodeURIComponent(q)+"&type=law&limit=12",{headers:{accept:"application/json"}});
+      const response=await fetch(API_BASE+"/api/web-sources",{headers:{accept:"application/json"}});
       const data=await response.json();
-      if(!response.ok || !data.ok) throw new Error(data?.error || "search_failed");
-      $("#searchResults").innerHTML=data.results?.length
-        ? data.results.map(x=>`<div class="resultItem"><div class="resultTop"><div><h4>${x.title}</h4><div class="meta">${[x.meta,x.date,x.jurisdiction].filter(Boolean).join(" · ")}</div></div><span class="badge ${x.status==="official"?"ok":""}">${statusLabel(x.status)}</span></div><p>${x.snippet||""}</p>${x.url?`<p><a href="${x.url}" target="_blank" rel="noopener noreferrer">${lang==="mk"?"Отвори официјален извор":"Open official source"} ↗</a></p>`:""}</div>`).join("")
-        : `<div class="resultItem">${lang==="mk"?"Нема пронајден проверен пропис за ова пребарување.":"No verified legislation found for this query."}</div>`;
-    }catch{
-      $("#searchResults").innerHTML=`<div class="resultItem">${lang==="mk"?"Регистарот моментално не е достапен. Системот останува затворен наместо да прикаже непроверени податоци.":"The registry is temporarily unavailable. The system remains fail-closed rather than showing unverified data."}</div>`;
-    }
+      if(response.ok && data.ok && Array.isArray(data.sources)) return data.sources;
+    }catch{}
+    return FALLBACK_OFFICIAL_SOURCES;
+  }
+
+  function showWorkspace(title,text,sources){
+    $("#workspaceTitle").textContent=title;
+    $("#workspaceText").textContent=text;
+    $("#workspaceLinks").innerHTML=sources.map(s=>`
+      <a class="sourceLink" href="${s.url}" target="_blank" rel="noopener noreferrer">
+        <b>${s.title}</b>
+        <small>${s.jurisdiction || ""} · ${s.category || "official_source"} ↗</small>
+      </a>`).join("");
+    $("#sourceWorkspace").hidden=false;
+    $("#sourceWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
+  }
+
+  async function openLawsRegistry(){
+    const sources=await getOfficialSources();
+    const selected=sources.filter(s=>["official_gazette","ministry_database","international_organization"].includes(s.category));
+    showWorkspace(
+      lang==="mk" ? "Закони и прописи" : "Laws & regulations",
+      lang==="mk"
+        ? "Проверени официјални влезни точки за важечки прописи и правни текстови. Отворете го примарниот извор пред професионално потпирање."
+        : "Verified official entry points for legislation and legal texts. Open the primary source before professional reliance.",
+      selected
+    );
+  }
+
+  async function openCaseLawRegistry(){
+    const sources=await getOfficialSources();
+    const selected=sources.filter(s=>["court","international_court"].includes(s.category));
+    showWorkspace(
+      lang==="mk" ? "Судска практика" : "Case law",
+      lang==="mk"
+        ? "Официјални судски извори за домашна и европска судска практика. AI Advokat не ја заменува проверката на оригиналната одлука."
+        : "Official court sources for domestic and European case law. AI Advokat does not replace verification of the original judgment.",
+      selected
+    );
   }
 
   $("#lawsCard").addEventListener("click",openLawsRegistry);
   $("#lawsCard").addEventListener("keydown",e=>{
     if(e.key==="Enter" || e.key===" "){e.preventDefault();openLawsRegistry();}
   });
-
-  async function openCaseLawRegistry(){
-    $("#typeFilter").value="case";
-    $("#statusFilter").value="all";
-    const q=$("#globalSearch").value.trim() || (lang==="mk" ? "суд" : "court");
-    $("#globalSearch").value=q;
-    document.querySelector(".searchPanel").scrollIntoView({behavior:"smooth",block:"center"});
-    $("#searchResults").innerHTML=`<div class="resultItem">${lang==="mk"?"Се вчитува судската практика од проверениот D1 корпус...":"Loading case law from the verified D1 corpus..."}</div>`;
-    try{
-      const response=await fetch("/api/search?q="+encodeURIComponent(q)+"&type=case&limit=12",{headers:{accept:"application/json"}});
-      const data=await response.json();
-      if(!response.ok || !data.ok) throw new Error(data?.error || "search_failed");
-      $("#searchResults").innerHTML=data.results?.length
-        ? data.results.map(x=>`<div class="resultItem"><div class="resultTop"><div><h4>${x.title}</h4><div class="meta">${[x.meta,x.date,x.jurisdiction].filter(Boolean).join(" · ")}</div></div><span class="badge ${x.status==="official"?"ok":""}">${statusLabel(x.status)}</span></div><p>${x.snippet||""}</p>${x.url?`<p><a href="${x.url}" target="_blank" rel="noopener noreferrer">${lang==="mk"?"Отвори извор":"Open source"} ↗</a></p>`:""}</div>`).join("")
-        : `<div class="resultItem">${lang==="mk"?"Нема пронајдена проверена судска практика за ова пребарување.":"No verified case law found for this query."}</div>`;
-    }catch{
-      $("#searchResults").innerHTML=`<div class="resultItem">${lang==="mk"?"Судската практика моментално не е достапна. Системот останува затворен наместо да прикаже непроверени податоци.":"Case law is temporarily unavailable. The system remains fail-closed rather than showing unverified data."}</div>`;
-    }
-  }
-
   $("#casesCard").addEventListener("click",openCaseLawRegistry);
   $("#casesCard").addEventListener("keydown",e=>{
     if(e.key==="Enter" || e.key===" "){e.preventDefault();openCaseLawRegistry();}
   });
+  $("#closeWorkspace").addEventListener("click",()=>{$("#sourceWorkspace").hidden=true;});
 
   $("#askBtn").addEventListener("click",()=>{
     const q=$("#legalQuestion").value.trim();
