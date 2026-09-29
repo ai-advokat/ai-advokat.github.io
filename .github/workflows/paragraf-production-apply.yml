@@ -54,12 +54,10 @@ jobs:
         run: |
           npx wrangler d1 migrations list DB --remote --config wrangler.jsonc > pending.txt
           cat pending.txt
-          for m in             0004_paragraf_import_landing.sql             0005_paragraf_corpus_gate.sql             0006_official_legal_source_registry.sql             0007_publication_zenodo_alignment.sql             0008_kocani_wpa_journal_issue1.sql
-          do
-            grep -q "$m" pending.txt || { echo "Missing expected migration: $m"; exit 1; }
-          done
+          grep -q "0008_kocani_wpa_journal_issue1.sql" pending.txt
+          grep -q "0009_kocani_issue1_compat.sql" pending.txt
           found="$(grep -Eo '000[0-9]+_[A-Za-z0-9_.-]+\.sql' pending.txt | sort -u)"
-          expected="$(printf '%s\n'             0004_paragraf_import_landing.sql             0005_paragraf_corpus_gate.sql             0006_official_legal_source_registry.sql             0007_publication_zenodo_alignment.sql             0008_kocani_wpa_journal_issue1.sql | sort -u)"
+          expected="$(printf '%s\n' 0008_kocani_wpa_journal_issue1.sql 0009_kocani_issue1_compat.sql | sort -u)"
           test "$found" = "$expected" || { echo "Unexpected pending migration set"; exit 1; }
 
       - name: Pre-apply production snapshot
