@@ -48,3 +48,44 @@ test("parses article, paragraph and item hierarchy",()=>{
 test("fails closed without source checksum",()=>{
   assert.throws(()=>parseLegalText(source,{...meta,source_sha256:""}),/Missing required metadata/);
 });
+
+
+test("fails closed on duplicate article labels",()=>{
+  const duplicate=`Член 1
+(1) Прв текст.
+
+Член 1
+(1) Втор текст.
+`;
+  assert.throws(()=>parseLegalText(duplicate,meta),/Duplicate article number detected/);
+});
+
+test("fails closed on empty article body",()=>{
+  const empty=`Член 1
+
+Член 2
+(1) Втор член.
+`;
+  assert.throws(()=>parseLegalText(empty,meta),/Empty article body: 1/);
+});
+
+test("parses items even when article has no explicit numbered paragraph",()=>{
+  const itemsOnly=`Член 7
+1) Прва точка
+2) Втора точка
+`;
+  const p=parseLegalText(itemsOnly,meta);
+  assert.equal(p.records[0].paragraphs.length,1);
+  assert.equal(p.records[0].paragraphs[0].paragraph_number,"1");
+  assert.equal(p.records[0].paragraphs[0].items.length,2);
+});
+
+test("keeps sentence-like first line as body, not heading",()=>{
+  const noHeading=`Член 8
+Оваа реченица е дел од членот.
+(1) Следува нумериран став.
+`;
+  const p=parseLegalText(noHeading,meta);
+  assert.equal(p.records[0].article_heading,null);
+  assert.match(p.records[0].paragraphs[0].text,/Оваа реченица е дел од членот/);
+});
