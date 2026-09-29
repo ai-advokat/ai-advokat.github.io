@@ -82,3 +82,18 @@ Do not bulk-ingest:
 - restricted registry datasets
 - personal data from enforcement notices
 - subscriber-only legal databases
+
+
+## Historical legal archive: pravo.org.mk
+
+Classification: historical legal resource / provenance source.
+
+Metamorphosis records that pravo.org.mk was launched in October 2005 as part of the Legal Resource Centre project by MOST and the Parliament of the Republic of Macedonia. Its early database contained laws adopted from 1998-2004 and also included legislative analyses, Supreme/Constitutional Court decisions, legislative news and international acts.
+
+AI Advokat policy:
+- use surviving public material for historical discovery and provenance;
+- preserve original publication/date/source metadata;
+- never treat an old pravo.org.mk text as current law solely because it appears in the archive;
+- re-verify current status through Official Gazette/LDBIS;
+- re-verify court decisions through the originating court when possible;
+- label historical acts with the correct temporal validity.
