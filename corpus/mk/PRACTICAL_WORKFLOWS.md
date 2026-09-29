@@ -208,3 +208,91 @@ Before filing, verify:
 - applicable urban plan;
 - delivery/service date;
 - remedy and deadline.
+
+
+### 15. Justice actors and professional roles / правосудни професии и институционални улоги
+Model separately:
+- Notaries / нотари
+- Enforcement agents / извршители
+- Public prosecutors / јавни обвинители
+- Attorneys / адвокати
+- State attorneys / правобранители
+- Judges / судии
+
+For every actor record:
+1. role and legal competence;
+2. document/act issued or received;
+3. legal basis;
+4. procedural stage;
+5. deadline or next step;
+6. dependency on another actor;
+7. official source;
+8. Human Gate status.
+
+Rules:
+- never merge prosecution, adjudication, defence, enforcement, notarial and state-representation powers;
+- preserve court/case/file numbers and dates;
+- distinguish allegations from findings;
+- never infer misconduct, bias or motive without evidence;
+- keep confidential client material outside the public corpus.
+
+
+### 16. Taxes / даноци
+
+Core tax areas:
+- personal income tax
+- value-added tax (VAT / ДДВ)
+- corporate income tax / profit tax
+- property tax
+- inheritance and gift tax
+- real-estate transfer tax
+- local taxes, fees and charges
+- withholding taxes where applicable
+- tax registration and taxpayer status
+- tax audits and inspections
+- assessment decisions
+- interest, penalties and surcharges
+- compulsory collection / enforcement
+- objections, appeals and judicial review
+- tax treatment of self-employed persons and businesses
+- cross-border / treaty questions where applicable
+
+#### Source-first rules
+- tax rates, thresholds, exemptions and deadlines must come from a current official source;
+- never reuse an old rate merely because it appears in an earlier law or article;
+- distinguish publication date, entry into force and application date;
+- preserve amendment history and effective periods;
+- show the exact legal provision supporting every calculation or conclusion;
+- if the current rate/status cannot be verified, fail closed and show the official source.
+
+#### Practical workflows
+- tax liability intake
+- tax return / filing checklist
+- VAT registration and deregistration checklist
+- tax audit response
+- evidence/document request
+- objection to tax assessment
+- appeal against tax decision
+- request for correction
+- limitation-period review
+- compulsory-collection review
+- property-tax dispute
+- inheritance/gift-tax analysis
+- real-estate-transfer-tax analysis
+- business tax compliance memo
+- tax chronology
+
+#### Calculation safeguards
+- identify tax year / period first;
+- identify taxpayer type and jurisdiction;
+- separate principal tax, interest, penalties and costs;
+- display assumptions explicitly;
+- never fabricate missing financial figures;
+- calculations are draft support until verified against current law and official tax authority guidance.
+
+#### Integrity boundary
+- lawful tax planning and compliance support only;
+- no concealment of income/assets;
+- no falsified invoices or records;
+- no sham transactions;
+- no advice for evading reporting or collection.
