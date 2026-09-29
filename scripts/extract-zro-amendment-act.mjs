@@ -29,9 +29,9 @@ for(let i=0;i<lines.length;i++){
   }
 }
 if(titleWindowStart<0 && gazetteEntryNumber){
-  const marker=new RegExp("^\\s*"+gazetteEntryNumber.replace(/[.*+?^$\\{}()|[\\]\\]/g,"\\if(titleWindowStart<0) throw new Error("ZRO amendment title not found");")+"\\.\\s*$");
+  const marker=String(gazetteEntryNumber).trim()+".";
   for(let i=0;i<lines.length;i++){
-    if(marker.test(normLine(lines[i]))){
+    if(normLine(lines[i])===marker){
       titleWindowStart=i;
       break;
     }
