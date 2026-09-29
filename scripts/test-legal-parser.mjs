@@ -20,6 +20,7 @@ const source=`ЗАКОН ЗА ТЕСТ
 `;
 
 const meta={
+  instrument_key:"mk:test-law",
   instrument_id:1,
   instrument_title:"Закон за тест",
   version_id:"2026-09-29",
@@ -88,4 +89,12 @@ test("keeps sentence-like first line as body, not heading",()=>{
   const p=parseLegalText(noHeading,meta);
   assert.equal(p.records[0].article_heading,null);
   assert.match(p.records[0].paragraphs[0].text,/Оваа реченица е дел од членот/);
+});
+
+
+test("canonical article id depends on stable instrument key, not database id",()=>{
+  const a=parseLegalText(source,{...meta,instrument_id:1});
+  const b=parseLegalText(source,{...meta,instrument_id:77});
+  assert.equal(a.records[0].canonical_id,b.records[0].canonical_id);
+  assert.equal(a.records[0].instrument_key,"mk:test-law");
 });
