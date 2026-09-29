@@ -77,7 +77,11 @@ jobs:
       - name: Extract target ZRO amendment act
         shell: bash
         run: |
-          pdftotext -layout "/tmp/${{ matrix.slug }}.pdf" "/tmp/${{ matrix.slug }}-raw.txt"
+          if [ "${{ matrix.slug }}" = "39-2025" ]; then
+            pdftotext -raw "/tmp/${{ matrix.slug }}.pdf" "/tmp/${{ matrix.slug }}-raw.txt"
+          else
+            pdftotext -layout "/tmp/${{ matrix.slug }}.pdf" "/tmp/${{ matrix.slug }}-raw.txt"
+          fi
           node scripts/extract-zro-amendment-act.mjs             "/tmp/${{ matrix.slug }}-raw.txt"             "/tmp/${{ matrix.slug }}-act.txt"             "/tmp/${{ matrix.slug }}-segment.json"
           cat "/tmp/${{ matrix.slug }}-segment.json"
 
