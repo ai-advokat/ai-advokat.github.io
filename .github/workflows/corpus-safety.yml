@@ -9,6 +9,8 @@ on:
       - "scripts/parse-mk-legal-text.mjs"
       - "scripts/legal-ndjson-to-sql.mjs"
       - "scripts/test-legal-parser.mjs"
+      - "scripts/parse-mk-amendment-text.mjs"
+      - "scripts/test-mk-amendment-parser.mjs"
       - "ingest/mk/**"
       - "corpus/**"
       - "package.json"
@@ -19,6 +21,8 @@ on:
       - "scripts/parse-mk-legal-text.mjs"
       - "scripts/legal-ndjson-to-sql.mjs"
       - "scripts/test-legal-parser.mjs"
+      - "scripts/parse-mk-amendment-text.mjs"
+      - "scripts/test-mk-amendment-parser.mjs"
       - "ingest/mk/**"
       - "corpus/**"
       - "package.json"
@@ -46,6 +50,12 @@ jobs:
 
       - name: Parser tests
         run: npm run test:legal-parser
+
+      - name: Amendment parser syntax
+        run: npm run check:amendment-parser
+
+      - name: Amendment parser tests
+        run: npm run test:amendment-parser
 
       - name: Apply all migrations in clean SQLite
         shell: bash
