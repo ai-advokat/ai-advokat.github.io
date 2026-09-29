@@ -76,3 +76,24 @@ test("handles членот form and inserted base-law article without splitting 
   assert.deepEqual(insert.inserted_article_numbers,["104-а"]);
   assert.equal(insert.event_type,"insert");
 });
+
+
+test("detects heading change and direct article replacement",()=>{
+  const src=`Член 1
+Насловот на член 12 се менува и гласи: „Нов наслов“.
+
+Член 2
+Членот 258-б се менува и гласи:
+„Нов текст“.
+
+Член 3
+Овој закон влегува во сила осмиот ден од денот на објавувањето.`;
+  const p=parseAmendmentText(src,meta);
+  const e1=p.events.find(e=>e.amendment_article_number==="1");
+  const e2=p.events.find(e=>e.amendment_article_number==="2");
+  assert.equal(e1.target_article_number,"12");
+  assert.equal(e2.target_article_number,"258-б");
+  assert.equal(e1.event_type,"amend");
+  assert.equal(e2.event_type,"amend");
+  assert.equal(p.warning_count,1);
+});
