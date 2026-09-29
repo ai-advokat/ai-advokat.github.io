@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
 
-export const PARSER_VERSION = "mk-legal-article-v0.1.0";
+export const PARSER_VERSION = "mk-legal-article-v0.2.0";
 
 function norm(s="") {
   return String(s).normalize("NFKC").replace(/\r\n?/g, "\n");
@@ -52,7 +52,7 @@ function parseStructure(bodyLines) {
   let idx=0;
 
   // Conservative heading detection: only a short first line before a numbered paragraph.
-  if (cleanLines.length>1 && cleanLines[0].length<=140 && !PARA_RE.test(cleanLines[0]) && PARA_RE.test(cleanLines[1])) {
+  if (cleanLines.length>1 && cleanLines[0].length<=120 && !/[.;,:!?]$/u.test(cleanLines[0]) && !PARA_RE.test(cleanLines[0]) && PARA_RE.test(cleanLines[1])) {
     heading=cleanLines[0];
     idx=1;
   }
@@ -77,6 +77,16 @@ function parseStructure(bodyLines) {
     }
 
     const im=line.match(ITEM_RE);
+    if (im && !current) {
+      current={
+        paragraph_number:"1",
+        paragraph_order:1,
+        text:"",
+        items:[]
+      };
+      paragraphs.push(current);
+      itemOrder=0;
+    }
     if (current && im) {
       itemOrder++;
       current.items.push({
@@ -133,11 +143,15 @@ export function parseLegalText(text, meta) {
   for (const raw of rawArticles) {
     const number=compact(raw.number);
     const numberNorm=normalizeArticleNumber(number);
-    if (seen.has(numberNorm)) warnings.push(`Duplicate article number detected: ${number}`);
+    if (seen.has(numberNorm)) {
+      throw new Error(`Duplicate article number detected: ${number}`);
+    }
     seen.add(numberNorm);
 
     const body=compact(raw.bodyLines.join("\n"));
-    if (!body) warnings.push(`Empty article body: ${number}`);
+    if (!body) {
+      throw new Error(`Empty article body: ${number}`);
+    }
 
     const {heading,paragraphs}=parseStructure(raw.bodyLines);
     const canonicalSeed=[
