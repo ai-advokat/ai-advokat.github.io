@@ -60,7 +60,7 @@ jobs:
             "instrument_id": 1,
             "instrument_title": "Закон за работните односи",
             "version_id": "official-consolidated-snapshot-2023-111",
-            "source_url": "https://cms.mtsp.gov.mk/content/pdf/2023/trud/ZRO,%20precisten%20tekst%202023.pdf",
+            "source_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf",
             "source_sha256": "$SHA",
             "source_issue_number": "through-111/2023",
             "source_issue_date": "2023-05-30",
@@ -86,10 +86,11 @@ jobs:
           extraction = json.loads(Path("/tmp/zro-2023-extraction-report.json").read_text())
           manifest = json.loads(Path("/tmp/zro-2023-manifest.json").read_text())
 
+          assert extraction["appendix_truncated"] is True, extraction
           assert extraction["duplicate_article_headers"] == [], extraction
           assert manifest["warning_count"] == 0, manifest
-          assert manifest["article_count"] >= 200, manifest
-          assert manifest["article_count"] <= 400, manifest
+          assert manifest["article_count"] >= 250, manifest
+          assert manifest["article_count"] <= 350, manifest
 
           print("ZRO official extraction/parser audit: PASS")
           print("Article count:", manifest["article_count"])
