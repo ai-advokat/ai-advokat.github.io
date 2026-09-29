@@ -1,0 +1,172 @@
+name: AI Advokat corpus safety
+
+on:
+  push:
+    branches:
+      - slvesnik-public-corpus-collector-29sep2026
+    paths:
+      - "migrations/**"
+      - "scripts/parse-mk-legal-text.mjs"
+      - "scripts/legal-ndjson-to-sql.mjs"
+      - "scripts/test-legal-parser.mjs"
+      - "ingest/mk/**"
+      - "corpus/**"
+      - "package.json"
+      - ".github/workflows/corpus-safety.yml"
+  pull_request:
+    paths:
+      - "migrations/**"
+      - "scripts/parse-mk-legal-text.mjs"
+      - "scripts/legal-ndjson-to-sql.mjs"
+      - "scripts/test-legal-parser.mjs"
+      - "ingest/mk/**"
+      - "corpus/**"
+      - "package.json"
+      - ".github/workflows/corpus-safety.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  corpus-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Parser syntax
+        run: npm run check:legal-parser
+
+      - name: Parser tests
+        run: npm run test:legal-parser
+
+      - name: Apply all migrations in clean SQLite
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import sqlite3
+          from pathlib import Path
+
+          db = sqlite3.connect(":memory:")
+          migrations = sorted(Path("migrations").glob("[0-9][0-9][0-9][0-9]_*.sql"))
+          assert migrations, "No migrations found"
+
+          for migration in migrations:
+              db.executescript(migration.read_text(encoding="utf-8"))
+
+          versions = [
+              row[0]
+              for row in db.execute(
+                  "SELECT version FROM schema_migrations ORDER BY CAST(version AS INTEGER)"
+              )
+          ]
+          expected = [str(i) for i in range(1, 13)]
+          assert versions == expected, (versions, expected)
+
+          required_tables = {
+              "legal_article_versions",
+              "legal_article_paragraphs",
+              "legal_article_items",
+              "legal_amendment_events",
+              "corpus_ingest_runs",
+              "case_law_authority",
+              "case_law_holdings",
+              "case_law_citations",
+              "case_match_assessments",
+          }
+          actual = {
+              row[0]
+              for row in db.execute(
+                  "SELECT name FROM sqlite_master WHERE type='table'"
+              )
+          }
+          missing = required_tables - actual
+          assert not missing, missing
+
+          print("All migrations: PASS")
+          PY
+
+      - name: End-to-end parser to SQLite import
+        shell: bash
+        run: |
+          cat > /tmp/legal-fixture.txt <<'EOF'
+          ЗАКОН ЗА ТЕСТ
+          Член 1
+          (1) Прв став.
+          (2) Втор став.
+          1) Прва точка
+          2) Втора точка
+
+          Член 2
+          Наслов на член
+          (1) Текст на вториот член.
+
+          Член 25-а
+          (1) Посебен член.
+          а) Прва алинеја
+          б) Втора алинеја
+          EOF
+
+          cat > /tmp/legal-meta.json <<'EOF'
+          {
+            "instrument_id": 1,
+            "instrument_title": "Закон за тест",
+            "version_id": "fixture-2026-09-29",
+            "source_url": "https://example.invalid/test-law",
+            "source_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "source_issue_number": "1/2026",
+            "source_issue_date": "2026-09-29",
+            "status": "source_text",
+            "human_review_status": "pending"
+          }
+          EOF
+
+          node scripts/parse-mk-legal-text.mjs /tmp/legal-fixture.txt /tmp/legal-meta.json /tmp/legal.ndjson
+          node scripts/legal-ndjson-to-sql.mjs /tmp/legal.ndjson /tmp/legal-import.sql
+
+          python3 - <<'PY'
+          import sqlite3
+          from pathlib import Path
+
+          db = sqlite3.connect(":memory:")
+          for migration in sorted(Path("migrations").glob("[0-9][0-9][0-9][0-9]_*.sql")):
+              db.executescript(migration.read_text(encoding="utf-8"))
+
+          db.execute(
+              """
+              INSERT INTO legal_instruments
+              (id,title,instrument_type,jurisdiction,current_status,human_review_status)
+              VALUES (1,'Закон за тест','law','MK','unknown','pending')
+              """
+          )
+          db.executescript(Path("/tmp/legal-import.sql").read_text(encoding="utf-8"))
+
+          article_count = db.execute(
+              "SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=1"
+          ).fetchone()[0]
+          assert article_count == 3, article_count
+
+          suffix = db.execute(
+              "SELECT article_number_normalized FROM legal_article_versions WHERE article_number='25-а'"
+          ).fetchone()
+          assert suffix and suffix[0] == "25-а", suffix
+
+          item_count = db.execute(
+              "SELECT COUNT(*) FROM legal_article_items"
+          ).fetchone()[0]
+          assert item_count == 4, item_count
+
+          run = db.execute(
+              "SELECT status, warning_count, article_count FROM corpus_ingest_runs"
+          ).fetchone()
+          assert run == ("validated", 0, 3), run
+
+          print("Parser -> SQL -> SQLite fixture: PASS")
+          PY
