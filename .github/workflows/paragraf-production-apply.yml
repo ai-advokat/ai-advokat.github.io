@@ -1,0 +1,99 @@
+name: Paragraf production migration apply
+
+on:
+  push:
+    branches:
+      - paragraf-production-apply-29sep2026
+    paths:
+      - ".github/workflows/paragraf-production-apply.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paragraf-production-migration
+  cancel-in-progress: false
+
+jobs:
+  guarded-production-apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Fail closed if Cloudflare secrets are missing
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Verify exact production target
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") {
+            throw new Error("Unexpected production D1 target");
+          }
+          NODE
+
+      - name: Verify only expected migrations are pending
+        shell: bash
+        run: |
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc > pending.txt
+          cat pending.txt
+          grep -q "0008_kocani_wpa_journal_issue1.sql" pending.txt
+          grep -q "0009_kocani_issue1_compat.sql" pending.txt
+          found="$(grep -Eo '000[0-9]+_[A-Za-z0-9_.-]+\.sql' pending.txt | sort -u)"
+          expected="$(printf '%s\n' 0008_kocani_wpa_journal_issue1.sql 0009_kocani_issue1_compat.sql | sort -u)"
+          test "$found" = "$expected" || { echo "Unexpected pending migration set"; exit 1; }
+
+      - name: Pre-apply production snapshot
+        shell: bash
+        run: |
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS source_count_before FROM sources;"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS publication_count_before FROM publications;"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS private_upload_urls_before FROM publications WHERE canonical_url LIKE '%zenodo.org/uploads/%';"
+
+      - name: Apply whitelisted migrations
+        run: npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc
+
+      - name: Verify migration ledger
+        shell: bash
+        run: |
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT version, description FROM schema_migrations WHERE version IN ('4','5','6','7','8','9') ORDER BY CAST(version AS INTEGER);"
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc
+
+      - name: Verify Paragraf landing zone and source registry
+        shell: bash
+        run: |
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS batch_count FROM legacy_import_batches;"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS document_count FROM legacy_documents;"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS private_documents FROM legacy_documents WHERE visibility='private';"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS official_source_count FROM sources WHERE source_status='official';"
+
+      - name: Verify five-publication state
+        shell: bash
+        run: |
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS publication_count FROM publications WHERE author_name='Zoran Stojankich';"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS published_count FROM publications WHERE author_name='Zoran Stojankich' AND publication_status='published';"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT title, venue, publication_status, doi, canonical_url, human_review_status FROM publications WHERE author_name='Zoran Stojankich' ORDER BY id;"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT COUNT(*) AS private_upload_urls FROM publications WHERE canonical_url LIKE '%zenodo.org/uploads/%';"
+
+      - name: Result
+        run: |
+          echo "PARAGRAF PRODUCTION SCHEMA/METADATA MIGRATION: PASS"
+          echo "No legacy Paragraf corpus was imported."
+          echo "No Worker deployment, bot activation, redirect, or private-data import occurred."
