@@ -1,0 +1,50 @@
+{
+  "source": "https://paragraf.mk/mk",
+  "captured_on": "2026-09-29",
+  "reconstruction_mode": "public_clean_room",
+  "public_claims": {
+    "assistant": "LexAI legal AI assistant for Macedonian law",
+    "cited_sources": true,
+    "document_generator": [
+      "contracts",
+      "submissions",
+      "forms",
+      "Word/PDF export"
+    ],
+    "risk_analysis": true,
+    "document_upload_entry": true,
+    "cases_feature": "advertised in PRO",
+    "web_search_feature": "advertised in PRO",
+    "languages": 5,
+    "security_claims": [
+      "GDPR aligned",
+      "SSL/TLS",
+      "EU hosting"
+    ]
+  },
+  "routes": [
+    "/mk",
+    "/mk/use-cases",
+    "/mk/security",
+    "/mk/blog",
+    "/mk/faq",
+    "/mk/docs",
+    "/mk/about",
+    "/mk/terms",
+    "/mk/privacy",
+    "/mk/careers"
+  ],
+  "separate_surfaces": [
+    "https://chat.paragraf.mk/"
+  ],
+  "excluded_from_knowledge_corpus": [
+    "pricing",
+    "billing",
+    "payment instructions",
+    "authentication",
+    "accounts",
+    "private chats",
+    "private uploads"
+  ],
+  "note": "Inventory reflects public claims and navigation only; it does not verify hidden backend implementation or private data."
+}
