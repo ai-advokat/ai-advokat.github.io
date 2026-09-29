@@ -296,3 +296,57 @@ Core tax areas:
 - no falsified invoices or records;
 - no sham transactions;
 - no advice for evading reporting or collection.
+
+
+### 17. Inheritance proceedings / оставински постапки
+
+Core issues:
+- identify the deceased person and date/place of death
+- identify all potential statutory heirs
+- check whether a will exists and verify its formal validity
+- distinguish statutory succession from testamentary succession
+- identify compulsory / reserved heirs and reserved-share issues
+- inventory the estate: real estate, movable property, bank assets, shares, claims and other rights
+- identify debts and liabilities of the estate
+- verify cadastral and ownership records for real property
+- identify co-ownership and marital/community-property issues before dividing the estate
+- identify prior gifts or dispositions where legally relevant
+- identify pending litigation, enforcement, mortgages, liens or annotations
+- identify minors or persons requiring special procedural protection
+- identify heirs abroad and service/representation issues
+- identify foreign assets and applicable private-international-law questions
+- distinguish acceptance, renunciation and transfer/assignment of inherited rights according to current law
+- record every statement, hearing, notarial act and decision with date and file number
+- Human Gate before any declaration affecting inheritance rights
+
+#### Notary / court routing
+- determine whether the matter is handled by a notary as court commissioner or directly by the competent court
+- preserve the court referral / notarial file number
+- identify when a dispute requires referral to litigation or another procedure
+- distinguish probate determination from separate ownership disputes
+
+#### Draft outputs
+- heir intake sheet
+- family-tree / heirship map
+- estate inventory
+- debt and encumbrance matrix
+- request for property/cadastral verification
+- statement accepting inheritance
+- statement renouncing inheritance where legally permitted
+- objection to proposed distribution
+- request to include omitted property
+- request to include omitted heir
+- challenge concerning will validity
+- reserved-share / compulsory-heir checklist
+- cross-border inheritance checklist
+- settlement proposal among heirs
+- chronology of probate steps
+- final Human Gate checklist
+
+#### Integrity and safety rules
+- never omit a known heir or asset intentionally
+- never fabricate a will, signature, kinship or ownership record
+- never advise concealment of estate property or debts
+- never assume cadastral registration alone resolves all ownership questions
+- never calculate inheritance consequences without identifying the applicable law, date and verified estate facts
+- protect minors and sensitive family data
