@@ -43,8 +43,9 @@ WHERE author_name='Zoran Stojankich'
 
 UPDATE publications
 SET publication_status='draft',
+    venue='WPA Journal',
     canonical_url=NULL,
-    human_review_status='pending',
+    human_review_status='pending_publication',
     updated_at=CURRENT_TIMESTAMP
 WHERE author_name='Zoran Stojankich'
   AND title='Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност';
