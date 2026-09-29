@@ -13,7 +13,7 @@ SELECT
   NULL,
   'Unpublished draft record. The reserved DOI is metadata only until formal Zenodo publication.',
   'criminal law; institutional accountability; public safety; North Macedonia',
-  'pending_publication'
+  'pending'
 WHERE NOT EXISTS (
   SELECT 1 FROM publications
   WHERE title='Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност'
@@ -31,7 +31,7 @@ SELECT
   NULL,
   'Unpublished working-paper draft. The reserved DOI is metadata only until formal Zenodo publication.',
   'plea bargaining; criminal justice; financial crime; confiscation; equality in sentencing',
-  'pending_publication'
+  'pending'
 WHERE NOT EXISTS (
   SELECT 1 FROM publications
   WHERE title='„СИНЏИР“ — Спогодување со обвинителството, признавање вина и границите на казнената правда'
@@ -49,7 +49,7 @@ SELECT
   NULL,
   'Future draft under review. No DOI is reserved and no Zenodo publication is represented.',
   'electronic evidence; AI-generated evidence; deepfake; authenticity; integrity; chain of custody',
-  'review_pending'
+  'pending'
 WHERE NOT EXISTS (
   SELECT 1 FROM publications
   WHERE title='Електронските и AI генерираните докази во судската постапка'
@@ -67,7 +67,7 @@ SELECT
   NULL,
   'Future draft under review. No DOI is reserved and no Zenodo publication is represented.',
   'criminal procedure; mobile phone search; legal professional privilege; electronic evidence; ECHR',
-  'review_pending'
+  'pending'
 WHERE NOT EXISTS (
   SELECT 1 FROM publications
   WHERE title='Претресот на мобилен телефон и заштитата на адвокатската тајна'
@@ -85,7 +85,7 @@ SELECT
   NULL,
   'Future draft under review. No DOI is reserved and no Zenodo publication is represented.',
   'AI and law; legal profession; judiciary; automated decision-making; fair trial; human control',
-  'review_pending'
+  'pending'
 WHERE NOT EXISTS (
   SELECT 1 FROM publications
   WHERE title='Вештачката интелигенција во адвокатурата и судството'
