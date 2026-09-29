@@ -350,3 +350,95 @@ Core issues:
 - never assume cadastral registration alone resolves all ownership questions
 - never calculate inheritance consequences without identifying the applicable law, date and verified estate facts
 - protect minors and sensitive family data
+
+
+### 18. Enforcement of small and bank debts / извршување за мали и банкарски долгови
+
+Purpose:
+Audit whether the amount demanded in enforcement is legally and arithmetically supported, especially where a small principal debt has grown substantially through interest, enforcement costs, lawyer/notary costs or other charges.
+
+#### Mandatory amount decomposition
+Never show only one total. Break the claim into:
+1. original principal;
+2. contractual/statutory interest;
+3. court/notary costs;
+4. creditor lawyer costs;
+5. enforcement administration fee;
+6. price of individual enforcement actions;
+7. enforcement reward;
+8. bank/transfer or other evidenced third-party costs;
+9. payments already made;
+10. remaining balance.
+
+For every component store:
+- amount;
+- date incurred;
+- legal/tariff basis;
+- source document;
+- whether challenged;
+- whether verified.
+
+#### Small-debt proportionality audit
+For very small principal claims:
+- compare total enforcement cost against principal;
+- identify repeated or unnecessary enforcement actions;
+- check whether the same action/cost appears more than once;
+- check whether a lower-cost lawful measure was available where legally relevant;
+- distinguish legally fixed tariff costs from discretionary or unsupported charges;
+- do not label a cost "unlawful" solely because it exceeds the principal; verify the tariff and underlying act.
+
+#### Bank-debt workflow
+- identify credit / overdraft / card / guarantee / other facility;
+- obtain original contract and all amendments;
+- verify principal balance independently;
+- reconstruct payment history;
+- separate contractual interest, default interest, fees and penalties;
+- identify acceleration / maturity notice;
+- verify the enforceable title relied upon;
+- verify assignment/cession if the creditor changed;
+- verify notices and service;
+- identify collateral, mortgage, pledge or guarantor exposure;
+- compare bank statement against enforcement claim;
+- flag unexplained fees or duplicated amounts.
+
+#### Enforcement-act review
+Capture every enforcement act:
+- title and date;
+- file number;
+- service date;
+- enforcement measure;
+- amount charged;
+- tariff/legal basis;
+- resulting effect;
+- available remedy and deadline.
+
+#### Objection / remedy gate
+Where the user alleges unlawful action or omission by an enforcement agent:
+- identify exact action/omission;
+- identify the date the user learned of it;
+- calculate the applicable objection window only from current official law;
+- identify the competent Basic Court;
+- attach the relevant enforcement act and evidence;
+- distinguish challenge to enforcement conduct from a dispute over the underlying debt.
+
+#### Draft outputs
+- debt-cost audit table
+- bank-debt reconciliation
+- enforcement chronology
+- request for itemized calculation
+- request for file access/copies
+- objection against enforcement action where legally available
+- challenge to cost calculation where legally available
+- payment / settlement comparison
+- limitation-period checklist
+- collateral / guarantor exposure memo
+- Human Gate checklist
+
+#### Integrity and debtor-protection rules
+- never erase or hide a valid debt;
+- never advise asset concealment or evasion of enforcement;
+- never fabricate payment receipts or banking records;
+- never assume that a high total is automatically unlawful;
+- require a tariff/legal basis for every cost component;
+- show uncertainty where the complete enforcement file is unavailable;
+- protect subsistence/exempt income and statutory enforcement limitations only according to verified current law.
