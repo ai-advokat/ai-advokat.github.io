@@ -1009,12 +1009,13 @@
           <div class="cardAction"><span>Отвори судска практика →</span><span class="cardState">LIVE</span></div>
         </article>
 
-        <article class="card">
+        <article class="card actionCard" role="button" tabindex="0" id="echrCard" aria-label="Отвори ЕСПЧ и меѓународни извори">
           <div class="icon">◎</div>
           <h3 data-i18n="cardEchr">ЕСПЧ и меѓународни извори</h3>
           <p data-i18n="cardEchrText">
             Европски стандарди и компаративни извори со јасно означена јурисдикција.
           </p>
+          <div class="cardAction"><span>Отвори меѓународни извори →</span><span class="cardState">LIVE</span></div>
         </article>
 
         <article class="card">
@@ -1943,6 +1944,23 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   $("#casesCard").addEventListener("click",openCaseLawRegistry);
   $("#casesCard").addEventListener("keydown",e=>{
     if(e.key==="Enter" || e.key===" "){e.preventDefault();openCaseLawRegistry();}
+  });
+
+  async function openInternationalRegistry(){
+    const sources=await getOfficialSources();
+    const selected=sources.filter(s=>["international_court","international_organization"].includes(s.category));
+    showWorkspace(
+      lang==="mk" ? "ЕСПЧ и меѓународни извори" : "ECHR & international sources",
+      lang==="mk"
+        ? "Официјални европски и меѓународни извори за судска практика, право на ЕУ и компаративно правно истражување."
+        : "Official European and international sources for case law, EU law and comparative legal research.",
+      selected
+    );
+  }
+
+  $("#echrCard").addEventListener("click",openInternationalRegistry);
+  $("#echrCard").addEventListener("keydown",e=>{
+    if(e.key==="Enter" || e.key===" "){e.preventDefault();openInternationalRegistry();}
   });
   $("#closeWorkspace").addEventListener("click",()=>{$("#sourceWorkspace").hidden=true;});
 
