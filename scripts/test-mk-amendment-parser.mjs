@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {parseAmendmentText} from "./parse-mk-amendment-text.mjs";
 
 const meta={
+  instrument_key:"mk:zro",
   instrument_id:1,
   instrument_title:"Закон за работните односи",
   amendment_title:"Закон за изменување на Законот за работните односи",
