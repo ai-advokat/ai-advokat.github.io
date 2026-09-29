@@ -175,3 +175,48 @@ Secondary literature categories worth modelling:
 - competition-law commentaries;
 - commercial/property-law forms;
 - professional training materials.
+
+
+## Ministry of Justice regulation lanes
+
+The Ministry of Justice publicly separates its regulation area into:
+- Закони на МП / Ministry laws;
+- Пречистени текстови / consolidated or purified texts;
+- Предлог закон / draft laws.
+
+AI Advokat must preserve these as different legal-status classes.
+
+### 1. Ministry law
+Status candidate: ENACTED / OFFICIAL_SUPPORTING_SOURCE
+
+Use as an official supporting source, but verify publication and current legal effect against Official Gazette/LDBIS before marking an article CURRENT.
+
+### 2. Пречистен текст
+Status candidate: CONSOLIDATED_OFFICIAL_SUPPORTING
+
+Use as a strong official consolidation signal.
+Still verify:
+- amendment chain;
+- Gazette provenance;
+- effective/application dates;
+- Constitutional Court effects;
+- whether the ministry text itself states any limitation or date.
+
+Never silently equate "пречистен текст" with "authoritative current text" unless source status and version chain are resolved.
+
+### 3. Предлог закон
+Status: PROPOSED
+
+Rules:
+- never answer a current-law question from a draft as controlling authority;
+- connect the proposal to ENER/parliamentary procedure when available;
+- if later enacted, link proposal history to the published Gazette act;
+- preserve proposal date and originating ministry.
+
+### Retrieval display
+Where relevant, the user-facing result should distinguish:
+- CURRENT LAW
+- OFFICIAL CONSOLIDATED TEXT
+- PROPOSED CHANGE
+
+These labels must never be collapsed into one generic "law" result.
