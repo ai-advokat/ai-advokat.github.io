@@ -57,7 +57,7 @@ jobs:
           SHA="$(cut -d' ' -f1 /tmp/zro-2023.sha256)"
           cat > /tmp/zro-2023-meta.json <<EOF
           {
-            "instrument_id": 1,
+            "instrument_key": "mk:zro",
             "instrument_title": "Закон за работните односи",
             "version_id": "official-consolidated-snapshot-2023-111",
             "source_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf",
