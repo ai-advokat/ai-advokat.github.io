@@ -75,7 +75,7 @@ jobs:
       - name: Verify migration ledger
         shell: bash
         run: |
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT version, description FROM schema_migrations WHERE version IN ('4','5','6','7','8') ORDER BY CAST(version AS INTEGER);"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT version, description FROM schema_migrations WHERE version IN ('4','5','6','7','8','9') ORDER BY CAST(version AS INTEGER);"
           npx wrangler d1 migrations list DB --remote --config wrangler.jsonc
 
       - name: Verify Paragraf landing zone and source registry
