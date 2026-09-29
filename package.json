@@ -12,7 +12,9 @@
     "db:status:staging": "wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\"",
     "db:status:production": "wrangler d1 execute ai-advokat-db --remote --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\"",
     "test:legal-parser": "node --test scripts/test-legal-parser.mjs",
-    "check:legal-parser": "node --check scripts/parse-mk-legal-text.mjs && node --check scripts/legal-ndjson-to-sql.mjs"
+    "check:legal-parser": "node --check scripts/parse-mk-legal-text.mjs && node --check scripts/legal-ndjson-to-sql.mjs",
+    "test:amendment-parser": "node --test scripts/test-mk-amendment-parser.mjs",
+    "check:amendment-parser": "node --check scripts/parse-mk-amendment-text.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
