@@ -127,7 +127,7 @@ jobs:
 
           cat > /tmp/legal-meta.json <<'EOF'
           {
-            "instrument_id": 1,
+            "instrument_key": "mk:test-law",
             "instrument_title": "Закон за тест",
             "version_id": "fixture-2026-09-29",
             "source_url": "https://example.invalid/test-law",
@@ -153,14 +153,14 @@ jobs:
           db.execute(
               """
               INSERT INTO legal_instruments
-              (id,title,instrument_type,jurisdiction,current_status,human_review_status)
-              VALUES (1,'Закон за тест','law','MK','unknown','pending')
+              (id,canonical_key,title,instrument_type,jurisdiction,current_status,human_review_status)
+              VALUES (77,'mk:test-law','Закон за тест','law','MK','unknown','pending')
               """
           )
           db.executescript(Path("/tmp/legal-import.sql").read_text(encoding="utf-8"))
 
           article_count = db.execute(
-              "SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=1"
+              "SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=77"
           ).fetchone()[0]
           assert article_count == 3, article_count
 
