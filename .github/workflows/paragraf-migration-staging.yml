@@ -9,6 +9,7 @@ on:
       - "migrations/0005_paragraf_corpus_gate.sql"
       - "migrations/0006_official_legal_source_registry.sql"
       - "migrations/0007_publication_zenodo_alignment.sql"
+      - "migrations/0008_kocani_wpa_journal_issue1.sql"
       - "scripts/validate-paragraf-import.mjs"
       - "migration/paragraf/**"
       - ".github/workflows/paragraf-migration-staging.yml"
@@ -67,7 +68,7 @@ jobs:
       - name: Verify migration v4 and empty landing zone
         shell: bash
         run: |
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT version, description FROM schema_migrations WHERE version IN ('4','5','6','7') ORDER BY version;"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT version, description FROM schema_migrations WHERE version IN ('4','5','6','7','8') ORDER BY version;"
           npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "PRAGMA table_info(legacy_documents);"
           npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS batch_count FROM legacy_import_batches;"
           npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS document_count FROM legacy_documents;"
@@ -79,7 +80,7 @@ jobs:
         run: |
           npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS publication_count FROM publications WHERE author_name='Zoran Stojankich';"
           npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS published_publication_count FROM publications WHERE author_name='Zoran Stojankich' AND publication_status='published';"
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT title, publication_status, doi, canonical_url FROM publications WHERE author_name='Zoran Stojankich' ORDER BY id;"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT title, venue, publication_status, doi, canonical_url, human_review_status FROM publications WHERE author_name='Zoran Stojankich' ORDER BY id;"
 
       - name: Result
         run: |
