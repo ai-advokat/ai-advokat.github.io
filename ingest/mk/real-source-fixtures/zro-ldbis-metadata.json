@@ -1,0 +1,47 @@
+{
+  "fixture_type": "official_metadata_only",
+  "jurisdiction": "MK",
+  "instrument_title": "Закон за работните односи",
+  "short_title": "ЗРО",
+  "instrument_type": "law",
+  "canonical_base_source": {
+    "provider": "LDBIS",
+    "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=10431",
+    "version": "Изворен текст",
+    "gazette_issue": "62/2005",
+    "publication_date": "2005-07-28",
+    "effective_date": "2005-08-05",
+    "application_date": "2005-08-05",
+    "active_signal": true
+  },
+  "latest_verified_amendment": {
+    "provider": "LDBIS",
+    "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=70756",
+    "title": "Закон за изменување на Законот за работните односи",
+    "gazette_issue": "124/2025",
+    "publication_date": "2025-06-19",
+    "effective_date": "2025-06-19",
+    "application_date": "2025-06-19",
+    "active_signal": true
+  },
+  "recent_amendment_issues": [
+    "111/2023",
+    "39/2025",
+    "74/2025",
+    "124/2025"
+  ],
+  "consolidated_candidate": {
+    "provider": "LDBIS",
+    "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=37111",
+    "version": "Пречистена верзија",
+    "gazette_issue": "74/2015",
+    "publication_date": "2015-05-08",
+    "effective_date": "2015-05-16",
+    "application_date": "2015-05-16",
+    "note": "Historical consolidated signal only; not sufficient by itself for current 2026 text."
+  },
+  "current_text_status": "VERSION_REVIEW_REQUIRED",
+  "article_text_ingested": false,
+  "rule": "Do not mark current_consolidated until all later amendments and Constitutional Court effects are resolved article-by-article.",
+  "verified_on": "2026-09-29"
+}
