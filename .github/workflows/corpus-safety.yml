@@ -11,6 +11,8 @@ on:
       - "scripts/test-legal-parser.mjs"
       - "scripts/parse-mk-amendment-text.mjs"
       - "scripts/test-mk-amendment-parser.mjs"
+      - "scripts/amendment-ndjson-to-sql.mjs"
+      - "scripts/extract-zro-amendment-act.mjs"
       - "ingest/mk/**"
       - "corpus/**"
       - "package.json"
@@ -56,6 +58,9 @@ jobs:
 
       - name: Amendment parser tests
         run: npm run test:amendment-parser
+
+      - name: Amendment importer syntax
+        run: npm run check:amendment-importer
 
       - name: Apply all migrations in clean SQLite
         shell: bash
