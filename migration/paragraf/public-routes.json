@@ -1,0 +1,25 @@
+{
+  "source": "https://paragraf.mk",
+  "captured_on": "2026-09-29",
+  "status": "public_inventory",
+  "public_routes": [
+    "/mk",
+    "/mk/blog",
+    "/mk/use-cases",
+    "/mk/security",
+    "/mk/faq",
+    "/mk/docs",
+    "/mk/about",
+    "/mk/terms",
+    "/mk/privacy"
+  ],
+  "external_or_separate_surfaces": [
+    "https://chat.paragraf.mk/",
+    "https://chat.paragraf.mk/offline-pay/"
+  ],
+  "notes": [
+    "Main public site is reachable and advertises LexAI, document generation, case-law/legal research and subscriptions.",
+    "chat.paragraf.mk is a separate authenticated surface and is not recoverable as a full corpus from public crawling.",
+    "Do not treat pricing/payment pages as legal knowledge corpus."
+  ]
+}
