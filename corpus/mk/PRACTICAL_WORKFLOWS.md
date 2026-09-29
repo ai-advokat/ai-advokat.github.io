@@ -442,3 +442,122 @@ Where the user alleges unlawful action or omission by an enforcement agent:
 - require a tariff/legal basis for every cost component;
 - show uncertainty where the complete enforcement file is unavailable;
 - protect subsistence/exempt income and statutory enforcement limitations only according to verified current law.
+
+
+### 19. Utilities, telecoms, banks and mass creditors / јавни услуги и масовни доверители
+
+Scope:
+- banks and financial creditors
+- telecom operators
+- electricity suppliers and distribution-related claims
+- water and sewerage utilities
+- communal hygiene / waste services
+- district heating
+- municipal and public enterprises
+- other recurring-service creditors
+
+#### Core citizen-protection audit
+For every claim, reconstruct the full amount from source documents and show:
+1. original principal;
+2. billing period;
+3. contractual/statutory interest;
+4. reminders / notices;
+5. notary costs;
+6. lawyer costs;
+7. court costs;
+8. enforcement administration fees;
+9. individual enforcement-action costs;
+10. enforcement reward;
+11. bank/payment-transfer costs;
+12. payments already made;
+13. credits/refunds;
+14. remaining verified balance.
+
+Also calculate:
+- total-to-principal ratio;
+- percentage increase over principal;
+- amount added at each procedural stage;
+- duplicated or unexplained line items;
+- costs without a visible legal/tariff basis.
+
+#### Claim provenance
+For each amount require:
+- creditor;
+- invoice/contract/account reference;
+- due date;
+- legal basis;
+- tariff/price-list basis where relevant;
+- notice/service evidence;
+- enforceable title;
+- transfer/assignment record if creditor changed;
+- enforcement file number;
+- source document.
+
+#### Utility and telecom disputes
+- disputed meter/consumption reading
+- estimated versus actual consumption
+- billing-period mismatch
+- old debt carried forward
+- service interruption/reconnection charges
+- disputed contract or subscriber identity
+- duplicate invoices
+- payment not credited
+- limitation-period review
+- regulatory complaint route where applicable
+
+#### Institutional relationship map
+Do not presume collusion or misconduct.
+Instead record, for the concrete case:
+- creditor/service provider;
+- owner/public-enterprise status where relevant;
+- regulator or supervisory authority;
+- notary/court/enforcement agent involvement;
+- legal basis for referral to enforcement;
+- each handoff date and document;
+- conflicts of interest or irregularity only when evidence exists.
+
+#### Draft outputs
+- full debt reconstruction
+- citizen cost-multiplier report
+- request for itemized statement
+- dispute of invoice/account balance
+- request to credit prior payment
+- complaint to provider
+- regulator/authority complaint where applicable
+- objection/challenge in enforcement where legally available
+- limitation checklist
+- settlement comparison
+- Human Gate review
+
+#### Fairness rules
+- never assume the creditor is wrong merely because total costs are high;
+- never assume the citizen owes the claimed amount merely because enforcement started;
+- every added amount needs an identifiable legal, contractual or tariff basis;
+- if the file is incomplete, show the missing evidence explicitly;
+- never advise concealment of assets or evasion of lawful debt collection.
+
+
+### 20. Citizen debt multiplier / граѓански cost-multiplier audit
+
+Purpose:
+Make visible when a small or ordinary debt becomes two, three or more times larger through accumulated interest and procedural costs.
+
+Output example:
+- principal: 100%
+- interest: +X%
+- notary/court: +Y%
+- lawyer: +Z%
+- enforcement: +N%
+- bank/other: +M%
+- total multiplier: 2.1x / 3.4x / etc.
+
+The multiplier is descriptive, not a legal conclusion.
+Each component must be verified before the system labels it:
+- supported
+- disputed
+- duplicated
+- unexplained
+- potentially challengeable
+- time-bar review needed
+
+No component is called unlawful until the applicable current law, tariff and source document have been checked.
