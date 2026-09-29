@@ -4,7 +4,7 @@
 UPDATE publications
 SET venue='WPA Journal of Protocol, Diplomacy, Public Communication, Security & Communicology — Volume I, Issue I',
     publication_status='draft',
-    human_review_status='pending_publication',
+    human_review_status='pending',
     updated_at=CURRENT_TIMESTAMP
 WHERE author_name='Zoran Stojankich'
   AND title='Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност';
