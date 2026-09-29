@@ -1,0 +1,189 @@
+name: ZRO 2025 amendments staging-only import
+
+on:
+  push:
+    branches:
+      - slvesnik-public-corpus-collector-29sep2026
+    paths:
+      - ".github/workflows/zro-2025-amendments-staging-import.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zro-2025-amendments-staging-only
+  cancel-in-progress: false
+
+jobs:
+  import-amendments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Install PDF tools
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+
+      - name: Fail closed if Cloudflare secrets are missing
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Verify staging target only
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const prod=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const preview=JSON.parse(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"));
+          const p=prod.d1_databases?.[0];
+          const s=preview.d1_databases?.[0];
+          if(!p || p.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1 identity");
+          if(!s || s.binding!=="PREVIEW_DB" || s.database_name!=="ai-advokat-db-staging" || s.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") {
+            throw new Error("Unexpected staging D1 target");
+          }
+          if(p.database_id===s.database_id) throw new Error("Staging and production D1 must differ");
+          console.log("STAGING TARGET GUARD: PASS");
+          NODE
+
+      - name: Corpus parser/importer safety
+        run: |
+          npm run check:amendment-parser
+          npm run test:amendment-parser
+          npm run check:amendment-importer
+
+      - name: Apply migrations to staging only
+        run: npm run db:migrate:staging
+
+      - name: Verify amendment schema and historical ZRO baseline
+        shell: bash
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT version, description FROM schema_migrations WHERE version IN ('14','15') ORDER BY CAST(version AS INTEGER);"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS baseline_articles FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro');"
+
+      - name: Build audited amendment event SQL
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          build_amendment () {
+            issue="$1"
+            slug="$2"
+            url="$3"
+            pages="$4"
+            title="$5"
+            pub="$6"
+            effective="$7"
+            application="$8"
+            expected_articles="$9"
+            expected_events="${10}"
+            expected_sha="${11}"
+            extract_mode="${12}"
+            entry_anchor="${13}"
+
+            curl --fail --location --retry 3 --retry-delay 2 "$url" -o "/tmp/$slug.pdf"
+            test -s "/tmp/$slug.pdf"
+            pdfinfo "/tmp/$slug.pdf" > "/tmp/$slug-pdfinfo.txt"
+            grep -Eq "^Pages:[[:space:]]+$pages$" "/tmp/$slug-pdfinfo.txt"
+
+            actual_sha="$(sha256sum "/tmp/$slug.pdf" | cut -d' ' -f1)"
+            test "$actual_sha" = "$expected_sha"
+
+            if [ "$extract_mode" = "raw" ]; then
+              pdftotext -raw "/tmp/$slug.pdf" "/tmp/$slug-raw.txt"
+            else
+              pdftotext -layout "/tmp/$slug.pdf" "/tmp/$slug-raw.txt"
+            fi
+
+            node scripts/extract-zro-amendment-act.mjs               "/tmp/$slug-raw.txt"               "/tmp/$slug-act.txt"               "/tmp/$slug-segment.json"               "$entry_anchor"
+
+            cat > "/tmp/$slug-meta.json" <<EOF
+          {
+            "instrument_key": "mk:zro",
+            "instrument_title": "Закон за работните односи",
+            "amendment_title": "$title",
+            "source_url": "$url",
+            "source_sha256": "$expected_sha",
+            "source_issue_number": "$issue",
+            "source_issue_date": "$pub",
+            "effective_date": "$effective",
+            "application_date": "$application"
+          }
+          EOF
+
+            node scripts/parse-mk-amendment-text.mjs               "/tmp/$slug-act.txt"               "/tmp/$slug-meta.json"               "/tmp/$slug-events.ndjson"
+
+            SLUG="$slug" EXPECTED_ARTICLES="$expected_articles" EXPECTED_EVENTS="$expected_events" python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          slug=os.environ["SLUG"]
+          expected_articles=int(os.environ["EXPECTED_ARTICLES"])
+          expected_events=int(os.environ["EXPECTED_EVENTS"])
+          segment=json.loads(Path(f"/tmp/{slug}-segment.json").read_text())
+          rows=[json.loads(x) for x in Path(f"/tmp/{slug}-events.ndjson").read_text().splitlines() if x.strip()]
+          manifest=next(x for x in rows if x.get("type")=="amendment_manifest")
+          events=[x for x in rows if x.get("type")=="amendment_event"]
+          assert segment["amendment_article_count"] == expected_articles, segment
+          assert manifest["amendment_article_count"] == expected_articles, manifest
+          assert manifest["event_count"] == expected_events, manifest
+          assert len(events) == expected_events, len(events)
+          assert manifest["instrument_key"] == "mk:zro", manifest
+          print(f"{slug}: amendment parse gate PASS")
+          PY
+
+            node scripts/amendment-ndjson-to-sql.mjs               "/tmp/$slug-events.ndjson"               "/tmp/$slug-import.sql"               "mk:zro"
+          }
+
+          build_amendment             "39/2025" "39-2025"             "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-Jv8C.pdf"             "2"             "Закон за изменување и дополнување на Законот за работните односи"             "2025-02-20" "2025-02-20" "2025-02-20"             "4" "4"             "d112e2449a07a6419ced1359b897758d9a2f6fd5fbc6f168dd8680f4f7bac854"             "raw" "911"
+
+          build_amendment             "74/2025" "74-2025"             "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-3i9b.pdf"             "4"             "Закон за изменување на Законот за работните односи"             "2025-04-08" "2025-04-16" "2025-04-16"             "26" "26"             "c5289c8e6b015d103bc17beb8686dbaca7b874c2b121888da8927cb320d309ba"             "layout" ""
+
+          build_amendment             "124/2025" "124-2025"             "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-lKlS.pdf"             "1"             "Закон за изменување на Законот за работните односи"             "2025-06-19" "2025-06-19" "2025-06-19"             "2" "2"             "a300554b91884449a46ee3b1df2ae168fea9a24e53a12dafa49647e83e0807fd"             "layout" ""
+
+      - name: Import amendment events to staging only
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --file /tmp/39-2025-import.sql
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --file /tmp/74-2025-import.sql
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --file /tmp/124-2025-import.sql
+
+      - name: Verify amendment staging state
+        shell: bash
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT source_issue_number, COUNT(*) AS event_count FROM legal_amendment_events WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND source_issue_number IN ('39/2025','74/2025','124/2025') GROUP BY source_issue_number ORDER BY source_issue_number;"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS total_events FROM legal_amendment_events WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND source_issue_number IN ('39/2025','74/2025','124/2025');"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT human_review_status, COUNT(*) AS count FROM legal_amendment_events WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND source_issue_number IN ('39/2025','74/2025','124/2025') GROUP BY human_review_status;"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT status, COUNT(*) AS count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') GROUP BY status ORDER BY status;"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS current_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND status='current_consolidated';"
+
+      - name: Assert staging counts
+        shell: bash
+        run: |
+          EVENT_COUNT="$(npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "SELECT COUNT(*) AS c FROM legal_amendment_events WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND source_issue_number IN ('39/2025','74/2025','124/2025');" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);console.log(j[0].results[0].c)})')"
+          REVIEW_COUNT="$(npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "SELECT COUNT(*) AS c FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND status='needs_version_review';" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);console.log(j[0].results[0].c)})')"
+          CURRENT_COUNT="$(npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "SELECT COUNT(*) AS c FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND status='current_consolidated';" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);console.log(j[0].results[0].c)})')"
+
+          test "$EVENT_COUNT" = "32"
+          test "$REVIEW_COUNT" = "26"
+          test "$CURRENT_COUNT" = "0"
+
+          echo "ZRO 2025 AMENDMENT EVENTS: STAGING ONLY PASS"
+          echo "events=$EVENT_COUNT"
+          echo "needs_version_review=$REVIEW_COUNT"
+          echo "current_consolidated=$CURRENT_COUNT"
+          echo "Production D1 was not targeted."
