@@ -50,3 +50,29 @@ test("keeps unresolved amendment act article pending",()=>{
   assert.equal(p.events[0].target_article_number,null);
   assert.equal(p.events[0].human_review_status,"pending");
 });
+
+
+test("handles членот form and inserted base-law article without splitting amendment act",()=>{
+  const src=`Член 1
+Во членот 104 зборот „друг“ се брише.
+
+Член 2
+По членот 104 се додава нов наслов и нов член 104-а, кои гласат:
+„Продолжување на работен однос
+Член 104-а
+(1) Текст на новиот член.
+
+Член 3
+Преодна одредба за лицата од членот 2 од овој закон.
+
+Член 4
+Овој закон влегува во сила со денот на објавувањето.`;
+  const p=parseAmendmentText(src,meta);
+  assert.equal(p.amendment_article_count,4);
+  assert.equal(p.events[0].target_article_number,"104");
+  const insert=p.events.find(e=>e.amendment_article_number==="2");
+  assert.ok(insert);
+  assert.equal(insert.target_article_number,"104");
+  assert.deepEqual(insert.inserted_article_numbers,["104-а"]);
+  assert.equal(insert.event_type,"insert");
+});
