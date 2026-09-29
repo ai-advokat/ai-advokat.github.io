@@ -20,19 +20,24 @@ const articles=lines.filter(x=>x.type==="article");
 if (!manifest) throw new Error("Missing ingest_manifest");
 if (!articles.length) throw new Error("No article records");
 
-const runKey=`legal:${manifest.instrument_id}:${manifest.version_id}:${manifest.source_sha256.slice(0,16)}`;
+if (!manifest.instrument_key) throw new Error("Missing instrument_key in ingest_manifest");
+const instrumentIdExpr=(key,fallbackId=null)=>{
+  if (key) return "(SELECT id FROM legal_instruments WHERE canonical_key="+sqlString(key)+")";
+  return sqlNumber(fallbackId);
+};
+const runKey=`legal:${manifest.instrument_key}:${manifest.version_id}:${manifest.source_sha256.slice(0,16)}`;
 const sql=[];
 sql.push("PRAGMA foreign_keys=ON;");
 sql.push("BEGIN TRANSACTION;");
 sql.push(`INSERT OR REPLACE INTO corpus_ingest_runs
 (run_key,source_url,source_sha256,instrument_id,input_kind,parser_version,article_count,warning_count,status,notes)
-VALUES (${sqlString(runKey)},${sqlString(manifest.source_url)},${sqlString(manifest.source_sha256)},${sqlNumber(manifest.instrument_id)},'article_ndjson',${sqlString(manifest.parser_version)},${articles.length},${Number(manifest.warning_count||0)},'staged',${sqlString((manifest.warnings||[]).join(" | "))});`);
+VALUES (${sqlString(runKey)},${sqlString(manifest.source_url)},${sqlString(manifest.source_sha256)},${instrumentIdExpr(manifest.instrument_key,manifest.instrument_id)},'article_ndjson',${sqlString(manifest.parser_version)},${articles.length},${Number(manifest.warning_count||0)},'staged',${sqlString((manifest.warnings||[]).join(" | "))});`);
 
 for (const a of articles) {
   sql.push(`INSERT OR REPLACE INTO legal_article_versions
 (canonical_id,instrument_id,instrument_version_id,article_number,article_number_normalized,article_heading,article_text,status,valid_from,valid_to,source_issue_number,source_issue_date,source_url,source_page_start,source_page_end,source_sha256,extraction_method,extraction_confidence,human_review_status)
 VALUES (${[
-    sqlString(a.canonical_id),sqlNumber(a.instrument_id),sqlNumber(a.instrument_version_id),
+    sqlString(a.canonical_id),instrumentIdExpr(a.instrument_key,a.instrument_id),sqlNumber(a.instrument_version_id),
     sqlString(a.article_number),sqlString(a.article_number_normalized),sqlString(a.article_heading),
     sqlString(a.article_text),sqlString(a.status),sqlString(a.valid_from),sqlString(a.valid_to),
     sqlString(a.source?.issue_number),sqlString(a.source?.issue_date),sqlString(a.source?.url),
