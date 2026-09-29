@@ -1,0 +1,50 @@
+{
+  "instrument_key": "mk:zro",
+  "instrument_title": "Закон за работните односи",
+  "verified_on": "2026-09-30",
+  "sources": [
+    {
+      "issue": "39/2025",
+      "publication_date": "2025-02-20",
+      "effective_date": "2025-02-20",
+      "application_date": "2025-02-20",
+      "title": "Закон за изменување и дополнување на Законот за работните односи",
+      "ministry_page": "https://www.economy.gov.mk/mk-MK/regulativa/zakoni",
+      "official_pdf": "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-Jv8C.pdf",
+      "ldbis": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=69550",
+      "expected_pdf_pages": 2,
+      "expected_amendment_articles": 4,
+      "expected_unresolved_articles": 2,
+      "status": "SOURCE_VERIFIED_AUDIT_PENDING"
+    },
+    {
+      "issue": "74/2025",
+      "publication_date": "2025-04-08",
+      "effective_date": "2025-04-16",
+      "application_date": "2025-04-16",
+      "title": "Закон за изменување на Законот за работните односи",
+      "ministry_page": "https://www.economy.gov.mk/mk-MK/regulativa/zakoni",
+      "official_pdf": "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-3i9b.pdf",
+      "expected_pdf_pages": 4,
+      "expected_amendment_articles": 26,
+      "expected_unresolved_articles": 1,
+      "status": "SOURCE_VERIFIED_AUDIT_PENDING",
+      "note": "Article 26 provides eighth-day entry into force."
+    },
+    {
+      "issue": "124/2025",
+      "publication_date": "2025-06-19",
+      "effective_date": "2025-06-19",
+      "application_date": "2025-06-19",
+      "title": "Закон за изменување на Законот за работните односи",
+      "ministry_page": "https://www.economy.gov.mk/mk-MK/regulativa/zakoni",
+      "official_pdf": "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-lKlS.pdf",
+      "ldbis": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=70756",
+      "expected_pdf_pages": 1,
+      "expected_amendment_articles": 2,
+      "expected_unresolved_articles": 1,
+      "status": "SOURCE_VERIFIED_AUDIT_PENDING"
+    }
+  ],
+  "rule": "Parse as amendment events only. Do not merge into current text until target-article application and Human Gate review are complete."
+}
