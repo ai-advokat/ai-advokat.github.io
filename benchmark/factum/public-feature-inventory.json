@@ -1,0 +1,35 @@
+{
+  "competitor": "Factum",
+  "url": "https://factum.mk/",
+  "captured_on": "2026-09-29",
+  "mode": "public_feature_benchmark_only",
+  "terms_boundary": {
+    "mass_scraping_allowed": false,
+    "reverse_engineering_allowed": false,
+    "authenticated_corpus_copying": false
+  },
+  "public_features": [
+    "consolidated national legislation",
+    "EU law",
+    "bylaws",
+    "article-level citations",
+    "court decision search",
+    "smart/contextual court search",
+    "legal document generation",
+    "selected-text legal explanation",
+    "selected-text legal revision",
+    "projects/private document grounding",
+    "PDF/Word/Excel/image inputs",
+    "multimodal document analysis",
+    "table view/advanced analysis",
+    "live web research",
+    "manual/hybrid/automatic modes",
+    "Microsoft Word add-in",
+    "MCP server",
+    "MCP client",
+    "OAuth 2.1/API-key access",
+    "multi-jurisdiction support",
+    "security/access-control claims"
+  ],
+  "ai_advokat_rule": "Implement clean-room equivalents from primary sources; never ingest proprietary Factum corpus."
+}
