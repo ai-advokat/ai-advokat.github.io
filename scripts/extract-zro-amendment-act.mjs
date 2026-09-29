@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 
-const [,,inputPath,outputPath,reportPath] = process.argv;
+const [,,inputPath,outputPath,reportPath,gazetteEntryNumber] = process.argv;
 if(!inputPath || !outputPath || !reportPath){
   console.error("Usage: node scripts/extract-zro-amendment-act.mjs <raw.txt> <act.txt> <report.json>");
   process.exit(2);
@@ -28,7 +28,16 @@ for(let i=0;i<lines.length;i++){
     break;
   }
 }
-if(titleWindowStart<0) throw new Error("ZRO amendment title not found");
+if(titleWindowStart<0 && gazetteEntryNumber){
+  const marker=new RegExp("^\\s*"+gazetteEntryNumber.replace(/[.*+?^$\\{}()|[\\]\\]/g,"\\if(titleWindowStart<0) throw new Error("ZRO amendment title not found");")+"\\.\\s*$");
+  for(let i=0;i<lines.length;i++){
+    if(marker.test(normLine(lines[i]))){
+      titleWindowStart=i;
+      break;
+    }
+  }
+}
+if(titleWindowStart<0) throw new Error("ZRO amendment title or Gazette entry anchor not found");
 
 let articleStart=-1;
 for(let i=titleWindowStart;i<lines.length;i++){
@@ -68,6 +77,7 @@ const report={
   input_path:inputPath,
   output_path:outputPath,
   title_window_start_line:titleWindowStart+1,
+  gazette_entry_number:gazetteEntryNumber||null,
   article_start_line:articleStart+1,
   end_line:end<lines.length?end+1:null,
   amendment_article_headers:headers,
