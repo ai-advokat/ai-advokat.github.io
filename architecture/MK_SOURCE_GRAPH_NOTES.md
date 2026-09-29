@@ -144,3 +144,34 @@ For every current-law answer, where relevant:
 - issuing ministry
 - official ENER link
 - publication/adoption status
+
+
+## Akademik / Akademika
+
+Classification:
+- commercial legal publisher;
+- commercial legal database;
+- legal literature / training provider;
+- coverage and freshness benchmark.
+
+Publicly described characteristics:
+- daily-updated collection of Macedonian regulations;
+- claim of comprehensive current Macedonian legislation coverage;
+- professional legal literature;
+- practical legal training;
+- contract/form collections and legal commentaries.
+
+AI Advokat policy:
+- use public information to benchmark corpus completeness, freshness, taxonomy and UX;
+- use public catalog metadata to discover relevant secondary literature;
+- never copy subscriber-only Akademika legal texts or proprietary editorial consolidation;
+- never treat a commentary/practicum/template as primary authority;
+- verify every legal proposition against Official Gazette/LDBIS/court sources;
+- where a secondary work materially informs analysis, label it as secondary commentary and preserve attribution.
+
+Secondary literature categories worth modelling:
+- criminal-procedure practice;
+- contract/template collections;
+- competition-law commentaries;
+- commercial/property-law forms;
+- professional training materials.
