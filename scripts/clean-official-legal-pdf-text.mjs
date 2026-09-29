@@ -12,6 +12,7 @@ const lines=raw.split("\n");
 const removed=[];
 const kept=[];
 let appendixStartLine=null;
+let seenFinalArticle=false;
 
 const noisePatterns=[
   /^\s*Службен весник на Република Северна Македонија\s+Редакциски пречистени текстови\s*$/iu,
@@ -21,8 +22,19 @@ const noisePatterns=[
 
 for (let i=0;i<lines.length;i++) {
   const line=lines[i].replace(/\f/g,"").trimEnd();
+  const lookahead=[line, lines[i+1]||"", lines[i+2]||""]
+    .join(" ")
+    .replace(/\s+/g," ")
+    .trim();
 
-  if (/ОДРЕДБИ\s+ОД\s+ЗАКОНИ\s+ЗА\s+ИЗМЕНУВАЊЕ/iu.test(line)) {
+  if (/^\s*Член\s+273\s*\.?\s*$/iu.test(line)) {
+    seenFinalArticle=true;
+  }
+
+  if (
+    seenFinalArticle &&
+    /ОДРЕДБИ\s+ОД\s+ЗАКОНИ\s+ЗА\s+ИЗМЕНУВАЊЕ(?:\s+И\/ИЛИ\s+ДОПОЛНУВАЊЕ)?/iu.test(lookahead)
+  ) {
     appendixStartLine=i+1;
     break;
   }
@@ -67,6 +79,7 @@ const report={
   removed_noise_line_count:removed.length,
   appendix_start_line:appendixStartLine,
   appendix_truncated:appendixStartLine!==null,
+  seen_final_article_273:seenFinalArticle,
   article_header_count:articleHeaders.length,
   duplicate_article_headers:duplicates,
   suspicious_markers:suspicious,
