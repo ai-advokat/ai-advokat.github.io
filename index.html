@@ -1018,12 +1018,13 @@
           <div class="cardAction"><span>Отвори меѓународни извори →</span><span class="cardState">LIVE</span></div>
         </article>
 
-        <article class="card">
+        <article class="card actionCard" role="button" tabindex="0" id="versionsCard" aria-label="Отвори верзии и измени">
           <div class="icon">⌁</div>
           <h3 data-i18n="cardVersions">Верзии и измени</h3>
           <p data-i18n="cardVersionsText">
             Споредба на стар и нов текст, со видливи датумски граници и правна важност.
           </p>
+          <div class="cardAction"><span>Провери верзии →</span><span class="cardState" style="color:var(--warn)">PREVIEW</span></div>
         </article>
 
         <article class="card">
@@ -1961,6 +1962,31 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   $("#echrCard").addEventListener("click",openInternationalRegistry);
   $("#echrCard").addEventListener("keydown",e=>{
     if(e.key==="Enter" || e.key===" "){e.preventDefault();openInternationalRegistry();}
+  });
+
+  async function openVersionsWorkspace(){
+    let statusMessage = lang==="mk"
+      ? "Споредбата на верзии е во GOVERNED PREVIEW. Ќе работи само врз проверени, датумски означени верзии на прописи."
+      : "Version comparison is in GOVERNED PREVIEW. It will operate only on verified, date-stamped instrument versions.";
+    try{
+      const response=await fetch(API_BASE+"/api/versions",{headers:{accept:"application/json"}});
+      const data=await response.json();
+      if(data?.message) statusMessage=data.message;
+    }catch{}
+    showWorkspace(
+      lang==="mk" ? "Верзии и измени" : "Versions & amendments",
+      statusMessage,
+      [
+        {title:lang==="mk" ? "Службен весник — примарна проверка" : "Official Gazette — primary verification",url:"https://slvesnik.com.mk/",jurisdiction:"MK",category:"official_gazette"},
+        {title:lang==="mk" ? "LDBIS — важечки правни текстови" : "LDBIS — current legal texts",url:"https://ldbis.pravda.gov.mk/",jurisdiction:"MK",category:"ministry_database"},
+        {title:"EUR-Lex",url:"https://eur-lex.europa.eu/",jurisdiction:"EU",category:"international_organization"}
+      ]
+    );
+  }
+
+  $("#versionsCard").addEventListener("click",openVersionsWorkspace);
+  $("#versionsCard").addEventListener("keydown",e=>{
+    if(e.key==="Enter" || e.key===" "){e.preventDefault();openVersionsWorkspace();}
   });
   $("#closeWorkspace").addEventListener("click",()=>{$("#sourceWorkspace").hidden=true;});
 
