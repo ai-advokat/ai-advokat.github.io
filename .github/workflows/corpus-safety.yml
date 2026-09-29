@@ -67,8 +67,9 @@ jobs:
                   "SELECT version FROM schema_migrations ORDER BY CAST(version AS INTEGER)"
               )
           ]
-          expected = [str(i) for i in range(1, 13)]
+          expected = [str(int(m.name.split("_", 1)[0])) for m in migrations]
           assert versions == expected, (versions, expected)
+          assert len(versions) == len(set(versions)), versions
 
           required_tables = {
               "legal_article_versions",
