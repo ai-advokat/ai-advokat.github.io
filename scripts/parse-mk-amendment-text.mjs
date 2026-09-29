@@ -15,9 +15,9 @@ function sha256(value) {
 }
 
 const ACT_ARTICLE_RE=/^\s*Член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s*\.?\s*$/imu;
-const TARGET_RE=/\bВо\s+член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)/giu;
-const AFTER_RE=/\bПо\s+член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+додава/giu;
-const DELETE_RE=/\bчлен\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+брише/giu;
+const TARGET_RE=/Во\s+член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)/giu;
+const AFTER_RE=/По\s+член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+додава/giu;
+const DELETE_RE=/член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s+се\s+брише/giu;
 
 function normalizeArticleNumber(raw="") {
   return compact(raw).toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"");
