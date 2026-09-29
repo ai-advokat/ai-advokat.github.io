@@ -35,10 +35,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL="https://cms.mtsp.gov.mk/content/pdf/2023/trud/ZRO,%20precisten%20tekst%202023.pdf"
+          URL="https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf"
           curl --fail --location --retry 3 --retry-delay 2 "$URL" -o /tmp/zro-2023.pdf
           test -s /tmp/zro-2023.pdf
           file /tmp/zro-2023.pdf
+          pdfinfo /tmp/zro-2023.pdf | tee /tmp/zro-2023-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+108$" /tmp/zro-2023-pdfinfo.txt
           sha256sum /tmp/zro-2023.pdf | tee /tmp/zro-2023.sha256
 
       - name: Extract raw PDF text
@@ -106,6 +108,7 @@ jobs:
           retention-days: 14
           path: |
             /tmp/zro-2023.sha256
+            /tmp/zro-2023-pdfinfo.txt
             /tmp/zro-2023-extraction-report.json
             /tmp/zro-2023-manifest.json
             /tmp/zro-2023.ndjson
