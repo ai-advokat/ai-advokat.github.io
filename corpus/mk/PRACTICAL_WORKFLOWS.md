@@ -561,3 +561,115 @@ Each component must be verified before the system labels it:
 - time-bar review needed
 
 No component is called unlawful until the applicable current law, tariff and source document have been checked.
+
+
+### 21. Sale of real estate / продажба на имот
+
+Scope:
+- apartment
+- house
+- construction land
+- agricultural land
+- commercial premises
+- garage / parking unit
+- co-owned property
+- property under mortgage or other encumbrance
+- new construction / developer sale
+
+#### Seller verification
+- verify registered owner independently in Cadastre
+- verify identity and legal capacity
+- verify marital/community-property implications where relevant
+- verify co-owners and required consents
+- verify power of attorney independently if used
+- verify inheritance/probate basis where title derives from succession
+- identify pending disputes, enforcement or prohibitions
+
+#### Property verification
+- cadastral municipality
+- parcel number
+- special-part/unit identifier
+- area and description
+- ownership share
+- mortgages
+- liens
+- prohibitions
+- annotations
+- easements and other registered rights
+- planning/building status where relevant
+- distinguish cadastral registration from legality of construction
+
+#### Contract workflow
+- reservation / deposit
+- preliminary agreement
+- final sale-purchase agreement
+- payment schedule
+- possession handover
+- allocation of taxes, fees and utility obligations
+- warranties and representations
+- default / termination provisions
+- escrow or secure payment method where available
+- exact property description must match official records
+
+#### Notary and registration
+- verify notarial form and certification requirements under current law
+- preserve notarial reference, date and identity of parties
+- verify whether registration consent / clausula intabulandi or equivalent is required
+- track filing to Cadastre
+- track registration result
+- do not treat signed contract as completed ownership transfer until the legally required registration steps are satisfied
+
+#### Tax and cost audit
+- identify applicable tax / exemption / payer under current law
+- distinguish real-estate transfer tax from VAT where relevant
+- notary costs
+- cadastral fees
+- bank/payment costs
+- agency/intermediary fee if any
+- never guess rates; use current official source
+
+#### Fraud / risk flags
+- seller not matching current cadastral owner
+- recent unexplained title transfer
+- undisclosed mortgage or prohibition
+- conflicting preliminary contracts
+- multiple buyers
+- unverifiable power of attorney
+- request for untraceable cash payment
+- mismatch between actual unit and cadastral description
+- developer selling without verified title/authority
+- pressure to sign before independent document review
+
+#### Draft outputs
+- buyer due-diligence checklist
+- seller due-diligence checklist
+- preliminary agreement
+- sale-purchase agreement
+- deposit clause
+- payment schedule
+- handover protocol
+- request for cadastral registration
+- request for release/deletion of mortgage where applicable
+- tax-document checklist
+- discrepancy/risk matrix
+- transaction chronology
+- Human Gate closing checklist
+
+#### Closing gate
+Before final signing/payment verify:
+1. current cadastral ownership;
+2. current encumbrances;
+3. seller authority;
+4. exact property identity;
+5. current tax treatment;
+6. payment destination and amount;
+7. notarial/form requirements;
+8. registration route;
+9. possession/handover conditions;
+10. unresolved disputes or enforcement.
+
+#### Integrity rules
+- never fabricate ownership, consent, power of attorney or cadastral data
+- never advise concealment of sale price or tax evasion
+- never advise bypassing registered encumbrances
+- never treat a scanned property sheet as authoritative without independent official verification
