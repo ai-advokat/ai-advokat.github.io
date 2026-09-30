@@ -12,6 +12,14 @@
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https://www.google-analytics.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev https://www.google-analytics.com https://*.google-analytics.com; font-src 'self' data:; object-src 'none'; media-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self' mailto:; upgrade-insecure-requests" />
   <link rel="canonical" href="https://ai-advokat.github.io/" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/app-icon.svg" />
+  <meta name="application-name" content="AI Advokat" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="AI Advokat" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <title>AI Advokat — Правен информациски и AI портал</title>
 
   <style>
@@ -894,7 +902,12 @@
           <a class="btn secondary" href="#publications" data-i18n="viewPapers">
             Отвори трудови
           </a>
+
+          <button class="btn secondary" id="installAppBtn" type="button" hidden data-i18n="installApp">
+            Инсталирај AI Advokat
+          </button>
         </div>
+        <div id="installAppHint" class="sourceRule" style="margin-top:12px" aria-live="polite"></div>
       </div>
 
       <div class="trustGrid" aria-label="Основни принципи" data-i18n-aria="trustGridAria">
@@ -1651,7 +1664,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       eyebrow:"AI АДВОКАТ · ЧОВЕЧКА ПРОВЕРКА",
       heroTitle:"Правото, организирано. AI, под човечка контрола.",
       heroText:"Едно место за прописи, судска практика, правни анализи, документи и истражување со вештачка интелигенција — со видливи извори, верзии и задолжителна човечка проверка.",
-      startResearch:"Започни правно истражување", viewPapers:"Отвори трудови",
+      startResearch:"Започни правно истражување", viewPapers:"Отвори трудови", installApp:"Инсталирај AI Advokat",
       trustLabel1:"Изворот прв", trustLabel2:"Човечка порта", trustLabel3:"Проверка на верзија", trustLabel4:"Поврзано со Zenodo",
       trust1:"Одговорите треба да покажуваат на што се потпираат.", trust2:"AI не ја заменува професионалната правна проценка.", trust3:"Правниот текст се чита со датум, верзија и важност.", trust4:"Авторските трудови имаат проверлив Zenodo-статус и резервирани DOI каде што се достапни.",
       sourceTag:"Правна база", sourceTitle:"Од извор до правен заклучок", sourceText:"Порталот е структуриран така што официјалниот текст, судската практика, стручната анализа и AI-синтезата никогаш не се мешаат без ознака.",
@@ -1687,7 +1700,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       eyebrow:"AI ADVOCATE · HUMAN REVIEW",
       heroTitle:"Law, organized. AI, under human control.",
       heroText:"One place for legislation, case law, legal analysis, documents and AI-assisted research — with visible sources, versions and mandatory human review.",
-      startResearch:"Start legal research", viewPapers:"View publications",
+      startResearch:"Start legal research", viewPapers:"View publications", installApp:"Install AI Advokat",
       trustLabel1:"Source-first", trustLabel2:"Human Gate", trustLabel3:"Version-aware", trustLabel4:"Zenodo-linked",
       trust1:"Answers should show what they rely on.", trust2:"AI does not replace professional legal judgment.", trust3:"Legal text is read with date, version and validity.", trust4:"Author publications show a verifiable Zenodo status, published DOI records and Scholar pages.",
       sourceTag:"Legal database", sourceTitle:"From source to legal conclusion", sourceText:"Official text, case law, professional analysis and AI synthesis remain visibly separated.",
@@ -2226,6 +2239,62 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   $("#closeModal").addEventListener("click",()=>$("#infoModal").classList.remove("show"));
   $("#infoModal").addEventListener("click",e=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove("show"); });
   document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("#infoModal").classList.remove("show"); });
+
+  let deferredInstallPrompt=null;
+  const installButton=$("#installAppBtn");
+  const installHint=$("#installAppHint");
+
+  window.addEventListener("beforeinstallprompt",event=>{
+    event.preventDefault();
+    deferredInstallPrompt=event;
+    installButton.hidden=false;
+    installHint.textContent=lang==="mk"
+      ? "AI Advokat може да се инсталира како апликација на овој уред."
+      : "AI Advokat can be installed as an app on this device.";
+  });
+
+  installButton.addEventListener("click",async()=>{
+    if(!deferredInstallPrompt){
+      installHint.textContent=lang==="mk"
+        ? "На iPhone/iPad: Share → Add to Home Screen. На desktop користете ја Install App опцијата на прелистувачот."
+        : "On iPhone/iPad: Share → Add to Home Screen. On desktop use the browser's Install App option.";
+      return;
+    }
+    deferredInstallPrompt.prompt();
+    const choice=await deferredInstallPrompt.userChoice;
+    installHint.textContent=choice.outcome==="accepted"
+      ? (lang==="mk" ? "AI Advokat се инсталира." : "AI Advokat is being installed.")
+      : (lang==="mk" ? "Инсталацијата е откажана." : "Installation was cancelled.");
+    deferredInstallPrompt=null;
+    installButton.hidden=true;
+  });
+
+  window.addEventListener("appinstalled",()=>{
+    installButton.hidden=true;
+    installHint.textContent=lang==="mk"
+      ? "AI Advokat е инсталиран на уредот."
+      : "AI Advokat is installed on this device.";
+  });
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load",()=>{
+      navigator.serviceWorker.register("/service-worker.js",{scope:"/"})
+        .catch(()=>{});
+    },{once:true});
+  }
+
+  const standalone=window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone===true;
+  if(standalone){
+    installButton.hidden=true;
+    installHint.textContent=lang==="mk"
+      ? "Работите во AI Advokat апликацијата."
+      : "You are using the AI Advokat app.";
+  }else if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
+    installButton.hidden=false;
+    installHint.textContent=lang==="mk"
+      ? "На iPhone/iPad: Share → Add to Home Screen."
+      : "On iPhone/iPad: Share → Add to Home Screen.";
+  }
 
   $("#year").textContent=new Date().getFullYear();
   applyLanguage();
