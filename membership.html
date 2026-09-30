@@ -5,10 +5,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="AI Advokat членство — достапни правни AI планови со Source-first и Human Gate.">
-  <meta name="theme-color" content="#0c2038">\n  <link rel="manifest" href="/manifest.webmanifest">\n  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">\n  <link rel="apple-touch-icon" href="/assets/app-icon.svg">
+  <meta name="theme-color" content="#0c2038">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/app-icon.svg">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https://www.google-analytics.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev https://www.google-analytics.com https://*.google-analytics.com; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self' mailto:; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https://www.google-analytics.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev https://www.google-analytics.com https://*.google-analytics.com; font-src 'self' data:; object-src 'none'; frame-src https://challenges.cloudflare.com; base-uri 'none'; form-action 'self' mailto:; upgrade-insecure-requests">
   <title>Членство · AI Advokat</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
   <style>
     :root{--bg:#f4f6f8;--surface:#fff;--ink:#132033;--muted:#607080;--line:#d9e0e7;--navy:#0c2038;--gold:#b9985b;--ok:#1f6c4d;--radius:18px}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -65,6 +69,7 @@
       <label>Организација<input name="organizationName" maxlength="160" autocomplete="organization"></label>
       <label>План<select name="planCode" id="planCode"><option value="start">START · 199 ден.</option><option value="pro">PRO · 399 ден.</option><option value="office">OFFICE · 999 ден.</option></select></label>
       <label>Период<select name="billingCycle"><option value="monthly">Месечно</option><option value="annual">Годишно</option></select></label>
+      <div class="wide" id="turnstileBox" aria-label="Заштита од автоматизирани барања"></div>
       <div style="align-self:end"><button class="btn primary" type="submit">Испрати барање</button></div>
       <div class="wide"><button class="btn light" type="button" id="trialBtn">Побарај 7-дневен PRO trial</button></div>
     </form>
@@ -96,15 +101,75 @@
     $("#request").scrollIntoView({behavior:"smooth",block:"start"});
   }));
 
-  async function submitMembership(payload){
-    const box=$("#requestResult"); box.hidden=false; box.textContent="Се испраќа...";
+  // Turnstile: the public site key comes from the Worker (/api/membership/plans),
+  // so it is configured in one place. Without it the form stays closed; the server
+  // enforces the same rule independently.
+  let turnstileToken=null;
+  let turnstileWidget=null;
+  let turnstileReady=false;
+
+  function showRequestMessage(text, ok){
+    const box=$("#requestResult"); box.hidden=false; box.textContent="";
+    if(ok){ const s=document.createElement("span"); s.className="ok"; s.textContent="Барањето е примено."; box.append(s, document.createElement("br")); }
+    box.append(document.createTextNode(text));
+  }
+
+  async function initTurnstile(){
+    let siteKey=null;
     try{
-      const r=await fetch("/api/membership/request",{method:"POST",headers:{"content-type":"application/json","accept":"application/json"},body:JSON.stringify(payload)});
+      const r=await fetch("/api/membership/plans",{headers:{accept:"application/json"}});
+      const d=await r.json();
+      siteKey=d.turnstileSiteKey || null;
+    }catch{}
+    if(!siteKey){
+      showRequestMessage("Барањата за членство привремено не се достапни (заштитата од автоматизирани барања не е конфигурирана). Обидете се подоцна.", false);
+      return;
+    }
+    const render=()=>{
+      turnstileWidget=window.turnstile.render("#turnstileBox",{
+        sitekey:siteKey,
+        action:"membership_request",
+        callback:t=>{ turnstileToken=t; },
+        "expired-callback":()=>{ turnstileToken=null; },
+        "error-callback":()=>{ turnstileToken=null; }
+      });
+      turnstileReady=true;
+    };
+    if(window.turnstile) render();
+    else {
+      const wait=setInterval(()=>{ if(window.turnstile){ clearInterval(wait); render(); } },200);
+      setTimeout(()=>clearInterval(wait),15000);
+    }
+  }
+
+  const REQUEST_ERRORS={
+    turnstile_required:"Потврдете ја заштитата од автоматизирани барања.",
+    turnstile_failed:"Проверката од автоматизирани барања не успеа. Обидете се повторно.",
+    too_many_requests:"Премногу барања. Обидете се повторно подоцна.",
+    invalid_email:"Внесете валидна е-пошта.",
+    invalid_display_name:"Името е предолго или содржи недозволени знаци.",
+    invalid_organization_name:"Називот на организацијата е предолг или содржи недозволени знаци."
+  };
+
+  async function submitMembership(payload){
+    if(!turnstileReady){ showRequestMessage("Формата сè уште се вчитува или привремено не е достапна.", false); return; }
+    if(!turnstileToken){ showRequestMessage(REQUEST_ERRORS.turnstile_required, false); return; }
+    showRequestMessage("Се испраќа...", false);
+    try{
+      const r=await fetch("/api/membership/request",{method:"POST",headers:{"content-type":"application/json","accept":"application/json"},body:JSON.stringify({...payload,turnstileToken})});
       const d=await r.json();
       if(!r.ok || !d.ok) throw new Error(d.error || "request_failed");
-      box.innerHTML='<span class="ok">Барањето е примено.</span><br>'+d.message+'<br><small>Референца: '+d.requestId+'</small>';
-    }catch(e){ box.textContent="Барањето не можеше да се запише во оваа околина. Обидете се повторно подоцна."; }
+      showRequestMessage(d.message, true);
+    }catch(e){
+      showRequestMessage(REQUEST_ERRORS[e.message] || "Барањето не можеше да се запише. Обидете се повторно подоцна.", false);
+    }finally{
+      // Turnstile tokens are single-use.
+      turnstileToken=null;
+      if(turnstileWidget!==null && window.turnstile) window.turnstile.reset(turnstileWidget);
+    }
   }
+
+  initTurnstile();
 
   $("#membershipForm").addEventListener("submit",e=>{
     e.preventDefault(); const fd=new FormData(e.currentTarget);

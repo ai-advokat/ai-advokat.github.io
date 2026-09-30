@@ -35,6 +35,7 @@ jobs:
           grep -q 'value="mk:zkp"' index.html
           grep -q 'openZkpBrowser' index.html
           grep -q 'fetchInstruments' index.html
-          grep -q 'ЗРО и ЗКП' index.html
+          # Corpus coverage is rendered from /api/capabilities (no hard-coded law list).
+          grep -q 'coverageNote' index.html
           ! grep -q 'body:JSON.stringify({q,instrument:"mk:zro"})' index.html
           echo "ZKP structural safety: PASS"
