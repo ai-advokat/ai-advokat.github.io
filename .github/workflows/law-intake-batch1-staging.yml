@@ -1,0 +1,95 @@
+name: Law intake batch 1 staging metadata
+
+on:
+  push:
+    branches:
+      - law-intake-batch-1-30sep2026
+    paths:
+      - ".github/workflows/law-intake-batch1-staging.yml"
+      - "migrations/0019_law_intake_batch_1.sql"
+      - "migrations/0020_kz_2026_correction_provenance.sql"
+      - "migrations/0021_canonical_source_reconciliation.sql"
+      - "src/index.js"
+      - "index.html"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Verify code and exact staging target
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/index.js
+          npm run verify
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(!d || d.binding!=="PREVIEW_DB" || d.database_name!=="ai-advokat-db-staging" || d.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d"){
+            throw new Error("Unexpected staging target");
+          }
+          console.log("STAGING TARGET: PASS");
+          NODE
+      - name: Apply pending staging migrations 19 through 21
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations list PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc | tee /tmp/pending.txt
+          if grep -Eq '0019_law_intake_batch_1.sql|0020_kz_2026_correction_provenance.sql|0021_canonical_source_reconciliation.sql' /tmp/pending.txt; then
+            npx wrangler d1 migrations apply PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc
+          fi
+      - name: Verify registry, aliases and ZPP temporal tracks
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT version,description FROM schema_migrations WHERE version IN ('19','20','21') ORDER BY CAST(version AS INTEGER); SELECT li.canonical_key,li.short_title,li.title,li.current_status,li.human_review_status,li.gazette_reference,li.canonical_source_id,s.url AS canonical_source_url,s.source_type,s.source_status FROM legal_instruments li LEFT JOIN sources s ON s.id=li.canonical_source_id WHERE li.canonical_key IN ('mk:zro','mk:zkp','mk:kz','mk:zpp','mk:zoo','mk:zoup','mk:zi','mk:zs','mk:zsidp','mk:ztd') ORDER BY li.canonical_key; SELECT COUNT(*) AS alias_count FROM legal_instrument_aliases; SELECT version_label,valid_from,valid_to,is_current,human_review_status FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zpp') ORDER BY id; SELECT url,source_type,source_status FROM sources WHERE url IN ('https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=72841','https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=41212') ORDER BY url;"             | tee /tmp/state.txt
+          grep -q '"version": "19"' /tmp/state.txt
+          grep -q '"version": "20"' /tmp/state.txt
+          grep -q '"version": "21"' /tmp/state.txt
+          grep -q 'correction 17/2026' /tmp/state.txt
+          grep -q 'id=72841' /tmp/state.txt
+          for key in mk:zro mk:zkp mk:kz mk:zpp mk:zoo mk:zoup mk:zi mk:zs mk:zsidp mk:ztd; do grep -q "\"canonical_key\": \"$key\"" /tmp/state.txt; done
+          python3 - <<'PY'
+          import re
+          t=open("/tmp/state.txt").read()
+          m=re.search(r'"alias_count":\s*(\d+)',t)
+          assert m and int(m.group(1))>=20, m.group(1) if m else "missing"
+          assert 'applicable-track-79/2005-through-124/2015' in t
+          assert 'future-application-151/2026' in t
+          assert t.count('"canonical_source_id": null')==0, "canonical source gap remains"
+          assert t.count('"canonical_source_url": null')==0, "canonical source URL gap remains"
+          assert t.count('"source_status": "official"')>=10, "official canonical sources missing"
+          print("BATCH1 STAGING METADATA + SOURCES: PASS")
+          PY
+      - name: Assert ZRO and ZKP unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT COUNT(*) AS zro_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro'); SELECT COUNT(*) AS zkp_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp'); SELECT COUNT(*) AS zi_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi');"             | tee /tmp/regression.txt
+          grep -q '"zro_count": 298' /tmp/regression.txt
+          grep -q '"zkp_count": 570' /tmp/regression.txt
+          grep -q '"zi_count": 258' /tmp/regression.txt
+          echo "ZRO/ZKP/ZI REGRESSION: PASS"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: law-intake-batch1-staging
+          retention-days: 14
+          path: |
+            /tmp/pending.txt
+            /tmp/state.txt
+            /tmp/regression.txt

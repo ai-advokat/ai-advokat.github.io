@@ -1,17 +1,14 @@
 name: Paragraf production post-failure check
 
 on:
-  push:
-    branches:
-      - paragraf-production-apply-29sep2026
-    paths:
-      - ".github/workflows/paragraf-production-postcheck.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   read-only:
+    environment: production
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

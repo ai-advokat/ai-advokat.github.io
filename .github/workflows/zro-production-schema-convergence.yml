@@ -2,11 +2,6 @@ name: ZRO production schema convergence
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - slvesnik-public-corpus-collector-29sep2026
-    paths:
-      - ".github/workflows/zro-production-schema-convergence.yml"
 
 permissions:
   contents: read
@@ -17,6 +12,7 @@ concurrency:
 
 jobs:
   converge:
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:

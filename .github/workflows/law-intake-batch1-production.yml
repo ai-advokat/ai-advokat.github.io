@@ -1,0 +1,187 @@
+name: Law intake batch 1 production resume
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-law-intake-batch1-production
+  cancel-in-progress: false
+
+jobs:
+  resume:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify exact production target and completed corpus state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --check src/index.js
+          npm run verify
+
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
+          NODE
+
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT version,description FROM schema_migrations WHERE version='19'; SELECT COUNT(*) AS zro_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro'); SELECT COUNT(*) AS zkp_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp'); SELECT COUNT(*) AS zi_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi');" \
+            | tee /tmp/prestate.txt
+          grep -q '"version": "19"' /tmp/prestate.txt
+          grep -q '"zro_count": 298' /tmp/prestate.txt
+          grep -q '"zkp_count": 570' /tmp/prestate.txt
+          grep -q '"zi_count": 258' /tmp/prestate.txt
+          echo "COMPLETED CORPUS STATE: PASS"
+
+      - name: Apply provenance migrations 20 and 21 if pending
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/pending.txt
+          if grep -Eq '0020_kz_2026_correction_provenance.sql|0021_canonical_source_reconciliation.sql' /tmp/pending.txt; then
+            npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc
+          fi
+
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT version,description FROM schema_migrations WHERE version IN ('20','21') ORDER BY CAST(version AS INTEGER); SELECT canonical_key,gazette_reference,notes,canonical_source_id FROM legal_instruments WHERE canonical_key='mk:kz'; SELECT id,title,url,source_type,source_status FROM sources WHERE url LIKE 'https://ldbis.pravda.gov.mk/%' ORDER BY id DESC LIMIT 40;" \
+            | tee /tmp/kz.txt
+          grep -q '"version": "20"' /tmp/kz.txt
+          grep -q '"version": "21"' /tmp/kz.txt
+          grep -q 'correction 17/2026' /tmp/kz.txt
+          grep -q 'id=72841' /tmp/kz.txt
+          echo "KZ 2026 + CANONICAL SOURCE METADATA: PASS"
+
+      - name: Verify registry and alias layer
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT li.canonical_key,li.short_title,li.title,li.current_status,li.human_review_status,li.canonical_source_id,s.url AS canonical_source_url FROM legal_instruments li LEFT JOIN sources s ON s.id=li.canonical_source_id WHERE li.canonical_key IN ('mk:zro','mk:zkp','mk:kz','mk:zpp','mk:zoo','mk:zoup','mk:zi','mk:zs','mk:zsidp','mk:ztd') ORDER BY li.canonical_key; SELECT COUNT(*) AS alias_count FROM legal_instrument_aliases;" \
+            | tee /tmp/registry.txt
+          for key in mk:zro mk:zkp mk:kz mk:zpp mk:zoo mk:zoup mk:zi mk:zs mk:zsidp mk:ztd; do grep -q "\"canonical_key\": \"$key\"" /tmp/registry.txt; done
+          python3 - <<'PY'
+          import re
+          t=open("/tmp/registry.txt").read()
+          m=re.search(r'"alias_count":\s*(\d+)',t)
+          assert m and int(m.group(1))>=20
+          assert t.count('"canonical_source_id": null')==0, "canonical source gap remains"
+          assert t.count('"canonical_source_url": null')==0, "canonical source URL gap remains"
+          print("REGISTRY + ALIASES + CANONICAL SOURCES: PASS")
+          PY
+
+      - name: Deploy routing fix and app assets
+        run: npx wrangler deploy --config wrangler.jsonc
+
+      - name: Live routing and corpus smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+
+          fetch_live () {
+            path="$1"; output="$2"
+            for attempt in $(seq 1 10); do
+              code="$(curl -sS -o "$output" -w '%{http_code}' "$BASE$path" || true)"
+              echo "$path attempt=$attempt status=$code"
+              if [ "$code" = "200" ]; then return 0; fi
+              sleep 4
+            done
+            cat "$output" || true
+            return 1
+          }
+
+          post_expected () {
+            body="$1"; output="$2"; expected="$3"
+            for attempt in $(seq 1 10); do
+              code="$(curl -sS -o "$output" -w '%{http_code}' \
+                -H 'content-type: application/json' -d "$body" "$BASE/api/assistant" || true)"
+              echo "assistant attempt=$attempt status=$code expected=$expected"
+              if [ "$code" = "$expected" ]; then return 0; fi
+              sleep 4
+            done
+            cat "$output" || true
+            return 1
+          }
+
+          fetch_live "/api/instruments" /tmp/live-instruments.json
+          fetch_live "/api/articles?instrument=mk%3Azi&article=269" /tmp/live-zi-269.json
+          fetch_live "/api/articles?instrument=mk%3Azro&limit=1" /tmp/live-zro.json
+          fetch_live "/api/articles?instrument=mk%3Azkp&limit=1" /tmp/live-zkp.json
+          fetch_live "/api/membership/plans" /tmp/live-membership.json
+
+          post_expected '{"q":"Што предвидува член 12 од ЗИ?","instrument":"auto"}' /tmp/live-ai-zi.json 200
+          post_expected '{"q":"член 12","instrument":"auto"}' /tmp/live-ai-ambiguous.json 400
+          post_expected '{"q":"Како се дели наследство?","instrument":"auto"}' /tmp/live-ai-unsupported.json 400
+          post_expected '{"q":"Како се разведува брак?","instrument":"auto"}' /tmp/live-ai-divorce.json 400
+          post_expected '{"q":"Што е ништовен договор?","instrument":"auto"}' /tmp/live-ai-contract.json 400
+
+          node <<'NODE'
+          const fs=require("fs"), read=p=>JSON.parse(fs.readFileSync(p,"utf8"));
+          const inst=read("/tmp/live-instruments.json");
+          const zi269=read("/tmp/live-zi-269.json");
+          const zro=read("/tmp/live-zro.json");
+          const zkp=read("/tmp/live-zkp.json");
+          const ai=read("/tmp/live-ai-zi.json");
+          const amb=read("/tmp/live-ai-ambiguous.json");
+          const uns=read("/tmp/live-ai-unsupported.json");
+          const divorce=read("/tmp/live-ai-divorce.json");
+          const contract=read("/tmp/live-ai-contract.json");
+          const membership=read("/tmp/live-membership.json");
+
+          const byKey=Object.fromEntries((inst.instruments||[]).map(x=>[x.canonicalKey,x]));
+          for(const key of ["mk:zro","mk:zkp","mk:kz","mk:zpp","mk:zoo","mk:zoup","mk:zi","mk:zs","mk:zsidp","mk:ztd"]) if(!byKey[key]) throw new Error("missing "+key);
+          if(Number(byKey["mk:zi"].articleCount)!==258) throw new Error("ZI registry count");
+          if(zi269.articles?.[0]?.articleNumberNormalized!=="269") throw new Error("ZI article 269");
+          if(zro.total!==298 || zkp.total!==570) throw new Error("ZRO/ZKP regression");
+          if(!ai.ok || ai.instrument?.canonicalKey!=="mk:zi" || !(ai.citations||[]).some(c=>String(c.articleNumber)==="12")) throw new Error("ZI routing");
+          if(amb.error!=="instrument_required") throw new Error("bare article must require law");
+          if(uns.error!=="instrument_required") throw new Error("inheritance must not guess a law");
+          if(divorce.error!=="instrument_required") throw new Error("divorce must not guess a law");
+          if(contract.error!=="instrument_required") throw new Error("contract must not guess a law");
+          const prices=(membership.plans||[]).map(x=>x.monthlyPriceMkd);
+          for(const n of [199,399,999]) if(!prices.includes(n)) throw new Error("membership regression");
+          console.log("LIVE BATCH1 ROUTING + CORPUS: PASS");
+          NODE
+
+      - name: Upload resume evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: law-intake-batch1-production-resume
+          retention-days: 30
+          path: |
+            /tmp/prestate.txt
+            /tmp/pending.txt
+            /tmp/kz.txt
+            /tmp/registry.txt
+            /tmp/live-instruments.json
+            /tmp/live-zi-269.json
+            /tmp/live-zro.json
+            /tmp/live-zkp.json
+            /tmp/live-membership.json
+            /tmp/live-ai-zi.json
+            /tmp/live-ai-ambiguous.json
+            /tmp/live-ai-unsupported.json
+            /tmp/live-ai-divorce.json
+            /tmp/live-ai-contract.json

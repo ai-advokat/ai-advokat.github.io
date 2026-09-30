@@ -1,11 +1,7 @@
 name: Paragraf production migration apply
 
 on:
-  push:
-    branches:
-      - paragraf-production-apply-29sep2026
-    paths:
-      - ".github/workflows/paragraf-production-apply.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,6 +12,7 @@ concurrency:
 
 jobs:
   guarded-production-apply:
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 12
 

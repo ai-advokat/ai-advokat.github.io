@@ -1,11 +1,6 @@
 name: ZKP production resume smoke
 
 on:
-  push:
-    branches:
-      - zkp-corpus-v1-30sep2026
-    paths:
-      - ".github/workflows/zkp-production-resume-smoke.yml"
   workflow_dispatch:
 
 permissions:
@@ -17,6 +12,7 @@ concurrency:
 
 jobs:
   smoke:
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
