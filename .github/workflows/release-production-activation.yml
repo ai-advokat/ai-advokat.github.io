@@ -2,11 +2,6 @@ name: AI Advokat release production activation
 # retry-after-legacy-schema-compat
 
 on:
-  push:
-    branches:
-      - release-zro-membership-app-30sep2026
-    paths:
-      - ".github/workflows/release-production-activation.yml"
   workflow_dispatch:
 
 permissions:
@@ -18,6 +13,7 @@ concurrency:
 
 jobs:
   activate:
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
