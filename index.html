@@ -1165,8 +1165,6 @@
 
             <select id="instrumentSelect" aria-label="Избери закон">
               <option value="auto">Автоматски избери закон</option>
-              <option value="mk:zro">ЗРО · Закон за работните односи</option>
-              <option value="mk:zkp">ЗКП · Закон за кривичната постапка</option>
             </select>
 
             <select id="jurisdiction">
@@ -1736,7 +1734,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       trustLabel1:"Изворот прв", trustLabel2:"Човечка порта", trustLabel3:"Проверка на верзија", trustLabel4:"Поврзано со Zenodo",
       trust1:"Одговорите треба да покажуваат на што се потпираат.", trust2:"AI не ја заменува професионалната правна проценка.", trust3:"Правниот текст се чита со датум, верзија и важност.", trust4:"Авторските трудови имаат проверлив Zenodo-статус и резервирани DOI каде што се достапни.",
       sourceTag:"Правна база", sourceTitle:"Од извор до правен заклучок", sourceText:"Порталот е структуриран така што официјалниот текст, судската практика, стручната анализа и AI-синтезата никогаш не се мешаат без ознака.",
-      cardLaws:"Закони и прописи", cardLawsText:"ЗРО и ЗКП се достапни како одделни корпуси член-по-член, со извор, верзија и Human Gate статус.",
+      cardLaws:"Закони и прописи", cardLawsText:"Регистарот се проширува закон-по-закон. ЗРО и ЗКП се LIVE article-level корпуси; новите закони прво влегуваат со официјална metadata/provenance, а потоа со проверен текст член-по-член.",
       cardCases:"Судска практика", cardCasesText:"Пресуди организирани по суд, област, правно прашање, цитирани одредби и исход.",
       cardEchr:"ЕСПЧ и меѓународни извори", cardEchrText:"Европски стандарди и компаративни извори со јасно означена јурисдикција.",
       cardVersions:"Верзии и измени", cardVersionsText:"Споредба на стар и нов текст, со видливи датумски граници и правна важност.",
@@ -1772,7 +1770,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       trustLabel1:"Source-first", trustLabel2:"Human Gate", trustLabel3:"Version-aware", trustLabel4:"Zenodo-linked",
       trust1:"Answers should show what they rely on.", trust2:"AI does not replace professional legal judgment.", trust3:"Legal text is read with date, version and validity.", trust4:"Author publications show a verifiable Zenodo status, published DOI records and Scholar pages.",
       sourceTag:"Legal database", sourceTitle:"From source to legal conclusion", sourceText:"Official text, case law, professional analysis and AI synthesis remain visibly separated.",
-      cardLaws:"Laws & regulations", cardLawsText:"The Labour Relations Act (ZRO) and Criminal Procedure Act (ZKP) are separate article-level corpora with source, version and Human Gate status.",
+      cardLaws:"Laws & regulations", cardLawsText:"The registry expands law-by-law. ZRO and ZKP are LIVE article-level corpora; new laws enter first with official metadata/provenance and then with verified article-level text.",
       cardCases:"Case law", cardCasesText:"Judgments organized by court, field, legal issue, cited provisions and outcome.",
       cardEchr:"ECHR & international sources", cardEchrText:"European standards and comparative sources with clearly marked jurisdiction.",
       cardVersions:"Versions & amendments", cardVersionsText:"Compare old and new text with visible temporal boundaries and legal effect.",
@@ -1900,6 +1898,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
     renderPrompts();
     renderPublications();
+    hydrateInstrumentSelect();
     if($("#searchResults").children.length) renderResults();
   }
 
@@ -2037,6 +2036,31 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     const data=await response.json();
     if(!response.ok || !data.ok || !Array.isArray(data.instruments)) throw new Error(data?.error || "instrument_api_error");
     return data.instruments;
+  }
+
+  async function hydrateInstrumentSelect(){
+    const select=$("#instrumentSelect");
+    if(!select) return;
+    const current=select.value || "auto";
+    const autoLabel=lang==="mk" ? "Автоматски избери закон" : "Automatically choose law";
+    try{
+      const instruments=await fetchInstruments();
+      select.innerHTML=`<option value="auto">${autoLabel}</option>`+
+        instruments.map(inst=>{
+          const count=Number(inst.articleCount || 0);
+          const suffix=count>0
+            ? (lang==="mk" ? ` · ${count} членови` : ` · ${count} articles`)
+            : (lang==="mk" ? " · corpus pending" : " · corpus pending");
+          return `<option value="${escapeHtml(inst.canonicalKey)}">${escapeHtml((inst.shortTitle || inst.title)+ " · " + inst.title + suffix)}</option>`;
+        }).join("");
+      if([...select.options].some(o=>o.value===current)) select.value=current;
+    }catch{
+      select.innerHTML=`
+        <option value="auto">${autoLabel}</option>
+        <option value="mk:zro">ЗРО · Закон за работните односи</option>
+        <option value="mk:zkp">ЗКП · Закон за кривичната постапка</option>`;
+      if([...select.options].some(o=>o.value===current)) select.value=current;
+    }
   }
 
   async function fetchArticles(instrumentKey,params={}){
@@ -2203,7 +2227,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       $("#workspaceLinks").innerHTML=instruments.map(inst=>`
         <button class="sourceLink lawInstrumentCard" type="button" data-key="${escapeHtml(inst.canonicalKey)}" style="text-align:left">
           <b>${escapeHtml(inst.shortTitle || inst.title)} · ${escapeHtml(inst.title)}</b>
-          <small>${inst.articleCount} ${lang==="mk" ? "членови" : "articles"} · ${escapeHtml(inst.gazetteReference || "")}</small>
+          <small>${inst.articleCount>0 ? (inst.articleCount+" "+(lang==="mk" ? "членови" : "articles")) : (lang==="mk" ? "METADATA · CORPUS PENDING" : "METADATA · CORPUS PENDING")} · ${escapeHtml(inst.gazetteReference || "")}</small>
           <small>${escapeHtml(inst.currentStatus || "")} · Human Gate: ${escapeHtml(inst.humanReviewStatus || "")}</small>
         </button>`).join("");
       $("#workspaceLinks").querySelectorAll(".lawInstrumentCard").forEach(btn=>{
