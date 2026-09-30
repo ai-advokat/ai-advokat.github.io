@@ -1,0 +1,291 @@
+name: Law corpus batch 2 staging import
+
+on:
+  push:
+    branches:
+      - law-corpus-batch2-zsidp-zoup-30sep2026
+    paths:
+      - ".github/workflows/law-corpus-batch2-staging-import.yml"
+      - "scripts/clean-official-legal-pdf-text.mjs"
+      - "scripts/parse-mk-legal-text.mjs"
+      - "scripts/legal-ndjson-to-sql.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-law-corpus-batch2-staging
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install tooling
+        run: |
+          set -euo pipefail
+          npm install --ignore-scripts --no-audit --no-fund
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Verify exact staging target and registered instruments
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/index.js
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(!d || d.binding!=="PREVIEW_DB" || d.database_name!=="ai-advokat-db-staging" || d.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") {
+            throw new Error("Unexpected staging D1 target");
+          }
+          NODE
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc \
+            --command "SELECT canonical_key,current_status,human_review_status FROM legal_instruments WHERE canonical_key IN ('mk:zsidp','mk:zoup') ORDER BY canonical_key; SELECT version FROM schema_migrations WHERE version='19';" \
+            | tee /tmp/prestate.txt
+          grep -q '"canonical_key": "mk:zsidp"' /tmp/prestate.txt
+          grep -q '"canonical_key": "mk:zoup"' /tmp/prestate.txt
+          grep -q '"version": "19"' /tmp/prestate.txt
+
+      - name: Download and verify ZSIDP source
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://portal.mdt.gov.mk/post-body-files/soopstenie-za-polaganje-za-strucen-ispit-od-oblasta-na-urbanistickoto-planiranje-vo-fevruarska-ispitna-sesija-2-file-NEOr.pdf'
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180 \
+            --user-agent "AI-Advokat-Law-Intake/1.0" "$URL" -o /tmp/zsidp.pdf
+          test -s /tmp/zsidp.pdf
+          head -c 5 /tmp/zsidp.pdf | grep -q "%PDF-"
+          pdfinfo /tmp/zsidp.pdf | tee /tmp/zsidp-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+117$" /tmp/zsidp-pdfinfo.txt
+          SHA="$(sha256sum /tmp/zsidp.pdf | cut -d' ' -f1)"
+          test "$SHA" = "21b66999341e7a47629afd43c58db48dfc8f96e710635f34f5b97d02f40dc698"
+          echo "$SHA" > /tmp/zsidp.sha256
+
+      - name: Parse exactly 260 ZSIDP article chunks
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -layout /tmp/zsidp.pdf /tmp/zsidp-raw.txt
+          node scripts/clean-official-legal-pdf-text.mjs /tmp/zsidp-raw.txt /tmp/zsidp-clean.txt /tmp/zsidp-clean-report.json 259
+          cat > /tmp/zsidp-meta.json <<'EOF'
+          {
+            "instrument_key": "mk:zsidp",
+            "instrument_title": "Закон за сопственост и други стварни права",
+            "version_id": "government-hosted-consolidated-through-35-2010",
+            "source_url": "https://portal.mdt.gov.mk/post-body-files/soopstenie-za-polaganje-za-strucen-ispit-od-oblasta-na-urbanistickoto-planiranje-vo-fevruarska-ispitna-sesija-2-file-NEOr.pdf",
+            "source_sha256": "21b66999341e7a47629afd43c58db48dfc8f96e710635f34f5b97d02f40dc698",
+            "source_issue_number": "18/2001; Constitutional Court 31/2008; 92/2008; 139/2009; 35/2010",
+            "source_issue_date": "2010-03-12",
+            "status": "needs_version_review",
+            "extraction_method": "pdftotext_layout_plus_cleaner",
+            "human_review_status": "pending"
+          }
+          EOF
+          node scripts/parse-mk-legal-text.mjs /tmp/zsidp-clean.txt /tmp/zsidp-meta.json /tmp/zsidp.ndjson
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zsidp.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          nums={x.get("article_number_normalized") for x in arts}
+          assert len(arts)==260, len(arts)
+          assert int(m.get("warning_count") or 0)==0, m
+          assert {"1","252-а","259"} <= nums
+          print("ZSIDP PARSE GATE: PASS")
+          PY
+          node scripts/legal-ndjson-to-sql.mjs /tmp/zsidp.ndjson /tmp/zsidp.sql
+          test -s /tmp/zsidp.sql
+
+      - name: Download and verify ZOUP base and court-effect sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_URL='https://portal.mdt.gov.mk/post-body-files/legislativa-mod-file-yzNe.pdf'
+          COURT_URL='https://portal.mdt.gov.mk/post-body-files/legislativa-file-oN2H.pdf'
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180 \
+            --user-agent "AI-Advokat-Law-Intake/1.0" "$BASE_URL" -o /tmp/zoup.pdf
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180 \
+            --user-agent "AI-Advokat-Law-Intake/1.0" "$COURT_URL" -o /tmp/zoup-u94-2017.pdf
+          for f in /tmp/zoup.pdf /tmp/zoup-u94-2017.pdf; do test -s "$f"; head -c 5 "$f" | grep -q "%PDF-"; done
+          pdfinfo /tmp/zoup.pdf | tee /tmp/zoup-pdfinfo.txt
+          pdfinfo /tmp/zoup-u94-2017.pdf | tee /tmp/zoup-u94-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+45$" /tmp/zoup-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+4$" /tmp/zoup-u94-pdfinfo.txt
+          BASE_SHA="$(sha256sum /tmp/zoup.pdf | cut -d' ' -f1)"
+          COURT_SHA="$(sha256sum /tmp/zoup-u94-2017.pdf | cut -d' ' -f1)"
+          test "$BASE_SHA" = "fd91d3f1a3731596de0c6dfb383f6a681926aabd20a2ffff0840c308103873ac"
+          test "$COURT_SHA" = "4f15514e4bde15c5a177a97094e2f1506393a8886228634ad9ca3e9cad7e0949"
+          echo "$BASE_SHA" > /tmp/zoup.sha256
+          echo "$COURT_SHA" > /tmp/zoup-u94.sha256
+          pdftotext -layout /tmp/zoup-u94-2017.pdf /tmp/zoup-u94.txt
+          grep -Eq 'У\. *бр\. *94/2017|У\.бр\.94/2017' /tmp/zoup-u94.txt
+          grep -Eq 'член 77 став 2|членот 77 став 2' /tmp/zoup-u94.txt
+
+      - name: Parse exactly 141 ZOUP base article chunks
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -layout /tmp/zoup.pdf /tmp/zoup-raw.txt
+          node scripts/clean-official-legal-pdf-text.mjs /tmp/zoup-raw.txt /tmp/zoup-clean.txt /tmp/zoup-clean-report.json 141
+          cat > /tmp/zoup-meta.json <<'EOF'
+          {
+            "instrument_key": "mk:zoup",
+            "instrument_title": "Закон за општата управна постапка",
+            "version_id": "official-gazette-base-124-2015-pre-court-effect",
+            "source_url": "https://portal.mdt.gov.mk/post-body-files/legislativa-mod-file-yzNe.pdf",
+            "source_sha256": "fd91d3f1a3731596de0c6dfb383f6a681926aabd20a2ffff0840c308103873ac",
+            "source_issue_number": "124/2015",
+            "source_issue_date": "2015-07-23",
+            "status": "needs_version_review",
+            "extraction_method": "pdftotext_layout_plus_cleaner",
+            "human_review_status": "pending"
+          }
+          EOF
+          node scripts/parse-mk-legal-text.mjs /tmp/zoup-clean.txt /tmp/zoup-meta.json /tmp/zoup.ndjson
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zoup.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          nums={x.get("article_number_normalized") for x in arts}
+          assert len(arts)==141, len(arts)
+          assert int(m.get("warning_count") or 0)==0, m
+          assert {"1","77","141"} <= nums
+          print("ZOUP BASE PARSE GATE: PASS")
+          PY
+          node scripts/legal-ndjson-to-sql.mjs /tmp/zoup.ndjson /tmp/zoup.sql
+          test -s /tmp/zoup.sql
+
+      - name: Import both corpora into staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --file /tmp/zsidp.sql
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --file /tmp/zoup.sql
+
+      - name: Link versions and record ZOUP Constitutional Court effect
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "
+          INSERT OR IGNORE INTO instrument_versions
+            (instrument_id,version_label,valid_from,valid_to,is_current,checksum_sha256,text_content,source_url,human_review_status)
+          SELECT id,'government-hosted-consolidated-through-35-2010',NULL,NULL,0,
+            '21b66999341e7a47629afd43c58db48dfc8f96e710635f34f5b97d02f40dc698',NULL,
+            'https://portal.mdt.gov.mk/post-body-files/soopstenie-za-polaganje-za-strucen-ispit-od-oblasta-na-urbanistickoto-planiranje-vo-fevruarska-ispitna-sesija-2-file-NEOr.pdf','pending'
+          FROM legal_instruments WHERE canonical_key='mk:zsidp';
+
+          INSERT OR IGNORE INTO instrument_versions
+            (instrument_id,version_label,valid_from,valid_to,is_current,checksum_sha256,text_content,source_url,human_review_status)
+          SELECT id,'official-gazette-base-124-2015-pre-court-effect','2016-07-31',NULL,0,
+            'fd91d3f1a3731596de0c6dfb383f6a681926aabd20a2ffff0840c308103873ac',NULL,
+            'https://portal.mdt.gov.mk/post-body-files/legislativa-mod-file-yzNe.pdf','pending'
+          FROM legal_instruments WHERE canonical_key='mk:zoup';
+
+          UPDATE legal_article_versions
+             SET instrument_version_id=(SELECT id FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zsidp') AND version_label='government-hosted-consolidated-through-35-2010')
+           WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zsidp')
+             AND source_sha256='21b66999341e7a47629afd43c58db48dfc8f96e710635f34f5b97d02f40dc698';
+
+          UPDATE legal_article_versions
+             SET instrument_version_id=(SELECT id FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zoup') AND version_label='official-gazette-base-124-2015-pre-court-effect')
+           WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zoup')
+             AND source_sha256='fd91d3f1a3731596de0c6dfb383f6a681926aabd20a2ffff0840c308103873ac';
+
+          INSERT INTO legal_amendment_events
+            (instrument_id,target_article_number,event_type,event_text,source_issue_number,source_issue_date,source_url,source_sha256,effective_date,application_date,human_review_status)
+          SELECT id,'77','court_effect',
+            'Constitutional Court decision U.br.94/2017 abolishes Article 77 paragraph 2; consolidation into article text remains Human-Gate pending.',
+            '65/2018','2018-04-12',
+            'https://portal.mdt.gov.mk/post-body-files/legislativa-file-oN2H.pdf',
+            '4f15514e4bde15c5a177a97094e2f1506393a8886228634ad9ca3e9cad7e0949',
+            '2018-04-12','2018-04-12','pending'
+          FROM legal_instruments li
+          WHERE li.canonical_key='mk:zoup'
+            AND NOT EXISTS (
+              SELECT 1 FROM legal_amendment_events e
+               WHERE e.instrument_id=li.id
+                 AND e.target_article_number='77'
+                 AND e.event_type='court_effect'
+                 AND e.source_url='https://portal.mdt.gov.mk/post-body-files/legislativa-file-oN2H.pdf'
+            );
+          " | tee /tmp/version-event.txt
+
+      - name: Read back corpus, chunks, statuses and regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "
+          SELECT COUNT(*) AS zsidp_count,
+                 SUM(CASE WHEN status='needs_version_review' THEN 1 ELSE 0 END) AS zsidp_review_count,
+                 SUM(CASE WHEN human_review_status='pending' THEN 1 ELSE 0 END) AS zsidp_pending_count
+            FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zsidp');
+          SELECT COUNT(*) AS zoup_count,
+                 SUM(CASE WHEN status='needs_version_review' THEN 1 ELSE 0 END) AS zoup_review_count,
+                 SUM(CASE WHEN human_review_status='pending' THEN 1 ELSE 0 END) AS zoup_pending_count
+            FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zoup');
+          SELECT COUNT(*) AS zsidp_paragraph_chunks FROM legal_article_paragraphs WHERE article_version_id IN (SELECT id FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zsidp'));
+          SELECT COUNT(*) AS zoup_paragraph_chunks FROM legal_article_paragraphs WHERE article_version_id IN (SELECT id FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zoup'));
+          SELECT article_number_normalized,instrument_version_id,status,human_review_status FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zsidp') AND article_number_normalized IN ('1','252-а','259') ORDER BY id;
+          SELECT article_number_normalized,instrument_version_id,status,human_review_status FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zoup') AND article_number_normalized IN ('1','77','141') ORDER BY id;
+          SELECT target_article_number,event_type,source_issue_number,source_issue_date,effective_date,human_review_status FROM legal_amendment_events WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zoup') AND target_article_number='77' AND event_type='court_effect';
+          SELECT COUNT(*) AS zro_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro');
+          SELECT COUNT(*) AS zkp_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp');
+          SELECT COUNT(*) AS zi_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi');
+          " | tee /tmp/readback.txt
+          grep -q '"zsidp_count": 260' /tmp/readback.txt
+          grep -q '"zsidp_review_count": 260' /tmp/readback.txt
+          grep -q '"zsidp_pending_count": 260' /tmp/readback.txt
+          grep -q '"zoup_count": 141' /tmp/readback.txt
+          grep -q '"zoup_review_count": 141' /tmp/readback.txt
+          grep -q '"zoup_pending_count": 141' /tmp/readback.txt
+          grep -q '"article_number_normalized": "252-а"' /tmp/readback.txt
+          grep -q '"article_number_normalized": "141"' /tmp/readback.txt
+          grep -q '"target_article_number": "77"' /tmp/readback.txt
+          grep -q '"source_issue_number": "65/2018"' /tmp/readback.txt
+          grep -q '"zro_count": 298' /tmp/readback.txt
+          grep -q '"zkp_count": 570' /tmp/readback.txt
+          grep -q '"zi_count": 258' /tmp/readback.txt
+          python3 - <<'PY'
+          import re
+          t=open("/tmp/readback.txt").read()
+          for key in ("zsidp_paragraph_chunks","zoup_paragraph_chunks"):
+              m=re.search(r'"'+key+r'":\s*(\d+)',t)
+              assert m and int(m.group(1))>0, (key, m.group(1) if m else None)
+          assert '"instrument_version_id": null' not in t
+          print("BATCH2 STAGING CORPUS + CHUNKS + COURT EFFECT: PASS")
+          PY
+
+      - name: Upload staging evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: law-corpus-batch2-staging-import
+          retention-days: 14
+          path: |
+            /tmp/prestate.txt
+            /tmp/zsidp-pdfinfo.txt
+            /tmp/zsidp.sha256
+            /tmp/zsidp-clean-report.json
+            /tmp/zsidp-meta.json
+            /tmp/zoup-pdfinfo.txt
+            /tmp/zoup.sha256
+            /tmp/zoup-clean-report.json
+            /tmp/zoup-meta.json
+            /tmp/zoup-u94-pdfinfo.txt
+            /tmp/zoup-u94.sha256
+            /tmp/version-event.txt
+            /tmp/readback.txt
