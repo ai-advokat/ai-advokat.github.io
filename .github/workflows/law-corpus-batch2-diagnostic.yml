@@ -76,8 +76,9 @@ jobs:
           print("ZSIDP_WARNING_COUNT",m.get("warning_count"))
           print("ZSIDP_FIRST",nums[:12])
           print("ZSIDP_LAST",nums[-12:])
+          assert len(arts)==260, len(arts)
           assert len(nums)==len(set(nums))
-          assert "1" in nums and "259" in nums
+          assert "1" in nums and "252-а" in nums and "259" in nums
           assert int(m.get("warning_count") or 0)==0
           PY
 
@@ -127,10 +128,27 @@ jobs:
           print("ZOUP_WARNING_COUNT",m.get("warning_count"))
           print("ZOUP_FIRST",nums[:12])
           print("ZOUP_LAST",nums[-12:])
+          assert len(arts)==141, len(arts)
           assert len(nums)==len(set(nums))
-          assert "1" in nums and "141" in nums
+          assert "1" in nums and "77" in nums and "141" in nums
           assert int(m.get("warning_count") or 0)==0
           PY
+
+      - name: Download official Constitutional Court effect for ZOUP article 77
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://portal.mdt.gov.mk/post-body-files/legislativa-file-oN2H.pdf'
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180 \
+            --user-agent "AI-Advokat-Law-Intake/1.0" "$URL" -o /tmp/zoup-u94-2017.pdf
+          test -s /tmp/zoup-u94-2017.pdf
+          head -c 5 /tmp/zoup-u94-2017.pdf | grep -q "%PDF-"
+          pdfinfo /tmp/zoup-u94-2017.pdf | tee /tmp/zoup-u94-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+4$" /tmp/zoup-u94-pdfinfo.txt
+          pdftotext -layout /tmp/zoup-u94-2017.pdf /tmp/zoup-u94.txt
+          grep -Eq 'У\. *бр\. *94/2017|У\.бр\.94/2017' /tmp/zoup-u94.txt
+          grep -Eq 'член 77 став 2|членот 77 став 2' /tmp/zoup-u94.txt
+          sha256sum /tmp/zoup-u94-2017.pdf | tee /tmp/zoup-u94.sha256
 
       - name: Upload diagnostic evidence
         uses: actions/upload-artifact@v4
@@ -148,3 +166,5 @@ jobs:
             /tmp/zoup-clean-report.json
             /tmp/zoup-manifest.json
             /tmp/zoup-meta.json
+            /tmp/zoup-u94-pdfinfo.txt
+            /tmp/zoup-u94.sha256
