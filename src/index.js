@@ -1,4 +1,4 @@
-const VERSION = "1.3.3";
+const VERSION = "1.4.0";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -84,7 +84,7 @@ const ORCID = Object.freeze({
 function corsHeaders(request) {
   const origin = request.headers.get("Origin");
   const headers = {
-    "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS",
+    "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin"
@@ -501,6 +501,284 @@ async function handleSearch(request, env, url) {
   });
 }
 
+
+function articlePublicStatus(row) {
+  const status=String(row?.status || "");
+  if (status==="current_consolidated" && row?.human_review_status==="approved") return "current_verified";
+  if (status==="verified" && ["approved","reviewed"].includes(String(row?.human_review_status || ""))) return "verified";
+  if (status==="needs_version_review") return "version_review";
+  if (status==="historical") return "historical";
+  return "pending";
+}
+
+function normalizeArticle(row) {
+  return {
+    id: row.id,
+    canonicalId: row.canonical_id,
+    articleNumber: row.article_number,
+    articleNumberNormalized: row.article_number_normalized,
+    heading: row.article_heading || null,
+    text: row.article_text,
+    status: row.status,
+    publicStatus: articlePublicStatus(row),
+    humanReviewStatus: row.human_review_status,
+    sourceIssueNumber: row.source_issue_number || null,
+    sourceIssueDate: row.source_issue_date || null,
+    sourceUrl: row.source_url,
+    sourceSha256: row.source_sha256,
+    validFrom: row.valid_from || null,
+    validTo: row.valid_to || null
+  };
+}
+
+function articleTokens(value) {
+  return [...new Set(normalizeText(value)
+    .replace(/[^\p{L}\p{N}-]+/gu," ")
+    .split(/\s+/u)
+    .filter(t=>t.length>=3)
+    .slice(0,24))];
+}
+
+async function getInstrument(env, canonicalKey) {
+  return env.DB.prepare(
+    `SELECT li.id,li.canonical_key,li.title,li.short_title,li.instrument_type,
+            li.jurisdiction,li.gazette_reference,li.current_status,
+            li.human_review_status,li.notes,s.url AS canonical_source_url
+       FROM legal_instruments li
+       LEFT JOIN sources s ON s.id=li.canonical_source_id
+      WHERE li.canonical_key=?
+      LIMIT 1`
+  ).bind(canonicalKey).first();
+}
+
+async function loadInstrumentArticles(env, instrumentId) {
+  const result=await env.DB.prepare(
+    `SELECT id,canonical_id,article_number,article_number_normalized,article_heading,
+            article_text,status,human_review_status,source_issue_number,source_issue_date,
+            source_url,source_sha256,valid_from,valid_to
+       FROM legal_article_versions
+      WHERE instrument_id=?
+      ORDER BY id ASC
+      LIMIT 500`
+  ).bind(instrumentId).all();
+  return result.results ?? [];
+}
+
+function scoreArticle(row, q) {
+  const target=normalizeText(q);
+  const text=normalizeText(`${row.article_heading || ""} ${row.article_text || ""}`);
+  const num=normalizeText(row.article_number_normalized || row.article_number || "");
+  let score=0;
+
+  const articleMatch=target.match(/(?:член|article)\s*([0-9]+(?:[-–—][\p{L}]+)?)/u);
+  if(articleMatch && normalizeText(articleMatch[1])===num) score+=1000;
+  if(target===num) score+=1000;
+  if(text.includes(target) && target.length>=4) score+=120;
+
+  for(const token of articleTokens(target)){
+    if(num===token) score+=200;
+    const heading=normalizeText(row.article_heading || "");
+    if(heading.includes(token)) score+=24;
+    let pos=0;
+    let count=0;
+    while((pos=text.indexOf(token,pos))>=0 && count<8){
+      score+=6;
+      count++;
+      pos+=token.length;
+    }
+  }
+
+  if(row.status==="current_consolidated" && row.human_review_status==="approved") score+=25;
+  else if(row.status==="verified") score+=15;
+  else if(row.status==="needs_version_review") score-=4;
+
+  return score;
+}
+
+async function findRelevantArticles(env, instrumentKey, q, limit=6) {
+  const instrument=await getInstrument(env,instrumentKey);
+  if(!instrument) return {instrument:null,articles:[]};
+
+  const rows=await loadInstrumentArticles(env,instrument.id);
+  const ranked=rows
+    .map(row=>({row,score:scoreArticle(row,q)}))
+    .filter(x=>x.score>0)
+    .sort((a,b)=>b.score-a.score || a.row.id-b.row.id)
+    .slice(0,limit)
+    .map(x=>({...normalizeArticle(x.row),relevanceScore:x.score}));
+
+  return {instrument,articles:ranked};
+}
+
+async function handleArticles(request, env, url) {
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+
+  const instrumentKey=cleanQuery(url.searchParams.get("instrument") || "mk:zro",64);
+  const article=cleanQuery(url.searchParams.get("article"),24);
+  const q=cleanQuery(url.searchParams.get("q"),200);
+  const limit=Math.min(Math.max(Number.parseInt(url.searchParams.get("limit") || "40",10) || 40,1),100);
+  const offset=Math.max(Number.parseInt(url.searchParams.get("offset") || "0",10) || 0,0);
+
+  const instrument=await getInstrument(env,instrumentKey);
+  if(!instrument) return json(request,{ok:false,error:"instrument_not_found"},404);
+
+  let rows=await loadInstrumentArticles(env,instrument.id);
+  const total=rows.length;
+
+  if(article){
+    const needle=normalizeText(article).replace(/^член\s*/u,"");
+    rows=rows.filter(row=>normalizeText(row.article_number_normalized)===needle || normalizeText(row.article_number)===needle);
+  }else if(q){
+    rows=rows
+      .map(row=>({row,score:scoreArticle(row,q)}))
+      .filter(x=>x.score>0)
+      .sort((a,b)=>b.score-a.score || a.row.id-b.row.id)
+      .map(x=>x.row);
+  }
+
+  const filteredCount=rows.length;
+  const page=rows.slice(offset,offset+limit).map(normalizeArticle);
+  const statusCounts={};
+  for(const row of await loadInstrumentArticles(env,instrument.id)){
+    statusCounts[row.status]=(statusCounts[row.status] || 0)+1;
+  }
+
+  return json(request,{
+    ok:true,
+    mode:"public_article_corpus",
+    instrument:{
+      canonicalKey:instrument.canonical_key,
+      title:instrument.title,
+      shortTitle:instrument.short_title,
+      jurisdiction:instrument.jurisdiction,
+      gazetteReference:instrument.gazette_reference,
+      currentStatus:instrument.current_status,
+      humanReviewStatus:instrument.human_review_status,
+      canonicalSourceUrl:instrument.canonical_source_url,
+      notes:instrument.notes
+    },
+    total,
+    filteredCount,
+    offset,
+    limit,
+    statusCounts,
+    articles:page,
+    humanGate:"Only approved/current-consolidated provisions may be presented as verified current law."
+  });
+}
+
+function assistantStatusWarning(articles) {
+  if(!articles.length) return null;
+  const review=articles.some(a=>a.status==="needs_version_review");
+  const historical=articles.some(a=>a.status==="historical");
+  if(review) return "Еден или повеќе релевантни членови се под VERSION REVIEW. Одговорот не смее да се третира како потврдена важечка верзија.";
+  if(historical) return "Релевантните членови се од историскиот официјален пречистен snapshot преку 111/2023 и сè уште немаат Human Gate одобрување како тековен текст.";
+  return null;
+}
+
+function fallbackAssistantAnswer(q, instrument, articles) {
+  if(!articles.length){
+    return "Во достапниот корпус не најдов доволно релевантен член за ова прашање. Потребна е дополнителна проверка на официјалните извори.";
+  }
+  const intro=`За прашањето „${q}“, најрелевантни во достапниот корпус се ${articles.map(a=>`член ${a.articleNumber}`).join(", ")} од ${instrument.title}.`;
+  const body=articles.slice(0,3).map(a=>{
+    const excerpt=String(a.text || "").replace(/\s+/g," ").slice(0,700);
+    return `\n\n[Член ${a.articleNumber}] ${excerpt}${a.text.length>700 ? "…" : ""}`;
+  }).join("");
+  return intro+body;
+}
+
+async function handleAssistant(request, env, url) {
+  if(!["GET","HEAD","POST"].includes(request.method)) return methodNotAllowed(request);
+
+  let payload={};
+  if(request.method==="POST"){
+    try{ payload=await request.json(); }
+    catch{ return json(request,{ok:false,error:"invalid_json"},400); }
+  }
+
+  const q=cleanQuery(request.method==="POST" ? payload.q : url.searchParams.get("q"),600);
+  const instrumentKey=cleanQuery((request.method==="POST" ? payload.instrument : url.searchParams.get("instrument")) || "mk:zro",64);
+
+  if(q.length<3) return json(request,{ok:false,error:"query_too_short",message:"Use at least three characters."},400);
+
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+
+  const {instrument,articles}=await findRelevantArticles(env,instrumentKey,q,6);
+  if(!instrument) return json(request,{ok:false,error:"instrument_not_found"},404);
+
+  const warning=assistantStatusWarning(articles);
+  let answer=null;
+  let answerMode="retrieval_only";
+
+  if(env.AI && articles.length){
+    const context=articles.map(a=>
+      `[Член ${a.articleNumber}]\nSTATUS: ${a.status}; HUMAN_REVIEW: ${a.humanReviewStatus}\nSOURCE: ${a.sourceUrl}\nTEXT:\n${String(a.text).slice(0,4500)}`
+    ).join("\n\n---\n\n").slice(0,18000);
+
+    const prompt=`Ти си AI Advokat, source-first правен истражувач за македонското право.
+Одговори на македонски, јасно и професионално.
+КОРИСТИ ИСКЛУЧИВО ги дадените законски членови. Не дополнувај факти или право од меморија.
+Секое правно тврдење поткрепи го со цитат во форма [Член N].
+Ако изворот е historical или needs_version_review, кажи јасно дека не е Human-Gate потврден како тековен текст.
+Ако изворите не се доволни, кажи што недостига наместо да претпоставуваш.
+Не давај измислени проценти за исход.
+Структура: Краток одговор; Правна основа; Примена/објаснување; Ограничувања и што треба да се провери.
+
+ПРАШАЊЕ:
+${q}
+
+ИНСТРУМЕНТ:
+${instrument.title}
+
+ИЗВОРНИ ЧЛЕНОВИ:
+${context}`;
+
+    try{
+      const generated=await env.AI.run("@cf/zai-org/glm-4.7-flash",{prompt});
+      answer=generated?.response || generated?.result?.response || generated?.text || null;
+      if(answer) answerMode="workers_ai_source_backed";
+    }catch(error){
+      answer=null;
+    }
+  }
+
+  if(!answer) answer=fallbackAssistantAnswer(q,instrument,articles);
+
+  return json(request,{
+    ok:true,
+    mode:answerMode,
+    question:q,
+    instrument:{
+      canonicalKey:instrument.canonical_key,
+      title:instrument.title,
+      currentStatus:instrument.current_status,
+      humanReviewStatus:instrument.human_review_status
+    },
+    answer,
+    legalStatusWarning:warning,
+    citations:articles.map(a=>({
+      articleNumber:a.articleNumber,
+      heading:a.heading,
+      status:a.status,
+      humanReviewStatus:a.humanReviewStatus,
+      sourceUrl:a.sourceUrl,
+      sourceIssueNumber:a.sourceIssueNumber,
+      sourceIssueDate:a.sourceIssueDate,
+      excerpt:String(a.text || "").replace(/\s+/g," ").slice(0,420)
+    })),
+    humanGate:"AI output is research assistance. Verify the controlling version and primary source before professional reliance."
+  });
+}
+
 function handleWebSources(request) {
   if (request.method !== "GET" && request.method !== "HEAD") return methodNotAllowed(request);
 
@@ -549,13 +827,14 @@ async function handleCapabilities(request, env) {
       officialSourceDirectory: "live_read_only",
       zenodo: "metadata_only",
       orcid: "live_read_only",
-      retrievalAssistant: "governed_preview",
+      articleCorpus: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
+      retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
       citationAudit: "governed_preview",
       versionCompare: "governed_preview",
       documentUpload: "locked",
       caseWorkspace: "locked",
       vectorize: "not_bound",
-      workersAI: "not_bound"
+      workersAI: env.AI ? "bound" : "not_bound"
     }
   });
 }
@@ -626,17 +905,11 @@ export default {
     }
 
     if (url.pathname === "/api/search") return handleSearch(request, env, url);
+    if (url.pathname === "/api/articles") return handleArticles(request, env, url);
+    if (url.pathname === "/api/assistant") return handleAssistant(request, env, url);
     if (url.pathname === "/api/web-sources") return handleWebSources(request);
     if (url.pathname === "/api/zenodo") return handleZenodo(request);
     if (url.pathname === "/api/orcid") return handleOrcid(request);
-
-    if (url.pathname === "/api/assistant") {
-      return governedPreview(
-        request,
-        "retrieval_assistant",
-        "The assistant remains locked until public search passes staging and production validation."
-      );
-    }
 
     if (url.pathname === "/api/citation-audit") {
       return governedPreview(
