@@ -600,10 +600,19 @@ async function findRelevantArticles(env, instrumentKey, q, limit=6) {
   if(!instrument) return {instrument:null,articles:[]};
 
   const rows=await loadInstrumentArticles(env,instrument.id);
-  const ranked=rows
+  let ranked=rows
     .map(row=>({row,score:scoreArticle(row,q)}))
     .filter(x=>x.score>0)
-    .sort((a,b)=>b.score-a.score || a.row.id-b.row.id)
+    .sort((a,b)=>b.score-a.score || a.row.id-b.row.id);
+
+  const exactMatch=q.match(/(?:член|article)\s*([0-9]+(?:[-–—][\p{L}]+)?)/iu);
+  if(exactMatch){
+    const exactNumber=normalizeText(exactMatch[1]).replace(/[–—]/g,"-");
+    const exact=ranked.filter(x=>normalizeText(x.row.article_number_normalized).replace(/[–—]/g,"-")===exactNumber);
+    if(exact.length) ranked=exact;
+  }
+
+  ranked=ranked
     .slice(0,limit)
     .map(x=>({...normalizeArticle(x.row),relevanceScore:x.score}));
 
@@ -718,6 +727,7 @@ async function handleAssistant(request, env, url) {
   const warning=assistantStatusWarning(articles);
   let answer=null;
   let answerMode="retrieval_only";
+  let aiError=null;
 
   if(env.AI && articles.length){
     const context=articles.map(a=>
@@ -743,10 +753,27 @@ ${instrument.title}
 ${context}`;
 
     try{
-      const generated=await env.AI.run("@cf/zai-org/glm-4.7-flash",{prompt});
-      answer=generated?.response || generated?.result?.response || generated?.text || null;
+      const generated=await env.AI.run("@cf/zai-org/glm-4.7-flash",{
+        messages:[
+          {
+            role:"system",
+            content:"Ти си AI Advokat, source-first правен истражувач. Користи исклучиво доставени правни извори, цитирај ги членовите и јасно означи ако текстот не е Human-Gate потврден како тековен."
+          },
+          {role:"user",content:prompt}
+        ],
+        max_tokens:1400,
+        temperature:0.1
+      });
+      answer=generated?.response
+        || generated?.result?.response
+        || generated?.text
+        || generated?.choices?.[0]?.message?.content
+        || null;
       if(answer) answerMode="workers_ai_source_backed";
+      else aiError="empty_model_response";
     }catch(error){
+      aiError=String(error?.message || error || "workers_ai_error").slice(0,240);
+      console.error("workers_ai_generation_failed",aiError);
       answer=null;
     }
   }
@@ -775,7 +802,10 @@ ${context}`;
       sourceIssueDate:a.sourceIssueDate,
       excerpt:String(a.text || "").replace(/\s+/g," ").slice(0,420)
     })),
-    humanGate:"AI output is research assistance. Verify the controlling version and primary source before professional reliance."
+    humanGate:"AI output is research assistance. Verify the controlling version and primary source before professional reliance.",
+    ...(new URL(request.url).hostname.startsWith("ai-advokat-staging.")
+      ? {aiDiagnostic:{binding:Boolean(env.AI),error:aiError}}
+      : {})
   });
 }
 
