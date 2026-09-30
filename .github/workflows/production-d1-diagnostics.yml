@@ -1,17 +1,14 @@
 name: AI Advokat production D1 diagnostics
 
 on:
-  push:
-    branches:
-      - activate-public-search-v1.3.3-clean
-    paths:
-      - ".github/workflows/production-d1-diagnostics.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   diagnose-production:
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 8
 
