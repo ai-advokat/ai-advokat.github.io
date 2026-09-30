@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 
-const [,,inputPath,outputPath,reportPath] = process.argv;
+const [,,inputPath,outputPath,reportPath,finalArticleArg] = process.argv;
 if (!inputPath || !outputPath || !reportPath) {
-  console.error("Usage: node scripts/clean-official-legal-pdf-text.mjs <raw.txt> <clean.txt> <report.json>");
+  console.error("Usage: node scripts/clean-official-legal-pdf-text.mjs <raw.txt> <clean.txt> <report.json> [final-article]");
   process.exit(2);
 }
+const finalArticleExpected=String(finalArticleArg || "273")
+  .normalize("NFKC")
+  .toLocaleLowerCase("mk")
+  .replace(/[–—]/g,"-")
+  .replace(/\s+/g,"");
 
 const raw=fs.readFileSync(inputPath,"utf8").normalize("NFKC").replace(/\r\n?/g,"\n");
 const lines=raw.split("\n");
@@ -29,7 +34,11 @@ for (let i=0;i<lines.length;i++) {
 
   const articleMatch=line.match(/^\s*Член\s+([0-9]+(?:\s*[-–—]\s*[A-Za-zА-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ]+)?)\s*\.?\s*$/iu);
 
-  if (articleMatch && articleMatch[1].replace(/\s+/g,"")==="273") {
+  const articleNorm=articleMatch
+    ? articleMatch[1].normalize("NFKC").toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"")
+    : null;
+
+  if (articleMatch && articleNorm===finalArticleExpected) {
     seenFinalArticle=true;
   } else if (seenFinalArticle && articleMatch) {
     appendixStartLine=i+1;
@@ -39,8 +48,8 @@ for (let i=0;i<lines.length;i++) {
   if (
     seenFinalArticle &&
     (
-      /ОДРЕДБИ\s+ОД\s+ЗАКОНИ\s+ЗА\s+ИЗМЕНУВАЊЕ/iu.test(lookahead) ||
-      /ЗАКОН\s+ЗА\s+ИЗМЕНУВАЊЕ(?:\s+И\s+ДОПОЛНУВАЊЕ)?\s+НА\s+ЗАКОНОТ\s+ЗА\s+РАБОТНИТЕ\s+ОДНОСИ/iu.test(lookahead)
+      /ОДРЕДБИ\s+ОД\s+(?:ДРУГИ\s+)?ЗАКОНИ/iu.test(lookahead) ||
+      /ЗАКОН\s+ЗА\s+ИЗМЕНУВАЊЕ(?:\s+И\s+ДОПОЛНУВАЊЕ)?\s+НА\s+ЗАКОНОТ/iu.test(lookahead)
     )
   ) {
     appendixStartLine=i+1;
@@ -87,7 +96,9 @@ const report={
   removed_noise_line_count:removed.length,
   appendix_start_line:appendixStartLine,
   appendix_truncated:appendixStartLine!==null,
-  seen_final_article_273:seenFinalArticle,
+  final_article_expected:finalArticleExpected,
+  seen_final_article:seenFinalArticle,
+  seen_final_article_273:finalArticleExpected==="273" ? seenFinalArticle : null,
   article_header_count:articleHeaders.length,
   duplicate_article_headers:duplicates,
   suspicious_markers:suspicious,
