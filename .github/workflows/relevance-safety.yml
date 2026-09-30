@@ -1,0 +1,33 @@
+name: Relevance safety
+
+on:
+  pull_request:
+    paths:
+      - "src/index.js"
+      - "scripts/test-score-article.mjs"
+      - "package.json"
+      - ".github/workflows/relevance-safety.yml"
+  push:
+    branches:
+      - "fix-scorearticle-relevance-gate-30sep2026"
+    paths:
+      - "src/index.js"
+      - "scripts/test-score-article.mjs"
+      - "package.json"
+      - ".github/workflows/relevance-safety.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  score-article:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run test:relevance
+      - run: node --check src/index.js

@@ -824,7 +824,7 @@ async function loadInstrumentArticles(env, instrumentId) {
   return result.results ?? [];
 }
 
-function scoreArticle(row, q) {
+export function scoreArticle(row, q) {
   const target=normalizeText(q);
   const text=normalizeText(`${row.article_heading || ""} ${row.article_text || ""}`);
   const num=normalizeText(row.article_number_normalized || row.article_number || "");
@@ -848,9 +848,13 @@ function scoreArticle(row, q) {
     }
   }
 
-  if(row.status==="current_consolidated" && row.human_review_status==="approved") score+=25;
-  else if(row.status==="verified") score+=15;
-  else if(row.status==="needs_version_review") score-=4;
+  // Quality/status may break ties among relevant rows, but must never create relevance.
+  // Without this gate an approved row could score >0 even when the query shared no term.
+  if(score>0){
+    if(row.status==="current_consolidated" && row.human_review_status==="approved") score+=25;
+    else if(row.status==="verified") score+=15;
+    else if(row.status==="needs_version_review") score-=4;
+  }
 
   return score;
 }
