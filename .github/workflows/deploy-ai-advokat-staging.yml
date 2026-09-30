@@ -75,6 +75,7 @@ jobs:
           curl --fail --silent --show-error             -X POST "$BASE/api/assistant"             -H "content-type: application/json"             -d '{"q":"Објасни го член 1 од Законот за работните односи.","instrument":"mk:zro"}'             -o /tmp/assistant.json
           cat /tmp/assistant.json
           grep -q '"ok": true' /tmp/assistant.json
+          grep -q '"mode": "workers_ai_source_backed"' /tmp/assistant.json
           grep -q '"articleNumber": "1"' /tmp/assistant.json
 
       - name: Upload staging smoke evidence
