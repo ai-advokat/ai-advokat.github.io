@@ -140,11 +140,14 @@ if (!worker.includes('documentUpload: "locked"')) {
 if (!worker.includes('caseWorkspace: "locked"')) {
   throw new Error("Case workspace must remain locked.");
 }
-if (!worker.includes('workersAI: "not_bound"')) {
-  throw new Error("Workers AI must remain disabled in this release.");
+if (wrangler.ai) {
+  throw new Error("Production wrangler.jsonc must not bind Workers AI before governed production activation.");
+}
+if (!worker.includes('workersAI: env.AI ? "bound" : "not_bound"')) {
+  throw new Error("Worker must report Workers AI binding state dynamically.");
 }
 if (!worker.includes('vectorize: "not_bound"')) {
   throw new Error("Vectorize must remain disabled in this release.");
 }
 
-console.log("AI Advokat v1.3.3 structural verification: PASS");
+console.log("AI Advokat structural verification: PASS");
