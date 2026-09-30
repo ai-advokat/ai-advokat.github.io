@@ -1,10 +1,11 @@
-const CACHE_NAME = "ai-advokat-shell-v2";
+const CACHE_NAME = "ai-advokat-shell-v3";
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   OFFLINE_URL,
   "/manifest.webmanifest",
   "/assets/app-icon.svg",
-  "/assets/app-icon-maskable.svg"
+  "/assets/app-icon-maskable.svg",
+  "/assets/ai-advokat-hero-brand.webp"
 ];
 
 self.addEventListener("install", event => {
