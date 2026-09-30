@@ -788,3 +788,23 @@ describe("configuration exposure", () => {
     assert.equal(r.body.capabilities.membershipRequests, "blocked");
   });
 });
+
+describe("final audit follow-up", () => {
+  test("X4 CORS-simple membership posts are refused before rate-limit windows (no cross-site lockout)", async () => {
+    const { env, raw } = freshEnv();
+    const body = JSON.stringify({ requestKind: "trial", email: "victim@example.com", turnstileToken: "valid" });
+    for (const ct of ["text/plain", "application/x-www-form-urlencoded", "multipart/form-data; boundary=x"]) {
+      for (let i = 0; i < 4; i++) {
+        const r = await worker.fetch(new Request(BASE + "/api/membership/request", {
+          method: "POST", headers: { "content-type": ct, "CF-Connecting-IP": "198.51.100.200", Origin: "https://evil.example" }, body
+        }), env, {});
+        assert.equal(r.status, 415, ct);
+      }
+    }
+    assert.equal(raw.prepare("SELECT COUNT(*) AS n FROM security_rate_limit_windows").get().n, 0, "no window may be consumed");
+    assert.equal(requestRows(raw).length, 0);
+    installTurnstileMock();
+    const ok = await call(env, membershipRequest(validPayload(), { ip: "198.51.100.200" }));
+    assert.equal(ok.status, 202, "the victim can still submit a real request");
+  });
+});
