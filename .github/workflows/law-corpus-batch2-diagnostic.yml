@@ -1,0 +1,149 @@
+name: Law corpus batch 2 diagnostic
+
+on:
+  push:
+    branches:
+      - law-corpus-batch2-zsidp-zoup-30sep2026
+    paths:
+      - ".github/workflows/law-corpus-batch2-diagnostic.yml"
+      - "scripts/clean-official-legal-pdf-text.mjs"
+      - "scripts/parse-mk-legal-text.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install parser tooling
+        run: |
+          set -euo pipefail
+          npm install --ignore-scripts --no-audit --no-fund
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Download official ZSIDP consolidated snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://www.pravda.gov.mk/upload/Documents/%D0%97%D0%B0%D0%BA%D0%BE%D0%BD%20%D0%B7%D0%B0%20%D1%81%D0%BE%D0%BF%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BE%D1%81%D1%82%20%D0%B8%20%D0%B4%D1%80.%D1%81%D1%82%D0%B2%D0%B0%D1%80%D0%BD%D0%B8%20%D0%BF%D1%80%D0%B0%D0%B2%D0%B0%20-%20%D1%80%D0%B5%D0%B4%D0%B0%D0%BA%D1%86%D0%B8%D1%81%D0%BA%D0%B8%20%D0%BF%D1%80%D0%B5%D1%87%D0%B8%D1%81%D1%82%D0%B5%D0%BD(2).pdf'
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180             --user-agent "AI-Advokat-Law-Intake/1.0" "$URL" -o /tmp/zsidp.pdf
+          test -s /tmp/zsidp.pdf
+          head -c 5 /tmp/zsidp.pdf | grep -q "%PDF-"
+          pdfinfo /tmp/zsidp.pdf | tee /tmp/zsidp-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+62$" /tmp/zsidp-pdfinfo.txt
+          sha256sum /tmp/zsidp.pdf | tee /tmp/zsidp.sha256
+
+      - name: Parse and chunk ZSIDP
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -layout /tmp/zsidp.pdf /tmp/zsidp-raw.txt
+          node scripts/clean-official-legal-pdf-text.mjs /tmp/zsidp-raw.txt /tmp/zsidp-clean.txt /tmp/zsidp-clean-report.json 259
+          SHA="$(cut -d' ' -f1 /tmp/zsidp.sha256)"
+          cat > /tmp/zsidp-meta.json <<EOF
+          {
+            "instrument_key": "mk:zsidp",
+            "instrument_title": "Закон за сопственост и други стварни права",
+            "version_id": "official-editorial-consolidated-through-35-2010",
+            "source_url": "https://www.pravda.gov.mk/upload/Documents/%D0%97%D0%B0%D0%BA%D0%BE%D0%BD%20%D0%B7%D0%B0%20%D1%81%D0%BE%D0%BF%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BE%D1%81%D1%82%20%D0%B8%20%D0%B4%D1%80.%D1%81%D1%82%D0%B2%D0%B0%D1%80%D0%BD%D0%B8%20%D0%BF%D1%80%D0%B0%D0%B2%D0%B0%20-%20%D1%80%D0%B5%D0%B4%D0%B0%D0%BA%D1%86%D0%B8%D1%81%D0%BA%D0%B8%20%D0%BF%D1%80%D0%B5%D1%87%D0%B8%D1%81%D1%82%D0%B5%D0%BD(2).pdf",
+            "source_sha256": "$SHA",
+            "source_issue_number": "18/2001; Constitutional Court 31/2008; 92/2008; 139/2009; 35/2010",
+            "source_issue_date": "2010-03-12",
+            "status": "needs_version_review",
+            "extraction_method": "pdftotext_layout_plus_cleaner",
+            "human_review_status": "pending"
+          }
+          EOF
+          node scripts/parse-mk-legal-text.mjs /tmp/zsidp-clean.txt /tmp/zsidp-meta.json /tmp/zsidp.ndjson
+          head -n 1 /tmp/zsidp.ndjson > /tmp/zsidp-manifest.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zsidp.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          nums=[a.get("article_number_normalized") for a in arts]
+          print("ZSIDP_ARTICLE_COUNT",len(arts))
+          print("ZSIDP_WARNING_COUNT",m.get("warning_count"))
+          print("ZSIDP_FIRST",nums[:12])
+          print("ZSIDP_LAST",nums[-12:])
+          assert len(nums)==len(set(nums))
+          assert "1" in nums and "259" in nums
+          assert int(m.get("warning_count") or 0)==0
+          PY
+
+      - name: Download official ZOUP base law
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://ldbis.pravda.gov.mk/PdfFiles/2u50g5fib0a2nvznwkhwcvpl.pdf'
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180             --user-agent "AI-Advokat-Law-Intake/1.0" "$URL" -o /tmp/zoup.pdf
+          test -s /tmp/zoup.pdf
+          head -c 5 /tmp/zoup.pdf | grep -q "%PDF-"
+          pdfinfo /tmp/zoup.pdf | tee /tmp/zoup-pdfinfo.txt
+          sha256sum /tmp/zoup.pdf | tee /tmp/zoup.sha256
+
+      - name: Parse and chunk ZOUP base snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -layout /tmp/zoup.pdf /tmp/zoup-raw.txt
+          node scripts/clean-official-legal-pdf-text.mjs /tmp/zoup-raw.txt /tmp/zoup-clean.txt /tmp/zoup-clean-report.json 141
+          SHA="$(cut -d' ' -f1 /tmp/zoup.sha256)"
+          cat > /tmp/zoup-meta.json <<EOF
+          {
+            "instrument_key": "mk:zoup",
+            "instrument_title": "Закон за општата управна постапка",
+            "version_id": "official-gazette-base-124-2015",
+            "source_url": "https://ldbis.pravda.gov.mk/PdfFiles/2u50g5fib0a2nvznwkhwcvpl.pdf",
+            "source_sha256": "$SHA",
+            "source_issue_number": "124/2015",
+            "source_issue_date": "2015-07-23",
+            "status": "needs_version_review",
+            "extraction_method": "pdftotext_layout_plus_cleaner",
+            "human_review_status": "pending"
+          }
+          EOF
+          node scripts/parse-mk-legal-text.mjs /tmp/zoup-clean.txt /tmp/zoup-meta.json /tmp/zoup.ndjson
+          head -n 1 /tmp/zoup.ndjson > /tmp/zoup-manifest.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zoup.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          nums=[a.get("article_number_normalized") for a in arts]
+          print("ZOUP_ARTICLE_COUNT",len(arts))
+          print("ZOUP_WARNING_COUNT",m.get("warning_count"))
+          print("ZOUP_FIRST",nums[:12])
+          print("ZOUP_LAST",nums[-12:])
+          assert len(nums)==len(set(nums))
+          assert "1" in nums and "141" in nums
+          assert int(m.get("warning_count") or 0)==0
+          PY
+
+      - name: Upload diagnostic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: law-corpus-batch2-diagnostic
+          retention-days: 14
+          path: |
+            /tmp/zsidp-pdfinfo.txt
+            /tmp/zsidp.sha256
+            /tmp/zsidp-clean-report.json
+            /tmp/zsidp-manifest.json
+            /tmp/zsidp-meta.json
+            /tmp/zoup-pdfinfo.txt
+            /tmp/zoup.sha256
+            /tmp/zoup-clean-report.json
+            /tmp/zoup-manifest.json
+            /tmp/zoup-meta.json
