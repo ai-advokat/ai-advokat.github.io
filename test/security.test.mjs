@@ -632,6 +632,30 @@ describe("regression and truthful capabilities", () => {
     assert.ok(!/published:true[^}]*22981554|22981554[^}]*published:true/.test(html));
   });
 
+  test("R9 membership page never calls the API with a relative URL (breaks on GitHub Pages)", () => {
+    const html = fs.readFileSync("membership.html", "utf8");
+    assert.ok(!/fetch\(\s*["'`]\/api\//.test(html), "relative /api fetch found");
+    assert.equal((html.match(/fetch\(API_BASE\+"\/api\/membership\//g) || []).length, 3);
+    const csp = html.match(/connect-src[^;]*;/)[0];
+    assert.ok(csp.includes("https://ai-advokat-github-io.aiadvokat16.workers.dev"), "CSP must allow the Worker origin");
+  });
+
+  test("R9b the Worker accepts cross-origin membership calls from GitHub Pages (CORS)", async () => {
+    const { env } = freshEnv();
+    const pre = await worker.fetch(new Request(BASE + "/api/membership/request", {
+      method: "OPTIONS",
+      headers: { Origin: "https://ai-advokat.github.io", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "content-type" }
+    }), env, {});
+    assert.equal(pre.status, 204);
+    assert.equal(pre.headers.get("Access-Control-Allow-Origin"), "https://ai-advokat.github.io");
+    assert.ok(/POST/.test(pre.headers.get("Access-Control-Allow-Methods")));
+    assert.ok(/content-type/i.test(pre.headers.get("Access-Control-Allow-Headers")));
+    const plans = await worker.fetch(new Request(BASE + "/api/membership/plans", { headers: { Origin: "https://ai-advokat.github.io" } }), env, {});
+    assert.equal(plans.headers.get("Access-Control-Allow-Origin"), "https://ai-advokat.github.io");
+    const evil = await worker.fetch(new Request(BASE + "/api/membership/plans", { headers: { Origin: "https://evil.example" } }), env, {});
+    assert.equal(evil.headers.get("Access-Control-Allow-Origin"), null);
+  });
+
   test("R8 homepage status labels are capability-driven, not hard-coded LIVE", () => {
     const html = fs.readFileSync("index.html", "utf8");
     assert.ok(!/cardState">LIVE</.test(html), "no card may be hard-coded as LIVE");

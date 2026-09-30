@@ -96,6 +96,11 @@
 </footer>
 <script>
   const $=s=>document.querySelector(s);
+  // Same rule as index.html: on a workers.dev host the Worker is same-origin;
+  // on GitHub Pages (ai-advokat.github.io) the API lives on the production Worker.
+  const API_BASE = location.hostname.endsWith("workers.dev")
+    ? location.origin
+    : "https://ai-advokat-github-io.aiadvokat16.workers.dev";
   document.querySelectorAll(".choose").forEach(btn=>btn.addEventListener("click",()=>{
     $("#planCode").value=btn.dataset.plan;
     $("#request").scrollIntoView({behavior:"smooth",block:"start"});
@@ -117,7 +122,7 @@
   async function initTurnstile(){
     let siteKey=null;
     try{
-      const r=await fetch("/api/membership/plans",{headers:{accept:"application/json"}});
+      const r=await fetch(API_BASE+"/api/membership/plans",{headers:{accept:"application/json"}});
       const d=await r.json();
       siteKey=d.turnstileSiteKey || null;
     }catch{}
@@ -156,7 +161,7 @@
     if(!turnstileToken){ showRequestMessage(REQUEST_ERRORS.turnstile_required, false); return; }
     showRequestMessage("Се испраќа...", false);
     try{
-      const r=await fetch("/api/membership/request",{method:"POST",headers:{"content-type":"application/json","accept":"application/json"},body:JSON.stringify({...payload,turnstileToken})});
+      const r=await fetch(API_BASE+"/api/membership/request",{method:"POST",headers:{"content-type":"application/json","accept":"application/json"},body:JSON.stringify({...payload,turnstileToken})});
       const d=await r.json();
       if(!r.ok || !d.ok) throw new Error(d.error || "request_failed");
       showRequestMessage(d.message, true);
@@ -186,7 +191,7 @@
     e.preventDefault(); const key=$("#membershipKey").value.trim(); const box=$("#statusResult");
     box.hidden=false; box.textContent="Се проверува...";
     try{
-      const r=await fetch("/api/membership/status",{headers:{"accept":"application/json","authorization":"Bearer "+key}});
+      const r=await fetch(API_BASE+"/api/membership/status",{headers:{"accept":"application/json","authorization":"Bearer "+key}});
       const d=await r.json();
       if(!r.ok || !d.ok) throw new Error(d.error || "inactive");
       const m=d.membership;
