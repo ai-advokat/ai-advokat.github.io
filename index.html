@@ -1082,7 +1082,7 @@
           <span class="tag" data-i18n="researchTag">AI ПРАВНО ИСТРАЖУВАЊЕ</span>
           <h2 data-i18n="researchTitle">AI Истражувач со доказна трага</h2>
           <p data-i18n="researchText">
-            Интерфејсот е подготвен за Cloudflare Worker/D1/R2/Vectorize. Во оваа статичка верзија работи како безбеден demo и не испраќа податоци на надворешен AI сервис.
+            AI Истражувачот работи преку Cloudflare Worker/D1 и го користи истиот article-level правен корпус што е видлив во „Закони и прописи“. Одговорите прикажуваат изворни членови, статус на верзија и Човечка порта.
           </p>
         </div>
       </div>
@@ -1478,7 +1478,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
   window.AI_ADVOCAT_CONFIG = Object.freeze({
     portal: "AI Advokat",
-    demoMode: true,
+    demoMode: false,
 
     api: {
       search: "/api/search",
@@ -1683,7 +1683,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       trustLabel1:"Изворот прв", trustLabel2:"Човечка порта", trustLabel3:"Проверка на верзија", trustLabel4:"Поврзано со Zenodo",
       trust1:"Одговорите треба да покажуваат на што се потпираат.", trust2:"AI не ја заменува професионалната правна проценка.", trust3:"Правниот текст се чита со датум, верзија и важност.", trust4:"Авторските трудови имаат проверлив Zenodo-статус и резервирани DOI каде што се достапни.",
       sourceTag:"Правна база", sourceTitle:"Од извор до правен заклучок", sourceText:"Порталот е структуриран така што официјалниот текст, судската практика, стручната анализа и AI-синтезата никогаш не се мешаат без ознака.",
-      cardLaws:"Закони и прописи", cardLawsText:"Регистар со важечки текст, изменувања, датум на важност и врска до официјален извор.",
+      cardLaws:"Закони и прописи", cardLawsText:"ЗРО е достапен член-по-член со извор, верзија и Human Gate статус; регистарот постепено се проширува со останатите закони.",
       cardCases:"Судска практика", cardCasesText:"Пресуди организирани по суд, област, правно прашање, цитирани одредби и исход.",
       cardEchr:"ЕСПЧ и меѓународни извори", cardEchrText:"Европски стандарди и компаративни извори со јасно означена јурисдикција.",
       cardVersions:"Верзии и измени", cardVersionsText:"Споредба на стар и нов текст, со видливи датумски граници и правна важност.",
@@ -1703,8 +1703,8 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       searchPlaceholder:"Пребарај закон, член, пресуда, поим или труд...", searchAria:"Глобално пребарување", typeAria:"Тип", statusAria:"Статус", typeAll:"Сите извори", typeLaw:"Прописи", typeCase:"Судска практика", typePaper:"Трудови", typeGuide:"Водичи", statusAll:"Секој статус", statusOfficial:"Официјален", statusVerified:"Проверен", statusPending:"Во подготовка", searchButton:"Пребарај",
       chipConstitutional:"Уставно право", chipCriminal:"Кривично право", chipObligations:"Облигации", chipAdministrative:"Управно право", chipEchr:"ЕСПЧ", chipMediation:"Медијација", chipAiLaw:"AI и право",
       questionPlaceholder:"Пример: Кои се условите за институционална одговорност и како се разликува од индивидуалната кривична одговорност?", jurisdictionMk:"Северна Македонија", jurisdictionEchr:"Европски суд за човекови права", jurisdictionEu:"Европска унија", jurisdictionComparative:"Компаративно право", modeSource:"Истражување со примарни извори", modeMemo:"Правно мислење", modeCase:"Матрица на судска практика", modeCitations:"Проверка на цитати", sourceRule:"✓ Прво официјални извори · ✓ видливи цитати · ✓ без измислен DOI", analyzeButton:"Анализирај", demoMode:"AI Advokat · Source-backed",
-      usePrompt:"Користи", doiReserved:"DOI", openZenodo:"Отвори на Zenodo", openDraft:"Отвори Zenodo нацрт (сопственик)", zenodoPending:"Zenodo-запис во подготовка", noResults:"Нема резултат во демо-регистарот. Во продукција пребарувањето ќе користи D1/Vectorize и официјални извори.", statusOfficialBadge:"ОФИЦИЈАЛЕН", statusVerifiedBadge:"ПРОВЕРЕН", statusPendingBadge:"ВО ПОДГОТОВКА",
-      askReady:"Прашањето е подготвено за {mode} во јурисдикција: {jurisdiction}. Во оваа статичка верзија не се повикува надворешен AI. Продукцискиот Worker треба да врати: (1) листа на извори, (2) применливи норми, (3) анализа, (4) контрааргументи и (5) контролна листа за Човечката порта.",
+      usePrompt:"Користи", doiReserved:"DOI", openZenodo:"Отвори на Zenodo", openDraft:"Отвори Zenodo нацрт (сопственик)", zenodoPending:"Zenodo-запис во подготовка", noResults:"Нема пронајден релевантен резултат во достапниот правен корпус.", statusOfficialBadge:"ОФИЦИЈАЛЕН", statusVerifiedBadge:"ПРОВЕРЕН", statusPendingBadge:"ВО ПОДГОТОВКА",
+      askReady:"AI Advokat го обработува прашањето преку правниот корпус за {jurisdiction} и мора да покаже извори, применливи норми, ограничувања на верзијата и Човечка порта.",
       askEmpty:"Внесете правно прашање. Порталот намерно не генерира правни заклучоци без прашање и извори."
     },
     en:{
@@ -1719,7 +1719,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       trustLabel1:"Source-first", trustLabel2:"Human Gate", trustLabel3:"Version-aware", trustLabel4:"Zenodo-linked",
       trust1:"Answers should show what they rely on.", trust2:"AI does not replace professional legal judgment.", trust3:"Legal text is read with date, version and validity.", trust4:"Author publications show a verifiable Zenodo status, published DOI records and Scholar pages.",
       sourceTag:"Legal database", sourceTitle:"From source to legal conclusion", sourceText:"Official text, case law, professional analysis and AI synthesis remain visibly separated.",
-      cardLaws:"Laws & regulations", cardLawsText:"Registry with current text, amendments, effective dates and official source links.",
+      cardLaws:"Laws & regulations", cardLawsText:"The Labour Relations Act (ZRO) is available article-by-article with source, version and Human Gate status; the registry will expand law-by-law.",
       cardCases:"Case law", cardCasesText:"Judgments organized by court, field, legal issue, cited provisions and outcome.",
       cardEchr:"ECHR & international sources", cardEchrText:"European standards and comparative sources with clearly marked jurisdiction.",
       cardVersions:"Versions & amendments", cardVersionsText:"Compare old and new text with visible temporal boundaries and legal effect.",
@@ -1739,8 +1739,8 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       searchPlaceholder:"Search law, article, judgment, term or publication...", searchAria:"Global search", typeAria:"Type", statusAria:"Status", typeAll:"All sources", typeLaw:"Legislation", typeCase:"Case law", typePaper:"Publications", typeGuide:"Guides", statusAll:"Any status", statusOfficial:"Official", statusVerified:"Verified", statusPending:"In preparation", searchButton:"Search",
       chipConstitutional:"Constitutional law", chipCriminal:"Criminal law", chipObligations:"Law of obligations", chipAdministrative:"Administrative law", chipEchr:"ECHR", chipMediation:"Mediation", chipAiLaw:"AI & Law",
       questionPlaceholder:"Example: What are the conditions for institutional accountability and how does it differ from individual criminal responsibility?", jurisdictionMk:"North Macedonia", jurisdictionEchr:"European Court of Human Rights", jurisdictionEu:"European Union", jurisdictionComparative:"Comparative law", modeSource:"Source-first research", modeMemo:"Legal memo", modeCase:"Case-law matrix", modeCitations:"Citation audit", sourceRule:"✓ official sources first · ✓ visible citations · ✓ no invented DOI", analyzeButton:"Analyze", demoMode:"AI Advokat · Source-backed",
-      usePrompt:"Use", doiReserved:"DOI", openZenodo:"Open on Zenodo", openDraft:"Open Zenodo draft (owner)", zenodoPending:"Zenodo record in preparation", noResults:"No result in the demo registry. In production, search will use D1/Vectorize and official sources.", statusOfficialBadge:"OFFICIAL", statusVerifiedBadge:"VERIFIED", statusPendingBadge:"IN PREPARATION",
-      askReady:"The question is prepared for {mode} in the jurisdiction: {jurisdiction}. This static version does not call an external AI service. The production Worker should return: (1) source list, (2) applicable rules, (3) analysis, (4) counterarguments and (5) a Human Gate checklist.",
+      usePrompt:"Use", doiReserved:"DOI", openZenodo:"Open on Zenodo", openDraft:"Open Zenodo draft (owner)", zenodoPending:"Zenodo record in preparation", noResults:"No relevant result was found in the available legal corpus.", statusOfficialBadge:"OFFICIAL", statusVerifiedBadge:"VERIFIED", statusPendingBadge:"IN PREPARATION",
+      askReady:"AI Advokat processes the question through the legal corpus for {jurisdiction} and must expose sources, applicable rules, version limitations and the Human Gate.",
       askEmpty:"Enter a legal question. The portal deliberately does not generate legal conclusions without a question and sources."
     }
   };
