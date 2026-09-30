@@ -880,38 +880,9 @@ async function findRelevantArticles(env, instrumentKey, q, limit=6) {
     return {instrument,articles};
   }
 
-  const candidates=await listSearchableInstruments(env);
-
-  // A bare article number is never enough to select a law once multiple corpora are live.
-  const bareArticle=/^\s*(?:член|article)?\s*[0-9]+(?:[-–—][\p{L}]+)?\s*[?.!]*\s*$/iu.test(q);
-  if(bareArticle && candidates.length>1){
-    return {instrument:null,articles:[],reason:"instrument_required"};
-  }
-
-  const scored=[];
-  for(const row of candidates){
-    const instrument={
-      id:row.id,
-      canonical_key:row.canonical_key,
-      title:row.title,
-      short_title:row.short_title,
-      instrument_type:row.instrument_type,
-      jurisdiction:row.jurisdiction,
-      gazette_reference:row.gazette_reference,
-      current_status:row.current_status,
-      human_review_status:row.human_review_status,
-      notes:row.notes,
-      canonical_source_url:row.canonical_source_url
-    };
-    const articles=await rankInstrumentArticles(env,instrument,q,limit);
-    const top=articles[0]?.relevanceScore || 0;
-    if(top>0) scored.push({instrument,articles,top});
-  }
-
-  scored.sort((a,b)=>b.top-a.top);
-  if(!scored.length) return {instrument:null,articles:[],reason:"no_relevant_instrument"};
-
-  return scored[0];
+  // Fail closed: with multiple legal corpora, never guess a statute from generic words.
+  // Auto mode is resolved only by explicit aliases in inferInstrumentKey().
+  return {instrument:null,articles:[],reason:"instrument_required"};
 }
 
 async function handleArticles(request, env, url) {
@@ -1096,7 +1067,7 @@ async function handleAssistant(request, env, url) {
   const {instrument,articles}=retrieval;
   if(!instrument){
     if(retrieval.reason==="instrument_required"){
-      return json(request,{ok:false,error:"instrument_required",message:"Изберете конкретен закон за прашање што содржи само број на член."},400);
+      return json(request,{ok:false,error:"instrument_required",message:"Не е безбедно автоматски да се избере закон. Изберете конкретен закон или наведете ја неговата кратенка/назив."},400);
     }
     return json(request,{ok:false,error:"instrument_not_found",message:"Не е утврден релевантен закон во достапниот корпус. Изберете закон од селекторот."},404);
   }
