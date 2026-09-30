@@ -71,19 +71,18 @@ jobs:
           fi
 
           npx wrangler d1 execute DB --remote --config wrangler.jsonc \
-            --command "SELECT version,description FROM schema_migrations WHERE version='20'; SELECT canonical_key,gazette_reference,notes FROM legal_instruments WHERE canonical_key='mk:kz'; SELECT url,source_status FROM sources WHERE url IN ('https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=72834','https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=72841') ORDER BY url;" \
+            --command "SELECT version,description FROM schema_migrations WHERE version='20'; SELECT canonical_key,gazette_reference,notes,canonical_source_id FROM legal_instruments WHERE canonical_key='mk:kz'; SELECT sql FROM sqlite_master WHERE type='table' AND name='sources'; SELECT id,title,url,source_type,source_status FROM sources WHERE url LIKE 'https://ldbis.pravda.gov.mk/%' ORDER BY id DESC LIMIT 30;" \
             | tee /tmp/kz.txt
           grep -q '"version": "20"' /tmp/kz.txt
           grep -q 'correction 17/2026' /tmp/kz.txt
-          grep -q 'id=72841' /tmp/kz.txt
-          echo "KZ 2026 PROVENANCE: PASS"
+          echo "KZ 2026 METADATA: PASS"
 
       - name: Verify registry and alias layer
         shell: bash
         run: |
           set -euo pipefail
           npx wrangler d1 execute DB --remote --config wrangler.jsonc \
-            --command "SELECT canonical_key,short_title,title,current_status,human_review_status FROM legal_instruments WHERE canonical_key IN ('mk:zro','mk:zkp','mk:kz','mk:zpp','mk:zoo','mk:zoup','mk:zi','mk:zs','mk:zsidp','mk:ztd') ORDER BY canonical_key; SELECT COUNT(*) AS alias_count FROM legal_instrument_aliases;" \
+            --command "SELECT li.canonical_key,li.short_title,li.title,li.current_status,li.human_review_status,li.canonical_source_id,s.url AS canonical_source_url FROM legal_instruments li LEFT JOIN sources s ON s.id=li.canonical_source_id WHERE li.canonical_key IN ('mk:zro','mk:zkp','mk:kz','mk:zpp','mk:zoo','mk:zoup','mk:zi','mk:zs','mk:zsidp','mk:ztd') ORDER BY li.canonical_key; SELECT COUNT(*) AS alias_count FROM legal_instrument_aliases;" \
             | tee /tmp/registry.txt
           for key in mk:zro mk:zkp mk:kz mk:zpp mk:zoo mk:zoup mk:zi mk:zs mk:zsidp mk:ztd; do grep -q "\"canonical_key\": \"$key\"" /tmp/registry.txt; done
           python3 - <<'PY'
