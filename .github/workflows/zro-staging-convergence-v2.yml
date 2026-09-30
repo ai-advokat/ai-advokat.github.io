@@ -53,10 +53,11 @@ jobs:
       - name: Verify existing ZRO corpus baseline
         shell: bash
         run: |
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT COUNT(*) AS article_count, SUM(CASE WHEN status='historical' THEN 1 ELSE 0 END) AS historical_count, SUM(CASE WHEN status='current_consolidated' THEN 1 ELSE 0 END) AS current_count, SUM(CASE WHEN human_review_status='pending' THEN 1 ELSE 0 END) AS pending_review_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro');"             | tee /tmp/before.txt
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT COUNT(*) AS article_count, SUM(CASE WHEN status='historical' THEN 1 ELSE 0 END) AS historical_count, SUM(CASE WHEN status='needs_version_review' THEN 1 ELSE 0 END) AS needs_review_count, SUM(CASE WHEN status='current_consolidated' THEN 1 ELSE 0 END) AS current_count, SUM(CASE WHEN human_review_status='pending' THEN 1 ELSE 0 END) AS pending_review_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro'); SELECT status,COUNT(*) AS count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') GROUP BY status ORDER BY status;"             | tee /tmp/before.txt
 
           grep -q '"article_count": 298' /tmp/before.txt
-          grep -q '"historical_count": 298' /tmp/before.txt
+          grep -q '"historical_count": 272' /tmp/before.txt
+          grep -q '"needs_review_count": 26' /tmp/before.txt
           grep -q '"current_count": 0' /tmp/before.txt
           grep -q '"pending_review_count": 298' /tmp/before.txt
 
@@ -78,9 +79,10 @@ jobs:
       - name: Verify ZRO corpus unchanged after migration
         shell: bash
         run: |
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT COUNT(*) AS article_count, SUM(CASE WHEN status='historical' THEN 1 ELSE 0 END) AS historical_count, SUM(CASE WHEN status='current_consolidated' THEN 1 ELSE 0 END) AS current_count, SUM(CASE WHEN human_review_status='pending' THEN 1 ELSE 0 END) AS pending_review_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro');"             | tee /tmp/after.txt
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT COUNT(*) AS article_count, SUM(CASE WHEN status='historical' THEN 1 ELSE 0 END) AS historical_count, SUM(CASE WHEN status='needs_version_review' THEN 1 ELSE 0 END) AS needs_review_count, SUM(CASE WHEN status='current_consolidated' THEN 1 ELSE 0 END) AS current_count, SUM(CASE WHEN human_review_status='pending' THEN 1 ELSE 0 END) AS pending_review_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro');"             | tee /tmp/after.txt
           grep -q '"article_count": 298' /tmp/after.txt
-          grep -q '"historical_count": 298' /tmp/after.txt
+          grep -q '"historical_count": 272' /tmp/after.txt
+          grep -q '"needs_review_count": 26' /tmp/after.txt
           grep -q '"current_count": 0' /tmp/after.txt
           grep -q '"pending_review_count": 298' /tmp/after.txt
 
@@ -94,7 +96,7 @@ jobs:
       - name: Upload convergence evidence
         uses: actions/upload-artifact@v4
         with:
-          name: zro-staging-convergence-evidence
+          name: zro-staging-convergence-evidence-v2
           retention-days: 14
           path: |
             /tmp/pending.txt
