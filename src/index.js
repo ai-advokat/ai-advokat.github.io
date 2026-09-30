@@ -690,6 +690,69 @@ function assistantStatusWarning(articles) {
   return null;
 }
 
+
+function extractModelText(value, depth=0) {
+  if(depth>4 || value===null || value===undefined) return null;
+  if(typeof value==="string"){
+    const trimmed=value.trim();
+    return trimmed || null;
+  }
+  if(Array.isArray(value)){
+    for(const item of value){
+      if(typeof item==="string" && item.trim()) return item.trim();
+      if(item && typeof item==="object"){
+        for(const key of ["text","content","output_text","response"]){
+          const found=extractModelText(item[key],depth+1);
+          if(found) return found;
+        }
+      }
+    }
+    return null;
+  }
+  if(typeof value!=="object") return null;
+
+  const directKeys=["output_text","text","response","content","answer","result"];
+  for(const key of directKeys){
+    const found=extractModelText(value[key],depth+1);
+    if(found) return found;
+  }
+
+  const choiceCollections=[
+    value.choices,
+    value.output,
+    value.data,
+    value.result?.choices,
+    value.response?.choices
+  ];
+  for(const collection of choiceCollections){
+    if(!Array.isArray(collection)) continue;
+    for(const choice of collection){
+      const found=extractModelText(
+        choice?.message?.content
+        ?? choice?.delta?.content
+        ?? choice?.content
+        ?? choice?.text,
+        depth+1
+      );
+      if(found) return found;
+    }
+  }
+  return null;
+}
+
+function modelShapeSummary(value) {
+  if(value===null) return {type:"null"};
+  if(Array.isArray(value)) return {type:"array",length:value.length};
+  if(typeof value!=="object") return {type:typeof value};
+  return {
+    type:"object",
+    keys:Object.keys(value).slice(0,20),
+    choiceCount:Array.isArray(value.choices) ? value.choices.length : null,
+    resultKeys:value.result && typeof value.result==="object" ? Object.keys(value.result).slice(0,12) : null,
+    responseType:typeof value.response
+  };
+}
+
 function fallbackAssistantAnswer(q, instrument, articles) {
   if(!articles.length){
     return "Во достапниот корпус не најдов доволно релевантен член за ова прашање. Потребна е дополнителна проверка на официјалните извори.";
@@ -764,13 +827,9 @@ ${context}`;
         max_tokens:1400,
         temperature:0.1
       });
-      answer=generated?.response
-        || generated?.result?.response
-        || generated?.text
-        || generated?.choices?.[0]?.message?.content
-        || null;
+      answer=extractModelText(generated);
       if(answer) answerMode="workers_ai_source_backed";
-      else aiError="empty_model_response";
+      else aiError="empty_model_response:"+JSON.stringify(modelShapeSummary(generated));
     }catch(error){
       aiError=String(error?.message || error || "workers_ai_error").slice(0,240);
       console.error("workers_ai_generation_failed",aiError);
