@@ -712,6 +712,22 @@ describe("Codex review follow-ups (PR #44)", () => {
     });
   }
 
+  test("X1a text/plain POST is rejected before D1, quota or AI", async () => {
+    const ai = mockAI("[Член 12]");
+    const { env, raw, stats } = freshEnv({ ai });
+    const req = new Request(BASE + "/api/assistant", {
+      method: "POST",
+      headers: { "content-type": "text/plain", "CF-Connecting-IP": nextIp(), Origin: "https://evil.example" },
+      body: JSON.stringify({ q: "ЗРО член 12", instrument: "mk:zro" })
+    });
+    const response = await worker.fetch(req, env, {});
+    assert.equal(response.status, 415);
+    assert.equal(ai.calls.length, 0, "AI must not be called");
+    assert.equal(totalUsage(raw), 0, "quota must not be consumed");
+    assert.equal(raw.prepare("SELECT COUNT(*) AS n FROM security_rate_limit_windows").get().n, 0, "burst window must not be touched");
+    assert.equal(stats.statements, 0, "no D1 work at all for unsupported media type");
+  });
+
   test("X1b CORS preflight for POST /api/assistant still succeeds", async () => {
     const { env } = freshEnv();
     const r = await worker.fetch(new Request(BASE + "/api/assistant", {
@@ -737,6 +753,15 @@ describe("Codex review follow-ups (PR #44)", () => {
     assert.equal(r.body.capabilities.membershipRequests, "manual_human_gate");
     const plans = await call(complete.env, new Request(BASE + "/api/membership/plans"));
     assert.equal(plans.body.turnstileSiteKey, "0x4AAAAAAATESTKEY", "capability and form must agree");
+  });
+});
+
+describe("membership API base routing", () => {
+  test("X3 localhost and 127.0.0.1 stay same-origin; GitHub Pages uses the Worker", () => {
+    const html = fs.readFileSync("membership.html", "utf8");
+    assert.ok(html.includes('location.hostname === "localhost"'));
+    assert.ok(html.includes('location.hostname === "127.0.0.1"'));
+    assert.ok(html.includes('"https://ai-advokat-github-io.aiadvokat16.workers.dev"'));
   });
 });
 
