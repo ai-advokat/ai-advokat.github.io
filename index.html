@@ -1117,6 +1117,12 @@
 
           <div class="fieldGrid">
 
+            <select id="instrumentSelect" aria-label="Избери закон">
+              <option value="auto">Автоматски избери закон</option>
+              <option value="mk:zro">ЗРО · Закон за работните односи</option>
+              <option value="mk:zkp">ЗКП · Закон за кривичната постапка</option>
+            </select>
+
             <select id="jurisdiction">
               <option data-i18n="jurisdictionMk">Северна Македонија</option>
               <option data-i18n="jurisdictionEchr">Европски суд за човекови права</option>
@@ -1144,7 +1150,7 @@
           </div>
 
           <div class="answer" id="answerBox">
-            <strong data-i18n="demoMode">Демо-режим</strong>
+            <strong data-i18n="demoMode">LIVE · SOURCE-BACKED AI</strong>
             <span id="answerText"></span>
           </div>
 
@@ -1482,6 +1488,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
     api: {
       search: "/api/search",
+      instruments: "/api/instruments",
       articles: "/api/articles",
       assistant: "/api/assistant",
       membershipStatus: "/api/membership/status",
@@ -1683,7 +1690,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       trustLabel1:"Изворот прв", trustLabel2:"Човечка порта", trustLabel3:"Проверка на верзија", trustLabel4:"Поврзано со Zenodo",
       trust1:"Одговорите треба да покажуваат на што се потпираат.", trust2:"AI не ја заменува професионалната правна проценка.", trust3:"Правниот текст се чита со датум, верзија и важност.", trust4:"Авторските трудови имаат проверлив Zenodo-статус и резервирани DOI каде што се достапни.",
       sourceTag:"Правна база", sourceTitle:"Од извор до правен заклучок", sourceText:"Порталот е структуриран така што официјалниот текст, судската практика, стручната анализа и AI-синтезата никогаш не се мешаат без ознака.",
-      cardLaws:"Закони и прописи", cardLawsText:"ЗРО е достапен член-по-член со извор, верзија и Human Gate статус; регистарот постепено се проширува со останатите закони.",
+      cardLaws:"Закони и прописи", cardLawsText:"ЗРО и ЗКП се достапни како одделни корпуси член-по-член, со извор, верзија и Human Gate статус.",
       cardCases:"Судска практика", cardCasesText:"Пресуди организирани по суд, област, правно прашање, цитирани одредби и исход.",
       cardEchr:"ЕСПЧ и меѓународни извори", cardEchrText:"Европски стандарди и компаративни извори со јасно означена јурисдикција.",
       cardVersions:"Верзии и измени", cardVersionsText:"Споредба на стар и нов текст, со видливи датумски граници и правна важност.",
@@ -1719,7 +1726,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       trustLabel1:"Source-first", trustLabel2:"Human Gate", trustLabel3:"Version-aware", trustLabel4:"Zenodo-linked",
       trust1:"Answers should show what they rely on.", trust2:"AI does not replace professional legal judgment.", trust3:"Legal text is read with date, version and validity.", trust4:"Author publications show a verifiable Zenodo status, published DOI records and Scholar pages.",
       sourceTag:"Legal database", sourceTitle:"From source to legal conclusion", sourceText:"Official text, case law, professional analysis and AI synthesis remain visibly separated.",
-      cardLaws:"Laws & regulations", cardLawsText:"The Labour Relations Act (ZRO) is available article-by-article with source, version and Human Gate status; the registry will expand law-by-law.",
+      cardLaws:"Laws & regulations", cardLawsText:"The Labour Relations Act (ZRO) and Criminal Procedure Act (ZKP) are separate article-level corpora with source, version and Human Gate status.",
       cardCases:"Case law", cardCasesText:"Judgments organized by court, field, legal issue, cited provisions and outcome.",
       cardEchr:"ECHR & international sources", cardEchrText:"European standards and comparative sources with clearly marked jurisdiction.",
       cardVersions:"Versions & amendments", cardVersionsText:"Compare old and new text with visible temporal boundaries and legal effect.",
@@ -1979,9 +1986,16 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     return ["current_verified","verified"].includes(article.publicStatus) ? "ok" : "pending";
   }
 
-  async function fetchArticles(params={}){
+  async function fetchInstruments(){
+    const response=await fetch(API_BASE+"/api/instruments",{headers:{accept:"application/json"}});
+    const data=await response.json();
+    if(!response.ok || !data.ok || !Array.isArray(data.instruments)) throw new Error(data?.error || "instrument_api_error");
+    return data.instruments;
+  }
+
+  async function fetchArticles(instrumentKey,params={}){
     const url=new URL(API_BASE+"/api/articles");
-    url.searchParams.set("instrument","mk:zro");
+    url.searchParams.set("instrument",instrumentKey);
     for(const [k,v] of Object.entries(params)){
       if(v!==undefined && v!==null && String(v)!=="") url.searchParams.set(k,String(v));
     }
@@ -1993,6 +2007,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
   function renderArticleRows(root,data){
     const rows=data.articles || [];
+    const instrument=data.instrument || {};
     if(!rows.length){
       root.innerHTML=`<div class="resultItem">${lang==="mk" ? "Нема пронајдени членови." : "No articles found."}</div>`;
       return;
@@ -2004,7 +2019,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
           <div class="resultTop">
             <div>
               <h4 style="margin:0">${lang==="mk" ? "Член" : "Article"} ${escapeHtml(a.articleNumber)}${a.heading ? " · "+escapeHtml(a.heading) : ""}</h4>
-              <div class="meta">${escapeHtml(a.sourceIssueNumber || "")} · ${escapeHtml(a.sourceIssueDate || "")}</div>
+              <div class="meta">${escapeHtml(a.sourceIssueNumber || instrument.gazetteReference || "")} · ${escapeHtml(a.sourceIssueDate || "")}</div>
             </div>
             <span class="badge ${articleStatusClass(a)}">${escapeHtml(articleStatusLabel(a))}</span>
           </div>
@@ -2012,9 +2027,12 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
         <div style="white-space:pre-wrap;margin-top:14px;line-height:1.65">${escapeHtml(a.text)}</div>
         <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
           <a class="btn light" href="${escapeHtml(a.sourceUrl)}" target="_blank" rel="noopener noreferrer">
-            ${lang==="mk" ? "Официјален извор ↗" : "Official source ↗"}
+            ${lang==="mk" ? "Отвори извор ↗" : "Open source ↗"}
           </a>
-          <button class="btn light askArticleBtn" type="button" data-article="${escapeHtml(a.articleNumber)}">
+          <button class="btn light askArticleBtn" type="button"
+            data-article="${escapeHtml(a.articleNumber)}"
+            data-instrument="${escapeHtml(instrument.canonicalKey || "")}"
+            data-title="${escapeHtml(instrument.title || "")}">
             ${lang==="mk" ? "Прашај AI за овој член" : "Ask AI about this article"}
           </button>
         </div>
@@ -2022,28 +2040,32 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
     root.querySelectorAll(".askArticleBtn").forEach(btn=>{
       btn.addEventListener("click",()=>{
+        if($("#instrumentSelect")) $("#instrumentSelect").value=btn.dataset.instrument || "auto";
         $("#legalQuestion").value=(lang==="mk"
-          ? `Објасни го член ${btn.dataset.article} од Законот за работните односи, неговото практично значење и ограничувањата на верзијата.`
-          : `Explain Article ${btn.dataset.article} of the Labour Relations Act, its practical meaning and version limitations.`);
+          ? `Објасни го член ${btn.dataset.article} од ${btn.dataset.title}, неговото практично значење и ограничувањата на верзијата.`
+          : `Explain Article ${btn.dataset.article} of ${btn.dataset.title}, its practical meaning and version limitations.`);
         document.querySelector("#research").scrollIntoView({behavior:"smooth",block:"start"});
         $("#legalQuestion").focus();
       });
     });
   }
 
-  async function openZroBrowser(){
-    $("#workspaceTag").textContent="STAGING · ARTICLE-LEVEL CORPUS";
-    $("#workspaceTitle").textContent=lang==="mk" ? "Закони и прописи · ЗРО" : "Laws & regulations · Labour Relations Act";
+  async function openLawBrowser(instrumentKey){
+    $("#workspaceTag").textContent="LIVE · ARTICLE-LEVEL CORPUS";
+    $("#workspaceTitle").textContent=lang==="mk" ? "Закони и прописи" : "Laws & regulations";
     $("#workspaceText").textContent=lang==="mk"
-      ? "Официјален пречистен snapshot преку 111/2023, расчленет член-по-член. Не е означен како тековен 2026 текст додека не заврши Human Gate за подоцнежните измени."
-      : "Official consolidated snapshot through 111/2023, split article-by-article. It is not marked as current 2026 law until later amendments pass Human Gate.";
+      ? "Секој закон е одделен instrument со сопствен извор, верзија и Human Gate статус."
+      : "Each law is a separate instrument with its own source, version and Human Gate status.";
 
     $("#sourceWorkspace").hidden=false;
     $("#workspaceLinks").innerHTML=`
+      <div style="grid-column:1/-1;margin-bottom:4px">
+        <button class="btn light" type="button" id="backToLawRegistry">${lang==="mk" ? "← Сите закони" : "← All laws"}</button>
+      </div>
       <div class="resultItem" style="grid-column:1/-1">
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
           <input id="lawArticleQuery" type="search"
-            placeholder="${lang==="mk" ? "Пребарај: член 88, отказен рок, годишен одмор..." : "Search: article 88, notice period, annual leave..."}"
+            placeholder="${lang==="mk" ? "Пребарај член, поим или институт..." : "Search article, term or legal concept..."}"
             style="flex:1;min-width:240px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)">
           <button class="btn primary" type="button" id="lawArticleSearchBtn">${lang==="mk" ? "Пребарај членови" : "Search articles"}</button>
           <button class="btn light" type="button" id="lawArticleResetBtn">${lang==="mk" ? "Први членови" : "First articles"}</button>
@@ -2055,6 +2077,8 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
         <button class="btn light" type="button" id="lawLoadMoreBtn" hidden>${lang==="mk" ? "Вчитај уште" : "Load more"}</button>
       </div>`;
 
+    $("#backToLawRegistry").addEventListener("click",openLawsRegistry);
+
     const results=$("#lawArticleResults");
     const stats=$("#lawCorpusStats");
     const loadMore=$("#lawLoadMoreBtn");
@@ -2065,11 +2089,12 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       results.setAttribute("aria-busy","true");
       if(!append) results.innerHTML=`<div class="resultItem">${lang==="mk" ? "Се вчитуваат членовите..." : "Loading articles..."}</div>`;
       try{
-        const data=await fetchArticles({q:currentQuery,limit:40,offset});
+        const data=await fetchArticles(instrumentKey,{q:currentQuery,limit:40,offset});
         const counts=data.statusCounts || {};
-        stats.textContent=(lang==="mk"
-          ? `ЗРО · ${data.total} членови · historical: ${counts.historical || 0} · version review: ${counts.needs_version_review || 0} · current verified: ${counts.current_consolidated || 0}`
-          : `Labour Relations Act · ${data.total} articles · historical: ${counts.historical || 0} · version review: ${counts.needs_version_review || 0} · current verified: ${counts.current_consolidated || 0}`);
+        const inst=data.instrument || {};
+        $("#workspaceTitle").textContent=(lang==="mk" ? "Закони и прописи · " : "Laws & regulations · ")+(inst.shortTitle || inst.title || instrumentKey);
+        $("#workspaceText").textContent=inst.notes || "";
+        stats.textContent=`${inst.shortTitle || inst.title} · ${data.total} ${lang==="mk" ? "членови" : "articles"} · historical: ${counts.historical || 0} · version review: ${counts.needs_version_review || 0} · current verified: ${counts.current_consolidated || 0}`;
 
         if(append){
           const temp=document.createElement("div");
@@ -2082,7 +2107,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
         offset+=data.articles.length;
         loadMore.hidden=Boolean(currentQuery) || offset>=data.filteredCount;
       }catch(error){
-        results.innerHTML=`<div class="resultItem">${lang==="mk" ? "Corpus API моментално не е достапен во оваа околина." : "Corpus API is not available in this environment."}</div>`;
+        results.innerHTML=`<div class="resultItem">${lang==="mk" ? "Corpus API моментално не е достапен." : "Corpus API is currently unavailable."}</div>`;
         stats.textContent="";
         loadMore.hidden=true;
       }finally{
@@ -2114,8 +2139,38 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     await load();
   }
 
+  async function openZroBrowser(){ return openLawBrowser("mk:zro"); }
+  async function openZkpBrowser(){ return openLawBrowser("mk:zkp"); }
+
   async function openLawsRegistry(){
-    await openZroBrowser();
+    $("#workspaceTag").textContent="LIVE · LAW REGISTRY";
+    $("#workspaceTitle").textContent=lang==="mk" ? "Закони и прописи" : "Laws & regulations";
+    $("#workspaceText").textContent=lang==="mk"
+      ? "Изберете закон. Секој корпус прикажува број на членови, официјална правна линија и Human Gate статус."
+      : "Choose a law. Each corpus shows article count, official legal lineage and Human Gate status.";
+    $("#sourceWorkspace").hidden=false;
+    $("#workspaceLinks").innerHTML=`<div class="resultItem" style="grid-column:1/-1">${lang==="mk" ? "Се вчитува регистарот..." : "Loading law registry..."}</div>`;
+    $("#sourceWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
+
+    try{
+      const instruments=await fetchInstruments();
+      $("#workspaceLinks").innerHTML=instruments.map(inst=>`
+        <button class="sourceLink lawInstrumentCard" type="button" data-key="${escapeHtml(inst.canonicalKey)}" style="text-align:left">
+          <b>${escapeHtml(inst.shortTitle || inst.title)} · ${escapeHtml(inst.title)}</b>
+          <small>${inst.articleCount} ${lang==="mk" ? "членови" : "articles"} · ${escapeHtml(inst.gazetteReference || "")}</small>
+          <small>${escapeHtml(inst.currentStatus || "")} · Human Gate: ${escapeHtml(inst.humanReviewStatus || "")}</small>
+        </button>`).join("");
+      $("#workspaceLinks").querySelectorAll(".lawInstrumentCard").forEach(btn=>{
+        btn.addEventListener("click",()=>openLawBrowser(btn.dataset.key));
+      });
+    }catch{
+      $("#workspaceLinks").innerHTML=`
+        <button class="sourceLink lawInstrumentCard" type="button" data-key="mk:zro"><b>ЗРО · Закон за работните односи</b></button>
+        <button class="sourceLink lawInstrumentCard" type="button" data-key="mk:zkp"><b>ЗКП · Закон за кривичната постапка</b></button>`;
+      $("#workspaceLinks").querySelectorAll(".lawInstrumentCard").forEach(btn=>{
+        btn.addEventListener("click",()=>openLawBrowser(btn.dataset.key));
+      });
+    }
   }
 
   async function openCaseLawRegistry(){
@@ -2233,7 +2288,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
           "accept":"application/json",
           ...(currentMembershipKey() ? {"authorization":"Bearer "+currentMembershipKey()} : {})
         },
-        body:JSON.stringify({q,instrument:"mk:zro"})
+        body:JSON.stringify({q,instrument:$("#instrumentSelect")?.value || "auto"})
       });
       const data=await response.json();
       if(!response.ok || !data.ok) throw new Error(data?.message || data?.error || "assistant_error");

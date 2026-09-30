@@ -717,6 +717,60 @@ async function getInstrument(env, canonicalKey) {
   ).bind(canonicalKey).first();
 }
 
+
+async function listPublicInstruments(env) {
+  const result=await env.DB.prepare(
+    `SELECT li.canonical_key,li.title,li.short_title,li.instrument_type,
+            li.jurisdiction,li.gazette_reference,li.current_status,
+            li.human_review_status,li.notes,s.url AS canonical_source_url,
+            COUNT(lav.id) AS article_count
+       FROM legal_instruments li
+       LEFT JOIN sources s ON s.id=li.canonical_source_id
+       LEFT JOIN legal_article_versions lav ON lav.instrument_id=li.id
+      WHERE li.canonical_key IS NOT NULL
+      GROUP BY li.id
+      ORDER BY CASE li.canonical_key WHEN 'mk:zro' THEN 1 WHEN 'mk:zkp' THEN 2 ELSE 99 END, li.title`
+  ).all();
+  return result.results ?? [];
+}
+
+async function handleInstruments(request, env) {
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+  const rows=await listPublicInstruments(env);
+  return json(request,{
+    ok:true,
+    instruments:rows.map(row=>({
+      canonicalKey:row.canonical_key,
+      title:row.title,
+      shortTitle:row.short_title,
+      jurisdiction:row.jurisdiction,
+      gazetteReference:row.gazette_reference,
+      currentStatus:row.current_status,
+      humanReviewStatus:row.human_review_status,
+      canonicalSourceUrl:row.canonical_source_url,
+      articleCount:Number(row.article_count || 0),
+      notes:row.notes
+    }))
+  });
+}
+
+function inferInstrumentKey(q, requested) {
+  const explicit=cleanQuery(requested,64);
+  if(explicit && explicit!=="auto") return explicit;
+  const n=normalizeText(q);
+  if(/\bзкп\b/u.test(n) || n.includes("кривичната постапка") || n.includes("кривична постапка") || n.includes("criminal procedure")){
+    return "mk:zkp";
+  }
+  if(/\bзро\b/u.test(n) || n.includes("работните односи") || n.includes("работен однос") || n.includes("labour relations") || n.includes("labor relations")){
+    return "mk:zro";
+  }
+  return "mk:zro";
+}
+
 async function loadInstrumentArticles(env, instrumentId) {
   const result=await env.DB.prepare(
     `SELECT id,canonical_id,article_number,article_number_normalized,article_heading,
@@ -725,7 +779,7 @@ async function loadInstrumentArticles(env, instrumentId) {
        FROM legal_article_versions
       WHERE instrument_id=?
       ORDER BY id ASC
-      LIMIT 500`
+      LIMIT 2000`
   ).bind(instrumentId).all();
   return result.results ?? [];
 }
@@ -941,7 +995,10 @@ async function handleAssistant(request, env, url) {
   }
 
   const q=cleanQuery(request.method==="POST" ? payload.q : url.searchParams.get("q"),600);
-  const instrumentKey=cleanQuery((request.method==="POST" ? payload.instrument : url.searchParams.get("instrument")) || "mk:zro",64);
+  const instrumentKey=inferInstrumentKey(
+    q,
+    request.method==="POST" ? payload.instrument : url.searchParams.get("instrument")
+  );
 
   if(q.length<3) return json(request,{ok:false,error:"query_too_short",message:"Use at least three characters."},400);
 
@@ -1109,6 +1166,7 @@ async function handleCapabilities(request, env) {
       membershipRequests: database.reachable && database.schemaReady ? "manual_human_gate" : "blocked",
       membershipEntitlements: database.reachable && database.schemaReady ? "key_based_v1" : "blocked",
       cardPayments: "locked_until_provider_selected",
+      instrumentRegistry: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       articleCorpus: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
       citationAudit: "governed_preview",
@@ -1187,6 +1245,7 @@ export default {
     }
 
     if (url.pathname === "/api/search") return handleSearch(request, env, url);
+    if (url.pathname === "/api/instruments") return handleInstruments(request, env);
     if (url.pathname === "/api/articles") return handleArticles(request, env, url);
     if (url.pathname === "/api/assistant") return handleAssistant(request, env, url);
     if (url.pathname === "/api/web-sources") return handleWebSources(request);

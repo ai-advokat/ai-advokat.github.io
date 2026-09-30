@@ -1,0 +1,95 @@
+name: ZKP parse diagnostic
+
+on:
+  push:
+    branches:
+      - zkp-corpus-v1-30sep2026
+    paths:
+      - ".github/workflows/zkp-parse-diagnostic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install parser dependencies
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+      - name: Download ZKP consolidated reference PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf"
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 180             --user-agent "AI-Advokat-ZKP-Audit/1.0" "$URL" -o /tmp/zkp.pdf
+          test -s /tmp/zkp.pdf
+          head -c 5 /tmp/zkp.pdf | grep -q "%PDF-"
+          pdfinfo /tmp/zkp.pdf | tee /tmp/zkp-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+195$" /tmp/zkp-pdfinfo.txt
+          sha256sum /tmp/zkp.pdf | tee /tmp/zkp.sha256
+      - name: Extract and parse
+        shell: bash
+        run: |
+          pdftotext -layout /tmp/zkp.pdf /tmp/zkp-raw.txt
+          node scripts/clean-official-legal-pdf-text.mjs /tmp/zkp-raw.txt /tmp/zkp-clean.txt /tmp/zkp-clean-report.json 568
+
+          cat > /tmp/zkp-meta.json <<'EOF'
+          {
+            "instrument_key": "mk:zkp",
+            "instrument_title": "Закон за кривичната постапка",
+            "version_id": "consolidated-reference-through-198-2018-and-cc-193-2016",
+            "source_url": "https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf",
+            "source_issue_number": "150/2010; 100/2012; 142/2016; 193/2016; 198/2018",
+            "source_issue_date": "2018-10-31",
+            "status": "needs_version_review",
+            "extraction_method": "pdftotext_layout_plus_cleaner",
+            "human_review_status": "pending"
+          }
+          EOF
+
+          SHA="$(cut -d' ' -f1 /tmp/zkp.sha256)"
+          python3 - "$SHA" <<'PY'
+          import json,sys
+          p="/tmp/zkp-meta.json"
+          d=json.load(open(p))
+          d["source_sha256"]=sys.argv[1]
+          json.dump(d,open(p,"w"),ensure_ascii=False,indent=2)
+          PY
+
+          node scripts/parse-mk-legal-text.mjs /tmp/zkp-clean.txt /tmp/zkp-meta.json /tmp/zkp.ndjson
+          head -n 1 /tmp/zkp.ndjson | tee /tmp/zkp-manifest.json
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zkp.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          print("ARTICLE_COUNT",len(arts))
+          print("WARNING_COUNT",m.get("warning_count"))
+          print("FIRST",[(a.get("article_number"),a.get("article_heading")) for a in arts[:5]])
+          print("LAST",[(a.get("article_number"),a.get("article_heading")) for a in arts[-10:]])
+          assert len(arts) >= 568
+          assert any(a.get("article_number_normalized")=="568" for a in arts)
+          assert any(a.get("article_number_normalized") in ("567-а","567-a") for a in arts)
+          PY
+      - name: Upload diagnostic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: zkp-parse-diagnostic
+          retention-days: 14
+          path: |
+            /tmp/zkp-pdfinfo.txt
+            /tmp/zkp.sha256
+            /tmp/zkp-clean-report.json
+            /tmp/zkp-manifest.json
+            /tmp/zkp-meta.json

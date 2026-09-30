@@ -1,0 +1,176 @@
+name: ZKP staging import
+
+on:
+  push:
+    branches:
+      - zkp-corpus-v1-30sep2026
+    paths:
+      - ".github/workflows/zkp-staging-import.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  import-zkp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install tooling
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Verify exact staging target
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(!d || d.binding!=="PREVIEW_DB" || d.database_name!=="ai-advokat-db-staging" || d.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d"){
+            throw new Error("Unexpected staging target");
+          }
+          console.log("STAGING TARGET: PASS");
+          NODE
+
+      - name: Verify migration 18 and ZKP instrument
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations list PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc | tee /tmp/pending.txt
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "UPDATE legal_instruments SET current_status='pending', human_review_status='pending', updated_at=CURRENT_TIMESTAMP WHERE canonical_key='mk:zkp'; SELECT version,description FROM schema_migrations WHERE version='18'; SELECT canonical_key,title,short_title,gazette_reference,current_status,human_review_status FROM legal_instruments WHERE canonical_key='mk:zkp';"             | tee /tmp/zkp-instrument.txt
+          grep -q '"version": "18"' /tmp/zkp-instrument.txt
+          grep -q '"canonical_key": "mk:zkp"' /tmp/zkp-instrument.txt
+          grep -q '"current_status": "pending"' /tmp/zkp-instrument.txt
+          grep -q '"human_review_status": "pending"' /tmp/zkp-instrument.txt
+
+      - name: Reconcile article-level reference source
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "INSERT OR IGNORE INTO sources (title,url,source_type,issuing_body,jurisdiction,source_status,notes) VALUES ('ZKP consolidated reference snapshot through 198/2018','https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf','secondary_consolidated_reference','Public legal-resource consolidated reference','MK','verified','Article-level reference snapshot; official LDBIS/Gazette lineage remains controlling.');"             | tee /tmp/reconcile.txt
+
+      - name: Download and verify ZKP reference snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf"
+          curl --fail --location --retry 4 --retry-delay 2             --connect-timeout 20 --max-time 180             --user-agent "AI-Advokat-ZKP-Audit/1.0"             "$URL" -o /tmp/zkp.pdf
+          test -s /tmp/zkp.pdf
+          head -c 5 /tmp/zkp.pdf | grep -q "%PDF-"
+          pdfinfo /tmp/zkp.pdf | tee /tmp/zkp-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+195$" /tmp/zkp-pdfinfo.txt
+          SHA="$(sha256sum /tmp/zkp.pdf | cut -d' ' -f1)"
+          test "$SHA" = "e6bf4588833752695a9b776b473ed9d504264effdfcd7917b8d6655bcfacaf45"
+          echo "$SHA" | tee /tmp/zkp.sha256
+          echo "ZKP REFERENCE SNAPSHOT: PASS"
+
+      - name: Extract and parse exactly 570 article records
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -layout /tmp/zkp.pdf /tmp/zkp-raw.txt
+          node scripts/clean-official-legal-pdf-text.mjs             /tmp/zkp-raw.txt /tmp/zkp-clean.txt /tmp/zkp-clean-report.json 568
+
+          cat > /tmp/zkp-meta.json <<'EOF'
+          {
+            "instrument_key": "mk:zkp",
+            "instrument_title": "Закон за кривичната постапка",
+            "version_id": "consolidated-reference-through-198-2018-and-cc-193-2016",
+            "source_url": "https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf",
+            "source_sha256": "e6bf4588833752695a9b776b473ed9d504264effdfcd7917b8d6655bcfacaf45",
+            "source_issue_number": "150/2010; 100/2012; 142/2016; 193/2016; 198/2018",
+            "source_issue_date": "2018-10-31",
+            "status": "needs_version_review",
+            "extraction_method": "pdftotext_layout_plus_cleaner",
+            "human_review_status": "pending"
+          }
+          EOF
+
+          node scripts/parse-mk-legal-text.mjs             /tmp/zkp-clean.txt /tmp/zkp-meta.json /tmp/zkp.ndjson
+          head -n 1 /tmp/zkp.ndjson | tee /tmp/zkp-manifest.json
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zkp.ndjson").read_text().splitlines() if x.strip()]
+          manifest=rows[0]
+          articles=[x for x in rows if x.get("type")=="article"]
+          assert len(articles)==570, len(articles)
+          assert int(manifest.get("warning_count") or 0)==0, manifest
+          numbers={a.get("article_number_normalized") for a in articles}
+          assert "1" in numbers
+          assert "568" in numbers
+          assert "567-а" in numbers or "567-a" in numbers
+          print("ARTICLE_COUNT 570")
+          print("WARNING_COUNT 0")
+          print("ZKP PARSE GATE: PASS")
+          PY
+
+      - name: Generate and import ZKP article SQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/legal-ndjson-to-sql.mjs /tmp/zkp.ndjson /tmp/zkp-staging.sql
+          test -s /tmp/zkp-staging.sql
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --file /tmp/zkp-staging.sql
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "UPDATE instrument_versions SET checksum_sha256='e6bf4588833752695a9b776b473ed9d504264effdfcd7917b8d6655bcfacaf45' WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND version_label='consolidated-reference-through-198/2018-and-CC-193/2016';"
+
+      - name: Read-back verify ZKP corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT COUNT(*) AS article_count, SUM(CASE WHEN status='needs_version_review' THEN 1 ELSE 0 END) AS review_count, SUM(CASE WHEN human_review_status='pending' THEN 1 ELSE 0 END) AS pending_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp'); SELECT article_number,article_number_normalized,status,human_review_status FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND article_number_normalized IN ('1','12','567','567-а','568') ORDER BY id; SELECT run_key,article_count,warning_count,status FROM corpus_ingest_runs WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') ORDER BY id DESC LIMIT 1;"             | tee /tmp/zkp-readback.txt
+
+          grep -q '"article_count": 570' /tmp/zkp-readback.txt
+          grep -q '"review_count": 570' /tmp/zkp-readback.txt
+          grep -q '"pending_count": 570' /tmp/zkp-readback.txt
+          grep -q '"article_number_normalized": "568"' /tmp/zkp-readback.txt
+          grep -Eq '"article_number_normalized": "567-(а|a)"' /tmp/zkp-readback.txt
+          grep -q '"warning_count": 0' /tmp/zkp-readback.txt
+          grep -q '"status": "validated"' /tmp/zkp-readback.txt
+          echo "ZKP STAGING IMPORT: PASS"
+
+      - name: Regression check ZRO remains intact
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT COUNT(*) AS zro_article_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro');"             | tee /tmp/zro-regression.txt
+          grep -q '"zro_article_count": 298' /tmp/zro-regression.txt
+          echo "ZRO REGRESSION: PASS"
+
+      - name: Assert production target absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -R "12ece285-74bb-4f27-a025-2dbd1be6c59a"             /tmp/pending.txt /tmp/zkp-instrument.txt /tmp/reconcile.txt /tmp/zkp-readback.txt /tmp/zro-regression.txt
+          echo "PRODUCTION TARGET ABSENT: PASS"
+
+      - name: Upload staging evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: zkp-staging-import-evidence
+          retention-days: 14
+          path: |
+            /tmp/pending.txt
+            /tmp/zkp-instrument.txt
+            /tmp/reconcile.txt
+            /tmp/zkp-pdfinfo.txt
+            /tmp/zkp.sha256
+            /tmp/zkp-clean-report.json
+            /tmp/zkp-manifest.json
+            /tmp/zkp-readback.txt
+            /tmp/zro-regression.txt
