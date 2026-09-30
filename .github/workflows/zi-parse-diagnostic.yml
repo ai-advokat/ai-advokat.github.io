@@ -73,7 +73,8 @@ jobs:
           print("LAST",[(a.get("article_number"),a.get("article_heading")) for a in arts[-12:]])
           assert len(arts)==258, len(arts)
           assert any(a.get("article_number_normalized")=="1" for a in arts)
-          assert int(m.get("warning_count") or 0)==0, m\n          assert any(a.get("article_number_normalized")=="269" for a in arts)
+          assert int(m.get("warning_count") or 0)==0, m
+          assert any(a.get("article_number_normalized")=="269" for a in arts)
           PY
       - uses: actions/upload-artifact@v4
         with:
