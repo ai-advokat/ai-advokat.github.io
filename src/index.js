@@ -81,6 +81,172 @@ const ORCID = Object.freeze({
   name: "Zoran Stojankich"
 });
 
+const MEMBERSHIP_PLANS = Object.freeze({
+  free: { code:"free", name:"FREE", monthlyPriceMkd:0, annualPriceMkd:0, monthlyQuota:10, seats:1, trialDays:0 },
+  start: { code:"start", name:"START", monthlyPriceMkd:199, annualPriceMkd:1990, monthlyQuota:100, seats:1, trialDays:0 },
+  pro: { code:"pro", name:"PRO", monthlyPriceMkd:399, annualPriceMkd:3990, monthlyQuota:500, seats:1, trialDays:7 },
+  office: { code:"office", name:"OFFICE", monthlyPriceMkd:999, annualPriceMkd:9990, monthlyQuota:2000, seats:5, trialDays:0 }
+});
+
+function publicMembershipPlans() {
+  return Object.values(MEMBERSHIP_PLANS).map(p=>({
+    code:p.code,
+    name:p.name,
+    monthlyPriceMkd:p.monthlyPriceMkd,
+    annualPriceMkd:p.annualPriceMkd,
+    monthlyQuota:p.monthlyQuota,
+    seats:p.seats,
+    trialDays:p.trialDays
+  }));
+}
+
+function validEmail(value) {
+  const email=cleanQuery(value,254).toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
+
+async function sha256Hex(value) {
+  const bytes=new TextEncoder().encode(String(value));
+  const digest=await crypto.subtle.digest("SHA-256",bytes);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function membershipKeyFromRequest(request) {
+  const auth=request.headers.get("Authorization") || "";
+  if(auth.startsWith("Bearer ")) return cleanQuery(auth.slice(7),200);
+  return cleanQuery(request.headers.get("X-Membership-Key"),200);
+}
+
+async function resolveMembership(request, env) {
+  const key=membershipKeyFromRequest(request);
+  if(!key || !env.DB) return null;
+
+  const keyHash=await sha256Hex(key);
+  const row=await env.DB.prepare(
+    `SELECT k.account_id, k.status AS key_status, k.expires_at AS key_expires_at,
+            e.plan_code, e.status AS entitlement_status, e.monthly_quota, e.seat_limit,
+            e.expires_at AS entitlement_expires_at, a.status AS account_status
+       FROM membership_access_keys k
+       JOIN membership_accounts a ON a.id=k.account_id
+       JOIN membership_entitlements e ON e.account_id=a.id
+      WHERE k.key_hash=?
+        AND k.status='active'
+        AND a.status='active'
+        AND e.status IN ('trial','active')
+        AND (k.expires_at IS NULL OR datetime(k.expires_at) > datetime('now'))
+        AND (e.expires_at IS NULL OR datetime(e.expires_at) > datetime('now'))
+      ORDER BY CASE e.status WHEN 'active' THEN 0 ELSE 1 END, e.updated_at DESC
+      LIMIT 1`
+  ).bind(keyHash).first();
+
+  if(!row) return null;
+
+  const period=new Date().toISOString().slice(0,7);
+  const subjectKey=`account:${row.account_id}`;
+  const usage=await env.DB.prepare(
+    "SELECT assistant_requests FROM membership_usage_monthly WHERE subject_key=? AND period_ym=?"
+  ).bind(subjectKey,period).first();
+
+  return {
+    accountId:row.account_id,
+    planCode:row.plan_code,
+    status:row.entitlement_status,
+    monthlyQuota:Number(row.monthly_quota || 0),
+    seats:Number(row.seat_limit || 1),
+    used:Number(usage?.assistant_requests || 0),
+    remaining:Math.max(0,Number(row.monthly_quota || 0)-Number(usage?.assistant_requests || 0)),
+    subjectKey,
+    period
+  };
+}
+
+async function consumeMembershipQuota(env, membership) {
+  if(!membership) return;
+  await env.DB.prepare(
+    `INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests,last_request_at,updated_at)
+     VALUES (?,?,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+     ON CONFLICT(subject_key,period_ym) DO UPDATE SET
+       assistant_requests=assistant_requests+1,
+       last_request_at=CURRENT_TIMESTAMP,
+       updated_at=CURRENT_TIMESTAMP`
+  ).bind(membership.subjectKey,membership.period).run();
+}
+
+async function handleMembershipPlans(request) {
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+  return json(request,{
+    ok:true,
+    currency:"MKD",
+    plans:publicMembershipPlans(),
+    principles:{
+      lawsAndOfficialSourcesRemainFree:true,
+      paidLayer:"AI analysis, higher quotas and professional workflow features",
+      humanReview:"Separate professional service; not included as unlimited legal advice.",
+      cardPayments:"locked_until_provider_selected"
+    }
+  });
+}
+
+async function handleMembershipRequest(request, env) {
+  if(request.method!=="POST") return methodNotAllowed(request);
+  if(!env.DB) return json(request,{ok:false,error:"database_not_ready"},503);
+
+  let payload={};
+  try{ payload=await request.json(); }
+  catch{ return json(request,{ok:false,error:"invalid_json"},400); }
+
+  const email=validEmail(payload.email);
+  const displayName=cleanQuery(payload.displayName,120);
+  const organizationName=cleanQuery(payload.organizationName,160);
+  const requestKind=payload.requestKind==="trial" ? "trial" : "subscription";
+  const requestedPlan=requestKind==="trial" ? "trial_pro" : cleanQuery(payload.planCode,24);
+  const billingCycle=requestKind==="trial" ? "trial" : (payload.billingCycle==="annual" ? "annual" : "monthly");
+
+  if(!email) return json(request,{ok:false,error:"invalid_email"},400);
+  if(requestKind==="subscription" && !["start","pro","office"].includes(requestedPlan)){
+    return json(request,{ok:false,error:"invalid_plan"},400);
+  }
+
+  const id=crypto.randomUUID();
+  await env.DB.prepare(
+    `INSERT INTO membership_requests
+      (id,email,display_name,organization_name,request_kind,requested_plan,billing_cycle,status)
+     VALUES (?,?,?,?,?,?,?,'pending')`
+  ).bind(id,email,displayName || null,organizationName || null,requestKind,requestedPlan,billingCycle).run();
+
+  return json(request,{
+    ok:true,
+    requestId:id,
+    status:"pending_human_gate",
+    message:requestKind==="trial"
+      ? "Барањето за 7-дневен PRO trial е примено. Ќе се активира по проверка; не е создадена автоматска наплата."
+      : "Барањето за членство е примено. Упатството за банкарска уплата/активација се потврдува човечки пред активирање.",
+    payment:{
+      mode:"manual_bank_transfer",
+      activated:false,
+      cardStorage:false
+    }
+  },202);
+}
+
+async function handleMembershipStatus(request, env) {
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+  const membership=await resolveMembership(request,env);
+  if(!membership) return json(request,{ok:false,error:"membership_not_found_or_inactive"},401);
+  return json(request,{
+    ok:true,
+    membership:{
+      planCode:membership.planCode,
+      status:membership.status,
+      monthlyQuota:membership.monthlyQuota,
+      used:membership.used,
+      remaining:membership.remaining,
+      seats:membership.seats
+    }
+  });
+}
+
+
 function corsHeaders(request) {
   const origin = request.headers.get("Origin");
   const headers = {
@@ -784,6 +950,15 @@ async function handleAssistant(request, env, url) {
     return json(request,{ok:false,error:"database_not_ready",database},503);
   }
 
+  const membership=await resolveMembership(request,env);
+  if(membership && membership.remaining<=0){
+    return json(request,{
+      ok:false,
+      error:"membership_quota_exhausted",
+      membership:{planCode:membership.planCode,monthlyQuota:membership.monthlyQuota,used:membership.used,remaining:0}
+    },429);
+  }
+
   const {instrument,articles}=await findRelevantArticles(env,instrumentKey,q,6);
   if(!instrument) return json(request,{ok:false,error:"instrument_not_found"},404);
 
@@ -839,6 +1014,8 @@ ${context}`;
 
   if(!answer) answer=fallbackAssistantAnswer(q,instrument,articles);
 
+  if(membership) await consumeMembershipQuota(env,membership);
+
   return json(request,{
     ok:true,
     mode:answerMode,
@@ -865,6 +1042,15 @@ ${context}`;
     legalNotice:"/legal-notice.html",
     privacyPolicy:"/privacy-policy.html",
     aiUsePolicy:"/ai-use-policy.html",
+    membership:membership ? {
+      planCode:membership.planCode,
+      monthlyQuota:membership.monthlyQuota,
+      used:membership.used+1,
+      remaining:Math.max(0,membership.remaining-1)
+    } : {
+      planCode:"free_preview",
+      note:"Public preview remains available while secure account activation is being introduced."
+    },
     ...(new URL(request.url).hostname.startsWith("ai-advokat-staging.")
       ? {aiDiagnostic:{binding:Boolean(env.AI),error:aiError}}
       : {})
@@ -919,6 +1105,10 @@ async function handleCapabilities(request, env) {
       officialSourceDirectory: "live_read_only",
       zenodo: "metadata_only",
       orcid: "live_read_only",
+      membershipPlans: "live_read_only",
+      membershipRequests: database.reachable && database.schemaReady ? "manual_human_gate" : "blocked",
+      membershipEntitlements: database.reachable && database.schemaReady ? "key_based_v1" : "blocked",
+      cardPayments: "locked_until_provider_selected",
       articleCorpus: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
       citationAudit: "governed_preview",
@@ -1002,6 +1192,9 @@ export default {
     if (url.pathname === "/api/web-sources") return handleWebSources(request);
     if (url.pathname === "/api/zenodo") return handleZenodo(request);
     if (url.pathname === "/api/orcid") return handleOrcid(request);
+    if (url.pathname === "/api/membership/plans") return handleMembershipPlans(request);
+    if (url.pathname === "/api/membership/request") return handleMembershipRequest(request, env);
+    if (url.pathname === "/api/membership/status") return handleMembershipStatus(request, env);
 
     if (url.pathname === "/api/citation-audit") {
       return governedPreview(
