@@ -33,7 +33,7 @@ SELECT
   'MK',
   '150/2010; 100/2012; 142/2016; 193/2016; 198/2018',
   '2012-11-26',
-  'needs_version_review',
+  'pending',
   'pending',
   (SELECT id FROM sources WHERE url='https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=20679'),
   'LDBIS lists the law as active. Article-level text is imported from a consolidated reference snapshot matching the cited official lineage, but remains Human-Gate pending until article/version verification is completed.'
