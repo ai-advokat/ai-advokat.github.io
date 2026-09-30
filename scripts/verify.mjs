@@ -29,6 +29,20 @@ for (const path of required) {
 }
 
 const wrangler = JSON.parse(fs.readFileSync("wrangler.jsonc", "utf8"));
+const stagingWrangler = JSON.parse(fs.readFileSync("wrangler.staging.jsonc", "utf8"));
+const siteKeyPattern = /^[0-9A-Za-z_-]{8,128}$/;
+const prodSiteKey = wrangler.vars?.TURNSTILE_SITE_KEY;
+const stagingSiteKey = stagingWrangler.vars?.TURNSTILE_SITE_KEY;
+if (!siteKeyPattern.test(prodSiteKey || "")) throw new Error("Production TURNSTILE_SITE_KEY missing or malformed in wrangler.jsonc vars.");
+if (stagingSiteKey !== prodSiteKey) throw new Error("Staging and production TURNSTILE_SITE_KEY must match.");
+for (const cfg of [wrangler, stagingWrangler]) {
+  for (const name of ["TURNSTILE_SECRET", "RATE_LIMIT_SALT"]) {
+    if (cfg.vars && name in cfg.vars) throw new Error(`${name} must be a secret, never a plain var.`);
+  }
+}
+if (wrangler.vars && "TURNSTILE_ALLOWED_HOSTNAMES" in wrangler.vars) {
+  throw new Error("Production must not widen Turnstile hostnames; use CORS origins.");
+}
 const previewMigrations = JSON.parse(fs.readFileSync("wrangler.preview-migrations.jsonc", "utf8"));
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 const worker = fs.readFileSync("src/index.js", "utf8");
