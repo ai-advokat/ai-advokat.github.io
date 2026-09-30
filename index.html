@@ -1084,6 +1084,11 @@
             id="legalQuestion"
             placeholder="Пример: Кои се условите за институционална одговорност и како се разликува од индивидуалната кривична одговорност?" data-i18n-placeholder="questionPlaceholder"></textarea>
 
+          <div class="notice" style="margin-top:10px;font-size:.9rem">
+            <b data-i18n="privacyWarningTitle">Не внесувајте доверливи податоци</b>
+            <span data-i18n="privacyWarningText">AI полето е за правно истражување. Не внесувајте непотребни матични броеви, адреси, здравствени податоци, детали од активни кривични предмети, адвокатска тајна или други доверливи податоци.</span>
+          </div>
+
           <div class="fieldGrid">
 
             <select id="jurisdiction">
@@ -1332,8 +1337,13 @@
         </b>
 
         <span data-i18n="disclaimerText">
-          AI Advokat е информациска и истражувачка платформа. Содржината не создава однос адвокат-клиент и не е автоматска замена за индивидуален правен совет, проверка на важечки текст или професионално застапување.
+          AI Advokat е правно-информативна и истражувачка платформа. AI-генерираната содржина може да содржи грешки, не создава сама по себе однос адвокат-клиент и не е замена за индивидуален правен совет. Официјалниот и важечки текст на правниот извор секогаш има предност; за рокови, кривична постапка и други високоризични прашања е задолжителна човечка професионална проверка.
         </span>
+        <div style="margin-top:10px;display:flex;gap:12px;flex-wrap:wrap;font-size:.9rem">
+          <a href="/legal-notice.html"><strong>Целосно правно известување →</strong></a>
+          <a href="/privacy-policy.html"><strong>Приватност →</strong></a>
+          <a href="/ai-use-policy.html"><strong>AI политика →</strong></a>
+        </div>
 
       </div>
 
@@ -1375,7 +1385,9 @@
         <h4 data-i18n="footerIntegrityTitle">Интегритет</h4>
 
         <a href="#about" data-i18n="methodology">Методологија</a>
-        <a href="#about" data-i18n="legalNotice">Правна напомена</a>
+        <a href="/legal-notice.html" data-i18n="legalNotice">Правно известување</a>
+        <a href="/privacy-policy.html" data-i18n="privacyPolicy">Политика за приватност</a>
+        <a href="/ai-use-policy.html" data-i18n="aiPolicy">AI, точност и Human Gate</a>
         <a href="mailto:aiadvokat16@gmail.com">Gmail</a>
         <a href="mailto:aiadvokat@outlook.com">Outlook</a>
         <a
@@ -1656,7 +1668,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       focus:"Области на интерес", focusText:"Право · институционална одговорност · безбедност · медијација", researchIds:"Истражувачки идентификатори", zenodoReserved:"Zenodo · 4 објавени труда · 4 Scholar страници", contact:"Контакт", publication:"Публикации", zenodoDraftRecords:"Zenodo · 4 објавени труда · 4 Scholar страници",
       aboutTag:"УПРАВУВАЊЕ", aboutTitle:"Како порталот ја чува доказната дисциплина", intLabel1:"1. Извор", intLabel2:"2. Доказно потекло", intLabel3:"3. AI нацрт", intLabel4:"4. Човечка порта",
       int1:"Официјалниот документ се чува одделно од толкувањето.", int2:"Се бележат орган, датум, верзија и доказно потекло.", int3:"AI може да сумира и споредува, но мора да покаже извори.", int4:"Конечната правна проценка и објавување остануваат човечки.",
-      disclaimerTitle:"Правна напомена", disclaimerText:"AI Advokat е информациска и истражувачка платформа. Содржината не создава однос адвокат-клиент и не е автоматска замена за индивидуален правен совет, проверка на важечки текст или професионално застапување.",
+      disclaimerTitle:"Правна напомена", disclaimerText:"AI Advokat е правно-информативна и истражувачка платформа. AI-генерираната содржина може да содржи грешки, не создава сама по себе однос адвокат-клиент и не е замена за индивидуален правен совет. Официјалниот и важечки текст на правниот извор секогаш има предност; за рокови, кривична постапка и други високоризични прашања е задолжителна човечка професионална проверка.", privacyWarningTitle:"Не внесувајте доверливи податоци", privacyWarningText:"AI полето е за правно истражување. Не внесувајте непотребни матични броеви, адреси, здравствени податоци, детали од активни кривични предмети, адвокатска тајна или други доверливи податоци.", privacyPolicy:"Политика за приватност", aiPolicy:"AI, точност и Human Gate",
       footerSub:"Правен информациски портал и AI истражување", footerText:"Правни извори, авторски анализи и AI-поддржано истражување со проверливи извори и човечка финална контрола.", footerNavTitle:"Навигација", footerIntegrityTitle:"Интегритет", methodology:"Методологија", legalNotice:"Правна напомена", zenodoDoiRecords:"Zenodo · DOI-записи", rights:"Сите права задржани.", footerStatus:"Продукциска основа · подготвено за Cloudflare · Човечка порта",
       modalTitle:"Zenodo интеграција", modalText:"Zenodo-профилот на Зоран Стојанкиќ / AI Advokat е активен. Објавени се „СИНЏИР“ (DOI 10.5281/zenodo.22981744), „Електронските и AI-генерираните докази во судската постапка“ (DOI 10.5281/zenodo.23017531) , „Претресот на мобилен телефон и заштитата на адвокатската тајна“ (DOI 10.5281/zenodo.23021388) и „Вештачката интелигенција во адвокатурата и судството“ (DOI 10.5281/zenodo.23023442), сите како Working paper, Version 1.0. Автоматската API-синхронизација сè уште не е вклучена.",
       skipLink:"Прескокни до главната содржина", changeLanguage:"Промени јазик", changeTheme:"Промени тема", increaseText:"Зголеми текст", brandHome:"AI Advokat почетна", mainNav:"Главна навигација", openMenu:"Отвори мени", trustGridAria:"Основни принципи", searchPanelAria:"Пребарување", authorPortraitAlt:"Професионален портрет на адвокат Зоран Стојанкиќ", footerNavAria:"Навигација во подножје", footerIntegrityAria:"Интегритет и контакти", closeModal:"Затвори",
@@ -1692,7 +1704,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       focus:"Areas of interest", focusText:"Law · institutional accountability · security · mediation", researchIds:"Research identifiers", zenodoReserved:"Zenodo · 4 published works · 4 Scholar pages", contact:"Contact", publication:"Publications", zenodoDraftRecords:"Zenodo · 4 published works · 4 Scholar pages",
       aboutTag:"GOVERNANCE", aboutTitle:"How the portal protects evidence discipline", intLabel1:"1. Source", intLabel2:"2. Provenance", intLabel3:"3. AI Draft", intLabel4:"4. Human Gate",
       int1:"Official documents stay separate from interpretation.", int2:"Authority, date, version and provenance are recorded.", int3:"AI may summarize and compare, but must expose sources.", int4:"Final legal judgment and publication remain human.",
-      disclaimerTitle:"Legal notice", disclaimerText:"AI Advokat is an information and research platform. Content does not create an attorney-client relationship and is not an automatic substitute for individualized legal advice, current-law verification or professional representation.",
+      disclaimerTitle:"Legal notice", disclaimerText:"AI Advokat is a legal-information and research platform. AI-generated content may contain errors, does not by itself create an attorney-client relationship, and is not a substitute for individualized legal advice. The official and current legal source controls; human professional review is required for deadlines, criminal proceedings and other high-risk matters.", privacyWarningTitle:"Do not enter confidential data", privacyWarningText:"The AI field is for legal research. Do not enter unnecessary national ID numbers, addresses, health data, details from active criminal matters, legal professional privilege, or other confidential data.", privacyPolicy:"Privacy policy", aiPolicy:"AI accuracy and Human Gate",
       footerSub:"Legal information & AI research portal", footerText:"Legal sources, author analyses and AI-assisted research with verifiable sources and final human control.", footerNavTitle:"Navigation", footerIntegrityTitle:"Integrity", methodology:"Methodology", legalNotice:"Legal notice", zenodoDoiRecords:"Zenodo · DOI records", rights:"All rights reserved.", footerStatus:"Production foundation · Cloudflare-ready · Human Gate",
       modalTitle:"Zenodo integration", modalText:"The Zenodo profile of Zoran Stojankich / AI Advokat is active. Published works are “CHAIN” (DOI 10.5281/zenodo.22981744), “Electronic and AI-Generated Evidence in Judicial Proceedings” (DOI 10.5281/zenodo.23017531), , “Searching a Mobile Phone and the Protection of Legal Professional Privilege” (DOI 10.5281/zenodo.23021388), and “Artificial Intelligence in the Legal Profession and the Judiciary” (DOI 10.5281/zenodo.23023442), all as Working paper, Version 1.0. Automatic API synchronization is not yet enabled.",
       skipLink:"Skip to main content", changeLanguage:"Change language", changeTheme:"Change theme", increaseText:"Increase text size", brandHome:"AI Advokat home", mainNav:"Main navigation", openMenu:"Open menu", trustGridAria:"Core principles", searchPanelAria:"Search", authorPortraitAlt:"Professional portrait of Attorney Zoran Stojankich", footerNavAria:"Footer navigation", footerIntegrityAria:"Integrity and contacts", closeModal:"Close",
