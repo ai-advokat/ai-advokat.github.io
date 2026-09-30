@@ -8,6 +8,7 @@ on:
       - "service-worker.js"
       - "offline.html"
       - "assets/app-icon*.svg"
+      - "assets/ai-advokat-lockup.svg"
       - "mobile/**"
       - ".assetsignore"
       - ".github/workflows/app-distribution-safety.yml"
@@ -34,6 +35,15 @@ jobs:
           test -f offline.html
           test -f assets/app-icon.svg
           test -f assets/app-icon-maskable.svg
+          test -f assets/ai-advokat-lockup.svg
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          for path in ["assets/app-icon.svg","assets/app-icon-maskable.svg","assets/ai-advokat-lockup.svg"]:
+              ET.parse(path)
+              print(path, "XML PASS")
+          PY
+          grep -q 'Justice scales fused with an artificial intelligence profile' assets/app-icon.svg
+          grep -q 'ВЕШТАЧКАТА ИНТЕЛИГЕНЦИЈА' assets/ai-advokat-lockup.svg
           test -f mobile/android/twa-manifest.json
           test -f mobile/android/assetlinks.template.json
           test -f mobile/ios/AIAdvokatApp.swift
