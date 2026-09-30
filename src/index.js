@@ -758,17 +758,57 @@ async function handleInstruments(request, env) {
   });
 }
 
-function inferInstrumentKey(q, requested) {
+async function inferInstrumentKey(env,q,requested) {
   const explicit=cleanQuery(requested,64);
   if(explicit && explicit!=="auto") return explicit;
-  const n=normalizeText(q);
-  if(/\bзкп\b/u.test(n) || n.includes("кривичната постапка") || n.includes("кривична постапка") || n.includes("criminal procedure")){
-    return "mk:zkp";
+
+  const normalizedQuestion=normalizeText(q);
+  const tokenizedQuestion=" "+normalizedQuestion.replace(/[^\p{L}\p{N}:-]+/gu," ").replace(/\s+/g," ").trim()+" ";
+
+  try{
+    const result=await env.DB.prepare(
+      `SELECT lia.alias,lia.priority,li.canonical_key
+         FROM legal_instrument_aliases lia
+         JOIN legal_instruments li ON li.id=lia.instrument_id
+        WHERE li.canonical_key IS NOT NULL
+        ORDER BY lia.priority DESC, LENGTH(lia.alias) DESC`
+    ).all();
+
+    for(const row of result.results ?? []){
+      const alias=normalizeText(row.alias || "");
+      if(!alias) continue;
+      const matched=alias.length<=6
+        ? tokenizedQuestion.includes(" "+alias+" ")
+        : normalizedQuestion.includes(alias);
+      if(matched) return row.canonical_key;
+    }
+  }catch(error){
+    console.error("instrument_alias_lookup_failed",String(error?.message || error));
   }
-  if(/\bзро\b/u.test(n) || n.includes("работните односи") || n.includes("работен однос") || n.includes("labour relations") || n.includes("labor relations")){
-    return "mk:zro";
-  }
-  return "mk:zro";
+
+  // Compatibility fallbacks while older environments converge to the alias registry.
+  if(normalizedQuestion.includes("кривичната постапка") || normalizedQuestion.includes("кривична постапка")) return "mk:zkp";
+  if(normalizedQuestion.includes("работните односи") || normalizedQuestion.includes("работен однос")) return "mk:zro";
+
+  // No silent guess: auto mode stays explicit so a bare article number is not attributed to the wrong law.
+  return "auto";
+}
+
+async function listSearchableInstruments(env) {
+  const result=await env.DB.prepare(
+    `SELECT li.id,li.canonical_key,li.title,li.short_title,li.instrument_type,
+            li.jurisdiction,li.gazette_reference,li.current_status,
+            li.human_review_status,li.notes,s.url AS canonical_source_url,
+            COUNT(lav.id) AS article_count
+       FROM legal_instruments li
+       LEFT JOIN sources s ON s.id=li.canonical_source_id
+       JOIN legal_article_versions lav ON lav.instrument_id=li.id
+      WHERE li.canonical_key IS NOT NULL
+      GROUP BY li.id
+      HAVING COUNT(lav.id)>0
+      ORDER BY li.title`
+  ).all();
+  return result.results ?? [];
 }
 
 async function loadInstrumentArticles(env, instrumentId) {
@@ -815,10 +855,7 @@ function scoreArticle(row, q) {
   return score;
 }
 
-async function findRelevantArticles(env, instrumentKey, q, limit=6) {
-  const instrument=await getInstrument(env,instrumentKey);
-  if(!instrument) return {instrument:null,articles:[]};
-
+async function rankInstrumentArticles(env,instrument,q,limit=6){
   const rows=await loadInstrumentArticles(env,instrument.id);
   let ranked=rows
     .map(row=>({row,score:scoreArticle(row,q)}))
@@ -832,11 +869,48 @@ async function findRelevantArticles(env, instrumentKey, q, limit=6) {
     if(exact.length) ranked=exact;
   }
 
-  ranked=ranked
-    .slice(0,limit)
-    .map(x=>({...normalizeArticle(x.row),relevanceScore:x.score}));
+  return ranked.slice(0,limit).map(x=>({...normalizeArticle(x.row),relevanceScore:x.score}));
+}
 
-  return {instrument,articles:ranked};
+async function findRelevantArticles(env, instrumentKey, q, limit=6) {
+  if(instrumentKey && instrumentKey!=="auto"){
+    const instrument=await getInstrument(env,instrumentKey);
+    if(!instrument) return {instrument:null,articles:[],reason:"instrument_not_found"};
+    const articles=await rankInstrumentArticles(env,instrument,q,limit);
+    return {instrument,articles};
+  }
+
+  const candidates=await listSearchableInstruments(env);
+  const scored=[];
+  for(const row of candidates){
+    const instrument={
+      id:row.id,
+      canonical_key:row.canonical_key,
+      title:row.title,
+      short_title:row.short_title,
+      instrument_type:row.instrument_type,
+      jurisdiction:row.jurisdiction,
+      gazette_reference:row.gazette_reference,
+      current_status:row.current_status,
+      human_review_status:row.human_review_status,
+      notes:row.notes,
+      canonical_source_url:row.canonical_source_url
+    };
+    const articles=await rankInstrumentArticles(env,instrument,q,limit);
+    const top=articles[0]?.relevanceScore || 0;
+    if(top>0) scored.push({instrument,articles,top});
+  }
+
+  scored.sort((a,b)=>b.top-a.top);
+  if(!scored.length) return {instrument:null,articles:[],reason:"no_relevant_instrument"};
+
+  // Bare article-number questions are inherently ambiguous across multiple laws.
+  const bareArticle=/^\s*(?:член|article)?\s*[0-9]+(?:[-–—][\p{L}]+)?\s*[?.!]*\s*$/iu.test(q);
+  if(bareArticle && scored.length>1 && scored[0].top===scored[1].top){
+    return {instrument:null,articles:[],reason:"instrument_required"};
+  }
+
+  return scored[0];
 }
 
 async function handleArticles(request, env, url) {
@@ -995,7 +1069,8 @@ async function handleAssistant(request, env, url) {
   }
 
   const q=cleanQuery(request.method==="POST" ? payload.q : url.searchParams.get("q"),600);
-  const instrumentKey=inferInstrumentKey(
+  const instrumentKey=await inferInstrumentKey(
+    env,
     q,
     request.method==="POST" ? payload.instrument : url.searchParams.get("instrument")
   );
@@ -1016,8 +1091,14 @@ async function handleAssistant(request, env, url) {
     },429);
   }
 
-  const {instrument,articles}=await findRelevantArticles(env,instrumentKey,q,6);
-  if(!instrument) return json(request,{ok:false,error:"instrument_not_found"},404);
+  const retrieval=await findRelevantArticles(env,instrumentKey,q,6);
+  const {instrument,articles}=retrieval;
+  if(!instrument){
+    if(retrieval.reason==="instrument_required"){
+      return json(request,{ok:false,error:"instrument_required",message:"Изберете конкретен закон за прашање што содржи само број на член."},400);
+    }
+    return json(request,{ok:false,error:"instrument_not_found",message:"Не е утврден релевантен закон во достапниот корпус. Изберете закон од селекторот."},404);
+  }
 
   const warning=assistantStatusWarning(articles);
   let answer=null;
