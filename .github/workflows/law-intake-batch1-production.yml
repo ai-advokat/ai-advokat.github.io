@@ -1,13 +1,6 @@
 name: Law intake batch 1 production resume
 
 on:
-  push:
-    branches:
-      - law-intake-batch-1-30sep2026
-    paths:
-      - ".github/workflows/law-intake-batch1-production.yml"
-      - "migrations/0020_kz_2026_correction_provenance.sql"
-      - "src/index.js"
   workflow_dispatch:
 
 permissions:
@@ -19,6 +12,7 @@ concurrency:
 
 jobs:
   resume:
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
@@ -136,6 +130,8 @@ jobs:
           post_expected '{"q":"Што предвидува член 12 од ЗИ?","instrument":"auto"}' /tmp/live-ai-zi.json 200
           post_expected '{"q":"член 12","instrument":"auto"}' /tmp/live-ai-ambiguous.json 400
           post_expected '{"q":"Како се дели наследство?","instrument":"auto"}' /tmp/live-ai-unsupported.json 400
+          post_expected '{"q":"Како се разведува брак?","instrument":"auto"}' /tmp/live-ai-divorce.json 400
+          post_expected '{"q":"Што е ништовен договор?","instrument":"auto"}' /tmp/live-ai-contract.json 400
 
           node <<'NODE'
           const fs=require("fs"), read=p=>JSON.parse(fs.readFileSync(p,"utf8"));
@@ -146,6 +142,8 @@ jobs:
           const ai=read("/tmp/live-ai-zi.json");
           const amb=read("/tmp/live-ai-ambiguous.json");
           const uns=read("/tmp/live-ai-unsupported.json");
+          const divorce=read("/tmp/live-ai-divorce.json");
+          const contract=read("/tmp/live-ai-contract.json");
           const membership=read("/tmp/live-membership.json");
 
           const byKey=Object.fromEntries((inst.instruments||[]).map(x=>[x.canonicalKey,x]));
@@ -155,7 +153,9 @@ jobs:
           if(zro.total!==298 || zkp.total!==570) throw new Error("ZRO/ZKP regression");
           if(!ai.ok || ai.instrument?.canonicalKey!=="mk:zi" || !(ai.citations||[]).some(c=>String(c.articleNumber)==="12")) throw new Error("ZI routing");
           if(amb.error!=="instrument_required") throw new Error("bare article must require law");
-          if(uns.error!=="instrument_required") throw new Error("unsupported domain must not guess a law");
+          if(uns.error!=="instrument_required") throw new Error("inheritance must not guess a law");
+          if(divorce.error!=="instrument_required") throw new Error("divorce must not guess a law");
+          if(contract.error!=="instrument_required") throw new Error("contract must not guess a law");
           const prices=(membership.plans||[]).map(x=>x.monthlyPriceMkd);
           for(const n of [199,399,999]) if(!prices.includes(n)) throw new Error("membership regression");
           console.log("LIVE BATCH1 ROUTING + CORPUS: PASS");
@@ -179,3 +179,5 @@ jobs:
             /tmp/live-ai-zi.json
             /tmp/live-ai-ambiguous.json
             /tmp/live-ai-unsupported.json
+            /tmp/live-ai-divorce.json
+            /tmp/live-ai-contract.json
