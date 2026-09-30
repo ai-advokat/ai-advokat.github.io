@@ -237,10 +237,22 @@ async function monthlyUsage(env, subjectKey, period=currentPeriod()) {
   return Number(usage?.assistant_requests || 0);
 }
 
+/** Public Turnstile site key if well-formed, else null (form stays closed). */
+function turnstileSiteKey(env) {
+  return typeof env?.TURNSTILE_SITE_KEY==="string" && /^[0-9A-Za-z_-]{8,128}$/.test(env.TURNSTILE_SITE_KEY)
+    ? env.TURNSTILE_SITE_KEY : null;
+}
+
+/** Membership requests are usable only when every piece of the protection is configured. */
+function membershipRequestsConfigured(env) {
+  return saltIsConfigured(env)
+    && typeof env?.TURNSTILE_SECRET==="string" && env.TURNSTILE_SECRET.length>0
+    && turnstileSiteKey(env)!==null;
+}
+
 async function handleMembershipPlans(request, env) {
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
-  const siteKey=typeof env?.TURNSTILE_SITE_KEY==="string" && /^[0-9A-Za-z_-]{8,128}$/.test(env.TURNSTILE_SITE_KEY)
-    ? env.TURNSTILE_SITE_KEY : null;
+  const siteKey=turnstileSiteKey(env);
   return json(request,{
     ok:true,
     currency:"MKD",
@@ -454,8 +466,8 @@ function json(request, data, status = 200, extraHeaders = {}) {
   });
 }
 
-function methodNotAllowed(request) {
-  return json(request, { ok: false, error: "method_not_allowed" }, 405);
+function methodNotAllowed(request, allow) {
+  return json(request, { ok: false, error: "method_not_allowed" }, 405, allow ? { Allow: allow } : {});
 }
 
 function governedPreview(request, capability, message) {
@@ -1256,7 +1268,9 @@ function assistantError(request, status, error, message, extraHeaders={}) {
 }
 
 async function handleAssistant(request, env, url) {
-  if(!["GET","HEAD","POST"].includes(request.method)) return methodNotAllowed(request);
+  // POST only: GET/HEAD can be triggered by prefetchers, link scanners and crawlers,
+  // and must never reach quota reservation or the AI provider.
+  if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
 
   const database=await dbStatus(env);
   if(!database.reachable || !database.schemaReady){
@@ -1290,22 +1304,16 @@ async function handleAssistant(request, env, url) {
   }
 
   // 3. Validation.
-  let payload={};
-  if(request.method==="POST"){
-    try{ payload=await request.json(); }
-    catch{ return json(request,{ok:false,error:"invalid_json"},400); }
-    if(!payload || typeof payload!=="object" || Array.isArray(payload)) return json(request,{ok:false,error:"invalid_payload"},400);
-  }
+  let payload;
+  try{ payload=await request.json(); }
+  catch{ return json(request,{ok:false,error:"invalid_json"},400); }
+  if(!payload || typeof payload!=="object" || Array.isArray(payload)) return json(request,{ok:false,error:"invalid_payload"},400);
 
-  const q=cleanQuery(request.method==="POST" ? payload.q : url.searchParams.get("q"),600);
+  const q=cleanQuery(payload.q,600);
   if(q.length<3) return json(request,{ok:false,error:"query_too_short",message:"Use at least three characters."},400);
 
   // 4. Routing / retrieval. Rejected routing does not consume quota.
-  const instrumentKey=await inferInstrumentKey(
-    env,
-    q,
-    request.method==="POST" ? payload.instrument : url.searchParams.get("instrument")
-  );
+  const instrumentKey=await inferInstrumentKey(env,q,payload.instrument);
   const retrieval=await findRelevantArticles(env,instrumentKey,q,6);
   const {instrument,articles}=retrieval;
   if(!instrument){
@@ -1512,7 +1520,7 @@ async function handleCapabilities(request, env) {
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",
       // Deliberately coarse: configuration details are not exposed publicly.
       assistantQuota: saltIsConfigured(env) ? "enforced" : "unavailable",
-      membershipRequests: database.reachable && database.schemaReady && saltIsConfigured(env) && env.TURNSTILE_SECRET ? "manual_human_gate" : "blocked",
+      membershipRequests: database.reachable && database.schemaReady && membershipRequestsConfigured(env) ? "manual_human_gate" : "blocked",
       citationAudit: "governed_preview",
       versionCompare: "governed_preview",
       documentUpload: "locked",

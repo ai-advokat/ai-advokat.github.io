@@ -692,6 +692,54 @@ describe("production AI binding guard", () => {
   });
 });
 
+describe("Codex review follow-ups (PR #44)", () => {
+  for (const method of ["GET", "HEAD"]) {
+    test(`X1 ${method} /api/assistant is refused before quota or AI (prefetch / link-scanner safe)`, async () => {
+      const ai = mockAI("[Член 12]");
+      const { env, raw, stats } = freshEnv({ ai });
+      const req = new Request(BASE + "/api/assistant?q=" + encodeURIComponent("ЗРО член 12") + "&instrument=mk:zro", {
+        method, headers: { "CF-Connecting-IP": nextIp() }
+      });
+      // ctx without waitUntil: the 1% opportunistic prune is skipped, so the D1 count is deterministic.
+      const response = await worker.fetch(req, env, {});
+      const r = { status: response.status, headers: response.headers };
+      assert.equal(r.status, 405);
+      assert.equal(r.headers.get("Allow"), "POST, OPTIONS");
+      assert.equal(ai.calls.length, 0, "AI must not be called");
+      assert.equal(totalUsage(raw), 0, "quota must not be consumed");
+      assert.equal(raw.prepare("SELECT COUNT(*) AS n FROM security_rate_limit_windows").get().n, 0, "burst window must not be touched");
+      assert.equal(stats.statements, 0, "no D1 work at all for a refused method");
+    });
+  }
+
+  test("X1b CORS preflight for POST /api/assistant still succeeds", async () => {
+    const { env } = freshEnv();
+    const r = await worker.fetch(new Request(BASE + "/api/assistant", {
+      method: "OPTIONS",
+      headers: { Origin: "https://ai-advokat.github.io", "Access-Control-Request-Method": "POST" }
+    }), env, {});
+    assert.equal(r.status, 204);
+  });
+
+  test("X2 membership capability requires a valid public site key, not only secret + salt", async () => {
+    const without = freshEnv();
+    let r = await call(without.env, new Request(BASE + "/api/capabilities"));
+    assert.equal(r.body.capabilities.membershipRequests, "blocked");
+
+    const malformed = freshEnv();
+    malformed.env.TURNSTILE_SITE_KEY = "bad key!";
+    r = await call(malformed.env, new Request(BASE + "/api/capabilities"));
+    assert.equal(r.body.capabilities.membershipRequests, "blocked");
+
+    const complete = freshEnv();
+    complete.env.TURNSTILE_SITE_KEY = "0x4AAAAAAATESTKEY";
+    r = await call(complete.env, new Request(BASE + "/api/capabilities"));
+    assert.equal(r.body.capabilities.membershipRequests, "manual_human_gate");
+    const plans = await call(complete.env, new Request(BASE + "/api/membership/plans"));
+    assert.equal(plans.body.turnstileSiteKey, "0x4AAAAAAATESTKEY", "capability and form must agree");
+  });
+});
+
 describe("configuration exposure", () => {
   test("C1 localhost Turnstile tokens are not accepted implicitly", async () => {
     installTurnstileMock();
