@@ -29,10 +29,10 @@ SELECT
   'MK',
   '62/2005; consolidated through 111/2023',
   '2005-08-05',
-  'needs_version_review',
+  'pending',
   'pending',
   (SELECT id FROM sources WHERE url='https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf'),
-  'Phase-1 instrument. Historical consolidated snapshot is parseable; 2025 amendments and Constitutional Court effects must be resolved before current status.'
+  'Phase-1 instrument. Instrument-level status remains pending while article-level rows carry needs_version_review where affected. Historical snapshot is parseable; 2025 amendments and Constitutional Court effects must be resolved before current status.'
 WHERE NOT EXISTS (
   SELECT 1 FROM legal_instruments WHERE canonical_key='mk:zro'
 );
