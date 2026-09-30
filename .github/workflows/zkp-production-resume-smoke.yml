@@ -1,0 +1,132 @@
+name: ZKP production resume smoke
+
+on:
+  push:
+    branches:
+      - zkp-corpus-v1-30sep2026
+    paths:
+      - ".github/workflows/zkp-production-resume-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-zkp-production-resume
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify completed production corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --check src/index.js
+          npm run verify
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT version,description FROM schema_migrations WHERE version='18'; SELECT canonical_key,current_status,human_review_status FROM legal_instruments WHERE canonical_key IN ('mk:zro','mk:zkp') ORDER BY canonical_key; SELECT COUNT(*) AS zkp_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp'); SELECT COUNT(*) AS zro_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro');"             | tee /tmp/state.txt
+          grep -q '"version": "18"' /tmp/state.txt
+          grep -q '"canonical_key": "mk:zkp"' /tmp/state.txt
+          grep -q '"zkp_count": 570' /tmp/state.txt
+          grep -q '"zro_count": 298' /tmp/state.txt
+          echo "PRODUCTION CORPUS STATE: PASS"
+
+      - name: Deploy production Worker and app assets
+        run: npx wrangler deploy --config wrangler.jsonc
+
+      - name: Wait for Worker propagation and fetch endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+
+          fetch_live () {
+            path="$1"
+            output="$2"
+            for attempt in $(seq 1 12); do
+              code="$(curl -sS -o "$output" -w '%{http_code}' "$BASE$path" || true)"
+              echo "$path attempt=$attempt status=$code"
+              if [ "$code" = "200" ]; then return 0; fi
+              sleep 5
+            done
+            cat "$output" || true
+            return 1
+          }
+
+          fetch_live "/api/health" /tmp/live-health.json
+          fetch_live "/api/instruments" /tmp/live-instruments.json
+          fetch_live "/api/articles?instrument=mk%3Azkp&article=1" /tmp/live-zkp-1.json
+          fetch_live "/api/articles?instrument=mk%3Azkp&article=568" /tmp/live-zkp-568.json
+          fetch_live "/api/articles?instrument=mk%3Azro&limit=1" /tmp/live-zro.json
+          fetch_live "/api/membership/plans" /tmp/live-membership.json
+
+          for attempt in $(seq 1 12); do
+            code="$(curl -sS -o /tmp/live-assistant.json -w '%{http_code}'               -H 'content-type: application/json'               -d '{"q":"Што предвидува член 12 од ЗКП?","instrument":"mk:zkp"}'               "$BASE/api/assistant" || true)"
+            echo "/api/assistant attempt=$attempt status=$code"
+            if [ "$code" = "200" ]; then break; fi
+            sleep 5
+          done
+          test "$(node -e 'const d=require("/tmp/live-assistant.json"); process.stdout.write(d.ok?"yes":"no")')" = "yes"
+
+      - name: Assert live ZKP, ZRO and membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require("fs");
+          const read=p=>JSON.parse(fs.readFileSync(p,"utf8"));
+          const health=read("/tmp/live-health.json");
+          const inst=read("/tmp/live-instruments.json");
+          const a1=read("/tmp/live-zkp-1.json");
+          const a568=read("/tmp/live-zkp-568.json");
+          const zro=read("/tmp/live-zro.json");
+          const ai=read("/tmp/live-assistant.json");
+          const membership=read("/tmp/live-membership.json");
+
+          if(!health.ok) throw new Error("health failed");
+          const keys=new Set((inst.instruments||[]).map(x=>x.canonicalKey));
+          if(!keys.has("mk:zro") || !keys.has("mk:zkp")) throw new Error("instrument registry incomplete");
+          const zkp=inst.instruments.find(x=>x.canonicalKey==="mk:zkp");
+          if(Number(zkp?.articleCount)!==570) throw new Error("ZKP registry count mismatch");
+          if(a1.total!==570 || a1.filteredCount!==1 || a1.articles?.[0]?.articleNumberNormalized!=="1") throw new Error("ZKP article 1 failed");
+          if(a568.filteredCount!==1 || a568.articles?.[0]?.articleNumberNormalized!=="568") throw new Error("ZKP article 568 failed");
+          if(zro.total!==298) throw new Error("ZRO regression");
+          if(!ai.ok || ai.instrument?.canonicalKey!=="mk:zkp") throw new Error("ZKP assistant failed");
+          if(!(ai.citations||[]).some(c=>String(c.articleNumber)==="12")) throw new Error("ZKP citation 12 missing");
+          if(!ai.legalStatusWarning) throw new Error("ZKP legal status warning missing");
+          const prices=(membership.plans||[]).map(x=>x.monthlyPriceMkd);
+          for(const n of [199,399,999]) if(!prices.includes(n)) throw new Error("membership regression");
+          console.log("LIVE ZKP + ZRO + MEMBERSHIP: PASS");
+          NODE
+
+      - name: Upload live smoke evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: zkp-production-resume-smoke
+          retention-days: 30
+          path: |
+            /tmp/state.txt
+            /tmp/live-health.json
+            /tmp/live-instruments.json
+            /tmp/live-zkp-1.json
+            /tmp/live-zkp-568.json
+            /tmp/live-zro.json
+            /tmp/live-assistant.json
+            /tmp/live-membership.json
