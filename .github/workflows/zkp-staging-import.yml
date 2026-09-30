@@ -61,7 +61,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "INSERT OR IGNORE INTO sources (title,url,source_type,issuing_body,jurisdiction,source_status,notes) VALUES ('ZKP consolidated reference snapshot through 198/2018','https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf','secondary_consolidated_reference','Public legal-resource consolidated reference','MK','verified','Article-level reference snapshot; official LDBIS/Gazette lineage remains controlling.'); UPDATE instrument_versions SET source_url='https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf' WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND version_label='consolidated-reference-through-198/2018-and-CC-193/2016';"             | tee /tmp/reconcile.txt
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "INSERT OR IGNORE INTO sources (title,url,source_type,issuing_body,jurisdiction,source_status,notes) VALUES ('ZKP consolidated reference snapshot through 198/2018','https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf','secondary_consolidated_reference','Public legal-resource consolidated reference','MK','verified','Article-level reference snapshot; official LDBIS/Gazette lineage remains controlling.');"             | tee /tmp/reconcile.txt
 
       - name: Download and verify ZKP reference snapshot
         shell: bash
@@ -127,7 +127,7 @@ jobs:
           node scripts/legal-ndjson-to-sql.mjs /tmp/zkp.ndjson /tmp/zkp-staging.sql
           test -s /tmp/zkp-staging.sql
           npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --file /tmp/zkp-staging.sql
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "UPDATE instrument_versions SET checksum_sha256='e6bf4588833752695a9b776b473ed9d504264effdfcd7917b8d6655bcfacaf45', source_url='https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf' WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND version_label='consolidated-reference-through-198/2018-and-CC-193/2016';"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "UPDATE instrument_versions SET checksum_sha256='e6bf4588833752695a9b776b473ed9d504264effdfcd7917b8d6655bcfacaf45' WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND version_label='consolidated-reference-through-198/2018-and-CC-193/2016';"
 
       - name: Read-back verify ZKP corpus
         shell: bash
