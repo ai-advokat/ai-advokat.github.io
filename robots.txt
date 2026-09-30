@@ -1,3 +1,4 @@
+# Pages refresh after environment protection update 2026-09-30
 User-agent: *
 Allow: /
 Disallow: /api/
