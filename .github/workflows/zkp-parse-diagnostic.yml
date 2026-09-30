@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           pdftotext -layout /tmp/zkp.pdf /tmp/zkp-raw.txt
-          node scripts/clean-official-legal-pdf-text.mjs /tmp/zkp-raw.txt /tmp/zkp-clean.txt /tmp/zkp-clean-report.json
+          node scripts/clean-official-legal-pdf-text.mjs /tmp/zkp-raw.txt /tmp/zkp-clean.txt /tmp/zkp-clean-report.json 568
 
           cat > /tmp/zkp-meta.json <<'EOF'
           {
