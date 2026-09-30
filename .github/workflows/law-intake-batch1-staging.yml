@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/law-intake-batch1-staging.yml"
       - "migrations/0019_law_intake_batch_1.sql"
+      - "migrations/0020_kz_2026_correction_provenance.sql"
       - "src/index.js"
       - "index.html"
   workflow_dispatch:
@@ -43,20 +44,23 @@ jobs:
           }
           console.log("STAGING TARGET: PASS");
           NODE
-      - name: Apply pending staging migration 19
+      - name: Apply pending staging migrations 19 and 20
         shell: bash
         run: |
           set -euo pipefail
           npx wrangler d1 migrations list PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc | tee /tmp/pending.txt
-          if grep -q '0019_law_intake_batch_1.sql' /tmp/pending.txt; then
+          if grep -Eq '0019_law_intake_batch_1.sql|0020_kz_2026_correction_provenance.sql' /tmp/pending.txt; then
             npx wrangler d1 migrations apply PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc
           fi
       - name: Verify registry, aliases and ZPP temporal tracks
         shell: bash
         run: |
           set -euo pipefail
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT version,description FROM schema_migrations WHERE version='19'; SELECT canonical_key,short_title,title,current_status,human_review_status FROM legal_instruments WHERE canonical_key IN ('mk:zro','mk:zkp','mk:kz','mk:zpp','mk:zoo','mk:zoup','mk:zi','mk:zs','mk:zsidp','mk:ztd') ORDER BY canonical_key; SELECT COUNT(*) AS alias_count FROM legal_instrument_aliases; SELECT version_label,valid_from,valid_to,is_current,human_review_status FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zpp') ORDER BY id;"             | tee /tmp/state.txt
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT version,description FROM schema_migrations WHERE version IN ('19','20') ORDER BY CAST(version AS INTEGER); SELECT canonical_key,short_title,title,current_status,human_review_status,gazette_reference FROM legal_instruments WHERE canonical_key IN ('mk:zro','mk:zkp','mk:kz','mk:zpp','mk:zoo','mk:zoup','mk:zi','mk:zs','mk:zsidp','mk:ztd') ORDER BY canonical_key; SELECT COUNT(*) AS alias_count FROM legal_instrument_aliases; SELECT version_label,valid_from,valid_to,is_current,human_review_status FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zpp') ORDER BY id; SELECT url,source_status FROM sources WHERE url='https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=72841';"             | tee /tmp/state.txt
           grep -q '"version": "19"' /tmp/state.txt
+          grep -q '"version": "20"' /tmp/state.txt
+          grep -q 'correction 17/2026' /tmp/state.txt
+          grep -q 'id=72841' /tmp/state.txt
           for key in mk:zro mk:zkp mk:kz mk:zpp mk:zoo mk:zoup mk:zi mk:zs mk:zsidp mk:ztd; do grep -q "\"canonical_key\": \"$key\"" /tmp/state.txt; done
           python3 - <<'PY'
           import re
@@ -71,10 +75,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT COUNT(*) AS zro_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro'); SELECT COUNT(*) AS zkp_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp');"             | tee /tmp/regression.txt
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT COUNT(*) AS zro_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro'); SELECT COUNT(*) AS zkp_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp'); SELECT COUNT(*) AS zi_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi');"             | tee /tmp/regression.txt
           grep -q '"zro_count": 298' /tmp/regression.txt
           grep -q '"zkp_count": 570' /tmp/regression.txt
-          echo "ZRO/ZKP REGRESSION: PASS"
+          grep -q '"zi_count": 258' /tmp/regression.txt
+          echo "ZRO/ZKP/ZI REGRESSION: PASS"
       - uses: actions/upload-artifact@v4
         with:
           name: law-intake-batch1-staging
