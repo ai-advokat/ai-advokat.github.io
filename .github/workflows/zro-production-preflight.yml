@@ -2,17 +2,13 @@ name: ZRO production preflight
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - slvesnik-public-corpus-collector-29sep2026
-    paths:
-      - ".github/workflows/zro-production-preflight.yml"
 
 permissions:
   contents: read
 
 jobs:
   preflight:
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
