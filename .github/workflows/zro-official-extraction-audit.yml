@@ -36,8 +36,12 @@ jobs:
         run: |
           set -euo pipefail
           URL="https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf"
-          curl --fail --location --retry 3 --retry-delay 2 "$URL" -o /tmp/zro-2023.pdf
+          curl --fail --location --retry 3 --retry-delay 2 \
+            --connect-timeout 20 --max-time 120 \
+            --user-agent "AI-Advokat-Official-Source-Audit/1.0" \
+            "$URL" -o /tmp/zro-2023.pdf
           test -s /tmp/zro-2023.pdf
+          head -c 5 /tmp/zro-2023.pdf | grep -q "%PDF-"
           file /tmp/zro-2023.pdf
           pdfinfo /tmp/zro-2023.pdf | tee /tmp/zro-2023-pdfinfo.txt
           grep -Eq "^Pages:[[:space:]]+108$" /tmp/zro-2023-pdfinfo.txt
