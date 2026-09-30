@@ -1,0 +1,48 @@
+name: AI Advokat app distribution safety
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "manifest.webmanifest"
+      - "service-worker.js"
+      - "offline.html"
+      - "assets/app-icon*.svg"
+      - "mobile/**"
+      - ".assetsignore"
+      - ".github/workflows/app-distribution-safety.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  app-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate PWA manifest JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest PASS')"
+      - name: Validate service worker syntax
+        run: node --check service-worker.js
+      - name: App distribution assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f manifest.webmanifest
+          test -f service-worker.js
+          test -f offline.html
+          test -f assets/app-icon.svg
+          test -f assets/app-icon-maskable.svg
+          test -f mobile/android/twa-manifest.json
+          test -f mobile/android/assetlinks.template.json
+          test -f mobile/ios/AIAdvokatApp.swift
+          test -f mobile/ios/AIAdvokatWebView.swift
+          grep -q 'rel="manifest"' index.html
+          grep -q 'navigator.serviceWorker.register' index.html
+          grep -q 'beforeinstallprompt' index.html
+          grep -q 'url.pathname.startsWith("/api/")' service-worker.js
+          ! grep -q 'caches.*api' service-worker.js
+          grep -q 'mobile/\*\*' .assetsignore
+          grep -q 'REPLACE_WITH_GOOGLE_PLAY_APP_SIGNING_SHA256' mobile/android/assetlinks.template.json
+          echo "AI Advokat app distribution safety: PASS"
