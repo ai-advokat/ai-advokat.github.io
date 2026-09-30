@@ -1,0 +1,87 @@
+name: ZI parse diagnostic
+
+on:
+  push:
+    branches:
+      - law-intake-batch-1-30sep2026
+    paths:
+      - ".github/workflows/zi-parse-diagnostic.yml"
+      - "scripts/clean-official-legal-pdf-text.mjs"
+      - "scripts/parse-mk-legal-text.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install tooling
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+      - name: Download official consolidated Execution Act
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf"
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180             --user-agent "AI-Advokat-Law-Intake/1.0" "$URL" -o /tmp/zi.pdf
+          test -s /tmp/zi.pdf
+          head -c 5 /tmp/zi.pdf | grep -q "%PDF-"
+          pdfinfo /tmp/zi.pdf | tee /tmp/zi-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+99$" /tmp/zi-pdfinfo.txt
+          sha256sum /tmp/zi.pdf | tee /tmp/zi.sha256
+      - name: Parse article-level corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -layout /tmp/zi.pdf /tmp/zi-raw.txt
+          node scripts/clean-official-legal-pdf-text.mjs /tmp/zi-raw.txt /tmp/zi-clean.txt /tmp/zi-clean-report.json 269
+          SHA="$(cut -d' ' -f1 /tmp/zi.sha256)"
+          cat > /tmp/zi-meta.json <<EOF
+          {
+            "instrument_key": "mk:zi",
+            "instrument_title": "Закон за извршување",
+            "version_id": "official-editorial-consolidated-through-154-2023",
+            "source_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf",
+            "source_sha256": "$SHA",
+            "source_issue_number": "72/2016; 142/2016; 178/2017; 26/2018; 233/2018; 14/2020; 136/2020; 154/2023",
+            "source_issue_date": "2023-07-20",
+            "status": "needs_version_review",
+            "extraction_method": "pdftotext_layout_plus_cleaner",
+            "human_review_status": "pending"
+          }
+          EOF
+          node scripts/parse-mk-legal-text.mjs /tmp/zi-clean.txt /tmp/zi-meta.json /tmp/zi.ndjson
+          head -n 1 /tmp/zi.ndjson | tee /tmp/zi-manifest.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zi.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          print("ARTICLE_COUNT",len(arts))
+          print("WARNING_COUNT",m.get("warning_count"))
+          print("FIRST",[(a.get("article_number"),a.get("article_heading")) for a in arts[:8]])
+          print("LAST",[(a.get("article_number"),a.get("article_heading")) for a in arts[-12:]])
+          assert len(arts)>=269
+          assert any(a.get("article_number_normalized")=="1" for a in arts)
+          assert any(a.get("article_number_normalized")=="269" for a in arts)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zi-parse-diagnostic
+          retention-days: 14
+          path: |
+            /tmp/zi-pdfinfo.txt
+            /tmp/zi.sha256
+            /tmp/zi-clean-report.json
+            /tmp/zi-manifest.json
+            /tmp/zi-meta.json
