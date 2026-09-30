@@ -1,0 +1,40 @@
+name: ZKP corpus safety
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "src/index.js"
+      - "migrations/0018_zkp_instrument_metadata.sql"
+      - ".github/workflows/zkp-*.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zkp-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Worker syntax
+        run: node --check src/index.js
+      - name: Structural ZKP assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f migrations/0018_zkp_instrument_metadata.sql
+          grep -q "'mk:zkp'" migrations/0018_zkp_instrument_metadata.sql
+          grep -q "Закон за кривичната постапка" migrations/0018_zkp_instrument_metadata.sql
+          grep -q 'LIMIT 2000' src/index.js
+          grep -q '/api/instruments' src/index.js
+          grep -q 'return "mk:zkp"' src/index.js
+          grep -q 'value="mk:zkp"' index.html
+          grep -q 'openZkpBrowser' index.html
+          grep -q 'fetchInstruments' index.html
+          grep -q 'ЗРО и ЗКП' index.html
+          ! grep -q 'body:JSON.stringify({q,instrument:"mk:zro"})' index.html
+          echo "ZKP structural safety: PASS"
