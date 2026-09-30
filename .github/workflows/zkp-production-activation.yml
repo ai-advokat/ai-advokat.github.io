@@ -1,11 +1,6 @@
 name: ZKP production activation
 
 on:
-  push:
-    branches:
-      - zkp-corpus-v1-30sep2026
-    paths:
-      - ".github/workflows/zkp-production-activation.yml"
   workflow_dispatch:
 
 permissions:
@@ -17,6 +12,7 @@ concurrency:
 
 jobs:
   activate-zkp:
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
