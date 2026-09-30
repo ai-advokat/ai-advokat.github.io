@@ -1,11 +1,7 @@
 name: AI Advokat production D1 activation
 
 on:
-  push:
-    branches:
-      - activate-public-search-v1.3.3-clean
-    paths:
-      - ".github/workflows/production-d1-activation.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,6 +12,7 @@ concurrency:
 
 jobs:
   production-gate:
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 12
 
