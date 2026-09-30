@@ -43,8 +43,12 @@ WHERE title='Закон за работните односи'
   AND canonical_key IS NULL
   AND id=(SELECT MIN(id) FROM legal_instruments WHERE title='Закон за работните односи');
 
+-- Keep this insert compatible with both the legacy production instrument_versions
+-- schema (which uses source_id) and the newer clean schema (which uses source_url).
+-- Provenance remains available through legal_instruments.canonical_source_id and
+-- article-level source_url/source_sha256 fields.
 INSERT OR IGNORE INTO instrument_versions
-(instrument_id,version_label,valid_from,valid_to,is_current,checksum_sha256,text_content,source_url,human_review_status)
+(instrument_id,version_label,valid_from,valid_to,is_current,checksum_sha256,text_content,human_review_status)
 SELECT
   id,
   'official-consolidated-snapshot-through-111/2023',
@@ -53,7 +57,6 @@ SELECT
   0,
   'f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655',
   NULL,
-  'https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf',
   'pending'
 FROM legal_instruments
 WHERE canonical_key='mk:zro';
