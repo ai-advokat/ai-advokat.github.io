@@ -51,7 +51,7 @@ jobs:
         run: |
           set -euo pipefail
           npx wrangler d1 migrations list PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc | tee /tmp/pending.txt
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT version,description FROM schema_migrations WHERE version='18'; SELECT canonical_key,title,short_title,gazette_reference,current_status,human_review_status FROM legal_instruments WHERE canonical_key='mk:zkp';"             | tee /tmp/zkp-instrument.txt
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "UPDATE legal_instruments SET current_status='pending', human_review_status='pending', updated_at=CURRENT_TIMESTAMP WHERE canonical_key='mk:zkp'; SELECT version,description FROM schema_migrations WHERE version='18'; SELECT canonical_key,title,short_title,gazette_reference,current_status,human_review_status FROM legal_instruments WHERE canonical_key='mk:zkp';"             | tee /tmp/zkp-instrument.txt
           grep -q '"version": "18"' /tmp/zkp-instrument.txt
           grep -q '"canonical_key": "mk:zkp"' /tmp/zkp-instrument.txt
           grep -q '"current_status": "pending"' /tmp/zkp-instrument.txt
