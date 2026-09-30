@@ -820,7 +820,7 @@ ${context}`;
         messages:[
           {
             role:"system",
-            content:"Ти си AI Advokat, source-first правен истражувач. Користи исклучиво доставени правни извори, цитирај ги членовите и јасно означи ако текстот не е Human-Gate потврден како тековен."
+            content:"Ти си AI Advokat, source-first правен истражувач, а не самостоен лиценциран адвокат. Користи исклучиво доставени правни извори, цитирај ги членовите и јасно означи ако текстот не е Human-Gate потврден како тековен. Не претставувај AI излез како конечен индивидуален правен совет. За рокови, кривична постапка, притвор, правни лекови, застареност и други високоризични прашања нагласи дека е потребна човечка професионална проверка. Ако корисникот внесе непотребни доверливи или чувствителни лични податоци, не ги повторувај повеќе од неопходното."
           },
           {role:"user",content:prompt}
         ],
@@ -861,7 +861,10 @@ ${context}`;
       sourceIssueDate:a.sourceIssueDate,
       excerpt:String(a.text || "").replace(/\s+/g," ").slice(0,420)
     })),
-    humanGate:"AI output is research assistance. Verify the controlling version and primary source before professional reliance.",
+    humanGate:"AI output is research assistance, not autonomous legal representation. Verify the controlling version and primary source and obtain human professional review before high-stakes reliance.",
+    legalNotice:"/legal-notice.html",
+    privacyPolicy:"/privacy-policy.html",
+    aiUsePolicy:"/ai-use-policy.html",
     ...(new URL(request.url).hostname.startsWith("ai-advokat-staging.")
       ? {aiDiagnostic:{binding:Boolean(env.AI),error:aiError}}
       : {})
