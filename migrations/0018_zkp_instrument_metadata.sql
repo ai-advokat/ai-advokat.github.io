@@ -42,7 +42,7 @@ WHERE NOT EXISTS (
 );
 
 INSERT OR IGNORE INTO instrument_versions
-  (instrument_id,version_label,valid_from,valid_to,is_current,checksum_sha256,text_content,source_url,human_review_status)
+  (instrument_id,version_label,valid_from,valid_to,is_current,checksum_sha256,text_content,human_review_status)
 SELECT
   id,
   'consolidated-reference-through-198/2018-and-CC-193/2016',
@@ -51,7 +51,6 @@ SELECT
   0,
   NULL,
   NULL,
-  'https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf',
   'pending'
 FROM legal_instruments
 WHERE canonical_key='mk:zkp';
