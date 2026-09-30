@@ -98,7 +98,11 @@
   const $=s=>document.querySelector(s);
   // Same rule as index.html: on a workers.dev host the Worker is same-origin;
   // on GitHub Pages (ai-advokat.github.io) the API lives on the production Worker.
-  const API_BASE = location.hostname.endsWith("workers.dev")
+  const API_BASE = (
+    location.hostname.endsWith("workers.dev") ||
+    location.hostname === "localhost" ||
+    location.hostname === "127.0.0.1"
+  )
     ? location.origin
     : "https://ai-advokat-github-io.aiadvokat16.workers.dev";
   document.querySelectorAll(".choose").forEach(btn=>btn.addEventListener("click",()=>{
