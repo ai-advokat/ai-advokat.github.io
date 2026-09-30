@@ -114,12 +114,15 @@ jobs:
 
           post_expected () {
             body="$1"; output="$2"; expected="$3"
-            for attempt in $(seq 1 10); do
+            for attempt in $(seq 1 3); do
+              if [ "$attempt" -gt 1 ]; then
+                echo "Waiting 65s before assistant retry to clear the 5/min burst window"
+                sleep 65
+              fi
               code="$(curl -sS -o "$output" -w '%{http_code}' \
                 -H 'content-type: application/json' -d "$body" "$BASE/api/assistant" || true)"
               echo "assistant attempt=$attempt status=$code expected=$expected"
               if [ "$code" = "$expected" ]; then return 0; fi
-              sleep 4
             done
             cat "$output" || true
             return 1
