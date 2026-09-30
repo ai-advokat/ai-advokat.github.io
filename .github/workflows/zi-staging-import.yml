@@ -1,0 +1,131 @@
+name: ZI staging import
+
+on:
+  push:
+    branches:
+      - law-intake-batch-1-30sep2026
+    paths:
+      - ".github/workflows/zi-staging-import.yml"
+      - "migrations/0019_law_intake_batch_1.sql"
+      - "scripts/clean-official-legal-pdf-text.mjs"
+      - "scripts/parse-mk-legal-text.mjs"
+      - "scripts/legal-ndjson-to-sql.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  import-zi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install tooling
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+      - name: Verify staging metadata and exact target
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/index.js
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(!d || d.binding!=="PREVIEW_DB" || d.database_name!=="ai-advokat-db-staging" || d.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") throw new Error("Unexpected staging target");
+          NODE
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT version FROM schema_migrations WHERE version='19'; SELECT canonical_key,current_status,human_review_status FROM legal_instruments WHERE canonical_key='mk:zi';"             | tee /tmp/prestate.txt
+          grep -q '"version": "19"' /tmp/prestate.txt
+          grep -q '"canonical_key": "mk:zi"' /tmp/prestate.txt
+      - name: Download and verify official consolidated text
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf"
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180             --user-agent "AI-Advokat-Law-Intake/1.0" "$URL" -o /tmp/zi.pdf
+          test -s /tmp/zi.pdf
+          head -c 5 /tmp/zi.pdf | grep -q "%PDF-"
+          pdfinfo /tmp/zi.pdf | tee /tmp/zi-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+99$" /tmp/zi-pdfinfo.txt
+          SHA="$(sha256sum /tmp/zi.pdf | cut -d' ' -f1)"
+          test "$SHA" = "15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55"
+          echo "$SHA" > /tmp/zi.sha256
+      - name: Parse exactly 258 article records
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -layout /tmp/zi.pdf /tmp/zi-raw.txt
+          node scripts/clean-official-legal-pdf-text.mjs /tmp/zi-raw.txt /tmp/zi-clean.txt /tmp/zi-clean-report.json 269
+          cat > /tmp/zi-meta.json <<'EOF'
+          {
+            "instrument_key": "mk:zi",
+            "instrument_title": "Закон за извршување",
+            "version_id": "official-editorial-consolidated-through-154-2023",
+            "source_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf",
+            "source_sha256": "15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55",
+            "source_issue_number": "72/2016; 142/2016; 178/2017; 26/2018; 233/2018; 14/2020; 136/2020; 154/2023",
+            "source_issue_date": "2023-07-20",
+            "status": "needs_version_review",
+            "extraction_method": "pdftotext_layout_plus_cleaner",
+            "human_review_status": "pending"
+          }
+          EOF
+          node scripts/parse-mk-legal-text.mjs /tmp/zi-clean.txt /tmp/zi-meta.json /tmp/zi.ndjson
+          head -n 1 /tmp/zi.ndjson > /tmp/zi-manifest.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zi.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          assert len(arts)==258, len(arts)
+          assert int(m.get("warning_count") or 0)==0, m
+          nums={a.get("article_number_normalized") for a in arts}
+          assert "1" in nums and "12" in nums and "269" in nums
+          assert "240" not in nums and "244" not in nums
+          print("ZI PARSE GATE: PASS")
+          PY
+      - name: Import corpus and version marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/legal-ndjson-to-sql.mjs /tmp/zi.ndjson /tmp/zi.sql
+          test -s /tmp/zi.sql
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --file /tmp/zi.sql
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "INSERT OR IGNORE INTO instrument_versions (instrument_id,version_label,valid_from,valid_to,is_current,checksum_sha256,text_content,human_review_status) SELECT id,'official-editorial-consolidated-through-154/2023',NULL,NULL,0,'15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55',NULL,'pending' FROM legal_instruments WHERE canonical_key='mk:zi';"             | tee /tmp/version.txt
+      - name: Read-back and regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc             --command "SELECT COUNT(*) AS zi_count, SUM(CASE WHEN status='needs_version_review' THEN 1 ELSE 0 END) AS review_count, SUM(CASE WHEN human_review_status='pending' THEN 1 ELSE 0 END) AS pending_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi'); SELECT article_number,article_number_normalized,status FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND article_number_normalized IN ('1','12','269') ORDER BY id; SELECT COUNT(*) AS abolished_240_244 FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND CAST(article_number_normalized AS INTEGER) BETWEEN 240 AND 244; SELECT run_key,article_count,warning_count,status FROM corpus_ingest_runs WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') ORDER BY id DESC LIMIT 1; SELECT COUNT(*) AS zro_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro'); SELECT COUNT(*) AS zkp_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp');"             | tee /tmp/readback.txt
+          grep -q '"zi_count": 258' /tmp/readback.txt
+          grep -q '"review_count": 258' /tmp/readback.txt
+          grep -q '"pending_count": 258' /tmp/readback.txt
+          grep -q '"article_number_normalized": "269"' /tmp/readback.txt
+          grep -q '"abolished_240_244": 0' /tmp/readback.txt
+          grep -q '"warning_count": 0' /tmp/readback.txt
+          grep -q '"status": "validated"' /tmp/readback.txt
+          grep -q '"zro_count": 298' /tmp/readback.txt
+          grep -q '"zkp_count": 570' /tmp/readback.txt
+          echo "ZI STAGING IMPORT + REGRESSION: PASS"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zi-staging-import
+          retention-days: 14
+          path: |
+            /tmp/prestate.txt
+            /tmp/zi-pdfinfo.txt
+            /tmp/zi.sha256
+            /tmp/zi-clean-report.json
+            /tmp/zi-manifest.json
+            /tmp/version.txt
+            /tmp/readback.txt
