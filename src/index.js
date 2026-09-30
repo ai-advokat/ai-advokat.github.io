@@ -321,6 +321,14 @@ async function handleMembershipRequest(request, env) {
     return json(request,{ok:false,error:"membership_requests_temporarily_unavailable"},503);
   }
 
+  // Same rule as /api/assistant: CORS-simple cross-origin posts (text/plain, forms)
+  // must not reach the rate-limit windows, otherwise any website could silently
+  // exhaust a visitor's hourly/daily membership-request allowance.
+  const contentType=(request.headers.get("content-type") || "").toLowerCase();
+  if(!contentType.startsWith("application/json")){
+    return json(request,{ok:false,error:"unsupported_media_type"},415);
+  }
+
   const parsed=await readLimitedJson(request,MEMBERSHIP_REQUEST_MAX_BYTES);
   if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
   const payload=parsed.value;
