@@ -24,7 +24,7 @@ The Worker exposes:
 - `/api/health`, `/api/db-status` — Worker and D1 health
 - `/api/capabilities` — live capability state and corpus coverage; the homepage status labels are rendered from this endpoint
 - `/api/search`, `/api/instruments`, `/api/articles` — read-only public corpus
-- `/api/assistant` — source-backed legal research assistant (quota-protected, see below)
+- `/api/assistant` — source-backed legal research assistant, **POST only** (quota-protected, see below; GET/HEAD return 405 so prefetchers and link scanners cannot consume quota)
 - `/api/membership/plans`, `/api/membership/request`, `/api/membership/status` — membership v1
 - `/api/web-sources`, `/api/zenodo`, `/api/orcid` — directories and publication metadata
 - `/api/citation-audit`, `/api/versions`, `/api/documents`, `/api/cases` — governed preview / locked
