@@ -15,12 +15,12 @@ VALUES
   ),
   (
     'ZKP consolidated reference snapshot through 198/2018',
-    'https://www.refworld.org/sites/default/files/attachments/5d319ea44.pdf',
+    'https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf',
     'secondary_consolidated_reference',
-    'Refworld / consolidated reference text',
+    'Public legal-resource consolidated reference',
     'MK',
     'verified',
-    '251-page consolidated reference text citing Official Gazette 150/2010, 100/2012, 142/2016, 198/2018 and Constitutional Court decision 193/2016. Used as article-level reference snapshot; official LDBIS/Gazette lineage remains controlling.'
+    '195-page consolidated reference text citing Official Gazette 150/2010, 100/2012, 142/2016, 198/2018 and Constitutional Court decision 193/2016. Used as article-level reference snapshot; official LDBIS/Gazette lineage remains controlling.'
   );
 
 INSERT INTO legal_instruments
@@ -51,7 +51,7 @@ SELECT
   0,
   NULL,
   NULL,
-  'https://www.refworld.org/sites/default/files/attachments/5d319ea44.pdf',
+  'https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf',
   'pending'
 FROM legal_instruments
 WHERE canonical_key='mk:zkp';
