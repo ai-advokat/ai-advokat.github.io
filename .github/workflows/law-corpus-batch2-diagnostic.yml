@@ -34,12 +34,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL='https://www.pravda.gov.mk/upload/Documents/%D0%97%D0%B0%D0%BA%D0%BE%D0%BD%20%D0%B7%D0%B0%20%D1%81%D0%BE%D0%BF%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BE%D1%81%D1%82%20%D0%B8%20%D0%B4%D1%80.%D1%81%D1%82%D0%B2%D0%B0%D1%80%D0%BD%D0%B8%20%D0%BF%D1%80%D0%B0%D0%B2%D0%B0%20-%20%D1%80%D0%B5%D0%B4%D0%B0%D0%BA%D1%86%D0%B8%D1%81%D0%BA%D0%B8%20%D0%BF%D1%80%D0%B5%D1%87%D0%B8%D1%81%D1%82%D0%B5%D0%BD%283%29.pdf'
+          URL='https://portal.mdt.gov.mk/post-body-files/soopstenie-za-polaganje-za-strucen-ispit-od-oblasta-na-urbanistickoto-planiranje-vo-fevruarska-ispitna-sesija-2-file-NEOr.pdf'
           curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180             --user-agent "AI-Advokat-Law-Intake/1.0" "$URL" -o /tmp/zsidp.pdf
           test -s /tmp/zsidp.pdf
           head -c 5 /tmp/zsidp.pdf | grep -q "%PDF-"
           pdfinfo /tmp/zsidp.pdf | tee /tmp/zsidp-pdfinfo.txt
-          grep -Eq "^Pages:[[:space:]]+62$" /tmp/zsidp-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+117$" /tmp/zsidp-pdfinfo.txt
           sha256sum /tmp/zsidp.pdf | tee /tmp/zsidp.sha256
 
       - name: Parse and chunk ZSIDP
@@ -54,7 +54,7 @@ jobs:
             "instrument_key": "mk:zsidp",
             "instrument_title": "Закон за сопственост и други стварни права",
             "version_id": "official-editorial-consolidated-through-35-2010",
-            "source_url": "https://www.pravda.gov.mk/upload/Documents/%D0%97%D0%B0%D0%BA%D0%BE%D0%BD%20%D0%B7%D0%B0%20%D1%81%D0%BE%D0%BF%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BE%D1%81%D1%82%20%D0%B8%20%D0%B4%D1%80.%D1%81%D1%82%D0%B2%D0%B0%D1%80%D0%BD%D0%B8%20%D0%BF%D1%80%D0%B0%D0%B2%D0%B0%20-%20%D1%80%D0%B5%D0%B4%D0%B0%D0%BA%D1%86%D0%B8%D1%81%D0%BA%D0%B8%20%D0%BF%D1%80%D0%B5%D1%87%D0%B8%D1%81%D1%82%D0%B5%D0%BD%283%29.pdf",
+            "source_url": "https://portal.mdt.gov.mk/post-body-files/soopstenie-za-polaganje-za-strucen-ispit-od-oblasta-na-urbanistickoto-planiranje-vo-fevruarska-ispitna-sesija-2-file-NEOr.pdf",
             "source_sha256": "$SHA",
             "source_issue_number": "18/2001; Constitutional Court 31/2008; 92/2008; 139/2009; 35/2010",
             "source_issue_date": "2010-03-12",
