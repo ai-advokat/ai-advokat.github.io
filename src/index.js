@@ -881,6 +881,13 @@ async function findRelevantArticles(env, instrumentKey, q, limit=6) {
   }
 
   const candidates=await listSearchableInstruments(env);
+
+  // A bare article number is never enough to select a law once multiple corpora are live.
+  const bareArticle=/^\s*(?:член|article)?\s*[0-9]+(?:[-–—][\p{L}]+)?\s*[?.!]*\s*$/iu.test(q);
+  if(bareArticle && candidates.length>1){
+    return {instrument:null,articles:[],reason:"instrument_required"};
+  }
+
   const scored=[];
   for(const row of candidates){
     const instrument={
@@ -903,12 +910,6 @@ async function findRelevantArticles(env, instrumentKey, q, limit=6) {
 
   scored.sort((a,b)=>b.top-a.top);
   if(!scored.length) return {instrument:null,articles:[],reason:"no_relevant_instrument"};
-
-  // Bare article-number questions are inherently ambiguous across multiple laws.
-  const bareArticle=/^\s*(?:член|article)?\s*[0-9]+(?:[-–—][\p{L}]+)?\s*[?.!]*\s*$/iu.test(q);
-  if(bareArticle && scored.length>1 && scored[0].top===scored[1].top){
-    return {instrument:null,articles:[],reason:"instrument_required"};
-  }
 
   return scored[0];
 }
