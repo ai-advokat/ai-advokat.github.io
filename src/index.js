@@ -1272,6 +1272,13 @@ async function handleAssistant(request, env, url) {
   // and must never reach quota reservation or the AI provider.
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
 
+  // Reject CORS-simple cross-origin form/text posts before touching D1, burst
+  // counters, monthly quota or Workers AI. Browser JSON posts require preflight.
+  const contentType=(request.headers.get("content-type") || "").toLowerCase();
+  if(!contentType.startsWith("application/json")){
+    return json(request,{ok:false,error:"unsupported_media_type"},415);
+  }
+
   const database=await dbStatus(env);
   if(!database.reachable || !database.schemaReady){
     return json(request,{ok:false,error:"database_not_ready",database},503);
