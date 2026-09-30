@@ -688,6 +688,22 @@ describe("Codex review follow-ups (PR #44)", () => {
     });
   }
 
+  test("X1a text/plain POST is rejected before D1, quota or AI", async () => {
+    const ai = mockAI("[Член 12]");
+    const { env, raw, stats } = freshEnv({ ai });
+    const req = new Request(BASE + "/api/assistant", {
+      method: "POST",
+      headers: { "content-type": "text/plain", "CF-Connecting-IP": nextIp(), Origin: "https://evil.example" },
+      body: JSON.stringify({ q: "ЗРО член 12", instrument: "mk:zro" })
+    });
+    const response = await worker.fetch(req, env, {});
+    assert.equal(response.status, 415);
+    assert.equal(ai.calls.length, 0, "AI must not be called");
+    assert.equal(totalUsage(raw), 0, "quota must not be consumed");
+    assert.equal(raw.prepare("SELECT COUNT(*) AS n FROM security_rate_limit_windows").get().n, 0, "burst window must not be touched");
+    assert.equal(stats.statements, 0, "no D1 work at all for unsupported media type");
+  });
+
   test("X1b CORS preflight for POST /api/assistant still succeeds", async () => {
     const { env } = freshEnv();
     const r = await worker.fetch(new Request(BASE + "/api/assistant", {
