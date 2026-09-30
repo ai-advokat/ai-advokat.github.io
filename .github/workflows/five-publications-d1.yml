@@ -1,12 +1,7 @@
 name: AI Advokat five-publication D1 migration
 
 on:
-  push:
-    branches:
-      - add-five-publications-d1-29sep2026
-    paths:
-      - "migrations/0003_five_publications.sql"
-      - ".github/workflows/five-publications-d1.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -54,6 +49,7 @@ jobs:
           npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT COUNT(*) AS private_draft_urls FROM publications WHERE canonical_url LIKE '%zenodo.org/uploads/%';"
 
   production:
+    environment: production
     needs: staging
     runs-on: ubuntu-latest
     timeout-minutes: 12
