@@ -68,12 +68,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL="https://www.refworld.org/sites/default/files/attachments/5d319ea44.pdf"
+          URL="https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf"
           curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180             --user-agent "AI-Advokat-ZKP-Audit/1.0" "$URL" -o /tmp/zkp.pdf
           test -s /tmp/zkp.pdf
           head -c 5 /tmp/zkp.pdf | grep -q "%PDF-"
           pdfinfo /tmp/zkp.pdf | tee /tmp/zkp-pdfinfo.txt
-          grep -Eq "^Pages:[[:space:]]+251$" /tmp/zkp-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+195$" /tmp/zkp-pdfinfo.txt
           sha256sum /tmp/zkp.pdf | tee /tmp/zkp.sha256
 
       - name: Parse consolidated ZKP
@@ -88,7 +88,7 @@ jobs:
             "instrument_key": "mk:zkp",
             "instrument_title": "Закон за кривичната постапка",
             "version_id": "consolidated-reference-through-198-2018-and-cc-193-2016",
-            "source_url": "https://www.refworld.org/sites/default/files/attachments/5d319ea44.pdf",
+            "source_url": "https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf",
             "source_sha256": "$SHA",
             "source_issue_number": "150/2010; 100/2012; 142/2016; 193/2016; 198/2018",
             "source_issue_date": "2018-10-31",
