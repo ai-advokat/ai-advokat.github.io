@@ -1,11 +1,6 @@
 name: AI Advokat release production resume deploy
 
 on:
-  push:
-    branches:
-      - release-zro-membership-app-30sep2026
-    paths:
-      - ".github/workflows/release-production-resume-deploy.yml"
   workflow_dispatch:
 
 permissions:
@@ -17,6 +12,7 @@ concurrency:
 
 jobs:
   deploy:
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
