@@ -1,0 +1,19 @@
+{
+  "packageId": "mk.aiadvokat.app",
+  "host": "ai-advokat.github.io",
+  "name": "AI Advokat",
+  "launcherName": "AI Advokat",
+  "display": "standalone",
+  "themeColor": "#0c2038",
+  "navigationColor": "#0c2038",
+  "backgroundColor": "#f4f6f8",
+  "startUrl": "/?source=play",
+  "webManifestUrl": "https://ai-advokat.github.io/manifest.webmanifest",
+  "iconUrl": "https://ai-advokat.github.io/assets/app-icon.svg",
+  "maskableIconUrl": "https://ai-advokat.github.io/assets/app-icon-maskable.svg",
+  "enableNotifications": false,
+  "shortcuts": [
+    {"name": "Закони", "url": "/#sources"},
+    {"name": "AI Истражувач", "url": "/#research"}
+  ]
+}
