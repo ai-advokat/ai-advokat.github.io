@@ -72,7 +72,8 @@ jobs:
           assert 'applicable-track-79/2005-through-124/2015' in t
           assert 'future-application-151/2026' in t
           assert t.count('"canonical_source_id": null')==0, "canonical source gap remains"
-          assert t.count('"source_type": "ministry"')>=10, "ministry canonical sources missing"
+          assert t.count('"canonical_source_url": null')==0, "canonical source URL gap remains"
+          assert t.count('"source_status": "official"')>=10, "official canonical sources missing"
           print("BATCH1 STAGING METADATA + SOURCES: PASS")
           PY
       - name: Assert ZRO and ZKP unchanged
