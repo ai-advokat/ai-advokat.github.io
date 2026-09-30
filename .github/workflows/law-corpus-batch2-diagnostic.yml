@@ -85,11 +85,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL='https://ldbis.pravda.gov.mk/PdfFiles/2u50g5fib0a2nvznwkhwcvpl.pdf'
+          URL='https://portal.mdt.gov.mk/post-body-files/legislativa-mod-file-yzNe.pdf'
           curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180             --user-agent "AI-Advokat-Law-Intake/1.0" "$URL" -o /tmp/zoup.pdf
           test -s /tmp/zoup.pdf
           head -c 5 /tmp/zoup.pdf | grep -q "%PDF-"
           pdfinfo /tmp/zoup.pdf | tee /tmp/zoup-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+45$" /tmp/zoup-pdfinfo.txt
           sha256sum /tmp/zoup.pdf | tee /tmp/zoup.sha256
 
       - name: Parse and chunk ZOUP base snapshot
@@ -104,7 +105,7 @@ jobs:
             "instrument_key": "mk:zoup",
             "instrument_title": "Закон за општата управна постапка",
             "version_id": "official-gazette-base-124-2015",
-            "source_url": "https://ldbis.pravda.gov.mk/PdfFiles/2u50g5fib0a2nvznwkhwcvpl.pdf",
+            "source_url": "https://portal.mdt.gov.mk/post-body-files/legislativa-mod-file-yzNe.pdf",
             "source_sha256": "$SHA",
             "source_issue_number": "124/2015",
             "source_issue_date": "2015-07-23",
