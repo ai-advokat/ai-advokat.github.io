@@ -1,0 +1,87 @@
+name: Deploy AI Advokat staging
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - slvesnik-public-corpus-collector-29sep2026
+    paths:
+      - "src/**"
+      - "index.html"
+      - "wrangler.staging.jsonc"
+      - ".github/workflows/deploy-ai-advokat-staging.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Static syntax checks
+        run: |
+          node --check src/index.js
+          npm run verify
+
+      - name: Verify staging-only bindings
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.staging.jsonc","utf8"));
+          if(c.name!=="ai-advokat-staging") throw new Error("Unexpected Worker name");
+          const d=c.d1_databases?.[0];
+          if(!d || d.binding!=="DB" || d.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") {
+            throw new Error("Unexpected staging D1");
+          }
+          if(c.ai?.binding!=="AI") throw new Error("Missing Workers AI binding");
+          const raw=fs.readFileSync("wrangler.staging.jsonc","utf8");
+          if(raw.includes("12ece285-74bb-4f27-a025-2dbd1be6c59a")) throw new Error("Production D1 id present");
+          console.log("Staging-only bindings: PASS");
+          NODE
+
+      - name: Deploy staging Worker
+        run: npx wrangler deploy --config wrangler.staging.jsonc
+
+      - name: Smoke test staging API
+        shell: bash
+        run: |
+          BASE="https://ai-advokat-staging.aiadvokat16.workers.dev"
+          for i in 1 2 3 4 5; do
+            if curl --fail --silent --show-error "$BASE/api/health" -o /tmp/health.json; then break; fi
+            sleep 3
+          done
+          cat /tmp/health.json
+
+          curl --fail --silent --show-error             "$BASE/api/articles?instrument=mk:zro&article=1"             -o /tmp/article.json
+          cat /tmp/article.json
+          grep -q '"articleNumber": "1"' /tmp/article.json
+
+          curl --fail --silent --show-error             -X POST "$BASE/api/assistant"             -H "content-type: application/json"             -d '{"q":"Објасни го член 1 од Законот за работните односи.","instrument":"mk:zro"}'             -o /tmp/assistant.json
+          cat /tmp/assistant.json
+          grep -q '"ok": true' /tmp/assistant.json
+          grep -q '"articleNumber": "1"' /tmp/assistant.json
+
+      - name: Upload staging smoke evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-staging-smoke
+          retention-days: 14
+          path: |
+            /tmp/health.json
+            /tmp/article.json
+            /tmp/assistant.json
