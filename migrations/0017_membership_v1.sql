@@ -61,6 +61,24 @@ CREATE TABLE IF NOT EXISTS membership_usage_monthly (
   PRIMARY KEY (subject_key, period_ym)
 );
 
+CREATE TABLE IF NOT EXISTS membership_requests (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  display_name TEXT,
+  organization_name TEXT,
+  request_kind TEXT NOT NULL CHECK (request_kind IN ('trial','subscription')),
+  requested_plan TEXT NOT NULL CHECK (requested_plan IN ('trial_pro','start','pro','office')),
+  billing_cycle TEXT NOT NULL CHECK (billing_cycle IN ('trial','monthly','annual')),
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','approved','rejected','cancelled')),
+  notes TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  reviewed_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_membership_requests_status
+ON membership_requests(status, created_at);
+
 CREATE TABLE IF NOT EXISTS membership_payments (
   id TEXT PRIMARY KEY,
   account_id TEXT NOT NULL,
