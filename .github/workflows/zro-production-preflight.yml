@@ -1,0 +1,90 @@
+name: ZRO production preflight
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - slvesnik-public-corpus-collector-29sep2026
+    paths:
+      - ".github/workflows/zro-production-preflight.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify exact production target
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") {
+            throw new Error("Unexpected production target");
+          }
+          const preview=c.previews?.d1_databases?.[0];
+          if(preview?.database_id===d.database_id) throw new Error("Production/staging collision");
+          console.log("PRODUCTION TARGET VERIFIED");
+          NODE
+
+      - name: Read-only pending migration inventory
+        run: |
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/pending.txt
+
+      - name: Read-only schema ledger
+        shell: bash
+        run: |
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT version,description FROM schema_migrations ORDER BY CAST(version AS INTEGER);"             | tee /tmp/schema.txt
+
+      - name: Read-only corpus table inventory
+        shell: bash
+        run: |
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('legal_instruments','legal_article_versions','legal_amendment_events','legal_article_version_candidates','corpus_ingest_runs') ORDER BY name;"             | tee /tmp/tables.txt
+
+      - name: Read-only ZRO state if schema exists
+        shell: bash
+        run: |
+          if grep -q "legal_instruments" /tmp/tables.txt; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc               --command "SELECT id,canonical_key,title,current_status,human_review_status FROM legal_instruments WHERE title='Закон за работните односи' OR canonical_key='mk:zro';"               | tee /tmp/zro.txt
+          else
+            echo "legal_instruments absent" | tee /tmp/zro.txt
+          fi
+
+          if grep -q "legal_article_versions" /tmp/tables.txt; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc               --command "SELECT COUNT(*) AS zro_articles FROM legal_article_versions WHERE instrument_id IN (SELECT id FROM legal_instruments WHERE title='Закон за работните односи' OR canonical_key='mk:zro');"               | tee /tmp/articles.txt
+          else
+            echo "legal_article_versions absent" | tee /tmp/articles.txt
+          fi
+
+      - name: Assert no staging target in commands
+        run: |
+          ! grep -R "eb560e98-9fc0-408e-9c81-9b823ffde44d" /tmp/pending.txt /tmp/schema.txt /tmp/tables.txt /tmp/zro.txt /tmp/articles.txt
+          echo "No staging D1 target observed: PASS"
+
+      - name: Upload preflight evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: zro-production-preflight
+          retention-days: 14
+          path: |
+            /tmp/pending.txt
+            /tmp/schema.txt
+            /tmp/tables.txt
+            /tmp/zro.txt
+            /tmp/articles.txt

@@ -1,0 +1,46 @@
+name: AI Advokat membership safety
+
+on:
+  pull_request:
+    paths:
+      - "membership.html"
+      - "membership/**"
+      - "migrations/0017_membership_v1.sql"
+      - "src/index.js"
+      - "scripts/membership-key-hash.mjs"
+      - ".github/workflows/membership-safety.yml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  membership-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check Worker syntax
+        run: node --check src/index.js
+      - name: Check membership key tool syntax
+        run: node --check scripts/membership-key-hash.mjs
+      - name: Membership structural assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f membership.html
+          test -f membership/README.md
+          test -f migrations/0017_membership_v1.sql
+          grep -q 'monthlyPriceMkd:199' src/index.js
+          grep -q 'monthlyPriceMkd:399' src/index.js
+          grep -q 'monthlyPriceMkd:999' src/index.js
+          grep -q 'cardPayments: "locked_until_provider_selected"' src/index.js
+          grep -q 'membership_requests' migrations/0017_membership_v1.sql
+          grep -q 'membership_access_keys' migrations/0017_membership_v1.sql
+          grep -q 'membership_usage_monthly' migrations/0017_membership_v1.sql
+          grep -q 'key_hash TEXT NOT NULL UNIQUE' migrations/0017_membership_v1.sql
+          ! grep -R -E 'AIADV-[A-Za-z0-9_-]{24,}' membership.html membership src migrations .github package.json
+          echo "Membership safety checks: PASS"

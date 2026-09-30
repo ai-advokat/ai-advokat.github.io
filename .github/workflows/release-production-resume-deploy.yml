@@ -1,0 +1,116 @@
+name: AI Advokat release production resume deploy
+
+on:
+  push:
+    branches:
+      - release-zro-membership-app-30sep2026
+    paths:
+      - ".github/workflows/release-production-resume-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-release-production-resume-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify release and exact production target
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --check src/index.js
+          npm run verify
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker name");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") {
+            throw new Error("Unexpected production D1 target");
+          }
+          console.log("EXACT PRODUCTION TARGET: PASS");
+          NODE
+
+      - name: Guard completed production schema and ZRO corpus
+        shell: bash
+        run: |
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/pending.txt
+          grep -q "No migrations to apply" /tmp/pending.txt
+
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT id,canonical_key,title,current_status,human_review_status FROM legal_instruments WHERE canonical_key='mk:zro'; SELECT COUNT(*) AS article_count, SUM(CASE WHEN status='historical' THEN 1 ELSE 0 END) AS historical_count, SUM(CASE WHEN status='current_consolidated' THEN 1 ELSE 0 END) AS current_count, SUM(CASE WHEN human_review_status='pending' THEN 1 ELSE 0 END) AS pending_review_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro'); SELECT name FROM sqlite_master WHERE type='table' AND name IN ('membership_accounts','membership_entitlements','membership_access_keys','membership_usage_monthly','membership_requests','membership_payments') ORDER BY name;"             | tee /tmp/state.txt
+
+          grep -q '"canonical_key": "mk:zro"' /tmp/state.txt
+          grep -q '"article_count": 298' /tmp/state.txt
+          grep -q '"historical_count": 298' /tmp/state.txt
+          grep -q '"current_count": 0' /tmp/state.txt
+          grep -q '"pending_review_count": 298' /tmp/state.txt
+          for t in membership_accounts membership_entitlements membership_access_keys membership_usage_monthly membership_requests membership_payments; do
+            grep -q "\"name\": \"$t\"" /tmp/state.txt
+          done
+          echo "PRODUCTION ZRO + MEMBERSHIP STATE: PASS"
+
+      - name: Deploy production Worker and static app assets
+        run: npx wrangler deploy --config wrangler.jsonc
+
+      - name: Live production smoke tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/health" | tee /tmp/live-health.json
+          grep -q '"ok": true' /tmp/live-health.json
+
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/articles?instrument=mk%3Azro&limit=1" | tee /tmp/live-articles.json
+          grep -q '"canonicalKey": "mk:zro"' /tmp/live-articles.json
+          grep -q '"total": 298' /tmp/live-articles.json
+          grep -q '"articleNumber": "1"' /tmp/live-articles.json
+
+          curl --fail --retry 6 --retry-delay 3             -H 'content-type: application/json'             -d '{"q":"Што предвидува член 1?","instrument":"mk:zro"}'             "$BASE/api/assistant" | tee /tmp/live-assistant.json
+          grep -q '"ok": true' /tmp/live-assistant.json
+          grep -q '"articleNumber": "1"' /tmp/live-assistant.json
+          grep -q '"legalStatusWarning"' /tmp/live-assistant.json
+
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/membership/plans" | tee /tmp/live-membership.json
+          grep -q '"monthlyPriceMkd": 199' /tmp/live-membership.json
+          grep -q '"monthlyPriceMkd": 399' /tmp/live-membership.json
+          grep -q '"monthlyPriceMkd": 999' /tmp/live-membership.json
+
+          curl --fail --retry 6 --retry-delay 3 "$BASE/manifest.webmanifest" | tee /tmp/live-manifest.json
+          grep -q '"name": "AI Advokat"' /tmp/live-manifest.json
+
+          echo "LIVE PRODUCTION WORKER: PASS"
+
+      - name: Upload resume-deploy evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-release-production-resume-deploy
+          retention-days: 30
+          path: |
+            /tmp/pending.txt
+            /tmp/state.txt
+            /tmp/live-health.json
+            /tmp/live-articles.json
+            /tmp/live-assistant.json
+            /tmp/live-membership.json
+            /tmp/live-manifest.json

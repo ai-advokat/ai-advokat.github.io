@@ -1,4 +1,4 @@
-const VERSION = "1.3.3";
+const VERSION = "1.4.0";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -81,11 +81,177 @@ const ORCID = Object.freeze({
   name: "Zoran Stojankich"
 });
 
+const MEMBERSHIP_PLANS = Object.freeze({
+  free: { code:"free", name:"FREE", monthlyPriceMkd:0, annualPriceMkd:0, monthlyQuota:10, seats:1, trialDays:0 },
+  start: { code:"start", name:"START", monthlyPriceMkd:199, annualPriceMkd:1990, monthlyQuota:100, seats:1, trialDays:0 },
+  pro: { code:"pro", name:"PRO", monthlyPriceMkd:399, annualPriceMkd:3990, monthlyQuota:500, seats:1, trialDays:7 },
+  office: { code:"office", name:"OFFICE", monthlyPriceMkd:999, annualPriceMkd:9990, monthlyQuota:2000, seats:5, trialDays:0 }
+});
+
+function publicMembershipPlans() {
+  return Object.values(MEMBERSHIP_PLANS).map(p=>({
+    code:p.code,
+    name:p.name,
+    monthlyPriceMkd:p.monthlyPriceMkd,
+    annualPriceMkd:p.annualPriceMkd,
+    monthlyQuota:p.monthlyQuota,
+    seats:p.seats,
+    trialDays:p.trialDays
+  }));
+}
+
+function validEmail(value) {
+  const email=cleanQuery(value,254).toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
+
+async function sha256Hex(value) {
+  const bytes=new TextEncoder().encode(String(value));
+  const digest=await crypto.subtle.digest("SHA-256",bytes);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function membershipKeyFromRequest(request) {
+  const auth=request.headers.get("Authorization") || "";
+  if(auth.startsWith("Bearer ")) return cleanQuery(auth.slice(7),200);
+  return cleanQuery(request.headers.get("X-Membership-Key"),200);
+}
+
+async function resolveMembership(request, env) {
+  const key=membershipKeyFromRequest(request);
+  if(!key || !env.DB) return null;
+
+  const keyHash=await sha256Hex(key);
+  const row=await env.DB.prepare(
+    `SELECT k.account_id, k.status AS key_status, k.expires_at AS key_expires_at,
+            e.plan_code, e.status AS entitlement_status, e.monthly_quota, e.seat_limit,
+            e.expires_at AS entitlement_expires_at, a.status AS account_status
+       FROM membership_access_keys k
+       JOIN membership_accounts a ON a.id=k.account_id
+       JOIN membership_entitlements e ON e.account_id=a.id
+      WHERE k.key_hash=?
+        AND k.status='active'
+        AND a.status='active'
+        AND e.status IN ('trial','active')
+        AND (k.expires_at IS NULL OR datetime(k.expires_at) > datetime('now'))
+        AND (e.expires_at IS NULL OR datetime(e.expires_at) > datetime('now'))
+      ORDER BY CASE e.status WHEN 'active' THEN 0 ELSE 1 END, e.updated_at DESC
+      LIMIT 1`
+  ).bind(keyHash).first();
+
+  if(!row) return null;
+
+  const period=new Date().toISOString().slice(0,7);
+  const subjectKey=`account:${row.account_id}`;
+  const usage=await env.DB.prepare(
+    "SELECT assistant_requests FROM membership_usage_monthly WHERE subject_key=? AND period_ym=?"
+  ).bind(subjectKey,period).first();
+
+  return {
+    accountId:row.account_id,
+    planCode:row.plan_code,
+    status:row.entitlement_status,
+    monthlyQuota:Number(row.monthly_quota || 0),
+    seats:Number(row.seat_limit || 1),
+    used:Number(usage?.assistant_requests || 0),
+    remaining:Math.max(0,Number(row.monthly_quota || 0)-Number(usage?.assistant_requests || 0)),
+    subjectKey,
+    period
+  };
+}
+
+async function consumeMembershipQuota(env, membership) {
+  if(!membership) return;
+  await env.DB.prepare(
+    `INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests,last_request_at,updated_at)
+     VALUES (?,?,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+     ON CONFLICT(subject_key,period_ym) DO UPDATE SET
+       assistant_requests=assistant_requests+1,
+       last_request_at=CURRENT_TIMESTAMP,
+       updated_at=CURRENT_TIMESTAMP`
+  ).bind(membership.subjectKey,membership.period).run();
+}
+
+async function handleMembershipPlans(request) {
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+  return json(request,{
+    ok:true,
+    currency:"MKD",
+    plans:publicMembershipPlans(),
+    principles:{
+      lawsAndOfficialSourcesRemainFree:true,
+      paidLayer:"AI analysis, higher quotas and professional workflow features",
+      humanReview:"Separate professional service; not included as unlimited legal advice.",
+      cardPayments:"locked_until_provider_selected"
+    }
+  });
+}
+
+async function handleMembershipRequest(request, env) {
+  if(request.method!=="POST") return methodNotAllowed(request);
+  if(!env.DB) return json(request,{ok:false,error:"database_not_ready"},503);
+
+  let payload={};
+  try{ payload=await request.json(); }
+  catch{ return json(request,{ok:false,error:"invalid_json"},400); }
+
+  const email=validEmail(payload.email);
+  const displayName=cleanQuery(payload.displayName,120);
+  const organizationName=cleanQuery(payload.organizationName,160);
+  const requestKind=payload.requestKind==="trial" ? "trial" : "subscription";
+  const requestedPlan=requestKind==="trial" ? "trial_pro" : cleanQuery(payload.planCode,24);
+  const billingCycle=requestKind==="trial" ? "trial" : (payload.billingCycle==="annual" ? "annual" : "monthly");
+
+  if(!email) return json(request,{ok:false,error:"invalid_email"},400);
+  if(requestKind==="subscription" && !["start","pro","office"].includes(requestedPlan)){
+    return json(request,{ok:false,error:"invalid_plan"},400);
+  }
+
+  const id=crypto.randomUUID();
+  await env.DB.prepare(
+    `INSERT INTO membership_requests
+      (id,email,display_name,organization_name,request_kind,requested_plan,billing_cycle,status)
+     VALUES (?,?,?,?,?,?,?,'pending')`
+  ).bind(id,email,displayName || null,organizationName || null,requestKind,requestedPlan,billingCycle).run();
+
+  return json(request,{
+    ok:true,
+    requestId:id,
+    status:"pending_human_gate",
+    message:requestKind==="trial"
+      ? "Барањето за 7-дневен PRO trial е примено. Ќе се активира по проверка; не е создадена автоматска наплата."
+      : "Барањето за членство е примено. Упатството за банкарска уплата/активација се потврдува човечки пред активирање.",
+    payment:{
+      mode:"manual_bank_transfer",
+      activated:false,
+      cardStorage:false
+    }
+  },202);
+}
+
+async function handleMembershipStatus(request, env) {
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+  const membership=await resolveMembership(request,env);
+  if(!membership) return json(request,{ok:false,error:"membership_not_found_or_inactive"},401);
+  return json(request,{
+    ok:true,
+    membership:{
+      planCode:membership.planCode,
+      status:membership.status,
+      monthlyQuota:membership.monthlyQuota,
+      used:membership.used,
+      remaining:membership.remaining,
+      seats:membership.seats
+    }
+  });
+}
+
+
 function corsHeaders(request) {
   const origin = request.headers.get("Origin");
   const headers = {
-    "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Membership-Key",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin"
   };
@@ -501,6 +667,396 @@ async function handleSearch(request, env, url) {
   });
 }
 
+
+function articlePublicStatus(row) {
+  const status=String(row?.status || "");
+  if (status==="current_consolidated" && row?.human_review_status==="approved") return "current_verified";
+  if (status==="verified" && ["approved","reviewed"].includes(String(row?.human_review_status || ""))) return "verified";
+  if (status==="needs_version_review") return "version_review";
+  if (status==="historical") return "historical";
+  return "pending";
+}
+
+function normalizeArticle(row) {
+  return {
+    id: row.id,
+    canonicalId: row.canonical_id,
+    articleNumber: row.article_number,
+    articleNumberNormalized: row.article_number_normalized,
+    heading: row.article_heading || null,
+    text: row.article_text,
+    status: row.status,
+    publicStatus: articlePublicStatus(row),
+    humanReviewStatus: row.human_review_status,
+    sourceIssueNumber: row.source_issue_number || null,
+    sourceIssueDate: row.source_issue_date || null,
+    sourceUrl: row.source_url,
+    sourceSha256: row.source_sha256,
+    validFrom: row.valid_from || null,
+    validTo: row.valid_to || null
+  };
+}
+
+function articleTokens(value) {
+  return [...new Set(normalizeText(value)
+    .replace(/[^\p{L}\p{N}-]+/gu," ")
+    .split(/\s+/u)
+    .filter(t=>t.length>=3)
+    .slice(0,24))];
+}
+
+async function getInstrument(env, canonicalKey) {
+  return env.DB.prepare(
+    `SELECT li.id,li.canonical_key,li.title,li.short_title,li.instrument_type,
+            li.jurisdiction,li.gazette_reference,li.current_status,
+            li.human_review_status,li.notes,s.url AS canonical_source_url
+       FROM legal_instruments li
+       LEFT JOIN sources s ON s.id=li.canonical_source_id
+      WHERE li.canonical_key=?
+      LIMIT 1`
+  ).bind(canonicalKey).first();
+}
+
+async function loadInstrumentArticles(env, instrumentId) {
+  const result=await env.DB.prepare(
+    `SELECT id,canonical_id,article_number,article_number_normalized,article_heading,
+            article_text,status,human_review_status,source_issue_number,source_issue_date,
+            source_url,source_sha256,valid_from,valid_to
+       FROM legal_article_versions
+      WHERE instrument_id=?
+      ORDER BY id ASC
+      LIMIT 500`
+  ).bind(instrumentId).all();
+  return result.results ?? [];
+}
+
+function scoreArticle(row, q) {
+  const target=normalizeText(q);
+  const text=normalizeText(`${row.article_heading || ""} ${row.article_text || ""}`);
+  const num=normalizeText(row.article_number_normalized || row.article_number || "");
+  let score=0;
+
+  const articleMatch=target.match(/(?:член|article)\s*([0-9]+(?:[-–—][\p{L}]+)?)/u);
+  if(articleMatch && normalizeText(articleMatch[1])===num) score+=1000;
+  if(target===num) score+=1000;
+  if(text.includes(target) && target.length>=4) score+=120;
+
+  for(const token of articleTokens(target)){
+    if(num===token) score+=200;
+    const heading=normalizeText(row.article_heading || "");
+    if(heading.includes(token)) score+=24;
+    let pos=0;
+    let count=0;
+    while((pos=text.indexOf(token,pos))>=0 && count<8){
+      score+=6;
+      count++;
+      pos+=token.length;
+    }
+  }
+
+  if(row.status==="current_consolidated" && row.human_review_status==="approved") score+=25;
+  else if(row.status==="verified") score+=15;
+  else if(row.status==="needs_version_review") score-=4;
+
+  return score;
+}
+
+async function findRelevantArticles(env, instrumentKey, q, limit=6) {
+  const instrument=await getInstrument(env,instrumentKey);
+  if(!instrument) return {instrument:null,articles:[]};
+
+  const rows=await loadInstrumentArticles(env,instrument.id);
+  let ranked=rows
+    .map(row=>({row,score:scoreArticle(row,q)}))
+    .filter(x=>x.score>0)
+    .sort((a,b)=>b.score-a.score || a.row.id-b.row.id);
+
+  const exactMatch=q.match(/(?:член|article)\s*([0-9]+(?:[-–—][\p{L}]+)?)/iu);
+  if(exactMatch){
+    const exactNumber=normalizeText(exactMatch[1]).replace(/[–—]/g,"-");
+    const exact=ranked.filter(x=>normalizeText(x.row.article_number_normalized).replace(/[–—]/g,"-")===exactNumber);
+    if(exact.length) ranked=exact;
+  }
+
+  ranked=ranked
+    .slice(0,limit)
+    .map(x=>({...normalizeArticle(x.row),relevanceScore:x.score}));
+
+  return {instrument,articles:ranked};
+}
+
+async function handleArticles(request, env, url) {
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+
+  const instrumentKey=cleanQuery(url.searchParams.get("instrument") || "mk:zro",64);
+  const article=cleanQuery(url.searchParams.get("article"),24);
+  const q=cleanQuery(url.searchParams.get("q"),200);
+  const limit=Math.min(Math.max(Number.parseInt(url.searchParams.get("limit") || "40",10) || 40,1),100);
+  const offset=Math.max(Number.parseInt(url.searchParams.get("offset") || "0",10) || 0,0);
+
+  const instrument=await getInstrument(env,instrumentKey);
+  if(!instrument) return json(request,{ok:false,error:"instrument_not_found"},404);
+
+  let rows=await loadInstrumentArticles(env,instrument.id);
+  const total=rows.length;
+
+  if(article){
+    const needle=normalizeText(article).replace(/^член\s*/u,"");
+    rows=rows.filter(row=>normalizeText(row.article_number_normalized)===needle || normalizeText(row.article_number)===needle);
+  }else if(q){
+    rows=rows
+      .map(row=>({row,score:scoreArticle(row,q)}))
+      .filter(x=>x.score>0)
+      .sort((a,b)=>b.score-a.score || a.row.id-b.row.id)
+      .map(x=>x.row);
+  }
+
+  const filteredCount=rows.length;
+  const page=rows.slice(offset,offset+limit).map(normalizeArticle);
+  const statusCounts={};
+  for(const row of await loadInstrumentArticles(env,instrument.id)){
+    statusCounts[row.status]=(statusCounts[row.status] || 0)+1;
+  }
+
+  return json(request,{
+    ok:true,
+    mode:"public_article_corpus",
+    instrument:{
+      canonicalKey:instrument.canonical_key,
+      title:instrument.title,
+      shortTitle:instrument.short_title,
+      jurisdiction:instrument.jurisdiction,
+      gazetteReference:instrument.gazette_reference,
+      currentStatus:instrument.current_status,
+      humanReviewStatus:instrument.human_review_status,
+      canonicalSourceUrl:instrument.canonical_source_url,
+      notes:instrument.notes
+    },
+    total,
+    filteredCount,
+    offset,
+    limit,
+    statusCounts,
+    articles:page,
+    humanGate:"Only approved/current-consolidated provisions may be presented as verified current law."
+  });
+}
+
+function assistantStatusWarning(articles) {
+  if(!articles.length) return null;
+  const review=articles.some(a=>a.status==="needs_version_review");
+  const historical=articles.some(a=>a.status==="historical");
+  if(review) return "Еден или повеќе релевантни членови се под VERSION REVIEW. Одговорот не смее да се третира како потврдена важечка верзија.";
+  if(historical) return "Релевантните членови се од историскиот официјален пречистен snapshot преку 111/2023 и сè уште немаат Human Gate одобрување како тековен текст.";
+  return null;
+}
+
+
+function extractModelText(value, depth=0) {
+  if(depth>4 || value===null || value===undefined) return null;
+  if(typeof value==="string"){
+    const trimmed=value.trim();
+    return trimmed || null;
+  }
+  if(Array.isArray(value)){
+    for(const item of value){
+      if(typeof item==="string" && item.trim()) return item.trim();
+      if(item && typeof item==="object"){
+        for(const key of ["text","content","output_text","response"]){
+          const found=extractModelText(item[key],depth+1);
+          if(found) return found;
+        }
+      }
+    }
+    return null;
+  }
+  if(typeof value!=="object") return null;
+
+  const directKeys=["output_text","text","response","content","answer","result"];
+  for(const key of directKeys){
+    const found=extractModelText(value[key],depth+1);
+    if(found) return found;
+  }
+
+  const choiceCollections=[
+    value.choices,
+    value.output,
+    value.data,
+    value.result?.choices,
+    value.response?.choices
+  ];
+  for(const collection of choiceCollections){
+    if(!Array.isArray(collection)) continue;
+    for(const choice of collection){
+      const found=extractModelText(
+        choice?.message?.content
+        ?? choice?.delta?.content
+        ?? choice?.content
+        ?? choice?.text,
+        depth+1
+      );
+      if(found) return found;
+    }
+  }
+  return null;
+}
+
+function modelShapeSummary(value) {
+  if(value===null) return {type:"null"};
+  if(Array.isArray(value)) return {type:"array",length:value.length};
+  if(typeof value!=="object") return {type:typeof value};
+  return {
+    type:"object",
+    keys:Object.keys(value).slice(0,20),
+    choiceCount:Array.isArray(value.choices) ? value.choices.length : null,
+    resultKeys:value.result && typeof value.result==="object" ? Object.keys(value.result).slice(0,12) : null,
+    responseType:typeof value.response
+  };
+}
+
+function fallbackAssistantAnswer(q, instrument, articles) {
+  if(!articles.length){
+    return "Во достапниот корпус не најдов доволно релевантен член за ова прашање. Потребна е дополнителна проверка на официјалните извори.";
+  }
+  const intro=`За прашањето „${q}“, најрелевантни во достапниот корпус се ${articles.map(a=>`член ${a.articleNumber}`).join(", ")} од ${instrument.title}.`;
+  const body=articles.slice(0,3).map(a=>{
+    const excerpt=String(a.text || "").replace(/\s+/g," ").slice(0,700);
+    return `\n\n[Член ${a.articleNumber}] ${excerpt}${a.text.length>700 ? "…" : ""}`;
+  }).join("");
+  return intro+body;
+}
+
+async function handleAssistant(request, env, url) {
+  if(!["GET","HEAD","POST"].includes(request.method)) return methodNotAllowed(request);
+
+  let payload={};
+  if(request.method==="POST"){
+    try{ payload=await request.json(); }
+    catch{ return json(request,{ok:false,error:"invalid_json"},400); }
+  }
+
+  const q=cleanQuery(request.method==="POST" ? payload.q : url.searchParams.get("q"),600);
+  const instrumentKey=cleanQuery((request.method==="POST" ? payload.instrument : url.searchParams.get("instrument")) || "mk:zro",64);
+
+  if(q.length<3) return json(request,{ok:false,error:"query_too_short",message:"Use at least three characters."},400);
+
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+
+  const membership=await resolveMembership(request,env);
+  if(membership && membership.remaining<=0){
+    return json(request,{
+      ok:false,
+      error:"membership_quota_exhausted",
+      membership:{planCode:membership.planCode,monthlyQuota:membership.monthlyQuota,used:membership.used,remaining:0}
+    },429);
+  }
+
+  const {instrument,articles}=await findRelevantArticles(env,instrumentKey,q,6);
+  if(!instrument) return json(request,{ok:false,error:"instrument_not_found"},404);
+
+  const warning=assistantStatusWarning(articles);
+  let answer=null;
+  let answerMode="retrieval_only";
+  let aiError=null;
+
+  if(env.AI && articles.length){
+    const context=articles.map(a=>
+      `[Член ${a.articleNumber}]\nSTATUS: ${a.status}; HUMAN_REVIEW: ${a.humanReviewStatus}\nSOURCE: ${a.sourceUrl}\nTEXT:\n${String(a.text).slice(0,4500)}`
+    ).join("\n\n---\n\n").slice(0,18000);
+
+    const prompt=`Ти си AI Advokat, source-first правен истражувач за македонското право.
+Одговори на македонски, јасно и професионално.
+КОРИСТИ ИСКЛУЧИВО ги дадените законски членови. Не дополнувај факти или право од меморија.
+Секое правно тврдење поткрепи го со цитат во форма [Член N].
+Ако изворот е historical или needs_version_review, кажи јасно дека не е Human-Gate потврден како тековен текст.
+Ако изворите не се доволни, кажи што недостига наместо да претпоставуваш.
+Не давај измислени проценти за исход.
+Структура: Краток одговор; Правна основа; Примена/објаснување; Ограничувања и што треба да се провери.
+
+ПРАШАЊЕ:
+${q}
+
+ИНСТРУМЕНТ:
+${instrument.title}
+
+ИЗВОРНИ ЧЛЕНОВИ:
+${context}`;
+
+    try{
+      const generated=await env.AI.run("@cf/zai-org/glm-4.7-flash",{
+        messages:[
+          {
+            role:"system",
+            content:"Ти си AI Advokat, source-first правен истражувач, а не самостоен лиценциран адвокат. Користи исклучиво доставени правни извори, цитирај ги членовите и јасно означи ако текстот не е Human-Gate потврден како тековен. Не претставувај AI излез како конечен индивидуален правен совет. За рокови, кривична постапка, притвор, правни лекови, застареност и други високоризични прашања нагласи дека е потребна човечка професионална проверка. Ако корисникот внесе непотребни доверливи или чувствителни лични податоци, не ги повторувај повеќе од неопходното."
+          },
+          {role:"user",content:prompt}
+        ],
+        max_tokens:1400,
+        temperature:0.1
+      });
+      answer=extractModelText(generated);
+      if(answer) answerMode="workers_ai_source_backed";
+      else aiError="empty_model_response:"+JSON.stringify(modelShapeSummary(generated));
+    }catch(error){
+      aiError=String(error?.message || error || "workers_ai_error").slice(0,240);
+      console.error("workers_ai_generation_failed",aiError);
+      answer=null;
+    }
+  }
+
+  if(!answer) answer=fallbackAssistantAnswer(q,instrument,articles);
+
+  if(membership) await consumeMembershipQuota(env,membership);
+
+  return json(request,{
+    ok:true,
+    mode:answerMode,
+    question:q,
+    instrument:{
+      canonicalKey:instrument.canonical_key,
+      title:instrument.title,
+      currentStatus:instrument.current_status,
+      humanReviewStatus:instrument.human_review_status
+    },
+    answer,
+    legalStatusWarning:warning,
+    citations:articles.map(a=>({
+      articleNumber:a.articleNumber,
+      heading:a.heading,
+      status:a.status,
+      humanReviewStatus:a.humanReviewStatus,
+      sourceUrl:a.sourceUrl,
+      sourceIssueNumber:a.sourceIssueNumber,
+      sourceIssueDate:a.sourceIssueDate,
+      excerpt:String(a.text || "").replace(/\s+/g," ").slice(0,420)
+    })),
+    humanGate:"AI output is research assistance, not autonomous legal representation. Verify the controlling version and primary source and obtain human professional review before high-stakes reliance.",
+    legalNotice:"/legal-notice.html",
+    privacyPolicy:"/privacy-policy.html",
+    aiUsePolicy:"/ai-use-policy.html",
+    membership:membership ? {
+      planCode:membership.planCode,
+      monthlyQuota:membership.monthlyQuota,
+      used:membership.used+1,
+      remaining:Math.max(0,membership.remaining-1)
+    } : {
+      planCode:"free_preview",
+      note:"Public preview remains available while secure account activation is being introduced."
+    },
+    ...(new URL(request.url).hostname.startsWith("ai-advokat-staging.")
+      ? {aiDiagnostic:{binding:Boolean(env.AI),error:aiError}}
+      : {})
+  });
+}
+
 function handleWebSources(request) {
   if (request.method !== "GET" && request.method !== "HEAD") return methodNotAllowed(request);
 
@@ -549,13 +1105,18 @@ async function handleCapabilities(request, env) {
       officialSourceDirectory: "live_read_only",
       zenodo: "metadata_only",
       orcid: "live_read_only",
-      retrievalAssistant: "governed_preview",
+      membershipPlans: "live_read_only",
+      membershipRequests: database.reachable && database.schemaReady ? "manual_human_gate" : "blocked",
+      membershipEntitlements: database.reachable && database.schemaReady ? "key_based_v1" : "blocked",
+      cardPayments: "locked_until_provider_selected",
+      articleCorpus: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
+      retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
       citationAudit: "governed_preview",
       versionCompare: "governed_preview",
       documentUpload: "locked",
       caseWorkspace: "locked",
       vectorize: "not_bound",
-      workersAI: "not_bound"
+      workersAI: env.AI ? "bound" : "not_bound"
     }
   });
 }
@@ -626,17 +1187,14 @@ export default {
     }
 
     if (url.pathname === "/api/search") return handleSearch(request, env, url);
+    if (url.pathname === "/api/articles") return handleArticles(request, env, url);
+    if (url.pathname === "/api/assistant") return handleAssistant(request, env, url);
     if (url.pathname === "/api/web-sources") return handleWebSources(request);
     if (url.pathname === "/api/zenodo") return handleZenodo(request);
     if (url.pathname === "/api/orcid") return handleOrcid(request);
-
-    if (url.pathname === "/api/assistant") {
-      return governedPreview(
-        request,
-        "retrieval_assistant",
-        "The assistant remains locked until public search passes staging and production validation."
-      );
-    }
+    if (url.pathname === "/api/membership/plans") return handleMembershipPlans(request);
+    if (url.pathname === "/api/membership/request") return handleMembershipRequest(request, env);
+    if (url.pathname === "/api/membership/status") return handleMembershipStatus(request, env);
 
     if (url.pathname === "/api/citation-audit") {
       return governedPreview(

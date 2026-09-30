@@ -1,0 +1,170 @@
+name: ZRO 2025 amendment audit
+
+on:
+  push:
+    branches:
+      - slvesnik-public-corpus-collector-29sep2026
+    paths:
+      - ".github/workflows/zro-2025-amendment-audit.yml"
+      - "scripts/extract-zro-amendment-act.mjs"
+      - "scripts/parse-mk-amendment-text.mjs"
+      - "scripts/test-mk-amendment-parser.mjs"
+      - "ingest/mk/real-source-fixtures/zro-2025-amendments.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - issue: "39/2025"
+            slug: "39-2025"
+            url: "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-Jv8C.pdf"
+            pages: 2
+            amendment_title: "Закон за изменување и дополнување на Законот за работните односи"
+            publication_date: "2025-02-20"
+            effective_date: "2025-02-20"
+            application_date: "2025-02-20"
+            expected_articles: 4
+            entry_number: "911"
+          - issue: "74/2025"
+            slug: "74-2025"
+            url: "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-3i9b.pdf"
+            pages: 4
+            amendment_title: "Закон за изменување на Законот за работните односи"
+            publication_date: "2025-04-08"
+            effective_date: "2025-04-16"
+            application_date: "2025-04-16"
+            expected_articles: 26
+            entry_number: ""
+          - issue: "124/2025"
+            slug: "124-2025"
+            url: "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-lKlS.pdf"
+            pages: 1
+            amendment_title: "Закон за изменување на Законот за работните односи"
+            publication_date: "2025-06-19"
+            effective_date: "2025-06-19"
+            application_date: "2025-06-19"
+            expected_articles: 2
+            entry_number: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install PDF tools
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+
+      - name: Parser tests
+        run: node --test scripts/test-mk-amendment-parser.mjs
+
+      - name: Download exact official amendment PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --retry-delay 2 "${{ matrix.url }}" -o "/tmp/${{ matrix.slug }}.pdf"
+          test -s "/tmp/${{ matrix.slug }}.pdf"
+          pdfinfo "/tmp/${{ matrix.slug }}.pdf" > "/tmp/${{ matrix.slug }}-pdfinfo.txt"
+          grep -Eq "^Pages:[[:space:]]+${{ matrix.pages }}$" "/tmp/${{ matrix.slug }}-pdfinfo.txt"
+          sha256sum "/tmp/${{ matrix.slug }}.pdf" | tee "/tmp/${{ matrix.slug }}.sha256"
+
+      - name: Extract target ZRO amendment act
+        shell: bash
+        run: |
+          if [ "${{ matrix.slug }}" = "39-2025" ]; then
+            pdftotext -raw "/tmp/${{ matrix.slug }}.pdf" "/tmp/${{ matrix.slug }}-raw.txt"
+          else
+            pdftotext -layout "/tmp/${{ matrix.slug }}.pdf" "/tmp/${{ matrix.slug }}-raw.txt"
+          fi
+          node scripts/extract-zro-amendment-act.mjs             "/tmp/${{ matrix.slug }}-raw.txt"             "/tmp/${{ matrix.slug }}-act.txt"             "/tmp/${{ matrix.slug }}-segment.json"             "${{ matrix.entry_number }}"
+          cat "/tmp/${{ matrix.slug }}-segment.json"
+
+      - name: Build amendment metadata
+        shell: bash
+        run: |
+          SHA="$(cut -d' ' -f1 "/tmp/${{ matrix.slug }}.sha256")"
+          cat > "/tmp/${{ matrix.slug }}-meta.json" <<EOF
+          {
+            "instrument_key": "mk:zro",
+            "instrument_title": "Закон за работните односи",
+            "amendment_title": "${{ matrix.amendment_title }}",
+            "source_url": "${{ matrix.url }}",
+            "source_sha256": "$SHA",
+            "source_issue_number": "${{ matrix.issue }}",
+            "source_issue_date": "${{ matrix.publication_date }}",
+            "effective_date": "${{ matrix.effective_date }}",
+            "application_date": "${{ matrix.application_date }}"
+          }
+          EOF
+
+      - name: Parse amendment events
+        shell: bash
+        run: |
+          node scripts/parse-mk-amendment-text.mjs             "/tmp/${{ matrix.slug }}-act.txt"             "/tmp/${{ matrix.slug }}-meta.json"             "/tmp/${{ matrix.slug }}-events.ndjson"
+          head -n 1 "/tmp/${{ matrix.slug }}-events.ndjson" | tee "/tmp/${{ matrix.slug }}-manifest.json"
+
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          slug=os.environ["SLUG"]
+          expected=int(os.environ["EXPECTED"])
+          segment=json.loads(Path(f"/tmp/{slug}-segment.json").read_text())
+          manifest=json.loads(Path(f"/tmp/{slug}-manifest.json").read_text())
+          assert segment["amendment_article_count"] == expected, (segment, expected)
+          assert manifest["amendment_article_count"] == expected, (manifest, expected)
+          assert manifest["instrument_key"] == "mk:zro", manifest
+          print("AMENDMENT AUDIT PARSE: PASS")
+          print(json.dumps(manifest, ensure_ascii=False, indent=2))
+          PY
+        env:
+          SLUG: ${{ matrix.slug }}
+          EXPECTED: ${{ matrix.expected_articles }}
+
+      - name: Summarize targets
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          slug=os.environ["SLUG"]
+          rows=[json.loads(x) for x in Path(f"/tmp/{slug}-events.ndjson").read_text().splitlines() if x.strip()]
+          events=[x for x in rows if x.get("type")=="amendment_event"]
+          affected=sorted({e["target_article_number"] for e in events if e.get("target_article_number")})
+          inserted=sorted({a for e in events for a in e.get("inserted_article_numbers",[])})
+          unresolved=[e["amendment_article_number"] for e in events if not e.get("target_article_number")]
+          summary={
+            "issue": os.environ["ISSUE"],
+            "event_count": len(events),
+            "affected_articles": affected,
+            "inserted_articles": inserted,
+            "unresolved_amendment_articles": unresolved
+          }
+          Path(f"/tmp/{slug}-summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2)+"\n")
+          print(json.dumps(summary,ensure_ascii=False,indent=2))
+          PY
+        env:
+          SLUG: ${{ matrix.slug }}
+          ISSUE: ${{ matrix.issue }}
+
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zro-amendment-${{ matrix.slug }}-audit
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            /tmp/${{ matrix.slug }}.sha256
+            /tmp/${{ matrix.slug }}-pdfinfo.txt
+            /tmp/${{ matrix.slug }}-segment.json
+            /tmp/${{ matrix.slug }}-manifest.json
+            /tmp/${{ matrix.slug }}-summary.json
+            /tmp/${{ matrix.slug }}-events.ndjson

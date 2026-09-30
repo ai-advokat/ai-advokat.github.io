@@ -1,0 +1,285 @@
+name: ZRO Human Gate review packets
+
+on:
+  push:
+    branches:
+      - slvesnik-public-corpus-collector-29sep2026
+    paths:
+      - ".github/workflows/zro-human-gate-review-packets.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-review-packets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Fail closed if Cloudflare secrets are missing
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Verify staging read target only
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const prod=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const preview=JSON.parse(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"));
+          const p=prod.d1_databases?.[0];
+          const s=preview.d1_databases?.[0];
+          if(!p || p.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production identity");
+          if(!s || s.binding!=="PREVIEW_DB" || s.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") throw new Error("Unexpected staging identity");
+          if(p.database_id===s.database_id) throw new Error("Staging/production identity collision");
+          console.log("STAGING READ GUARD: PASS");
+          NODE
+
+      - name: Export affected historical articles
+        shell: bash
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "
+            SELECT
+              canonical_id,
+              article_number,
+              article_number_normalized,
+              article_heading,
+              article_text,
+              status,
+              source_issue_number,
+              source_issue_date,
+              source_url,
+              source_sha256,
+              human_review_status
+            FROM legal_article_versions
+            WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
+              AND status='needs_version_review'
+            ORDER BY article_number_normalized;
+          " > /tmp/zro-affected-articles-wrangler.json
+
+      - name: Export audited amendment events
+        shell: bash
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "
+            SELECT
+              event_key,
+              amendment_title,
+              amendment_article_number,
+              target_article_number,
+              inserted_article_numbers_json,
+              event_type,
+              event_text,
+              source_issue_number,
+              source_issue_date,
+              source_url,
+              source_sha256,
+              effective_date,
+              application_date,
+              human_review_status
+            FROM legal_amendment_events
+            WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
+              AND source_issue_number IN ('39/2025','74/2025','124/2025')
+            ORDER BY source_issue_date, CAST(amendment_article_number AS INTEGER);
+          " > /tmp/zro-amendment-events-wrangler.json
+
+      - name: Build Human Gate packets
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          def wrangler_rows(path):
+              payload=json.loads(Path(path).read_text())
+              if not payload:
+                  return []
+              return payload[0].get("results",[])
+
+          articles=wrangler_rows("/tmp/zro-affected-articles-wrangler.json")
+          events=wrangler_rows("/tmp/zro-amendment-events-wrangler.json")
+
+          assert len(articles)==26, len(articles)
+          assert len(events)==32, len(events)
+
+          by_article={a["article_number_normalized"]:a for a in articles}
+          packets={}
+
+          for key,a in by_article.items():
+              packets[key]={
+                  "packet_type":"existing_article_review",
+                  "instrument_key":"mk:zro",
+                  "article_number":a["article_number"],
+                  "article_number_normalized":key,
+                  "base_snapshot":{
+                      "canonical_id":a["canonical_id"],
+                      "article_heading":a["article_heading"],
+                      "article_text":a["article_text"],
+                      "source_issue_number":a["source_issue_number"],
+                      "source_issue_date":a["source_issue_date"],
+                      "source_url":a["source_url"],
+                      "source_sha256":a["source_sha256"],
+                      "status":a["status"]
+                  },
+                  "amendment_events":[],
+                  "candidate_reconstruction":None,
+                  "candidate_effective_from":None,
+                  "review":{
+                      "human_gate_status":"pending",
+                      "decision":None,
+                      "reviewer":None,
+                      "reviewed_at":None,
+                      "notes":None
+                  }
+              }
+
+          unresolved=[]
+
+          for e in events:
+              target=e.get("target_article_number")
+              try:
+                  inserted=json.loads(e.get("inserted_article_numbers_json") or "[]")
+              except json.JSONDecodeError:
+                  inserted=[]
+
+              event={
+                  "event_key":e["event_key"],
+                  "amendment_title":e["amendment_title"],
+                  "amendment_article_number":e["amendment_article_number"],
+                  "target_article_number":target,
+                  "inserted_article_numbers":inserted,
+                  "event_type":e["event_type"],
+                  "event_text":e["event_text"],
+                  "source_issue_number":e["source_issue_number"],
+                  "source_issue_date":e["source_issue_date"],
+                  "source_url":e["source_url"],
+                  "source_sha256":e["source_sha256"],
+                  "effective_date":e["effective_date"],
+                  "application_date":e["application_date"],
+                  "human_review_status":e["human_review_status"]
+              }
+
+              if target:
+                  if target not in packets:
+                      packets[target]={
+                          "packet_type":"target_without_historical_record",
+                          "instrument_key":"mk:zro",
+                          "article_number":target,
+                          "article_number_normalized":target,
+                          "base_snapshot":None,
+                          "amendment_events":[],
+                          "candidate_reconstruction":None,
+                          "candidate_effective_from":None,
+                          "review":{
+                              "human_gate_status":"pending",
+                              "decision":None,
+                              "reviewer":None,
+                              "reviewed_at":None,
+                              "notes":None
+                          }
+                      }
+                  packets[target]["amendment_events"].append(event)
+
+              for inserted_article in inserted:
+                  if inserted_article not in packets:
+                      packets[inserted_article]={
+                          "packet_type":"inserted_article_review",
+                          "instrument_key":"mk:zro",
+                          "article_number":inserted_article,
+                          "article_number_normalized":inserted_article,
+                          "base_snapshot":None,
+                          "amendment_events":[],
+                          "candidate_reconstruction":None,
+                          "candidate_effective_from":None,
+                          "review":{
+                              "human_gate_status":"pending",
+                              "decision":None,
+                              "reviewer":None,
+                              "reviewed_at":None,
+                              "notes":"New article inserted by amendment; construct from source event."
+                          }
+                      }
+                  if not any(x["event_key"]==event["event_key"] for x in packets[inserted_article]["amendment_events"]):
+                      packets[inserted_article]["amendment_events"].append(event)
+
+              if not target:
+                  unresolved.append(event)
+
+          packet_list=sorted(
+              packets.values(),
+              key=lambda p: p["article_number_normalized"]
+          )
+
+          assert len(packet_list)==27, len(packet_list)
+          assert "104-а" in packets, packets.keys()
+          assert packets["104-а"]["packet_type"]=="inserted_article_review"
+          assert len(packets["212"]["amendment_events"])==2, packets["212"]["amendment_events"]
+          assert len(unresolved)==4, unresolved
+
+          out={
+              "instrument_key":"mk:zro",
+              "source_snapshot":"official-consolidated-snapshot-2023-111",
+              "review_packet_count":len(packet_list),
+              "existing_article_packet_count":sum(1 for p in packet_list if p["base_snapshot"] is not None),
+              "inserted_article_packet_count":sum(1 for p in packet_list if p["packet_type"]=="inserted_article_review"),
+              "unresolved_amendment_provision_count":len(unresolved),
+              "promotion_allowed":False,
+              "packets":packet_list
+          }
+
+          Path("/tmp/zro-human-gate-packets.json").write_text(
+              json.dumps(out,ensure_ascii=False,indent=2)+"\n"
+          )
+          Path("/tmp/zro-unresolved-amendment-provisions.json").write_text(
+              json.dumps({
+                  "instrument_key":"mk:zro",
+                  "human_gate_status":"pending",
+                  "provisions":unresolved
+              },ensure_ascii=False,indent=2)+"\n"
+          )
+
+          summary={
+              "review_packets":len(packet_list),
+              "existing":out["existing_article_packet_count"],
+              "inserted":out["inserted_article_packet_count"],
+              "unresolved_provisions":len(unresolved),
+              "article_212_events":len(packets["212"]["amendment_events"]),
+              "article_104a_exists":"104-а" in packets,
+              "promotion_allowed":False
+          }
+          print(json.dumps(summary,ensure_ascii=False,indent=2))
+          PY
+
+      - name: Assert no current-law promotion
+        shell: bash
+        run: |
+          CURRENT_COUNT="$(npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "SELECT COUNT(*) AS c FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND status='current_consolidated';" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);console.log(j[0].results[0].c)})')"
+          test "$CURRENT_COUNT" = "0"
+          echo "HUMAN GATE PACKET BUILD: PASS"
+          echo "review_packets=27"
+          echo "current_consolidated=0"
+
+      - name: Upload Human Gate packet artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zro-human-gate-review-packets
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            /tmp/zro-human-gate-packets.json
+            /tmp/zro-unresolved-amendment-provisions.json

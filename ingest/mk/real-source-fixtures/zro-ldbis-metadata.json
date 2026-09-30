@@ -1,0 +1,80 @@
+{
+  "fixture_type": "official_metadata_only",
+  "jurisdiction": "MK",
+  "instrument_title": "Закон за работните односи",
+  "short_title": "ЗРО",
+  "instrument_type": "law",
+  "canonical_base_source": {
+    "provider": "LDBIS",
+    "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=10431",
+    "version": "Изворен текст",
+    "gazette_issue": "62/2005",
+    "publication_date": "2005-07-28",
+    "effective_date": "2005-08-05",
+    "application_date": "2005-08-05",
+    "active_signal": true
+  },
+  "latest_verified_amendment": {
+    "provider": "LDBIS",
+    "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=70756",
+    "title": "Закон за изменување на Законот за работните односи",
+    "gazette_issue": "124/2025",
+    "publication_date": "2025-06-19",
+    "effective_date": "2025-06-19",
+    "application_date": "2025-06-19",
+    "active_signal": true
+  },
+  "recent_amendment_issues": [
+    "111/2023",
+    "39/2025",
+    "74/2025",
+    "124/2025"
+  ],
+  "consolidated_candidate": {
+    "provider": "LDBIS",
+    "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=37111",
+    "version": "Пречистена верзија",
+    "gazette_issue": "74/2015",
+    "publication_date": "2015-05-08",
+    "effective_date": "2015-05-16",
+    "application_date": "2015-05-16",
+    "note": "Historical consolidated signal only; not sufficient by itself for current 2026 text."
+  },
+  "current_text_status": "VERSION_REVIEW_REQUIRED",
+  "article_text_ingested": false,
+  "rule": "Do not mark current_consolidated until all later amendments and Constitutional Court effects are resolved article-by-article.",
+  "verified_on": "2026-09-30",
+  "ldbis_chain_verified_from_latest_record": {
+    "latest_record_url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=70756",
+    "latest_record_version": "Текст измена/дополна",
+    "latest_record_gazette_issue": "124/2025",
+    "latest_record_publication_date": "2025-06-19",
+    "latest_record_effective_date": "2025-06-19",
+    "latest_record_application_date": "2025-06-19",
+    "active_signal": true,
+    "linked_recent_amendments": [
+      {
+        "gazette_issue": "111/2023",
+        "publication_date": "2023-05-30",
+        "kind": "amend_and_supplement"
+      },
+      {
+        "gazette_issue": "39/2025",
+        "publication_date": "2025-02-20",
+        "kind": "amend_and_supplement"
+      },
+      {
+        "gazette_issue": "74/2025",
+        "publication_date": "2025-04-08",
+        "kind": "amend"
+      },
+      {
+        "gazette_issue": "124/2025",
+        "publication_date": "2025-06-19",
+        "kind": "amend"
+      }
+    ],
+    "constitutional_court_effects_present": true,
+    "note": "The latest LDBIS record links the base act, amendment chain and multiple Constitutional Court effects. These must be resolved article-by-article before marking the 2026 text current."
+  }
+}

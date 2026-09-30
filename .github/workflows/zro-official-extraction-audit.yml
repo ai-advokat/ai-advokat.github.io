@@ -1,0 +1,120 @@
+name: ZRO official extraction audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - slvesnik-public-corpus-collector-29sep2026
+    paths:
+      - "scripts/clean-official-legal-pdf-text.mjs"
+      - "scripts/parse-mk-legal-text.mjs"
+      - "scripts/legal-ndjson-to-sql.mjs"
+      - ".github/workflows/zro-official-extraction-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit-zro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install PDF text extractor
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+
+      - name: Download official 2023 consolidated ZRO snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf"
+          curl --fail --location --retry 3 --retry-delay 2 \
+            --connect-timeout 20 --max-time 120 \
+            --user-agent "AI-Advokat-Official-Source-Audit/1.0" \
+            "$URL" -o /tmp/zro-2023.pdf
+          test -s /tmp/zro-2023.pdf
+          head -c 5 /tmp/zro-2023.pdf | grep -q "%PDF-"
+          file /tmp/zro-2023.pdf
+          pdfinfo /tmp/zro-2023.pdf | tee /tmp/zro-2023-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+108$" /tmp/zro-2023-pdfinfo.txt
+          sha256sum /tmp/zro-2023.pdf | tee /tmp/zro-2023.sha256
+
+      - name: Extract raw PDF text
+        run: pdftotext -layout /tmp/zro-2023.pdf /tmp/zro-2023-raw.txt
+
+      - name: Clean and audit extraction
+        run: |
+          node scripts/clean-official-legal-pdf-text.mjs             /tmp/zro-2023-raw.txt             /tmp/zro-2023-clean.txt             /tmp/zro-2023-extraction-report.json
+          cat /tmp/zro-2023-extraction-report.json
+
+      - name: Build parser metadata
+        shell: bash
+        run: |
+          SHA="$(cut -d' ' -f1 /tmp/zro-2023.sha256)"
+          cat > /tmp/zro-2023-meta.json <<EOF
+          {
+            "instrument_key": "mk:zro",
+            "instrument_title": "Закон за работните односи",
+            "version_id": "official-consolidated-snapshot-2023-111",
+            "source_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf",
+            "source_sha256": "$SHA",
+            "source_issue_number": "through-111/2023",
+            "source_issue_date": "2023-05-30",
+            "status": "historical",
+            "extraction_method": "pdftotext_layout_plus_cleaner",
+            "human_review_status": "pending"
+          }
+          EOF
+          cat /tmp/zro-2023-meta.json
+
+      - name: Parse article-by-article
+        run: |
+          node scripts/parse-mk-legal-text.mjs             /tmp/zro-2023-clean.txt             /tmp/zro-2023-meta.json             /tmp/zro-2023.ndjson
+
+      - name: Audit parser manifest
+        shell: bash
+        run: |
+          head -n 1 /tmp/zro-2023.ndjson | tee /tmp/zro-2023-manifest.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          extraction = json.loads(Path("/tmp/zro-2023-extraction-report.json").read_text())
+          manifest = json.loads(Path("/tmp/zro-2023-manifest.json").read_text())
+
+          assert extraction["appendix_truncated"] is True, extraction
+          assert extraction["duplicate_article_headers"] == [], extraction
+          assert manifest["warning_count"] == 0, manifest
+          assert manifest["article_count"] >= 250, manifest
+          assert manifest["article_count"] <= 350, manifest
+
+          print("ZRO official extraction/parser audit: PASS")
+          print("Article count:", manifest["article_count"])
+          PY
+
+      - name: Generate staging SQL only
+        run: |
+          node scripts/legal-ndjson-to-sql.mjs             /tmp/zro-2023.ndjson             /tmp/zro-2023-staging.sql
+          test -s /tmp/zro-2023-staging.sql
+
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zro-2023-official-extraction-audit
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            /tmp/zro-2023.sha256
+            /tmp/zro-2023-pdfinfo.txt
+            /tmp/zro-2023-extraction-report.json
+            /tmp/zro-2023-manifest.json
+            /tmp/zro-2023.ndjson
+            /tmp/zro-2023-staging.sql

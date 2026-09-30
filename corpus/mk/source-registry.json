@@ -1,0 +1,26 @@
+{
+  "version": "2026-09-29",
+  "jurisdiction": "MK",
+  "retrieval_order": [
+    "Official Gazette / public official text",
+    "LDBIS active or consolidated official metadata/text",
+    "Constitutional and Supreme Court official decisions",
+    "Ministry of Justice official regulatory pages",
+    "ENER for proposals and consultation history only",
+    "verified public-information portals",
+    "secondary commercial/informational platforms for discovery only"
+  ],
+  "sources": [
+    {"name":"Службен весник","url":"https://slvesnik.com.mk/","authority":"primary_official","mode":"public_only","article_chunking":true},
+    {"name":"LDBIS","url":"https://ldbis.pravda.gov.mk/Prebaruvanje.aspx","authority":"primary_official","mode":"public_metadata_and_text","article_chunking":true},
+    {"name":"LDBIS consolidated","url":"https://ldbis.pravda.gov.mk/Revidirani.aspx","authority":"primary_official","mode":"public_metadata_and_text","article_chunking":true},
+    {"name":"ENER","url":"https://ener.gov.mk/","authority":"proposal_registry","mode":"public_metadata","article_chunking":false},
+    {"name":"Министерство за правда","url":"https://www.pravda.gov.mk/mk-MK/regulativa","authority":"official_supporting","mode":"public_metadata_and_documents","article_chunking":true},
+    {"name":"Уставен суд","url":"https://ustavensud.mk/","authority":"court_official","mode":"public_metadata_and_decisions"},
+    {"name":"Врховен суд","url":"https://www.vrhoven.sud.mk/","authority":"court_official","mode":"public_metadata_and_decisions"},
+    {"name":"Правна помош","url":"https://pravnapomos.mk/","authority":"public_information","mode":"public_information"},
+    {"name":"deJure","url":"https://dejure.mk/","authority":"secondary_reference","mode":"link_only"},
+    {"name":"Factum","url":"https://factum.mk/","authority":"secondary_reference","mode":"link_only"},
+    {"name":"SamoDaPrasham","url":"https://samodaprasham.mk/","authority":"secondary_reference","mode":"no_crawl"}
+  ]
+}

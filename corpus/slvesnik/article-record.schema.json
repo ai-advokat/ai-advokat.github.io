@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI Advokat Legal Article Record",
+  "type": "object",
+  "required": [
+    "canonical_id",
+    "instrument_key",
+    "instrument_title",
+    "version_id",
+    "article_number",
+    "article_text",
+    "source"
+  ],
+  "properties": {
+    "canonical_id": {
+      "type": "string"
+    },
+    "instrument_key": {
+      "type": "string"
+    },
+    "instrument_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "instrument_title": {
+      "type": "string"
+    },
+    "version_id": {
+      "type": "string"
+    },
+    "instrument_version_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "article_number": {
+      "type": "string"
+    },
+    "article_number_normalized": {
+      "type": "string"
+    },
+    "article_heading": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "article_text": {
+      "type": "string"
+    },
+    "paragraphs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "paragraph_number",
+          "paragraph_order",
+          "text",
+          "items"
+        ],
+        "properties": {
+          "paragraph_number": {
+            "type": "string"
+          },
+          "paragraph_order": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array"
+          }
+        }
+      }
+    },
+    "status": {
+      "enum": [
+        "source_text",
+        "verified",
+        "needs_version_review",
+        "current_consolidated",
+        "historical",
+        "repealed"
+      ]
+    },
+    "valid_from": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "valid_to": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "url",
+        "sha256"
+      ],
+      "properties": {
+        "issue_number": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "issue_date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": "string"
+        },
+        "page_start": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "page_end": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        }
+      }
+    },
+    "extraction_method": {
+      "type": "string"
+    },
+    "extraction_confidence": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "human_review_status": {
+      "type": "string"
+    }
+  }
+}

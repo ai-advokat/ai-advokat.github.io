@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="mk">
+<head>
+  <script defer src="/assets/analytics.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="AI Advokat членство — достапни правни AI планови со Source-first и Human Gate.">
+  <meta name="theme-color" content="#0c2038">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https://www.google-analytics.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev https://www.google-analytics.com https://*.google-analytics.com; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self' mailto:; upgrade-insecure-requests">
+  <title>Членство · AI Advokat</title>
+  <style>
+    :root{--bg:#f4f6f8;--surface:#fff;--ink:#132033;--muted:#607080;--line:#d9e0e7;--navy:#0c2038;--gold:#b9985b;--ok:#1f6c4d;--radius:18px}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    a{color:inherit;text-decoration:none}.wrap{width:min(1120px,calc(100% - 28px));margin:auto}
+    header{background:var(--navy);color:#fff;padding:24px 0}.nav{display:flex;justify-content:space-between;gap:16px;align-items:center}.brand{font-weight:850}.nav a{color:#fff}
+    main{padding:54px 0}.hero{max-width:840px;margin-bottom:28px}.hero h1{font-size:clamp(2.2rem,5vw,4rem);line-height:1.03;margin:0 0 16px}.hero p{color:var(--muted);font-size:1.08rem}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:0 10px 28px rgba(12,32,56,.06)}
+    .card.featured{border:2px solid var(--gold)}.tag{font-size:.73rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#775e31}.price{font-size:2.1rem;font-weight:850;margin:12px 0 2px}.muted{color:var(--muted)}
+    ul{padding-left:20px}.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:11px;border:1px solid var(--line);padding:11px 15px;font-weight:750;cursor:pointer}.primary{background:var(--navy);color:#fff;border-color:var(--navy)}.light{background:#fff}
+    .panel{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px}.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form .wide{grid-column:1/-1}
+    input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit}.notice{border-left:4px solid var(--gold);background:#f5efe3;padding:14px 16px;border-radius:0 12px 12px 0;margin-top:16px}.ok{color:var(--ok);font-weight:700}
+    footer{padding:26px 0 42px;color:var(--muted);font-size:.9rem}.footlinks{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+    @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.grid,.form{grid-template-columns:1fr}.form .wide{grid-column:auto}}
+  </style>
+</head>
+<body>
+<header><div class="wrap nav"><a class="brand" href="/">AI Advokat</a><nav><a href="/">Почетна</a></nav></div></header>
+<main class="wrap">
+  <section class="hero">
+    <span class="tag">AI ADVOCAT MEMBERSHIP</span>
+    <h1>Правното AI истражување да биде достапно, не луксуз.</h1>
+    <p>Законите, официјалните извори и основното пребарување остануваат бесплатно достапни. Членството ја плаќа интелигенцијата над корпусот: повеќе AI прашања, напредни анализи и професионални workflow функции.</p>
+  </section>
+
+  <section class="grid" aria-label="Планови">
+    <article class="card">
+      <div class="tag">FREE</div><div class="price">0 ден.</div><div class="muted">засекогаш</div>
+      <ul><li>Закони и прописи</li><li>Официјални извори</li><li>Основно пребарување</li><li>10 AI прашања/месечно како целен FREE лимит</li></ul>
+      <a class="btn light" href="/">Користи бесплатно</a>
+    </article>
+    <article class="card">
+      <div class="tag">START</div><div class="price">199 ден.</div><div class="muted">месечно · 1.990 ден. годишно</div>
+      <ul><li>100 AI прашања/месечно</li><li>Source-first одговори</li><li>Цитирани членови</li><li>1 корисник</li></ul>
+      <button class="btn primary choose" data-plan="start">Избери START</button>
+    </article>
+    <article class="card featured">
+      <div class="tag">PRO · 7 ДЕНА TRIAL</div><div class="price">399 ден.</div><div class="muted">месечно · 3.990 ден. годишно</div>
+      <ul><li>500 AI прашања/месечно</li><li>Подетални правни анализи</li><li>Верзии, хронологии и case-law workflow</li><li>7-дневен trial по проверка</li></ul>
+      <button class="btn primary choose" data-plan="pro">Избери PRO</button>
+    </article>
+    <article class="card">
+      <div class="tag">OFFICE</div><div class="price">999 ден.</div><div class="muted">месечно · 9.990 ден. годишно</div>
+      <ul><li>2.000 AI прашања/месечно</li><li>до 5 места</li><li>адвокатска канцеларија/тим</li><li>напредни workflow функции</li></ul>
+      <button class="btn primary choose" data-plan="office">Избери OFFICE</button>
+    </article>
+  </section>
+
+  <section class="panel" id="request">
+    <h2>Барање за членство</h2>
+    <p class="muted">Во v1 нема складирање картички. Барањето оди во Human Gate; за платен план следи потврда и упатство за банкарска уплата. Картички ќе се вклучат само преку избран сигурен payment provider.</p>
+    <form id="membershipForm" class="form">
+      <label>Име и презиме<input name="displayName" maxlength="120" autocomplete="name"></label>
+      <label>Е-пошта *<input name="email" type="email" maxlength="254" required autocomplete="email"></label>
+      <label>Организација<input name="organizationName" maxlength="160" autocomplete="organization"></label>
+      <label>План<select name="planCode" id="planCode"><option value="start">START · 199 ден.</option><option value="pro">PRO · 399 ден.</option><option value="office">OFFICE · 999 ден.</option></select></label>
+      <label>Период<select name="billingCycle"><option value="monthly">Месечно</option><option value="annual">Годишно</option></select></label>
+      <div style="align-self:end"><button class="btn primary" type="submit">Испрати барање</button></div>
+      <div class="wide"><button class="btn light" type="button" id="trialBtn">Побарај 7-дневен PRO trial</button></div>
+    </form>
+    <div id="requestResult" class="notice" hidden aria-live="polite"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Веќе имате membership key?</h2>
+    <p class="muted">Клучот е приватен. На оваа страница се користи само за проверка на активниот пакет и не се зачувува трајно од формата.</p>
+    <form id="statusForm" class="form">
+      <label class="wide">Membership key<input id="membershipKey" type="password" autocomplete="off" placeholder="AIADV-..."></label>
+      <div><button class="btn primary" type="submit">Провери членство</button></div>
+    </form>
+    <div id="statusResult" class="notice" hidden aria-live="polite"></div>
+  </section>
+
+  <section class="notice">
+    <strong>Human Review е одделна професионална услуга.</strong> Членството не значи неограничен индивидуален правен совет и не создава само по себе однос адвокат–клиент. За конкретен предмет, рок или застапување важи посебен професионален ангажман.
+  </section>
+</main>
+<footer class="wrap">
+  <div>© 2026 AI Advokat</div>
+  <div class="footlinks"><a href="/legal-notice.html">Правно известување</a><a href="/privacy-policy.html">Приватност</a><a href="/ai-use-policy.html">AI и Human Gate</a><a href="/">Почетна</a></div>
+</footer>
+<script>
+  const $=s=>document.querySelector(s);
+  document.querySelectorAll(".choose").forEach(btn=>btn.addEventListener("click",()=>{
+    $("#planCode").value=btn.dataset.plan;
+    $("#request").scrollIntoView({behavior:"smooth",block:"start"});
+  }));
+
+  async function submitMembership(payload){
+    const box=$("#requestResult"); box.hidden=false; box.textContent="Се испраќа...";
+    try{
+      const r=await fetch("/api/membership/request",{method:"POST",headers:{"content-type":"application/json","accept":"application/json"},body:JSON.stringify(payload)});
+      const d=await r.json();
+      if(!r.ok || !d.ok) throw new Error(d.error || "request_failed");
+      box.innerHTML='<span class="ok">Барањето е примено.</span><br>'+d.message+'<br><small>Референца: '+d.requestId+'</small>';
+    }catch(e){ box.textContent="Барањето не можеше да се запише во оваа околина. Обидете се повторно подоцна."; }
+  }
+
+  $("#membershipForm").addEventListener("submit",e=>{
+    e.preventDefault(); const fd=new FormData(e.currentTarget);
+    submitMembership({requestKind:"subscription",displayName:fd.get("displayName"),email:fd.get("email"),organizationName:fd.get("organizationName"),planCode:fd.get("planCode"),billingCycle:fd.get("billingCycle")});
+  });
+
+  $("#trialBtn").addEventListener("click",()=>{
+    const fd=new FormData($("#membershipForm"));
+    if(!fd.get("email")){ $("#membershipForm").reportValidity(); return; }
+    submitMembership({requestKind:"trial",displayName:fd.get("displayName"),email:fd.get("email"),organizationName:fd.get("organizationName")});
+  });
+
+  $("#statusForm").addEventListener("submit",async e=>{
+    e.preventDefault(); const key=$("#membershipKey").value.trim(); const box=$("#statusResult");
+    box.hidden=false; box.textContent="Се проверува...";
+    try{
+      const r=await fetch("/api/membership/status",{headers:{"accept":"application/json","authorization":"Bearer "+key}});
+      const d=await r.json();
+      if(!r.ok || !d.ok) throw new Error(d.error || "inactive");
+      const m=d.membership;
+      box.innerHTML='<span class="ok">Активно членство: '+m.planCode.toUpperCase()+'</span><br>Квота: '+m.used+' / '+m.monthlyQuota+' · преостануваат '+m.remaining+' AI прашања.';
+    }catch(e){ box.textContent="Клучот не е активен или не може да се провери."; }
+  });
+</script>
+</body></html>
