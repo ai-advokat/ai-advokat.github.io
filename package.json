@@ -16,7 +16,8 @@
     "test:amendment-parser": "node --test scripts/test-mk-amendment-parser.mjs",
     "check:amendment-parser": "node --check scripts/parse-mk-amendment-text.mjs",
     "check:amendment-importer": "node --check scripts/amendment-ndjson-to-sql.mjs && node --check scripts/extract-zro-amendment-act.mjs",
-    "membership:key-hash": "node scripts/membership-key-hash.mjs"
+    "membership:key-hash": "node scripts/membership-key-hash.mjs",
+    "test:relevance": "node --test scripts/test-score-article.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
