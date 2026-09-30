@@ -9,6 +9,7 @@ on:
       - "src/**"
       - "index.html"
       - "wrangler.staging.jsonc"
+      - "scripts/verify.mjs"
       - ".github/workflows/deploy-ai-advokat-staging.yml"
 
 permissions:
