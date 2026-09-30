@@ -1,4 +1,5 @@
 name: AI Advokat release production activation
+# retry-after-legacy-schema-compat
 
 on:
   push:
