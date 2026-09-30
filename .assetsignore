@@ -13,6 +13,7 @@ mobile/**
 test/**
 
 wrangler.jsonc
+wrangler.staging.jsonc
 wrangler.preview-migrations.jsonc
 package.json
 package-lock.json
