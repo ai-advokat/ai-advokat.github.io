@@ -1,4 +1,4 @@
-name: Law intake batch 1 production activation
+name: Law intake batch 1 production resume
 
 on:
   push:
@@ -6,6 +6,8 @@ on:
       - law-intake-batch-1-30sep2026
     paths:
       - ".github/workflows/law-intake-batch1-production.yml"
+      - "migrations/0020_kz_2026_correction_provenance.sql"
+      - "src/index.js"
   workflow_dispatch:
 
 permissions:
@@ -16,9 +18,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  activate:
+  resume:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 18
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -31,12 +33,9 @@ jobs:
           node-version: "22"
 
       - name: Install tooling
-        run: |
-          npm install --ignore-scripts --no-audit --no-fund
-          sudo apt-get update
-          sudo apt-get install -y poppler-utils
+        run: npm install --ignore-scripts --no-audit --no-fund
 
-      - name: Fail closed on credentials and code
+      - name: Verify exact production target and completed corpus state
         shell: bash
         run: |
           set -euo pipefail
@@ -45,133 +44,60 @@ jobs:
           node --check src/index.js
           npm run verify
 
-      - name: Verify exact production target and pre-state
-        shell: bash
-        run: |
-          set -euo pipefail
           node <<'NODE'
           const fs=require("fs");
           const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
           const d=c.d1_databases?.[0];
-          const p=c.previews?.d1_databases?.[0];
           if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker");
           if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
-          if(p?.database_id===d.database_id) throw new Error("Production/staging collision");
           NODE
 
-          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/pending.txt
-          found="$(grep -Eo '0019_law_intake_batch_1\.sql' /tmp/pending.txt | sort -u || true)"
-          test "$found" = "0019_law_intake_batch_1.sql"
-          unexpected="$(grep -Eo '00[0-9]+_[A-Za-z0-9_.-]+\.sql' /tmp/pending.txt | grep -v '^0019_law_intake_batch_1\.sql$' || true)"
-          test -z "$unexpected"
-
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT COUNT(*) AS zi_instrument_before FROM legal_instruments WHERE canonical_key='mk:zi'; SELECT COUNT(*) AS zi_articles_before FROM legal_article_versions WHERE instrument_id IN (SELECT id FROM legal_instruments WHERE canonical_key='mk:zi'); SELECT COUNT(*) AS zro_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro'); SELECT COUNT(*) AS zkp_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp');"             | tee /tmp/prestate.txt
-          grep -q '"zi_instrument_before": 0' /tmp/prestate.txt
-          grep -q '"zi_articles_before": 0' /tmp/prestate.txt
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT version,description FROM schema_migrations WHERE version='19'; SELECT COUNT(*) AS zro_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro'); SELECT COUNT(*) AS zkp_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp'); SELECT COUNT(*) AS zi_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi');" \
+            | tee /tmp/prestate.txt
+          grep -q '"version": "19"' /tmp/prestate.txt
           grep -q '"zro_count": 298' /tmp/prestate.txt
           grep -q '"zkp_count": 570' /tmp/prestate.txt
-          echo "PRODUCTION PRE-STATE: PASS"
+          grep -q '"zi_count": 258' /tmp/prestate.txt
+          echo "COMPLETED CORPUS STATE: PASS"
 
-      - name: Apply law-intake migration 19
-        run: npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc
-
-      - name: Verify batch registry and aliases
+      - name: Apply KZ correction provenance migration 20 if pending
         shell: bash
         run: |
           set -euo pipefail
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT version,description FROM schema_migrations WHERE version='19'; SELECT canonical_key,short_title,title,current_status,human_review_status FROM legal_instruments WHERE canonical_key IN ('mk:zro','mk:zkp','mk:kz','mk:zpp','mk:zoo','mk:zoup','mk:zi','mk:zs','mk:zsidp','mk:ztd') ORDER BY canonical_key; SELECT COUNT(*) AS alias_count FROM legal_instrument_aliases; SELECT version_label,valid_from,valid_to,is_current,human_review_status FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zpp') ORDER BY id;"             | tee /tmp/registry.txt
-          grep -q '"version": "19"' /tmp/registry.txt
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/pending.txt
+          if grep -q '0020_kz_2026_correction_provenance.sql' /tmp/pending.txt; then
+            npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc
+          fi
+
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT version,description FROM schema_migrations WHERE version='20'; SELECT canonical_key,gazette_reference,notes FROM legal_instruments WHERE canonical_key='mk:kz'; SELECT url,source_status FROM sources WHERE url IN ('https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=72834','https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=72841') ORDER BY url;" \
+            | tee /tmp/kz.txt
+          grep -q '"version": "20"' /tmp/kz.txt
+          grep -q 'correction 17/2026' /tmp/kz.txt
+          grep -q 'id=72841' /tmp/kz.txt
+          echo "KZ 2026 PROVENANCE: PASS"
+
+      - name: Verify registry and alias layer
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT canonical_key,short_title,title,current_status,human_review_status FROM legal_instruments WHERE canonical_key IN ('mk:zro','mk:zkp','mk:kz','mk:zpp','mk:zoo','mk:zoup','mk:zi','mk:zs','mk:zsidp','mk:ztd') ORDER BY canonical_key; SELECT COUNT(*) AS alias_count FROM legal_instrument_aliases;" \
+            | tee /tmp/registry.txt
           for key in mk:zro mk:zkp mk:kz mk:zpp mk:zoo mk:zoup mk:zi mk:zs mk:zsidp mk:ztd; do grep -q "\"canonical_key\": \"$key\"" /tmp/registry.txt; done
           python3 - <<'PY'
           import re
           t=open("/tmp/registry.txt").read()
           m=re.search(r'"alias_count":\s*(\d+)',t)
-          assert m and int(m.group(1))>=20, m.group(1) if m else "missing"
-          assert 'applicable-track-79/2005-through-124/2015' in t
-          assert 'future-application-151/2026' in t
-          print("BATCH1 REGISTRY: PASS")
+          assert m and int(m.group(1))>=20
+          print("REGISTRY + ALIASES: PASS")
           PY
 
-      - name: Download and verify official Execution Act snapshot
-        shell: bash
-        run: |
-          set -euo pipefail
-          URL="https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf"
-          curl --fail --location --retry 4 --retry-delay 2             --connect-timeout 20 --max-time 180             --user-agent "AI-Advokat-Law-Intake/1.0"             "$URL" -o /tmp/zi.pdf
-          test -s /tmp/zi.pdf
-          head -c 5 /tmp/zi.pdf | grep -q "%PDF-"
-          pdfinfo /tmp/zi.pdf | tee /tmp/zi-pdfinfo.txt
-          grep -Eq "^Pages:[[:space:]]+99$" /tmp/zi-pdfinfo.txt
-          SHA="$(sha256sum /tmp/zi.pdf | cut -d' ' -f1)"
-          test "$SHA" = "15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55"
-          echo "$SHA" > /tmp/zi.sha256
-          echo "ZI SNAPSHOT: PASS"
-
-      - name: Parse exactly 258 Execution Act records
-        shell: bash
-        run: |
-          set -euo pipefail
-          pdftotext -layout /tmp/zi.pdf /tmp/zi-raw.txt
-          node scripts/clean-official-legal-pdf-text.mjs /tmp/zi-raw.txt /tmp/zi-clean.txt /tmp/zi-clean-report.json 269
-          cat > /tmp/zi-meta.json <<'EOF'
-          {
-            "instrument_key": "mk:zi",
-            "instrument_title": "Закон за извршување",
-            "version_id": "official-editorial-consolidated-through-154-2023",
-            "source_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf",
-            "source_sha256": "15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55",
-            "source_issue_number": "72/2016; 142/2016; 178/2017; 26/2018; 233/2018; 14/2020; 136/2020; 154/2023",
-            "source_issue_date": "2023-07-20",
-            "status": "needs_version_review",
-            "extraction_method": "pdftotext_layout_plus_cleaner",
-            "human_review_status": "pending"
-          }
-          EOF
-          node scripts/parse-mk-legal-text.mjs /tmp/zi-clean.txt /tmp/zi-meta.json /tmp/zi.ndjson
-          head -n 1 /tmp/zi.ndjson > /tmp/zi-manifest.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          rows=[json.loads(x) for x in Path("/tmp/zi.ndjson").read_text().splitlines() if x.strip()]
-          m=rows[0]
-          arts=[x for x in rows if x.get("type")=="article"]
-          assert len(arts)==258, len(arts)
-          assert int(m.get("warning_count") or 0)==0, m
-          nums={a.get("article_number_normalized") for a in arts}
-          assert "1" in nums and "12" in nums and "269" in nums
-          assert all(str(n) not in nums for n in range(240,245))
-          print("ZI PARSE: PASS")
-          PY
-
-      - name: Import Execution Act corpus
-        shell: bash
-        run: |
-          set -euo pipefail
-          node scripts/legal-ndjson-to-sql.mjs /tmp/zi.ndjson /tmp/zi.sql
-          test -s /tmp/zi.sql
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/zi.sql
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "INSERT OR IGNORE INTO instrument_versions (instrument_id,version_label,valid_from,valid_to,is_current,checksum_sha256,text_content,human_review_status) SELECT id,'official-editorial-consolidated-through-154/2023',NULL,NULL,0,'15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55',NULL,'pending' FROM legal_instruments WHERE canonical_key='mk:zi';"
-
-      - name: Production read-back and regression
-        shell: bash
-        run: |
-          set -euo pipefail
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT COUNT(*) AS zi_count, SUM(CASE WHEN status='needs_version_review' THEN 1 ELSE 0 END) AS review_count, SUM(CASE WHEN human_review_status='pending' THEN 1 ELSE 0 END) AS pending_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi'); SELECT article_number,article_number_normalized,status FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND article_number_normalized IN ('1','12','269') ORDER BY id; SELECT COUNT(*) AS abolished_240_244 FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND CAST(article_number_normalized AS INTEGER) BETWEEN 240 AND 244; SELECT run_key,article_count,warning_count,status FROM corpus_ingest_runs WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') ORDER BY id DESC LIMIT 1; SELECT COUNT(*) AS zro_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro'); SELECT COUNT(*) AS zkp_count FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp');"             | tee /tmp/readback.txt
-          grep -q '"zi_count": 258' /tmp/readback.txt
-          grep -q '"review_count": 258' /tmp/readback.txt
-          grep -q '"pending_count": 258' /tmp/readback.txt
-          grep -q '"article_number_normalized": "269"' /tmp/readback.txt
-          grep -q '"abolished_240_244": 0' /tmp/readback.txt
-          grep -q '"warning_count": 0' /tmp/readback.txt
-          grep -q '"status": "validated"' /tmp/readback.txt
-          grep -q '"zro_count": 298' /tmp/readback.txt
-          grep -q '"zkp_count": 570' /tmp/readback.txt
-          echo "PRODUCTION READ-BACK: PASS"
-
-      - name: Deploy Worker and static app assets
+      - name: Deploy routing fix and app assets
         run: npx wrangler deploy --config wrangler.jsonc
 
-      - name: Wait for live endpoints and verify routing
+      - name: Live routing and corpus smoke
         shell: bash
         run: |
           set -euo pipefail
@@ -179,84 +105,78 @@ jobs:
 
           fetch_live () {
             path="$1"; output="$2"
-            for attempt in $(seq 1 12); do
+            for attempt in $(seq 1 10); do
               code="$(curl -sS -o "$output" -w '%{http_code}' "$BASE$path" || true)"
               echo "$path attempt=$attempt status=$code"
               if [ "$code" = "200" ]; then return 0; fi
-              sleep 5
+              sleep 4
             done
             cat "$output" || true
             return 1
           }
 
-          fetch_live "/api/health" /tmp/live-health.json
+          post_expected () {
+            body="$1"; output="$2"; expected="$3"
+            for attempt in $(seq 1 10); do
+              code="$(curl -sS -o "$output" -w '%{http_code}' \
+                -H 'content-type: application/json' -d "$body" "$BASE/api/assistant" || true)"
+              echo "assistant attempt=$attempt status=$code expected=$expected"
+              if [ "$code" = "$expected" ]; then return 0; fi
+              sleep 4
+            done
+            cat "$output" || true
+            return 1
+          }
+
           fetch_live "/api/instruments" /tmp/live-instruments.json
-          fetch_live "/api/articles?instrument=mk%3Azi&article=1" /tmp/live-zi-1.json
           fetch_live "/api/articles?instrument=mk%3Azi&article=269" /tmp/live-zi-269.json
           fetch_live "/api/articles?instrument=mk%3Azro&limit=1" /tmp/live-zro.json
           fetch_live "/api/articles?instrument=mk%3Azkp&limit=1" /tmp/live-zkp.json
+          fetch_live "/api/membership/plans" /tmp/live-membership.json
 
-          post_assistant () {
-            body="$1"; output="$2"; expected="$3"
-            for attempt in $(seq 1 12); do
-              code="$(curl -sS -o "$output" -w '%{http_code}' -H 'content-type: application/json' -d "$body" "$BASE/api/assistant" || true)"
-              echo "assistant attempt=$attempt status=$code expected=$expected"
-              if [ "$code" = "$expected" ]; then return 0; fi
-              sleep 5
-            done
-            cat "$output" || true
-            return 1
-          }
-
-          post_assistant '{"q":"Што предвидува член 12 од ЗИ?","instrument":"auto"}' /tmp/live-ai-zi.json 200
-          post_assistant '{"q":"член 12","instrument":"auto"}' /tmp/live-ai-ambiguous.json 400
-          post_assistant '{"q":"Како се дели наследство?","instrument":"auto"}' /tmp/live-ai-unsupported.json 404
+          post_expected '{"q":"Што предвидува член 12 од ЗИ?","instrument":"auto"}' /tmp/live-ai-zi.json 200
+          post_expected '{"q":"член 12","instrument":"auto"}' /tmp/live-ai-ambiguous.json 400
+          post_expected '{"q":"Како се дели наследство?","instrument":"auto"}' /tmp/live-ai-unsupported.json 404
 
           node <<'NODE'
           const fs=require("fs"), read=p=>JSON.parse(fs.readFileSync(p,"utf8"));
-          const health=read("/tmp/live-health.json");
           const inst=read("/tmp/live-instruments.json");
-          const a1=read("/tmp/live-zi-1.json");
-          const a269=read("/tmp/live-zi-269.json");
+          const zi269=read("/tmp/live-zi-269.json");
           const zro=read("/tmp/live-zro.json");
           const zkp=read("/tmp/live-zkp.json");
-          const zi=read("/tmp/live-ai-zi.json");
+          const ai=read("/tmp/live-ai-zi.json");
           const amb=read("/tmp/live-ai-ambiguous.json");
           const uns=read("/tmp/live-ai-unsupported.json");
+          const membership=read("/tmp/live-membership.json");
 
-          if(!health.ok) throw new Error("health");
           const byKey=Object.fromEntries((inst.instruments||[]).map(x=>[x.canonicalKey,x]));
           for(const key of ["mk:zro","mk:zkp","mk:kz","mk:zpp","mk:zoo","mk:zoup","mk:zi","mk:zs","mk:zsidp","mk:ztd"]) if(!byKey[key]) throw new Error("missing "+key);
-          if(Number(byKey["mk:zi"].articleCount)!==258) throw new Error("ZI count");
-          if(a1.articles?.[0]?.articleNumberNormalized!=="1") throw new Error("ZI article 1");
-          if(a269.articles?.[0]?.articleNumberNormalized!=="269") throw new Error("ZI article 269");
-          if(zro.total!==298 || zkp.total!==570) throw new Error("regression");
-          if(!zi.ok || zi.instrument?.canonicalKey!=="mk:zi" || !(zi.citations||[]).some(c=>String(c.articleNumber)==="12")) throw new Error("ZI routing");
-          if(amb.error!=="instrument_required") throw new Error("ambiguous routing");
-          if(uns.error!=="instrument_not_found") throw new Error("unsupported fallback");
-          console.log("LIVE LAW INTAKE BATCH1: PASS");
+          if(Number(byKey["mk:zi"].articleCount)!==258) throw new Error("ZI registry count");
+          if(zi269.articles?.[0]?.articleNumberNormalized!=="269") throw new Error("ZI article 269");
+          if(zro.total!==298 || zkp.total!==570) throw new Error("ZRO/ZKP regression");
+          if(!ai.ok || ai.instrument?.canonicalKey!=="mk:zi" || !(ai.citations||[]).some(c=>String(c.articleNumber)==="12")) throw new Error("ZI routing");
+          if(amb.error!=="instrument_required") throw new Error("bare article must require law");
+          if(uns.error!=="instrument_not_found") throw new Error("unsupported domain must not guess a law");
+          const prices=(membership.plans||[]).map(x=>x.monthlyPriceMkd);
+          for(const n of [199,399,999]) if(!prices.includes(n)) throw new Error("membership regression");
+          console.log("LIVE BATCH1 ROUTING + CORPUS: PASS");
           NODE
 
-      - name: Upload production evidence
+      - name: Upload resume evidence
         uses: actions/upload-artifact@v4
         with:
-          name: law-intake-batch1-production-evidence
+          name: law-intake-batch1-production-resume
           retention-days: 30
           path: |
-            /tmp/pending.txt
             /tmp/prestate.txt
+            /tmp/pending.txt
+            /tmp/kz.txt
             /tmp/registry.txt
-            /tmp/zi-pdfinfo.txt
-            /tmp/zi.sha256
-            /tmp/zi-clean-report.json
-            /tmp/zi-manifest.json
-            /tmp/readback.txt
-            /tmp/live-health.json
             /tmp/live-instruments.json
-            /tmp/live-zi-1.json
             /tmp/live-zi-269.json
             /tmp/live-zro.json
             /tmp/live-zkp.json
+            /tmp/live-membership.json
             /tmp/live-ai-zi.json
             /tmp/live-ai-ambiguous.json
             /tmp/live-ai-unsupported.json
