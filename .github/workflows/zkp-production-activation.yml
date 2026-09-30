@@ -88,7 +88,7 @@ jobs:
           npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT version,description FROM schema_migrations WHERE version='18'; SELECT canonical_key,title,short_title,gazette_reference,current_status,human_review_status FROM legal_instruments WHERE canonical_key='mk:zkp';"             | tee /tmp/zkp-instrument.txt
           grep -q '"version": "18"' /tmp/zkp-instrument.txt
           grep -q '"canonical_key": "mk:zkp"' /tmp/zkp-instrument.txt
-          grep -q '"current_status": "needs_version_review"' /tmp/zkp-instrument.txt
+          grep -q '"current_status": "pending"' /tmp/zkp-instrument.txt
           grep -q '"human_review_status": "pending"' /tmp/zkp-instrument.txt
 
           npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "INSERT OR IGNORE INTO sources (title,url,source_type,issuing_body,jurisdiction,source_status,notes) VALUES ('ZKP consolidated reference snapshot through 198/2018','https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf','secondary_consolidated_reference','Public legal-resource consolidated reference','MK','verified','Article-level reference snapshot; official LDBIS/Gazette lineage remains controlling.'); UPDATE instrument_versions SET source_url='https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf' WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND version_label='consolidated-reference-through-198/2018-and-CC-193/2016';"             | tee /tmp/reconcile.txt
