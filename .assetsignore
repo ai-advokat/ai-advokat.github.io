@@ -9,6 +9,7 @@ src/**
 migrations/**
 ingest/**
 scripts/**
+mobile/**
 
 wrangler.jsonc
 wrangler.preview-migrations.jsonc
