@@ -89,6 +89,10 @@ jobs:
           grep -q 'publicMode: "read_only"' src/index.js
           grep -q 'documentUpload: "locked"' src/index.js
           grep -q 'caseWorkspace: "locked"' src/index.js
-          grep -q 'workersAI: "not_bound"' src/index.js
+          grep -q 'workersAI: env.AI ? "bound" : "not_bound"' src/index.js
+          if grep -q '"ai"[[:space:]]*:' wrangler.jsonc; then
+            echo "Production wrangler.jsonc must not bind Workers AI before governed production activation"
+            exit 1
+          fi
           grep -q 'vectorize: "not_bound"' src/index.js
           echo "Public-data boundary checks: PASS"
