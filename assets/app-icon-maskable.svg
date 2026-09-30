@@ -1,14 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" rx="220" fill="#0c2038"/>
-  <circle cx="512" cy="512" r="360" fill="none" stroke="#b9985b" stroke-width="28"/>
-  <text x="512" y="455" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="300" font-weight="800" fill="#ffffff">AI</text>
-  <g stroke="#b9985b" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <path d="M512 560v220"/>
-    <path d="M350 620h324"/>
-    <path d="M400 620l-95 150"/>
-    <path d="M624 620l95 150"/>
-    <path d="M280 775h110"/>
-    <path d="M634 775h110"/>
-    <path d="M435 810h154"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+<title id="title">AI Advokat</title><desc id="desc">Justice scales fused with an artificial intelligence profile and circuit network.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#061525"/><stop offset="1" stop-color="#0d3155"/></linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8e6426"/><stop offset=".35" stop-color="#f4d07f"/><stop offset=".7" stop-color="#b98537"/><stop offset="1" stop-color="#fff0b5"/></linearGradient>
+  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b5fa5"/><stop offset=".45" stop-color="#23c7ff"/><stop offset="1" stop-color="#85ecff"/></linearGradient>
+</defs>
+<rect width="1024" height="1024" rx="0" fill="url(#bg)"/>
+<circle cx="512" cy="492" r="355" fill="none" stroke="#d7ad5e" stroke-width="10" opacity=".85"/>
+<circle cx="512" cy="492" r="324" fill="none" stroke="#198bd0" stroke-width="7" stroke-dasharray="250 85 38 70" opacity=".75"/>
+<path d="M485 184h54l12 76-18 31v447h79v54H410v-54h77V291l-18-31z" fill="url(#gold)"/>
+<circle cx="512" cy="176" r="35" fill="url(#gold)" stroke="#ffe4a0" stroke-width="7"/>
+<path d="M230 330 Q370 260 488 306 Q512 319 536 306 Q655 260 794 330" fill="none" stroke="url(#gold)" stroke-width="28" stroke-linecap="round"/>
+<circle cx="230" cy="330" r="18" fill="#e7bf6c"/><circle cx="794" cy="330" r="18" fill="#e7bf6c"/>
+<path d="M230 350l-94 225M230 350l94 225M794 350l-94 225M794 350l94 225" stroke="#d9b35f" stroke-width="12" stroke-linecap="round"/>
+<path d="M105 575h250q-25 102-125 102T105 575z" fill="url(#gold)"/><path d="M669 575h250q-25 102-125 102T669 575z" fill="url(#gold)"/>
+<path d="M532 292 C605 254 702 285 740 362 C762 406 751 450 718 482 C698 501 673 511 652 527 C633 541 625 558 631 581 C638 611 672 624 683 652 C694 680 681 708 652 724 C623 740 580 742 540 732 L540 330 C552 316 557 307 532 292z" fill="url(#blue)" opacity=".98"/>
+<path d="M566 319 C622 291 687 311 713 364 C730 399 722 430 697 455 C681 471 655 478 638 491 C610 512 596 541 602 571 C608 601 632 623 649 645" fill="none" stroke="#dff9ff" stroke-width="8" stroke-linecap="round" opacity=".95"/>
+<g fill="none" stroke="#64dfff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M552 355h74l28 28h52"/><path d="M552 395h54l34 34h68"/><path d="M552 438h78l25 25h35"/><path d="M554 494h42l34 34h45"/><path d="M553 548h35l29 29h44"/><path d="M554 604h45l31 31h33"/><path d="M554 658h55l23 23h27"/></g>
+<g fill="#9af2ff" stroke="#0b5fa5" stroke-width="5"><circle cx="706" cy="383" r="10"/><circle cx="708" cy="429" r="10"/><circle cx="690" cy="463" r="10"/><circle cx="675" cy="528" r="10"/><circle cx="661" cy="577" r="10"/><circle cx="663" cy="635" r="10"/><circle cx="659" cy="681" r="10"/></g>
+<circle cx="623" cy="410" r="20" fill="#8cf2ff" stroke="#fff" stroke-width="6"/>
+<path d="M355 735L485 506M400 735L511 542" stroke="url(#gold)" stroke-width="28" stroke-linecap="round"/>
+<path d="M350 740h323" stroke="#f1d58e" stroke-width="14" stroke-linecap="round"/>
 </svg>
