@@ -12,8 +12,14 @@ scripts/**
 mobile/**
 test/**
 
+# Internal documentation: public in the GitHub repository, not part of the portal.
+architecture/**
+benchmark/**
+corpus/**
+migration/**
+
 wrangler.jsonc
-wrangler.preview-migrations.jsonc
+wrangler.*.jsonc
 package.json
 package-lock.json
 bun.lock
