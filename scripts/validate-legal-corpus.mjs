@@ -280,9 +280,22 @@ export function validateCorpus(parsed, m) {
     }
     const headerChain = Array.isArray(header.source_chain) ? header.source_chain : null;
     if (headerChain) {
-      const hs = new Set(headerChain.map(c => String(c?.sha256 || "").toLowerCase()));
-      for (const k of hs) if (!chain.has(k)) stop("provenance", `Parsed corpus was built from ${k.slice(0, 12)}…, which the manifest source_chain does not declare`);
-      for (const k of chain.keys()) if (!hs.has(k)) stop("provenance", `Manifest source_chain declares ${k.slice(0, 12)}…, but the parsed corpus was not built from it`);
+      const provenanceFields = ["sha256", "url", "role", "issue_number", "issue_date"];
+      if (headerChain.length !== m.source_chain.length) {
+        stop("provenance", `Parsed corpus source_chain has ${headerChain.length} entries, manifest declares ${m.source_chain.length}`);
+      }
+      const n = Math.min(headerChain.length, m.source_chain.length);
+      for (let i = 0; i < n; i++) {
+        const actual = headerChain[i] || {};
+        const expected = m.source_chain[i] || {};
+        for (const field of provenanceFields) {
+          const av = field === "sha256" ? String(actual[field] || "").toLowerCase() : String(actual[field] || "");
+          const ev = field === "sha256" ? String(expected[field] || "").toLowerCase() : String(expected[field] || "");
+          if (av !== ev) {
+            stop("provenance", `source_chain[${i}].${field} differs between parsed corpus and manifest`);
+          }
+        }
+      }
     }
     for (const [k, c] of chain) if (!used.has(k)) note("provenance", `source_chain entry ${c.issue_number || c.issue_date || k.slice(0, 12)} is not referenced by any article`);
   });
