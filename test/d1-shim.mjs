@@ -14,11 +14,22 @@ function toSqlValue(value) {
   return value;
 }
 
-export function createD1({ migrationsDir = "migrations" } = {}) {
+/**
+ * stopBefore: apply only migrations whose file name sorts before this prefix
+ * (e.g. "0023") so tests can create legacy rows exactly as production has them,
+ * then call applyRemaining() to run the newer migrations on top.
+ */
+export function createD1({ migrationsDir = "migrations", stopBefore = null } = {}) {
   const db = new DatabaseSync(":memory:");
-  for (const file of fs.readdirSync(migrationsDir).filter((f) => f.endsWith(".sql")).sort()) {
+  const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith(".sql")).sort();
+  const pending = [];
+  for (const file of files) {
+    if (stopBefore && file >= stopBefore) { pending.push(file); continue; }
     db.exec(fs.readFileSync(path.join(migrationsDir, file), "utf8"));
   }
+  const applyRemaining = () => {
+    while (pending.length) db.exec(fs.readFileSync(path.join(migrationsDir, pending.shift()), "utf8"));
+  };
 
   const stats = { statements: 0, bySql: new Map() };
 
@@ -62,22 +73,39 @@ export function createD1({ migrationsDir = "migrations" } = {}) {
     return statement;
   }
 
-  return { d1: { prepare }, raw: db, stats };
+  return { d1: { prepare }, raw: db, stats, applyRemaining };
 }
 
-export function seedArticles(raw, canonicalKey, articles, { status = "current_consolidated", review = "approved" } = {}) {
+/**
+ * Seeds article rows bound to an instrument version.
+ *   version: { label, valid_from, application_from, valid_to, is_current, human_review_status, version_class }
+ *            defaults to an undated, non-current "test-v1" version;
+ *            null = legacy unversioned rows (only possible before migration 0023).
+ */
+export function seedArticles(raw, canonicalKey, articles, { status = "current_consolidated", review = "approved", version = {} } = {}) {
   const instrument = raw.prepare("SELECT id FROM legal_instruments WHERE canonical_key=?").get(canonicalKey);
   if (!instrument) throw new Error(`Unknown instrument ${canonicalKey}`);
+  let versionId = null;
+  if (version !== null) {
+    const v = { label: "test-v1", is_current: 0, human_review_status: "pending", ...version };
+    const cols = raw.prepare("PRAGMA table_info(instrument_versions)").all().map((c) => c.name);
+    const fields = ["instrument_id", "version_label", "valid_from", "valid_to", "is_current", "human_review_status"];
+    const values = [instrument.id, v.label, v.valid_from ?? null, v.valid_to ?? null, v.is_current, v.human_review_status];
+    for (const k of ["application_from", "version_class"]) if (cols.includes(k)) { fields.push(k); values.push(v[k] ?? null); }
+    raw.prepare(`INSERT OR IGNORE INTO instrument_versions (${fields.join(",")}) VALUES (${fields.map(() => "?").join(",")})`).run(...values);
+    versionId = raw.prepare("SELECT id FROM instrument_versions WHERE instrument_id=? AND version_label=?").get(instrument.id, v.label).id;
+  }
   const insert = raw.prepare(
     `INSERT INTO legal_article_versions
-      (canonical_id,instrument_id,article_number,article_number_normalized,article_heading,
+      (canonical_id,instrument_id,instrument_version_id,article_number,article_number_normalized,article_heading,
        article_text,status,source_url,source_sha256,human_review_status)
-     VALUES (?,?,?,?,?,?,?,?,?,?)`
+     VALUES (?,?,?,?,?,?,?,?,?,?,?)`
   );
   for (const a of articles) {
     insert.run(
-      `${canonicalKey}:art:${a.number}`,
+      `${canonicalKey}:${version === null ? "legacy" : version.label ?? "test-v1"}:art:${a.number}`,
       instrument.id,
+      versionId,
       String(a.number),
       String(a.number),
       a.heading ?? null,

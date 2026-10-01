@@ -64,7 +64,26 @@ npx wrangler secret put TURNSTILE_SECRET
 
 Until `RATE_LIMIT_SALT` is set, the anonymous assistant returns `503 assistant_temporarily_unavailable` by design.
 
-## Zenodo
+## Corpus safety (article-level legal corpus)
+
+Every answer and every `/api/articles` page comes from **exactly one instrument version**.
+
+| Piece | File | Rule |
+|---|---|---|
+| Parser v0.3 | `scripts/parse-mk-legal-text.mjs` | Recognises `Член 10`, `Член 10-а`, `Член 10а` and dash variants; never rewrites text. Structural errors (duplicate, out-of-order, empty, Latin letter in a number) throw. Gaps, mixed Latin/Cyrillic tokens, malformed header-like lines (`ЧЛЕН 5`, `Член5`, homoglyph `Член`), header/footer, amending-act and editorial-note contamination, lowercase `член N` lines, deleted articles and the transitional/final-provisions heading are reported as findings; `warning_count` counts real `stop`+`warning` findings. |
+| QA validator | `scripts/validate-legal-corpus.mjs` | `node scripts/validate-legal-corpus.mjs parsed.ndjson manifest.json report.json report.md` → PASS/STOP (exit 0/1). Recomputes counts, first/last, gaps, duplicates and scripts itself; Checks lettered and repealed articles and the declared start of transitional/final provisions against the manifest; STOPs on missing version, provenance or sha256, unresolved status, impossible/overlapping dates, unapproved `current_consolidated`, low extraction confidence and unacknowledged warnings. Manifest format is documented at the top of the file. |
+| Importer | `scripts/legal-ndjson-to-sql.mjs` | Binds every row to `instrument_versions` by `(canonical_key, version_label)`; plain `INSERT` (a duplicate or re-run fails loudly instead of silently replacing articles). |
+| Migration 0023 | `migrations/0023_corpus_safety_foundation.sql` | Adds `version_class`, `application_from`, version-level `source_issue_*`; blocks new rows without a version, cross-instrument versions, unapproved `current_consolidated`, impossible validity windows; partial UNIQUE `(instrument_version_id, article_number_normalized)`; audit views `corpus_legacy_unversioned_articles` and `legal_instrument_alias_collisions`; alias `ЗСем` → `mk:zs`. Existing rows are not modified. |
+| Version resolution | `src/corpus-versions.js` | One article set per law → used (a lone future version is refused until it applies). Several sets → with `date` (YYYY-MM-DD) the version whose window contains the date; without `date` only a version that is `is_current=1` **and** Human-Gate `approved`. Otherwise a controlled 409 (`version_required`, `version_ambiguous`, `version_not_yet_applicable`, …) with the list of versions, and no quota is consumed. `valid_to` is exclusive; the start is `application_from ?? valid_from`. |
+| Aliases | `src/index.js` `inferInstrumentKey` | If aliases of different laws match (e.g. `ЗС` = family law and courts), the answer is `instrument_ambiguous` with candidates; a full title beats a shorter alias it contains. Bare `член 12` stays `instrument_required`. |
+
+Before applying 0023 to a database, this read-only preflight must return no rows:
+```sql
+SELECT instrument_version_id, article_number_normalized, COUNT(*) FROM legal_article_versions
+ WHERE instrument_version_id IS NOT NULL GROUP BY 1,2 HAVING COUNT(*) > 1;
+```
+Apply 0023 before running any import with the new importer. Legacy corpora imported without a version (for example ZRO, ZKP, ZI) keep working as a single unversioned set; backfilling their version happens later and only after Human Gate.
+
 
 The Zenodo profile for **Zoran Stojankich / AI Advokat** is active. Status was verified on 2026-09-30 against the DOI registry (doi.org handle API): a DOI resolves there only once the Zenodo record is published.
 

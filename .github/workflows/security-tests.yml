@@ -8,6 +8,7 @@ on:
       - "membership.html"
       - "migrations/**"
       - "test/**"
+      - "scripts/**"
       - "wrangler*.jsonc"
       - "package.json"
       - ".github/workflows/security-tests.yml"
@@ -29,8 +30,12 @@ jobs:
         with:
           node-version: "22"
       - name: Worker syntax
-        run: node --check src/index.js && node --check src/security.js
+        run: node --check src/index.js && node --check src/security.js && node --check src/corpus-versions.js
       - name: Structural verification
         run: npm run verify
       - name: Security, quota, routing and truth-labelling tests
         run: npm run test:security
+      - name: Legal parser regression tests
+        run: npm run test:legal-parser
+      - name: Corpus safety foundation tests (parser v0.3, QA validator, migration 0023, version-aware retrieval)
+        run: npm run test:corpus-safety
