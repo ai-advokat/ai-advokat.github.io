@@ -2362,7 +2362,21 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
         body:JSON.stringify({q,instrument:$("#instrumentSelect")?.value || "auto"})
       });
       const data=await response.json();
-      if(!response.ok || !data.ok) throw new Error(data?.message || data?.error || "assistant_error");
+      // Controlled refusals (law/version must be chosen, quota, rate limit) are shown as
+      // the server states them; they are not service failures.
+      const CONTROLLED=new Set(["instrument_required","instrument_ambiguous","instrument_not_found","no_relevant_articles",
+        "version_required","version_ambiguous","version_not_yet_applicable","version_no_longer_applicable",
+        "version_not_applicable_on_date","version_date_unverifiable","version_metadata_missing",
+        "free_quota_exhausted","membership_quota_exhausted","rate_limited","invalid_date"]);
+      if(!response.ok || !data.ok){
+        if(data && CONTROLLED.has(data.error) && data.message){
+          const extra=(data.candidates || []).map(c=>c.shortTitle ? `${c.title} (${c.shortTitle})` : c.title)
+            .concat((data.versions || []).map(v=>v.label+(v.applicationFrom ? ` · ${lang==="mk" ? "примена од" : "applies from"} ${v.applicationFrom}` : "")));
+          answerText.textContent=" "+data.message+(extra.length ? " "+(lang==="mk" ? "Опции: " : "Options: ")+extra.join("; ") : "");
+          return;
+        }
+        throw new Error(data?.message || data?.error || "assistant_error");
+      }
 
       answerText.textContent=" "+data.answer;
       if(data.membership){
@@ -2393,7 +2407,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
         const item=document.createElement("div");
         item.className="resultItem";
         const title=document.createElement("b");
-        title.textContent=(lang==="mk" ? "Член " : "Article ")+c.articleNumber+" · "+c.status;
+        title.textContent=(lang==="mk" ? "Член " : "Article ")+c.articleNumber+" · "+c.status+(c.version?.label ? " · "+(lang==="mk" ? "верзија " : "version ")+c.version.label : "");
         const excerpt=document.createElement("p");
         excerpt.textContent=c.excerpt || "";
         const source=document.createElement("a");

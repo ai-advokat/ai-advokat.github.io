@@ -17,6 +17,13 @@ import {
   validateAnswerCitations,
   verifyTurnstile
 } from "./security.js";
+import {
+  VERSION_ERROR_MESSAGES,
+  parseQueryDate,
+  resolveInstrumentVersion,
+  summarizeVersion,
+  versionStatusWarning
+} from "./corpus-versions.js";
 
 const VERSION = "1.5.0";
 
@@ -955,70 +962,84 @@ async function handleInstruments(request, env) {
   });
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Resolves the statute a question refers to.
+ * Returns { key } for one instrument, { key:"auto" } when nothing matched, or
+ * { ambiguous:[candidates] } when aliases of different instruments match — the
+ * router never picks "the first" of several statutes.
+ */
 async function inferInstrumentKey(env,q,requested) {
   const explicit=cleanQuery(requested,64);
-  if(explicit && explicit!=="auto") return explicit;
+  if(explicit && explicit!=="auto") return {key:explicit};
 
   const normalizedQuestion=normalizeText(q);
-  const tokenizedQuestion=" "+normalizedQuestion.replace(/[^\p{L}\p{N}:-]+/gu," ").replace(/\s+/g," ").trim()+" ";
+  const matches=[];
 
   try{
     const result=await env.DB.prepare(
-      `SELECT lia.alias,lia.priority,li.canonical_key
+      `SELECT lia.alias,lia.priority,li.canonical_key,li.title,li.short_title
          FROM legal_instrument_aliases lia
          JOIN legal_instruments li ON li.id=lia.instrument_id
-        WHERE li.canonical_key IS NOT NULL
-        ORDER BY lia.priority DESC, LENGTH(lia.alias) DESC`
+        WHERE li.canonical_key IS NOT NULL`
     ).all();
 
     for(const row of result.results ?? []){
-      const alias=normalizeText(row.alias || "");
+      const alias=normalizeText(row.alias || "").trim();
       if(!alias) continue;
-      const matched=alias.length<=6
-        ? tokenizedQuestion.includes(" "+alias+" ")
-        : normalizedQuestion.includes(alias);
-      if(matched) return row.canonical_key;
+      // Short aliases (abbreviations) must stand alone as a word; long aliases match as phrases.
+      const re=new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(alias)}(?![\\p{L}\\p{N}])`,"u");
+      const m=alias.length<=6 ? normalizedQuestion.match(re) : null;
+      const start=alias.length<=6 ? (m ? m.index : -1) : normalizedQuestion.indexOf(alias);
+      if(start<0) continue;
+      matches.push({key:row.canonical_key,title:row.title,shortTitle:row.short_title,alias:row.alias,start,end:start+alias.length});
     }
   }catch(error){
     console.error("instrument_alias_lookup_failed",String(error?.message || error));
   }
 
+  // A match fully inside a longer match of a different statute is less specific; drop it.
+  const specific=matches.filter(m=>!matches.some(o=>o.key!==m.key && o.start<=m.start && o.end>=m.end && (o.end-o.start)>(m.end-m.start)));
+  const keys=[...new Set(specific.map(m=>m.key))];
+  if(keys.length===1) return {key:keys[0]};
+  if(keys.length>1){
+    return {ambiguous:keys.map(k=>{
+      const m=specific.find(x=>x.key===k);
+      return {canonicalKey:k,title:m.title,shortTitle:m.shortTitle,matchedAlias:m.alias};
+    })};
+  }
+
   // Compatibility fallbacks while older environments converge to the alias registry.
-  if(normalizedQuestion.includes("кривичната постапка") || normalizedQuestion.includes("кривична постапка")) return "mk:zkp";
-  if(normalizedQuestion.includes("работните односи") || normalizedQuestion.includes("работен однос")) return "mk:zro";
+  if(normalizedQuestion.includes("кривичната постапка") || normalizedQuestion.includes("кривична постапка")) return {key:"mk:zkp"};
+  if(normalizedQuestion.includes("работните односи") || normalizedQuestion.includes("работен однос")) return {key:"mk:zro"};
 
   // No silent guess: auto mode stays explicit so a bare article number is not attributed to the wrong law.
-  return "auto";
+  return {key:"auto"};
 }
 
-async function listSearchableInstruments(env) {
-  const result=await env.DB.prepare(
-    `SELECT li.id,li.canonical_key,li.title,li.short_title,li.instrument_type,
-            li.jurisdiction,li.gazette_reference,li.current_status,
-            li.human_review_status,li.notes,s.url AS canonical_source_url,
-            COUNT(lav.id) AS article_count
-       FROM legal_instruments li
-       LEFT JOIN sources s ON s.id=li.canonical_source_id
-       JOIN legal_article_versions lav ON lav.instrument_id=li.id
-      WHERE li.canonical_key IS NOT NULL
-      GROUP BY li.id
-      HAVING COUNT(lav.id)>0
-      ORDER BY li.title`
-  ).all();
-  return result.results ?? [];
-}
-
-async function loadInstrumentArticles(env, instrumentId) {
+/** Loads the articles of ONE resolved version (versionId null = legacy unversioned rows). */
+async function loadInstrumentArticles(env, instrumentId, versionId) {
   const result=await env.DB.prepare(
     `SELECT id,canonical_id,article_number,article_number_normalized,article_heading,
             article_text,status,human_review_status,source_issue_number,source_issue_date,
-            source_url,source_sha256,valid_from,valid_to
+            source_url,source_sha256,valid_from,valid_to,instrument_version_id
        FROM legal_article_versions
-      WHERE instrument_id=?
+      WHERE instrument_id=? AND instrument_version_id IS ?
       ORDER BY id ASC
       LIMIT 2000`
-  ).bind(instrumentId).all();
+  ).bind(instrumentId, versionId ?? null).all();
   return result.results ?? [];
+}
+
+/** Resolves exactly one version and loads only its articles, or returns a controlled error. */
+async function loadResolvedCorpus(env, instrument, {date=null}={}) {
+  const decision=await resolveInstrumentVersion(env,instrument.id,{date});
+  if(!decision.ok) return decision;
+  const rows=await loadInstrumentArticles(env,instrument.id,decision.versionId);
+  return {...decision,rows};
 }
 
 export function scoreArticle(row, q) {
@@ -1056,8 +1077,7 @@ export function scoreArticle(row, q) {
   return score;
 }
 
-async function rankInstrumentArticles(env,instrument,q,limit=6){
-  const rows=await loadInstrumentArticles(env,instrument.id);
+function rankInstrumentArticles(rows,q,limit=6){
   let ranked=rows
     .map(row=>({row,score:scoreArticle(row,q)}))
     .filter(x=>x.score>0)
@@ -1073,12 +1093,14 @@ async function rankInstrumentArticles(env,instrument,q,limit=6){
   return ranked.slice(0,limit).map(x=>({...normalizeArticle(x.row),relevanceScore:x.score}));
 }
 
-async function findRelevantArticles(env, instrumentKey, q, limit=6) {
+async function findRelevantArticles(env, instrumentKey, q, limit=6, {date=null}={}) {
   if(instrumentKey && instrumentKey!=="auto"){
     const instrument=await getInstrument(env,instrumentKey);
     if(!instrument) return {instrument:null,articles:[],reason:"instrument_not_found"};
-    const articles=await rankInstrumentArticles(env,instrument,q,limit);
-    return {instrument,articles};
+    const corpus=await loadResolvedCorpus(env,instrument,{date});
+    if(!corpus.ok) return {instrument,articles:[],reason:corpus.error,versions:corpus.versions};
+    const articles=rankInstrumentArticles(corpus.rows,q,limit);
+    return {instrument,articles,version:corpus.version,versionBasis:corpus.basis};
   }
 
   // Fail closed: with multiple legal corpora, never guess a statute from generic words.
@@ -1100,12 +1122,22 @@ async function handleArticles(request, env, url) {
   const limit=Math.min(Math.max(Number.parseInt(url.searchParams.get("limit") || "40",10) || 40,1),100);
   const offset=Math.max(Number.parseInt(url.searchParams.get("offset") || "0",10) || 0,0);
 
+  const dateCheck=parseQueryDate(url.searchParams.get("date"));
+  if(!dateCheck.ok) return json(request,{ok:false,error:"invalid_date",message:"Датумот мора да биде во формат YYYY-MM-DD."},400);
+
   const instrument=await getInstrument(env,instrumentKey);
   if(!instrument) return json(request,{ok:false,error:"instrument_not_found"},404);
 
-  // Single D1 read: totals, status aggregates and the returned page all come from
-  // the same read-set, so they can never disagree with each other.
-  const allRows=await loadInstrumentArticles(env,instrument.id);
+  // Exactly one version per response; totals, status aggregates and the page all
+  // come from that single read-set, so they can never mix versions or disagree.
+  const corpus=await loadResolvedCorpus(env,instrument,{date:dateCheck.date});
+  if(!corpus.ok){
+    return json(request,{
+      ok:false,error:corpus.error,message:VERSION_ERROR_MESSAGES[corpus.error] || null,
+      instrument:{canonicalKey:instrument.canonical_key,title:instrument.title},versions:corpus.versions
+    },corpus.error==="no_articles" ? 404 : 409);
+  }
+  const allRows=corpus.rows;
   const total=allRows.length;
   const statusCounts={};
   for(const row of allRows){
@@ -1141,6 +1173,8 @@ async function handleArticles(request, env, url) {
       canonicalSourceUrl:instrument.canonical_source_url,
       notes:instrument.notes
     },
+    instrumentVersion:summarizeVersion(corpus.version,allRows.length),
+    versionBasis:corpus.basis,
     total,
     filteredCount,
     offset,
@@ -1150,16 +1184,6 @@ async function handleArticles(request, env, url) {
     humanGate:"Only approved/current-consolidated provisions may be presented as verified current law."
   });
 }
-
-function assistantStatusWarning(articles) {
-  if(!articles.length) return null;
-  const review=articles.some(a=>a.status==="needs_version_review");
-  const historical=articles.some(a=>a.status==="historical");
-  if(review) return "Еден или повеќе релевантни членови се под VERSION REVIEW. Одговорот не смее да се третира како потврдена важечка верзија.";
-  if(historical) return "Релевантните членови се од историскиот официјален пречистен snapshot преку 111/2023 и сè уште немаат Human Gate одобрување како тековен текст.";
-  return null;
-}
-
 
 function extractModelText(value, depth=0) {
   if(depth>4 || value===null || value===undefined) return null;
@@ -1249,7 +1273,7 @@ const ASSISTANT_SYSTEM_RULES = [
   "10. Структура: Краток одговор; Правна основа; Примена/објаснување; Ограничувања и што треба да се провери."
 ].join("\n");
 
-function buildAssistantUserMessage(q, instrument, articles) {
+function buildAssistantUserMessage(q, instrument, articles, version=null) {
   const sources=articles.map(a=>[
     `[Член ${sanitizeForPrompt(a.articleNumber)}]`,
     `STATUS: ${sanitizeForPrompt(a.status)}; HUMAN_REVIEW: ${sanitizeForPrompt(a.humanReviewStatus)}`,
@@ -1261,6 +1285,7 @@ function buildAssistantUserMessage(q, instrument, articles) {
   return [
     "<<<LEGAL_SOURCES>>>",
     `ИНСТРУМЕНТ: ${sanitizeForPrompt(instrument.title)}`,
+    `ВЕРЗИЈА: ${sanitizeForPrompt(version ? version.version_label : "legacy-unversioned")}; КЛАСА: ${sanitizeForPrompt(version?.version_class || "unknown")}; HUMAN_GATE: ${sanitizeForPrompt(version?.human_review_status || "pending")}`,
     "",
     sources,
     "<<<END_LEGAL_SOURCES>>>",
@@ -1327,10 +1352,30 @@ async function handleAssistant(request, env, url) {
   const q=cleanQuery(payload.q,600);
   if(q.length<3) return json(request,{ok:false,error:"query_too_short",message:"Use at least three characters."},400);
 
+  const dateCheck=parseQueryDate(payload.date);
+  if(!dateCheck.ok) return json(request,{ok:false,error:"invalid_date",message:"Датумот мора да биде во формат YYYY-MM-DD."},400);
+
   // 4. Routing / retrieval. Rejected routing does not consume quota.
-  const instrumentKey=await inferInstrumentKey(env,q,payload.instrument);
-  const retrieval=await findRelevantArticles(env,instrumentKey,q,6);
+  const routing=await inferInstrumentKey(env,q,payload.instrument);
+  if(routing.ambiguous){
+    return json(request,{
+      ok:false,
+      error:"instrument_ambiguous",
+      message:"Кратенката или називот одговара на повеќе закони. Изберете еден закон.",
+      candidates:routing.ambiguous
+    },400);
+  }
+  const retrieval=await findRelevantArticles(env,routing.key,q,6,{date:dateCheck.date});
   const {instrument,articles}=retrieval;
+  if(instrument && retrieval.versions && retrieval.reason && retrieval.reason!=="no_articles"){
+    return json(request,{
+      ok:false,
+      error:retrieval.reason,
+      message:VERSION_ERROR_MESSAGES[retrieval.reason] || null,
+      instrument:{canonicalKey:instrument.canonical_key,title:instrument.title},
+      versions:retrieval.versions
+    },409);
+  }
   if(!instrument){
     if(retrieval.reason==="instrument_required"){
       return json(request,{ok:false,error:"instrument_required",message:"Не е безбедно автоматски да се избере закон. Изберете конкретен закон или наведете ја неговата кратенка/назив."},400);
@@ -1361,7 +1406,9 @@ async function handleAssistant(request, env, url) {
   }
 
   // 6. AI (optional) with strict source-only guard.
-  const warning=assistantStatusWarning(articles);
+  const version=retrieval.version || null;
+  const versionInfo=summarizeVersion(version);
+  const warning=versionStatusWarning(version,articles);
   let answer=null;
   let answerMode="retrieval_only";
   let aiError=null;
@@ -1373,7 +1420,7 @@ async function handleAssistant(request, env, url) {
       generated=await env.AI.run("@cf/zai-org/glm-4.7-flash",{
         messages:[
           {role:"system",content:ASSISTANT_SYSTEM_RULES},
-          {role:"user",content:buildAssistantUserMessage(q,instrument,articles)}
+          {role:"user",content:buildAssistantUserMessage(q,instrument,articles,version)}
         ],
         max_tokens:1400,
         temperature:0.1
@@ -1418,6 +1465,8 @@ async function handleAssistant(request, env, url) {
       currentStatus:instrument.current_status,
       humanReviewStatus:instrument.human_review_status
     },
+    instrumentVersion:versionInfo,
+    versionBasis:retrieval.versionBasis || null,
     answer,
     legalStatusWarning:warning,
     citations:articles.map(a=>({
@@ -1428,6 +1477,7 @@ async function handleAssistant(request, env, url) {
       sourceUrl:a.sourceUrl,
       sourceIssueNumber:a.sourceIssueNumber,
       sourceIssueDate:a.sourceIssueDate,
+      version:{label:versionInfo.label,class:versionInfo.class,isCurrent:versionInfo.isCurrent,humanReviewStatus:versionInfo.humanReviewStatus},
       excerpt:String(a.text || "").replace(/\s+/g," ").slice(0,420)
     })),
     humanGate:"AI output is research assistance, not autonomous legal representation. Verify the controlling version and primary source and obtain human professional review before high-stakes reliance.",
