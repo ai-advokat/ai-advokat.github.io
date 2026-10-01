@@ -101,6 +101,20 @@ describe("A. Validator v1.1", () => {
     assert.ok(checksFailed(validateCorpus(derivedParsed(), derivedManifest({ source_chain: chain }))).includes("provenance"));
   });
 
+  test("A3d reversed source_chain order -> STOP", () => {
+    const chain = clone(CHAIN).reverse();
+    const r = validateCorpus(derivedParsed(), derivedManifest({ source_chain: chain }));
+    assert.equal(r.verdict, "STOP");
+    assert.ok(r.errors.some((e) => e.check === "provenance" && /source_chain\[0\]/.test(e.detail)));
+  });
+
+  test("A3e source_chain provenance metadata mismatch -> STOP", () => {
+    const chain = clone(CHAIN); chain[1].role = "official_consolidation";
+    const r = validateCorpus(derivedParsed(), derivedManifest({ source_chain: chain }));
+    assert.equal(r.verdict, "STOP");
+    assert.ok(r.errors.some((e) => e.check === "provenance" && /\.role differs/.test(e.detail)));
+  });
+
   test("A4 expected_lettered_articles as a string -> STOP (not silently skipped)", () => {
     const r = validateCorpus(singleParsed(), singleManifest({ expected_lettered_articles: "UNRESOLVED — HUMAN REVIEW NEEDED" }));
     assert.equal(r.verdict, "STOP");
@@ -256,6 +270,20 @@ describe("B. Amendment engine", () => {
     const once = merged();
     const e = stopOf(() => applyAmendments({ manifest: once.header, records: once.records }, plan()));
     assert.ok(e.stops.some((s) => /already been applied/.test(s.detail)));
+  });
+
+  test("S18 base corpus with parser severity=stop finding -> STOP", () => {
+    const base = baseCorpus();
+    base.manifest.warnings = [{ severity: "stop", code: "unexplained_gap", detail: "fixture gap" }];
+    const e = stopOf(() => applyAmendments(base, plan()));
+    assert.ok(e.stops.some((s) => /parser STOP finding/.test(s.detail)));
+  });
+
+  test("S19 operations out of amendment_article order -> STOP", () => {
+    const p = plan();
+    [p.operations[0], p.operations[1]] = [p.operations[1], p.operations[0]];
+    const e = stopOf(() => applyAmendments(baseCorpus(), p));
+    assert.ok(e.stops.some((s) => /out of statutory order/.test(s.detail)));
   });
 
   test("B9 chained run: a second (fictional) act applies on top of the first", () => {
