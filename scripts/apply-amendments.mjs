@@ -114,6 +114,10 @@ function validatePlan(plan, header, records) {
   if (plan.engine_input_version !== 1) stop(`engine_input_version must be 1 (got ${plan.engine_input_version})`);
   if (plan.instrument_key !== header.instrument_key) stop(`plan instrument_key '${plan.instrument_key}' differs from base corpus '${header.instrument_key}'`);
   if ((header.errors || []).length) stop(`base corpus has ${header.errors.length} parser error(s)`);
+  const baseStopFindings = Array.isArray(header.warnings) ? header.warnings.filter(w => w?.severity === "stop") : [];
+  if (baseStopFindings.length) {
+    stop(`base corpus has ${baseStopFindings.length} parser STOP finding(s): ${baseStopFindings.map(w => w.code || "unknown").join(", ")}`);
+  }
   const pv = String(header.parser_version || "").match(/v(\d+)\.(\d+)/);
   if (!pv || (Number(pv[1]) === 0 && Number(pv[2]) < 3)) stop(`base corpus parser '${header.parser_version}' predates v0.3`);
   if (!records.length) stop("base corpus has no article records");
@@ -157,6 +161,7 @@ function validatePlan(plan, header, records) {
 
   if (!Array.isArray(plan.operations) || !plan.operations.length) { stop("operations must be a non-empty array"); return stops; }
   const covered = new Set();
+  let previousAmendmentArticle = 0;
   plan.operations.forEach((o, i) => {
     if (!o || typeof o !== "object") { stop("operation is not an object", i); return; }
     const required = OPS[o.op];
@@ -166,7 +171,13 @@ function validatePlan(plan, header, records) {
     for (const k of required) if (o[k] === undefined || o[k] === null || (k !== "replace" && o[k] === "")) stop(`${o.op} requires '${k}'`, i);
     if (!Number.isInteger(o.amendment_article) || o.amendment_article < 1 || (Number.isInteger(count) && o.amendment_article > count)) {
       stop(`amendment_article must be an integer between 1 and ${count}`, i);
-    } else covered.add(o.amendment_article);
+    } else {
+      if (o.amendment_article < previousAmendmentArticle) {
+        stop(`amendment_article ${o.amendment_article} is out of statutory order after ${previousAmendmentArticle}; operations must be nondecreasing`, i);
+      }
+      previousAmendmentArticle = Math.max(previousAmendmentArticle, o.amendment_article);
+      covered.add(o.amendment_article);
+    }
     if (typeof o.source_text !== "string" || !o.source_text.trim()) stop("source_text (verbatim instruction from the amending act) is required", i);
     if (o.op === "non_text" && !NON_TEXT_KINDS.has(o.kind)) stop(`non_text kind must be one of ${[...NON_TEXT_KINDS].join(", ")}`, i);
     if (o.op === "textual_edit") {
