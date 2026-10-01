@@ -10,6 +10,7 @@ migrations/**
 ingest/**
 scripts/**
 mobile/**
+test/**
 
 wrangler.jsonc
 wrangler.preview-migrations.jsonc

@@ -1027,6 +1027,7 @@
         <span class="chip" data-i18n="chipMediation">Медијација</span>
         <span class="chip" data-i18n="chipAiLaw">AI и право</span>
       </div>
+      <p class="coverageNote" id="coverageNote" aria-live="polite" style="margin:8px 0 0;font-size:.86rem;color:var(--muted)"></p>
 
       <div
         class="resultList"
@@ -1058,7 +1059,7 @@
           <p data-i18n="cardLawsText">
             Регистар со важечки текст, изменувања, датум на важност и врска до официјален извор.
           </p>
-          <div class="cardAction"><span>Отвори регистар →</span><span class="cardState">LIVE</span></div>
+          <div class="cardAction"><span>Отвори регистар →</span><span class="cardState" data-cap="laws">…</span></div>
         </article>
 
         <article class="card actionCard" role="button" tabindex="0" id="casesCard" aria-label="Отвори судска практика">
@@ -1067,7 +1068,7 @@
           <p data-i18n="cardCasesText">
             Пресуди организирани по суд, област, правно прашање, цитирани одредби и исход.
           </p>
-          <div class="cardAction"><span>Отвори судска практика →</span><span class="cardState">LIVE</span></div>
+          <div class="cardAction"><span>Отвори судска практика →</span><span class="cardState" data-cap="cases">…</span></div>
         </article>
 
         <article class="card actionCard" role="button" tabindex="0" id="echrCard" aria-label="Отвори ЕСПЧ и меѓународни извори">
@@ -1076,7 +1077,7 @@
           <p data-i18n="cardEchrText">
             Европски стандарди и компаративни извори со јасно означена јурисдикција.
           </p>
-          <div class="cardAction"><span>Отвори меѓународни извори →</span><span class="cardState">LIVE</span></div>
+          <div class="cardAction"><span>Отвори меѓународни извори →</span><span class="cardState" data-cap="echr">…</span></div>
         </article>
 
         <article class="card actionCard" role="button" tabindex="0" id="versionsCard" aria-label="Отвори верзии и измени">
@@ -1085,7 +1086,7 @@
           <p data-i18n="cardVersionsText">
             Споредба на стар и нов текст, со видливи датумски граници и правна важност.
           </p>
-          <div class="cardAction"><span>Провери верзии →</span><span class="cardState" style="color:var(--warn)">PREVIEW</span></div>
+          <div class="cardAction"><span>Провери верзии →</span><span class="cardState" data-cap="versions" style="color:var(--warn)">PREVIEW</span></div>
         </article>
 
         <article class="card">
@@ -1109,7 +1110,7 @@
       <div class="sourceWorkspace" id="sourceWorkspace" hidden aria-live="polite">
         <div class="workspaceHead">
           <div>
-            <span class="tag" id="workspaceTag">LIVE · OFFICIAL SOURCES</span>
+            <span class="tag" id="workspaceTag">OFFICIAL SOURCE DIRECTORY</span>
             <h3 id="workspaceTitle">Правен работен простор</h3>
             <p id="workspaceText">Изберете секција за да ги отворите проверените официјални извори.</p>
           </div>
@@ -1194,7 +1195,7 @@
           </div>
 
           <div class="answer" id="answerBox">
-            <strong data-i18n="demoMode">LIVE · SOURCE-BACKED AI</strong>
+            <strong id="aiModeLabel">…</strong>
             <span id="answerText"></span>
           </div>
 
@@ -1734,9 +1735,9 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       trustLabel1:"Изворот прв", trustLabel2:"Човечка порта", trustLabel3:"Проверка на верзија", trustLabel4:"Поврзано со Zenodo",
       trust1:"Одговорите треба да покажуваат на што се потпираат.", trust2:"AI не ја заменува професионалната правна проценка.", trust3:"Правниот текст се чита со датум, верзија и важност.", trust4:"Авторските трудови имаат проверлив Zenodo-статус и резервирани DOI каде што се достапни.",
       sourceTag:"Правна база", sourceTitle:"Од извор до правен заклучок", sourceText:"Порталот е структуриран така што официјалниот текст, судската практика, стручната анализа и AI-синтезата никогаш не се мешаат без ознака.",
-      cardLaws:"Закони и прописи", cardLawsText:"Регистарот се проширува закон-по-закон. ЗРО и ЗКП се LIVE article-level корпуси; новите закони прво влегуваат со официјална metadata/provenance, а потоа со проверен текст член-по-член.",
-      cardCases:"Судска практика", cardCasesText:"Пресуди организирани по суд, област, правно прашање, цитирани одредби и исход.",
-      cardEchr:"ЕСПЧ и меѓународни извори", cardEchrText:"Европски стандарди и компаративни извори со јасно означена јурисдикција.",
+      cardLaws:"Закони и прописи", cardLawsText:"Регистарот се проширува закон-по-закон. Новите закони прво влегуваат со официјална metadata/provenance, а потоа со проверен текст член-по-член. Кои закони имаат article-level корпус се прикажува од живиот статус на системот.",
+      cardCases:"Судска практика", cardCasesText:"Директориум кон официјалните бази на судовите. Индексирана судска практика по суд, правно прашање и исход се додава постепено и се означува кога ќе биде достапна.",
+      cardEchr:"ЕСПЧ и меѓународни извори", cardEchrText:"Директориум кон HUDOC и EUR-Lex со јасно означена јурисдикција. Индексиран корпус на одлуки сè уште не е вклучен.",
       cardVersions:"Верзии и измени", cardVersionsText:"Споредба на стар и нов текст, со видливи датумски граници и правна важност.",
       cardCitations:"Проверка на цитати", cardCitationsText:"Контрола дали членот, предметот, DOI или изворот навистина го поддржува тврдењето.",
       cardDocs:"Документи и досиеја", cardDocsText:"Работни досиеја, хронологии, доказни матрици и правни белешки со човечко одобрување.",
@@ -1770,9 +1771,9 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       trustLabel1:"Source-first", trustLabel2:"Human Gate", trustLabel3:"Version-aware", trustLabel4:"Zenodo-linked",
       trust1:"Answers should show what they rely on.", trust2:"AI does not replace professional legal judgment.", trust3:"Legal text is read with date, version and validity.", trust4:"Author publications show a verifiable Zenodo status, published DOI records and Scholar pages.",
       sourceTag:"Legal database", sourceTitle:"From source to legal conclusion", sourceText:"Official text, case law, professional analysis and AI synthesis remain visibly separated.",
-      cardLaws:"Laws & regulations", cardLawsText:"The registry expands law-by-law. ZRO and ZKP are LIVE article-level corpora; new laws enter first with official metadata/provenance and then with verified article-level text.",
-      cardCases:"Case law", cardCasesText:"Judgments organized by court, field, legal issue, cited provisions and outcome.",
-      cardEchr:"ECHR & international sources", cardEchrText:"European standards and comparative sources with clearly marked jurisdiction.",
+      cardLaws:"Laws & regulations", cardLawsText:"The registry expands law-by-law. New laws enter first with official metadata/provenance and then with verified article-level text. Which laws have an article-level corpus is shown from the live system status.",
+      cardCases:"Case law", cardCasesText:"Directory of official court databases. Indexed case law by court, legal issue and outcome is added gradually and labelled once available.",
+      cardEchr:"ECHR & international sources", cardEchrText:"Directory of HUDOC and EUR-Lex with clearly marked jurisdiction. An indexed decision corpus is not yet included.",
       cardVersions:"Versions & amendments", cardVersionsText:"Compare old and new text with visible temporal boundaries and legal effect.",
       cardCitations:"Citation audit", cardCitationsText:"Check whether an article, case, DOI or source actually supports the claim.",
       cardDocs:"Documents & files", cardDocsText:"Working files, chronologies, evidence matrices and legal notes under human approval.",
@@ -2479,6 +2480,74 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   $("#year").textContent=new Date().getFullYear();
   applyLanguage();
 
+
+  // ---------------------------------------------------------------------------
+  // Truthful status labels: derived from /api/capabilities, never hard-coded.
+  // The UI must never promise more than the backend actually provides.
+  // ---------------------------------------------------------------------------
+  let systemCapabilities=null;
+  let capabilitiesState="loading";
+
+  function renderCapabilityLabels(){
+    const mk=lang==="mk";
+    const T=(m,e)=>mk?m:e;
+    const set=(key,text,live)=>{
+      document.querySelectorAll(`[data-cap="${key}"]`).forEach(el=>{
+        el.textContent=text;
+        el.style.color=live?"var(--ok)":"var(--warn)";
+      });
+    };
+    const aiLabel=document.getElementById("aiModeLabel");
+    const note=document.getElementById("coverageNote");
+
+    if(capabilitiesState!=="ready" || !systemCapabilities){
+      const unknown=capabilitiesState==="loading" ? "…" : T("СТАТУС НЕПОЗНАТ","STATUS UNKNOWN");
+      ["laws","cases","echr"].forEach(k=>set(k,unknown,false));
+      if(aiLabel) aiLabel.textContent=unknown;
+      if(note) note.textContent="";
+      return;
+    }
+
+    const c=systemCapabilities.capabilities || {};
+    const corpora=(systemCapabilities.coverage?.articleCorpusInstruments || []).filter(i=>i.articleCount>0);
+
+    set("laws",
+      corpora.length ? T(`LIVE · ${corpora.length} ${corpora.length===1?"закон":"закони"}`,`LIVE · ${corpora.length} ${corpora.length===1?"law":"laws"}`) : T("РЕГИСТАР","REGISTRY"),
+      corpora.length>0);
+    set("cases", c.caseLawCorpus==="live_corpus" ? "LIVE" : T("ДИРЕКТОРИУМ","DIRECTORY"), c.caseLawCorpus==="live_corpus");
+    set("echr", c.echrCorpus==="live_corpus" ? "LIVE" : T("ДИРЕКТОРИУМ","DIRECTORY"), c.echrCorpus==="live_corpus");
+    set("versions", "PREVIEW", false);
+
+    if(aiLabel){
+      aiLabel.textContent =
+        c.retrievalAssistant==="live_source_backed_ai" ? "LIVE · SOURCE-BACKED AI"
+        : c.retrievalAssistant==="live_retrieval_only" ? T("LIVE · ПРЕБАРУВАЊЕ НА ИЗВОРИ (без AI синтеза)","LIVE · SOURCE RETRIEVAL (no AI synthesis)")
+        : T("НЕДОСТАПНО","UNAVAILABLE");
+    }
+    if(note){
+      const list=corpora.map(i=>i.shortTitle || i.canonicalKey).join(", ");
+      note.textContent=T(
+        `Темите погоре се тематска навигација. Article-level корпус моментално имаат: ${list || "—"}.`,
+        `The topics above are thematic navigation. Article-level corpora currently available: ${list || "—"}.`
+      );
+    }
+  }
+
+  async function loadCapabilities(){
+    try{
+      const response=await fetch(API_BASE+"/api/capabilities",{headers:{accept:"application/json"}});
+      if(!response.ok) throw new Error("capabilities_"+response.status);
+      systemCapabilities=await response.json();
+      capabilitiesState="ready";
+    }catch{
+      capabilitiesState="failed";
+    }
+    renderCapabilityLabels();
+  }
+
+  document.getElementById("langBtn")?.addEventListener("click",()=>setTimeout(renderCapabilityLabels,0));
+  renderCapabilityLabels();
+  loadCapabilities();
 </script>
 
 </body>
