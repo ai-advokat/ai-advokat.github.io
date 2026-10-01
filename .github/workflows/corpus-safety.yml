@@ -124,7 +124,7 @@ jobs:
           Наслов на член
           (1) Текст на вториот член.
 
-          Член 25-а
+          Член 3-а
           (1) Посебен член.
           а) Прва алинеја
           б) Втора алинеја
@@ -162,6 +162,15 @@ jobs:
               VALUES (77,'mk:test-law','Закон за тест','law','MK','unknown','pending')
               """
           )
+          db.execute(
+              """
+              INSERT INTO instrument_versions
+              (instrument_id,version_label,valid_from,valid_to,is_current,checksum_sha256,text_content,source_url,human_review_status)
+              VALUES (77,'fixture-2026-09-29','2026-09-29',NULL,0,
+                      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+                      NULL,'https://example.invalid/test-law','pending')
+              """
+          )
           db.executescript(Path("/tmp/legal-import.sql").read_text(encoding="utf-8"))
 
           article_count = db.execute(
@@ -170,9 +179,9 @@ jobs:
           assert article_count == 3, article_count
 
           suffix = db.execute(
-              "SELECT article_number_normalized FROM legal_article_versions WHERE article_number='25-а'"
+              "SELECT article_number_normalized FROM legal_article_versions WHERE article_number='3-а'"
           ).fetchone()
-          assert suffix and suffix[0] == "25-а", suffix
+          assert suffix and suffix[0] == "3-а", suffix
 
           item_count = db.execute(
               "SELECT COUNT(*) FROM legal_article_items"
