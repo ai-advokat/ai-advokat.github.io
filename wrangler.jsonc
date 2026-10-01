@@ -5,6 +5,10 @@
   "compatibility_date": "2026-09-26",
   "preview_urls": true,
 
+  "vars": {
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFKQHY3Quvb_8JqH"
+  },
+
   "assets": {
     "directory": "./",
     "binding": "ASSETS",

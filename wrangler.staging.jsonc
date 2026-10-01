@@ -5,6 +5,11 @@
   "compatibility_date": "2026-09-26",
   "preview_urls": true,
 
+  "vars": {
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFKQHY3Quvb_8JqH",
+    "TURNSTILE_ALLOWED_HOSTNAMES": "ai-advokat-staging.aiadvokat16.workers.dev"
+  },
+
   "assets": {
     "directory": "./",
     "binding": "ASSETS",
