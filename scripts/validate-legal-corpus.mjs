@@ -26,16 +26,34 @@
 //   "min_extraction_confidence": 0.9,                        (optional)
 //   "transitional_final_provisions": {"present": true, "starts_at_article": "270"},
 //   "expected_lettered_articles": ["10-а","122-а"],          (optional; compared exactly when given)
-//   "expected_repealed_articles": ["15"]                     (optional; compared exactly when given)
+//   "expected_repealed_articles": ["15"],                    (optional; compared exactly when given)
+//   "source_chain": [                                        (optional, v1.1; required for multi-source corpora)
+//     {"role":"official_consolidation","issue_number":"7/2011","issue_date":"2011-01-20","url":"https://...","sha256":"<64 hex>"},
+//     {"role":"amendment","issue_number":"124/2015","issue_date":"2015-07-23","url":"https://...","sha256":"<64 hex>"}
+//   ]
 // }
+//
+// Optional list fields must be JSON arrays when present: a string such as "UNRESOLVED" is a STOP,
+// never a silently skipped check (v1.1).
+//
+// Provenance (v1.1):
+//   * without source_chain: every article's source must equal manifest.source (v1.0 behaviour, unchanged);
+//     an article carrying derived_from is a STOP, because its extra sources cannot be checked.
+//   * with source_chain: manifest.source must be one of its entries; every article's source must be a
+//     chain entry (url + sha256), and every derived_from[].sha256 must be a chain entry.
 import fs from "node:fs";
 import { normalizeArticleNumber, mixedScriptTokens } from "./parse-mk-legal-text.mjs";
 
-export const VALIDATOR_VERSION = "mk-legal-corpus-validator-v1.0.0";
+export const VALIDATOR_VERSION = "mk-legal-corpus-validator-v1.1.0";
 const VERSION_CLASSES = new Set(["original_text","official_consolidated","dated_snapshot","reference_consolidation","amendment_text","other"]);
 const LEGAL_STATUSES = new Set(["source_text","verified","needs_version_review","historical","current_consolidated"]);
 const HUMAN_GATE = new Set(["pending","reviewed","approved","rejected"]);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const SHA256_RE = /^[a-f0-9]{64}$/i;
+const LIST_FIELDS = ["allowed_gaps","acknowledged_warnings","expected_lettered_articles","expected_repealed_articles","other_versions","source_chain"];
+const present = x => x !== undefined && x !== null;
+// Present-but-not-an-array is a STOP (reported by the caller); absent or malformed yields [].
+const list = x => (Array.isArray(x) ? x : []);
 
 function parseNdjson(text) {
   const lines = text.split(/\r?\n/).filter(Boolean).map(JSON.parse);
@@ -72,6 +90,9 @@ export function validateCorpus(parsed, m) {
       if (m[k] === undefined || m[k] === null || m[k] === "") stop("manifest", `Manifest field '${k}' is missing`);
     }
     if (m.version_class && !VERSION_CLASSES.has(m.version_class)) stop("manifest", `Unknown version_class '${m.version_class}'`);
+    for (const k of ["acknowledged_warnings","other_versions","source_chain"]) {
+      if (present(m[k]) && !Array.isArray(m[k])) stop("manifest", `Manifest field '${k}' must be an array when present (got ${typeof m[k]})`);
+    }
     if (header.instrument_key && m.instrument_key && header.instrument_key !== m.instrument_key) {
       stop("manifest", `Parsed instrument '${header.instrument_key}' does not match manifest '${m.instrument_key}'`);
     }
@@ -112,7 +133,8 @@ export function validateCorpus(parsed, m) {
   });
 
   run("gaps", () => {
-    const allowed = new Set((m.allowed_gaps || []).map(norm));
+    if (present(m.allowed_gaps) && !Array.isArray(m.allowed_gaps)) stop("gaps", `allowed_gaps must be an array when present (got ${typeof m.allowed_gaps}); no gap is treated as allowed`);
+    const allowed = new Set(list(m.allowed_gaps).map(norm));
     const bases = [...new Set(nums.map(n => Number(n.split("-")[0])).filter(Number.isFinite))].sort((a, b) => a - b);
     for (let n = bases[0]; n <= bases[bases.length - 1]; n++) {
       if (bases.includes(n)) continue;
@@ -124,7 +146,9 @@ export function validateCorpus(parsed, m) {
 
   run("lettered_articles", () => {
     const found = nums.filter(n => n.includes("-"));
-    if (Array.isArray(m.expected_lettered_articles)) {
+    if (present(m.expected_lettered_articles) && !Array.isArray(m.expected_lettered_articles)) {
+      stop("lettered_articles", `expected_lettered_articles must be an array when present (got ${typeof m.expected_lettered_articles}); the comparison cannot run`);
+    } else if (Array.isArray(m.expected_lettered_articles)) {
       const exp = m.expected_lettered_articles.map(norm);
       for (const n of exp) if (!found.includes(n)) stop("lettered_articles", `Expected lettered article ${n} is missing`, n);
       for (const n of found) if (!exp.includes(n)) stop("lettered_articles", `Unexpected lettered article ${n}`, n);
@@ -135,7 +159,9 @@ export function validateCorpus(parsed, m) {
 
   run("repealed_articles", () => {
     const found = records.filter(r => r.status === "repealed").map(r => norm(r.article_number_normalized));
-    if (Array.isArray(m.expected_repealed_articles)) {
+    if (present(m.expected_repealed_articles) && !Array.isArray(m.expected_repealed_articles)) {
+      stop("repealed_articles", `expected_repealed_articles must be an array when present (got ${typeof m.expected_repealed_articles}); the comparison cannot run`);
+    } else if (Array.isArray(m.expected_repealed_articles)) {
       const exp = m.expected_repealed_articles.map(norm);
       for (const n of exp) if (!found.includes(n)) stop("repealed_articles", `Article ${n} should be marked repealed but is not`, n);
       for (const n of found) if (!exp.includes(n)) stop("repealed_articles", `Article ${n} is marked repealed but the manifest does not expect it`, n);
@@ -178,7 +204,7 @@ export function validateCorpus(parsed, m) {
   });
 
   run("parser_findings", () => {
-    const ack = m.acknowledged_warnings || [];
+    const ack = list(m.acknowledged_warnings);
     const isAck = f => ack.some(a => a.code === f.code && (a.article == null || norm(a.article) === norm(f.article ?? "")) && a.reason);
     for (const f of header.warnings || []) {
       if (typeof f !== "object") continue;
@@ -199,15 +225,66 @@ export function validateCorpus(parsed, m) {
   run("provenance", () => {
     const s = m.source || {};
     if (!s.url || !/^https:\/\//.test(s.url)) stop("provenance", "source.url missing or not https");
-    if (!s.sha256 || !/^[a-f0-9]{64}$/i.test(s.sha256)) stop("provenance", "source.sha256 missing or malformed");
+    if (!s.sha256 || !SHA256_RE.test(s.sha256)) stop("provenance", "source.sha256 missing or malformed");
     if (!s.issue_number && !s.issue_date) stop("provenance", "source.issue_number and source.issue_date are both missing");
     if (s.issue_date && !ISO_DATE.test(s.issue_date)) stop("provenance", "source.issue_date is not YYYY-MM-DD");
     for (const r of records) {
       if (!r.source?.url) stop("provenance", "Article without source url", r.article_number_normalized);
-      if (!r.source?.sha256 || !/^[a-f0-9]{64}$/i.test(r.source.sha256)) stop("provenance", "Article without sha256", r.article_number_normalized);
-      if (s.sha256 && r.source?.sha256 && r.source.sha256.toLowerCase() !== s.sha256.toLowerCase()) stop("provenance", "Article sha256 differs from manifest source", r.article_number_normalized);
-      if (s.url && r.source?.url && r.source.url !== s.url) stop("provenance", "Article source url differs from manifest source", r.article_number_normalized);
+      if (!r.source?.sha256 || !SHA256_RE.test(r.source.sha256)) stop("provenance", "Article without sha256", r.article_number_normalized);
+      if (present(r.derived_from) && !Array.isArray(r.derived_from)) stop("provenance", "derived_from must be an array", r.article_number_normalized);
     }
+
+    if (!Array.isArray(m.source_chain)) {
+      // v1.0 single-source behaviour, unchanged.
+      for (const r of records) {
+        if (s.sha256 && r.source?.sha256 && r.source.sha256.toLowerCase() !== s.sha256.toLowerCase()) stop("provenance", "Article sha256 differs from manifest source", r.article_number_normalized);
+        if (s.url && r.source?.url && r.source.url !== s.url) stop("provenance", "Article source url differs from manifest source", r.article_number_normalized);
+        if (list(r.derived_from).length) stop("provenance", "Article has derived_from but the manifest declares no source_chain", r.article_number_normalized);
+      }
+      return;
+    }
+
+    // v1.1 multi-source provenance.
+    const chain = new Map();
+    if (!m.source_chain.length) stop("provenance", "source_chain is empty");
+    m.source_chain.forEach((c, i) => {
+      const at = `source_chain[${i}]`;
+      if (!c || typeof c !== "object") { stop("provenance", `${at} is not an object`); return; }
+      if (!c.role || typeof c.role !== "string") stop("provenance", `${at}.role is missing`);
+      if (!c.url || !/^https:\/\//.test(c.url)) stop("provenance", `${at}.url missing or not https`);
+      if (!c.sha256 || !SHA256_RE.test(c.sha256)) { stop("provenance", `${at}.sha256 missing or malformed`); return; }
+      if (!c.issue_number && !c.issue_date) stop("provenance", `${at} has neither issue_number nor issue_date`);
+      if (c.issue_date && !ISO_DATE.test(c.issue_date)) stop("provenance", `${at}.issue_date is not YYYY-MM-DD`);
+      const key = c.sha256.toLowerCase();
+      if (chain.has(key)) stop("provenance", `${at} repeats sha256 ${key.slice(0, 12)}…`);
+      chain.set(key, c);
+    });
+    const used = new Set();
+    const s256 = (s.sha256 || "").toLowerCase();
+    if (s256 && !chain.has(s256)) stop("provenance", "manifest source.sha256 is not an entry of source_chain");
+    else if (s256 && s.url && chain.get(s256).url !== s.url) stop("provenance", "manifest source.url differs from its source_chain entry");
+    for (const r of records) {
+      const a = r.article_number_normalized;
+      const rs = (r.source?.sha256 || "").toLowerCase();
+      if (rs && !chain.has(rs)) stop("provenance", "Article source sha256 is not in source_chain", a);
+      else if (rs) {
+        used.add(rs);
+        if (r.source.url !== chain.get(rs).url) stop("provenance", "Article source url differs from its source_chain entry", a);
+      }
+      for (const d of list(r.derived_from)) {
+        const ds = String(d?.sha256 || "").toLowerCase();
+        if (!SHA256_RE.test(ds)) stop("provenance", "derived_from entry without a valid sha256", a);
+        else if (!chain.has(ds)) stop("provenance", `derived_from sha256 ${ds.slice(0, 12)}… is not in source_chain`, a);
+        else used.add(ds);
+      }
+    }
+    const headerChain = Array.isArray(header.source_chain) ? header.source_chain : null;
+    if (headerChain) {
+      const hs = new Set(headerChain.map(c => String(c?.sha256 || "").toLowerCase()));
+      for (const k of hs) if (!chain.has(k)) stop("provenance", `Parsed corpus was built from ${k.slice(0, 12)}…, which the manifest source_chain does not declare`);
+      for (const k of chain.keys()) if (!hs.has(k)) stop("provenance", `Manifest source_chain declares ${k.slice(0, 12)}…, but the parsed corpus was not built from it`);
+    }
+    for (const [k, c] of chain) if (!used.has(k)) note("provenance", `source_chain entry ${c.issue_number || c.issue_date || k.slice(0, 12)} is not referenced by any article`);
   });
 
   run("legal_status", () => {
@@ -230,7 +307,7 @@ export function validateCorpus(parsed, m) {
     if (v.application_from && v.valid_from && v.application_from < v.valid_from) stop("validity_dates", "application_from is before valid_from");
     const w = windowOf(v);
     if (w.start && w.end && w.end <= w.start) stop("validity_dates", "valid_to is not after the start of application");
-    for (const o of m.other_versions || []) {
+    for (const o of list(m.other_versions)) {
       if (o.version_label === m.version_label) stop("validity_dates", "other_versions repeats this version label");
       if ((w.start || w.end) && overlaps(w, windowOf(o))) stop("validity_dates", `Validity window overlaps version '${o.version_label}'`);
     }
