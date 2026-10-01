@@ -56,6 +56,10 @@ jobs:
       - name: Read-only production migration inventory
         run: npx wrangler d1 migrations list DB --remote --config wrangler.jsonc
 
+      - name: Read-only production ZPP version windows
+        run: |
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT li.canonical_key, iv.id, iv.version_label, iv.valid_from, iv.application_from, iv.valid_to, iv.is_current, iv.human_review_status, iv.version_class, iv.source_issue_number, iv.source_issue_date FROM instrument_versions iv JOIN legal_instruments li ON li.id=iv.instrument_id WHERE li.canonical_key='mk:zpp' ORDER BY iv.id;"
+
       - name: Diagnostic result
         run: |
           echo "READ-ONLY PRODUCTION DIAGNOSTICS: PASS"
