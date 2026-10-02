@@ -21,6 +21,48 @@
   <meta name="apple-mobile-web-app-title" content="AI Advokat" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>AI Advokat — Правен информациски и AI портал</title>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AI Advokat" />
+  <meta property="og:title" content="AI Advokat — Правен информациски и AI портал" />
+  <meta property="og:description" content="Правни извори, article-level корпус на закони и AI-истражување со видливи извори, проверка на верзија и задолжителна човечка проверка." />
+  <meta property="og:url" content="https://ai-advokat.github.io/" />
+  <meta property="og:image" content="https://ai-advokat.github.io/assets/ai-advokat-hero-brand.webp" />
+  <meta property="og:image:alt" content="AI Advokat — правната вага и AI профил" />
+  <meta property="og:locale" content="mk_MK" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://ai-advokat.github.io/#website",
+        "url": "https://ai-advokat.github.io/",
+        "name": "AI Advokat",
+        "description": "Правен информациски и AI-истражувачки портал: правни извори, article-level корпус на закони и AI-помош при истражување под човечка контрола. Не е адвокатско застапување.",
+        "inLanguage": ["mk", "en"],
+        "publisher": { "@id": "https://ai-advokat.github.io/#organization" }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://ai-advokat.github.io/#organization",
+        "name": "AI Advokat",
+        "url": "https://ai-advokat.github.io/",
+        "logo": "https://ai-advokat.github.io/assets/app-icon.svg",
+        "email": "aiadvokat16@gmail.com"
+      },
+      {
+        "@type": "Person",
+        "@id": "https://ai-advokat.github.io/#author",
+        "name": "Zoran Stojankich",
+        "alternateName": "Зоран Стојанкиќ",
+        "url": "https://ai-advokat.github.io/#author",
+        "sameAs": ["https://orcid.org/0009-0001-0702-2371"]
+      }
+    ]
+  }
+  </script>
 
   <style>
     :root {
@@ -28,7 +70,7 @@
       --surface: #ffffff;
       --surface-2: #eef2f5;
       --ink: #132033;
-      --muted: #607080;
+      --muted: #56667a;
       --line: #d9e0e7;
       --navy: #0c2038;
       --navy-2: #173d66;
@@ -40,6 +82,7 @@
       --shadow: 0 16px 46px rgba(12,32,56,.10);
       --radius: 18px;
       --max: 1220px;
+      --focus: #1d5fa8;
     }
 
     html[data-theme="dark"] {
@@ -57,10 +100,11 @@
       --warn:#e7bc69;
       --danger:#ee8686;
       --shadow:0 16px 46px rgba(0,0,0,.28);
+      --focus:#f2d69d;
     }
 
     *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
+    html{scroll-behavior:smooth;scroll-padding-top:92px}
 
     body{
       margin:0;
@@ -843,6 +887,81 @@
       section{padding:56px 0}
     }
 
+    /* ---- Public-layer pass (2 Oct 2026): focus, states, coverage, citations ---- */
+    :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+    .actionCard:focus-within{border-color:var(--gold);box-shadow:0 14px 32px rgba(12,32,56,.10)}
+    .sourceLink:focus-visible,.searchRow input:focus-visible,.searchRow select:focus-visible,
+    .assistantPanel textarea:focus-visible,.assistantPanel input:focus-visible,.assistantPanel select:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+    html[data-theme="dark"] .tag{color:#9ec3e6}
+    .utility button{min-height:32px}
+    .menuBtn{min-width:44px;min-height:44px}
+    #mobileMenu a{display:block;padding:10px 0}
+    button.chip{cursor:pointer;color:var(--ink);min-height:32px}
+    button.chip:hover{border-color:var(--gold)}
+    button.cardAction{width:100%;border:0;background:transparent;color:inherit;padding:8px 0 0;text-align:left;cursor:pointer}
+    .cardState.locked{color:var(--muted)}
+    .badge.draft{color:var(--warn);border-style:dashed}
+    .badge.info{color:var(--navy-2)}
+    html[data-theme="dark"] .badge.info{color:#9ec3e6}
+    .fieldLabel{display:block;font-weight:750;font-size:.9rem;margin:0 0 6px}
+    .help{display:block;font-size:.82rem;color:var(--muted);margin-top:5px}
+    .fieldMeta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .fieldGrid > div{min-width:0}
+    .fieldGrid input,.keyRow input{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:11px;padding:10px 12px}
+    .assistantPanel textarea{min-height:130px}
+    .scopeNote{margin:4px 0 0;font-size:.85rem;color:var(--muted)}
+    .modeLine{font-size:.85rem;color:var(--muted)}
+    .modeLine strong{color:var(--ink)}
+    .answer h3{margin:0 0 8px;font-size:1.05rem}
+    .answerBody{white-space:pre-wrap;line-height:1.65}
+    .stateBox{border:1px solid var(--line);border-left:5px solid var(--warn);background:var(--surface);border-radius:0 12px 12px 0;padding:14px 16px}
+    .stateBox.unavailable{border-left-color:var(--danger)}
+    .stateBox h3{margin:0 0 6px;font-size:1.02rem}
+    .stateBox p{margin:6px 0}
+    .stateBox .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .stateBox .failClosed{font-size:.84rem;color:var(--muted)}
+    .versionBox{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px;margin:10px 0}
+    .versionBox dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:6px 0 0;font-size:.88rem}
+    .versionBox dt{color:var(--muted)}
+    .versionBox dd{margin:0;word-break:break-word}
+    .versionList{margin:8px 0 0;padding-left:18px;font-size:.88rem}
+    .citationItem .citeHead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+    .citationItem p{margin:8px 0}
+    .keyBox{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);padding:10px 14px}
+    .keyBox summary{cursor:pointer;font-weight:750;min-height:32px;display:flex;align-items:center}
+    .keyRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .keyRow input{flex:1;min-width:200px}
+    .coveragePanel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:18px}
+    .coveragePanel h3{margin:0 0 6px}
+    .coveragePanel p{margin:0 0 12px;color:var(--muted);font-size:.9rem}
+    .coverageTable{width:100%;border-collapse:collapse;font-size:.9rem}
+    .coverageTable caption{text-align:left;font-size:.82rem;color:var(--muted);padding-bottom:6px}
+    .coverageTable th,.coverageTable td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+    .coverageTable th{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+    .coverageTable td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+    .helpBox{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:16px}
+    .helpBox summary{cursor:pointer;font-weight:750;min-height:32px;display:flex;align-items:center}
+    .helpBox ol{margin:8px 0 4px;padding-left:20px}
+    .helpBox li{margin:6px 0}
+    .searchStatus{margin:10px 0 0;font-size:.86rem;color:var(--muted)}
+    .resultItem .resultActions{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+    .pubCard .pubActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+    .pubCard .pubActions .btn,.citeBox .btn{padding:9px 12px;font-size:.9rem}
+    .pubCard .doi a{text-decoration:underline}
+    .citeBox{border:1px dashed var(--line);border-radius:10px;padding:8px 12px;font-size:.88rem}
+    .citeBox summary{cursor:pointer;font-weight:700;min-height:28px;display:flex;align-items:center}
+    .citeText{margin:8px 0;font-family:ui-serif,Georgia,serif;line-height:1.5;word-break:break-word}
+    .footerGrid .footHead{color:#fff;font-size:1rem;margin:0 0 6px}
+    .portrait picture{display:block;width:100%;height:100%;position:relative;z-index:2}
+    @media (prefers-reduced-motion:reduce){
+      html{scroll-behavior:auto}
+      *,*::before,*::after{transition:none!important;animation:none!important}
+    }
+    @media (max-width:650px){
+      .versionBox dl{grid-template-columns:1fr}
+      .coverageTable th:nth-child(3),.coverageTable td:nth-child(3){display:none}
+    }
+
     @media print{
       .topbar,.header,.heroActions,.searchPanel,.btn,.menuBtn,.utility,.modal{display:none!important}
       .hero{background:white;color:black;padding:24px 0}
@@ -865,7 +984,7 @@
 
     <div class="utility">
       <button type="button" id="langBtn" aria-label="Промени јазик" data-i18n-aria="changeLanguage">MK / EN</button>
-      <button type="button" id="themeBtn" aria-label="Промени тема" data-i18n-aria="changeTheme">
+      <button type="button" id="themeBtn" aria-label="Промени тема" aria-pressed="false" data-i18n-aria="changeTheme">
         ◐ <span data-i18n="theme">Тема</span>
       </button>
       <button type="button" id="a11yBtn" aria-label="Зголеми текст" data-i18n-aria="increaseText">A+</button>
@@ -975,7 +1094,7 @@
 
         <div class="trustCard">
           <b data-i18n="trustLabel4">Поврзано со Zenodo</b>
-          <span data-i18n="trust4">Авторските трудови имаат проверлив Zenodo статус, објавени DOI-записи и Scholar страници.</span>
+          <span data-i18n="trust4">Четири авторски труда се објавени на Zenodo со DOI и имаат Scholar страници; нацртите се јасно означени.</span>
         </div>
         </div>
       </div>
@@ -983,51 +1102,56 @@
     </div>
   </section>
 
-  <div class="container searchPanel" aria-label="Пребарување" data-i18n-aria="searchPanelAria">
-    <div class="searchBox">
+  <div class="container searchPanel">
+    <form class="searchBox" id="searchForm" role="search" aria-label="Пребарување" data-i18n-aria="searchPanelAria">
 
       <div class="searchRow">
 
+        <label class="sr" for="globalSearch" data-i18n="searchAria">Глобално пребарување</label>
         <input
           id="globalSearch"
           type="search"
+          minlength="2"
+          maxlength="160"
           placeholder="Пребарај закон, член, пресуда, поим или труд..."
           data-i18n-placeholder="searchPlaceholder"
-          aria-label="Глобално пребарување"
-          data-i18n-aria="searchAria"
+          aria-describedby="coverageNote"
         />
 
-        <select id="typeFilter" aria-label="Тип" data-i18n-aria="typeAria">
+        <label class="sr" for="typeFilter" data-i18n="typeAria">Тип</label>
+        <select id="typeFilter">
           <option value="all" data-i18n="typeAll">Сите извори</option>
           <option value="law" data-i18n="typeLaw">Прописи</option>
+          <option value="source" data-i18n="typeSource">Официјални извори</option>
           <option value="case" data-i18n="typeCase">Судска практика</option>
           <option value="paper" data-i18n="typePaper">Трудови</option>
-          <option value="guide" data-i18n="typeGuide">Водичи</option>
         </select>
 
-        <select id="statusFilter" aria-label="Статус" data-i18n-aria="statusAria">
+        <label class="sr" for="statusFilter" data-i18n="statusAria">Статус</label>
+        <select id="statusFilter">
           <option value="all" data-i18n="statusAll">Секој статус</option>
           <option value="official" data-i18n="statusOfficial">Официјален</option>
           <option value="verified" data-i18n="statusVerified">Проверен</option>
           <option value="pending" data-i18n="statusPending">Во подготовка</option>
         </select>
 
-        <button class="btn primary" id="searchBtn" data-i18n="searchButton">
+        <button class="btn primary" id="searchBtn" type="submit" data-i18n="searchButton">
           Пребарај
         </button>
 
       </div>
 
-      <div class="chips">
-        <span class="chip" data-i18n="chipConstitutional">Уставно право</span>
-        <span class="chip" data-i18n="chipCriminal">Кривично право</span>
-        <span class="chip" data-i18n="chipObligations">Облигации</span>
-        <span class="chip" data-i18n="chipAdministrative">Управно право</span>
-        <span class="chip" data-i18n="chipEchr">ЕСПЧ</span>
-        <span class="chip" data-i18n="chipMediation">Медијација</span>
-        <span class="chip" data-i18n="chipAiLaw">AI и право</span>
+      <div class="chips" role="group" aria-label="Теми" data-i18n-aria="chipsAria">
+        <button type="button" class="chip" data-i18n="chipConstitutional">Уставно право</button>
+        <button type="button" class="chip" data-i18n="chipCriminal">Кривично право</button>
+        <button type="button" class="chip" data-i18n="chipObligations">Облигации</button>
+        <button type="button" class="chip" data-i18n="chipAdministrative">Управно право</button>
+        <button type="button" class="chip" data-i18n="chipEchr">ЕСПЧ</button>
+        <button type="button" class="chip" data-i18n="chipMediation">Медијација</button>
+        <button type="button" class="chip" data-i18n="chipAiLaw">AI и право</button>
       </div>
       <p class="coverageNote" id="coverageNote" aria-live="polite" style="margin:8px 0 0;font-size:.86rem;color:var(--muted)"></p>
+      <p class="searchStatus" id="searchStatus" role="status"></p>
 
       <div
         class="resultList"
@@ -1035,7 +1159,7 @@
         aria-live="polite">
       </div>
 
-    </div>
+    </form>
   </div>
 
   <section id="sources">
@@ -1053,68 +1177,70 @@
 
       <div class="grid3">
 
-        <article class="card actionCard" role="button" tabindex="0" id="lawsCard" aria-label="Отвори регистар на закони и прописи">
-          <div class="icon">§</div>
+        <article class="card actionCard" id="lawsCard">
+          <div class="icon" aria-hidden="true">§</div>
           <h3 data-i18n="cardLaws">Закони и прописи</h3>
           <p data-i18n="cardLawsText">
-            Регистар со важечки текст, изменувања, датум на важност и врска до официјален извор.
+            Регистарот се проширува закон-по-закон: прво официјални метаподатоци и доказно потекло, а потоа проверен текст член-по-член.
           </p>
-          <div class="cardAction"><span>Отвори регистар →</span><span class="cardState" data-cap="laws">…</span></div>
+          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardLawsAction">Отвори регистар →</span><span class="cardState" data-cap="laws">…</span></button>
         </article>
 
-        <article class="card actionCard" role="button" tabindex="0" id="casesCard" aria-label="Отвори судска практика">
-          <div class="icon">⚖</div>
+        <article class="card actionCard" id="casesCard">
+          <div class="icon" aria-hidden="true">⚖</div>
           <h3 data-i18n="cardCases">Судска практика</h3>
           <p data-i18n="cardCasesText">
-            Пресуди организирани по суд, област, правно прашање, цитирани одредби и исход.
+            Директориум кон официјалните бази на судовите. Индексирана судска практика се додава постепено и се означува кога ќе биде достапна.
           </p>
-          <div class="cardAction"><span>Отвори судска практика →</span><span class="cardState" data-cap="cases">…</span></div>
+          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardCasesAction">Отвори судска практика →</span><span class="cardState" data-cap="cases">…</span></button>
         </article>
 
-        <article class="card actionCard" role="button" tabindex="0" id="echrCard" aria-label="Отвори ЕСПЧ и меѓународни извори">
-          <div class="icon">◎</div>
+        <article class="card actionCard" id="echrCard">
+          <div class="icon" aria-hidden="true">◎</div>
           <h3 data-i18n="cardEchr">ЕСПЧ и меѓународни извори</h3>
           <p data-i18n="cardEchrText">
-            Европски стандарди и компаративни извори со јасно означена јурисдикција.
+            Директориум кон HUDOC и EUR-Lex со јасно означена јурисдикција. Индексиран корпус на одлуки сè уште не е вклучен.
           </p>
-          <div class="cardAction"><span>Отвори меѓународни извори →</span><span class="cardState" data-cap="echr">…</span></div>
+          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardEchrAction">Отвори меѓународни извори →</span><span class="cardState" data-cap="echr">…</span></button>
         </article>
 
-        <article class="card actionCard" role="button" tabindex="0" id="versionsCard" aria-label="Отвори верзии и измени">
-          <div class="icon">⌁</div>
+        <article class="card actionCard" id="versionsCard">
+          <div class="icon" aria-hidden="true">⌁</div>
           <h3 data-i18n="cardVersions">Верзии и измени</h3>
           <p data-i18n="cardVersionsText">
             Споредба на стар и нов текст, со видливи датумски граници и правна важност.
           </p>
-          <div class="cardAction"><span>Провери верзии →</span><span class="cardState" data-cap="versions" style="color:var(--warn)">PREVIEW</span></div>
+          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardVersionsAction">Провери верзии →</span><span class="cardState" data-cap="versions" style="color:var(--warn)">PREVIEW</span></button>
         </article>
 
         <article class="card">
-          <div class="icon">✓</div>
+          <div class="icon" aria-hidden="true">✓</div>
           <h3 data-i18n="cardCitations">Проверка на цитати</h3>
           <p data-i18n="cardCitationsText">
             Контрола дали членот, предметот, DOI или изворот навистина го поддржува тврдењето.
           </p>
+          <div class="cardAction"><span data-i18n="cardStatusLabel">Статус</span><span class="cardState" data-cap="citationAudit">…</span></div>
         </article>
 
         <article class="card">
-          <div class="icon">▣</div>
+          <div class="icon" aria-hidden="true">▣</div>
           <h3 data-i18n="cardDocs">Документи и досиеја</h3>
           <p data-i18n="cardDocsText">
             Работни досиеја, хронологии, доказни матрици и правни белешки со човечко одобрување.
           </p>
+          <div class="cardAction"><span data-i18n="cardStatusLabel">Статус</span><span class="cardState" data-cap="documents">…</span></div>
         </article>
 
       </div>
 
-      <div class="sourceWorkspace" id="sourceWorkspace" hidden aria-live="polite">
+      <div class="sourceWorkspace" id="sourceWorkspace" hidden aria-live="polite" tabindex="-1" aria-labelledby="workspaceTitle">
         <div class="workspaceHead">
           <div>
             <span class="tag" id="workspaceTag">OFFICIAL SOURCE DIRECTORY</span>
             <h3 id="workspaceTitle">Правен работен простор</h3>
             <p id="workspaceText">Изберете секција за да ги отворите проверените официјални извори.</p>
           </div>
-          <button type="button" class="btn light" id="closeWorkspace">Затвори</button>
+          <button type="button" class="btn light" id="closeWorkspace" data-i18n="closeModal">Затвори</button>
         </div>
         <div class="sourceLinkGrid" id="workspaceLinks"></div>
       </div>
@@ -1138,66 +1264,65 @@
 
         <div class="assistantPanel">
 
-          <label for="legalQuestion">
-            <b data-i18n="question">Правно прашање</b>
-          </label>
+          <div class="notice" id="privacyNotice" style="margin-bottom:14px;font-size:.9rem">
+            <b data-i18n="privacyWarningTitle">Не внесувајте доверливи податоци</b>
+            <span data-i18n="privacyWarningText">Ова е јавно поле за правно истражување. Не внесувајте имиња на странки, матични броеви, адреси, здравствени податоци, детали од активни предмети, адвокатска тајна или други доверливи податоци. Поставете го прашањето општо.</span>
+          </div>
+
+          <label for="legalQuestion" class="fieldLabel" data-i18n="question">Правно прашање</label>
 
           <textarea
             id="legalQuestion"
+            maxlength="600"
+            aria-describedby="privacyNotice questionHelp"
             placeholder="Пример: Кои се условите за институционална одговорност и како се разликува од индивидуалната кривична одговорност?" data-i18n-placeholder="questionPlaceholder"></textarea>
-
-          <div class="notice" style="margin-top:10px;font-size:.9rem">
-            <b data-i18n="membershipKeyTitle">Membership key (опционално)</b>
-            <span data-i18n="membershipKeyText">Ако имате активно членство, внесете го приватниот клуч за да се примени вашиот пакет и месечната квота. Клучот се чува само во тековната browser сесија.</span>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-              <input id="botMembershipKey" type="password" autocomplete="off" placeholder="AIADV-..." style="flex:1;min-width:220px">
-              <button type="button" class="btn light" id="saveMembershipKey" data-i18n="membershipKeyUse">Користи клуч</button>
-              <a class="btn light" href="/membership.html" data-i18n="membershipLink">Планови и членство</a>
-            </div>
-            <small id="membershipKeyState" style="display:block;margin-top:8px;color:var(--muted)"></small>
-          </div>
-
-          <div class="notice" style="margin-top:10px;font-size:.9rem">
-            <b data-i18n="privacyWarningTitle">Не внесувајте доверливи податоци</b>
-            <span data-i18n="privacyWarningText">AI полето е за правно истражување. Не внесувајте непотребни матични броеви, адреси, здравствени податоци, детали од активни кривични предмети, адвокатска тајна или други доверливи податоци.</span>
+          <div class="fieldMeta">
+            <small id="questionHelp" class="help" data-i18n="questionHelp">Наведете го законот (на пр. „ЗРО“) и членот или поимот. Одговорот се заснова само на членовите што ќе бидат прикажани како извори.</small>
+            <small id="questionCount" class="help" aria-hidden="true">0 / 600</small>
           </div>
 
           <div class="fieldGrid">
-
-            <select id="instrumentSelect" aria-label="Избери закон">
-              <option value="auto">Автоматски избери закон</option>
-            </select>
-
-            <select id="jurisdiction">
-              <option data-i18n="jurisdictionMk">Северна Македонија</option>
-              <option data-i18n="jurisdictionEchr">Европски суд за човекови права</option>
-              <option data-i18n="jurisdictionEu">Европска унија</option>
-              <option data-i18n="jurisdictionComparative">Компаративно право</option>
-            </select>
-
-            <select id="researchMode">
-              <option value="source" data-i18n="modeSource">Истражување со примарни извори</option>
-              <option value="memo" data-i18n="modeMemo">Правно мислење</option>
-              <option value="case" data-i18n="modeCase">Матрица на судска практика</option>
-              <option value="citations" data-i18n="modeCitations">Проверка на цитати</option>
-            </select>
-
+            <div>
+              <label for="instrumentSelect" class="fieldLabel" data-i18n="instrumentLabel">Закон</label>
+              <select id="instrumentSelect" aria-describedby="instrumentHelp">
+                <option value="auto">Автоматски избери закон</option>
+              </select>
+              <small id="instrumentHelp" class="help" data-i18n="instrumentHelp">„Автоматски“ избира закон само кога називот или кратенката во прашањето е еднозначна.</small>
+            </div>
+            <div>
+              <label for="questionDate" class="fieldLabel" data-i18n="dateLabel">Датум на кој се однесува прашањето (опционално)</label>
+              <input id="questionDate" type="date" min="1991-01-01" max="2100-12-31" aria-describedby="dateHelp">
+              <small id="dateHelp" class="help" data-i18n="dateHelp">Ако законот има повеќе верзии, датумот одредува која верзија се применува. Без датум, верзија се користи само кога може безбедно да се утврди; во спротивно системот ќе побара датум.</small>
+            </div>
           </div>
 
-          <div class="assistantFoot">
-            <span class="sourceRule" data-i18n="sourceRule">
-              ✓ Прво официјални извори · ✓ видливи цитати · ✓ без измислен DOI
-            </span>
+          <p class="scopeNote" data-i18n="scopeNote">Опсег: Северна Македонија · article-level корпус на законите. Судската практика и ЕСПЧ засега се достапни само како директориум на официјални извори.</p>
 
-            <button class="btn primary" id="askBtn" data-i18n="analyzeButton">
+          <div class="assistantFoot">
+            <span class="modeLine"><span data-i18n="systemModeLabel">Режим на системот:</span> <strong id="aiModeLabel">…</strong></span>
+
+            <button class="btn primary" id="askBtn" type="button" data-i18n="analyzeButton">
               Анализирај
             </button>
           </div>
+          <p class="sourceRule" data-i18n="sourceRule" style="margin:8px 0 0">✓ Прво официјални извори · ✓ видливи цитати · ✓ без измислен DOI</p>
 
-          <div class="answer" id="answerBox">
-            <strong id="aiModeLabel">…</strong>
-            <span id="answerText"></span>
+          <div class="answer" id="answerBox" role="region" aria-labelledby="answerHeading" aria-live="polite">
+            <h3 id="answerHeading" class="sr" data-i18n="answerHeading">Резултат од AI Истражувачот</h3>
+            <div id="answerText"></div>
           </div>
+
+          <details class="keyBox">
+            <summary data-i18n="membershipKeyTitle">Клуч за членство (опционално)</summary>
+            <p class="help" style="margin-top:6px" data-i18n="membershipKeyText">Ако имате активно членство, внесете го приватниот клуч за да се примени вашиот пакет и месечната квота. Клучот се чува само во тековната сесија на прелистувачот и се испраќа само до AI Advokat API.</p>
+            <label for="botMembershipKey" class="fieldLabel" data-i18n="membershipKeyLabel">Клуч</label>
+            <div class="keyRow">
+              <input id="botMembershipKey" type="password" autocomplete="off" spellcheck="false" placeholder="AIADV-...">
+              <button type="button" class="btn light" id="saveMembershipKey" data-i18n="membershipKeyUse">Користи клуч</button>
+              <a class="btn light" href="/membership.html" data-i18n="membershipLink">Планови и членство</a>
+            </div>
+            <small id="membershipKeyState" class="help" role="status"></small>
+          </details>
 
           <div class="notice" style="margin-top:16px">
             <b data-i18n="humanGate">
@@ -1212,8 +1337,25 @@
         </div>
 
         <div>
+          <section class="coveragePanel" aria-labelledby="coverageTitle" style="padding:20px">
+            <h3 id="coverageTitle" data-i18n="coverageTitle">Покриеност на корпусот</h3>
+            <p data-i18n="coverageText">Закони со внесен текст член-по-член. Бројот на членови не значи дека текстот е потврден како тековен: статусот на верзијата се прикажува при секој одговор.</p>
+            <div id="coverageTable" aria-live="polite"><p data-i18n="coverageLoading">Се вчитува регистарот…</p></div>
+          </section>
+
+          <details class="helpBox">
+            <summary data-i18n="helpTitle">Како да поставите прашање</summary>
+            <ol>
+              <li data-i18n="help1">Именувајте го законот (кратенка или назив) или изберете го од листата.</li>
+              <li data-i18n="help2">Прашајте за конкретен член, поим, рок или обврска.</li>
+              <li data-i18n="help3">Ако законот има повеќе верзии (на пр. ЗПП), внесете датум.</li>
+              <li data-i18n="help4">Отворете ги прикажаните членови и официјалниот извор пред да се потпрете на одговорот.</li>
+              <li data-i18n="help5">Кога системот одбива да одговори (двосмислен закон, непозната верзија, тема без корпус), тоа е заштита — не грешка.</li>
+            </ol>
+          </details>
+
           <h3 style="margin-top:0" data-i18n="promptTitle">
-            Библиотека на правни промптови
+            Примери на прашања
           </h3>
 
           <div class="promptGrid" id="promptGrid"></div>
@@ -1265,15 +1407,20 @@
       <div class="portrait">
         <div class="portraitFallback" aria-hidden="true">ЗС</div>
 
-        <img
-          id="authorPortrait"
-          src="assets/zoran-stojankic.png"
-          alt="Професионален портрет на адвокат Зоран Стојанкиќ"
-          data-i18n-alt="authorPortraitAlt"
-          loading="lazy"
-          decoding="async"
-          onerror="this.style.display='none'"
-        />
+        <picture>
+          <source srcset="/assets/zoran-stojankic.webp" type="image/webp">
+          <img
+            id="authorPortrait"
+            src="/assets/zoran-stojankic.png"
+            alt="Професионален портрет на адвокат Зоран Стојанкиќ"
+            data-i18n-alt="authorPortraitAlt"
+            width="660"
+            height="825"
+            loading="lazy"
+            decoding="async"
+            onerror="this.style.display='none'"
+          />
+        </picture>
       </div>
 
       <div class="authorMeta">
@@ -1450,7 +1597,7 @@
       </div>
 
       <nav aria-label="Навигација во подножје" data-i18n-aria="footerNavAria">
-        <h4 data-i18n="footerNavTitle">Навигација</h4>
+        <h2 class="footHead" data-i18n="footerNavTitle">Навигација</h2>
         <a href="#sources" data-i18n="navSources">Правни извори</a>
         <a href="#research" data-i18n="navResearch">AI Истражувач</a>
         <a href="#publications" data-i18n="navPublications">Трудови</a>
@@ -1460,7 +1607,7 @@
 
       <nav aria-label="Интегритет и контакти" data-i18n-aria="footerIntegrityAria">
 
-        <h4 data-i18n="footerIntegrityTitle">Интегритет</h4>
+        <h2 class="footHead" data-i18n="footerIntegrityTitle">Интегритет</h2>
 
         <a href="#about" data-i18n="methodology">Методологија</a>
         <a href="/legal-notice.html" data-i18n="legalNotice">Правно известување</a>
@@ -1488,7 +1635,7 @@
       </span>
 
       <span data-i18n="footerStatus">
-        Продукциска основа · подготвено за Cloudflare · Човечка порта
+        Правно-информативна платформа · Изворот прв · Човечка порта
       </span>
     </div>
 
@@ -1498,6 +1645,7 @@
 <div
   class="modal"
   id="infoModal"
+  hidden
   role="dialog"
   aria-modal="true"
   aria-labelledby="modalTitle">
@@ -1519,8 +1667,7 @@
       Zenodo-профилот на Зоран Стојанкиќ / AI Advokat е активен. Јавниот портал прикажува само објавени записи и контролирани Scholar страници; приватни Zenodo editor/upload врски не се изложуваат. Автоматската API-синхронизација сè уште не е вклучена.
     </p>
 
-    <pre style="white-space:pre-wrap;background:var(--surface-2);padding:14px;border-radius:12px;border:1px solid var(--line)">window.AI_ADVOCAT_CONFIG.zenodoEnabled = false;
-window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
+    <p><a href="https://zenodo.org/communities/ai-advokat/" target="_blank" rel="noopener noreferrer">Zenodo Community: AI Advokat ↗</a></p>
 
   </div>
 </div>
@@ -1561,167 +1708,6 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   });
 
 
-  const ZENODO_AUTHOR_URL =
-    "#publications";
-
-
-  const data = [
-
-
-    {
-      type:"paper",
-      status:"verified",
-      title:"„СИНЏИР“ — Спогодување со обвинителството, признавање вина и границите на казнената правда",
-      meta:"Зоран Стојанкиќ · Working paper · Version 1.0 · DOI: 10.5281/zenodo.22981744",
-      text:"Спогодување; признание на вина; организиран финансиски криминал; даночно затајување; перење пари; конфискација; пропорционалност."
-    },
-
-    {
-      type:"paper",
-      status:"verified",
-      title:"Електронските и AI-генерираните докази во судската постапка",
-      meta:"Зоран Стојанкиќ · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23017531",
-      text:"Автентичност; интегритет; deepfake; синџир на чување; електронски докази; AI-генерирани докази; ефективно оспорување."
-    },
-
-    {
-      type:"guide",
-      status:"verified",
-      title:"Метод за проверка на правен цитат",
-      meta:"AI Advokat Research Guide · v1",
-      text:"Проверка на член, верзија, важност, судска одлука, DOI и примарен извор."
-    },
-
-    {
-      type:"law",
-      status:"official",
-      title:"Регистар на прописи — архитектура",
-      meta:"Подготвено за D1 · официјални извори први",
-      text:"Закон, службен весник, член, измена, датум на важност, консолидиран текст."
-    },
-
-    {
-      type:"case",
-      status:"official",
-      title:"Судска практика — архитектура",
-      meta:"Подготвено за indexed case law",
-      text:"Суд, број на предмет, датум, правно прашање, релевантни членови, исход и цитати."
-    }
-
-  ];
-
-
-  const publications = [
-
-
-    {
-      title:"„СИНЏИР“ — Спогодување со обвинителството, признавање вина и границите на казнената правда",
-      kind:"Working Paper",
-      version:"Version 1.0 · Human Gate completed",
-      doi:"10.5281/zenodo.22981744",
-      badge:"ZENODO · PUBLISHED",
-      published:true,
-      draftUrl:"",
-      zenodoUrl:"https://zenodo.org/records/22981744",
-      tags:[
-        "кривично право",
-        "спогодување",
-        "финансиски криминал",
-        "конфискација"
-      ]
-    },
-
-    {
-      title:"Електронските и AI-генерираните докази во судската постапка",
-      kind:"Working Paper",
-      version:"Version 1.0 · Human Gate completed",
-      doi:"10.5281/zenodo.23017531",
-      badge:"ZENODO · PUBLISHED",
-      published:true,
-      draftUrl:"",
-      zenodoUrl:"https://zenodo.org/records/23017531",
-      tags:[
-        "електронски докази",
-        "AI-генерирани докази",
-        "deepfake",
-        "синџир на чување"
-      ]
-    },
-
-    {
-      title:"AI Advokat Research Notes",
-      kind:"Working Papers",
-      version:"Series scaffold",
-      doi:"DOI pending",
-      badge:"ZENODO READY · DOI PENDING",
-      published:false,
-      draftUrl:"",
-      zenodoUrl:ZENODO_AUTHOR_URL,
-      tags:[
-        "legal research",
-        "evidence",
-        "AI"
-      ]
-    }
-
-  ];
-
-
-  const prompts = [
-
-    [
-      "Пронајди важечки пропис",
-      "Најди го важечкиот текст, измени, датум на важност и официјален извор."
-    ],
-
-    [
-      "Спореди две верзии на член",
-      "Покажи што е изменето, кога и каква е правната последица."
-    ],
-
-    [
-      "Сумирај пресуда",
-      "Оддели факти, правно прашање, применети норми, образложение и исход."
-    ],
-
-    [
-      "Направи case-law matrix",
-      "Спореди повеќе одлуки по правно прашање, норма и резултат."
-    ],
-
-    [
-      "Изгради правна хронологија",
-      "Извлечи датуми, акти, органи, рокови и процесни чекори."
-    ],
-
-    [
-      "Провери цитати и фусноти",
-      "Провери дали секој цитат ја поддржува реченицата и дали изворот е примарен."
-    ],
-
-    [
-      "Подготви legal memo",
-      "Issue · Rule · Authority · Application · Counterarguments · Conclusion · Sources."
-    ],
-
-    [
-      "Извлечи рокови и обврски",
-      "Направи листа на рокови, носители, последици и изворни членови."
-    ],
-
-    [
-      "Направи evidence map",
-      "Раздели утврдени факти, наводи, спорни факти и недостасувачки докази."
-    ],
-
-    [
-      "Human Gate проверка",
-      "Наведи што мора адвокатот лично да провери пред документот да се употреби."
-    ]
-
-  ];
-
-
   const i18n = {
     mk:{
       topLine:"Правен информациски портал · AI со проверливи извори · човечка контрола",
@@ -1733,29 +1719,38 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       heroText:"Едно место за прописи, судска практика, правни анализи, документи и истражување со вештачка интелигенција — со видливи извори, верзии и задолжителна човечка проверка.",
       startResearch:"Започни правно истражување", viewPapers:"Отвори трудови", installApp:"Инсталирај AI Advokat",
       trustLabel1:"Изворот прв", trustLabel2:"Човечка порта", trustLabel3:"Проверка на верзија", trustLabel4:"Поврзано со Zenodo",
-      trust1:"Одговорите треба да покажуваат на што се потпираат.", trust2:"AI не ја заменува професионалната правна проценка.", trust3:"Правниот текст се чита со датум, верзија и важност.", trust4:"Авторските трудови имаат проверлив Zenodo-статус и резервирани DOI каде што се достапни.",
+      trust1:"Одговорите треба да покажуваат на што се потпираат.", trust2:"AI не ја заменува професионалната правна проценка.", trust3:"Правниот текст се чита со датум, верзија и важност.", trust4:"Четири авторски труда се објавени на Zenodo со DOI и имаат Scholar страници; нацртите се јасно означени.",
       sourceTag:"Правна база", sourceTitle:"Од извор до правен заклучок", sourceText:"Порталот е структуриран така што официјалниот текст, судската практика, стручната анализа и AI-синтезата никогаш не се мешаат без ознака.",
-      cardLaws:"Закони и прописи", cardLawsText:"Регистарот се проширува закон-по-закон. Новите закони прво влегуваат со официјална metadata/provenance, а потоа со проверен текст член-по-член. Кои закони имаат article-level корпус се прикажува од живиот статус на системот.",
+      cardLaws:"Закони и прописи", cardLawsText:"Регистарот се проширува закон-по-закон: прво официјални метаподатоци и доказно потекло, а потоа проверен текст член-по-член.",
       cardCases:"Судска практика", cardCasesText:"Директориум кон официјалните бази на судовите. Индексирана судска практика по суд, правно прашање и исход се додава постепено и се означува кога ќе биде достапна.",
       cardEchr:"ЕСПЧ и меѓународни извори", cardEchrText:"Директориум кон HUDOC и EUR-Lex со јасно означена јурисдикција. Индексиран корпус на одлуки сè уште не е вклучен.",
       cardVersions:"Верзии и измени", cardVersionsText:"Споредба на стар и нов текст, со видливи датумски граници и правна важност.",
       cardCitations:"Проверка на цитати", cardCitationsText:"Контрола дали членот, предметот, DOI или изворот навистина го поддржува тврдењето.",
       cardDocs:"Документи и досиеја", cardDocsText:"Работни досиеја, хронологии, доказни матрици и правни белешки со човечко одобрување.",
-      researchTag:"AI ПРАВНО ИСТРАЖУВАЊЕ", researchTitle:"AI Истражувач со доказна трага", researchText:"AI Истражувачот пребарува низ истиот article-level corpus што е видлив во „Закони и прописи“, со директни извори, статус на верзија и Човечка порта.",
+      researchTag:"AI ПРАВНО ИСТРАЖУВАЊЕ", researchTitle:"AI Истражувач со доказна трага", researchText:"AI Истражувачот работи врз истиот article-level корпус што е видлив во „Закони и прописи“. Секој одговор се врзува за една утврдена верзија на законот, ги прикажува изворните членови и останува под Човечка порта.",
       question:"Правно прашање", humanGate:"Човечка правна проверка е задолжителна", humanGateText:"AI-излезот е истражувачка помош. Не претставува адвокатско мислење, застапување или конечен правен совет додека не биде проверен и усвоен од овластен професионалец.",
-      promptTitle:"Библиотека на правни промптови", pubTag:"ПУБЛИКАЦИИ", pubTitle:"Трудови и стручни анализи", pubText:"Zenodo-профилот е активен. Четири Working papers се објавени со регистрирани DOI и се вклучени во AI Advokat Zenodo Community. „Кочани – Пулс“ е означен како draft во подготовка за журналски труд.", zenodoStatus:"Статус на Zenodo",
+      promptTitle:"Примери на прашања", pubTag:"ПУБЛИКАЦИИ", pubTitle:"Трудови и стручни анализи", pubText:"Zenodo-профилот е активен. Четири Working papers се објавени со регистрирани DOI и се вклучени во AI Advokat Zenodo Community. „Кочани – Пулс“ е означен како draft во подготовка за журналски труд.", zenodoStatus:"Статус на Zenodo",
       authorTag:"АВТОР", authorName:"Адвокат Зоран Стојанкиќ", authorBio:"Порталот е развиен како професионална правна платформа за систематизирање на законодавството, судската практика, стручните анализи и истражувањето поддржано од вештачка интелигенција. Zenodo-профилот е активен; четири труда се објавени со DOI, имаат Scholar страници и се вклучени во AI Advokat Zenodo Community.",
       focus:"Области на интерес", focusText:"Право · институционална одговорност · безбедност · медијација", researchIds:"Истражувачки идентификатори", zenodoReserved:"Zenodo · 4 објавени труда · 4 Scholar страници", contact:"Контакт", publication:"Публикации", zenodoDraftRecords:"Zenodo · 4 објавени труда · 4 Scholar страници",
       aboutTag:"УПРАВУВАЊЕ", aboutTitle:"Како порталот ја чува доказната дисциплина", intLabel1:"1. Извор", intLabel2:"2. Доказно потекло", intLabel3:"3. AI нацрт", intLabel4:"4. Човечка порта",
       int1:"Официјалниот документ се чува одделно од толкувањето.", int2:"Се бележат орган, датум, верзија и доказно потекло.", int3:"AI може да сумира и споредува, но мора да покаже извори.", int4:"Конечната правна проценка и објавување остануваат човечки.",
-      disclaimerTitle:"Правна напомена", disclaimerText:"AI Advokat е правно-информативна и истражувачка платформа. AI-генерираната содржина може да содржи грешки, не создава сама по себе однос адвокат-клиент и не е замена за индивидуален правен совет. Официјалниот и важечки текст на правниот извор секогаш има предност; за рокови, кривична постапка и други високоризични прашања е задолжителна човечка професионална проверка.", privacyWarningTitle:"Не внесувајте доверливи податоци", privacyWarningText:"AI полето е за правно истражување. Не внесувајте непотребни матични броеви, адреси, здравствени податоци, детали од активни кривични предмети, адвокатска тајна или други доверливи податоци.", privacyPolicy:"Политика за приватност", aiPolicy:"AI, точност и Human Gate", navMembership:"Членство", membershipKeyTitle:"Membership key (опционално)", membershipKeyText:"Ако имате активно членство, внесете го приватниот клуч за да се примени вашиот пакет и месечната квота. Клучот се чува само во тековната browser сесија.", membershipKeyUse:"Користи клуч", membershipLink:"Планови и членство",
-      footerSub:"Правен информациски портал и AI истражување", footerText:"Правни извори, авторски анализи и AI-поддржано истражување со проверливи извори и човечка финална контрола.", footerNavTitle:"Навигација", footerIntegrityTitle:"Интегритет", methodology:"Методологија", legalNotice:"Правна напомена", zenodoDoiRecords:"Zenodo · DOI-записи", rights:"Сите права задржани.", footerStatus:"Продукциска основа · подготвено за Cloudflare · Човечка порта",
-      modalTitle:"Zenodo интеграција", modalText:"Zenodo-профилот на Зоран Стојанкиќ / AI Advokat е активен. Објавени се „СИНЏИР“ (DOI 10.5281/zenodo.22981744), „Електронските и AI-генерираните докази во судската постапка“ (DOI 10.5281/zenodo.23017531) , „Претресот на мобилен телефон и заштитата на адвокатската тајна“ (DOI 10.5281/zenodo.23021388) и „Вештачката интелигенција во адвокатурата и судството“ (DOI 10.5281/zenodo.23023442), сите како Working paper, Version 1.0. Автоматската API-синхронизација сè уште не е вклучена.",
+      disclaimerTitle:"Правна напомена", disclaimerText:"AI Advokat е правно-информативна и истражувачка платформа. AI-генерираната содржина може да содржи грешки, не создава сама по себе однос адвокат-клиент и не е замена за индивидуален правен совет. Официјалниот и важечки текст на правниот извор секогаш има предност; за рокови, кривична постапка и други високоризични прашања е задолжителна човечка професионална проверка.", privacyWarningTitle:"Не внесувајте доверливи податоци", privacyWarningText:"Ова е јавно поле за правно истражување. Не внесувајте имиња на странки, матични броеви, адреси, здравствени податоци, детали од активни предмети, адвокатска тајна или други доверливи податоци. Поставете го прашањето општо.", privacyPolicy:"Политика за приватност", aiPolicy:"AI, точност и Human Gate", navMembership:"Членство", membershipKeyTitle:"Клуч за членство (опционално)", membershipKeyText:"Ако имате активно членство, внесете го приватниот клуч за да се примени вашиот пакет и месечната квота. Клучот се чува само во тековната сесија на прелистувачот и се испраќа само до AI Advokat API.", membershipKeyUse:"Користи клуч", membershipLink:"Планови и членство",
+      footerSub:"Правен информациски портал и AI истражување", footerText:"Правни извори, авторски анализи и AI-поддржано истражување со проверливи извори и човечка финална контрола.", footerNavTitle:"Навигација", footerIntegrityTitle:"Интегритет", methodology:"Методологија", legalNotice:"Правна напомена", zenodoDoiRecords:"Zenodo · DOI-записи", rights:"Сите права задржани.", footerStatus:"Правно-информативна платформа · Изворот прв · Човечка порта",
+      modalTitle:"Zenodo интеграција", modalText:"Zenodo-профилот на Зоран Стојанкиќ / AI Advokat е активен. Објавени се „СИНЏИР“ (DOI 10.5281/zenodo.22981744), „Електронските и AI-генерираните докази во судската постапка“ (DOI 10.5281/zenodo.23017531), „Претресот на мобилен телефон и заштитата на адвокатската тајна“ (DOI 10.5281/zenodo.23021388) и „Вештачката интелигенција во адвокатурата и судството“ (DOI 10.5281/zenodo.23023442), сите како Working paper, Version 1.0. Автоматската API-синхронизација сè уште не е вклучена.",
       skipLink:"Прескокни до главната содржина", changeLanguage:"Промени јазик", changeTheme:"Промени тема", increaseText:"Зголеми текст", brandHome:"AI Advokat почетна", mainNav:"Главна навигација", openMenu:"Отвори мени", trustGridAria:"Основни принципи", searchPanelAria:"Пребарување", authorPortraitAlt:"Професионален портрет на адвокат Зоран Стојанкиќ", footerNavAria:"Навигација во подножје", footerIntegrityAria:"Интегритет и контакти", closeModal:"Затвори",
       searchPlaceholder:"Пребарај закон, член, пресуда, поим или труд...", searchAria:"Глобално пребарување", typeAria:"Тип", statusAria:"Статус", typeAll:"Сите извори", typeLaw:"Прописи", typeCase:"Судска практика", typePaper:"Трудови", typeGuide:"Водичи", statusAll:"Секој статус", statusOfficial:"Официјален", statusVerified:"Проверен", statusPending:"Во подготовка", searchButton:"Пребарај",
       chipConstitutional:"Уставно право", chipCriminal:"Кривично право", chipObligations:"Облигации", chipAdministrative:"Управно право", chipEchr:"ЕСПЧ", chipMediation:"Медијација", chipAiLaw:"AI и право",
       questionPlaceholder:"Пример: Кои се условите за институционална одговорност и како се разликува од индивидуалната кривична одговорност?", jurisdictionMk:"Северна Македонија", jurisdictionEchr:"Европски суд за човекови права", jurisdictionEu:"Европска унија", jurisdictionComparative:"Компаративно право", modeSource:"Истражување со примарни извори", modeMemo:"Правно мислење", modeCase:"Матрица на судска практика", modeCitations:"Проверка на цитати", sourceRule:"✓ Прво официјални извори · ✓ видливи цитати · ✓ без измислен DOI", analyzeButton:"Анализирај", demoMode:"AI Advokat · Source-backed",
       usePrompt:"Користи", doiReserved:"DOI", openZenodo:"Отвори на Zenodo", openDraft:"Отвори Zenodo нацрт (сопственик)", zenodoPending:"Zenodo-запис во подготовка", noResults:"Нема пронајден релевантен резултат во достапниот правен корпус.", statusOfficialBadge:"ОФИЦИЈАЛЕН", statusVerifiedBadge:"ПРОВЕРЕН", statusPendingBadge:"ВО ПОДГОТОВКА",
+      typeSource:"Официјални извори", chipsAria:"Теми за пребарување", cardStatusLabel:"Статус",
+      cardLawsAction:"Отвори регистар →", cardCasesAction:"Отвори судска практика →", cardEchrAction:"Отвори меѓународни извори →", cardVersionsAction:"Провери верзии →",
+      questionHelp:"Наведете го законот (на пр. „ЗРО“) и членот или поимот. Одговорот се заснова само на членовите што ќе бидат прикажани како извори.",
+      instrumentLabel:"Закон", instrumentHelp:"„Автоматски“ избира закон само кога називот или кратенката во прашањето е еднозначна.",
+      dateLabel:"Датум на кој се однесува прашањето (опционално)", dateHelp:"Ако законот има повеќе верзии, датумот одредува која верзија се применува. Без датум, верзија се користи само кога може безбедно да се утврди; во спротивно системот ќе побара датум.",
+      scopeNote:"Опсег: Северна Македонија · article-level корпус на законите. Судската практика и ЕСПЧ засега се достапни само како директориум на официјални извори.",
+      systemModeLabel:"Режим на системот:", answerHeading:"Резултат од AI Истражувачот", membershipKeyLabel:"Клуч",
+      coverageTitle:"Покриеност на корпусот", coverageText:"Закони со внесен текст член-по-член. Бројот на членови не значи дека текстот е потврден како тековен: статусот на верзијата се прикажува при секој одговор.", coverageLoading:"Се вчитува регистарот…",
+      helpTitle:"Како да поставите прашање", help1:"Именувајте го законот (кратенка или назив) или изберете го од листата.", help2:"Прашајте за конкретен член, поим, рок или обврска.", help3:"Ако законот има повеќе верзии (на пр. ЗПП), внесете датум.", help4:"Отворете ги прикажаните членови и официјалниот извор пред да се потпрете на одговорот.", help5:"Кога системот одбива да одговори (двосмислен закон, непозната верзија, тема без корпус), тоа е заштита — не грешка.",
       askReady:"AI Advokat го обработува прашањето преку правниот корпус за {jurisdiction} и мора да покаже извори, применливи норми, ограничувања на верзијата и Човечка порта.",
       askEmpty:"Внесете правно прашање. Порталот намерно не генерира правни заклучоци без прашање и извори."
     },
@@ -1769,29 +1764,38 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       heroText:"One place for legislation, case law, legal analysis, documents and AI-assisted research — with visible sources, versions and mandatory human review.",
       startResearch:"Start legal research", viewPapers:"View publications", installApp:"Install AI Advokat",
       trustLabel1:"Source-first", trustLabel2:"Human Gate", trustLabel3:"Version-aware", trustLabel4:"Zenodo-linked",
-      trust1:"Answers should show what they rely on.", trust2:"AI does not replace professional legal judgment.", trust3:"Legal text is read with date, version and validity.", trust4:"Author publications show a verifiable Zenodo status, published DOI records and Scholar pages.",
+      trust1:"Answers should show what they rely on.", trust2:"AI does not replace professional legal judgment.", trust3:"Legal text is read with date, version and validity.", trust4:"Four author papers are published on Zenodo with DOIs and have Scholar pages; drafts are clearly labelled.",
       sourceTag:"Legal database", sourceTitle:"From source to legal conclusion", sourceText:"Official text, case law, professional analysis and AI synthesis remain visibly separated.",
-      cardLaws:"Laws & regulations", cardLawsText:"The registry expands law-by-law. New laws enter first with official metadata/provenance and then with verified article-level text. Which laws have an article-level corpus is shown from the live system status.",
+      cardLaws:"Laws & regulations", cardLawsText:"The registry expands law-by-law: first official metadata and provenance, then verified article-by-article text.",
       cardCases:"Case law", cardCasesText:"Directory of official court databases. Indexed case law by court, legal issue and outcome is added gradually and labelled once available.",
       cardEchr:"ECHR & international sources", cardEchrText:"Directory of HUDOC and EUR-Lex with clearly marked jurisdiction. An indexed decision corpus is not yet included.",
       cardVersions:"Versions & amendments", cardVersionsText:"Compare old and new text with visible temporal boundaries and legal effect.",
       cardCitations:"Citation audit", cardCitationsText:"Check whether an article, case, DOI or source actually supports the claim.",
       cardDocs:"Documents & files", cardDocsText:"Working files, chronologies, evidence matrices and legal notes under human approval.",
-      researchTag:"AI LEGAL RESEARCH", researchTitle:"AI Research with an evidence trail", researchText:"The AI Researcher uses the same article-level corpus visible under Laws & regulations, with direct sources, version status and Human Gate controls.",
+      researchTag:"AI LEGAL RESEARCH", researchTitle:"AI Research with an evidence trail", researchText:"The AI Researcher works on the same article-level corpus shown under Laws & regulations. Every answer is bound to one resolved version of the law, shows the source articles and stays under the Human Gate.",
       question:"Legal question", humanGate:"Human legal review is mandatory", humanGateText:"AI output is research assistance. It is not legal representation or final legal advice until verified and adopted by an authorized professional.",
-      promptTitle:"Legal prompt library", pubTag:"PUBLICATIONS", pubTitle:"Publications & legal analyses", pubText:"The Zenodo profile is active. Four Working papers are published with registered DOIs and are included in the AI Advokat Zenodo Community. “Kočani – Puls” is listed as a draft in preparation for a journal article.", zenodoStatus:"Zenodo status",
+      promptTitle:"Example questions", pubTag:"PUBLICATIONS", pubTitle:"Publications & legal analyses", pubText:"The Zenodo profile is active. Four Working papers are published with registered DOIs and are included in the AI Advokat Zenodo Community. “Kočani – Puls” is listed as a draft in preparation for a journal article.", zenodoStatus:"Zenodo status",
       authorTag:"AUTHOR", authorName:"Attorney Zoran Stojankich", authorBio:"The portal is developed as a professional legal platform for organizing legislation, case law, professional analyses and AI-assisted research. The Zenodo profile is active; four works are published with DOIs, have Scholar pages, and are included in the AI Advokat Zenodo Community.",
       focus:"Areas of interest", focusText:"Law · institutional accountability · security · mediation", researchIds:"Research identifiers", zenodoReserved:"Zenodo · 4 published works · 4 Scholar pages", contact:"Contact", publication:"Publications", zenodoDraftRecords:"Zenodo · 4 published works · 4 Scholar pages",
       aboutTag:"GOVERNANCE", aboutTitle:"How the portal protects evidence discipline", intLabel1:"1. Source", intLabel2:"2. Provenance", intLabel3:"3. AI Draft", intLabel4:"4. Human Gate",
       int1:"Official documents stay separate from interpretation.", int2:"Authority, date, version and provenance are recorded.", int3:"AI may summarize and compare, but must expose sources.", int4:"Final legal judgment and publication remain human.",
-      disclaimerTitle:"Legal notice", disclaimerText:"AI Advokat is a legal-information and research platform. AI-generated content may contain errors, does not by itself create an attorney-client relationship, and is not a substitute for individualized legal advice. The official and current legal source controls; human professional review is required for deadlines, criminal proceedings and other high-risk matters.", privacyWarningTitle:"Do not enter confidential data", privacyWarningText:"The AI field is for legal research. Do not enter unnecessary national ID numbers, addresses, health data, details from active criminal matters, legal professional privilege, or other confidential data.", privacyPolicy:"Privacy policy", aiPolicy:"AI accuracy and Human Gate", navMembership:"Membership", membershipKeyTitle:"Membership key (optional)", membershipKeyText:"If you have an active membership, enter your private key to apply your plan and monthly quota. The key is kept only for the current browser session.", membershipKeyUse:"Use key", membershipLink:"Plans & membership",
-      footerSub:"Legal information & AI research portal", footerText:"Legal sources, author analyses and AI-assisted research with verifiable sources and final human control.", footerNavTitle:"Navigation", footerIntegrityTitle:"Integrity", methodology:"Methodology", legalNotice:"Legal notice", zenodoDoiRecords:"Zenodo · DOI records", rights:"All rights reserved.", footerStatus:"Production foundation · Cloudflare-ready · Human Gate",
-      modalTitle:"Zenodo integration", modalText:"The Zenodo profile of Zoran Stojankich / AI Advokat is active. Published works are “CHAIN” (DOI 10.5281/zenodo.22981744), “Electronic and AI-Generated Evidence in Judicial Proceedings” (DOI 10.5281/zenodo.23017531), , “Searching a Mobile Phone and the Protection of Legal Professional Privilege” (DOI 10.5281/zenodo.23021388), and “Artificial Intelligence in the Legal Profession and the Judiciary” (DOI 10.5281/zenodo.23023442), all as Working paper, Version 1.0. Automatic API synchronization is not yet enabled.",
+      disclaimerTitle:"Legal notice", disclaimerText:"AI Advokat is a legal-information and research platform. AI-generated content may contain errors, does not by itself create an attorney-client relationship, and is not a substitute for individualized legal advice. The official and current legal source controls; human professional review is required for deadlines, criminal proceedings and other high-risk matters.", privacyWarningTitle:"Do not enter confidential data", privacyWarningText:"This is a public legal-research field. Do not enter party names, national ID numbers, addresses, health data, details of active matters, privileged information or other confidential data. Ask the question in general terms.", privacyPolicy:"Privacy policy", aiPolicy:"AI accuracy and Human Gate", navMembership:"Membership", membershipKeyTitle:"Membership key (optional)", membershipKeyText:"If you have an active membership, enter your private key to apply your plan and monthly quota. The key is kept only for the current browser session and is sent only to the AI Advokat API.", membershipKeyUse:"Use key", membershipLink:"Plans & membership",
+      footerSub:"Legal information & AI research portal", footerText:"Legal sources, author analyses and AI-assisted research with verifiable sources and final human control.", footerNavTitle:"Navigation", footerIntegrityTitle:"Integrity", methodology:"Methodology", legalNotice:"Legal notice", zenodoDoiRecords:"Zenodo · DOI records", rights:"All rights reserved.", footerStatus:"Legal-information platform · Source-first · Human Gate",
+      modalTitle:"Zenodo integration", modalText:"The Zenodo profile of Zoran Stojankich / AI Advokat is active. Published works are “CHAIN” (DOI 10.5281/zenodo.22981744), “Electronic and AI-Generated Evidence in Judicial Proceedings” (DOI 10.5281/zenodo.23017531), “Searching a Mobile Phone and the Protection of Legal Professional Privilege” (DOI 10.5281/zenodo.23021388), and “Artificial Intelligence in the Legal Profession and the Judiciary” (DOI 10.5281/zenodo.23023442), all as Working paper, Version 1.0. Automatic API synchronization is not yet enabled.",
       skipLink:"Skip to main content", changeLanguage:"Change language", changeTheme:"Change theme", increaseText:"Increase text size", brandHome:"AI Advokat home", mainNav:"Main navigation", openMenu:"Open menu", trustGridAria:"Core principles", searchPanelAria:"Search", authorPortraitAlt:"Professional portrait of Attorney Zoran Stojankich", footerNavAria:"Footer navigation", footerIntegrityAria:"Integrity and contacts", closeModal:"Close",
       searchPlaceholder:"Search law, article, judgment, term or publication...", searchAria:"Global search", typeAria:"Type", statusAria:"Status", typeAll:"All sources", typeLaw:"Legislation", typeCase:"Case law", typePaper:"Publications", typeGuide:"Guides", statusAll:"Any status", statusOfficial:"Official", statusVerified:"Verified", statusPending:"In preparation", searchButton:"Search",
       chipConstitutional:"Constitutional law", chipCriminal:"Criminal law", chipObligations:"Law of obligations", chipAdministrative:"Administrative law", chipEchr:"ECHR", chipMediation:"Mediation", chipAiLaw:"AI & Law",
       questionPlaceholder:"Example: What are the conditions for institutional accountability and how does it differ from individual criminal responsibility?", jurisdictionMk:"North Macedonia", jurisdictionEchr:"European Court of Human Rights", jurisdictionEu:"European Union", jurisdictionComparative:"Comparative law", modeSource:"Source-first research", modeMemo:"Legal memo", modeCase:"Case-law matrix", modeCitations:"Citation audit", sourceRule:"✓ official sources first · ✓ visible citations · ✓ no invented DOI", analyzeButton:"Analyze", demoMode:"AI Advokat · Source-backed",
       usePrompt:"Use", doiReserved:"DOI", openZenodo:"Open on Zenodo", openDraft:"Open Zenodo draft (owner)", zenodoPending:"Zenodo record in preparation", noResults:"No relevant result was found in the available legal corpus.", statusOfficialBadge:"OFFICIAL", statusVerifiedBadge:"VERIFIED", statusPendingBadge:"IN PREPARATION",
+      typeSource:"Official sources", chipsAria:"Search topics", cardStatusLabel:"Status",
+      cardLawsAction:"Open registry →", cardCasesAction:"Open case law →", cardEchrAction:"Open international sources →", cardVersionsAction:"Check versions →",
+      questionHelp:"Name the law (e.g. “ZRO”) and the article or concept. The answer relies only on the articles shown as sources.",
+      instrumentLabel:"Law", instrumentHelp:"“Automatic” selects a law only when the name or abbreviation in the question is unambiguous.",
+      dateLabel:"Date the question refers to (optional)", dateHelp:"If a law has several versions, the date decides which version applies. Without a date a version is used only when it can be determined safely; otherwise the system asks for a date.",
+      scopeNote:"Scope: North Macedonia · article-level corpus of laws. Case law and ECHR are currently available only as a directory of official sources.",
+      systemModeLabel:"System mode:", answerHeading:"AI Researcher result", membershipKeyLabel:"Key",
+      coverageTitle:"Corpus coverage", coverageText:"Laws with article-by-article text. An article count does not mean the text is verified as current: the version status is shown with every answer.", coverageLoading:"Loading registry…",
+      helpTitle:"How to ask a question", help1:"Name the law (abbreviation or title) or choose it from the list.", help2:"Ask about a specific article, concept, deadline or obligation.", help3:"If the law has several versions (e.g. ZPP), enter a date.", help4:"Open the cited articles and the official source before relying on the answer.", help5:"When the system declines to answer (ambiguous law, unknown version, topic without corpus), that is a safeguard — not an error.",
       askReady:"AI Advokat processes the question through the legal corpus for {jurisdiction} and must expose sources, applicable rules, version limitations and the Human Gate.",
       askEmpty:"Enter a legal question. The portal deliberately does not generate legal conclusions without a question and sources."
     }
@@ -1805,63 +1809,59 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
 
+  const SCHOLAR_BASE="https://ai-advokat.github.io";
+  const PUBLICATION_META={
+    "10.5281/zenodo.22981744":{scholar:"/scholar/sindzir/",year:"2026",titleEn:"“CHAIN” — Plea Agreements, Guilty Pleas and the Limits of Criminal Justice"},
+    "10.5281/zenodo.23017531":{scholar:"/scholar/electronic-ai-evidence/",year:"2026",titleEn:"Electronic and AI-Generated Evidence in Judicial Proceedings"},
+    "10.5281/zenodo.23021388":{scholar:"/scholar/mobile-phone-privilege/",year:"2026",titleEn:"Searching a Mobile Phone and the Protection of Legal Professional Privilege"},
+    "10.5281/zenodo.23023442":{scholar:"/scholar/ai-legal-practice-judiciary/",year:"2026",titleEn:"Artificial Intelligence in the Legal Profession and the Judiciary"}
+  };
+
   const dynamicContent = {
     mk:{
       prompts:[
-        ["Пронајди важечки пропис","Најди го важечкиот текст, измените, датумот на важност и официјалниот извор."],
-        ["Спореди две верзии на член","Покажи што е изменето, кога и каква е правната последица."],
-        ["Сумирај пресуда","Оддели факти, правно прашање, применети норми, образложение и исход."],
-        ["Направи матрица на судска практика","Спореди повеќе одлуки по правно прашање, норма и резултат."],
-        ["Изгради правна хронологија","Извлечи датуми, акти, органи, рокови и процесни чекори."],
-        ["Провери цитати и фусноти","Провери дали секој цитат ја поддржува реченицата и дали изворот е примарен."],
-        ["Подготви правно мислење","Прашање · Правило · Извор · Примена · Контрааргументи · Заклучок · Извори."],
-        ["Извлечи рокови и обврски","Направи листа на рокови, носители, последици и изворни членови."],
-        ["Направи доказна карта","Раздели утврдени факти, наводи, спорни факти и недостасувачки докази."],
-        ["Проверка на Човечката порта","Наведи што мора адвокатот лично да провери пред документот да се употреби."]
+        ["Член од закон","Што уредува член 12 од ЗРО и кои услови ги предвидува?"],
+        ["Поим во закон","Кои членови од ЗКП го уредуваат притворот и кои рокови предвидуваат?"],
+        ["Рокови и обврски","Кои рокови ги предвидува ЗИ за постапување по предлог за извршување? Наведи ги изворните членови."],
+        ["Права и обврски","Кои права ги има работникот при престанок на договорот за вработување според ЗРО?"],
+        ["Верзија на законот","Кој член од ЗПП ја уредува содржината на тужбата? (ЗПП има повеќе верзии — внесете датум.)"],
+        ["Проверка пред употреба","Кои членови од ЗРО треба лично да се проверат во официјалниот извор пред примена на конкретен случај?"]
       ],
       publications:[        {title:"„СИНЏИР“ — Спогодување со обвинителството, признавање вина и границите на казнената правда",kind:"Работен труд",version:"Верзија 1.0 · Човечка порта завршена",doi:"10.5281/zenodo.22981744",badge:"ZENODO · ОБЈАВЕНО",published:true,draftUrl:"",zenodoUrl:"https://zenodo.org/records/22981744",tags:["кривично право","спогодување","финансиски криминал","конфискација"]},
         {title:"Електронските и AI-генерираните докази во судската постапка",kind:"Работен труд",version:"Верзија 1.0 · Човечка порта завршена",doi:"10.5281/zenodo.23017531",badge:"ZENODO · ОБЈАВЕНО",published:true,draftUrl:"",zenodoUrl:"https://zenodo.org/records/23017531",tags:["електронски докази","AI-генерирани докази","deepfake","синџир на чување"]},
         {title:"Претресот на мобилен телефон и заштитата на адвокатската тајна",kind:"Работен труд",version:"Верзија 1.0 · Човечка порта завршена",doi:"10.5281/zenodo.23021388",badge:"ZENODO · ОБЈАВЕНО",published:true,draftUrl:"",zenodoUrl:"https://zenodo.org/records/23021388",tags:["мобилен телефон","адвокатска тајна","електронски докази","приватност"]},
         {title:"Вештачката интелигенција во адвокатурата и судството",kind:"Работен труд",version:"Верзија 1.0 · Човечка порта завршена",doi:"10.5281/zenodo.23023442",badge:"ZENODO · ОБЈАВЕНО",published:true,draftUrl:"",zenodoUrl:"https://zenodo.org/records/23023442",tags:["вештачка интелигенција","адвокатура","судство","правично судење"]},
-        {title:"Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност",kind:"Нацрт за журналски труд",version:"Draft · Во подготовка за журналски артикал",doi:"",badge:"DRAFT · JOURNAL ARTICLE IN PREPARATION",published:false,draftUrl:"",tags:["кривична одговорност","институционална одговорност","политичка одговорност","Кочани · Пулс"]},
+        {title:"Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност",kind:"Нацрт за журналски труд",version:"Нацрт · Во подготовка за журналски артикал",doi:"",badge:"НАЦРТ · НЕ Е ОБЈАВЕН",published:false,draftUrl:"",tags:["кривична одговорност","институционална одговорност","политичка одговорност","Кочани · Пулс"]},
       ],
-      data:[        {type:"paper",status:"verified",title:"„СИНЏИР“ — Спогодување со обвинителството, признавање вина и границите на казнената правда",meta:"Зоран Стојанкиќ · Working paper · Version 1.0 · DOI: 10.5281/zenodo.22981744",text:"Спогодување; признание на вина; организиран финансиски криминал; даночно затајување; перење пари; конфискација; пропорционалност."},
-        {type:"paper",status:"verified",title:"Електронските и AI-генерираните докази во судската постапка",meta:"Зоран Стојанкиќ · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23017531",text:"Автентичност; интегритет; deepfake; синџир на чување; електронски докази; AI-генерирани докази; ефективно оспорување."},
-        {type:"paper",status:"verified",title:"Претресот на мобилен телефон и заштитата на адвокатската тајна",meta:"Зоран Стојанкиќ · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23021388",text:"Мобилен телефон; адвокатска тајна; електронски докази; судска наредба; приватност; независно издвојување."},
-        {type:"paper",status:"verified",title:"Вештачката интелигенција во адвокатурата и судството",meta:"Зоран Стојанкиќ · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23023442",text:"Вештачка интелигенција; адвокатура; судство; правично судење; алгоритамска пристрасност; електронски докази; човечки надзор."},
-        {type:"paper",status:"pending",title:"Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност",meta:"Зоран Стојанкиќ · Draft · Подготовка за журналски труд",text:"Нацрт во подготовка за журналски артикал; индивидуална кривична, институционална и политичка одговорност."},
-        {type:"guide",status:"verified",title:"Метод за проверка на правен цитат",meta:"AI Advokat · Истражувачки водич · v1",text:"Проверка на член, верзија, важност, судска одлука, DOI и примарен извор."},
-        {type:"law",status:"official",title:"Регистар на прописи — архитектура",meta:"Подготвено за D1 · прво официјални извори",text:"Закон, службен весник, член, измена, датум на важност, консолидиран текст."},
-        {type:"case",status:"official",title:"Судска практика — архитектура",meta:"Подготвено за индексирана судска практика",text:"Суд, број на предмет, датум, правно прашање, релевантни членови, исход и цитати."}
+      data:[        {type:"paper",status:"verified",title:"„СИНЏИР“ — Спогодување со обвинителството, признавање вина и границите на казнената правда",meta:"Зоран Стојанкиќ · Working paper · Version 1.0 · DOI: 10.5281/zenodo.22981744",text:"Спогодување; признание на вина; организиран финансиски криминал; даночно затајување; перење пари; конфискација; пропорционалност.",url:"/scholar/sindzir/"},
+        {type:"paper",status:"verified",title:"Електронските и AI-генерираните докази во судската постапка",meta:"Зоран Стојанкиќ · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23017531",text:"Автентичност; интегритет; deepfake; синџир на чување; електронски докази; AI-генерирани докази; ефективно оспорување.",url:"/scholar/electronic-ai-evidence/"},
+        {type:"paper",status:"verified",title:"Претресот на мобилен телефон и заштитата на адвокатската тајна",meta:"Зоран Стојанкиќ · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23021388",text:"Мобилен телефон; адвокатска тајна; електронски докази; судска наредба; приватност; независно издвојување.",url:"/scholar/mobile-phone-privilege/"},
+        {type:"paper",status:"verified",title:"Вештачката интелигенција во адвокатурата и судството",meta:"Зоран Стојанкиќ · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23023442",text:"Вештачка интелигенција; адвокатура; судство; правично судење; алгоритамска пристрасност; електронски докази; човечки надзор.",url:"/scholar/ai-legal-practice-judiciary/"},
+        {type:"paper",status:"pending",title:"Кочани – „Пулс“: индивидуална кривична, институционална и политичка одговорност",meta:"Зоран Стојанкиќ · Нацрт · Подготовка за журналски труд",text:"Нацрт во подготовка за журналски артикал; индивидуална кривична, институционална и политичка одговорност."},
+        {type:"guide",status:"verified",title:"Метод за проверка на правен цитат",meta:"AI Advokat · Истражувачки водич · v1",text:"Проверка на член, верзија, важност, судска одлука, DOI и примарен извор."}
       ]
     },
     en:{
       prompts:[
-        ["Find current legislation","Find the current text, amendments, effective date and official source."],
-        ["Compare two versions of a provision","Show what changed, when it changed and the legal consequence."],
-        ["Summarize a judgment","Separate facts, legal issue, applicable rules, reasoning and outcome."],
-        ["Build a case-law matrix","Compare decisions by legal issue, rule and outcome."],
-        ["Build a legal chronology","Extract dates, acts, authorities, deadlines and procedural steps."],
-        ["Audit citations and footnotes","Check whether each citation supports the sentence and whether the source is primary."],
-        ["Prepare a legal memo","Issue · Rule · Authority · Application · Counterarguments · Conclusion · Sources."],
-        ["Extract deadlines and obligations","List deadlines, responsible actors, consequences and source provisions."],
-        ["Build an evidence map","Separate established facts, allegations, disputed facts and missing evidence."],
-        ["Human Gate review","Identify what the attorney must personally verify before the document is used."]
+        ["Article of a law","What does Article 12 of the ZRO regulate and which conditions does it set?"],
+        ["Concept in a law","Which ZKP articles regulate detention and which deadlines do they set?"],
+        ["Deadlines and obligations","Which deadlines does the ZI set for acting on an enforcement motion? List the source articles."],
+        ["Rights and obligations","Which rights does an employee have when an employment contract ends under the ZRO?"],
+        ["Version of a law","Which ZPP article regulates the content of a claim? (The ZPP has several versions — enter a date.)"],
+        ["Check before use","Which ZRO articles must be checked personally in the official source before applying them to a specific case?"]
       ],
       publications:[        {title:"“CHAIN” — Plea Agreements, Guilty Pleas and the Limits of Criminal Justice",kind:"Working Paper",version:"Version 1.0 · Human Gate completed",doi:"10.5281/zenodo.22981744",badge:"ZENODO · PUBLISHED",published:true,draftUrl:"",zenodoUrl:"https://zenodo.org/records/22981744",tags:["criminal law","plea agreements","financial crime","confiscation"]},
         {title:"Electronic and AI-Generated Evidence in Judicial Proceedings",kind:"Working Paper",version:"Version 1.0 · Human Gate completed",doi:"10.5281/zenodo.23017531",badge:"ZENODO · PUBLISHED",published:true,draftUrl:"",zenodoUrl:"https://zenodo.org/records/23017531",tags:["electronic evidence","AI-generated evidence","deepfake","chain of custody"]},
         {title:"Searching a Mobile Phone and the Protection of Legal Professional Privilege",kind:"Working Paper",version:"Version 1.0 · Human Gate completed",doi:"10.5281/zenodo.23021388",badge:"ZENODO · PUBLISHED",published:true,draftUrl:"",zenodoUrl:"https://zenodo.org/records/23021388",tags:["mobile phone","legal professional privilege","electronic evidence","privacy"]},
         {title:"Artificial Intelligence in the Legal Profession and the Judiciary",kind:"Working Paper",version:"Version 1.0 · Human Gate completed",doi:"10.5281/zenodo.23023442",badge:"ZENODO · PUBLISHED",published:true,draftUrl:"",zenodoUrl:"https://zenodo.org/records/23023442",tags:["artificial intelligence","legal profession","judiciary","fair trial"]},
-        {title:"Kočani – “Puls”: Individual Criminal, Institutional and Political Responsibility",kind:"Journal article draft",version:"Draft · In preparation for a journal article",doi:"",badge:"DRAFT · JOURNAL ARTICLE IN PREPARATION",published:false,draftUrl:"",tags:["criminal responsibility","institutional responsibility","political responsibility","Kočani · Puls"]},
+        {title:"Kočani – “Puls”: Individual Criminal, Institutional and Political Responsibility",kind:"Journal article draft",version:"Draft · In preparation for a journal article",doi:"",badge:"DRAFT · NOT PUBLISHED",published:false,draftUrl:"",tags:["criminal responsibility","institutional responsibility","political responsibility","Kočani · Puls"]},
       ],
-      data:[        {type:"paper",status:"verified",title:"“CHAIN” — Plea Agreements, Guilty Pleas and the Limits of Criminal Justice",meta:"Zoran Stojankich · Working paper · Version 1.0 · DOI: 10.5281/zenodo.22981744",text:"Plea agreements; guilty pleas; organised financial crime; tax evasion; money laundering; confiscation; proportionality."},
-        {type:"paper",status:"verified",title:"Electronic and AI-Generated Evidence in Judicial Proceedings",meta:"Zoran Stojankich · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23017531",text:"Authenticity; integrity; deepfakes; chain of custody; electronic evidence; AI-generated evidence; effective challenge."},
-        {type:"paper",status:"verified",title:"Searching a Mobile Phone and the Protection of Legal Professional Privilege",meta:"Zoran Stojankich · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23021388",text:"Mobile phone search; legal professional privilege; electronic evidence; judicial order; privacy; independent filtering."},
-        {type:"paper",status:"verified",title:"Artificial Intelligence in the Legal Profession and the Judiciary",meta:"Zoran Stojankich · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23023442",text:"Artificial intelligence; legal profession; judiciary; fair trial; algorithmic bias; electronic evidence; human oversight."},
+      data:[        {type:"paper",status:"verified",title:"“CHAIN” — Plea Agreements, Guilty Pleas and the Limits of Criminal Justice",meta:"Zoran Stojankich · Working paper · Version 1.0 · DOI: 10.5281/zenodo.22981744",text:"Plea agreements; guilty pleas; organised financial crime; tax evasion; money laundering; confiscation; proportionality.",url:"/scholar/sindzir/"},
+        {type:"paper",status:"verified",title:"Electronic and AI-Generated Evidence in Judicial Proceedings",meta:"Zoran Stojankich · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23017531",text:"Authenticity; integrity; deepfakes; chain of custody; electronic evidence; AI-generated evidence; effective challenge.",url:"/scholar/electronic-ai-evidence/"},
+        {type:"paper",status:"verified",title:"Searching a Mobile Phone and the Protection of Legal Professional Privilege",meta:"Zoran Stojankich · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23021388",text:"Mobile phone search; legal professional privilege; electronic evidence; judicial order; privacy; independent filtering.",url:"/scholar/mobile-phone-privilege/"},
+        {type:"paper",status:"verified",title:"Artificial Intelligence in the Legal Profession and the Judiciary",meta:"Zoran Stojankich · Working paper · Version 1.0 · DOI: 10.5281/zenodo.23023442",text:"Artificial intelligence; legal profession; judiciary; fair trial; algorithmic bias; electronic evidence; human oversight.",url:"/scholar/ai-legal-practice-judiciary/"},
         {type:"paper",status:"pending",title:"Kočani – “Puls”: Individual Criminal, Institutional and Political Responsibility",meta:"Zoran Stojankich · Draft · Journal article in preparation",text:"Draft in preparation for a journal article; individual criminal, institutional and political responsibility."},
-        {type:"guide",status:"verified",title:"Method for auditing a legal citation",meta:"AI Advokat · Research Guide · v1",text:"Check provision, version, validity, judicial decision, DOI and primary source."},
-        {type:"law",status:"official",title:"Legislation registry — architecture",meta:"D1-ready · official sources first",text:"Law, official gazette, article, amendment, effective date, consolidated text."},
-        {type:"case",status:"official",title:"Case law — architecture",meta:"Ready for indexed case law",text:"Court, case number, date, legal issue, relevant provisions, outcome and citations."}
+        {type:"guide",status:"verified",title:"Method for auditing a legal citation",meta:"AI Advokat · Research Guide · v1",text:"Check provision, version, validity, judicial decision, DOI and primary source."}
       ]
     }
   };
@@ -1900,7 +1900,9 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     renderPrompts();
     renderPublications();
     hydrateInstrumentSelect();
-    if($("#searchResults").children.length) renderResults();
+    if(lastSearch) renderSearchResults(lastSearch);
+    const themeBtn=$("#themeBtn");
+    if(themeBtn) themeBtn.setAttribute("aria-pressed",String(document.documentElement.dataset.theme==="dark"));
   }
 
   function renderPrompts(){
@@ -1909,7 +1911,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     dynamicContent[lang].prompts.forEach((p,i)=>{
       const el=document.createElement("div");
       el.className="prompt";
-      el.innerHTML=`<span class="n">${i+1}</span><span><b>${p[0]}</b><small>${p[1]}</small></span><button type="button">${i18n[lang].usePrompt}</button>`;
+      el.innerHTML=`<span class="n" aria-hidden="true">${i+1}</span><span><b>${escapeHtml(p[0])}</b><small>${escapeHtml(p[1])}</small></span><button type="button" aria-label="${escapeHtml(i18n[lang].usePrompt+": "+p[0])}">${i18n[lang].usePrompt}</button>`;
       el.querySelector("button").addEventListener("click",()=>{
         $("#legalQuestion").value=p[1];
         $("#legalQuestion").focus();
@@ -1918,19 +1920,41 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     });
   }
 
+  function citationFor(pub){
+    const meta=PUBLICATION_META[pub.doi];
+    if(!pub.published || !meta) return "";
+    const author=lang==="mk" ? "Стојанкиќ, З." : "Stojankich, Z.";
+    const version=lang==="mk" ? "Верзија 1.0" : "Version 1.0";
+    const kind=lang==="mk" ? "Работен труд" : "Working paper";
+    return `${author} (${meta.year}). ${pub.title} (${version}) [${kind}]. Zenodo. https://doi.org/${pub.doi}`;
+  }
+
   function renderPublications(){
     const root=$("#publicationGrid");
     root.innerHTML="";
     dynamicContent[lang].publications.forEach(pub=>{
       const el=document.createElement("article");
       el.className="card pubCard";
-      const doiText=pub.doi ? `${i18n[lang].doiReserved}: ${pub.doi}` : i18n[lang].zenodoPending;
-      const action=pub.published
-        ? `<a class="btn light" href="${pub.zenodoUrl || `https://doi.org/${pub.doi}`}" target="_blank" rel="noopener noreferrer">${i18n[lang].openZenodo}</a>`
-        : pub.draftUrl
-          ? `<a class="btn light" href="${pub.draftUrl}" target="_blank" rel="noopener noreferrer">${i18n[lang].openDraft}</a>`
-          : `<button class="btn light" type="button" disabled aria-disabled="true">${i18n[lang].zenodoPending}</button>`;
-      el.innerHTML=`<span class="badge pending">${pub.badge}</span><div><h3>${pub.title}</h3><p>${pub.kind} · ${pub.version}</p></div><div class="doi">${doiText}</div><div class="chips">${pub.tags.map(t=>`<span class="chip">${t}</span>`).join("")}</div>${action}`;
+      const meta=PUBLICATION_META[pub.doi];
+      const doiHtml=pub.published && pub.doi
+        ? `DOI: <a href="https://doi.org/${escapeHtml(pub.doi)}" target="_blank" rel="noopener noreferrer">${escapeHtml(pub.doi)}</a>`
+        : escapeHtml(lang==="mk" ? "Нема објавен DOI · нацрт" : "No published DOI · draft");
+      const actions=[];
+      if(pub.published){
+        if(meta) actions.push(`<a class="btn light" href="${meta.scholar}">${lang==="mk" ? "Scholar страница" : "Scholar page"}</a>`);
+        actions.push(`<a class="btn light" href="${escapeHtml(pub.zenodoUrl || `https://doi.org/${pub.doi}`)}" target="_blank" rel="noopener noreferrer">${i18n[lang].openZenodo}</a>`);
+      }else if(pub.draftUrl){
+        actions.push(`<a class="btn light" href="${escapeHtml(pub.draftUrl)}" target="_blank" rel="noopener noreferrer">${i18n[lang].openDraft}</a>`);
+      }
+      const cite=citationFor(pub);
+      const citeHtml=cite ? `<details class="citeBox"><summary>${lang==="mk" ? "Цитирај" : "Cite"}</summary><p class="citeText">${escapeHtml(cite)}</p><button type="button" class="btn light copyCite">${lang==="mk" ? "Копирај цитат" : "Copy citation"}</button><span class="help" role="status"></span></details>` : "";
+      el.innerHTML=`<span class="badge ${pub.published ? "ok" : "draft"}">${escapeHtml(pub.badge)}</span><div><h3>${escapeHtml(pub.title)}</h3><p>${escapeHtml(pub.kind)} · ${escapeHtml(pub.version)}</p></div><div class="doi">${doiHtml}</div><div class="chips">${pub.tags.map(t=>`<span class="chip">${escapeHtml(t)}</span>`).join("")}</div>${citeHtml}${actions.length ? `<div class="pubActions">${actions.join("")}</div>` : ""}`;
+      const copy=el.querySelector(".copyCite");
+      if(copy) copy.addEventListener("click",async()=>{
+        const status=copy.nextElementSibling;
+        try{ await navigator.clipboard.writeText(cite); status.textContent=lang==="mk" ? "Цитатот е копиран." : "Citation copied."; }
+        catch{ status.textContent=lang==="mk" ? "Копирањето не е дозволено; означете го текстот рачно." : "Copying is not allowed; select the text manually."; }
+      });
       root.appendChild(el);
     });
   }
@@ -1941,19 +1965,80 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     return i18n[lang].statusPendingBadge;
   }
 
-  function renderResults(){
+  const ENTITY_LABELS={
+    mk:{law:"Пропис",source:"Официјален извор",case:"Судска одлука",paper:"Труд",guide:"Водич"},
+    en:{law:"Legislation",source:"Official source",case:"Court decision",paper:"Publication",guide:"Guide"}
+  };
+  let lastSearch=null;
+  let searchSeq=0;
+
+  function renderSearchResults(state){
+    const root=$("#searchResults");
+    const status=$("#searchStatus");
+    const labels=ENTITY_LABELS[lang];
+    if(state.mode==="fallback"){
+      status.textContent=lang==="mk"
+        ? "Живото пребарување моментално не е достапно. Прикажани се само локалните записи за трудовите и водичите на порталот — не и прописи."
+        : "Live search is currently unavailable. Only the portal's local entries for publications and guides are shown — not legislation.";
+    }else{
+      status.textContent=lang==="mk"
+        ? `${state.results.length} резултати од јавниот корпус за „${state.query}“. Отворете го изворот пред професионална употреба.`
+        : `${state.results.length} results from the public corpus for “${state.query}”. Open the source before professional use.`;
+    }
+    if(!state.results.length){
+      root.innerHTML=`<div class="resultItem">${escapeHtml(i18n[lang].noResults)}</div>`;
+      return;
+    }
+    root.innerHTML=state.results.map(x=>{
+      const kind=labels[x.entityType] || x.entityType || "";
+      const meta=[kind,x.meta,x.jurisdiction,x.date].filter(Boolean).join(" · ");
+      const external=x.url && /^https?:\/\//.test(x.url);
+      const link=x.url
+        ? `<div class="resultActions"><a class="btn light" href="${escapeHtml(x.url)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ""}>${lang==="mk" ? "Отвори извор" : "Open source"}${external ? " ↗" : ""}</a></div>`
+        : "";
+      return `<div class="resultItem"><div class="resultTop"><div><h4>${escapeHtml(x.title)}</h4><div class="meta">${escapeHtml(meta)}</div></div><span class="badge ${x.status==="official" ? "ok" : x.status==="verified" ? "info" : "pending"}">${escapeHtml(statusLabel(x.status))}</span></div>${x.snippet ? `<p>${escapeHtml(String(x.snippet).slice(0,280))}</p>` : ""}${link}</div>`;
+    }).join("");
+  }
+
+  function localFallback(q,t,s){
     const locale=lang==="mk" ? "mk" : "en";
-    const q=$("#globalSearch").value.toLocaleLowerCase(locale);
+    const needle=q.toLocaleLowerCase(locale);
+    return dynamicContent[lang].data
+      .filter(x=>(!needle || `${x.title} ${x.text} ${x.meta}`.toLocaleLowerCase(locale).includes(needle)) && (t==="all" || x.type===t) && (s==="all" || x.status===s))
+      .map(x=>({entityType:x.type,title:x.title,meta:x.meta,snippet:x.text,url:x.url || null,jurisdiction:null,status:x.status,date:null}));
+  }
+
+  async function renderResults(){
+    const q=$("#globalSearch").value.trim();
     const t=$("#typeFilter").value;
     const s=$("#statusFilter").value;
-    const hits=dynamicContent[lang].data.filter(x=>
-      (!q || `${x.title} ${x.text} ${x.meta}`.toLocaleLowerCase(locale).includes(q)) &&
-      (t==="all" || x.type===t) &&
-      (s==="all" || x.status===s)
-    );
-    $("#searchResults").innerHTML=hits.length
-      ? hits.map(x=>`<div class="resultItem"><div class="resultTop"><div><h4>${x.title}</h4><div class="meta">${x.meta}</div></div><span class="badge ${x.status==="official" ? "ok" : ""}">${statusLabel(x.status)}</span></div><p>${x.text}</p></div>`).join("")
-      : `<div class="resultItem">${i18n[lang].noResults}</div>`;
+    const status=$("#searchStatus");
+    if(q.length<2){
+      status.textContent=lang==="mk" ? "Внесете најмалку два знака." : "Enter at least two characters.";
+      return;
+    }
+    const seq=++searchSeq;
+    status.textContent=lang==="mk" ? "Се пребарува…" : "Searching…";
+    $("#searchResults").setAttribute("aria-busy","true");
+    let state;
+    try{
+      const url=new URL(API_BASE+"/api/search");
+      url.searchParams.set("q",q);
+      url.searchParams.set("type",t);
+      url.searchParams.set("status",s);
+      url.searchParams.set("limit","20");
+      const response=await fetch(url,{headers:{accept:"application/json"}});
+      const data=await response.json();
+      if(!response.ok || !data.ok || !Array.isArray(data.results)) throw new Error(data?.error || "search_error");
+      state={mode:"live",query:q,results:data.results};
+    }catch{
+      state={mode:"fallback",query:q,results:localFallback(q,t,s)};
+    }finally{
+      $("#searchResults").removeAttribute("aria-busy");
+    }
+    if(seq!==searchSeq) return;
+    lastSearch=state;
+    renderSearchResults(state);
   }
 
   $("#langBtn").addEventListener("click",()=>{
@@ -1962,7 +2047,9 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
   });
 
   $("#themeBtn").addEventListener("click",()=>{
-    document.documentElement.dataset.theme=document.documentElement.dataset.theme==="dark" ? "light" : "dark";
+    const dark=document.documentElement.dataset.theme!=="dark";
+    document.documentElement.dataset.theme=dark ? "dark" : "light";
+    $("#themeBtn").setAttribute("aria-pressed",String(dark));
   });
 
   let zoom=0;
@@ -1971,14 +2058,22 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     document.documentElement.style.fontSize=["100%","108%","116%"][zoom];
   });
 
-  $("#menuBtn").addEventListener("click",()=>{
+  function setMenu(open){
     const m=$("#mobileMenu");
-    m.hidden=!m.hidden;
-    $("#menuBtn").setAttribute("aria-expanded",String(!m.hidden));
+    m.hidden=!open;
+    $("#menuBtn").setAttribute("aria-expanded",String(open));
+  }
+  $("#menuBtn").addEventListener("click",()=>setMenu($("#mobileMenu").hidden));
+  $$("#mobileMenu a").forEach(a=>a.addEventListener("click",()=>setMenu(false)));
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape" && !$("#mobileMenu").hidden){ setMenu(false); $("#menuBtn").focus(); }
   });
 
-  $("#searchBtn").addEventListener("click",renderResults);
-  $("#globalSearch").addEventListener("keydown",e=>{ if(e.key==="Enter") renderResults(); });
+  $("#searchForm").addEventListener("submit",e=>{ e.preventDefault(); renderResults(); });
+  $$(".chips button.chip").forEach(chip=>chip.addEventListener("click",()=>{
+    $("#globalSearch").value=chip.textContent.trim();
+    renderResults();
+  }));
 
   const FALLBACK_OFFICIAL_SOURCES = [
     {title:"Службен весник на Република Северна Македонија",url:"https://slvesnik.com.mk/",category:"official_gazette",jurisdiction:"MK"},
@@ -2008,6 +2103,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
       </a>`).join("");
     $("#sourceWorkspace").hidden=false;
     $("#sourceWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
+    $("#sourceWorkspace").focus({preventScroll:true});
   }
 
 
@@ -2039,6 +2135,28 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     return data.instruments;
   }
 
+  const REVIEW_LABELS={
+    mk:{approved:"одобрено",reviewed:"прегледано",pending:"чека проверка",rejected:"одбиено"},
+    en:{approved:"approved",reviewed:"reviewed",pending:"pending review",rejected:"rejected"}
+  };
+  function reviewLabel(v){ return REVIEW_LABELS[lang][v] || REVIEW_LABELS[lang].pending; }
+
+  function renderCoverage(instruments){
+    const root=$("#coverageTable");
+    if(!root) return;
+    if(!instruments){
+      root.innerHTML=`<p>${lang==="mk" ? "Регистарот моментално не е достапен. Покриеноста не може да се прикаже." : "The registry is currently unavailable. Coverage cannot be shown."}</p>`;
+      return;
+    }
+    const withText=instruments.filter(i=>Number(i.articleCount)>0);
+    const metaOnly=instruments.length-withText.length;
+    const rows=withText.map(i=>`<tr><td><b>${escapeHtml(i.shortTitle || "")}</b> ${escapeHtml(i.title)}</td><td class="num">${Number(i.articleCount)}</td><td>${escapeHtml(reviewLabel(i.humanReviewStatus))}</td></tr>`).join("");
+    root.innerHTML=withText.length
+      ? `<table class="coverageTable"><caption>${lang==="mk" ? "Закони со текст член-по-член" : "Laws with article-level text"}</caption><thead><tr><th scope="col">${lang==="mk" ? "Закон" : "Law"}</th><th scope="col">${lang==="mk" ? "Членови" : "Articles"}</th><th scope="col">Human Gate</th></tr></thead><tbody>${rows}</tbody></table>`
+        + `<p class="help" style="margin-top:8px">${lang==="mk" ? `Уште ${metaOnly} закони се во регистарот само со метаподатоци, без внесен текст; за нив AI Истражувачот не одговара.` : `${metaOnly} more laws are in the registry with metadata only and no text; the AI Researcher does not answer for them.`}</p>`
+      : `<p>${lang==="mk" ? "Моментално нема закон со внесен текст член-по-член." : "No law currently has article-level text."}</p>`;
+  }
+
   async function hydrateInstrumentSelect(){
     const select=$("#instrumentSelect");
     if(!select) return;
@@ -2046,16 +2164,18 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     const autoLabel=lang==="mk" ? "Автоматски избери закон" : "Automatically choose law";
     try{
       const instruments=await fetchInstruments();
+      renderCoverage(instruments);
       select.innerHTML=`<option value="auto">${autoLabel}</option>`+
         instruments.map(inst=>{
           const count=Number(inst.articleCount || 0);
           const suffix=count>0
             ? (lang==="mk" ? ` · ${count} членови` : ` · ${count} articles`)
-            : (lang==="mk" ? " · corpus pending" : " · corpus pending");
+            : (lang==="mk" ? " · само метаподатоци" : " · metadata only");
           return `<option value="${escapeHtml(inst.canonicalKey)}">${escapeHtml((inst.shortTitle || inst.title)+ " · " + inst.title + suffix)}</option>`;
         }).join("");
       if([...select.options].some(o=>o.value===current)) select.value=current;
     }catch{
+      renderCoverage(null);
       select.innerHTML=`
         <option value="auto">${autoLabel}</option>
         <option value="mk:zro">ЗРО · Закон за работните односи</option>
@@ -2207,6 +2327,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     loadMore.addEventListener("click",()=>load({append:true}));
 
     $("#sourceWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
+    $("#sourceWorkspace").focus({preventScroll:true});
     await load();
   }
 
@@ -2222,6 +2343,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     $("#sourceWorkspace").hidden=false;
     $("#workspaceLinks").innerHTML=`<div class="resultItem" style="grid-column:1/-1">${lang==="mk" ? "Се вчитува регистарот..." : "Loading law registry..."}</div>`;
     $("#sourceWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
+    $("#sourceWorkspace").focus({preventScroll:true});
 
     try{
       const instruments=await fetchInstruments();
@@ -2256,14 +2378,16 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     );
   }
 
-  $("#lawsCard").addEventListener("click",openLawsRegistry);
-  $("#lawsCard").addEventListener("keydown",e=>{
-    if(e.key==="Enter" || e.key===" "){e.preventDefault();openLawsRegistry();}
-  });
-  $("#casesCard").addEventListener("click",openCaseLawRegistry);
-  $("#casesCard").addEventListener("keydown",e=>{
-    if(e.key==="Enter" || e.key===" "){e.preventDefault();openCaseLawRegistry();}
-  });
+  let workspaceOpener=null;
+  function bindCard(id,open){
+    const card=$(id);
+    const button=card.querySelector("button.cardAction");
+    const go=()=>{ workspaceOpener=button; open(); };
+    button.addEventListener("click",go);
+    card.addEventListener("click",e=>{ if(!e.target.closest("button,a")) go(); });
+  }
+  bindCard("#lawsCard",openLawsRegistry);
+  bindCard("#casesCard",openCaseLawRegistry);
 
   async function openInternationalRegistry(){
     const sources=await getOfficialSources();
@@ -2277,10 +2401,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     );
   }
 
-  $("#echrCard").addEventListener("click",openInternationalRegistry);
-  $("#echrCard").addEventListener("keydown",e=>{
-    if(e.key==="Enter" || e.key===" "){e.preventDefault();openInternationalRegistry();}
-  });
+  bindCard("#echrCard",openInternationalRegistry);
 
   async function openVersionsWorkspace(){
     let statusMessage = lang==="mk"
@@ -2302,11 +2423,11 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     );
   }
 
-  $("#versionsCard").addEventListener("click",openVersionsWorkspace);
-  $("#versionsCard").addEventListener("keydown",e=>{
-    if(e.key==="Enter" || e.key===" "){e.preventDefault();openVersionsWorkspace();}
+  bindCard("#versionsCard",openVersionsWorkspace);
+  $("#closeWorkspace").addEventListener("click",()=>{
+    $("#sourceWorkspace").hidden=true;
+    (workspaceOpener || $("#lawsCard button.cardAction")).focus({preventScroll:true});
   });
-  $("#closeWorkspace").addEventListener("click",()=>{$("#sourceWorkspace").hidden=true;});
 
   function currentMembershipKey(){
     try{return sessionStorage.getItem("ai_advokat_membership_key_v1") || "";}catch{return "";}
@@ -2337,18 +2458,214 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     }
   });
 
+  // ---------------------------------------------------------------------------
+  // AI Researcher result rendering. Every refusal stays fail-closed: no answer text
+  // is shown for a refused question, only the reason and the safe next step.
+  // ---------------------------------------------------------------------------
+  function el(tag,attrs={},...children){
+    const node=document.createElement(tag);
+    for(const [k,v] of Object.entries(attrs)){
+      if(v===null || v===undefined || v===false) continue;
+      if(k==="class") node.className=v;
+      else if(k==="text") node.textContent=v;
+      else if(k.startsWith("on")) node.addEventListener(k.slice(2),v);
+      else node.setAttribute(k,v===true ? "" : String(v));
+    }
+    for(const c of children.flat()){ if(c!==null && c!==undefined && c!==false) node.append(c instanceof Node ? c : document.createTextNode(String(c))); }
+    return node;
+  }
+  const T=(mk,en)=>lang==="mk" ? mk : en;
+
+  // Every error code the assistant endpoint can return (see src/index.js handleAssistant and
+  // VERSION_ERROR_MESSAGES in src/corpus-versions.js). test/public-layer.test.mjs keeps them in sync.
+  const ASSISTANT_STATES={
+    instrument_required:{kind:"controlled",mk:"Изберете закон",en:"Choose a law",hintMk:"Прашањето не именува закон еднозначно. Изберете го законот од листата „Закон“ и обидете се повторно.",hintEn:"The question does not name a law unambiguously. Choose the law in the “Law” list and try again.",action:"instrument"},
+    instrument_ambiguous:{kind:"controlled",mk:"Кратенката одговара на повеќе закони",en:"The abbreviation matches several laws",hintMk:"Системот не избира закон наместо вас. Изберете еден од понудените закони.",hintEn:"The system does not pick a law for you. Choose one of the laws offered.",action:"candidates"},
+    instrument_not_found:{kind:"controlled",mk:"Законот не е утврден во корпусот",en:"The law was not identified in the corpus",hintMk:"Изберете закон од листата. Видете ја табелата „Покриеност на корпусот“.",hintEn:"Choose a law from the list. See the “Corpus coverage” table.",action:"instrument"},
+    no_relevant_articles:{kind:"controlled",mk:"Темата не е покриена со доволно релевантни членови",en:"The topic is not covered by sufficiently relevant articles",hintMk:"Нема одговор без извор. Прегледајте го законот член-по-член или преформулирајте го прашањето.",hintEn:"There is no answer without a source. Browse the law article by article or rephrase the question.",action:"browse"},
+    no_articles:{kind:"controlled",mk:"Законот нема внесен текст член-по-член",en:"The law has no article-level text",hintMk:"За овој закон постојат само метаподатоци. Проверете го официјалниот извор.",hintEn:"Only metadata exists for this law. Check the official source.",action:"instrument"},
+    version_required:{kind:"version",mk:"Потребен е датум за да се утврди верзијата",en:"A date is needed to resolve the version",hintMk:"Законот има повеќе верзии и ниту една не е потврдена како тековна. Внесете датум на кој се однесува прашањето.",hintEn:"The law has several versions and none is confirmed as current. Enter the date the question refers to.",action:"date"},
+    version_ambiguous:{kind:"version",mk:"Верзијата не може безбедно да се избере",en:"The version cannot be chosen safely",hintMk:"Внесете датум за да се утврди која верзија се применува.",hintEn:"Enter a date so the applicable version can be resolved.",action:"date"},
+    version_not_yet_applicable:{kind:"version",mk:"Верзијата сè уште не се применува",en:"The version does not apply yet",hintMk:"Внесената верзија почнува да се применува подоцна. За преглед на идната верзија внесете датум од периодот на примена.",hintEn:"The loaded version applies later. To review the future version, enter a date within its period of application.",action:"date"},
+    version_no_longer_applicable:{kind:"version",mk:"Верзијата повеќе не се применува",en:"The version no longer applies",hintMk:"За историски преглед внесете датум од периодот кога верзијата се применувала.",hintEn:"For a historical view, enter a date within the period when the version applied.",action:"date"},
+    version_not_applicable_on_date:{kind:"version",mk:"Нема применлива верзија на наведениот датум",en:"No version applies on the given date",hintMk:"Ниту една внесена верзија не важи на тој датум. Проверете го датумот или официјалниот извор.",hintEn:"No loaded version applies on that date. Check the date or the official source.",action:"date"},
+    version_date_unverifiable:{kind:"version",mk:"Верзијата за датумот не може да се потврди",en:"The version for this date cannot be verified",hintMk:"Корпусот нема датумски метаподатоци за оваа верзија. Проверете ја важечката верзија во официјалниот извор.",hintEn:"The corpus has no date metadata for this version. Check the applicable version in the official source.",action:"date"},
+    version_metadata_missing:{kind:"version",mk:"Недостасуваат метаподатоци за верзијата",en:"Version metadata is missing",hintMk:"Одговорот е запрен додека не се поправат метаподатоците.",hintEn:"The answer is withheld until the metadata is fixed.",action:null},
+    invalid_date:{kind:"input",mk:"Неважечки датум",en:"Invalid date",hintMk:"Датумот мора да биде во формат ГГГГ-ММ-ДД.",hintEn:"The date must use the YYYY-MM-DD format.",action:"date"},
+    query_too_short:{kind:"input",mk:"Прашањето е прекратко",en:"The question is too short",hintMk:"Внесете најмалку три знака.",hintEn:"Enter at least three characters.",action:"question"},
+    invalid_json:{kind:"input",mk:"Барањето не е валидно",en:"The request is not valid",hintMk:"Освежете ја страницата и обидете се повторно.",hintEn:"Reload the page and try again.",action:null},
+    invalid_payload:{kind:"input",mk:"Барањето не е валидно",en:"The request is not valid",hintMk:"Освежете ја страницата и обидете се повторно.",hintEn:"Reload the page and try again.",action:null},
+    unsupported_media_type:{kind:"input",mk:"Барањето не е валидно",en:"The request is not valid",hintMk:"Освежете ја страницата и обидете се повторно.",hintEn:"Reload the page and try again.",action:null},
+    free_quota_exhausted:{kind:"quota",mk:"Бесплатната месечна квота е искористена",en:"The free monthly quota is used up",hintMk:"Законите, официјалните извори и пребарувањето остануваат слободно достапни. Поголема квота е дел од членството.",hintEn:"Laws, official sources and search remain freely available. A larger quota is part of membership.",action:"membership"},
+    membership_quota_exhausted:{kind:"quota",mk:"Месечната квота на пакетот е искористена",en:"Your plan's monthly quota is used up",hintMk:"Квотата се обновува на почетокот на следниот месец.",hintEn:"The quota renews at the start of next month.",action:"membership"},
+    rate_limited:{kind:"quota",mk:"Премногу барања за кратко време",en:"Too many requests in a short time",hintMk:"Почекајте малку и обидете се повторно.",hintEn:"Wait a moment and try again.",action:null},
+    assistant_temporarily_unavailable:{kind:"unavailable",mk:"AI Истражувачот привремено не е достапен",en:"The AI Researcher is temporarily unavailable",hintMk:"Обидете се подоцна. Законите се достапни во „Закони и прописи“.",hintEn:"Try again later. Laws remain available under “Laws & regulations”.",action:"browse"},
+    database_not_ready:{kind:"unavailable",mk:"Правната база привремено не е достапна",en:"The legal database is temporarily unavailable",hintMk:"Обидете се подоцна.",hintEn:"Try again later.",action:null},
+    method_not_allowed:{kind:"unavailable",mk:"AI Истражувачот привремено не е достапен",en:"The AI Researcher is temporarily unavailable",hintMk:"Освежете ја страницата и обидете се повторно.",hintEn:"Reload the page and try again.",action:null}
+  };
+  const UNAVAILABLE_STATE={kind:"unavailable",mk:"AI Истражувачот привремено не е достапен",en:"The AI Researcher is temporarily unavailable",hintMk:"Услугата не одговори. Обидете се подоцна.",hintEn:"The service did not respond. Try again later.",action:"browse"};
+
+  const MODE_LABELS={
+    workers_ai_source_backed:{mk:"AI синтеза врз прикажаните членови — помош при истражување",en:"AI synthesis over the cited articles — research assistance"},
+    retrieval_only:{mk:"Извадок од изворите — без AI синтеза",en:"Extract from the sources — no AI synthesis"},
+    retrieval_only_citation_guard:{mk:"AI синтезата е одбиена од контролата на цитати — прикажани се само изворите",en:"The AI synthesis was rejected by the citation guard — only the sources are shown"}
+  };
+  const BASIS_LABELS={
+    date:{mk:"Избрана според наведениот датум",en:"Selected by the date you entered"},
+    approved_current:{mk:"Тековна верзија потврдена преку Human Gate",en:"Current version confirmed through the Human Gate"},
+    single_version:{mk:"Единствена внесена верзија на законот",en:"The only loaded version of the law"},
+    single_unversioned:{mk:"Корпус без верзиски метаподатоци (legacy) — верзијата мора да се провери во официјалниот извор",en:"Corpus without version metadata (legacy) — check the version in the official source"}
+  };
+  const CLASS_LABELS={
+    original_text:{mk:"Оригинален текст",en:"Original text"},
+    official_consolidated:{mk:"Официјален пречистен текст",en:"Official consolidated text"},
+    dated_snapshot:{mk:"Датумски снимок",en:"Dated snapshot"},
+    reference_consolidation:{mk:"Референтна консолидација (не е официјален пречистен текст)",en:"Reference consolidation (not an official consolidated text)"},
+    amendment_text:{mk:"Текст на измена",en:"Amendment text"},
+    other:{mk:"Друго",en:"Other"}
+  };
+
+  function versionWindowText(v){
+    const start=v.applicationFrom || v.validFrom;
+    if(!start && !v.validTo) return T("без датумски граници во корпусот","no date boundaries in the corpus");
+    return T(`од ${start || "—"}${v.validTo ? ` до ${v.validTo} (не вклучувајќи)` : " · без краен датум"}`,`from ${start || "—"}${v.validTo ? ` until ${v.validTo} (exclusive)` : " · no end date"}`);
+  }
+  function versionCurrencyText(v){
+    if(v.isCurrent && v.humanReviewStatus==="approved") return T("ТЕКОВНА · потврдена преку Human Gate","CURRENT · confirmed through the Human Gate");
+    if(v.isCurrent) return T("Означена како тековна, но НЕ е потврдена преку Human Gate","Marked as current but NOT confirmed through the Human Gate");
+    return T("Не е потврдена како тековна","Not confirmed as current");
+  }
+  function citationStatusLabel(c){
+    const approved=c.humanReviewStatus==="approved";
+    if(c.status==="current_consolidated" && approved) return T("ТЕКОВЕН · ПРОВЕРЕН","CURRENT · VERIFIED");
+    if(c.status==="verified" && (approved || c.humanReviewStatus==="reviewed")) return T("ПРОВЕРЕН","VERIFIED");
+    if(c.status==="needs_version_review") return T("ПРОВЕРКА НА ВЕРЗИЈА","VERSION REVIEW");
+    if(c.status==="historical") return T("ИСТОРИСКИ ТЕКСТ","HISTORICAL TEXT");
+    if(c.status==="repealed") return T("ИЗБРИШАН ЧЛЕН","REPEALED ARTICLE");
+    if(c.status==="source_text") return T("ИЗВОРЕН ТЕКСТ · НЕПРОВЕРЕН","SOURCE TEXT · UNVERIFIED");
+    return T("ЧЕКА ПРОВЕРКА","PENDING REVIEW");
+  }
+
+  function versionList(versions){
+    if(!Array.isArray(versions) || !versions.length) return null;
+    return el("ul",{class:"versionList"},versions.map(v=>el("li",{},
+      el("b",{text:v.label || T("без ознака","unlabelled")}),
+      " · ",versionWindowText(v),
+      " · Human Gate: ",reviewLabel(v.humanReviewStatus)
+    )));
+  }
+
+  function selectInstrument(c){
+    const select=$("#instrumentSelect");
+    if(![...select.options].some(o=>o.value===c.canonicalKey)){
+      select.append(el("option",{value:c.canonicalKey,text:(c.shortTitle ? c.shortTitle+" · " : "")+c.title}));
+    }
+    select.value=c.canonicalKey;
+    $("#askBtn").focus();
+  }
+
+  function renderAssistantState(code,data,status,retryAfter){
+    const def=ASSISTANT_STATES[code] || (status>=500 || !status ? UNAVAILABLE_STATE : {kind:"controlled",mk:"Барањето е одбиено",en:"The request was declined",hintMk:"",hintEn:"",action:null});
+    // The server explains refusals in Macedonian. In the Macedonian UI that message is shown
+    // as is; the English UI shows its own guidance first and the server message as a quote.
+    const hint=T(def.hintMk,def.hintEn);
+    const box=el("div",{class:`stateBox ${def.kind==="unavailable" ? "unavailable" : ""}`},
+      el("h3",{text:T(def.mk,def.en)}),
+      lang==="mk"
+        ? el("p",{text:data?.message || hint})
+        : [hint ? el("p",{text:hint}) : null, data?.message ? el("p",{class:"help",lang:"mk",text:data.message}) : null]
+    );
+    if(data?.instrument?.title) box.append(el("p",{class:"help",text:T("Закон: ","Law: ")+data.instrument.title}));
+    const versions=versionList(data?.versions);
+    if(versions) box.append(el("p",{class:"help",text:T("Внесени верзии:","Loaded versions:")}),versions);
+    if(code==="rate_limited" && retryAfter) box.append(el("p",{class:"help",text:T(`Обидете се повторно за околу ${retryAfter} секунди.`,`Try again in about ${retryAfter} seconds.`)}));
+    if(code==="free_quota_exhausted" || code==="membership_quota_exhausted"){
+      const m=data?.membership;
+      if(m) box.append(el("p",{class:"help",text:`${String(m.planCode || "free").toUpperCase()} · ${m.used}/${m.monthlyQuota}`}));
+    }
+    const actions=el("div",{class:"actions"});
+    if(def.action==="candidates" && Array.isArray(data?.candidates)){
+      data.candidates.forEach(c=>actions.append(el("button",{type:"button",class:"btn light",onclick:()=>selectInstrument(c)},
+        T("Избери: ","Choose: ")+(c.shortTitle ? `${c.shortTitle} · ` : "")+c.title)));
+    }
+    if(def.action==="instrument") actions.append(el("button",{type:"button",class:"btn light",onclick:()=>$("#instrumentSelect").focus()},T("Избери закон","Choose a law")));
+    if(def.action==="date") actions.append(el("button",{type:"button",class:"btn light",onclick:()=>$("#questionDate").focus()},T("Внеси датум","Enter a date")));
+    if(def.action==="question") actions.append(el("button",{type:"button",class:"btn light",onclick:()=>$("#legalQuestion").focus()},T("Измени го прашањето","Edit the question")));
+    if(def.action==="membership") actions.append(el("a",{class:"btn light",href:"/membership.html"},T("Планови и членство","Plans & membership")));
+    if(def.action==="browse"){
+      const key=data?.instrument?.canonicalKey;
+      actions.append(el("button",{type:"button",class:"btn light",onclick:()=>key ? openLawBrowser(key) : openLawsRegistry()},T("Прегледај ги законите","Browse the laws")));
+    }
+    if(actions.children.length) box.append(actions);
+    box.append(el("p",{class:"failClosed",text:T("Не е генериран правен одговор.","No legal answer was generated.")}));
+    return box;
+  }
+
+  function renderAssistantAnswer(data){
+    const frag=document.createDocumentFragment();
+    const mode=MODE_LABELS[data.mode] || {mk:data.mode || "—",en:data.mode || "—"};
+    frag.append(el("p",{class:"modeLine"},T("Тип на одговор: ","Answer type: "),el("strong",{text:T(mode.mk,mode.en)})));
+
+    const v=data.instrumentVersion;
+    if(data.instrument || v){
+      const dl=el("dl",{});
+      const row=(k,val)=>{ if(val) dl.append(el("dt",{text:k}),el("dd",{text:val})); };
+      row(T("Закон","Law"),data.instrument?.title);
+      if(v){
+        row(T("Верзија","Version"),v.legacyUnversioned ? T("без верзиски метаподатоци (legacy)","no version metadata (legacy)") : v.label);
+        row(T("Вид на текст","Text type"),v.class ? T(CLASS_LABELS[v.class]?.mk || v.class,CLASS_LABELS[v.class]?.en || v.class) : null);
+        if(!v.legacyUnversioned) row(T("Важење","Validity"),versionWindowText(v));
+        row(T("Статус","Status"),versionCurrencyText(v));
+        row("Human Gate",reviewLabel(v.humanReviewStatus));
+      }
+      const basis=BASIS_LABELS[data.versionBasis];
+      if(basis) row(T("Основ за избор","Selection basis"),T(basis.mk,basis.en));
+      frag.append(el("div",{class:"versionBox"},el("b",{text:T("Верзија на која се заснова одговорот","Version the answer relies on")}),dl));
+    }
+    if(data.legalStatusWarning) frag.append(el("div",{class:"notice",style:"margin:10px 0"},el("b",{text:T("Статус на правниот текст","Legal text status")}),data.legalStatusWarning));
+    frag.append(el("div",{class:"answerBody",text:data.answer || ""}));
+
+    const citations=el("div",{id:"assistantCitations",style:"margin-top:14px;display:grid;gap:8px"});
+    if((data.citations || []).length) citations.append(el("b",{text:T("Изворни членови","Source articles")}));
+    (data.citations || []).forEach(c=>{
+      const head=el("div",{class:"citeHead"},
+        el("b",{text:T("Член ","Article ")+c.articleNumber+(c.heading ? " · "+c.heading : "")}),
+        el("span",{class:`badge ${c.status==="current_consolidated" && c.humanReviewStatus==="approved" ? "ok" : "pending"}`,text:citationStatusLabel(c)}));
+      const meta=[c.sourceIssueNumber,c.sourceIssueDate,c.version?.label && c.version.label!=="legacy-unversioned" ? T("верзија ","version ")+c.version.label : null].filter(Boolean).join(" · ");
+      citations.append(el("div",{class:"resultItem citationItem"},
+        head,
+        meta ? el("div",{class:"meta",text:meta}) : null,
+        el("p",{text:c.excerpt || ""}),
+        c.sourceUrl ? el("a",{class:"btn light",href:c.sourceUrl,target:"_blank",rel:"noopener noreferrer"},T("Отвори официјален извор ↗","Open official source ↗")) : null
+      ));
+    });
+    frag.append(citations);
+    frag.append(el("p",{class:"help"},T("Проверете ги членовите во официјалниот извор. Ова е помош при истражување, не правен совет.","Check the articles in the official source. This is research assistance, not legal advice.")));
+    return frag;
+  }
+
+  const questionField=$("#legalQuestion");
+  const questionCount=$("#questionCount");
+  const updateCount=()=>{ if(questionCount) questionCount.textContent=`${questionField.value.length} / 600`; };
+  questionField.addEventListener("input",updateCount);
+  updateCount();
+
   $("#askBtn").addEventListener("click",async()=>{
     const q=$("#legalQuestion").value.trim();
     const answerBox=$("#answerBox");
     const answerText=$("#answerText");
     answerBox.classList.add("show");
+    answerText.replaceChildren();
 
     if(!q){
-      answerText.textContent=" "+i18n[lang].askEmpty;
+      answerText.append(el("p",{text:i18n[lang].askEmpty}));
+      $("#legalQuestion").focus();
       return;
     }
 
-    answerText.textContent=lang==="mk" ? " Се пребарува правниот corpus..." : " Searching the legal corpus...";
+    const date=$("#questionDate").value;
+    answerText.append(el("p",{text:T("Се пребарува правниот корпус…","Searching the legal corpus…")}));
+    answerBox.setAttribute("aria-busy","true");
     $("#askBtn").disabled=true;
 
     try{
@@ -2359,26 +2676,18 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
           "accept":"application/json",
           ...(currentMembershipKey() ? {"authorization":"Bearer "+currentMembershipKey()} : {})
         },
-        body:JSON.stringify({q,instrument:$("#instrumentSelect")?.value || "auto"})
+        body:JSON.stringify({q,instrument:$("#instrumentSelect")?.value || "auto",...(date ? {date} : {})})
       });
-      const data=await response.json();
-      // Controlled refusals (law/version must be chosen, quota, rate limit) are shown as
-      // the server states them; they are not service failures.
-      const CONTROLLED=new Set(["instrument_required","instrument_ambiguous","instrument_not_found","no_relevant_articles",
-        "version_required","version_ambiguous","version_not_yet_applicable","version_no_longer_applicable",
-        "version_not_applicable_on_date","version_date_unverifiable","version_metadata_missing",
-        "free_quota_exhausted","membership_quota_exhausted","rate_limited","invalid_date"]);
-      if(!response.ok || !data.ok){
-        if(data && CONTROLLED.has(data.error) && data.message){
-          const extra=(data.candidates || []).map(c=>c.shortTitle ? `${c.title} (${c.shortTitle})` : c.title)
-            .concat((data.versions || []).map(v=>v.label+(v.applicationFrom ? ` · ${lang==="mk" ? "примена од" : "applies from"} ${v.applicationFrom}` : "")));
-          answerText.textContent=" "+data.message+(extra.length ? " "+(lang==="mk" ? "Опции: " : "Options: ")+extra.join("; ") : "");
-          return;
-        }
-        throw new Error(data?.message || data?.error || "assistant_error");
+      let data=null;
+      try{ data=await response.json(); }catch{}
+      answerText.replaceChildren();
+      if(!response.ok || !data || !data.ok){
+        answerText.append(renderAssistantState(data?.error,data,response.status,response.headers.get("retry-after")));
+        if(data?.membership?.monthlyQuota) updateMembershipKeyState(`${String(data.membership.planCode).toUpperCase()} · ${data.membership.used}/${data.membership.monthlyQuota}`);
+        return;
       }
 
-      answerText.textContent=" "+data.answer;
+      answerText.append(renderAssistantAnswer(data));
       if(data.membership){
         if(data.membership.monthlyQuota){
           updateMembershipKeyState((lang==="mk" ? "Пакет " : "Plan ")+String(data.membership.planCode).toUpperCase()+" · "+data.membership.used+"/"+data.membership.monthlyQuota+" · "+(lang==="mk" ? "преостануваат " : "remaining ")+data.membership.remaining);
@@ -2386,54 +2695,41 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
           updateMembershipKeyState(lang==="mk" ? "FREE preview режим." : "FREE preview mode.");
         }
       }
-
-      const oldCitations=document.querySelector("#assistantCitations");
-      if(oldCitations) oldCitations.remove();
-
-      const citations=document.createElement("div");
-      citations.id="assistantCitations";
-      citations.style.marginTop="14px";
-      citations.style.display="grid";
-      citations.style.gap="8px";
-
-      if(data.legalStatusWarning){
-        const warning=document.createElement("div");
-        warning.className="notice";
-        warning.textContent=data.legalStatusWarning;
-        citations.appendChild(warning);
-      }
-
-      (data.citations || []).forEach(c=>{
-        const item=document.createElement("div");
-        item.className="resultItem";
-        const title=document.createElement("b");
-        title.textContent=(lang==="mk" ? "Член " : "Article ")+c.articleNumber+" · "+c.status+(c.version?.label ? " · "+(lang==="mk" ? "верзија " : "version ")+c.version.label : "");
-        const excerpt=document.createElement("p");
-        excerpt.textContent=c.excerpt || "";
-        const source=document.createElement("a");
-        source.className="btn light";
-        source.target="_blank";
-        source.rel="noopener noreferrer";
-        source.href=c.sourceUrl;
-        source.textContent=lang==="mk" ? "Отвори официјален извор ↗" : "Open official source ↗";
-        item.append(title,excerpt,source);
-        citations.appendChild(item);
-      });
-
-      answerBox.appendChild(citations);
     }catch(error){
-      answerText.textContent=lang==="mk"
-        ? " Corpus/AI услугата моментално не е достапна во оваа околина. Ниту еден правен заклучок не е генериран."
-        : " The corpus/AI service is not available in this environment. No legal conclusion was generated.";
+      answerText.replaceChildren(renderAssistantState(null,null,0,null));
     }finally{
+      answerBox.removeAttribute("aria-busy");
       $("#askBtn").disabled=false;
     }
   });
 
-  $("#zenodoInfo").addEventListener("click",()=>$("#infoModal").classList.add("show"));
-  $("#closeModal").addEventListener("click",()=>$("#infoModal").classList.remove("show"));
-  $("#infoModal").addEventListener("click",e=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove("show"); });
-  document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("#infoModal").classList.remove("show"); });
+  let modalReturnFocus=null;
+  function openModal(){
+    modalReturnFocus=document.activeElement;
+    const modal=$("#infoModal");
+    modal.hidden=false;
+    modal.classList.add("show");
+    $("#closeModal").focus();
+  }
+  function closeModal(){
+    const modal=$("#infoModal");
+    if(modal.hidden) return;
+    modal.classList.remove("show");
+    modal.hidden=true;
+    if(modalReturnFocus && modalReturnFocus.focus) modalReturnFocus.focus();
+  }
+  $("#zenodoInfo").addEventListener("click",openModal);
+  $("#closeModal").addEventListener("click",closeModal);
+  $("#infoModal").addEventListener("click",e=>{ if(e.target===e.currentTarget) closeModal(); });
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape") closeModal();
+    if(e.key==="Tab" && !$("#infoModal").hidden){
+      const focusables=[...$("#infoModal").querySelectorAll("a[href],button")];
+      const first=focusables[0], last=focusables[focusables.length-1];
+      if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+    }
+  });
 
   let deferredInstallPrompt=null;
   const installButton=$("#installAppBtn");
@@ -2516,7 +2812,7 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
 
     if(capabilitiesState!=="ready" || !systemCapabilities){
       const unknown=capabilitiesState==="loading" ? "…" : T("СТАТУС НЕПОЗНАТ","STATUS UNKNOWN");
-      ["laws","cases","echr"].forEach(k=>set(k,unknown,false));
+      ["laws","cases","echr","citationAudit","documents"].forEach(k=>set(k,unknown,false));
       if(aiLabel) aiLabel.textContent=unknown;
       if(note) note.textContent="";
       return;
@@ -2531,6 +2827,8 @@ window.AI_ADVOCAT_CONFIG.zenodoApi = "/api/zenodo";</pre>
     set("cases", c.caseLawCorpus==="live_corpus" ? "LIVE" : T("ДИРЕКТОРИУМ","DIRECTORY"), c.caseLawCorpus==="live_corpus");
     set("echr", c.echrCorpus==="live_corpus" ? "LIVE" : T("ДИРЕКТОРИУМ","DIRECTORY"), c.echrCorpus==="live_corpus");
     set("versions", "PREVIEW", false);
+    set("citationAudit", c.citationAudit==="governed_preview" ? "PREVIEW" : c.citationAudit==="live" ? "LIVE" : T("ВО ПОДГОТОВКА","IN PREPARATION"), c.citationAudit==="live");
+    set("documents", (c.documentUpload==="locked" || c.caseWorkspace==="locked" || !c.documentUpload) ? T("ЗАКЛУЧЕНО · ВО ПОДГОТОВКА","LOCKED · IN PREPARATION") : "PREVIEW", false);
 
     if(aiLabel){
       aiLabel.textContent =

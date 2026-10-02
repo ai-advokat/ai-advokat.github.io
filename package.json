@@ -20,6 +20,7 @@
     "test:relevance": "node --test scripts/test-score-article.mjs",
     "test:security": "node --no-warnings --test test/security.test.mjs",
     "test:corpus-safety": "node --no-warnings --test test/corpus-safety.test.mjs",
+    "test:public-layer": "node --no-warnings --test test/public-layer.test.mjs",
     "validate:corpus": "node scripts/validate-legal-corpus.mjs",
     "test:corpus-foundation": "node --no-warnings --test test/corpus-foundation.test.mjs",
     "apply:amendments": "node scripts/apply-amendments.mjs"

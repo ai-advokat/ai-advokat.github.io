@@ -6,6 +6,11 @@ on:
       - "src/**"
       - "index.html"
       - "membership.html"
+      - "scholar/**"
+      - "*.html"
+      - "assets/**"
+      - "sitemap.*"
+      - "robots.txt"
       - "migrations/**"
       - "test/**"
       - "scripts/**"
@@ -41,3 +46,5 @@ jobs:
         run: npm run test:corpus-safety
       - name: Corpus foundation v1.1 tests (multi-source validator, amendment engine)
         run: node --check scripts/apply-amendments.mjs && npm run test:corpus-foundation
+      - name: Public layer tests (front-end/API contract, publication status, links, accessibility)
+        run: npm run test:public-layer
