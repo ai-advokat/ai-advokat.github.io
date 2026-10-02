@@ -309,6 +309,31 @@ function zppTracks({ approveOld = true } = {}) {
   return { env: baseEnv(d1), raw };
 }
 
+describe("ZPP production metadata window correction", () => {
+  test("0027 closes the exclusive-boundary gap without promoting either ZPP version", () => {
+    const { raw } = createD1();
+    const rows = raw.prepare(`
+      SELECT v.version_label, v.valid_from, v.valid_to, v.application_from, v.is_current, v.human_review_status
+        FROM instrument_versions v
+        JOIN legal_instruments i ON i.id = v.instrument_id
+       WHERE i.canonical_key = 'mk:zpp'
+       ORDER BY v.version_label
+    `).all().map((r) => ({ ...r }));
+
+    const oldTrack = rows.find((r) => r.version_label === "applicable-track-79/2005-through-124/2015");
+    const newTrack = rows.find((r) => r.version_label === "future-application-151/2026");
+
+    assert.ok(oldTrack, "pre-2027 ZPP track must exist");
+    assert.ok(newTrack, "151/2026 future track must exist");
+    assert.equal(oldTrack.valid_to, "2027-01-18", "exclusive old-track boundary must meet the new application date");
+    assert.equal(newTrack.valid_from, "2027-01-18");
+    assert.equal(oldTrack.is_current, 1, "0027 must not alter the existing is_current flag");
+    assert.equal(newTrack.is_current, 0, "0027 must not promote the future version");
+    assert.equal(oldTrack.human_review_status, "pending");
+    assert.equal(newTrack.human_review_status, "pending");
+  });
+});
+
 describe("F4 version-aware retrieval", () => {
   test("T6 two versions with the same article number -> only the applicable version is returned", async () => {
     const { env } = zppTracks();
