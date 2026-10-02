@@ -14,6 +14,7 @@ They explain existing behaviour; they **do not** change the corpus-safety, secur
 |---|---|
 | [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md) | Anyone who needs the big picture |
 | [AI_RESEARCHER_HELP.md](AI_RESEARCHER_HELP.md) | Users of the AI Researcher (MK + EN) |
+| [LEGAL_BASE.md](LEGAL_BASE.md) | Legal Base section: layers, card states, panels, status vocabulary |
 | [HUMAN_GATE.md](HUMAN_GATE.md) | Users and reviewers: what “Human Gate” means on the portal |
 | [PRIVACY_SAFE_USAGE.md](PRIVACY_SAFE_USAGE.md) | Users: what not to paste into the public research box |
 | [MEMBERSHIP_ONBOARDING.md](MEMBERSHIP_ONBOARDING.md) | Users and the operator: how membership is requested and activated |
