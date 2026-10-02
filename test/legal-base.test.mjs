@@ -231,6 +231,28 @@ describe("versions, case law, documents", () => {
     assert.ok(!/(Рев|Гж|Пж|Кж|К)\.?\s?бр\.?\s?\d|Application no\.|v\. [A-Z][a-z]+/.test(body), "no case citations in code");
   });
 
+  test("VD3a case-law banner text follows the live capability instead of contradicting it", () => {
+    const body = fnBody("openCaseLawRegistry");
+    assert.match(body, /live\s*\?\s*"Индексираната судска практика е вклучена/);
+    assert.match(body, /:\s*"Индексираната судска практика не е вклучена/);
+  });
+
+  test("VD3b article browser ignores stale async responses after a newer date/search request", () => {
+    const body = fnBody("openLawBrowser");
+    assert.match(body, /let loadSeq=0/);
+    assert.match(body, /const seq=\+\+loadSeq/);
+    assert.match(body, /if\(seq!==loadSeq\) return/);
+    assert.match(body, /requestedDate=date\.value/);
+    assert.match(body, /requestedQuery=currentQuery/);
+  });
+
+  test("VD3c version comparison probes candidate versions before declaring that only one is available", () => {
+    const body = fnBody("openVersionsWorkspace");
+    assert.match(body, /date:"0001-01-01"/);
+    assert.match(body, /probe\.body\?\.versions/);
+    assert.ok(!/successful resolution as proof/i.test(body));
+  });
+
   test("VD4 documents stay locked: no upload control, file input or storage anywhere on the page", () => {
     assert.ok(!/type="file"|type:"file"|FormData\(|\.upload\b|\/api\/documents"?,\s*\{[^}]*method/.test(index));
     const body = fnBody("openDocumentsInfo");
