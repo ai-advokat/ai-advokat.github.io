@@ -5,3 +5,6 @@ https://ai-advokat.github.io/scholar/electronic-ai-evidence/
 https://ai-advokat.github.io/scholar/mobile-phone-privilege/
 https://ai-advokat.github.io/scholar/ai-legal-practice-judiciary/
 https://ai-advokat.github.io/membership.html
+https://ai-advokat.github.io/legal-notice.html
+https://ai-advokat.github.io/privacy-policy.html
+https://ai-advokat.github.io/ai-use-policy.html

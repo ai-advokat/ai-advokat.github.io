@@ -114,6 +114,10 @@ Publication workflow:
 
 AI-assisted review does not replace independent academic peer review, professional legal responsibility or authorial approval.
 
+## Public layer (UI, accessibility, metadata)
+
+User-facing help, Human Gate explanation, privacy-safe usage, membership onboarding, publication governance, accessibility and UI notes live in [`docs/public-layer/`](docs/public-layer/README.md). `npm run test:public-layer` checks the front-end/API contract (every assistant error code has a UI state), publication-status facts, link integrity, sitemaps, structured data and accessibility basics.
+
 ## Contact
 
 - aiadvokat16@gmail.com
