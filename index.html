@@ -962,6 +962,75 @@
       .coverageTable th:nth-child(3),.coverageTable td:nth-child(3){display:none}
     }
 
+    /* ---- Legal Base public layer (source-first hierarchy) ---- */
+    [hidden]{display:none!important}
+    .resultItem > .layerTag,.lawCard > .layerTag,.sourceLink > .layerTag{display:block;width:max-content;max-width:100%}
+    .layerTag{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--navy-2);border:1px solid var(--line);background:var(--surface-2);border-radius:6px;padding:3px 7px;margin-bottom:6px}
+    html[data-theme="dark"] .layerTag{color:#9ec3e6}
+    .layerLadder{list-style:none;margin:0 0 22px;padding:0;display:grid;grid-template-columns:1fr;gap:8px;counter-reset:layer}
+    .layerLadder li{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+    .layerLadder .num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--navy);color:#fff;font-weight:800}
+    html[data-theme="dark"] .layerLadder .num{background:var(--navy-2)}
+    .layerLadder b{display:block}
+    .layerLadder small{color:var(--muted)}
+    @media (min-width:900px){
+      .layerLadder{grid-template-columns:repeat(5,1fr)}
+      .layerLadder li{grid-template-columns:1fr;position:relative}
+    }
+    .cardAction{flex-wrap:wrap}
+    .cardState{white-space:nowrap}
+    .cardState[data-state="live"]::before{content:"● "}
+    .cardState[data-state="preview"]::before,.cardState[data-state="directory"]::before{content:"◐ "}
+    .cardState[data-state="locked"]::before{content:"🔒 ";}
+    .cardState[data-state="locked"]{color:var(--muted)}
+    .wsBanner{border:1px solid var(--line);border-left:5px solid var(--warn);background:var(--surface-2);border-radius:0 12px 12px 0;padding:12px 14px;margin-bottom:14px}
+    .wsBanner.live{border-left-color:var(--ok)}
+    .wsBanner b{display:block;margin-bottom:4px}
+    .wsGrid{display:grid;gap:12px;grid-template-columns:1fr}
+    @media (min-width:760px){.wsGrid.two{grid-template-columns:1fr 1fr}.wsGrid.three{grid-template-columns:repeat(3,1fr)}}
+    .lawCard{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:14px 16px;display:grid;gap:8px}
+    .lawCard h4{margin:0}
+    .layerList{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:.88rem}
+    .layerList li::before{content:"— ";color:var(--muted)}
+    .layerList li.yes::before{content:"✓ ";color:var(--ok);font-weight:800}
+    .glossary{display:grid;gap:6px;margin:0 0 14px;font-size:.88rem}
+    .glossary dt{font-weight:750}
+    .glossary dd{margin:0 0 6px;color:var(--muted)}
+    .filterSet{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px}
+    .filterSet legend{font-weight:750;padding:0 6px}
+    .filterGrid{display:grid;gap:10px;grid-template-columns:1fr}
+    @media (min-width:760px){.filterGrid{grid-template-columns:repeat(4,1fr)}}
+    .filterSet label{display:block;font-size:.85rem;font-weight:700;margin-bottom:4px}
+    .filterSet input,.filterSet select,.wsForm input,.wsForm select,.wsForm textarea{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:10px 12px;font:inherit;min-height:44px}
+    .filterSet [disabled]{opacity:.65;cursor:not-allowed}
+    .wsForm{display:grid;gap:12px;margin-bottom:14px}
+    .wsForm .row{display:grid;gap:12px;grid-template-columns:1fr}
+    @media (min-width:760px){.wsForm .row{grid-template-columns:1fr 1fr}}
+    .wsForm label{display:block;font-weight:700;font-size:.88rem;margin-bottom:4px}
+    .wsForm fieldset{border:0;padding:0;margin:0}
+    .wsForm legend{font-weight:700;font-size:.88rem;margin-bottom:6px}
+    .radioRow{display:flex;gap:8px;flex-wrap:wrap}
+    .radioRow label{display:flex;gap:6px;align-items:center;font-weight:600;border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:40px;cursor:pointer;margin:0}
+    .radioRow input{width:auto;min-height:0}
+    .versionTable{width:100%;border-collapse:collapse;font-size:.86rem}
+    .versionTable th,.versionTable td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+    .versionTable th{color:var(--muted);font-weight:700;width:44%}
+    .versionTable code{font-size:.84rem}
+    .compareCol{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px;min-width:0}
+    .compareCol h4{margin:0 0 6px}
+    .compareText{white-space:pre-wrap;line-height:1.6;margin-top:10px}
+    .diffView{white-space:pre-wrap;line-height:1.7;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}
+    .diffView ins{text-decoration:underline;text-decoration-thickness:2px;background:color-mix(in srgb,var(--ok) 16%,transparent)}
+    .diffView del{text-decoration:line-through;background:color-mix(in srgb,var(--danger) 14%,transparent)}
+    .diffView .diffMark{font-weight:800;color:var(--muted)}
+    .auditState{display:inline-block;font-weight:800;font-size:.82rem;border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+    .auditState[data-state="source_unavailable"]{color:var(--danger)}
+    .auditState[data-state="unresolved"]{color:var(--warn)}
+    .auditState[data-state="supported"]{color:var(--ok)}
+    .auditState[data-state="unsupported"]{color:var(--danger)}
+    .lockedList{margin:8px 0 0;padding-left:20px}
+    .lockedList li{margin:4px 0}
+
     @media print{
       .topbar,.header,.heroActions,.searchPanel,.btn,.menuBtn,.utility,.modal{display:none!important}
       .hero{background:white;color:black;padding:24px 0}
@@ -1162,73 +1231,82 @@
     </form>
   </div>
 
-  <section id="sources">
+  <section id="sources" aria-labelledby="sourcesTitle">
     <div class="container">
 
       <div class="sectionHead">
         <div>
           <span class="tag" data-i18n="sourceTag">Правна база</span>
-          <h2 data-i18n="sourceTitle">Од извор до правен заклучок</h2>
+          <h2 id="sourcesTitle" data-i18n="sourceTitle">Од извор до правен заклучок</h2>
           <p data-i18n="sourceText">
-            Порталот е структуриран така што официјалниот текст, судската пракса, стручната анализа и AI-синтезата никогаш не се мешаат без ознака.
+            Порталот е структуриран така што официјалниот текст, судската практика, стручната анализа и AI-синтезата никогаш не се мешаат без ознака.
           </p>
         </div>
       </div>
 
+      <h3 class="sr" id="layersTitle" data-i18n="layersTitle">Слоеви на авторитет</h3>
+      <ol class="layerLadder" id="layerLadder" aria-labelledby="layersTitle"></ol>
+
       <div class="grid3">
 
         <article class="card actionCard" id="lawsCard">
+          <span class="layerTag" data-i18n="layerLawsTag">Слој 1–2 · Извор, член, верзија</span>
           <div class="icon" aria-hidden="true">§</div>
           <h3 data-i18n="cardLaws">Закони и прописи</h3>
           <p data-i18n="cardLawsText">
             Регистарот се проширува закон-по-закон: прво официјални метаподатоци и доказно потекло, а потоа проверен текст член-по-член.
           </p>
-          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardLawsAction">Отвори регистар →</span><span class="cardState" data-cap="laws">…</span></button>
+          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardLawsAction">Отвори регистар →</span><span class="cardState" data-cap="laws" role="status">…</span></button>
         </article>
 
         <article class="card actionCard" id="casesCard">
+          <span class="layerTag" data-i18n="layerCasesTag">Слој 3 · Судска практика</span>
           <div class="icon" aria-hidden="true">⚖</div>
           <h3 data-i18n="cardCases">Судска практика</h3>
           <p data-i18n="cardCasesText">
             Директориум кон официјалните бази на судовите. Индексирана судска практика се додава постепено и се означува кога ќе биде достапна.
           </p>
-          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardCasesAction">Отвори судска практика →</span><span class="cardState" data-cap="cases">…</span></button>
+          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardCasesAction">Отвори судска практика →</span><span class="cardState" data-cap="cases" role="status">…</span></button>
         </article>
 
         <article class="card actionCard" id="echrCard">
+          <span class="layerTag" data-i18n="layerEchrTag">Слој 1 и 3 · Меѓународно</span>
           <div class="icon" aria-hidden="true">◎</div>
           <h3 data-i18n="cardEchr">ЕСПЧ и меѓународни извори</h3>
           <p data-i18n="cardEchrText">
             Директориум кон HUDOC и EUR-Lex со јасно означена јурисдикција. Индексиран корпус на одлуки сè уште не е вклучен.
           </p>
-          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardEchrAction">Отвори меѓународни извори →</span><span class="cardState" data-cap="echr">…</span></button>
+          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardEchrAction">Отвори меѓународни извори →</span><span class="cardState" data-cap="echr" role="status">…</span></button>
         </article>
 
         <article class="card actionCard" id="versionsCard">
+          <span class="layerTag" data-i18n="layerVersionsTag">Слој 2 · Верзии</span>
           <div class="icon" aria-hidden="true">⌁</div>
           <h3 data-i18n="cardVersions">Верзии и измени</h3>
           <p data-i18n="cardVersionsText">
             Споредба на стар и нов текст, со видливи датумски граници и правна важност.
           </p>
-          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardVersionsAction">Провери верзии →</span><span class="cardState" data-cap="versions" style="color:var(--warn)">PREVIEW</span></button>
+          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardVersionsAction">Провери верзии →</span><span class="cardState" data-cap="versions" role="status">…</span></button>
         </article>
 
-        <article class="card">
+        <article class="card actionCard" id="citationsCard">
+          <span class="layerTag" data-i18n="layerCitationsTag">Проверка меѓу слоевите</span>
           <div class="icon" aria-hidden="true">✓</div>
           <h3 data-i18n="cardCitations">Проверка на цитати</h3>
           <p data-i18n="cardCitationsText">
             Контрола дали членот, предметот, DOI или изворот навистина го поддржува тврдењето.
           </p>
-          <div class="cardAction"><span data-i18n="cardStatusLabel">Статус</span><span class="cardState" data-cap="citationAudit">…</span></div>
+          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardCitationsAction">Отвори проверка →</span><span class="cardState" data-cap="citationAudit" role="status">…</span></button>
         </article>
 
-        <article class="card">
+        <article class="card actionCard" id="documentsCard">
+          <span class="layerTag" data-i18n="layerDocumentsTag">Работен простор</span>
           <div class="icon" aria-hidden="true">▣</div>
           <h3 data-i18n="cardDocs">Документи и досиеја</h3>
           <p data-i18n="cardDocsText">
             Работни досиеја, хронологии, доказни матрици и правни белешки со човечко одобрување.
           </p>
-          <div class="cardAction"><span data-i18n="cardStatusLabel">Статус</span><span class="cardState" data-cap="documents">…</span></div>
+          <button type="button" class="cardAction" aria-controls="sourceWorkspace"><span data-i18n="cardDocsAction">Што е планирано →</span><span class="cardState" data-cap="documents" role="status">…</span></button>
         </article>
 
       </div>
@@ -1236,7 +1314,7 @@
       <div class="sourceWorkspace" id="sourceWorkspace" hidden aria-live="polite" tabindex="-1" aria-labelledby="workspaceTitle">
         <div class="workspaceHead">
           <div>
-            <span class="tag" id="workspaceTag">OFFICIAL SOURCE DIRECTORY</span>
+            <span class="tag" id="workspaceTag">ПРАВНА БАЗА</span>
             <h3 id="workspaceTitle">Правен работен простор</h3>
             <p id="workspaceText">Изберете секција за да ги отворите проверените официјални извори.</p>
           </div>
@@ -1252,7 +1330,7 @@
 
       <div class="sectionHead">
         <div>
-          <span class="tag" data-i18n="researchTag">AI ПРАВНО ИСТРАЖУВАЊЕ</span>
+          <span class="tag" data-i18n="researchTag">AI ПРАВНО ИСТРАЖУВАЊЕ</span> <span class="layerTag" data-i18n="layerAiTag">Слој 5 · AI синтеза</span>
           <h2 data-i18n="researchTitle">AI Истражувач со доказна трага</h2>
           <p data-i18n="researchText">
             AI Истражувачот работи преку Cloudflare Worker/D1 и го користи истиот article-level правен корпус што е видлив во „Закони и прописи“. Одговорите прикажуваат изворни членови, статус на верзија и Човечка порта.
@@ -1370,7 +1448,7 @@
 
       <div class="sectionHead">
         <div>
-          <span class="tag" data-i18n="pubTag">ПУБЛИКАЦИИ</span>
+          <span class="tag" data-i18n="pubTag">ПУБЛИКАЦИИ</span> <span class="layerTag" data-i18n="layerAnalysisTag">Слој 4 · Стручна анализа</span>
 
           <h2 data-i18n="pubTitle">
             Трудови и стручни анализи
@@ -1672,6 +1750,7 @@
   </div>
 </div>
 
+<script src="/assets/legal-base.js"></script>
 <script>
 
   window.AI_ADVOCAT_CONFIG = Object.freeze({
@@ -1751,6 +1830,7 @@
       systemModeLabel:"Режим на системот:", answerHeading:"Резултат од AI Истражувачот", membershipKeyLabel:"Клуч",
       coverageTitle:"Покриеност на корпусот", coverageText:"Закони со внесен текст член-по-член. Бројот на членови не значи дека текстот е потврден како тековен: статусот на верзијата се прикажува при секој одговор.", coverageLoading:"Се вчитува регистарот…",
       helpTitle:"Како да поставите прашање", help1:"Именувајте го законот (кратенка или назив) или изберете го од листата.", help2:"Прашајте за конкретен член, поим, рок или обврска.", help3:"Ако законот има повеќе верзии (на пр. ЗПП), внесете датум.", help4:"Отворете ги прикажаните членови и официјалниот извор пред да се потпрете на одговорот.", help5:"Кога системот одбива да одговори (двосмислен закон, непозната верзија, тема без корпус), тоа е заштита — не грешка.",
+      layersTitle:"Слоеви на авторитет", layerLawsTag:"Слој 1–2 · Извор, член, верзија", layerCasesTag:"Слој 3 · Судска практика", layerEchrTag:"Слој 1 и 3 · Меѓународно", layerVersionsTag:"Слој 2 · Верзии", layerCitationsTag:"Проверка меѓу слоевите", layerDocumentsTag:"Работен простор", layerAnalysisTag:"Слој 4 · Стручна анализа", layerAiTag:"Слој 5 · AI синтеза", cardCitationsAction:"Отвори проверка →", cardDocsAction:"Што е планирано →",
       askReady:"AI Advokat го обработува прашањето преку правниот корпус за {jurisdiction} и мора да покаже извори, применливи норми, ограничувања на верзијата и Човечка порта.",
       askEmpty:"Внесете правно прашање. Порталот намерно не генерира правни заклучоци без прашање и извори."
     },
@@ -1796,6 +1876,7 @@
       systemModeLabel:"System mode:", answerHeading:"AI Researcher result", membershipKeyLabel:"Key",
       coverageTitle:"Corpus coverage", coverageText:"Laws with article-by-article text. An article count does not mean the text is verified as current: the version status is shown with every answer.", coverageLoading:"Loading registry…",
       helpTitle:"How to ask a question", help1:"Name the law (abbreviation or title) or choose it from the list.", help2:"Ask about a specific article, concept, deadline or obligation.", help3:"If the law has several versions (e.g. ZPP), enter a date.", help4:"Open the cited articles and the official source before relying on the answer.", help5:"When the system declines to answer (ambiguous law, unknown version, topic without corpus), that is a safeguard — not an error.",
+      layersTitle:"Layers of authority", layerLawsTag:"Layer 1–2 · Source, article, version", layerCasesTag:"Layer 3 · Case law", layerEchrTag:"Layer 1 and 3 · International", layerVersionsTag:"Layer 2 · Versions", layerCitationsTag:"Cross-layer check", layerDocumentsTag:"Workspace", layerAnalysisTag:"Layer 4 · Professional analysis", layerAiTag:"Layer 5 · AI synthesis", cardCitationsAction:"Open audit →", cardDocsAction:"What is planned →",
       askReady:"AI Advokat processes the question through the legal corpus for {jurisdiction} and must expose sources, applicable rules, version limitations and the Human Gate.",
       askEmpty:"Enter a legal question. The portal deliberately does not generate legal conclusions without a question and sources."
     }
@@ -1899,6 +1980,7 @@
 
     renderPrompts();
     renderPublications();
+    renderLayerLadder();
     hydrateInstrumentSelect();
     if(lastSearch) renderSearchResults(lastSearch);
     const themeBtn=$("#themeBtn");
@@ -2075,14 +2157,8 @@
     renderResults();
   }));
 
-  const FALLBACK_OFFICIAL_SOURCES = [
-    {title:"Службен весник на Република Северна Македонија",url:"https://slvesnik.com.mk/",category:"official_gazette",jurisdiction:"MK"},
-    {title:"Министерство за правда — LDBIS",url:"https://ldbis.pravda.gov.mk/",category:"ministry_database",jurisdiction:"MK"},
-    {title:"Уставен суд на Република Северна Македонија",url:"https://ustavensud.mk/",category:"court",jurisdiction:"MK"},
-    {title:"Врховен суд на Република Северна Македонија",url:"https://www.vrhoven.sud.mk/",category:"court",jurisdiction:"MK"},
-    {title:"European Court of Human Rights — HUDOC",url:"https://hudoc.echr.coe.int/",category:"international_court",jurisdiction:"ECHR"},
-    {title:"EUR-Lex",url:"https://eur-lex.europa.eu/",category:"international_organization",jurisdiction:"EU"}
-  ];
+  const LB=window.LegalBase;
+  const FALLBACK_OFFICIAL_SOURCES = LB.OFFICIAL_SOURCES.map(x=>({title:x.mk,url:x.url,category:x.category,jurisdiction:x.jurisdiction}));
 
   async function getOfficialSources(){
     try{
@@ -2093,19 +2169,44 @@
     return FALLBACK_OFFICIAL_SOURCES;
   }
 
-  function showWorkspace(title,text,sources){
+  // ---------------------------------------------------------------------------
+  // Legal Base workspace. Every panel shows what the backend returned and nothing more.
+  // ---------------------------------------------------------------------------
+  function openWorkspace(tag,title,text){
+    $("#workspaceTag").textContent=tag;
     $("#workspaceTitle").textContent=title;
     $("#workspaceText").textContent=text;
-    $("#workspaceLinks").innerHTML=sources.map(s=>`
-      <a class="sourceLink" href="${s.url}" target="_blank" rel="noopener noreferrer">
-        <b>${s.title}</b>
-        <small>${s.jurisdiction || ""} · ${s.category || "official_source"} ↗</small>
-      </a>`).join("");
+    $("#workspaceLinks").replaceChildren();
     $("#sourceWorkspace").hidden=false;
     $("#sourceWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
     $("#sourceWorkspace").focus({preventScroll:true});
+    return $("#workspaceLinks");
   }
 
+  function capState(key){
+    return LB.capabilityState(key, capabilitiesState==="ready" ? systemCapabilities : null);
+  }
+
+  function statusBanner(key,textMk,textEn){
+    const st=capState(key);
+    return el("div",{class:`wsBanner ${st.active ? "live" : ""}`,role:"note"},
+      el("b",{text:T("Статус: ","Status: ")+T(st.mk,st.en)}),
+      T(textMk,textEn));
+  }
+
+  function officialSourceCard(src){
+    const meta=LB.OFFICIAL_SOURCES.find(x=>x.url===src.url) || null;
+    const jur=LB.JURISDICTION_LABELS[src.jurisdiction];
+    return el("a",{class:"sourceLink",href:src.url,target:"_blank",rel:"noopener noreferrer"},
+      el("span",{class:"layerTag",text:T("Слој 1 · Официјален извор","Layer 1 · Official source")}),
+      el("b",{text:meta ? T(meta.mk,meta.en) : src.title}),
+      el("small",{text:[jur ? T(jur.mk,jur.en) : src.jurisdiction, meta ? T(meta.kindMk,meta.kindEn) : src.category].filter(Boolean).join(" · ")+" ↗"}));
+  }
+
+  function versionTable(v){
+    const rows=LB.versionRows(v,lang);
+    return el("table",{class:"versionTable"},el("tbody",{},rows.map(([k,val])=>el("tr",{},el("th",{scope:"row",text:k}),el("td",{text:val})))));
+  }
 
   function escapeHtml(value){
     return String(value ?? "")
@@ -2116,17 +2217,9 @@
       .replaceAll("'","&#039;");
   }
 
-  function articleStatusLabel(article){
-    if(article.publicStatus==="current_verified") return lang==="mk" ? "ТЕКОВЕН · ПРОВЕРЕН" : "CURRENT · VERIFIED";
-    if(article.publicStatus==="verified") return lang==="mk" ? "ПРОВЕРЕН" : "VERIFIED";
-    if(article.publicStatus==="version_review") return lang==="mk" ? "VERSION REVIEW" : "VERSION REVIEW";
-    if(article.publicStatus==="historical") return lang==="mk" ? "ИСТОРИСКИ SNAPSHOT" : "HISTORICAL SNAPSHOT";
-    return lang==="mk" ? "ЧЕКА ПРОВЕРКА" : "PENDING REVIEW";
-  }
-
-  function articleStatusClass(article){
-    return ["current_verified","verified"].includes(article.publicStatus) ? "ok" : "pending";
-  }
+  // Labels come from the backend's publicStatus (computed server-side); see assets/legal-base.js.
+  function articleStatusLabel(article){ return LB.articleStatus(article.publicStatus,lang).label; }
+  function articleStatusClass(article){ return LB.articleStatus(article.publicStatus,lang).tone; }
 
   async function fetchInstruments(){
     const response=await fetch(API_BASE+"/api/instruments",{headers:{accept:"application/json"}});
@@ -2191,8 +2284,13 @@
       if(v!==undefined && v!==null && String(v)!=="") url.searchParams.set(k,String(v));
     }
     const response=await fetch(url,{headers:{accept:"application/json"}});
-    const data=await response.json();
-    if(!response.ok || !data.ok) throw new Error(data?.message || data?.error || "article_api_error");
+    let data=null;
+    try{ data=await response.json(); }catch{}
+    if(!response.ok || !data || !data.ok){
+      const error=new Error(data?.message || data?.error || "article_api_error");
+      error.status=response.status; error.body=data;
+      throw error;
+    }
     return data;
   }
 
@@ -2241,52 +2339,68 @@
     });
   }
 
-  async function openLawBrowser(instrumentKey){
-    $("#workspaceTag").textContent="LIVE · ARTICLE-LEVEL CORPUS";
-    $("#workspaceTitle").textContent=lang==="mk" ? "Закони и прописи" : "Laws & regulations";
-    $("#workspaceText").textContent=lang==="mk"
-      ? "Секој закон е одделен instrument со сопствен извор, верзија и Human Gate статус."
-      : "Each law is a separate instrument with its own source, version and Human Gate status.";
+  function versionRefusal(body){
+    const box=el("div",{class:"stateBox"},
+      el("h4",{style:"margin:0 0 6px",text:T("Верзијата не може безбедно да се утврди","The version cannot be resolved safely")}),
+      el("p",{text:body?.message || T("Наведете датум.","Enter a date.")}));
+    (body?.versions || []).forEach(v=>box.append(el("div",{class:"versionBox"},el("b",{text:v.label || "—"}),versionTable(v))));
+    return box;
+  }
 
-    $("#sourceWorkspace").hidden=false;
-    $("#workspaceLinks").innerHTML=`
-      <div style="grid-column:1/-1;margin-bottom:4px">
-        <button class="btn light" type="button" id="backToLawRegistry">${lang==="mk" ? "← Сите закони" : "← All laws"}</button>
-      </div>
-      <div class="resultItem" style="grid-column:1/-1">
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <input id="lawArticleQuery" type="search"
-            placeholder="${lang==="mk" ? "Пребарај член, поим или институт..." : "Search article, term or legal concept..."}"
-            style="flex:1;min-width:240px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)">
-          <button class="btn primary" type="button" id="lawArticleSearchBtn">${lang==="mk" ? "Пребарај членови" : "Search articles"}</button>
-          <button class="btn light" type="button" id="lawArticleResetBtn">${lang==="mk" ? "Први членови" : "First articles"}</button>
-        </div>
-        <div id="lawCorpusStats" class="meta" style="margin-top:10px"></div>
-      </div>
-      <div id="lawArticleResults" style="display:grid;gap:12px;grid-column:1/-1"></div>
-      <div style="grid-column:1/-1;text-align:center">
-        <button class="btn light" type="button" id="lawLoadMoreBtn" hidden>${lang==="mk" ? "Вчитај уште" : "Load more"}</button>
-      </div>`;
+  async function openLawBrowser(instrumentKey,opts={}){
+    const root=openWorkspace(T("Слој 2 · Член и верзија","Layer 2 · Article and version"),T("Закони и прописи","Laws & regulations"),
+      T("Секој закон е одделен инструмент со сопствен извор, верзија и Human Gate статус.","Each law is a separate instrument with its own source, version and Human Gate status."));
 
-    $("#backToLawRegistry").addEventListener("click",openLawsRegistry);
+    const back=el("button",{class:"btn light",type:"button",id:"backToLawRegistry",onclick:openLawsRegistry},T("← Сите закони","← All laws"));
+    const query=el("input",{id:"lawArticleQuery",type:"search","aria-label":T("Пребарај членови","Search articles"),placeholder:T("Пребарај член, поим или институт...","Search article, term or legal concept..."),style:"flex:1;min-width:220px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)"});
+    const date=el("input",{id:"lawArticleDate",type:"date","aria-label":T("Датум на верзијата (опционално)","Version date (optional)"),value:opts.date || "",style:"padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)"});
+    const searchBtn=el("button",{class:"btn primary",type:"button",id:"lawArticleSearchBtn"},T("Пребарај членови","Search articles"));
+    const resetBtn=el("button",{class:"btn light",type:"button",id:"lawArticleResetBtn"},T("Први членови","First articles"));
+    const stats=el("div",{id:"lawCorpusStats",class:"meta",style:"margin-top:10px"});
+    const versionBox=el("div",{id:"lawVersionBox"});
+    const results=el("div",{id:"lawArticleResults",style:"display:grid;gap:12px;grid-column:1/-1"});
+    const loadMore=el("button",{class:"btn light",type:"button",id:"lawLoadMoreBtn",hidden:true},T("Вчитај уште","Load more"));
 
-    const results=$("#lawArticleResults");
-    const stats=$("#lawCorpusStats");
-    const loadMore=$("#lawLoadMoreBtn");
+    root.append(
+      el("div",{style:"grid-column:1/-1"},back),
+      el("div",{class:"resultItem",style:"grid-column:1/-1"},
+        el("div",{style:"display:flex;gap:10px;flex-wrap:wrap;align-items:center"},query,date,searchBtn,resetBtn),
+        el("small",{class:"help",text:T("Датумот е потребен само кога законот има повеќе верзии.","A date is needed only when the law has several versions.")}),
+        stats),
+      el("div",{style:"grid-column:1/-1"},versionBox),
+      results,
+      el("div",{style:"grid-column:1/-1;text-align:center"},loadMore));
+
     let offset=0;
     let currentQuery="";
+    let loadSeq=0;
 
     const load=async({append=false}={})=>{
+      const seq=++loadSeq;
+      const requestedOffset=offset;
+      const requestedQuery=currentQuery;
+      const requestedDate=date.value;
       results.setAttribute("aria-busy","true");
-      if(!append) results.innerHTML=`<div class="resultItem">${lang==="mk" ? "Се вчитуваат членовите..." : "Loading articles..."}</div>`;
+      if(!append) results.innerHTML=`<div class="resultItem">${T("Се вчитуваат членовите...","Loading articles...")}</div>`;
       try{
-        const data=await fetchArticles(instrumentKey,{q:currentQuery,limit:40,offset});
+        const data=await fetchArticles(instrumentKey,{q:requestedQuery,limit:40,offset:requestedOffset,date:requestedDate});
+        if(seq!==loadSeq) return;
         const counts=data.statusCounts || {};
         const inst=data.instrument || {};
-        $("#workspaceTitle").textContent=(lang==="mk" ? "Закони и прописи · " : "Laws & regulations · ")+(inst.shortTitle || inst.title || instrumentKey);
+        $("#workspaceTitle").textContent=T("Закони и прописи · ","Laws & regulations · ")+(inst.shortTitle || inst.title || instrumentKey);
         $("#workspaceText").textContent=inst.notes || "";
-        stats.textContent=`${inst.shortTitle || inst.title} · ${data.total} ${lang==="mk" ? "членови" : "articles"} · historical: ${counts.historical || 0} · version review: ${counts.needs_version_review || 0} · current verified: ${counts.current_consolidated || 0}`;
-
+        stats.textContent=[
+          `${inst.shortTitle || inst.title} · ${data.total} ${T("членови","articles")}`,
+          `${LB.articleStatus("historical",lang).label}: ${counts.historical || 0}`,
+          `${LB.articleStatus("version_review",lang).label}: ${counts.needs_version_review || 0}`,
+          `${LB.articleStatus("current_verified",lang).label}: ${counts.current_consolidated || 0}`
+        ].join(" · ");
+        if(!append){
+          versionBox.replaceChildren(el("div",{class:"versionBox"},
+            el("b",{text:T("Верзија на прикажаниот текст","Version of the text shown")}),
+            versionTable(data.instrumentVersion),
+            inst.canonicalSourceUrl ? el("p",{style:"margin:8px 0 0"},el("a",{href:inst.canonicalSourceUrl,target:"_blank",rel:"noopener noreferrer"},T("Слој 1 · Официјален извор ↗","Layer 1 · Official source ↗"))) : null));
+        }
         if(append){
           const temp=document.createElement("div");
           renderArticleRows(temp,data);
@@ -2294,88 +2408,127 @@
         }else{
           renderArticleRows(results,data);
         }
-
-        offset+=data.articles.length;
-        loadMore.hidden=Boolean(currentQuery) || offset>=data.filteredCount;
+        offset=requestedOffset+data.articles.length;
+        loadMore.hidden=Boolean(requestedQuery) || offset>=data.filteredCount;
       }catch(error){
-        results.innerHTML=`<div class="resultItem">${lang==="mk" ? "Corpus API моментално не е достапен." : "Corpus API is currently unavailable."}</div>`;
+        if(seq!==loadSeq) return;
+        versionBox.replaceChildren();
+        if(error.status===409){
+          results.replaceChildren(versionRefusal(error.body));
+        }else if(error.status===404 && error.body?.error==="no_articles"){
+          results.replaceChildren(el("div",{class:"resultItem",text:T("За овој закон има само официјални метаподатоци; текст член-по-член не е внесен.","Only official metadata exists for this law; article-level text is not loaded.")}));
+        }else{
+          results.innerHTML=`<div class="resultItem">${T("Corpus API моментално не е достапен.","Corpus API is currently unavailable.")}</div>`;
+        }
         stats.textContent="";
         loadMore.hidden=true;
       }finally{
-        results.removeAttribute("aria-busy");
+        if(seq===loadSeq) results.removeAttribute("aria-busy");
       }
     };
 
-    $("#lawArticleSearchBtn").addEventListener("click",()=>{
-      currentQuery=$("#lawArticleQuery").value.trim();
-      offset=0;
-      load();
-    });
-    $("#lawArticleQuery").addEventListener("keydown",e=>{
-      if(e.key==="Enter"){
-        currentQuery=e.currentTarget.value.trim();
-        offset=0;
-        load();
-      }
-    });
-    $("#lawArticleResetBtn").addEventListener("click",()=>{
-      $("#lawArticleQuery").value="";
-      currentQuery="";
-      offset=0;
-      load();
-    });
+    const run=()=>{ currentQuery=query.value.trim(); offset=0; load(); };
+    searchBtn.addEventListener("click",run);
+    query.addEventListener("keydown",e=>{ if(e.key==="Enter") run(); });
+    date.addEventListener("change",()=>{ offset=0; load(); });
+    resetBtn.addEventListener("click",()=>{ query.value=""; currentQuery=""; offset=0; load(); });
     loadMore.addEventListener("click",()=>load({append:true}));
-
-    $("#sourceWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
-    $("#sourceWorkspace").focus({preventScroll:true});
     await load();
   }
 
   async function openZroBrowser(){ return openLawBrowser("mk:zro"); }
   async function openZkpBrowser(){ return openLawBrowser("mk:zkp"); }
 
-  async function openLawsRegistry(){
-    $("#workspaceTag").textContent="LIVE · LAW REGISTRY";
-    $("#workspaceTitle").textContent=lang==="mk" ? "Закони и прописи" : "Laws & regulations";
-    $("#workspaceText").textContent=lang==="mk"
-      ? "Изберете закон. Секој корпус прикажува број на членови, официјална правна линија и Human Gate статус."
-      : "Choose a law. Each corpus shows article count, official legal lineage and Human Gate status.";
-    $("#sourceWorkspace").hidden=false;
-    $("#workspaceLinks").innerHTML=`<div class="resultItem" style="grid-column:1/-1">${lang==="mk" ? "Се вчитува регистарот..." : "Loading law registry..."}</div>`;
-    $("#sourceWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
-    $("#sourceWorkspace").focus({preventScroll:true});
+  function statusGlossary(){
+    const items=[
+      [T("Официјални метаподатоци","Official metadata"),T("Назив, Службен весник и врска до официјалниот извор. Нема текст.","Title, Official Gazette reference and link to the official source. No text.")],
+      [T("Текст член-по-член","Article-level text"),T("Внесен текст врзан за една верзија. Сам по себе не значи дека е тековен.","Loaded text bound to one version. On its own it does not mean the text is current.")],
+      [LB.articleStatus("historical",lang).label,T("Снимок на текстот од одреден извор и датум. Не е потврден како важечки.","A snapshot of the text from a given source and date. Not confirmed as in force.")],
+      [LB.articleStatus("version_review",lang).label,T("Текстот чека проверка на верзијата.","The text awaits version review.")],
+      [LB.articleStatus("current_verified",lang).label,T("Само кога backend-от вели дека текстот е тековен пречистен И одобрен преку Human Gate.","Only when the backend says the text is current consolidated AND approved through the Human Gate.")]
+    ];
+    return el("dl",{class:"glossary"},items.flatMap(([k,v])=>[el("dt",{text:k}),el("dd",{text:v})]));
+  }
 
+  function lawCard(inst){
+    const layers=LB.instrumentLayers(inst,lang);
+    const actions=el("div",{style:"display:flex;gap:8px;flex-wrap:wrap"});
+    if(Number(inst.articleCount)>0) actions.append(el("button",{type:"button",class:"btn light lawInstrumentCard","data-key":inst.canonicalKey,onclick:()=>openLawBrowser(inst.canonicalKey)},T("Прегледај членови","Browse articles")));
+    if(inst.canonicalSourceUrl) actions.append(el("a",{class:"btn light",href:inst.canonicalSourceUrl,target:"_blank",rel:"noopener noreferrer"},T("Официјален извор ↗","Official source ↗")));
+    return el("article",{class:"lawCard"},
+      el("h4",{},el("b",{text:inst.shortTitle || ""})," ",inst.title),
+      inst.gazetteReference ? el("div",{class:"meta",text:T("Сл. весник: ","Official Gazette: ")+inst.gazetteReference}) : null,
+      el("ul",{class:"layerList"},layers.map(l=>el("li",{class:l.present ? "yes" : ""},l.label,el("span",{class:"sr",text:l.present ? T(" (да)"," (yes)") : T(" (не)"," (no)")})))),
+      actions);
+  }
+
+  async function openLawsRegistry(){
+    const root=openWorkspace(T("Слој 1–2 · Регистар","Layer 1–2 · Registry"),T("Закони и прописи","Laws & regulations"),
+      T("Законите се додаваат еден по еден: прво официјални метаподатоци и доказно потекло, па текст член-по-член врзан за верзија, па Human Gate проверка.","Laws are added one by one: first official metadata and provenance, then article-level text bound to a version, then Human Gate review."));
+    root.append(el("div",{style:"grid-column:1/-1"},
+      el("details",{class:"helpBox"},el("summary",{text:T("Што значат ознаките","What the labels mean")}),statusGlossary()),
+      el("div",{class:"resultItem",id:"lawRegistryList",text:T("Се вчитува регистарот...","Loading law registry...")})));
+    const list=$("#lawRegistryList");
     try{
       const instruments=await fetchInstruments();
-      $("#workspaceLinks").innerHTML=instruments.map(inst=>`
-        <button class="sourceLink lawInstrumentCard" type="button" data-key="${escapeHtml(inst.canonicalKey)}" style="text-align:left">
-          <b>${escapeHtml(inst.shortTitle || inst.title)} · ${escapeHtml(inst.title)}</b>
-          <small>${inst.articleCount>0 ? (inst.articleCount+" "+(lang==="mk" ? "членови" : "articles")) : (lang==="mk" ? "METADATA · CORPUS PENDING" : "METADATA · CORPUS PENDING")} · ${escapeHtml(inst.gazetteReference || "")}</small>
-          <small>${escapeHtml(inst.currentStatus || "")} · Human Gate: ${escapeHtml(inst.humanReviewStatus || "")}</small>
-        </button>`).join("");
-      $("#workspaceLinks").querySelectorAll(".lawInstrumentCard").forEach(btn=>{
-        btn.addEventListener("click",()=>openLawBrowser(btn.dataset.key));
-      });
+      const withText=instruments.filter(i=>Number(i.articleCount)>0);
+      const metaOnly=instruments.filter(i=>!(Number(i.articleCount)>0));
+      list.className="";
+      list.replaceChildren(
+        el("h4",{text:T(`Со текст член-по-член (${withText.length})`,`With article-level text (${withText.length})`)}),
+        el("div",{class:"wsGrid two"},withText.map(lawCard)),
+        el("h4",{style:"margin-top:16px",text:T(`Само официјални метаподатоци (${metaOnly.length})`,`Official metadata only (${metaOnly.length})`)}),
+        el("div",{class:"wsGrid two"},metaOnly.map(lawCard)));
     }catch{
-      $("#workspaceLinks").innerHTML=`
-        <button class="sourceLink lawInstrumentCard" type="button" data-key="mk:zro"><b>ЗРО · Закон за работните односи</b></button>
-        <button class="sourceLink lawInstrumentCard" type="button" data-key="mk:zkp"><b>ЗКП · Закон за кривичната постапка</b></button>`;
-      $("#workspaceLinks").querySelectorAll(".lawInstrumentCard").forEach(btn=>{
-        btn.addEventListener("click",()=>openLawBrowser(btn.dataset.key));
-      });
+      list.replaceChildren(T("Регистарот моментално не е достапен. Прикажани се само законите со познат корпус.","The registry is currently unavailable. Only laws with a known corpus are shown."),
+        el("div",{class:"wsGrid two",style:"margin-top:10px"},
+          el("button",{class:"sourceLink lawInstrumentCard",type:"button","data-key":"mk:zro",onclick:()=>openLawBrowser("mk:zro")},el("b",{text:"ЗРО · Закон за работните односи"})),
+          el("button",{class:"sourceLink lawInstrumentCard",type:"button","data-key":"mk:zkp",onclick:()=>openLawBrowser("mk:zkp")},el("b",{text:"ЗКП · Закон за кривичната постапка"}))));
     }
   }
 
   async function openCaseLawRegistry(){
-    const sources=await getOfficialSources();
-    const selected=sources.filter(s=>["court","international_court"].includes(s.category));
-    showWorkspace(
-      lang==="mk" ? "Судска практика" : "Case law",
-      lang==="mk"
-        ? "Официјални судски извори за домашна и европска судска практика. AI Advokat не ја заменува проверката на оригиналната одлука."
-        : "Official court sources for domestic and European case law. AI Advokat does not replace verification of the original judgment.",
-      selected
-    );
+    const root=openWorkspace(T("Слој 3 · Судска практика","Layer 3 · Case law"),T("Судска практика","Case law"),
+      T("Официјални судски бази. AI Advokat не ја заменува проверката на оригиналната одлука и не прикажува одлуки што не се индексирани.","Official court databases. AI Advokat does not replace checking the original decision and shows no decision that is not indexed."));
+    const st=capState("cases");
+    const live=st.active;
+    root.append(el("div",{style:"grid-column:1/-1"},statusBanner("cases",
+      live
+        ? "Индексираната судска практика е вклучена. Пребарувањето по клучен збор е достапно; филтрите за суд, датум и исход остануваат исклучени додека API-то не ги поддржи."
+        : "Индексираната судска практика не е вклучена. Подолу се официјалните бази на судовите; филтрите ќе работат кога корпусот ќе биде вклучен.",
+      live
+        ? "Indexed case law is enabled. Keyword search is available; court, date and outcome filters remain disabled until the API supports them."
+        : "Indexed case law is not enabled. Below are the courts' official databases; the filters will work once the corpus is enabled.")));
+    const sources=(await getOfficialSources()).filter(s=>s.category==="court" && s.jurisdiction==="MK");
+    const courtSelect=el("select",{id:"caseCourt",disabled:true},el("option",{value:"",text:T("Сите судови","All courts")}),sources.map(s=>{const m=LB.OFFICIAL_SOURCES.find(x=>x.url===s.url); return el("option",{value:s.url,text:m ? T(m.mk,m.en) : s.title});}));
+    const field=(id,labelMk,labelEn,control)=>el("div",{},el("label",{for:id,text:T(labelMk,labelEn)}),control);
+    const issue=el("input",{id:"caseIssue",type:"search",disabled:!live,placeholder:T("на пр. отказ, притвор","e.g. dismissal, detention")});
+    const filters=el("fieldset",{class:"filterSet"},
+      el("legend",{text:T("Филтри за индексирана судска практика","Filters for indexed case law")}),
+      el("div",{class:"filterGrid"},
+        field("caseCourt","Суд","Court",courtSelect),
+        field("caseIssue","Правно прашање (клучен збор)","Legal issue (keyword)",issue),
+        field("caseDate","Датум на одлука","Decision date",el("input",{id:"caseDate",type:"date",disabled:true})),
+        field("caseOutcome","Исход","Outcome",el("select",{id:"caseOutcome",disabled:true},el("option",{value:"",text:T("Секој исход","Any outcome")})))),
+      el("small",{class:"help",text:live
+        ? T("Пребарувањето работи само по клучен збор преку јавниот корпус; филтрите за суд, датум и исход сè уште не се поддржани од API-то.","Search works by keyword only through the public corpus; court, date and outcome filters are not yet supported by the API.")
+        : T("Сите филтри се исклучени: индексирана судска практика не е вклучена. Нема прикажани ниту измислени предмети.","All filters are disabled: indexed case law is not enabled. No cases are shown or invented.")}));
+    const results=el("div",{id:"caseResults",role:"status",class:"wsGrid"});
+    root.append(el("div",{style:"grid-column:1/-1"},filters,results),
+      el("h4",{style:"grid-column:1/-1;margin:6px 0 0",text:T("Официјални бази на судовите","Official court databases")}),
+      ...sources.map(officialSourceCard));
+    if(live){
+      issue.addEventListener("keydown",async e=>{
+        if(e.key!=="Enter" || issue.value.trim().length<2) return;
+        results.textContent=T("Се пребарува…","Searching…");
+        try{
+          const url=new URL(API_BASE+"/api/search"); url.searchParams.set("q",issue.value.trim()); url.searchParams.set("type","case"); url.searchParams.set("limit","20");
+          const data=await (await fetch(url,{headers:{accept:"application/json"}})).json();
+          if(!data.ok) throw new Error();
+          results.replaceChildren(...(data.results.length ? data.results.map(x=>el("div",{class:"resultItem"},el("b",{text:x.title}),el("div",{class:"meta",text:[x.meta,x.date].filter(Boolean).join(" · ")}),x.url ? el("a",{href:x.url,target:"_blank",rel:"noopener noreferrer"},T("Отвори одлука ↗","Open decision ↗")) : null)) : [el("p",{text:i18n[lang].noResults})]));
+        }catch{ results.textContent=T("Пребарувањето не е достапно.","Search is unavailable."); }
+      });
+    }
   }
 
   let workspaceOpener=null;
@@ -2390,40 +2543,262 @@
   bindCard("#casesCard",openCaseLawRegistry);
 
   async function openInternationalRegistry(){
-    const sources=await getOfficialSources();
-    const selected=sources.filter(s=>["international_court","international_organization"].includes(s.category));
-    showWorkspace(
-      lang==="mk" ? "ЕСПЧ и меѓународни извори" : "ECHR & international sources",
-      lang==="mk"
-        ? "Официјални европски и меѓународни извори за судска практика, право на ЕУ и компаративно правно истражување."
-        : "Official European and international sources for case law, EU law and comparative legal research.",
-      selected
-    );
+    const root=openWorkspace(T("Слој 1 и 3 · Меѓународни извори","Layer 1 and 3 · International sources"),T("ЕСПЧ и меѓународни извори","ECHR & international sources"),
+      T("Европски извори со сопствена јурисдикција и правна природа. Не се прикажуваат како македонски прописи.","European sources with their own jurisdiction and legal nature. They are not presented as Macedonian legislation."));
+    root.append(el("div",{style:"grid-column:1/-1"},statusBanner("echr",
+      "Индексиран корпус на одлуки на ЕСПЧ и СПЕУ не е вклучен. AI Истражувачот не одговара врз овие извори.",
+      "An indexed corpus of ECtHR and CJEU decisions is not enabled. The AI Researcher does not answer from these sources.")));
+    const sources=(await getOfficialSources()).filter(s=>["international_court","international_organization"].includes(s.category));
+    sources.forEach(src=>{
+      const meta=LB.OFFICIAL_SOURCES.find(x=>x.url===src.url);
+      const jur=LB.JURISDICTION_LABELS[src.jurisdiction];
+      root.append(el("article",{class:"lawCard"},
+        el("span",{class:"layerTag",text:T("Слој 1 · Официјален извор","Layer 1 · Official source")}),
+        el("h4",{text:meta ? T(meta.mk,meta.en) : src.title}),
+        el("dl",{class:"glossary",style:"margin:0"},
+          el("dt",{text:T("Јурисдикција","Jurisdiction")}),el("dd",{text:jur ? T(jur.mk,jur.en) : src.jurisdiction}),
+          el("dt",{text:T("Вид на извор","Source type")}),el("dd",{text:meta ? T(meta.kindMk,meta.kindEn) : src.category}),
+          el("dt",{text:T("Во AI Advokat","In AI Advokat")}),el("dd",{text:T("Само врска до официјалната база · не е индексирано","Link to the official database only · not indexed")})),
+        el("a",{class:"btn light",href:src.url,target:"_blank",rel:"noopener noreferrer"},T("Отвори ","Open ")+(meta ? meta.en.split(" — ").pop() : src.title)+" ↗")));
+    });
   }
 
   bindCard("#echrCard",openInternationalRegistry);
 
+  // ---- Versions and amendments: compares two versions the backend returns; no legal-status inference.
   async function openVersionsWorkspace(){
-    let statusMessage = lang==="mk"
-      ? "Споредбата на верзии е во GOVERNED PREVIEW. Ќе работи само врз проверени, датумски означени верзии на прописи."
-      : "Version comparison is in GOVERNED PREVIEW. It will operate only on verified, date-stamped instrument versions.";
+    const root=openWorkspace(T("Слој 2 · Верзии и измени","Layer 2 · Versions and amendments"),T("Верзии и измени","Versions & amendments"),
+      T("Споредба на текстот на ист член во две верзии што backend-от ги враќа. Споредбата е текстуална и не утврдува правно дејство.","Compares the text of one article in two versions returned by the backend. The comparison is textual and does not determine legal effect."));
+    root.append(el("div",{style:"grid-column:1/-1"},statusBanner("versions",
+      "Споредбата работи само врз верзии што се внесени со датумски метаподатоци. Секоја верзија го покажува својот статус и Human Gate.",
+      "The comparison works only on versions loaded with date metadata. Each version shows its own status and Human Gate.")));
+    const lawSelect=el("select",{id:"versionLaw"});
+    const article=el("input",{id:"versionArticle",type:"text",inputmode:"text",placeholder:T("на пр. 12 или 12-а","e.g. 12 or 12-a"),required:true});
+    const show=el("button",{class:"btn primary",type:"submit"},T("Прикажи верзии","Show versions"));
+    const out=el("div",{id:"versionOut",role:"status"});
+    const form=el("form",{class:"wsForm",style:"grid-column:1/-1"},
+      el("div",{class:"row"},
+        el("div",{},el("label",{for:"versionLaw",text:T("Закон","Law")}),lawSelect),
+        el("div",{},el("label",{for:"versionArticle",text:T("Член","Article")}),article)),
+      el("div",{},show));
+    root.append(form,el("div",{style:"grid-column:1/-1"},out));
     try{
-      const response=await fetch(API_BASE+"/api/versions",{headers:{accept:"application/json"}});
-      const data=await response.json();
-      if(data?.message) statusMessage=data.message;
-    }catch{}
-    showWorkspace(
-      lang==="mk" ? "Верзии и измени" : "Versions & amendments",
-      statusMessage,
-      [
-        {title:lang==="mk" ? "Службен весник — примарна проверка" : "Official Gazette — primary verification",url:"https://slvesnik.com.mk/",jurisdiction:"MK",category:"official_gazette"},
-        {title:lang==="mk" ? "LDBIS — важечки правни текстови" : "LDBIS — current legal texts",url:"https://ldbis.pravda.gov.mk/",jurisdiction:"MK",category:"ministry_database"},
-        {title:"EUR-Lex",url:"https://eur-lex.europa.eu/",jurisdiction:"EU",category:"international_organization"}
-      ]
-    );
+      const instruments=(await fetchInstruments()).filter(i=>Number(i.articleCount)>0);
+      lawSelect.replaceChildren(...instruments.map(i=>el("option",{value:i.canonicalKey,text:`${i.shortTitle || ""} · ${i.title}`})));
+    }catch{
+      lawSelect.replaceChildren(el("option",{value:"",text:T("Регистарот не е достапен","Registry unavailable")}));
+      show.disabled=true;
+    }
+
+    const column=(titleText,v,art)=>el("section",{class:"compareCol","aria-label":titleText},
+      el("h4",{text:titleText}),versionTable(v),
+      art ? el("div",{class:"compareText",text:art.text}) : el("p",{class:"help",text:T("Членот не постои во оваа верзија.","The article does not exist in this version.")}));
+
+    async function compare(key,num,oldV,newV){
+      out.replaceChildren(el("p",{text:T("Се вчитуваат двете верзии…","Loading both versions…")}));
+      const fetchAt=async v=>{
+        try{ const d=await fetchArticles(key,{article:num,date:LB.versionStartDate(v),limit:1}); return {v:d.instrumentVersion || v,art:d.articles[0] || null}; }
+        catch(e){ return {v,art:null,error:e}; }
+      };
+      const [a,b]=await Promise.all([fetchAt(oldV),fetchAt(newV)]);
+      const diff=a.art && b.art ? LB.diffWords(a.art.text,b.art.text) : null;
+      const diffBox=el("div",{});
+      if(a.art && b.art){
+        if(a.art.text===b.art.text) diffBox.append(el("p",{class:"wsBanner",text:T("Текстот на членот е идентичен во двете верзии (текстуална споредба).","The article text is identical in both versions (textual comparison).")}));
+        else if(diff){
+          const view=el("div",{class:"diffView","aria-label":T("Текстуални разлики","Textual differences")});
+          // Text markers ([− …] / [+ …]) carry the meaning; colour is only a secondary cue.
+          diff.forEach(part=>{
+            if(part.type==="same"){ view.append(document.createTextNode(part.text)); return; }
+            const added=part.type==="added";
+            view.append(el("span",{class:"diffMark",text:added ? "[+ " : "[− "}),el(added ? "ins" : "del",{text:part.text.trim()}),el("span",{class:"diffMark",text:" ]"})," ");
+          });
+          diffBox.append(el("h4",{text:T("Текстуални разлики","Textual differences")}),
+            el("p",{class:"help",text:T("[− …] отстранет текст · [+ …] додаден текст. Ова не е правна оцена на измената.","[− …] removed text · [+ …] added text. This is not a legal assessment of the amendment.")}),view);
+        }else diffBox.append(el("p",{class:"help",text:T("Текстот е предолг за автоматска споредба; споредете ги колоните.","The text is too long for automatic comparison; compare the columns.")}));
+      }
+      out.replaceChildren(el("div",{class:"wsGrid two"},column(T("Постара верзија","Older version"),a.v,a.art),column(T("Понова верзија","Newer version"),b.v,b.art)),diffBox);
+    }
+
+    form.addEventListener("submit",async e=>{
+      e.preventDefault();
+      const key=lawSelect.value, num=article.value.trim();
+      if(!key || !num){ out.replaceChildren(el("p",{text:T("Изберете закон и внесете број на член.","Choose a law and enter an article number.")})); article.focus(); return; }
+      out.replaceChildren(el("p",{text:T("Се проверуваат верзиите…","Checking versions…")}));
+      let versions=[];
+      try{
+        // Metadata probe only: a deliberately early ISO date makes the existing
+        // version resolver return its candidate list without treating today's
+        // approved version as proof that no historical/future version exists.
+        await fetchArticles(key,{article:num,limit:1,date:"0001-01-01"});
+      }catch(probe){
+        if(probe.status===409) versions=(probe.body?.versions || []).filter(v=>v && v.label);
+        else throw probe;
+      }
+      if(versions.length<2){
+        try{
+          const d=await fetchArticles(key,{article:num,limit:1});
+          out.replaceChildren(
+            el("div",{class:"wsBanner",text:T("Во корпусот нема две верзии со текст што може безбедно да се споредат.","The corpus does not contain two text-bearing versions that can be compared safely.")}),
+            column(T("Внесена верзија","Loaded version"),d.instrumentVersion,d.articles[0] || null));
+          return;
+        }catch(err){
+          const fallback=(err.body?.versions || []).filter(v=>v && v.label);
+          if(fallback.length>=2) versions=fallback;
+          else{
+            out.replaceChildren(err.status===409 ? versionRefusal(err.body) : el("p",{text:T("Верзиите не можат да се вчитаат.","The versions cannot be loaded.")}));
+            return;
+          }
+        }
+      }
+      {
+        const pick=(id,labelMk,labelEn,sel)=>{
+          const s=el("select",{id},versions.map((v,i)=>el("option",{value:String(i),disabled:!LB.versionStartDate(v),text:`${v.label} · ${LB.versionStartDate(v) || T("нема датум на почеток","no start date")} · ${LB.versionCategoryLabel(v,lang)}`})));
+          s.value=String(sel);
+          return el("div",{},el("label",{for:id,text:T(labelMk,labelEn)}),s);
+        };
+        const ordered=versions.map((v,i)=>({v,i})).sort((x,y)=>String(LB.versionStartDate(x.v) || "").localeCompare(String(LB.versionStartDate(y.v) || "")));
+        const pickOld=pick("versionOld","Постара верзија","Older version",ordered[0].i);
+        const pickNew=pick("versionNew","Понова верзија","Newer version",ordered[ordered.length-1].i);
+        const go=el("button",{class:"btn primary",type:"button"},T("Спореди","Compare"));
+        out.replaceChildren(
+          el("p",{text:T(`Внесени се ${versions.length} верзии. Изберете кои две да се споредат.`,`${versions.length} versions are loaded. Choose which two to compare.`)}),
+          el("div",{class:"wsGrid two"},versions.map(v=>el("div",{class:"versionBox"},el("b",{text:v.label}),versionTable(v)))),
+          el("div",{class:"wsForm"},el("div",{class:"row"},pickOld,pickNew),el("div",{},go)));
+        go.addEventListener("click",()=>{
+          const o=versions[Number($("#versionOld").value)], n=versions[Number($("#versionNew").value)];
+          if(o===n){ out.append(el("p",{text:T("Изберете две различни верзии.","Choose two different versions.")})); return; }
+          compare(key,num,o,n);
+        });
+      }
+    });
   }
 
   bindCard("#versionsCard",openVersionsWorkspace);
+
+  // ---- Citation audit (PREVIEW): finds the source, never decides support on its own.
+  async function openCitationAudit(){
+    const root=openWorkspace(T("Проверка меѓу слоевите","Cross-layer check"),T("Проверка на цитати","Citation audit"),
+      T("Внесете тврдење и цитат. Системот само проверува дали изворот постои во порталот или во официјалниот директориум и го прикажува; дали го поддржува тврдењето одлучувате вие.","Enter a claim and a citation. The system only checks whether the source exists in the portal or the official directory and shows it; you decide whether it supports the claim."));
+    root.append(el("div",{style:"grid-column:1/-1"},statusBanner("citationAudit",
+      "PREVIEW: системот никогаш не означува „поддржано“ или „не е поддржано“ сам и никогаш не го поправа цитатот.",
+      "PREVIEW: the system never marks “supported” or “unsupported” on its own and never corrects the citation.")));
+    const claim=el("textarea",{id:"auditClaim",rows:"3",maxlength:"600","aria-describedby":"auditClaimHelp",placeholder:T("Тврдење што сакате да го проверите","Claim you want to check")});
+    const kinds=[["article","Член од закон","Article of a law"],["doi","DOI","DOI"],["url","Официјален извор (URL)","Official source (URL)"],["case","Судска одлука","Court decision"]];
+    const radios=el("div",{class:"radioRow"},kinds.map(([v,mk,en],i)=>el("label",{},el("input",{type:"radio",name:"auditKind",value:v,checked:i===0}),T(mk,en))));
+    const law=el("select",{id:"auditLaw"});
+    const art=el("input",{id:"auditArticle",type:"text",placeholder:T("на пр. 12","e.g. 12")});
+    const date=el("input",{id:"auditDate",type:"date"});
+    const doi=el("input",{id:"auditDoi",type:"text",placeholder:"10.5281/zenodo.…"});
+    const url=el("input",{id:"auditUrl",type:"url",placeholder:"https://"});
+    const caseRef=el("input",{id:"auditCase",type:"text",placeholder:T("Суд, број и датум на одлуката","Court, number and date of the decision")});
+    const fld=(id,mk,en,c)=>el("div",{"data-kind-field":""},el("label",{for:id,text:T(mk,en)}),c);
+    const groups={
+      article:el("div",{class:"row"},fld("auditLaw","Закон","Law",law),fld("auditArticle","Член","Article",art),fld("auditDate","Датум (ако законот има повеќе верзии)","Date (if the law has several versions)",date)),
+      doi:el("div",{class:"row",hidden:true},fld("auditDoi","DOI","DOI",doi)),
+      url:el("div",{class:"row",hidden:true},fld("auditUrl","Адреса на изворот","Source address",url)),
+      case:el("div",{class:"row",hidden:true},fld("auditCase","Одлука","Decision",caseRef))
+    };
+    const result=el("div",{id:"auditResult",role:"status"});
+    const form=el("form",{class:"wsForm",style:"grid-column:1/-1"},
+      el("div",{},el("label",{for:"auditClaim",text:T("Тврдење","Claim")}),claim,el("small",{id:"auditClaimHelp",class:"help",text:T("Не внесувајте имиња на странки или доверливи податоци.","Do not enter party names or confidential data.")})),
+      el("fieldset",{},el("legend",{text:T("Вид на цитат","Citation type")}),radios),
+      ...Object.values(groups),
+      el("div",{},el("button",{class:"btn primary",type:"submit"},T("Провери го изворот","Check the source"))));
+    root.append(form,el("div",{style:"grid-column:1/-1"},result));
+    radios.addEventListener("change",()=>{
+      const k=form.querySelector('input[name="auditKind"]:checked').value;
+      for(const [name,g] of Object.entries(groups)) g.hidden=name!==k;
+    });
+    try{
+      law.replaceChildren(...(await fetchInstruments()).map(i=>el("option",{value:i.canonicalKey,text:`${i.shortTitle || ""} · ${i.title}${Number(i.articleCount)>0 ? "" : T(" · без текст"," · no text")}`})));
+    }catch{ law.replaceChildren(el("option",{value:"",text:T("Регистарот не е достапен","Registry unavailable")})); }
+
+    function verdictControls(){
+      const status=el("p",{class:"help",role:"status"});
+      const mk=(state,mkL,enL)=>el("button",{type:"button",class:"btn light",onclick:()=>{ status.replaceChildren(el("span",{class:"auditState","data-state":state,text:LB.auditLabel(state,lang)})," ",T("Оваа оцена е ваша и не се зачувува.","This assessment is yours and is not stored.")); }},T(mkL,enL));
+      return el("div",{},
+        el("p",{class:"help",text:T("Ваша оцена по споредбата (не се зачувува, не се испраќа):","Your assessment after comparing (not stored, not sent):")}),
+        el("div",{class:"actions",style:"display:flex;gap:8px;flex-wrap:wrap"},mk("supported","Го поддржува","Supports it"),mk("unsupported","Не го поддржува","Does not support it")),
+        status);
+    }
+
+    form.addEventListener("submit",async e=>{
+      e.preventDefault();
+      const kind=form.querySelector('input[name="auditKind"]:checked').value;
+      let verdict, evidence=null;
+      result.replaceChildren(el("p",{text:T("Се проверува…","Checking…")}));
+      if(kind==="article"){
+        if(!law.value || !art.value.trim()){ result.replaceChildren(el("p",{text:T("Изберете закон и внесете член.","Choose a law and enter an article.")})); return; }
+        let status=0, body=null;
+        try{ body=await fetchArticles(law.value,{article:art.value.trim(),date:date.value,limit:1}); status=200; }
+        catch(err){ status=err.status || 0; body=err.body || null; }
+        verdict=LB.classifyArticleLookup(status,body);
+        if(verdict.article) evidence=el("div",{class:"resultItem"},
+          el("span",{class:"layerTag",text:T("Слој 2 · Член и верзија","Layer 2 · Article and version")}),
+          el("b",{text:T("Член ","Article ")+verdict.article.articleNumber+(verdict.article.heading ? " · "+verdict.article.heading : "")}),
+          el("div",{class:"meta",text:[articleStatusLabel(verdict.article),body.instrumentVersion?.label].filter(Boolean).join(" · ")}),
+          el("div",{class:"compareText",text:verdict.article.text}),
+          verdict.article.sourceUrl ? el("a",{href:verdict.article.sourceUrl,target:"_blank",rel:"noopener noreferrer"},T("Отвори официјален извор ↗","Open official source ↗")) : null);
+        else if(verdict.versions?.length) evidence=versionRefusal(body);
+      }else if(kind==="doi"){
+        let records=[];
+        try{ const d=await (await fetch(API_BASE+"/api/zenodo",{headers:{accept:"application/json"}})).json(); records=d.records || []; }
+        catch{ records=null; }
+        verdict=records===null ? {state:"source_unavailable",reason:"service_unavailable"} : LB.classifyDoi(doi.value,records);
+        if(verdict.record) evidence=el("div",{class:"resultItem"},
+          el("span",{class:"layerTag",text:T("Слој 4 · Стручна анализа","Layer 4 · Professional analysis")}),
+          el("b",{text:verdict.record.title}),
+          el("a",{href:verdict.record.publicUrl,target:"_blank",rel:"noopener noreferrer"},"https://doi.org/"+verdict.doi+" ↗"));
+      }else if(kind==="url"){
+        verdict=LB.classifySourceUrl(url.value);
+        if(verdict.state==="unresolved") evidence=el("div",{class:"resultItem"},
+          verdict.source ? el("span",{class:"layerTag",text:T("Слој 1 · Официјален извор","Layer 1 · Official source")}) : null,
+          verdict.source ? el("b",{text:T(verdict.source.mk,verdict.source.en)}) : null,
+          el("a",{href:url.value.trim(),target:"_blank",rel:"noopener noreferrer"},T("Отвори го изворот ↗","Open the source ↗")));
+      }else{
+        verdict=capState("cases").active
+          ? {state:"source_unavailable",reason:"lookup_failed"}
+          : {state:"source_unavailable",reason:"case_corpus_disabled"};
+      }
+      result.replaceChildren(el("div",{class:"stateBox"},
+        el("h4",{style:"margin:0 0 6px"},T("Резултат: ","Result: "),el("span",{class:"auditState","data-state":verdict.state,text:LB.auditLabel(verdict.state,lang)})),
+        el("p",{text:LB.auditReason(verdict.reason,lang)}),
+        claim.value.trim() ? el("p",{class:"help"},el("b",{text:T("Тврдење: ","Claim: ")}),claim.value.trim()) : null,
+        evidence,
+        verdict.state==="unresolved" ? verdictControls() : el("p",{class:"failClosed",text:T("Цитатот не е изменет или „поправен“. Без извор, тврдењето останува непроверено.","The citation was not changed or “fixed”. Without a source the claim remains unverified.")})));
+    });
+  }
+
+  bindCard("#citationsCard",openCitationAudit);
+
+  function openDocumentsInfo(){
+    const root=openWorkspace(T("Работен простор · ЗАКЛУЧЕНО","Workspace · LOCKED"),T("Документи и досиеја","Documents & case files"),
+      T("Оваа функција е заклучена и во подготовка. Порталот не прима, не прикачува и не чува документи.","This feature is locked and in preparation. The portal does not accept, upload or store documents."));
+    root.append(el("div",{style:"grid-column:1/-1"},
+      statusBanner("documents",
+        "Прикачувањето документи и работните простори се заклучени додека не се воведат автентикација, шифрирано чување, правила за задржување и контрола на пристап.",
+        "Document upload and workspaces are locked until authentication, encrypted storage, retention rules and access controls are in place."),
+      el("div",{class:"resultItem"},
+        el("b",{text:T("Што може да вклучуваат идните работни простори","What future workspaces may include")}),
+        el("ul",{class:"lockedList"},
+          el("li",{text:T("хронологии на настани и процесни чекори","timelines of events and procedural steps")}),
+          el("li",{text:T("доказни матрици (утврдени факти, наводи, спорни факти)","evidence matrices (established facts, allegations, disputed facts)")}),
+          el("li",{text:T("работни белешки поврзани со членови и извори","working notes linked to articles and sources")}),
+          el("li",{text:T("Human Gate преглед пред секоја употреба","Human Gate review before any use")})),
+        el("p",{class:"help",text:T("Ништо од ова сè уште не е вклучено. Не испраќајте доверливи документи по е-пошта до порталот.","None of this is enabled yet. Do not send confidential documents to the portal by e-mail.")}))));
+  }
+
+  bindCard("#documentsCard",openDocumentsInfo);
+
+  function renderLayerLadder(){
+    const root=$("#layerLadder");
+    if(!root) return;
+    root.replaceChildren(...LB.LAYERS.map(l=>el("li",{},
+      el("span",{class:"num","aria-hidden":"true",text:String(l.n)}),
+      el("span",{},el("b",{text:`${T("Слој","Layer")} ${l.n} · ${T(l.mk,l.en)}`}),el("small",{text:T(l.textMk,l.textEn)})))));
+  }
+
   $("#closeWorkspace").addEventListener("click",()=>{
     $("#sourceWorkspace").hidden=true;
     (workspaceOpener || $("#lawsCard button.cardAction")).focus({preventScroll:true});
@@ -2801,18 +3176,20 @@
   function renderCapabilityLabels(){
     const mk=lang==="mk";
     const T=(m,e)=>mk?m:e;
-    const set=(key,text,live)=>{
-      document.querySelectorAll(`[data-cap="${key}"]`).forEach(el=>{
-        el.textContent=text;
-        el.style.color=live?"var(--ok)":"var(--warn)";
+    const setCap=key=>{
+      const st=LB.capabilityState(key, capabilitiesState==="ready" ? systemCapabilities : null);
+      document.querySelectorAll(`[data-cap="${key}"]`).forEach(node=>{
+        node.textContent=capabilitiesState==="loading" ? "…" : T(st.mk,st.en);
+        node.dataset.state=capabilitiesState==="loading" ? "loading" : st.state;
+        node.style.color=st.active ? "var(--ok)" : st.state==="locked" ? "var(--muted)" : "var(--warn)";
       });
     };
     const aiLabel=document.getElementById("aiModeLabel");
     const note=document.getElementById("coverageNote");
+    ["laws","cases","echr","versions","citationAudit","documents"].forEach(setCap);
 
     if(capabilitiesState!=="ready" || !systemCapabilities){
       const unknown=capabilitiesState==="loading" ? "…" : T("СТАТУС НЕПОЗНАТ","STATUS UNKNOWN");
-      ["laws","cases","echr","citationAudit","documents"].forEach(k=>set(k,unknown,false));
       if(aiLabel) aiLabel.textContent=unknown;
       if(note) note.textContent="";
       return;
@@ -2820,15 +3197,6 @@
 
     const c=systemCapabilities.capabilities || {};
     const corpora=(systemCapabilities.coverage?.articleCorpusInstruments || []).filter(i=>i.articleCount>0);
-
-    set("laws",
-      corpora.length ? T(`LIVE · ${corpora.length} ${corpora.length===1?"закон":"закони"}`,`LIVE · ${corpora.length} ${corpora.length===1?"law":"laws"}`) : T("РЕГИСТАР","REGISTRY"),
-      corpora.length>0);
-    set("cases", c.caseLawCorpus==="live_corpus" ? "LIVE" : T("ДИРЕКТОРИУМ","DIRECTORY"), c.caseLawCorpus==="live_corpus");
-    set("echr", c.echrCorpus==="live_corpus" ? "LIVE" : T("ДИРЕКТОРИУМ","DIRECTORY"), c.echrCorpus==="live_corpus");
-    set("versions", "PREVIEW", false);
-    set("citationAudit", c.citationAudit==="governed_preview" ? "PREVIEW" : c.citationAudit==="live" ? "LIVE" : T("ВО ПОДГОТОВКА","IN PREPARATION"), c.citationAudit==="live");
-    set("documents", (c.documentUpload==="locked" || c.caseWorkspace==="locked" || !c.documentUpload) ? T("ЗАКЛУЧЕНО · ВО ПОДГОТОВКА","LOCKED · IN PREPARATION") : "PREVIEW", false);
 
     if(aiLabel){
       aiLabel.textContent =

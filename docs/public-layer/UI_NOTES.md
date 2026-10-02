@@ -17,3 +17,5 @@
 **Images.** The author portrait is served as WebP (≈35 KB) with the original PNG as fallback.
 
 **Visual check.** The UI in this change was verified in Chromium at 1366×900 and 390×844, in light and dark themes, against a mocked API with the response shapes from `src/index.js`.
+
+**Legal Base helpers.** `assets/legal-base.js` (window.LegalBase / CommonJS) holds the pure presentation helpers (capability states, version and article labels, citation-audit classification, word diff). It is loaded before the app script. Keep `OFFICIAL_SOURCES` identical to `PUBLIC_WEB_SOURCES` in `src/index.js`; `test/legal-base.test.mjs` enforces this.
