@@ -2323,6 +2323,8 @@
       if([...select.options].some(o=>o.value===current)) select.value=current;
     }catch{
       renderCoverage(null);
+      zppInstrument=null;
+      renderZppTimeline();
       select.innerHTML=`
         <option value="auto">${autoLabel}</option>
         <option value="mk:zro">ЗРО · Закон за работните односи</option>
@@ -2851,14 +2853,20 @@
   // as of a fixed date and are withdrawn (not recomputed) once that date has passed.
   // ---------------------------------------------------------------------------
   let zppInstrument=null;
-  function localIsoDate(){
-    const d=new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  function jurisdictionIsoDate(){
+    const parts=new Intl.DateTimeFormat("en-CA",{
+      timeZone:"Europe/Skopje",
+      year:"numeric",
+      month:"2-digit",
+      day:"2-digit"
+    }).formatToParts(new Date());
+    const byType=Object.fromEntries(parts.filter(p=>p.type!=="literal").map(p=>[p.type,p.value]));
+    return `${byType.year}-${byType.month}-${byType.day}`;
   }
   function renderZppTimeline(){
     const ZT=window.ZppTimeline, root=$("#zppItems");
     if(!ZT || !root) return;
-    const tl=ZT.ZPP_TIMELINE, today=localIsoDate(), stale=ZT.isStale(today);
+    const tl=ZT.ZPP_TIMELINE, today=jurisdictionIsoDate(), stale=ZT.isStale(today);
     const L=lang==="en" ? "en" : "mk";
     const gate=ZT.humanGateLabel(zppInstrument,lang);
     $("#zppAsOf").textContent=stale
