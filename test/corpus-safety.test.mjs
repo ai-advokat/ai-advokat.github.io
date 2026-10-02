@@ -249,7 +249,7 @@ describe("F3 migration 0023 and importer", () => {
     applyRemaining();
     assert.equal(raw.prepare("SELECT COUNT(*) n FROM legal_article_versions").get().n, 2);
     assert.deepEqual(raw.prepare("SELECT canonical_key, article_count FROM corpus_legacy_unversioned_articles").all().map((r) => ({ ...r })), [{ canonical_key: "mk:zs", article_count: 2 }]);
-    assert.equal(raw.prepare("SELECT MAX(CAST(version AS INTEGER)) v FROM schema_migrations").get().v, 26);
+    assert.equal(raw.prepare("SELECT MAX(CAST(version AS INTEGER)) v FROM schema_migrations").get().v, 27);
   });
 
   test("T5 duplicate article in one version, NULL version, foreign version and unapproved current are blocked", () => {
