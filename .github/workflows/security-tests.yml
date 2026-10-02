@@ -48,3 +48,5 @@ jobs:
         run: node --check scripts/apply-amendments.mjs && npm run test:corpus-foundation
       - name: Public layer tests (front-end/API contract, publication status, links, accessibility)
         run: npm run test:public-layer
+      - name: Legal Base public layer tests (capability states, official sources, version labels, citation audit)
+        run: node --check assets/legal-base.js && npm run test:legal-base
