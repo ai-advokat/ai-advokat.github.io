@@ -2373,12 +2373,18 @@
 
     let offset=0;
     let currentQuery="";
+    let loadSeq=0;
 
     const load=async({append=false}={})=>{
+      const seq=++loadSeq;
+      const requestedOffset=offset;
+      const requestedQuery=currentQuery;
+      const requestedDate=date.value;
       results.setAttribute("aria-busy","true");
       if(!append) results.innerHTML=`<div class="resultItem">${T("Се вчитуваат членовите...","Loading articles...")}</div>`;
       try{
-        const data=await fetchArticles(instrumentKey,{q:currentQuery,limit:40,offset,date:date.value});
+        const data=await fetchArticles(instrumentKey,{q:requestedQuery,limit:40,offset:requestedOffset,date:requestedDate});
+        if(seq!==loadSeq) return;
         const counts=data.statusCounts || {};
         const inst=data.instrument || {};
         $("#workspaceTitle").textContent=T("Закони и прописи · ","Laws & regulations · ")+(inst.shortTitle || inst.title || instrumentKey);
@@ -2402,9 +2408,10 @@
         }else{
           renderArticleRows(results,data);
         }
-        offset+=data.articles.length;
-        loadMore.hidden=Boolean(currentQuery) || offset>=data.filteredCount;
+        offset=requestedOffset+data.articles.length;
+        loadMore.hidden=Boolean(requestedQuery) || offset>=data.filteredCount;
       }catch(error){
+        if(seq!==loadSeq) return;
         versionBox.replaceChildren();
         if(error.status===409){
           results.replaceChildren(versionRefusal(error.body));
@@ -2416,7 +2423,7 @@
         stats.textContent="";
         loadMore.hidden=true;
       }finally{
-        results.removeAttribute("aria-busy");
+        if(seq===loadSeq) results.removeAttribute("aria-busy");
       }
     };
 
@@ -2486,8 +2493,12 @@
     const st=capState("cases");
     const live=st.active;
     root.append(el("div",{style:"grid-column:1/-1"},statusBanner("cases",
-      "Индексираната судска практика не е вклучена. Подолу се официјалните бази на судовите; филтрите ќе работат кога корпусот ќе биде вклучен.",
-      "Indexed case law is not enabled. Below are the courts' official databases; the filters will work once the corpus is enabled.")));
+      live
+        ? "Индексираната судска практика е вклучена. Пребарувањето по клучен збор е достапно; филтрите за суд, датум и исход остануваат исклучени додека API-то не ги поддржи."
+        : "Индексираната судска практика не е вклучена. Подолу се официјалните бази на судовите; филтрите ќе работат кога корпусот ќе биде вклучен.",
+      live
+        ? "Indexed case law is enabled. Keyword search is available; court, date and outcome filters remain disabled until the API supports them."
+        : "Indexed case law is not enabled. Below are the courts' official databases; the filters will work once the corpus is enabled.")));
     const sources=(await getOfficialSources()).filter(s=>s.category==="court" && s.jurisdiction==="MK");
     const courtSelect=el("select",{id:"caseCourt",disabled:true},el("option",{value:"",text:T("Сите судови","All courts")}),sources.map(s=>{const m=LB.OFFICIAL_SOURCES.find(x=>x.url===s.url); return el("option",{value:s.url,text:m ? T(m.mk,m.en) : s.title});}));
     const field=(id,labelMk,labelEn,control)=>el("div",{},el("label",{for:id,text:T(labelMk,labelEn)}),control);
@@ -2614,17 +2625,33 @@
       const key=lawSelect.value, num=article.value.trim();
       if(!key || !num){ out.replaceChildren(el("p",{text:T("Изберете закон и внесете број на член.","Choose a law and enter an article number.")})); article.focus(); return; }
       out.replaceChildren(el("p",{text:T("Се проверуваат верзиите…","Checking versions…")}));
+      let versions=[];
       try{
-        const d=await fetchArticles(key,{article:num,limit:1});
-        out.replaceChildren(
-          el("div",{class:"wsBanner",text:T("Во корпусот е внесена само една верзија што може безбедно да се утврди. Нема со што да се спореди.","Only one safely resolvable version is loaded. There is nothing to compare.")}),
-          column(T("Внесена верзија","Loaded version"),d.instrumentVersion,d.articles[0] || null));
-      }catch(err){
-        const versions=(err.body?.versions || []).filter(v=>v && v.label);
-        if(err.status!==409 || versions.length<2){
-          out.replaceChildren(err.status===409 ? versionRefusal(err.body) : el("p",{text:T("Верзиите не можат да се вчитаат.","The versions cannot be loaded.")}));
+        // Metadata probe only: a deliberately early ISO date makes the existing
+        // version resolver return its candidate list without treating today's
+        // approved version as proof that no historical/future version exists.
+        await fetchArticles(key,{article:num,limit:1,date:"0001-01-01"});
+      }catch(probe){
+        if(probe.status===409) versions=(probe.body?.versions || []).filter(v=>v && v.label);
+        else throw probe;
+      }
+      if(versions.length<2){
+        try{
+          const d=await fetchArticles(key,{article:num,limit:1});
+          out.replaceChildren(
+            el("div",{class:"wsBanner",text:T("Во корпусот нема две верзии со текст што може безбедно да се споредат.","The corpus does not contain two text-bearing versions that can be compared safely.")}),
+            column(T("Внесена верзија","Loaded version"),d.instrumentVersion,d.articles[0] || null));
           return;
+        }catch(err){
+          const fallback=(err.body?.versions || []).filter(v=>v && v.label);
+          if(fallback.length>=2) versions=fallback;
+          else{
+            out.replaceChildren(err.status===409 ? versionRefusal(err.body) : el("p",{text:T("Верзиите не можат да се вчитаат.","The versions cannot be loaded.")}));
+            return;
+          }
         }
+      }
+      {
         const pick=(id,labelMk,labelEn,sel)=>{
           const s=el("select",{id},versions.map((v,i)=>el("option",{value:String(i),disabled:!LB.versionStartDate(v),text:`${v.label} · ${LB.versionStartDate(v) || T("нема датум на почеток","no start date")} · ${LB.versionCategoryLabel(v,lang)}`})));
           s.value=String(sel);
