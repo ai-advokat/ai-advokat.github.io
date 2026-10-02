@@ -22,6 +22,7 @@
     "test:corpus-safety": "node --no-warnings --test test/corpus-safety.test.mjs test/legacy-backfill.test.mjs",
     "test:legacy-backfill": "node --no-warnings --test test/legacy-backfill.test.mjs",
     "test:public-layer": "node --no-warnings --test test/public-layer.test.mjs",
+    "test:legal-base": "node --no-warnings --test test/legal-base.test.mjs",
     "validate:corpus": "node scripts/validate-legal-corpus.mjs",
     "test:corpus-foundation": "node --no-warnings --test test/corpus-foundation.test.mjs",
     "apply:amendments": "node scripts/apply-amendments.mjs",
