@@ -1031,6 +1031,38 @@
     .lockedList{margin:8px 0 0;padding-left:20px}
     .lockedList li{margin:4px 0}
 
+    /* ---- ZPP version timeline ---- */
+    .zppTimeline{margin-top:28px;padding:22px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}
+    .zppTimeline h3{margin:2px 0 6px}
+    .zppTimeline > p{margin:0 0 8px;color:var(--muted)}
+    .zppItems{list-style:none;margin:16px 0;padding:0;display:grid;gap:14px;grid-template-columns:1fr}
+    .zppItem{position:relative;border:1px solid var(--line);border-left:5px solid var(--line);border-radius:0 14px 14px 0;padding:14px 16px;background:var(--surface-2);display:grid;gap:6px}
+    .zppItem[data-phase="reference"]{border-left-color:var(--muted)}
+    .zppItem[data-phase="current_track"]{border-left-color:var(--navy-2)}
+    .zppItem[data-phase="future_application"]{border-left-color:var(--warn);border-left-style:dashed}
+    .zppItem[data-phase="stale"]{border-left-color:var(--danger)}
+    .zppItem .gazette{font-size:1.5rem;font-weight:850;letter-spacing:-.02em;line-height:1.15;margin:0}
+    .zppItem .gazette small{display:block;font-size:.8rem;font-weight:700;color:var(--muted);letter-spacing:0;margin-top:3px}
+    .zppItem h4{margin:0;font-size:1rem}
+    .zppItem dl{display:grid;grid-template-columns:max-content 1fr;gap:3px 10px;margin:4px 0;font-size:.88rem}
+    .zppItem dt{color:var(--muted)}
+    .zppItem dd{margin:0;font-variant-numeric:tabular-nums}
+    .phaseChip{display:inline-block;font-size:.8rem;font-weight:800;border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:var(--surface)}
+    .phaseChip[data-phase="current_track"]{color:var(--navy-2)}
+    .phaseChip[data-phase="future_application"]{color:var(--warn)}
+    .phaseChip[data-phase="stale"]{color:var(--danger)}
+    html[data-theme="dark"] .phaseChip[data-phase="current_track"]{color:#9ec3e6}
+    .srcBadge{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ok);border:1px solid var(--line);border-radius:6px;padding:3px 7px;width:max-content}
+    .zppTracks{display:grid;gap:12px;grid-template-columns:1fr;margin:6px 0 16px}
+    .zppTrack{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+    .zppTrack b{display:block}
+    .zppExplain p{margin:6px 0}
+    @media (min-width:900px){
+      .zppItems{grid-template-columns:repeat(3,1fr)}
+      .zppItem:not(:last-child)::after{content:"→";position:absolute;right:-14px;top:18px;font-weight:800;color:var(--muted)}
+      .zppTracks{grid-template-columns:1fr 1fr}
+    }
+
     @media print{
       .topbar,.header,.heroActions,.searchPanel,.btn,.menuBtn,.utility,.modal{display:none!important}
       .hero{background:white;color:black;padding:24px 0}
@@ -1322,6 +1354,22 @@
         </div>
         <div class="sourceLinkGrid" id="workspaceLinks"></div>
       </div>
+
+      <section class="zppTimeline" id="zpp-timeline" aria-labelledby="zppTitle">
+        <span class="layerTag" data-i18n="zppLayerTag">Слој 1–2 · Верзиски статус</span>
+        <h3 id="zppTitle" data-i18n="zppTitle">ЗПП · временска линија на верзиите</h3>
+        <p data-i18n="zppIntro">Кој текст на Законот за парничната постапка се однесува на кој период — прикажано само од официјалните метаподатоци во LDBIS.</p>
+        <p class="help" id="zppAsOf"></p>
+        <ol class="zppItems" id="zppItems" aria-label="7/2011 → 124/2015 → 151/2026"></ol>
+        <div class="zppTracks" id="zppTracks"></div>
+        <aside class="notice zppExplain" aria-labelledby="zppEifTitle">
+          <b id="zppEifTitle" data-i18n="zppEifTitle">Стапување во сила ≠ почеток на примена</b>
+          <p data-i18n="zppEif1">Законот стапува во сила кога станува дел од правниот поредок, по објавувањето во Службен весник. Почетокот на примена е денот од кој неговите одредби навистина се применуваат.</p>
+          <p data-i18n="zppEif2">Тие два датума може да се разликуваат: законот може да биде во сила, а да се применува подоцна, за да има време за подготовка на судовите и странките.</p>
+          <p data-i18n="zppEif3">Пример: новиот ЗПП (151/2026) е објавен на 08.07.2026, стапи во сила на 16.07.2026, а се применува од 18.01.2027. Според официјалните метаподатоци, дотогаш се применува претходната патека (пречистениот текст 7/2011 со измената 124/2015).</p>
+        </aside>
+        <p class="help" data-i18n="zppCaveat">Преодните одредби на новиот закон (на пр. за постапки започнати пред 18.01.2027) не се прикажани овде — проверете ги во официјалниот текст. Приказот е информативен и не е правен совет.</p>
+      </section>
     </div>
   </section>
 
@@ -1751,6 +1799,7 @@
 </div>
 
 <script src="/assets/legal-base.js"></script>
+<script src="/assets/zpp-timeline.js"></script>
 <script>
 
   window.AI_ADVOCAT_CONFIG = Object.freeze({
@@ -1831,6 +1880,7 @@
       coverageTitle:"Покриеност на корпусот", coverageText:"Закони со внесен текст член-по-член. Бројот на членови не значи дека текстот е потврден како тековен: статусот на верзијата се прикажува при секој одговор.", coverageLoading:"Се вчитува регистарот…",
       helpTitle:"Како да поставите прашање", help1:"Именувајте го законот (кратенка или назив) или изберете го од листата.", help2:"Прашајте за конкретен член, поим, рок или обврска.", help3:"Ако законот има повеќе верзии (на пр. ЗПП), внесете датум.", help4:"Отворете ги прикажаните членови и официјалниот извор пред да се потпрете на одговорот.", help5:"Кога системот одбива да одговори (двосмислен закон, непозната верзија, тема без корпус), тоа е заштита — не грешка.",
       layersTitle:"Слоеви на авторитет", layerLawsTag:"Слој 1–2 · Извор, член, верзија", layerCasesTag:"Слој 3 · Судска практика", layerEchrTag:"Слој 1 и 3 · Меѓународно", layerVersionsTag:"Слој 2 · Верзии", layerCitationsTag:"Проверка меѓу слоевите", layerDocumentsTag:"Работен простор", layerAnalysisTag:"Слој 4 · Стручна анализа", layerAiTag:"Слој 5 · AI синтеза", cardCitationsAction:"Отвори проверка →", cardDocsAction:"Што е планирано →",
+      zppLayerTag:"Слој 1–2 · Верзиски статус", zppTitle:"ЗПП · временска линија на верзиите", zppIntro:"Кој текст на Законот за парничната постапка се однесува на кој период — прикажано само од официјалните метаподатоци во LDBIS.", zppEifTitle:"Стапување во сила ≠ почеток на примена", zppEif1:"Законот стапува во сила кога станува дел од правниот поредок, по објавувањето во Службен весник. Почетокот на примена е денот од кој неговите одредби навистина се применуваат.", zppEif2:"Тие два датума може да се разликуваат: законот може да биде во сила, а да се применува подоцна, за да има време за подготовка на судовите и странките.", zppEif3:"Пример: новиот ЗПП (151/2026) е објавен на 08.07.2026, стапи во сила на 16.07.2026, а се применува од 18.01.2027. Според официјалните метаподатоци, дотогаш се применува претходната патека (пречистениот текст 7/2011 со измената 124/2015).", zppCaveat:"Преодните одредби на новиот закон (на пр. за постапки започнати пред 18.01.2027) не се прикажани овде — проверете ги во официјалниот текст. Приказот е информативен и не е правен совет.",
       askReady:"AI Advokat го обработува прашањето преку правниот корпус за {jurisdiction} и мора да покаже извори, применливи норми, ограничувања на верзијата и Човечка порта.",
       askEmpty:"Внесете правно прашање. Порталот намерно не генерира правни заклучоци без прашање и извори."
     },
@@ -1877,6 +1927,7 @@
       coverageTitle:"Corpus coverage", coverageText:"Laws with article-by-article text. An article count does not mean the text is verified as current: the version status is shown with every answer.", coverageLoading:"Loading registry…",
       helpTitle:"How to ask a question", help1:"Name the law (abbreviation or title) or choose it from the list.", help2:"Ask about a specific article, concept, deadline or obligation.", help3:"If the law has several versions (e.g. ZPP), enter a date.", help4:"Open the cited articles and the official source before relying on the answer.", help5:"When the system declines to answer (ambiguous law, unknown version, topic without corpus), that is a safeguard — not an error.",
       layersTitle:"Layers of authority", layerLawsTag:"Layer 1–2 · Source, article, version", layerCasesTag:"Layer 3 · Case law", layerEchrTag:"Layer 1 and 3 · International", layerVersionsTag:"Layer 2 · Versions", layerCitationsTag:"Cross-layer check", layerDocumentsTag:"Workspace", layerAnalysisTag:"Layer 4 · Professional analysis", layerAiTag:"Layer 5 · AI synthesis", cardCitationsAction:"Open audit →", cardDocsAction:"What is planned →",
+      zppLayerTag:"Layer 1–2 · Version status", zppTitle:"ZPP · version timeline", zppIntro:"Which text of the Law on Civil Procedure relates to which period — shown only from the official LDBIS metadata.", zppEifTitle:"Entry into force ≠ start of application", zppEif1:"A law enters into force when it becomes part of the legal order, after publication in the Official Gazette. The start of application is the day from which its provisions actually apply.", zppEif2:"The two dates can differ: a law can be in force but apply later, to give courts and parties time to prepare.", zppEif3:"Example: the new ZPP (151/2026) was published on 8 July 2026, entered into force on 16 July 2026 and applies from 18 January 2027. According to the official metadata, the previous track (the 7/2011 consolidated text with the 124/2015 amendment) applies until then.", zppCaveat:"The transitional provisions of the new law (e.g. for proceedings started before 18 January 2027) are not shown here — check them in the official text. This is information, not legal advice.",
       askReady:"AI Advokat processes the question through the legal corpus for {jurisdiction} and must expose sources, applicable rules, version limitations and the Human Gate.",
       askEmpty:"Enter a legal question. The portal deliberately does not generate legal conclusions without a question and sources."
     }
@@ -1981,6 +2032,7 @@
     renderPrompts();
     renderPublications();
     renderLayerLadder();
+    renderZppTimeline();
     hydrateInstrumentSelect();
     if(lastSearch) renderSearchResults(lastSearch);
     const themeBtn=$("#themeBtn");
@@ -2258,6 +2310,8 @@
     try{
       const instruments=await fetchInstruments();
       renderCoverage(instruments);
+      zppInstrument=instruments.find(i=>i.canonicalKey==="mk:zpp") || null;
+      renderZppTimeline();
       select.innerHTML=`<option value="auto">${autoLabel}</option>`+
         instruments.map(inst=>{
           const count=Number(inst.articleCount || 0);
@@ -2790,6 +2844,53 @@
   }
 
   bindCard("#documentsCard",openDocumentsInfo);
+
+  // ---------------------------------------------------------------------------
+  // ZPP version timeline: static official metadata (assets/zpp-timeline.js) plus the
+  // instrument's Human Gate status from /api/instruments. Phase labels are statements
+  // as of a fixed date and are withdrawn (not recomputed) once that date has passed.
+  // ---------------------------------------------------------------------------
+  let zppInstrument=null;
+  function localIsoDate(){
+    const d=new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+  function renderZppTimeline(){
+    const ZT=window.ZppTimeline, root=$("#zppItems");
+    if(!ZT || !root) return;
+    const tl=ZT.ZPP_TIMELINE, today=localIsoDate(), stale=ZT.isStale(today);
+    const L=lang==="en" ? "en" : "mk";
+    const gate=ZT.humanGateLabel(zppInstrument,lang);
+    $("#zppAsOf").textContent=stale
+      ? T(`Ознаките за состојба беа точни на ${ZT.formatDate(tl.statusAsOf,"mk")} и сега се повлечени до нова проверка.`,`The status labels were accurate on ${ZT.formatDate(tl.statusAsOf,"en")} and are now withdrawn until re-checked.`)
+      : T(`Ознаките за состојба важат на ${ZT.formatDate(tl.statusAsOf,"mk")}. Human Gate (закон): ${gate}.`,`Status labels as of ${ZT.formatDate(tl.statusAsOf,"en")}. Human Gate (law): ${gate}.`);
+    root.replaceChildren(...tl.items.map(it=>{
+      const phase=ZT.phaseFor(it,today);
+      const dl=el("dl",{});
+      ZT.dateRows(it,lang).forEach(r=>dl.append(el("dt",{text:r.label}),el("dd",{},r.iso ? el("time",{datetime:r.iso,text:r.value}) : el("span",{class:"help",style:"margin:0",text:r.value}))));
+      dl.append(el("dt",{text:T("Human Gate (закон)","Human Gate (law)")}),el("dd",{text:gate}));
+      return el("li",{class:"zppItem","data-phase":phase.key},
+        el("span",{class:"srcBadge",text:T("✓ Официјален извор · LDBIS","✓ Official source · LDBIS")}),
+        el("p",{class:"gazette"},T("Сл. весник ","Off. Gazette "),it.gazette," ",el("small",{text:it.kindLabel[L]})),
+        el("h4",{text:it.title[L]}),
+        dl,
+        el("span",{class:"phaseChip","data-phase":phase.key,text:phase[L]}),
+        el("p",{class:"help",style:"margin:0",text:phase[L==="en" ? "noteEn" : "noteMk"]}),
+        el("a",{href:it.sourceUrl,target:"_blank",rel:"noopener noreferrer"},T("Официјални метаподатоци (LDBIS) ↗","Official metadata (LDBIS) ↗")));
+    }));
+    const next=tl.items.find(i=>i.id==="zpp-151-2026");
+    $("#zppTracks").replaceChildren(
+      el("div",{class:"zppTrack"},
+        el("b",{text:T("Патека пред 2027: 7/2011 + 124/2015","Pre-2027 track: 7/2011 + 124/2015")}),
+        stale ? T("Повторна проверка е потребна.","Re-check required.")
+          : T(`Се применува до почетокот на примената на 151/2026 (${ZT.formatDate(next.applicationFrom,"mk")}). Не е потврдена како тековен пречистен текст. Human Gate: ${gate}.`,
+              `Applies until 151/2026 begins to apply (${ZT.formatDate(next.applicationFrom,"en")}). Not confirmed as a current consolidated text. Human Gate: ${gate}.`)),
+      el("div",{class:"zppTrack"},
+        el("b",{text:T("Патека од 2027: 151/2026","2027 track: 151/2026")}),
+        stale ? T("Повторна проверка е потребна.","Re-check required.")
+          : T(`Објавен и стапен во сила; примена од ${ZT.formatDate(next.applicationFrom,"mk")}. Сè уште не се применува. Human Gate: ${gate}.`,
+              `Published and in force; application begins ${ZT.formatDate(next.applicationFrom,"en")}. Not yet applicable. Human Gate: ${gate}.`)));
+  }
 
   function renderLayerLadder(){
     const root=$("#layerLadder");
