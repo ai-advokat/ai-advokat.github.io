@@ -243,13 +243,13 @@ describe("F3 migration 0023 and importer", () => {
     `INSERT INTO legal_article_versions (canonical_id,instrument_id,instrument_version_id,article_number,article_number_normalized,article_text,source_url,source_sha256)
      VALUES (?,(SELECT id FROM legal_instruments WHERE canonical_key=?),?,?,?,?,?,?)`).run(id, key, versionId, number, number, "x", "u", SHA);
 
-  test("M1 legacy ZKP rows survive 0023 and unrelated ZI/ZRO backfills and remain in the audit view", () => {
+  test("M1 unrelated legacy rows survive 0023 and governed ZI/ZRO/ZKP backfills and remain in the audit view", () => {
     const { raw, applyRemaining } = createD1({ stopBefore: "0023" });
-    seedArticles(raw, "mk:zkp", [{ number: "1", text: "a" }, { number: "2", text: "b" }], { version: null, status: "historical", review: "pending" });
+    seedArticles(raw, "mk:zs", [{ number: "1", text: "a" }, { number: "2", text: "b" }], { version: null, status: "historical", review: "pending" });
     applyRemaining();
     assert.equal(raw.prepare("SELECT COUNT(*) n FROM legal_article_versions").get().n, 2);
-    assert.deepEqual(raw.prepare("SELECT canonical_key, article_count FROM corpus_legacy_unversioned_articles").all().map((r) => ({ ...r })), [{ canonical_key: "mk:zkp", article_count: 2 }]);
-    assert.equal(raw.prepare("SELECT MAX(CAST(version AS INTEGER)) v FROM schema_migrations").get().v, 25);
+    assert.deepEqual(raw.prepare("SELECT canonical_key, article_count FROM corpus_legacy_unversioned_articles").all().map((r) => ({ ...r })), [{ canonical_key: "mk:zs", article_count: 2 }]);
+    assert.equal(raw.prepare("SELECT MAX(CAST(version AS INTEGER)) v FROM schema_migrations").get().v, 26);
   });
 
   test("T5 duplicate article in one version, NULL version, foreign version and unapproved current are blocked", () => {
@@ -371,24 +371,24 @@ describe("F4 version-aware retrieval", () => {
     assert.doesNotMatch(r.body.legalStatusWarning, /111\/2023/, "the ZRO-specific date must not leak into other laws");
   });
 
-  test("T8b legacy unversioned rows and new versioned rows of one law are never mixed", async () => {
+  test("T8b unrelated legacy unversioned rows and new versioned rows of one law are never mixed", async () => {
     const { d1, raw, applyRemaining } = createD1({ stopBefore: "0023" });
-    seedArticles(raw, "mk:zkp", [{ number: "12", text: "ЛЕГАЦИ текст." }], { version: null, status: "historical", review: "pending" });
+    seedArticles(raw, "mk:zs", [{ number: "12", text: "ЛЕГАЦИ текст." }], { version: null, status: "historical", review: "pending" });
     applyRemaining();
-    seedArticles(raw, "mk:zkp", [{ number: "12", text: "НОВА верзија." }], { status: "source_text", review: "pending", version: { label: "zkp-new" } });
-    const r = await ask(baseEnv(d1), "ЗКП член 12");
+    seedArticles(raw, "mk:zs", [{ number: "12", text: "НОВА верзија." }], { status: "source_text", review: "pending", version: { label: "zs-new" } });
+    const r = await ask(baseEnv(d1), "ЗСем член 12");
     assert.equal(r.status, 409);
     assert.equal(r.body.error, "version_ambiguous");
   });
 
-  test("T8c a legacy corpus cannot prove applicability on an explicit date", async () => {
+  test("T8c an unrelated legacy corpus cannot prove applicability on an explicit date", async () => {
     const { d1, raw, applyRemaining } = createD1({ stopBefore: "0023" });
-    seedArticles(raw, "mk:zkp", [{ number: "12", text: "Судот е должен." }], { version: null, status: "historical", review: "pending" });
+    seedArticles(raw, "mk:zs", [{ number: "12", text: "Матичарот е должен." }], { version: null, status: "historical", review: "pending" });
     applyRemaining();
-    const r = await ask(baseEnv(d1), "ЗКП член 12", { date: "2010-05-01" });
+    const r = await ask(baseEnv(d1), "ЗСем член 12", { date: "2010-05-01" });
     assert.equal(r.status, 409);
     assert.equal(r.body.error, "version_date_unverifiable");
-    assert.equal((await ask(baseEnv(d1), "ЗКП член 12", { date: "2010-02-30" })).body.error, "invalid_date");
+    assert.equal((await ask(baseEnv(d1), "ЗСем член 12", { date: "2010-02-30" })).body.error, "invalid_date");
   });
 
   test("/api/articles serves exactly one version and refuses to mix", async () => {
@@ -453,19 +453,20 @@ describe("F4 alias ambiguity", () => {
 });
 
 // ---------------------------------------------------------------------------
-// T12 — existing production corpora (legacy, unversioned) keep working
+// T12 — governed legacy production corpora become version-bound without regression
 // ---------------------------------------------------------------------------
 describe("T12 compatibility with existing ZRO / ZKP / ZI corpora", () => {
-  test("exact ZRO and ZI snapshots become version-bound while ZKP remains legacy; all three still answer and count exactly", async () => {
+  test("exact ZRO, ZI and ZKP snapshots become version-bound; all three still answer and count exactly", async () => {
     const { d1, raw, applyRemaining } = createD1({ stopBefore: "0023" });
-    const make = (n, word) => Array.from({ length: n }, (_, i) => ({ number: String(i + 1), text: `${word} одредба број ${i + 1}.` }));
     const zroNumbers = [...Array.from({ length: 298 }, (_, i) => i + 1).filter((n) => n !== 26), "25-а"];
     const zroRows = zroNumbers.map((n) => ({ number: String(n), text: `работна одредба број ${n}.` }));
     const ziNumbers = [...Array.from({ length: 262 }, (_, i) => i + 1).filter((n) => n < 240 || n > 244), 269];
     const ziRows = ziNumbers.map((n) => ({ number: String(n), text: `извршна одредба број ${n}.` }));
+    const zkpNumbers = [...Array.from({ length: 568 }, (_, i) => i + 1), "100-а", "567-а"];
+    const zkpRows = zkpNumbers.map((n) => ({ number: String(n), text: `кривична одредба број ${n}.` }));
 
     seedArticles(raw, "mk:zro", zroRows, { version: null, status: "historical", review: "pending" });
-    seedArticles(raw, "mk:zkp", make(570, "кривична"), { version: null, status: "historical", review: "pending" });
+    seedArticles(raw, "mk:zkp", zkpRows, { version: null, status: "needs_version_review", review: "pending" });
     seedArticles(raw, "mk:zi", ziRows, { version: null, status: "needs_version_review", review: "pending" });
 
     raw.prepare(`UPDATE legal_article_versions
@@ -479,6 +480,13 @@ describe("T12 compatibility with existing ZRO / ZKP / ZI corpora", () => {
                     SET source_url='https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf',
                         source_sha256='15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55'
                   WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi')`).run();
+
+    raw.prepare(`UPDATE legal_article_versions
+                    SET source_url='https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf',
+                        source_sha256='e6bf4588833752695a9b776b473ed9d504264effdfcd7917b8d6655bcfacaf45',
+                        source_issue_number='150/2010; 100/2012; 142/2016; 193/2016; 198/2018',
+                        source_issue_date='2018-10-31'
+                  WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp')`).run();
     raw.prepare(`INSERT INTO instrument_versions
                     (instrument_id,version_label,valid_from,valid_to,is_current,checksum_sha256,text_content,human_review_status)
                   SELECT id,'official-editorial-consolidated-through-154/2023',NULL,NULL,0,NULL,NULL,'pending'
@@ -502,7 +510,10 @@ describe("T12 compatibility with existing ZRO / ZKP / ZI corpora", () => {
         assert.equal(a.body.instrumentVersion.class, "dated_snapshot");
         assert.equal(a.body.instrumentVersion.isCurrent, false);
       } else {
-        assert.equal(a.body.instrumentVersion.legacyUnversioned, true);
+        assert.equal(a.body.instrumentVersion.legacyUnversioned, false);
+        assert.equal(a.body.instrumentVersion.label, "consolidated-reference-through-198/2018-and-CC-193/2016");
+        assert.equal(a.body.instrumentVersion.class, "reference_consolidation");
+        assert.equal(a.body.instrumentVersion.isCurrent, false);
       }
       const r = await ask(env, `${short} член 12`);
       assert.equal(r.status, 200, `${short}: ${JSON.stringify(r.body).slice(0, 200)}`);
