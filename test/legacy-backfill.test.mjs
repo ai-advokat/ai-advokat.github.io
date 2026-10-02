@@ -24,9 +24,10 @@ function zroNumbers() {
 }
 
 function zkpNumbers() {
-  // Production parse is 570 records ending at 568 and includes lettered 567-а.
-  // The synthetic fixture keeps exact count/boundaries without claiming real article text.
-  return [...Array.from({ length: 569 }, (_, i) => i + 1).filter((n) => n !== 567), "567-а"];
+  // Production parse is 570 records ending at numeric article 568 and includes
+  // lettered provisions. The synthetic fixture preserves only the governed
+  // count/boundaries; it does not claim these test article numbers mirror the source.
+  return [...Array.from({ length: 568 }, (_, i) => i + 1), "100-а", "567-а"];
 }
 
 function legacyZiFixture({ corruptOneHash = false } = {}) {
