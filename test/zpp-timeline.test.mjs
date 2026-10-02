@@ -90,6 +90,9 @@ describe("conservative status wording", () => {
     const fn = index.slice(index.indexOf("function renderZppTimeline("), index.indexOf("function renderLayerLadder("));
     assert.match(fn, /ZT\.isStale\(today\)/);
     assert.ok(!/applicationFrom\s*[<>]=?|[<>]=?\s*[a-z.]*applicationFrom/.test(fn), "no date comparison against application dates in the page");
+    assert.match(index, /timeZone:"Europe\/Skopje"/, "jurisdiction date must use the Macedonian time zone");
+    assert.match(index, /function jurisdictionIsoDate\(/);
+    assert.ok(!/function localIsoDate\(/.test(index), "visitor-local date helper must not be used for legal staleness");
   });
 
   test("Z10 unknown dates are shown as 'not stated', never guessed", () => {
@@ -110,6 +113,8 @@ describe("Human Gate and page structure", () => {
     assert.equal(ZT.humanGateLabel({ humanReviewStatus: "pending" }, "mk"), "чека проверка");
     assert.equal(ZT.humanGateLabel({ humanReviewStatus: "weird" }, "mk"), "чека проверка");
     assert.match(index, /zppInstrument=instruments\.find\(i=>i\.canonicalKey==="mk:zpp"\)/);
+    const hydrate=index.slice(index.indexOf("async function hydrateInstrumentSelect("),index.indexOf("async function fetchArticles("));
+    assert.match(hydrate, /catch\{[\s\S]*zppInstrument=null;[\s\S]*renderZppTimeline\(\)/, "failed registry refresh must clear cached Human Gate status");
   });
 
   test("Z12 the section is accessible and shows the 'entry into force ≠ application' explanation in MK and EN", () => {
