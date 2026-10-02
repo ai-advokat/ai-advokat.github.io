@@ -1,0 +1,76 @@
+{
+  "_draft": {
+    "status": "DRAFT — NOT FOR IMPORT. Structure only (validator v1.1).",
+    "prepared": "2026-10-01",
+    "validator": "mk-legal-corpus-validator-v1.1.0",
+    "engine": "mk-amendment-engine-v1.0.0",
+    "rule": "Every value that must be read from an official Службен весник PDF stays 'UNRESOLVED — HUMAN REVIEW NEEDED'. The validator STOPs on each of them (test A7). Keys starting with '_' are ignored by the validator.",
+    "open_items": ["HR-1 official PDFs + sha256", "HR-2 counts/gaps/lettered/repealed/transitional", "HR-3 Constitutional Court exhaustive check", "HR-4 7/2011 keeps original numbering", "HR-5 151/2026 application date", "HR-6 pending proceedings after 2027-01-18", "HR-7 124/2015 provisions applied from 2015-07-31", "HR-8 production instrument_versions values"]
+  },
+
+  "instrument_key": "mk:zpp",
+  "version_label": "applicable-track-79/2005-through-124/2015",
+  "version_class": "reference_consolidation",
+
+  "expected_article_count": "UNRESOLVED — HUMAN REVIEW NEEDED",
+  "expected_first_article": "1",
+  "expected_last_article": "UNRESOLVED — HUMAN REVIEW NEEDED",
+  "allowed_gaps": "UNRESOLVED — HUMAN REVIEW NEEDED",
+  "expected_lettered_articles": "UNRESOLVED — HUMAN REVIEW NEEDED",
+  "expected_repealed_articles": "UNRESOLVED — HUMAN REVIEW NEEDED",
+  "transitional_final_provisions": {
+    "present": true,
+    "starts_at_article": "UNRESOLVED — HUMAN REVIEW NEEDED"
+  },
+  "acknowledged_warnings": [],
+
+  "source": {
+    "url": "UNRESOLVED — HUMAN REVIEW NEEDED (https URL of the official Сл. весник 7/2011 PDF)",
+    "sha256": "UNRESOLVED — HUMAN REVIEW NEEDED",
+    "issue_number": "7/2011",
+    "issue_date": "2011-01-20"
+  },
+  "source_chain": [
+    {
+      "role": "official_consolidation",
+      "title": "Закон за парничната постапка (пречистен текст)",
+      "consolidates": ["79/2005", "110/2008", "83/2009", "116/2010"],
+      "issue_number": "7/2011",
+      "issue_date": "2011-01-20",
+      "url": "UNRESOLVED — HUMAN REVIEW NEEDED",
+      "sha256": "UNRESOLVED — HUMAN REVIEW NEEDED"
+    },
+    {
+      "role": "amendment",
+      "title": "Закон за изменување и дополнување на Законот за парничната постапка",
+      "issue_number": "124/2015",
+      "issue_date": "2015-07-23",
+      "entry_into_force": "2015-07-31",
+      "application_from": "2016-01-31",
+      "ldbis_id": 37950,
+      "url": "UNRESOLVED — HUMAN REVIEW NEEDED",
+      "sha256": "UNRESOLVED — HUMAN REVIEW NEEDED"
+    }
+  ],
+  "_source_chain_note": "Only sources whose text enters the corpus belong in source_chain. 79/2005, 110/2008, 83/2009 and 116/2010 are reached through the official consolidation 7/2011 and are listed under 'consolidates'. No Constitutional Court decision with a text effect was found (HR-3); if one is found it is added here with role 'constitutional_court' and applied as an operation.",
+
+  "legal_status": "needs_version_review",
+  "human_gate": {
+    "status": "pending",
+    "approved_by": null,
+    "approved_at": null
+  },
+
+  "validity": {
+    "valid_from": "2016-01-31",
+    "application_from": null,
+    "valid_to": "2027-01-18"
+  },
+  "_validity_note": "valid_to is EXCLUSIVE (last applicable day 2027-01-17). Same window as production per the 2026-10-01 brief and migration 0024 (proposal). Not decided here: HR-5, HR-6, HR-7.",
+
+  "other_versions": [
+    { "version_label": "future-application-151/2026", "valid_from": "2027-01-18", "application_from": null, "valid_to": null }
+  ],
+
+  "min_extraction_confidence": 0.95
+}

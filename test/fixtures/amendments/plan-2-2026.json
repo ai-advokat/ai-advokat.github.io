@@ -1,0 +1,65 @@
+{
+  "_note": "FICTIONAL amending act for engine tests (covers every operation type). Not a real Macedonian statute.",
+  "engine_input_version": 1,
+  "instrument_key": "mk:fixture-amend",
+  "base": {
+    "role": "base_text",
+    "issue_number": "1/2020",
+    "issue_date": "2020-01-10",
+    "url": "https://example.invalid/fixture/base-1-2020.pdf",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "amendment": {
+    "role": "amendment",
+    "issue_number": "2/2026",
+    "issue_date": "2026-02-02",
+    "url": "https://example.invalid/fixture/amend-2-2026.pdf",
+    "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "article_count": 7
+  },
+  "target": {
+    "version_label": "fixture-consolidated-through-2/2026",
+    "status": "needs_version_review",
+    "valid_from": "2026-02-10",
+    "application_from": "2026-08-10",
+    "valid_to": null
+  },
+  "operations": [
+    {
+      "op": "textual_edit", "amendment_article": 1,
+      "source_text": "Во членот 2 став (2) бројот „300.000“ се заменува со бројот „600.000“.",
+      "target": "2", "paragraph": "2", "find": "300.000", "replace": "600.000", "expected_matches": 1
+    },
+    {
+      "op": "replace_paragraph", "amendment_article": 2,
+      "source_text": "Во членот 2 ставот (1) се менува и гласи: „(1) Судот одлучува во рок од 15 дена.“",
+      "target": "2", "paragraph": "1", "new_text": "(1) Судот одлучува во рок од 15 дена."
+    },
+    {
+      "op": "replace_article", "amendment_article": 3,
+      "source_text": "Членот 3 се менува и гласи: „(1) Странките имаат право на жалба во рок од 15 дена. (2) Жалбата се поднесува преку првостепениот суд.“",
+      "target": "3", "new_text": "(1) Странките имаат право на жалба во рок од 15 дена.\n(2) Жалбата се поднесува преку првостепениот суд."
+    },
+    {
+      "op": "insert_article", "amendment_article": 4,
+      "source_text": "По членот 4-а се додава нов член 4-б, кој гласи: „Задолжителна медијација (1) Во трговските спорови странките се обидуваат спорот да го решат со медијација пред поднесување на тужба.“",
+      "after": "4-а", "number": "4-б",
+      "text": "Задолжителна медијација\n(1) Во трговските спорови странките се обидуваат спорот да го решат со медијација пред поднесување на тужба."
+    },
+    {
+      "op": "delete_article", "amendment_article": 5,
+      "source_text": "Членот 4 се брише.",
+      "target": "4"
+    },
+    {
+      "op": "textual_edit", "amendment_article": 6,
+      "source_text": "Во членот 5 зборот „член“ на двете места се заменува со зборот „членот“.",
+      "target": "5", "find": "член", "replace": "членот", "expected_matches": 2, "whole_word": true
+    },
+    {
+      "op": "non_text", "amendment_article": 7,
+      "source_text": "Овој закон влегува во сила осмиот ден од денот на објавувањето, а ќе се применува по истекот на шест месеци од денот на влегувањето во сила.",
+      "kind": "application"
+    }
+  ]
+}

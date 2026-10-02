@@ -39,3 +39,5 @@ jobs:
         run: npm run test:legal-parser
       - name: Corpus safety foundation tests (parser v0.3, QA validator, migration 0023, version-aware retrieval)
         run: npm run test:corpus-safety
+      - name: Corpus foundation v1.1 tests (multi-source validator, amendment engine)
+        run: node --check scripts/apply-amendments.mjs && npm run test:corpus-foundation
