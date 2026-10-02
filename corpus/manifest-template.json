@@ -1,0 +1,36 @@
+{
+  "instrument_key": "mk:REPLACE",
+  "version_label": "REPLACE",
+  "version_class": "original_text",
+  "expected_article_count": 0,
+  "expected_first_article": "1",
+  "expected_last_article": "1",
+  "allowed_gaps": [],
+  "acknowledged_warnings": [],
+  "source": {
+    "url": "https://REPLACE-OFFICIAL-SOURCE",
+    "sha256": "REPLACE_WITH_64_HEX_SHA256",
+    "issue_number": null,
+    "issue_date": null
+  },
+  "legal_status": "needs_version_review",
+  "human_gate": {
+    "status": "pending",
+    "approved_by": null,
+    "approved_at": null
+  },
+  "validity": {
+    "valid_from": null,
+    "application_from": null,
+    "valid_to": null
+  },
+  "other_versions": [],
+  "source_chain": [],
+  "min_extraction_confidence": 0.9,
+  "transitional_final_provisions": {
+    "present": false,
+    "starts_at_article": null
+  },
+  "expected_lettered_articles": [],
+  "expected_repealed_articles": []
+}

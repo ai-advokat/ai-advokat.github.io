@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-10-02",
+  "purpose": "Non-authoritative engineering intake queue. Legal currency must be independently verified before import.",
+  "lanes": [
+    {
+      "id": "legacy_backfill",
+      "description": "Existing article-level corpora that predate mandatory version binding.",
+      "items": [
+        {"key_hint":"mk:zkp","short_name":"ZKP","state":"legacy_unversioned_audit","human_gate":"required"},
+        {"key_hint":"mk:zro","short_name":"ZRO","state":"legacy_unversioned_audit","human_gate":"required"},
+        {"key_hint":"mk:zi","short_name":"ZI","state":"legacy_unversioned_audit","human_gate":"required"}
+      ]
+    },
+    {
+      "id": "next_primary_laws",
+      "description": "Engineering intake candidates only; not claims that a specific source/version is current.",
+      "items": [
+        {"title":"Law on Civil Procedure","state":"source_verification_required"},
+        {"title":"Law on Enforcement","state":"source_verification_required"},
+        {"title":"Law on Notariat","state":"source_verification_required"},
+        {"title":"Law on Advocacy","state":"source_verification_required"},
+        {"title":"Law on Mediation","state":"source_verification_required"},
+        {"title":"Law on Administrative Disputes","state":"source_verification_required"},
+        {"title":"Law on General Administrative Procedure","state":"source_verification_required"},
+        {"title":"Law on Courts","state":"source_verification_required"},
+        {"title":"Law on Public Prosecution","state":"source_verification_required"}
+      ]
+    }
+  ],
+  "required_gate": [
+    "canonical_identity",
+    "official_source",
+    "source_sha256",
+    "issue_metadata",
+    "version_class",
+    "validity_window",
+    "parser_pass",
+    "validator_pass",
+    "human_gate",
+    "version_bound_import",
+    "post_import_integrity"
+  ]
+}
