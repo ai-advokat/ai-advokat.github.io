@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-10-03",
+  "standard": "AI_ADVOKAT_PROFESSIONAL_PUBLICATION_STANDARD_v1.0",
+  "doctrine": "source_first_human_gate",
+  "gates": {
+    "author_approval": "explicit",
+    "public_release": "explicit",
+    "rag_ingest": "explicit",
+    "production_corpus_write": "explicit",
+    "github_merge": "explicit_and_separate"
+  },
+  "pipeline": [
+    {
+      "id": "practical-guides-batch-1",
+      "kind": "practical_guides",
+      "status": "governed_registry_live_on_main",
+      "notes": "Original batch registry merged through PR #67; public source files remain Human-Gated."
+    },
+    {
+      "id": "administrative-guide-v2",
+      "kind": "professional_guide",
+      "status": "reviewed_candidate_pr_open",
+      "pull_request": 68,
+      "notes": "V2 supersession/provenance update awaiting merge gate."
+    },
+    {
+      "id": "professional-library-manuals",
+      "kind": "professional_library",
+      "status": "reviewed_candidate_pr_open",
+      "pull_request": 69,
+      "notes": "Criminal-procedure manual and ECtHR V4.2 metadata/audit; no public files or RAG ingest."
+    },
+    {
+      "id": "full-word-guides-38-63",
+      "kind": "practical_guides",
+      "status": "reviewed_candidate_pr_open",
+      "pull_request": 70,
+      "notes": "26 FULL Word guides audited; Guide 53 retains a blocking legal finding."
+    },
+    {
+      "id": "criminal-procedure-manual-v2",
+      "kind": "professional_manual",
+      "status": "publication_review_queue",
+      "notes": "Candidate requires final legal/source, version, layout and citation closeout before publication-master status."
+    },
+    {
+      "id": "civil-procedure-manual-v13",
+      "kind": "professional_manual",
+      "status": "editorial_upgrade_candidate",
+      "notes": "641-page source reviewed; editorial artefacts identified and candidate cleanup produced. Full article-by-article legal/source closeout remains pending."
+    },
+    {
+      "id": "echr-manual-v4-2",
+      "kind": "legal_monograph",
+      "status": "publication_fix_required",
+      "notes": "Internal V4.1/V4.2 mismatch and source-hierarchy closeout remain blockers before publication master."
+    }
+  ]
+}
