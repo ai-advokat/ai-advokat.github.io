@@ -61,6 +61,20 @@
       "kind": "research_papers",
       "status": "publication_review_queue",
       "notes": "Five-paper first round: preserve MK/UK-English master pairs, DOI/ORCID provenance, citation integrity and journal-placement status. Kočani remains a separate journal/publication workflow and must not be silently promoted from draft."
+    },
+    {
+      "id": "inheritance-estate-guide-2025-r1",
+      "kind": "practical_professional_guide",
+      "title": "Водич за наследство и оставинска постапка",
+      "status": "corrected_candidate",
+      "source_edition": "Прво издание 2025",
+      "legal_source_review_date": "2026-10-03",
+      "candidate_docx_sha256": "ccc2280b06d50b7ad7f2213c1a3f0bc4c3b016dd708e4a9ca05ef607cf4f3a86",
+      "candidate_pdf_sha256": "b60c8f2407026361caff7cf5de82d3cb58f6731bc215e9e1460b0e2ba580a741",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "notes": "Full legal/source upgrade completed. Corrected inheritance orders, forced-heir rules, testament forms/revocation, notary workflow, renunciation, debt liability, cadastre wording, inheritance tax, international succession, sanctions and digital/company-asset caveats. Candidate remains Human-Gated."
     }
   ]
 }
