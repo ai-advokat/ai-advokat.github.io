@@ -29,7 +29,8 @@
     "apply:amendments": "node scripts/apply-amendments.mjs",
     "db:preflight:production": "wrangler d1 execute ai-advokat-db --remote --file scripts/legacy-corpus-backfill-preflight.sql",
     "test:agent-orchestrator": "node --no-warnings --test test/agent-orchestrator.test.mjs",
-    "test:casepilot": "node --no-warnings --test test/casepilot.test.mjs"
+    "test:casepilot": "node --no-warnings --test test/casepilot.test.mjs",
+    "test:guides": "node --no-warnings --test test/guides-library.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
