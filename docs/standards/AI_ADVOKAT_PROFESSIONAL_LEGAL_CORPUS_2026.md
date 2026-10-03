@@ -26,18 +26,23 @@ Every publication must occupy exactly one lifecycle lane:
 
 No lane implies the next lane.
 
-## 3. Epistemic labels
+## 3. Verification states and content roles
 
-Material used by AI Advokat must carry a machine-readable epistemic label:
+Material used by AI Advokat must keep **verification state** separate from **content role**.
 
+Verification states:
 - `verified_current` — checked against identified current primary/official sources on a recorded date.
 - `verified_historical` — verified as historical evidence but not represented as current law.
-- `authorial_analysis` — interpretation, commentary or argument attributed to its author.
 - `pending_verification` — not safe to present as a current-law proposition.
 - `conflicted` — material source conflict remains unresolved.
 - `superseded` — replaced by a newer controlled version.
 
-A legal proposition cannot be promoted from `pending_verification` merely because it appears in an authored publication.
+Content roles:
+- `authorial_analysis` — interpretation, commentary or argument attributed to its author.
+- `secondary_reference` — non-primary supporting/reference material.
+- `ai_synthesis` — machine-generated organisation or explanation, never legal authority.
+
+A content role never substitutes for a verification state. A legal proposition cannot be promoted from `pending_verification` merely because it appears in an authored publication.
 
 ## 4. Source hierarchy
 
