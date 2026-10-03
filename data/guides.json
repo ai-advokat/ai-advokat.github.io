@@ -29,7 +29,9 @@
       "superseded_by": null,
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "ab110bc706c9a3f09d10439ac2de65411adaaa4ba8aee9a8e129bcb7139bc9c3",
+      "source_size_bytes": 114088
     },
     {
       "id": "guide-02-victim-draft-2026-09-29",
@@ -50,7 +52,9 @@
       "superseded_by": "guide-02-victim-edited-2026-10-01",
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "93075e9ba8437d74deac92c30480e1d4eff21b7363fbfb0623522ec3b11c785c",
+      "source_size_bytes": 154806
     },
     {
       "id": "guide-05-workplace",
@@ -71,7 +75,9 @@
       "superseded_by": null,
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "92152823bb2e0e7dd8eab6e6ee21c7d3e03e8031ecd3235cbde85b5e599de053",
+      "source_size_bytes": 154127
     },
     {
       "id": "guide-09-family",
@@ -92,7 +98,9 @@
       "superseded_by": null,
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "738aee4bc8f2115cdb6344a6fb179ae8f24899ad9d2b910ce4dfbf52bf1cb7fa",
+      "source_size_bytes": 140801
     },
     {
       "id": "guide-10-traffic",
@@ -113,7 +121,9 @@
       "superseded_by": null,
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "e5d9d109ced10e4c96545e07df8ed6dbbcc947d0d790478b5b76ac4429b6e7aa",
+      "source_size_bytes": 144043
     },
     {
       "id": "guide-17-police",
@@ -134,7 +144,9 @@
       "superseded_by": null,
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "361ca4bcafc737b1134fccecc2fde90bbcc9fb1f8165abf787b1cc2949958292",
+      "source_size_bytes": 154339
     },
     {
       "id": "guide-21-witness",
@@ -155,7 +167,9 @@
       "superseded_by": null,
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "f7f14e628fde1041d3905f91a2beaae643fb89e02873efabe4fad81c7ccd0bce",
+      "source_size_bytes": 125168
     },
     {
       "id": "guide-22-corruption",
@@ -176,7 +190,9 @@
       "superseded_by": null,
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "a5635a61432aefb2a053cb49c3c8aed1967c254943dee150367e64a5eb632eff",
+      "source_size_bytes": 135673
     },
     {
       "id": "guide-26-administrative-short",
@@ -197,7 +213,9 @@
       "superseded_by": null,
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "c06dbab1855db726004be2b0f66f10978f33e0f1a29417cdc9acb0cc682d9889",
+      "source_size_bytes": 164939
     },
     {
       "id": "guide-administrative-v1",
@@ -210,7 +228,7 @@
       "pages": 24,
       "source_file": "Vodic_upravna_postapka_i_upraven_spor.pdf",
       "attribution": "Автор: адвокат Зоран Стојанкиќ • Едиција Paragraf.mk",
-      "status": "author_version_checked",
+      "status": "source_checked_review",
       "status_label": "Авторско издание • изворите проверени 29.09.2026; актуелноста се проверува пред конкретна употреба",
       "scope": "Цел процес од управно барање и жалба до управен спор, расправа, пресуда, трошоци, правна помош и контролни листи.",
       "source_role": "companion_expanded",
@@ -218,7 +236,9 @@
       "superseded_by": null,
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "fe052ff4a005c8f10f9b544b25a3d8ad7dc8cb72ad3c039d09744183a7fb225e",
+      "source_size_bytes": 209410
     },
     {
       "id": "guide-choose-lawyer",
@@ -239,7 +259,9 @@
       "superseded_by": null,
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "2075c26cbb850fee591383352ff47a8abcf9bd3794c6f9b7fe8cf41700c4db8c",
+      "source_size_bytes": 140473
     },
     {
       "id": "guide-free-legal-aid",
@@ -260,7 +282,9 @@
       "superseded_by": null,
       "public_pdf": null,
       "ai_use": "reference_only_until_human_gate",
-      "professional_use": "human_review_required"
+      "professional_use": "human_review_required",
+      "sha256": "1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e",
+      "source_size_bytes": 108040
     }
   ]
 }
