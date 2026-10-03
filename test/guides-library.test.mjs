@@ -6,9 +6,9 @@ const data=JSON.parse(fs.readFileSync("data/guides.json","utf8"));
 const html=fs.readFileSync("guides/index.html","utf8");
 
 describe("Zoran guides library governance",()=>{
-  test("G1 first batch contains exactly 12 delivered PDF records",()=>{
-    assert.equal(data.records.length,12);
-    assert.equal(new Set(data.records.map(x=>x.id)).size,12);
+  test("G1 registry contains exactly 38 governed delivered records",()=>{
+    assert.equal(data.records.length,38);
+    assert.equal(new Set(data.records.map(x=>x.id)).size,38);
   });
   test("G2 no guide exposes a public PDF before Human Gate",()=>{
     assert.ok(data.records.every(x=>x.public_pdf===null));
@@ -35,5 +35,29 @@ describe("Zoran guides library governance",()=>{
     assert.match(html,/секундарни материјали/);
     assert.match(html,/Human Gate/);
     assert.match(html,/не се прикажуваат како важечки закон/i);
+  });
+  test("G7 FULL Word batch 38-63 is complete and provenance-locked",()=>{
+    const batch=data.records.filter(x=>x.source_role==="primary_full_word");
+    assert.equal(batch.length,26);
+    assert.deepEqual(batch.map(x=>Number(x.guide_no)).sort((a,b)=>a-b),Array.from({length:26},(_,i)=>i+38));
+    for(const r of batch){
+      assert.equal(r.source_format,"docx");
+      assert.equal(r.public_pdf,null);
+      assert.equal(r.ai_use,"reference_only_until_human_gate");
+      assert.equal(r.source_package,"Pravni_vodichi_38_63_FULL_WORD_ALL.zip");
+      assert.equal(r.source_package_sha256,"5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172");
+    }
+  });
+  test("G8 Guide 53 remains blocked on the silence-of-administration deadline correction",()=>{
+    const g=data.records.find(x=>x.id==="guide-53-full-word-2026");
+    assert.equal(g.status,"legal_approval_required");
+    assert.match(g.review_note,/У\.бр\.148\/2024/);
+  });
+  test("G9 source-checked Word guides remain Human-Gated",()=>{
+    for(const id of ["guide-39-full-word-2026","guide-51-full-word-2026","guide-52-full-word-2026"]){
+      const g=data.records.find(x=>x.id===id);
+      assert.equal(g.status,"source_checked_review");
+      assert.equal(g.professional_use,"human_review_required");
+    }
   });
 });
