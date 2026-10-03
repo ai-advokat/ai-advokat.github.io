@@ -25,7 +25,13 @@ describe("Zoran guides library governance",()=>{
     assert.ok(data.records.find(x=>x.id==="guide-26-administrative-short"));
     assert.ok(data.records.find(x=>x.id==="guide-administrative-v1"));
   });
-  test("G5 public page states source-first and Human Gate boundaries",()=>{
+  test("G5 every delivered source has immutable provenance metadata",()=>{
+    for(const r of data.records){
+      assert.match(r.sha256,/^[0-9a-f]{64}$/);
+      assert.ok(Number.isInteger(r.source_size_bytes) && r.source_size_bytes>0);
+    }
+  });
+  test("G6 public page states source-first and Human Gate boundaries",()=>{
     assert.match(html,/секундарни материјали/);
     assert.match(html,/Human Gate/);
     assert.match(html,/не се прикажуваат како важечки закон/);
