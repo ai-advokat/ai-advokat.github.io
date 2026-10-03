@@ -37,7 +37,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 </section>
 <section class="stats" aria-label="Статистика на библиотеката">
 <div class="stat"><b id="countAll">12</b><span>доставени PDF изданија</span></div>
-<div class="stat"><b id="countPrimary">10</b><span>активни/посебни записи</span></div>
+<div class="stat"><b id="countPrimary">11</b><span>активни/посебни записи</span></div>
 <div class="stat"><b>2</b><span>верзии на Водич 02</span></div>
 <div class="stat"><b>1</b><span>Human Gate пред јавен PDF</span></div>
 </section>
@@ -72,7 +72,7 @@ function render(){
  <div><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.format)}</span><span class="pill ${statusClass(x.status)}">${esc(x.status_label)}</span></div>
  <h2>${esc(x.title)}</h2><div class="meta">${esc(x.category)} · ${esc(x.edition)} · ${esc(x.edition_date)} · ${esc(x.pages)} стр.</div>
  <p class="scope">${esc(x.scope)}</p>
- <div class="source"><strong>Атрибуција:</strong> ${esc(x.attribution)}<br><strong>Изворна датотека:</strong> ${esc(x.source_file)}<br><span class="locked">PDF: Human Gate / не е јавно активиран</span>${x.superseded_by?`<br><strong>Заменет со:</strong> ${esc(x.superseded_by)}`:""}${x.supersedes?`<br><strong>Ја заменува:</strong> ${esc(x.supersedes)}`:""}</div>
+ <div class="source"><strong>Атрибуција:</strong> ${esc(x.attribution)}<br><strong>Изворна датотека:</strong> ${esc(x.source_file)}<br><strong>SHA-256:</strong> <code>${esc((x.sha256||"").slice(0,16))}…</code><br><span class="locked">PDF: Human Gate / не е јавно активиран</span>${x.superseded_by?`<br><strong>Заменет со:</strong> ${esc(x.superseded_by)}`:""}${x.supersedes?`<br><strong>Ја заменува:</strong> ${esc(x.supersedes)}`:""}</div>
  </article>`).join("")||'<p>Нема записи за избраниот филтер.</p>';
 }
 fetch("/data/guides.json").then(r=>r.json()).then(d=>{
