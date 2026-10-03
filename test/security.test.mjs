@@ -394,6 +394,24 @@ describe("assistant — AI safety", () => {
     assert.equal(r.body.answerProvenance.verificationState, "pending_verification");
   });
 
+  test("A10j negation cannot reverse a cited legal duty", async () => {
+    const ai = mockAI("[Член 12] Работодавачот не е должен да го извести работникот.");
+    const { env } = freshEnv({ ai });
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "retrieval_only_citation_guard");
+    assert.ok(!r.body.answer.includes("не е должен да го извести"));
+  });
+
+  test("A10k disclaimer prefix cannot hide an uncited substantive claim", async () => {
+    const ai = mockAI("[Член 12] Работодавачот е должен да го извести работникот. Потребна е дополнителна проверка, но работникот секогаш добива отпремнина.");
+    const { env } = freshEnv({ ai });
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "retrieval_only_citation_guard");
+    assert.ok(!r.body.answer.includes("секогаш добива отпремнина"));
+  });
+
   test("A11 AI is never called when the quota reservation fails", async () => {
     const ai = mockAI("[Член 12]");
     const { env, raw } = freshEnv({ ai });
