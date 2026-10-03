@@ -79,7 +79,23 @@ describe("Response Provenance Contract",()=>{
     assert.ok(r.errors.includes("release_without_human_approval"));
   });
 
-  test("RPC5 missing human control blocks response release",()=>{
+  test("RPC5 current-law response without source version/date is rejected",()=>{
+    const r=validateResponseProvenance({
+      response_id:"resp-5",
+      generated_at:"2026-10-03",
+      overall_verification_state:"verified",
+      claims:[{
+        claim_id:"c1",text:"x",claim_type:"current_law",risk:"medium",authority_class:"A1",
+        source_identity:"Official statute",locator:"Article 1",
+        verification_state:"verified_current",provenance:"official",response_label:"verified_current_law"
+      }],
+      human_control:{human_review_required:true,human_review_state:"approved",release_decision:"authorized_for_release"}
+    });
+    assert.equal(r.decision,"reject");
+    assert.ok(r.errors.some(x=>x.includes("missing_version_or_date")));
+  });
+
+  test("RPC6 missing human control blocks response release",()=>{
     const r=validateResponseProvenance({
       response_id:"resp-5",generated_at:"2026-10-03",overall_verification_state:"mixed",claims:[]
     });
