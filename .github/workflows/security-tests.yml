@@ -15,6 +15,7 @@ on:
       - "data/professional-legal-corpus-2026.json"
       - "data/legal-evidence-cards.json"
       - "data/citation-authority-engine.json"
+      - "data/response-provenance-contract.json"
       - "*.html"
       - "assets/**"
       - "sitemap.*"
@@ -62,6 +63,8 @@ jobs:
         run: npm run test:citation-authority-engine
       - name: Legal Claim Validator tests
         run: npm run test:legal-claim-validator
+      - name: Response Provenance Contract tests
+        run: npm run test:response-provenance
       - name: Security, quota, routing and truth-labelling tests
         run: npm run test:security
       - name: Legal parser regression tests
