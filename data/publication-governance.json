@@ -55,6 +55,12 @@
       "kind": "legal_monograph",
       "status": "publication_fix_required",
       "notes": "Internal V4.1/V4.2 mismatch and source-hierarchy closeout remain blockers before publication master."
+    },
+    {
+      "id": "research-papers-round-1",
+      "kind": "research_papers",
+      "status": "publication_review_queue",
+      "notes": "Five-paper first round: preserve MK/UK-English master pairs, DOI/ORCID provenance, citation integrity and journal-placement status. Kočani remains a separate journal/publication workflow and must not be silently promoted from draft."
     }
   ]
 }
