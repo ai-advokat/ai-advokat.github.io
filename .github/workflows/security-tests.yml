@@ -13,6 +13,7 @@ on:
       - "docs/standards/**"
       - "data/publication-governance.json"
       - "data/professional-legal-corpus-2026.json"
+      - "data/legal-evidence-cards.json"
       - "*.html"
       - "assets/**"
       - "sitemap.*"
@@ -54,6 +55,8 @@ jobs:
         run: npm run test:publication-governance
       - name: Professional Legal Corpus 2026 tests
         run: npm run test:professional-legal-corpus
+      - name: Legal Evidence Card governance tests
+        run: npm run test:legal-evidence-cards
       - name: Security, quota, routing and truth-labelling tests
         run: npm run test:security
       - name: Legal parser regression tests
