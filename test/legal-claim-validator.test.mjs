@@ -40,6 +40,7 @@ describe("Legal Claim Validator",()=>{
       risk:"medium",
       authority_class:"A4",
       source_identity:"Author guide",
+      version_or_date:"2026-10-03",
       verification_state:"verified_current",
       provenance:"controlled_publication"
     });
@@ -64,6 +65,7 @@ describe("Legal Claim Validator",()=>{
       risk:"medium",
       authority_class:"A1",
       source_identity:"Old statute",
+      version_or_date:"2005-01-01",
       verification_state:"superseded",
       provenance:"official_archive"
     });
@@ -84,7 +86,21 @@ describe("Legal Claim Validator",()=>{
     assert.ok(r.reasons.includes("invented_locator"));
   });
 
-  test("LCV7 authority labels are stable",()=>{
+  test("LCV7 ordinary current-law claim without version/date is downgraded",()=>{
+    const r=validateLegalClaim({
+      claim_type:"current_law",
+      risk:"medium",
+      authority_class:"A1",
+      source_identity:"Official statute",
+      verification_state:"verified_current",
+      provenance:"official_source_record"
+    });
+    assert.equal(r.decision,"downgrade");
+    assert.equal(r.current_law_capable,false);
+    assert.ok(r.reasons.includes("missing_version_or_date_for_current_law"));
+  });
+
+  test("LCV8 authority labels are stable",()=>{
     assert.equal(authorityLabel("A1"),"primary_binding_law");
     assert.equal(authorityLabel("A6"),"ai_synthesis");
     assert.equal(authorityLabel("A9"),null);
