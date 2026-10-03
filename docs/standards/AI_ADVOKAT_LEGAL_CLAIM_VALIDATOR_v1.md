@@ -17,9 +17,10 @@ A claim may be marked `current_law_capable=true` only when:
 - claim type is `current_law`;
 - authority class is A1, A2 or A3;
 - verification state is `verified_current`;
-- mandatory provenance fields are present.
+- mandatory provenance fields are present;
+- the checked source version/date is recorded.
 
-For high-risk current-law claims, version/date is mandatory and a precise locator is expected.
+For high-risk current-law claims, a precise locator is additionally expected.
 
 ## Safety principle
 
