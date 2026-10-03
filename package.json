@@ -32,7 +32,8 @@
     "test:casepilot": "node --no-warnings --test test/casepilot.test.mjs",
     "test:guides": "node --no-warnings --test test/guides-library.test.mjs",
     "test:publication-governance": "node --no-warnings --test test/publication-governance.test.mjs",
-    "test:professional-legal-corpus": "node --no-warnings --test test/professional-legal-corpus.test.mjs"
+    "test:professional-legal-corpus": "node --no-warnings --test test/professional-legal-corpus.test.mjs",
+    "test:legal-evidence-cards": "node --no-warnings --test test/legal-evidence-cards.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
