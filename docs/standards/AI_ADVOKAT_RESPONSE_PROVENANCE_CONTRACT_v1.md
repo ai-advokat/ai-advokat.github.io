@@ -86,7 +86,8 @@ The response must be blocked or downgraded when:
 - a claim has no source;
 - AI synthesis is used as the legal source;
 - a current-law claim is not `verified_current`;
-- a high-risk claim lacks version/date or precise locator;
+- a current-law claim lacks the checked source version/date;
+- a high-risk current-law claim lacks a precise locator;
 - human review metadata is missing;
 - one unresolved claim is hidden behind an overall “verified” label;
 - a superseded source is used as current law.
