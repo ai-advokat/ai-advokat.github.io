@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Практични правни водичи · AI Advokat</title>
+<meta name="description" content="Систематизиран каталог на практични правни водичи на адвокат Зоран Стојанкиќ, со верзии, статус на правна проверка и Human Gate.">
+<link rel="canonical" href="https://ai-advokat.github.io/guides/">
+<style>
+:root{--bg:#f5f7fa;--surface:#fff;--ink:#102033;--muted:#59697b;--line:#dbe3eb;--navy:#0c2038;--blue:#173d66;--soft:#eef4fa;--amber:#8a5a00;--red:#9b1c1c;--green:#1c6a45}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+a{color:var(--blue)}.skip{position:absolute;left:-9999px}.skip:focus{left:12px;top:12px;background:#fff;padding:8px;z-index:5}
+header{background:var(--navy);color:#fff}.wrap{max-width:1180px;margin:auto;padding:0 20px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0}.brand{font-weight:900;font-size:1.15rem}.top nav{display:flex;gap:16px;flex-wrap:wrap}.top a{color:#fff;text-decoration:none}
+main{padding:34px 0 60px}.hero{background:linear-gradient(135deg,#fff,#eef4fa);border:1px solid var(--line);border-radius:16px;padding:28px}.eyebrow{font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);font-size:.78rem}
+h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.05;margin:.35em 0}.lead{max-width:850px;color:var(--muted);font-size:1.08rem}
+.guard{margin-top:18px;border-left:4px solid var(--amber);background:#fff8e7;padding:14px 16px;border-radius:8px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:22px 0}.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}.stat b{display:block;font-size:1.5rem}
+.controls{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin:26px 0}.controls input,.controls select{width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 3px 12px rgba(12,32,56,.04)}
+.card h2{font-size:1.2rem;margin:.45rem 0}.meta{color:var(--muted);font-size:.9rem}.pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:.75rem;font-weight:800;margin-right:5px;background:var(--soft);color:var(--blue)}
+.pill.warn{background:#fff1d6;color:var(--amber)}.pill.archive{background:#fbe9e9;color:var(--red)}.pill.checked{background:#e7f4ed;color:var(--green)}
+.scope{margin:.8rem 0}.source{font-size:.87rem;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}.locked{font-weight:800;color:var(--amber)}
+.audit{margin-top:28px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px}.audit li{margin:.35rem 0}
+footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var(--muted)}
+@media(max-width:760px){.stats,.grid,.controls{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Прескокни до главната содржина</a>
+<header><div class="wrap top"><div class="brand">AI Advokat · Практични водичи</div><nav aria-label="Главна навигација"><a href="/">Почетна</a><a href="/#sources">Правни извори</a><a href="/#research">AI Истражувач</a><a href="/#publications">Трудови</a></nav></div></header>
+<main id="main"><div class="wrap">
+<section class="hero">
+<div class="eyebrow">Моите права во секојдневниот живот</div>
+<h1>Практични правни водичи</h1>
+<p class="lead">Посебна библиотека за водичите доставени од адвокат Зоран Стојанкиќ. Секој запис е одвоен од официјалниот corpus на закони и носи видлив статус на верзија, правна проверка и Human Gate.</p>
+<div class="guard"><strong>Изворот прв.</strong> Водичите се авторски/редакциски секундарни материјали. Не се прикажуваат како важечки закон и не се користат за професионален правен заклучок без проверка на официјалниот извор и човечка правна ревизија. PDF-преземањето останува заклучено додека Зоран не одобри конкретна верзија за јавно објавување.</div>
+</section>
+<section class="stats" aria-label="Статистика на библиотеката">
+<div class="stat"><b id="countAll">12</b><span>доставени PDF изданија</span></div>
+<div class="stat"><b id="countPrimary">10</b><span>активни/посебни записи</span></div>
+<div class="stat"><b>2</b><span>верзии на Водич 02</span></div>
+<div class="stat"><b>1</b><span>Human Gate пред јавен PDF</span></div>
+</section>
+<section aria-labelledby="libraryTitle"><h2 id="libraryTitle">Каталог</h2>
+<div class="controls">
+<label>Пребарај<input id="q" type="search" placeholder="жртва, управен спор, корупција…" aria-label="Пребарај водичи"></label>
+<label>Област<select id="cat" aria-label="Филтер по област"><option value="">Сите области</option></select></label>
+<label>Статус<select id="status" aria-label="Филтер по статус"><option value="">Сите статуси</option><option value="review">За правна проверка</option><option value="checked">Проверена основа/извори</option><option value="archive">Архивска верзија</option></select></label>
+</div>
+<div id="cards" class="grid" aria-live="polite"></div></section>
+<section class="audit">
+<h2>Контрола на квалитет</h2>
+<ul>
+<li>Дупликатите не се бришат: се водат како <strong>version history</strong> (Водич 02).</li>
+<li>Краткиот Водич 26 и 24-страничниот управен водич се водат одвоено: првиот е редакциски краток/проширен водич, вториот е сеопфатна авторска верзија 1.0.</li>
+<li>Секој запис е <strong>reference-only</strong> за AI додека Human Gate не го одобри за професионална употреба.</li>
+<li>Правните рокови и статусот на прописите мора повторно да се проверат со официјален извор на датумот на конкретната употреба.</li>
+</ul>
+<p><a href="/docs/guides/AUDIT_2026-10-03.md">Отвори го редакцискиот audit запис →</a></p>
+</section>
+</div></main>
+<footer><div class="wrap">AI Advokat · Правото, организирано. AI, под човечка контрола.</div></footer>
+<script>
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const statusClass=s=>s==="superseded_draft"?"archive":(s==="author_version_checked"||s==="source_checked_review")?"checked":"warn";
+const statusGroup=s=>s==="superseded_draft"?"archive":(s==="author_version_checked"||s==="source_checked_review")?"checked":"review";
+let records=[];
+function render(){
+ const q=document.querySelector("#q").value.trim().toLowerCase(),cat=document.querySelector("#cat").value,st=document.querySelector("#status").value;
+ const items=records.filter(x=>(!q||[x.title,x.category,x.scope,x.guide_no].join(" ").toLowerCase().includes(q))&&(!cat||x.category===cat)&&(!st||statusGroup(x.status)===st));
+ document.querySelector("#cards").innerHTML=items.map(x=>`<article class="card">
+ <div><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.format)}</span><span class="pill ${statusClass(x.status)}">${esc(x.status_label)}</span></div>
+ <h2>${esc(x.title)}</h2><div class="meta">${esc(x.category)} · ${esc(x.edition)} · ${esc(x.edition_date)} · ${esc(x.pages)} стр.</div>
+ <p class="scope">${esc(x.scope)}</p>
+ <div class="source"><strong>Атрибуција:</strong> ${esc(x.attribution)}<br><strong>Изворна датотека:</strong> ${esc(x.source_file)}<br><span class="locked">PDF: Human Gate / не е јавно активиран</span>${x.superseded_by?`<br><strong>Заменет со:</strong> ${esc(x.superseded_by)}`:""}${x.supersedes?`<br><strong>Ја заменува:</strong> ${esc(x.supersedes)}`:""}</div>
+ </article>`).join("")||'<p>Нема записи за избраниот филтер.</p>';
+}
+fetch("/data/guides.json").then(r=>r.json()).then(d=>{
+ records=d.records;
+ const cats=[...new Set(records.map(x=>x.category))].sort((a,b)=>a.localeCompare(b,"mk"));
+ document.querySelector("#cat").insertAdjacentHTML("beforeend",cats.map(c=>`<option>${esc(c)}</option>`).join(""));
+ document.querySelector("#countAll").textContent=records.length;
+ document.querySelector("#countPrimary").textContent=records.filter(x=>x.source_role!=="version_history").length;
+ render();
+}).catch(()=>{document.querySelector("#cards").innerHTML='<p>Каталогот моментално не може да се вчита.</p>';});
+["q","cat","status"].forEach(id=>document.querySelector("#"+id).addEventListener("input",render));
+</script>
+</body></html>
