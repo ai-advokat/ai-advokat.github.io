@@ -35,7 +35,8 @@
     "test:professional-legal-corpus": "node --no-warnings --test test/professional-legal-corpus.test.mjs",
     "test:legal-evidence-cards": "node --no-warnings --test test/legal-evidence-cards.test.mjs",
     "test:citation-authority-engine": "node --no-warnings --test test/citation-authority-engine.test.mjs",
-    "test:legal-claim-validator": "node --no-warnings --test test/legal-claim-validator.test.mjs"
+    "test:legal-claim-validator": "node --no-warnings --test test/legal-claim-validator.test.mjs",
+    "test:response-provenance": "node --no-warnings --test test/response-provenance-contract.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
