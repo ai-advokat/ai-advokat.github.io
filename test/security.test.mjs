@@ -350,6 +350,26 @@ describe("assistant — AI safety", () => {
     assert.equal(r.body.mode, "workers_ai_source_backed");
   });
 
+  test("A10f one valid citation cannot launder an uncited legal claim", async () => {
+    const ai = mockAI("Краток одговор: [Член 12] бара известување. Работникот има право на отпремнина во секој случај.");
+    const { env } = freshEnv({ ai });
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "retrieval_only_citation_guard");
+    assert.ok(!r.body.answer.includes("отпремнина во секој случај"));
+  });
+
+  test("A10g accepted AI answers expose fail-closed provenance metadata", async () => {
+    const ai = mockAI("Краток одговор: [Член 12] бара известување.");
+    const { env } = freshEnv({ ai });
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "workers_ai_source_backed");
+    assert.equal(r.body.answerProvenance.contract, "AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v1");
+    assert.equal(r.body.answerProvenance.humanControl.reviewState, "not_reviewed");
+    assert.equal(r.body.answerProvenance.humanControl.releaseDecision, "not_authorized");
+  });
+
   test("A11 AI is never called when the quota reservation fails", async () => {
     const ai = mockAI("[Член 12]");
     const { env, raw } = freshEnv({ ai });
