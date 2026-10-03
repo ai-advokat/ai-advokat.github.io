@@ -7,6 +7,9 @@ on:
       - "index.html"
       - "membership.html"
       - "scholar/**"
+      - "guides/**"
+      - "data/guides.json"
+      - "docs/guides/**"
       - "*.html"
       - "assets/**"
       - "sitemap.*"
@@ -42,6 +45,8 @@ jobs:
         run: npm run test:agent-orchestrator
       - name: CasePilot foundation tests
         run: npm run test:casepilot
+      - name: Zoran practical guides governance tests
+        run: npm run test:guides
       - name: Security, quota, routing and truth-labelling tests
         run: npm run test:security
       - name: Legal parser regression tests
