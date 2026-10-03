@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "decision_id": "catalog-visibility-38-2026-10-03",
+  "decision_type": "catalog_visibility",
+  "decision_state": "approved",
+  "approved_on": "2026-10-03",
+  "subject": "AI Advokat public guides catalogue",
+  "scope": {
+    "governed_records": 38,
+    "catalogue_visibility": "public",
+    "document_download": "not_authorized",
+    "rag_ingest": "not_authorized",
+    "production_corpus_write": "not_authorized",
+    "legal_corpus_promotion": "not_authorized"
+  },
+  "decision_basis": "Explicit Human Gate approval: public catalogue for all 38 guides, without PDF/DOCX download and without RAG.",
+  "fail_closed_note": "This decision authorizes metadata/catalogue visibility only and must not be interpreted as document publication or AI/RAG eligibility."
+}
