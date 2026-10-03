@@ -1,0 +1,402 @@
+{
+  "schema_version": "1.0",
+  "history_id": "AI_ADVOKAT_AUDIT_TRAIL_DECISION_HISTORY_v1",
+  "generated_on": "2026-10-03",
+  "doctrine": [
+    "chronological",
+    "append_only_intent",
+    "version_bound",
+    "fingerprint_bound",
+    "gate_isolated",
+    "fail_closed"
+  ],
+  "event_types": [
+    "source_registered",
+    "audit_opened",
+    "legal_source_review_completed",
+    "corrected_candidate_fingerprinted",
+    "human_gate_decision",
+    "public_release",
+    "rag_eligibility_change",
+    "production_corpus_write",
+    "superseded",
+    "revoked"
+  ],
+  "invariants": [
+    "events_do_not_delete_prior_events",
+    "state_change_requires_evidence",
+    "candidate_state_requires_candidate_fingerprint",
+    "human_gate_event_requires_ledger_reference",
+    "release_event_requires_public_release_gate",
+    "rag_event_requires_rag_gate",
+    "production_write_event_requires_production_gate",
+    "missing_event_does_not_imply_state"
+  ],
+  "subjects": [
+    {
+      "subject_id": "inheritance-estate-guide-2025-r1",
+      "title": "Водич за наследство и оставинска постапка",
+      "current_governance_status": "author_approved_candidate",
+      "source_set": "last_set_2026_10_03",
+      "events": [
+        {
+          "event_id": "inheritance-estate-guide-2025-r1:source_registered:2026-10-03",
+          "event_type": "source_registered",
+          "occurred_at": "2026-10-03",
+          "artifact_version": "Прво издание | 2025",
+          "artifact_fingerprint": {
+            "package_sha256": "2a7b28ea555459638334c2ea05291eab8dc65980eba02f82216c26eef91af80b",
+            "docx_sha256": "8497a36e4e1f7b806fd96691359b0ec5463a807a5a9b41a5a7df27d0db4ccac8",
+            "pdf_sha256": "79304c1f592f269beb7bff264476559dce30125a9f387e60cbd6428de623b45e"
+          },
+          "evidence": {
+            "source_package": "files (3).zip",
+            "docx": "Nasledstvo-Paragrafmk.docx",
+            "pdf": "Nasledstvo-Paragrafmk.pdf"
+          },
+          "resulting_state": "source"
+        },
+        {
+          "event_id": "inheritance-estate-guide-2025-r1:legal_source_review_completed:2026-10-03",
+          "event_type": "legal_source_review_completed",
+          "occurred_at": "2026-10-03",
+          "evidence": {
+            "audit_file": "docs/guides/AUDIT_NASLEDSTVO_2026-10-03.md"
+          },
+          "resulting_state": "corrected_candidate"
+        },
+        {
+          "event_id": "inheritance-estate-guide-2025-r1:corrected_candidate_fingerprinted:2026-10-03",
+          "event_type": "corrected_candidate_fingerprinted",
+          "occurred_at": "2026-10-03",
+          "artifact_version": "LEGAL_SOURCE_UPGRADE_2026_CANDIDATE",
+          "artifact_fingerprint": {
+            "docx_sha256": "ccc2280b06d50b7ad7f2213c1a3f0bc4c3b016dd708e4a9ca05ef607cf4f3a86",
+            "pdf_sha256": "b60c8f2407026361caff7cf5de82d3cb58f6731bc215e9e1460b0e2ba580a741"
+          },
+          "resulting_state": "corrected_candidate"
+        },
+        {
+          "event_id": "inheritance-estate-guide-2025-r1:author_approved:2026-10-03",
+          "event_type": "human_gate_decision",
+          "occurred_at": "2026-10-03",
+          "gate_type": "author_approval",
+          "decision_state": "approved",
+          "decision_ledger_ref": "hg-2026-10-03-inheritance-author-approval",
+          "artifact_version": "LEGAL_SOURCE_UPGRADE_2026_CANDIDATE",
+          "artifact_fingerprint": {
+            "docx_sha256": "ccc2280b06d50b7ad7f2213c1a3f0bc4c3b016dd708e4a9ca05ef607cf4f3a86",
+            "pdf_sha256": "b60c8f2407026361caff7cf5de82d3cb58f6731bc215e9e1460b0e2ba580a741"
+          },
+          "resulting_state": "author_approved_candidate"
+        }
+      ]
+    },
+    {
+      "subject_id": "last-set-real-estate-transfer",
+      "title": "Водич за промет со недвижности",
+      "current_governance_status": "revision_required",
+      "source_set": "last_set_2026_10_03",
+      "events": [
+        {
+          "event_id": "last-set-real-estate-transfer:source_registered:2026-10-03",
+          "event_type": "source_registered",
+          "occurred_at": "2026-10-03",
+          "artifact_version": "Прво издание | 2025",
+          "artifact_fingerprint": {
+            "package_sha256": "2a7b28ea555459638334c2ea05291eab8dc65980eba02f82216c26eef91af80b",
+            "docx_sha256": "f93088534c938b57fc62d0aad082898500b48556b6cb11a8e09f324099085dea",
+            "pdf_sha256": "f0819dcad3aba318d12484ab538c4cddd0382084102549a1165d3ab16c2247b3"
+          },
+          "evidence": {
+            "source_package": "files (3).zip",
+            "docx": "Promet-Nedviznosti-Paragrafmk.docx",
+            "pdf": "Promet-Nedviznosti-Paragrafmk.pdf"
+          },
+          "resulting_state": "source"
+        },
+        {
+          "event_id": "last-set-real-estate-transfer:audit_opened:2026-10-03",
+          "event_type": "audit_opened",
+          "occurred_at": "2026-10-03",
+          "evidence": {
+            "audit_file": "docs/guides/AUDIT_REAL_ESTATE_TRANSFER_2026-10-03.md"
+          },
+          "resulting_state": "legal_source_review"
+        }
+      ]
+    },
+    {
+      "subject_id": "last-set-cadastre-citizen",
+      "title": "Катастарски водич",
+      "current_governance_status": "legal_source_review_required",
+      "source_set": "last_set_2026_10_03",
+      "events": [
+        {
+          "event_id": "last-set-cadastre-citizen:source_registered:2026-10-03",
+          "event_type": "source_registered",
+          "occurred_at": "2026-10-03",
+          "artifact_version": "Второ издание | 2025",
+          "artifact_fingerprint": {
+            "package_sha256": "2a7b28ea555459638334c2ea05291eab8dc65980eba02f82216c26eef91af80b",
+            "docx_sha256": "02540705ad7c7c76860643b21082daf63ddb61869df16273bd99039860f4cc2a",
+            "pdf_sha256": "a01f735f51ca91c8fd75450fa88934731f21fc7250d311d681530d6690cf268d"
+          },
+          "evidence": {
+            "source_package": "files (3).zip",
+            "docx": "Katastarski-Vodic-Paragrafmk.docx",
+            "pdf": "Katastarski-Vodic-Paragrafmk.pdf"
+          },
+          "resulting_state": "source"
+        },
+        {
+          "event_id": "last-set-cadastre-citizen:audit_opened:2026-10-03",
+          "event_type": "audit_opened",
+          "occurred_at": "2026-10-03",
+          "evidence": {
+            "audit_file": "docs/guides/AUDIT_CADASTRE_CITIZEN_2026-10-03.md"
+          },
+          "resulting_state": "legal_source_review"
+        }
+      ]
+    },
+    {
+      "subject_id": "last-set-cadastre-professional",
+      "title": "Стручен водич АKN",
+      "current_governance_status": "revision_required",
+      "source_set": "last_set_2026_10_03",
+      "events": [
+        {
+          "event_id": "last-set-cadastre-professional:source_registered:2026-10-03",
+          "event_type": "source_registered",
+          "occurred_at": "2026-10-03",
+          "artifact_version": "Прво издание | 2025",
+          "artifact_fingerprint": {
+            "package_sha256": "2a7b28ea555459638334c2ea05291eab8dc65980eba02f82216c26eef91af80b",
+            "docx_sha256": "1ee023857b9415817f109db60f417489d477d7860de81276750a12720003016c",
+            "pdf_sha256": "0a97bb5c6b12363b5a7f1ced1542582dad73503da191ec2458b5224799ee08d3"
+          },
+          "evidence": {
+            "source_package": "files (3).zip",
+            "docx": "Strucen-Vodic-AKN-Paragrafmk.docx",
+            "pdf": "Strucen-Vodic-AKN-Paragrafmk.pdf"
+          },
+          "resulting_state": "source"
+        },
+        {
+          "event_id": "last-set-cadastre-professional:audit_opened:2026-10-03",
+          "event_type": "audit_opened",
+          "occurred_at": "2026-10-03",
+          "evidence": {
+            "audit_file": "docs/guides/AUDIT_CADASTRE_PROFESSIONAL_2026-10-03.md"
+          },
+          "resulting_state": "legal_source_review"
+        }
+      ]
+    },
+    {
+      "subject_id": "last-set-administrative-law",
+      "title": "Водич за административно право",
+      "current_governance_status": "revision_required",
+      "source_set": "last_set_2026_10_03",
+      "events": [
+        {
+          "event_id": "last-set-administrative-law:source_registered:2026-10-03",
+          "event_type": "source_registered",
+          "occurred_at": "2026-10-03",
+          "artifact_version": "Прво издание | 2025",
+          "artifact_fingerprint": {
+            "package_sha256": "b0c7b091ca976717f3b66e4adb6905a54aaf3047d66e8fd0913294dd7f3a2830",
+            "docx_sha256": "e0f8f29facddf4b63ae2ba7cd109a510f327252bf6f3bad05b8c52b1a1e2356d",
+            "pdf_sha256": "305b5b2af6e33050a91c358073408496b218f922c7bfa7734d1b81f82bb4f481"
+          },
+          "evidence": {
+            "source_package": "files (4).zip",
+            "docx": "Administrativno-Pravo-Paragrafmk.docx",
+            "pdf": "Administrativno-Pravo-Paragrafmk.pdf"
+          },
+          "resulting_state": "source"
+        },
+        {
+          "event_id": "last-set-administrative-law:audit_opened:2026-10-03",
+          "event_type": "audit_opened",
+          "occurred_at": "2026-10-03",
+          "evidence": {
+            "audit_file": "docs/guides/AUDIT_ADMINISTRATIVE_LAW_2026-10-03.md"
+          },
+          "resulting_state": "legal_source_review"
+        }
+      ]
+    },
+    {
+      "subject_id": "last-set-criminal-law",
+      "title": "Водич за кривично право",
+      "current_governance_status": "revision_required",
+      "source_set": "last_set_2026_10_03",
+      "events": [
+        {
+          "event_id": "last-set-criminal-law:source_registered:2026-10-03",
+          "event_type": "source_registered",
+          "occurred_at": "2026-10-03",
+          "artifact_version": "Прво издание | 2025",
+          "artifact_fingerprint": {
+            "package_sha256": "4f1ff6ea1ced920398d4a415a87b615426897ae8372490c949a5be34478ffe95",
+            "docx_sha256": "cace6d28a3fa917a46b9b7e20974ddf431397f9f09c2270d1c4c9b49039d47f1",
+            "pdf_sha256": "bb29197294c80581a39b6466c421f255a2b3a9c3e995127e12fb8e4fd61b75fc"
+          },
+          "evidence": {
+            "source_package": "files (5).zip",
+            "docx": "Krivicno-Pravo-Paragrafmk.docx",
+            "pdf": "Krivicno-Pravo-Paragrafmk.pdf"
+          },
+          "resulting_state": "source"
+        },
+        {
+          "event_id": "last-set-criminal-law:audit_opened:2026-10-03",
+          "event_type": "audit_opened",
+          "occurred_at": "2026-10-03",
+          "evidence": {
+            "audit_file": "docs/guides/AUDIT_CRIMINAL_LAW_2026-10-03.md"
+          },
+          "resulting_state": "legal_source_review"
+        }
+      ]
+    },
+    {
+      "subject_id": "last-set-tax-law",
+      "title": "Водич за даночно право",
+      "current_governance_status": "legal_source_review_required",
+      "source_set": "last_set_2026_10_03",
+      "events": [
+        {
+          "event_id": "last-set-tax-law:source_registered:2026-10-03",
+          "event_type": "source_registered",
+          "occurred_at": "2026-10-03",
+          "artifact_version": "Прво издание | 2025",
+          "artifact_fingerprint": {
+            "package_sha256": "ea75dd448a6226dac2b6fad5559b8ba94150c223403af685f8a7b97617f52825",
+            "docx_sha256": "0dd052b4975c86a99c6c9145ec6ee53929fb259801c0a7d4739aaf0a07d8897a",
+            "pdf_sha256": "dcf63b6bd04a24251983b0c2c00139687622b166be45291604ef4bf244f039b6"
+          },
+          "evidence": {
+            "source_package": "files (6).zip",
+            "docx": "Danocno-Pravo-Paragrafmk.docx",
+            "pdf": "Danocno-Pravo-Paragrafmk.pdf"
+          },
+          "resulting_state": "source"
+        },
+        {
+          "event_id": "last-set-tax-law:audit_opened:2026-10-03",
+          "event_type": "audit_opened",
+          "occurred_at": "2026-10-03",
+          "evidence": {
+            "audit_file": "docs/guides/AUDIT_TAX_LAW_2026-10-03.md"
+          },
+          "resulting_state": "legal_source_review"
+        }
+      ]
+    },
+    {
+      "subject_id": "last-set-civil-procedure",
+      "title": "Водич за граѓанска постапка",
+      "current_governance_status": "revision_required",
+      "source_set": "last_set_2026_10_03",
+      "events": [
+        {
+          "event_id": "last-set-civil-procedure:source_registered:2026-10-03",
+          "event_type": "source_registered",
+          "occurred_at": "2026-10-03",
+          "artifact_version": "Прво издание | 2025",
+          "artifact_fingerprint": {
+            "package_sha256": "4fa6c0490754d8956ad54f914f0df1e2584f9716c90af87032c42ca0e01da622",
+            "docx_sha256": "7b42fd8225305f9e0be3de2c54a30d4cb08e3c1466b086f15165ff6ec06edd71",
+            "pdf_sha256": "16aa946b028be3d47d8cb2cf9ed15d8656cdfee9fe2bd76b3b6a2ace53f9ced1"
+          },
+          "evidence": {
+            "source_package": "files (7).zip",
+            "docx": "Gragjanska-Postapka-Paragrafmk.docx",
+            "pdf": "Gragjanska-Postapka-Paragrafmk.pdf"
+          },
+          "resulting_state": "source"
+        },
+        {
+          "event_id": "last-set-civil-procedure:audit_opened:2026-10-03",
+          "event_type": "audit_opened",
+          "occurred_at": "2026-10-03",
+          "evidence": {
+            "audit_file": "docs/guides/AUDIT_CIVIL_PROCEDURE_2026-10-03.md"
+          },
+          "resulting_state": "legal_source_review"
+        }
+      ]
+    },
+    {
+      "subject_id": "last-set-commercial-law",
+      "title": "Водич за трговско право",
+      "current_governance_status": "legal_source_review_required",
+      "source_set": "last_set_2026_10_03",
+      "events": [
+        {
+          "event_id": "last-set-commercial-law:source_registered:2026-10-03",
+          "event_type": "source_registered",
+          "occurred_at": "2026-10-03",
+          "artifact_version": "Прво издание | 2025",
+          "artifact_fingerprint": {
+            "package_sha256": "eb86ae526a54d40d54018a990c93118d999c5b6a70b73b07917a050744bb2071",
+            "docx_sha256": "49329ab1fb7cd83d5446c71910a465a2d29d1d326a3af52a457811d71d864238",
+            "pdf_sha256": "c516dc2d019f0be93e6ad589a32337a5059cb0a0588ed655910798bc719e0955"
+          },
+          "evidence": {
+            "source_package": "files (8).zip",
+            "docx": "Trgovsko-Pravo-Paragrafmk.docx",
+            "pdf": "Trgovsko-Pravo-Paragrafmk.pdf"
+          },
+          "resulting_state": "source"
+        },
+        {
+          "event_id": "last-set-commercial-law:audit_opened:2026-10-03",
+          "event_type": "audit_opened",
+          "occurred_at": "2026-10-03",
+          "evidence": {
+            "audit_file": "docs/guides/AUDIT_COMMERCIAL_LAW_2026-10-03.md"
+          },
+          "resulting_state": "legal_source_review"
+        }
+      ]
+    },
+    {
+      "subject_id": "last-set-family-law",
+      "title": "Водич за семејно право",
+      "current_governance_status": "legal_source_review_required",
+      "source_set": "last_set_2026_10_03",
+      "events": [
+        {
+          "event_id": "last-set-family-law:source_registered:2026-10-03",
+          "event_type": "source_registered",
+          "occurred_at": "2026-10-03",
+          "artifact_version": "Прво издание | 2025",
+          "artifact_fingerprint": {
+            "package_sha256": "ad27c3da32aa07eb9289080c4e1a6b489dbcffbb2c3fc999c0b4b7b37d23b6fc",
+            "docx_sha256": "b0da8df1460b7f6b89174b7de82cecc17f87a02a4190489adbdc60416d122d72",
+            "pdf_sha256": "f8a3d39070f745d0c2543f63b90a54b1296da90ee8bcef33a887de7b294ff8ca"
+          },
+          "evidence": {
+            "source_package": "files (9).zip",
+            "docx": "Semejno-Pravo-Paragrafmk.docx",
+            "pdf": "Semejno-Pravo-Paragrafmk.pdf"
+          },
+          "resulting_state": "source"
+        },
+        {
+          "event_id": "last-set-family-law:audit_opened:2026-10-03",
+          "event_type": "audit_opened",
+          "occurred_at": "2026-10-03",
+          "evidence": {
+            "audit_file": "docs/guides/AUDIT_FAMILY_LAW_2026-10-03.md"
+          },
+          "resulting_state": "legal_source_review"
+        }
+      ]
+    }
+  ]
+}

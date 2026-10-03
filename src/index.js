@@ -17,6 +17,7 @@ import {
   validateAnswerCitations,
   verifyTurnstile
 } from "./security.js";
+import { validateLegalClaim } from "./legal-claim-validator.js";
 import {
   VERSION_ERROR_MESSAGES,
   parseQueryDate,
@@ -1442,11 +1443,56 @@ async function handleAssistant(request, env, url) {
       }else{
         const check=validateAnswerCitations(candidate,articles);
         if(check.ok){
-          answer=candidate;
-          answerMode="workers_ai_source_backed";
+          const normalizeRef=(value)=>String(value || "").normalize("NFKC").toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"");
+          const articleByRef=new Map();
+          for(const a of articles){
+            for(const ref of [a.articleNumberNormalized,a.articleNumber].filter(Boolean).map(normalizeRef)){
+              articleByRef.set(ref,a);
+            }
+          }
+          const versionAnchor=version?.version_label || null;
+          const versionIsApprovedCurrent=versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved";
+
+          const articleVerificationState=(a)=>{
+            if(versionIsApprovedCurrent){
+              return a.publicStatus==="current_verified" ? "verified_current" : "pending_verification";
+            }
+            if(a.status==="historical" && ["approved","reviewed"].includes(String(a.humanReviewStatus || ""))){
+              return "verified_historical";
+            }
+            return "pending_verification";
+          };
+
+          const claimChecks=(check.claims || []).map(claim=>{
+            const citedArticles=claim.cited.map(ref=>articleByRef.get(ref)).filter(Boolean);
+            const states=citedArticles.map(articleVerificationState);
+            const verificationState=versionIsApprovedCurrent
+              ? (states.length && states.every(x=>x==="verified_current") ? "verified_current" : "pending_verification")
+              : (states.length && states.every(x=>x==="verified_historical") ? "verified_historical" : "pending_verification");
+            return validateLegalClaim({
+              claim:claim.text,
+              claim_type:versionIsApprovedCurrent ? "current_law" : "historical_law",
+              risk:"high",
+              authority_class:"A1",
+              source_identity:citedArticles.map(a=>a.sourceUrl || instrument.title).join(" | "),
+              version_or_date:versionAnchor,
+              locator:citedArticles.map(a=>`Article ${a.articleNumber}`).join("; "),
+              verification_state:verificationState,
+              provenance:citedArticles.map(a=>`${a.sourceUrl || instrument.canonical_key}#article-${a.articleNumber}`).join(" | ")
+            });
+          });
+          const failedClaim=claimChecks.find(x=>x.decision!=="accept");
+          if(!failedClaim){
+            answer=candidate;
+            answerMode="workers_ai_source_backed";
+          }else{
+            aiError=`claim_guard_rejected:${failedClaim.reasons.join(",")}`;
+            console.warn("assistant_claim_guard_rejected",failedClaim.reasons.join(","));
+            answerMode="retrieval_only_claim_guard";
+          }
         }else{
           aiError=`citation_guard_rejected:${check.reason}`;
-          console.warn("assistant_citation_guard_rejected",check.reason,check.unexpected.slice(0,5).join(","));
+          console.warn("assistant_citation_guard_rejected",check.reason,(check.unexpected || []).slice(0,5).join(","));
           answerMode="retrieval_only_citation_guard";
         }
       }
@@ -1469,6 +1515,24 @@ async function handleAssistant(request, env, url) {
     versionBasis:retrieval.versionBasis || null,
     answer,
     legalStatusWarning:warning,
+    answerProvenance:{
+      contract:"AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v1",
+      runtimeValidation:"claim_level_citation_and_authority_v1",
+      sourceVersionOrDate:version?.version_label || null,
+      verificationState:
+        versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
+          && articles.every(a=>a.publicStatus==="current_verified")
+          ? "verified_current"
+          : (!versionInfo.isCurrent
+              && articles.every(a=>a.status==="historical" && ["approved","reviewed"].includes(String(a.humanReviewStatus || "")))
+              ? "verified_historical"
+              : "pending_verification"),
+      humanControl:{
+        reviewRequired:true,
+        reviewState:"not_reviewed",
+        releaseDecision:"not_authorized"
+      }
+    },
     citations:articles.map(a=>({
       articleNumber:a.articleNumber,
       heading:a.heading,

@@ -30,7 +30,16 @@
     "db:preflight:production": "wrangler d1 execute ai-advokat-db --remote --file scripts/legacy-corpus-backfill-preflight.sql",
     "test:agent-orchestrator": "node --no-warnings --test test/agent-orchestrator.test.mjs",
     "test:casepilot": "node --no-warnings --test test/casepilot.test.mjs",
-    "test:guides": "node --no-warnings --test test/guides-library.test.mjs"
+    "test:guides": "node --no-warnings --test test/guides-library.test.mjs",
+    "test:publication-governance": "node --no-warnings --test test/publication-governance.test.mjs",
+    "test:professional-legal-corpus": "node --no-warnings --test test/professional-legal-corpus.test.mjs",
+    "test:legal-evidence-cards": "node --no-warnings --test test/legal-evidence-cards.test.mjs",
+    "test:citation-authority-engine": "node --no-warnings --test test/citation-authority-engine.test.mjs",
+    "test:legal-claim-validator": "node --no-warnings --test test/legal-claim-validator.test.mjs",
+    "test:response-provenance": "node --no-warnings --test test/response-provenance-contract.test.mjs",
+    "test:human-gate-ledger": "node --no-warnings --test test/human-gate-decision-ledger.test.mjs",
+    "test:audit-trail-history": "node --no-warnings --test test/audit-trail-decision-history.test.mjs",
+    "test:governance-dashboard": "node --no-warnings --test test/governance-dashboard.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"

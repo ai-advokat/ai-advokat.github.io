@@ -66,4 +66,7 @@
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
+  <url>
+    <loc>https://ai-advokat.github.io/governance.html</loc>
+  </url>
 </urlset>

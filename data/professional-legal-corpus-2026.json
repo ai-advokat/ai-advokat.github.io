@@ -1,0 +1,123 @@
+{
+  "schema_version": "1.0",
+  "corpus_id": "AI_ADVOKAT_PROFESSIONAL_LEGAL_CORPUS_2026",
+  "generated_on": "2026-10-03",
+  "doctrine": [
+    "source_first",
+    "version_aware",
+    "human_gate",
+    "fail_closed"
+  ],
+  "standard_file": "docs/standards/AI_ADVOKAT_PROFESSIONAL_LEGAL_CORPUS_2026.md",
+  "governance_file": "data/publication-governance.json",
+  "allowed_lanes": [
+    "source",
+    "legal_source_review",
+    "corrected_candidate",
+    "author_approved_candidate",
+    "publication_master"
+  ],
+  "independent_gates": [
+    "author_approval",
+    "github_merge",
+    "public_release",
+    "rag_eligibility",
+    "production_corpus_write"
+  ],
+  "cohorts": [
+    {
+      "id": "last_set_2026_10_03",
+      "kind": "practical_professional_guides",
+      "count": 10,
+      "items": [
+        {
+          "id": "inheritance-estate-guide-2025-r1",
+          "lane": "author_approved_candidate",
+          "epistemic_status": "verified_current",
+          "verification_date": "2026-10-03"
+        },
+        {
+          "id": "last-set-real-estate-transfer",
+          "lane": "legal_source_review",
+          "epistemic_status": "pending_verification"
+        },
+        {
+          "id": "last-set-cadastre-citizen",
+          "lane": "legal_source_review",
+          "epistemic_status": "pending_verification"
+        },
+        {
+          "id": "last-set-cadastre-professional",
+          "lane": "legal_source_review",
+          "epistemic_status": "pending_verification"
+        },
+        {
+          "id": "last-set-administrative-law",
+          "lane": "legal_source_review",
+          "epistemic_status": "pending_verification"
+        },
+        {
+          "id": "last-set-criminal-law",
+          "lane": "legal_source_review",
+          "epistemic_status": "pending_verification"
+        },
+        {
+          "id": "last-set-tax-law",
+          "lane": "legal_source_review",
+          "epistemic_status": "pending_verification"
+        },
+        {
+          "id": "last-set-civil-procedure",
+          "lane": "legal_source_review",
+          "epistemic_status": "pending_verification"
+        },
+        {
+          "id": "last-set-commercial-law",
+          "lane": "legal_source_review",
+          "epistemic_status": "pending_verification"
+        },
+        {
+          "id": "last-set-family-law",
+          "lane": "legal_source_review",
+          "epistemic_status": "pending_verification"
+        }
+      ]
+    }
+  ],
+  "future_collections": [
+    {
+      "id": "research-papers-round-1",
+      "kind": "research_papers",
+      "policy": "same_gates_no_implicit_rag"
+    },
+    {
+      "id": "professional-library-manuals",
+      "kind": "professional_manuals",
+      "policy": "same_gates_no_implicit_publication"
+    },
+    {
+      "id": "future-authored-legal-publications",
+      "kind": "extensible",
+      "policy": "must_register_before_controlled_use"
+    }
+  ],
+  "release_policy": {
+    "public_release": false,
+    "rag_eligibility": false,
+    "github_merge": false,
+    "production_corpus_write": false,
+    "note": "Top-level defaults are fail-closed; per-item explicit Human Gates are required."
+  },
+  "verification_states": [
+    "verified_current",
+    "verified_historical",
+    "pending_verification",
+    "conflicted",
+    "superseded"
+  ],
+  "content_roles": [
+    "authorial_analysis",
+    "secondary_reference",
+    "ai_synthesis"
+  ]
+}
