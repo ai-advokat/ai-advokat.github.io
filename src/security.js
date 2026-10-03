@@ -314,14 +314,23 @@ function isMetaOnlySegment(segment) {
   const clean=String(segment ?? "").replace(/^[-*•#\s]+/u,"").trim();
   if(!clean) return true;
   if(/^(?:Краток одговор|Правна основа|Примена(?:\/објаснување)?|Ограничувања(?: и што треба да се провери)?|Заклучок)\s*:?$/iu.test(clean)) return true;
-  return /(?:нема доволна основа|нема доволно релевантен|потребна е дополнителна проверка|потребна е човечка професионална проверка|не е конечен индивидуален правен совет|истражувачка помош)/iu.test(clean)
-    && !/(?:има право|нема право|е должен|мора|се забранува|се дозволува|предвидува|уредува|рок|казна|обврска)/iu.test(clean);
+
+  // Metadata/disclaimer text is ignored only when the entire segment is a
+  // recognised disclaimer. A disclaimer prefix must never hide a later claim.
+  return /^(?:
+    Во\s+достапниот\s+корпус\s+)?(?:
+    нема\s+доволна\s+основа(?:\s+во\s+достапниот\s+корпус)?|
+    нема\s+доволно\s+релевантен\s+член|
+    потребна\s+е\s+дополнителна\s+проверка(?:\s+на\s+официјалните\s+извори)?|
+    потребна\s+е\s+човечка\s+професионална\s+проверка|
+    ова\s+не\s+е\s+конечен\s+индивидуален\s+правен\s+совет|
+    ова\s+е\s+истражувачка\s+помош
+  )[.!?]?$/iux.test(clean);
 }
 
 const CLAIM_SUPPORT_STOPWORDS = new Set([
   "краток","одговор","правна","основа","примена","објаснување","поврзано","според","член","членот",
-  "ова","овој","оваа","овие","тоа","како","дека","кој","која","кое","кои","има","нема","право",
-  "може","мора","треба","должен","должна","должно","секој","секоја","секое","сите","само","исто",
+  "ова","овој","оваа","овие","тоа","како","дека","кој","која","кое","кои","исто",
   "при","под","над","пред","по","од","до","за","со","без","во","на","и","а","но","или","се","е","го","ја","ги",
   "the","a","an","and","or","of","to","in","for","with","article","according"
 ]);
@@ -349,12 +358,46 @@ function segmentWithoutCitations(segment) {
     .trim();
 }
 
+function legalPolaritySignature(text) {
+  const t=String(text ?? "").normalize("NFKC").toLocaleLowerCase("mk");
+  return {
+    negatedObligation:/\b(?:не\s+(?:е\s+)?долж\w*|не\s+мора|не\s+треба)\b/u.test(t),
+    positiveObligation:/\b(?:е\s+долж\w*|мора|треба)\b/u.test(t) && !/\b(?:не\s+(?:е\s+)?долж\w*|не\s+мора|не\s+треба)\b/u.test(t),
+    prohibition:/\b(?:не\s+смее|забран\w*)\b/u.test(t),
+    permission:/\b(?:може|дозвол\w*|има\s+право)\b/u.test(t) && !/\b(?:не\s+може|нема\s+право)\b/u.test(t),
+    deniedPermission:/\b(?:не\s+може|нема\s+право)\b/u.test(t),
+    absoluteQualifier:/\b(?:секогаш|никогаш|исклучиво|само|секој|секоја|секое|сите)\b/u.test(t)
+  };
+}
+
+function legalPolarityCompatible(claim, source) {
+  const c=legalPolaritySignature(claim);
+  const s=legalPolaritySignature(source);
+
+  if(c.negatedObligation && s.positiveObligation && !s.negatedObligation) return false;
+  if(c.positiveObligation && s.negatedObligation && !s.positiveObligation) return false;
+  if(c.permission && s.deniedPermission && !s.permission) return false;
+  if(c.deniedPermission && s.permission && !s.deniedPermission) return false;
+  if(c.prohibition && !s.prohibition) return false;
+
+  // Absolute qualifiers materially strengthen a legal proposition. They must be
+  // present in the cited source, otherwise the answer is overclaiming.
+  if(c.absoluteQualifier && !s.absoluteQualifier) return false;
+
+  return true;
+}
+
 function claimSupport(segment, citedRefs, articleMap) {
   const sourceText=[...citedRefs]
     .map(ref=>articleMap.get(ref)?.text || "")
     .join(" ");
+  const claimText=segmentWithoutCitations(segment);
+  if(!legalPolarityCompatible(claimText,sourceText)){
+    return {ok:false,unsupported:["legal_polarity_or_modality_mismatch"],ratio:0};
+  }
+
   const sourceStems=supportStems(sourceText);
-  const claimStems=supportStems(segmentWithoutCitations(segment));
+  const claimStems=supportStems(claimText);
   if(!claimStems.length) return {ok:true,unsupported:[]};
 
   const unsupported=claimStems.filter(stem=>!sourceStems.some(src=>src.startsWith(stem) || stem.startsWith(src)));
