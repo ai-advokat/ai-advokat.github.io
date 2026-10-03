@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="mk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="AI Advokat — read-only legal governance dashboard: verification, provenance, Human Gate and audit history.">
+  <title>Правна проверливост · AI Advokat</title>
+  <style>
+    :root{color-scheme:light dark;--bg:#07131d;--panel:#0d1f2d;--line:#274254;--text:#eef6fb;--muted:#a9bdca;--accent:#7fd4ff;--ok:#9ce0b0;--warn:#ffd88a;--closed:#d7e2e9}
+    *{box-sizing:border-box}body{margin:0;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    a{color:var(--accent)}.wrap{width:min(1180px,92vw);margin:auto}.top{border-bottom:1px solid var(--line);background:#091925;position:sticky;top:0;z-index:5}
+    .topin{display:flex;gap:18px;align-items:center;justify-content:space-between;padding:14px 0}.brand{text-decoration:none;color:var(--text);font-weight:800}
+    .nav{display:flex;gap:14px;flex-wrap:wrap}.nav a{text-decoration:none;color:var(--muted)}main{padding:42px 0 64px}
+    .eyebrow{font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-size:.8rem}.hero h1{font-size:clamp(2rem,5vw,3.8rem);line-height:1.05;margin:.35em 0}
+    .hero p{max-width:850px;color:var(--muted);font-size:1.05rem}.notice{margin:24px 0;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:#0b1a26}
+    .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:30px 0}.metric{padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+    .metric b{font-size:1.7rem;display:block}.metric span{color:var(--muted)}.section-title{margin:38px 0 14px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}
+    .card{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:18px}.card h2{font-size:1.1rem;margin:0 0 7px}.meta{color:var(--muted);font-size:.92rem}
+    .chips{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}.chip{border:1px solid var(--line);border-radius:999px;padding:4px 9px;font-size:.78rem;background:#102737}
+    .chip.ok{border-color:#387d50;color:var(--ok)}.chip.warn{border-color:#806c36;color:var(--warn)}.chip.closed{color:var(--closed)}
+    .timeline{border-left:2px solid var(--line);margin:14px 0 0 5px;padding-left:16px}.event{margin:0 0 12px}.event b{display:block;font-size:.9rem}.event small{color:var(--muted)}
+    .architecture{display:grid;gap:8px;margin-top:14px}.layer{padding:12px 14px;border-left:3px solid var(--accent);background:#0a1b28;border-radius:8px}
+    .error{padding:16px;border:1px solid #7d3a3a;background:#281313;border-radius:12px}.sr{position:absolute;left:-9999px}
+    footer{border-top:1px solid var(--line);padding:28px 0 44px;color:var(--muted)}
+    @media(max-width:700px){.topin{align-items:flex-start;flex-direction:column}.nav{font-size:.92rem}}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap topin">
+      <a class="brand" href="/">AI Advokat</a>
+      <nav class="nav" aria-label="Навигација">
+        <a href="/">Почетна</a>
+        <a href="/guides/">Водичи</a>
+        <a href="/#publications">Трудови</a>
+        <a href="/membership.html">Членство</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="eyebrow">LEGAL GOVERNANCE · HUMAN GATE</div>
+      <h1>Правна проверливост и трага на одлуки</h1>
+      <p>Read-only приказ на контролираниот publication lifecycle: извор, правно-изворна проверка, candidate version, авторско одобрување и одделни downstream Human Gates.</p>
+      <div class="notice"><strong>Информативен приказ.</strong> Оваа страница не одобрува merge, јавна објава, AI/RAG ingest или production corpus write. Отсуство на експлицитно одобрување значи <strong>не е одобрено</strong>.</div>
+    </section>
+
+    <section class="summary" aria-label="Резиме">
+      <div class="metric"><b id="mTotal">—</b><span>контролирани водичи</span></div>
+      <div class="metric"><b id="mVerified">—</b><span>правно-изворно проверени</span></div>
+      <div class="metric"><b id="mAuthor">—</b><span>авторски одобрени</span></div>
+      <div class="metric"><b id="mPublic">—</b><span>јавно release-ирани од овој cohort</span></div>
+    </section>
+
+    <h2 class="section-title">Professional Legal Corpus · 2026 cohort</h2>
+    <div id="cards" class="grid" aria-live="polite"><p>Се вчитува контролираниот регистар…</p></div>
+
+    <h2 class="section-title">Доказна архитектура</h2>
+    <div class="architecture" aria-label="Доказна архитектура">
+      <div class="layer"><strong>1 · Source / Provenance</strong><br><span class="meta">Идентитет, издание, source pair и fingerprint.</span></div>
+      <div class="layer"><strong>2 · Legal Evidence Card</strong><br><span class="meta">Verification state, audit и независни release gates.</span></div>
+      <div class="layer"><strong>3 · Citation & Authority Engine</strong><br><span class="meta">A1–A6 authority classification; AI synthesis никогаш не е правен авторитет.</span></div>
+      <div class="layer"><strong>4 · Legal Claim Validator</strong><br><span class="meta">Claim-level source, version/date, locator, verification и provenance.</span></div>
+      <div class="layer"><strong>5 · Response Provenance</strong><br><span class="meta">Трага од извор до конкретен AI одговор, без blanket “verified”.</span></div>
+      <div class="layer"><strong>6 · Human Gate Ledger</strong><br><span class="meta">Одлуката е врзана за предмет, gate, верзија и fingerprint.</span></div>
+      <div class="layer"><strong>7 · Audit Trail / Decision History</strong><br><span class="meta">Append-only временска реконструкција без имплицитни настани.</span></div>
+    </div>
+  </main>
+
+  <footer><div class="wrap">AI Advokat · Правото, организирано. AI, под човечка контрола.</div></footer>
+
+<script type="module">
+  const escText=(v)=>v==null?"—":String(v);
+  const mkEvent={
+    source_registered:"Извор регистриран",
+    audit_opened:"Отворена правно-изворна проверка",
+    legal_source_review_completed:"Правно-изворната проверка е завршена",
+    corrected_candidate_fingerprinted:"Candidate fingerprint",
+    human_gate_decision:"Human Gate одлука",
+    public_release:"Јавна објава",
+    rag_eligibility_change:"AI/RAG gate",
+    production_corpus_write:"Production corpus write",
+    superseded:"Superseded",
+    revoked:"Revoked"
+  };
+
+  const chip=(label,kind="closed")=>{
+    const el=document.createElement("span");
+    el.className="chip "+kind;
+    el.textContent=label;
+    return el;
+  };
+
+  try{
+    const [cardsRes,historyRes]=await Promise.all([
+      fetch("/data/legal-evidence-cards.json",{cache:"no-store"}),
+      fetch("/data/audit-trail-decision-history.json",{cache:"no-store"})
+    ]);
+    if(!cardsRes.ok || !historyRes.ok) throw new Error("governance_data_unavailable");
+    const cardsData=await cardsRes.json();
+    const historyData=await historyRes.json();
+    const historyMap=new Map(historyData.subjects.map(x=>[x.subject_id,x]));
+
+    const cards=cardsData.cards || [];
+    document.getElementById("mTotal").textContent=cards.length;
+    document.getElementById("mVerified").textContent=cards.filter(x=>x.epistemic_status==="verified_current").length;
+    document.getElementById("mAuthor").textContent=cards.filter(x=>String(x.author_approval||"").startsWith("approved")).length;
+    document.getElementById("mPublic").textContent=cards.filter(x=>x.public_release===true).length;
+
+    const host=document.getElementById("cards");
+    host.replaceChildren();
+
+    for(const item of cards){
+      const article=document.createElement("article");
+      article.className="card";
+
+      const h=document.createElement("h2");
+      h.textContent=escText(item.title);
+      article.append(h);
+
+      const meta=document.createElement("div");
+      meta.className="meta";
+      meta.textContent=escText(item.source_edition)+" · "+escText(item.kind);
+      article.append(meta);
+
+      const chips=document.createElement("div");
+      chips.className="chips";
+      chips.append(
+        item.epistemic_status==="verified_current" ? chip("Правно-изворно проверено","ok") : chip("Правна проверка во тек","warn"),
+        String(item.author_approval||"").startsWith("approved") ? chip("Авторски одобрено","ok") : chip("Авторско одобрување: pending","warn"),
+        item.public_release ? chip("Public release: approved","ok") : chip("Public release: closed"),
+        item.rag_eligible ? chip("AI/RAG: approved","ok") : chip("AI/RAG: closed"),
+        item.github_merge_approved ? chip("GitHub merge: approved","ok") : chip("GitHub merge: closed"),
+        item.production_corpus_write_approved ? chip("Production write: approved","ok") : chip("Production write: closed")
+      );
+      article.append(chips);
+
+      const subject=historyMap.get(item.id);
+      if(subject?.events?.length){
+        const tl=document.createElement("div");
+        tl.className="timeline";
+        for(const e of subject.events){
+          const ev=document.createElement("div");
+          ev.className="event";
+          const b=document.createElement("b");
+          b.textContent=mkEvent[e.event_type] || escText(e.event_type);
+          const sm=document.createElement("small");
+          sm.textContent=escText(e.occurred_at)+" · "+escText(e.resulting_state);
+          ev.append(b,sm);
+          tl.append(ev);
+        }
+        article.append(tl);
+      }
+
+      host.append(article);
+    }
+  }catch(error){
+    const host=document.getElementById("cards");
+    host.replaceChildren();
+    const box=document.createElement("div");
+    box.className="error";
+    box.textContent="Governance регистарот моментално не може да се вчита. Ниту еден статус не се претпоставува.";
+    host.append(box);
+  }
+</script>
+</body>
+</html>
