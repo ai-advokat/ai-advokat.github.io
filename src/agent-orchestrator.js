@@ -58,10 +58,13 @@ export const ORCHESTRATOR_MODES = Object.freeze({
 });
 
 const ROUTE_PATTERNS = Object.freeze({
-  eu: /\b(eu|european union|eur-lex|cjeu|tfeu|teu|directive|regulation)\b/i,
-  echr: /\b(echr|ecthr|hudoc|european convention|strasbourg)\b/i,
-  common: /\b(common law|england|wales|uk law|united kingdom|us law|u\.s\.|united states|precedent|stare decisis)\b/i,
-  international: /\b(international law|treaty|convention|united nations|un\b|icc\b|icj\b|vienna convention)\b/i
+  // Avoid \b as the sole boundary mechanism: JavaScript word boundaries are not
+  // reliable for Cyrillic legal names. The patterns intentionally include both
+  // Macedonian and English forms used by the public interface.
+  eu: /(?:\b(?:eu|european union|eur-lex|cjeu|tfeu|teu|directive|regulation)\b|европска(?:та)? унија|право(?:то)? на европска(?:та)? унија|еур-лекс|суд(?:от)? на правдата на европска(?:та)? унија)/iu,
+  echr: /(?:\b(?:echr|ecthr|hudoc|european convention|strasbourg)\b|европски(?:от)? суд за човекови права|есчп|ехрч|европска(?:та)? конвенција за човекови права|худок)/iu,
+  common: /(?:\b(?:common law|england|wales|uk law|united kingdom|us law|u\.s\.|united states|precedent|stare decisis)\b|англо[- ]?саксонско право|англиско право|право(?:то)? на обединетото кралство|американско право|судски преседан)/iu,
+  international: /(?:\b(?:international law|treaty|convention|united nations|un|icc|icj|vienna convention)\b|меѓународно право|меѓународен договор|обединети нации|меѓународен суд на правдата|виенска конвенција)/iu
 });
 
 export function buildAgentPlan(question, {preferCorpus=false, explicitMode=null}={}) {
@@ -161,6 +164,16 @@ export async function runOpenAIOrchestrator(env, {plan,input,maxOutputTokens=160
 
   if(!response.ok){
     return {ok:false,error:"openai_response_error",status:response.status};
+  }
+
+  // Legal answers must never be returned from a truncated/refused/incomplete
+  // Responses API payload, even if HTTP status is 2xx.
+  if(payload?.status!=="completed"){
+    return {
+      ok:false,
+      error:"openai_incomplete_response",
+      responseStatus:typeof payload?.status==="string" ? payload.status : "unknown"
+    };
   }
 
   const text=extractOpenAIResponseText(payload);
