@@ -2,7 +2,7 @@
 
 Version: 1.0  
 Date: 2026-10-03  
-Scope: all authored legal guides, manuals, monographs and professional working materials of attorney Zoran Stojankich prepared for AI Advokat / Paragraf.mk.
+Scope: all authored legal guides, manuals, monographs, research papers, working papers and professional working materials of attorney Zoran Stojankich prepared for AI Advokat / Paragraf.mk.
 
 ## 1. Core doctrine
 
