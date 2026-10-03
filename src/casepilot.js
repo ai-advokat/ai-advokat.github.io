@@ -53,7 +53,9 @@ export function validateCasePilotClaim(claim) {
   if(!Object.values(CASEPILOT_STATUSES).includes(claim.status)) errors.push("valid_status_required");
 
   const sourceBacked=[CASEPILOT_STATUSES.CONFIRMED,CASEPILOT_STATUSES.INDICATION,CASEPILOT_STATUSES.DISPUTED];
-  if(sourceBacked.includes(claim.status) && (!claim.sourceId || !claim.page)) errors.push("source_and_page_required");
+  if(sourceBacked.includes(claim.status) && !validSourceRef({sourceId:claim.sourceId,page:claim.page})) {
+    errors.push("source_and_page_required");
+  }
 
   if(claim.status===CASEPILOT_STATUSES.CONFIRMED && claim.requiresProfessionalJudgment) {
     errors.push("confirmed_cannot_replace_professional_judgment");
@@ -100,6 +102,15 @@ export function contradiction(a,b,{meaning="",question=""}={}) {
   });
 }
 
+const VALID_LAWYER_DECISIONS=Object.freeze(["accepted","corrected","rejected"]);
+
+function completedLawyerReview(value) {
+  return value?.lockedForProfessionalUse===false
+    && VALID_LAWYER_DECISIONS.includes(value?.decision)
+    && typeof value?.decisionBy==="string" && value.decisionBy.trim().length>0
+    && typeof value?.decisionAt==="string" && value.decisionAt.trim().length>0;
+}
+
 export function validateAIConclusion(value) {
   const errors=[];
   if(!value || typeof value!=="object") return {ok:false,errors:["conclusion_required"]};
@@ -107,6 +118,12 @@ export function validateAIConclusion(value) {
   if(!value.text) errors.push("text_required");
   if(!Array.isArray(value.sources) || value.sources.length===0) errors.push("source_required");
   else value.sources.forEach((ref,index)=>{ if(!validSourceRef(ref)) errors.push(`source_${index}_requires_id_and_page`); });
+
+  if(value.lockedForProfessionalUse===false && !completedLawyerReview(value)) {
+    if(!VALID_LAWYER_DECISIONS.includes(value.decision)) errors.push("valid_lawyer_decision_required");
+    if(typeof value.decisionBy!=="string" || !value.decisionBy.trim()) errors.push("lawyer_identity_required");
+    if(typeof value.decisionAt!=="string" || !value.decisionAt.trim()) errors.push("lawyer_timestamp_required");
+  }
   return {ok:errors.length===0,errors};
 }
 
@@ -126,7 +143,7 @@ export function aiConclusion({id,text,sources=[],reviewType="lawyer_review"}={})
 
 export function approveAIConclusion(conclusion,{decision,lawyer,at}={}) {
   if(!conclusion) throw new Error("casepilot_ai_conclusion_required");
-  if(!["accepted","corrected","rejected"].includes(decision)) throw new Error("casepilot_invalid_lawyer_decision");
+  if(!VALID_LAWYER_DECISIONS.includes(decision)) throw new Error("casepilot_invalid_lawyer_decision");
   if(!lawyer || !at) throw new Error("casepilot_lawyer_and_timestamp_required");
   return Object.freeze({
     ...conclusion,
@@ -159,7 +176,7 @@ export function createCasePilotWorkspace(meta={}) {
 
 export function casePilotReadiness(workspace) {
   const conclusions=workspace?.sections?.ai_conclusion_register || [];
-  const unreviewed=conclusions.filter(c=>c.lockedForProfessionalUse || !c.decision);
+  const unreviewed=conclusions.filter(c=>!completedLawyerReview(c));
   const sourceProblems=[];
   for(const [sectionName,section] of Object.entries(workspace?.sections || {})){
     if(!Array.isArray(section)) continue;
@@ -174,7 +191,7 @@ export function casePilotReadiness(workspace) {
         if(!check.ok) sourceProblems.push({id:item?.id || null,section:sectionName,errors:check.errors});
         continue;
       }
-      if(item?.text && item?.status){
+      if(item && typeof item==="object" && ("text" in item || "status" in item || "sourceId" in item || "page" in item)){
         const check=validateCasePilotClaim(item);
         if(!check.ok) sourceProblems.push({id:item.id || null,section:sectionName,errors:check.errors});
       }

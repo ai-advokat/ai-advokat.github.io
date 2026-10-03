@@ -25,6 +25,7 @@ describe("AI Advokat CasePilot foundation", () => {
       assert.equal(validateCasePilotClaim({id:"x",text:"claim",status}).ok,false);
       assert.equal(validateCasePilotClaim({id:"x",text:"claim",status,sourceId:"D-01",page:2}).ok,true);
     }
+    assert.equal(validateCasePilotClaim({id:"x",text:"claim",status:CASEPILOT_STATUSES.CONFIRMED,sourceId:{},page:"unknown"}).ok,false);
   });
 
   test("a contradiction preserves both sources", () => {
@@ -63,11 +64,33 @@ describe("AI Advokat CasePilot foundation", () => {
     assert.equal(approved.decision,"accepted");
   });
 
-  test("readiness never auto-unlocks professional use", () => {
+  test("readiness catches incomplete claim entries instead of skipping them", () => {
+    const ws=createCasePilotWorkspace();
+    ws.sections.claims_evidence_matrix.push({id:"C-01",status:CASEPILOT_STATUSES.CONFIRMED,sourceId:"D-01",page:1});
+    const readiness=casePilotReadiness(ws);
+    assert.equal(readiness.sourceProblems.length,1);
+    assert.ok(readiness.sourceProblems[0].errors.includes("text_required"));
+  });
+
+  test("readiness never auto-unlocks professional use or accepts malformed review metadata", () => {
     const ws=createCasePilotWorkspace();
     ws.sections.ai_conclusion_register.push(aiConclusion({id:"AI-01",text:"Check attribution",sources:[{sourceId:"D-08",page:2}]}));
+    ws.sections.ai_conclusion_register.push({
+      id:"AI-02",
+      text:"Malformed reconstructed review",
+      sources:[{sourceId:"D-09",page:1}],
+      lockedForProfessionalUse:false,
+      decision:"banana",
+      decisionBy:"",
+      decisionAt:null
+    });
     const readiness=casePilotReadiness(ws);
     assert.equal(readiness.readyForProfessionalUse,false);
-    assert.equal(readiness.unreviewedAIConclusions,1);
+    assert.equal(readiness.unreviewedAIConclusions,2);
+    const malformed=readiness.sourceProblems.find(x=>x.id==="AI-02");
+    assert.ok(malformed);
+    assert.ok(malformed.errors.includes("valid_lawyer_decision_required"));
+    assert.ok(malformed.errors.includes("lawyer_identity_required"));
+    assert.ok(malformed.errors.includes("lawyer_timestamp_required"));
   });
 });
