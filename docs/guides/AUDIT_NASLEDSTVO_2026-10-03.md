@@ -2,7 +2,7 @@
 
 Date: 2026-10-03  
 Source edition: Paragraf.mk, first edition 2025  
-Status: **CORRECTED CANDIDATE — AUTHOR APPROVAL / HUMAN GATE PENDING**
+Status: **AUTHOR-APPROVED CANDIDATE — DOWNSTREAM HUMAN GATES REMAIN CLOSED**
 
 ## Scope
 
