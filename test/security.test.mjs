@@ -370,6 +370,30 @@ describe("assistant — AI safety", () => {
     assert.equal(r.body.answerProvenance.humanControl.releaseDecision, "not_authorized");
   });
 
+  test("A10h a valid citation cannot support an unrelated compound proposition in the same claim", async () => {
+    const ai = mockAI("Краток одговор: [Член 12] бара известување и секој работник секогаш добива отпремнина.");
+    const { env } = freshEnv({ ai });
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "retrieval_only_citation_guard");
+    assert.ok(!r.body.answer.includes("секогаш добива отпремнина"));
+  });
+
+  test("A10i current instrument version cannot elevate an article pending article-level review", async () => {
+    const ai = mockAI("Краток одговор: [Член 12] бара известување.");
+    const { env, raw } = freshEnv({ ai });
+    raw.prepare(
+      "UPDATE instrument_versions SET is_current=1, human_review_status='approved' WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')"
+    ).run();
+    raw.prepare(
+      "UPDATE legal_article_versions SET status='needs_version_review', human_review_status='pending' WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND article_number='12'"
+    ).run();
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "retrieval_only_claim_guard");
+    assert.equal(r.body.answerProvenance.verificationState, "pending_verification");
+  });
+
   test("A11 AI is never called when the quota reservation fails", async () => {
     const ai = mockAI("[Член 12]");
     const { env, raw } = freshEnv({ ai });
