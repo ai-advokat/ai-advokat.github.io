@@ -330,7 +330,11 @@ const CLAIM_SUPPORT_STOPWORDS = new Set([
 function supportStem(token) {
   const clean=String(token ?? "").normalize("NFKC").toLocaleLowerCase("mk").replace(/[^\p{L}\p{N}]/gu,"");
   if(clean.length<4 || CLAIM_SUPPORT_STOPWORDS.has(clean)) return null;
-  return clean.length>6 ? clean.slice(0,Math.max(5,clean.length-2)) : clean;
+
+  // Macedonian inflection and derivation can substantially change endings
+  // (e.g. "извести" / "известување"). A stable six-character lexical prefix
+  // preserves the content root while polarity/modality are checked separately.
+  return clean.length>=6 ? clean.slice(0,6) : clean;
 }
 
 function supportStems(text) {
