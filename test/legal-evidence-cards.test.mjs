@@ -21,8 +21,8 @@ describe("legal evidence cards",()=>{
     }
   });
 
-  test("LEC3 only inheritance may claim verified_current_law",()=>{
-    const verified=cards.cards.filter(x=>x.epistemic_status==="verified_current_law");
+  test("LEC3 only inheritance may claim verified_current",()=>{
+    const verified=cards.cards.filter(x=>x.epistemic_status==="verified_current");
     assert.deepEqual(verified.map(x=>x.id),["inheritance-estate-guide-2025-r1"]);
     assert.equal(verified[0].legal_source_review_date,"2026-10-03");
     for(const x of cards.cards.filter(x=>x.id!=="inheritance-estate-guide-2025-r1")){
