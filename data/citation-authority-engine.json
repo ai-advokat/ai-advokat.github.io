@@ -56,10 +56,16 @@
       "provenance"
     ],
     "recommended": [
-      "version_or_date",
       "locator"
     ],
     "high_risk_current_law_requires": [
+      "authority_class",
+      "source_identity",
+      "version_or_date",
+      "verification_state",
+      "provenance"
+    ],
+    "current_law_requires": [
       "authority_class",
       "source_identity",
       "version_or_date",
@@ -81,7 +87,8 @@
     "commentary_mislabelled_as_binding_law",
     "superseded_source_presented_as_current",
     "invented_locator",
-    "missing_verification_state_for_high_risk_claim"
+    "missing_version_or_date_for_current_law",
+    "missing_or_invalid_verification_state"
   ],
   "separate_human_gates": [
     "author_approval",
