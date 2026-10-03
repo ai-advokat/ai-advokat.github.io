@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0",
+  "engine_id": "AI_ADVOKAT_CITATION_AUTHORITY_ENGINE_v1",
+  "generated_on": "2026-10-03",
+  "doctrine": [
+    "classify_first",
+    "cite_precisely",
+    "preserve_provenance",
+    "ai_is_not_authority",
+    "fail_closed"
+  ],
+  "authority_classes": [
+    {
+      "code": "A1",
+      "label": "primary_binding_law",
+      "binding_role": "primary",
+      "may_support_current_law": true
+    },
+    {
+      "code": "A2",
+      "label": "judicial_authority",
+      "binding_role": "jurisdiction_dependent",
+      "may_support_current_law": true
+    },
+    {
+      "code": "A3",
+      "label": "official_guidance",
+      "binding_role": "official_non_legislative",
+      "may_support_current_law": true
+    },
+    {
+      "code": "A4",
+      "label": "authorial_analysis",
+      "binding_role": "commentary",
+      "may_support_current_law": false
+    },
+    {
+      "code": "A5",
+      "label": "secondary_reference",
+      "binding_role": "secondary",
+      "may_support_current_law": false
+    },
+    {
+      "code": "A6",
+      "label": "ai_synthesis",
+      "binding_role": "none",
+      "may_support_current_law": false
+    }
+  ],
+  "claim_contract": {
+    "required": [
+      "claim",
+      "authority_class",
+      "source_identity",
+      "verification_state",
+      "provenance"
+    ],
+    "recommended": [
+      "locator"
+    ],
+    "high_risk_current_law_requires": [
+      "authority_class",
+      "source_identity",
+      "version_or_date",
+      "verification_state",
+      "provenance"
+    ],
+    "current_law_requires": [
+      "authority_class",
+      "source_identity",
+      "version_or_date",
+      "verification_state",
+      "provenance"
+    ]
+  },
+  "verification_states": [
+    "verified_current",
+    "verified_historical",
+    "pending_verification",
+    "conflicted",
+    "superseded"
+  ],
+  "downgrade_rules": [
+    "missing_authority_class",
+    "missing_source_identity",
+    "current_law_supported_only_by_ai_synthesis",
+    "commentary_mislabelled_as_binding_law",
+    "superseded_source_presented_as_current",
+    "invented_locator",
+    "missing_version_or_date_for_current_law",
+    "missing_or_invalid_verification_state"
+  ],
+  "separate_human_gates": [
+    "author_approval",
+    "public_release",
+    "rag_eligibility",
+    "github_merge",
+    "production_corpus_write"
+  ]
+}

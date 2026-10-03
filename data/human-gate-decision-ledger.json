@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "ledger_id": "AI_ADVOKAT_HUMAN_GATE_DECISION_LEDGER_v1",
+  "generated_on": "2026-10-03",
+  "doctrine": [
+    "explicit_decision_only",
+    "gate_isolation",
+    "version_binding",
+    "fingerprint_binding",
+    "append_only_intent",
+    "fail_closed"
+  ],
+  "gate_types": [
+    "author_approval",
+    "github_merge",
+    "public_release",
+    "rag_eligibility",
+    "production_corpus_write"
+  ],
+  "decision_states": [
+    "pending",
+    "approved",
+    "rejected",
+    "needs_revision",
+    "revoked"
+  ],
+  "required_record_fields": [
+    "decision_id",
+    "subject_id",
+    "gate_type",
+    "decision_state",
+    "decided_at",
+    "decision_basis",
+    "artifact_version",
+    "artifact_fingerprint"
+  ],
+  "invariants": [
+    "approval_applies_only_to_named_gate",
+    "approval_applies_only_to_bound_version",
+    "approval_applies_only_to_bound_fingerprint",
+    "later_artifact_change_requires_new_decision",
+    "revocation_never_deletes_history",
+    "missing_decision_means_not_approved"
+  ],
+  "initial_records": [
+    {
+      "decision_id": "hg-2026-10-03-inheritance-author-approval",
+      "subject_id": "inheritance-estate-guide-2025-r1",
+      "gate_type": "author_approval",
+      "decision_state": "approved",
+      "decided_at": "2026-10-03",
+      "decision_basis": "Explicit author approval recorded as 'odlicno' for the upgraded inheritance candidate.",
+      "artifact_version": "LEGAL_SOURCE_UPGRADE_2026_CANDIDATE",
+      "artifact_fingerprint": {
+        "docx_sha256": "ccc2280b06d50b7ad7f2213c1a3f0bc4c3b016dd708e4a9ca05ef607cf4f3a86",
+        "pdf_sha256": "b60c8f2407026361caff7cf5de82d3cb58f6731bc215e9e1460b0e2ba580a741"
+      },
+      "implied_gates": [],
+      "notes": "This approval does not authorize GitHub merge, public release, RAG eligibility or production corpus write."
+    }
+  ]
+}

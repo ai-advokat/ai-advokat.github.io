@@ -1,0 +1,188 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-10-03",
+  "corpus_id": "AI_ADVOKAT_PROFESSIONAL_LEGAL_CORPUS_2026",
+  "contract": "AI_ADVOKAT_LEGAL_EVIDENCE_CARD_v1",
+  "doctrine": "source_to_human_gate",
+  "fields": {
+    "identity": [
+      "id",
+      "title",
+      "kind",
+      "source_edition"
+    ],
+    "provenance": [
+      "source_set",
+      "source_files",
+      "source_package"
+    ],
+    "verification": [
+      "legal_source_review_date",
+      "epistemic_status",
+      "audit_file"
+    ],
+    "authority": [
+      "source_role",
+      "author_approval"
+    ],
+    "release": [
+      "public_release",
+      "rag_eligible",
+      "github_merge_approved",
+      "production_corpus_write_approved"
+    ]
+  },
+  "cards": [
+    {
+      "id": "inheritance-estate-guide-2025-r1",
+      "title": "Водич за наследство и оставинска постапка",
+      "kind": "practical_professional_guide",
+      "source_edition": "Прво издание | 2025",
+      "source_set": "last_set_2026_10_03",
+      "epistemic_status": "verified_current",
+      "legal_source_review_date": "2026-10-03",
+      "audit_file": "docs/guides/AUDIT_NASLEDSTVO_2026-10-03.md",
+      "source_role": "author_delivered_source",
+      "author_approval": "approved_2026-10-03",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
+    },
+    {
+      "id": "last-set-real-estate-transfer",
+      "title": "Водич за промет со недвижности",
+      "kind": "real_estate",
+      "source_edition": "Прво издание | 2025",
+      "source_set": "last_set_2026_10_03",
+      "epistemic_status": "pending_verification",
+      "audit_file": "docs/guides/AUDIT_REAL_ESTATE_TRANSFER_2026-10-03.md",
+      "source_role": "author_delivered_source",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
+    },
+    {
+      "id": "last-set-cadastre-citizen",
+      "title": "Катастарски водич",
+      "kind": "cadastre",
+      "source_edition": "Второ издание | 2025",
+      "source_set": "last_set_2026_10_03",
+      "epistemic_status": "pending_verification",
+      "audit_file": "docs/guides/AUDIT_CADASTRE_CITIZEN_2026-10-03.md",
+      "source_role": "author_delivered_source",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
+    },
+    {
+      "id": "last-set-cadastre-professional",
+      "title": "Стручен водич АKN",
+      "kind": "cadastre_professional",
+      "source_edition": "Прво издание | 2025",
+      "source_set": "last_set_2026_10_03",
+      "epistemic_status": "pending_verification",
+      "audit_file": "docs/guides/AUDIT_CADASTRE_PROFESSIONAL_2026-10-03.md",
+      "source_role": "author_delivered_source",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
+    },
+    {
+      "id": "last-set-administrative-law",
+      "title": "Водич за административно право",
+      "kind": "administrative_law",
+      "source_edition": "Прво издание | 2025",
+      "source_set": "last_set_2026_10_03",
+      "epistemic_status": "pending_verification",
+      "audit_file": "docs/guides/AUDIT_ADMINISTRATIVE_LAW_2026-10-03.md",
+      "source_role": "author_delivered_source",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
+    },
+    {
+      "id": "last-set-criminal-law",
+      "title": "Водич за кривично право",
+      "kind": "criminal_law",
+      "source_edition": "Прво издание | 2025",
+      "source_set": "last_set_2026_10_03",
+      "epistemic_status": "pending_verification",
+      "audit_file": "docs/guides/AUDIT_CRIMINAL_LAW_2026-10-03.md",
+      "source_role": "author_delivered_source",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
+    },
+    {
+      "id": "last-set-tax-law",
+      "title": "Водич за даночно право",
+      "kind": "tax_law",
+      "source_edition": "Прво издание | 2025",
+      "source_set": "last_set_2026_10_03",
+      "epistemic_status": "pending_verification",
+      "audit_file": "docs/guides/AUDIT_TAX_LAW_2026-10-03.md",
+      "source_role": "author_delivered_source",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
+    },
+    {
+      "id": "last-set-civil-procedure",
+      "title": "Водич за граѓанска постапка",
+      "kind": "civil_procedure",
+      "source_edition": "Прво издание | 2025",
+      "source_set": "last_set_2026_10_03",
+      "epistemic_status": "pending_verification",
+      "audit_file": "docs/guides/AUDIT_CIVIL_PROCEDURE_2026-10-03.md",
+      "source_role": "author_delivered_source",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
+    },
+    {
+      "id": "last-set-commercial-law",
+      "title": "Водич за трговско право",
+      "kind": "commercial_law",
+      "source_edition": "Прво издание | 2025",
+      "source_set": "last_set_2026_10_03",
+      "epistemic_status": "pending_verification",
+      "audit_file": "docs/guides/AUDIT_COMMERCIAL_LAW_2026-10-03.md",
+      "source_role": "author_delivered_source",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
+    },
+    {
+      "id": "last-set-family-law",
+      "title": "Водич за семејно право",
+      "kind": "family_law",
+      "source_edition": "Прво издание | 2025",
+      "source_set": "last_set_2026_10_03",
+      "epistemic_status": "pending_verification",
+      "audit_file": "docs/guides/AUDIT_FAMILY_LAW_2026-10-03.md",
+      "source_role": "author_delivered_source",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
+    }
+  ]
+}

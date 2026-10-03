@@ -302,17 +302,173 @@ export function citedArticleNumbers(answer) {
   return found;
 }
 
+function answerClaimSegments(answer) {
+  return String(answer ?? "")
+    .normalize("NFKC")
+    .split(/\n+|(?<=[.!?])\s+(?=[\p{L}\d\[])/u)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function isMetaOnlySegment(segment) {
+  const clean=String(segment ?? "").replace(/^[-*•#\s]+/u,"").trim();
+  if(!clean) return true;
+  if(/^(?:Краток одговор|Правна основа|Примена(?:\/објаснување)?|Ограничувања(?: и што треба да се провери)?|Заклучок)\s*:?$/iu.test(clean)) return true;
+
+  // Metadata/disclaimer text is ignored only when the entire segment is a
+  // recognised disclaimer. A disclaimer prefix must never hide a later claim.
+  return /^(?:Во\s+достапниот\s+корпус\s+)?(?:нема\s+доволна\s+основа(?:\s+во\s+достапниот\s+корпус)?|нема\s+доволно\s+релевантен\s+член|потребна\s+е\s+дополнителна\s+проверка(?:\s+на\s+официјалните\s+извори)?|потребна\s+е\s+човечка\s+професионална\s+проверка|ова\s+не\s+е\s+конечен\s+индивидуален\s+правен\s+совет|ова\s+е\s+истражувачка\s+помош)[.!?]?$/iu.test(clean);
+}
+
+const CLAIM_SUPPORT_STOPWORDS = new Set([
+  "краток","одговор","правна","основа","примена","објаснување","поврзано","според","член","членот",
+  "ова","овој","оваа","овие","тоа","како","дека","кој","која","кое","кои","исто",
+  "при","под","над","пред","по","од","до","за","со","без","во","на","и","а","но","или","се","е","го","ја","ги",
+  "the","a","an","and","or","of","to","in","for","with","article","according"
+]);
+
+function supportStem(token) {
+  const clean=String(token ?? "").normalize("NFKC").toLocaleLowerCase("mk").replace(/[^\p{L}\p{N}]/gu,"");
+  if(clean.length<4 || CLAIM_SUPPORT_STOPWORDS.has(clean)) return null;
+
+  // Macedonian inflection and derivation can substantially change endings
+  // (e.g. "извести" / "известување"). A stable six-character lexical prefix
+  // preserves the content root while polarity/modality are checked separately.
+  return clean.length>=6 ? clean.slice(0,6) : clean;
+}
+
+function supportStems(text) {
+  const out=[];
+  for(const token of String(text ?? "").split(/[^\p{L}\p{N}]+/u)){
+    const stem=supportStem(token);
+    if(stem) out.push(stem);
+  }
+  return [...new Set(out)];
+}
+
+function segmentWithoutCitations(segment) {
+  return String(segment ?? "")
+    .replace(/\[(?:Член|чл\.|Article)\s*\d+(?:\s*[-–—]\s*[\p{L}]{1,3})?\]/giu," ")
+    .replace(/(?<![\p{L}])(?:член(?:от|ови|овите)?|чл\.|article)\s*\d+(?:\s*[-–—]\s*[\p{L}]{1,3})?/giu," ")
+    .replace(/^(?:Краток одговор|Правна основа|Примена(?:\/објаснување)?|Ограничувања(?: и што треба да се провери)?|Заклучок|Поврзано)\s*:\s*/iu," ")
+    .trim();
+}
+
+function legalPolaritySignature(text) {
+  const t=String(text ?? "").normalize("NFKC").toLocaleLowerCase("mk");
+  const negOb=/(?<!\p{L})(?:не\s+(?:е\s+)?долж\p{L}*|не\s+мора|не\s+треба)(?!\p{L})/u;
+  const posOb=/(?<!\p{L})(?:е\s+долж\p{L}*|мора|треба)(?!\p{L})/u;
+  const prohibition=/(?<!\p{L})(?:не\s+смее|забран\p{L}*)(?!\p{L})/u;
+  const permission=/(?<!\p{L})(?:може|дозвол\p{L}*|има\s+право)(?!\p{L})/u;
+  const denied=/(?<!\p{L})(?:не\s+може|нема\s+право)(?!\p{L})/u;
+  const absolute=/(?<!\p{L})(?:секогаш|никогаш|исклучиво|само|секој|секоја|секое|сите)(?!\p{L})/u;
+  return {
+    negatedObligation:negOb.test(t),
+    positiveObligation:posOb.test(t) && !negOb.test(t),
+    prohibition:prohibition.test(t),
+    permission:permission.test(t) && !denied.test(t),
+    deniedPermission:denied.test(t),
+    absoluteQualifier:absolute.test(t)
+  };
+}
+
+function legalPolarityCompatible(claim, source) {
+  const c=legalPolaritySignature(claim);
+  const s=legalPolaritySignature(source);
+
+  if(c.negatedObligation && s.positiveObligation && !s.negatedObligation) return false;
+  if(c.positiveObligation && s.negatedObligation && !s.positiveObligation) return false;
+  if(c.permission && s.deniedPermission && !s.permission) return false;
+  if(c.deniedPermission && s.permission && !s.deniedPermission) return false;
+  if(c.prohibition && !s.prohibition) return false;
+
+  // Absolute qualifiers materially strengthen a legal proposition. They must be
+  // present in the cited source, otherwise the answer is overclaiming.
+  if(c.absoluteQualifier && !s.absoluteQualifier) return false;
+
+  return true;
+}
+
+function claimSupport(segment, citedRefs, articleMap) {
+  const sourceText=[...citedRefs]
+    .map(ref=>articleMap.get(ref)?.text || "")
+    .join(" ");
+  const claimText=segmentWithoutCitations(segment);
+  if(!legalPolarityCompatible(claimText,sourceText)){
+    return {ok:false,unsupported:["legal_polarity_or_modality_mismatch"],ratio:0};
+  }
+
+  const sourceStems=supportStems(sourceText);
+  const claimStems=supportStems(claimText);
+  if(!claimStems.length) return {ok:true,unsupported:[]};
+
+  const unsupported=claimStems.filter(stem=>!sourceStems.some(src=>src.startsWith(stem) || stem.startsWith(src)));
+  const supported=claimStems.length-unsupported.length;
+  const ratio=supported/claimStems.length;
+
+  // Conservative source-entailment proxy: reject when multiple substantive
+  // concepts are absent, or when most content words have no source support.
+  return {
+    ok: unsupported.length<2 && ratio>=0.5,
+    unsupported,
+    ratio
+  };
+}
+
 /**
- * Accepts an AI answer only if it cites at least one article and every article it
- * mentions is one of the retrieved articles. Returns {ok, unexpected}.
+ * Accepts an AI answer only if:
+ * 1) it cites at least one retrieved article;
+ * 2) every cited article is inside the retrieved corpus;
+ * 3) every substantive claim segment carries its own retrieved-article citation; and
+ * 4) each extracted claim is lexically grounded in the text of its cited article(s).
+ *
+ * The final check is deliberately conservative: it is not a legal-entailment model.
+ * It exists to prevent a valid citation from laundering unrelated propositions.
  */
 export function validateAnswerCitations(answer, articles) {
-  const allowed = new Set(
-    articles.flatMap((a) => [a.articleNumberNormalized, a.articleNumber]).filter(Boolean).map(normalizeArticleRef)
-  );
-  const cited = citedArticleNumbers(answer);
-  const unexpected = [...cited].filter((n) => !allowed.has(n));
-  if (!cited.size) return { ok: false, reason: "no_citations", unexpected: [] };
-  if (unexpected.length) return { ok: false, reason: "citation_outside_retrieved_corpus", unexpected };
-  return { ok: true, unexpected: [] };
+  const articleMap=new Map();
+  for(const a of articles){
+    for(const ref of [a.articleNumberNormalized,a.articleNumber].filter(Boolean).map(normalizeArticleRef)){
+      articleMap.set(ref,a);
+    }
+  }
+  const allowed=new Set(articleMap.keys());
+  const cited=citedArticleNumbers(answer);
+  const unexpected=[...cited].filter((n)=>!allowed.has(n));
+  if(!cited.size) return {ok:false,reason:"no_citations",unexpected:[],cited:[],claims:[]};
+  if(unexpected.length) return {ok:false,reason:"citation_outside_retrieved_corpus",unexpected,cited:[...cited],claims:[]};
+
+  const claims=[];
+  const uncovered=[];
+  const unsupported=[];
+
+  for(const segment of answerClaimSegments(answer)){
+    if(isMetaOnlySegment(segment)) continue;
+    const refs=citedArticleNumbers(segment);
+    if(!refs.size){
+      uncovered.push(segment);
+      continue;
+    }
+    const support=claimSupport(segment,refs,articleMap);
+    const claim={text:segment,cited:[...refs],support};
+    claims.push(claim);
+    if(!support.ok) unsupported.push(claim);
+  }
+
+  if(uncovered.length){
+    return {ok:false,reason:"uncited_claim_segment",unexpected:[],cited:[...cited],uncovered:uncovered.slice(0,5),claims};
+  }
+  if(unsupported.length){
+    return {
+      ok:false,
+      reason:"claim_not_grounded_in_cited_source",
+      unexpected:[],
+      cited:[...cited],
+      uncovered:[],
+      unsupported:unsupported.slice(0,5),
+      claims
+    };
+  }
+
+  return {ok:true,unexpected:[],cited:[...cited],uncovered:[],unsupported:[],claims};
 }

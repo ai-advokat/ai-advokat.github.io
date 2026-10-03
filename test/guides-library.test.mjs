@@ -44,7 +44,8 @@ describe("Zoran guides library governance",()=>{
       assert.equal(r.source_format,"docx");
       assert.equal(r.public_pdf,null);
       assert.equal(r.ai_use,"reference_only_until_human_gate");
-      assert.match(r.source_package_sha256,/^[0-9a-f]{64}$/);
+      assert.equal(r.source_package,"Pravni_vodichi_38_63_FULL_WORD_ALL.zip");
+      assert.equal(r.source_package_sha256,"5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172");
     }
   });
   test("G8 Guide 53 remains blocked on the silence-of-administration deadline correction",()=>{
