@@ -33,4 +33,14 @@ describe("professional publication governance",()=>{
     assert.match(x.candidate_docx_sha256,/^[0-9a-f]{64}$/);
     assert.match(x.candidate_pdf_sha256,/^[0-9a-f]{64}$/);
   });
+  test("PP6 new last-set batch is registered as ten Human-Gated guides",()=>{
+    assert.equal(g.last_set_2026_10_03.unique_guides,10);
+    const lastSet=g.pipeline.filter(x=>x.source_set==="last_set_2026_10_03");
+    assert.equal(lastSet.length,10);
+    for(const x of lastSet){
+      assert.equal(x.author_approval,"pending");
+      assert.equal(x.public_release,false);
+      assert.equal(x.rag_eligible,false);
+    }
+  });
 });
