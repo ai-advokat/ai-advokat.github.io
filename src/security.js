@@ -302,9 +302,29 @@ export function citedArticleNumbers(answer) {
   return found;
 }
 
+function answerClaimSegments(answer) {
+  return String(answer ?? "")
+    .normalize("NFKC")
+    .split(/\n+|(?<=[.!?])\s+(?=[\p{L}\d\[])/u)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function isMetaOnlySegment(segment) {
+  const clean=String(segment ?? "").replace(/^[-*•#\s]+/u,"").trim();
+  if(!clean) return true;
+  if(/^(?:Краток одговор|Правна основа|Примена(?:\/објаснување)?|Ограничувања(?: и што треба да се провери)?|Заклучок)\s*:?$/iu.test(clean)) return true;
+  return /(?:нема доволна основа|нема доволно релевантен|потребна е дополнителна проверка|потребна е човечка професионална проверка|не е конечен индивидуален правен совет|истражувачка помош)/iu.test(clean)
+    && !/(?:има право|нема право|е должен|мора|се забранува|се дозволува|предвидува|уредува|рок|казна|обврска)/iu.test(clean);
+}
+
 /**
- * Accepts an AI answer only if it cites at least one article and every article it
- * mentions is one of the retrieved articles. Returns {ok, unexpected}.
+ * Accepts an AI answer only if:
+ * 1) it cites at least one retrieved article;
+ * 2) every cited article is inside the retrieved corpus; and
+ * 3) every substantive answer segment carries its own retrieved-article citation.
+ *
+ * This prevents one valid citation from laundering additional unsupported legal claims.
  */
 export function validateAnswerCitations(answer, articles) {
   const allowed = new Set(
@@ -312,7 +332,22 @@ export function validateAnswerCitations(answer, articles) {
   );
   const cited = citedArticleNumbers(answer);
   const unexpected = [...cited].filter((n) => !allowed.has(n));
-  if (!cited.size) return { ok: false, reason: "no_citations", unexpected: [] };
-  if (unexpected.length) return { ok: false, reason: "citation_outside_retrieved_corpus", unexpected };
-  return { ok: true, unexpected: [] };
+  if (!cited.size) return { ok: false, reason: "no_citations", unexpected: [], cited: [] };
+  if (unexpected.length) return { ok: false, reason: "citation_outside_retrieved_corpus", unexpected, cited: [...cited] };
+
+  const uncovered=answerClaimSegments(answer)
+    .filter((segment)=>!isMetaOnlySegment(segment))
+    .filter((segment)=>citedArticleNumbers(segment).size===0);
+
+  if(uncovered.length){
+    return {
+      ok:false,
+      reason:"uncited_claim_segment",
+      unexpected:[],
+      cited:[...cited],
+      uncovered:uncovered.slice(0,5)
+    };
+  }
+
+  return { ok: true, unexpected: [], cited: [...cited], uncovered: [] };
 }
