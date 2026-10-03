@@ -8,8 +8,19 @@ on:
       - "membership.html"
       - "scholar/**"
       - "guides/**"
+      - "professional-library/**"
       - "data/guides.json"
+      - "data/professional-library.json"
       - "docs/guides/**"
+      - "docs/professional-library/**"
+      - "docs/standards/**"
+      - "data/publication-governance.json"
+      - "data/professional-legal-corpus-2026.json"
+      - "data/legal-evidence-cards.json"
+      - "data/citation-authority-engine.json"
+      - "data/response-provenance-contract.json"
+      - "data/human-gate-decision-ledger.json"
+      - "data/audit-trail-decision-history.json"
       - "*.html"
       - "assets/**"
       - "sitemap.*"
@@ -38,7 +49,7 @@ jobs:
         with:
           node-version: "22"
       - name: Worker syntax
-        run: node --check src/index.js && node --check src/security.js && node --check src/corpus-versions.js && node --check src/agent-orchestrator.js && node --check src/casepilot.js
+        run: node --check src/index.js && node --check src/security.js && node --check src/legal-claim-validator.js && node --check src/corpus-versions.js && node --check src/agent-orchestrator.js && node --check src/casepilot.js
       - name: Structural verification
         run: npm run verify
       - name: GPT orchestrator foundation tests
@@ -47,6 +58,26 @@ jobs:
         run: npm run test:casepilot
       - name: Zoran practical guides governance tests
         run: npm run test:guides
+      - name: Professional Library governance tests
+        run: npm run test:professional-library
+      - name: Professional publication governance tests
+        run: npm run test:publication-governance
+      - name: Professional Legal Corpus 2026 tests
+        run: npm run test:professional-legal-corpus
+      - name: Legal Evidence Card governance tests
+        run: npm run test:legal-evidence-cards
+      - name: Citation and Authority Engine tests
+        run: npm run test:citation-authority-engine
+      - name: Legal Claim Validator tests
+        run: npm run test:legal-claim-validator
+      - name: Response Provenance Contract tests
+        run: npm run test:response-provenance
+      - name: Human Gate Decision Ledger tests
+        run: npm run test:human-gate-ledger
+      - name: Audit Trail Decision History tests
+        run: npm run test:audit-trail-history
+      - name: Legal Governance Dashboard tests
+        run: npm run test:governance-dashboard
       - name: Security, quota, routing and truth-labelling tests
         run: npm run test:security
       - name: Legal parser regression tests
