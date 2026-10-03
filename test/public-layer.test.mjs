@@ -10,7 +10,7 @@ import { loadWorker } from "./load-worker.mjs";
 const { workerModule, security } = await loadWorker();
 const read = (p) => fs.readFileSync(p, "utf8");
 const PAGES = [
-  "index.html", "membership.html", "legal-notice.html", "privacy-policy.html", "ai-use-policy.html", "offline.html",
+  "index.html", "membership.html", "legal-notice.html", "privacy-policy.html", "ai-use-policy.html", "offline.html", "guides/index.html",
   "scholar/index.html", "scholar/sindzir/index.html", "scholar/electronic-ai-evidence/index.html",
   "scholar/mobile-phone-privilege/index.html", "scholar/ai-legal-practice-judiciary/index.html"
 ];
