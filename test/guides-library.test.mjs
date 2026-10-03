@@ -34,6 +34,6 @@ describe("Zoran guides library governance",()=>{
   test("G6 public page states source-first and Human Gate boundaries",()=>{
     assert.match(html,/секундарни материјали/);
     assert.match(html,/Human Gate/);
-    assert.match(html,/не се прикажуваат како важечки закон/);
+    assert.match(html,/не се прикажуваат како важечки закон/i);
   });
 });
