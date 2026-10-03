@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v1",
+  "generated_on": "2026-10-03",
+  "chain": [
+    "source",
+    "legal_claim",
+    "ai_response",
+    "human_control"
+  ],
+  "doctrine": [
+    "source_first",
+    "claim_level_provenance",
+    "authority_visible",
+    "ai_synthesis_separate",
+    "human_gate_final"
+  ],
+  "response_labels": [
+    "verified_current_law",
+    "judicial_or_official_information",
+    "authorial_analysis",
+    "secondary_reference",
+    "ai_synthesis",
+    "unverified"
+  ],
+  "required_response_fields": [
+    "response_id",
+    "generated_at",
+    "claims",
+    "overall_verification_state",
+    "human_control"
+  ],
+  "claim_fields": [
+    "claim_id",
+    "text",
+    "claim_type",
+    "authority_class",
+    "source_identity",
+    "source_version_or_date",
+    "locator",
+    "verification_state",
+    "provenance",
+    "response_label"
+  ],
+  "human_control": {
+    "required": true,
+    "fields": [
+      "human_review_required",
+      "human_review_state",
+      "release_decision"
+    ],
+    "allowed_review_states": [
+      "not_reviewed",
+      "reviewed",
+      "approved",
+      "rejected",
+      "needs_revision"
+    ],
+    "allowed_release_decisions": [
+      "not_authorized",
+      "internal_only",
+      "authorized_for_release"
+    ]
+  },
+  "fail_closed_rules": [
+    "claim_without_source_is_unverified",
+    "ai_synthesis_cannot_be_source_identity",
+    "current_law_claim_requires_verified_current",
+    "high_risk_claim_requires_version_and_locator",
+    "human_review_missing_blocks_release",
+    "mixed_verification_response_cannot_be_overall_verified",
+    "superseded_source_cannot_support_current_law"
+  ]
+}

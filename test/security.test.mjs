@@ -350,6 +350,68 @@ describe("assistant — AI safety", () => {
     assert.equal(r.body.mode, "workers_ai_source_backed");
   });
 
+  test("A10f one valid citation cannot launder an uncited legal claim", async () => {
+    const ai = mockAI("Краток одговор: [Член 12] бара известување. Работникот има право на отпремнина во секој случај.");
+    const { env } = freshEnv({ ai });
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "retrieval_only_citation_guard");
+    assert.ok(!r.body.answer.includes("отпремнина во секој случај"));
+  });
+
+  test("A10g accepted AI answers expose fail-closed provenance metadata", async () => {
+    const ai = mockAI("Краток одговор: [Член 12] бара известување.");
+    const { env } = freshEnv({ ai });
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "workers_ai_source_backed");
+    assert.equal(r.body.answerProvenance.contract, "AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v1");
+    assert.equal(r.body.answerProvenance.humanControl.reviewState, "not_reviewed");
+    assert.equal(r.body.answerProvenance.humanControl.releaseDecision, "not_authorized");
+  });
+
+  test("A10h a valid citation cannot support an unrelated compound proposition in the same claim", async () => {
+    const ai = mockAI("Краток одговор: [Член 12] бара известување и секој работник секогаш добива отпремнина.");
+    const { env } = freshEnv({ ai });
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "retrieval_only_citation_guard");
+    assert.ok(!r.body.answer.includes("секогаш добива отпремнина"));
+  });
+
+  test("A10i current instrument version cannot elevate an article pending article-level review", async () => {
+    const ai = mockAI("Краток одговор: [Член 12] бара известување.");
+    const { env, raw } = freshEnv({ ai });
+    raw.prepare(
+      "UPDATE instrument_versions SET is_current=1, human_review_status='approved' WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')"
+    ).run();
+    raw.prepare(
+      "UPDATE legal_article_versions SET status='needs_version_review', human_review_status='pending' WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND article_number='12'"
+    ).run();
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "retrieval_only_claim_guard");
+    assert.equal(r.body.answerProvenance.verificationState, "pending_verification");
+  });
+
+  test("A10j negation cannot reverse a cited legal duty", async () => {
+    const ai = mockAI("[Член 12] Работодавачот не е должен да го извести работникот.");
+    const { env } = freshEnv({ ai });
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "retrieval_only_citation_guard");
+    assert.ok(!r.body.answer.includes("не е должен да го извести"));
+  });
+
+  test("A10k disclaimer prefix cannot hide an uncited substantive claim", async () => {
+    const ai = mockAI("[Член 12] Работодавачот е должен да го извести работникот. Потребна е дополнителна проверка, но работникот секогаш добива отпремнина.");
+    const { env } = freshEnv({ ai });
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
+    assert.equal(r.status, 200);
+    assert.equal(r.body.mode, "retrieval_only_citation_guard");
+    assert.ok(!r.body.answer.includes("секогаш добива отпремнина"));
+  });
+
   test("A11 AI is never called when the quota reservation fails", async () => {
     const ai = mockAI("[Член 12]");
     const { env, raw } = freshEnv({ ai });
