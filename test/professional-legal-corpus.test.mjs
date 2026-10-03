@@ -31,7 +31,7 @@ describe("AI Advokat Professional Legal Corpus 2026",()=>{
     const cohort=c.cohorts.find(x=>x.id==="last_set_2026_10_03");
     const approved=cohort.items.filter(x=>x.lane==="author_approved_candidate");
     assert.deepEqual(approved.map(x=>x.id),["inheritance-estate-guide-2025-r1"]);
-    assert.equal(approved[0].epistemic_status,"verified_current_law");
+    assert.equal(approved[0].epistemic_status,"verified_current");
     assert.equal(approved[0].verification_date,"2026-10-03");
   });
 
@@ -59,7 +59,7 @@ describe("AI Advokat Professional Legal Corpus 2026",()=>{
   });
 
   test("PLC7 epistemic labels distinguish current law from analysis and unverified content",()=>{
-    for(const x of ["verified_current_law","historical_source","authorial_analysis","pending_verification","superseded"]) assert.ok(c.epistemic_labels.includes(x));
+    for(const x of ["verified_current","verified_historical","authorial_analysis","pending_verification","conflicted","superseded"]) assert.ok(c.epistemic_labels.includes(x));
     assert.match(s,/what the source says/i);
     assert.match(s,/what the author analyses or concludes/i);
     assert.match(s,/what AI generated or organised/i);
