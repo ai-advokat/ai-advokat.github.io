@@ -74,7 +74,138 @@
       "author_approval": "pending",
       "public_release": false,
       "rag_eligible": false,
-      "notes": "Full legal/source upgrade completed. Corrected inheritance orders, forced-heir rules, testament forms/revocation, notary workflow, renunciation, debt liability, cadastre wording, inheritance tax, international succession, sanctions and digital/company-asset caveats. Candidate remains Human-Gated."
+      "notes": "Confirmed as one of the NEW last-set guides. Full legal/source upgrade completed; corrected candidate remains author/Human-Gated.",
+      "source_set": "last_set_2026_10_03"
+    },
+    {
+      "id": "last-set-real-estate-transfer",
+      "kind": "real_estate",
+      "title": "Водич за промет со недвижности",
+      "status": "revision_required",
+      "source_set": "last_set_2026_10_03",
+      "source_docx_sha256": "f93088534c938b57fc62d0aad082898500b48556b6cb11a8e09f324099085dea",
+      "source_pdf_sha256": "f0819dcad3aba318d12484ab538c4cddd0382084102549a1165d3ab16c2247b3",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "notes": "Notary-law and property-tax source layer needs current-law correction before publication."
+    },
+    {
+      "id": "last-set-cadastre-citizen",
+      "kind": "cadastre",
+      "title": "Катастарски водич",
+      "status": "legal_source_review_required",
+      "source_set": "last_set_2026_10_03",
+      "source_docx_sha256": "02540705ad7c7c76860643b21082daf63ddb61869df16273bd99039860f4cc2a",
+      "source_pdf_sha256": "a01f735f51ca91c8fd75450fa88934731f21fc7250d311d681530d6690cf268d",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "notes": "AKN/cadastre source list must be reconciled to the current consolidated cadastral legislation and current fees/procedures."
+    },
+    {
+      "id": "last-set-cadastre-professional",
+      "kind": "cadastre_professional",
+      "title": "Стручен водич АKN",
+      "status": "revision_required",
+      "source_set": "last_set_2026_10_03",
+      "source_docx_sha256": "1ee023857b9415817f109db60f417489d477d7860de81276750a12720003016c",
+      "source_pdf_sha256": "0a97bb5c6b12363b5a7f1ced1542582dad73503da191ec2458b5224799ee08d3",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "notes": "Source list includes superseded Notary and Enforcement Acts; professional deadlines, sanctions and filing rules require article-level verification."
+    },
+    {
+      "id": "last-set-administrative-law",
+      "kind": "administrative_law",
+      "title": "Водич за административно право",
+      "status": "revision_required",
+      "source_set": "last_set_2026_10_03",
+      "source_docx_sha256": "e0f8f29facddf4b63ae2ba7cd109a510f327252bf6f3bad05b8c52b1a1e2356d",
+      "source_pdf_sha256": "305b5b2af6e33050a91c358073408496b218f922c7bfa7734d1b81f82bb4f481",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "notes": "P1: cites the repealed 2006 Administrative Disputes Act instead of the current 96/2019 Act; silence-of-administration content must reflect U.br.148/2024."
+    },
+    {
+      "id": "last-set-criminal-law",
+      "kind": "criminal_law",
+      "title": "Водич за кривично право",
+      "status": "revision_required",
+      "source_set": "last_set_2026_10_03",
+      "source_docx_sha256": "cace6d28a3fa917a46b9b7e20974ddf431397f9f09c2270d1c4c9b49039d47f1",
+      "source_pdf_sha256": "bb29197294c80581a39b6466c421f255a2b3a9c3e995127e12fb8e4fd61b75fc",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "notes": "P1: child-justice source terminology is outdated; current Law on Justice for Children (66/2024, amended 55/2025) must replace legacy juvenile-justice references."
+    },
+    {
+      "id": "last-set-tax-law",
+      "kind": "tax_law",
+      "title": "Водич за даночно право",
+      "status": "legal_source_review_required",
+      "source_set": "last_set_2026_10_03",
+      "source_docx_sha256": "0dd052b4975c86a99c6c9145ec6ee53929fb259801c0a7d4739aaf0a07d8897a",
+      "source_pdf_sha256": "dcf63b6bd04a24251983b0c2c00139687622b166be45291604ef4bf244f039b6",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "notes": "Core 10% income/profit tax and VAT 2,000,000 denar threshold are source-supported, but all annual allowances, capital-gain exceptions, contribution rates, sanctions and filing deadlines require 2026 verification."
+    },
+    {
+      "id": "last-set-civil-procedure",
+      "kind": "civil_procedure",
+      "title": "Водич за граѓанска постапка",
+      "status": "revision_required",
+      "source_set": "last_set_2026_10_03",
+      "source_docx_sha256": "7b42fd8225305f9e0be3de2c54a30d4cb08e3c1466b086f15165ff6ec06edd71",
+      "source_pdf_sha256": "16aa946b028be3d47d8cb2cf9ed15d8656cdfee9fe2bd76b3b6a2ace53f9ced1",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "notes": "P1: source layer cites obsolete Enforcement Act 35/2005 and old free-legal-aid regime; replace with Enforcement Act 72/2016 (as amended) and BPP 101/2019 + 194/2024."
+    },
+    {
+      "id": "last-set-commercial-law",
+      "kind": "commercial_law",
+      "title": "Водич за трговско право",
+      "status": "legal_source_review_required",
+      "source_set": "last_set_2026_10_03",
+      "source_docx_sha256": "49329ab1fb7cd83d5446c71910a465a2d29d1d326a3af52a457811d71d864238",
+      "source_pdf_sha256": "c516dc2d019f0be93e6ad589a32337a5059cb0a0588ed655910798bc719e0955",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "notes": "Numerous fixed capital thresholds, voting majorities, audit thresholds, insolvency triggers and sanctions require article-level verification against the current company/insolvency/accounting framework."
+    },
+    {
+      "id": "last-set-family-law",
+      "kind": "family_law",
+      "title": "Водич за семејно право",
+      "status": "legal_source_review_required",
+      "source_set": "last_set_2026_10_03",
+      "source_docx_sha256": "b0da8df1460b7f6b89174b7de82cecc17f87a02a4190489adbdc60416d122d72",
+      "source_pdf_sha256": "f8a3d39070f745d0c2543f63b90a54b1296da90ee8bcef33a887de7b294ff8ca",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "notes": "Family-law source reflects amendment 192/2025; related domestic-violence legislation also has a 39/2025 amendment and should be harmonised throughout before publication."
     }
-  ]
+  ],
+  "last_set_2026_10_03": {
+    "source_packages": [
+      "files (3).zip",
+      "files (4).zip",
+      "files (5).zip",
+      "files (6).zip",
+      "files (7).zip",
+      "files (8).zip",
+      "files (9).zip"
+    ],
+    "unique_guides": 10,
+    "note": "Confirmed by author as NEW guides from the last set. Inheritance guide is one of these ten and already has a corrected candidate; the remaining nine enter legal/source review."
+  }
 }
