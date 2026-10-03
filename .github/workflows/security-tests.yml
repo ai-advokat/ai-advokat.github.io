@@ -71,6 +71,8 @@ jobs:
         run: npm run test:human-gate-ledger
       - name: Audit Trail Decision History tests
         run: npm run test:audit-trail-history
+      - name: Legal Governance Dashboard tests
+        run: npm run test:governance-dashboard
       - name: Security, quota, routing and truth-labelling tests
         run: npm run test:security
       - name: Legal parser regression tests
