@@ -62,22 +62,60 @@ export function validateCasePilotClaim(claim) {
   return {ok:errors.length===0,errors};
 }
 
+function validSourceRef(ref) {
+  return !!ref
+    && typeof ref==="object"
+    && typeof ref.sourceId==="string"
+    && ref.sourceId.trim().length>0
+    && Number.isInteger(ref.page)
+    && ref.page>0;
+}
+
+function snapshotSourceRef(ref) {
+  if(!validSourceRef(ref)) throw new Error("casepilot_complete_source_reference_required");
+  return Object.freeze({sourceId:ref.sourceId.trim(),page:ref.page});
+}
+
+export function validateContradiction(value) {
+  const errors=[];
+  if(!value || typeof value!=="object") return {ok:false,errors:["contradiction_required"]};
+  for(const side of ["left","right"]){
+    const v=value[side];
+    if(!v || typeof v.text!=="string" || !v.text.trim()) errors.push(`${side}_text_required`);
+    if(!validSourceRef(v)) errors.push(`${side}_source_and_page_required`);
+  }
+  return {ok:errors.length===0,errors};
+}
+
 export function contradiction(a,b,{meaning="",question=""}={}) {
-  if(!a?.sourceId || !b?.sourceId) throw new Error("casepilot_contradiction_sources_required");
+  const candidate={left:a,right:b};
+  const check=validateContradiction(candidate);
+  if(!check.ok) throw new Error(`casepilot_invalid_contradiction:${check.errors.join(",")}`);
   return Object.freeze({
-    left:{text:a.text,sourceId:a.sourceId,page:a.page || null},
-    right:{text:b.text,sourceId:b.sourceId,page:b.page || null},
+    left:Object.freeze({text:a.text.trim(),...snapshotSourceRef(a)}),
+    right:Object.freeze({text:b.text.trim(),...snapshotSourceRef(b)}),
     meaning,
     question,
     status:CASEPILOT_STATUSES.DISPUTED
   });
 }
 
+export function validateAIConclusion(value) {
+  const errors=[];
+  if(!value || typeof value!=="object") return {ok:false,errors:["conclusion_required"]};
+  if(!value.id) errors.push("id_required");
+  if(!value.text) errors.push("text_required");
+  if(!Array.isArray(value.sources) || value.sources.length===0) errors.push("source_required");
+  else value.sources.forEach((ref,index)=>{ if(!validSourceRef(ref)) errors.push(`source_${index}_requires_id_and_page`); });
+  return {ok:errors.length===0,errors};
+}
+
 export function aiConclusion({id,text,sources=[],reviewType="lawyer_review"}={}) {
-  if(!id || !text) throw new Error("casepilot_ai_conclusion_fields_required");
-  if(!Array.isArray(sources) || sources.length===0) throw new Error("casepilot_ai_conclusion_source_required");
+  const check=validateAIConclusion({id,text,sources});
+  if(!check.ok) throw new Error(`casepilot_invalid_ai_conclusion:${check.errors.join(",")}`);
+  const sourceSnapshot=Object.freeze(sources.map(snapshotSourceRef));
   return Object.freeze({
-    id,text,sources,
+    id,text,sources:sourceSnapshot,
     reviewType,
     decision:null,
     decisionBy:null,
@@ -123,12 +161,22 @@ export function casePilotReadiness(workspace) {
   const conclusions=workspace?.sections?.ai_conclusion_register || [];
   const unreviewed=conclusions.filter(c=>c.lockedForProfessionalUse || !c.decision);
   const sourceProblems=[];
-  for(const section of Object.values(workspace?.sections || {})){
+  for(const [sectionName,section] of Object.entries(workspace?.sections || {})){
     if(!Array.isArray(section)) continue;
     for(const item of section){
+      if(sectionName==="ai_conclusion_register"){
+        const check=validateAIConclusion(item);
+        if(!check.ok) sourceProblems.push({id:item?.id || null,section:sectionName,errors:check.errors});
+        continue;
+      }
+      if(sectionName==="contradictions_matrix"){
+        const check=validateContradiction(item);
+        if(!check.ok) sourceProblems.push({id:item?.id || null,section:sectionName,errors:check.errors});
+        continue;
+      }
       if(item?.text && item?.status){
         const check=validateCasePilotClaim(item);
-        if(!check.ok) sourceProblems.push({id:item.id || null,errors:check.errors});
+        if(!check.ok) sourceProblems.push({id:item.id || null,section:sectionName,errors:check.errors});
       }
     }
   }
