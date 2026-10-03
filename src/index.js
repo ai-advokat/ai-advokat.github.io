@@ -17,6 +17,7 @@ import {
   validateAnswerCitations,
   verifyTurnstile
 } from "./security.js";
+import { validateLegalClaim } from "./legal-claim-validator.js";
 import {
   VERSION_ERROR_MESSAGES,
   parseQueryDate,
@@ -1442,11 +1443,39 @@ async function handleAssistant(request, env, url) {
       }else{
         const check=validateAnswerCitations(candidate,articles);
         if(check.ok){
-          answer=candidate;
-          answerMode="workers_ai_source_backed";
+          const citedSet=new Set(check.cited || []);
+          const verificationState=
+            versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
+              ? "verified_current"
+              : (!versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
+                  ? "verified_historical"
+                  : "pending_verification");
+          const claimType=versionInfo.isCurrent ? "current_law" : "historical_law";
+          const versionAnchor=version?.version_label || null;
+          const claimChecks=articles
+            .filter(a=>citedSet.has(String(a.articleNumberNormalized || a.articleNumber || "").toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"")))
+            .map(a=>validateLegalClaim({
+              claim_type:claimType,
+              risk:"high",
+              authority_class:"A1",
+              source_identity:a.sourceUrl || instrument.title,
+              version_or_date:versionAnchor,
+              locator:`Article ${a.articleNumber}`,
+              verification_state:verificationState,
+              provenance:`${a.sourceUrl || instrument.canonical_key}#article-${a.articleNumber}`
+            }));
+          const failedClaim=claimChecks.find(x=>x.decision!=="accept");
+          if(!failedClaim){
+            answer=candidate;
+            answerMode="workers_ai_source_backed";
+          }else{
+            aiError=`claim_guard_rejected:${failedClaim.reasons.join(",")}`;
+            console.warn("assistant_claim_guard_rejected",failedClaim.reasons.join(","));
+            answerMode="retrieval_only_claim_guard";
+          }
         }else{
           aiError=`citation_guard_rejected:${check.reason}`;
-          console.warn("assistant_citation_guard_rejected",check.reason,check.unexpected.slice(0,5).join(","));
+          console.warn("assistant_citation_guard_rejected",check.reason,(check.unexpected || []).slice(0,5).join(","));
           answerMode="retrieval_only_citation_guard";
         }
       }
@@ -1469,6 +1498,22 @@ async function handleAssistant(request, env, url) {
     versionBasis:retrieval.versionBasis || null,
     answer,
     legalStatusWarning:warning,
+    answerProvenance:{
+      contract:"AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v1",
+      runtimeValidation:"claim_level_citation_and_authority_v1",
+      sourceVersionOrDate:version?.version_label || null,
+      verificationState:
+        versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
+          ? "verified_current"
+          : (!versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
+              ? "verified_historical"
+              : "pending_verification"),
+      humanControl:{
+        reviewRequired:true,
+        reviewState:"not_reviewed",
+        releaseDecision:"not_authorized"
+      }
+    },
     citations:articles.map(a=>({
       articleNumber:a.articleNumber,
       heading:a.heading,
