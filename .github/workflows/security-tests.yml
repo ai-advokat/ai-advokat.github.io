@@ -17,6 +17,7 @@ on:
       - "data/citation-authority-engine.json"
       - "data/response-provenance-contract.json"
       - "data/human-gate-decision-ledger.json"
+      - "data/audit-trail-decision-history.json"
       - "*.html"
       - "assets/**"
       - "sitemap.*"
@@ -68,6 +69,8 @@ jobs:
         run: npm run test:response-provenance
       - name: Human Gate Decision Ledger tests
         run: npm run test:human-gate-ledger
+      - name: Audit Trail Decision History tests
+        run: npm run test:audit-trail-history
       - name: Security, quota, routing and truth-labelling tests
         run: npm run test:security
       - name: Legal parser regression tests
