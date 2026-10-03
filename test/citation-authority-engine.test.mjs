@@ -4,6 +4,8 @@ import fs from "node:fs";
 
 const e=JSON.parse(fs.readFileSync("data/citation-authority-engine.json","utf8"));
 const p=fs.readFileSync("docs/standards/AI_ADVOKAT_CITATION_AUTHORITY_ENGINE_v1.md","utf8");
+const corpus=JSON.parse(fs.readFileSync("data/professional-legal-corpus-2026.json","utf8"));
+const cards=JSON.parse(fs.readFileSync("data/legal-evidence-cards.json","utf8"));
 
 describe("Citation & Authority Engine",()=>{
   test("CAE1 authority taxonomy is complete and unique",()=>{
@@ -33,9 +35,9 @@ describe("Citation & Authority Engine",()=>{
     }
   });
 
-  test("CAE4 high-risk current-law claims require verification and provenance",()=>{
+  test("CAE4 every current-law claim requires a temporal anchor",()=>{
     for(const k of ["authority_class","source_identity","version_or_date","verification_state","provenance"]){
-      assert.ok(e.claim_contract.high_risk_current_law_requires.includes(k));
+      assert.ok(e.claim_contract.current_law_requires.includes(k));
     }
   });
 
@@ -47,11 +49,18 @@ describe("Citation & Authority Engine",()=>{
       "commentary_mislabelled_as_binding_law",
       "superseded_source_presented_as_current",
       "invented_locator",
-      "missing_verification_state_for_high_risk_claim"
+      "missing_version_or_date_for_current_law",
+      "missing_or_invalid_verification_state"
     ]) assert.ok(e.downgrade_rules.includes(k));
   });
 
-  test("CAE6 human gates remain outside citation classification",()=>{
+  test("CAE6 verification enum is shared across corpus and evidence cards",()=>{
+    const allowed=new Set(e.verification_states);
+    for(const label of corpus.epistemic_labels) assert.ok(allowed.has(label),`Corpus label not in engine enum: ${label}`);
+    for(const card of cards.cards) assert.ok(allowed.has(card.epistemic_status),`Card state not in engine enum: ${card.epistemic_status}`);
+  });
+
+  test("CAE7 human gates remain outside citation classification",()=>{
     assert.deepEqual(e.separate_human_gates,[
       "author_approval","public_release","rag_eligibility","github_merge","production_corpus_write"
     ]);
