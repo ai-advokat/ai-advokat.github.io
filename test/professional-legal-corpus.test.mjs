@@ -58,8 +58,10 @@ describe("AI Advokat Professional Legal Corpus 2026",()=>{
     }
   });
 
-  test("PLC7 epistemic labels distinguish current law from analysis and unverified content",()=>{
-    for(const x of ["verified_current","verified_historical","authorial_analysis","pending_verification","conflicted","superseded"]) assert.ok(c.epistemic_labels.includes(x));
+  test("PLC7 verification states are separate from content roles",()=>{
+    for(const x of ["verified_current","verified_historical","pending_verification","conflicted","superseded"]) assert.ok(c.verification_states.includes(x));
+    for(const x of ["authorial_analysis","secondary_reference","ai_synthesis"]) assert.ok(c.content_roles.includes(x));
+    assert.equal(c.verification_states.includes("authorial_analysis"),false);
     assert.match(s,/what the source says/i);
     assert.match(s,/what the author analyses or concludes/i);
     assert.match(s,/what AI generated or organised/i);
