@@ -10,6 +10,8 @@ on:
       - "guides/**"
       - "data/guides.json"
       - "docs/guides/**"
+      - "docs/standards/**"
+      - "data/publication-governance.json"
       - "*.html"
       - "assets/**"
       - "sitemap.*"
@@ -47,6 +49,8 @@ jobs:
         run: npm run test:casepilot
       - name: Zoran practical guides governance tests
         run: npm run test:guides
+      - name: Professional publication governance tests
+        run: npm run test:publication-governance
       - name: Security, quota, routing and truth-labelling tests
         run: npm run test:security
       - name: Legal parser regression tests
