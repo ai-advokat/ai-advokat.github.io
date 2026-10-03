@@ -18,10 +18,11 @@
     "publication_master"
   ],
   "epistemic_labels": [
-    "verified_current_law",
-    "historical_source",
+    "verified_current",
+    "verified_historical",
     "authorial_analysis",
     "pending_verification",
+    "conflicted",
     "superseded"
   ],
   "independent_gates": [
@@ -40,7 +41,7 @@
         {
           "id": "inheritance-estate-guide-2025-r1",
           "lane": "author_approved_candidate",
-          "epistemic_status": "verified_current_law",
+          "epistemic_status": "verified_current",
           "verification_date": "2026-10-03"
         },
         {
