@@ -56,7 +56,7 @@ describe("Citation & Authority Engine",()=>{
 
   test("CAE6 verification enum is shared across corpus and evidence cards",()=>{
     const allowed=new Set(e.verification_states);
-    for(const label of corpus.epistemic_labels) assert.ok(allowed.has(label),`Corpus label not in engine enum: ${label}`);
+    for(const state of corpus.verification_states) assert.ok(allowed.has(state),`Corpus state not in engine enum: ${state}`);
     for(const card of cards.cards) assert.ok(allowed.has(card.epistemic_status),`Card state not in engine enum: ${card.epistemic_status}`);
   });
 
