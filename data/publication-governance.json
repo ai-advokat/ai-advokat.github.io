@@ -15,59 +15,99 @@
       "id": "practical-guides-batch-1",
       "kind": "practical_guides",
       "status": "governed_registry_live_on_main",
-      "notes": "Original batch registry merged through PR #67; public source files remain Human-Gated."
+      "notes": "Original batch registry merged through PR #67; public source files remain Human-Gated.",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
     },
     {
       "id": "administrative-guide-v2",
       "kind": "professional_guide",
       "status": "reviewed_candidate_pr_open",
       "pull_request": 68,
-      "notes": "V2 supersession/provenance update awaiting merge gate."
+      "notes": "V2 supersession/provenance update awaiting merge gate.",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
     },
     {
       "id": "professional-library-manuals",
       "kind": "professional_library",
       "status": "reviewed_candidate_pr_open",
       "pull_request": 69,
-      "notes": "Criminal-procedure manual and ECtHR V4.2 metadata/audit; no public files or RAG ingest."
+      "notes": "Criminal-procedure manual and ECtHR V4.2 metadata/audit; no public files or RAG ingest.",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
     },
     {
       "id": "full-word-guides-38-63",
       "kind": "practical_guides",
       "status": "reviewed_candidate_pr_open",
       "pull_request": 70,
-      "notes": "26 FULL Word guides audited; Guide 53 retains a blocking legal finding."
+      "notes": "26 FULL Word guides audited; Guide 53 retains a blocking legal finding.",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
     },
     {
       "id": "criminal-procedure-manual-v2",
       "kind": "professional_manual",
       "status": "publication_review_queue",
-      "notes": "Candidate requires final legal/source, version, layout and citation closeout before publication-master status."
+      "notes": "Candidate requires final legal/source, version, layout and citation closeout before publication-master status.",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
     },
     {
       "id": "civil-procedure-manual-v13",
       "kind": "professional_manual",
       "status": "editorial_upgrade_candidate",
-      "notes": "641-page source reviewed; editorial artefacts identified and candidate cleanup produced. Full article-by-article legal/source closeout remains pending."
+      "notes": "641-page source reviewed; editorial artefacts identified and candidate cleanup produced. Full article-by-article legal/source closeout remains pending.",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
     },
     {
       "id": "echr-manual-v4-2",
       "kind": "legal_monograph",
       "status": "publication_fix_required",
-      "notes": "Internal V4.1/V4.2 mismatch and source-hierarchy closeout remain blockers before publication master."
+      "notes": "Internal V4.1/V4.2 mismatch and source-hierarchy closeout remain blockers before publication master.",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
     },
     {
       "id": "research-papers-round-1",
       "kind": "research_papers",
       "status": "publication_review_queue",
-      "notes": "Five-paper first round: preserve MK/UK-English master pairs, DOI/ORCID provenance, citation integrity and journal-placement status. Kočani remains a separate journal/publication workflow and must not be silently promoted from draft."
+      "notes": "Five-paper first round: preserve MK/UK-English master pairs, DOI/ORCID provenance, citation integrity and journal-placement status. Kočani remains a separate journal/publication workflow and must not be silently promoted from draft.",
+      "author_approval": "pending",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false
     },
     {
       "id": "inheritance-estate-guide-2025-r1",
       "kind": "practical_professional_guide",
       "title": "Водич за наследство и оставинска постапка",
       "status": "author_approved_candidate",
-      "source_edition": "Прво издание 2025",
+      "source_edition": "Прво издание | 2025",
       "legal_source_review_date": "2026-10-03",
       "candidate_docx_sha256": "ccc2280b06d50b7ad7f2213c1a3f0bc4c3b016dd708e4a9ca05ef607cf4f3a86",
       "candidate_pdf_sha256": "b60c8f2407026361caff7cf5de82d3cb58f6731bc215e9e1460b0e2ba580a741",
@@ -75,7 +115,28 @@
       "public_release": false,
       "rag_eligible": false,
       "notes": "Confirmed as one of the NEW last-set guides. Full legal/source upgrade completed and author Zoran Stojankich approved the upgraded inheritance candidate on 2026-10-03. Public release, GitHub merge and RAG ingest remain separate Human Gates.",
-      "source_set": "last_set_2026_10_03"
+      "source_set": "last_set_2026_10_03",
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false,
+      "source_role": "author_delivered_source",
+      "source_package": {
+        "file": "files (3).zip",
+        "sha256": "2a7b28ea555459638334c2ea05291eab8dc65980eba02f82216c26eef91af80b"
+      },
+      "source_files": {
+        "docx": {
+          "file": "Nasledstvo-Paragrafmk.docx",
+          "size_bytes": 27441,
+          "sha256": "8497a36e4e1f7b806fd96691359b0ec5463a807a5a9b41a5a7df27d0db4ccac8",
+          "role": "author_delivered_source"
+        },
+        "pdf": {
+          "file": "Nasledstvo-Paragrafmk.pdf",
+          "size_bytes": 264890,
+          "sha256": "79304c1f592f269beb7bff264476559dce30125a9f387e60cbd6428de623b45e",
+          "role": "author_delivered_source"
+        }
+      }
     },
     {
       "id": "last-set-real-estate-transfer",
@@ -83,12 +144,32 @@
       "title": "Водич за промет со недвижности",
       "status": "revision_required",
       "source_set": "last_set_2026_10_03",
-      "source_docx_sha256": "f93088534c938b57fc62d0aad082898500b48556b6cb11a8e09f324099085dea",
-      "source_pdf_sha256": "f0819dcad3aba318d12484ab538c4cddd0382084102549a1165d3ab16c2247b3",
       "author_approval": "pending",
       "public_release": false,
       "rag_eligible": false,
-      "notes": "Notary-law and property-tax source layer needs current-law correction before publication."
+      "notes": "Notary-law and property-tax source layer needs current-law correction before publication.",
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false,
+      "source_edition": "Прво издание | 2025",
+      "source_role": "author_delivered_source",
+      "source_package": {
+        "file": "files (3).zip",
+        "sha256": "2a7b28ea555459638334c2ea05291eab8dc65980eba02f82216c26eef91af80b"
+      },
+      "source_files": {
+        "docx": {
+          "file": "Promet-Nedviznosti-Paragrafmk.docx",
+          "size_bytes": 33063,
+          "sha256": "f93088534c938b57fc62d0aad082898500b48556b6cb11a8e09f324099085dea",
+          "role": "author_delivered_source"
+        },
+        "pdf": {
+          "file": "Promet-Nedviznosti-Paragrafmk.pdf",
+          "size_bytes": 353635,
+          "sha256": "f0819dcad3aba318d12484ab538c4cddd0382084102549a1165d3ab16c2247b3",
+          "role": "author_delivered_source"
+        }
+      }
     },
     {
       "id": "last-set-cadastre-citizen",
@@ -96,12 +177,32 @@
       "title": "Катастарски водич",
       "status": "legal_source_review_required",
       "source_set": "last_set_2026_10_03",
-      "source_docx_sha256": "02540705ad7c7c76860643b21082daf63ddb61869df16273bd99039860f4cc2a",
-      "source_pdf_sha256": "a01f735f51ca91c8fd75450fa88934731f21fc7250d311d681530d6690cf268d",
       "author_approval": "pending",
       "public_release": false,
       "rag_eligible": false,
-      "notes": "AKN/cadastre source list must be reconciled to the current consolidated cadastral legislation and current fees/procedures."
+      "notes": "AKN/cadastre source list must be reconciled to the current consolidated cadastral legislation and current fees/procedures.",
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false,
+      "source_edition": "Второ издание | 2025",
+      "source_role": "author_delivered_source",
+      "source_package": {
+        "file": "files (3).zip",
+        "sha256": "2a7b28ea555459638334c2ea05291eab8dc65980eba02f82216c26eef91af80b"
+      },
+      "source_files": {
+        "docx": {
+          "file": "Katastarski-Vodic-Paragrafmk.docx",
+          "size_bytes": 26045,
+          "sha256": "02540705ad7c7c76860643b21082daf63ddb61869df16273bd99039860f4cc2a",
+          "role": "author_delivered_source"
+        },
+        "pdf": {
+          "file": "Katastarski-Vodic-Paragrafmk.pdf",
+          "size_bytes": 269899,
+          "sha256": "a01f735f51ca91c8fd75450fa88934731f21fc7250d311d681530d6690cf268d",
+          "role": "author_delivered_source"
+        }
+      }
     },
     {
       "id": "last-set-cadastre-professional",
@@ -109,12 +210,32 @@
       "title": "Стручен водич АKN",
       "status": "revision_required",
       "source_set": "last_set_2026_10_03",
-      "source_docx_sha256": "1ee023857b9415817f109db60f417489d477d7860de81276750a12720003016c",
-      "source_pdf_sha256": "0a97bb5c6b12363b5a7f1ced1542582dad73503da191ec2458b5224799ee08d3",
       "author_approval": "pending",
       "public_release": false,
       "rag_eligible": false,
-      "notes": "Source list includes superseded Notary and Enforcement Acts; professional deadlines, sanctions and filing rules require article-level verification."
+      "notes": "Source list includes superseded Notary and Enforcement Acts; professional deadlines, sanctions and filing rules require article-level verification.",
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false,
+      "source_edition": "Прво издание | 2025",
+      "source_role": "author_delivered_source",
+      "source_package": {
+        "file": "files (3).zip",
+        "sha256": "2a7b28ea555459638334c2ea05291eab8dc65980eba02f82216c26eef91af80b"
+      },
+      "source_files": {
+        "docx": {
+          "file": "Strucen-Vodic-AKN-Paragrafmk.docx",
+          "size_bytes": 34170,
+          "sha256": "1ee023857b9415817f109db60f417489d477d7860de81276750a12720003016c",
+          "role": "author_delivered_source"
+        },
+        "pdf": {
+          "file": "Strucen-Vodic-AKN-Paragrafmk.pdf",
+          "size_bytes": 357732,
+          "sha256": "0a97bb5c6b12363b5a7f1ced1542582dad73503da191ec2458b5224799ee08d3",
+          "role": "author_delivered_source"
+        }
+      }
     },
     {
       "id": "last-set-administrative-law",
@@ -122,12 +243,32 @@
       "title": "Водич за административно право",
       "status": "revision_required",
       "source_set": "last_set_2026_10_03",
-      "source_docx_sha256": "e0f8f29facddf4b63ae2ba7cd109a510f327252bf6f3bad05b8c52b1a1e2356d",
-      "source_pdf_sha256": "305b5b2af6e33050a91c358073408496b218f922c7bfa7734d1b81f82bb4f481",
       "author_approval": "pending",
       "public_release": false,
       "rag_eligible": false,
-      "notes": "P1: cites the repealed 2006 Administrative Disputes Act instead of the current 96/2019 Act; silence-of-administration content must reflect U.br.148/2024."
+      "notes": "P1: cites the repealed 2006 Administrative Disputes Act instead of the current 96/2019 Act; silence-of-administration content must reflect U.br.148/2024.",
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false,
+      "source_edition": "Прво издание | 2025",
+      "source_role": "author_delivered_source",
+      "source_package": {
+        "file": "files (4).zip",
+        "sha256": "b0c7b091ca976717f3b66e4adb6905a54aaf3047d66e8fd0913294dd7f3a2830"
+      },
+      "source_files": {
+        "docx": {
+          "file": "Administrativno-Pravo-Paragrafmk.docx",
+          "size_bytes": 28705,
+          "sha256": "e0f8f29facddf4b63ae2ba7cd109a510f327252bf6f3bad05b8c52b1a1e2356d",
+          "role": "author_delivered_source"
+        },
+        "pdf": {
+          "file": "Administrativno-Pravo-Paragrafmk.pdf",
+          "size_bytes": 297370,
+          "sha256": "305b5b2af6e33050a91c358073408496b218f922c7bfa7734d1b81f82bb4f481",
+          "role": "author_delivered_source"
+        }
+      }
     },
     {
       "id": "last-set-criminal-law",
@@ -135,12 +276,32 @@
       "title": "Водич за кривично право",
       "status": "revision_required",
       "source_set": "last_set_2026_10_03",
-      "source_docx_sha256": "cace6d28a3fa917a46b9b7e20974ddf431397f9f09c2270d1c4c9b49039d47f1",
-      "source_pdf_sha256": "bb29197294c80581a39b6466c421f255a2b3a9c3e995127e12fb8e4fd61b75fc",
       "author_approval": "pending",
       "public_release": false,
       "rag_eligible": false,
-      "notes": "P1: child-justice source terminology is outdated; current Law on Justice for Children (66/2024, amended 55/2025) must replace legacy juvenile-justice references."
+      "notes": "P1: child-justice source terminology is outdated; current Law on Justice for Children (66/2024, amended 55/2025) must replace legacy juvenile-justice references.",
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false,
+      "source_edition": "Прво издание | 2025",
+      "source_role": "author_delivered_source",
+      "source_package": {
+        "file": "files (5).zip",
+        "sha256": "4f1ff6ea1ced920398d4a415a87b615426897ae8372490c949a5be34478ffe95"
+      },
+      "source_files": {
+        "docx": {
+          "file": "Krivicno-Pravo-Paragrafmk.docx",
+          "size_bytes": 31725,
+          "sha256": "cace6d28a3fa917a46b9b7e20974ddf431397f9f09c2270d1c4c9b49039d47f1",
+          "role": "author_delivered_source"
+        },
+        "pdf": {
+          "file": "Krivicno-Pravo-Paragrafmk.pdf",
+          "size_bytes": 347198,
+          "sha256": "bb29197294c80581a39b6466c421f255a2b3a9c3e995127e12fb8e4fd61b75fc",
+          "role": "author_delivered_source"
+        }
+      }
     },
     {
       "id": "last-set-tax-law",
@@ -148,12 +309,32 @@
       "title": "Водич за даночно право",
       "status": "legal_source_review_required",
       "source_set": "last_set_2026_10_03",
-      "source_docx_sha256": "0dd052b4975c86a99c6c9145ec6ee53929fb259801c0a7d4739aaf0a07d8897a",
-      "source_pdf_sha256": "dcf63b6bd04a24251983b0c2c00139687622b166be45291604ef4bf244f039b6",
       "author_approval": "pending",
       "public_release": false,
       "rag_eligible": false,
-      "notes": "Core 10% income/profit tax and VAT 2,000,000 denar threshold are source-supported, but all annual allowances, capital-gain exceptions, contribution rates, sanctions and filing deadlines require 2026 verification."
+      "notes": "Core 10% income/profit tax and VAT 2,000,000 denar threshold are source-supported, but all annual allowances, capital-gain exceptions, contribution rates, sanctions and filing deadlines require 2026 verification.",
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false,
+      "source_edition": "Прво издание | 2025",
+      "source_role": "author_delivered_source",
+      "source_package": {
+        "file": "files (6).zip",
+        "sha256": "ea75dd448a6226dac2b6fad5559b8ba94150c223403af685f8a7b97617f52825"
+      },
+      "source_files": {
+        "docx": {
+          "file": "Danocno-Pravo-Paragrafmk.docx",
+          "size_bytes": 31884,
+          "sha256": "0dd052b4975c86a99c6c9145ec6ee53929fb259801c0a7d4739aaf0a07d8897a",
+          "role": "author_delivered_source"
+        },
+        "pdf": {
+          "file": "Danocno-Pravo-Paragrafmk.pdf",
+          "size_bytes": 336182,
+          "sha256": "dcf63b6bd04a24251983b0c2c00139687622b166be45291604ef4bf244f039b6",
+          "role": "author_delivered_source"
+        }
+      }
     },
     {
       "id": "last-set-civil-procedure",
@@ -161,12 +342,32 @@
       "title": "Водич за граѓанска постапка",
       "status": "revision_required",
       "source_set": "last_set_2026_10_03",
-      "source_docx_sha256": "7b42fd8225305f9e0be3de2c54a30d4cb08e3c1466b086f15165ff6ec06edd71",
-      "source_pdf_sha256": "16aa946b028be3d47d8cb2cf9ed15d8656cdfee9fe2bd76b3b6a2ace53f9ced1",
       "author_approval": "pending",
       "public_release": false,
       "rag_eligible": false,
-      "notes": "P1: source layer cites obsolete Enforcement Act 35/2005 and old free-legal-aid regime; replace with Enforcement Act 72/2016 (as amended) and BPP 101/2019 + 194/2024."
+      "notes": "P1: source layer cites obsolete Enforcement Act 35/2005 and old free-legal-aid regime; replace with Enforcement Act 72/2016 (as amended) and BPP 101/2019 + 194/2024.",
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false,
+      "source_edition": "Прво издание | 2025",
+      "source_role": "author_delivered_source",
+      "source_package": {
+        "file": "files (7).zip",
+        "sha256": "4fa6c0490754d8956ad54f914f0df1e2584f9716c90af87032c42ca0e01da622"
+      },
+      "source_files": {
+        "docx": {
+          "file": "Gragjanska-Postapka-Paragrafmk.docx",
+          "size_bytes": 33274,
+          "sha256": "7b42fd8225305f9e0be3de2c54a30d4cb08e3c1466b086f15165ff6ec06edd71",
+          "role": "author_delivered_source"
+        },
+        "pdf": {
+          "file": "Gragjanska-Postapka-Paragrafmk.pdf",
+          "size_bytes": 344354,
+          "sha256": "16aa946b028be3d47d8cb2cf9ed15d8656cdfee9fe2bd76b3b6a2ace53f9ced1",
+          "role": "author_delivered_source"
+        }
+      }
     },
     {
       "id": "last-set-commercial-law",
@@ -174,12 +375,32 @@
       "title": "Водич за трговско право",
       "status": "legal_source_review_required",
       "source_set": "last_set_2026_10_03",
-      "source_docx_sha256": "49329ab1fb7cd83d5446c71910a465a2d29d1d326a3af52a457811d71d864238",
-      "source_pdf_sha256": "c516dc2d019f0be93e6ad589a32337a5059cb0a0588ed655910798bc719e0955",
       "author_approval": "pending",
       "public_release": false,
       "rag_eligible": false,
-      "notes": "Numerous fixed capital thresholds, voting majorities, audit thresholds, insolvency triggers and sanctions require article-level verification against the current company/insolvency/accounting framework."
+      "notes": "Numerous fixed capital thresholds, voting majorities, audit thresholds, insolvency triggers and sanctions require article-level verification against the current company/insolvency/accounting framework.",
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false,
+      "source_edition": "Прво издание | 2025",
+      "source_role": "author_delivered_source",
+      "source_package": {
+        "file": "files (8).zip",
+        "sha256": "eb86ae526a54d40d54018a990c93118d999c5b6a70b73b07917a050744bb2071"
+      },
+      "source_files": {
+        "docx": {
+          "file": "Trgovsko-Pravo-Paragrafmk.docx",
+          "size_bytes": 31568,
+          "sha256": "49329ab1fb7cd83d5446c71910a465a2d29d1d326a3af52a457811d71d864238",
+          "role": "author_delivered_source"
+        },
+        "pdf": {
+          "file": "Trgovsko-Pravo-Paragrafmk.pdf",
+          "size_bytes": 325933,
+          "sha256": "c516dc2d019f0be93e6ad589a32337a5059cb0a0588ed655910798bc719e0955",
+          "role": "author_delivered_source"
+        }
+      }
     },
     {
       "id": "last-set-family-law",
@@ -187,12 +408,32 @@
       "title": "Водич за семејно право",
       "status": "legal_source_review_required",
       "source_set": "last_set_2026_10_03",
-      "source_docx_sha256": "b0da8df1460b7f6b89174b7de82cecc17f87a02a4190489adbdc60416d122d72",
-      "source_pdf_sha256": "f8a3d39070f745d0c2543f63b90a54b1296da90ee8bcef33a887de7b294ff8ca",
       "author_approval": "pending",
       "public_release": false,
       "rag_eligible": false,
-      "notes": "Family-law source reflects amendment 192/2025; related domestic-violence legislation also has a 39/2025 amendment and should be harmonised throughout before publication."
+      "notes": "Family-law source reflects amendment 192/2025; related domestic-violence legislation also has a 39/2025 amendment and should be harmonised throughout before publication.",
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false,
+      "source_edition": "Прво издание | 2025",
+      "source_role": "author_delivered_source",
+      "source_package": {
+        "file": "files (9).zip",
+        "sha256": "ad27c3da32aa07eb9289080c4e1a6b489dbcffbb2c3fc999c0b4b7b37d23b6fc"
+      },
+      "source_files": {
+        "docx": {
+          "file": "Semejno-Pravo-Paragrafmk.docx",
+          "size_bytes": 31871,
+          "sha256": "b0da8df1460b7f6b89174b7de82cecc17f87a02a4190489adbdc60416d122d72",
+          "role": "author_delivered_source"
+        },
+        "pdf": {
+          "file": "Semejno-Pravo-Paragrafmk.pdf",
+          "size_bytes": 327194,
+          "sha256": "f8a3d39070f745d0c2543f63b90a54b1296da90ee8bcef33a887de7b294ff8ca",
+          "role": "author_delivered_source"
+        }
+      }
     }
   ],
   "last_set_2026_10_03": {
