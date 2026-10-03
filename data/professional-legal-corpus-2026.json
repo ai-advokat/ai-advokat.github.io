@@ -17,14 +17,6 @@
     "author_approved_candidate",
     "publication_master"
   ],
-  "epistemic_labels": [
-    "verified_current",
-    "verified_historical",
-    "authorial_analysis",
-    "pending_verification",
-    "conflicted",
-    "superseded"
-  ],
   "independent_gates": [
     "author_approval",
     "github_merge",
@@ -115,5 +107,17 @@
     "github_merge": false,
     "production_corpus_write": false,
     "note": "Top-level defaults are fail-closed; per-item explicit Human Gates are required."
-  }
+  },
+  "verification_states": [
+    "verified_current",
+    "verified_historical",
+    "pending_verification",
+    "conflicted",
+    "superseded"
+  ],
+  "content_roles": [
+    "authorial_analysis",
+    "secondary_reference",
+    "ai_synthesis"
+  ]
 }
