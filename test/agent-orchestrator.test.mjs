@@ -29,6 +29,16 @@ describe("AI Advokat GPT orchestrator foundation", () => {
     assert.equal(plan.verifier,AGENT_ROLES.verify.id);
   });
 
+  test("Macedonian Cyrillic jurisdiction names route the right specialists", () => {
+    const eu=buildAgentPlan("Што вели правото на Европската Унија?");
+    assert.ok(eu.agents.includes(AGENT_ROLES.eu.id));
+    assert.equal(eu.mode,ORCHESTRATOR_MODES.COMPARATIVE);
+
+    const echr=buildAgentPlan("Што вели Европскиот суд за човекови права?");
+    assert.ok(echr.agents.includes(AGENT_ROLES.echr.id));
+    assert.equal(echr.mode,ORCHESTRATOR_MODES.COMPARATIVE);
+  });
+
   test("provider activation fails closed unless gate, key and model are all present", () => {
     assert.equal(openAIOrchestratorConfigured({}),false);
     assert.equal(openAIOrchestratorConfigured({OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40)}),false);
@@ -37,7 +47,7 @@ describe("AI Advokat GPT orchestrator foundation", () => {
   });
 
   test("Responses API output text is extracted without accepting arbitrary fields", () => {
-    assert.equal(extractOpenAIResponseText({output_text:"  Одговор  "}),"Одговор");
+    assert.equal(extractOpenAIResponseText({status:"completed",output_text:"  Одговор  "}),"Одговор");
     assert.equal(extractOpenAIResponseText({output:[{type:"message",content:[{type:"output_text",text:"A"},{type:"output_text",text:"B"}]}]}),"A\n\nB");
     assert.equal(extractOpenAIResponseText({answer:"unsafe-shape"}),null);
   });
