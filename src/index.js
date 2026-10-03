@@ -1443,27 +1443,44 @@ async function handleAssistant(request, env, url) {
       }else{
         const check=validateAnswerCitations(candidate,articles);
         if(check.ok){
-          const citedSet=new Set(check.cited || []);
-          const verificationState=
-            versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
-              ? "verified_current"
-              : (!versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
-                  ? "verified_historical"
-                  : "pending_verification");
-          const claimType=versionInfo.isCurrent ? "current_law" : "historical_law";
+          const normalizeRef=(value)=>String(value || "").normalize("NFKC").toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"");
+          const articleByRef=new Map();
+          for(const a of articles){
+            for(const ref of [a.articleNumberNormalized,a.articleNumber].filter(Boolean).map(normalizeRef)){
+              articleByRef.set(ref,a);
+            }
+          }
           const versionAnchor=version?.version_label || null;
-          const claimChecks=articles
-            .filter(a=>citedSet.has(String(a.articleNumberNormalized || a.articleNumber || "").toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"")))
-            .map(a=>validateLegalClaim({
-              claim_type:claimType,
+          const versionIsApprovedCurrent=versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved";
+
+          const articleVerificationState=(a)=>{
+            if(versionIsApprovedCurrent){
+              return a.publicStatus==="current_verified" ? "verified_current" : "pending_verification";
+            }
+            if(a.status==="historical" && ["approved","reviewed"].includes(String(a.humanReviewStatus || ""))){
+              return "verified_historical";
+            }
+            return "pending_verification";
+          };
+
+          const claimChecks=(check.claims || []).map(claim=>{
+            const citedArticles=claim.cited.map(ref=>articleByRef.get(ref)).filter(Boolean);
+            const states=citedArticles.map(articleVerificationState);
+            const verificationState=versionIsApprovedCurrent
+              ? (states.length && states.every(x=>x==="verified_current") ? "verified_current" : "pending_verification")
+              : (states.length && states.every(x=>x==="verified_historical") ? "verified_historical" : "pending_verification");
+            return validateLegalClaim({
+              claim:claim.text,
+              claim_type:versionIsApprovedCurrent ? "current_law" : "historical_law",
               risk:"high",
               authority_class:"A1",
-              source_identity:a.sourceUrl || instrument.title,
+              source_identity:citedArticles.map(a=>a.sourceUrl || instrument.title).join(" | "),
               version_or_date:versionAnchor,
-              locator:`Article ${a.articleNumber}`,
+              locator:citedArticles.map(a=>`Article ${a.articleNumber}`).join("; "),
               verification_state:verificationState,
-              provenance:`${a.sourceUrl || instrument.canonical_key}#article-${a.articleNumber}`
-            }));
+              provenance:citedArticles.map(a=>`${a.sourceUrl || instrument.canonical_key}#article-${a.articleNumber}`).join(" | ")
+            });
+          });
           const failedClaim=claimChecks.find(x=>x.decision!=="accept");
           if(!failedClaim){
             answer=candidate;
@@ -1504,8 +1521,10 @@ async function handleAssistant(request, env, url) {
       sourceVersionOrDate:version?.version_label || null,
       verificationState:
         versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
+          && articles.every(a=>a.publicStatus==="current_verified")
           ? "verified_current"
-          : (!versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
+          : (!versionInfo.isCurrent
+              && articles.every(a=>a.status==="historical" && ["approved","reviewed"].includes(String(a.humanReviewStatus || "")))
               ? "verified_historical"
               : "pending_verification"),
       humanControl:{
