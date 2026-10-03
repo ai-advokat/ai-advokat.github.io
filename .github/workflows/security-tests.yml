@@ -16,6 +16,7 @@ on:
       - "data/legal-evidence-cards.json"
       - "data/citation-authority-engine.json"
       - "data/response-provenance-contract.json"
+      - "data/human-gate-decision-ledger.json"
       - "*.html"
       - "assets/**"
       - "sitemap.*"
@@ -65,6 +66,8 @@ jobs:
         run: npm run test:legal-claim-validator
       - name: Response Provenance Contract tests
         run: npm run test:response-provenance
+      - name: Human Gate Decision Ledger tests
+        run: npm run test:human-gate-ledger
       - name: Security, quota, routing and truth-labelling tests
         run: npm run test:security
       - name: Legal parser regression tests
