@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-10-03",
+  "collection": {
+    "id": "zoran-professional-legal-library",
+    "title_mk": "Стручна библиотека",
+    "platform": "AI Advokat",
+    "owner_note": "Стручни прирачници и монографски изданија на адвокат Зоран Стојанкиќ",
+    "public_download_policy": "locked_until_human_gate",
+    "rag_policy": "no_ingestion_until_source_and_version_audit_pass"
+  },
+  "records": [
+    {
+      "id": "criminal-procedure-manual-2026",
+      "type": "professional_manual",
+      "title": "Прирачник за адвокати во кривична постапка",
+      "subtitle": "Практична методологија, правна анализа, доказна стратегија и обрасци",
+      "author": "Адвокат Зоран Стојанкиќ",
+      "place_year": "Скопје, 2026",
+      "pdf": {
+        "source_file": "Priracnik_za_advokati_vo_krivicna_postapka_CELOSEN_REPAIRED (3).pdf",
+        "sha256": "6e742633c80a49d14936c90d29be68c8008727b2b2d266e3889d69db196120a3",
+        "size_bytes": 2046475,
+        "pages": 272
+      },
+      "docx": {
+        "source_file": "Priracnik_za_advokati_vo_krivicna_postapka_CELOSEN.docx",
+        "sha256": "b32ae175aca1cc7024febddef07f93a9c81fa2ac534544bedceaa500aab7323a",
+        "size_bytes": 450915
+      },
+      "scope": "32 глави и 10 прилози: од прв контакт со клиент, полициска/обвинителска фаза, притвор и докази, до главна расправа, жалби, ЕСЧП, правни лица, обрасци и финална методологија.",
+      "strengths": [
+        "Јасна авторска и правна напомена дека прирачникот не го заменува важечкиот закон и судската практика.",
+        "Практична структура со контролни листи и blank-field табела за законски членови наместо лажно фиксирање на членови.",
+        "Изразен Human Gate: конкретните рокови, членови и институти мора повторно да се проверуваат."
+      ],
+      "findings": [
+        {
+          "severity": "P1",
+          "code": "separate_corporate_liability_law_reference",
+          "text": "Во листата за нормативна проверка се споменува „Закон за кривична одговорност на правни лица“. Корпоративната кривична одговорност е уредена во Кривичниот законик, вклучително член 28-а и поврзаните одредби; формулацијата треба да се коригира пред публикација."
+        },
+        {
+          "severity": "P2",
+          "code": "duplicate_section_headings",
+          "text": "Во PDF-от има видливи повторувања на дел/глава наслови (на пр. Дел VI и Глава 27), што треба да се исчисти пред јавна публикација."
+        },
+        {
+          "severity": "P2",
+          "code": "source_apparatus_upgrade",
+          "text": "За професионално цитирање треба да се додаде консолидиран изворен/библиографски апарат со датум на нормативен пресек и официјални извори."
+        }
+      ],
+      "status": "revision_required",
+      "status_label": "Содржински силен нацрт • потребни нормативна и издавачка корекција пред Human Gate",
+      "ai_use": "blocked_for_rag_until_revision",
+      "professional_use": "human_review_required",
+      "public_files": false
+    },
+    {
+      "id": "echr-north-macedonia-manual-v4-2",
+      "type": "legal_monograph",
+      "title": "Практичен прирачник за праксата на Европскиот суд за човекови права во предмети против Република Северна Македонија",
+      "subtitle": "Стручна правна монографија · V4.2",
+      "author": "Адвокат Зоран Стојанкиќ",
+      "publisher": "АРКАНА ДОО Скопје",
+      "platform": "Paragraf.mk",
+      "place_year": "Скопје, 2026",
+      "pdf": {
+        "source_file": "ESCP_PRIRACNIK_V4_2_AUTHORSHIP_COLOPHON_INTEGRATED.pdf",
+        "sha256": "2785290609aee4975c375436c115c4681a9056d83b0ec2c6de1adf236d3c57da",
+        "size_bytes": 1269507,
+        "pages": 183
+      },
+      "docx": {
+        "source_file": "ESCP_PRIRACNIK_V4_2_AUTHORSHIP_COLOPHON_INTEGRATED.docx",
+        "sha256": "d1bb914e05cafceb6182c16ee97efc682cb1e101ad41cb2548abc26f703bfdea",
+        "size_bytes": 284420
+      },
+      "scope": "Членови 3, 5, 6, 8, 10/11, 13/14 и член 1 од Протокол бр. 1; аналитички картички, ratio, verification register, Source_Log и AI/RAG таксономија.",
+      "strengths": [
+        "Јасно раздвојува A+/A/P1, D и VX/C статуси и не дозволува непроверен предмет да се користи како конечен авторитет.",
+        "Има експлицитна забрана на фабрикација и дисциплина за член 41.",
+        "Авторство, издавачки податоци, AI-поддршка под авторска контрола и rights notice се јасно интегрирани."
+      ],
+      "findings": [
+        {
+          "severity": "P1",
+          "code": "v4_1_v4_2_internal_mismatch",
+          "text": "Предниот апарат и колофонот го означуваат изданието како V4.2, но Прилог IV и завршната издавачка забелешка на повеќе места сè уште ја нарекуваат тековната публикациска верзија V4.1. Верзиската терминологија мора да се усогласи."
+        },
+        {
+          "severity": "P1",
+          "code": "source_hierarchy_wording",
+          "text": "За судско цитирање HUDOC треба да биде контролниот извор за автентичниот case-law record; македонските преводи/објави на Бирото се официјален домашен слој и треба да се вкрстат со HUDOC."
+        },
+        {
+          "severity": "P2",
+          "code": "open_verification_items",
+          "text": "US-Construction и Eryuz остануваат отворени/непотврдени контролни ставки; правилно се исклучени од мериторното цитирање до затворање на проверката."
+        }
+      ],
+      "status": "publication_fix_required",
+      "status_label": "Напредна V4.2 монографија • потребно version/source closeout пред Human Gate",
+      "ai_use": "blocked_for_rag_until_version_closeout",
+      "professional_use": "human_review_required",
+      "public_files": false
+    }
+  ]
+}
