@@ -35,9 +35,11 @@ jobs:
         with:
           node-version: "22"
       - name: Worker syntax
-        run: node --check src/index.js && node --check src/security.js && node --check src/corpus-versions.js
+        run: node --check src/index.js && node --check src/security.js && node --check src/corpus-versions.js && node --check src/casepilot.js
       - name: Structural verification
         run: npm run verify
+      - name: CasePilot foundation tests
+        run: npm run test:casepilot
       - name: Security, quota, routing and truth-labelling tests
         run: npm run test:security
       - name: Legal parser regression tests
