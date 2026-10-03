@@ -356,13 +356,19 @@ function segmentWithoutCitations(segment) {
 
 function legalPolaritySignature(text) {
   const t=String(text ?? "").normalize("NFKC").toLocaleLowerCase("mk");
+  const negOb=/(?<!\p{L})(?:не\s+(?:е\s+)?долж\p{L}*|не\s+мора|не\s+треба)(?!\p{L})/u;
+  const posOb=/(?<!\p{L})(?:е\s+долж\p{L}*|мора|треба)(?!\p{L})/u;
+  const prohibition=/(?<!\p{L})(?:не\s+смее|забран\p{L}*)(?!\p{L})/u;
+  const permission=/(?<!\p{L})(?:може|дозвол\p{L}*|има\s+право)(?!\p{L})/u;
+  const denied=/(?<!\p{L})(?:не\s+може|нема\s+право)(?!\p{L})/u;
+  const absolute=/(?<!\p{L})(?:секогаш|никогаш|исклучиво|само|секој|секоја|секое|сите)(?!\p{L})/u;
   return {
-    negatedObligation:/\b(?:не\s+(?:е\s+)?долж\w*|не\s+мора|не\s+треба)\b/u.test(t),
-    positiveObligation:/\b(?:е\s+долж\w*|мора|треба)\b/u.test(t) && !/\b(?:не\s+(?:е\s+)?долж\w*|не\s+мора|не\s+треба)\b/u.test(t),
-    prohibition:/\b(?:не\s+смее|забран\w*)\b/u.test(t),
-    permission:/\b(?:може|дозвол\w*|има\s+право)\b/u.test(t) && !/\b(?:не\s+може|нема\s+право)\b/u.test(t),
-    deniedPermission:/\b(?:не\s+може|нема\s+право)\b/u.test(t),
-    absoluteQualifier:/\b(?:секогаш|никогаш|исклучиво|само|секој|секоја|секое|сите)\b/u.test(t)
+    negatedObligation:negOb.test(t),
+    positiveObligation:posOb.test(t) && !negOb.test(t),
+    prohibition:prohibition.test(t),
+    permission:permission.test(t) && !denied.test(t),
+    deniedPermission:denied.test(t),
+    absoluteQualifier:absolute.test(t)
   };
 }
 
