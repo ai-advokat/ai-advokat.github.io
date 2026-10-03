@@ -60,4 +60,19 @@ describe("Zoran guides library governance",()=>{
       assert.equal(g.professional_use,"human_review_required");
     }
   });
+  test("G10 public catalogue activation covers exactly all 38 governed records",()=>{
+    assert.equal(data.collection.catalog_visibility.state,"public");
+    assert.equal(data.collection.catalog_visibility.decision_id,"catalog-visibility-38-2026-10-03");
+    assert.equal(data.records.filter(x=>x.catalog_public===true).length,38);
+    assert.match(html,/Каталогот е <strong>јавно активиран<\/strong>/);
+    assert.match(html,/catalog_public===true/);
+  });
+  test("G11 catalogue visibility does not open document, RAG or production gates",()=>{
+    assert.equal(data.collection.catalog_visibility.public_download,false);
+    assert.equal(data.collection.catalog_visibility.rag_eligibility,false);
+    assert.equal(data.collection.catalog_visibility.production_corpus_write,false);
+    assert.equal(data.collection.catalog_visibility.legal_corpus_promotion,false);
+    assert.ok(data.records.every(x=>x.public_pdf===null));
+    assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
+  });
 });

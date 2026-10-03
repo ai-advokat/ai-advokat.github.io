@@ -53,7 +53,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 <ul>
 <li>Дупликатите не се бришат: се водат како <strong>version history</strong> (Водич 02).</li>
 <li>Краткиот Водич 26 и 24-страничниот управен водич се водат одвоено: првиот е редакциски краток/проширен водич, вториот е сеопфатна авторска верзија 1.0.</li>
-<li>Секој запис е <strong>reference-only</strong> за AI додека Human Gate не го одобри за професионална употреба.</li>
+<li>Каталогот е <strong>јавно активиран</strong> за сите 38 контролирани записи. Самите DOCX/PDF датотеки остануваат заклучени зад Human Gate.</li>\n<li>Секој запис е <strong>reference-only</strong> за AI; јавната видливост на каталогот не е RAG/AI одобрување.</li>
 <li>Правните рокови и статусот на прописите мора повторно да се проверат со официјален извор на датумот на конкретната употреба.</li>
 </ul>
 <p><a href="/docs/guides/AUDIT_2026-10-03.md">Прва тура — audit →</a> · <a href="/docs/guides/AUDIT_38_63_2026-10-03.md">FULL Word водичи 38–63 — audit →</a></p>
@@ -76,7 +76,7 @@ function render(){
  </article>`).join("")||'<p>Нема записи за избраниот филтер.</p>';
 }
 fetch("/data/guides.json").then(r=>r.json()).then(d=>{
- records=d.records;
+ records=d.records.filter(x=>x.catalog_public===true);
  const cats=[...new Set(records.map(x=>x.category))].sort((a,b)=>a.localeCompare(b,"mk"));
  document.querySelector("#cat").insertAdjacentHTML("beforeend",cats.map(c=>`<option>${esc(c)}</option>`).join(""));
  document.querySelector("#countAll").textContent=records.length;
