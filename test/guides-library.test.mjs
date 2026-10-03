@@ -6,9 +6,9 @@ const data=JSON.parse(fs.readFileSync("data/guides.json","utf8"));
 const html=fs.readFileSync("guides/index.html","utf8");
 
 describe("Zoran guides library governance",()=>{
-  test("G1 first batch contains exactly 12 delivered PDF records",()=>{
-    assert.equal(data.records.length,12);
-    assert.equal(new Set(data.records.map(x=>x.id)).size,12);
+  test("G1 registry contains 12 delivered editions plus controlled V2 upgrade",()=>{
+    assert.equal(data.records.length,13);
+    assert.equal(new Set(data.records.map(x=>x.id)).size,13);
   });
   test("G2 no guide exposes a public PDF before Human Gate",()=>{
     assert.ok(data.records.every(x=>x.public_pdf===null));
@@ -21,9 +21,16 @@ describe("Zoran guides library governance",()=>{
     assert.equal(current.supersedes,old.id);
     assert.equal(old.status,"superseded_draft");
   });
-  test("G4 administrative short and comprehensive guides remain distinct",()=>{
-    assert.ok(data.records.find(x=>x.id==="guide-26-administrative-short"));
-    assert.ok(data.records.find(x=>x.id==="guide-administrative-v1"));
+  test("G4 administrative version hierarchy is explicit",()=>{
+    const short=data.records.find(x=>x.id==="guide-26-administrative-short");
+    const v1=data.records.find(x=>x.id==="guide-administrative-v1");
+    const v2=data.records.find(x=>x.id==="guide-administrative-v2");
+    assert.ok(short);
+    assert.equal(v1.superseded_by,v2.id);
+    assert.equal(v2.supersedes,v1.id);
+    assert.equal(v1.source_role,"version_history");
+    assert.equal(v2.source_role,"primary");
+    assert.equal(v2.provenance.provenance_role,"conceptual_and_organizational_reference_only");
   });
   test("G5 every delivered source has immutable provenance metadata",()=>{
     for(const r of data.records){
