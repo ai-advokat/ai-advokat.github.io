@@ -67,6 +67,12 @@
     <priority>0.4</priority>
   </url>
   <url>
+    <loc>https://ai-advokat.github.io/professional-library/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://ai-advokat.github.io/governance.html</loc>
   </url>
 </urlset>

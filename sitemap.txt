@@ -9,4 +9,5 @@ https://ai-advokat.github.io/membership.html
 https://ai-advokat.github.io/legal-notice.html
 https://ai-advokat.github.io/privacy-policy.html
 https://ai-advokat.github.io/ai-use-policy.html
+https://ai-advokat.github.io/professional-library/
 https://ai-advokat.github.io/governance.html

@@ -39,7 +39,8 @@
     "test:response-provenance": "node --no-warnings --test test/response-provenance-contract.test.mjs",
     "test:human-gate-ledger": "node --no-warnings --test test/human-gate-decision-ledger.test.mjs",
     "test:audit-trail-history": "node --no-warnings --test test/audit-trail-decision-history.test.mjs",
-    "test:governance-dashboard": "node --no-warnings --test test/governance-dashboard.test.mjs"
+    "test:governance-dashboard": "node --no-warnings --test test/governance-dashboard.test.mjs",
+    "test:professional-library": "node --no-warnings --test test/professional-library.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"

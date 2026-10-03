@@ -8,8 +8,11 @@ on:
       - "membership.html"
       - "scholar/**"
       - "guides/**"
+      - "professional-library/**"
       - "data/guides.json"
+      - "data/professional-library.json"
       - "docs/guides/**"
+      - "docs/professional-library/**"
       - "docs/standards/**"
       - "data/publication-governance.json"
       - "data/professional-legal-corpus-2026.json"
@@ -55,6 +58,8 @@ jobs:
         run: npm run test:casepilot
       - name: Zoran practical guides governance tests
         run: npm run test:guides
+      - name: Professional Library governance tests
+        run: npm run test:professional-library
       - name: Professional publication governance tests
         run: npm run test:publication-governance
       - name: Professional Legal Corpus 2026 tests
