@@ -6,9 +6,9 @@ const data=JSON.parse(fs.readFileSync("data/guides.json","utf8"));
 const html=fs.readFileSync("guides/index.html","utf8");
 
 describe("Zoran guides library governance",()=>{
-  test("G1 registry contains exactly 38 governed delivered records",()=>{
-    assert.equal(data.records.length,38);
-    assert.equal(new Set(data.records.map(x=>x.id)).size,38);
+  test("G1 registry contains 39 governed records including controlled Administrative V2",()=>{
+    assert.equal(data.records.length,39);
+    assert.equal(new Set(data.records.map(x=>x.id)).size,39);
   });
   test("G2 no guide exposes a public PDF before Human Gate",()=>{
     assert.ok(data.records.every(x=>x.public_pdf===null));
