@@ -72,11 +72,13 @@ The source list correctly recognizes the 192/2025 amendment to the Family Act. T
 
 The inheritance guide is not an older unrelated file; it is one of these new last-set guides. Its corrected candidate has already closed major legal/source issues, including succession orders, forced heirs, wills, renunciation, debt liability, inheritance tax, international succession and sanctions.
 
-Status remains:
-- corrected candidate;
-- author approval pending;
+Status now:
+- author-approved candidate;
+- author approval recorded on 2026-10-03;
 - public release false;
-- RAG eligibility false.
+- GitHub merge approval false;
+- RAG eligibility false;
+- production corpus-write approval false.
 
 ## Provenance
 
