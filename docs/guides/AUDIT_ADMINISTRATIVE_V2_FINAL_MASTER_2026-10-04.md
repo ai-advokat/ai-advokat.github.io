@@ -1,0 +1,35 @@
+# AI Advokat — Administrative Guide V2.0 FINAL MASTER audit closeout
+
+**Date:** 4 October 2026  
+**Subject:** `guide-administrative-v2`  
+**Artifact version:** `V2.0 FINAL MASTER`
+
+## Scope
+
+Final legal, editorial, source-governance and visual QA closeout for the guide **„Водич низ управната постапка и управниот спор“**, authored by адвокат Зоран Стојанкиќ and prepared for AI Advokat / Paragraf.mk.
+
+## Final candidate fingerprints
+
+- DOCX: `de609c4526eee401a3759ff2fe22556cacded9bef87cdf675213e69e8a10ed11`
+- PDF: `4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d`
+
+## Audit result
+
+- Legal-content audit: **PASS — no P1 blocker identified in the final review.**
+- Administrative silence: the guide preserves the U.br.148/2024 correction and does not present the removed 30-day wording from Article 26(2) ZUS as a current preclusive deadline.
+- Source-history: U.br.118/2025 is retained only as a source-history note; it does not alter the current-law statement because the proceeding was stopped after withdrawal of the initiative.
+- Editorial audit: **PASS.** Duplicate list-number presentation and FAQ heading hierarchy were corrected.
+- Publication metadata: **PASS.** Technical `python-docx` author metadata was removed/replaced with professional publication metadata.
+- Visual QA: **PASS, 15 pages.** No clipping, overlap or broken-glyph defect observed in the final render.
+
+## Human Gate state
+
+This closeout creates a **corrected candidate only**.
+
+- Author approval: **PENDING**
+- GitHub merge: **NOT AUTHORIZED by this record**
+- Public release / public PDF: **NOT AUTHORIZED**
+- RAG eligibility: **NOT AUTHORIZED**
+- Production corpus write: **NOT AUTHORIZED**
+
+No gate implies another. Any later artifact change invalidates these fingerprints and requires a new candidate fingerprint event.
