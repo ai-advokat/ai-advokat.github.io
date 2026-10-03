@@ -24,4 +24,13 @@ describe("professional publication governance",()=>{
     const prs=g.pipeline.filter(x=>x.pull_request).map(x=>x.pull_request).sort((a,b)=>a-b);
     assert.deepEqual(prs,[68,69,70]);
   });
+  test("PP5 inheritance guide candidate is corrected but still fail-closed",()=>{
+    const x=g.pipeline.find(x=>x.id==="inheritance-estate-guide-2025-r1");
+    assert.equal(x.status,"corrected_candidate");
+    assert.equal(x.author_approval,"pending");
+    assert.equal(x.public_release,false);
+    assert.equal(x.rag_eligible,false);
+    assert.match(x.candidate_docx_sha256,/^[0-9a-f]{64}$/);
+    assert.match(x.candidate_pdf_sha256,/^[0-9a-f]{64}$/);
+  });
 });
