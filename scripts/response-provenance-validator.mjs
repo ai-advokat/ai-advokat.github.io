@@ -1,4 +1,4 @@
-const CURRENT_LAW_LABEL="verified_current_law";
+const VALID_VERIFICATION=new Set(["verified_current","verified_historical","pending_verification","conflicted","superseded"]);
 
 function nonEmpty(v){
   return typeof v==="string" && v.trim().length>0;
@@ -26,7 +26,7 @@ export function validateResponseProvenance(response){
     if(!nonEmpty(claim?.text)) errors.push(`claim:${cid}:missing_text`);
     if(!nonEmpty(claim?.authority_class)) errors.push(`claim:${cid}:missing_authority_class`);
     if(!nonEmpty(claim?.source_identity)) errors.push(`claim:${cid}:missing_source_identity`);
-    if(!nonEmpty(claim?.verification_state)) errors.push(`claim:${cid}:missing_verification_state`);
+    if(!VALID_VERIFICATION.has(claim?.verification_state)) errors.push(`claim:${cid}:missing_or_invalid_verification_state`);
     if(!nonEmpty(claim?.provenance)) errors.push(`claim:${cid}:missing_provenance`);
     if(!nonEmpty(claim?.response_label)) errors.push(`claim:${cid}:missing_response_label`);
 
@@ -38,9 +38,11 @@ export function validateResponseProvenance(response){
       if(claim?.verification_state!=="verified_current"){
         errors.push(`claim:${cid}:current_law_not_verified_current`);
       }
-      if(["high","critical"].includes(claim?.risk)){
-        if(!nonEmpty(claim?.source_version_or_date)) errors.push(`claim:${cid}:missing_version_or_date`);
-        if(!nonEmpty(claim?.locator)) warnings.push(`claim:${cid}:missing_precise_locator`);
+      if(!nonEmpty(claim?.source_version_or_date)){
+        errors.push(`claim:${cid}:missing_version_or_date`);
+      }
+      if(["high","critical"].includes(claim?.risk) && !nonEmpty(claim?.locator)){
+        warnings.push(`claim:${cid}:missing_precise_locator`);
       }
       if(claim?.verification_state==="superseded"){
         errors.push(`claim:${cid}:superseded_source_used_as_current`);
