@@ -40,9 +40,12 @@ export function validateLegalClaim(claim){
   if(wantsCurrentLaw && authority==="A6") reasons.push("current_law_supported_only_by_ai_synthesis");
   if(wantsCurrentLaw && ["A4","A5"].includes(authority)) reasons.push("commentary_cannot_establish_current_law");
 
-  if(wantsCurrentLaw && isHighRisk){
-    if(!nonEmpty(claim.version_or_date)) reasons.push("missing_version_or_date_for_high_risk_current_law");
-    if(!nonEmpty(claim.locator)) warnings.push("missing_precise_locator");
+  if(wantsCurrentLaw && !nonEmpty(claim.version_or_date)){
+    reasons.push("missing_version_or_date_for_current_law");
+  }
+
+  if(wantsCurrentLaw && isHighRisk && !nonEmpty(claim.locator)){
+    warnings.push("missing_precise_locator");
   }
 
   if(claim.verification_state==="superseded" && wantsCurrentLaw) reasons.push("superseded_source_presented_as_current");
