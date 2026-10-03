@@ -6,13 +6,14 @@ const data=JSON.parse(fs.readFileSync("data/guides.json","utf8"));
 const html=fs.readFileSync("guides/index.html","utf8");
 
 describe("Zoran guides library governance",()=>{
-  test("G1 registry contains exactly 38 governed delivered records",()=>{
-    assert.equal(data.records.length,38);
-    assert.equal(new Set(data.records.map(x=>x.id)).size,38);
+  test("G1 registry contains 39 governed records including controlled Administrative V2",()=>{
+    assert.equal(data.records.length,39);
+    assert.equal(new Set(data.records.map(x=>x.id)).size,39);
   });
   test("G2 no guide exposes a public PDF before Human Gate",()=>{
     assert.ok(data.records.every(x=>x.public_pdf===null));
     assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
+    assert.equal(data.records.find(x=>x.id==="guide-administrative-v2").public_pdf,null);
   });
   test("G3 Guide 02 keeps explicit version history",()=>{
     const old=data.records.find(x=>x.id==="guide-02-victim-draft-2026-09-29");
@@ -21,9 +22,17 @@ describe("Zoran guides library governance",()=>{
     assert.equal(current.supersedes,old.id);
     assert.equal(old.status,"superseded_draft");
   });
-  test("G4 administrative short and comprehensive guides remain distinct",()=>{
-    assert.ok(data.records.find(x=>x.id==="guide-26-administrative-short"));
-    assert.ok(data.records.find(x=>x.id==="guide-administrative-v1"));
+  test("G4 administrative version hierarchy is explicit and Human-Gated",()=>{
+    const short=data.records.find(x=>x.id==="guide-26-administrative-short");
+    const v1=data.records.find(x=>x.id==="guide-administrative-v1");
+    const v2=data.records.find(x=>x.id==="guide-administrative-v2");
+    assert.ok(short);
+    assert.equal(v1.superseded_by,v2.id);
+    assert.equal(v2.supersedes,v1.id);
+    assert.equal(v1.source_role,"version_history");
+    assert.equal(v2.source_role,"primary");
+    assert.equal(v2.provenance.provenance_role,"conceptual_and_organizational_reference_only");
+    assert.equal(v2.catalog_public,false);
   });
   test("G5 every delivered source has immutable provenance metadata",()=>{
     for(const r of data.records){
@@ -64,6 +73,7 @@ describe("Zoran guides library governance",()=>{
     assert.equal(data.collection.catalog_visibility.state,"public");
     assert.equal(data.collection.catalog_visibility.decision_id,"catalog-visibility-38-2026-10-03");
     assert.equal(data.records.filter(x=>x.catalog_public===true).length,38);
+    assert.equal(data.records.find(x=>x.id==="guide-administrative-v2").catalog_public,false);
     assert.match(html,/Каталогот е <strong>јавно активиран<\/strong>/);
     assert.match(html,/catalog_public===true/);
   });

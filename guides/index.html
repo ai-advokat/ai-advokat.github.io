@@ -52,7 +52,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 <h2>Контрола на квалитет</h2>
 <ul>
 <li>Дупликатите не се бришат: се водат како <strong>version history</strong> (Водич 02).</li>
-<li>Краткиот Водич 26 и 24-страничниот управен водич се водат одвоено: првиот е редакциски краток/проширен водич, вториот е сеопфатна авторска верзија 1.0.</li>
+<li>Краткиот Водич 26 останува посебен. Сеопфатниот управен водич V2 е новата контролирана примарна верзија, а верзијата 1.0 останува во <strong>version history</strong>. V2 сè уште не е вклучен во одобрениот јавен каталог од 38 записи.</li>
 <li>Каталогот е <strong>јавно активиран</strong> за сите 38 контролирани записи. Самите DOCX/PDF датотеки остануваат заклучени зад Human Gate.</li>\n<li>Секој запис е <strong>reference-only</strong> за AI; јавната видливост на каталогот не е RAG/AI одобрување.</li>
 <li>Правните рокови и статусот на прописите мора повторно да се проверат со официјален извор на датумот на конкретната употреба.</li>
 </ul>
@@ -70,9 +70,9 @@ function render(){
  const items=records.filter(x=>(!q||[x.title,x.category,x.scope,x.guide_no].join(" ").toLowerCase().includes(q))&&(!cat||x.category===cat)&&(!st||statusGroup(x.status)===st));
  document.querySelector("#cards").innerHTML=items.map(x=>`<article class="card">
  <div><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.format)}</span><span class="pill ${statusClass(x.status)}">${esc(x.status_label)}</span></div>
- <h2>${esc(x.title)}</h2><div class="meta">${esc(x.category)} · ${esc(x.edition)} · ${esc(x.edition_date)} · ${esc(x.pages)} стр.</div>
+ <h2>${esc(x.title)}</h2><div class="meta">${esc(x.category)} · ${esc(x.edition)} · ${esc(x.edition_date)}${x.pages!=null?` · ${esc(x.pages)} стр.`:""}</div>
  <p class="scope">${esc(x.scope)}</p>
- <div class="source"><strong>Атрибуција:</strong> ${esc(x.attribution)}<br><strong>Изворна датотека:</strong> ${esc(x.source_file)}<br><strong>SHA-256:</strong> <code>${esc((x.sha256||"").slice(0,16))}…</code><br><span class="locked">Датотека: Human Gate / не е јавно активирана</span>${x.superseded_by?`<br><strong>Заменет со:</strong> ${esc(x.superseded_by)}`:""}${x.supersedes?`<br><strong>Ја заменува:</strong> ${esc(x.supersedes)}`:""}</div>
+ <div class="source"><strong>Атрибуција:</strong> ${esc(x.attribution)}<br><strong>Изворна датотека:</strong> ${esc(x.source_file)}<br><strong>SHA-256:</strong> <code>${esc((x.sha256||"").slice(0,16))}…</code>${x.provenance?`<br><strong>Provenance:</strong> ${esc(x.provenance.adapted_from)} — ${esc(x.provenance.provenance_role)}`:""}<br><span class="locked">Датотека: Human Gate / не е јавно активирана</span>${x.superseded_by?`<br><strong>Заменет со:</strong> ${esc(x.superseded_by)}`:""}${x.supersedes?`<br><strong>Ја заменува:</strong> ${esc(x.supersedes)}`:""}</div>
  </article>`).join("")||'<p>Нема записи за избраниот филтер.</p>';
 }
 fetch("/data/guides.json").then(r=>r.json()).then(d=>{
