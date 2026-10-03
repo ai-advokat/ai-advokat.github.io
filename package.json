@@ -37,7 +37,8 @@
     "test:citation-authority-engine": "node --no-warnings --test test/citation-authority-engine.test.mjs",
     "test:legal-claim-validator": "node --no-warnings --test test/legal-claim-validator.test.mjs",
     "test:response-provenance": "node --no-warnings --test test/response-provenance-contract.test.mjs",
-    "test:human-gate-ledger": "node --no-warnings --test test/human-gate-decision-ledger.test.mjs"
+    "test:human-gate-ledger": "node --no-warnings --test test/human-gate-decision-ledger.test.mjs",
+    "test:audit-trail-history": "node --no-warnings --test test/audit-trail-decision-history.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
