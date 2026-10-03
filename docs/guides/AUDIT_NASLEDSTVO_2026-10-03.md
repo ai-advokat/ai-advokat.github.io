@@ -89,3 +89,16 @@ This audit does **not** mean:
 - production D1/corpus-write approval.
 
 Those remain separate Human Gates.
+
+
+## Author approval recorded
+
+On 2026-10-03, attorney Zoran Stojankich explicitly approved the upgraded inheritance guide candidate ("odlicno").
+
+Governance effect:
+- author approval: **APPROVED**
+- candidate status: **author_approved_candidate**
+- public DOCX/PDF release: **NOT approved by this approval alone**
+- GitHub merge: **separate Human Gate**
+- AI/RAG ingest: **separate Human Gate**
+- production D1/corpus write: **separate Human Gate**
