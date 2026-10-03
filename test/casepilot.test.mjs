@@ -7,6 +7,8 @@ import {
   contradiction,
   aiConclusion,
   approveAIConclusion,
+  validateAIConclusion,
+  validateContradiction,
   casePilotReadiness
 } from "../src/casepilot.js";
 
@@ -36,8 +38,25 @@ describe("AI Advokat CasePilot foundation", () => {
     assert.equal(c.right.sourceId,"D-10");
   });
 
+  test("AI conclusions require exact source and page provenance and snapshot it", () => {
+    assert.equal(validateAIConclusion({id:"AI-X",text:"x",sources:[null]}).ok,false);
+    assert.equal(validateAIConclusion({id:"AI-X",text:"x",sources:[{sourceId:"D-08"}]}).ok,false);
+    const refs=[{sourceId:"D-08",page:2}];
+    const c=aiConclusion({id:"AI-X",text:"x",sources:refs});
+    refs[0].sourceId="MUTATED";
+    refs.push({sourceId:"D-99",page:9});
+    assert.deepEqual(c.sources,[{sourceId:"D-08",page:2}]);
+    assert.ok(Object.isFrozen(c.sources));
+    assert.ok(Object.isFrozen(c.sources[0]));
+  });
+
+  test("contradictions require statement text plus page provenance", () => {
+    assert.equal(validateContradiction({left:{sourceId:"D-01"},right:{sourceId:"D-02"}}).ok,false);
+    assert.throws(()=>contradiction({sourceId:"D-01",page:1},{text:"B",sourceId:"D-02",page:2}),/invalid_contradiction/);
+  });
+
   test("AI conclusions are locked until explicit lawyer decision", () => {
-    const c=aiConclusion({id:"AI-01",text:"Potential time contradiction",sources:["D-06","D-10"]});
+    const c=aiConclusion({id:"AI-01",text:"Potential time contradiction",sources:[{sourceId:"D-06",page:4},{sourceId:"D-10",page:1}]});
     assert.equal(c.lockedForProfessionalUse,true);
     const approved=approveAIConclusion(c,{decision:"accepted",lawyer:"lawyer-1",at:"2026-10-03T12:00:00Z"});
     assert.equal(approved.lockedForProfessionalUse,false);
@@ -46,7 +65,7 @@ describe("AI Advokat CasePilot foundation", () => {
 
   test("readiness never auto-unlocks professional use", () => {
     const ws=createCasePilotWorkspace();
-    ws.sections.ai_conclusion_register.push(aiConclusion({id:"AI-01",text:"Check attribution",sources:["D-08"]}));
+    ws.sections.ai_conclusion_register.push(aiConclusion({id:"AI-01",text:"Check attribution",sources:[{sourceId:"D-08",page:2}]}));
     const readiness=casePilotReadiness(ws);
     assert.equal(readiness.readyForProfessionalUse,false);
     assert.equal(readiness.unreviewedAIConclusions,1);
