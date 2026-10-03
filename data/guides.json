@@ -1030,11 +1030,11 @@
       "title": "Водич низ управната постапка и управниот спор",
       "edition": "Проширено и целосно адаптирано издание 2.0",
       "edition_date": "2026-10-03",
-      "pages": null,
+      "pages": 15,
       "source_file": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2.docx",
       "attribution": "Автор: адвокат Зоран Стојанкиќ • AI Advokat / Paragraf.mk",
-      "status": "source_checked_review",
-      "status_label": "Целосно адаптирано македонско издание • извори и референци вградени • финален Human Gate пред јавно објавување",
+      "status": "corrected_candidate",
+      "status_label": "V2.0 FINAL MASTER candidate • финален правен, редакциски и визуелен audit завршен • чека авторско одобрување",
       "scope": "Управна постапка и управен спор во Северна Македонија: рокови, молчење на администрацијата, тужба, времени мерки, Управен и Виш управен суд, полна јурисдикција, жалба, повторување, трошоци, бесплатна правна помош, извршување, FAQ, поимник, контролни листи и практични модели.",
       "source_role": "primary",
       "supersedes": "guide-administrative-v1",
@@ -1054,7 +1054,22 @@
           "Катарина Голубовиќ"
         ]
       },
-      "catalog_public": false
+      "catalog_public": false,
+      "candidate_artifact": {
+        "artifact_version": "V2.0 FINAL MASTER",
+        "docx_file": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2_FINAL_MASTER.docx",
+        "docx_sha256": "de609c4526eee401a3759ff2fe22556cacded9bef87cdf675213e69e8a10ed11",
+        "pdf_file": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2_FINAL_MASTER.pdf",
+        "pdf_sha256": "4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d",
+        "audit_date": "2026-10-04",
+        "legal_audit": "pass_no_p1_blockers",
+        "editorial_audit": "pass",
+        "visual_qa": "pass_15_pages",
+        "author_approval": "pending",
+        "public_release": "not_authorized",
+        "rag_eligibility": "not_authorized",
+        "production_corpus_write": "not_authorized"
+      }
     }
   ]
 }
