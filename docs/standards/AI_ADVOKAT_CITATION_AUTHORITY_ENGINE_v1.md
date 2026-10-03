@@ -78,9 +78,9 @@ Every consequential legal claim should be representable as:
 
 `claim -> authority_class -> source_identity -> version/date -> locator -> verification_state -> provenance`
 
-Where available, the locator should identify an article, paragraph, decision number, section or other precise anchor.
+Every current-law claim must identify the source version/date that was actually checked. For high-risk current-law claims, the locator should also identify an article, paragraph, decision number, section or other precise anchor.
 
-A bare URL is not sufficient provenance for a high-risk current-law claim.
+A bare URL is not sufficient provenance for a current-law claim.
 
 ## 4. Current-law rule
 
@@ -120,7 +120,8 @@ The engine must reject or downgrade a claim when:
 - an A4/A5 source is mislabelled as binding law;
 - a historical or superseded source is presented as current without explicit qualification;
 - a citation locator is invented;
-- verification state is missing for a high-risk current-law claim.
+- verification state is missing or invalid;
+- a current-law claim has no source version/date identifying the temporal anchor.
 
 ## 8. Human Gate
 
