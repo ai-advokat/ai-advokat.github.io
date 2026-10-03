@@ -27,7 +27,8 @@
     "validate:corpus": "node scripts/validate-legal-corpus.mjs",
     "test:corpus-foundation": "node --no-warnings --test test/corpus-foundation.test.mjs",
     "apply:amendments": "node scripts/apply-amendments.mjs",
-    "db:preflight:production": "wrangler d1 execute ai-advokat-db --remote --file scripts/legacy-corpus-backfill-preflight.sql"
+    "db:preflight:production": "wrangler d1 execute ai-advokat-db --remote --file scripts/legacy-corpus-backfill-preflight.sql",
+    "test:casepilot": "node --no-warnings --test test/casepilot.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
