@@ -397,6 +397,40 @@
           "resulting_state": "legal_source_review"
         }
       ]
+    },
+    {
+      "subject_id": "guide-administrative-v2",
+      "title": "Водич низ управната постапка и управниот спор",
+      "current_governance_status": "corrected_candidate",
+      "source_set": "administrative_v2_2026_10_04",
+      "events": [
+        {
+          "event_id": "guide-administrative-v2:legal_source_review_completed:2026-10-04",
+          "event_type": "legal_source_review_completed",
+          "occurred_at": "2026-10-04",
+          "artifact_version": "V2.0 FINAL MASTER",
+          "evidence": {
+            "audit_file": "docs/guides/AUDIT_ADMINISTRATIVE_V2_FINAL_MASTER_2026-10-04.md"
+          },
+          "resulting_state": "corrected_candidate"
+        },
+        {
+          "event_id": "guide-administrative-v2:corrected_candidate_fingerprinted:2026-10-04",
+          "event_type": "corrected_candidate_fingerprinted",
+          "occurred_at": "2026-10-04",
+          "artifact_version": "V2.0 FINAL MASTER",
+          "artifact_fingerprint": {
+            "docx_sha256": "de609c4526eee401a3759ff2fe22556cacded9bef87cdf675213e69e8a10ed11",
+            "pdf_sha256": "4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d"
+          },
+          "evidence": {
+            "docx": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2_FINAL_MASTER.docx",
+            "pdf": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2_FINAL_MASTER.pdf",
+            "audit_file": "docs/guides/AUDIT_ADMINISTRATIVE_V2_FINAL_MASTER_2026-10-04.md"
+          },
+          "resulting_state": "corrected_candidate"
+        }
+      ]
     }
   ]
 }
