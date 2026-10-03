@@ -36,7 +36,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 <div class="guard"><strong>Изворот прв.</strong> Водичите се авторски/редакциски секундарни материјали. Не се прикажуваат како важечки закон и не се користат за професионален правен заклучок без проверка на официјалниот извор и човечка правна ревизија. PDF-преземањето останува заклучено додека Зоран не одобри конкретна верзија за јавно објавување.</div>
 </section>
 <section class="stats" aria-label="Статистика на библиотеката">
-<div class="stat"><b id="countAll">12</b><span>доставени PDF изданија</span></div>
+<div class="stat"><b id="countAll">13</b><span>12 доставени изданија + 1 авторска V2 надградба</span></div>
 <div class="stat"><b id="countPrimary">11</b><span>активни/посебни записи</span></div>
 <div class="stat"><b>2</b><span>верзии на Водич 02</span></div>
 <div class="stat"><b>1</b><span>Human Gate пред јавен PDF</span></div>
@@ -52,7 +52,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 <h2>Контрола на квалитет</h2>
 <ul>
 <li>Дупликатите не се бришат: се водат како <strong>version history</strong> (Водич 02).</li>
-<li>Краткиот Водич 26 и 24-страничниот управен водич се водат одвоено: првиот е редакциски краток/проширен водич, вториот е сеопфатна авторска верзија 1.0.</li>
+<li>Краткиот Водич 26 останува посебен. Сеопфатниот управен водич V2 е новата примарна верзија, а верзијата 1.0 останува во <strong>version history</strong>.</li>
 <li>Секој запис е <strong>reference-only</strong> за AI додека Human Gate не го одобри за професионална употреба.</li>
 <li>Правните рокови и статусот на прописите мора повторно да се проверат со официјален извор на датумот на конкретната употреба.</li>
 </ul>
@@ -72,7 +72,7 @@ function render(){
  <div><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.format)}</span><span class="pill ${statusClass(x.status)}">${esc(x.status_label)}</span></div>
  <h2>${esc(x.title)}</h2><div class="meta">${esc(x.category)} · ${esc(x.edition)} · ${esc(x.edition_date)} · ${esc(x.pages)} стр.</div>
  <p class="scope">${esc(x.scope)}</p>
- <div class="source"><strong>Атрибуција:</strong> ${esc(x.attribution)}<br><strong>Изворна датотека:</strong> ${esc(x.source_file)}<br><strong>SHA-256:</strong> <code>${esc((x.sha256||"").slice(0,16))}…</code><br><span class="locked">PDF: Human Gate / не е јавно активиран</span>${x.superseded_by?`<br><strong>Заменет со:</strong> ${esc(x.superseded_by)}`:""}${x.supersedes?`<br><strong>Ја заменува:</strong> ${esc(x.supersedes)}`:""}</div>
+ <div class="source"><strong>Атрибуција:</strong> ${esc(x.attribution)}<br><strong>Изворна датотека:</strong> ${esc(x.source_file)}<br><strong>SHA-256:</strong> <code>${esc((x.sha256||"").slice(0,16))}…</code>${x.provenance?`<br><strong>Provenance:</strong> ${esc(x.provenance.adapted_from)} — ${esc(x.provenance.provenance_role)}`:""}<br><span class="locked">PDF: Human Gate / не е јавно активиран</span>${x.superseded_by?`<br><strong>Заменет со:</strong> ${esc(x.superseded_by)}`:""}${x.supersedes?`<br><strong>Ја заменува:</strong> ${esc(x.supersedes)}`:""}</div>
  </article>`).join("")||'<p>Нема записи за избраниот филтер.</p>';
 }
 fetch("/data/guides.json").then(r=>r.json()).then(d=>{
