@@ -66,15 +66,15 @@
       "id": "inheritance-estate-guide-2025-r1",
       "kind": "practical_professional_guide",
       "title": "Водич за наследство и оставинска постапка",
-      "status": "corrected_candidate",
+      "status": "author_approved_candidate",
       "source_edition": "Прво издание 2025",
       "legal_source_review_date": "2026-10-03",
       "candidate_docx_sha256": "ccc2280b06d50b7ad7f2213c1a3f0bc4c3b016dd708e4a9ca05ef607cf4f3a86",
       "candidate_pdf_sha256": "b60c8f2407026361caff7cf5de82d3cb58f6731bc215e9e1460b0e2ba580a741",
-      "author_approval": "pending",
+      "author_approval": "approved_2026-10-03",
       "public_release": false,
       "rag_eligible": false,
-      "notes": "Confirmed as one of the NEW last-set guides. Full legal/source upgrade completed; corrected candidate remains author/Human-Gated.",
+      "notes": "Confirmed as one of the NEW last-set guides. Full legal/source upgrade completed and author Zoran Stojankich approved the upgraded inheritance candidate on 2026-10-03. Public release, GitHub merge and RAG ingest remain separate Human Gates.",
       "source_set": "last_set_2026_10_03"
     },
     {
