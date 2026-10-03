@@ -30,10 +30,11 @@ No lane implies the next lane.
 
 Material used by AI Advokat must carry a machine-readable epistemic label:
 
-- `verified_current_law` — checked against identified current primary/official sources on a recorded date.
-- `historical_source` — valid as historical evidence but not represented as current law.
+- `verified_current` — checked against identified current primary/official sources on a recorded date.
+- `verified_historical` — verified as historical evidence but not represented as current law.
 - `authorial_analysis` — interpretation, commentary or argument attributed to its author.
 - `pending_verification` — not safe to present as a current-law proposition.
+- `conflicted` — material source conflict remains unresolved.
 - `superseded` — replaced by a newer controlled version.
 
 A legal proposition cannot be promoted from `pending_verification` merely because it appears in an authored publication.
