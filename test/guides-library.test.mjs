@@ -8,7 +8,7 @@ const html=fs.readFileSync("guides/index.html","utf8");
 describe("Zoran guides library governance",()=>{
   test("G1 registry contains 12 delivered editions plus controlled V2 upgrade",()=>{
     assert.equal(data.records.length,13);
-    assert.equal(new Set(data.records.map(x=>x.id)).size,12);
+    assert.equal(new Set(data.records.map(x=>x.id)).size,13);
   });
   test("G2 no guide exposes a public PDF before Human Gate",()=>{
     assert.ok(data.records.every(x=>x.public_pdf===null));
