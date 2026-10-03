@@ -169,7 +169,10 @@
           "sha256": "f0819dcad3aba318d12484ab538c4cddd0382084102549a1165d3ab16c2247b3",
           "role": "author_delivered_source"
         }
-      }
+      },
+      "audit_file": "docs/guides/AUDIT_REAL_ESTATE_TRANSFER_2026-10-03.md",
+      "audit_opened_on": "2026-10-03",
+      "implementation_phase": "legal_source_upgrade_open"
     },
     {
       "id": "last-set-cadastre-citizen",
@@ -202,7 +205,10 @@
           "sha256": "a01f735f51ca91c8fd75450fa88934731f21fc7250d311d681530d6690cf268d",
           "role": "author_delivered_source"
         }
-      }
+      },
+      "audit_file": "docs/guides/AUDIT_CADASTRE_CITIZEN_2026-10-03.md",
+      "audit_opened_on": "2026-10-03",
+      "implementation_phase": "legal_source_upgrade_open"
     },
     {
       "id": "last-set-cadastre-professional",
@@ -235,7 +241,10 @@
           "sha256": "0a97bb5c6b12363b5a7f1ced1542582dad73503da191ec2458b5224799ee08d3",
           "role": "author_delivered_source"
         }
-      }
+      },
+      "audit_file": "docs/guides/AUDIT_CADASTRE_PROFESSIONAL_2026-10-03.md",
+      "audit_opened_on": "2026-10-03",
+      "implementation_phase": "legal_source_upgrade_open"
     },
     {
       "id": "last-set-administrative-law",
@@ -268,7 +277,10 @@
           "sha256": "305b5b2af6e33050a91c358073408496b218f922c7bfa7734d1b81f82bb4f481",
           "role": "author_delivered_source"
         }
-      }
+      },
+      "audit_file": "docs/guides/AUDIT_ADMINISTRATIVE_LAW_2026-10-03.md",
+      "audit_opened_on": "2026-10-03",
+      "implementation_phase": "legal_source_upgrade_open"
     },
     {
       "id": "last-set-criminal-law",
@@ -301,7 +313,10 @@
           "sha256": "bb29197294c80581a39b6466c421f255a2b3a9c3e995127e12fb8e4fd61b75fc",
           "role": "author_delivered_source"
         }
-      }
+      },
+      "audit_file": "docs/guides/AUDIT_CRIMINAL_LAW_2026-10-03.md",
+      "audit_opened_on": "2026-10-03",
+      "implementation_phase": "legal_source_upgrade_open"
     },
     {
       "id": "last-set-tax-law",
@@ -334,7 +349,10 @@
           "sha256": "dcf63b6bd04a24251983b0c2c00139687622b166be45291604ef4bf244f039b6",
           "role": "author_delivered_source"
         }
-      }
+      },
+      "audit_file": "docs/guides/AUDIT_TAX_LAW_2026-10-03.md",
+      "audit_opened_on": "2026-10-03",
+      "implementation_phase": "legal_source_upgrade_open"
     },
     {
       "id": "last-set-civil-procedure",
@@ -367,7 +385,10 @@
           "sha256": "16aa946b028be3d47d8cb2cf9ed15d8656cdfee9fe2bd76b3b6a2ace53f9ced1",
           "role": "author_delivered_source"
         }
-      }
+      },
+      "audit_file": "docs/guides/AUDIT_CIVIL_PROCEDURE_2026-10-03.md",
+      "audit_opened_on": "2026-10-03",
+      "implementation_phase": "legal_source_upgrade_open"
     },
     {
       "id": "last-set-commercial-law",
@@ -400,7 +421,10 @@
           "sha256": "c516dc2d019f0be93e6ad589a32337a5059cb0a0588ed655910798bc719e0955",
           "role": "author_delivered_source"
         }
-      }
+      },
+      "audit_file": "docs/guides/AUDIT_COMMERCIAL_LAW_2026-10-03.md",
+      "audit_opened_on": "2026-10-03",
+      "implementation_phase": "legal_source_upgrade_open"
     },
     {
       "id": "last-set-family-law",
@@ -433,7 +457,10 @@
           "sha256": "f8a3d39070f745d0c2543f63b90a54b1296da90ee8bcef33a887de7b294ff8ca",
           "role": "author_delivered_source"
         }
-      }
+      },
+      "audit_file": "docs/guides/AUDIT_FAMILY_LAW_2026-10-03.md",
+      "audit_opened_on": "2026-10-03",
+      "implementation_phase": "legal_source_upgrade_open"
     }
   ],
   "last_set_2026_10_03": {
