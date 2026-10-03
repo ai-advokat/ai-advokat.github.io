@@ -60,6 +60,8 @@ jobs:
         run: npm run test:legal-evidence-cards
       - name: Citation and Authority Engine tests
         run: npm run test:citation-authority-engine
+      - name: Legal Claim Validator tests
+        run: npm run test:legal-claim-validator
       - name: Security, quota, routing and truth-labelling tests
         run: npm run test:security
       - name: Legal parser regression tests
