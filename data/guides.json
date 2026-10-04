@@ -55,7 +55,8 @@
         "explicit_cross_category_related_guides",
         "stable_public_slugs",
         "share_link",
-        "print_friendly_record"
+        "print_friendly_record",
+        "citizen_guide_router_clickable_recommendations"
       ],
       "public_document_download": false,
       "rag_eligibility": false,
@@ -113,7 +114,7 @@
     },
     "citizen_guide_router": {
       "version": "1.0",
-      "status": "implementation_candidate",
+      "status": "active_public_metadata_router",
       "date": "2026-10-04",
       "purpose": "Route ordinary-language citizen questions to clickable public guide records before or alongside article-level legal research.",
       "source_scope": "public_catalogue_metadata_only",
