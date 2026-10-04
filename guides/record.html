@@ -6,6 +6,12 @@
 <meta name="robots" content="index,follow">
 <title>Детален запис · Практични правни водичи · AI Advokat</title>
 <meta name="description" content="Детален јавен metadata-запис за практичен правен водич на AI Advokat.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Advokat">
+<meta property="og:title" content="Практичен правен водич · AI Advokat">
+<meta property="og:description" content="Контролиран јавен metadata-запис со provenance, fingerprint, version history и Human Gate.">
+<meta property="og:url" content="https://ai-advokat.github.io/guides/record.html">
+<meta name="twitter:card" content="summary">
 <style>
 :root{--bg:#f4f7fa;--surface:#fff;--ink:#102033;--muted:#5b6979;--line:#dbe3ea;--navy:#0c2038;--blue:#173d66;--amber:#8a5a00;--red:#9b1c1c;--green:#1b6a45;--soft:#edf4fa;--gold:#b9985b;--shadow:0 12px 32px rgba(12,32,56,.08)}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.62 system-ui,-apple-system,Segoe UI,sans-serif}a{color:var(--blue)}button{font:inherit}
@@ -49,6 +55,9 @@ fetch("/data/guides.json").then(r=>r.json()).then(d=>{
  document.title=x.title+" · AI Advokat";
  const canon=document.createElement("link");canon.rel="canonical";canon.href=new URL(x.public_record_url,location.origin).href;document.head.appendChild(canon);
  const desc=document.querySelector('meta[name="description"]');desc.content=x.scope;
+ const ogTitle=document.querySelector('meta[property="og:title"]');if(ogTitle) ogTitle.content=x.title+" · AI Advokat";
+ const ogDesc=document.querySelector('meta[property="og:description"]');if(ogDesc) ogDesc.content=x.scope;
+ const ogUrl=document.querySelector('meta[property="og:url"]');if(ogUrl) ogUrl.content=new URL(x.public_record_url,location.origin).href;
  const structured={"@context":"https://schema.org","@type":"CreativeWork","name":x.title,"author":{"@type":"Person","name":"Зоран Стојанкиќ"},"dateModified":x.edition_date,"description":x.scope,"isPartOf":{"@type":"CollectionPage","name":"Моите права во секојдневниот живот","url":"https://ai-advokat.github.io/guides/"}};
  const ld=document.createElement("script");ld.type="application/ld+json";ld.textContent=JSON.stringify(structured);document.head.appendChild(ld);
  document.querySelector("#view").innerHTML=`<article class="sheet">
