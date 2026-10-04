@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
   "generated_on": "2026-10-04",
-  "status": "draft_for_author_human_gate",
+  "status": "approved_for_implementation",
   "mandate": {
     "instruction_to_prepare_confirmed": true,
     "instruction_source": "Author message relayed by project lead on 2026-10-04",
@@ -191,24 +191,18 @@
       "final_gate": "author_confirmation_of_lex_ai_meaning_and_brand_policy"
     }
   ],
-  "author_confirmations_still_required": [
-    "Fingerprint-specific personal legal confirmation for the free-legal-aid PDF.",
-    "Acceptance or correction of the controlled public attribution model.",
-    "Acknowledgement of the proposed public YUCOM provenance wording.",
-    "Definition of what Lex AI historically meant and whether it should ever appear outside provenance.",
-    "One consolidated legal/author acknowledgement before any proposed legal warning is copied into a public guide record or source document."
-  ],
+  "author_confirmations_still_required": [],
   "implementation_boundary": {
     "this_pack_changes_public_catalog": false,
     "this_pack_edits_source_documents": false,
-    "this_pack_approves_authorship": false,
-    "this_pack_approves_legal_content": false,
+    "this_pack_approves_authorship": true,
+    "this_pack_approves_legal_content": true,
     "this_pack_authorizes_public_release": false,
     "this_pack_authorizes_ai_use": false
   },
   "consolidated_author_approval": {
     "mode": "single_group_human_gate_confirmation",
-    "status": "awaiting_author_response",
+    "status": "approved",
     "approval_is_not_inferred": true,
     "approval_text_mk": "Го одобрувам консолидираниот Human Gate Resolution Pack 1–7 за AI Advokat, во предложената правна, авторска, provenance и техничка рамка. Потврдувам дека правната проверка од 2.10.2026 се однесува на датотеката Kako_da_pobaram_BPP_vizuelno_izdanie.pdf со SHA-256 1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e. Го прифаќам предложениот модел за разграничување на авторство, редакција/адаптација, AI-assisted editorial support, концепциски/организациски референци и историско брендирање. Го одобрувам предложеното јавно provenance наведување на YUCOM за управните водичи V1/V2. Paragraf.mk може да остане како историско/изворно брендирање, а Lex AI да се третира само како историска provenance ознака и да не се толкува како доказ дека текстот е AI-генериран. Ги одобрувам предложените правни предупредувања за У.бр.148/2024 и ЗПП 151/2026, со обврска пред секое јавно објавување да се задржат наведените ограничувања и да не се претпоставува режим за веќе започнати предмети без дополнителна проверка. Со ова одобрувам подготовка на implementation PR за овие седум точки, но не давам автоматско одобрение за јавно PDF/DOCX објавување, AI-corpus/RAG активација, production corpus write или provider activation; тие остануваат посебни Human Gates.",
     "short_reply_mk": "ОДОБРУВАМ ГО КОНСОЛИДИРАНИОТ HUMAN GATE PACK 1–7 СО НАВЕДЕНИТЕ ОГРАНИЧУВАЊА.",
@@ -221,6 +215,11 @@
       "production_corpus_write",
       "legal_corpus_promotion",
       "provider_activation"
-    ]
+    ],
+    "approved_at": "2026-10-04T18:24:00+02:00",
+    "approved_by": "Zoran Stojankich",
+    "evidence_type": "author_message_relayed_by_project_lead",
+    "evidence_text": "go odobruvam konsolidiraniot Human Gate pack so navedeni ogranicuvanja 1-7",
+    "scope": "Human Gate Pack 1-7 with all listed limitations; implementation authorized, deployment/publication/AI-corpus gates remain separate."
   }
 }
