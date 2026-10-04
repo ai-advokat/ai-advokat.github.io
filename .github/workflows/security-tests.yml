@@ -58,6 +58,8 @@ jobs:
         run: npm run test:casepilot
       - name: Zoran practical guides governance tests
         run: npm run test:guides
+      - name: Guides Human Gate resolution pack tests
+        run: npm run test:guides-human-gate-pack
       - name: Professional Library governance tests
         run: npm run test:professional-library
       - name: Professional publication governance tests

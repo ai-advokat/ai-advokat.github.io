@@ -9,7 +9,7 @@
     "exact_file_fingerprint_binding",
     "no_public_release_or_rag_implication"
   ],
-  "status": "open",
+  "status": "approved_for_implementation",
   "items": [
     {
       "issue_id": "silence-of-administration-consistency",
@@ -23,7 +23,14 @@
       "already_flagged_reference": "guide-53-full-word-2026",
       "basis": "Guide 53 already carries the U.br.148/2024 correction warning. The other silence-of-administration guides require the same issue to be checked consistently before any source-document release.",
       "required_human_gate": "legal_source_review",
-      "public_catalog_change_in_this_pr": false
+      "public_catalog_change_in_this_pr": false,
+      "resolution_draft": {
+        "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
+        "issue_id": "silence-of-administration-consistency"
+      },
+      "human_gate_status": "approved_for_implementation",
+      "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
+      "human_gate_approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "zpp-2027-transition-crosscheck",
@@ -41,7 +48,14 @@
       "basis": "Repository ZPP timeline records 151/2026 as published 08.07.2026, in force 16.07.2026 and applicable from 18.01.2027. Guides dated before the transition need a human review of whether and how the new procedural track affects their public warning.",
       "source_reference": "assets/zpp-timeline.js",
       "required_human_gate": "legal_source_review",
-      "public_catalog_change_in_this_pr": false
+      "public_catalog_change_in_this_pr": false,
+      "resolution_draft": {
+        "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
+        "issue_id": "zpp-2027-transition-crosscheck"
+      },
+      "human_gate_status": "approved_for_implementation",
+      "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
+      "human_gate_approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "guide-05-statute-identification",
@@ -52,7 +66,14 @@
       ],
       "basis": "The public status note references Articles 18 and 22(4) without naming the statute. The statute must be identified and source-bound before any stronger public statement.",
       "required_human_gate": "legal_source_review",
-      "public_catalog_change_in_this_pr": false
+      "public_catalog_change_in_this_pr": false,
+      "resolution_draft": {
+        "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
+        "issue_id": "guide-05-statute-identification"
+      },
+      "human_gate_status": "approved_for_implementation",
+      "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
+      "human_gate_approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "free-legal-aid-review-fingerprint-binding",
@@ -65,7 +86,14 @@
       "source_sha256": "1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e",
       "basis": "Confirm that the 02.10.2026 legal review applies to this exact visual-edition file fingerprint.",
       "required_human_gate": "legal_source_review",
-      "public_catalog_change_in_this_pr": false
+      "public_catalog_change_in_this_pr": false,
+      "resolution_draft": {
+        "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
+        "issue_id": "free-legal-aid-review-fingerprint-binding"
+      },
+      "human_gate_status": "approved_for_implementation",
+      "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
+      "human_gate_approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "authorship-editorial-role-normalization",
@@ -81,7 +109,14 @@
       ],
       "basis": "Public attribution should distinguish author, editor/adaptor, source provider, brand and AI-assisted editorial contribution. No authorship is rewritten in this PR.",
       "required_human_gate": "author_approval",
-      "public_catalog_change_in_this_pr": false
+      "public_catalog_change_in_this_pr": false,
+      "resolution_draft": {
+        "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
+        "issue_id": "authorship-editorial-role-normalization"
+      },
+      "human_gate_status": "approved_for_implementation",
+      "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
+      "human_gate_approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "yucom-provenance-v1-v2",
@@ -93,7 +128,14 @@
       ],
       "basis": "Administrative V2 already records YUCOM 2023 as conceptual/organizational reference only. Zoran should confirm the corresponding provenance of V1 before a public authorship/provenance rewrite.",
       "required_human_gate": "author_approval",
-      "public_catalog_change_in_this_pr": false
+      "public_catalog_change_in_this_pr": false,
+      "resolution_draft": {
+        "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
+        "issue_id": "yucom-provenance-v1-v2"
+      },
+      "human_gate_status": "approved_for_implementation",
+      "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
+      "human_gate_approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "paragraf-lex-ai-branding-decision",
@@ -102,7 +144,24 @@
       "records_scope": "26_FULL_WORD_guides_38_63",
       "basis": "The source documents carry Paragraf.mk and Lex AI branding. A deliberate decision is needed on whether those labels remain as historical provenance, are replaced in public display, or require an explanatory note.",
       "required_human_gate": "author_approval",
-      "public_catalog_change_in_this_pr": false
+      "public_catalog_change_in_this_pr": false,
+      "resolution_draft": {
+        "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
+        "issue_id": "paragraf-lex-ai-branding-decision"
+      },
+      "human_gate_status": "approved_for_implementation",
+      "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
+      "human_gate_approved_by": "Zoran Stojankich"
     }
-  ]
+  ],
+  "resolution_pack": {
+    "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
+    "path": "data/guides-human-gate-resolution-pack-2026-10-04.json",
+    "documentation": "docs/guides/HUMAN_GATE_RESOLUTION_PACK_2026-10-04.md",
+    "status": "approved_for_implementation",
+    "changes_public_catalog": false,
+    "author_final_approval_inferred": false,
+    "approved_at": "2026-10-04T18:24:00+02:00",
+    "approved_by": "Zoran Stojankich"
+  }
 }
