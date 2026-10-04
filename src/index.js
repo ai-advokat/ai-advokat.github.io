@@ -1967,7 +1967,7 @@ async function handleCapabilities(request, env) {
       retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
       legalOrchestrator: orchestratorRuntimeReadiness(env).provider==="configured"
         ? "gpt_6_1_sol_live_governed"
-        : "architecture_v2_armed_provider_secret_required",
+        : "architecture_v2_provider_locked",
       gptWebSearch: orchestratorRuntimeReadiness(env).externalResearchTools,
       gptFileInputs: orchestratorRuntimeReadiness(env).fileInputs,
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
