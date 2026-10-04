@@ -49,3 +49,4 @@ https://ai-advokat.github.io/guides/record.html?id=guide-60-full-word-2026
 https://ai-advokat.github.io/guides/record.html?id=guide-61-full-word-2026
 https://ai-advokat.github.io/guides/record.html?id=guide-62-full-word-2026
 https://ai-advokat.github.io/guides/record.html?id=guide-63-full-word-2026
+https://ai-advokat.github.io/agent-architecture.html
