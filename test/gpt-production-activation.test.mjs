@@ -46,9 +46,9 @@ test("GPTACT3 production activation workflow requires explicit confirmation, bil
   assert.match(workflow,/secrets\.CLOUDFLARE_API_TOKEN/);
   assert.match(workflow,/wrangler secret put OPENAI_API_KEY/);
   assert.match(workflow,/wrangler deploy --config wrangler\.jsonc/);
-  assert.match(workflow,/Live GPT-6\.1 Sol smoke test/);
-  assert.match(workflow,/Live Web search smoke test/);
-  assert.match(workflow,/Live attachment smoke test/);
+  assert.match(workflow,/Live GPT \+ Web \+ attachment smoke test/);
+  assert.match(workflow,/gpt-combined-smoke\.json/);
+  assert.match(workflow,/sources/);
 });
 
 test("GPTACT4 chat privacy is stateless at OpenAI and session-scoped in the browser",()=>{
