@@ -7,10 +7,10 @@
   "orchestration_pattern": "manager_agents_as_tools",
   "design_target": "OpenAI Agents SDK manager-style orchestration",
   "current_runtime": {
-    "state": "gpt_runtime_armed_secret_and_billing_required",
+    "state": "gpt_activation_authorized_pending_secret_and_paid_quota_preflight",
     "compatibility_layer": "Responses API guarded runtime foundation",
     "public_provider_activation": false,
-    "reason": "GPT-6.1 Sol, Web search and attachment runtime flags are armed in production configuration, but provider execution remains fail-closed until a server-side OPENAI_API_KEY is installed and OpenAI billing/spend controls are confirmed.",
+    "reason": "Project lead explicitly authorized production activation. Workflow must still fail closed until OPENAI_API_KEY exists, GPT-6.1 Sol access and paid quota are verified, Cloudflare deploy succeeds, and the live smoke test passes.",
     "approved_target_model": "gpt-6.1-sol"
   },
   "modes": [
@@ -131,7 +131,7 @@
     "default_reasoning_effort": "medium",
     "escalation_reasoning_effort": "high",
     "rationale": "Approved as the primary GPT model for AI Advokat because it is intended for complex professional work with near-Astra capability at substantially lower cost.",
-    "production_provider_activation": false,
+    "production_provider_activation": "authorized_pending_preflight",
     "activation_requirements": [
       "server-side OPENAI_API_KEY installed as Cloudflare Worker secret",
       "billing and spend limit configured in the OpenAI project",
@@ -144,7 +144,10 @@
       "attachment_input_flag_armed": true,
       "api_key_installed": "unknown_not_readable_from_repository",
       "billing_spend_limit_confirmed": false,
-      "production_provider_live": false
+      "production_provider_live": false,
+      "production_activation_authorized": true,
+      "authorization_decision_id": "AI_ADVOKAT_GPT_PRODUCTION_ACTIVATION_2026-10-04",
+      "paid_quota_preflight_passed": false
     }
   },
   "product_experience": {
@@ -193,9 +196,12 @@
     }
   },
   "production_activation_request": {
+    "decision_id": "AI_ADVOKAT_GPT_PRODUCTION_ACTIVATION_2026-10-04",
     "requested_on": "2026-10-04",
     "requested_by_role": "project_lead",
-    "evidence_text": "ajde implementirja",
-    "implementation_status": "armed_pending_secret_and_billing"
+    "evidence_text": "ајде да го активираме гпт ботот",
+    "model": "gpt-6.1-sol",
+    "authorization": "explicit",
+    "implementation_status": "authorized_pending_secret_and_paid_quota_preflight"
   }
 }
