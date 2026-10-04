@@ -5,6 +5,8 @@ import fs from "node:fs";
 const data=JSON.parse(fs.readFileSync("data/guides.json","utf8"));
 const html=fs.readFileSync("guides/index.html","utf8");
 const recordHtml=fs.readFileSync("guides/record.html","utf8");
+const sitemapXml=fs.readFileSync("sitemap.xml","utf8");
+const sitemapTxt=fs.readFileSync("sitemap.txt","utf8");
 
 describe("Zoran guides library governance",()=>{
   test("G1 registry contains 39 governed records including controlled Administrative V2",()=>{
@@ -161,5 +163,24 @@ describe("Zoran guides library governance",()=>{
     assert.equal(data.collection.public_experience.rag_eligibility,false);
     assert.equal(data.collection.public_experience.production_corpus_write,false);
     assert.equal(data.collection.public_experience.legal_corpus_promotion,false);
+  });
+  test("G20 all 38 public guide detail URLs are discoverable in both sitemaps",()=>{
+    const publicRecords=data.records.filter(x=>x.catalog_public===true&&x.public_record_enabled===true);
+    assert.equal(publicRecords.length,38);
+    for(const r of publicRecords){
+      const url="https://ai-advokat.github.io"+r.public_record_url;
+      assert.ok(sitemapXml.includes("<loc>"+url+"</loc>"),url);
+      assert.ok(sitemapTxt.split(/\r?\n/).includes(url),url);
+    }
+    const admin=data.records.find(x=>x.id==="guide-administrative-v2");
+    assert.ok(!sitemapXml.includes("id="+admin.id));
+    assert.ok(!sitemapTxt.includes("id="+admin.id));
+  });
+  test("G21 guides collection and detail pages expose structured discoverability metadata",()=>{
+    assert.match(html,/CollectionPage/);
+    assert.match(html,/numberOfItems/);
+    assert.match(html,/og:title/);
+    assert.match(recordHtml,/og:type/);
+    assert.match(recordHtml,/application\/ld\+json/);
   });
 });
