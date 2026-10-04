@@ -15,7 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/app-icon.svg" />
-  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261004-gpt-shell-v1" />
+  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261005-gpt-corpus-v2" />
   <meta name="application-name" content="AI Advokat" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -1406,7 +1406,7 @@
         <div>
           <span class="tag">AI ADVOKAT · GPT-POWERED WORKSPACE</span>
           <h2 id="aiChatHeading">Разговарајте со AI Advokat</h2>
-          <p>Еден разговор: AI Advokat библиотеката и водичите се проверуваат прво, а GPT слојот е подготвен да преземе за прашања надвор од нив кога production provider-от ќе биде активиран.</p>
+          <p>Еден разговор: AI Advokat прво ги проверува достапните водичи и article-level правниот корпус, а GPT-6.1 Sol е production-активен за контролирана синтеза, Web истражување и прилози.</p>
         </div>
       </div>
 
@@ -1423,7 +1423,7 @@
             <div class="ai-chat-title">
               <div>
                 <strong>AI Advokat</strong>
-                <small id="aiChatProvider">GPT-6.1 Sol target · provider activation pending</small>
+                <small id="aiChatProvider">GPT-6.1 Sol · LIVE governed</small>
               </div>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
@@ -1436,7 +1436,7 @@
 
           <div class="ai-chat-composer-zone">
             <div class="ai-chat-provider-note">
-              <strong>Приватност:</strong> не прикачувајте адвокатска тајна, матични броеви, здравствени или други чувствителни податоци. Attachment обработката кон GPT останува посебно gated додека не се активира provider/privacy контролата.
+              <strong>Приватност:</strong> не прикачувајте адвокатска тајна, матични броеви, здравствени или други чувствителни податоци. Прилозите се обработуваат само кога server-side provider/privacy gate е активен; разговорот останува session-private и OpenAI Responses се повикува со store:false.
             </div>
             <div class="ai-chat-composer">
               <div class="ai-chat-attachments" id="aiChatAttachments"></div>
@@ -1462,7 +1462,7 @@
           <div class="ai-chat-empty">
             <img src="/assets/app-icon.svg" width="58" height="58" alt="" style="border-radius:14px;margin-bottom:12px">
             <h2>Како можам да ви помогнам?</h2>
-            <p>Опишете го проблемот со свои зборови. Ќе ги провериме релевантните AI Advokat водичи, а GPT слојот е подготвен за пошироки прашања кога ќе биде production-активиран.</p>
+            <p>Опишете го проблемот со свои зборови. Ќе ги провериме релевантните AI Advokat водичи и достапниот article-level правен корпус, а GPT-6.1 Sol ќе помогне со контролирана синтеза под Human Gate.</p>
             <div class="ai-chat-starters">
               <button class="ai-chat-starter" type="button" data-starter="Ме повика полиција на информативен разговор. Што треба да знам?">Ме повика полиција — што да направам?</button>
               <button class="ai-chat-starter" type="button" data-starter="Институцијата не ми одговара на барањето. Кои се следните чекори?">Институцијата не ми одговара</button>
@@ -3510,7 +3510,7 @@
   renderCapabilityLabels();
   loadCapabilities();
 </script>
-<script src="/assets/ai-advokat-chat.js?v=20261004-gpt-shell-v1"></script>
+<script src="/assets/ai-advokat-chat.js?v=20261005-gpt-corpus-v2"></script>
 
 </body>
 </html>
