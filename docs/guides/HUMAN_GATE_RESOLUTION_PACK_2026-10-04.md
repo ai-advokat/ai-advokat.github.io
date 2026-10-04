@@ -262,3 +262,20 @@ A consolidated Human Gate should confirm or correct:
 
 Until then this resolution pack remains a **draft** and every publication,
 AI-corpus/RAG and production gate stays closed.
+
+
+---
+
+## Consolidated author approval — single Human Gate
+
+To avoid seven separate replies, the author may approve the complete draft package with one consolidated confirmation.
+
+### Full approval text
+
+> Го одобрувам консолидираниот Human Gate Resolution Pack 1–7 за AI Advokat, во предложената правна, авторска, provenance и техничка рамка. Потврдувам дека правната проверка од 2.10.2026 се однесува на датотеката `Kako_da_pobaram_BPP_vizuelno_izdanie.pdf` со SHA-256 `1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e`. Го прифаќам предложениот модел за разграничување на авторство, редакција/адаптација, AI-assisted editorial support, концепциски/организациски референци и историско брендирање. Го одобрувам предложеното јавно provenance наведување на YUCOM за управните водичи V1/V2. Paragraf.mk може да остане како историско/изворно брендирање, а Lex AI да се третира само како историска provenance ознака и да не се толкува како доказ дека текстот е AI-генериран. Ги одобрувам предложените правни предупредувања за У.бр.148/2024 и ЗПП 151/2026, со обврска пред секое јавно објавување да се задржат наведените ограничувања и да не се претпоставува режим за веќе започнати предмети без дополнителна проверка. Со ова одобрувам подготовка на implementation PR за овие седум точки, но не давам автоматско одобрение за јавно PDF/DOCX објавување, AI-corpus/RAG активација, production corpus write или provider activation; тие остануваат посебни Human Gates.
+
+### Short reply accepted
+
+> **ОДОБРУВАМ ГО КОНСОЛИДИРАНИОТ HUMAN GATE PACK 1–7 СО НАВЕДЕНИТЕ ОГРАНИЧУВАЊА.**
+
+The short reply is valid only as acceptance of the full text immediately above. It authorizes preparation of the implementation PR for the seven reviewed issues. It does **not** open any publication, AI-corpus/RAG, production-write or provider-activation gate.
