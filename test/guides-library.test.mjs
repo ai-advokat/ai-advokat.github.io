@@ -63,7 +63,7 @@ describe("Zoran guides library governance",()=>{
     assert.match(html,/секундарни авторски\/редакциски материјали/);
     assert.match(html,/човечка правна ревизија/);
     assert.match(html,/не се прикажуваат како важечки закон/i);
-    assert.match(html,/Јавните PDF-изданија се одобрени/);
+    assert.match(html,/Јавното PDF-објавување е одобрено во принцип, но е ставено на hold/);
   });
 
   test("G7 FULL Word batch 38-63 is complete, provenance-locked and does not pretend Word has fixed page counts",()=>{
@@ -201,7 +201,7 @@ describe("Zoran guides library governance",()=>{
   test("G17 public detail experience is PDF-aware while remaining fail-closed for unbound assets and AI use",()=>{
     assert.match(recordHtml,/Public PDF Human Gate/);
     assert.match(recordHtml,/Отвори цел PDF/);
-    assert.match(recordHtml,/точниот артефакт сè уште не е објавен/);
+    assert.match(recordHtml,/публикацијата е на hold до финално пречистување и повторна проверка/);
     assert.match(recordHtml,/catalog_public===true/);
     assert.match(recordHtml,/public_pdf/);
   });
