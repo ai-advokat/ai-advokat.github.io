@@ -12,6 +12,7 @@ import {
   openAIOrchestratorConfigured,
   orchestratorRuntimeReadiness,
   extractOpenAIResponseText,
+  extractOpenAIWebCitations,
   orchestratorInstructions
 } from "../src/agent-orchestrator.js";
 import {
@@ -120,6 +121,17 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.equal(extractOpenAIResponseText({answer:"unsafe-shape"}),null);
   });
 
+  test("Responses API web citations are extracted as safe source metadata", () => {
+    const citations=extractOpenAIWebCitations({
+      output:[{type:"message",content:[{type:"output_text",text:"x",annotations:[
+        {type:"url_citation",url:"https://example.com/a",title:"Example A"},
+        {type:"url_citation",url:"javascript:alert(1)",title:"Unsafe"},
+        {type:"url_citation",url:"https://example.com/a",title:"Duplicate"}
+      ]}]}]
+    });
+    assert.deepEqual(citations,[{url:"https://example.com/a",title:"Example A"}]);
+  });
+
   test("orchestrator contract states corpus, external-research and jurisdiction boundaries", () => {
     const rules=orchestratorInstructions(buildAgentPlan("Спореди EU и македонско право"));
     assert.match(rules,/Never merge jurisdictions/);
@@ -166,7 +178,9 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.match(architecturePage,/GPT General Assistant/);
     assert.match(architecturePage,/GPT-style workspace/);
     assert.equal(architectureManifest.product_experience.backend_contract.endpoint,"/api/chat");
-    assert.equal(architectureManifest.product_experience.backend_contract.conversations_api,true);
+    assert.equal(architectureManifest.product_experience.backend_contract.conversations_api,false);
+    assert.equal(architectureManifest.product_experience.backend_contract.responses_store,false);
+    assert.equal(architectureManifest.product_experience.backend_contract.conversation_state,"browser_session_history_replayed_as_context");
     assert.equal(architectureManifest.product_experience.current_activation.provider_execution,false);
   });
 
@@ -195,7 +209,10 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.equal(architectureManifest.current_runtime.approved_target_model,"gpt-6.1-sol");
     assert.equal(architectureManifest.current_runtime.public_provider_activation,false);
     assert.match(wranglerConfig,/"OPENAI_MODEL"\s*:\s*"gpt-6\.1-sol"/);
-    assert.doesNotMatch(wranglerConfig,/OPENAI_ORCHESTRATOR_ENABLED/);
+    assert.match(wranglerConfig,/"OPENAI_ORCHESTRATOR_ENABLED"\s*:\s*"true"/);
+    assert.match(wranglerConfig,/"OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED"\s*:\s*"true"/);
+    assert.match(wranglerConfig,/"OPENAI_FILE_INPUT_ENABLED"\s*:\s*"true"/);
     assert.doesNotMatch(wranglerConfig,/OPENAI_API_KEY/);
+    assert.equal(architectureManifest.model_selection.activation_progress.production_provider_live,false);
   });
 });

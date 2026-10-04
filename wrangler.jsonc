@@ -8,7 +8,11 @@
   "vars": {
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFKQHY3Quvb_8JqH",
     "OPENAI_MODEL": "gpt-6.1-sol",
-    "OPENAI_REASONING_EFFORT": "medium"
+    "OPENAI_REASONING_EFFORT": "medium",
+    "OPENAI_ORCHESTRATOR_ENABLED": "true",
+    "OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED": "true",
+    "OPENAI_FILE_INPUT_ENABLED": "true",
+    "OPENAI_PROVIDER_ACTIVATION_STATE": "armed_secret_and_billing_required"
   },
 
   "assets": {

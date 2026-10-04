@@ -82,7 +82,9 @@ test("CHAT8 GPT provider remains fail-closed until server-side activation",()=>{
   assert.match(worker,/gpt_provider_locked/);
   assert.match(wrangler,/"OPENAI_MODEL"\s*:\s*"gpt-6\.1-sol"/);
   assert.doesNotMatch(wrangler,/OPENAI_API_KEY/);
-  assert.doesNotMatch(wrangler,/OPENAI_ORCHESTRATOR_ENABLED/);
+  assert.match(wrangler,/"OPENAI_ORCHESTRATOR_ENABLED"\s*:\s*"true"/);
+  assert.match(wrangler,/"OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED"\s*:\s*"true"/);
+  assert.match(wrangler,/"OPENAI_FILE_INPUT_ENABLED"\s*:\s*"true"/);
   assert.equal(manifest.current_runtime.public_provider_activation,false);
 });
 
@@ -102,4 +104,40 @@ test("CHAT10 product manifest documents the intended one-assistant GPT backgroun
   assert.equal(manifest.product_experience.backend_contract.native_corpus_first,true);
   assert.equal(manifest.product_experience.backend_contract.general_gpt_fallback,true);
   assert.equal(manifest.product_experience.current_activation.provider_execution,false);
+});
+
+
+test("CHAT11 session privacy uses store:false and never creates a durable OpenAI Conversation object",()=>{
+  const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(orchestrator,/store:false/);
+  assert.match(orchestrator,/SESSION_HISTORY_CONTEXT_ONLY_NOT_AUTHORITY/);
+  assert.doesNotMatch(orchestrator,/\/v1\/conversations/);
+  assert.match(chatJs,/history:historyForApi/);
+  assert.doesNotMatch(chatJs,/conversationId/);
+  assert.equal(manifest.product_experience.backend_contract.conversations_api,false);
+  assert.equal(manifest.product_experience.backend_contract.responses_store,false);
+});
+
+test("CHAT12 GitHub Pages chat calls the Cloudflare Worker API, not the static origin",()=>{
+  assert.match(chatJs,/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
+  assert.match(chatJs,/CHAT_API_BASE\+"\/api\/chat"/);
+  assert.match(chatJs,/CHAT_API_BASE\+"\/api\/assistant"/);
+});
+
+
+test("CHAT13 web citations are surfaced as clickable safe links",()=>{
+  const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(orchestrator,/extractOpenAIWebCitations/);
+  assert.match(orchestrator,/tool_choice:"required"/);
+  assert.match(worker,/sources:result\.sources/);
+  assert.match(chatJs,/Web извори/);
+  assert.match(chatJs,/safeHttpUrl/);
+  assert.match(chatJs,/rel="noopener noreferrer"/);
+});
+
+test("CHAT14 file inputs use OpenAI Responses data URI format and server MIME allowlist",()=>{
+  const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(orchestrator,/file_data:\x60data:\$\{mime\};base64,/);
+  assert.match(worker,/CHAT_ALLOWED_FILE_MIME/);
+  assert.match(worker,/unsupported_file_type/);
 });

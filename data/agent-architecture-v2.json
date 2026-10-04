@@ -7,10 +7,10 @@
   "orchestration_pattern": "manager_agents_as_tools",
   "design_target": "OpenAI Agents SDK manager-style orchestration",
   "current_runtime": {
-    "state": "gpt_style_workspace_implemented_provider_execution_locked",
+    "state": "gpt_runtime_armed_secret_and_billing_required",
     "compatibility_layer": "Responses API guarded runtime foundation",
     "public_provider_activation": false,
-    "reason": "Model selection is approved, but provider execution, secrets, billing/spend controls and production activation remain separate Human Gates.",
+    "reason": "GPT-6.1 Sol, Web search and attachment runtime flags are armed in production configuration, but provider execution remains fail-closed until a server-side OPENAI_API_KEY is installed and OpenAI billing/spend controls are confirmed.",
     "approved_target_model": "gpt-6.1-sol"
   },
   "modes": [
@@ -133,11 +133,19 @@
     "rationale": "Approved as the primary GPT model for AI Advokat because it is intended for complex professional work with near-Astra capability at substantially lower cost.",
     "production_provider_activation": false,
     "activation_requirements": [
-      "server-side OPENAI_API_KEY",
-      "OPENAI_ORCHESTRATOR_ENABLED=true",
-      "billing and spend limit configured",
-      "explicit production provider Human Gate"
-    ]
+      "server-side OPENAI_API_KEY installed as Cloudflare Worker secret",
+      "billing and spend limit configured in the OpenAI project",
+      "production Worker deployment and live smoke test"
+    ],
+    "activation_progress": {
+      "exact_model_id_verified_against_official_openai_docs": "gpt-6.1-sol",
+      "orchestrator_flag_armed": true,
+      "web_search_flag_armed": true,
+      "attachment_input_flag_armed": true,
+      "api_key_installed": "unknown_not_readable_from_repository",
+      "billing_spend_limit_confirmed": false,
+      "production_provider_live": false
+    }
   },
   "product_experience": {
     "experience_id": "AI_ADVOCAT_GPT_STYLE_WORKSPACE_v1",
@@ -160,19 +168,34 @@
     ],
     "backend_contract": {
       "endpoint": "/api/chat",
-      "conversations_api": true,
+      "conversations_api": false,
       "responses_api": true,
       "target_model": "gpt-6.1-sol",
       "native_corpus_first": true,
       "general_gpt_fallback": true,
       "web_search_tool": "separate_runtime_gate",
-      "attachment_processing": "separate_privacy_tool_gate"
+      "attachment_processing": "separate_privacy_tool_gate",
+      "conversation_state": "browser_session_history_replayed_as_context",
+      "responses_store": false,
+      "privacy_rule": "no durable OpenAI Conversation object; session context is retained in sessionStorage and sent only with the current request"
     },
     "current_activation": {
       "shell_public_ready": true,
+      "runtime_flags_armed": true,
       "provider_execution": false,
       "web_search": false,
-      "attachment_provider_processing": false
+      "attachment_provider_processing": false,
+      "blocking_requirements": [
+        "OPENAI_API_KEY secret",
+        "OpenAI billing/spend limit",
+        "production deploy smoke test"
+      ]
     }
+  },
+  "production_activation_request": {
+    "requested_on": "2026-10-04",
+    "requested_by_role": "project_lead",
+    "evidence_text": "ajde implementirja",
+    "implementation_status": "armed_pending_secret_and_billing"
   }
 }

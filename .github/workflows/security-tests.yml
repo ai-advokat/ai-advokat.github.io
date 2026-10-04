@@ -62,6 +62,8 @@ jobs:
         run: npm run test:guide-router
       - name: GPT-style AI Advokat workspace tests
         run: npm run test:chat-shell
+      - name: GPT production activation tests
+        run: npm run test:gpt-activation
       - name: Guides Human Gate resolution pack tests
         run: npm run test:guides-human-gate-pack
       - name: Professional Library governance tests

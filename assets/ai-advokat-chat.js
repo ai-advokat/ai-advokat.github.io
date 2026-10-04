@@ -2,6 +2,7 @@
   "use strict";
   const root=document.getElementById("aiAdvokatChat");
   if(!root) return;
+  const CHAT_API_BASE=location.hostname.endsWith("workers.dev") ? location.origin : "https://ai-advokat-github-io.aiadvokat16.workers.dev";
 
   const $=(s,p=root)=>p.querySelector(s);
   const messagesEl=$("#aiChatMessages");
@@ -29,9 +30,15 @@
   const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
   const now=()=>new Date().toISOString();
   const uid=()=>crypto.randomUUID ? crypto.randomUUID() : "chat-"+Date.now()+"-"+Math.random().toString(16).slice(2);
+  function safeHttpUrl(value){
+    try{
+      const u=new URL(String(value||""));
+      return (u.protocol==="https:"||u.protocol==="http:") ? u.href : null;
+    }catch{return null;}
+  }
 
   function newState(){
-    return {id:uid(),title:"Нов разговор",conversationId:null,messages:[],createdAt:now(),updatedAt:now()};
+    return {id:uid(),title:"Нов разговор",messages:[],createdAt:now(),updatedAt:now()};
   }
   function save(){
     const serial=[...chats.values()].slice(-10).map(c=>({
@@ -113,6 +120,21 @@
     if(m.sourceLabel){
       const source=document.createElement("div");source.className="ai-msg-source";source.textContent=m.sourceLabel;body.append(source);
     }
+    if(Array.isArray(m.sources) && m.sources.length){
+      const sourceBox=document.createElement("div");sourceBox.className="ai-msg-source";
+      const label=document.createElement("strong");label.textContent="Web извори";
+      sourceBox.append(label);
+      const links=document.createElement("div");links.className="ai-msg-tools";
+      m.sources.slice(0,8).forEach((s,i)=>{
+        const href=safeHttpUrl(s?.url);
+        if(!href) return;
+        const a=document.createElement("a");
+        a.href=href;a.target="_blank";a.rel="noopener noreferrer";
+        a.textContent=(s?.title||("Извор "+(i+1))).slice(0,90);
+        links.append(a);
+      });
+      if(links.childElementCount){sourceBox.append(links);body.append(sourceBox);}
+    }
     const tools=document.createElement("div");tools.className="ai-msg-tools";
     const copy=document.createElement("button");copy.type="button";copy.textContent="Копирај";
     copy.onclick=async()=>{try{await navigator.clipboard.writeText(m.text||"");copy.textContent="Копирано ✓";setTimeout(()=>copy.textContent="Копирај",1200);}catch{}};
@@ -188,8 +210,23 @@
     fileInput.value="";renderAttachments();
   });
 
+  function inferredMime(file){
+    if(file?.type) return file.type;
+    const name=String(file?.name||"").toLowerCase();
+    if(name.endsWith(".pdf")) return "application/pdf";
+    if(name.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    if(name.endsWith(".doc")) return "application/msword";
+    if(name.endsWith(".csv")) return "text/csv";
+    if(name.endsWith(".json")) return "application/json";
+    if(name.endsWith(".txt")||name.endsWith(".md")) return "text/plain";
+    if(name.endsWith(".png")) return "image/png";
+    if(name.endsWith(".jpg")||name.endsWith(".jpeg")) return "image/jpeg";
+    if(name.endsWith(".webp")) return "image/webp";
+    return "application/octet-stream";
+  }
+
   async function encodeFile(file){
-    const mime=file.type||"application/octet-stream";
+    const mime=inferredMime(file);
     if(mime.startsWith("text/")||["application/json","text/csv","application/xml"].includes(mime)){
       return {kind:"text",name:file.name,mime,text:(await file.text()).slice(0,120000)};
     }
@@ -208,7 +245,7 @@
 
   async function fallbackSourceAssistant(q){
     try{
-      const r=await fetch("/api/assistant",{method:"POST",headers:{"content-type":"application/json","accept":"application/json",...membershipHeaders()},body:JSON.stringify({q,instrument:"auto"})});
+      const r=await fetch(CHAT_API_BASE+"/api/assistant",{method:"POST",headers:{"content-type":"application/json","accept":"application/json",...membershipHeaders()},body:JSON.stringify({q,instrument:"auto"})});
       const d=await r.json().catch(()=>null);
       if(r.ok&&d?.ok&&d.answer){
         const cite=(d.citations||[]).map(c=>"чл. "+c.articleNumber).join(", ");
@@ -223,6 +260,10 @@
     const q=String(forcedText??input.value).trim();
     if(!q) return;
     const chat=current();setTitle(chat,q);
+    const historyForApi=chat.messages
+      .filter(m=>(m.role==="user"||m.role==="assistant") && m.text && m.text!=="Обработувам…")
+      .slice(-12)
+      .map(m=>({role:m.role,text:String(m.text).slice(0,6000)}));
     const selectedFiles=[...attachments];
     addMessage({role:"user",text:q,meta:selectedFiles.length?selectedFiles.length+" прилог(а)":""});
     input.value="";attachments=[];renderAttachments();autoSize();
@@ -236,7 +277,7 @@
     try{
       const encoded=[];
       for(const f of selectedFiles) encoded.push(await encodeFile(f));
-      const r=await fetch("/api/chat",{
+      const r=await fetch(CHAT_API_BASE+"/api/chat",{
         method:"POST",
         headers:{"content-type":"application/json","accept":"application/json",...membershipHeaders()},
         signal:abortController.signal,
@@ -245,17 +286,17 @@
           mode:activeMode(),
           webSearch:activeMode()==="web",
           guideIds:guides.map(g=>g.id),
-          conversationId:chat.conversationId,
+          history:historyForApi,
           attachments:encoded
         })
       });
       const d=await r.json().catch(()=>null);
       if(r.ok&&d?.ok){
-        chat.conversationId=d.conversationId||chat.conversationId;
         updateAssistantPlaceholder(assistantIndex,{
           text:d.answer,
-          meta:(d.model||"GPT")+" · "+(d.mode||"auto"),
+          meta:(d.model||"GPT")+" · "+(d.mode||"auto")+" · session-private",
           guides,
+          sources:Array.isArray(d.sources)?d.sources:[],
           sourceLabel:d.sourceMode==="ai_advokat_catalogue_context_first"
             ?"AI Advokat corpus/catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
             :(d.webSearch==="enabled"?"GPT + Web research":"GPT general/proactive assistance")
@@ -312,9 +353,9 @@
     });
   }
 
-  fetch("/api/orchestrator",{headers:{"accept":"application/json"}}).then(r=>r.json()).then(d=>{
+  fetch(CHAT_API_BASE+"/api/orchestrator",{headers:{"accept":"application/json"}}).then(r=>r.json()).then(d=>{
     const state=d?.runtime?.providerExecution;
-    if(state==="configured_but_not_publicly_auto_executed") provider.textContent="GPT provider конфигуриран · production auto-execution сè уште gated";
+    if(state==="configured_for_api_chat_execution") provider.textContent="GPT-6.1 Sol · LIVE governed";
     else provider.textContent="GPT-6.1 Sol target · provider activation pending";
   }).catch(()=>{});
 

@@ -43,7 +43,8 @@
     "test:professional-library": "node --no-warnings --test test/professional-library.test.mjs",
     "test:guides-human-gate-pack": "node --no-warnings --test test/guides-human-gate-resolution-pack.test.mjs",
     "test:guide-router": "node --no-warnings --test test/guide-router.test.mjs",
-    "test:chat-shell": "node --no-warnings --test test/chat-shell.test.mjs"
+    "test:chat-shell": "node --no-warnings --test test/chat-shell.test.mjs",
+    "test:gpt-activation": "node --no-warnings --test test/gpt-production-activation.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"

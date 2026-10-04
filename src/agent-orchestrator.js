@@ -316,34 +316,10 @@ export function orchestratorRuntimeReadiness(env={}) {
     provider:openAIOrchestratorConfigured(env) ? "configured" : "locked",
     nativeCorpusTool:env?.OPENAI_NATIVE_CORPUS_TOOL_ENABLED==="true" ? "configured" : "locked",
     externalResearchTools:env?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true" ? "configured" : "locked",
+    fileInputs:env?.OPENAI_FILE_INPUT_ENABLED==="true" ? "configured" : "locked",
     tracing:env?.OPENAI_AGENTS_TRACING_ENABLED==="true" ? "configured" : "locked",
     humanGate:"required"
   });
-}
-
-export async function createOpenAIConversation(env) {
-  if(!openAIOrchestratorConfigured(env)){
-    return {ok:false,error:"openai_orchestrator_not_configured"};
-  }
-  let response;
-  try{
-    response=await fetch("https://api.openai.com/v1/conversations",{
-      method:"POST",
-      headers:{
-        "Authorization":`Bearer ${env.OPENAI_API_KEY}`,
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({metadata:{application:"AI Advokat"}})
-    });
-  }catch(error){
-    return {ok:false,error:"openai_conversation_network_error",detail:String(error?.message || error).slice(0,180)};
-  }
-  let payload=null;
-  try{ payload=await response.json(); }catch{}
-  if(!response.ok || typeof payload?.id!=="string"){
-    return {ok:false,error:"openai_conversation_error",status:response.status};
-  }
-  return {ok:true,id:payload.id};
 }
 
 export function extractOpenAIResponseText(payload) {
@@ -357,6 +333,29 @@ export function extractOpenAIResponseText(payload) {
     }
   }
   return parts.length ? parts.join("\n\n") : null;
+}
+
+export function extractOpenAIWebCitations(payload) {
+  if(!Array.isArray(payload?.output)) return [];
+  const seen=new Set();
+  const citations=[];
+  for(const item of payload.output){
+    if(item?.type!=="message" || !Array.isArray(item.content)) continue;
+    for(const content of item.content){
+      if(content?.type!=="output_text" || !Array.isArray(content.annotations)) continue;
+      for(const annotation of content.annotations){
+        if(annotation?.type!=="url_citation") continue;
+        const url=String(annotation.url || "").trim();
+        if(!/^https?:\/\//i.test(url) || seen.has(url)) continue;
+        seen.add(url);
+        citations.push({
+          url,
+          title:String(annotation.title || url).trim().slice(0,240)
+        });
+      }
+    }
+  }
+  return citations.slice(0,12);
 }
 
 function compactSourceContext(items,label) {
@@ -379,7 +378,7 @@ export async function runOpenAIOrchestrator(env, {
   externalResearchEnabled=false,
   webSearchEnabled=false,
   attachments=[],
-  conversationId=null,
+  history=[],
   maxOutputTokens=1600
 }={}) {
   if(!openAIOrchestratorConfigured(env)){
@@ -392,18 +391,25 @@ export async function runOpenAIOrchestrator(env, {
   }
 
   const model=env.OPENAI_MODEL.trim();
-  let activeConversationId=conversationId;
-  if(!activeConversationId){
-    const created=await createOpenAIConversation(env);
-    if(!created.ok) return created;
-    activeConversationId=created.id;
-  }
 
   const envelope=buildExecutionEnvelope(plan,{
     question:input,
     corpusContext,
     externalContext
   });
+
+  const sessionHistory=(Array.isArray(history)?history:[])
+    .slice(-12)
+    .map(item=>({
+      role:item?.role==="assistant" ? "assistant" : "user",
+      text:String(item?.text || "").normalize("NFKC").trim().slice(0,6000)
+    }))
+    .filter(item=>item.text)
+    .slice(-12);
+
+  const historyContext=sessionHistory.length
+    ? sessionHistory.map((item,index)=>`[${index+1}] ${item.role.toUpperCase()}: ${item.text}`).join("\n\n")
+    : "NONE";
 
   const userContent=[
     "<<<ORCHESTRATION_GRAPH>>>",
@@ -418,6 +424,10 @@ export async function runOpenAIOrchestrator(env, {
     externalResearchEnabled ? compactSourceContext(externalContext,"External legal research") : "NOT_AUTHORISED",
     "<<<END_EXTERNAL_LEGAL_RESEARCH>>>",
     "",
+    "<<<SESSION_HISTORY_CONTEXT_ONLY_NOT_AUTHORITY>>>",
+    historyContext,
+    "<<<END_SESSION_HISTORY_CONTEXT_ONLY_NOT_AUTHORITY>>>",
+    "",
     "<<<USER_QUESTION>>>",
     String(input || ""),
     "<<<END_USER_QUESTION>>>"
@@ -430,7 +440,8 @@ export async function runOpenAIOrchestrator(env, {
     if(attachment.kind==="image" && typeof attachment.dataUrl==="string" && attachment.dataUrl.startsWith("data:image/")){
       userParts.push({type:"input_image",image_url:attachment.dataUrl,detail:"auto"});
     }else if(attachment.kind==="file" && typeof attachment.base64==="string" && attachment.base64.length){
-      userParts.push({type:"input_file",file_data:attachment.base64,filename});
+      const mime=String(attachment.mime || "application/octet-stream").slice(0,120);
+      userParts.push({type:"input_file",file_data:`data:${mime};base64,${attachment.base64}`,filename});
     }else if(attachment.kind==="text" && typeof attachment.text==="string"){
       userParts.push({type:"input_text",text:"ATTACHMENT: "+filename+"\n"+attachment.text.slice(0,120000)});
     }
@@ -448,8 +459,11 @@ export async function runOpenAIOrchestrator(env, {
     input:[{role:"user",content:userParts}],
     max_output_tokens:maxOutputTokens,
     store:false,
-    conversation:activeConversationId,
-    ...(tools.length ? {tools} : {})
+    ...(tools.length ? {
+      tools,
+      tool_choice:"required",
+      include:["web_search_call.action.sources"]
+    } : {})
   };
 
   let response;
@@ -485,14 +499,19 @@ export async function runOpenAIOrchestrator(env, {
 
   const text=extractOpenAIResponseText(payload);
   if(!text) return {ok:false,error:"openai_empty_response"};
+  const sources=extractOpenAIWebCitations(payload);
+  const webSearchUsed=Array.isArray(payload?.output) && payload.output.some(item=>item?.type==="web_search_call");
   return {
     ok:true,
     text,
     model,
     responseId:payload?.id || null,
+    sources,
+    webSearchUsed,
     architecture:envelope.architecture,
     plan,
-    conversationId:activeConversationId,
+    conversationPersistence:"browser_session_only_store_false",
+    historyItemsUsed:sessionHistory.length,
     toolMode:tools.length ? "web_search_enabled" : "no_external_tools",
     humanGate:"output_not_authorized_for_autonomous_legal_reliance"
   };

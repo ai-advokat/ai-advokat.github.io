@@ -1318,6 +1318,14 @@ function assistantError(request, status, error, message, extraHeaders={}) {
 const CHAT_MAX_BYTES=6*1024*1024;
 const CHAT_MAX_ATTACHMENTS=5;
 const CHAT_ATTACHMENT_MAX_BASE64=5_500_000;
+const CHAT_ALLOWED_FILE_MIME=new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/csv",
+  "application/csv",
+  "application/json"
+]);
 
 async function governedGuideContext(request,env,guideIds){
   const wanted=new Set((Array.isArray(guideIds)?guideIds:[]).map(x=>String(x)).slice(0,5));
@@ -1348,6 +1356,21 @@ async function governedGuideContext(request,env,guideIds){
   }
 }
 
+function validateChatHistory(payload){
+  const input=Array.isArray(payload)?payload:[];
+  if(input.length>12) return {ok:false,error:"chat_history_too_long"};
+  const history=[];
+  for(const raw of input){
+    if(!raw || typeof raw!=="object" || Array.isArray(raw)) return {ok:false,error:"invalid_chat_history"};
+    const role=raw.role==="assistant" ? "assistant" : raw.role==="user" ? "user" : null;
+    if(!role) return {ok:false,error:"invalid_chat_history_role"};
+    const text=cleanQuery(raw.text,6000);
+    if(!text) continue;
+    history.push({role,text});
+  }
+  return {ok:true,history};
+}
+
 function validateChatAttachments(payload){
   const input=Array.isArray(payload)?payload:[];
   if(input.length>CHAT_MAX_ATTACHMENTS) return {ok:false,error:"too_many_attachments"};
@@ -1366,6 +1389,9 @@ function validateChatAttachments(payload){
       out.push({kind,name,mime,dataUrl});
     }else if(kind==="file"){
       const base64=typeof raw.base64==="string" ? raw.base64 : "";
+      if(!CHAT_ALLOWED_FILE_MIME.has(mime)){
+        return {ok:false,error:"unsupported_file_type"};
+      }
       if(!/^[A-Za-z0-9+/=]+$/.test(base64) || base64.length>CHAT_ATTACHMENT_MAX_BASE64){
         return {ok:false,error:"invalid_file_attachment"};
       }
@@ -1415,6 +1441,9 @@ async function handleGPTChat(request,env){
     },503);
   }
 
+  const historyCheck=validateChatHistory(payload.history);
+  if(!historyCheck.ok) return json(request,{ok:false,error:historyCheck.error},400);
+
   const attachmentCheck=validateChatAttachments(payload.attachments);
   if(!attachmentCheck.ok) return json(request,{ok:false,error:attachmentCheck.error},400);
   if(attachmentCheck.attachments.length && env.OPENAI_FILE_INPUT_ENABLED!=="true"){
@@ -1461,7 +1490,7 @@ async function handleGPTChat(request,env){
     externalResearchEnabled:webRequested,
     webSearchEnabled:webRequested,
     attachments:attachmentCheck.attachments,
-    conversationId:typeof payload.conversationId==="string" ? cleanQuery(payload.conversationId,160) : null,
+    history:historyCheck.history,
     maxOutputTokens:1800
   });
 
@@ -1474,7 +1503,10 @@ async function handleGPTChat(request,env){
     ok:true,
     answer:result.text,
     model:result.model,
-    conversationId:result.conversationId,
+    conversationPersistence:result.conversationPersistence,
+    historyItemsUsed:result.historyItemsUsed,
+    sources:result.sources || [],
+    webSearchUsed:result.webSearchUsed===true,
     mode:plan.mode,
     sourceMode:preferCorpus ? "ai_advokat_catalogue_context_first" : "gpt_general_or_proactive",
     corpusContextCount:corpusContext.length,
@@ -1830,10 +1862,11 @@ async function handleOrchestratorArchitecture(request, env) {
       architecture:readiness.architecture,
       orchestrationPattern:readiness.orchestrationPattern,
       providerExecution:readiness.provider==="configured"
-        ? "configured_but_not_publicly_auto_executed"
+        ? "configured_for_api_chat_execution"
         : "locked",
       nativeCorpusTool:readiness.nativeCorpusTool,
       externalResearchTools:readiness.externalResearchTools,
+      fileInputs:readiness.fileInputs,
       tracing:readiness.tracing,
       humanGate:readiness.humanGate
     },
@@ -1932,7 +1965,11 @@ async function handleCapabilities(request, env) {
       instrumentRegistry: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       articleCorpus: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
-      legalOrchestrator: "architecture_v2_planning_live_provider_execution_locked",
+      legalOrchestrator: orchestratorRuntimeReadiness(env).provider==="configured"
+        ? "gpt_6_1_sol_live_governed"
+        : "architecture_v2_provider_locked",
+      gptWebSearch: orchestratorRuntimeReadiness(env).externalResearchTools,
+      gptFileInputs: orchestratorRuntimeReadiness(env).fileInputs,
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",
