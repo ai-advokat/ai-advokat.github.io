@@ -70,9 +70,9 @@ fetch("/data/guides.json?v=20261004-public-pdf-release-v1",{cache:"no-store"}).t
  const ld=document.createElement("script");ld.type="application/ld+json";ld.textContent=JSON.stringify(structured);document.head.appendChild(ld);
  const editionDisplay=x.source_role==="primary_full_word"?"Изворно издание од "+x.edition_date:x.edition;
  const pdfActive=typeof x.public_pdf==="string"&&x.public_pdf.startsWith("/guides/pdfs/");
- const pdfStatus=pdfActive?"PDF: јавно активен":"PDF: release одобрен · се врзува артефакт";
+ const pdfStatus=pdfActive?"PDF: јавно активен":"PDF: HOLD · финално пречистување";
  const pdfAction=pdfActive?`<a class="btn primary" href="${esc(x.public_pdf)}" target="_blank" rel="noopener">Отвори цел PDF</a>`:"";
- const pdfRow=pdfActive?`<dt>Јавен PDF</dt><dd><a href="${esc(x.public_pdf)}" target="_blank" rel="noopener">Отвори го целосниот водич во PDF</a>${x.public_pdf_sha256?`<br><code>${esc(x.public_pdf_sha256)}</code>`:""}</dd>`:`<dt>Јавен PDF</dt><dd>Одобрен за објавување; точниот PDF артефакт сè уште не е физички врзан за овој запис.</dd>`;
+ const pdfRow=pdfActive?`<dt>Јавен PDF</dt><dd><a href="${esc(x.public_pdf)}" target="_blank" rel="noopener">Отвори го целосниот водич во PDF</a>${x.public_pdf_sha256?`<br><code>${esc(x.public_pdf_sha256)}</code>`:""}</dd>`:`<dt>Јавен PDF</dt><dd>Одобрен во принцип, но објавувањето е на hold додека не заврши финалното пречистување, правната проверка и fingerprint binding.</dd>`;
  const pagesRow=x.pages!=null?`<dt>Страници</dt><dd>${esc(x.pages)}</dd>`:"";
  const ar=x.attribution_roles||{};
  const roleRows=[
@@ -117,7 +117,7 @@ fetch("/data/guides.json?v=20261004-public-pdf-release-v1",{cache:"no-store"}).t
    </dl></section>
  </div>
  <div class="approval-note"><strong>Public PDF Human Gate:</strong> на 4.10.2026 е експлицитно одобрено сите 39 водичи да можат јавно да се отвораат во PDF. Ова одобрение е само за PDF; DOCX и трајното внесување во AI-базата остануваат посебно контролирани.</div>
- <div class="guard"><strong>Човечка правна контрола.</strong> ${pdfActive?"Целосниот PDF е јавно достапен за граѓанинот преку копчето подолу.":"PDF release е одобрен, но точниот артефакт сè уште не е објавен на оваа адреса."} Водичот не е официјален законски извор. Роковите, важечките прописи и правните средства треба да се проверат во официјалниот извор на датумот на конкретната употреба.</div>
+ <div class="guard"><strong>Човечка правна контрола.</strong> ${pdfActive?"Целосниот PDF е јавно достапен за граѓанинот преку копчето подолу.":"PDF release е одобрен во принцип, но публикацијата е на hold до финално пречистување и повторна проверка."} Водичот не е официјален законски извор. Роковите, важечките прописи и правните средства треба да се проверат во официјалниот извор на датумот на конкретната употреба.</div>
  <div class="flow"><strong>Контролирана употреба:</strong> <code>каталошки запис → официјален извор → проверка на верзија → човечка правна проверка → употреба</code></div>
  <div class="actions">${pdfAction}<a class="btn ${pdfActive?"":"primary"}" href="/guides/">← Назад кон каталогот</a><button class="btn" type="button" onclick="share()">Сподели / копирај линк</button><button class="btn" type="button" onclick="print()">Печати каталошки запис</button></div>
  </article>`;
