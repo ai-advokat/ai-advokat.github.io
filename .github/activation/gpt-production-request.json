@@ -1,0 +1,23 @@
+{
+  "decision_id": "AI_ADVOKAT_GPT_PRODUCTION_ACTIVATION_2026-10-04",
+  "activation_authorized": true,
+  "authorized_on": "2026-10-04",
+  "authorized_by_role": "project_lead",
+  "evidence_text": "ајде да го активираме гпт ботот",
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "medium",
+  "runtime_features": {
+    "gpt_background": true,
+    "web_search": true,
+    "attachment_input": true,
+    "browser_session_history_store_false": true
+  },
+  "fail_closed_requirements": [
+    "GitHub production secret OPENAI_API_KEY",
+    "valid access to gpt-6.1-sol",
+    "successful paid-quota Responses API preflight",
+    "Cloudflare deployment success",
+    "live GPT + Web + attachment smoke test"
+  ],
+  "note": "No API key is stored in this file. The workflow must fail before deployment if the secret or paid quota is unavailable."
+}
