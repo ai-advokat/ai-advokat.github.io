@@ -1,55 +1,66 @@
 # AI Advokat — Final control of Practical Guides registry and public catalogue
 
 **Date:** 4 October 2026  
-**Scope:** registry, public-catalogue rendering, version graph, provenance metadata and Human Gate consistency  
-**Result:** **PASS WITH EXISTING PER-GUIDE LEGAL REVIEW GATES**
+**Scope:** registry, public-catalogue rendering, version graph, provenance metadata, Human Gate Pack 1–7 and V2.0 FINAL MASTER catalogue activation  
+**Result:** **PASS — 39-record catalogue active; file/AI gates remain closed**
 
-## Verified implementation state
+## Verified final state
 
 - Governed registry records: **39**
-- Public catalogue records: **38**
-- Public active/special records: **36**
+- Public catalogue records: **39**
+- Public active/special records: **37**
 - Public version-history records: **2**
-- Controlled non-public candidate records: **1** — Administrative V2 FINAL MASTER
+- Controlled non-public candidate records: **0**
+- Administrative V2.0 FINAL MASTER: **active current public master catalogue record**
 - Public PDF/DOCX downloads: **0**
 - Duplicate IDs: **0**
-- Broken supersedes/superseded_by links: **0**
+- Broken `supersedes/superseded_by` links: **0**
 - All records remain `reference_only_until_human_gate` for AI.
 - All records remain `human_review_required` for professional use.
 - FULL Word range 38–63 remains complete: **26/26** governed records.
 
-## Corrections implemented in this final control
+## Human Gate Pack 1–7
 
-1. Corrected the no-JavaScript fallback count from 37 to the actual 36 active/special public records.
-2. Replaced the ambiguous label “38 delivered editions” with the accurate public-scope label “38 publicly visible records”.
-3. Replaced the single-Human-Gate statistic with the factual state: **0 publicly activated PDF/DOCX files**.
-4. Made the two public version-history records explicit in the statistics.
-5. Removed a literal `\\n` rendering defect in the Quality Control list.
-6. Added links to the Administrative V2 FINAL MASTER audit and this final-control record.
-7. Added deterministic tests for public counts, file activation, final-control metadata and version-link reciprocity.\n8. CI exposed stale Audit Trail test expectations from before Administrative V2 became the 11th governed history subject; the tests were corrected to preserve the original nine `last-set-*` legal-source-review records while separately asserting Administrative V2 as `corrected_candidate` with no Human Gate decision.
+The consolidated Human Gate Pack approved by Zoran Stojankich on 4 October 2026 at 18:24 (+02:00) is implemented catalogue-only.
 
-## Legal-review state preserved
+Implemented:
+1. U.br.148/2024 consistency for silence of administration.
+2. ZPP 151/2026 transition warnings on the approved five-guide scope.
+3. Guide 05 statute identification.
+4. Exact fingerprint binding for the free-legal-aid review.
+5. Structured attribution roles.
+6. Visible YUCOM provenance for Administrative V1/V2.
+7. Historical Paragraf.mk / Lex AI provenance policy.
 
-This final control does **not** overrule the existing per-guide legal review states.
+## V2.0 FINAL MASTER catalogue activation
 
-- Guide 53 remains blocked in `legal_approval_required` because its silence-of-administration wording must be corrected against U.br.148/2024 before any document release.
-- Source-checked guides remain Human-Gated and are not promoted to official/current-law authority.
-- Administrative V2 FINAL MASTER remains a `corrected_candidate` with its exact candidate fingerprints recorded in the separate closeout audit.
-- Administrative V2 remains outside the approved public catalogue scope of 38 records until a separate explicit Human Gate decision.
+The project lead explicitly requested activation of V2.0 FINAL MASTER on 4 October 2026.
 
-## Gate state
+Activation scope:
+- `guide-administrative-v2` is now public in the catalogue.
+- Public slug: `upravna-postapka-v2`.
+- It supersedes Administrative V1, which remains visible as version history.
+- The public detail record exposes the governed FINAL MASTER artifact names and fingerprints.
+- The catalogue metadata version is **2.1** and the public detail route is `/guides/record.html?g={public_slug}`.
 
-This record does **not** authorize:
+Exact FINAL MASTER fingerprints:
+- DOCX: `de609c4526eee401a3759ff2fe22556cacded9bef87cdf675213e69e8a10ed11`
+- PDF: `4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d`
 
-- author approval for any pending guide;
-- public DOCX/PDF release;
-- RAG eligibility;
+## Gates that remain closed
+
+Catalogue activation does **not** authorize:
+- public DOCX download;
+- public PDF download;
+- RAG / AI-corpus ingestion;
 - production corpus write;
 - legal-corpus promotion;
-- any change to the exact 38-record public-catalogue approval.
+- provider activation.
 
-No gate implies another.
+The artifact-level author-approval field remains separate and is not inferred from catalogue activation.
 
 ## Final implementation conclusion
 
-The Practical Guides catalogue is structurally and governance-consistent for the already authorised 38-record public metadata scope. Remaining blockers are substantive, guide-specific legal/author approval matters and are intentionally not bypassed by this implementation pass.
+The Practical Guides catalogue is internally consistent at **39 public catalogue records**, with Administrative V2.0 FINAL MASTER as the current public master catalogue record. The two metadata defects identified in the previous final control are corrected: `public_experience.version = 2.1` and the public detail route uses `?g={public_slug}`.
+
+**FINAL CONTROL: PASS.**
