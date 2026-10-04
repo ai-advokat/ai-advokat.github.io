@@ -321,6 +321,31 @@ export function orchestratorRuntimeReadiness(env={}) {
   });
 }
 
+export async function createOpenAIConversation(env) {
+  if(!openAIOrchestratorConfigured(env)){
+    return {ok:false,error:"openai_orchestrator_not_configured"};
+  }
+  let response;
+  try{
+    response=await fetch("https://api.openai.com/v1/conversations",{
+      method:"POST",
+      headers:{
+        "Authorization":`Bearer ${env.OPENAI_API_KEY}`,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({metadata:{application:"AI Advokat"}})
+    });
+  }catch(error){
+    return {ok:false,error:"openai_conversation_network_error",detail:String(error?.message || error).slice(0,180)};
+  }
+  let payload=null;
+  try{ payload=await response.json(); }catch{}
+  if(!response.ok || typeof payload?.id!=="string"){
+    return {ok:false,error:"openai_conversation_error",status:response.status};
+  }
+  return {ok:true,id:payload.id};
+}
+
 export function extractOpenAIResponseText(payload) {
   if(payload && typeof payload.output_text==="string" && payload.output_text.trim()) return payload.output_text.trim();
   if(!Array.isArray(payload?.output)) return null;
@@ -367,6 +392,13 @@ export async function runOpenAIOrchestrator(env, {
   }
 
   const model=env.OPENAI_MODEL.trim();
+  let activeConversationId=conversationId;
+  if(!activeConversationId){
+    const created=await createOpenAIConversation(env);
+    if(!created.ok) return created;
+    activeConversationId=created.id;
+  }
+
   const envelope=buildExecutionEnvelope(plan,{
     question:input,
     corpusContext,
@@ -415,7 +447,7 @@ export async function runOpenAIOrchestrator(env, {
     input:[{role:"user",content:userParts}],
     max_output_tokens:maxOutputTokens,
     store:false,
-    ...(conversationId ? {conversation:conversationId} : {}),
+    conversation:activeConversationId,
     ...(tools.length ? {tools} : {})
   };
 
@@ -459,7 +491,7 @@ export async function runOpenAIOrchestrator(env, {
     responseId:payload?.id || null,
     architecture:envelope.architecture,
     plan,
-    conversationId:conversationId || null,
+    conversationId:activeConversationId,
     toolMode:tools.length ? "web_search_enabled" : "no_external_tools",
     humanGate:"output_not_authorized_for_autonomous_legal_reliance"
   };
