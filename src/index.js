@@ -1849,10 +1849,11 @@ async function handleOrchestratorArchitecture(request, env) {
       architecture:readiness.architecture,
       orchestrationPattern:readiness.orchestrationPattern,
       providerExecution:readiness.provider==="configured"
-        ? "configured_but_not_publicly_auto_executed"
+        ? "configured_for_api_chat_execution"
         : "locked",
       nativeCorpusTool:readiness.nativeCorpusTool,
       externalResearchTools:readiness.externalResearchTools,
+      fileInputs:readiness.fileInputs,
       tracing:readiness.tracing,
       humanGate:readiness.humanGate
     },
@@ -1951,7 +1952,11 @@ async function handleCapabilities(request, env) {
       instrumentRegistry: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       articleCorpus: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
-      legalOrchestrator: "architecture_v2_planning_live_provider_execution_locked",
+      legalOrchestrator: orchestratorRuntimeReadiness(env).provider==="configured"
+        ? "gpt_6_1_sol_live_governed"
+        : "architecture_v2_armed_provider_secret_required",
+      gptWebSearch: orchestratorRuntimeReadiness(env).externalResearchTools,
+      gptFileInputs: orchestratorRuntimeReadiness(env).fileInputs,
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",
