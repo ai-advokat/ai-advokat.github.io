@@ -6,7 +6,8 @@
   "preview_urls": true,
 
   "vars": {
-    "TURNSTILE_SITE_KEY": "0x4AAAAAAFKQHY3Quvb_8JqH"
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFKQHY3Quvb_8JqH",
+    "OPENAI_MODEL": "gpt-6.1-sol"
   },
 
   "assets": {
