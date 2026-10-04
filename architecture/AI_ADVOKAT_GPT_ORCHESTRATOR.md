@@ -86,3 +86,32 @@ Adversarial jurisdiction-mixing tests, citation completeness, temporal/version t
 - no legal-status promotion;
 - no API key or secret committed;
 - no autonomous legal representation.
+
+
+## Approved production target model — 4 October 2026
+
+Zoran Stojankich approved **GPT-6.1 Sol** as the primary GPT model for AI Advokat.
+
+Author approval received through the project lead:
+
+> vo celos se soglasuvam  
+> so 6,1
+
+Governed target:
+
+- model ID: `gpt-6.1-sol`
+- API: OpenAI Responses API
+- default reasoning effort: `medium`
+- escalation effort for harder legal/professional tasks: `high`
+- role: Chief Legal Orchestrator / proactive GPT layer behind the AI Advokat identity
+
+This approval selects the model. It does **not** activate production provider execution.
+
+Production activation still requires all of the following:
+
+1. server-side `OPENAI_API_KEY`;
+2. `OPENAI_ORCHESTRATOR_ENABLED=true`;
+3. billing and an explicit spend limit;
+4. a separate production provider Human Gate.
+
+The API key must never be committed to GitHub or exposed to browser code.
