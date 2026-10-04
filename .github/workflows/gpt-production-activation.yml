@@ -115,44 +115,25 @@ jobs:
           console.log("Provider readiness: PASS");
           NODE
 
-      - name: Live GPT-6.1 Sol smoke test
+      - name: Live GPT + Web + attachment smoke test
         shell: bash
         run: |
           set -euo pipefail
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
-          curl --fail --retry 3 --retry-delay 2             -H 'content-type: application/json'             -d '{"q":"Одговори само со: AI_ADV_GPT_OK","mode":"auto","history":[],"guideIds":[],"attachments":[]}'             "$BASE/api/chat" -o /tmp/gpt-smoke.json
+          curl --fail --retry 3 --retry-delay 2 \
+            -H 'content-type: application/json' \
+            -d '{"q":"Прочитај го прилогот и со Web search најди ја официјалната веб-страница на OpenAI. Во одговорот вклучи го зборот од прилогот.","mode":"web","webSearch":true,"history":[],"guideIds":[],"attachments":[{"kind":"text","name":"smoke.txt","mime":"text/plain","text":"PRAVDA"}]}' \
+            "$BASE/api/chat" -o /tmp/gpt-combined-smoke.json
           node <<'NODE'
-          const d=require("/tmp/gpt-smoke.json");
+          const d=require("/tmp/gpt-combined-smoke.json");
           if(!d.ok) throw new Error("GPT smoke failed: "+JSON.stringify(d));
           if(d.model!=="gpt-6.1-sol") throw new Error("Unexpected model: "+d.model);
-          if(!String(d.answer||"").includes("AI_ADV_GPT_OK")) throw new Error("Unexpected smoke answer");
+          if(d.webSearch!=="enabled" || d.webSearchUsed!==true) throw new Error("Web search did not execute");
+          if(d.attachmentsUsed!==1) throw new Error("Attachment was not processed");
+          if(!String(d.answer||"").toUpperCase().includes("PRAVDA")) throw new Error("Attachment content missing from answer");
+          if(!Array.isArray(d.sources) || !d.sources.length) throw new Error("Clickable web citations missing");
           if(d.conversationPersistence!=="browser_session_only_store_false") throw new Error("Unexpected conversation persistence");
-          console.log("LIVE GPT-6.1 SOL: PASS");
-          NODE
-
-      - name: Live Web search smoke test
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
-          curl --fail --retry 3 --retry-delay 2             -H 'content-type: application/json'             -d '{"q":"Која е официјалната веб-страница на OpenAI? Одговори кратко.","mode":"web","webSearch":true,"history":[],"guideIds":[],"attachments":[]}'             "$BASE/api/chat" -o /tmp/web-smoke.json
-          node <<'NODE'
-          const d=require("/tmp/web-smoke.json");
-          if(!d.ok || d.webSearch!=="enabled") throw new Error("Web smoke failed: "+JSON.stringify(d));
-          console.log("LIVE GPT WEB SEARCH: PASS");
-          NODE
-
-      - name: Live attachment smoke test
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
-          curl --fail --retry 3 --retry-delay 2             -H 'content-type: application/json'             -d '{"q":"Кој збор е во прилогот? Одговори само со зборот.","mode":"auto","history":[],"guideIds":[],"attachments":[{"kind":"text","name":"smoke.txt","mime":"text/plain","text":"PRAVDA"}]}'             "$BASE/api/chat" -o /tmp/attachment-smoke.json
-          node <<'NODE'
-          const d=require("/tmp/attachment-smoke.json");
-          if(!d.ok || d.attachmentsUsed!==1) throw new Error("Attachment smoke failed: "+JSON.stringify(d));
-          if(!String(d.answer||"").toUpperCase().includes("PRAVDA")) throw new Error("Attachment content not processed");
-          console.log("LIVE GPT ATTACHMENT INPUT: PASS");
+          console.log("LIVE GPT-6.1 SOL + WEB + ATTACHMENT: PASS");
           NODE
 
       - name: Upload non-secret activation evidence
@@ -162,6 +143,4 @@ jobs:
           retention-days: 30
           path: |
             /tmp/orchestrator.json
-            /tmp/gpt-smoke.json
-            /tmp/web-smoke.json
-            /tmp/attachment-smoke.json
+            /tmp/gpt-combined-smoke.json
