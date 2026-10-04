@@ -9,7 +9,7 @@
     "exact_file_fingerprint_binding",
     "no_public_release_or_rag_implication"
   ],
-  "status": "approved_for_implementation",
+  "status": "implemented_catalogue_only",
   "items": [
     {
       "issue_id": "silence-of-administration-consistency",
@@ -30,7 +30,10 @@
       },
       "human_gate_status": "approved_for_implementation",
       "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
-      "human_gate_approved_by": "Zoran Stojankich"
+      "human_gate_approved_by": "Zoran Stojankich",
+      "implementation_status": "implemented_catalogue_only",
+      "implementation_catalogue_change": true,
+      "source_document_change": false
     },
     {
       "issue_id": "zpp-2027-transition-crosscheck",
@@ -55,7 +58,10 @@
       },
       "human_gate_status": "approved_for_implementation",
       "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
-      "human_gate_approved_by": "Zoran Stojankich"
+      "human_gate_approved_by": "Zoran Stojankich",
+      "implementation_status": "implemented_catalogue_only",
+      "implementation_catalogue_change": true,
+      "source_document_change": false
     },
     {
       "issue_id": "guide-05-statute-identification",
@@ -73,7 +79,10 @@
       },
       "human_gate_status": "approved_for_implementation",
       "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
-      "human_gate_approved_by": "Zoran Stojankich"
+      "human_gate_approved_by": "Zoran Stojankich",
+      "implementation_status": "implemented_catalogue_only",
+      "implementation_catalogue_change": true,
+      "source_document_change": false
     },
     {
       "issue_id": "free-legal-aid-review-fingerprint-binding",
@@ -93,7 +102,10 @@
       },
       "human_gate_status": "approved_for_implementation",
       "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
-      "human_gate_approved_by": "Zoran Stojankich"
+      "human_gate_approved_by": "Zoran Stojankich",
+      "implementation_status": "implemented_catalogue_only",
+      "implementation_catalogue_change": true,
+      "source_document_change": false
     },
     {
       "issue_id": "authorship-editorial-role-normalization",
@@ -116,7 +128,10 @@
       },
       "human_gate_status": "approved_for_implementation",
       "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
-      "human_gate_approved_by": "Zoran Stojankich"
+      "human_gate_approved_by": "Zoran Stojankich",
+      "implementation_status": "implemented_catalogue_only",
+      "implementation_catalogue_change": true,
+      "source_document_change": false
     },
     {
       "issue_id": "yucom-provenance-v1-v2",
@@ -135,7 +150,10 @@
       },
       "human_gate_status": "approved_for_implementation",
       "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
-      "human_gate_approved_by": "Zoran Stojankich"
+      "human_gate_approved_by": "Zoran Stojankich",
+      "implementation_status": "implemented_catalogue_only",
+      "implementation_catalogue_change": true,
+      "source_document_change": false
     },
     {
       "issue_id": "paragraf-lex-ai-branding-decision",
@@ -151,17 +169,34 @@
       },
       "human_gate_status": "approved_for_implementation",
       "human_gate_approved_at": "2026-10-04T18:24:00+02:00",
-      "human_gate_approved_by": "Zoran Stojankich"
+      "human_gate_approved_by": "Zoran Stojankich",
+      "implementation_status": "implemented_catalogue_only",
+      "implementation_catalogue_change": true,
+      "source_document_change": false
     }
   ],
   "resolution_pack": {
     "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
     "path": "data/guides-human-gate-resolution-pack-2026-10-04.json",
     "documentation": "docs/guides/HUMAN_GATE_RESOLUTION_PACK_2026-10-04.md",
-    "status": "approved_for_implementation",
+    "status": "implemented_catalogue_only",
     "changes_public_catalog": false,
     "author_final_approval_inferred": false,
     "approved_at": "2026-10-04T18:24:00+02:00",
     "approved_by": "Zoran Stojankich"
+  },
+  "implementation": {
+    "status": "implemented_catalogue_only",
+    "implementation_branch": "guides-human-gate-implementation-2026-10-04",
+    "implemented_on": "2026-10-04",
+    "catalogue_and_ui_changes": true,
+    "source_document_changes": false,
+    "public_pdf_release": false,
+    "public_docx_release": false,
+    "ai_corpus_eligibility": false,
+    "rag_eligibility": false,
+    "production_corpus_write": false,
+    "legal_corpus_promotion": false,
+    "provider_activation": false
   }
 }

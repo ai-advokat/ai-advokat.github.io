@@ -19,7 +19,7 @@ const byIssue = new Map(pack.resolutions.map((x) => [x.issue_id, x]));
 const byGuide = new Map(guides.records.map((x) => [x.id, x]));
 
 test("HGR1 pack is a seven-item draft and never final approval", () => {
-  assert.equal(pack.status, "approved_for_implementation");
+  assert.equal(pack.status, "implemented_catalogue_only");
   assert.equal(pack.resolutions.length, 7);
   assert.equal(new Set(pack.resolutions.map((x) => x.issue_id)).size, 7);
   assert.equal(pack.mandate.instruction_to_prepare_confirmed, true);
@@ -49,9 +49,9 @@ test("HGR2 every activation and publication gate remains fail-closed", () => {
 });
 
 test("HGR3 review queue links one-to-one to the resolution pack", () => {
-  assert.equal(queue.status, "approved_for_implementation");
+  assert.equal(queue.status, "implemented_catalogue_only");
   assert.equal(queue.resolution_pack.pack_id, pack.pack_id);
-  assert.equal(queue.resolution_pack.status, "approved_for_implementation");
+  assert.equal(queue.resolution_pack.status, "implemented_catalogue_only");
   assert.equal(queue.resolution_pack.changes_public_catalog, false);
   assert.equal(queue.resolution_pack.author_final_approval_inferred, false);
   assert.equal(queue.items.length, 7);
@@ -165,6 +165,10 @@ test("HGR11 consolidated approval is a single author gate and does not open depl
   assert.equal(a.implementation_authority_after_exact_approval, true);
   assert.equal(pack.author_confirmations_still_required.length, 0);
   assert.ok(pack.resolutions.every((r) => r.final_gate_status === "satisfied_by_consolidated_author_approval"));
+  assert.equal(pack.implementation_result.status, "implemented_catalogue_only");
+  assert.equal(pack.implementation_result.source_documents_edited, false);
+  assert.equal(pack.implementation_result.public_release_authorized, false);
+  assert.equal(pack.implementation_result.ai_use_authorized, false);
   assert.match(a.approval_text_mk, /Human Gate Resolution Pack 1–7/);
   assert.match(a.approval_text_mk, /1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e/);
   assert.match(a.short_reply_mk, /ОДОБРУВАМ/);
