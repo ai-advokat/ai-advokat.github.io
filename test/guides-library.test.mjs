@@ -85,4 +85,19 @@ describe("Zoran guides library governance",()=>{
     assert.ok(data.records.every(x=>x.public_pdf===null));
     assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
   });
+  test("G12 Administrative V2 FINAL MASTER candidate is fingerprint-bound and still fail-closed",()=>{
+    const g=data.records.find(x=>x.id==="guide-administrative-v2");
+    assert.equal(g.status,"corrected_candidate");
+    assert.equal(g.pages,15);
+    assert.equal(g.candidate_artifact.artifact_version,"V2.0 FINAL MASTER");
+    assert.equal(g.candidate_artifact.docx_sha256,"de609c4526eee401a3759ff2fe22556cacded9bef87cdf675213e69e8a10ed11");
+    assert.equal(g.candidate_artifact.pdf_sha256,"4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d");
+    assert.equal(g.candidate_artifact.author_approval,"pending");
+    assert.equal(g.candidate_artifact.public_release,"not_authorized");
+    assert.equal(g.candidate_artifact.rag_eligibility,"not_authorized");
+    assert.equal(g.candidate_artifact.production_corpus_write,"not_authorized");
+    assert.equal(g.catalog_public,false);
+    assert.equal(g.public_pdf,null);
+    assert.equal(g.ai_use,"reference_only_until_human_gate");
+  });
 });
