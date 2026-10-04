@@ -116,7 +116,7 @@ fetch("/data/guides.json?v=20261004-public-pdf-release-v1",{cache:"no-store"}).t
    ${provenanceRows}
    </dl></section>
  </div>
- <div class="approval-note"><strong>Public PDF Human Gate:</strong> на 4.10.2026 е експлицитно одобрено сите 39 водичи да можат јавно да се отвораат во PDF. Ова одобрение е само за PDF; DOCX, RAG/AI corpus и production corpus остануваат посебно контролирани.</div>
+ <div class="approval-note"><strong>Public PDF Human Gate:</strong> на 4.10.2026 е експлицитно одобрено сите 39 водичи да можат јавно да се отвораат во PDF. Ова одобрение е само за PDF; DOCX и трајното внесување во AI-базата остануваат посебно контролирани.</div>
  <div class="guard"><strong>Човечка правна контрола.</strong> ${pdfActive?"Целосниот PDF е јавно достапен за граѓанинот преку копчето подолу.":"PDF release е одобрен, но точниот артефакт сè уште не е објавен на оваа адреса."} Водичот не е официјален законски извор. Роковите, важечките прописи и правните средства треба да се проверат во официјалниот извор на датумот на конкретната употреба.</div>
  <div class="flow"><strong>Контролирана употреба:</strong> <code>каталошки запис → официјален извор → проверка на верзија → човечка правна проверка → употреба</code></div>
  <div class="actions">${pdfAction}<a class="btn ${pdfActive?"":"primary"}" href="/guides/">← Назад кон каталогот</a><button class="btn" type="button" onclick="share()">Сподели / копирај линк</button><button class="btn" type="button" onclick="print()">Печати каталошки запис</button></div>
