@@ -59,6 +59,9 @@
     let out="";
     for(const ch of raw) out+=CYR_TO_LAT[ch] ?? ch;
     return out
+      .replace(/sh/g,"s")
+      .replace(/ch/g,"c")
+      .replace(/zh/g,"z")
       .replace(/[^a-z0-9]+/g," ")
       .replace(/\s+/g," ")
       .trim();
@@ -106,7 +109,7 @@
     for(const alias of (EXTRA_TERMS[record.id] || [])){
       const a=normalize(alias);
       if(!a) continue;
-      if(phraseIn(" "+q+" "," "+a+" ")) score+=34+Math.min(10,a.split(" ").length*2);
+      if(q===a || q.includes(a)) score+=34+Math.min(10,a.split(" ").length*2);
       else if(q.length>=5 && a.includes(q)) score+=14;
     }
 
