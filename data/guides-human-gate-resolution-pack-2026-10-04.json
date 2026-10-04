@@ -94,7 +94,10 @@
       "legal_finding": "Article 26(2) of the Law on Administrative Disputes may not be presented as imposing the abolished fixed additional 30-day period for a silence-of-administration action.",
       "proposed_public_warning_mk": "ВАЖНО: За тужба поради молчење на управата не применувајте фиксен дополнителен рок од 30 дена по истекот на рокот за одлучување. Уставниот суд со Одлука У.бр.148/2024 од 2.10.2024 го укина делот „во рок од 30 дена“ од член 26 став 2 од Законот за управните спорови. Пред поднесување проверете дали се исполнети процесните претпоставки, дали е дозволена и искористена жалба или друго правно средство и дали молчењето сè уште трае.",
       "proposed_catalog_note_mk": "P1: делот за молчење на администрацијата мора да биде усогласен со Одлуката У.бр.148/2024 пред јавно објавување.",
-      "final_gate": "legal_source_review_acknowledgement"
+      "final_gate": "legal_source_review_acknowledgement",
+      "final_gate_status": "satisfied_by_consolidated_author_approval",
+      "approved_at": "2026-10-04T18:24:00+02:00",
+      "approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "zpp-2027-transition-crosscheck",
@@ -121,7 +124,10 @@
       },
       "proposed_public_warning_mk": "ПРОЦЕСНА ПРОМЕНА: Новиот Закон за парничната постапка („Службен весник на РСМ“ бр.151/2026) е објавен на 8.7.2026, стапил во сила на 16.7.2026 и започнува да се применува од 18.1.2027. Ако конкретниот случај преминува во парнична постапка, пред тужба или друго процесно дејствие проверете кој процесен режим се применува на предметот и релевантните преодни одредби. Овој водич е изработен пред почетокот на примената на новиот ЗПП.",
       "limitation": "This pack does not infer the treatment of already-pending cases; article-level transitional provisions must be checked for the concrete matter.",
-      "final_gate": "legal_source_review_acknowledgement"
+      "final_gate": "legal_source_review_acknowledgement",
+      "final_gate_status": "satisfied_by_consolidated_author_approval",
+      "approved_at": "2026-10-04T18:24:00+02:00",
+      "approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "guide-05-statute-identification",
@@ -138,22 +144,28 @@
       ],
       "proposed_catalog_note_mk": "Редакциски нацрт • Закон за заштита од вознемирување на работно место: отворено толкувачко прашање меѓу чл. 18 и чл. 22 ст. 4 • правна проверка потребна пред објавување.",
       "interpretation_policy": "Do not resolve the conflict as settled unless verified case-law or a later authoritative source does so.",
-      "final_gate": "legal_source_review_acknowledgement"
+      "final_gate": "legal_source_review_acknowledgement",
+      "final_gate_status": "satisfied_by_consolidated_author_approval",
+      "approved_at": "2026-10-04T18:24:00+02:00",
+      "approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "free-legal-aid-review-fingerprint-binding",
-      "resolution_state": "technical_binding_ready_author_confirmation_required",
+      "resolution_state": "fingerprint_binding_approved_for_implementation",
       "target": "guide-free-legal-aid",
       "file": "Kako_da_pobaram_BPP_vizuelno_izdanie.pdf",
       "sha256": "1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e",
       "source_file_internal_evidence": "The exact PDF contains the note „Проверка: 2.10.2026“ and states the scope/limitations of that check.",
       "safe_catalog_wording_before_author_confirmation_mk": "Во точниот изворен PDF е евидентирана проверка од 2.10.2026 • финалната авторска/правна потврда за оваа fingerprint-врзана верзија е Human Gate.",
       "author_confirmation_text_mk": "Потврдувам дека мојата правна проверка од 2.10.2026 се однесува на датотеката Kako_da_pobaram_BPP_vizuelno_izdanie.pdf со SHA-256 1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e.",
-      "final_gate": "explicit_author_legal_confirmation"
+      "final_gate": "explicit_author_legal_confirmation",
+      "final_gate_status": "satisfied_by_consolidated_author_approval",
+      "approved_at": "2026-10-04T18:24:00+02:00",
+      "approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "authorship-editorial-role-normalization",
-      "resolution_state": "governance_model_draft",
+      "resolution_state": "governance_model_approved_for_implementation",
       "controlled_roles": [
         "author",
         "source_provider",
@@ -166,11 +178,14 @@
       "public_template_when_authorship_confirmed_mk": "Автор: адвокат Зоран Стојанкиќ. Редакциска и техничка подготовка: AI-assisted, под човечка контрола во AI Advokat. AI-поддршката не е правен авторитет; изворите, важечката верзија и јавното објавување подлежат на Human Gate.",
       "public_template_when_only_source_delivery_is_confirmed_mk": "Изворна верзија доставена од адвокат Зоран Стојанкиќ. Авторството, редакцијата или адаптацијата не се претпоставуваат и се прикажуваат само ако се посебно потврдени.",
       "fingerprint_rule": "Any final author/legal approval must identify the exact artifact version and SHA-256 where an artifact is being approved.",
-      "final_gate": "author_acceptance_of_attribution_model"
+      "final_gate": "author_acceptance_of_attribution_model",
+      "final_gate_status": "satisfied_by_consolidated_author_approval",
+      "approved_at": "2026-10-04T18:24:00+02:00",
+      "approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "yucom-provenance-v1-v2",
-      "resolution_state": "document_supported_provenance_draft",
+      "resolution_state": "provenance_approved_for_implementation",
       "targets": [
         "guide-administrative-v1",
         "guide-administrative-v2"
@@ -179,16 +194,22 @@
       "finding_v2": "V2 expressly states that it is not a translation of Serbian law, identifies YUCOM 2023 as a conceptual/organizational reference, names the three original authors, and says North Macedonian rules and models are independently adapted from domestic sources.",
       "proposed_public_provenance_mk": "Концепциска и организациска референца: Теодора Томиќ Лазаревиќ, Драгиша Ќалиќ и Катарина Голубовиќ, „Водич кроз управни спор“, Комитет правника за људска права – YUCOM, Белград, 2023, ISBN 978-86-82222-18-7. Референцата е педагошка/организациска, а не извор на македонското позитивно право; домашните правила, институции, рокови и модели се обработуваат врз основа на домашни извори.",
       "authorship_caution": "Public attribution must not imply that YUCOM or its authors authored or approved the North Macedonian guide.",
-      "final_gate": "author_acknowledgement_of_public_provenance_wording"
+      "final_gate": "author_acknowledgement_of_public_provenance_wording",
+      "final_gate_status": "satisfied_by_consolidated_author_approval",
+      "approved_at": "2026-10-04T18:24:00+02:00",
+      "approved_by": "Zoran Stojankich"
     },
     {
       "issue_id": "paragraf-lex-ai-branding-decision",
-      "resolution_state": "conservative_branding_draft",
+      "resolution_state": "branding_policy_approved_for_implementation",
       "scope": "26_FULL_WORD_guides_38_63_and_other_legacy_files_where_present",
       "paragraf_mk_policy": "Preserve Paragraf.mk as historical/source branding where it appears in the original artifact; do not use it as the primary current AI Advokat public brand unless separately decided.",
       "lex_ai_policy": "Preserve Lex AI only as historical/source provenance until its meaning is explicitly confirmed. Do not equate Lex AI with AI-generated text.",
       "proposed_public_wording_mk": "Изворно брендирање во доставениот документ: Paragraf.mk / Lex AI. Оваа ознака се чува како provenance и не означува сама по себе дека текстот е AI-генериран.",
-      "final_gate": "author_confirmation_of_lex_ai_meaning_and_brand_policy"
+      "final_gate": "author_confirmation_of_lex_ai_meaning_and_brand_policy",
+      "final_gate_status": "satisfied_by_consolidated_author_approval",
+      "approved_at": "2026-10-04T18:24:00+02:00",
+      "approved_by": "Zoran Stojankich"
     }
   ],
   "author_confirmations_still_required": [],
