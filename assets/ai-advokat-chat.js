@@ -31,7 +31,7 @@
   const uid=()=>crypto.randomUUID ? crypto.randomUUID() : "chat-"+Date.now()+"-"+Math.random().toString(16).slice(2);
 
   function newState(){
-    return {id:uid(),title:"Нов разговор",conversationId:null,messages:[],createdAt:now(),updatedAt:now()};
+    return {id:uid(),title:"Нов разговор",messages:[],createdAt:now(),updatedAt:now()};
   }
   function save(){
     const serial=[...chats.values()].slice(-10).map(c=>({
@@ -223,6 +223,10 @@
     const q=String(forcedText??input.value).trim();
     if(!q) return;
     const chat=current();setTitle(chat,q);
+    const historyForApi=chat.messages
+      .filter(m=>(m.role==="user"||m.role==="assistant") && m.text && m.text!=="Обработувам…")
+      .slice(-12)
+      .map(m=>({role:m.role,text:String(m.text).slice(0,6000)}));
     const selectedFiles=[...attachments];
     addMessage({role:"user",text:q,meta:selectedFiles.length?selectedFiles.length+" прилог(а)":""});
     input.value="";attachments=[];renderAttachments();autoSize();
@@ -245,16 +249,15 @@
           mode:activeMode(),
           webSearch:activeMode()==="web",
           guideIds:guides.map(g=>g.id),
-          conversationId:chat.conversationId,
+          history:historyForApi,
           attachments:encoded
         })
       });
       const d=await r.json().catch(()=>null);
       if(r.ok&&d?.ok){
-        chat.conversationId=d.conversationId||chat.conversationId;
         updateAssistantPlaceholder(assistantIndex,{
           text:d.answer,
-          meta:(d.model||"GPT")+" · "+(d.mode||"auto"),
+          meta:(d.model||"GPT")+" · "+(d.mode||"auto")+" · session-private",
           guides,
           sourceLabel:d.sourceMode==="ai_advokat_catalogue_context_first"
             ?"AI Advokat corpus/catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
