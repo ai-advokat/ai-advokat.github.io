@@ -10,7 +10,8 @@
     "state": "architecture_implemented_provider_execution_locked",
     "compatibility_layer": "Responses API guarded runtime foundation",
     "public_provider_activation": false,
-    "reason": "Provider, source-tool, tracing and production activation remain separate Human Gates."
+    "reason": "Model selection is approved, but provider execution, secrets, billing/spend controls and production activation remain separate Human Gates.",
+    "approved_target_model": "gpt-6.1-sol"
   },
   "modes": [
     {
@@ -107,5 +108,24 @@
     "tracing_requires_manual_flush": true,
     "tracing_accuracy_caveat": "Cloudflare Workers AsyncLocalStorage support may limit trace accuracy.",
     "activation_state": "not_enabled_by_this_change"
+  },
+  "model_selection": {
+    "decision_id": "AI_ADVOKAT_MODEL_SELECTION_2026-10-04",
+    "approved_by": "Zoran Stojankich",
+    "approved_at": "2026-10-04T20:58:00+02:00",
+    "evidence_type": "author_message_relayed_by_project_lead",
+    "evidence_text": "vo celos se soglasuvam / so 6,1",
+    "primary_model_id": "gpt-6.1-sol",
+    "api": "OpenAI Responses API",
+    "default_reasoning_effort": "medium",
+    "escalation_reasoning_effort": "high",
+    "rationale": "Approved as the primary GPT model for AI Advokat because it is intended for complex professional work with near-Astra capability at substantially lower cost.",
+    "production_provider_activation": false,
+    "activation_requirements": [
+      "server-side OPENAI_API_KEY",
+      "OPENAI_ORCHESTRATOR_ENABLED=true",
+      "billing and spend limit configured",
+      "explicit production provider Human Gate"
+    ]
   }
 }
