@@ -100,4 +100,34 @@ describe("Zoran guides library governance",()=>{
     assert.equal(g.public_pdf,null);
     assert.equal(g.ai_use,"reference_only_until_human_gate");
   });
+  test("G13 final catalogue control metrics are internally consistent",()=>{
+    const publicRecords=data.records.filter(x=>x.catalog_public===true);
+    assert.equal(data.generated_on,"2026-10-04");
+    assert.equal(publicRecords.length,38);
+    assert.equal(publicRecords.filter(x=>x.source_role!=="version_history").length,36);
+    assert.equal(publicRecords.filter(x=>x.source_role==="version_history").length,2);
+    assert.equal(publicRecords.filter(x=>x.public_pdf!==null).length,0);
+    assert.equal(data.collection.final_control.registry_total,39);
+    assert.equal(data.collection.final_control.public_catalog_records,38);
+    assert.equal(data.collection.final_control.public_document_downloads,0);
+  });
+  test("G14 public catalogue labels do not misstate registry totals or file activation",()=>{
+    assert.match(html,/јавно видливи записи/);
+    assert.match(html,/архивски version-history записи/);
+    assert.match(html,/јавно активирани PDF\/DOCX/);
+    assert.ok(!html.includes("</li>\\n<li>"));
+  });
+  test("G15 version graph has no broken or non-reciprocal links",()=>{
+    const byId=new Map(data.records.map(x=>[x.id,x]));
+    for(const r of data.records){
+      if(r.supersedes){
+        assert.ok(byId.has(r.supersedes));
+        assert.equal(byId.get(r.supersedes).superseded_by,r.id);
+      }
+      if(r.superseded_by){
+        assert.ok(byId.has(r.superseded_by));
+        assert.equal(byId.get(r.superseded_by).supersedes,r.id);
+      }
+    }
+  });
 });
