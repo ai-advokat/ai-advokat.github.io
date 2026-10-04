@@ -64,3 +64,14 @@ The artifact-level author-approval field remains separate and is not inferred fr
 The Practical Guides catalogue is internally consistent at **39 public catalogue records**, with Administrative V2.0 FINAL MASTER as the current public master catalogue record. The two metadata defects identified in the previous final control are corrected: `public_experience.version = 2.1` and the public detail route uses `?g={public_slug}`.
 
 **FINAL CONTROL: PASS.**
+
+
+## Post-control public PDF decision — 4 October 2026
+
+After this control was completed, the project lead explicitly authorized **public PDF release for all 39 guide records** so citizens can open and read the full procedure.
+
+Decision: `all-guides-public-pdf-release-2026-10-04`.
+
+This later decision supersedes the earlier **PDF-release closed** state only for the public PDF gate. It does not retroactively alter the earlier audit findings and does not authorize DOCX release, RAG/AI corpus, production corpus write, legal-corpus promotion or provider activation.
+
+Publication remains fingerprint-bound: no `public_pdf` URL is exposed until the exact PDF asset has been verified and published.

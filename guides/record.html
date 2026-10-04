@@ -26,7 +26,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:22px 0;color:var
 @media print{header,.actions,.related,footer{display:none}body{background:#fff}.sheet{box-shadow:none;border:0;padding:0}}
 </style>
 </head>
-<body data-catalog-build="guides-v2-1-v2-final-master-2026-10-04">
+<body data-catalog-build="guides-v2-2-public-pdf-release-2026-10-04">
 <header><div class="wrap top"><a href="/">AI Advokat</a><nav><a href="/guides/">← Практични водичи</a></nav></div></header>
 <main><div class="wrap">
 <div class="crumb"><a href="/guides/">Практични водичи</a> / детален јавен запис</div>
@@ -54,7 +54,7 @@ function versionLink(target,all){
    ? '<a href="'+esc(x.public_record_url)+'">'+esc(label)+'</a>'
    : esc(label)+' <small>— контролирана верзија што не е јавно активирана во каталогот</small>';
 }
-fetch("/data/guides.json?v=20261004-v2-final-master",{cache:"no-store"}).then(r=>r.json()).then(d=>{
+fetch("/data/guides.json?v=20261004-public-pdf-release-v1",{cache:"no-store"}).then(r=>r.json()).then(d=>{
  const allRecords=d.records;
  const publicRecords=allRecords.filter(x=>x.catalog_public===true&&x.public_record_enabled===true);
  const x=publicRecords.find(r=>(slug&&r.public_slug===slug)||(!slug&&legacyId&&r.id===legacyId));
@@ -69,6 +69,10 @@ fetch("/data/guides.json?v=20261004-v2-final-master",{cache:"no-store"}).then(r=
  const structured={"@context":"https://schema.org","@type":"CreativeWork","name":title,"dateModified":x.edition_date,"description":x.scope,"isPartOf":{"@type":"CollectionPage","name":"Моите права во секојдневниот живот","url":"https://ai-advokat.github.io/guides/"}};
  const ld=document.createElement("script");ld.type="application/ld+json";ld.textContent=JSON.stringify(structured);document.head.appendChild(ld);
  const editionDisplay=x.source_role==="primary_full_word"?"Изворно издание од "+x.edition_date:x.edition;
+ const pdfActive=typeof x.public_pdf==="string"&&x.public_pdf.startsWith("/guides/pdfs/");
+ const pdfStatus=pdfActive?"PDF: јавно активен":"PDF: release одобрен · се врзува артефакт";
+ const pdfAction=pdfActive?`<a class="btn primary" href="${esc(x.public_pdf)}" target="_blank" rel="noopener">Отвори цел PDF</a>`:"";
+ const pdfRow=pdfActive?`<dt>Јавен PDF</dt><dd><a href="${esc(x.public_pdf)}" target="_blank" rel="noopener">Отвори го целосниот водич во PDF</a>${x.public_pdf_sha256?`<br><code>${esc(x.public_pdf_sha256)}</code>`:""}</dd>`:`<dt>Јавен PDF</dt><dd>Одобрен за објавување; точниот PDF артефакт сè уште не е физички врзан за овој запис.</dd>`;
  const pagesRow=x.pages!=null?`<dt>Страници</dt><dd>${esc(x.pages)}</dd>`:"";
  const ar=x.attribution_roles||{};
  const roleRows=[
@@ -80,11 +84,11 @@ fetch("/data/guides.json?v=20261004-v2-final-master",{cache:"no-store"}).then(r=
  ].join("");
  const legacyRows=(ar.legacy_branding||[]).length?`<dt>Историско/изворно брендирање</dt><dd>${esc(ar.legacy_branding.join(" · "))}${x.legacy_branding_note_mk?`<br><small>${esc(x.legacy_branding_note_mk)}</small>`:""}</dd>`:"";
  const reviewBindingRow=x.legal_review_binding?`<dt>Врзана правна проверка</dt><dd>${esc(x.legal_review_binding.check_date)} · точна датотека и SHA-256 потврдени со Human Gate<br><small>${esc(x.legal_review_binding.pack_id)}</small></dd>`:"";
- const masterRows=x.public_master_artifact?`<dt>Активен master артефакт</dt><dd><strong>${esc(x.public_master_artifact.artifact_version)}</strong><br><small>DOCX: ${esc(x.public_master_artifact.docx_file)}</small><br><code>${esc(x.public_master_artifact.docx_sha256)}</code><br><small>PDF: ${esc(x.public_master_artifact.pdf_file)}</small><br><code>${esc(x.public_master_artifact.pdf_sha256)}</code><br><small>Каталошки статус: активен · јавен download: не е одобрен</small></dd>`:"";
+ const masterRows=x.public_master_artifact?`<dt>Активен master артефакт</dt><dd><strong>${esc(x.public_master_artifact.artifact_version)}</strong><br><small>DOCX: ${esc(x.public_master_artifact.docx_file)}</small><br><code>${esc(x.public_master_artifact.docx_sha256)}</code><br><small>PDF: ${esc(x.public_master_artifact.pdf_file)}</small><br><code>${esc(x.public_master_artifact.pdf_sha256)}</code><br><small>Каталошки статус: активен · јавен PDF: ${pdfActive?"активен":"одобрен, артефакт се врзува"}</small></dd>`:"";
  const provenanceRows=x.provenance?`<dt>Референтна основа</dt><dd>${esc(x.provenance.adapted_from)}${x.provenance.reference_isbn?`<br><small>ISBN ${esc(x.provenance.reference_isbn)}</small>`:""}${x.provenance.original_authors?.length?`<br><small>Автори на референтната публикација: ${esc(x.provenance.original_authors.join(", "))}</small>`:""}${x.provenance.public_note_mk?`<br><small>${esc(x.provenance.public_note_mk)}</small>`:""}</dd>`:"";
  const legalNotices=(x.legal_notices||[]).length?`<div class="notice-stack">${x.legal_notices.map(n=>`<div class="legal-notice"><strong>${esc(n.title_mk)}</strong>${esc(n.text_mk)}${n.limitation_mk?`<small>${esc(n.limitation_mk)}</small>`:""}${n.official_source?.url?`<small>Официјален извор: <a href="${esc(n.official_source.url)}" target="_blank" rel="noopener">${esc(n.official_source.reference||n.official_source.institution)}</a></small>`:""}</div>`).join("")}</div>`:"";
  document.querySelector("#view").innerHTML=`<article class="sheet">
- <div class="badges"><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.display_format||x.format)}</span><span class="pill ${verificationClass(x.verification_level)}">${esc(x.verification_label)}</span><span class="pill lock">Документ: не е јавно активиран</span></div>
+ <div class="badges"><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.display_format||x.format)}</span><span class="pill ${verificationClass(x.verification_level)}">${esc(x.verification_label)}</span><span class="pill ${pdfActive?"checked":"lock"}">${pdfStatus}</span></div>
  <h1>${esc(title)}</h1>
  <p class="lead">${esc(x.scope)}</p>
  ${legalNotices}
@@ -95,6 +99,7 @@ fetch("/data/guides.json?v=20261004-v2-final-master",{cache:"no-store"}).then(r=
    <dt>Издание</dt><dd>${esc(editionDisplay)}</dd>
    <dt>Датум</dt><dd>${esc(x.edition_date)}</dd>
    ${pagesRow}
+   ${pdfRow}
    <dt>Јавна атрибуција</dt><dd>${esc(x.attribution_public||x.attribution)}</dd>
    ${roleRows}
    ${legacyRows}
@@ -111,10 +116,10 @@ fetch("/data/guides.json?v=20261004-v2-final-master",{cache:"no-store"}).then(r=
    ${provenanceRows}
    </dl></section>
  </div>
- <div class="approval-note"><strong>Human Gate Pack 1–7:</strong> одобрен за каталошка, правна, provenance и атрибуциска имплементација на 4.10.2026. Ова одобрение не ги активира целосните датотеки ниту AI-базата.</div>
- <div class="guard"><strong>Човечка правна контрола.</strong> Ова е јавен каталошки запис, а не јавно објавен целосен документ. Водичот не е официјален законски извор. За професионална употреба се бара проверка на важечкиот официјален извор и човечка правна ревизија. Целосната датотека и внесувањето во AI-базата не се активирани со овој каталог.</div>
+ <div class="approval-note"><strong>Public PDF Human Gate:</strong> на 4.10.2026 е експлицитно одобрено сите 39 водичи да можат јавно да се отвораат во PDF. Ова одобрение е само за PDF; DOCX и трајното внесување во AI-базата остануваат посебно контролирани.</div>
+ <div class="guard"><strong>Човечка правна контрола.</strong> ${pdfActive?"Целосниот PDF е јавно достапен за граѓанинот преку копчето подолу.":"PDF release е одобрен, но точниот артефакт сè уште не е објавен на оваа адреса."} Водичот не е официјален законски извор. Роковите, важечките прописи и правните средства треба да се проверат во официјалниот извор на датумот на конкретната употреба.</div>
  <div class="flow"><strong>Контролирана употреба:</strong> <code>каталошки запис → официјален извор → проверка на верзија → човечка правна проверка → употреба</code></div>
- <div class="actions"><a class="btn primary" href="/guides/">← Назад кон каталогот</a><button class="btn" type="button" onclick="share()">Сподели / копирај линк</button><button class="btn" type="button" onclick="print()">Печати каталошки запис</button></div>
+ <div class="actions">${pdfAction}<a class="btn ${pdfActive?"":"primary"}" href="/guides/">← Назад кон каталогот</a><button class="btn" type="button" onclick="share()">Сподели / копирај линк</button><button class="btn" type="button" onclick="print()">Печати каталошки запис</button></div>
  </article>`;
 
  const explicit=(x.related_records||[]).map(rel=>publicRecords.find(r=>r.id===rel.target_id)).filter(Boolean);
