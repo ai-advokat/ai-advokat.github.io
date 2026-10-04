@@ -12,6 +12,7 @@ const LB = require("../assets/legal-base.js");
 const { worker, workerModule } = await loadWorker();
 const index = fs.readFileSync("index.html", "utf8");
 const workerSrc = fs.readFileSync("src/index.js", "utf8");
+const chatJs = fs.readFileSync("assets/ai-advokat-chat.js", "utf8");
 const BASE = "https://ai-advokat-github-io.aiadvokat16.workers.dev";
 
 async function liveCapabilities() {
@@ -253,10 +254,16 @@ describe("versions, case law, documents", () => {
     assert.ok(!/successful resolution as proof/i.test(body));
   });
 
-  test("VD4 documents stay locked: no upload control, file input or storage anywhere on the page", () => {
-    assert.ok(!/type="file"|type:"file"|FormData\(|\.upload\b|\/api\/documents"?,\s*\{[^}]*method/.test(index));
+  test("VD4 document workspace stays locked while chat attachment UI is allowed only behind a provider/privacy gate", () => {
+    const fileInputs=[...index.matchAll(/<input\b[^>]*type="file"[^>]*>/g)].map(m=>m[0]);
+    assert.equal(fileInputs.length,1);
+    assert.match(fileInputs[0],/id="aiChatFiles"/);
+    assert.ok(!/FormData\(|\.upload\b|\/api\/documents"?,\s*\{[^}]*method/.test(index));
+    assert.match(chatJs,/\/api\/chat/);
+    assert.match(workerSrc,/OPENAI_FILE_INPUT_ENABLED/);
+    assert.match(workerSrc,/attachment_processing_locked/);
     const body = fnBody("openDocumentsInfo");
-    assert.ok(!/el\("(input|textarea|form)"/.test(body), "documents panel must not contain inputs");
+    assert.ok(!/el\("(input|textarea|form)"/.test(body), "documents workspace panel must not contain inputs");
     assert.match(body, /заклучена и во подготовка/);
     assert.match(body, /хронологии/);
     assert.match(body, /доказни матрици/);
