@@ -444,6 +444,7 @@ export async function runOpenAIOrchestrator(env, {
   const body={
     model,
     instructions:orchestratorInstructions(plan),
+    reasoning:{effort:["low","medium","high"].includes(String(env?.OPENAI_REASONING_EFFORT || "")) ? String(env.OPENAI_REASONING_EFFORT) : "medium"},
     input:[{role:"user",content:userParts}],
     max_output_tokens:maxOutputTokens,
     store:false,
