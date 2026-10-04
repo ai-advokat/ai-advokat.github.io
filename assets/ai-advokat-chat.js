@@ -2,6 +2,7 @@
   "use strict";
   const root=document.getElementById("aiAdvokatChat");
   if(!root) return;
+  const CHAT_API_BASE=location.hostname.endsWith("workers.dev") ? location.origin : "https://ai-advokat-github-io.aiadvokat16.workers.dev";
 
   const $=(s,p=root)=>p.querySelector(s);
   const messagesEl=$("#aiChatMessages");
@@ -208,7 +209,7 @@
 
   async function fallbackSourceAssistant(q){
     try{
-      const r=await fetch("/api/assistant",{method:"POST",headers:{"content-type":"application/json","accept":"application/json",...membershipHeaders()},body:JSON.stringify({q,instrument:"auto"})});
+      const r=await fetch(CHAT_API_BASE+"/api/assistant",{method:"POST",headers:{"content-type":"application/json","accept":"application/json",...membershipHeaders()},body:JSON.stringify({q,instrument:"auto"})});
       const d=await r.json().catch(()=>null);
       if(r.ok&&d?.ok&&d.answer){
         const cite=(d.citations||[]).map(c=>"чл. "+c.articleNumber).join(", ");
@@ -240,7 +241,7 @@
     try{
       const encoded=[];
       for(const f of selectedFiles) encoded.push(await encodeFile(f));
-      const r=await fetch("/api/chat",{
+      const r=await fetch(CHAT_API_BASE+"/api/chat",{
         method:"POST",
         headers:{"content-type":"application/json","accept":"application/json",...membershipHeaders()},
         signal:abortController.signal,
@@ -315,7 +316,7 @@
     });
   }
 
-  fetch("/api/orchestrator",{headers:{"accept":"application/json"}}).then(r=>r.json()).then(d=>{
+  fetch(CHAT_API_BASE+"/api/orchestrator",{headers:{"accept":"application/json"}}).then(r=>r.json()).then(d=>{
     const state=d?.runtime?.providerExecution;
     if(state==="configured_but_not_publicly_auto_executed") provider.textContent="GPT provider конфигуриран · production auto-execution сè уште gated";
     else provider.textContent="GPT-6.1 Sol target · provider activation pending";
