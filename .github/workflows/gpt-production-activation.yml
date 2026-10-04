@@ -7,11 +7,10 @@ on:
         description: "Type ACTIVATE_GPT_6_1_SOL"
         required: true
         type: string
-      billing_spend_limit_confirmed:
-        description: "OpenAI project billing and spend limit are configured"
-        required: true
-        type: boolean
-        default: false
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/activation/gpt-production-request.json"
 
 permissions:
   contents: read
@@ -29,7 +28,6 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      BILLING_CONFIRMED: ${{ inputs.billing_spend_limit_confirmed }}
       CONFIRMATION: ${{ inputs.confirmation }}
 
     steps:
@@ -46,8 +44,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$CONFIRMATION" = "ACTIVATE_GPT_6_1_SOL"
-          test "$BILLING_CONFIRMED" = "true"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            test "$CONFIRMATION" = "ACTIVATE_GPT_6_1_SOL"
+          else
+            node <<'NODE'
+          const fs=require("fs");
+          const p=".github/activation/gpt-production-request.json";
+          const d=JSON.parse(fs.readFileSync(p,"utf8"));
+          if(d.activation_authorized!==true) throw new Error("Activation request is not authorized");
+          if(d.model!=="gpt-6.1-sol") throw new Error("Unexpected requested model");
+          if(d.decision_id!=="AI_ADVOKAT_GPT_PRODUCTION_ACTIVATION_2026-10-04") throw new Error("Unexpected activation decision");
+          console.log("Repository activation authorization: PASS");
+          NODE
+          fi
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$OPENAI_API_KEY"
@@ -87,6 +96,19 @@ jobs:
           code="$(curl --silent --show-error --output /tmp/openai-model.json --write-out '%{http_code}'             -H "Authorization: Bearer $OPENAI_API_KEY"             https://api.openai.com/v1/models/gpt-6.1-sol)"
           test "$code" = "200"
           node -e 'const d=require("/tmp/openai-model.json"); if(d.id!=="gpt-6.1-sol") process.exit(1); console.log("OpenAI model access: PASS")'
+
+      - name: Verify paid quota with a minimal Responses API preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl --silent --show-error --output /tmp/openai-preflight.json --write-out '%{http_code}'             -H "Authorization: Bearer $OPENAI_API_KEY"             -H 'content-type: application/json'             -d '{"model":"gpt-6.1-sol","input":"Reply with only: PREFLIGHT_OK","reasoning":{"effort":"low"},"max_output_tokens":16,"store":false}'             https://api.openai.com/v1/responses)"
+          test "$code" = "200"
+          node <<'NODE'
+          const d=require("/tmp/openai-preflight.json");
+          const text=(d.output||[]).flatMap(x=>x.content||[]).filter(x=>x.type==="output_text").map(x=>x.text||"").join("\n");
+          if(!text.includes("PREFLIGHT_OK")) throw new Error("OpenAI paid-quota preflight did not complete");
+          console.log("OpenAI billing/quota preflight: PASS");
+          NODE
 
       - name: Install OpenAI API key as Cloudflare Worker secret
         shell: bash
@@ -142,5 +164,7 @@ jobs:
           name: ai-advokat-gpt-production-activation
           retention-days: 30
           path: |
+            /tmp/openai-model.json
+            /tmp/openai-preflight.json
             /tmp/orchestrator.json
             /tmp/gpt-combined-smoke.json
