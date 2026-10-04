@@ -1348,6 +1348,21 @@ async function governedGuideContext(request,env,guideIds){
   }
 }
 
+function validateChatHistory(payload){
+  const input=Array.isArray(payload)?payload:[];
+  if(input.length>12) return {ok:false,error:"chat_history_too_long"};
+  const history=[];
+  for(const raw of input){
+    if(!raw || typeof raw!=="object" || Array.isArray(raw)) return {ok:false,error:"invalid_chat_history"};
+    const role=raw.role==="assistant" ? "assistant" : raw.role==="user" ? "user" : null;
+    if(!role) return {ok:false,error:"invalid_chat_history_role"};
+    const text=cleanQuery(raw.text,6000);
+    if(!text) continue;
+    history.push({role,text});
+  }
+  return {ok:true,history};
+}
+
 function validateChatAttachments(payload){
   const input=Array.isArray(payload)?payload:[];
   if(input.length>CHAT_MAX_ATTACHMENTS) return {ok:false,error:"too_many_attachments"};
@@ -1415,6 +1430,9 @@ async function handleGPTChat(request,env){
     },503);
   }
 
+  const historyCheck=validateChatHistory(payload.history);
+  if(!historyCheck.ok) return json(request,{ok:false,error:historyCheck.error},400);
+
   const attachmentCheck=validateChatAttachments(payload.attachments);
   if(!attachmentCheck.ok) return json(request,{ok:false,error:attachmentCheck.error},400);
   if(attachmentCheck.attachments.length && env.OPENAI_FILE_INPUT_ENABLED!=="true"){
@@ -1461,7 +1479,7 @@ async function handleGPTChat(request,env){
     externalResearchEnabled:webRequested,
     webSearchEnabled:webRequested,
     attachments:attachmentCheck.attachments,
-    conversationId:typeof payload.conversationId==="string" ? cleanQuery(payload.conversationId,160) : null,
+    history:historyCheck.history,
     maxOutputTokens:1800
   });
 
@@ -1474,7 +1492,8 @@ async function handleGPTChat(request,env){
     ok:true,
     answer:result.text,
     model:result.model,
-    conversationId:result.conversationId,
+    conversationPersistence:result.conversationPersistence,
+    historyItemsUsed:result.historyItemsUsed,
     mode:plan.mode,
     sourceMode:preferCorpus ? "ai_advokat_catalogue_context_first" : "gpt_general_or_proactive",
     corpusContextCount:corpusContext.length,
