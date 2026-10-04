@@ -41,24 +41,33 @@
       "note": "Final implementation control confirms registry/catalog/governance consistency. It does not convert per-guide legal review states into publication masters and does not authorize public files, RAG, production corpus write or legal-corpus promotion."
     },
     "public_experience": {
-      "version": "1.0",
+      "version": "2.0",
       "enabled_on": "2026-10-04",
       "scope": "exact_38_public_catalog_records",
       "detail_route": "/guides/record.html?id={record_id}",
       "features": [
-        "search_and_filters",
-        "status_and_human_gate_badges",
-        "individual_public_metadata_record",
+        "search_and_controlled_category_filters",
+        "multi_level_verification_labels",
+        "individual_public_catalog_record",
         "provenance_and_fingerprint",
-        "version_history_links",
-        "related_guides",
-        "permanent_share_link",
+        "friendly_version_history",
+        "explicit_cross_category_related_guides",
+        "stable_public_slugs",
+        "share_link",
         "print_friendly_record"
       ],
       "public_document_download": false,
       "rag_eligibility": false,
       "production_corpus_write": false,
       "legal_corpus_promotion": false
+    },
+    "catalog_schema_version": "2.0",
+    "taxonomy_id": "AI_ADVOKAT_GUIDE_TAXONOMY_v2",
+    "numbering_note_mk": "Каталогот ја задржува изворната нумерација. Неприкажаните броеви 01–37 не значат дека водичите се откажани; тие едноставно не се дел од тековно доставениот и управуван сет.",
+    "public_language_policy": {
+      "citizen_facing_terms": true,
+      "machine_ids_hidden_from_primary_ui": true,
+      "technical_provenance_available_in_detail_view": true
     }
   },
   "records": [
@@ -85,8 +94,24 @@
       "sha256": "ab110bc706c9a3f09d10439ac2de65411adaaa4ba8aee9a8e129bcb7139bc9c3",
       "source_size_bytes": 114088,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-02-victim-edited-2026-10-01",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=02-zrtva",
+      "public_record_enabled": true,
+      "category_original": "Кривична постапка",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Кривична постапка",
+      "display_title": "Правата и обврските на жртвата и оштетениот во кривична постапка",
+      "display_format": "Проширена верзија",
+      "verification_level": "editorial_review",
+      "verification_label": "Содржински редактирано · правна актуелност за проверка",
+      "related_records": [
+        {
+          "target_id": "guide-45-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Права и заштита на жртва во кривична постапка"
+        }
+      ],
+      "public_slug": "02-zrtva"
     },
     {
       "id": "guide-02-victim-draft-2026-09-29",
@@ -111,8 +136,18 @@
       "sha256": "93075e9ba8437d74deac92c30480e1d4eff21b7363fbfb0623522ec3b11c785c",
       "source_size_bytes": 154806,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-02-victim-draft-2026-09-29",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=02-zrtva-arhiva",
+      "public_record_enabled": true,
+      "category_original": "Кривична постапка",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Кривична постапка",
+      "display_title": "Правата и обврските на жртвата и оштетениот во кривична постапка",
+      "display_format": "Проширена верзија",
+      "verification_level": "archive",
+      "verification_label": "Архивска верзија",
+      "related_records": [],
+      "public_slug": "02-zrtva-arhiva"
     },
     {
       "id": "guide-05-workplace",
@@ -137,8 +172,18 @@
       "sha256": "92152823bb2e0e7dd8eab6e6ee21c7d3e03e8031ecd3235cbde85b5e599de053",
       "source_size_bytes": 154127,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-05-workplace",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=05-rabotno-voznemiruvanje",
+      "public_record_enabled": true,
+      "category_original": "Работно право",
+      "category_code": "labour_social",
+      "category_label": "Работно и социјално право",
+      "subcategory_label": "Работно право",
+      "display_title": "Дискриминација и вознемирување на работното место",
+      "display_format": "Проширена верзија",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "public_slug": "05-rabotno-voznemiruvanje"
     },
     {
       "id": "guide-09-family",
@@ -163,8 +208,18 @@
       "sha256": "738aee4bc8f2115cdb6344a6fb179ae8f24899ad9d2b910ce4dfbf52bf1cb7fa",
       "source_size_bytes": 140801,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-09-family",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=09-brak-deca-imot",
+      "public_record_enabled": true,
+      "category_original": "Семејно и имотно право",
+      "category_code": "family_property",
+      "category_label": "Семејно и имотно право",
+      "subcategory_label": "Семејно и имотно право",
+      "display_title": "Брак, деца и имот — моите права",
+      "display_format": "Кратка верзија",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "public_slug": "09-brak-deca-imot"
     },
     {
       "id": "guide-10-traffic",
@@ -189,8 +244,24 @@
       "sha256": "e5d9d109ced10e4c96545e07df8ed6dbbcc947d0d790478b5b76ac4429b6e7aa",
       "source_size_bytes": 144043,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-10-traffic",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=10-soobrakajna-nezgoda",
+      "public_record_enabled": true,
+      "category_original": "Осигурување и надоместок",
+      "category_code": "civil_compensation",
+      "category_label": "Надоместок и осигурување",
+      "subcategory_label": "Осигурување и надоместок",
+      "display_title": "Сообраќајна незгода — барање надоместок од осигурител",
+      "display_format": "Кратка верзија",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [
+        {
+          "target_id": "guide-40-full-word-2026",
+          "type": "same_topic",
+          "reason": "Сообраќајна незгода и надомест на штета"
+        }
+      ],
+      "public_slug": "10-soobrakajna-nezgoda"
     },
     {
       "id": "guide-17-police",
@@ -215,8 +286,29 @@
       "sha256": "361ca4bcafc737b1134fccecc2fde90bbcc9fb1f8165abf787b1cc2949958292",
       "source_size_bytes": 154339,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-17-police",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=17-policija-pretres-lisuvanje",
+      "public_record_enabled": true,
+      "category_original": "Полиција и кривична постапка",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Полиција и кривична постапка",
+      "display_title": "Легитимирање, претрес и лишување од слобода",
+      "display_format": "Проширена верзија",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [
+        {
+          "target_id": "guide-41-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Полициско постапување, разговор, лишување и задржување"
+        },
+        {
+          "target_id": "guide-42-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Полициско постапување, разговор, лишување и задржување"
+        }
+      ],
+      "public_slug": "17-policija-pretres-lisuvanje"
     },
     {
       "id": "guide-21-witness",
@@ -241,8 +333,24 @@
       "sha256": "f7f14e628fde1041d3905f91a2beaae643fb89e02873efabe4fad81c7ccd0bce",
       "source_size_bytes": 125168,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-21-witness",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=21-svedocenje",
+      "public_record_enabled": true,
+      "category_original": "Кривична постапка",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Кривична постапка",
+      "display_title": "Добив повик за сведочење — што да направам",
+      "display_format": "Кратка верзија",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [
+        {
+          "target_id": "guide-44-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Сведочење, покана и процесна положба"
+        }
+      ],
+      "public_slug": "21-svedocenje"
     },
     {
       "id": "guide-22-corruption",
@@ -267,8 +375,18 @@
       "sha256": "a5635a61432aefb2a053cb49c3c8aed1967c254943dee150367e64a5eb632eff",
       "source_size_bytes": 135673,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-22-corruption",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=22-korupcija",
+      "public_record_enabled": true,
+      "category_original": "Антикорупција и укажувачи",
+      "category_code": "integrity",
+      "category_label": "Антикорупција и укажувачи",
+      "subcategory_label": "Антикорупција и укажувачи",
+      "display_title": "Како да пријавам корупција и да побарам заштита",
+      "display_format": "Кратка верзија",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "public_slug": "22-korupcija"
     },
     {
       "id": "guide-26-administrative-short",
@@ -293,8 +411,34 @@
       "sha256": "c06dbab1855db726004be2b0f66f10978f33e0f1a29417cdc9acb0cc682d9889",
       "source_size_bytes": 164939,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-26-administrative-short",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=26-upraven-spor",
+      "public_record_enabled": true,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Кога институцијата одбива или молчи — водич низ управниот спор",
+      "display_format": "Проширена верзија",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [
+        {
+          "target_id": "guide-53-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        },
+        {
+          "target_id": "guide-54-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        },
+        {
+          "target_id": "guide-administrative-v1",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        }
+      ],
+      "public_slug": "26-upraven-spor"
     },
     {
       "id": "guide-administrative-v1",
@@ -319,8 +463,34 @@
       "sha256": "fe052ff4a005c8f10f9b544b25a3d8ad7dc8cb72ad3c039d09744183a7fb225e",
       "source_size_bytes": 209410,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-administrative-v1",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=upravna-postapka-v1",
+      "public_record_enabled": true,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Водич низ управната постапка и управниот спор",
+      "display_format": "Сеопфатен практичен водич",
+      "verification_level": "archive",
+      "verification_label": "Архивска верзија",
+      "related_records": [
+        {
+          "target_id": "guide-26-administrative-short",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        },
+        {
+          "target_id": "guide-53-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        },
+        {
+          "target_id": "guide-54-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        }
+      ],
+      "public_slug": "upravna-postapka-v1"
     },
     {
       "id": "guide-choose-lawyer",
@@ -345,8 +515,18 @@
       "sha256": "2075c26cbb850fee591383352ff47a8abcf9bd3794c6f9b7fe8cf41700c4db8c",
       "source_size_bytes": 140473,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-choose-lawyer",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=izbor-na-advokat",
+      "public_record_enabled": true,
+      "category_original": "Пристап до правна помош",
+      "category_code": "access_to_justice",
+      "category_label": "Пристап до правна помош",
+      "subcategory_label": "Правна помош",
+      "display_title": "Како да изберам адвокат и да ги разберам трошоците",
+      "display_format": "Практичен водич",
+      "verification_level": "sources_checked",
+      "verification_label": "Проверени извори",
+      "related_records": [],
+      "public_slug": "izbor-na-advokat"
     },
     {
       "id": "guide-free-legal-aid",
@@ -371,8 +551,18 @@
       "sha256": "1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e",
       "source_size_bytes": 108040,
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-free-legal-aid",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=besplatna-pravna-pomos",
+      "public_record_enabled": true,
+      "category_original": "Пристап до правна помош",
+      "category_code": "access_to_justice",
+      "category_label": "Пристап до правна помош",
+      "subcategory_label": "Правна помош",
+      "display_title": "Како да побарам бесплатна правна помош",
+      "display_format": "Практичен водич",
+      "verification_level": "base_legal_reviewed",
+      "verification_label": "Основната верзија правно проверена",
+      "related_records": [],
+      "public_slug": "besplatna-pravna-pomos"
     },
     {
       "id": "guide-38-full-word-2026",
@@ -382,7 +572,7 @@
       "title": "КАКО ДА ПОДНЕСЕТЕ БАРАЊЕ ЗА УТВРДУВАЊЕ И ДОКАЖУВАЊЕ НА РАБОТЕН СТАЖ КОГА ИМА ПРАЗНИНИ ВО ЕВИДЕНЦИЈАТА",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_38_FULL_38_kako_da_podnesete_baranje_za_utvrduvanje_i_dokazhuvanje_na_raboten_.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -400,8 +590,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-38-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=38",
+      "public_record_enabled": true,
+      "category_original": "Работно и социјално осигурување",
+      "category_code": "labour_social",
+      "category_label": "Работно и социјално право",
+      "subcategory_label": "Работно и социјално осигурување",
+      "display_title": "Како да поднесете барање за утврдување и докажување на работен стаж кога има празнини во евиденцијата",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "38"
     },
     {
       "id": "guide-39-full-word-2026",
@@ -411,7 +612,7 @@
       "title": "КАКО ДА ПОДНЕСЕТЕ БАРАЊЕ ИЛИ ЖАЛБА ПРЕД ФОНДОТ ЗА ЗДРАВСТВЕНО ОСИГУРУВАЊЕ",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_39_FULL_39_kako_da_podnesete_baranje_ili_zhalba_pred_fondot_za_zdravstveno_osi.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "source_checked_review",
@@ -430,8 +631,19 @@
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "review_note": "Тековната страница на ФЗО наведува 15 дена за жалба против првостепено решение; конкретната постапка/право може да има дополнителни правила.",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-39-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=39",
+      "public_record_enabled": true,
+      "category_original": "Здравствено осигурување",
+      "category_code": "labour_social",
+      "category_label": "Работно и социјално право",
+      "subcategory_label": "Здравствено осигурување",
+      "display_title": "Како да поднесете барање или жалба пред фондот за здравствено осигурување",
+      "display_format": "Практичен водич",
+      "verification_level": "specific_point_checked",
+      "verification_label": "Проверен конкретен извор или рок",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "39"
     },
     {
       "id": "guide-40-full-word-2026",
@@ -441,7 +653,7 @@
       "title": "КАКО ДА ПОВЕДЕТЕ ПОСТАПКА ЗА НАДОМЕСТ НА ШТЕТА ОД СООБРАЌАЈНА НЕЗГОДА",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_40_FULL_40_kako_da_povedete_postapka_za_nadomest_na_shteta_od_soobrakjajna_nez.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -459,8 +671,25 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-40-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=40",
+      "public_record_enabled": true,
+      "category_original": "Осигурување и надоместок",
+      "category_code": "civil_compensation",
+      "category_label": "Надоместок и осигурување",
+      "subcategory_label": "Осигурување и надоместок",
+      "display_title": "Како да поведете постапка за надомест на штета од сообраќајна незгода",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [
+        {
+          "target_id": "guide-10-traffic",
+          "type": "same_topic",
+          "reason": "Сообраќајна незгода и надомест на штета"
+        }
+      ],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "40"
     },
     {
       "id": "guide-41-full-word-2026",
@@ -470,7 +699,7 @@
       "title": "КАКО ДА ПОСТАПИТЕ АКО ВЕ ПОВИКА ПОЛИЦИЈА НА ИНФОРМАТИВЕН РАЗГОВОР",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_41_FULL_41_kako_da_postapite_ako_ve_povika_policija_na_informativen_razgovor.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -488,8 +717,30 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-41-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=41",
+      "public_record_enabled": true,
+      "category_original": "Полиција и кривична постапка",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Полиција и кривична постапка",
+      "display_title": "Како да постапите ако ве повика полиција на информативен разговор",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [
+        {
+          "target_id": "guide-17-police",
+          "type": "overlapping_scope",
+          "reason": "Полициско постапување, разговор, лишување и задржување"
+        },
+        {
+          "target_id": "guide-42-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Полициско постапување, разговор, лишување и задржување"
+        }
+      ],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "41"
     },
     {
       "id": "guide-42-full-word-2026",
@@ -499,7 +750,7 @@
       "title": "КАКО ДА ПОСТАПИТЕ АКО БИДЕТЕ ЛИШЕНИ ОД СЛОБОДА ИЛИ ЗАДРЖАНИ ВО ПОЛИЦИСКА СТАНИЦА",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_42_FULL_42_kako_da_postapite_ako_bidete_lisheni_od_sloboda_ili_zadrzhani_vo_po.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -517,8 +768,30 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-42-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=42",
+      "public_record_enabled": true,
+      "category_original": "Полиција и кривична постапка",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Полиција и кривична постапка",
+      "display_title": "Како да постапите ако бидете лишени од слобода или задржани во полициска станица",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [
+        {
+          "target_id": "guide-17-police",
+          "type": "overlapping_scope",
+          "reason": "Полициско постапување, разговор, лишување и задржување"
+        },
+        {
+          "target_id": "guide-41-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Полициско постапување, разговор, лишување и задржување"
+        }
+      ],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "42"
     },
     {
       "id": "guide-43-full-word-2026",
@@ -528,7 +801,7 @@
       "title": "КАКО ДА ПОДНЕСЕТЕ КРИВИЧНА ПРИЈАВА",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_43_FULL_43_kako_da_podnesete_krivichna_prijava.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -546,8 +819,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-43-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=43",
+      "public_record_enabled": true,
+      "category_original": "Полиција и кривична постапка",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Полиција и кривична постапка",
+      "display_title": "Како да поднесете кривична пријава",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "43"
     },
     {
       "id": "guide-44-full-word-2026",
@@ -557,7 +841,7 @@
       "title": "КАКО ДА ПОСТАПИТЕ АКО ДОБИЕТЕ ПОКАНА КАКО СВЕДОК, ОСОМНИЧЕН ИЛИ ОШТЕТЕН",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_44_FULL_44_kako_da_postapite_ako_dobiete_pokana_kako_svedok_osomnichen_ili_osh.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -575,8 +859,25 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-44-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=44",
+      "public_record_enabled": true,
+      "category_original": "Полиција и кривична постапка",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Полиција и кривична постапка",
+      "display_title": "Како да постапите ако добиете покана како сведок, осомничен или оштетен",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [
+        {
+          "target_id": "guide-21-witness",
+          "type": "overlapping_scope",
+          "reason": "Сведочење, покана и процесна положба"
+        }
+      ],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "44"
     },
     {
       "id": "guide-45-full-word-2026",
@@ -586,7 +887,7 @@
       "title": "КАКО ДА ГИ ЗАШТИТИТЕ ВАШИТЕ ПРАВА АКО СТЕ ЖРТВА НА КРИВИЧНО ДЕЛО",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_45_FULL_45_kako_da_gi_zashtitite_vashite_prava_ako_ste_zhrtva_na_krivichno_del.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -604,8 +905,25 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-45-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=45",
+      "public_record_enabled": true,
+      "category_original": "Полиција и кривична постапка",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Полиција и кривична постапка",
+      "display_title": "Како да ги заштитите вашите права ако сте жртва на кривично дело",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [
+        {
+          "target_id": "guide-02-victim-edited-2026-10-01",
+          "type": "overlapping_scope",
+          "reason": "Права и заштита на жртва во кривична постапка"
+        }
+      ],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "45"
     },
     {
       "id": "guide-46-full-word-2026",
@@ -615,7 +933,7 @@
       "title": "КАКО ДА БАРАТЕ УКИНУВАЊЕ ИЛИ ЗАМЕНА НА ПРИТВОР",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_46_FULL_46_kako_da_barate_ukinuvanje_ili_zamena_na_pritvor.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -633,8 +951,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-46-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=46",
+      "public_record_enabled": true,
+      "category_original": "Полиција и кривична постапка",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Полиција и кривична постапка",
+      "display_title": "Како да барате укинување или замена на притвор",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "46"
     },
     {
       "id": "guide-47-full-word-2026",
@@ -644,7 +973,7 @@
       "title": "КАКО ДА ПОДНЕСЕТЕ БАРАЊЕ ЗА УСЛОВЕН ОТПУСТ",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_47_FULL_47_kako_da_podnesete_baranje_za_usloven_otpust.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -662,8 +991,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-47-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=47",
+      "public_record_enabled": true,
+      "category_original": "Кривична постапка и извршување санкции",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Извршување санкции",
+      "display_title": "Како да поднесете барање за условен отпуст",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "47"
     },
     {
       "id": "guide-48-full-word-2026",
@@ -673,7 +1013,7 @@
       "title": "КАКО ДА ПОДНЕСЕТЕ БАРАЊЕ ЗА ОДЛАГАЊЕ НА ИЗВРШУВАЊЕ НА КАЗНА ЗАТВОР",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_48_FULL_48_kako_da_podnesete_baranje_za_odlaganje_na_izvrshuvanje_na_kazna_zat.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -691,8 +1031,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-48-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=48",
+      "public_record_enabled": true,
+      "category_original": "Кривична постапка и извршување санкции",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Извршување санкции",
+      "display_title": "Како да поднесете барање за одлагање на извршување на казна затвор",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "48"
     },
     {
       "id": "guide-49-full-word-2026",
@@ -702,7 +1053,7 @@
       "title": "КАКО ДА ПОДНЕСЕТЕ БАРАЊЕ ЗА РЕХАБИЛИТАЦИЈА",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_49_FULL_49_kako_da_podnesete_baranje_za_rehabilitacija.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -720,8 +1071,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-49-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=49",
+      "public_record_enabled": true,
+      "category_original": "Кривична постапка и извршување санкции",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Извршување санкции",
+      "display_title": "Како да поднесете барање за рехабилитација",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "49"
     },
     {
       "id": "guide-50-full-word-2026",
@@ -731,7 +1093,7 @@
       "title": "КАКО ДА ПОДНЕСЕТЕ БАРАЊЕ ЗА ПОМИЛУВАЊЕ",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_50_FULL_50_kako_da_podnesete_baranje_za_pomiluvanje.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -749,8 +1111,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-50-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=50",
+      "public_record_enabled": true,
+      "category_original": "Кривична постапка и извршување санкции",
+      "category_code": "criminal_justice",
+      "category_label": "Кривична постапка и права",
+      "subcategory_label": "Извршување санкции",
+      "display_title": "Како да поднесете барање за помилување",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "50"
     },
     {
       "id": "guide-51-full-word-2026",
@@ -760,7 +1133,7 @@
       "title": "КАКО ДА ПОДНЕСЕТЕ БАРАЊЕ ВО УПРАВНА ПОСТАПКА",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_51_FULL_51_kako_da_podnesete_baranje_vo_upravna_postapka.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "source_checked_review",
@@ -779,8 +1152,19 @@
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "review_note": "Член 106 став 1 ЗОУП предвидува 15 дена од доставувањето/известувањето, освен ако со посебен закон е определен подолг рок.",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-51-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=51",
+      "public_record_enabled": true,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Како да поднесете барање во управна постапка",
+      "display_format": "Практичен водич",
+      "verification_level": "specific_provision_checked",
+      "verification_label": "Проверена конкретна законска одредба",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "51"
     },
     {
       "id": "guide-52-full-word-2026",
@@ -790,7 +1174,7 @@
       "title": "КАКО ДА ПОДНЕСЕТЕ ЖАЛБА ПРОТИВ УПРАВНО РЕШЕНИЕ",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_52_FULL_52_kako_da_podnesete_zhalba_protiv_upravno_reshenie.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "source_checked_review",
@@ -809,8 +1193,19 @@
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "review_note": "Член 106 став 1 ЗОУП предвидува 15 дена од доставувањето/известувањето, освен ако со посебен закон е определен подолг рок.",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-52-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=52",
+      "public_record_enabled": true,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Како да поднесете жалба против управно решение",
+      "display_format": "Практичен водич",
+      "verification_level": "specific_provision_checked",
+      "verification_label": "Проверена конкретна законска одредба",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "52"
     },
     {
       "id": "guide-53-full-word-2026",
@@ -820,7 +1215,7 @@
       "title": "КАКО ДА ПОДНЕСЕТЕ ТУЖБА ВО УПРАВЕН СПОР ПРЕД УПРАВЕН СУД",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_53_FULL_53_kako_da_podnesete_tuzhba_vo_upraven_spor_pred_upraven_sud.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -839,8 +1234,35 @@
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "review_note": "P1: текстот дека основниот рок е 30 дена и кај молчење не смее да се користи како фиксен преклузивен рок; Уставниот суд со У.бр.148/2024 го укина делот „во рок од 30 дена“ од член 26 став 2 ЗУС.",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-53-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=53",
+      "public_record_enabled": true,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Како да поднесете тужба во управен спор пред управен суд",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [
+        {
+          "target_id": "guide-26-administrative-short",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        },
+        {
+          "target_id": "guide-54-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        },
+        {
+          "target_id": "guide-administrative-v1",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        }
+      ],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "53"
     },
     {
       "id": "guide-54-full-word-2026",
@@ -850,7 +1272,7 @@
       "title": "КАКО ДА ПОСТАПИТЕ АКО ИНСТИТУЦИЈАТА НЕ ОДГОВАРА (МОЛЧЕЊЕ НА АДМИНИСТРАЦИЈА)",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_54_FULL_54_kako_da_postapite_ako_institucijata_ne_odgovara_molchenje_na_admini.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -868,8 +1290,35 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-54-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=54",
+      "public_record_enabled": true,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Како да постапите ако институцијата не одговара (молчење на администрација)",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [
+        {
+          "target_id": "guide-26-administrative-short",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        },
+        {
+          "target_id": "guide-53-full-word-2026",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        },
+        {
+          "target_id": "guide-administrative-v1",
+          "type": "overlapping_scope",
+          "reason": "Управен спор и молчење на администрацијата"
+        }
+      ],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "54"
     },
     {
       "id": "guide-55-full-word-2026",
@@ -879,7 +1328,7 @@
       "title": "КАКО ДА ПОБАРАТЕ ПОНИШТУВАЊЕ ИЛИ УКИНУВАЊЕ НА УПРАВЕН АКТ",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_55_FULL_55_kako_da_pobarate_ponishtuvanje_ili_ukinuvanje_na_upraven_akt.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -897,8 +1346,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-55-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=55",
+      "public_record_enabled": true,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Како да побарате поништување или укинување на управен акт",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "55"
     },
     {
       "id": "guide-56-full-word-2026",
@@ -908,7 +1368,7 @@
       "title": "КАКО ДА ПОБАРАТЕ ПОВТОРУВАЊЕ НА УПРАВНА ПОСТАПКА",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_56_FULL_56_kako_da_pobarate_povtoruvanje_na_upravna_postapka.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -926,8 +1386,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-56-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=56",
+      "public_record_enabled": true,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Како да побарате повторување на управна постапка",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "56"
     },
     {
       "id": "guide-57-full-word-2026",
@@ -937,7 +1408,7 @@
       "title": "КАКО ДА ПОБАРАТЕ ИЗДАВАЊЕ УВЕРЕНИЕ ИЛИ ИЗВОД ОД ЈАВНА ЕВИДЕНЦИЈА",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_57_FULL_57_kako_da_pobarate_izdavanje_uverenie_ili_izvod_od_javna_evidencija.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -955,8 +1426,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-57-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=57",
+      "public_record_enabled": true,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Како да побарате издавање уверение или извод од јавна евиденција",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "57"
     },
     {
       "id": "guide-58-full-word-2026",
@@ -966,7 +1448,7 @@
       "title": "КАКО ДА ПОДНЕСЕТЕ ПРЕТСТАВКА ИЛИ ПРИГОВОР ПРОТИВ РАБОТА НА ОРГАН НА УПРАВА",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_58_FULL_58_kako_da_podnesete_pretstavka_ili_prigovor_protiv_rabota_na_organ_na.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -984,8 +1466,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-58-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=58",
+      "public_record_enabled": true,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Како да поднесете претставка или приговор против работа на орган на управа",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "58"
     },
     {
       "id": "guide-59-full-word-2026",
@@ -995,7 +1488,7 @@
       "title": "КАКО ДА БАРАТЕ НАДОМЕСТ НА ШТЕТА ОД НЕЗАКОНИТО УПРАВНО ПОСТАПУВАЊЕ",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_59_FULL_59_kako_da_barate_nadomest_na_shteta_od_nezakonito_upravno_postapuvanj.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -1013,8 +1506,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-59-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=59",
+      "public_record_enabled": true,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Како да барате надомест на штета од незаконито управно постапување",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "59"
     },
     {
       "id": "guide-60-full-word-2026",
@@ -1024,7 +1528,7 @@
       "title": "КАКО ДА ЗАВЕРИТЕ ДОГОВОР КАЈ НОТАР ВО РСМ",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_60_FULL_60_kako_da_zaverite_dogovor_kaj_notar_vo_rsm.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -1042,8 +1546,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-60-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=60",
+      "public_record_enabled": true,
+      "category_original": "Нотарски постапки и приватно право",
+      "category_code": "private_notarial",
+      "category_label": "Приватно и нотарско право",
+      "subcategory_label": "Нотарски постапки",
+      "display_title": "Како да заверите договор кај нотар во рсм",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "60"
     },
     {
       "id": "guide-61-full-word-2026",
@@ -1053,7 +1568,7 @@
       "title": "КАКО ДА СОСТАВИТЕ И ЗАВЕРИТЕ ПОЛНОМОШНО КАЈ НОТАР ВО РСМ",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_61_FULL_61_kako_da_sostavite_i_zaverite_polnomoshno_kaj_notar_vo_rsm.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -1071,8 +1586,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-61-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=61",
+      "public_record_enabled": true,
+      "category_original": "Нотарски постапки и приватно право",
+      "category_code": "private_notarial",
+      "category_label": "Приватно и нотарско право",
+      "subcategory_label": "Нотарски постапки",
+      "display_title": "Како да составите и заверите полномошно кај нотар во рсм",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "61"
     },
     {
       "id": "guide-62-full-word-2026",
@@ -1082,7 +1608,7 @@
       "title": "КАКО ДА ЗАВЕРИТЕ ПОТПИС ИЛИ ПРЕПИС НА ДОКУМЕНТ КАЈ НОТАР ВО РСМ",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_62_FULL_62_kako_da_zaverite_potpis_ili_prepis_na_dokument_kaj_notar_vo_rsm.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -1100,8 +1626,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-62-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=62",
+      "public_record_enabled": true,
+      "category_original": "Нотарски постапки и приватно право",
+      "category_code": "private_notarial",
+      "category_label": "Приватно и нотарско право",
+      "subcategory_label": "Нотарски постапки",
+      "display_title": "Како да заверите потпис или препис на документ кај нотар во рсм",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "62"
     },
     {
       "id": "guide-63-full-word-2026",
@@ -1111,7 +1648,7 @@
       "title": "КАКО ДА НАПРАВИТЕ НОТАРСКА ИЗЈАВА ВО РСМ",
       "edition": "Целосна, некомпресирана Word верзија",
       "edition_date": "2026-04-30",
-      "pages": 3,
+      "pages": null,
       "source_file": "Vodic_63_FULL_63_kako_da_napravite_notarska_izjava_vo_rsm.docx",
       "attribution": "Доставено од адвокат Зоран Стојанкиќ • изворно брендирање во документот: Paragraf.mk • Lex AI",
       "status": "legal_approval_required",
@@ -1129,8 +1666,19 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "catalog_public": true,
-      "public_record_url": "/guides/record.html?id=guide-63-full-word-2026",
-      "public_record_enabled": true
+      "public_record_url": "/guides/record.html?g=63",
+      "public_record_enabled": true,
+      "category_original": "Нотарски постапки и приватно право",
+      "category_code": "private_notarial",
+      "category_label": "Приватно и нотарско право",
+      "subcategory_label": "Нотарски постапки",
+      "display_title": "Како да направите нотарска изјава во рсм",
+      "display_format": "Практичен водич",
+      "verification_level": "legal_review_pending",
+      "verification_label": "Правна проверка потребна",
+      "related_records": [],
+      "page_count_note": "DOCX извор: бројот на страници не се прикажува како фиксен каталошки податок.",
+      "public_slug": "63"
     },
     {
       "id": "guide-administrative-v2",
@@ -1181,7 +1729,17 @@
         "production_corpus_write": "not_authorized"
       },
       "public_record_url": null,
-      "public_record_enabled": false
+      "public_record_enabled": false,
+      "category_original": "Управно право",
+      "category_code": "administrative_law",
+      "category_label": "Управно право",
+      "subcategory_label": "Управно право",
+      "display_title": "Водич низ управната постапка и управниот спор",
+      "display_format": "Сеопфатен практичен водич",
+      "verification_level": "corrected_candidate",
+      "verification_label": "Коригиран кандидат",
+      "related_records": [],
+      "public_slug": null
     }
   ]
 }
