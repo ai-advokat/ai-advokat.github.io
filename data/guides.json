@@ -110,6 +110,28 @@
       "legal_corpus_promotion": false,
       "provider_activation": false,
       "note": "Activates the governed V2.0 FINAL MASTER catalogue record as the current public master version while keeping the underlying files and AI/production gates closed."
+    },
+    "citizen_guide_router": {
+      "version": "1.0",
+      "status": "implementation_candidate",
+      "date": "2026-10-04",
+      "purpose": "Route ordinary-language citizen questions to clickable public guide records before or alongside article-level legal research.",
+      "source_scope": "public_catalogue_metadata_only",
+      "public_records_available": 39,
+      "current_records_recommended_by_default": 37,
+      "version_history_records_default_recommendation": false,
+      "input_support": [
+        "Macedonian Cyrillic",
+        "common Macedonian Latin transliteration"
+      ],
+      "output": "up_to_3_clickable_public_guide_records_plus_browse_all",
+      "fallback": "browse_all_39_without_guessing",
+      "public_document_download": false,
+      "rag_eligibility": false,
+      "ai_corpus_eligibility": false,
+      "production_corpus_write": false,
+      "legal_corpus_promotion": false,
+      "provider_activation": false
     }
   },
   "records": [
