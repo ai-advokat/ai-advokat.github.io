@@ -205,5 +205,22 @@
     "this_pack_approves_legal_content": false,
     "this_pack_authorizes_public_release": false,
     "this_pack_authorizes_ai_use": false
+  },
+  "consolidated_author_approval": {
+    "mode": "single_group_human_gate_confirmation",
+    "status": "awaiting_author_response",
+    "approval_is_not_inferred": true,
+    "approval_text_mk": "Го одобрувам консолидираниот Human Gate Resolution Pack 1–7 за AI Advokat, во предложената правна, авторска, provenance и техничка рамка. Потврдувам дека правната проверка од 2.10.2026 се однесува на датотеката Kako_da_pobaram_BPP_vizuelno_izdanie.pdf со SHA-256 1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e. Го прифаќам предложениот модел за разграничување на авторство, редакција/адаптација, AI-assisted editorial support, концепциски/организациски референци и историско брендирање. Го одобрувам предложеното јавно provenance наведување на YUCOM за управните водичи V1/V2. Paragraf.mk може да остане како историско/изворно брендирање, а Lex AI да се третира само како историска provenance ознака и да не се толкува како доказ дека текстот е AI-генериран. Ги одобрувам предложените правни предупредувања за У.бр.148/2024 и ЗПП 151/2026, со обврска пред секое јавно објавување да се задржат наведените ограничувања и да не се претпоставува режим за веќе започнати предмети без дополнителна проверка. Со ова одобрувам подготовка на implementation PR за овие седум точки, но не давам автоматско одобрение за јавно PDF/DOCX објавување, AI-corpus/RAG активација, production corpus write или provider activation; тие остануваат посебни Human Gates.",
+    "short_reply_mk": "ОДОБРУВАМ ГО КОНСОЛИДИРАНИОТ HUMAN GATE PACK 1–7 СО НАВЕДЕНИТЕ ОГРАНИЧУВАЊА.",
+    "implementation_authority_after_exact_approval": true,
+    "still_separate_gates": [
+      "public_pdf_release",
+      "public_docx_release",
+      "ai_corpus_eligibility",
+      "rag_eligibility",
+      "production_corpus_write",
+      "legal_corpus_promotion",
+      "provider_activation"
+    ]
   }
 }
