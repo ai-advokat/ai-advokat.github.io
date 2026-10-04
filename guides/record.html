@@ -26,7 +26,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:22px 0;color:var
 @media print{header,.actions,.related,footer{display:none}body{background:#fff}.sheet{box-shadow:none;border:0;padding:0}}
 </style>
 </head>
-<body data-catalog-build="guides-v2-2026-10-04">
+<body data-catalog-build="guides-v2-1-v2-final-master-2026-10-04">
 <header><div class="wrap top"><a href="/">AI Advokat</a><nav><a href="/guides/">← Практични водичи</a></nav></div></header>
 <main><div class="wrap">
 <div class="crumb"><a href="/guides/">Практични водичи</a> / детален јавен запис</div>
@@ -54,11 +54,11 @@ function versionLink(target,all){
    ? '<a href="'+esc(x.public_record_url)+'">'+esc(label)+'</a>'
    : esc(label)+' <small>— контролирана верзија што не е јавно активирана во каталогот</small>';
 }
-fetch("/data/guides.json?v=20261004-human-gate-impl",{cache:"no-store"}).then(r=>r.json()).then(d=>{
+fetch("/data/guides.json?v=20261004-v2-final-master",{cache:"no-store"}).then(r=>r.json()).then(d=>{
  const allRecords=d.records;
  const publicRecords=allRecords.filter(x=>x.catalog_public===true&&x.public_record_enabled===true);
  const x=publicRecords.find(r=>(slug&&r.public_slug===slug)||(!slug&&legacyId&&r.id===legacyId));
- if(!x){document.title="Записот не е јавно достапен · AI Advokat";document.querySelector("#view").innerHTML='<div class="error"><h1>Записот не е јавно достапен</h1><p>Овој запис не е дел од одобрениот јавен каталог од 38 записи.</p><p><a href="/guides/">← Назад кон каталогот</a></p></div>';return}
+ if(!x){document.title="Записот не е јавно достапен · AI Advokat";document.querySelector("#view").innerHTML='<div class="error"><h1>Записот не е јавно достапен</h1><p>Овој запис не е дел од одобрениот јавен каталог од 39 записи.</p><p><a href="/guides/">← Назад кон каталогот</a></p></div>';return}
  const title=x.display_title||x.title;
  document.title=title+" · AI Advokat";
  const canon=document.createElement("link");canon.rel="canonical";canon.href=new URL(x.public_record_url,location.origin).href;document.head.appendChild(canon);
@@ -80,6 +80,7 @@ fetch("/data/guides.json?v=20261004-human-gate-impl",{cache:"no-store"}).then(r=
  ].join("");
  const legacyRows=(ar.legacy_branding||[]).length?`<dt>Историско/изворно брендирање</dt><dd>${esc(ar.legacy_branding.join(" · "))}${x.legacy_branding_note_mk?`<br><small>${esc(x.legacy_branding_note_mk)}</small>`:""}</dd>`:"";
  const reviewBindingRow=x.legal_review_binding?`<dt>Врзана правна проверка</dt><dd>${esc(x.legal_review_binding.check_date)} · точна датотека и SHA-256 потврдени со Human Gate<br><small>${esc(x.legal_review_binding.pack_id)}</small></dd>`:"";
+ const masterRows=x.public_master_artifact?`<dt>Активен master артефакт</dt><dd><strong>${esc(x.public_master_artifact.artifact_version)}</strong><br><small>DOCX: ${esc(x.public_master_artifact.docx_file)}</small><br><code>${esc(x.public_master_artifact.docx_sha256)}</code><br><small>PDF: ${esc(x.public_master_artifact.pdf_file)}</small><br><code>${esc(x.public_master_artifact.pdf_sha256)}</code><br><small>Каталошки статус: активен · јавен download: не е одобрен</small></dd>`:"";
  const provenanceRows=x.provenance?`<dt>Референтна основа</dt><dd>${esc(x.provenance.adapted_from)}${x.provenance.reference_isbn?`<br><small>ISBN ${esc(x.provenance.reference_isbn)}</small>`:""}${x.provenance.original_authors?.length?`<br><small>Автори на референтната публикација: ${esc(x.provenance.original_authors.join(", "))}</small>`:""}${x.provenance.public_note_mk?`<br><small>${esc(x.provenance.public_note_mk)}</small>`:""}</dd>`:"";
  const legalNotices=(x.legal_notices||[]).length?`<div class="notice-stack">${x.legal_notices.map(n=>`<div class="legal-notice"><strong>${esc(n.title_mk)}</strong>${esc(n.text_mk)}${n.limitation_mk?`<small>${esc(n.limitation_mk)}</small>`:""}${n.official_source?.url?`<small>Официјален извор: <a href="${esc(n.official_source.url)}" target="_blank" rel="noopener">${esc(n.official_source.reference||n.official_source.institution)}</a></small>`:""}</div>`).join("")}</div>`:"";
  document.querySelector("#view").innerHTML=`<article class="sheet">
@@ -98,6 +99,7 @@ fetch("/data/guides.json?v=20261004-human-gate-impl",{cache:"no-store"}).then(r=
    ${roleRows}
    ${legacyRows}
    ${reviewBindingRow}
+   ${masterRows}
    <dt>Изворна атрибуција</dt><dd>${esc(x.attribution)}</dd>
    <dt>Изворна датотека</dt><dd>${esc(x.source_file)}</dd>
    </dl></section>
