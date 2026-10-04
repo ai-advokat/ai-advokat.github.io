@@ -335,6 +335,29 @@ export function extractOpenAIResponseText(payload) {
   return parts.length ? parts.join("\n\n") : null;
 }
 
+export function extractOpenAIWebCitations(payload) {
+  if(!Array.isArray(payload?.output)) return [];
+  const seen=new Set();
+  const citations=[];
+  for(const item of payload.output){
+    if(item?.type!=="message" || !Array.isArray(item.content)) continue;
+    for(const content of item.content){
+      if(content?.type!=="output_text" || !Array.isArray(content.annotations)) continue;
+      for(const annotation of content.annotations){
+        if(annotation?.type!=="url_citation") continue;
+        const url=String(annotation.url || "").trim();
+        if(!/^https?:\/\//i.test(url) || seen.has(url)) continue;
+        seen.add(url);
+        citations.push({
+          url,
+          title:String(annotation.title || url).trim().slice(0,240)
+        });
+      }
+    }
+  }
+  return citations.slice(0,12);
+}
+
 function compactSourceContext(items,label) {
   if(!Array.isArray(items) || !items.length) return `${label}: NONE`;
   return `${label}:\n`+items.map((item,index)=>{
@@ -417,7 +440,8 @@ export async function runOpenAIOrchestrator(env, {
     if(attachment.kind==="image" && typeof attachment.dataUrl==="string" && attachment.dataUrl.startsWith("data:image/")){
       userParts.push({type:"input_image",image_url:attachment.dataUrl,detail:"auto"});
     }else if(attachment.kind==="file" && typeof attachment.base64==="string" && attachment.base64.length){
-      userParts.push({type:"input_file",file_data:attachment.base64,filename});
+      const mime=String(attachment.mime || "application/octet-stream").slice(0,120);
+      userParts.push({type:"input_file",file_data:`data:${mime};base64,${attachment.base64}`,filename});
     }else if(attachment.kind==="text" && typeof attachment.text==="string"){
       userParts.push({type:"input_text",text:"ATTACHMENT: "+filename+"\n"+attachment.text.slice(0,120000)});
     }
@@ -435,7 +459,11 @@ export async function runOpenAIOrchestrator(env, {
     input:[{role:"user",content:userParts}],
     max_output_tokens:maxOutputTokens,
     store:false,
-    ...(tools.length ? {tools} : {})
+    ...(tools.length ? {
+      tools,
+      tool_choice:"required",
+      include:["web_search_call.action.sources"]
+    } : {})
   };
 
   let response;
@@ -471,11 +499,15 @@ export async function runOpenAIOrchestrator(env, {
 
   const text=extractOpenAIResponseText(payload);
   if(!text) return {ok:false,error:"openai_empty_response"};
+  const sources=extractOpenAIWebCitations(payload);
+  const webSearchUsed=Array.isArray(payload?.output) && payload.output.some(item=>item?.type==="web_search_call");
   return {
     ok:true,
     text,
     model,
     responseId:payload?.id || null,
+    sources,
+    webSearchUsed,
     architecture:envelope.architecture,
     plan,
     conversationPersistence:"browser_session_only_store_false",
