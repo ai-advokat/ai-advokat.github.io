@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
   "generated_on": "2026-10-04",
-  "status": "approved_for_implementation",
+  "status": "implemented_catalogue_only",
   "mandate": {
     "instruction_to_prepare_confirmed": true,
     "instruction_source": "Author message relayed by project lead on 2026-10-04",
@@ -242,5 +242,16 @@
     "evidence_type": "author_message_relayed_by_project_lead",
     "evidence_text": "go odobruvam konsolidiraniot Human Gate pack so navedeni ogranicuvanja 1-7",
     "scope": "Human Gate Pack 1-7 with all listed limitations; implementation authorized, deployment/publication/AI-corpus gates remain separate."
+  },
+  "implementation_result": {
+    "status": "implemented_catalogue_only",
+    "branch": "guides-human-gate-implementation-2026-10-04",
+    "implemented_on": "2026-10-04",
+    "registry": "data/guides.json",
+    "public_catalogue": "guides/index.html",
+    "public_record_view": "guides/record.html",
+    "source_documents_edited": false,
+    "public_release_authorized": false,
+    "ai_use_authorized": false
   }
 }
