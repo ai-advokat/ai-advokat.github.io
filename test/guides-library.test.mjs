@@ -4,6 +4,7 @@ import fs from "node:fs";
 
 const data=JSON.parse(fs.readFileSync("data/guides.json","utf8"));
 const html=fs.readFileSync("guides/index.html","utf8");
+const recordHtml=fs.readFileSync("guides/record.html","utf8");
 
 describe("Zoran guides library governance",()=>{
   test("G1 registry contains 39 governed records including controlled Administrative V2",()=>{
@@ -129,5 +130,36 @@ describe("Zoran guides library governance",()=>{
         assert.equal(byId.get(r.superseded_by).supersedes,r.id);
       }
     }
+  });
+  test("G16 all 38 public catalogue records have governed public detail routes",()=>{
+    const publicRecords=data.records.filter(x=>x.catalog_public===true);
+    assert.equal(publicRecords.length,38);
+    for(const r of publicRecords){
+      assert.equal(r.public_record_enabled,true);
+      assert.equal(r.public_record_url,`/guides/record.html?id=${encodeURIComponent(r.id)}`);
+    }
+    const admin=data.records.find(x=>x.id==="guide-administrative-v2");
+    assert.equal(admin.public_record_enabled,false);
+    assert.equal(admin.public_record_url,null);
+  });
+  test("G17 public detail experience remains metadata-only and fail-closed",()=>{
+    assert.match(recordHtml,/јавен metadata-запис/i);
+    assert.match(recordHtml,/PDF\/DOCX download, RAG eligibility и production corpus не се активирани/);
+    assert.match(recordHtml,/catalog_public===true/);
+    assert.ok(!recordHtml.includes("public_pdf"));
+  });
+  test("G18 catalogue exposes search, sorting, permanent detail links and Human Gate badges",()=>{
+    assert.match(html,/id="sort"/);
+    assert.match(html,/Отвори детален запис/);
+    assert.match(html,/Копирај линк/);
+    assert.match(html,/Документ: Human Gate/);
+    assert.match(html,/public_record_enabled===true/);
+  });
+  test("G19 public experience gate remains exactly the approved 38-record metadata scope",()=>{
+    assert.equal(data.collection.public_experience.scope,"exact_38_public_catalog_records");
+    assert.equal(data.collection.public_experience.public_document_download,false);
+    assert.equal(data.collection.public_experience.rag_eligibility,false);
+    assert.equal(data.collection.public_experience.production_corpus_write,false);
+    assert.equal(data.collection.public_experience.legal_corpus_promotion,false);
   });
 });
