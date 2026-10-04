@@ -141,3 +141,27 @@ test("HGR10 Lex AI remains provenance-only until its historical meaning is confi
   assert.equal(r.final_gate, "author_confirmation_of_lex_ai_meaning_and_brand_policy");
   assert.match(r.proposed_public_wording_mk, /не означува сама по себе дека текстот е AI-генериран/);
 });
+
+
+test("HGR11 consolidated approval is a single author gate and does not open deployment gates", () => {
+  const a = pack.consolidated_author_approval;
+  assert.equal(a.mode, "single_group_human_gate_confirmation");
+  assert.equal(a.status, "awaiting_author_response");
+  assert.equal(a.approval_is_not_inferred, true);
+  assert.equal(a.implementation_authority_after_exact_approval, true);
+  assert.match(a.approval_text_mk, /Human Gate Resolution Pack 1–7/);
+  assert.match(a.approval_text_mk, /1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e/);
+  assert.match(a.short_reply_mk, /ОДОБРУВАМ/);
+  for (const gate of [
+    "public_pdf_release",
+    "public_docx_release",
+    "ai_corpus_eligibility",
+    "rag_eligibility",
+    "production_corpus_write",
+    "legal_corpus_promotion",
+    "provider_activation"
+  ]) {
+    assert.ok(a.still_separate_gates.includes(gate), gate);
+    assert.equal(pack.fail_closed[gate], false, gate);
+  }
+});
