@@ -123,3 +123,21 @@ test("CHAT12 GitHub Pages chat calls the Cloudflare Worker API, not the static o
   assert.match(chatJs,/CHAT_API_BASE\+"\/api\/chat"/);
   assert.match(chatJs,/CHAT_API_BASE\+"\/api\/assistant"/);
 });
+
+
+test("CHAT13 web citations are surfaced as clickable safe links",()=>{
+  const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(orchestrator,/extractOpenAIWebCitations/);
+  assert.match(orchestrator,/tool_choice:"required"/);
+  assert.match(worker,/sources:result\.sources/);
+  assert.match(chatJs,/Web извори/);
+  assert.match(chatJs,/safeHttpUrl/);
+  assert.match(chatJs,/rel="noopener noreferrer"/);
+});
+
+test("CHAT14 file inputs use OpenAI Responses data URI format and server MIME allowlist",()=>{
+  const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(orchestrator,/file_data:\x60data:\$\{mime\};base64,/);
+  assert.match(worker,/CHAT_ALLOWED_FILE_MIME/);
+  assert.match(worker,/unsupported_file_type/);
+});
