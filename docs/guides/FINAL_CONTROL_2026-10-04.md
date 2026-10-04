@@ -26,7 +26,7 @@
 4. Made the two public version-history records explicit in the statistics.
 5. Removed a literal `\\n` rendering defect in the Quality Control list.
 6. Added links to the Administrative V2 FINAL MASTER audit and this final-control record.
-7. Added deterministic tests for public counts, file activation, final-control metadata and version-link reciprocity.
+7. Added deterministic tests for public counts, file activation, final-control metadata and version-link reciprocity.\n8. CI exposed stale Audit Trail test expectations from before Administrative V2 became the 11th governed history subject; the tests were corrected to preserve the original nine `last-set-*` legal-source-review records while separately asserting Administrative V2 as `corrected_candidate` with no Human Gate decision.
 
 ## Legal-review state preserved
 
