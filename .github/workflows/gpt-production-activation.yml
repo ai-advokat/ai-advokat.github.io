@@ -1,0 +1,167 @@
+name: AI Advokat GPT production activation
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type ACTIVATE_GPT_6_1_SOL"
+        required: true
+        type: string
+      billing_spend_limit_confirmed:
+        description: "OpenAI project billing and spend limit are configured"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-gpt-production-activation
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      BILLING_CONFIRMED: ${{ inputs.billing_spend_limit_confirmed }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Fail closed on activation prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$CONFIRMATION" = "ACTIVATE_GPT_6_1_SOL"
+          test "$BILLING_CONFIRMED" = "true"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$OPENAI_API_KEY"
+          test "${#OPENAI_API_KEY}" -gt 20
+          echo "Activation prerequisites: PASS"
+
+      - name: Verify exact governed GPT production configuration
+        shell: bash
+        run: |
+          node --check src/index.js
+          node --check src/agent-orchestrator.js
+          node --check assets/ai-advokat-chat.js
+          npm run verify
+          npm run test:agent-orchestrator
+          npm run test:chat-shell
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker name");
+          if(c.vars?.OPENAI_MODEL!=="gpt-6.1-sol") throw new Error("Unexpected OpenAI model");
+          if(c.vars?.OPENAI_REASONING_EFFORT!=="medium") throw new Error("Unexpected reasoning effort");
+          if(c.vars?.OPENAI_ORCHESTRATOR_ENABLED!=="true") throw new Error("GPT orchestrator gate not armed");
+          if(c.vars?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED!=="true") throw new Error("Web search gate not armed");
+          if(c.vars?.OPENAI_FILE_INPUT_ENABLED!=="true") throw new Error("Attachment input gate not armed");
+          const source=fs.readFileSync("src/agent-orchestrator.js","utf8");
+          if(source.includes("/v1/conversations")) throw new Error("Durable Conversations API must not be used");
+          if(!source.includes("store:false")) throw new Error("Responses store:false missing");
+          const all=fs.readFileSync("wrangler.jsonc","utf8")+source+fs.readFileSync("assets/ai-advokat-chat.js","utf8");
+          if(/sk-[A-Za-z0-9_-]{20,}/.test(all)) throw new Error("API key pattern found in repository source");
+          console.log("Governed GPT config: PASS");
+          NODE
+
+      - name: Verify GPT-6.1 Sol access with OpenAI
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl --silent --show-error --output /tmp/openai-model.json --write-out '%{http_code}'             -H "Authorization: Bearer $OPENAI_API_KEY"             https://api.openai.com/v1/models/gpt-6.1-sol)"
+          test "$code" = "200"
+          node -e 'const d=require("/tmp/openai-model.json"); if(d.id!=="gpt-6.1-sol") process.exit(1); console.log("OpenAI model access: PASS")'
+
+      - name: Install OpenAI API key as Cloudflare Worker secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$OPENAI_API_KEY" | npx wrangler secret put OPENAI_API_KEY --config wrangler.jsonc >/tmp/secret-put.log
+          grep -Eq 'secret|Success|success|Uploaded' /tmp/secret-put.log || true
+          echo "Cloudflare OpenAI secret installation completed."
+
+      - name: Deploy production Worker
+        run: npx wrangler deploy --config wrangler.jsonc
+
+      - name: Verify provider readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/orchestrator" -o /tmp/orchestrator.json
+          node <<'NODE'
+          const d=require("/tmp/orchestrator.json");
+          if(!d.ok) throw new Error("orchestrator endpoint not ready");
+          if(d.runtime?.providerExecution!=="configured_for_api_chat_execution") {
+            throw new Error("GPT provider not configured after deploy: "+JSON.stringify(d.runtime));
+          }
+          if(d.runtime?.externalResearchTools!=="configured") throw new Error("Web search runtime not configured");
+          console.log("Provider readiness: PASS");
+          NODE
+
+      - name: Live GPT-6.1 Sol smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 3 --retry-delay 2             -H 'content-type: application/json'             -d '{"q":"Одговори само со: AI_ADV_GPT_OK","mode":"auto","history":[],"guideIds":[],"attachments":[]}'             "$BASE/api/chat" -o /tmp/gpt-smoke.json
+          node <<'NODE'
+          const d=require("/tmp/gpt-smoke.json");
+          if(!d.ok) throw new Error("GPT smoke failed: "+JSON.stringify(d));
+          if(d.model!=="gpt-6.1-sol") throw new Error("Unexpected model: "+d.model);
+          if(!String(d.answer||"").includes("AI_ADV_GPT_OK")) throw new Error("Unexpected smoke answer");
+          if(d.conversationPersistence!=="browser_session_only_store_false") throw new Error("Unexpected conversation persistence");
+          console.log("LIVE GPT-6.1 SOL: PASS");
+          NODE
+
+      - name: Live Web search smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 3 --retry-delay 2             -H 'content-type: application/json'             -d '{"q":"Која е официјалната веб-страница на OpenAI? Одговори кратко.","mode":"web","webSearch":true,"history":[],"guideIds":[],"attachments":[]}'             "$BASE/api/chat" -o /tmp/web-smoke.json
+          node <<'NODE'
+          const d=require("/tmp/web-smoke.json");
+          if(!d.ok || d.webSearch!=="enabled") throw new Error("Web smoke failed: "+JSON.stringify(d));
+          console.log("LIVE GPT WEB SEARCH: PASS");
+          NODE
+
+      - name: Live attachment smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 3 --retry-delay 2             -H 'content-type: application/json'             -d '{"q":"Кој збор е во прилогот? Одговори само со зборот.","mode":"auto","history":[],"guideIds":[],"attachments":[{"kind":"text","name":"smoke.txt","mime":"text/plain","text":"PRAVDA"}]}'             "$BASE/api/chat" -o /tmp/attachment-smoke.json
+          node <<'NODE'
+          const d=require("/tmp/attachment-smoke.json");
+          if(!d.ok || d.attachmentsUsed!==1) throw new Error("Attachment smoke failed: "+JSON.stringify(d));
+          if(!String(d.answer||"").toUpperCase().includes("PRAVDA")) throw new Error("Attachment content not processed");
+          console.log("LIVE GPT ATTACHMENT INPUT: PASS");
+          NODE
+
+      - name: Upload non-secret activation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-gpt-production-activation
+          retention-days: 30
+          path: |
+            /tmp/orchestrator.json
+            /tmp/gpt-smoke.json
+            /tmp/web-smoke.json
+            /tmp/attachment-smoke.json
