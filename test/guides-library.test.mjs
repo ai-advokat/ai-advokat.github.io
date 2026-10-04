@@ -22,7 +22,7 @@ describe("Zoran guides library governance",()=>{
     assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
     assert.equal(data.records.find(x=>x.id==="guide-administrative-v2").public_pdf,null);
     assert.equal(data.collection.public_pdf_release_authorization.scope,"all_39_public_catalog_records_pdf_only");
-    assert.equal(data.collection.public_pdf_release_authorization.publication_state,"authorized_pending_asset_binding");
+    assert.equal(data.collection.public_pdf_release_authorization.publication_state,"hold_pending_full_content_reaudit");
     assert.equal(data.collection.public_pdf_release_authorization.public_docx_release,false);
     assert.equal(data.collection.public_pdf_release_authorization.rag_eligibility,false);
   });
@@ -63,7 +63,7 @@ describe("Zoran guides library governance",()=>{
     assert.match(html,/секундарни авторски\/редакциски материјали/);
     assert.match(html,/човечка правна ревизија/);
     assert.match(html,/не се прикажуваат како важечки закон/i);
-    assert.match(html,/Јавните PDF-изданија се одобрени/);
+    assert.match(html,/Јавното PDF-објавување е одобрено во принцип, но е ставено на hold/);
   });
 
   test("G7 FULL Word batch 38-63 is complete, provenance-locked and does not pretend Word has fixed page counts",()=>{
@@ -201,7 +201,7 @@ describe("Zoran guides library governance",()=>{
   test("G17 public detail experience is PDF-aware while remaining fail-closed for unbound assets and AI use",()=>{
     assert.match(recordHtml,/Public PDF Human Gate/);
     assert.match(recordHtml,/Отвори цел PDF/);
-    assert.match(recordHtml,/точниот артефакт сè уште не е објавен/);
+    assert.match(recordHtml,/публикацијата е на hold до финално пречистување и повторна проверка/);
     assert.match(recordHtml,/catalog_public===true/);
     assert.match(recordHtml,/public_pdf/);
   });
@@ -420,15 +420,15 @@ describe("Zoran guides library governance",()=>{
     assert.equal(v2.catalogue_activation.public_file_release,"authorized_by_project_lead_2026-10-04_pending_asset_publication");
     assert.equal(v2.catalogue_activation.ai_use,"not_authorized");
     assert.equal(v2.pdf_release_authorization.decision_id,"all-guides-public-pdf-release-2026-10-04");
-    assert.equal(v2.pdf_release_authorization.publication_state,"authorized_pending_asset_binding");
+    assert.equal(v2.pdf_release_authorization.publication_state,"hold_pending_full_content_reaudit");
     assert.equal(v2.public_pdf,null);
     assert.equal(v2.ai_use,"reference_only_until_human_gate");
   });
 
   test("G39 catalogue v2.2 UI advertises authorized PDF release without exposing unbound downloads",()=>{
     assert.match(html,/39 јавно видливи каталошки записи/);
-    assert.match(html,/Каталог v2\.2 · Public PDF release одобрен/);
-    assert.match(html,/Public PDF release е одобрен за сите 39/);
+    assert.match(html,/Каталог v2\.2 · PDF објавување на hold до финално пречистување/);
+    assert.match(html,/Public PDF release е одобрен за сите 39, но физичкото објавување е на hold/);
     assert.match(recordHtml,/Активен master артефакт/);
     assert.match(recordHtml,/јавен PDF:/);
     assert.match(recordHtml,/upravna-postapka-v2|public_slug===slug/);
@@ -441,7 +441,7 @@ describe("Zoran guides library governance",()=>{
     assert.match(recordHtml,/AI-поддршката не е правен авторитет/);
     assert.match(recordHtml,/Историско\/изворно брендирање/);
     assert.match(recordHtml,/Официјален извор:/);
-    assert.match(recordHtml,/PDF: release одобрен/);
+    assert.match(recordHtml,/PDF: HOLD · финално пречистување/);
     assert.match(recordHtml,/DOCX и трајното внесување во AI-базата остануваат посебно контролирани/);
     assert.ok(data.records.every(x=>x.public_pdf===null));
     assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
@@ -463,6 +463,14 @@ describe("Zoran guides library governance",()=>{
     assert.equal(data.collection.public_pdf_release_authorization.public_docx_release,false);
     assert.equal(data.collection.public_pdf_release_authorization.production_corpus_write,false);
     assert.equal(data.collection.public_pdf_release_authorization.provider_activation,false);
+  });
+
+  test("G41 publication hold prevents binding stale candidate PDFs",()=>{
+    const a=data.collection.public_pdf_release_authorization;
+    assert.equal(a.publication_state,"hold_pending_full_content_reaudit");
+    assert.match(a.hold_reason,/Claude\/GPT/);
+    assert.equal(a.hold_evidence.source_package_38_63_sha256,"5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172");
+    assert.ok(data.records.every(x=>x.public_pdf===null));
   });
 
 });
