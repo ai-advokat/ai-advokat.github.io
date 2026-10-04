@@ -210,8 +210,23 @@
     fileInput.value="";renderAttachments();
   });
 
+  function inferredMime(file){
+    if(file?.type) return file.type;
+    const name=String(file?.name||"").toLowerCase();
+    if(name.endsWith(".pdf")) return "application/pdf";
+    if(name.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    if(name.endsWith(".doc")) return "application/msword";
+    if(name.endsWith(".csv")) return "text/csv";
+    if(name.endsWith(".json")) return "application/json";
+    if(name.endsWith(".txt")||name.endsWith(".md")) return "text/plain";
+    if(name.endsWith(".png")) return "image/png";
+    if(name.endsWith(".jpg")||name.endsWith(".jpeg")) return "image/jpeg";
+    if(name.endsWith(".webp")) return "image/webp";
+    return "application/octet-stream";
+  }
+
   async function encodeFile(file){
-    const mime=file.type||"application/octet-stream";
+    const mime=inferredMime(file);
     if(mime.startsWith("text/")||["application/json","text/csv","application/xml"].includes(mime)){
       return {kind:"text",name:file.name,mime,text:(await file.text()).slice(0,120000)};
     }
