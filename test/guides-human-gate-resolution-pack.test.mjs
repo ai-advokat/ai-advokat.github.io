@@ -26,7 +26,7 @@ test("HGR1 pack is a seven-item draft and never final approval", () => {
   assert.equal(pack.mandate.author_final_approval_inferred, false);
 });
 
-test("HGR2 every activation and publication gate remains fail-closed", () => {
+test("HGR2 Pack 1-7 itself remains fail-closed, while a later separate PDF-only authorization is recorded independently", () => {
   for (const [key, value] of Object.entries(pack.fail_closed)) {
     assert.equal(value, false, key);
   }
@@ -43,7 +43,10 @@ test("HGR2 every activation and publication gate remains fail-closed", () => {
   assert.ok(guides.records.every((x) => x.public_pdf === null));
   assert.ok(guides.records.every((x) => x.ai_use === "reference_only_until_human_gate"));
   const admin = byGuide.get("guide-administrative-v2");
-  assert.equal(admin.candidate_artifact.public_release, "not_authorized");
+  assert.equal(admin.candidate_artifact.public_release, "authorized_by_project_lead_2026-10-04_pending_asset_publication");
+  assert.equal(guides.collection.public_pdf_release_authorization.decision_id, "all-guides-public-pdf-release-2026-10-04");
+  assert.equal(guides.collection.public_pdf_release_authorization.public_docx_release, false);
+  assert.equal(guides.collection.public_pdf_release_authorization.rag_eligibility, false);
   assert.equal(admin.candidate_artifact.rag_eligibility, "not_authorized");
   assert.equal(admin.candidate_artifact.production_corpus_write, "not_authorized");
 });
