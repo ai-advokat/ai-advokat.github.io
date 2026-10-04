@@ -30,8 +30,15 @@ test("HGR2 every activation and publication gate remains fail-closed", () => {
   for (const [key, value] of Object.entries(pack.fail_closed)) {
     assert.equal(value, false, key);
   }
-  for (const value of Object.values(pack.implementation_boundary)) {
-    assert.equal(value, false);
+  assert.equal(pack.implementation_boundary.this_pack_approves_authorship, true);
+  assert.equal(pack.implementation_boundary.this_pack_approves_legal_content, true);
+  for (const key of [
+    "this_pack_changes_public_catalog",
+    "this_pack_edits_source_documents",
+    "this_pack_authorizes_public_release",
+    "this_pack_authorizes_ai_use"
+  ]) {
+    assert.equal(pack.implementation_boundary[key], false, key);
   }
   assert.ok(guides.records.every((x) => x.public_pdf === null));
   assert.ok(guides.records.every((x) => x.ai_use === "reference_only_until_human_gate"));
@@ -98,13 +105,14 @@ test("HGR6 Guide 05 names the exact statute but does not pretend the interpretat
   assert.match(r.interpretation_policy, /Do not resolve the conflict as settled/i);
 });
 
-test("HGR7 free-legal-aid check is exact-file-bound but still awaits personal author confirmation", () => {
+test("HGR7 free-legal-aid fingerprint binding is covered by the consolidated author approval", () => {
   const r = byIssue.get("free-legal-aid-review-fingerprint-binding");
   const g = byGuide.get("guide-free-legal-aid");
   assert.equal(r.file, g.source_file);
   assert.equal(r.sha256, g.sha256);
-  assert.equal(r.resolution_state, "technical_binding_ready_author_confirmation_required");
+  assert.equal(r.resolution_state, "fingerprint_binding_approved_for_implementation");
   assert.equal(r.final_gate, "explicit_author_legal_confirmation");
+  assert.equal(r.final_gate_status, "satisfied_by_consolidated_author_approval");
   assert.match(r.author_confirmation_text_mk, new RegExp(g.sha256));
 });
 
@@ -155,6 +163,8 @@ test("HGR11 consolidated approval is a single author gate and does not open depl
   assert.equal(a.approved_at, "2026-10-04T18:24:00+02:00");
   assert.equal(a.evidence_text, "go odobruvam konsolidiraniot Human Gate pack so navedeni ogranicuvanja 1-7");
   assert.equal(a.implementation_authority_after_exact_approval, true);
+  assert.equal(pack.author_confirmations_still_required.length, 0);
+  assert.ok(pack.resolutions.every((r) => r.final_gate_status === "satisfied_by_consolidated_author_approval"));
   assert.match(a.approval_text_mk, /Human Gate Resolution Pack 1–7/);
   assert.match(a.approval_text_mk, /1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e/);
   assert.match(a.short_reply_mk, /ОДОБРУВАМ/);
