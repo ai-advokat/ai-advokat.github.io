@@ -1318,6 +1318,14 @@ function assistantError(request, status, error, message, extraHeaders={}) {
 const CHAT_MAX_BYTES=6*1024*1024;
 const CHAT_MAX_ATTACHMENTS=5;
 const CHAT_ATTACHMENT_MAX_BASE64=5_500_000;
+const CHAT_ALLOWED_FILE_MIME=new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/csv",
+  "application/csv",
+  "application/json"
+]);
 
 async function governedGuideContext(request,env,guideIds){
   const wanted=new Set((Array.isArray(guideIds)?guideIds:[]).map(x=>String(x)).slice(0,5));
@@ -1381,6 +1389,9 @@ function validateChatAttachments(payload){
       out.push({kind,name,mime,dataUrl});
     }else if(kind==="file"){
       const base64=typeof raw.base64==="string" ? raw.base64 : "";
+      if(!CHAT_ALLOWED_FILE_MIME.has(mime)){
+        return {ok:false,error:"unsupported_file_type"};
+      }
       if(!/^[A-Za-z0-9+/=]+$/.test(base64) || base64.length>CHAT_ATTACHMENT_MAX_BASE64){
         return {ok:false,error:"invalid_file_attachment"};
       }
@@ -1494,6 +1505,8 @@ async function handleGPTChat(request,env){
     model:result.model,
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,
+    sources:result.sources || [],
+    webSearchUsed:result.webSearchUsed===true,
     mode:plan.mode,
     sourceMode:preferCorpus ? "ai_advokat_catalogue_context_first" : "gpt_general_or_proactive",
     corpusContextCount:corpusContext.length,
