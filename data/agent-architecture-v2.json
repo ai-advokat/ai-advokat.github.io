@@ -7,7 +7,7 @@
   "orchestration_pattern": "manager_agents_as_tools",
   "design_target": "OpenAI Agents SDK manager-style orchestration",
   "current_runtime": {
-    "state": "architecture_implemented_provider_execution_locked",
+    "state": "gpt_style_workspace_implemented_provider_execution_locked",
     "compatibility_layer": "Responses API guarded runtime foundation",
     "public_provider_activation": false,
     "reason": "Model selection is approved, but provider execution, secrets, billing/spend controls and production activation remain separate Human Gates.",
@@ -28,6 +28,11 @@
       "id": "comparative",
       "label": "COMPARATIVE LEGAL RESEARCH",
       "rule": "Multiple legal systems may appear in one answer only with separate authority labels; comparative authority is never silently treated as controlling law."
+    },
+    {
+      "id": "general_gpt",
+      "label": "GPT GENERAL ASSISTANCE",
+      "rule": "When a task is outside the native AI Advokat corpus and is not a legal-authority question, GPT may answer as general assistance while never presenting model knowledge as verified Macedonian law."
     }
   ],
   "agents": [
@@ -60,6 +65,12 @@
       "id": "common_law",
       "label": "Anglo-American / Common Law Agent",
       "jurisdiction": "COMMON_LAW"
+    },
+    {
+      "id": "general_gpt_assistant",
+      "label": "GPT General Assistant",
+      "jurisdiction": "GENERAL",
+      "rule": "General non-legal assistance and productivity tasks outside the native corpus."
     },
     {
       "id": "ai_advokat_knowledge",
@@ -127,5 +138,41 @@
       "billing and spend limit configured",
       "explicit production provider Human Gate"
     ]
+  },
+  "product_experience": {
+    "experience_id": "AI_ADVOCAT_GPT_STYLE_WORKSPACE_v1",
+    "approved_direction": "AI Advokat is the only visible assistant identity; GPT operates in the background.",
+    "public_ui": "original AI Advokat conversation workspace inspired by modern GPT interaction patterns; not a copy of third-party branding/trade dress",
+    "controls": [
+      "new_chat",
+      "session_history",
+      "attachment_button",
+      "voice_dictation_when_browser_supported",
+      "auto_mode",
+      "ai_advokat_library_mode",
+      "web_mode",
+      "send",
+      "stop",
+      "copy",
+      "retry",
+      "export_conversation",
+      "clickable_guide_recommendations"
+    ],
+    "backend_contract": {
+      "endpoint": "/api/chat",
+      "conversations_api": true,
+      "responses_api": true,
+      "target_model": "gpt-6.1-sol",
+      "native_corpus_first": true,
+      "general_gpt_fallback": true,
+      "web_search_tool": "separate_runtime_gate",
+      "attachment_processing": "separate_privacy_tool_gate"
+    },
+    "current_activation": {
+      "shell_public_ready": true,
+      "provider_execution": false,
+      "web_search": false,
+      "attachment_provider_processing": false
+    }
   }
 }
