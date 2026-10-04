@@ -40,8 +40,8 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 <div class="eyebrow">Моите права во секојдневниот живот</div>
 <h1>Практични правни водичи</h1>
 <p class="lead">Јавен каталог на 39 контролирани записи доставени во проектот од адвокат Зоран Стојанкиќ. Секој запис има извор, датум, ниво на проверка, историја на верзии каде што постои и посебен детален приказ.</p>
-<div class="guard"><strong>Изворот прв.</strong> Водичите се секундарни авторски/редакциски материјали. Не се прикажуваат како важечки закон и не се користат за професионален правен заклучок без проверка на официјалниот извор и човечка правна ревизија. Јавните PDF-изданија се одобрени со посебен Human Gate и се отвораат само кога точниот PDF артефакт е fingerprint-bound и објавен. DOCX и трајното внесување во AI-базата остануваат одделно контролирани.</div>
-<div class="build">Каталог v2.2 · Public PDF release одобрен · V2.0 FINAL MASTER · 4.10.2026</div>
+<div class="guard"><strong>Изворот прв.</strong> Водичите се секундарни авторски/редакциски материјали. Не се прикажуваат како важечки закон и не се користат за професионален правен заклучок без проверка на официјалниот извор и човечка правна ревизија. Јавното PDF-објавување е одобрено во принцип, но е ставено на hold додека не се усогласат Claude/GPT забелешките, не се направи финална правна проверка и не се врзе точниот пречистен PDF со SHA-256. DOCX и трајното внесување во AI-базата остануваат одделно контролирани.</div>
+<div class="build">Каталог v2.2 · PDF објавување на hold до финално пречистување · 4.10.2026</div>
 </section>
 
 <section class="stats" aria-label="Статистика на библиотеката">
@@ -78,7 +78,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 <ul>
 <li>Претходните изданија не се бришат: се водат како <strong>историја на верзии</strong>.</li>
 <li>Краткиот Водич 26 останува посебен. Сеопфатниот управен водич V2.0 FINAL MASTER е тековен master. <strong>Јавното PDF-отворање е одобрено</strong>, но секој PDF се активира само по точна fingerprint и URL проверка.</li>
-<li>Каталогот е <strong>јавно активиран</strong> за 39 записи. Public PDF release е одобрен за сите 39; бројот на физички објавени PDF-и се прикажува во статистиката погоре.</li>
+<li>Каталогот е <strong>јавно активиран</strong> за 39 записи. Public PDF release е одобрен за сите 39, но физичкото објавување е на hold до целосно пречистување и повторна проверка.</li>
 <li>Public PDF release <strong>не</strong> е одобрение за јавно објавување DOCX, трајно внесување во AI-базата или професионална правна употреба без човечка проверка.</li>
 <li id="numberingNote">Каталогот ја задржува изворната нумерација. Неприкажаните броеви 01–37 не значат дека водичите се откажани; тие едноставно не се дел од тековно доставениот и управуван сет.</li>
 <li>Правните рокови и статусот на прописите мора повторно да се проверат со официјален извор на датумот на конкретната употреба.</li>
@@ -112,7 +112,7 @@ function render(){
  const items=sortItems(filtered,sort);
  document.querySelector("#resultCount").textContent=items.length+" записи";
  document.querySelector("#cards").innerHTML=items.map(x=>{const notice=(x.legal_notices||[]).length?`<div class="notice-mini"><strong>Правно предупредување:</strong> ${x.legal_notices.map(n=>esc(n.title_mk)).join(" · ")}</div>`:"";const pdfActive=typeof x.public_pdf==="string"&&x.public_pdf.startsWith("/guides/pdfs/");const pdfButton=pdfActive?`<a class="btn primary" href="${esc(x.public_pdf)}" target="_blank" rel="noopener">Отвори PDF</a>`:"";return `<article class="card">
- <div class="badges"><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.display_format||x.format)}</span><span class="pill ${verificationClass(x.verification_level)}">${esc(x.verification_label)}</span><span class="pill ${pdfActive?"checked":"lock"}">${pdfActive?"PDF: јавно активен":"PDF: одобрен · се врзува артефакт"}</span></div>
+ <div class="badges"><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.display_format||x.format)}</span><span class="pill ${verificationClass(x.verification_level)}">${esc(x.verification_label)}</span><span class="pill ${pdfActive?"checked":"lock"}">${pdfActive?"PDF: јавно активен":"PDF: HOLD · финално пречистување"}</span></div>
  <h2>${esc(x.display_title||x.title)}</h2>
  <div class="meta">${esc(x.category_label)}${x.subcategory_label&&x.subcategory_label!==x.category_label?" · "+esc(x.subcategory_label):""} · ${esc(x.edition_date)}${x.pages!=null?` · ${esc(x.pages)} стр.`:""}</div>
  <p class="scope">${esc(x.scope)}</p>
