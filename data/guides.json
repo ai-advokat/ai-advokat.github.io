@@ -6,7 +6,7 @@
     "title_mk": "Моите права во секојдневниот живот",
     "platform": "AI Advokat",
     "owner_note": "Каталог на практични водичи доставени од адвокат Зоран Стојанкиќ; тековниот регистар ги вклучува и FULL Word водичите 38–63.",
-    "public_download_policy": "locked_until_human_gate",
+    "public_download_policy": "public_pdf_release_authorized_pending_fingerprint_bound_assets",
     "corpus_policy": "Guides are secondary authored/editorial material and must never be silently treated as the current official law text.",
     "source_package_38_63": {
       "file": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
@@ -39,10 +39,11 @@
       "controlled_nonpublic_candidates": 0,
       "duplicate_ids": 0,
       "broken_version_links": 0,
-      "note": "All 39 governed records are now visible in the catalogue, including V2.0 FINAL MASTER as the current administrative master record. Public files, AI-corpus/RAG, production corpus write, legal-corpus promotion and provider activation remain unauthorized."
+      "note": "Public PDF release for all 39 catalogue records is now explicitly authorized by the project lead, but activation remains asset-bound: no PDF URL is exposed until the exact file is verified and published. RAG/AI corpus, production corpus write, legal-corpus promotion and provider activation remain separate.",
+      "public_pdf_release_authorized": true
     },
     "public_experience": {
-      "version": "2.1",
+      "version": "2.2",
       "enabled_on": "2026-10-04",
       "scope": "exact_39_public_catalog_records",
       "detail_route": "/guides/record.html?g={public_slug}",
@@ -56,12 +57,14 @@
         "stable_public_slugs",
         "share_link",
         "print_friendly_record",
-        "citizen_guide_router_clickable_recommendations"
+        "citizen_guide_router_clickable_recommendations",
+        "fingerprint_bound_public_pdf_open_action"
       ],
       "public_document_download": false,
       "rag_eligibility": false,
       "production_corpus_write": false,
-      "legal_corpus_promotion": false
+      "legal_corpus_promotion": false,
+      "public_pdf_release_authorized": true
     },
     "catalog_schema_version": "2.0",
     "taxonomy_id": "AI_ADVOKAT_GUIDE_TAXONOMY_v2",
@@ -133,6 +136,27 @@
       "production_corpus_write": false,
       "legal_corpus_promotion": false,
       "provider_activation": false
+    },
+    "public_pdf_release_authorization": {
+      "decision_id": "all-guides-public-pdf-release-2026-10-04",
+      "authorized_on": "2026-10-04",
+      "authorized_by_role": "project_lead",
+      "authorization_source": "explicit_user_request",
+      "evidence_text": "да му ги активираш сите водичи да се отвораат во пдф форма, за да може граѓанинот да ја види целата процедура",
+      "scope": "all_39_public_catalog_records_pdf_only",
+      "target_count": 39,
+      "release_format": "PDF",
+      "citizen_purpose": "full_procedure_visibility",
+      "source_fingerprint_required": true,
+      "pdf_fingerprint_required": true,
+      "public_docx_release": false,
+      "rag_eligibility": false,
+      "ai_corpus_eligibility": false,
+      "production_corpus_write": false,
+      "legal_corpus_promotion": false,
+      "provider_activation": false,
+      "publication_state": "authorized_pending_asset_binding",
+      "note": "This opens the public PDF release gate only. A record becomes downloadable only after its exact source is bound to a verified PDF asset and the public URL resolves successfully."
     }
   },
   "records": [
