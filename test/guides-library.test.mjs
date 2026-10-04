@@ -442,7 +442,7 @@ describe("Zoran guides library governance",()=>{
     assert.match(recordHtml,/Историско\/изворно брендирање/);
     assert.match(recordHtml,/Официјален извор:/);
     assert.match(recordHtml,/PDF: release одобрен/);
-    assert.match(recordHtml,/DOCX, RAG\/AI corpus и production corpus остануваат посебно контролирани/);
+    assert.match(recordHtml,/DOCX и трајното внесување во AI-базата остануваат посебно контролирани/);
     assert.ok(data.records.every(x=>x.public_pdf===null));
     assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
     assert.equal(data.collection.human_gate_implementation.separate_closed_gates.public_pdf_release,false);
