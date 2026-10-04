@@ -9,6 +9,7 @@ const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
 const chat=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
 const workflow=fs.readFileSync(".github/workflows/gpt-production-activation.yml","utf8");
 const manifest=JSON.parse(fs.readFileSync("data/agent-architecture-v2.json","utf8"));
+const activationRequest=JSON.parse(fs.readFileSync(".github/activation/gpt-production-request.json","utf8"));
 
 test("GPTACT1 production runtime is armed for the approved model but contains no API secret",()=>{
   const config=JSON.parse(wrangler);
@@ -38,11 +39,15 @@ test("GPTACT2 provider remains fail-closed without secret and opens only with ga
   assert.equal(orchestratorRuntimeReadiness(ready).fileInputs,"configured");
 });
 
-test("GPTACT3 production activation workflow requires explicit confirmation, billing and secrets",()=>{
+test("GPTACT3 production activation workflow requires explicit authorization, secrets and a real paid-quota preflight",()=>{
   assert.match(workflow,/workflow_dispatch:/);
+  assert.match(workflow,/push:/);
+  assert.match(workflow,/gpt-production-request\.json/);
   assert.match(workflow,/ACTIVATE_GPT_6_1_SOL/);
-  assert.match(workflow,/billing_spend_limit_confirmed/);
   assert.match(workflow,/secrets\.OPENAI_API_KEY/);
+  assert.match(workflow,/Verify paid quota with a minimal Responses API preflight/);
+  assert.match(workflow,/PREFLIGHT_OK/);
+  assert.match(workflow,/\/v1\/responses/);
   assert.match(workflow,/secrets\.CLOUDFLARE_API_TOKEN/);
   assert.match(workflow,/wrangler secret put OPENAI_API_KEY/);
   assert.match(workflow,/wrangler deploy --config wrangler\.jsonc/);
@@ -68,13 +73,26 @@ test("GPTACT5 public chat routes to Worker and runtime status can report live pr
   assert.match(worker,/gpt_6_1_sol_live_governed/);
 });
 
-test("GPTACT6 governance registry records armed-not-live state until activation smoke passes",()=>{
-  assert.equal(manifest.current_runtime.state,"gpt_runtime_armed_secret_and_billing_required");
+test("GPTACT6 governance registry records explicit activation authorization while remaining not-live until preflight and smoke pass",()=>{
+  assert.equal(manifest.current_runtime.state,"gpt_activation_authorized_pending_secret_and_paid_quota_preflight");
   assert.equal(manifest.current_runtime.public_provider_activation,false);
+  assert.equal(manifest.production_activation_request.authorization,"explicit");
+  assert.equal(manifest.production_activation_request.evidence_text,"ајде да го активираме гпт ботот");
+  assert.equal(manifest.model_selection.activation_progress.production_activation_authorized,true);
   assert.equal(manifest.model_selection.activation_progress.orchestrator_flag_armed,true);
   assert.equal(manifest.model_selection.activation_progress.web_search_flag_armed,true);
   assert.equal(manifest.model_selection.activation_progress.attachment_input_flag_armed,true);
   assert.equal(manifest.model_selection.activation_progress.production_provider_live,false);
   assert.equal(manifest.product_experience.backend_contract.responses_store,false);
   assert.equal(manifest.product_experience.backend_contract.conversations_api,false);
+});
+
+
+test("GPTACT7 activation request is explicit, model-bound and contains no secret",()=>{
+  assert.equal(activationRequest.decision_id,"AI_ADVOKAT_GPT_PRODUCTION_ACTIVATION_2026-10-04");
+  assert.equal(activationRequest.activation_authorized,true);
+  assert.equal(activationRequest.model,"gpt-6.1-sol");
+  assert.equal(activationRequest.runtime_features.web_search,true);
+  assert.equal(activationRequest.runtime_features.attachment_input,true);
+  assert.doesNotMatch(JSON.stringify(activationRequest),/sk-[A-Za-z0-9_-]{20,}/);
 });
