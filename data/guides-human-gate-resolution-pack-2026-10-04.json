@@ -1,0 +1,209 @@
+{
+  "schema_version": "1.0",
+  "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04",
+  "generated_on": "2026-10-04",
+  "status": "draft_for_author_human_gate",
+  "mandate": {
+    "instruction_to_prepare_confirmed": true,
+    "instruction_source": "Author message relayed by project lead on 2026-10-04",
+    "meaning": "Prepare expert draft resolutions for all seven review items.",
+    "author_final_approval_inferred": false
+  },
+  "doctrine": [
+    "source_first",
+    "exact_version_and_fingerprint",
+    "separate_author_editor_adaptor_source_provider_and_ai_assistance",
+    "no_publication_without_human_gate",
+    "no_ai_corpus_or_rag_promotion_without_separate_gate",
+    "no_production_corpus_write_without_separate_gate",
+    "no_unverified_legal_transition_rule"
+  ],
+  "fail_closed": {
+    "public_pdf_release": false,
+    "public_docx_release": false,
+    "ai_corpus_eligibility": false,
+    "rag_eligibility": false,
+    "production_corpus_write": false,
+    "legal_corpus_promotion": false,
+    "provider_activation": false
+  },
+  "sources": {
+    "constitutional_court_u148_2024": {
+      "type": "official_web",
+      "title": "У.бр.148/2024",
+      "url": "https://ustavensud.mk/2024/10/%D1%83-%D0%B1%D1%80-148-2024/",
+      "verified_on": "2026-10-04",
+      "finding": "The Court abolished the words „во рок од 30 дена“ in Article 26(2) of the Law on Administrative Disputes."
+    },
+    "zpp_151_2026": {
+      "type": "official_web",
+      "title": "Закон за парничната постапка",
+      "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=74234",
+      "verified_on": "2026-10-04",
+      "official_metadata": {
+        "gazette_issue": "151/2026",
+        "published": "2026-07-08",
+        "entry_into_force": "2026-07-16",
+        "application_from": "2027-01-18"
+      }
+    },
+    "guide_05": {
+      "type": "governed_source_file",
+      "file": "05_Rabota.pdf",
+      "sha256": "92152823bb2e0e7dd8eab6e6ee21c7d3e03e8031ecd3235cbde85b5e599de053"
+    },
+    "free_legal_aid": {
+      "type": "governed_source_file",
+      "file": "Kako_da_pobaram_BPP_vizuelno_izdanie.pdf",
+      "sha256": "1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e"
+    },
+    "administrative_v1": {
+      "type": "governed_source_file",
+      "file": "Vodic_upravna_postapka_i_upraven_spor.pdf",
+      "sha256": "fe052ff4a005c8f10f9b544b25a3d8ad7dc8cb72ad3c039d09744183a7fb225e"
+    },
+    "administrative_v2": {
+      "type": "governed_source_file",
+      "file": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2_FINAL_MASTER.docx",
+      "sha256": "de609c4526eee401a3759ff2fe22556cacded9bef87cdf675213e69e8a10ed11"
+    },
+    "yucom_2023": {
+      "type": "reference_source",
+      "title": "Водич кроз управни спор",
+      "publisher": "Комитет правника за људска права – YUCOM",
+      "place": "Белград",
+      "year": 2023,
+      "isbn": "978-86-82222-18-7",
+      "authors": [
+        "Теодора Томиќ Лазаревиќ",
+        "Драгиша Ќалиќ",
+        "Катарина Голубовиќ"
+      ]
+    }
+  },
+  "resolutions": [
+    {
+      "issue_id": "silence-of-administration-consistency",
+      "resolution_state": "source_supported_draft",
+      "targets": [
+        "guide-54-full-word-2026",
+        "guide-26-administrative-short",
+        "guide-administrative-v1"
+      ],
+      "reference_record": "guide-53-full-word-2026",
+      "legal_finding": "Article 26(2) of the Law on Administrative Disputes may not be presented as imposing the abolished fixed additional 30-day period for a silence-of-administration action.",
+      "proposed_public_warning_mk": "ВАЖНО: За тужба поради молчење на управата не применувајте фиксен дополнителен рок од 30 дена по истекот на рокот за одлучување. Уставниот суд со Одлука У.бр.148/2024 од 2.10.2024 го укина делот „во рок од 30 дена“ од член 26 став 2 од Законот за управните спорови. Пред поднесување проверете дали се исполнети процесните претпоставки, дали е дозволена и искористена жалба или друго правно средство и дали молчењето сè уште трае.",
+      "proposed_catalog_note_mk": "P1: делот за молчење на администрацијата мора да биде усогласен со Одлуката У.бр.148/2024 пред јавно објавување.",
+      "final_gate": "legal_source_review_acknowledgement"
+    },
+    {
+      "issue_id": "zpp-2027-transition-crosscheck",
+      "resolution_state": "source_supported_transition_warning_draft",
+      "targets": [
+        "guide-10-traffic",
+        "guide-40-full-word-2026",
+        "guide-59-full-word-2026",
+        "guide-05-workplace",
+        "guide-09-family"
+      ],
+      "official_timeline": {
+        "gazette_issue": "151/2026",
+        "published": "2026-07-08",
+        "entry_into_force": "2026-07-16",
+        "application_from": "2027-01-18"
+      },
+      "scope_basis": {
+        "guide-10-traffic": "The guide concerns compensation and may proceed to a civil damages claim.",
+        "guide-40-full-word-2026": "The source scope expressly includes a lawsuit for traffic-accident damages.",
+        "guide-59-full-word-2026": "The source scope includes judicial proceedings for damages from unlawful administrative conduct.",
+        "guide-05-workplace": "Judicial protection under the workplace-harassment regime is a labour dispute in which civil-procedure rules apply.",
+        "guide-09-family": "The guide includes divorce and related family litigation; the Family Law expressly describes matrimonial disputes as civil proceedings."
+      },
+      "proposed_public_warning_mk": "ПРОЦЕСНА ПРОМЕНА: Новиот Закон за парничната постапка („Службен весник на РСМ“ бр.151/2026) е објавен на 8.7.2026, стапил во сила на 16.7.2026 и започнува да се применува од 18.1.2027. Ако конкретниот случај преминува во парнична постапка, пред тужба или друго процесно дејствие проверете кој процесен режим се применува на предметот и релевантните преодни одредби. Овој водич е изработен пред почетокот на примената на новиот ЗПП.",
+      "limitation": "This pack does not infer the treatment of already-pending cases; article-level transitional provisions must be checked for the concrete matter.",
+      "final_gate": "legal_source_review_acknowledgement"
+    },
+    {
+      "issue_id": "guide-05-statute-identification",
+      "resolution_state": "source_resolved_draft",
+      "target": "guide-05-workplace",
+      "resolved_statute": "Закон за заштита од вознемирување на работно место",
+      "cited_articles": [
+        "18",
+        "22(4)"
+      ],
+      "source_versions_listed_in_guide": [
+        "79/2013",
+        "147/2015"
+      ],
+      "proposed_catalog_note_mk": "Редакциски нацрт • Закон за заштита од вознемирување на работно место: отворено толкувачко прашање меѓу чл. 18 и чл. 22 ст. 4 • правна проверка потребна пред објавување.",
+      "interpretation_policy": "Do not resolve the conflict as settled unless verified case-law or a later authoritative source does so.",
+      "final_gate": "legal_source_review_acknowledgement"
+    },
+    {
+      "issue_id": "free-legal-aid-review-fingerprint-binding",
+      "resolution_state": "technical_binding_ready_author_confirmation_required",
+      "target": "guide-free-legal-aid",
+      "file": "Kako_da_pobaram_BPP_vizuelno_izdanie.pdf",
+      "sha256": "1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e",
+      "source_file_internal_evidence": "The exact PDF contains the note „Проверка: 2.10.2026“ and states the scope/limitations of that check.",
+      "safe_catalog_wording_before_author_confirmation_mk": "Во точниот изворен PDF е евидентирана проверка од 2.10.2026 • финалната авторска/правна потврда за оваа fingerprint-врзана верзија е Human Gate.",
+      "author_confirmation_text_mk": "Потврдувам дека мојата правна проверка од 2.10.2026 се однесува на датотеката Kako_da_pobaram_BPP_vizuelno_izdanie.pdf со SHA-256 1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e.",
+      "final_gate": "explicit_author_legal_confirmation"
+    },
+    {
+      "issue_id": "authorship-editorial-role-normalization",
+      "resolution_state": "governance_model_draft",
+      "controlled_roles": [
+        "author",
+        "source_provider",
+        "editor_or_adaptor",
+        "ai_assisted_editorial_support",
+        "conceptual_or_organizational_reference",
+        "legacy_branding",
+        "human_gate_approval"
+      ],
+      "public_template_when_authorship_confirmed_mk": "Автор: адвокат Зоран Стојанкиќ. Редакциска и техничка подготовка: AI-assisted, под човечка контрола во AI Advokat. AI-поддршката не е правен авторитет; изворите, важечката верзија и јавното објавување подлежат на Human Gate.",
+      "public_template_when_only_source_delivery_is_confirmed_mk": "Изворна верзија доставена од адвокат Зоран Стојанкиќ. Авторството, редакцијата или адаптацијата не се претпоставуваат и се прикажуваат само ако се посебно потврдени.",
+      "fingerprint_rule": "Any final author/legal approval must identify the exact artifact version and SHA-256 where an artifact is being approved.",
+      "final_gate": "author_acceptance_of_attribution_model"
+    },
+    {
+      "issue_id": "yucom-provenance-v1-v2",
+      "resolution_state": "document_supported_provenance_draft",
+      "targets": [
+        "guide-administrative-v1",
+        "guide-administrative-v2"
+      ],
+      "finding_v1": "V1 already states internally that the Serbian YUCOM 2023 guide was used as an example for organizing a citizen-facing publication and that domestic rules/models were handled independently.",
+      "finding_v2": "V2 expressly states that it is not a translation of Serbian law, identifies YUCOM 2023 as a conceptual/organizational reference, names the three original authors, and says North Macedonian rules and models are independently adapted from domestic sources.",
+      "proposed_public_provenance_mk": "Концепциска и организациска референца: Теодора Томиќ Лазаревиќ, Драгиша Ќалиќ и Катарина Голубовиќ, „Водич кроз управни спор“, Комитет правника за људска права – YUCOM, Белград, 2023, ISBN 978-86-82222-18-7. Референцата е педагошка/организациска, а не извор на македонското позитивно право; домашните правила, институции, рокови и модели се обработуваат врз основа на домашни извори.",
+      "authorship_caution": "Public attribution must not imply that YUCOM or its authors authored or approved the North Macedonian guide.",
+      "final_gate": "author_acknowledgement_of_public_provenance_wording"
+    },
+    {
+      "issue_id": "paragraf-lex-ai-branding-decision",
+      "resolution_state": "conservative_branding_draft",
+      "scope": "26_FULL_WORD_guides_38_63_and_other_legacy_files_where_present",
+      "paragraf_mk_policy": "Preserve Paragraf.mk as historical/source branding where it appears in the original artifact; do not use it as the primary current AI Advokat public brand unless separately decided.",
+      "lex_ai_policy": "Preserve Lex AI only as historical/source provenance until its meaning is explicitly confirmed. Do not equate Lex AI with AI-generated text.",
+      "proposed_public_wording_mk": "Изворно брендирање во доставениот документ: Paragraf.mk / Lex AI. Оваа ознака се чува како provenance и не означува сама по себе дека текстот е AI-генериран.",
+      "final_gate": "author_confirmation_of_lex_ai_meaning_and_brand_policy"
+    }
+  ],
+  "author_confirmations_still_required": [
+    "Fingerprint-specific personal legal confirmation for the free-legal-aid PDF.",
+    "Acceptance or correction of the controlled public attribution model.",
+    "Acknowledgement of the proposed public YUCOM provenance wording.",
+    "Definition of what Lex AI historically meant and whether it should ever appear outside provenance.",
+    "One consolidated legal/author acknowledgement before any proposed legal warning is copied into a public guide record or source document."
+  ],
+  "implementation_boundary": {
+    "this_pack_changes_public_catalog": false,
+    "this_pack_edits_source_documents": false,
+    "this_pack_approves_authorship": false,
+    "this_pack_approves_legal_content": false,
+    "this_pack_authorizes_public_release": false,
+    "this_pack_authorizes_ai_use": false
+  }
+}
