@@ -19,7 +19,7 @@ const byIssue = new Map(pack.resolutions.map((x) => [x.issue_id, x]));
 const byGuide = new Map(guides.records.map((x) => [x.id, x]));
 
 test("HGR1 pack is a seven-item draft and never final approval", () => {
-  assert.equal(pack.status, "draft_for_author_human_gate");
+  assert.equal(pack.status, "approved_for_implementation");
   assert.equal(pack.resolutions.length, 7);
   assert.equal(new Set(pack.resolutions.map((x) => x.issue_id)).size, 7);
   assert.equal(pack.mandate.instruction_to_prepare_confirmed, true);
@@ -42,8 +42,9 @@ test("HGR2 every activation and publication gate remains fail-closed", () => {
 });
 
 test("HGR3 review queue links one-to-one to the resolution pack", () => {
+  assert.equal(queue.status, "approved_for_implementation");
   assert.equal(queue.resolution_pack.pack_id, pack.pack_id);
-  assert.equal(queue.resolution_pack.status, "draft_for_author_human_gate");
+  assert.equal(queue.resolution_pack.status, "approved_for_implementation");
   assert.equal(queue.resolution_pack.changes_public_catalog, false);
   assert.equal(queue.resolution_pack.author_final_approval_inferred, false);
   assert.equal(queue.items.length, 7);
@@ -51,6 +52,8 @@ test("HGR3 review queue links one-to-one to the resolution pack", () => {
     assert.ok(byIssue.has(item.issue_id), item.issue_id);
     assert.equal(item.resolution_draft.pack_id, pack.pack_id);
     assert.equal(item.resolution_draft.issue_id, item.issue_id);
+    assert.equal(item.human_gate_status, "approved_for_implementation");
+    assert.equal(item.human_gate_approved_by, "Zoran Stojankich");
   }
 });
 
@@ -146,8 +149,11 @@ test("HGR10 Lex AI remains provenance-only until its historical meaning is confi
 test("HGR11 consolidated approval is a single author gate and does not open deployment gates", () => {
   const a = pack.consolidated_author_approval;
   assert.equal(a.mode, "single_group_human_gate_confirmation");
-  assert.equal(a.status, "awaiting_author_response");
+  assert.equal(a.status, "approved");
   assert.equal(a.approval_is_not_inferred, true);
+  assert.equal(a.approved_by, "Zoran Stojankich");
+  assert.equal(a.approved_at, "2026-10-04T18:24:00+02:00");
+  assert.equal(a.evidence_text, "go odobruvam konsolidiraniot Human Gate pack so navedeni ogranicuvanja 1-7");
   assert.equal(a.implementation_authority_after_exact_approval, true);
   assert.match(a.approval_text_mk, /Human Gate Resolution Pack 1–7/);
   assert.match(a.approval_text_mk, /1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e/);
