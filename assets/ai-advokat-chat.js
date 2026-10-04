@@ -120,6 +120,22 @@
     if(m.sourceLabel){
       const source=document.createElement("div");source.className="ai-msg-source";source.textContent=m.sourceLabel;body.append(source);
     }
+    if(Array.isArray(m.legalSources) && m.legalSources.length){
+      const legalBox=document.createElement("div");legalBox.className="ai-msg-source";
+      const legalLabel=document.createElement("strong");legalLabel.textContent="Правни извори";
+      legalBox.append(legalLabel);
+      const legalLinks=document.createElement("div");legalLinks.className="ai-msg-tools";
+      m.legalSources.slice(0,8).forEach((src,i)=>{
+        const href=safeHttpUrl(src?.url);
+        const labelText=(src?.title||("Правен извор "+(i+1))).slice(0,100);
+        if(href){
+          const a=document.createElement("a");a.href=href;a.target="_blank";a.rel="noopener noreferrer";a.textContent=labelText;legalLinks.append(a);
+        }else{
+          const span=document.createElement("span");span.textContent=labelText;legalLinks.append(span);
+        }
+      });
+      if(legalLinks.childElementCount){legalBox.append(legalLinks);body.append(legalBox);}
+    }
     if(Array.isArray(m.sources) && m.sources.length){
       const sourceBox=document.createElement("div");sourceBox.className="ai-msg-source";
       const label=document.createElement("strong");label.textContent="Web извори";
@@ -262,21 +278,22 @@
     const chat=current();setTitle(chat,q);
     const historyForApi=chat.messages
       .filter(m=>(m.role==="user"||m.role==="assistant") && m.text && m.text!=="Обработувам…")
-      .slice(-12)
-      .map(m=>({role:m.role,text:String(m.text).slice(0,6000)}));
+      .slice(-8)
+      .map(m=>({role:m.role,text:String(m.text).slice(0,4000)}));
     const selectedFiles=[...attachments];
     addMessage({role:"user",text:q,meta:selectedFiles.length?selectedFiles.length+" прилог(а)":""});
     input.value="";attachments=[];renderAttachments();autoSize();
 
-    const guides=await guideMatches(q);
+    const guidePromise=guideMatches(q);
+    const encodePromise=Promise.all(selectedFiles.map(f=>encodeFile(f)));
     const assistantIndex=current().messages.length;
-    addMessage({role:"assistant",text:"Обработувам…",meta:"AI Advokat",guides});
+    addMessage({role:"assistant",text:"Обработувам…",meta:"AI Advokat",guides:[]});
     root.classList.add("ai-chat-running");
     abortController=new AbortController();
 
     try{
-      const encoded=[];
-      for(const f of selectedFiles) encoded.push(await encodeFile(f));
+      const [guides,encoded]=await Promise.all([guidePromise,encodePromise]);
+      updateAssistantPlaceholder(assistantIndex,{guides});
       const r=await fetch(CHAT_API_BASE+"/api/chat",{
         method:"POST",
         headers:{"content-type":"application/json","accept":"application/json",...membershipHeaders()},
@@ -294,12 +311,19 @@
       if(r.ok&&d?.ok){
         updateAssistantPlaceholder(assistantIndex,{
           text:d.answer,
-          meta:(d.model||"GPT")+" · "+(d.mode||"auto")+" · session-private",
+          meta:(d.model||"GPT")+" · "+(d.displayMode||d.mode||"auto")+" · session-private",
           guides,
           sources:Array.isArray(d.sources)?d.sources:[],
-          sourceLabel:d.sourceMode==="ai_advokat_catalogue_context_first"
-            ?"AI Advokat corpus/catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
-            :(d.webSearch==="enabled"?"GPT + Web research":"GPT general/proactive assistance")
+          legalSources:Array.isArray(d.legalSources)?d.legalSources:[],
+          sourceLabel:d.sourceMode==="ai_advokat_article_corpus_first"
+            ?"AI Advokat article-level corpus first · верзија и Human Gate се прикажани во изворите."
+            :d.sourceMode==="ai_advokat_article_corpus_plus_external_web"
+              ?"AI Advokat article-level corpus + одделно означено Web истражување."
+              :d.sourceMode==="ai_advokat_article_corpus_gate"
+                ?"AI Advokat corpus gate · недостига доволно потврден корпус за сигурен правен заклучок."
+                :d.sourceMode==="ai_advokat_catalogue_context_first"
+                  ?"AI Advokat catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
+                  :(d.webSearchUsed===true?"External legal research · Web извори":"GPT general/proactive assistance")
         });
       }else if(d?.error==="gpt_provider_locked"){
         const fallback=selectedFiles.length?{ok:false,error:"attachments_need_gpt"}:await fallbackSourceAssistant(q);

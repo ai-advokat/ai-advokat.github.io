@@ -379,7 +379,8 @@ export async function runOpenAIOrchestrator(env, {
   webSearchEnabled=false,
   attachments=[],
   history=[],
-  maxOutputTokens=1600
+  maxOutputTokens=1600,
+  reasoningEffort=null
 }={}) {
   if(!openAIOrchestratorConfigured(env)){
     return {ok:false,error:"openai_orchestrator_not_configured"};
@@ -455,7 +456,7 @@ export async function runOpenAIOrchestrator(env, {
   const body={
     model,
     instructions:orchestratorInstructions(plan),
-    reasoning:{effort:["low","medium","high"].includes(String(env?.OPENAI_REASONING_EFFORT || "")) ? String(env.OPENAI_REASONING_EFFORT) : "medium"},
+    reasoning:{effort:["low","medium","high"].includes(String(reasoningEffort || "")) ? String(reasoningEffort) : (["low","medium","high"].includes(String(env?.OPENAI_REASONING_EFFORT || "")) ? String(env.OPENAI_REASONING_EFFORT) : "medium")},
     input:[{role:"user",content:userParts}],
     max_output_tokens:maxOutputTokens,
     store:false,

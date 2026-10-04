@@ -39,7 +39,7 @@ import {
   KNOWLEDGE_INTAKE_POLICY
 } from "./knowledge-intake.js";
 
-const VERSION = "1.6.0";
+const VERSION = "1.6.1";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -1356,6 +1356,143 @@ async function governedGuideContext(request,env,guideIds){
   }
 }
 
+
+function chatQueryDate(q){
+  const match=String(q || "").match(/\b((?:19|20)\d{2}-\d{2}-\d{2})\b/);
+  if(!match) return null;
+  const parsed=parseQueryDate(match[1]);
+  return parsed.ok ? parsed.date : null;
+}
+
+function articleCorpusGateContext(message,{source="AI Advokat article-level legal corpus",locator="corpus routing",version="unresolved"}={}){
+  return [{
+    source,
+    locator,
+    version,
+    text:[
+      "CORPUS_GATE: "+String(message || "The governed article-level corpus cannot support this request."),
+      "Do not replace this missing or unresolved native legal support with model memory.",
+      "Explain the limitation and request the missing law/version/date when needed.",
+      "Human Gate remains mandatory for any current-law conclusion."
+    ].join("\n")
+  }];
+}
+
+async function governedArticleContext(env,q,basePlan){
+  const empty={context:[],legalSources:[],articles:[],state:"not_applicable",instrument:null,version:null,versionBasis:null};
+  if(!basePlan?.agents?.includes(AGENT_ROLES.mk.id)) return empty;
+
+  try{
+    const routing=await inferInstrumentKey(env,q,"auto");
+    if(routing.ambiguous){
+      return {
+        ...empty,
+        state:"instrument_ambiguous",
+        context:articleCorpusGateContext(
+          "More than one Macedonian legal instrument matches the question. A specific instrument is required before legal synthesis."
+        )
+      };
+    }
+    if(!routing.key || routing.key==="auto") return {...empty,state:"instrument_not_resolved"};
+
+    const queryDate=chatQueryDate(q);
+    const retrieval=await findRelevantArticles(env,routing.key,q,5,{date:queryDate});
+    const instrument=retrieval.instrument || null;
+    const instrumentTitle=instrument?.title || routing.key;
+
+    if(retrieval.reason){
+      const reasonText=VERSION_ERROR_MESSAGES[retrieval.reason] || retrieval.reason;
+      return {
+        ...empty,
+        state:retrieval.reason,
+        instrument,
+        context:articleCorpusGateContext(
+          "The governed corpus lookup for "+instrumentTitle+" is blocked: "+reasonText,
+          {locator:instrument?.canonical_source_url || routing.key,version:"unresolved"}
+        )
+      };
+    }
+
+    if(!retrieval.articles?.length){
+      return {
+        ...empty,
+        state:"no_relevant_articles",
+        instrument,
+        version:retrieval.version || null,
+        versionBasis:retrieval.versionBasis || null,
+        context:articleCorpusGateContext(
+          "The instrument was resolved, but no sufficiently relevant article was found for this question.",
+          {locator:instrument?.canonical_source_url || routing.key,version:retrieval.version?.version_label || "unresolved"}
+        )
+      };
+    }
+
+    const versionInfo=summarizeVersion(retrieval.version,retrieval.articles.length);
+    const context=retrieval.articles.map(article=>{
+      const sourceUrl=article.sourceUrl || instrument?.canonical_source_url || "";
+      return {
+        source:"AI Advokat article-level legal corpus · "+instrumentTitle,
+        locator:"Член "+String(article.articleNumber || "")+(sourceUrl ? " · "+sourceUrl : ""),
+        version:[
+          versionInfo.label,
+          versionInfo.class || "class-unknown",
+          "Human Gate "+versionInfo.humanReviewStatus,
+          retrieval.versionBasis || "basis-unknown"
+        ].join(" · "),
+        text:[
+          "JURISDICTION: "+String(instrument?.jurisdiction || "MK"),
+          "INSTRUMENT: "+instrumentTitle,
+          "ARTICLE: "+String(article.articleNumber || ""),
+          "HEADING: "+String(article.heading || ""),
+          "ARTICLE_STATUS: "+String(article.status || "unknown"),
+          "ARTICLE_HUMAN_REVIEW: "+String(article.humanReviewStatus || "pending"),
+          "VERSION_LABEL: "+String(versionInfo.label || "unknown"),
+          "VERSION_CLASS: "+String(versionInfo.class || "unknown"),
+          "VERSION_HUMAN_GATE: "+String(versionInfo.humanReviewStatus || "pending"),
+          "VERSION_BASIS: "+String(retrieval.versionBasis || "unknown"),
+          "SOURCE_URL: "+String(sourceUrl),
+          "CITATION_LABEL: [Член "+String(article.articleNumber || "")+"]",
+          "TEXT:",
+          String(article.text || "").slice(0,3600)
+        ].join("\n")
+      };
+    });
+
+    const legalSources=retrieval.articles.map(article=>({
+      title:instrumentTitle+" · член "+String(article.articleNumber || ""),
+      articleNumber:String(article.articleNumber || ""),
+      url:article.sourceUrl || instrument?.canonical_source_url || null,
+      status:article.status || null,
+      humanReviewStatus:article.humanReviewStatus || null,
+      version:versionInfo.label || null,
+      versionHumanReviewStatus:versionInfo.humanReviewStatus || null
+    }));
+
+    return {
+      context,
+      legalSources,
+      articles:retrieval.articles,
+      state:"matched",
+      instrument:{
+        canonicalKey:instrument?.canonical_key || routing.key,
+        title:instrumentTitle,
+        jurisdiction:instrument?.jurisdiction || "MK"
+      },
+      version:versionInfo,
+      versionBasis:retrieval.versionBasis || null
+    };
+  }catch(error){
+    console.error("chat_article_corpus_lookup_failed",String(error?.message || error).slice(0,180));
+    return {
+      ...empty,
+      state:"corpus_unavailable",
+      context:articleCorpusGateContext(
+        "The governed article-level corpus is temporarily unavailable. Do not issue a source-asserted Macedonian-law conclusion from model memory."
+      )
+    };
+  }
+}
+
 function validateChatHistory(payload){
   const input=Array.isArray(payload)?payload:[];
   if(input.length>12) return {ok:false,error:"chat_history_too_long"};
@@ -1415,7 +1552,7 @@ async function handleGPTChat(request,env){
     return json(request,{
       ok:false,
       error:"gpt_provider_locked",
-      message:"GPT background orchestration is prepared but not yet activated. A server-side OpenAI API key, billing/spend controls and the production provider gate are still required.",
+      message:"GPT production orchestration is not ready on the server. Provider execution remains fail-closed.",
       runtime:readiness
     },503);
   }
@@ -1429,15 +1566,11 @@ async function handleGPTChat(request,env){
   if(q.length<2) return json(request,{ok:false,error:"query_too_short"},400);
 
   const uiMode=["auto","library","web"].includes(payload.mode) ? payload.mode : "auto";
-  const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
-  const corpusContext=await governedGuideContext(request,env,guideIds);
-  const preferCorpus=uiMode==="library" || corpusContext.length>0;
   const webRequested=uiMode==="web" || payload.webSearch===true;
-
   if(webRequested && env.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED!=="true"){
     return json(request,{
       ok:false,error:"web_search_locked",
-      message:"Web search is present in the interface but remains a separate production tool gate."
+      message:"Web search remains a separate production tool gate."
     },503);
   }
 
@@ -1449,9 +1582,36 @@ async function handleGPTChat(request,env){
   if(attachmentCheck.attachments.length && env.OPENAI_FILE_INPUT_ENABLED!=="true"){
     return json(request,{
       ok:false,error:"attachment_processing_locked",
-      message:"Attachment controls are active in the interface, but sending file contents to the GPT provider remains a separate privacy/tool gate."
+      message:"Attachment processing is disabled by the server-side privacy/tool gate."
     },503);
   }
+
+  const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
+  const initialPlan=buildAgentPlan(q);
+  const [guideContext,articleBundle]=await Promise.all([
+    governedGuideContext(request,env,guideIds),
+    governedArticleContext(env,q,initialPlan)
+  ]);
+
+  const corpusContext=[...articleBundle.context,...guideContext];
+  if(uiMode==="library" && corpusContext.length===0){
+    corpusContext.push({
+      source:"AI Advokat public library",
+      locator:"library routing",
+      version:"current public catalogue",
+      text:[
+        "CORPUS_NOT_SUPPORTED: No matching governed public AI Advokat record was supplied for this question.",
+        "Do not silently replace the missing library support with model knowledge.",
+        "Explain that the library did not supply a supporting record and suggest a narrower query or Web mode."
+      ].join("\n")
+    });
+  }
+
+  // Explicit Web mode must not be mislabeled as passive_corpus merely because the
+  // UI suggested a guide. Article-level Macedonian law remains corpus-first.
+  const preferCorpus=articleBundle.context.length>0
+    || uiMode==="library"
+    || (uiMode==="auto" && guideContext.length>0);
 
   const membership=await resolveMembership(request,env);
   let subject;
@@ -1482,6 +1642,17 @@ async function handleGPTChat(request,env){
   }
 
   const plan=buildAgentPlan(q,{preferCorpus});
+  const fastGeneral=plan.mode===ORCHESTRATOR_MODES.GENERAL
+    && !webRequested
+    && attachmentCheck.attachments.length===0
+    && corpusContext.length===0;
+  const maxOutputTokens=fastGeneral ? 700
+    : webRequested ? 1300
+      : articleBundle.state==="matched" ? 1200
+        : attachmentCheck.attachments.length ? 1100
+          : 1000;
+  const reasoningEffort=fastGeneral ? "low" : "medium";
+
   const result=await runOpenAIOrchestrator(env,{
     plan,
     input:q,
@@ -1491,13 +1662,27 @@ async function handleGPTChat(request,env){
     webSearchEnabled:webRequested,
     attachments:attachmentCheck.attachments,
     history:historyCheck.history,
-    maxOutputTokens:1800
+    maxOutputTokens,
+    reasoningEffort
   });
 
   if(!result.ok){
     await releaseMonthlyQuota(env,{subject,period});
     return json(request,{ok:false,error:result.error,problems:result.problems || null},503);
   }
+
+  const articleMatched=articleBundle.state==="matched";
+  const sourceMode=result.webSearchUsed===true && articleMatched
+    ? "ai_advokat_article_corpus_plus_external_web"
+    : result.webSearchUsed===true
+      ? "external_web_research"
+      : articleMatched
+        ? "ai_advokat_article_corpus_first"
+        : articleBundle.context.length
+          ? "ai_advokat_article_corpus_gate"
+          : guideContext.length
+            ? "ai_advokat_catalogue_context_first"
+            : "gpt_general_or_proactive";
 
   return json(request,{
     ok:true,
@@ -1506,12 +1691,23 @@ async function handleGPTChat(request,env){
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,
     sources:result.sources || [],
+    legalSources:articleBundle.legalSources || [],
     webSearchUsed:result.webSearchUsed===true,
     mode:plan.mode,
-    sourceMode:preferCorpus ? "ai_advokat_catalogue_context_first" : "gpt_general_or_proactive",
+    displayMode:result.webSearchUsed===true ? "external_web_research" : plan.mode,
+    sourceMode,
     corpusContextCount:corpusContext.length,
+    articleCorpusContextCount:articleBundle.context.length,
+    articleCorpusState:articleBundle.state,
+    articleCorpus:articleBundle.instrument ? {
+      instrument:articleBundle.instrument,
+      version:articleBundle.version,
+      versionBasis:articleBundle.versionBasis
+    } : null,
     webSearch:webRequested ? "enabled" : "not_requested",
     attachmentsUsed:attachmentCheck.attachments.length,
+    reasoningEffort,
+    maxOutputTokens,
     humanGate:result.humanGate,
     membership:{
       planCode:membership ? membership.planCode : "free",

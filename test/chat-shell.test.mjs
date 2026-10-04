@@ -141,3 +141,37 @@ test("CHAT14 file inputs use OpenAI Responses data URI format and server MIME al
   assert.match(worker,/CHAT_ALLOWED_FILE_MIME/);
   assert.match(worker,/unsupported_file_type/);
 });
+
+
+test("CHAT15 GPT workspace bridges governed article-level corpus before synthesis",()=>{
+  assert.match(worker,/governedArticleContext/);
+  assert.match(worker,/findRelevantArticles\(env,routing\.key,q,5/);
+  assert.match(worker,/ai_advokat_article_corpus_first/);
+  assert.match(worker,/legalSources:articleBundle\.legalSources/);
+  assert.match(worker,/Human Gate/);
+  assert.match(chatJs,/Правни извори/);
+  assert.match(chatJs,/ai_advokat_article_corpus_first/);
+});
+
+test("CHAT16 explicit Web mode is labelled as external research, not passive corpus",()=>{
+  assert.match(worker,/displayMode:result\.webSearchUsed===true \? "external_web_research"/);
+  assert.match(worker,/external_web_research/);
+  assert.match(chatJs,/External legal research · Web извори/);
+});
+
+test("CHAT17 chat latency optimisations preserve governed routing",()=>{
+  assert.match(chatJs,/Promise\.all\(\[guidePromise,encodePromise\]\)/);
+  assert.match(chatJs,/\.slice\(-8\)/);
+  assert.match(worker,/const fastGeneral=/);
+  assert.match(worker,/reasoningEffort=fastGeneral \? "low" : "medium"/);
+  assert.match(worker,/maxOutputTokens=fastGeneral \? 700/);
+  assert.match(worker,/Promise\.all\(\[/);
+});
+
+test("CHAT18 production UI copy no longer claims GPT activation is pending",()=>{
+  assert.match(html,/GPT-6\.1 Sol · LIVE governed/);
+  assert.match(html,/production-активен/);
+  assert.doesNotMatch(html,/production provider-от ќе биде активиран/);
+  assert.doesNotMatch(html,/GPT-6\.1 Sol target · provider activation pending/);
+  assert.match(html,/store:false/);
+});
