@@ -36,10 +36,10 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 <div class="guard"><strong>Изворот прв.</strong> Водичите се авторски/редакциски секундарни материјали. Не се прикажуваат како важечки закон и не се користат за професионален правен заклучок без проверка на официјалниот извор и човечка правна ревизија. Преземањето на изворната датотека останува заклучено додека Зоран не одобри конкретна верзија за јавно објавување.</div>
 </section>
 <section class="stats" aria-label="Статистика на библиотеката">
-<div class="stat"><b id="countAll">38</b><span>доставени изданија</span></div>
-<div class="stat"><b id="countPrimary">37</b><span>активни/посебни записи</span></div>
-<div class="stat"><b>2</b><span>верзии на Водич 02</span></div>
-<div class="stat"><b>1</b><span>Human Gate пред јавен PDF</span></div>
+<div class="stat"><b id="countAll">38</b><span>јавно видливи записи</span></div>
+<div class="stat"><b id="countPrimary">36</b><span>активни/посебни записи</span></div>
+<div class="stat"><b id="countHistory">2</b><span>архивски version-history записи</span></div>
+<div class="stat"><b id="countDownloads">0</b><span>јавно активирани PDF/DOCX</span></div>
 </section>
 <section aria-labelledby="libraryTitle"><h2 id="libraryTitle">Каталог</h2>
 <div class="controls">
@@ -53,10 +53,11 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 <ul>
 <li>Дупликатите не се бришат: се водат како <strong>version history</strong> (Водич 02).</li>
 <li>Краткиот Водич 26 останува посебен. Сеопфатниот управен водич V2 е новата контролирана примарна верзија, а верзијата 1.0 останува во <strong>version history</strong>. V2 сè уште не е вклучен во одобрениот јавен каталог од 38 записи.</li>
-<li>Каталогот е <strong>јавно активиран</strong> за сите 38 контролирани записи. Самите DOCX/PDF датотеки остануваат заклучени зад Human Gate.</li>\n<li>Секој запис е <strong>reference-only</strong> за AI; јавната видливост на каталогот не е RAG/AI одобрување.</li>
+<li>Каталогот е <strong>јавно активиран</strong> за сите 38 контролирани записи. Самите DOCX/PDF датотеки остануваат заклучени зад Human Gate.</li>
+<li>Секој запис е <strong>reference-only</strong> за AI; јавната видливост на каталогот не е RAG/AI одобрување.</li>
 <li>Правните рокови и статусот на прописите мора повторно да се проверат со официјален извор на датумот на конкретната употреба.</li>
 </ul>
-<p><a href="/docs/guides/AUDIT_2026-10-03.md">Прва тура — audit →</a> · <a href="/docs/guides/AUDIT_38_63_2026-10-03.md">FULL Word водичи 38–63 — audit →</a></p>
+<p><a href="/docs/guides/AUDIT_2026-10-03.md">Прва тура — audit →</a> · <a href="/docs/guides/AUDIT_38_63_2026-10-03.md">FULL Word водичи 38–63 — audit →</a> · <a href="/docs/guides/AUDIT_ADMINISTRATIVE_V2_FINAL_MASTER_2026-10-04.md">Administrative V2 FINAL MASTER — audit →</a> · <a href="/docs/guides/FINAL_CONTROL_2026-10-04.md">Финална контрола 4.10.2026 →</a></p>
 </section>
 </div></main>
 <footer><div class="wrap">AI Advokat · Правото, организирано. AI, под човечка контрола.</div></footer>
@@ -81,6 +82,8 @@ fetch("/data/guides.json").then(r=>r.json()).then(d=>{
  document.querySelector("#cat").insertAdjacentHTML("beforeend",cats.map(c=>`<option>${esc(c)}</option>`).join(""));
  document.querySelector("#countAll").textContent=records.length;
  document.querySelector("#countPrimary").textContent=records.filter(x=>x.source_role!=="version_history").length;
+ document.querySelector("#countHistory").textContent=records.filter(x=>x.source_role==="version_history").length;
+ document.querySelector("#countDownloads").textContent=records.filter(x=>x.public_pdf!==null).length;
  render();
 }).catch(()=>{document.querySelector("#cards").innerHTML='<p>Каталогот моментално не може да се вчита.</p>';});
 ["q","cat","status"].forEach(id=>document.querySelector("#"+id).addEventListener("input",render));

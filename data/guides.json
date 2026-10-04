@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_on": "2026-10-03",
+  "generated_on": "2026-10-04",
   "collection": {
     "id": "zoran-everyday-rights-guides",
     "title_mk": "Моите права во секојдневниот живот",
@@ -25,6 +25,20 @@
       "production_corpus_write": false,
       "legal_corpus_promotion": false,
       "note": "Public catalogue visibility only. No DOCX/PDF download, RAG ingest, production corpus write or legal-corpus promotion is authorized."
+    },
+    "final_control": {
+      "date": "2026-10-04",
+      "scope": "registry_catalog_governance_and_ui_consistency",
+      "result": "pass_with_existing_legal_review_gates",
+      "registry_total": 39,
+      "public_catalog_records": 38,
+      "public_active_or_special_records": 36,
+      "public_version_history_records": 2,
+      "public_document_downloads": 0,
+      "controlled_nonpublic_candidates": 1,
+      "duplicate_ids": 0,
+      "broken_version_links": 0,
+      "note": "Final implementation control confirms registry/catalog/governance consistency. It does not convert per-guide legal review states into publication masters and does not authorize public files, RAG, production corpus write or legal-corpus promotion."
     }
   },
   "records": [
