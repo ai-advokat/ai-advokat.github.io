@@ -137,7 +137,7 @@ Backend contract:
 
 - `POST /api/chat`;
 - OpenAI Responses API;
-- OpenAI Conversations API for continuity when provider execution is enabled;
+- browser-session conversation history replayed to the Responses API with `store:false`;
 - target model selected by Human Gate: `gpt-6.1-sol`;
 - general non-legal tasks route to a GPT General Assistant;
 - legal tasks retain jurisdiction/source governance;
@@ -158,3 +158,40 @@ Still separate gates:
 - production provider Human Gate.
 
 The interface must not imply that a visible button is an already-authorised tool. Attachment contents and Web search are not sent/executed until their corresponding server-side gate is enabled.
+
+
+## Production-ready activation — 4 October 2026
+
+The project lead requested implementation of the GPT background runtime.
+
+Production configuration is now **armed but fail-closed**:
+
+- `OPENAI_MODEL=gpt-6.1-sol`;
+- `OPENAI_REASONING_EFFORT=medium`;
+- `OPENAI_ORCHESTRATOR_ENABLED=true`;
+- `OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED=true`;
+- `OPENAI_FILE_INPUT_ENABLED=true`.
+
+The exact model ID `gpt-6.1-sol` was re-verified against current official OpenAI API documentation before activation work.
+
+### Privacy correction before provider activation
+
+AI Advokat does **not** use a durable OpenAI Conversation object for portal chat history.
+
+Instead:
+
+- the browser keeps the current session in `sessionStorage`;
+- up to 12 prior user/assistant messages are replayed as context;
+- the context is explicitly labelled **context only, not legal authority**;
+- Responses API requests use `store:false`;
+- no portal chat conversation is intentionally persisted by AI Advokat as an OpenAI Conversation object.
+
+### Final external prerequisites
+
+Provider execution still fails closed until:
+
+1. a valid `OPENAI_API_KEY` is installed as a Cloudflare Worker secret;
+2. billing and an explicit spend limit are configured in the OpenAI project;
+3. the production activation workflow deploys the Worker and the live GPT smoke test passes.
+
+The API key must never appear in GitHub source, workflow logs, browser JavaScript or public configuration.
