@@ -318,7 +318,7 @@
 
   fetch(CHAT_API_BASE+"/api/orchestrator",{headers:{"accept":"application/json"}}).then(r=>r.json()).then(d=>{
     const state=d?.runtime?.providerExecution;
-    if(state==="configured_but_not_publicly_auto_executed") provider.textContent="GPT provider конфигуриран · production auto-execution сè уште gated";
+    if(state==="configured_for_api_chat_execution") provider.textContent="GPT-6.1 Sol · LIVE governed";
     else provider.textContent="GPT-6.1 Sol target · provider activation pending";
   }).catch(()=>{});
 
