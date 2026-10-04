@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "policy_id": "AI_ADVOKAT_KNOWLEDGE_INTAKE_POLICY_v1",
+  "generated_on": "2026-10-04",
+  "doctrine": [
+    "read_before_edit",
+    "preserve_original",
+    "classify_before_use",
+    "source_identity_required",
+    "authority_separate_from_authorship",
+    "rag_requires_separate_human_gate",
+    "fail_closed"
+  ],
+  "classifications": [
+    {
+      "id": "authoritative_internal_instruction",
+      "meaning": "Author-approved instruction governing AI Advokat behaviour/workflow; it is not automatically a source of law.",
+      "default_rag_eligible": false
+    },
+    {
+      "id": "legal_reference_document",
+      "meaning": "Legal source/reference requiring separate authority classification, version and verification state.",
+      "default_rag_eligible": false
+    },
+    {
+      "id": "user_facing_guide",
+      "meaning": "Authorial educational/practical material for users; secondary material, not official law.",
+      "default_rag_eligible": false
+    },
+    {
+      "id": "research_working_material",
+      "meaning": "Draft/research material that remains internal until separately reviewed.",
+      "default_rag_eligible": false
+    },
+    {
+      "id": "unclassified_pending_review",
+      "meaning": "Default holding state before classification.",
+      "default_rag_eligible": false
+    }
+  ],
+  "intake_sequence": [
+    "receive_original",
+    "fingerprint_sha256",
+    "read_without_editing",
+    "classify",
+    "assign_authority_role",
+    "legal_source_review_if_applicable",
+    "author_human_gate_if_applicable",
+    "separate_rag_gate",
+    "separate_publication_or_production_gate"
+  ],
+  "default_gates": {
+    "content_mutation": false,
+    "public_release": false,
+    "rag_eligibility": false,
+    "production_corpus_write": false,
+    "legal_corpus_promotion": false
+  }
+}

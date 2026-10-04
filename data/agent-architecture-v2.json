@@ -1,0 +1,111 @@
+{
+  "schema_version": "2.0",
+  "architecture_id": "AI_ADVOKAT_GOVERNED_AGENT_ARCHITECTURE_v2",
+  "generated_on": "2026-10-04",
+  "owner_concept": "AI Advokat",
+  "user_facing_agent": "chief_legal_orchestrator",
+  "orchestration_pattern": "manager_agents_as_tools",
+  "design_target": "OpenAI Agents SDK manager-style orchestration",
+  "current_runtime": {
+    "state": "architecture_implemented_provider_execution_locked",
+    "compatibility_layer": "Responses API guarded runtime foundation",
+    "public_provider_activation": false,
+    "reason": "Provider, source-tool, tracing and production activation remain separate Human Gates."
+  },
+  "modes": [
+    {
+      "id": "proactive_research",
+      "label": "PROACTIVE LEGAL AGENT",
+      "rule": "Chief plans research, selects bounded specialists, preserves jurisdiction boundaries and requires verification before synthesis."
+    },
+    {
+      "id": "passive_corpus",
+      "label": "AI ADVOKAT KNOWLEDGE / PASSIVE SOURCE AGENT",
+      "rule": "Corpus first -> exact source -> exact version -> citation -> only then synthesis. Missing native support must be stated explicitly."
+    },
+    {
+      "id": "comparative",
+      "label": "COMPARATIVE LEGAL RESEARCH",
+      "rule": "Multiple legal systems may appear in one answer only with separate authority labels; comparative authority is never silently treated as controlling law."
+    }
+  ],
+  "agents": [
+    {
+      "id": "chief_legal_orchestrator",
+      "label": "AI Advokat — Chief Legal Orchestrator",
+      "user_facing": true
+    },
+    {
+      "id": "macedonian_law",
+      "label": "Macedonian Law Agent",
+      "jurisdiction": "MK"
+    },
+    {
+      "id": "eu_law",
+      "label": "EU Law Agent",
+      "jurisdiction": "EU"
+    },
+    {
+      "id": "echr_law",
+      "label": "ECHR Agent",
+      "jurisdiction": "ECHR"
+    },
+    {
+      "id": "international_law",
+      "label": "International Law Agent",
+      "jurisdiction": "INTL"
+    },
+    {
+      "id": "common_law",
+      "label": "Anglo-American / Common Law Agent",
+      "jurisdiction": "COMMON_LAW"
+    },
+    {
+      "id": "ai_advokat_knowledge",
+      "label": "AI Advokat Knowledge Agent",
+      "jurisdiction": "AI_ADVOCAT_CORPUS"
+    },
+    {
+      "id": "verification_citation",
+      "label": "Verification & Citation Agent",
+      "mandatory_final_check": true
+    }
+  ],
+  "execution_graph": [
+    "chief_routes_task",
+    "bounded_specialists_research",
+    "verification_citation_agent_checks",
+    "chief_composes_final_answer"
+  ],
+  "corpus_doctrine": [
+    "native_corpus_first",
+    "exact_source",
+    "exact_version",
+    "citation_required",
+    "no_silent_model_fallback",
+    "external_research_separate_and_labelled"
+  ],
+  "jurisdiction_doctrine": [
+    "never_merge_jurisdictions",
+    "country_and_court_hierarchy_visible",
+    "comparative_authority_not_controlling_by_default",
+    "EU_and_ECHR_are_distinct",
+    "MK_current_law_requires_official_source_and_version_control"
+  ],
+  "human_gates": [
+    "author_approval",
+    "current_law_verification",
+    "corpus_promotion",
+    "rag_eligibility",
+    "github_merge",
+    "public_release",
+    "production_corpus_write",
+    "provider_activation"
+  ],
+  "openai_agents_sdk_cloudflare_notes": {
+    "nodejs_compat_required": true,
+    "tracing_requires_manual_flush": true,
+    "tracing_accuracy_caveat": "Cloudflare Workers AsyncLocalStorage support may limit trace accuracy.",
+    "activation_state": "not_enabled_by_this_change"
+  }
+}

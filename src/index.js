@@ -25,8 +25,20 @@ import {
   summarizeVersion,
   versionStatusWarning
 } from "./corpus-versions.js";
+import {
+  AGENT_ROLES,
+  ORCHESTRATOR_MODES,
+  ORCHESTRATION_PATTERN,
+  buildAgentPlan,
+  buildExecutionGraph,
+  orchestratorRuntimeReadiness
+} from "./agent-orchestrator.js";
+import {
+  KNOWLEDGE_CLASSES,
+  KNOWLEDGE_INTAKE_POLICY
+} from "./knowledge-intake.js";
 
-const VERSION = "1.5.0";
+const VERSION = "1.6.0";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -1618,6 +1630,104 @@ async function corpusCoverage(env, database) {
   return coverage;
 }
 
+function publicAgentRole(role) {
+  return {
+    id: role.id,
+    label: role.label,
+    ...(role.jurisdiction ? {jurisdiction:role.jurisdiction} : {}),
+    purpose: role.purpose
+  };
+}
+
+async function handleOrchestratorArchitecture(request, env) {
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+
+  const readiness=orchestratorRuntimeReadiness(env);
+  return json(request,{
+    ok:true,
+    architecture:"AI_ADVOKAT_GOVERNED_AGENT_ARCHITECTURE_v2",
+    pattern:ORCHESTRATION_PATTERN,
+    modes:ORCHESTRATOR_MODES,
+    agents:Object.values(AGENT_ROLES).map(publicAgentRole),
+    runtime:{
+      architecture:readiness.architecture,
+      orchestrationPattern:readiness.orchestrationPattern,
+      providerExecution:readiness.provider==="configured"
+        ? "configured_but_not_publicly_auto_executed"
+        : "locked",
+      nativeCorpusTool:readiness.nativeCorpusTool,
+      externalResearchTools:readiness.externalResearchTools,
+      tracing:readiness.tracing,
+      humanGate:readiness.humanGate
+    },
+    doctrine:{
+      corpus:"Corpus first -> exact source -> exact version -> citation -> synthesis.",
+      externalResearch:"Separate, visibly labelled External legal research only.",
+      jurisdiction:"Authorities from different legal systems must never be silently merged.",
+      release:"AI research output does not bypass Human Gate."
+    }
+  });
+}
+
+async function handleOrchestratorPlan(request, env) {
+  if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+  const contentType=(request.headers.get("content-type") || "").toLowerCase();
+  if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+
+  let payload;
+  try{ payload=await request.json(); }
+  catch{ return json(request,{ok:false,error:"invalid_json"},400); }
+  if(!payload || typeof payload!=="object" || Array.isArray(payload)) return json(request,{ok:false,error:"invalid_payload"},400);
+
+  const q=cleanQuery(payload.q,600);
+  if(q.length<3) return json(request,{ok:false,error:"query_too_short",message:"Use at least three characters."},400);
+
+  const validModes=new Set(Object.values(ORCHESTRATOR_MODES));
+  const explicitMode=payload.mode==null ? null : String(payload.mode);
+  if(explicitMode && !validModes.has(explicitMode)) return json(request,{ok:false,error:"invalid_orchestrator_mode"},400);
+
+  const plan=buildAgentPlan(q,{
+    preferCorpus:payload.preferCorpus===true,
+    explicitMode
+  });
+  const graph=buildExecutionGraph(plan);
+  const readiness=orchestratorRuntimeReadiness(env);
+
+  return json(request,{
+    ok:true,
+    execution:"planning_only",
+    question:q,
+    plan,
+    graph,
+    runtime:{
+      architecture:readiness.architecture,
+      providerExecution:"separate_activation_required",
+      sourceTools:"separate_governed_connections_required",
+      humanGate:"required"
+    },
+    note:"This endpoint plans the governed agent workflow. It does not execute OpenAI or external legal research."
+  });
+}
+
+function handleKnowledgeIntakePolicy(request) {
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+  return json(request,{
+    ok:true,
+    policyId:KNOWLEDGE_INTAKE_POLICY.policyId,
+    doctrine:KNOWLEDGE_INTAKE_POLICY.doctrine,
+    classes:Object.values(KNOWLEDGE_CLASSES),
+    defaultClass:KNOWLEDGE_INTAKE_POLICY.defaultClass,
+    intakeState:"classification_policy_live_document_ingest_locked",
+    gates:{
+      contentMutation:"separate_human_gate",
+      publicRelease:"separate_human_gate",
+      ragEligibility:"separate_human_gate",
+      productionCorpusWrite:"separate_human_gate",
+      legalCorpusPromotion:"separate_human_gate"
+    }
+  });
+}
+
 async function handleCapabilities(request, env) {
   if (request.method !== "GET" && request.method !== "HEAD") return methodNotAllowed(request);
 
@@ -1645,6 +1755,8 @@ async function handleCapabilities(request, env) {
       instrumentRegistry: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       articleCorpus: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
+      legalOrchestrator: "architecture_v2_planning_live_provider_execution_locked",
+      knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",
       // Deliberately coarse: configuration details are not exposed publicly.
@@ -1722,6 +1834,9 @@ export default {
     }
 
     if (url.pathname === "/api/capabilities") return handleCapabilities(request, env);
+    if (url.pathname === "/api/orchestrator") return handleOrchestratorArchitecture(request, env);
+    if (url.pathname === "/api/orchestrator/plan") return handleOrchestratorPlan(request, env);
+    if (url.pathname === "/api/knowledge-intake-policy") return handleKnowledgeIntakePolicy(request);
 
     if (url.pathname === "/api/db-status") {
       if (request.method !== "GET" && request.method !== "HEAD") return methodNotAllowed(request);
