@@ -30,6 +30,12 @@
   const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
   const now=()=>new Date().toISOString();
   const uid=()=>crypto.randomUUID ? crypto.randomUUID() : "chat-"+Date.now()+"-"+Math.random().toString(16).slice(2);
+  function safeHttpUrl(value){
+    try{
+      const u=new URL(String(value||""));
+      return (u.protocol==="https:"||u.protocol==="http:") ? u.href : null;
+    }catch{return null;}
+  }
 
   function newState(){
     return {id:uid(),title:"Нов разговор",messages:[],createdAt:now(),updatedAt:now()};
@@ -113,6 +119,21 @@
     }
     if(m.sourceLabel){
       const source=document.createElement("div");source.className="ai-msg-source";source.textContent=m.sourceLabel;body.append(source);
+    }
+    if(Array.isArray(m.sources) && m.sources.length){
+      const sourceBox=document.createElement("div");sourceBox.className="ai-msg-source";
+      const label=document.createElement("strong");label.textContent="Web извори";
+      sourceBox.append(label);
+      const links=document.createElement("div");links.className="ai-msg-tools";
+      m.sources.slice(0,8).forEach((s,i)=>{
+        const href=safeHttpUrl(s?.url);
+        if(!href) return;
+        const a=document.createElement("a");
+        a.href=href;a.target="_blank";a.rel="noopener noreferrer";
+        a.textContent=(s?.title||("Извор "+(i+1))).slice(0,90);
+        links.append(a);
+      });
+      if(links.childElementCount){sourceBox.append(links);body.append(sourceBox);}
     }
     const tools=document.createElement("div");tools.className="ai-msg-tools";
     const copy=document.createElement("button");copy.type="button";copy.textContent="Копирај";
@@ -260,6 +281,7 @@
           text:d.answer,
           meta:(d.model||"GPT")+" · "+(d.mode||"auto")+" · session-private",
           guides,
+          sources:Array.isArray(d.sources)?d.sources:[],
           sourceLabel:d.sourceMode==="ai_advokat_catalogue_context_first"
             ?"AI Advokat corpus/catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
             :(d.webSearch==="enabled"?"GPT + Web research":"GPT general/proactive assistance")
