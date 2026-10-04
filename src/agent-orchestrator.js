@@ -316,6 +316,7 @@ export function orchestratorRuntimeReadiness(env={}) {
     provider:openAIOrchestratorConfigured(env) ? "configured" : "locked",
     nativeCorpusTool:env?.OPENAI_NATIVE_CORPUS_TOOL_ENABLED==="true" ? "configured" : "locked",
     externalResearchTools:env?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true" ? "configured" : "locked",
+    fileInputs:env?.OPENAI_FILE_INPUT_ENABLED==="true" ? "configured" : "locked",
     tracing:env?.OPENAI_AGENTS_TRACING_ENABLED==="true" ? "configured" : "locked",
     humanGate:"required"
   });
