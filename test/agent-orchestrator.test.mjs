@@ -166,7 +166,9 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.match(architecturePage,/GPT General Assistant/);
     assert.match(architecturePage,/GPT-style workspace/);
     assert.equal(architectureManifest.product_experience.backend_contract.endpoint,"/api/chat");
-    assert.equal(architectureManifest.product_experience.backend_contract.conversations_api,true);
+    assert.equal(architectureManifest.product_experience.backend_contract.conversations_api,false);
+    assert.equal(architectureManifest.product_experience.backend_contract.responses_store,false);
+    assert.equal(architectureManifest.product_experience.backend_contract.conversation_state,"browser_session_history_replayed_as_context");
     assert.equal(architectureManifest.product_experience.current_activation.provider_execution,false);
   });
 
@@ -195,7 +197,10 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.equal(architectureManifest.current_runtime.approved_target_model,"gpt-6.1-sol");
     assert.equal(architectureManifest.current_runtime.public_provider_activation,false);
     assert.match(wranglerConfig,/"OPENAI_MODEL"\s*:\s*"gpt-6\.1-sol"/);
-    assert.doesNotMatch(wranglerConfig,/OPENAI_ORCHESTRATOR_ENABLED/);
+    assert.match(wranglerConfig,/"OPENAI_ORCHESTRATOR_ENABLED"\s*:\s*"true"/);
+    assert.match(wranglerConfig,/"OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED"\s*:\s*"true"/);
+    assert.match(wranglerConfig,/"OPENAI_FILE_INPUT_ENABLED"\s*:\s*"true"/);
     assert.doesNotMatch(wranglerConfig,/OPENAI_API_KEY/);
+    assert.equal(architectureManifest.model_selection.activation_progress.production_provider_live,false);
   });
 });
