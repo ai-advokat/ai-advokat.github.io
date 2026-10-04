@@ -33,3 +33,24 @@ This closeout creates a **corrected candidate only**.
 - Production corpus write: **NOT AUTHORIZED**
 
 No gate implies another. Any later artifact change invalidates these fingerprints and requires a new candidate fingerprint event.
+
+
+## Post-audit catalogue activation update — 4 October 2026
+
+After the original audit closeout, the project lead explicitly authorized **catalogue activation** of V2.0 FINAL MASTER.
+
+Current catalogue state:
+- catalogue record: **ACTIVE**
+- role: **current public master catalogue record**
+- public slug: `upravna-postapka-v2`
+- governed FINAL MASTER DOCX fingerprint: `de609c4526eee401a3759ff2fe22556cacded9bef87cdf675213e69e8a10ed11`
+- governed FINAL MASTER PDF fingerprint: `4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d`
+
+This later activation does **not** retroactively change the original audit decision. The following gates remain separate and closed:
+- public DOCX/PDF download;
+- RAG / AI-corpus eligibility;
+- production corpus write;
+- legal-corpus promotion;
+- provider activation.
+
+The artifact-level `author_approval` field remains separate and is not inferred from catalogue activation.

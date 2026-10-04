@@ -17,34 +17,35 @@
     },
     "catalog_visibility": {
       "state": "public",
-      "approved_on": "2026-10-03",
-      "decision_id": "catalog-visibility-38-2026-10-03",
-      "scope": "all_38_governed_records",
+      "approved_on": "2026-10-04",
+      "decision_id": "catalog-visibility-39-v2-final-master-2026-10-04",
+      "scope": "all_39_governed_records",
       "public_download": false,
       "rag_eligibility": false,
       "production_corpus_write": false,
       "legal_corpus_promotion": false,
-      "note": "Public catalogue visibility only. No DOCX/PDF download, RAG ingest, production corpus write or legal-corpus promotion is authorized."
+      "note": "Public catalogue visibility now covers all 39 governed records, including the V2.0 FINAL MASTER catalogue record. No DOCX/PDF download, RAG ingest, production corpus write or legal-corpus promotion is authorized.",
+      "previous_decision_id": "catalog-visibility-38-2026-10-03"
     },
     "final_control": {
       "date": "2026-10-04",
-      "scope": "registry_catalog_governance_ui_and_approved_human_gate_pack",
-      "result": "pass_with_human_gate_pack_implemented_catalogue_only",
+      "scope": "registry_catalog_governance_ui_human_gate_and_v2_master_activation",
+      "result": "pass_with_v2_final_master_catalogue_active",
       "registry_total": 39,
-      "public_catalog_records": 38,
-      "public_active_or_special_records": 36,
+      "public_catalog_records": 39,
+      "public_active_or_special_records": 37,
       "public_version_history_records": 2,
       "public_document_downloads": 0,
-      "controlled_nonpublic_candidates": 1,
+      "controlled_nonpublic_candidates": 0,
       "duplicate_ids": 0,
       "broken_version_links": 0,
-      "note": "Human Gate Pack 1–7 is approved and implemented in catalogue/legal/provenance metadata. Public files, AI-corpus/RAG, production corpus write and provider activation remain unauthorized."
+      "note": "All 39 governed records are now visible in the catalogue, including V2.0 FINAL MASTER as the current administrative master record. Public files, AI-corpus/RAG, production corpus write, legal-corpus promotion and provider activation remain unauthorized."
     },
     "public_experience": {
-      "version": "2.0",
+      "version": "2.1",
       "enabled_on": "2026-10-04",
-      "scope": "exact_38_public_catalog_records",
-      "detail_route": "/guides/record.html?id={record_id}",
+      "scope": "exact_39_public_catalog_records",
+      "detail_route": "/guides/record.html?g={public_slug}",
       "features": [
         "search_and_controlled_category_filters",
         "multi_level_verification_labels",
@@ -92,6 +93,23 @@
         "legal_corpus_promotion": false,
         "provider_activation": false
       }
+    },
+    "v2_final_master_activation": {
+      "decision_id": "v2-final-master-catalogue-activation-2026-10-04",
+      "authorized_on": "2026-10-04",
+      "authorization_source": "explicit_project_lead_user_request",
+      "scope": "public_catalogue_master_record_only",
+      "record_id": "guide-administrative-v2",
+      "artifact_version": "V2.0 FINAL MASTER",
+      "public_catalogue_record": true,
+      "public_docx_download": false,
+      "public_pdf_download": false,
+      "rag_eligibility": false,
+      "ai_corpus_eligibility": false,
+      "production_corpus_write": false,
+      "legal_corpus_promotion": false,
+      "provider_activation": false,
+      "note": "Activates the governed V2.0 FINAL MASTER catalogue record as the current public master version while keeping the underlying files and AI/production gates closed."
     }
   },
   "records": [
@@ -2846,8 +2864,8 @@
       "pages": 15,
       "source_file": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2.docx",
       "attribution": "Автор: адвокат Зоран Стојанкиќ • AI Advokat / Paragraf.mk",
-      "status": "corrected_candidate",
-      "status_label": "V2.0 FINAL MASTER candidate • финален правен, редакциски и визуелен audit завршен • чека авторско одобрување",
+      "status": "final_master_catalogue_active",
+      "status_label": "V2.0 FINAL MASTER • јавен каталошки master • финален правен, редакциски и визуелен audit PASS • целосните датотеки остануваат под посебен Human Gate",
       "scope": "Управна постапка и управен спор во Северна Македонија: рокови, молчење на администрацијата, тужба, времени мерки, Управен и Виш управен суд, полна јурисдикција, жалба, повторување, трошоци, бесплатна правна помош, извршување, FAQ, поимник, контролни листи и практични модели.",
       "source_role": "primary",
       "supersedes": "guide-administrative-v1",
@@ -2879,7 +2897,7 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "catalog_public": false,
+      "catalog_public": true,
       "candidate_artifact": {
         "artifact_version": "V2.0 FINAL MASTER",
         "docx_file": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2_FINAL_MASTER.docx",
@@ -2893,20 +2911,21 @@
         "author_approval": "pending",
         "public_release": "not_authorized",
         "rag_eligibility": "not_authorized",
-        "production_corpus_write": "not_authorized"
+        "production_corpus_write": "not_authorized",
+        "catalogue_status": "active_current_master_record"
       },
-      "public_record_url": null,
-      "public_record_enabled": false,
+      "public_record_url": "/guides/record.html?g=upravna-postapka-v2",
+      "public_record_enabled": true,
       "category_original": "Управно право",
       "category_code": "administrative_law",
       "category_label": "Управно право",
       "subcategory_label": "Управно право",
-      "display_title": "Водич низ управната постапка и управниот спор",
+      "display_title": "Водич низ управната постапка и управниот спор — V2.0 FINAL MASTER",
       "display_format": "Сеопфатен практичен водич",
-      "verification_level": "corrected_candidate",
-      "verification_label": "Коригиран кандидат",
+      "verification_level": "base_legal_reviewed",
+      "verification_label": "V2.0 FINAL MASTER · финален audit PASS",
       "related_records": [],
-      "public_slug": null,
+      "public_slug": "upravna-postapka-v2",
       "attribution_public": "Автор: адвокат Зоран Стојанкиќ",
       "attribution_roles": {
         "author": "адвокат Зоран Стојанкиќ",
@@ -2942,7 +2961,29 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Paragraf.mk се чува како историско/изворно брендирање; тековниот јавен портал е AI Advokat."
+      "legacy_branding_note_mk": "Paragraf.mk се чува како историско/изворно брендирање; тековниот јавен портал е AI Advokat.",
+      "catalogue_activation": {
+        "status": "active_current_master_record",
+        "activated_on": "2026-10-04",
+        "decision_id": "v2-final-master-catalogue-activation-2026-10-04",
+        "scope": "catalogue_record_only",
+        "author_file_approval": "not_inferred",
+        "public_file_release": "not_authorized",
+        "ai_use": "not_authorized"
+      },
+      "public_master_artifact": {
+        "artifact_version": "V2.0 FINAL MASTER",
+        "docx_file": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2_FINAL_MASTER.docx",
+        "docx_sha256": "de609c4526eee401a3759ff2fe22556cacded9bef87cdf675213e69e8a10ed11",
+        "pdf_file": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2_FINAL_MASTER.pdf",
+        "pdf_sha256": "4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d",
+        "audit_date": "2026-10-04",
+        "legal_audit": "pass_no_p1_blockers",
+        "editorial_audit": "pass",
+        "visual_qa": "pass_15_pages",
+        "catalogue_status": "active",
+        "public_download": "not_authorized"
+      }
     }
   ]
 }

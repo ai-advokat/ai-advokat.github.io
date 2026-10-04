@@ -2,7 +2,9 @@
 
 **Date:** 4 October 2026  
 **Scope:** public catalogue structure and UX only; no substantive legal or authorship decision  
-**Status:** implementation candidate
+**Status:** historical catalogue-normalisation record
+
+> **Status update — 4 October 2026:** This document records the earlier catalogue-normalisation pass. Its open Human Review Queue items were subsequently resolved through the approved Human Gate Pack 1–7, and Administrative V2.0 FINAL MASTER was later activated as the 39th public catalogue record. The underlying PDF/DOCX and AI/production gates remain separate and closed.
 
 ## Purpose
 

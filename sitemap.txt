@@ -22,6 +22,7 @@ https://ai-advokat.github.io/guides/record.html?g=21-svedocenje
 https://ai-advokat.github.io/guides/record.html?g=22-korupcija
 https://ai-advokat.github.io/guides/record.html?g=26-upraven-spor
 https://ai-advokat.github.io/guides/record.html?g=upravna-postapka-v1
+https://ai-advokat.github.io/guides/record.html?g=upravna-postapka-v2
 https://ai-advokat.github.io/guides/record.html?g=izbor-na-advokat
 https://ai-advokat.github.io/guides/record.html?g=besplatna-pravna-pomos
 https://ai-advokat.github.io/guides/record.html?g=38
