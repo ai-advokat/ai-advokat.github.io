@@ -42,7 +42,8 @@
     "test:governance-dashboard": "node --no-warnings --test test/governance-dashboard.test.mjs",
     "test:professional-library": "node --no-warnings --test test/professional-library.test.mjs",
     "test:guides-human-gate-pack": "node --no-warnings --test test/guides-human-gate-resolution-pack.test.mjs",
-    "test:guide-router": "node --no-warnings --test test/guide-router.test.mjs"
+    "test:guide-router": "node --no-warnings --test test/guide-router.test.mjs",
+    "test:chat-shell": "node --no-warnings --test test/chat-shell.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"

@@ -48,6 +48,7 @@ footer{border-top:1px solid var(--line);padding:28px 0 44px;color:var(--muted)}@
 <article class="card"><div class="role">ECHR</div><h3>ECHR Agent</h3><p>Конвенција и ECtHR/HUDOC. Се води одвоено од EU law и од домашно право.</p></article>
 <article class="card"><div class="role">INTL</div><h3>International Law Agent</h3><p>Меѓународни договори, организации и судови, секогаш со инструмент/body/source label.</p></article>
 <article class="card"><div class="role">COMMON LAW</div><h3>Anglo-American / Common Law Agent</h3><p>UK/US и други common-law системи со експлицитна држава, судска хиерархија и precedent status.</p></article>
+<article class="card"><div class="role">GENERAL GPT</div><h3>GPT General Assistant</h3><p>За прашања и продуктивни задачи надвор од native AI Advokat corpus. Никогаш не го претставува општото моделско знаење како проверено македонско позитивно право.</p></article>
 <article class="card"><div class="role">NATIVE KNOWLEDGE</div><h3>AI Advokat Knowledge Agent</h3><p>Прво одговара од govern-ираниот AI Advokat corpus. Ако native corpus не поддржува тврдење, не го заменува тивко со моделско знаење.</p></article>
 <article class="card"><div class="role">FINAL CHECK</div><h3>Verification & Citation Agent</h3><p>Ги проверува source identity, locator, jurisdiction, date/version, authority hierarchy, corpus/external labels и Human Gate state.</p></article>
 </div>
@@ -76,6 +77,11 @@ footer{border-top:1px solid var(--line);padding:28px 0 44px;color:var(--muted)}@
 
 <h2>Клучна доктрина</h2>
 <div class="rule"><code>AI може да оркестрира, анализира и предлага → правниот статус, важечката верзија, corpus promotion и чувствителните production промени остануваат под Human Gate.</code></div>
+<section class="panel" style="margin-top:20px">
+<h2>GPT-style workspace</h2>
+<p>AI Advokat е единствениот видлив асистент. Во позадина архитектурата е подготвена за GPT-6.1 Sol преку OpenAI Responses API и Conversations API. Јавниот интерфејс има нов разговор, session history, attachments, Auto/Library/Web режими, Send/Stop, Copy/Retry, export и кликабилни водичи.</p>
+<p><strong>Fail-closed:</strong> provider execution, Web search и испраќањето attachment содржина кон GPT остануваат посебни production gates додека не се конфигурираат server-side key, billing/spend controls и privacy/tool authorization.</p>
+</section>
 </main>
 <footer><div class="wrap">AI Advokat · Правото, организирано. AI, под човечка контрола.</div></footer>
 </body></html>

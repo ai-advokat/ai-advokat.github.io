@@ -115,3 +115,46 @@ Production activation still requires all of the following:
 4. a separate production provider Human Gate.
 
 The API key must never be committed to GitHub or exposed to browser code.
+
+
+## GPT-style product experience — implemented shell, provider gated
+
+The user-facing design target confirmed by the project lead is **one AI Advokat assistant identity with GPT operating in the background**.
+
+Implemented public workspace controls:
+
+- New chat;
+- current-session conversation history;
+- attachment picker for PDF/DOC/DOCX/TXT/MD/CSV/JSON/images;
+- browser voice dictation when supported;
+- Auto / AI Advokat Library / Web modes;
+- Send / Stop;
+- Copy / Retry;
+- export conversation;
+- clickable Citizen Guide Router recommendations.
+
+Backend contract:
+
+- `POST /api/chat`;
+- OpenAI Responses API;
+- OpenAI Conversations API for continuity when provider execution is enabled;
+- target model selected by Human Gate: `gpt-6.1-sol`;
+- general non-legal tasks route to a GPT General Assistant;
+- legal tasks retain jurisdiction/source governance;
+- native AI Advokat catalogue/corpus context is used first when governed context exists.
+
+### Current activation boundary
+
+The shell and routing contract may be public while provider/tool execution remains fail-closed.
+
+Still separate gates:
+
+- `OPENAI_API_KEY` secret;
+- `OPENAI_ORCHESTRATOR_ENABLED=true`;
+- billing/spend controls;
+- Web search tool activation;
+- attachment-content processing;
+- RAG / production corpus write;
+- production provider Human Gate.
+
+The interface must not imply that a visible button is an already-authorised tool. Attachment contents and Web search are not sent/executed until their corresponding server-side gate is enabled.

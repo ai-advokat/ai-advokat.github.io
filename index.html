@@ -15,6 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/app-icon.svg" />
+  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261004-gpt-shell-v1" />
   <meta name="application-name" content="AI Advokat" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -1124,7 +1125,7 @@
 
     <nav class="links" aria-label="Главна навигација" data-i18n-aria="mainNav">
       <a href="#sources" data-i18n="navSources">Правни извори</a>
-      <a href="#research" data-i18n="navResearch">AI Истражувач</a>
+      <a href="#ai-advokat-chat">AI Advokat</a>
       <a href="/agent-architecture.html">AI Архитектура</a>
       <a href="/guides/">Водичи</a>
       <a href="/professional-library/">Стручна библиотека</a>
@@ -1150,7 +1151,7 @@
   <div id="mobileMenu" class="container" hidden style="padding-bottom:14px">
     <div style="display:grid;gap:8px">
       <a href="#sources" data-i18n="navSources">Правни извори</a>
-      <a href="#research" data-i18n="navResearch">AI Истражувач</a>
+      <a href="#ai-advokat-chat">AI Advokat</a>
       <a href="/agent-architecture.html">AI Архитектура</a>
       <a href="/guides/">Водичи</a>
       <a href="/professional-library/">Стручна библиотека</a>
@@ -1396,6 +1397,81 @@
         </aside>
         <p class="help" data-i18n="zppCaveat">Преодните одредби на новиот закон (на пр. за постапки започнати пред 18.01.2027) не се прикажани овде — проверете ги во официјалниот текст. Приказот е информативен и не е правен совет.</p>
       </section>
+    </div>
+  </section>
+
+  <section class="ai-chat-section" id="ai-advokat-chat" aria-labelledby="aiChatHeading">
+    <div class="container">
+      <div class="sectionHead">
+        <div>
+          <span class="tag">AI ADVOKAT · GPT-POWERED WORKSPACE</span>
+          <h2 id="aiChatHeading">Разговарајте со AI Advokat</h2>
+          <p>Еден разговор: AI Advokat библиотеката и водичите се проверуваат прво, а GPT слојот е подготвен да преземе за прашања надвор од нив кога production provider-от ќе биде активиран.</p>
+        </div>
+      </div>
+
+      <div class="ai-chat-wrap" id="aiAdvokatChat">
+        <aside class="ai-chat-side" aria-label="Разговори">
+          <div class="brandMini"><img src="/assets/app-icon.svg" alt=""><span>AI Advokat</span></div>
+          <button class="ai-chat-new" id="aiChatNew" type="button">＋ Нов разговор</button>
+          <div class="ai-chat-history" id="aiChatHistory"></div>
+          <div class="ai-chat-side-note">Разговорите во оваа фаза се чуваат само во тековната browser сесија. Не внесувајте доверливи или лични податоци.</div>
+        </aside>
+
+        <div class="ai-chat-main">
+          <div class="ai-chat-top">
+            <div class="ai-chat-title">
+              <div>
+                <strong>AI Advokat</strong>
+                <small id="aiChatProvider">GPT-6.1 Sol target · provider activation pending</small>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span class="ai-chat-status"><span class="ai-chat-status-dot"></span> Human Gate</span>
+              <button class="btn light" id="aiChatExport" type="button">Извези разговор</button>
+            </div>
+          </div>
+
+          <div class="ai-chat-messages" id="aiChatMessages" aria-live="polite"></div>
+
+          <div class="ai-chat-composer-zone">
+            <div class="ai-chat-provider-note">
+              <strong>Приватност:</strong> не прикачувајте адвокатска тајна, матични броеви, здравствени или други чувствителни податоци. Attachment обработката кон GPT останува посебно gated додека не се активира provider/privacy контролата.
+            </div>
+            <div class="ai-chat-composer">
+              <div class="ai-chat-attachments" id="aiChatAttachments"></div>
+              <div class="ai-chat-input">
+                <button class="ai-chat-iconbtn" id="aiChatAttach" type="button" aria-label="Прикачи датотека" title="Прикачи датотека">＋</button>
+                <input id="aiChatFiles" type="file" multiple hidden aria-label="Прикачи датотеки во AI Advokat" accept=".pdf,.doc,.docx,.txt,.md,.csv,.json,.png,.jpg,.jpeg,.webp" />
+                <button class="ai-chat-iconbtn" id="aiChatMic" type="button" aria-label="Диктирај" title="Диктирај">🎙</button>
+                <textarea id="aiChatInput" rows="1" maxlength="4000" aria-label="Порака до AI Advokat" placeholder="Прашајте го AI Advokat…"></textarea>
+                <button class="ai-chat-send" id="aiChatSend" type="button" aria-label="Испрати" title="Испрати">➤</button>
+                <button class="ai-chat-stop" id="aiChatStop" type="button" aria-label="Стоп" title="Стоп">■</button>
+              </div>
+              <div class="ai-chat-modes" aria-label="Режим">
+                <button class="ai-chat-mode active" type="button" data-chat-mode="auto">✨ Auto</button>
+                <button class="ai-chat-mode" type="button" data-chat-mode="library">📚 AI Advokat Library</button>
+                <button class="ai-chat-mode" type="button" data-chat-mode="web">🌐 Web</button>
+              </div>
+            </div>
+            <p class="ai-chat-hint">AI Advokat е информативна и истражувачка помош. За конкретна правна одлука проверете го официјалниот извор и користете човечка професионална контрола.</p>
+          </div>
+        </div>
+
+        <template id="aiChatEmptyTemplate">
+          <div class="ai-chat-empty">
+            <img src="/assets/app-icon.svg" width="58" height="58" alt="" style="border-radius:14px;margin-bottom:12px">
+            <h2>Како можам да ви помогнам?</h2>
+            <p>Опишете го проблемот со свои зборови. Ќе ги провериме релевантните AI Advokat водичи, а GPT слојот е подготвен за пошироки прашања кога ќе биде production-активиран.</p>
+            <div class="ai-chat-starters">
+              <button class="ai-chat-starter" type="button" data-starter="Ме повика полиција на информативен разговор. Што треба да знам?">Ме повика полиција — што да направам?</button>
+              <button class="ai-chat-starter" type="button" data-starter="Институцијата не ми одговара на барањето. Кои се следните чекори?">Институцијата не ми одговара</button>
+              <button class="ai-chat-starter" type="button" data-starter="Сакам развод и ме интересираат правата за децата и имотот.">Развод, деца и имот</button>
+              <button class="ai-chat-starter" type="button" data-starter="Објасни ми едноставно што можеш да правиш како AI Advokat.">Што може AI Advokat?</button>
+            </div>
+          </div>
+        </template>
+      </div>
     </div>
   </section>
 
@@ -1758,7 +1834,7 @@
       <nav aria-label="Навигација во подножје" data-i18n-aria="footerNavAria">
         <h2 class="footHead" data-i18n="footerNavTitle">Навигација</h2>
         <a href="#sources" data-i18n="navSources">Правни извори</a>
-        <a href="#research" data-i18n="navResearch">AI Истражувач</a>
+        <a href="#ai-advokat-chat">AI Advokat</a>
         <a href="/guides/">Водичи</a>
       <a href="/professional-library/">Стручна библиотека</a>
       <a href="/governance.html">Проверливост</a>
@@ -3434,6 +3510,7 @@
   renderCapabilityLabels();
   loadCapabilities();
 </script>
+<script src="/assets/ai-advokat-chat.js?v=20261004-gpt-shell-v1"></script>
 
 </body>
 </html>

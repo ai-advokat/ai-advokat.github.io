@@ -31,7 +31,8 @@ import {
   ORCHESTRATION_PATTERN,
   buildAgentPlan,
   buildExecutionGraph,
-  orchestratorRuntimeReadiness
+  orchestratorRuntimeReadiness,
+  runOpenAIOrchestrator
 } from "./agent-orchestrator.js";
 import {
   KNOWLEDGE_CLASSES,
@@ -1313,6 +1314,182 @@ function assistantError(request, status, error, message, extraHeaders={}) {
   return json(request,{ok:false,error,...(message ? {message} : {})},status,extraHeaders);
 }
 
+
+const CHAT_MAX_BYTES=6*1024*1024;
+const CHAT_MAX_ATTACHMENTS=5;
+const CHAT_ATTACHMENT_MAX_BASE64=5_500_000;
+
+async function governedGuideContext(request,env,guideIds){
+  const wanted=new Set((Array.isArray(guideIds)?guideIds:[]).map(x=>String(x)).slice(0,5));
+  if(!wanted.size || !env.ASSETS) return [];
+  try{
+    const assetUrl=new URL("/data/guides.json",request.url);
+    const response=await env.ASSETS.fetch(new Request(assetUrl,{method:"GET"}));
+    if(!response.ok) return [];
+    const data=await response.json();
+    const records=Array.isArray(data?.records)?data.records:[];
+    return records
+      .filter(r=>wanted.has(String(r.id)) && r.catalog_public===true && r.public_record_enabled===true)
+      .map(r=>({
+        source:"AI Advokat public guide catalogue",
+        locator:r.public_record_url,
+        version:r.verification_label || r.status_label || r.edition || "",
+        text:[
+          "CATALOGUE METADATA ONLY — the full guide text is not supplied in this context.",
+          "Do not infer or quote the guide beyond the metadata below.",
+          "TITLE: "+String(r.display_title || r.title || ""),
+          "SCOPE: "+String(r.scope || ""),
+          "CATEGORY: "+String(r.category_label || ""),
+          ...(Array.isArray(r.legal_notices)?r.legal_notices.map(n=>"NOTICE: "+String(n.text_mk || n.title_mk || "")):[])
+        ].join("\n")
+      }));
+  }catch{
+    return [];
+  }
+}
+
+function validateChatAttachments(payload){
+  const input=Array.isArray(payload)?payload:[];
+  if(input.length>CHAT_MAX_ATTACHMENTS) return {ok:false,error:"too_many_attachments"};
+  const out=[];
+  for(const raw of input){
+    if(!raw || typeof raw!=="object" || Array.isArray(raw)) return {ok:false,error:"invalid_attachment"};
+    const name=cleanQuery(raw.name,180) || "attachment";
+    const kind=String(raw.kind || "");
+    const mime=cleanQuery(raw.mime,120);
+    if(!["image","file","text"].includes(kind)) return {ok:false,error:"invalid_attachment_kind"};
+    if(kind==="image"){
+      const dataUrl=typeof raw.dataUrl==="string" ? raw.dataUrl : "";
+      if(!/^data:image\/(?:png|jpeg|webp|gif);base64,/i.test(dataUrl) || dataUrl.length>CHAT_ATTACHMENT_MAX_BASE64){
+        return {ok:false,error:"invalid_image_attachment"};
+      }
+      out.push({kind,name,mime,dataUrl});
+    }else if(kind==="file"){
+      const base64=typeof raw.base64==="string" ? raw.base64 : "";
+      if(!/^[A-Za-z0-9+/=]+$/.test(base64) || base64.length>CHAT_ATTACHMENT_MAX_BASE64){
+        return {ok:false,error:"invalid_file_attachment"};
+      }
+      out.push({kind,name,mime,base64});
+    }else{
+      const text=typeof raw.text==="string" ? raw.text : "";
+      if(text.length>120000) return {ok:false,error:"text_attachment_too_large"};
+      out.push({kind,name,mime,text});
+    }
+  }
+  return {ok:true,attachments:out};
+}
+
+async function handleGPTChat(request,env){
+  if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+  const contentType=(request.headers.get("content-type") || "").toLowerCase();
+  if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+
+  const readiness=orchestratorRuntimeReadiness(env);
+  if(readiness.provider!=="configured"){
+    return json(request,{
+      ok:false,
+      error:"gpt_provider_locked",
+      message:"GPT background orchestration is prepared but not yet activated. A server-side OpenAI API key, billing/spend controls and the production provider gate are still required.",
+      runtime:readiness
+    },503);
+  }
+
+  const parsed=await readLimitedJson(request,CHAT_MAX_BYTES);
+  if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
+  const payload=parsed.value;
+  if(!payload || typeof payload!=="object" || Array.isArray(payload)) return json(request,{ok:false,error:"invalid_payload"},400);
+
+  const q=cleanQuery(payload.q,4000);
+  if(q.length<2) return json(request,{ok:false,error:"query_too_short"},400);
+
+  const uiMode=["auto","library","web"].includes(payload.mode) ? payload.mode : "auto";
+  const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
+  const corpusContext=await governedGuideContext(request,env,guideIds);
+  const preferCorpus=uiMode==="library" || corpusContext.length>0;
+  const webRequested=uiMode==="web" || payload.webSearch===true;
+
+  if(webRequested && env.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED!=="true"){
+    return json(request,{
+      ok:false,error:"web_search_locked",
+      message:"Web search is present in the interface but remains a separate production tool gate."
+    },503);
+  }
+
+  const attachmentCheck=validateChatAttachments(payload.attachments);
+  if(!attachmentCheck.ok) return json(request,{ok:false,error:attachmentCheck.error},400);
+  if(attachmentCheck.attachments.length && env.OPENAI_FILE_INPUT_ENABLED!=="true"){
+    return json(request,{
+      ok:false,error:"attachment_processing_locked",
+      message:"Attachment controls are active in the interface, but sending file contents to the GPT provider remains a separate privacy/tool gate."
+    },503);
+  }
+
+  const membership=await resolveMembership(request,env);
+  let subject;
+  let quota;
+  if(membership){
+    subject=membership.subjectKey;
+    quota=membership.monthlyQuota;
+  }else{
+    try{ subject=await anonymousSubject(request,env); }
+    catch(error){
+      if(error instanceof SecurityConfigError) return json(request,{ok:false,error:"assistant_temporarily_unavailable"},503);
+      throw error;
+    }
+    quota=MEMBERSHIP_PLANS.free.monthlyQuota;
+  }
+
+  const burst=await checkAssistantBurst(env,subject);
+  if(!burst.allowed) return json(request,{ok:false,error:"rate_limited"},429,{"Retry-After":String(burst.retryAfter)});
+
+  const period=currentPeriod();
+  const reservation=await reserveMonthlyQuota(env,{subject,period,quota});
+  if(!reservation.reserved){
+    return json(request,{
+      ok:false,
+      error:membership ? "membership_quota_exhausted" : "free_quota_exhausted",
+      membership:{planCode:membership ? membership.planCode : "free",monthlyQuota:quota,used:quota,remaining:0}
+    },429,{"Retry-After":String(secondsUntilNextMonth())});
+  }
+
+  const plan=buildAgentPlan(q,{preferCorpus});
+  const result=await runOpenAIOrchestrator(env,{
+    plan,
+    input:q,
+    corpusContext,
+    externalContext:[],
+    externalResearchEnabled:webRequested,
+    webSearchEnabled:webRequested,
+    attachments:attachmentCheck.attachments,
+    conversationId:typeof payload.conversationId==="string" ? cleanQuery(payload.conversationId,160) : null,
+    maxOutputTokens:1800
+  });
+
+  if(!result.ok){
+    await releaseMonthlyQuota(env,{subject,period});
+    return json(request,{ok:false,error:result.error,problems:result.problems || null},503);
+  }
+
+  return json(request,{
+    ok:true,
+    answer:result.text,
+    model:result.model,
+    conversationId:result.conversationId,
+    mode:plan.mode,
+    sourceMode:preferCorpus ? "ai_advokat_catalogue_context_first" : "gpt_general_or_proactive",
+    corpusContextCount:corpusContext.length,
+    webSearch:webRequested ? "enabled" : "not_requested",
+    attachmentsUsed:attachmentCheck.attachments.length,
+    humanGate:result.humanGate,
+    membership:{
+      planCode:membership ? membership.planCode : "free",
+      monthlyQuota:quota,
+      used:reservation.used,
+      remaining:Math.max(0,quota-reservation.used)
+    }
+  });
+}
+
 async function handleAssistant(request, env, url) {
   // POST only: GET/HEAD can be triggered by prefetchers, link scanners and crawlers,
   // and must never reach quota reservation or the AI provider.
@@ -1850,6 +2027,7 @@ export default {
     if (url.pathname === "/api/instruments") return handleInstruments(request, env);
     if (url.pathname === "/api/articles") return handleArticles(request, env, url);
     if (url.pathname === "/api/assistant") return handleAssistant(request, env, url);
+    if (url.pathname === "/api/chat") return handleGPTChat(request, env);
     if (url.pathname === "/api/web-sources") return handleWebSources(request);
     if (url.pathname === "/api/zenodo") return handleZenodo(request);
     if (url.pathname === "/api/orcid") return handleOrcid(request);

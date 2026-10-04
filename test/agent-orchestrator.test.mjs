@@ -48,6 +48,13 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.equal(plan.verifier,AGENT_ROLES.verify.id);
   });
 
+  test("general non-legal tasks route to GPT General Assistant instead of pretending to be Macedonian law", () => {
+    const plan=buildAgentPlan("Напиши ми кратка деловна порака за состанок.");
+    assert.equal(plan.mode,ORCHESTRATOR_MODES.GENERAL);
+    assert.deepEqual(plan.agents,[AGENT_ROLES.general.id]);
+    assert.equal(plan.rules.corpusFirst,false);
+  });
+
   test("single foreign jurisdiction routes only its specialist unless comparison is requested", () => {
     const eu=buildAgentPlan("Што вели правото на Европската Унија?");
     assert.deepEqual(eu.agents,[AGENT_ROLES.eu.id]);
@@ -151,11 +158,16 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.equal(architectureManifest.architecture_id,"AI_ADVOKAT_GOVERNED_AGENT_ARCHITECTURE_v2");
     assert.equal(architectureManifest.orchestration_pattern,"manager_agents_as_tools");
     assert.equal(architectureManifest.current_runtime.public_provider_activation,false);
-    assert.equal(architectureManifest.agents.length,8);
+    assert.equal(architectureManifest.agents.length,9);
     assert.match(architecturePage,/Chief Legal Orchestrator/);
     assert.match(architecturePage,/AI Advokat Knowledge Agent/);
     assert.match(architecturePage,/Verification & Citation Agent/);
     assert.match(architecturePage,/provider execution · separate activation/);
+    assert.match(architecturePage,/GPT General Assistant/);
+    assert.match(architecturePage,/GPT-style workspace/);
+    assert.equal(architectureManifest.product_experience.backend_contract.endpoint,"/api/chat");
+    assert.equal(architectureManifest.product_experience.backend_contract.conversations_api,true);
+    assert.equal(architectureManifest.product_experience.current_activation.provider_execution,false);
   });
 
   test("knowledge intake registry preserves originals and leaves downstream gates closed",()=>{

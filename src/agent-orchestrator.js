@@ -55,6 +55,14 @@ export const AGENT_ROLES = Object.freeze({
     preferredSources: ["official legislation/court source", "authorised report/source"],
     purpose: "UK/US and other common-law research with explicit country, court hierarchy and precedent status; never imported as Macedonian controlling law."
   }),
+  general: Object.freeze({
+    id: "general_gpt_assistant",
+    label: "GPT General Assistant",
+    jurisdiction: "GENERAL",
+    authorityBoundary: "general_assistance_non_legal_or_explicitly_labelled",
+    preferredSources: ["OpenAI model knowledge", "approved tools when enabled"],
+    purpose: "Handles ordinary non-legal questions and productivity tasks when they are outside the AI Advokat native corpus, while never presenting general model knowledge as verified Macedonian law."
+  }),
   corpus: Object.freeze({
     id: "ai_advokat_knowledge",
     label: "AI Advokat Knowledge Agent",
@@ -74,7 +82,8 @@ export const AGENT_ROLES = Object.freeze({
 export const ORCHESTRATOR_MODES = Object.freeze({
   PASSIVE_CORPUS: "passive_corpus",
   PROACTIVE_RESEARCH: "proactive_research",
-  COMPARATIVE: "comparative"
+  COMPARATIVE: "comparative",
+  GENERAL: "general_gpt"
 });
 
 export const ORCHESTRATION_PATTERN = Object.freeze({
@@ -95,7 +104,8 @@ const ROUTE_PATTERNS = Object.freeze({
   echr: /(?:\b(?:echr|ecthr|hudoc|european convention|strasbourg)\b|европски(?:от)? суд за човекови права|есчп|ехрч|европска(?:та)? конвенција за човекови права|худок)/iu,
   common: /(?:\b(?:common law|england|wales|uk law|united kingdom|us law|u\.s\.|united states|precedent|stare decisis)\b|англо[- ]?американско право|англо[- ]?саксонско право|англиско право|право(?:то)? на обединетото кралство|американско право|судски преседан)/iu,
   international: /(?:\b(?:international law|treaty|convention|united nations|\bun\b|icc|icj|vienna convention)\b|меѓународно право|меѓународен договор|обединети нации|меѓународен суд на правдата|виенска конвенција)/iu,
-  comparison: /(?:спореди|споредба|компаратив|наспроти|versus|\bvs\.?\b|compare|comparative)/iu
+  comparison: /(?:спореди|споредба|компаратив|наспроти|versus|\bvs\.?\b|compare|comparative)/iu,
+  legal: /(?:право|правен|правна|закон|член|тужб|жалб|суд|адвокат|обвин|полици|кривич|управн|договор|нотар|рок|пресуд|решение|осигур|штета|работен однос|семејн|развод|притвор|казна|legal|law|court|lawsuit|appeal|statute|regulation|contract|police)/iu
 });
 
 const ROLE_BY_ID = Object.freeze(Object.fromEntries(
@@ -111,9 +121,12 @@ function routeKeys(question,{preferCorpus=false}={}) {
     if(ROUTE_PATTERNS[key].test(q)) selected.add(key);
   }
 
-  // Domestic law is the safe default only when the user did not name another
-  // jurisdiction or corpus explicitly.
-  if(!selected.size) selected.add("mk");
+  // Ordinary non-legal tasks are routed to the general GPT layer. Legal
+  // questions with no named foreign jurisdiction default conservatively to MK.
+  if(!selected.size){
+    if(ROUTE_PATTERNS.legal.test(q)) selected.add("mk");
+    else selected.add("general");
+  }
 
   // A comparison that names a foreign system but references Macedonian law
   // explicitly keeps MK as a separate specialist; it is never inferred as
@@ -133,14 +146,16 @@ export function buildAgentPlan(question, {preferCorpus=false, explicitMode=null}
     selected.add("mk");
   }
 
-  const jurisdictionKeys=[...selected].filter(k=>k!=="corpus");
+  const jurisdictionKeys=[...selected].filter(k=>k!=="corpus" && k!=="general");
   const comparative=ROUTE_PATTERNS.comparison.test(q) || jurisdictionKeys.length>1;
   const mode=explicitMode
     || (selected.has("corpus") && (preferCorpus || !comparative)
       ? ORCHESTRATOR_MODES.PASSIVE_CORPUS
-      : comparative
-        ? ORCHESTRATOR_MODES.COMPARATIVE
-        : ORCHESTRATOR_MODES.PROACTIVE_RESEARCH);
+      : selected.has("general") && selected.size===1
+        ? ORCHESTRATOR_MODES.GENERAL
+        : comparative
+          ? ORCHESTRATOR_MODES.COMPARATIVE
+          : ORCHESTRATOR_MODES.PROACTIVE_RESEARCH);
 
   const agents=[...selected].map(key=>AGENT_ROLES[key].id);
 
@@ -208,6 +223,13 @@ export function specialistInstructions(agentId) {
     "Never silently import another jurisdiction as controlling authority."
   ];
 
+  if(agentId===AGENT_ROLES.general.id){
+    shared.push(
+      "Handle ordinary non-legal questions and productivity tasks helpfully.",
+      "Never present general model knowledge as verified Macedonian law.",
+      "If a task becomes legal or high-stakes, preserve legal-source and Human Gate rules."
+    );
+  }
   if(agentId===AGENT_ROLES.corpus.id){
     shared.push(
       "Native AI Advokat corpus comes first.",
@@ -232,7 +254,9 @@ export function orchestratorInstructions(plan) {
   return [
     "You are AI Advokat, the Chief Legal Orchestrator and the only user-facing legal agent.",
     "Use manager-style orchestration: keep control of the conversation and call bounded specialists for sub-tasks.",
-    "Your task is legal research assistance, not autonomous legal representation.",
+    plan.mode===ORCHESTRATOR_MODES.GENERAL
+      ? "For ordinary non-legal questions, provide general GPT assistance. For legal or high-stakes claims, preserve AI Advokat source and Human Gate rules."
+      : "Your task is legal research assistance, not autonomous legal representation.",
     `MODE: ${plan.mode}. SPECIALISTS: ${agentList}. VERIFIER: ${plan.verifier}.`,
     "Never merge jurisdictions or imply that comparative authority is controlling law.",
     "For AI Advokat native documents, corpus content and exact provenance come first. If the corpus does not support a proposition, say so.",
@@ -297,6 +321,31 @@ export function orchestratorRuntimeReadiness(env={}) {
   });
 }
 
+export async function createOpenAIConversation(env) {
+  if(!openAIOrchestratorConfigured(env)){
+    return {ok:false,error:"openai_orchestrator_not_configured"};
+  }
+  let response;
+  try{
+    response=await fetch("https://api.openai.com/v1/conversations",{
+      method:"POST",
+      headers:{
+        "Authorization":`Bearer ${env.OPENAI_API_KEY}`,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({metadata:{application:"AI Advokat"}})
+    });
+  }catch(error){
+    return {ok:false,error:"openai_conversation_network_error",detail:String(error?.message || error).slice(0,180)};
+  }
+  let payload=null;
+  try{ payload=await response.json(); }catch{}
+  if(!response.ok || typeof payload?.id!=="string"){
+    return {ok:false,error:"openai_conversation_error",status:response.status};
+  }
+  return {ok:true,id:payload.id};
+}
+
 export function extractOpenAIResponseText(payload) {
   if(payload && typeof payload.output_text==="string" && payload.output_text.trim()) return payload.output_text.trim();
   if(!Array.isArray(payload?.output)) return null;
@@ -328,6 +377,9 @@ export async function runOpenAIOrchestrator(env, {
   corpusContext=[],
   externalContext=[],
   externalResearchEnabled=false,
+  webSearchEnabled=false,
+  attachments=[],
+  conversationId=null,
   maxOutputTokens=1600
 }={}) {
   if(!openAIOrchestratorConfigured(env)){
@@ -340,6 +392,13 @@ export async function runOpenAIOrchestrator(env, {
   }
 
   const model=env.OPENAI_MODEL.trim();
+  let activeConversationId=conversationId;
+  if(!activeConversationId){
+    const created=await createOpenAIConversation(env);
+    if(!created.ok) return created;
+    activeConversationId=created.id;
+  }
+
   const envelope=buildExecutionEnvelope(plan,{
     question:input,
     corpusContext,
@@ -364,12 +423,33 @@ export async function runOpenAIOrchestrator(env, {
     "<<<END_USER_QUESTION>>>"
   ].join("\n");
 
+  const userParts=[{type:"input_text",text:userContent}];
+  for(const attachment of (Array.isArray(attachments)?attachments:[]).slice(0,5)){
+    if(!attachment || typeof attachment!=="object") continue;
+    const filename=String(attachment.name || "attachment").slice(0,180);
+    if(attachment.kind==="image" && typeof attachment.dataUrl==="string" && attachment.dataUrl.startsWith("data:image/")){
+      userParts.push({type:"input_image",image_url:attachment.dataUrl,detail:"auto"});
+    }else if(attachment.kind==="file" && typeof attachment.base64==="string" && attachment.base64.length){
+      userParts.push({type:"input_file",file_data:attachment.base64,filename});
+    }else if(attachment.kind==="text" && typeof attachment.text==="string"){
+      userParts.push({type:"input_text",text:"ATTACHMENT: "+filename+"\n"+attachment.text.slice(0,120000)});
+    }
+  }
+
+  const tools=[];
+  if(webSearchEnabled && env?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"){
+    tools.push({type:"web_search"});
+  }
+
   const body={
     model,
     instructions:orchestratorInstructions(plan),
-    input:[{role:"user",content:userContent}],
+    reasoning:{effort:["low","medium","high"].includes(String(env?.OPENAI_REASONING_EFFORT || "")) ? String(env.OPENAI_REASONING_EFFORT) : "medium"},
+    input:[{role:"user",content:userParts}],
     max_output_tokens:maxOutputTokens,
-    store:false
+    store:false,
+    conversation:activeConversationId,
+    ...(tools.length ? {tools} : {})
   };
 
   let response;
@@ -412,6 +492,8 @@ export async function runOpenAIOrchestrator(env, {
     responseId:payload?.id || null,
     architecture:envelope.architecture,
     plan,
+    conversationId:activeConversationId,
+    toolMode:tools.length ? "web_search_enabled" : "no_external_tools",
     humanGate:"output_not_authorized_for_autonomous_legal_reliance"
   };
 }
