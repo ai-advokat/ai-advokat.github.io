@@ -49,7 +49,7 @@ jobs:
         with:
           node-version: "22"
       - name: Worker syntax
-        run: node --check src/index.js && node --check src/security.js && node --check src/legal-claim-validator.js && node --check src/corpus-versions.js && node --check src/agent-orchestrator.js && node --check src/casepilot.js
+        run: node --check src/index.js && node --check src/security.js && node --check src/legal-claim-validator.js && node --check src/corpus-versions.js && node --check src/agent-orchestrator.js && node --check src/casepilot.js && node --check assets/guide-router.js
       - name: Structural verification
         run: npm run verify
       - name: GPT orchestrator foundation tests
@@ -58,6 +58,8 @@ jobs:
         run: npm run test:casepilot
       - name: Zoran practical guides governance tests
         run: npm run test:guides
+      - name: Citizen guide router tests
+        run: npm run test:guide-router
       - name: Guides Human Gate resolution pack tests
         run: npm run test:guides-human-gate-pack
       - name: Professional Library governance tests
