@@ -5,6 +5,7 @@ import fs from "node:fs";
 const data=JSON.parse(fs.readFileSync("data/guides.json","utf8"));
 const taxonomy=JSON.parse(fs.readFileSync("data/guides-taxonomy-v2.json","utf8"));
 const reviewQueue=JSON.parse(fs.readFileSync("data/guides-human-review-queue.json","utf8"));
+const resolutionPack=JSON.parse(fs.readFileSync("data/guides-human-gate-resolution-pack-2026-10-04.json","utf8"));
 const html=fs.readFileSync("guides/index.html","utf8");
 const recordHtml=fs.readFileSync("guides/record.html","utf8");
 const sitemapXml=fs.readFileSync("sitemap.xml","utf8");
@@ -279,18 +280,119 @@ describe("Zoran guides library governance",()=>{
     assert.ok(!data.collection.numbering_note_mk.includes("откажани се"));
   });
 
-  test("G28 the legal/authorship review queue is fail-closed and does not mutate public legal labels",()=>{
+  test("G28 approved legal/authorship queue is implemented catalogue-only and release gates stay closed",()=>{
     assert.equal(reviewQueue.queue_id,"AI_ADVOKAT_GUIDES_HUMAN_REVIEW_QUEUE_2026-10-04");
+    assert.equal(reviewQueue.status,"implemented_catalogue_only");
+    assert.equal(reviewQueue.resolution_pack.status,"implemented_catalogue_only");
     assert.ok(reviewQueue.items.length>=7);
-    assert.ok(reviewQueue.items.every(x=>x.public_catalog_change_in_this_pr===false));
-    assert.ok(reviewQueue.items.some(x=>x.issue_id==="silence-of-administration-consistency"));
-    assert.ok(reviewQueue.items.some(x=>x.issue_id==="zpp-2027-transition-crosscheck"));
-    assert.ok(reviewQueue.items.some(x=>x.issue_id==="authorship-editorial-role-normalization"));
+    assert.ok(reviewQueue.items.every(x=>x.human_gate_status==="approved_for_implementation"));
+    assert.ok(reviewQueue.items.every(x=>x.implementation_status==="implemented_catalogue_only"));
+    assert.ok(reviewQueue.items.every(x=>x.implementation_catalogue_change===true));
+    assert.ok(reviewQueue.items.every(x=>x.source_document_change===false));
+    for(const [key,value] of Object.entries(reviewQueue.implementation)){
+      if(["status","implementation_branch","implemented_on","catalogue_and_ui_changes"].includes(key)) continue;
+      assert.equal(value,false,key);
+    }
+    assert.equal(resolutionPack.status,"implemented_catalogue_only");
   });
 
   test("G29 unused author_version_checked status is not emitted by the registry or UI",()=>{
     assert.ok(!data.records.some(x=>x.status==="author_version_checked"));
     assert.ok(!html.includes("author_version_checked"));
     assert.ok(!recordHtml.includes("author_version_checked"));
+  });
+
+  test("G30 U.br.148/2024 silence warning is implemented consistently on all four scoped records",()=>{
+    const ids=["guide-53-full-word-2026","guide-54-full-word-2026","guide-26-administrative-short","guide-administrative-v1"];
+    for(const id of ids){
+      const r=data.records.find(x=>x.id===id);
+      const n=(r.legal_notices||[]).find(x=>x.id==="u148-2024-silence-of-administration");
+      assert.ok(n,id);
+      assert.match(n.text_mk,/не применувајте фиксен дополнителен рок од 30 дена/);
+      assert.match(n.text_mk,/член 26 став 2/);
+      assert.equal(n.official_source.reference,"У.бр.148/2024");
+    }
+  });
+
+  test("G31 ZPP 151/2026 transition warning is implemented on the approved five-guide scope",()=>{
+    const ids=["guide-10-traffic","guide-40-full-word-2026","guide-59-full-word-2026","guide-05-workplace","guide-09-family"];
+    for(const id of ids){
+      const r=data.records.find(x=>x.id===id);
+      const n=(r.legal_notices||[]).find(x=>x.id==="zpp-151-2026-transition");
+      assert.ok(n,id);
+      assert.equal(n.official_source.published,"2026-07-08");
+      assert.equal(n.official_source.entry_into_force,"2026-07-16");
+      assert.equal(n.official_source.application_from,"2027-01-18");
+      assert.match(n.limitation_mk,/веќе започнати предмети/);
+    }
+  });
+
+  test("G32 Guide 05 names the exact workplace-harassment statute without claiming the conflict is settled",()=>{
+    const r=data.records.find(x=>x.id==="guide-05-workplace");
+    assert.equal(r.legal_issue.statute,"Закон за заштита од вознемирување на работно место");
+    assert.deepEqual(r.legal_issue.provisions,["чл. 18","чл. 22 ст. 4"]);
+    assert.deepEqual(r.legal_issue.source_versions,["79/2013","147/2015"]);
+    assert.equal(r.legal_issue.interpretation_status,"open_pending_authoritative_resolution");
+    assert.match(r.status_label,/Закон за заштита од вознемирување на работно место/);
+  });
+
+  test("G33 free legal aid review is bound to the exact approved file fingerprint",()=>{
+    const r=data.records.find(x=>x.id==="guide-free-legal-aid");
+    assert.equal(r.legal_review_binding.status,"author_confirmed_exact_artifact");
+    assert.equal(r.legal_review_binding.file,"Kako_da_pobaram_BPP_vizuelno_izdanie.pdf");
+    assert.equal(r.legal_review_binding.sha256,"1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e");
+    assert.equal(r.legal_review_binding.approved_by,"Zoran Stojankich");
+    assert.equal(r.legal_review_binding.approved_at,"2026-10-04T18:24:00+02:00");
+  });
+
+  test("G34 structured attribution separates author, source provider, review target, AI support and legacy branding",()=>{
+    for(const r of data.records){
+      assert.ok(r.attribution_public,r.id);
+      assert.ok(r.attribution_roles,r.id);
+      assert.equal(r.attribution_roles.ai_assisted_editorial_support.scope,"catalogue_metadata_and_editorial_governance");
+      assert.equal(r.attribution_roles.ai_assisted_editorial_support.legal_authority,false);
+      assert.equal(r.attribution_roles.human_gate_approval.pack_id,"AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04");
+    }
+    const delivered=data.records.find(x=>x.id==="guide-40-full-word-2026");
+    assert.equal(delivered.attribution_roles.author,null);
+    assert.equal(delivered.attribution_roles.source_provider,"адвокат Зоран Стојанкиќ");
+    const authored=data.records.find(x=>x.id==="guide-administrative-v1");
+    assert.equal(authored.attribution_roles.author,"адвокат Зоран Стојанкиќ");
+  });
+
+  test("G35 Administrative V1 and V2 expose complete YUCOM provenance without treating it as Macedonian positive law",()=>{
+    for(const id of ["guide-administrative-v1","guide-administrative-v2"]){
+      const r=data.records.find(x=>x.id===id);
+      assert.equal(r.provenance.reference_publisher,"Комитет правника за људска права – YUCOM");
+      assert.equal(r.provenance.reference_isbn,"978-86-82222-18-7");
+      assert.deepEqual(r.provenance.original_authors,["Теодора Томиќ Лазаревиќ","Драгиша Ќалиќ","Катарина Голубовиќ"]);
+      assert.match(r.provenance.public_note_mk,/не е извор на македонското позитивно право/);
+    }
+  });
+
+  test("G36 Paragraf.mk and Lex AI are preserved as provenance without an AI-generated inference",()=>{
+    const batch=data.records.filter(x=>x.source_role==="primary_full_word");
+    assert.equal(batch.length,26);
+    for(const r of batch){
+      assert.ok(r.attribution_roles.legacy_branding.includes("Paragraf.mk"),r.id);
+      assert.ok(r.attribution_roles.legacy_branding.includes("Lex AI"),r.id);
+      assert.match(r.legacy_branding_note_mk,/не се толкува како доказ дека текстот е AI-генериран/);
+    }
+  });
+
+  test("G37 public UI renders approved warnings and structured attribution while keeping documents and AI use locked",()=>{
+    assert.match(html,/Правно предупредување:/);
+    assert.match(html,/Јавна атрибуција:/);
+    assert.match(recordHtml,/Human Gate Pack 1–7/);
+    assert.match(recordHtml,/AI-поддршката не е правен авторитет/);
+    assert.match(recordHtml,/Историско\/изворно брендирање/);
+    assert.match(recordHtml,/Официјален извор:/);
+    assert.match(recordHtml,/Документ: не е јавно активиран/);
+    assert.match(recordHtml,/Целосната датотека и внесувањето во AI-базата не се активирани/);
+    assert.ok(data.records.every(x=>x.public_pdf===null));
+    assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
+    assert.equal(data.collection.human_gate_implementation.separate_closed_gates.public_pdf_release,false);
+    assert.equal(data.collection.human_gate_implementation.separate_closed_gates.rag_eligibility,false);
+    assert.equal(data.collection.human_gate_implementation.separate_closed_gates.production_corpus_write,false);
   });
 });
