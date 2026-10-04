@@ -32,7 +32,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 @media print{header,.toolbar,.actions,.audit,footer{display:none}.card{break-inside:avoid;box-shadow:none}.grid{display:block}.card{margin-bottom:12px}}
 </style>
 </head>
-<body data-catalog-build="guides-v2-2026-10-04">
+<body data-catalog-build="guides-v2-human-gate-2026-10-04">
 <a class="skip" href="#main">Прескокни до главната содржина</a>
 <header><div class="wrap top"><div class="brand">AI Advokat · Практични водичи</div><nav aria-label="Главна навигација"><a href="/">Почетна</a><a href="/#sources">Правни извори</a><a href="/#research">AI Истражувач</a><a href="/#publications">Трудови</a></nav></div></header>
 <main id="main"><div class="wrap">
@@ -111,17 +111,18 @@ function render(){
  const filtered=records.filter(x=>(!q||[x.display_title,x.title,x.category_label,x.subcategory_label,x.scope,x.guide_no,x.edition].join(" ").toLowerCase().includes(q))&&(!cat||x.category_code===cat)&&(!st||x.verification_level===st));
  const items=sortItems(filtered,sort);
  document.querySelector("#resultCount").textContent=items.length+" записи";
- document.querySelector("#cards").innerHTML=items.map(x=>`<article class="card">
+ document.querySelector("#cards").innerHTML=items.map(x=>{const notice=(x.legal_notices||[]).length?`<div class="notice-mini"><strong>Правно предупредување:</strong> ${x.legal_notices.map(n=>esc(n.title_mk)).join(" · ")}</div>`:"";return `<article class="card">
  <div class="badges"><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.display_format||x.format)}</span><span class="pill ${verificationClass(x.verification_level)}">${esc(x.verification_label)}</span><span class="pill lock">Документ: не е јавно активиран</span></div>
  <h2>${esc(x.display_title||x.title)}</h2>
  <div class="meta">${esc(x.category_label)}${x.subcategory_label&&x.subcategory_label!==x.category_label?" · "+esc(x.subcategory_label):""} · ${esc(x.edition_date)}${x.pages!=null?` · ${esc(x.pages)} стр.`:""}</div>
  <p class="scope">${esc(x.scope)}</p>
- <div class="source"><strong>Атрибуција од регистарот:</strong> ${esc(x.attribution)}<br><strong>Отпечаток SHA-256:</strong> <code>${esc((x.sha256||"").slice(0,16))}…</code></div>
+ ${notice}
+ <div class="source"><strong>Јавна атрибуција:</strong> ${esc(x.attribution_public||x.attribution)}<br><strong>Отпечаток SHA-256:</strong> <code>${esc((x.sha256||"").slice(0,16))}…</code></div>
  <div class="actions"><a class="btn primary" href="${esc(x.public_record_url)}">Отвори детален запис</a><button class="btn light" type="button" data-copy="${esc(x.public_record_url)}">Копирај линк</button></div>
- </article>`).join("")||'<div class="empty">Нема записи за избраните филтри.</div>';
+ </article>`}).join("")||'<div class="empty">Нема записи за избраните филтри.</div>';
  document.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",()=>copyLink(b.dataset.copy,b)));
 }
-fetch("/data/guides.json?v=20261004-catalog-v2",{cache:"no-store"}).then(r=>r.json()).then(d=>{
+fetch("/data/guides.json?v=20261004-human-gate-impl",{cache:"no-store"}).then(r=>r.json()).then(d=>{
  records=d.records.filter(x=>x.catalog_public===true&&x.public_record_enabled===true);
  const cats=[...new Map(records.map(x=>[x.category_code,x.category_label])).entries()].sort((a,b)=>a[1].localeCompare(b[1],"mk"));
  document.querySelector("#cat").insertAdjacentHTML("beforeend",cats.map(([code,label])=>`<option value="${esc(code)}">${esc(label)}</option>`).join(""));
