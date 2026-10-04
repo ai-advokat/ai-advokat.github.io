@@ -1,5 +1,6 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import {
   AGENT_ROLES,
   ORCHESTRATOR_MODES,
@@ -18,6 +19,11 @@ import {
   createKnowledgeIntakeRecord,
   knowledgeCorpusAnswerPolicy
 } from "../src/knowledge-intake.js";
+
+const architectureManifest=JSON.parse(fs.readFileSync("data/agent-architecture-v2.json","utf8"));
+const intakeManifest=JSON.parse(fs.readFileSync("data/knowledge-intake-policy.json","utf8"));
+const architecturePage=fs.readFileSync("agent-architecture.html","utf8");
+const workerSource=fs.readFileSync("src/index.js","utf8");
 
 describe("AI Advokat governed legal-agent architecture v2", () => {
   test("native corpus mode is corpus-first and keeps Macedonian verifier specialist", () => {
@@ -139,5 +145,31 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     const external=knowledgeCorpusAnswerPolicy({nativeSupport:false,externalResearchAuthorized:true});
     assert.equal(external.route,"external_research_separate");
     assert.equal(external.label,"External legal research");
+  });
+  test("architecture registry and public page expose the exact governed specialist set",()=>{
+    assert.equal(architectureManifest.architecture_id,"AI_ADVOKAT_GOVERNED_AGENT_ARCHITECTURE_v2");
+    assert.equal(architectureManifest.orchestration_pattern,"manager_agents_as_tools");
+    assert.equal(architectureManifest.current_runtime.public_provider_activation,false);
+    assert.equal(architectureManifest.agents.length,8);
+    assert.match(architecturePage,/Chief Legal Orchestrator/);
+    assert.match(architecturePage,/AI Advokat Knowledge Agent/);
+    assert.match(architecturePage,/Verification & Citation Agent/);
+    assert.match(architecturePage,/provider execution · separate activation/);
+  });
+
+  test("knowledge intake registry preserves originals and leaves downstream gates closed",()=>{
+    assert.equal(intakeManifest.policy_id,"AI_ADVOKAT_KNOWLEDGE_INTAKE_POLICY_v1");
+    assert.ok(intakeManifest.doctrine.includes("read_before_edit"));
+    assert.ok(intakeManifest.doctrine.includes("preserve_original"));
+    assert.equal(intakeManifest.default_gates.rag_eligibility,false);
+    assert.equal(intakeManifest.default_gates.production_corpus_write,false);
+    assert.equal(intakeManifest.default_gates.legal_corpus_promotion,false);
+  });
+
+  test("worker exposes planning and policy endpoints without public provider execution",()=>{
+    assert.match(workerSource,/\/api\/orchestrator\/plan/);
+    assert.match(workerSource,/\/api\/knowledge-intake-policy/);
+    assert.match(workerSource,/execution:"planning_only"/);
+    assert.match(workerSource,/providerExecution:"separate_activation_required"/);
   });
 });
