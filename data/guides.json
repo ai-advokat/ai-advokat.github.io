@@ -39,7 +39,7 @@
       "controlled_nonpublic_candidates": 0,
       "duplicate_ids": 0,
       "broken_version_links": 0,
-      "note": "Public PDF release for all 39 catalogue records is now explicitly authorized by the project lead, but activation remains asset-bound: no PDF URL is exposed until the exact file is verified and published. RAG/AI corpus, production corpus write, legal-corpus promotion and provider activation remain separate.",
+      "note": "Public PDF release remains authorized in principle, but publication is on hold pending a full content re-audit and fingerprinted cleaned final masters. No PDF URL is active.",
       "public_pdf_release_authorized": true
     },
     "public_experience": {
@@ -155,8 +155,22 @@
       "production_corpus_write": false,
       "legal_corpus_promotion": false,
       "provider_activation": false,
-      "publication_state": "authorized_pending_asset_binding",
-      "note": "This opens the public PDF release gate only. A record becomes downloadable only after its exact source is bound to a verified PDF asset and the public URL resolves successfully."
+      "publication_state": "hold_pending_full_content_reaudit",
+      "note": "This opens the public PDF release gate only. A record becomes downloadable only after its exact source is bound to a verified PDF asset and the public URL resolves successfully.",
+      "hold_reason": "Uploaded source bundles include earlier audited working versions and at least one later candidate; Claude/GPT findings must be reconciled and exact cleaned masters fingerprinted before any public PDF asset is bound.",
+      "hold_evidence": {
+        "source_package_38_63_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
+        "guide_53_known_issue": "uploaded FULL source still contains general 30-day wording requiring correction after U.br.148/2024 review",
+        "inheritance_candidate_status": "LEGAL_SOURCE_UPGRADE_2026_CANDIDATE / HUMAN GATE, not final"
+      },
+      "release_preconditions": [
+        "reconcile prior Claude/GPT audit findings",
+        "perform current source-by-source legal verification",
+        "produce cleaned final master for each guide",
+        "render and visually verify final DOCX/PDF",
+        "record final PDF SHA-256",
+        "bind public_pdf only after successful URL check"
+      ]
     }
   },
   "records": [
