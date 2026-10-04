@@ -7,7 +7,8 @@
 
   "vars": {
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFKQHY3Quvb_8JqH",
-    "OPENAI_MODEL": "gpt-6.1-sol"
+    "OPENAI_MODEL": "gpt-6.1-sol",
+    "OPENAI_REASONING_EFFORT": "medium"
   },
 
   "assets": {
