@@ -321,31 +321,6 @@ export function orchestratorRuntimeReadiness(env={}) {
   });
 }
 
-export async function createOpenAIConversation(env) {
-  if(!openAIOrchestratorConfigured(env)){
-    return {ok:false,error:"openai_orchestrator_not_configured"};
-  }
-  let response;
-  try{
-    response=await fetch("https://api.openai.com/v1/conversations",{
-      method:"POST",
-      headers:{
-        "Authorization":`Bearer ${env.OPENAI_API_KEY}`,
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({metadata:{application:"AI Advokat"}})
-    });
-  }catch(error){
-    return {ok:false,error:"openai_conversation_network_error",detail:String(error?.message || error).slice(0,180)};
-  }
-  let payload=null;
-  try{ payload=await response.json(); }catch{}
-  if(!response.ok || typeof payload?.id!=="string"){
-    return {ok:false,error:"openai_conversation_error",status:response.status};
-  }
-  return {ok:true,id:payload.id};
-}
-
 export function extractOpenAIResponseText(payload) {
   if(payload && typeof payload.output_text==="string" && payload.output_text.trim()) return payload.output_text.trim();
   if(!Array.isArray(payload?.output)) return null;
@@ -379,7 +354,7 @@ export async function runOpenAIOrchestrator(env, {
   externalResearchEnabled=false,
   webSearchEnabled=false,
   attachments=[],
-  conversationId=null,
+  history=[],
   maxOutputTokens=1600
 }={}) {
   if(!openAIOrchestratorConfigured(env)){
@@ -392,18 +367,25 @@ export async function runOpenAIOrchestrator(env, {
   }
 
   const model=env.OPENAI_MODEL.trim();
-  let activeConversationId=conversationId;
-  if(!activeConversationId){
-    const created=await createOpenAIConversation(env);
-    if(!created.ok) return created;
-    activeConversationId=created.id;
-  }
 
   const envelope=buildExecutionEnvelope(plan,{
     question:input,
     corpusContext,
     externalContext
   });
+
+  const sessionHistory=(Array.isArray(history)?history:[])
+    .slice(-12)
+    .map(item=>({
+      role:item?.role==="assistant" ? "assistant" : "user",
+      text:String(item?.text || "").normalize("NFKC").trim().slice(0,6000)
+    }))
+    .filter(item=>item.text)
+    .slice(-12);
+
+  const historyContext=sessionHistory.length
+    ? sessionHistory.map((item,index)=>`[${index+1}] ${item.role.toUpperCase()}: ${item.text}`).join("\n\n")
+    : "NONE";
 
   const userContent=[
     "<<<ORCHESTRATION_GRAPH>>>",
@@ -417,6 +399,10 @@ export async function runOpenAIOrchestrator(env, {
     "<<<EXTERNAL_LEGAL_RESEARCH>>>",
     externalResearchEnabled ? compactSourceContext(externalContext,"External legal research") : "NOT_AUTHORISED",
     "<<<END_EXTERNAL_LEGAL_RESEARCH>>>",
+    "",
+    "<<<SESSION_HISTORY_CONTEXT_ONLY_NOT_AUTHORITY>>>",
+    historyContext,
+    "<<<END_SESSION_HISTORY_CONTEXT_ONLY_NOT_AUTHORITY>>>",
     "",
     "<<<USER_QUESTION>>>",
     String(input || ""),
@@ -448,7 +434,6 @@ export async function runOpenAIOrchestrator(env, {
     input:[{role:"user",content:userParts}],
     max_output_tokens:maxOutputTokens,
     store:false,
-    conversation:activeConversationId,
     ...(tools.length ? {tools} : {})
   };
 
@@ -492,7 +477,8 @@ export async function runOpenAIOrchestrator(env, {
     responseId:payload?.id || null,
     architecture:envelope.architecture,
     plan,
-    conversationId:activeConversationId,
+    conversationPersistence:"browser_session_only_store_false",
+    historyItemsUsed:sessionHistory.length,
     toolMode:tools.length ? "web_search_enabled" : "no_external_tools",
     humanGate:"output_not_authorized_for_autonomous_legal_reliance"
   };
