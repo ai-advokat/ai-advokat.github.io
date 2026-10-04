@@ -12,6 +12,7 @@ import {
   openAIOrchestratorConfigured,
   orchestratorRuntimeReadiness,
   extractOpenAIResponseText,
+  extractOpenAIWebCitations,
   orchestratorInstructions
 } from "../src/agent-orchestrator.js";
 import {
@@ -118,6 +119,17 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.equal(extractOpenAIResponseText({status:"completed",output_text:"  Одговор  "}),"Одговор");
     assert.equal(extractOpenAIResponseText({output:[{type:"message",content:[{type:"output_text",text:"A"},{type:"output_text",text:"B"}]}]}),"A\n\nB");
     assert.equal(extractOpenAIResponseText({answer:"unsafe-shape"}),null);
+  });
+
+  test("Responses API web citations are extracted as safe source metadata", () => {
+    const citations=extractOpenAIWebCitations({
+      output:[{type:"message",content:[{type:"output_text",text:"x",annotations:[
+        {type:"url_citation",url:"https://example.com/a",title:"Example A"},
+        {type:"url_citation",url:"javascript:alert(1)",title:"Unsafe"},
+        {type:"url_citation",url:"https://example.com/a",title:"Duplicate"}
+      ]}]}]
+    });
+    assert.deepEqual(citations,[{url:"https://example.com/a",title:"Example A"}]);
   });
 
   test("orchestrator contract states corpus, external-research and jurisdiction boundaries", () => {
