@@ -1,0 +1,130 @@
+{
+  "schema_version": "2.0",
+  "taxonomy_id": "AI_ADVOKAT_GUIDE_TAXONOMY_v2",
+  "generated_on": "2026-10-04",
+  "doctrine": [
+    "controlled_categories",
+    "source_labels_preserved",
+    "public_labels_are_not_legal_approval",
+    "topic_relations_are_not_version_equivalence",
+    "authorship_and_legal_review_remain_separate_human_gates"
+  ],
+  "categories": [
+    {
+      "code": "criminal_justice",
+      "label_mk": "Кривична постапка и права",
+      "aliases": [
+        "Кривична постапка",
+        "Полиција и кривична постапка",
+        "Кривична постапка и извршување санкции"
+      ]
+    },
+    {
+      "code": "administrative_law",
+      "label_mk": "Управно право",
+      "aliases": [
+        "Управно право"
+      ]
+    },
+    {
+      "code": "private_notarial",
+      "label_mk": "Приватно и нотарско право",
+      "aliases": [
+        "Нотарски постапки и приватно право"
+      ]
+    },
+    {
+      "code": "civil_compensation",
+      "label_mk": "Надоместок и осигурување",
+      "aliases": [
+        "Осигурување и надоместок"
+      ]
+    },
+    {
+      "code": "access_to_justice",
+      "label_mk": "Пристап до правна помош",
+      "aliases": [
+        "Пристап до правна помош"
+      ]
+    },
+    {
+      "code": "labour_social",
+      "label_mk": "Работно и социјално право",
+      "aliases": [
+        "Работно право",
+        "Работно и социјално осигурување",
+        "Здравствено осигурување"
+      ]
+    },
+    {
+      "code": "family_property",
+      "label_mk": "Семејно и имотно право",
+      "aliases": [
+        "Семејно и имотно право"
+      ]
+    },
+    {
+      "code": "integrity",
+      "label_mk": "Антикорупција и укажувачи",
+      "aliases": [
+        "Антикорупција и укажувачи"
+      ]
+    }
+  ],
+  "verification_levels": [
+    {
+      "code": "legal_review_pending",
+      "label_mk": "Правна проверка потребна",
+      "meaning": "Нема доволна основа за посилна јавна ознака."
+    },
+    {
+      "code": "sources_checked",
+      "label_mk": "Проверени извори",
+      "meaning": "Проверени се наведени извори; ова не значи целосна правна верификација."
+    },
+    {
+      "code": "specific_point_checked",
+      "label_mk": "Проверен конкретен извор или рок",
+      "meaning": "Потврдена е конкретна точка; остатокот останува Human-Gated."
+    },
+    {
+      "code": "specific_provision_checked",
+      "label_mk": "Проверена конкретна законска одредба",
+      "meaning": "Усогласена е конкретно наведена одредба; не е blanket approval на водичот."
+    },
+    {
+      "code": "base_legal_reviewed",
+      "label_mk": "Основната верзија правно проверена",
+      "meaning": "Поширока правна проверка е евидентирана, но употребата и release остануваат Human-Gated."
+    },
+    {
+      "code": "editorial_review",
+      "label_mk": "Содржински редактирано · правна актуелност за проверка",
+      "meaning": "Редакцијата е завршена, но правната актуелност не е конечен release approval."
+    },
+    {
+      "code": "archive",
+      "label_mk": "Архивска верзија",
+      "meaning": "Историска/заменета верзија."
+    },
+    {
+      "code": "corrected_candidate",
+      "label_mk": "Коригиран кандидат",
+      "meaning": "Контролиран кандидат надвор од јавниот каталог додека не поминат одделните gates."
+    }
+  ],
+  "relation_types": [
+    {
+      "code": "same_topic",
+      "label_mk": "Сродна тема"
+    },
+    {
+      "code": "overlapping_scope",
+      "label_mk": "Преклопувачки опфат"
+    },
+    {
+      "code": "version_history",
+      "label_mk": "Историја на верзии"
+    }
+  ]
+}
