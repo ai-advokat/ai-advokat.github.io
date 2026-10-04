@@ -24,6 +24,7 @@ const architectureManifest=JSON.parse(fs.readFileSync("data/agent-architecture-v
 const intakeManifest=JSON.parse(fs.readFileSync("data/knowledge-intake-policy.json","utf8"));
 const architecturePage=fs.readFileSync("agent-architecture.html","utf8");
 const workerSource=fs.readFileSync("src/index.js","utf8");
+const wranglerConfig=fs.readFileSync("wrangler.jsonc","utf8");
 
 describe("AI Advokat governed legal-agent architecture v2", () => {
   test("native corpus mode is corpus-first and keeps Macedonian verifier specialist", () => {
@@ -171,5 +172,18 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.match(workerSource,/\/api\/knowledge-intake-policy/);
     assert.match(workerSource,/execution:"planning_only"/);
     assert.match(workerSource,/providerExecution:"separate_activation_required"/);
+  });
+
+  test("approved GPT-6.1 Sol target model is recorded without activating provider execution",()=>{
+    assert.equal(architectureManifest.model_selection.primary_model_id,"gpt-6.1-sol");
+    assert.equal(architectureManifest.model_selection.api,"OpenAI Responses API");
+    assert.equal(architectureManifest.model_selection.default_reasoning_effort,"medium");
+    assert.equal(architectureManifest.model_selection.escalation_reasoning_effort,"high");
+    assert.equal(architectureManifest.model_selection.production_provider_activation,false);
+    assert.equal(architectureManifest.current_runtime.approved_target_model,"gpt-6.1-sol");
+    assert.equal(architectureManifest.current_runtime.public_provider_activation,false);
+    assert.match(wranglerConfig,/"OPENAI_MODEL"\s*:\s*"gpt-6\.1-sol"/);
+    assert.doesNotMatch(wranglerConfig,/OPENAI_ORCHESTRATOR_ENABLED/);
+    assert.doesNotMatch(wranglerConfig,/OPENAI_API_KEY/);
   });
 });
