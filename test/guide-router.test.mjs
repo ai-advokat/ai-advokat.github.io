@@ -94,7 +94,11 @@ test("CGR10 homepage integrates clickable guide routing before statute-level AI 
   assert.match(html,/legalSlot\.append\(renderAssistantAnswer\(data\)\)/);
 });
 
-test("CGR11 guide routing does not alter file, RAG or production gates",()=>{
+test("CGR11 router governance metadata is active and guide routing does not alter file, RAG or production gates",()=>{
+  assert.equal(registry.collection.citizen_guide_router.status,"active_public_metadata_router");
+  assert.equal(registry.collection.citizen_guide_router.public_records_available,39);
+  assert.equal(registry.collection.citizen_guide_router.current_records_recommended_by_default,37);
+  assert.ok(registry.collection.public_experience.features.includes("citizen_guide_router_clickable_recommendations"));
   assert.ok(records.every(r=>r.public_pdf===null));
   assert.ok(records.every(r=>r.ai_use==="reference_only_until_human_gate"));
   assert.equal(registry.collection.public_experience.public_document_download,false);
