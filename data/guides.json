@@ -39,6 +39,26 @@
       "duplicate_ids": 0,
       "broken_version_links": 0,
       "note": "Final implementation control confirms registry/catalog/governance consistency. It does not convert per-guide legal review states into publication masters and does not authorize public files, RAG, production corpus write or legal-corpus promotion."
+    },
+    "public_experience": {
+      "version": "1.0",
+      "enabled_on": "2026-10-04",
+      "scope": "exact_38_public_catalog_records",
+      "detail_route": "/guides/record.html?id={record_id}",
+      "features": [
+        "search_and_filters",
+        "status_and_human_gate_badges",
+        "individual_public_metadata_record",
+        "provenance_and_fingerprint",
+        "version_history_links",
+        "related_guides",
+        "permanent_share_link",
+        "print_friendly_record"
+      ],
+      "public_document_download": false,
+      "rag_eligibility": false,
+      "production_corpus_write": false,
+      "legal_corpus_promotion": false
     }
   },
   "records": [
@@ -64,7 +84,9 @@
       "professional_use": "human_review_required",
       "sha256": "ab110bc706c9a3f09d10439ac2de65411adaaa4ba8aee9a8e129bcb7139bc9c3",
       "source_size_bytes": 114088,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-02-victim-edited-2026-10-01",
+      "public_record_enabled": true
     },
     {
       "id": "guide-02-victim-draft-2026-09-29",
@@ -88,7 +110,9 @@
       "professional_use": "human_review_required",
       "sha256": "93075e9ba8437d74deac92c30480e1d4eff21b7363fbfb0623522ec3b11c785c",
       "source_size_bytes": 154806,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-02-victim-draft-2026-09-29",
+      "public_record_enabled": true
     },
     {
       "id": "guide-05-workplace",
@@ -112,7 +136,9 @@
       "professional_use": "human_review_required",
       "sha256": "92152823bb2e0e7dd8eab6e6ee21c7d3e03e8031ecd3235cbde85b5e599de053",
       "source_size_bytes": 154127,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-05-workplace",
+      "public_record_enabled": true
     },
     {
       "id": "guide-09-family",
@@ -136,7 +162,9 @@
       "professional_use": "human_review_required",
       "sha256": "738aee4bc8f2115cdb6344a6fb179ae8f24899ad9d2b910ce4dfbf52bf1cb7fa",
       "source_size_bytes": 140801,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-09-family",
+      "public_record_enabled": true
     },
     {
       "id": "guide-10-traffic",
@@ -160,7 +188,9 @@
       "professional_use": "human_review_required",
       "sha256": "e5d9d109ced10e4c96545e07df8ed6dbbcc947d0d790478b5b76ac4429b6e7aa",
       "source_size_bytes": 144043,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-10-traffic",
+      "public_record_enabled": true
     },
     {
       "id": "guide-17-police",
@@ -184,7 +214,9 @@
       "professional_use": "human_review_required",
       "sha256": "361ca4bcafc737b1134fccecc2fde90bbcc9fb1f8165abf787b1cc2949958292",
       "source_size_bytes": 154339,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-17-police",
+      "public_record_enabled": true
     },
     {
       "id": "guide-21-witness",
@@ -208,7 +240,9 @@
       "professional_use": "human_review_required",
       "sha256": "f7f14e628fde1041d3905f91a2beaae643fb89e02873efabe4fad81c7ccd0bce",
       "source_size_bytes": 125168,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-21-witness",
+      "public_record_enabled": true
     },
     {
       "id": "guide-22-corruption",
@@ -232,7 +266,9 @@
       "professional_use": "human_review_required",
       "sha256": "a5635a61432aefb2a053cb49c3c8aed1967c254943dee150367e64a5eb632eff",
       "source_size_bytes": 135673,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-22-corruption",
+      "public_record_enabled": true
     },
     {
       "id": "guide-26-administrative-short",
@@ -256,7 +292,9 @@
       "professional_use": "human_review_required",
       "sha256": "c06dbab1855db726004be2b0f66f10978f33e0f1a29417cdc9acb0cc682d9889",
       "source_size_bytes": 164939,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-26-administrative-short",
+      "public_record_enabled": true
     },
     {
       "id": "guide-administrative-v1",
@@ -280,7 +318,9 @@
       "professional_use": "human_review_required",
       "sha256": "fe052ff4a005c8f10f9b544b25a3d8ad7dc8cb72ad3c039d09744183a7fb225e",
       "source_size_bytes": 209410,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-administrative-v1",
+      "public_record_enabled": true
     },
     {
       "id": "guide-choose-lawyer",
@@ -304,7 +344,9 @@
       "professional_use": "human_review_required",
       "sha256": "2075c26cbb850fee591383352ff47a8abcf9bd3794c6f9b7fe8cf41700c4db8c",
       "source_size_bytes": 140473,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-choose-lawyer",
+      "public_record_enabled": true
     },
     {
       "id": "guide-free-legal-aid",
@@ -328,7 +370,9 @@
       "professional_use": "human_review_required",
       "sha256": "1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e",
       "source_size_bytes": 108040,
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-free-legal-aid",
+      "public_record_enabled": true
     },
     {
       "id": "guide-38-full-word-2026",
@@ -355,7 +399,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-38-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-39-full-word-2026",
@@ -383,7 +429,9 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "review_note": "Тековната страница на ФЗО наведува 15 дена за жалба против првостепено решение; конкретната постапка/право може да има дополнителни правила.",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-39-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-40-full-word-2026",
@@ -410,7 +458,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-40-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-41-full-word-2026",
@@ -437,7 +487,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-41-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-42-full-word-2026",
@@ -464,7 +516,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-42-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-43-full-word-2026",
@@ -491,7 +545,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-43-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-44-full-word-2026",
@@ -518,7 +574,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-44-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-45-full-word-2026",
@@ -545,7 +603,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-45-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-46-full-word-2026",
@@ -572,7 +632,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-46-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-47-full-word-2026",
@@ -599,7 +661,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-47-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-48-full-word-2026",
@@ -626,7 +690,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-48-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-49-full-word-2026",
@@ -653,7 +719,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-49-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-50-full-word-2026",
@@ -680,7 +748,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-50-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-51-full-word-2026",
@@ -708,7 +778,9 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "review_note": "Член 106 став 1 ЗОУП предвидува 15 дена од доставувањето/известувањето, освен ако со посебен закон е определен подолг рок.",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-51-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-52-full-word-2026",
@@ -736,7 +808,9 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "review_note": "Член 106 став 1 ЗОУП предвидува 15 дена од доставувањето/известувањето, освен ако со посебен закон е определен подолг рок.",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-52-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-53-full-word-2026",
@@ -764,7 +838,9 @@
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
       "review_note": "P1: текстот дека основниот рок е 30 дена и кај молчење не смее да се користи како фиксен преклузивен рок; Уставниот суд со У.бр.148/2024 го укина делот „во рок од 30 дена“ од член 26 став 2 ЗУС.",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-53-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-54-full-word-2026",
@@ -791,7 +867,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-54-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-55-full-word-2026",
@@ -818,7 +896,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-55-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-56-full-word-2026",
@@ -845,7 +925,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-56-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-57-full-word-2026",
@@ -872,7 +954,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-57-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-58-full-word-2026",
@@ -899,7 +983,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-58-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-59-full-word-2026",
@@ -926,7 +1012,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-59-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-60-full-word-2026",
@@ -953,7 +1041,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-60-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-61-full-word-2026",
@@ -980,7 +1070,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-61-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-62-full-word-2026",
@@ -1007,7 +1099,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-62-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-63-full-word-2026",
@@ -1034,7 +1128,9 @@
       "source_format": "docx",
       "source_package": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip",
       "source_package_sha256": "5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172",
-      "catalog_public": true
+      "catalog_public": true,
+      "public_record_url": "/guides/record.html?id=guide-63-full-word-2026",
+      "public_record_enabled": true
     },
     {
       "id": "guide-administrative-v2",
@@ -1083,7 +1179,9 @@
         "public_release": "not_authorized",
         "rag_eligibility": "not_authorized",
         "production_corpus_write": "not_authorized"
-      }
+      },
+      "public_record_url": null,
+      "public_record_enabled": false
     }
   ]
 }
