@@ -1,6 +1,6 @@
 {
   "run_id": "LIOE-2026-0002",
-  "case_id": null,
+  "case_id": "PR-97",
   "started_at": "2026-10-06T00:08:00+02:00",
   "finished_at": null,
   "record_origin": "LIVE_LIOE",
@@ -27,7 +27,8 @@
     "/architecture/AI_ADVOKAT_LEGAL_OPERATING_PROTOCOL.md",
     "/data/legal-operating-protocol-v1.json",
     "/data/agent-architecture-v2.json",
-    "/data/human-gate-decision-ledger.json"
+    "/data/human-gate-decision-ledger.json",
+    "https://github.com/ai-advokat/ai-advokat.github.io/pull/97"
   ],
   "source_verification_state": "VERIFIED",
   "current_law_claim_material": false,
