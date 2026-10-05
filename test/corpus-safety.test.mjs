@@ -14,7 +14,7 @@ import { generateImportSql } from "../scripts/legal-ndjson-to-sql.mjs";
 import { createD1, seedArticles } from "./d1-shim.mjs";
 import { loadWorker } from "./load-worker.mjs";
 
-const { worker } = await loadWorker();
+const { worker, workerModule } = await loadWorker();
 const BASE = "https://ai-advokat-github-io.aiadvokat16.workers.dev";
 const SHA = "a".repeat(64);
 const META = { instrument_key: "mk:test", instrument_title: "Закон за тест", version_id: "v-test", version_label: "v-test",
@@ -128,6 +128,44 @@ describe("F1 parser v0.3", () => {
     const seed = ["MK", META.instrument_key, META.version_id, "ART", "25-а", SHA].join(":");
     assert.equal(p.records[0].canonical_id, "MK:" + crypto.createHash("sha256").update(seed).digest("hex").slice(0, 32));
     assert.equal(splitArticles("Член 25-а\n(1) x")[0].number, "25-а");
+  });
+});
+
+
+
+describe("F4b governed article cross-reference extraction", () => {
+  test("XR1 explicit Macedonian range expands deterministically", () => {
+    assert.deepEqual(
+      workerModule.extractArticleCrossReferences("Постапката се спроведува согласно членовите 483 до 490 од овој закон."),
+      ["483","484","485","486","487","488","489","490"]
+    );
+  });
+
+  test("XR2 explicit lists and lettered articles are preserved without duplicates", () => {
+    assert.deepEqual(
+      workerModule.extractArticleCrossReferences("Согласно чл. 12, 13 и 14-а, а во врска со член 12."),
+      ["12","13","14-а"]
+    );
+  });
+
+  test("XR3 bare numbers, dates and paragraph numbers are not treated as article references", () => {
+    assert.deepEqual(
+      workerModule.extractArticleCrossReferences("Рокот е 30 дена, датумот е 08.07.2026, а ставот е (2)."),
+      []
+    );
+  });
+
+  test("XR4 suspiciously wide ranges are not expanded", () => {
+    assert.deepEqual(
+      workerModule.extractArticleCrossReferences("Се применуваат членовите 1 до 500."),
+      []
+    );
+  });
+
+  test("XR5 one-hop extraction is capped", () => {
+    const refs=workerModule.extractArticleCrossReferences("членовите 100 до 120",{max:12});
+    assert.equal(refs.length,12);
+    assert.deepEqual(refs,["100","101","102","103","104","105","106","107","108","109","110","111"]);
   });
 });
 
