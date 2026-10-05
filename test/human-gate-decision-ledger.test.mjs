@@ -60,3 +60,10 @@ describe("Human Gate Decision Ledger",()=>{
     }),false);
   });
 });
+
+
+  test("HGL7 Legal Operating Protocol gates are explicitly registered",()=>{
+    for(const gate of ["current_law_verification","corpus_promotion","provider_activation"]){
+      assert.ok(ledger.gate_types.includes(gate),`missing gate type ${gate}`);
+    }
+  });
