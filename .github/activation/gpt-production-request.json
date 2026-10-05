@@ -22,7 +22,7 @@
   "note": "No API key is stored in this file. The workflow must fail before deployment if the secret or paid quota is unavailable.",
   "last_redeploy": {
     "requested_on": "2026-10-05",
-    "target_commit": "e8b854a3b5e50d9d77e06bac90b51e35f8039e29",
-    "reason": "Deploy governed article-level corpus bridge, corrected runtime labels and chat latency optimisations after successful PR #90 safety checks."
+    "target_commit": "33624f40ad10c0e1aaa472acc36d2fa1e7e2b4d6",
+    "reason": "Deploy PR #92 private fingerprint-verified Guide Vault and governed full-guide reading after all PR and main security checks passed."
   }
 }
