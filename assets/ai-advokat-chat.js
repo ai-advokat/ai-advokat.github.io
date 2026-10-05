@@ -19,11 +19,15 @@
   const exportBtn=$("#aiChatExport");
   const micBtn=$("#aiChatMic");
   const emptyTemplate=$("#aiChatEmptyTemplate");
+  const guideVaultImport=$("#aiGuideVaultImport");
+  const guideVaultClear=$("#aiGuideVaultClear");
+  const guideVaultFiles=$("#aiGuideVaultFiles");
+  const guideVaultStatus=$("#aiGuideVaultStatus");
 
   let abortController=null;
   let mode="auto";
   let attachments=[];
-  let guideRecordsPromise=null;
+  let guideRegistryPromise=null;
   let currentId=null;
   const chats=new Map();
 
@@ -136,6 +140,22 @@
       });
       if(legalLinks.childElementCount){legalBox.append(legalLinks);body.append(legalBox);}
     }
+    if(Array.isArray(m.guideSources) && m.guideSources.length){
+      const guideBox=document.createElement("div");guideBox.className="ai-msg-source";
+      const guideLabel=document.createElement("strong");guideLabel.textContent="Прочитани водичи";
+      guideBox.append(guideLabel);
+      const guideLinks=document.createElement("div");guideLinks.className="ai-msg-tools";
+      m.guideSources.slice(0,4).forEach((src,i)=>{
+        const href=safeHttpUrl(src?.url);
+        const labelText=(src?.title||("Водич "+(i+1))).slice(0,100);
+        if(href){
+          const a=document.createElement("a");a.href=href;a.target="_blank";a.rel="noopener noreferrer";a.textContent=labelText;guideLinks.append(a);
+        }else{
+          const span=document.createElement("span");span.textContent=labelText;guideLinks.append(span);
+        }
+      });
+      if(guideLinks.childElementCount){guideBox.append(guideLinks);body.append(guideBox);}
+    }
     if(Array.isArray(m.sources) && m.sources.length){
       const sourceBox=document.createElement("div");sourceBox.className="ai-msg-source";
       const label=document.createElement("strong");label.textContent="Web извори";
@@ -165,13 +185,75 @@
     return article;
   }
 
-  async function fetchGuides(){
-    if(!guideRecordsPromise){
-      guideRecordsPromise=fetch("/data/guides.json?v=20261004-v2-final-master",{cache:"no-store"})
-        .then(r=>r.ok?r.json():Promise.reject(new Error("guides")))
-        .then(d=>Array.isArray(d.records)?d.records:[]);
+  async function fetchGuideRegistry(){
+    if(!guideRegistryPromise){
+      guideRegistryPromise=fetch("/data/guides.json?v=20261005-private-guide-reading",{cache:"no-store"})
+        .then(r=>r.ok?r.json():Promise.reject(new Error("guides")));
     }
-    return guideRecordsPromise;
+    return guideRegistryPromise;
+  }
+  async function fetchGuides(){
+    const d=await fetchGuideRegistry();
+    return Array.isArray(d?.records)?d.records:[];
+  }
+
+  async function refreshGuideVaultStatus(){
+    if(!guideVaultStatus) return;
+    const vault=window.AIAdvokatGuideVault;
+    if(!vault){
+      guideVaultStatus.textContent="Guide Vault · недостапен";
+      return;
+    }
+    try{
+      const state=await vault.summary();
+      guideVaultStatus.textContent=state.available ? `Guide Vault · ${state.count} водичи локално` : "Guide Vault · browser storage недостапен";
+    }catch{
+      guideVaultStatus.textContent="Guide Vault · статус недостапен";
+    }
+  }
+
+  async function guideDocumentsForMatches(guides){
+    const vault=window.AIAdvokatGuideVault;
+    if(!vault) return [];
+    try{return await vault.documentsForGuides(guides,{max:2});}
+    catch{return [];}
+  }
+
+  if(guideVaultImport && guideVaultFiles){
+    guideVaultImport.addEventListener("click",()=>guideVaultFiles.click());
+    guideVaultFiles.addEventListener("change",async()=>{
+      const files=[...guideVaultFiles.files];
+      guideVaultFiles.value="";
+      if(!files.length) return;
+      const vault=window.AIAdvokatGuideVault;
+      if(!vault){alert("Guide Vault не е достапен во овој browser.");return;}
+      guideVaultImport.disabled=true;
+      if(guideVaultStatus) guideVaultStatus.textContent="Guide Vault · проверка на fingerprint…";
+      try{
+        const registry=await fetchGuideRegistry();
+        const result=await vault.importFiles(files,registry);
+        await refreshGuideVaultStatus();
+        const message=[
+          `Вчитани: ${result.imported}`,
+          `Одбиени: ${result.rejected}`,
+          `Прескокнати: ${result.skipped}`
+        ].join(" · ");
+        alert("Guide Vault\n"+message);
+      }catch(error){
+        if(guideVaultStatus) guideVaultStatus.textContent="Guide Vault · вчитувањето не успеа";
+        alert("Водичите не се вчитани: "+String(error?.message||error));
+      }finally{
+        guideVaultImport.disabled=false;
+      }
+    });
+  }
+  if(guideVaultClear){
+    guideVaultClear.addEventListener("click",async()=>{
+      const vault=window.AIAdvokatGuideVault;
+      if(!vault) return;
+      await vault.clear();
+      await refreshGuideVaultStatus();
+    });
   }
   async function guideMatches(q){
     try{
@@ -293,6 +375,7 @@
 
     try{
       const [guides,encoded]=await Promise.all([guidePromise,encodePromise]);
+      const guideDocuments=await guideDocumentsForMatches(guides);
       updateAssistantPlaceholder(assistantIndex,{guides});
       const r=await fetch(CHAT_API_BASE+"/api/chat",{
         method:"POST",
@@ -303,6 +386,7 @@
           mode:activeMode(),
           webSearch:activeMode()==="web",
           guideIds:guides.map(g=>g.id),
+          guideDocuments,
           history:historyForApi,
           attachments:encoded
         })
@@ -315,15 +399,20 @@
           guides,
           sources:Array.isArray(d.sources)?d.sources:[],
           legalSources:Array.isArray(d.legalSources)?d.legalSources:[],
+          guideSources:Array.isArray(d.guideSources)?d.guideSources:[],
           sourceLabel:d.sourceMode==="ai_advokat_article_corpus_first"
             ?"AI Advokat article-level corpus first · верзија и Human Gate се прикажани во изворите."
             :d.sourceMode==="ai_advokat_article_corpus_plus_external_web"
               ?"AI Advokat article-level corpus + одделно означено Web истражување."
               :d.sourceMode==="ai_advokat_article_corpus_gate"
                 ?"AI Advokat corpus gate · недостига доволно потврден корпус за сигурен правен заклучок."
-                :d.sourceMode==="ai_advokat_catalogue_context_first"
-                  ?"AI Advokat catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
-                  :(d.webSearchUsed===true?"External legal research · Web извори":"GPT general/proactive assistance")
+                :d.sourceMode==="ai_advokat_legal_corpus_plus_guides"
+                  ?"AI Advokat законски corpus + fingerprint-верификувани целосни водичи · Human Gate."
+                  :d.sourceMode==="ai_advokat_guides_fulltext_first"
+                    ?"Fingerprint-верификувани целосни водичи · секундарен материјал под Human Gate."
+                    :d.sourceMode==="ai_advokat_catalogue_context_first"
+                      ?"AI Advokat catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
+                      :(d.webSearchUsed===true?"External legal research · Web извори":"GPT general/proactive assistance")
         });
       }else if(d?.error==="gpt_provider_locked"){
         const fallback=selectedFiles.length?{ok:false,error:"attachments_need_gpt"}:await fallbackSourceAssistant(q);
@@ -383,5 +472,5 @@
     else provider.textContent="GPT-6.1 Sol target · provider activation pending";
   }).catch(()=>{});
 
-  load();render();renderAttachments();autoSize();
+  load();render();renderAttachments();autoSize();refreshGuideVaultStatus();
 })();
