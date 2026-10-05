@@ -1321,6 +1321,8 @@ const CHAT_MAX_GUIDE_DOCUMENTS=2;
 const CHAT_ATTACHMENT_MAX_BASE64=5_500_000;
 const CHAT_GUIDE_DOCUMENT_MAX_BASE64=3_500_000;
 const GUIDE_DOCX_MIME="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const GUIDE_PDF_MIME="application/pdf";
+const GUIDE_ALLOWED_MIME=new Set([GUIDE_DOCX_MIME,GUIDE_PDF_MIME]);
 const CHAT_ALLOWED_FILE_MIME=new Set([
   "application/pdf",
   "application/msword",
@@ -1374,7 +1376,9 @@ function guideAllowedNames(record){
   return new Set([
     record?.source_file,
     record?.candidate_artifact?.docx_file,
-    record?.public_master_artifact?.docx_file
+    record?.candidate_artifact?.pdf_file,
+    record?.public_master_artifact?.docx_file,
+    record?.public_master_artifact?.pdf_file
   ].filter(Boolean).map(guideBasename));
 }
 
@@ -1382,7 +1386,9 @@ function guideAllowedHashes(record){
   return new Set([
     record?.sha256,
     record?.candidate_artifact?.docx_sha256,
-    record?.public_master_artifact?.docx_sha256
+    record?.candidate_artifact?.pdf_sha256,
+    record?.public_master_artifact?.docx_sha256,
+    record?.public_master_artifact?.pdf_sha256
   ].filter(v=>/^[0-9a-f]{64}$/i.test(String(v || ""))).map(v=>String(v).toLowerCase()));
 }
 
@@ -1422,7 +1428,7 @@ async function validateGuideDocuments(request,env,payload){
     const name=guideBasename(cleanQuery(raw.name,220));
     const mime=cleanQuery(raw.mime,160);
     const claimedHash=String(raw.sha256 || "").toLowerCase();
-    if(!guideId || !name || mime!==GUIDE_DOCX_MIME || !/^[0-9a-f]{64}$/.test(claimedHash)){
+    if(!guideId || !name || !GUIDE_ALLOWED_MIME.has(mime) || !/^[0-9a-f]{64}$/.test(claimedHash)){
       return {ok:false,error:"invalid_guide_document_metadata"};
     }
     const record=records.find(r=>String(r.id)===guideId);
@@ -1434,6 +1440,8 @@ async function validateGuideDocuments(request,env,payload){
       return {ok:false,error:"guide_document_not_authorized"};
     }
     if(!guideAllowedNames(record).has(name)) return {ok:false,error:"guide_document_filename_mismatch"};
+    const extensionMime=/\.pdf$/i.test(name) ? GUIDE_PDF_MIME : (/\.docx$/i.test(name) ? GUIDE_DOCX_MIME : null);
+    if(!extensionMime || extensionMime!==mime) return {ok:false,error:"guide_document_mime_mismatch"};
 
     const bytes=bytesFromBase64(raw.base64);
     if(!bytes || bytes.byteLength<1 || bytes.byteLength>2_500_000) return {ok:false,error:"invalid_guide_document_payload"};
