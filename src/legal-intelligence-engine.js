@@ -50,6 +50,8 @@ function requiredGateTypes(q,profile){
   const gates=new Set();
   if(profile.id==="L3_CONSEQUENTIAL")gates.add("author_approval");
   if(profile.id==="L4_LEGAL_TRUTH_GOVERNANCE"){
+    if(has(q,["прогласи ја оваа верзија","прогласи за важечк","current law promotion","legal status promotion"]))gates.add("current_law_verification");
+    if(has(q,["corpus promotion","legal corpus promotion","промовирај corpus","промовирај во корпус"]))gates.add("corpus_promotion");
     if(has(q,["production corpus","production corpus write"]))gates.add("production_corpus_write");
     if(has(q,["rag eligibility","rag_eligibility","rag promotion"]))gates.add("rag_eligibility");
     if(has(q,["public release","јавна објава"]))gates.add("public_release");
