@@ -2,7 +2,7 @@
   "run_id": "LIOE-2026-0002",
   "case_id": "PR-97",
   "started_at": "2026-10-06T00:08:00+02:00",
-  "finished_at": null,
+  "finished_at": "2026-10-05T22:29:07Z",
   "record_origin": "LIVE_LIOE",
   "mission_profile": "L3_CONSEQUENTIAL",
   "problem_class": "lioe_runtime_observability_and_real_run_collection",
@@ -30,26 +30,27 @@
     "/data/human-gate-decision-ledger.json",
     "https://github.com/ai-advokat/ai-advokat.github.io/pull/97",
     "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37382628931",
-    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37382628971"
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37382628971",
+    "https://github.com/ai-advokat/ai-advokat.github.io/commit/3eb823aeef5e9fec79a4b220a8d107ee62631f9f"
   ],
   "source_verification_state": "VERIFIED",
   "current_law_claim_material": false,
   "temporal_verification_state": "NOT_REQUIRED",
   "jurisdiction_verification_state": "NOT_REQUIRED",
-  "human_review_state": "PENDING",
+  "human_review_state": "APPROVED",
   "required_gate_types": [
     "github_merge"
   ],
   "gate_decisions": {
-    "github_merge": "pending"
+    "github_merge": "approved"
   },
-  "implementation_state": "STAGED",
+  "implementation_state": "IMPLEMENTED",
   "rollback_reference": "e70f8b2bc6419dd89441a57cf811ee70e4778784",
   "legal_stress_test_state": "PASSED",
   "adversarial_review_state": "PASSED",
   "verification_state": "PASSED",
-  "outcome_state": "PARTIAL_SUCCESS",
-  "release_status": "READY_FOR_MERGE",
+  "outcome_state": "SUCCESS",
+  "release_status": "CLOSED",
   "first_pass_verification": false,
   "verification_attempts": 2,
   "correction_required": true,
@@ -59,12 +60,12 @@
   "provider_or_tool_failures": [],
   "fallback_mode": "NONE",
   "data_classification": "PUBLIC",
-  "elapsed_ms": null,
+  "elapsed_ms": 1267000,
   "tool_calls": null,
   "measured_cost": null,
   "metric_eligibility": {
-    "effectiveness": false,
-    "time": false,
+    "effectiveness": true,
+    "time": true,
     "activation": false,
     "tooling": false,
     "cost": false
@@ -73,6 +74,7 @@
     "Live record opened while the LIOE implementation mission is in progress.",
     "The record will not be closed as SUCCESS unless executable CI verification and the named GitHub merge gate are both evidenced.",
     "First focused LIOE CI attempt passed syntax, JSON governance, unit tests, Chief Orchestrator integration, all 9 canonical legal eval cases and both real-run record checks; the job failed only because shallow checkout made the base-SHA diff unavailable.",
-    "Second CI iteration passed all six PR checks: security tests, activation safety, LIOE governance, corpus safety, membership safety and relevance safety."
+    "Second CI iteration passed all six PR checks: security tests, activation safety, LIOE governance, corpus safety, membership safety and relevance safety.",
+    "PR #97 was squash-merged to main at 2026-10-05T22:29:07Z after all six final PR checks passed."
   ]
 }
