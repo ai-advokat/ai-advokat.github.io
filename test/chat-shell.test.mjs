@@ -227,3 +227,21 @@ test("CHAT23 Private Guide Vault supports first-wave PDF guides as well as DOCX"
   assert.match(worker,/guide_document_mime_mismatch/);
   assert.match(html,/accept="\.zip,\.docx,\.pdf,/);
 });
+
+
+test("CHAT24 GPT legal corpus context expands explicit same-version article cross-references",()=>{
+  assert.match(worker,/extractArticleCrossReferences/);
+  assert.match(worker,/expandArticleCrossReferences/);
+  assert.match(worker,/expandReferences:true/);
+  assert.match(worker,/maxReferences:12/);
+  assert.match(worker,/REFERENCE_ROLE:/);
+  assert.match(worker,/explicit_cross_reference/);
+  assert.match(worker,/legalCrossReferenceCount/);
+});
+
+test("CHAT25 legal cross-reference expansion remains one-hop and version-bound",()=>{
+  assert.match(worker,/primaryArticles\.slice\(0,3\)/);
+  assert.match(worker,/rowByNumber/);
+  assert.match(worker,/loadResolvedCorpus/);
+  assert.doesNotMatch(worker,/expandArticleCrossReferences\([^\n]*crossReferenceArticles/);
+});
