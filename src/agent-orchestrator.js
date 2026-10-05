@@ -1,3 +1,5 @@
+import { buildLegalIntelligencePlan, VERSION as LIOE_VERSION, SPEC_PATH as LIOE_SPEC_PATH } from "./legal-intelligence-engine.js";
+
 // AI Advokat — governed legal-agent orchestration architecture.
 // V2 implements the manager-style contract requested by the author:
 // one user-facing Chief Legal Orchestrator, bounded specialist agents,
@@ -90,6 +92,7 @@ export const LEGAL_OPERATING_PROTOCOL = Object.freeze({
   id:"AI_ADVOKAT_LEGAL_OPERATING_PROTOCOL_v1",
   document:"/data/legal-operating-protocol-v1.json",
   directive:"/architecture/AI_ADVOKAT_LEGAL_OPERATING_PROTOCOL.md",
+  executionEngine:Object.freeze({id:"AI_ADVOKAT_LIOE_v1",version:LIOE_VERSION,specification:LIOE_SPEC_PATH,createsLegalAuthority:false}),
   cycle:Object.freeze(["intake","knowledge","system_map","diagnosis","specialist_routing","options","legal_stress_test","authority_gate","solution_design","implementation","adversarial_review","verify","learn"]),
   createsLegalAuthority:false,
   humanGateUnchanged:true
@@ -167,10 +170,12 @@ export function buildAgentPlan(question, {preferCorpus=false, explicitMode=null}
           : ORCHESTRATOR_MODES.PROACTIVE_RESEARCH);
 
   const agents=[...selected].map(key=>AGENT_ROLES[key].id);
+  const legalIntelligenceEngine=buildLegalIntelligencePlan(q,{mode,selectedAgents:agents});
 
   return Object.freeze({
     mode,
     legalOperatingProtocol:LEGAL_OPERATING_PROTOCOL,
+    legalIntelligenceEngine,
     orchestrator:AGENT_ROLES.chief.id,
     agents,
     verifier:AGENT_ROLES.verify.id,
@@ -185,7 +190,11 @@ export function buildAgentPlan(question, {preferCorpus=false, explicitMode=null}
       externalResearchMustBeLabelled:true,
       externalResearchIsSeparateStep:true,
       humanGateRequiredForCurrentLawPromotion:true,
-      humanGateRequiredForCorpusPromotion:true
+      humanGateRequiredForCorpusPromotion:true,
+      minimalSufficientSpecialistActivation:true,
+      lioeMissionProfile:legalIntelligenceEngine.mission_profile.id,
+      legalStressTestRequired:legalIntelligenceEngine.legal_stress_test.required,
+      runRecordRequired:legalIntelligenceEngine.observability.run_record_required
     })
   });
 }
@@ -201,6 +210,13 @@ export function buildExecutionGraph(plan) {
         execution:"mandatory_for_legal_tasks",
         cycle:LEGAL_OPERATING_PROTOCOL.cycle,
         rule:"Structure the problem before specialist research; the protocol creates no legal authority and cannot bypass any Human Gate."
+      }),
+      Object.freeze({
+        id:"legal_intelligence_engine",
+        execution:plan.legalIntelligenceEngine?.engaged===false?"bypassed_for_general_task":"mandatory_for_legal_tasks",
+        engine:plan.legalIntelligenceEngine?.engine_id||"AI_ADVOKAT_LIOE_v1",
+        missionProfile:plan.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS",
+        rule:"Apply variable legal mission depth, source/version discipline, named Human Gates and legal stress testing without creating legal authority."
       }),
       Object.freeze({
         id:"specialist_research",
@@ -274,6 +290,7 @@ export function orchestratorInstructions(plan) {
       ? "For ordinary non-legal questions, provide general GPT assistance. For legal or high-stakes claims, preserve AI Advokat source and Human Gate rules."
       : "Your task is legal research assistance, not autonomous legal representation.",
     `MODE: ${plan.mode}. SPECIALISTS: ${agentList}. VERIFIER: ${plan.verifier}.`,
+    `LIOE MISSION PROFILE: ${plan.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS"}. CURRENT-LAW VERIFICATION: ${plan.legalIntelligenceEngine?.knowledge?.current_law_verification_required===true?"REQUIRED":"NOT_TRIGGERED"}.`,
     "Never merge jurisdictions or imply that comparative authority is controlling law.",
     "For AI Advokat native documents, corpus content and exact provenance come first. If the corpus does not support a proposition, say so.",
     "Fingerprint-verified GUIDE_DOCUMENT attachments are secondary authored/editorial guides. You may read them for procedure, explanation, examples, checklists and authorial framing, but they are not official law and never outrank article-level or official legal sources.",
