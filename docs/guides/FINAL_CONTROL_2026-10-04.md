@@ -75,3 +75,17 @@ Decision: `all-guides-public-pdf-release-2026-10-04`.
 This later decision supersedes the earlier **PDF-release closed** state only for the public PDF gate. It does not retroactively alter the earlier audit findings and does not authorize DOCX release, RAG/AI corpus, production corpus write, legal-corpus promotion or provider activation.
 
 Publication remains fingerprint-bound: no `public_pdf` URL is exposed until the exact PDF asset has been verified and published.
+## Post-audit private AI-reading decision — 5 October 2026
+
+This historical audit remains unchanged as to legal review, publication, RAG and production-corpus status. A later, separate Human Gate decision (private-guide-reading-2026-10-05) authorizes **private, transient AI reading** of current public guide records only when the exact PDF/DOCX source file is available in the user's local Guide Vault and its SHA-256 matches the governed registry.
+
+This later decision:
+- permits fingerprint-verified **PDF and DOCX** full-text reading as **secondary authored/editorial guidance**;
+- does **not** authorize public DOCX release;
+- does **not** authorize RAG / AI-corpus ingestion;
+- does **not** authorize production corpus write or legal-corpus promotion;
+- does **not** make any guide an official or current-law authority;
+- keeps archive/version-history records excluded from automatic reading;
+- requires official/article-level source verification and Human Gate control for deadlines, sanctions, jurisdiction, eligibility, remedies and current-law propositions.
+
+The legacy field `ai_use = reference_only_until_human_gate` therefore continues to govern RAG/production-corpus promotion. The separate `ai_reading` field governs the narrowly authorized Private Guide Vault reading path.
