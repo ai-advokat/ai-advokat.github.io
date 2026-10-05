@@ -39,7 +39,7 @@ import {
   KNOWLEDGE_INTAKE_POLICY
 } from "./knowledge-intake.js";
 
-const VERSION = "1.6.1";
+const VERSION = "1.7.0";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -1317,7 +1317,10 @@ function assistantError(request, status, error, message, extraHeaders={}) {
 
 const CHAT_MAX_BYTES=6*1024*1024;
 const CHAT_MAX_ATTACHMENTS=5;
+const CHAT_MAX_GUIDE_DOCUMENTS=2;
 const CHAT_ATTACHMENT_MAX_BASE64=5_500_000;
+const CHAT_GUIDE_DOCUMENT_MAX_BASE64=3_500_000;
+const GUIDE_DOCX_MIME="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const CHAT_ALLOWED_FILE_MIME=new Set([
   "application/pdf",
   "application/msword",
@@ -1327,33 +1330,150 @@ const CHAT_ALLOWED_FILE_MIME=new Set([
   "application/json"
 ]);
 
-async function governedGuideContext(request,env,guideIds){
-  const wanted=new Set((Array.isArray(guideIds)?guideIds:[]).map(x=>String(x)).slice(0,5));
-  if(!wanted.size || !env.ASSETS) return [];
+async function loadGuideRegistry(request,env){
+  if(!env.ASSETS) return null;
   try{
     const assetUrl=new URL("/data/guides.json",request.url);
     const response=await env.ASSETS.fetch(new Request(assetUrl,{method:"GET"}));
-    if(!response.ok) return [];
+    if(!response.ok) return null;
     const data=await response.json();
-    const records=Array.isArray(data?.records)?data.records:[];
-    return records
-      .filter(r=>wanted.has(String(r.id)) && r.catalog_public===true && r.public_record_enabled===true)
-      .map(r=>({
-        source:"AI Advokat public guide catalogue",
-        locator:r.public_record_url,
-        version:r.verification_label || r.status_label || r.edition || "",
-        text:[
-          "CATALOGUE METADATA ONLY — the full guide text is not supplied in this context.",
-          "Do not infer or quote the guide beyond the metadata below.",
-          "TITLE: "+String(r.display_title || r.title || ""),
-          "SCOPE: "+String(r.scope || ""),
-          "CATEGORY: "+String(r.category_label || ""),
-          ...(Array.isArray(r.legal_notices)?r.legal_notices.map(n=>"NOTICE: "+String(n.text_mk || n.title_mk || "")):[])
-        ].join("\n")
-      }));
+    return data && typeof data==="object" ? data : null;
   }catch{
-    return [];
+    return null;
   }
+}
+
+async function governedGuideContext(request,env,guideIds){
+  const wanted=new Set((Array.isArray(guideIds)?guideIds:[]).map(x=>String(x)).slice(0,5));
+  if(!wanted.size) return [];
+  const data=await loadGuideRegistry(request,env);
+  const records=Array.isArray(data?.records)?data.records:[];
+  return records
+    .filter(r=>wanted.has(String(r.id)) && r.catalog_public===true && r.public_record_enabled===true)
+    .map(r=>({
+      source:"AI Advokat public guide catalogue",
+      locator:r.public_record_url,
+      version:r.verification_label || r.status_label || r.edition || "",
+      text:[
+        "CATALOGUE METADATA ONLY — use it only for routing unless a fingerprint-verified full guide document is separately attached.",
+        "TITLE: "+String(r.display_title || r.title || ""),
+        "SCOPE: "+String(r.scope || ""),
+        "CATEGORY: "+String(r.category_label || ""),
+        "AI_READING: "+String(r.ai_reading || "not_authorized"),
+        "LEGAL_AUTHORITY: false",
+        ...(Array.isArray(r.legal_notices)?r.legal_notices.map(n=>"NOTICE: "+String(n.text_mk || n.title_mk || "")):[])
+      ].join("\n")
+    }));
+}
+
+function guideBasename(value){
+  return String(value || "").replace(/\\/g,"/").split("/").pop() || "";
+}
+
+function guideAllowedNames(record){
+  return new Set([
+    record?.source_file,
+    record?.candidate_artifact?.docx_file,
+    record?.public_master_artifact?.docx_file
+  ].filter(Boolean).map(guideBasename));
+}
+
+function guideAllowedHashes(record){
+  return new Set([
+    record?.sha256,
+    record?.candidate_artifact?.docx_sha256,
+    record?.public_master_artifact?.docx_sha256
+  ].filter(v=>/^[0-9a-f]{64}$/i.test(String(v || ""))).map(v=>String(v).toLowerCase()));
+}
+
+function bytesFromBase64(value){
+  const raw=String(value || "");
+  if(!raw || raw.length>CHAT_GUIDE_DOCUMENT_MAX_BASE64 || !/^[A-Za-z0-9+/=]+$/.test(raw)) return null;
+  try{
+    const binary=atob(raw);
+    const bytes=new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    return bytes;
+  }catch{
+    return null;
+  }
+}
+
+async function sha256BytesHex(bytes){
+  const digest=await crypto.subtle.digest("SHA-256",bytes);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function validateGuideDocuments(request,env,payload){
+  const input=Array.isArray(payload)?payload:[];
+  if(input.length>CHAT_MAX_GUIDE_DOCUMENTS) return {ok:false,error:"too_many_guide_documents"};
+  if(!input.length) return {ok:true,attachments:[],context:[],sources:[]};
+
+  const registry=await loadGuideRegistry(request,env);
+  if(!registry) return {ok:false,error:"guide_registry_unavailable"};
+  const records=Array.isArray(registry.records)?registry.records:[];
+  const attachments=[];
+  const context=[];
+  const sources=[];
+
+  for(const raw of input){
+    if(!raw || typeof raw!=="object" || Array.isArray(raw)) return {ok:false,error:"invalid_guide_document"};
+    const guideId=cleanQuery(raw.guideId,160);
+    const name=guideBasename(cleanQuery(raw.name,220));
+    const mime=cleanQuery(raw.mime,160);
+    const claimedHash=String(raw.sha256 || "").toLowerCase();
+    if(!guideId || !name || mime!==GUIDE_DOCX_MIME || !/^[0-9a-f]{64}$/.test(claimedHash)){
+      return {ok:false,error:"invalid_guide_document_metadata"};
+    }
+    const record=records.find(r=>String(r.id)===guideId);
+    if(!record
+      || record.catalog_public!==true
+      || record.public_record_enabled!==true
+      || record.source_role==="version_history"
+      || record.ai_reading!=="authorized_private_vault_secondary_context"){
+      return {ok:false,error:"guide_document_not_authorized"};
+    }
+    if(!guideAllowedNames(record).has(name)) return {ok:false,error:"guide_document_filename_mismatch"};
+
+    const bytes=bytesFromBase64(raw.base64);
+    if(!bytes || bytes.byteLength<1 || bytes.byteLength>2_500_000) return {ok:false,error:"invalid_guide_document_payload"};
+    const actualHash=await sha256BytesHex(bytes);
+    if(actualHash!==claimedHash || !guideAllowedHashes(record).has(actualHash)){
+      return {ok:false,error:"guide_document_fingerprint_mismatch"};
+    }
+
+    attachments.push({kind:"file",name,mime,base64:String(raw.base64)});
+    const title=String(record.display_title || record.title || guideId);
+    const verification=String(record.verification_label || record.status_label || record.edition || "");
+    context.push({
+      source:"AI Advokat fingerprint-verified private guide · "+title,
+      locator:String(record.public_record_url || ""),
+      version:verification,
+      text:[
+        "FULL_GUIDE_DOCUMENT_ATTACHED: "+name,
+        "GUIDE_ID: "+guideId,
+        "SHA256_VERIFIED: "+actualHash,
+        "MATERIAL_CLASS: secondary authored/editorial practical guide",
+        "LEGAL_AUTHORITY: false",
+        "STATUS: "+String(record.status || ""),
+        "VERIFICATION: "+verification,
+        "RULE: Read the attached guide for procedure, explanation, examples, checklists and authorial framing.",
+        "RULE: Never present the guide itself as official/current law. Any legal rule, deadline, remedy or current-law proposition must be supported by the article-level/official source layer or explicitly labelled unverified and subject to Human Gate.",
+        ...(Array.isArray(record.legal_notices)?record.legal_notices.map(n=>"NOTICE: "+String(n.text_mk || n.title_mk || "")):[])
+      ].join("\n")
+    });
+    sources.push({
+      title,
+      url:String(record.public_record_url || ""),
+      guideId,
+      sha256:actualHash,
+      verificationLabel:verification,
+      status:String(record.status || ""),
+      authority:"secondary_authored_guide"
+    });
+  }
+
+  return {ok:true,attachments,context,sources};
 }
 
 
@@ -1579,10 +1699,14 @@ async function handleGPTChat(request,env){
 
   const attachmentCheck=validateChatAttachments(payload.attachments);
   if(!attachmentCheck.ok) return json(request,{ok:false,error:attachmentCheck.error},400);
-  if(attachmentCheck.attachments.length && env.OPENAI_FILE_INPUT_ENABLED!=="true"){
+
+  const guideDocumentCheck=await validateGuideDocuments(request,env,payload.guideDocuments);
+  if(!guideDocumentCheck.ok) return json(request,{ok:false,error:guideDocumentCheck.error},400);
+
+  if((attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) && env.OPENAI_FILE_INPUT_ENABLED!=="true"){
     return json(request,{
       ok:false,error:"attachment_processing_locked",
-      message:"Attachment processing is disabled by the server-side privacy/tool gate."
+      message:"Attachment and private guide processing is disabled by the server-side privacy/tool gate."
     },503);
   }
 
@@ -1593,7 +1717,7 @@ async function handleGPTChat(request,env){
     governedArticleContext(env,q,initialPlan)
   ]);
 
-  const corpusContext=[...articleBundle.context,...guideContext];
+  const corpusContext=[...articleBundle.context,...guideDocumentCheck.context,...guideContext];
   if(uiMode==="library" && corpusContext.length===0){
     corpusContext.push({
       source:"AI Advokat public library",
@@ -1610,6 +1734,7 @@ async function handleGPTChat(request,env){
   // Explicit Web mode must not be mislabeled as passive_corpus merely because the
   // UI suggested a guide. Article-level Macedonian law remains corpus-first.
   const preferCorpus=articleBundle.context.length>0
+    || guideDocumentCheck.context.length>0
     || uiMode==="library"
     || (uiMode==="auto" && guideContext.length>0);
 
@@ -1645,11 +1770,12 @@ async function handleGPTChat(request,env){
   const fastGeneral=plan.mode===ORCHESTRATOR_MODES.GENERAL
     && !webRequested
     && attachmentCheck.attachments.length===0
+    && guideDocumentCheck.attachments.length===0
     && corpusContext.length===0;
   const maxOutputTokens=fastGeneral ? 700
     : webRequested ? 1300
       : articleBundle.state==="matched" ? 1200
-        : attachmentCheck.attachments.length ? 1100
+        : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1100
           : 1000;
   const reasoningEffort=fastGeneral ? "low" : "medium";
 
@@ -1660,7 +1786,7 @@ async function handleGPTChat(request,env){
     externalContext:[],
     externalResearchEnabled:webRequested,
     webSearchEnabled:webRequested,
-    attachments:attachmentCheck.attachments,
+    attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
     history:historyCheck.history,
     maxOutputTokens,
     reasoningEffort
@@ -1672,17 +1798,26 @@ async function handleGPTChat(request,env){
   }
 
   const articleMatched=articleBundle.state==="matched";
-  const sourceMode=result.webSearchUsed===true && articleMatched
-    ? "ai_advokat_article_corpus_plus_external_web"
-    : result.webSearchUsed===true
-      ? "external_web_research"
-      : articleMatched
-        ? "ai_advokat_article_corpus_first"
-        : articleBundle.context.length
-          ? "ai_advokat_article_corpus_gate"
-          : guideContext.length
-            ? "ai_advokat_catalogue_context_first"
-            : "gpt_general_or_proactive";
+  const guideFullTextUsed=guideDocumentCheck.attachments.length>0;
+  const sourceMode=result.webSearchUsed===true && articleMatched && guideFullTextUsed
+    ? "ai_advokat_legal_corpus_guides_plus_external_web"
+    : result.webSearchUsed===true && guideFullTextUsed
+      ? "ai_advokat_guides_plus_external_web"
+      : result.webSearchUsed===true && articleMatched
+        ? "ai_advokat_article_corpus_plus_external_web"
+        : result.webSearchUsed===true
+          ? "external_web_research"
+          : articleMatched && guideFullTextUsed
+            ? "ai_advokat_legal_corpus_plus_guides"
+            : guideFullTextUsed
+              ? "ai_advokat_guides_fulltext_first"
+              : articleMatched
+                ? "ai_advokat_article_corpus_first"
+                : articleBundle.context.length
+                  ? "ai_advokat_article_corpus_gate"
+                  : guideContext.length
+                    ? "ai_advokat_catalogue_context_first"
+                    : "gpt_general_or_proactive";
 
   return json(request,{
     ok:true,
@@ -1692,6 +1827,9 @@ async function handleGPTChat(request,env){
     historyItemsUsed:result.historyItemsUsed,
     sources:result.sources || [],
     legalSources:articleBundle.legalSources || [],
+    guideSources:guideDocumentCheck.sources || [],
+    guideDocumentsUsed:guideDocumentCheck.attachments.length,
+    guideDocumentFingerprintsVerified:guideDocumentCheck.attachments.length>0,
     webSearchUsed:result.webSearchUsed===true,
     mode:plan.mode,
     displayMode:result.webSearchUsed===true ? "external_web_research" : plan.mode,
@@ -1706,6 +1844,7 @@ async function handleGPTChat(request,env){
     } : null,
     webSearch:webRequested ? "enabled" : "not_requested",
     attachmentsUsed:attachmentCheck.attachments.length,
+    totalInputFilesUsed:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
     reasoningEffort,
     maxOutputTokens,
     humanGate:result.humanGate,
