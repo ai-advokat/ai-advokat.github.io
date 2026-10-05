@@ -54,3 +54,17 @@ This later activation does **not** retroactively change the original audit decis
 - provider activation.
 
 The artifact-level `author_approval` field remains separate and is not inferred from catalogue activation.
+## Post-audit private AI-reading decision — 5 October 2026
+
+This historical audit remains unchanged as to legal review, publication, RAG and production-corpus status. A later, separate Human Gate decision (private-guide-reading-2026-10-05) authorizes **private, transient AI reading** of current public guide records only when the exact PDF/DOCX source file is available in the user's local Guide Vault and its SHA-256 matches the governed registry.
+
+This later decision:
+- permits fingerprint-verified **PDF and DOCX** full-text reading as **secondary authored/editorial guidance**;
+- does **not** authorize public DOCX release;
+- does **not** authorize RAG / AI-corpus ingestion;
+- does **not** authorize production corpus write or legal-corpus promotion;
+- does **not** make any guide an official or current-law authority;
+- keeps archive/version-history records excluded from automatic reading;
+- requires official/article-level source verification and Human Gate control for deadlines, sanctions, jurisdiction, eligibility, remedies and current-law propositions.
+
+The legacy field `ai_use = reference_only_until_human_gate` therefore continues to govern RAG/production-corpus promotion. The separate `ai_reading` field governs the narrowly authorized Private Guide Vault reading path.

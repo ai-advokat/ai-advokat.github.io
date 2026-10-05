@@ -193,7 +193,15 @@
       "production_corpus_write": false,
       "legal_corpus_promotion": false,
       "legal_authority": false,
-      "rule": "Guide text is secondary authored/editorial material. It may be read and summarized, but any legal rule, deadline, remedy or current-law proposition must remain subordinate to official/article-level sources and Human Gate verification."
+      "rule": "Guide text is secondary authored/editorial material. It may be read and summarized, but any legal rule, deadline, remedy or current-law proposition must remain subordinate to official/article-level sources and Human Gate verification.",
+      "allowed_source_formats": [
+        "PDF",
+        "DOCX"
+      ],
+      "expected_current_readable_records": 37,
+      "pdf_source_records_supported": true,
+      "docx_source_records_supported": true,
+      "note": "Private AI reading is a transient, fingerprint-verified Guide Vault capability. It does not change the legacy ai_use/RAG gate, does not create a production guide corpus, and does not make any guide an official legal authority."
     }
   },
   "records": [
