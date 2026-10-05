@@ -34,7 +34,8 @@ const L4_SIGNALS=["production corpus","production corpus write","rag eligibility
 const GUIDE_SIGNALS=["водич","guide","каде е","каде во ai advokat","каталог","catalog"];
 
 function inferGeneralBypass(q,mode){
-  return mode==="general_gpt" || (!has(q,LEGAL_SIGNALS)&&!has(q,GUIDE_SIGNALS));
+  const governedLegalSignal=has(q,[...LEGAL_SIGNALS,...GUIDE_SIGNALS,...CURRENT_LAW_SIGNALS,...TEMPORAL_SIGNALS,...STRATEGY_SIGNALS,...ACTION_SIGNALS,...L4_SIGNALS]);
+  return mode==="general_gpt" || !governedLegalSignal;
 }
 function selectProfile(q,{mode=null}={}){
   if(inferGeneralBypass(q,mode))return LEGAL_MISSION_PROFILES.GENERAL_BYPASS;
