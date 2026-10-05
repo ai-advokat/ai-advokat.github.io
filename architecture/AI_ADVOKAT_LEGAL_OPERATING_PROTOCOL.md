@@ -1,6 +1,6 @@
-# AI Advokat Legal Operating Protocol v1
+# AI Advokat Legal Operating Protocol v1.1
 
-**Status:** Governed Working Method  
+**Status:** Governed Working Method
 **Date:** 5 October 2026
 
 ## Purpose
@@ -20,6 +20,14 @@ AI Advokat may research, compare, draft, structure, test and recommend. It may n
 - write to production legal truth stores without the applicable Human Gate;
 - convert comparative law into controlling Macedonian law;
 - infer approval for a new gate, artifact version or fingerprint.
+
+## LIOE execution engine
+
+The **AI Advokat Legal Intelligence & Orchestration Engine (LIOE)** is the internal execution layer that applies this protocol beneath the Chief Legal Orchestrator. LIOE selects variable mission depth, routes only justified specialists, triggers legal stress tests, preserves named Human Gates, and creates governed run records.
+
+LIOE does not create legal authority, client consent, representation authority, filing authority, current-law status or corpus promotion.
+
+**Full legal governance discipline, variable execution depth:** a simple guide-orientation task should not invoke the same machinery as a filing-support package or production legal-truth change. Over-processing is an efficiency defect; under-processing consequential legal work is a governance defect.
 
 ## 13-stage legal procedure
 
@@ -44,3 +52,15 @@ This protocol sits beneath the **Chief Legal Orchestrator** and above bounded sp
 ## Fail-closed rule
 
 When source, version, jurisdiction, authority or Human Gate status is materially uncertain, the output is **PROVISIONAL / NOT VERIFIED / NEEDS HUMAN REVIEW**, not guessed.
+
+
+## Real Legal Run Records
+
+L2-L4 missions and material implementation work are eligible for governed Legal Run Records.
+
+- Schema: `/data/legal-runs/legal-run-record.schema.json`
+- Index: `/data/legal-runs/index.json`
+- Baseline: `/data/legal-intelligence-metrics-baseline.json`
+- Validator: `/scripts/validate-legal-run-records.mjs`
+
+Unknown telemetry remains unknown. Cancelled verification remains cancelled. A final success state may not rewrite an earlier correction or failed/cancelled verification event out of history.
