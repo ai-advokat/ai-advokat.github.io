@@ -48,10 +48,12 @@
   "verification_state": "PENDING",
   "outcome_state": "UNKNOWN",
   "release_status": "BLOCKED",
-  "first_pass_verification": null,
-  "verification_attempts": null,
-  "correction_required": false,
-  "learning_candidates": [],
+  "first_pass_verification": false,
+  "verification_attempts": 1,
+  "correction_required": true,
+  "learning_candidates": [
+    "Focused LIOE governance CI must fetch full Git history before comparing the PR base SHA for diff hygiene."
+  ],
   "provider_or_tool_failures": [],
   "fallback_mode": "NONE",
   "data_classification": "PUBLIC",
@@ -67,6 +69,7 @@
   },
   "measurement_notes": [
     "Live record opened while the LIOE implementation mission is in progress.",
-    "The record will not be closed as SUCCESS unless executable CI verification and the named GitHub merge gate are both evidenced."
+    "The record will not be closed as SUCCESS unless executable CI verification and the named GitHub merge gate are both evidenced.",
+    "First focused LIOE CI attempt passed syntax, JSON governance, unit tests, Chief Orchestrator integration, all 9 canonical legal eval cases and both real-run record checks; the job failed only because shallow checkout made the base-SHA diff unavailable."
   ]
 }
