@@ -72,3 +72,32 @@ test("GV7 Worker independently recomputes the uploaded guide fingerprint before 
   assert.match(worker,/LEGAL_AUTHORITY: false/);
   assert.match(worker,/secondary authored\/editorial practical guide/);
 });
+
+
+test("GV8 current first-wave PDF guide is matchable and fingerprint governed",()=>{
+  const g02=registry.records.find(r=>r.id==="guide-02-victim-edited-2026-10-01");
+  assert.ok(g02);
+  assert.equal(g02.source_file,"Vodic_02_redaktiran.pdf");
+  assert.equal(Vault.matchRecordForFile(g02.source_file,registry.records)?.id,g02.id);
+  assert.ok(Vault.expectedHashes(g02).has(g02.sha256));
+  assert.equal(Vault.isAiReadable(g02),true);
+});
+
+test("GV9 vault explicitly supports governed PDF and DOCX source formats",()=>{
+  const a=registry.collection.ai_reading_authorization;
+  assert.deepEqual(a.allowed_source_formats,["PDF","DOCX"]);
+  assert.equal(a.expected_current_readable_records,37);
+  assert.equal(a.pdf_source_records_supported,true);
+  assert.equal(a.docx_source_records_supported,true);
+  assert.match(vaultSource,/const PDF_MIME="application\/pdf"/);
+  assert.match(vaultSource,/\.\(\?:docx\|pdf\)\$/);
+});
+
+test("GV10 Worker accepts only matching PDF or DOCX MIME and still recomputes SHA-256",()=>{
+  assert.match(worker,/GUIDE_PDF_MIME="application\/pdf"/);
+  assert.match(worker,/GUIDE_ALLOWED_MIME/);
+  assert.match(worker,/guide_document_mime_mismatch/);
+  assert.match(worker,/candidate_artifact\?\.pdf_sha256/);
+  assert.match(worker,/public_master_artifact\?\.pdf_sha256/);
+  assert.match(worker,/sha256BytesHex/);
+});
