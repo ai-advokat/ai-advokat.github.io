@@ -68,9 +68,11 @@ jobs:
         run: |
           node --check src/index.js
           node --check src/agent-orchestrator.js
+          node --check assets/guide-vault.js
           node --check assets/ai-advokat-chat.js
           npm run verify
           npm run test:agent-orchestrator
+          npm run test:guide-vault
           npm run test:chat-shell
           node <<'NODE'
           const fs=require("fs");
