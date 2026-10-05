@@ -1,5 +1,5 @@
 {
-  "schema_version": "2.0",
+  "schema_version": "2.1",
   "architecture_id": "AI_ADVOKAT_GOVERNED_AGENT_ARCHITECTURE_v2",
   "generated_on": "2026-10-04",
   "owner_concept": "AI Advokat",
@@ -84,8 +84,10 @@
     }
   ],
   "execution_graph": [
-    "chief_routes_task",
+    "chief_intake_and_scope",
+    "legal_operating_protocol",
     "bounded_specialists_research",
+    "adversarial_review_where_material",
     "verification_citation_agent_checks",
     "chief_composes_final_answer"
   ],
@@ -203,5 +205,28 @@
     "model": "gpt-6.1-sol",
     "authorization": "explicit",
     "implementation_status": "authorized_pending_secret_and_paid_quota_preflight"
+  },
+  "legal_operating_protocol": {
+    "id": "AI_ADVOKAT_LEGAL_OPERATING_PROTOCOL_v1",
+    "path": "/data/legal-operating-protocol-v1.json",
+    "directive": "/architecture/AI_ADVOKAT_LEGAL_OPERATING_PROTOCOL.md",
+    "status": "GOVERNED_WORKING_METHOD",
+    "cycle": [
+      "intake",
+      "knowledge",
+      "system_map",
+      "diagnosis",
+      "specialist_routing",
+      "options",
+      "legal_stress_test",
+      "authority_gate",
+      "solution_design",
+      "implementation",
+      "adversarial_review",
+      "verify",
+      "learn"
+    ],
+    "creates_legal_authority": false,
+    "human_gate_unchanged": true
   }
 }

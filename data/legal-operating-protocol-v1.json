@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "protocol_id": "AI_ADVOKAT_LEGAL_OPERATING_PROTOCOL_v1",
+  "generated_on": "2026-10-05",
+  "status": "GOVERNED_WORKING_METHOD",
+  "purpose": "Provide one legal-domain operating procedure for intake, source control, diagnosis, specialist routing, option design, legal stress testing, implementation planning, adversarial review, verification and governed learning while preserving Human Gate control.",
+  "principles": [
+    "source_first",
+    "exact_version_and_date",
+    "jurisdiction_separation",
+    "authority_hierarchy_visible",
+    "corpus_first_when_applicable",
+    "claim_level_provenance",
+    "human_gate_final",
+    "automation_may_not_expand_mandate",
+    "draft_is_not_legal_effect",
+    "learning_may_not_silently_change_legal_truth_labels"
+  ],
+  "procedure": [
+    {"order":1,"id":"intake","name":"INTAKE","output":"bounded legal task with user objective, jurisdiction, parties, procedural posture, urgency and consequence class"},
+    {"order":2,"id":"knowledge","name":"KNOWLEDGE","output":"native corpus, official-source and authorised-material map with version/date and authority labels"},
+    {"order":3,"id":"system_map","name":"SYSTEM MAP","output":"legal/procedural map: actors, court/authority, deadlines, documents, dependencies, available remedies and unresolved facts"},
+    {"order":4,"id":"diagnosis","name":"DIAGNOSIS","output":"legal issues, evidentiary gaps, version conflicts, procedural risks, missing authority and bottlenecks"},
+    {"order":5,"id":"specialist_routing","name":"SPECIALIST ROUTING","output":"bounded specialist tasks by jurisdiction and authority source"},
+    {"order":6,"id":"options","name":"OPTIONS","output":"materially different legal/procedural options with benefits, risks, authority basis, deadlines and reversibility"},
+    {"order":7,"id":"legal_stress_test","name":"LEGAL STRESS TEST","output":"test the preferred option against adverse facts, missing evidence, jurisdiction conflict, limitation/deadline risk, superseded law, procedural rejection and enforcement failure"},
+    {"order":8,"id":"authority_gate","name":"AUTHORITY & HUMAN GATE","output":"who may act, what source authorises it, what is draft-only, what requires client/lawyer/human approval, and what remains outside system authority"},
+    {"order":9,"id":"solution_design","name":"SOLUTION DESIGN","output":"legal memo, draft, checklist, pleading-support package, research plan, guide update, code change or workflow change with sources and unresolved issues"},
+    {"order":10,"id":"implementation","name":"IMPLEMENTATION","output":"bounded implementation only where authorised; no autonomous legal representation, filing, current-law promotion or production corpus write"},
+    {"order":11,"id":"adversarial_review","name":"ADVERSARIAL REVIEW","output":"counter-argument, weakest point, missing source, contrary authority, procedural failure mode, hallucination/citation risk and jurisdiction-mixing check"},
+    {"order":12,"id":"verify","name":"VERIFY","output":"pass, fail, provisional or revise state based on source identity, locator, date/version, authority hierarchy, citation coverage and Human Gate"},
+    {"order":13,"id":"learn","name":"LEARN","output":"governed lesson, new test, corrected guide/workflow candidate, source-gap note or research backlog item; no silent corpus/legal-status mutation"}
+  ],
+  "mandatory_gates": [
+    "author_approval",
+    "current_law_verification",
+    "corpus_promotion",
+    "rag_eligibility",
+    "github_merge",
+    "public_release",
+    "production_corpus_write",
+    "provider_activation"
+  ],
+  "specialist_families": [
+    "Macedonian Law",
+    "EU Law",
+    "ECHR",
+    "International Law",
+    "Common Law",
+    "AI Advokat Knowledge",
+    "Verification and Citation",
+    "General GPT for non-legal assistance"
+  ],
+  "release_rules": [
+    "A draft answer is not legal representation and does not create legal effect.",
+    "Current-law claims require verified source/version status.",
+    "Comparative authority is not controlling law by default.",
+    "A missing source or locator must remain visible.",
+    "Human approval cannot be inferred from previous approval of a different version or gate.",
+    "Adversarial review does not replace legal verification or Human Gate approval."
+  ]
+}

@@ -5,6 +5,7 @@ import {
   AGENT_ROLES,
   ORCHESTRATOR_MODES,
   ORCHESTRATION_PATTERN,
+  LEGAL_OPERATING_PROTOCOL,
   buildAgentPlan,
   buildExecutionGraph,
   validateExecutionPreconditions,
@@ -74,8 +75,10 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.equal(graph.userFacingAgent,AGENT_ROLES.chief.id);
     assert.equal(graph.finalAnswerOwner,AGENT_ROLES.chief.id);
     assert.equal(graph.handoffPolicy,"disabled_by_default");
-    assert.equal(graph.phases[1].agent,AGENT_ROLES.verify.id);
-    assert.equal(graph.phases[2].agent,AGENT_ROLES.chief.id);
+    assert.equal(graph.phases[0].id,"legal_operating_protocol");
+    assert.equal(graph.phases[1].id,"specialist_research");
+    assert.equal(graph.phases[2].agent,AGENT_ROLES.verify.id);
+    assert.equal(graph.phases[3].agent,AGENT_ROLES.chief.id);
   });
 
   test("knowledge specialist refuses silent model fallback", () => {
@@ -215,4 +218,14 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.doesNotMatch(wranglerConfig,/OPENAI_API_KEY/);
     assert.equal(architectureManifest.model_selection.activation_progress.production_provider_live,false);
   });
+});
+
+
+test('legal operating protocol does not create legal authority or bypass Human Gate',()=>{
+  const plan=buildAgentPlan('Подготви правна анализа според важечко македонско право');
+  assert.equal(LEGAL_OPERATING_PROTOCOL.createsLegalAuthority,false);
+  assert.equal(LEGAL_OPERATING_PROTOCOL.humanGateUnchanged,true);
+  assert.deepEqual(plan.legalOperatingProtocol.cycle.slice(0,4),['intake','knowledge','system_map','diagnosis']);
+  const graph=buildExecutionGraph(plan);
+  assert.equal(graph.phases[0].id,'legal_operating_protocol');
 });
