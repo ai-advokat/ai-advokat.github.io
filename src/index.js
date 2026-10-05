@@ -1091,6 +1091,85 @@ export function scoreArticle(row, q) {
   return score;
 }
 
+
+export function extractArticleCrossReferences(text,{max=12}={}){
+  const source=String(text || "").normalize("NFKC").replace(/[–—]/g,"-");
+  const out=[];
+  const seen=new Set();
+  const blockedSpans=[];
+  const limit=Math.max(1,Math.min(20,Number(max)||12));
+
+  const add=(value)=>{
+    const normalized=normalizeText(String(value || "")).replace(/[–—]/g,"-").replace(/\s+/g,"");
+    if(!/^[0-9]+(?:-[\p{L}]+)?$/u.test(normalized) || seen.has(normalized) || out.length>=limit) return;
+    seen.add(normalized);
+    out.push(normalized);
+  };
+
+  const expandRange=(a,b)=>{
+    const start=Number.parseInt(a,10);
+    const end=Number.parseInt(b,10);
+    if(!Number.isFinite(start) || !Number.isFinite(end) || end<start || end-start>20) return false;
+    for(let n=start;n<=end && out.length<limit;n++) add(String(n));
+    return true;
+  };
+
+  // Explicit same-statute ranges such as "членовите 483 до 490" or "чл. 483-490".
+  const rangeRe=/(?:член(?:от|овите|ови)?|чл\.?|articles?)\s*([0-9]+)\s*(?:до|-)\s*(?:член(?:от|овите|ови)?|чл\.?|articles?)?\s*([0-9]+)/giu;
+  for(const match of source.matchAll(rangeRe)){
+    const accepted=expandRange(match[1],match[2]);
+    if(!accepted && Number.isInteger(match.index)){
+      blockedSpans.push([match.index,match.index+match[0].length]);
+    }
+    if(out.length>=limit) return out;
+  }
+
+  // Lists and single references, including lettered articles such as 122-а.
+  const listRe=/(?:член(?:от|овите|ови)?|чл\.?|articles?)\s*((?:[0-9]+(?:-[\p{L}]+)?)(?:\s*(?:,|и)\s*[0-9]+(?:-[\p{L}]+)?)*)/giu;
+  for(const match of source.matchAll(listRe)){
+    const start=Number.isInteger(match.index) ? match.index : -1;
+    if(start>=0 && blockedSpans.some(([a,b])=>start>=a && start<b)) continue;
+    for(const token of String(match[1]).split(/\s*(?:,|и)\s*/u)){
+      add(token);
+      if(out.length>=limit) return out;
+    }
+  }
+
+  return out;
+}
+
+function expandArticleCrossReferences(rows,primaryArticles,{maxReferences=12}={}){
+  const rowByNumber=new Map();
+  for(const row of rows){
+    const key=normalizeText(row.article_number_normalized || row.article_number || "").replace(/[–—]/g,"-").replace(/\s+/g,"");
+    if(key && !rowByNumber.has(key)) rowByNumber.set(key,row);
+  }
+
+  const primaryNumbers=new Set(
+    primaryArticles.map(a=>normalizeText(a.articleNumberNormalized || a.articleNumber || "").replace(/[–—]/g,"-").replace(/\s+/g,""))
+  );
+  const origins=new Map();
+  for(const primary of primaryArticles.slice(0,3)){
+    const origin=String(primary.articleNumber || primary.articleNumberNormalized || "");
+    for(const ref of extractArticleCrossReferences(primary.text,{max:maxReferences})){
+      if(primaryNumbers.has(ref)) continue;
+      const row=rowByNumber.get(ref);
+      if(!row) continue;
+      if(!origins.has(ref)) origins.set(ref,new Set());
+      origins.get(ref).add(origin);
+      if(origins.size>=maxReferences) break;
+    }
+    if(origins.size>=maxReferences) break;
+  }
+
+  return [...origins.entries()].map(([ref,from])=>{
+    const article={...normalizeArticle(rowByNumber.get(ref)),relevanceScore:0};
+    article.referenceRole="explicit_cross_reference";
+    article.referenceOriginArticleNumbers=[...from];
+    return article;
+  });
+}
+
 function rankInstrumentArticles(rows,q,limit=6){
   let ranked=rows
     .map(row=>({row,score:scoreArticle(row,q)}))
@@ -1107,14 +1186,26 @@ function rankInstrumentArticles(rows,q,limit=6){
   return ranked.slice(0,limit).map(x=>({...normalizeArticle(x.row),relevanceScore:x.score}));
 }
 
-async function findRelevantArticles(env, instrumentKey, q, limit=6, {date=null}={}) {
+async function findRelevantArticles(env, instrumentKey, q, limit=6, {date=null,expandReferences=false,maxReferences=12}={}) {
   if(instrumentKey && instrumentKey!=="auto"){
     const instrument=await getInstrument(env,instrumentKey);
     if(!instrument) return {instrument:null,articles:[],reason:"instrument_not_found"};
     const corpus=await loadResolvedCorpus(env,instrument,{date});
     if(!corpus.ok) return {instrument,articles:[],reason:corpus.error,versions:corpus.versions};
-    const articles=rankInstrumentArticles(corpus.rows,q,limit);
-    return {instrument,articles,version:corpus.version,versionBasis:corpus.basis};
+    const primaryArticles=rankInstrumentArticles(corpus.rows,q,limit);
+    const crossReferenceArticles=expandReferences
+      ? expandArticleCrossReferences(corpus.rows,primaryArticles,{maxReferences})
+      : [];
+    const articles=[...primaryArticles,...crossReferenceArticles];
+    return {
+      instrument,
+      articles,
+      primaryArticles,
+      crossReferenceArticles,
+      corpusArticleCount:corpus.rows.length,
+      version:corpus.version,
+      versionBasis:corpus.basis
+    };
   }
 
   // Fail closed: with multiple legal corpora, never guess a statute from generic words.
@@ -1524,7 +1615,7 @@ async function governedArticleContext(env,q,basePlan){
     if(!routing.key || routing.key==="auto") return {...empty,state:"instrument_not_resolved"};
 
     const queryDate=chatQueryDate(q);
-    const retrieval=await findRelevantArticles(env,routing.key,q,5,{date:queryDate});
+    const retrieval=await findRelevantArticles(env,routing.key,q,5,{date:queryDate,expandReferences:true,maxReferences:12});
     const instrument=retrieval.instrument || null;
     const instrumentTitle=instrument?.title || routing.key;
 
@@ -1555,7 +1646,7 @@ async function governedArticleContext(env,q,basePlan){
       };
     }
 
-    const versionInfo=summarizeVersion(retrieval.version,retrieval.articles.length);
+    const versionInfo=summarizeVersion(retrieval.version,retrieval.corpusArticleCount || retrieval.articles.length);
     const context=retrieval.articles.map(article=>{
       const sourceUrl=article.sourceUrl || instrument?.canonical_source_url || "";
       return {
@@ -1580,6 +1671,8 @@ async function governedArticleContext(env,q,basePlan){
           "VERSION_BASIS: "+String(retrieval.versionBasis || "unknown"),
           "SOURCE_URL: "+String(sourceUrl),
           "CITATION_LABEL: [Член "+String(article.articleNumber || "")+"]",
+          "REFERENCE_ROLE: "+String(article.referenceRole || "direct_match"),
+          "REFERENCE_ORIGIN: "+(Array.isArray(article.referenceOriginArticleNumbers) ? article.referenceOriginArticleNumbers.map(n=>"Член "+n).join(", ") : "direct query match"),
           "TEXT:",
           String(article.text || "").slice(0,3600)
         ].join("\n")
@@ -1587,19 +1680,23 @@ async function governedArticleContext(env,q,basePlan){
     });
 
     const legalSources=retrieval.articles.map(article=>({
-      title:instrumentTitle+" · член "+String(article.articleNumber || ""),
+      title:instrumentTitle+" · член "+String(article.articleNumber || "")+(article.referenceRole==="explicit_cross_reference" ? " · упатување од "+article.referenceOriginArticleNumbers.map(n=>"член "+n).join(", ") : ""),
       articleNumber:String(article.articleNumber || ""),
       url:article.sourceUrl || instrument?.canonical_source_url || null,
       status:article.status || null,
       humanReviewStatus:article.humanReviewStatus || null,
       version:versionInfo.label || null,
-      versionHumanReviewStatus:versionInfo.humanReviewStatus || null
+      versionHumanReviewStatus:versionInfo.humanReviewStatus || null,
+      relation:article.referenceRole || "direct_match",
+      referenceOriginArticleNumbers:Array.isArray(article.referenceOriginArticleNumbers) ? article.referenceOriginArticleNumbers : []
     }));
 
     return {
       context,
       legalSources,
       articles:retrieval.articles,
+      primaryArticles:retrieval.primaryArticles || retrieval.articles,
+      crossReferenceArticles:retrieval.crossReferenceArticles || [],
       state:"matched",
       instrument:{
         canonicalKey:instrument?.canonical_key || routing.key,
@@ -1845,6 +1942,7 @@ async function handleGPTChat(request,env){
     corpusContextCount:corpusContext.length,
     articleCorpusContextCount:articleBundle.context.length,
     articleCorpusState:articleBundle.state,
+    legalCrossReferenceCount:Array.isArray(articleBundle.crossReferenceArticles)?articleBundle.crossReferenceArticles.length:0,
     articleCorpus:articleBundle.instrument ? {
       instrument:articleBundle.instrument,
       version:articleBundle.version,
