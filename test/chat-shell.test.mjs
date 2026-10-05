@@ -183,7 +183,8 @@ test("CHAT19 homepage exposes a private Guide Vault without public guide full-te
     assert.match(html,new RegExp('id="'+id+'"'));
   }
   assert.match(html,/assets\/guide-vault\.js/);
-  assert.match(html,/Guide Vault ги чува датотеките само на овој уред/);
+  assert.match(html,/Guide Vault ги чува PDF\/DOCX датотеките само на овој уред/);
+  assert.match(html,/aiGuideVaultFiles[^>]+application\/pdf/);
   assert.match(guideVaultJs,/indexedDB/);
   assert.match(guideVaultJs,/Pravni_vodichi_38_63_FULL_WORD_ALL/);
 });
@@ -215,4 +216,14 @@ test("CHAT22 guide vault preserves store:false and has no server-side guide pers
   assert.doesNotMatch(worker,/INSERT\s+INTO\s+.*guide/i);
   assert.doesNotMatch(worker,/UPDATE\s+.*guide/i);
   assert.match(guideVaultJs,/const DB_NAME="ai-advokat-private-guide-vault"/);
+});
+
+
+test("CHAT23 Private Guide Vault supports first-wave PDF guides as well as DOCX",()=>{
+  assert.match(guideVaultJs,/const PDF_MIME="application\/pdf"/);
+  assert.match(guideVaultJs,/importGuideBytes/);
+  assert.match(worker,/GUIDE_PDF_MIME="application\/pdf"/);
+  assert.match(worker,/GUIDE_ALLOWED_MIME/);
+  assert.match(worker,/guide_document_mime_mismatch/);
+  assert.match(html,/accept="\.zip,\.docx,\.pdf,/);
 });
