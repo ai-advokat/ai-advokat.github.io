@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "baseline_id": "AI_ADVOKAT_LIOE_METRICS_BASELINE_v1",
+  "updated": "2026-10-06",
+  "status": "BASELINE_COLLECTION_STARTED_NO_VERIFIED_EFFECTIVENESS_SAMPLE",
+  "source_index": "/data/legal-runs/index.json",
+  "record_count": 2,
+  "verified_effectiveness_sample_size": 0,
+  "metric_sample_sizes": {
+    "effectiveness": 0,
+    "time_to_verified_result": 1,
+    "activation": 0,
+    "tooling": 0,
+    "cost": 0
+  },
+  "effectiveness": {
+    "objective_completion_rate": null,
+    "verified_legal_claim_coverage": null,
+    "claim_level_provenance_completeness": null,
+    "jurisdiction_integrity_rate": null,
+    "version_temporal_verification_rate": null,
+    "human_gate_compliance_rate": null,
+    "first_pass_verification_rate": null,
+    "implementation_success_rate": null
+  },
+  "efficiency": {
+    "median_time_to_observed_mission_end_ms": 1893000,
+    "median_specialists_activated": null,
+    "unnecessary_specialist_activation_rate": null,
+    "duplicate_research_rate": null,
+    "verified_asset_reuse_rate": null,
+    "rework_ratio": null,
+    "correction_loop_time_ms": null,
+    "tool_calls_per_verified_result": null,
+    "cost_per_verified_result": null
+  },
+  "governance": {
+    "performance_claim_ready": false,
+    "sample_size_must_be_visible": true,
+    "retrospective_provisional_runs_do_not_count_as_verified_effectiveness": true,
+    "unknown_metrics_remain_null": true,
+    "targets_require_human_review": true
+  },
+  "interpretation": "Real-run collection has started, but there is not yet a verified effectiveness sample. The single time observation comes from a retrospective mission with cancelled executable verification and must not be generalised."
+}
