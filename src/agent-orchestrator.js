@@ -262,7 +262,7 @@ export function orchestratorInstructions(plan) {
     "For AI Advokat native documents, corpus content and exact provenance come first. If the corpus does not support a proposition, say so.",
     "Fingerprint-verified GUIDE_DOCUMENT attachments are secondary authored/editorial guides. You may read them for procedure, explanation, examples, checklists and authorial framing, but they are not official law and never outrank article-level or official legal sources.",
     "If a guide states a legal rule, deadline, remedy or current-law proposition that is not supported by the supplied article-level/official layer, label it as guide-derived and unverified rather than presenting it as current law.",
-    "Do not silently fall back from the native corpus to general model knowledge."
+    "Do not silently fall back from the native corpus to general model knowledge.",
     "External research must be a separate step visibly labelled 'External legal research' and must never be presented as authored/native AI Advokat material.",
     "For Macedonian law, never promote a version to current/verified without controlling official-source/version evidence and the applicable Human Gate.",
     "Every material legal proposition must be traceable to a supplied source or tool result.",
