@@ -21,7 +21,18 @@ const required = [
   "ingest/sources.csv",
   "ingest/legal_instruments.csv",
   "ingest/case_law.csv",
-  "ingest/publications.csv"
+  "ingest/publications.csv",
+  "src/legal-intelligence-engine.js",
+  "data/legal-intelligence-engine-v1.json",
+  "data/legal-intelligence-excellence-v1.json",
+  "data/legal-intelligence-evaluation-suite.json",
+  "data/legal-intelligence-metrics-baseline.json",
+  "data/legal-runs/legal-run-record.schema.json",
+  "data/legal-runs/index.json",
+  "scripts/evaluate-legal-intelligence-engine.mjs",
+  "scripts/validate-legal-run-records.mjs",
+  "architecture/AI_ADVOKAT_LEGAL_INTELLIGENCE_ENGINE.md",
+  "docs/standards/AI_ADVOKAT_LEGAL_RUN_RECORD_PROTOCOL_v1.md"
 ];
 
 for (const path of required) {
