@@ -22,7 +22,7 @@
   "note": "No API key is stored in this file. The workflow must fail before deployment if the secret or paid quota is unavailable.",
   "last_redeploy": {
     "requested_on": "2026-10-05",
-    "target_commit": "3cc77d5e6799af4f729e5f66b6fe006c1c9245a6",
-    "reason": "Deploy PR #94 fingerprint-verified PDF and DOCX Private Guide Vault reading for all 37 current guide records after successful security and Human Gate checks."
+    "target_commit": "c66e22a8e15e8e5465b7252a294d39c31d8b1829",
+    "reason": "Deploy consolidated Guide Vault PDF/DOCX reading plus governed one-hop same-version legal article cross-reference expansion after all PR and post-merge security checks passed."
   }
 }
