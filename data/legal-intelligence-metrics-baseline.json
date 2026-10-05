@@ -24,7 +24,7 @@
     "implementation_success_rate": 1
   },
   "efficiency": {
-    "median_time_to_observed_mission_end_ms": 1580000,
+    "median_time_to_observed_mission_end_ms": 1590500,
     "median_specialists_activated": null,
     "unnecessary_specialist_activation_rate": null,
     "duplicate_research_rate": null,
@@ -42,5 +42,5 @@
     "targets_require_human_review": true,
     "single_verified_sample_is_descriptive_not_generalizable": true
   },
-  "interpretation": "Real-run collection contains two records. One verified effectiveness sample (LIOE-2026-0002) closed successfully after a CI correction cycle; LIOE-2026-0001 remains excluded from effectiveness metrics because executable verification was cancelled. n=1 verified effectiveness data is descriptive only and cannot support a general performance claim."
+  "interpretation": "Real-run collection contains two records. One verified effectiveness sample (LIOE-2026-0002) closed successfully after a CI correction cycle and post-merge security/LIOE verification; LIOE-2026-0001 remains excluded from effectiveness metrics because executable verification was cancelled. n=1 verified effectiveness data is descriptive only and cannot support a general performance claim."
 }
