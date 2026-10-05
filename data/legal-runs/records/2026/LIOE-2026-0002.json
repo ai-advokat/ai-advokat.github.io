@@ -28,7 +28,9 @@
     "/data/legal-operating-protocol-v1.json",
     "/data/agent-architecture-v2.json",
     "/data/human-gate-decision-ledger.json",
-    "https://github.com/ai-advokat/ai-advokat.github.io/pull/97"
+    "https://github.com/ai-advokat/ai-advokat.github.io/pull/97",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37382628931",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37382628971"
   ],
   "source_verification_state": "VERIFIED",
   "current_law_claim_material": false,
@@ -43,13 +45,13 @@
   },
   "implementation_state": "STAGED",
   "rollback_reference": "e70f8b2bc6419dd89441a57cf811ee70e4778784",
-  "legal_stress_test_state": "PENDING",
-  "adversarial_review_state": "PENDING",
-  "verification_state": "PENDING",
-  "outcome_state": "UNKNOWN",
-  "release_status": "BLOCKED",
+  "legal_stress_test_state": "PASSED",
+  "adversarial_review_state": "PASSED",
+  "verification_state": "PASSED",
+  "outcome_state": "PARTIAL_SUCCESS",
+  "release_status": "READY_FOR_MERGE",
   "first_pass_verification": false,
-  "verification_attempts": 1,
+  "verification_attempts": 2,
   "correction_required": true,
   "learning_candidates": [
     "Focused LIOE governance CI must fetch full Git history before comparing the PR base SHA for diff hygiene."
@@ -70,6 +72,7 @@
   "measurement_notes": [
     "Live record opened while the LIOE implementation mission is in progress.",
     "The record will not be closed as SUCCESS unless executable CI verification and the named GitHub merge gate are both evidenced.",
-    "First focused LIOE CI attempt passed syntax, JSON governance, unit tests, Chief Orchestrator integration, all 9 canonical legal eval cases and both real-run record checks; the job failed only because shallow checkout made the base-SHA diff unavailable."
+    "First focused LIOE CI attempt passed syntax, JSON governance, unit tests, Chief Orchestrator integration, all 9 canonical legal eval cases and both real-run record checks; the job failed only because shallow checkout made the base-SHA diff unavailable.",
+    "Second CI iteration passed all six PR checks: security tests, activation safety, LIOE governance, corpus safety, membership safety and relevance safety."
   ]
 }
