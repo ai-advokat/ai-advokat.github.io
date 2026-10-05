@@ -76,9 +76,10 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.equal(graph.finalAnswerOwner,AGENT_ROLES.chief.id);
     assert.equal(graph.handoffPolicy,"disabled_by_default");
     assert.equal(graph.phases[0].id,"legal_operating_protocol");
-    assert.equal(graph.phases[1].id,"specialist_research");
-    assert.equal(graph.phases[2].agent,AGENT_ROLES.verify.id);
-    assert.equal(graph.phases[3].agent,AGENT_ROLES.chief.id);
+    assert.equal(graph.phases[1].id,"legal_intelligence_engine");
+    assert.equal(graph.phases[2].id,"specialist_research");
+    assert.equal(graph.phases[3].agent,AGENT_ROLES.verify.id);
+    assert.equal(graph.phases[4].agent,AGENT_ROLES.chief.id);
   });
 
   test("knowledge specialist refuses silent model fallback", () => {
@@ -228,4 +229,21 @@ test('legal operating protocol does not create legal authority or bypass Human G
   assert.deepEqual(plan.legalOperatingProtocol.cycle.slice(0,4),['intake','knowledge','system_map','diagnosis']);
   const graph=buildExecutionGraph(plan);
   assert.equal(graph.phases[0].id,'legal_operating_protocol');
+});
+
+
+test("LIOE mission depth is integrated without creating legal authority",()=>{
+  const current=buildAgentPlan("Што вели важечкото македонско право денес?");
+  assert.equal(current.legalIntelligenceEngine.mission_profile.id,"L1_VERIFIED_RESEARCH");
+  assert.equal(current.legalIntelligenceEngine.knowledge.current_law_verification_required,true);
+  assert.equal(current.rules.minimalSufficientSpecialistActivation,true);
+
+  const consequential=buildAgentPlan("Подготви финален поднесок за поднесување до суд и испрати го.");
+  assert.equal(consequential.legalIntelligenceEngine.mission_profile.id,"L3_CONSEQUENTIAL");
+  assert.equal(consequential.legalIntelligenceEngine.implementation.no_autonomous_filing,true);
+  assert.equal(consequential.rules.runRecordRequired,true);
+
+  const general=buildAgentPlan("Напиши ми кратка деловна порака.");
+  assert.equal(general.legalIntelligenceEngine.mission_profile.id,"GENERAL_BYPASS");
+  assert.equal(general.legalIntelligenceEngine.engaged,false);
 });
