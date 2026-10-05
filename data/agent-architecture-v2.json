@@ -1,7 +1,7 @@
 {
-  "schema_version": "2.1",
+  "schema_version": "2.2",
   "architecture_id": "AI_ADVOKAT_GOVERNED_AGENT_ARCHITECTURE_v2",
-  "generated_on": "2026-10-04",
+  "generated_on": "2026-10-06",
   "owner_concept": "AI Advokat",
   "user_facing_agent": "chief_legal_orchestrator",
   "orchestration_pattern": "manager_agents_as_tools",
@@ -86,8 +86,9 @@
   "execution_graph": [
     "chief_intake_and_scope",
     "legal_operating_protocol",
+    "lioe_mission_depth_and_governance",
     "bounded_specialists_research",
-    "adversarial_review_where_material",
+    "legal_stress_test_and_adversarial_review_where_material",
     "verification_citation_agent_checks",
     "chief_composes_final_answer"
   ],
@@ -227,6 +228,30 @@
       "learn"
     ],
     "creates_legal_authority": false,
+    "human_gate_unchanged": true,
+    "schema_version": "1.1",
+    "execution_engine": "AI_ADVOKAT_LIOE_v1",
+    "variable_depth": true,
+    "real_run_collection": true
+  },
+  "legal_intelligence_engine": {
+    "id": "AI_ADVOKAT_LIOE_v1",
+    "name": "AI Advokat Legal Intelligence & Orchestration Engine",
+    "path": "/data/legal-intelligence-engine-v1.json",
+    "runtime": "/src/legal-intelligence-engine.js",
+    "status": "IMPLEMENTED_MVP_GOVERNED_PREVIEW",
+    "position": "under_chief_legal_orchestrator_and_legal_operating_protocol_above_bounded_specialist_execution",
+    "creates_legal_authority": false,
+    "mission_profiles": [
+      "L0_INFORMATIONAL",
+      "L1_VERIFIED_RESEARCH",
+      "L2_STRATEGY_PROCEDURE",
+      "L3_CONSEQUENTIAL",
+      "L4_LEGAL_TRUTH_GOVERNANCE"
+    ],
+    "real_run_index": "/data/legal-runs/index.json",
+    "evaluation_suite": "/data/legal-intelligence-evaluation-suite.json",
+    "metrics_baseline": "/data/legal-intelligence-metrics-baseline.json",
     "human_gate_unchanged": true
   }
 }
