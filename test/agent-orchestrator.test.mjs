@@ -216,3 +216,13 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.equal(architectureManifest.model_selection.activation_progress.production_provider_live,false);
   });
 });
+
+
+test('legal operating protocol does not create legal authority or bypass Human Gate',()=>{
+  const plan=buildAgentPlan('Подготви правна анализа според важечко македонско право');
+  assert.equal(LEGAL_OPERATING_PROTOCOL.createsLegalAuthority,false);
+  assert.equal(LEGAL_OPERATING_PROTOCOL.humanGateUnchanged,true);
+  assert.deepEqual(plan.legalOperatingProtocol.cycle.slice(0,4),['intake','knowledge','system_map','diagnosis']);
+  const graph=buildExecutionGraph(plan);
+  assert.equal(graph.phases[0].id,'legal_operating_protocol');
+});
