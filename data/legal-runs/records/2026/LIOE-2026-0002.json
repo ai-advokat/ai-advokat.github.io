@@ -2,7 +2,7 @@
   "run_id": "LIOE-2026-0002",
   "case_id": "PR-97",
   "started_at": "2026-10-06T00:08:00+02:00",
-  "finished_at": "2026-10-05T22:29:07Z",
+  "finished_at": "2026-10-05T22:29:28Z",
   "record_origin": "LIVE_LIOE",
   "mission_profile": "L3_CONSEQUENTIAL",
   "problem_class": "lioe_runtime_observability_and_real_run_collection",
@@ -31,7 +31,10 @@
     "https://github.com/ai-advokat/ai-advokat.github.io/pull/97",
     "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37382628931",
     "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37382628971",
-    "https://github.com/ai-advokat/ai-advokat.github.io/commit/3eb823aeef5e9fec79a4b220a8d107ee62631f9f"
+    "https://github.com/ai-advokat/ai-advokat.github.io/commit/3eb823aeef5e9fec79a4b220a8d107ee62631f9f",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37382770058",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37382770053",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37382769567"
   ],
   "source_verification_state": "VERIFIED",
   "current_law_claim_material": false,
@@ -60,7 +63,7 @@
   "provider_or_tool_failures": [],
   "fallback_mode": "NONE",
   "data_classification": "PUBLIC",
-  "elapsed_ms": 1267000,
+  "elapsed_ms": 1288000,
   "tool_calls": null,
   "measured_cost": null,
   "metric_eligibility": {
@@ -75,6 +78,7 @@
     "The record will not be closed as SUCCESS unless executable CI verification and the named GitHub merge gate are both evidenced.",
     "First focused LIOE CI attempt passed syntax, JSON governance, unit tests, Chief Orchestrator integration, all 9 canonical legal eval cases and both real-run record checks; the job failed only because shallow checkout made the base-SHA diff unavailable.",
     "Second CI iteration passed all six PR checks: security tests, activation safety, LIOE governance, corpus safety, membership safety and relevance safety.",
-    "PR #97 was squash-merged to main at 2026-10-05T22:29:07Z after all six final PR checks passed."
+    "PR #97 was squash-merged to main at 2026-10-05T22:29:07Z after all six final PR checks passed.",
+    "Post-merge main security #213 and LIOE governance #5 both passed. GitHub Pages build #108 was still waiting at the verification checkpoint and is treated as a separate public-surface deployment state, not as legal-engine verification."
   ]
 }
