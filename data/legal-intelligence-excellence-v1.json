@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "framework_id": "AI_ADVOKAT_LIOE_EXCELLENCE_v1",
+  "updated": "2026-10-06",
+  "status": "INTERNAL_GOVERNANCE_AND_EVALUATION_FRAMEWORK",
+  "north_star": "Maximise verified legal usefulness with the minimum justified specialist activation, duplication, latency and rework, without weakening authority hierarchy, current-law verification, provenance, deadlines, privacy or Human Gate controls.",
+  "effectiveness_metrics": [
+    "objective_completion_rate",
+    "verified_legal_claim_coverage",
+    "claim_level_provenance_completeness",
+    "jurisdiction_integrity_rate",
+    "version_temporal_verification_rate",
+    "human_gate_compliance_rate",
+    "first_pass_verification_rate",
+    "implementation_success_rate",
+    "correction_escape_rate_inverse"
+  ],
+  "efficiency_metrics": [
+    "time_to_verified_result",
+    "specialists_activated",
+    "unnecessary_specialist_activation_rate",
+    "duplicate_research_rate",
+    "verified_asset_reuse_rate",
+    "rework_ratio",
+    "correction_loop_time",
+    "tool_calls_per_verified_result",
+    "cost_per_verified_result_when_reliably_measured"
+  ],
+  "quality_rule": "A faster route that weakens source, authority, version/date, jurisdiction, citation, deadline or Human Gate integrity is a failed optimisation.",
+  "baseline_policy": {
+    "no_performance_claim_without_sufficient_sample": true,
+    "sample_size_visible": true,
+    "unknown_metrics_remain_null": true,
+    "targets_require_human_review": true
+  },
+  "external_reference_boundary": "Methodological references may inform engineering practice but do not imply endorsement, certification or legal authority."
+}

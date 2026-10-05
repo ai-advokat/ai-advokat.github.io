@@ -1,0 +1,71 @@
+{
+  "run_id": "LIOE-2026-0001",
+  "case_id": "PR-96",
+  "started_at": "2026-10-05T20:49:01Z",
+  "finished_at": "2026-10-05T21:20:34Z",
+  "record_origin": "RETROSPECTIVE_EVIDENCE",
+  "mission_profile": "L3_CONSEQUENTIAL",
+  "problem_class": "legal_operating_protocol_repository_integration",
+  "mode": "governance_engineering",
+  "objective": "Add and integrate the governed AI Advokat Legal Operating Protocol into the canonical repository and Chief Legal Orchestrator.",
+  "jurisdictions": [
+    "SYSTEM_GOVERNANCE"
+  ],
+  "specialist_agents": [],
+  "routing_reasons": {},
+  "sources": [
+    "https://github.com/ai-advokat/ai-advokat.github.io/pull/96",
+    "https://github.com/ai-advokat/ai-advokat.github.io/commit/e70f8b2bc6419dd89441a57cf811ee70e4778784",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37372077387",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37372077405",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37372220529",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37372219307"
+  ],
+  "source_verification_state": "VERIFIED",
+  "current_law_claim_material": false,
+  "temporal_verification_state": "NOT_REQUIRED",
+  "jurisdiction_verification_state": "NOT_REQUIRED",
+  "human_review_state": "APPROVED",
+  "required_gate_types": [
+    "github_merge"
+  ],
+  "gate_decisions": {
+    "github_merge": "approved"
+  },
+  "implementation_state": "IMPLEMENTED",
+  "rollback_reference": "2dbda56437235b60cb4dbd7e52a754c17adc77c6",
+  "legal_stress_test_state": "PROVISIONAL",
+  "adversarial_review_state": "PROVISIONAL",
+  "verification_state": "PROVISIONAL",
+  "outcome_state": "PARTIAL_SUCCESS",
+  "release_status": "CLOSED_WITH_FINDINGS",
+  "first_pass_verification": false,
+  "verification_attempts": null,
+  "correction_required": true,
+  "learning_candidates": [
+    "A GitHub merge must not be treated as proof that executable verification passed.",
+    "Cancelled CI jobs must remain visibly distinct from successful or failed test execution.",
+    "Legal operating architecture needs a dedicated execution-depth and observability engine rather than only a static 13-stage protocol."
+  ],
+  "provider_or_tool_failures": [
+    "PR-triggered security and activation jobs were cancelled.",
+    "Post-merge security and Pages jobs on the merge commit were cancelled; no green post-merge executable verification is recorded for this mission."
+  ],
+  "fallback_mode": "MANUAL_REPOSITORY_EVIDENCE",
+  "data_classification": "PUBLIC",
+  "elapsed_ms": 1893000,
+  "tool_calls": null,
+  "measured_cost": null,
+  "metric_eligibility": {
+    "effectiveness": false,
+    "time": true,
+    "activation": false,
+    "tooling": false,
+    "cost": false
+  },
+  "measurement_notes": [
+    "Retrospective record reconstructed from GitHub PR, commit and Actions metadata.",
+    "Time is PR-open to final observed post-merge workflow completion/cancellation, not model latency.",
+    "Because executable verification was cancelled, this record is excluded from effectiveness baseline metrics."
+  ]
+}

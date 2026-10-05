@@ -43,4 +43,10 @@ describe("Legal Governance Dashboard",()=>{
   test("LGD6 missing data fails closed",()=>{
     assert.match(page,/Ниту еден статус не се претпоставува/);
   });
+
+  test("LGD7 LIOE operational evidence is visible but read-only",()=>{
+    assert.match(page,/LIOE \/ Real Legal Run Records/);
+    assert.match(page,/\/data\/legal-runs\/index\.json/);
+    assert.match(page,/\/data\/legal-intelligence-metrics-baseline\.json/);
+  });
 });

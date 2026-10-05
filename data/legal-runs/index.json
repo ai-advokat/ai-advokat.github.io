@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "index_id": "AI_ADVOKAT_LIOE_REAL_RUN_INDEX_v1",
+  "updated": "2026-10-06",
+  "status": "ACTIVE_REAL_RUN_COLLECTION",
+  "store": "/data/legal-runs/records/",
+  "record_count": 2,
+  "latest_run_id": "LIOE-2026-0002",
+  "records": [
+    {
+      "run_id": "LIOE-2026-0001",
+      "path": "/data/legal-runs/records/2026/LIOE-2026-0001.json",
+      "mission_profile": "L3_CONSEQUENTIAL",
+      "outcome_state": "PARTIAL_SUCCESS",
+      "verification_state": "PROVISIONAL",
+      "release_status": "CLOSED_WITH_FINDINGS",
+      "metric_effectiveness_eligible": false
+    },
+    {
+      "run_id": "LIOE-2026-0002",
+      "path": "/data/legal-runs/records/2026/LIOE-2026-0002.json",
+      "mission_profile": "L3_CONSEQUENTIAL",
+      "outcome_state": "PARTIAL_SUCCESS",
+      "verification_state": "PASSED",
+      "release_status": "READY_FOR_MERGE",
+      "metric_effectiveness_eligible": false
+    }
+  ],
+  "governance": {
+    "real_records_only": true,
+    "test_records_forbidden": true,
+    "sensitive_raw_legal_matter_content_forbidden_in_public_repository": true,
+    "corrections_and_cancelled_verification_must_remain_visible": true,
+    "logging_creates_no_legal_authority": true
+  }
+}

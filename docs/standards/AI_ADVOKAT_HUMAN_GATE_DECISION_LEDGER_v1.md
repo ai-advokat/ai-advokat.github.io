@@ -28,7 +28,10 @@ The following gates are independent:
 2. GitHub merge;
 3. public release;
 4. AI/RAG eligibility;
-5. production corpus write.
+5. production corpus write;
+6. current-law verification/promotion;
+7. legal-corpus promotion;
+8. provider activation.
 
 For example, author approval never means public-release approval.
 
@@ -61,3 +64,10 @@ The inheritance candidate has one explicit recorded approval:
 - candidate DOCX/PDF fingerprints recorded.
 
 No downstream authorization is inferred from that approval.
+
+
+## Additional gate isolation
+
+Current-law verification is not corpus promotion. Corpus promotion is not production-corpus write. Provider activation is not implied by model selection, repository code, or any earlier approval.
+
+Each gate requires its own explicit, version-bound and fingerprint-bound decision where an artifact fingerprint applies.

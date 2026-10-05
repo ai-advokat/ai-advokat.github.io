@@ -1,0 +1,152 @@
+{
+  "schema_version": "1.0",
+  "engine_id": "AI_ADVOKAT_LIOE_v1",
+  "name": "AI Advokat Legal Intelligence & Orchestration Engine",
+  "short_name": "LIOE",
+  "updated": "2026-10-06",
+  "status": "IMPLEMENTED_MVP_GOVERNED_PREVIEW",
+  "role": "Internal non-authority execution and orchestration engine that operationalises the Legal Operating Protocol under the Chief Legal Orchestrator.",
+  "authority_boundary": "LIOE may analyse, route, compare, draft, stress-test, verify and prepare bounded implementation. It does not create legal authority, legal representation, client consent, current-law status, filing authority or institutional will.",
+  "master_protocol": "/data/legal-operating-protocol-v1.json",
+  "principles": [
+    "source_first",
+    "exact_version_effective_date_and_application_date",
+    "jurisdiction_separation",
+    "authority_hierarchy_visible",
+    "claim_level_provenance",
+    "deadline_and_procedural_posture_visible",
+    "human_gate_isolated_and_fail_closed",
+    "draft_is_not_legal_effect",
+    "comparative_authority_is_not_controlling_by_default",
+    "unknown_is_not_verified"
+  ],
+  "mission_profiles": [
+    {
+      "id": "L0_INFORMATIONAL",
+      "depth": "lightweight",
+      "purpose": "Simple legal orientation, guide navigation or low-consequence explanation without unresolved current-law reliance.",
+      "specialist_budget": 2
+    },
+    {
+      "id": "L1_VERIFIED_RESEARCH",
+      "depth": "standard",
+      "purpose": "Source-backed legal research requiring jurisdiction/version/citation verification.",
+      "specialist_budget": 4
+    },
+    {
+      "id": "L2_STRATEGY_PROCEDURE",
+      "depth": "institutional",
+      "purpose": "Case planning, legal strategy, procedure, deadlines, multiple options or cross-domain analysis.",
+      "specialist_budget": 6
+    },
+    {
+      "id": "L3_CONSEQUENTIAL",
+      "depth": "consequential",
+      "purpose": "High-stakes reliance, pleading/contract/action preparation, public/professional release, production change or legal workflow implementation.",
+      "specialist_budget": 8
+    },
+    {
+      "id": "L4_LEGAL_TRUTH_GOVERNANCE",
+      "depth": "constitutional",
+      "purpose": "Current-law promotion, corpus/RAG eligibility, production legal-truth changes, provider/legal-governance rules or authority-boundary changes.",
+      "specialist_budget": 10
+    }
+  ],
+  "operating_cycle": [
+    "intake",
+    "knowledge",
+    "system_map",
+    "diagnosis",
+    "specialist_routing",
+    "options",
+    "legal_stress_test",
+    "authority_and_human_gate",
+    "solution_design",
+    "implementation",
+    "adversarial_review",
+    "verify",
+    "learn"
+  ],
+  "legal_stress_test": [
+    "superseded_or_amended_law",
+    "commencement_vs_application_date",
+    "transitional_provisions",
+    "wrong_jurisdiction_or_authority_level",
+    "deadline_or_limitation_expiry",
+    "adverse_or_distinguishable_case_law",
+    "missing_fact_or_evidence",
+    "procedural_inadmissibility",
+    "remedy_or_enforcement_failure",
+    "contrary_official_source",
+    "jurisdiction_mixing",
+    "citation_or_locator_failure"
+  ],
+  "selective_activation": {
+    "every_specialist_requires_reason": true,
+    "no_full_specialist_fanout_by_default": true,
+    "corpus_reuse_before_duplicate_research": true,
+    "parallel_only_when_independent": true,
+    "verification_agent_mandatory_for_material_legal_claims": true,
+    "over_routing_is_efficiency_defect": true
+  },
+  "early_exit": {
+    "permitted_for": [
+      "L0_INFORMATIONAL",
+      "L1_VERIFIED_RESEARCH"
+    ],
+    "only_if": [
+      "objective_resolved",
+      "source_support_sufficient",
+      "jurisdiction_clear",
+      "version_and_temporal_status_clear_if_material",
+      "no_material_deadline_or_high_stakes_action",
+      "no_unresolved_contrary_authority",
+      "no_required_human_gate_pending"
+    ],
+    "forbidden_for": [
+      "L3_CONSEQUENTIAL",
+      "L4_LEGAL_TRUTH_GOVERNANCE"
+    ]
+  },
+  "implementation_safety": {
+    "no_autonomous_filing": true,
+    "no_autonomous_legal_representation": true,
+    "no_autonomous_current_law_promotion": true,
+    "no_autonomous_production_corpus_write": true,
+    "no_autonomous_rag_promotion": true,
+    "staged_changes_preferred": true,
+    "rollback_reference_required_for_material_code_or_corpus_changes": true,
+    "regression_verification_required": true
+  },
+  "assurance": {
+    "current_law_requires_official_or_governed_verified_source": true,
+    "source_freshness_required_for_time_sensitive_claims": true,
+    "effective_and_application_dates_distinct": true,
+    "preserve_material_specialist_disagreement": true,
+    "majority_vote_is_not_legal_authority": true,
+    "graceful_degradation_on_tool_or_provider_failure": true,
+    "no_invented_completion": true,
+    "no_uncalibrated_confidence_as_legal_evidence": true,
+    "privacy_data_minimisation": true,
+    "adverse_outcome_reopens_case": true
+  },
+  "observability": {
+    "run_schema": "/data/legal-runs/legal-run-record.schema.json",
+    "run_index": "/data/legal-runs/index.json",
+    "metrics_baseline": "/data/legal-intelligence-metrics-baseline.json",
+    "evaluation_suite": "/data/legal-intelligence-evaluation-suite.json",
+    "record_required_for": [
+      "L2_STRATEGY_PROCEDURE",
+      "L3_CONSEQUENTIAL",
+      "L4_LEGAL_TRUTH_GOVERNANCE"
+    ]
+  },
+  "learning": {
+    "candidate_not_rule": true,
+    "verified_outcome_required": true,
+    "no_silent_corpus_mutation": true,
+    "no_silent_legal_status_mutation": true,
+    "no_silent_prompt_or_policy_mutation": true,
+    "material_change_requires_human_review": true
+  }
+}

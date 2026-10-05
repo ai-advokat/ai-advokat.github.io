@@ -1,0 +1,342 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-advokat.github.io/data/legal-runs/legal-run-record.schema.json",
+  "x-ai-advokat-schema-version": "1.0",
+  "title": "AI Advokat Governed Legal Run Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "started_at",
+    "record_origin",
+    "mission_profile",
+    "problem_class",
+    "release_status"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "finished_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "record_origin": {
+      "enum": [
+        "LIVE_LIOE",
+        "RETROSPECTIVE_EVIDENCE",
+        "MIGRATED",
+        "TEST"
+      ]
+    },
+    "mission_profile": {
+      "enum": [
+        "GENERAL_BYPASS",
+        "L0_INFORMATIONAL",
+        "L1_VERIFIED_RESEARCH",
+        "L2_STRATEGY_PROCEDURE",
+        "L3_CONSEQUENTIAL",
+        "L4_LEGAL_TRUTH_GOVERNANCE"
+      ]
+    },
+    "problem_class": {
+      "type": "string"
+    },
+    "mode": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "objective": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "jurisdictions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "specialist_agents": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "routing_reasons": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "default": {}
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "source_verification_state": {
+      "enum": [
+        "NOT_REQUIRED",
+        "PENDING",
+        "PARTIAL",
+        "VERIFIED",
+        "FAILED"
+      ],
+      "default": "PENDING"
+    },
+    "current_law_claim_material": {
+      "type": "boolean",
+      "default": false
+    },
+    "temporal_verification_state": {
+      "enum": [
+        "NOT_REQUIRED",
+        "PENDING",
+        "PARTIAL",
+        "VERIFIED",
+        "FAILED"
+      ],
+      "default": "NOT_REQUIRED"
+    },
+    "jurisdiction_verification_state": {
+      "enum": [
+        "NOT_REQUIRED",
+        "PENDING",
+        "PARTIAL",
+        "VERIFIED",
+        "FAILED"
+      ],
+      "default": "PENDING"
+    },
+    "human_review_state": {
+      "enum": [
+        "NOT_REQUIRED",
+        "PENDING",
+        "APPROVED",
+        "REJECTED",
+        "NEEDS_REVISION"
+      ],
+      "default": "PENDING"
+    },
+    "required_gate_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "gate_decisions": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": [
+          "not_recorded",
+          "pending",
+          "approved",
+          "rejected",
+          "needs_revision",
+          "revoked"
+        ]
+      },
+      "default": {}
+    },
+    "implementation_state": {
+      "enum": [
+        "NOT_REQUESTED",
+        "PLANNED",
+        "STAGED",
+        "IMPLEMENTED",
+        "ROLLED_BACK",
+        "FAILED"
+      ],
+      "default": "NOT_REQUESTED"
+    },
+    "rollback_reference": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "legal_stress_test_state": {
+      "enum": [
+        "NOT_REQUIRED",
+        "PENDING",
+        "PASSED",
+        "FAILED",
+        "PROVISIONAL"
+      ],
+      "default": "NOT_REQUIRED"
+    },
+    "adversarial_review_state": {
+      "enum": [
+        "NOT_REQUIRED",
+        "PENDING",
+        "PASSED",
+        "FAILED",
+        "PROVISIONAL"
+      ],
+      "default": "NOT_REQUIRED"
+    },
+    "verification_state": {
+      "enum": [
+        "PENDING",
+        "PASSED",
+        "FAILED",
+        "PROVISIONAL"
+      ],
+      "default": "PENDING"
+    },
+    "outcome_state": {
+      "enum": [
+        "UNKNOWN",
+        "SUCCESS",
+        "PARTIAL_SUCCESS",
+        "NO_CHANGE",
+        "FAILURE",
+        "ADVERSE_OUTCOME"
+      ],
+      "default": "UNKNOWN"
+    },
+    "release_status": {
+      "enum": [
+        "BLOCKED",
+        "PROVISIONAL",
+        "READY_FOR_MERGE",
+        "RELEASED",
+        "CLOSED",
+        "CLOSED_WITH_FINDINGS"
+      ]
+    },
+    "first_pass_verification": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "default": null
+    },
+    "verification_attempts": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "default": null
+    },
+    "correction_required": {
+      "type": "boolean",
+      "default": false
+    },
+    "learning_candidates": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "provider_or_tool_failures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "fallback_mode": {
+      "enum": [
+        "NONE",
+        "MANUAL_REPOSITORY_EVIDENCE",
+        "APPROVED_FALLBACK",
+        "PROVISIONAL_REDUCED_CAPABILITY",
+        "PAUSED_FOR_HUMAN"
+      ],
+      "default": "NONE"
+    },
+    "data_classification": {
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "SENSITIVE_AUTHORISED",
+        "UNKNOWN"
+      ],
+      "default": "UNKNOWN"
+    },
+    "elapsed_ms": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "tool_calls": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "measured_cost": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "metric_eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effectiveness",
+        "time",
+        "activation",
+        "tooling",
+        "cost"
+      ],
+      "properties": {
+        "effectiveness": {
+          "type": "boolean"
+        },
+        "time": {
+          "type": "boolean"
+        },
+        "activation": {
+          "type": "boolean"
+        },
+        "tooling": {
+          "type": "boolean"
+        },
+        "cost": {
+          "type": "boolean"
+        }
+      }
+    },
+    "measurement_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "governance_note": "A Legal Run Record is an audit and improvement artifact. It creates no legal authority. Public-repository records must not contain sensitive raw client/legal matter content."
+}

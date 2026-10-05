@@ -27,3 +27,21 @@ This page explains how the portal *shows* the Human Gate. The rule itself is def
 - hide a refusal;
 - present a draft as published;
 - present a version-review item as current law.
+
+
+**Named isolated gates.**
+
+AI Advokat does not treat “human approval” as one blanket permission. The governed ledger separates:
+
+- author approval;
+- GitHub merge;
+- public release;
+- AI/RAG eligibility;
+- production corpus write;
+- current-law verification/promotion;
+- legal-corpus promotion;
+- provider activation.
+
+Approval of one gate does not approve another. A model selection does not activate a provider. A verified legal source does not automatically authorize corpus promotion. An author-approved artifact is not automatically public or RAG-eligible.
+
+**LIOE relationship.** The Legal Intelligence & Orchestration Engine may identify which gate is required, but it cannot approve the gate itself. Missing explicit gate evidence remains not approved.

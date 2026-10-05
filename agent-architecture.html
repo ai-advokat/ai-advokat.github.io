@@ -26,7 +26,7 @@ table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:
 footer{border-top:1px solid var(--line);padding:28px 0 44px;color:var(--muted)}@media(max-width:700px){.topin{align-items:flex-start;flex-direction:column}.nav{font-size:.92rem}}
 </style>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"TechArticle","headline":"AI Advokat Governed Legal Agent Architecture v2","dateModified":"2026-10-04","about":["legal AI","multi-agent orchestration","Human Gate","legal provenance"],"author":{"@type":"Organization","name":"AI Advokat"}}
+{"@context":"https://schema.org","@type":"TechArticle","headline":"AI Advokat Governed Legal Agent Architecture v2","dateModified":"2026-10-06","about":["legal AI","multi-agent orchestration","Human Gate","legal provenance"],"author":{"@type":"Organization","name":"AI Advokat"}}
 </script>
 </head>
 <body>
@@ -36,7 +36,7 @@ footer{border-top:1px solid var(--line);padding:28px 0 44px;color:var(--muted)}@
 <div class="eyebrow">GOVERNED LEGAL AGENTS · ARCHITECTURE V2</div>
 <h1>Еден AI Адвокат. Повеќе специјалисти. Еден Human Gate.</h1>
 <p class="lead">Корисникот комуницира само со <strong>AI Advokat — Chief Legal Orchestrator</strong>. Тој го планира истражувањето, избира bounded specialists, ги држи правните системи одвоени и бара финална проверка на извор, верзија, применливост и цитат пред синтезата.</p>
-<div class="status"><span class="chip ok">Architecture V2 · implemented</span><span class="chip ok">Planning API · live in code</span><span class="chip warn">OpenAI provider execution · separate activation</span><span class="chip warn">RAG / corpus promotion · Human Gate</span></div>
+<div class="status"><span class="chip ok">Architecture V2.2 · implemented</span><span class="chip ok">LIOE · governed preview</span><span class="chip ok">Real Legal Run Records · active</span><span class="chip ok">Planning API · live in code</span><span class="chip warn">OpenAI provider execution · separate activation</span><span class="chip warn">RAG / corpus promotion · Human Gate</span></div>
 <div class="notice"><strong>Статусна дисциплина.</strong> Имплементираната архитектура не значи дека provider execution, external research tools, RAG или production corpus се автоматски активирани. Тие остануваат посебни контролирани gates.</div>
 </section>
 
@@ -66,10 +66,20 @@ footer{border-top:1px solid var(--line);padding:28px 0 44px;color:var(--muted)}@
 <h2>Manager-style execution</h2>
 <div class="flow">
 <div class="step"><strong>1 · Chief routes the task</strong><span>Го утврдува режимот и потребните jurisdictions / corpus specialist.</span></div>
-<div class="step"><strong>2 · Bounded specialists research</strong><span>Секој работи само во својата authority boundary и со одобрени source/tool inputs.</span></div>
-<div class="step"><strong>3 · Verification & Citation Agent</strong><span>Одбива unsupported claims, mixed jurisdiction authority и missing version/source evidence.</span></div>
-<div class="step"><strong>4 · Chief synthesis</strong><span>Единствениот user-facing agent го составува одговорот со видливи labels и ограничувања.</span></div>
+<div class="step"><strong>2 · Legal Operating Protocol + LIOE</strong><span>Го одредува L0–L4 mission depth, source/version/date requirements, stress-test и конкретните Human Gates — без да создава правна власт.</span></div>
+<div class="step"><strong>3 · Bounded specialists research</strong><span>Секој работи само во својата authority boundary и со одобрени source/tool inputs.</span></div>
+<div class="step"><strong>4 · Verification & Citation Agent</strong><span>Одбива unsupported claims, mixed jurisdiction authority и missing version/source evidence.</span></div>
+<div class="step"><strong>5 · Chief synthesis</strong><span>Единствениот user-facing agent го составува одговорот со видливи labels и ограничувања.</span></div>
 </div>
+
+<h2>Legal Intelligence &amp; Orchestration Engine · LIOE</h2>
+<div class="grid">
+<article class="card"><div class="role">L0–L1</div><h3>Lightweight / Verified Research</h3><p>Едноставно ориентирање не активира непотребен multi-agent fan-out. Current-law истражувањето бара official/governed source, точна верзија и temporal verification.</p></article>
+<article class="card"><div class="role">L2</div><h3>Strategy / Procedure</h3><p>За рокови, правни опции, процесна стратегија и comparative analysis: system map, legal stress-test и adversarial review.</p></article>
+<article class="card"><div class="role">L3–L4</div><h3>Consequential / Legal Truth</h3><p>Финален поднесок, production change, corpus/RAG promotion или current-law status не се самоовластуваат. Named Human Gates остануваат изолирани и fail-closed.</p></article>
+<article class="card"><div class="role">OBSERVABILITY</div><h3>Real Legal Run Records</h3><p>Реални мисии се евидентираат со verification, corrections, CI/tool failures и metric eligibility. Sensitive raw client matter не се чува во јавниот repository.</p><p><a href="/data/legal-runs/index.json">Run index</a> · <a href="/data/legal-intelligence-metrics-baseline.json">Metrics baseline</a></p></article>
+</div>
+<div class="notice"><strong>Клучна граница.</strong> Mission depth ≠ legal authority. LIOE може да бара подлабока анализа, но не смее да поднесе документ, да врзе клиент, да прогласи важечко право или да промовира corpus/RAG без соодветен Human Gate.</div>
 
 <h2>Knowledge intake за новите упатства на Зоран</h2>
 <div class="rule"><strong>Прво читање — без менување.</strong><br>Секој нов материјал прво се fingerprint-ира и се задржува original read-only. Потоа се класифицира како: authoritative internal instruction, legal reference document, user-facing guide, research working material или unclassified pending review.</div>
