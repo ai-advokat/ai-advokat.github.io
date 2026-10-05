@@ -1,0 +1,71 @@
+{
+  "run_id": "LIOE-2026-0002",
+  "case_id": null,
+  "started_at": "2026-10-06T00:08:00+02:00",
+  "finished_at": null,
+  "record_origin": "LIVE_LIOE",
+  "mission_profile": "L3_CONSEQUENTIAL",
+  "problem_class": "lioe_runtime_observability_and_real_run_collection",
+  "mode": "governance_engineering",
+  "objective": "Implement the complete AI Advokat Legal Intelligence & Orchestration Engine, variable mission depth, evaluation, real Legal Run Records, baseline measurement and CI governance.",
+  "jurisdictions": [
+    "SYSTEM_GOVERNANCE"
+  ],
+  "specialist_agents": [
+    "chief_legal_orchestrator",
+    "verification_citation"
+  ],
+  "routing_reasons": {
+    "chief_legal_orchestrator": [
+      "owns user-facing orchestration and final synthesis"
+    ],
+    "verification_citation": [
+      "mandatory verification of governance and source/version boundaries"
+    ]
+  },
+  "sources": [
+    "/architecture/AI_ADVOKAT_LEGAL_OPERATING_PROTOCOL.md",
+    "/data/legal-operating-protocol-v1.json",
+    "/data/agent-architecture-v2.json",
+    "/data/human-gate-decision-ledger.json"
+  ],
+  "source_verification_state": "VERIFIED",
+  "current_law_claim_material": false,
+  "temporal_verification_state": "NOT_REQUIRED",
+  "jurisdiction_verification_state": "NOT_REQUIRED",
+  "human_review_state": "PENDING",
+  "required_gate_types": [
+    "github_merge"
+  ],
+  "gate_decisions": {
+    "github_merge": "pending"
+  },
+  "implementation_state": "STAGED",
+  "rollback_reference": "e70f8b2bc6419dd89441a57cf811ee70e4778784",
+  "legal_stress_test_state": "PENDING",
+  "adversarial_review_state": "PENDING",
+  "verification_state": "PENDING",
+  "outcome_state": "UNKNOWN",
+  "release_status": "BLOCKED",
+  "first_pass_verification": null,
+  "verification_attempts": null,
+  "correction_required": false,
+  "learning_candidates": [],
+  "provider_or_tool_failures": [],
+  "fallback_mode": "NONE",
+  "data_classification": "PUBLIC",
+  "elapsed_ms": null,
+  "tool_calls": null,
+  "measured_cost": null,
+  "metric_eligibility": {
+    "effectiveness": false,
+    "time": false,
+    "activation": false,
+    "tooling": false,
+    "cost": false
+  },
+  "measurement_notes": [
+    "Live record opened while the LIOE implementation mission is in progress.",
+    "The record will not be closed as SUCCESS unless executable CI verification and the named GitHub merge gate are both evidenced."
+  ]
+}
