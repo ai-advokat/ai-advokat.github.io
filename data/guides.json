@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_on": "2026-10-04",
+  "generated_on": "2026-10-05",
   "collection": {
     "id": "zoran-everyday-rights-guides",
     "title_mk": "Моите права во секојдневниот живот",
@@ -58,7 +58,8 @@
         "share_link",
         "print_friendly_record",
         "citizen_guide_router_clickable_recommendations",
-        "fingerprint_bound_public_pdf_open_action"
+        "fingerprint_bound_public_pdf_open_action",
+        "private_fingerprint_verified_guide_vault"
       ],
       "public_document_download": false,
       "rag_eligibility": false,
@@ -171,6 +172,28 @@
         "record final PDF SHA-256",
         "bind public_pdf only after successful URL check"
       ]
+    },
+    "ai_reading_authorization": {
+      "decision_id": "private-guide-reading-2026-10-05",
+      "authorized_on": "2026-10-05",
+      "authorized_by_role": "project_lead",
+      "authorization_source": "explicit_user_request",
+      "evidence_text": "да продолжиме со успешна имплментација на водичите и читањето на нив од страна на ботот",
+      "mode": "browser_private_vault_fingerprint_verified_transient_provider_reading",
+      "scope": "current_public_guide_records_when_exact_source_file_is_locally_available_and_fingerprint_verified",
+      "current_public_records_eligible": 37,
+      "archive_records_default_eligible": false,
+      "source_file_must_match_registry": true,
+      "sha256_must_match_registry": true,
+      "provider_store": false,
+      "browser_persistence": "IndexedDB on the user's device only",
+      "server_persistence": false,
+      "public_full_text_release": false,
+      "rag_eligibility": false,
+      "production_corpus_write": false,
+      "legal_corpus_promotion": false,
+      "legal_authority": false,
+      "rule": "Guide text is secondary authored/editorial material. It may be read and summarized, but any legal rule, deadline, remedy or current-law proposition must remain subordinate to official/article-level sources and Human Gate verification."
     }
   },
   "records": [
@@ -237,7 +260,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Paragraf.mk се чува како историско/изворно брендирање; тековниот јавен портал е AI Advokat."
+      "legacy_branding_note_mk": "Paragraf.mk се чува како историско/изворно брендирање; тековниот јавен портал е AI Advokat.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-02-victim-draft-2026-09-29",
@@ -293,7 +318,9 @@
           "approved_at": "2026-10-04T18:24:00+02:00",
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
-      }
+      },
+      "ai_reading": "archive_explicit_request_only",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-05-workplace",
@@ -391,7 +418,9 @@
           "approved_at": "2026-10-04T18:24:00+02:00",
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
-      }
+      },
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-09-family",
@@ -470,7 +499,9 @@
             "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
           }
         }
-      ]
+      ],
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-10-traffic",
@@ -555,7 +586,9 @@
             "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
           }
         }
-      ]
+      ],
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-17-police",
@@ -622,7 +655,9 @@
           "approved_at": "2026-10-04T18:24:00+02:00",
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
-      }
+      },
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-21-witness",
@@ -684,7 +719,9 @@
           "approved_at": "2026-10-04T18:24:00+02:00",
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
-      }
+      },
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-22-corruption",
@@ -740,7 +777,9 @@
           "approved_at": "2026-10-04T18:24:00+02:00",
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
-      }
+      },
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-26-administrative-short",
@@ -831,7 +870,9 @@
             "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
           }
         }
-      ]
+      ],
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-administrative-v1",
@@ -960,7 +1001,9 @@
           "approved_at": "2026-10-04T18:24:00+02:00",
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
-      }
+      },
+      "ai_reading": "archive_explicit_request_only",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-choose-lawyer",
@@ -1019,7 +1062,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Paragraf.mk се чува како историско/изворно брендирање; тековниот јавен портал е AI Advokat."
+      "legacy_branding_note_mk": "Paragraf.mk се чува како историско/изворно брендирање; тековниот јавен портал е AI Advokat.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-free-legal-aid",
@@ -1088,7 +1133,9 @@
         "approved_by": "Zoran Stojankich",
         "approved_at": "2026-10-04T18:24:00+02:00",
         "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04"
-      }
+      },
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-38-full-word-2026",
@@ -1152,7 +1199,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-39-full-word-2026",
@@ -1217,7 +1266,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-40-full-word-2026",
@@ -1310,7 +1361,9 @@
             "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
           }
         }
-      ]
+      ],
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-41-full-word-2026",
@@ -1385,7 +1438,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-42-full-word-2026",
@@ -1460,7 +1515,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-43-full-word-2026",
@@ -1524,7 +1581,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-44-full-word-2026",
@@ -1594,7 +1653,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-45-full-word-2026",
@@ -1664,7 +1725,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-46-full-word-2026",
@@ -1728,7 +1791,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-47-full-word-2026",
@@ -1792,7 +1857,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-48-full-word-2026",
@@ -1856,7 +1923,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-49-full-word-2026",
@@ -1920,7 +1989,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-50-full-word-2026",
@@ -1984,7 +2055,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-51-full-word-2026",
@@ -2049,7 +2122,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-52-full-word-2026",
@@ -2114,7 +2189,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-53-full-word-2026",
@@ -2214,7 +2291,9 @@
             "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
           }
         }
-      ]
+      ],
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-54-full-word-2026",
@@ -2313,7 +2392,9 @@
             "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
           }
         }
-      ]
+      ],
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-55-full-word-2026",
@@ -2377,7 +2458,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-56-full-word-2026",
@@ -2441,7 +2524,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-57-full-word-2026",
@@ -2505,7 +2590,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-58-full-word-2026",
@@ -2569,7 +2656,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-59-full-word-2026",
@@ -2656,7 +2745,9 @@
             "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
           }
         }
-      ]
+      ],
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-60-full-word-2026",
@@ -2720,7 +2811,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-61-full-word-2026",
@@ -2784,7 +2877,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-62-full-word-2026",
@@ -2848,7 +2943,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-63-full-word-2026",
@@ -2912,7 +3009,9 @@
           "scope": "catalogue_legal_provenance_and_attribution_implementation_only"
         }
       },
-      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран."
+      "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     },
     {
       "id": "guide-administrative-v2",
@@ -3052,7 +3151,9 @@
         "artifact_file": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2_FINAL_MASTER.pdf",
         "artifact_sha256": "4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d",
         "publication_state": "hold_pending_full_content_reaudit"
-      }
+      },
+      "ai_reading": "authorized_private_vault_secondary_context",
+      "ai_legal_authority": false
     }
   ]
 }

@@ -65,3 +65,8 @@
   .ai-chat-starters{grid-template-columns:1fr}
   .ai-chat-status{display:none}
 }
+
+.ai-guide-vault-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px}
+.ai-guide-vault-bar .btn{padding:7px 9px;font-size:.76rem}
+.ai-guide-vault-status{font-size:.76rem;font-weight:800;color:var(--muted)}
+.ai-guide-vault-note{display:block;margin-top:7px;line-height:1.45;color:var(--muted)}

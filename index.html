@@ -15,7 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/app-icon.svg" />
-  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261005-gpt-corpus-v2" />
+  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261005-guide-vault-v1" />
   <meta name="application-name" content="AI Advokat" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -1437,6 +1437,13 @@
           <div class="ai-chat-composer-zone">
             <div class="ai-chat-provider-note">
               <strong>Приватност:</strong> не прикачувајте адвокатска тајна, матични броеви, здравствени или други чувствителни податоци. Прилозите се обработуваат само кога server-side provider/privacy gate е активен; разговорот останува session-private и OpenAI Responses се повикува со store:false.
+              <div class="ai-guide-vault-bar">
+                <button class="btn light" id="aiGuideVaultImport" type="button">📚 Вчитај приватни водичи</button>
+                <button class="btn light" id="aiGuideVaultClear" type="button">Избриши локални водичи</button>
+                <span id="aiGuideVaultStatus" class="ai-guide-vault-status">Guide Vault · проверка…</span>
+                <input id="aiGuideVaultFiles" type="file" multiple hidden aria-label="Вчитај приватни AI Advokat водичи" accept=".zip,.docx,application/zip,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+              </div>
+              <small class="ai-guide-vault-note">Guide Vault ги чува датотеките само на овој уред. Кон GPT се испраќа само релевантен водич со SHA-256 што се совпаѓа со AI Advokat регистарот; водичот е секундарен материјал, не официјален закон.</small>
             </div>
             <div class="ai-chat-composer">
               <div class="ai-chat-attachments" id="aiChatAttachments"></div>
@@ -3510,7 +3517,8 @@
   renderCapabilityLabels();
   loadCapabilities();
 </script>
-<script src="/assets/ai-advokat-chat.js?v=20261005-gpt-corpus-v2"></script>
+<script src="/assets/guide-vault.js?v=20261005-private-vault-v1"></script>
+<script src="/assets/ai-advokat-chat.js?v=20261005-guide-vault-v1"></script>
 
 </body>
 </html>

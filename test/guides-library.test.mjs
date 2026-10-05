@@ -147,7 +147,7 @@ describe("Zoran guides library governance",()=>{
 
   test("G13 final catalogue control metrics remain internally consistent",()=>{
     const publicRecords=data.records.filter(x=>x.catalog_public===true);
-    assert.equal(data.generated_on,"2026-10-04");
+    assert.equal(data.generated_on,"2026-10-05");
     assert.equal(publicRecords.length,39);
     assert.equal(publicRecords.filter(x=>x.source_role!=="version_history").length,37);
     assert.equal(publicRecords.filter(x=>x.source_role==="version_history").length,2);
@@ -471,6 +471,23 @@ describe("Zoran guides library governance",()=>{
     assert.match(a.hold_reason,/Claude\/GPT/);
     assert.equal(a.hold_evidence.source_package_38_63_sha256,"5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172");
     assert.ok(data.records.every(x=>x.public_pdf===null));
+  });
+
+
+  test("G42 private Guide Vault reading is authorized without changing legacy RAG/publication gates",()=>{
+    const a=data.collection.ai_reading_authorization;
+    assert.equal(a.decision_id,"private-guide-reading-2026-10-05");
+    assert.equal(a.current_public_records_eligible,37);
+    assert.equal(a.public_full_text_release,false);
+    assert.equal(a.rag_eligibility,false);
+    assert.equal(a.production_corpus_write,false);
+    assert.equal(a.legal_corpus_promotion,false);
+    const current=data.records.filter(x=>x.catalog_public===true&&x.public_record_enabled===true&&x.source_role!=="version_history");
+    assert.ok(current.every(x=>x.ai_reading==="authorized_private_vault_secondary_context"));
+    assert.ok(current.every(x=>x.ai_legal_authority===false));
+    assert.ok(data.records.filter(x=>x.source_role==="version_history").every(x=>x.ai_reading==="archive_explicit_request_only"));
+    assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
+    assert.ok(data.collection.public_experience.features.includes("private_fingerprint_verified_guide_vault"));
   });
 
 });
