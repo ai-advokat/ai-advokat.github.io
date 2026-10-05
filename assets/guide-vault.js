@@ -9,6 +9,7 @@
   const DB_VERSION=1;
   const STORE="guide_files";
   const DOCX_MIME="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  const PDF_MIME="application/pdf";
   const MAX_GUIDE_FILE_BYTES=2_500_000;
   const PACKAGE_NAME_RE=/^Pravni_vodichi_38_63_FULL_WORD_ALL(?:\(\d+\))?\.zip$/i;
 
@@ -99,7 +100,9 @@
     return new Set([
       record?.source_file,
       record?.candidate_artifact?.docx_file,
-      record?.public_master_artifact?.docx_file
+      record?.candidate_artifact?.pdf_file,
+      record?.public_master_artifact?.docx_file,
+      record?.public_master_artifact?.pdf_file
     ].filter(Boolean).map(basename));
   }
 
@@ -107,7 +110,9 @@
     return new Set([
       record?.sha256,
       record?.candidate_artifact?.docx_sha256,
-      record?.public_master_artifact?.docx_sha256
+      record?.candidate_artifact?.pdf_sha256,
+      record?.public_master_artifact?.docx_sha256,
+      record?.public_master_artifact?.pdf_sha256
     ].filter(v=>/^[0-9a-f]{64}$/i.test(String(v||""))).map(v=>String(v).toLowerCase()));
   }
 
@@ -195,9 +200,17 @@
     return btoa(out);
   }
 
-  async function importDocxBytes(name,bytes,records){
+  function mimeForGuideName(name){
     const base=basename(name);
-    if(!/\.docx$/i.test(base)) return {status:"skipped",name:base,reason:"not_docx"};
+    if(/\.pdf$/i.test(base)) return PDF_MIME;
+    if(/\.docx$/i.test(base)) return DOCX_MIME;
+    return null;
+  }
+
+  async function importGuideBytes(name,bytes,records){
+    const base=basename(name);
+    const mime=mimeForGuideName(base);
+    if(!mime) return {status:"skipped",name:base,reason:"unsupported_guide_type"};
     if(bytes.length<=0 || bytes.length>MAX_GUIDE_FILE_BYTES) return {status:"rejected",name:base,reason:"file_size"};
     const record=matchRecordForFile(base,records);
     if(!record) return {status:"skipped",name:base,reason:"not_authorized_or_unregistered"};
@@ -208,14 +221,14 @@
     await put({
       guideId:record.id,
       name:base,
-      mime:DOCX_MIME,
+      mime,
       sha256:actual,
       bytes:bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),
       importedAt:new Date().toISOString(),
       verificationLabel:String(record.verification_label||""),
       status:String(record.status||"")
     });
-    return {status:"imported",name:base,guideId:record.id,sha256:actual};
+    return {status:"imported",name:base,guideId:record.id,sha256:actual,mime};
   }
 
   async function importFiles(fileList,registry){
@@ -235,11 +248,11 @@
         const entries=await unzip(bytes);
         for(const entry of entries){
           if(/\.docx$/i.test(entry.name) && !/^00_INDEX_/i.test(basename(entry.name))){
-            results.push(await importDocxBytes(entry.name,entry.bytes,records));
+            results.push(await importGuideBytes(entry.name,entry.bytes,records));
           }
         }
-      }else if(/\.docx$/i.test(name)){
-        results.push(await importDocxBytes(name,bytes,records));
+      }else if(/\.(?:docx|pdf)$/i.test(name)){
+        results.push(await importGuideBytes(name,bytes,records));
       }else{
         results.push({status:"skipped",name,reason:"unsupported_type"});
       }
@@ -265,7 +278,7 @@
       out.push({
         guideId:row.guideId,
         name:row.name,
-        mime:row.mime||DOCX_MIME,
+        mime:row.mime||mimeForGuideName(row.name)||DOCX_MIME,
         sha256:row.sha256,
         base64:bytesToBase64(bytes)
       });
