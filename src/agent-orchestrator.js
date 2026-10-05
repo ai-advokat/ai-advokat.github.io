@@ -86,6 +86,15 @@ export const ORCHESTRATOR_MODES = Object.freeze({
   GENERAL: "general_gpt"
 });
 
+export const LEGAL_OPERATING_PROTOCOL = Object.freeze({
+  id:"AI_ADVOKAT_LEGAL_OPERATING_PROTOCOL_v1",
+  document:"/data/legal-operating-protocol-v1.json",
+  directive:"/architecture/AI_ADVOKAT_LEGAL_OPERATING_PROTOCOL.md",
+  cycle:Object.freeze(["intake","knowledge","system_map","diagnosis","specialist_routing","options","legal_stress_test","authority_gate","solution_design","implementation","adversarial_review","verify","learn"]),
+  createsLegalAuthority:false,
+  humanGateUnchanged:true
+});
+
 export const ORCHESTRATION_PATTERN = Object.freeze({
   pattern: "manager_agents_as_tools",
   userFacingAgent: AGENT_ROLES.chief.id,
@@ -161,6 +170,7 @@ export function buildAgentPlan(question, {preferCorpus=false, explicitMode=null}
 
   return Object.freeze({
     mode,
+    legalOperatingProtocol:LEGAL_OPERATING_PROTOCOL,
     orchestrator:AGENT_ROLES.chief.id,
     agents,
     verifier:AGENT_ROLES.verify.id,
@@ -186,6 +196,12 @@ export function buildExecutionGraph(plan) {
     pattern:ORCHESTRATION_PATTERN.pattern,
     userFacingAgent:AGENT_ROLES.chief.id,
     phases:Object.freeze([
+      Object.freeze({
+        id:"legal_operating_protocol",
+        execution:"mandatory_for_legal_tasks",
+        cycle:LEGAL_OPERATING_PROTOCOL.cycle,
+        rule:"Structure the problem before specialist research; the protocol creates no legal authority and cannot bypass any Human Gate."
+      }),
       Object.freeze({
         id:"specialist_research",
         execution:"parallel_when_independent",
@@ -266,7 +282,7 @@ export function orchestratorInstructions(plan) {
     "External research must be a separate step visibly labelled 'External legal research' and must never be presented as authored/native AI Advokat material.",
     "For Macedonian law, never promote a version to current/verified without controlling official-source/version evidence and the applicable Human Gate.",
     "Every material legal proposition must be traceable to a supplied source or tool result.",
-    "The Verification & Citation Agent must check source, jurisdiction, date/version, applicability and citation coverage before you compose the final answer.",
+    "The Verification & Citation Agent must check source, jurisdiction, date/version, applicability and citation coverage before you compose the final answer. For material legal tasks, apply the Legal Operating Protocol: Intake -> Knowledge -> System Map -> Diagnosis -> Specialist Routing -> Options -> Legal Stress Test -> Authority & Human Gate -> Solution Design -> Implementation -> Adversarial Review -> Verify -> Learn. Adversarial review challenges the proposal but never substitutes for source verification or Human Gate approval.",
     "AI may research, compare and propose; author approval, current-law status, corpus promotion, RAG eligibility and sensitive production changes remain separate Human Gates."
   ].join("\n");
 }
