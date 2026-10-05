@@ -13,6 +13,7 @@ const { worker, workerModule } = await loadWorker();
 const index = fs.readFileSync("index.html", "utf8");
 const workerSrc = fs.readFileSync("src/index.js", "utf8");
 const chatJs = fs.readFileSync("assets/ai-advokat-chat.js", "utf8");
+const guideVaultJs = fs.readFileSync("assets/guide-vault.js", "utf8");
 const BASE = "https://ai-advokat-github-io.aiadvokat16.workers.dev";
 
 async function liveCapabilities() {
@@ -254,14 +255,17 @@ describe("versions, case law, documents", () => {
     assert.ok(!/successful resolution as proof/i.test(body));
   });
 
-  test("VD4 document workspace stays locked while chat attachment UI is allowed only behind a provider/privacy gate", () => {
+  test("VD4 document workspace stays locked while chat attachments and the local Guide Vault stay separately privacy-gated", () => {
     const fileInputs=[...index.matchAll(/<input\b[^>]*type="file"[^>]*>/g)].map(m=>m[0]);
-    assert.equal(fileInputs.length,1);
-    assert.match(fileInputs[0],/id="aiChatFiles"/);
+    assert.equal(fileInputs.length,2);
+    assert.ok(fileInputs.some(x=>/id="aiChatFiles"/.test(x)));
+    assert.ok(fileInputs.some(x=>/id="aiGuideVaultFiles"/.test(x) && /hidden/.test(x)));
     assert.ok(!/FormData\(|\.upload\b|\/api\/documents"?,\s*\{[^}]*method/.test(index));
     assert.match(chatJs,/\/api\/chat/);
     assert.match(workerSrc,/OPENAI_FILE_INPUT_ENABLED/);
     assert.match(workerSrc,/attachment_processing_locked/);
+    assert.match(guideVaultJs,/indexedDB/);
+    assert.doesNotMatch(workerSrc,/INSERT\s+INTO\s+.*guide/i);
     const body = fnBody("openDocumentsInfo");
     assert.ok(!/el\("(input|textarea|form)"/.test(body), "documents workspace panel must not contain inputs");
     assert.match(body, /заклучена и во подготовка/);
