@@ -11,6 +11,7 @@ import {
 const html=fs.readFileSync("index.html","utf8");
 const chatJs=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
 const chatCss=fs.readFileSync("assets/ai-advokat-chat.css","utf8");
+const guideVaultJs=fs.readFileSync("assets/guide-vault.js","utf8");
 const worker=fs.readFileSync("src/index.js","utf8");
 const wrangler=fs.readFileSync("wrangler.jsonc","utf8");
 const manifest=JSON.parse(fs.readFileSync("data/agent-architecture-v2.json","utf8"));
@@ -174,4 +175,44 @@ test("CHAT18 production UI copy no longer claims GPT activation is pending",()=>
   assert.doesNotMatch(html,/production provider-от ќе биде активиран/);
   assert.doesNotMatch(html,/GPT-6\.1 Sol target · provider activation pending/);
   assert.match(html,/store:false/);
+});
+
+
+test("CHAT19 homepage exposes a private Guide Vault without public guide full-text publication",()=>{
+  for(const id of ["aiGuideVaultImport","aiGuideVaultClear","aiGuideVaultFiles","aiGuideVaultStatus"]){
+    assert.match(html,new RegExp('id="'+id+'"'));
+  }
+  assert.match(html,/assets\/guide-vault\.js/);
+  assert.match(html,/Guide Vault ги чува датотеките само на овој уред/);
+  assert.match(guideVaultJs,/indexedDB/);
+  assert.match(guideVaultJs,/Pravni_vodichi_38_63_FULL_WORD_ALL/);
+});
+
+test("CHAT20 guide documents are fingerprint-verified server-side before GPT attachment",()=>{
+  assert.match(chatJs,/guideDocumentsForMatches/);
+  assert.match(chatJs,/guideDocuments,/);
+  assert.match(worker,/validateGuideDocuments/);
+  assert.match(worker,/guide_document_fingerprint_mismatch/);
+  assert.match(worker,/guideAllowedNames/);
+  assert.match(worker,/guideAllowedHashes/);
+  assert.match(worker,/sha256BytesHex/);
+  assert.match(worker,/authorized_private_vault_secondary_context/);
+});
+
+test("CHAT21 full guides remain a separate secondary source layer under Human Gate",()=>{
+  const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(orchestrator,/GUIDE_DOCUMENT attachments are secondary authored\/editorial guides/);
+  assert.match(orchestrator,/they are not official law/);
+  assert.match(worker,/LEGAL_AUTHORITY: false/);
+  assert.match(worker,/ai_advokat_legal_corpus_plus_guides/);
+  assert.match(worker,/ai_advokat_guides_fulltext_first/);
+  assert.match(chatJs,/Прочитани водичи/);
+});
+
+test("CHAT22 guide vault preserves store:false and has no server-side guide persistence path",()=>{
+  const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(orchestrator,/store:false/);
+  assert.doesNotMatch(worker,/INSERT\s+INTO\s+.*guide/i);
+  assert.doesNotMatch(worker,/UPDATE\s+.*guide/i);
+  assert.match(guideVaultJs,/const DB_NAME="ai-advokat-private-guide-vault"/);
 });
