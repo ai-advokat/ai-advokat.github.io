@@ -1096,6 +1096,7 @@ export function extractArticleCrossReferences(text,{max=12}={}){
   const source=String(text || "").normalize("NFKC").replace(/[–—]/g,"-");
   const out=[];
   const seen=new Set();
+  const blockedSpans=[];
   const limit=Math.max(1,Math.min(20,Number(max)||12));
 
   const add=(value)=>{
@@ -1108,20 +1109,26 @@ export function extractArticleCrossReferences(text,{max=12}={}){
   const expandRange=(a,b)=>{
     const start=Number.parseInt(a,10);
     const end=Number.parseInt(b,10);
-    if(!Number.isFinite(start) || !Number.isFinite(end) || end<start || end-start>20) return;
+    if(!Number.isFinite(start) || !Number.isFinite(end) || end<start || end-start>20) return false;
     for(let n=start;n<=end && out.length<limit;n++) add(String(n));
+    return true;
   };
 
   // Explicit same-statute ranges such as "членовите 483 до 490" or "чл. 483-490".
   const rangeRe=/(?:член(?:от|овите|ови)?|чл\.?|articles?)\s*([0-9]+)\s*(?:до|-)\s*(?:член(?:от|овите|ови)?|чл\.?|articles?)?\s*([0-9]+)/giu;
   for(const match of source.matchAll(rangeRe)){
-    expandRange(match[1],match[2]);
+    const accepted=expandRange(match[1],match[2]);
+    if(!accepted && Number.isInteger(match.index)){
+      blockedSpans.push([match.index,match.index+match[0].length]);
+    }
     if(out.length>=limit) return out;
   }
 
   // Lists and single references, including lettered articles such as 122-а.
   const listRe=/(?:член(?:от|овите|ови)?|чл\.?|articles?)\s*((?:[0-9]+(?:-[\p{L}]+)?)(?:\s*(?:,|и)\s*[0-9]+(?:-[\p{L}]+)?)*)/giu;
   for(const match of source.matchAll(listRe)){
+    const start=Number.isInteger(match.index) ? match.index : -1;
+    if(start>=0 && blockedSpans.some(([a,b])=>start>=a && start<b)) continue;
     for(const token of String(match[1]).split(/\s*(?:,|и)\s*/u)){
       add(token);
       if(out.length>=limit) return out;
