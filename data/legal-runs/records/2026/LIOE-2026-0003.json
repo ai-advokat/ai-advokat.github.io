@@ -29,7 +29,14 @@
     "/data/human-gate-decision-ledger.json",
     "/.github/activation/lioe-runtime-production-request.json",
     "/migrations/0028_lioe_runtime_telemetry.sql",
-    "https://github.com/ai-advokat/ai-advokat.github.io/pull/99"
+    "https://github.com/ai-advokat/ai-advokat.github.io/pull/99",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104222",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104456",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104446",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104318",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104315",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104230",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104455"
   ],
   "source_verification_state": "VERIFIED",
   "current_law_claim_material": false,
@@ -50,13 +57,13 @@
   },
   "implementation_state": "STAGED",
   "rollback_reference": "1d04f77373343bd6cc685f7084640d68612fd575",
-  "legal_stress_test_state": "PENDING",
-  "adversarial_review_state": "PENDING",
-  "verification_state": "PENDING",
-  "outcome_state": "UNKNOWN",
-  "release_status": "BLOCKED",
+  "legal_stress_test_state": "PASSED",
+  "adversarial_review_state": "PASSED",
+  "verification_state": "PASSED",
+  "outcome_state": "PARTIAL_SUCCESS",
+  "release_status": "READY_FOR_MERGE",
   "first_pass_verification": false,
-  "verification_attempts": 2,
+  "verification_attempts": 3,
   "correction_required": true,
   "learning_candidates": [
     "Runtime telemetry tests must distinguish primary provider calls from postflight provider calls.",
@@ -82,6 +89,7 @@
     "The run cannot close SUCCESS before repository CI, production migration, runtime deploy and post-deploy verification evidence exist.",
     "Public release is treated as a separate named gate from GitHub merge, schema migration and runtime deployment.",
     "First PR #99 CI iteration found two test-contract regressions only: explicit provider-call fixture mismatch and a hard-coded migration count of 27 after adding migration 0028. LIOE unit, specialist and activation safety tests otherwise reached their preceding checkpoints.",
-    "Second PR #99 CI iteration passed focused LIOE, corpus, activation, membership, relevance and ZKP safety; broad security reached the Audit Trail suite and found only a hard-coded 11-subject expectation after adding the twelfth governed LIOE release subject."
+    "Second PR #99 CI iteration passed focused LIOE, corpus, activation, membership, relevance and ZKP safety; broad security reached the Audit Trail suite and found only a hard-coded 11-subject expectation after adding the twelfth governed LIOE release subject.",
+    "Third PR #99 CI iteration passed all seven checks on the exact candidate: LIOE governance, broad security, corpus safety, ZKP corpus safety, activation safety, membership safety and relevance safety."
   ]
 }
