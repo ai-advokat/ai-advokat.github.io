@@ -32,7 +32,10 @@ const required = [
   "scripts/evaluate-legal-intelligence-engine.mjs",
   "scripts/validate-legal-run-records.mjs",
   "architecture/AI_ADVOKAT_LEGAL_INTELLIGENCE_ENGINE.md",
-  "docs/standards/AI_ADVOKAT_LEGAL_RUN_RECORD_PROTOCOL_v1.md"
+  "docs/standards/AI_ADVOKAT_LEGAL_RUN_RECORD_PROTOCOL_v1.md",
+  "src/legal-runtime-governance.js",
+  "test/legal-runtime-governance.test.mjs",
+  "migrations/0028_lioe_runtime_telemetry.sql"
 ];
 
 for (const path of required) {
@@ -75,6 +78,13 @@ if (!migrationTarget || migrationTarget.database_id !== preview.database_id) {
   throw new Error("Preview migration target must match Preview D1.");
 }
 if (pkg.version !== "1.3.3") throw new Error("package.json version must be 1.3.3.");
+for (const [name,expected] of Object.entries({
+  LIOE_RUNTIME_GOVERNANCE_ENABLED:"true",
+  LIOE_POSTFLIGHT_ENABLED:"true",
+  LIOE_RUNTIME_TELEMETRY_ENABLED:"true"
+})) {
+  if (wrangler.vars?.[name] !== expected) throw new Error(`${name} must be armed as ${expected}.`);
+}
 
 if (html.includes("zenodo.org/uploads/")) {
   throw new Error("Private Zenodo upload URL exposed in public index.html.");
