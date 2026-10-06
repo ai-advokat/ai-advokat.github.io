@@ -260,6 +260,19 @@
       "migration": "/migrations/0028_lioe_runtime_telemetry.sql",
       "table": "lioe_runtime_runs",
       "privacy": "metadata_only_no_question_answer_attachment_identity_or_source_text"
+    },
+    "specialist_execution": {
+      "state": "IMPLEMENTED_FULL_RUNTIME_CANDIDATE",
+      "pattern": "selected bounded specialists execute in parallel before Chief synthesis",
+      "profiles": [
+        "L2_STRATEGY_PROCEDURE",
+        "L3_CONSEQUENTIAL",
+        "L4_LEGAL_TRUTH_GOVERNANCE"
+      ],
+      "max_parallel": 4,
+      "L0_L1_fanout": false,
+      "runtime_gate": "LIOE_SPECIALIST_EXECUTION_ENABLED",
+      "specialist_failure": "FAIL_CLOSED"
     }
   }
 }
