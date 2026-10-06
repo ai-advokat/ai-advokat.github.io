@@ -49,7 +49,8 @@
     "test:legal-intelligence-engine": "node --no-warnings --test test/legal-intelligence-engine.test.mjs",
     "eval:legal-intelligence-engine": "node scripts/evaluate-legal-intelligence-engine.mjs",
     "validate:legal-runs": "node scripts/validate-legal-run-records.mjs",
-    "test:legal-runtime-governance": "node --no-warnings --test test/legal-runtime-governance.test.mjs"
+    "test:legal-runtime-governance": "node --no-warnings --test test/legal-runtime-governance.test.mjs",
+    "test:lioe-production-activation": "node --no-warnings --test test/lioe-production-activation.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
