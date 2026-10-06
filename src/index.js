@@ -36,6 +36,8 @@ import {
   runLegalPostflightVerifier
 } from "./agent-orchestrator.js";
 import {
+  LEGAL_RUNTIME_GOVERNANCE_VERSION,
+  legalPostflightRequired,
   assessLegalRuntimeRelease,
   buildSanitisedRuntimeRecord,
   persistSanitisedRuntimeRecord
@@ -1884,6 +1886,19 @@ async function handleGPTChat(request,env){
   const lioeRunId=lioeEngaged
     ? "LIOE-RT-"+lioeRunStartedAt.replace(/[-:.TZ]/g,"").slice(0,14)+"-"+crypto.randomUUID().slice(0,8)
     : null;
+  const postflightRequiredForMission=legalPostflightRequired(plan);
+  if(lioeEngaged && env.LIOE_RUNTIME_GOVERNANCE_ENABLED!=="true"){
+    await releaseMonthlyQuota(env,{subject,period});
+    return json(request,{ok:false,error:"lioe_runtime_governance_locked",message:"LIOE runtime governance is not enabled on the server."},503);
+  }
+  if(postflightRequiredForMission && env.LIOE_POSTFLIGHT_ENABLED!=="true"){
+    await releaseMonthlyQuota(env,{subject,period});
+    return json(request,{ok:false,error:"lioe_postflight_locked",message:"This legal mission requires LIOE postflight verification; the gate is not enabled."},503);
+  }
+  if(plan.legalIntelligenceEngine?.observability?.run_record_required===true && env.LIOE_RUNTIME_TELEMETRY_ENABLED!=="true"){
+    await releaseMonthlyQuota(env,{subject,period});
+    return json(request,{ok:false,error:"lioe_observability_locked",message:"This L2-L4 mission requires governed runtime observability; telemetry is not enabled."},503);
+  }
   const fastGeneral=plan.mode===ORCHESTRATOR_MODES.GENERAL
     && !webRequested
     && attachmentCheck.attachments.length===0
@@ -1926,7 +1941,9 @@ async function handleGPTChat(request,env){
         sourceMode:"provider_failure",
         postflightMeta:{attempts:0,firstPass:false,providerCalls:0,primaryProviderCalls:0}
       });
-      telemetryState=(await persistSanitisedRuntimeRecord(env,record)).state;
+      telemetryState=env.LIOE_RUNTIME_TELEMETRY_ENABLED==="true"
+        ? (await persistSanitisedRuntimeRecord(env,record)).state
+        : "disabled";
     }
     return json(request,{
       ok:false,error:result.error,problems:result.problems || null,
@@ -1962,7 +1979,9 @@ async function handleGPTChat(request,env){
         sourceMode:"legal_postflight_failed",
         postflightMeta:{...postflight,primaryProviderCalls:1}
       });
-      telemetryState=(await persistSanitisedRuntimeRecord(env,record)).state;
+      telemetryState=env.LIOE_RUNTIME_TELEMETRY_ENABLED==="true"
+        ? (await persistSanitisedRuntimeRecord(env,record)).state
+        : "disabled";
     }
     return json(request,{
       ok:false,
@@ -2028,7 +2047,9 @@ async function handleGPTChat(request,env){
       sourceMode,
       postflightMeta:{...postflight,primaryProviderCalls:1}
     });
-    const telemetry=await persistSanitisedRuntimeRecord(env,record);
+    const telemetry=env.LIOE_RUNTIME_TELEMETRY_ENABLED==="true"
+      ? await persistSanitisedRuntimeRecord(env,record)
+      : {ok:false,state:"disabled"};
     runtimeTelemetry=telemetry.state;
     if(plan.legalIntelligenceEngine?.observability?.run_record_required===true && !telemetry.ok){
       await releaseMonthlyQuota(env,{subject,period});
@@ -2438,10 +2459,23 @@ function publicAgentRole(role) {
   };
 }
 
+async function lioeRuntimeTelemetryStatus(env){
+  if(env?.LIOE_RUNTIME_TELEMETRY_ENABLED!=="true") return "disabled";
+  if(!env?.DB) return "database_not_bound";
+  try{
+    await env.DB.prepare("SELECT run_id FROM lioe_runtime_runs LIMIT 1").first();
+    return "ready";
+  }catch(error){
+    const message=String(error?.message||error);
+    return /no such table/i.test(message) ? "migration_0028_required" : "unavailable";
+  }
+}
+
 async function handleOrchestratorArchitecture(request, env) {
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
 
   const readiness=orchestratorRuntimeReadiness(env);
+  const telemetryStatus=await lioeRuntimeTelemetryStatus(env);
   return json(request,{
     ok:true,
     architecture:"AI_ADVOKAT_GOVERNED_AGENT_ARCHITECTURE_v2",
@@ -2458,7 +2492,11 @@ async function handleOrchestratorArchitecture(request, env) {
       externalResearchTools:readiness.externalResearchTools,
       fileInputs:readiness.fileInputs,
       tracing:readiness.tracing,
-      humanGate:readiness.humanGate
+      humanGate:readiness.humanGate,
+      lioeRuntimeGovernance:env.LIOE_RUNTIME_GOVERNANCE_ENABLED==="true" ? "enabled" : "locked",
+      lioePostflight:env.LIOE_POSTFLIGHT_ENABLED==="true" ? "enabled" : "locked",
+      lioeRuntimeTelemetry:telemetryStatus,
+      lioeRuntimeVersion:LEGAL_RUNTIME_GOVERNANCE_VERSION
     },
     doctrine:{
       corpus:"Corpus first -> exact source -> exact version -> citation -> synthesis.",
@@ -2533,6 +2571,7 @@ async function handleCapabilities(request, env) {
 
   const database = await dbStatus(env);
   const coverage = await corpusCoverage(env, database);
+  const lioeTelemetry=await lioeRuntimeTelemetryStatus(env);
 
   return json(request, {
     ok: true,
@@ -2558,6 +2597,9 @@ async function handleCapabilities(request, env) {
       legalOrchestrator: orchestratorRuntimeReadiness(env).provider==="configured"
         ? "gpt_6_1_sol_live_governed"
         : "architecture_v2_provider_locked",
+      lioeRuntimeGovernance: env.LIOE_RUNTIME_GOVERNANCE_ENABLED==="true" ? "enabled" : "locked",
+      lioePostflight: env.LIOE_POSTFLIGHT_ENABLED==="true" ? "enabled" : "locked",
+      lioeRuntimeTelemetry: lioeTelemetry,
       gptWebSearch: orchestratorRuntimeReadiness(env).externalResearchTools,
       gptFileInputs: orchestratorRuntimeReadiness(env).fileInputs,
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
