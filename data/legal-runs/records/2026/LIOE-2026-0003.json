@@ -55,10 +55,13 @@
   "verification_state": "PENDING",
   "outcome_state": "UNKNOWN",
   "release_status": "BLOCKED",
-  "first_pass_verification": null,
-  "verification_attempts": null,
-  "correction_required": false,
-  "learning_candidates": [],
+  "first_pass_verification": false,
+  "verification_attempts": 1,
+  "correction_required": true,
+  "learning_candidates": [
+    "Runtime telemetry tests must distinguish primary provider calls from postflight provider calls.",
+    "Corpus migration regression counts must advance when a new additive privacy-safe migration is introduced."
+  ],
   "provider_or_tool_failures": [],
   "fallback_mode": "NONE",
   "data_classification": "PUBLIC",
@@ -76,6 +79,7 @@
     "Live run opened for the explicit full LIOE implementation request.",
     "Provider activation is not part of this run and remains a separate Human Gate.",
     "The run cannot close SUCCESS before repository CI, production migration, runtime deploy and post-deploy verification evidence exist.",
-    "Public release is treated as a separate named gate from GitHub merge, schema migration and runtime deployment."
+    "Public release is treated as a separate named gate from GitHub merge, schema migration and runtime deployment.",
+    "First PR #99 CI iteration found two test-contract regressions only: explicit provider-call fixture mismatch and a hard-coded migration count of 27 after adding migration 0028. LIOE unit, specialist and activation safety tests otherwise reached their preceding checkpoints."
   ]
 }
