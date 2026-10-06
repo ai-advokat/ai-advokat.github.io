@@ -7,8 +7,8 @@ const h=JSON.parse(fs.readFileSync("data/audit-trail-decision-history.json","utf
 
 describe("Audit Trail & Decision History",()=>{
   test("ATH1 governed subjects have unique history records",()=>{
-    assert.equal(h.subjects.length,11);
-    assert.equal(new Set(h.subjects.map(x=>x.subject_id)).size,11);
+    assert.equal(h.subjects.length,12);
+    assert.equal(new Set(h.subjects.map(x=>x.subject_id)).size,12);
   });
 
   test("ATH2 registry is structurally valid",()=>{
@@ -52,5 +52,15 @@ describe("Audit Trail & Decision History",()=>{
     const e=x.events.find(e=>e.event_type==="corrected_candidate_fingerprinted");
     assert.match(e.artifact_fingerprint.docx_sha256,/^[0-9a-f]{64}$/);
     assert.match(e.artifact_fingerprint.pdf_sha256,/^[0-9a-f]{64}$/);
+  });
+
+  test("ATH7 LIOE release subject preserves four isolated approvals and no provider activation",()=>{
+    const x=h.subjects.find(x=>x.subject_id==="lioe-full-runtime-2026-10-06");
+    assert.ok(x);
+    const gates=x.events.filter(e=>e.event_type==="human_gate_decision").map(e=>e.gate_type).sort();
+    assert.deepEqual(gates,["github_merge","production_runtime_deploy","production_schema_migration","public_release"]);
+    assert.equal(gates.includes("provider_activation"),false);
+    const source=x.events.find(e=>e.event_type==="source_registered");
+    assert.match(source.artifact_fingerprint.activation_request_sha256,/^[0-9a-f]{64}$/);
   });
 });
