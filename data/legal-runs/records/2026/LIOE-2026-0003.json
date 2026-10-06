@@ -1,6 +1,6 @@
 {
   "run_id": "LIOE-2026-0003",
-  "case_id": null,
+  "case_id": "PR-99",
   "started_at": "2026-10-06T08:00:00Z",
   "finished_at": null,
   "record_origin": "LIVE_LIOE",
@@ -28,7 +28,8 @@
     "/data/legal-operating-protocol-v1.json",
     "/data/human-gate-decision-ledger.json",
     "/.github/activation/lioe-runtime-production-request.json",
-    "/migrations/0028_lioe_runtime_telemetry.sql"
+    "/migrations/0028_lioe_runtime_telemetry.sql",
+    "https://github.com/ai-advokat/ai-advokat.github.io/pull/99"
   ],
   "source_verification_state": "VERIFIED",
   "current_law_claim_material": false,
