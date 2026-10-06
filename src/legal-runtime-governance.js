@@ -219,7 +219,7 @@ export function buildSanitisedRuntimeRecord({
     article_context_count:Array.isArray(articleBundle?.context)?articleBundle.context.length:0,
     guide_context_count:Number(guideContextCount)||0,
     attachment_count:Number(attachmentCount)||0,
-    provider_calls:result?.ok===true ? 1+(Number(postflightMeta?.providerCalls)||0) : Number(postflightMeta?.providerCalls)||0,
+    provider_calls:(Number(postflightMeta?.primaryProviderCalls)||0)+(Number(postflightMeta?.providerCalls)||0),
     input_tokens:inputTokens||null,
     output_tokens:outputTokens||null,
     total_tokens:totalTokens||null,
