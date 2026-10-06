@@ -38,12 +38,14 @@
   "required_gate_types": [
     "github_merge",
     "production_schema_migration",
-    "production_runtime_deploy"
+    "production_runtime_deploy",
+    "public_release"
   ],
   "gate_decisions": {
     "github_merge": "approved",
     "production_schema_migration": "approved",
-    "production_runtime_deploy": "approved"
+    "production_runtime_deploy": "approved",
+    "public_release": "approved"
   },
   "implementation_state": "STAGED",
   "rollback_reference": "1d04f77373343bd6cc685f7084640d68612fd575",
@@ -72,6 +74,7 @@
   "measurement_notes": [
     "Live run opened for the explicit full LIOE implementation request.",
     "Provider activation is not part of this run and remains a separate Human Gate.",
-    "The run cannot close SUCCESS before repository CI, production migration, runtime deploy and post-deploy verification evidence exist."
+    "The run cannot close SUCCESS before repository CI, production migration, runtime deploy and post-deploy verification evidence exist.",
+    "Public release is treated as a separate named gate from GitHub merge, schema migration and runtime deployment."
   ]
 }
