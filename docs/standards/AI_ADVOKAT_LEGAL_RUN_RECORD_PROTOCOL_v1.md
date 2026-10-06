@@ -116,3 +116,16 @@ The baseline exposes record count and per-metric sample size.
 A provisional or cancelled-verification run may contribute a time observation but not a verified effectiveness score.
 
 Early samples are descriptive, not proof that AI Advokat is universally faster or more accurate.
+
+
+## Live runtime telemetry records
+
+Canonical repository run records and production chat telemetry serve different purposes.
+
+Repository records (`LIOE-2026-NNNN`) document major governed system missions and retain human-readable evidence/history.
+
+Production runtime telemetry (`LIOE-RT-...`) is written to D1 by the Worker and is privacy-minimised. It records operational states and measurements only; it is not a conversation log or case file.
+
+For L2–L4, required telemetry is part of release governance. If the D1 telemetry store is unavailable, the draft is blocked rather than silently released without its required audit record.
+
+Provider/token measurements are observational only. Monetary cost remains null until an explicit, versioned provider-price table is governed and verified.
