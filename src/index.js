@@ -1939,7 +1939,7 @@ async function handleGPTChat(request,env){
         guideContextCount:guideContext.length+guideDocumentCheck.context.length,
         attachmentCount:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
         sourceMode:"provider_failure",
-        postflightMeta:{attempts:0,firstPass:false,providerCalls:0,primaryProviderCalls:0}
+        postflightMeta:{attempts:0,firstPass:false,providerCalls:0,primaryProviderCalls:Number(result.providerCalls||0)}
       });
       telemetryState=env.LIOE_RUNTIME_TELEMETRY_ENABLED==="true"
         ? (await persistSanitisedRuntimeRecord(env,record)).state
@@ -1977,7 +1977,7 @@ async function handleGPTChat(request,env){
         guideContextCount:guideContext.length+guideDocumentCheck.context.length,
         attachmentCount:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
         sourceMode:"legal_postflight_failed",
-        postflightMeta:{...postflight,primaryProviderCalls:1}
+        postflightMeta:{...postflight,primaryProviderCalls:Number(result.providerCalls||1)}
       });
       telemetryState=env.LIOE_RUNTIME_TELEMETRY_ENABLED==="true"
         ? (await persistSanitisedRuntimeRecord(env,record)).state
@@ -2045,7 +2045,7 @@ async function handleGPTChat(request,env){
       guideContextCount:guideContext.length+guideDocumentCheck.context.length,
       attachmentCount:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
       sourceMode,
-      postflightMeta:{...postflight,primaryProviderCalls:1}
+      postflightMeta:{...postflight,primaryProviderCalls:Number(result.providerCalls||1)}
     });
     const telemetry=env.LIOE_RUNTIME_TELEMETRY_ENABLED==="true"
       ? await persistSanitisedRuntimeRecord(env,record)
@@ -2122,6 +2122,7 @@ async function handleGPTChat(request,env){
       firstPassVerification:postflight.firstPass===true,
       correctionRequired:(postflight.attempts||0)>1,
       officialWebSourceCount:runtimeAssessment.officialWebSourceCount,
+      specialistExecution:result.specialistExecution||null,
       warning:runtimeAssessment.warningMk
     } : null,
     membership:{
@@ -2495,6 +2496,7 @@ async function handleOrchestratorArchitecture(request, env) {
       humanGate:readiness.humanGate,
       lioeRuntimeGovernance:env.LIOE_RUNTIME_GOVERNANCE_ENABLED==="true" ? "enabled" : "locked",
       lioePostflight:env.LIOE_POSTFLIGHT_ENABLED==="true" ? "enabled" : "locked",
+      lioeSpecialistExecution:env.LIOE_SPECIALIST_EXECUTION_ENABLED==="true" ? "enabled" : "locked",
       lioeRuntimeTelemetry:telemetryStatus,
       lioeRuntimeVersion:LEGAL_RUNTIME_GOVERNANCE_VERSION
     },
@@ -2599,6 +2601,7 @@ async function handleCapabilities(request, env) {
         : "architecture_v2_provider_locked",
       lioeRuntimeGovernance: env.LIOE_RUNTIME_GOVERNANCE_ENABLED==="true" ? "enabled" : "locked",
       lioePostflight: env.LIOE_POSTFLIGHT_ENABLED==="true" ? "enabled" : "locked",
+      lioeSpecialistExecution: env.LIOE_SPECIALIST_EXECUTION_ENABLED==="true" ? "enabled" : "locked",
       lioeRuntimeTelemetry: lioeTelemetry,
       gptWebSearch: orchestratorRuntimeReadiness(env).externalResearchTools,
       gptFileInputs: orchestratorRuntimeReadiness(env).fileInputs,
