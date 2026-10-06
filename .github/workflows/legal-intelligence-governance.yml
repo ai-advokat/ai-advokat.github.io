@@ -9,6 +9,7 @@ on:
       - "test/agent-orchestrator.test.mjs"
       - "test/legal-intelligence-engine.test.mjs"
       - "test/legal-runtime-governance.test.mjs"
+      - "test/lioe-production-activation.test.mjs"
       - "data/legal-operating-protocol-v1.json"
       - "data/legal-intelligence-engine-v1.json"
       - "data/legal-intelligence-excellence-v1.json"
@@ -23,6 +24,8 @@ on:
       - "architecture/AI_ADVOKAT_LEGAL_INTELLIGENCE_ENGINE.md"
       - "docs/standards/AI_ADVOKAT_LEGAL_RUN_RECORD_PROTOCOL_v1.md"
       - ".github/workflows/legal-intelligence-governance.yml"
+      - ".github/workflows/lioe-runtime-production-activation.yml"
+      - ".github/activation/lioe-runtime-production-request.json"
       - "package.json"
   push:
     branches: [main]
@@ -64,6 +67,8 @@ jobs:
         run: npm run test:legal-intelligence-engine
       - name: Runtime release and telemetry governance
         run: npm run test:legal-runtime-governance
+      - name: LIOE production activation contract
+        run: npm run test:lioe-production-activation
       - name: Chief orchestrator integration
         run: npm run test:agent-orchestrator
       - name: Canonical legal evaluation
