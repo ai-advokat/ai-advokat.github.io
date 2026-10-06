@@ -46,6 +46,14 @@ test("LIOE runtime flags are armed while provider activation stays separate",()=
   assert.equal(wrangler.vars.LIOE_RUNTIME_GOVERNANCE_ENABLED,"true");
   assert.equal(wrangler.vars.LIOE_POSTFLIGHT_ENABLED,"true");
   assert.equal(wrangler.vars.LIOE_RUNTIME_TELEMETRY_ENABLED,"true");
+  assert.equal(wrangler.vars.LIOE_SPECIALIST_EXECUTION_ENABLED,"true");
   assert.equal(wrangler.vars.OPENAI_PROVIDER_ACTIVATION_STATE,"armed_secret_and_billing_required");
   assert.ok(!("OPENAI_API_KEY" in wrangler.vars));
+});
+
+
+test("production activation verifies bounded specialist execution readiness",()=>{
+  assert.match(workflow,/LIOE_SPECIALIST_EXECUTION_ENABLED/);
+  assert.match(workflow,/lioeSpecialistExecution.*enabled/);
+  assert.match(workflow,/specialistExecution.*executed/);
 });
