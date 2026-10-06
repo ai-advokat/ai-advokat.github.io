@@ -65,6 +65,62 @@
       },
       "implied_gates": [],
       "notes": "This approval does not authorize GitHub merge, public release, RAG eligibility or production corpus write."
+    },
+    {
+      "decision_id": "hg-2026-10-06-lioe-github-merge",
+      "subject_id": "lioe-full-runtime-2026-10-06",
+      "gate_type": "github_merge",
+      "decision_state": "approved",
+      "decided_at": "2026-10-06",
+      "decision_basis": "Explicit project-lead request on 2026-10-06 for full LIOE implementation, bound to the governed activation request artifact. Provider activation is explicitly excluded.",
+      "artifact_version": "AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f"
+      },
+      "implied_gates": [],
+      "notes": "Approval is isolated to this named gate and activation artifact. It does not authorize OpenAI provider activation."
+    },
+    {
+      "decision_id": "hg-2026-10-06-lioe-public-release",
+      "subject_id": "lioe-full-runtime-2026-10-06",
+      "gate_type": "public_release",
+      "decision_state": "approved",
+      "decided_at": "2026-10-06",
+      "decision_basis": "Explicit project-lead request on 2026-10-06 for full LIOE implementation, bound to the governed activation request artifact. Provider activation is explicitly excluded.",
+      "artifact_version": "AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f"
+      },
+      "implied_gates": [],
+      "notes": "Approval is isolated to this named gate and activation artifact. It does not authorize OpenAI provider activation."
+    },
+    {
+      "decision_id": "hg-2026-10-06-lioe-production-schema-migration",
+      "subject_id": "lioe-full-runtime-2026-10-06",
+      "gate_type": "production_schema_migration",
+      "decision_state": "approved",
+      "decided_at": "2026-10-06",
+      "decision_basis": "Explicit project-lead request on 2026-10-06 for full LIOE implementation, bound to the governed activation request artifact. Provider activation is explicitly excluded.",
+      "artifact_version": "AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f"
+      },
+      "implied_gates": [],
+      "notes": "Approval is isolated to this named gate and activation artifact. It does not authorize OpenAI provider activation."
+    },
+    {
+      "decision_id": "hg-2026-10-06-lioe-production-runtime-deploy",
+      "subject_id": "lioe-full-runtime-2026-10-06",
+      "gate_type": "production_runtime_deploy",
+      "decision_state": "approved",
+      "decided_at": "2026-10-06",
+      "decision_basis": "Explicit project-lead request on 2026-10-06 for full LIOE implementation, bound to the governed activation request artifact. Provider activation is explicitly excluded.",
+      "artifact_version": "AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f"
+      },
+      "implied_gates": [],
+      "notes": "Approval is isolated to this named gate and activation artifact. It does not authorize OpenAI provider activation."
     }
   ]
 }
