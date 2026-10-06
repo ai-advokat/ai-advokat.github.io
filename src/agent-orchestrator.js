@@ -417,6 +417,143 @@ function compactSourceContext(items,label) {
   }).join("\n\n---\n\n");
 }
 
+export function specialistExecutionRequired(plan){
+  const lioe=plan?.legalIntelligenceEngine;
+  const profile=lioe?.mission_profile?.id||"GENERAL_BYPASS";
+  return lioe?.engaged===true
+    && ["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(profile);
+}
+
+function mergeWebSources(...groups){
+  const seen=new Set();
+  const out=[];
+  for(const group of groups){
+    for(const source of Array.isArray(group)?group:[]){
+      const url=String(source?.url||"").trim();
+      if(!/^https?:\/\//i.test(url)||seen.has(url))continue;
+      seen.add(url);
+      out.push({url,title:String(source?.title||url).trim().slice(0,240)});
+      if(out.length>=20)return out;
+    }
+  }
+  return out;
+}
+
+async function runOneBoundedSpecialist(env,{
+  agentId,input,missionProfile,corpusContext=[],webSearchEnabled=false
+}={}){
+  const role=ROLE_BY_ID[agentId];
+  if(!role) return {ok:false,error:"unknown_specialist",agentId,providerCalls:0};
+  const useWeb=webSearchEnabled===true && agentId!==AGENT_ROLES.corpus.id;
+  const body={
+    model:env.OPENAI_MODEL.trim(),
+    instructions:[
+      specialistInstructions(agentId),
+      "MISSION PROFILE: "+String(missionProfile||"UNKNOWN"),
+      "Return concise findings for the Chief Legal Orchestrator, not a user-facing final answer.",
+      "Separate supported propositions, uncertainty, contrary authority/risk and missing evidence.",
+      "Do not claim Human Gate approval or external action."
+    ].join("\n"),
+    reasoning:{effort:"medium"},
+    input:[{role:"user",content:[{type:"input_text",text:[
+      "USER LEGAL TASK:",
+      String(input||""),
+      "",
+      compactSourceContext(corpusContext,"GOVERNED_NATIVE_CONTEXT")
+    ].join("\n")}]}],
+    max_output_tokens:850,
+    store:false,
+    ...(useWeb ? {
+      tools:[{type:"web_search"}],
+      tool_choice:"required",
+      include:["web_search_call.action.sources"]
+    } : {})
+  };
+
+  let response;
+  try{
+    response=await fetch("https://api.openai.com/v1/responses",{
+      method:"POST",
+      headers:{"Authorization":`Bearer ${env.OPENAI_API_KEY}`,"Content-Type":"application/json"},
+      body:JSON.stringify(body)
+    });
+  }catch(error){
+    return {ok:false,error:"specialist_network_error",agentId,providerCalls:1,detail:String(error?.message||error).slice(0,160)};
+  }
+  let payload=null;
+  try{payload=await response.json();}catch{}
+  const usage=extractOpenAIUsage(payload);
+  if(!response.ok) return {ok:false,error:"specialist_response_error",status:response.status,agentId,providerCalls:1,usage};
+  if(payload?.status!=="completed") return {ok:false,error:"specialist_incomplete",agentId,providerCalls:1,usage};
+  const text=extractOpenAIResponseText(payload);
+  if(!text) return {ok:false,error:"specialist_empty_response",agentId,providerCalls:1,usage};
+  const sources=extractOpenAIWebCitations(payload);
+  return Object.freeze({
+    ok:true,agentId,label:role.label,text,sources,
+    webSearchUsed:Array.isArray(payload?.output)&&payload.output.some(item=>item?.type==="web_search_call"),
+    providerCalls:1,usage
+  });
+}
+
+export async function runBoundedSpecialists(env,{
+  plan,input,corpusContext=[],webSearchEnabled=false
+}={}){
+  if(!specialistExecutionRequired(plan)){
+    return Object.freeze({
+      ok:true,required:false,executed:false,findings:Object.freeze([]),
+      sources:Object.freeze([]),webSearchUsed:false,providerCalls:0,
+      usage:Object.freeze({inputTokens:0,outputTokens:0,totalTokens:0})
+    });
+  }
+  if(env?.LIOE_SPECIALIST_EXECUTION_ENABLED!=="true"){
+    return {ok:false,required:true,error:"lioe_specialist_execution_locked",providerCalls:0};
+  }
+  const selected=(Array.isArray(plan?.agents)?plan.agents:[])
+    .filter(id=>id!==AGENT_ROLES.general.id && id!==AGENT_ROLES.verify.id)
+    .slice(0,4);
+  if(!selected.length){
+    return {ok:false,required:true,error:"no_specialist_selected",providerCalls:0};
+  }
+
+  const results=await Promise.all(selected.map(agentId=>runOneBoundedSpecialist(env,{
+    agentId,input,
+    missionProfile:plan?.legalIntelligenceEngine?.mission_profile?.id,
+    corpusContext,
+    webSearchEnabled
+  })));
+
+  const failed=results.find(x=>!x.ok);
+  const aggregate=results.reduce((acc,x)=>{
+    acc.inputTokens+=Number(x?.usage?.inputTokens||0);
+    acc.outputTokens+=Number(x?.usage?.outputTokens||0);
+    acc.totalTokens+=Number(x?.usage?.totalTokens||0);
+    acc.providerCalls+=Number(x?.providerCalls||0);
+    return acc;
+  },{inputTokens:0,outputTokens:0,totalTokens:0,providerCalls:0});
+  if(failed){
+    return {
+      ok:false,required:true,error:failed.error||"specialist_execution_failed",
+      failedAgent:failed.agentId||null,providerCalls:aggregate.providerCalls,
+      usage:{inputTokens:aggregate.inputTokens,outputTokens:aggregate.outputTokens,totalTokens:aggregate.totalTokens}
+    };
+  }
+
+  return Object.freeze({
+    ok:true,required:true,executed:true,
+    findings:Object.freeze(results.map(x=>Object.freeze({agentId:x.agentId,label:x.label,text:x.text}))),
+    sources:Object.freeze(mergeWebSources(...results.map(x=>x.sources))),
+    webSearchUsed:results.some(x=>x.webSearchUsed===true),
+    providerCalls:aggregate.providerCalls,
+    usage:Object.freeze({inputTokens:aggregate.inputTokens,outputTokens:aggregate.outputTokens,totalTokens:aggregate.totalTokens})
+  });
+}
+
+function compactSpecialistFindings(stage){
+  const findings=Array.isArray(stage?.findings)?stage.findings:[];
+  if(!findings.length)return"NONE";
+  return findings.map((f,i)=>`[${i+1}] ${f.label} (${f.agentId})\n${String(f.text||"").slice(0,5000)}`).join("\n\n---\n\n");
+}
+
 export async function runOpenAIOrchestrator(env, {
   plan,
   input,
@@ -439,6 +576,22 @@ export async function runOpenAIOrchestrator(env, {
   }
 
   const model=env.OPENAI_MODEL.trim();
+
+  const specialistStage=await runBoundedSpecialists(env,{
+    plan,
+    input,
+    corpusContext,
+    webSearchEnabled:webSearchEnabled && externalResearchEnabled
+  });
+  if(!specialistStage.ok){
+    return {
+      ok:false,
+      error:specialistStage.error||"specialist_execution_failed",
+      failedAgent:specialistStage.failedAgent||null,
+      providerCalls:specialistStage.providerCalls||0,
+      usage:specialistStage.usage||{inputTokens:0,outputTokens:0,totalTokens:0}
+    };
+  }
 
   const envelope=buildExecutionEnvelope(plan,{
     question:input,
@@ -472,6 +625,10 @@ export async function runOpenAIOrchestrator(env, {
     externalResearchEnabled ? compactSourceContext(externalContext,"External legal research") : "NOT_AUTHORISED",
     "<<<END_EXTERNAL_LEGAL_RESEARCH>>>",
     "",
+    "<<<BOUNDED_SPECIALIST_FINDINGS>>>",
+    compactSpecialistFindings(specialistStage),
+    "<<<END_BOUNDED_SPECIALIST_FINDINGS>>>",
+    "",
     "<<<SESSION_HISTORY_CONTEXT_ONLY_NOT_AUTHORITY>>>",
     historyContext,
     "<<<END_SESSION_HISTORY_CONTEXT_ONLY_NOT_AUTHORITY>>>",
@@ -496,7 +653,10 @@ export async function runOpenAIOrchestrator(env, {
   }
 
   const tools=[];
-  if(webSearchEnabled && env?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"){
+  const chiefNeedsWeb=webSearchEnabled
+    && env?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"
+    && specialistStage.webSearchUsed!==true;
+  if(chiefNeedsWeb){
     tools.push({type:"web_search"});
   }
 
@@ -547,8 +707,16 @@ export async function runOpenAIOrchestrator(env, {
 
   const text=extractOpenAIResponseText(payload);
   if(!text) return {ok:false,error:"openai_empty_response"};
-  const sources=extractOpenAIWebCitations(payload);
-  const webSearchUsed=Array.isArray(payload?.output) && payload.output.some(item=>item?.type==="web_search_call");
+  const chiefSources=extractOpenAIWebCitations(payload);
+  const sources=mergeWebSources(specialistStage.sources,chiefSources);
+  const chiefWebSearchUsed=Array.isArray(payload?.output) && payload.output.some(item=>item?.type==="web_search_call");
+  const webSearchUsed=specialistStage.webSearchUsed===true||chiefWebSearchUsed;
+  const chiefUsage=extractOpenAIUsage(payload);
+  const combinedUsage=Object.freeze({
+    inputTokens:Number(specialistStage.usage?.inputTokens||0)+chiefUsage.inputTokens,
+    outputTokens:Number(specialistStage.usage?.outputTokens||0)+chiefUsage.outputTokens,
+    totalTokens:Number(specialistStage.usage?.totalTokens||0)+chiefUsage.totalTokens
+  });
   return {
     ok:true,
     text,
@@ -560,9 +728,16 @@ export async function runOpenAIOrchestrator(env, {
     plan,
     conversationPersistence:"browser_session_only_store_false",
     historyItemsUsed:sessionHistory.length,
-    toolMode:tools.length ? "web_search_enabled" : "no_external_tools",
+    toolMode:webSearchUsed ? "web_search_enabled" : "no_external_tools",
     humanGate:"output_not_authorized_for_autonomous_legal_reliance",
-    usage:extractOpenAIUsage(payload)
+    specialistExecution:{
+      required:specialistStage.required===true,
+      executed:specialistStage.executed===true,
+      agents:Array.isArray(specialistStage.findings)?specialistStage.findings.map(x=>x.agentId):[],
+      providerCalls:Number(specialistStage.providerCalls||0)
+    },
+    providerCalls:Number(specialistStage.providerCalls||0)+1,
+    usage:combinedUsage
   };
 }
 
