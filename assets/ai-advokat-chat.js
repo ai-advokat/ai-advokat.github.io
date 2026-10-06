@@ -121,6 +121,27 @@
       });
       body.append(grid);
     }
+    if(m.governance){
+      const box=document.createElement("div");box.className="ai-msg-source";
+      const title=document.createElement("strong");title.textContent="LIOE правна контрола";
+      const state=document.createElement("div");
+      const g=m.governance;
+      state.textContent=[g.missionProfile,g.releaseState,g.verificationState].filter(Boolean).join(" · ");
+      box.append(title,state);
+      if(g.warning){
+        const warning=document.createElement("div");warning.textContent=String(g.warning);box.append(warning);
+      }
+      if(g.humanReviewRequired===true){
+        const gate=document.createElement("div");
+        const gates=Array.isArray(g.requiredGateTypes)&&g.requiredGateTypes.length ? " · "+g.requiredGateTypes.join(", ") : "";
+        gate.textContent="Human Gate / човечка проверка: задолжително"+gates;
+        box.append(gate);
+      }
+      if(g.executionAuthorization){
+        const auth=document.createElement("div");auth.textContent="Execution: "+g.executionAuthorization;box.append(auth);
+      }
+      body.append(box);
+    }
     if(m.sourceLabel){
       const source=document.createElement("div");source.className="ai-msg-source";source.textContent=m.sourceLabel;body.append(source);
     }
@@ -400,6 +421,7 @@
           sources:Array.isArray(d.sources)?d.sources:[],
           legalSources:Array.isArray(d.legalSources)?d.legalSources:[],
           guideSources:Array.isArray(d.guideSources)?d.guideSources:[],
+          governance:d.legalGovernance||null,
           sourceLabel:d.sourceMode==="ai_advokat_article_corpus_first"
             ?"AI Advokat article-level corpus first · верзија и Human Gate се прикажани во изворите."
             :d.sourceMode==="ai_advokat_article_corpus_plus_external_web"
@@ -426,7 +448,8 @@
         updateAssistantPlaceholder(assistantIndex,{
           text:d?.message||"Оваа функција моментално е заклучена со Human Gate. Предложените водичи остануваат достапни.",
           meta:d?.error||"controlled state",
-          guides
+          guides,
+          governance:d?.legalGovernance||null
         });
       }
     }catch(err){
