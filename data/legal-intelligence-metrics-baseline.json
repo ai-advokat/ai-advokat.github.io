@@ -4,7 +4,7 @@
   "updated": "2026-10-06",
   "status": "BASELINE_COLLECTION_STARTED",
   "source_index": "/data/legal-runs/index.json",
-  "record_count": 2,
+  "record_count": 3,
   "verified_effectiveness_sample_size": 1,
   "metric_sample_sizes": {
     "effectiveness": 1,
@@ -42,5 +42,5 @@
     "targets_require_human_review": true,
     "single_verified_sample_is_descriptive_not_generalizable": true
   },
-  "interpretation": "Real-run collection contains two records. One verified effectiveness sample (LIOE-2026-0002) closed successfully after a CI correction cycle and post-merge security/LIOE verification; LIOE-2026-0001 remains excluded from effectiveness metrics because executable verification was cancelled. n=1 verified effectiveness data is descriptive only and cannot support a general performance claim."
+  "interpretation": "Real-run collection contains three records: one verified effectiveness sample (LIOE-2026-0002), one retrospective provisional record excluded from effectiveness (LIOE-2026-0001), and one open live full-runtime implementation run (LIOE-2026-0003). Open runs do not affect performance metrics. n=1 verified effectiveness data remains descriptive only."
 }
