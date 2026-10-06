@@ -245,3 +245,31 @@ test("CHAT25 legal cross-reference expansion remains one-hop and version-bound",
   assert.match(worker,/loadResolvedCorpus/);
   assert.doesNotMatch(worker,/expandArticleCrossReferences\([^\n]*crossReferenceArticles/);
 });
+
+
+test("CHAT26 LIOE runtime governance is visible and fail-closed",()=>{
+  assert.match(worker,/runLegalPostflightVerifier/);
+  assert.match(worker,/assessLegalRuntimeRelease/);
+  assert.match(worker,/persistSanitisedRuntimeRecord/);
+  assert.match(worker,/lioe_observability_unavailable/);
+  assert.match(worker,/LIOE_POSTFLIGHT_ENABLED/);
+  assert.match(worker,/LIOE_RUNTIME_TELEMETRY_ENABLED/);
+  assert.match(chatJs,/LIOE правна контрола/);
+  assert.match(chatJs,/governance:d\.legalGovernance/);
+  assert.match(wrangler,/"LIOE_RUNTIME_GOVERNANCE_ENABLED"\s*:\s*"true"/);
+  assert.match(wrangler,/"LIOE_POSTFLIGHT_ENABLED"\s*:\s*"true"/);
+  assert.match(wrangler,/"LIOE_RUNTIME_TELEMETRY_ENABLED"\s*:\s*"true"/);
+});
+
+test("CHAT27 L2-L4 observability is not bypassed when telemetry is unavailable",()=>{
+  assert.match(worker,/run_record_required===true/);
+  assert.match(worker,/BLOCKED_OBSERVABILITY_REQUIRED/);
+  assert.match(worker,/releaseMonthlyQuota/);
+});
+
+test("CHAT28 current-law runtime exposes temporal verification and release state",()=>{
+  assert.match(worker,/temporalVerificationState:runtimeAssessment\.temporalVerificationState/);
+  assert.match(worker,/releaseState:runtimeAssessment\.releaseState/);
+  assert.match(worker,/executionAuthorization:runtimeAssessment\.executionAuthorization/);
+  assert.match(chatJs,/Human Gate \/ човечка проверка/);
+});
