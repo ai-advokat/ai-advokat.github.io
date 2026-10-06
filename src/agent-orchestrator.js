@@ -370,6 +370,18 @@ export function extractOpenAIResponseText(payload) {
   return parts.length ? parts.join("\n\n") : null;
 }
 
+export function extractOpenAIUsage(payload) {
+  const usage=payload?.usage||{};
+  const inputTokens=Number(usage.input_tokens||0);
+  const outputTokens=Number(usage.output_tokens||0);
+  const totalTokens=Number(usage.total_tokens||inputTokens+outputTokens);
+  return Object.freeze({
+    inputTokens:Number.isFinite(inputTokens)&&inputTokens>=0?inputTokens:0,
+    outputTokens:Number.isFinite(outputTokens)&&outputTokens>=0?outputTokens:0,
+    totalTokens:Number.isFinite(totalTokens)&&totalTokens>=0?totalTokens:0
+  });
+}
+
 export function extractOpenAIWebCitations(payload) {
   if(!Array.isArray(payload?.output)) return [];
   const seen=new Set();
@@ -405,6 +417,143 @@ function compactSourceContext(items,label) {
   }).join("\n\n---\n\n");
 }
 
+export function specialistExecutionRequired(plan){
+  const lioe=plan?.legalIntelligenceEngine;
+  const profile=lioe?.mission_profile?.id||"GENERAL_BYPASS";
+  return lioe?.engaged===true
+    && ["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(profile);
+}
+
+function mergeWebSources(...groups){
+  const seen=new Set();
+  const out=[];
+  for(const group of groups){
+    for(const source of Array.isArray(group)?group:[]){
+      const url=String(source?.url||"").trim();
+      if(!/^https?:\/\//i.test(url)||seen.has(url))continue;
+      seen.add(url);
+      out.push({url,title:String(source?.title||url).trim().slice(0,240)});
+      if(out.length>=20)return out;
+    }
+  }
+  return out;
+}
+
+async function runOneBoundedSpecialist(env,{
+  agentId,input,missionProfile,corpusContext=[],webSearchEnabled=false
+}={}){
+  const role=ROLE_BY_ID[agentId];
+  if(!role) return {ok:false,error:"unknown_specialist",agentId,providerCalls:0};
+  const useWeb=webSearchEnabled===true && agentId!==AGENT_ROLES.corpus.id;
+  const body={
+    model:env.OPENAI_MODEL.trim(),
+    instructions:[
+      specialistInstructions(agentId),
+      "MISSION PROFILE: "+String(missionProfile||"UNKNOWN"),
+      "Return concise findings for the Chief Legal Orchestrator, not a user-facing final answer.",
+      "Separate supported propositions, uncertainty, contrary authority/risk and missing evidence.",
+      "Do not claim Human Gate approval or external action."
+    ].join("\n"),
+    reasoning:{effort:"medium"},
+    input:[{role:"user",content:[{type:"input_text",text:[
+      "USER LEGAL TASK:",
+      String(input||""),
+      "",
+      compactSourceContext(corpusContext,"GOVERNED_NATIVE_CONTEXT")
+    ].join("\n")}]}],
+    max_output_tokens:850,
+    store:false,
+    ...(useWeb ? {
+      tools:[{type:"web_search"}],
+      tool_choice:"required",
+      include:["web_search_call.action.sources"]
+    } : {})
+  };
+
+  let response;
+  try{
+    response=await fetch("https://api.openai.com/v1/responses",{
+      method:"POST",
+      headers:{"Authorization":`Bearer ${env.OPENAI_API_KEY}`,"Content-Type":"application/json"},
+      body:JSON.stringify(body)
+    });
+  }catch(error){
+    return {ok:false,error:"specialist_network_error",agentId,providerCalls:1,detail:String(error?.message||error).slice(0,160)};
+  }
+  let payload=null;
+  try{payload=await response.json();}catch{}
+  const usage=extractOpenAIUsage(payload);
+  if(!response.ok) return {ok:false,error:"specialist_response_error",status:response.status,agentId,providerCalls:1,usage};
+  if(payload?.status!=="completed") return {ok:false,error:"specialist_incomplete",agentId,providerCalls:1,usage};
+  const text=extractOpenAIResponseText(payload);
+  if(!text) return {ok:false,error:"specialist_empty_response",agentId,providerCalls:1,usage};
+  const sources=extractOpenAIWebCitations(payload);
+  return Object.freeze({
+    ok:true,agentId,label:role.label,text,sources,
+    webSearchUsed:Array.isArray(payload?.output)&&payload.output.some(item=>item?.type==="web_search_call"),
+    providerCalls:1,usage
+  });
+}
+
+export async function runBoundedSpecialists(env,{
+  plan,input,corpusContext=[],webSearchEnabled=false
+}={}){
+  if(!specialistExecutionRequired(plan)){
+    return Object.freeze({
+      ok:true,required:false,executed:false,findings:Object.freeze([]),
+      sources:Object.freeze([]),webSearchUsed:false,providerCalls:0,
+      usage:Object.freeze({inputTokens:0,outputTokens:0,totalTokens:0})
+    });
+  }
+  if(env?.LIOE_SPECIALIST_EXECUTION_ENABLED!=="true"){
+    return {ok:false,required:true,error:"lioe_specialist_execution_locked",providerCalls:0};
+  }
+  const selected=(Array.isArray(plan?.agents)?plan.agents:[])
+    .filter(id=>id!==AGENT_ROLES.general.id && id!==AGENT_ROLES.verify.id)
+    .slice(0,4);
+  if(!selected.length){
+    return {ok:false,required:true,error:"no_specialist_selected",providerCalls:0};
+  }
+
+  const results=await Promise.all(selected.map(agentId=>runOneBoundedSpecialist(env,{
+    agentId,input,
+    missionProfile:plan?.legalIntelligenceEngine?.mission_profile?.id,
+    corpusContext,
+    webSearchEnabled
+  })));
+
+  const failed=results.find(x=>!x.ok);
+  const aggregate=results.reduce((acc,x)=>{
+    acc.inputTokens+=Number(x?.usage?.inputTokens||0);
+    acc.outputTokens+=Number(x?.usage?.outputTokens||0);
+    acc.totalTokens+=Number(x?.usage?.totalTokens||0);
+    acc.providerCalls+=Number(x?.providerCalls||0);
+    return acc;
+  },{inputTokens:0,outputTokens:0,totalTokens:0,providerCalls:0});
+  if(failed){
+    return {
+      ok:false,required:true,error:failed.error||"specialist_execution_failed",
+      failedAgent:failed.agentId||null,providerCalls:aggregate.providerCalls,
+      usage:{inputTokens:aggregate.inputTokens,outputTokens:aggregate.outputTokens,totalTokens:aggregate.totalTokens}
+    };
+  }
+
+  return Object.freeze({
+    ok:true,required:true,executed:true,
+    findings:Object.freeze(results.map(x=>Object.freeze({agentId:x.agentId,label:x.label,text:x.text}))),
+    sources:Object.freeze(mergeWebSources(...results.map(x=>x.sources))),
+    webSearchUsed:results.some(x=>x.webSearchUsed===true),
+    providerCalls:aggregate.providerCalls,
+    usage:Object.freeze({inputTokens:aggregate.inputTokens,outputTokens:aggregate.outputTokens,totalTokens:aggregate.totalTokens})
+  });
+}
+
+function compactSpecialistFindings(stage){
+  const findings=Array.isArray(stage?.findings)?stage.findings:[];
+  if(!findings.length)return"NONE";
+  return findings.map((f,i)=>`[${i+1}] ${f.label} (${f.agentId})\n${String(f.text||"").slice(0,5000)}`).join("\n\n---\n\n");
+}
+
 export async function runOpenAIOrchestrator(env, {
   plan,
   input,
@@ -427,6 +576,22 @@ export async function runOpenAIOrchestrator(env, {
   }
 
   const model=env.OPENAI_MODEL.trim();
+
+  const specialistStage=await runBoundedSpecialists(env,{
+    plan,
+    input,
+    corpusContext,
+    webSearchEnabled:webSearchEnabled && externalResearchEnabled
+  });
+  if(!specialistStage.ok){
+    return {
+      ok:false,
+      error:specialistStage.error||"specialist_execution_failed",
+      failedAgent:specialistStage.failedAgent||null,
+      providerCalls:specialistStage.providerCalls||0,
+      usage:specialistStage.usage||{inputTokens:0,outputTokens:0,totalTokens:0}
+    };
+  }
 
   const envelope=buildExecutionEnvelope(plan,{
     question:input,
@@ -460,6 +625,10 @@ export async function runOpenAIOrchestrator(env, {
     externalResearchEnabled ? compactSourceContext(externalContext,"External legal research") : "NOT_AUTHORISED",
     "<<<END_EXTERNAL_LEGAL_RESEARCH>>>",
     "",
+    "<<<BOUNDED_SPECIALIST_FINDINGS>>>",
+    compactSpecialistFindings(specialistStage),
+    "<<<END_BOUNDED_SPECIALIST_FINDINGS>>>",
+    "",
     "<<<SESSION_HISTORY_CONTEXT_ONLY_NOT_AUTHORITY>>>",
     historyContext,
     "<<<END_SESSION_HISTORY_CONTEXT_ONLY_NOT_AUTHORITY>>>",
@@ -484,7 +653,10 @@ export async function runOpenAIOrchestrator(env, {
   }
 
   const tools=[];
-  if(webSearchEnabled && env?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"){
+  const chiefNeedsWeb=webSearchEnabled
+    && env?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"
+    && specialistStage.webSearchUsed!==true;
+  if(chiefNeedsWeb){
     tools.push({type:"web_search"});
   }
 
@@ -535,8 +707,16 @@ export async function runOpenAIOrchestrator(env, {
 
   const text=extractOpenAIResponseText(payload);
   if(!text) return {ok:false,error:"openai_empty_response"};
-  const sources=extractOpenAIWebCitations(payload);
-  const webSearchUsed=Array.isArray(payload?.output) && payload.output.some(item=>item?.type==="web_search_call");
+  const chiefSources=extractOpenAIWebCitations(payload);
+  const sources=mergeWebSources(specialistStage.sources,chiefSources);
+  const chiefWebSearchUsed=Array.isArray(payload?.output) && payload.output.some(item=>item?.type==="web_search_call");
+  const webSearchUsed=specialistStage.webSearchUsed===true||chiefWebSearchUsed;
+  const chiefUsage=extractOpenAIUsage(payload);
+  const combinedUsage=Object.freeze({
+    inputTokens:Number(specialistStage.usage?.inputTokens||0)+chiefUsage.inputTokens,
+    outputTokens:Number(specialistStage.usage?.outputTokens||0)+chiefUsage.outputTokens,
+    totalTokens:Number(specialistStage.usage?.totalTokens||0)+chiefUsage.totalTokens
+  });
   return {
     ok:true,
     text,
@@ -548,7 +728,208 @@ export async function runOpenAIOrchestrator(env, {
     plan,
     conversationPersistence:"browser_session_only_store_false",
     historyItemsUsed:sessionHistory.length,
-    toolMode:tools.length ? "web_search_enabled" : "no_external_tools",
-    humanGate:"output_not_authorized_for_autonomous_legal_reliance"
+    toolMode:webSearchUsed ? "web_search_enabled" : "no_external_tools",
+    humanGate:"output_not_authorized_for_autonomous_legal_reliance",
+    specialistExecution:{
+      required:specialistStage.required===true,
+      executed:specialistStage.executed===true,
+      agents:Array.isArray(specialistStage.findings)?specialistStage.findings.map(x=>x.agentId):[],
+      providerCalls:Number(specialistStage.providerCalls||0)
+    },
+    providerCalls:Number(specialistStage.providerCalls||0)+1,
+    usage:combinedUsage
   };
+}
+
+const LEGAL_POSTFLIGHT_SCHEMA=Object.freeze({
+  type:"object",
+  additionalProperties:false,
+  properties:{
+    verdict:{type:"string",enum:["PASS","REVISE","FAIL"]},
+    stress_test:{type:"string",enum:["PASS","PROVISIONAL","FAIL","NOT_REQUIRED"]},
+    adversarial_review:{type:"string",enum:["PASS","PROVISIONAL","FAIL","NOT_REQUIRED"]},
+    source_integrity:{type:"string",enum:["VERIFIED","PARTIAL","FAILED","NOT_REQUIRED"]},
+    temporal_integrity:{type:"string",enum:["VERIFIED","PARTIAL","FAILED","NOT_REQUIRED"]},
+    jurisdiction_integrity:{type:"string",enum:["VERIFIED","PARTIAL","FAILED","NOT_REQUIRED"]},
+    human_gate:{type:"string",enum:["NOT_REQUIRED","REQUIRED","MISSING_OR_UNAPPROVED"]},
+    issues:{type:"array",items:{type:"string"}},
+    corrected_answer:{type:"string"}
+  },
+  required:[
+    "verdict","stress_test","adversarial_review","source_integrity",
+    "temporal_integrity","jurisdiction_integrity","human_gate","issues","corrected_answer"
+  ]
+});
+
+function postflightRequired(plan){
+  const lioe=plan?.legalIntelligenceEngine;
+  const profile=lioe?.mission_profile?.id||"GENERAL_BYPASS";
+  return lioe?.engaged===true && (
+    lioe?.knowledge?.current_law_verification_required===true
+    || ["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(profile)
+  );
+}
+
+function safePostflightContext(items,label){
+  const rows=(Array.isArray(items)?items:[]).slice(0,12).map((item,index)=>{
+    const source=String(item?.source||item?.title||"unknown").slice(0,220);
+    const locator=String(item?.locator||item?.url||"").slice(0,320);
+    const version=String(item?.version||"").slice(0,220);
+    const text=String(item?.text||"").slice(0,2600);
+    return `[${index+1}] SOURCE=${source}; LOCATOR=${locator}; VERSION=${version}${text?"\n"+text:""}`;
+  });
+  return rows.length ? `${label}:\n${rows.join("\n---\n")}` : `${label}: NONE`;
+}
+
+export async function runLegalPostflightVerifier(env,{
+  plan,
+  draft,
+  corpusContext=[],
+  webSources=[],
+  maxAttempts=2
+}={}){
+  if(!postflightRequired(plan)){
+    return Object.freeze({
+      ok:true,required:false,verdict:"PASS",stress_test:"NOT_REQUIRED",
+      adversarial_review:"NOT_REQUIRED",source_integrity:"NOT_REQUIRED",
+      temporal_integrity:"NOT_REQUIRED",jurisdiction_integrity:"NOT_REQUIRED",
+      human_gate:"NOT_REQUIRED",issues:Object.freeze([]),corrected_answer:String(draft||""),
+      attempts:0,firstPass:true,providerCalls:0,
+      usage:Object.freeze({inputTokens:0,outputTokens:0,totalTokens:0})
+    });
+  }
+  if(!openAIOrchestratorConfigured(env)){
+    return {ok:false,required:true,error:"legal_postflight_provider_not_configured",attempts:0,providerCalls:0};
+  }
+
+  const profile=plan?.legalIntelligenceEngine?.mission_profile?.id||"UNKNOWN";
+  const currentLaw=plan?.legalIntelligenceEngine?.knowledge?.current_law_verification_required===true;
+  const requiredGates=plan?.legalIntelligenceEngine?.authority_and_human_gate?.required_gate_types||[];
+  let answer=String(draft||"").trim();
+  const limit=Math.max(1,Math.min(2,Number(maxAttempts)||2));
+  let aggregate={inputTokens:0,outputTokens:0,totalTokens:0};
+  let attempts=0;
+
+  for(let attempt=1;attempt<=limit;attempt++){
+    attempts=attempt;
+    const input=[
+      "MISSION_PROFILE: "+profile,
+      "CURRENT_LAW_VERIFICATION_REQUIRED: "+String(currentLaw),
+      "NAMED_HUMAN_GATES: "+JSON.stringify(requiredGates),
+      "",
+      safePostflightContext(corpusContext,"GOVERNED_NATIVE_CORPUS"),
+      "",
+      safePostflightContext(webSources,"EXTERNAL_WEB_SOURCE_METADATA"),
+      "",
+      "DRAFT_TO_VERIFY:",
+      answer
+    ].join("\n");
+
+    const body={
+      model:env.OPENAI_MODEL.trim(),
+      instructions:[
+        "You are the AI Advokat Legal Postflight Verifier. You do not answer the user independently; you verify the draft.",
+        "Return only the structured schema requested by the API.",
+        "Never treat model memory, a URL title, or majority agreement as legal authority.",
+        "For current-law claims, VERIFIED source_integrity and temporal_integrity require governed native official/article-level evidence that identifies the applicable version/date. External Web URL metadata alone can be at most PARTIAL.",
+        "Check jurisdiction separation, authority hierarchy, version/date/applicability, deadlines where material, citation/source support, contrary authority risk and Human Gate boundaries.",
+        "For L2-L4, stress_test and adversarial_review must be PASS before verdict PASS.",
+        "For L3, the corrected answer must remain advisory/draft-only and must not claim that AI filed, sent, signed, represented or exercised legal authority.",
+        "For L4, the corrected answer must not claim current-law/corpus/RAG/production/provider mutation without the named Human Gate.",
+        "If the draft can be made safe and materially correct from the supplied evidence, verdict REVISE and provide corrected_answer. If it cannot, verdict FAIL.",
+        "If verdict PASS, corrected_answer must preserve the draft's substance while removing any unsafe overclaim."
+      ].join("\n"),
+      input:[{role:"user",content:[{type:"input_text",text:input}]}],
+      reasoning:{effort:"medium"},
+      max_output_tokens:1800,
+      store:false,
+      text:{
+        format:{
+          type:"json_schema",
+          name:"legal_postflight_verdict",
+          strict:true,
+          schema:LEGAL_POSTFLIGHT_SCHEMA
+        }
+      }
+    };
+
+    let response;
+    try{
+      response=await fetch("https://api.openai.com/v1/responses",{
+        method:"POST",
+        headers:{
+          "Authorization":`Bearer ${env.OPENAI_API_KEY}`,
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify(body)
+      });
+    }catch(error){
+      return {ok:false,required:true,error:"legal_postflight_network_error",attempts,providerCalls:attempts,detail:String(error?.message||error).slice(0,180),usage:aggregate};
+    }
+
+    let payload=null;
+    try{payload=await response.json();}catch{}
+    const usage=extractOpenAIUsage(payload);
+    aggregate={
+      inputTokens:aggregate.inputTokens+usage.inputTokens,
+      outputTokens:aggregate.outputTokens+usage.outputTokens,
+      totalTokens:aggregate.totalTokens+usage.totalTokens
+    };
+
+    if(!response.ok){
+      return {ok:false,required:true,error:"legal_postflight_response_error",status:response.status,attempts,providerCalls:attempts,usage:aggregate};
+    }
+    if(payload?.status!=="completed"){
+      return {ok:false,required:true,error:"legal_postflight_incomplete",attempts,providerCalls:attempts,usage:aggregate};
+    }
+
+    const text=extractOpenAIResponseText(payload);
+    let verdict;
+    try{verdict=JSON.parse(text||"");}
+    catch{
+      return {ok:false,required:true,error:"legal_postflight_invalid_json",attempts,providerCalls:attempts,usage:aggregate};
+    }
+
+    if(!["PASS","REVISE","FAIL"].includes(verdict?.verdict)){
+      return {ok:false,required:true,error:"legal_postflight_invalid_verdict",attempts,providerCalls:attempts,usage:aggregate};
+    }
+
+    if(verdict.verdict==="PASS"){
+      return Object.freeze({
+        ok:true,
+        required:true,
+        ...verdict,
+        corrected_answer:String(verdict.corrected_answer||answer).trim()||answer,
+        issues:Object.freeze(Array.isArray(verdict.issues)?verdict.issues.map(x=>String(x).slice(0,240)).slice(0,12):[]),
+        attempts,
+        firstPass:attempt===1,
+        providerCalls:attempts,
+        usage:Object.freeze(aggregate)
+      });
+    }
+
+    if(verdict.verdict==="FAIL"){
+      return Object.freeze({
+        ok:false,
+        required:true,
+        error:"legal_postflight_failed",
+        verdict:"FAIL",
+        issues:Object.freeze(Array.isArray(verdict.issues)?verdict.issues.map(x=>String(x).slice(0,240)).slice(0,12):[]),
+        attempts,
+        firstPass:false,
+        providerCalls:attempts,
+        usage:Object.freeze(aggregate)
+      });
+    }
+
+    answer=String(verdict.corrected_answer||"").trim();
+    if(!answer){
+      return {ok:false,required:true,error:"legal_postflight_empty_revision",attempts,firstPass:false,providerCalls:attempts,usage:aggregate};
+    }
+  }
+
+  return Object.freeze({
+    ok:false,required:true,error:"legal_postflight_revision_limit_reached",
+    attempts,firstPass:false,providerCalls:attempts,usage:Object.freeze(aggregate)
+  });
 }

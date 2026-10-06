@@ -3,7 +3,12 @@ const VALID_GATES=new Set([
   "github_merge",
   "public_release",
   "rag_eligibility",
-  "production_corpus_write"
+  "production_corpus_write",
+  "current_law_verification",
+  "corpus_promotion",
+  "provider_activation",
+  "production_schema_migration",
+  "production_runtime_deploy"
 ]);
 
 const VALID_STATES=new Set([

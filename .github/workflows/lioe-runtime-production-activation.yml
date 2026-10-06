@@ -1,0 +1,239 @@
+name: AI Advokat LIOE runtime production activation
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type ACTIVATE_LIOE_RUNTIME_1"
+        required: true
+        type: string
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/activation/lioe-runtime-production-request.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-lioe-runtime-production
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify explicit LIOE activation authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            test "$CONFIRMATION" = "ACTIVATE_LIOE_RUNTIME_1"
+          else
+            node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync(".github/activation/lioe-runtime-production-request.json","utf8"));
+          if(d.activation_authorized!==true) throw new Error("LIOE activation not authorised");
+          if(d.decision_id!=="AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06") throw new Error("Unexpected decision id");
+          if(d.runtime_version!=="ai-advokat-lioe-runtime-1.0.0") throw new Error("Unexpected LIOE runtime version");
+          if(d.migration!=="0028_lioe_runtime_telemetry.sql") throw new Error("Unexpected migration");
+          const gates=new Set(d.authorized_gates||[]);
+          for(const g of ["github_merge","production_schema_migration","production_runtime_deploy","public_release"]) {
+            if(!gates.has(g)) throw new Error("Missing authorised gate: "+g);
+          }
+          if(d.provider_activation_authorized===true) throw new Error("Provider activation must remain separate");
+          console.log("LIOE activation authorization: PASS");
+          NODE
+          fi
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Verify version-bound Human Gate ledger approvals
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          import crypto from "node:crypto";
+          import {isGateApproved} from "./scripts/human-gate-ledger-validator.mjs";
+          const requestPath=".github/activation/lioe-runtime-production-request.json";
+          const raw=fs.readFileSync(requestPath);
+          const sha=crypto.createHash("sha256").update(raw).digest("hex");
+          const d=JSON.parse(raw);
+          const ledger=JSON.parse(fs.readFileSync("data/human-gate-decision-ledger.json","utf8"));
+          const expected="949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f";
+          if(sha!==expected) throw new Error("Activation artifact fingerprint changed: "+sha);
+          const query={
+            subject_id:"lioe-full-runtime-2026-10-06",
+            artifact_version:d.decision_id,
+            artifact_fingerprint:{activation_request_sha256:sha}
+          };
+          for(const gate of ["github_merge","public_release","production_schema_migration","production_runtime_deploy"]){
+            if(!isGateApproved(ledger.initial_records,{...query,gate_type:gate})) throw new Error("Human Gate not approved: "+gate);
+          }
+          if(isGateApproved(ledger.initial_records,{...query,gate_type:"provider_activation"})) throw new Error("Provider activation must remain unapproved by this release");
+          console.log("Version-bound Human Gate ledger: PASS");
+          NODE
+
+      - name: Verify repository and LIOE runtime invariants
+        run: |
+          node --check src/index.js
+          node --check src/agent-orchestrator.js
+          node --check src/legal-intelligence-engine.js
+          node --check src/legal-runtime-governance.js
+          node --check scripts/validate-legal-run-records.mjs
+          npm run verify
+          npm run test:legal-intelligence-engine
+          npm run test:legal-runtime-governance
+          npm run test:agent-orchestrator
+          npm run test:human-gate-ledger
+          npm run eval:legal-intelligence-engine
+          npm run validate:legal-runs
+
+      - name: Verify exact production target and runtime flags
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker name");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1 target");
+          if(c.previews?.d1_databases?.[0]?.database_id===d.database_id) throw new Error("Production/staging collision");
+          for(const k of ["LIOE_RUNTIME_GOVERNANCE_ENABLED","LIOE_POSTFLIGHT_ENABLED","LIOE_RUNTIME_TELEMETRY_ENABLED","LIOE_SPECIALIST_EXECUTION_ENABLED"]){
+            if(c.vars?.[k]!=="true") throw new Error(k+" is not armed");
+          }
+          if(c.vars?.OPENAI_PROVIDER_ACTIVATION_STATE!=="armed_secret_and_billing_required") throw new Error("Provider boundary changed unexpectedly");
+          console.log("Exact production target + LIOE flags: PASS");
+          NODE
+
+      - name: Inspect pending production migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/lioe-pending.txt
+          found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/lioe-pending.txt | sort -u || true)"
+          unexpected="$(printf '%s\n' "$found" | grep -v '^0028_lioe_runtime_telemetry\.sql$' | sed '/^$/d' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected pending migrations:"
+            echo "$unexpected"
+            exit 1
+          fi
+          echo "Pending migration guard: PASS"
+
+      - name: Apply LIOE telemetry migration when pending
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -q '0028_lioe_runtime_telemetry.sql' /tmp/lioe-pending.txt; then
+            npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc
+          else
+            echo "0028 not listed as pending; verifying it is already applied."
+          fi
+
+      - name: Verify LIOE production telemetry schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT version,description FROM schema_migrations WHERE version='28'; PRAGMA table_info(lioe_runtime_runs); SELECT COUNT(*) AS runtime_run_count FROM lioe_runtime_runs;"             | tee /tmp/lioe-schema.txt
+          grep -q '"version": "28"' /tmp/lioe-schema.txt
+          for col in run_id mission_profile source_verification_state temporal_verification_state execution_authorization verification_state release_state provider_calls total_tokens elapsed_ms; do
+            grep -q "\"name\": \"$col\"" /tmp/lioe-schema.txt
+          done
+          for forbidden in question answer history user_id membership_key attachment_text source_text; do
+            if grep -q "\"name\": \"$forbidden\"" /tmp/lioe-schema.txt; then
+              echo "Forbidden sensitive telemetry column: $forbidden"
+              exit 1
+            fi
+          done
+          echo "Production telemetry schema: PASS"
+
+      - name: Deploy LIOE-enabled production Worker
+        run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/lioe-deploy.txt
+
+      - name: Verify live LIOE runtime readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/orchestrator" -o /tmp/lioe-orchestrator.json
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/capabilities" -o /tmp/lioe-capabilities.json
+          node <<'NODE'
+          const o=require("/tmp/lioe-orchestrator.json");
+          const c=require("/tmp/lioe-capabilities.json");
+          if(!o.ok) throw new Error("orchestrator endpoint not ready");
+          if(o.runtime?.lioeRuntimeGovernance!=="enabled") throw new Error("LIOE governance not enabled");
+          if(o.runtime?.lioePostflight!=="enabled") throw new Error("LIOE postflight not enabled");
+          if(o.runtime?.lioeSpecialistExecution!=="enabled") throw new Error("LIOE specialist execution not enabled");
+          if(o.runtime?.lioeRuntimeTelemetry!=="ready") throw new Error("LIOE telemetry not ready: "+o.runtime?.lioeRuntimeTelemetry);
+          if(c.capabilities?.lioeRuntimeTelemetry!=="ready") throw new Error("Capabilities telemetry state mismatch");
+          console.log("LIVE LIOE RUNTIME READINESS: PASS");
+          console.log("Provider execution:",o.runtime?.providerExecution);
+          NODE
+
+      - name: Live governed legal chat smoke when provider is configured
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          provider="$(node -e 'const d=require("/tmp/lioe-orchestrator.json"); process.stdout.write(d.runtime?.providerExecution||"locked")')"
+          if [ "$provider" != "configured_for_api_chat_execution" ]; then
+            echo "GPT provider remains separately locked; legal chat smoke SKIPPED_BY_PROVIDER_GATE."
+            echo "SKIPPED_PROVIDER_LOCKED" > /tmp/lioe-chat-state.txt
+            exit 0
+          fi
+
+          curl --fail --retry 3 --retry-delay 2             -H 'content-type: application/json'             -d '{"q":"Спореди две можни толкувања на член 1 од Законот за работните односи, со ризици и ограничувања.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"attachments":[]}'             "$BASE/api/chat" -o /tmp/lioe-live-chat.json
+
+          node <<'NODE'
+          const d=require("/tmp/lioe-live-chat.json");
+          if(!d.ok) throw new Error("LIOE live chat failed: "+JSON.stringify(d));
+          if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error("LIOE metadata missing");
+          if(d.legalGovernance?.missionProfile!=="L2_STRATEGY_PROCEDURE") throw new Error("Unexpected mission profile: "+d.legalGovernance?.missionProfile);
+          if(d.legalGovernance?.postflightRequired!==true) throw new Error("Postflight was not required");
+          if(d.legalGovernance?.specialistExecution?.executed!==true) throw new Error("Bounded specialist execution did not run");
+          if(!Array.isArray(d.legalGovernance?.specialistExecution?.agents) || !d.legalGovernance.specialistExecution.agents.length) throw new Error("Specialist execution agents missing");
+          if(d.runtimeTelemetry!=="recorded") throw new Error("Runtime telemetry not recorded: "+d.runtimeTelemetry);
+          if(!d.governanceRunId) throw new Error("Governance run id missing");
+          if(d.legalGovernance?.executionAuthorization!=="RESEARCH_OUTPUT_ONLY") throw new Error("Unexpected execution authorization");
+          console.log("LIVE LIOE LEGAL CHAT + POSTFLIGHT + TELEMETRY: PASS");
+          require("fs").writeFileSync("/tmp/lioe-run-id.txt",d.governanceRunId);
+          NODE
+
+          RUN_ID="$(cat /tmp/lioe-run-id.txt)"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT run_id,mission_profile,verification_state,release_state,postflight_required,provider_calls,total_tokens FROM lioe_runtime_runs WHERE run_id='$RUN_ID';"             | tee /tmp/lioe-runtime-row.txt
+          grep -q "\"run_id\": \"$RUN_ID\"" /tmp/lioe-runtime-row.txt
+          echo "LIVE LIOE D1 READBACK: PASS"
+
+      - name: Upload non-secret LIOE activation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-lioe-runtime-production
+          retention-days: 30
+          path: |
+            /tmp/lioe-pending.txt
+            /tmp/lioe-schema.txt
+            /tmp/lioe-deploy.txt
+            /tmp/lioe-orchestrator.json
+            /tmp/lioe-capabilities.json
+            /tmp/lioe-chat-state.txt
+            /tmp/lioe-live-chat.json
+            /tmp/lioe-runtime-row.txt
+          if-no-files-found: ignore

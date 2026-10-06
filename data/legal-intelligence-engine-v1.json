@@ -1,10 +1,10 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "engine_id": "AI_ADVOKAT_LIOE_v1",
   "name": "AI Advokat Legal Intelligence & Orchestration Engine",
   "short_name": "LIOE",
   "updated": "2026-10-06",
-  "status": "IMPLEMENTED_MVP_GOVERNED_PREVIEW",
+  "status": "FULL_RUNTIME_CANDIDATE_PENDING_PRODUCTION_ACTIVATION",
   "role": "Internal non-authority execution and orchestration engine that operationalises the Legal Operating Protocol under the Chief Legal Orchestrator.",
   "authority_boundary": "LIOE may analyse, route, compare, draft, stress-test, verify and prepare bounded implementation. It does not create legal authority, legal representation, client consent, current-law status, filing authority or institutional will.",
   "master_protocol": "/data/legal-operating-protocol-v1.json",
@@ -139,7 +139,27 @@
       "L2_STRATEGY_PROCEDURE",
       "L3_CONSEQUENTIAL",
       "L4_LEGAL_TRUTH_GOVERNANCE"
-    ]
+    ],
+    "runtime_telemetry": {
+      "migration": "/migrations/0028_lioe_runtime_telemetry.sql",
+      "table": "lioe_runtime_runs",
+      "id_prefix": "LIOE-RT-",
+      "content_storage": false,
+      "forbidden_content": [
+        "question",
+        "answer",
+        "history",
+        "attachments",
+        "identity",
+        "client_facts",
+        "source_text"
+      ],
+      "required_for_profiles": [
+        "L2_STRATEGY_PROCEDURE",
+        "L3_CONSEQUENTIAL",
+        "L4_LEGAL_TRUTH_GOVERNANCE"
+      ]
+    }
   },
   "learning": {
     "candidate_not_rule": true,
@@ -148,5 +168,37 @@
     "no_silent_legal_status_mutation": true,
     "no_silent_prompt_or_policy_mutation": true,
     "material_change_requires_human_review": true
+  },
+  "runtime_execution": {
+    "module": "/src/legal-runtime-governance.js",
+    "version": "ai-advokat-lioe-runtime-1.0.0",
+    "chat_endpoint": "/api/chat",
+    "structured_postflight": true,
+    "postflight_max_attempts": 2,
+    "current_law_release_states": [
+      "VERIFIED_CURRENT_RESEARCH",
+      "PROVISIONAL_CURRENT_LAW_EXTERNAL_RESEARCH",
+      "UNVERIFIED_CURRENT_LAW"
+    ],
+    "consequential_execution_authorization": "NO_EXTERNAL_ACTION",
+    "legal_truth_execution_authorization": "NO_LEGAL_TRUTH_MUTATION",
+    "production_flags": [
+      "LIOE_RUNTIME_GOVERNANCE_ENABLED",
+      "LIOE_POSTFLIGHT_ENABLED",
+      "LIOE_RUNTIME_TELEMETRY_ENABLED",
+      "LIOE_SPECIALIST_EXECUTION_ENABLED"
+    ],
+    "specialist_execution": {
+      "required_for": [
+        "L2_STRATEGY_PROCEDURE",
+        "L3_CONSEQUENTIAL",
+        "L4_LEGAL_TRUTH_GOVERNANCE"
+      ],
+      "pattern": "bounded_parallel_specialists_then_chief_synthesis",
+      "max_parallel_specialists": 4,
+      "low_depth_fanout": false,
+      "failure_policy": "fail_closed",
+      "web_search_policy": "specialists may use governed Web search when explicitly enabled; Chief avoids duplicate Web search when specialist stage already used it"
+    }
   }
 }

@@ -5,14 +5,18 @@ on:
     paths:
       - "src/agent-orchestrator.js"
       - "src/legal-intelligence-engine.js"
+      - "src/legal-runtime-governance.js"
       - "test/agent-orchestrator.test.mjs"
       - "test/legal-intelligence-engine.test.mjs"
+      - "test/legal-runtime-governance.test.mjs"
+      - "test/lioe-production-activation.test.mjs"
       - "data/legal-operating-protocol-v1.json"
       - "data/legal-intelligence-engine-v1.json"
       - "data/legal-intelligence-excellence-v1.json"
       - "data/legal-intelligence-evaluation-suite.json"
       - "data/legal-intelligence-metrics-baseline.json"
       - "data/legal-runs/**"
+      - "migrations/0028_lioe_runtime_telemetry.sql"
       - "data/human-gate-decision-ledger.json"
       - "scripts/evaluate-legal-intelligence-engine.mjs"
       - "scripts/validate-legal-run-records.mjs"
@@ -20,6 +24,8 @@ on:
       - "architecture/AI_ADVOKAT_LEGAL_INTELLIGENCE_ENGINE.md"
       - "docs/standards/AI_ADVOKAT_LEGAL_RUN_RECORD_PROTOCOL_v1.md"
       - ".github/workflows/legal-intelligence-governance.yml"
+      - ".github/workflows/lioe-runtime-production-activation.yml"
+      - ".github/activation/lioe-runtime-production-request.json"
       - "package.json"
   push:
     branches: [main]
@@ -50,6 +56,7 @@ jobs:
       - name: Syntax
         run: |
           node --check src/legal-intelligence-engine.js
+          node --check src/legal-runtime-governance.js
           node --check src/agent-orchestrator.js
           node --check scripts/evaluate-legal-intelligence-engine.mjs
           node --check scripts/validate-legal-run-records.mjs
@@ -58,6 +65,10 @@ jobs:
           node -e "const fs=require('fs');for(const f of ['data/legal-operating-protocol-v1.json','data/legal-intelligence-engine-v1.json','data/legal-intelligence-excellence-v1.json','data/legal-intelligence-evaluation-suite.json','data/legal-intelligence-metrics-baseline.json','data/legal-runs/legal-run-record.schema.json','data/legal-runs/index.json','data/human-gate-decision-ledger.json'])JSON.parse(fs.readFileSync(f,'utf8'));"
       - name: LIOE unit tests
         run: npm run test:legal-intelligence-engine
+      - name: Runtime release and telemetry governance
+        run: npm run test:legal-runtime-governance
+      - name: LIOE production activation contract
+        run: npm run test:lioe-production-activation
       - name: Chief orchestrator integration
         run: npm run test:agent-orchestrator
       - name: Canonical legal evaluation

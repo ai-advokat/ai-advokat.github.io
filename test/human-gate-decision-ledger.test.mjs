@@ -67,3 +67,24 @@ describe("Human Gate Decision Ledger",()=>{
       assert.ok(ledger.gate_types.includes(gate),`missing gate type ${gate}`);
     }
   });
+
+
+test("HGL8 production activation gates are isolated from GitHub merge",()=>{
+  for(const gate of ["production_schema_migration","production_runtime_deploy"]){
+    assert.ok(ledger.gate_types.includes(gate),`missing gate type ${gate}`);
+  }
+  assert.ok(ledger.invariants.includes("github_merge_does_not_imply_production_schema_migration_or_runtime_deploy"));
+});
+
+
+test("HGL9 LIOE full-runtime release approvals are version and fingerprint bound",()=>{
+  const query={
+    subject_id:"lioe-full-runtime-2026-10-06",
+    artifact_version:"AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06",
+    artifact_fingerprint:{activation_request_sha256:"949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f"}
+  };
+  for(const gate of ["github_merge","public_release","production_schema_migration","production_runtime_deploy"]){
+    assert.equal(isGateApproved(ledger.initial_records,{...query,gate_type:gate}),true,gate);
+  }
+  assert.equal(isGateApproved(ledger.initial_records,{...query,gate_type:"provider_activation"}),false);
+});

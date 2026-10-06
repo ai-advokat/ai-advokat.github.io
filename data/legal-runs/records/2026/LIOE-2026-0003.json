@@ -1,0 +1,95 @@
+{
+  "run_id": "LIOE-2026-0003",
+  "case_id": "PR-99",
+  "started_at": "2026-10-06T08:00:00Z",
+  "finished_at": null,
+  "record_origin": "LIVE_LIOE",
+  "mission_profile": "L3_CONSEQUENTIAL",
+  "problem_class": "full_lioe_runtime_production_implementation",
+  "mode": "governance_engineering",
+  "objective": "Complete end-to-end LIOE implementation: runtime release enforcement, structured postflight verification with bounded correction, privacy-minimised D1 telemetry, visible UI governance state, isolated production gates, production migration/deploy workflow and live verification.",
+  "jurisdictions": [
+    "SYSTEM_GOVERNANCE"
+  ],
+  "specialist_agents": [
+    "chief_legal_orchestrator",
+    "verification_citation"
+  ],
+  "routing_reasons": {
+    "chief_legal_orchestrator": [
+      "runtime integration and final user-facing control"
+    ],
+    "verification_citation": [
+      "postflight legal verification and release governance"
+    ]
+  },
+  "sources": [
+    "/data/legal-intelligence-engine-v1.json",
+    "/data/legal-operating-protocol-v1.json",
+    "/data/human-gate-decision-ledger.json",
+    "/.github/activation/lioe-runtime-production-request.json",
+    "/migrations/0028_lioe_runtime_telemetry.sql",
+    "https://github.com/ai-advokat/ai-advokat.github.io/pull/99",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104222",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104456",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104446",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104318",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104315",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104230",
+    "https://github.com/ai-advokat/ai-advokat.github.io/actions/runs/37437104455"
+  ],
+  "source_verification_state": "VERIFIED",
+  "current_law_claim_material": false,
+  "temporal_verification_state": "NOT_REQUIRED",
+  "jurisdiction_verification_state": "NOT_REQUIRED",
+  "human_review_state": "APPROVED",
+  "required_gate_types": [
+    "github_merge",
+    "production_schema_migration",
+    "production_runtime_deploy",
+    "public_release"
+  ],
+  "gate_decisions": {
+    "github_merge": "approved",
+    "production_schema_migration": "approved",
+    "production_runtime_deploy": "approved",
+    "public_release": "approved"
+  },
+  "implementation_state": "STAGED",
+  "rollback_reference": "1d04f77373343bd6cc685f7084640d68612fd575",
+  "legal_stress_test_state": "PASSED",
+  "adversarial_review_state": "PASSED",
+  "verification_state": "PASSED",
+  "outcome_state": "PARTIAL_SUCCESS",
+  "release_status": "READY_FOR_MERGE",
+  "first_pass_verification": false,
+  "verification_attempts": 3,
+  "correction_required": true,
+  "learning_candidates": [
+    "Runtime telemetry tests must distinguish primary provider calls from postflight provider calls.",
+    "Corpus migration regression counts must advance when a new additive privacy-safe migration is introduced.",
+    "Audit Trail subject-count regressions must advance when a new governed release subject is added."
+  ],
+  "provider_or_tool_failures": [],
+  "fallback_mode": "NONE",
+  "data_classification": "PUBLIC",
+  "elapsed_ms": null,
+  "tool_calls": null,
+  "measured_cost": null,
+  "metric_eligibility": {
+    "effectiveness": false,
+    "time": false,
+    "activation": false,
+    "tooling": false,
+    "cost": false
+  },
+  "measurement_notes": [
+    "Live run opened for the explicit full LIOE implementation request.",
+    "Provider activation is not part of this run and remains a separate Human Gate.",
+    "The run cannot close SUCCESS before repository CI, production migration, runtime deploy and post-deploy verification evidence exist.",
+    "Public release is treated as a separate named gate from GitHub merge, schema migration and runtime deployment.",
+    "First PR #99 CI iteration found two test-contract regressions only: explicit provider-call fixture mismatch and a hard-coded migration count of 27 after adding migration 0028. LIOE unit, specialist and activation safety tests otherwise reached their preceding checkpoints.",
+    "Second PR #99 CI iteration passed focused LIOE, corpus, activation, membership, relevance and ZKP safety; broad security reached the Audit Trail suite and found only a hard-coded 11-subject expectation after adding the twelfth governed LIOE release subject.",
+    "Third PR #99 CI iteration passed all seven checks on the exact candidate: LIOE governance, broad security, corpus safety, ZKP corpus safety, activation safety, membership safety and relevance safety."
+  ]
+}

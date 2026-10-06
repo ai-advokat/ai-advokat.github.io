@@ -4,8 +4,8 @@
   "updated": "2026-10-06",
   "status": "ACTIVE_REAL_RUN_COLLECTION",
   "store": "/data/legal-runs/records/",
-  "record_count": 2,
-  "latest_run_id": "LIOE-2026-0002",
+  "record_count": 3,
+  "latest_run_id": "LIOE-2026-0003",
   "records": [
     {
       "run_id": "LIOE-2026-0001",
@@ -24,6 +24,15 @@
       "verification_state": "PASSED",
       "release_status": "CLOSED",
       "metric_effectiveness_eligible": true
+    },
+    {
+      "run_id": "LIOE-2026-0003",
+      "path": "/data/legal-runs/records/2026/LIOE-2026-0003.json",
+      "mission_profile": "L3_CONSEQUENTIAL",
+      "outcome_state": "PARTIAL_SUCCESS",
+      "verification_state": "PASSED",
+      "release_status": "READY_FOR_MERGE",
+      "metric_effectiveness_eligible": false
     }
   ],
   "governance": {

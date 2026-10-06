@@ -431,6 +431,79 @@
           "resulting_state": "corrected_candidate"
         }
       ]
+    },
+    {
+      "subject_id": "lioe-full-runtime-2026-10-06",
+      "title": "AI Advokat LIOE full runtime activation 2026-10-06",
+      "current_governance_status": "release_pipeline_authorized_provider_separate",
+      "source_set": "lioe-runtime-production-request-2026-10-06",
+      "events": [
+        {
+          "event_id": "lioe-full-runtime-2026-10-06:source_registered:2026-10-06",
+          "event_type": "source_registered",
+          "occurred_at": "2026-10-06",
+          "artifact_version": "AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06",
+          "artifact_fingerprint": {
+            "activation_request_sha256": "949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f"
+          },
+          "evidence": {
+            "activation_request": ".github/activation/lioe-runtime-production-request.json"
+          },
+          "resulting_state": "activation_request_registered"
+        },
+        {
+          "event_id": "lioe-full-runtime-2026-10-06:human_gate:github_merge:2026-10-06",
+          "event_type": "human_gate_decision",
+          "occurred_at": "2026-10-06",
+          "gate_type": "github_merge",
+          "decision_state": "approved",
+          "decision_ledger_ref": "hg-2026-10-06-lioe-github-merge",
+          "artifact_version": "AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06",
+          "artifact_fingerprint": {
+            "activation_request_sha256": "949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f"
+          },
+          "resulting_state": "github_merge_approved"
+        },
+        {
+          "event_id": "lioe-full-runtime-2026-10-06:human_gate:public_release:2026-10-06",
+          "event_type": "human_gate_decision",
+          "occurred_at": "2026-10-06",
+          "gate_type": "public_release",
+          "decision_state": "approved",
+          "decision_ledger_ref": "hg-2026-10-06-lioe-public-release",
+          "artifact_version": "AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06",
+          "artifact_fingerprint": {
+            "activation_request_sha256": "949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f"
+          },
+          "resulting_state": "public_release_approved"
+        },
+        {
+          "event_id": "lioe-full-runtime-2026-10-06:human_gate:production_schema_migration:2026-10-06",
+          "event_type": "human_gate_decision",
+          "occurred_at": "2026-10-06",
+          "gate_type": "production_schema_migration",
+          "decision_state": "approved",
+          "decision_ledger_ref": "hg-2026-10-06-lioe-production-schema-migration",
+          "artifact_version": "AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06",
+          "artifact_fingerprint": {
+            "activation_request_sha256": "949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f"
+          },
+          "resulting_state": "production_schema_migration_approved"
+        },
+        {
+          "event_id": "lioe-full-runtime-2026-10-06:human_gate:production_runtime_deploy:2026-10-06",
+          "event_type": "human_gate_decision",
+          "occurred_at": "2026-10-06",
+          "gate_type": "production_runtime_deploy",
+          "decision_state": "approved",
+          "decision_ledger_ref": "hg-2026-10-06-lioe-production-runtime-deploy",
+          "artifact_version": "AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06",
+          "artifact_fingerprint": {
+            "activation_request_sha256": "949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f"
+          },
+          "resulting_state": "production_runtime_deploy_approved"
+        }
+      ]
     }
   ]
 }

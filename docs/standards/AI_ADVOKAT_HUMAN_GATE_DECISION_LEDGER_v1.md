@@ -31,7 +31,9 @@ The following gates are independent:
 5. production corpus write;
 6. current-law verification/promotion;
 7. legal-corpus promotion;
-8. provider activation.
+8. provider activation;
+9. production schema migration;
+10. production runtime deployment.
 
 For example, author approval never means public-release approval.
 
@@ -71,3 +73,10 @@ No downstream authorization is inferred from that approval.
 Current-law verification is not corpus promotion. Corpus promotion is not production-corpus write. Provider activation is not implied by model selection, repository code, or any earlier approval.
 
 Each gate requires its own explicit, version-bound and fingerprint-bound decision where an artifact fingerprint applies.
+
+
+## Merge, schema migration and runtime deployment are separate
+
+GitHub merge is not a production deployment. A production database/schema migration and a production Worker/runtime deployment are separate consequential gates.
+
+For a governed release, each relevant gate must be explicitly authorised for the named release. Provider activation remains separate again and is never implied by a runtime deploy.
