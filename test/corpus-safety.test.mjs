@@ -287,7 +287,13 @@ describe("F3 migration 0023 and importer", () => {
     applyRemaining();
     assert.equal(raw.prepare("SELECT COUNT(*) n FROM legal_article_versions").get().n, 2);
     assert.deepEqual(raw.prepare("SELECT canonical_key, article_count FROM corpus_legacy_unversioned_articles").all().map((r) => ({ ...r })), [{ canonical_key: "mk:zs", article_count: 2 }]);
-    assert.equal(raw.prepare("SELECT MAX(CAST(version AS INTEGER)) v FROM schema_migrations").get().v, 27);
+    assert.equal(raw.prepare("SELECT MAX(CAST(version AS INTEGER)) v FROM schema_migrations").get().v, 28);
+    const telemetryCols=raw.prepare("PRAGMA table_info(lioe_runtime_runs)").all().map(r=>r.name);
+    assert.ok(telemetryCols.includes("mission_profile"));
+    assert.ok(telemetryCols.includes("verification_state"));
+    for(const forbidden of ["question","answer","history","user_id","membership_key","attachment_text","source_text"]){
+      assert.ok(!telemetryCols.includes(forbidden),forbidden);
+    }
   });
 
   test("T5 duplicate article in one version, NULL version, foreign version and unapproved current are blocked", () => {
