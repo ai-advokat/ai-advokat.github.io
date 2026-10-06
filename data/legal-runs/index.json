@@ -29,9 +29,9 @@
       "run_id": "LIOE-2026-0003",
       "path": "/data/legal-runs/records/2026/LIOE-2026-0003.json",
       "mission_profile": "L3_CONSEQUENTIAL",
-      "outcome_state": "UNKNOWN",
-      "verification_state": "PENDING",
-      "release_status": "BLOCKED",
+      "outcome_state": "PARTIAL_SUCCESS",
+      "verification_state": "PASSED",
+      "release_status": "READY_FOR_MERGE",
       "metric_effectiveness_eligible": false
     }
   ],
