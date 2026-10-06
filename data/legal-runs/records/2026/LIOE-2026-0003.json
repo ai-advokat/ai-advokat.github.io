@@ -1,0 +1,77 @@
+{
+  "run_id": "LIOE-2026-0003",
+  "case_id": null,
+  "started_at": "2026-10-06T08:00:00Z",
+  "finished_at": null,
+  "record_origin": "LIVE_LIOE",
+  "mission_profile": "L3_CONSEQUENTIAL",
+  "problem_class": "full_lioe_runtime_production_implementation",
+  "mode": "governance_engineering",
+  "objective": "Complete end-to-end LIOE implementation: runtime release enforcement, structured postflight verification with bounded correction, privacy-minimised D1 telemetry, visible UI governance state, isolated production gates, production migration/deploy workflow and live verification.",
+  "jurisdictions": [
+    "SYSTEM_GOVERNANCE"
+  ],
+  "specialist_agents": [
+    "chief_legal_orchestrator",
+    "verification_citation"
+  ],
+  "routing_reasons": {
+    "chief_legal_orchestrator": [
+      "runtime integration and final user-facing control"
+    ],
+    "verification_citation": [
+      "postflight legal verification and release governance"
+    ]
+  },
+  "sources": [
+    "/data/legal-intelligence-engine-v1.json",
+    "/data/legal-operating-protocol-v1.json",
+    "/data/human-gate-decision-ledger.json",
+    "/.github/activation/lioe-runtime-production-request.json",
+    "/migrations/0028_lioe_runtime_telemetry.sql"
+  ],
+  "source_verification_state": "VERIFIED",
+  "current_law_claim_material": false,
+  "temporal_verification_state": "NOT_REQUIRED",
+  "jurisdiction_verification_state": "NOT_REQUIRED",
+  "human_review_state": "APPROVED",
+  "required_gate_types": [
+    "github_merge",
+    "production_schema_migration",
+    "production_runtime_deploy"
+  ],
+  "gate_decisions": {
+    "github_merge": "approved",
+    "production_schema_migration": "approved",
+    "production_runtime_deploy": "approved"
+  },
+  "implementation_state": "STAGED",
+  "rollback_reference": "1d04f77373343bd6cc685f7084640d68612fd575",
+  "legal_stress_test_state": "PENDING",
+  "adversarial_review_state": "PENDING",
+  "verification_state": "PENDING",
+  "outcome_state": "UNKNOWN",
+  "release_status": "BLOCKED",
+  "first_pass_verification": null,
+  "verification_attempts": null,
+  "correction_required": false,
+  "learning_candidates": [],
+  "provider_or_tool_failures": [],
+  "fallback_mode": "NONE",
+  "data_classification": "PUBLIC",
+  "elapsed_ms": null,
+  "tool_calls": null,
+  "measured_cost": null,
+  "metric_eligibility": {
+    "effectiveness": false,
+    "time": false,
+    "activation": false,
+    "tooling": false,
+    "cost": false
+  },
+  "measurement_notes": [
+    "Live run opened for the explicit full LIOE implementation request.",
+    "Provider activation is not part of this run and remains a separate Human Gate.",
+    "The run cannot close SUCCESS before repository CI, production migration, runtime deploy and post-deploy verification evidence exist."
+  ]
+}
