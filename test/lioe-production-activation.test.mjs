@@ -13,7 +13,7 @@ test("LIOE production activation request is explicit and provider-isolated",()=>
   assert.equal(activation.runtime_version,"ai-advokat-lioe-runtime-1.0.0");
   assert.equal(activation.migration,"0028_lioe_runtime_telemetry.sql");
   assert.equal(activation.provider_activation_authorized,false);
-  for(const gate of ["github_merge","production_schema_migration","production_runtime_deploy"]){
+  for(const gate of ["github_merge","production_schema_migration","production_runtime_deploy","public_release"]){
     assert.ok(activation.authorized_gates.includes(gate));
   }
 });
