@@ -1,5 +1,5 @@
 {
-  "schema_version": "2.2",
+  "schema_version": "2.3",
   "architecture_id": "AI_ADVOKAT_GOVERNED_AGENT_ARCHITECTURE_v2",
   "generated_on": "2026-10-06",
   "owner_concept": "AI Advokat",
@@ -239,7 +239,7 @@
     "name": "AI Advokat Legal Intelligence & Orchestration Engine",
     "path": "/data/legal-intelligence-engine-v1.json",
     "runtime": "/src/legal-intelligence-engine.js",
-    "status": "IMPLEMENTED_MVP_GOVERNED_PREVIEW",
+    "status": "FULL_RUNTIME_CANDIDATE_PENDING_PRODUCTION_ACTIVATION",
     "position": "under_chief_legal_orchestrator_and_legal_operating_protocol_above_bounded_specialist_execution",
     "creates_legal_authority": false,
     "mission_profiles": [
@@ -252,6 +252,14 @@
     "real_run_index": "/data/legal-runs/index.json",
     "evaluation_suite": "/data/legal-intelligence-evaluation-suite.json",
     "metrics_baseline": "/data/legal-intelligence-metrics-baseline.json",
-    "human_gate_unchanged": true
+    "human_gate_unchanged": true,
+    "runtime_governance": "/src/legal-runtime-governance.js",
+    "runtime_version": "ai-advokat-lioe-runtime-1.0.0",
+    "postflight": "structured_two-attempt_fail-closed_for_current-law-and-L2-L4",
+    "runtime_telemetry": {
+      "migration": "/migrations/0028_lioe_runtime_telemetry.sql",
+      "table": "lioe_runtime_runs",
+      "privacy": "metadata_only_no_question_answer_attachment_identity_or_source_text"
+    }
   }
 }
