@@ -14,7 +14,9 @@ import {
   orchestratorRuntimeReadiness,
   extractOpenAIResponseText,
   extractOpenAIWebCitations,
-  orchestratorInstructions
+  extractOpenAIUsage,
+  orchestratorInstructions,
+  runLegalPostflightVerifier
 } from "../src/agent-orchestrator.js";
 import {
   KNOWLEDGE_CLASSES,
@@ -246,4 +248,88 @@ test("LIOE mission depth is integrated without creating legal authority",()=>{
   const general=buildAgentPlan("Напиши ми кратка деловна порака.");
   assert.equal(general.legalIntelligenceEngine.mission_profile.id,"GENERAL_BYPASS");
   assert.equal(general.legalIntelligenceEngine.engaged,false);
+});
+
+
+test("OpenAI usage extraction is explicit and bounded",()=>{
+  assert.deepEqual(extractOpenAIUsage({usage:{input_tokens:120,output_tokens:30,total_tokens:150}}),{
+    inputTokens:120,outputTokens:30,totalTokens:150
+  });
+});
+
+test("structured legal postflight revises once and then passes",async()=>{
+  const originalFetch=globalThis.fetch;
+  const responses=[
+    {
+      status:"completed",
+      output_text:JSON.stringify({
+        verdict:"REVISE",stress_test:"PASS",adversarial_review:"PASS",
+        source_integrity:"VERIFIED",temporal_integrity:"NOT_REQUIRED",
+        jurisdiction_integrity:"VERIFIED",human_gate:"REQUIRED",
+        issues:["remove execution overclaim"],corrected_answer:"Безбедна правна верзија."
+      }),
+      usage:{input_tokens:100,output_tokens:40,total_tokens:140}
+    },
+    {
+      status:"completed",
+      output_text:JSON.stringify({
+        verdict:"PASS",stress_test:"PASS",adversarial_review:"PASS",
+        source_integrity:"VERIFIED",temporal_integrity:"NOT_REQUIRED",
+        jurisdiction_integrity:"VERIFIED",human_gate:"REQUIRED",
+        issues:[],corrected_answer:"Безбедна правна верзија."
+      }),
+      usage:{input_tokens:80,output_tokens:20,total_tokens:100}
+    }
+  ];
+  let i=0;
+  globalThis.fetch=async()=>new Response(JSON.stringify(responses[i++]),{status:200,headers:{"content-type":"application/json"}});
+  try{
+    const plan=buildAgentPlan("Спореди ги опциите и процесниот ризик за жалба.");
+    const verdict=await runLegalPostflightVerifier({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test"
+    },{
+      plan,
+      draft:"Нацрт што треба да се поправи.",
+      corpusContext:[{source:"official",locator:"чл. 1",version:"v1",text:"test"}],
+      webSources:[],
+      maxAttempts:2
+    });
+    assert.equal(verdict.ok,true);
+    assert.equal(verdict.verdict,"PASS");
+    assert.equal(verdict.attempts,2);
+    assert.equal(verdict.firstPass,false);
+    assert.equal(verdict.corrected_answer,"Безбедна правна верзија.");
+    assert.equal(verdict.usage.totalTokens,240);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test("structured legal postflight fails closed after verifier FAIL",async()=>{
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=async()=>new Response(JSON.stringify({
+    status:"completed",
+    output_text:JSON.stringify({
+      verdict:"FAIL",stress_test:"FAIL",adversarial_review:"FAIL",
+      source_integrity:"FAILED",temporal_integrity:"FAILED",
+      jurisdiction_integrity:"PARTIAL",human_gate:"MISSING_OR_UNAPPROVED",
+      issues:["insufficient authority"],corrected_answer:""
+    }),
+    usage:{input_tokens:50,output_tokens:10,total_tokens:60}
+  }),{status:200,headers:{"content-type":"application/json"}});
+  try{
+    const plan=buildAgentPlan("Што вели важечкото македонско право денес?");
+    const verdict=await runLegalPostflightVerifier({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test"
+    },{plan,draft:"Непотврдено тврдење.",corpusContext:[],webSources:[]});
+    assert.equal(verdict.ok,false);
+    assert.equal(verdict.error,"legal_postflight_failed");
+    assert.equal(verdict.attempts,1);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
 });
