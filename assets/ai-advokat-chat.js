@@ -140,6 +140,12 @@
       if(g.executionAuthorization){
         const auth=document.createElement("div");auth.textContent="Execution: "+g.executionAuthorization;box.append(auth);
       }
+      if(g.specialistExecution?.executed===true){
+        const specialists=document.createElement("div");
+        const agents=Array.isArray(g.specialistExecution.agents)?g.specialistExecution.agents:[];
+        specialists.textContent="Bounded specialists: "+(agents.length?agents.join(", "):"executed");
+        box.append(specialists);
+      }
       body.append(box);
     }
     if(m.sourceLabel){
