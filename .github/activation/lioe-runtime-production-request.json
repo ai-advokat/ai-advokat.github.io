@@ -1,0 +1,24 @@
+{
+  "decision_id": "AI_ADVOKAT_LIOE_FULL_RUNTIME_2026-10-06",
+  "requested_on": "2026-10-06",
+  "requested_by_role": "project_lead",
+  "decision_basis": "Explicit request for full LIOE implementation in the current project session.",
+  "activation_authorized": true,
+  "runtime_version": "ai-advokat-lioe-runtime-1.0.0",
+  "migration": "0028_lioe_runtime_telemetry.sql",
+  "authorized_gates": [
+    "github_merge",
+    "production_schema_migration",
+    "production_runtime_deploy"
+  ],
+  "provider_activation_authorized": false,
+  "provider_boundary": "OpenAI provider activation remains a separate gate and is not implied by this LIOE runtime activation.",
+  "privacy_boundary": "Runtime telemetry must not store user questions, answers, attachments, identities, client facts or source text.",
+  "expected_checks": [
+    "focused LIOE governance CI",
+    "broad security CI",
+    "production D1 telemetry schema verification",
+    "live runtime readiness",
+    "live legal chat smoke only when provider is separately configured"
+  ]
+}
