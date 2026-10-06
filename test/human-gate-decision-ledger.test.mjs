@@ -67,3 +67,11 @@ describe("Human Gate Decision Ledger",()=>{
       assert.ok(ledger.gate_types.includes(gate),`missing gate type ${gate}`);
     }
   });
+
+
+test("HGL8 production activation gates are isolated from GitHub merge",()=>{
+  for(const gate of ["production_schema_migration","production_runtime_deploy"]){
+    assert.ok(ledger.gate_types.includes(gate),`missing gate type ${gate}`);
+  }
+  assert.ok(ledger.invariants.includes("github_merge_does_not_imply_production_schema_migration_or_runtime_deploy"));
+});
