@@ -185,7 +185,20 @@
     "production_flags": [
       "LIOE_RUNTIME_GOVERNANCE_ENABLED",
       "LIOE_POSTFLIGHT_ENABLED",
-      "LIOE_RUNTIME_TELEMETRY_ENABLED"
-    ]
+      "LIOE_RUNTIME_TELEMETRY_ENABLED",
+      "LIOE_SPECIALIST_EXECUTION_ENABLED"
+    ],
+    "specialist_execution": {
+      "required_for": [
+        "L2_STRATEGY_PROCEDURE",
+        "L3_CONSEQUENTIAL",
+        "L4_LEGAL_TRUTH_GOVERNANCE"
+      ],
+      "pattern": "bounded_parallel_specialists_then_chief_synthesis",
+      "max_parallel_specialists": 4,
+      "low_depth_fanout": false,
+      "failure_policy": "fail_closed",
+      "web_search_policy": "specialists may use governed Web search when explicitly enabled; Chief avoids duplicate Web search when specialist stage already used it"
+    }
   }
 }
