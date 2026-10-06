@@ -91,7 +91,7 @@ jobs:
           if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker name");
           if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1 target");
           if(c.previews?.d1_databases?.[0]?.database_id===d.database_id) throw new Error("Production/staging collision");
-          for(const k of ["LIOE_RUNTIME_GOVERNANCE_ENABLED","LIOE_POSTFLIGHT_ENABLED","LIOE_RUNTIME_TELEMETRY_ENABLED"]){
+          for(const k of ["LIOE_RUNTIME_GOVERNANCE_ENABLED","LIOE_POSTFLIGHT_ENABLED","LIOE_RUNTIME_TELEMETRY_ENABLED","LIOE_SPECIALIST_EXECUTION_ENABLED"]){
             if(c.vars?.[k]!=="true") throw new Error(k+" is not armed");
           }
           if(c.vars?.OPENAI_PROVIDER_ACTIVATION_STATE!=="armed_secret_and_billing_required") throw new Error("Provider boundary changed unexpectedly");
@@ -155,6 +155,7 @@ jobs:
           if(!o.ok) throw new Error("orchestrator endpoint not ready");
           if(o.runtime?.lioeRuntimeGovernance!=="enabled") throw new Error("LIOE governance not enabled");
           if(o.runtime?.lioePostflight!=="enabled") throw new Error("LIOE postflight not enabled");
+          if(o.runtime?.lioeSpecialistExecution!=="enabled") throw new Error("LIOE specialist execution not enabled");
           if(o.runtime?.lioeRuntimeTelemetry!=="ready") throw new Error("LIOE telemetry not ready: "+o.runtime?.lioeRuntimeTelemetry);
           if(c.capabilities?.lioeRuntimeTelemetry!=="ready") throw new Error("Capabilities telemetry state mismatch");
           console.log("LIVE LIOE RUNTIME READINESS: PASS");
@@ -181,6 +182,8 @@ jobs:
           if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error("LIOE metadata missing");
           if(d.legalGovernance?.missionProfile!=="L2_STRATEGY_PROCEDURE") throw new Error("Unexpected mission profile: "+d.legalGovernance?.missionProfile);
           if(d.legalGovernance?.postflightRequired!==true) throw new Error("Postflight was not required");
+          if(d.legalGovernance?.specialistExecution?.executed!==true) throw new Error("Bounded specialist execution did not run");
+          if(!Array.isArray(d.legalGovernance?.specialistExecution?.agents) || !d.legalGovernance.specialistExecution.agents.length) throw new Error("Specialist execution agents missing");
           if(d.runtimeTelemetry!=="recorded") throw new Error("Runtime telemetry not recorded: "+d.runtimeTelemetry);
           if(!d.governanceRunId) throw new Error("Governance run id missing");
           if(d.legalGovernance?.executionAuthorization!=="RESEARCH_OUTPUT_ONLY") throw new Error("Unexpected execution authorization");
