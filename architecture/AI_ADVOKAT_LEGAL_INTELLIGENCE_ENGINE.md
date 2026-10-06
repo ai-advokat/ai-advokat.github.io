@@ -147,3 +147,16 @@ Production activation is separately governed:
 **GitHub merge ≠ production schema migration ≠ production runtime deploy ≠ provider activation.**
 
 Migration 0028 creates the telemetry table. The dedicated production activation workflow verifies the exact D1 target, rejects unexpected pending migrations, applies 0028, verifies the privacy schema, deploys the Worker, checks live LIOE readiness and, only when the provider is independently configured, runs a live legal postflight + telemetry smoke test.
+
+
+## Real bounded specialist execution
+
+For L2–L4, selected specialist roles are now executable bounded sub-agents rather than routing labels only.
+
+The Chief Legal Orchestrator remains the sole owner of the user-facing conversation. LIOE activates up to four justified specialists in parallel, each inside its jurisdiction/source boundary. Their findings return to the Chief as bounded research inputs.
+
+L0/L1 do not automatically fan out. This preserves the minimal-sufficient-activation rule.
+
+If a required specialist execution fails, the mission fails closed rather than silently continuing as if the specialist had completed. When Web research is explicitly enabled, specialists may use governed Web search; if they already obtain Web sources, the Chief avoids a duplicate Web-search call where possible.
+
+Specialist consensus does not create legal authority. Verification & Citation and the structured postflight remain separate controls.
