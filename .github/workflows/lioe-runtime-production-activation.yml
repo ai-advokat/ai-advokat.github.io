@@ -56,7 +56,7 @@ jobs:
           if(d.runtime_version!=="ai-advokat-lioe-runtime-1.0.0") throw new Error("Unexpected LIOE runtime version");
           if(d.migration!=="0028_lioe_runtime_telemetry.sql") throw new Error("Unexpected migration");
           const gates=new Set(d.authorized_gates||[]);
-          for(const g of ["github_merge","production_schema_migration","production_runtime_deploy"]) {
+          for(const g of ["github_merge","production_schema_migration","production_runtime_deploy","public_release"]) {
             if(!gates.has(g)) throw new Error("Missing authorised gate: "+g);
           }
           if(d.provider_activation_authorized===true) throw new Error("Provider activation must remain separate");
