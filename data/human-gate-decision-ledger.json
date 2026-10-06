@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "ledger_id": "AI_ADVOKAT_HUMAN_GATE_DECISION_LEDGER_v1",
   "generated_on": "2026-10-06",
   "doctrine": [
@@ -18,7 +18,9 @@
     "production_corpus_write",
     "current_law_verification",
     "corpus_promotion",
-    "provider_activation"
+    "provider_activation",
+    "production_schema_migration",
+    "production_runtime_deploy"
   ],
   "decision_states": [
     "pending",
@@ -45,7 +47,8 @@
     "revocation_never_deletes_history",
     "missing_decision_means_not_approved",
     "current_law_verification_gate_is_distinct_from_corpus_promotion",
-    "provider_activation_requires_its_own_explicit_decision"
+    "provider_activation_requires_its_own_explicit_decision",
+    "github_merge_does_not_imply_production_schema_migration_or_runtime_deploy"
   ],
   "initial_records": [
     {
