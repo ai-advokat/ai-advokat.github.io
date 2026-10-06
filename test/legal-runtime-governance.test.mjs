@@ -98,7 +98,7 @@ test("sanitised telemetry contains no question answer history or source text",()
     runId:"LIOE-RT-TEST",startedAt:"2026-10-06T08:00:00Z",finishedAt:"2026-10-06T08:00:01Z",
     elapsedMs:1000,plan:p,assessment:a,result:{ok:true,model:"gpt-test",usage:{inputTokens:100,outputTokens:40,totalTokens:140},sources:[],webSearchUsed:false},
     articleBundle:{context:[{}]},guideContextCount:1,attachmentCount:2,sourceMode:"test",
-    postflightMeta:{attempts:1,firstPass:true,providerCalls:1,usage:{inputTokens:50,outputTokens:20,totalTokens:70}}
+    postflightMeta:{attempts:1,firstPass:true,primaryProviderCalls:1,providerCalls:1,usage:{inputTokens:50,outputTokens:20,totalTokens:70}}
   });
   assert.equal(rec.total_tokens,210);
   assert.equal(rec.provider_calls,2);
