@@ -66,6 +66,32 @@ jobs:
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
 
+      - name: Verify version-bound Human Gate ledger approvals
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          import crypto from "node:crypto";
+          import {isGateApproved} from "./scripts/human-gate-ledger-validator.mjs";
+          const requestPath=".github/activation/lioe-runtime-production-request.json";
+          const raw=fs.readFileSync(requestPath);
+          const sha=crypto.createHash("sha256").update(raw).digest("hex");
+          const d=JSON.parse(raw);
+          const ledger=JSON.parse(fs.readFileSync("data/human-gate-decision-ledger.json","utf8"));
+          const expected="949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f";
+          if(sha!==expected) throw new Error("Activation artifact fingerprint changed: "+sha);
+          const query={
+            subject_id:"lioe-full-runtime-2026-10-06",
+            artifact_version:d.decision_id,
+            artifact_fingerprint:{activation_request_sha256:sha}
+          };
+          for(const gate of ["github_merge","public_release","production_schema_migration","production_runtime_deploy"]){
+            if(!isGateApproved(ledger.initial_records,{...query,gate_type:gate})) throw new Error("Human Gate not approved: "+gate);
+          }
+          if(isGateApproved(ledger.initial_records,{...query,gate_type:"provider_activation"})) throw new Error("Provider activation must remain unapproved by this release");
+          console.log("Version-bound Human Gate ledger: PASS");
+          NODE
+
       - name: Verify repository and LIOE runtime invariants
         run: |
           node --check src/index.js
