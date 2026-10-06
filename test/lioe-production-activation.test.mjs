@@ -57,3 +57,11 @@ test("production activation verifies bounded specialist execution readiness",()=
   assert.match(workflow,/lioeSpecialistExecution.*enabled/);
   assert.match(workflow,/specialistExecution.*executed/);
 });
+
+
+test("production activation enforces version-bound Human Gate ledger",()=>{
+  assert.match(workflow,/Verify version-bound Human Gate ledger approvals/);
+  assert.match(workflow,/949484d76cbc4cbd99db4402215c5150ad510ac39fde3f5fb0b5168c525a525f/);
+  assert.match(workflow,/provider_activation/);
+  assert.match(workflow,/Provider activation must remain unapproved/);
+});
