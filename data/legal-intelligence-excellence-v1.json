@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "framework_id": "AI_ADVOKAT_LIOE_EXCELLENCE_v1",
   "updated": "2026-10-06",
   "status": "INTERNAL_GOVERNANCE_AND_EVALUATION_FRAMEWORK",
@@ -24,7 +24,11 @@
     "rework_ratio",
     "correction_loop_time",
     "tool_calls_per_verified_result",
-    "cost_per_verified_result_when_reliably_measured"
+    "cost_per_verified_result_when_reliably_measured",
+    "postflight_first_pass_rate",
+    "postflight_correction_rate",
+    "provider_calls_per_verified_result",
+    "tokens_per_verified_result"
   ],
   "quality_rule": "A faster route that weakens source, authority, version/date, jurisdiction, citation, deadline or Human Gate integrity is a failed optimisation.",
   "baseline_policy": {
@@ -33,5 +37,20 @@
     "unknown_metrics_remain_null": true,
     "targets_require_human_review": true
   },
-  "external_reference_boundary": "Methodological references may inform engineering practice but do not imply endorsement, certification or legal authority."
+  "external_reference_boundary": "Methodological references may inform engineering practice but do not imply endorsement, certification or legal authority.",
+  "runtime_measurement": {
+    "source": "D1 lioe_runtime_runs",
+    "content_free": true,
+    "measures": [
+      "elapsed_ms",
+      "provider_calls",
+      "input_tokens",
+      "output_tokens",
+      "total_tokens",
+      "verification_attempts",
+      "correction_required",
+      "release_state"
+    ],
+    "no_cost_estimate_without_verified_price_table": true
+  }
 }
