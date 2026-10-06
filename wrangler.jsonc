@@ -14,7 +14,8 @@
     "OPENAI_PROVIDER_ACTIVATION_STATE": "armed_secret_and_billing_required",
     "LIOE_RUNTIME_GOVERNANCE_ENABLED": "true",
     "LIOE_POSTFLIGHT_ENABLED": "true",
-    "LIOE_RUNTIME_TELEMETRY_ENABLED": "true"
+    "LIOE_RUNTIME_TELEMETRY_ENABLED": "true",
+    "LIOE_SPECIALIST_EXECUTION_ENABLED": "true"
   },
   "assets": {
     "directory": "./",
