@@ -81,7 +81,8 @@ if (pkg.version !== "1.3.3") throw new Error("package.json version must be 1.3.3
 for (const [name,expected] of Object.entries({
   LIOE_RUNTIME_GOVERNANCE_ENABLED:"true",
   LIOE_POSTFLIGHT_ENABLED:"true",
-  LIOE_RUNTIME_TELEMETRY_ENABLED:"true"
+  LIOE_RUNTIME_TELEMETRY_ENABLED:"true",
+  LIOE_SPECIALIST_EXECUTION_ENABLED:"true"
 })) {
   if (wrangler.vars?.[name] !== expected) throw new Error(`${name} must be armed as ${expected}.`);
 }
