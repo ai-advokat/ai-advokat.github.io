@@ -9,7 +9,8 @@
   "authorized_gates": [
     "github_merge",
     "production_schema_migration",
-    "production_runtime_deploy"
+    "production_runtime_deploy",
+    "public_release"
   ],
   "provider_activation_authorized": false,
   "provider_boundary": "OpenAI provider activation remains a separate gate and is not implied by this LIOE runtime activation.",
@@ -20,5 +21,6 @@
     "production D1 telemetry schema verification",
     "live runtime readiness",
     "live legal chat smoke only when provider is separately configured"
-  ]
+  ],
+  "public_release_scope": "LIOE runtime/UI/governance changes introduced by the named release only; no provider activation is implied."
 }
