@@ -259,6 +259,7 @@ test("CHAT26 LIOE runtime governance is visible and fail-closed",()=>{
   assert.match(wrangler,/"LIOE_RUNTIME_GOVERNANCE_ENABLED"\s*:\s*"true"/);
   assert.match(wrangler,/"LIOE_POSTFLIGHT_ENABLED"\s*:\s*"true"/);
   assert.match(wrangler,/"LIOE_RUNTIME_TELEMETRY_ENABLED"\s*:\s*"true"/);
+  assert.match(wrangler,/"LIOE_SPECIALIST_EXECUTION_ENABLED"\s*:\s*"true"/);
 });
 
 test("CHAT27 L2-L4 observability is not bypassed when telemetry is unavailable",()=>{
@@ -272,4 +273,14 @@ test("CHAT28 current-law runtime exposes temporal verification and release state
   assert.match(worker,/releaseState:runtimeAssessment\.releaseState/);
   assert.match(worker,/executionAuthorization:runtimeAssessment\.executionAuthorization/);
   assert.match(chatJs,/Human Gate \/ човечка проверка/);
+});
+
+
+test("CHAT29 L2-L4 use real bounded specialist execution before Chief synthesis",()=>{
+  const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(orchestrator,/runBoundedSpecialists/);
+  assert.match(orchestrator,/Promise\.all\(selected\.map/);
+  assert.match(orchestrator,/BOUNDED_SPECIALIST_FINDINGS/);
+  assert.match(orchestrator,/LIOE_SPECIALIST_EXECUTION_ENABLED/);
+  assert.match(worker,/specialistExecution:result\.specialistExecution/);
 });
