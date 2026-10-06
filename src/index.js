@@ -32,8 +32,14 @@ import {
   buildAgentPlan,
   buildExecutionGraph,
   orchestratorRuntimeReadiness,
-  runOpenAIOrchestrator
+  runOpenAIOrchestrator,
+  runLegalPostflightVerifier
 } from "./agent-orchestrator.js";
+import {
+  assessLegalRuntimeRelease,
+  buildSanitisedRuntimeRecord,
+  persistSanitisedRuntimeRecord
+} from "./legal-runtime-governance.js";
 import {
   KNOWLEDGE_CLASSES,
   KNOWLEDGE_INTAKE_POLICY
@@ -1872,6 +1878,12 @@ async function handleGPTChat(request,env){
   }
 
   const plan=buildAgentPlan(q,{preferCorpus});
+  const lioeEngaged=plan.legalIntelligenceEngine?.engaged===true;
+  const lioeRunStartedMs=Date.now();
+  const lioeRunStartedAt=new Date(lioeRunStartedMs).toISOString();
+  const lioeRunId=lioeEngaged
+    ? "LIOE-RT-"+lioeRunStartedAt.replace(/[-:.TZ]/g,"").slice(0,14)+"-"+crypto.randomUUID().slice(0,8)
+    : null;
   const fastGeneral=plan.mode===ORCHESTRATOR_MODES.GENERAL
     && !webRequested
     && attachmentCheck.attachments.length===0
@@ -1899,8 +1911,77 @@ async function handleGPTChat(request,env){
 
   if(!result.ok){
     await releaseMonthlyQuota(env,{subject,period});
-    return json(request,{ok:false,error:result.error,problems:result.problems || null},503);
+    let telemetryState="not_applicable";
+    if(lioeEngaged){
+      const finishedAt=new Date().toISOString();
+      const assessment=assessLegalRuntimeRelease({
+        plan,articleBundle,result:{...result,ok:false},postflight:{verdict:"FAIL"}
+      });
+      const record=buildSanitisedRuntimeRecord({
+        runId:lioeRunId,startedAt:lioeRunStartedAt,finishedAt,
+        elapsedMs:Date.now()-lioeRunStartedMs,plan,assessment,
+        result:{...result,ok:false},articleBundle,
+        guideContextCount:guideContext.length+guideDocumentCheck.context.length,
+        attachmentCount:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
+        sourceMode:"provider_failure",
+        postflightMeta:{attempts:0,firstPass:false,providerCalls:0,primaryProviderCalls:0}
+      });
+      telemetryState=(await persistSanitisedRuntimeRecord(env,record)).state;
+    }
+    return json(request,{
+      ok:false,error:result.error,problems:result.problems || null,
+      governanceRunId:lioeRunId,
+      runtimeTelemetry:telemetryState
+    },503);
   }
+
+  const postflight=await runLegalPostflightVerifier(env,{
+    plan,
+    draft:result.text,
+    corpusContext,
+    webSources:result.sources||[],
+    maxAttempts:2
+  });
+
+  if(!postflight.ok){
+    await releaseMonthlyQuota(env,{subject,period});
+    let telemetryState="not_applicable";
+    let assessment=null;
+    if(lioeEngaged){
+      assessment=assessLegalRuntimeRelease({
+        plan,articleBundle,result:{...result,ok:false},
+        postflight:{...postflight,verdict:postflight.verdict||"FAIL"}
+      });
+      const finishedAt=new Date().toISOString();
+      const record=buildSanitisedRuntimeRecord({
+        runId:lioeRunId,startedAt:lioeRunStartedAt,finishedAt,
+        elapsedMs:Date.now()-lioeRunStartedMs,plan,assessment,
+        result:{...result,ok:false},articleBundle,
+        guideContextCount:guideContext.length+guideDocumentCheck.context.length,
+        attachmentCount:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
+        sourceMode:"legal_postflight_failed",
+        postflightMeta:{...postflight,primaryProviderCalls:1}
+      });
+      telemetryState=(await persistSanitisedRuntimeRecord(env,record)).state;
+    }
+    return json(request,{
+      ok:false,
+      error:postflight.error||"legal_postflight_failed",
+      message:"Правниот draft не ја помина задолжителната LIOE postflight проверка. Одговорот не е пуштен.",
+      governanceRunId:lioeRunId,
+      runtimeTelemetry:telemetryState,
+      legalGovernance:assessment ? {
+        engine:"LIOE",
+        missionProfile:plan.legalIntelligenceEngine?.mission_profile?.id||null,
+        verificationState:assessment.verificationState,
+        releaseState:assessment.releaseState,
+        executionAuthorization:assessment.executionAuthorization,
+        humanReviewRequired:true
+      } : null
+    },503);
+  }
+
+  const finalAnswer=postflight.required ? postflight.corrected_answer : result.text;
 
   const articleMatched=articleBundle.state==="matched";
   const guideFullTextUsed=guideDocumentCheck.attachments.length>0;
@@ -1924,9 +2005,53 @@ async function handleGPTChat(request,env){
                     ? "ai_advokat_catalogue_context_first"
                     : "gpt_general_or_proactive";
 
+  const runtimeAssessment=assessLegalRuntimeRelease({
+    plan,
+    articleBundle,
+    result,
+    postflight
+  });
+  let runtimeTelemetry="not_applicable";
+  if(lioeEngaged){
+    const finishedAt=new Date().toISOString();
+    const record=buildSanitisedRuntimeRecord({
+      runId:lioeRunId,
+      startedAt:lioeRunStartedAt,
+      finishedAt,
+      elapsedMs:Date.now()-lioeRunStartedMs,
+      plan,
+      assessment:runtimeAssessment,
+      result,
+      articleBundle,
+      guideContextCount:guideContext.length+guideDocumentCheck.context.length,
+      attachmentCount:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
+      sourceMode,
+      postflightMeta:{...postflight,primaryProviderCalls:1}
+    });
+    const telemetry=await persistSanitisedRuntimeRecord(env,record);
+    runtimeTelemetry=telemetry.state;
+    if(plan.legalIntelligenceEngine?.observability?.run_record_required===true && !telemetry.ok){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:"lioe_observability_unavailable",
+        message:"LIOE run-record persistence is required for this L2-L4 mission and is not available. The legal draft was not released.",
+        governanceRunId:lioeRunId,
+        runtimeTelemetry,
+        legalGovernance:{
+          engine:"LIOE",
+          missionProfile:plan.legalIntelligenceEngine?.mission_profile?.id||null,
+          releaseState:"BLOCKED_OBSERVABILITY_REQUIRED",
+          executionAuthorization:runtimeAssessment.executionAuthorization,
+          humanReviewRequired:true
+        }
+      },503);
+    }
+  }
+
   return json(request,{
     ok:true,
-    answer:result.text,
+    answer:finalAnswer,
     model:result.model,
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,
@@ -1954,6 +2079,30 @@ async function handleGPTChat(request,env){
     reasoningEffort,
     maxOutputTokens,
     humanGate:result.humanGate,
+    governanceRunId:lioeRunId,
+    runtimeTelemetry,
+    legalGovernance:lioeEngaged ? {
+      engine:"AI_ADVOKAT_LIOE_v1",
+      missionProfile:plan.legalIntelligenceEngine?.mission_profile?.id||null,
+      problemClass:plan.legalIntelligenceEngine?.problem_class||null,
+      currentLawMaterial:runtimeAssessment.currentLawMaterial,
+      sourceVerificationState:runtimeAssessment.sourceVerificationState,
+      temporalVerificationState:runtimeAssessment.temporalVerificationState,
+      jurisdictionVerificationState:runtimeAssessment.jurisdictionVerificationState,
+      verificationState:runtimeAssessment.verificationState,
+      releaseState:runtimeAssessment.releaseState,
+      executionAuthorization:runtimeAssessment.executionAuthorization,
+      humanReviewRequired:runtimeAssessment.humanReviewRequired,
+      requiredGateTypes:runtimeAssessment.requiredGateTypes||[],
+      legalStressTestState:runtimeAssessment.legalStressTestState,
+      adversarialReviewState:runtimeAssessment.adversarialReviewState,
+      postflightRequired:runtimeAssessment.postflightRequired,
+      verificationAttempts:postflight.attempts||0,
+      firstPassVerification:postflight.firstPass===true,
+      correctionRequired:(postflight.attempts||0)>1,
+      officialWebSourceCount:runtimeAssessment.officialWebSourceCount,
+      warning:runtimeAssessment.warningMk
+    } : null,
     membership:{
       planCode:membership ? membership.planCode : "free",
       monthlyQuota:quota,
