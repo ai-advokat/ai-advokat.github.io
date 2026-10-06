@@ -1,6 +1,6 @@
 # AI Advokat Legal Intelligence & Orchestration Engine — LIOE v1.0
 
-**Status:** Implemented MVP · Governed Preview
+**Status:** Full Runtime Candidate · Production Activation Pending
 **Date:** 6 October 2026
 
 ## Purpose
@@ -105,3 +105,45 @@ It may not silently change:
 - jurisdiction hierarchy.
 
 **Self-improving legal workflow does not mean self-authorising legal authority.**
+
+
+## Runtime enforcement
+
+The full runtime implementation adds deterministic release governance around `/api/chat`.
+
+For governed legal missions, the Worker now returns visible LIOE metadata including mission profile, source verification, temporal verification, release state, execution authorization and Human Gate requirements.
+
+Current-law output is classified as:
+
+- **VERIFIED_CURRENT_RESEARCH** only where Human-Gate approved current article-level evidence and postflight temporal verification are both present;
+- **PROVISIONAL_CURRENT_LAW_EXTERNAL_RESEARCH** where external Web research exists but current-law status is not established by the governed native corpus;
+- **UNVERIFIED_CURRENT_LAW** where the necessary current-law evidence is absent.
+
+L3 remains advisory/draft-only with `NO_EXTERNAL_ACTION`. L4 remains `NO_LEGAL_TRUTH_MUTATION`.
+
+## Structured legal postflight
+
+Current-law missions and L2–L4 missions receive a second bounded verifier pass using OpenAI Responses Structured Outputs.
+
+The verifier checks source integrity, temporal integrity, jurisdiction integrity, legal stress testing, adversarial review and Human Gate boundaries.
+
+A first `REVISE` result triggers one correction and exactly one re-verification attempt. A second non-PASS result fails closed and the draft is not released.
+
+## Two-tier observability
+
+AI Advokat now separates two evidence layers:
+
+1. **Canonical engineering runs** — `LIOE-2026-NNNN` records in the repository for major architecture/release missions.
+2. **Live runtime telemetry** — `LIOE-RT-...` rows in production D1 for privacy-minimised operational measurement.
+
+Runtime telemetry stores metadata only: mission profile, verification/release states, source counts, postflight attempts, provider calls, token counts and elapsed time. It does not store questions, answers, conversation history, attachments, identities, client facts or source text.
+
+L2–L4 runtime release fails closed when required telemetry persistence is unavailable.
+
+## Production activation
+
+Production activation is separately governed:
+
+**GitHub merge ≠ production schema migration ≠ production runtime deploy ≠ provider activation.**
+
+Migration 0028 creates the telemetry table. The dedicated production activation workflow verifies the exact D1 target, rejects unexpected pending migrations, applies 0028, verifies the privacy schema, deploys the Worker, checks live LIOE readiness and, only when the provider is independently configured, runs a live legal postflight + telemetry smoke test.
