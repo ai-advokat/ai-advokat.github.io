@@ -49,13 +49,15 @@ jobs:
         with:
           node-version: "22"
       - name: Worker syntax
-        run: node --check src/index.js && node --check src/security.js && node --check src/legal-claim-validator.js && node --check src/corpus-versions.js && node --check src/agent-orchestrator.js && node --check src/legal-intelligence-engine.js && node --check src/casepilot.js && node --check assets/guide-router.js && node --check assets/guide-vault.js && node --check assets/ai-advokat-chat.js
+        run: node --check src/index.js && node --check src/security.js && node --check src/legal-claim-validator.js && node --check src/corpus-versions.js && node --check src/agent-orchestrator.js && node --check src/legal-intelligence-engine.js && node --check src/legal-runtime-governance.js && node --check src/casepilot.js && node --check assets/guide-router.js && node --check assets/guide-vault.js && node --check assets/ai-advokat-chat.js
       - name: Structural verification
         run: npm run verify
       - name: GPT orchestrator foundation tests
         run: npm run test:agent-orchestrator
       - name: LIOE governance unit tests
         run: npm run test:legal-intelligence-engine
+      - name: LIOE runtime governance tests
+        run: npm run test:legal-runtime-governance
       - name: CasePilot foundation tests
         run: npm run test:casepilot
       - name: Zoran practical guides governance tests
