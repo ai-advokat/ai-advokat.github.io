@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "protocol_id": "AI_ADVOKAT_LEGAL_OPERATING_PROTOCOL_v1",
   "generated_on": "2026-10-06",
   "status": "GOVERNED_WORKING_METHOD",
@@ -104,7 +104,9 @@
     "github_merge",
     "public_release",
     "production_corpus_write",
-    "provider_activation"
+    "provider_activation",
+    "production_schema_migration",
+    "production_runtime_deploy"
   ],
   "specialist_families": [
     "Macedonian Law",
@@ -124,7 +126,8 @@
     "Human approval cannot be inferred from previous approval of a different version or gate.",
     "Adversarial review does not replace legal verification or Human Gate approval.",
     "Mission depth does not create legal authority or approval.",
-    "A faster route is rejected if it weakens source, jurisdiction, version/date, citation, deadline or Human Gate integrity."
+    "A faster route is rejected if it weakens source, jurisdiction, version/date, citation, deadline or Human Gate integrity.",
+    "GitHub merge does not itself authorize production schema migration or production runtime deployment."
   ],
   "execution_engine": {
     "id": "AI_ADVOKAT_LIOE_v1",
