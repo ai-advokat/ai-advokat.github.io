@@ -16,6 +16,8 @@ import {
   extractOpenAIWebCitations,
   extractOpenAIUsage,
   orchestratorInstructions,
+  specialistExecutionRequired,
+  runBoundedSpecialists,
   runLegalPostflightVerifier
 } from "../src/agent-orchestrator.js";
 import {
@@ -329,6 +331,88 @@ test("structured legal postflight fails closed after verifier FAIL",async()=>{
     assert.equal(verdict.ok,false);
     assert.equal(verdict.error,"legal_postflight_failed");
     assert.equal(verdict.attempts,1);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+
+test("L0 and L1 do not fan out to bounded specialist executions",()=>{
+  const light=buildAgentPlan("Каде е водичот за наследство?",{preferCorpus:true});
+  assert.equal(specialistExecutionRequired(light),false);
+  const research=buildAgentPlan("Што вели важечкото македонско право денес?");
+  assert.equal(research.legalIntelligenceEngine.mission_profile.id,"L1_VERIFIED_RESEARCH");
+  assert.equal(specialistExecutionRequired(research),false);
+});
+
+test("L2-L4 selectively execute bounded specialists in parallel and aggregate usage",async()=>{
+  const originalFetch=globalThis.fetch;
+  const calls=[];
+  globalThis.fetch=async(_url,options)=>{
+    const body=JSON.parse(options.body);
+    calls.push(body);
+    return new Response(JSON.stringify({
+      status:"completed",
+      output_text:"BOUND_SPECIALIST_FINDING",
+      output:[],
+      usage:{input_tokens:20,output_tokens:10,total_tokens:30}
+    }),{status:200,headers:{"content-type":"application/json"}});
+  };
+  try{
+    const plan=buildAgentPlan("Спореди македонско право со EU право и пракса на ЕСЧП.");
+    assert.equal(plan.legalIntelligenceEngine.mission_profile.id,"L2_STRATEGY_PROCEDURE");
+    assert.equal(specialistExecutionRequired(plan),true);
+    const stage=await runBoundedSpecialists({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test",
+      LIOE_SPECIALIST_EXECUTION_ENABLED:"true"
+    },{
+      plan,
+      input:"Спореди македонско право со EU право и пракса на ЕСЧП.",
+      corpusContext:[{source:"governed",locator:"x",version:"v",text:"source"}],
+      webSearchEnabled:false
+    });
+    assert.equal(stage.ok,true);
+    assert.equal(stage.executed,true);
+    assert.ok(stage.findings.length>=3);
+    assert.ok(stage.findings.length<=4);
+    assert.equal(stage.providerCalls,stage.findings.length);
+    assert.equal(stage.usage.totalTokens,30*stage.findings.length);
+    assert.equal(calls.length,stage.findings.length);
+    assert.ok(calls.every(x=>x.store===false));
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test("L2-L4 specialist stage fails closed when its runtime gate is locked",async()=>{
+  const plan=buildAgentPlan("Спореди две правни опции за жалба и нивните ризици.");
+  const stage=await runBoundedSpecialists({
+    OPENAI_ORCHESTRATOR_ENABLED:"true",
+    OPENAI_API_KEY:"x".repeat(40),
+    OPENAI_MODEL:"gpt-test",
+    LIOE_SPECIALIST_EXECUTION_ENABLED:"false"
+  },{plan,input:"x"});
+  assert.equal(stage.ok,false);
+  assert.equal(stage.error,"lioe_specialist_execution_locked");
+  assert.equal(stage.providerCalls,0);
+});
+
+test("bounded specialist failure is visible and fail-closed",async()=>{
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=async()=>new Response(JSON.stringify({error:{message:"provider"}}),{status:500,headers:{"content-type":"application/json"}});
+  try{
+    const plan=buildAgentPlan("Спореди македонско право со EU право.");
+    const stage=await runBoundedSpecialists({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test",
+      LIOE_SPECIALIST_EXECUTION_ENABLED:"true"
+    },{plan,input:"x"});
+    assert.equal(stage.ok,false);
+    assert.equal(stage.error,"specialist_response_error");
+    assert.ok(stage.providerCalls>=1);
   }finally{
     globalThis.fetch=originalFetch;
   }
