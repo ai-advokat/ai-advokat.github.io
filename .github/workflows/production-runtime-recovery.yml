@@ -10,7 +10,8 @@ on:
   push:
     branches: ["main"]
     paths:
-      - ".github/activation/production-runtime-recovery-2026-10-07.json"
+      - ".github/activation/production-runtime-recovery-resume-2026-10-07.json"
+      - ".github/activation/production-runtime-recovery-resume-2026-10-07.json"
 
 permissions:
   contents: read
@@ -54,32 +55,33 @@ jobs:
           import crypto from "node:crypto";
           import {isGateApproved} from "./scripts/human-gate-ledger-validator.mjs";
 
-          const requestPath=".github/activation/production-runtime-recovery-2026-10-07.json";
+          const requestPath=".github/activation/production-runtime-recovery-resume-2026-10-07.json";
           const raw=fs.readFileSync(requestPath);
           const sha=crypto.createHash("sha256").update(raw).digest("hex");
-          const expectedSha="686e33e00b70c46985a76941f31c92afc0370aa5fbc0845ea7ccad659715f1dd";
+          const expectedSha="d9f49c79b3e5f76ef4efe19f63e4e159ddcfdef9dfa2de5821dad67ae2fed0ab";
           if(sha!==expectedSha) throw new Error("Recovery request fingerprint changed: "+sha);
 
           const d=JSON.parse(raw);
           if(d.activation_authorized!==true) throw new Error("Recovery request not authorized");
-          if(d.decision_id!=="AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_2026-10-07") throw new Error("Unexpected recovery decision");
-          if(d.recovery_version!=="ai-advokat-production-recovery-1.0.0") throw new Error("Unexpected recovery version");
+          if(d.decision_id!=="AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_RESUME_2026-10-07") throw new Error("Unexpected recovery decision");
+          if(d.recovery_version!=="ai-advokat-production-recovery-1.1.0") throw new Error("Unexpected recovery version");
           if(d.target_runtime_version!=="ai-advokat-lioe-runtime-1.0.0") throw new Error("Unexpected target runtime");
           if(d.production_database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production database id");
           if(d.provider_activation_authorized!==false) throw new Error("Recovery must not create a new provider authorization");
 
+          const alreadyApplied=["0024_zi_legacy_version_backfill.sql"];
           const expected=[
-            "0024_zi_legacy_version_backfill.sql",
             "0025_zro_legacy_version_backfill.sql",
             "0026_zkp_legacy_version_backfill.sql",
             "0027_zpp_validity_window_correction.sql",
             "0028_lioe_runtime_telemetry.sql"
           ];
-          if(JSON.stringify(d.expected_pending_migrations)!==JSON.stringify(expected)) throw new Error("Unexpected migration recovery set");
+          if(JSON.stringify(d.already_applied_migrations)!==JSON.stringify(alreadyApplied)) throw new Error("Unexpected already-applied migration set");
+          if(JSON.stringify(d.expected_pending_migrations)!==JSON.stringify(expected)) throw new Error("Unexpected pending recovery set");
 
           const ledger=JSON.parse(fs.readFileSync("data/human-gate-decision-ledger.json","utf8"));
           const query={
-            subject_id:"production-runtime-recovery-2026-10-07",
+            subject_id:"production-runtime-recovery-resume-2026-10-07",
             artifact_version:d.decision_id,
             artifact_fingerprint:{activation_request_sha256:sha}
           };
@@ -135,7 +137,7 @@ jobs:
           set -euo pipefail
           npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/recovery-pending-before.txt
           found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/recovery-pending-before.txt | sort -u || true)"
-          expected="$(printf '%s\n'             0024_zi_legacy_version_backfill.sql             0025_zro_legacy_version_backfill.sql             0026_zkp_legacy_version_backfill.sql             0027_zpp_validity_window_correction.sql             0028_lioe_runtime_telemetry.sql)"
+          expected="$(printf '%s\n'             0025_zro_legacy_version_backfill.sql             0026_zkp_legacy_version_backfill.sql             0027_zpp_validity_window_correction.sql             0028_lioe_runtime_telemetry.sql)"
           if [ "$found" != "$expected" ]; then
             echo "Unexpected production migration state."
             echo "Expected:"
@@ -144,7 +146,7 @@ jobs:
             echo "$found"
             exit 1
           fi
-          echo "Exact pending migration set 0024-0028: PASS"
+          echo "Exact pending migration set 0025-0028: PASS"
 
       - name: Read-only production corpus preflight
         shell: bash
@@ -152,6 +154,7 @@ jobs:
           set -euo pipefail
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
           SELECT
+            (SELECT COUNT(*) FROM schema_migrations WHERE version='24') AS migration_24_applied,
             (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi')) AS zi_count,
             (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND instrument_version_id IS NULL) AS zi_null,
             (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')) AS zro_count,
@@ -160,6 +163,10 @@ jobs:
             (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND instrument_version_id IS NULL) AS zkp_null,
             (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND source_sha256='15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55') AS zi_hash_count,
             (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND source_sha256='f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655') AS zro_hash_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND source_issue_number='through-111/2023' AND source_issue_date='2023-05-30') AS zro_issue_metadata_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND status IN ('historical','needs_version_review')) AS zro_allowed_status_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND human_review_status='pending') AS zro_pending_review_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND status='current_consolidated') AS zro_current_count,
             (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND source_sha256='e6bf4588833752695a9b776b473ed9d504264effdfcd7917b8d6655bcfacaf45') AS zkp_hash_count,
             (SELECT COUNT(*) FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND version_label='official-editorial-consolidated-through-154/2023') AS zi_target_versions,
             (SELECT COUNT(*) FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND version_label='official-consolidated-snapshot-through-111/2023') AS zro_target_versions,
@@ -176,7 +183,7 @@ jobs:
             (SELECT valid_to FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zpp') AND version_label='applicable-track-79/2005-through-124/2015') AS zpp_valid_to;
           " | tee /tmp/recovery-preflight.txt
 
-          for pair in             '"zi_count": 258' '"zi_null": 258'             '"zro_count": 298' '"zro_null": 298'             '"zkp_count": 570' '"zkp_null": 570'             '"zi_hash_count": 258' '"zro_hash_count": 298' '"zkp_hash_count": 570'             '"zi_target_versions": 1' '"zro_target_versions": 1' '"zkp_target_versions": 1'             '"duplicate_groups": 0' '"zpp_valid_to": "2027-01-17"'; do
+          for pair in             '"migration_24_applied": 1'             '"zi_count": 258' '"zi_null": 0'             '"zro_count": 298' '"zro_null": 298'             '"zkp_count": 570' '"zkp_null": 570'             '"zi_hash_count": 258' '"zro_hash_count": 298' '"zkp_hash_count": 570'             '"zro_issue_metadata_count": 298' '"zro_allowed_status_count": 298' '"zro_pending_review_count": 298' '"zro_current_count": 0'             '"zi_target_versions": 1' '"zro_target_versions": 1' '"zkp_target_versions": 1'             '"duplicate_groups": 0' '"zpp_valid_to": "2027-01-17"'; do
             grep -q "$pair" /tmp/recovery-preflight.txt
           done
           echo "Production corpus preflight: PASS"
@@ -198,7 +205,7 @@ jobs:
           console.log("OpenAI paid quota: PASS");
           NODE
 
-      - name: Apply exact governed migrations 0024-0028
+      - name: Apply exact governed migrations 0025-0028
         shell: bash
         run: |
           set -euo pipefail
