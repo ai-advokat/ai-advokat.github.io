@@ -22,7 +22,7 @@
   "note": "No API key is stored in this file. The workflow must fail before deployment if the secret or paid quota is unavailable.",
   "last_redeploy": {
     "requested_on": "2026-10-07",
-    "target_commit": "b6fc7ece96bbfcab6d77e8fb7c6c2e3a76f9fd23",
-    "reason": "Deploy latency-bounded governed LIOE legal chat and run six synthetic production legal UAT scenarios, including divorce and contract lawsuit drafts, after PR #104 and post-merge safety checks passed."
+    "target_commit": "541060e99ad7331c7dcf9ddf40c26cd9f72671ec",
+    "reason": "Deploy specialist completion hardening and full six-scenario synthetic legal UAT after PR #105 passed security, LIOE governance and activation safety checks."
   }
 }
