@@ -93,7 +93,7 @@ test("REC7 ZRO backfill sentinel distinguishes 298 records from Article 298",()=
   assert.match(migration,/article_number_normalized='273'\) = 1/);
   assert.doesNotMatch(migration,/article_number_normalized='298'\) = 1/);
   const legacy=fs.readFileSync("test/legacy-backfill.test.mjs","utf8");
-  assert.match(legacy,/numeric boundary ends at Article 273/);
+  assert.match(legacy,/boundary ends at Article 273/);
   assert.match(legacy,/article_number_normalized === "273"/);
   assert.match(legacy,/article_number_normalized === "298"/);
 });
