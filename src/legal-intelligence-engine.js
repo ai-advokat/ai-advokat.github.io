@@ -38,15 +38,17 @@ const ACTION_SIGNALS=[
 ];
 const L4_SIGNALS=["production corpus","production corpus write","rag eligibility","rag_eligibility","прогласи ја оваа верзија","прогласи за важечк","current law promotion","legal status promotion","legal truth","сменi human gate","смени human gate","provider activation","активирај provider","corpus promotion"];
 const GUIDE_SIGNALS=["водич","guide","каде е","каде во ai advokat","каталог","catalog"];
+const ACTION_DRAFT_PATTERN=/\b(?:draft|prepare|compose|write)\b.{0,48}\b(?:complaint|lawsuit|appeal|pleading|petition|motion)\b/u;
 
 function inferGeneralBypass(q,mode){
-  const governedLegalSignal=has(q,[...LEGAL_SIGNALS,...GUIDE_SIGNALS,...CURRENT_LAW_SIGNALS,...TEMPORAL_SIGNALS,...STRATEGY_SIGNALS,...ACTION_SIGNALS,...L4_SIGNALS]);
+  const governedLegalSignal=has(q,[...LEGAL_SIGNALS,...GUIDE_SIGNALS,...CURRENT_LAW_SIGNALS,...TEMPORAL_SIGNALS,...STRATEGY_SIGNALS,...ACTION_SIGNALS,...L4_SIGNALS])
+    || ACTION_DRAFT_PATTERN.test(q);
   return mode==="general_gpt" || !governedLegalSignal;
 }
 function selectProfile(q,{mode=null}={}){
   if(inferGeneralBypass(q,mode))return LEGAL_MISSION_PROFILES.GENERAL_BYPASS;
   if(has(q,L4_SIGNALS))return LEGAL_MISSION_PROFILES.L4_LEGAL_TRUTH_GOVERNANCE;
-  if(has(q,ACTION_SIGNALS))return LEGAL_MISSION_PROFILES.L3_CONSEQUENTIAL;
+  if(has(q,ACTION_SIGNALS)||ACTION_DRAFT_PATTERN.test(q))return LEGAL_MISSION_PROFILES.L3_CONSEQUENTIAL;
   const comparative=has(q,["спореди","compare","comparative","компаратив","versus"]);
   if(comparative||has(q,STRATEGY_SIGNALS))return LEGAL_MISSION_PROFILES.L2_STRATEGY_PROCEDURE;
   if(has(q,CURRENT_LAW_SIGNALS)||has(q,TEMPORAL_SIGNALS)||has(q,["истраж","research","правна анализа","legal analysis"]))return LEGAL_MISSION_PROFILES.L1_VERIFIED_RESEARCH;
