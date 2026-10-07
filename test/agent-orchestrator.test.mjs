@@ -309,6 +309,42 @@ test("structured legal postflight revises once and then passes",async()=>{
   }
 });
 
+
+test("single-pass legal postflight may release verifier-corrected text only as REVISE provisional",async()=>{
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=async()=>new Response(JSON.stringify({
+    status:"completed",
+    output_text:JSON.stringify({
+      verdict:"REVISE",stress_test:"PASS",adversarial_review:"PASS",
+      source_integrity:"VERIFIED",temporal_integrity:"NOT_REQUIRED",
+      jurisdiction_integrity:"VERIFIED",human_gate:"REQUIRED",
+      issues:["keep Human Gate warning"],corrected_answer:"Коригиран нацрт само за човечка проверка."
+    }),
+    usage:{input_tokens:60,output_tokens:25,total_tokens:85}
+  }),{status:200,headers:{"content-type":"application/json"}});
+  try{
+    const plan=buildAgentPlan("Подготви тужба за развод со placeholders.");
+    const verdict=await runLegalPostflightVerifier({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test"
+    },{
+      plan,
+      draft:"Нацрт.",
+      corpusContext:[],
+      webSources:[],
+      maxAttempts:1
+    });
+    assert.equal(verdict.ok,true);
+    assert.equal(verdict.verdict,"REVISE");
+    assert.equal(verdict.provisionalRevision,true);
+    assert.equal(verdict.attempts,1);
+    assert.equal(verdict.corrected_answer,"Коригиран нацрт само за човечка проверка.");
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
 test("structured legal postflight fails closed after verifier FAIL",async()=>{
   const originalFetch=globalThis.fetch;
   globalThis.fetch=async()=>new Response(JSON.stringify({
@@ -381,6 +417,8 @@ test("L2-L4 selectively execute bounded specialists in parallel and aggregate us
     assert.equal(stage.usage.totalTokens,30*stage.findings.length);
     assert.equal(calls.length,stage.findings.length);
     assert.ok(calls.every(x=>x.store===false));
+    assert.ok(calls.every(x=>x.reasoning?.effort==="low"));
+    assert.ok(calls.every(x=>x.max_output_tokens===500));
   }finally{
     globalThis.fetch=originalFetch;
   }
