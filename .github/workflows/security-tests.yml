@@ -34,6 +34,7 @@ on:
       - ".github/workflows/production-runtime-recovery.yml"
       - ".github/activation/production-runtime-recovery-2026-10-07.json"
       - ".github/activation/production-runtime-recovery-final-2026-10-07.json"
+      - ".github/activation/production-runtime-recovery-v1-3-2026-10-07.json"
   push:
     branches:
       - main

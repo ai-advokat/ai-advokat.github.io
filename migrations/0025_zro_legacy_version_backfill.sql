@@ -75,11 +75,19 @@ SELECT CASE WHEN
       AND
       (SELECT COUNT(*) FROM legal_article_versions
         WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
-          AND article_number_normalized='25-а') = 1
+          AND article_number_normalized='28-а') = 1
+      AND
+      (SELECT COUNT(*) FROM legal_article_versions
+        WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
+          AND article_number_normalized='25-а') = 0
       AND
       (SELECT COUNT(*) FROM legal_article_versions
         WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
           AND article_number_normalized='273') = 1
+      AND
+      (SELECT COUNT(*) FROM legal_article_versions
+        WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
+          AND article_number_normalized='298') = 0
       AND NOT EXISTS (
         SELECT 1
           FROM legal_article_versions

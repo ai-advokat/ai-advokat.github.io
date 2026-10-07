@@ -247,6 +247,48 @@
       "notes": "Approval is limited to the exact final recovery artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, public guide release, or legal-status promotion.",
       "decision_id": "hg-2026-10-07-runtime-recovery-final-runtime-deploy",
       "gate_type": "production_runtime_deploy"
+    },
+    {
+      "subject_id": "production-runtime-recovery-v1-3-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Continuation of the explicit 2026-10-07 project-lead authorization to complete production recovery. Recovery #3 proved the remaining blocker was a second false ZRO sentinel: Article 25-a does not exist in the governed 111/2023 source, while Article 28-a does.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_V1_3_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "42f4919b7b996d25f58214586dd2c4ef070c9f3da233bd51fe4202df4cfd3e92"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact v1.3 recovery artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, public guide release, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-v1-3-github-merge",
+      "gate_type": "github_merge"
+    },
+    {
+      "subject_id": "production-runtime-recovery-v1-3-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Continuation of the explicit 2026-10-07 project-lead authorization to complete production recovery. Recovery #3 proved the remaining blocker was a second false ZRO sentinel: Article 25-a does not exist in the governed 111/2023 source, while Article 28-a does.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_V1_3_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "42f4919b7b996d25f58214586dd2c4ef070c9f3da233bd51fe4202df4cfd3e92"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact v1.3 recovery artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, public guide release, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-v1-3-production-schema",
+      "gate_type": "production_schema_migration"
+    },
+    {
+      "subject_id": "production-runtime-recovery-v1-3-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Continuation of the explicit 2026-10-07 project-lead authorization to complete production recovery. Recovery #3 proved the remaining blocker was a second false ZRO sentinel: Article 25-a does not exist in the governed 111/2023 source, while Article 28-a does.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_V1_3_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "42f4919b7b996d25f58214586dd2c4ef070c9f3da233bd51fe4202df4cfd3e92"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact v1.3 recovery artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, public guide release, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-v1-3-runtime-deploy",
+      "gate_type": "production_runtime_deploy"
     }
   ]
 }
