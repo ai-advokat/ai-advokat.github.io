@@ -118,4 +118,5 @@ if(failCount){
   console.error(`LEGAL UAT FAIL: ${passCount}/${results.length} passed; ${failCount} failed`);
   process.exitCode=1;
 }else{
-  
+  console.log(`LEGAL UAT PASS: ${passCount}/${results.length}`);
+}
