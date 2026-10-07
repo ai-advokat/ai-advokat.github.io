@@ -21,8 +21,8 @@
   ],
   "note": "No API key is stored in this file. The workflow must fail before deployment if the secret or paid quota is unavailable.",
   "last_redeploy": {
-    "requested_on": "2026-10-05",
-    "target_commit": "c66e22a8e15e8e5465b7252a294d39c31d8b1829",
-    "reason": "Deploy consolidated Guide Vault PDF/DOCX reading plus governed one-hop same-version legal article cross-reference expansion after all PR and post-merge security checks passed."
+    "requested_on": "2026-10-07",
+    "target_commit": "b6fc7ece96bbfcab6d77e8fb7c6c2e3a76f9fd23",
+    "reason": "Deploy latency-bounded governed LIOE legal chat and run six synthetic production legal UAT scenarios, including divorce and contract lawsuit drafts, after PR #104 and post-merge safety checks passed."
   }
 }
