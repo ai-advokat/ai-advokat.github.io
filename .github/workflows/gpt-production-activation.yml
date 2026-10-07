@@ -169,10 +169,12 @@ jobs:
           UAT_OUTPUT=/tmp/legal-uat-results.json node scripts/run-live-legal-uat.mjs data/uat/legal-scenarios-v1.json
 
       - name: Upload non-secret activation evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ai-advokat-gpt-production-activation
           retention-days: 30
+          if-no-files-found: warn
           path: |
             /tmp/openai-model.json
             /tmp/openai-preflight.json
