@@ -1,0 +1,344 @@
+name: AI Advokat production runtime recovery
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type RECOVER_AI_ADVOKAT_RUNTIME"
+        required: true
+        type: string
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/activation/production-runtime-recovery-2026-10-07.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-production-runtime-recovery
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify exact recovery authorization and Human Gate ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            test "$CONFIRMATION" = "RECOVER_AI_ADVOKAT_RUNTIME"
+          fi
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          import crypto from "node:crypto";
+          import {isGateApproved} from "./scripts/human-gate-ledger-validator.mjs";
+
+          const requestPath=".github/activation/production-runtime-recovery-2026-10-07.json";
+          const raw=fs.readFileSync(requestPath);
+          const sha=crypto.createHash("sha256").update(raw).digest("hex");
+          const expectedSha="686e33e00b70c46985a76941f31c92afc0370aa5fbc0845ea7ccad659715f1dd";
+          if(sha!==expectedSha) throw new Error("Recovery request fingerprint changed: "+sha);
+
+          const d=JSON.parse(raw);
+          if(d.activation_authorized!==true) throw new Error("Recovery request not authorized");
+          if(d.decision_id!=="AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_2026-10-07") throw new Error("Unexpected recovery decision");
+          if(d.recovery_version!=="ai-advokat-production-recovery-1.0.0") throw new Error("Unexpected recovery version");
+          if(d.target_runtime_version!=="ai-advokat-lioe-runtime-1.0.0") throw new Error("Unexpected target runtime");
+          if(d.production_database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production database id");
+          if(d.provider_activation_authorized!==false) throw new Error("Recovery must not create a new provider authorization");
+
+          const expected=[
+            "0024_zi_legacy_version_backfill.sql",
+            "0025_zro_legacy_version_backfill.sql",
+            "0026_zkp_legacy_version_backfill.sql",
+            "0027_zpp_validity_window_correction.sql",
+            "0028_lioe_runtime_telemetry.sql"
+          ];
+          if(JSON.stringify(d.expected_pending_migrations)!==JSON.stringify(expected)) throw new Error("Unexpected migration recovery set");
+
+          const ledger=JSON.parse(fs.readFileSync("data/human-gate-decision-ledger.json","utf8"));
+          const query={
+            subject_id:"production-runtime-recovery-2026-10-07",
+            artifact_version:d.decision_id,
+            artifact_fingerprint:{activation_request_sha256:sha}
+          };
+          for(const gate of ["github_merge","production_schema_migration","production_runtime_deploy"]){
+            if(!isGateApproved(ledger.initial_records,{...query,gate_type:gate})) throw new Error("Human Gate not approved: "+gate);
+          }
+          for(const forbidden of ["provider_activation","current_law_verification","corpus_promotion","rag_eligibility","production_corpus_write"]){
+            if(isGateApproved(ledger.initial_records,{...query,gate_type:forbidden})) throw new Error("Recovery over-authorized forbidden gate: "+forbidden);
+          }
+          console.log("Recovery authorization + Human Gate ledger: PASS");
+          NODE
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$OPENAI_API_KEY"
+          test "${#OPENAI_API_KEY}" -gt 20
+
+      - name: Verify repository recovery invariants
+        run: |
+          node --check src/index.js
+          node --check src/agent-orchestrator.js
+          node --check src/legal-runtime-governance.js
+          node --check assets/ai-advokat-chat.js
+          npm run verify
+          npm run test:legacy-backfill
+          npm run test:zpp-timeline
+          npm run test:legal-runtime-governance
+          npm run test:lioe-production-activation
+          npm run test:chat-shell
+          npm run test:human-gate-ledger
+
+      - name: Verify exact production targets and prior provider authorization
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const db=c.d1_databases?.[0];
+          const preview=c.previews?.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker name");
+          if(!db || db.binding!=="DB" || db.database_name!=="ai-advokat-db" || db.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1 target");
+          if(preview?.database_id===db.database_id) throw new Error("Production/staging collision");
+          for(const k of ["LIOE_RUNTIME_GOVERNANCE_ENABLED","LIOE_POSTFLIGHT_ENABLED","LIOE_RUNTIME_TELEMETRY_ENABLED","LIOE_SPECIALIST_EXECUTION_ENABLED"]){
+            if(c.vars?.[k]!=="true") throw new Error(k+" is not armed");
+          }
+          const provider=JSON.parse(fs.readFileSync(".github/activation/gpt-production-request.json","utf8"));
+          if(provider.activation_authorized!==true || provider.model!=="gpt-6.1-sol") throw new Error("Prior provider authorization missing");
+          console.log("Production targets + prior provider authorization: PASS");
+          NODE
+
+      - name: Inspect exact pending production migration set
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/recovery-pending-before.txt
+          found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/recovery-pending-before.txt | sort -u || true)"
+          expected="$(printf '%s\n'             0024_zi_legacy_version_backfill.sql             0025_zro_legacy_version_backfill.sql             0026_zkp_legacy_version_backfill.sql             0027_zpp_validity_window_correction.sql             0028_lioe_runtime_telemetry.sql)"
+          if [ "$found" != "$expected" ]; then
+            echo "Unexpected production migration state."
+            echo "Expected:"
+            echo "$expected"
+            echo "Found:"
+            echo "$found"
+            exit 1
+          fi
+          echo "Exact pending migration set 0024-0028: PASS"
+
+      - name: Read-only production corpus preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+          SELECT
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi')) AS zi_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND instrument_version_id IS NULL) AS zi_null,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')) AS zro_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND instrument_version_id IS NULL) AS zro_null,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp')) AS zkp_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND instrument_version_id IS NULL) AS zkp_null,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND source_sha256='15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55') AS zi_hash_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND source_sha256='f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655') AS zro_hash_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND source_sha256='e6bf4588833752695a9b776b473ed9d504264effdfcd7917b8d6655bcfacaf45') AS zkp_hash_count,
+            (SELECT COUNT(*) FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND version_label='official-editorial-consolidated-through-154/2023') AS zi_target_versions,
+            (SELECT COUNT(*) FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND version_label='official-consolidated-snapshot-through-111/2023') AS zro_target_versions,
+            (SELECT COUNT(*) FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND version_label='consolidated-reference-through-198/2018-and-CC-193/2016') AS zkp_target_versions,
+            (SELECT COUNT(*) FROM (
+              SELECT instrument_id,article_number_normalized
+              FROM legal_article_versions
+              WHERE instrument_id IN (
+                SELECT id FROM legal_instruments WHERE canonical_key IN ('mk:zi','mk:zro','mk:zkp')
+              )
+              GROUP BY instrument_id,article_number_normalized
+              HAVING COUNT(*)>1
+            )) AS duplicate_groups,
+            (SELECT valid_to FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zpp') AND version_label='applicable-track-79/2005-through-124/2015') AS zpp_valid_to;
+          " | tee /tmp/recovery-preflight.txt
+
+          for pair in             '"zi_count": 258' '"zi_null": 258'             '"zro_count": 298' '"zro_null": 298'             '"zkp_count": 570' '"zkp_null": 570'             '"zi_hash_count": 258' '"zro_hash_count": 298' '"zkp_hash_count": 570'             '"zi_target_versions": 1' '"zro_target_versions": 1' '"zkp_target_versions": 1'             '"duplicate_groups": 0' '"zpp_valid_to": "2027-01-17"'; do
+            grep -q "$pair" /tmp/recovery-preflight.txt
+          done
+          echo "Production corpus preflight: PASS"
+
+      - name: Verify existing OpenAI model access and paid quota
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl --silent --show-error --output /tmp/recovery-openai-model.json --write-out '%{http_code}'             -H "Authorization: Bearer $OPENAI_API_KEY"             https://api.openai.com/v1/models/gpt-6.1-sol)"
+          test "$code" = "200"
+          node -e 'const d=require("/tmp/recovery-openai-model.json"); if(d.id!=="gpt-6.1-sol") process.exit(1); console.log("OpenAI model access: PASS")'
+
+          code="$(curl --silent --show-error --output /tmp/recovery-openai-preflight.json --write-out '%{http_code}'             -H "Authorization: Bearer $OPENAI_API_KEY"             -H 'content-type: application/json'             -d '{"model":"gpt-6.1-sol","input":"Reply with only: RECOVERY_PREFLIGHT_OK","reasoning":{"effort":"low"},"max_output_tokens":20,"store":false}'             https://api.openai.com/v1/responses)"
+          test "$code" = "200"
+          node <<'NODE'
+          const d=require("/tmp/recovery-openai-preflight.json");
+          const text=(d.output||[]).flatMap(x=>x.content||[]).filter(x=>x.type==="output_text").map(x=>x.text||"").join("\n");
+          if(!text.includes("RECOVERY_PREFLIGHT_OK")) throw new Error("OpenAI recovery preflight did not complete");
+          console.log("OpenAI paid quota: PASS");
+          NODE
+
+      - name: Apply exact governed migrations 0024-0028
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc | tee /tmp/recovery-migrations-apply.txt
+
+      - name: Verify production schema and legal metadata after recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/recovery-pending-after.txt
+          if grep -Eq '002[4-8]_[A-Za-z0-9_.-]+\.sql' /tmp/recovery-pending-after.txt; then
+            echo "A recovery migration is still pending."
+            exit 1
+          fi
+
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+          SELECT
+            (SELECT COUNT(*) FROM schema_migrations WHERE CAST(version AS INTEGER) BETWEEN 24 AND 28) AS recovery_migration_rows,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi')) AS zi_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND instrument_version_id IS NULL) AS zi_null,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')) AS zro_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND instrument_version_id IS NULL) AS zro_null,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp')) AS zkp_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND instrument_version_id IS NULL) AS zkp_null,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id IN (SELECT id FROM legal_instruments WHERE canonical_key IN ('mk:zi','mk:zro','mk:zkp')) AND status='current_consolidated') AS prohibited_current_promotions,
+            (SELECT valid_to FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zpp') AND version_label='applicable-track-79/2005-through-124/2015') AS zpp_valid_to,
+            (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='lioe_runtime_runs') AS lioe_table_count;
+          PRAGMA table_info(lioe_runtime_runs);
+          " | tee /tmp/recovery-postflight-schema.txt
+
+          for pair in             '"recovery_migration_rows": 5'             '"zi_count": 258' '"zi_null": 0'             '"zro_count": 298' '"zro_null": 0'             '"zkp_count": 570' '"zkp_null": 0'             '"prohibited_current_promotions": 0'             '"zpp_valid_to": "2027-01-18"'             '"lioe_table_count": 1'; do
+            grep -q "$pair" /tmp/recovery-postflight-schema.txt
+          done
+          for col in run_id mission_profile verification_state release_state provider_calls total_tokens elapsed_ms; do
+            grep -q "\"name\": \"$col\"" /tmp/recovery-postflight-schema.txt
+          done
+          echo "Post-migration schema + legal metadata: PASS"
+
+      - name: Restore existing authorized OpenAI Worker secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$OPENAI_API_KEY" | npx wrangler secret put OPENAI_API_KEY --config wrangler.jsonc >/tmp/recovery-secret-put.log
+          echo "Existing authorized OpenAI secret restored without disclosure."
+
+      - name: Deploy current production Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler deploy --config wrangler.jsonc | tee /tmp/recovery-deploy.txt
+
+      - name: Verify live runtime, browser CORS and capabilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/health" -o /tmp/recovery-health.json
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/orchestrator" -o /tmp/recovery-orchestrator.json
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/capabilities" -o /tmp/recovery-capabilities.json
+
+          curl --silent --show-error --fail -D /tmp/recovery-cors-headers.txt -o /dev/null             -X OPTIONS             -H 'Origin: https://ai-advokat.github.io'             -H 'Access-Control-Request-Method: POST'             -H 'Access-Control-Request-Headers: content-type'             "$BASE/api/chat"
+          grep -qi '^access-control-allow-origin: https://ai-advokat.github.io' /tmp/recovery-cors-headers.txt
+
+          node <<'NODE'
+          const h=require("/tmp/recovery-health.json");
+          const o=require("/tmp/recovery-orchestrator.json");
+          const c=require("/tmp/recovery-capabilities.json");
+          if(!h.ok || h.database?.reachable!==true || h.database?.schemaReady!==true) throw new Error("Health/database not ready");
+          if(!o.ok) throw new Error("Orchestrator not ready");
+          if(o.runtime?.providerExecution!=="configured_for_api_chat_execution") throw new Error("Provider not configured");
+          if(o.runtime?.externalResearchTools!=="configured") throw new Error("Web tools not configured");
+          if(o.runtime?.fileInputs!=="configured") throw new Error("File inputs not configured");
+          if(o.runtime?.lioeRuntimeGovernance!=="enabled") throw new Error("LIOE governance not enabled");
+          if(o.runtime?.lioePostflight!=="enabled") throw new Error("LIOE postflight not enabled");
+          if(o.runtime?.lioeSpecialistExecution!=="enabled") throw new Error("LIOE specialist execution not enabled");
+          if(o.runtime?.lioeRuntimeTelemetry!=="ready") throw new Error("LIOE telemetry not ready");
+          if(c.capabilities?.legalOrchestrator!=="gpt_6_1_sol_live_governed") throw new Error("Capabilities provider state mismatch");
+          if(c.capabilities?.lioeRuntimeTelemetry!=="ready") throw new Error("Capabilities telemetry state mismatch");
+          console.log("LIVE RUNTIME + CORS + CAPABILITIES: PASS");
+          NODE
+
+      - name: Live general GPT smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 3 --retry-delay 2             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Одговори само со: AI_ADVOKAT_RUNTIME_OK","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/chat" -o /tmp/recovery-general-chat.json
+          node <<'NODE'
+          const d=require("/tmp/recovery-general-chat.json");
+          if(!d.ok) throw new Error("General GPT recovery smoke failed: "+JSON.stringify(d));
+          if(d.model!=="gpt-6.1-sol") throw new Error("Unexpected model");
+          if(!String(d.answer||"").includes("AI_ADVOKAT_RUNTIME_OK")) throw new Error("Unexpected general answer");
+          console.log("LIVE GENERAL GPT CHAT: PASS");
+          NODE
+
+      - name: Live LIOE legal chat, postflight and telemetry smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 3 --retry-delay 2             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Спореди две можни толкувања на член 1 од Законот за работните односи, со ризици и ограничувања.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/chat" -o /tmp/recovery-legal-chat.json
+
+          node <<'NODE'
+          const d=require("/tmp/recovery-legal-chat.json");
+          if(!d.ok) throw new Error("LIOE legal recovery smoke failed: "+JSON.stringify(d));
+          if(d.model!=="gpt-6.1-sol") throw new Error("Unexpected model");
+          if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error("LIOE metadata missing");
+          if(d.legalGovernance?.postflightRequired!==true) throw new Error("LIOE postflight not required");
+          if(d.legalGovernance?.specialistExecution?.executed!==true) throw new Error("Bounded specialists did not execute");
+          if(d.runtimeTelemetry!=="recorded") throw new Error("Telemetry not recorded: "+d.runtimeTelemetry);
+          if(!d.governanceRunId) throw new Error("Governance run id missing");
+          console.log("LIVE LIOE LEGAL CHAT: PASS");
+          require("fs").writeFileSync("/tmp/recovery-run-id.txt",d.governanceRunId);
+          NODE
+
+          RUN_ID="$(cat /tmp/recovery-run-id.txt)"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT run_id,mission_profile,verification_state,release_state,postflight_required,provider_calls,total_tokens FROM lioe_runtime_runs WHERE run_id='$RUN_ID';"             | tee /tmp/recovery-runtime-row.txt
+          grep -q "\"run_id\": \"$RUN_ID\"" /tmp/recovery-runtime-row.txt
+          echo "LIVE LIOE D1 READBACK: PASS"
+
+      - name: Upload non-secret recovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-production-runtime-recovery
+          retention-days: 30
+          path: |
+            /tmp/recovery-pending-before.txt
+            /tmp/recovery-preflight.txt
+            /tmp/recovery-openai-model.json
+            /tmp/recovery-openai-preflight.json
+            /tmp/recovery-migrations-apply.txt
+            /tmp/recovery-pending-after.txt
+            /tmp/recovery-postflight-schema.txt
+            /tmp/recovery-deploy.txt
+            /tmp/recovery-health.json
+            /tmp/recovery-orchestrator.json
+            /tmp/recovery-capabilities.json
+            /tmp/recovery-cors-headers.txt
+            /tmp/recovery-general-chat.json
+            /tmp/recovery-legal-chat.json
+            /tmp/recovery-runtime-row.txt
+          if-no-files-found: error

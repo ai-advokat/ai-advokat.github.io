@@ -1,7 +1,7 @@
 {
   "schema_version": "1.2",
   "ledger_id": "AI_ADVOKAT_HUMAN_GATE_DECISION_LEDGER_v1",
-  "generated_on": "2026-10-06",
+  "generated_on": "2026-10-07",
   "doctrine": [
     "explicit_decision_only",
     "gate_isolation",
@@ -121,6 +121,48 @@
       },
       "implied_gates": [],
       "notes": "Approval is isolated to this named gate and activation artifact. It does not authorize OpenAI provider activation."
+    },
+    {
+      "subject_id": "production-runtime-recovery-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Explicit project-lead request on 2026-10-07 to perform a comprehensive audit and successfully reactivate the non-functioning AI Advokat bot.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "686e33e00b70c46985a76941f31c92afc0370aa5fbc0845ea7ccad659715f1dd"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact recovery artifact and named gate. It does not authorize provider rotation/activation, current-law verification, corpus promotion, RAG promotion, public guide release, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-github-merge",
+      "gate_type": "github_merge"
+    },
+    {
+      "subject_id": "production-runtime-recovery-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Explicit project-lead request on 2026-10-07 to perform a comprehensive audit and successfully reactivate the non-functioning AI Advokat bot.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "686e33e00b70c46985a76941f31c92afc0370aa5fbc0845ea7ccad659715f1dd"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact recovery artifact and named gate. It does not authorize provider rotation/activation, current-law verification, corpus promotion, RAG promotion, public guide release, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-production-schema",
+      "gate_type": "production_schema_migration"
+    },
+    {
+      "subject_id": "production-runtime-recovery-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Explicit project-lead request on 2026-10-07 to perform a comprehensive audit and successfully reactivate the non-functioning AI Advokat bot.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "686e33e00b70c46985a76941f31c92afc0370aa5fbc0845ea7ccad659715f1dd"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact recovery artifact and named gate. It does not authorize provider rotation/activation, current-law verification, corpus promotion, RAG promotion, public guide release, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-runtime-deploy",
+      "gate_type": "production_runtime_deploy"
     }
   ]
 }
