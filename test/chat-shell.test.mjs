@@ -301,7 +301,7 @@ test("CHAT31 synchronous LIOE path is latency-bounded without bypassing postflig
   const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
   assert.match(worker,/maxAttempts:1/);
   assert.match(orchestrator,/highDepthGovernance \? "medium" : "low"/);
-  assert.match(orchestrator,/max_output_tokens:highDepthGovernance \? 700 : 500/);
+  assert.match(orchestrator,/max_output_tokens:highDepthGovernance \? 900 : 800/);
   assert.match(orchestrator,/reasoning:\{effort:profile==="L4_LEGAL_TRUTH_GOVERNANCE" \? "medium" : "low"\}/);
   assert.match(orchestrator,/provisionalRevision:true/);
   assert.match(worker,/postflightVerdict:postflight\.verdict/);
