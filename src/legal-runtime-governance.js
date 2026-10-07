@@ -67,6 +67,7 @@ export function assessLegalRuntimeRelease({
   const webUsed=result?.webSearchUsed===true;
   const postflightNeeded=legalPostflightRequired(plan);
   const postflightPassed=!postflightNeeded || postflight?.verdict==="PASS";
+  const postflightRevised=postflightNeeded && postflight?.verdict==="REVISE";
 
   if(!engaged){
     return Object.freeze({
@@ -137,7 +138,9 @@ export function assessLegalRuntimeRelease({
   }
 
   const verificationState=postflightNeeded
-    ? (postflightPassed ? (currentLawMaterial&&!currentVerified ? "PROVISIONAL" : "PASSED") : "FAILED")
+    ? (postflightPassed
+      ? (currentLawMaterial&&!currentVerified ? "PROVISIONAL" : "PASSED")
+      : postflightRevised ? "PROVISIONAL" : "FAILED")
     : (articleMatched ? "PASSED" : "PROVISIONAL");
 
   return Object.freeze({
@@ -212,7 +215,7 @@ export function buildSanitisedRuntimeRecord({
       ? (postflightMeta.firstPass===true?1:0)
       : null,
     verification_attempts:postflightMeta?.attempts||null,
-    correction_required:postflightMeta?.attempts>1?1:0,
+    correction_required:(postflightMeta?.verdict==="REVISE" || postflightMeta?.attempts>1)?1:0,
     web_search_used:result?.webSearchUsed===true?1:0,
     official_web_source_count:Number(assessment?.officialWebSourceCount)||0,
     external_source_count:Array.isArray(result?.sources)?result.sources.length:0,
