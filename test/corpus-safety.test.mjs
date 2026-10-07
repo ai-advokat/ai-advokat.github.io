@@ -527,7 +527,12 @@ describe("F4 alias ambiguity", () => {
 describe("T12 compatibility with existing ZRO / ZKP / ZI corpora", () => {
   test("exact ZRO, ZI and ZKP snapshots become version-bound; all three still answer and count exactly", async () => {
     const { d1, raw, applyRemaining } = createD1({ stopBefore: "0023" });
-    const zroNumbers = [...Array.from({ length: 298 }, (_, i) => i + 1).filter((n) => n !== 26), "25-а"];
+    const zroNumbers = [
+      ...Array.from({ length: 273 }, (_, i) => i + 1),
+      "28-а","50-а","60-а","70-а","80-а","90-а","100-а","110-а","120-а",
+      "130-а","140-а","150-а","160-а","170-а","180-а","190-а","200-а",
+      "210-а","220-а","230-а","240-а","250-а","260-а","270-а","272-а"
+    ];
     const zroRows = zroNumbers.map((n) => ({ number: String(n), text: `работна одредба број ${n}.` }));
     const ziNumbers = [...Array.from({ length: 262 }, (_, i) => i + 1).filter((n) => n < 240 || n > 244), 269];
     const ziRows = ziNumbers.map((n) => ({ number: String(n), text: `извршна одредба број ${n}.` }));
