@@ -419,7 +419,7 @@ test("L2-L4 selectively execute bounded specialists in parallel and aggregate us
     assert.equal(calls.length,stage.findings.length);
     assert.ok(calls.every(x=>x.store===false));
     assert.ok(calls.every(x=>x.reasoning?.effort==="low"));
-    assert.ok(calls.every(x=>x.max_output_tokens===500));
+    assert.ok(calls.every(x=>x.max_output_tokens===800));
   }finally{
     globalThis.fetch=originalFetch;
   }
