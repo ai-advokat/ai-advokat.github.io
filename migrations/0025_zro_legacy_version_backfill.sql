@@ -6,6 +6,11 @@
 -- This migration does NOT claim current 2026 law. The snapshot remains
 -- version_class=dated_snapshot, is_current=0, human_review_status=pending.
 --
+-- Row status is preserved. The governed 298-row base snapshot may contain
+-- both 'historical' and 'needs_version_review' rows: later amendment review
+-- may mark affected provisions for version review without changing the base
+-- source snapshot. No row may be current_consolidated.
+--
 -- Governed source:
 --   https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf
 --   SHA-256 f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655
@@ -56,8 +61,13 @@ SELECT CASE WHEN
           AND source_sha256='f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655'
           AND source_issue_number='through-111/2023'
           AND source_issue_date='2023-05-30'
-          AND status='historical'
+          AND status IN ('historical','needs_version_review')
           AND human_review_status='pending') = 298
+      AND
+      (SELECT COUNT(*)
+         FROM legal_article_versions
+        WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
+          AND status='current_consolidated') = 0
       AND
       (SELECT COUNT(*) FROM legal_article_versions
         WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
@@ -138,7 +148,7 @@ SELECT CASE WHEN
     (SELECT COUNT(*)
        FROM legal_article_versions
       WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
-        AND status='historical'
+        AND status IN ('historical','needs_version_review')
         AND human_review_status='pending') = 298
     AND
     (SELECT COUNT(*)
