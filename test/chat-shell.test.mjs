@@ -169,11 +169,11 @@ test("CHAT17 chat latency optimisations preserve governed routing",()=>{
   assert.match(worker,/Promise\.all\(\[/);
 });
 
-test("CHAT18 production UI copy no longer claims GPT activation is pending",()=>{
-  assert.match(html,/GPT-6\.1 Sol · LIVE governed/);
+test("CHAT18 production UI status is readiness-driven rather than statically claiming LIVE",()=>{
+  assert.match(html,/GPT-6\.1 Sol · проверка на runtime/);
   assert.match(html,/production-активен/);
+  assert.doesNotMatch(html,/id="aiChatProvider">GPT-6\.1 Sol · LIVE governed/);
   assert.doesNotMatch(html,/production provider-от ќе биде активиран/);
-  assert.doesNotMatch(html,/GPT-6\.1 Sol target · provider activation pending/);
   assert.match(html,/store:false/);
 });
 
@@ -283,4 +283,15 @@ test("CHAT29 L2-L4 use real bounded specialist execution before Chief synthesis"
   assert.match(orchestrator,/BOUNDED_SPECIALIST_FINDINGS/);
   assert.match(orchestrator,/LIOE_SPECIALIST_EXECUTION_ENABLED/);
   assert.match(worker,/specialistExecution:result\.specialistExecution/);
+});
+
+
+test("CHAT30 runtime status and network failures are fail-closed and user-visible",()=>{
+  assert.match(chatJs,/const fullyReady=/);
+  assert.match(chatJs,/lioeRuntimeTelemetry==="ready"/);
+  assert.match(chatJs,/GPT-6\.1 Sol · LIVE governed/);
+  assert.match(chatJs,/runtime partial · recovery required/);
+  assert.match(chatJs,/GPT runtime · недостапен/);
+  assert.match(chatJs,/Runtime\/API unavailable/);
+  assert.match(chatJs,/Барањето не е обработено/);
 });
