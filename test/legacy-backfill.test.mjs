@@ -59,7 +59,7 @@ function legacyZiFixture({ corruptOneHash = false } = {}) {
   return { d1, raw, applyRemaining };
 }
 
-function legacyZroFixture({ corruptOneHash = false } = {}) {
+function legacyZroFixture({ corruptOneHash = false, needsVersionReviewCount = 0 } = {}) {
   const { d1, raw, applyRemaining } = createD1({ stopBefore: "0023" });
   const rows = zroNumbers().map((n) => ({ number: String(n), text: `ЗРО тест член ${n}.` }));
   seedArticles(raw, "mk:zro", rows, { version: null, status: "historical", review: "pending" });
@@ -69,6 +69,19 @@ function legacyZroFixture({ corruptOneHash = false } = {}) {
         SET source_url=?, source_sha256=?, source_issue_number='through-111/2023', source_issue_date='2023-05-30'
       WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')`
   ).run(ZRO_URL, ZRO_SHA);
+
+  if (needsVersionReviewCount > 0) {
+    raw.prepare(
+      `UPDATE legal_article_versions
+          SET status='needs_version_review'
+        WHERE id IN (
+          SELECT id FROM legal_article_versions
+           WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
+           ORDER BY id
+           LIMIT ?
+        )`
+    ).run(needsVersionReviewCount);
+  }
 
   if (corruptOneHash) {
     raw.prepare(
@@ -222,6 +235,22 @@ describe("migration 0025 — ZRO 111/2023 historical snapshot binding", () => {
       human_review_status: "pending"
     });
     assert.equal(raw.prepare("SELECT COUNT(*) n FROM legal_article_versions WHERE status='historical' AND human_review_status='pending' AND instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')").get().n, 298);
+    assert.equal(raw.prepare("SELECT COUNT(*) n FROM legal_article_versions WHERE status='current_consolidated' AND instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')").get().n, 0);
+  });
+
+  test("mixed historical and needs_version_review ZRO rows bind without status promotion", () => {
+    const { raw, applyRemaining } = legacyZroFixture({ needsVersionReviewCount: 26 });
+    const before = snapshot(raw, "mk:zro");
+    assert.equal(before.filter((r) => r.status === "historical").length, 272);
+    assert.equal(before.filter((r) => r.status === "needs_version_review").length, 26);
+
+    applyRemaining();
+
+    const after = snapshot(raw, "mk:zro");
+    assert.deepEqual(after, before, "0025 must preserve mixed governed review status exactly");
+    assert.equal(raw.prepare("SELECT COUNT(*) n FROM legal_article_versions WHERE instrument_version_id IS NULL AND instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')").get().n, 0);
+    assert.equal(raw.prepare("SELECT COUNT(*) n FROM legal_article_versions WHERE status='historical' AND instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')").get().n, 272);
+    assert.equal(raw.prepare("SELECT COUNT(*) n FROM legal_article_versions WHERE status='needs_version_review' AND instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')").get().n, 26);
     assert.equal(raw.prepare("SELECT COUNT(*) n FROM legal_article_versions WHERE status='current_consolidated' AND instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')").get().n, 0);
   });
 
