@@ -163,6 +163,48 @@
       "notes": "Approval is limited to the exact recovery artifact and named gate. It does not authorize provider rotation/activation, current-law verification, corpus promotion, RAG promotion, public guide release, or legal-status promotion.",
       "decision_id": "hg-2026-10-07-runtime-recovery-runtime-deploy",
       "gate_type": "production_runtime_deploy"
+    },
+    {
+      "subject_id": "production-runtime-recovery-resume-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Explicit project-lead approval of the production recovery was already given on 2026-10-07; this version-bound continuation narrows the same authorized recovery to the remaining migrations after 0024 succeeded and 0025 failed closed.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_RESUME_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "d9f49c79b3e5f76ef4efe19f63e4e159ddcfdef9dfa2de5821dad67ae2fed0ab"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact recovery-resume artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-resume-github-merge",
+      "gate_type": "github_merge"
+    },
+    {
+      "subject_id": "production-runtime-recovery-resume-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Explicit project-lead approval of the production recovery was already given on 2026-10-07; this version-bound continuation narrows the same authorized recovery to the remaining migrations after 0024 succeeded and 0025 failed closed.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_RESUME_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "d9f49c79b3e5f76ef4efe19f63e4e159ddcfdef9dfa2de5821dad67ae2fed0ab"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact recovery-resume artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-resume-production-schema",
+      "gate_type": "production_schema_migration"
+    },
+    {
+      "subject_id": "production-runtime-recovery-resume-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Explicit project-lead approval of the production recovery was already given on 2026-10-07; this version-bound continuation narrows the same authorized recovery to the remaining migrations after 0024 succeeded and 0025 failed closed.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_RESUME_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "d9f49c79b3e5f76ef4efe19f63e4e159ddcfdef9dfa2de5821dad67ae2fed0ab"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact recovery-resume artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-resume-runtime-deploy",
+      "gate_type": "production_runtime_deploy"
     }
   ]
 }
