@@ -1,0 +1,40 @@
+{
+  "decision_id": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_RESUME_2026-10-07",
+  "requested_on": "2026-10-07",
+  "requested_by_role": "project_lead",
+  "decision_basis": "Continuation of the explicitly authorized 2026-10-07 production recovery after migration 0024 applied successfully and migration 0025 failed closed on an over-strict ZRO status guard.",
+  "activation_authorized": true,
+  "recovery_version": "ai-advokat-production-recovery-1.1.0",
+  "target_runtime_version": "ai-advokat-lioe-runtime-1.0.0",
+  "production_database_id": "12ece285-74bb-4f27-a025-2dbd1be6c59a",
+  "already_applied_migrations": [
+    "0024_zi_legacy_version_backfill.sql"
+  ],
+  "expected_pending_migrations": [
+    "0025_zro_legacy_version_backfill.sql",
+    "0026_zkp_legacy_version_backfill.sql",
+    "0027_zpp_validity_window_correction.sql",
+    "0028_lioe_runtime_telemetry.sql"
+  ],
+  "authorized_gates": [
+    "github_merge",
+    "production_schema_migration",
+    "production_runtime_deploy"
+  ],
+  "provider_activation_authorized": false,
+  "provider_boundary": "Existing separately activated OpenAI provider credentials and model settings are preserved; this recovery resume does not rotate, expose or newly authorize the provider.",
+  "legal_truth_boundary": "Migration 0025 may accept only historical or needs_version_review ZRO rows under pending Human Gate and must preserve their status. Migrations 0026-0027 remain metadata-only. No migration may rewrite article text, promote current_consolidated status, approve Human Gate, or create new current-law claims.",
+  "telemetry_boundary": "Migration 0028 may create only privacy-minimised LIOE runtime telemetry; it must not store user questions, answers, attachments, identities, client facts or source text.",
+  "success_criteria": [
+    "migration 0024 verified applied with 258 ZI rows bound and no current-law promotion",
+    "exact remote pending migration set 0025-0028 verified",
+    "ZRO preflight verifies 298 rows, exact source fingerprint, pending Human Gate, only historical or needs_version_review statuses, and zero current_consolidated rows",
+    "migrations 0025-0028 applied in order with fail-closed guards",
+    "post-migration article counts unchanged and NULL version bindings eliminated for ZRO/ZKP",
+    "ZPP validity boundary corrected without current-law promotion",
+    "LIOE telemetry schema verified",
+    "current main Worker deployed",
+    "live orchestrator and capabilities readiness pass",
+    "live GPT general and legal chat smoke tests pass"
+  ]
+}
