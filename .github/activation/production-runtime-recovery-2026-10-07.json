@@ -1,0 +1,37 @@
+{
+  "decision_id": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_2026-10-07",
+  "requested_on": "2026-10-07",
+  "requested_by_role": "project_lead",
+  "decision_basis": "Explicit project-lead request on 2026-10-07 for a comprehensive audit and successful reactivation after the public GPT workspace returned Unavailable.",
+  "activation_authorized": true,
+  "recovery_version": "ai-advokat-production-recovery-1.0.0",
+  "target_runtime_version": "ai-advokat-lioe-runtime-1.0.0",
+  "production_database_id": "12ece285-74bb-4f27-a025-2dbd1be6c59a",
+  "expected_pending_migrations": [
+    "0024_zi_legacy_version_backfill.sql",
+    "0025_zro_legacy_version_backfill.sql",
+    "0026_zkp_legacy_version_backfill.sql",
+    "0027_zpp_validity_window_correction.sql",
+    "0028_lioe_runtime_telemetry.sql"
+  ],
+  "authorized_gates": [
+    "github_merge",
+    "production_schema_migration",
+    "production_runtime_deploy"
+  ],
+  "provider_activation_authorized": false,
+  "provider_boundary": "Existing separately activated OpenAI provider credentials and model settings are preserved; this recovery does not rotate, expose or newly authorize the provider.",
+  "legal_truth_boundary": "Migrations 0024-0027 may bind or correct governed version metadata only. They must not rewrite article text, promote current_consolidated status, approve Human Gate, or create new current-law claims.",
+  "telemetry_boundary": "Migration 0028 may create only privacy-minimised LIOE runtime telemetry; it must not store user questions, answers, attachments, identities, client facts or source text.",
+  "success_criteria": [
+    "exact remote pending migration set verified",
+    "legacy corpus preflight matches governed counts and provenance",
+    "migrations 0024-0028 applied in order with fail-closed guards",
+    "post-migration article counts unchanged and NULL version bindings eliminated for ZI/ZRO/ZKP",
+    "ZPP validity boundary corrected without current-law promotion",
+    "LIOE telemetry schema verified",
+    "current main Worker deployed",
+    "live orchestrator and capabilities readiness pass",
+    "live GPT legal chat smoke passes when separately configured provider remains available"
+  ]
+}
