@@ -14,7 +14,7 @@
 -- Governed source:
 --   https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf
 --   SHA-256 f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655
---   298 article rows
+--   298 article records; base-law numeric boundary ends at Article 273
 --   issue lineage through 111/2023
 --   source issue date 2023-05-30
 
@@ -79,7 +79,7 @@ SELECT CASE WHEN
       AND
       (SELECT COUNT(*) FROM legal_article_versions
         WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
-          AND article_number_normalized='298') = 1
+          AND article_number_normalized='273') = 1
       AND NOT EXISTS (
         SELECT 1
           FROM legal_article_versions
