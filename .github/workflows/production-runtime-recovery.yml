@@ -10,7 +10,7 @@ on:
   push:
     branches: ["main"]
     paths:
-      - ".github/activation/production-runtime-recovery-resume-2026-10-07.json"
+      - ".github/activation/production-runtime-recovery-final-2026-10-07.json"
 
 permissions:
   contents: read
@@ -54,16 +54,16 @@ jobs:
           import crypto from "node:crypto";
           import {isGateApproved} from "./scripts/human-gate-ledger-validator.mjs";
 
-          const requestPath=".github/activation/production-runtime-recovery-resume-2026-10-07.json";
+          const requestPath=".github/activation/production-runtime-recovery-final-2026-10-07.json";
           const raw=fs.readFileSync(requestPath);
           const sha=crypto.createHash("sha256").update(raw).digest("hex");
-          const expectedSha="d9f49c79b3e5f76ef4efe19f63e4e159ddcfdef9dfa2de5821dad67ae2fed0ab";
+          const expectedSha="784fb4ba0dca086243bb6afcddc94547921a58e68fc16a2d547172cfa170ad9f";
           if(sha!==expectedSha) throw new Error("Recovery request fingerprint changed: "+sha);
 
           const d=JSON.parse(raw);
           if(d.activation_authorized!==true) throw new Error("Recovery request not authorized");
-          if(d.decision_id!=="AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_RESUME_2026-10-07") throw new Error("Unexpected recovery decision");
-          if(d.recovery_version!=="ai-advokat-production-recovery-1.1.0") throw new Error("Unexpected recovery version");
+          if(d.decision_id!=="AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_FINAL_2026-10-07") throw new Error("Unexpected recovery decision");
+          if(d.recovery_version!=="ai-advokat-production-recovery-1.2.0") throw new Error("Unexpected recovery version");
           if(d.target_runtime_version!=="ai-advokat-lioe-runtime-1.0.0") throw new Error("Unexpected target runtime");
           if(d.production_database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production database id");
           if(d.provider_activation_authorized!==false) throw new Error("Recovery must not create a new provider authorization");
@@ -80,7 +80,7 @@ jobs:
 
           const ledger=JSON.parse(fs.readFileSync("data/human-gate-decision-ledger.json","utf8"));
           const query={
-            subject_id:"production-runtime-recovery-resume-2026-10-07",
+            subject_id:"production-runtime-recovery-final-2026-10-07",
             artifact_version:d.decision_id,
             artifact_fingerprint:{activation_request_sha256:sha}
           };
@@ -166,6 +166,8 @@ jobs:
             (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND status IN ('historical','needs_version_review')) AS zro_allowed_status_count,
             (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND human_review_status='pending') AS zro_pending_review_count,
             (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND status='current_consolidated') AS zro_current_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND article_number_normalized='273') AS zro_article_273_count,
+            (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND article_number_normalized='298') AS zro_article_298_count,
             (SELECT COUNT(*) FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND source_sha256='e6bf4588833752695a9b776b473ed9d504264effdfcd7917b8d6655bcfacaf45') AS zkp_hash_count,
             (SELECT COUNT(*) FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zi') AND version_label='official-editorial-consolidated-through-154/2023') AS zi_target_versions,
             (SELECT COUNT(*) FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro') AND version_label='official-consolidated-snapshot-through-111/2023') AS zro_target_versions,
@@ -182,7 +184,7 @@ jobs:
             (SELECT valid_to FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zpp') AND version_label='applicable-track-79/2005-through-124/2015') AS zpp_valid_to;
           " | tee /tmp/recovery-preflight.txt
 
-          for pair in             '"migration_24_applied": 1'             '"zi_count": 258' '"zi_null": 0'             '"zro_count": 298' '"zro_null": 298'             '"zkp_count": 570' '"zkp_null": 570'             '"zi_hash_count": 258' '"zro_hash_count": 298' '"zkp_hash_count": 570'             '"zro_issue_metadata_count": 298' '"zro_allowed_status_count": 298' '"zro_pending_review_count": 298' '"zro_current_count": 0'             '"zi_target_versions": 1' '"zro_target_versions": 1' '"zkp_target_versions": 1'             '"duplicate_groups": 0' '"zpp_valid_to": "2027-01-17"'; do
+          for pair in             '"migration_24_applied": 1'             '"zi_count": 258' '"zi_null": 0'             '"zro_count": 298' '"zro_null": 298'             '"zkp_count": 570' '"zkp_null": 570'             '"zi_hash_count": 258' '"zro_hash_count": 298' '"zkp_hash_count": 570'             '"zro_issue_metadata_count": 298' '"zro_allowed_status_count": 298' '"zro_pending_review_count": 298' '"zro_current_count": 0' '"zro_article_273_count": 1' '"zro_article_298_count": 0'             '"zi_target_versions": 1' '"zro_target_versions": 1' '"zkp_target_versions": 1'             '"duplicate_groups": 0' '"zpp_valid_to": "2027-01-17"'; do
             grep -q "$pair" /tmp/recovery-preflight.txt
           done
           echo "Production corpus preflight: PASS"

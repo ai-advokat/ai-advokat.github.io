@@ -205,6 +205,48 @@
       "notes": "Approval is limited to the exact recovery-resume artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, or legal-status promotion.",
       "decision_id": "hg-2026-10-07-runtime-recovery-resume-runtime-deploy",
       "gate_type": "production_runtime_deploy"
+    },
+    {
+      "subject_id": "production-runtime-recovery-final-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Continuation of the explicit 2026-10-07 project-lead authorization to complete the production recovery. Root-cause review proved the remaining blocker was a false Article 298 sentinel in migration 0025; the governed 298-record ZRO snapshot ends at Article 273.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_FINAL_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "784fb4ba0dca086243bb6afcddc94547921a58e68fc16a2d547172cfa170ad9f"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact final recovery artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, public guide release, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-final-github-merge",
+      "gate_type": "github_merge"
+    },
+    {
+      "subject_id": "production-runtime-recovery-final-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Continuation of the explicit 2026-10-07 project-lead authorization to complete the production recovery. Root-cause review proved the remaining blocker was a false Article 298 sentinel in migration 0025; the governed 298-record ZRO snapshot ends at Article 273.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_FINAL_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "784fb4ba0dca086243bb6afcddc94547921a58e68fc16a2d547172cfa170ad9f"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact final recovery artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, public guide release, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-final-production-schema",
+      "gate_type": "production_schema_migration"
+    },
+    {
+      "subject_id": "production-runtime-recovery-final-2026-10-07",
+      "decision_state": "approved",
+      "decided_at": "2026-10-07",
+      "decision_basis": "Continuation of the explicit 2026-10-07 project-lead authorization to complete the production recovery. Root-cause review proved the remaining blocker was a false Article 298 sentinel in migration 0025; the governed 298-record ZRO snapshot ends at Article 273.",
+      "artifact_version": "AI_ADVOKAT_PRODUCTION_RUNTIME_RECOVERY_FINAL_2026-10-07",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "784fb4ba0dca086243bb6afcddc94547921a58e68fc16a2d547172cfa170ad9f"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to the exact final recovery artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, public guide release, or legal-status promotion.",
+      "decision_id": "hg-2026-10-07-runtime-recovery-final-runtime-deploy",
+      "gate_type": "production_runtime_deploy"
     }
   ]
 }
