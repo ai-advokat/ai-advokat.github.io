@@ -445,6 +445,7 @@ async function runOneBoundedSpecialist(env,{
   const role=ROLE_BY_ID[agentId];
   if(!role) return {ok:false,error:"unknown_specialist",agentId,providerCalls:0};
   const useWeb=webSearchEnabled===true && agentId!==AGENT_ROLES.corpus.id;
+  const highDepthGovernance=missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE";
   const body={
     model:env.OPENAI_MODEL.trim(),
     instructions:[
@@ -454,14 +455,14 @@ async function runOneBoundedSpecialist(env,{
       "Separate supported propositions, uncertainty, contrary authority/risk and missing evidence.",
       "Do not claim Human Gate approval or external action."
     ].join("\n"),
-    reasoning:{effort:"medium"},
+    reasoning:{effort:highDepthGovernance ? "medium" : "low"},
     input:[{role:"user",content:[{type:"input_text",text:[
       "USER LEGAL TASK:",
       String(input||""),
       "",
       compactSourceContext(corpusContext,"GOVERNED_NATIVE_CONTEXT")
     ].join("\n")}]}],
-    max_output_tokens:850,
+    max_output_tokens:highDepthGovernance ? 700 : 500,
     store:false,
     ...(useWeb ? {
       tools:[{type:"web_search"}],
@@ -840,8 +841,8 @@ export async function runLegalPostflightVerifier(env,{
         "If verdict PASS, corrected_answer must preserve the draft's substance while removing any unsafe overclaim."
       ].join("\n"),
       input:[{role:"user",content:[{type:"input_text",text:input}]}],
-      reasoning:{effort:"medium"},
-      max_output_tokens:1800,
+      reasoning:{effort:profile==="L4_LEGAL_TRUTH_GOVERNANCE" ? "medium" : "low"},
+      max_output_tokens:1200,
       store:false,
       text:{
         format:{
@@ -925,6 +926,25 @@ export async function runLegalPostflightVerifier(env,{
     answer=String(verdict.corrected_answer||"").trim();
     if(!answer){
       return {ok:false,required:true,error:"legal_postflight_empty_revision",attempts,firstPass:false,providerCalls:attempts,usage:aggregate};
+    }
+
+    // In synchronous production chat, one verifier pass may be the full latency
+    // budget. A verifier-supplied correction may be released only as PROVISIONAL
+    // material under the existing Human Gate; it is never upgraded to PASS.
+    if(attempt===limit){
+      return Object.freeze({
+        ok:true,
+        required:true,
+        ...verdict,
+        verdict:"REVISE",
+        corrected_answer:answer,
+        issues:Object.freeze(Array.isArray(verdict.issues)?verdict.issues.map(x=>String(x).slice(0,240)).slice(0,12):[]),
+        attempts,
+        firstPass:false,
+        provisionalRevision:true,
+        providerCalls:attempts,
+        usage:Object.freeze(aggregate)
+      });
     }
   }
 
