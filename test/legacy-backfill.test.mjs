@@ -26,7 +26,7 @@ function zroNumbers() {
   // the exact source-side distribution of every lettered provision.
   return [
     ...Array.from({ length: 273 }, (_, i) => i + 1),
-    "25-а","50-а","60-а","70-а","80-а","90-а","100-а","110-а","120-а",
+    "28-а","50-а","60-а","70-а","80-а","90-а","100-а","110-а","120-а",
     "130-а","140-а","150-а","160-а","170-а","180-а","190-а","200-а",
     "210-а","220-а","230-а","240-а","250-а","260-а","270-а","272-а"
   ];
@@ -212,7 +212,8 @@ describe("migration 0025 — ZRO 111/2023 historical snapshot binding", () => {
     const { raw, applyRemaining } = legacyZroFixture();
     const before = snapshot(raw, "mk:zro");
     assert.equal(before.length, 298);
-    assert.equal(before.filter((r) => r.article_number_normalized === "25-а").length, 1);
+    assert.equal(before.filter((r) => r.article_number_normalized === "28-а").length, 1);
+    assert.equal(before.filter((r) => r.article_number_normalized === "25-а").length, 0);
     assert.equal(before.filter((r) => r.article_number_normalized === "273").length, 1);
     assert.equal(before.filter((r) => r.article_number_normalized === "298").length, 0);
 
