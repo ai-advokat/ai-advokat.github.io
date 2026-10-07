@@ -31,6 +31,8 @@ on:
       - "wrangler*.jsonc"
       - "package.json"
       - ".github/workflows/security-tests.yml"
+      - ".github/workflows/production-runtime-recovery.yml"
+      - ".github/activation/production-runtime-recovery-2026-10-07.json"
   push:
     branches:
       - main
@@ -60,6 +62,8 @@ jobs:
         run: npm run test:legal-runtime-governance
       - name: LIOE production activation contract
         run: npm run test:lioe-production-activation
+      - name: Production runtime recovery contract
+        run: npm run test:production-runtime-recovery
       - name: CasePilot foundation tests
         run: npm run test:casepilot
       - name: Zoran practical guides governance tests
