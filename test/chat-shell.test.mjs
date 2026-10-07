@@ -295,3 +295,22 @@ test("CHAT30 runtime status and network failures are fail-closed and user-visibl
   assert.match(chatJs,/Runtime\/API unavailable/);
   assert.match(chatJs,/Барањето не е обработено/);
 });
+
+
+test("CHAT31 synchronous LIOE path is latency-bounded without bypassing postflight",()=>{
+  const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(worker,/maxAttempts:1/);
+  assert.match(orchestrator,/highDepthGovernance \? "medium" : "low"/);
+  assert.match(orchestrator,/max_output_tokens:highDepthGovernance \? 700 : 500/);
+  assert.match(orchestrator,/reasoning:\{effort:profile==="L4_LEGAL_TRUTH_GOVERNANCE" \? "medium" : "low"\}/);
+  assert.match(orchestrator,/provisionalRevision:true/);
+  assert.match(worker,/postflightVerdict:postflight\.verdict/);
+  assert.match(worker,/postflightProvisional:postflight\.verdict==="REVISE"/);
+});
+
+test("CHAT32 pleading drafting is routed through consequential Human Gate",()=>{
+  const divorce=buildAgentPlan("Подготви тужба за развод со placeholders.");
+  assert.equal(divorce.legalIntelligenceEngine.mission_profile.id,"L3_CONSEQUENTIAL");
+  assert.equal(divorce.legalIntelligenceEngine.authority_and_human_gate.human_review_required,true);
+  assert.equal(divorce.legalIntelligenceEngine.implementation.no_autonomous_filing,true);
+});

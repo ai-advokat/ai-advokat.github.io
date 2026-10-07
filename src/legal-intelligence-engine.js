@@ -29,18 +29,26 @@ const LEGAL_SIGNALS=[
 const CURRENT_LAW_SIGNALS=["важечко","важечки","важечката","денес","сега","current law","currently in force","applicable law","најнова верзија","latest law"];
 const TEMPORAL_SIGNALS=["влегува во сила","почнува да се применува","преодни одредби","application date","effective date","commencement","transitional provision","објавен но","published but"];
 const STRATEGY_SIGNALS=["стратег","опции","спореди","ризик","процесен","рок за","жалба","remedy","strategy","options","compare","procedural","deadline","limitation","case plan"];
-const ACTION_SIGNALS=["финален поднесок","поднесок за поднесување","испрати до суд","поднеси до суд","поднеси го","file it","submit to court","send to court","final pleading","потпиши договор","sign contract","public release","јавна објава","production deploy","deploy to production"];
+const ACTION_SIGNALS=[
+  "финален поднесок","поднесок за поднесување","испрати до суд","поднеси до суд","поднеси го",
+  "подготви тужба","изготви тужба","состави тужба","нацрт тужба","подготви жалба","изготви жалба","состави жалба",
+  "подготви поднесок","изготви поднесок","состави поднесок",
+  "file it","submit to court","send to court","final pleading","draft complaint","draft lawsuit","prepare complaint","prepare lawsuit","draft appeal","prepare appeal","draft pleading",
+  "потпиши договор","sign contract","public release","јавна објава","production deploy","deploy to production"
+];
 const L4_SIGNALS=["production corpus","production corpus write","rag eligibility","rag_eligibility","прогласи ја оваа верзија","прогласи за важечк","current law promotion","legal status promotion","legal truth","сменi human gate","смени human gate","provider activation","активирај provider","corpus promotion"];
 const GUIDE_SIGNALS=["водич","guide","каде е","каде во ai advokat","каталог","catalog"];
+const ACTION_DRAFT_PATTERN=/\b(?:draft|prepare|compose|write)\b.{0,48}\b(?:complaint|lawsuit|appeal|pleading|petition|motion)\b/u;
 
 function inferGeneralBypass(q,mode){
-  const governedLegalSignal=has(q,[...LEGAL_SIGNALS,...GUIDE_SIGNALS,...CURRENT_LAW_SIGNALS,...TEMPORAL_SIGNALS,...STRATEGY_SIGNALS,...ACTION_SIGNALS,...L4_SIGNALS]);
+  const governedLegalSignal=has(q,[...LEGAL_SIGNALS,...GUIDE_SIGNALS,...CURRENT_LAW_SIGNALS,...TEMPORAL_SIGNALS,...STRATEGY_SIGNALS,...ACTION_SIGNALS,...L4_SIGNALS])
+    || ACTION_DRAFT_PATTERN.test(q);
   return mode==="general_gpt" || !governedLegalSignal;
 }
 function selectProfile(q,{mode=null}={}){
   if(inferGeneralBypass(q,mode))return LEGAL_MISSION_PROFILES.GENERAL_BYPASS;
   if(has(q,L4_SIGNALS))return LEGAL_MISSION_PROFILES.L4_LEGAL_TRUTH_GOVERNANCE;
-  if(has(q,ACTION_SIGNALS))return LEGAL_MISSION_PROFILES.L3_CONSEQUENTIAL;
+  if(has(q,ACTION_SIGNALS)||ACTION_DRAFT_PATTERN.test(q))return LEGAL_MISSION_PROFILES.L3_CONSEQUENTIAL;
   const comparative=has(q,["спореди","compare","comparative","компаратив","versus"]);
   if(comparative||has(q,STRATEGY_SIGNALS))return LEGAL_MISSION_PROFILES.L2_STRATEGY_PROCEDURE;
   if(has(q,CURRENT_LAW_SIGNALS)||has(q,TEMPORAL_SIGNALS)||has(q,["истраж","research","правна анализа","legal analysis"]))return LEGAL_MISSION_PROFILES.L1_VERIFIED_RESEARCH;

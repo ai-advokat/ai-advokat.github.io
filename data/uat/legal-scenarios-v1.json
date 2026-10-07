@@ -1,0 +1,57 @@
+{
+  "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v1",
+  "synthetic_data_only": true,
+  "base_url": "https://ai-advokat-github-io.aiadvokat16.workers.dev",
+  "scenarios": [
+    {
+      "id": "divorce-complaint-draft",
+      "title": "Тужба за развод — синтетички случај",
+      "prompt": "Подготви нацрт тужба за развод за целосно измислени странки А.А. и Б.Б. Факти за тест: брак склучен во Скопје во 2015 година, немаат малолетни деца, брачната заедница фактички престанала пред 14 месеци, живеат одвоено и во оваа тужба не се поставува имотно побарување. Подготви структурен судски нацрт со јасни placeholders за суд, адреси, ЕМБГ, датум и докази. Не измислувај непроверени членови или важечка правна основа; означи што мора да провери адвокат пред поднесување.",
+      "expect_mission_profile": "L3_CONSEQUENTIAL",
+      "expect_human_review": true,
+      "expect_execution_authorization": "NO_EXTERNAL_ACTION",
+      "min_answer_chars": 500,
+      "answer_must_match": "туж"
+    },
+    {
+      "id": "administrative-silence-options",
+      "title": "Молчење на администрацијата — опции и ризици",
+      "prompt": "Спореди ги процесните опции и ризици за граѓанин кога орган не одговорил на управно барање. Не претставувај 30-дневен рок за молчење како автоматски важечки фиксен преклузивен рок ако изворите не го потврдуваат тоа.",
+      "expect_mission_profile": "L2_STRATEGY_PROCEDURE",
+      "expect_human_review": true,
+      "min_answer_chars": 350
+    },
+    {
+      "id": "zkp-334-cross-reference",
+      "title": "ЗКП член 334 — cross-reference",
+      "prompt": "Објасни ја разликата меѓу признание на вина и спогодба според член 334 ЗКП. Ако членот упатува на други членови, користи ги само истоверзиските експлицитни cross-reference од правниот corpus и означи ги изворите.",
+      "expect_mission_profile": "L0_INFORMATIONAL",
+      "min_answer_chars": 300,
+      "min_legal_cross_reference_count": 1
+    },
+    {
+      "id": "labour-law-article-one",
+      "title": "Работни односи — член 1",
+      "prompt": "Објасни што уредува член 1 од Законот за работните односи врз основа на AI Advokat article-level corpus. Не додавај непотврдени важечки измени.",
+      "expect_mission_profile": "L0_INFORMATIONAL",
+      "min_answer_chars": 250
+    },
+    {
+      "id": "police-detention-rights",
+      "title": "Лишување од слобода — практична ориентација",
+      "prompt": "Кои се првите практични чекори што треба да ги преземе лице кое е лишено од слобода? Оддели ја практичната ориентација од тврдења за важечко право и не измислувај рокови.",
+      "expect_mission_profile": "L0_INFORMATIONAL",
+      "min_answer_chars": 300
+    },
+    {
+      "id": "contract-debt-complaint-draft",
+      "title": "Договорно побарување — нацрт тужба",
+      "prompt": "Состави нацрт тужба за наплата на договорен долг за целосно измислен случај: доверител А.Д. против должник Б.Д., главен долг 120.000 денари, без внесување вистински лични податоци. Користи placeholders и наведи кои договори, фактури, опомени и докази треба човечки да се проверат. Не поднесувај ништо и не измислувај непроверена правна основа.",
+      "expect_mission_profile": "L3_CONSEQUENTIAL",
+      "expect_human_review": true,
+      "expect_execution_authorization": "NO_EXTERNAL_ACTION",
+      "min_answer_chars": 450,
+      "answer_must_match": "туж"
+    }
+  ]
+}

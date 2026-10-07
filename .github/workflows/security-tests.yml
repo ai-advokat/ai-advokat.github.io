@@ -21,6 +21,7 @@ on:
       - "data/response-provenance-contract.json"
       - "data/human-gate-decision-ledger.json"
       - "data/audit-trail-decision-history.json"
+      - "data/uat/**"
       - "*.html"
       - "assets/**"
       - "sitemap.*"
@@ -62,6 +63,8 @@ jobs:
         run: npm run test:legal-intelligence-engine
       - name: LIOE runtime governance tests
         run: npm run test:legal-runtime-governance
+      - name: Legal UAT contract tests
+        run: node --check scripts/run-live-legal-uat.mjs && npm run test:legal-uat
       - name: LIOE production activation contract
         run: npm run test:lioe-production-activation
       - name: Production runtime recovery contract

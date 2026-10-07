@@ -23,7 +23,7 @@ jobs:
   activate:
     environment: production
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -70,10 +70,12 @@ jobs:
           node --check src/agent-orchestrator.js
           node --check assets/guide-vault.js
           node --check assets/ai-advokat-chat.js
+          node --check scripts/run-live-legal-uat.mjs
           npm run verify
           npm run test:agent-orchestrator
           npm run test:guide-vault
           npm run test:chat-shell
+          npm run test:legal-uat
           node <<'NODE'
           const fs=require("fs");
           const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
@@ -160,6 +162,12 @@ jobs:
           console.log("LIVE GPT-6.1 SOL + WEB + ATTACHMENT: PASS");
           NODE
 
+      - name: Live governed legal UAT scenarios
+        shell: bash
+        run: |
+          set -euo pipefail
+          UAT_OUTPUT=/tmp/legal-uat-results.json node scripts/run-live-legal-uat.mjs data/uat/legal-scenarios-v1.json
+
       - name: Upload non-secret activation evidence
         uses: actions/upload-artifact@v4
         with:
@@ -170,3 +178,4 @@ jobs:
             /tmp/openai-preflight.json
             /tmp/orchestrator.json
             /tmp/gpt-combined-smoke.json
+            /tmp/legal-uat-results.json

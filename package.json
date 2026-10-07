@@ -51,7 +51,8 @@
     "validate:legal-runs": "node scripts/validate-legal-run-records.mjs",
     "test:legal-runtime-governance": "node --no-warnings --test test/legal-runtime-governance.test.mjs",
     "test:lioe-production-activation": "node --no-warnings --test test/lioe-production-activation.test.mjs",
-    "test:production-runtime-recovery": "node --no-warnings --test test/production-runtime-recovery.test.mjs"
+    "test:production-runtime-recovery": "node --no-warnings --test test/production-runtime-recovery.test.mjs",
+    "test:legal-uat": "node --no-warnings --test test/legal-uat.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"

@@ -1957,7 +1957,7 @@ async function handleGPTChat(request,env){
     draft:result.text,
     corpusContext,
     webSources:result.sources||[],
-    maxAttempts:2
+    maxAttempts:1
   });
 
   if(!postflight.ok){
@@ -2120,6 +2120,8 @@ async function handleGPTChat(request,env){
       postflightRequired:runtimeAssessment.postflightRequired,
       verificationAttempts:postflight.attempts||0,
       firstPassVerification:postflight.firstPass===true,
+      postflightVerdict:postflight.verdict||null,
+      postflightProvisional:postflight.verdict==="REVISE",
       correctionRequired:(postflight.attempts||0)>1,
       officialWebSourceCount:runtimeAssessment.officialWebSourceCount,
       specialistExecution:result.specialistExecution||null,
