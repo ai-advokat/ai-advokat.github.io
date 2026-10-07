@@ -50,6 +50,20 @@ test("final pleading request is consequential and cannot file autonomously",()=>
   assert.equal(p.implementation.no_autonomous_filing,true);
 });
 
+test("drafting a divorce complaint is consequential and requires Human Gate",()=>{
+  const p=buildLegalIntelligencePlan("Подготви тужба за развод со placeholders и докази.",{selectedAgents:["macedonian_law"]});
+  assert.equal(p.mission_profile.id,"L3_CONSEQUENTIAL");
+  assert.equal(p.authority_and_human_gate.human_review_required,true);
+  assert.ok(p.authority_and_human_gate.required_gate_types.includes("author_approval"));
+  assert.equal(p.implementation.no_autonomous_filing,true);
+});
+
+test("English complaint drafting is also consequential",()=>{
+  const p=buildLegalIntelligencePlan("Draft a divorce complaint under North Macedonian law.",{selectedAgents:["macedonian_law"]});
+  assert.equal(p.mission_profile.id,"L3_CONSEQUENTIAL");
+  assert.equal(p.implementation.no_autonomous_legal_representation,true);
+});
+
 test("production corpus promotion is L4 and fail-closed",()=>{
   const p=buildLegalIntelligencePlan("Прогласи ја оваа верзија за важечка и внеси ја во production corpus.",{selectedAgents:["macedonian_law","verification_citation"],codeOrCorpusChange:true});
   assert.equal(p.mission_profile.id,"L4_LEGAL_TRUTH_GOVERNANCE");
