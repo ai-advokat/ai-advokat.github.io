@@ -29,7 +29,13 @@ const LEGAL_SIGNALS=[
 const CURRENT_LAW_SIGNALS=["важечко","важечки","важечката","денес","сега","current law","currently in force","applicable law","најнова верзија","latest law"];
 const TEMPORAL_SIGNALS=["влегува во сила","почнува да се применува","преодни одредби","application date","effective date","commencement","transitional provision","објавен но","published but"];
 const STRATEGY_SIGNALS=["стратег","опции","спореди","ризик","процесен","рок за","жалба","remedy","strategy","options","compare","procedural","deadline","limitation","case plan"];
-const ACTION_SIGNALS=["финален поднесок","поднесок за поднесување","испрати до суд","поднеси до суд","поднеси го","file it","submit to court","send to court","final pleading","потпиши договор","sign contract","public release","јавна објава","production deploy","deploy to production"];
+const ACTION_SIGNALS=[
+  "финален поднесок","поднесок за поднесување","испрати до суд","поднеси до суд","поднеси го",
+  "подготви тужба","изготви тужба","состави тужба","нацрт тужба","подготви жалба","изготви жалба","состави жалба",
+  "подготви поднесок","изготви поднесок","состави поднесок",
+  "file it","submit to court","send to court","final pleading","draft complaint","draft lawsuit","prepare complaint","prepare lawsuit","draft appeal","prepare appeal","draft pleading",
+  "потпиши договор","sign contract","public release","јавна објава","production deploy","deploy to production"
+];
 const L4_SIGNALS=["production corpus","production corpus write","rag eligibility","rag_eligibility","прогласи ја оваа верзија","прогласи за важечк","current law promotion","legal status promotion","legal truth","сменi human gate","смени human gate","provider activation","активирај provider","corpus promotion"];
 const GUIDE_SIGNALS=["водич","guide","каде е","каде во ai advokat","каталог","catalog"];
 
