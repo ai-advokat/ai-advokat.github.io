@@ -460,7 +460,11 @@
       }
     }catch(err){
       if(err?.name==="AbortError") updateAssistantPlaceholder(assistantIndex,{text:"Генерирањето е прекинато.",meta:"Stop"});
-      else updateAssistantPlaceholder(assistantIndex,{text:"Сервисот моментално не е достапен. Обидете се повторно.",meta:"Unavailable"});
+      else updateAssistantPlaceholder(assistantIndex,{
+        text:"Не можам да воспоставам врска со AI runtime. Барањето не е обработено. Обидете се повторно по кратко време.",
+        meta:"Runtime/API unavailable",
+        sourceLabel:"Не е издаден правен одговор и не е направен успешен GPT повик."
+      });
     }finally{
       abortController=null;root.classList.remove("ai-chat-running");save();
     }
@@ -495,11 +499,24 @@
     });
   }
 
-  fetch(CHAT_API_BASE+"/api/orchestrator",{headers:{"accept":"application/json"}}).then(r=>r.json()).then(d=>{
-    const state=d?.runtime?.providerExecution;
-    if(state==="configured_for_api_chat_execution") provider.textContent="GPT-6.1 Sol · LIVE governed";
-    else provider.textContent="GPT-6.1 Sol target · provider activation pending";
-  }).catch(()=>{});
+  fetch(CHAT_API_BASE+"/api/orchestrator",{headers:{"accept":"application/json"}})
+    .then(async r=>{
+      if(!r.ok) throw new Error("runtime_"+r.status);
+      return r.json();
+    })
+    .then(d=>{
+      const runtime=d?.runtime||{};
+      const fullyReady=
+        runtime.providerExecution==="configured_for_api_chat_execution"
+        && runtime.lioeRuntimeGovernance==="enabled"
+        && runtime.lioePostflight==="enabled"
+        && runtime.lioeSpecialistExecution==="enabled"
+        && runtime.lioeRuntimeTelemetry==="ready";
+      if(fullyReady) provider.textContent="GPT-6.1 Sol · LIVE governed";
+      else if(runtime.providerExecution==="configured_for_api_chat_execution") provider.textContent="GPT-6.1 Sol · runtime partial · recovery required";
+      else provider.textContent="GPT-6.1 Sol · provider unavailable";
+    })
+    .catch(()=>{provider.textContent="GPT runtime · недостапен";});
 
   load();render();renderAttachments();autoSize();refreshGuideVaultStatus();
 })();
