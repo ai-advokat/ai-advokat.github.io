@@ -70,10 +70,12 @@ jobs:
           node --check src/agent-orchestrator.js
           node --check assets/guide-vault.js
           node --check assets/ai-advokat-chat.js
+          node --check scripts/run-live-legal-uat.mjs
           npm run verify
           npm run test:agent-orchestrator
           npm run test:guide-vault
           npm run test:chat-shell
+          npm run test:legal-uat
           node <<'NODE'
           const fs=require("fs");
           const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
