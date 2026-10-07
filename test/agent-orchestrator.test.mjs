@@ -31,6 +31,7 @@ const intakeManifest=JSON.parse(fs.readFileSync("data/knowledge-intake-policy.js
 const architecturePage=fs.readFileSync("agent-architecture.html","utf8");
 const workerSource=fs.readFileSync("src/index.js","utf8");
 const wranglerConfig=fs.readFileSync("wrangler.jsonc","utf8");
+const agentSource=fs.readFileSync("src/agent-orchestrator.js","utf8");
 
 describe("AI Advokat governed legal-agent architecture v2", () => {
   test("native corpus mode is corpus-first and keeps Macedonian verifier specialist", () => {
@@ -418,7 +419,7 @@ test("L2-L4 selectively execute bounded specialists in parallel and aggregate us
     assert.equal(calls.length,stage.findings.length);
     assert.ok(calls.every(x=>x.store===false));
     assert.ok(calls.every(x=>x.reasoning?.effort==="low"));
-    assert.ok(calls.every(x=>x.max_output_tokens===500));
+    assert.ok(calls.every(x=>x.max_output_tokens===800));
   }finally{
     globalThis.fetch=originalFetch;
   }
@@ -454,4 +455,16 @@ test("bounded specialist failure is visible and fail-closed",async()=>{
   }finally{
     globalThis.fetch=originalFetch;
   }
+});
+
+
+test("L3 pleading draft uses one bounded MK specialist with hardened completion budget",()=>{
+  const plan=buildAgentPlan("Подготви нацрт тужба за развод со измислени странки и Human Gate.");
+  assert.equal(plan.legalIntelligenceEngine.mission_profile.id,"L3_CONSEQUENTIAL");
+  assert.deepEqual(plan.agents,[AGENT_ROLES.mk.id]);
+  assert.equal(specialistExecutionRequired(plan),true);
+  assert.match(agentSource,/Use at most 180 words and at most 8 short bullets/);
+  assert.match(agentSource,/highDepthGovernance \? 900 : 800/);
+  assert.match(agentSource,/incomplete_details\?\.reason/);
+  assert.match(agentSource,/failureDetail/);
 });

@@ -452,6 +452,7 @@ async function runOneBoundedSpecialist(env,{
       specialistInstructions(agentId),
       "MISSION PROFILE: "+String(missionProfile||"UNKNOWN"),
       "Return concise findings for the Chief Legal Orchestrator, not a user-facing final answer.",
+      "Use at most 180 words and at most 8 short bullets. Do not draft the final pleading inside the specialist stage.",
       "Separate supported propositions, uncertainty, contrary authority/risk and missing evidence.",
       "Do not claim Human Gate approval or external action."
     ].join("\n"),
@@ -462,7 +463,7 @@ async function runOneBoundedSpecialist(env,{
       "",
       compactSourceContext(corpusContext,"GOVERNED_NATIVE_CONTEXT")
     ].join("\n")}]}],
-    max_output_tokens:highDepthGovernance ? 700 : 500,
+    max_output_tokens:highDepthGovernance ? 900 : 800,
     store:false,
     ...(useWeb ? {
       tools:[{type:"web_search"}],
@@ -485,7 +486,14 @@ async function runOneBoundedSpecialist(env,{
   try{payload=await response.json();}catch{}
   const usage=extractOpenAIUsage(payload);
   if(!response.ok) return {ok:false,error:"specialist_response_error",status:response.status,agentId,providerCalls:1,usage};
-  if(payload?.status!=="completed") return {ok:false,error:"specialist_incomplete",agentId,providerCalls:1,usage};
+  if(payload?.status!=="completed") return {
+    ok:false,
+    error:"specialist_incomplete",
+    agentId,
+    providerCalls:1,
+    usage,
+    detail:String(payload?.incomplete_details?.reason || payload?.status || "unknown").slice(0,120)
+  };
   const text=extractOpenAIResponseText(payload);
   if(!text) return {ok:false,error:"specialist_empty_response",agentId,providerCalls:1,usage};
   const sources=extractOpenAIWebCitations(payload);
@@ -534,7 +542,9 @@ export async function runBoundedSpecialists(env,{
   if(failed){
     return {
       ok:false,required:true,error:failed.error||"specialist_execution_failed",
-      failedAgent:failed.agentId||null,providerCalls:aggregate.providerCalls,
+      failedAgent:failed.agentId||null,
+      failureDetail:failed.detail||null,
+      providerCalls:aggregate.providerCalls,
       usage:{inputTokens:aggregate.inputTokens,outputTokens:aggregate.outputTokens,totalTokens:aggregate.totalTokens}
     };
   }
@@ -589,6 +599,7 @@ export async function runOpenAIOrchestrator(env, {
       ok:false,
       error:specialistStage.error||"specialist_execution_failed",
       failedAgent:specialistStage.failedAgent||null,
+      failureDetail:specialistStage.failureDetail||null,
       providerCalls:specialistStage.providerCalls||0,
       usage:specialistStage.usage||{inputTokens:0,outputTokens:0,totalTokens:0}
     };

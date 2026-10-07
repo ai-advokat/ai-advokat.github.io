@@ -12,8 +12,10 @@ const results=[];
 
 for(const scenario of suite.scenarios){
   const started=Date.now();
-  let response;
-  let body;
+  let response=null;
+  let body={};
+  const failures=[];
+
   try{
     response=await fetch(base+"/api/chat",{
       method:"POST",
@@ -35,16 +37,47 @@ for(const scenario of suite.scenarios){
     const text=await response.text();
     try{body=JSON.parse(text);}catch{body={ok:false,error:"invalid_json",raw:text.slice(0,1000)};}
   }catch(error){
-    throw new Error(`${scenario.id}: network/timeout failure: ${String(error?.message||error)}`);
+    failures.push("network/timeout failure: "+String(error?.message||error));
   }
 
   const elapsedMs=Date.now()-started;
+  if(response && response.status!==200) failures.push("HTTP "+response.status+": "+JSON.stringify(body).slice(0,1200));
+  if(response && body?.ok!==true) failures.push("API ok=false: "+JSON.stringify(body).slice(0,1200));
+  if(response && body?.model!=="gpt-6.1-sol") failures.push("unexpected model "+String(body?.model));
+  if(response && body?.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") failures.push("LIOE metadata missing");
+  if(response && scenario.expect_mission_profile && body?.legalGovernance?.missionProfile!==scenario.expect_mission_profile){
+    failures.push("expected mission "+scenario.expect_mission_profile+", got "+String(body?.legalGovernance?.missionProfile));
+  }
+  if(response && scenario.expect_human_review===true && body?.legalGovernance?.humanReviewRequired!==true){
+    failures.push("Human Gate/human review must be required");
+  }
+  if(response && scenario.expect_execution_authorization && body?.legalGovernance?.executionAuthorization!==scenario.expect_execution_authorization){
+    failures.push("expected executionAuthorization "+scenario.expect_execution_authorization+", got "+String(body?.legalGovernance?.executionAuthorization));
+  }
+  if(response && String(body?.answer||"").length<Number(scenario.min_answer_chars||1)){
+    failures.push("answer too short ("+String(body?.answer||"").length+")");
+  }
+  if(response && scenario.answer_must_match && !String(body?.answer||"").toLowerCase().includes(String(scenario.answer_must_match).toLowerCase())){
+    failures.push("expected answer marker "+scenario.answer_must_match);
+  }
+  if(response && Number(body?.legalCrossReferenceCount||0)<Number(scenario.min_legal_cross_reference_count||0)){
+    failures.push("expected at least "+scenario.min_legal_cross_reference_count+" legal cross-references, got "+String(body?.legalCrossReferenceCount||0));
+  }
+  if(response && body?.runtimeTelemetry!=="recorded"){
+    failures.push("runtime telemetry not recorded ("+String(body?.runtimeTelemetry)+")");
+  }
+  if(elapsedMs>65000) failures.push("exceeded legal UAT latency budget: "+elapsedMs+"ms");
+
   const record={
     id:scenario.id,
     title:scenario.title,
-    http_status:response.status,
+    passed:failures.length===0,
+    failures,
+    http_status:response?.status||0,
     elapsed_ms:elapsedMs,
     ok:body?.ok===true,
+    error:body?.error||null,
+    failure_detail:body?.failureDetail||null,
     model:body?.model||null,
     mission_profile:body?.legalGovernance?.missionProfile||null,
     verification_state:body?.legalGovernance?.verificationState||null,
@@ -60,44 +93,30 @@ for(const scenario of suite.scenarios){
   };
   results.push(record);
 
-  if(response.status!==200) throw new Error(`${scenario.id}: HTTP ${response.status}: ${JSON.stringify(body).slice(0,1200)}`);
-  if(body?.ok!==true) throw new Error(`${scenario.id}: API ok=false: ${JSON.stringify(body).slice(0,1200)}`);
-  if(body?.model!=="gpt-6.1-sol") throw new Error(`${scenario.id}: unexpected model ${body?.model}`);
-  if(body?.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error(`${scenario.id}: LIOE metadata missing`);
-  if(scenario.expect_mission_profile && body?.legalGovernance?.missionProfile!==scenario.expect_mission_profile){
-    throw new Error(`${scenario.id}: expected mission ${scenario.expect_mission_profile}, got ${body?.legalGovernance?.missionProfile}`);
+  if(record.passed){
+    console.log(`UAT PASS ${scenario.id}: ${elapsedMs}ms · ${record.mission_profile} · ${record.release_state}`);
+  }else{
+    console.error(`UAT FAIL ${scenario.id}: ${failures.join(" | ")}`);
   }
-  if(scenario.expect_human_review===true && body?.legalGovernance?.humanReviewRequired!==true){
-    throw new Error(`${scenario.id}: Human Gate/human review must be required`);
-  }
-  if(scenario.expect_execution_authorization && body?.legalGovernance?.executionAuthorization!==scenario.expect_execution_authorization){
-    throw new Error(`${scenario.id}: expected executionAuthorization ${scenario.expect_execution_authorization}, got ${body?.legalGovernance?.executionAuthorization}`);
-  }
-  if(String(body?.answer||"").length<Number(scenario.min_answer_chars||1)){
-    throw new Error(`${scenario.id}: answer too short (${String(body?.answer||"").length})`);
-  }
-  if(scenario.answer_must_match && !String(body?.answer||"").toLowerCase().includes(String(scenario.answer_must_match).toLowerCase())){
-    throw new Error(`${scenario.id}: expected answer marker ${scenario.answer_must_match}`);
-  }
-  if(Number(body?.legalCrossReferenceCount||0)<Number(scenario.min_legal_cross_reference_count||0)){
-    throw new Error(`${scenario.id}: expected at least ${scenario.min_legal_cross_reference_count} legal cross-references, got ${body?.legalCrossReferenceCount||0}`);
-  }
-  if(body?.runtimeTelemetry!=="recorded"){
-    throw new Error(`${scenario.id}: runtime telemetry not recorded (${body?.runtimeTelemetry})`);
-  }
-  if(elapsedMs>65000) throw new Error(`${scenario.id}: exceeded legal UAT latency budget: ${elapsedMs}ms`);
-
-  console.log(`UAT PASS ${scenario.id}: ${elapsedMs}ms · ${record.mission_profile} · ${record.release_state}`);
   await sleep(700);
 }
+
+const passCount=results.filter(x=>x.passed).length;
+const failCount=results.length-passCount;
 
 fs.writeFileSync(outputPath,JSON.stringify({
   suite_id:suite.suite_id,
   executed_at:new Date().toISOString(),
   synthetic_data_only:true,
   scenario_count:results.length,
-  pass_count:results.length,
+  pass_count:passCount,
+  fail_count:failCount,
   results
 },null,2)+"\n");
 
-console.log(`LEGAL UAT PASS: ${results.length}/${results.length}`);
+if(failCount){
+  console.error(`LEGAL UAT FAIL: ${passCount}/${results.length} passed; ${failCount} failed`);
+  process.exitCode=1;
+}else{
+  console.log(`LEGAL UAT PASS: ${passCount}/${results.length}`);
+}

@@ -56,3 +56,13 @@ test("UAT5 live runner checks model, LIOE, Human Gate, telemetry and cross-refer
   assert.match(runner,/runtimeTelemetry/);
   assert.match(runner,/legalCrossReferenceCount/);
 });
+
+
+test("UAT6 live runner aggregates all scenario failures before exiting",()=>{
+  assert.match(runner,/pass_count:passCount/);
+  assert.match(runner,/fail_count:failCount/);
+  assert.match(runner,/process\.exitCode=1/);
+  assert.match(runner,/UAT FAIL/);
+  assert.match(runner,/failure_detail/);
+  assert.match(runner,/for\(const scenario of suite\.scenarios\)/);
+});
