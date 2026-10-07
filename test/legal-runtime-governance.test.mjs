@@ -74,6 +74,20 @@ test("L3 consequential output is advisory only even when verifier passes",()=>{
   assert.deepEqual(a.requiredGateTypes,["author_approval"]);
 });
 
+test("one-pass verifier revision remains provisional and Human-Gate controlled",()=>{
+  const p=plan("L3_CONSEQUENTIAL",{gates:["author_approval"]});
+  const a=assessLegalRuntimeRelease({
+    plan:p,
+    articleBundle:{state:"instrument_not_resolved",legalSources:[],context:[]},
+    result:{ok:true,sources:[],webSearchUsed:false},
+    postflight:{verdict:"REVISE",stress_test:"PASS",adversarial_review:"PASS",temporal_integrity:"NOT_REQUIRED"}
+  });
+  assert.equal(a.releaseState,"ADVISORY_DRAFT_HUMAN_GATE_REQUIRED");
+  assert.equal(a.executionAuthorization,"NO_EXTERNAL_ACTION");
+  assert.equal(a.verificationState,"PROVISIONAL");
+  assert.equal(a.humanReviewRequired,true);
+});
+
 test("L4 never authorizes legal-truth mutation",()=>{
   const p=plan("L4_LEGAL_TRUTH_GOVERNANCE",{gates:["production_corpus_write"]});
   const a=assessLegalRuntimeRelease({
@@ -98,7 +112,7 @@ test("sanitised telemetry contains no question answer history or source text",()
     runId:"LIOE-RT-TEST",startedAt:"2026-10-06T08:00:00Z",finishedAt:"2026-10-06T08:00:01Z",
     elapsedMs:1000,plan:p,assessment:a,result:{ok:true,model:"gpt-test",usage:{inputTokens:100,outputTokens:40,totalTokens:140},sources:[],webSearchUsed:false},
     articleBundle:{context:[{}]},guideContextCount:1,attachmentCount:2,sourceMode:"test",
-    postflightMeta:{attempts:1,firstPass:true,primaryProviderCalls:1,providerCalls:1,usage:{inputTokens:50,outputTokens:20,totalTokens:70}}
+    postflightMeta:{attempts:1,firstPass:true,verdict:"PASS",primaryProviderCalls:1,providerCalls:1,usage:{inputTokens:50,outputTokens:20,totalTokens:70}}
   });
   assert.equal(rec.total_tokens,210);
   assert.equal(rec.provider_calls,2);
