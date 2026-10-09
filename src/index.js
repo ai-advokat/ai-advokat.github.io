@@ -1904,12 +1904,17 @@ async function handleGPTChat(request,env){
     && attachmentCheck.attachments.length===0
     && guideDocumentCheck.attachments.length===0
     && corpusContext.length===0;
+  const missionProfile=plan.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
+  const consequentialLegal=["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile);
+  const lightweightLegal=["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(missionProfile);
   const maxOutputTokens=fastGeneral ? 700
-    : webRequested ? 1300
-      : articleBundle.state==="matched" ? 1200
-        : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1100
-          : 1000;
-  const reasoningEffort=fastGeneral ? "low" : "medium";
+    : consequentialLegal ? 2200
+      : lightweightLegal ? 1600
+        : webRequested ? 1600
+          : articleBundle.state==="matched" ? 1600
+            : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1400
+              : 1200;
+  const reasoningEffort=fastGeneral ? "low" : lightweightLegal ? "low" : "medium";
 
   const result=await runOpenAIOrchestrator(env,{
     plan,
