@@ -164,8 +164,12 @@ test("CHAT17 chat latency optimisations preserve governed routing",()=>{
   assert.match(chatJs,/Promise\.all\(\[guidePromise,encodePromise\]\)/);
   assert.match(chatJs,/\.slice\(-8\)/);
   assert.match(worker,/const fastGeneral=/);
-  assert.match(worker,/reasoningEffort=fastGeneral \? "low" : "medium"/);
+  assert.match(worker,/reasoningEffort=fastGeneral \? "low" : lightweightLegal \? "low" : "medium"/);
+  assert.match(worker,/const consequentialLegal=/);
+  assert.match(worker,/const lightweightLegal=/);
   assert.match(worker,/maxOutputTokens=fastGeneral \? 700/);
+  assert.match(worker,/consequentialLegal \? 2200/);
+  assert.match(worker,/lightweightLegal \? 1600/);
   assert.match(worker,/Promise\.all\(\[/);
 });
 
