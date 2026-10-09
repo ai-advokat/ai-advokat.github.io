@@ -40,7 +40,7 @@
       "id": "police-detention-rights",
       "title": "Лишување од слобода — практична ориентација",
       "prompt": "Кои се првите практични чекори што треба да ги преземе лице кое е лишено од слобода? Оддели ја практичната ориентација од тврдења за важечко право и не измислувај рокови.",
-      "expect_mission_profile": "L0_INFORMATIONAL",
+      "expect_mission_profile": "L1_VERIFIED_RESEARCH",
       "min_answer_chars": 300
     },
     {
