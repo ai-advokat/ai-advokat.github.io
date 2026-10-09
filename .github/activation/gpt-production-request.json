@@ -21,8 +21,8 @@
   ],
   "note": "No API key is stored in this file. The workflow must fail before deployment if the secret or paid quota is unavailable.",
   "last_redeploy": {
-    "requested_on": "2026-10-07",
-    "target_commit": "541060e99ad7331c7dcf9ddf40c26cd9f72671ec",
-    "reason": "Deploy specialist completion hardening and full six-scenario synthetic legal UAT after PR #105 passed security, LIOE governance and activation safety checks."
+    "requested_on": "2026-10-09",
+    "target_commit": "b5a9d3a90a389a76dcd649657fe6ecb60bd52000",
+    "reason": "Re-verify production after Macedonian natural-language pleading drafting fix. Run full six-scenario synthetic legal UAT with L3 divorce drafting, Human Gate, NO_EXTERNAL_ACTION, bounded specialists, and unchanged governance controls."
   }
 }
