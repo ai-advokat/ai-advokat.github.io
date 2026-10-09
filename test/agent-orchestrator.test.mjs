@@ -72,6 +72,13 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.equal(echr.mode,ORCHESTRATOR_MODES.PROACTIVE_RESEARCH);
   });
 
+  test("AI Advokat corpus legal question keeps Macedonian law specialist for domestic article retrieval", () => {
+    const plan=buildAgentPlan("Објасни што уредува член 1 од Законот за работните односи врз основа на AI Advokat article-level corpus.");
+    assert.ok(plan.agents.includes(AGENT_ROLES.corpus.id));
+    assert.ok(plan.agents.includes(AGENT_ROLES.mk.id));
+    assert.equal(plan.mode,ORCHESTRATOR_MODES.PASSIVE_CORPUS);
+  });
+
   test("manager pattern keeps one user-facing chief and mandatory verifier", () => {
     const plan=buildAgentPlan("Спореди македонско право со EU право.");
     const graph=buildExecutionGraph(plan);
