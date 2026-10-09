@@ -58,7 +58,15 @@ test("drafting a divorce complaint is consequential and requires Human Gate",()=
   assert.equal(p.implementation.no_autonomous_filing,true);
 });
 
-test("natural Macedonian request to make a divorce complaint is consequential",()=>{\n  const p=buildLegalIntelligencePlan("Да те замолам да ми направиш тужба за развод!",{selectedAgents:["macedonian_law"]});\n  assert.equal(p.mission_profile.id,"L3_CONSEQUENTIAL");\n  assert.equal(p.authority_and_human_gate.human_review_required,true);\n  assert.ok(p.authority_and_human_gate.required_gate_types.includes("author_approval"));\n  assert.equal(p.implementation.no_autonomous_filing,true);\n});\n\ntest("English complaint drafting is also consequential",()=>{
+test("natural Macedonian request to make a divorce complaint is consequential",()=>{
+  const p=buildLegalIntelligencePlan("Да те замолам да ми направиш тужба за развод!",{selectedAgents:["macedonian_law"]});
+  assert.equal(p.mission_profile.id,"L3_CONSEQUENTIAL");
+  assert.equal(p.authority_and_human_gate.human_review_required,true);
+  assert.ok(p.authority_and_human_gate.required_gate_types.includes("author_approval"));
+  assert.equal(p.implementation.no_autonomous_filing,true);
+});
+
+test("English complaint drafting is also consequential",()=>{
   const p=buildLegalIntelligencePlan("Draft a divorce complaint under North Macedonian law.",{selectedAgents:["macedonian_law"]});
   assert.equal(p.mission_profile.id,"L3_CONSEQUENTIAL");
   assert.equal(p.implementation.no_autonomous_legal_representation,true);
