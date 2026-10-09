@@ -138,6 +138,12 @@ function routeKeys(question,{preferCorpus=false}={}) {
   if(!selected.size){
     if(ROUTE_PATTERNS.legal.test(q)) selected.add("mk");
     else selected.add("general");
+  }else if(
+    selected.has("corpus")
+    && ROUTE_PATTERNS.legal.test(q)
+    && !["eu","echr","common","international"].some(key=>selected.has(key))
+  ){
+    selected.add("mk");
   }
 
   // A comparison that names a foreign system but references Macedonian law
@@ -713,7 +719,8 @@ export async function runOpenAIOrchestrator(env, {
     return {
       ok:false,
       error:"openai_incomplete_response",
-      responseStatus:typeof payload?.status==="string" ? payload.status : "unknown"
+      responseStatus:typeof payload?.status==="string" ? payload.status : "unknown",
+      failureDetail:typeof payload?.incomplete_details?.reason==="string" ? payload.incomplete_details.reason.slice(0,180) : null
     };
   }
 
