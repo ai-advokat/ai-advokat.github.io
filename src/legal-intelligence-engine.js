@@ -39,6 +39,7 @@ const ACTION_SIGNALS=[
 const L4_SIGNALS=["production corpus","production corpus write","rag eligibility","rag_eligibility","прогласи ја оваа верзија","прогласи за важечк","current law promotion","legal status promotion","legal truth","сменi human gate","смени human gate","provider activation","активирај provider","corpus promotion"];
 const GUIDE_SIGNALS=["водич","guide","каде е","каде во ai advokat","каталог","catalog"];
 const ACTION_DRAFT_PATTERN=/\b(?:draft|prepare|compose|write)\b.{0,48}\b(?:complaint|lawsuit|appeal|pleading|petition|motion)\b/u;
+const MK_ACTION_DRAFT_PATTERN=/(?:подготви|изготви|состави|направи(?:ш)?|напиши|изработи)(?: ми)?(?: нацрт)? (?:тужба|жалба|поднесок)/u;
 
 function inferGeneralBypass(q,mode){
   const governedLegalSignal=has(q,[...LEGAL_SIGNALS,...GUIDE_SIGNALS,...CURRENT_LAW_SIGNALS,...TEMPORAL_SIGNALS,...STRATEGY_SIGNALS,...ACTION_SIGNALS,...L4_SIGNALS])
