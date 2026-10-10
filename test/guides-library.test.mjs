@@ -529,3 +529,23 @@ test("G32 current-law review metadata does not silently open PDF or production c
   assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
   assert.ok(data.records.filter(x=>x.source_role!=="version_history").every(x=>x.current_law_authority===false));
 });
+
+
+test("G43 guide activation audit requires exact masters before promoting review_required records",()=>{
+  const audit=JSON.parse(fs.readFileSync("data/guides-activation-audit-2026-10-10.json","utf8"));
+  assert.equal(audit.counts.current_records,37);
+  assert.equal(audit.counts.active_verified,5);
+  assert.equal(audit.counts.active_with_warning,3);
+  assert.equal(audit.counts.review_required,29);
+  assert.equal(audit.missing_input.exact_source_bundle_required,true);
+  assert.equal(audit.missing_input.repository_binary_masters_present,false);
+  assert.equal(audit.missing_input.library_binary_masters_located,false);
+  assert.equal(audit.activation_boundary.public_pdf_for_unreviewed,false);
+  assert.equal(audit.activation_boundary.private_guide_vault_for_unreviewed,false);
+  assert.equal(audit.activation_boundary.production_guide_corpus_for_unreviewed,false);
+  assert.equal(audit.activation_boundary.human_gate_required,true);
+  const p1=new Set(audit.priority_clusters.filter(x=>x.priority==="P1").flatMap(x=>x.guides));
+  for(const no of ["26","53","54","09","10","40","59","17","21","41","42","43","44","45","46","47","48","49","50"]){
+    assert.ok(p1.has(no),no);
+  }
+});

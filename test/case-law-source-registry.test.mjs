@@ -7,7 +7,7 @@ const registry=JSON.parse(fs.readFileSync("data/case-law-source-registry-2026.js
 
 test("CLSRC1 official domestic and European source lanes are registered",()=>{
   const byId=new Map(registry.sources.map(x=>[x.id,x]));
-  for(const id of ["mk-constitutional-court","mk-supreme-court","mk-judicial-portal","echr-hudoc","cjeu-infocuria","paragraf-mk"]){
+  for(const id of ["mk-constitutional-court","mk-supreme-court","mk-judicial-portal","mk-ministry-court-directory","echr-hudoc","cjeu-infocuria","eu-eurlex-case-law","paragraf-mk"]){
     assert.ok(byId.has(id),id);
   }
   assert.equal(byId.get("echr-hudoc").jurisdiction,"ECHR");
@@ -55,4 +55,28 @@ test("CLSRC5 European source authority remains explicitly scoped",()=>{
   assert.equal(cjeu.authority_class,"eu_case_law_reference");
   assert.match(migration,/convention_case_law/);
   assert.match(migration,/eu_case_law_reference/);
+});
+
+
+test("CLSRC6 EUR-Lex and Paragraf product lineage are explicit",()=>{
+  const eurlex=registry.sources.find(x=>x.id==="eu-eurlex-case-law");
+  assert.equal(eurlex.access,"official_public");
+  assert.equal(eurlex.identifier,"ECLI_and_CELEX");
+  const p=registry.sources.find(x=>x.id==="paragraf-mk");
+  assert.deepEqual(p.products,["Lex","Nova","LexAI"]);
+  assert.equal(p.official_binding_required_before_gpt_case_law_context,true);
+  assert.match(p.product_policy,/never changes the record's authority class/i);
+  for(const key of ["celex","hudoc_item_id","source_product","source_record_id","official_binding_verified"]){
+    assert.ok(registry.target_case_record.recommended.includes(key),key);
+  }
+});
+
+test("CLSRC7 migration 0031 adds deduplication identifiers and official-binding provenance",()=>{
+  const m=fs.readFileSync("migrations/0031_case_law_identifiers_and_provenance.sql","utf8");
+  assert.match(m,/CREATE TABLE IF NOT EXISTS case_law_external_ids/);
+  assert.match(m,/UNIQUE \(id_scheme,id_value\)/);
+  assert.match(m,/CREATE TABLE IF NOT EXISTS case_law_provenance/);
+  assert.match(m,/official_binding_verified/);
+  assert.match(m,/licensed_secondary/);
+  assert.match(m,/EUR-Lex EU case-law/);
 });

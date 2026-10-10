@@ -11,7 +11,8 @@ const OFFICIAL_HOST_SUFFIXES=[
   "ustavensud.mk",
   "hudoc.echr.coe.int",
   "echr.coe.int",
-  "curia.europa.eu"
+  "curia.europa.eu",
+  "eur-lex.europa.eu"
 ];
 const LICENSED_HOST_SUFFIXES=["paragraf.mk"];
 const SECRET_KEY_RE=/(password|passwd|secret|token|cookie|session|authorization|api[_-]?key|credential)/i;
@@ -113,6 +114,20 @@ export function generateCaseLawImportSql(ndjsonText){
     const domesticArticles=optionalText(item.authority?.domestic_articles,500);
     const issueKeys=optionalText(item.authority?.legal_issue_keys,1500);
     const importance=optionalText(item.authority?.importance_level,80);
+    const sourceProduct=optionalText(item.source_product||manifest.source_product,80);
+    const sourceRecordId=optionalText(item.source_record_id,220);
+    const ids=(item.external_ids && typeof item.external_ids==="object" && !Array.isArray(item.external_ids)) ? item.external_ids : {};
+    const idPairs=[];
+    for(const [scheme,value] of Object.entries(ids)){
+      if(!["ecli","celex","echr_application_number","hudoc_item_id","domestic_case_number","constitutional_reference","paragraf_legacy_id","other"].includes(scheme)){
+        throw new Error("Unsupported external id scheme: "+scheme);
+      }
+      if(Array.isArray(value)){
+        for(const v of value) idPairs.push([scheme,requireText(v,"external_id."+scheme,300)]);
+      }else if(value!==null && value!==undefined && value!==""){
+        idPairs.push([scheme,requireText(value,"external_id."+scheme,300)]);
+      }
+    }
 
     sql.push(
       "INSERT OR IGNORE INTO sources(title,url,source_type,issuing_body,jurisdiction,source_status,notes) VALUES ("+
@@ -150,6 +165,26 @@ export function generateCaseLawImportSql(ndjsonText){
         sqlString(conventionArticles),sqlString(domesticArticles),sqlString(issueKeys),sqlString(importance),"'pending'"
       ].join(",")+");"
     );
+
+    const sourceClass=manifest.source_class==="official_public" ? "official_primary" : "licensed_secondary";
+    const officialBinding=manifest.source_class==="official_public" ? 1 : 0;
+    const discoveryOnly=manifest.source_class==="official_public" ? 0 : 1;
+    sql.push(
+      "INSERT INTO case_law_provenance(case_law_id,source_class,source_provider,source_product,source_url,source_sha256,source_record_id,discovery_only,official_binding_verified,license_or_access_basis,imported_batch_key,human_review_status) SELECT "+
+      [
+        caseIdExpr,sqlString(sourceClass),sqlString(provider),sqlString(sourceProduct),sqlString(sourceUrl.href),
+        sqlString(String(item.source_sha256).toLowerCase()),sqlString(sourceRecordId),String(discoveryOnly),String(officialBinding),
+        sqlString(manifest.license_or_access_basis||null),sqlString(runId),"'pending'"
+      ].join(",")+
+      " WHERE NOT EXISTS (SELECT 1 FROM case_law_provenance WHERE case_law_id="+caseIdExpr+" AND source_url="+sqlString(sourceUrl.href)+" AND COALESCE(source_sha256,'')="+sqlString(String(item.source_sha256).toLowerCase())+");"
+    );
+
+    for(const [scheme,value] of idPairs){
+      sql.push(
+        "INSERT OR IGNORE INTO case_law_external_ids(case_law_id,id_scheme,id_value,source_url,is_primary_identifier,human_review_status) VALUES ("+
+        [caseIdExpr,sqlString(scheme),sqlString(value),sqlString(sourceUrl.href),String(scheme==="ecli"||scheme==="echr_application_number"||scheme==="domestic_case_number"||scheme==="constitutional_reference"?1:0), "'pending'"].join(",")+");"
+      );
+    }
 
     for(const holding of Array.isArray(item.holdings)?item.holdings:[]){
       const proposition=requireText(holding.proposition,"holding.proposition",6000);

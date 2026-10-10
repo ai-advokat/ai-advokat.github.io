@@ -149,3 +149,47 @@ test("CLI7 generated SQL is rerun-resistant and never REPLACE-promotes case auth
   assert.doesNotMatch(out.sql,/UPDATE case_law SET human_review_status='reviewed'/);
   assert.doesNotMatch(out.sql,/UPDATE case_law_authority SET human_review_status='reviewed'/);
 });
+
+
+test("CLI8 external identifiers and source provenance are preserved without auto-review",()=>{
+  const row=caseRow({
+    source_url:"https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:62026CJ0001",
+    jurisdiction:"EU",
+    source_product:"EUR-Lex",
+    source_record_id:"62026CJ0001",
+    external_ids:{ecli:"ECLI:EU:C:2026:1",celex:"62026CJ0001"}
+  });
+  const out=generateCaseLawImportSql(ndjson([
+    manifest({source_provider:"EUR-Lex",license_or_access_basis:"public_official"}),
+    row
+  ]));
+  assert.match(out.sql,/INSERT INTO case_law_provenance/);
+  assert.match(out.sql,/official_primary/);
+  assert.match(out.sql,/INSERT OR IGNORE INTO case_law_external_ids/);
+  assert.match(out.sql,/ECLI:EU:C:2026:1/);
+  assert.match(out.sql,/62026CJ0001/);
+  assert.doesNotMatch(out.sql,/human_review_status[^\n]*reviewed/i);
+});
+
+test("CLI9 licensed Paragraf Lex Nova LexAI lineage remains discovery-only until official binding",()=>{
+  for(const product of ["Lex","Nova","LexAI"]){
+    const out=generateCaseLawImportSql(ndjson([
+      manifest({
+        source_class:"licensed_secondary_export",
+        source_provider:"Paragraf.mk",
+        source_product:product,
+        authorized_export:true,
+        license_or_access_basis:"Lawfully supplied export"
+      }),
+      caseRow({
+        source_url:"https://paragraf.mk/export/"+product.toLowerCase()+"-case",
+        source_sha256:"c".repeat(64),
+        external_ids:{paragraf_legacy_id:"P-"+product+"-1"}
+      })
+    ]));
+    assert.match(out.sql,/licensed_secondary/);
+    assert.match(out.sql,/,1,0,/);
+    assert.match(out.sql,new RegExp(product));
+    assert.match(out.sql,/paragraf_legacy_id/);
+  }
+});
