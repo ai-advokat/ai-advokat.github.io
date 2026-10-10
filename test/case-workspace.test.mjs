@@ -109,7 +109,13 @@ test("Worker case API requires membership and per-case account access",()=>{
   assert.match(worker,/url\.pathname === "\/api\/cases" \|\| url\.pathname\.startsWith\("\/api\/cases\/"\)/);
 });
 
-test("case workspace runtime is armed while document storage remains separately unbound",()=>{
+test("case workspace runtime is armed with only the governed private CASE_FILES binding",()=>{
   assert.equal(wrangler.vars.CASE_WORKSPACE_ENABLED,"true");
-  assert.equal(Object.prototype.hasOwnProperty.call(wrangler,"r2_buckets"),false);
+  assert.equal(Array.isArray(wrangler.r2_buckets),true);
+  assert.equal(wrangler.r2_buckets.length,1);
+  assert.deepEqual(wrangler.r2_buckets[0],{
+    binding:"CASE_FILES",
+    bucket_name:"ai-advokat-case-files",
+    preview_bucket_name:"ai-advokat-case-files-staging"
+  });
 });

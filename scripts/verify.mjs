@@ -190,7 +190,15 @@ if (!worker.includes("Global confidential upload is disabled.")) {
   throw new Error("Global confidential document upload must remain disabled.");
 }
 if (wrangler.r2_buckets) {
-  throw new Error("Private CASE_FILES object storage must remain unbound until the separate storage activation gate.");
+  if (!Array.isArray(wrangler.r2_buckets) || wrangler.r2_buckets.length !== 1) {
+    throw new Error("Only one governed private R2 binding is permitted.");
+  }
+  const r2=wrangler.r2_buckets[0];
+  if (r2.binding!=="CASE_FILES"
+      || r2.bucket_name!=="ai-advokat-case-files"
+      || r2.preview_bucket_name!=="ai-advokat-case-files-staging") {
+    throw new Error("Private R2 binding must match the approved CASE_FILES production/staging buckets.");
+  }
 }
 if (wrangler.ai) {
   throw new Error("Production wrangler.jsonc must not bind Workers AI before governed production activation.");

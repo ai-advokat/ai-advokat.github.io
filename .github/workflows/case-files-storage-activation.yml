@@ -1,0 +1,231 @@
+name: AI Advokat private case storage activation
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "wrangler.jsonc"
+      - "migrations/0035_case_document_download_audit.sql"
+      - ".github/workflows/case-files-storage-activation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-private-case-storage-activation
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify credentials and repository safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --check src/index.js
+          node --check src/case-workspace.js
+          node --check assets/casepilot-workspace-ui.js
+          npm run verify
+          npm run test:casepilot-professional-stack
+
+      - name: Verify exact D1 and R2 bindings
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          const p=c.previews?.d1_databases?.[0];
+          const r=c.r2_buckets?.find(x=>x.binding==="CASE_FILES");
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker");
+          if(!d || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
+          if(!p || p.database_name!=="ai-advokat-db-staging" || p.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") throw new Error("Unexpected staging D1");
+          if(!r || r.bucket_name!=="ai-advokat-case-files" || r.preview_bucket_name!=="ai-advokat-case-files-staging") throw new Error("Unexpected CASE_FILES R2 binding");
+          console.log("Exact D1/R2 binding target: PASS");
+          NODE
+
+      - name: Verify private buckets exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler r2 bucket list | tee /tmp/r2-buckets.txt
+          grep -Fq "ai-advokat-case-files" /tmp/r2-buckets.txt
+          grep -Fq "ai-advokat-case-files-staging" /tmp/r2-buckets.txt
+          echo "Private R2 bucket precondition: PASS"
+
+      - name: Verify exact schema-34 prestate and migration 0035 only
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER)>=34 ORDER BY CAST(version AS INTEGER);"             | tee /tmp/storage-prestate.txt
+          grep -q '"version": "34"' /tmp/storage-prestate.txt
+          if grep -q '"version": "35"' /tmp/storage-prestate.txt; then
+            echo "Migration 0035 already applied; refusing duplicate activation."
+            exit 1
+          fi
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/storage-pending.txt
+          found="$(grep -Eo '0035_[A-Za-z0-9_.-]+\.sql' /tmp/storage-pending.txt | sort -u)"
+          test "$found" = "0035_case_document_download_audit.sql"
+          unexpected="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/storage-pending.txt | grep -v '^0035_case_document_download_audit\.sql$' || true)"
+          test -z "$unexpected"
+
+      - name: Apply migration 0035
+        run: npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc
+
+      - name: Verify document download audit schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT version,description FROM schema_migrations WHERE version='35'; SELECT sql FROM sqlite_master WHERE type='table' AND name='case_audit_events';"             | tee /tmp/storage-schema.txt
+          grep -q '"version": "35"' /tmp/storage-schema.txt
+          grep -q 'document_downloaded' /tmp/storage-schema.txt
+
+      - name: Deploy Worker with CASE_FILES binding
+        run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/storage-deploy.txt
+
+      - name: Verify live storage capability
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          ready=0
+          for attempt in $(seq 1 20); do
+            curl --fail --silent --show-error "$BASE/api/capabilities" -o /tmp/storage-capabilities.json || true
+            if node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("/tmp/storage-capabilities.json","utf8"));
+          if(c.capabilities?.caseWorkspace!=="workspace_and_storage_ready") process.exit(1);
+          if(c.capabilities?.documentUpload!=="case_scoped_storage_ready_ingestion_gate_required") process.exit(1);
+          NODE
+            then
+              ready=1
+              break
+            fi
+            sleep 3
+          done
+          test "$ready" = "1"
+          echo "LIVE PRIVATE STORAGE CAPABILITY: PASS"
+
+      - name: Provision ephemeral private-storage UAT account
+        shell: bash
+        run: |
+          set -euo pipefail
+          UAT_ACCOUNT_ID="case-storage-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_ENTITLEMENT_ID="case-storage-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_KEY_ID="case-storage-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_KEY="cst_$(openssl rand -hex 24)"
+          UAT_KEY_HASH="$(printf '%s' "$UAT_KEY" | sha256sum | awk '{print $1}')"
+          UAT_KEY_PREFIX="${UAT_KEY:0:12}"
+          echo "::add-mask::$UAT_KEY"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            INSERT INTO membership_accounts(id,display_name,status)
+            VALUES ('$UAT_ACCOUNT_ID','AI Advokat Synthetic Private Storage','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+            VALUES
+              ('$UAT_ENTITLEMENT_ID','$UAT_ACCOUNT_ID','office','active','manual',20,1,0,datetime('now','+2 hours'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+            VALUES
+              ('$UAT_KEY_ID','$UAT_ACCOUNT_ID','$UAT_KEY_HASH','$UAT_KEY_PREFIX','ephemeral private storage UAT','active',datetime('now','+2 hours'));
+          "
+          echo "UAT_ACCOUNT_ID=$UAT_ACCOUNT_ID" >> "$GITHUB_ENV"
+          echo "PRIVATE_STORAGE_UAT_KEY=$UAT_KEY" >> "$GITHUB_ENV"
+
+      - name: Live private upload download delete smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          test -n "${PRIVATE_STORAGE_UAT_KEY:-}"
+
+          cat > /tmp/storage-case.json <<'JSON'
+          {"title":"Синтетички private-storage UAT","clientReference":"R2-UAT","legalArea":"синтетички тест"}
+          JSON
+          create_code="$(curl --silent --show-error --output /tmp/storage-case-created.json --write-out '%{http_code}'             -H "Authorization: Bearer $PRIVATE_STORAGE_UAT_KEY"             -H "Content-Type: application/json"             --data-binary @/tmp/storage-case.json             "$BASE/api/cases")"
+          test "$create_code" = "201"
+          CASE_ID="$(node -e 'const d=require("/tmp/storage-case-created.json");if(!d.case?.id)process.exit(2);process.stdout.write(d.case.id)')"
+          echo "PRIVATE_STORAGE_UAT_CASE_ID=$CASE_ID" >> "$GITHUB_ENV"
+
+          printf '%%PDF-1.4\n%% AI Advokat synthetic private storage test\n' > /tmp/synthetic-private.pdf
+          EXPECTED_SHA="$(sha256sum /tmp/synthetic-private.pdf | awk '{print $1}')"
+
+          upload_code="$(curl --silent --show-error --output /tmp/storage-upload.json --write-out '%{http_code}'             -H "Authorization: Bearer $PRIVATE_STORAGE_UAT_KEY"             -H "Content-Type: application/pdf"             -H "X-File-Name: synthetic-private.pdf"             -H "X-Page-Count: 1"             --data-binary @/tmp/synthetic-private.pdf             "$BASE/api/cases/$CASE_ID/documents/upload")"
+          test "$upload_code" = "201"
+          DOC_ID="$(node -e 'const d=require("/tmp/storage-upload.json");if(!d.document?.id)process.exit(2);process.stdout.write(d.document.id)')"
+          node -e 'const d=require("/tmp/storage-upload.json");const s=process.argv[1];if(d.document?.sha256!==s||d.document?.storageState!=="uploaded")process.exit(2)' "$EXPECTED_SHA"
+
+          curl --fail --silent --show-error             -H "Authorization: Bearer $PRIVATE_STORAGE_UAT_KEY"             "$BASE/api/cases/$CASE_ID/documents/$DOC_ID/download"             -o /tmp/storage-download.pdf
+          test "$(sha256sum /tmp/storage-download.pdf | awk '{print $1}')" = "$EXPECTED_SHA"
+
+          delete_code="$(curl --silent --show-error --output /tmp/storage-delete.json --write-out '%{http_code}'             -X DELETE             -H "Authorization: Bearer $PRIVATE_STORAGE_UAT_KEY"             "$BASE/api/cases/$CASE_ID/documents/$DOC_ID")"
+          test "$delete_code" = "200"
+
+          curl --fail --silent --show-error             -H "Authorization: Bearer $PRIVATE_STORAGE_UAT_KEY"             "$BASE/api/cases/$CASE_ID/audit"             -o /tmp/storage-audit.json
+          node <<'NODE'
+          const d=require("/tmp/storage-audit.json");
+          const types=new Set((d.events||[]).map(x=>x.event_type));
+          for(const t of ["document_slot_reserved","document_uploaded","document_downloaded","document_deleted"]){
+            if(!types.has(t)) throw new Error("Missing audit event "+t);
+          }
+          console.log("LIVE PRIVATE DOCUMENT AUDIT: PASS");
+          NODE
+          echo "LIVE PRIVATE STORAGE UAT: PASS"
+
+      - name: Cleanup ephemeral UAT data
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${PRIVATE_STORAGE_UAT_CASE_ID:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM case_audit_events WHERE case_id='$PRIVATE_STORAGE_UAT_CASE_ID';
+              DELETE FROM case_document_slots WHERE case_id='$PRIVATE_STORAGE_UAT_CASE_ID';
+              DELETE FROM case_workspace_access WHERE case_id='$PRIVATE_STORAGE_UAT_CASE_ID';
+              DELETE FROM case_workspaces WHERE id='$PRIVATE_STORAGE_UAT_CASE_ID';
+            "
+          fi
+          if [ -n "${UAT_ACCOUNT_ID:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_access_keys WHERE account_id='$UAT_ACCOUNT_ID';
+              DELETE FROM membership_entitlements WHERE account_id='$UAT_ACCOUNT_ID';
+              DELETE FROM membership_accounts WHERE id='$UAT_ACCOUNT_ID';
+            "
+          fi
+          echo "Private storage UAT cleanup: PASS"
+
+      - name: Upload non-secret activation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-private-case-storage-activation
+          retention-days: 30
+          path: |
+            /tmp/r2-buckets.txt
+            /tmp/storage-prestate.txt
+            /tmp/storage-pending.txt
+            /tmp/storage-schema.txt
+            /tmp/storage-deploy.txt
+            /tmp/storage-capabilities.json
+            /tmp/storage-upload.json
+            /tmp/storage-delete.json
+            /tmp/storage-audit.json

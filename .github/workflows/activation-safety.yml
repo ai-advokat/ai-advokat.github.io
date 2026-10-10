@@ -24,6 +24,7 @@ on:
       - ".github/workflows/case-workspace-production-activation.yml"
       - ".github/workflows/production-d1-activation.yml"
       - ".github/workflows/case-files-r2-provision.yml"
+      - ".github/workflows/case-files-storage-activation.yml"
       - ".github/activation/case-workspace-production-request.json"
       - ".github/activation/case-export-production-request.json"
       - ".github/activation/case-workspace-export-rerun-2026-10-10.json"
@@ -102,10 +103,18 @@ jobs:
           grep -q 'case_workspace_membership_required' src/index.js
           grep -q "a.account_id=? AND a.status='active'" src/index.js
           grep -q 'Global confidential upload is disabled.' src/index.js
-          if grep -q '"r2_buckets"[[:space:]]*:' wrangler.jsonc; then
-            echo "Private object storage must remain unbound in Secure Case Workspace v1"
-            exit 1
-          fi
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const buckets=Array.isArray(c.r2_buckets)?c.r2_buckets:[];
+          if(buckets.length){
+            if(buckets.length!==1) throw new Error("Unexpected R2 binding count");
+            const r=buckets[0];
+            if(r.binding!=="CASE_FILES" || r.bucket_name!=="ai-advokat-case-files" || r.preview_bucket_name!=="ai-advokat-case-files-staging"){
+              throw new Error("Unexpected private R2 binding");
+            }
+          }
+          NODE
           if grep -Eqi 'document_bytes|file_bytes|extracted_text|document_text|ocr_text' migrations/0029_secure_case_workspace.sql; then
             echo "Private document content column detected in D1 migration"
             exit 1
