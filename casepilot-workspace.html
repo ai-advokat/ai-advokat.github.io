@@ -160,6 +160,32 @@
         </table>
       </div>
     </section>
+
+    <section class="card">
+      <h2>6. Governed Export Center</h2>
+      <p class="muted">Export-от секогаш поминува низ server-side CasePilot provenance. Ако professional Human Gate е заклучен, излезот е WORKING COPY. Оваа страница не може сама да го отклучи Human Gate.</p>
+      <label for="exportSummary">Краток работен резиме</label>
+      <textarea id="exportSummary" maxlength="20000" placeholder="Опционално резиме за работниот пакет."></textarea>
+      <div class="actions">
+        <button id="exportMd" class="secondary" type="button">MD</button>
+        <button id="exportDocx" class="secondary" type="button">DOCX</button>
+        <button id="exportPdf" class="gold" type="button">PDF</button>
+      </div>
+      <p id="exportStatus" class="statusline muted" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>7. Audit Trail</h2>
+      <p class="muted">Приказ на последните case-scoped audit events. Не содржи document body.</p>
+      <div class="actions"><button id="refreshAudit" class="secondary" type="button">Освежи audit</button></div>
+      <div class="scroll" style="margin-top:12px">
+        <table>
+          <thead><tr><th>Време</th><th>Настан</th><th>Објект</th><th>Metadata</th></tr></thead>
+          <tbody id="auditBody"><tr><td colspan="4" class="muted">Нема вчитан audit.</td></tr></tbody>
+        </table>
+      </div>
+      <p id="auditStatus" class="statusline muted" aria-live="polite"></p>
+    </section>
   </section>
 </main>
 
