@@ -144,6 +144,9 @@
     if(archive && !isArchiveIntent(q)) score-=50;
     if(record.id==="guide-administrative-v2" && /(?:uprav|instituci|administraci)/.test(q)) score+=3;
 
+    if(record.activation_state==="active_verified") score+=6;
+    else if(record.activation_state==="active_with_warning") score+=2;
+
     return score;
   }
 
@@ -166,6 +169,9 @@
         scope:record.scope || "",
         category:record.category_label || "",
         verificationLabel:record.verification_label || "",
+        activationState:record.activation_state || "review_required",
+        activationLabel:record.activation_label_mk || "",
+        currentLawAuthority:record.current_law_authority===true,
         sourceRole:record.source_role || "",
         url:record.public_record_url,
         score
