@@ -1,0 +1,23 @@
+{
+  "decision_id": "AI_ADVOKAT_CASEPILOT_EXPORT_V1_2026-10-10",
+  "activation_authorized": true,
+  "authorized_on": "2026-10-10",
+  "authorized_by_role": "project_lead",
+  "evidence_text": "ti blagodaram drugar, od testovite evidentno e deka seuste ne pravi pdf, dox i md, moze li toa da go sredime",
+  "runtime_version": "casepilot-export-1.0.0",
+  "formats": [
+    "md",
+    "docx",
+    "pdf"
+  ],
+  "authorized_gates": [
+    "github_merge",
+    "production_runtime_deploy"
+  ],
+  "case_workspace_dependency": "AI_ADVOKAT_SECURE_CASE_WORKSPACE_V1_2026-10-10",
+  "professional_export_requires_recorded_human_gate": true,
+  "private_document_upload_authorized": false,
+  "private_object_storage_activation_authorized": false,
+  "provider_activation_authorized": false,
+  "note": "Authorizes the real CasePilot export runtime and its current-main deployment only. It does not authorize R2/private document upload, autonomous legal action, provider changes, corpus promotion or professional export without recorded Human Gate evidence."
+}
