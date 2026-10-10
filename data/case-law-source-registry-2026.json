@@ -47,6 +47,16 @@
       ]
     },
     {
+      "id": "mk-ministry-court-directory",
+      "jurisdiction": "MK",
+      "authority_class": "court_identity_discovery",
+      "official_name": "Министерство за правда — Судови",
+      "url": "https://www.pravda.gov.mk/mk-MK/resursi/sudovi",
+      "access": "official_public",
+      "ingest": "court_identity_and_portal_discovery_only",
+      "authority_note": "Directory metadata identifies courts and portals; the originating court decision remains the primary authority."
+    },
+    {
       "id": "echr-hudoc",
       "jurisdiction": "ECHR",
       "authority_class": "convention_case_law",
@@ -69,6 +79,17 @@
       "domestic_effect_note": "Do not classify as automatically binding North Macedonian domestic precedent; use according to applicable EU-law/approximation context."
     },
     {
+      "id": "eu-eurlex-case-law",
+      "jurisdiction": "EU",
+      "authority_class": "eu_case_law_reference",
+      "official_name": "EUR-Lex — EU case-law",
+      "url": "https://eur-lex.europa.eu/collection/eu-law/eu-case-law.html",
+      "access": "official_public",
+      "ingest": "public_case_metadata_and_public_case_documents",
+      "identifier": "ECLI_and_CELEX",
+      "domestic_effect_note": "Use according to the applicable EU-law/approximation context; do not label it as automatically binding North Macedonian domestic precedent."
+    },
+    {
       "id": "paragraf-mk",
       "jurisdiction": "MK",
       "authority_class": "licensed_secondary_discovery",
@@ -83,7 +104,14 @@
         "paywall_bypass",
         "automated_copy_of_restricted_database"
       ],
-      "provenance_requirement": "retain original platform/source identifiers and independently verify controlling law/court origin"
+      "provenance_requirement": "retain original platform/source identifiers and independently verify controlling law/court origin",
+      "products": [
+        "Lex",
+        "Nova",
+        "LexAI"
+      ],
+      "product_policy": "Preserve the supplied product/origin label in provenance. Product branding never changes the record's authority class.",
+      "official_binding_required_before_gpt_case_law_context": true
     }
   ],
   "target_case_record": {
@@ -107,7 +135,12 @@
       "convention_articles",
       "holdings",
       "supporting_or_adverse_role",
-      "authoritative_language"
+      "authoritative_language",
+      "celex",
+      "hudoc_item_id",
+      "source_product",
+      "source_record_id",
+      "official_binding_verified"
     ]
   }
 }
