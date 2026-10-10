@@ -7,6 +7,10 @@ import {isGateApproved} from "../scripts/human-gate-ledger-validator.mjs";
 const requestPath=new URL("../.github/activation/case-workspace-production-request.json",import.meta.url);
 const raw=fs.readFileSync(requestPath);
 const request=JSON.parse(raw);
+const exportRequestPath=new URL("../.github/activation/case-export-production-request.json",import.meta.url);
+const exportRaw=fs.readFileSync(exportRequestPath);
+const exportRequest=JSON.parse(exportRaw);
+const exportSha=crypto.createHash("sha256").update(exportRaw).digest("hex");
 const workflow=fs.readFileSync(new URL("../.github/workflows/case-workspace-production-activation.yml",import.meta.url),"utf8");
 const ledger=JSON.parse(fs.readFileSync(new URL("../data/human-gate-decision-ledger.json",import.meta.url),"utf8"));
 const sha=crypto.createHash("sha256").update(raw).digest("hex");
@@ -42,4 +46,46 @@ test("production workflow is migration-exact and keeps private storage locked",(
   assert.match(workflow,/workspace_ready_storage_locked/);
   assert.match(workflow,/case_workspace_membership_required/);
   assert.match(workflow,/Global document upload boundary failed/);
+});
+
+
+test("CasePilot export activation artifact is fingerprint-bound and does not authorize private upload",()=>{
+  assert.equal(exportSha,"a77e18e9f7f9f970cfc27c0d35c49f61fa399a32d0a2a98d26f2c1dfdc0f6770");
+  assert.equal(exportRequest.activation_authorized,true);
+  assert.equal(exportRequest.runtime_version,"casepilot-export-1.0.0");
+  assert.deepEqual(exportRequest.formats,["md","docx","pdf"]);
+  assert.deepEqual(exportRequest.authorized_gates,["github_merge","production_runtime_deploy"]);
+  assert.equal(exportRequest.professional_export_requires_recorded_human_gate,true);
+  assert.equal(exportRequest.private_document_upload_authorized,false);
+  assert.equal(exportRequest.private_object_storage_activation_authorized,false);
+  assert.equal(exportRequest.provider_activation_authorized,false);
+});
+
+test("CasePilot export Human Gate approves runtime deploy but not schema/provider/corpus gates",()=>{
+  const query={
+    subject_id:"casepilot-export-v1-2026-10-10",
+    artifact_version:exportRequest.decision_id,
+    artifact_fingerprint:{case_export_request_sha256:exportSha}
+  };
+  for(const gate of ["github_merge","production_runtime_deploy"]){
+    assert.equal(isGateApproved(ledger.initial_records,{...query,gate_type:gate}),true,gate);
+  }
+  for(const gate of ["production_schema_migration","provider_activation","production_corpus_write","corpus_promotion","rag_eligibility"]){
+    assert.equal(isGateApproved(ledger.initial_records,{...query,gate_type:gate}),false,gate);
+  }
+});
+
+test("current-main Case Workspace activation performs live bounded export smoke and cleanup",()=>{
+  assert.match(workflow,/case-export-production-request\.json/);
+  assert.match(workflow,/npm run test:case-export/);
+  assert.match(workflow,/md_docx_live_pdf_browser_rendered_human_gate_bound/);
+  assert.match(workflow,/Live CasePilot MD DOCX PDF export smoke/);
+  assert.match(workflow,/WORKING COPY — HUMAN GATE PENDING/);
+  assert.match(workflow,/casepilot_canvas_pdf_v1/);
+  assert.match(workflow,/browser_local_pdf_rendering_no_external_service/);
+  assert.match(workflow,/event_type==="export_generated"/);
+  assert.match(workflow,/Cleanup ephemeral CasePilot export data/);
+  assert.match(workflow,/if: always\(\)/);
+  assert.match(workflow,/DELETE FROM case_audit_events WHERE case_id/);
+  assert.match(workflow,/DELETE FROM membership_access_keys WHERE account_id/);
 });

@@ -23,6 +23,7 @@ on:
       - ".github/workflows/activation-safety.yml"
       - ".github/workflows/case-workspace-production-activation.yml"
       - ".github/activation/case-workspace-production-request.json"
+      - ".github/activation/case-export-production-request.json"
       - "data/human-gate-decision-ledger.json"
 
 permissions:
@@ -43,7 +44,7 @@ jobs:
           node-version: "20"
 
       - name: JavaScript syntax
-        run: node --check src/index.js && node --check src/case-workspace.js
+        run: node --check src/index.js && node --check src/case-workspace.js && node --check src/case-export.js && node --check assets/casepilot-export.js
 
       - name: Structural safety verification
         run: npm run verify
@@ -92,6 +93,9 @@ jobs:
           grep -q 'publicMode: "read_only"' src/index.js
           grep -q 'documentUpload: caseWorkspaceStorageReady(env) && caseSchemaReady' src/index.js
           grep -q 'caseWorkspace: caseRuntime' src/index.js
+          grep -q 'caseExports: caseSchemaReady ? "md_docx_live_pdf_browser_rendered_human_gate_bound" : "locked"' src/index.js
+          grep -q 'case_export_professional_human_gate_evidence_missing' src/index.js
+          grep -q 'browser_local_pdf_rendering_no_external_service' src/index.js
           grep -q 'case_workspace_membership_required' src/index.js
           grep -q "a.account_id=? AND a.status='active'" src/index.js
           grep -q 'Global confidential upload is disabled.' src/index.js
