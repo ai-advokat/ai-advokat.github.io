@@ -687,6 +687,134 @@ async function handleCaseWorkspaceApi(request,env,url){
     });
   }
 
+  if(tail==="case-law-classifications"){
+    if(request.method==="GET" || request.method==="HEAD"){
+      const result=await env.DB.prepare(
+        `SELECT cac.id,cac.case_law_id,cac.role,cac.reason,cac.issue_key,
+                cac.classified_by_account_id,cac.status,cac.created_at,cac.updated_at,
+                cl.case_title,cl.court,cl.case_number,cl.jurisdiction,cl.decision_date,
+                cl.source_url,s.url AS registry_source_url,
+                cl.human_review_status,
+                cla.precedential_weight,cla.human_review_status AS authority_review_status
+           FROM casepilot_authority_classifications cac
+           JOIN case_law cl ON cl.id=cac.case_law_id
+           JOIN sources s ON s.id=cl.source_id AND s.source_status='official'
+           JOIN case_law_authority cla ON cla.case_law_id=cl.id
+          WHERE cac.case_id=? AND cac.status='active'
+          ORDER BY cac.updated_at DESC,cac.id DESC
+          LIMIT 100`
+      ).bind(caseId).all();
+      return json(request,{
+        ok:true,
+        caseId,
+        classifications:(result.results||[]).map(row=>({
+          id:row.id,
+          caseLawId:row.case_law_id,
+          role:row.role,
+          reason:row.reason,
+          issueKey:row.issue_key||null,
+          classifiedByAccountId:row.classified_by_account_id,
+          createdAt:row.created_at,
+          updatedAt:row.updated_at,
+          authority:{
+            caseTitle:row.case_title||null,
+            court:row.court||null,
+            caseNumber:row.case_number||null,
+            jurisdiction:row.jurisdiction||null,
+            decisionDate:row.decision_date||null,
+            precedentialWeight:row.precedential_weight||null,
+            sourceUrl:row.source_url||row.registry_source_url||null,
+            humanReviewStatus:row.human_review_status,
+            authorityReviewStatus:row.authority_review_status
+          }
+        })),
+        humanGate:"Issue-specific authority roles are private lawyer work-product metadata and do not change the authority record itself."
+      });
+    }
+
+    if(request.method==="POST"){
+      if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
+      const contentType=(request.headers.get("content-type")||"").toLowerCase();
+      if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+      const parsed=await readLimitedJson(request,8192);
+      if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
+      const body=parsed.value;
+      if(!body || typeof body!=="object" || Array.isArray(body)) return json(request,{ok:false,error:"invalid_payload"},400);
+
+      const allowed=new Set(["caseLawId","role","reason","issueKey"]);
+      const unexpected=Object.keys(body).filter(k=>!allowed.has(k));
+      if(unexpected.length) return json(request,{ok:false,error:"unexpected_field",fields:unexpected},400);
+
+      const caseLawId=Number(body.caseLawId);
+      const role=String(body.role||"").toLowerCase();
+      const reason=cleanQuery(body.reason,1200);
+      const issueKey=cleanQuery(body.issueKey,240)||null;
+      if(!Number.isInteger(caseLawId)||caseLawId<1) return json(request,{ok:false,error:"case_law_id_invalid"},400);
+      if(!["supporting","adverse","distinguishing","neutral"].includes(role)) return json(request,{ok:false,error:"case_law_role_invalid"},400);
+      if(reason.length<8) return json(request,{ok:false,error:"case_law_role_reason_required"},400);
+
+      const authority=await env.DB.prepare(
+        `SELECT cl.id,cl.human_review_status,s.source_status,
+                cla.human_review_status AS authority_review_status
+           FROM case_law cl
+           JOIN sources s ON s.id=cl.source_id
+           JOIN case_law_authority cla ON cla.case_law_id=cl.id
+          WHERE cl.id=?
+          LIMIT 1`
+      ).bind(caseLawId).first();
+      if(!authority
+        || authority.source_status!=="official"
+        || !["approved","reviewed"].includes(String(authority.human_review_status||""))
+        || !["approved","reviewed"].includes(String(authority.authority_review_status||""))){
+        return json(request,{ok:false,error:"case_law_not_official_dual_reviewed"},409);
+      }
+
+      const at=new Date().toISOString();
+      const classificationId="CAC-"+crypto.randomUUID();
+      await env.DB.batch([
+        env.DB.prepare(
+          `UPDATE casepilot_authority_classifications
+              SET status='superseded',updated_at=?
+            WHERE case_id=? AND case_law_id=? AND COALESCE(issue_key,'')=COALESCE(?,'') AND status='active'`
+        ).bind(at,caseId,caseLawId,issueKey),
+        env.DB.prepare(
+          `INSERT INTO casepilot_authority_classifications
+            (id,case_id,case_law_id,role,reason,issue_key,classified_by_account_id,status,created_at,updated_at)
+           VALUES (?,?,?,?,?,?,?,'active',?,?)`
+        ).bind(classificationId,caseId,caseLawId,role,reason,issueKey,membership.accountId,at,at),
+        env.DB.prepare(
+          `INSERT INTO case_audit_events
+            (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+           VALUES (?, ?, ?, 'case_law_classified', 'case_law', ?, ?, ?)`
+        ).bind(
+          "CAE-"+crypto.randomUUID(),
+          caseId,
+          membership.accountId,
+          String(caseLawId),
+          safeCaseAuditMetadata({role,issueKey}),
+          at
+        )
+      ]);
+
+      return json(request,{
+        ok:true,
+        caseId,
+        classification:{
+          id:classificationId,
+          caseLawId,
+          role,
+          reason,
+          issueKey,
+          classifiedByAccountId:membership.accountId,
+          createdAt:at
+        },
+        humanGate:"Recorded as lawyer issue-specific work-product. It does not alter the underlying judgment or its legal authority."
+      },201);
+    }
+
+    return methodNotAllowed(request,"GET, HEAD, POST, OPTIONS");
+  }
+
 
   if(tail==="exports"){
     if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
