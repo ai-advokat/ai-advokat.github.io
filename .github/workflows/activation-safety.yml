@@ -23,6 +23,7 @@ on:
       - ".github/workflows/activation-safety.yml"
       - ".github/workflows/case-workspace-production-activation.yml"
       - ".github/workflows/production-d1-activation.yml"
+      - ".github/workflows/case-files-r2-provision.yml"
       - ".github/activation/case-workspace-production-request.json"
       - ".github/activation/case-export-production-request.json"
       - ".github/activation/case-workspace-export-rerun-2026-10-10.json"
