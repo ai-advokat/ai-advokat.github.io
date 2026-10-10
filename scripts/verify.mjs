@@ -40,7 +40,9 @@ const required = [
   "migrations/0028_lioe_runtime_telemetry.sql",
   "migrations/0030_case_law_source_graph_v2.sql",
   "data/guides-current-law-review-2026-10-10.json",
-  "data/case-law-source-registry-2026.json"
+  "data/case-law-source-registry-2026.json",
+  "scripts/case-law-ndjson-to-sql.mjs",
+  "ingest/case_law.ndjson.example"
 ];
 
 for (const path of required) {
@@ -236,4 +238,17 @@ if (!worker.includes("SOURCE_ROLE: OFFICIAL_REVIEWED_CASE_LAW")
 }
 if (!worker.includes("CASE_LAW_IS_NOT_STATUTORY_TEXT: true")) {
   throw new Error("Case-law context must remain explicitly distinct from statutory text.");
+}
+
+
+const caseLawImporter = fs.readFileSync("scripts/case-law-ndjson-to-sql.mjs","utf8");
+if (!caseLawImporter.includes("Credential/session field is forbidden")
+    || !caseLawImporter.includes("licensed_secondary_export")
+    || !caseLawImporter.includes("authorized_export=true")
+    || !caseLawImporter.includes("human_review_status") 
+    || !caseLawImporter.includes("'pending'")) {
+  throw new Error("Case-law importer credential boundary is missing or import is not fail-closed.");
+}
+if (caseLawImporter.includes("document.cookie") || caseLawImporter.includes("Authorization: Bearer")) {
+  throw new Error("Case-law importer must never contain credential/session acquisition logic.");
 }
