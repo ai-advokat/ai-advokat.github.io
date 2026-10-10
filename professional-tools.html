@@ -78,9 +78,11 @@
           </div>
           <p class="muted" style="margin-top:14px">„Комплетност“ не е AI confidence и не е веројатност за правна точност. Таа само покажува колку од однапред дефинирани структурни полиња се пронајдени.</p>
           <div class="actions">
+            <button id="verifyCorpus" class="gold" type="button" disabled>Провери со AI Advokat корпус</button>
             <button id="exportJson" class="secondary" type="button" disabled>JSON</button>
             <button id="exportCsv" class="secondary" type="button" disabled>CSV Review Row</button>
           </div>
+          <p id="verifyStatus" class="statusline muted" aria-live="polite"></p>
         </div>
       </div>
 
@@ -90,6 +92,17 @@
           <table>
             <thead><tr><th>Документ</th><th>Тип</th><th>Суд/орган</th><th>Број</th><th>Датум</th><th>Закони / членови</th><th>Рокови</th><th>Извори</th><th>Human Gate</th></tr></thead>
             <tbody id="reviewBody"><tr><td colspan="9" class="muted">Нема анализа.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Проверени правни извори</h3>
+        <p class="muted">До серверот се испраќаат само извлечени правни hints (закон/член/број на предмет), не целиот документ.</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Тип</th><th>Извор</th><th>Статус</th><th>Локатор</th></tr></thead>
+            <tbody id="sourceBody"><tr><td colspan="4" class="muted">Нема corpus verification.</td></tr></tbody>
           </table>
         </div>
       </div>
