@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.0",
+  "registry_id": "AI_ADVOKAT_CASE_LAW_SOURCE_REGISTRY_2026",
+  "updated_on": "2026-10-10",
+  "doctrine": [
+    "official_origin_first",
+    "court_level_and_jurisdiction_visible",
+    "metadata_and_text_provenance_required",
+    "supporting_and_adverse_authority_both_retrieved",
+    "no_subscription_bypass",
+    "licensed_secondary_import_requires_explicit_provenance",
+    "human_review_for_material_legal_propositions"
+  ],
+  "sources": [
+    {
+      "id": "mk-constitutional-court",
+      "jurisdiction": "MK",
+      "authority_class": "constitutional_review",
+      "official_name": "Уставен суд на Република Северна Македонија",
+      "url": "https://ustavensud.mk/",
+      "access": "official_public",
+      "ingest": "public_metadata_and_public_decisions",
+      "identifier": "U/UZ/BZSP or other official reference"
+    },
+    {
+      "id": "mk-supreme-court",
+      "jurisdiction": "MK",
+      "authority_class": "highest_domestic_case_law",
+      "official_name": "Врховен суд на Република Северна Македонија",
+      "url": "https://www.vrhoven.sud.mk/",
+      "access": "official_public",
+      "ingest": "public_metadata_and_public_decisions",
+      "identifier": "domestic case number / legal opinion reference"
+    },
+    {
+      "id": "mk-judicial-portal",
+      "jurisdiction": "MK",
+      "authority_class": "domestic_case_law",
+      "official_name": "Судски портал на Република Северна Македонија",
+      "url": "https://www.sud.mk/",
+      "access": "official_public",
+      "ingest": "public_metadata_and_public_decisions_only",
+      "exclusions": [
+        "authenticated e-delivery",
+        "private case files",
+        "personal-data bulk profiling"
+      ]
+    },
+    {
+      "id": "echr-hudoc",
+      "jurisdiction": "ECHR",
+      "authority_class": "convention_case_law",
+      "official_name": "European Court of Human Rights / HUDOC",
+      "url": "https://hudoc.echr.coe.int/",
+      "access": "official_public",
+      "ingest": "public_case_metadata_and_public_case_documents",
+      "identifier": "application_number",
+      "north_macedonia_filter": "Respondent State = North Macedonia / former state naming where historically applicable"
+    },
+    {
+      "id": "cjeu-infocuria",
+      "jurisdiction": "EU",
+      "authority_class": "eu_case_law_reference",
+      "official_name": "Court of Justice of the European Union / InfoCuria",
+      "url": "https://curia.europa.eu/",
+      "access": "official_public",
+      "ingest": "public_case_metadata_and_public_case_documents",
+      "identifier": "ECLI_or_case_number",
+      "domestic_effect_note": "Do not classify as automatically binding North Macedonian domestic precedent; use according to applicable EU-law/approximation context."
+    },
+    {
+      "id": "paragraf-mk",
+      "jurisdiction": "MK",
+      "authority_class": "licensed_secondary_discovery",
+      "official_name": "Paragraf.mk / LexAI",
+      "url": "https://paragraf.mk/",
+      "access": "commercial_secondary",
+      "ingest": "link_only_without_license",
+      "licensed_import_condition": "separately authorized export supplied under a lawful subscription/license or by the rights holder",
+      "forbidden": [
+        "credential_bypass",
+        "session_hijack",
+        "paywall_bypass",
+        "automated_copy_of_restricted_database"
+      ],
+      "provenance_requirement": "retain original platform/source identifiers and independently verify controlling law/court origin"
+    }
+  ],
+  "target_case_record": {
+    "required": [
+      "court",
+      "jurisdiction",
+      "decision_type",
+      "case_number_or_application_number",
+      "decision_date",
+      "source_url",
+      "source_hash",
+      "legal_issue_keys",
+      "outcome_summary",
+      "human_review_status"
+    ],
+    "recommended": [
+      "ecli",
+      "finality_date",
+      "chamber_or_section",
+      "cited_domestic_articles",
+      "convention_articles",
+      "holdings",
+      "supporting_or_adverse_role",
+      "authoritative_language"
+    ]
+  }
+}

@@ -37,7 +37,10 @@ const required = [
   "docs/standards/AI_ADVOKAT_LEGAL_RUN_RECORD_PROTOCOL_v1.md",
   "src/legal-runtime-governance.js",
   "test/legal-runtime-governance.test.mjs",
-  "migrations/0028_lioe_runtime_telemetry.sql"
+  "migrations/0028_lioe_runtime_telemetry.sql",
+  "migrations/0030_case_law_source_graph_v2.sql",
+  "data/guides-current-law-review-2026-10-10.json",
+  "data/case-law-source-registry-2026.json"
 ];
 
 for (const path of required) {
@@ -208,4 +211,18 @@ if (!worker.includes('case_export_professional_human_gate_evidence_missing')) {
 }
 if (!worker.includes('browser_local_pdf_rendering_no_external_service')) {
   throw new Error("CasePilot PDF must remain local-browser rendered without an external PDF service.");
+}
+
+
+const guideReview = JSON.parse(fs.readFileSync("data/guides-current-law-review-2026-10-10.json","utf8"));
+if (guideReview.counts.active_verified !== 5 || guideReview.counts.active_with_warning !== 3 || guideReview.counts.review_required !== 29) {
+  throw new Error("Guide current-law activation counts changed without a reviewed manifest update.");
+}
+const caseLawSources = JSON.parse(fs.readFileSync("data/case-law-source-registry-2026.json","utf8"));
+const paragrafLane = caseLawSources.sources.find((x) => x.id === "paragraf-mk");
+if (!paragrafLane || paragrafLane.ingest !== "link_only_without_license") {
+  throw new Error("Paragraf licensed-secondary boundary is missing.");
+}
+for (const forbidden of ["credential_bypass","session_hijack","paywall_bypass","automated_copy_of_restricted_database"]) {
+  if (!paragrafLane.forbidden?.includes(forbidden)) throw new Error("Missing Paragraf safety boundary: "+forbidden);
 }

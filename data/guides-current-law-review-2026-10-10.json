@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "review_id": "AI_ADVOKAT_GUIDES_CURRENT_LAW_REVIEW_2026-10-10",
+  "review_date": "2026-10-10",
+  "policy": {
+    "guide_role": "secondary_authored_editorial_guidance",
+    "official_law_precedence": true,
+    "human_gate_for_consequential_use": true,
+    "no_blanket_current_law_claim": true,
+    "no_public_pdf_without_exact_asset_fingerprint": true
+  },
+  "counts": {
+    "current": 37,
+    "active_verified": 5,
+    "active_with_warning": 3,
+    "review_required": 29,
+    "archive": 2
+  },
+  "active_verified": [
+    {
+      "id": "guide-free-legal-aid",
+      "basis": [
+        "Ministry of Justice current BPP page",
+        "Law on Free Legal Aid 101/2019",
+        "Amendment 194/2024"
+      ],
+      "note": "Eligibility and service details remain case-specific."
+    },
+    {
+      "id": "guide-39-full-word-2026",
+      "basis": [
+        "Health Insurance Fund current procedure"
+      ],
+      "note": "15-day appeal point previously source-checked; special benefit rules remain case-specific."
+    },
+    {
+      "id": "guide-51-full-word-2026",
+      "basis": [
+        "General Administrative Procedure Act, art. 106(1) source check"
+      ],
+      "note": "Special statutes may prescribe a longer appeal period."
+    },
+    {
+      "id": "guide-52-full-word-2026",
+      "basis": [
+        "General Administrative Procedure Act, art. 106(1) source check"
+      ],
+      "note": "Legal instruction and special statute remain controlling."
+    },
+    {
+      "id": "guide-administrative-v2",
+      "basis": [
+        "V2.0 FINAL MASTER audit",
+        "U.br.148/2024 correction framework"
+      ],
+      "note": "Current public master guide; official law still controls."
+    }
+  ],
+  "active_with_warning": [
+    {
+      "id": "guide-02-victim-edited-2026-10-01",
+      "warning": "Editorially reviewed and source-aware, but not a substitute for a fully consolidated current ZKP and exhaustive case-law check."
+    },
+    {
+      "id": "guide-05-workplace",
+      "warning": "The source statute contains a material tension between Article 18 and Article 22(4) on prior employer procedure. Guide must expose the uncertainty and cannot present either reading as settled."
+    },
+    {
+      "id": "guide-choose-lawyer",
+      "warning": "Source set was checked on 2026-10-02; tariff, VAT status and procedural-cost treatment are dynamic and must be checked for the concrete engagement."
+    }
+  ],
+  "review_required_rule": "All other current records remain discoverable in the catalogue/router but are not promoted as current-law-verified full-text guidance until their exact source document is reconciled against current official law and relevant case law.",
+  "supplemental_author_approved_candidates": [
+    {
+      "id": "inheritance-estate-guide-2025-r1",
+      "source_file": "Nasledstvo-Paragrafmk_LEGAL_SOURCE_UPGRADE_2026_CANDIDATE(1).pdf",
+      "state": "author_approved_candidate",
+      "prior_verification_date": "2026-10-03",
+      "next_step": "recheck current-law deltas since 2026-10-03, then register as governed public guide before release"
+    }
+  ]
+}

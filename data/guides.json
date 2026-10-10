@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_on": "2026-10-05",
+  "generated_on": "2026-10-10",
   "collection": {
     "id": "zoran-everyday-rights-guides",
     "title_mk": "Моите права во секојдневниот живот",
@@ -202,6 +202,26 @@
       "pdf_source_records_supported": true,
       "docx_source_records_supported": true,
       "note": "Private AI reading is a transient, fingerprint-verified Guide Vault capability. It does not change the legacy ai_use/RAG gate, does not create a production guide corpus, and does not make any guide an official legal authority."
+    },
+    "current_law_review": {
+      "review_id": "AI_ADVOKAT_GUIDES_CURRENT_LAW_REVIEW_2026-10-10",
+      "reviewed_on": "2026-10-10",
+      "doctrine": [
+        "guide_is_secondary_not_official_law",
+        "active_verified_requires_current_source_check",
+        "active_with_warning_requires_visible_uncertainty",
+        "review_required_is_not_silently_promoted",
+        "legal_propositions_remain_subordinate_to_official_article_level_sources",
+        "human_gate_required_for_consequential_use"
+      ],
+      "current_records": 37,
+      "active_verified": 5,
+      "active_with_warning": 3,
+      "review_required": 29,
+      "archive_records": 2,
+      "public_pdf_release": "still_fingerprint_and_asset_bound",
+      "private_ai_reading": "authorized_when_exact_local_file_fingerprint_matches",
+      "production_guide_corpus": "not_authorized_by_this_review"
     }
   },
   "records": [
@@ -270,7 +290,12 @@
       },
       "legacy_branding_note_mk": "Paragraf.mk се чува како историско/изворно брендирање; тековниот јавен портал е AI Advokat.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "active_with_warning",
+      "activation_label_mk": "Активен со задолжителна правна резерва",
+      "current_law_reviewed_on": "2026-10-10",
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-02-victim-draft-2026-09-29",
@@ -328,7 +353,10 @@
         }
       },
       "ai_reading": "archive_explicit_request_only",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "archive",
+      "activation_label_mk": "Архивска верзија",
+      "current_law_reviewed_on": null
     },
     {
       "id": "guide-05-workplace",
@@ -428,7 +456,12 @@
         }
       },
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "active_with_warning",
+      "activation_label_mk": "Активен со задолжителна правна резерва",
+      "current_law_reviewed_on": "2026-10-10",
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-09-family",
@@ -509,7 +542,12 @@
         }
       ],
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-10-traffic",
@@ -596,7 +634,12 @@
         }
       ],
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-17-police",
@@ -665,7 +708,12 @@
         }
       },
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-21-witness",
@@ -729,7 +777,12 @@
         }
       },
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-22-corruption",
@@ -787,7 +840,12 @@
         }
       },
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-26-administrative-short",
@@ -880,7 +938,12 @@
         }
       ],
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-administrative-v1",
@@ -1011,7 +1074,10 @@
         }
       },
       "ai_reading": "archive_explicit_request_only",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "archive",
+      "activation_label_mk": "Архивска верзија",
+      "current_law_reviewed_on": null
     },
     {
       "id": "guide-choose-lawyer",
@@ -1072,7 +1138,12 @@
       },
       "legacy_branding_note_mk": "Paragraf.mk се чува како историско/изворно брендирање; тековниот јавен портал е AI Advokat.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "active_with_warning",
+      "activation_label_mk": "Активен со задолжителна правна резерва",
+      "current_law_reviewed_on": "2026-10-10",
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-free-legal-aid",
@@ -1143,7 +1214,12 @@
         "pack_id": "AI_ADVOKAT_GUIDES_HUMAN_GATE_RESOLUTION_PACK_2026-10-04"
       },
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "active_verified",
+      "activation_label_mk": "Активен · тековно проверен секундарен водич",
+      "current_law_reviewed_on": "2026-10-10",
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-38-full-word-2026",
@@ -1209,7 +1285,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-39-full-word-2026",
@@ -1276,7 +1357,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "active_verified",
+      "activation_label_mk": "Активен · тековно проверен секундарен водич",
+      "current_law_reviewed_on": "2026-10-10",
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-40-full-word-2026",
@@ -1371,7 +1457,12 @@
         }
       ],
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-41-full-word-2026",
@@ -1448,7 +1539,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-42-full-word-2026",
@@ -1525,7 +1621,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-43-full-word-2026",
@@ -1591,7 +1692,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-44-full-word-2026",
@@ -1663,7 +1769,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-45-full-word-2026",
@@ -1735,7 +1846,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-46-full-word-2026",
@@ -1801,7 +1917,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-47-full-word-2026",
@@ -1867,7 +1988,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-48-full-word-2026",
@@ -1933,7 +2059,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-49-full-word-2026",
@@ -1999,7 +2130,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-50-full-word-2026",
@@ -2065,7 +2201,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-51-full-word-2026",
@@ -2132,7 +2273,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "active_verified",
+      "activation_label_mk": "Активен · тековно проверен секундарен водич",
+      "current_law_reviewed_on": "2026-10-10",
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-52-full-word-2026",
@@ -2199,7 +2345,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "active_verified",
+      "activation_label_mk": "Активен · тековно проверен секундарен водич",
+      "current_law_reviewed_on": "2026-10-10",
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-53-full-word-2026",
@@ -2301,7 +2452,12 @@
         }
       ],
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-54-full-word-2026",
@@ -2402,7 +2558,12 @@
         }
       ],
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-55-full-word-2026",
@@ -2468,7 +2629,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-56-full-word-2026",
@@ -2534,7 +2700,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-57-full-word-2026",
@@ -2600,7 +2771,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-58-full-word-2026",
@@ -2666,7 +2842,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-59-full-word-2026",
@@ -2755,7 +2936,12 @@
         }
       ],
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-60-full-word-2026",
@@ -2821,7 +3007,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-61-full-word-2026",
@@ -2887,7 +3078,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-62-full-word-2026",
@@ -2953,7 +3149,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-63-full-word-2026",
@@ -3019,7 +3220,12 @@
       },
       "legacy_branding_note_mk": "Lex AI се чува само како историска provenance ознака од изворниот документ и не се толкува како доказ дека текстот е AI-генериран.",
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "review_required",
+      "activation_label_mk": "Правна ревизија потребна пред целосна активација",
+      "current_law_reviewed_on": null,
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     },
     {
       "id": "guide-administrative-v2",
@@ -3161,7 +3367,12 @@
         "publication_state": "hold_pending_full_content_reaudit"
       },
       "ai_reading": "authorized_private_vault_secondary_context",
-      "ai_legal_authority": false
+      "ai_legal_authority": false,
+      "activation_state": "active_verified",
+      "activation_label_mk": "Активен · тековно проверен секундарен водич",
+      "current_law_reviewed_on": "2026-10-10",
+      "ai_authority_class": "secondary_guide",
+      "current_law_authority": false
     }
   ]
 }

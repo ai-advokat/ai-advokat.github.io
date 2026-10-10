@@ -112,7 +112,7 @@ function render(){
  const items=sortItems(filtered,sort);
  document.querySelector("#resultCount").textContent=items.length+" записи";
  document.querySelector("#cards").innerHTML=items.map(x=>{const notice=(x.legal_notices||[]).length?`<div class="notice-mini"><strong>Правно предупредување:</strong> ${x.legal_notices.map(n=>esc(n.title_mk)).join(" · ")}</div>`:"";const pdfActive=typeof x.public_pdf==="string"&&x.public_pdf.startsWith("/guides/pdfs/");const pdfButton=pdfActive?`<a class="btn primary" href="${esc(x.public_pdf)}" target="_blank" rel="noopener">Отвори PDF</a>`:"";return `<article class="card">
- <div class="badges"><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.display_format||x.format)}</span><span class="pill ${verificationClass(x.verification_level)}">${esc(x.verification_label)}</span><span class="pill ${pdfActive?"checked":"lock"}">${pdfActive?"PDF: јавно активен":"PDF: HOLD · финално пречистување"}</span></div>
+ <div class="badges"><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.display_format||x.format)}</span><span class="pill ${verificationClass(x.verification_level)}">${esc(x.verification_label)}</span><span class="pill ${x.activation_state==="active_verified"?"checked":x.activation_state==="active_with_warning"?"warn":"lock"}">${esc(x.activation_label_mk||"Правна ревизија потребна")}</span><span class="pill ${pdfActive?"checked":"lock"}">${pdfActive?"PDF: јавно активен":"PDF: HOLD · финално пречистување"}</span></div>
  <h2>${esc(x.display_title||x.title)}</h2>
  <div class="meta">${esc(x.category_label)}${x.subcategory_label&&x.subcategory_label!==x.category_label?" · "+esc(x.subcategory_label):""} · ${esc(x.edition_date)}${x.pages!=null?` · ${esc(x.pages)} стр.`:""}</div>
  <p class="scope">${esc(x.scope)}</p>
@@ -122,7 +122,7 @@ function render(){
  </article>`}).join("")||'<div class="empty">Нема записи за избраните филтри.</div>';
  document.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",()=>copyLink(b.dataset.copy,b)));
 }
-fetch("/data/guides.json?v=20261004-public-pdf-release-v1",{cache:"no-store"}).then(r=>r.json()).then(d=>{
+fetch("/data/guides.json?v=20261010-current-law-review-v1",{cache:"no-store"}).then(r=>r.json()).then(d=>{
  records=d.records.filter(x=>x.catalog_public===true&&x.public_record_enabled===true);
  const cats=[...new Map(records.map(x=>[x.category_code,x.category_label])).entries()].sort((a,b)=>a[1].localeCompare(b[1],"mk"));
  document.querySelector("#cat").insertAdjacentHTML("beforeend",cats.map(([code,label])=>`<option value="${esc(code)}">${esc(label)}</option>`).join(""));

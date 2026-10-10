@@ -118,7 +118,10 @@
         const text=document.createElement("div");
         const b=document.createElement("b");b.textContent=g.title;
         const s=document.createElement("small");s.textContent=g.scope||g.category||"";
-        text.append(b,s);
+        const state=document.createElement("small");
+        state.className="ai-chat-guide-state "+(g.activationState||"review_required");
+        state.textContent=g.activationLabel||g.verificationLabel||"Правна ревизија потребна";
+        text.append(b,s,state);
         const a=document.createElement("a");a.className="btn light";a.href=g.url;a.textContent="Отвори →";
         card.append(text,a);grid.append(card);
       });
@@ -217,7 +220,7 @@
 
   async function fetchGuideRegistry(){
     if(!guideRegistryPromise){
-      guideRegistryPromise=fetch("/data/guides.json?v=20261005-private-guide-reading",{cache:"no-store"})
+      guideRegistryPromise=fetch("/data/guides.json?v=20261010-current-law-review-v1",{cache:"no-store"})
         .then(r=>r.ok?r.json():Promise.reject(new Error("guides")));
     }
     return guideRegistryPromise;

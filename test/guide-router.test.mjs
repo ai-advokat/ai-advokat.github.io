@@ -113,3 +113,19 @@ test("CGR12 router governance metadata is active and guide routing does not alte
   assert.equal(registry.collection.public_experience.legal_corpus_promotion,false);
   assert.equal(registry.collection.v2_final_master_activation.ai_corpus_eligibility,false);
 });
+
+
+test("CGR13 router surfaces activation state and never upgrades a guide to current-law authority",()=>{
+  const verified=Router.routeGuides("бесплатна правна помош",records,{limit:3,minScore:1});
+  const g=verified.find(x=>x.id==="guide-free-legal-aid");
+  assert.ok(g);
+  assert.equal(g.activationState,"active_verified");
+  assert.match(g.activationLabel,/Активен/);
+  assert.equal(g.currentLawAuthority,false);
+
+  const pending=Router.routeGuides("тужба пред управен суд",records,{limit:6,minScore:1})
+    .find(x=>x.id==="guide-53-full-word-2026");
+  assert.ok(pending);
+  assert.equal(pending.activationState,"review_required");
+  assert.equal(pending.currentLawAuthority,false);
+});

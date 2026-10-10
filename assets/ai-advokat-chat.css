@@ -114,3 +114,9 @@
 @media (prefers-reduced-motion:reduce){
   .ai-chat-messages{scroll-behavior:auto}
 }
+
+.ai-chat-guide-state{display:block;margin-top:3px;font-size:.7rem;font-weight:750}
+.ai-chat-guide-state.active_verified{color:#22633f}
+.ai-chat-guide-state.active_with_warning{color:#8a5a00}
+.ai-chat-guide-state.review_required{color:var(--muted)}
+.ai-chat-guide-state.archive{color:var(--muted);font-style:italic}
