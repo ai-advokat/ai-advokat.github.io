@@ -135,7 +135,7 @@ const ROUTE_PATTERNS = Object.freeze({
   common: /(?:\b(?:common law|england|wales|uk law|united kingdom|us law|u\.s\.|united states|precedent|stare decisis)\b|англо[- ]?американско право|англо[- ]?саксонско право|англиско право|право(?:то)? на обединетото кралство|американско право|судски преседан)/iu,
   international: /(?:\b(?:international law|treaty|convention|united nations|\bun\b|icc|icj|vienna convention)\b|меѓународно право|меѓународен договор|обединети нации|меѓународен суд на правдата|виенска конвенција)/iu,
   comparison: /(?:спореди|споредба|компаратив|наспроти|versus|\bvs\.?\b|compare|comparative)/iu,
-  legal: /(?:право|правен|правна|закон|член|тужб|жалб|суд|адвокат|обвин|полици|кривич|управн|договор|нотар|рок|пресуд|решение|осигур|штета|работен однос|семејн|развод|притвор|казна|важечк|поднесок|human gate|production corpus|corpus promotion|rag eligibility|provider activation|legal|law|court|lawsuit|appeal|statute|regulation|contract|police)/iu
+  legal: /(?:право|правен|правна|правно|закон|член|тужб|жалб|суд|адвокат|обвин|полици|кривич|управн|договор|нотар|рок|пресуд|решение|осигур|штета|работен однос|семејн|развод|притвор|казна|важечк|поднесок|сообраќај|незгод|прекрш|оставин|наслед|краж|дрог|наркот|насил|потрошувач|медијац|имотен спор|сопственост|меѓа|отказ|неисплатена плата|клевет|навред|лишен од слобода|слободен пристап|информации од јавен карактер|human gate|production corpus|corpus promotion|rag eligibility|provider activation|legal|law|court|lawsuit|appeal|statute|regulation|contract|police)/iu
 });
 
 const ROLE_BY_ID = Object.freeze(Object.fromEntries(
