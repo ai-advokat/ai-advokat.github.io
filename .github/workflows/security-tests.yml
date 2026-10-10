@@ -87,6 +87,10 @@ jobs:
         run: npm run test:guide-router
       - name: Case-law source registry tests
         run: npm run test:case-law-sources
+      - name: Governed case-law chat context tests
+        run: npm run test:case-law-chat
+      - name: Governed case-law import tests
+        run: npm run test:case-law-import
       - name: Private Guide Vault tests
         run: npm run test:guide-vault
       - name: GPT-style AI Advokat workspace tests

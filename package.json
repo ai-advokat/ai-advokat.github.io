@@ -56,7 +56,9 @@
     "test:case-workspace": "node --no-warnings --test test/case-workspace.test.mjs",
     "test:case-workspace-activation": "node --no-warnings --test test/case-workspace-production-activation.test.mjs",
     "test:case-export": "node --no-warnings --test test/case-export.test.mjs",
-    "test:case-law-sources": "node --no-warnings --test test/case-law-source-registry.test.mjs"
+    "test:case-law-sources": "node --no-warnings --test test/case-law-source-registry.test.mjs",
+    "test:case-law-chat": "node --no-warnings --test test/case-law-chat-context.test.mjs",
+    "test:case-law-import": "node --no-warnings --test test/case-law-import.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"

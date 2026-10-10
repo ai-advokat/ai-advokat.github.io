@@ -173,6 +173,22 @@
       });
       if(legalLinks.childElementCount){legalBox.append(legalLinks);body.append(legalBox);}
     }
+    if(Array.isArray(m.caseLawSources) && m.caseLawSources.length){
+      const caseBox=document.createElement("div");caseBox.className="ai-msg-source";
+      const caseLabel=document.createElement("strong");caseLabel.textContent="Судска практика";
+      caseBox.append(caseLabel);
+      const caseLinks=document.createElement("div");caseLinks.className="ai-msg-tools";
+      m.caseLawSources.slice(0,6).forEach((src,i)=>{
+        const href=safeHttpUrl(src?.url);
+        const labelText=(src?.title||("Судска одлука "+(i+1))).slice(0,120);
+        if(href){
+          const a=document.createElement("a");a.href=href;a.target="_blank";a.rel="noopener noreferrer";a.textContent=labelText;caseLinks.append(a);
+        }else{
+          const span=document.createElement("span");span.textContent=labelText;caseLinks.append(span);
+        }
+      });
+      if(caseLinks.childElementCount){caseBox.append(caseLinks);body.append(caseBox);}
+    }
     if(Array.isArray(m.guideSources) && m.guideSources.length){
       const guideBox=document.createElement("div");guideBox.className="ai-msg-source";
       const guideLabel=document.createElement("strong");guideLabel.textContent="Прочитани водичи";
@@ -438,6 +454,7 @@
           guides,
           sources:Array.isArray(d.sources)?d.sources:[],
           legalSources:Array.isArray(d.legalSources)?d.legalSources:[],
+          caseLawSources:Array.isArray(d.caseLawSources)?d.caseLawSources:[],
           guideSources:Array.isArray(d.guideSources)?d.guideSources:[],
           governance:d.legalGovernance||null,
           sourceLabel:d.sourceMode==="ai_advokat_article_corpus_first"
