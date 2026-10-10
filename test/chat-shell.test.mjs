@@ -349,3 +349,25 @@ test("CHAT34 primary composer stays intentionally minimal while preserving full 
   assert.match(html,/Историјата се чува само во оваа browser сесија/);
   assert.match(html,/важните правни чекори остануваат под човечка професионална контрола/);
 });
+
+
+test("CHAT35 reviewed official case law is a separate governed chat layer",()=>{
+  assert.match(worker,/governedCaseLawContext/);
+  assert.match(worker,/OFFICIAL_REVIEWED_CASE_LAW/);
+  assert.match(worker,/CASE_LAW_IS_NOT_STATUTORY_TEXT: true/);
+  assert.match(worker,/s\.source_status='official'/);
+  assert.match(worker,/cla\.human_review_status IN \('approved','reviewed'\)/);
+  assert.match(worker,/cl\.human_review_status IN \('approved','reviewed'\)/);
+  assert.match(worker,/caseLawSources:caseLawBundle\.sources/);
+  assert.match(worker,/caseLawContextCount:caseLawBundle\.context\.length/);
+  assert.match(chatJs,/Судска практика/);
+  assert.match(chatJs,/caseLawSources/);
+  assert.match(chatJs,/safeHttpUrl\(src\?\.url\)/);
+});
+
+test("CHAT36 case-law relevance participates in corpus routing without replacing article current-law verification",()=>{
+  assert.match(worker,/caseLawBundle\.context\.length>0/);
+  assert.match(worker,/ai_advokat_case_law_first/);
+  assert.match(worker,/ai_advokat_article_corpus_plus_case_law/);
+  assert.match(worker,/assessLegalRuntimeRelease\(\{[\s\S]*articleBundle,[\s\S]*result,[\s\S]*postflight/);
+});
