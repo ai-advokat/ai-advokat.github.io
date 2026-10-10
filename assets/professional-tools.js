@@ -261,3 +261,73 @@ async function loadProfessionalWorkflows(){
 }
 
 loadProfessionalWorkflows();
+
+
+const caseLawSearchButton=$("caseLawSearch");
+if(caseLawSearchButton){
+  caseLawSearchButton.addEventListener("click",async()=>{
+    const query=$("caseLawQuery")?.value?.trim()||"";
+    if(query.length<3){
+      $("caseLawStatus").textContent="Внесете конкретно правно прашање.";
+      return;
+    }
+    caseLawSearchButton.disabled=true;
+    $("caseLawStatus").textContent="Пребарување низ governed official case law…";
+    try{
+      const response=await fetch("/api/casepilot/case-law",{
+        method:"POST",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({query})
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok||!data.ok) throw new Error(data.error||"case_law_search_failed");
+      renderCaseLaw(data);
+      $("caseLawStatus").textContent=data.state==="matched"
+        ? "Пронајдени се Human-Gate прегледани официјални извори. Улогата останува neutral до адвокатска класификација."
+        : "Нема Human-Gate прегледан match во достапниот корпус.";
+    }catch(error){
+      $("caseLawStatus").textContent="Пребарувањето не успеа: "+String(error?.message||error);
+      $("caseLawBody").innerHTML='<tr><td colspan="5" class="muted">Нема резултати.</td></tr>';
+    }finally{
+      caseLawSearchButton.disabled=false;
+    }
+  });
+}
+
+function renderCaseLaw(data){
+  const body=$("caseLawBody");
+  if(!body) return;
+  body.innerHTML="";
+  const cards=Array.isArray(data?.comparison?.cards)?data.comparison.cards:[];
+  if(!cards.length){
+    body.innerHTML='<tr><td colspan="5" class="muted">Нема Human-Gate прегледан match во достапниот корпус.</td></tr>';
+    return;
+  }
+  for(const card of cards){
+    const tr=document.createElement("tr");
+    const values=[
+      String(card.role||"neutral"),
+      [card.court,card.caseNumber||card.caseTitle].filter(Boolean).join(" · "),
+      String(card.jurisdiction||"—"),
+      String(card.precedentialWeight||"—")
+    ];
+    for(const value of values){
+      const td=document.createElement("td");
+      td.textContent=value||"—";
+      tr.appendChild(td);
+    }
+    const td=document.createElement("td");
+    if(card.sourceUrl&&/^https:\/\//i.test(card.sourceUrl)){
+      const a=document.createElement("a");
+      a.href=card.sourceUrl;
+      a.target="_blank";
+      a.rel="noopener noreferrer";
+      a.textContent="Отвори официјален извор";
+      td.appendChild(a);
+    }else{
+      td.textContent="—";
+    }
+    tr.appendChild(td);
+    body.appendChild(tr);
+  }
+}
