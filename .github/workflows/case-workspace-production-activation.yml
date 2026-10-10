@@ -359,18 +359,30 @@ jobs:
           NODE
 
           curl --fail --silent --show-error             -H "Authorization: Bearer $CASE_EXPORT_TEST_KEY"             "$BASE/api/cases/$CASE_ID/audit" -o /tmp/case-export-audit.json
-          node <<'NODE'
+          node <<'NODE' | tee /tmp/case-export-privacy.txt
           const fs=require("fs");
           const d=JSON.parse(fs.readFileSync("/tmp/case-export-audit.json","utf8"));
           const exports=(d.events||[]).filter(e=>e.event_type==="export_generated");
           if(exports.length<3) throw new Error("Expected at least 3 export audit events, got "+exports.length);
-          const formats=new Set(exports.map(e=>{try{return JSON.parse(e.metadata_json||"{}").format}catch{return null}}));
+          const allowed=new Set(["format","mode","caseVersion"]);
+          const formats=new Set();
+          const forbidden=["Синтетички CasePilot export предмет","Синтетички работен правен извештај","Синтетичка provenance трага"];
+          for(const event of exports){
+            let meta;
+            try{meta=JSON.parse(event.metadata_json||"{}");}catch{throw new Error("Invalid export audit metadata JSON");}
+            for(const key of Object.keys(meta)){
+              if(!allowed.has(key)) throw new Error("Unexpected export audit metadata key: "+key);
+            }
+            for(const needle of forbidden){
+              if(JSON.stringify(meta).includes(needle)) throw new Error("Case content leaked into export audit metadata");
+            }
+            if(meta.format) formats.add(meta.format);
+          }
           for(const f of ["md","docx","pdf"]) if(!formats.has(f)) throw new Error("Missing export audit format "+f);
           console.log("LIVE EXPORT AUDIT: PASS");
+          console.log("LIVE EXPORT PRIVACY: PASS");
           NODE
 
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command             "SELECT COUNT(*) AS leaked FROM case_audit_events WHERE case_id='$CASE_ID' AND metadata_json LIKE '%Синтетички CasePilot export предмет%';"             | tee /tmp/case-export-privacy.txt
-          grep -q '"leaked": 0' /tmp/case-export-privacy.txt
           echo "LIVE CASEPILOT EXPORTS: PASS"
 
       - name: Cleanup ephemeral CasePilot export data
