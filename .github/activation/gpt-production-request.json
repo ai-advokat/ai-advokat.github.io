@@ -28,10 +28,15 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "UAT #9 exposed systemic chief/postflight completion failures (1/20 pass). Re-run the unchanged twenty-scenario suite after bounded remediation: L0-L3 low reasoning, larger mission-aware answer budgets, compact PASS verification, source-gap-safe REVISE behavior and explicit incomplete_details diagnostics.",
+    "reason": "Activation #10 improved from 1/20 to 5/20 and eliminated systemic postflight-incomplete failures. Remaining dominant blocker was the UAT harness consuming anonymous FREE quota after ten requests, followed by rate limiting. Three additional failures were false negatives from brittle single-word topic markers despite substantive 3,600-5,500 character answers. Re-run the unchanged legal scenarios using an ephemeral synthetic OFFICE membership that is created and always deleted by the production workflow; preserve the 65-second latency budget and replace only those brittle topical markers with grouped semantic checks.",
     "approval_text": "Ti odobruvam!!! (Potoa napravi dvaesetina trsta na orasanja za: ravod na brsk, ostavina, krazba, pritvor, droga, soobrskajni krivicni dela, i se ostanato)",
-    "baseline_run": 9,
-    "baseline_result": "1/20",
-    "no_governance_weakening": true
+    "baseline_run": 10,
+    "baseline_result": "5/20",
+    "prior_baseline_run": 9,
+    "prior_baseline_result": "1/20",
+    "no_governance_weakening": true,
+    "real_user_quota_bypass": false,
+    "synthetic_uat_account_cleanup_required": true,
+    "latency_budget_ms": 65000
   }
 }
