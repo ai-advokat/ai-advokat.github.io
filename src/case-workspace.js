@@ -3,6 +3,11 @@
 
 export const CASE_WORKSPACE_VERSION="1.0.0";
 export const CASE_WORKSPACE_DOCUMENT_LIMIT=20;
+export const CASE_WORKSPACE_MAX_FILE_BYTES=20*1024*1024;
+export const CASE_WORKSPACE_ALLOWED_MIME_TYPES=Object.freeze([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+]);
 export const CASE_WORKSPACE_ALLOWED_PLANS=Object.freeze(["trial_pro","pro","office"]);
 export const CASE_WORKSPACE_ROLES=Object.freeze(["owner","lawyer","reviewer"]);
 export const CASE_WORKSPACE_STATUSES=Object.freeze(["active","closed","delete_pending","deleted"]);
@@ -47,6 +52,25 @@ export function validateCaseWorkspaceCreate(payload){
 export function caseWorkspaceId(value){
   const id=String(value||"").trim();
   return /^CASE-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ? id : null;
+}
+
+
+export function validateCaseDocumentUploadMetadata({name,mimeType,pageCount=null}={}){
+  const errors=[];
+  let originalName=null;
+  try{ originalName=cleanOptional(name,180); }catch{ errors.push("invalid_file_name"); }
+  const mime=String(mimeType||"").toLowerCase().trim();
+  if(!originalName) errors.push("file_name_required");
+  if(!CASE_WORKSPACE_ALLOWED_MIME_TYPES.includes(mime)) errors.push("unsupported_file_type");
+  if(originalName && /[\\/]/.test(originalName)) errors.push("invalid_file_name");
+  if(originalName && mime==="application/pdf" && !/\.pdf$/i.test(originalName)) errors.push("file_extension_mismatch");
+  if(originalName && mime==="application/vnd.openxmlformats-officedocument.wordprocessingml.document" && !/\.docx$/i.test(originalName)) errors.push("file_extension_mismatch");
+  let pages=null;
+  if(pageCount!==null && pageCount!==undefined && pageCount!==""){
+    pages=Number(pageCount);
+    if(!Number.isInteger(pages) || pages<1 || pages>5000) errors.push("invalid_page_count");
+  }
+  return {ok:errors.length===0,errors,value:{originalName,mimeType:mime,pageCount:pages}};
 }
 
 export function caseWorkspaceStorageReady(env){
