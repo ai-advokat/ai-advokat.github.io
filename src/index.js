@@ -2136,13 +2136,17 @@ async function handleGPTChat(request,env){
   const consequentialLegal=["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile);
   const lightweightLegal=["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(missionProfile);
   const maxOutputTokens=fastGeneral ? 700
-    : consequentialLegal ? 2200
-      : lightweightLegal ? 1600
-        : webRequested ? 1600
-          : articleBundle.state==="matched" ? 1600
-            : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1400
-              : 1200;
-  const reasoningEffort=fastGeneral ? "low" : lightweightLegal ? "low" : "medium";
+    : consequentialLegal ? 3200
+      : lightweightLegal ? 2200
+        : webRequested ? 2200
+          : articleBundle.state==="matched" ? 2200
+            : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1800
+              : 1600;
+  const reasoningEffort=fastGeneral
+    ? "low"
+    : missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE"
+      ? "medium"
+      : "low";
 
   const result=await runOpenAIOrchestrator(env,{
     plan,
@@ -2179,9 +2183,21 @@ async function handleGPTChat(request,env){
         : "disabled";
     }
     return json(request,{
-      ok:false,error:result.error,problems:result.problems || null,
+      ok:false,
+      error:result.error,
+      problems:result.problems || null,
+      failureDetail:result.failureDetail || result.detail || null,
+      model:env.OPENAI_MODEL || null,
       governanceRunId:lioeRunId,
-      runtimeTelemetry:telemetryState
+      runtimeTelemetry:telemetryState,
+      legalGovernance:lioeEngaged ? {
+        engine:"AI_ADVOKAT_LIOE_v1",
+        missionProfile:plan.legalIntelligenceEngine?.mission_profile?.id||null,
+        executionAuthorization:plan.legalIntelligenceEngine?.implementation?.no_autonomous_filing===true
+          ? "NO_EXTERNAL_ACTION"
+          : "RESEARCH_OUTPUT_ONLY",
+        humanReviewRequired:plan.legalIntelligenceEngine?.authority_and_human_gate?.human_review_required===true
+      } : null
     },503);
   }
 
