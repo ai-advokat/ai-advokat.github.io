@@ -29,6 +29,14 @@ import {
   safeCaseAuditMetadata
 } from "./case-workspace.js";
 import {
+  CASE_EXPORT_FORMATS,
+  normalizeCaseExportReport,
+  caseExportFilename,
+  caseExportMime,
+  renderCaseExportMarkdown,
+  renderCaseExportDocxBytes
+} from "./case-export.js";
+import {
   VERSION_ERROR_MESSAGES,
   parseQueryDate,
   resolveInstrumentVersion,
@@ -651,6 +659,88 @@ async function handleCaseWorkspaceApi(request,env,url){
     });
   }
 
+
+  if(tail==="exports"){
+    if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+    if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
+    const contentType=(request.headers.get("content-type")||"").toLowerCase();
+    if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+    const parsed=await readLimitedJson(request,1100000);
+    if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
+    const format=String(parsed.value?.format||"").toLowerCase();
+    if(!CASE_EXPORT_FORMATS.includes(format)) return json(request,{ok:false,error:"case_export_format_invalid"},400);
+    const reportInput=parsed.value?.report;
+    if(!reportInput || typeof reportInput!=="object" || Array.isArray(reportInput)){
+      return json(request,{ok:false,error:"case_export_report_required"},400);
+    }
+
+    const mode=Number(access.professional_use_locked)===0 ? "professional" : "working";
+    let serverHumanGate={status:"pending",reviewer:"",decidedAt:"",decisionRef:""};
+    if(mode==="professional"){
+      const gateRow=await env.DB.prepare(
+        `SELECT id,metadata_json,created_at
+           FROM case_audit_events
+          WHERE case_id=? AND event_type='human_gate_recorded'
+          ORDER BY created_at DESC
+          LIMIT 1`
+      ).bind(caseId).first();
+      let gateMeta={};
+      try{gateMeta=JSON.parse(gateRow?.metadata_json||"{}");}catch{}
+      if(!gateRow || gateMeta?.decision!=="approved" || typeof gateMeta?.reviewer!=="string" || !gateMeta.reviewer.trim()){
+        return json(request,{ok:false,error:"case_export_professional_human_gate_evidence_missing"},409);
+      }
+      serverHumanGate={
+        status:"approved",
+        reviewer:gateMeta.reviewer,
+        decidedAt:gateRow.created_at,
+        decisionRef:gateRow.id
+      };
+    }
+
+    let exportModel;
+    try{
+      exportModel=normalizeCaseExportReport({
+        ...reportInput,
+        caseId,
+        title:reportInput.title||access.title,
+        generatedAt:new Date().toISOString()
+      },{mode,serverHumanGate});
+    }catch(error){
+      return json(request,{ok:false,error:String(error?.message||"case_export_invalid")},400);
+    }
+
+    const filename=caseExportFilename(exportModel,format);
+    const auditMeta={format,mode,caseVersion:exportModel.caseVersion};
+    if(format==="pdf"){
+      await recordCaseAudit(env,{
+        caseId,accountId:membership.accountId,eventType:"export_generated",
+        objectType:"case_export_model",objectId:filename,metadata:auditMeta
+      });
+      return json(request,{
+        ok:true,
+        format,
+        filename,
+        mode,
+        renderer:"casepilot_canvas_pdf_v1",
+        exportModel,
+        privacy:"browser_local_pdf_rendering_no_external_service"
+      });
+    }
+
+    const body=format==="md"
+      ? renderCaseExportMarkdown(exportModel)
+      : renderCaseExportDocxBytes(exportModel);
+    await recordCaseAudit(env,{
+      caseId,accountId:membership.accountId,eventType:"export_generated",
+      objectType:"case_export",objectId:filename,metadata:auditMeta
+    });
+    return binaryDownloadResponse(request,body,{
+      contentType:caseExportMime(format),
+      filename,
+      mode
+    });
+  }
+
   if(tail==="audit"){
     if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
     const result=await env.DB.prepare(
@@ -707,6 +797,7 @@ function corsHeaders(request) {
     "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Membership-Key",
     "Access-Control-Max-Age": "86400",
+    "Access-Control-Expose-Headers": "Content-Disposition, X-AI-Advokat-Export-Mode",
     "Vary": "Origin"
   };
 
@@ -727,6 +818,22 @@ function json(request, data, status = 200, extraHeaders = {}) {
       "referrer-policy": "same-origin",
       ...corsHeaders(request),
       ...extraHeaders
+    }
+  });
+}
+
+function binaryDownloadResponse(request,body,{contentType,filename,mode="working"}={}){
+  const bytes=body instanceof Uint8Array ? body : new TextEncoder().encode(String(body??""));
+  return new Response(bytes,{
+    status:200,
+    headers:{
+      "content-type":contentType||"application/octet-stream",
+      "content-disposition":`attachment; filename="${filename||"case-export.bin"}"`,
+      "cache-control":"no-store",
+      "x-content-type-options":"nosniff",
+      "referrer-policy":"same-origin",
+      "x-ai-advokat-export-mode":mode,
+      ...corsHeaders(request)
     }
   });
 }
@@ -2868,6 +2975,7 @@ async function handleCapabilities(request, env) {
       versionCompare: "governed_preview",
       documentUpload: caseWorkspaceStorageReady(env) && caseSchemaReady ? "case_scoped_storage_ready_ingestion_gate_required" : "locked_private_storage",
       caseWorkspace: caseRuntime,
+      caseExports: caseSchemaReady ? "md_docx_live_pdf_browser_rendered_human_gate_bound" : "locked",
       vectorize: "not_bound",
       workersAI: env.AI ? "bound" : "not_bound"
     },
