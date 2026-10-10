@@ -2061,6 +2061,161 @@ async function governedArticleContext(env,q,basePlan){
   }
 }
 
+
+const CASE_LAW_QUERY_STOPWORDS=new Set([
+  "дали","како","што","може","треба","имам","има","нема","еден","една","едно","ова","овој","оваа",
+  "мој","моја","моето","ми","ме","се","со","без","пред","после","за","од","до","во","на","и","или","а",
+  "право","правна","правен","закон","законот","член","суд","судот","постапка","предмет","случај",
+  "what","how","can","should","with","without","law","legal","court","case","article","the","and","for","from"
+]);
+
+function caseLawQueryTerms(q){
+  const tokens=normalizeText(q)
+    .replace(/[^\p{L}\p{N}]+/gu," ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter(t=>t.length>=4 && !CASE_LAW_QUERY_STOPWORDS.has(t));
+  const stems=[];
+  for(const token of tokens){
+    const stem=token.length>=8 ? token.slice(0,6) : token.length>=6 ? token.slice(0,5) : token;
+    if(stem.length>=4 && !stems.includes(stem)) stems.push(stem);
+    if(stems.length>=8) break;
+  }
+  return stems;
+}
+
+function caseLawSearchVariants(stem){
+  const lower=String(stem||"").toLocaleLowerCase("mk");
+  const upper=lower.toLocaleUpperCase("mk");
+  const title=lower ? lower[0].toLocaleUpperCase("mk")+lower.slice(1) : lower;
+  return [...new Set([lower,upper,title])].map(x=>"%"+escapeLike(x)+"%");
+}
+
+function caseLawAuthorityScope(row){
+  const jurisdiction=String(row?.jurisdiction||"").toUpperCase();
+  if(jurisdiction==="ECHR") return "Convention case law. Apply according to ECHR authority and the concrete Convention issue.";
+  if(jurisdiction==="EU") return "EU case-law reference. Do not present it as automatically binding North Macedonian domestic precedent.";
+  if(jurisdiction==="MK") return "North Macedonian domestic case law. Weight depends on the court level, decision type and the reviewed authority classification.";
+  return "Case-law authority must be evaluated for the stated jurisdiction and court level.";
+}
+
+export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
+  const empty=Object.freeze({context:[],sources:[],cases:[],state:"not_applicable"});
+  if(!basePlan?.legalIntelligenceEngine?.engaged || !env?.DB) return empty;
+
+  const terms=caseLawQueryTerms(q);
+  if(!terms.length) return {...empty,state:"no_query_terms"};
+
+  const blob="cl.case_title || ' ' || COALESCE(cl.case_number,'') || ' ' || "+
+    "COALESCE(cl.legal_area,'') || ' ' || COALESCE(cl.reasoning_summary,'') || ' ' || "+
+    "COALESCE(cl.outcome_summary,'') || ' ' || COALESCE(cla.legal_issue_keys,'') || ' ' || "+
+    "COALESCE(cla.domestic_articles,'') || ' ' || COALESCE(cla.convention_articles,'')";
+  const conditions=[];
+  const bindings=[];
+  for(const term of terms){
+    const variants=caseLawSearchVariants(term);
+    conditions.push("("+variants.map(()=>blob+" LIKE ? ESCAPE '\\\\'").join(" OR ")+")");
+    bindings.push(...variants);
+  }
+
+  try{
+    const candidateLimit=Math.max(24,Math.min(60,Number(limit||4)*12));
+    const sql=
+      "SELECT cl.id,cl.case_title,cl.court,cl.case_number,cl.jurisdiction,cl.legal_area, "+
+      "cl.decision_date,cl.outcome_summary,cl.reasoning_summary,cl.source_url, "+
+      "cl.finality_status,cl.human_review_status, "+
+      "s.title AS source_title,s.url AS registry_source_url,s.source_status, "+
+      "cla.court_level,cla.chamber_or_section,cla.decision_type,cla.precedential_weight, "+
+      "cla.outcome_side,cla.convention_articles,cla.domestic_articles,cla.legal_issue_keys, "+
+      "cla.finality_date,cla.importance_level,cla.human_review_status AS authority_review_status, "+
+      "(SELECT GROUP_CONCAT(h.proposition,' || ') FROM case_law_holdings h "+
+      "WHERE h.case_law_id=cl.id AND h.human_review_status IN ('approved','reviewed')) AS reviewed_holdings "+
+      "FROM case_law cl "+
+      "JOIN sources s ON s.id=cl.source_id AND s.source_status='official' "+
+      "JOIN case_law_authority cla ON cla.case_law_id=cl.id AND cla.human_review_status IN ('approved','reviewed') "+
+      "WHERE cl.human_review_status IN ('approved','reviewed') AND ("+conditions.join(" OR ")+") "+
+      "ORDER BY cl.decision_date DESC,cl.id DESC LIMIT ?";
+    const result=await env.DB.prepare(sql).bind(...bindings,candidateLimit).all();
+
+    const rows=(result.results||[]).map(row=>{
+      const normalized=normalizeText([
+        row.case_title,row.case_number,row.legal_area,row.reasoning_summary,row.outcome_summary,
+        row.legal_issue_keys,row.domestic_articles,row.convention_articles,row.reviewed_holdings
+      ].filter(Boolean).join(" "));
+      let score=0;
+      for(const term of terms){
+        if(normalized.includes(term)) score+=2;
+        if(normalizeText(row.legal_issue_keys||"").includes(term)) score+=2;
+        if(normalizeText(row.case_title||"").includes(term)) score+=1;
+      }
+      return {...row,_score:score};
+    }).filter(row=>row._score>0)
+      .sort((a,b)=>b._score-a._score || String(b.decision_date||"").localeCompare(String(a.decision_date||"")))
+      .slice(0,Math.max(1,Math.min(6,Number(limit)||4)));
+
+    if(!rows.length) return {...empty,state:"no_reviewed_match"};
+
+    const context=rows.map(row=>{
+      const sourceUrl=row.source_url||row.registry_source_url||"";
+      return {
+        source:"AI Advokat reviewed official case law · "+String(row.court||row.source_title||"court"),
+        locator:[
+          row.case_number ? "Предмет "+row.case_number : null,
+          row.decision_date || null,
+          sourceUrl || null
+        ].filter(Boolean).join(" · "),
+        version:[
+          "jurisdiction "+String(row.jurisdiction||"unknown"),
+          "case Human Gate "+String(row.human_review_status||"pending"),
+          "authority Human Gate "+String(row.authority_review_status||"pending"),
+          row.finality_status ? "finality "+row.finality_status : null
+        ].filter(Boolean).join(" · "),
+        text:[
+          "SOURCE_ROLE: OFFICIAL_REVIEWED_CASE_LAW",
+          "CASE_LAW_IS_NOT_STATUTORY_TEXT: true",
+          "AUTHORITY_SCOPE: "+caseLawAuthorityScope(row),
+          "JURISDICTION: "+String(row.jurisdiction||"unknown"),
+          "COURT: "+String(row.court||""),
+          "COURT_LEVEL: "+String(row.court_level||"unknown"),
+          "CASE_NUMBER: "+String(row.case_number||""),
+          "DECISION_TYPE: "+String(row.decision_type||""),
+          "DECISION_DATE: "+String(row.decision_date||""),
+          "PRECEDENTIAL_WEIGHT: "+String(row.precedential_weight||"unknown"),
+          "OUTCOME_ROLE: "+String(row.outcome_side||"neutral"),
+          "LEGAL_ISSUES: "+String(row.legal_issue_keys||""),
+          "DOMESTIC_ARTICLES: "+String(row.domestic_articles||""),
+          "CONVENTION_ARTICLES: "+String(row.convention_articles||""),
+          "REVIEWED_HOLDINGS: "+String(row.reviewed_holdings||"").slice(0,1200),
+          "OUTCOME_SUMMARY: "+String(row.outcome_summary||"").slice(0,700),
+          "REASONING_SUMMARY: "+String(row.reasoning_summary||"").slice(0,1400),
+          "SOURCE_URL: "+String(sourceUrl),
+          "Use this record as case-law authority only within its reviewed jurisdiction/weight. Identify contrary or distinguishing authority when material."
+        ].join("\n")
+      };
+    });
+
+    const sources=rows.map(row=>({
+      title:[row.court||"Суд",row.case_number||row.case_title||"предмет"].filter(Boolean).join(" · "),
+      caseTitle:row.case_title||null,
+      court:row.court||null,
+      caseNumber:row.case_number||null,
+      jurisdiction:row.jurisdiction||null,
+      decisionDate:row.decision_date||null,
+      decisionType:row.decision_type||null,
+      precedentialWeight:row.precedential_weight||null,
+      outcomeRole:row.outcome_side||null,
+      url:row.source_url||row.registry_source_url||null,
+      humanReviewStatus:row.human_review_status||null,
+      authorityReviewStatus:row.authority_review_status||null
+    }));
+
+    return {context,sources,cases:rows,state:"matched"};
+  }catch(error){
+    console.error("chat_case_law_lookup_failed",String(error?.message||error).slice(0,180));
+    return {...empty,state:"unavailable"};
+  }
+}
+
 function validateChatHistory(payload){
   const input=Array.isArray(payload)?payload:[];
   if(input.length>12) return {ok:false,error:"chat_history_too_long"};
