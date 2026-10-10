@@ -70,7 +70,8 @@
     "test:casepilot-authority-classification": "node --no-warnings --test test/casepilot-authority-classification.test.mjs",
     "test:casepilot-classification-export": "node --no-warnings --test test/casepilot-classification-export.test.mjs",
     "test:casepilot-workspace-ui": "node --no-warnings --test test/casepilot-workspace-ui.test.mjs",
-    "test:casepilot-case-picker-create": "node --no-warnings --test test/casepilot-case-picker-create.test.mjs"
+    "test:casepilot-case-picker-create": "node --no-warnings --test test/casepilot-case-picker-create.test.mjs",
+    "test:casepilot-governed-export-audit-ui": "node --no-warnings --test test/casepilot-governed-export-audit-ui.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
