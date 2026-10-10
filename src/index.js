@@ -65,6 +65,12 @@ import {
   KNOWLEDGE_INTAKE_POLICY
 } from "./knowledge-intake.js";
 import { listLegalWorkflows } from "./legal-workflows.js";
+import {
+  CASEPILOT_MATTER_VERSION,
+  CASEPILOT_MATTER_OBJECTS,
+  CASEPILOT_FINDING_STATUSES,
+  CASEPILOT_LAWYER_DECISIONS
+} from "./casepilot-matter.js";
 
 const VERSION = "1.7.0";
 
@@ -3394,6 +3400,21 @@ export default {
     if (url.pathname === "/api/professional-workflows") {
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
       return json(request,{ok:true,version:"1.0.0",workflows:listLegalWorkflows(),humanGate:"required"});
+    }
+    if (url.pathname === "/api/casepilot/schema") {
+      if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+      return json(request,{
+        ok:true,
+        version:CASEPILOT_MATTER_VERSION,
+        objects:CASEPILOT_MATTER_OBJECTS,
+        findingStatuses:CASEPILOT_FINDING_STATUSES,
+        lawyerDecisions:CASEPILOT_LAWYER_DECISIONS,
+        sourceAnchorsRequired:true,
+        professionalUse:"locked_until_human_gate",
+        autonomousFiling:false,
+        autonomousSignature:false,
+        autonomousExternalTransmission:false
+      });
     }
 
     if (url.pathname === "/api/db-status") {
