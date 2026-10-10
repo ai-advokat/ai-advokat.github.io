@@ -287,7 +287,7 @@ describe("F3 migration 0023 and importer", () => {
     applyRemaining();
     assert.equal(raw.prepare("SELECT COUNT(*) n FROM legal_article_versions").get().n, 2);
     assert.deepEqual(raw.prepare("SELECT canonical_key, article_count FROM corpus_legacy_unversioned_articles").all().map((r) => ({ ...r })), [{ canonical_key: "mk:zs", article_count: 2 }]);
-    assert.equal(raw.prepare("SELECT MAX(CAST(version AS INTEGER)) v FROM schema_migrations").get().v, 30);
+    assert.equal(raw.prepare("SELECT MAX(CAST(version AS INTEGER)) v FROM schema_migrations").get().v, 31);
     const caseCols=raw.prepare("PRAGMA table_info(case_workspaces)").all().map(r=>r.name);
     assert.ok(caseCols.includes("owner_account_id"));
     assert.ok(caseCols.includes("professional_use_locked"));
