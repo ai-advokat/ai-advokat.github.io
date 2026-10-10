@@ -499,3 +499,25 @@ test("L3 pleading draft uses one bounded MK specialist with hardened completion 
   assert.match(agentSource,/incomplete_details\?\.reason/);
   assert.match(agentSource,/failureDetail/);
 });
+
+test("natural Macedonian legal-domain prompts never bypass legal governance",()=>{
+  const prompts=[
+    "Имав тешка сообраќајна незгода, кои се опциите и ризиците?",
+    "Ме товарат за кражба, што треба да проверам?",
+    "Кај мене најдоа дрога и спорен е претресот.",
+    "Имам оставинска постапка за куќа и плац.",
+    "Добив прекршочна одлука и сакам жалба.",
+    "Работодавачот ми даде отказ.",
+    "Имам спор за сопственост и меѓа.",
+    "Сакам медијација за деловен спор.",
+    "Објавија клевета и навреда за мене.",
+    "Барам слободен пристап до информации од јавен карактер."
+  ];
+  for(const prompt of prompts){
+    const plan=buildAgentPlan(prompt);
+    assert.notEqual(plan.mode,ORCHESTRATOR_MODES.GENERAL,prompt);
+    assert.notEqual(plan.legalIntelligenceEngine.mission_profile.id,"GENERAL_BYPASS",prompt);
+    assert.ok(plan.agents.includes("macedonian_law"),prompt);
+  }
+});
+
