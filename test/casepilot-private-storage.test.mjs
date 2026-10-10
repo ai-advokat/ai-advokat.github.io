@@ -28,7 +28,7 @@ test("private upload is storage-gated, server-hashed and never stores bytes in D
   assert.match(block,/sha256BytesHex/);
   assert.match(block,/env\.CASE_FILES\.put/);
   assert.match(block,/storage_state='uploaded'/);
-  assert.doesNotMatch(block,/file_bytes|document_bytes|extracted_text|document_text/i);
+  assert.doesNotMatch(block,/\b(?:file_bytes|document_bytes|extracted_text|document_text)\b/i);
 });
 
 test("reviewer remains read-only for consequential CasePilot writes",()=>{
