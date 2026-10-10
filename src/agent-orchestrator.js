@@ -492,7 +492,7 @@ async function runOneBoundedSpecialist(env,{
       specialistInstructions(agentId),
       "MISSION PROFILE: "+String(missionProfile||"UNKNOWN"),
       "Return concise findings for the Chief Legal Orchestrator, not a user-facing final answer.",
-      "Use at most 180 words and at most 8 short bullets. Do not draft the final pleading inside the specialist stage.",
+      "Use at most 120 words and at most 6 short bullets. Do not draft the final pleading inside the specialist stage.",
       "Separate supported propositions, uncertainty, contrary authority/risk and missing evidence.",
       "Do not claim Human Gate approval or external action."
     ].join("\n"),
@@ -503,7 +503,7 @@ async function runOneBoundedSpecialist(env,{
       "",
       compactSourceContext(corpusContext,"GOVERNED_NATIVE_CONTEXT")
     ].join("\n")}]}],
-    max_output_tokens:highDepthGovernance ? 900 : 800,
+    max_output_tokens:highDepthGovernance ? 800 : 650,
     store:false,
     ...(useWeb ? {
       tools:[{type:"web_search"}],
@@ -602,7 +602,7 @@ export async function runBoundedSpecialists(env,{
 function compactSpecialistFindings(stage){
   const findings=Array.isArray(stage?.findings)?stage.findings:[];
   if(!findings.length)return"NONE";
-  return findings.map((f,i)=>`[${i+1}] ${f.label} (${f.agentId})\n${String(f.text||"").slice(0,5000)}`).join("\n\n---\n\n");
+  return findings.map((f,i)=>`[${i+1}] ${f.label} (${f.agentId})\n${String(f.text||"").slice(0,3200)}`).join("\n\n---\n\n");
 }
 
 export async function runOpenAIOrchestrator(env, {
