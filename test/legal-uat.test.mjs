@@ -112,3 +112,25 @@ test("UAT9 live runner aggregates all scenario failures before exiting",()=>{
   assert.match(runner,/UAT FAIL/);
   assert.match(runner,/for\(const scenario of suite\.scenarios\)/);
 });
+
+
+test("UAT10 semantic topicality uses grouped topic markers for historically false-negative scenarios",()=>{
+  const theft=suite.scenarios.find(x=>x.id==="theft-current-law-analysis");
+  const drugs=suite.scenarios.find(x=>x.id==="drug-possession-options-risks");
+  const violence=suite.scenarios.find(x=>x.id==="domestic-violence-protection-options");
+  for(const scenario of [theft,drugs,violence]){
+    assert.ok(Array.isArray(scenario.answer_must_match_groups));
+    assert.ok(scenario.answer_must_match_groups.length>=3);
+    assert.equal("answer_must_match" in scenario,false);
+  }
+  assert.match(runner,/answer_must_match_groups/);
+  assert.match(runner,/expected topical marker group/);
+});
+
+test("UAT11 live runner can use an ephemeral membership key without embedding credentials",()=>{
+  assert.match(runner,/AI_ADVOCAT_UAT_MEMBERSHIP_KEY/);
+  assert.match(runner,/authorization":"Bearer "/);
+  assert.match(runner,/synthetic UAT membership not applied/);
+  assert.match(runner,/minScenarioSpacingMs=13000/);
+  assert.doesNotMatch(runner,/uat_[0-9a-f]{20,}/i);
+});
