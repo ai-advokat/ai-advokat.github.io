@@ -71,7 +71,7 @@
       "id": "labour-dismissal-current-law",
       "title": "Отказ од работа — важечко право",
       "prompt": "Направи правна анализа според важечкото право за измислен случај во кој работник добил отказ и тврди дека образложението е недоволно и постапката не била правилно спроведена. Наведи кои факти, акти, датуми и докази мора да се проверат и не измислувај рок за заштита ако изворите не го потврдат.",
-      "expect_mission_profile": "L1_VERIFIED_RESEARCH",
+      "expect_mission_profile": "L2_STRATEGY_PROCEDURE",
       "expect_human_review": true,
       "min_answer_chars": 550,
       "answer_must_match": "отказ"
