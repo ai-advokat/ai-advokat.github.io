@@ -250,3 +250,87 @@ A case analysis is not production-ready unless:
 - no unsupported outcome percentage is shown;
 - private data boundaries pass;
 - Human Gate is present.
+
+
+## Professional 20-document work package
+
+Target professional workflow:
+
+1. the lawyer/client opens one private case workspace;
+2. uploads up to **20 case documents** in a single governed work package;
+3. every file is registered by stable document ID, SHA-256 hash, page count, language and extraction method;
+4. each page is analysed independently with page-level provenance;
+5. the system produces a per-document summary before any cross-document synthesis;
+6. facts, persons, dates, amounts, properties, procedural events and assertions are merged into one case graph;
+7. contradictions and missing evidence are surfaced rather than silently reconciled;
+8. current law and relevant authority are retrieved source-first;
+9. GPT-6.1 Sol Chief synthesis evaluates the whole file through multiple views;
+10. Human Gate precedes professional release and export.
+
+### Required analytic views
+
+The final analysis must cover, where relevant:
+
+- client/claimant theory;
+- opposing-party theory;
+- neutral adjudicator view;
+- evidentiary strengths and weaknesses;
+- procedural risks;
+- best-case scenario;
+- base-case scenario;
+- worst-case scenario;
+- alternative hypotheses;
+- missing evidence and decisive unknowns;
+- recommended next lawful step.
+
+### Final professional opinion pack
+
+The output pack should contain:
+
+1. Executive conclusion
+2. Case passport
+3. Source document register
+4. Document-by-document digest
+5. Established facts
+6. Disputed/uncertain facts
+7. Chronology
+8. Parties and relationship map
+9. Legal issue tree
+10. Applicable law and authority
+11. Fact-to-source matrix
+12. Claim-to-evidence matrix
+13. Contradictions
+14. Evidence strengths
+15. Evidence weaknesses
+16. Procedural obstacles and deadlines
+17. Opposing arguments
+18. Neutral adjudicator analysis
+19. Alternative hypotheses
+20. Outcome/strength assessment
+21. Missing documents/evidence
+22. Recommended strategy and next steps
+23. Draft(s), where legally justified
+24. Human Gate decision register
+25. Provenance appendix
+
+### Outcome / probability rule
+
+The default assessment is factor-based: STRONG / MODERATE / UNCERTAIN / WEAK.
+
+A numerical percentage must **not** be generated from model intuition. It may appear only when a documented statistical model is available with a disclosed comparable-case population, time period, calibration quality, applicability analysis and uncertainty interval, and after lawyer Human Gate approval.
+
+If those requirements are not met, AI Advokat explains the practical likelihood factors and uncertainty without fabricating a percentage.
+
+### Export
+
+After Human Gate, the same versioned professional opinion may be exported as:
+
+- **MD** — canonical machine-readable working master;
+- **DOCX** — editable professional working opinion;
+- **PDF** — fixed review/share copy.
+
+All three exports must carry the same case version, generation timestamp, source manifest, Human Gate status and provenance appendix.
+
+### Production security boundary
+
+The 20-document workflow is a target private professional capability, not permission to expose private uploads through the public portal. Production upload remains locked until authenticated per-case workspaces, encrypted object storage, tenant isolation, retention/deletion/export controls, audit logging and cross-case isolation are implemented and tested.
