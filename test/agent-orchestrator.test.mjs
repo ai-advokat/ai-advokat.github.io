@@ -511,7 +511,8 @@ test("natural Macedonian legal-domain prompts never bypass legal governance",()=
     "Имам спор за сопственост и меѓа.",
     "Сакам медијација за деловен спор.",
     "Објавија клевета и навреда за мене.",
-    "Барам слободен пристап до информации од јавен карактер."
+    "Барам слободен пристап до информации од јавен карактер.",
+    "Кога почнува да се применува ЗПП 151/2026?"
   ];
   for(const prompt of prompts){
     const plan=buildAgentPlan(prompt);
