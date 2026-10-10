@@ -931,16 +931,25 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
 
     const authorityClassifications=await loadActiveCaseLawClassifications(env,caseId);
+    // Reserved namespaces are server-owned so a client cannot spoof lawyer authority
+    // classification in a professional report or shadow the canonical audit record.
+    const clientSections=(Array.isArray(reportInput.sections)?reportInput.sections:[])
+      .filter(section=>String(section?.id||"")!=="case-law-authority-classification");
+    const clientManifest=(Array.isArray(reportInput.sourceManifest)?reportInput.sourceManifest:[])
+      .filter(source=>!String(source?.id||"").startsWith("CASELAW-"));
+    const clientProvenance=(Array.isArray(reportInput.provenance)?reportInput.provenance:[])
+      .filter(entry=>!String(entry?.claimId||entry?.id||"").startsWith("authority-classification:"));
+
     const serverSections=[
-      ...(Array.isArray(reportInput.sections)?reportInput.sections:[]),
+      ...clientSections,
       ...(authorityClassifications.length ? [caseLawClassificationExportSection(authorityClassifications)] : [])
     ];
     const serverSourceManifest=[
-      ...(Array.isArray(reportInput.sourceManifest)?reportInput.sourceManifest:[]),
+      ...clientManifest,
       ...caseLawClassificationManifest(authorityClassifications)
     ];
     const serverProvenance=[
-      ...(Array.isArray(reportInput.provenance)?reportInput.provenance:[]),
+      ...clientProvenance,
       ...caseLawClassificationProvenance(authorityClassifications)
     ];
 
