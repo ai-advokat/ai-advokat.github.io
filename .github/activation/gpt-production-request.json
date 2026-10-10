@@ -17,12 +17,19 @@
     "valid access to gpt-6.1-sol",
     "successful paid-quota Responses API preflight",
     "Cloudflare deployment success",
-    "live GPT + Web + attachment smoke test"
+    "live GPT + Web + attachment smoke test",
+    "twenty-scenario synthetic production legal UAT",
+    "Human Gate preserved for consequential scenarios",
+    "NO_EXTERNAL_ACTION preserved for drafting scenarios"
   ],
   "note": "No API key is stored in this file. The workflow must fail before deployment if the secret or paid quota is unavailable.",
   "last_redeploy": {
-    "requested_on": "2026-10-09",
-    "target_commit": "b5a9d3a90a389a76dcd649657fe6ecb60bd52000",
-    "reason": "Re-verify production after Macedonian natural-language pleading drafting fix. Run full six-scenario synthetic legal UAT with L3 divorce drafting, Human Gate, NO_EXTERNAL_ACTION, bounded specialists, and unchanged governance controls."
+    "requested_on": "2026-10-10",
+    "target_branch": "main",
+    "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
+    "scenario_count": 20,
+    "reason": "Project lead explicitly approved a comprehensive re-verification after the Secure Case Workspace and Accuracy/Answer-First upgrades. Execute twenty synthetic legal scenarios spanning divorce, inheritance, theft, detention, drugs, traffic crime, domestic violence, labour, administrative law, property, contracts, consumer law, defamation, misdemeanours, FOI, mediation, ZKP and ZPP temporal applicability.",
+    "approval_text": "Ti odobruvam!!! (Potoa napravi dvaesetina trsta na orasanja za: ravod na brsk, ostavina, krazba, pritvor, droga, soobrskajni krivicni dela, i se ostanato)",
+    "no_governance_weakening": true
   }
 }

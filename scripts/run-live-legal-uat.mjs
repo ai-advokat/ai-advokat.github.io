@@ -88,7 +88,12 @@ for(const scenario of suite.scenarios){
     postflight_provisional:body?.legalGovernance?.postflightProvisional??null,
     runtime_telemetry:body?.runtimeTelemetry||null,
     legal_cross_reference_count:Number(body?.legalCrossReferenceCount||0),
+    sources_count:Array.isArray(body?.sources) ? body.sources.length : 0,
+    specialist_agents:Array.isArray(body?.legalGovernance?.specialistExecution?.agents)
+      ? body.legalGovernance.specialistExecution.agents
+      : [],
     answer_chars:String(body?.answer||"").length,
+    answer:String(body?.answer||""),
     answer_excerpt:String(body?.answer||"").slice(0,500)
   };
   results.push(record);

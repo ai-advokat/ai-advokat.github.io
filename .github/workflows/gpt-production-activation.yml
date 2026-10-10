@@ -23,7 +23,7 @@ jobs:
   activate:
     environment: production
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -76,6 +76,14 @@ jobs:
           npm run test:guide-vault
           npm run test:chat-shell
           npm run test:legal-uat
+          node <<'NODE'
+          const fs=require("fs");
+          const suite=JSON.parse(fs.readFileSync("data/uat/legal-scenarios-v2-20.json","utf8"));
+          if(suite.synthetic_data_only!==true) throw new Error("Extended UAT must be synthetic-only");
+          if(suite.suite_id!=="AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20") throw new Error("Unexpected extended UAT suite");
+          if(suite.scenarios?.length!==20) throw new Error("Extended production UAT must contain exactly 20 scenarios");
+          console.log("20-scenario production legal UAT contract: PASS");
+          NODE
           node <<'NODE'
           const fs=require("fs");
           const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
@@ -162,11 +170,11 @@ jobs:
           console.log("LIVE GPT-6.1 SOL + WEB + ATTACHMENT: PASS");
           NODE
 
-      - name: Live governed legal UAT scenarios
+      - name: Live governed legal UAT scenarios — 20-domain suite
         shell: bash
         run: |
           set -euo pipefail
-          UAT_OUTPUT=/tmp/legal-uat-results.json node scripts/run-live-legal-uat.mjs data/uat/legal-scenarios-v1.json
+          UAT_OUTPUT=/tmp/legal-uat-results.json node scripts/run-live-legal-uat.mjs data/uat/legal-scenarios-v2-20.json
 
       - name: Upload non-secret activation evidence
         if: always()
