@@ -71,6 +71,7 @@ import {
   CASEPILOT_FINDING_STATUSES,
   CASEPILOT_LAWYER_DECISIONS
 } from "./casepilot-matter.js";
+import { mapWorkspaceToCasePilotShell } from "./casepilot-workspace-bridge.js";
 
 const VERSION = "1.7.0";
 
@@ -663,6 +664,25 @@ async function handleCaseWorkspaceApi(request,env,url){
       documents:result.results||[],
       upload:caseWorkspaceStorageReady(env) ? "storage_ready_ingestion_gate_required" : "locked_pending_private_object_storage",
       note:"No document bytes are stored in D1."
+    });
+  }
+
+  if(tail==="casepilot"){
+    if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+    const result=await env.DB.prepare(
+      `SELECT id,slot_number,original_name,mime_type,sha256,page_count,storage_state,extraction_state,provenance_required,created_at,updated_at
+         FROM case_document_slots
+        WHERE case_id=?
+        ORDER BY slot_number`
+    ).bind(caseId).all();
+    const shell=mapWorkspaceToCasePilotShell(access,result.results||[]);
+    return json(request,{
+      ok:true,
+      caseId,
+      role:access.role,
+      casePilot:shell,
+      ingestion:caseWorkspaceStorageReady(env) ? "storage_ready_ingestion_gate_required" : "locked_pending_private_object_storage",
+      note:"CasePilot shell contains metadata/source registry only; file bytes and extracted private text are not returned."
     });
   }
 
