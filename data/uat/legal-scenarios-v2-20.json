@@ -29,7 +29,18 @@
       "expect_mission_profile": "L1_VERIFIED_RESEARCH",
       "expect_human_review": true,
       "min_answer_chars": 500,
-      "answer_must_match": "краж"
+      "answer_must_match_groups": [
+        [
+          "краж",
+          "одзема"
+        ],
+        [
+          "продавниц"
+        ],
+        [
+          "доказ"
+        ]
+      ]
     },
     {
       "id": "police-detention-rights",
@@ -47,7 +58,20 @@
       "expect_mission_profile": "L2_STRATEGY_PROCEDURE",
       "expect_human_review": true,
       "min_answer_chars": 550,
-      "answer_must_match": "дрог"
+      "answer_must_match_groups": [
+        [
+          "дрог",
+          "наркот",
+          "матери"
+        ],
+        [
+          "претрес"
+        ],
+        [
+          "доказ",
+          "лаборатор"
+        ]
+      ]
     },
     {
       "id": "traffic-criminal-offence-strategy",
@@ -65,7 +89,21 @@
       "expect_mission_profile": "L2_STRATEGY_PROCEDURE",
       "expect_human_review": true,
       "min_answer_chars": 550,
-      "answer_must_match": "насил"
+      "answer_must_match_groups": [
+        [
+          "насил",
+          "семеј"
+        ],
+        [
+          "безбедн",
+          "заштит"
+        ],
+        [
+          "порак",
+          "сведок",
+          "медицин"
+        ]
+      ]
     },
     {
       "id": "labour-dismissal-current-law",
