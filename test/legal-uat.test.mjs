@@ -134,3 +134,12 @@ test("UAT11 live runner can use an ephemeral membership key without embedding cr
   assert.match(runner,/minScenarioSpacingMs=13000/);
   assert.doesNotMatch(runner,/uat_[0-9a-f]{20,}/i);
 });
+
+
+test("UAT12 traffic topicality is semantic rather than a single literal word",()=>{
+  const traffic=suite.scenarios.find(x=>x.id==="traffic-criminal-offence-strategy");
+  assert.equal("answer_must_match" in traffic,false);
+  assert.ok(Array.isArray(traffic.answer_must_match_groups));
+  assert.ok(traffic.answer_must_match_groups.length>=4);
+  for(const group of traffic.answer_must_match_groups) assert.ok(Array.isArray(group)&&group.length>=1);
+});
