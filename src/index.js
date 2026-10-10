@@ -522,6 +522,115 @@ async function caseWorkspaceAccess(env,caseId,accountId){
   ).bind(caseId,accountId).first();
 }
 
+async function loadActiveCaseLawClassifications(env,caseId){
+  const result=await env.DB.prepare(
+    `SELECT cac.id,cac.case_law_id,cac.role,cac.reason,cac.issue_key,
+            cac.classified_by_account_id,cac.status,cac.created_at,cac.updated_at,
+            ma.display_name AS classifier_display_name,
+            cl.case_title,cl.court,cl.case_number,cl.jurisdiction,cl.decision_date,
+            cl.source_url,s.url AS registry_source_url,
+            cl.human_review_status,
+            cla.precedential_weight,cla.human_review_status AS authority_review_status
+       FROM casepilot_authority_classifications cac
+       JOIN case_law cl ON cl.id=cac.case_law_id
+       JOIN sources s ON s.id=cl.source_id AND s.source_status='official'
+       JOIN case_law_authority cla ON cla.case_law_id=cl.id
+       LEFT JOIN membership_accounts ma ON ma.id=cac.classified_by_account_id
+      WHERE cac.case_id=? AND cac.status='active'
+      ORDER BY cac.updated_at DESC,cac.id DESC
+      LIMIT 100`
+  ).bind(caseId).all();
+
+  return (result.results||[]).map(row=>({
+    id:row.id,
+    caseLawId:row.case_law_id,
+    role:row.role,
+    reason:row.reason,
+    issueKey:row.issue_key||null,
+    classifierDisplayName:row.classifier_display_name||null,
+    createdAt:row.created_at,
+    updatedAt:row.updated_at,
+    authority:{
+      caseTitle:row.case_title||null,
+      court:row.court||null,
+      caseNumber:row.case_number||null,
+      jurisdiction:row.jurisdiction||null,
+      decisionDate:row.decision_date||null,
+      precedentialWeight:row.precedential_weight||null,
+      sourceUrl:row.source_url||row.registry_source_url||null,
+      humanReviewStatus:row.human_review_status,
+      authorityReviewStatus:row.authority_review_status
+    }
+  }));
+}
+
+function caseLawClassificationExportSection(classifications){
+  return {
+    id:"case-law-authority-classification",
+    title:"Судска практика — адвокатска класификација",
+    items:(classifications||[]).map(x=>({
+      heading:[
+        String(x.role||"neutral").toUpperCase(),
+        x.authority?.court||null,
+        x.authority?.caseNumber||x.authority?.caseTitle||null
+      ].filter(Boolean).join(" · "),
+      text:[
+        x.issueKey ? "Правно прашање: "+x.issueKey : null,
+        "Образложение: "+String(x.reason||""),
+        x.authority?.jurisdiction ? "Надлежност: "+x.authority.jurisdiction : null,
+        x.authority?.precedentialWeight ? "Тежина: "+x.authority.precedentialWeight : null,
+        x.classifierDisplayName ? "Класифицирал: "+x.classifierDisplayName : null,
+        x.updatedAt ? "Запишано: "+x.updatedAt : null,
+        "Classification ID: "+String(x.id||"")
+      ].filter(Boolean).join("\n"),
+      status:"LAWYER_CLASSIFIED",
+      sources:x.authority?.sourceUrl ? [{
+        id:"CASELAW-"+String(x.caseLawId),
+        title:[x.authority?.court,x.authority?.caseNumber||x.authority?.caseTitle].filter(Boolean).join(" · "),
+        locator:x.authority.sourceUrl
+      }] : []
+    }))
+  };
+}
+
+function caseLawClassificationManifest(classifications){
+  const seen=new Set();
+  const out=[];
+  for(const x of classifications||[]){
+    const id="CASELAW-"+String(x.caseLawId);
+    if(seen.has(id)) continue;
+    seen.add(id);
+    out.push({
+      id,
+      title:[x.authority?.court,x.authority?.caseNumber||x.authority?.caseTitle].filter(Boolean).join(" · ")||id,
+      locator:x.authority?.sourceUrl||"",
+      version:[
+        x.authority?.jurisdiction||null,
+        x.authority?.precedentialWeight||null,
+        "case HG "+String(x.authority?.humanReviewStatus||""),
+        "authority HG "+String(x.authority?.authorityReviewStatus||"")
+      ].filter(Boolean).join(" · "),
+      sha256:""
+    });
+  }
+  return out;
+}
+
+function caseLawClassificationProvenance(classifications){
+  return (classifications||[])
+    .filter(x=>x.authority?.sourceUrl)
+    .map(x=>({
+      claimId:"authority-classification:"+String(x.id),
+      sourceId:"CASELAW-"+String(x.caseLawId),
+      locator:x.authority.sourceUrl,
+      note:[
+        "role:"+String(x.role||"neutral"),
+        x.issueKey ? "issue:"+x.issueKey : null,
+        "lawyer_classification_record:"+String(x.id)
+      ].filter(Boolean).join(" · ")
+    }));
+}
+
 async function recordCaseAudit(env,{caseId,accountId,eventType,objectType=null,objectId=null,metadata={}}){
   await env.DB.prepare(
     `INSERT INTO case_audit_events
@@ -677,57 +786,25 @@ async function handleCaseWorkspaceApi(request,env,url){
         ORDER BY slot_number`
     ).bind(caseId).all();
     const shell=mapWorkspaceToCasePilotShell(access,result.results||[]);
+    const authorityClassifications=await loadActiveCaseLawClassifications(env,caseId);
     return json(request,{
       ok:true,
       caseId,
       role:access.role,
       casePilot:shell,
+      authorityClassifications,
       ingestion:caseWorkspaceStorageReady(env) ? "storage_ready_ingestion_gate_required" : "locked_pending_private_object_storage",
-      note:"CasePilot shell contains metadata/source registry only; file bytes and extracted private text are not returned."
+      note:"CasePilot shell contains metadata/source registry and lawyer authority classifications only; file bytes and extracted private text are not returned."
     });
   }
 
   if(tail==="case-law-classifications"){
     if(request.method==="GET" || request.method==="HEAD"){
-      const result=await env.DB.prepare(
-        `SELECT cac.id,cac.case_law_id,cac.role,cac.reason,cac.issue_key,
-                cac.classified_by_account_id,cac.status,cac.created_at,cac.updated_at,
-                cl.case_title,cl.court,cl.case_number,cl.jurisdiction,cl.decision_date,
-                cl.source_url,s.url AS registry_source_url,
-                cl.human_review_status,
-                cla.precedential_weight,cla.human_review_status AS authority_review_status
-           FROM casepilot_authority_classifications cac
-           JOIN case_law cl ON cl.id=cac.case_law_id
-           JOIN sources s ON s.id=cl.source_id AND s.source_status='official'
-           JOIN case_law_authority cla ON cla.case_law_id=cl.id
-          WHERE cac.case_id=? AND cac.status='active'
-          ORDER BY cac.updated_at DESC,cac.id DESC
-          LIMIT 100`
-      ).bind(caseId).all();
+      const classifications=await loadActiveCaseLawClassifications(env,caseId);
       return json(request,{
         ok:true,
         caseId,
-        classifications:(result.results||[]).map(row=>({
-          id:row.id,
-          caseLawId:row.case_law_id,
-          role:row.role,
-          reason:row.reason,
-          issueKey:row.issue_key||null,
-          classifiedByAccountId:row.classified_by_account_id,
-          createdAt:row.created_at,
-          updatedAt:row.updated_at,
-          authority:{
-            caseTitle:row.case_title||null,
-            court:row.court||null,
-            caseNumber:row.case_number||null,
-            jurisdiction:row.jurisdiction||null,
-            decisionDate:row.decision_date||null,
-            precedentialWeight:row.precedential_weight||null,
-            sourceUrl:row.source_url||row.registry_source_url||null,
-            humanReviewStatus:row.human_review_status,
-            authorityReviewStatus:row.authority_review_status
-          }
-        })),
+        classifications,
         humanGate:"Issue-specific authority roles are private lawyer work-product metadata and do not change the authority record itself."
       });
     }
@@ -853,10 +930,27 @@ async function handleCaseWorkspaceApi(request,env,url){
       };
     }
 
+    const authorityClassifications=await loadActiveCaseLawClassifications(env,caseId);
+    const serverSections=[
+      ...(Array.isArray(reportInput.sections)?reportInput.sections:[]),
+      ...(authorityClassifications.length ? [caseLawClassificationExportSection(authorityClassifications)] : [])
+    ];
+    const serverSourceManifest=[
+      ...(Array.isArray(reportInput.sourceManifest)?reportInput.sourceManifest:[]),
+      ...caseLawClassificationManifest(authorityClassifications)
+    ];
+    const serverProvenance=[
+      ...(Array.isArray(reportInput.provenance)?reportInput.provenance:[]),
+      ...caseLawClassificationProvenance(authorityClassifications)
+    ];
+
     let exportModel;
     try{
       exportModel=normalizeCaseExportReport({
         ...reportInput,
+        sections:serverSections,
+        sourceManifest:serverSourceManifest,
+        provenance:serverProvenance,
         caseId,
         title:reportInput.title||access.title,
         generatedAt:new Date().toISOString()
@@ -866,7 +960,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
 
     const filename=caseExportFilename(exportModel,format);
-    const auditMeta={format,mode,caseVersion:exportModel.caseVersion};
+    const auditMeta={format,mode,caseVersion:exportModel.caseVersion,authorityClassificationCount:authorityClassifications.length};
     if(format==="pdf"){
       await recordCaseAudit(env,{
         caseId,accountId:membership.accountId,eventType:"export_generated",
