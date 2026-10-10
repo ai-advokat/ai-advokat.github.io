@@ -1,3 +1,4 @@
+import { downloadCasePilotExportFromApi } from "./casepilot-export.js";
 const $=id=>document.getElementById(id);
 
 const API_BASE=(
@@ -9,6 +10,7 @@ const API_BASE=(
 let accessKey="";
 let activeCaseId="";
 let currentCaseLawCards=[];
+let currentWorkspaceData=null;
 
 function authHeaders(extra={}){
   if(!accessKey) throw new Error("membership_key_required");
@@ -59,6 +61,7 @@ function setWorkspaceVisible(visible){
 function resetWorkspace(){
   activeCaseId="";
   currentCaseLawCards=[];
+  currentWorkspaceData=null;
   setWorkspaceVisible(false);
   $("caseTitle").textContent="—";
   $("caseLegalArea").textContent="—";
@@ -79,8 +82,10 @@ async function openCaseById(caseId){
   if(!validCaseId(caseId)) throw new Error("invalid_case_id");
   activeCaseId=caseId;
   const data=await api("/api/cases/"+encodeURIComponent(caseId)+"/casepilot");
+  currentWorkspaceData=data;
   renderWorkspace(data);
   await loadClassifications();
+  await loadAudit();
   setWorkspaceVisible(true);
   $("caseId").value=caseId;
   return data;
@@ -419,6 +424,123 @@ function renderClassifications(rows){
     const sourceCell=document.createElement("td");
     sourceCell.appendChild(sourceLink(row.authority?.sourceUrl));
     tr.appendChild(sourceCell);
+    body.appendChild(tr);
+  }
+}
+
+
+function buildExportReport(){
+  if(!currentWorkspaceData || !activeCaseId) throw new Error("case_not_open");
+  const cp=currentWorkspaceData.casePilot||{};
+  const matter=cp.matter||{};
+  const sourceRegistry=Array.isArray(cp.sourceRegistry)?cp.sourceRegistry:[];
+  return {
+    caseId:activeCaseId,
+    title:String(matter.title||activeCaseId),
+    caseVersion:String(matter.caseVersion||"0.1"),
+    summary:$("exportSummary")?.value?.trim()||"",
+    sections:[{
+      id:"workspace-overview",
+      title:"CasePilot workspace",
+      items:[{
+        heading:"Предмет",
+        text:[
+          matter.legalArea ? "Правна област: "+matter.legalArea : null,
+          "Professional Human Gate: "+(cp?.runtime?.professionalUseLocked===false?"UNLOCKED":"LOCKED"),
+          "Source-linked documents: "+String(sourceRegistry.length)
+        ].filter(Boolean).join("\n"),
+        status:"WORKSPACE_METADATA",
+        sources:[]
+      }]
+    }],
+    sourceManifest:sourceRegistry.map(source=>({
+      id:String(source.sourceId),
+      title:String(source.title||source.sourceId),
+      locator:"",
+      version:String(matter.caseVersion||"0.1"),
+      sha256:String(source.sha256||"")
+    })),
+    provenance:[]
+  };
+}
+
+async function runExport(format){
+  if(!activeCaseId || !accessKey){
+    $("exportStatus").textContent="Прво отворете предмет.";
+    return;
+  }
+  const button=format==="md"?$("exportMd"):format==="docx"?$("exportDocx"):$("exportPdf");
+  button.disabled=true;
+  $("exportStatus").textContent="Се подготвува governed "+format.toUpperCase()+" export…";
+  try{
+    const report=buildExportReport();
+    const result=await downloadCasePilotExportFromApi({
+      caseId:activeCaseId,
+      format,
+      report,
+      membershipKey:accessKey,
+      apiBase:API_BASE
+    });
+    $("exportStatus").textContent="Export е подготвен: "+String(result.filename||format)+". Mode се определува server-side според Human Gate.";
+    await loadAudit();
+  }catch(error){
+    $("exportStatus").textContent="Export не успеа: "+String(error?.message||error);
+  }finally{
+    button.disabled=false;
+  }
+}
+
+$("exportMd").addEventListener("click",()=>runExport("md"));
+$("exportDocx").addEventListener("click",()=>runExport("docx"));
+$("exportPdf").addEventListener("click",()=>runExport("pdf"));
+
+$("refreshAudit").addEventListener("click",async()=>{
+  $("refreshAudit").disabled=true;
+  try{
+    await loadAudit();
+  }finally{
+    $("refreshAudit").disabled=false;
+  }
+});
+
+async function loadAudit(){
+  if(!activeCaseId || !accessKey) return;
+  $("auditStatus").textContent="Се вчитува audit trail…";
+  try{
+    const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/audit");
+    renderAudit(Array.isArray(data.events)?data.events:[]);
+    $("auditStatus").textContent="Audit trail е освежен.";
+  }catch(error){
+    $("auditStatus").textContent="Audit trail не е достапен: "+String(error?.message||error);
+  }
+}
+
+function renderAudit(events){
+  const body=$("auditBody");
+  clearNode(body);
+  if(!events.length){
+    const tr=document.createElement("tr");
+    const cell=td("Нема audit events.");
+    cell.colSpan=4;
+    cell.className="muted";
+    tr.appendChild(cell);
+    body.appendChild(tr);
+    return;
+  }
+
+  for(const event of events){
+    const tr=document.createElement("tr");
+    tr.appendChild(td(event.created_at));
+    tr.appendChild(td(event.event_type));
+    tr.appendChild(td([event.object_type,event.object_id].filter(Boolean).join(" · ")));
+    let metadata="—";
+    try{
+      const parsed=JSON.parse(event.metadata_json||"{}");
+      metadata=Object.entries(parsed).map(([k,v])=>k+": "+String(v)).join(" · ")||"—";
+    }catch{
+      metadata="—";
+    }
+    tr.appendChild(td(metadata));
     body.appendChild(tr);
   }
 }
