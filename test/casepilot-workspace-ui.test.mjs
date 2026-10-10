@@ -38,8 +38,13 @@ test("classification UI sends only bounded classification metadata",()=>{
 });
 
 test("official source links are https-only and isolated",()=>{
-  assert.match(js,/^https:\/\//);
-  assert.match(js,/a\.rel="noopener noreferrer"/);
+  const start=js.indexOf("function sourceLink");
+  const end=js.indexOf("async function api",start);
+  assert.ok(start>0 && end>start);
+  const block=js.slice(start,end);
+  assert.match(block,/https/);
+  assert.match(block,/test\(url\)/);
+  assert.match(block,/a\.rel="noopener noreferrer"/);
 });
 
 test("professional tools exposes the authenticated secure workspace",()=>{
