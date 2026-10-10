@@ -331,6 +331,10 @@ After Human Gate, the same versioned professional opinion may be exported as:
 
 All three exports must carry the same case version, generation timestamp, source manifest, Human Gate status and provenance appendix.
 
+**Export engine v1 status (2026-10-10):** the repository now contains a real shared export engine. MD is generated as the canonical UTF-8 master; DOCX is generated as a real OpenXML package; PDF is rendered locally in the browser from the same normalized export model and assembled as a fixed PDF copy. Browser-local PDF rendering is deliberate so Macedonian Cyrillic can use the user's/system font without shipping a font binary or sending private case content to a third-party conversion service. While `professional_use_locked` is true, every export is forced to **WORKING COPY — HUMAN GATE PENDING**. Professional mode fails closed unless the server has a recorded approved Human Gate event.
+
+This export engine does **not** unlock private document upload or the 20-document ingestion pipeline. It only turns an already-structured CasePilot opinion payload into versioned MD/DOCX/PDF outputs under the existing case authorization boundary.
+
 ### Production security boundary
 
 The 20-document workflow is a target private professional capability, not permission to expose private uploads through the public portal. Production upload remains locked until authenticated per-case workspaces, encrypted object storage, tenant isolation, retention/deletion/export controls, audit logging and cross-case isolation are implemented and tested.
