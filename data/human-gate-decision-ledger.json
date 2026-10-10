@@ -331,6 +331,34 @@
       },
       "implied_gates": [],
       "notes": "Does not authorize private file bytes/R2, document ingestion, provider activation, autonomous legal action, current-law promotion, corpus promotion or RAG eligibility."
+    },
+    {
+      "decision_id": "hg-2026-10-10-casepilot-export-github-merge",
+      "subject_id": "casepilot-export-v1-2026-10-10",
+      "gate_type": "github_merge",
+      "decision_state": "approved",
+      "decided_at": "2026-10-10",
+      "decision_basis": "Explicit project-lead request on 2026-10-10 to make CasePilot PDF/DOCX/MD exports real and operational. Approval is isolated to the version-bound export artifact and current runtime deployment. It does not authorize private document upload/R2, provider changes, corpus promotion, autonomous legal action or professional release without a recorded Human Gate.",
+      "artifact_version": "AI_ADVOKAT_CASEPILOT_EXPORT_V1_2026-10-10",
+      "artifact_fingerprint": {
+        "case_export_request_sha256": "a77e18e9f7f9f970cfc27c0d35c49f61fa399a32d0a2a98d26f2c1dfdc0f6770"
+      },
+      "implied_gates": [],
+      "notes": "No implication to production_schema_migration; migration 0029 remains governed by the separate Secure Case Workspace artifact. No R2/private upload authorization."
+    },
+    {
+      "decision_id": "hg-2026-10-10-casepilot-export-production-runtime-deploy",
+      "subject_id": "casepilot-export-v1-2026-10-10",
+      "gate_type": "production_runtime_deploy",
+      "decision_state": "approved",
+      "decided_at": "2026-10-10",
+      "decision_basis": "Explicit project-lead request on 2026-10-10 to make CasePilot PDF/DOCX/MD exports real and operational. Approval is isolated to the version-bound export artifact and current runtime deployment. It does not authorize private document upload/R2, provider changes, corpus promotion, autonomous legal action or professional release without a recorded Human Gate.",
+      "artifact_version": "AI_ADVOKAT_CASEPILOT_EXPORT_V1_2026-10-10",
+      "artifact_fingerprint": {
+        "case_export_request_sha256": "a77e18e9f7f9f970cfc27c0d35c49f61fa399a32d0a2a98d26f2c1dfdc0f6770"
+      },
+      "implied_gates": [],
+      "notes": "No implication to production_schema_migration; migration 0029 remains governed by the separate Secure Case Workspace artifact. No R2/private upload authorization."
     }
   ]
 }
