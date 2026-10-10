@@ -11,6 +11,7 @@ on:
     branches: ["main"]
     paths:
       - ".github/activation/case-workspace-production-request.json"
+      - ".github/activation/case-export-production-request.json"
 
 permissions:
   contents: read
@@ -73,6 +74,34 @@ jobs:
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
 
+      - name: Verify bounded CasePilot export authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require("fs");
+          const crypto=require("crypto");
+          const p=".github/activation/case-export-production-request.json";
+          const raw=fs.readFileSync(p);
+          const sha=crypto.createHash("sha256").update(raw).digest("hex");
+          const expected="a77e18e9f7f9f970cfc27c0d35c49f61fa399a32d0a2a98d26f2c1dfdc0f6770";
+          if(sha!==expected) throw new Error("Case export activation request fingerprint changed: "+sha);
+          const d=JSON.parse(raw);
+          if(d.activation_authorized!==true) throw new Error("Case export activation not authorised");
+          if(d.decision_id!=="AI_ADVOKAT_CASEPILOT_EXPORT_V1_2026-10-10") throw new Error("Unexpected export decision id");
+          if(d.runtime_version!=="casepilot-export-1.0.0") throw new Error("Unexpected export runtime version");
+          if(JSON.stringify(d.formats)!==JSON.stringify(["md","docx","pdf"])) throw new Error("Unexpected export formats");
+          const gates=new Set(d.authorized_gates||[]);
+          for(const g of ["github_merge","production_runtime_deploy"]){
+            if(!gates.has(g)) throw new Error("Missing export gate: "+g);
+          }
+          if(d.professional_export_requires_recorded_human_gate!==true) throw new Error("Professional export must remain Human-Gate bound");
+          if(d.private_document_upload_authorized!==false) throw new Error("Private document upload must remain unauthorised");
+          if(d.private_object_storage_activation_authorized!==false) throw new Error("Private object storage must remain unauthorised");
+          if(d.provider_activation_authorized!==false) throw new Error("Provider activation must remain unauthorised");
+          console.log("Bounded CasePilot export artifact: PASS");
+          NODE
+
       - name: Verify Human Gate ledger
         shell: bash
         run: |
@@ -95,16 +124,34 @@ jobs:
           for(const forbidden of ["provider_activation","production_corpus_write","corpus_promotion","rag_eligibility"]){
             if(isGateApproved(ledger.initial_records,{...query,gate_type:forbidden})) throw new Error("Forbidden gate unexpectedly approved: "+forbidden);
           }
-          console.log("Version-bound Human Gate: PASS");
+
+          const exportRaw=fs.readFileSync(".github/activation/case-export-production-request.json");
+          const exportSha=crypto.createHash("sha256").update(exportRaw).digest("hex");
+          const exportArtifact=JSON.parse(exportRaw);
+          const exportQuery={
+            subject_id:"casepilot-export-v1-2026-10-10",
+            artifact_version:exportArtifact.decision_id,
+            artifact_fingerprint:{case_export_request_sha256:exportSha}
+          };
+          for(const gate of ["github_merge","production_runtime_deploy"]){
+            if(!isGateApproved(ledger.initial_records,{...exportQuery,gate_type:gate})) throw new Error("Case export Human Gate not approved: "+gate);
+          }
+          for(const forbidden of ["production_schema_migration","provider_activation","production_corpus_write","corpus_promotion","rag_eligibility"]){
+            if(isGateApproved(ledger.initial_records,{...exportQuery,gate_type:forbidden})) throw new Error("Case export forbidden gate unexpectedly approved: "+forbidden);
+          }
+          console.log("Version-bound Human Gates: PASS");
           NODE
 
       - name: Verify repository safety and Case Workspace tests
         run: |
           node --check src/index.js
           node --check src/case-workspace.js
+          node --check src/case-export.js
+          node --check assets/casepilot-export.js
           npm run verify
           npm run test:case-workspace
           npm run test:casepilot
+          npm run test:case-export
           npm run test:security
           npm run test:human-gate-ledger
 
@@ -120,7 +167,8 @@ jobs:
           if(c.previews?.d1_databases?.[0]?.database_id===d.database_id) throw new Error("Production/staging collision");
           if(c.vars?.CASE_WORKSPACE_ENABLED!=="true") throw new Error("Case Workspace runtime is not armed");
           if(c.r2_buckets) throw new Error("Private CASE_FILES storage must remain unbound in this activation");
-          console.log("Exact target + storage lock: PASS");
+          if(!fs.existsSync("src/case-export.js") || !fs.existsSync("assets/casepilot-export.js")) throw new Error("CasePilot export runtime missing");
+          console.log("Exact target + storage/export lock: PASS");
           NODE
 
       - name: Inspect pending production migrations
@@ -180,11 +228,156 @@ jobs:
           const u=require("/tmp/case-unauth.json");
           const d=require("/tmp/case-documents-global.json");
           if(c.capabilities?.caseWorkspace!=="workspace_ready_storage_locked") throw new Error("Unexpected caseWorkspace state: "+c.capabilities?.caseWorkspace);
+          if(c.capabilities?.caseExports!=="md_docx_live_pdf_browser_rendered_human_gate_bound") throw new Error("Unexpected caseExports state: "+c.capabilities?.caseExports);
           if(c.capabilities?.documentUpload!=="locked_private_storage") throw new Error("Document upload unexpectedly unlocked: "+c.capabilities?.documentUpload);
           if(u.error!=="case_workspace_membership_required") throw new Error("Unauthenticated case isolation failed");
           if(d.status!=="governed_preview" || d.capability!=="document_upload") throw new Error("Global document upload boundary failed");
           console.log("LIVE SECURE CASE WORKSPACE BOUNDARY: PASS");
           NODE
+
+      - name: Provision ephemeral CasePilot export account
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPORT_ACCOUNT_ID="case-export-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          EXPORT_ENTITLEMENT_ID="case-export-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          EXPORT_KEY_ID="case-export-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          EXPORT_KEY="cex_$(openssl rand -hex 24)"
+          EXPORT_KEY_HASH="$(printf '%s' "$EXPORT_KEY" | sha256sum | awk '{print $1}')"
+          EXPORT_KEY_PREFIX="${EXPORT_KEY:0:12}"
+          echo "::add-mask::$EXPORT_KEY"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$EXPORT_ACCOUNT_ID';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$EXPORT_ACCOUNT_ID';
+            DELETE FROM membership_access_keys WHERE account_id='$EXPORT_ACCOUNT_ID';
+            DELETE FROM membership_entitlements WHERE account_id='$EXPORT_ACCOUNT_ID';
+            DELETE FROM membership_accounts WHERE id='$EXPORT_ACCOUNT_ID';
+            INSERT INTO membership_accounts(id,display_name,status)
+            VALUES ('$EXPORT_ACCOUNT_ID','AI Advokat Synthetic Case Export','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+            VALUES
+              ('$EXPORT_ENTITLEMENT_ID','$EXPORT_ACCOUNT_ID','office','active','manual',20,1,0,datetime('now','+2 hours'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+            VALUES
+              ('$EXPORT_KEY_ID','$EXPORT_ACCOUNT_ID','$EXPORT_KEY_HASH','$EXPORT_KEY_PREFIX','ephemeral CasePilot export activation','active',datetime('now','+2 hours'));
+          "
+          echo "EXPORT_ACCOUNT_ID=$EXPORT_ACCOUNT_ID" >> "$GITHUB_ENV"
+          echo "CASE_EXPORT_TEST_KEY=$EXPORT_KEY" >> "$GITHUB_ENV"
+
+      - name: Live CasePilot MD DOCX PDF export smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          test -n "${CASE_EXPORT_TEST_KEY:-}"
+          cat > /tmp/case-create-request.json <<'JSON'
+          {"title":"Синтетички CasePilot export предмет","clientReference":"UAT-EXPORT","legalArea":"синтетички тест"}
+          JSON
+          code="$(curl --silent --show-error --output /tmp/case-create.json --write-out '%{http_code}'             -H "Authorization: Bearer $CASE_EXPORT_TEST_KEY"             -H "Content-Type: application/json"             --data-binary @/tmp/case-create-request.json             "$BASE/api/cases")"
+          test "$code" = "201"
+          CASE_ID="$(node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("/tmp/case-create.json","utf8"));if(!d.case?.id)process.exit(2);process.stdout.write(d.case.id)')"
+          echo "CASE_EXPORT_TEST_CASE_ID=$CASE_ID" >> "$GITHUB_ENV"
+
+          CASE_ID="$CASE_ID" node <<'NODE'
+          const fs=require("fs");
+          const base={
+            report:{
+              caseVersion:"uat-1",
+              title:"Синтетички CasePilot export предмет",
+              summary:"Синтетички работен правен извештај за production export smoke.",
+              sections:[
+                {id:"chronology",title:"Хронологија",items:[
+                  {heading:"Настан",text:"Ова е синтетички тест без вистински клиентски податоци.",status:"CONFIRMED",sources:[{id:"DOC-UAT",locator:"стр. 1",title:"Синтетички документ"}]}
+                ]},
+                {id:"outcome",title:"Проценка",items:["Исходот не се претставува со измислен процент."]}
+              ],
+              sourceManifest:[
+                {id:"DOC-UAT",title:"Синтетички документ",locator:"стр. 1",version:"uat",sha256:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+              ],
+              provenance:[
+                {claimId:"CL-UAT-1",sourceId:"DOC-UAT",locator:"стр. 1",note:"Синтетичка provenance трага."}
+              ]
+            }
+          };
+          for(const format of ["md","docx","pdf"]){
+            fs.writeFileSync("/tmp/case-export-"+format+"-request.json",JSON.stringify({...base,format}));
+          }
+          NODE
+
+          md_code="$(curl --silent --show-error --dump-header /tmp/case-export-md.headers             --output /tmp/case-export.md --write-out '%{http_code}'             -H "Authorization: Bearer $CASE_EXPORT_TEST_KEY"             -H "Content-Type: application/json"             --data-binary @/tmp/case-export-md-request.json             "$BASE/api/cases/$CASE_ID/exports")"
+          test "$md_code" = "200"
+          grep -qi 'content-type: text/markdown' /tmp/case-export-md.headers
+          grep -q 'WORKING COPY — HUMAN GATE PENDING' /tmp/case-export.md
+          grep -q 'Синтетички CasePilot export предмет' /tmp/case-export.md
+          grep -q 'Provenance appendix' /tmp/case-export.md
+
+          docx_code="$(curl --silent --show-error --dump-header /tmp/case-export-docx.headers             --output /tmp/case-export.docx --write-out '%{http_code}'             -H "Authorization: Bearer $CASE_EXPORT_TEST_KEY"             -H "Content-Type: application/json"             --data-binary @/tmp/case-export-docx-request.json             "$BASE/api/cases/$CASE_ID/exports")"
+          test "$docx_code" = "200"
+          grep -qi 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' /tmp/case-export-docx.headers
+          node <<'NODE'
+          const fs=require("fs");
+          const b=fs.readFileSync("/tmp/case-export.docx");
+          if(b[0]!==0x50||b[1]!==0x4b) throw new Error("DOCX is not ZIP/OpenXML");
+          const s=b.toString("utf8");
+          if(!s.includes("word/document.xml")) throw new Error("DOCX document part missing");
+          if(!s.includes("Синтетички CasePilot export предмет")) throw new Error("DOCX Cyrillic content missing");
+          if(!s.includes("WORKING COPY — HUMAN GATE PENDING")) throw new Error("DOCX Human Gate banner missing");
+          console.log("LIVE DOCX: PASS");
+          NODE
+
+          pdf_code="$(curl --silent --show-error --output /tmp/case-export-pdf-model.json --write-out '%{http_code}'             -H "Authorization: Bearer $CASE_EXPORT_TEST_KEY"             -H "Content-Type: application/json"             --data-binary @/tmp/case-export-pdf-request.json             "$BASE/api/cases/$CASE_ID/exports")"
+          test "$pdf_code" = "200"
+          node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync("/tmp/case-export-pdf-model.json","utf8"));
+          if(d.ok!==true || d.format!=="pdf") throw new Error("PDF export model failed");
+          if(d.renderer!=="casepilot_canvas_pdf_v1") throw new Error("Unexpected PDF renderer");
+          if(d.mode!=="working" || d.exportModel?.mode!=="working") throw new Error("PDF must remain working while Human Gate is locked");
+          if(d.exportModel?.title!=="Синтетички CasePilot export предмет") throw new Error("PDF export model content missing");
+          if(d.privacy!=="browser_local_pdf_rendering_no_external_service") throw new Error("PDF privacy contract missing");
+          console.log("LIVE PDF MODEL: PASS");
+          NODE
+
+          curl --fail --silent --show-error             -H "Authorization: Bearer $CASE_EXPORT_TEST_KEY"             "$BASE/api/cases/$CASE_ID/audit" -o /tmp/case-export-audit.json
+          node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync("/tmp/case-export-audit.json","utf8"));
+          const exports=(d.events||[]).filter(e=>e.event_type==="export_generated");
+          if(exports.length<3) throw new Error("Expected at least 3 export audit events, got "+exports.length);
+          const formats=new Set(exports.map(e=>{try{return JSON.parse(e.metadata_json||"{}").format}catch{return null}}));
+          for(const f of ["md","docx","pdf"]) if(!formats.has(f)) throw new Error("Missing export audit format "+f);
+          console.log("LIVE EXPORT AUDIT: PASS");
+          NODE
+
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command             "SELECT COUNT(*) AS leaked FROM case_audit_events WHERE case_id='$CASE_ID' AND metadata_json LIKE '%Синтетички CasePilot export предмет%';"             | tee /tmp/case-export-privacy.txt
+          grep -q '"leaked": 0' /tmp/case-export-privacy.txt
+          echo "LIVE CASEPILOT EXPORTS: PASS"
+
+      - name: Cleanup ephemeral CasePilot export data
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${CASE_EXPORT_TEST_CASE_ID:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM case_audit_events WHERE case_id='$CASE_EXPORT_TEST_CASE_ID';
+              DELETE FROM case_document_slots WHERE case_id='$CASE_EXPORT_TEST_CASE_ID';
+              DELETE FROM case_workspace_access WHERE case_id='$CASE_EXPORT_TEST_CASE_ID';
+              DELETE FROM case_workspaces WHERE id='$CASE_EXPORT_TEST_CASE_ID';
+            "
+          fi
+          if [ -n "${EXPORT_ACCOUNT_ID:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$EXPORT_ACCOUNT_ID';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$EXPORT_ACCOUNT_ID';
+              DELETE FROM membership_access_keys WHERE account_id='$EXPORT_ACCOUNT_ID';
+              DELETE FROM membership_entitlements WHERE account_id='$EXPORT_ACCOUNT_ID';
+              DELETE FROM membership_accounts WHERE id='$EXPORT_ACCOUNT_ID';
+            "
+          fi
+          echo "Ephemeral CasePilot export data cleaned."
 
       - name: Upload non-secret activation evidence
         uses: actions/upload-artifact@v4
@@ -198,4 +391,10 @@ jobs:
             /tmp/case-capabilities.json
             /tmp/case-unauth.json
             /tmp/case-documents-global.json
+            /tmp/case-create.json
+            /tmp/case-export.md
+            /tmp/case-export.docx
+            /tmp/case-export-pdf-model.json
+            /tmp/case-export-audit.json
+            /tmp/case-export-privacy.txt
           if-no-files-found: ignore
