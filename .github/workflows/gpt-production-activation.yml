@@ -184,6 +184,8 @@ jobs:
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
             DELETE FROM membership_usage_monthly WHERE subject_key='account:$UAT_ACCOUNT_ID';
             DELETE FROM security_rate_limit_windows WHERE subject_key='account:$UAT_ACCOUNT_ID';
+            DELETE FROM membership_access_keys WHERE account_id='$UAT_ACCOUNT_ID';
+            DELETE FROM membership_entitlements WHERE account_id='$UAT_ACCOUNT_ID';
             DELETE FROM membership_accounts WHERE id='$UAT_ACCOUNT_ID';
             INSERT INTO membership_accounts(id,display_name,status)
             VALUES ('$UAT_ACCOUNT_ID','AI Advokat Synthetic UAT','active');
@@ -216,6 +218,8 @@ jobs:
             npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
               DELETE FROM membership_usage_monthly WHERE subject_key='account:$UAT_ACCOUNT_ID';
               DELETE FROM security_rate_limit_windows WHERE subject_key='account:$UAT_ACCOUNT_ID';
+              DELETE FROM membership_access_keys WHERE account_id='$UAT_ACCOUNT_ID';
+              DELETE FROM membership_entitlements WHERE account_id='$UAT_ACCOUNT_ID';
               DELETE FROM membership_accounts WHERE id='$UAT_ACCOUNT_ID';
             "
             echo "Ephemeral UAT membership cleaned."
