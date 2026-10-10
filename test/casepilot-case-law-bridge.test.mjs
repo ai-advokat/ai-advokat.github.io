@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import {
   caseLawRecordEligible,
   toCasePilotAuthorityCard,
@@ -78,4 +79,20 @@ test("unreviewed/secondary records are rejected rather than silently included",(
   assert.equal(out.cards.length,1);
   assert.equal(out.rejected.length,1);
   assert.equal(out.rejected[0].caseLawId,9);
+});
+
+
+test("Worker case-law research endpoint is query-only and privacy bounded",()=>{
+  const worker=fs.readFileSync(new URL("../src/index.js",import.meta.url),"utf8");
+  const start=worker.indexOf("async function handleCasePilotCaseLawResearch");
+  const end=worker.indexOf("async function handleLegalAnalyzerVerify",start);
+  assert.ok(start>0 && end>start);
+  const block=worker.slice(start,end);
+  assert.match(block,/private_matter_content_not_accepted/);
+  assert.match(block,/governedCaseLawContext/);
+  assert.match(block,/reviewed_official_case_law_only/);
+  assert.match(block,/dualHumanReviewRequired:true/);
+  assert.match(block,/adverseAuthorityMustNotBeHidden:true/);
+  assert.match(block,/neutral_until_professional_issue-specific_classification/);
+  assert.match(worker,/\/api\/casepilot\/case-law/);
 });
