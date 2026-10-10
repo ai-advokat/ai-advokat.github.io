@@ -96,8 +96,8 @@ test("CasePilot export rerun request does not expand Human Gate authorization",(
   assert.equal(rerun.does_not_expand_authorization,true);
   assert.equal(rerun.private_document_upload_authorized,false);
   assert.equal(rerun.private_object_storage_activation_authorized,false);
-  assert.equal(rerun.baseline_run,2);
-  assert.equal(rerun.baseline_failure,"stale_post_deploy_capabilities_caseExports_undefined");
+  assert.equal(rerun.baseline_run,3);
+  assert.equal(rerun.baseline_failure,"d1_like_or_glob_pattern_too_complex_after_md_docx_pdf_audit_pass");
 });
 
 test("live Case Workspace boundary polls for current post-deploy capabilities before export smoke",()=>{
