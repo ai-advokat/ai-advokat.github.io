@@ -85,6 +85,7 @@ async function openCaseById(caseId){
   currentWorkspaceData=data;
   renderWorkspace(data);
   await loadClassifications();
+  await loadHumanGate();
   await loadAudit();
   setWorkspaceVisible(true);
   $("caseId").value=caseId;
@@ -385,8 +386,9 @@ $("saveClassification").addEventListener("click",async()=>{
       method:"POST",
       body:{caseLawId,role,reason,issueKey:issueKey||null}
     });
-    $("classificationStatus").textContent="Класификацијата е зачувана како private case-scoped work product.";
+    $("classificationStatus").textContent="Класификацијата е зачувана како private case-scoped work product. Professional Human Gate повторно е заклучен до нова одлука.";
     await loadClassifications();
+    await loadHumanGate();
   }catch(error){
     $("classificationStatus").textContent="Класификацијата не е зачувана: "+String(error?.message||error);
   }finally{
@@ -428,6 +430,79 @@ function renderClassifications(rows){
   }
 }
 
+
+async function loadHumanGate(){
+  if(!activeCaseId || !accessKey) return;
+  $("humanGateStatus").textContent="Се проверува Human Gate…";
+  try{
+    const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/human-gate");
+    renderHumanGate(data);
+  }catch(error){
+    $("caseGate").textContent="LOCKED";
+    $("humanGateCurrent").textContent="LOCKED";
+    $("humanGateStatus").textContent="Human Gate не е достапен: "+String(error?.message||error);
+  }
+}
+
+function renderHumanGate(data){
+  const gate=data?.gate||{};
+  const effective=gate.effectiveApproved===true && data.professionalUseLocked===false;
+  $("caseGate").textContent=effective?"UNLOCKED":"LOCKED";
+  $("humanGateCurrent").textContent=effective
+    ? "APPROVED"
+    : gate.stale ? "STALE" : String(gate.decision||"pending").toUpperCase();
+  $("humanGateStatus").textContent=[
+    gate.reviewer ? "Reviewer: "+gate.reviewer : null,
+    gate.decidedAt ? "Decided: "+gate.decidedAt : null,
+    gate.reason ? "Reason: "+gate.reason : null,
+    gate.stale ? "Одобрувањето е застарено по промена на предметот." : null
+  ].filter(Boolean).join(" · ") || "Нема запишана Human Gate одлука. Professional export е заклучен.";
+  $("humanGateFingerprint").textContent=gate.currentFingerprint
+    ? "Current fingerprint: "+gate.currentFingerprint
+    : "Current fingerprint: —";
+}
+
+$("refreshHumanGate").addEventListener("click",async()=>{
+  $("refreshHumanGate").disabled=true;
+  try{
+    await loadHumanGate();
+  }finally{
+    $("refreshHumanGate").disabled=false;
+  }
+});
+
+$("recordHumanGate").addEventListener("click",async()=>{
+  if(!activeCaseId || !accessKey){
+    $("humanGateStatus").textContent="Прво отворете предмет.";
+    return;
+  }
+  const decision=$("humanGateDecision").value;
+  const reason=$("humanGateReason").value.trim();
+  if(reason.length<8){
+    $("humanGateStatus").textContent="Внесете конкретно образложение (најмалку 8 знаци).";
+    return;
+  }
+  $("recordHumanGate").disabled=true;
+  $("humanGateStatus").textContent="Се запишува Human Gate одлуката…";
+  try{
+    const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/human-gate",{
+      method:"POST",
+      body:{decision,reason}
+    });
+    renderHumanGate(data);
+    $("humanGateReason").value="";
+    $("humanGateStatus").textContent=decision==="approved"
+      ? "Human Gate е одобрен за тековниот fingerprint. Professional export е отклучен додека предметот не се промени."
+      : "Human Gate одлуката е запишана. Professional export е заклучен.";
+    await loadAudit();
+    const list=await api("/api/cases");
+    renderCasePicker(Array.isArray(list.cases)?list.cases:[]);
+  }catch(error){
+    $("humanGateStatus").textContent="Human Gate одлуката не е запишана: "+String(error?.message||error);
+  }finally{
+    $("recordHumanGate").disabled=false;
+  }
+});
 
 function buildExportReport(){
   if(!currentWorkspaceData || !activeCaseId) throw new Error("case_not_open");

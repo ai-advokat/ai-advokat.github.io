@@ -84,7 +84,7 @@ export function safeCaseWorkspaceView(row,role="owner"){
 export function safeCaseAuditMetadata(value={}){
   const out={};
   if(value && typeof value==="object" && !Array.isArray(value)){
-    for(const key of ["reason","previousStatus","newStatus","slotNumber","mimeType","pageCount","storageState","format","mode","caseVersion","decision","reviewer","role","issueKey","authorityClassificationCount"]){
+    for(const key of ["reason","previousStatus","newStatus","slotNumber","mimeType","pageCount","storageState","format","mode","caseVersion","decision","reviewer","role","issueKey","authorityClassificationCount","fingerprint"]){
       const v=value[key];
       if(v===undefined || v===null) continue;
       if(typeof v==="number" && Number.isFinite(v)) out[key]=v;

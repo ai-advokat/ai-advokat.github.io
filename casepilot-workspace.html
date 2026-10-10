@@ -162,7 +162,32 @@
     </section>
 
     <section class="card">
-      <h2>6. Governed Export Center</h2>
+      <h2>6. Professional Human Gate</h2>
+      <p class="muted">Одлуката е експлицитна, append-only и врзана за server-computed fingerprint на тековниот предмет. Нова релевантна промена го поништува старото одобрување за professional export.</p>
+      <div class="grid2">
+        <div>
+          <label for="humanGateDecision">Одлука</label>
+          <select id="humanGateDecision">
+            <option value="approved">approved</option>
+            <option value="needs_revision">needs_revision</option>
+            <option value="rejected">rejected</option>
+            <option value="revoked">revoked</option>
+          </select>
+        </div>
+        <div class="metric"><b id="humanGateCurrent">PENDING</b><span>effective Human Gate</span></div>
+      </div>
+      <label for="humanGateReason" style="display:block;margin-top:12px">Образложение</label>
+      <textarea id="humanGateReason" maxlength="1200" placeholder="Зошто предметот е одобрен, вратен на ревизија, одбиен или одобрението е повлечено?"></textarea>
+      <div class="actions">
+        <button id="recordHumanGate" class="gold" type="button">Запиши Human Gate одлука</button>
+        <button id="refreshHumanGate" class="secondary" type="button">Освежи статус</button>
+      </div>
+      <p id="humanGateStatus" class="statusline muted" aria-live="polite"></p>
+      <p id="humanGateFingerprint" class="statusline muted"></p>
+    </section>
+
+    <section class="card">
+      <h2>7. Governed Export Center</h2>
       <p class="muted">Export-от секогаш поминува низ server-side CasePilot provenance. Ако professional Human Gate е заклучен, излезот е WORKING COPY. Оваа страница не може сама да го отклучи Human Gate.</p>
       <label for="exportSummary">Краток работен резиме</label>
       <textarea id="exportSummary" maxlength="20000" placeholder="Опционално резиме за работниот пакет."></textarea>
@@ -175,7 +200,7 @@
     </section>
 
     <section class="card">
-      <h2>7. Audit Trail</h2>
+      <h2>8. Audit Trail</h2>
       <p class="muted">Приказ на последните case-scoped audit events. Не содржи document body.</p>
       <div class="actions"><button id="refreshAudit" class="secondary" type="button">Освежи audit</button></div>
       <div class="scroll" style="margin-top:12px">

@@ -564,6 +564,87 @@ async function loadActiveCaseLawClassifications(env,caseId){
   }));
 }
 
+async function caseProfessionalFingerprint(env,caseId,access){
+  const [documents,classifications]=await Promise.all([
+    env.DB.prepare(
+      `SELECT id,slot_number,sha256,page_count,storage_state,extraction_state,updated_at
+         FROM case_document_slots
+        WHERE case_id=?
+        ORDER BY slot_number,id`
+    ).bind(caseId).all(),
+    env.DB.prepare(
+      `SELECT id,case_law_id,role,COALESCE(issue_key,'') AS issue_key,updated_at
+         FROM casepilot_authority_classifications
+        WHERE case_id=? AND status='active'
+        ORDER BY case_law_id,issue_key,id`
+    ).bind(caseId).all()
+  ]);
+  const payload={
+    gateVersion:"CASEPILOT_PROFESSIONAL_USE_V1",
+    caseId,
+    title:String(access?.title||""),
+    clientReference:String(access?.client_reference||""),
+    legalArea:String(access?.legal_area||""),
+    status:String(access?.status||""),
+    documents:(documents.results||[]).map(row=>({
+      id:row.id,
+      slotNumber:row.slot_number,
+      sha256:row.sha256||null,
+      pageCount:row.page_count||null,
+      storageState:row.storage_state,
+      extractionState:row.extraction_state,
+      updatedAt:row.updated_at
+    })),
+    authorityClassifications:(classifications.results||[]).map(row=>({
+      id:row.id,
+      caseLawId:row.case_law_id,
+      role:row.role,
+      issueKey:row.issue_key,
+      updatedAt:row.updated_at
+    }))
+  };
+  return sha256Hex(JSON.stringify(payload));
+}
+
+async function latestCaseHumanGate(env,caseId,currentFingerprint=null){
+  const row=await env.DB.prepare(
+    `SELECT id,actor_account_id,metadata_json,created_at
+       FROM case_audit_events
+      WHERE case_id=? AND event_type='human_gate_recorded'
+      ORDER BY created_at DESC,id DESC
+      LIMIT 1`
+  ).bind(caseId).first();
+  if(!row){
+    return {
+      decisionId:null,
+      decision:"pending",
+      reviewer:null,
+      reason:null,
+      decidedAt:null,
+      fingerprint:null,
+      currentFingerprint,
+      stale:false,
+      effectiveApproved:false
+    };
+  }
+  let meta={};
+  try{meta=JSON.parse(row.metadata_json||"{}");}catch{}
+  const fingerprint=typeof meta.fingerprint==="string" ? meta.fingerprint : null;
+  const stale=meta.decision==="approved"
+    && (!fingerprint || !currentFingerprint || fingerprint!==currentFingerprint);
+  return {
+    decisionId:row.id,
+    decision:String(meta.decision||"pending"),
+    reviewer:typeof meta.reviewer==="string" ? meta.reviewer : null,
+    reason:typeof meta.reason==="string" ? meta.reason : null,
+    decidedAt:row.created_at||null,
+    fingerprint,
+    currentFingerprint,
+    stale,
+    effectiveApproved:meta.decision==="approved" && !stale
+  };
+}
+
 function caseLawClassificationExportSection(classifications){
   return {
     id:"case-law-authority-classification",
@@ -860,6 +941,11 @@ async function handleCaseWorkspaceApi(request,env,url){
            VALUES (?,?,?,?,?,?,?,'active',?,?)`
         ).bind(classificationId,caseId,caseLawId,role,reason,issueKey,membership.accountId,at,at),
         env.DB.prepare(
+          `UPDATE case_workspaces
+              SET professional_use_locked=1,updated_at=?
+            WHERE id=?`
+        ).bind(at,caseId),
+        env.DB.prepare(
           `INSERT INTO case_audit_events
             (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
            VALUES (?, ?, ?, 'case_law_classified', 'case_law', ?, ?, ?)`
@@ -893,6 +979,101 @@ async function handleCaseWorkspaceApi(request,env,url){
   }
 
 
+  if(tail==="human-gate"){
+    const currentFingerprint=await caseProfessionalFingerprint(env,caseId,access);
+
+    if(request.method==="GET" || request.method==="HEAD"){
+      const gate=await latestCaseHumanGate(env,caseId,currentFingerprint);
+      return json(request,{
+        ok:true,
+        caseId,
+        professionalUseLocked:Number(access.professional_use_locked)!==0 || !gate.effectiveApproved,
+        gate,
+        doctrine:{
+          explicitDecisionOnly:true,
+          fingerprintBound:true,
+          appendOnly:true,
+          missingDecisionMeansLocked:true
+        }
+      });
+    }
+
+    if(request.method==="POST"){
+      if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
+      const contentType=(request.headers.get("content-type")||"").toLowerCase();
+      if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+      const parsed=await readLimitedJson(request,8192);
+      if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
+      const body=parsed.value;
+      if(!body || typeof body!=="object" || Array.isArray(body)) return json(request,{ok:false,error:"invalid_payload"},400);
+      const allowed=new Set(["decision","reason"]);
+      const unexpected=Object.keys(body).filter(key=>!allowed.has(key));
+      if(unexpected.length) return json(request,{ok:false,error:"unexpected_field",fields:unexpected},400);
+
+      const decision=String(body.decision||"").toLowerCase();
+      const reason=cleanQuery(body.reason,1200);
+      if(!["approved","rejected","needs_revision","revoked"].includes(decision)){
+        return json(request,{ok:false,error:"human_gate_decision_invalid"},400);
+      }
+      if(reason.length<8) return json(request,{ok:false,error:"human_gate_reason_required"},400);
+
+      const reviewerRow=await env.DB.prepare(
+        "SELECT display_name FROM membership_accounts WHERE id=? LIMIT 1"
+      ).bind(membership.accountId).first();
+      const reviewer=cleanQuery(reviewerRow?.display_name,120)
+        || ("account:"+String(membership.accountId).slice(0,80));
+      const at=new Date().toISOString();
+      const decisionId="CAE-"+crypto.randomUUID();
+      const unlock=decision==="approved" ? 0 : 1;
+      await env.DB.batch([
+        env.DB.prepare(
+          `UPDATE case_workspaces
+              SET professional_use_locked=?,updated_at=?
+            WHERE id=?`
+        ).bind(unlock,at,caseId),
+        env.DB.prepare(
+          `INSERT INTO case_audit_events
+            (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+           VALUES (?, ?, ?, 'human_gate_recorded', 'case_workspace', ?, ?, ?)`
+        ).bind(
+          decisionId,
+          caseId,
+          membership.accountId,
+          caseId,
+          safeCaseAuditMetadata({
+            decision,
+            reviewer,
+            reason,
+            caseVersion:"CASEPILOT_PROFESSIONAL_USE_V1",
+            fingerprint:currentFingerprint
+          }),
+          at
+        )
+      ]);
+
+      return json(request,{
+        ok:true,
+        caseId,
+        professionalUseLocked:unlock===1,
+        gate:{
+          decisionId,
+          decision,
+          reviewer,
+          reason,
+          decidedAt:at,
+          fingerprint:currentFingerprint,
+          currentFingerprint,
+          stale:false,
+          effectiveApproved:decision==="approved"
+        },
+        note:"Human Gate applies only to the current server-computed case fingerprint. Material case changes require a new decision."
+      },201);
+    }
+
+    return methodNotAllowed(request,"GET, HEAD, POST, OPTIONS");
+  }
+
+
   if(tail==="exports"){
     if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
     if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
@@ -907,28 +1088,26 @@ async function handleCaseWorkspaceApi(request,env,url){
       return json(request,{ok:false,error:"case_export_report_required"},400);
     }
 
-    const mode=Number(access.professional_use_locked)===0 ? "professional" : "working";
-    let serverHumanGate={status:"pending",reviewer:"",decidedAt:"",decisionRef:""};
-    if(mode==="professional"){
-      const gateRow=await env.DB.prepare(
-        `SELECT id,metadata_json,created_at
-           FROM case_audit_events
-          WHERE case_id=? AND event_type='human_gate_recorded'
-          ORDER BY created_at DESC
-          LIMIT 1`
-      ).bind(caseId).first();
-      let gateMeta={};
-      try{gateMeta=JSON.parse(gateRow?.metadata_json||"{}");}catch{}
-      if(!gateRow || gateMeta?.decision!=="approved" || typeof gateMeta?.reviewer!=="string" || !gateMeta.reviewer.trim()){
-        return json(request,{ok:false,error:"case_export_professional_human_gate_evidence_missing"},409);
-      }
-      serverHumanGate={
-        status:"approved",
-        reviewer:gateMeta.reviewer,
-        decidedAt:gateRow.created_at,
-        decisionRef:gateRow.id
-      };
+    const currentFingerprint=await caseProfessionalFingerprint(env,caseId,access);
+    const latestGate=await latestCaseHumanGate(env,caseId,currentFingerprint);
+    const professionalRequested=Number(access.professional_use_locked)===0;
+    if(professionalRequested && !latestGate.effectiveApproved){
+      return json(request,{
+        ok:false,
+        error:latestGate.stale
+          ? "case_export_professional_human_gate_stale"
+          : "case_export_professional_human_gate_evidence_missing"
+      },409);
     }
+    const mode=professionalRequested ? "professional" : "working";
+    const serverHumanGate=mode==="professional"
+      ? {
+          status:"approved",
+          reviewer:latestGate.reviewer,
+          decidedAt:latestGate.decidedAt,
+          decisionRef:latestGate.decisionId
+        }
+      : {status:"pending",reviewer:"",decidedAt:"",decisionRef:""};
 
     const authorityClassifications=await loadActiveCaseLawClassifications(env,caseId);
     // Reserved namespaces are server-owned so a client cannot spoof lawyer authority
