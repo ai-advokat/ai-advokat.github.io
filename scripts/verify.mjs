@@ -32,6 +32,8 @@ const required = [
   "scripts/evaluate-legal-intelligence-engine.mjs",
   "scripts/validate-legal-run-records.mjs",
   "architecture/AI_ADVOKAT_LEGAL_INTELLIGENCE_ENGINE.md",
+  "src/case-export.js",
+  "assets/casepilot-export.js",
   "docs/standards/AI_ADVOKAT_LEGAL_RUN_RECORD_PROTOCOL_v1.md",
   "src/legal-runtime-governance.js",
   "test/legal-runtime-governance.test.mjs",
@@ -196,3 +198,14 @@ if (!worker.includes('vectorize: "not_bound"')) {
 }
 
 console.log("AI Advokat structural verification: PASS");
+
+
+if (!worker.includes('caseExports: caseSchemaReady ? "md_docx_live_pdf_browser_rendered_human_gate_bound" : "locked"')) {
+  throw new Error("Case export capability must remain Human-Gate bound and schema-gated.");
+}
+if (!worker.includes('case_export_professional_human_gate_evidence_missing')) {
+  throw new Error("Professional CasePilot export must fail closed without recorded Human Gate evidence.");
+}
+if (!worker.includes('browser_local_pdf_rendering_no_external_service')) {
+  throw new Error("CasePilot PDF must remain local-browser rendered without an external PDF service.");
+}

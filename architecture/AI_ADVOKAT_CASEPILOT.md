@@ -115,3 +115,19 @@ A numerical success percentage is prohibited unless it comes from a documented v
 CasePilot follows the AI Advokat Accuracy-First doctrine. The design target is to **strive toward 99.99% accuracy**, but no individual answer is labelled 99.99% accurate unless that claim is supported by a documented benchmark.
 
 The professional pack therefore exposes provenance, contradictions, adverse material, missing evidence, uncertainty and Human Gate status instead of hiding them behind confident prose. The objective is maximum defensible correctness and reproducibility, not artificial certainty.
+
+
+## Export engine v1
+
+CasePilot now has executable export primitives rather than format declarations only:
+
+- **MD** — canonical UTF-8 working master;
+- **DOCX** — real OpenXML package generated without a new runtime dependency;
+- **PDF** — browser-local fixed review copy rendered from the same normalized report model using the system Cyrillic font and assembled locally as PDF;
+- stable case/version filenames;
+- identical source manifest, Human Gate status and provenance appendix across formats;
+- authenticated case export API with privacy-bounded `export_generated` audit events;
+- client-supplied "professional" status is ignored: the server derives working/professional mode from the case workspace lock;
+- professional export fails closed without recorded approved Human Gate evidence.
+
+This does not change the separate lock on private 20-document ingestion or R2/CASE_FILES object storage.
