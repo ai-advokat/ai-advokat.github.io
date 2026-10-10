@@ -2265,6 +2265,171 @@ function validateChatAttachments(payload){
   return {ok:true,attachments:out};
 }
 
+async function handleLegalAnalyzerVerify(request,env){
+  if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+  const contentType=(request.headers.get("content-type")||"").toLowerCase();
+  if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+
+  const parsed=await readLimitedJson(request,32768);
+  if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
+  const payload=parsed.value;
+  if(!payload || typeof payload!=="object" || Array.isArray(payload)){
+    return json(request,{ok:false,error:"invalid_payload"},400);
+  }
+
+  // Privacy boundary: this endpoint verifies extracted legal hints only.
+  // It deliberately rejects full document text/content.
+  const forbidden=["text","content","document","documentText","fullText","attachment","attachments"];
+  if(forbidden.some(key=>Object.prototype.hasOwnProperty.call(payload,key))){
+    return json(request,{
+      ok:false,
+      error:"full_document_not_accepted",
+      message:"Legal Analyzer verification accepts extracted legal hints only; full private document text must use the governed case workspace ingestion path."
+    },400);
+  }
+
+  const query=cleanQuery(payload.query,900);
+  const instrument=cleanQuery(payload.instrument||"auto",64);
+  const articleNumbers=Array.isArray(payload.articleNumbers)
+    ? payload.articleNumbers.slice(0,20).map(v=>cleanQuery(v,24)).filter(Boolean)
+    : [];
+  const caseNumbers=Array.isArray(payload.caseNumbers)
+    ? payload.caseNumbers.slice(0,12).map(v=>cleanQuery(v,80)).filter(Boolean)
+    : [];
+
+  if(query.length<2 && !articleNumbers.length && !caseNumbers.length){
+    return json(request,{ok:false,error:"verification_hints_required"},400);
+  }
+
+  const composed=[
+    query,
+    articleNumbers.map(n=>"член "+n).join(" "),
+    caseNumbers.join(" ")
+  ].filter(Boolean).join(" ").slice(0,1400);
+
+  const initialPlan=buildAgentPlan(composed,{preferCorpus:true});
+  const [articleBundle,caseLawBundle]=await Promise.all([
+    governedArticleContext(env,composed,initialPlan),
+    governedCaseLawContext(env,composed,initialPlan,{limit:6})
+  ]);
+
+  let exactInstrument=null;
+  let exactArticles=[];
+  let exactArticleState="not_requested";
+  if(articleNumbers.length){
+    try{
+      const routing=await inferInstrumentKey(env,composed,instrument);
+      if(routing.ambiguous){
+        exactArticleState="instrument_ambiguous";
+      }else if(routing.key && routing.key!=="auto"){
+        const instrumentRow=await getInstrument(env,routing.key);
+        exactInstrument=instrumentRow ? {
+          canonicalKey:instrumentRow.canonical_key,
+          title:instrumentRow.title,
+          jurisdiction:instrumentRow.jurisdiction,
+          humanReviewStatus:instrumentRow.human_review_status,
+          canonicalSourceUrl:instrumentRow.canonical_source_url
+        } : null;
+        if(instrumentRow){
+          const corpus=await loadResolvedCorpus(env,instrumentRow,{});
+          if(corpus.ok){
+            const wanted=new Set(articleNumbers.map(n=>normalizeText(n).replace(/^член\s*/u,"").replace(/\s+/g,"")));
+            exactArticles=corpus.rows
+              .filter(row=>wanted.has(normalizeText(row.article_number_normalized||row.article_number||"").replace(/\s+/g,"")))
+              .map(row=>normalizeArticle(row));
+            exactArticleState=exactArticles.length ? "matched" : "no_exact_match";
+          }else{
+            exactArticleState=corpus.error||"version_unresolved";
+          }
+        }else{
+          exactArticleState="instrument_not_found";
+        }
+      }else{
+        exactArticleState="instrument_not_resolved";
+      }
+    }catch(error){
+      console.error("legal_analyzer_exact_article_verify_failed",String(error?.message||error).slice(0,180));
+      exactArticleState="unavailable";
+    }
+  }
+
+  let exactCases=[];
+  let exactCaseState=caseNumbers.length ? "no_exact_match" : "not_requested";
+  if(caseNumbers.length){
+    try{
+      const placeholders=caseNumbers.map(()=>"?").join(",");
+      const result=await env.DB.prepare(
+        `SELECT cl.id,cl.case_title,cl.court,cl.case_number,cl.jurisdiction,cl.decision_type,
+                cl.decision_date,cl.finality_status,cl.legal_area,cl.outcome_summary,
+                cl.reasoning_summary,cl.source_url,cl.human_review_status,
+                s.source_status,s.url AS registry_source_url,
+                cla.precedential_weight,cla.human_review_status AS authority_review_status
+           FROM case_law cl
+           JOIN sources s ON s.id=cl.source_id AND s.source_status='official'
+           JOIN case_law_authority cla ON cla.case_law_id=cl.id
+          WHERE cl.case_number IN (${placeholders})
+            AND cl.human_review_status IN ('approved','reviewed')
+            AND cla.human_review_status IN ('approved','reviewed')
+          ORDER BY cl.decision_date DESC,cl.id DESC
+          LIMIT 24`
+      ).bind(...caseNumbers).all();
+      exactCases=(result.results||[]).map(row=>({
+        id:row.id,
+        caseTitle:row.case_title,
+        court:row.court,
+        caseNumber:row.case_number,
+        jurisdiction:row.jurisdiction,
+        decisionType:row.decision_type,
+        decisionDate:row.decision_date,
+        finalityStatus:row.finality_status,
+        legalArea:row.legal_area,
+        outcomeSummary:row.outcome_summary,
+        reasoningSummary:row.reasoning_summary,
+        sourceUrl:row.source_url||row.registry_source_url||null,
+        humanReviewStatus:row.human_review_status,
+        authorityReviewStatus:row.authority_review_status,
+        precedentialWeight:row.precedential_weight
+      }));
+      exactCaseState=exactCases.length ? "matched" : "no_exact_match";
+    }catch(error){
+      console.error("legal_analyzer_exact_case_verify_failed",String(error?.message||error).slice(0,180));
+      exactCaseState="unavailable";
+    }
+  }
+
+  return json(request,{
+    ok:true,
+    mode:"extracted_hints_only",
+    privacy:{
+      fullDocumentAccepted:false,
+      documentTextStored:false,
+      note:"Only extracted legal hints were used for this verification request."
+    },
+    query:composed,
+    exact:{
+      instrument:exactInstrument,
+      articleState:exactArticleState,
+      articles:exactArticles,
+      caseState:exactCaseState,
+      cases:exactCases
+    },
+    governed:{
+      articleState:articleBundle.state,
+      instrument:articleBundle.instrument||null,
+      version:articleBundle.version||null,
+      legalSources:articleBundle.legalSources||[],
+      caseLawState:caseLawBundle.state,
+      caseLawSources:caseLawBundle.sources||[]
+    },
+    humanGate:"Open and verify the primary source before professional reliance. Analyzer verification never unlocks professional use by itself."
+  });
+}
+
 async function handleGPTChat(request,env){
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
   const contentType=(request.headers.get("content-type") || "").toLowerCase();
@@ -3239,6 +3404,7 @@ export default {
     if (url.pathname === "/api/articles") return handleArticles(request, env, url);
     if (url.pathname === "/api/assistant") return handleAssistant(request, env, url);
     if (url.pathname === "/api/chat") return handleGPTChat(request, env);
+    if (url.pathname === "/api/legal-analyzer/verify") return handleLegalAnalyzerVerify(request, env);
     if (url.pathname === "/api/web-sources") return handleWebSources(request);
     if (url.pathname === "/api/zenodo") return handleZenodo(request);
     if (url.pathname === "/api/orcid") return handleOrcid(request);
