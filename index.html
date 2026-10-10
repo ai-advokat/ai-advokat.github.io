@@ -15,7 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/app-icon.svg" />
-  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261005-guide-vault-v2" />
+  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261010-simple-workspace-v1" />
   <meta name="application-name" content="AI Advokat" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -1402,79 +1402,96 @@
 
   <section class="ai-chat-section" id="ai-advokat-chat" aria-labelledby="aiChatHeading">
     <div class="container">
-      <div class="sectionHead">
-        <div>
-          <span class="tag">AI ADVOKAT · GPT-POWERED WORKSPACE</span>
-          <h2 id="aiChatHeading">Разговарајте со AI Advokat</h2>
-          <p>Еден разговор: AI Advokat прво ги проверува достапните водичи и article-level правниот корпус, а GPT-6.1 Sol е production-активен за контролирана синтеза, Web истражување и прилози.</p>
-        </div>
+      <div class="ai-chat-intro">
+        <span class="tag">AI ADVOKAT</span>
+        <h2 id="aiChatHeading">AI Advokat</h2>
+        <p>Опишете го правниот проблем со свои зборови. Системот сам ги избира релевантните извори и алатки, со GPT-6.1 Sol во позадина и Human Gate за важните чекори.</p>
       </div>
 
       <div class="ai-chat-wrap" id="aiAdvokatChat">
         <aside class="ai-chat-side" aria-label="Разговори">
           <div class="brandMini"><img src="/assets/app-icon.svg" alt=""><span>AI Advokat</span></div>
-          <button class="ai-chat-new" id="aiChatNew" type="button">＋ Нов разговор</button>
+          <div class="ai-chat-side-label">Разговори</div>
           <div class="ai-chat-history" id="aiChatHistory"></div>
-          <div class="ai-chat-side-note">Разговорите во оваа фаза се чуваат само во тековната browser сесија. Не внесувајте доверливи или лични податоци.</div>
+          <div class="ai-chat-side-note">Историјата се чува само во оваа browser сесија.</div>
         </aside>
 
         <div class="ai-chat-main">
           <div class="ai-chat-top">
             <div class="ai-chat-title">
+              <img src="/assets/app-icon.svg" width="30" height="30" alt="" aria-hidden="true">
               <div>
                 <strong>AI Advokat</strong>
                 <small id="aiChatProvider">GPT-6.1 Sol · проверка на runtime…</small>
               </div>
             </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <span class="ai-chat-status"><span class="ai-chat-status-dot"></span> Human Gate</span>
-              <button class="btn light" id="aiChatExport" type="button">Извези разговор</button>
+            <div class="ai-chat-top-actions">
+              <button class="ai-chat-topbtn" id="aiChatNew" type="button" aria-label="Нов разговор" title="Нов разговор">＋</button>
+              <details class="ai-chat-menu" id="aiChatMenu">
+                <summary class="ai-chat-topbtn" aria-label="Повеќе опции" title="Повеќе опции">⋯</summary>
+                <div class="ai-chat-menu-panel">
+                  <div class="ai-chat-menu-status"><span class="ai-chat-status-dot"></span><span>Human Gate</span></div>
+                  <button class="ai-chat-menu-action" id="aiChatExport" type="button">Извези разговор</button>
+                </div>
+              </details>
             </div>
           </div>
 
           <div class="ai-chat-messages" id="aiChatMessages" aria-live="polite"></div>
 
           <div class="ai-chat-composer-zone">
-            <div class="ai-chat-provider-note">
-              <strong>Приватност:</strong> не прикачувајте адвокатска тајна, матични броеви, здравствени или други чувствителни податоци. Прилозите се обработуваат само кога server-side provider/privacy gate е активен; разговорот останува session-private и OpenAI Responses се повикува со store:false.
-              <div class="ai-guide-vault-bar">
-                <button class="btn light" id="aiGuideVaultImport" type="button">📚 Вчитај приватни водичи</button>
-                <button class="btn light" id="aiGuideVaultClear" type="button">Избриши локални водичи</button>
-                <span id="aiGuideVaultStatus" class="ai-guide-vault-status">Guide Vault · проверка…</span>
-                <input id="aiGuideVaultFiles" type="file" multiple hidden aria-label="Вчитај приватни AI Advokat водичи" accept=".zip,.docx,.pdf,application/zip,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf" />
-              </div>
-              <small class="ai-guide-vault-note">Guide Vault ги чува PDF/DOCX датотеките само на овој уред. Кон GPT се испраќа само релевантен водич со SHA-256 што се совпаѓа со AI Advokat регистарот; водичот е секундарен материјал, не официјален закон.</small>
-            </div>
             <div class="ai-chat-composer">
               <div class="ai-chat-attachments" id="aiChatAttachments"></div>
               <div class="ai-chat-input">
                 <button class="ai-chat-iconbtn" id="aiChatAttach" type="button" aria-label="Прикачи датотека" title="Прикачи датотека">＋</button>
                 <input id="aiChatFiles" type="file" multiple hidden aria-label="Прикачи датотеки во AI Advokat" accept=".pdf,.doc,.docx,.txt,.md,.csv,.json,.png,.jpg,.jpeg,.webp" />
-                <button class="ai-chat-iconbtn" id="aiChatMic" type="button" aria-label="Диктирај" title="Диктирај">🎙</button>
                 <textarea id="aiChatInput" rows="1" maxlength="4000" aria-label="Порака до AI Advokat" placeholder="Прашајте го AI Advokat…"></textarea>
+                <button class="ai-chat-iconbtn" id="aiChatMic" type="button" aria-label="Диктирај" title="Диктирај">🎙</button>
                 <button class="ai-chat-send" id="aiChatSend" type="button" aria-label="Испрати" title="Испрати">➤</button>
                 <button class="ai-chat-stop" id="aiChatStop" type="button" aria-label="Стоп" title="Стоп">■</button>
               </div>
-              <div class="ai-chat-modes" aria-label="Режим">
-                <button class="ai-chat-mode active" type="button" data-chat-mode="auto">✨ Auto</button>
-                <button class="ai-chat-mode" type="button" data-chat-mode="library">📚 AI Advokat Library</button>
-                <button class="ai-chat-mode" type="button" data-chat-mode="web">🌐 Web</button>
+
+              <div class="ai-chat-composer-footer">
+                <details class="ai-chat-tools" id="aiChatTools">
+                  <summary>Алатки</summary>
+                  <div class="ai-chat-tools-panel">
+                    <div class="ai-chat-tools-group">
+                      <strong>Извор</strong>
+                      <div class="ai-chat-modes" aria-label="Режим">
+                        <button class="ai-chat-mode active" type="button" data-chat-mode="auto">Auto</button>
+                        <button class="ai-chat-mode" type="button" data-chat-mode="library">AI Advokat Library</button>
+                        <button class="ai-chat-mode" type="button" data-chat-mode="web">Web</button>
+                      </div>
+                    </div>
+                    <div class="ai-chat-tools-group">
+                      <strong>Приватни водичи</strong>
+                      <div class="ai-guide-vault-bar">
+                        <button class="ai-chat-tool-action" id="aiGuideVaultImport" type="button">Вчитај водичи</button>
+                        <button class="ai-chat-tool-action" id="aiGuideVaultClear" type="button">Избриши локални</button>
+                        <span id="aiGuideVaultStatus" class="ai-guide-vault-status">Guide Vault · проверка…</span>
+                        <input id="aiGuideVaultFiles" type="file" multiple hidden aria-label="Вчитај приватни AI Advokat водичи" accept=".zip,.docx,.pdf,application/zip,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf" />
+                      </div>
+                      <small class="ai-guide-vault-note">Guide Vault ги чува PDF/DOCX датотеките само на овој уред. Кон GPT се испраќа само релевантен водич со SHA-256 што се совпаѓа со AI Advokat регистарот; водичот е секундарен материјал, не официјален закон.</small>
+                    </div>
+                  </div>
+                </details>
+                <span class="ai-chat-mode-caption" id="aiChatModeCaption">Auto</span>
               </div>
             </div>
-            <p class="ai-chat-hint">AI Advokat е информативна и истражувачка помош. За конкретна правна одлука проверете го официјалниот извор и користете човечка професионална контрола.</p>
+            <p class="ai-chat-hint"><strong>Приватност:</strong> не внесувајте адвокатска тајна, матични броеви, здравствени или други чувствителни податоци. AI Advokat е истражувачка помош; важните правни чекори остануваат под човечка професионална контрола.</p>
           </div>
         </div>
 
         <template id="aiChatEmptyTemplate">
           <div class="ai-chat-empty">
-            <img src="/assets/app-icon.svg" width="58" height="58" alt="" style="border-radius:14px;margin-bottom:12px">
+            <img src="/assets/app-icon.svg" width="52" height="52" alt="" class="ai-chat-empty-logo">
             <h2>Како можам да ви помогнам?</h2>
-            <p>Опишете го проблемот со свои зборови. Ќе ги провериме релевантните AI Advokat водичи и достапниот article-level правен корпус, а GPT-6.1 Sol ќе помогне со контролирана синтеза под Human Gate.</p>
+            <p>Опишете го проблемот со свои зборови.</p>
             <div class="ai-chat-starters">
-              <button class="ai-chat-starter" type="button" data-starter="Ме повика полиција на информативен разговор. Што треба да знам?">Ме повика полиција — што да направам?</button>
+              <button class="ai-chat-starter" type="button" data-starter="Ме повика полиција на информативен разговор. Што треба да знам?">Ме повика полиција</button>
               <button class="ai-chat-starter" type="button" data-starter="Институцијата не ми одговара на барањето. Кои се следните чекори?">Институцијата не ми одговара</button>
               <button class="ai-chat-starter" type="button" data-starter="Сакам развод и ме интересираат правата за децата и имотот.">Развод, деца и имот</button>
-              <button class="ai-chat-starter" type="button" data-starter="Објасни ми едноставно што можеш да правиш како AI Advokat.">Што може AI Advokat?</button>
+              <button class="ai-chat-starter" type="button" data-starter="Имаме оставинска постапка. Што треба да подготвиме и кои прашања да ги провериме?">Оставина и наследство</button>
             </div>
           </div>
         </template>
@@ -3518,7 +3535,7 @@
   loadCapabilities();
 </script>
 <script src="/assets/guide-vault.js?v=20261005-private-vault-v2"></script>
-<script src="/assets/ai-advokat-chat.js?v=20261007-runtime-recovery-v1"></script>
+<script src="/assets/ai-advokat-chat.js?v=20261010-simple-workspace-v1"></script>
 
 </body>
 </html>

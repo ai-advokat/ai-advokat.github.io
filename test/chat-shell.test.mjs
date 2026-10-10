@@ -19,7 +19,7 @@ const manifest=JSON.parse(fs.readFileSync("data/agent-architecture-v2.json","utf
 test("CHAT1 homepage exposes one primary AI Advokat conversation workspace",()=>{
   assert.match(html,/id="ai-advokat-chat"/);
   assert.match(html,/id="aiAdvokatChat"/);
-  assert.match(html,/Разговарајте со AI Advokat/);
+  assert.match(html,/Опишете го правниот проблем со свои зборови/);
   assert.match(html,/assets\/ai-advokat-chat\.css/);
   assert.match(html,/assets\/ai-advokat-chat\.js/);
 });
@@ -177,10 +177,9 @@ test("CHAT17 chat latency optimisations preserve governed routing",()=>{
 
 test("CHAT18 production UI status is readiness-driven rather than statically claiming LIVE",()=>{
   assert.match(html,/GPT-6\.1 Sol · проверка на runtime/);
-  assert.match(html,/production-активен/);
+  assert.match(html,/GPT-6\.1 Sol во позадина/);
   assert.doesNotMatch(html,/id="aiChatProvider">GPT-6\.1 Sol · LIVE governed/);
   assert.doesNotMatch(html,/production provider-от ќе биде активиран/);
-  assert.match(html,/store:false/);
 });
 
 
@@ -326,4 +325,27 @@ test("CHAT32 pleading drafting is routed through consequential Human Gate",()=>{
   assert.equal(divorce.legalIntelligenceEngine.mission_profile.id,"L3_CONSEQUENTIAL");
   assert.equal(divorce.legalIntelligenceEngine.authority_and_human_gate.human_review_required,true);
   assert.equal(divorce.legalIntelligenceEngine.implementation.no_autonomous_filing,true);
+});
+
+
+test("CHAT33 simple workspace keeps advanced controls behind compact menus",()=>{
+  assert.match(html,/<details class="ai-chat-menu" id="aiChatMenu">[\s\S]*id="aiChatExport"/);
+  assert.match(html,/<details class="ai-chat-tools" id="aiChatTools">[\s\S]*data-chat-mode="auto"[\s\S]*id="aiGuideVaultImport"/);
+  assert.match(html,/id="aiChatModeCaption">Auto</);
+  assert.doesNotMatch(html,/ai-chat-provider-note/);
+  assert.match(chatCss,/\.ai-chat-tools-panel/);
+  assert.match(chatCss,/\.ai-chat-menu-panel/);
+  assert.match(chatJs,/toolsMenu\.open=false/);
+  assert.match(chatJs,/topMenu\.open=false/);
+});
+
+test("CHAT34 primary composer stays intentionally minimal while preserving full capability",()=>{
+  const composer=html.match(/<div class="ai-chat-composer">([\s\S]*?)<\/div>\s*<p class="ai-chat-hint">/)?.[1]||"";
+  assert.match(composer,/id="aiChatAttach"/);
+  assert.match(composer,/id="aiChatInput"/);
+  assert.match(composer,/id="aiChatMic"/);
+  assert.match(composer,/id="aiChatSend"/);
+  assert.match(composer,/id="aiChatTools"/);
+  assert.match(html,/Историјата се чува само во оваа browser сесија/);
+  assert.match(html,/важните правни чекори остануваат под човечка професионална контрола/);
 });
