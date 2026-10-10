@@ -1,10 +1,10 @@
 {
-  "rerun_id": "AI_ADVOKAT_CASE_EXPORT_PRODUCTION_RERUN_2026-10-10_01",
+  "rerun_id": "AI_ADVOKAT_CASE_EXPORT_PRODUCTION_RERUN_2026-10-10_02",
   "requested_on": "2026-10-10",
   "target_branch": "main",
-  "reason": "Activation #2 applied migration 0029, verified the production Case Workspace schema and deployed the current Worker, but the immediate live capability smoke observed a stale propagation response without caseExports. Re-run the same bounded activation with semantic capability polling before MD/DOCX/PDF smoke.",
-  "baseline_run": 2,
-  "baseline_failure": "stale_post_deploy_capabilities_caseExports_undefined",
+  "reason": "Activation #3 verified current Worker capabilities and passed live MD, DOCX, PDF model and export audit checks. It failed only in the final privacy assertion because Cloudflare D1 rejected a short metadata_json LIKE pattern with SQLITE_ERROR 'LIKE or GLOB pattern too complex'. Re-run the same bounded activation after replacing that SQL pattern check with a strict JSON audit-metadata allowlist and explicit no-content-leak assertion.",
+  "baseline_run": 3,
+  "baseline_failure": "d1_like_or_glob_pattern_too_complex_after_md_docx_pdf_audit_pass",
   "authorization_source": [
     "AI_ADVOKAT_SECURE_CASE_WORKSPACE_V1_2026-10-10",
     "AI_ADVOKAT_CASEPILOT_EXPORT_V1_2026-10-10"
