@@ -28,8 +28,10 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Project lead explicitly approved a comprehensive re-verification after the Secure Case Workspace and Accuracy/Answer-First upgrades. Execute twenty synthetic legal scenarios spanning divorce, inheritance, theft, detention, drugs, traffic crime, domestic violence, labour, administrative law, property, contracts, consumer law, defamation, misdemeanours, FOI, mediation, ZKP and ZPP temporal applicability.",
+    "reason": "UAT #9 exposed systemic chief/postflight completion failures (1/20 pass). Re-run the unchanged twenty-scenario suite after bounded remediation: L0-L3 low reasoning, larger mission-aware answer budgets, compact PASS verification, source-gap-safe REVISE behavior and explicit incomplete_details diagnostics.",
     "approval_text": "Ti odobruvam!!! (Potoa napravi dvaesetina trsta na orasanja za: ravod na brsk, ostavina, krazba, pritvor, droga, soobrskajni krivicni dela, i se ostanato)",
+    "baseline_run": 9,
+    "baseline_result": "1/20",
     "no_governance_weakening": true
   }
 }
