@@ -53,7 +53,8 @@
     "test:lioe-production-activation": "node --no-warnings --test test/lioe-production-activation.test.mjs",
     "test:production-runtime-recovery": "node --no-warnings --test test/production-runtime-recovery.test.mjs",
     "test:legal-uat": "node --no-warnings --test test/legal-uat.test.mjs",
-    "test:case-workspace": "node --no-warnings --test test/case-workspace.test.mjs"
+    "test:case-workspace": "node --no-warnings --test test/case-workspace.test.mjs",
+    "test:case-workspace-activation": "node --no-warnings --test test/case-workspace-production-activation.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
