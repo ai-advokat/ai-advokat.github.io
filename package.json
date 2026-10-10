@@ -58,7 +58,8 @@
     "test:case-export": "node --no-warnings --test test/case-export.test.mjs",
     "test:case-law-sources": "node --no-warnings --test test/case-law-source-registry.test.mjs",
     "test:case-law-chat": "node --no-warnings --test test/case-law-chat-context.test.mjs",
-    "test:case-law-import": "node --no-warnings --test test/case-law-import.test.mjs"
+    "test:case-law-import": "node --no-warnings --test test/case-law-import.test.mjs",
+    "test:legal-analyzer": "node --no-warnings --test test/legal-analyzer.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
