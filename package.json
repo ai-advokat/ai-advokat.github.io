@@ -64,7 +64,8 @@
     "test:matter-search": "node --no-warnings --test test/matter-search.test.mjs",
     "test:casepilot-matter": "node --no-warnings --test test/casepilot-matter.test.mjs",
     "test:casepilot-workspace-bridge": "node --no-warnings --test test/casepilot-workspace-bridge.test.mjs",
-    "test:casepilot-export-adapter": "node --no-warnings --test test/casepilot-export-adapter.test.mjs"
+    "test:casepilot-export-adapter": "node --no-warnings --test test/casepilot-export-adapter.test.mjs",
+    "test:casepilot-case-law-bridge": "node --no-warnings --test test/casepilot-case-law-bridge.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"

@@ -72,6 +72,7 @@ import {
   CASEPILOT_LAWYER_DECISIONS
 } from "./casepilot-matter.js";
 import { mapWorkspaceToCasePilotShell } from "./casepilot-workspace-bridge.js";
+import { buildCaseLawComparison } from "./casepilot-case-law-bridge.js";
 
 const VERSION = "1.7.0";
 
@@ -2292,6 +2293,54 @@ function validateChatAttachments(payload){
   return {ok:true,attachments:out};
 }
 
+async function handleCasePilotCaseLawResearch(request,env){
+  if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+  const contentType=(request.headers.get("content-type")||"").toLowerCase();
+  if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+
+  const parsed=await readLimitedJson(request,16384);
+  if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
+  const payload=parsed.value;
+  if(!payload || typeof payload!=="object" || Array.isArray(payload)) return json(request,{ok:false,error:"invalid_payload"},400);
+
+  // Privacy boundary: this endpoint accepts a legal issue/query only.
+  // It must never receive private matter documents or full factual narratives.
+  for(const forbidden of ["text","content","document","documents","attachment","attachments","fullText","documentText","matterText"]){
+    if(Object.prototype.hasOwnProperty.call(payload,forbidden)){
+      return json(request,{ok:false,error:"private_matter_content_not_accepted"},400);
+    }
+  }
+
+  const query=cleanQuery(payload.query,1200);
+  if(query.length<3) return json(request,{ok:false,error:"case_law_query_required"},400);
+
+  const plan=buildAgentPlan(query,{preferCorpus:true});
+  const bundle=await governedCaseLawContext(env,query,plan,{limit:6});
+  const comparison=buildCaseLawComparison(bundle.cases||[],{roleAssignments:{}});
+
+  return json(request,{
+    ok:true,
+    mode:"reviewed_official_case_law_only",
+    state:bundle.state,
+    query,
+    comparison,
+    sources:bundle.sources||[],
+    safeguards:{
+      privateMatterContentAccepted:false,
+      officialSourcesOnly:true,
+      dualHumanReviewRequired:true,
+      adverseAuthorityMustNotBeHidden:true,
+      roleClassification:"neutral_until_professional_issue-specific_classification"
+    },
+    humanGate:"Case-law role in a concrete matter must be classified and approved by a lawyer before professional reliance."
+  });
+}
+
 async function handleLegalAnalyzerVerify(request,env){
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
   const contentType=(request.headers.get("content-type")||"").toLowerCase();
@@ -3451,6 +3500,7 @@ export default {
     if (url.pathname === "/api/assistant") return handleAssistant(request, env, url);
     if (url.pathname === "/api/chat") return handleGPTChat(request, env);
     if (url.pathname === "/api/legal-analyzer/verify") return handleLegalAnalyzerVerify(request, env);
+    if (url.pathname === "/api/casepilot/case-law") return handleCasePilotCaseLawResearch(request, env);
     if (url.pathname === "/api/web-sources") return handleWebSources(request);
     if (url.pathname === "/api/zenodo") return handleZenodo(request);
     if (url.pathname === "/api/orcid") return handleOrcid(request);
