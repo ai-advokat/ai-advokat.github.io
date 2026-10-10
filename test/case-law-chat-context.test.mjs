@@ -57,7 +57,7 @@ function seedCaseLaw(){
   insertAuthority.run(goodId,"supreme","decision","strong_persuasive","neutral",null,"ЗКП","притвор жалба поблага мерка","reviewed");
   insertAuthority.run(pendingId,"appellate","decision","persuasive","neutral",null,"ЗКП","притвор жалба","pending");
   insertAuthority.run(secondaryId,"other","decision","unknown","neutral",null,"ЗКП","притвор жалба","reviewed");
-  insertAuthority.run(echrId,"international","decision","strong_persuasive","neutral","Article 2",null,"effective investigation medical negligence","reviewed");
+  insertAuthority.run(echrId,"international","decision","strong_persuasive","neutral","Article 2",null,"effective investigation medical negligence ефективна истрага медицинска небрежност","reviewed");
 
   raw.prepare(`INSERT INTO case_law_holdings(case_law_id,holding_type,proposition,source_locator,human_review_status)
     VALUES (?,?,?,?,?)`).run(goodId,"principle","Притворот бара конкретно образложена нужност и разгледување на поблага мерка.","§ test","reviewed");
@@ -83,8 +83,8 @@ test("CLC1 legal chat retrieves only official + case-reviewed + authority-review
 
 test("CLC2 pending official cases and reviewed Paragraf-secondary cases are excluded from synthesis",async()=>{
   const {d1}=seedCaseLaw();
-  const plan=buildAgentPlan("Кои се условите за притвор?");
-  const out=await governedCaseLawContext({DB:d1},"притвор жалба",plan,{limit:6});
+  const plan=buildAgentPlan("Подготви анализа на жалба против притвор и поблага мерка.");
+  const out=await governedCaseLawContext({DB:d1},"жалба против притвор поблага мерка",plan,{limit:6});
   assert.deepEqual(out.cases.map(x=>x.case_number),["КЖ-101/2026"]);
   assert.ok(out.cases.every(x=>x.source_status==="official"));
 });
