@@ -123,7 +123,17 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.ok(blocked.problems.includes("external_research_not_authorized"));
   });
 
-  test("provider activation fails closed unless gate, key and model are all present", () => {
+  test("chief instructions require answer-first substantive help without inventing unsupported law",()=>{
+  const plan=buildAgentPlan("Помогни ми да подготвам што ми треба за правна постапка.",{explicitMode:ORCHESTRATOR_MODES.PROACTIVE_RESEARCH});
+  const text=orchestratorInstructions(plan);
+  assert.match(text,/ANSWER-FIRST QUALITY CONTRACT/);
+  assert.match(text,/most useful substantive answer/);
+  assert.match(text,/never invent current law, deadlines, jurisdiction, mandatory documents or legal effect/i);
+  assert.match(text,/non-authoritative practical orientation/i);
+  assert.match(text,/ordinarily no more than three/i);
+});
+
+test("provider activation fails closed unless gate, key and model are all present", () => {
     assert.equal(openAIOrchestratorConfigured({}),false);
     assert.equal(openAIOrchestratorConfigured({OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40)}),false);
     assert.equal(openAIOrchestratorConfigured({OPENAI_ORCHESTRATOR_ENABLED:"false",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-x"}),false);
