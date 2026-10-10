@@ -32,6 +32,8 @@ on:
       - "wrangler*.jsonc"
       - "package.json"
       - ".github/workflows/security-tests.yml"
+      - ".github/workflows/case-workspace-production-activation.yml"
+      - ".github/activation/case-workspace-production-request.json"
       - ".github/workflows/production-runtime-recovery.yml"
       - ".github/activation/production-runtime-recovery-2026-10-07.json"
       - ".github/activation/production-runtime-recovery-final-2026-10-07.json"
@@ -73,6 +75,8 @@ jobs:
         run: npm run test:casepilot
       - name: Secure Case Workspace tests
         run: npm run test:case-workspace
+      - name: Secure Case Workspace activation contract
+        run: npm run test:case-workspace-activation
       - name: Zoran practical guides governance tests
         run: npm run test:guides
       - name: Citizen guide router tests
