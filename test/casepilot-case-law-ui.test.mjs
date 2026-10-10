@@ -8,7 +8,7 @@ test("CasePilot UI sends only a legal query to governed case-law research",()=>{
   const end=js.indexOf("function renderCaseLaw",start);
   assert.ok(start>0 && end>start);
   const block=js.slice(start,end);
-  assert.match(block,/JSON.stringify({query})/);
+  assert.ok(block.includes("JSON.stringify({query})"));
   assert.doesNotMatch(block,/matterText|documentText|fullText|attachments|documents/);
 });
 
@@ -23,6 +23,6 @@ test("CasePilot case-law UI links only https sources in a new safe tab",()=>{
   const js=fs.readFileSync(new URL("../assets/professional-tools.js",import.meta.url),"utf8");
   const start=js.indexOf("function renderCaseLaw");
   const block=js.slice(start,start+2500);
-  assert.match(block,/^https:\/\//);
+  assert.ok(block.includes("/^https:\\/\\//i.test(card.sourceUrl)"));
   assert.match(block,/a.rel="noopener noreferrer"/);
 });
