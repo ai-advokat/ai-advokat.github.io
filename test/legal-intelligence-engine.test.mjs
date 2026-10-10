@@ -72,6 +72,14 @@ test("English complaint drafting is also consequential",()=>{
   assert.equal(p.implementation.no_autonomous_legal_representation,true);
 });
 
+test("temporal applicability phrasing requires verified research and Human Gate",()=>{
+  const p=buildLegalIntelligencePlan("Провери ја временската применливост на ЗПП: датум на објавување, влегување во сила и почеток на примена.",{mode:"proactive_research",selectedAgents:["macedonian_law"]});
+  assert.equal(p.mission_profile.id,"L1_VERIFIED_RESEARCH");
+  assert.equal(p.knowledge.current_law_verification_required,true);
+  assert.equal(p.knowledge.effective_date_required,true);
+  assert.equal(p.authority_and_human_gate.human_review_required,true);
+});
+
 test("natural Macedonian legal domains never fall into GENERAL_BYPASS",()=>{
   for(const q of [
     "Ме товарат за кражба, што треба да проверам?",
