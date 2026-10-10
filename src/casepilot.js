@@ -1,6 +1,29 @@
 // AI Advokat CasePilot — governed case-analysis foundation.
 // No private-document upload/storage is enabled by this module.
 
+export const CASEPILOT_MAX_DOCUMENTS = 20;
+
+export const CASEPILOT_EXPORT_FORMATS = Object.freeze(["md","docx","pdf"]);
+
+export const CASEPILOT_OUTCOME_BANDS = Object.freeze([
+  "strong",
+  "moderate",
+  "uncertain",
+  "weak"
+]);
+
+export const CASEPILOT_ANALYTIC_VIEWS = Object.freeze([
+  "client_theory",
+  "opposing_theory",
+  "neutral_adjudicator_view",
+  "evidentiary_view",
+  "procedural_view",
+  "best_case",
+  "base_case",
+  "worst_case",
+  "alternative_hypotheses"
+]);
+
 export const CASEPILOT_STATUSES = Object.freeze({
   CONFIRMED: "confirmed",
   INDICATION: "indication",
@@ -13,6 +36,10 @@ export const CASEPILOT_SECTIONS = Object.freeze([
   "case_passport",
   "lawyer_summary",
   "source_document_register",
+  "multi_document_ingestion",
+  "document_summary_matrix",
+  "fact_source_matrix",
+  "legal_source_matrix",
   "completeness_check",
   "chronology",
   "participants_access_map",
@@ -33,6 +60,9 @@ export const CASEPILOT_SECTIONS = Object.freeze([
   "objections_interventions",
   "closing_structure",
   "scenario_map",
+  "multi_perspective_analysis",
+  "outcome_assessment",
+  "executive_legal_opinion",
   "hearing_day_checklist",
   "hearing_notes",
   "ai_conclusion_register",
@@ -204,4 +234,101 @@ export function casePilotReadiness(workspace) {
     sourceProblems,
     reason:"Human Gate and private-case security remain mandatory."
   };
+}
+
+
+export function validateCaseDocumentRegistry(documents=[]) {
+  const errors=[];
+  if(!Array.isArray(documents)) return {ok:false,errors:["documents_array_required"]};
+  if(documents.length>CASEPILOT_MAX_DOCUMENTS) errors.push("document_limit_exceeded");
+  const seen=new Set();
+  documents.forEach((doc,index)=>{
+    if(!doc || typeof doc!=="object") {
+      errors.push(`document_${index}_required`);
+      return;
+    }
+    if(typeof doc.id!=="string" || !doc.id.trim()) errors.push(`document_${index}_id_required`);
+    if(typeof doc.title!=="string" || !doc.title.trim()) errors.push(`document_${index}_title_required`);
+    if(typeof doc.sha256!=="string" || !/^[a-f0-9]{64}$/i.test(doc.sha256)) errors.push(`document_${index}_sha256_required`);
+    if(!Number.isInteger(doc.pageCount) || doc.pageCount<1) errors.push(`document_${index}_page_count_required`);
+    if(doc?.id){
+      const key=doc.id.trim();
+      if(seen.has(key)) errors.push(`document_${index}_duplicate_id`);
+      seen.add(key);
+    }
+  });
+  return {ok:errors.length===0,errors};
+}
+
+export function createCaseWorkPackage({caseId,documents=[],requestedFormats=["md"]}={}) {
+  if(typeof caseId!=="string" || !caseId.trim()) throw new Error("casepilot_case_id_required");
+  const registry=validateCaseDocumentRegistry(documents);
+  if(!registry.ok) throw new Error(`casepilot_invalid_document_registry:${registry.errors.join(",")}`);
+  if(!Array.isArray(requestedFormats) || requestedFormats.length===0) throw new Error("casepilot_export_format_required");
+  const formats=[...new Set(requestedFormats)];
+  if(formats.some(f=>!CASEPILOT_EXPORT_FORMATS.includes(f))) throw new Error("casepilot_invalid_export_format");
+
+  return Object.freeze({
+    caseId:caseId.trim(),
+    documentLimit:CASEPILOT_MAX_DOCUMENTS,
+    documents:Object.freeze(documents.map(d=>Object.freeze({...d}))),
+    requestedFormats:Object.freeze(formats),
+    privateWorkspace:"LOCKED",
+    humanGateRequired:true,
+    analysisViews:CASEPILOT_ANALYTIC_VIEWS,
+    pipeline:Object.freeze([
+      "register_and_hash",
+      "page_level_extract",
+      "per_document_analysis",
+      "cross_document_synthesis",
+      "fact_chronology_and_contradictions",
+      "source_first_legal_retrieval",
+      "multi_perspective_analysis",
+      "outcome_strength_assessment",
+      "lawyer_human_gate",
+      "versioned_export"
+    ])
+  });
+}
+
+export function caseOutcomeAssessment({
+  band,
+  factors=[],
+  numericProbability=null,
+  statisticalModel=null,
+  confidenceInterval=null,
+  lawyerApproved=false
+}={}) {
+  if(!CASEPILOT_OUTCOME_BANDS.includes(band)) throw new Error("casepilot_valid_outcome_band_required");
+  if(!Array.isArray(factors) || factors.length===0) throw new Error("casepilot_outcome_factors_required");
+
+  if(numericProbability!==null){
+    if(typeof numericProbability!=="number" || numericProbability<0 || numericProbability>100){
+      throw new Error("casepilot_invalid_numeric_probability");
+    }
+    const modelOk=statisticalModel
+      && typeof statisticalModel==="object"
+      && typeof statisticalModel.name==="string" && statisticalModel.name.trim()
+      && typeof statisticalModel.population==="string" && statisticalModel.population.trim()
+      && typeof statisticalModel.period==="string" && statisticalModel.period.trim()
+      && typeof statisticalModel.calibration==="string" && statisticalModel.calibration.trim()
+      && typeof statisticalModel.applicability==="string" && statisticalModel.applicability.trim();
+    const intervalOk=Array.isArray(confidenceInterval)
+      && confidenceInterval.length===2
+      && confidenceInterval.every(v=>typeof v==="number" && v>=0 && v<=100)
+      && confidenceInterval[0]<=numericProbability
+      && numericProbability<=confidenceInterval[1];
+    if(!modelOk || !intervalOk || lawyerApproved!==true){
+      throw new Error("casepilot_numeric_probability_requires_validated_model_interval_and_human_gate");
+    }
+  }
+
+  return Object.freeze({
+    band,
+    factors:Object.freeze(factors.map(String)),
+    numericProbability,
+    statisticalModel:numericProbability===null ? null : Object.freeze({...statisticalModel}),
+    confidenceInterval:numericProbability===null ? null : Object.freeze([...confidenceInterval]),
+    lawyerApproved:numericProbability===null ? false : true
+  });
 }

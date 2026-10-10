@@ -9,7 +9,12 @@ import {
   approveAIConclusion,
   validateAIConclusion,
   validateContradiction,
-  casePilotReadiness
+  casePilotReadiness,
+  CASEPILOT_MAX_DOCUMENTS,
+  CASEPILOT_EXPORT_FORMATS,
+  validateCaseDocumentRegistry,
+  createCaseWorkPackage,
+  caseOutcomeAssessment
 } from "../src/casepilot.js";
 
 describe("AI Advokat CasePilot foundation", () => {
@@ -93,4 +98,55 @@ describe("AI Advokat CasePilot foundation", () => {
     assert.ok(malformed.errors.includes("lawyer_identity_required"));
     assert.ok(malformed.errors.includes("lawyer_timestamp_required"));
   });
+
+
+  test("20-document professional work package is bounded and export-aware", () => {
+    const docs=Array.from({length:20},(_,i)=>({
+      id:`D-${String(i+1).padStart(2,"0")}`,
+      title:`Document ${i+1}`,
+      sha256:"a".repeat(64),
+      pageCount:i+1
+    }));
+    assert.equal(CASEPILOT_MAX_DOCUMENTS,20);
+    assert.deepEqual(CASEPILOT_EXPORT_FORMATS,["md","docx","pdf"]);
+    assert.equal(validateCaseDocumentRegistry(docs).ok,true);
+    const wp=createCaseWorkPackage({caseId:"CASE-20",documents:docs,requestedFormats:["md","docx","pdf"]});
+    assert.equal(wp.documents.length,20);
+    assert.equal(wp.privateWorkspace,"LOCKED");
+    assert.equal(wp.humanGateRequired,true);
+    assert.ok(wp.pipeline.includes("cross_document_synthesis"));
+    assert.ok(wp.analysisViews.includes("opposing_theory"));
+    assert.throws(
+      ()=>createCaseWorkPackage({caseId:"CASE-21",documents:[...docs,{id:"D-21",title:"x",sha256:"b".repeat(64),pageCount:1}]}),
+      /document_limit_exceeded/
+    );
+  });
+
+  test("outcome assessment forbids intuitive percentages and permits only validated calibrated probability", () => {
+    const qualitative=caseOutcomeAssessment({
+      band:"moderate",
+      factors:["strong documentary chain","unresolved procedural risk"]
+    });
+    assert.equal(qualitative.numericProbability,null);
+    assert.throws(
+      ()=>caseOutcomeAssessment({band:"strong",factors:["x"],numericProbability:78}),
+      /validated_model_interval_and_human_gate/
+    );
+    const calibrated=caseOutcomeAssessment({
+      band:"moderate",
+      factors:["x","y"],
+      numericProbability:62,
+      statisticalModel:{
+        name:"validated-case-outcome-model",
+        population:"comparable finalized cases",
+        period:"2022-2026",
+        calibration:"Brier/calibration curve documented",
+        applicability:"same legal issue and procedural posture"
+      },
+      confidenceInterval:[48,74],
+      lawyerApproved:true
+    });
+    assert.equal(calibrated.numericProbability,62);
+  });
+
 });

@@ -99,3 +99,12 @@ Phase 5 — export: versioned DOCX/PDF working pack after Human Gate.
 - no autonomous guilt assessment;
 - no automatic filing;
 - no professional-use unlock without lawyer approval.
+
+
+## Professional work-package target
+
+CasePilot's professional target is one governed case package with up to **20 documents** analysed as a single evidentiary record. GPT-6.1 Sol performs bounded synthesis over document-level findings, while every material factual conclusion remains traceable to document ID and page.
+
+The professional pack includes multi-perspective analysis (client theory, adverse theory, neutral adjudicator, evidence/procedure, best/base/worst case and alternative hypotheses), a factor-based outcome assessment, and a versioned MD/DOCX/PDF export after Human Gate.
+
+A numerical success percentage is prohibited unless it comes from a documented validated statistical model with calibration, applicability and uncertainty interval; model intuition alone is never sufficient.
