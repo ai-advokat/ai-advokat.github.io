@@ -168,8 +168,10 @@ test("CHAT17 chat latency optimisations preserve governed routing",()=>{
   assert.match(worker,/const consequentialLegal=/);
   assert.match(worker,/const lightweightLegal=/);
   assert.match(worker,/maxOutputTokens=fastGeneral \? 700/);
-  assert.match(worker,/consequentialLegal \? 3200/);
-  assert.match(worker,/lightweightLegal \? 2200/);
+  assert.match(worker,/missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE" \? 3200/);
+  assert.match(worker,/missionProfile==="L3_CONSEQUENTIAL" \? 2800/);
+  assert.match(worker,/missionProfile==="L2_STRATEGY_PROCEDURE" \? 2400/);
+  assert.match(worker,/lightweightLegal \? 2000/);
   assert.match(worker,/Promise\.all\(\[/);
 });
 
@@ -305,13 +307,14 @@ test("CHAT31 synchronous LIOE path is latency-bounded without bypassing postflig
   const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
   assert.match(worker,/maxAttempts:1/);
   assert.match(orchestrator,/highDepthGovernance \? "medium" : "low"/);
-  assert.match(orchestrator,/max_output_tokens:highDepthGovernance \? 800 : 650/);
-  assert.match(orchestrator,/Use at most 120 words and at most 6 short bullets/);
-  assert.match(orchestrator,/slice\(0,3200\)/);
+  assert.match(orchestrator,/max_output_tokens:highDepthGovernance \? 700 : 500/);
+  assert.match(orchestrator,/Use at most 90 words and at most 5 short bullets/);
+  assert.match(orchestrator,/slice\(0,2400\)/);
   assert.match(orchestrator,/reasoning:\{effort:profile==="L4_LEGAL_TRUTH_GOVERNANCE" \? "medium" : "low"\}/);
   assert.match(orchestrator,/postflightOutputTokens/);
   assert.match(orchestrator,/profile==="L3_CONSEQUENTIAL"/);
   assert.match(orchestrator,/corrected_answer to the empty string/);
+  assert.match(orchestrator,/normally no more than 800 words/);
   assert.match(orchestrator,/do not FAIL solely because the source set is incomplete/);
   assert.match(orchestrator,/provisionalRevision:true/);
   assert.match(worker,/postflightVerdict:postflight\.verdict/);
