@@ -42,19 +42,26 @@ test("UAT2 production v2 suite is synthetic-only and contains exactly twenty bro
 });
 
 test("UAT3 every v2 expected mission profile matches the local governed classifier",()=>{
+  const mismatches=[];
   for(const scenario of suite.scenarios){
     const plan=buildAgentPlan(scenario.prompt);
-    if(scenario.expect_mission_profile){
-      assert.equal(plan.legalIntelligenceEngine.mission_profile.id,scenario.expect_mission_profile,scenario.id);
+    const actual=plan.legalIntelligenceEngine.mission_profile.id;
+    if(scenario.expect_mission_profile && actual!==scenario.expect_mission_profile){
+      mismatches.push({id:scenario.id,expected:scenario.expect_mission_profile,actual});
     }
-    if(scenario.expect_human_review===true){
-      assert.equal(plan.legalIntelligenceEngine.authority_and_human_gate.human_review_required,true,scenario.id);
+    if(scenario.expect_human_review===true && plan.legalIntelligenceEngine.authority_and_human_gate.human_review_required!==true){
+      mismatches.push({id:scenario.id,expected:"human_review_required",actual:"not_required"});
     }
     if(scenario.expect_execution_authorization==="NO_EXTERNAL_ACTION"){
-      assert.equal(plan.legalIntelligenceEngine.implementation.no_autonomous_filing,true,scenario.id);
-      assert.ok(plan.legalIntelligenceEngine.authority_and_human_gate.required_gate_types.includes("author_approval"),scenario.id);
+      if(plan.legalIntelligenceEngine.implementation.no_autonomous_filing!==true){
+        mismatches.push({id:scenario.id,expected:"no_autonomous_filing",actual:false});
+      }
+      if(!plan.legalIntelligenceEngine.authority_and_human_gate.required_gate_types.includes("author_approval")){
+        mismatches.push({id:scenario.id,expected:"author_approval_gate",actual:plan.legalIntelligenceEngine.authority_and_human_gate.required_gate_types});
+      }
     }
   }
+  assert.deepEqual(mismatches,[]);
 });
 
 test("UAT4 consequential drafting scenarios are Human-Gated and never autonomous",()=>{
