@@ -509,7 +509,7 @@ test("L2-L4 selectively execute bounded specialists in parallel and aggregate us
     assert.equal(calls.length,stage.findings.length);
     assert.ok(calls.every(x=>x.store===false));
     assert.ok(calls.every(x=>x.reasoning?.effort==="low"));
-    assert.ok(calls.every(x=>x.max_output_tokens===650));
+    assert.ok(calls.every(x=>x.max_output_tokens===500));
   }finally{
     globalThis.fetch=originalFetch;
   }
@@ -553,8 +553,8 @@ test("L3 pleading draft uses one bounded MK specialist with hardened completion 
   assert.equal(plan.legalIntelligenceEngine.mission_profile.id,"L3_CONSEQUENTIAL");
   assert.deepEqual(plan.agents,[AGENT_ROLES.mk.id]);
   assert.equal(specialistExecutionRequired(plan),true);
-  assert.match(agentSource,/Use at most 120 words and at most 6 short bullets/);
-  assert.match(agentSource,/max_output_tokens:highDepthGovernance \? 800 : 650/);
+  assert.match(agentSource,/Use at most 90 words and at most 5 short bullets/);
+  assert.match(agentSource,/max_output_tokens:highDepthGovernance \? 700 : 500/);
   assert.match(agentSource,/incomplete_details\?\.reason/);
   assert.match(agentSource,/failureDetail/);
 });
@@ -579,4 +579,11 @@ test("natural Macedonian legal-domain prompts never bypass legal governance",()=
     assert.notEqual(plan.legalIntelligenceEngine.mission_profile.id,"GENERAL_BYPASS",prompt);
     assert.ok(plan.agents.includes("macedonian_law"),prompt);
   }
+});
+
+
+test("postflight REVISE is explicitly bounded for synchronous production latency",()=>{
+  assert.match(agentSource,/normally no more than 800 words/);
+  assert.match(agentSource,/maxItems:6/);
+  assert.match(agentSource,/must not repeat long evidence lists or source metadata/);
 });
