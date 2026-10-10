@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import {
   CASEPILOT_MATTER_VERSION,
   createMatter,
@@ -140,4 +141,17 @@ test("professional objects remain working drafts and review-bound",()=>{
   assert.equal(gap.status,"missing");
   assert.equal(risk.humanReviewRequired,true);
   assert.equal(q.status,"working_draft");
+});
+
+
+test("Worker exposes CasePilot schema read-only and keeps consequential actions disabled",()=>{
+  const worker=fs.readFileSync(new URL("../src/index.js",import.meta.url),"utf8");
+  const start=worker.indexOf('if (url.pathname === "/api/casepilot/schema")');
+  assert.ok(start>0);
+  const block=worker.slice(start,start+1400);
+  assert.match(block,/sourceAnchorsRequired:true/);
+  assert.match(block,/professionalUse:"locked_until_human_gate"/);
+  assert.match(block,/autonomousFiling:false/);
+  assert.match(block,/autonomousSignature:false/);
+  assert.match(block,/autonomousExternalTransmission:false/);
 });
