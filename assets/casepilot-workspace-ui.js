@@ -71,6 +71,47 @@ function resetWorkspace(){
   $("classificationStatus").textContent="";
 }
 
+function validCaseId(value){
+  return /^CASE-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||""));
+}
+
+async function openCaseById(caseId){
+  if(!validCaseId(caseId)) throw new Error("invalid_case_id");
+  activeCaseId=caseId;
+  const data=await api("/api/cases/"+encodeURIComponent(caseId)+"/casepilot");
+  renderWorkspace(data);
+  await loadClassifications();
+  setWorkspaceVisible(true);
+  $("caseId").value=caseId;
+  return data;
+}
+
+$("loadCases").addEventListener("click",async()=>{
+  const key=$("membershipKey").value.trim();
+  if(!key){
+    $("accessStatus").textContent="Внесете membership key.";
+    return;
+  }
+  accessKey=key;
+  $("loadCases").disabled=true;
+  $("accessStatus").textContent="Се вчитуваат вашите Secure Case Workspaces…";
+  try{
+    const data=await api("/api/cases");
+    renderCasePicker(Array.isArray(data.cases)?data.cases:[]);
+    $("casePickerCard").classList.remove("hidden");
+    $("createCaseCard").classList.remove("hidden");
+    $("accessStatus").textContent="Пристапот е потврден. Изберете предмет или креирајте нов.";
+  }catch(error){
+    resetWorkspace();
+    $("casePickerCard").classList.add("hidden");
+    $("createCaseCard").classList.add("hidden");
+    accessKey="";
+    $("accessStatus").textContent="Не може да се вчитаат предметите: "+String(error?.message||error);
+  }finally{
+    $("loadCases").disabled=false;
+  }
+});
+
 $("openCase").addEventListener("click",async()=>{
   const key=$("membershipKey").value.trim();
   const caseId=$("caseId").value.trim();
@@ -78,20 +119,18 @@ $("openCase").addEventListener("click",async()=>{
     $("accessStatus").textContent="Внесете membership key.";
     return;
   }
-  if(!/^CASE-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(caseId)){
+  if(!validCaseId(caseId)){
     $("accessStatus").textContent="Внесете валиден Case ID.";
     return;
   }
 
   accessKey=key;
-  activeCaseId=caseId;
   $("openCase").disabled=true;
   $("accessStatus").textContent="Се отвора приватниот CasePilot workspace…";
   try{
-    const data=await api("/api/cases/"+encodeURIComponent(caseId)+"/casepilot");
-    renderWorkspace(data);
-    await loadClassifications();
-    setWorkspaceVisible(true);
+    await openCaseById(caseId);
+    $("casePickerCard").classList.remove("hidden");
+    $("createCaseCard").classList.remove("hidden");
     $("accessStatus").textContent="Предметот е отворен. Membership key останува само во меморијата на оваа страница.";
   }catch(error){
     resetWorkspace();
@@ -102,11 +141,102 @@ $("openCase").addEventListener("click",async()=>{
   }
 });
 
+function renderCasePicker(cases){
+  const body=$("casePickerBody");
+  clearNode(body);
+  if(!cases.length){
+    const tr=document.createElement("tr");
+    const cell=td("Немате активни Secure Case Workspaces.");
+    cell.colSpan=6;
+    cell.className="muted";
+    tr.appendChild(cell);
+    body.appendChild(tr);
+    return;
+  }
+
+  for(const item of cases){
+    const tr=document.createElement("tr");
+    tr.appendChild(td(item.title));
+    tr.appendChild(td(item.clientReference));
+    tr.appendChild(td(item.legalArea));
+    tr.appendChild(td(item.status));
+    tr.appendChild(td(item.professionalUseLocked?"LOCKED":"UNLOCKED"));
+
+    const action=document.createElement("td");
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="secondary";
+    button.textContent="Отвори";
+    button.addEventListener("click",async()=>{
+      button.disabled=true;
+      $("accessStatus").textContent="Се отвора предметот…";
+      try{
+        await openCaseById(String(item.id||""));
+        $("accessStatus").textContent="Предметот е отворен.";
+      }catch(error){
+        $("accessStatus").textContent="Не може да се отвори предметот: "+String(error?.message||error);
+      }finally{
+        button.disabled=false;
+      }
+    });
+    action.appendChild(button);
+    tr.appendChild(action);
+    body.appendChild(tr);
+  }
+}
+
+$("createCase").addEventListener("click",async()=>{
+  if(!accessKey){
+    $("createCaseStatus").textContent="Прво потврдете membership key.";
+    return;
+  }
+  const title=$("newCaseTitle").value.trim();
+  const clientReference=$("newClientReference").value.trim();
+  const legalArea=$("newLegalArea").value.trim();
+  const retentionUntil=$("newRetentionUntil").value.trim();
+  if(!title){
+    $("createCaseStatus").textContent="Внесете назив на предмет.";
+    return;
+  }
+
+  $("createCase").disabled=true;
+  $("createCaseStatus").textContent="Се креира приватниот workspace…";
+  try{
+    const data=await api("/api/cases",{
+      method:"POST",
+      body:{
+        title,
+        clientReference:clientReference||null,
+        legalArea:legalArea||null,
+        retentionUntil:retentionUntil||null
+      }
+    });
+    const newCase=data.case||{};
+    $("createCaseStatus").textContent="Предметот е креиран. Document ingestion останува заклучен додека private storage gate не е активен.";
+    $("newCaseTitle").value="";
+    $("newClientReference").value="";
+    $("newLegalArea").value="";
+    $("newRetentionUntil").value="";
+    const list=await api("/api/cases");
+    renderCasePicker(Array.isArray(list.cases)?list.cases:[]);
+    $("casePickerCard").classList.remove("hidden");
+    if(validCaseId(newCase.id)) await openCaseById(newCase.id);
+  }catch(error){
+    $("createCaseStatus").textContent="Предметот не е креиран: "+String(error?.message||error);
+  }finally{
+    $("createCase").disabled=false;
+  }
+});
+
 $("forgetAccess").addEventListener("click",()=>{
   accessKey="";
   $("membershipKey").value="";
   $("caseId").value="";
   resetWorkspace();
+  $("casePickerCard").classList.add("hidden");
+  $("createCaseCard").classList.add("hidden");
+  $("casePickerBody").innerHTML='<tr><td colspan="6" class="muted">Нема вчитани предмети.</td></tr>';
+  $("createCaseStatus").textContent="";
   $("accessStatus").textContent="Пристапните податоци се исчистени од оваа страница.";
 });
 

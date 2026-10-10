@@ -42,16 +42,55 @@
         <input id="membershipKey" type="password" autocomplete="off" spellcheck="false" placeholder="AIADV-...">
       </div>
       <div>
-        <label for="caseId">Case ID</label>
+        <label for="caseId">Case ID (опционално)</label>
         <input id="caseId" autocomplete="off" spellcheck="false" placeholder="CASE-xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx">
       </div>
     </div>
     <div class="actions">
-      <button id="openCase" class="primary" type="button">Отвори предмет</button>
+      <button id="loadCases" class="primary" type="button">Вчитај мои предмети</button>
+      <button id="openCase" class="secondary" type="button">Отвори Case ID</button>
       <button id="forgetAccess" class="secondary" type="button">Исчисти пристап</button>
       <a class="btn secondary" href="/professional-tools.html#casepilot">Назад кон CasePilot</a>
     </div>
     <p id="accessStatus" class="statusline muted" aria-live="polite"></p>
+  </section>
+
+  <section id="casePickerCard" class="card hidden" aria-labelledby="casePickerTitle">
+    <h2 id="casePickerTitle">Мои Secure Case Workspaces</h2>
+    <p class="muted">Се прикажуваат само предметите до кои тековниот membership account има активен пристап.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Предмет</th><th>Референца</th><th>Област</th><th>Статус</th><th>Human Gate</th><th></th></tr></thead>
+        <tbody id="casePickerBody"><tr><td colspan="6" class="muted">Нема вчитани предмети.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="createCaseCard" class="card hidden" aria-labelledby="createCaseTitle">
+    <h2 id="createCaseTitle">Нов Secure Case Workspace</h2>
+    <p class="muted">Создава само приватен workspace metadata record. Document ingestion останува посебно fail-closed додека private storage gate не е активен.</p>
+    <div class="grid2">
+      <div>
+        <label for="newCaseTitle">Назив на предмет</label>
+        <input id="newCaseTitle" maxlength="180" placeholder="На пр. Управен спор — клиент X">
+      </div>
+      <div>
+        <label for="newClientReference">Клиентска референца</label>
+        <input id="newClientReference" maxlength="120" placeholder="Опционално">
+      </div>
+      <div>
+        <label for="newLegalArea">Правна област</label>
+        <input id="newLegalArea" maxlength="120" placeholder="На пр. управно право">
+      </div>
+      <div>
+        <label for="newRetentionUntil">Retention until</label>
+        <input id="newRetentionUntil" type="date">
+      </div>
+    </div>
+    <div class="actions">
+      <button id="createCase" class="gold" type="button">Креирај предмет</button>
+    </div>
+    <p id="createCaseStatus" class="statusline muted" aria-live="polite"></p>
   </section>
 
   <section id="workspace" class="hidden">
