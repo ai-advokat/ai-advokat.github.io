@@ -147,7 +147,7 @@ describe("Zoran guides library governance",()=>{
 
   test("G13 final catalogue control metrics remain internally consistent",()=>{
     const publicRecords=data.records.filter(x=>x.catalog_public===true);
-    assert.equal(data.generated_on,"2026-10-05");
+    assert.equal(data.generated_on,"2026-10-10");
     assert.equal(publicRecords.length,39);
     assert.equal(publicRecords.filter(x=>x.source_role!=="version_history").length,37);
     assert.equal(publicRecords.filter(x=>x.source_role==="version_history").length,2);
@@ -490,4 +490,42 @@ describe("Zoran guides library governance",()=>{
     assert.ok(data.collection.public_experience.features.includes("private_fingerprint_verified_guide_vault"));
   });
 
+});
+
+
+test("G30 current-law activation states are explicit and conservative",()=>{
+  const current=data.records.filter(x=>x.source_role!=="version_history");
+  const archive=data.records.filter(x=>x.source_role==="version_history");
+  assert.equal(current.length,37);
+  assert.equal(archive.length,2);
+  assert.equal(current.filter(x=>x.activation_state==="active_verified").length,5);
+  assert.equal(current.filter(x=>x.activation_state==="active_with_warning").length,3);
+  assert.equal(current.filter(x=>x.activation_state==="review_required").length,29);
+  assert.ok(archive.every(x=>x.activation_state==="archive"));
+  assert.ok(data.records.every(x=>x.current_law_authority===false || x.source_role==="version_history"));
+  assert.ok(current.every(x=>x.ai_authority_class==="secondary_guide"));
+});
+
+test("G31 only the source-checked first wave is promoted to active_verified",()=>{
+  const ids=data.records.filter(x=>x.activation_state==="active_verified").map(x=>x.id).sort();
+  assert.deepEqual(ids,[
+    "guide-39-full-word-2026",
+    "guide-51-full-word-2026",
+    "guide-52-full-word-2026",
+    "guide-administrative-v2",
+    "guide-free-legal-aid"
+  ].sort());
+  const warned=new Set(data.records.filter(x=>x.activation_state==="active_with_warning").map(x=>x.id));
+  for(const id of ["guide-02-victim-edited-2026-10-01","guide-05-workplace","guide-choose-lawyer"]) assert.ok(warned.has(id));
+  assert.equal(data.records.find(x=>x.id==="guide-53-full-word-2026").activation_state,"review_required");
+});
+
+test("G32 current-law review metadata does not silently open PDF or production corpus gates",()=>{
+  assert.equal(data.collection.current_law_review.review_id,"AI_ADVOKAT_GUIDES_CURRENT_LAW_REVIEW_2026-10-10");
+  assert.equal(data.collection.current_law_review.active_verified,5);
+  assert.equal(data.collection.current_law_review.active_with_warning,3);
+  assert.equal(data.collection.current_law_review.review_required,29);
+  assert.ok(data.records.every(x=>x.public_pdf===null));
+  assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
+  assert.ok(data.records.every(x=>x.current_law_authority===false));
 });
