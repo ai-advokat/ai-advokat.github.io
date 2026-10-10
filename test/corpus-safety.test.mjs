@@ -287,7 +287,7 @@ describe("F3 migration 0023 and importer", () => {
     applyRemaining();
     assert.equal(raw.prepare("SELECT COUNT(*) n FROM legal_article_versions").get().n, 2);
     assert.deepEqual(raw.prepare("SELECT canonical_key, article_count FROM corpus_legacy_unversioned_articles").all().map((r) => ({ ...r })), [{ canonical_key: "mk:zs", article_count: 2 }]);
-    const latestMigration=fs.readdirSync(MIGRATIONS_DIR)
+    const latestMigration=fs.readdirSync("migrations")
       .filter(name=>/^\d{4}_.+\.sql$/.test(name))
       .map(name=>Number(name.slice(0,4)))
       .reduce((max,n)=>Math.max(max,n),0);
