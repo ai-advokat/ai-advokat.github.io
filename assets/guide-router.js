@@ -93,8 +93,12 @@
     return /(?:arhiv|prethod|stara verz|istorisk|archive|previous version)/.test(q);
   }
 
+  function routingQuestion(value){
+    return normalize(value).replace(/(?:^|\\s)ai advokat(?:\\s|$)/g," ").replace(/\\s+/g," ").trim();
+  }
+
   function scoreRecord(question,record){
-    const q=normalize(question);
+    const q=routingQuestion(question);
     if(!q) return 0;
     const title=normalize(record.display_title || record.title || "");
     const text=normalize(recordText(record));
@@ -139,9 +143,9 @@
     return score;
   }
 
-  function routeGuides(question,records,{limit=3,minScore=6,includeHistory=false}={}){
+  function routeGuides(question,records,{limit=3,minScore=10,includeHistory=false}={}){
     if(!Array.isArray(records)) return [];
-    const q=normalize(question);
+    const q=routingQuestion(question);
     if(!q) return [];
     const archiveIntent=isArchiveIntent(q);
     return records
@@ -175,6 +179,7 @@
     tokenise,
     scoreRecord,
     routeGuides,
+    routingQuestion,
     currentPublicGuides,
     extraTerms:EXTRA_TERMS
   });
