@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import {
   LEGAL_ANALYZER_VERSION,
   extractOfficialIdentifiers,
@@ -57,4 +58,30 @@ test("review table is batch bounded",()=>{
     ()=>buildReviewTable(Array.from({length:101},(_,i)=>({filename:String(i),text:"документ"}))),
     /batch_limit/
   );
+});
+
+
+test("corpus verification endpoint is extracted-hints-only and fail-closed for full documents",()=>{
+  const worker=fs.readFileSync(new URL("../src/index.js",import.meta.url),"utf8");
+  const start=worker.indexOf("async function handleLegalAnalyzerVerify");
+  const end=worker.indexOf("async function handleGPTChat",start);
+  assert.ok(start>0 && end>start);
+  const block=worker.slice(start,end);
+  assert.match(block,/full_document_not_accepted/);
+  assert.match(block,/documentText/);
+  assert.match(block,/governedArticleContext/);
+  assert.match(block,/governedCaseLawContext/);
+  assert.match(block,/humanGate:/);
+  assert.match(worker,/\/api\/legal-analyzer\/verify/);
+});
+
+test("professional tools client never sends full document text to corpus verification",()=>{
+  const js=fs.readFileSync(new URL("../assets/professional-tools.js",import.meta.url),"utf8");
+  const start=js.indexOf('$("verifyCorpus").addEventListener');
+  const end=js.indexOf('$("exportJson").addEventListener',start);
+  assert.ok(start>0 && end>start);
+  const block=js.slice(start,end);
+  assert.match(block,/articleNumbers:r\.articles/);
+  assert.match(block,/caseNumbers:r\.identifiers\.referenceNumbers/);
+  assert.doesNotMatch(block,/docText|fullText|documentText/);
 });
