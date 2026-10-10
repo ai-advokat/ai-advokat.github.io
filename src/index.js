@@ -248,11 +248,6 @@ async function sha256Hex(value) {
   return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 
-async function sha256BytesHex(bytes){
-  const digest=await crypto.subtle.digest("SHA-256",bytes);
-  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
-}
-
 async function readLimitedBytes(request,maxBytes){
   const declared=Number(request.headers.get("content-length")||"0");
   if(declared>maxBytes) return {ok:false,status:413,error:"file_too_large"};
