@@ -11,6 +11,7 @@ let accessKey="";
 let activeCaseId="";
 let currentCaseLawCards=[];
 let currentWorkspaceData=null;
+let currentCaseRole="";
 
 function authHeaders(extra={}){
   if(!accessKey) throw new Error("membership_key_required");
@@ -62,6 +63,7 @@ function resetWorkspace(){
   activeCaseId="";
   currentCaseLawCards=[];
   currentWorkspaceData=null;
+  currentCaseRole="";
   setWorkspaceVisible(false);
   $("caseTitle").textContent="—";
   $("caseLegalArea").textContent="—";
@@ -83,7 +85,9 @@ async function openCaseById(caseId){
   activeCaseId=caseId;
   const data=await api("/api/cases/"+encodeURIComponent(caseId)+"/casepilot");
   currentWorkspaceData=data;
+  currentCaseRole=String(data.role||"");
   renderWorkspace(data);
+  await loadDocuments();
   await loadClassifications();
   await loadHumanGate();
   await loadAudit();
@@ -275,6 +279,177 @@ function renderWorkspace(data){
     body.appendChild(tr);
   }
 }
+
+
+function documentMimeForFile(file){
+  const name=String(file?.name||"").toLowerCase();
+  if(file?.type==="application/pdf" || name.endsWith(".pdf")) return "application/pdf";
+  if(file?.type==="application/vnd.openxmlformats-officedocument.wordprocessingml.document" || name.endsWith(".docx")){
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
+  return "";
+}
+
+async function loadDocuments(){
+  if(!activeCaseId || !accessKey) return;
+  $("documentStatus").textContent="Се вчитуваат приватните документи…";
+  try{
+    const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/documents");
+    renderDocuments(Array.isArray(data.documents)?data.documents:[]);
+    $("documentStorageState").textContent="Storage: "+String(data.upload||"unknown")+" · limit "+String(data.documentLimit||20);
+    $("documentStatus").textContent="Document registry е освежен.";
+  }catch(error){
+    renderDocuments([]);
+    $("documentStorageState").textContent="Storage: unavailable";
+    $("documentStatus").textContent="Документите не се достапни: "+String(error?.message||error);
+  }
+}
+
+function renderDocuments(rows){
+  const body=$("documentBody");
+  clearNode(body);
+  if(!rows.length){
+    const tr=document.createElement("tr");
+    const cell=td("Нема приватни документи.");
+    cell.colSpan=7;
+    cell.className="muted";
+    tr.appendChild(cell);
+    body.appendChild(tr);
+    return;
+  }
+  for(const row of rows){
+    if(String(row.storage_state||"")==="deleted") continue;
+    const tr=document.createElement("tr");
+    tr.appendChild(td(row.slot_number));
+    tr.appendChild(td(row.original_name));
+    tr.appendChild(td(row.mime_type));
+    tr.appendChild(td(row.page_count));
+    tr.appendChild(td(row.sha256));
+    tr.appendChild(td([row.storage_state,row.extraction_state].filter(Boolean).join(" / ")));
+    const actions=document.createElement("td");
+    if(String(row.storage_state||"")==="uploaded"){
+      const download=document.createElement("button");
+      download.type="button";
+      download.className="secondary";
+      download.textContent="Преземи";
+      download.addEventListener("click",()=>downloadPrivateDocument(row));
+      actions.appendChild(download);
+    }
+    if(["owner","lawyer"].includes(currentCaseRole)){
+      const del=document.createElement("button");
+      del.type="button";
+      del.className="secondary";
+      del.textContent="Избриши";
+      del.addEventListener("click",()=>deletePrivateDocument(row));
+      actions.appendChild(del);
+    }
+    tr.appendChild(actions);
+    body.appendChild(tr);
+  }
+}
+
+async function downloadPrivateDocument(row){
+  if(!activeCaseId || !accessKey) return;
+  $("documentStatus").textContent="Се презема приватниот документ…";
+  try{
+    const response=await fetch(API_BASE+"/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/"+encodeURIComponent(row.id)+"/download",{
+      method:"GET",
+      headers:authHeaders()
+    });
+    if(!response.ok){
+      const data=await response.json().catch(()=>({}));
+      throw new Error(data.error||("http_"+response.status));
+    }
+    const blob=await response.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download=String(row.original_name||"document");
+    a.rel="noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    $("documentStatus").textContent="Документот е преземен преку authenticated case-scoped route.";
+    await loadAudit();
+  }catch(error){
+    $("documentStatus").textContent="Преземањето не успеа: "+String(error?.message||error);
+  }
+}
+
+async function deletePrivateDocument(row){
+  if(!activeCaseId || !accessKey) return;
+  if(!["owner","lawyer"].includes(currentCaseRole)){
+    $("documentStatus").textContent="Reviewer пристапот е read-only.";
+    return;
+  }
+  if(!confirm("Да се избрише приватниот документ од CasePilot storage?")) return;
+  $("documentStatus").textContent="Се брише приватниот документ…";
+  try{
+    await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/"+encodeURIComponent(row.id),{method:"DELETE"});
+    $("documentStatus").textContent="Документот е избришан. Professional Human Gate е повторно заклучен.";
+    await loadDocuments();
+    await loadHumanGate();
+    await loadAudit();
+  }catch(error){
+    $("documentStatus").textContent="Бришењето не успеа: "+String(error?.message||error);
+  }
+}
+
+$("refreshDocuments").addEventListener("click",async()=>{
+  $("refreshDocuments").disabled=true;
+  try{await loadDocuments();}finally{$("refreshDocuments").disabled=false;}
+});
+
+$("uploadCaseFile").addEventListener("click",async()=>{
+  if(!activeCaseId || !accessKey){
+    $("documentStatus").textContent="Прво отворете предмет.";
+    return;
+  }
+  if(!["owner","lawyer"].includes(currentCaseRole)){
+    $("documentStatus").textContent="Reviewer пристапот е read-only.";
+    return;
+  }
+  const file=$("caseFileInput").files?.[0]||null;
+  if(!file){
+    $("documentStatus").textContent="Изберете PDF или DOCX документ.";
+    return;
+  }
+  if(file.size>20*1024*1024){
+    $("documentStatus").textContent="Документот е поголем од 20 MB.";
+    return;
+  }
+  const mime=documentMimeForFile(file);
+  if(!mime){
+    $("documentStatus").textContent="Дозволени се само PDF и DOCX.";
+    return;
+  }
+  const pages=$("caseFilePages").value.trim();
+  $("uploadCaseFile").disabled=true;
+  $("documentStatus").textContent="Се поставува приватниот документ…";
+  try{
+    const headers=authHeaders({
+      "content-type":mime,
+      "X-File-Name":file.name
+    });
+    if(pages) headers["X-Page-Count"]=pages;
+    const response=await fetch(API_BASE+"/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/upload",{
+      method:"POST",
+      headers,
+      body:file
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok || !data.ok) throw new Error(data.error||("http_"+response.status));
+    $("caseFileInput").value="";
+    $("caseFilePages").value="";
+    $("documentStatus").textContent="Документот е зачуван приватно. SHA-256 е пресметан server-side; AI ingestion сè уште е посебно governed.";
+    await openCaseById(activeCaseId);
+  }catch(error){
+    $("documentStatus").textContent="Upload не успеа: "+String(error?.message||error);
+  }finally{
+    $("uploadCaseFile").disabled=false;
+  }
+});
 
 $("researchCaseLaw").addEventListener("click",async()=>{
   if(!activeCaseId || !accessKey){
