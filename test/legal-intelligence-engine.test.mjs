@@ -72,6 +72,24 @@ test("English complaint drafting is also consequential",()=>{
   assert.equal(p.implementation.no_autonomous_legal_representation,true);
 });
 
+test("natural Macedonian legal domains never fall into GENERAL_BYPASS",()=>{
+  for(const q of [
+    "Ме товарат за кражба, што треба да проверам?",
+    "Имав тешка сообраќајна незгода и сакам опции и ризици.",
+    "Кај мене најдоа дрога и спорен е претресот.",
+    "Добив прекршочна одлука.",
+    "Работодавачот ми даде отказ.",
+    "Имам спор за сопственост и меѓа.",
+    "Сакам медијација за деловен спор.",
+    "Објавија клевета и навреда.",
+    "Барам слободен пристап до информации од јавен карактер."
+  ]){
+    const p=buildLegalIntelligencePlan(q,{mode:"proactive_research",selectedAgents:["macedonian_law"]});
+    assert.notEqual(p.mission_profile.id,"GENERAL_BYPASS",q);
+    assert.equal(p.engaged,true,q);
+  }
+});
+
 test("inheritance procedure preparation is L2 and requires Human Gate",()=>{
   const p=buildLegalIntelligencePlan("Сакав да те замолам да ми подготвиш се што е потребно за оставинска постапка за плац на кој има куќа.",{selectedAgents:["macedonian_law"]});
   assert.equal(p.mission_profile.id,"L2_STRATEGY_PROCEDURE");
