@@ -28,9 +28,9 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Activation #11 reached 17/20. One failure was a confirmed topicality false negative for the traffic-crime scenario; the full answer covered accident reconstruction, speed, alcohol, visibility, expert evidence and causation but omitted the literal stem 'сообраќ'. Two remaining failures were genuine latency misses of only 669 ms and 869 ms above the unchanged 65,000 ms budget. Re-run the same twenty scenarios after compacting bounded specialist findings (120 words / 6 bullets, 650 tokens for L2-L3, 800 for L4) without removing specialists, verifier, Human Gate, source controls or changing the latency threshold.",
+    "reason": "Activation #12 remained 17/20. Traffic failed closed on legal_postflight_incomplete at 68.13s; property-boundary timed out at 70.00s; mediation exceeded the unchanged 65,000ms budget by 938ms. Re-run the same twenty scenarios after reducing L2/L3 chief output headroom, compacting bounded specialist findings to 90 words / 5 bullets / 500 tokens, constraining verifier REVISE output to a concise complete correction, and exposing postflight incomplete_details diagnostics. Human Gate, source-first verification, specialist execution, postflight verification and the 65-second threshold remain unchanged.",
     "approval_text": "Ti odobruvam!!! (Potoa napravi dvaesetina trsta na orasanja za: ravod na brsk, ostavina, krazba, pritvor, droga, soobrskajni krivicni dela, i se ostanato)",
-    "baseline_run": 11,
+    "baseline_run": 12,
     "baseline_result": "17/20",
     "prior_runs": [
       {
@@ -40,11 +40,17 @@
       {
         "run": 10,
         "result": "5/20"
+      },
+      {
+        "run": 11,
+        "result": "17/20"
       }
     ],
     "no_governance_weakening": true,
     "latency_budget_ms": 65000,
     "latency_budget_changed": false,
-    "specialist_count_changed": false
+    "specialist_execution_preserved": true,
+    "postflight_preserved": true,
+    "human_gate_preserved": true
   }
 }
