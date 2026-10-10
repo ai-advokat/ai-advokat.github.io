@@ -8,6 +8,8 @@ const base=String(process.env.AI_ADVOCAT_BASE_URL || suite.base_url || "").repla
 if(!/^https:\/\//.test(base)) throw new Error("Invalid UAT base URL");
 
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const uatMembershipKey=String(process.env.AI_ADVOCAT_UAT_MEMBERSHIP_KEY||"").trim();
+const minScenarioSpacingMs=13000;
 const results=[];
 
 for(const scenario of suite.scenarios){
@@ -21,7 +23,8 @@ for(const scenario of suite.scenarios){
       method:"POST",
       headers:{
         "content-type":"application/json",
-        "origin":"https://ai-advokat.github.io"
+        "origin":"https://ai-advokat.github.io",
+        ...(uatMembershipKey ? {"authorization":"Bearer "+uatMembershipKey} : {})
       },
       body:JSON.stringify({
         q:scenario.prompt,
@@ -57,8 +60,20 @@ for(const scenario of suite.scenarios){
   if(response && String(body?.answer||"").length<Number(scenario.min_answer_chars||1)){
     failures.push("answer too short ("+String(body?.answer||"").length+")");
   }
-  if(response && scenario.answer_must_match && !String(body?.answer||"").toLowerCase().includes(String(scenario.answer_must_match).toLowerCase())){
+  const answerLower=String(body?.answer||"").toLowerCase();
+  if(response && scenario.answer_must_match && !answerLower.includes(String(scenario.answer_must_match).toLowerCase())){
     failures.push("expected answer marker "+scenario.answer_must_match);
+  }
+  if(response && Array.isArray(scenario.answer_must_match_groups)){
+    for(const group of scenario.answer_must_match_groups){
+      const terms=Array.isArray(group)?group.map(x=>String(x).toLowerCase()).filter(Boolean):[];
+      if(terms.length && !terms.some(term=>answerLower.includes(term))){
+        failures.push("expected topical marker group "+terms.join("|"));
+      }
+    }
+  }
+  if(response && uatMembershipKey && body?.membership?.planCode!=="office"){
+    failures.push("synthetic UAT membership not applied");
   }
   if(response && Number(body?.legalCrossReferenceCount||0)<Number(scenario.min_legal_cross_reference_count||0)){
     failures.push("expected at least "+scenario.min_legal_cross_reference_count+" legal cross-references, got "+String(body?.legalCrossReferenceCount||0));
@@ -103,7 +118,8 @@ for(const scenario of suite.scenarios){
   }else{
     console.error(`UAT FAIL ${scenario.id}: ${failures.join(" | ")}`);
   }
-  await sleep(700);
+  const spacingDelay=Math.max(700,minScenarioSpacingMs-elapsedMs);
+  await sleep(spacingDelay);
 }
 
 const passCount=results.filter(x=>x.passed).length;

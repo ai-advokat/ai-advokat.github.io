@@ -96,3 +96,19 @@ test("GPTACT7 activation request is explicit, model-bound and contains no secret
   assert.equal(activationRequest.runtime_features.attachment_input,true);
   assert.doesNotMatch(JSON.stringify(activationRequest),/sk-[A-Za-z0-9_-]{20,}/);
 });
+
+
+test("GPTACT8 production legal UAT uses an ephemeral synthetic membership and always cleans it",()=>{
+  assert.match(workflow,/Provision ephemeral synthetic UAT membership/);
+  assert.match(workflow,/AI Advokat Synthetic UAT/);
+  assert.match(workflow,/'office','active','manual',50,1,0/);
+  assert.match(workflow,/::add-mask::\$UAT_KEY/);
+  assert.match(workflow,/AI_ADVOCAT_UAT_MEMBERSHIP_KEY=\$UAT_KEY/);
+  assert.match(workflow,/Cleanup ephemeral synthetic UAT membership/);
+  assert.match(workflow,/if: always\(\)/);
+  assert.match(workflow,/DELETE FROM membership_access_keys WHERE account_id/);
+  assert.match(workflow,/DELETE FROM membership_entitlements WHERE account_id/);
+  assert.match(workflow,/DELETE FROM membership_usage_monthly WHERE subject_key/);
+  assert.match(workflow,/DELETE FROM security_rate_limit_windows WHERE subject_key/);
+  assert.doesNotMatch(workflow,/echo\s+["']?\$UAT_KEY["']?\s*$/m);
+});
