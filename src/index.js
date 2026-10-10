@@ -2114,7 +2114,7 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
   const bindings=[];
   for(const term of terms){
     const variants=caseLawSearchVariants(term);
-    conditions.push("("+variants.map(()=>blob+" LIKE ? ESCAPE '\\\\'").join(" OR ")+")");
+    conditions.push("("+variants.map(()=>blob+" LIKE ? ESCAPE '\\'").join(" OR ")+")");
     bindings.push(...variants);
   }
 
