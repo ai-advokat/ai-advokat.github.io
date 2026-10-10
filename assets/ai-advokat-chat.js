@@ -23,6 +23,9 @@
   const guideVaultClear=$("#aiGuideVaultClear");
   const guideVaultFiles=$("#aiGuideVaultFiles");
   const guideVaultStatus=$("#aiGuideVaultStatus");
+  const toolsMenu=$("#aiChatTools");
+  const topMenu=$("#aiChatMenu");
+  const modeCaption=$("#aiChatModeCaption");
 
   let abortController=null;
   let mode="auto";
@@ -301,9 +304,15 @@
   function activeMode(){
     return mode;
   }
+  const modeLabels={auto:"Auto",library:"Library",web:"Web"};
+  function syncModeUi(){
+    modeBtns.forEach(x=>x.classList.toggle("active",x.dataset.chatMode===mode));
+    if(modeCaption) modeCaption.textContent=modeLabels[mode]||"Auto";
+  }
   modeBtns.forEach(btn=>btn.addEventListener("click",()=>{
     mode=btn.dataset.chatMode;
-    modeBtns.forEach(x=>x.classList.toggle("active",x===btn));
+    syncModeUi();
+    if(toolsMenu) toolsMenu.open=false;
   }));
 
   function autoSize(){
@@ -483,6 +492,7 @@
     const c=newState();chats.set(c.id,c);currentId=c.id;attachments=[];renderAttachments();render();save();input.focus();
   });
   exportBtn.addEventListener("click",()=>{
+    if(topMenu) topMenu.open=false;
     const chat=current();
     const text=chat.messages.map(m=>(m.role==="user"?"Вие":"AI Advokat")+":\n"+m.text).join("\n\n");
     const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
@@ -518,5 +528,5 @@
     })
     .catch(()=>{provider.textContent="GPT runtime · недостапен";});
 
-  load();render();renderAttachments();autoSize();refreshGuideVaultStatus();
+  load();syncModeUi();render();renderAttachments();autoSize();refreshGuideVaultStatus();
 })();
