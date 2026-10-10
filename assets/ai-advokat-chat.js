@@ -220,7 +220,7 @@
 
   async function fetchGuideRegistry(){
     if(!guideRegistryPromise){
-      guideRegistryPromise=fetch("/data/guides.json?v=20261005-private-guide-reading",{cache:"no-store"})
+      guideRegistryPromise=fetch("/data/guides.json?v=20261010-current-law-review-v1",{cache:"no-store"})
         .then(r=>r.ok?r.json():Promise.reject(new Error("guides")));
     }
     return guideRegistryPromise;
