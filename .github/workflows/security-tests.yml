@@ -54,7 +54,7 @@ jobs:
         with:
           node-version: "22"
       - name: Worker syntax
-        run: node --check src/index.js && node --check src/security.js && node --check src/legal-claim-validator.js && node --check src/corpus-versions.js && node --check src/agent-orchestrator.js && node --check src/legal-intelligence-engine.js && node --check src/legal-runtime-governance.js && node --check src/casepilot.js && node --check assets/guide-router.js && node --check assets/guide-vault.js && node --check assets/ai-advokat-chat.js
+        run: node --check src/index.js && node --check src/security.js && node --check src/legal-claim-validator.js && node --check src/corpus-versions.js && node --check src/agent-orchestrator.js && node --check src/legal-intelligence-engine.js && node --check src/legal-runtime-governance.js && node --check src/casepilot.js && node --check src/case-workspace.js && node --check assets/guide-router.js && node --check assets/guide-vault.js && node --check assets/ai-advokat-chat.js
       - name: Structural verification
         run: npm run verify
       - name: GPT orchestrator foundation tests
@@ -71,6 +71,8 @@ jobs:
         run: npm run test:production-runtime-recovery
       - name: CasePilot foundation tests
         run: npm run test:casepilot
+      - name: Secure Case Workspace tests
+        run: npm run test:case-workspace
       - name: Zoran practical guides governance tests
         run: npm run test:guides
       - name: Citizen guide router tests
