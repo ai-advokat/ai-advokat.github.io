@@ -28,7 +28,7 @@ const LEGAL_SIGNALS=[
   "legal","law","court","appeal","deadline","statute","regulation","contract","judgment","procedure"
 ];
 const CURRENT_LAW_SIGNALS=["важечко","важечки","важечката","денес","сега","current law","currently in force","applicable law","најнова верзија","latest law"];
-const TEMPORAL_SIGNALS=["влегува во сила","почнува да се применува","преодни одредби","application date","effective date","commencement","transitional provision","објавен но","published but"];
+const TEMPORAL_SIGNALS=["влегува во сила","влегување во сила","почнува да се применува","почеток на примена","датум на примена","временска применливост","применливост","преодни одредби","application date","effective date","commencement","transitional provision","објавен но","published but"];
 const STRATEGY_SIGNALS=["стратег","опции","спореди","ризик","процесен","рок за","жалба","remedy","strategy","options","compare","procedural","deadline","limitation","case plan"];
 const ACTION_SIGNALS=[
   "финален поднесок","поднесок за поднесување","испрати до суд","поднеси до суд","поднеси го",
