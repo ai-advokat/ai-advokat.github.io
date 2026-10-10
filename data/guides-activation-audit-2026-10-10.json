@@ -1,0 +1,104 @@
+{
+  "audit_id": "AI_ADVOKAT_GUIDES_ACTIVATION_AUDIT_2026-10-10",
+  "generated_on": "2026-10-10",
+  "source_registry": "data/guides.json",
+  "rule": "No guide may be promoted from review_required without the exact fingerprint-bound source master being available for content review against current primary law.",
+  "counts": {
+    "current_records": 37,
+    "active_verified": 5,
+    "active_with_warning": 3,
+    "review_required": 29
+  },
+  "immediate_ai_status": {
+    "active_verified": "usable_as_secondary_guide_context_subject_to_official_law_override",
+    "active_with_warning": "usable_as_secondary_guide_context_with_visible_warning_and_human_review",
+    "review_required": "catalogue_only_until_exact_master_reviewed"
+  },
+  "missing_input": {
+    "exact_source_bundle_required": true,
+    "expected_bundle": "Pravni_vodichi_38_63_FULL_WORD_ALL.zip and the exact PDF/DOCX masters for the remaining current guide records",
+    "repository_binary_masters_present": false,
+    "library_binary_masters_located": false,
+    "consequence": "The 29 review_required guides cannot be honestly promoted or released as reviewed full-text assets yet."
+  },
+  "priority_clusters": [
+    {
+      "priority": "P1",
+      "guides": [
+        "26",
+        "53",
+        "54"
+      ],
+      "issue": "silence_of_administration_after_U_br_148_2024",
+      "action": "compare exact guide text against current ZUS/ZOUP and Constitutional Court effect before promotion"
+    },
+    {
+      "priority": "P1",
+      "guides": [
+        "09",
+        "10",
+        "40",
+        "59"
+      ],
+      "issue": "ZPP_151_2026_transition_and_civil_procedure_timing",
+      "action": "verify current vs future-applicable ZPP rules, transitional provisions and insurance/civil procedure dependencies"
+    },
+    {
+      "priority": "P1",
+      "guides": [
+        "17",
+        "21",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50"
+      ],
+      "issue": "criminal_procedure_and_liberty",
+      "action": "verify ZKP/current amendments, custody/detention remedies, witness/suspect/victim roles, ECHR safeguards and digital-search rules"
+    },
+    {
+      "priority": "P2",
+      "guides": [
+        "38"
+      ],
+      "issue": "employment_service_record",
+      "action": "verify current pension/employment evidence procedure and competent authorities"
+    },
+    {
+      "priority": "P2",
+      "guides": [
+        "55",
+        "56",
+        "57",
+        "58"
+      ],
+      "issue": "administrative_remedies",
+      "action": "verify current ZOUP/ZUS remedies, extraordinary remedies, certificates/records and complaint channels"
+    },
+    {
+      "priority": "P2",
+      "guides": [
+        "60",
+        "61",
+        "62",
+        "63"
+      ],
+      "issue": "notarial_form_and_tariff",
+      "action": "verify current Notariat Act, required form, certification scope and current tariff/special rules"
+    }
+  ],
+  "activation_boundary": {
+    "public_catalogue": true,
+    "public_pdf_for_unreviewed": false,
+    "private_guide_vault_for_unreviewed": false,
+    "production_guide_corpus_for_unreviewed": false,
+    "legal_authority": false,
+    "human_gate_required": true
+  }
+}
