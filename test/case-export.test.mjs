@@ -137,8 +137,11 @@ test("EXP6 filenames are stable, bounded and format-specific",()=>{
 
 test("EXP7 authenticated case API derives export mode server-side and never trusts client professional status",()=>{
   assert.match(worker,/if\(tail==="exports"\)/);
-  assert.match(worker,/mode=Number\(access\.professional_use_locked\)===0 \? "professional" : "working"/);
+  assert.match(worker,/professionalRequested=Number\(access\.professional_use_locked\)===0/);
+  assert.match(worker,/latestCaseHumanGate\(env,caseId,currentFingerprint\)/);
+  assert.match(worker,/mode=professionalRequested \? "professional" : "working"/);
   assert.match(worker,/case_export_professional_human_gate_evidence_missing/);
+  assert.match(worker,/case_export_professional_human_gate_stale/);
   assert.match(worker,/eventType:"export_generated"/);
   assert.match(worker,/casepilot_canvas_pdf_v1/);
   assert.match(worker,/browser_local_pdf_rendering_no_external_service/);

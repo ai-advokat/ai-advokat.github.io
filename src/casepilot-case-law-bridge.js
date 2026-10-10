@@ -81,7 +81,9 @@ export function buildCaseLawComparison(records,{roleAssignments={}}={}){
     }
     const assignment=roleAssignments[String(record.id)]||null;
     cards.push(toCasePilotAuthorityCard(record,{
-      role:assignment?.role??null,
+      // A reviewed outcome is not a lawyer's issue-specific role classification.
+      // Until an explicit assignment exists, every authority remains neutral.
+      role:assignment?.role??"neutral",
       roleReason:assignment?.reason??null
     }));
   }
