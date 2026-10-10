@@ -32,7 +32,7 @@ export function caseLawRecordEligible(record){
   if(!reviewed(record.human_review_status)) return false;
   if(!reviewed(record.authority_review_status)) return false;
   const url=record.source_url||record.registry_source_url;
-  return typeof url==="string" && /^https:///i.test(url);
+  return typeof url==="string" && /^https:\/\//i.test(url);
 }
 
 export function toCasePilotAuthorityCard(record,{role=null,roleReason=null}={}){
