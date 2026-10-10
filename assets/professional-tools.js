@@ -226,3 +226,38 @@ function download(content,name,type){
   a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+
+
+async function loadProfessionalWorkflows(){
+  const host=$("workflowList");
+  if(!host) return;
+  try{
+    const response=await fetch("/api/professional-workflows",{headers:{"accept":"application/json"}});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok || !data.ok || !Array.isArray(data.workflows)) throw new Error(data.error||"workflow_catalog_unavailable");
+    host.innerHTML="";
+    for(const w of data.workflows){
+      const item=document.createElement("div");
+      item.className="caseitem";
+      const b=document.createElement("b");
+      b.textContent=String(w.title||w.id||"Workflow");
+      const p=document.createElement("span");
+      const outputs=Array.isArray(w.outputs)?w.outputs.join(", "):"";
+      p.textContent=[String(w.scope||""),outputs?"Излези: "+outputs:"","Human Gate"].filter(Boolean).join(" · ");
+      item.append(b,p);
+      host.appendChild(item);
+    }
+  }catch(error){
+    host.innerHTML="";
+    const item=document.createElement("div");
+    item.className="caseitem";
+    const b=document.createElement("b");
+    b.textContent="Workflow каталогот не е достапен";
+    const p=document.createElement("span");
+    p.textContent="Fail-closed: не е стартуван workflow.";
+    item.append(b,p);
+    host.appendChild(item);
+  }
+}
+
+loadProfessionalWorkflows();
