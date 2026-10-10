@@ -107,3 +107,11 @@ test("live Case Workspace boundary polls for current post-deploy capabilities be
   assert.match(workflow,/sleep 3/);
   assert.match(workflow,/test "\$ready" = "1"/);
 });
+
+
+test("privacy smoke avoids D1 LIKE and validates bounded audit metadata in JSON",()=>{
+  assert.doesNotMatch(workflow,/metadata_json LIKE/);
+  assert.match(workflow,/const allowed=new Set\(\["format","mode","caseVersion"\]\)/);
+  assert.match(workflow,/Case content leaked into export audit metadata/);
+  assert.match(workflow,/LIVE EXPORT PRIVACY: PASS/);
+});
