@@ -108,3 +108,10 @@ CasePilot's professional target is one governed case package with up to **20 doc
 The professional pack includes multi-perspective analysis (client theory, adverse theory, neutral adjudicator, evidence/procedure, best/base/worst case and alternative hypotheses), a factor-based outcome assessment, and a versioned MD/DOCX/PDF export after Human Gate.
 
 A numerical success percentage is prohibited unless it comes from a documented validated statistical model with calibration, applicability and uncertainty interval; model intuition alone is never sufficient.
+
+
+## Accuracy target
+
+CasePilot follows the AI Advokat Accuracy-First doctrine. The design target is to **strive toward 99.99% accuracy**, but no individual answer is labelled 99.99% accurate unless that claim is supported by a documented benchmark.
+
+The professional pack therefore exposes provenance, contradictions, adverse material, missing evidence, uncertainty and Human Gate status instead of hiding them behind confident prose. The objective is maximum defensible correctness and reproducibility, not artificial certainty.

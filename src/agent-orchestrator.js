@@ -98,6 +98,24 @@ export const LEGAL_OPERATING_PROTOCOL = Object.freeze({
   humanGateUnchanged:true
 });
 
+export const ACCURACY_FIRST_DOCTRINE = Object.freeze({
+  id:"AI_ADVOKAT_ACCURACY_FIRST_v1",
+  aspirationalTarget:"99.99_percent_directional_quality_goal_not_SLA",
+  guarantee:false,
+  rules:Object.freeze([
+    "separate_fact_from_inference_from_legal_conclusion",
+    "trace_material_facts_to_source_and_locator",
+    "verify_current_law_version_and_effective_date",
+    "prefer_controlling_primary_authority",
+    "search_for_contradictory_or_adverse_material",
+    "cross_check_high_stakes_claims_when_independent_support_is_available",
+    "never_convert_missing_evidence_into_confident_language",
+    "label_uncertainty_and_unresolved_source_conflicts",
+    "mandatory_verification_pass_before_release",
+    "human_gate_for_consequential_professional_use"
+  ])
+});
+
 export const ORCHESTRATION_PATTERN = Object.freeze({
   pattern: "manager_agents_as_tools",
   userFacingAgent: AGENT_ROLES.chief.id,
@@ -200,7 +218,9 @@ export function buildAgentPlan(question, {preferCorpus=false, explicitMode=null}
       minimalSufficientSpecialistActivation:true,
       lioeMissionProfile:legalIntelligenceEngine.mission_profile.id,
       legalStressTestRequired:legalIntelligenceEngine.legal_stress_test.required,
-      runRecordRequired:legalIntelligenceEngine.observability.run_record_required
+      runRecordRequired:legalIntelligenceEngine.observability.run_record_required,
+      accuracyFirstDoctrine:ACCURACY_FIRST_DOCTRINE.id,
+      accuracyGuarantee:false
     })
   });
 }
@@ -279,6 +299,7 @@ export function specialistInstructions(agentId) {
   if(agentId===AGENT_ROLES.verify.id){
     shared.push(
       "You are the final verification gate before Chief synthesis.",
+      "Apply the Accuracy-First Doctrine independently from the drafting agent: re-check material facts, legal version/date, adverse authority, contradictions, unsupported certainty and claim-to-source coverage.",
       "Reject claims without adequate citations, current-law claims without version/date evidence, and any jurisdiction blending.",
       "Check that AI Advokat native material and External legal research are visibly separated."
     );
@@ -297,6 +318,13 @@ export function orchestratorInstructions(plan) {
       : "Your task is legal research assistance, not autonomous legal representation.",
     `MODE: ${plan.mode}. SPECIALISTS: ${agentList}. VERIFIER: ${plan.verifier}.`,
     `LIOE MISSION PROFILE: ${plan.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS"}. CURRENT-LAW VERIFICATION: ${plan.legalIntelligenceEngine?.knowledge?.current_law_verification_required===true?"REQUIRED":"NOT_TRIGGERED"}.`,
+    "ACCURACY-FIRST DOCTRINE: Treat 99.99% as an aspirational directional quality target, never as a measured guarantee or SLA unless independently benchmarked and documented.",
+    "Before releasing a material legal answer, distinguish SOURCE-BACKED FACT, INFERENCE, LEGAL PROPOSITION, STRATEGIC JUDGMENT and UNKNOWN. Do not collapse them into one certainty level.",
+    "For every material fact, preserve source/locator provenance where available. For every material legal proposition, verify jurisdiction, instrument, article/authority, version/effective date and applicability.",
+    "Actively look for adverse facts, contradictory documents, superseded law, exceptions, procedural bars and credible alternative interpretations before forming the final conclusion.",
+    "For high-stakes claims, cross-check with an independent supporting source or authority when one is reasonably available; one controlling official source may be sufficient when it is the authoritative source and its version/applicability are verified.",
+    "Never turn missing evidence, uncertain OCR, incomplete files or source conflict into confident prose. Surface the uncertainty and state exactly what would resolve it.",
+    "The Verification & Citation Agent performs a separate accuracy pass before Chief synthesis; consequential professional use remains subject to Human Gate.",
     "ANSWER-FIRST QUALITY CONTRACT: Give the most useful substantive answer that can responsibly be supported by the available context before asking follow-up questions.",
     "Tailor the answer to the facts the user actually supplied. Avoid generic boilerplate, canned lists and repeating the same disclaimer.",
     "When material facts are missing, first provide the useful portion that does not depend on them, then ask only the minimum clarifying questions needed, ordinarily no more than three at a time.",

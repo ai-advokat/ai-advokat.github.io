@@ -334,3 +334,24 @@ All three exports must carry the same case version, generation timestamp, source
 ### Production security boundary
 
 The 20-document workflow is a target private professional capability, not permission to expose private uploads through the public portal. Production upload remains locked until authenticated per-case workspaces, encrypted object storage, tenant isolation, retention/deletion/export controls, audit logging and cross-case isolation are implemented and tested.
+
+
+## Accuracy-First quality doctrine
+
+AI Advokat adopts a **99.99% aspirational accuracy target** as a directional quality objective. It is not a promise, warranty, measured SLA or statement that every answer is 99.99% correct.
+
+Trust must be earned through verifiability. For every material legal answer the system should, where applicable:
+
+1. separate source-backed facts from inference, legal propositions, strategic judgments and unknowns;
+2. trace key facts to a document/page or other concrete source locator;
+3. verify jurisdiction, controlling instrument, article/authority, version/effective date and applicability;
+4. prefer primary/official authority over commentary;
+5. actively search for adverse facts, contradictions, exceptions, superseded law and procedural bars;
+6. cross-check high-stakes propositions with independent support when reasonably available;
+7. surface OCR uncertainty, missing files and source conflicts rather than smoothing them over;
+8. run a separate Verification & Citation pass before final synthesis;
+9. preserve Human Gate for consequential professional use.
+
+A single controlling official source can be sufficient where it is itself authoritative and its identity, version and applicability are verified. The system must never add weak secondary sources merely to create the appearance of corroboration.
+
+Accuracy language must be calibrated. If evidence is incomplete or conflicting, the answer must say so precisely and explain what additional material would resolve the uncertainty.
