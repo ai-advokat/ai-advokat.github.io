@@ -1,0 +1,85 @@
+name: AI Advokat private case storage provisioning
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/case-files-r2-provision.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-case-files-r2-provision
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Fail closed if Cloudflare credentials are missing
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Verify exact repository target and storage remains unbound
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          const p=c.previews?.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
+          if(!p || p.database_name!=="ai-advokat-db-staging" || p.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") throw new Error("Unexpected staging D1");
+          if(c.r2_buckets) throw new Error("CASE_FILES must still be unbound before bucket provisioning");
+          console.log("Repository/storage precondition: PASS");
+          NODE
+
+      - name: Provision private production and staging R2 buckets
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler r2 bucket list | tee /tmp/r2-before.txt
+
+          for bucket in ai-advokat-case-files ai-advokat-case-files-staging; do
+            if grep -Fq "$bucket" /tmp/r2-before.txt; then
+              echo "$bucket already exists; leaving it unchanged."
+            else
+              npx wrangler r2 bucket create "$bucket"
+            fi
+          done
+
+          npx wrangler r2 bucket list | tee /tmp/r2-after.txt
+          grep -Fq "ai-advokat-case-files" /tmp/r2-after.txt
+          grep -Fq "ai-advokat-case-files-staging" /tmp/r2-after.txt
+          echo "PRIVATE CASE R2 BUCKET PROVISIONING: PASS"
+
+      - name: Upload non-secret provisioning evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-private-case-r2-provision
+          retention-days: 30
+          path: |
+            /tmp/r2-before.txt
+            /tmp/r2-after.txt
