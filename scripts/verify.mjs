@@ -226,3 +226,14 @@ if (!paragrafLane || paragrafLane.ingest !== "link_only_without_license") {
 for (const forbidden of ["credential_bypass","session_hijack","paywall_bypass","automated_copy_of_restricted_database"]) {
   if (!paragrafLane.forbidden?.includes(forbidden)) throw new Error("Missing Paragraf safety boundary: "+forbidden);
 }
+
+
+if (!worker.includes("SOURCE_ROLE: OFFICIAL_REVIEWED_CASE_LAW")
+    || !worker.includes("s.source_status='official'")
+    || !worker.includes("cla.human_review_status IN ('approved','reviewed')")
+    || !worker.includes("cl.human_review_status IN ('approved','reviewed')")) {
+  throw new Error("Governed case-law context must require official reviewed sources and authority.");
+}
+if (!worker.includes("CASE_LAW_IS_NOT_STATUTORY_TEXT: true")) {
+  throw new Error("Case-law context must remain explicitly distinct from statutory text.");
+}
