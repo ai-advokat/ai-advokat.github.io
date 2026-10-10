@@ -20,6 +20,8 @@ import {
 import { validateLegalClaim } from "./legal-claim-validator.js";
 import {
   CASE_WORKSPACE_DOCUMENT_LIMIT,
+  CASE_WORKSPACE_MAX_FILE_BYTES,
+  validateCaseDocumentUploadMetadata,
   caseWorkspacePlanAllowed,
   validateCaseWorkspaceCreate,
   caseWorkspaceId,
@@ -244,6 +246,69 @@ async function sha256Hex(value) {
   const bytes=new TextEncoder().encode(String(value));
   const digest=await crypto.subtle.digest("SHA-256",bytes);
   return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function sha256BytesHex(bytes){
+  const digest=await crypto.subtle.digest("SHA-256",bytes);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function readLimitedBytes(request,maxBytes){
+  const declared=Number(request.headers.get("content-length")||"0");
+  if(declared>maxBytes) return {ok:false,status:413,error:"file_too_large"};
+  const reader=request.body?.getReader();
+  if(!reader) return {ok:false,status:400,error:"file_body_required"};
+  const chunks=[];
+  let size=0;
+  for(;;){
+    const {done,value}=await reader.read();
+    if(done) break;
+    size+=value.byteLength;
+    if(size>maxBytes){
+      try{await reader.cancel();}catch{}
+      return {ok:false,status:413,error:"file_too_large"};
+    }
+    chunks.push(value);
+  }
+  if(size<1) return {ok:false,status:400,error:"file_body_required"};
+  const bytes=new Uint8Array(size);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  return {ok:true,bytes};
+}
+
+function caseDocumentBytesMatchMime(bytes,mimeType){
+  if(mimeType==="application/pdf"){
+    return bytes.length>=5
+      && bytes[0]===0x25 && bytes[1]===0x50 && bytes[2]===0x44 && bytes[3]===0x46 && bytes[4]===0x2d;
+  }
+  if(mimeType==="application/vnd.openxmlformats-officedocument.wordprocessingml.document"){
+    return bytes.length>=4
+      && bytes[0]===0x50 && bytes[1]===0x4b
+      && ((bytes[2]===0x03 && bytes[3]===0x04)||(bytes[2]===0x05 && bytes[3]===0x06)||(bytes[2]===0x07 && bytes[3]===0x08));
+  }
+  return false;
+}
+
+function caseDocumentId(value){
+  const id=String(value||"").trim();
+  return /^DOC-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ? id : null;
+}
+
+function privateDocumentDownloadResponse(request,body,{mimeType,fileName}={}){
+  const safeName=String(fileName||"document").normalize("NFKC").replace(/[\r\n]/g," ").slice(0,180);
+  const encoded=encodeURIComponent(safeName);
+  return new Response(body,{
+    status:200,
+    headers:{
+      "content-type":mimeType||"application/octet-stream",
+      "content-disposition":`attachment; filename="document"; filename*=UTF-8''${encoded}`,
+      "cache-control":"private, no-store, max-age=0",
+      "x-content-type-options":"nosniff",
+      "referrer-policy":"no-referrer",
+      ...corsHeaders(request)
+    }
+  });
 }
 
 function membershipKeyFromRequest(request) {
