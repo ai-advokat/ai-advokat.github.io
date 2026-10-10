@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import {
   slotEligibleForCasePilot,
   mapWorkspaceToCasePilotShell
@@ -70,4 +71,16 @@ test("bridge reports storage/extraction state but never body fields",()=>{
   assert.deepEqual(out.runtime.extractionStates,{ready:1,pending:1});
   const json=JSON.stringify(out);
   assert.ok(!/document_text|extracted_text|file_bytes|ocr_text/i.test(json));
+});
+
+
+test("authenticated case API exposes CasePilot shell without private body fields",()=>{
+  const worker=fs.readFileSync(new URL("../src/index.js",import.meta.url),"utf8");
+  const start=worker.indexOf('if(tail==="casepilot")');
+  assert.ok(start>0);
+  const block=worker.slice(start,start+2200);
+  assert.match(block,/mapWorkspaceToCasePilotShell/);
+  assert.match(block,/metadata\/source registry only/);
+  assert.match(block,/file bytes and extracted private text are not returned/);
+  assert.doesNotMatch(block,/SELECT[^;]*(document_text|extracted_text|ocr_text|file_bytes)/i);
 });
