@@ -74,8 +74,9 @@
     "test:casepilot-governed-export-audit-ui": "node --no-warnings --test test/casepilot-governed-export-audit-ui.test.mjs",
     "test:casepilot-audit-schema": "node --no-warnings --test test/casepilot-audit-schema.test.mjs",
     "test:casepilot-human-gate-decision": "node --no-warnings --test test/casepilot-human-gate-decision.test.mjs",
-    "test:casepilot-professional-stack": "npm run test:casepilot-matter && npm run test:casepilot-workspace-bridge && npm run test:casepilot-export-adapter && npm run test:casepilot-case-law-bridge && npm run test:casepilot-case-law-ui && npm run test:casepilot-authority-classification && npm run test:casepilot-classification-export && npm run test:casepilot-workspace-ui && npm run test:casepilot-case-picker-create && npm run test:casepilot-governed-export-audit-ui && npm run test:casepilot-audit-schema && npm run test:casepilot-human-gate-decision && npm run test:casepilot-case-law-direct-research",
-    "test:casepilot-case-law-direct-research": "node --no-warnings --test test/casepilot-case-law-direct-research.test.mjs"
+    "test:casepilot-professional-stack": "npm run test:casepilot-matter && npm run test:casepilot-workspace-bridge && npm run test:casepilot-export-adapter && npm run test:casepilot-case-law-bridge && npm run test:casepilot-case-law-ui && npm run test:casepilot-authority-classification && npm run test:casepilot-classification-export && npm run test:casepilot-workspace-ui && npm run test:casepilot-case-picker-create && npm run test:casepilot-governed-export-audit-ui && npm run test:casepilot-audit-schema && npm run test:casepilot-human-gate-decision && npm run test:casepilot-case-law-direct-research && npm run test:casepilot-private-storage",
+    "test:casepilot-case-law-direct-research": "node --no-warnings --test test/casepilot-case-law-direct-research.test.mjs",
+    "test:casepilot-private-storage": "node --no-warnings --test test/casepilot-private-storage.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
