@@ -286,7 +286,7 @@
     try{
       const records=await fetchGuides();
       const router=window.AIAdvokatGuideRouter;
-      return router?.routeGuides ? router.routeGuides(q,records,{limit:3,minScore:6}) : [];
+      return router?.routeGuides ? router.routeGuides(q,records,{limit:3,minScore:10}) : [];
     }catch{return [];}
   }
 

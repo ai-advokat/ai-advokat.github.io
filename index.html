@@ -3271,7 +3271,7 @@
     try{
       const records=await fetchPublicGuideRegistry();
       const router=window.AIAdvokatGuideRouter;
-      const matches=router?.routeGuides ? router.routeGuides(question,records,{limit:3,minScore:6}) : [];
+      const matches=router?.routeGuides ? router.routeGuides(question,records,{limit:3,minScore:10}) : [];
       if(matches.length){
         const grid=el("div",{class:"guideMatchGrid"});
         matches.forEach(m=>grid.append(el("article",{class:"guideMatchCard"},

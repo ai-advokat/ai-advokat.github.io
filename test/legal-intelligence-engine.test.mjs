@@ -72,6 +72,15 @@ test("English complaint drafting is also consequential",()=>{
   assert.equal(p.implementation.no_autonomous_legal_representation,true);
 });
 
+test("inheritance procedure preparation is L2 and requires Human Gate",()=>{
+  const p=buildLegalIntelligencePlan("Сакав да те замолам да ми подготвиш се што е потребно за оставинска постапка за плац на кој има куќа.",{selectedAgents:["macedonian_law"]});
+  assert.equal(p.mission_profile.id,"L2_STRATEGY_PROCEDURE");
+  assert.equal(p.authority_and_human_gate.human_review_required,true);
+  assert.equal(p.system_map.required,true);
+  assert.equal(p.legal_stress_test.required,true);
+  assert.equal(p.implementation.no_autonomous_filing,true);
+});
+
 test("production corpus promotion is L4 and fail-closed",()=>{
   const p=buildLegalIntelligencePlan("Прогласи ја оваа верзија за важечка и внеси ја во production corpus.",{selectedAgents:["macedonian_law","verification_citation"],codeOrCorpusChange:true});
   assert.equal(p.mission_profile.id,"L4_LEGAL_TRUTH_GOVERNANCE");

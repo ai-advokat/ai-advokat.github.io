@@ -10,6 +10,11 @@
     "the","a","an","and","or","to","of","in","on","for","with","my","i","me"
   ]);
 
+  const GENERIC_ROUTING_TOKENS=new Set([
+    "postapka","pravo","praven","pravna","baranje","dokument","dokumenti","predmet",
+    "organ","institucija","sud","imot","informacija","informacii","potrebno","podgotvi"
+  ]);
+
   const EXTRA_TERMS=Object.freeze({
     "guide-02-victim-edited-2026-10-01":["жртва","оштетен","оштетена","кривично дело","права на жртва","надоместок жртва"],
     "guide-05-workplace":["мобинг","вознемирување на работа","дискриминација на работа","работодавач","работно место","шеф ме вознемирува"],
@@ -93,13 +98,17 @@
     return /(?:arhiv|prethod|stara verz|istorisk|archive|previous version)/.test(q);
   }
 
+  function routingQuestion(value){
+    return normalize(value).replace(/ai advokat/g," ").replace(/\s+/g," ").trim();
+  }
+
   function scoreRecord(question,record){
-    const q=normalize(question);
+    const q=routingQuestion(question);
     if(!q) return 0;
     const title=normalize(record.display_title || record.title || "");
     const text=normalize(recordText(record));
-    const qTokens=tokenise(q);
-    const recordTokens=new Set(tokenise(text));
+    const qTokens=tokenise(q).filter(t=>!GENERIC_ROUTING_TOKENS.has(t));
+    const recordTokens=new Set(tokenise(text).filter(t=>!GENERIC_ROUTING_TOKENS.has(t)));
     let score=0;
 
     if(title && q===title) score+=120;
@@ -133,15 +142,14 @@
 
     const archive=record.source_role==="version_history";
     if(archive && !isArchiveIntent(q)) score-=50;
-    if(!archive) score+=2;
     if(record.id==="guide-administrative-v2" && /(?:uprav|instituci|administraci)/.test(q)) score+=3;
 
     return score;
   }
 
-  function routeGuides(question,records,{limit=3,minScore=6,includeHistory=false}={}){
+  function routeGuides(question,records,{limit=3,minScore=10,includeHistory=false}={}){
     if(!Array.isArray(records)) return [];
-    const q=normalize(question);
+    const q=routingQuestion(question);
     if(!q) return [];
     const archiveIntent=isArchiveIntent(q);
     return records
@@ -175,6 +183,7 @@
     tokenise,
     scoreRecord,
     routeGuides,
+    routingQuestion,
     currentPublicGuides,
     extraTerms:EXTRA_TERMS
   });

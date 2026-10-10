@@ -10,7 +10,7 @@ const html=fs.readFileSync("index.html","utf8");
 const records=registry.records;
 
 function ids(question,limit=3){
-  return Router.routeGuides(question,records,{limit,minScore:6}).map(x=>x.id);
+  return Router.routeGuides(question,records,{limit,minScore:10}).map(x=>x.id);
 }
 
 test("CGR1 all 39 governed public records have clickable stable public URLs",()=>{
@@ -85,7 +85,13 @@ test("CGR9 unrelated text fails closed instead of inventing a guide match",()=>{
   assert.deepEqual(Router.routeGuides("xyzqv completely unrelated token sequence",records,{limit:3,minScore:6}),[]);
 });
 
-test("CGR10 homepage integrates clickable guide routing before statute-level AI output",()=>{
+test("CGR10 inheritance request without a matching guide fails closed and ignores platform self-name",()=>{
+  const q="Добро утро почитуван AI Advokat, сакав да те замолам да ми подготвиш се што е потребно за оставинска постапка на плац на која има куќа.";
+  assert.deepEqual(Router.routeGuides(q,records,{limit:3,minScore:10}),[]);
+  assert.equal(Router.routingQuestion(q).includes("ai advokat"),false);
+});
+
+test("CGR11 homepage integrates clickable guide routing before statute-level AI output",()=>{
   assert.match(html,/assets\/guide-router\.js/);
   assert.match(html,/renderCitizenGuideMatches/);
   assert.match(html,/Отвори го водичот/);
@@ -94,7 +100,7 @@ test("CGR10 homepage integrates clickable guide routing before statute-level AI 
   assert.match(html,/legalSlot\.append\(renderAssistantAnswer\(data\)\)/);
 });
 
-test("CGR11 router governance metadata is active and guide routing does not alter file, RAG or production gates",()=>{
+test("CGR12 router governance metadata is active and guide routing does not alter file, RAG or production gates",()=>{
   assert.equal(registry.collection.citizen_guide_router.status,"active_public_metadata_router");
   assert.equal(registry.collection.citizen_guide_router.public_records_available,39);
   assert.equal(registry.collection.citizen_guide_router.current_records_recommended_by_default,37);
