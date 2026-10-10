@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="mk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self';">
+  <title>AI Advokat Professional Tools</title>
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <style>
+    :root{--bg:#f4f6f8;--surface:#fff;--ink:#132033;--muted:#5a6878;--line:#d9e0e7;--navy:#0c2038;--navy2:#173d66;--gold:#b9985b;--goldsoft:#f0e8d8;--ok:#1f6c4d;--warn:#8c5f19;--danger:#9c2f2f;--radius:18px;--shadow:0 16px 46px rgba(12,32,56,.10)}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+    a{color:inherit}.wrap{width:min(1180px,calc(100% - 28px));margin:auto}.top{background:linear-gradient(125deg,#071524,#173d66);color:#fff;padding:28px 0}
+    .brand{display:flex;align-items:center;gap:14px}.brand img{width:48px;height:48px;border-radius:12px}.brand h1{margin:0;font-size:1.6rem}.brand p{margin:4px 0 0;color:#d6e1eb}
+    .tabs{display:flex;gap:10px;margin:24px 0;flex-wrap:wrap}.tab{border:1px solid var(--line);background:var(--surface);padding:11px 15px;border-radius:999px;font-weight:750;cursor:pointer}.tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+    .panel{display:none}.panel.active{display:block}.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);margin-bottom:18px}
+    h2,h3{margin-top:0}.muted{color:var(--muted)}.notice{border:1px solid #d6c28f;background:var(--goldsoft);padding:14px;border-radius:12px}.notice b{display:block;margin-bottom:4px}
+    textarea,input,select{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:#fff;color:var(--ink);font:inherit}textarea{min-height:260px;resize:vertical}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    button,.btn{border:0;border-radius:11px;padding:11px 15px;font-weight:750;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.primary{background:var(--navy);color:#fff}.secondary{background:#eef2f5;color:var(--ink);border:1px solid var(--line)}.gold{background:var(--gold);color:#132033}
+    .drop{border:2px dashed var(--line);border-radius:15px;padding:18px;text-align:center}.drop input{display:none}.badge{display:inline-flex;padding:5px 8px;border-radius:999px;border:1px solid var(--line);font-size:.78rem;font-weight:700}.badge.ok{color:var(--ok)}.badge.warn{color:var(--warn)}
+    table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#eef2f5}.scroll{overflow:auto}
+    .metric{padding:14px;border:1px solid var(--line);border-radius:14px}.metric b{display:block;font-size:1.35rem}.metric span{color:var(--muted);font-size:.85rem}
+    .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.step{padding:14px;border:1px solid var(--line);border-radius:12px;background:#fafbfc}.step b{display:block}
+    .statusline{margin-top:12px;font-size:.9rem}.casegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.caseitem{border:1px solid var(--line);border-radius:13px;padding:14px;background:#fafbfc}.caseitem b{display:block;margin-bottom:4px}
+    footer{padding:30px 0 45px;color:var(--muted);font-size:.88rem}
+    @media(max-width:800px){.grid2,.grid3,.steps,.casegrid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap brand">
+      <img src="/assets/app-icon.svg" alt="">
+      <div><h1>AI Advokat Professional Tools</h1><p>Legal Analyzer + CasePilot · проверливи извори · Human Gate</p></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="analyzer" type="button">Legal Analyzer</button>
+      <button class="tab" data-tab="casepilot" type="button">CasePilot</button>
+    </div>
+
+    <section id="analyzer" class="panel active">
+      <div class="card">
+        <h2>Legal Analyzer</h2>
+        <p class="muted">Анализа на правен текст со детерминистичко извлекување на метаподатоци, правни референци, рокови и Review Table. Официјални идентификатори никогаш не се измислуваат.</p>
+        <div class="notice"><b>Human Gate</b>Резултатот е работен материјал. Правна важност, актуелност на нормата и професионална употреба бараат проверка од адвокат и официјален извор.</div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>1. Внесете текст</h3>
+          <label for="docName">Назив на документ</label>
+          <input id="docName" value="правен-документ.txt" maxlength="200">
+          <label for="docText" style="display:block;margin-top:12px">Текст</label>
+          <textarea id="docText" placeholder="Залепете текст од пресуда, договор, поднесок или друг правен документ..."></textarea>
+          <div class="drop" style="margin-top:12px">
+            <strong>Локална датотека</strong>
+            <p class="muted">TXT, MD, CSV и JSON се читаат само во вашиот browser.</p>
+            <label class="btn secondary" for="localFile">Избери датотека</label>
+            <input id="localFile" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json">
+          </div>
+          <div class="actions">
+            <button id="analyze" class="primary" type="button">Анализирај</button>
+            <button id="clear" class="secondary" type="button">Исчисти</button>
+          </div>
+          <div id="status" class="statusline muted" aria-live="polite"></div>
+        </div>
+
+        <div class="card">
+          <h3>2. Governance</h3>
+          <div class="grid2">
+            <div class="metric"><b id="mType">—</b><span>тип на документ</span></div>
+            <div class="metric"><b id="mComplete">—</b><span>детерминистичка комплетност</span></div>
+            <div class="metric"><b id="mRefs">—</b><span>правни референци</span></div>
+            <div class="metric"><b id="mGate">LOCKED</b><span>Human Gate</span></div>
+          </div>
+          <p class="muted" style="margin-top:14px">„Комплетност“ не е AI confidence и не е веројатност за правна точност. Таа само покажува колку од однапред дефинирани структурни полиња се пронајдени.</p>
+          <div class="actions">
+            <button id="exportJson" class="secondary" type="button" disabled>JSON</button>
+            <button id="exportCsv" class="secondary" type="button" disabled>CSV Review Row</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Review Table</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Документ</th><th>Тип</th><th>Суд/орган</th><th>Број</th><th>Датум</th><th>Закони / членови</th><th>Рокови</th><th>Извори</th><th>Human Gate</th></tr></thead>
+            <tbody id="reviewBody"><tr><td colspan="9" class="muted">Нема анализа.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>PDF/DOCX production path</h3>
+        <p class="muted">PDF/DOCX не се испраќаат преку оваа јавна локална форма. Тие ќе се обработуваат преку Secure Case Workspace / governed ingestion pipeline кога соодветниот приватен ingestion gate е активиран. Ова спречува доверливи предмети да завршат во јавен слој или непроверен third-party parser.</p>
+      </div>
+    </section>
+
+    <section id="casepilot" class="panel">
+      <div class="card">
+        <h2>CasePilot</h2>
+        <p class="muted">Matter-level работна средина за цел предмет: извори, хронологија, докази, противречности, празнини, процесни ризици, рочиште и регистар на AI заклучоци.</p>
+        <div class="notice"><b>Не е автоматска процена на вина или исход</b>CasePilot создава проверлива работна карта. Адвокатот ја носи професионалната одлука и го отклучува финалниот работен пакет преку Human Gate.</div>
+      </div>
+
+      <div class="card">
+        <h3>Работен тек</h3>
+        <div class="steps">
+          <div class="step"><b>1 · Досие</b>пасош + документи + fingerprint</div>
+          <div class="step"><b>2 · Анализа</b>timeline + лица + факти + правни прашања</div>
+          <div class="step"><b>3 · Проверка</b>докази + противречности + missing evidence</div>
+          <div class="step"><b>4 · Human Gate</b>прифати / коригирај / одбиј + versioned export</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Модули</h3>
+        <div class="casegrid">
+          <div class="caseitem"><b>Пасош на предмет</b>фаза, перспектива, верзија</div>
+          <div class="caseitem"><b>Документи</b>регистар, SHA-256, страници, provenance</div>
+          <div class="caseitem"><b>Хронологија</b>настан → извор → статус</div>
+          <div class="caseitem"><b>Тврдења и докази</b>claim → source → weakness → counterevidence</div>
+          <div class="caseitem"><b>Противречности</b>две верзии со точни source/page anchors</div>
+          <div class="caseitem"><b>Missing evidence</b>што недостига и зошто е важно</div>
+          <div class="caseitem"><b>Процесни ризици</b>ризик → последица → контрола</div>
+          <div class="caseitem"><b>Рочиште</b>прашања, приговори, работни drafts</div>
+          <div class="caseitem"><b>AI Findings Register</b>извор + review type + адвокатска одлука</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Secure Case Workspace</h3>
+        <p class="muted">Backend архитектурата и versioned MD/DOCX/PDF export engine веќе се дел од AI Advokat. Приватниот document-ingestion слој останува fail-closed додека storage/tenant/retention контролите не се целосно активирани. Ниту една доверлива датотека не се внесува во public corpus.</p>
+        <div class="actions">
+          <a class="btn primary" href="/membership.html">Професионален пристап</a>
+          <a class="btn secondary" href="/">Назад кон AI Advokat</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">AI Advokat · правна истражувачка и професионална работна средина · Human Gate задолжителен за consequential legal use.</footer>
+  <script type="module" src="/assets/professional-tools.js"></script>
+</body>
+</html>
