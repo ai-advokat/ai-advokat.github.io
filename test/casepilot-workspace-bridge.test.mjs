@@ -80,7 +80,7 @@ test("authenticated case API exposes CasePilot shell without private body fields
   assert.ok(start>0);
   const block=worker.slice(start,start+2200);
   assert.match(block,/mapWorkspaceToCasePilotShell/);
-  assert.match(block,/metadata\/source registry only/);
+  assert.match(block,/metadata\/source registry and lawyer authority classifications only/);
   assert.match(block,/file bytes and extracted private text are not returned/);
   assert.doesNotMatch(block,/SELECT[^;]*(document_text|extracted_text|ocr_text|file_bytes)/i);
 });
