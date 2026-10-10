@@ -11,6 +11,7 @@ const exportRequestPath=new URL("../.github/activation/case-export-production-re
 const exportRaw=fs.readFileSync(exportRequestPath);
 const exportRequest=JSON.parse(exportRaw);
 const exportSha=crypto.createHash("sha256").update(exportRaw).digest("hex");
+const rerun=JSON.parse(fs.readFileSync(new URL("../.github/activation/case-workspace-export-rerun-2026-10-10.json",import.meta.url),"utf8"));
 const workflow=fs.readFileSync(new URL("../.github/workflows/case-workspace-production-activation.yml",import.meta.url),"utf8");
 const ledger=JSON.parse(fs.readFileSync(new URL("../data/human-gate-decision-ledger.json",import.meta.url),"utf8"));
 const sha=crypto.createHash("sha256").update(raw).digest("hex");
@@ -88,4 +89,21 @@ test("current-main Case Workspace activation performs live bounded export smoke 
   assert.match(workflow,/if: always\(\)/);
   assert.match(workflow,/DELETE FROM case_audit_events WHERE case_id/);
   assert.match(workflow,/DELETE FROM membership_access_keys WHERE account_id/);
+});
+
+
+test("CasePilot export rerun request does not expand Human Gate authorization",()=>{
+  assert.equal(rerun.does_not_expand_authorization,true);
+  assert.equal(rerun.private_document_upload_authorized,false);
+  assert.equal(rerun.private_object_storage_activation_authorized,false);
+  assert.equal(rerun.baseline_run,2);
+  assert.equal(rerun.baseline_failure,"stale_post_deploy_capabilities_caseExports_undefined");
+});
+
+test("live Case Workspace boundary polls for current post-deploy capabilities before export smoke",()=>{
+  assert.match(workflow,/seq 1 20/);
+  assert.match(workflow,/Current Worker capabilities observed after deploy on attempt/);
+  assert.match(workflow,/caseExports!=="md_docx_live_pdf_browser_rendered_human_gate_bound"/);
+  assert.match(workflow,/sleep 3/);
+  assert.match(workflow,/test "\$ready" = "1"/);
 });
