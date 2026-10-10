@@ -144,8 +144,10 @@
     if(archive && !isArchiveIntent(q)) score-=50;
     if(record.id==="guide-administrative-v2" && /(?:uprav|instituci|administraci)/.test(q)) score+=3;
 
-    if(record.activation_state==="active_verified") score+=6;
-    else if(record.activation_state==="active_with_warning") score+=2;
+    if(score>0){
+      if(record.activation_state==="active_verified") score+=6;
+      else if(record.activation_state==="active_with_warning") score+=2;
+    }
 
     return score;
   }
