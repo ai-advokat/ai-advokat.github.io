@@ -170,11 +170,58 @@ jobs:
           console.log("LIVE GPT-6.1 SOL + WEB + ATTACHMENT: PASS");
           NODE
 
+      - name: Provision ephemeral synthetic UAT membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          UAT_ACCOUNT_ID="uat-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_ENTITLEMENT_ID="uat-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_KEY_ID="uat-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_KEY="uat_$(openssl rand -hex 24)"
+          UAT_KEY_HASH="$(printf '%s' "$UAT_KEY" | sha256sum | awk '{print $1}')"
+          UAT_KEY_PREFIX="${UAT_KEY:0:12}"
+          echo "::add-mask::$UAT_KEY"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$UAT_ACCOUNT_ID';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$UAT_ACCOUNT_ID';
+            DELETE FROM membership_accounts WHERE id='$UAT_ACCOUNT_ID';
+            INSERT INTO membership_accounts(id,display_name,status)
+            VALUES ('$UAT_ACCOUNT_ID','AI Advokat Synthetic UAT','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+            VALUES
+              ('$UAT_ENTITLEMENT_ID','$UAT_ACCOUNT_ID','office','active','manual',50,1,0,datetime('now','+2 hours'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+            VALUES
+              ('$UAT_KEY_ID','$UAT_ACCOUNT_ID','$UAT_KEY_HASH','$UAT_KEY_PREFIX','ephemeral production legal UAT','active',datetime('now','+2 hours'));
+          "
+          echo "UAT_ACCOUNT_ID=$UAT_ACCOUNT_ID" >> "$GITHUB_ENV"
+          echo "AI_ADVOCAT_UAT_MEMBERSHIP_KEY=$UAT_KEY" >> "$GITHUB_ENV"
+          echo "Ephemeral UAT membership provisioned."
+
       - name: Live governed legal UAT scenarios — 20-domain suite
         shell: bash
         run: |
           set -euo pipefail
+          test -n "${AI_ADVOCAT_UAT_MEMBERSHIP_KEY:-}"
           UAT_OUTPUT=/tmp/legal-uat-results.json node scripts/run-live-legal-uat.mjs data/uat/legal-scenarios-v2-20.json
+
+      - name: Cleanup ephemeral synthetic UAT membership
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${UAT_ACCOUNT_ID:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$UAT_ACCOUNT_ID';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$UAT_ACCOUNT_ID';
+              DELETE FROM membership_accounts WHERE id='$UAT_ACCOUNT_ID';
+            "
+            echo "Ephemeral UAT membership cleaned."
+          else
+            echo "No ephemeral UAT membership to clean."
+          fi
 
       - name: Upload non-secret activation evidence
         if: always()
