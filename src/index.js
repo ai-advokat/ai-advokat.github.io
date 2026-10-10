@@ -2730,7 +2730,15 @@ async function handleCasePilotCaseLawResearch(request,env){
   if(query.length<3) return json(request,{ok:false,error:"case_law_query_required"},400);
 
   const plan=buildAgentPlan(query,{preferCorpus:true});
-  const bundle=await governedCaseLawContext(env,query,plan,{limit:6});
+  const directResearchPlan={
+    ...plan,
+    legalIntelligenceEngine:{
+      ...(plan?.legalIntelligenceEngine||{}),
+      engaged:true,
+      engagementReason:"direct_case_law_research_endpoint"
+    }
+  };
+  const bundle=await governedCaseLawContext(env,query,directResearchPlan,{limit:6});
   const comparison=buildCaseLawComparison(bundle.cases||[],{roleAssignments:{}});
 
   return json(request,{
