@@ -2315,12 +2315,13 @@ async function handleGPTChat(request,env){
 
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const initialPlan=buildAgentPlan(q);
-  const [guideContext,articleBundle]=await Promise.all([
+  const [guideContext,articleBundle,caseLawBundle]=await Promise.all([
     governedGuideContext(request,env,guideIds),
-    governedArticleContext(env,q,initialPlan)
+    governedArticleContext(env,q,initialPlan),
+    governedCaseLawContext(env,q,initialPlan,{limit:4})
   ]);
 
-  const corpusContext=[...articleBundle.context,...guideDocumentCheck.context,...guideContext];
+  const corpusContext=[...articleBundle.context,...caseLawBundle.context,...guideDocumentCheck.context,...guideContext];
   if(uiMode==="library" && corpusContext.length===0){
     corpusContext.push({
       source:"AI Advokat public library",
@@ -2337,6 +2338,7 @@ async function handleGPTChat(request,env){
   // Explicit Web mode must not be mislabeled as passive_corpus merely because the
   // UI suggested a guide. Article-level Macedonian law remains corpus-first.
   const preferCorpus=articleBundle.context.length>0
+    || caseLawBundle.context.length>0
     || guideDocumentCheck.context.length>0
     || uiMode==="library"
     || (uiMode==="auto" && guideContext.length>0);
@@ -2519,26 +2521,39 @@ async function handleGPTChat(request,env){
   const finalAnswer=postflight.required ? postflight.corrected_answer : result.text;
 
   const articleMatched=articleBundle.state==="matched";
+  const caseLawMatched=caseLawBundle.state==="matched";
   const guideFullTextUsed=guideDocumentCheck.attachments.length>0;
-  const sourceMode=result.webSearchUsed===true && articleMatched && guideFullTextUsed
-    ? "ai_advokat_legal_corpus_guides_plus_external_web"
-    : result.webSearchUsed===true && guideFullTextUsed
-      ? "ai_advokat_guides_plus_external_web"
-      : result.webSearchUsed===true && articleMatched
-        ? "ai_advokat_article_corpus_plus_external_web"
-        : result.webSearchUsed===true
-          ? "external_web_research"
-          : articleMatched && guideFullTextUsed
-            ? "ai_advokat_legal_corpus_plus_guides"
-            : guideFullTextUsed
-              ? "ai_advokat_guides_fulltext_first"
-              : articleMatched
-                ? "ai_advokat_article_corpus_first"
-                : articleBundle.context.length
-                  ? "ai_advokat_article_corpus_gate"
-                  : guideContext.length
-                    ? "ai_advokat_catalogue_context_first"
-                    : "gpt_general_or_proactive";
+  const sourceMode=result.webSearchUsed===true && articleMatched && caseLawMatched && guideFullTextUsed
+    ? "ai_advokat_legal_corpus_guides_case_law_plus_external_web"
+    : result.webSearchUsed===true && articleMatched && caseLawMatched
+      ? "ai_advokat_article_corpus_case_law_plus_external_web"
+      : result.webSearchUsed===true && caseLawMatched
+        ? "ai_advokat_case_law_plus_external_web"
+        : result.webSearchUsed===true && guideFullTextUsed
+          ? "ai_advokat_guides_plus_external_web"
+          : result.webSearchUsed===true && articleMatched
+            ? "ai_advokat_article_corpus_plus_external_web"
+            : result.webSearchUsed===true
+              ? "external_web_research"
+              : articleMatched && caseLawMatched && guideFullTextUsed
+                ? "ai_advokat_legal_corpus_guides_case_law"
+                : articleMatched && caseLawMatched
+                  ? "ai_advokat_article_corpus_plus_case_law"
+                  : caseLawMatched && guideFullTextUsed
+                    ? "ai_advokat_case_law_plus_guides"
+                    : caseLawMatched
+                      ? "ai_advokat_case_law_first"
+                      : articleMatched && guideFullTextUsed
+                        ? "ai_advokat_legal_corpus_plus_guides"
+                        : guideFullTextUsed
+                          ? "ai_advokat_guides_fulltext_first"
+                          : articleMatched
+                            ? "ai_advokat_article_corpus_first"
+                            : articleBundle.context.length
+                              ? "ai_advokat_article_corpus_gate"
+                              : guideContext.length
+                                ? "ai_advokat_catalogue_context_first"
+                                : "gpt_general_or_proactive";
 
   const runtimeAssessment=assessLegalRuntimeRelease({
     plan,
@@ -2594,6 +2609,7 @@ async function handleGPTChat(request,env){
     historyItemsUsed:result.historyItemsUsed,
     sources:result.sources || [],
     legalSources:articleBundle.legalSources || [],
+    caseLawSources:caseLawBundle.sources || [],
     guideSources:guideDocumentCheck.sources || [],
     guideDocumentsUsed:guideDocumentCheck.attachments.length,
     guideDocumentFingerprintsVerified:guideDocumentCheck.attachments.length>0,
@@ -2603,6 +2619,8 @@ async function handleGPTChat(request,env){
     sourceMode,
     corpusContextCount:corpusContext.length,
     articleCorpusContextCount:articleBundle.context.length,
+    caseLawContextCount:caseLawBundle.context.length,
+    caseLawState:caseLawBundle.state,
     articleCorpusState:articleBundle.state,
     legalCrossReferenceCount:Array.isArray(articleBundle.crossReferenceArticles)?articleBundle.crossReferenceArticles.length:0,
     articleCorpus:articleBundle.instrument ? {
