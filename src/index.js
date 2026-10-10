@@ -20,6 +20,8 @@ import {
 import { validateLegalClaim } from "./legal-claim-validator.js";
 import {
   CASE_WORKSPACE_DOCUMENT_LIMIT,
+  CASE_WORKSPACE_MAX_FILE_BYTES,
+  validateCaseDocumentUploadMetadata,
   caseWorkspacePlanAllowed,
   validateCaseWorkspaceCreate,
   caseWorkspaceId,
@@ -244,6 +246,64 @@ async function sha256Hex(value) {
   const bytes=new TextEncoder().encode(String(value));
   const digest=await crypto.subtle.digest("SHA-256",bytes);
   return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function readLimitedBytes(request,maxBytes){
+  const declared=Number(request.headers.get("content-length")||"0");
+  if(declared>maxBytes) return {ok:false,status:413,error:"file_too_large"};
+  const reader=request.body?.getReader();
+  if(!reader) return {ok:false,status:400,error:"file_body_required"};
+  const chunks=[];
+  let size=0;
+  for(;;){
+    const {done,value}=await reader.read();
+    if(done) break;
+    size+=value.byteLength;
+    if(size>maxBytes){
+      try{await reader.cancel();}catch{}
+      return {ok:false,status:413,error:"file_too_large"};
+    }
+    chunks.push(value);
+  }
+  if(size<1) return {ok:false,status:400,error:"file_body_required"};
+  const bytes=new Uint8Array(size);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  return {ok:true,bytes};
+}
+
+function caseDocumentBytesMatchMime(bytes,mimeType){
+  if(mimeType==="application/pdf"){
+    return bytes.length>=5
+      && bytes[0]===0x25 && bytes[1]===0x50 && bytes[2]===0x44 && bytes[3]===0x46 && bytes[4]===0x2d;
+  }
+  if(mimeType==="application/vnd.openxmlformats-officedocument.wordprocessingml.document"){
+    return bytes.length>=4
+      && bytes[0]===0x50 && bytes[1]===0x4b
+      && ((bytes[2]===0x03 && bytes[3]===0x04)||(bytes[2]===0x05 && bytes[3]===0x06)||(bytes[2]===0x07 && bytes[3]===0x08));
+  }
+  return false;
+}
+
+function caseDocumentId(value){
+  const id=String(value||"").trim();
+  return /^DOC-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ? id : null;
+}
+
+function privateDocumentDownloadResponse(request,body,{mimeType,fileName}={}){
+  const safeName=String(fileName||"document").normalize("NFKC").replace(/[\r\n]/g," ").slice(0,180);
+  const encoded=encodeURIComponent(safeName);
+  return new Response(body,{
+    status:200,
+    headers:{
+      "content-type":mimeType||"application/octet-stream",
+      "content-disposition":`attachment; filename="document"; filename*=UTF-8''${encoded}`,
+      "cache-control":"private, no-store, max-age=0",
+      "x-content-type-options":"nosniff",
+      "referrer-policy":"no-referrer",
+      ...corsHeaders(request)
+    }
+  });
 }
 
 function membershipKeyFromRequest(request) {
@@ -858,6 +918,185 @@ async function handleCaseWorkspaceApi(request,env,url){
     });
   }
 
+
+  if(tail==="documents/upload"){
+    if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+    if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_document_write_role_required"},403);
+    if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
+    if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
+
+    const metadata=validateCaseDocumentUploadMetadata({
+      name:request.headers.get("X-File-Name"),
+      mimeType:(request.headers.get("content-type")||"").split(";")[0].trim(),
+      pageCount:request.headers.get("X-Page-Count")
+    });
+    if(!metadata.ok) return json(request,{ok:false,error:"invalid_case_document",problems:metadata.errors},400);
+
+    const file=await readLimitedBytes(request,CASE_WORKSPACE_MAX_FILE_BYTES);
+    if(!file.ok) return json(request,{ok:false,error:file.error},file.status);
+    if(!caseDocumentBytesMatchMime(file.bytes,metadata.value.mimeType)){
+      return json(request,{ok:false,error:"file_signature_mismatch"},400);
+    }
+
+    const usedRows=await env.DB.prepare(
+      "SELECT slot_number FROM case_document_slots WHERE case_id=? AND storage_state!='deleted' ORDER BY slot_number"
+    ).bind(caseId).all();
+    const used=new Set((usedRows.results||[]).map(row=>Number(row.slot_number)));
+    const documentLimit=Number(access.document_limit||CASE_WORKSPACE_DOCUMENT_LIMIT);
+    let slotNumber=null;
+    for(let i=1;i<=documentLimit;i++){if(!used.has(i)){slotNumber=i;break;}}
+    if(slotNumber===null) return json(request,{ok:false,error:"case_document_limit_reached"},409);
+
+    const documentId="DOC-"+crypto.randomUUID();
+    const storageKey=`case-files/v1/${caseId}/${documentId}`;
+    const sha256=await sha256BytesHex(file.bytes);
+    const at=new Date().toISOString();
+
+    try{
+      await env.DB.prepare(
+        `INSERT INTO case_document_slots
+          (id,case_id,slot_number,original_name,mime_type,sha256,page_count,storage_key,storage_state,extraction_state,provenance_required,created_at,updated_at)
+         VALUES (?,?,?,?,?,?,?,?, 'reserved','not_started',1,?,?)`
+      ).bind(
+        documentId,caseId,slotNumber,metadata.value.originalName,metadata.value.mimeType,
+        sha256,metadata.value.pageCount,storageKey,at,at
+      ).run();
+    }catch(error){
+      console.error("case_document_slot_reserve_failed",String(error?.message||error).slice(0,180));
+      return json(request,{ok:false,error:"case_document_slot_conflict"},409);
+    }
+
+    try{
+      await env.CASE_FILES.put(storageKey,file.bytes,{
+        httpMetadata:{contentType:metadata.value.mimeType},
+        customMetadata:{caseId,documentId,sha256}
+      });
+    }catch(error){
+      console.error("case_document_r2_put_failed",String(error?.message||error).slice(0,180));
+      await env.DB.prepare("DELETE FROM case_document_slots WHERE id=? AND case_id=? AND storage_state='reserved'")
+        .bind(documentId,caseId).run().catch(()=>{});
+      return json(request,{ok:false,error:"private_case_storage_write_failed"},503);
+    }
+
+    try{
+      await env.DB.batch([
+        env.DB.prepare(
+          `UPDATE case_document_slots
+              SET storage_state='uploaded',updated_at=?
+            WHERE id=? AND case_id=? AND storage_state='reserved'`
+        ).bind(at,documentId,caseId),
+        env.DB.prepare(
+          `UPDATE case_workspaces
+              SET professional_use_locked=1,updated_at=?
+            WHERE id=?`
+        ).bind(at,caseId),
+        env.DB.prepare(
+          `INSERT INTO case_audit_events
+            (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+           VALUES (?, ?, ?, 'document_slot_reserved', 'case_document', ?, ?, ?)`
+        ).bind(
+          "CAE-"+crypto.randomUUID(),caseId,membership.accountId,documentId,
+          safeCaseAuditMetadata({slotNumber,mimeType:metadata.value.mimeType,storageState:"reserved"}),at
+        ),
+        env.DB.prepare(
+          `INSERT INTO case_audit_events
+            (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+           VALUES (?, ?, ?, 'document_uploaded', 'case_document', ?, ?, ?)`
+        ).bind(
+          "CAE-"+crypto.randomUUID(),caseId,membership.accountId,documentId,
+          safeCaseAuditMetadata({slotNumber,mimeType:metadata.value.mimeType,pageCount:metadata.value.pageCount,storageState:"uploaded"}),at
+        )
+      ]);
+    }catch(error){
+      console.error("case_document_metadata_commit_failed",String(error?.message||error).slice(0,180));
+      await env.CASE_FILES.delete(storageKey).catch(()=>{});
+      await env.DB.prepare("DELETE FROM case_document_slots WHERE id=? AND case_id=?")
+        .bind(documentId,caseId).run().catch(()=>{});
+      return json(request,{ok:false,error:"case_document_metadata_commit_failed"},500);
+    }
+
+    return json(request,{
+      ok:true,
+      caseId,
+      document:{
+        id:documentId,
+        slotNumber,
+        originalName:metadata.value.originalName,
+        mimeType:metadata.value.mimeType,
+        sha256,
+        pageCount:metadata.value.pageCount,
+        storageState:"uploaded",
+        extractionState:"not_started",
+        provenanceRequired:true
+      },
+      humanGate:{professionalUseLocked:true},
+      ingestion:"stored_private_not_ingested"
+    },201);
+  }
+
+  if(tail.startsWith("documents/")){
+    const docTail=tail.slice("documents/".length);
+    const segments=docTail.split("/").filter(Boolean);
+    const documentId=caseDocumentId(segments[0]);
+    if(!documentId) return json(request,{ok:false,error:"case_document_not_found"},404);
+
+    const row=await env.DB.prepare(
+      `SELECT id,slot_number,original_name,mime_type,sha256,page_count,storage_key,storage_state,extraction_state
+         FROM case_document_slots
+        WHERE id=? AND case_id=?
+        LIMIT 1`
+    ).bind(documentId,caseId).first();
+    if(!row || row.storage_state==="deleted") return json(request,{ok:false,error:"case_document_not_found"},404);
+
+    if(segments.length===2 && segments[1]==="download"){
+      if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+      if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
+      if(row.storage_state!=="uploaded") return json(request,{ok:false,error:"case_document_not_available"},409);
+      const object=await env.CASE_FILES.get(row.storage_key);
+      if(!object) return json(request,{ok:false,error:"case_document_storage_object_missing"},503);
+      await recordCaseAudit(env,{
+        caseId,accountId:membership.accountId,eventType:"document_downloaded",
+        objectType:"case_document",objectId:documentId,
+        metadata:{slotNumber:row.slot_number,mimeType:row.mime_type,storageState:row.storage_state}
+      });
+      return privateDocumentDownloadResponse(request,request.method==="HEAD" ? null : object.body,{
+        mimeType:row.mime_type,
+        fileName:row.original_name||"document"
+      });
+    }
+
+    if(segments.length===1 && request.method==="DELETE"){
+      if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_document_write_role_required"},403);
+      if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
+      if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
+      await env.CASE_FILES.delete(row.storage_key);
+      const at=new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare(
+          `UPDATE case_document_slots
+              SET storage_state='deleted',extraction_state='not_started',updated_at=?
+            WHERE id=? AND case_id=?`
+        ).bind(at,documentId,caseId),
+        env.DB.prepare(
+          `UPDATE case_workspaces
+              SET professional_use_locked=1,updated_at=?
+            WHERE id=?`
+        ).bind(at,caseId),
+        env.DB.prepare(
+          `INSERT INTO case_audit_events
+            (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+           VALUES (?, ?, ?, 'document_deleted', 'case_document', ?, ?, ?)`
+        ).bind(
+          "CAE-"+crypto.randomUUID(),caseId,membership.accountId,documentId,
+          safeCaseAuditMetadata({slotNumber:row.slot_number,mimeType:row.mime_type,storageState:"deleted"}),at
+        )
+      ]);
+      return json(request,{ok:true,caseId,documentId,storageState:"deleted",humanGate:{professionalUseLocked:true}});
+    }
+
+    return methodNotAllowed(request,"GET, HEAD, DELETE, OPTIONS");
+  }
+
   if(tail==="casepilot"){
     if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
     const result=await env.DB.prepare(
@@ -891,6 +1130,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
 
     if(request.method==="POST"){
+      if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_professional_write_role_required"},403);
       if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
       const contentType=(request.headers.get("content-type")||"").toLowerCase();
       if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
@@ -999,6 +1239,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
 
     if(request.method==="POST"){
+      if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_professional_write_role_required"},403);
       if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
       const contentType=(request.headers.get("content-type")||"").toLowerCase();
       if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
@@ -1232,8 +1473,8 @@ async function handleCaseWorkspaceApi(request,env,url){
 function corsHeaders(request) {
   const origin = request.headers.get("Origin");
   const headers = {
-    "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Membership-Key",
+    "Access-Control-Allow-Methods": "GET,HEAD,POST,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Membership-Key, X-File-Name, X-Page-Count",
     "Access-Control-Max-Age": "86400",
     "Access-Control-Expose-Headers": "Content-Disposition, X-AI-Advokat-Export-Mode",
     "Vary": "Origin"
