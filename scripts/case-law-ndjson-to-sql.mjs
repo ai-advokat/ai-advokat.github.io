@@ -182,7 +182,7 @@ export function generateCaseLawImportSql(ndjsonText){
     for(const [scheme,value] of idPairs){
       sql.push(
         "INSERT OR IGNORE INTO case_law_external_ids(case_law_id,id_scheme,id_value,source_url,is_primary_identifier,human_review_status) VALUES ("+
-        [caseIdExpr,sqlString(scheme),sqlString(value),sqlString(sourceUrl.href),"'"+(scheme==="ecli"||scheme==="echr_application_number"||scheme==="domestic_case_number"||scheme==="constitutional_reference"?"1":"0")+"'", "'pending'"].join(",")+");"
+        [caseIdExpr,sqlString(scheme),sqlString(value),sqlString(sourceUrl.href),String(scheme==="ecli"||scheme==="echr_application_number"||scheme==="domestic_case_number"||scheme==="constitutional_reference"?1:0), "'pending'"].join(",")+");"
       );
     }
 
