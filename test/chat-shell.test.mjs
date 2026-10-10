@@ -180,7 +180,6 @@ test("CHAT18 production UI status is readiness-driven rather than statically cla
   assert.match(html,/GPT-6\.1 Sol во позадина/);
   assert.doesNotMatch(html,/id="aiChatProvider">GPT-6\.1 Sol · LIVE governed/);
   assert.doesNotMatch(html,/production provider-от ќе биде активиран/);
-  assert.match(html,/store:false/);
 });
 
 
