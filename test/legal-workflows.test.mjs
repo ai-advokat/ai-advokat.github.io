@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import {
   LEGAL_WORKFLOWS,
   getLegalWorkflow,
@@ -45,4 +46,12 @@ test("unknown workflows fail closed",()=>{
   assert.equal(getLegalWorkflow("does-not-exist"),null);
   assert.throws(()=>buildWorkflowRun("does-not-exist"),/not_found/);
   assert.ok(listLegalWorkflows().every(x=>x.humanGate==="required"));
+});
+
+
+test("Worker exposes workflow catalogue read-only",()=>{
+  const worker=fs.readFileSync(new URL("../src/index.js",import.meta.url),"utf8");
+  assert.match(worker,/\/api\/professional-workflows/);
+  assert.match(worker,/listLegalWorkflows\(\)/);
+  assert.match(worker,/humanGate:"required"/);
 });
