@@ -170,11 +170,20 @@ if (!worker.includes("https://www.googletagmanager.com") || !worker.includes("ht
 if (!worker.includes('publicMode: "read_only"')) {
   throw new Error("Worker must declare read-only public mode.");
 }
-if (!worker.includes('documentUpload: "locked"')) {
-  throw new Error("Document upload must remain locked.");
+if (!worker.includes('documentUpload: caseWorkspaceStorageReady(env) && caseSchemaReady')) {
+  throw new Error("Document upload capability must remain dynamically locked behind case-scoped private storage.");
 }
-if (!worker.includes('caseWorkspace: "locked"')) {
-  throw new Error("Case workspace must remain locked.");
+if (!worker.includes('caseWorkspace: caseRuntime')) {
+  throw new Error("Case workspace capability must be runtime-gated.");
+}
+if (!worker.includes('case_workspace_membership_required') || !worker.includes("a.account_id=? AND a.status='active'")) {
+  throw new Error("Case workspace must require authenticated membership and per-case account authorization.");
+}
+if (!worker.includes("Global confidential upload is disabled.")) {
+  throw new Error("Global confidential document upload must remain disabled.");
+}
+if (wrangler.r2_buckets) {
+  throw new Error("Private CASE_FILES object storage must remain unbound until the separate storage activation gate.");
 }
 if (wrangler.ai) {
   throw new Error("Production wrangler.jsonc must not bind Workers AI before governed production activation.");
