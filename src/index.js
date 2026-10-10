@@ -2242,9 +2242,13 @@ async function handleGPTChat(request,env){
   const missionProfile=plan.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
   const consequentialLegal=["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile);
   const lightweightLegal=["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(missionProfile);
+  const legalMissionOutputTokens=missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE" ? 3200
+    : missionProfile==="L3_CONSEQUENTIAL" ? 2800
+      : missionProfile==="L2_STRATEGY_PROCEDURE" ? 2400
+        : 2000;
   const maxOutputTokens=fastGeneral ? 700
-    : consequentialLegal ? 3200
-      : lightweightLegal ? 2200
+    : consequentialLegal ? legalMissionOutputTokens
+      : lightweightLegal ? 2000
         : webRequested ? 2200
           : articleBundle.state==="matched" ? 2200
             : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1800
@@ -2342,6 +2346,7 @@ async function handleGPTChat(request,env){
     return json(request,{
       ok:false,
       error:postflight.error||"legal_postflight_failed",
+      failureDetail:postflight.detail||null,
       message:"Правниот draft не ја помина задолжителната LIOE postflight проверка. Одговорот не е пуштен.",
       governanceRunId:lioeRunId,
       runtimeTelemetry:telemetryState,
