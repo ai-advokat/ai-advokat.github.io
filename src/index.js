@@ -1135,6 +1135,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
 
     if(request.method==="POST"){
+      if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_professional_write_role_required"},403);
       if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
       const contentType=(request.headers.get("content-type")||"").toLowerCase();
       if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
@@ -1243,6 +1244,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
 
     if(request.method==="POST"){
+      if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_professional_write_role_required"},403);
       if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
       const contentType=(request.headers.get("content-type")||"").toLowerCase();
       if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
