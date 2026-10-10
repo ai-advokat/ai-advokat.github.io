@@ -80,7 +80,22 @@
       "expect_mission_profile": "L2_STRATEGY_PROCEDURE",
       "expect_human_review": true,
       "min_answer_chars": 600,
-      "answer_must_match": "сообраќ"
+      "answer_must_match_groups": [
+        [
+          "незгод",
+          "судир"
+        ],
+        [
+          "брзин"
+        ],
+        [
+          "алкохол"
+        ],
+        [
+          "вештач",
+          "реконструк"
+        ]
+      ]
     },
     {
       "id": "domestic-violence-protection-options",
