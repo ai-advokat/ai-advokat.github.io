@@ -492,7 +492,7 @@ async function runOneBoundedSpecialist(env,{
       specialistInstructions(agentId),
       "MISSION PROFILE: "+String(missionProfile||"UNKNOWN"),
       "Return concise findings for the Chief Legal Orchestrator, not a user-facing final answer.",
-      "Use at most 120 words and at most 6 short bullets. Do not draft the final pleading inside the specialist stage.",
+      "Use at most 90 words and at most 5 short bullets. Do not draft the final pleading inside the specialist stage.",
       "Separate supported propositions, uncertainty, contrary authority/risk and missing evidence.",
       "Do not claim Human Gate approval or external action."
     ].join("\n"),
@@ -503,7 +503,7 @@ async function runOneBoundedSpecialist(env,{
       "",
       compactSourceContext(corpusContext,"GOVERNED_NATIVE_CONTEXT")
     ].join("\n")}]}],
-    max_output_tokens:highDepthGovernance ? 800 : 650,
+    max_output_tokens:highDepthGovernance ? 700 : 500,
     store:false,
     ...(useWeb ? {
       tools:[{type:"web_search"}],
@@ -602,7 +602,7 @@ export async function runBoundedSpecialists(env,{
 function compactSpecialistFindings(stage){
   const findings=Array.isArray(stage?.findings)?stage.findings:[];
   if(!findings.length)return"NONE";
-  return findings.map((f,i)=>`[${i+1}] ${f.label} (${f.agentId})\n${String(f.text||"").slice(0,3200)}`).join("\n\n---\n\n");
+  return findings.map((f,i)=>`[${i+1}] ${f.label} (${f.agentId})\n${String(f.text||"").slice(0,2400)}`).join("\n\n---\n\n");
 }
 
 export async function runOpenAIOrchestrator(env, {
@@ -805,7 +805,7 @@ const LEGAL_POSTFLIGHT_SCHEMA=Object.freeze({
     temporal_integrity:{type:"string",enum:["VERIFIED","PARTIAL","FAILED","NOT_REQUIRED"]},
     jurisdiction_integrity:{type:"string",enum:["VERIFIED","PARTIAL","FAILED","NOT_REQUIRED"]},
     human_gate:{type:"string",enum:["NOT_REQUIRED","REQUIRED","MISSING_OR_UNAPPROVED"]},
-    issues:{type:"array",items:{type:"string"}},
+    issues:{type:"array",maxItems:6,items:{type:"string"}},
     corrected_answer:{type:"string"}
   },
   required:[
@@ -896,7 +896,7 @@ export async function runLegalPostflightVerifier(env,{
         "For L4, the corrected answer must not claim current-law/corpus/RAG/production/provider mutation without the named Human Gate.",
         "If governed evidence is insufficient to verify current law, do not FAIL solely because the source set is incomplete. If the draft can be made safe, verdict REVISE: remove or clearly qualify unsupported current-law claims, deadlines, sanctions, jurisdictional assertions and mandatory-document claims; preserve useful non-authoritative practical orientation and state what must be verified.",
         "Use FAIL only when the draft cannot be made materially safe and useful from the supplied evidence without inventing law or authority.",
-        "If the draft can be made safe and materially correct from the supplied evidence, verdict REVISE and provide a complete corrected_answer.",
+        "If the draft can be made safe and materially correct from the supplied evidence, verdict REVISE and provide a complete corrected_answer. The corrected answer must be concise (normally no more than 800 words), preserve the useful core, change only what is necessary for safety/correctness, and must not repeat long evidence lists or source metadata already present.",
         "If verdict PASS, set corrected_answer to the empty string. The runtime will preserve the original verified draft; do not waste output tokens by echoing it."
       ].join("\n"),
       input:[{role:"user",content:[{type:"input_text",text:input}]}],

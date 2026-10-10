@@ -24,6 +24,7 @@ on:
       - ".github/workflows/case-workspace-production-activation.yml"
       - ".github/activation/case-workspace-production-request.json"
       - ".github/activation/case-export-production-request.json"
+      - ".github/activation/case-workspace-export-rerun-2026-10-10.json"
       - "data/human-gate-decision-ledger.json"
 
 permissions:

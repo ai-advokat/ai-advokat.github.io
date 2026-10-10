@@ -12,6 +12,7 @@ on:
     paths:
       - ".github/activation/case-workspace-production-request.json"
       - ".github/activation/case-export-production-request.json"
+      - ".github/activation/case-workspace-export-rerun-2026-10-10.json"
 
 permissions:
   contents: read
@@ -218,7 +219,24 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
-          curl --fail --retry 6 --retry-delay 3 "$BASE/api/capabilities" -o /tmp/case-capabilities.json
+          ready=0
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent --show-error "$BASE/api/capabilities" -o /tmp/case-capabilities.json; then
+              if node <<'NODE'
+          const c=require("/tmp/case-capabilities.json");
+          if(c.capabilities?.caseWorkspace!=="workspace_ready_storage_locked") process.exit(1);
+          if(c.capabilities?.caseExports!=="md_docx_live_pdf_browser_rendered_human_gate_bound") process.exit(1);
+          if(c.capabilities?.documentUpload!=="locked_private_storage") process.exit(1);
+          NODE
+              then
+                ready=1
+                echo "Current Worker capabilities observed after deploy on attempt $attempt."
+                break
+              fi
+            fi
+            sleep 3
+          done
+          test "$ready" = "1"
           code="$(curl --silent --show-error --output /tmp/case-unauth.json --write-out '%{http_code}' "$BASE/api/cases")"
           test "$code" = "401"
           doc_code="$(curl --silent --show-error --output /tmp/case-documents-global.json --write-out '%{http_code}' "$BASE/api/documents")"
