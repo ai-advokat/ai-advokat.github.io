@@ -37,3 +37,20 @@ node scripts/case-law-ndjson-to-sql.mjs ingest/cases.ndjson /tmp/cases.sql
 ```
 
 The generated SQL is staging material. Generation does not authorize production import or professional reliance.
+
+
+### Paragraf Lex / Nova / LexAI
+
+If a lawful Paragraf export is later supplied, preserve the originating product as `source_product` (`Lex`, `Nova` or `LexAI`) and any platform identifier as `external_ids.paragraf_legacy_id`.
+
+The import remains `licensed_secondary` with `discovery_only=1`. It is not eligible for governed GPT case-law context until the underlying decision is independently bound to an official court/HUDOC/CURIA/EUR-Lex source and reviewed under Human Gate.
+
+### Official identifiers
+
+Prefer stable identifiers whenever available:
+
+- Macedonian domestic case number / Constitutional Court reference;
+- ECHR application number + HUDOC item id;
+- EU ECLI + CELEX + CJEU case number.
+
+These identifiers are used for deduplication across official and licensed-secondary discovery records.
