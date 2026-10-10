@@ -61,7 +61,8 @@
     "test:case-law-import": "node --no-warnings --test test/case-law-import.test.mjs",
     "test:legal-analyzer": "node --no-warnings --test test/legal-analyzer.test.mjs",
     "test:legal-workflows": "node --no-warnings --test test/legal-workflows.test.mjs",
-    "test:matter-search": "node --no-warnings --test test/matter-search.test.mjs"
+    "test:matter-search": "node --no-warnings --test test/matter-search.test.mjs",
+    "test:casepilot-matter": "node --no-warnings --test test/casepilot-matter.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
