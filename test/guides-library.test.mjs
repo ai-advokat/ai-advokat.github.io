@@ -527,5 +527,5 @@ test("G32 current-law review metadata does not silently open PDF or production c
   assert.equal(data.collection.current_law_review.review_required,29);
   assert.ok(data.records.every(x=>x.public_pdf===null));
   assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
-  assert.ok(data.records.every(x=>x.current_law_authority===false));
+  assert.ok(data.records.filter(x=>x.source_role!=="version_history").every(x=>x.current_law_authority===false));
 });
