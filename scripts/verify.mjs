@@ -245,7 +245,7 @@ const caseLawImporter = fs.readFileSync("scripts/case-law-ndjson-to-sql.mjs","ut
 if (!caseLawImporter.includes("Credential/session field is forbidden")
     || !caseLawImporter.includes("licensed_secondary_export")
     || !caseLawImporter.includes("authorized_export=true")
-    || !caseLawImporter.includes("human_review_status") 
+    || !caseLawImporter.includes("human_review_status")
     || !caseLawImporter.includes("'pending'")) {
   throw new Error("Case-law importer credential boundary is missing or import is not fail-closed.");
 }
