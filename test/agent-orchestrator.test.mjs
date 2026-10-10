@@ -6,6 +6,7 @@ import {
   ORCHESTRATOR_MODES,
   ORCHESTRATION_PATTERN,
   LEGAL_OPERATING_PROTOCOL,
+  ACCURACY_FIRST_DOCTRINE,
   buildAgentPlan,
   buildExecutionGraph,
   validateExecutionPreconditions,
@@ -123,7 +124,20 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.ok(blocked.problems.includes("external_research_not_authorized"));
   });
 
-  test("chief instructions require answer-first substantive help without inventing unsupported law",()=>{
+  test("Accuracy-First doctrine treats 99.99% as aspiration, not an unsupported guarantee",()=>{
+  assert.equal(ACCURACY_FIRST_DOCTRINE.guarantee,false);
+  assert.match(ACCURACY_FIRST_DOCTRINE.aspirationalTarget,/99\.99_percent_directional_quality_goal_not_SLA/);
+  const plan=buildAgentPlan("Што е најточниот правен одговор за овој предмет?",{explicitMode:ORCHESTRATOR_MODES.PROACTIVE_RESEARCH});
+  const text=orchestratorInstructions(plan);
+  assert.match(text,/ACCURACY-FIRST DOCTRINE/);
+  assert.match(text,/99\.99% as an aspirational directional quality target/);
+  assert.match(text,/SOURCE-BACKED FACT, INFERENCE, LEGAL PROPOSITION, STRATEGIC JUDGMENT and UNKNOWN/);
+  assert.match(text,/Actively look for adverse facts, contradictory documents, superseded law/);
+  assert.match(text,/Verification & Citation Agent performs a separate accuracy pass/);
+  assert.equal(plan.rules.accuracyGuarantee,false);
+});
+
+test("chief instructions require answer-first substantive help without inventing unsupported law",()=>{
   const plan=buildAgentPlan("Помогни ми да подготвам што ми треба за правна постапка.",{explicitMode:ORCHESTRATOR_MODES.PROACTIVE_RESEARCH});
   const text=orchestratorInstructions(plan);
   assert.match(text,/ANSWER-FIRST QUALITY CONTRACT/);
