@@ -1,0 +1,18 @@
+{
+  "decision_id": "AI_ADVOKAT_SECURE_CASE_WORKSPACE_V1_2026-10-10",
+  "activation_authorized": true,
+  "authorized_on": "2026-10-10",
+  "authorized_by_role": "project_lead",
+  "evidence_text": "Bravo Caru! Ajde da odime na implementacija na sledniot cekor",
+  "runtime_version": "secure-case-workspace-1.0.0",
+  "migration": "0029_secure_case_workspace.sql",
+  "authorized_gates": [
+    "github_merge",
+    "production_schema_migration",
+    "production_runtime_deploy"
+  ],
+  "private_document_upload_authorized": false,
+  "private_object_storage_activation_authorized": false,
+  "provider_activation_authorized": false,
+  "note": "Authorizes only the tenant-bound case metadata workspace and additive D1 schema. Private file bytes, CASE_FILES/R2 activation, provider changes and autonomous legal action remain separate Human Gates."
+}

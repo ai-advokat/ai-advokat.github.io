@@ -21,6 +21,9 @@ on:
       - ".well-known/security.txt"
       - ".assetsignore"
       - ".github/workflows/activation-safety.yml"
+      - ".github/workflows/case-workspace-production-activation.yml"
+      - ".github/activation/case-workspace-production-request.json"
+      - "data/human-gate-decision-ledger.json"
 
 permissions:
   contents: read
@@ -40,7 +43,7 @@ jobs:
           node-version: "20"
 
       - name: JavaScript syntax
-        run: node --check src/index.js
+        run: node --check src/index.js && node --check src/case-workspace.js
 
       - name: Structural safety verification
         run: npm run verify
@@ -87,8 +90,19 @@ jobs:
             exit 1
           fi
           grep -q 'publicMode: "read_only"' src/index.js
-          grep -q 'documentUpload: "locked"' src/index.js
-          grep -q 'caseWorkspace: "locked"' src/index.js
+          grep -q 'documentUpload: caseWorkspaceStorageReady(env) && caseSchemaReady' src/index.js
+          grep -q 'caseWorkspace: caseRuntime' src/index.js
+          grep -q 'case_workspace_membership_required' src/index.js
+          grep -q "a.account_id=? AND a.status='active'" src/index.js
+          grep -q 'Global confidential upload is disabled.' src/index.js
+          if grep -q '"r2_buckets"[[:space:]]*:' wrangler.jsonc; then
+            echo "Private object storage must remain unbound in Secure Case Workspace v1"
+            exit 1
+          fi
+          if grep -Eqi 'document_bytes|file_bytes|extracted_text|document_text|ocr_text' migrations/0029_secure_case_workspace.sql; then
+            echo "Private document content column detected in D1 migration"
+            exit 1
+          fi
           grep -q 'workersAI: env.AI ? "bound" : "not_bound"' src/index.js
           if grep -q '"ai"[[:space:]]*:' wrangler.jsonc; then
             echo "Production wrangler.jsonc must not bind Workers AI before governed production activation"

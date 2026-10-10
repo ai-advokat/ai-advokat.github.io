@@ -15,7 +15,8 @@
     "LIOE_RUNTIME_GOVERNANCE_ENABLED": "true",
     "LIOE_POSTFLIGHT_ENABLED": "true",
     "LIOE_RUNTIME_TELEMETRY_ENABLED": "true",
-    "LIOE_SPECIALIST_EXECUTION_ENABLED": "true"
+    "LIOE_SPECIALIST_EXECUTION_ENABLED": "true",
+    "CASE_WORKSPACE_ENABLED": "true"
   },
   "assets": {
     "directory": "./",

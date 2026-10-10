@@ -1,0 +1,201 @@
+name: AI Advokat Secure Case Workspace production activation
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type ACTIVATE_SECURE_CASE_WORKSPACE_V1"
+        required: true
+        type: string
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/activation/case-workspace-production-request.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-secure-case-workspace-production
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify bounded Case Workspace authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            test "$CONFIRMATION" = "ACTIVATE_SECURE_CASE_WORKSPACE_V1"
+          fi
+          node <<'NODE'
+          const fs=require("fs");
+          const crypto=require("crypto");
+          const p=".github/activation/case-workspace-production-request.json";
+          const raw=fs.readFileSync(p);
+          const sha=crypto.createHash("sha256").update(raw).digest("hex");
+          const expected="1fac9cb9e4b5837a92ca9e75345e1b450fe8bf5b310d2b9ee29b3162f1ca46b0";
+          if(sha!==expected) throw new Error("Activation request fingerprint changed: "+sha);
+          const d=JSON.parse(raw);
+          if(d.activation_authorized!==true) throw new Error("Case Workspace activation not authorised");
+          if(d.decision_id!=="AI_ADVOKAT_SECURE_CASE_WORKSPACE_V1_2026-10-10") throw new Error("Unexpected decision id");
+          if(d.runtime_version!=="secure-case-workspace-1.0.0") throw new Error("Unexpected runtime version");
+          if(d.migration!=="0029_secure_case_workspace.sql") throw new Error("Unexpected migration");
+          const gates=new Set(d.authorized_gates||[]);
+          for(const g of ["github_merge","production_schema_migration","production_runtime_deploy"]){
+            if(!gates.has(g)) throw new Error("Missing authorised gate: "+g);
+          }
+          if(d.private_document_upload_authorized!==false) throw new Error("Private document upload must remain unauthorised");
+          if(d.private_object_storage_activation_authorized!==false) throw new Error("Private object storage must remain unauthorised");
+          if(d.provider_activation_authorized!==false) throw new Error("Provider activation must remain unauthorised");
+          console.log("Bounded activation artifact: PASS");
+          NODE
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Verify Human Gate ledger
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          import crypto from "node:crypto";
+          import {isGateApproved} from "./scripts/human-gate-ledger-validator.mjs";
+          const raw=fs.readFileSync(".github/activation/case-workspace-production-request.json");
+          const sha=crypto.createHash("sha256").update(raw).digest("hex");
+          const d=JSON.parse(raw);
+          const ledger=JSON.parse(fs.readFileSync("data/human-gate-decision-ledger.json","utf8"));
+          const query={
+            subject_id:"secure-case-workspace-v1-2026-10-10",
+            artifact_version:d.decision_id,
+            artifact_fingerprint:{activation_request_sha256:sha}
+          };
+          for(const gate of ["github_merge","production_schema_migration","production_runtime_deploy"]){
+            if(!isGateApproved(ledger.initial_records,{...query,gate_type:gate})) throw new Error("Human Gate not approved: "+gate);
+          }
+          for(const forbidden of ["provider_activation","production_corpus_write","corpus_promotion","rag_eligibility"]){
+            if(isGateApproved(ledger.initial_records,{...query,gate_type:forbidden})) throw new Error("Forbidden gate unexpectedly approved: "+forbidden);
+          }
+          console.log("Version-bound Human Gate: PASS");
+          NODE
+
+      - name: Verify repository safety and Case Workspace tests
+        run: |
+          node --check src/index.js
+          node --check src/case-workspace.js
+          npm run verify
+          npm run test:case-workspace
+          npm run test:casepilot
+          npm run test:security
+          npm run test:human-gate-ledger
+
+      - name: Verify exact production target and storage lock
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
+          if(c.previews?.d1_databases?.[0]?.database_id===d.database_id) throw new Error("Production/staging collision");
+          if(c.vars?.CASE_WORKSPACE_ENABLED!=="true") throw new Error("Case Workspace runtime is not armed");
+          if(c.r2_buckets) throw new Error("Private CASE_FILES storage must remain unbound in this activation");
+          console.log("Exact target + storage lock: PASS");
+          NODE
+
+      - name: Inspect pending production migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/case-pending.txt
+          found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/case-pending.txt | sort -u || true)"
+          unexpected="$(printf '%s\n' "$found" | grep -v '^0029_secure_case_workspace\.sql$' | sed '/^$/d' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected pending migrations:"
+            echo "$unexpected"
+            exit 1
+          fi
+          echo "Pending migration guard: PASS"
+
+      - name: Apply migration 0029 when pending
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -q '0029_secure_case_workspace.sql' /tmp/case-pending.txt; then
+            npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc
+          else
+            echo "0029 not pending; verifying already-applied state."
+          fi
+
+      - name: Verify production Case Workspace schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT version,description FROM schema_migrations WHERE version='29'; PRAGMA table_info(case_workspaces); PRAGMA table_info(case_workspace_access); PRAGMA table_info(case_document_slots); PRAGMA table_info(case_audit_events);" | tee /tmp/case-schema.txt
+          grep -q '"version": "29"' /tmp/case-schema.txt
+          for col in owner_account_id confidentiality_class document_limit professional_use_locked; do grep -q "\"name\": \"$col\"" /tmp/case-schema.txt; done
+          for forbidden in document_bytes file_bytes extracted_text document_text ocr_text; do
+            if grep -q "\"name\": \"$forbidden\"" /tmp/case-schema.txt; then
+              echo "Forbidden private-content column in D1: $forbidden"
+              exit 1
+            fi
+          done
+          echo "Production Case Workspace schema: PASS"
+
+      - name: Deploy Case Workspace-enabled Worker
+        run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/case-deploy.txt
+
+      - name: Verify live private-workspace boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/capabilities" -o /tmp/case-capabilities.json
+          code="$(curl --silent --show-error --output /tmp/case-unauth.json --write-out '%{http_code}' "$BASE/api/cases")"
+          test "$code" = "401"
+          doc_code="$(curl --silent --show-error --output /tmp/case-documents-global.json --write-out '%{http_code}' "$BASE/api/documents")"
+          test "$doc_code" = "503"
+          node <<'NODE'
+          const c=require("/tmp/case-capabilities.json");
+          const u=require("/tmp/case-unauth.json");
+          const d=require("/tmp/case-documents-global.json");
+          if(c.capabilities?.caseWorkspace!=="workspace_ready_storage_locked") throw new Error("Unexpected caseWorkspace state: "+c.capabilities?.caseWorkspace);
+          if(c.capabilities?.documentUpload!=="locked_private_storage") throw new Error("Document upload unexpectedly unlocked: "+c.capabilities?.documentUpload);
+          if(u.error!=="case_workspace_membership_required") throw new Error("Unauthenticated case isolation failed");
+          if(d.status!=="governed_preview" || d.capability!=="document_upload") throw new Error("Global document upload boundary failed");
+          console.log("LIVE SECURE CASE WORKSPACE BOUNDARY: PASS");
+          NODE
+
+      - name: Upload non-secret activation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-secure-case-workspace-production
+          retention-days: 30
+          path: |
+            /tmp/case-pending.txt
+            /tmp/case-schema.txt
+            /tmp/case-deploy.txt
+            /tmp/case-capabilities.json
+            /tmp/case-unauth.json
+            /tmp/case-documents-global.json
+          if-no-files-found: ignore

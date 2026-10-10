@@ -1,7 +1,7 @@
 {
   "schema_version": "1.2",
   "ledger_id": "AI_ADVOKAT_HUMAN_GATE_DECISION_LEDGER_v1",
-  "generated_on": "2026-10-07",
+  "generated_on": "2026-10-10",
   "doctrine": [
     "explicit_decision_only",
     "gate_isolation",
@@ -289,6 +289,48 @@
       "notes": "Approval is limited to the exact v1.3 recovery artifact and named gate. It does not authorize provider activation/rotation, current-law verification, corpus promotion, RAG eligibility, production corpus write, public guide release, or legal-status promotion.",
       "decision_id": "hg-2026-10-07-runtime-recovery-v1-3-runtime-deploy",
       "gate_type": "production_runtime_deploy"
+    },
+    {
+      "decision_id": "hg-2026-10-10-case-workspace-github-merge",
+      "subject_id": "secure-case-workspace-v1-2026-10-10",
+      "gate_type": "github_merge",
+      "decision_state": "approved",
+      "decided_at": "2026-10-10",
+      "decision_basis": "Explicit project-lead instruction on 2026-10-10 to proceed with implementation of the next audited step: Secure Case Workspace v1. Authorization is bounded to tenant-bound case metadata, additive migration 0029 and runtime deployment; private document storage/upload and provider changes remain separate gates.",
+      "artifact_version": "AI_ADVOKAT_SECURE_CASE_WORKSPACE_V1_2026-10-10",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "1fac9cb9e4b5837a92ca9e75345e1b450fe8bf5b310d2b9ee29b3162f1ca46b0"
+      },
+      "implied_gates": [],
+      "notes": "Does not authorize private file bytes/R2, document ingestion, provider activation, autonomous legal action, current-law promotion, corpus promotion or RAG eligibility."
+    },
+    {
+      "decision_id": "hg-2026-10-10-case-workspace-production-schema-migration",
+      "subject_id": "secure-case-workspace-v1-2026-10-10",
+      "gate_type": "production_schema_migration",
+      "decision_state": "approved",
+      "decided_at": "2026-10-10",
+      "decision_basis": "Explicit project-lead instruction on 2026-10-10 to proceed with implementation of the next audited step: Secure Case Workspace v1. Authorization is bounded to tenant-bound case metadata, additive migration 0029 and runtime deployment; private document storage/upload and provider changes remain separate gates.",
+      "artifact_version": "AI_ADVOKAT_SECURE_CASE_WORKSPACE_V1_2026-10-10",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "1fac9cb9e4b5837a92ca9e75345e1b450fe8bf5b310d2b9ee29b3162f1ca46b0"
+      },
+      "implied_gates": [],
+      "notes": "Does not authorize private file bytes/R2, document ingestion, provider activation, autonomous legal action, current-law promotion, corpus promotion or RAG eligibility."
+    },
+    {
+      "decision_id": "hg-2026-10-10-case-workspace-production-runtime-deploy",
+      "subject_id": "secure-case-workspace-v1-2026-10-10",
+      "gate_type": "production_runtime_deploy",
+      "decision_state": "approved",
+      "decided_at": "2026-10-10",
+      "decision_basis": "Explicit project-lead instruction on 2026-10-10 to proceed with implementation of the next audited step: Secure Case Workspace v1. Authorization is bounded to tenant-bound case metadata, additive migration 0029 and runtime deployment; private document storage/upload and provider changes remain separate gates.",
+      "artifact_version": "AI_ADVOKAT_SECURE_CASE_WORKSPACE_V1_2026-10-10",
+      "artifact_fingerprint": {
+        "activation_request_sha256": "1fac9cb9e4b5837a92ca9e75345e1b450fe8bf5b310d2b9ee29b3162f1ca46b0"
+      },
+      "implied_gates": [],
+      "notes": "Does not authorize private file bytes/R2, document ingestion, provider activation, autonomous legal action, current-law promotion, corpus promotion or RAG eligibility."
     }
   ]
 }

@@ -19,6 +19,16 @@ import {
 } from "./security.js";
 import { validateLegalClaim } from "./legal-claim-validator.js";
 import {
+  CASE_WORKSPACE_DOCUMENT_LIMIT,
+  caseWorkspacePlanAllowed,
+  validateCaseWorkspaceCreate,
+  caseWorkspaceId,
+  caseWorkspaceStorageReady,
+  caseWorkspaceRuntimeState,
+  safeCaseWorkspaceView,
+  safeCaseAuditMetadata
+} from "./case-workspace.js";
+import {
   VERSION_ERROR_MESSAGES,
   parseQueryDate,
   resolveInstrumentVersion,
@@ -470,6 +480,224 @@ async function handleMembershipStatus(request, env) {
       seats:membership.seats
     }
   });
+}
+
+
+async function caseWorkspaceSchemaReady(env){
+  if(!env?.DB) return false;
+  try{
+    const row=await env.DB.prepare(
+      "SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name IN ('case_workspaces','case_workspace_access','case_document_slots','case_audit_events')"
+    ).first();
+    return Number(row?.n||0)===4;
+  }catch{
+    return false;
+  }
+}
+
+async function caseWorkspaceAccess(env,caseId,accountId){
+  return env.DB.prepare(
+    `SELECT w.*,a.role
+       FROM case_workspaces w
+       JOIN case_workspace_access a ON a.case_id=w.id
+      WHERE w.id=? AND a.account_id=? AND a.status='active' AND w.status!='deleted'
+      LIMIT 1`
+  ).bind(caseId,accountId).first();
+}
+
+async function recordCaseAudit(env,{caseId,accountId,eventType,objectType=null,objectId=null,metadata={}}){
+  await env.DB.prepare(
+    `INSERT INTO case_audit_events
+      (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json)
+     VALUES (?,?,?,?,?,?,?)`
+  ).bind(
+    "CAE-"+crypto.randomUUID(),
+    caseId,
+    accountId,
+    eventType,
+    objectType,
+    objectId,
+    safeCaseAuditMetadata(metadata)
+  ).run();
+}
+
+async function caseWorkspaceMembership(request,env){
+  const membership=await resolveMembership(request,env);
+  if(!membership) return {ok:false,response:json(request,{ok:false,error:"case_workspace_membership_required"},401)};
+  if(!caseWorkspacePlanAllowed(membership.planCode)){
+    return {
+      ok:false,
+      response:json(request,{
+        ok:false,
+        error:"case_workspace_plan_required",
+        message:"Secure Case Workspace is available only to trial-PRO, PRO or OFFICE memberships."
+      },403)
+    };
+  }
+  return {ok:true,membership};
+}
+
+async function handleCaseWorkspaceApi(request,env,url){
+  if(env.CASE_WORKSPACE_ENABLED!=="true"){
+    return json(request,{ok:false,error:"case_workspace_locked",status:"governed_preview"},503);
+  }
+
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+  const schemaReady=await caseWorkspaceSchemaReady(env);
+  if(!schemaReady){
+    return json(request,{
+      ok:false,
+      error:"case_workspace_schema_not_ready",
+      runtime:caseWorkspaceRuntimeState(env,{schemaReady:false})
+    },503);
+  }
+
+  const auth=await caseWorkspaceMembership(request,env);
+  if(!auth.ok) return auth.response;
+  const membership=auth.membership;
+
+  const parts=url.pathname.split("/").filter(Boolean);
+  const caseId=parts.length>=3 ? caseWorkspaceId(decodeURIComponent(parts[2])) : null;
+  const tail=parts.slice(3).join("/");
+
+  if(parts.length===2){
+    if(request.method==="GET" || request.method==="HEAD"){
+      const rows=await env.DB.prepare(
+        `SELECT w.*,a.role
+           FROM case_workspaces w
+           JOIN case_workspace_access a ON a.case_id=w.id
+          WHERE a.account_id=? AND a.status='active' AND w.status!='deleted'
+          ORDER BY w.updated_at DESC
+          LIMIT 100`
+      ).bind(membership.accountId).all();
+      const cases=(rows.results||[]).map(row=>safeCaseWorkspaceView(row,row.role));
+      return json(request,{
+        ok:true,
+        cases,
+        privacy:"private_case_metadata",
+        storage:caseWorkspaceStorageReady(env) ? "ready" : "locked_pending_private_object_storage",
+        documentLimit:CASE_WORKSPACE_DOCUMENT_LIMIT
+      });
+    }
+
+    if(request.method==="POST"){
+      const contentType=(request.headers.get("content-type")||"").toLowerCase();
+      if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+      const parsed=await readLimitedJson(request,8192);
+      if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
+      const check=validateCaseWorkspaceCreate(parsed.value);
+      if(!check.ok) return json(request,{ok:false,error:"invalid_case_workspace",problems:check.errors},400);
+
+      const id="CASE-"+crypto.randomUUID();
+      const created=new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare(
+          `INSERT INTO case_workspaces
+            (id,owner_account_id,title,client_reference,legal_area,status,confidentiality_class,document_limit,professional_use_locked,retention_until,created_at,updated_at)
+           VALUES (?,?,?,?,?,'active','private_legal',20,1,?,?,?)`
+        ).bind(id,membership.accountId,check.value.title,check.value.clientReference,check.value.legalArea,check.value.retentionUntil,created,created),
+        env.DB.prepare(
+          "INSERT INTO case_workspace_access(case_id,account_id,role,status,granted_at) VALUES (?,?,'owner','active',?)"
+        ).bind(id,membership.accountId,created),
+        env.DB.prepare(
+          `INSERT INTO case_audit_events
+            (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+           VALUES (?, ?, ?, 'workspace_created', 'case_workspace', ?, '{}', ?)`
+        ).bind("CAE-"+crypto.randomUUID(),id,membership.accountId,id,created)
+      ]);
+
+      const row=await caseWorkspaceAccess(env,id,membership.accountId);
+      return json(request,{
+        ok:true,
+        case:safeCaseWorkspaceView(row,row.role),
+        humanGate:{professionalUseLocked:true},
+        documentUpload:caseWorkspaceStorageReady(env) ? "storage_ready_ingestion_gate_required" : "locked_pending_private_object_storage"
+      },201);
+    }
+    return methodNotAllowed(request,"GET, HEAD, POST, OPTIONS");
+  }
+
+  if(!caseId) return json(request,{ok:false,error:"case_not_found"},404);
+  const access=await caseWorkspaceAccess(env,caseId,membership.accountId);
+  if(!access) return json(request,{ok:false,error:"case_not_found"},404);
+
+  if(!tail){
+    if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+    return json(request,{
+      ok:true,
+      case:safeCaseWorkspaceView(access,access.role),
+      documentUpload:caseWorkspaceStorageReady(env) ? "storage_ready_ingestion_gate_required" : "locked_pending_private_object_storage"
+    });
+  }
+
+  if(tail==="documents"){
+    if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+    const result=await env.DB.prepare(
+      `SELECT id,slot_number,original_name,mime_type,sha256,page_count,storage_state,extraction_state,provenance_required,created_at,updated_at
+         FROM case_document_slots
+        WHERE case_id=?
+        ORDER BY slot_number`
+    ).bind(caseId).all();
+    return json(request,{
+      ok:true,
+      caseId,
+      documentLimit:Number(access.document_limit||CASE_WORKSPACE_DOCUMENT_LIMIT),
+      documents:result.results||[],
+      upload:caseWorkspaceStorageReady(env) ? "storage_ready_ingestion_gate_required" : "locked_pending_private_object_storage",
+      note:"No document bytes are stored in D1."
+    });
+  }
+
+  if(tail==="audit"){
+    if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+    const result=await env.DB.prepare(
+      `SELECT id,event_type,object_type,object_id,metadata_json,created_at
+         FROM case_audit_events
+        WHERE case_id=?
+        ORDER BY created_at DESC
+        LIMIT 100`
+    ).bind(caseId).all();
+    return json(request,{ok:true,caseId,events:result.results||[]});
+  }
+
+  if(tail==="delete-request"){
+    if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+    if(access.role!=="owner") return json(request,{ok:false,error:"case_owner_required"},403);
+    if(access.status==="delete_pending"){
+      return json(request,{ok:true,caseId,status:"delete_pending",alreadyRequested:true});
+    }
+    const at=new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE case_workspaces
+            SET status='delete_pending',delete_requested_at=?,updated_at=?
+          WHERE id=? AND owner_account_id=? AND status IN ('active','closed')`
+      ).bind(at,at,caseId,membership.accountId),
+      env.DB.prepare(
+        `INSERT INTO case_audit_events
+          (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+         VALUES (?, ?, ?, 'delete_requested', 'case_workspace', ?, ?, ?)`
+      ).bind(
+        "CAE-"+crypto.randomUUID(),
+        caseId,
+        membership.accountId,
+        caseId,
+        safeCaseAuditMetadata({previousStatus:access.status,newStatus:"delete_pending"}),
+        at
+      )
+    ]);
+    return json(request,{
+      ok:true,
+      caseId,
+      status:"delete_pending",
+      message:"Deletion is staged for governed cleanup; no immediate destructive delete was performed."
+    },202);
+  }
+
+  return json(request,{ok:false,error:"case_workspace_route_not_found"},404);
 }
 
 
@@ -2581,6 +2809,8 @@ async function handleCapabilities(request, env) {
   const database = await dbStatus(env);
   const coverage = await corpusCoverage(env, database);
   const lioeTelemetry=await lioeRuntimeTelemetryStatus(env);
+  const caseSchemaReady=database.reachable && database.schemaReady ? await caseWorkspaceSchemaReady(env) : false;
+  const caseRuntime=caseWorkspaceRuntimeState(env,{schemaReady:caseSchemaReady});
 
   return json(request, {
     ok: true,
@@ -2620,8 +2850,8 @@ async function handleCapabilities(request, env) {
       membershipRequests: database.reachable && database.schemaReady && membershipRequestsConfigured(env) ? "manual_human_gate" : "blocked",
       citationAudit: "governed_preview",
       versionCompare: "governed_preview",
-      documentUpload: "locked",
-      caseWorkspace: "locked",
+      documentUpload: caseWorkspaceStorageReady(env) && caseSchemaReady ? "case_scoped_storage_ready_ingestion_gate_required" : "locked_private_storage",
+      caseWorkspace: caseRuntime,
       vectorize: "not_bound",
       workersAI: env.AI ? "bound" : "not_bound"
     },
@@ -2734,16 +2964,12 @@ export default {
       return governedPreview(
         request,
         "document_upload",
-        "Confidential document upload is locked until authentication, encrypted storage, retention controls and access governance are implemented."
+        "Global confidential upload is disabled. Private documents must use an authorised case workspace after the separate CASE_FILES storage and ingestion gates are activated."
       );
     }
 
-    if (url.pathname === "/api/cases") {
-      return governedPreview(
-        request,
-        "case_workspace",
-        "Case workspaces are locked until authentication, role-based access, secure storage and audit controls are implemented."
-      );
+    if (url.pathname === "/api/cases" || url.pathname.startsWith("/api/cases/")) {
+      return handleCaseWorkspaceApi(request,env,url);
     }
 
     return json(request, { ok: false, error: "api_not_found" }, 404);
