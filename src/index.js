@@ -64,6 +64,7 @@ import {
   KNOWLEDGE_CLASSES,
   KNOWLEDGE_INTAKE_POLICY
 } from "./knowledge-intake.js";
+import { listLegalWorkflows } from "./legal-workflows.js";
 
 const VERSION = "1.7.0";
 
@@ -3390,6 +3391,10 @@ export default {
     if (url.pathname === "/api/orchestrator") return handleOrchestratorArchitecture(request, env);
     if (url.pathname === "/api/orchestrator/plan") return handleOrchestratorPlan(request, env);
     if (url.pathname === "/api/knowledge-intake-policy") return handleKnowledgeIntakePolicy(request);
+    if (url.pathname === "/api/professional-workflows") {
+      if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+      return json(request,{ok:true,version:"1.0.0",workflows:listLegalWorkflows(),humanGate:"required"});
+    }
 
     if (url.pathname === "/api/db-status") {
       if (request.method !== "GET" && request.method !== "HEAD") return methodNotAllowed(request);
