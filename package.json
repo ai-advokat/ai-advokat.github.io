@@ -66,7 +66,8 @@
     "test:casepilot-workspace-bridge": "node --no-warnings --test test/casepilot-workspace-bridge.test.mjs",
     "test:casepilot-export-adapter": "node --no-warnings --test test/casepilot-export-adapter.test.mjs",
     "test:casepilot-case-law-bridge": "node --no-warnings --test test/casepilot-case-law-bridge.test.mjs",
-    "test:casepilot-case-law-ui": "node --no-warnings --test test/casepilot-case-law-ui.test.mjs"
+    "test:casepilot-case-law-ui": "node --no-warnings --test test/casepilot-case-law-ui.test.mjs",
+    "test:casepilot-authority-classification": "node --no-warnings --test test/casepilot-authority-classification.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
