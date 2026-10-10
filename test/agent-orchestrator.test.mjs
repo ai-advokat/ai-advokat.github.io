@@ -520,4 +520,3 @@ test("natural Macedonian legal-domain prompts never bypass legal governance",()=
     assert.ok(plan.agents.includes("macedonian_law"),prompt);
   }
 });
-
