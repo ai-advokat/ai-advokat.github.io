@@ -164,12 +164,12 @@ test("CHAT17 chat latency optimisations preserve governed routing",()=>{
   assert.match(chatJs,/Promise\.all\(\[guidePromise,encodePromise\]\)/);
   assert.match(chatJs,/\.slice\(-8\)/);
   assert.match(worker,/const fastGeneral=/);
-  assert.match(worker,/reasoningEffort=fastGeneral \? "low" : lightweightLegal \? "low" : "medium"/);
+  assert.match(worker,/missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE"/);
   assert.match(worker,/const consequentialLegal=/);
   assert.match(worker,/const lightweightLegal=/);
   assert.match(worker,/maxOutputTokens=fastGeneral \? 700/);
-  assert.match(worker,/consequentialLegal \? 2200/);
-  assert.match(worker,/lightweightLegal \? 1600/);
+  assert.match(worker,/consequentialLegal \? 3200/);
+  assert.match(worker,/lightweightLegal \? 2200/);
   assert.match(worker,/Promise\.all\(\[/);
 });
 
@@ -307,6 +307,10 @@ test("CHAT31 synchronous LIOE path is latency-bounded without bypassing postflig
   assert.match(orchestrator,/highDepthGovernance \? "medium" : "low"/);
   assert.match(orchestrator,/max_output_tokens:highDepthGovernance \? 900 : 800/);
   assert.match(orchestrator,/reasoning:\{effort:profile==="L4_LEGAL_TRUTH_GOVERNANCE" \? "medium" : "low"\}/);
+  assert.match(orchestrator,/postflightOutputTokens/);
+  assert.match(orchestrator,/profile==="L3_CONSEQUENTIAL"/);
+  assert.match(orchestrator,/corrected_answer to the empty string/);
+  assert.match(orchestrator,/do not FAIL solely because the source set is incomplete/);
   assert.match(orchestrator,/provisionalRevision:true/);
   assert.match(worker,/postflightVerdict:postflight\.verdict/);
   assert.match(worker,/postflightProvisional:postflight\.verdict==="REVISE"/);

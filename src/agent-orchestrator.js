@@ -878,6 +878,11 @@ export async function runLegalPostflightVerifier(env,{
       answer
     ].join("\n");
 
+    const postflightOutputTokens=profile==="L4_LEGAL_TRUTH_GOVERNANCE"
+      ? 2600
+      : profile==="L3_CONSEQUENTIAL"
+        ? 2400
+        : 2000;
     const body={
       model:env.OPENAI_MODEL.trim(),
       instructions:[
@@ -889,12 +894,14 @@ export async function runLegalPostflightVerifier(env,{
         "For L2-L4, stress_test and adversarial_review must be PASS before verdict PASS.",
         "For L3, the corrected answer must remain advisory/draft-only and must not claim that AI filed, sent, signed, represented or exercised legal authority.",
         "For L4, the corrected answer must not claim current-law/corpus/RAG/production/provider mutation without the named Human Gate.",
-        "If the draft can be made safe and materially correct from the supplied evidence, verdict REVISE and provide corrected_answer. If it cannot, verdict FAIL.",
-        "If verdict PASS, corrected_answer must preserve the draft's substance while removing any unsafe overclaim."
+        "If governed evidence is insufficient to verify current law, do not FAIL solely because the source set is incomplete. If the draft can be made safe, verdict REVISE: remove or clearly qualify unsupported current-law claims, deadlines, sanctions, jurisdictional assertions and mandatory-document claims; preserve useful non-authoritative practical orientation and state what must be verified.",
+        "Use FAIL only when the draft cannot be made materially safe and useful from the supplied evidence without inventing law or authority.",
+        "If the draft can be made safe and materially correct from the supplied evidence, verdict REVISE and provide a complete corrected_answer.",
+        "If verdict PASS, set corrected_answer to the empty string. The runtime will preserve the original verified draft; do not waste output tokens by echoing it."
       ].join("\n"),
       input:[{role:"user",content:[{type:"input_text",text:input}]}],
       reasoning:{effort:profile==="L4_LEGAL_TRUTH_GOVERNANCE" ? "medium" : "low"},
-      max_output_tokens:1200,
+      max_output_tokens:postflightOutputTokens,
       store:false,
       text:{
         format:{
@@ -933,7 +940,15 @@ export async function runLegalPostflightVerifier(env,{
       return {ok:false,required:true,error:"legal_postflight_response_error",status:response.status,attempts,providerCalls:attempts,usage:aggregate};
     }
     if(payload?.status!=="completed"){
-      return {ok:false,required:true,error:"legal_postflight_incomplete",attempts,providerCalls:attempts,usage:aggregate};
+      return {
+        ok:false,
+        required:true,
+        error:"legal_postflight_incomplete",
+        attempts,
+        providerCalls:attempts,
+        detail:String(payload?.incomplete_details?.reason || payload?.status || "unknown").slice(0,180),
+        usage:aggregate
+      };
     }
 
     const text=extractOpenAIResponseText(payload);

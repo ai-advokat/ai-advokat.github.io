@@ -377,6 +377,65 @@ test("single-pass legal postflight may release verifier-corrected text only as R
   }
 });
 
+
+
+test("postflight PASS is compact and preserves the original draft without echoing it",async()=>{
+  const originalFetch=globalThis.fetch;
+  let captured=null;
+  globalThis.fetch=async(_url,options)=>{
+    captured=JSON.parse(options.body);
+    return new Response(JSON.stringify({
+      status:"completed",
+      output_text:JSON.stringify({
+        verdict:"PASS",stress_test:"PASS",adversarial_review:"PASS",
+        source_integrity:"PARTIAL",temporal_integrity:"PARTIAL",
+        jurisdiction_integrity:"PARTIAL",human_gate:"REQUIRED",
+        issues:[],corrected_answer:""
+      }),
+      usage:{input_tokens:40,output_tokens:12,total_tokens:52}
+    }),{status:200,headers:{"content-type":"application/json"}});
+  };
+  try{
+    const plan=buildAgentPlan("Подготви тужба за развод со placeholders.");
+    const original="Оригинален проверен нацрт што мора да се зачува.";
+    const verdict=await runLegalPostflightVerifier({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test"
+    },{plan,draft:original,corpusContext:[],webSources:[],maxAttempts:1});
+    assert.equal(verdict.ok,true);
+    assert.equal(verdict.verdict,"PASS");
+    assert.equal(verdict.corrected_answer,original);
+    assert.equal(captured.max_output_tokens,2400);
+    assert.match(captured.instructions,/set corrected_answer to the empty string/);
+    assert.match(captured.instructions,/do not FAIL solely because the source set is incomplete/);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test("postflight incomplete response preserves provider reason for diagnosis",async()=>{
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=async()=>new Response(JSON.stringify({
+    status:"incomplete",
+    incomplete_details:{reason:"max_output_tokens"},
+    usage:{input_tokens:50,output_tokens:2000,total_tokens:2050}
+  }),{status:200,headers:{"content-type":"application/json"}});
+  try{
+    const plan=buildAgentPlan("Спореди ги опциите и процесниот ризик за жалба.");
+    const verdict=await runLegalPostflightVerifier({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test"
+    },{plan,draft:"Нацрт.",corpusContext:[],webSources:[],maxAttempts:1});
+    assert.equal(verdict.ok,false);
+    assert.equal(verdict.error,"legal_postflight_incomplete");
+    assert.equal(verdict.detail,"max_output_tokens");
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
 test("structured legal postflight fails closed after verifier FAIL",async()=>{
   const originalFetch=globalThis.fetch;
   globalThis.fetch=async()=>new Response(JSON.stringify({
