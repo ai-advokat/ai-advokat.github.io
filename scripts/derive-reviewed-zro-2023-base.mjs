@@ -88,6 +88,26 @@ export function deriveReviewedBase(corpus,review){
   normalizeRecordStructure(a2,manifest);
   transformations.push({article:"2",kind:"editorial_footnote_boundary",before_sha256:sha256(raw2),after_sha256:sha256(cut)});
 
+  const headingReview=review.dispositions.find(x=>x.code==="next_section_heading_contamination"&&x.article==="104");
+  const a104=by.get("104");
+  if(!headingReview||!a104) throw new Error("Article 104 heading-boundary review missing");
+  const raw104=String(a104.article_text||"");
+  const marker104=String(headingReview.raw_marker||"");
+  const marker104Count=raw104.split(marker104).length-1;
+  if(marker104Count!==1) throw new Error(`Article 104 chapter marker matched ${marker104Count} times`);
+  if(String(headingReview.secondary_marker||"")){
+    const secondaryCount=raw104.split(String(headingReview.secondary_marker)).length-1;
+    if(secondaryCount!==1) throw new Error(`Article 104 secondary heading marker matched ${secondaryCount} times`);
+  }
+  const cut104=raw104.slice(0,raw104.indexOf(marker104)).trim();
+  if(cut104!==headingReview.reviewed_text) throw new Error("Article 104 reviewed boundary does not match the approved normative text");
+  a104.raw_article_text_sha256=sha256(raw104);
+  a104.article_text=cut104;
+  a104.extraction_method="reviewed_derived_from_official_source_v1";
+  a104.reviewed_derivation={review_id:review.review_id,kind:"next_section_heading_boundary",raw_source_preserved:true};
+  normalizeRecordStructure(a104,manifest);
+  transformations.push({article:"104",kind:"next_section_heading_boundary",before_sha256:sha256(raw104),after_sha256:sha256(cut104)});
+
   for(const d of review.dispositions.filter(x=>x.code==="mixed_script_token")){
     const r=by.get(d.article);
     if(!r) throw new Error(`Missing reviewed article ${d.article}`);
