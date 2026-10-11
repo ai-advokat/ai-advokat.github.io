@@ -46,20 +46,26 @@
         "source_issue_date": "2023-07-20",
         "backfill_migration": "0024_zi_legacy_version_backfill.sql"
       },
-      "current_law_status": "VERSION_REVIEW_REQUIRED",
+      "current_law_status": "CURRENT_TEXT_CANDIDATE_REQUIRES_HUMAN_GATE",
       "repository_binding_plan_ready": true,
-      "current_text_reconstructed": false,
+      "current_text_reconstructed": true,
       "gates": {
         "official_source_bound": true,
         "article_level_text_present": true,
-        "article_set_version_bound": false,
-        "amendment_chain_resolved": false,
-        "constitutional_court_effects_resolved": false,
+        "article_set_version_bound": true,
+        "amendment_chain_resolved": true,
+        "constitutional_court_effects_resolved": true,
         "application_dates_verified": false,
         "current_version_verified": false,
         "human_gate_approved": false
       },
-      "next_action": "Run read-only live D1 state preflight. If exact snapshot invariants pass, bind snapshot version without current-law promotion; then reconcile post-154/2023 lineage before Human Gate."
+      "next_action": "Verify constituent entry/application dates, integrate Article 218 pending-review warning, then Human Gate the 258-article official editorial snapshot; re-check official sources immediately before any current-version promotion.",
+      "pending_constitutional_review": {
+        "case": "U.br.86/2025",
+        "article": "218",
+        "warning_required": true,
+        "legal_effect": "none_identified_as_of_2026-10-11"
+      }
     },
     {
       "canonical_key": "mk:zro",
