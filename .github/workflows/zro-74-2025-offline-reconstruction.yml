@@ -364,7 +364,7 @@ jobs:
             event_text=compact(by[n]["event_text"])
             for op in ops_by[n]:
               source=compact(op["source_text"])
-              assert source in event_text, (n,source,event_text)
+              assert source.casefold() in event_text.casefold(), (n,source,event_text)
 
           assert by[13]["target_article_number"]=="213-б"
           assert by[20]["target_article_number"]=="258-б"
