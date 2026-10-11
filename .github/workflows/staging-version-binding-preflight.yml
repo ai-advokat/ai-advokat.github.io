@@ -1,0 +1,89 @@
+name: STAGING legacy version binding preflight
+
+on:
+  push:
+    branches:
+      - staging-version-binding-preflight-2026-10-11
+    paths:
+      - ".github/workflows/staging-version-binding-preflight.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readonly-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Fail closed if Cloudflare secrets are missing
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Verify staging identity only
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const strip=(s)=>s.replace(/\/\*[\s\S]*?\*\//g,"").replace(/^\s*\/\/.*$/gm,"");
+          const preview=JSON.parse(strip(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8")));
+          const s=preview.d1_databases?.[0];
+          if(!s || s.binding!=="PREVIEW_DB" || s.database_name!=="ai-advokat-db-staging" || s.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") {
+            throw new Error("Unexpected staging D1 identity");
+          }
+          console.log("STAGING IDENTITY: PASS");
+          NODE
+
+      - name: Read staging migration state
+        shell: bash
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT version, description FROM schema_migrations WHERE CAST(version AS INTEGER) BETWEEN 20 AND 35 ORDER BY CAST(version AS INTEGER);"
+
+      - name: Read exact target corpus state
+        shell: bash
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT li.canonical_key,
+            COUNT(lav.id) AS article_count,
+            SUM(CASE WHEN lav.instrument_version_id IS NULL AND lav.id IS NOT NULL THEN 1 ELSE 0 END) AS null_version_count,
+            COUNT(DISTINCT lav.instrument_version_id) AS distinct_bound_versions
+          FROM legal_instruments li
+          LEFT JOIN legal_article_versions lav ON lav.instrument_id=li.id
+          WHERE li.canonical_key IN ('mk:zi','mk:zro','mk:zkp')
+          GROUP BY li.canonical_key
+          ORDER BY li.canonical_key;"
+
+      - name: Read target version rows
+        shell: bash
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT li.canonical_key, v.id, v.version_label, v.version_class, v.is_current, v.human_review_status, v.checksum_sha256, v.source_issue_number, v.source_issue_date
+          FROM instrument_versions v
+          JOIN legal_instruments li ON li.id=v.instrument_id
+          WHERE li.canonical_key IN ('mk:zi','mk:zro','mk:zkp')
+          ORDER BY li.canonical_key, v.id;"
+
+      - name: Read provenance distributions
+        shell: bash
+        run: |
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command "SELECT li.canonical_key, lav.source_url, lav.source_sha256, COUNT(*) AS n
+          FROM legal_article_versions lav
+          JOIN legal_instruments li ON li.id=lav.instrument_id
+          WHERE li.canonical_key IN ('mk:zi','mk:zro','mk:zkp')
+          GROUP BY li.canonical_key, lav.source_url, lav.source_sha256
+          ORDER BY li.canonical_key, n DESC;"
+
+      - name: Confirm no writes were requested
+        run: echo "READ-ONLY PREFLIGHT COMPLETE - NO MIGRATION APPLIED"
