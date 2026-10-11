@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.0",
+  "jurisdiction": "MK",
+  "instrument_key": "mk:zkp",
+  "instrument_title": "Закон за кривичната постапка",
+  "checked_on": "2026-10-12",
+  "check_type": "bounded_official_lineage_recheck",
+  "result": "OFFICIAL_LINEAGE_REQUIRES_51_2011_CLASSIFICATION",
+  "current_law_promotion": false,
+  "caveat": "The finding is bounded to the official Ministry/LDBIS/Gazette surfaces checked. It does not prove a universal negative beyond those surfaces.",
+  "official_base": {
+    "ldbis_url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=20679",
+    "gazette_issue": "150/2010",
+    "publication_date": "2010-11-18",
+    "entry_into_force": "2010-11-26",
+    "application_from": "2012-11-26",
+    "active_signal": true
+  },
+  "official_linked_lineage": [
+    {
+      "issue": "51/2011",
+      "kind": "amendment",
+      "publication_date": "2011-04-13",
+      "classification": "REQUIRES_EXACT_ACT_REVIEW"
+    },
+    {
+      "issue": "100/2012",
+      "kind": "amendment",
+      "publication_date": "2012-08-06",
+      "entry_into_force": "2012-08-14",
+      "application_from": "2012-08-14"
+    },
+    {
+      "issue": "142/2016",
+      "kind": "amendment",
+      "publication_date": "2016-08-01",
+      "entry_into_force": "2016-08-01",
+      "application_from": "2016-08-01"
+    },
+    {
+      "issue": "193/2016",
+      "kind": "constitutional_court_effect",
+      "case": "U.br.2/2016",
+      "publication_date": "2016-10-18"
+    },
+    {
+      "issue": "198/2018",
+      "kind": "amendment",
+      "publication_date": "2018-10-31",
+      "entry_into_force": "2018-10-31",
+      "application_from": "2018-10-31",
+      "active_signal": true
+    }
+  ],
+  "latest_enacted_amendment_identified_on_checked_ldbis_chain": "198/2018",
+  "ministry_current_surface": {
+    "url": "https://www.pravda.gov.mk/mk-MK/regulativa/zakoni",
+    "observed": "The Ministry surface contains a notice about preparation of a proposal for a new Criminal Procedure Act.",
+    "classification": "PROPOSAL_PREPARATION_NOTICE",
+    "enacted_law_effect": false
+  },
+  "repository_reference_snapshot": {
+    "source_url": "https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf",
+    "source_sha256": "e6bf4588833752695a9b776b473ed9d504264effdfcd7917b8d6655bcfacaf45",
+    "article_count": 570,
+    "version_label": "consolidated-reference-through-198/2018-and-CC-193/2016",
+    "authority_class": "secondary_consolidated_reference",
+    "labelled_lineage": [
+      "150/2010",
+      "100/2012",
+      "142/2016",
+      "193/2016",
+      "198/2018"
+    ],
+    "missing_from_label_relative_to_official_linked_lineage": [
+      "51/2011"
+    ]
+  },
+  "gates": {
+    "official_source_bound": false,
+    "article_level_text_present": true,
+    "article_set_version_bound": true,
+    "amendment_chain_resolved": false,
+    "constitutional_court_effects_resolved": false,
+    "application_dates_verified": false,
+    "current_version_verified": false,
+    "human_gate_approved": false
+  },
+  "blockers": [
+    "Classify the exact legal effect of OG 51/2011 against the 2010 base and application timeline.",
+    "Bind article-level text to an official current source or reconstruct from exact official acts; secondary consolidation cannot alone establish current law.",
+    "Verify the full Constitutional Court effect of U.br.2/2016 / OG 193/2016 at affected-article level.",
+    "Re-check official Ministry/LDBIS/Gazette surfaces immediately before any current-version decision.",
+    "Human Gate approval is absent."
+  ],
+  "next_action": "Acquire and classify the exact OG 51/2011 amending act first; do not mutate or promote the 570-article reference corpus."
+}

@@ -89,7 +89,8 @@
     "test:zro-39-reconstruction": "node --no-warnings --test test/zro-39-2025-reconstruction.test.mjs",
     "test:zro-74-reconstruction": "node --no-warnings --test test/zro-74-2025-reconstruction.test.mjs",
     "test:zro-124-reconstruction": "node --no-warnings --test test/zro-124-2025-reconstruction.test.mjs",
-    "test:zro-human-gate-pack": "node --no-warnings --test test/zro-human-gate-pack.test.mjs"
+    "test:zro-human-gate-pack": "node --no-warnings --test test/zro-human-gate-pack.test.mjs",
+    "test:zkp-official-lineage": "node --no-warnings --test test/zkp-official-lineage-audit.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"

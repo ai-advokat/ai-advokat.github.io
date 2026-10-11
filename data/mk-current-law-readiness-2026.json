@@ -201,20 +201,29 @@
         "source_issue_date": "2018-10-31",
         "backfill_migration": "0026_zkp_legacy_version_backfill.sql"
       },
-      "current_law_status": "VERSION_REVIEW_REQUIRED",
+      "current_law_status": "OFFICIAL_LINEAGE_REVIEW_51_2011_REQUIRED",
       "repository_binding_plan_ready": true,
       "current_text_reconstructed": false,
       "gates": {
         "official_source_bound": false,
         "article_level_text_present": true,
-        "article_set_version_bound": false,
+        "article_set_version_bound": true,
         "amendment_chain_resolved": false,
         "constitutional_court_effects_resolved": false,
         "application_dates_verified": false,
         "current_version_verified": false,
         "human_gate_approved": false
       },
-      "next_action": "Bind only as historical/reference snapshot after live invariant check. Replace current-law reliance with official LDBIS/Gazette lineage before any Human Gate approval."
+      "next_action": "Acquire and classify the exact OG 51/2011 amendment before any current-law reconstruction or promotion. Keep the 570-article secondary consolidation as reference-only.",
+      "official_lineage_audit": {
+        "checked_on": "2026-10-12",
+        "latest_enacted_amendment_identified_on_checked_ldbis_chain": "198/2018",
+        "missing_from_reference_label": [
+          "51/2011"
+        ],
+        "proposal_notice_2026_is_enacted_law": false,
+        "evidence": "ingest/mk/real-source-fixtures/zkp-official-lineage-audit-2026.json"
+      }
     },
     {
       "canonical_key": "mk:zpp",
