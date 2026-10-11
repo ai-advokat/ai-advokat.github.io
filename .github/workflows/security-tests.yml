@@ -156,3 +156,5 @@ jobs:
         run: npm run test:zi-final-status-recheck
       - name: ZRO current-status recheck gate
         run: npm run test:zro-current-status-recheck
+      - name: ZRO 39/2025 deterministic reconstruction gate
+        run: npm run test:zro-39-reconstruction
