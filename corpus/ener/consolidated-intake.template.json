@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "source_system": "ENER",
+  "lane": "consolidated_text_snapshot",
+  "instrument_key": "mk:replace-me",
+  "instrument_title": "Replace with exact ENER title",
+  "ener_listing_date": "YYYY-MM-DD",
+  "ener_label": "консолидиран текст",
+  "ener_officialness": "government_hosted_reference",
+  "source_url": "https://ener.gov.mk/files/...",
+  "source_sha256": "64-hex-sha256-of-source-pdf",
+  "source_issue_number": null,
+  "source_issue_date": null,
+  "notes": "Preserve any ENER wording such as 'неофицијална верзија'."
+}

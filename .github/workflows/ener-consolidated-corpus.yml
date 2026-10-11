@@ -1,0 +1,46 @@
+name: ENER consolidated corpus safety
+
+on:
+  pull_request:
+    paths:
+      - "corpus/ener/**"
+      - "corpus/mk/source-registry.json"
+      - "scripts/ener-consolidated-meta.mjs"
+      - "test/ener-consolidated-source.test.mjs"
+      - "scripts/parse-mk-legal-text.mjs"
+      - "scripts/legal-ndjson-to-sql.mjs"
+      - ".github/workflows/ener-consolidated-corpus.yml"
+  push:
+    branches:
+      - main
+      - "ener-consolidated-text-chunks-*"
+    paths:
+      - "corpus/ener/**"
+      - "corpus/mk/source-registry.json"
+      - "scripts/ener-consolidated-meta.mjs"
+      - "test/ener-consolidated-source.test.mjs"
+      - ".github/workflows/ener-consolidated-corpus.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax
+        run: |
+          node --check scripts/ener-consolidated-meta.mjs
+          node --check scripts/parse-mk-legal-text.mjs
+          node --check scripts/legal-ndjson-to-sql.mjs
+      - name: ENER source governance tests
+        run: node --test test/ener-consolidated-source.test.mjs
+      - name: Existing legal parser tests
+        run: npm run test:legal-parser
+      - name: Repository verification
+        run: npm run verify
