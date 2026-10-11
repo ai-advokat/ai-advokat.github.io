@@ -134,8 +134,8 @@ test("ZRO39-9 reviewed base transformations are exact and bounded",()=>{
 });
 
 test("ZRO39-10 workflow derives reviewed base before invoking amendment engine",()=>{
-  const derive=workflow.indexOf("derive-reviewed-zro-2023-base.mjs");
-  const apply=workflow.indexOf("apply-amendments.mjs");
+  const derive=workflow.indexOf("node scripts/derive-reviewed-zro-2023-base.mjs");
+  const apply=workflow.indexOf("node scripts/apply-amendments.mjs");
   assert.ok(derive>0 && apply>derive);
   assert.match(workflow,/allowed_gaps/);
   assert.match(workflow,/zro-2023-reviewed\.ndjson/);
