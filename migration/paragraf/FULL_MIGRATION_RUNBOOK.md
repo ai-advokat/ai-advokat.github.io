@@ -47,21 +47,28 @@ Preferred package:
 ## Execution sequence
 
 ### Phase 0 — preserve
+
 - Copy authoritative export to immutable/read-only storage.
 - Record export date, provider/product, operator, file count, byte count and package SHA-256.
 - Do not edit the original.
+- Keep the authoritative package outside the public GitHub repository.
 
 ### Phase 1 — inventory
+
 Create a manifest with:
-- run_id
-- source_provider
-- source_product
-- authorized_export=true
-- license_or_access_basis
-- package SHA-256
+
+- `run_id`
+- `source_provider`
+- `source_product`
+- `authorized_export=true`
+- `license_or_access_basis`
+- `package_sha256`
 - expected item counts by category
 
-### Phase 2 — normalize
+Template: `migration/paragraf/full-export-manifest.template.json`.
+
+### Phase 2 — normalize and validate
+
 Run:
 
 ```bash
@@ -69,32 +76,83 @@ node scripts/normalize-paragraf-full-export.mjs export.json normalized.ndjson
 node scripts/validate-paragraf-import.mjs normalized.ndjson
 ```
 
-The normalizer rejects credential/session fields and marks private/account/billing material as non-knowledge.
+The normalizer:
 
-### Phase 3 — case-law split
-Route normalized `case_law` records through the governed case-law importer:
+- preserves the original package SHA-256 when supplied;
+- computes a SHA-256 over the normalized payload;
+- rejects credential/session fields;
+- assigns corpus roles;
+- marks private/account/billing material as non-knowledge;
+- keeps all records Human Gate pending.
+
+The validator understands the normalized manifest, verifies record counts and checksums, and fails closed if the manifest is production-eligible or lacks the Human Gate requirement.
+
+### Phase 3 — generate landing-zone SQL
+
+Generate rerun-resistant SQL for the Paragraf landing tables:
 
 ```bash
-node scripts/case-law-ndjson-to-sql.mjs ingest/cases.ndjson /tmp/cases.sql
+node scripts/paragraf-full-ndjson-to-sql.mjs normalized.ndjson /tmp/paragraf-staging.sql
 ```
 
-Paragraf case law is `licensed_secondary`, `discovery_only=1`, Human Gate pending.
+Important behavior:
 
-### Phase 4 — staging import
-- Load metadata into the Paragraf landing tables.
-- Store source/original files only in the designated private/object storage layer, not the public repository.
-- Run deduplication using legacy ID + SHA-256 + official identifiers.
-- Run corpus safety tests.
+- every imported record remains `provenance_status='pending'`;
+- every imported record remains `human_review_status='pending'`;
+- private/client/account/billing records are forced to `knowledge_eligible=0`;
+- private/account/billing text is not written into the D1 landing table;
+- original private material remains only in the preserved export / designated secure object-storage path;
+- inserts are rerun-resistant.
 
-### Phase 5 — official-source binding
+### Phase 4 — staging D1 import
+
+Only after the generated SQL has been reviewed:
+
+```bash
+npx wrangler d1 execute PREVIEW_DB \
+  --remote \
+  --config wrangler.preview-migrations.jsonc \
+  --file /tmp/paragraf-staging.sql
+```
+
+Then run read-only checks:
+
+```bash
+npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc \
+  --command "SELECT import_status, item_count, source_export_id, source_export_sha256 FROM legacy_import_batches ORDER BY id DESC LIMIT 5;"
+
+npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc \
+  --command "SELECT corpus_role, visibility, knowledge_eligible, COUNT(*) AS n FROM legacy_documents GROUP BY corpus_role, visibility, knowledge_eligible ORDER BY corpus_role;"
+```
+
+Do not mark a batch production-ready merely because the SQL executed successfully.
+
+### Phase 5 — case-law bridge and official-source binding
+
+Paragraf case-law is a licensed-secondary discovery layer. Route case-law records through the governed case-law pipeline and preserve:
+
+- Paragraf legacy ID;
+- product lineage (Lex / Nova / LexAI);
+- court;
+- case number;
+- decision date;
+- legal area;
+- source URL;
+- source fingerprint.
+
 For every case-law record where possible:
-- Macedonian courts: bind by case number/court/date to official court source.
-- ECHR: bind by application number + HUDOC item.
-- EU: bind by ECLI/CELEX/InfoCuria.
-- Preserve Paragraf as provenance/discovery source, not controlling authority.
+
+- Macedonian courts: bind by case number/court/date to the official court source;
+- ECHR: bind by application number + HUDOC item;
+- EU: bind by ECLI/CELEX/InfoCuria;
+- preserve Paragraf as provenance/discovery source, not controlling authority.
+
+The dedicated case-law importer keeps Paragraf records `licensed_secondary`, `discovery_only=1`, and Human Gate pending until official binding and review.
 
 ### Phase 6 — parity audit
+
 Compare source vs staging:
+
 - total records;
 - counts by material class;
 - missing/duplicate IDs;
@@ -103,10 +161,13 @@ Compare source vs staging:
 - metadata without files;
 - encoding failures;
 - unbound case law;
-- rejected credential/session material.
+- rejected credential/session material;
+- private/account/billing records accidentally marked knowledge-eligible (must be zero).
 
 ### Phase 7 — Human Gate
+
 Human reviewer approves:
+
 - provenance;
 - classification;
 - current-law/version state;
@@ -115,15 +176,17 @@ Human reviewer approves:
 - knowledge eligibility.
 
 ### Phase 8 — production promotion
+
 Only reviewed/approved eligible records are promoted. Private material stays in the authenticated workspace path. Account/billing material never enters legal retrieval.
 
 ## Recovery path when credentials are unavailable
 
-Use the provider's official recovery route. For Hetzner, current official documentation states that if the customer number or primary email is no longer known, the customer should contact `info@hetzner.com` and be prepared to provide customer/account information for verification. Recovery must remain provider-mediated; no technical bypass is part of this runbook.
+Use the provider's official recovery route. Provider-mediated identity/ownership verification is required. Do not attempt technical bypasses. Once an authoritative backup/export is supplied, preserve it unchanged and begin at Phase 0.
 
 ## Completion definition
 
 The migration is complete only when:
+
 - authoritative export is preserved;
 - every source item is inventoried;
 - normalized corpus count matches the export within documented exclusions;
