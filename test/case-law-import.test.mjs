@@ -219,7 +219,7 @@ test("CLI10 official international court hosts and identifiers are accepted as s
 });
 
 test("CLI11 secondary global aggregators cannot masquerade as official-public court origins",()=>{
-  for(const url of ["https://www.worldcourts.com/example","https://www.worldlii.org/example"]){
+  for(const url of ["https://www.worldcourts.com/example","https://www.worldlii.org/example","https://www.bailii.org/example"]){
     assert.throws(
       ()=>generateCaseLawImportSql(ndjson([manifest({source_provider:"secondary"}),caseRow({source_url:url})])),
       /outside the approved official host set/
