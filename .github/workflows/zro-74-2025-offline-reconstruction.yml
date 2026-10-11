@@ -257,10 +257,6 @@ jobs:
             ingest/mk/plans/zro-39-2025-reconstruction-plan.json \
             /tmp/zro-through-39-2025.ndjson \
             /tmp/zro-through-39-2025-merge-log.json
-            /tmp/zro-74-segment.json
-            /tmp/zro-74-events.ndjson
-            /tmp/zro-through-74-2025.ndjson
-            /tmp/zro-through-74-2025-merge-log.json
 
       - name: Verify exact candidate and fail closed on promotion
         shell: bash
@@ -471,3 +467,7 @@ jobs:
             /tmp/zro-39-events.ndjson
             /tmp/zro-through-39-2025.ndjson
             /tmp/zro-through-39-2025-merge-log.json
+            /tmp/zro-74-segment.json
+            /tmp/zro-74-events.ndjson
+            /tmp/zro-through-74-2025.ndjson
+            /tmp/zro-through-74-2025-merge-log.json
