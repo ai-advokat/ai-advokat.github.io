@@ -211,6 +211,22 @@
       "ingest": "source_discovery_only",
       "official_binding_required_before_gpt_case_law_context": true,
       "authority_note": "Official UN research directory, not a judicial decision source."
+    },
+    {
+      "id": "bailii",
+      "jurisdiction": "UK/IRELAND",
+      "authority_class": "secondary_case_law_discovery",
+      "official_name": "British and Irish Legal Information Institute (BAILII)",
+      "url": "https://www.bailii.org/",
+      "access": "secondary_public_human_access",
+      "ingest": "link_only_no_automated_access",
+      "official_binding_required_before_gpt_case_law_context": true,
+      "forbidden": [
+        "bulk_downloading",
+        "scraping",
+        "automated_systems"
+      ],
+      "authority_note": "Useful legal-information institute for human/manual discovery. The supplied public notice states that BAILII Terms of Service prohibit bulk downloading, scraping and automated systems. Originating court or authorized report remains the authority."
     }
   ],
   "target_case_record": {
@@ -244,7 +260,10 @@
       "official_document_id",
       "series_or_report_reference",
       "translation_status",
-      "domestic_effect_class"
+      "domestic_effect_class",
+      "ratio_or_holding_status",
+      "subsequent_treatment",
+      "distinguished_or_overruled_status"
     ]
   }
 }
