@@ -160,3 +160,6 @@ jobs:
         run: npm run test:zro-39-reconstruction
       - name: ZRO 74/2025 deterministic operation-matrix gate
         run: npm run test:zro-74-reconstruction
+
+      - name: ZRO 124/2025 deterministic reconstruction gate
+        run: npm run test:zro-124-reconstruction
