@@ -78,7 +78,8 @@
     "test:casepilot-case-law-direct-research": "node --no-warnings --test test/casepilot-case-law-direct-research.test.mjs",
     "test:casepilot-private-storage": "node --no-warnings --test test/casepilot-private-storage.test.mjs",
     "test:current-law-readiness": "node --no-warnings --test test/mk-current-law-readiness.test.mjs",
-    "test:zi-current-law": "node --no-warnings --test test/zi-current-law-audit.test.mjs"
+    "test:zi-current-law": "node --no-warnings --test test/zi-current-law-audit.test.mjs",
+    "test:zi-date-matrix": "node --no-warnings --test test/zi-application-date-matrix.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
