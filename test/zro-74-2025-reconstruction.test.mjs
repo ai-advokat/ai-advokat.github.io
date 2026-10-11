@@ -96,3 +96,14 @@ test("ZRO74-11 exact base wording divergence for Article 213-g(2) is explicit",(
   assert.equal(plan.reviewed_base_wording[0].target_article,"213-г");
   assert.match(plan.reviewed_base_wording[0].rule,/exact governed 2023 base phrase/);
 });
+
+
+test("ZRO74-12 Article 265 base wording divergence is explicit",()=>{
+  const x=plan.operations.find(op=>op.amendment_article===22 && op.target==="265" && op.paragraph==="4");
+  assert.ok(x);
+  assert.equal(x.find,"министерот надлежен за работите од областа на трудот");
+  assert.match(x.source_text,/министерот за труд и социјална политика/);
+  const r=plan.reviewed_base_wording.find(v=>v.target_article==="265");
+  assert.ok(r);
+  assert.match(r.rule,/exact governed 2023 base phrase/);
+});
