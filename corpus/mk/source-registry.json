@@ -112,6 +112,34 @@
       "mode": "public_metadata_and_decisions",
       "article_chunking": false,
       "use_for": "court_decision_discovery_and_public_judicial_materials"
+    },
+    {
+      "name": "European Court of Human Rights / HUDOC",
+      "url": "https://hudoc.echr.coe.int/",
+      "authority": "international_court_official",
+      "mode": "public_case_metadata_and_public_case_documents",
+      "article_chunking": false,
+      "use_for": "echr_case_law_primary_authority"
+    },
+    {
+      "name": "Биро за застапување на Република Северна Македонија пред ЕСЧП",
+      "url": "http://biroescp.gov.mk/пресуди-и-одлуки-на-рм/",
+      "authority": "official_domestic_echr_reference",
+      "mode": "public_case_index_and_public_translations",
+      "article_chunking": false,
+      "current_law_authority": false,
+      "hudoc_binding_required": true,
+      "use_for": "north_macedonia_echr_case_discovery_and_domestic_translation_lookup"
+    },
+    {
+      "name": "odluki.sud.mk — ECHR comparative archive",
+      "url": "http://www.odluki.sud.mk/VSUD/MatraVSUD.nsf/EvropskiSud.xsp",
+      "authority": "official_domestic_secondary_jurisprudence_reference",
+      "mode": "public_metadata_and_selected_translations",
+      "article_chunking": false,
+      "current_law_authority": false,
+      "hudoc_binding_required": true,
+      "use_for": "macedonian_language_comparative_echr_discovery"
     }
   ]
 }
