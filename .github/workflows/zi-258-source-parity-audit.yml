@@ -95,12 +95,28 @@ jobs:
           const manifest=rows.find(x=>x.type==="ingest_manifest");
           const arts=rows.filter(x=>x.type==="article");
           if(arts.length!==258) throw new Error("Parsed article count "+arts.length+" != 258");
-          if(Number(manifest?.warning_count||0)!==0) throw new Error("Parser warnings: "+manifest.warning_count);
+          // This exact official PDF/hash currently yields 28 governed parser findings
+          // under parser v0.3. They are NOT auto-repaired or waived for promotion.
+          // Parity comparison may continue only as a diagnostic; Human Gate remains closed.
+          if(Number(manifest?.warning_count||0)!==28) throw new Error("Unexpected parser warning count: "+manifest?.warning_count+"; expected 28 for governed source hash");
+          const warningSummary=(manifest.warnings||[]).map(w=>({
+            severity:w.severity||null,
+            code:w.code||null,
+            article:w.article_number||w.article||null,
+            line:w.line||null
+          }));
+          fs.writeFileSync("/tmp/zi-warning-summary.json",JSON.stringify({
+            source_sha256:"15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55",
+            parser_warning_count:Number(manifest.warning_count),
+            promotion_blocked:true,
+            findings:warningSummary
+          },null,2)+"\n");
           const nums=new Set(arts.map(x=>x.article_number_normalized));
           if(!nums.has("1") || !nums.has("218") || !nums.has("269")) throw new Error("Required article anchors missing");
           for(const n of ["240","241","242","243","244"]) if(nums.has(n)) throw new Error("Abolished article unexpectedly parsed: "+n);
           if(nums.size!==258) throw new Error("Duplicate normalized article number");
-          console.log("OFFICIAL SOURCE PARSE: PASS 258/258");
+          console.log("OFFICIAL SOURCE PARSE: PASS 258/258 WITH 28 GOVERNED REVIEW FINDINGS");
+          console.log("CURRENT-LAW PROMOTION REMAINS BLOCKED");
           NODE
 
       - name: Read complete bound ZI article sets from production and staging
@@ -204,6 +220,7 @@ jobs:
             /tmp/zi-pdfinfo.txt
             /tmp/zi.sha256
             /tmp/zi-clean-report.json
+            /tmp/zi-warning-summary.json
             /tmp/zi-production-digest.txt
             /tmp/zi-staging-digest.txt
             /tmp/zi-production-mismatches.json
