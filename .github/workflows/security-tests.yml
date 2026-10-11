@@ -141,3 +141,5 @@ jobs:
         run: npm run test:current-law-readiness
       - name: ZI current-law source audit gate
         run: npm run test:zi-current-law
+      - name: ZI application-date matrix gate
+        run: npm run test:zi-date-matrix
