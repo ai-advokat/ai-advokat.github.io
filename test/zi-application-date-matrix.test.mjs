@@ -51,3 +51,10 @@ test("ZI-D6 date gate closes without current/Human Gate promotion",()=>{
   assert.equal(x.verification_result.current_version_verified,false);
   assert.equal(x.verification_result.human_gate_approved,false);
 });
+
+
+test("ZIDM direct Constitutional Court provenance for U.br.94/2019",()=>{
+  const ev=matrix.events.find(x=>x.constitutional_case==="U.br.94/2019");
+  assert.ok(ev);
+  assert.equal(ev.official_court_reference,"https://ustavensud.mk/2020/05/%D0%A3-%D0%B1%D1%80-942019-1/");
+});
