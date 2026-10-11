@@ -86,7 +86,8 @@
     "test:reviewed-article-representations": "node --no-warnings --test test/reviewed-article-representations.test.mjs test/reviewed-article-runtime.test.mjs",
     "test:zi-final-status-recheck": "node --no-warnings --test test/zi-final-current-status-recheck.test.mjs",
     "test:zro-current-status-recheck": "node --no-warnings --test test/zro-current-status-recheck.test.mjs",
-    "test:zro-39-reconstruction": "node --no-warnings --test test/zro-39-2025-reconstruction.test.mjs"
+    "test:zro-39-reconstruction": "node --no-warnings --test test/zro-39-2025-reconstruction.test.mjs",
+    "test:zro-74-reconstruction": "node --no-warnings --test test/zro-74-2025-reconstruction.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
