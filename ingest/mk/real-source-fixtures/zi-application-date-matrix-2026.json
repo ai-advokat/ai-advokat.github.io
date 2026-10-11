@@ -1,0 +1,155 @@
+{
+  "schema_version": "1.0",
+  "jurisdiction": "MK",
+  "instrument_key": "mk:zi",
+  "instrument_title": "Закон за извршување",
+  "verified_on": "2026-10-11",
+  "scope": "permanent current-text lineage timing; emergency overlays tracked separately",
+  "current_reference_date": "2026-10-11",
+  "rules": {
+    "publication_entry_application_are_distinct": true,
+    "constitutional_effect_from_publication_when_decision_so_states": true,
+    "transitional_rules_preserved": true,
+    "historical_emergency_overlay_not_folded_into_permanent_lineage": true
+  },
+  "events": [
+    {
+      "id": "zi-72-2016",
+      "kind": "base_law",
+      "gazette_issue": "72/2016",
+      "publication_date": "2016-04-12",
+      "entry_into_force_date": "2016-04-20",
+      "application_from": "2017-01-01",
+      "entry_rule": "eighth_day_after_publication",
+      "application_rule": "Article 269 as amended by OG 142/2016",
+      "source_url": "https://slvesnik.com.mk/Issues/7e2ad780ba694c9e824358157c9ea995.pdf",
+      "consolidated_source_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf",
+      "note": "Original Article 269 provided later application; amendment 142/2016 replaced that start with 1 January 2017. The prior 2005 act ceased to apply when this law began application."
+    },
+    {
+      "id": "zi-142-2016",
+      "kind": "amendment",
+      "gazette_issue": "142/2016",
+      "publication_date": "2016-08-01",
+      "entry_into_force_date": "2016-08-01",
+      "application_from": "2016-08-01",
+      "entry_rule": "day_of_publication",
+      "source_url": "https://www.slvesnik.com.mk/Issues/6f8d996e802342e0ae27878062c8ecff.pdf",
+      "affected_timing": "base law application moved to 2017-01-01"
+    },
+    {
+      "id": "zi-cc-u143-2016",
+      "kind": "constitutional_court_effect",
+      "constitutional_case": "U.br.143/2016",
+      "gazette_issue": "178/2017",
+      "decision_date": "2017-11-29",
+      "publication_date": "2017-12-06",
+      "legal_effect_from": "2017-12-06",
+      "effect_rule": "day_of_gazette_publication",
+      "source_url": "https://www.slvesnik.com.mk/Issues/abc59f23d3df483f89c3cece45495309.pdf",
+      "official_court_reference": "https://ustavensud.mk/2017/12/1112016-0-0/",
+      "affected_provisions": [
+        "6(2)",
+        "11(14)",
+        "12(1)(4)",
+        "17(3)",
+        "28(2)",
+        "46(2)",
+        "240",
+        "241",
+        "242",
+        "243",
+        "244"
+      ]
+    },
+    {
+      "id": "zi-cc-u135-2016",
+      "kind": "constitutional_court_effect",
+      "constitutional_case": "U.br.135/2016",
+      "gazette_issue": "26/2018",
+      "decision_date": "2018-01-24",
+      "publication_date": "2018-02-08",
+      "legal_effect_from": "2018-02-08",
+      "effect_rule": "day_of_gazette_publication",
+      "source_url": "https://ustavensud.mk/2018/01/%D0%A3-%D0%B1%D1%80-1352016/",
+      "affected_provisions": [
+        "28(1)-part",
+        "86(1)-part",
+        "87(1)-part"
+      ]
+    },
+    {
+      "id": "zi-233-2018",
+      "kind": "amendment",
+      "gazette_issue": "233/2018",
+      "publication_date": "2018-12-20",
+      "entry_into_force_date": "2018-12-28",
+      "application_from": "2018-12-28",
+      "entry_rule": "eighth_day_after_publication",
+      "source_url": "https://www.slvesnik.com.mk/Issues/19ccb45a74834b3ab333f689d98e099a.pdf",
+      "transitional_rule": true,
+      "transitional_note": "Article 52 makes the amended regime applicable to ongoing executions, while preserving the tariff applicable to enforcement acts already taken before entry into force."
+    },
+    {
+      "id": "zi-14-2020",
+      "kind": "amendment",
+      "gazette_issue": "14/2020",
+      "publication_date": "2020-01-20",
+      "entry_into_force_date": "2020-01-28",
+      "application_from": "2020-01-28",
+      "entry_rule": "eighth_day_after_publication",
+      "source_url": "https://www.slvesnik.com.mk/Issues/a9f505f8932d43e5919f0a951f3ffe06.pdf",
+      "transitional_rule": true,
+      "transitional_note": "Article 3 directs specified ongoing executions under prior/current provisions to continue under this amendment."
+    },
+    {
+      "id": "zi-cc-u94-2019",
+      "kind": "constitutional_court_effect",
+      "constitutional_case": "U.br.94/2019",
+      "gazette_issue": "136/2020",
+      "decision_date": "2020-05-12",
+      "publication_date": "2020-05-27",
+      "legal_effect_from": "2020-05-27",
+      "effect_rule": "day_of_gazette_publication",
+      "source_url": "https://www.slvesnik.com.mk/Issues/1ec4796e8aa04d809e16343bbe4c496f.pdf",
+      "official_court_reference": "https://ustavensud.mk/2026/07/%D1%83%D0%B7-%D0%B1%D1%80-75-2025/",
+      "affected_provisions": [
+        "18(2)"
+      ]
+    },
+    {
+      "id": "zi-154-2023",
+      "kind": "amendment",
+      "gazette_issue": "154/2023",
+      "publication_date": "2023-07-20",
+      "entry_into_force_date": "2023-07-20",
+      "application_from": "2023-07-20",
+      "entry_rule": "day_of_publication",
+      "source_url": "https://slvesnik.com.mk/Issues/cdedfdbaa7654e26a2484ee728d5424f.pdf",
+      "affected_provisions": [
+        "18(1)"
+      ]
+    }
+  ],
+  "historical_overlays": [
+    {
+      "family": "COVID-19 emergency application decrees",
+      "gazette_issues": [
+        "86/2020",
+        "103/2020",
+        "156/2020"
+      ],
+      "permanent_current_text_component": false,
+      "status": "SEPARATE_HISTORICAL_TEMPORAL_LAYER_REQUIRED",
+      "ministry_reference": "https://www.pravda.gov.mk/mk-MK/regulativa/zakoni",
+      "note": "These decrees governed application during the emergency period and are not silently treated as permanent amendments to the editorial consolidated current text."
+    }
+  ],
+  "verification_result": {
+    "permanent_lineage_timing_verified": true,
+    "historical_overlay_index_complete": false,
+    "current_law_gate_application_dates_verified": true,
+    "current_version_verified": false,
+    "human_gate_approved": false
+  }
+}
