@@ -1,6 +1,6 @@
 # ZI current-law source audit — 2026-10-11
 
-Instrument: `mk:zi` — Закон за извршување  
+Instrument: `mk:zi` — Закон за извршување
 Status: **CURRENT TEXT CANDIDATE / NOT HUMAN-GATE APPROVED**
 
 ## Executive finding
