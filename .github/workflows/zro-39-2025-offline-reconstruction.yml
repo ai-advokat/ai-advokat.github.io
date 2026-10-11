@@ -8,6 +8,8 @@ on:
       - "test/zro-39-2025-reconstruction.test.mjs"
       - ".github/workflows/zro-39-2025-offline-reconstruction.yml"
       - "scripts/apply-amendments.mjs"
+      - "ingest/mk/audits/zro-2023-parser-review-dispositions-2026-10-11.json"
+      - "scripts/derive-reviewed-zro-2023-base.mjs"
       - "scripts/clean-official-legal-pdf-text.mjs"
       - "scripts/parse-mk-legal-text.mjs"
       - "scripts/extract-zro-amendment-act.mjs"
@@ -43,7 +45,7 @@ jobs:
           node-version: "22"
 
       - name: Unit and contract gate
-        run: npm run test:zro-39-reconstruction
+        run: node --check scripts/derive-reviewed-zro-2023-base.mjs && npm run test:zro-39-reconstruction
 
       - name: Install PDF tools
         run: |
