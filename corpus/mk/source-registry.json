@@ -95,6 +95,23 @@
       "url": "https://samodaprasham.mk/",
       "authority": "secondary_reference",
       "mode": "no_crawl"
+    },
+    {
+      "name": "Собрание на Република Северна Македонија",
+      "url": "https://www.sobranie.mk/",
+      "authority": "official_legislative_history",
+      "mode": "public_metadata_and_documents",
+      "article_chunking": false,
+      "current_law_authority": false,
+      "use_for": "adoption_history_bills_enactment_metadata_and_official_gazette_discovery"
+    },
+    {
+      "name": "Судски портал на Република Северна Македонија",
+      "url": "https://www.sud.mk/",
+      "authority": "court_official",
+      "mode": "public_metadata_and_decisions",
+      "article_chunking": false,
+      "use_for": "court_decision_discovery_and_public_judicial_materials"
     }
   ]
 }
