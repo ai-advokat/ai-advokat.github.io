@@ -139,3 +139,5 @@ jobs:
         run: node --check assets/zpp-timeline.js && npm run test:zpp-timeline
       - name: MK current-law readiness gate
         run: npm run test:current-law-readiness
+      - name: ZI current-law source audit gate
+        run: npm run test:zi-current-law
