@@ -168,18 +168,35 @@ The dedicated case-law importer keeps Paragraf records `licensed_secondary`, `di
 
 ### Phase 6 — parity audit
 
-Compare source vs staging:
+Generate a machine-readable parity report after normalization and binding-queue generation:
 
-- total records;
-- counts by material class;
-- missing/duplicate IDs;
-- checksum mismatches;
+```bash
+node scripts/paragraf-parity-audit.mjs \
+  normalized.ndjson \
+  /tmp/paragraf-binding-queue.ndjson \
+  /tmp/paragraf-parity-report.json
+```
+
+The audit fails closed on hard mismatches and checks:
+
+- total normalized record count against the manifest;
+- expected counts by material class;
+- missing or malformed source SHA-256 values;
+- duplicate legacy IDs and duplicate source fingerprints (surfaced as warnings for review);
+- private/account/billing knowledge-eligibility violations;
+- case-law count against the official-source binding queue;
+- binding queue fail-closed state (`binding_status=pending`, `human_review_status=pending`).
+
+The report always records `production_promotion_authorized=false`. A passing parity audit is necessary but not sufficient for production promotion.
+
+Also compare source vs staging operationally:
+
 - files without metadata;
 - metadata without files;
 - encoding failures;
-- unbound case law;
 - rejected credential/session material;
-- private/account/billing records accidentally marked knowledge-eligible (must be zero).
+- unbound case law;
+- any documented exclusions from the authoritative source package.
 
 ### Phase 7 — Human Gate
 
