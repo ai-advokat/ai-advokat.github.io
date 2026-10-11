@@ -90,7 +90,7 @@ test("ZRO74-10 full offline verification requires 299 pending articles and zero 
 test("ZRO74-11 exact base wording divergence for Article 213-g(2) is explicit",()=>{
   const x=plan.operations.find(op=>op.amendment_article===15 && op.target==="213-г" && op.paragraph==="2");
   assert.ok(x);
-  assert.equal(x.find,"министерството надлежно за работите од областа за трудот");
+  assert.equal(x.find,"Министерството надлежно за работите од областа за трудот");
   assert.match(x.source_text,/од областа на трудот/);
   assert.equal(plan.reviewed_base_wording.length,1);
   assert.equal(plan.reviewed_base_wording[0].target_article,"213-г");
