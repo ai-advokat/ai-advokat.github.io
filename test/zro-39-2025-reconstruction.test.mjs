@@ -137,6 +137,7 @@ test("ZRO39-9 reviewed base transformations are exact and bounded",()=>{
   assert.match(heading.reviewed_text,/доколку со друг закон поинаку не е уредено/);
   assert.match(deriveSrc,/Article 104 reviewed boundary/);
   assert.match(deriveSrc,/next_section_heading_boundary/);
+  assert.match(deriveSrc,/replace\(\/\\s\+\/gu," "\)/);
   assert.match(deriveSrc,/Unexpected unresolved parser finding set/);
   assert.match(deriveSrc,/raw_source_preserved:true/);
   assert.match(deriveSrc,/human_gate_approved:false/);
