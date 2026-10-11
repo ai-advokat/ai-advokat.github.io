@@ -54,8 +54,9 @@ function summarizeFields(fields){
   };
 }
 function deriveCandidate(counts){
-  if((counts.restricted_operational??0)>0 && Object.values(counts).reduce((a,b)=>a+b,0)===(counts.restricted_operational??0)) return "restricted_operational";
   const legal=["case_law","primary_law","document","commentary"];
+  const legalTotal=legal.reduce((sum,k)=>sum+(counts[k]??0),0);
+  if((counts.restricted_operational??0)>0 && legalTotal===0) return "restricted_operational";
   let best="other",score=0;
   for(const k of legal){
     if((counts[k]??0)>score){best=k;score=counts[k];}
