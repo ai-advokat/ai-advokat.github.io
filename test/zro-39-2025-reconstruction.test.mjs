@@ -105,9 +105,11 @@ test("ZRO39-7 audit workflow is offline-only with no D1 or secret access",()=>{
 });
 
 
-test("ZRO39-8 2023 parser review resolves exactly nine findings without source overwrite",()=>{
-  assert.equal(review.findings_total,9);
-  assert.equal(review.findings_resolved,9);
+test("ZRO39-8 2023 source review resolves nine parser findings plus one reconstruction-preflight finding without source overwrite",()=>{
+  assert.equal(review.findings_total,10);
+  assert.equal(review.findings_resolved,10);
+  assert.equal(review.parser_findings_total,9);
+  assert.equal(review.reconstruction_preflight_findings_total,1);
   assert.equal(review.raw_source_preserved,true);
   assert.equal(review.current_law_promotion,false);
   assert.equal(review.human_gate_approved,false);
@@ -128,6 +130,13 @@ test("ZRO39-9 reviewed base transformations are exact and bounded",()=>{
     ["266-в","Инспекторoт","Инспекторот"]
   ]);
   assert.ok(mixed.every(x=>x.expected_matches===1));
+  const heading=review.dispositions.find(x=>x.code==="next_section_heading_contamination"&&x.article==="104");
+  assert.ok(heading);
+  assert.equal(heading.raw_marker,"VIII ПЛАЌАЊЕ НА РАБОТАТА");
+  assert.equal(heading.secondary_marker,"Вид на плаќање");
+  assert.match(heading.reviewed_text,/доколку со друг закон поинаку не е уредено/);
+  assert.match(deriveSrc,/Article 104 reviewed boundary/);
+  assert.match(deriveSrc,/next_section_heading_boundary/);
   assert.match(deriveSrc,/Unexpected unresolved parser finding set/);
   assert.match(deriveSrc,/raw_source_preserved:true/);
   assert.match(deriveSrc,/human_gate_approved:false/);
