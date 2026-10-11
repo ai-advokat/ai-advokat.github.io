@@ -55,3 +55,10 @@ Before an offline candidate may be emitted:
 7. keep Human Gate pending and current-consolidated count zero.
 
 No D1 write is authorized by this plan.
+
+
+## Article 213-г(2) base wording divergence
+
+The exact official 2023 consolidated base reads `Министерството надлежно за работите од областа за трудот`, while OG 74/2025 identifies the replaced phrase as `министерството надлежно за работите од областа на трудот`.
+
+The reconstruction matches the exact governed base phrase (`за трудот`) and applies the amendment replacement deterministically. The amendment event/source text remains preserved verbatim. This is an explicit source-to-source wording divergence, not a silent correction or fuzzy match.
