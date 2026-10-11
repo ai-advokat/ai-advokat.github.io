@@ -154,3 +154,5 @@ jobs:
         run: npm run test:reviewed-article-representations
       - name: Final ZI official-status recheck and Human Gate pack
         run: npm run test:zi-final-status-recheck
+      - name: ZRO current-status recheck gate
+        run: npm run test:zro-current-status-recheck
