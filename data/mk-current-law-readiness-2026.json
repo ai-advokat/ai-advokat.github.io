@@ -46,7 +46,7 @@
         "source_issue_date": "2023-07-20",
         "backfill_migration": "0024_zi_legacy_version_backfill.sql"
       },
-      "current_law_status": "CURRENT_TEXT_CANDIDATE_REVIEWED_REPRESENTATION_COMPLETE_FINAL_CURRENT_GATE_PENDING",
+      "current_law_status": "FINAL_HUMAN_GATE_READY_NOT_APPROVED",
       "repository_binding_plan_ready": true,
       "current_text_reconstructed": true,
       "gates": {
@@ -59,7 +59,7 @@
         "current_version_verified": false,
         "human_gate_approved": false
       },
-      "next_action": "Freshly re-check the official Ministry/LDBIS/Official Gazette/Constitutional Court surfaces, including Article 218 / U.br.86/2025. If no legal-status drift is found, run the final Human Gate decision. Do not promote automatically.",
+      "next_action": "Human reviewer must examine the final decision pack, re-check for any post-pack official change, and record APPROVE_WITH_CONDITIONS, REJECT or RETURN_FOR_REVIEW. No automatic current-law or Human Gate promotion is permitted.",
       "pending_constitutional_review": {
         "case": "U.br.86/2025",
         "article": "218",
@@ -104,6 +104,23 @@
         "human_gate_approved": false,
         "runtime_uses_reviewed_text_for_legal_synthesis": true,
         "audit": "ingest/mk/audits/zi-reviewed-derived-representation-2026-10-11.md"
+      },
+      "official_status_recheck": {
+        "checked_on": "2026-10-11",
+        "state": "PASS_BOUNDED_OFFICIAL_SURFACES",
+        "ministry_latest_enacted_amendment_displayed": "154/2023",
+        "ldbis_latest_linked_amendment_displayed": "154/2023",
+        "later_enacted_amendment_identified_on_checked_surfaces": false,
+        "article_218_state": "PROCEEDINGS_INITIATED",
+        "article_218_final_effect_identified": false,
+        "bounded_negative": true,
+        "evidence": "ingest/mk/real-source-fixtures/zi-final-current-status-recheck-2026.json"
+      },
+      "final_human_gate": {
+        "ready": true,
+        "decision_state": "PENDING_HUMAN_DECISION",
+        "pack": "ingest/mk/human-gate/zi-final-human-gate-pack-2026-10-11.json",
+        "automatic_promotion_allowed": false
       }
     },
     {
