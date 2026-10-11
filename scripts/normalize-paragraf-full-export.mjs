@@ -35,6 +35,9 @@ function assertNoSecrets(value,path="root"){
 function sha256(value){
   return crypto.createHash("sha256").update(String(value??""),"utf8").digest("hex");
 }
+function validSha(value){
+  return /^[a-f0-9]{64}$/i.test(String(value??""));
+}
 
 function canonicalType(raw){
   const s=String(raw??"reference").toLowerCase().replace(/[\s-]+/g,"_");
@@ -85,9 +88,9 @@ function normalizeRecord(raw,index,manifest){
   const mimeType=text(raw.mime_type??raw.content_type,200);
   const jurisdiction=text(raw.jurisdiction??"MK",40)??"MK";
 
-  const administrative = role==="account" || role==="commercial";
-  const privateMaterial = visibility==="private" || role==="private_case" || administrative;
-  const eligible = KNOWLEDGE_ROLES.has(role) && !privateMaterial && raw.knowledge_eligible!==false;
+  const administrative=role==="account"||role==="commercial";
+  const privateMaterial=visibility==="private"||role==="private_case"||administrative;
+  const eligible=KNOWLEDGE_ROLES.has(role)&&!privateMaterial&&raw.knowledge_eligible!==false;
 
   const canonicalPayload={
     legacy_id:legacyId,
@@ -119,7 +122,7 @@ function normalizeRecord(raw,index,manifest){
   };
 
   canonicalPayload.source_sha256=text(raw.source_sha256,64)??sha256(body??JSON.stringify(canonicalPayload));
-  if(!/^[a-f0-9]{64}$/i.test(canonicalPayload.source_sha256)) throw new Error("Invalid source_sha256 at record "+(index+1));
+  if(!validSha(canonicalPayload.source_sha256)) throw new Error("Invalid source_sha256 at record "+(index+1));
   return canonicalPayload;
 }
 
@@ -129,10 +132,12 @@ export function normalizeParagrafFullExport(inputText){
   if(manifest.authorized_export!==true) throw new Error("Full migration requires manifest.authorized_export=true");
   if(!text(manifest.license_or_access_basis,1000)) throw new Error("Full migration requires manifest.license_or_access_basis");
   if(!records.length) throw new Error("No export records supplied");
+  if(manifest.package_sha256 && !validSha(manifest.package_sha256)) throw new Error("Invalid manifest.package_sha256");
 
   const normalized=records.map((r,i)=>normalizeRecord(r,i,manifest));
   const counts={};
   for(const r of normalized) counts[r.corpus_role]=(counts[r.corpus_role]??0)+1;
+  const normalizedPayload=normalized.map(x=>JSON.stringify(x)).join("\n")+"\n";
 
   const outManifest={
     type:"ai_advokat_paragraf_normalized_manifest",
@@ -141,6 +146,10 @@ export function normalizeParagrafFullExport(inputText){
     source_product:text(manifest.source_product,80)??"unknown",
     authorized_export:true,
     license_or_access_basis:text(manifest.license_or_access_basis,1000),
+    export_created_at:text(manifest.export_created_at,80),
+    package_sha256:text(manifest.package_sha256,64),
+    normalized_payload_sha256:sha256(normalizedPayload),
+    expected_counts:manifest.expected_counts??null,
     normalized_record_count:normalized.length,
     corpus_role_counts:counts,
     production_eligible:false,
@@ -150,7 +159,7 @@ export function normalizeParagrafFullExport(inputText){
   return {
     manifest:outManifest,
     records:normalized,
-    ndjson:[JSON.stringify(outManifest),...normalized.map(x=>JSON.stringify(x))].join("\n")+"\n"
+    ndjson:[JSON.stringify(outManifest),normalizedPayload.trimEnd()].join("\n")+"\n"
   };
 }
 
@@ -162,5 +171,11 @@ if(import.meta.url===`file://${process.argv[1]}`){
   }
   const result=normalizeParagrafFullExport(fs.readFileSync(inputPath,"utf8"));
   fs.writeFileSync(outPath,result.ndjson,"utf8");
-  console.error(JSON.stringify({ok:true,records:result.records.length,roles:result.manifest.corpus_role_counts,out:outPath},null,2));
+  console.error(JSON.stringify({
+    ok:true,
+    records:result.records.length,
+    roles:result.manifest.corpus_role_counts,
+    normalized_payload_sha256:result.manifest.normalized_payload_sha256,
+    out:outPath
+  },null,2));
 }
