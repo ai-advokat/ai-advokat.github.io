@@ -1,0 +1,24 @@
+{
+  "request_id": "staging-legacy-version-binding-2026-10-11",
+  "requested_on": "2026-10-11",
+  "target": "ai-advokat-db-staging",
+  "target_database_id": "eb560e98-9fc0-408e-9c81-9b823ffde44d",
+  "production_database_id": "12ece285-74bb-4f27-a025-2dbd1be6c59a",
+  "scope": [
+    "mk:zi",
+    "mk:zro",
+    "mk:zkp"
+  ],
+  "migrations": [
+    "0024_zi_legacy_version_backfill.sql",
+    "0025_zro_legacy_version_backfill.sql",
+    "0026_zkp_legacy_version_backfill.sql"
+  ],
+  "mutation_scope": "instrument_version_id binding plus governed snapshot metadata normalization defined by migrations 0024-0026",
+  "current_law_promotion": false,
+  "human_gate_promotion": false,
+  "production_allowed": false,
+  "preflight_run_id": 38169827479,
+  "preflight_result": "PASS",
+  "required_postcondition": "all three staging corpora bound_exact_snapshot; zero current_consolidated promotion"
+}
