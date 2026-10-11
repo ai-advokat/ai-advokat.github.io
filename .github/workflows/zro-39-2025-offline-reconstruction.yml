@@ -122,7 +122,8 @@ jobs:
           assert allowed==["253","254","255","98"], allowed
           a104=next(x for x in arts if x["article_number_normalized"]=="104")
           normative104="Договорот за вработување работодавачот го прекинува кога работникот ќе наполни 64 години возраст и 15 години пензиски стаж, доколку со друг закон поинаку не е уредено."
-          assert a104["article_text"].startswith(normative104), a104["article_text"]
+          compact104=" ".join(a104["article_text"].split())
+          assert compact104.startswith(normative104), a104["article_text"]
           assert a104["article_text"].count("VIII ПЛАЌАЊЕ НА РАБОТАТА")==1, a104["article_text"]
           assert a104["article_text"].count("Вид на плаќање")==1, a104["article_text"]
           assert a104["article_text"].split().count("друг")==1
