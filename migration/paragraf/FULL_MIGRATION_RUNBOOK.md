@@ -129,7 +129,21 @@ Do not mark a batch production-ready merely because the SQL executed successfull
 
 ### Phase 5 — case-law bridge and official-source binding
 
-Paragraf case-law is a licensed-secondary discovery layer. Route case-law records through the governed case-law pipeline and preserve:
+Paragraf case-law is a licensed-secondary discovery layer. Build the governed case-law package and the official-source binding queue:
+
+```bash
+node scripts/paragraf-case-law-bridge.mjs normalized.ndjson /tmp/paragraf-cases.ndjson
+
+node scripts/case-law-ndjson-to-sql.mjs \
+  /tmp/paragraf-cases.ndjson \
+  /tmp/paragraf-cases-staging.sql
+
+node scripts/paragraf-case-law-binding-queue.mjs \
+  /tmp/paragraf-cases.ndjson \
+  /tmp/paragraf-binding-queue.ndjson
+```
+
+The bridge preserves, where supplied:
 
 - Paragraf legacy ID;
 - product lineage (Lex / Nova / LexAI);
@@ -137,8 +151,11 @@ Paragraf case-law is a licensed-secondary discovery layer. Route case-law record
 - case number;
 - decision date;
 - legal area;
-- source URL;
-- source fingerprint.
+- source URL and SHA-256;
+- official identifiers such as domestic case number, ECLI, CELEX or HUDOC/application number;
+- authority metadata, summaries and holdings.
+
+The binding queue marks every case `binding_status=pending` and `human_review_status=pending`. Records with a usable official identifier are labelled `identifier_ready`; weaker records are labelled `metadata_search_required`.
 
 For every case-law record where possible:
 
@@ -147,7 +164,7 @@ For every case-law record where possible:
 - EU: bind by ECLI/CELEX/InfoCuria;
 - preserve Paragraf as provenance/discovery source, not controlling authority.
 
-The dedicated case-law importer keeps Paragraf records `licensed_secondary`, `discovery_only=1`, and Human Gate pending until official binding and review.
+The dedicated case-law importer keeps Paragraf records `licensed_secondary`, `discovery_only=1`, and Human Gate pending until official binding and review. If an export record lacks a direct Paragraf URL, the bridge uses the Paragraf root only as a secondary-source locator; that does not count as official binding.
 
 ### Phase 6 — parity audit
 
