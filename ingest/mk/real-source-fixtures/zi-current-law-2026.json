@@ -1,0 +1,133 @@
+{
+  "fixture_type": "current_law_source_audit",
+  "jurisdiction": "MK",
+  "instrument_key": "mk:zi",
+  "instrument_title": "Закон за извршување",
+  "audited_on": "2026-10-11",
+  "promotion_status": "CURRENT_TEXT_CANDIDATE_REQUIRES_HUMAN_GATE",
+  "current_law_promotion": false,
+  "official_editorial_consolidation": {
+    "provider": "Ministry of Justice / Official Gazette editorial consolidated text",
+    "listing_url": "https://www.pravda.gov.mk/mk-MK/resursi/zakoni-izvrsuvanje",
+    "pdf_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf",
+    "page_count": 99,
+    "sha256": "15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55",
+    "source_lineage": [
+      {
+        "issue": "72/2016",
+        "kind": "base_law"
+      },
+      {
+        "issue": "142/2016",
+        "kind": "amendment"
+      },
+      {
+        "issue": "178/2017",
+        "kind": "constitutional_court_effect",
+        "case": "U.br.143/2016"
+      },
+      {
+        "issue": "26/2018",
+        "kind": "constitutional_court_effect",
+        "case": "U.br.135/2016"
+      },
+      {
+        "issue": "233/2018",
+        "kind": "amendment"
+      },
+      {
+        "issue": "14/2020",
+        "kind": "amendment"
+      },
+      {
+        "issue": "136/2020",
+        "kind": "constitutional_court_effect",
+        "case": "U.br.94/2019"
+      },
+      {
+        "issue": "154/2023",
+        "kind": "amendment"
+      }
+    ],
+    "last_enacted_amendment_identified": "154/2023",
+    "note": "The official editorial-consolidation footnote states that these constituent acts/decisions are incorporated and that their entry/application timing is indicated in the source."
+  },
+  "ldbis_latest_amendment": {
+    "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=63684",
+    "gazette_issue": "154/2023",
+    "publication_date": "2023-07-20",
+    "entry_into_force": "2023-07-20",
+    "application_from": "2023-07-20",
+    "active_signal": true
+  },
+  "current_ministry_listing": {
+    "checked_on": "2026-10-11",
+    "latest_enacted_amendment_listed": "154/2023",
+    "proposal_notice_2025_present": true,
+    "later_enacted_amendment_identified_on_listing": false,
+    "caveat": "This is a bounded official-source finding, not a universal negative beyond the official sources checked."
+  },
+  "temporary_historical_overlay": {
+    "gazette_issue": "86/2020",
+    "type": "emergency_decree_application_overlay",
+    "permanent_consolidation_component": false,
+    "note": "The 2020 emergency decree affected application during the emergency period; it is not listed in the official editorial-consolidation footnote as a permanent constituent amendment/effect and must be modeled separately for historical date queries."
+  },
+  "constitutional_review": [
+    {
+      "case": "U.br.86/2025",
+      "article": "218",
+      "status": "PROCEEDINGS_INITIATED",
+      "decision_date": "2026-01-21",
+      "source_url": "https://ustavensud.mk/2026/01/%D1%83-%D0%B1%D1%80-86-2025/",
+      "legal_effect": "NO_REPEAL_EFFECT_IDENTIFIED",
+      "warning_required": true,
+      "note": "Proceedings were initiated; the provision remains part of the source text unless/until a final decision with legal effect is identified."
+    },
+    {
+      "case": "U.br.44/2026",
+      "article": "9",
+      "status": "NO_PROCEEDINGS_INITIATED",
+      "decision_date": "2026-07-08",
+      "source_url": "https://ustavensud.mk/2026/07/%D1%83-%D0%B1%D1%80-44-2026/",
+      "legal_effect": "NONE"
+    },
+    {
+      "case": "U.br.45/2025",
+      "article": "86(1) first sentence",
+      "status": "NO_PROCEEDINGS_INITIATED",
+      "decision_date": "2026-06-03",
+      "legal_effect": "NONE"
+    },
+    {
+      "case": "U.br.56/2025",
+      "article": "71(1)(b)",
+      "status": "NO_PROCEEDINGS_INITIATED",
+      "decision_date": "2026-02-04",
+      "legal_effect": "NONE"
+    },
+    {
+      "case": "U.br.146/2024",
+      "article": "13(2) phrase 'и заклучок'",
+      "status": "INITIATIVE_DISMISSED",
+      "decision_date": "2026-09-23",
+      "legal_effect": "NONE"
+    }
+  ],
+  "gates": {
+    "official_source_bound": true,
+    "article_level_text_present": true,
+    "article_set_version_bound": true,
+    "amendment_chain_resolved": true,
+    "constitutional_court_effects_resolved": true,
+    "application_dates_verified": false,
+    "current_version_verified": false,
+    "human_gate_approved": false
+  },
+  "pending_actions": [
+    "Build constituent-act date matrix and verify entry/application dates for all permanent lineage components.",
+    "Attach a constitutional-review warning to Article 218 retrieval while U.br.86/2025 remains unresolved.",
+    "Human Gate review of the 258 article set against the official editorial consolidated PDF before current-version promotion.",
+    "Re-check LDBIS/Ministry/Constitutional Court immediately before promotion."
+  ]
+}
