@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI Advokat Official Source Index Chunk",
+  "type": "object",
+  "required": [
+    "chunk_id",
+    "chunk_type",
+    "jurisdiction",
+    "source_id",
+    "source_name",
+    "authority_class",
+    "title",
+    "source_url",
+    "captured_on",
+    "human_review_status"
+  ],
+  "properties": {
+    "chunk_id": {
+      "type": "string"
+    },
+    "chunk_type": {
+      "type": "string"
+    },
+    "jurisdiction": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "source_name": {
+      "type": "string"
+    },
+    "authority_class": {
+      "type": "string"
+    },
+    "record_kind": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "case_reference": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "decision_date": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "publication_date": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "adoption_date": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "gazette_issue": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "session": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "captured_on": {
+      "type": "string"
+    },
+    "is_full_text": {
+      "type": "boolean"
+    },
+    "current_law_authority": {
+      "type": "boolean"
+    },
+    "case_law_authority": {
+      "type": "boolean"
+    },
+    "official_gazette_binding_required": {
+      "type": "boolean"
+    },
+    "needs_full_text_fetch": {
+      "type": "boolean"
+    },
+    "source_sha256": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_hash_status": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "use_for": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "human_review_status": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}
