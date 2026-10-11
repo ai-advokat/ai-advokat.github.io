@@ -107,7 +107,9 @@ export function generateParagrafFullImportSql(ndjsonText){
 
     const metadataRaw=optionalText(doc.metadata_json,1000000);
     if(metadataRaw){
-      try{JSON.parse(metadataRaw);}catch{throw new Error("Invalid metadata_json at record "+(index+1));}
+      let parsedMetadata;
+      try{parsedMetadata=JSON.parse(metadataRaw);}catch{throw new Error("Invalid metadata_json at record "+(index+1));}
+      assertNoSecrets(parsedMetadata,"record["+index+"].metadata_json");
     }
 
     sql.push(
