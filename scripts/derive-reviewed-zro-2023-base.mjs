@@ -79,7 +79,7 @@ export function deriveReviewedBase(corpus,review){
   const marker=foot.raw_marker;
   const count2=raw2.split(marker).length-1;
   if(count2!==1) throw new Error(`Article 2 footnote marker matched ${count2} times`);
-  const cut=raw2.slice(0,raw2.indexOf(marker)).trim().replace(/\s+1$/u,"").trim();
+  const cut=raw2.slice(0,raw2.indexOf(marker)).trim().replace(/\s+1$/u,"").replace(/\s+/gu," ").trim();
   if(cut!==foot.reviewed_text) throw new Error("Article 2 reviewed boundary does not match the approved normative text");
   a2.raw_article_text_sha256=sha256(raw2);
   a2.article_text=cut;
@@ -99,7 +99,7 @@ export function deriveReviewedBase(corpus,review){
     const secondaryCount=raw104.split(String(headingReview.secondary_marker)).length-1;
     if(secondaryCount!==1) throw new Error(`Article 104 secondary heading marker matched ${secondaryCount} times`);
   }
-  const cut104=raw104.slice(0,raw104.indexOf(marker104)).trim();
+  const cut104=raw104.slice(0,raw104.indexOf(marker104)).replace(/\s+/gu," ").trim();
   if(cut104!==headingReview.reviewed_text) throw new Error("Article 104 reviewed boundary does not match the approved normative text");
   a104.raw_article_text_sha256=sha256(raw104);
   a104.article_text=cut104;
