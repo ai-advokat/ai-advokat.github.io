@@ -80,7 +80,8 @@
     "test:current-law-readiness": "node --no-warnings --test test/mk-current-law-readiness.test.mjs",
     "test:zi-current-law": "node --no-warnings --test test/zi-current-law-audit.test.mjs",
     "test:zi-date-matrix": "node --no-warnings --test test/zi-application-date-matrix.test.mjs",
-    "test:legal-status-overlays": "node --no-warnings --test test/legal-status-overlays.test.mjs test/legal-status-overlay-runtime.test.mjs"
+    "test:legal-status-overlays": "node --no-warnings --test test/legal-status-overlays.test.mjs test/legal-status-overlay-runtime.test.mjs",
+    "test:staging-legacy-version-binding": "node --no-warnings --test test/staging-legacy-version-binding-contract.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
