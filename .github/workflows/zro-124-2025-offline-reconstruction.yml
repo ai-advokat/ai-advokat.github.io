@@ -1,0 +1,598 @@
+name: ZRO 124-2025 offline reconstruction audit
+
+on:
+  pull_request:
+    paths:
+      - "ingest/mk/plans/zro-39-2025-reconstruction-plan.json"
+      - "ingest/mk/audits/zro-39-2025-reconstruction-plan.md"
+      - "test/zro-39-2025-reconstruction.test.mjs"
+      - "ingest/mk/plans/zro-74-2025-reconstruction-plan.json"
+      - "ingest/mk/audits/zro-74-2025-reconstruction-plan.md"
+      - "test/zro-74-2025-reconstruction.test.mjs"
+      - "ingest/mk/plans/zro-124-2025-reconstruction-plan.json"
+      - "ingest/mk/audits/zro-124-2025-reconstruction-plan.md"
+      - "test/zro-124-2025-reconstruction.test.mjs"
+      - ".github/workflows/zro-124-2025-offline-reconstruction.yml"
+      - ".github/workflows/zro-74-2025-offline-reconstruction.yml"
+      - "scripts/apply-amendments.mjs"
+      - "ingest/mk/audits/zro-2023-parser-review-dispositions-2026-10-11.json"
+      - "scripts/derive-reviewed-zro-2023-base.mjs"
+      - "scripts/clean-official-legal-pdf-text.mjs"
+      - "scripts/parse-mk-legal-text.mjs"
+      - "scripts/extract-zro-amendment-act.mjs"
+      - "scripts/parse-mk-amendment-text.mjs"
+      - "package.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "ingest/mk/plans/zro-39-2025-reconstruction-plan.json"
+      - "ingest/mk/audits/zro-39-2025-reconstruction-plan.md"
+      - "test/zro-39-2025-reconstruction.test.mjs"
+      - "ingest/mk/plans/zro-74-2025-reconstruction-plan.json"
+      - "ingest/mk/audits/zro-74-2025-reconstruction-plan.md"
+      - "test/zro-74-2025-reconstruction.test.mjs"
+      - "ingest/mk/plans/zro-124-2025-reconstruction-plan.json"
+      - "ingest/mk/audits/zro-124-2025-reconstruction-plan.md"
+      - "test/zro-124-2025-reconstruction.test.mjs"
+      - ".github/workflows/zro-124-2025-offline-reconstruction.yml"
+      - ".github/workflows/zro-74-2025-offline-reconstruction.yml"
+      - "scripts/apply-amendments.mjs"
+      - "scripts/clean-official-legal-pdf-text.mjs"
+      - "scripts/parse-mk-legal-text.mjs"
+      - "scripts/extract-zro-amendment-act.mjs"
+      - "scripts/parse-mk-amendment-text.mjs"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reconstruct:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Unit and contract gate
+        run: node --check scripts/derive-reviewed-zro-2023-base.mjs && npm run test:zro-39-reconstruction && npm run test:zro-74-reconstruction && npm run test:zro-124-reconstruction
+
+      - name: Install PDF tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Download and fingerprint exact official sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180 \
+            --user-agent "AI-Advokat-ZRO-Reconstruction/1.0" \
+            "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf" -o /tmp/zro-2023.pdf
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180 \
+            --user-agent "AI-Advokat-ZRO-Reconstruction/1.0" \
+            "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-Jv8C.pdf" -o /tmp/zro-39-2025.pdf
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180 \
+            --user-agent "AI-Advokat-ZRO-Reconstruction/1.0" \
+            "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-3i9b.pdf" -o /tmp/zro-74-2025.pdf
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180 \
+            --user-agent "AI-Advokat-ZRO-Reconstruction/1.0" \
+            "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-lKlS.pdf" -o /tmp/zro-124-2025.pdf
+
+          pdfinfo /tmp/zro-2023.pdf > /tmp/zro-2023-pdfinfo.txt
+          pdfinfo /tmp/zro-39-2025.pdf > /tmp/zro-39-pdfinfo.txt
+          pdfinfo /tmp/zro-74-2025.pdf > /tmp/zro-74-pdfinfo.txt
+          pdfinfo /tmp/zro-124-2025.pdf > /tmp/zro-124-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+108$" /tmp/zro-2023-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+2$" /tmp/zro-39-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+4$" /tmp/zro-74-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+1$" /tmp/zro-124-pdfinfo.txt
+
+          BASE_SHA="$(sha256sum /tmp/zro-2023.pdf | cut -d' ' -f1)"
+          AMEND39_SHA="$(sha256sum /tmp/zro-39-2025.pdf | cut -d' ' -f1)"
+          AMEND74_SHA="$(sha256sum /tmp/zro-74-2025.pdf | cut -d' ' -f1)"
+          AMEND124_SHA="$(sha256sum /tmp/zro-124-2025.pdf | cut -d' ' -f1)"
+          test "$BASE_SHA" = "f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655"
+          test "$AMEND39_SHA" = "d112e2449a07a6419ced1359b897758d9a2f6fd5fbc6f168dd8680f4f7bac854"
+          test "$AMEND74_SHA" = "c5289c8e6b015d103bc17beb8686dbaca7b874c2b121888da8927cb320d309ba"
+          test "$AMEND124_SHA" = "a300554b91884449a46ee3b1df2ae168fea9a24e53a12dafa49647e83e0807fd"
+          printf "%s  zro-2023.pdf\n%s  zro-39-2025.pdf\n%s  zro-74-2025.pdf\n%s  zro-124-2025.pdf\n" "$BASE_SHA" "$AMEND39_SHA" "$AMEND74_SHA" "$AMEND124_SHA" > /tmp/source-sha256.txt
+          echo "OFFICIAL SOURCE FINGERPRINTS THROUGH 124/2025: PASS"
+
+      - name: Parse exact 298-article base snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -layout /tmp/zro-2023.pdf /tmp/zro-2023-raw.txt
+          node scripts/clean-official-legal-pdf-text.mjs \
+            /tmp/zro-2023-raw.txt /tmp/zro-2023-clean.txt /tmp/zro-2023-clean-report.json
+
+          cat > /tmp/zro-2023-meta.json <<'EOF'
+          {
+            "instrument_key":"mk:zro",
+            "instrument_title":"Закон за работните односи",
+            "version_id":"official-consolidated-snapshot-2023-111",
+            "source_url":"https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf",
+            "source_sha256":"f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655",
+            "source_issue_number":"through-111/2023",
+            "source_issue_date":"2023-05-30",
+            "status":"historical",
+            "extraction_method":"pdftotext_layout_plus_cleaner",
+            "human_review_status":"pending",
+            "allowed_gaps":["98","253","254","255"]
+          }
+          EOF
+
+          node scripts/parse-mk-legal-text.mjs /tmp/zro-2023-clean.txt /tmp/zro-2023-meta.json /tmp/zro-2023.ndjson
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zro-2023.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          assert m["article_count"]==298, m
+          assert m["warning_count"]==5, m
+          assert len(arts)==298, len(arts)
+          unresolved=sorted((x["code"],x.get("article")) for x in m["warnings"] if x["severity"] in ("stop","warning"))
+          assert unresolved==sorted([
+            ("amending_act_contamination","2"),
+            ("mixed_script_token","259"),
+            ("mixed_script_token","264"),
+            ("mixed_script_token","265"),
+            ("mixed_script_token","266-в")
+          ]), unresolved
+          allowed=sorted(x["article"] for x in m["warnings"] if x["code"]=="allowed_gap")
+          assert allowed==["253","254","255","98"], allowed
+          a104=next(x for x in arts if x["article_number_normalized"]=="104")
+          normative104="Договорот за вработување работодавачот го прекинува кога работникот ќе наполни 64 години возраст и 15 години пензиски стаж, доколку со друг закон поинаку не е уредено."
+          compact104=" ".join(a104["article_text"].split())
+          assert compact104.startswith(normative104), a104["article_text"]
+          assert a104["article_text"].count("VIII ПЛАЌАЊЕ НА РАБОТАТА")==1, a104["article_text"]
+          assert a104["article_text"].count("Вид на плаќање")==1, a104["article_text"]
+          assert a104["article_text"].split().count("друг")==1
+          assert not any(x["article_number_normalized"]=="104-а" for x in arts)
+          print("RAW BASE 298 + 10-FINDING REVIEW QUEUE GATE: PASS")
+          PY
+
+      - name: Derive fail-closed reviewed 2023 base
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/derive-reviewed-zro-2023-base.mjs \
+            /tmp/zro-2023.ndjson \
+            ingest/mk/audits/zro-2023-parser-review-dispositions-2026-10-11.json \
+            /tmp/zro-2023-reviewed.ndjson \
+            /tmp/zro-2023-reviewed-log.json
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zro-2023-reviewed.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          by={x["article_number_normalized"]:x for x in arts}
+          log=json.loads(Path("/tmp/zro-2023-reviewed-log.json").read_text())
+
+          assert m["article_count"]==298
+          assert m["warning_count"]==0, m
+          assert not [x for x in m["warnings"] if x["severity"] in ("stop","warning")], m["warnings"]
+          assert m["reviewed_base"]["raw_source_preserved"] is True
+          assert m["reviewed_base"]["current_law_authority"] is False
+          assert m["reviewed_base"]["human_gate_approved"] is False
+          assert len(m["reviewed_base"]["transformations"])==6
+          assert m["reviewed_base"]["deleted_gap_articles"]==["98","253","254","255"]
+
+          expected2="Цел на законот е вклучување на работници во работниот процес, како и обезбедување на усогласено одвивање на тој процес, при што се почитува правото на работниците на слобода на трудот, достоинство и заштита на интересите на работниците во работниот однос."
+          assert by["2"]["article_text"]==expected2, by["2"]["article_text"]
+          assert "Пречистениот текст на Законот" not in by["2"]["article_text"]
+
+          expected104="Договорот за вработување работодавачот го прекинува кога работникот ќе наполни 64 години возраст и 15 години пензиски стаж, доколку со друг закон поинаку не е уредено."
+          assert by["104"]["article_text"]==expected104, by["104"]["article_text"]
+          assert "VIII ПЛАЌАЊЕ НА РАБОТАТА" not in by["104"]["article_text"]
+          assert "Вид на плаќање" not in by["104"]["article_text"]
+          assert by["104"]["reviewed_derivation"]["kind"]=="next_section_heading_boundary"
+          assert by["104"]["reviewed_derivation"]["raw_source_preserved"] is True
+
+          expected_tokens={
+            "259":("зaтекне","затекне"),
+            "264":("членoви","членови"),
+            "265":("платa","плата"),
+            "266-в":("Инспекторoт","Инспекторот")
+          }
+          for article,(old,new) in expected_tokens.items():
+            assert old not in by[article]["article_text"], (article,old)
+            assert new in by[article]["article_text"], (article,new)
+            assert by[article]["reviewed_derivation"]["raw_source_preserved"] is True
+
+          assert log["verdict"]=="REVIEWED_BASE_READY"
+          assert log["article_count"]==298
+          assert len(log["transformations"])==6
+          assert log["raw_source_preserved"] is True
+          assert log["human_gate_approved"] is False
+          print("ZRO 2023 REVIEWED BASE: PASS")
+          PY
+
+      - name: Re-extract and verify OG 39/2025 amendment topology
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -raw /tmp/zro-39-2025.pdf /tmp/zro-39-raw.txt
+          node scripts/extract-zro-amendment-act.mjs \
+            /tmp/zro-39-raw.txt /tmp/zro-39-act.txt /tmp/zro-39-segment.json 911
+
+          cat > /tmp/zro-39-meta.json <<'EOF'
+          {
+            "instrument_key":"mk:zro",
+            "instrument_title":"Закон за работните односи",
+            "amendment_title":"Закон за изменување и дополнување на Законот за работните односи",
+            "source_url":"https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-Jv8C.pdf",
+            "source_sha256":"d112e2449a07a6419ced1359b897758d9a2f6fd5fbc6f168dd8680f4f7bac854",
+            "source_issue_number":"39/2025",
+            "source_issue_date":"2025-02-20",
+            "effective_date":"2025-02-20",
+            "application_date":"2025-02-20"
+          }
+          EOF
+
+          node scripts/parse-mk-amendment-text.mjs /tmp/zro-39-act.txt /tmp/zro-39-meta.json /tmp/zro-39-events.ndjson
+
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zro-39-events.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          ev=[x for x in rows if x.get("type")=="amendment_event"]
+          assert m["amendment_article_count"]==4, m
+          assert m["event_count"]==4, m
+          assert len(ev)==4, len(ev)
+          by={x["amendment_article_number"]:x for x in ev}
+          assert by["1"]["target_article_number"]=="104", by["1"]
+          assert "друг" in by["1"]["event_text"] and "се брише" in by["1"]["event_text"]
+          assert by["2"]["target_article_number"]=="104", by["2"]
+          assert by["2"]["inserted_article_numbers"]==["104-а"], by["2"]
+          assert "67 години" in by["2"]["event_text"]
+          assert by["3"]["target_article_number"] is None, by["3"]
+          assert "30 дена" in by["3"]["event_text"]
+          assert by["4"]["target_article_number"] is None, by["4"]
+          assert "влегува во сила" in by["4"]["event_text"]
+          print("OG 39/2025 EVENT TOPOLOGY: PASS")
+          PY
+
+      - name: Apply deterministic plan offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/apply-amendments.mjs \
+            /tmp/zro-2023-reviewed.ndjson \
+            ingest/mk/plans/zro-39-2025-reconstruction-plan.json \
+            /tmp/zro-through-39-2025.ndjson \
+            /tmp/zro-through-39-2025-merge-log.json
+
+      - name: Verify exact candidate and fail closed on promotion
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          rows=[json.loads(x) for x in Path("/tmp/zro-through-39-2025.ndjson").read_text().splitlines() if x.strip()]
+          manifest=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          by={x["article_number_normalized"]:x for x in arts}
+          log=json.loads(Path("/tmp/zro-through-39-2025-merge-log.json").read_text())
+
+          assert manifest["article_count"]==299, manifest
+          assert len(arts)==299, len(arts)
+          assert manifest["instrument_version_label"]=="derived-candidate-through-39/2025"
+          assert [x["issue_number"] for x in manifest["source_chain"]]==["through-111/2023","39/2025"]
+
+          expected104="Договорот за вработување работодавачот го прекинува кога работникот ќе наполни 64 години возраст и 15 години пензиски стаж, доколку со закон поинаку не е уредено."
+          assert by["104"]["article_text"]==expected104, by["104"]["article_text"]
+
+          expected_heading="Продолжување на работен однос на избрани и именувани лица"
+          assert by["104-а"]["article_heading"]==expected_heading, by["104-а"].get("article_heading")
+          assert "најмногу до 67 години возраст" in by["104-а"]["article_text"]
+          assert "најдоцна до 31 август" in by["104-а"]["article_text"]
+          assert by["104-а"]["source"]["sha256"]=="d112e2449a07a6419ced1359b897758d9a2f6fd5fbc6f168dd8680f4f7bac854"
+          assert by["104"]["derived_from"][-1]["issue_number"]=="39/2025"
+
+          assert log["verdict"]=="APPLIED", log
+          assert log["summary"]["operations"]==4, log["summary"]
+          assert log["summary"]["changed_articles"]==2, log["summary"]
+          assert log["summary"]["inserted"]==["104-а"], log["summary"]
+          assert log["summary"]["non_text"]==[
+            {"amendment_article":3,"kind":"transitional"},
+            {"amendment_article":4,"kind":"entry_into_force"}
+          ], log["summary"]
+          assert log["summary"]["article_count_before"]==298
+          assert log["summary"]["article_count_after"]==299
+
+          for a in arts:
+            assert a["status"]!="current_consolidated", a["article_number_normalized"]
+            assert a["human_review_status"]=="pending", a["article_number_normalized"]
+            assert a["instrument_version_label"]=="derived-candidate-through-39/2025", a["article_number_normalized"]
+
+          print("ZRO 39/2025 OFFLINE CANDIDATE: PASS")
+          print("candidate_articles=299")
+          print("changed_articles=2")
+          print("human_gate=pending")
+          print("database_writes=0")
+          PY
+
+      - name: Re-extract and verify OG 74/2025 amendment topology
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -raw /tmp/zro-74-2025.pdf /tmp/zro-74-raw.txt
+          node scripts/extract-zro-amendment-act.mjs \
+            /tmp/zro-74-raw.txt /tmp/zro-74-act.txt /tmp/zro-74-segment.json 911
+
+          cat > /tmp/zro-74-meta.json <<'EOF'
+          {
+            "instrument_key":"mk:zro",
+            "instrument_title":"Закон за работните односи",
+            "amendment_title":"Закон за изменување на Законот за работните односи",
+            "source_url":"https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-3i9b.pdf",
+            "source_sha256":"c5289c8e6b015d103bc17beb8686dbaca7b874c2b121888da8927cb320d309ba",
+            "source_issue_number":"74/2025",
+            "source_issue_date":"2025-04-08",
+            "effective_date":"2025-04-16",
+            "application_date":"2025-04-16"
+          }
+          EOF
+
+          node scripts/parse-mk-amendment-text.mjs /tmp/zro-74-act.txt /tmp/zro-74-meta.json /tmp/zro-74-events.ndjson
+
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zro-74-events.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          ev=[x for x in rows if x.get("type")=="amendment_event"]
+          plan=json.loads(Path("ingest/mk/plans/zro-74-2025-reconstruction-plan.json").read_text())
+
+          assert m["amendment_article_count"]==26, m
+          assert m["event_count"]==26, m
+          assert len(ev)==26, len(ev)
+          assert m["warning_count"]==1, m
+          assert m["warnings"]==["No target article detected in amendment act article 26"], m
+
+          by={int(x["amendment_article_number"]):x for x in ev}
+          assert sorted(by)==list(range(1,27))
+          assert by[26]["target_article_number"] is None
+          assert "осмиот ден" in by[26]["event_text"]
+
+          def compact(s):
+            return re.sub(r"\s+"," ",s).strip()
+
+          ops_by={}
+          for op in plan["operations"]:
+            ops_by.setdefault(op["amendment_article"],[]).append(op)
+          assert sorted(ops_by)==list(range(1,27))
+
+          for n in range(1,27):
+            event_text=compact(by[n]["event_text"])
+            for op in ops_by[n]:
+              source=compact(op["source_text"])
+              assert source.casefold() in event_text.casefold(), (n,source,event_text)
+
+          assert by[13]["target_article_number"]=="213-б"
+          assert by[20]["target_article_number"]=="258-б"
+          assert by[24]["target_article_number"]=="266-б"
+          print("OG 74/2025 EVENT + PLAN PROVENANCE: PASS")
+          PY
+
+      - name: Apply deterministic 74/2025 plan offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/apply-amendments.mjs \
+            /tmp/zro-through-39-2025.ndjson \
+            ingest/mk/plans/zro-74-2025-reconstruction-plan.json \
+            /tmp/zro-through-74-2025.ndjson \
+            /tmp/zro-through-74-2025-merge-log.json
+
+      - name: Verify exact through-74 candidate and fail closed on promotion
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          rows=[json.loads(x) for x in Path("/tmp/zro-through-74-2025.ndjson").read_text().splitlines() if x.strip()]
+          manifest=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          by={x["article_number_normalized"]:x for x in arts}
+          log=json.loads(Path("/tmp/zro-through-74-2025-merge-log.json").read_text())
+
+          assert manifest["article_count"]==299, manifest
+          assert len(arts)==299
+          assert manifest["instrument_version_label"]=="derived-candidate-through-74/2025"
+          assert [x["issue_number"] for x in manifest["source_chain"]]==["through-111/2023","39/2025","74/2025"]
+
+          assert "доколку со закон поинаку не е уредено" in by["104"]["article_text"]
+          assert "најмногу до 67 години возраст" in by["104-а"]["article_text"]
+
+          assert "министерот за економија и труд" in by["110"]["article_text"]
+          assert "министерот за труд и социјална политика" not in by["110"]["article_text"]
+
+          assert "министерот за дигитална транформација" in by["191"]["article_text"]
+          assert "министерот за информатичко општество и администрација" not in by["191"]["article_text"]
+
+          assert by["213-б"]["article_text"].count("(1)")>=1
+          assert "(5) Начинот на работа на Комисијата" in by["213-б"]["article_text"]
+
+          assert "Министерството за економија и труд" in by["213-г"]["article_text"]
+          assert "Mинистерството" not in by["213-г"]["article_text"]
+          assert "инспекциски надзор во втор степен" in by["213-г"]["article_text"]
+
+          assert "Mинистерството" not in by["231"]["article_text"]
+          assert "Министерството за економија и труд" in by["231"]["article_text"]
+
+          assert by["258-б"]["article_text"].startswith("Министерството за економија и труд")
+          assert "кваратален преглед" in by["258-б"]["article_text"]
+
+          assert by["266-б"]["article_text"].startswith("(1) Прекршочна комисија формира министерот за економија и труд.")
+          assert "Министерот за економија и труд" in by["266-б"]["article_text"]
+
+          assert log["verdict"]=="APPLIED", log
+          assert log["summary"]["operations"]==40, log["summary"]
+          assert log["summary"]["changed_articles"]==25, log["summary"]
+          assert log["summary"]["inserted"]==[], log["summary"]
+          assert log["summary"]["repealed"]==[], log["summary"]
+          assert log["summary"]["non_text"]==[{"amendment_article":26,"kind":"entry_into_force"}], log["summary"]
+          assert log["summary"]["article_count_before"]==299
+          assert log["summary"]["article_count_after"]==299
+          assert log["summary"]["new_parser_warnings"]==0, log["summary"]
+
+          for a in arts:
+            assert a["status"]!="current_consolidated", a["article_number_normalized"]
+            assert a["human_review_status"]=="pending", a["article_number_normalized"]
+            assert a["instrument_version_label"]=="derived-candidate-through-74/2025", a["article_number_normalized"]
+
+          print("ZRO 74/2025 OFFLINE CANDIDATE: PASS")
+          print("candidate_articles=299")
+          print("changed_articles=25")
+          print("operations=40")
+          print("human_gate=pending")
+          print("database_writes=0")
+          PY
+
+      - name: Re-extract and verify OG 124/2025 amendment topology
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -raw /tmp/zro-124-2025.pdf /tmp/zro-124-raw.txt
+          node scripts/extract-zro-amendment-act.mjs \
+            /tmp/zro-124-raw.txt /tmp/zro-124-act.txt /tmp/zro-124-segment.json
+
+          cat > /tmp/zro-124-meta.json <<'EOF'
+          {
+            "instrument_key":"mk:zro",
+            "instrument_title":"Закон за работните односи",
+            "amendment_title":"Закон за изменување на Законот за работните односи",
+            "source_url":"https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-lKlS.pdf",
+            "source_sha256":"a300554b91884449a46ee3b1df2ae168fea9a24e53a12dafa49647e83e0807fd",
+            "source_issue_number":"124/2025",
+            "source_issue_date":"2025-06-19",
+            "effective_date":"2025-06-19",
+            "application_date":"2025-06-19"
+          }
+          EOF
+
+          node scripts/parse-mk-amendment-text.mjs /tmp/zro-124-act.txt /tmp/zro-124-meta.json /tmp/zro-124-events.ndjson
+
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zro-124-events.ndjson").read_text().splitlines() if x.strip()]
+          m=rows[0]
+          ev=[x for x in rows if x.get("type")=="amendment_event"]
+          plan=json.loads(Path("ingest/mk/plans/zro-124-2025-reconstruction-plan.json").read_text())
+
+          assert m["amendment_article_count"]==2, m
+          assert m["event_count"]==2, m
+          assert len(ev)==2, len(ev)
+          by={int(x["amendment_article_number"]):x for x in ev}
+          assert by[1]["target_article_number"]=="212", by[1]
+          assert "10%" in by[1]["event_text"] and "5%" in by[1]["event_text"]
+          assert by[2]["target_article_number"] is None, by[2]
+          assert "со денот на објавувањето" in by[2]["event_text"]
+
+          def compact(s):
+            return re.sub(r"\s+"," ",s).strip()
+          ops_by={int(x["amendment_article"]):x for x in plan["operations"]}
+          assert sorted(ops_by)==[1,2]
+          for n in [1,2]:
+            assert compact(ops_by[n]["source_text"]).casefold() in compact(by[n]["event_text"]).casefold(), (n,ops_by[n]["source_text"],by[n]["event_text"])
+          print("OG 124/2025 EVENT + PLAN PROVENANCE: PASS")
+          PY
+
+      - name: Apply deterministic 124/2025 plan offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/apply-amendments.mjs \
+            /tmp/zro-through-74-2025.ndjson \
+            ingest/mk/plans/zro-124-2025-reconstruction-plan.json \
+            /tmp/zro-through-124-2025.ndjson \
+            /tmp/zro-through-124-2025-merge-log.json
+
+      - name: Verify exact through-124 candidate and fail closed on promotion
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path("/tmp/zro-through-124-2025.ndjson").read_text().splitlines() if x.strip()]
+          manifest=rows[0]
+          arts=[x for x in rows if x.get("type")=="article"]
+          by={x["article_number_normalized"]:x for x in arts}
+          log=json.loads(Path("/tmp/zro-through-124-2025-merge-log.json").read_text())
+
+          assert manifest["article_count"]==299, manifest
+          assert len(arts)==299
+          assert manifest["instrument_version_label"]=="derived-candidate-through-124/2025"
+          assert [x["issue_number"] for x in manifest["source_chain"]]==["through-111/2023","39/2025","74/2025","124/2025"]
+
+          art212=by["212"]["article_text"]
+          m=re.search(r"\(1\)(.*?)(?=\n\(2\)|$)",art212,re.S)
+          assert m, art212
+          p1=m.group(1)
+          assert "5%" in p1, p1
+          assert "10%" not in p1, p1
+          assert by["212"]["derived_from"][-1]["issue_number"]=="124/2025"
+
+          assert log["verdict"]=="APPLIED", log
+          assert log["summary"]["operations"]==2, log["summary"]
+          assert log["summary"]["changed_articles"]==1, log["summary"]
+          assert log["summary"]["inserted"]==[], log["summary"]
+          assert log["summary"]["repealed"]==[], log["summary"]
+          assert log["summary"]["non_text"]==[{"amendment_article":2,"kind":"entry_into_force"}], log["summary"]
+          assert log["summary"]["article_count_before"]==299
+          assert log["summary"]["article_count_after"]==299
+          assert log["summary"]["new_parser_warnings"]==0, log["summary"]
+
+          for a in arts:
+            assert a["status"]!="current_consolidated", a["article_number_normalized"]
+            assert a["human_review_status"]=="pending", a["article_number_normalized"]
+            assert a["instrument_version_label"]=="derived-candidate-through-124/2025", a["article_number_normalized"]
+
+          print("ZRO 124/2025 OFFLINE CANDIDATE: PASS")
+          print("candidate_articles=299")
+          print("changed_articles=1")
+          print("operations=2")
+          print("new_parser_warnings==0")
+          print("human_gate=pending")
+          print("database_writes=0")
+          PY
+
+      - name: Upload review-only artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zro-74-2025-offline-candidate
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            /tmp/source-sha256.txt
+            /tmp/zro-2023-pdfinfo.txt
+            /tmp/zro-39-pdfinfo.txt
+            /tmp/zro-74-pdfinfo.txt
+            /tmp/zro-124-pdfinfo.txt
+            /tmp/zro-2023-clean-report.json
+            /tmp/zro-2023.ndjson
+            /tmp/zro-2023-reviewed.ndjson
+            /tmp/zro-2023-reviewed-log.json
+            /tmp/zro-39-segment.json
+            /tmp/zro-39-events.ndjson
+            /tmp/zro-through-39-2025.ndjson
+            /tmp/zro-through-39-2025-merge-log.json
+            /tmp/zro-74-segment.json
+            /tmp/zro-74-events.ndjson
+            /tmp/zro-through-74-2025.ndjson
+            /tmp/zro-through-74-2025-merge-log.json

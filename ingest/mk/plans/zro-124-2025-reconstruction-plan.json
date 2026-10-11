@@ -1,0 +1,46 @@
+{
+  "engine_input_version": 1,
+  "instrument_key": "mk:zro",
+  "base": {
+    "role": "official_consolidation",
+    "issue_number": "through-111/2023",
+    "issue_date": "2023-05-30",
+    "url": "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf",
+    "sha256": "f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655"
+  },
+  "amendment": {
+    "role": "amendment",
+    "issue_number": "124/2025",
+    "issue_date": "2025-06-19",
+    "url": "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-lKlS.pdf",
+    "sha256": "a300554b91884449a46ee3b1df2ae168fea9a24e53a12dafa49647e83e0807fd",
+    "article_count": 2
+  },
+  "target": {
+    "version_label": "derived-candidate-through-124/2025",
+    "status": "needs_version_review",
+    "valid_from": "2025-06-19",
+    "application_from": "2025-06-19",
+    "valid_to": null,
+    "human_review_status": "pending"
+  },
+  "operations": [
+    {
+      "op": "textual_edit",
+      "amendment_article": 1,
+      "source_text": "Во Законот за работните односи („Службен весник на Република Македонија” број 62/2005, 3/2006, 44/2006, 66/2006, 16/2007, 57/2007, 77/2007, 106/2008, 161/2008, 63/2009, 114/2009, 130/2009, 149/2009, 10/10, 50/10, 52/10, 58/10, 124/10, 132/10, 47/11, 11/12, 39/12, 13/13, 25/13, 170/13, 187/13, 106/14, 113/14, 20/15, 33/15, 72/15, 129/15, 27/16, 134/16 и 120/18 и „Службен весник на Република Северна Македонија” број 110/19, 267/20, 151/21, 288/21, 111/23, 39/25 и 74/25), во членот 212 во ставот (1) во точката 2) бројот „10%“ се заменува со бројот „5%”.",
+      "target": "212",
+      "paragraph": "1",
+      "find": "10%",
+      "replace": "5%",
+      "expected_matches": 1
+    },
+    {
+      "op": "non_text",
+      "amendment_article": 2,
+      "source_text": "Овој закон влегува во сила со денот на објавувањето во „Службен весник на Република Северна Македонија“.",
+      "kind": "entry_into_force",
+      "note": "Immediate entry into force on publication: 2025-06-19."
+    }
+  ]
+}
