@@ -1,0 +1,217 @@
+{
+  "schema_version": "1.0",
+  "jurisdiction": "MK",
+  "instrument_key": "mk:zi",
+  "instrument_title": "Закон за извршување",
+  "source_sha256": "15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55",
+  "source_page_count": 99,
+  "audit_run_id": 38170893630,
+  "audited_on": "2026-10-11",
+  "parser_findings_count": 28,
+  "machine_source_parity": {
+    "production": "PASS_258_OF_258",
+    "staging": "PASS_258_OF_258",
+    "production_staging_digest_match": true,
+    "corpus_sha256": "56a69c8c0d278f237984ad7d0e4271f12e48ee54f5ffd8fdd0f804826b361609",
+    "database_mutation": false
+  },
+  "promotion_blocked": true,
+  "current_version_verified": false,
+  "human_gate_approved": false,
+  "finding_summary": {
+    "mixed_script_token": 11,
+    "editorial_note_contamination": 2,
+    "unexplained_gap": 15
+  },
+  "findings": [
+    {
+      "severity": "stop",
+      "code": "mixed_script_token",
+      "article": "4",
+      "token": "Oдлуката",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "mixed_script_token",
+      "article": "29",
+      "token": "повлeкување",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "mixed_script_token",
+      "article": "33",
+      "token": "ЕКТC",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "mixed_script_token",
+      "article": "68",
+      "token": "Kомората",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "mixed_script_token",
+      "article": "73",
+      "token": "члeнот",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "mixed_script_token",
+      "article": "74",
+      "token": "Kомората",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "mixed_script_token",
+      "article": "86",
+      "token": "коe",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "warning",
+      "code": "editorial_note_contamination",
+      "article": "104",
+      "marker": "Забелешка наместо попис",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "mixed_script_token",
+      "article": "110",
+      "token": "определeна",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "mixed_script_token",
+      "article": "163",
+      "token": "прoдажба",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "mixed_script_token",
+      "article": "245",
+      "token": "диплoмирани",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "mixed_script_token",
+      "article": "261",
+      "token": "Oдмерувањето",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "warning",
+      "code": "editorial_note_contamination",
+      "article": "269",
+      "marker": "*Членот 269 е изменет, види: член 1 од Законот за изменување на Законот",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "95",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "240",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "241",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "242",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "243",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "244",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "247",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "248",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "250",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "252",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "256",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "257",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "258",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "259",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "severity": "stop",
+      "code": "unexplained_gap",
+      "article": "260",
+      "review_state": "PENDING_HUMAN_REVIEW"
+    }
+  ],
+  "review_rules": [
+    "Do not silently normalize mixed-script tokens; compare each token to the rendered official PDF/source layer.",
+    "Do not remove editorial notes unless Human Gate confirms they are non-normative source annotations and preserves provenance.",
+    "Do not synthesize missing articles; verify each gap as deleted/abolished/not present in the governing consolidated source.",
+    "Any text correction requires a separately versioned reviewed record; never overwrite the source-faithful extraction.",
+    "Article 218 pending Constitutional Court review overlay remains mandatory and separate from text parity.",
+    "No current-version promotion until every finding is resolved or explicitly accepted by Human Gate with rationale."
+  ]
+}

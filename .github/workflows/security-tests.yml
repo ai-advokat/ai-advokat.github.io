@@ -145,3 +145,5 @@ jobs:
         run: npm run test:zi-date-matrix
       - name: Article legal-status overlay runtime gate
         run: npm run test:legal-status-overlays
+      - name: ZI source-parity evidence gate
+        run: npm run test:zi-source-parity

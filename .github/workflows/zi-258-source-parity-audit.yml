@@ -1,0 +1,227 @@
+name: ZI 258-article source parity audit
+
+on:
+  push:
+    branches:
+      - zi-258-source-parity-audit-2026-10-11
+    paths:
+      - ".github/workflows/zi-258-source-parity-audit.yml"
+      - "scripts/clean-official-legal-pdf-text.mjs"
+      - "scripts/parse-mk-legal-text.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parity-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tools
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Fail closed on missing credentials or D1 identity drift
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node <<'NODE'
+          const fs=require("fs");
+          const strip=(s)=>s.replace(/\/\*[\s\S]*?\*\//g,"").replace(/^\s*\/\/.*$/gm,"");
+          const prod=JSON.parse(strip(fs.readFileSync("wrangler.jsonc","utf8"))).d1_databases?.[0];
+          const stg=JSON.parse(strip(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"))).d1_databases?.[0];
+          if(!prod || prod.database_name!=="ai-advokat-db" || prod.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Production D1 identity drift");
+          if(!stg || stg.binding!=="PREVIEW_DB" || stg.database_name!=="ai-advokat-db-staging" || stg.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") throw new Error("Staging D1 identity drift");
+          if(prod.database_id===stg.database_id) throw new Error("Production/staging collision");
+          console.log("D1 IDENTITIES: PASS");
+          NODE
+
+      - name: Download and fingerprint exact official editorial PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf"
+          curl --fail --location --retry 4 --retry-delay 2 --connect-timeout 20 --max-time 180 \
+            --user-agent "AI-Advokat-ZI-Parity-Audit/1.0" "$URL" -o /tmp/zi.pdf
+          test -s /tmp/zi.pdf
+          head -c 5 /tmp/zi.pdf | grep -q "%PDF-"
+          pdfinfo /tmp/zi.pdf > /tmp/zi-pdfinfo.txt
+          grep -Eq "^Pages:[[:space:]]+99$" /tmp/zi-pdfinfo.txt
+          ACTUAL="$(sha256sum /tmp/zi.pdf | cut -d' ' -f1)"
+          EXPECTED="15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55"
+          test "$ACTUAL" = "$EXPECTED"
+          echo "$ACTUAL" > /tmp/zi.sha256
+          echo "OFFICIAL PDF FINGERPRINT: PASS"
+
+      - name: Parse exact official source into 258 article records
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -layout /tmp/zi.pdf /tmp/zi-raw.txt
+          node scripts/clean-official-legal-pdf-text.mjs /tmp/zi-raw.txt /tmp/zi-clean.txt /tmp/zi-clean-report.json 269
+          cat > /tmp/zi-meta.json <<'EOF'
+          {
+            "instrument_key": "mk:zi",
+            "instrument_title": "Закон за извршување",
+            "version_id": "official-editorial-consolidated-through-154-2023",
+            "source_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf",
+            "source_sha256": "15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55",
+            "source_issue_number": "72/2016; 142/2016; 178/2017; 26/2018; 233/2018; 14/2020; 136/2020; 154/2023",
+            "source_issue_date": "2023-07-20",
+            "status": "needs_version_review",
+            "extraction_method": "pdftotext_layout_plus_cleaner",
+            "human_review_status": "pending"
+          }
+          EOF
+          node scripts/parse-mk-legal-text.mjs /tmp/zi-clean.txt /tmp/zi-meta.json /tmp/zi.ndjson
+          node <<'NODE'
+          const fs=require("fs");
+          const rows=fs.readFileSync("/tmp/zi.ndjson","utf8").split(/\r?\n/).filter(Boolean).map(JSON.parse);
+          const manifest=rows.find(x=>x.type==="ingest_manifest");
+          const arts=rows.filter(x=>x.type==="article");
+          if(arts.length!==258) throw new Error("Parsed article count "+arts.length+" != 258");
+          // This exact official PDF/hash currently yields 28 governed parser findings
+          // under parser v0.3. They are NOT auto-repaired or waived for promotion.
+          // Parity comparison may continue only as a diagnostic; Human Gate remains closed.
+          if(Number(manifest?.warning_count||0)!==28) throw new Error("Unexpected parser warning count: "+manifest?.warning_count+"; expected 28 for governed source hash");
+          const warningSummary=(manifest.warnings||[]).map(w=>({
+            severity:w.severity||null,
+            code:w.code||null,
+            article:w.article_number||w.article||null,
+            line:w.line||null
+          }));
+          fs.writeFileSync("/tmp/zi-warning-summary.json",JSON.stringify({
+            source_sha256:"15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55",
+            parser_warning_count:Number(manifest.warning_count),
+            promotion_blocked:true,
+            findings:warningSummary
+          },null,2)+"\n");
+          const nums=new Set(arts.map(x=>x.article_number_normalized));
+          if(!nums.has("1") || !nums.has("218") || !nums.has("269")) throw new Error("Required article anchors missing");
+          for(const n of ["240","241","242","243","244"]) if(nums.has(n)) throw new Error("Abolished article unexpectedly parsed: "+n);
+          if(nums.size!==258) throw new Error("Duplicate normalized article number");
+          console.log("OFFICIAL SOURCE PARSE: PASS 258/258 WITH 28 GOVERNED REVIEW FINDINGS");
+          console.log("CURRENT-LAW PROMOTION REMAINS BLOCKED");
+          NODE
+
+      - name: Read complete bound ZI article sets from production and staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          SQL="SELECT lav.article_number,
+                      lav.article_number_normalized,
+                      lav.article_heading,
+                      lav.article_text,
+                      lav.status,
+                      lav.human_review_status,
+                      lav.source_url,
+                      lav.source_sha256,
+                      v.version_label,
+                      v.version_class,
+                      v.is_current,
+                      v.human_review_status AS version_human_review_status
+                 FROM legal_article_versions lav
+                 JOIN legal_instruments li ON li.id=lav.instrument_id
+                 JOIN instrument_versions v ON v.id=lav.instrument_version_id
+                WHERE li.canonical_key='mk:zi'
+                ORDER BY lav.id;"
+
+          npx wrangler d1 execute ai-advokat-db --remote --json --command "$SQL" > /tmp/zi-production.json
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "$SQL" > /tmp/zi-staging.json
+
+      - name: Compare every article body and metadata
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const crypto=require("crypto");
+          const parsed=fs.readFileSync("/tmp/zi.ndjson","utf8").split(/\r?\n/).filter(Boolean).map(JSON.parse).filter(x=>x.type==="article");
+
+          function d1Rows(path){
+            const j=JSON.parse(fs.readFileSync(path,"utf8"));
+            const rows=j?.[0]?.results;
+            if(!Array.isArray(rows)) throw new Error(path+" invalid D1 JSON");
+            return rows;
+          }
+          function digest(rows,mode){
+            const parts=rows.map(r=>{
+              const n=String(mode==="parsed" ? r.article_number_normalized : r.article_number_normalized);
+              const h=String(mode==="parsed" ? (r.article_heading||"") : (r.article_heading||""));
+              const t=String(mode==="parsed" ? r.article_text : r.article_text);
+              return n+"\u0000"+h+"\u0000"+t;
+            });
+            return crypto.createHash("sha256").update(parts.join("\u0001"),"utf8").digest("hex");
+          }
+          function compare(target,db){
+            if(db.length!==258) throw new Error(target+": D1 count "+db.length+" != 258");
+            const by=new Map(db.map(r=>[String(r.article_number_normalized),r]));
+            const mismatches=[];
+            for(const a of parsed){
+              const n=String(a.article_number_normalized);
+              const r=by.get(n);
+              if(!r){mismatches.push({article:n,kind:"missing_in_d1"});continue;}
+              if(String(r.article_number)!==String(a.article_number)) mismatches.push({article:n,kind:"article_number",d1:r.article_number,parsed:a.article_number});
+              if(String(r.article_heading||"")!==String(a.article_heading||"")) mismatches.push({article:n,kind:"heading"});
+              if(String(r.article_text)!==String(a.article_text)) mismatches.push({article:n,kind:"text"});
+              if(r.source_url!=="https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf") mismatches.push({article:n,kind:"source_url"});
+              if(r.source_sha256!=="15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55") mismatches.push({article:n,kind:"source_sha256"});
+              if(r.version_label!=="official-editorial-consolidated-through-154/2023") mismatches.push({article:n,kind:"version_label"});
+              if(r.version_class!=="dated_snapshot") mismatches.push({article:n,kind:"version_class"});
+              if(Number(r.is_current)!==0) mismatches.push({article:n,kind:"unexpected_current"});
+              if(r.version_human_review_status!=="pending") mismatches.push({article:n,kind:"unexpected_version_human_gate"});
+              if(r.human_review_status!=="pending") mismatches.push({article:n,kind:"unexpected_article_human_gate"});
+              if(r.status==="current_consolidated") mismatches.push({article:n,kind:"unexpected_current_consolidated"});
+            }
+            if(mismatches.length){
+              fs.writeFileSync("/tmp/zi-"+target+"-mismatches.json",JSON.stringify(mismatches.slice(0,200),null,2)+"\n");
+              throw new Error(target+": "+mismatches.length+" parity mismatches; see artifact");
+            }
+            const pd=digest(parsed,"parsed");
+            const dd=digest(db,"d1");
+            if(pd!==dd) throw new Error(target+": corpus digest mismatch despite row comparison");
+            fs.writeFileSync("/tmp/zi-"+target+"-digest.txt",dd+"\n");
+            console.log(target.toUpperCase()+" 258/258 EXACT ARTICLE PARITY: PASS");
+            console.log(target.toUpperCase()+" CORPUS SHA256: "+dd);
+          }
+
+          compare("production",d1Rows("/tmp/zi-production.json"));
+          compare("staging",d1Rows("/tmp/zi-staging.json"));
+
+          const prodDigest=fs.readFileSync("/tmp/zi-production-digest.txt","utf8").trim();
+          const stgDigest=fs.readFileSync("/tmp/zi-staging-digest.txt","utf8").trim();
+          if(prodDigest!==stgDigest) throw new Error("Production/staging corpus digest mismatch");
+          console.log("PRODUCTION/STAGING ZI CORPUS PARITY: PASS");
+          console.log("READ-ONLY AUDIT: NO DATABASE MUTATION PERFORMED");
+          NODE
+
+      - name: Upload non-text audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zi-258-source-parity-audit
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/zi-pdfinfo.txt
+            /tmp/zi.sha256
+            /tmp/zi-clean-report.json
+            /tmp/zi-warning-summary.json
+            /tmp/zi-production-digest.txt
+            /tmp/zi-staging-digest.txt
+            /tmp/zi-production-mismatches.json
+            /tmp/zi-staging-mismatches.json
