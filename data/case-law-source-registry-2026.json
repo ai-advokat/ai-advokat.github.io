@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "registry_id": "AI_ADVOKAT_CASE_LAW_SOURCE_REGISTRY_2026",
-  "updated_on": "2026-10-10",
+  "updated_on": "2026-10-11",
   "doctrine": [
     "official_origin_first",
     "court_level_and_jurisdiction_visible",
@@ -112,6 +112,28 @@
       ],
       "product_policy": "Preserve the supplied product/origin label in provenance. Product branding never changes the record's authority class.",
       "official_binding_required_before_gpt_case_law_context": true
+    },
+    {
+      "id": "mk-echr-representation-bureau",
+      "jurisdiction": "ECHR/MK",
+      "authority_class": "official_domestic_echr_reference",
+      "official_name": "Биро за застапување на Република Северна Македонија пред Европскиот суд за човекови права",
+      "url": "http://biroescp.gov.mk/пресуди-и-одлуки-на-рм/",
+      "access": "official_public",
+      "ingest": "public_case_index_and_public_translations",
+      "authority_note": "High-value official domestic index/translation source. HUDOC remains the primary ECHR case-law origin for exact application metadata, authoritative text and holding.",
+      "hudoc_binding_required": true
+    },
+    {
+      "id": "mk-judicial-portal-echr-legacy",
+      "jurisdiction": "ECHR/MK",
+      "authority_class": "official_domestic_secondary_jurisprudence_reference",
+      "official_name": "odluki.sud.mk — Пресуди на ЕСЧП против други држави",
+      "url": "http://www.odluki.sud.mk/VSUD/MatraVSUD.nsf/EvropskiSud.xsp",
+      "access": "official_public_legacy",
+      "ingest": "public_metadata_and_selected_translation_reference",
+      "authority_note": "Useful Macedonian-language discovery layer only. Exact ECHR metadata and material propositions require HUDOC verification.",
+      "hudoc_binding_required": true
     }
   ],
   "target_case_record": {
