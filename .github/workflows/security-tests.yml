@@ -147,3 +147,6 @@ jobs:
         run: npm run test:legal-status-overlays
       - name: ZI source-parity evidence gate
         run: npm run test:zi-source-parity
+
+      - name: ZI Human Gate parser-finding dispositions
+        run: npm run test:zi-human-gate-review
