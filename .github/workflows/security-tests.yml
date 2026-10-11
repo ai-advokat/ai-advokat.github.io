@@ -166,3 +166,6 @@ jobs:
 
       - name: ZRO final Human Gate decision pack
         run: npm run test:zro-human-gate-pack
+
+      - name: ZKP official-lineage fail-closed gate
+        run: npm run test:zkp-official-lineage
