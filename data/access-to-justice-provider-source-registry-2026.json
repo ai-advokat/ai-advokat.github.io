@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "registry_id": "AI_ADVOKAT_ACCESS_TO_JUSTICE_PROVIDER_SOURCES_2026",
+  "updated_on": "2026-10-11",
+  "doctrine": [
+    "provider_directory_is_not_legal_authority",
+    "legal_aid_service_information_requires_current_law_binding_for_rights_and_eligibility",
+    "provider_status_requires_live_verification",
+    "source_integrity_quarantine_blocks_referral_and_ingest",
+    "personal_data_minimisation",
+    "provider_activation_requires_human_gate"
+  ],
+  "sources": [
+    {
+      "id": "najdi-advokat",
+      "name": "Најди Адвокат",
+      "source_class": "private_lawyer_directory",
+      "authority_class": "secondary_provider_discovery",
+      "legal_answer_eligible": false,
+      "provider_discovery_eligible": false,
+      "referral_eligible": false,
+      "content_integrity_state": "quarantined",
+      "substantive_legal_claims_require_primary_binding": true
+    },
+    {
+      "id": "myla",
+      "name": "Македонско здружение на млади правници / Macedonian Young Lawyers Association",
+      "source_class": "ngo_legal_aid_and_rule_of_law_provider",
+      "authority_class": "secondary_professional_and_service_information",
+      "legal_answer_eligible": false,
+      "provider_discovery_eligible": true,
+      "referral_eligible": true,
+      "content_integrity_state": "not_flagged",
+      "substantive_legal_claims_require_primary_binding": true
+    },
+    {
+      "id": "loc-guide-law-north-macedonia",
+      "name": "Law Library of Congress — Guide to Law Online: North Macedonia",
+      "source_class": "official_research_directory",
+      "authority_class": "official_research_guidance",
+      "legal_answer_eligible": false,
+      "provider_discovery_eligible": false,
+      "referral_eligible": false,
+      "content_integrity_state": "not_flagged",
+      "substantive_legal_claims_require_primary_binding": true
+    },
+    {
+      "id": "pravnapomos-mk",
+      "name": "Правна Помош / pravnapomos.mk",
+      "source_class": "public_legal_aid_service_portal",
+      "authority_class": "service_guidance_pending_ownership_verification",
+      "legal_answer_eligible": false,
+      "provider_discovery_eligible": true,
+      "referral_eligible": true,
+      "content_integrity_state": "not_flagged",
+      "substantive_legal_claims_require_primary_binding": true
+    }
+  ],
+  "provider_record": {
+    "required": [
+      "source_id",
+      "provider_name",
+      "provider_type",
+      "jurisdiction_or_area",
+      "source_url",
+      "captured_on",
+      "verification_state",
+      "human_review_status"
+    ],
+    "recommended": [
+      "practice_area",
+      "city",
+      "professional_registration_verified",
+      "verification_date",
+      "current_contact_verified",
+      "free_legal_aid_role",
+      "languages",
+      "conflict_status"
+    ]
+  }
+}
