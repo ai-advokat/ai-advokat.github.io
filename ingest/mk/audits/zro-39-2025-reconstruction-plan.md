@@ -25,7 +25,7 @@ The plan starts only from the exact official 2023 consolidated ZRO snapshot:
 - SHA-256 `f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655`;
 - version through OG 111/2023.
 
-Parser v0.3 additionally identified nine legacy-source findings in this 2023 snapshot. Before the amendment engine runs, a separate reviewed-base derivation now resolves all nine against the same official PDF while preserving the raw NDJSON: four officially deleted gaps (98, 253-255), one consolidation-footnote boundary after Article 2, and four exact Unicode homoglyph normalizations. The derived base remains non-current and Human-Gate pending.
+Parser v0.3 identified nine legacy-source findings in this 2023 snapshot. The exact Article 104 preflight then exposed one additional section-heading boundary that the parser had not flagged. Before the amendment engine runs, a separate reviewed-base derivation resolves all ten against the same official PDF while preserving the raw NDJSON: four officially deleted gaps (98, 253-255), one consolidation-footnote boundary after Article 2, one next-section heading boundary after Article 104, and four exact Unicode homoglyph normalizations. The derived base remains non-current and Human-Gate pending.
 
 The base Article 104 reads, in substance and text, that employment terminates at age 64 and 15 years of pension service unless **another law** provides otherwise. OG 39/2025 removes only the word `друг`.
 
@@ -49,13 +49,13 @@ Target status is:
 The offline workflow:
 1. re-downloads the exact 2023 base PDF and 39/2025 amendment PDF;
 2. verifies page counts and SHA-256 fingerprints;
-3. re-parses the raw base to exactly 298 articles and requires the exact reviewed finding topology;
+3. re-parses the raw base to exactly 298 articles, requires the exact nine parser findings plus the independently checked Article 104 heading boundary;
 4. derives a fail-closed 298-article reviewed base with zero unresolved parser warnings while keeping the raw extraction as a separate artifact;
 5. re-parses 39/2025 to exactly four amendment events;
 6. applies the plan with the deterministic amendment engine;
-6. requires exactly 299 candidate articles;
-7. verifies Article 104, inserted Article 104-а, provenance and the two non-text rules;
-8. uploads review artifacts only.
+7. requires exactly 299 candidate articles;
+8. verifies Article 104, inserted Article 104-а, provenance and the two non-text rules;
+9. uploads review artifacts only.
 
 It contains no Cloudflare credentials, Wrangler D1 command, database migration or database write.
 
