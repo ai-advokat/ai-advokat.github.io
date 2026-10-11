@@ -1,0 +1,54 @@
+{
+  "captured_on": "2026-10-11",
+  "source_name": "UN Dag Hammarskjöld Library — Legal Research Resources",
+  "authority_class": "official_research_directory",
+  "source_url": "https://research.un.org/en/legal/websites",
+  "rule": "Directory entries are discovery aids. Legal propositions must resolve to the originating treaty body, court, tribunal or official UN document.",
+  "highlighted_resources": [
+    {
+      "name": "UN Treaty Series Online",
+      "class": "official_treaty_source",
+      "url": "https://treaties.un.org/Pages/AdvanceSearch.aspx?tab=UNTS&clang=_en"
+    },
+    {
+      "name": "OHCHR Treaty Body Database",
+      "class": "official_treaty_body_documents",
+      "url": "https://tbinternet.ohchr.org/"
+    },
+    {
+      "name": "Reports of International Arbitral Awards",
+      "class": "official_UN_arbitral_awards_collection",
+      "url": "https://legal.un.org/riaa/"
+    },
+    {
+      "name": "ICC Legal Tools Database",
+      "class": "official_or_institutional_criminal_law_research_tool",
+      "url": "https://www.legal-tools.org/"
+    },
+    {
+      "name": "ICTY Court Records / IRMCT",
+      "class": "official_international_criminal_tribunal_records",
+      "url": "https://cld.irmct.org/"
+    },
+    {
+      "name": "MICT Case Law Database",
+      "class": "official_international_criminal_case_law",
+      "url": "https://cld.irmct.org/"
+    },
+    {
+      "name": "UNCITRAL CLOUT",
+      "class": "official_UN_case_law_abstracts",
+      "url": "https://uncitral.un.org/en/case_law"
+    },
+    {
+      "name": "UN Appeals Tribunal",
+      "class": "official_UN_internal_justice",
+      "url": "https://www.un.org/en/internaljustice/unat/"
+    },
+    {
+      "name": "UN Dispute Tribunal",
+      "class": "official_UN_internal_justice",
+      "url": "https://www.un.org/en/internaljustice/undt/"
+    }
+  ]
+}
