@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "jurisdiction": "MK",
+  "instrument_key": "mk:zi",
+  "instrument_title": "Закон за извршување",
+  "reviewed_on": "2026-10-11",
+  "status": "DERIVED_REVIEWED_REPRESENTATIONS_PRE_CURRENT_GATE",
+  "source": {
+    "url": "https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf",
+    "sha256": "15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55",
+    "page_count": 99
+  },
+  "governance": {
+    "raw_source_records_immutable": true,
+    "current_law_authority": false,
+    "current_version_verified": false,
+    "human_gate_approved": false,
+    "fingerprint_match_required": true,
+    "fail_closed_on_marker_mismatch": true
+  },
+  "representations": [
+    {
+      "id": "mk:zi:art:4:reviewed-derived:v1",
+      "article_number": "4",
+      "derivation_kind": "editorial_suffix_removed",
+      "source_page": 1,
+      "reviewed_text": "Извршувањето заради остварување на парично побарување ќе се спроведе во обем што е потребен за намирување на тоа побарување.",
+      "raw_marker_required": "Редакциски пречистениот текст на Законот за извршување ги опфаќа:",
+      "review_basis": "The editorial consolidation footnote begins after the complete normative Article 4 sentence; it is source provenance, not Article 4 normative text.",
+      "representation_review_state": "reviewed_structure",
+      "legal_currency_state": "pending_current_gate",
+      "raw_source_preserved": true
+    },
+    {
+      "id": "mk:zi:art:104:reviewed-derived:v1",
+      "article_number": "104",
+      "derivation_kind": "next_article_heading_removed",
+      "source_page": 49,
+      "reviewed_text": "(1) За пописот и процената извршителот составува записник.\n(2) Во записникот, покрај другото, посебно се назначуваат поединечно попишаните предмети, нивната проценета вредност, изјавите од странките и од учесниците во постапката, како и изјавите од трети лица за постоењето на права што го спречуваат извршувањето.\n(3) Записникот за извршен попис на подвижни предмети со вредност поголема од 1.000 евра, задолжително се доставува до Заложниот регистар заради упис на заложното право.",
+      "raw_marker_required": "Забелешка наместо попис",
+      "review_basis": "The marker is the heading immediately preceding Article 105 and is not part of Article 104.",
+      "representation_review_state": "reviewed_structure",
+      "legal_currency_state": "pending_current_gate",
+      "raw_source_preserved": true
+    },
+    {
+      "id": "mk:zi:art:269:reviewed-derived:v1",
+      "article_number": "269",
+      "derivation_kind": "official_amendment_applied_and_editorial_suffix_removed",
+      "source_page": 96,
+      "reviewed_text": "Овој закон влегува во сила осмиот ден од денот на објавувањето во „Службен весник на Република Македонија“ а ќе започне да се применува од 1 јануари 2017 година.",
+      "raw_marker_required": "*Членот 269 е изменет, види:",
+      "base_phrase_required": "по четири месеци од денот на неговото влегување во сила",
+      "amendment_replacement": "од 1 јануари 2017 година",
+      "amendment": {
+        "gazette_issue": "142/2016",
+        "source_url": "https://www.slvesnik.com.mk/Issues/6f8d996e802342e0ae27878062c8ecff.pdf",
+        "publication_date": "2016-08-01",
+        "entry_into_force_date": "2016-08-01",
+        "applies_to_article": "269",
+        "official_editorial_source_reproduces_amendment": true
+      },
+      "applies_from": "2016-08-01",
+      "review_basis": "The editorial consolidated source reproduces the amendment instruction replacing the original four-month application phrase with 'од 1 јануари 2017 година'. The starred note and reproduced amendment material remain provenance, not normative Article 269 body.",
+      "representation_review_state": "reviewed_structure_and_amendment_derivation",
+      "legal_currency_state": "pending_current_gate",
+      "raw_source_preserved": true
+    }
+  ]
+}
