@@ -122,3 +122,19 @@ test("CLSRC10 BAILII remains manual secondary discovery and automated access is 
     assert.ok(registry.target_case_record.recommended.includes(key),key);
   }
 });
+
+
+test("CLSRC11 Judicial Portal search results fail closed until record kind and document provenance are resolved",()=>{
+  const p=registry.sources.find(x=>x.id==="mk-judicial-portal");
+  assert.ok(p);
+  assert.equal(p.displayed_result_count_snapshot.count,899778);
+  assert.match(p.displayed_result_count_snapshot.scope,/not a verified count of final judgments/i);
+  assert.ok(Array.isArray(p.supreme_court_interpretive_sections));
+  for(const label of ["Начелни правни мислења","Начелни ставови","Правни мислења и заклучоци","Сентенци"]){
+    assert.ok(p.supreme_court_interpretive_sections.includes(label),label);
+  }
+  for(const key of ["record_kind","displayed_decision_date","internal_document_date","date_conflict_status","related_case_numbers","authority_subtype"]){
+    assert.ok(registry.target_case_record.recommended.includes(key),key);
+  }
+  assert.equal(p.privacy_minimisation,true);
+});

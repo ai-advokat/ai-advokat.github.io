@@ -44,7 +44,20 @@
         "authenticated e-delivery",
         "private case files",
         "personal-data bulk profiling"
-      ]
+      ],
+      "public_surface_note": "Search results may include judgments, rulings, decisions and non-authority procedural records such as hearing minutes. Record kind must be classified before authority use.",
+      "displayed_result_count_snapshot": {
+        "captured_on": "2026-10-11",
+        "count": 899778,
+        "scope": "unspecified public search UI; not a verified count of final judgments or unique cases"
+      },
+      "supreme_court_interpretive_sections": [
+        "Начелни правни мислења",
+        "Начелни ставови",
+        "Правни мислења и заклучоци",
+        "Сентенци"
+      ],
+      "privacy_minimisation": true
     },
     {
       "id": "mk-ministry-court-directory",
@@ -263,7 +276,14 @@
       "domestic_effect_class",
       "ratio_or_holding_status",
       "subsequent_treatment",
-      "distinguished_or_overruled_status"
+      "distinguished_or_overruled_status",
+      "record_kind",
+      "displayed_decision_date",
+      "internal_document_date",
+      "internal_session_date",
+      "date_conflict_status",
+      "related_case_numbers",
+      "authority_subtype"
     ]
   }
 }

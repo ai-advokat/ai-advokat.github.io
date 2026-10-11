@@ -12,7 +12,12 @@
     "title",
     "source_url",
     "captured_on",
-    "human_review_status"
+    "human_review_status",
+    "is_full_text",
+    "current_law_authority",
+    "case_law_authority",
+    "official_gazette_binding_required",
+    "needs_full_text_fetch"
   ],
   "properties": {
     "chunk_id": {
@@ -127,5 +132,40 @@
       "type": "string"
     }
   },
-  "additionalProperties": true
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "is_full_text": {
+            "const": false
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "needs_full_text_fetch"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "chunk_type": {
+            "const": "official_source_index"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "is_full_text": {
+            "const": false
+          },
+          "current_law_authority": {
+            "const": false
+          }
+        }
+      }
+    }
+  ]
 }
