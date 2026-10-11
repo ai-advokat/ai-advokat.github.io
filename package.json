@@ -81,7 +81,8 @@
     "test:zi-current-law": "node --no-warnings --test test/zi-current-law-audit.test.mjs",
     "test:zi-date-matrix": "node --no-warnings --test test/zi-application-date-matrix.test.mjs",
     "test:legal-status-overlays": "node --no-warnings --test test/legal-status-overlays.test.mjs test/legal-status-overlay-runtime.test.mjs",
-    "test:zi-source-parity": "node --no-warnings --test test/zi-source-parity-audit.test.mjs"
+    "test:zi-source-parity": "node --no-warnings --test test/zi-source-parity-audit.test.mjs",
+    "test:zi-human-gate-review": "node --no-warnings --test test/zi-human-gate-review-dispositions.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
