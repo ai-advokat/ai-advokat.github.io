@@ -117,7 +117,13 @@ function normalizeRecord(raw,index,manifest){
       decision_date:raw.decision_date??null,
       legal_area:raw.legal_area??null,
       cited_articles:raw.cited_articles??null,
-      finality_status:raw.finality_status??null
+      finality_status:raw.finality_status??null,
+      outcome_summary:raw.outcome_summary??null,
+      reasoning_summary:raw.reasoning_summary??null,
+      authority:raw.authority??null,
+      holdings:raw.holdings??null,
+      decision_type:raw.decision_type??null,
+      chamber_or_section:raw.chamber_or_section??null
     })
   };
 
