@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "as_of": "2026-10-11",
+  "overlays": [
+    {
+      "id": "mk:zi:art:218:constitutional-review:u-86-2025",
+      "instrument_key": "mk:zi",
+      "article_number": "218",
+      "type": "pending_constitutional_review",
+      "case_number": "U.br.86/2025",
+      "initiated_on": "2026-01-21",
+      "source_url": "https://ustavensud.mk/2026/01/%D1%83-%D0%B1%D1%80-86-2025/",
+      "legal_effect": "none_identified",
+      "human_gate_required": true,
+      "rule": "Surface warning on and after initiation date. Do not alter statutory text; do not infer repeal/annulment; re-verify official status before professional reliance."
+    }
+  ]
+}
