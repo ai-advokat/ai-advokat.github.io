@@ -25,7 +25,7 @@ test("ZRO124-2 operation matrix is exactly one Article 212 edit plus entry rule"
   assert.equal(edit.find,"10%");
   assert.equal(edit.replace,"5%");
   assert.equal(edit.expected_matches,1);
-  assert.match(edit.source_text,/точката 2)/);
+  assert.match(edit.source_text,/точката 2\)/);
   assert.match(edit.source_text,/10%/);
   assert.match(edit.source_text,/5%/);
   assert.equal(entry.op,"non_text");
