@@ -46,7 +46,7 @@
         "source_issue_date": "2023-07-20",
         "backfill_migration": "0024_zi_legacy_version_backfill.sql"
       },
-      "current_law_status": "CURRENT_TEXT_CANDIDATE_REQUIRES_HUMAN_GATE",
+      "current_law_status": "CURRENT_TEXT_CANDIDATE_DATE_VERIFIED_HUMAN_GATE_PENDING",
       "repository_binding_plan_ready": true,
       "current_text_reconstructed": true,
       "gates": {
@@ -55,16 +55,25 @@
         "article_set_version_bound": true,
         "amendment_chain_resolved": true,
         "constitutional_court_effects_resolved": true,
-        "application_dates_verified": false,
+        "application_dates_verified": true,
         "current_version_verified": false,
         "human_gate_approved": false
       },
-      "next_action": "Verify constituent entry/application dates, integrate Article 218 pending-review warning, then Human Gate the 258-article official editorial snapshot; re-check official sources immediately before any current-version promotion.",
+      "next_action": "Integrate Article 218 pending constitutional-review warning into retrieval, then Human Gate the exact 258-article snapshot; re-check official sources immediately before current-version promotion.",
       "pending_constitutional_review": {
         "case": "U.br.86/2025",
         "article": "218",
         "warning_required": true,
         "legal_effect": "none_identified_as_of_2026-10-11"
+      },
+      "historical_temporal_overlay": {
+        "issues": [
+          "86/2020",
+          "103/2020",
+          "156/2020"
+        ],
+        "permanent_current_text_component": false,
+        "index_complete": false
       }
     },
     {
