@@ -163,3 +163,6 @@ jobs:
 
       - name: ZRO 124/2025 deterministic reconstruction gate
         run: npm run test:zro-124-reconstruction
+
+      - name: ZRO final Human Gate decision pack
+        run: npm run test:zro-human-gate-pack

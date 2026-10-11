@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.0",
+  "jurisdiction": "MK",
+  "instrument_key": "mk:zro",
+  "instrument_title": "Закон за работните односи",
+  "prepared_on": "2026-10-12",
+  "status": "HUMAN_GATE_PACK_READY_NOT_APPROVED",
+  "current_law_claim": false,
+  "current_version_verified": false,
+  "human_gate_approved": false,
+  "database_write_authorized": false,
+  "candidate": {
+    "version_label": "derived-candidate-through-124/2025",
+    "article_count": 299,
+    "status": "needs_version_review",
+    "human_review_status": "pending",
+    "source_chain": [
+      {
+        "issue": "through-111/2023",
+        "role": "official_consolidation",
+        "sha256": "f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655"
+      },
+      {
+        "issue": "39/2025",
+        "role": "amendment",
+        "sha256": "d112e2449a07a6419ced1359b897758d9a2f6fd5fbc6f168dd8680f4f7bac854"
+      },
+      {
+        "issue": "74/2025",
+        "role": "amendment",
+        "sha256": "c5289c8e6b015d103bc17beb8686dbaca7b874c2b121888da8927cb320d309ba"
+      },
+      {
+        "issue": "124/2025",
+        "role": "amendment",
+        "sha256": "a300554b91884449a46ee3b1df2ae168fea9a24e53a12dafa49647e83e0807fd"
+      }
+    ]
+  },
+  "reconstruction": {
+    "offline_only": true,
+    "plans": [
+      "ingest/mk/plans/zro-39-2025-reconstruction-plan.json",
+      "ingest/mk/plans/zro-74-2025-reconstruction-plan.json",
+      "ingest/mk/plans/zro-124-2025-reconstruction-plan.json"
+    ],
+    "operation_count": 46,
+    "text_operation_count": 42,
+    "non_text_operation_count": 4,
+    "unique_changed_or_inserted_articles": [
+      "104",
+      "104-а",
+      "110",
+      "116",
+      "122-а",
+      "134",
+      "162",
+      "173",
+      "190",
+      "191",
+      "210",
+      "212",
+      "213",
+      "213-а",
+      "213-б",
+      "213-в",
+      "213-г",
+      "216",
+      "231",
+      "246",
+      "258",
+      "258-б",
+      "259",
+      "265",
+      "265-а",
+      "266-б",
+      "266-в"
+    ],
+    "unique_changed_or_inserted_article_count": 27,
+    "database_writes": 0
+  },
+  "temporal_events": [
+    {
+      "issue": "39/2025",
+      "amendment_article": 3,
+      "kind": "transitional",
+      "effect": "2025-functionholders transition; 30-day declaration window",
+      "human_review_required": true
+    },
+    {
+      "issue": "39/2025",
+      "amendment_article": 4,
+      "kind": "entry_into_force",
+      "date": "2025-02-20",
+      "rule": "day_of_publication"
+    },
+    {
+      "issue": "74/2025",
+      "amendment_article": 26,
+      "kind": "entry_into_force",
+      "date": "2025-04-16",
+      "rule": "eighth_day_after_publication"
+    },
+    {
+      "issue": "124/2025",
+      "amendment_article": 2,
+      "kind": "entry_into_force",
+      "date": "2025-06-19",
+      "rule": "day_of_publication"
+    }
+  ],
+  "constitutional_review_checked": [
+    {
+      "case": "U.br.14/2025",
+      "article": "104",
+      "result": "INITIATIVE_DISMISSED",
+      "decision_date": "2025-06-18",
+      "text_effect": false
+    },
+    {
+      "case": "U.br.27/2025 + U.br.50/2025 + U.br.132/2025",
+      "article": "104-а",
+      "result": "NO_PROCEEDINGS_INITIATED",
+      "decision_date": "2025-11-26",
+      "text_effect": false
+    }
+  ],
+  "human_gate_checklist": [
+    "Compare each of the 27 changed/inserted candidate articles against the 2023 base plus the exact amendment instruction chain.",
+    "Confirm Article 104 and inserted Article 104-а against OG 39/2025 and the checked Constitutional Court outcomes.",
+    "Confirm all 25 Article targets affected by OG 74/2025, including explicit base/amendment wording divergences for Articles 213-г(2) and 265(4).",
+    "Confirm Article 212(1), point 2 reflects the OG 124/2025 10% -> 5% replacement and no other percentage was changed.",
+    "Confirm all four non-text temporal events and transitional consequences remain separately represented.",
+    "Re-check Ministry, LDBIS and Constitutional Court immediately before any current-version decision.",
+    "Do not write the candidate to production and do not set current_consolidated or Human Gate approved from this pack."
+  ],
+  "promotion_blockers": [
+    "Final human comparison of all 27 changed/inserted candidate articles is not yet approved.",
+    "Final immediate official-source status re-check is required at decision time.",
+    "Candidate is not yet a governed D1 current-version record.",
+    "Human Gate decision is absent."
+  ],
+  "decision": {
+    "permitted_values": [
+      "APPROVE_CURRENT_CANDIDATE",
+      "REJECT",
+      "RETURN_FOR_CORRECTION"
+    ],
+    "value": null,
+    "decided_by": null,
+    "decided_at": null,
+    "rationale": null
+  }
+}
