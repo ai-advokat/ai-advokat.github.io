@@ -1,0 +1,87 @@
+{
+  "captured_on": "2026-10-11",
+  "purpose": "Source classification for comparative common-law research. These are not originating-court authorities.",
+  "sources": [
+    {
+      "id": "bbc-bitesize-legal-history",
+      "name": "BBC Bitesize — Crime and punishment in Britain / Anglo-Saxon England",
+      "source_class": "educational_legal_history",
+      "authority_class": "secondary_educational",
+      "current_law_authority": false,
+      "case_law_authority": false,
+      "allowed_use": [
+        "historical_context",
+        "educational_background"
+      ],
+      "prohibited_use": [
+        "current_criminal_law_authority",
+        "modern_procedure_rule",
+        "holding_extraction"
+      ]
+    },
+    {
+      "id": "university-of-law-blog-landmark-cases",
+      "name": "University of Law — Top five legal cases every law student should know",
+      "source_class": "legal_education_commentary",
+      "authority_class": "secondary_educational",
+      "current_law_authority": false,
+      "case_law_authority": false,
+      "allowed_use": [
+        "case_name_discovery",
+        "topic_tagging",
+        "educational_context"
+      ],
+      "official_case_binding_required": true
+    },
+    {
+      "id": "burt-brill-cardens-landmark-cases",
+      "name": "Burt, Brill & Cardens — Landmark Cases in English Legal History",
+      "source_class": "law_firm_commentary",
+      "authority_class": "secondary_practitioner_commentary",
+      "current_law_authority": false,
+      "case_law_authority": false,
+      "allowed_use": [
+        "case_name_discovery",
+        "issue_spotting",
+        "topic_tagging"
+      ],
+      "official_case_binding_required": true
+    },
+    {
+      "id": "encyclopedia-common-law",
+      "name": "Encyclopedia.com — Common Law (Anglo-American)",
+      "source_class": "encyclopedic_doctrine",
+      "authority_class": "secondary_reference",
+      "current_law_authority": false,
+      "case_law_authority": false,
+      "allowed_use": [
+        "doctrinal_orientation",
+        "historical_background",
+        "research_vocabulary"
+      ],
+      "official_case_binding_required": true,
+      "duplicate_upload_note": "The user supplied two copies/variants of the same article; retain one source profile only."
+    },
+    {
+      "id": "bailii",
+      "name": "British and Irish Legal Information Institute (BAILII)",
+      "source_class": "legal_information_institute",
+      "authority_class": "secondary_case_law_discovery",
+      "current_law_authority": false,
+      "case_law_authority": false,
+      "allowed_use": [
+        "manual_case_discovery",
+        "citation_discovery",
+        "human_navigation"
+      ],
+      "ingest_policy": "link_only_no_automated_access",
+      "forbidden": [
+        "bulk_downloading",
+        "scraping",
+        "automated_systems"
+      ],
+      "official_case_binding_required": true,
+      "notes": "The supplied BAILII notice states that its Terms of Service prohibit bulk downloading, scraping and use of automated systems."
+    }
+  ]
+}

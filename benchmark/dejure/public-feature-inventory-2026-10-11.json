@@ -1,0 +1,78 @@
+{
+  "competitor": "DejureMK",
+  "url": "https://dejure.mk/",
+  "captured_on": "2026-10-11",
+  "mode": "public_feature_benchmark_only",
+  "authority_class": "secondary_reference",
+  "corpus_policy": "Do not copy proprietary/subscriber corpus. Use public claims/features only; independently reconstruct legal content from official sources.",
+  "public_claims_as_displayed": {
+    "legal_acts": "98000+",
+    "rulebooks": "5000+",
+    "court_acts": "450000+",
+    "users": "5000+",
+    "legislation_list_results": "100679"
+  },
+  "public_features": [
+    "legislation and act search",
+    "article/text search",
+    "court decision search",
+    "consolidated texts and consolidation history",
+    "linked bylaws",
+    "daily updates",
+    "source link to Official Gazette",
+    "AI answers with references",
+    "document generation",
+    "deadline calendar/reminders",
+    "workflow/case management",
+    "EU/EUR-Lex links",
+    "Albanian-language acts",
+    "visual consolidation differences"
+  ],
+  "public_pricing_snapshot_mkd": [
+    {
+      "plan": "Mini 12 months",
+      "price": 4700,
+      "limits": "100 court decisions/month; 100 acts/month; physical persons"
+    },
+    {
+      "plan": "Basic 12 months",
+      "price": 13500,
+      "limits": "300 court decisions/month; 300 acts/month; Dejure Case; 10 AI questions or 5 document analyses"
+    },
+    {
+      "plan": "Premium 12 months",
+      "price": 34220,
+      "limits": "unlimited court decisions and acts; Dejure Case; 10 AI questions or 5 document analyses"
+    },
+    {
+      "plan": "AI Mini monthly",
+      "price": 1500,
+      "limits": "30 questions or 15 document uploads"
+    },
+    {
+      "plan": "AI Premium monthly",
+      "price": 3900,
+      "limits": "100 questions or 50 document uploads"
+    },
+    {
+      "plan": "AI Mini annual",
+      "price": 15000,
+      "limits": "400 questions or 200 document uploads"
+    },
+    {
+      "plan": "AI Premium annual",
+      "price": 39000,
+      "limits": "1200 questions or 600 document uploads"
+    }
+  ],
+  "ai_advokat_clean_room_targets": [
+    "official-source-first answer path",
+    "article-level current-version retrieval",
+    "court decisions linked to cited law/article",
+    "version and consolidation history",
+    "visible source provenance",
+    "deadline/workflow utilities",
+    "AI document analysis with Human Gate"
+  ],
+  "verification_note": "Counts, pricing and product capabilities are public marketing statements captured from the user-supplied public page text; they are benchmark claims, not legal-authority data."
+}

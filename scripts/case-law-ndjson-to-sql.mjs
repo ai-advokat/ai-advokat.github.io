@@ -12,7 +12,11 @@ const OFFICIAL_HOST_SUFFIXES=[
   "hudoc.echr.coe.int",
   "echr.coe.int",
   "curia.europa.eu",
-  "eur-lex.europa.eu"
+  "eur-lex.europa.eu",
+  "icj-cij.org",
+  "itlos.org",
+  "corteidh.or.cr",
+  "icc-cpi.int"
 ];
 const LICENSED_HOST_SUFFIXES=["paragraf.mk"];
 const SECRET_KEY_RE=/(password|passwd|secret|token|cookie|session|authorization|api[_-]?key|credential)/i;
@@ -119,7 +123,7 @@ export function generateCaseLawImportSql(ndjsonText){
     const ids=(item.external_ids && typeof item.external_ids==="object" && !Array.isArray(item.external_ids)) ? item.external_ids : {};
     const idPairs=[];
     for(const [scheme,value] of Object.entries(ids)){
-      if(!["ecli","celex","echr_application_number","hudoc_item_id","domestic_case_number","constitutional_reference","paragraf_legacy_id","other"].includes(scheme)){
+      if(!["ecli","celex","echr_application_number","hudoc_item_id","domestic_case_number","constitutional_reference","paragraf_legacy_id","icj_case_number","itlos_case_number","iacthr_series_number","icc_case_number","un_document_symbol","other"].includes(scheme)){
         throw new Error("Unsupported external id scheme: "+scheme);
       }
       if(Array.isArray(value)){

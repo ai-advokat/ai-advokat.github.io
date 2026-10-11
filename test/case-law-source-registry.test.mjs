@@ -80,3 +80,45 @@ test("CLSRC7 migration 0031 adds deduplication identifiers and official-binding 
   assert.match(m,/licensed_secondary/);
   assert.match(m,/EUR-Lex EU case-law/);
 });
+
+
+test("CLSRC8 official international court lanes and secondary discovery lanes remain distinct",()=>{
+  const byId=new Map(registry.sources.map(x=>[x.id,x]));
+  for(const id of ["icj-official","itlos-official","iacthr-official","icc-official","worldcourts","worldlii","un-dag-legal-research"]){
+    assert.ok(byId.has(id),id);
+  }
+  assert.equal(byId.get("icj-official").access,"official_public");
+  assert.equal(byId.get("itlos-official").authority_class,"international_court_case_law");
+  assert.equal(byId.get("iacthr-official").authority_class,"comparative_human_rights_case_law");
+  assert.equal(byId.get("icc-official").authority_class,"international_criminal_case_law");
+  assert.match(byId.get("worldcourts").authority_class,/secondary/);
+  assert.match(byId.get("worldlii").authority_class,/secondary/);
+  assert.equal(byId.get("worldcourts").official_binding_required_before_gpt_case_law_context,true);
+  assert.equal(byId.get("worldlii").official_binding_required_before_gpt_case_law_context,true);
+  assert.equal(byId.get("un-dag-legal-research").ingest,"source_discovery_only");
+});
+
+test("CLSRC9 international case-law metadata includes domestic-effect and provenance fields",()=>{
+  for(const id of ["icj-official","itlos-official","iacthr-official","icc-official"]){
+    const s=registry.sources.find(x=>x.id===id);
+    assert.match(s.domestic_effect_note,/North Macedonian|North Macedonia|Rome Statute|law-of-the-sea/i,id);
+  }
+  for(const key of ["international_court_case_number","official_document_id","series_or_report_reference","translation_status","domestic_effect_class"]){
+    assert.ok(registry.target_case_record.recommended.includes(key),key);
+  }
+});
+
+
+test("CLSRC10 BAILII remains manual secondary discovery and automated access is prohibited",()=>{
+  const b=registry.sources.find(x=>x.id==="bailii");
+  assert.ok(b);
+  assert.equal(b.authority_class,"secondary_case_law_discovery");
+  assert.equal(b.ingest,"link_only_no_automated_access");
+  assert.equal(b.official_binding_required_before_gpt_case_law_context,true);
+  for(const rule of ["bulk_downloading","scraping","automated_systems"]){
+    assert.ok(b.forbidden.includes(rule),rule);
+  }
+  for(const key of ["ratio_or_holding_status","subsequent_treatment","distinguished_or_overruled_status"]){
+    assert.ok(registry.target_case_record.recommended.includes(key),key);
+  }
+});
