@@ -1,0 +1,160 @@
+name: ZRO current-law read-only audit
+
+on:
+  pull_request:
+    paths:
+      - "ingest/mk/real-source-fixtures/zro-current-status-recheck-2026.json"
+      - "ingest/mk/audits/zro-current-status-recheck-2026-10-11.md"
+      - "test/zro-current-status-recheck.test.mjs"
+      - "data/mk-current-law-readiness-2026.json"
+      - ".github/workflows/zro-current-law-readonly-audit.yml"
+      - "package.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "ingest/mk/real-source-fixtures/zro-current-status-recheck-2026.json"
+      - "ingest/mk/audits/zro-current-status-recheck-2026-10-11.md"
+      - "test/zro-current-status-recheck.test.mjs"
+      - "data/mk-current-law-readiness-2026.json"
+      - ".github/workflows/zro-current-law-readonly-audit.yml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-source-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: ZRO source/reconstruction readiness
+        run: npm run test:zro-current-status-recheck
+
+  live-readonly:
+    if: github.event_name != 'pull_request'
+    needs: offline-source-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify exact D1 identities
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node <<'NODE'
+          const fs=require("fs");
+          const strip=(s)=>s.replace(/\/\*[\s\S]*?\*\//g,"").replace(/^\s*\/\/.*$/gm,"");
+          const p=JSON.parse(strip(fs.readFileSync("wrangler.jsonc","utf8"))).d1_databases?.[0];
+          const s=JSON.parse(strip(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"))).d1_databases?.[0];
+          if(!p || p.database_name!=="ai-advokat-db" || p.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
+          if(!s || s.binding!=="PREVIEW_DB" || s.database_name!=="ai-advokat-db-staging" || s.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") throw new Error("Unexpected staging D1");
+          if(p.database_id===s.database_id) throw new Error("D1 identity collision");
+          console.log("D1 IDENTITIES: PASS");
+          NODE
+
+      - name: Read ZRO snapshot state
+        shell: bash
+        run: |
+          set -euo pipefail
+          SQL="SELECT li.canonical_key,
+                      COUNT(lav.id) AS article_count,
+                      SUM(CASE WHEN lav.instrument_version_id IS NULL THEN 1 ELSE 0 END) AS null_version_count,
+                      COUNT(DISTINCT lav.instrument_version_id) AS bound_versions,
+                      COUNT(DISTINCT lav.source_url) AS url_count,
+                      MIN(lav.source_url) AS source_url,
+                      COUNT(DISTINCT lav.source_sha256) AS hash_count,
+                      MIN(lav.source_sha256) AS source_sha256,
+                      MIN(v.version_label) AS version_label,
+                      MAX(COALESCE(v.is_current,0)) AS max_is_current,
+                      SUM(CASE WHEN v.human_review_status='approved' THEN 1 ELSE 0 END) AS approved_version_rows,
+                      SUM(CASE WHEN lav.human_review_status='approved' THEN 1 ELSE 0 END) AS approved_article_rows,
+                      SUM(CASE WHEN lav.status='current_consolidated' THEN 1 ELSE 0 END) AS current_article_rows
+                 FROM legal_instruments li
+                 JOIN legal_article_versions lav ON lav.instrument_id=li.id
+                 LEFT JOIN instrument_versions v ON v.id=lav.instrument_version_id
+                WHERE li.canonical_key='mk:zro'
+                GROUP BY li.canonical_key;"
+          npx wrangler d1 execute ai-advokat-db --remote --json --command "$SQL" > /tmp/zro-prod.json
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "$SQL" > /tmp/zro-stg.json
+
+      - name: Assert exact non-current snapshot in production and staging
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const expected={
+            count:298,
+            url:"https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf",
+            sha:"f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655",
+            label:"official-consolidated-snapshot-through-111/2023"
+          };
+          for(const [name,path] of [["production","/tmp/zro-prod.json"],["staging","/tmp/zro-stg.json"]]){
+            const row=JSON.parse(fs.readFileSync(path,"utf8"))?.[0]?.results?.[0];
+            if(!row) throw new Error(name+": missing ZRO state");
+            if(Number(row.article_count)!==expected.count) throw new Error(name+": article count drift");
+            if(Number(row.null_version_count)!==0 || Number(row.bound_versions)!==1) throw new Error(name+": version binding drift");
+            if(Number(row.url_count)!==1 || row.source_url!==expected.url) throw new Error(name+": source URL drift");
+            if(Number(row.hash_count)!==1 || row.source_sha256!==expected.sha) throw new Error(name+": source hash drift");
+            if(row.version_label!==expected.label) throw new Error(name+": version label drift");
+            if(Number(row.max_is_current)!==0) throw new Error(name+": current version promotion detected");
+            if(Number(row.approved_version_rows)!==0 || Number(row.approved_article_rows)!==0) throw new Error(name+": Human Gate approval detected");
+            if(Number(row.current_article_rows)!==0) throw new Error(name+": current_consolidated article detected");
+            console.log(name.toUpperCase()+" ZRO SNAPSHOT: PASS");
+          }
+          NODE
+
+      - name: Read 2025 amendment-event state
+        shell: bash
+        run: |
+          set -euo pipefail
+          SQL="SELECT source_issue_number,COUNT(*) AS event_count,
+                      SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved_count
+                 FROM legal_amendment_events
+                WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zro')
+                  AND source_issue_number IN ('39/2025','74/2025','124/2025')
+                GROUP BY source_issue_number ORDER BY source_issue_number;"
+          npx wrangler d1 execute ai-advokat-db --remote --json --command "$SQL" > /tmp/zro-events-prod.json
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "$SQL" > /tmp/zro-events-stg.json
+
+      - name: Assert governed event topology
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const expected={"39/2025":4,"74/2025":26,"124/2025":2};
+          const rows=p=>JSON.parse(fs.readFileSync(p,"utf8"))?.[0]?.results??[];
+
+          const stg=rows("/tmp/zro-events-stg.json");
+          const sm=Object.fromEntries(stg.map(r=>[r.source_issue_number,Number(r.event_count)]));
+          if(JSON.stringify(sm)!==JSON.stringify(expected)) throw new Error("staging amendment event topology drift: "+JSON.stringify(sm));
+          if(stg.some(r=>Number(r.approved_count)!==0)) throw new Error("staging amendment events unexpectedly approved");
+
+          const prod=rows("/tmp/zro-events-prod.json");
+          const total=prod.reduce((n,r)=>n+Number(r.event_count||0),0);
+          if(total!==0 && total!==32) throw new Error("production has partial 2025 amendment-event state: "+total);
+          if(total===32){
+            const pm=Object.fromEntries(prod.map(r=>[r.source_issue_number,Number(r.event_count)]));
+            if(JSON.stringify(pm)!==JSON.stringify(expected)) throw new Error("production amendment event topology drift: "+JSON.stringify(pm));
+            if(prod.some(r=>Number(r.approved_count)!==0)) throw new Error("production amendment events unexpectedly approved");
+          }
+          console.log("STAGING ZRO EVENTS: PASS 32");
+          console.log("PRODUCTION ZRO EVENTS: "+(total===0?"ABSENT":"FULL_PENDING_32"));
+          console.log("ZRO CURRENT-LAW READ-ONLY AUDIT: PASS");
+          NODE

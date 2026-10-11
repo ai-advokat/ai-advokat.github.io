@@ -138,7 +138,7 @@
         "backfill_migration": "0025_zro_legacy_version_backfill.sql"
       },
       "verified_amendment_events_2025": 32,
-      "current_law_status": "VERSION_REVIEW_REQUIRED",
+      "current_law_status": "LATEST_IDENTIFIED_AMENDMENT_124_2025_RECONSTRUCTION_PENDING",
       "repository_binding_plan_ready": true,
       "current_text_reconstructed": false,
       "gates": {
@@ -151,7 +151,30 @@
         "current_version_verified": false,
         "human_gate_approved": false
       },
-      "next_action": "Confirm live snapshot binding state, then apply audited 2025 amendment events only in governed staging; do not promote current text until unresolved amendment instructions and Constitutional Court effects are closed."
+      "next_action": "Run the live read-only D1 invariant audit. If production/staging snapshot and staging 32-event topology pass, build deterministic candidate reconstructions only in staging, article-by-article, with unresolved transitional/entry provisions preserved for Human Gate.",
+      "official_status_recheck": {
+        "checked_on": "2026-10-11",
+        "state": "LATEST_IDENTIFIED_AMENDMENT_124_2025",
+        "ministry_latest_displayed_amendment": "124/2025",
+        "ldbis_latest_displayed_amendment": "124/2025",
+        "later_amendment_identified_on_checked_surfaces": false,
+        "constitutional_review_latest_checked": [
+          {
+            "case": "U.br.27/2025 + U.br.50/2025 + U.br.132/2025",
+            "article": "104-а",
+            "result": "NO_PROCEEDINGS_INITIATED",
+            "decision_date": "2025-11-26"
+          },
+          {
+            "case": "U.br.14/2025",
+            "article": "104",
+            "result": "INITIATIVE_DISMISSED",
+            "decision_date": "2025-06-18"
+          }
+        ],
+        "bounded_negative": true,
+        "evidence": "ingest/mk/real-source-fixtures/zro-current-status-recheck-2026.json"
+      }
     },
     {
       "canonical_key": "mk:zkp",
