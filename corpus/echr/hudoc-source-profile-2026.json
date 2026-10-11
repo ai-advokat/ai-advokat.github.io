@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.0",
+  "source_id": "echr-hudoc",
+  "source_name": "European Court of Human Rights / HUDOC",
+  "authority_class": "international_court_official",
+  "captured_on": "2026-10-11",
+  "faq_update": "2026-01",
+  "official_url": "https://hudoc.echr.coe.int/",
+  "source_material_hashes": {
+    "hudoc_faq_pdf_sha256": "44aa509a748edf015578a162d5e3bda790a267c741ef7fc8998c87404af5e5e1",
+    "key_cases_2025_pdf_sha256": "8d981aee362f00de9ee5125fff6e2f770166e1ce95843069b803dbcc25a9946a",
+    "hudoc_search_snapshot_sha256": "eee8ddc4b070583356277f430349998f9b702c709af183da5a63addb256cd43c"
+  },
+  "collections": [
+    "Judgments: Grand Chamber, Chamber, Committee",
+    "Decisions: Grand Chamber, Chamber, Committee, Commission, Screening Panel",
+    "Communicated Cases",
+    "Legal Summaries",
+    "Advisory Opinions: Article 47 and Protocol No. 16",
+    "Reports",
+    "Committee of Ministers Resolutions: execution and merits"
+  ],
+  "default_collection_note": "HUDOC selects Grand Chamber and Chamber judgments by default. Other collections must be explicitly selected.",
+  "official_languages": [
+    "English",
+    "French"
+  ],
+  "non_official_translation_rule": "Non-official translations may be available for information. Unless otherwise indicated, they are not produced by the Registry and are not checked by the Registry for accuracy or linguistic quality.",
+  "text_search": {
+    "supported_operators": [
+      "AND",
+      "OR",
+      "NEAR",
+      "quoted phrase"
+    ],
+    "purpose": "word, sentence or sequence search inside selected document collections"
+  },
+  "filters": [
+    "Language",
+    "Importance",
+    "State",
+    "Article",
+    "Non-violation",
+    "Violation",
+    "Keywords",
+    "Document type",
+    "Date",
+    "Judge",
+    "Originating body",
+    "Court",
+    "Organisation"
+  ],
+  "importance_levels": {
+    "1": "High importance: significant contribution to development, clarification or modification of case-law.",
+    "2": "Medium importance: goes beyond merely applying existing case-law.",
+    "3": "Low importance: generally applies existing case-law, friendly settlements or strike-outs unless a point of interest arises.",
+    "key_case": "Most important cases selected by the Bureau, following recommendation by the Jurisconsult."
+  },
+  "analysis_coverage_rule": "Only Key cases and importance levels 1 and 2 contain full analysis searchable under all search fields. Level 3 has limited analytical metadata from 2007 onwards.",
+  "case_details_fields": [
+    "Originating Body",
+    "Document Type",
+    "Language(s)",
+    "Title",
+    "Application Number",
+    "Respondent State(s)",
+    "Date",
+    "Importance Level",
+    "Applicability",
+    "Conclusion(s)",
+    "Article(s)",
+    "Rules of Court",
+    "Separate Opinion",
+    "Strasbourg Case-Law",
+    "Domestic Law",
+    "International Law & Other Relevant Material",
+    "Keywords",
+    "ECLI"
+  ],
+  "boolean_defaults": {
+    "advanced_search_fields": "AND",
+    "filters": "OR",
+    "note": "Most filters other than Language, Importance and Date allow AND/OR within the same filter."
+  },
+  "retrieval_policy": [
+    "Bind every legal proposition to the actual HUDOC judgment/decision or official case document whenever available.",
+    "Treat Case Details as structured metadata, not a substitute for the reasoning text.",
+    "Use non-official translations as research aids only and preserve the authoritative-language link.",
+    "Use importance level to rank jurisprudential significance, never as a claim of greater formal binding force.",
+    "Do not infer absence of an issue from missing Level-3 analytical fields.",
+    "Press releases, country profiles and media pages are context-only."
+  ],
+  "snapshot_2026_10_11": {
+    "displayed_result_count": 71528,
+    "displayed_scope_note": "The supplied HUDOC snapshot showed the default judgment collection selection, not a count of every HUDOC document collection.",
+    "north_macedonia_example": {
+      "title": "TALESKI AND OTHERS v. NORTH MACEDONIA",
+      "application_numbers": [
+        "34261/23",
+        "7877/24"
+      ],
+      "date": "2026-06-23",
+      "document_type": "Judgment (Merits and Just Satisfaction)",
+      "originating_body": "Court (Second Section)",
+      "language_display": "Available only in English",
+      "full_text_required_for_holding": true
+    }
+  }
+}
