@@ -107,3 +107,18 @@ test("CLSRC9 international case-law metadata includes domestic-effect and proven
     assert.ok(registry.target_case_record.recommended.includes(key),key);
   }
 });
+
+
+test("CLSRC10 BAILII remains manual secondary discovery and automated access is prohibited",()=>{
+  const b=registry.sources.find(x=>x.id==="bailii");
+  assert.ok(b);
+  assert.equal(b.authority_class,"secondary_case_law_discovery");
+  assert.equal(b.ingest,"link_only_no_automated_access");
+  assert.equal(b.official_binding_required_before_gpt_case_law_context,true);
+  for(const rule of ["bulk_downloading","scraping","automated_systems"]){
+    assert.ok(b.forbidden.includes(rule),rule);
+  }
+  for(const key of ["ratio_or_holding_status","subsequent_treatment","distinguished_or_overruled_status"]){
+    assert.ok(registry.target_case_record.recommended.includes(key),key);
+  }
+});
