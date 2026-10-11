@@ -1,0 +1,40 @@
+name: Paragraf full migration validation
+
+on:
+  pull_request:
+    paths:
+      - "migration/paragraf/**"
+      - "scripts/normalize-paragraf-full-export.mjs"
+      - "scripts/validate-paragraf-import.mjs"
+      - "scripts/case-law-ndjson-to-sql.mjs"
+      - "test/paragraf-full-export-normalizer.test.mjs"
+      - "test/case-law-import.test.mjs"
+      - ".github/workflows/paragraf-full-migration-validation.yml"
+  push:
+    branches:
+      - paragraf-full-migration-2026-10-11
+    paths:
+      - "migration/paragraf/**"
+      - "scripts/normalize-paragraf-full-export.mjs"
+      - "test/paragraf-full-export-normalizer.test.mjs"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax
+        run: node --check scripts/normalize-paragraf-full-export.mjs
+      - name: Full-export normalizer tests
+        run: node --test test/paragraf-full-export-normalizer.test.mjs
+      - name: Existing governed case-law import tests
+        run: node --test test/case-law-import.test.mjs
+      - name: Existing repository verification
+        run: npm run verify
