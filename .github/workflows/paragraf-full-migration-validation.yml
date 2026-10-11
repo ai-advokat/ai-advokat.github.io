@@ -7,10 +7,14 @@ on:
       - "scripts/normalize-paragraf-full-export.mjs"
       - "scripts/validate-paragraf-import.mjs"
       - "scripts/paragraf-full-ndjson-to-sql.mjs"
+      - "scripts/paragraf-case-law-bridge.mjs"
+      - "scripts/paragraf-case-law-binding-queue.mjs"
       - "scripts/case-law-ndjson-to-sql.mjs"
       - "test/paragraf-full-export-normalizer.test.mjs"
       - "test/paragraf-import-validator.test.mjs"
       - "test/paragraf-full-ndjson-to-sql.test.mjs"
+      - "test/paragraf-case-law-bridge.test.mjs"
+      - "test/paragraf-case-law-binding-queue.test.mjs"
       - "test/case-law-import.test.mjs"
       - ".github/workflows/paragraf-full-migration-validation.yml"
   push:
@@ -22,9 +26,13 @@ on:
       - "scripts/normalize-paragraf-full-export.mjs"
       - "scripts/validate-paragraf-import.mjs"
       - "scripts/paragraf-full-ndjson-to-sql.mjs"
+      - "scripts/paragraf-case-law-bridge.mjs"
+      - "scripts/paragraf-case-law-binding-queue.mjs"
       - "test/paragraf-full-export-normalizer.test.mjs"
       - "test/paragraf-import-validator.test.mjs"
       - "test/paragraf-full-ndjson-to-sql.test.mjs"
+      - "test/paragraf-case-law-bridge.test.mjs"
+      - "test/paragraf-case-law-binding-queue.test.mjs"
       - ".github/workflows/paragraf-full-migration-validation.yml"
 
 permissions:
@@ -44,12 +52,16 @@ jobs:
           node --check scripts/normalize-paragraf-full-export.mjs
           node --check scripts/validate-paragraf-import.mjs
           node --check scripts/paragraf-full-ndjson-to-sql.mjs
+          node --check scripts/paragraf-case-law-bridge.mjs
+          node --check scripts/paragraf-case-law-binding-queue.mjs
           node --check scripts/case-law-ndjson-to-sql.mjs
       - name: Paragraf full migration tests
         run: |
           node --test test/paragraf-full-export-normalizer.test.mjs
           node --test test/paragraf-import-validator.test.mjs
           node --test test/paragraf-full-ndjson-to-sql.test.mjs
+          node --test test/paragraf-case-law-bridge.test.mjs
+          node --test test/paragraf-case-law-binding-queue.test.mjs
           node --test test/case-law-import.test.mjs
       - name: Existing repository verification
         run: npm run verify
