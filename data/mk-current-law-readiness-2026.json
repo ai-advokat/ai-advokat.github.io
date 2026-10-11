@@ -1,0 +1,250 @@
+{
+  "schema_version": "1.0",
+  "jurisdiction": "MK",
+  "captured_on": "2026-10-11",
+  "status": "GOVERNED_PRE_CURRENT_LAW",
+  "purpose": "Machine-readable readiness ledger for promotion of Macedonian article-level corpora to verified current-law use.",
+  "promotion_rule": {
+    "production_ready_requires_all": [
+      "official_source_bound",
+      "article_level_text_present",
+      "article_set_version_bound",
+      "amendment_chain_resolved",
+      "constitutional_court_effects_resolved",
+      "application_dates_verified",
+      "current_version_verified",
+      "human_gate_approved"
+    ],
+    "fail_closed": true,
+    "no_inference_from_active_base_law": true,
+    "no_inference_from_consolidated_label_alone": true
+  },
+  "priority_order": [
+    "mk:zi",
+    "mk:zro",
+    "mk:zkp",
+    "mk:zpp",
+    "mk:kz",
+    "mk:zoo",
+    "mk:zoup",
+    "mk:zs",
+    "mk:zsidp",
+    "mk:ztd"
+  ],
+  "instruments": [
+    {
+      "canonical_key": "mk:zi",
+      "title": "Закон за извршување",
+      "priority": 1,
+      "repository_snapshot": {
+        "expected_article_rows": 258,
+        "version_label": "official-editorial-consolidated-through-154/2023",
+        "version_class": "dated_snapshot",
+        "source_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf",
+        "source_sha256": "15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55",
+        "lineage": "72/2016; 142/2016; 178/2017; 26/2018; 233/2018; 14/2020; 136/2020; 154/2023",
+        "source_issue_date": "2023-07-20",
+        "backfill_migration": "0024_zi_legacy_version_backfill.sql"
+      },
+      "current_law_status": "VERSION_REVIEW_REQUIRED",
+      "repository_binding_plan_ready": true,
+      "current_text_reconstructed": false,
+      "gates": {
+        "official_source_bound": true,
+        "article_level_text_present": true,
+        "article_set_version_bound": false,
+        "amendment_chain_resolved": false,
+        "constitutional_court_effects_resolved": false,
+        "application_dates_verified": false,
+        "current_version_verified": false,
+        "human_gate_approved": false
+      },
+      "next_action": "Run read-only live D1 state preflight. If exact snapshot invariants pass, bind snapshot version without current-law promotion; then reconcile post-154/2023 lineage before Human Gate."
+    },
+    {
+      "canonical_key": "mk:zro",
+      "title": "Закон за работните односи",
+      "priority": 2,
+      "repository_snapshot": {
+        "expected_article_rows": 298,
+        "version_label": "official-consolidated-snapshot-through-111/2023",
+        "version_class": "dated_snapshot",
+        "source_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-met-file-LaRm.pdf",
+        "source_sha256": "f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655",
+        "lineage": "through 111/2023",
+        "source_issue_date": "2023-05-30",
+        "backfill_migration": "0025_zro_legacy_version_backfill.sql"
+      },
+      "verified_amendment_events_2025": 32,
+      "current_law_status": "VERSION_REVIEW_REQUIRED",
+      "repository_binding_plan_ready": true,
+      "current_text_reconstructed": false,
+      "gates": {
+        "official_source_bound": true,
+        "article_level_text_present": true,
+        "article_set_version_bound": false,
+        "amendment_chain_resolved": false,
+        "constitutional_court_effects_resolved": false,
+        "application_dates_verified": false,
+        "current_version_verified": false,
+        "human_gate_approved": false
+      },
+      "next_action": "Confirm live snapshot binding state, then apply audited 2025 amendment events only in governed staging; do not promote current text until unresolved amendment instructions and Constitutional Court effects are closed."
+    },
+    {
+      "canonical_key": "mk:zkp",
+      "title": "Закон за кривичната постапка",
+      "priority": 3,
+      "repository_snapshot": {
+        "expected_article_rows": 570,
+        "version_label": "consolidated-reference-through-198/2018-and-CC-193/2016",
+        "version_class": "reference_consolidation",
+        "source_url": "https://glasprotivnasilstvo.org.mk/wp-content/uploads/2020/10/ZAKON-ZA-KRIVICHNATA-POSTAPKA.pdf",
+        "source_sha256": "e6bf4588833752695a9b776b473ed9d504264effdfcd7917b8d6655bcfacaf45",
+        "lineage": "150/2010; 100/2012; 142/2016; 193/2016; 198/2018",
+        "source_issue_date": "2018-10-31",
+        "backfill_migration": "0026_zkp_legacy_version_backfill.sql"
+      },
+      "current_law_status": "VERSION_REVIEW_REQUIRED",
+      "repository_binding_plan_ready": true,
+      "current_text_reconstructed": false,
+      "gates": {
+        "official_source_bound": false,
+        "article_level_text_present": true,
+        "article_set_version_bound": false,
+        "amendment_chain_resolved": false,
+        "constitutional_court_effects_resolved": false,
+        "application_dates_verified": false,
+        "current_version_verified": false,
+        "human_gate_approved": false
+      },
+      "next_action": "Bind only as historical/reference snapshot after live invariant check. Replace current-law reliance with official LDBIS/Gazette lineage before any Human Gate approval."
+    },
+    {
+      "canonical_key": "mk:zpp",
+      "title": "Закон за парничната постапка",
+      "priority": 4,
+      "current_law_status": "TEMPORAL_DUAL_TRACK_REVIEW",
+      "temporal_note": "The repository records the pre-2027 track and Law 151/2026 separately; application of 151/2026 begins 2027-01-18.",
+      "gates": {
+        "official_source_bound": true,
+        "article_level_text_present": false,
+        "article_set_version_bound": false,
+        "amendment_chain_resolved": false,
+        "constitutional_court_effects_resolved": false,
+        "application_dates_verified": true,
+        "current_version_verified": false,
+        "human_gate_approved": false
+      },
+      "next_action": "Complete article-level source binding for the applicable pre-2027 track and separately stage 151/2026; never collapse the two temporal tracks."
+    },
+    {
+      "canonical_key": "mk:kz",
+      "title": "Кривичен законик",
+      "priority": 5,
+      "current_law_status": "METADATA_VERIFIED_TEXT_PENDING",
+      "repository_note": "LDBIS metadata lineage in Batch 1 records amendments through Official Gazette 16/2026.",
+      "gates": {
+        "official_source_bound": true,
+        "article_level_text_present": false,
+        "article_set_version_bound": false,
+        "amendment_chain_resolved": false,
+        "constitutional_court_effects_resolved": false,
+        "application_dates_verified": false,
+        "current_version_verified": false,
+        "human_gate_approved": false
+      },
+      "next_action": "Acquire exact official article-level text and converge amendment/Constitutional Court lineage before offence-level production coverage."
+    },
+    {
+      "canonical_key": "mk:zoo",
+      "title": "Закон за облигационите односи",
+      "priority": 6,
+      "current_law_status": "METADATA_VERIFIED_TEXT_PENDING",
+      "repository_note": "Batch 1 records lineage through Official Gazette 154/2023 with Constitutional Court effects.",
+      "gates": {
+        "official_source_bound": true,
+        "article_level_text_present": false,
+        "article_set_version_bound": false,
+        "amendment_chain_resolved": false,
+        "constitutional_court_effects_resolved": false,
+        "application_dates_verified": false,
+        "current_version_verified": false,
+        "human_gate_approved": false
+      },
+      "next_action": "Resolve current official article text plus amendment and Constitutional Court effects."
+    },
+    {
+      "canonical_key": "mk:zoup",
+      "title": "Закон за општата управна постапка",
+      "priority": 7,
+      "current_law_status": "METADATA_VERIFIED_TEXT_PENDING",
+      "repository_note": "Batch 1 records 124/2015 with Constitutional Court lineage including 65/2018.",
+      "gates": {
+        "official_source_bound": true,
+        "article_level_text_present": false,
+        "article_set_version_bound": false,
+        "amendment_chain_resolved": false,
+        "constitutional_court_effects_resolved": false,
+        "application_dates_verified": false,
+        "current_version_verified": false,
+        "human_gate_approved": false
+      },
+      "next_action": "Bind official consolidated/current article text and resolve Constitutional Court effects."
+    },
+    {
+      "canonical_key": "mk:zs",
+      "title": "Закон за семејството",
+      "priority": 8,
+      "current_law_status": "VERSION_REVIEW_REQUIRED",
+      "repository_note": "Batch 1 records purified 153/2014 plus later amendments including 192/2025.",
+      "gates": {
+        "official_source_bound": true,
+        "article_level_text_present": false,
+        "article_set_version_bound": false,
+        "amendment_chain_resolved": false,
+        "constitutional_court_effects_resolved": false,
+        "application_dates_verified": false,
+        "current_version_verified": false,
+        "human_gate_approved": false
+      },
+      "next_action": "Converge later amendments into an official article-level candidate before current-law review."
+    },
+    {
+      "canonical_key": "mk:zsidp",
+      "title": "Закон за сопственост и други стварни права",
+      "priority": 9,
+      "current_law_status": "VERSION_REVIEW_REQUIRED",
+      "repository_note": "Batch 1 records the 18/2001 base lineage with later amendments and Constitutional Court effects unresolved.",
+      "gates": {
+        "official_source_bound": true,
+        "article_level_text_present": false,
+        "article_set_version_bound": false,
+        "amendment_chain_resolved": false,
+        "constitutional_court_effects_resolved": false,
+        "application_dates_verified": false,
+        "current_version_verified": false,
+        "human_gate_approved": false
+      },
+      "next_action": "Resolve amendment and Constitutional Court lineage before article-level current promotion."
+    },
+    {
+      "canonical_key": "mk:ztd",
+      "title": "Закон за трговските друштва",
+      "priority": 10,
+      "current_law_status": "VERSION_REVIEW_REQUIRED",
+      "repository_note": "Batch 1 records the 28/2004 lineage including Official Gazette 272/2024.",
+      "gates": {
+        "official_source_bound": true,
+        "article_level_text_present": false,
+        "article_set_version_bound": false,
+        "amendment_chain_resolved": false,
+        "constitutional_court_effects_resolved": false,
+        "application_dates_verified": false,
+        "current_version_verified": false,
+        "human_gate_approved": false
+      },
+      "next_action": "Converge the long amendment chain against official sources before current article-level use."
+    }
+  ]
+}
