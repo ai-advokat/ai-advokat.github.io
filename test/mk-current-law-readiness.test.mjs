@@ -38,12 +38,17 @@ test("CLR3 ZI is the first exact-snapshot candidate but remains non-current",()=
   assert.equal(x.gates.human_gate_approved,false);
 });
 
-test("CLR4 ZRO records audited 2025 amendments without claiming reconstruction",()=>{
+test("CLR4 ZRO has an offline reconstructed candidate but remains non-current and Human-Gate closed",()=>{
   const x=byKey.get("mk:zro");
   assert.equal(x.repository_snapshot.expected_article_rows,298);
   assert.equal(x.verified_amendment_events_2025,32);
-  assert.equal(x.current_text_reconstructed,false);
+  assert.equal(x.current_text_reconstructed,true);
+  assert.equal(x.offline_candidate.version_label,"derived-candidate-through-124/2025");
+  assert.equal(x.offline_candidate.article_count,299);
+  assert.equal(x.offline_candidate.database_writes,0);
   assert.equal(x.gates.amendment_chain_resolved,false);
+  assert.equal(x.gates.current_version_verified,false);
+  assert.equal(x.gates.human_gate_approved,false);
 });
 
 test("CLR5 ZKP reference consolidation cannot satisfy official current-law binding",()=>{
