@@ -50,6 +50,10 @@ import {
   legalStatusOverlaysForArticles
 } from "./legal-status-overlays.js";
 import {
+  attachReviewedArticleRepresentation,
+  articleTextForLegalSynthesis
+} from "./reviewed-article-representations.js";
+import {
   AGENT_ROLES,
   ORCHESTRATOR_MODES,
   ORCHESTRATION_PATTERN,
@@ -1941,6 +1945,11 @@ function normalizeArticle(row) {
   };
 }
 
+function attachArticleGovernance(instrumentKey,article,{referenceDate=null}={}) {
+  const reviewed=attachReviewedArticleRepresentation(instrumentKey,article,{referenceDate});
+  return attachLegalStatusOverlays(instrumentKey,reviewed,{referenceDate});
+}
+
 function articleTokens(value) {
   return [...new Set(normalizeText(value)
     .replace(/[^\p{L}\p{N}-]+/gu," ")
@@ -2084,8 +2093,9 @@ async function loadResolvedCorpus(env, instrument, {date=null}={}) {
 
 export function scoreArticle(row, q) {
   const target=normalizeText(q);
-  const text=normalizeText(`${row.article_heading || ""} ${row.article_text || ""}`);
-  const num=normalizeText(row.article_number_normalized || row.article_number || "");
+  const heading=row.heading ?? row.article_heading ?? "";
+  const text=normalizeText(`${heading} ${articleTextForLegalSynthesis(row)}`);
+  const num=normalizeText(row.articleNumberNormalized || row.articleNumber || row.article_number_normalized || row.article_number || "");
   let score=0;
 
   const articleMatch=target.match(/(?:член|article)\s*([0-9]+(?:[-–—][\p{L}]+)?)/u);
@@ -2095,8 +2105,8 @@ export function scoreArticle(row, q) {
 
   for(const token of articleTokens(target)){
     if(num===token) score+=200;
-    const heading=normalizeText(row.article_heading || "");
-    if(heading.includes(token)) score+=24;
+    const headingText=normalizeText(row.heading ?? row.article_heading ?? "");
+    if(headingText.includes(token)) score+=24;
     let pos=0;
     let count=0;
     while((pos=text.indexOf(token,pos))>=0 && count<8){
@@ -2177,7 +2187,7 @@ function expandArticleCrossReferences(rows,primaryArticles,{maxReferences=12}={}
   const origins=new Map();
   for(const primary of primaryArticles.slice(0,3)){
     const origin=String(primary.articleNumber || primary.articleNumberNormalized || "");
-    for(const ref of extractArticleCrossReferences(primary.text,{max:maxReferences})){
+    for(const ref of extractArticleCrossReferences(articleTextForLegalSynthesis(primary),{max:maxReferences})){
       if(primaryNumbers.has(ref)) continue;
       const row=rowByNumber.get(ref);
       if(!row) continue;
@@ -2196,20 +2206,26 @@ function expandArticleCrossReferences(rows,primaryArticles,{maxReferences=12}={}
   });
 }
 
-function rankInstrumentArticles(rows,q,limit=6){
+function rankInstrumentArticles(rows,q,limit=6,{instrumentKey=null,referenceDate=null}={}){
   let ranked=rows
-    .map(row=>({row,score:scoreArticle(row,q)}))
+    .map(row=>{
+      const base=normalizeArticle(row);
+      const article=instrumentKey
+        ? attachReviewedArticleRepresentation(instrumentKey,base,{referenceDate})
+        : base;
+      return {article,score:scoreArticle(article,q)};
+    })
     .filter(x=>x.score>0)
-    .sort((a,b)=>b.score-a.score || a.row.id-b.row.id);
+    .sort((a,b)=>b.score-a.score || a.article.id-b.article.id);
 
   const exactMatch=q.match(/(?:член|article)\s*([0-9]+(?:[-–—][\p{L}]+)?)/iu);
   if(exactMatch){
     const exactNumber=normalizeText(exactMatch[1]).replace(/[–—]/g,"-");
-    const exact=ranked.filter(x=>normalizeText(x.row.article_number_normalized).replace(/[–—]/g,"-")===exactNumber);
+    const exact=ranked.filter(x=>normalizeText(x.article.articleNumberNormalized).replace(/[–—]/g,"-")===exactNumber);
     if(exact.length) ranked=exact;
   }
 
-  return ranked.slice(0,limit).map(x=>({...normalizeArticle(x.row),relevanceScore:x.score}));
+  return ranked.slice(0,limit).map(x=>({...x.article,relevanceScore:x.score}));
 }
 
 async function findRelevantArticles(env, instrumentKey, q, limit=6, {date=null,expandReferences=false,maxReferences=12}={}) {
@@ -2218,12 +2234,12 @@ async function findRelevantArticles(env, instrumentKey, q, limit=6, {date=null,e
     if(!instrument) return {instrument:null,articles:[],reason:"instrument_not_found"};
     const corpus=await loadResolvedCorpus(env,instrument,{date});
     if(!corpus.ok) return {instrument,articles:[],reason:corpus.error,versions:corpus.versions};
-    const primaryArticles=rankInstrumentArticles(corpus.rows,q,limit)
-      .map(article=>attachLegalStatusOverlays(instrumentKey,article,{referenceDate:date}));
+    const primaryArticles=rankInstrumentArticles(corpus.rows,q,limit,{instrumentKey,referenceDate:date})
+      .map(article=>attachArticleGovernance(instrumentKey,article,{referenceDate:date}));
     const crossReferenceArticles=(expandReferences
       ? expandArticleCrossReferences(corpus.rows,primaryArticles,{maxReferences})
       : [])
-      .map(article=>attachLegalStatusOverlays(instrumentKey,article,{referenceDate:date}));
+      .map(article=>attachArticleGovernance(instrumentKey,article,{referenceDate:date}));
     const articles=[...primaryArticles,...crossReferenceArticles];
     return {
       instrument,
@@ -2283,7 +2299,10 @@ async function handleArticles(request, env, url) {
     rows=rows.filter(row=>normalizeText(row.article_number_normalized)===needle || normalizeText(row.article_number)===needle);
   }else if(q){
     rows=rows
-      .map(row=>({row,score:scoreArticle(row,q)}))
+      .map(row=>{
+        const article=attachReviewedArticleRepresentation(instrumentKey,normalizeArticle(row),{referenceDate:dateCheck.date});
+        return {row,score:scoreArticle(article,q)};
+      })
       .filter(x=>x.score>0)
       .sort((a,b)=>b.score-a.score || a.row.id-b.row.id)
       .map(x=>x.row);
@@ -2291,7 +2310,7 @@ async function handleArticles(request, env, url) {
 
   const filteredCount=rows.length;
   const page=rows.slice(offset,offset+limit)
-    .map(row=>attachLegalStatusOverlays(instrumentKey,normalizeArticle(row),{referenceDate:dateCheck.date}));
+    .map(row=>attachArticleGovernance(instrumentKey,normalizeArticle(row),{referenceDate:dateCheck.date}));
   const legalStatusOverlays=legalStatusOverlaysForArticles(instrumentKey,page,{referenceDate:dateCheck.date});
 
   return json(request,{
@@ -2389,8 +2408,9 @@ function fallbackAssistantAnswer(q, instrument, articles) {
   }
   const intro=`За прашањето „${q}“, најрелевантни во достапниот корпус се ${articles.map(a=>`член ${a.articleNumber}`).join(", ")} од ${instrument.title}.`;
   const body=articles.slice(0,3).map(a=>{
-    const excerpt=String(a.text || "").replace(/\s+/g," ").slice(0,700);
-    return `\n\n[Член ${a.articleNumber}] ${excerpt}${a.text.length>700 ? "…" : ""}`;
+    const synthesisText=articleTextForLegalSynthesis(a);
+    const excerpt=synthesisText.replace(/\s+/g," ").slice(0,700);
+    return `\n\n[Член ${a.articleNumber}] ${excerpt}${synthesisText.length>700 ? "…" : ""}`;
   }).join("");
   return intro+body;
 }
@@ -2405,6 +2425,7 @@ const ASSISTANT_SYSTEM_RULES = [
   "6. Ако LEGAL_SOURCES не се доволни за одговор, кажи јасно дека нема доволна основа во достапниот корпус и што недостига, наместо да претпоставуваш.",
   "7. Ако член има STATUS historical или needs_version_review, кажи јасно дека не е Human-Gate потврден како тековен текст.",
   "7a. Ако LEGAL_STATUS_NOTICES наведува pending_constitutional_review, задолжително соопшти дека постапката е во тек и наведи го предметот. Не тврди дека членот е укинат, поништен или престанал да важи освен ако notice изречно наведува таков правен ефект. За професионално потпирање барај најнова официјална проверка и Human Gate.",
+  "7b. Ако TEXT_REPRESENTATION е reviewed_derived, користи го REVIEWED_TEXT како правно-релевантна структурна/амандманска репрезентација, но не го претставувај тоа како доказ дека верзијата е Human-Gate потврдена како тековна. RAW_SOURCE_PRESERVED значи дека изворниот запис е зачуван непроменет.",
   "8. Не давај проценти за исход. Не претставувај го одговорот како конечен индивидуален правен совет. За рокови, кривична постапка, притвор, правни лекови, застареност и други високоризични прашања нагласи дека е потребна човечка професионална проверка.",
   "9. Ако корисникот внесе непотребни доверливи или чувствителни лични податоци, не ги повторувај.",
   "10. Структура: Краток одговор; Правна основа; Примена/објаснување; Ограничувања и што треба да се провери."
@@ -2422,13 +2443,18 @@ function buildAssistantUserMessage(q, instrument, articles, version=null) {
           `WARNING=${sanitizeForPrompt(o.warningMk)}`
         ].join("; ")).join(" | ")
       : "none";
+    const rep=a.reviewedRepresentation || null;
+    const synthesisText=articleTextForLegalSynthesis(a);
     return [
       `[Член ${sanitizeForPrompt(a.articleNumber)}]`,
       `STATUS: ${sanitizeForPrompt(a.status)}; HUMAN_REVIEW: ${sanitizeForPrompt(a.humanReviewStatus)}`,
       `SOURCE: ${sanitizeForPrompt(a.sourceUrl)}`,
+      `TEXT_REPRESENTATION: ${rep ? "reviewed_derived" : "raw_source_faithful"}`,
+      `REPRESENTATION_ID: ${sanitizeForPrompt(rep?.id || "none")}; REPRESENTATION_REVIEW: ${sanitizeForPrompt(rep?.representationReviewState || "none")}; LEGAL_CURRENCY: ${sanitizeForPrompt(rep?.legalCurrencyState || "source_status_only")}`,
+      `RAW_SOURCE_PRESERVED: ${rep?.rawSourcePreserved===true ? "true" : "not_applicable"}`,
       `LEGAL_STATUS_NOTICES: ${notices}`,
-      "TEXT:",
-      sanitizeForPrompt(String(a.text || "").slice(0,4500))
+      rep ? "REVIEWED_TEXT:" : "TEXT:",
+      sanitizeForPrompt(synthesisText.slice(0,4500))
     ].join("\n");
   }).join("\n\n---\n\n").slice(0,18000);
 
@@ -2723,8 +2749,13 @@ async function governedArticleContext(env,q,basePlan){
           "CITATION_LABEL: [Член "+String(article.articleNumber || "")+"]",
           "REFERENCE_ROLE: "+String(article.referenceRole || "direct_match"),
           "REFERENCE_ORIGIN: "+(Array.isArray(article.referenceOriginArticleNumbers) ? article.referenceOriginArticleNumbers.map(n=>"Член "+n).join(", ") : "direct query match"),
-          "TEXT:",
-          String(article.text || "").slice(0,3600)
+          "TEXT_REPRESENTATION: "+(article.reviewedRepresentation ? "reviewed_derived" : "raw_source_faithful"),
+          "REPRESENTATION_ID: "+String(article.reviewedRepresentation?.id || "none"),
+          "REPRESENTATION_REVIEW: "+String(article.reviewedRepresentation?.representationReviewState || "none"),
+          "LEGAL_CURRENCY: "+String(article.reviewedRepresentation?.legalCurrencyState || "source_status_only"),
+          "RAW_SOURCE_PRESERVED: "+(article.reviewedRepresentation?.rawSourcePreserved===true ? "true" : "not_applicable"),
+          article.reviewedRepresentation ? "REVIEWED_TEXT:" : "TEXT:",
+          articleTextForLegalSynthesis(article).slice(0,3600)
         ].join("\n")
       };
     });
@@ -2739,7 +2770,8 @@ async function governedArticleContext(env,q,basePlan){
       versionHumanReviewStatus:versionInfo.humanReviewStatus || null,
       relation:article.referenceRole || "direct_match",
       referenceOriginArticleNumbers:Array.isArray(article.referenceOriginArticleNumbers) ? article.referenceOriginArticleNumbers : [],
-      legalStatusOverlays:Array.isArray(article.legalStatusOverlays) ? article.legalStatusOverlays : []
+      legalStatusOverlays:Array.isArray(article.legalStatusOverlays) ? article.legalStatusOverlays : [],
+      reviewedRepresentation:article.reviewedRepresentation || null
     }));
 
     return {
@@ -3105,7 +3137,7 @@ async function handleLegalAnalyzerVerify(request,env){
             const wanted=new Set(articleNumbers.map(n=>normalizeText(n).replace(/^член\s*/u,"").replace(/\s+/g,"")));
             exactArticles=corpus.rows
               .filter(row=>wanted.has(normalizeText(row.article_number_normalized||row.article_number||"").replace(/\s+/g,"")))
-              .map(row=>normalizeArticle(row));
+              .map(row=>attachArticleGovernance(routing.key,normalizeArticle(row)));
             exactArticleState=exactArticles.length ? "matched" : "no_exact_match";
           }else{
             exactArticleState=corpus.error||"version_unresolved";
@@ -3861,7 +3893,8 @@ async function handleAssistant(request, env, url) {
       sourceIssueDate:a.sourceIssueDate,
       version:{label:versionInfo.label,class:versionInfo.class,isCurrent:versionInfo.isCurrent,humanReviewStatus:versionInfo.humanReviewStatus},
       legalStatusOverlays:Array.isArray(a.legalStatusOverlays) ? a.legalStatusOverlays : [],
-      excerpt:String(a.text || "").replace(/\s+/g," ").slice(0,420)
+      reviewedRepresentation:a.reviewedRepresentation || null,
+      excerpt:articleTextForLegalSynthesis(a).replace(/\s+/g," ").slice(0,420)
     })),
     humanGate:"AI output is research assistance, not autonomous legal representation. Verify the controlling version and primary source and obtain human professional review before high-stakes reliance.",
     legalNotice:"/legal-notice.html",
