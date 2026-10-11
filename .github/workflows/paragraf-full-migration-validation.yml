@@ -6,17 +6,26 @@ on:
       - "migration/paragraf/**"
       - "scripts/normalize-paragraf-full-export.mjs"
       - "scripts/validate-paragraf-import.mjs"
+      - "scripts/paragraf-full-ndjson-to-sql.mjs"
       - "scripts/case-law-ndjson-to-sql.mjs"
       - "test/paragraf-full-export-normalizer.test.mjs"
+      - "test/paragraf-import-validator.test.mjs"
+      - "test/paragraf-full-ndjson-to-sql.test.mjs"
       - "test/case-law-import.test.mjs"
       - ".github/workflows/paragraf-full-migration-validation.yml"
   push:
     branches:
-      - paragraf-full-migration-2026-10-11
+      - main
+      - "paragraf-full-migration-*"
     paths:
       - "migration/paragraf/**"
       - "scripts/normalize-paragraf-full-export.mjs"
+      - "scripts/validate-paragraf-import.mjs"
+      - "scripts/paragraf-full-ndjson-to-sql.mjs"
       - "test/paragraf-full-export-normalizer.test.mjs"
+      - "test/paragraf-import-validator.test.mjs"
+      - "test/paragraf-full-ndjson-to-sql.test.mjs"
+      - ".github/workflows/paragraf-full-migration-validation.yml"
 
 permissions:
   contents: read
@@ -31,10 +40,16 @@ jobs:
         with:
           node-version: "22"
       - name: Syntax
-        run: node --check scripts/normalize-paragraf-full-export.mjs
-      - name: Full-export normalizer tests
-        run: node --test test/paragraf-full-export-normalizer.test.mjs
-      - name: Existing governed case-law import tests
-        run: node --test test/case-law-import.test.mjs
+        run: |
+          node --check scripts/normalize-paragraf-full-export.mjs
+          node --check scripts/validate-paragraf-import.mjs
+          node --check scripts/paragraf-full-ndjson-to-sql.mjs
+          node --check scripts/case-law-ndjson-to-sql.mjs
+      - name: Paragraf full migration tests
+        run: |
+          node --test test/paragraf-full-export-normalizer.test.mjs
+          node --test test/paragraf-import-validator.test.mjs
+          node --test test/paragraf-full-ndjson-to-sql.test.mjs
+          node --test test/case-law-import.test.mjs
       - name: Existing repository verification
         run: npm run verify
