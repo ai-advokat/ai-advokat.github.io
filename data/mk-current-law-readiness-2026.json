@@ -46,7 +46,7 @@
         "source_issue_date": "2023-07-20",
         "backfill_migration": "0024_zi_legacy_version_backfill.sql"
       },
-      "current_law_status": "CURRENT_TEXT_CANDIDATE_MACHINE_PARITY_VERIFIED_HUMAN_GATE_REVIEW_REQUIRED",
+      "current_law_status": "CURRENT_TEXT_CANDIDATE_MACHINE_PARITY_VERIFIED_3_SEGMENTATION_BLOCKERS",
       "repository_binding_plan_ready": true,
       "current_text_reconstructed": true,
       "gates": {
@@ -59,7 +59,7 @@
         "current_version_verified": false,
         "human_gate_approved": false
       },
-      "next_action": "Human Gate the 28 parser findings against the rendered official PDF, without overwriting source-faithful text. Then re-check Article 218 constitutional-review status and all official sources immediately before any current-version promotion.",
+      "next_action": "Create a derived reviewed representation for Articles 4, 104 and 269 only; preserve raw source-faithful records. Then re-run 258-article parity on the reviewed representation, re-check Article 218 and official sources, and only then consider Human Gate approval.",
       "pending_constitutional_review": {
         "case": "U.br.86/2025",
         "article": "218",
@@ -85,8 +85,11 @@
         "staging_exact": true,
         "production_staging_equal": true,
         "corpus_sha256": "56a69c8c0d278f237984ad7d0e4271f12e48ee54f5ffd8fdd0f804826b361609",
-        "parser_findings_pending": 28,
-        "database_mutation": false
+        "parser_findings_pending": 3,
+        "database_mutation": false,
+        "parser_findings_total": 28,
+        "parser_findings_resolved": 25,
+        "human_gate_review_dispositions": "ingest/mk/audits/zi-human-gate-review-dispositions-2026-10-11.json"
       }
     },
     {
