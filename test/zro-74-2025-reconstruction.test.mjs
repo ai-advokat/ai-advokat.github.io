@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const plan=JSON.parse(fs.readFileSync("ingest/mk/plans/zro-74-2025-reconstruction-plan.json","utf8"));
+const workflow=fs.readFileSync(".github/workflows/zro-74-2025-offline-reconstruction.yml","utf8");
 
 test("ZRO74-1 exact source and chronology are fixed",()=>{
   assert.equal(plan.instrument_key,"mk:zro");
@@ -63,4 +64,24 @@ test("ZRO74-8 target remains candidate-only",()=>{
   assert.equal(plan.target.status,"needs_version_review");
   assert.equal(plan.target.human_review_status,"pending");
   assert.notEqual(plan.target.status,"current_consolidated");
+});
+
+
+test("ZRO74-9 offline workflow cannot write D1 or access Cloudflare secrets",()=>{
+  assert.doesNotMatch(workflow,/wrangler\s+d1/i);
+  assert.doesNotMatch(workflow,/CLOUDFLARE_/);
+  assert.doesNotMatch(workflow,/db:migrate/i);
+  assert.match(workflow,/zro-through-39-2025\.ndjson/);
+  assert.match(workflow,/zro-through-74-2025\.ndjson/);
+  const apply39=workflow.indexOf("ingest/mk/plans/zro-39-2025-reconstruction-plan.json");
+  const apply74=workflow.lastIndexOf("ingest/mk/plans/zro-74-2025-reconstruction-plan.json");
+  assert.ok(apply39>=0 && apply74>apply39);
+});
+
+test("ZRO74-10 full offline verification requires 299 pending articles and zero new parser warnings",()=>{
+  assert.match(workflow,/candidate_articles=299/);
+  assert.match(workflow,/changed_articles=25/);
+  assert.match(workflow,/operations=40/);
+  assert.match(workflow,/new_parser_warnings.*==0/);
+  assert.match(workflow,/database_writes=0/);
 });
