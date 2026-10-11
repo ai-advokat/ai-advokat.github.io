@@ -1,0 +1,214 @@
+{
+  "schema_version": "1.0",
+  "jurisdiction": "MK",
+  "instrument_key": "mk:zi",
+  "instrument_title": "Закон за извршување",
+  "reviewed_on": "2026-10-11",
+  "source_sha256": "15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55",
+  "source_url": "https://portal.mdt.gov.mk/post-body-files/zakoni-izvrsuvanje-file-zhwP.pdf",
+  "input_review_queue": "ingest/mk/audits/zi-parser-review-queue-2026-10-11.json",
+  "review_scope": "Human Gate classification of parser findings against the official rendered/text source. No corpus mutation.",
+  "summary": {
+    "findings_total": 28,
+    "resolved_as_source_explained_or_source_faithful": 25,
+    "blocking_segmentation_findings": 3,
+    "current_version_verified": false,
+    "human_gate_approved": false,
+    "corpus_mutation": false
+  },
+  "resolved": [
+    {
+      "code": "unexplained_gap",
+      "article": "95",
+      "disposition": "RESOLVED_EXPLICITLY_DELETED",
+      "evidence": "Official source states the title and Article 95 are deleted by OG 233/2018."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "240",
+      "disposition": "RESOLVED_EXPLICITLY_REPEALED",
+      "evidence": "Official source states Articles 240-244 were repealed by Constitutional Court U.br.143/2016, OG 178/2017."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "241",
+      "disposition": "RESOLVED_EXPLICITLY_REPEALED",
+      "evidence": "Same explicit source statement for Articles 240-244."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "242",
+      "disposition": "RESOLVED_EXPLICITLY_REPEALED",
+      "evidence": "Same explicit source statement for Articles 240-244."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "243",
+      "disposition": "RESOLVED_EXPLICITLY_REPEALED",
+      "evidence": "Same explicit source statement for Articles 240-244."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "244",
+      "disposition": "RESOLVED_EXPLICITLY_REPEALED",
+      "evidence": "Same explicit source statement for Articles 240-244."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "247",
+      "disposition": "RESOLVED_EXPLICITLY_DELETED",
+      "evidence": "Official source states titles and Articles 247 and 248 are deleted by OG 233/2018."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "248",
+      "disposition": "RESOLVED_EXPLICITLY_DELETED",
+      "evidence": "Official source states titles and Articles 247 and 248 are deleted by OG 233/2018."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "250",
+      "disposition": "RESOLVED_EXPLICITLY_DELETED",
+      "evidence": "Official source states the title and Article 250 are deleted by OG 233/2018."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "252",
+      "disposition": "RESOLVED_EXPLICITLY_DELETED",
+      "evidence": "Official source states the title and Article 252 are deleted by OG 233/2018."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "256",
+      "disposition": "RESOLVED_EXPLICITLY_DELETED",
+      "evidence": "Official source states Articles 256-260 are deleted by OG 233/2018."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "257",
+      "disposition": "RESOLVED_EXPLICITLY_DELETED",
+      "evidence": "Official source states Articles 256-260 are deleted by OG 233/2018."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "258",
+      "disposition": "RESOLVED_EXPLICITLY_DELETED",
+      "evidence": "Official source states Articles 256-260 are deleted by OG 233/2018."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "259",
+      "disposition": "RESOLVED_EXPLICITLY_DELETED",
+      "evidence": "Official source states Articles 256-260 are deleted by OG 233/2018."
+    },
+    {
+      "code": "unexplained_gap",
+      "article": "260",
+      "disposition": "RESOLVED_EXPLICITLY_DELETED",
+      "evidence": "Official source states Articles 256-260 are deleted by OG 233/2018."
+    },
+    {
+      "code": "mixed_script_token",
+      "article": "29",
+      "token": "повлeкување",
+      "disposition": "RESOLVED_SOURCE_TEXT_LAYER_CONFIRMED",
+      "rule": "Preserve source-faithful text; optional search normalization must be non-destructive."
+    },
+    {
+      "code": "mixed_script_token",
+      "article": "33",
+      "token": "ЕКТC",
+      "disposition": "RESOLVED_SOURCE_TEXT_LAYER_CONFIRMED",
+      "rule": "Preserve source-faithful text; optional search normalization must be non-destructive."
+    },
+    {
+      "code": "mixed_script_token",
+      "article": "68",
+      "token": "Kомората",
+      "disposition": "RESOLVED_SOURCE_TEXT_LAYER_CONFIRMED",
+      "rule": "Preserve source-faithful text; optional search normalization must be non-destructive."
+    },
+    {
+      "code": "mixed_script_token",
+      "article": "73",
+      "token": "члeнот",
+      "disposition": "RESOLVED_SOURCE_TEXT_LAYER_CONFIRMED",
+      "rule": "Preserve source-faithful text; optional search normalization must be non-destructive."
+    },
+    {
+      "code": "mixed_script_token",
+      "article": "74",
+      "token": "Kомората",
+      "disposition": "RESOLVED_SOURCE_TEXT_LAYER_CONFIRMED",
+      "rule": "Preserve source-faithful text; optional search normalization must be non-destructive."
+    },
+    {
+      "code": "mixed_script_token",
+      "article": "86",
+      "token": "коe",
+      "disposition": "RESOLVED_SOURCE_TEXT_LAYER_CONFIRMED",
+      "rule": "Preserve source-faithful text; optional search normalization must be non-destructive."
+    },
+    {
+      "code": "mixed_script_token",
+      "article": "110",
+      "token": "определeна",
+      "disposition": "RESOLVED_SOURCE_TEXT_LAYER_CONFIRMED",
+      "rule": "Preserve source-faithful text; optional search normalization must be non-destructive."
+    },
+    {
+      "code": "mixed_script_token",
+      "article": "163",
+      "token": "прoдажба",
+      "disposition": "RESOLVED_SOURCE_TEXT_LAYER_CONFIRMED",
+      "rule": "Preserve source-faithful text; optional search normalization must be non-destructive."
+    },
+    {
+      "code": "mixed_script_token",
+      "article": "245",
+      "token": "диплoмирани",
+      "disposition": "RESOLVED_SOURCE_TEXT_LAYER_CONFIRMED",
+      "rule": "Preserve source-faithful text; optional search normalization must be non-destructive."
+    },
+    {
+      "code": "mixed_script_token",
+      "article": "261",
+      "token": "Oдмерувањето",
+      "disposition": "RESOLVED_SOURCE_TEXT_LAYER_CONFIRMED",
+      "rule": "Preserve source-faithful text; optional search normalization must be non-destructive."
+    }
+  ],
+  "blockers": [
+    {
+      "code": "mixed_script_token",
+      "article": "4",
+      "token": "Oдлуката",
+      "disposition": "BLOCKED_EDITORIAL_FOOTNOTE_SEGMENTATION",
+      "evidence": "The official source Article 4 body ends before the editorial consolidation footnote; the mixed-script token occurs in that footnote. A current-law authoritative article chunk must not silently treat the footnote as normative Article 4 text.",
+      "required_action": "Create a reviewed article representation or parser boundary fix that separates the editorial source footnote while retaining full provenance. Do not overwrite the raw source-faithful record."
+    },
+    {
+      "code": "editorial_note_contamination",
+      "article": "104",
+      "marker": "Забелешка наместо попис",
+      "disposition": "BLOCKED_NEXT_ARTICLE_HEADING_SEGMENTATION",
+      "evidence": "The phrase is the heading immediately preceding Article 105, not normative text of Article 104.",
+      "required_action": "Correct heading/article boundary in a reviewed representation while preserving the raw extraction and source coordinates."
+    },
+    {
+      "code": "editorial_note_contamination",
+      "article": "269",
+      "marker": "*Членот 269 е изменет, види: член 1 од Законот за изменување на Законот",
+      "disposition": "BLOCKED_EDITORIAL_AMENDMENT_NOTE_SEGMENTATION",
+      "evidence": "The source places this as an editorial amendment note after Article 269 before reproduced transitional/amendment material; it must not be silently treated as normative Article 269 body.",
+      "required_action": "Separate editorial annotation from normative article text in a reviewed representation; retain the annotation as provenance."
+    }
+  ],
+  "governance": [
+    "No raw article text is overwritten by this review.",
+    "Resolved missing-number findings are explained by explicit deletion/repeal statements in the official source.",
+    "Source-faithful mixed-script tokens remain preserved; normalization, if added, belongs only to a derived search/index field.",
+    "Current-version promotion remains blocked until all three segmentation blockers are closed and Article 218 status is re-verified.",
+    "Human Gate remains false."
+  ]
+}
