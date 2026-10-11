@@ -46,6 +46,10 @@ import {
   versionStatusWarning
 } from "./corpus-versions.js";
 import {
+  attachLegalStatusOverlays,
+  legalStatusOverlaysForArticles
+} from "./legal-status-overlays.js";
+import {
   AGENT_ROLES,
   ORCHESTRATOR_MODES,
   ORCHESTRATION_PATTERN,
@@ -2214,10 +2218,12 @@ async function findRelevantArticles(env, instrumentKey, q, limit=6, {date=null,e
     if(!instrument) return {instrument:null,articles:[],reason:"instrument_not_found"};
     const corpus=await loadResolvedCorpus(env,instrument,{date});
     if(!corpus.ok) return {instrument,articles:[],reason:corpus.error,versions:corpus.versions};
-    const primaryArticles=rankInstrumentArticles(corpus.rows,q,limit);
-    const crossReferenceArticles=expandReferences
+    const primaryArticles=rankInstrumentArticles(corpus.rows,q,limit)
+      .map(article=>attachLegalStatusOverlays(instrumentKey,article,{referenceDate:date}));
+    const crossReferenceArticles=(expandReferences
       ? expandArticleCrossReferences(corpus.rows,primaryArticles,{maxReferences})
-      : [];
+      : [])
+      .map(article=>attachLegalStatusOverlays(instrumentKey,article,{referenceDate:date}));
     const articles=[...primaryArticles,...crossReferenceArticles];
     return {
       instrument,
@@ -2284,7 +2290,9 @@ async function handleArticles(request, env, url) {
   }
 
   const filteredCount=rows.length;
-  const page=rows.slice(offset,offset+limit).map(normalizeArticle);
+  const page=rows.slice(offset,offset+limit)
+    .map(row=>attachLegalStatusOverlays(instrumentKey,normalizeArticle(row),{referenceDate:dateCheck.date}));
+  const legalStatusOverlays=legalStatusOverlaysForArticles(instrumentKey,page,{referenceDate:dateCheck.date});
 
   return json(request,{
     ok:true,
@@ -2308,7 +2316,8 @@ async function handleArticles(request, env, url) {
     limit,
     statusCounts,
     articles:page,
-    humanGate:"Only approved/current-consolidated provisions may be presented as verified current law."
+    legalStatusOverlays,
+    humanGate:"Only approved/current-consolidated provisions may be presented as verified current law. Pending legal-status overlays require explicit professional re-verification."
   });
 }
 
@@ -2395,19 +2404,33 @@ const ASSISTANT_SYSTEM_RULES = [
   "5. Секое правно тврдење поткрепи го со цитат во форма [Член N], каде N е член што постои во LEGAL_SOURCES. Не спомнувај број на член што не е во LEGAL_SOURCES.",
   "6. Ако LEGAL_SOURCES не се доволни за одговор, кажи јасно дека нема доволна основа во достапниот корпус и што недостига, наместо да претпоставуваш.",
   "7. Ако член има STATUS historical или needs_version_review, кажи јасно дека не е Human-Gate потврден како тековен текст.",
+  "7a. Ако LEGAL_STATUS_NOTICES наведува pending_constitutional_review, задолжително соопшти дека постапката е во тек и наведи го предметот. Не тврди дека членот е укинат, поништен или престанал да важи освен ако notice изречно наведува таков правен ефект. За професионално потпирање барај најнова официјална проверка и Human Gate.",
   "8. Не давај проценти за исход. Не претставувај го одговорот како конечен индивидуален правен совет. За рокови, кривична постапка, притвор, правни лекови, застареност и други високоризични прашања нагласи дека е потребна човечка професионална проверка.",
   "9. Ако корисникот внесе непотребни доверливи или чувствителни лични податоци, не ги повторувај.",
   "10. Структура: Краток одговор; Правна основа; Примена/објаснување; Ограничувања и што треба да се провери."
 ].join("\n");
 
 function buildAssistantUserMessage(q, instrument, articles, version=null) {
-  const sources=articles.map(a=>[
-    `[Член ${sanitizeForPrompt(a.articleNumber)}]`,
-    `STATUS: ${sanitizeForPrompt(a.status)}; HUMAN_REVIEW: ${sanitizeForPrompt(a.humanReviewStatus)}`,
-    `SOURCE: ${sanitizeForPrompt(a.sourceUrl)}`,
-    "TEXT:",
-    sanitizeForPrompt(String(a.text || "").slice(0,4500))
-  ].join("\n")).join("\n\n---\n\n").slice(0,18000);
+  const sources=articles.map(a=>{
+    const notices=Array.isArray(a.legalStatusOverlays) && a.legalStatusOverlays.length
+      ? a.legalStatusOverlays.map(o=>[
+          `TYPE=${sanitizeForPrompt(o.type)}`,
+          `CASE=${sanitizeForPrompt(o.caseNumber)}`,
+          `LEGAL_EFFECT=${sanitizeForPrompt(o.legalEffect)}`,
+          `STATUS_AS_OF=${sanitizeForPrompt(o.statusAsOf)}`,
+          `SOURCE=${sanitizeForPrompt(o.sourceUrl)}`,
+          `WARNING=${sanitizeForPrompt(o.warningMk)}`
+        ].join("; ")).join(" | ")
+      : "none";
+    return [
+      `[Член ${sanitizeForPrompt(a.articleNumber)}]`,
+      `STATUS: ${sanitizeForPrompt(a.status)}; HUMAN_REVIEW: ${sanitizeForPrompt(a.humanReviewStatus)}`,
+      `SOURCE: ${sanitizeForPrompt(a.sourceUrl)}`,
+      `LEGAL_STATUS_NOTICES: ${notices}`,
+      "TEXT:",
+      sanitizeForPrompt(String(a.text || "").slice(0,4500))
+    ].join("\n");
+  }).join("\n\n---\n\n").slice(0,18000);
 
   return [
     "<<<LEGAL_SOURCES>>>",
@@ -2687,6 +2710,11 @@ async function governedArticleContext(env,q,basePlan){
           "HEADING: "+String(article.heading || ""),
           "ARTICLE_STATUS: "+String(article.status || "unknown"),
           "ARTICLE_HUMAN_REVIEW: "+String(article.humanReviewStatus || "pending"),
+          "LEGAL_STATUS_NOTICES: "+(
+            Array.isArray(article.legalStatusOverlays) && article.legalStatusOverlays.length
+              ? article.legalStatusOverlays.map(o=>[o.type,o.caseNumber,o.legalEffect,o.warningMk].filter(Boolean).join(" · ")).join(" | ")
+              : "none"
+          ),
           "VERSION_LABEL: "+String(versionInfo.label || "unknown"),
           "VERSION_CLASS: "+String(versionInfo.class || "unknown"),
           "VERSION_HUMAN_GATE: "+String(versionInfo.humanReviewStatus || "pending"),
@@ -2710,7 +2738,8 @@ async function governedArticleContext(env,q,basePlan){
       version:versionInfo.label || null,
       versionHumanReviewStatus:versionInfo.humanReviewStatus || null,
       relation:article.referenceRole || "direct_match",
-      referenceOriginArticleNumbers:Array.isArray(article.referenceOriginArticleNumbers) ? article.referenceOriginArticleNumbers : []
+      referenceOriginArticleNumbers:Array.isArray(article.referenceOriginArticleNumbers) ? article.referenceOriginArticleNumbers : [],
+      legalStatusOverlays:Array.isArray(article.legalStatusOverlays) ? article.legalStatusOverlays : []
     }));
 
     return {
@@ -3678,7 +3707,16 @@ async function handleAssistant(request, env, url) {
   // 6. AI (optional) with strict source-only guard.
   const version=retrieval.version || null;
   const versionInfo=summarizeVersion(version);
-  const warning=versionStatusWarning(version,articles);
+  const legalStatusOverlays=legalStatusOverlaysForArticles(
+    instrument.canonical_key,
+    articles,
+    {referenceDate:dateCheck.date}
+  );
+  const warningParts=[
+    versionStatusWarning(version,articles),
+    ...legalStatusOverlays.map(o=>o.warningMk)
+  ].filter(Boolean);
+  const warning=warningParts.length ? warningParts.join(" ") : null;
   let answer=null;
   let answerMode="retrieval_only";
   let aiError=null;
@@ -3723,6 +3761,9 @@ async function handleAssistant(request, env, url) {
           const versionIsApprovedCurrent=versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved";
 
           const articleVerificationState=(a)=>{
+            if(Array.isArray(a.legalStatusOverlays) && a.legalStatusOverlays.some(o=>o.humanGateRequired)){
+              return "pending_verification";
+            }
             if(versionIsApprovedCurrent){
               return a.publicStatus==="current_verified" ? "verified_current" : "pending_verification";
             }
@@ -3769,6 +3810,12 @@ async function handleAssistant(request, env, url) {
   }
 
   if(!answer) answer=fallbackAssistantAnswer(q,instrument,articles);
+  if(legalStatusOverlays.length){
+    const noticeText=legalStatusOverlays.map(o=>o.warningMk).join(" ");
+    if(!answer.includes(noticeText)){
+      answer=answer+"\n\nСтатусно предупредување: "+noticeText;
+    }
+  }
 
   return json(request,{
     ok:true,
@@ -3784,6 +3831,7 @@ async function handleAssistant(request, env, url) {
     versionBasis:retrieval.versionBasis || null,
     answer,
     legalStatusWarning:warning,
+    legalStatusOverlays,
     answerProvenance:{
       contract:"AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v1",
       runtimeValidation:"claim_level_citation_and_authority_v1",
@@ -3791,6 +3839,7 @@ async function handleAssistant(request, env, url) {
       verificationState:
         versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
           && articles.every(a=>a.publicStatus==="current_verified")
+          && articles.every(a=>!(Array.isArray(a.legalStatusOverlays) && a.legalStatusOverlays.some(o=>o.humanGateRequired)))
           ? "verified_current"
           : (!versionInfo.isCurrent
               && articles.every(a=>a.status==="historical" && ["approved","reviewed"].includes(String(a.humanReviewStatus || "")))
@@ -3811,6 +3860,7 @@ async function handleAssistant(request, env, url) {
       sourceIssueNumber:a.sourceIssueNumber,
       sourceIssueDate:a.sourceIssueDate,
       version:{label:versionInfo.label,class:versionInfo.class,isCurrent:versionInfo.isCurrent,humanReviewStatus:versionInfo.humanReviewStatus},
+      legalStatusOverlays:Array.isArray(a.legalStatusOverlays) ? a.legalStatusOverlays : [],
       excerpt:String(a.text || "").replace(/\s+/g," ").slice(0,420)
     })),
     humanGate:"AI output is research assistance, not autonomous legal representation. Verify the controlling version and primary source and obtain human professional review before high-stakes reliance.",
