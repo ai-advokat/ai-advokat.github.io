@@ -5,7 +5,9 @@ import { parseLegalText } from "../scripts/parse-mk-legal-text.mjs";
 import { applyAmendments } from "../scripts/apply-amendments.mjs";
 
 const plan=JSON.parse(fs.readFileSync("ingest/mk/plans/zro-39-2025-reconstruction-plan.json","utf8"));
+const review=JSON.parse(fs.readFileSync("ingest/mk/audits/zro-2023-parser-review-dispositions-2026-10-11.json","utf8"));
 const workflow=fs.readFileSync(".github/workflows/zro-39-2025-offline-reconstruction.yml","utf8");
+const deriveSrc=fs.readFileSync("scripts/derive-reviewed-zro-2023-base.mjs","utf8");
 
 const baseMeta={
   instrument_key:"mk:zro",
@@ -100,4 +102,41 @@ test("ZRO39-7 audit workflow is offline-only with no D1 or secret access",()=>{
   assert.doesNotMatch(workflow,/db:migrate/i);
   assert.doesNotMatch(workflow,/legal_article_version_candidates/);
   assert.match(workflow,/apply-amendments\.mjs/);
+});
+
+
+test("ZRO39-8 2023 parser review resolves exactly nine findings without source overwrite",()=>{
+  assert.equal(review.findings_total,9);
+  assert.equal(review.findings_resolved,9);
+  assert.equal(review.raw_source_preserved,true);
+  assert.equal(review.current_law_promotion,false);
+  assert.equal(review.human_gate_approved,false);
+  const gaps=review.dispositions.filter(x=>x.code==="unexplained_gap");
+  assert.deepEqual(gaps.map(x=>x.article),["98","253","254","255"]);
+  assert.ok(gaps.every(x=>x.disposition==="RESOLVED_EXPLICITLY_DELETED"));
+});
+
+test("ZRO39-9 reviewed base transformations are exact and bounded",()=>{
+  const foot=review.dispositions.find(x=>x.code==="amending_act_contamination");
+  assert.equal(foot.article,"2");
+  assert.match(foot.raw_marker,/Пречистениот текст на Законот/);
+  const mixed=review.dispositions.filter(x=>x.code==="mixed_script_token");
+  assert.deepEqual(mixed.map(x=>[x.article,x.from,x.to]),[
+    ["259","зaтекне","затекне"],
+    ["264","членoви","членови"],
+    ["265","платa","плата"],
+    ["266-в","Инспекторoт","Инспекторот"]
+  ]);
+  assert.ok(mixed.every(x=>x.expected_matches===1));
+  assert.match(deriveSrc,/Unexpected unresolved parser finding set/);
+  assert.match(deriveSrc,/raw_source_preserved:true/);
+  assert.match(deriveSrc,/human_gate_approved:false/);
+});
+
+test("ZRO39-10 workflow derives reviewed base before invoking amendment engine",()=>{
+  const derive=workflow.indexOf("derive-reviewed-zro-2023-base.mjs");
+  const apply=workflow.indexOf("apply-amendments.mjs");
+  assert.ok(derive>0 && apply>derive);
+  assert.match(workflow,/allowed_gaps/);
+  assert.match(workflow,/zro-2023-reviewed\.ndjson/);
 });
