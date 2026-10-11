@@ -48,7 +48,11 @@ const OPS = {
   textual_edit:      ["target", "find", "replace"],
   non_text:          ["kind"]
 };
-const OPTIONAL = { textual_edit: ["paragraph", "expected_matches", "whole_word"], non_text: ["note"] };
+const OPTIONAL = {
+  replace_paragraph: ["expected_current_text"],
+  textual_edit: ["paragraph", "expected_matches", "whole_word"],
+  non_text: ["note"]
+};
 const COMMON = ["op", "amendment_article", "source_text"];
 const NON_TEXT_KINDS = new Set(["transitional", "entry_into_force", "application", "other"]);
 const ALLOWED_TARGET_STATUSES = new Set(["source_text", "needs_version_review", "historical", "verified"]);
@@ -286,6 +290,15 @@ export function applyAmendments(base, plan) {
       const lines = before.split("\n");
       const b = paragraphBlock(lines, o.paragraph);
       if (b.error) opStop(`article ${target}: ${b.error}`);
+      const currentParagraph = compactText(lines.slice(b.start, b.end).join("\n"));
+      if (o.expected_current_text !== undefined) {
+        const expectedCurrent = compactText(o.expected_current_text);
+        entry.expected_current_text_sha256 = sha256(expectedCurrent);
+        entry.current_paragraph_sha256 = sha256(currentParagraph);
+        if (currentParagraph !== expectedCurrent) {
+          opStop(`article ${target} paragraph (${o.paragraph}) differs from expected_current_text`);
+        }
+      }
       const repl = compactText(o.new_text);
       if (!repl.match(PARA_LINE) || repl.match(PARA_LINE)[1] !== String(o.paragraph)) opStop(`new_text must start with the paragraph marker (${o.paragraph})`);
       after = [...lines.slice(0, b.start), ...repl.split("\n"), ...lines.slice(b.end)].join("\n");
