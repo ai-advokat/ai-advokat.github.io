@@ -1,0 +1,113 @@
+{
+  "captured_on": "2026-10-11",
+  "purpose": "Access-to-justice, legal-aid and provider-discovery source classification",
+  "sources": [
+    {
+      "id": "najdi-advokat",
+      "name": "Најди Адвокат",
+      "source_class": "private_lawyer_directory",
+      "authority_class": "secondary_provider_discovery",
+      "evidence_scope": "user-supplied public page text",
+      "content_integrity_state": "quarantined",
+      "quarantine_reasons": [
+        "unrelated test1.com entries",
+        "online-casino promotional text embedded in the lawyer-directory surface"
+      ],
+      "displayed_functions": [
+        "lawyer search by name",
+        "lawyer search by city",
+        "lawyer search by field of work",
+        "initial lawyer contact",
+        "legal information/news"
+      ],
+      "displayed_practice_areas": [
+        "Деловно и корпоративно право",
+        "Кривично право",
+        "Управно право",
+        "Постапки",
+        "Семејно и наследно право",
+        "Договори, штети и други облигациони односи",
+        "Работни односи",
+        "Недвижности и подвижни предмети",
+        "Меѓународно право",
+        "Интелектуална сопственост"
+      ],
+      "referral_eligible": false,
+      "legal_answer_eligible": false,
+      "automated_ingest_allowed": false,
+      "current_bar_status_verification_required": true,
+      "human_review_status": "quarantined_pending_clean_source_verification"
+    },
+    {
+      "id": "myla",
+      "name": "Македонско здружение на млади правници / Macedonian Young Lawyers Association",
+      "source_class": "ngo_legal_aid_and_rule_of_law_provider",
+      "authority_class": "secondary_professional_and_service_information",
+      "evidence_scope": "user-supplied public page text",
+      "displayed_status_claim": "non-profit, independent and professional organization established in 2003",
+      "displayed_work_areas": [
+        "Access to Justice",
+        "Asylum and Migration",
+        "Human Trafficking",
+        "Children’s Rights",
+        "Environmental Rights",
+        "Anti-discrimination",
+        "Statelessness"
+      ],
+      "displayed_service_roles": [
+        "free legal aid",
+        "strategic litigation",
+        "public policy development"
+      ],
+      "provider_discovery_eligible": true,
+      "legal_answer_eligible": false,
+      "substantive_legal_claims_require_primary_binding": true,
+      "current_contact_verification_required": true
+    },
+    {
+      "id": "loc-guide-law-north-macedonia",
+      "name": "Law Library of Congress — Guide to Law Online: North Macedonia",
+      "source_class": "official_research_directory",
+      "authority_class": "official_research_guidance",
+      "evidence_scope": "user-supplied Law Library of Congress guide text",
+      "last_updated_as_displayed": "2025-09-30",
+      "use_for": [
+        "official-source discovery",
+        "foreign-law research orientation",
+        "source-hierarchy orientation"
+      ],
+      "legal_answer_eligible": false,
+      "inclusion_is_endorsement": false,
+      "official_gazette_note": "The guide describes official gazettes as primary sources of law and notes their central role in civil-law systems.",
+      "substantive_legal_claims_require_primary_binding": true
+    },
+    {
+      "id": "pravnapomos-mk",
+      "name": "Правна Помош / pravnapomos.mk",
+      "source_class": "public_legal_aid_service_portal",
+      "authority_class": "service_guidance_pending_ownership_verification",
+      "evidence_scope": "user-supplied public page text",
+      "displayed_service_categories": [
+        "Примарна правна помош",
+        "Секундарна правна помош",
+        "БПП во кривични постапки"
+      ],
+      "displayed_provider_categories": [
+        "Подрачни одделенија на Министерството за правда",
+        "Овластени здруженија",
+        "Правни клиники",
+        "Адвокати запишани во регистар за секундарна правна помош"
+      ],
+      "displayed_footer_context": [
+        "Министерство за правда logo",
+        "EU support logo",
+        "Council of Europe support context"
+      ],
+      "provider_discovery_eligible": true,
+      "legal_answer_eligible": false,
+      "eligibility_and_rights_require_primary_law_verification": true,
+      "ownership_verification_required": true,
+      "current_provider_list_verification_required": true
+    }
+  ]
+}
