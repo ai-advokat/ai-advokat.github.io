@@ -134,6 +134,83 @@
       "ingest": "public_metadata_and_selected_translation_reference",
       "authority_note": "Useful Macedonian-language discovery layer only. Exact ECHR metadata and material propositions require HUDOC verification.",
       "hudoc_binding_required": true
+    },
+    {
+      "id": "icj-official",
+      "jurisdiction": "ICJ",
+      "authority_class": "international_court_case_law",
+      "official_name": "International Court of Justice",
+      "url": "https://www.icj-cij.org/decisions",
+      "access": "official_public",
+      "ingest": "public_metadata_and_public_decisions",
+      "identifier": "official_case_and_document_metadata",
+      "domestic_effect_note": "Assess case-specific jurisdiction, treaty basis and party relationship; do not label as automatically binding North Macedonian domestic precedent."
+    },
+    {
+      "id": "itlos-official",
+      "jurisdiction": "ITLOS",
+      "authority_class": "international_court_case_law",
+      "official_name": "International Tribunal for the Law of the Sea",
+      "url": "https://www.itlos.org/en/main/cases/list-of-cases/",
+      "access": "official_public",
+      "ingest": "public_metadata_and_public_decisions",
+      "identifier": "case_number",
+      "domestic_effect_note": "Use according to applicable law-of-the-sea jurisdiction and treaty context; do not label as automatically binding North Macedonian domestic precedent."
+    },
+    {
+      "id": "iacthr-official",
+      "jurisdiction": "INTER_AMERICAN",
+      "authority_class": "comparative_human_rights_case_law",
+      "official_name": "Inter-American Court of Human Rights / Corte IDH",
+      "url": "https://www.corteidh.or.cr/",
+      "access": "official_public",
+      "ingest": "public_metadata_and_public_judicial_documents",
+      "identifier": "official_case_or_series_reference",
+      "domestic_effect_note": "Comparative human-rights authority for North Macedonian research unless a distinct legal basis makes it relevant; not binding North Macedonian precedent."
+    },
+    {
+      "id": "icc-official",
+      "jurisdiction": "ICC",
+      "authority_class": "international_criminal_case_law",
+      "official_name": "International Criminal Court",
+      "url": "https://www.icc-cpi.int/cases",
+      "access": "official_public",
+      "ingest": "public_metadata_and_public_case_documents",
+      "identifier": "icc_case_number",
+      "domestic_effect_note": "Use according to Rome Statute jurisdiction and the concrete legal question; do not present as ordinary North Macedonian domestic precedent."
+    },
+    {
+      "id": "worldcourts",
+      "jurisdiction": "GLOBAL",
+      "authority_class": "secondary_global_case_law_discovery",
+      "official_name": "WorldCourts: International Case Law Database",
+      "url": "https://www.worldcourts.com/",
+      "access": "secondary_public",
+      "ingest": "link_only_pending_terms_review",
+      "official_binding_required_before_gpt_case_law_context": true,
+      "authority_note": "Discovery only. Verify against the originating court or tribunal and do not bulk-copy a terms-restricted corpus without a lawful basis."
+    },
+    {
+      "id": "worldlii",
+      "jurisdiction": "GLOBAL",
+      "authority_class": "secondary_global_legal_discovery",
+      "official_name": "World Legal Information Institute (WorldLII)",
+      "url": "https://www.worldlii.org/",
+      "access": "secondary_open_public",
+      "ingest": "link_and_metadata_discovery_pending_dataset_specific_terms_review",
+      "official_binding_required_before_gpt_case_law_context": true,
+      "authority_note": "Open legal-information discovery network. The originating court, tribunal or official publisher remains the authority."
+    },
+    {
+      "id": "un-dag-legal-research",
+      "jurisdiction": "GLOBAL",
+      "authority_class": "official_research_directory",
+      "official_name": "UN Dag Hammarskjöld Library — Legal Research Resources",
+      "url": "https://research.un.org/en/legal/websites",
+      "access": "official_public",
+      "ingest": "source_discovery_only",
+      "official_binding_required_before_gpt_case_law_context": true,
+      "authority_note": "Official UN research directory, not a judicial decision source."
     }
   ],
   "target_case_record": {
@@ -162,7 +239,12 @@
       "hudoc_item_id",
       "source_product",
       "source_record_id",
-      "official_binding_verified"
+      "official_binding_verified",
+      "international_court_case_number",
+      "official_document_id",
+      "series_or_report_reference",
+      "translation_status",
+      "domestic_effect_class"
     ]
   }
 }
