@@ -22,6 +22,8 @@ on:
       - "data/human-gate-decision-ledger.json"
       - "data/audit-trail-decision-history.json"
       - "data/uat/**"
+      - "data/mk-current-law-readiness-2026.json"
+      - "architecture/MK_CURRENT_LAW_READINESS_GATE.md"
       - "*.html"
       - "assets/**"
       - "sitemap.*"
@@ -135,3 +137,5 @@ jobs:
         run: node --check assets/legal-base.js && npm run test:legal-base
       - name: ZPP version timeline tests (official metadata, conservative status, staleness)
         run: node --check assets/zpp-timeline.js && npm run test:zpp-timeline
+      - name: MK current-law readiness gate
+        run: npm run test:current-law-readiness
