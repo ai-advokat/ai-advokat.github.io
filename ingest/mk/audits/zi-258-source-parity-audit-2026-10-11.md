@@ -1,7 +1,7 @@
 # ZI 258-article official-source parity audit
 
-Date: 2026-10-11  
-Run: 38170893630  
+Date: 2026-10-11
+Run: 38170893630
 Status: **MACHINE PARITY PASS / HUMAN GATE STILL BLOCKED**
 
 ## Exact official source
