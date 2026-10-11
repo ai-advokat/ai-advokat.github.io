@@ -1,0 +1,130 @@
+{
+  "captured_on": "2026-10-11",
+  "purpose": "Legal-market intelligence and professional-provider discovery. None of these sources is primary legal authority.",
+  "sources": [
+    {
+      "id": "chambers-and-partners",
+      "name": "Chambers and Partners",
+      "source_class": "commercial_legal_market_intelligence_and_rankings",
+      "authority_class": "secondary_market_intelligence",
+      "evidence_scope": "public homepage text supplied by user",
+      "public_functions_as_displayed": [
+        "legal rankings",
+        "find a law firm",
+        "find a lawyer",
+        "market intelligence",
+        "practice guides",
+        "practice analytics",
+        "talent intelligence",
+        "strategic intelligence"
+      ],
+      "public_claims_as_displayed": [
+        "29M+ data points collected",
+        "382,000+ interviews and surveys annually",
+        "66,000+ total annual submissions",
+        "10,000+ submitting law firms",
+        "another supplied homepage sentence states over 366,000 research interviews and surveys every year"
+      ],
+      "claim_consistency_note": "The supplied page text contains two different interview/survey figures (over 366,000 and 382,000+). Preserve both as displayed; do not reconcile without source-level verification.",
+      "allowed_use": [
+        "law_firm_discovery",
+        "lawyer_discovery",
+        "practice_area_mapping",
+        "market_intelligence",
+        "ranking_signal"
+      ],
+      "legal_answer_eligible": false,
+      "substantive_legal_claims_require_primary_binding": true,
+      "ingest_policy": "public_metadata_and_links_only_pending_terms_review"
+    },
+    {
+      "id": "legal-500",
+      "name": "The Legal 500",
+      "source_class": "commercial_legal_market_rankings_and_comparative_guides",
+      "authority_class": "secondary_market_and_practitioner_intelligence",
+      "evidence_scope": "public homepage text supplied by user",
+      "public_functions_as_displayed": [
+        "market analysis and rankings",
+        "Country Comparative Guides",
+        "LegalBusiness",
+        "GC Powerlist",
+        "Mondaq",
+        "data products",
+        "international law firm networks",
+        "Future Lawyers"
+      ],
+      "duplicate_capture_note": "The Legal 500 homepage block was supplied twice in the same user message; one source profile is retained.",
+      "comparative_guide_rule": "Treat Country Comparative Guides as secondary practitioner guidance and verify any material legal proposition against current official law.",
+      "allowed_use": [
+        "provider_discovery",
+        "practice_area_mapping",
+        "comparative_issue_spotting",
+        "market_intelligence",
+        "network_discovery"
+      ],
+      "legal_answer_eligible": false,
+      "substantive_legal_claims_require_primary_binding": true,
+      "ingest_policy": "public_metadata_and_links_only_pending_terms_review"
+    },
+    {
+      "id": "iflr",
+      "name": "IFLR / IFLR1000",
+      "source_class": "commercial_financial_legal_market_intelligence",
+      "authority_class": "secondary_market_editorial_and_ranking_intelligence",
+      "evidence_scope": "public page capture supplied by user",
+      "public_functions_as_displayed": [
+        "News & Insights",
+        "Market Intelligence",
+        "Rankings",
+        "Awards",
+        "Banking",
+        "M&A",
+        "Capital Markets",
+        "ESG",
+        "AI in Legal Services Guide"
+      ],
+      "market_claims_as_displayed": [
+        "1,327 firms across 14 jurisdictions referenced in a 2026 Southeast Asia rankings article",
+        "rankings analysis and regional accreditation coverage"
+      ],
+      "sponsored_content_present": true,
+      "sponsored_content_rule": "Preserve sponsored/editorial status. Sponsored items are discovery material only and cannot support independent ranking or legal-authority claims.",
+      "allowed_use": [
+        "financial_legal_market_trends",
+        "provider_discovery",
+        "practice_area_mapping",
+        "deal_and_regulatory_issue_spotting",
+        "ranking_signal"
+      ],
+      "legal_answer_eligible": false,
+      "substantive_legal_claims_require_primary_binding": true,
+      "ingest_policy": "public_metadata_and_links_only_pending_terms_review"
+    },
+    {
+      "id": "martindale",
+      "name": "Martindale",
+      "source_class": "professional_legal_directory_identity",
+      "authority_class": "secondary_directory_identity_only",
+      "evidence_scope": "brand/logo supplied only",
+      "allowed_use": [
+        "future_provider_directory_source_identification"
+      ],
+      "legal_answer_eligible": false,
+      "capabilities_verified": false,
+      "ingest_policy": "no_ingest_until_public_surface_and_terms_review"
+    },
+    {
+      "id": "cee-legal-matters",
+      "name": "CEE Legal Matters",
+      "source_class": "regional_legal_market_media_identity",
+      "authority_class": "secondary_market_media_identity_only",
+      "evidence_scope": "brand/logo supplied only",
+      "allowed_use": [
+        "future_regional_market_source_identification"
+      ],
+      "legal_answer_eligible": false,
+      "capabilities_verified": false,
+      "ingest_policy": "no_ingest_until_public_surface_and_terms_review"
+    }
+  ]
+}
