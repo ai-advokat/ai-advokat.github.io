@@ -46,7 +46,7 @@
         "source_issue_date": "2023-07-20",
         "backfill_migration": "0024_zi_legacy_version_backfill.sql"
       },
-      "current_law_status": "CURRENT_TEXT_CANDIDATE_WARNINGS_INTEGRATED_HUMAN_GATE_PENDING",
+      "current_law_status": "CURRENT_TEXT_CANDIDATE_MACHINE_PARITY_VERIFIED_HUMAN_GATE_REVIEW_REQUIRED",
       "repository_binding_plan_ready": true,
       "current_text_reconstructed": true,
       "gates": {
@@ -59,7 +59,7 @@
         "current_version_verified": false,
         "human_gate_approved": false
       },
-      "next_action": "Machine-compare all 258 bound article records against the exact official editorial PDF, preserve the Article 218 pending-review overlay, then Human Gate the verified snapshot; re-check official sources immediately before any current-version promotion.",
+      "next_action": "Human Gate the 28 parser findings against the rendered official PDF, without overwriting source-faithful text. Then re-check Article 218 constitutional-review status and all official sources immediately before any current-version promotion.",
       "pending_constitutional_review": {
         "case": "U.br.86/2025",
         "article": "218",
@@ -75,6 +75,18 @@
         ],
         "permanent_current_text_component": false,
         "index_complete": false
+      },
+      "machine_source_parity": {
+        "verified": true,
+        "audited_on": "2026-10-11",
+        "audit_run_id": 38170893630,
+        "article_count": 258,
+        "production_exact": true,
+        "staging_exact": true,
+        "production_staging_equal": true,
+        "corpus_sha256": "56a69c8c0d278f237984ad7d0e4271f12e48ee54f5ffd8fdd0f804826b361609",
+        "parser_findings_pending": 28,
+        "database_mutation": false
       }
     },
     {
