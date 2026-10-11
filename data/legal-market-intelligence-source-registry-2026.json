@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0",
+  "registry_id": "AI_ADVOKAT_LEGAL_MARKET_INTELLIGENCE_SOURCES_2026",
+  "updated_on": "2026-10-11",
+  "doctrine": [
+    "legal_market_sources_are_not_primary_law",
+    "rankings_are_secondary_signals_not_quality_guarantees",
+    "comparative_guides_require_primary_law_verification",
+    "sponsored_and_editorial_content_must_remain_distinct",
+    "no_bulk_copy_without_terms_review",
+    "provider_status_requires_live_verification"
+  ],
+  "sources": [
+    {
+      "id": "chambers-and-partners",
+      "name": "Chambers and Partners",
+      "source_class": "commercial_legal_market_intelligence_and_rankings",
+      "authority_class": "secondary_market_intelligence",
+      "allowed_use": [
+        "law_firm_discovery",
+        "lawyer_discovery",
+        "practice_area_mapping",
+        "market_intelligence",
+        "ranking_signal"
+      ],
+      "legal_answer_eligible": false,
+      "substantive_legal_claims_require_primary_binding": true,
+      "ingest_policy": "public_metadata_and_links_only_pending_terms_review"
+    },
+    {
+      "id": "legal-500",
+      "name": "The Legal 500",
+      "source_class": "commercial_legal_market_rankings_and_comparative_guides",
+      "authority_class": "secondary_market_and_practitioner_intelligence",
+      "allowed_use": [
+        "provider_discovery",
+        "practice_area_mapping",
+        "comparative_issue_spotting",
+        "market_intelligence",
+        "network_discovery"
+      ],
+      "legal_answer_eligible": false,
+      "substantive_legal_claims_require_primary_binding": true,
+      "ingest_policy": "public_metadata_and_links_only_pending_terms_review"
+    },
+    {
+      "id": "iflr",
+      "name": "IFLR / IFLR1000",
+      "source_class": "commercial_financial_legal_market_intelligence",
+      "authority_class": "secondary_market_editorial_and_ranking_intelligence",
+      "allowed_use": [
+        "financial_legal_market_trends",
+        "provider_discovery",
+        "practice_area_mapping",
+        "deal_and_regulatory_issue_spotting",
+        "ranking_signal"
+      ],
+      "legal_answer_eligible": false,
+      "substantive_legal_claims_require_primary_binding": true,
+      "ingest_policy": "public_metadata_and_links_only_pending_terms_review"
+    },
+    {
+      "id": "martindale",
+      "name": "Martindale",
+      "source_class": "professional_legal_directory_identity",
+      "authority_class": "secondary_directory_identity_only",
+      "allowed_use": [
+        "future_provider_directory_source_identification"
+      ],
+      "legal_answer_eligible": false,
+      "substantive_legal_claims_require_primary_binding": true,
+      "ingest_policy": "no_ingest_until_public_surface_and_terms_review"
+    },
+    {
+      "id": "cee-legal-matters",
+      "name": "CEE Legal Matters",
+      "source_class": "regional_legal_market_media_identity",
+      "authority_class": "secondary_market_media_identity_only",
+      "allowed_use": [
+        "future_regional_market_source_identification"
+      ],
+      "legal_answer_eligible": false,
+      "substantive_legal_claims_require_primary_binding": true,
+      "ingest_policy": "no_ingest_until_public_surface_and_terms_review"
+    }
+  ],
+  "provider_research_record": {
+    "required": [
+      "source_id",
+      "provider_name",
+      "jurisdiction_or_market",
+      "source_url",
+      "captured_on",
+      "source_class",
+      "human_review_status"
+    ],
+    "recommended": [
+      "practice_area",
+      "ranking_or_band",
+      "edition_year",
+      "individual_or_firm",
+      "author_or_researcher",
+      "sponsored_status",
+      "current_status_verified",
+      "verification_date"
+    ]
+  }
+}
