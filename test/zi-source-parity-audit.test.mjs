@@ -42,8 +42,8 @@ test("ZI-P4 readiness records parity but current/Human Gate remain false",()=>{
   assert.equal(zi.machine_source_parity?.article_count,258);
   assert.equal(zi.machine_source_parity?.corpus_sha256,q.machine_source_parity.corpus_sha256);
   assert.equal(zi.machine_source_parity?.parser_findings_total,28);
-  assert.equal(zi.machine_source_parity?.parser_findings_resolved,25);
-  assert.equal(zi.machine_source_parity?.parser_findings_pending,3);
+  assert.equal(zi.machine_source_parity?.parser_findings_resolved,28);
+  assert.equal(zi.machine_source_parity?.parser_findings_pending,0);
   assert.equal(zi.gates.current_version_verified,false);
   assert.equal(zi.gates.human_gate_approved,false);
   assert.notEqual(zi.current_law_status,"PRODUCTION_READY");
