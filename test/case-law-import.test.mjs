@@ -193,3 +193,36 @@ test("CLI9 licensed Paragraf Lex Nova LexAI lineage remains discovery-only until
     assert.match(out.sql,/paragraf_legacy_id/);
   }
 });
+
+
+test("CLI10 official international court hosts and identifiers are accepted as staged official imports",()=>{
+  const samples=[
+    ["https://www.icj-cij.org/case/example","ICJ",{icj_case_number:"ICJ-TEST-1"}],
+    ["https://www.itlos.org/en/main/cases/list-of-cases/case-example/","ITLOS",{itlos_case_number:"36"}],
+    ["https://www.corteidh.or.cr/docs/casos/articulos/example.pdf","INTER_AMERICAN",{iacthr_series_number:"Series-C-TEST"}],
+    ["https://www.icc-cpi.int/court-record/example","ICC",{icc_case_number:"ICC-TEST-01"}]
+  ];
+  for(const [url,jurisdiction,external_ids] of samples){
+    const out=generateCaseLawImportSql(ndjson([
+      manifest({source_provider:jurisdiction}),
+      caseRow({
+        source_url:url,
+        jurisdiction,
+        source_sha256:"d".repeat(64),
+        external_ids
+      })
+    ]));
+    assert.equal(out.sourceClass,"official_public");
+    assert.match(out.sql,/official_primary/);
+    for(const value of Object.values(external_ids)) assert.match(out.sql,new RegExp(value.replace(/[.*+?^$\{\}()|[\]\\]/g,"\\$&")));
+  }
+});
+
+test("CLI11 secondary global aggregators cannot masquerade as official-public court origins",()=>{
+  for(const url of ["https://www.worldcourts.com/example","https://www.worldlii.org/example"]){
+    assert.throws(
+      ()=>generateCaseLawImportSql(ndjson([manifest({source_provider:"secondary"}),caseRow({source_url:url})])),
+      /outside the approved official host set/
+    );
+  }
+});
