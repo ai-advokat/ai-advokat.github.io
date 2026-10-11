@@ -1,0 +1,38 @@
+{
+  "captured_on": "2026-10-11",
+  "source_id": "mk-judicial-portal",
+  "source_name": "Судски портал на Република Северна Македонија",
+  "surface_label": "Врховен суд на Република Северна Македонија / Судски портал",
+  "source_url": "https://www.sud.mk/",
+  "authority_class": "official_public_judicial_metadata",
+  "displayed_result_count": 899778,
+  "query_scope": "unspecified/unfiltered in supplied snapshot",
+  "result_count_rule": "Treat as a point-in-time UI count only. It is not a verified count of final judgments, precedential decisions, or unique cases.",
+  "observed_result_types": [
+    "hearing minutes / zapisnik",
+    "first-instance criminal judgments",
+    "first-instance civil judgments",
+    "criminal rulings",
+    "appellate criminal rulings",
+    "appellate civil decisions",
+    "higher administrative judgments"
+  ],
+  "observed_courts": [
+    "Основен суд Битола со одделение Демир Хисар",
+    "Основен суд Ресен",
+    "Основен суд Кичево со одделение во Македонски Брод",
+    "Основен суд Охрид",
+    "Основен суд Кочани",
+    "Апелационен суд Скопје",
+    "Виш управен суд"
+  ],
+  "observed_supreme_court_research_sections": [
+    "Начелни правни мислења",
+    "Начелни ставови",
+    "Правни мислења и заклучоци",
+    "Сентенци",
+    "Европски суд за човекови права"
+  ],
+  "privacy_rule": "Store only legal metadata needed for research. Do not bulk-retain personal identifiers or party-level profiling fields from public snippets.",
+  "full_document_rule": "A search-result snippet is discovery metadata only. Fetch/hash the exact public document before extracting holdings or treating it as case-law authority."
+}
