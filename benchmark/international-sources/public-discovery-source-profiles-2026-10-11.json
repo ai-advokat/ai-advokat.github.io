@@ -1,0 +1,44 @@
+{
+  "captured_on": "2026-10-11",
+  "sources": [
+    {
+      "id": "worldcourts",
+      "name": "WorldCourts: International Case Law Database",
+      "url": "https://www.worldcourts.com/",
+      "source_class": "secondary_global_case_law_aggregator",
+      "public_claims_as_displayed": [
+        "50,000+ decisions",
+        "50+ institutions"
+      ],
+      "ingest_policy": "link_only_pending_terms_review",
+      "official_binding_required": true,
+      "use_for": "cross-institution_case_discovery",
+      "notes": "Copyrighted secondary aggregator. Do not treat as originating-court authority or bulk-copy without a separately verified lawful basis."
+    },
+    {
+      "id": "worldlii",
+      "name": "World Legal Information Institute (WorldLII)",
+      "url": "https://www.worldlii.org/",
+      "source_class": "secondary_open_legal_information_aggregator",
+      "public_claims_as_displayed": [
+        "free, independent and non-profit access to worldwide law",
+        "1834 databases",
+        "123 jurisdictions",
+        "14 Legal Information Institutes"
+      ],
+      "ingest_policy": "link_and_metadata_discovery_pending_dataset_specific_terms_review",
+      "official_binding_required": true,
+      "use_for": "global_legal_source_discovery",
+      "notes": "Open-access discovery network, not the originating court for most included judicial materials."
+    },
+    {
+      "id": "un-dag-legal-research",
+      "name": "UN Dag Hammarskjöld Library — Legal Research Resources",
+      "url": "https://research.un.org/en/legal/websites",
+      "source_class": "official_research_directory",
+      "ingest_policy": "source_discovery_only",
+      "official_binding_required": true,
+      "use_for": "locating_official_UN_and_international_law_sources"
+    }
+  ]
+}
