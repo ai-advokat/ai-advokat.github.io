@@ -152,3 +152,5 @@ jobs:
         run: npm run test:zi-human-gate-review
       - name: Reviewed ZI article representation runtime gate
         run: npm run test:reviewed-article-representations
+      - name: Final ZI official-status recheck and Human Gate pack
+        run: npm run test:zi-final-status-recheck

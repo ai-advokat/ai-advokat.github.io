@@ -83,7 +83,8 @@
     "test:legal-status-overlays": "node --no-warnings --test test/legal-status-overlays.test.mjs test/legal-status-overlay-runtime.test.mjs",
     "test:zi-source-parity": "node --no-warnings --test test/zi-source-parity-audit.test.mjs",
     "test:zi-human-gate-review": "node --no-warnings --test test/zi-human-gate-review-dispositions.test.mjs",
-    "test:reviewed-article-representations": "node --no-warnings --test test/reviewed-article-representations.test.mjs test/reviewed-article-runtime.test.mjs"
+    "test:reviewed-article-representations": "node --no-warnings --test test/reviewed-article-representations.test.mjs test/reviewed-article-runtime.test.mjs",
+    "test:zi-final-status-recheck": "node --no-warnings --test test/zi-final-current-status-recheck.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"

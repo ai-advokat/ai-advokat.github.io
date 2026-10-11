@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "pack_id": "ZI_FINAL_HUMAN_GATE_2026-10-11",
+  "jurisdiction": "MK",
+  "instrument_key": "mk:zi",
+  "instrument_title": "Закон за извршување",
+  "prepared_on": "2026-10-11",
+  "decision_state": "PENDING_HUMAN_DECISION",
+  "proposed_decision_scope": "Whether to approve the governed ZI article corpus as the verified current-text representation as of 2026-10-11, subject to explicit Article 218 pending-review warning and historical temporal overlays.",
+  "machine_evidence": {
+    "official_pdf_sha256": "15d8b0961d1beb1b5bc7de8f43d4b6ff4c1d79cdc46b241e829530039eefaa55",
+    "official_pdf_pages": 99,
+    "article_count": 258,
+    "production_source_parity": "PASS_258_OF_258",
+    "staging_source_parity": "PASS_258_OF_258",
+    "corpus_sha256": "56a69c8c0d278f237984ad7d0e4271f12e48ee54f5ffd8fdd0f804826b361609",
+    "permanent_lineage_reconciled": true,
+    "application_dates_verified": true,
+    "parser_findings_total": 28,
+    "parser_findings_resolved": 28,
+    "reviewed_representation_articles": [
+      "4",
+      "104",
+      "269"
+    ],
+    "official_status_recheck": "PASS_BOUNDED_OFFICIAL_SURFACES"
+  },
+  "unresolved_or_conditional": [
+    {
+      "id": "article-218-pending-review",
+      "type": "pending_constitutional_review",
+      "case": "U.br.86/2025",
+      "article": "218",
+      "mandatory_warning": true,
+      "final_repeal_or_annulment_effect_identified": false
+    },
+    {
+      "id": "historical-emergency-overlay",
+      "type": "historical_temporal_layer",
+      "gazette_issues": [
+        "86/2020",
+        "103/2020",
+        "156/2020"
+      ],
+      "current_text_component": false,
+      "note": "Historical date queries in the emergency period require the separate overlay."
+    },
+    {
+      "id": "bounded-negative",
+      "type": "research_limit",
+      "note": "No later enacted amendment was identified on the checked official surfaces; this must not be represented as a universal proof beyond those surfaces."
+    }
+  ],
+  "reviewer_checklist": [
+    "Confirm the reviewed official-source bundle and fingerprints.",
+    "Confirm that the 258 article set and reviewed representations for Articles 4, 104 and 269 are acceptable.",
+    "Confirm that Article 218 warning remains mandatory and is not described as repeal/annulment.",
+    "Confirm that historical emergency overlays remain separate from present-day current-text retrieval.",
+    "Confirm no newer official amendment/correction/Constitutional Court effect has appeared since this pack was prepared.",
+    "Record reviewer identity/role, decision, reason and decision timestamp."
+  ],
+  "allowed_decisions": [
+    "APPROVE_WITH_CONDITIONS",
+    "REJECT",
+    "RETURN_FOR_REVIEW"
+  ],
+  "prohibited_automation": [
+    "Do not auto-set human_gate_approved=true.",
+    "Do not auto-set is_current=1.",
+    "Do not auto-set article status=current_consolidated.",
+    "Do not remove Article 218 warning automatically."
+  ],
+  "decision": null,
+  "reviewer": null,
+  "decided_at": null,
+  "reason": null
+}
