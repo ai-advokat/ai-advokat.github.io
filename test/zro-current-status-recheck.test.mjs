@@ -28,10 +28,12 @@ test("ZRO-R3 latest checked Constitutional Court outcomes do not alter Articles 
   assert.equal(x.bounded_findings.latest_checked_constitutional_cases_change_text,false);
 });
 
-test("ZRO-R4 readiness remains reconstruction-pending and Human Gate closed",()=>{
+test("ZRO-R4 later offline reconstruction does not alter the bounded source-recheck or open Human Gate",()=>{
   assert.equal(zro.gates.current_version_verified,false);
   assert.equal(zro.gates.human_gate_approved,false);
-  assert.equal(zro.current_text_reconstructed,false);
+  assert.equal(zro.current_text_reconstructed,true);
+  assert.equal(zro.offline_candidate?.known_2025_chain_reconstructed,true);
+  assert.equal(zro.offline_candidate?.database_writes,0);
   assert.notEqual(zro.current_law_status,"PRODUCTION_READY");
   assert.equal(zro.official_status_recheck?.state,"LATEST_IDENTIFIED_AMENDMENT_124_2025");
 });
