@@ -365,7 +365,7 @@
       "source_text": "Во член 265 во ставот (4) зборовите: „министерот за труд и социјална политика” се заменуваат со зборовите: „министерот за економија и труд”.",
       "target": "265",
       "paragraph": "4",
-      "find": "министерот за труд и социјална политика",
+      "find": "министерот надлежен за работите од областа на трудот",
       "replace": "министерот за економија и труд",
       "expected_matches": 1
     },
@@ -431,6 +431,13 @@
       "paragraph": "2",
       "base_phrase": "Министерството надлежно за работите од областа за трудот",
       "amendment_phrase": "министерството надлежно за работите од областа на трудот",
+      "rule": "Match the exact governed 2023 base phrase; preserve OG 74/2025 source_text verbatim; no fuzzy matching."
+    },
+    {
+      "target_article": "265",
+      "paragraph": "4",
+      "base_phrase": "министерот надлежен за работите од областа на трудот",
+      "amendment_phrase": "министерот за труд и социјална политика",
       "rule": "Match the exact governed 2023 base phrase; preserve OG 74/2025 source_text verbatim; no fuzzy matching."
     }
   ]
