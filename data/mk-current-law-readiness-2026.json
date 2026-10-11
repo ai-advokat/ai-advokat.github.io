@@ -138,9 +138,9 @@
         "backfill_migration": "0025_zro_legacy_version_backfill.sql"
       },
       "verified_amendment_events_2025": 32,
-      "current_law_status": "LATEST_IDENTIFIED_AMENDMENT_124_2025_RECONSTRUCTION_PENDING",
+      "current_law_status": "OFFLINE_CANDIDATE_THROUGH_124_2025_HUMAN_GATE_PENDING",
       "repository_binding_plan_ready": true,
-      "current_text_reconstructed": false,
+      "current_text_reconstructed": true,
       "gates": {
         "official_source_bound": true,
         "article_level_text_present": true,
@@ -151,7 +151,7 @@
         "current_version_verified": false,
         "human_gate_approved": false
       },
-      "next_action": "Run the live read-only D1 invariant audit. If production/staging snapshot and staging 32-event topology pass, build deterministic candidate reconstructions only in staging, article-by-article, with unresolved transitional/entry provisions preserved for Human Gate.",
+      "next_action": "Human Gate the 27 changed/inserted articles in ingest/mk/audits/zro-human-gate-pack-2026-10-12.json, then immediately re-check Ministry/LDBIS/Constitutional Court before any current-version or D1 promotion.",
       "official_status_recheck": {
         "checked_on": "2026-10-11",
         "state": "LATEST_IDENTIFIED_AMENDMENT_124_2025",
@@ -174,6 +174,17 @@
         ],
         "bounded_negative": true,
         "evidence": "ingest/mk/real-source-fixtures/zro-current-status-recheck-2026.json"
+      },
+      "offline_candidate": {
+        "version_label": "derived-candidate-through-124/2025",
+        "article_count": 299,
+        "known_2025_chain_reconstructed": true,
+        "operation_count": 46,
+        "unique_changed_or_inserted_articles": 27,
+        "current_version_verified": false,
+        "human_gate_approved": false,
+        "database_writes": 0,
+        "evidence": "ingest/mk/audits/zro-human-gate-pack-2026-10-12.json"
       }
     },
     {
