@@ -125,3 +125,13 @@ test("OLS9 target ingest record preserves provenance and rights state", () => {
     assert.ok(recommended.has(key), key);
   }
 });
+
+test("OLS10 public dashboard is read-only, indexed and fail-closed in its messaging", () => {
+  const page = fs.readFileSync("open-legal-sources.html","utf8");
+  assert.match(page, /rel="canonical" href="https:\/\/ai-advokat\.github\.io\/open-legal-sources\.html"/);
+  assert.match(page, /name="robots" content="index,follow/);
+  assert.match(page, /PUBLIC ≠ REUSABLE/);
+  assert.match(page, /fetch\("\/data\/open-legal-sources-registry-2026\.json"/);
+  assert.match(page, /Human Gate пред автоматизација/);
+  assert.doesNotMatch(page, /bulk ingest approved for all public sources/i);
+});
