@@ -24,7 +24,7 @@ const PUBLISHED = workerModule.ZENODO_RECORDS.filter((r) => r.status === "publis
 
 describe("frontend ↔ API contract", () => {
   test("FC1 every error code /api/assistant can return has a UI state (no silent 'service unavailable')", () => {
-    const handler = worker.slice(worker.indexOf("async function handleAssistant("), worker.indexOf("function handleWebSources("));
+    const handler = worker.slice(worker.indexOf("async function handleAssistant("), worker.indexOf("async function handleGazetteRegister("));
     const codes = new Set([
       ...[...handler.matchAll(/error:\s*"([a-z_]+)"/g)].map((m) => m[1]),
       ...[...handler.matchAll(/assistantError\(request,\s*\d+,\s*"([a-z_]+)"/g)].map((m) => m[1]),
