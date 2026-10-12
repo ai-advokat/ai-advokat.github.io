@@ -9,7 +9,7 @@
 <link rel="canonical" href="https://ai-advokat.github.io/guides/fulltext/izbor-na-advokat/">
 <style>
 :root{--navy:#0c2038;--ink:#132033;--muted:#607083;--line:#dbe3ea;--bg:#f4f7fa;--surface:#fff;--warn:#8a5a00;--red:#922b2b;--ok:#176746}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}a{color:#173d66}.wrap{max-width:960px;margin:auto;padding:0 20px}
+*{box-sizing:border-box}.skip{position:absolute;left:-9999px;top:8px;background:#fff;color:#0c2038;padding:9px 12px;border-radius:8px;z-index:99}.skip:focus{left:10px}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}a{color:#173d66}.wrap{max-width:960px;margin:auto;padding:0 20px}
 header{background:var(--navy);color:#fff}.top{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:16px 0;flex-wrap:wrap}.top a{color:#fff;text-decoration:none;font-weight:700}
 main{padding:34px 0 70px}.hero,.provenance,.source-text,.notice{background:var(--surface);border:1px solid var(--line);border-radius:16px}.hero{padding:28px}.eyebrow{font-size:.76rem;letter-spacing:.1em;text-transform:uppercase;font-weight:900;color:#24527f}h1{line-height:1.12;margin:.35rem 0 1rem}.lead{color:var(--muted)}
 .badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:15px}.pill{font-size:.76rem;font-weight:800;border-radius:999px;padding:5px 9px;background:#edf4fa}.pill.ok{background:#e7f4ed;color:var(--ok)}.pill.warn{background:#fff1d6;color:var(--warn)}
@@ -20,8 +20,9 @@ footer{border-top:1px solid var(--line);background:#fff;color:var(--muted);paddi
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Прескокни до главната содржина</a>
 <header><div class="wrap top"><strong>AI Advokat · Практични водичи</strong><nav><a href="/guides/">Сите водичи</a> · <a href="/sluzben-vesnik/">Службен весник</a> · <a href="/">Почетна</a></nav></div></header>
-<main><div class="wrap">
+<main id="main"><div class="wrap">
 <section class="hero">
 <div class="eyebrow">Целосен јавен текст · source-preserving release</div>
 <h1>Како да изберам адвокат и да ги разберам трошоците</h1>
