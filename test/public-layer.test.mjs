@@ -235,6 +235,11 @@ describe("links and metadata", () => {
     assert.ok(map.includes("/professional-tools.html"));
   });
 
+  test("LM9 homepage exposes exactly the active Google Search Console verification token", () => {
+    const tags = [...index.matchAll(/<meta name="google-site-verification" content="([^"]+)" \/>/g)].map((m) => m[1]);
+    assert.deepEqual(tags, ["Whd-Cu_4mUM1-LpyGS1MhvQ4yV2OpTAojJcZLKdnRfE"]);
+  });
+
   test("LM6 every JSON-LD block parses", () => {
     for (const p of PAGES) for (const m of read(p).matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) JSON.parse(m[1]);
   });
