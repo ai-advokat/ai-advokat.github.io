@@ -4010,6 +4010,23 @@ async function lioeRuntimeTelemetryStatus(env){
   }
 }
 
+function handleOpenLegalSourcesPolicy(request){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+  return json(request,{
+    ok:true,
+    policy:openLegalSourcePolicySummary(),
+    sources:PUBLIC_WEB_SOURCES,
+    runtime:{
+      sourceRouter:"enabled",
+      rightsGate:"enabled",
+      specialistPolicyPrompts:"enabled",
+      webCitationAnnotation:"enabled",
+      verificationPolicyContext:"enabled",
+      corpusPromotion:"separate_human_gate"
+    }
+  });
+}
+
 async function handleOrchestratorArchitecture(request, env) {
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
 
