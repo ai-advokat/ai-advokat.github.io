@@ -130,25 +130,24 @@ jobs:
           grep -Eq 'secret|Success|success|Uploaded' /tmp/secret-put.log || true
           echo "Cloudflare OpenAI secret installation completed."
 
-      - name: Ensure production CasePilot R2 bucket exists
+      - name: Preserve CasePilot private-storage Human Gate
         shell: bash
         run: |
           set -euo pipefail
-          BUCKET="ai-advokat-case-files"
-          if npx wrangler r2 bucket info "$BUCKET" --config wrangler.jsonc --json >/tmp/r2-bucket.json 2>/tmp/r2-bucket-info.err; then
-            echo "Production R2 bucket exists: $BUCKET"
-          else
-            echo "Production R2 bucket missing; creating private bucket: $BUCKET"
-            cat /tmp/r2-bucket-info.err || true
-            npx wrangler r2 bucket create "$BUCKET" --config wrangler.jsonc
-            npx wrangler r2 bucket info "$BUCKET" --config wrangler.jsonc --json >/tmp/r2-bucket.json
-          fi
           node <<'NODE'
           const fs=require("fs");
-          const d=JSON.parse(fs.readFileSync("/tmp/r2-bucket.json","utf8"));
-          const name=String(d.name||d.bucket_name||"");
-          if(name!=="ai-advokat-case-files") throw new Error("Unexpected or unverified production R2 bucket: "+JSON.stringify(d));
-          console.log("Production R2 preflight: PASS");
+          const config=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const request=JSON.parse(fs.readFileSync(".github/activation/case-workspace-production-request.json","utf8"));
+          if(Array.isArray(config.r2_buckets) && config.r2_buckets.length) {
+            throw new Error("CASE_FILES R2 must remain unbound until private object storage receives a separate Human Gate approval");
+          }
+          if(request.private_object_storage_activation_authorized!==false) {
+            throw new Error("Unexpected Case Workspace private-storage authorization state");
+          }
+          if(request.private_document_upload_authorized!==false) {
+            throw new Error("Unexpected Case Workspace private-upload authorization state");
+          }
+          console.log("CasePilot storage gate: LOCKED as required; GPT provider activation may proceed independently.");
           NODE
 
       - name: Deploy production Worker
@@ -167,6 +166,7 @@ jobs:
             throw new Error("GPT provider not configured after deploy: "+JSON.stringify(d.runtime));
           }
           if(d.runtime?.externalResearchTools!=="configured") throw new Error("Web search runtime not configured");
+          if(d.runtime?.fileInputs!=="configured") throw new Error("Attachment input runtime not configured");
           console.log("Provider readiness: PASS");
           NODE
 
