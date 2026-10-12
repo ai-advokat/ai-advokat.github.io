@@ -89,6 +89,10 @@ jobs:
         run: npm run test:guides
       - name: Citizen guide router tests
         run: npm run test:guide-router
+      - name: Guide-to-law runtime governance
+        run: npm run test:guide-law-governance
+      - name: ZRO Human Gate workflow safety
+        run: npm run test:zro-human-gate-workflow
       - name: Case-law source registry tests
         run: npm run test:case-law-sources
       - name: Governed case-law chat context tests
