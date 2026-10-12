@@ -3584,6 +3584,12 @@ async function handleGPTChat(request,env){
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,
     sources:result.sources || [],
+    sourcePolicy:{
+      version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
+      registeredExternalSources:(result.sources||[]).filter(s=>s.registered===true).length,
+      unregisteredExternalSources:(result.sources||[]).filter(s=>s.registered!==true).length,
+      corpusPromotion:"human_gate_required"
+    },
     legalSources:articleBundle.legalSources || [],
     caseLawSources:caseLawBundle.sources || [],
     guideSources:guideDocumentCheck.sources || [],
@@ -3638,6 +3644,9 @@ async function handleGPTChat(request,env){
       postflightProvisional:postflight.verdict==="REVISE",
       correctionRequired:(postflight.attempts||0)>1,
       officialWebSourceCount:runtimeAssessment.officialWebSourceCount,
+      registeredOpenLegalSourceCount:runtimeAssessment.registeredOpenLegalSourceCount||0,
+      policyCompliantWebSourceCount:runtimeAssessment.policyCompliantWebSourceCount||0,
+      openLegalSourcePolicyVersion:runtimeAssessment.openLegalSourcePolicyVersion||OPEN_LEGAL_SOURCE_POLICY_VERSION,
       specialistExecution:result.specialistExecution||null,
       warning:runtimeAssessment.warningMk
     } : null,
@@ -4260,6 +4269,7 @@ export default {
     if (url.pathname === "/api/orchestrator") return handleOrchestratorArchitecture(request, env);
     if (url.pathname === "/api/orchestrator/plan") return handleOrchestratorPlan(request, env);
     if (url.pathname === "/api/knowledge-intake-policy") return handleKnowledgeIntakePolicy(request);
+    if (url.pathname === "/api/open-legal-sources-policy") return handleOpenLegalSourcesPolicy(request);
     if (url.pathname === "/api/professional-workflows") {
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
       return json(request,{ok:true,version:"1.0.0",workflows:listLegalWorkflows(),humanGate:"required"});
