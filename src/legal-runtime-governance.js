@@ -171,6 +171,9 @@ export function assessLegalRuntimeRelease({
       ? (postflightPassed&&postflight?.adversarial_review==="PASS" ? "PASSED" : "PROVISIONAL")
       : "NOT_REQUIRED",
     officialWebSourceCount:officialCount,
+    registeredOpenLegalSourceCount:registeredCount,
+    policyCompliantWebSourceCount:policyCompliantCount,
+    openLegalSourcePolicyVersion:OPEN_LEGAL_SOURCE_POLICY_VERSION,
     postflightRequired:postflightNeeded,
     warningMk
   });
