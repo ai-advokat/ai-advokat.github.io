@@ -54,6 +54,10 @@ import {
   articleTextForLegalSynthesis
 } from "./reviewed-article-representations.js";
 import {
+  evaluateGuideLawDependencies,
+  guideLawGatePrompt
+} from "./guide-law-governance.js";
+import {
   AGENT_ROLES,
   ORCHESTRATOR_MODES,
   ORCHESTRATION_PATTERN,
@@ -2507,27 +2511,62 @@ async function loadGuideRegistry(request,env){
   }
 }
 
+async function loadGuideLawDependencyRegistry(request,env){
+  if(!env.ASSETS) return null;
+  try{
+    const assetUrl=new URL("/data/guide-law-dependencies-2026.json",request.url);
+    const response=await env.ASSETS.fetch(new Request(assetUrl,{method:"GET"}));
+    if(!response.ok) return null;
+    const data=await response.json();
+    return data && typeof data==="object" ? data : null;
+  }catch{
+    return null;
+  }
+}
+
+async function loadCurrentLawReadinessLedger(request,env){
+  if(!env.ASSETS) return null;
+  try{
+    const assetUrl=new URL("/data/mk-current-law-readiness-2026.json",request.url);
+    const response=await env.ASSETS.fetch(new Request(assetUrl,{method:"GET"}));
+    if(!response.ok) return null;
+    const data=await response.json();
+    return data && typeof data==="object" ? data : null;
+  }catch{
+    return null;
+  }
+}
+
 async function governedGuideContext(request,env,guideIds){
   const wanted=new Set((Array.isArray(guideIds)?guideIds:[]).map(x=>String(x)).slice(0,5));
   if(!wanted.size) return [];
-  const data=await loadGuideRegistry(request,env);
+  const [data,dependencyRegistry,readinessLedger]=await Promise.all([
+    loadGuideRegistry(request,env),
+    loadGuideLawDependencyRegistry(request,env),
+    loadCurrentLawReadinessLedger(request,env)
+  ]);
   const records=Array.isArray(data?.records)?data.records:[];
   return records
     .filter(r=>wanted.has(String(r.id)) && r.catalog_public===true && r.public_record_enabled===true)
-    .map(r=>({
-      source:"AI Advokat public guide catalogue",
-      locator:r.public_record_url,
-      version:r.verification_label || r.status_label || r.edition || "",
-      text:[
-        "CATALOGUE METADATA ONLY — use it only for routing unless a fingerprint-verified full guide document is separately attached.",
-        "TITLE: "+String(r.display_title || r.title || ""),
-        "SCOPE: "+String(r.scope || ""),
-        "CATEGORY: "+String(r.category_label || ""),
-        "AI_READING: "+String(r.ai_reading || "not_authorized"),
-        "LEGAL_AUTHORITY: false",
-        ...(Array.isArray(r.legal_notices)?r.legal_notices.map(n=>"NOTICE: "+String(n.text_mk || n.title_mk || "")):[])
-      ].join("\n")
-    }));
+    .map(r=>{
+      const dependencyGate=evaluateGuideLawDependencies(r.id,dependencyRegistry,readinessLedger);
+      return {
+        source:"AI Advokat public guide catalogue",
+        locator:r.public_record_url,
+        version:r.verification_label || r.status_label || r.edition || "",
+        dependencyGate,
+        text:[
+          "CATALOGUE METADATA ONLY — use it only for routing unless a fingerprint-verified full guide document is separately attached.",
+          "TITLE: "+String(r.display_title || r.title || ""),
+          "SCOPE: "+String(r.scope || ""),
+          "CATEGORY: "+String(r.category_label || ""),
+          "AI_READING: "+String(r.ai_reading || "not_authorized"),
+          "LEGAL_AUTHORITY: false",
+          guideLawGatePrompt(dependencyGate),
+          ...(Array.isArray(r.legal_notices)?r.legal_notices.map(n=>"NOTICE: "+String(n.text_mk || n.title_mk || "")):[])
+        ].join("\n")
+      };
+    });
 }
 
 function guideBasename(value){
@@ -2577,7 +2616,11 @@ async function validateGuideDocuments(request,env,payload){
   if(input.length>CHAT_MAX_GUIDE_DOCUMENTS) return {ok:false,error:"too_many_guide_documents"};
   if(!input.length) return {ok:true,attachments:[],context:[],sources:[]};
 
-  const registry=await loadGuideRegistry(request,env);
+  const [registry,dependencyRegistry,readinessLedger]=await Promise.all([
+    loadGuideRegistry(request,env),
+    loadGuideLawDependencyRegistry(request,env),
+    loadCurrentLawReadinessLedger(request,env)
+  ]);
   if(!registry) return {ok:false,error:"guide_registry_unavailable"};
   const records=Array.isArray(registry.records)?registry.records:[];
   const attachments=[];
@@ -2615,10 +2658,12 @@ async function validateGuideDocuments(request,env,payload){
     attachments.push({kind:"file",name,mime,base64:String(raw.base64)});
     const title=String(record.display_title || record.title || guideId);
     const verification=String(record.verification_label || record.status_label || record.edition || "");
+    const dependencyGate=evaluateGuideLawDependencies(guideId,dependencyRegistry,readinessLedger);
     context.push({
       source:"AI Advokat fingerprint-verified private guide · "+title,
       locator:String(record.public_record_url || ""),
       version:verification,
+      dependencyGate,
       text:[
         "FULL_GUIDE_DOCUMENT_ATTACHED: "+name,
         "GUIDE_ID: "+guideId,
@@ -2629,6 +2674,7 @@ async function validateGuideDocuments(request,env,payload){
         "VERIFICATION: "+verification,
         "RULE: Read the attached guide for procedure, explanation, examples, checklists and authorial framing.",
         "RULE: Never present the guide itself as official/current law. Any legal rule, deadline, remedy or current-law proposition must be supported by the article-level/official source layer or explicitly labelled unverified and subject to Human Gate.",
+        guideLawGatePrompt(dependencyGate),
         ...(Array.isArray(record.legal_notices)?record.legal_notices.map(n=>"NOTICE: "+String(n.text_mk || n.title_mk || "")):[])
       ].join("\n")
     });
@@ -2639,7 +2685,10 @@ async function validateGuideDocuments(request,env,payload){
       sha256:actualHash,
       verificationLabel:verification,
       status:String(record.status || ""),
-      authority:"secondary_authored_guide"
+      authority:"secondary_authored_guide",
+      lawDependencyGate:dependencyGate.state,
+      primarySourceRequired:dependencyGate.primarySourceRequired===true,
+      lawDependencies:dependencyGate.dependencies.map(d=>({key:d.key,state:d.state,role:d.role}))
     });
   }
 
@@ -3484,6 +3533,7 @@ async function handleGPTChat(request,env){
   const articleMatched=articleBundle.state==="matched";
   const caseLawMatched=caseLawBundle.state==="matched";
   const guideFullTextUsed=guideDocumentCheck.attachments.length>0;
+  const guidePrimaryLawRequired=guideDocumentCheck.sources.some(s=>s.primarySourceRequired===true && s.lawDependencyGate!=="all_mapped_dependencies_current_verified");
   const sourceMode=result.webSearchUsed===true && articleMatched && caseLawMatched && guideFullTextUsed
     ? "ai_advokat_legal_corpus_guides_case_law_plus_external_web"
     : result.webSearchUsed===true && articleMatched && caseLawMatched
@@ -3506,9 +3556,11 @@ async function handleGPTChat(request,env){
                       ? "ai_advokat_case_law_first"
                       : articleMatched && guideFullTextUsed
                         ? "ai_advokat_legal_corpus_plus_guides"
-                        : guideFullTextUsed
-                          ? "ai_advokat_guides_fulltext_first"
-                          : articleMatched
+                        : guideFullTextUsed && guidePrimaryLawRequired
+                          ? "ai_advokat_guides_secondary_primary_law_required"
+                          : guideFullTextUsed
+                            ? "ai_advokat_guides_fulltext_first"
+                            : articleMatched
                             ? "ai_advokat_article_corpus_first"
                             : articleBundle.context.length
                               ? "ai_advokat_article_corpus_gate"
@@ -3572,6 +3624,10 @@ async function handleGPTChat(request,env){
     legalSources:articleBundle.legalSources || [],
     caseLawSources:caseLawBundle.sources || [],
     guideSources:guideDocumentCheck.sources || [],
+    guideLawDependencyGate:guideDocumentCheck.sources.length ? {
+      primarySourceRequired:guidePrimaryLawRequired,
+      states:[...new Set(guideDocumentCheck.sources.map(s=>s.lawDependencyGate).filter(Boolean))]
+    } : null,
     guideDocumentsUsed:guideDocumentCheck.attachments.length,
     guideDocumentFingerprintsVerified:guideDocumentCheck.attachments.length>0,
     webSearchUsed:result.webSearchUsed===true,
