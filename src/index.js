@@ -4053,7 +4053,18 @@ async function handleOrchestratorArchitecture(request, env) {
       lioePostflight:env.LIOE_POSTFLIGHT_ENABLED==="true" ? "enabled" : "locked",
       lioeSpecialistExecution:env.LIOE_SPECIALIST_EXECUTION_ENABLED==="true" ? "enabled" : "locked",
       lioeRuntimeTelemetry:telemetryStatus,
-      lioeRuntimeVersion:LEGAL_RUNTIME_GOVERNANCE_VERSION
+      lioeRuntimeVersion:LEGAL_RUNTIME_GOVERNANCE_VERSION,
+      openLegalSourcesPolicy:"runtime_wired_"+OPEN_LEGAL_SOURCE_POLICY_VERSION
+    },
+    sourcePolicy:{
+      version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
+      registryId:OPEN_LEGAL_SOURCE_REGISTRY_ID,
+      sourceCount:PUBLIC_WEB_SOURCES.length,
+      sourceRouter:"enabled",
+      rightsGate:"enabled",
+      webCitationAnnotation:"enabled",
+      verificationIntegration:"enabled",
+      regionalComparative:"RS_SI_registered_HR_BA_ME_fail_closed_pending_validation"
     },
     doctrine:{
       corpus:"Corpus first -> exact source -> exact version -> citation -> synthesis.",
