@@ -3936,9 +3936,10 @@ function handleWebSources(request) {
 
   return json(request, {
     ok: true,
-    mode: "curated_official_directory",
+    mode: "rights_aware_open_legal_source_directory",
+    policyVersion: OPEN_LEGAL_SOURCE_POLICY_VERSION,
     sources: PUBLIC_WEB_SOURCES,
-    note: "Directory only. AI Advokat does not replace the official publication."
+    note: "Runtime-wired research directory. Public access does not authorize bulk reuse, corpus promotion or republication."
   });
 }
 
