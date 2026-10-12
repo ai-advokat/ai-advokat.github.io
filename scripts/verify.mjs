@@ -155,8 +155,20 @@ const mobileScholar = fs.readFileSync("scholar/mobile-phone-privilege/index.html
 if (!mobileScholar.includes("10.5281/zenodo.23021388") || !mobileScholar.includes("https://zenodo.org/records/23021388")) {
   throw new Error("Published mobile-phone Scholar record is not fully linked.");
 }
-if (!mobileScholar.includes('name="citation_pdf_url"')) {
-  throw new Error("Published mobile-phone Scholar record must expose citation_pdf_url.");
+for (const path of scholarUrls.slice(1).map((url) => url.replace("https://ai-advokat.github.io/", "") + "index.html")) {
+  const scholarHtml = fs.readFileSync(path, "utf8");
+  for (const required of ["citation_title","citation_author","citation_publication_date"]) {
+    if (!scholarHtml.includes(`name="${required}"`)) throw new Error(`Scholar required metadata ${required} missing in ${path}`);
+  }
+  const canonical = scholarHtml.match(/rel="canonical" href="([^"]+)"/)?.[1];
+  const pdf = scholarHtml.match(/name="citation_pdf_url" content="([^"]+)"/)?.[1];
+  if (pdf) {
+    const canonicalUrl = new URL(canonical);
+    const pdfUrl = new URL(pdf);
+    if (pdfUrl.origin !== canonicalUrl.origin || !pdfUrl.pathname.startsWith(canonicalUrl.pathname)) {
+      throw new Error(`Scholar citation_pdf_url must be in the same subdirectory as the abstract page: ${path}`);
+    }
+  }
 }
 if (!securityTxt.includes("Canonical: https://ai-advokat.github.io/.well-known/security.txt")) {
   throw new Error("security.txt canonical URL is invalid.");
