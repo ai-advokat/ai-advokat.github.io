@@ -28,16 +28,19 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Execute the approved ordered activation after current-law source/parity blockers for ZI were resolved and the final ZI Human Gate pack became decision-ready. Re-run the existing fail-closed production chain: exact model access, paid-quota Responses API preflight, Cloudflare deploy, GPT + Web + attachment smoke test, then the unchanged 20-scenario governed legal UAT. Dynamic architecture UI must display LIVE only when the production /api/orchestrator runtime proves provider execution and the relevant governed runtime gates. No current-law, corpus/RAG, Human Gate, latency, source-first, specialist, or postflight requirement is weakened.",
-    "approval_text": "implementiraj drugar po toj raspored se!!!",
-    "baseline_run": 12,
-    "baseline_result": "17/20",
+    "reason": "Activation #14 proved OpenAI model access, paid quota, API key installation and local governed tests, then failed before Worker deploy because configured CasePilot R2 bucket ai-advokat-case-files did not exist (Cloudflare code 10085). Add an idempotent fail-closed R2 dependency preflight: verify the private production bucket; create it only when absent; verify it again; then continue with the unchanged Worker deploy, provider readiness, GPT+Web+attachment smoke test and 20-scenario legal UAT. No legal, privacy, Human Gate, specialist, postflight, source-first or latency requirement is weakened.",
+    "approval_text": "production deployment approved; remediate failed activation #14",
+    "baseline_run": 14,
+    "baseline_result": "R2_DEPENDENCY_MISSING_BEFORE_DEPLOY",
     "no_governance_weakening": true,
     "latency_budget_ms": 65000,
     "latency_budget_changed": false,
     "specialist_execution_preserved": true,
     "postflight_preserved": true,
     "human_gate_preserved": true,
-    "current_law_human_gate_preserved": true
+    "current_law_human_gate_preserved": true,
+    "r2_dependency_preflight": true,
+    "r2_bucket": "ai-advokat-case-files",
+    "bucket_public_access": false
   }
 }

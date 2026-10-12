@@ -130,6 +130,27 @@ jobs:
           grep -Eq 'secret|Success|success|Uploaded' /tmp/secret-put.log || true
           echo "Cloudflare OpenAI secret installation completed."
 
+      - name: Ensure production CasePilot R2 bucket exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUCKET="ai-advokat-case-files"
+          if npx wrangler r2 bucket info "$BUCKET" --config wrangler.jsonc --json >/tmp/r2-bucket.json 2>/tmp/r2-bucket-info.err; then
+            echo "Production R2 bucket exists: $BUCKET"
+          else
+            echo "Production R2 bucket missing; creating private bucket: $BUCKET"
+            cat /tmp/r2-bucket-info.err || true
+            npx wrangler r2 bucket create "$BUCKET" --config wrangler.jsonc
+            npx wrangler r2 bucket info "$BUCKET" --config wrangler.jsonc --json >/tmp/r2-bucket.json
+          fi
+          node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync("/tmp/r2-bucket.json","utf8"));
+          const name=String(d.name||d.bucket_name||"");
+          if(name!=="ai-advokat-case-files") throw new Error("Unexpected or unverified production R2 bucket: "+JSON.stringify(d));
+          console.log("Production R2 preflight: PASS");
+          NODE
+
       - name: Deploy production Worker
         run: npx wrangler deploy --config wrangler.jsonc
 
