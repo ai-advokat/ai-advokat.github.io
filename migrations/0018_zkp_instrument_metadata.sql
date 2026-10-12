@@ -11,7 +11,7 @@ VALUES
     'Ministry of Justice of the Republic of North Macedonia',
     'MK',
     'official',
-    'Official LDBIS metadata page. Active base law: Official Gazette 150/2010; linked amendments include 100/2012, 142/2016, Constitutional Court decision 193/2016, and 198/2018.'
+    'Official LDBIS metadata page. Current-law normative lineage: Official Gazette 150/2010, 100/2012, 142/2016, Constitutional Court decision 193/2016, and 198/2018. OG 51/2011 belongs to the predecessor 15/1997 transitional chain and is referenced by Articles 566-567 after OG 100/2012.'
   ),
   (
     'ZKP consolidated reference snapshot through 198/2018',
@@ -32,11 +32,11 @@ SELECT
   'law',
   'MK',
   '150/2010; 100/2012; 142/2016; 193/2016; 198/2018',
-  '2012-11-26',
+  '2010-11-26',
   'pending',
   'pending',
   (SELECT id FROM sources WHERE url='https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=20679'),
-  'LDBIS lists the law as active. Article-level text is imported from a consolidated reference snapshot matching the cited official lineage, but remains Human-Gate pending until article/version verification is completed.'
+  'LDBIS lists the law as active. Entry into force: 2010-11-26. Full application from 2013-12-01 after OG 100/2012 Article 2 amended Article 568. Article-level text is imported from a secondary consolidated reference snapshot and remains Human-Gate pending until official article/version verification is completed.'
 WHERE NOT EXISTS (
   SELECT 1 FROM legal_instruments WHERE canonical_key='mk:zkp'
 );
@@ -46,7 +46,7 @@ INSERT OR IGNORE INTO instrument_versions
 SELECT
   id,
   'consolidated-reference-through-198/2018-and-CC-193/2016',
-  NULL,
+  '2018-10-31',
   NULL,
   0,
   NULL,
