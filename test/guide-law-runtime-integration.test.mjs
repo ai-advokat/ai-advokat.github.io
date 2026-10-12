@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const worker=fs.readFileSync("src/index.js","utf8");
+const gateModule=fs.readFileSync("src/guide-law-governance.js","utf8");
 const chat=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
 const catalogue=fs.readFileSync("guides/index.html","utf8");
 const record=fs.readFileSync("guides/record.html","utf8");
@@ -16,7 +17,7 @@ test("GLRI1 backend loads guide dependency registry and current-law readiness le
 });
 
 test("GLRI2 fingerprint-verified guides carry dependency gate into model context and response provenance",()=>{
-  assert.match(worker,/GUIDE_LAW_DEPENDENCY_GATE/);
+  assert.match(gateModule,/GUIDE_LAW_DEPENDENCY_GATE/);
   assert.match(worker,/lawDependencyGate:dependencyGate\.state/);
   assert.match(worker,/primarySourceRequired:dependencyGate\.primarySourceRequired===true/);
   assert.match(worker,/ai_advokat_guides_secondary_primary_law_required/);
