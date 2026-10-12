@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "jurisdiction": "MK",
+  "instrument_key": "mk:zkp",
+  "reviewed_on": "2026-10-12",
+  "status": "RESOLVED_PREDECESSOR_TRANSITIONAL_ACT_NOT_NEW_2010_AMENDMENT",
+  "official_sources": {
+    "og_51_2011": {
+      "issue": "51/2011",
+      "publication_date": "2011-04-13",
+      "act_item_number": "1381",
+      "url": "https://www.slvesnik.com.mk/Issues/00E4D4F3FC23794C946EECD276FBF419.pdf",
+      "title": "Закон за изменување на Законот за кривичната постапка",
+      "enacted_on": "2011-04-12",
+      "entry_into_force_rule": "eighth_day_after_publication",
+      "target_law_lineage": [
+        "15/1997",
+        "44/2002",
+        "74/2004",
+        "83/2008",
+        "67/2009"
+      ],
+      "changed_old_law_articles": [
+        "142-б",
+        "142-г",
+        "200",
+        "202"
+      ],
+      "sunset_clause": {
+        "amending_act_article": "5",
+        "rule": "The provisions of the 51/2011 amending act cease when the Criminal Procedure Act 150/2010 begins application."
+      },
+      "classification": "PREDECESSOR_LAW_AMENDMENT_WITH_TRANSITIONAL_SUNSET",
+      "direct_text_effect_on_150_2010": false
+    },
+    "og_100_2012": {
+      "issue": "100/2012",
+      "publication_date": "2012-08-06",
+      "act_item_number": "2624",
+      "url": "https://www.slvesnik.com.mk/Issues/50764A0B577A854090D9A0F149266F81.pdf",
+      "title": "Закон за изменување и дополнување на Законот за кривичната постапка",
+      "target_law": "150/2010",
+      "key_effects": [
+        "Articles 566 and 567 were amended to include 51/2011 in the predecessor-law citation chain.",
+        "Article 568 was amended so the 150/2010 Act begins application on 2013-12-01."
+      ],
+      "current_2010_act_application_from": "2013-12-01"
+    }
+  },
+  "lineage_classification": {
+    "current_2010_act_normative_lineage": [
+      "150/2010",
+      "100/2012",
+      "142/2016",
+      "193/2016",
+      "198/2018"
+    ],
+    "predecessor_transitional_lineage": [
+      "15/1997",
+      "44/2002",
+      "74/2004",
+      "83/2008",
+      "67/2009",
+      "51/2011"
+    ],
+    "issue_51_2011_role": "PREDECESSOR_TRANSITIONAL_REFERENCE_ONLY",
+    "issue_51_2011_should_not_be_added_to_570_snapshot_normative_lineage": true,
+    "repository_reference_snapshot_lineage_mismatch_resolved": true
+  },
+  "timing": {
+    "new_150_2010_entry_into_force": "2010-11-26",
+    "new_150_2010_original_application_rule": "two_years_after_entry_into_force",
+    "new_150_2010_application_rule_replaced_by_100_2012": true,
+    "new_150_2010_application_from": "2013-12-01",
+    "predecessor_51_2011_general_sunset_triggered_on": "2013-12-01",
+    "transition_caveat": "Proceedings begun before application of the 150/2010 Act remain governed by the predecessor regime to the extent provided by Articles 566-567."
+  },
+  "citation_variance": {
+    "observed": true,
+    "note": "Some later official decisions list 51/2011 alongside 150/2010 when citing the Criminal Procedure Act. The operative text of OG 51/2011 itself targets the 15/1997 predecessor chain, while OG 100/2012 expressly places 51/2011 into Articles 566-567 as predecessor-law transition history. Classification follows the operative official acts rather than citation shorthand."
+  },
+  "remaining_blockers": [
+    "Verify exact article-level effects of 100/2012, 142/2016 and 198/2018 against official Gazette acts.",
+    "Resolve U.br.2/2016 / OG 193/2016 at affected-article level.",
+    "Bind the 570-article reference text to an official-derived/current article representation or replace it with official-source article text.",
+    "Re-check current Ministry/LDBIS/Gazette surfaces immediately before Human Gate.",
+    "Human Gate approval remains absent."
+  ],
+  "promotion_authorized": false
+}
