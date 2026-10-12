@@ -62,8 +62,9 @@ describe("Zoran guides library governance",()=>{
   test("G6 public page states source-first and human legal control boundaries in citizen-facing language",()=>{
     assert.match(html,/секундарни авторски\/редакциски материјали/);
     assert.match(html,/човечка правна ревизија/);
-    assert.match(html,/не се прикажуваат како важечки закон/i);
-    assert.match(html,/Јавното PDF-објавување е одобрено во принцип, но е ставено на hold/);
+    assert.match(html,/не се прикажува како важечки закон/i);
+    assert.match(html,/PDF\/DOCX објавувањето.*остануваат одделни контролирани чекори/);
+    assert.match(html,/целосниот source текст е јавно отворен за избрани записи/);
   });
 
   test("G7 FULL Word batch 38-63 is complete, provenance-locked and does not pretend Word has fixed page counts",()=>{
@@ -147,7 +148,7 @@ describe("Zoran guides library governance",()=>{
 
   test("G13 final catalogue control metrics remain internally consistent",()=>{
     const publicRecords=data.records.filter(x=>x.catalog_public===true);
-    assert.equal(data.generated_on,"2026-10-10");
+    assert.equal(data.generated_on,"2026-10-13");
     assert.equal(publicRecords.length,39);
     assert.equal(publicRecords.filter(x=>x.source_role!=="version_history").length,37);
     assert.equal(publicRecords.filter(x=>x.source_role==="version_history").length,2);
@@ -157,6 +158,8 @@ describe("Zoran guides library governance",()=>{
     assert.equal(data.collection.final_control.public_active_or_special_records,37);
     assert.equal(data.collection.final_control.controlled_nonpublic_candidates,0);
     assert.equal(data.collection.final_control.public_document_downloads,0);
+    assert.equal(data.collection.public_fulltext_release.active_count,4);
+    assert.equal(publicRecords.filter(x=>typeof x.public_fulltext==="string").length,4);
   });
 
   test("G14 public catalogue removes the flagged citizen-facing jargon from primary explanatory text",()=>{
@@ -198,11 +201,13 @@ describe("Zoran guides library governance",()=>{
     assert.equal(admin.public_slug,"upravna-postapka-v2");
   });
 
-  test("G17 public detail experience is PDF-aware while remaining fail-closed for unbound assets and AI use",()=>{
+  test("G17 public detail experience separates source-preserving full text from the still fail-closed PDF gate",()=>{
+    assert.match(recordHtml,/Public full-text release/);
+    assert.match(recordHtml,/Отвори цел водич/);
     assert.match(recordHtml,/Public PDF Human Gate/);
-    assert.match(recordHtml,/Отвори цел PDF/);
-    assert.match(recordHtml,/публикацијата е на hold до финално пречистување и повторна проверка/);
+    assert.match(recordHtml,/PDF останува посебен, неактивиран артефакт/);
     assert.match(recordHtml,/catalog_public===true/);
+    assert.match(recordHtml,/public_fulltext/);
     assert.match(recordHtml,/public_pdf/);
   });
 
@@ -425,12 +430,13 @@ describe("Zoran guides library governance",()=>{
     assert.equal(v2.ai_use,"reference_only_until_human_gate");
   });
 
-  test("G39 catalogue v2.2 UI advertises authorized PDF release without exposing unbound downloads",()=>{
+  test("G39 catalogue v2.3 opens bounded source text while preserving the separate PDF artifact gate",()=>{
     assert.match(html,/39 јавно видливи каталошки записи/);
-    assert.match(html,/Каталог v2\.2 · PDF објавување на hold до финално пречистување/);
-    assert.match(html,/Public PDF release е одобрен за сите 39, но физичкото објавување е на hold/);
+    assert.match(html,/Каталог v2\.3 · source-preserving full-text release/);
+    assert.match(html,/Целосен текст: јавно активен/);
     assert.match(recordHtml,/Активен master артефакт/);
     assert.match(recordHtml,/јавен PDF:/);
+    assert.match(recordHtml,/PDF останува посебен, неактивиран артефакт/);
     assert.match(recordHtml,/upravna-postapka-v2|public_slug===slug/);
   });
 

@@ -188,7 +188,7 @@ jobs:
           ready=0
           for attempt in $(seq 1 20); do
             if curl --fail --silent --show-error "$BASE/api/open-legal-sources-policy" -o /tmp/ols-policy.json; then
-              if grep -q '"sourceCount":15' /tmp/ols-policy.json && grep -q '"sourceRouter":"enabled"' /tmp/ols-policy.json; then
+              if node -e 'const x=require("/tmp/ols-policy.json"); process.exit(x?.ok===true && x?.policy?.sourceCount===15 && x?.runtime?.sourceRouter==="enabled" ? 0 : 1)'; then
                 ready=1
                 break
               fi
@@ -198,14 +198,13 @@ jobs:
           test "$ready" = "1"
 
           curl --fail --silent --show-error "$BASE/api/orchestrator" -o /tmp/ols-orchestrator.json
-          grep -q '"openLegalSourcesPolicy":"runtime_wired_1.0.0"' /tmp/ols-orchestrator.json
-          grep -q '"id":"regional_comparative"' /tmp/ols-orchestrator.json
+          node -e 'const x=require("/tmp/ols-orchestrator.json"); if(x?.runtime?.openLegalSourcesPolicy!=="runtime_wired_1.0.0" || !x?.agents?.some(a=>a.id==="regional_comparative")) process.exit(1)'
 
           curl --fail --silent --show-error "$BASE/api/capabilities" -o /tmp/ols-capabilities.json
-          grep -q '"openLegalSourcesPolicy":"runtime_wired_1.0.0"' /tmp/ols-capabilities.json
+          node -e 'const x=require("/tmp/ols-capabilities.json"); if(x?.capabilities?.openLegalSourcesPolicy!=="runtime_wired_1.0.0") process.exit(1)'
 
           curl --fail --silent --show-error -H 'content-type: application/json' -d '{"q":"Што вели словенечкото право?"}' "$BASE/api/orchestrator/plan" -o /tmp/ols-plan.json
-          grep -q '"regional_comparative"' /tmp/ols-plan.json
+          node -e 'const x=require("/tmp/ols-plan.json"); if(!x?.plan?.agents?.includes("regional_comparative")) process.exit(1)'
           echo "OPEN LEGAL SOURCES RUNTIME LIVE SMOKE: PASS"
 
       - name: Upload non-secret activation evidence

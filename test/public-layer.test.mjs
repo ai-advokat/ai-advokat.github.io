@@ -10,7 +10,7 @@ import { loadWorker } from "./load-worker.mjs";
 const { workerModule, security } = await loadWorker();
 const read = (p) => fs.readFileSync(p, "utf8");
 const PAGES = [
-  "index.html", "membership.html", "legal-notice.html", "privacy-policy.html", "ai-use-policy.html", "offline.html", "guides/index.html", "professional-library/index.html", "professional-tools.html", "governance.html",
+  "index.html", "membership.html", "legal-notice.html", "privacy-policy.html", "ai-use-policy.html", "offline.html", "guides/index.html", "sluzben-vesnik/index.html", "guides/fulltext/besplatna-pravna-pomos/index.html", "guides/fulltext/izbor-na-advokat/index.html", "guides/fulltext/02-zrtva/index.html", "guides/fulltext/05-rabotno-voznemiruvanje/index.html", "professional-library/index.html", "professional-tools.html", "governance.html",
   "scholar/index.html", "scholar/sindzir/index.html", "scholar/electronic-ai-evidence/index.html",
   "scholar/mobile-phone-privilege/index.html", "scholar/ai-legal-practice-judiciary/index.html"
 ];
@@ -24,7 +24,7 @@ const PUBLISHED = workerModule.ZENODO_RECORDS.filter((r) => r.status === "publis
 
 describe("frontend ↔ API contract", () => {
   test("FC1 every error code /api/assistant can return has a UI state (no silent 'service unavailable')", () => {
-    const handler = worker.slice(worker.indexOf("async function handleAssistant("), worker.indexOf("function handleWebSources("));
+    const handler = worker.slice(worker.indexOf("async function handleAssistant("), worker.indexOf("async function handleGazetteRegister("));
     const codes = new Set([
       ...[...handler.matchAll(/error:\s*"([a-z_]+)"/g)].map((m) => m[1]),
       ...[...handler.matchAll(/assistantError\(request,\s*\d+,\s*"([a-z_]+)"/g)].map((m) => m[1]),

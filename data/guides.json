@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_on": "2026-10-10",
+  "generated_on": "2026-10-13",
   "collection": {
     "id": "zoran-everyday-rights-guides",
     "title_mk": "Моите права во секојдневниот живот",
@@ -232,6 +232,13 @@
       "primary_source_required_for_current_law_claims": true,
       "unresolved_dependencies_fail_closed": true,
       "activated_on": "2026-10-12"
+    },
+    "public_fulltext_release": {
+      "state": "active_partial_source_preserving_release",
+      "released_on": "2026-10-13",
+      "active_count": 4,
+      "policy": "Only records with a located exact source document and an activation state of active_verified or active_with_warning may expose public_fulltext. Legal warnings remain separate overlays; source text is not silently rewritten.",
+      "pdf_release": "separate_artifact_binding_required"
     }
   },
   "records": [
@@ -314,7 +321,17 @@
           "role": "primary",
           "source_class": "readiness_ledger"
         }
-      ]
+      ],
+      "public_fulltext": "/guides/fulltext/02-zrtva/",
+      "public_fulltext_state": "source_text_public_with_governance_overlay",
+      "public_fulltext_published_on": "2026-10-13",
+      "public_fulltext_source_binding": {
+        "source_file": "Vodic_02_redaktiran.pdf",
+        "registry_sha256": "ab110bc706c9a3f09d10439ac2de65411adaaa4ba8aee9a8e129bcb7139bc9c3",
+        "source_size_bytes": 114088,
+        "byte_hash_reverified_in_release": false,
+        "release_note_mk": "Јавниот HTML е изведен од индексираниот текст на регистрираната source датотека. Овој release не тврди ново независно byte-level SHA повторно хеширање на Library објектот."
+      }
     },
     {
       "id": "guide-02-victim-draft-2026-09-29",
@@ -504,7 +521,17 @@
           "role": "conditional_procedure",
           "source_class": "readiness_ledger"
         }
-      ]
+      ],
+      "public_fulltext": "/guides/fulltext/05-rabotno-voznemiruvanje/",
+      "public_fulltext_state": "source_text_public_with_governance_overlay",
+      "public_fulltext_published_on": "2026-10-13",
+      "public_fulltext_source_binding": {
+        "source_file": "05_Rabota.pdf",
+        "registry_sha256": "92152823bb2e0e7dd8eab6e6ee21c7d3e03e8031ecd3235cbde85b5e599de053",
+        "source_size_bytes": 154127,
+        "byte_hash_reverified_in_release": false,
+        "release_note_mk": "Јавниот HTML е изведен од индексираниот текст на регистрираната source датотека. Овој release не тврди ново независно byte-level SHA повторно хеширање на Library објектот."
+      }
     },
     {
       "id": "guide-09-family",
@@ -1294,7 +1321,17 @@
           "role": "dynamic",
           "source_class": "external_official_source_required"
         }
-      ]
+      ],
+      "public_fulltext": "/guides/fulltext/izbor-na-advokat/",
+      "public_fulltext_state": "source_text_public_with_governance_overlay",
+      "public_fulltext_published_on": "2026-10-13",
+      "public_fulltext_source_binding": {
+        "source_file": "Kako_da_izberam_advokat.pdf",
+        "registry_sha256": "2075c26cbb850fee591383352ff47a8abcf9bd3794c6f9b7fe8cf41700c4db8c",
+        "source_size_bytes": 140473,
+        "byte_hash_reverified_in_release": false,
+        "release_note_mk": "Јавниот HTML е изведен од индексираниот текст на регистрираната source датотека. Овој release не тврди ново независно byte-level SHA повторно хеширање на Library објектот."
+      }
     },
     {
       "id": "guide-free-legal-aid",
@@ -1379,7 +1416,17 @@
           "role": "primary",
           "source_class": "external_official_source_required"
         }
-      ]
+      ],
+      "public_fulltext": "/guides/fulltext/besplatna-pravna-pomos/",
+      "public_fulltext_state": "source_text_public_with_governance_overlay",
+      "public_fulltext_published_on": "2026-10-13",
+      "public_fulltext_source_binding": {
+        "source_file": "Kako_da_pobaram_BPP_vizuelno_izdanie.pdf",
+        "registry_sha256": "1ca100dca77169b851f02567924203ef00ed64b27d22dbe5c5e9823c8d89be0e",
+        "source_size_bytes": 108040,
+        "byte_hash_reverified_in_release": false,
+        "release_note_mk": "Јавниот HTML е изведен од индексираниот текст на регистрираната source датотека. Овој release не тврди ново независно byte-level SHA повторно хеширање на Library објектот."
+      }
     },
     {
       "id": "guide-38-full-word-2026",
