@@ -4161,7 +4161,7 @@ async function handleCapabilities(request, env) {
       sourceRouter: "runtime_enabled",
       sourceRightsPolicy: "runtime_enabled",
       regionalComparativeResearch: "rs_si_registered_hr_ba_me_pending_validation",
-      zenodo: "metadata_only",
+      zenodo: "metadata_only_record_license_controlled",
       orcid: "live_read_only",
       membershipPlans: "live_read_only",
       membershipEntitlements: database.reachable && database.schemaReady ? "key_based_v1" : "blocked",
