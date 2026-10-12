@@ -12,6 +12,7 @@ https://ai-advokat.github.io/ai-use-policy.html
 https://ai-advokat.github.io/professional-library/
 https://ai-advokat.github.io/professional-tools.html
 https://ai-advokat.github.io/governance.html
+https://ai-advokat.github.io/open-legal-sources.html
 https://ai-advokat.github.io/agent-architecture.html
 https://ai-advokat.github.io/guides/record.html?g=02-zrtva
 https://ai-advokat.github.io/guides/record.html?g=02-zrtva-arhiva

@@ -1,0 +1,459 @@
+{
+  "schema_version": "1.0",
+  "registry_id": "AI_ADVOKAT_OPEN_LEGAL_SOURCES_REGISTRY_2026",
+  "updated_on": "2026-10-12",
+  "purpose": "Rights-aware registry for public and open legal-source discovery, ingestion and provenance. Public accessibility never by itself authorizes bulk copying or republication.",
+  "doctrine": [
+    "official_origin_first",
+    "public_does_not_mean_reusable",
+    "reuse_terms_must_be_recorded",
+    "bulk_ingest_fails_closed_when_terms_are_unclear",
+    "current_law_requires_version_and_effective_date_verification",
+    "court_authority_and_jurisdiction_must_remain_visible",
+    "record_level_licenses_control_repository_full_text",
+    "personal_data_minimisation_applies_to_case_law",
+    "secondary_and_comparative_sources_never_silently_replace_controlling_authority",
+    "human_review_required_before_new_source_is_promoted_to_automated_ingest"
+  ],
+  "status_model": {
+    "authority_status": [
+      "primary_official",
+      "court_official",
+      "official_supporting",
+      "official_legislative_history",
+      "international_court_official",
+      "eu_official",
+      "official_foreign_comparative",
+      "open_scholarly_metadata",
+      "open_repository"
+    ],
+    "public_access_status": [
+      "public_confirmed",
+      "public_partial",
+      "record_level",
+      "pending_verification"
+    ],
+    "reuse_status": [
+      "verified_reuse_allowed",
+      "metadata_reuse_verified",
+      "record_level_license_required",
+      "mixed_rights",
+      "terms_review_required",
+      "restricted"
+    ],
+    "ingest_status": [
+      "fulltext_and_metadata_allowed_with_conditions",
+      "metadata_allowed_fulltext_conditional",
+      "public_retrieval_conditional",
+      "metadata_only",
+      "link_only",
+      "blocked"
+    ],
+    "human_review_status": [
+      "reviewed",
+      "pending"
+    ]
+  },
+  "sources": [
+    {
+      "id": "mk-official-gazette",
+      "jurisdiction": "MK",
+      "name": "Службен весник на Република Северна Македонија",
+      "canonical_url": "https://slvesnik.com.mk/",
+      "authority_status": "primary_official",
+      "public_access_status": "public_partial",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "public_retrieval_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "official_gazette_reference_metadata",
+        "individual_public_document_retrieval_for_verification",
+        "source_linking_and_provenance"
+      ],
+      "blocked_until_review": [
+        "bulk_mirroring",
+        "database_republication"
+      ],
+      "current_law_role": "publication_provenance_primary",
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12",
+      "note": "Official publication provenance. Treat bulk reuse as closed until terms/licensing are separately verified."
+    },
+    {
+      "id": "mk-ldbis",
+      "jurisdiction": "MK",
+      "name": "ЛДБИС — База на закони, други прописи и акти",
+      "canonical_url": "https://ldbis.pravda.gov.mk/",
+      "authority_status": "primary_official",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "metadata_allowed_fulltext_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "public_metadata",
+        "version_status_metadata",
+        "individual_public_text_retrieval_for_legal_verification",
+        "article_level_research_with_provenance"
+      ],
+      "blocked_until_review": [
+        "bulk_database_mirror",
+        "republication_of_entire_database"
+      ],
+      "current_law_role": "version_status_and_public_legal_text",
+      "terms_evidence_url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=4515",
+      "terms_evidence_note": "The public site exposes legal metadata and text and carries a Ministry of Justice copyright notice; no blanket bulk-reuse licence is recorded in this registry.",
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "mk-ener",
+      "jurisdiction": "MK",
+      "name": "ЕНЕР — Единствен национален електронски регистар на прописи",
+      "canonical_url": "https://ener.gov.mk/",
+      "authority_status": "official_supporting",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "public_retrieval_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "public_metadata",
+        "proposal_and_consultation_history",
+        "ria_and_public_documents",
+        "dated_consolidated_text_snapshot_for_research"
+      ],
+      "blocked_until_review": [
+        "bulk_mirroring",
+        "republication_of_third_party_material",
+        "treating_unofficial_consolidated_text_as_current_law_without_binding"
+      ],
+      "current_law_role": "supporting_only",
+      "terms_evidence_url": "https://ener.gov.mk/Default.aspx?item=newspublic",
+      "terms_evidence_note": "ENER states that the system may be used only for its established purposes and warns against infringing third-party intellectual-property or proprietary rights.",
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "mk-sobranie",
+      "jurisdiction": "MK",
+      "name": "Собрание на Република Северна Македонија",
+      "canonical_url": "https://www.sobranie.mk/",
+      "authority_status": "official_legislative_history",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "metadata_allowed_fulltext_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "adoption_history",
+        "bill_and_session_metadata",
+        "public_document_discovery",
+        "official_gazette_reference_discovery"
+      ],
+      "blocked_until_review": [
+        "bulk_site_mirroring"
+      ],
+      "current_law_role": "legislative_history_not_current_law_by_itself",
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "mk-constitutional-court",
+      "jurisdiction": "MK",
+      "name": "Уставен суд на Република Северна Македонија",
+      "canonical_url": "https://ustavensud.mk/",
+      "authority_status": "court_official",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "metadata_allowed_fulltext_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "public_case_metadata",
+        "individual_public_decisions",
+        "constitutional_review_provenance"
+      ],
+      "blocked_until_review": [
+        "bulk_mirroring_without_terms_review"
+      ],
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "mk-supreme-court",
+      "jurisdiction": "MK",
+      "name": "Врховен суд на Република Северна Македонија",
+      "canonical_url": "https://www.vrhoven.sud.mk/",
+      "authority_status": "court_official",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "metadata_allowed_fulltext_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "public_case_metadata",
+        "individual_public_decisions",
+        "legal_opinions_and_interpretive_materials"
+      ],
+      "blocked_until_review": [
+        "bulk_mirroring_without_terms_review"
+      ],
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "mk-judicial-portal",
+      "jurisdiction": "MK",
+      "name": "Судски портал на Република Северна Македонија",
+      "canonical_url": "https://www.sud.mk/",
+      "authority_status": "court_official",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "metadata_allowed_fulltext_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "public_case_metadata",
+        "public_judicial_document_discovery",
+        "individual_public_decisions"
+      ],
+      "blocked_until_review": [
+        "authenticated_e_delivery",
+        "private_case_files",
+        "personal_data_bulk_profiling",
+        "bulk_mirroring_without_terms_review"
+      ],
+      "privacy_minimisation": true,
+      "record_kind_classification_required": true,
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "mk-ministry-justice",
+      "jurisdiction": "MK",
+      "name": "Министерство за правда — регулатива и правосудни ресурси",
+      "canonical_url": "https://www.pravda.gov.mk/mk-MK/regulativa",
+      "authority_status": "official_supporting",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "metadata_allowed_fulltext_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "public_regulatory_metadata",
+        "public_documents",
+        "institutional_resource_discovery"
+      ],
+      "blocked_until_review": [
+        "bulk_site_mirroring"
+      ],
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "echr-hudoc",
+      "jurisdiction": "ECHR",
+      "name": "European Court of Human Rights — HUDOC",
+      "canonical_url": "https://hudoc.echr.coe.int/",
+      "authority_status": "international_court_official",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "mixed_rights",
+      "ingest_status": "metadata_allowed_fulltext_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "official_case_metadata",
+        "official_case_document_retrieval_for_research",
+        "stable_case_identifiers_and_links"
+      ],
+      "blocked_until_review": [
+        "bulk_republication_of_non_official_translations",
+        "treating_third_party_translation_as_court_authoritative"
+      ],
+      "rights_evidence_url": "https://www.echr.coe.int/en/case-law-translations",
+      "rights_evidence_note": "Non-official translations can be copyright-protected and may require permission from the rights holder. Official-language text and translation rights must remain distinct.",
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "eu-eurlex",
+      "jurisdiction": "EU",
+      "name": "EUR-Lex",
+      "canonical_url": "https://eur-lex.europa.eu/",
+      "authority_status": "eu_official",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "verified_reuse_allowed",
+      "ingest_status": "fulltext_and_metadata_allowed_with_conditions",
+      "automated_bulk_ingest": true,
+      "allowed_now": [
+        "eurlex_metadata_cc0",
+        "eu_legal_documents_subject_to_stated_exceptions",
+        "editorial_and_consolidated_content_under_cc_by_4_0_where_applicable",
+        "official_bulk_data_services_and_apis"
+      ],
+      "conditions": [
+        "preserve_source_attribution_where_required",
+        "respect_document_specific_third_party_rights_and_special_conditions",
+        "official_journal_authenticity_rules_remain visible"
+      ],
+      "rights_evidence_url": "https://eur-lex.europa.eu/content/legal-notice/legal-notice.html?locale=en",
+      "reuse_evidence_url": "https://eur-lex.europa.eu/content/help/data-reuse/reuse-contents-eurlex-details.html",
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "eu-curia",
+      "jurisdiction": "EU",
+      "name": "Court of Justice of the European Union — CURIA / InfoCuria",
+      "canonical_url": "https://curia.europa.eu/",
+      "authority_status": "eu_official",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "metadata_allowed_fulltext_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "case_metadata",
+        "case_number_and_ecli_discovery",
+        "individual_public_document_retrieval"
+      ],
+      "blocked_until_review": [
+        "bulk_mirroring_without_reuse_review"
+      ],
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "crossref",
+      "jurisdiction": "GLOBAL",
+      "name": "Crossref metadata",
+      "canonical_url": "https://www.crossref.org/",
+      "authority_status": "open_scholarly_metadata",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "metadata_reuse_verified",
+      "ingest_status": "metadata_only",
+      "automated_bulk_ingest": true,
+      "allowed_now": [
+        "bibliographic_metadata",
+        "references",
+        "crossref_generated_cc0_data"
+      ],
+      "blocked_until_review": [
+        "abstract_fulltext_reuse_without_record_or_publisher_rights"
+      ],
+      "rights_evidence_url": "https://www.crossref.org/documentation/retrieve-metadata/",
+      "rights_evidence_note": "Crossref states that most bibliographic metadata is reusable without restriction; abstracts remain subject to publisher or author copyright.",
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "zenodo",
+      "jurisdiction": "GLOBAL",
+      "name": "Zenodo",
+      "canonical_url": "https://zenodo.org/",
+      "authority_status": "open_repository",
+      "public_access_status": "record_level",
+      "reuse_status": "record_level_license_required",
+      "ingest_status": "metadata_allowed_fulltext_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "record_metadata",
+        "doi_and_provenance",
+        "fulltext_only_when_record_license_allows_reuse"
+      ],
+      "blocked_until_review": [
+        "assuming_all_zenodo_files_share_one_open_license"
+      ],
+      "rights_evidence_url": "https://about.zenodo.org/principles/",
+      "rights_evidence_note": "Zenodo requires a record-level licence and states that downloaded data are subject to the licence selected by the uploader.",
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "rs-pravno-informacioni-sistem",
+      "jurisdiction": "RS",
+      "name": "Правно-информациони систем Републике Србије",
+      "canonical_url": "https://pravno-informacioni-sistem.rs/",
+      "authority_status": "official_foreign_comparative",
+      "public_access_status": "public_partial",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "public_retrieval_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "comparative_legal_metadata",
+        "individual_public_regulation_retrieval",
+        "official_gazette_reference_discovery"
+      ],
+      "blocked_until_review": [
+        "bulk_mirroring",
+        "subscriber_only_content",
+        "treating_rs_law_as_mk_controlling_authority"
+      ],
+      "access_evidence_url": "https://fp.pravno-informacioni-sistem.rs/api/prins/GetStaticPageByCode/MM0301",
+      "access_evidence_note": "The official system describes free public access to specified legal databases while other content can remain subscription-based.",
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    },
+    {
+      "id": "si-pisrs",
+      "jurisdiction": "SI",
+      "name": "Pravni informacijski sistem Republike Slovenije — PISRS",
+      "canonical_url": "https://pisrs.si/",
+      "authority_status": "official_foreign_comparative",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "public_retrieval_conditional",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "comparative_legal_metadata",
+        "individual_public_regulation_retrieval",
+        "public_case_law_discovery"
+      ],
+      "blocked_until_review": [
+        "bulk_mirroring_without_reuse_review",
+        "treating_si_law_as_mk_controlling_authority"
+      ],
+      "access_evidence_url": "https://pisrs.si/pregledNpb?idPredpisa=URED8183&idPredpisaChng=URED8183",
+      "access_evidence_note": "The governing regulation states that PISRS is freely accessible online and that legally valid texts are those published in the Official Gazette.",
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-12"
+    }
+  ],
+  "expansion_queue": [
+    {
+      "jurisdiction": "HR",
+      "target": "official legislation and case-law portals",
+      "status": "source_and_reuse_validation_required_before_activation"
+    },
+    {
+      "jurisdiction": "BA",
+      "target": "state/entity official gazettes and judicial portals",
+      "status": "source_and_reuse_validation_required_before_activation"
+    },
+    {
+      "jurisdiction": "ME",
+      "target": "official gazette and judicial portals",
+      "status": "source_and_reuse_validation_required_before_activation"
+    }
+  ],
+  "target_ingest_record": {
+    "required": [
+      "source_id",
+      "source_url",
+      "jurisdiction",
+      "authority_status",
+      "captured_at",
+      "reuse_status",
+      "ingest_status",
+      "source_hash",
+      "human_review_status"
+    ],
+    "recommended": [
+      "terms_or_license_url",
+      "rights_checked_on",
+      "document_identifier",
+      "document_type",
+      "publisher_or_court",
+      "publication_date",
+      "effective_from",
+      "effective_to",
+      "language",
+      "official_binding_verified",
+      "record_level_license",
+      "personal_data_review",
+      "retrieval_method"
+    ]
+  }
+}

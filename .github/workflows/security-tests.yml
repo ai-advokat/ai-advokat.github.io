@@ -19,6 +19,8 @@ on:
       - "data/legal-evidence-cards.json"
       - "data/citation-authority-engine.json"
       - "data/response-provenance-contract.json"
+      - "data/open-legal-sources-registry-2026.json"
+      - "architecture/OPEN_LEGAL_SOURCES_POLICY.md"
       - "data/human-gate-decision-ledger.json"
       - "data/audit-trail-decision-history.json"
       - "data/uat/**"
@@ -95,6 +97,8 @@ jobs:
         run: npm run test:zro-human-gate-workflow
       - name: Case-law source registry tests
         run: npm run test:case-law-sources
+      - name: Open Legal Sources rights and ingest governance
+        run: npm run test:open-legal-sources
       - name: Governed case-law chat context tests
         run: npm run test:case-law-chat
       - name: Governed case-law import tests
