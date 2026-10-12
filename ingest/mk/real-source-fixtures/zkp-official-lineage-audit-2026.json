@@ -5,7 +5,7 @@
   "instrument_title": "Закон за кривичната постапка",
   "checked_on": "2026-10-12",
   "check_type": "bounded_official_lineage_recheck",
-  "result": "OFFICIAL_LINEAGE_REQUIRES_51_2011_CLASSIFICATION",
+  "result": "OFFICIAL_LINEAGE_51_2011_CLASSIFIED_ARTICLE_SOURCE_REVIEW_REQUIRED",
   "current_law_promotion": false,
   "caveat": "The finding is bounded to the official Ministry/LDBIS/Gazette surfaces checked. It does not prove a universal negative beyond those surfaces.",
   "official_base": {
@@ -13,22 +13,36 @@
     "gazette_issue": "150/2010",
     "publication_date": "2010-11-18",
     "entry_into_force": "2010-11-26",
-    "application_from": "2012-11-26",
-    "active_signal": true
+    "application_from": "2013-12-01",
+    "active_signal": true,
+    "original_application_from": "2012-11-26",
+    "application_date_changed_by": "100/2012 Article 2"
   },
   "official_linked_lineage": [
     {
       "issue": "51/2011",
-      "kind": "amendment",
+      "kind": "predecessor_transitional_amendment",
       "publication_date": "2011-04-13",
-      "classification": "REQUIRES_EXACT_ACT_REVIEW"
+      "classification": "NOT_AMENDMENT_TO_150_2010",
+      "target_law_lineage": [
+        "15/1997",
+        "44/2002",
+        "74/2004",
+        "83/2008",
+        "67/2009"
+      ],
+      "direct_text_effect_on_150_2010": false,
+      "sunset_trigger": "application_of_150_2010",
+      "sunset_trigger_date": "2013-12-01",
+      "evidence": "ingest/mk/real-source-fixtures/zkp-51-2011-classification-2026.json"
     },
     {
       "issue": "100/2012",
       "kind": "amendment",
       "publication_date": "2012-08-06",
       "entry_into_force": "2012-08-14",
-      "application_from": "2012-08-14"
+      "application_from": "2013-12-01",
+      "application_date_effect": "replaces Article 568 application timing"
     },
     {
       "issue": "142/2016",
@@ -72,9 +86,11 @@
       "193/2016",
       "198/2018"
     ],
-    "missing_from_label_relative_to_official_linked_lineage": [
+    "missing_from_label_relative_to_official_linked_lineage": [],
+    "excluded_predecessor_transitional_reference": [
       "51/2011"
-    ]
+    ],
+    "normative_lineage_matches_classified_current_lineage": true
   },
   "gates": {
     "official_source_bound": false,
@@ -87,11 +103,22 @@
     "human_gate_approved": false
   },
   "blockers": [
-    "Classify the exact legal effect of OG 51/2011 against the 2010 base and application timeline.",
+    "Verify exact article-level effects of 100/2012, 142/2016 and 198/2018 against official Gazette acts.",
     "Bind article-level text to an official current source or reconstruct from exact official acts; secondary consolidation cannot alone establish current law.",
     "Verify the full Constitutional Court effect of U.br.2/2016 / OG 193/2016 at affected-article level.",
     "Re-check official Ministry/LDBIS/Gazette surfaces immediately before any current-version decision.",
     "Human Gate approval is absent."
   ],
-  "next_action": "Acquire and classify the exact OG 51/2011 amending act first; do not mutate or promote the 570-article reference corpus."
+  "next_action": "Verify exact official article-level effects of 100/2012, 142/2016, 198/2018 and U.br.2/2016 / OG 193/2016; then build an official-derived candidate. Keep the 570-article secondary consolidation reference-only.",
+  "current_normative_lineage": [
+    "150/2010",
+    "100/2012",
+    "142/2016",
+    "193/2016",
+    "198/2018"
+  ],
+  "predecessor_transitional_reference": [
+    "51/2011"
+  ],
+  "classification_evidence": "ingest/mk/real-source-fixtures/zkp-51-2011-classification-2026.json"
 }
