@@ -3,9 +3,12 @@ name: ZRO Human Gate review packets
 on:
   push:
     branches:
-      - slvesnik-public-corpus-collector-29sep2026
+      - main
     paths:
       - ".github/workflows/zro-human-gate-review-packets.yml"
+      - "ingest/mk/audits/zro-human-gate-pack-2026-10-12.json"
+      - "ingest/mk/real-source-fixtures/zro-current-status-recheck-2026.json"
+      - "data/mk-current-law-readiness-2026.json"
   workflow_dispatch:
 
 permissions:
