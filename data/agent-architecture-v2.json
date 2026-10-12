@@ -62,12 +62,6 @@
       "jurisdiction": "INTL"
     },
     {
-      "id": "regional_comparative",
-      "label": "Regional Comparative Law Agent",
-      "jurisdiction": "REGIONAL",
-      "rule": "RS/SI registered official comparative sources; HR/BA/ME remain fail-closed until source/reuse validation. Never treated as MK controlling law."
-    },
-    {
       "id": "common_law",
       "label": "Anglo-American / Common Law Agent",
       "jurisdiction": "COMMON_LAW"
@@ -303,6 +297,10 @@
         "ME"
       ]
     },
-    "corpus_promotion": "separate_human_gate"
+    "corpus_promotion": "separate_human_gate",
+    "runtime_extensions": [
+      "regional_comparative"
+    ],
+    "runtime_extension_note": "Regional Comparative Law Agent is a bounded runtime extension governed by the Open Legal Sources policy; the historical v2 manifest agent set remains backward-compatible."
   }
 }
