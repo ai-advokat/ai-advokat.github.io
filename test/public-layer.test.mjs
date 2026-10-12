@@ -10,7 +10,7 @@ import { loadWorker } from "./load-worker.mjs";
 const { workerModule, security } = await loadWorker();
 const read = (p) => fs.readFileSync(p, "utf8");
 const PAGES = [
-  "index.html", "membership.html", "legal-notice.html", "privacy-policy.html", "ai-use-policy.html", "offline.html", "guides/index.html", "professional-library/index.html",
+  "index.html", "membership.html", "legal-notice.html", "privacy-policy.html", "ai-use-policy.html", "offline.html", "guides/index.html", "professional-library/index.html", "professional-tools.html", "governance.html",
   "scholar/index.html", "scholar/sindzir/index.html", "scholar/electronic-ai-evidence/index.html",
   "scholar/mobile-phone-privilege/index.html", "scholar/ai-legal-practice-judiciary/index.html"
 ];
@@ -108,6 +108,23 @@ describe("publication status facts", () => {
       assert.equal(ld.url, html.match(/rel="canonical" href="([^"]*)"/)[1]);
       assert.ok(html.includes(`https://doi.org/${rec.doi}`), `${page} must link the DOI resolver`);
       assert.ok(index.includes(`"${rec.doi}":{scholar:`), `homepage has no Scholar mapping for ${rec.doi}`);
+    }
+  });
+
+  test("PS5 Scholar metadata follows Google Scholar parser requirements", () => {
+    for (const p of SCHOLAR) {
+      const html = read(p);
+      assert.match(html, /name="citation_title" content="[^"]+"/, `${p} citation_title`);
+      assert.match(html, /name="citation_author" content="[^"]+"/, `${p} citation_author`);
+      assert.match(html, /name="citation_publication_date" content="\d{4}\/\d{2}\/\d{2}"/, `${p} citation_publication_date`);
+      const canonical = html.match(/rel="canonical" href="([^"]+)"/)?.[1];
+      const pdf = html.match(/name="citation_pdf_url" content="([^"]+)"/)?.[1];
+      if (pdf) {
+        const c = new URL(canonical);
+        const u = new URL(pdf);
+        assert.equal(u.origin, c.origin, `${p} citation_pdf_url origin`);
+        assert.ok(u.pathname.startsWith(c.pathname), `${p} citation_pdf_url must be in the same Scholar subdirectory`);
+      }
     }
   });
 
@@ -209,6 +226,13 @@ describe("links and metadata", () => {
       assert.match(html, /<meta name="description" content="[^"]{20,}/, `${p} description`);
       assert.match(html, /<title>[^<]{5,}<\/title>/, `${p} title`);
     }
+  });
+
+  test("LM8 noindex/private utility pages are excluded from the sitemap", () => {
+    const map = read("sitemap.txt");
+    assert.ok(!map.includes("/casepilot-workspace.html"));
+    assert.ok(!map.includes("/offline.html"));
+    assert.ok(map.includes("/professional-tools.html"));
   });
 
   test("LM6 every JSON-LD block parses", () => {
