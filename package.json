@@ -92,7 +92,8 @@
     "test:zro-human-gate-pack": "node --no-warnings --test test/zro-human-gate-pack.test.mjs",
     "test:zkp-official-lineage": "node --no-warnings --test test/zkp-official-lineage-audit.test.mjs",
     "test:guide-law-governance": "node --no-warnings --test test/guide-law-governance.test.mjs test/guide-law-runtime-integration.test.mjs",
-    "test:zro-human-gate-workflow": "node --no-warnings --test test/zro-human-gate-workflow-contract.test.mjs"
+    "test:zro-human-gate-workflow": "node --no-warnings --test test/zro-human-gate-workflow-contract.test.mjs",
+    "test:zkp-lineage-resolution": "node --no-warnings --test test/zkp-official-lineage-audit.test.mjs test/zkp-51-2011-classification.test.mjs test/zkp-metadata-correction-contract.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
