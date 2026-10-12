@@ -87,8 +87,14 @@ import {
 } from "./casepilot-matter.js";
 import { mapWorkspaceToCasePilotShell } from "./casepilot-workspace-bridge.js";
 import { buildCaseLawComparison } from "./casepilot-case-law-bridge.js";
+import {
+  OPEN_LEGAL_SOURCE_POLICY_VERSION,
+  OPEN_LEGAL_SOURCE_REGISTRY_ID,
+  publicOpenLegalSourceDirectory,
+  openLegalSourcePolicySummary
+} from "./open-legal-sources-policy.js";
 
-const VERSION = "1.7.0";
+const VERSION = "1.8.0";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -105,50 +111,7 @@ const MAX_SEARCH_LIMIT = 20;
 const UNICODE_SCAN_PAGE = 250;
 const UNICODE_SCAN_MAX_ROWS = 1000;
 
-const PUBLIC_WEB_SOURCES = Object.freeze([
-  {
-    id: "official-gazette",
-    title: "Official Gazette of the Republic of North Macedonia",
-    url: "https://slvesnik.com.mk/",
-    category: "official_gazette",
-    jurisdiction: "MK"
-  },
-  {
-    id: "ldbis",
-    title: "Ministry of Justice LDBIS legal database",
-    url: "https://ldbis.pravda.gov.mk/",
-    category: "ministry_database",
-    jurisdiction: "MK"
-  },
-  {
-    id: "constitutional-court",
-    title: "Constitutional Court of the Republic of North Macedonia",
-    url: "https://ustavensud.mk/",
-    category: "court",
-    jurisdiction: "MK"
-  },
-  {
-    id: "supreme-court",
-    title: "Supreme Court of the Republic of North Macedonia",
-    url: "https://www.vrhoven.sud.mk/",
-    category: "court",
-    jurisdiction: "MK"
-  },
-  {
-    id: "hudoc",
-    title: "European Court of Human Rights - HUDOC",
-    url: "https://hudoc.echr.coe.int/",
-    category: "international_court",
-    jurisdiction: "ECHR"
-  },
-  {
-    id: "eur-lex",
-    title: "EUR-Lex",
-    url: "https://eur-lex.europa.eu/",
-    category: "international_organization",
-    jurisdiction: "EU"
-  }
-]);
+const PUBLIC_WEB_SOURCES = publicOpenLegalSourceDirectory();
 
 // Publication state verified against the DOI registry (doi.org handle API) on 2026-09-30:
 // a DOI resolves there only after the Zenodo record is published. Reserved DOIs of
