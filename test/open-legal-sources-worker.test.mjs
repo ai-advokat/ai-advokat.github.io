@@ -27,11 +27,19 @@ test("Open Legal Sources public runtime endpoint exposes 15 governed lanes",asyn
   assert.equal(r.body.runtime.corpusPromotion,"separate_human_gate");
 });
 
-test("web source directory is generated from the rights-aware runtime registry",async()=>{
+test("Legal Base keeps its backward-compatible core official source directory",async()=>{
   const r=await call("/api/web-sources");
   assert.equal(r.status,200);
-  assert.equal(r.body.mode,"rights_aware_open_legal_source_directory");
-  assert.equal(r.body.policyVersion,"1.0.0");
+  assert.equal(r.body.mode,"curated_official_directory");
+  assert.equal(r.body.sources.length,6);
+  assert.ok(r.body.sources.some(x=>x.id==="ldbis"));
+  assert.ok(r.body.sources.some(x=>x.id==="hudoc"));
+  assert.ok(r.body.sources.some(x=>x.id==="eur-lex"));
+});
+
+test("the separate Open Legal Sources policy endpoint exposes all rights-aware lanes",async()=>{
+  const r=await call("/api/open-legal-sources-policy");
+  assert.equal(r.status,200);
   assert.equal(r.body.sources.length,15);
   const eurlex=r.body.sources.find(x=>x.id==="eu-eurlex");
   assert.equal(eurlex.reuseStatus,"verified_reuse_allowed");
