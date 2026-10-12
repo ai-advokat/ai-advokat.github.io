@@ -123,12 +123,14 @@ describe("publication status facts", () => {
       assert.ok(html.includes(`<p class="citation_author">${citationAuthor}</p>`), `${p} visible author must match citation_author`);
       const canonical = html.match(/rel="canonical" href="([^"]+)"/)?.[1];
       const pdf = html.match(/name="citation_pdf_url" content="([^"]+)"/)?.[1];
-      if (pdf) {
-        const c = new URL(canonical);
-        const u = new URL(pdf);
-        assert.equal(u.origin, c.origin, `${p} citation_pdf_url origin`);
-        assert.ok(u.pathname.startsWith(c.pathname), `${p} citation_pdf_url must be in the same Scholar subdirectory`);
-      }
+      const expectedPdf = new URL("paper.pdf", canonical).href;
+      assert.equal(pdf, expectedPdf, `${p} citation_pdf_url must point to the verified local full text`);
+      const c = new URL(canonical);
+      const u = new URL(pdf);
+      assert.equal(u.origin, c.origin, `${p} citation_pdf_url origin`);
+      assert.ok(u.pathname.startsWith(c.pathname), `${p} citation_pdf_url must be in the same Scholar subdirectory`);
+      assert.ok(fs.existsSync(path.join(path.dirname(p), "paper.pdf")), `${p} local Scholar PDF must exist`);
+      assert.ok(html.includes('<a class="btn" href="./paper.pdf">Full text PDF</a>'), `${p} must visibly link the local PDF`);
     }
   });
 
