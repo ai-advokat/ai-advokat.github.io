@@ -24,33 +24,20 @@
   ],
   "note": "No API key is stored in this file. The workflow must fail before deployment if the secret or paid quota is unavailable.",
   "last_redeploy": {
-    "requested_on": "2026-10-10",
+    "requested_on": "2026-10-12",
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Activation #12 remained 17/20. Traffic failed closed on legal_postflight_incomplete at 68.13s; property-boundary timed out at 70.00s; mediation exceeded the unchanged 65,000ms budget by 938ms. Re-run the same twenty scenarios after reducing L2/L3 chief output headroom, compacting bounded specialist findings to 90 words / 5 bullets / 500 tokens, constraining verifier REVISE output to a concise complete correction, and exposing postflight incomplete_details diagnostics. Human Gate, source-first verification, specialist execution, postflight verification and the 65-second threshold remain unchanged.",
-    "approval_text": "Ti odobruvam!!! (Potoa napravi dvaesetina trsta na orasanja za: ravod na brsk, ostavina, krazba, pritvor, droga, soobrskajni krivicni dela, i se ostanato)",
+    "reason": "Execute the approved ordered activation after current-law source/parity blockers for ZI were resolved and the final ZI Human Gate pack became decision-ready. Re-run the existing fail-closed production chain: exact model access, paid-quota Responses API preflight, Cloudflare deploy, GPT + Web + attachment smoke test, then the unchanged 20-scenario governed legal UAT. Dynamic architecture UI must display LIVE only when the production /api/orchestrator runtime proves provider execution and the relevant governed runtime gates. No current-law, corpus/RAG, Human Gate, latency, source-first, specialist, or postflight requirement is weakened.",
+    "approval_text": "implementiraj drugar po toj raspored se!!!",
     "baseline_run": 12,
     "baseline_result": "17/20",
-    "prior_runs": [
-      {
-        "run": 9,
-        "result": "1/20"
-      },
-      {
-        "run": 10,
-        "result": "5/20"
-      },
-      {
-        "run": 11,
-        "result": "17/20"
-      }
-    ],
     "no_governance_weakening": true,
     "latency_budget_ms": 65000,
     "latency_budget_changed": false,
     "specialist_execution_preserved": true,
     "postflight_preserved": true,
-    "human_gate_preserved": true
+    "human_gate_preserved": true,
+    "current_law_human_gate_preserved": true
   }
 }
