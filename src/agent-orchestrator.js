@@ -1,4 +1,10 @@
 import { buildLegalIntelligencePlan, VERSION as LIOE_VERSION, SPEC_PATH as LIOE_SPEC_PATH } from "./legal-intelligence-engine.js";
+import {
+  annotateExternalSources,
+  classifyOpenLegalSource,
+  sourcePolicyPrompt,
+  sourceResearchRole
+} from "./open-legal-sources-policy.js";
 
 // AI Advokat — governed legal-agent orchestration architecture.
 // V2 implements the manager-style contract requested by the author:
@@ -56,6 +62,14 @@ export const AGENT_ROLES = Object.freeze({
     authorityBoundary: "country_and_court_hierarchy_required",
     preferredSources: ["official legislation/court source", "authorised report/source"],
     purpose: "UK/US and other common-law research with explicit country, court hierarchy and precedent status; never imported as Macedonian controlling law."
+  }),
+  regional: Object.freeze({
+    id: "regional_comparative",
+    label: "Regional Comparative Law Agent",
+    jurisdiction: "REGIONAL",
+    authorityBoundary: "foreign_comparative_only_never_MK_controlling",
+    preferredSources: ["Serbia PIS", "Slovenia PISRS", "official Croatian/BiH/Montenegrin sources after source-policy validation"],
+    purpose: "Regional comparative research for RS/SI and later HR/BA/ME, with explicit country labels and no silent import into Macedonian controlling law."
   }),
   general: Object.freeze({
     id: "general_gpt_assistant",
@@ -133,6 +147,7 @@ const ROUTE_PATTERNS = Object.freeze({
   eu: /(?:\b(?:eu|european union|eur-lex|curia|cjeu|tfeu|teu|directive|regulation)\b|европска(?:та)? унија|право(?:то)? на европска(?:та)? унија|еур-лекс|курија|суд(?:от)? на правдата на европска(?:та)? унија)/iu,
   echr: /(?:\b(?:echr|ecthr|hudoc|european convention|strasbourg)\b|европски(?:от)? суд за човекови права|есчп|ехрч|европска(?:та)? конвенција за човекови права|худок)/iu,
   common: /(?:\b(?:common law|england|wales|uk law|united kingdom|us law|u\.s\.|united states|precedent|stare decisis)\b|англо[- ]?американско право|англо[- ]?саксонско право|англиско право|право(?:то)? на обединетото кралство|американско право|судски преседан)/iu,
+  regional: /(?:\b(?:serbia|serbian law|slovenia|slovenian law|croatia|croatian law|bosnia|bosnia and herzegovina|montenegro|regional law|pisrs|pravno-informacioni sistem)\b|србија|српск(?:о|ото) право|словенија|словенечк(?:о|ото) право|хрватска|хрватск(?:о|ото) право|босна(?: и херцеговина)?|црна гора|регионалн(?:о|ото) право|писрс|правно[- ]информациони систем)/iu,
   international: /(?:\b(?:international law|treaty|convention|united nations|\bun\b|icc|icj|vienna convention)\b|меѓународно право|меѓународен договор|обединети нации|меѓународен суд на правдата|виенска конвенција)/iu,
   comparison: /(?:спореди|споредба|компаратив|наспроти|versus|\bvs\.?\b|compare|comparative)/iu,
   legal: /(?:право|правен|правна|правно|закон|член|тужб|жалб|суд|адвокат|обвин|полици|кривич|управн|договор|нотар|рок|пресуд|решение|осигур|штета|работен однос|семејн|развод|притвор|казна|важечк|поднесок|сообраќај|незгод|прекрш|оставин|наслед|краж|дрог|наркот|насил|потрошувач|медијац|имотен спор|сопственост|меѓа|отказ|неисплатена плата|клевет|навред|лишен од слобода|слободен пристап|информации од јавен карактер|зпп|зкп|зро|зус|human gate|production corpus|corpus promotion|rag eligibility|provider activation|legal|law|court|lawsuit|appeal|statute|regulation|contract|police)/iu
@@ -147,7 +162,7 @@ function routeKeys(question,{preferCorpus=false}={}) {
   const selected=new Set();
   if(preferCorpus || ROUTE_PATTERNS.corpus.test(q)) selected.add("corpus");
 
-  for(const key of ["mk","eu","echr","common","international"]){
+  for(const key of ["mk","eu","echr","regional","common","international"]){
     if(ROUTE_PATTERNS[key].test(q)) selected.add(key);
   }
 
@@ -159,7 +174,7 @@ function routeKeys(question,{preferCorpus=false}={}) {
   }else if(
     selected.has("corpus")
     && ROUTE_PATTERNS.legal.test(q)
-    && !["eu","echr","common","international"].some(key=>selected.has(key))
+    && !["eu","echr","regional","common","international"].some(key=>selected.has(key))
   ){
     selected.add("mk");
   }
@@ -278,7 +293,8 @@ export function specialistInstructions(agentId) {
     "Use only supplied/approved source material or tools for your own authority boundary; do not fill gaps from memory.",
     "Every material legal claim must carry source identity, locator where available, date/version and jurisdiction.",
     "If the sources do not support a proposition, say NOT_SUPPORTED instead of guessing.",
-    "Never silently import another jurisdiction as controlling authority."
+    "Never silently import another jurisdiction as controlling authority.",
+    sourcePolicyPrompt(agentId)
   ];
 
   if(agentId===AGENT_ROLES.general.id){
@@ -294,6 +310,13 @@ export function specialistInstructions(agentId) {
       "Do not replace missing corpus support with model knowledge.",
       "If the native corpus does not support the answer, return CORPUS_NOT_SUPPORTED.",
       "External legal research, if later authorised, must be a separate visibly labelled step."
+    );
+  }
+  if(agentId===AGENT_ROLES.regional.id){
+    shared.push(
+      "Regional sources are comparative only and must carry an explicit country label.",
+      "RS and SI registered official sources may support comparative propositions; HR/BA/ME remain source-policy pending unless a registered official source is actually verified.",
+      "Never convert regional foreign law into Macedonian controlling law."
     );
   }
   if(agentId===AGENT_ROLES.verify.id){
@@ -333,6 +356,8 @@ export function orchestratorInstructions(plan) {
     "Prefer concrete, case-specific structure and actionable next steps over vague generalities, while preserving privacy data minimisation and all Human Gates.",
     "Never merge jurisdictions or imply that comparative authority is controlling law.",
     "For AI Advokat native documents, corpus content and exact provenance come first. If the corpus does not support a proposition, say so.",
+    sourcePolicyPrompt(AGENT_ROLES.chief.id),
+    "External web citations must preserve their Open Legal Sources policy status when available; unregistered sources may support discovery but not silently establish controlling or current law.",
     "Fingerprint-verified GUIDE_DOCUMENT attachments are secondary authored/editorial guides. You may read them for procedure, explanation, examples, checklists and authorial framing, but they are not official law and never outrank article-level or official legal sources.",
     "If a guide states a legal rule, deadline, remedy or current-law proposition that is not supported by the supplied article-level/official layer, label it as guide-derived and unverified rather than presenting it as current law.",
     "Do not silently fall back from the native corpus to general model knowledge.",
@@ -472,7 +497,19 @@ function mergeWebSources(...groups){
       const url=String(source?.url||"").trim();
       if(!/^https?:\/\//i.test(url)||seen.has(url))continue;
       seen.add(url);
-      out.push({url,title:String(source?.title||url).trim().slice(0,240)});
+      const policy=classifyOpenLegalSource(url);
+      out.push({
+        url,
+        title:String(source?.title||url).trim().slice(0,240),
+        openLegalSourceId:source?.openLegalSourceId||policy?.id||null,
+        jurisdiction:source?.jurisdiction||policy?.jurisdiction||null,
+        authorityStatus:source?.authorityStatus||policy?.authorityStatus||"unregistered_external",
+        reuseStatus:source?.reuseStatus||policy?.reuseStatus||"unverified",
+        ingestStatus:source?.ingestStatus||policy?.ingestStatus||"not_authorized",
+        registered:source?.registered===true||Boolean(policy),
+        agentBoundaryAllowed:source?.agentBoundaryAllowed===true,
+        researchRole:source?.researchRole||sourceResearchRole(policy,"chief_legal_orchestrator")
+      });
       if(out.length>=20)return out;
     }
   }
@@ -536,7 +573,7 @@ async function runOneBoundedSpecialist(env,{
   };
   const text=extractOpenAIResponseText(payload);
   if(!text) return {ok:false,error:"specialist_empty_response",agentId,providerCalls:1,usage};
-  const sources=extractOpenAIWebCitations(payload);
+  const sources=annotateExternalSources(extractOpenAIWebCitations(payload),{agentId});
   return Object.freeze({
     ok:true,agentId,label:role.label,text,sources,
     webSearchUsed:Array.isArray(payload?.output)&&payload.output.some(item=>item?.type==="web_search_call"),
@@ -760,7 +797,7 @@ export async function runOpenAIOrchestrator(env, {
 
   const text=extractOpenAIResponseText(payload);
   if(!text) return {ok:false,error:"openai_empty_response"};
-  const chiefSources=extractOpenAIWebCitations(payload);
+  const chiefSources=annotateExternalSources(extractOpenAIWebCitations(payload),{agentId:AGENT_ROLES.chief.id});
   const sources=mergeWebSources(specialistStage.sources,chiefSources);
   const chiefWebSearchUsed=Array.isArray(payload?.output) && payload.output.some(item=>item?.type==="web_search_call");
   const webSearchUsed=specialistStage.webSearchUsed===true||chiefWebSearchUsed;
@@ -891,6 +928,7 @@ export async function runLegalPostflightVerifier(env,{
         "Never treat model memory, a URL title, or majority agreement as legal authority.",
         "For current-law claims, VERIFIED source_integrity and temporal_integrity require governed native official/article-level evidence that identifies the applicable version/date. External Web URL metadata alone can be at most PARTIAL.",
         "Check jurisdiction separation, authority hierarchy, version/date/applicability, deadlines where material, citation/source support, contrary authority risk and Human Gate boundaries.",
+        "Apply Open Legal Sources policy: registered official sources are preferred inside their jurisdiction; unregistered web results are discovery/supporting material only; metadata-only and record-level-licence sources must not be treated as controlling legal text; public access never authorizes corpus promotion.",
         "For L2-L4, stress_test and adversarial_review must be PASS before verdict PASS.",
         "For L3, the corrected answer must remain advisory/draft-only and must not claim that AI filed, sent, signed, represented or exercised legal authority.",
         "For L4, the corrected answer must not claim current-law/corpus/RAG/production/provider mutation without the named Human Gate.",
