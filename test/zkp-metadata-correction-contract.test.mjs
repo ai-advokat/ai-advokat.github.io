@@ -33,8 +33,11 @@ test("ZKPMC3 migration changes metadata only and preserves current/Human Gate",(
   assert.doesNotMatch(sql,/current_status\s*=\s*'active'/i);
 });
 
-test("ZKPMC4 production unchanged verification is mandatory",()=>{
-  assert.match(wf,/ZKP PRODUCTION UNCHANGED: PASS/);
+test("ZKPMC4 production unchanged verification compares normalized logical result rows only",()=>{
+  assert.match(wf,/ZKP PRODUCTION LOGICAL RESULTS UNCHANGED: PASS/);
+  assert.match(wf,/payload\?\.\[0\]\?\.results \?\? \[\]/);
+  assert.match(wf,/Object\.entries\(row\)\.sort/);
+  assert.match(wf,/production logical query results changed/);
+  assert.doesNotMatch(wf,/JSON\.stringify\(JSON\.parse\(fs\.readFileSync\("\/tmp\/zkp-prod-before\.json"/);
   assert.match(wf,/current_consolidated/);
-  assert.match(wf,/article_rows/);
 });
