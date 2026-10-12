@@ -111,7 +111,15 @@ const MAX_SEARCH_LIMIT = 20;
 const UNICODE_SCAN_PAGE = 250;
 const UNICODE_SCAN_MAX_ROWS = 1000;
 
-const PUBLIC_WEB_SOURCES = publicOpenLegalSourceDirectory();
+const OPEN_LEGAL_SOURCE_DIRECTORY = publicOpenLegalSourceDirectory();
+const PUBLIC_WEB_SOURCES = Object.freeze([
+  { id:"official-gazette", title:"Official Gazette of the Republic of North Macedonia", url:"https://slvesnik.com.mk/", category:"official_gazette", jurisdiction:"MK" },
+  { id:"ldbis", title:"Ministry of Justice LDBIS legal database", url:"https://ldbis.pravda.gov.mk/", category:"ministry_database", jurisdiction:"MK" },
+  { id:"constitutional-court", title:"Constitutional Court of the Republic of North Macedonia", url:"https://ustavensud.mk/", category:"court", jurisdiction:"MK" },
+  { id:"supreme-court", title:"Supreme Court of the Republic of North Macedonia", url:"https://www.vrhoven.sud.mk/", category:"court", jurisdiction:"MK" },
+  { id:"hudoc", title:"European Court of Human Rights - HUDOC", url:"https://hudoc.echr.coe.int/", category:"international_court", jurisdiction:"ECHR" },
+  { id:"eur-lex", title:"EUR-Lex", url:"https://eur-lex.europa.eu/", category:"international_organization", jurisdiction:"EU" }
+]);
 
 // Publication state verified against the DOI registry (doi.org handle API) on 2026-09-30:
 // a DOI resolves there only after the Zenodo record is published. Reserved DOIs of
@@ -3945,10 +3953,9 @@ function handleWebSources(request) {
 
   return json(request, {
     ok: true,
-    mode: "rights_aware_open_legal_source_directory",
-    policyVersion: OPEN_LEGAL_SOURCE_POLICY_VERSION,
+    mode: "curated_official_directory",
     sources: PUBLIC_WEB_SOURCES,
-    note: "Runtime-wired research directory. Public access does not authorize bulk reuse, corpus promotion or republication."
+    note: "Core official legal-source directory for Legal Base. Full rights-aware source policy is exposed separately at /api/open-legal-sources-policy."
   });
 }
 
@@ -4025,7 +4032,7 @@ function handleOpenLegalSourcesPolicy(request){
   return json(request,{
     ok:true,
     policy:openLegalSourcePolicySummary(),
-    sources:PUBLIC_WEB_SOURCES,
+    sources:OPEN_LEGAL_SOURCE_DIRECTORY,
     runtime:{
       sourceRouter:"enabled",
       rightsGate:"enabled",
@@ -4069,7 +4076,7 @@ async function handleOrchestratorArchitecture(request, env) {
     sourcePolicy:{
       version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
       registryId:OPEN_LEGAL_SOURCE_REGISTRY_ID,
-      sourceCount:PUBLIC_WEB_SOURCES.length,
+      sourceCount:OPEN_LEGAL_SOURCE_DIRECTORY.length,
       sourceRouter:"enabled",
       rightsGate:"enabled",
       webCitationAnnotation:"enabled",
