@@ -1,13 +1,12 @@
 name: AI Advokat private case storage activation
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "wrangler.jsonc"
-      - "migrations/0035_case_document_download_audit.sql"
-      - ".github/workflows/case-files-storage-activation.yml"
   workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type ACTIVATE_CASE_FILES_R2"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -24,6 +23,7 @@ jobs:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CONFIRMATION: ${{ inputs.confirmation }}
 
     steps:
       - uses: actions/checkout@v4
@@ -39,8 +39,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test "$CONFIRMATION" = "ACTIVATE_CASE_FILES_R2"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
+          node <<'NODE'
+          const fs=require("fs");
+          const request=JSON.parse(fs.readFileSync(".github/activation/case-workspace-production-request.json","utf8"));
+          if(request.private_object_storage_activation_authorized!==true) {
+            throw new Error("Private object storage has no separate Human Gate approval");
+          }
+          if(request.private_document_upload_authorized!==true) {
+            throw new Error("Private document upload has no separate Human Gate approval");
+          }
+          NODE
           node --check src/index.js
           node --check src/case-workspace.js
           node --check assets/casepilot-workspace-ui.js
