@@ -101,6 +101,8 @@ jobs:
         run: npm run test:open-legal-sources
       - name: Open Legal Sources runtime routing and rights policy
         run: npm run test:open-legal-sources-runtime
+      - name: Official Gazette and public guide product safety
+        run: npm run test:gazette-guides-product
       - name: Governed case-law chat context tests
         run: npm run test:case-law-chat
       - name: Governed case-law import tests
