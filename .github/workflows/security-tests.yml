@@ -62,7 +62,7 @@ jobs:
         with:
           node-version: "22"
       - name: Worker syntax
-        run: node --check src/index.js && node --check src/legal-status-overlays.js && node --check src/security.js && node --check src/legal-claim-validator.js && node --check src/corpus-versions.js && node --check src/agent-orchestrator.js && node --check src/legal-intelligence-engine.js && node --check src/legal-runtime-governance.js && node --check src/casepilot.js && node --check src/casepilot-matter.js && node --check src/casepilot-workspace-bridge.js && node --check src/casepilot-export-adapter.js && node --check src/casepilot-case-law-bridge.js && node --check src/case-workspace.js && node --check src/case-export.js && node --check assets/casepilot-export.js && node --check assets/casepilot-workspace-ui.js && node --check assets/professional-tools.js && node --check assets/guide-router.js && node --check assets/guide-vault.js && node --check assets/ai-advokat-chat.js
+        run: node --check src/index.js && node --check src/open-legal-sources-policy.js && node --check src/legal-status-overlays.js && node --check src/security.js && node --check src/legal-claim-validator.js && node --check src/corpus-versions.js && node --check src/agent-orchestrator.js && node --check src/legal-intelligence-engine.js && node --check src/legal-runtime-governance.js && node --check src/casepilot.js && node --check src/casepilot-matter.js && node --check src/casepilot-workspace-bridge.js && node --check src/casepilot-export-adapter.js && node --check src/casepilot-case-law-bridge.js && node --check src/case-workspace.js && node --check src/case-export.js && node --check assets/casepilot-export.js && node --check assets/casepilot-workspace-ui.js && node --check assets/professional-tools.js && node --check assets/guide-router.js && node --check assets/guide-vault.js && node --check assets/ai-advokat-chat.js
       - name: Structural verification
         run: npm run verify
       - name: GPT orchestrator foundation tests
@@ -99,6 +99,8 @@ jobs:
         run: npm run test:case-law-sources
       - name: Open Legal Sources rights and ingest governance
         run: npm run test:open-legal-sources
+      - name: Open Legal Sources runtime routing and rights policy
+        run: npm run test:open-legal-sources-runtime
       - name: Governed case-law chat context tests
         run: npm run test:case-law-chat
       - name: Governed case-law import tests
