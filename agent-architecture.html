@@ -20,6 +20,13 @@ main{padding:48px 0 70px}.eyebrow{font-size:.8rem;font-weight:850;letter-spacing
 .status{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}.chip{border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:800}.chip.ok{color:var(--ok);border-color:#397c50}.chip.warn{color:var(--warn);border-color:#806c36}
 .notice{padding:17px 19px;border-left:4px solid var(--gold);background:#0b1a26;border-radius:10px;margin:26px 0;color:var(--muted)}.notice strong{color:var(--text)}
 h2{margin-top:42px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}.card h3{margin:.2em 0 .5em}.card p{color:var(--muted);margin:.45em 0}.role{color:var(--gold);font-size:.78rem;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
+.runtime-pill{display:inline-flex;align-items:center;gap:6px;margin:.55em 0 .1em;padding:4px 8px;border:1px solid var(--line);border-radius:999px;font-size:.7rem;font-weight:900;letter-spacing:.06em}
+.runtime-pill.live{color:var(--ok);border-color:#397c50;background:rgba(156,224,176,.06)}
+.runtime-pill.corpus{color:var(--accent);border-color:#2d708f;background:rgba(127,212,255,.06)}
+.runtime-pill.wired{color:var(--warn);border-color:#806c36;background:rgba(255,216,138,.05)}
+.runtime-pill.locked{color:var(--muted);background:#0a1b28}
+.runtime-board{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 30px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:#0a1b28}
+.runtime-board strong{margin-right:4px}.runtime-board .runtime-pill{margin:0}.runtime-note{width:100%;color:var(--muted);font-size:.82rem}
 .flow{display:grid;gap:9px;margin-top:16px}.step{border-left:3px solid var(--accent);background:#0a1b28;border-radius:8px;padding:13px 15px}.step span{display:block;color:var(--muted);font-size:.9rem}
 .rule{background:#0a1b28;border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}.rule code{color:#f0d49a}
 table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:14px;overflow:hidden}th,td{padding:12px;border:1px solid var(--line);text-align:left;vertical-align:top}th{background:#102737}td{color:var(--muted)}
@@ -38,19 +45,28 @@ footer{border-top:1px solid var(--line);padding:28px 0 44px;color:var(--muted)}@
 <p class="lead">Корисникот комуницира само со <strong>AI Advokat — Chief Legal Orchestrator</strong>. Тој го планира истражувањето, избира bounded specialists, ги држи правните системи одвоени и бара финална проверка на извор, верзија, применливост и цитат пред синтезата.</p>
 <div class="status"><span class="chip ok">Architecture V2.2 · implemented</span><span class="chip ok">LIOE · governed preview</span><span class="chip ok">Real Legal Run Records · active</span><span class="chip ok">Planning API · live in code</span><span class="chip warn">OpenAI provider execution · separate activation</span><span class="chip warn">RAG / corpus promotion · Human Gate</span></div>
 <div class="notice"><strong>Статусна дисциплина.</strong> Имплементираната архитектура не значи дека provider execution, external research tools, RAG или production corpus се автоматски активирани. Тие остануваат посебни контролирани gates.</div>
+<div class="runtime-board" id="runtimeBoard" aria-live="polite">
+  <strong>Production runtime</strong>
+  <span class="runtime-pill wired" data-runtime-summary="provider">GPT · CHECKING</span>
+  <span class="runtime-pill wired" data-runtime-summary="web">WEB · CHECKING</span>
+  <span class="runtime-pill wired" data-runtime-summary="files">ATTACHMENTS · CHECKING</span>
+  <span class="runtime-pill wired" data-runtime-summary="specialists">SPECIALISTS · CHECKING</span>
+  <span class="runtime-pill corpus" data-runtime-summary="human">HUMAN GATE · REQUIRED</span>
+  <span class="runtime-note" id="runtimeNote">LIVE статус се прикажува само од реалниот production /api/orchestrator runtime; не се претпоставува од статичката страница.</span>
+</div>
 </section>
 
 <h2>Главен оркестратор и специјализирани агенти</h2>
 <div class="grid">
-<article class="card"><div class="role">User-facing manager</div><h3>AI Advokat — Chief Legal Orchestrator</h3><p>Ја задржува целата корисничка комуникација, маршрутира подзадачи, ги споредува specialist outputs и го составува конечниот одговор само по verification phase.</p></article>
-<article class="card"><div class="role">MK</div><h3>Macedonian Law Agent</h3><p>Официјални македонски извори, точна верзија, датум на примена и Human Gate. Не прогласува „важечко право“ без потребната доказна основа.</p></article>
-<article class="card"><div class="role">EU</div><h3>EU Law Agent</h3><p>EUR-Lex, EU primary/secondary law и CJEU/CURIA, со јасна EU authority label.</p></article>
-<article class="card"><div class="role">ECHR</div><h3>ECHR Agent</h3><p>Конвенција и ECtHR/HUDOC. Се води одвоено од EU law и од домашно право.</p></article>
-<article class="card"><div class="role">INTL</div><h3>International Law Agent</h3><p>Меѓународни договори, организации и судови, секогаш со инструмент/body/source label.</p></article>
-<article class="card"><div class="role">COMMON LAW</div><h3>Anglo-American / Common Law Agent</h3><p>UK/US и други common-law системи со експлицитна држава, судска хиерархија и precedent status.</p></article>
-<article class="card"><div class="role">GENERAL GPT</div><h3>GPT General Assistant</h3><p>За прашања и продуктивни задачи надвор од native AI Advokat corpus. Никогаш не го претставува општото моделско знаење како проверено македонско позитивно право.</p></article>
-<article class="card"><div class="role">NATIVE KNOWLEDGE</div><h3>AI Advokat Knowledge Agent</h3><p>Прво одговара од govern-ираниот AI Advokat corpus. Ако native corpus не поддржува тврдење, не го заменува тивко со моделско знаење.</p></article>
-<article class="card"><div class="role">FINAL CHECK</div><h3>Verification & Citation Agent</h3><p>Ги проверува source identity, locator, jurisdiction, date/version, authority hierarchy, corpus/external labels и Human Gate state.</p></article>
+<article class="card" data-agent-runtime="chief"><div class="role">User-facing manager</div><span class="runtime-pill wired" data-runtime-pill>CHECKING</span><h3>AI Advokat — Chief Legal Orchestrator</h3><p>Ја задржува целата корисничка комуникација, маршрутира подзадачи, ги споредува specialist outputs и го составува конечниот одговор само по verification phase.</p></article>
+<article class="card" data-agent-runtime="mk"><div class="role">MK</div><span class="runtime-pill wired" data-runtime-pill>CHECKING</span><h3>Macedonian Law Agent</h3><p>Официјални македонски извори, точна верзија, датум на примена и Human Gate. Не прогласува „важечко право“ без потребната доказна основа.</p></article>
+<article class="card" data-agent-runtime="eu"><div class="role">EU</div><span class="runtime-pill wired" data-runtime-pill>CHECKING</span><h3>EU Law Agent</h3><p>EUR-Lex, EU primary/secondary law и CJEU/CURIA, со јасна EU authority label.</p></article>
+<article class="card" data-agent-runtime="echr"><div class="role">ECHR</div><span class="runtime-pill wired" data-runtime-pill>CHECKING</span><h3>ECHR Agent</h3><p>Конвенција и ECtHR/HUDOC. Се води одвоено од EU law и од домашно право.</p></article>
+<article class="card" data-agent-runtime="intl"><div class="role">INTL</div><span class="runtime-pill wired" data-runtime-pill>CHECKING</span><h3>International Law Agent</h3><p>Меѓународни договори, организации и судови, секогаш со инструмент/body/source label.</p></article>
+<article class="card" data-agent-runtime="common"><div class="role">COMMON LAW</div><span class="runtime-pill wired" data-runtime-pill>CHECKING</span><h3>Anglo-American / Common Law Agent</h3><p>UK/US и други common-law системи со експлицитна држава, судска хиерархија и precedent status.</p></article>
+<article class="card" data-agent-runtime="general"><div class="role">GENERAL GPT</div><span class="runtime-pill wired" data-runtime-pill>CHECKING</span><h3>GPT General Assistant</h3><p>За прашања и продуктивни задачи надвор од native AI Advokat corpus. Никогаш не го претставува општото моделско знаење како проверено македонско позитивно право.</p></article>
+<article class="card" data-agent-runtime="corpus"><div class="role">NATIVE KNOWLEDGE</div><span class="runtime-pill corpus" data-runtime-pill>CORPUS</span><h3>AI Advokat Knowledge Agent</h3><p>Прво одговара од govern-ираниот AI Advokat corpus. Ако native corpus не поддржува тврдење, не го заменува тивко со моделско знаење.</p></article>
+<article class="card" data-agent-runtime="verify"><div class="role">FINAL CHECK</div><span class="runtime-pill wired" data-runtime-pill>CHECKING</span><h3>Verification & Citation Agent</h3><p>Ги проверува source identity, locator, jurisdiction, date/version, authority hierarchy, corpus/external labels и Human Gate state.</p></article>
 </div>
 
 <h2>Двата главни режима</h2>
@@ -94,4 +110,66 @@ footer{border-top:1px solid var(--line);padding:28px 0 44px;color:var(--muted)}@
 </section>
 </main>
 <footer><div class="wrap">AI Advokat · Правото, организирано. AI, под човечка контрола.</div></footer>
+
+<script>
+(() => {
+  const endpoint="https://ai-advokat-github-io.aiadvokat16.workers.dev/api/orchestrator";
+  const setPill=(el,label,kind)=>{
+    if(!el)return;
+    el.textContent=label;
+    el.classList.remove("live","corpus","wired","locked");
+    el.classList.add(kind);
+  };
+  const setSummary=(key,label,kind)=>setPill(document.querySelector('[data-runtime-summary="'+key+'"]'),label,kind);
+  const cards=[...document.querySelectorAll("[data-agent-runtime]")];
+
+  const applyCard=(card,runtime)=>{
+    const id=card.dataset.agentRuntime;
+    const pill=card.querySelector("[data-runtime-pill]");
+    const provider=runtime?.providerExecution==="configured_for_api_chat_execution";
+    const specialists=runtime?.lioeSpecialistExecution==="enabled";
+    const postflight=runtime?.lioePostflight==="enabled";
+    if(id==="corpus") return setPill(pill,"CORPUS","corpus");
+    if(id==="verify") return setPill(pill,postflight ? "LIVE · HUMAN GATE" : "WIRED","live");
+    if(id==="general") return setPill(pill,provider ? "LIVE" : "WIRED",provider ? "live" : "wired");
+    const live=provider && specialists;
+    setPill(pill,live ? "LIVE" : "WIRED",live ? "live" : "wired");
+  };
+
+  fetch(endpoint,{cache:"no-store",headers:{accept:"application/json"}})
+    .then(r=>{if(!r.ok)throw new Error("runtime_status_"+r.status);return r.json();})
+    .then(d=>{
+      if(!d?.ok || !d.runtime) throw new Error("runtime_status_invalid");
+      const rt=d.runtime;
+      const provider=rt.providerExecution==="configured_for_api_chat_execution";
+      const web=rt.externalResearchTools==="configured";
+      const files=rt.fileInputs==="configured";
+      const specialists=rt.lioeSpecialistExecution==="enabled";
+      setSummary("provider",provider ? "GPT · LIVE" : "GPT · LOCKED",provider ? "live" : "locked");
+      setSummary("web",web && provider ? "WEB · LIVE" : "WEB · LOCKED",web && provider ? "live" : "locked");
+      setSummary("files",files && provider ? "ATTACHMENTS · LIVE" : "ATTACHMENTS · LOCKED",files && provider ? "live" : "locked");
+      setSummary("specialists",specialists && provider ? "SPECIALISTS · LIVE" : "SPECIALISTS · WIRED",specialists && provider ? "live" : "wired");
+      setSummary("human","HUMAN GATE · REQUIRED","corpus");
+      cards.forEach(card=>applyCard(card,rt));
+      const note=document.getElementById("runtimeNote");
+      if(note) note.textContent=provider
+        ? "Runtime потврден од production API. LIVE значи provider execution + релевантниот governed runtime gate се активни; Human Gate останува задолжителен."
+        : "Production API е достапен, но provider execution не е отворен. Архитектурата останува WIRED/LOCKED без лажно LIVE означување.";
+    })
+    .catch(()=>{
+      setSummary("provider","GPT · UNKNOWN","locked");
+      setSummary("web","WEB · UNKNOWN","locked");
+      setSummary("files","ATTACHMENTS · UNKNOWN","locked");
+      setSummary("specialists","SPECIALISTS · UNKNOWN","locked");
+      setSummary("human","HUMAN GATE · REQUIRED","corpus");
+      cards.forEach(card=>{
+        if(card.dataset.agentRuntime==="corpus") return;
+        setPill(card.querySelector("[data-runtime-pill]"),"STATUS UNKNOWN","locked");
+      });
+      const note=document.getElementById("runtimeNote");
+      if(note) note.textContent="Production runtime status не може да се прочита; системот намерно не прикажува LIVE без доказ.";
+    });
+})();
+</script>
+
 </body></html>
