@@ -201,7 +201,7 @@
         "source_issue_date": "2018-10-31",
         "backfill_migration": "0026_zkp_legacy_version_backfill.sql"
       },
-      "current_law_status": "OFFICIAL_LINEAGE_REVIEW_51_2011_REQUIRED",
+      "current_law_status": "OFFICIAL_LINEAGE_51_2011_RESOLVED_ARTICLE_SOURCE_REVIEW_REQUIRED",
       "repository_binding_plan_ready": true,
       "current_text_reconstructed": false,
       "gates": {
@@ -214,15 +214,22 @@
         "current_version_verified": false,
         "human_gate_approved": false
       },
-      "next_action": "Acquire and classify the exact OG 51/2011 amendment before any current-law reconstruction or promotion. Keep the 570-article secondary consolidation as reference-only.",
+      "next_action": "Verify exact official article-level effects of 100/2012, 142/2016, 198/2018 and U.br.2/2016 / OG 193/2016, then build an official-derived candidate. Keep the 570-article secondary consolidation reference-only.",
       "official_lineage_audit": {
         "checked_on": "2026-10-12",
         "latest_enacted_amendment_identified_on_checked_ldbis_chain": "198/2018",
-        "missing_from_reference_label": [
-          "51/2011"
+        "issue_51_2011_classification": "PREDECESSOR_TRANSITIONAL_REFERENCE_ONLY",
+        "issue_51_2011_direct_text_effect_on_150_2010": false,
+        "current_normative_lineage": [
+          "150/2010",
+          "100/2012",
+          "142/2016",
+          "193/2016",
+          "198/2018"
         ],
+        "application_from": "2013-12-01",
         "proposal_notice_2026_is_enacted_law": false,
-        "evidence": "ingest/mk/real-source-fixtures/zkp-official-lineage-audit-2026.json"
+        "evidence": "ingest/mk/real-source-fixtures/zkp-51-2011-classification-2026.json"
       }
     },
     {
