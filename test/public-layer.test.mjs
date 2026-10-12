@@ -117,6 +117,10 @@ describe("publication status facts", () => {
       assert.match(html, /name="citation_title" content="[^"]+"/, `${p} citation_title`);
       assert.match(html, /name="citation_author" content="[^"]+"/, `${p} citation_author`);
       assert.match(html, /name="citation_publication_date" content="\d{4}\/\d{2}\/\d{2}"/, `${p} citation_publication_date`);
+      const citationTitle = html.match(/name="citation_title" content="([^"]+)"/)?.[1];
+      const citationAuthor = html.match(/name="citation_author" content="([^"]+)"/)?.[1];
+      assert.ok(html.includes(`<h1 class="citation_title" lang="en">${citationTitle}</h1>`), `${p} visible title must match citation_title`);
+      assert.ok(html.includes(`<p class="citation_author">${citationAuthor}</p>`), `${p} visible author must match citation_author`);
       const canonical = html.match(/rel="canonical" href="([^"]+)"/)?.[1];
       const pdf = html.match(/name="citation_pdf_url" content="([^"]+)"/)?.[1];
       if (pdf) {
