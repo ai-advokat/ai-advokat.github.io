@@ -161,8 +161,17 @@ jobs:
           npx wrangler d1 execute ai-advokat-db --remote --json --command "$SQL" > /tmp/zkp-prod-after.json
           node <<'NODE'
           const fs=require("fs");
-          const a=JSON.stringify(JSON.parse(fs.readFileSync("/tmp/zkp-prod-before.json","utf8")));
-          const b=JSON.stringify(JSON.parse(fs.readFileSync("/tmp/zkp-prod-after.json","utf8")));
-          if(a!==b) throw new Error("production changed during staging-only correction");
-          console.log("ZKP PRODUCTION UNCHANGED: PASS");
+          const rows=(path)=>{
+            const payload=JSON.parse(fs.readFileSync(path,"utf8"));
+            return payload?.[0]?.results ?? [];
+          };
+          const normalize=(items)=>items.map(row=>Object.fromEntries(
+            Object.entries(row).sort(([a],[b])=>a.localeCompare(b))
+          )).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
+          const before=normalize(rows("/tmp/zkp-prod-before.json"));
+          const after=normalize(rows("/tmp/zkp-prod-after.json"));
+          if(JSON.stringify(before)!==JSON.stringify(after)){
+            throw new Error("production logical query results changed during staging-only correction");
+          }
+          console.log("ZKP PRODUCTION LOGICAL RESULTS UNCHANGED: PASS");
           NODE
