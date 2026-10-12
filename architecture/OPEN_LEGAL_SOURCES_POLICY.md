@@ -1,7 +1,7 @@
 # AI Advokat · Open Legal Sources Policy
 
-Version: 1.0  
-Date: 2026-10-12  
+Version: 1.0
+Date: 2026-10-12
 Registry: `data/open-legal-sources-registry-2026.json`
 
 ## Purpose
@@ -105,7 +105,7 @@ This policy is a **rights-and-ingest overlay**, not a replacement for:
 - case-law authority classification;
 - response provenance and Human Gate controls.
 
-Those registries answer **what the source is and how much legal authority it has**.  
+Those registries answer **what the source is and how much legal authority it has**.
 This registry additionally answers **what may be retrieved, reused, automated or republished**.
 
 ## Change control
