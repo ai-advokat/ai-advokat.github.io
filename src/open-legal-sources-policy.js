@@ -26,7 +26,7 @@ const SOURCE_ROWS=[
   },
   {
     "id": "mk-ldbis",
-    "name": "ЛДБИС — База на закони, други прописи и акти",
+    "name": "LDBIS / ЛДБИС — База на закони, други прописи и акти",
     "canonicalUrl": "https://ldbis.pravda.gov.mk/",
     "jurisdiction": "MK",
     "authorityStatus": "primary_official",
