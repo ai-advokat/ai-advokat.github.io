@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="mk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="AI Advokat Open Legal Sources Registry — јавни и отворени правни извори со видливи права, reuse, ingest и Human Review статуси.">
+  <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
+  <link rel="canonical" href="https://ai-advokat.github.io/open-legal-sources.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AI Advokat">
+  <meta property="og:title" content="Open Legal Sources Registry · AI Advokat">
+  <meta property="og:description" content="Rights-aware registry for public legal sources: authority, public access, reuse, ingest and Human Review.">
+  <meta property="og:url" content="https://ai-advokat.github.io/open-legal-sources.html">
+  <title>Open Legal Sources Registry · AI Advokat</title>
+  <style>
+    :root{color-scheme:light dark;--bg:#07131d;--panel:#0d1f2d;--line:#274254;--text:#eef6fb;--muted:#a9bdca;--accent:#7fd4ff;--ok:#9ce0b0;--warn:#ffd88a;--closed:#d7e2e9;--danger:#ffaaaa}
+    *{box-sizing:border-box}body{margin:0;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    a{color:var(--accent)}.wrap{width:min(1180px,92vw);margin:auto}.top{border-bottom:1px solid var(--line);background:#091925;position:sticky;top:0;z-index:5}
+    .topin{display:flex;gap:18px;align-items:center;justify-content:space-between;padding:14px 0}.brand{text-decoration:none;color:var(--text);font-weight:800}
+    .nav{display:flex;gap:14px;flex-wrap:wrap}.nav a{text-decoration:none;color:var(--muted)}main{padding:42px 0 64px}
+    .eyebrow{font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-size:.8rem}.hero h1{font-size:clamp(2rem,5vw,3.6rem);line-height:1.05;margin:.35em 0}
+    .hero p{max-width:900px;color:var(--muted);font-size:1.05rem}.notice{margin:24px 0;padding:16px 18px;border:1px solid #806c36;border-radius:14px;background:#211d12;color:var(--warn)}
+    .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:30px 0}.metric{padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+    .metric b{font-size:1.7rem;display:block}.metric span{color:var(--muted)}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:26px 0}.toolbar select{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}.card{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:18px}
+    .card h2{font-size:1.1rem;margin:0 0 6px}.meta{color:var(--muted);font-size:.91rem}.chips{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}.chip{border:1px solid var(--line);border-radius:999px;padding:4px 9px;font-size:.76rem;background:#102737}
+    .chip.ok{border-color:#387d50;color:var(--ok)}.chip.warn{border-color:#806c36;color:var(--warn)}.chip.closed{color:var(--closed)}.chip.danger{border-color:#7d3a3a;color:var(--danger)}
+    .details{margin:12px 0 0;padding-left:18px;color:var(--muted);font-size:.91rem}.details li{margin:5px 0}.section-title{margin:38px 0 14px}.error{padding:16px;border:1px solid #7d3a3a;background:#281313;border-radius:12px}
+    .skip{position:absolute;left:-9999px;top:8px;background:#fff;color:#07131d;padding:10px 14px;border-radius:8px;z-index:20}.skip:focus{left:10px}
+    footer{border-top:1px solid var(--line);padding:28px 0 44px;color:var(--muted)}
+    @media(max-width:700px){.topin{align-items:flex-start;flex-direction:column}.nav{font-size:.92rem}}
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Прескокни до главната содржина</a>
+  <header class="top">
+    <div class="wrap topin">
+      <a class="brand" href="/">AI Advokat</a>
+      <nav class="nav" aria-label="Навигација">
+        <a href="/">Почетна</a>
+        <a href="/guides/">Водичи</a>
+        <a href="/governance.html">Проверливост</a>
+        <a href="/agent-architecture.html">AI Архитектура</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="main">
+    <section class="hero">
+      <div class="eyebrow">OPEN LEGAL SOURCES · RIGHTS-AWARE INGEST</div>
+      <h1>Open Legal Sources Registry</h1>
+      <p>Јавен read-only регистар на правни извори што ги раздвојува правниот авторитет, јавната достапност, reuse/licence статусот, дозволениот ingest и Human Review.</p>
+      <div class="notice"><strong>PUBLIC ≠ REUSABLE.</strong> Тоа што документ или база може да се отвори на интернет не значи дека е дозволено автоматски масовно копирање, mirror или републикација. Нејасните права се третираат fail-closed.</div>
+    </section>
+
+    <section class="summary" aria-label="Резиме">
+      <div class="metric"><b id="mTotal">—</b><span>регистрирани извори</span></div>
+      <div class="metric"><b id="mOfficial">—</b><span>официјални/судски извори</span></div>
+      <div class="metric"><b id="mVerified">—</b><span>reuse верификуван</span></div>
+      <div class="metric"><b id="mAuto">—</b><span>автоматски ingest lanes</span></div>
+      <div class="metric"><b id="mConditional">—</b><span>условни / terms review</span></div>
+    </section>
+
+    <div class="toolbar" aria-label="Филтри">
+      <label>Јурисдикција
+        <select id="jurisdiction">
+          <option value="">Сите</option>
+        </select>
+      </label>
+      <label>Reuse
+        <select id="reuse">
+          <option value="">Сите</option>
+        </select>
+      </label>
+      <label>Ingest
+        <select id="ingest">
+          <option value="">Сите</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="cards" class="grid" aria-live="polite"><p>Се вчитува регистарот…</p></div>
+
+    <h2 class="section-title">Governance правило</h2>
+    <div class="card">
+      <h2>Human Gate пред автоматизација</h2>
+      <p class="meta">Нов извор не преминува во автоматски full-text ingest само затоа што е официјален или јавно достапен. Потребни се проверени права/услови, source-specific ограничувања, provenance и Human Review. Current-law статусот се проверува одделно.</p>
+      <p><a href="/governance.html">Отвори Legal Governance →</a></p>
+    </div>
+  </main>
+
+  <footer><div class="wrap">AI Advokat · Официјален извор прво. Права и provenance секогаш видливи.</div></footer>
+
+<script type="module">
+  const host=document.getElementById("cards");
+  const esc=(v)=>v==null?"—":String(v);
+  const nice=(v)=>esc(v).replaceAll("_"," ");
+  const chip=(label,kind="closed")=>{
+    const el=document.createElement("span");
+    el.className="chip "+kind;
+    el.textContent=label;
+    return el;
+  };
+  const addOptions=(select,values)=>{
+    for(const value of [...new Set(values)].sort()){
+      const option=document.createElement("option");
+      option.value=value; option.textContent=nice(value); select.append(option);
+    }
+  };
+  try{
+    const res=await fetch("/data/open-legal-sources-registry-2026.json",{cache:"no-store"});
+    if(!res.ok) throw new Error("registry_unavailable");
+    const data=await res.json();
+    const sources=data.sources||[];
+
+    document.getElementById("mTotal").textContent=sources.length;
+    document.getElementById("mOfficial").textContent=sources.filter(s=>/official/.test(s.authority_status)).length;
+    document.getElementById("mVerified").textContent=sources.filter(s=>["verified_reuse_allowed","metadata_reuse_verified"].includes(s.reuse_status)).length;
+    document.getElementById("mAuto").textContent=sources.filter(s=>s.automated_bulk_ingest===true).length;
+    document.getElementById("mConditional").textContent=sources.filter(s=>["terms_review_required","mixed_rights","record_level_license_required"].includes(s.reuse_status)).length;
+
+    const jurisdiction=document.getElementById("jurisdiction");
+    const reuse=document.getElementById("reuse");
+    const ingest=document.getElementById("ingest");
+    addOptions(jurisdiction,sources.map(s=>s.jurisdiction));
+    addOptions(reuse,sources.map(s=>s.reuse_status));
+    addOptions(ingest,sources.map(s=>s.ingest_status));
+
+    const render=()=>{
+      const visible=sources.filter(s=>
+        (!jurisdiction.value||s.jurisdiction===jurisdiction.value) &&
+        (!reuse.value||s.reuse_status===reuse.value) &&
+        (!ingest.value||s.ingest_status===ingest.value)
+      );
+      host.replaceChildren();
+      for(const source of visible){
+        const article=document.createElement("article");
+        article.className="card";
+
+        const h=document.createElement("h2");
+        const a=document.createElement("a");
+        a.href=source.canonical_url; a.target="_blank"; a.rel="noopener noreferrer"; a.textContent=source.name;
+        h.append(a); article.append(h);
+
+        const meta=document.createElement("div");
+        meta.className="meta";
+        meta.textContent=source.jurisdiction+" · "+nice(source.authority_status);
+        article.append(meta);
+
+        const chips=document.createElement("div");
+        chips.className="chips";
+        chips.append(
+          chip("PUBLIC: "+nice(source.public_access_status),source.public_access_status==="public_confirmed"?"ok":"warn"),
+          chip("REUSE: "+nice(source.reuse_status),["verified_reuse_allowed","metadata_reuse_verified"].includes(source.reuse_status)?"ok":"warn"),
+          chip("INGEST: "+nice(source.ingest_status),source.automated_bulk_ingest?"ok":"closed"),
+          chip("AUTO: "+(source.automated_bulk_ingest?"YES":"NO"),source.automated_bulk_ingest?"ok":"closed"),
+          chip("HUMAN: "+nice(source.human_review_status),source.human_review_status==="reviewed"?"ok":"warn")
+        );
+        article.append(chips);
+
+        const ul=document.createElement("ul");
+        ul.className="details";
+        for(const item of (source.allowed_now||[]).slice(0,4)){
+          const li=document.createElement("li"); li.textContent="Allowed: "+nice(item); ul.append(li);
+        }
+        for(const item of (source.blocked_until_review||[]).slice(0,3)){
+          const li=document.createElement("li"); li.textContent="Closed: "+nice(item); ul.append(li);
+        }
+        article.append(ul);
+
+        const note=document.createElement("p");
+        note.className="meta";
+        note.textContent=esc(source.rights_evidence_note||source.terms_evidence_note||source.access_evidence_note||source.note||"");
+        article.append(note);
+
+        const evidence=source.rights_evidence_url||source.terms_evidence_url||source.access_evidence_url||source.reuse_evidence_url;
+        if(evidence){
+          const p=document.createElement("p");
+          const link=document.createElement("a");
+          link.href=evidence; link.target="_blank"; link.rel="noopener noreferrer"; link.textContent="Rights / access evidence →";
+          p.append(link); article.append(p);
+        }
+        host.append(article);
+      }
+      if(!visible.length){
+        const p=document.createElement("p");
+        p.textContent="Нема извори за избраните филтри.";
+        host.append(p);
+      }
+    };
+    for(const select of [jurisdiction,reuse,ingest]) select.addEventListener("change",render);
+    render();
+  }catch(error){
+    host.replaceChildren();
+    const box=document.createElement("div");
+    box.className="error";
+    box.textContent="Open Legal Sources регистарот моментално не може да се вчита. Ниту еден ingest статус не се претпоставува.";
+    host.append(box);
+  }
+</script>
+</body>
+</html>
