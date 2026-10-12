@@ -174,6 +174,10 @@
         activationState:record.activation_state || "review_required",
         activationLabel:record.activation_label_mk || "",
         currentLawAuthority:record.current_law_authority===true,
+        currentLawClaimPolicy:record.current_law_claim_policy || "primary_source_required",
+        lawDependencies:Array.isArray(record.law_dependencies)?record.law_dependencies.map(x=>({
+          key:x.key,title:x.title,role:x.role,sourceClass:x.source_class
+        })):[],
         sourceRole:record.source_role || "",
         url:record.public_record_url,
         score
