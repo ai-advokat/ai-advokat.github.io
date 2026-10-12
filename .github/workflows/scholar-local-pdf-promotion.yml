@@ -58,13 +58,12 @@ jobs:
             test "$(head -c 4 "$file")" = "%PDF"
           done
 
-          cat > /tmp/scholar-pdf-sha256.txt <<'EOF'
-4089c2c5e8ec53cf31924e07afa1621004198114e0f7ecdf2d8d37e4066a5c31  scholar/sindzir/paper.pdf
-e7ace82572a3678e7c7503d283e4e60f63c9a6dd541b4ce04d6a9eb0562e6250  scholar/electronic-ai-evidence/paper.pdf
-f212ddc59d083ab74b0fa42bd5f785ec717e758d6d4fbfadcdae667efd186f16  scholar/mobile-phone-privilege/paper.pdf
-0887adb3dd33ed0d3940795074b3eb7f6e73eecafff8c34909cb552deb31c079  scholar/ai-legal-practice-judiciary/paper.pdf
-EOF
-          sha256sum --check /tmp/scholar-pdf-sha256.txt
+          {
+            echo "4089c2c5e8ec53cf31924e07afa1621004198114e0f7ecdf2d8d37e4066a5c31  scholar/sindzir/paper.pdf"
+            echo "e7ace82572a3678e7c7503d283e4e60f63c9a6dd541b4ce04d6a9eb0562e6250  scholar/electronic-ai-evidence/paper.pdf"
+            echo "f212ddc59d083ab74b0fa42bd5f785ec717e758d6d4fbfadcdae667efd186f16  scholar/mobile-phone-privilege/paper.pdf"
+            echo "0887adb3dd33ed0d3940795074b3eb7f6e73eecafff8c34909cb552deb31c079  scholar/ai-legal-practice-judiciary/paper.pdf"
+          } | sha256sum --check
 
       - name: Commit verified local Scholar PDFs
         shell: bash
