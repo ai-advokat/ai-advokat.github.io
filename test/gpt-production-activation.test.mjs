@@ -123,3 +123,13 @@ test("GPTACT7 architecture status is evidence-backed by the production runtime a
   assert.match(architecturePage,/STATUS UNKNOWN/);
   assert.match(architecturePage,/не прикажува LIVE без доказ/);
 });
+
+
+test("GPTACT9 production activation fail-closes on the CasePilot R2 dependency",()=>{
+  assert.match(workflow,/Ensure production CasePilot R2 bucket exists/);
+  assert.match(workflow,/wrangler r2 bucket info "\$BUCKET"/);
+  assert.match(workflow,/wrangler r2 bucket create "\$BUCKET"/);
+  assert.match(workflow,/Production R2 preflight: PASS/);
+  assert.match(wrangler,/"binding": "CASE_FILES"/);
+  assert.match(wrangler,/"bucket_name": "ai-advokat-case-files"/);
+});
