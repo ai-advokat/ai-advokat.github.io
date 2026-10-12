@@ -129,3 +129,26 @@ test("CGR13 router surfaces activation state and never upgrades a guide to curre
   assert.equal(pending.activationState,"review_required");
   assert.equal(pending.currentLawAuthority,false);
 });
+
+
+test("CGR14 every guide route carries governed law dependencies without becoming legal authority",()=>{
+  const current=Router.currentPublicGuides(records);
+  for(const r of current){
+    const routed=Router.routeGuides(r.display_title||r.title,records,{limit:6,minScore:1}).find(x=>x.id===r.id);
+    assert.ok(routed,r.id);
+    assert.equal(routed.currentLawClaimPolicy,"primary_source_required",r.id);
+    assert.ok(Array.isArray(routed.lawDependencies) && routed.lawDependencies.length>=1,r.id);
+    assert.equal(routed.currentLawAuthority,false,r.id);
+  }
+});
+
+test("CGR15 ZPP and ZKP dependent routes expose their canonical dependency keys",()=>{
+  const traffic=Router.routeGuides("надомест штета сообраќајна незгода",records,{limit:6,minScore:1})
+    .find(x=>x.id==="guide-40-full-word-2026");
+  assert.ok(traffic);
+  assert.ok(traffic.lawDependencies.some(x=>x.key==="mk:zpp"));
+  const detention=Router.routeGuides("укинување притвор",records,{limit:6,minScore:1})
+    .find(x=>x.id==="guide-46-full-word-2026");
+  assert.ok(detention);
+  assert.ok(detention.lawDependencies.some(x=>x.key==="mk:zkp"));
+});
