@@ -173,3 +173,5 @@ jobs:
 
       - name: ZKP official-lineage fail-closed gate
         run: npm run test:zkp-official-lineage
+      - name: ZKP 51/2011 lineage resolution and staging metadata contract
+        run: npm run test:zkp-lineage-resolution

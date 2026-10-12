@@ -1,0 +1,18 @@
+{
+  "activation_id": "zkp-metadata-correction-staging-2026-10-12",
+  "environment": "staging",
+  "migration": "0036_zkp_entry_application_metadata_correction.sql",
+  "production_write_authorized": false,
+  "article_text_mutation_authorized": false,
+  "current_law_promotion_authorized": false,
+  "human_gate_mutation_authorized": false,
+  "expected": {
+    "effective_date": "2010-11-26",
+    "application_from": "2013-12-01",
+    "reference_version_valid_from": "2018-10-31",
+    "current_status": "pending",
+    "human_review_status": "pending",
+    "is_current": 0
+  },
+  "fail_closed": true
+}
