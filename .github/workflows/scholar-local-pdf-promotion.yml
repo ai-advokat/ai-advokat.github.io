@@ -1,0 +1,87 @@
+name: Scholar local PDF promotion
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/scholar-local-pdf-promotion.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download allowlisted Zenodo PDFs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p \
+            scholar/sindzir \
+            scholar/electronic-ai-evidence \
+            scholar/mobile-phone-privilege \
+            scholar/ai-legal-practice-judiciary
+
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://zenodo.org/records/22981744/files/Stojankich_CHAIN_FINAL_CENTERED_ZENODO_DOI_EN_UK_v1.0_28SEP2026.pdf" \
+            --output scholar/sindzir/paper.pdf
+
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://zenodo.org/records/23017531/files/Stojankich_ELECTRONIC_AI_EVIDENCE_FINAL_CENTERED_ZENODO_DOI_EN_UK_v1.0_28SEP2026.pdf" \
+            --output scholar/electronic-ai-evidence/paper.pdf
+
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://zenodo.org/records/23021388/files/Stojankich_MOBILE_PHONE_PRIVILEGE_FINAL_CENTERED_ZENODO_DOI_EN_UK_v1.0_28SEP2026.pdf" \
+            --output scholar/mobile-phone-privilege/paper.pdf
+
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://zenodo.org/records/23023442/files/Stojankich_AI_LEGAL_PROFESSION_JUDICIARY_FINAL_CENTERED_ZENODO_DOI_EN_UK_v1.0_28SEP2026.pdf" \
+            --output scholar/ai-legal-practice-judiciary/paper.pdf
+
+      - name: Verify PDF magic and exact final-file hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            scholar/sindzir/paper.pdf \
+            scholar/electronic-ai-evidence/paper.pdf \
+            scholar/mobile-phone-privilege/paper.pdf \
+            scholar/ai-legal-practice-judiciary/paper.pdf
+          do
+            test "$(head -c 4 "$file")" = "%PDF"
+          done
+
+          cat > /tmp/scholar-pdf-sha256.txt <<'EOF'
+4089c2c5e8ec53cf31924e07afa1621004198114e0f7ecdf2d8d37e4066a5c31  scholar/sindzir/paper.pdf
+e7ace82572a3678e7c7503d283e4e60f63c9a6dd541b4ce04d6a9eb0562e6250  scholar/electronic-ai-evidence/paper.pdf
+f212ddc59d083ab74b0fa42bd5f785ec717e758d6d4fbfadcdae667efd186f16  scholar/mobile-phone-privilege/paper.pdf
+0887adb3dd33ed0d3940795074b3eb7f6e73eecafff8c34909cb552deb31c079  scholar/ai-legal-practice-judiciary/paper.pdf
+EOF
+          sha256sum --check /tmp/scholar-pdf-sha256.txt
+
+      - name: Commit verified local Scholar PDFs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add \
+            scholar/sindzir/paper.pdf \
+            scholar/electronic-ai-evidence/paper.pdf \
+            scholar/mobile-phone-privilege/paper.pdf \
+            scholar/ai-legal-practice-judiciary/paper.pdf
+
+          if git diff --cached --quiet; then
+            echo "Verified Scholar PDFs already present; nothing to commit."
+            exit 0
+          fi
+
+          git config user.name "ai-advokat-actions"
+          git config user.email "aiadvokat16@gmail.com"
+          git commit -m "Add verified local Scholar full-text PDFs"
+          git push origin HEAD:main
