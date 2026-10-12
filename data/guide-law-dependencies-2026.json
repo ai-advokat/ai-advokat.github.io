@@ -1,0 +1,621 @@
+{
+  "schema_version": "1.0",
+  "registry_id": "AI_ADVOKAT_GUIDE_LAW_DEPENDENCIES_2026",
+  "generated_on": "2026-10-12",
+  "policy": {
+    "guide_material_class": "secondary_authored_editorial_guidance",
+    "guide_never_primary_law": true,
+    "current_law_claim_requires_primary_source": true,
+    "current_law_claim_requires_temporal_match": true,
+    "external_dependency_requires_live_official_check": true,
+    "unresolved_dependency_never_silently_satisfied": true
+  },
+  "records": [
+    {
+      "guide_id": "guide-02-victim-edited-2026-10-01",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-02-victim-draft-2026-09-29",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-05-workplace",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:workplace-harassment-act",
+          "title": "Закон за заштита од вознемирување на работно место",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        },
+        {
+          "key": "mk:zpp",
+          "title": "Закон за парничната постапка",
+          "role": "conditional_procedure",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-09-family",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zs",
+          "title": "Закон за семејството",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:zpp",
+          "title": "Закон за парничната постапка",
+          "role": "conditional_procedure",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-10-traffic",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoo",
+          "title": "Закон за облигационите односи",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:zpp",
+          "title": "Закон за парничната постапка",
+          "role": "conditional_procedure",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "external:motor-liability-insurance",
+          "title": "Закон/правила за задолжително осигурување во сообраќајот",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-17-police",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-21-witness",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-22-corruption",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:whistleblower-protection",
+          "title": "Закон за заштита на укажувачи и релевантни антикорупциски прописи",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-26-administrative-short",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "external:zus",
+          "title": "Закон за управните спорови",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-administrative-v1",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "external:zus",
+          "title": "Закон за управните спорови",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-choose-lawyer",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:advocacy-act",
+          "title": "Закон за адвокатура",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        },
+        {
+          "key": "external:advocacy-tariff",
+          "title": "Адвокатска тарифа",
+          "role": "dynamic",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-free-legal-aid",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:free-legal-aid-act",
+          "title": "Закон за бесплатна правна помош",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-38-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:pension-disability-insurance",
+          "title": "Прописи за пензиско и инвалидско осигурување",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        },
+        {
+          "key": "external:employment-records",
+          "title": "Прописи/евиденции за работен стаж",
+          "role": "supporting",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-39-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:health-insurance-act",
+          "title": "Прописи за здравствено осигурување",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-40-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoo",
+          "title": "Закон за облигационите односи",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:zpp",
+          "title": "Закон за парничната постапка",
+          "role": "conditional_procedure",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "external:motor-liability-insurance",
+          "title": "Прописи за задолжително осигурување во сообраќајот",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-41-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-42-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-43-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-44-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-45-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-46-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-47-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "supporting",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "external:execution-sanctions-act",
+          "title": "Прописи за извршување на санкции",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-48-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:execution-sanctions-act",
+          "title": "Прописи за извршување на санкции",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-49-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "supporting",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-50-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:pardon-act",
+          "title": "Закон за помилување",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        },
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "supporting",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-51-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-52-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-53-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:zus",
+          "title": "Закон за управните спорови",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        },
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "supporting",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-54-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:zus",
+          "title": "Закон за управните спорови",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        },
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "supporting",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-55-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "external:zus",
+          "title": "Закон за управните спорови",
+          "role": "conditional_procedure",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-56-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-57-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-58-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-59-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoo",
+          "title": "Закон за облигационите односи",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:zpp",
+          "title": "Закон за парничната постапка",
+          "role": "conditional_procedure",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "supporting",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-60-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:notariat-act",
+          "title": "Закон за нотаријат",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        },
+        {
+          "key": "external:notary-tariff",
+          "title": "Нотарска тарифа",
+          "role": "dynamic",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-61-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:notariat-act",
+          "title": "Закон за нотаријат",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        },
+        {
+          "key": "external:notary-tariff",
+          "title": "Нотарска тарифа",
+          "role": "dynamic",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-62-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:notariat-act",
+          "title": "Закон за нотаријат",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        },
+        {
+          "key": "external:notary-tariff",
+          "title": "Нотарска тарифа",
+          "role": "dynamic",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-63-full-word-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "external:notariat-act",
+          "title": "Закон за нотаријат",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        },
+        {
+          "key": "external:notary-tariff",
+          "title": "Нотарска тарифа",
+          "role": "dynamic",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-administrative-v2",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zoup",
+          "title": "Закон за општата управна постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "external:zus",
+          "title": "Закон за управните спорови",
+          "role": "primary",
+          "source_class": "external_official_source_required"
+        }
+      ]
+    }
+  ]
+}
