@@ -1,0 +1,25 @@
+{
+  "decision_id": "AI_ADVOKAT_OPEN_LEGAL_SOURCES_RUNTIME_ACTIVATION_2026-10-12",
+  "requested_on": "2026-10-12",
+  "requested_by_role": "project_lead",
+  "activation_authorized": true,
+  "authorized_scope": [
+    "runtime_source_policy_wiring",
+    "regional_comparative_source_routing",
+    "staging_migration_0037",
+    "production_migration_0037",
+    "production_worker_redeploy",
+    "live_policy_smoke_test"
+  ],
+  "not_authorized": [
+    "bulk_copy_of_terms_unclear_sources",
+    "automatic_corpus_promotion",
+    "automatic_current_law_promotion",
+    "subscription_or_paywall_bypass",
+    "private_case_storage_activation"
+  ],
+  "human_gate_preserved": true,
+  "registry_id": "AI_ADVOKAT_OPEN_LEGAL_SOURCES_REGISTRY_2026",
+  "policy_version": "1.0.0",
+  "migration": "0037_open_legal_sources_registry.sql"
+}

@@ -87,8 +87,14 @@ import {
 } from "./casepilot-matter.js";
 import { mapWorkspaceToCasePilotShell } from "./casepilot-workspace-bridge.js";
 import { buildCaseLawComparison } from "./casepilot-case-law-bridge.js";
+import {
+  OPEN_LEGAL_SOURCE_POLICY_VERSION,
+  OPEN_LEGAL_SOURCE_REGISTRY_ID,
+  publicOpenLegalSourceDirectory,
+  openLegalSourcePolicySummary
+} from "./open-legal-sources-policy.js";
 
-const VERSION = "1.7.0";
+const VERSION = "1.8.0";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -105,49 +111,14 @@ const MAX_SEARCH_LIMIT = 20;
 const UNICODE_SCAN_PAGE = 250;
 const UNICODE_SCAN_MAX_ROWS = 1000;
 
+const OPEN_LEGAL_SOURCE_DIRECTORY = publicOpenLegalSourceDirectory();
 const PUBLIC_WEB_SOURCES = Object.freeze([
-  {
-    id: "official-gazette",
-    title: "Official Gazette of the Republic of North Macedonia",
-    url: "https://slvesnik.com.mk/",
-    category: "official_gazette",
-    jurisdiction: "MK"
-  },
-  {
-    id: "ldbis",
-    title: "Ministry of Justice LDBIS legal database",
-    url: "https://ldbis.pravda.gov.mk/",
-    category: "ministry_database",
-    jurisdiction: "MK"
-  },
-  {
-    id: "constitutional-court",
-    title: "Constitutional Court of the Republic of North Macedonia",
-    url: "https://ustavensud.mk/",
-    category: "court",
-    jurisdiction: "MK"
-  },
-  {
-    id: "supreme-court",
-    title: "Supreme Court of the Republic of North Macedonia",
-    url: "https://www.vrhoven.sud.mk/",
-    category: "court",
-    jurisdiction: "MK"
-  },
-  {
-    id: "hudoc",
-    title: "European Court of Human Rights - HUDOC",
-    url: "https://hudoc.echr.coe.int/",
-    category: "international_court",
-    jurisdiction: "ECHR"
-  },
-  {
-    id: "eur-lex",
-    title: "EUR-Lex",
-    url: "https://eur-lex.europa.eu/",
-    category: "international_organization",
-    jurisdiction: "EU"
-  }
+  { id:"official-gazette", title:"Official Gazette of the Republic of North Macedonia", url:"https://slvesnik.com.mk/", category:"official_gazette", jurisdiction:"MK" },
+  { id:"ldbis", title:"Ministry of Justice LDBIS legal database", url:"https://ldbis.pravda.gov.mk/", category:"ministry_database", jurisdiction:"MK" },
+  { id:"constitutional-court", title:"Constitutional Court of the Republic of North Macedonia", url:"https://ustavensud.mk/", category:"court", jurisdiction:"MK" },
+  { id:"supreme-court", title:"Supreme Court of the Republic of North Macedonia", url:"https://www.vrhoven.sud.mk/", category:"court", jurisdiction:"MK" },
+  { id:"hudoc", title:"European Court of Human Rights - HUDOC", url:"https://hudoc.echr.coe.int/", category:"international_court", jurisdiction:"ECHR" },
+  { id:"eur-lex", title:"EUR-Lex", url:"https://eur-lex.europa.eu/", category:"international_organization", jurisdiction:"EU" }
 ]);
 
 // Publication state verified against the DOI registry (doi.org handle API) on 2026-09-30:
@@ -3621,6 +3592,12 @@ async function handleGPTChat(request,env){
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,
     sources:result.sources || [],
+    sourcePolicy:{
+      version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
+      registeredExternalSources:(result.sources||[]).filter(s=>s.registered===true).length,
+      unregisteredExternalSources:(result.sources||[]).filter(s=>s.registered!==true).length,
+      corpusPromotion:"human_gate_required"
+    },
     legalSources:articleBundle.legalSources || [],
     caseLawSources:caseLawBundle.sources || [],
     guideSources:guideDocumentCheck.sources || [],
@@ -3675,6 +3652,9 @@ async function handleGPTChat(request,env){
       postflightProvisional:postflight.verdict==="REVISE",
       correctionRequired:(postflight.attempts||0)>1,
       officialWebSourceCount:runtimeAssessment.officialWebSourceCount,
+      registeredOpenLegalSourceCount:runtimeAssessment.registeredOpenLegalSourceCount||0,
+      policyCompliantWebSourceCount:runtimeAssessment.policyCompliantWebSourceCount||0,
+      openLegalSourcePolicyVersion:runtimeAssessment.openLegalSourcePolicyVersion||OPEN_LEGAL_SOURCE_POLICY_VERSION,
       specialistExecution:result.specialistExecution||null,
       warning:runtimeAssessment.warningMk
     } : null,
@@ -3975,7 +3955,7 @@ function handleWebSources(request) {
     ok: true,
     mode: "curated_official_directory",
     sources: PUBLIC_WEB_SOURCES,
-    note: "Directory only. AI Advokat does not replace the official publication."
+    note: "Core official legal-source directory for Legal Base. Full rights-aware source policy is exposed separately at /api/open-legal-sources-policy."
   });
 }
 
@@ -4047,6 +4027,23 @@ async function lioeRuntimeTelemetryStatus(env){
   }
 }
 
+function handleOpenLegalSourcesPolicy(request){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+  return json(request,{
+    ok:true,
+    policy:openLegalSourcePolicySummary(),
+    sources:OPEN_LEGAL_SOURCE_DIRECTORY,
+    runtime:{
+      sourceRouter:"enabled",
+      rightsGate:"enabled",
+      specialistPolicyPrompts:"enabled",
+      webCitationAnnotation:"enabled",
+      verificationPolicyContext:"enabled",
+      corpusPromotion:"separate_human_gate"
+    }
+  });
+}
+
 async function handleOrchestratorArchitecture(request, env) {
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
 
@@ -4073,7 +4070,18 @@ async function handleOrchestratorArchitecture(request, env) {
       lioePostflight:env.LIOE_POSTFLIGHT_ENABLED==="true" ? "enabled" : "locked",
       lioeSpecialistExecution:env.LIOE_SPECIALIST_EXECUTION_ENABLED==="true" ? "enabled" : "locked",
       lioeRuntimeTelemetry:telemetryStatus,
-      lioeRuntimeVersion:LEGAL_RUNTIME_GOVERNANCE_VERSION
+      lioeRuntimeVersion:LEGAL_RUNTIME_GOVERNANCE_VERSION,
+      openLegalSourcesPolicy:"runtime_wired_"+OPEN_LEGAL_SOURCE_POLICY_VERSION
+    },
+    sourcePolicy:{
+      version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
+      registryId:OPEN_LEGAL_SOURCE_REGISTRY_ID,
+      sourceCount:OPEN_LEGAL_SOURCE_DIRECTORY.length,
+      sourceRouter:"enabled",
+      rightsGate:"enabled",
+      webCitationAnnotation:"enabled",
+      verificationIntegration:"enabled",
+      regionalComparative:"RS_SI_registered_HR_BA_ME_fail_closed_pending_validation"
     },
     doctrine:{
       corpus:"Corpus first -> exact source -> exact version -> citation -> synthesis.",
@@ -4165,7 +4173,11 @@ async function handleCapabilities(request, env) {
             : "schema_missing",
       publicSearch: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       officialSourceDirectory: "live_read_only",
-      zenodo: "metadata_only",
+      openLegalSourcesPolicy: "runtime_wired_"+OPEN_LEGAL_SOURCE_POLICY_VERSION,
+      sourceRouter: "runtime_enabled",
+      sourceRightsPolicy: "runtime_enabled",
+      regionalComparativeResearch: "rs_si_registered_hr_ba_me_pending_validation",
+      zenodo: "metadata_only_record_license_controlled",
       orcid: "live_read_only",
       membershipPlans: "live_read_only",
       membershipEntitlements: database.reachable && database.schemaReady ? "key_based_v1" : "blocked",
@@ -4264,6 +4276,7 @@ export default {
     if (url.pathname === "/api/orchestrator") return handleOrchestratorArchitecture(request, env);
     if (url.pathname === "/api/orchestrator/plan") return handleOrchestratorPlan(request, env);
     if (url.pathname === "/api/knowledge-intake-policy") return handleKnowledgeIntakePolicy(request);
+    if (url.pathname === "/api/open-legal-sources-policy") return handleOpenLegalSourcesPolicy(request);
     if (url.pathname === "/api/professional-workflows") {
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
       return json(request,{ok:true,version:"1.0.0",workflows:listLegalWorkflows(),humanGate:"required"});

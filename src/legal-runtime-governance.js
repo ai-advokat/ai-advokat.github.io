@@ -1,3 +1,9 @@
+import {
+  classifyOpenLegalSource,
+  isRegisteredOfficialLegalSource,
+  OPEN_LEGAL_SOURCE_POLICY_VERSION
+} from "./open-legal-sources-policy.js";
+
 // AI Advokat LIOE runtime governance.
 // Pure release assessment + privacy-minimised D1 telemetry.
 // This module stores no user question, answer, attachment, source text,
@@ -6,29 +12,29 @@
 export const LEGAL_RUNTIME_GOVERNANCE_VERSION="ai-advokat-lioe-runtime-1.0.0";
 export const LEGAL_RUNTIME_TELEMETRY_SCHEMA="1.0";
 
-const OFFICIAL_HOSTS=Object.freeze([
-  "slvesnik.com.mk",
-  "ldbis.pravda.gov.mk",
-  "pravda.gov.mk",
-  "ustavensud.mk",
-  "vrhoven.sud.mk",
-  "sud.mk",
-  "eur-lex.europa.eu",
-  "curia.europa.eu",
-  "hudoc.echr.coe.int",
-  "echr.coe.int"
-]);
-
-function hostOf(value){
-  try{return new URL(String(value||"")).hostname.toLowerCase();}
-  catch{return"";}
-}
 function officialWebSourceCount(sources=[]){
   let count=0;
   for(const source of Array.isArray(sources)?sources:[]){
-    const host=hostOf(source?.url);
-    if(!host)continue;
-    if(OFFICIAL_HOSTS.some(allowed=>host===allowed||host.endsWith("."+allowed)))count++;
+    if(isRegisteredOfficialLegalSource(source?.url))count++;
+  }
+  return count;
+}
+
+function registeredWebSourceCount(sources=[]){
+  let count=0;
+  for(const source of Array.isArray(sources)?sources:[]){
+    if(classifyOpenLegalSource(source?.url))count++;
+  }
+  return count;
+}
+
+function policyCompliantWebSourceCount(sources=[]){
+  let count=0;
+  for(const source of Array.isArray(sources)?sources:[]){
+    const policy=classifyOpenLegalSource(source?.url);
+    if(!policy)continue;
+    if(source?.agentBoundaryAllowed===false)continue;
+    count++;
   }
   return count;
 }
@@ -64,6 +70,8 @@ export function assessLegalRuntimeRelease({
   const currentVerified=nativeCurrentVerified(articleBundle);
   const webSources=Array.isArray(result?.sources)?result.sources:[];
   const officialCount=officialWebSourceCount(webSources);
+  const registeredCount=registeredWebSourceCount(webSources);
+  const policyCompliantCount=policyCompliantWebSourceCount(webSources);
   const webUsed=result?.webSearchUsed===true;
   const postflightNeeded=legalPostflightRequired(plan);
   const postflightPassed=!postflightNeeded || postflight?.verdict==="PASS";
@@ -82,6 +90,9 @@ export function assessLegalRuntimeRelease({
       legalStressTestState:"NOT_REQUIRED",
       adversarialReviewState:"NOT_REQUIRED",
       officialWebSourceCount:officialCount,
+      registeredOpenLegalSourceCount:registeredCount,
+      policyCompliantWebSourceCount:policyCompliantCount,
+      openLegalSourcePolicyVersion:OPEN_LEGAL_SOURCE_POLICY_VERSION,
       postflightRequired:false,
       warningMk:null
     });
@@ -160,6 +171,9 @@ export function assessLegalRuntimeRelease({
       ? (postflightPassed&&postflight?.adversarial_review==="PASS" ? "PASSED" : "PROVISIONAL")
       : "NOT_REQUIRED",
     officialWebSourceCount:officialCount,
+    registeredOpenLegalSourceCount:registeredCount,
+    policyCompliantWebSourceCount:policyCompliantCount,
+    openLegalSourcePolicyVersion:OPEN_LEGAL_SOURCE_POLICY_VERSION,
     postflightRequired:postflightNeeded,
     warningMk
   });
@@ -219,6 +233,8 @@ export function buildSanitisedRuntimeRecord({
     web_search_used:result?.webSearchUsed===true?1:0,
     official_web_source_count:Number(assessment?.officialWebSourceCount)||0,
     external_source_count:Array.isArray(result?.sources)?result.sources.length:0,
+    registered_open_legal_source_count:Number(assessment?.registeredOpenLegalSourceCount)||0,
+    policy_compliant_web_source_count:Number(assessment?.policyCompliantWebSourceCount)||0,
     article_context_count:Array.isArray(articleBundle?.context)?articleBundle.context.length:0,
     guide_context_count:Number(guideContextCount)||0,
     attachment_count:Number(attachmentCount)||0,
