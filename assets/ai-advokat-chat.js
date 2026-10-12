@@ -465,6 +465,8 @@
                 ?"AI Advokat corpus gate · недостига доволно потврден корпус за сигурен правен заклучок."
                 :d.sourceMode==="ai_advokat_legal_corpus_plus_guides"
                   ?"AI Advokat законски corpus + fingerprint-верификувани целосни водичи · Human Gate."
+                  :d.sourceMode==="ai_advokat_guides_secondary_primary_law_required"
+                    ?"Fingerprint-верификуван водич · секундарен материјал · за тековна правна теза е задолжителен официјален законски извор."
                   :d.sourceMode==="ai_advokat_guides_fulltext_first"
                     ?"Fingerprint-верификувани целосни водичи · секундарен материјал под Human Gate."
                     :d.sourceMode==="ai_advokat_catalogue_context_first"
