@@ -125,11 +125,18 @@ test("GPTACT7 architecture status is evidence-backed by the production runtime a
 });
 
 
-test("GPTACT9 production activation fail-closes on the CasePilot R2 dependency",()=>{
-  assert.match(workflow,/Ensure production CasePilot R2 bucket exists/);
-  assert.match(workflow,/wrangler r2 bucket info "\$BUCKET"/);
-  assert.match(workflow,/wrangler r2 bucket create "\$BUCKET"/);
-  assert.match(workflow,/Production R2 preflight: PASS/);
-  assert.match(wrangler,/"binding": "CASE_FILES"/);
-  assert.match(wrangler,/"bucket_name": "ai-advokat-case-files"/);
+test("GPTACT9 GPT activation preserves the separate CasePilot private-storage Human Gate",()=>{
+  assert.match(workflow,/Preserve CasePilot private-storage Human Gate/);
+  assert.match(workflow,/private_object_storage_activation_authorized/);
+  assert.match(workflow,/private_document_upload_authorized/);
+  assert.match(workflow,/CasePilot storage gate: LOCKED as required/);
+  assert.doesNotMatch(wrangler,/"binding": "CASE_FILES"/);
+  assert.doesNotMatch(wrangler,/"r2_buckets"/);
+  assert.doesNotMatch(workflow,/wrangler r2 bucket create/);
+});
+
+test("GPTACT10 provider readiness requires GPT Web and attachment runtime gates",()=>{
+  assert.match(workflow,/providerExecution!=="configured_for_api_chat_execution"/);
+  assert.match(workflow,/externalResearchTools!=="configured"/);
+  assert.match(workflow,/fileInputs!=="configured"/);
 });
