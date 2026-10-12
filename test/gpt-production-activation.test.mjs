@@ -10,6 +10,7 @@ const chat=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
 const workflow=fs.readFileSync(".github/workflows/gpt-production-activation.yml","utf8");
 const manifest=JSON.parse(fs.readFileSync("data/agent-architecture-v2.json","utf8"));
 const activationRequest=JSON.parse(fs.readFileSync(".github/activation/gpt-production-request.json","utf8"));
+const architecturePage=fs.readFileSync("agent-architecture.html","utf8");
 
 test("GPTACT1 production runtime is armed for the approved model but contains no API secret",()=>{
   const config=JSON.parse(wrangler);
@@ -111,4 +112,14 @@ test("GPTACT8 production legal UAT uses an ephemeral synthetic membership and al
   assert.match(workflow,/DELETE FROM membership_usage_monthly WHERE subject_key/);
   assert.match(workflow,/DELETE FROM security_rate_limit_windows WHERE subject_key/);
   assert.doesNotMatch(workflow,/echo\s+["']?\$UAT_KEY["']?\s*$/m);
+});
+
+
+test("GPTACT7 architecture status is evidence-backed by the production runtime and never statically claims LIVE",()=>{
+  assert.match(architecturePage,/\/api\/orchestrator/);
+  assert.match(architecturePage,/providerExecution===["']configured_for_api_chat_execution["']/);
+  assert.match(architecturePage,/SPECIALISTS · LIVE/);
+  assert.match(architecturePage,/HUMAN GATE · REQUIRED/);
+  assert.match(architecturePage,/STATUS UNKNOWN/);
+  assert.match(architecturePage,/не прикажува LIVE без доказ/);
 });
