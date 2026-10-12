@@ -94,7 +94,7 @@ import {
   openLegalSourcePolicySummary
 } from "./open-legal-sources-policy.js";
 
-const VERSION = "1.8.0";
+const VERSION = "1.8.1";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -3948,6 +3948,110 @@ async function handleAssistant(request, env, url) {
   });
 }
 
+async function handleGazetteRegister(request, env, url) {
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+
+  const rawLimit=Number(url.searchParams.get("limit")||250);
+  const limit=Number.isFinite(rawLimit)?Math.max(20,Math.min(500,Math.floor(rawLimit))):250;
+
+  let versions=[];
+  let amendments=[];
+  try{
+    const vr=await env.DB.prepare(
+      `SELECT li.canonical_key,li.title,li.short_title,
+              v.version_label,v.version_class,v.valid_from,v.application_from,v.valid_to,
+              v.is_current,v.human_review_status,v.source_url,
+              v.source_issue_number,v.source_issue_date,v.checksum_sha256
+         FROM instrument_versions v
+         JOIN legal_instruments li ON li.id=v.instrument_id
+        WHERE v.source_issue_number IS NOT NULL OR v.source_issue_date IS NOT NULL
+        ORDER BY COALESCE(v.source_issue_date,v.application_from,v.valid_from) DESC,v.id DESC
+        LIMIT ?`
+    ).bind(limit).all();
+    versions=(vr.results||[]).map(row=>({
+      kind:"instrument_version",
+      canonicalKey:row.canonical_key,
+      instrumentTitle:row.title,
+      shortTitle:row.short_title,
+      issueNumber:row.source_issue_number,
+      issueDate:row.source_issue_date,
+      versionLabel:row.version_label,
+      versionClass:row.version_class,
+      validFrom:row.valid_from,
+      applicationFrom:row.application_from,
+      validTo:row.valid_to,
+      currentVerified:Number(row.is_current)===1 && row.human_review_status==="approved",
+      humanReviewStatus:row.human_review_status||"pending",
+      sourceUrl:row.source_url||null,
+      checksumSha256:row.checksum_sha256||null
+    }));
+
+    const ar=await env.DB.prepare(
+      `SELECT li.canonical_key,li.title,li.short_title,
+              e.event_key,e.event_type,e.target_article_number,
+              e.amendment_title,e.amendment_article_number,
+              e.source_issue_number,e.source_issue_date,e.source_url,e.source_sha256,
+              e.effective_date,e.application_date,e.human_review_status
+         FROM legal_amendment_events e
+         JOIN legal_instruments li ON li.id=e.instrument_id
+        WHERE e.source_issue_number IS NOT NULL OR e.source_issue_date IS NOT NULL
+        ORDER BY COALESCE(e.source_issue_date,e.application_date,e.effective_date) DESC,e.id DESC
+        LIMIT ?`
+    ).bind(limit).all();
+    amendments=(ar.results||[]).map(row=>({
+      kind:"amendment_event",
+      canonicalKey:row.canonical_key,
+      instrumentTitle:row.title,
+      shortTitle:row.short_title,
+      issueNumber:row.source_issue_number,
+      issueDate:row.source_issue_date,
+      amendmentTitle:row.amendment_title,
+      amendmentArticleNumber:row.amendment_article_number,
+      targetArticleNumber:row.target_article_number,
+      eventKey:row.event_key,
+      eventType:row.event_type,
+      effectiveDate:row.effective_date,
+      applicationFrom:row.application_date,
+      currentVerified:false,
+      humanReviewStatus:row.human_review_status||"pending",
+      sourceUrl:row.source_url||null,
+      sourceSha256:row.source_sha256||null
+    }));
+  }catch(error){
+    console.error("gazette_register_query_failed",String(error?.message||error).slice(0,240));
+    return json(request,{ok:false,error:"gazette_register_unavailable"},503);
+  }
+
+  const entries=[...versions,...amendments].sort((a,b)=>{
+    const ad=String(a.issueDate||a.applicationFrom||a.effectiveDate||a.validFrom||"");
+    const bd=String(b.issueDate||b.applicationFrom||b.effectiveDate||b.validFrom||"");
+    return bd.localeCompare(ad)||String(b.issueNumber||"").localeCompare(String(a.issueNumber||""));
+  }).slice(0,limit);
+
+  return json(request,{
+    ok:true,
+    mode:"read_only_gazette_provenance_register",
+    count:entries.length,
+    entries,
+    officialGazette:{
+      title:"Службен весник на Република Северна Македонија",
+      url:"https://slvesnik.com.mk/",
+      chronologicalRegisters:"https://slvesnik.com.mk/Issues/634836914B1C2C48A528E23A94A0CD4B.pdf/hronoloshki-registri.nspx"
+    },
+    doctrine:{
+      metadataOnly:true,
+      subscriberContentCopied:false,
+      currentLabelRequiresHumanGateApproval:true,
+      officialPublicationControls:true
+    },
+    humanGate:"Регистарот е истражувачки индекс. За професионално потпирање отворете го официјалниот извор и проверете ја применливата верзија."
+  });
+}
+
 function handleWebSources(request) {
   if (request.method !== "GET" && request.method !== "HEAD") return methodNotAllowed(request);
 
@@ -4173,6 +4277,7 @@ async function handleCapabilities(request, env) {
             : "schema_missing",
       publicSearch: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       officialSourceDirectory: "live_read_only",
+      gazetteProvenanceRegister: database.reachable && database.schemaReady ? "live_read_only_metadata" : "blocked",
       openLegalSourcesPolicy: "runtime_wired_"+OPEN_LEGAL_SOURCE_POLICY_VERSION,
       sourceRouter: "runtime_enabled",
       sourceRightsPolicy: "runtime_enabled",
@@ -4312,6 +4417,7 @@ export default {
     if (url.pathname === "/api/chat") return handleGPTChat(request, env);
     if (url.pathname === "/api/legal-analyzer/verify") return handleLegalAnalyzerVerify(request, env);
     if (url.pathname === "/api/casepilot/case-law") return handleCasePilotCaseLawResearch(request, env);
+    if (url.pathname === "/api/gazette-register") return handleGazetteRegister(request, env, url);
     if (url.pathname === "/api/web-sources") return handleWebSources(request);
     if (url.pathname === "/api/zenodo") return handleZenodo(request);
     if (url.pathname === "/api/orcid") return handleOrcid(request);
