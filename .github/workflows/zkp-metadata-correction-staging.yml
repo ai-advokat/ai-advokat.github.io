@@ -1,0 +1,168 @@
+name: ZKP metadata correction staging activation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/activation/zkp-metadata-correction-staging-2026-10-12.json"
+      - ".github/workflows/zkp-metadata-correction-staging.yml"
+      - "migrations/0036_zkp_entry_application_metadata_correction.sql"
+  pull_request:
+    paths:
+      - ".github/activation/zkp-metadata-correction-staging-2026-10-12.json"
+      - ".github/workflows/zkp-metadata-correction-staging.yml"
+      - "migrations/0036_zkp_entry_application_metadata_correction.sql"
+      - "test/zkp-51-2011-classification.test.mjs"
+      - "test/zkp-metadata-correction-contract.test.mjs"
+      - "ingest/mk/real-source-fixtures/zkp-51-2011-classification-2026.json"
+      - "ingest/mk/real-source-fixtures/zkp-official-lineage-audit-2026.json"
+      - "data/mk-current-law-readiness-2026.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zkp-metadata-correction-staging
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: ZKP classification and activation contract
+        run: npm run test:zkp-lineage-resolution
+
+  activate-staging:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Verify activation and D1 identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require("fs");
+          const req=JSON.parse(fs.readFileSync(".github/activation/zkp-metadata-correction-staging-2026-10-12.json","utf8"));
+          if(req.environment!=="staging") throw new Error("staging only");
+          if(req.production_write_authorized!==false) throw new Error("production write must be false");
+          if(req.current_law_promotion_authorized!==false) throw new Error("current promotion must be false");
+          if(req.human_gate_mutation_authorized!==false) throw new Error("Human Gate mutation must be false");
+          if(req.article_text_mutation_authorized!==false) throw new Error("article text mutation must be false");
+          if(req.migration!=="0036_zkp_entry_application_metadata_correction.sql") throw new Error("unexpected migration");
+          const strip=(s)=>s.replace(/\/\*[\s\S]*?\*\//g,"").replace(/^\s*\/\/.*$/gm,"");
+          const prod=JSON.parse(strip(fs.readFileSync("wrangler.jsonc","utf8"))).d1_databases?.[0];
+          const stg=JSON.parse(strip(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"))).d1_databases?.[0];
+          if(prod?.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("production D1 identity drift");
+          if(stg?.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d" || stg?.binding!=="PREVIEW_DB") throw new Error("staging D1 identity drift");
+          if(prod.database_id===stg.database_id) throw new Error("production/staging must differ");
+          console.log("ZKP STAGING TARGET GUARD: PASS");
+          NODE
+
+      - name: Capture production baseline read only
+        shell: bash
+        run: |
+          set -euo pipefail
+          SQL="SELECT li.canonical_key,li.effective_date,li.current_status,li.human_review_status,li.notes,
+                      v.version_label,v.valid_from,v.is_current,v.human_review_status AS version_review,
+                      (SELECT COUNT(*) FROM legal_article_versions a WHERE a.instrument_id=li.id AND a.status='current_consolidated') AS current_article_rows
+                 FROM legal_instruments li
+                 LEFT JOIN instrument_versions v ON v.instrument_id=li.id
+                  AND v.version_label='consolidated-reference-through-198/2018-and-CC-193/2016'
+                WHERE li.canonical_key='mk:zkp';"
+          npx wrangler d1 execute ai-advokat-db --remote --json --command "$SQL" > /tmp/zkp-prod-before.json
+
+      - name: Preflight staging fail closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          SQL="SELECT li.canonical_key,li.effective_date,li.current_status,li.human_review_status,
+                      v.version_label,v.valid_from,v.is_current,v.human_review_status AS version_review,
+                      (SELECT COUNT(*) FROM legal_article_versions a WHERE a.instrument_id=li.id) AS article_rows,
+                      (SELECT COUNT(*) FROM legal_article_versions a WHERE a.instrument_id=li.id AND a.status='current_consolidated') AS current_article_rows
+                 FROM legal_instruments li
+                 LEFT JOIN instrument_versions v ON v.instrument_id=li.id
+                  AND v.version_label='consolidated-reference-through-198/2018-and-CC-193/2016'
+                WHERE li.canonical_key='mk:zkp';"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "$SQL" > /tmp/zkp-stg-before.json
+          node <<'NODE'
+          const fs=require("fs");
+          const r=JSON.parse(fs.readFileSync("/tmp/zkp-stg-before.json","utf8"))?.[0]?.results?.[0];
+          if(!r) throw new Error("mk:zkp absent in staging");
+          if(!["2012-11-26","2010-11-26"].includes(String(r.effective_date))) throw new Error("unexpected effective_date");
+          if(r.current_status!=="pending" || r.human_review_status!=="pending") throw new Error("unexpected instrument status");
+          if(Number(r.is_current)!==0 || r.version_review!=="pending") throw new Error("unexpected version promotion");
+          if(Number(r.article_rows)!==570) throw new Error("unexpected article row count");
+          if(Number(r.current_article_rows)!==0) throw new Error("current_consolidated rows must be zero");
+          if(r.valid_from!==null && r.valid_from!=="2018-10-31") throw new Error("unexpected reference version valid_from");
+          console.log("ZKP STAGING PREFLIGHT: PASS");
+          NODE
+
+      - name: Apply metadata correction to staging only
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --file migrations/0036_zkp_entry_application_metadata_correction.sql
+
+      - name: Verify staging postconditions
+        shell: bash
+        run: |
+          set -euo pipefail
+          SQL="SELECT li.canonical_key,li.effective_date,li.current_status,li.human_review_status,li.notes,
+                      v.version_label,v.valid_from,v.is_current,v.human_review_status AS version_review,
+                      (SELECT COUNT(*) FROM legal_article_versions a WHERE a.instrument_id=li.id) AS article_rows,
+                      (SELECT COUNT(*) FROM legal_article_versions a WHERE a.instrument_id=li.id AND a.status='current_consolidated') AS current_article_rows
+                 FROM legal_instruments li
+                 JOIN instrument_versions v ON v.instrument_id=li.id
+                  AND v.version_label='consolidated-reference-through-198/2018-and-CC-193/2016'
+                WHERE li.canonical_key='mk:zkp';"
+          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "$SQL" > /tmp/zkp-stg-after.json
+          node <<'NODE'
+          const fs=require("fs");
+          const r=JSON.parse(fs.readFileSync("/tmp/zkp-stg-after.json","utf8"))?.[0]?.results?.[0];
+          if(!r) throw new Error("mk:zkp absent after correction");
+          if(r.effective_date!=="2010-11-26") throw new Error("entry-into-force correction missing");
+          if(r.valid_from!=="2018-10-31") throw new Error("reference version valid_from missing");
+          if(r.current_status!=="pending" || r.human_review_status!=="pending") throw new Error("instrument status drift");
+          if(Number(r.is_current)!==0 || r.version_review!=="pending") throw new Error("version promotion detected");
+          if(Number(r.article_rows)!==570 || Number(r.current_article_rows)!==0) throw new Error("article corpus mutation/promotion detected");
+          if(!String(r.notes||"").includes("Full application from 2013-12-01")) throw new Error("application metadata note missing");
+          console.log("ZKP STAGING METADATA CORRECTION: PASS");
+          NODE
+
+      - name: Verify production unchanged read only
+        shell: bash
+        run: |
+          set -euo pipefail
+          SQL="SELECT li.canonical_key,li.effective_date,li.current_status,li.human_review_status,li.notes,
+                      v.version_label,v.valid_from,v.is_current,v.human_review_status AS version_review,
+                      (SELECT COUNT(*) FROM legal_article_versions a WHERE a.instrument_id=li.id AND a.status='current_consolidated') AS current_article_rows
+                 FROM legal_instruments li
+                 LEFT JOIN instrument_versions v ON v.instrument_id=li.id
+                  AND v.version_label='consolidated-reference-through-198/2018-and-CC-193/2016'
+                WHERE li.canonical_key='mk:zkp';"
+          npx wrangler d1 execute ai-advokat-db --remote --json --command "$SQL" > /tmp/zkp-prod-after.json
+          node <<'NODE'
+          const fs=require("fs");
+          const a=JSON.stringify(JSON.parse(fs.readFileSync("/tmp/zkp-prod-before.json","utf8")));
+          const b=JSON.stringify(JSON.parse(fs.readFileSync("/tmp/zkp-prod-after.json","utf8")));
+          if(a!==b) throw new Error("production changed during staging-only correction");
+          console.log("ZKP PRODUCTION UNCHANGED: PASS");
+          NODE
