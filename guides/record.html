@@ -87,6 +87,9 @@ fetch("/data/guides.json?v=20261010-current-law-review-v1",{cache:"no-store"}).t
  const masterRows=x.public_master_artifact?`<dt>Активен master артефакт</dt><dd><strong>${esc(x.public_master_artifact.artifact_version)}</strong><br><small>DOCX: ${esc(x.public_master_artifact.docx_file)}</small><br><code>${esc(x.public_master_artifact.docx_sha256)}</code><br><small>PDF: ${esc(x.public_master_artifact.pdf_file)}</small><br><code>${esc(x.public_master_artifact.pdf_sha256)}</code><br><small>Каталошки статус: активен · јавен PDF: ${pdfActive?"активен":"одобрен, артефакт се врзува"}</small></dd>`:"";
  const provenanceRows=x.provenance?`<dt>Референтна основа</dt><dd>${esc(x.provenance.adapted_from)}${x.provenance.reference_isbn?`<br><small>ISBN ${esc(x.provenance.reference_isbn)}</small>`:""}${x.provenance.original_authors?.length?`<br><small>Автори на референтната публикација: ${esc(x.provenance.original_authors.join(", "))}</small>`:""}${x.provenance.public_note_mk?`<br><small>${esc(x.provenance.public_note_mk)}</small>`:""}</dd>`:"";
  const legalNotices=(x.legal_notices||[]).length?`<div class="notice-stack">${x.legal_notices.map(n=>`<div class="legal-notice"><strong>${esc(n.title_mk)}</strong>${esc(n.text_mk)}${n.limitation_mk?`<small>${esc(n.limitation_mk)}</small>`:""}${n.official_source?.url?`<small>Официјален извор: <a href="${esc(n.official_source.url)}" target="_blank" rel="noopener">${esc(n.official_source.reference||n.official_source.institution)}</a></small>`:""}</div>`).join("")}</div>`:"";
+ const lawDependencies=(x.law_dependencies||[]).length
+   ? `<dt>Законски зависности</dt><dd>${x.law_dependencies.map(d=>`${esc(d.title)} <small>(${esc(d.role)})</small>`).join("<br>")}<br><small>Водичот е секундарен материјал. За тековна правна теза секоја релевантна зависност се проверува во официјален/примарен извор за датумот на конкретниот случај.</small></dd>`
+   : "";
  document.querySelector("#view").innerHTML=`<article class="sheet">
  <div class="badges"><span class="pill">${x.guide_no&&x.guide_no!=="—"?"Водич "+esc(x.guide_no):"Посебен водич"}</span><span class="pill">${esc(x.display_format||x.format)}</span><span class="pill ${verificationClass(x.verification_level)}">${esc(x.verification_label)}</span><span class="pill ${x.activation_state==="active_verified"?"checked":x.activation_state==="active_with_warning"?"warn":"lock"}">${esc(x.activation_label_mk||"Правна ревизија потребна")}</span><span class="pill ${pdfActive?"checked":"lock"}">${pdfStatus}</span></div>
  <h1>${esc(title)}</h1>
@@ -99,6 +102,7 @@ fetch("/data/guides.json?v=20261010-current-law-review-v1",{cache:"no-store"}).t
    <dt>Издание</dt><dd>${esc(editionDisplay)}</dd>
    <dt>Датум</dt><dd>${esc(x.edition_date)}</dd>
     <dt>Тековна активација</dt><dd>${esc(x.activation_label_mk||"Правна ревизија потребна")}${x.current_law_reviewed_on?`<br><small>Проверка: ${esc(x.current_law_reviewed_on)}</small>`:""}<br><small>Водичот е секундарен материјал; важечкиот закон и официјалната судска практика имаат предност.</small></dd>
+   ${lawDependencies}
    ${pagesRow}
    ${pdfRow}
    <dt>Јавна атрибуција</dt><dd>${esc(x.attribution_public||x.attribution)}</dd>
