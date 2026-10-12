@@ -15,7 +15,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"Службен весник · Регистар на правни верзии","url":"https://ai-advokat.github.io/sluzben-vesnik/","description":"Read-only provenance регистар на законски верзии и измени со број и датум на Службен весник.","inLanguage":"mk"}</script>
 <style>
 :root{--navy:#0c2038;--blue:#173d66;--bg:#f4f7fa;--surface:#fff;--ink:#102033;--muted:#5b6979;--line:#dbe3ea;--soft:#edf4fa;--ok:#176746;--warn:#895c05;--red:#922b2b;--shadow:0 10px 30px rgba(12,32,56,.08)}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.58 system-ui,-apple-system,Segoe UI,sans-serif}a{color:var(--blue)}button,input,select{font:inherit}.wrap{max-width:1180px;margin:auto;padding:0 20px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}.skip{position:absolute;left:-9999px;top:8px;background:#fff;color:#0c2038;padding:9px 12px;border-radius:8px;z-index:99}.skip:focus{left:10px}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.58 system-ui,-apple-system,Segoe UI,sans-serif}a{color:var(--blue)}button,input,select{font:inherit}.wrap{max-width:1180px;margin:auto;padding:0 20px}
 header{background:var(--navy);color:#fff}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 0;flex-wrap:wrap}.top a{color:#fff;text-decoration:none;font-weight:750}.top nav{display:flex;gap:15px;flex-wrap:wrap}
 main{padding:34px 0 70px}.hero{background:linear-gradient(135deg,#fff,#edf4fa);border:1px solid var(--line);border-radius:20px;padding:30px;box-shadow:var(--shadow)}.eyebrow{font-size:.76rem;letter-spacing:.1em;text-transform:uppercase;font-weight:900;color:var(--blue)}h1{font-size:clamp(2rem,4.5vw,3.5rem);line-height:1.04;margin:.4rem 0 1rem}.lead{max-width:920px;color:var(--muted);font-size:1.07rem}.guard{margin-top:18px;padding:15px 17px;border-left:5px solid var(--warn);border-radius:10px;background:#fff8e7}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:22px 0}.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px}.stat b{display:block;font-size:1.55rem}.stat span{color:var(--muted)}
@@ -26,8 +26,9 @@ footer{border-top:1px solid var(--line);background:#fff;color:var(--muted);paddi
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Прескокни до главната содржина</a>
 <header><div class="wrap top"><strong>AI Advokat · Службен весник</strong><nav><a href="/">Почетна</a><a href="/guides/">Водичи</a><a href="/open-legal-sources.html">Правни извори</a><a href="/governance.html">Проверливост</a></nav></div></header>
-<main><div class="wrap">
+<main id="main"><div class="wrap">
 <section class="hero">
 <div class="eyebrow">OFFICIAL GAZETTE PROVENANCE · READ ONLY</div>
 <h1>Службен весник — регистар на правни верзии и измени</h1>
@@ -41,10 +42,10 @@ footer{border-top:1px solid var(--line);background:#fff;color:var(--muted);paddi
 <div class="stat"><b id="countCurrent">—</b><span>Human-Gate тековни</span></div>
 </section>
 <section class="toolbar"><div class="controls">
-<label>Пребарај<input id="q" type="search" placeholder="ЗПП, работни односи, 151/2026…"></label>
-<label>Година<select id="year"><option value="">Сите години</option></select></label>
-<label>Тип<select id="kind"><option value="">Сите типови</option><option value="instrument_version">Верзија</option><option value="amendment_event">Измена</option></select></label>
-<label>Human Gate<select id="review"><option value="">Сите состојби</option><option value="approved">Одобрено</option><option value="reviewed">Прегледано</option><option value="pending">Чека проверка</option></select></label>
+<label for="q">Пребарај<input id="q" type="search" placeholder="ЗПП, работни односи, 151/2026…"></label>
+<label for="year">Година<select id="year"><option value="">Сите години</option></select></label>
+<label for="kind">Тип<select id="kind"><option value="">Сите типови</option><option value="instrument_version">Верзија</option><option value="amendment_event">Измена</option></select></label>
+<label for="review">Human Gate<select id="review"><option value="">Сите состојби</option><option value="approved">Одобрено</option><option value="reviewed">Прегледано</option><option value="pending">Чека проверка</option></select></label>
 </div></section>
 <div id="status" class="empty">Се вчитува регистарот…</div>
 <section id="list" class="list" hidden></section>
