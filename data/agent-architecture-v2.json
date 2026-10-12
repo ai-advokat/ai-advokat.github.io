@@ -1,7 +1,7 @@
 {
-  "schema_version": "2.3",
+  "schema_version": "2.4",
   "architecture_id": "AI_ADVOKAT_GOVERNED_AGENT_ARCHITECTURE_v2",
-  "generated_on": "2026-10-06",
+  "generated_on": "2026-10-12",
   "owner_concept": "AI Advokat",
   "user_facing_agent": "chief_legal_orchestrator",
   "orchestration_pattern": "manager_agents_as_tools",
@@ -60,6 +60,12 @@
       "id": "international_law",
       "label": "International Law Agent",
       "jurisdiction": "INTL"
+    },
+    {
+      "id": "regional_comparative",
+      "label": "Regional Comparative Law Agent",
+      "jurisdiction": "REGIONAL",
+      "rule": "RS/SI registered official comparative sources; HR/BA/ME remain fail-closed until source/reuse validation. Never treated as MK controlling law."
     },
     {
       "id": "common_law",
@@ -274,5 +280,29 @@
       "runtime_gate": "LIOE_SPECIALIST_EXECUTION_ENABLED",
       "specialist_failure": "FAIL_CLOSED"
     }
+  },
+  "open_legal_sources_runtime": {
+    "policy_version": "1.0.0",
+    "registry": "/data/open-legal-sources-registry-2026.json",
+    "runtime_module": "/src/open-legal-sources-policy.js",
+    "source_router": true,
+    "rights_gate": true,
+    "specialist_policy_prompts": true,
+    "web_citation_annotation": true,
+    "verification_integration": true,
+    "public_access_not_equal_reuse": true,
+    "registered_source_count": 15,
+    "regional_comparative": {
+      "active_registered": [
+        "RS",
+        "SI"
+      ],
+      "pending_validation": [
+        "HR",
+        "BA",
+        "ME"
+      ]
+    },
+    "corpus_promotion": "separate_human_gate"
   }
 }
