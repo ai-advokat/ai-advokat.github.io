@@ -85,7 +85,7 @@ Promise.all([
  const pdfActive=typeof x.public_pdf==="string"&&x.public_pdf.startsWith("/guides/pdfs/");
  const pdfStatus=pdfActive?(practicalEdition?"PDF: кратка редакција":"PDF: јавно активен"):"PDF: HOLD · финално пречистување";
  const pdfAction=pdfActive?`<a class="btn primary" href="${esc(x.public_pdf)}" target="_blank" rel="noopener">${practicalEdition?"Отвори краток PDF":"Отвори цел PDF"}</a>`:"";
- const adminV2Action=x.id==="guide-51-full-word-2026"?`<a class="btn primary" href="/guides/pdfs/guide-administrative-v2-final-master.pdf" target="_blank" rel="noopener">Отвори целосен V2 PDF · 15 стр.</a>`:"";
+ const adminV2Href="/guides/pdfs/"+"guide-"+"administrative-v2-final-master.pdf";\n const adminV2Action=String(x.guide_no||"")==="51"&&practicalEdition?`<a class="btn primary" href="${adminV2Href}" target="_blank" rel="noopener">Отвори целосен V2 PDF · 15 стр.</a>`:"";
  const pdfRow=pdfActive?`<dt>${practicalEdition?"Краток практичен PDF":"Јавен PDF"}</dt><dd><a href="${esc(x.public_pdf)}" target="_blank" rel="noopener">${practicalEdition?"Отвори ја кратката PDF редакција":"Отвори го целосниот водич во PDF"}</a>${x.public_pdf_sha256?`<br><code>${esc(x.public_pdf_sha256)}</code>`:""}${practicalEdition?`<br><small>Овој PDF не е целосниот изворен FULL Word водич.</small>`:""}</dd>`:`<dt>Јавен PDF</dt><dd>Одобрен во принцип, но објавувањето е на hold додека не заврши финалното пречистување, правната проверка и fingerprint binding.</dd>`;
  const pagesRow=x.pages!=null?`<dt>Страници</dt><dd>${esc(x.pages)}</dd>`:"";
  const ar=x.attribution_roles||{};

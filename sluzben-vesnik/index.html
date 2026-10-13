@@ -42,6 +42,18 @@ footer{border-top:1px solid var(--line);background:#fff;color:var(--muted);paddi
 <div class="stat"><b id="countAmendments">—</b><span>измени / настани</span></div>
 <div class="stat"><b id="countCurrent">—</b><span>Human-Gate тековни</span></div>
 </section>
+<section class="hero" style="margin-top:22px">
+<div class="eyebrow">HYBRID LEGAL INTELLIGENCE · BOT RUNTIME</div>
+<h2 style="margin:.35rem 0 .7rem;font-size:1.55rem">Од издание до член, chunk и пречистен текст</h2>
+<p class="lead">AI Advokat го моделира „Службен весник“ како правна временска линија: издание → акт → член → став/точка → chunk → правен ефект → пречистен текст. Ботот користи само runtime-eligible записи што ја поминале предвидената Human Gate контрола.</p>
+<div class="stats" style="margin-bottom:0">
+<div class="stat"><b id="hybridIssues">—</b><span>изданија во hybrid слој</span></div>
+<div class="stat"><b id="hybridArticles">—</b><span>членови / норми</span></div>
+<div class="stat"><b id="hybridChunks">—</b><span>source-bound chunks</span></div>
+<div class="stat"><b id="hybridRuntime">—</b><span>chunks дозволени за bot runtime</span></div>
+</div>
+<div id="hybridState" class="guard"><strong>Се проверува production hybrid слојот…</strong></div>
+</section>
 <section class="toolbar"><div class="controls">
 <label for="q">Пребарај<input id="q" type="search" placeholder="ЗПП, работни односи, 151/2026…"></label>
 <label for="year">Година<select id="year"><option value="">Сите години</option></select></label>
@@ -85,6 +97,20 @@ function render(){
  });
  list.innerHTML=html||'<div class="empty">Нема записи за избраните филтри.</div>';
 }
+fetch(API+"/api/gazette-hybrid-status",{cache:"no-store"}).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});}).then(function(v){
+ var state=document.getElementById("hybridState");
+ if(!v.ok||!v.j.ok) throw new Error(v.j.error||"hybrid_unavailable");
+ var c=v.j.counts||{};
+ document.getElementById("hybridIssues").textContent=c.issues||0;
+ document.getElementById("hybridArticles").textContent=c.articles||0;
+ document.getElementById("hybridChunks").textContent=c.chunks||0;
+ document.getElementById("hybridRuntime").textContent=c.runtimeEligibleChunks||0;
+ state.innerHTML="<strong>Production runtime е поврзан.</strong> Тековното право останува fail-closed: само Human-Gate одобрени, current-law-eligible записи може да се претстават како важечки.";
+}).catch(function(){
+ var state=document.getElementById("hybridState");
+ state.innerHTML="<strong>Hybrid production слојот сè уште не е активен.</strong> Јавниот регистар останува read-only додека schema/runtime activation не заврши.";
+});
+
 fetch(API+"/api/gazette-register?limit=500",{cache:"no-store"}).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});}).then(function(v){
  if(!v.ok||!v.j.ok) throw new Error(v.j.error||"unavailable");
  entries=Array.isArray(v.j.entries)?v.j.entries:[];gazette=v.j.officialGazette||null;
