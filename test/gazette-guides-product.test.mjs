@@ -80,11 +80,15 @@ test("GG6 Gazette page is a provenance product, not a Gazette replica",()=>{
   assert.match(html,/ТЕКОВНО · HUMAN GATE/);
   assert.ok(sitemap.includes("https://ai-advokat.github.io/sluzben-vesnik/"));
 });
-
-test("GG7 Administrative V2 remains catalogued but is not falsely released from a non-final binary snapshot",()=>{
+test("GG7 Administrative V2 is released only from the exact fingerprint-bound FINAL MASTER",()=>{
   const admin=guides.records.find(x=>x.id==="guide-administrative-v2");
   assert.ok(admin);
   assert.equal(admin.activation_state,"active_verified");
   assert.equal(admin.public_fulltext,undefined);
   assert.equal(admin.public_master_artifact.artifact_version,"V2.0 FINAL MASTER");
+  assert.equal(admin.public_master_artifact.pdf_sha256,"4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d");
+  assert.equal(admin.public_pdf,"/guides/pdfs/guide-administrative-v2-final-master.pdf");
+  assert.equal(admin.public_pdf_sha256,admin.public_master_artifact.pdf_sha256);
+  assert.equal(admin.bot_runtime_enabled,true);
+  assert.equal(admin.current_law_authority,false);
 });

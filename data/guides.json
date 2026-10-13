@@ -30,16 +30,16 @@
     "final_control": {
       "date": "2026-10-04",
       "scope": "registry_catalog_governance_ui_human_gate_and_v2_master_activation",
-      "result": "pass_with_v2_final_master_catalogue_active",
+      "result": "pass_with_one_exact_fingerprint_bound_source_master_active",
       "registry_total": 39,
       "public_catalog_records": 39,
       "public_active_or_special_records": 37,
       "public_version_history_records": 2,
-      "public_document_downloads": 0,
+      "public_document_downloads": 1,
       "controlled_nonpublic_candidates": 0,
       "duplicate_ids": 0,
       "broken_version_links": 0,
-      "note": "Public PDF release remains authorized in principle, but publication is on hold pending a full content re-audit and fingerprinted cleaned final masters. No PDF URL is active.",
+      "note": "Administrative V2.0 FINAL MASTER is the first exact source-bound public PDF release. Remaining guide PDF gates stay closed until exact cleaned masters are fingerprint-bound.",
       "public_pdf_release_authorized": true
     },
     "public_experience": {
@@ -61,11 +61,15 @@
         "fingerprint_bound_public_pdf_open_action",
         "private_fingerprint_verified_guide_vault"
       ],
-      "public_document_download": false,
+      "public_document_download": true,
       "rag_eligibility": false,
       "production_corpus_write": false,
       "legal_corpus_promotion": false,
-      "public_pdf_release_authorized": true
+      "public_pdf_release_authorized": true,
+      "exact_fingerprint_bound_pdf_count": 1,
+      "exact_fingerprint_bound_record_ids": [
+        "guide-administrative-v2"
+      ]
     },
     "catalog_schema_version": "2.0",
     "taxonomy_id": "AI_ADVOKAT_GUIDE_TAXONOMY_v2",
@@ -108,13 +112,18 @@
       "artifact_version": "V2.0 FINAL MASTER",
       "public_catalogue_record": true,
       "public_docx_download": false,
-      "public_pdf_download": false,
+      "public_pdf_download": true,
       "rag_eligibility": false,
       "ai_corpus_eligibility": false,
       "production_corpus_write": false,
       "legal_corpus_promotion": false,
       "provider_activation": false,
-      "note": "Activates the governed V2.0 FINAL MASTER catalogue record as the current public master version while keeping the underlying files and AI/production gates closed."
+      "note": "Activates the governed V2.0 FINAL MASTER catalogue record as the current public master version while keeping the underlying files and AI/production gates closed.",
+      "public_pdf": "/guides/pdfs/guide-administrative-v2-final-master.pdf",
+      "public_pdf_sha256": "4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d",
+      "asset_publication_state": "active_exact_fingerprint_bound",
+      "asset_publication_date": "2026-10-13",
+      "bot_runtime_context": "active_secondary_human_gate"
     },
     "citizen_guide_router": {
       "version": "1.0",
@@ -156,7 +165,7 @@
       "production_corpus_write": false,
       "legal_corpus_promotion": false,
       "provider_activation": false,
-      "publication_state": "hold_pending_full_content_reaudit",
+      "publication_state": "partial_release_active_exact_asset_binding",
       "note": "This opens the public PDF release gate only. A record becomes downloadable only after its exact source is bound to a verified PDF asset and the public URL resolves successfully.",
       "hold_reason": "Uploaded source bundles include earlier audited working versions and at least one later candidate; Claude/GPT findings must be reconciled and exact cleaned masters fingerprinted before any public PDF asset is bound.",
       "hold_evidence": {
@@ -171,7 +180,21 @@
         "render and visually verify final DOCX/PDF",
         "record final PDF SHA-256",
         "bind public_pdf only after successful URL check"
-      ]
+      ],
+      "published_count": 1,
+      "published_record_ids": [
+        "guide-administrative-v2"
+      ],
+      "remaining_hold_count": 38,
+      "first_exact_release": {
+        "record_id": "guide-administrative-v2",
+        "public_pdf": "/guides/pdfs/guide-administrative-v2-final-master.pdf",
+        "sha256": "4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d",
+        "pages": 15,
+        "released_on": "2026-10-13",
+        "legal_authority": false,
+        "human_gate_required": true
+      }
     },
     "ai_reading_authorization": {
       "decision_id": "private-guide-reading-2026-10-05",
@@ -239,6 +262,18 @@
       "active_count": 4,
       "policy": "Only records with a located exact source document and an activation state of active_verified or active_with_warning may expose public_fulltext. Legal warnings remain separate overlays; source text is not silently rewritten.",
       "pdf_release": "separate_artifact_binding_required"
+    },
+    "public_bot_context_release": {
+      "state": "active_partial_secondary_context",
+      "released_on": "2026-10-13",
+      "active_count": 1,
+      "active_record_ids": [
+        "guide-administrative-v2"
+      ],
+      "policy": "Source-grounded secondary guide context only; current-law claims require official sources and Human Gate.",
+      "rag_eligibility": false,
+      "production_corpus_write": false,
+      "legal_authority": false
     }
   },
   "records": [
@@ -3775,7 +3810,7 @@
       "source_role": "primary",
       "supersedes": "guide-administrative-v1",
       "superseded_by": null,
-      "public_pdf": null,
+      "public_pdf": "/guides/pdfs/guide-administrative-v2-final-master.pdf",
       "ai_use": "reference_only_until_human_gate",
       "professional_use": "human_review_required",
       "sha256": "e22b7aeab8bab8e27247b15ecd720f48d402b258dc9a894a9554fa534015c325",
@@ -3817,7 +3852,9 @@
         "public_release": "authorized_by_project_lead_2026-10-04_pending_asset_publication",
         "rag_eligibility": "not_authorized",
         "production_corpus_write": "not_authorized",
-        "catalogue_status": "active_current_master_record"
+        "catalogue_status": "active_current_master_record",
+        "asset_publication_status": "exact_pdf_master_published_2026-10-13",
+        "published_pdf": "/guides/pdfs/guide-administrative-v2-final-master.pdf"
       },
       "public_record_url": "/guides/record.html?g=upravna-postapka-v2",
       "public_record_enabled": true,
@@ -3887,7 +3924,13 @@
         "editorial_audit": "pass",
         "visual_qa": "pass_15_pages",
         "catalogue_status": "active",
-        "public_download": "authorized_by_project_lead_2026-10-04_pending_asset_publication"
+        "public_download": "active_exact_fingerprint_bound_2026-10-13",
+        "public_pdf": "/guides/pdfs/guide-administrative-v2-final-master.pdf",
+        "public_pdf_sha256": "4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d",
+        "public_pdf_size_bytes": 297408,
+        "public_pdf_pages": 15,
+        "asset_publication_status": "active",
+        "asset_publication_date": "2026-10-13"
       },
       "pdf_release_authorization": {
         "decision_id": "all-guides-public-pdf-release-2026-10-04",
@@ -3895,7 +3938,9 @@
         "scope": "pdf_only",
         "artifact_file": "AI_Advokat_Vodic_upravna_postapka_i_upraven_spor_V2_FINAL_MASTER.pdf",
         "artifact_sha256": "4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d",
-        "publication_state": "hold_pending_full_content_reaudit"
+        "publication_state": "active_exact_fingerprint_bound",
+        "public_pdf": "/guides/pdfs/guide-administrative-v2-final-master.pdf",
+        "published_on": "2026-10-13"
       },
       "ai_reading": "authorized_private_vault_secondary_context",
       "ai_legal_authority": false,
@@ -3918,7 +3963,17 @@
           "role": "primary",
           "source_class": "external_official_source_required"
         }
-      ]
+      ],
+      "public_pdf_sha256": "4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d",
+      "public_pdf_size_bytes": 297408,
+      "public_pdf_pages": 15,
+      "public_pdf_state": "active_exact_fingerprint_bound_human_gate",
+      "bot_runtime_enabled": true,
+      "bot_text": "ВОДИЧ НИЗ УПРАВНАТА ПОСТАПКА И УПРАВНИОТ СПОР — V2.0 FINAL MASTER\nАвтор: адвокат Зоран Стојанкиќ. Едиција: „Моите права во секојдневниот живот“ — AI Advokat / Paragraf.mk. Проширено и целосно адаптирано издание 2.0, Скопје 2026. Правна проверка на јавно достапните извори: 3 октомври 2026.\n\nСТАТУС И HUMAN GATE\nОва е самостојно приспособен практичен водич за правниот систем на Република Северна Македонија. Не е официјален пречистен текст на закон, не е публикација на Управниот суд или друг државен орган и не заменува правна проценка на конкретен предмет. Посебните закони можат да содржат посебни правила. Пред употреба мора да се проверат важечката законска верзија, доставата, правната поука, посебниот материјален закон и поновите уставносудски или судски одлуки. Практичните модели се работни обрасци, не готови поднесоци. За професионална употреба конкретниот текст, рокот и правниот лек ги проверува адвокат или друг овластен правник.\n\nКАКО СЕ КОРИСТИ\nПочнете со брзата ориентација и табелата со рокови, па одете на соодветната фаза: управна постапка, жалба, молчење, тужба, расправа, жалба до Вишиот управен суд или извршување на пресуда. Кај секој рок запишете: што е доставено, кога е доставено, кој правен лек е дозволен и кој е последниот ден. Усно ветување, претставка или ургенција не се сигурна замена за навремено правно средство.\n\nОПФАТ\n1. Зошто е важен управниот спор.\n2. Разлика меѓу управна постапка и управен спор.\n3. Акти, дејствија и пропуштања што можат да се оспорат.\n4. Кога прво се поднесува жалба, а кога се оди на суд.\n5. Молчење на администрацијата.\n6. Надлежни судови и странки.\n7. Подготовка на тужбата.\n8. Одлагање на извршувањето и времени мерки.\n9. Рокови.\n10. Постапување по поднесување тужба.\n11. Факти, докази и расправа.\n12. Пресуди и полна јурисдикција.\n13. Жалба до Вишиот управен суд.\n14. Повторување на судската постапка.\n15. Трошоци и бесплатна правна помош.\n16. Извршување на судската пресуда.\n17. Практични модели, контролни листи, најчести прашања и поимник.\n\nКЛУЧНИ ИЗВОРНО НАВЕДЕНИ ПРАВИЛА — СЕКОГАШ ПРОВЕРИ ОФИЦИЈАЛЕН ИЗВОР\n• Кога ЗОУП или посебен закон дозволува жалба против првостепен акт, по правило прво се користи жалбата. Водичот го наведува општиот рок од 15 дена од доставувањето или известувањето, освен ако посебен закон предвидува подолг рок.\n• За тужба против доставен конечен акт, водичот го наведува општото правило од 30 дена од доставувањето, со задолжителна проверка на посебниот закон и правната поука.\n• Кај молчење на администрацијата, Одлуката У.бр.148/2024 од 2 октомври 2024 го укинала делот „во рок од 30 дена“ од член 26 став 2 на ЗУС. Старата 30-дневна формулација не смее да се користи како важечка преклузија.\n• Не се пренесува автоматски српскиот модел „60 + 7 дена“; се проверуваат ЗОУП, ЗУС, правната поука и посебниот закон.\n• Поднесувањето тужба по правило не го запира извршувањето. Условите за одлагање или времена мерка се оценуваат одделно и се докажуваат конкретно.\n• Тужбата треба да ги идентификува актот или пропуштањето, странките, фактите, правната повреда, барањето и доказите. Работниот модел е: факт → доказ → правно значење → барање.\n• Според водичот, член 60 став 1 на ЗУС ја нагласува полната јурисдикција, но постојат законски исклучоци. Поништување со враќање не значи автоматски дека материјалното право е признаено.\n• Жалба против пресуда е можна само во законски определени случаи. Кога е дозволена, водичот наведува 15 дена од доставување на преписот; секогаш се проверуваат изреката, член 69 и правната поука.\n• Повторувањето е вонреден правен лек со ограничени основи; водичот наведува општ субјективен рок од 30 дена од дознавањето за причината, со посебни правила за одделни основи.\n• Барањето за бесплатна правна помош не треба автоматски да се третира како прекин или продолжување на процесен рок.\n• По пресуда се проверуваат: дозволеност и рок за жалба, правосилност, точната изрека, рокот за органот и мерките при непостапување.\n\nДОКАЗИ И КОНТРОЛА\nЗа молчење се чуваат копија од барањето или жалбата, архивски печат/повратница/електронска потврда, доказ за предавање на списите кога е релевантно и писмен статус. Пред тужба се проверуваат конечноста на актот, датумот на достава, надлежноста, тужениот орган, конкретното барање, нумерираните прилози, потребата од времена мерка, таксата и можноста за бесплатна правна помош.\n\nИЗВОРИ НАВЕДЕНИ ВО MASTER-ОТ\nЗакон за управни спорови; Закон за општата управна постапка; Уставен суд У.бр.148/2024, У.бр.94/2017, У.бр.247/2024, У.бр.249/2024 и У.бр.118/2025; Министерство за правда — бесплатна правна помош и судови; Закон за парничната постапка кога ЗУС упатува; Европска конвенција за човековите права кога е применлива. YUCOM 2023 е наведена само како педагошка и организациска референца, не како извор на македонското позитивно право.\n\nFINGERPRINT\nТочниот јавно врзан PDF master има 15 страници, 297408 bytes и SHA-256 4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d. Ботот го користи само како секундарен контекст; секое тековно правно тврдење останува подредено на официјален извор и Human Gate.",
+      "public_bot_context_authorized": true,
+      "public_bot_context_policy": "secondary_source_primary_source_verification_and_human_gate",
+      "publication_state": "public_exact_master_human_gate_required",
+      "publication_notice_mk": "Точниот V2.0 FINAL MASTER PDF е јавно активен и fingerprint-врзан. Водичот останува секундарен материјал; официјалниот извор и Human Gate се задолжителни за конкретен предмет."
     }
   ]
 }
