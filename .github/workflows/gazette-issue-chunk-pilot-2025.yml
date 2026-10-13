@@ -74,8 +74,13 @@ jobs:
           assert s["runtime_eligible"] is False
           lines=Path("/tmp/gazette-2025-pilot/chunks/2025.ndjson").read_text().splitlines()
           assert lines
-          for line in lines[:25]:
-              x=json.loads(line)
+          rows=[json.loads(line) for line in lines]
+          keys=[x["chunk_key"] for x in rows]
+          assert len(keys)==len(set(keys)), (len(keys),len(set(keys)))
+          exact=sum(1 for x in rows if x.get("boundary_method")=="act_ordinal_marker")
+          fallback=sum(1 for x in rows if x.get("boundary_method")=="page_fallback")
+          assert exact>0, {"exact":exact,"fallback":fallback}
+          for x in rows[:25]:
               assert x["issue_source_url"].startswith("http")
               assert len(x["issue_sha256"])==64
               assert len(x["text_sha256"])==64
