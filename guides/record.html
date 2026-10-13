@@ -54,8 +54,16 @@ function versionLink(target,all){
    ? '<a href="'+esc(x.public_record_url)+'">'+esc(label)+'</a>'
    : esc(label)+' <small>— контролирана верзија што не е јавно активирана во каталогот</small>';
 }
-fetch("/data/guides.json?v=20261013-public-fulltext-v1",{cache:"no-store"}).then(r=>r.json()).then(d=>{
- const allRecords=d.records;
+Promise.all([
+ fetch("/data/guides.json?v=20261013-public-fulltext-v1",{cache:"no-store"}).then(r=>r.json()),
+ fetch("/data/public-practical-guides-38-73.json?v=20261013",{cache:"no-store"}).then(r=>r.ok?r.json():({guides:[]})).catch(()=>({guides:[]}))
+]).then(([d,practical])=>{
+ const byId=new Map((Array.isArray(d.records)?d.records:[]).map(x=>[String(x.id),x]));
+ for(const item of (Array.isArray(practical.guides)?practical.guides:[])){
+   const id=String(item?.id||""); if(!id) continue;
+   byId.set(id,{...(byId.get(id)||{}),...item});
+ }
+ const allRecords=[...byId.values()];
  const publicRecords=allRecords.filter(x=>x.catalog_public===true&&x.public_record_enabled===true);
  const x=publicRecords.find(r=>(slug&&r.public_slug===slug)||(!slug&&legacyId&&r.id===legacyId));
  if(!x){document.title="Записот не е јавно достапен · AI Advokat";document.querySelector("#view").innerHTML='<div class="error"><h1>Записот не е јавно достапен</h1><p>Овој запис не е дел од одобрениот јавен каталог од 39 записи.</p><p><a href="/guides/">← Назад кон каталогот</a></p></div>';return}
@@ -72,7 +80,7 @@ fetch("/data/guides.json?v=20261013-public-fulltext-v1",{cache:"no-store"}).then
  const fulltextActive=typeof x.public_fulltext==="string"&&x.public_fulltext.startsWith("/guides/fulltext/");
  const fulltextStatus=fulltextActive?"Целосен текст: јавно активен":"Целосен текст: не е јавно активен";
  const fulltextAction=fulltextActive?`<a class="btn primary" href="${esc(x.public_fulltext)}">Отвори цел водич</a>`:"";
- const fulltextRow=fulltextActive?`<dt>Целосен јавен текст</dt><dd><a href="${esc(x.public_fulltext)}">Отвори го целосниот source текст</a><br><small>Source-preserving HTML приказ; правните предупредувања се одделен overlay и оригиналниот текст не се коригира тивко.</small></dd>`:`<dt>Целосен јавен текст</dt><dd>Не е активиран. Каталошкиот запис останува достапен, но целосниот текст не се претставува како објавен без лоциран source master и соодветен activation статус.</dd>`;
+ const fulltextRow=fulltextActive?`<dt>Целосен јавен текст</dt><dd><a href="${esc(x.public_fulltext)}">Отвори го целосниот source текст</a><br><small>Јавен HTML приказ на активната редакција; официјалните правни извори и Human Gate остануваат контролни.</small></dd>`:`<dt>Целосен јавен текст</dt><dd>Не е активиран. Каталошкиот запис останува достапен, но целосниот текст не се претставува како објавен без лоциран source master и соодветен activation статус.</dd>`;
  const pdfActive=typeof x.public_pdf==="string"&&x.public_pdf.startsWith("/guides/pdfs/");
  const pdfStatus=pdfActive?"PDF: јавно активен":"PDF: HOLD · финално пречистување";
  const pdfAction=pdfActive?`<a class="btn primary" href="${esc(x.public_pdf)}" target="_blank" rel="noopener">Отвори цел PDF</a>`:"";
