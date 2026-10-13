@@ -1,0 +1,73 @@
+name: Release Administrative V2 exact source master
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - staging/admin-v2-pdf.pdf.gz.b64.part*
+      - staging/admin-v2-release.py.gz.b64
+      - .github/workflows/release-administrative-v2-source-master.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-administrative-v2-exact-source-master
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deterministic PDF parser
+        run: pip install pypdf==5.9.0
+      - name: Restore governed release script
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p scripts
+          base64 --decode staging/admin-v2-release.py.gz.b64 | gzip -d > scripts/release-administrative-v2-source-master.py
+          python -m py_compile scripts/release-administrative-v2-source-master.py
+      - name: Reassemble and verify exact uploaded master
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p guides/pdfs
+          cat staging/admin-v2-pdf.pdf.gz.b64.part* | base64 --decode | gzip -d > guides/pdfs/guide-administrative-v2-final-master.pdf
+          printf '%s  %s\n' \
+            '4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d' \
+            'guides/pdfs/guide-administrative-v2-final-master.pdf' | sha256sum -c -
+      - name: Build governed PDF and bot release
+        run: python scripts/release-administrative-v2-source-master.py
+      - name: Validate guide governance
+        run: |
+          npm run test:guides
+          npm run test:guides-human-gate-pack
+          npm run test:gazette-guides-product
+          npm run test:guide-vault
+          npm run test:guide-router
+          npm run test:guide-law-governance
+          npm run test:public-layer
+      - name: Remove transport files
+        run: rm -f staging/admin-v2-pdf.pdf.gz.b64.part* staging/admin-v2-release.py.gz.b64
+      - name: Commit exact source release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No generated release changes"
+          else
+            git commit -m "Activate exact Administrative V2 PDF and bot context"
+            git push
+          fi
