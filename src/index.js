@@ -3979,6 +3979,11 @@ async function handleAssistant(request, env, url) {
   });
 }
 
+async function governedGazetteChunkContext(env,q){
+  const bundle=await findGovernedGazetteChunks(env,q,{limit:6});
+  return {...bundle,context:gazetteChunksToContext(bundle)};
+}
+
 async function handleGazetteRegister(request, env, url) {
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
   const database=await dbStatus(env);
