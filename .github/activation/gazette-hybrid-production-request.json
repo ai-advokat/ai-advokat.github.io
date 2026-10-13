@@ -12,11 +12,12 @@
     "0039_gazette_act_purpose_metadata.sql",
     "0040_gazette_hybrid_legal_intelligence.sql",
     "0041_gazette_article_chunks.sql",
-    "0042_gazette_consolidated_texts.sql"
+    "0042_gazette_consolidated_texts.sql",
+    "0043_gazette_schema_migration_ledger.sql"
   ],
   "production_worker": "ai-advokat-github-io",
   "production_database": "ai-advokat-db",
   "public_portal": "/sluzben-vesnik/",
   "data_promotion_authorized": false,
-  "note": "Activate schema, governed runtime and public status surface only. Gazette backfill/chunks remain Human-Gate pending and runtime-ineligible until separately reconciled."
+  "note": "Activate schema, governed runtime and public status surface only. Includes migration-ledger convergence 0043. Gazette backfill/chunks remain Human-Gate pending and runtime-ineligible until separately reconciled."
 }
