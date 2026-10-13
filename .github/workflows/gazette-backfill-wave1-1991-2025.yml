@@ -1,0 +1,72 @@
+name: Gazette backfill wave 1 1991-2025
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/gazette_backfill_wave1.py"
+      - ".github/workflows/gazette-backfill-wave1-1991-2025.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gazette-backfill-wave1
+  cancel-in-progress: false
+
+jobs:
+  harvest-registers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PDF tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Harvest official chronological registers 1991-2025
+        run: |
+          python3 scripts/gazette_backfill_wave1.py             --from-year 1991             --to-year 2025             --out /tmp/gazette-wave1             --delay 0.8
+
+      - name: Validate wave-one evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("/tmp/gazette-wave1/summary.json")
+          d=json.loads(p.read_text())
+          assert d["scope"] == {"from":1991,"to":2025}, d["scope"]
+          assert len(d["years"]) == 35, len(d["years"])
+          assert d["totals"]["parsed_years"] > 0, d["totals"]
+          assert d["totals"]["acts"] > 0, d["totals"]
+          print(json.dumps(d["totals"],ensure_ascii=False))
+          PY
+
+      - name: Remove downloaded register PDFs from retained artifact
+        run: rm -rf /tmp/gazette-wave1/pdf
+
+      - name: Upload governed extraction evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gazette-wave1-1991-2025
+          retention-days: 30
+          path: /tmp/gazette-wave1
+
+      - name: Summary
+        run: |
+          echo "### Gazette wave 1 · 1991-2025" >> "$GITHUB_STEP_SUMMARY"
+          echo "Official chronological registers harvested with paced requests." >> "$GITHUB_STEP_SUMMARY"
+          echo "Outputs remain pending reconciliation and Human Gate; nothing is promoted to current-law runtime by this workflow." >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          d=json.load(open("/tmp/gazette-wave1/summary.json"))
+          t=d["totals"]
+          print(f"- Years parsed: {t['parsed_years']}/35")
+          print(f"- Act candidates: {t['acts']}")
+          print(f"- Unresolved candidates: {t['unresolved']}")
+          print(f"- Free-archive issue inventory rows: {t['issue_inventory']}")
+          PY
