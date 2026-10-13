@@ -46,3 +46,13 @@ test("GC5 definition of done requires official reconciliation",()=>{
   assert.match(doc,/reconciliation/i);
   assert.match(doc,/Human Gate/);
 });
+
+
+test("GC6 act purpose metadata is source-grounded and reviewable",()=>{
+  const purposeMigration=fs.readFileSync("migrations/0039_gazette_act_purpose_metadata.sql","utf8");
+  for(const col of ["subject_matter","adoption_purpose","legal_problem_addressed","affected_area","purpose_source_basis","purpose_review_status"]){
+    assert.match(purposeMigration,new RegExp(col));
+  }
+  assert.equal(manifest.publication_policy.act_purpose_must_be_source_grounded,true);
+  assert.equal(manifest.publication_policy.unsupported_purpose_inference,false);
+});
