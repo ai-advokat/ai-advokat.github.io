@@ -19,6 +19,6 @@
   "production_database": "ai-advokat-db",
   "public_portal": "/sluzben-vesnik/",
   "data_promotion_authorized": false,
-  "note": "Production activation revision after full security CI success. Activate schema 0038-0043, governed runtime and public status surface only. Gazette backfill/chunks remain Human-Gate pending and runtime-ineligible until separately reconciled.",
-  "request_revision": 2
+  "note": "Latest-only production activation after full security CI success. Older waiting activation runs must be superseded. Activate schema 0038-0043, governed runtime and public status surface only; backfill data promotion remains locked.",
+  "request_revision": 3
 }

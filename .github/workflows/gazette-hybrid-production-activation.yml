@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: gazette-hybrid-production-activation
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   activate:
