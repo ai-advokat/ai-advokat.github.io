@@ -1,0 +1,86 @@
+name: Gazette issue chunk pilot 2025
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "Gazette backfill wave 1 1991-2025"
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gazette-issue-chunk-pilot
+  cancel-in-progress: false
+
+jobs:
+  chunk-pilot:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PDF tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Build exact 2025 official-source inventory
+        run: |
+          python3 scripts/gazette_backfill_wave1.py             --from-year 2025             --to-year 2025             --out /tmp/gazette-2025-base             --delay 0.8
+
+      - name: Chunk first five directly bound official issues
+        run: |
+          python3 scripts/gazette_issue_chunk_batch.py             --base /tmp/gazette-2025-base             --year 2025             --out /tmp/gazette-2025-pilot             --max-issues 5             --delay 1.0
+
+      - name: Validate chunk provenance
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          s=json.loads(Path("/tmp/gazette-2025-pilot/summary.json").read_text())
+          assert s["year"]==2025
+          assert s["issues_processed"]>0
+          assert s["chunks_created"]>0
+          assert s["human_review_status"]=="pending"
+          assert s["runtime_eligible"] is False
+          lines=Path("/tmp/gazette-2025-pilot/chunks/2025.ndjson").read_text().splitlines()
+          assert lines
+          for line in lines[:25]:
+              x=json.loads(line)
+              assert x["issue_source_url"].startswith("http")
+              assert len(x["issue_sha256"])==64
+              assert len(x["text_sha256"])==64
+              assert x["runtime_eligible"] is False
+              assert x["current_law_eligible"] is False
+          print(json.dumps(s,ensure_ascii=False))
+          PY
+
+      - name: Remove PDFs before artifact retention
+        run: |
+          rm -rf /tmp/gazette-2025-base/pdf
+          rm -rf /tmp/gazette-2025-pilot/pdf
+
+      - name: Upload pilot evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gazette-2025-issue-chunk-pilot
+          retention-days: 30
+          path: |
+            /tmp/gazette-2025-base/summary.json
+            /tmp/gazette-2025-base/registers
+            /tmp/gazette-2025-base/acts
+            /tmp/gazette-2025-base/issues
+            /tmp/gazette-2025-pilot/summary.json
+            /tmp/gazette-2025-pilot/issues
+            /tmp/gazette-2025-pilot/chunks
+
+      - name: Summary
+        run: |
+          echo "### Gazette issue chunk pilot · 2025" >> "$GITHUB_STEP_SUMMARY"
+          echo "Five official issue PDFs maximum, paced at one request per second." >> "$GITHUB_STEP_SUMMARY"
+          echo "All chunks remain pending Human Gate and runtime-ineligible." >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/gazette-2025-pilot/summary.json >> "$GITHUB_STEP_SUMMARY"
