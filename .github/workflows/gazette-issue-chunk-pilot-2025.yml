@@ -32,6 +32,24 @@ jobs:
         run: |
           python3 scripts/gazette_backfill_wave1.py             --from-year 2025             --to-year 2025             --out /tmp/gazette-2025-base             --delay 0.8
 
+      - name: Merge verified public 2025 issue seed
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          base=Path("/tmp/gazette-2025-base/issues/2025.json")
+          seed=Path("data/gazette-public-issue-seed-2025.json")
+          rows=json.loads(base.read_text()) if base.exists() else []
+          seeded=json.loads(seed.read_text())["issues"]
+          by={str(x["issue_number"]):x for x in rows}
+          for x in seeded:
+              by[str(x["issue_number"])]=x
+          merged=sorted(by.values(),key=lambda x:int(x["issue_number"]))
+          base.parent.mkdir(parents=True,exist_ok=True)
+          base.write_text(json.dumps(merged,ensure_ascii=False,indent=2))
+          print("issue_inventory",len(merged))
+          PY
+
       - name: Chunk first five directly bound official issues
         run: |
           python3 scripts/gazette_issue_chunk_batch.py             --base /tmp/gazette-2025-base             --year 2025             --out /tmp/gazette-2025-pilot             --max-issues 5             --delay 1.0
