@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "year": 2025,
+  "source_policy": "official_public_issue_urls_only",
+  "discovered_via": "publicly indexed official Sluzben Vesnik PDF URLs",
+  "issues": [
+    {
+      "issue_number": "15",
+      "source_url": "https://slvesnik.com.mk/Issues/e95eed4cb1a440e19d45cb8edea2670b.pdf",
+      "label": "Службен весник бр. 15/2025",
+      "direct_pdf": true
+    },
+    {
+      "issue_number": "17",
+      "source_url": "https://slvesnik.com.mk/Issues/e7a2a009de434464bfa8dd9aeb6904ba.pdf",
+      "label": "Службен весник бр. 17/2025",
+      "direct_pdf": true
+    },
+    {
+      "issue_number": "20",
+      "source_url": "https://slvesnik.com.mk/Issues/41c147b2c004487e899221857baa7f57.pdf",
+      "label": "Службен весник бр. 20/2025",
+      "direct_pdf": true
+    },
+    {
+      "issue_number": "251",
+      "source_url": "https://slvesnik.com.mk/Issues/0ea04b7520bf4c5f8b071c02764bb648.pdf",
+      "label": "Службен весник бр. 251/2025",
+      "direct_pdf": true
+    },
+    {
+      "issue_number": "266",
+      "source_url": "https://slvesnik.com.mk/Issues/aa40f7f34245449eaae99f331de22bc5.pdf",
+      "label": "Службен весник бр. 266/2025",
+      "direct_pdf": true
+    },
+    {
+      "issue_number": "270",
+      "source_url": "https://slvesnik.com.mk/Issues/9c5506fd34ec470695aaa02cf69c4450.pdf",
+      "label": "Службен весник бр. 270/2025",
+      "direct_pdf": true
+    }
+  ],
+  "governance": {
+    "current_law_eligible": false,
+    "human_review_status": "pending",
+    "use": "pilot_and_endpoint-validation_only"
+  }
+}
