@@ -3351,6 +3351,7 @@ async function handleGPTChat(request,env){
   // Explicit Web mode must not be mislabeled as passive_corpus merely because the
   // UI suggested a guide. Article-level Macedonian law remains corpus-first.
   const preferCorpus=articleBundle.context.length>0
+    || gazetteBundle.context.length>0
     || caseLawBundle.context.length>0
     || guideDocumentCheck.context.length>0
     || uiMode==="library"
