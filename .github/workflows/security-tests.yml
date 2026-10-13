@@ -109,10 +109,6 @@ jobs:
         run: npm run test:gazette-chunk-runtime
       - name: Gazette production activation contract
         run: npm run test:gazette-production-activation
-      - name: Gazette comprehensive index governance
-        run: npm run test:gazette-comprehensive-index
-      - name: Gazette governed chunk runtime
-        run: npm run test:gazette-chunk-runtime
       - name: Governed case-law chat context tests
         run: npm run test:case-law-chat
       - name: Governed case-law import tests

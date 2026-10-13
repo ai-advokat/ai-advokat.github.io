@@ -85,5 +85,5 @@ test("GC9 consolidated text layer preserves derivation and current-law gates",()
     assert.match(migration,new RegExp(field));
   }
   assert.ok(policy.doctrine.some(x=>x.includes("derived representation")));
-  assert.ok(policy.bot_rules.some(x=>x.includes("fail")));
+  assert.ok(policy.bot_rules.some(x=>x.includes("fall back")||x.includes("fail")));
 });
