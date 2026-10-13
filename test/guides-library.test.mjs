@@ -18,7 +18,10 @@ describe("Zoran guides library governance",()=>{
   });
 
   test("G2 PDF release is authorized but no guide exposes a PDF before exact asset binding; AI corpus stays closed",()=>{
-    assert.ok(data.records.every(x=>x.public_pdf===null));
+    const activePdf=data.records.filter(x=>x.public_pdf!==null);
+    assert.equal(activePdf.length,1);
+    assert.equal(activePdf[0].id,"guide-administrative-v2");
+    assert.ok(data.records.every(x=>x.id==="guide-administrative-v2" || x.public_pdf===null));
     assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
     assert.equal(data.records.find(x=>x.id==="guide-administrative-v2").public_pdf,null);
     assert.equal(data.collection.public_pdf_release_authorization.scope,"all_39_public_catalog_records_pdf_only");
@@ -412,21 +415,24 @@ describe("Zoran guides library governance",()=>{
   });
 
 
-  test("G38 V2 FINAL MASTER activation is catalogue-only and every downstream release gate remains closed",()=>{
+  test("G38 V2 FINAL MASTER permits only its exact verified public PDF while all AI/corpus gates remain closed",()=>{
     const a=data.collection.v2_final_master_activation;
     const v2=data.records.find(x=>x.id==="guide-administrative-v2");
     assert.equal(a.decision_id,"v2-final-master-catalogue-activation-2026-10-04");
-    assert.equal(a.scope,"public_catalogue_master_record_only");
     assert.equal(a.public_catalogue_record,true);
-    for(const key of ["public_docx_download","public_pdf_download","rag_eligibility","ai_corpus_eligibility","production_corpus_write","legal_corpus_promotion","provider_activation"]){
-      assert.equal(a[key],false,key);
-    }
+    assert.equal(a.public_docx_download,false);
+    assert.equal(a.rag_eligibility,false);
+    assert.equal(a.ai_corpus_eligibility,false);
+    assert.equal(a.production_corpus_write,false);
+    assert.equal(a.legal_corpus_promotion,false);
+    assert.equal(a.provider_activation,false);
     assert.equal(v2.catalogue_activation.status,"active_current_master_record");
-    assert.equal(v2.catalogue_activation.public_file_release,"authorized_by_project_lead_2026-10-04_pending_asset_publication");
     assert.equal(v2.catalogue_activation.ai_use,"not_authorized");
     assert.equal(v2.pdf_release_authorization.decision_id,"all-guides-public-pdf-release-2026-10-04");
-    assert.equal(v2.pdf_release_authorization.publication_state,"hold_pending_full_content_reaudit");
-    assert.equal(v2.public_pdf,null);
+    assert.equal(v2.pdf_release_authorization.publication_state,"partial_release_active_exact_asset_binding");
+    assert.equal(v2.public_pdf,"/guides/pdfs/guide-administrative-v2-final-master.pdf");
+    assert.equal(v2.public_pdf_sha256,"4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d");
+    assert.equal(v2.pdf_publication?.verified,true);
     assert.equal(v2.ai_use,"reference_only_until_human_gate");
   });
 
@@ -471,12 +477,14 @@ describe("Zoran guides library governance",()=>{
     assert.equal(data.collection.public_pdf_release_authorization.provider_activation,false);
   });
 
-  test("G41 publication hold prevents binding stale candidate PDFs",()=>{
+  test("G41 publication hold remains for all guides except the exact verified Administrative V2 master",()=>{
     const a=data.collection.public_pdf_release_authorization;
-    assert.equal(a.publication_state,"hold_pending_full_content_reaudit");
-    assert.match(a.hold_reason,/Claude\/GPT/);
+    assert.equal(a.publication_state,"partial_release_active_exact_asset_binding");
     assert.equal(a.hold_evidence.source_package_38_63_sha256,"5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172");
-    assert.ok(data.records.every(x=>x.public_pdf===null));
+    const v2=data.records.find(x=>x.id==="guide-administrative-v2");
+    assert.equal(v2.public_pdf,"/guides/pdfs/guide-administrative-v2-final-master.pdf");
+    assert.equal(v2.pdf_publication?.verified,true);
+    assert.ok(data.records.every(x=>x.id==="guide-administrative-v2" || x.public_pdf===null));
   });
 
 
@@ -531,7 +539,8 @@ test("G32 current-law review metadata does not silently open PDF or production c
   assert.equal(data.collection.current_law_review.active_verified,5);
   assert.equal(data.collection.current_law_review.active_with_warning,3);
   assert.equal(data.collection.current_law_review.review_required,29);
-  assert.ok(data.records.every(x=>x.public_pdf===null));
+  assert.ok(data.records.every(x=>x.id==="guide-administrative-v2" || x.public_pdf===null));
+  assert.equal(data.records.find(x=>x.id==="guide-administrative-v2").public_pdf,"/guides/pdfs/guide-administrative-v2-final-master.pdf");
   assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
   assert.ok(data.records.filter(x=>x.source_role!=="version_history").every(x=>x.current_law_authority===false));
 });
