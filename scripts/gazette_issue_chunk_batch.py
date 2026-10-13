@@ -13,34 +13,56 @@ def _official_host_variants(url):
     elif p.netloc=="www.slvesnik.com.mk": hosts.append("slvesnik.com.mk")
     return [urlunsplit((p.scheme,h,p.path,p.query,p.fragment)) for h in hosts]
 
+def _curl_fetch(candidate,timeout,insecure=False):
+    tmp=None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False) as fh:
+            tmp=fh.name
+        cmd=[
+            "curl","--fail","--location","--silent","--show-error",
+            "--retry","2","--retry-delay","1",
+            "--connect-timeout","20","--max-time",str(int(timeout)),
+            "--user-agent",UA,
+            "--output",tmp,
+            "--write-out","%{url_effective}"
+        ]
+        if insecure: cmd.append("--insecure")
+        cmd.append(candidate)
+        p=subprocess.run(cmd,capture_output=True,text=True)
+        if p.returncode!=0:
+            raise RuntimeError("curl_fetch_failed:"+p.stderr[-300:])
+        b=Path(tmp).read_bytes()
+        if not b: raise RuntimeError("empty_response")
+        return b,(p.stdout or candidate).strip()
+    finally:
+        if tmp:
+            try: os.unlink(tmp)
+            except OSError: pass
+
 def fetch(url,timeout=120):
+    variants=_official_host_variants(url)
     last=None
-    for candidate in _official_host_variants(url):
-        tmp=None
+    for candidate in variants:
         try:
-            with tempfile.NamedTemporaryFile(delete=False) as fh:
-                tmp=fh.name
-            cmd=[
-                "curl","--fail","--location","--silent","--show-error",
-                "--retry","2","--retry-delay","1",
-                "--connect-timeout","20","--max-time",str(int(timeout)),
-                "--user-agent",UA,
-                "--output",tmp,
-                "--write-out","%{url_effective}",
-                candidate
-            ]
-            p=subprocess.run(cmd,capture_output=True,text=True)
-            if p.returncode!=0:
-                raise RuntimeError("curl_fetch_failed:"+p.stderr[-300:])
-            b=Path(tmp).read_bytes()
-            if not b: raise RuntimeError("empty_response")
-            return b,(p.stdout or candidate).strip()
+            b,final=_curl_fetch(candidate,timeout,insecure=False)
+            return b,final,True
         except Exception as e:
             last=e
-        finally:
-            if tmp:
-                try: os.unlink(tmp)
-                except OSError: pass
+    p=urlsplit(url)
+    if p.scheme=="https" and p.netloc in {"slvesnik.com.mk","www.slvesnik.com.mk"}:
+        successful=[]
+        for candidate in variants:
+            try:
+                b,final=_curl_fetch(candidate,timeout,insecure=True)
+                successful.append((b,final))
+            except Exception as e:
+                last=e
+        if successful:
+            hashes={hashlib.sha256(b).hexdigest() for b,_ in successful}
+            if len(hashes)>1:
+                raise RuntimeError("official_host_variants_mismatch_under_tls_fallback")
+            b,final=successful[0]
+            return b,final,False
     raise last
 
 def sha256_bytes(b): return hashlib.sha256(b).hexdigest()
@@ -137,7 +159,7 @@ def main():
     for issue_no in wanted:
         meta=issue_map[issue_no]; url=meta["source_url"]
         try:
-            raw,final=fetch(url)
+            raw,final,tls_verified=fetch(url)
             if not raw.startswith(b"%PDF"): raise RuntimeError("not_pdf")
             pdf=out/"pdf"/f"{issue_no}.pdf"; pdf.write_bytes(raw)
             issue_sha=sha256_bytes(raw)
@@ -172,6 +194,7 @@ def main():
                           "issue_number":issue_no,
                           "issue_source_url":final,
                           "issue_sha256":issue_sha,
+                          "transport_tls_verified":tls_verified,
                           "act_ordinal":a["ordinal"],
                           "act_title":a["title"],
                           "act_type":a["act_type"],
@@ -197,7 +220,7 @@ def main():
                 summary["acts_processed"]+=1
                 summary["articles_found"]+=len(blocks) if block_kind=="article" else 0
                 summary["chunks_created"]+=act_chunks
-            (out/"issues"/f"{issue_no}.json").write_text(json.dumps({"issue_number":issue_no,"source_url":final,"sha256":issue_sha,"pages":pages,"acts":len(acts_i)},ensure_ascii=False,indent=2),"utf-8")
+            (out/"issues"/f"{issue_no}.json").write_text(json.dumps({"issue_number":issue_no,"source_url":final,"sha256":issue_sha,"transport_tls_verified":tls_verified,"pages":pages,"acts":len(acts_i)},ensure_ascii=False,indent=2),"utf-8")
             summary["issues_processed"]+=1
         except Exception as e:
             summary["skipped"].append({"issue":issue_no,"reason":str(e)[:300]})

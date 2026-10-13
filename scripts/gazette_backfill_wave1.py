@@ -43,36 +43,61 @@ def _official_host_variants(url):
         if candidate not in out: out.append(candidate)
     return out
 
+def _curl_fetch(candidate, timeout, insecure=False):
+    tmp=None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False) as fh:
+            tmp=fh.name
+        cmd=[
+            "curl","--fail","--location","--silent","--show-error",
+            "--retry","2","--retry-delay","1",
+            "--connect-timeout","20","--max-time",str(int(timeout)),
+            "--user-agent",UA,
+            "--output",tmp,
+            "--write-out","%{url_effective}"
+        ]
+        if insecure:
+            cmd.append("--insecure")
+        cmd.append(candidate)
+        p=subprocess.run(cmd,capture_output=True,text=True)
+        if p.returncode!=0:
+            raise RuntimeError("curl_fetch_failed:"+p.stderr[-300:])
+        raw=Path(tmp).read_bytes()
+        if not raw: raise RuntimeError("empty_response")
+        return raw,(p.stdout or candidate).strip()
+    finally:
+        if tmp:
+            try: os.unlink(tmp)
+            except OSError: pass
+
 def fetch_bytes(url, timeout=90):
+    variants=_official_host_variants(url)
     last=None
-    for candidate in _official_host_variants(url):
-        tmp=None
+    for candidate in variants:
         try:
-            with tempfile.NamedTemporaryFile(delete=False) as fh:
-                tmp=fh.name
-            cmd=[
-                "curl","--fail","--location","--silent","--show-error",
-                "--retry","2","--retry-delay","1",
-                "--connect-timeout","20","--max-time",str(int(timeout)),
-                "--user-agent",UA,
-                "--output",tmp,
-                "--write-out","%{url_effective}",
-                candidate
-            ]
-            p=subprocess.run(cmd,capture_output=True,text=True)
-            if p.returncode!=0:
-                raise RuntimeError("curl_fetch_failed:"+p.stderr[-300:])
-            raw=Path(tmp).read_bytes()
-            final=(p.stdout or candidate).strip()
-            if not raw:
-                raise RuntimeError("empty_response")
-            return raw, final, {"X-AI-Advokat-TLS":"curl-verified"}
+            raw,final=_curl_fetch(candidate,timeout,insecure=False)
+            return raw,final,{"X-AI-Advokat-TLS":"verified"}
         except Exception as e:
             last=e
-        finally:
-            if tmp:
-                try: os.unlink(tmp)
-                except OSError: pass
+    # The official Gazette host currently presents an incomplete certificate chain
+    # to GitHub-hosted runners. A fallback is allowed ONLY for these exact public
+    # official hosts, with no credentials/cookies. The result remains staging-only,
+    # is fingerprinted, and must pass source reconciliation + Human Gate before use.
+    p=urlsplit(url)
+    if p.scheme=="https" and p.netloc in {"slvesnik.com.mk","www.slvesnik.com.mk"}:
+        successful=[]
+        for candidate in variants:
+            try:
+                raw,final=_curl_fetch(candidate,timeout,insecure=True)
+                successful.append((raw,final))
+            except Exception as e:
+                last=e
+        if successful:
+            hashes={hashlib.sha256(raw).hexdigest() for raw,_ in successful}
+            if len(hashes)>1:
+                raise RuntimeError("official_host_variants_mismatch_under_tls_fallback")
+            raw,final=successful[0]
+            return raw,final,{"X-AI-Advokat-TLS":"unverified_official_host_fallback"}
     raise last
 
 def fetch_text(url):
@@ -231,7 +256,7 @@ def main():
         if not row["register_url"]:
             row["status"]="register_link_missing"; summary["years"].append(row); continue
         try:
-            raw,final,_=fetch_bytes(row["register_url"])
+            raw,final,transport=fetch_bytes(row["register_url"])
             if not raw.startswith(b"%PDF"):
                 raise RuntimeError("register is not PDF")
             pdf=out/"pdf"/f"{year}.pdf"; pdf.write_bytes(raw)
@@ -244,7 +269,10 @@ def main():
                 (out/"registers"/f"{year}.json").write_text(json.dumps(row,ensure_ascii=False,indent=2),"utf-8")
                 summary["years"].append(row); time.sleep(args.delay); continue
             entries,unresolved=parse_register_text(text,year,final,sha)
-            row.update({"status":"parsed_pending_reconciliation","register_url":final,"register_sha256":sha,"act_count":len(entries),"unresolved_count":len(unresolved)})
+            for entry in entries:
+                entry["transport_tls_verified"]=transport.get("X-AI-Advokat-TLS")=="verified"
+                entry["transport_state"]=transport.get("X-AI-Advokat-TLS")
+            row.update({"status":"parsed_pending_reconciliation","register_url":final,"register_sha256":sha,"transport_tls_verified":transport.get("X-AI-Advokat-TLS")=="verified","transport_state":transport.get("X-AI-Advokat-TLS"),"act_count":len(entries),"unresolved_count":len(unresolved)})
             issues=issue_inventory.get(year,[])
             issue_nums={int(x["issue_number"]) for x in issues if str(x.get("issue_number","")).isdigit()}
             referenced={int(x["issue_number"]) for x in entries if str(x.get("issue_number","")).isdigit()}
