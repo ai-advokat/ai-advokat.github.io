@@ -4070,11 +4070,13 @@ async function handleGazetteRegister(request, env, url) {
     officialGazette:{
       title:"Службен весник на Република Северна Македонија",
       url:"https://slvesnik.com.mk/",
+      freeAccessUrl:"https://www.slvesnik.com.mk/besplaten-pristap-do-izdanija.nspx",
       chronologicalRegisters:"https://slvesnik.com.mk/Issues/634836914B1C2C48A528E23A94A0CD4B.pdf/hronoloshki-registri.nspx"
     },
     doctrine:{
       metadataOnly:true,
       subscriberContentCopied:false,
+      officialFreeIssueArchiveLinked:true,
       currentLabelRequiresHumanGateApproval:true,
       officialPublicationControls:true
     },
