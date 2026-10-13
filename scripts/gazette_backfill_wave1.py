@@ -2,7 +2,7 @@
 import argparse, hashlib, html, json, os, re, subprocess, sys, time
 from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
 
 UA="AI-Advokat-Gazette-Backfill/1.0 (+source-first; paced official-source audit)"
@@ -32,10 +32,27 @@ class LinkParser(HTMLParser):
             self._href=None
             self._buf=[]
 
+def _official_host_variants(url):
+    p=urlsplit(url)
+    hosts=[p.netloc]
+    if p.netloc=="slvesnik.com.mk": hosts.append("www.slvesnik.com.mk")
+    elif p.netloc=="www.slvesnik.com.mk": hosts.append("slvesnik.com.mk")
+    out=[]
+    for host in hosts:
+        candidate=urlunsplit((p.scheme,host,p.path,p.query,p.fragment))
+        if candidate not in out: out.append(candidate)
+    return out
+
 def fetch_bytes(url, timeout=90):
-    req=Request(url,headers={"User-Agent":UA,"Accept":"*/*"})
-    with urlopen(req,timeout=timeout) as r:
-        return r.read(), r.geturl(), dict(r.headers)
+    last=None
+    for candidate in _official_host_variants(url):
+        try:
+            req=Request(candidate,headers={"User-Agent":UA,"Accept":"*/*"})
+            with urlopen(req,timeout=timeout) as r:
+                return r.read(), r.geturl(), dict(r.headers)
+        except Exception as e:
+            last=e
+    raise last
 
 def fetch_text(url):
     raw, final, headers=fetch_bytes(url)
