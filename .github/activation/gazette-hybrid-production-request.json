@@ -19,5 +19,6 @@
   "production_database": "ai-advokat-db",
   "public_portal": "/sluzben-vesnik/",
   "data_promotion_authorized": false,
-  "note": "Activate schema, governed runtime and public status surface only. Includes migration-ledger convergence 0043. Gazette backfill/chunks remain Human-Gate pending and runtime-ineligible until separately reconciled."
+  "note": "Production activation revision after full security CI success. Activate schema 0038-0043, governed runtime and public status surface only. Gazette backfill/chunks remain Human-Gate pending and runtime-ineligible until separately reconciled.",
+  "request_revision": 2
 }
