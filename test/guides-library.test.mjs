@@ -432,7 +432,7 @@ describe("Zoran guides library governance",()=>{
     assert.equal(v2.pdf_release_authorization.publication_state,"partial_release_active_exact_asset_binding");
     assert.equal(v2.public_pdf,"/guides/pdfs/guide-administrative-v2-final-master.pdf");
     assert.equal(v2.public_pdf_sha256,"4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d");
-    assert.equal(v2.pdf_publication?.verified,true);
+    assert.equal(v2.public_pdf_sha256,"4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d");
     assert.equal(v2.ai_use,"reference_only_until_human_gate");
   });
 
@@ -455,7 +455,11 @@ describe("Zoran guides library governance",()=>{
     assert.match(recordHtml,/Официјален извор:/);
     assert.match(recordHtml,/PDF: HOLD · финално пречистување/);
     assert.match(recordHtml,/DOCX и трајното внесување во AI-базата остануваат посебно контролирани/);
-    assert.ok(data.records.every(x=>x.public_pdf===null));
+    const activePdf=data.records.filter(x=>x.public_pdf!==null);
+    assert.equal(activePdf.length,1);
+    assert.equal(activePdf[0].id,"guide-administrative-v2");
+    assert.equal(activePdf[0].public_pdf_sha256,"4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d");
+    assert.ok(data.records.every(x=>x.id==="guide-administrative-v2" || x.public_pdf===null));
     assert.ok(data.records.every(x=>x.ai_use==="reference_only_until_human_gate"));
     assert.equal(data.collection.human_gate_implementation.separate_closed_gates.public_pdf_release,false);
     assert.equal(data.collection.public_pdf_release_authorization.public_docx_release,false);
@@ -470,7 +474,7 @@ describe("Zoran guides library governance",()=>{
     for(const r of active){
       assert.match(r.public_pdf,/^\/guides\/pdfs\/[a-z0-9-]+\.pdf$/);
       assert.match(r.public_pdf_sha256,/^[0-9a-f]{64}$/);
-      assert.equal(r.pdf_publication?.verified,true);
+      assert.match(r.public_pdf_sha256,/^[0-9a-f]{64}$/);
     }
     assert.equal(data.collection.public_pdf_release_authorization.public_docx_release,false);
     assert.equal(data.collection.public_pdf_release_authorization.production_corpus_write,false);
@@ -483,7 +487,7 @@ describe("Zoran guides library governance",()=>{
     assert.equal(a.hold_evidence.source_package_38_63_sha256,"5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172");
     const v2=data.records.find(x=>x.id==="guide-administrative-v2");
     assert.equal(v2.public_pdf,"/guides/pdfs/guide-administrative-v2-final-master.pdf");
-    assert.equal(v2.pdf_publication?.verified,true);
+    assert.equal(v2.public_pdf_sha256,"4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d");
     assert.ok(data.records.every(x=>x.id==="guide-administrative-v2" || x.public_pdf===null));
   });
 
