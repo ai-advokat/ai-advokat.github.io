@@ -122,8 +122,17 @@ function render(){
  </article>`}).join("")||'<div class="empty">Нема записи за избраните филтри.</div>';
  document.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",()=>copyLink(b.dataset.copy,b)));
 }
-fetch("/data/guides.json?v=20261013-public-fulltext-v1",{cache:"no-store"}).then(r=>r.json()).then(d=>{
- records=d.records.filter(x=>x.catalog_public===true&&x.public_record_enabled===true);
+Promise.all([
+ fetch("/data/guides.json?v=20261013-public-fulltext-v1",{cache:"no-store"}).then(r=>r.json()),
+ fetch("/data/public-practical-guides-38-73.json?v=20261013",{cache:"no-store"}).then(r=>r.ok?r.json():({guides:[]})).catch(()=>({guides:[]}))
+]).then(([d,practical])=>{
+ const base=d.records.filter(x=>x.catalog_public===true&&x.public_record_enabled===true);
+ const byId=new Map(base.map(x=>[String(x.id),x]));
+ for(const x of (Array.isArray(practical.guides)?practical.guides:[])){
+   const id=String(x?.id||""); if(!id) continue;
+   byId.set(id,{...(byId.get(id)||{}),...x});
+ }
+ records=[...byId.values()].filter(x=>x.catalog_public===true&&x.public_record_enabled===true);
  const cats=[...new Map(records.map(x=>[x.category_code,x.category_label])).entries()].sort((a,b)=>a[1].localeCompare(b[1],"mk"));
  document.querySelector("#cat").insertAdjacentHTML("beforeend",cats.map(([code,label])=>`<option value="${esc(code)}">${esc(label)}</option>`).join(""));
  document.querySelector("#countAll").textContent=records.length;
