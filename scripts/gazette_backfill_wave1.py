@@ -131,6 +131,31 @@ def extract_register_links():
             y=int(m.group(1)); out[y]=urljoin(final,href)
     return out
 
+def register_url_candidates(year, discovered=None):
+    out=[]
+    if discovered: out.append(discovered)
+    bases=[
+        f"https://www.slvesnik.com.mk/content/pdf/Hronoloski_registar_{year}.pdf",
+        f"https://www.slvesnik.com.mk/content/pdf/Hronoloski_Registar_{year}.pdf",
+        f"https://slvesnik.com.mk/content/pdf/Hronoloski_registar_{year}.pdf",
+        f"https://slvesnik.com.mk/content/pdf/Hronoloski_Registar_{year}.pdf"
+    ]
+    for u in bases:
+        if u not in out: out.append(u)
+    return out
+
+def fetch_register_pdf(year, discovered=None):
+    last=None
+    for url in register_url_candidates(year, discovered):
+        try:
+            raw,final,transport=fetch_bytes(url)
+            if raw.startswith(b"%PDF"):
+                return raw,final,transport
+        except Exception as e:
+            last=e
+    if last: raise last
+    raise RuntimeError(f"register_pdf_not_found:{year}")
+
 def _parse_issue_links(page_text, page_url, year_hint=None):
     p=LinkParser(); p.feed(page_text)
     rows={}
@@ -252,17 +277,20 @@ def main():
     ap.add_argument("--delay",type=float,default=0.7)
     args=ap.parse_args()
     out=Path(args.out); (out/"registers").mkdir(parents=True,exist_ok=True); (out/"acts").mkdir(exist_ok=True); (out/"issues").mkdir(exist_ok=True); (out/"pdf").mkdir(exist_ok=True); (out/"text").mkdir(exist_ok=True)
-    reg_links=extract_register_links()
+    try:
+        reg_links=extract_register_links()
+    except Exception as e:
+        reg_links={}
+        print("WARN register index page unavailable; using direct official PDF discovery:",e,file=sys.stderr)
     try: issue_inventory=extract_free_issue_inventory(range(args.from_year,args.to_year+1))
     except Exception as e:
         issue_inventory={}; print("WARN free issue inventory:",e,file=sys.stderr)
     summary={"scope":{"from":args.from_year,"to":args.to_year},"register_page":REGISTER_PAGE,"free_access_page":FREE_ACCESS_PAGE,"years":[],"generated_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}
     for year in range(args.from_year,args.to_year+1):
         row={"year":year,"register_url":reg_links.get(year),"status":"pending","act_count":0,"unresolved_count":0,"issue_inventory_count":len(issue_inventory.get(year,[]))}
-        if not row["register_url"]:
-            row["status"]="register_link_missing"; summary["years"].append(row); continue
         try:
-            raw,final,transport=fetch_bytes(row["register_url"])
+            raw,final,transport=fetch_register_pdf(year,row["register_url"])
+            row["register_url"]=final
             if not raw.startswith(b"%PDF"):
                 raise RuntimeError("register is not PDF")
             pdf=out/"pdf"/f"{year}.pdf"; pdf.write_bytes(raw)
