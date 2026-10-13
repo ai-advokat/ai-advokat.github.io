@@ -1,0 +1,22 @@
+{
+  "decision_id": "AI_ADVOKAT_GAZETTE_HYBRID_PRODUCTION_ACTIVATION_2026-10-13",
+  "activation_authorized": true,
+  "authorized_gates": [
+    "github_merge",
+    "production_schema_migration",
+    "production_runtime_deploy",
+    "public_release"
+  ],
+  "migrations": [
+    "0038_gazette_comprehensive_archive.sql",
+    "0039_gazette_act_purpose_metadata.sql",
+    "0040_gazette_hybrid_legal_intelligence.sql",
+    "0041_gazette_article_chunks.sql",
+    "0042_gazette_consolidated_texts.sql"
+  ],
+  "production_worker": "ai-advokat-github-io",
+  "production_database": "ai-advokat-db",
+  "public_portal": "/sluzben-vesnik/",
+  "data_promotion_authorized": false,
+  "note": "Activate schema, governed runtime and public status surface only. Gazette backfill/chunks remain Human-Gate pending and runtime-ineligible until separately reconciled."
+}
