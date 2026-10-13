@@ -16,7 +16,8 @@ test("GP1 activation is explicit and data promotion stays locked",()=>{
 
 test("GP2 production workflow applies only Gazette migration range",()=>{
   for(const n of ["0035_","0036_","0038_","0039_","0040_","0041_","0042_","0043_"]) assert.match(workflow,new RegExp(n));
-  assert.match(workflow,/Unexpected pending migrations/);\n  assert.match(workflow,/CATCH-UP MIGRATION INVARIANTS: PASS/);
+  assert.match(workflow,/Unexpected pending migrations/);
+  assert.match(workflow,/CATCH-UP MIGRATION INVARIANTS: PASS/);
   assert.match(workflow,/wrangler d1 migrations apply DB --remote/);
 });
 
