@@ -29,22 +29,26 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          d=json.load(open('data/guides.json',encoding='utf-8'))
-          by={str(x.get('guide_no')):x for x in d['records'] if x.get('guide_no')}
-          assert all(str(n) in by for n in range(38,74))
+          d=json.load(open('data/public-practical-guides-38-73.json',encoding='utf-8'))
+          by={str(x.get('guide_no')):x for x in d['guides']}
+          assert list(sorted(map(int,by)))==list(range(38,74))
+          assert len(d['guides'])==36
           for n in range(38,74):
               r=by[str(n)]
               assert r.get('bot_runtime_enabled') is True
+              assert r.get('current_law_claim_policy')=='primary_source_required'
               assert r.get('public_pdf')==f'/guides/pdfs/guide-{n}.pdf'
               assert Path(f'guides/pdfs/guide-{n}.pdf').is_file()
               assert Path(f'guides/fulltext/{n}-prakticen-vodic/index.html').is_file()
-          print('PASS: 36 governed PDF/fulltext guides + bot metadata')
+          base=json.load(open('data/guides.json',encoding='utf-8'))
+          assert len(base['records'])==39
+          print('PASS: 36 separate practical PDF/fulltext guides + bot metadata; source registry preserved')
           PY
       - name: Commit generated assets
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/guides.json data/guide-law-dependencies-2026.json guides/pdfs guides/fulltext
+          git add data/public-practical-guides-38-73.json guides/pdfs guides/fulltext
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
