@@ -108,7 +108,7 @@ test("CGR12 router governance metadata is active and guide routing does not alte
   assert.ok(records.every(r=>r.id==="guide-administrative-v2" || r.public_pdf===null));
   assert.equal(records.find(r=>r.id==="guide-administrative-v2").public_pdf,"/guides/pdfs/guide-administrative-v2-final-master.pdf");
   assert.ok(records.every(r=>r.ai_use==="reference_only_until_human_gate"));
-  assert.equal(registry.collection.public_experience.public_document_download,false);
+  assert.equal(registry.collection.public_experience.public_document_download,true);
   assert.equal(registry.collection.public_experience.rag_eligibility,false);
   assert.equal(registry.collection.public_experience.production_corpus_write,false);
   assert.equal(registry.collection.public_experience.legal_corpus_promotion,false);
