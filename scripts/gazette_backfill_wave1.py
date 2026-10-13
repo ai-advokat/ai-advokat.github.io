@@ -93,10 +93,16 @@ def fetch_bytes(url, timeout=90):
             except Exception as e:
                 last=e
         if successful:
-            hashes={hashlib.sha256(raw).hexdigest() for raw,_ in successful}
-            if len(hashes)>1:
-                raise RuntimeError("official_host_variants_mismatch_under_tls_fallback")
-            raw,final=successful[0]
+            # Dynamic HTML may legitimately differ between apex/www hosts.
+            # Require byte identity only when comparing PDF payloads.
+            pdf_payloads=[(raw,final) for raw,final in successful if raw.startswith(b"%PDF")]
+            if len(pdf_payloads)>1:
+                hashes={hashlib.sha256(raw).hexdigest() for raw,_ in pdf_payloads}
+                if len(hashes)>1:
+                    raise RuntimeError("official_pdf_host_variants_mismatch_under_tls_fallback")
+                raw,final=pdf_payloads[0]
+            else:
+                raw,final=successful[0]
             return raw,final,{"X-AI-Advokat-TLS":"unverified_official_host_fallback"}
     raise last
 
