@@ -1,0 +1,66 @@
+-- Gazette article chunking and governed bot runtime
+CREATE TABLE IF NOT EXISTS gazette_article_chunks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  article_id INTEGER NOT NULL REFERENCES gazette_act_articles(id) ON DELETE CASCADE,
+  act_id INTEGER NOT NULL REFERENCES gazette_acts(id) ON DELETE CASCADE,
+  issue_id INTEGER NOT NULL REFERENCES gazette_issues(id) ON DELETE CASCADE,
+  chunk_key TEXT NOT NULL UNIQUE,
+  chunk_order INTEGER NOT NULL,
+  chunk_kind TEXT NOT NULL DEFAULT 'article_text',
+  article_number TEXT,
+  paragraph_number TEXT,
+  item_number TEXT,
+  text_content TEXT NOT NULL,
+  text_sha256 TEXT NOT NULL,
+  token_estimate INTEGER,
+  char_count INTEGER NOT NULL,
+  overlap_before_chars INTEGER NOT NULL DEFAULT 0,
+  overlap_after_chars INTEGER NOT NULL DEFAULT 0,
+  source_page_start INTEGER,
+  source_page_end INTEGER,
+  source_url TEXT NOT NULL,
+  source_issue_number TEXT NOT NULL,
+  source_issue_date TEXT,
+  source_publication_name TEXT,
+  canonical_instrument_key TEXT,
+  valid_from TEXT,
+  valid_to TEXT,
+  effective_date TEXT,
+  application_date TEXT,
+  authority_class TEXT NOT NULL DEFAULT 'official_gazette_source',
+  human_review_status TEXT NOT NULL DEFAULT 'pending',
+  runtime_eligible INTEGER NOT NULL DEFAULT 0,
+  current_law_eligible INTEGER NOT NULL DEFAULT 0,
+  superseded INTEGER NOT NULL DEFAULT 0,
+  provenance_note TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK(chunk_kind IN ('article_heading','article_text','paragraph','item','definition','transitional','final_provision','amendment_instruction','annex','note')),
+  CHECK(human_review_status IN ('pending','reviewed','approved')),
+  CHECK(runtime_eligible IN (0,1)),
+  CHECK(current_law_eligible IN (0,1)),
+  CHECK(superseded IN (0,1))
+);
+CREATE INDEX IF NOT EXISTS idx_gazette_chunks_issue ON gazette_article_chunks(issue_id,act_id,article_id,chunk_order);
+CREATE INDEX IF NOT EXISTS idx_gazette_chunks_article ON gazette_article_chunks(canonical_instrument_key,article_number,paragraph_number,item_number);
+CREATE INDEX IF NOT EXISTS idx_gazette_chunks_runtime ON gazette_article_chunks(runtime_eligible,human_review_status,current_law_eligible,superseded);
+CREATE INDEX IF NOT EXISTS idx_gazette_chunks_dates ON gazette_article_chunks(source_issue_date,effective_date,application_date);
+
+CREATE TABLE IF NOT EXISTS gazette_chunk_ingest_runs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_key TEXT NOT NULL UNIQUE,
+  issue_id INTEGER REFERENCES gazette_issues(id) ON DELETE SET NULL,
+  source_url TEXT NOT NULL,
+  source_sha256 TEXT,
+  parser_version TEXT NOT NULL,
+  chunker_version TEXT NOT NULL,
+  article_count INTEGER NOT NULL DEFAULT 0,
+  chunk_count INTEGER NOT NULL DEFAULT 0,
+  rejected_chunk_count INTEGER NOT NULL DEFAULT 0,
+  warning_count INTEGER NOT NULL DEFAULT 0,
+  reconciliation_status TEXT NOT NULL DEFAULT 'pending',
+  human_review_status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK(reconciliation_status IN ('pending','matched','mismatch','approved')),
+  CHECK(human_review_status IN ('pending','reviewed','approved'))
+);

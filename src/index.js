@@ -87,6 +87,7 @@ import {
 } from "./casepilot-matter.js";
 import { mapWorkspaceToCasePilotShell } from "./casepilot-workspace-bridge.js";
 import { buildCaseLawComparison } from "./casepilot-case-law-bridge.js";
+import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import {
   OPEN_LEGAL_SOURCE_POLICY_VERSION,
   OPEN_LEGAL_SOURCE_REGISTRY_ID,
@@ -3326,13 +3327,14 @@ async function handleGPTChat(request,env){
 
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const initialPlan=buildAgentPlan(q);
-  const [guideContext,articleBundle,caseLawBundle]=await Promise.all([
+  const [guideContext,articleBundle,caseLawBundle,gazetteBundle]=await Promise.all([
     governedGuideContext(request,env,guideIds),
     governedArticleContext(env,q,initialPlan),
-    governedCaseLawContext(env,q,initialPlan,{limit:4})
+    governedCaseLawContext(env,q,initialPlan,{limit:4}),
+    governedGazetteChunkContext(env,q)
   ]);
 
-  const corpusContext=[...articleBundle.context,...caseLawBundle.context,...guideDocumentCheck.context,...guideContext];
+  const corpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...guideDocumentCheck.context,...guideContext];
   if(uiMode==="library" && corpusContext.length===0){
     corpusContext.push({
       source:"AI Advokat public library",
@@ -3349,6 +3351,7 @@ async function handleGPTChat(request,env){
   // Explicit Web mode must not be mislabeled as passive_corpus merely because the
   // UI suggested a guide. Article-level Macedonian law remains corpus-first.
   const preferCorpus=articleBundle.context.length>0
+    || gazetteBundle.context.length>0
     || caseLawBundle.context.length>0
     || guideDocumentCheck.context.length>0
     || uiMode==="library"
@@ -3976,6 +3979,11 @@ async function handleAssistant(request, env, url) {
       ? {aiDiagnostic:{binding:Boolean(env.AI),error:aiError}}
       : {})
   });
+}
+
+async function governedGazetteChunkContext(env,q){
+  const bundle=await findGovernedGazetteChunks(env,q,{limit:6});
+  return {...bundle,context:gazetteChunksToContext(bundle)};
 }
 
 async function handleGazetteRegister(request, env, url) {

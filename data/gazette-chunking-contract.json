@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "name": "Gazette Article Chunking + Bot Runtime Contract",
+  "chunk_unit_order": [
+    "issue",
+    "act",
+    "article",
+    "paragraph",
+    "item",
+    "chunk"
+  ],
+  "default_strategy": {
+    "primary_boundary": "article",
+    "secondary_boundary": "paragraph",
+    "never_split_if_possible": [
+      "article_heading",
+      "paragraph",
+      "item",
+      "definition"
+    ],
+    "max_chars": 4200,
+    "target_chars": 2600,
+    "overlap_chars": 220,
+    "preserve_article_number": true,
+    "preserve_paragraph_number": true,
+    "preserve_item_number": true,
+    "preserve_issue_provenance": true
+  },
+  "bot_activation_rule": {
+    "requires_runtime_eligible": true,
+    "requires_human_review_status": [
+      "reviewed",
+      "approved"
+    ],
+    "excludes_superseded": true,
+    "current_law_claim_requires_current_law_eligible": true,
+    "current_law_claim_requires_primary_source_verification": true,
+    "fail_closed_on_missing_version": true
+  },
+  "retrieval_priority": [
+    "exact instrument + article",
+    "exact Gazette issue + act/article",
+    "article/paragraph/item semantic-lexical match",
+    "related amendment relationship",
+    "historical source chunk"
+  ],
+  "required_chunk_metadata": [
+    "source issue number",
+    "source issue date",
+    "official URL",
+    "text SHA-256",
+    "instrument key",
+    "article",
+    "paragraph/item when present",
+    "effective date",
+    "application date",
+    "human gate",
+    "authority class"
+  ],
+  "answer_rules": [
+    "Bot must cite the official source URL for Gazette-derived legal claims.",
+    "Bot must distinguish historical source text from current law.",
+    "Bot must not merge incompatible versions into one synthesized rule.",
+    "Bot must expose effective date and application date separately when material.",
+    "Bot must fall back to Human Gate when version status is unresolved."
+  ]
+}
