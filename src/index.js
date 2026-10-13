@@ -2521,19 +2521,28 @@ async function governedGuideContext(request,env,guideIds){
     .filter(r=>wanted.has(String(r.id)) && r.catalog_public===true && r.public_record_enabled===true)
     .map(r=>{
       const dependencyGate=evaluateGuideLawDependencies(r.id,dependencyRegistry,readinessLedger);
+      const governedPublicText=
+        r.bot_runtime_enabled===true &&
+        typeof r.bot_text==="string" &&
+        r.bot_text.trim()
+          ? sanitizeForPrompt(r.bot_text).slice(0,12000)
+          : "";
       return {
-        source:"AI Advokat public guide catalogue",
-        locator:r.public_record_url,
+        source:governedPublicText ? "AI Advokat governed public guide" : "AI Advokat public guide catalogue",
+        locator:r.public_fulltext || r.public_record_url,
         version:r.verification_label || r.status_label || r.edition || "",
         dependencyGate,
         text:[
-          "CATALOGUE METADATA ONLY — use it only for routing unless a fingerprint-verified full guide document is separately attached.",
+          governedPublicText
+            ? "GOVERNED PUBLIC GUIDE TEXT — secondary practical guidance only; never treat it as primary or official law."
+            : "CATALOGUE METADATA ONLY — use it only for routing unless a fingerprint-verified full guide document is separately attached.",
           "TITLE: "+String(r.display_title || r.title || ""),
           "SCOPE: "+String(r.scope || ""),
           "CATEGORY: "+String(r.category_label || ""),
           "AI_READING: "+String(r.ai_reading || "not_authorized"),
           "LEGAL_AUTHORITY: false",
           guideLawGatePrompt(dependencyGate),
+          ...(governedPublicText ? ["GUIDE_TEXT:",governedPublicText] : []),
           ...(Array.isArray(r.legal_notices)?r.legal_notices.map(n=>"NOTICE: "+String(n.text_mk || n.title_mk || "")):[])
         ].join("\n")
       };
