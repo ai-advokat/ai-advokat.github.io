@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, hashlib, html, json, os, re, subprocess, sys, time
+import argparse, hashlib, html, json, os, re, subprocess, sys, tempfile, time
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit, urlunsplit
@@ -46,12 +46,33 @@ def _official_host_variants(url):
 def fetch_bytes(url, timeout=90):
     last=None
     for candidate in _official_host_variants(url):
+        tmp=None
         try:
-            req=Request(candidate,headers={"User-Agent":UA,"Accept":"*/*"})
-            with urlopen(req,timeout=timeout) as r:
-                return r.read(), r.geturl(), dict(r.headers)
+            with tempfile.NamedTemporaryFile(delete=False) as fh:
+                tmp=fh.name
+            cmd=[
+                "curl","--fail","--location","--silent","--show-error",
+                "--retry","2","--retry-delay","1",
+                "--connect-timeout","20","--max-time",str(int(timeout)),
+                "--user-agent",UA,
+                "--output",tmp,
+                "--write-out","%{url_effective}",
+                candidate
+            ]
+            p=subprocess.run(cmd,capture_output=True,text=True)
+            if p.returncode!=0:
+                raise RuntimeError("curl_fetch_failed:"+p.stderr[-300:])
+            raw=Path(tmp).read_bytes()
+            final=(p.stdout or candidate).strip()
+            if not raw:
+                raise RuntimeError("empty_response")
+            return raw, final, {"X-AI-Advokat-TLS":"curl-verified"}
         except Exception as e:
             last=e
+        finally:
+            if tmp:
+                try: os.unlink(tmp)
+                except OSError: pass
     raise last
 
 def fetch_text(url):
