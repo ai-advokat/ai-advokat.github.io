@@ -2482,6 +2482,19 @@ async function loadGuideRegistry(request,env){
   }
 }
 
+async function loadPublicPracticalGuideRegistry(request,env){
+  if(!env.ASSETS) return null;
+  try{
+    const assetUrl=new URL("/data/public-practical-guides-38-73.json",request.url);
+    const response=await env.ASSETS.fetch(new Request(assetUrl,{method:"GET"}));
+    if(!response.ok) return null;
+    const data=await response.json();
+    return data && typeof data==="object" ? data : null;
+  }catch{
+    return null;
+  }
+}
+
 async function loadGuideLawDependencyRegistry(request,env){
   if(!env.ASSETS) return null;
   try{
@@ -2511,12 +2524,20 @@ async function loadCurrentLawReadinessLedger(request,env){
 async function governedGuideContext(request,env,guideIds){
   const wanted=new Set((Array.isArray(guideIds)?guideIds:[]).map(x=>String(x)).slice(0,5));
   if(!wanted.size) return [];
-  const [data,dependencyRegistry,readinessLedger]=await Promise.all([
+  const [data,practical,dependencyRegistry,readinessLedger]=await Promise.all([
     loadGuideRegistry(request,env),
+    loadPublicPracticalGuideRegistry(request,env),
     loadGuideLawDependencyRegistry(request,env),
     loadCurrentLawReadinessLedger(request,env)
   ]);
-  const records=Array.isArray(data?.records)?data.records:[];
+  const baseRecords=Array.isArray(data?.records)?data.records:[];
+  const byId=new Map(baseRecords.map(r=>[String(r.id),r]));
+  for(const item of (Array.isArray(practical?.guides)?practical.guides:[])){
+    const id=String(item?.id||"");
+    if(!id) continue;
+    byId.set(id,{...(byId.get(id)||{}),...item});
+  }
+  const records=[...byId.values()];
   return records
     .filter(r=>wanted.has(String(r.id)) && r.catalog_public===true && r.public_record_enabled===true)
     .map(r=>{
