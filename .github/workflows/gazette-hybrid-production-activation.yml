@@ -1,3 +1,4 @@
+# Retrigger after Gazette activation contract test repair.
 name: Gazette hybrid production activation
 
 on:
