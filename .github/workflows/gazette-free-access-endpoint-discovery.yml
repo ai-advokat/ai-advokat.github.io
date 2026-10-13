@@ -1,0 +1,33 @@
+name: Gazette free-access endpoint discovery
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/gazette_free_access_endpoint_diagnostic.py"
+      - ".github/workflows/gazette-free-access-endpoint-discovery.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Discover same-origin public data endpoints
+        run: python3 scripts/gazette_free_access_endpoint_diagnostic.py
+
+      - name: Upload endpoint evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gazette-free-access-endpoint-discovery
+          retention-days: 14
+          path: /tmp/gazette-endpoint-discovery.json
+
+      - name: Summary
+        run: cat /tmp/gazette-endpoint-discovery.json >> "$GITHUB_STEP_SUMMARY"
