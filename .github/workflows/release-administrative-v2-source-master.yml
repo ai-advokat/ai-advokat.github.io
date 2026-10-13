@@ -1,4 +1,5 @@
 name: Release Administrative V2 exact source master
+# exact-v2-publication-policy
 
 on:
   workflow_dispatch:
