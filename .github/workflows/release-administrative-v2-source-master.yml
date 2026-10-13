@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - staging/admin-v2-pdf.pdf.gz.b64.part*
+      - staging/admin-v2-pdf.pdf.gz.b64
       - staging/admin-v2-release.py.gz.b64
       - .github/workflows/release-administrative-v2-source-master.yml
 
@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p guides/pdfs
-          cat staging/admin-v2-pdf.pdf.gz.b64.part* | tr -d '[:space:]' | base64 --decode | gzip -d > guides/pdfs/guide-administrative-v2-final-master.pdf
+          tr -d '[:space:]' < staging/admin-v2-pdf.pdf.gz.b64 | base64 --decode | gzip -d > guides/pdfs/guide-administrative-v2-final-master.pdf
           printf '%s  %s\n' \
             '4c11375551a705173d7cf6d2785b5351c8dc61df76ae7ef7a7a35de14b3c721d' \
             'guides/pdfs/guide-administrative-v2-final-master.pdf' | sha256sum -c -
@@ -57,7 +57,7 @@ jobs:
           npm run test:guide-law-governance
           npm run test:public-layer
       - name: Remove transport files
-        run: rm -f staging/admin-v2-pdf.pdf.gz.b64.part* staging/admin-v2-release.py.gz.b64
+        run: rm -f staging/admin-v2-pdf.pdf.gz.b64 staging/admin-v2-pdf.pdf.gz.b64.part* staging/admin-v2-release.py.gz.b64
       - name: Commit exact source release
         shell: bash
         run: |
