@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "name": "Gazette Consolidated Text Governance",
+  "doctrine": [
+    "Пречистен текст е derived representation и никогаш не ја заменува amendment chain provenance.",
+    "Официјален пречистен текст се означува одделно од редакциски/работен пречистен текст.",
+    "Current-law eligibility бара комплетен amendment chain, проверени уставносудски ефекти, проверени effective/application dates и Human Gate.",
+    "Секој член во пречистениот текст мора да има derivation trace до изворните изданија/измени.",
+    "Нема тивко спојување на неусогласени верзии."
+  ],
+  "user_views": [
+    "Важечки пречистен текст на датум",
+    "Пречистен текст по член",
+    "Како е добиен овој член?",
+    "Разлика меѓу две пречистени верзии",
+    "Измени што довеле до тековниот текст"
+  ],
+  "bot_rules": [
+    "Bot may prefer an approved current-law-eligible consolidated text for synthesis.",
+    "Bot must still expose the official amendment provenance on request or when legally material.",
+    "If no approved current-law-eligible consolidation exists, bot must fall back to official source chunks and Human Gate.",
+    "Bot must label editorial or working consolidations as non-official."
+  ]
+}

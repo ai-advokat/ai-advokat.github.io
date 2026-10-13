@@ -76,3 +76,14 @@ test("GC8 hybrid schema stores rights, duties, deadlines, sanctions and cross-au
   assert.match(migration,/gazette_act_relationships/);
   assert.match(migration,/gazette_act_effects/);
 });
+
+
+test("GC9 consolidated text layer preserves derivation and current-law gates",()=>{
+  const migration=fs.readFileSync("migrations/0042_gazette_consolidated_texts.sql","utf8");
+  const policy=JSON.parse(fs.readFileSync("data/gazette-consolidated-text-policy.json","utf8"));
+  for(const field of ["consolidation_kind","reference_date","amendment_chain_complete","constitutional_court_effects_checked","effective_application_dates_checked","current_law_eligible","derivation_trace"]){
+    assert.match(migration,new RegExp(field));
+  }
+  assert.ok(policy.doctrine.some(x=>x.includes("derived representation")));
+  assert.ok(policy.bot_rules.some(x=>x.includes("fail")));
+});
