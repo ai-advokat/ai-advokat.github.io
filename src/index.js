@@ -3327,13 +3327,14 @@ async function handleGPTChat(request,env){
 
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const initialPlan=buildAgentPlan(q);
-  const [guideContext,articleBundle,caseLawBundle]=await Promise.all([
+  const [guideContext,articleBundle,caseLawBundle,gazetteBundle]=await Promise.all([
     governedGuideContext(request,env,guideIds),
     governedArticleContext(env,q,initialPlan),
-    governedCaseLawContext(env,q,initialPlan,{limit:4})
+    governedCaseLawContext(env,q,initialPlan,{limit:4}),
+    governedGazetteChunkContext(env,q)
   ]);
 
-  const corpusContext=[...articleBundle.context,...caseLawBundle.context,...guideDocumentCheck.context,...guideContext];
+  const corpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...guideDocumentCheck.context,...guideContext];
   if(uiMode==="library" && corpusContext.length===0){
     corpusContext.push({
       source:"AI Advokat public library",
