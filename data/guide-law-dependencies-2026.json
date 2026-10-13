@@ -616,6 +616,186 @@
           "source_class": "external_official_source_required"
         }
       ]
+    },
+    {
+      "guide_id": "guide-64-derived-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "conditional_substantive",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-65-derived-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "conditional_substantive",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-66-derived-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "conditional_substantive",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-67-derived-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "conditional_substantive",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-68-derived-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "conditional_substantive",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-69-derived-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "conditional_substantive",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-70-derived-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "conditional_substantive",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-71-derived-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "conditional_substantive",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-72-derived-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "conditional_substantive",
+          "source_class": "readiness_ledger"
+        }
+      ]
+    },
+    {
+      "guide_id": "guide-73-derived-2026",
+      "current_law_claim_policy": "primary_source_required",
+      "dependencies": [
+        {
+          "key": "mk:zkp",
+          "title": "Закон за кривичната постапка",
+          "role": "primary",
+          "source_class": "readiness_ledger"
+        },
+        {
+          "key": "mk:kz",
+          "title": "Кривичен законик",
+          "role": "conditional_substantive",
+          "source_class": "readiness_ledger"
+        }
+      ]
     }
   ]
 }
