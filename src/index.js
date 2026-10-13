@@ -4523,7 +4523,9 @@ export default {
     if (url.pathname === "/api/chat") return handleGPTChat(request, env);
     if (url.pathname === "/api/legal-analyzer/verify") return handleLegalAnalyzerVerify(request, env);
     if (url.pathname === "/api/casepilot/case-law") return handleCasePilotCaseLawResearch(request, env);
-    if (url.pathname === "/api/gazette-register") return handleGazetteRegister(request, env, url);\n    if (url.pathname === "/api/gazette-chunks") return handleGazetteChunks(request, env, url);\n    if (url.pathname === "/api/gazette-hybrid-status") return handleGazetteHybridStatus(request, env);
+    if (url.pathname === "/api/gazette-register") return handleGazetteRegister(request, env, url);
+    if (url.pathname === "/api/gazette-chunks") return handleGazetteChunks(request, env, url);
+    if (url.pathname === "/api/gazette-hybrid-status") return handleGazetteHybridStatus(request, env);
     if (url.pathname === "/api/web-sources") return handleWebSources(request);
     if (url.pathname === "/api/zenodo") return handleZenodo(request);
     if (url.pathname === "/api/orcid") return handleOrcid(request);
