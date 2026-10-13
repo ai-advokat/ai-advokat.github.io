@@ -98,7 +98,8 @@
     "test:zkp-lineage-resolution": "node --no-warnings --test test/zkp-official-lineage-audit.test.mjs test/zkp-51-2011-classification.test.mjs test/zkp-metadata-correction-contract.test.mjs",
     "test:gazette-guides-product": "node --no-warnings --test test/gazette-guides-product.test.mjs",
     "test:gazette-comprehensive-index": "node --no-warnings --test test/gazette-comprehensive-index.test.mjs",
-    "test:gazette-chunk-runtime": "node --no-warnings --test test/gazette-chunk-runtime.test.mjs"
+    "test:gazette-chunk-runtime": "node --no-warnings --test test/gazette-chunk-runtime.test.mjs",
+    "test:gazette-production-activation": "node --no-warnings --test test/gazette-production-activation.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
