@@ -51,16 +51,45 @@ def render(no,title,scope):
  doc.build(story,onFirstPage=footer,onLaterPages=footer); sha=hashlib.sha256(out.read_bytes()).hexdigest()
  slug=f'{no}-prakticen-vodic'; d=FULL/slug; d.mkdir(parents=True,exist_ok=True); li=lambda a:''.join('<li>'+html.escape(x)+'</li>' for x in a); (d/'index.html').write_text(f'''<!doctype html><html lang="mk"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(title)}</title><style>body{{font:16px/1.65 system-ui;background:#f4f7fa;color:#132033;margin:0}}main{{max-width:900px;margin:auto;padding:32px 18px}}article{{background:#fff;border:1px solid #dbe3ea;border-radius:18px;padding:28px}}h1{{color:#0c2038}}h2{{color:#173d66}}.w{{background:#fff3f1;border-left:4px solid #c85f5f;padding:12px}}a{{display:inline-block;background:#0c2038;color:#fff;padding:10px 14px;border-radius:9px;text-decoration:none;font-weight:700}}</style><main><article><p>AI Advokat · Водич {no} · 13.10.2026</p><h1>{html.escape(title)}</h1><p>{html.escape(scope)}</p><p class=w><b>Правна резерва:</b> секундарен практичен материјал; официјалниот извор и конкретниот акт имаат предност.</p><h2>Чекор по чекор</h2><ol>{li(steps)}</ol><h2>Контролна листа</h2><ul>{li(check)}</ul><h2>Предупредувања</h2><ul>{li(warns)}</ul><h2>Извори</h2><ul>{li(sources)}</ul><p><a href="/guides/pdfs/guide-{no}.pdf">Отвори PDF</a></p></article></main></html>''',encoding='utf-8')
  return sha,out.stat().st_size,slug,'\n'.join([title,scope,'Чекори:']+steps+['Предупредувања:']+warns+['Извори:']+sources)
-reg=json.loads(REG.read_text()); recs=reg['records']; by={str(x.get('guide_no')):x for x in recs if x.get('guide_no')}
-for no,(title,scope) in NEW.items():
- if no not in by:
-  r={'id':f'guide-{no}-derived-2026','guide_no':no,'category':'Кривична постапка','format':'AI Advokat јавна редакција','title':title,'edition':'Јавна редакција','edition_date':'2026-10-13','source_file':'Priracnik_Krivicni_Predmeti_FINAL_v2.docx','attribution':'Авторска тематска основа: адвокат Зоран Стојанкиќ; AI-assisted редакција под Human Gate','status':'public_secondary_guide','scope':scope,'source_role':'derived_authorial_guide','catalog_public':True,'public_record_enabled':True,'public_slug':f'{no}-prakticen-vodic','public_record_url':f'/guides/record.html?g={no}-prakticen-vodic','category_code':'criminal_justice','category_label':'Кривична постапка и права','subcategory_label':'Кривична постапка','display_title':title,'display_format':'Практичен водич','verification_level':'editorial_review','verification_label':'Јавна редакција · официјален извор задолжителен','attribution_public':'Авторска основа: адвокат Зоран Стојанкиќ · AI-assisted редакција под Human Gate','related_records':[]}; recs.append(r); by[no]=r
+reg=json.loads(REG.read_text()); base={str(x.get('guide_no')):x for x in reg['records'] if x.get('guide_no')}
+overlay=[]
 for n in range(38,74):
- no=str(n); r=by[no]; title=r.get('display_title') or r.get('title'); scope=r.get('scope') or title; sha,size,slug,bot=render(no,title,scope); r.update({'public_pdf':f'/guides/pdfs/guide-{no}.pdf','public_pdf_sha256':sha,'public_pdf_size_bytes':size,'public_fulltext':f'/guides/fulltext/{slug}/','public_fulltext_state':'public_secondary_guide','public_fulltext_published_on':'2026-10-13','bot_runtime_enabled':True,'bot_text':bot,'ai_reading':'authorized_public_secondary_context','ai_legal_authority':False,'current_law_authority':False,'current_law_claim_policy':'primary_source_required','activation_state':'active_verified' if no in {'39','51','52'} else 'active_with_warning','activation_label_mk':'Активен · PDF + бот · официјален извор задолжителен'})
-reg['collection']['public_pdf_release']={'state':'active_38_73','released_on':'2026-10-13','count':36,'rule':'Secondary practical guidance; official sources and Human Gate remain controlling.'}; reg['collection']['bot_guide_runtime']={'state':'active_38_73','enabled_on':'2026-10-13','count':36,'mode':'public_secondary_context_with_primary_source_gate'}; REG.write_text(json.dumps(reg,ensure_ascii=False,indent=2)+'\n')
-D=json.loads(DEP.read_text()); ids={x.get('guide_id') for x in D['records']}
-for no in range(64,74):
- gid=by[str(no)]['id']
- if gid not in ids: D['records'].append({'guide_id':gid,'current_law_claim_policy':'primary_source_required','dependencies':[{'key':'mk:zkp','title':'Закон за кривичната постапка','role':'primary','source_class':'readiness_ledger'},{'key':'mk:kz','title':'Кривичен законик','role':'conditional_substantive','source_class':'readiness_ledger'}]})
-DEP.write_text(json.dumps(D,ensure_ascii=False,indent=2)+'\n')
-print('generated 36 PDF/fulltext guides and runtime metadata')
+ no=str(n)
+ if no in base:
+  src=base[no]
+  title=src.get('display_title') or src.get('title') or ('Водич '+no)
+  scope=src.get('scope') or title
+  gid=src.get('id')
+  category_code=src.get('category_code') or 'other'
+  category_label=src.get('category_label') or src.get('category') or 'Практични права'
+  subcategory=src.get('subcategory_label') or category_label
+  verification=src.get('verification_label') or src.get('status_label') or 'Правна проверка потребна'
+  activation=src.get('activation_state') or 'review_required'
+  source_role='practical_public_edition_of_governed_source'
+ else:
+  title,scope=NEW[no]
+  gid=f'guide-{no}-derived-2026'
+  category_code='criminal_justice'; category_label='Кривична постапка и права'; subcategory='Кривична постапка'
+  verification='Јавна практична редакција · официјален извор задолжителен'
+  activation='active_with_warning'; source_role='derived_authorial_practical_guide'
+ sha,size,slug,bot=render(no,title,scope)
+ overlay.append({
+  'id':gid,'source_guide_id':gid if no in base else None,'guide_no':no,
+  'title':title,'display_title':title,'scope':scope,
+  'category_code':category_code,'category_label':category_label,'subcategory_label':subcategory,
+  'display_format':'Практичен PDF водич','edition':'Практична јавна редакција 2026-10-13','edition_date':'2026-10-13',
+  'verification_level':'editorial_review' if no not in base else base[no].get('verification_level','editorial_review'),
+  'verification_label':verification,'activation_state':activation,
+  'activation_label_mk':'PDF јавно активен · официјален извор задолжителен',
+  'catalog_public':True,'public_record_enabled':True,'public_slug':slug,
+  'public_record_url':f'/guides/record.html?g={slug}',
+  'public_pdf':f'/guides/pdfs/guide-{no}.pdf','public_pdf_sha256':sha,'public_pdf_size_bytes':size,
+  'public_fulltext':f'/guides/fulltext/{slug}/','public_fulltext_state':'public_practical_editorial_edition',
+  'bot_runtime_enabled':True,'bot_text':bot,'ai_reading':'authorized_public_secondary_context',
+  'ai_legal_authority':False,'current_law_authority':False,'current_law_claim_policy':'primary_source_required',
+  'source_role':source_role,
+  'attribution_public':'Авторска/изворна основа: адвокат Зоран Стојанкиќ · AI-assisted практична редакција под Human Gate'
+ })
+out={'schema_version':'1.0','generated_on':'2026-10-13','collection':{'id':'AI_ADVOKAT_PUBLIC_PRACTICAL_GUIDES_38_73','state':'active','count':36,'legal_authority':False,'primary_source_required':True,'note':'Separate practical public editions. The governed source registry in data/guides.json remains unchanged.'},'guides':overlay}
+(ROOT/'data/public-practical-guides-38-73.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print('generated',len(overlay),'separate practical PDF/fulltext guides')
