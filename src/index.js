@@ -87,6 +87,7 @@ import {
 } from "./casepilot-matter.js";
 import { mapWorkspaceToCasePilotShell } from "./casepilot-workspace-bridge.js";
 import { buildCaseLawComparison } from "./casepilot-case-law-bridge.js";
+import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import {
   OPEN_LEGAL_SOURCE_POLICY_VERSION,
   OPEN_LEGAL_SOURCE_REGISTRY_ID,
