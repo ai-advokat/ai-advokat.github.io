@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, hashlib, json, re, subprocess, sys, time
+import argparse, hashlib, json, os, re, subprocess, sys, tempfile, time
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.parse import urlsplit, urlunsplit
@@ -16,12 +16,31 @@ def _official_host_variants(url):
 def fetch(url,timeout=120):
     last=None
     for candidate in _official_host_variants(url):
+        tmp=None
         try:
-            req=Request(candidate,headers={"User-Agent":UA,"Accept":"application/pdf,*/*"})
-            with urlopen(req,timeout=timeout) as r:
-                b=r.read(); return b,r.geturl()
+            with tempfile.NamedTemporaryFile(delete=False) as fh:
+                tmp=fh.name
+            cmd=[
+                "curl","--fail","--location","--silent","--show-error",
+                "--retry","2","--retry-delay","1",
+                "--connect-timeout","20","--max-time",str(int(timeout)),
+                "--user-agent",UA,
+                "--output",tmp,
+                "--write-out","%{url_effective}",
+                candidate
+            ]
+            p=subprocess.run(cmd,capture_output=True,text=True)
+            if p.returncode!=0:
+                raise RuntimeError("curl_fetch_failed:"+p.stderr[-300:])
+            b=Path(tmp).read_bytes()
+            if not b: raise RuntimeError("empty_response")
+            return b,(p.stdout or candidate).strip()
         except Exception as e:
             last=e
+        finally:
+            if tmp:
+                try: os.unlink(tmp)
+                except OSError: pass
     raise last
 
 def sha256_bytes(b): return hashlib.sha256(b).hexdigest()
