@@ -56,3 +56,23 @@ test("GC6 act purpose metadata is source-grounded and reviewable",()=>{
   assert.equal(manifest.publication_policy.act_purpose_must_be_source_grounded,true);
   assert.equal(manifest.publication_policy.unsupported_purpose_inference,false);
 });
+
+
+test("GC7 hybrid legal intelligence covers legal effects, applicability and practical use",()=>{
+  const hybrid=JSON.parse(fs.readFileSync("data/gazette-hybrid-legal-intelligence.json","utf8"));
+  assert.equal(hybrid.layers.length,9);
+  for(const view of ["Што се смени?","Кого го засега?","Од кога важи/се применува?","Што треба да направам?"]){
+    assert.ok(hybrid.output_views.includes(view));
+  }
+  assert.ok(hybrid.mandatory_rules.some(x=>x.includes("Human Gate")));
+  assert.ok(hybrid.mandatory_rules.some(x=>x.includes("Effective date")));
+});
+
+test("GC8 hybrid schema stores rights, duties, deadlines, sanctions and cross-authority links",()=>{
+  const migration=fs.readFileSync("migrations/0040_gazette_hybrid_legal_intelligence.sql","utf8");
+  for(const field of ["rights_created","obligations_created","sanctions_consequences","deadlines_time_limits","eu_alignment","constitutional_context","case_law_context","citizen_summary","professional_summary","compliance_action"]){
+    assert.match(migration,new RegExp(field));
+  }
+  assert.match(migration,/gazette_act_relationships/);
+  assert.match(migration,/gazette_act_effects/);
+});
