@@ -224,7 +224,40 @@ def classify_title(title):
         if re.search(pat,t,re.I): return kind
     return "other"
 
+def _page_two_column_split(page):
+    lines=page.splitlines()
+    if len(lines)<8:
+        return page
+    width=max((len(x) for x in lines),default=0)
+    if width<110:
+        return page
+    centers=[]
+    for line in lines:
+        for m in re.finditer(r" {8,}",line):
+            c=(m.start()+m.end())//2
+            if int(width*0.35)<=c<=int(width*0.65):
+                left=line[:m.start()].strip()
+                right=line[m.end():].strip()
+                if left and right:
+                    centers.append(c)
+    if len(centers)<8:
+        return page
+    centers.sort()
+    split=centers[len(centers)//2]
+    left=[]; right=[]
+    for line in lines:
+        l=line[:split].rstrip()
+        r=line[split:].strip()
+        if l.strip(): left.append(l)
+        if r: right.append(r)
+    # Registers are printed in reading order: top-to-bottom left column, then right.
+    return "\n".join(left+right)
+
+def normalize_register_layout(text):
+    return "\f".join(_page_two_column_split(p) for p in text.split("\f"))
+
 def parse_register_text(text, year, source_url, source_sha):
+    text=normalize_register_layout(text)
     lines=[" ".join(x.split()) for x in text.splitlines()]
     entries=[]; unresolved=[]; current=None
     ordinal_re=re.compile(r"^(\d{1,6})\.\s*(.*)$")
