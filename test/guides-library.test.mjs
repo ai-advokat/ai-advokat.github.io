@@ -483,7 +483,7 @@ describe("Zoran guides library governance",()=>{
 
   test("G41 publication hold remains for all guides except the exact verified Administrative V2 master",()=>{
     const a=data.collection.public_pdf_release_authorization;
-    assert.equal(a.publication_state,"active_exact_fingerprint_bound");
+    assert.equal(a.publication_state,"partial_release_active_exact_asset_binding");
     assert.equal(a.hold_evidence.source_package_38_63_sha256,"5c6aedf360b0376e1e24bdbe9df6b49e393eff8a8984a476e06ad6b05c884172");
     const v2=data.records.find(x=>x.id==="guide-administrative-v2");
     assert.equal(v2.public_pdf,"/guides/pdfs/guide-administrative-v2-final-master.pdf");
