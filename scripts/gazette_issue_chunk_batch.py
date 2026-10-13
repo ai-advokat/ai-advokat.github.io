@@ -81,6 +81,32 @@ def extract_pages(pdf,start,end,out):
     rc,_,err=run(["pdftotext","-layout","-f",str(start),"-l",str(end),str(pdf),str(out)])
     return rc,err
 
+def extract_full_issue(pdf,out):
+    rc,_,err=run(["pdftotext","-layout",str(pdf),str(out)])
+    return rc,err
+
+def find_act_boundaries(text, acts):
+    hits=[]
+    for act in acts:
+        ordinal=str(act["ordinal"])
+        pats=[
+            re.compile(r"(?m)^\\s*"+re.escape(ordinal)+r"\\.\\s*$"),
+            re.compile(r"(?m)^\\s*"+re.escape(ordinal)+r"\\.\\s+")
+        ]
+        found=None
+        for pat in pats:
+            m=pat.search(text)
+            if m:
+                found=m.start(); break
+        if found is not None:
+            hits.append((found,act))
+    hits.sort(key=lambda x:x[0])
+    out={}
+    for i,(pos,act) in enumerate(hits):
+        end=hits[i+1][0] if i+1<len(hits) else len(text)
+        out[int(act["ordinal"])]=(pos,end)
+    return out
+
 ARTICLE_RE=re.compile(r"(?m)^\s*Член\s+([0-9]+(?:\s*[-–—]\s*[А-Яа-яA-Za-z]+)?)\s*$")
 POINT_RE=re.compile(r"(?m)^\s*(\d{1,3})\.\s+")
 
@@ -165,16 +191,26 @@ def main():
             issue_sha=sha256_bytes(raw)
             pages,err=pdf_pages(pdf)
             if not pages: raise RuntimeError("pdfinfo_failed:"+err[-200:])
-            acts_i=sorted(by_issue[issue_no],key=lambda a:a["page_start"])
+            acts_i=sorted(by_issue[issue_no],key=lambda a:(int(a["page_start"]),int(a["ordinal"])))
+            full_txt=out/"text"/f"{issue_no}-full.txt"
+            frc,ferr=extract_full_issue(pdf,full_txt)
+            full_text=full_txt.read_text("utf-8",errors="replace") if frc==0 and full_txt.exists() else ""
+            boundaries=find_act_boundaries(full_text,acts_i) if full_text else {}
             for idx,a in enumerate(acts_i):
                 start=max(1,int(a["page_start"]))
                 next_start=int(acts_i[idx+1]["page_start"]) if idx+1<len(acts_i) else pages+1
                 end=min(pages,max(start,next_start-1))
-                txt=out/"text"/f"{issue_no}-{a['ordinal']}.txt"
-                rc,err=extract_pages(pdf,start,end,txt)
-                if rc!=0 or not txt.exists():
-                    summary["skipped"].append({"issue":issue_no,"ordinal":a["ordinal"],"reason":"pdftotext_failed"}); continue
-                text=txt.read_text("utf-8",errors="replace").strip()
+                boundary=boundaries.get(int(a["ordinal"]))
+                if boundary:
+                    text=full_text[boundary[0]:boundary[1]].strip()
+                    boundary_method="act_ordinal_marker"
+                else:
+                    txt=out/"text"/f"{issue_no}-{a['ordinal']}.txt"
+                    rc,err=extract_pages(pdf,start,end,txt)
+                    if rc!=0 or not txt.exists():
+                        summary["skipped"].append({"issue":issue_no,"ordinal":a["ordinal"],"reason":"pdftotext_failed"}); continue
+                    text=txt.read_text("utf-8",errors="replace").strip()
+                    boundary_method="page_fallback"
                 if len(text)<40:
                     summary["skipped"].append({"issue":issue_no,"ordinal":a["ordinal"],"reason":"text_too_short"}); continue
                 blocks=article_blocks(text)
@@ -182,12 +218,12 @@ def main():
                 if not blocks:
                     blocks=fallback_blocks(text); block_kind="provision"
                 act_chunks=0
-                for locator,block in blocks:
+                for block_idx,(locator,block) in enumerate(blocks,1):
                     parts=split_long(block)
                     for part_idx,(part,ob,oa) in enumerate(parts,1):
                         if not part.strip(): continue
                         chunk_sha=hashlib.sha256(part.encode("utf-8")).hexdigest()
-                        key=f"mk-gazette:{args.year}:{issue_no}:{a['ordinal']}:{locator}:{part_idx}"
+                        key=f"mk-gazette:{args.year}:{issue_no}:{a['ordinal']}:{locator}:{block_idx}:{part_idx}"
                         row={
                           "chunk_key":key,
                           "year":args.year,
@@ -200,6 +236,7 @@ def main():
                           "act_type":a["act_type"],
                           "page_start":start,
                           "page_end":end,
+                          "boundary_method":boundary_method,
                           "locator_kind":block_kind,
                           "article_number":locator if block_kind=="article" else None,
                           "provision_locator":locator if block_kind!="article" else None,
@@ -225,6 +262,9 @@ def main():
         except Exception as e:
             summary["skipped"].append({"issue":issue_no,"reason":str(e)[:300]})
         time.sleep(args.delay)
+    keys=[x["chunk_key"] for x in all_chunks]
+    if len(keys)!=len(set(keys)):
+        raise SystemExit("Duplicate chunk_key detected; stop before artifact publication.")
     (out/"chunks"/f"{args.year}.ndjson").write_text("\n".join(json.dumps(x,ensure_ascii=False) for x in all_chunks)+("\n" if all_chunks else ""),"utf-8")
     (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),"utf-8")
     print(json.dumps(summary,ensure_ascii=False))
