@@ -8,6 +8,8 @@
     "public_release"
   ],
   "migrations": [
+    "0035_case_document_download_audit.sql",
+    "0036_zkp_entry_application_metadata_correction.sql",
     "0038_gazette_comprehensive_archive.sql",
     "0039_gazette_act_purpose_metadata.sql",
     "0040_gazette_hybrid_legal_intelligence.sql",
@@ -19,6 +21,6 @@
   "production_database": "ai-advokat-db",
   "public_portal": "/sluzben-vesnik/",
   "data_promotion_authorized": false,
-  "note": "Latest-only production activation after full security CI success. Older waiting activation runs must be superseded. Activate schema 0038-0043, governed runtime and public status surface only; backfill data promotion remains locked.",
-  "request_revision": 3
+  "note": "Production catch-up activation. Apply reviewed pending migrations 0035 and 0036 first, then Gazette 0038-0043. 0035 preserves existing case audit events while adding document_downloaded. 0036 is guarded metadata-only ZKP correction and does not promote current-law/Human Gate status. Gazette backfill data promotion remains locked.",
+  "request_revision": 4
 }
