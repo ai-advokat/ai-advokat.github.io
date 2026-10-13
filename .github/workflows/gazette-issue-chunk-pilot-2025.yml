@@ -2,6 +2,13 @@ name: Gazette issue chunk pilot 2025
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "data/gazette-public-issue-seed-2025.json"
+      - "scripts/gazette_issue_chunk_batch.py"
+      - ".github/workflows/gazette-issue-chunk-pilot-2025.yml"
   workflow_run:
     workflows:
       - "Gazette backfill wave 1 1991-2025"
