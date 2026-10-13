@@ -1,0 +1,35 @@
+name: Gazette free-access discovery diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/gazette_free_access_diagnostic.py"
+      - ".github/workflows/gazette-free-access-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Inspect official free-access page structure
+        run: python3 scripts/gazette_free_access_diagnostic.py
+
+      - name: Upload discovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gazette-free-access-diagnostic
+          retention-days: 14
+          path: /tmp/gazette-free-access-diagnostic.json
+
+      - name: Summary
+        run: |
+          echo "### Gazette free-access discovery diagnostic" >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/gazette-free-access-diagnostic.json >> "$GITHUB_STEP_SUMMARY"
