@@ -89,17 +89,19 @@ def find_act_boundaries(text, acts):
     hits=[]
     for act in acts:
         ordinal=str(act["ordinal"])
-        pats=[
-            re.compile(r"(?m)^\\s*"+re.escape(ordinal)+r"\\.\\s*$"),
-            re.compile(r"(?m)^\\s*"+re.escape(ordinal)+r"\\.\\s+")
-        ]
-        found=None
-        for pat in pats:
-            m=pat.search(text)
-            if m:
-                found=m.start(); break
-        if found is not None:
-            hits.append((found,act))
+        # Gazette PDFs are often extracted from two columns, so a printed act
+        # number can appear after a long horizontal gap instead of at column 0.
+        pat=re.compile(r"(?m)(?:^|[ \\t]{6,})"+re.escape(ordinal)+r"\\.\\s+")
+        matches=list(pat.finditer(text))
+        if not matches:
+            pat2=re.compile(r"(?m)^\\s*"+re.escape(ordinal)+r"\\.\\s*$")
+            matches=list(pat2.finditer(text))
+        if matches:
+            # The first occurrence is often the table of contents; the body copy
+            # appears later. Prefer the last structurally plausible occurrence.
+            m=matches[-1]
+            pos=m.start()
+            hits.append((pos,act))
     hits.sort(key=lambda x:x[0])
     out={}
     for i,(pos,act) in enumerate(hits):
