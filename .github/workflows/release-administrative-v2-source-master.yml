@@ -1,5 +1,5 @@
 name: Release Administrative V2 exact source master
-# exact-v2-publication-policy-final-router
+# exact-v2-publication-policy-final-router-doc
 
 on:
   workflow_dispatch:
