@@ -93,8 +93,18 @@ for src in p.src:
         scripts.append({"url":u,"error":str(e)[:500]})
 
 inline_matches=[]
+inline_snippets=[]
 for block in p.inline:
     inline_matches.extend(strings_of_interest(block))
+    for needle in ["FreeIssue/FreeIssue/freeIssue","freeIssueModuleId","freeIssueApp","freeIssue"]:
+        pos=0
+        while True:
+            pos=block.find(needle,pos)
+            if pos<0: break
+            snippet=" ".join(block[max(0,pos-700):pos+1400].split())
+            if snippet not in inline_snippets:
+                inline_snippets.append(snippet)
+            pos+=len(needle)
 dedup=[]
 for x in inline_matches:
     if x not in dedup: dedup.append(x)
@@ -104,6 +114,7 @@ result={
   "page_tls_verified":tls,
   "page_sha256":hashlib.sha256(raw).hexdigest(),
   "page_inline_matches":dedup[:500],
+  "page_inline_snippets":inline_snippets[:80],
   "same_origin_scripts":scripts,
   "network_errors":errors[-4:]
 }
