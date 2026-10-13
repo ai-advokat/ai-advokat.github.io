@@ -10,13 +10,13 @@ const portal=fs.readFileSync("sluzben-vesnik/index.html","utf8");
 test("GP1 activation is explicit and data promotion stays locked",()=>{
   assert.equal(request.activation_authorized,true);
   assert.equal(request.data_promotion_authorized,false);
-  assert.equal(request.migrations.length,6);
+  assert.equal(request.migrations.length,8);
   assert.match(workflow,/production_schema_migration|Gazette production activation/);
 });
 
 test("GP2 production workflow applies only Gazette migration range",()=>{
-  for(const n of ["0038_","0039_","0040_","0041_","0042_","0043_"]) assert.match(workflow,new RegExp(n));
-  assert.match(workflow,/Unexpected pending migrations/);
+  for(const n of ["0035_","0036_","0038_","0039_","0040_","0041_","0042_","0043_"]) assert.match(workflow,new RegExp(n));
+  assert.match(workflow,/Unexpected pending migrations/);\n  assert.match(workflow,/CATCH-UP MIGRATION INVARIANTS: PASS/);
   assert.match(workflow,/wrangler d1 migrations apply DB --remote/);
 });
 

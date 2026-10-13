@@ -47,6 +47,8 @@ jobs:
           if(d.activation_authorized!==true) throw new Error("Gazette production activation not authorized");
           if(d.decision_id!=="AI_ADVOKAT_GAZETTE_HYBRID_PRODUCTION_ACTIVATION_2026-10-13") throw new Error("Unexpected Gazette decision");
           const expected=[
+            "0035_case_document_download_audit.sql",
+            "0036_zkp_entry_application_metadata_correction.sql",
             "0038_gazette_comprehensive_archive.sql",
             "0039_gazette_act_purpose_metadata.sql",
             "0040_gazette_hybrid_legal_intelligence.sql",
@@ -91,7 +93,99 @@ jobs:
           set -euo pipefail
           npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/gazette-pending.txt
           found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/gazette-pending.txt | sort -u || true)"
-          unexpected="$(printf '%s\n' "$found" | grep -Ev '^(0038_gazette_comprehensive_archive|0039_gazette_act_purpose_metadata|0040_gazette_hybrid_legal_intelligence|0041_gazette_article_chunks|0042_gazette_consolidated_texts|0043_gazette_schema_migration_ledger)\.sql$' | sed '/^$/d' || true)"
+          unexpected="$(printf '%s\n' "$found" | grep -Ev '^(0035_case_document_download_audit|0036_zkp_entry_application_metadata_correction|0038_gazette_comprehensive_archive|0039_gazette_act_purpose_metadata|0040_gazette_hybrid_legal_intelligence|0041_gazette_article_chunks|0042_gazette_consolidated_texts|0043_gazette_schema_migration_ledger)\.sql | sed '/^$/d' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected pending migrations:"
+            echo "$unexpected"
+            exit 1
+          fi
+          echo "Pending Gazette migration guard: PASS"
+
+      - name: Apply Gazette migrations when pending
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq '0035_|0036_|0038_|0039_|0040_|0041_|0042_|0043_' /tmp/gazette-pending.txt; then
+            npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc
+          else
+            echo "Gazette migrations already applied; continuing with schema verification."
+          fi
+
+      - name: Verify catch-up migration invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "PRAGMA table_info(case_audit_events); SELECT effective_date,current_status,human_review_status FROM legal_instruments WHERE canonical_key='mk:zkp'; SELECT version_label,valid_from,is_current,human_review_status FROM instrument_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp') AND version_label='consolidated-reference-through-198/2018-and-CC-193/2016';" | tee /tmp/catchup-invariants.txt
+          grep -q '"name": "event_type"' /tmp/catchup-invariants.txt
+          grep -q '"effective_date": "2010-11-26"' /tmp/catchup-invariants.txt
+          grep -q '"current_status": "pending"' /tmp/catchup-invariants.txt
+          grep -q '"human_review_status": "pending"' /tmp/catchup-invariants.txt
+          grep -q '"valid_from": "2018-10-31"' /tmp/catchup-invariants.txt
+          grep -q '"is_current": 0' /tmp/catchup-invariants.txt
+          echo "CATCH-UP MIGRATION INVARIANTS: PASS"
+
+      - name: Verify Gazette production schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('gazette_issues','gazette_acts','gazette_act_articles','gazette_article_chunks','gazette_consolidated_texts','gazette_act_relationships','gazette_act_effects') ORDER BY name; SELECT COUNT(*) AS runtime_chunks FROM gazette_article_chunks WHERE runtime_eligible=1 AND human_review_status IN ('reviewed','approved') AND superseded=0;"             | tee /tmp/gazette-schema.txt
+          for t in gazette_issues gazette_acts gazette_act_articles gazette_article_chunks gazette_consolidated_texts gazette_act_relationships gazette_act_effects; do
+            grep -q "\"name\": \"$t\"" /tmp/gazette-schema.txt
+          done
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER) BETWEEN 38 AND 43 ORDER BY CAST(version AS INTEGER);" | tee /tmp/gazette-ledger.txt
+          for v in 38 39 40 41 42 43; do grep -q "\"version\": \"$v\"" /tmp/gazette-ledger.txt; done
+          echo "Gazette production schema + migration ledger: PASS"
+
+      - name: Deploy Gazette-enabled production Worker
+        run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/gazette-deploy.txt
+
+      - name: Live Gazette API smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/gazette-hybrid-status" -o /tmp/gazette-status.json
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/gazette-register?limit=20" -o /tmp/gazette-register.json
+          curl --fail --retry 6 --retry-delay 3 --get --data-urlencode "q=член 1" "$BASE/api/gazette-chunks" -o /tmp/gazette-chunks.json
+          node <<'NODE'
+          const s=require("/tmp/gazette-status.json");
+          const r=require("/tmp/gazette-register.json");
+          const c=require("/tmp/gazette-chunks.json");
+          if(!s.ok || s.runtimeConnected!==true) throw new Error("Gazette hybrid status not ready");
+          if(!r.ok) throw new Error("Gazette register not ready");
+          if(!c.ok) throw new Error("Gazette chunk API not ready");
+          if(s.governance?.currentLawFailClosed!==true) throw new Error("Current-law fail-closed gate missing");
+          console.log("LIVE GAZETTE HYBRID API: PASS");
+          console.log("Runtime eligible chunks:",s.counts?.runtimeEligibleChunks||0);
+          NODE
+
+      - name: Verify public portal
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://ai-advokat.github.io/sluzben-vesnik/"
+          curl --fail --retry 12 --retry-delay 5 "$URL" -o /tmp/gazette-portal.html
+          grep -q "HYBRID LEGAL INTELLIGENCE" /tmp/gazette-portal.html
+          grep -q "gazette-hybrid-status" /tmp/gazette-portal.html
+          echo "PUBLIC GAZETTE PORTAL: PASS"
+
+      - name: Upload non-secret activation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gazette-hybrid-production-activation
+          retention-days: 30
+          if-no-files-found: ignore
+          path: |
+            /tmp/gazette-pending.txt
+            /tmp/catchup-invariants.txt
+            /tmp/gazette-schema.txt
+            /tmp/gazette-deploy.txt
+            /tmp/gazette-status.json
+            /tmp/gazette-register.json
+            /tmp/gazette-chunks.json
+            /tmp/gazette-portal.html
+ | sed '/^$/d' || true)"
           if [ -n "$unexpected" ]; then
             echo "Unexpected pending migrations:"
             echo "$unexpected"
