@@ -3986,72 +3986,6 @@ async function governedGazetteChunkContext(env,q){
   return {...bundle,context:gazetteChunksToContext(bundle)};
 }
 
-async function handleGazetteChunks(request,env,url){
-  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
-  const database=await dbStatus(env);
-  if(!database.reachable || !database.schemaReady){
-    return json(request,{ok:false,error:"database_not_ready",database},503);
-  }
-  const q=cleanQuery(url.searchParams.get("q"),400);
-  if(q.length<2) return json(request,{ok:false,error:"query_too_short"},400);
-  const bundle=await findGovernedGazetteChunks(env,q,{limit:Number(url.searchParams.get("limit")||6)});
-  if(bundle.state==="unavailable") return json(request,{ok:false,state:bundle.state,error:"gazette_chunk_runtime_unavailable"},503);
-  return json(request,{
-    ok:true,
-    state:bundle.state,
-    count:bundle.chunks.length,
-    chunks:bundle.chunks,
-    doctrine:{
-      source:"official_gazette",
-      runtimeRequiresHumanGate:true,
-      currentLawRequiresCurrentLawEligible:true,
-      excludesSuperseded:true,
-      unresolvedVersionPolicy:"fail_closed"
-    }
-  });
-}
-
-async function handleGazetteHybridStatus(request,env){
-  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
-  const database=await dbStatus(env);
-  if(!database.reachable || !database.schemaReady){
-    return json(request,{ok:false,error:"database_not_ready",database},503);
-  }
-  try{
-    const [issues,acts,articles,chunks,consolidated]=await Promise.all([
-      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_issues").first(),
-      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_acts").first(),
-      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_act_articles").first(),
-      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN runtime_eligible=1 AND human_review_status IN ('reviewed','approved') AND superseded=0 THEN 1 ELSE 0 END) AS runtime_eligible, SUM(CASE WHEN current_law_eligible=1 AND human_review_status='approved' AND superseded=0 THEN 1 ELSE 0 END) AS current_law_eligible FROM gazette_article_chunks").first(),
-      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN current_law_eligible=1 AND human_review_status='approved' THEN 1 ELSE 0 END) AS current_law_eligible FROM gazette_consolidated_texts").first()
-    ]);
-    return json(request,{
-      ok:true,
-      product:"AI Advokat · Gazette Hybrid Legal Intelligence",
-      runtimeConnected:true,
-      counts:{
-        issues:Number(issues?.n||0),
-        acts:Number(acts?.n||0),
-        articles:Number(articles?.n||0),
-        chunks:Number(chunks?.n||0),
-        runtimeEligibleChunks:Number(chunks?.runtime_eligible||0),
-        currentLawEligibleChunks:Number(chunks?.current_law_eligible||0),
-        consolidatedTexts:Number(consolidated?.n||0),
-        currentLawEligibleConsolidatedTexts:Number(consolidated?.current_law_eligible||0)
-      },
-      governance:{
-        sourceFirst:true,
-        humanGateRequired:true,
-        currentLawFailClosed:true,
-        historicalAndCurrentSeparated:true,
-        consolidatedTextProvenanceRequired:true
-      }
-    });
-  }catch(error){
-    return json(request,{ok:false,error:"gazette_hybrid_schema_not_ready",message:String(error?.message||error).slice(0,180)},503);
-  }
-}
-
 async function handleGazetteRegister(request, env, url) {
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
   const database=await dbStatus(env);
@@ -4157,6 +4091,73 @@ async function handleGazetteRegister(request, env, url) {
     humanGate:"Регистарот е истражувачки индекс. За професионално потпирање отворете го официјалниот извор и проверете ја применливата верзија."
   });
 }
+
+async function handleGazetteChunks(request,env,url){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+  const q=cleanQuery(url.searchParams.get("q"),400);
+  if(q.length<2) return json(request,{ok:false,error:"query_too_short"},400);
+  const bundle=await findGovernedGazetteChunks(env,q,{limit:Number(url.searchParams.get("limit")||6)});
+  if(bundle.state==="unavailable") return json(request,{ok:false,state:bundle.state,error:"gazette_chunk_runtime_unavailable"},503);
+  return json(request,{
+    ok:true,
+    state:bundle.state,
+    count:bundle.chunks.length,
+    chunks:bundle.chunks,
+    doctrine:{
+      source:"official_gazette",
+      runtimeRequiresHumanGate:true,
+      currentLawRequiresCurrentLawEligible:true,
+      excludesSuperseded:true,
+      unresolvedVersionPolicy:"fail_closed"
+    }
+  });
+}
+
+async function handleGazetteHybridStatus(request,env){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+  try{
+    const [issues,acts,articles,chunks,consolidated]=await Promise.all([
+      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_issues").first(),
+      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_acts").first(),
+      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_act_articles").first(),
+      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN runtime_eligible=1 AND human_review_status IN ('reviewed','approved') AND superseded=0 THEN 1 ELSE 0 END) AS runtime_eligible, SUM(CASE WHEN current_law_eligible=1 AND human_review_status='approved' AND superseded=0 THEN 1 ELSE 0 END) AS current_law_eligible FROM gazette_article_chunks").first(),
+      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN current_law_eligible=1 AND human_review_status='approved' THEN 1 ELSE 0 END) AS current_law_eligible FROM gazette_consolidated_texts").first()
+    ]);
+    return json(request,{
+      ok:true,
+      product:"AI Advokat · Gazette Hybrid Legal Intelligence",
+      runtimeConnected:true,
+      counts:{
+        issues:Number(issues?.n||0),
+        acts:Number(acts?.n||0),
+        articles:Number(articles?.n||0),
+        chunks:Number(chunks?.n||0),
+        runtimeEligibleChunks:Number(chunks?.runtime_eligible||0),
+        currentLawEligibleChunks:Number(chunks?.current_law_eligible||0),
+        consolidatedTexts:Number(consolidated?.n||0),
+        currentLawEligibleConsolidatedTexts:Number(consolidated?.current_law_eligible||0)
+      },
+      governance:{
+        sourceFirst:true,
+        humanGateRequired:true,
+        currentLawFailClosed:true,
+        historicalAndCurrentSeparated:true,
+        consolidatedTextProvenanceRequired:true
+      }
+    });
+  }catch(error){
+    return json(request,{ok:false,error:"gazette_hybrid_schema_not_ready",message:String(error?.message||error).slice(0,180)},503);
+  }
+}
+
 
 function handleWebSources(request) {
   if (request.method !== "GET" && request.method !== "HEAD") return methodNotAllowed(request);
