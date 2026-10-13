@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "product": "AI Advokat · Службен весник — сеопфатен хронолошки индекс",
+  "coverage_target": {
+    "from_year": 1944,
+    "through": "present",
+    "dimensions": [
+      "година",
+      "месец",
+      "број на издание",
+      "датум на издание",
+      "назив/тип на акт",
+      "број на акт кога постои",
+      "доносител/издавач",
+      "страница",
+      "член",
+      "став",
+      "точка",
+      "вид на измена",
+      "засегнат пропис",
+      "засегнат член",
+      "датум на влегување во сила",
+      "датум на примена",
+      "официјален URL",
+      "SHA-256/потекло",
+      "Human Gate статус"
+    ]
+  },
+  "official_sources": [
+    {
+      "kind": "free_issue_archive",
+      "title": "ЈП Службен весник — Бесплатен пристап до изданија",
+      "url": "https://www.slvesnik.com.mk/besplaten-pristap-do-izdanija.nspx",
+      "role": "primary_issue_source"
+    },
+    {
+      "kind": "chronological_registers",
+      "title": "ЈП Службен весник — Хронолошки регистри",
+      "url": "https://slvesnik.com.mk/Issues/634836914B1C2C48A528E23A94A0CD4B.pdf/hronoloshki-registri.nspx",
+      "role": "official_act_index",
+      "verified_range": "1991-2025"
+    }
+  ],
+  "eras": [
+    {
+      "from": 1944,
+      "to": 1990,
+      "method": "issue_by_issue_official_archive",
+      "register_support": "not_confirmed_as_public_chronological_register",
+      "status": "planned"
+    },
+    {
+      "from": 1991,
+      "to": 2025,
+      "method": "chronological_register_plus_issue_binding",
+      "register_support": "official_public_pdf_registers",
+      "status": "ready_for_backfill"
+    },
+    {
+      "from": 2026,
+      "to": 2026,
+      "method": "rolling_current_year_issue_index",
+      "register_support": "current_year_until_annual_register_is_published",
+      "status": "rolling"
+    }
+  ],
+  "publication_policy": {
+    "metadata_index_public": true,
+    "official_links_public": true,
+    "bulk_replication_of_gazette": false,
+    "subscriber_content_copied": false,
+    "article_text_publication": "only_if_separately_authorized_and_source-bound",
+    "current_law_label_requires_human_gate": true
+  },
+  "completion_rule": "A year is COMPLETE only when every official issue is accounted for, issue date and source URL are bound, acts are indexed, article-level references are parsed where available, and validation counts reconcile with the official source."
+}
