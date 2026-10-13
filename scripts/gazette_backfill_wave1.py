@@ -62,29 +62,60 @@ def extract_register_links():
             y=int(m.group(1)); out[y]=urljoin(final,href)
     return out
 
-def extract_free_issue_inventory():
-    text, final=fetch_text(FREE_ACCESS_PAGE)
-    p=LinkParser(); p.feed(text)
-    inventory={}
-    # First pass: infer year from explicit year in label/href.
+def _parse_issue_links(page_text, page_url, year_hint=None):
+    p=LinkParser(); p.feed(page_text)
+    rows={}
     for href,label in p.links:
-        im=re.search(r"СЛУЖБЕН\s+ВЕСНИК[^0-9]{0,30}(\d{1,3})\s*$",label,re.I)
+        im=re.search(r"СЛУЖБЕН\s+ВЕСНИК[^0-9]{0,40}(\d{1,3})\s*$",label,re.I)
         if not im: continue
         issue=int(im.group(1))
         ym=re.search(r"(19\d{2}|20\d{2})",label+" "+href)
-        if ym:
-            y=int(ym.group(1))
-            inventory.setdefault(y,{})[issue]={"issue_number":str(issue),"source_url":urljoin(final,href),"label":label}
-    # Second pass: page-order heuristic. Useful when anchors omit year.
+        year=int(ym.group(1)) if ym else year_hint
+        if not year: continue
+        url=urljoin(page_url,href)
+        rows.setdefault(year,{})[issue]={
+            "issue_number":str(issue),
+            "source_url":url,
+            "label":label,
+            "direct_pdf":url.lower().split("?")[0].endswith(".pdf")
+        }
+    return rows
+
+def extract_free_issue_inventory(years=None):
+    text, final=fetch_text(FREE_ACCESS_PAGE)
+    p=LinkParser(); p.feed(text)
+    inventory=_parse_issue_links(text,final)
+    year_links={}
+    for href,label in p.links:
+        if re.fullmatch(r"(19\d{2}|20\d{2})",label.strip()):
+            year=int(label.strip())
+            if href and not href.lower().startswith("javascript:") and href!="#":
+                year_links[year]=urljoin(final,href)
+    requested=sorted(set(years or year_links.keys() or inventory.keys()))
+    for year in requested:
+        if year in year_links:
+            try:
+                ytext,yfinal=fetch_text(year_links[year])
+                parsed=_parse_issue_links(ytext,yfinal,year_hint=year)
+                for y,items in parsed.items():
+                    inventory.setdefault(y,{}).update(items)
+                time.sleep(0.15)
+            except Exception as e:
+                print(f"WARN year page {year}: {e}",file=sys.stderr)
+    # Last-resort ordered-page heuristic for the currently rendered year.
     current_year=None
-    token_iter=iter(p.data_stream)
-    for token in token_iter:
+    for token in p.data_stream:
         if re.fullmatch(r"(19\d{2}|20\d{2})",token):
             current_year=int(token); continue
         m=re.search(r"СЛУЖБЕН\s+ВЕСНИК[^0-9]{0,30}(\d{1,3})\s*$",token,re.I)
         if m and current_year:
             issue=int(m.group(1))
-            inventory.setdefault(current_year,{}).setdefault(issue,{"issue_number":str(issue),"source_url":FREE_ACCESS_PAGE,"label":token})
+            inventory.setdefault(current_year,{}).setdefault(issue,{
+                "issue_number":str(issue),
+                "source_url":FREE_ACCESS_PAGE,
+                "label":token,
+                "direct_pdf":False
+            })
     return {y:list(sorted(rows.values(),key=lambda x:int(x["issue_number"]))) for y,rows in inventory.items()}
 
 TYPE_PATTERNS=[
@@ -153,7 +184,7 @@ def main():
     args=ap.parse_args()
     out=Path(args.out); (out/"registers").mkdir(parents=True,exist_ok=True); (out/"acts").mkdir(exist_ok=True); (out/"issues").mkdir(exist_ok=True); (out/"pdf").mkdir(exist_ok=True); (out/"text").mkdir(exist_ok=True)
     reg_links=extract_register_links()
-    try: issue_inventory=extract_free_issue_inventory()
+    try: issue_inventory=extract_free_issue_inventory(range(args.from_year,args.to_year+1))
     except Exception as e:
         issue_inventory={}; print("WARN free issue inventory:",e,file=sys.stderr)
     summary={"scope":{"from":args.from_year,"to":args.to_year},"register_page":REGISTER_PAGE,"free_access_page":FREE_ACCESS_PAGE,"years":[],"generated_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}
