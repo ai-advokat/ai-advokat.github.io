@@ -1,0 +1,53 @@
+name: Public guides 38-73 release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/generate-public-guides-38-73.py
+      - .github/workflows/public-guides-38-73-release.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PDF dependency
+        run: pip install reportlab
+      - name: Generate governed public guides
+        run: python scripts/generate-public-guides-38-73.py
+      - name: Validate generated release
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.load(open('data/guides.json',encoding='utf-8'))
+          by={str(x.get('guide_no')):x for x in d['records'] if x.get('guide_no')}
+          assert all(str(n) in by for n in range(38,74))
+          for n in range(38,74):
+              r=by[str(n)]
+              assert r.get('bot_runtime_enabled') is True
+              assert r.get('public_pdf')==f'/guides/pdfs/guide-{n}.pdf'
+              assert Path(f'guides/pdfs/guide-{n}.pdf').is_file()
+              assert Path(f'guides/fulltext/{n}-prakticen-vodic/index.html').is_file()
+          print('PASS: 36 governed PDF/fulltext guides + bot metadata')
+          PY
+      - name: Commit generated assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/guides.json data/guide-law-dependencies-2026.json guides/pdfs guides/fulltext
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+          else
+            git commit -m "Release public PDF guides 38-73 with bot context"
+            git push
+          fi
