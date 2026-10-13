@@ -242,8 +242,20 @@
     return guideRegistryPromise;
   }
   async function fetchGuides(){
-    const d=await fetchGuideRegistry();
-    return Array.isArray(d?.records)?d.records:[];
+    const [d,practical]=await Promise.all([
+      fetchGuideRegistry(),
+      fetch("/data/public-practical-guides-38-73.json?v=20261013",{cache:"no-store"})
+        .then(r=>r.ok?r.json():({guides:[]})).catch(()=>({guides:[]}))
+    ]);
+    const records=Array.isArray(d?.records)?d.records:[];
+    const overlay=Array.isArray(practical?.guides)?practical.guides:[];
+    const byId=new Map(records.map(x=>[String(x.id),x]));
+    for(const x of overlay){
+      const id=String(x?.id||"");
+      if(!id) continue;
+      byId.set(id,{...(byId.get(id)||{}),...x});
+    }
+    return [...byId.values()];
   }
 
   async function refreshGuideVaultStatus(){
