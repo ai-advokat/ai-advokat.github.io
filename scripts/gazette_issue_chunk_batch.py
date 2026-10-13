@@ -2,13 +2,27 @@
 import argparse, hashlib, json, re, subprocess, sys, time
 from pathlib import Path
 from urllib.request import Request, urlopen
+from urllib.parse import urlsplit, urlunsplit
 
 UA="AI-Advokat-Gazette-Chunker/1.0 (+source-first; paced official-source audit)"
 
+def _official_host_variants(url):
+    p=urlsplit(url)
+    hosts=[p.netloc]
+    if p.netloc=="slvesnik.com.mk": hosts.append("www.slvesnik.com.mk")
+    elif p.netloc=="www.slvesnik.com.mk": hosts.append("slvesnik.com.mk")
+    return [urlunsplit((p.scheme,h,p.path,p.query,p.fragment)) for h in hosts]
+
 def fetch(url,timeout=120):
-    req=Request(url,headers={"User-Agent":UA,"Accept":"application/pdf,*/*"})
-    with urlopen(req,timeout=timeout) as r:
-        b=r.read(); return b,r.geturl()
+    last=None
+    for candidate in _official_host_variants(url):
+        try:
+            req=Request(candidate,headers={"User-Agent":UA,"Accept":"application/pdf,*/*"})
+            with urlopen(req,timeout=timeout) as r:
+                b=r.read(); return b,r.geturl()
+        except Exception as e:
+            last=e
+    raise last
 
 def sha256_bytes(b): return hashlib.sha256(b).hexdigest()
 
