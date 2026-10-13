@@ -78,10 +78,11 @@ CREATE TABLE IF NOT EXISTS gazette_act_articles (
   human_review_status TEXT NOT NULL DEFAULT 'pending'
     CHECK(human_review_status IN ('pending','reviewed','approved')),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(act_id, article_number, COALESCE(paragraph_number,''), COALESCE(item_number,''))
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS uq_gazette_articles_locator
+  ON gazette_act_articles(act_id, article_number, IFNULL(paragraph_number,''), IFNULL(item_number,''));
 CREATE INDEX IF NOT EXISTS idx_gazette_articles_act
   ON gazette_act_articles(act_id);
 CREATE INDEX IF NOT EXISTS idx_gazette_articles_number
