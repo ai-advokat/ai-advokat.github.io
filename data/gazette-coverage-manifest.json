@@ -23,7 +23,11 @@
       "датум на примена",
       "официјален URL",
       "SHA-256/потекло",
-      "Human Gate статус"
+      "Human Gate статус",
+      "предмет/област на регулирање",
+      "конкретна цел на донесување",
+      "правен проблем што се адресира",
+      "изворна основа за описот на целта"
     ]
   },
   "official_sources": [
@@ -70,7 +74,9 @@
     "bulk_replication_of_gazette": false,
     "subscriber_content_copied": false,
     "article_text_publication": "only_if_separately_authorized_and_source-bound",
-    "current_law_label_requires_human_gate": true
+    "current_law_label_requires_human_gate": true,
+    "act_purpose_must_be_source_grounded": true,
+    "unsupported_purpose_inference": false
   },
   "completion_rule": "A year is COMPLETE only when every official issue is accounted for, issue date and source URL are bound, acts are indexed, article-level references are parsed where available, and validation counts reconcile with the official source."
 }
