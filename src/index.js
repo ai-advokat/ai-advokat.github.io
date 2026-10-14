@@ -21,11 +21,15 @@ import { validateLegalClaim } from "./legal-claim-validator.js";
 import {
   CASE_WORKSPACE_DOCUMENT_LIMIT,
   CASE_WORKSPACE_MAX_FILE_BYTES,
+  CASE_WORKSPACE_MAX_LARGE_FILE_BYTES,
+  CASE_MULTIPART_PART_BYTES,
+  CASE_MULTIPART_MAX_PARTS,
   validateCaseDocumentUploadMetadata,
   caseWorkspacePlanAllowed,
   validateCaseWorkspaceCreate,
   caseWorkspaceId,
   caseWorkspaceStorageReady,
+  caseWorkspaceMultipartReady,
   caseWorkspaceRuntimeState,
   safeCaseWorkspaceView,
   safeCaseAuditMetadata
