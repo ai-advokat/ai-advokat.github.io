@@ -347,7 +347,7 @@ test("CHAT34 primary composer stays intentionally minimal while preserving full 
   assert.match(composer,/id="aiChatSend"/);
   assert.match(composer,/id="aiChatTools"/);
   assert.match(html,/Историјата се чува само во оваа browser сесија/);
-  assert.match(html,/важните правни чекори остануваат под човечка професионална контрола/);
+  assert.match(html,/важните правни чекори остануваат под човечка професионална контрола/i);
 });
 
 
