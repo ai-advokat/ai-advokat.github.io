@@ -97,6 +97,16 @@ function chunks(text){
   for(let i=0;i<clean.length;i+=CHUNK_CHARS) out.push(clean.slice(i,i+CHUNK_CHARS));
   return out;
 }
+function extractApplicationNumbers(text){
+  const sample=String(text||"").slice(0,12000);
+  const values=[];
+  for(const match of sample.matchAll(/\b(\d{1,6})\s*\/\s*(\d{2,4})\b/g)){
+    const raw=match[1]+"/"+match[2];
+    if(!values.includes(raw)) values.push(raw);
+    if(values.length>=12) break;
+  }
+  return values;
+}
 async function main(){
   const outPath=process.argv[2]||"corpus/echr/bureau-mk-fulltext.generated.ndjson";
   const htmlRes=await fetch(INDEX_URL,{headers:{"user-agent":"AI-Advokat/1.0 official-public-corpus-intake"}});
@@ -127,6 +137,7 @@ async function main(){
       if(pdftotext.status!==0) throw new Error("pdftotext failed");
       const text=fs.readFileSync(txt,"utf8").trim();
       if(text.length<100) throw new Error("extracted text too short");
+      const applicationNumbers=extractApplicationNumbers(text);
       const match=bestIndexRecord(link,records,matchedIndexIds,text);
       const matched=match?.record||null;
       if(matched?.chunk_id){
@@ -137,7 +148,8 @@ async function main(){
           score:Math.round(match.score*10000)/10000,
           margin:Math.round(match.margin*10000)/10000,
           duplicate_artifact:match.duplicateArtifact,
-          method:"link_filename_plus_pdf_first_page"
+          method:"link_filename_plus_pdf_first_page",
+          application_numbers:applicationNumbers
         });
         if(match.duplicateArtifact){
           duplicateArtifacts.push({
@@ -166,6 +178,7 @@ async function main(){
         listing_period:matched?.listing_period||null,
         source_url:link.url,
         source_sha256:sha,
+        application_numbers:applicationNumbers,
         source_language:"mk",
         translation_status:"official_domestic_reference_not_echr_authoritative_language",
         hudoc_binding_required:true,
