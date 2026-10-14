@@ -13,6 +13,7 @@ let currentCaseLawCards=[];
 let currentWorkspaceData=null;
 let currentCaseRole="";
 let pendingCaseFiles=[];
+let currentDocuments=[];
 
 function authHeaders(extra={}){
   if(!accessKey) throw new Error("membership_key_required");
@@ -66,6 +67,7 @@ function resetWorkspace(){
   currentWorkspaceData=null;
   currentCaseRole="";
   pendingCaseFiles=[];
+  currentDocuments=[];
   if($("caseFileInput")) $("caseFileInput").value="";
   if($("caseFileSelection")) $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
   setWorkspaceVisible(false);
@@ -92,6 +94,7 @@ async function openCaseById(caseId){
   currentCaseRole=String(data.role||"");
   renderWorkspace(data);
   await loadDocuments();
+  await loadIntelligenceReadiness().catch(()=>{});
   await loadClassifications();
   await loadHumanGate();
   await loadAudit();
@@ -347,10 +350,12 @@ async function loadDocuments(){
   $("documentStatus").textContent="Се вчитуваат приватните документи…";
   try{
     const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/documents");
-    renderDocuments(Array.isArray(data.documents)?data.documents:[]);
+    currentDocuments=Array.isArray(data.documents)?data.documents:[];
+    renderDocuments(currentDocuments);
     $("documentStorageState").textContent="Storage: "+String(data.upload||"unknown")+" · limit "+String(data.documentLimit||20);
     $("documentStatus").textContent="Document registry е освежен.";
   }catch(error){
+    currentDocuments=[];
     renderDocuments([]);
     $("documentStorageState").textContent="Storage: unavailable";
     $("documentStatus").textContent="Документите не се достапни: "+String(error?.message||error);
@@ -451,6 +456,118 @@ async function deletePrivateDocument(row){
 $("refreshDocuments").addEventListener("click",async()=>{
   $("refreshDocuments").disabled=true;
   try{await loadDocuments();}finally{$("refreshDocuments").disabled=false;}
+});
+
+async function loadIntelligenceReadiness(){
+  if(!activeCaseId || !accessKey) return null;
+  const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence");
+  const counts=data.counts||{};
+  $("intelligenceDocs").textContent=String(counts.extracted||0)+"/"+String(counts.registered||0);
+  $("intelligenceEvidence").textContent=data.latestAnalysisAvailable?"analysis ready":"—";
+  $("intelligenceLaw").textContent=data.latestAnalysisAvailable?"see analysis":"—";
+  $("intelligenceStatus").textContent=[
+    "Извлечени "+String(counts.extracted||0)+" од "+String(counts.registered||0)+" документи.",
+    data.latestAnalysisAvailable?"Постои последна приватна анализа.":"Нема завршена cross-document анализа."
+  ].join(" ");
+  return data;
+}
+
+$("refreshIntelligence").addEventListener("click",async()=>{
+  $("refreshIntelligence").disabled=true;
+  try{
+    await loadDocuments();
+    await loadIntelligenceReadiness();
+  }catch(error){
+    $("intelligenceStatus").textContent="Readiness не може да се вчита: "+String(error?.message||error);
+  }finally{
+    $("refreshIntelligence").disabled=false;
+  }
+});
+
+$("analyzeEntireCase").addEventListener("click",async()=>{
+  if(!activeCaseId || !accessKey){
+    $("intelligenceStatus").textContent="Прво отворете предмет.";
+    return;
+  }
+  if(!["owner","lawyer"].includes(currentCaseRole)){
+    $("intelligenceStatus").textContent="Reviewer пристапот е read-only.";
+    return;
+  }
+  $("analyzeEntireCase").disabled=true;
+  $("caseIntelligenceResult").hidden=true;
+  try{
+    await loadDocuments();
+    const active=currentDocuments.filter(row=>String(row.storage_state||"")!=="deleted");
+    if(!active.length) throw new Error("Нема документи за анализа.");
+
+    for(let i=0;i<active.length;i++){
+      const row=active[i];
+      if(String(row.extraction_state||"")==="complete") continue;
+      if(String(row.storage_state||"")!=="uploaded"){
+        throw new Error("Документот „"+String(row.original_name||row.id)+"“ е "+String(row.storage_state||"not ready")+". Големите/quarantined документи мора прво да поминат partitioned extraction.");
+      }
+      $("intelligenceStatus").textContent="Document Intelligence "+(i+1)+"/"+active.length+": "+String(row.original_name||row.id)+"…";
+      try{
+        await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/"+encodeURIComponent(row.id)+"/extract",{method:"POST",body:{}});
+      }catch(error){
+        if(error.code==="case_document_partitioning_required"){
+          throw new Error("Документот „"+String(row.original_name||row.id)+"“ е преголем за single-document analysis и бара partitioned extraction.");
+        }
+        throw error;
+      }
+    }
+
+    $("intelligenceStatus").textContent="Сите достапни документи се извлечени. Се гради evidence graph и правна анализа…";
+    const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence/analyze",{method:"POST",body:{}});
+    $("caseIntelligenceResult").textContent=String(data.analysis||"");
+    $("caseIntelligenceResult").hidden=false;
+    $("intelligenceDocs").textContent=String(data.coverage?.documentCoverage??100)+"%";
+    $("intelligenceEvidence").textContent=data.coverage?.evidenceCoverage==null?"N/A":String(data.coverage.evidenceCoverage)+"%";
+    $("intelligenceLaw").textContent=String(data.coverage?.currentLawVerification||"verification required");
+    $("intelligenceStatus").textContent="WORKING ANALYSIS е подготвена. Professional use останува под Human Gate.";
+    await loadDocuments();
+    await loadHumanGate();
+    await loadAudit();
+  }catch(error){
+    $("intelligenceStatus").textContent="Анализата е запрена безбедносно: "+String(error?.message||error);
+  }finally{
+    $("analyzeEntireCase").disabled=false;
+  }
+});
+
+$("prepareCaseDraft").addEventListener("click",async()=>{
+  if(!activeCaseId || !accessKey){
+    $("caseDraftStatus").textContent="Прво отворете предмет.";
+    return;
+  }
+  if(!["owner","lawyer"].includes(currentCaseRole)){
+    $("caseDraftStatus").textContent="Reviewer пристапот е read-only.";
+    return;
+  }
+  const draftType=$("caseDraftType").value;
+  const instruction=$("caseDraftInstruction").value.trim();
+  if(instruction.length<3){
+    $("caseDraftStatus").textContent="Внесете конкретна задача за поднесокот.";
+    return;
+  }
+  $("prepareCaseDraft").disabled=true;
+  $("caseDraftResult").hidden=true;
+  $("caseDraftStatus").textContent="Се подготвува governed WORKING DRAFT…";
+  try{
+    const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence/draft",{
+      method:"POST",
+      body:{draftType,instruction}
+    });
+    $("caseDraftResult").textContent=String(data.draft||"");
+    $("caseDraftResult").hidden=false;
+    $("caseDraftStatus").textContent="WORKING DRAFT е подготвен. Пред filing/signature/transmission е задолжителен Human Gate.";
+    await loadHumanGate();
+    await loadAudit();
+  }catch(error){
+    $("caseDraftStatus").textContent="Draft не е подготвен: "+String(error?.message||error);
+  }finally{
+    $("prepareCaseDraft").disabled=false;
+  }
 });
 
 async function sha256HexFromBuffer(buffer){

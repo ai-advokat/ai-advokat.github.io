@@ -67,7 +67,7 @@ test("private document vault supports drag drop and multi-file PDF Word image se
   assert.match(js,/image\/webp/);
 });
 
-test("private document batch is capped at 20 files and 25 MB each",()=>{
+test("private document batch is capped at 20 files and 500 MB each",()=>{
   assert.match(html,/до 500 MB по документ · до 20 документи/);
   assert.match(js,/all\.length>20/);
   assert.match(js,/500\*1024\*1024/);
@@ -82,4 +82,33 @@ test("large private files transparently use multipart integrity uploads",()=>{
   assert.match(js,/sha256HexFromBuffer/);
   assert.match(js,/file\.size<=25\*1024\*1024/);
   assert.match(js,/file\.size>500\*1024\*1024/);
+});
+
+
+test("Case Intelligence UI exposes whole-case analysis and governed drafting",()=>{
+  for(const id of [
+    "analyzeEntireCase","refreshIntelligence","intelligenceDocs","intelligenceEvidence","intelligenceLaw",
+    "caseIntelligenceResult","caseDraftType","caseDraftInstruction","prepareCaseDraft","caseDraftResult"
+  ]){
+    assert.match(html,new RegExp('id="'+id+'"'));
+  }
+  assert.match(html,/Case Intelligence Engine/);
+  assert.match(html,/Accuracy-First/);
+  assert.match(html,/WORKING DRAFT/);
+  assert.match(js,/documents\/"\+encodeURIComponent\(row\.id\)\+"\/extract/);
+  assert.match(js,/\/intelligence\/analyze/);
+  assert.match(js,/\/intelligence\/draft/);
+  assert.match(js,/case_document_partitioning_required/);
+  assert.match(js,/Professional use останува под Human Gate/);
+});
+
+test("whole-case UI fails closed if any active document is not source-ready",()=>{
+  const start=js.indexOf('$("analyzeEntireCase").addEventListener');
+  const end=js.indexOf('$("prepareCaseDraft").addEventListener',start);
+  assert.ok(start>0 && end>start);
+  const block=js.slice(start,end);
+  assert.match(block,/storage_state/);
+  assert.match(block,/extraction_state/);
+  assert.match(block,/partitioned extraction/);
+  assert.doesNotMatch(block,/Promise\.all\([^)]*extract/);
 });
