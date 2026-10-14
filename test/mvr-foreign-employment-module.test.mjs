@@ -74,3 +74,17 @@ test("official MVR foreigner-rights page is primary practical source with stale-
   assert.match(html,/Официјален МВР извор · права и постапки на странци/);
   assert.match(html,/зграда на МРТВ, 9 кат/);
 });
+
+
+test("foreigners module is a permanent dedicated portal section",()=>{
+  assert.match(html,/id="foreigners-services"/);
+  assert.match(html,/Престој и вработување на странци/);
+  assert.match(html,/data-foreign-static/);
+  assert.match(html,/>Прв пат<\/button>/);
+  assert.match(html,/>Продолжување<\/button>/);
+  assert.match(html,/Провери документи/);
+  assert.match(html,/Secure Case Workspace/);
+  assert.match(js,/function loadForeignEmploymentPrompt/);
+  assert.match(js,/querySelectorAll\("\[data-foreign-static\]"/);
+  assert.match(js,/scrollIntoView\(\{behavior:"smooth",block:"start"\}\)/);
+});
