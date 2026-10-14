@@ -3169,8 +3169,8 @@
     return T(`од ${start || "—"}${v.validTo ? ` до ${v.validTo} (не вклучувајќи)` : " · без краен датум"}`,`from ${start || "—"}${v.validTo ? ` until ${v.validTo} (exclusive)` : " · no end date"}`);
   }
   function versionCurrencyText(v){
-    if(v.isCurrent && v.humanReviewStatus==="approved") return T("ТЕКОВНА · потврдена преку човечка контрола","CURRENT · confirmed through the човечка контрола");
-    if(v.isCurrent) return T("Означена како тековна, но НЕ е потврдена преку човечка контрола","Marked as current but NOT confirmed through the човечка контрола");
+    if(v.isCurrent && v.humanReviewStatus==="approved") return T("ТЕКОВНА · потврдена преку човечка контрола","CURRENT · confirmed through the Human Gate");
+    if(v.isCurrent) return T("Означена како тековна, но НЕ е потврдена преку човечка контрола","Marked as current but NOT confirmed through the Human Gate");
     return T("Не е потврдена како тековна","Not confirmed as current");
   }
   function citationStatusLabel(c){
