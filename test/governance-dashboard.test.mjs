@@ -30,13 +30,13 @@ describe("Legal Governance Dashboard",()=>{
 
   test("LGD5 evidence architecture is visibly complete",()=>{
     for(const label of [
-      "Source / Provenance",
-      "Legal Evidence Card",
+      "Извор / потекло",
+      "Картичка за правен доказ",
       "Citation & Authority Engine",
       "Legal Claim Validator",
-      "Response Provenance",
-      "Human Gate Ledger",
-      "Audit Trail / Decision History"
+      "Потекло на одговорот",
+      "Регистар на човечка контрола",
+      "Ревизорска трага / историја на одлуки"
     ]) assert.ok(page.includes(label));
   });
 
