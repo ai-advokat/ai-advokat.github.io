@@ -61,3 +61,41 @@ test("CPR6 UI renders a direct private-workspace action",()=>{
   assert.match(ui,/if\(m\.action && typeof m\.action==="object"\)/);
   assert.match(ui,/href\.startsWith\("\/"\)/);
 });
+
+
+test("CPR7 browser preflight stops obvious confidential case text before public chat persistence or network",()=>{
+  assert.match(ui,/function localConfidentialCasePrompt\(value\)/);
+  assert.match(ui,/function confidentialCaseHandoffMessage\(\)/);
+  const sendStart=ui.indexOf("async function send(forcedText=null)");
+  const localGate=ui.indexOf("if(localConfidentialCasePrompt(q))",sendStart);
+  const title=ui.indexOf("setTitle(chat,q)",sendStart);
+  const publicFetch=ui.indexOf('fetch(CHAT_API_BASE+"\/api\/chat"',sendStart);
+  assert.ok(sendStart>0 && localGate>sendStart);
+  assert.ok(title>localGate);
+  assert.ok(publicFetch>title);
+  const localBlock=ui.slice(localGate,title);
+  assert.match(localBlock,/Доверлив правен предмет/);
+  assert.match(localBlock,/чувствителната содржина не е зачувана/);
+  assert.match(localBlock,/return;/);
+  assert.doesNotMatch(localBlock,/guideMatches\(q\)/);
+  assert.doesNotMatch(localBlock,/fetch\(/);
+});
+
+test("CPR8 server fallback scrubs confidential text from public session history",()=>{
+  assert.match(ui,/function scrubConfidentialPublicTurn/);
+  assert.match(ui,/Privacy-redacted/);
+  assert.match(ui,/чувствителната содржина е отстранета од јавната session history/);
+  assert.match(ui,/chat\.title="Доверлив правен предмет"/);
+  const branch=ui.indexOf('d?.error==="confidential_case_workspace_required"');
+  assert.ok(branch>0);
+  const block=ui.slice(branch,branch+1100);
+  assert.match(block,/scrubConfidentialPublicTurn\(\{userIndex,assistantIndex\}\)/);
+  assert.match(block,/guides:\[\]/);
+});
+
+test("CPR9 public UI exposes the private workspace before confidential data entry",()=>{
+  const html=fs.readFileSync("index.html","utf8");
+  assert.match(html,/id="secureCaseWorkspaceCta"/);
+  assert.match(html,/Доверлив предмет\? Отвори Secure Case Workspace/);
+  assert.match(html,/href="\/casepilot-workspace\.html"/);
+});
