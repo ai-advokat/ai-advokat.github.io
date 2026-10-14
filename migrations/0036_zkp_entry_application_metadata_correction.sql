@@ -31,13 +31,11 @@ UPDATE legal_instruments
        notes=CASE
          WHEN instr(COALESCE(notes,''),'Full application from 2013-12-01')>0 THEN notes
          ELSE trim(COALESCE(notes,'') || ' Entry into force: 2010-11-26. Full application from 2013-12-01 after OG 100/2012 Article 2 amended Article 568. OG 51/2011 is a predecessor-law transitional amendment, not a direct amendment of 150/2010.')
-       END,
-       updated_at=CURRENT_TIMESTAMP
+       END
  WHERE canonical_key='mk:zkp';
 
 UPDATE instrument_versions
-   SET valid_from='2018-10-31',
-       updated_at=CURRENT_TIMESTAMP
+   SET valid_from='2018-10-31'
  WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp')
    AND version_label='consolidated-reference-through-198/2018-and-CC-193/2016'
    AND (valid_from IS NULL OR valid_from='2018-10-31')
