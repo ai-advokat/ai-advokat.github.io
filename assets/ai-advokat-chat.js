@@ -568,7 +568,7 @@
       sessionStorage.setItem("aiAdvokatMembershipKey",key);
       sessionStorage.removeItem("ai_advokat_membership_key");
       const m=d.membership||{};
-      if(chatMembershipState) chatMembershipState.textContent="Активен "+String(m.planCode||"professional").toUpperCase()+" · преостанати "+String(m.remaining??"—")+" / "+String(m.monthlyQuota??"—");
+      if(chatMembershipState) chatMembershipState.textContent="Активен owner / "+String(m.planCode||"professional").toUpperCase()+" · преостанати "+String(m.remaining??"—")+" / "+String(m.monthlyQuota??"—");
       if(chatMembershipKey) chatMembershipKey.value="";
     }catch{
       sessionStorage.removeItem("aiAdvokatMembershipKey");
@@ -581,7 +581,7 @@
 
   function syncChatMembershipState(){
     const key=sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
-    if(chatMembershipState) chatMembershipState.textContent=key?"Професионален клуч е активен во оваа сесија.":"Нема активен професионален клуч";
+    if(chatMembershipState) chatMembershipState.textContent=key?"Owner / професионален клуч е активен во оваа сесија.":"Нема активен професионален клуч";
   }
 
 
