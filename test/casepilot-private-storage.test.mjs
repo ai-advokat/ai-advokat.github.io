@@ -9,7 +9,7 @@ import {
 const worker=fs.readFileSync(new URL("../src/index.js",import.meta.url),"utf8");
 
 test("private document metadata accepts bounded PDF Word and common image uploads",()=>{
-  assert.equal(CASE_WORKSPACE_MAX_FILE_BYTES,20*1024*1024);
+  assert.equal(CASE_WORKSPACE_MAX_FILE_BYTES,25*1024*1024);
   assert.equal(validateCaseDocumentUploadMetadata({name:"evidence.pdf",mimeType:"application/pdf",pageCount:"4"}).ok,true);
   assert.equal(validateCaseDocumentUploadMetadata({name:"legacy.doc",mimeType:"application/msword"}).ok,true);
   assert.equal(validateCaseDocumentUploadMetadata({name:"contract.docx",mimeType:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}).ok,true);
