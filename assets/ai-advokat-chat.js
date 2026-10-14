@@ -491,16 +491,94 @@
     }catch{return {ok:false,error:"source_fallback_unavailable"};}
   }
 
+  function localConfidentialCasePrompt(value){
+    const text=String(value||"").normalize("NFKC");
+    if(!text.trim()) return false;
+    const hard=[
+      /(?:ЕМБГ|EMBG|матичен\s+број)/iu,
+      /(?<!\d)\d{13}(?!\d)/u,
+      /(?:лична\s+карта|пасош)\s*(?:бр(?:ој)?\.?|number|no\.?)/iu
+    ].some(rx=>rx.test(text));
+    if(hard) return true;
+
+    const caseSignals=[
+      /предмет\s*:/iu,
+      /оставинск[\p{L}-]*/iu,
+      /тужб[\p{L}-]*/iu,
+      /судск(?:и|а)\s+предмет/iu,
+      /имотен\s+лист/iu,
+      /катастарск(?:а|и|иот)\s+(?:парцела|план|лист|имот)/iu,
+      /КП\s*\.?\s*\d+/iu,
+      /ИЛ\s*\.?\s*\d+/iu,
+      /ОВ\s*\.?\s*бр/iu
+    ].reduce((n,rx)=>n+(rx.test(text)?1:0),0);
+    const contactSignals=[
+      /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu,
+      /(?<!\d)(?:\+?389|0)\s*7\d(?:[\s/-]*\d){6,7}(?!\d)/u,
+      /(?:ул\.?|улица|адреса)\s+[^\n,]{2,80}\s+бр\.?\s*\d+/iu
+    ].reduce((n,rx)=>n+(rx.test(text)?1:0),0);
+    return (caseSignals>=2 && contactSignals>=1) || (text.length>=1200 && caseSignals>=3);
+  }
+
+  function confidentialCaseHandoffMessage(){
+    return {
+      role:"assistant",
+      text:"Ова изгледа како конкретен доверлив правен предмет. Не го испратив преку јавниот AI chat и не ја задржав чувствителната содржина во јавната session history. Отворете Secure Case Workspace, внесете го предметот таму и прикачете ги документите за Case Intelligence анализа.",
+      meta:"Privacy gate · local preflight",
+      guides:[],
+      action:{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"},
+      sourceLabel:"Public chat processing stopped before network/provider execution. Конкретните предмети се обработуваат во приватен case-scoped workspace."
+    };
+  }
+
+  function scrubConfidentialPublicTurn({userIndex,assistantIndex}={}){
+    const chat=current();
+    if(!chat) return;
+    if(Number.isInteger(userIndex) && chat.messages[userIndex]){
+      chat.messages[userIndex]={
+        role:"user",
+        text:"[Доверлив правен предмет — чувствителната содржина е отстранета од јавната session history.]",
+        meta:"Privacy-redacted"
+      };
+    }
+    if(Number.isInteger(assistantIndex) && chat.messages[assistantIndex]){
+      chat.messages[assistantIndex]={...chat.messages[assistantIndex],guides:[]};
+    }
+    chat.title="Доверлив правен предмет";
+    chat.updatedAt=now();
+    save();
+    render();
+  }
+
   async function send(forcedText=null){
     if(abortController) return;
     const q=String(forcedText??input.value).trim();
     if(!q) return;
+
+    if(localConfidentialCasePrompt(q)){
+      input.value="";
+      attachments=[];
+      renderAttachments();
+      autoSize();
+      const chat=current();
+      chat.title="Доверлив правен предмет";
+      addMessage({
+        role:"user",
+        text:"[Доверлив правен предмет — чувствителната содржина не е зачувана во јавниот chat.]",
+        meta:"Privacy-protected"
+      });
+      addMessage(confidentialCaseHandoffMessage());
+      save();
+      return;
+    }
+
     const chat=current();setTitle(chat,q);
     const historyForApi=chat.messages
       .filter(m=>(m.role==="user"||m.role==="assistant") && m.text && m.text!=="Обработувам…")
       .slice(-8)
       .map(m=>({role:m.role,text:String(m.text).slice(0,4000)}));
     const selectedFiles=[...attachments];
+    const userIndex=current().messages.length;
     addMessage({role:"user",text:q,meta:selectedFiles.length?selectedFiles.length+" прилог(а)":""});
     input.value="";attachments=[];renderAttachments();autoSize();
 
@@ -557,12 +635,11 @@
                       :(d.webSearchUsed===true?"External legal research · Web извори":"GPT general/proactive assistance")
         });
       }else if(d?.error==="confidential_case_workspace_required"){
+        scrubConfidentialPublicTurn({userIndex,assistantIndex});
         updateAssistantPlaceholder(assistantIndex,{
-          text:d?.message||"Ова изгледа како конкретен доверлив правен предмет. Користете Secure Case Workspace.",
-          meta:"Privacy gate · public GPT call stopped",
-          guides:[],
-          action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"},
-          sourceLabel:"Барањето е запрено пред public GPT/provider execution. За конкретни предмети користете приватен case-scoped workspace."
+          ...confidentialCaseHandoffMessage(),
+          meta:"Privacy gate · server preflight · public GPT call stopped",
+          action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"}
         });
       }else if(d?.error==="gpt_provider_locked"){
         const fallback=selectedFiles.length?{ok:false,error:"attachments_need_gpt"}:await fallbackSourceAssistant(q);
