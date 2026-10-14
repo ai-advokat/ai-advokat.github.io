@@ -29,9 +29,22 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
-          curl --fail-with-body --retry 5 --retry-delay 3 "$BASE/api/gazette-hybrid-status" -o /tmp/status.json
-          curl --fail-with-body --retry 5 --retry-delay 3 "$BASE/api/gazette-register?limit=20" -o /tmp/register.json
-          curl --fail-with-body --retry 5 --retry-delay 3 --get --data-urlencode "q=член 1" "$BASE/api/gazette-chunks" -o /tmp/chunks.json
+          fetch_json() {
+            name="$1"
+            url="$2"
+            shift 2
+            code="$(curl -sS --retry 5 --retry-delay 3 -w "%{http_code}" -o "/tmp/$name.json" "$@" "$url")"
+            echo "$name HTTP $code"
+            if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+              echo "--- $name response body ---"
+              cat "/tmp/$name.json" || true
+              echo
+              return 1
+            fi
+          }
+          fetch_json status "$BASE/api/gazette-hybrid-status"
+          fetch_json register "$BASE/api/gazette-register?limit=20"
+          fetch_json chunks "$BASE/api/gazette-chunks" --get --data-urlencode "q=член 1"
           node - <<'NODE'
           const fs=require("fs");
           const s=JSON.parse(fs.readFileSync("/tmp/status.json","utf8"));
