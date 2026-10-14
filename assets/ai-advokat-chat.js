@@ -369,7 +369,8 @@
     });
   }
   function inferredMime(file){
-    if(file?.type) return file.type;
+    const declared=String(file?.type||"").toLowerCase();
+    if(declared && declared!=="application/octet-stream") return declared;
     const name=String(file?.name||"").toLowerCase();
     if(name.endsWith(".pdf")) return "application/pdf";
     if(name.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
