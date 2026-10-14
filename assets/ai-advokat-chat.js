@@ -10,6 +10,8 @@
   const sendBtn=$("#aiChatSend");
   const stopBtn=$("#aiChatStop");
   const attachBtn=$("#aiChatAttach");
+  const attachWideBtn=$("#aiChatAttachWide");
+  const attachmentCount=$("#aiChatAttachmentCount");
   const fileInput=$("#aiChatFiles");
   const attachmentsEl=$("#aiChatAttachments");
   const dropZone=$("#aiChatDropZone");
@@ -435,6 +437,7 @@
 
   function renderAttachments(){
     attachmentsEl.replaceChildren();
+    if(attachmentCount) attachmentCount.textContent=attachments.length+" / "+CHAT_ATTACHMENT_LIMIT;
     attachments.forEach((a,i)=>{
       const chip=document.createElement("div");chip.className="ai-chat-attachment";
       const icon=document.createElement("span");icon.textContent=(a.type||"").startsWith("image/")?"🖼️":"📎";
@@ -495,9 +498,9 @@
     renderAttachments();
     if(dropHint){
       const suffix=rejected.length ? ` · одбиени: ${rejected.join(", ")}` : "";
-      dropHint.textContent=`Прикачени: ${attachments.length}/${CHAT_ATTACHMENT_LIMIT}${suffix}`;
+      dropHint.textContent=`Прикачени: ${attachments.length}/${CHAT_ATTACHMENT_LIMIT}${suffix} · можете да додадете уште документи`;
       setTimeout(()=>{
-        if(dropHint) dropHint.textContent="Повлечете PDF, Word или слика тука · или притиснете + за избор од уред/датотечен провајдер";
+        if(dropHint) dropHint.textContent="Повлечете до 20 PDF/Word/слики тука · или користете го копчето „Прикачи документи“";
       },2600);
     }
   }
@@ -509,6 +512,7 @@
   syncChatMembershipState();
 
   attachBtn.addEventListener("click",()=>fileInput.click());
+  if(attachWideBtn) attachWideBtn.addEventListener("click",()=>fileInput.click());
   fileInput.addEventListener("change",()=>{
     addAttachmentFiles(fileInput.files,{source:"picker"});
     fileInput.value="";
