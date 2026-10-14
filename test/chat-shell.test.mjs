@@ -433,7 +433,7 @@ test("CHAT38 visible multi-upload control exposes the 20-document contract",()=>
   assert.match(html,/id="aiChatAttachmentCount"/);
   assert.match(chatJs,/attachWideBtn/);
   assert.match(chatJs,/attachmentCount\.textContent=attachments\.length\+" \/ "\+CHAT_ATTACHMENT_LIMIT/);
-  assert.match(html,/20261015-owner-upload-v2/);
+  assert.match(html,/20261015-free-open-v1/);
 });
 
 
