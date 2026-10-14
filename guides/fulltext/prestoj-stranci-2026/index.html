@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="index,follow">
+<title>Проширен адвокатски прирачник — престој и работа на странци | AI Advokat</title>
+<style>
+:root{--bg:#f4f6f8;--surface:#fff;--ink:#132033;--muted:#56667a;--line:#d9e0e7;--navy:#0c2038;--gold:#b9985b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}
+a{color:inherit}.wrap{width:min(100% - 32px,980px);margin:auto}.top{background:var(--navy);color:#fff;padding:18px 0}.top a{text-decoration:none}.hero{padding:46px 0 26px}.tag{font-size:.78rem;font-weight:800;letter-spacing:.1em;color:#7b632f}.hero h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.02;margin:.35rem 0 1rem}.meta,.notice{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;margin:18px 0}.notice{border-left:4px solid var(--gold)}.actions{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.btn{display:inline-block;padding:11px 14px;border-radius:10px;text-decoration:none;font-weight:750;background:var(--surface);border:1px solid var(--line)}.btn.primary{background:var(--gold);border-color:var(--gold)}#guideText{white-space:pre-wrap;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 8px 28px rgba(12,32,56,.06);font-family:inherit;overflow-wrap:anywhere}.muted{color:var(--muted)}footer{padding:34px 0;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a href="/">← AI Advokat</a></div></header>
+<main class="wrap">
+<section class="hero">
+<span class="tag">ПРОФЕСИОНАЛЕН ПРАВЕН ВОДИЧ · HUMAN GATE</span>
+<h1>Проширен адвокатски прирачник — привремен престој и работа на странци</h1>
+<p class="muted">Вработување · самовработување · прво одобрување · продолжување · контролни листи · адвокатски обрасци</p>
+<div class="actions">
+<a class="btn primary" href="/#foreigners-services">🛂 Отвори модул за странци</a>
+<a class="btn" href="/casepilot-workspace.html">🔒 Secure Case Workspace</a>
+</div>
+</section>
+<div class="notice"><strong>Правно ограничување.</strong> Овој документ е професионален работен модел, а не службен образец на МВР. Пред конкретно поднесување мора да се потврдат важечките закони, правилници, формулари, тарифи, рокови и индивидуални услови.</div>
+<div class="meta" id="meta">Се вчитува provenance…</div>
+<pre id="guideText">Се вчитува целосниот текст…</pre>
+</main>
+<footer><div class="wrap">AI Advokat · секундарен професионален материјал под човечка контрола</div></footer>
+<script>
+fetch("/data/mvr-foreign-employment-checklists.json?v=20261014-handbook-v1",{cache:"no-store"})
+.then(r=>r.ok?r.json():Promise.reject(new Error("load")))
+.then(d=>{
+ const g=d.professional_guide||{};
+ document.getElementById("meta").textContent=[
+   "Редакциски пресек: "+(g.editorial_cutoff||"—"),
+   "Страници: "+(g.pages||"—"),
+   "SHA-256: "+(g.source_sha256||"—"),
+   "Статус: секундарен професионален водич · Human Gate задолжителен",
+   "PDF: точниот извор е fingerprint-регистриран; јавниот binary asset сè уште не е врзан во repository."
+ ].join(" · ");
+ document.getElementById("guideText").textContent=g.full_text||"Целосниот текст не е достапен.";
+})
+.catch(()=>{
+ document.getElementById("meta").textContent="Не може да се вчита provenance.";
+ document.getElementById("guideText").textContent="Водичот моментално не може да се вчита.";
+});
+</script>
+</body>
+</html>
