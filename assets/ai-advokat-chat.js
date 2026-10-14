@@ -638,7 +638,7 @@
         scrubConfidentialPublicTurn({userIndex,assistantIndex});
         updateAssistantPlaceholder(assistantIndex,{
           ...confidentialCaseHandoffMessage(),
-          meta:"Privacy gate · server preflight · public GPT call stopped",
+          meta:"Privacy gate · public GPT call stopped · server preflight",
           guides:[],
           action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"}
         });
