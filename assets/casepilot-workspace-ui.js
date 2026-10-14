@@ -114,10 +114,16 @@ $("loadCases").addEventListener("click",async()=>{
   $("accessStatus").textContent="Се вчитуваат вашите Secure Case Workspaces…";
   try{
     const data=await api("/api/cases");
-    renderCasePicker(Array.isArray(data.cases)?data.cases:[]);
+    const cases=Array.isArray(data.cases)?data.cases:[];
+    renderCasePicker(cases);
     $("casePickerCard").classList.remove("hidden");
     $("createCaseCard").classList.remove("hidden");
-    $("accessStatus").textContent="Пристапот е потврден. Изберете предмет или креирајте нов.";
+    if(cases.length){
+      $("accessStatus").textContent="Пристапот е потврден. Изберете постоечки предмет или креирајте нов.";
+    }else{
+      $("accessStatus").textContent="Пристапот е потврден. Немате активни предмети — креирајте нов Secure Case Workspace подолу.";
+      $("createCaseCard").scrollIntoView({behavior:"smooth",block:"start"});
+    }
   }catch(error){
     resetWorkspace();
     $("casePickerCard").classList.add("hidden");
@@ -126,6 +132,20 @@ $("loadCases").addEventListener("click",async()=>{
     $("accessStatus").textContent="Не може да се вчитаат предметите: "+String(error?.message||error);
   }finally{
     $("loadCases").disabled=false;
+  }
+});
+
+$("membershipKey").addEventListener("keydown",event=>{
+  if(event.key==="Enter"){
+    event.preventDefault();
+    $("loadCases").click();
+  }
+});
+
+$("caseId").addEventListener("keydown",event=>{
+  if(event.key==="Enter"){
+    event.preventDefault();
+    $("openCase").click();
   }
 });
 
@@ -229,7 +249,7 @@ $("createCase").addEventListener("click",async()=>{
       }
     });
     const newCase=data.case||{};
-    $("createCaseStatus").textContent="Предметот е креиран. Document ingestion останува заклучен додека private storage gate не е активен.";
+    $("createCaseStatus").textContent="Предметот е креиран и отворен. Private Document Vault е достапен; upload и Case Intelligence остануваат под provenance и Human Gate контроли.";
     $("newCaseTitle").value="";
     $("newClientReference").value="";
     $("newLegalArea").value="";
