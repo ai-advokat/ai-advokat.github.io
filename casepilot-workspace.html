@@ -21,6 +21,7 @@
     .metric{padding:14px;border:1px solid var(--line);border-radius:14px}.metric b{display:block;font-size:1.1rem}.metric span{color:var(--muted);font-size:.85rem}.statusline{margin-top:10px;font-size:.9rem}
     table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#eef2f5}.scroll{overflow:auto}
     .file-drop{border:1.5px dashed var(--line);border-radius:14px;padding:16px;background:#f9fbfc;transition:.18s ease}.file-drop.dragover{border-color:var(--gold);background:var(--goldsoft)}.file-drop strong{display:block}.file-drop .selection{margin-top:8px;font-size:.86rem;color:var(--muted);word-break:break-word}
+    .analysis-output{white-space:pre-wrap;word-break:break-word;border:1px solid var(--line);border-radius:14px;background:#f8fafb;padding:16px;max-height:720px;overflow:auto;font:0.88rem/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}.analysis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
     .hidden{display:none!important}.pill{display:inline-flex;padding:4px 8px;border:1px solid var(--line);border-radius:999px;font-size:.78rem;font-weight:700}
     footer{padding:30px 0 45px;color:var(--muted);font-size:.88rem}
     @media(max-width:800px){.grid2,.grid3{grid-template-columns:1fr}}
@@ -147,7 +148,50 @@
     </section>
 
     <section class="card">
-      <h2>4. Governed Case Law Research</h2>
+      <h2>4. Case Intelligence Engine</h2>
+      <p class="muted">Го анализира целиот приватен предмет како единствен доказен record: документи → факти → хронологија → имот/лица/договори → контрадикции → missing evidence → применливо право → reviewed case law → стратегија. Секој материјален факт мора да остане врзан за Document ID и page/locator.</p>
+      <div class="notice"><b>Accuracy-First</b>AI Advokat не прикажува измислен „99,99% успех“. Наместо тоа покажува Evidence Coverage, Current-Law Verification, контрадикции и празнини во доказите. Секој резултат е WORKING ANALYSIS додека Human Gate не е одобрен.</div>
+      <div class="actions">
+        <button id="analyzeEntireCase" class="primary" type="button">Анализирај го целиот предмет</button>
+        <button id="refreshIntelligence" class="secondary" type="button">Освежи readiness</button>
+      </div>
+      <p id="intelligenceStatus" class="statusline muted" aria-live="polite"></p>
+      <div class="analysis-grid">
+        <div class="metric"><b id="intelligenceDocs">—</b><span>извлечени документи</span></div>
+        <div class="metric"><b id="intelligenceEvidence">—</b><span>evidence coverage</span></div>
+        <div class="metric"><b id="intelligenceLaw">—</b><span>current-law verification</span></div>
+      </div>
+      <pre id="caseIntelligenceResult" class="analysis-output" hidden></pre>
+
+      <hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
+      <h3>Подготви работен поднесок</h3>
+      <div class="grid2">
+        <div>
+          <label for="caseDraftType">Тип</label>
+          <select id="caseDraftType">
+            <option value="lawsuit">Тужба</option>
+            <option value="appeal">Жалба</option>
+            <option value="objection">Приговор</option>
+            <option value="motion">Предлог / поднесок</option>
+            <option value="request">Барање</option>
+            <option value="legal_opinion">Правно мислење</option>
+            <option value="hearing_plan">План за рочиште</option>
+            <option value="evidence_request">Барање за докази</option>
+            <option value="registry_request">Барање до регистар / Катастар</option>
+          </select>
+        </div>
+        <div>
+          <label for="caseDraftInstruction">Конкретна задача</label>
+          <textarea id="caseDraftInstruction" maxlength="3000" placeholder="На пр. Подготви тужба за утврдување право на сопственост врз основа на приложените документи."></textarea>
+        </div>
+      </div>
+      <div class="actions"><button id="prepareCaseDraft" class="gold" type="button">Подготви WORKING DRAFT</button></div>
+      <p id="caseDraftStatus" class="statusline muted" aria-live="polite"></p>
+      <pre id="caseDraftResult" class="analysis-output" hidden></pre>
+    </section>
+
+    <section class="card">
+      <h2>5. Governed Case Law Research</h2>
       <label for="researchQuery">Правно прашање</label>
       <textarea id="researchQuery" placeholder="Пример: притвор, нужност и поблага мерка според ЗКП"></textarea>
       <div class="actions"><button id="researchCaseLaw" class="primary" type="button">Пребарај</button></div>
@@ -161,7 +205,7 @@
     </section>
 
     <section class="card">
-      <h2>5. Адвокатска класификација</h2>
+      <h2>6. Адвокатска класификација</h2>
       <p class="muted">Се зачувува како приватен case-scoped work product. Не го менува статусот или правната тежина на пресудата.</p>
       <div class="grid2">
         <div>
@@ -187,7 +231,7 @@
     </section>
 
     <section class="card">
-      <h2>6. Активни класификации</h2>
+      <h2>7. Активни класификации</h2>
       <div class="scroll">
         <table>
           <thead><tr><th>Улога</th><th>Суд / предмет</th><th>Issue</th><th>Образложение</th><th>Класифицирал</th><th>Извор</th></tr></thead>
@@ -197,7 +241,7 @@
     </section>
 
     <section class="card">
-      <h2>7. Professional Human Gate</h2>
+      <h2>8. Professional Human Gate</h2>
       <p class="muted">Одлуката е експлицитна, append-only и врзана за server-computed fingerprint на тековниот предмет. Нова релевантна промена го поништува старото одобрување за professional export.</p>
       <div class="grid2">
         <div>
@@ -222,7 +266,7 @@
     </section>
 
     <section class="card">
-      <h2>8. Governed Export Center</h2>
+      <h2>9. Governed Export Center</h2>
       <p class="muted">Export-от секогаш поминува низ server-side CasePilot provenance. Ако professional Human Gate е заклучен, излезот е WORKING COPY. Оваа страница не може сама да го отклучи Human Gate.</p>
       <label for="exportSummary">Краток работен резиме</label>
       <textarea id="exportSummary" maxlength="20000" placeholder="Опционално резиме за работниот пакет."></textarea>
@@ -235,7 +279,7 @@
     </section>
 
     <section class="card">
-      <h2>9. Audit Trail</h2>
+      <h2>10. Audit Trail</h2>
       <p class="muted">Приказ на последните case-scoped audit events. Не содржи document body.</p>
       <div class="actions"><button id="refreshAudit" class="secondary" type="button">Освежи audit</button></div>
       <div class="scroll" style="margin-top:12px">
