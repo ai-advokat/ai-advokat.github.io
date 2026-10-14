@@ -54,14 +54,41 @@ function pdfLinks(html){
   }
   return [...new Map(out.map(x=>[x.url,x])).values()];
 }
-function bestIndexRecord(link,records){
-  const seed=[link.anchorText,link.filename.replace(/\.pdf$/i,"")].filter(Boolean).join(" ");
-  let best=null,bestScore=0;
-  for(const record of records){
-    const score=similarity(seed,record.title);
-    if(score>bestScore){bestScore=score;best=record;}
-  }
-  return bestScore>=0.34 ? best : null;
+function listingYear(value){
+  const m=String(value||"").match(/\b(20\d{2}|19\d{2})\b/);
+  return m?m[1]:null;
+}
+function candidateScore(seed,record){
+  const base=similarity(seed,record.title);
+  const seedYear=listingYear(seed);
+  const recordYear=listingYear(record.listing_period);
+  const yearBonus=seedYear&&recordYear&&seedYear===recordYear ? 0.10 : 0;
+  const a=new Set(titleTokens(seed));
+  const b=new Set(titleTokens(record.title));
+  const intersection=[...a].filter(x=>b.has(x)).length;
+  const union=new Set([...a,...b]).size||1;
+  const jaccard=intersection/union;
+  return Math.max(base,0.65*base+0.35*jaccard)+yearBonus;
+}
+function bestIndexRecord(link,records,usedIds=new Set()){
+  const seed=[link.anchorText,decodeURIComponent(link.filename||"").replace(/\.pdf$/i,"")].filter(Boolean).join(" ");
+  // Rank against ALL records. Never remove an already-used true candidate, because
+  // doing so can make an unrelated unused record appear to be the best match.
+  const ranked=records
+    .map(record=>({record,score:candidateScore(seed,record)}))
+    .sort((a,b)=>b.score-a.score);
+  const first=ranked[0]||null;
+  const second=ranked[1]||null;
+  if(!first) return null;
+  const margin=first.score-(second?.score||0);
+  // Fail closed: require both a meaningful score and separation from the runner-up.
+  if(first.score<0.33 || margin<0.035) return null;
+  return {
+    record:first.record,
+    score:first.score,
+    margin,
+    duplicateArtifact:Boolean(first.record?.chunk_id && usedIds.has(first.record.chunk_id))
+  };
 }
 function chunks(text){
   const clean=String(text||"").replace(/\r/g,"").replace(/[ \t]+\n/g,"\n").replace(/\n{4,}/g,"\n\n\n").trim();
@@ -81,6 +108,7 @@ async function main(){
   const out=[];
   const matchedIndexIds=new Set();
   const processedPdfHashes=new Set();
+  const duplicateArtifacts=[];
   const failures=[];
   let processed=0,failed=0;
   for(const [i,link] of links.entries()){
@@ -97,8 +125,21 @@ async function main(){
       if(pdftotext.status!==0) throw new Error("pdftotext failed");
       const text=fs.readFileSync(txt,"utf8").trim();
       if(text.length<100) throw new Error("extracted text too short");
-      const matched=bestIndexRecord(link,records);
-      if(matched?.chunk_id) matchedIndexIds.add(matched.chunk_id);
+      const match=bestIndexRecord(link,records,matchedIndexIds);
+      const matched=match?.record||null;
+      if(matched?.chunk_id){
+        if(match.duplicateArtifact){
+          duplicateArtifacts.push({
+            chunk_id:matched.chunk_id,
+            title:matched.title,
+            source_url:link.url,
+            score:Math.round(match.score*10000)/10000,
+            margin:Math.round(match.margin*10000)/10000
+          });
+        }else{
+          matchedIndexIds.add(matched.chunk_id);
+        }
+      }
       processedPdfHashes.add(sha);
       const title=matched?.title || link.anchorText || link.filename.replace(/\.pdf$/i,"");
       const pieces=chunks(text);
@@ -154,6 +195,7 @@ async function main(){
     fulltext_chunks:out.length,
     matched_index_records:matchedIndexIds.size,
     unmatched_index_records:unmatchedIndexRecords,
+    duplicate_artifacts:duplicateArtifacts,
     failures,
     governance:{
       human_review_status:"pending",
@@ -171,6 +213,7 @@ async function main(){
     indexRecords:records.length,
     matchedIndexRecords:matchedIndexIds.size,
     unmatchedIndexRecords:unmatchedIndexRecords.length,
+    duplicateArtifacts:duplicateArtifacts.length,
     manifestPath,
     outPath
   }));
