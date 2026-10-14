@@ -120,9 +120,19 @@ jobs:
             exit 1
           fi
           grep -q 'workersAI: env.AI ? "bound" : "not_bound"' src/index.js
-          if grep -q '"ai"[[:space:]]*:' wrangler.jsonc; then
-            echo "Production wrangler.jsonc must not bind Workers AI before governed production activation"
-            exit 1
-          fi
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          if(c.ai){
+            const req=JSON.parse(fs.readFileSync(".github/activation/gpt-production-request.json","utf8"));
+            const free=req.last_redeploy||{};
+            if(c.ai.binding!=="AI") throw new Error("Unexpected Workers AI binding");
+            if(c.vars?.FREE_CHAT_PROVIDER!=="workers_ai") throw new Error("Workers AI bound without FREE provider contract");
+            if(c.vars?.WORKERS_AI_MARKDOWN_ENABLED!=="true") throw new Error("Workers AI Markdown conversion not armed");
+            if(free.free_provider!=="workers_ai" || free.human_gate_preserved!==true || free.current_law_human_gate_preserved!==true || free.no_governance_weakening!==true){
+              throw new Error("Workers AI binding lacks governed activation evidence");
+            }
+          }
+          NODE
           grep -q 'vectorize: "not_bound"' src/index.js
           echo "Public-data boundary checks: PASS"
