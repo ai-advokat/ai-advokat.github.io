@@ -1,0 +1,55 @@
+name: Gazette live smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/index.js"
+      - "sluzben-vesnik/**"
+      - ".github/workflows/gazette-live-smoke.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gazette-live-smoke
+  cancel-in-progress: true
+
+jobs:
+  live-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Wait briefly for Worker propagation
+        run: sleep 12
+
+      - name: Verify live Gazette APIs
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail-with-body --retry 5 --retry-delay 3 "$BASE/api/gazette-hybrid-status" -o /tmp/status.json
+          curl --fail-with-body --retry 5 --retry-delay 3 "$BASE/api/gazette-register?limit=20" -o /tmp/register.json
+          curl --fail-with-body --retry 5 --retry-delay 3 --get --data-urlencode "q=член 1" "$BASE/api/gazette-chunks" -o /tmp/chunks.json
+          node - <<'NODE'
+          const fs=require("fs");
+          const s=JSON.parse(fs.readFileSync("/tmp/status.json","utf8"));
+          const r=JSON.parse(fs.readFileSync("/tmp/register.json","utf8"));
+          const c=JSON.parse(fs.readFileSync("/tmp/chunks.json","utf8"));
+          if(!s.ok || s.runtimeConnected!==true) throw new Error("hybrid status not ready");
+          if(s.governance?.currentLawFailClosed!==true) throw new Error("current-law fail-closed missing");
+          if(!r.ok || r.mode!=="read_only_gazette_provenance_register") throw new Error("gazette register not ready");
+          if(!c.ok) throw new Error("gazette chunks endpoint not ready");
+          if(c.doctrine?.runtimeRequiresHumanGate!==true) throw new Error("chunk Human Gate missing");
+          console.log(JSON.stringify({hybrid:s.counts,registerCount:r.count,chunkState:c.state,chunkCount:c.count},null,2));
+          NODE
+
+      - name: Verify public Gazette portal
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --retry 5 --retry-delay 3 "https://ai-advokat.github.io/sluzben-vesnik/" -o /tmp/portal.html
+          grep -q "Службен весник — регистар на правни верзии и измени" /tmp/portal.html
+          grep -q "/api/gazette-register" /tmp/portal.html
+          grep -q "Hybrid production" /tmp/portal.html
+          echo "GAZETTE LIVE SMOKE: PASS"
