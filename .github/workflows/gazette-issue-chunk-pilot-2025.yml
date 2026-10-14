@@ -77,7 +77,7 @@ jobs:
           rows=[json.loads(line) for line in lines]
           keys=[x["chunk_key"] for x in rows]
           assert len(keys)==len(set(keys)), (len(keys),len(set(keys)))
-          exact=sum(1 for x in rows if x.get("boundary_method")=="act_ordinal_marker")
+          exact=sum(1 for x in rows if x.get("boundary_method") in {"act_ordinal_marker","act_title_anchor"})
           fallback=sum(1 for x in rows if x.get("boundary_method")=="page_fallback")
           assert exact>0, {"exact":exact,"fallback":fallback}
           for x in rows[:25]:

@@ -85,28 +85,46 @@ def extract_full_issue(pdf,out):
     rc,_,err=run(["pdftotext","-layout",str(pdf),str(out)])
     return rc,err
 
+def _title_anchor_pattern(title,min_tokens=6,max_tokens=14):
+    # Register ordinals are annual-index ordinals and are not guaranteed to be
+    # printed as body markers inside the individual Gazette issue. For an exact
+    # secondary anchor, require a substantial sequence of title words from the
+    # official register and tolerate only layout/punctuation separators.
+    words=[w for w in re.findall(r"[0-9A-Za-zА-Яа-яЀ-ӿ]+",str(title)) if len(w)>=2]
+    if len(words)<min_tokens:
+        return None
+    words=words[:max_tokens]
+    sep=r"(?:[\\s,.:;()\\[\\]{}'\"„“”«»/\\\\\\-–—]+)"
+    return re.compile(sep.join(re.escape(w) for w in words),re.I|re.M)
+
 def find_act_boundaries(text, acts):
     hits=[]
+    methods={}
     for act in acts:
         ordinal=str(act["ordinal"])
-        # Gazette PDFs are often extracted from two columns, so a printed act
-        # number can appear after a long horizontal gap instead of at column 0.
+        # First prefer a literal body ordinal when the issue really prints it.
         pat=re.compile(r"(?m)(?:^|[ \\t]{6,})"+re.escape(ordinal)+r"\\.\\s+")
         matches=list(pat.finditer(text))
         if not matches:
             pat2=re.compile(r"(?m)^\\s*"+re.escape(ordinal)+r"\\.\\s*$")
             matches=list(pat2.finditer(text))
+        method="act_ordinal_marker"
+        if not matches:
+            title_pat=_title_anchor_pattern(act.get("title",""))
+            matches=list(title_pat.finditer(text)) if title_pat else []
+            method="act_title_anchor"
         if matches:
-            # The first occurrence is often the table of contents; the body copy
-            # appears later. Prefer the last structurally plausible occurrence.
+            # Contents/index copies often occur before the actual body. Prefer
+            # the last exact structural/title occurrence in the issue.
             m=matches[-1]
             pos=m.start()
             hits.append((pos,act))
+            methods[int(act["ordinal"])]=method
     hits.sort(key=lambda x:x[0])
     out={}
     for i,(pos,act) in enumerate(hits):
         end=hits[i+1][0] if i+1<len(hits) else len(text)
-        out[int(act["ordinal"])]=(pos,end)
+        out[int(act["ordinal"])]=(pos,end,methods[int(act["ordinal"])])
     return out
 
 ARTICLE_RE=re.compile(r"(?m)^\s*Член\s+([0-9]+(?:\s*[-–—]\s*[А-Яа-яA-Za-z]+)?)\s*$")
@@ -205,7 +223,7 @@ def main():
                 boundary=boundaries.get(int(a["ordinal"]))
                 if boundary:
                     text=full_text[boundary[0]:boundary[1]].strip()
-                    boundary_method="act_ordinal_marker"
+                    boundary_method=boundary[2]
                 else:
                     txt=out/"text"/f"{issue_no}-{a['ordinal']}.txt"
                     rc,err=extract_pages(pdf,start,end,txt)
