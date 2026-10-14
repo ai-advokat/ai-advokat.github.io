@@ -63,3 +63,14 @@ test("Nexa immigration.mk is governed as secondary comparison source only",()=>{
   assert.match(js,/secondary_sources:data\.secondary_sources/);
   assert.match(html,/Секундарен практичен извор:/);
 });
+
+test("official MVR foreigner-rights page is primary practical source with stale-text guard",()=>{
+  const src=data.official_sources.mvr_foreigner_rights_instructions;
+  assert.equal(src.institution,"Министерство за внатрешни работи");
+  assert.equal(src.published_document_sets.length,6);
+  assert.ok(src.published_document_sets.some(x=>x.topic==="Вработување"&&x.variants.includes("прв пат")&&x.variants.includes("продолжување")));
+  assert.match(src.page_notice.stale_text_warning,/не смее автоматски да се третира/);
+  assert.match(src.governance_rule,/повисок практичен авторитет/);
+  assert.match(html,/Официјален МВР извор · права и постапки на странци/);
+  assert.match(html,/зграда на МРТВ, 9 кат/);
+});
