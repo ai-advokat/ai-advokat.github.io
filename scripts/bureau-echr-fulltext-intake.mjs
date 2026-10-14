@@ -58,32 +58,45 @@ function listingYear(value){
   const m=String(value||"").match(/\b(20\d{2}|19\d{2})\b/);
   return m?m[1]:null;
 }
-function candidateScore(seed,record){
-  const base=similarity(seed,record.title);
-  const seedYear=listingYear(seed);
+function titleContainedInTextScore(text,title){
+  const tokens=titleTokens(title);
+  if(!tokens.length) return 0;
+  const hay=norm(text);
+  let found=0;
+  for(const token of tokens){
+    if(hay.includes(token)) found++;
+  }
+  return found/tokens.length;
+}
+function candidateScore(linkSeed,pdfText,record){
+  // Keep link/filename similarity and PDF-content similarity as independent signals.
+  // Concatenating a long PDF body into the seed dilutes the title score and caused
+  // the #263 regression (1/301 matched).
+  const linkScore=similarity(linkSeed,record.title);
+  const contentScore=titleContainedInTextScore(String(pdfText||"").slice(0,8000),record.title);
+  const seedYear=listingYear(linkSeed);
   const recordYear=listingYear(record.listing_period);
-  const yearBonus=seedYear&&recordYear&&seedYear===recordYear ? 0.10 : 0;
-  const a=new Set(titleTokens(seed));
-  const b=new Set(titleTokens(record.title));
-  const intersection=[...a].filter(x=>b.has(x)).length;
-  const union=new Set([...a,...b]).size||1;
-  const jaccard=intersection/union;
-  return Math.max(base,0.65*base+0.35*jaccard)+yearBonus;
+  const yearBonus=seedYear&&recordYear&&seedYear===recordYear ? 0.08 : 0;
+  const combined=Math.max(
+    linkScore,
+    contentScore>=0.80 ? contentScore : 0,
+    (linkScore>=0.45 && contentScore>=0.50) ? (0.58*linkScore+0.42*contentScore) : 0
+  );
+  return Math.min(1.08,combined+yearBonus);
 }
 function bestIndexRecord(link,records,usedIds=new Set(),pdfText=""){
-  const firstPageText=String(pdfText||"").slice(0,5000);
-  const seed=[link.anchorText,decodeURIComponent(link.filename||"").replace(/\.pdf$/i,""),firstPageText].filter(Boolean).join(" ");
+  const linkSeed=[link.anchorText,decodeURIComponent(link.filename||"").replace(/\.pdf$/i,"")].filter(Boolean).join(" ");
   // Rank against ALL records. Never remove an already-used true candidate, because
   // doing so can make an unrelated unused record appear to be the best match.
   const ranked=records
-    .map(record=>({record,score:candidateScore(seed,record)}))
+    .map(record=>({record,score:candidateScore(linkSeed,pdfText,record)}))
     .sort((a,b)=>b.score-a.score);
   const first=ranked[0]||null;
   const second=ranked[1]||null;
   if(!first) return null;
   const margin=first.score-(second?.score||0);
   // Fail closed: require both a meaningful score and separation from the runner-up.
-  if(first.score<0.33 || margin<0.035) return null;
+  if(first.score<0.55 || margin<0.05) return null;
   return {
     record:first.record,
     score:first.score,
@@ -148,7 +161,7 @@ async function main(){
           score:Math.round(match.score*10000)/10000,
           margin:Math.round(match.margin*10000)/10000,
           duplicate_artifact:match.duplicateArtifact,
-          method:"link_filename_plus_pdf_first_page",
+          method:"independent_link_filename_and_pdf_title_containment",
           application_numbers:applicationNumbers
         });
         if(match.duplicateArtifact){
