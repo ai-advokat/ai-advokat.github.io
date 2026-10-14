@@ -15,7 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/app-icon.svg" />
-  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261010-simple-workspace-v1" />
+  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261014-featured-modules-v1" />
   <meta name="application-name" content="AI Advokat" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -1229,6 +1229,46 @@
         </div>
       </div>
 
+    </div>
+  </section>
+
+  <section id="featured-legal-modules" class="featured-modules" aria-labelledby="featuredModulesTitle">
+    <div class="container">
+      <div class="sectionHead featured-modules-head">
+        <div>
+          <span class="tag">ПОСЕБНИ ПРАВНИ МОДУЛИ</span>
+          <h2 id="featuredModulesTitle">Директен пристап до специјализирани правни модули</h2>
+          <p>Две видливи патеки за работа со странци и со македонскиот корпус на пресуди и одлуки на ЕСЧП.</p>
+        </div>
+      </div>
+      <div class="featured-modules-grid">
+        <article class="featured-module-card featured-module-foreigners">
+          <div class="featured-module-icon" aria-hidden="true">🛂</div>
+          <div>
+            <span class="tag">МВР · ПРЕСТОЈ · ВРАБОТУВАЊЕ</span>
+            <h3>Престој и вработување на странци</h3>
+            <p>Прв пат, продолжување и проверка на документи со официјални извори и Human Gate.</p>
+            <div class="featured-module-actions">
+              <button class="btn primary" type="button" data-foreign-employment="first" data-foreign-static>Прв пат</button>
+              <button class="btn light" type="button" data-foreign-employment="renewal" data-foreign-static>Продолжување</button>
+              <a class="btn light" href="#foreigners-services">Отвори модул</a>
+            </div>
+          </div>
+        </article>
+        <article class="featured-module-card featured-module-echr">
+          <div class="featured-module-icon" aria-hidden="true">⚖️</div>
+          <div>
+            <span class="tag">ЕСЧП · МАКЕДОНСКИ КОРПУС</span>
+            <h3>Пресуди и одлуки на ЕСЧП за Северна Македонија</h3>
+            <p>Официјален домашен индекс од 301 предмет, full-text intake и задолжително HUDOC врзување пред професионално потпирање.</p>
+            <div class="featured-module-actions">
+              <button class="btn primary" type="button" data-echr-static="search">Пребарај ЕСЧП</button>
+              <button class="btn light" type="button" data-echr-static="explain">Анализирај предмет</button>
+              <a class="btn light" href="#ai-advokat-chat">Отвори AI Advokat</a>
+            </div>
+          </div>
+        </article>
+      </div>
     </div>
   </section>
 
@@ -3650,7 +3690,7 @@
   loadCapabilities();
 </script>
 <script src="/assets/guide-vault.js?v=20261005-private-vault-v2"></script>
-<script src="/assets/ai-advokat-chat.js?v=20261010-simple-workspace-v1"></script>
+<script src="/assets/ai-advokat-chat.js?v=20261014-featured-modules-v1"></script>
 
 </body>
 </html>
