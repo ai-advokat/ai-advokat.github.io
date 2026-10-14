@@ -4003,15 +4003,12 @@ async function handleGazetteRegister(request, env, url) {
       `SELECT li.canonical_key,li.title,li.short_title,
               v.version_label,NULL AS version_class,v.valid_from,NULL AS application_from,v.valid_to,
               v.is_current,v.human_review_status,
-              COALESCE(
-                v.source_url,
-                (SELECT lav.source_url
-                   FROM legal_article_versions lav
-                  WHERE lav.instrument_version_id=v.id
-                    AND lav.source_url IS NOT NULL
-                  ORDER BY COALESCE(lav.source_issue_date,lav.valid_from,'') DESC,lav.id DESC
-                  LIMIT 1)
-              ) AS source_url,
+              (SELECT lav.source_url
+                 FROM legal_article_versions lav
+                WHERE lav.instrument_version_id=v.id
+                  AND lav.source_url IS NOT NULL
+                ORDER BY COALESCE(lav.source_issue_date,lav.valid_from,'') DESC,lav.id DESC
+                LIMIT 1) AS source_url,
               (SELECT lav.source_issue_number
                  FROM legal_article_versions lav
                 WHERE lav.instrument_version_id=v.id
@@ -4027,11 +4024,12 @@ async function handleGazetteRegister(request, env, url) {
               v.checksum_sha256
          FROM instrument_versions v
          JOIN legal_instruments li ON li.id=v.instrument_id
-        WHERE v.source_url IS NOT NULL
-           OR EXISTS (
+        WHERE EXISTS (
                 SELECT 1 FROM legal_article_versions lav
                  WHERE lav.instrument_version_id=v.id
-                   AND (lav.source_issue_number IS NOT NULL OR lav.source_issue_date IS NOT NULL)
+                   AND (lav.source_url IS NOT NULL
+                        OR lav.source_issue_number IS NOT NULL
+                        OR lav.source_issue_date IS NOT NULL)
               )
         ORDER BY COALESCE(
                    (SELECT MAX(lav.source_issue_date)

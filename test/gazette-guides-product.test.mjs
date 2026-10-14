@@ -75,6 +75,7 @@ test("GG5 Gazette API is read-only metadata and current status is Human-Gate bou
   assert.doesNotMatch(block,/\bv\.application_from\b/);
   assert.doesNotMatch(block,/\bv\.source_issue_number\b/);
   assert.doesNotMatch(block,/\bv\.source_issue_date\b/);
+  assert.doesNotMatch(block,/\bv\.source_url\b/);
 });
 
 test("GG6 Gazette page is a provenance product, not a Gazette replica",()=>{
