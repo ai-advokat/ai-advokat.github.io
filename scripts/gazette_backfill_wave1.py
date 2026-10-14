@@ -8,6 +8,8 @@ from urllib.request import Request, urlopen
 UA="AI-Advokat-Gazette-Backfill/1.0 (+source-first; paced official-source audit)"
 REGISTER_PAGE="https://slvesnik.com.mk/Issues/634836914B1C2C48A528E23A94A0CD4B.pdf/hronoloshki-registri.nspx"
 FREE_ACCESS_PAGE="https://www.slvesnik.com.mk/besplaten-pristap-do-izdanija.nspx"
+PROVENANCE_MANIFEST=Path("data/gazette-annual-registers-1991-2025.json")
+
 
 class LinkParser(HTMLParser):
     def __init__(self):
@@ -118,6 +120,22 @@ def fetch_text(url):
 
 def sha256_bytes(b):
     return hashlib.sha256(b).hexdigest()
+
+def load_provenance_manifest():
+    if not PROVENANCE_MANIFEST.exists():
+        raise RuntimeError(f"missing_provenance_manifest:{PROVENANCE_MANIFEST}")
+    data=json.loads(PROVENANCE_MANIFEST.read_text("utf-8"))
+    years=data.get("years",[])
+    by_year={int(x["year"]):x for x in years}
+    if sorted(by_year)!=list(range(1991,2026)):
+        raise RuntimeError("invalid_provenance_year_coverage")
+    return data,by_year
+
+def profile_for_year(by_year,year):
+    row=by_year.get(int(year))
+    if not row:
+        raise RuntimeError(f"missing_provenance_year:{year}")
+    return row.get("extraction_profile")
 
 def extract_register_links():
     text, final=fetch_text(REGISTER_PAGE)
@@ -310,6 +328,7 @@ def main():
     ap.add_argument("--delay",type=float,default=0.7)
     args=ap.parse_args()
     out=Path(args.out); (out/"registers").mkdir(parents=True,exist_ok=True); (out/"acts").mkdir(exist_ok=True); (out/"issues").mkdir(exist_ok=True); (out/"pdf").mkdir(exist_ok=True); (out/"text").mkdir(exist_ok=True)
+    provenance,provenance_by_year=load_provenance_manifest()
     try:
         reg_links=extract_register_links()
     except Exception as e:
@@ -320,7 +339,8 @@ def main():
         issue_inventory={}; print("WARN free issue inventory:",e,file=sys.stderr)
     summary={"scope":{"from":args.from_year,"to":args.to_year},"register_page":REGISTER_PAGE,"free_access_page":FREE_ACCESS_PAGE,"years":[],"generated_at":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime())}
     for year in range(args.from_year,args.to_year+1):
-        row={"year":year,"register_url":reg_links.get(year),"status":"pending","act_count":0,"unresolved_count":0,"issue_inventory_count":len(issue_inventory.get(year,[]))}
+        source_profile=profile_for_year(provenance_by_year,year)
+        row={"year":year,"register_url":reg_links.get(year),"status":"pending","act_count":0,"unresolved_count":0,"issue_inventory_count":len(issue_inventory.get(year,[])),"extraction_profile":source_profile,"provenance_manifest":"data/gazette-annual-registers-1991-2025.json"}
         try:
             raw,final,transport=fetch_register_pdf(year,row["register_url"])
             row["register_url"]=final
@@ -331,7 +351,7 @@ def main():
             txt=out/"text"/f"{year}.txt"
             rc,err=pdftotext(pdf,txt)
             text=txt.read_text("utf-8",errors="replace") if txt.exists() else ""
-            if rc!=0 or len(text.strip())<500:
+            if source_profile=="scan_image_primary" or rc!=0 or len(text.strip())<500:
                 row.update({"status":"needs_ocr_or_manual_extraction","register_sha256":sha,"pdftotext_error":err})
                 (out/"registers"/f"{year}.json").write_text(json.dumps(row,ensure_ascii=False,indent=2),"utf-8")
                 summary["years"].append(row); time.sleep(args.delay); continue
