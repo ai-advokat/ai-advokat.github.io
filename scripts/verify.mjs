@@ -213,7 +213,23 @@ if (wrangler.r2_buckets) {
   }
 }
 if (wrangler.ai) {
-  throw new Error("Production wrangler.jsonc must not bind Workers AI before governed production activation.");
+  const providerActivation=JSON.parse(fs.readFileSync(".github/activation/gpt-production-request.json","utf8"));
+  const freeActivation=providerActivation?.last_redeploy||{};
+  if (wrangler.ai.binding!=="AI") {
+    throw new Error("Only the governed AI binding named AI is permitted.");
+  }
+  if (wrangler.vars?.FREE_CHAT_PROVIDER!=="workers_ai"
+      || wrangler.vars?.WORKERS_AI_MARKDOWN_ENABLED!=="true"
+      || wrangler.vars?.WORKERS_AI_CHAT_MODEL!=="@cf/zai-org/glm-4.7-flash") {
+    throw new Error("Workers AI binding requires the explicit FREE provider and Markdown-conversion contract.");
+  }
+  if (providerActivation.activation_authorized!==true
+      || freeActivation.free_provider!=="workers_ai"
+      || freeActivation.human_gate_preserved!==true
+      || freeActivation.current_law_human_gate_preserved!==true
+      || freeActivation.no_governance_weakening!==true) {
+    throw new Error("Workers AI production binding lacks explicit governed activation evidence.");
+  }
 }
 if (!worker.includes('workersAI: env.AI ? "bound" : "not_bound"')) {
   throw new Error("Worker must report Workers AI binding state dynamically.");

@@ -452,7 +452,6 @@
     const name=String(file?.name||"").toLowerCase();
     if(name.endsWith(".pdf")) return "application/pdf";
     if(name.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    if(name.endsWith(".doc")) return "application/msword";
     if(name.endsWith(".csv")) return "text/csv";
     if(name.endsWith(".json")) return "application/json";
     if(name.endsWith(".txt")||name.endsWith(".md")) return "text/plain";
@@ -464,7 +463,6 @@
 
   const CHAT_ACCEPTED_MIME=new Set([
     "application/pdf",
-    "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "text/plain","text/markdown","text/csv","application/csv","application/json",
     "image/png","image/jpeg","image/webp"
@@ -554,8 +552,13 @@
     return key?{"authorization":"Bearer "+key}:{};
   }
   function syncChatMembershipState(){
-    if(chatMembershipState) chatMembershipState.textContent="FREE активен · не е потребен клуч";
-    if(ownerState) ownerState.textContent="FREE активен · без клуч";
+    const legacyOwner=sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
+    if(/^AIADV-OWNER-/i.test(legacyOwner)){
+      sessionStorage.removeItem("aiAdvokatMembershipKey");
+      sessionStorage.removeItem("ai_advokat_membership_key");
+    }
+    if(chatMembershipState) chatMembershipState.textContent="FREE активен · не е потребен клуч · документарна анализа преку Workers AI";
+    if(ownerState) ownerState.textContent="FREE активен · без клуч · Workers AI";
   }
 
 
@@ -810,8 +813,9 @@
         && runtime.lioeSpecialistExecution==="enabled"
         && runtime.lioeRuntimeTelemetry==="ready";
       if(fullyReady) provider.textContent="GPT-6.1 Sol · LIVE governed";
+      else if(runtime.providerExecution==="configured_for_free_workers_ai_chat_execution") provider.textContent="FREE Workers AI · LIVE · документи";
       else if(runtime.providerExecution==="configured_for_api_chat_execution") provider.textContent="GPT-6.1 Sol · runtime partial · recovery required";
-      else provider.textContent="GPT-6.1 Sol · provider unavailable";
+      else provider.textContent="AI provider · недостапен";
     })
     .catch(()=>{provider.textContent="GPT runtime · недостапен";});
 

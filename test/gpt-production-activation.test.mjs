@@ -19,7 +19,11 @@ test("GPTACT1 production runtime is armed for the approved model but contains no
   assert.equal(config.vars.OPENAI_ORCHESTRATOR_ENABLED,"true");
   assert.equal(config.vars.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED,"true");
   assert.equal(config.vars.OPENAI_FILE_INPUT_ENABLED,"true");
-  assert.equal(config.vars.OPENAI_PROVIDER_ACTIVATION_STATE,"armed_secret_and_billing_required");
+  assert.equal(config.vars.OPENAI_PROVIDER_ACTIVATION_STATE,"optional_paid_provider_free_workers_ai_primary");
+  assert.equal(config.ai?.binding,"AI");
+  assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
+  assert.equal(config.vars.WORKERS_AI_MARKDOWN_ENABLED,"true");
+  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/zai-org/glm-4.7-flash");
   assert.doesNotMatch(wrangler,/OPENAI_API_KEY/);
   assert.doesNotMatch(wrangler,/sk-[A-Za-z0-9_-]{20,}/);
 });
@@ -40,7 +44,7 @@ test("GPTACT2 provider remains fail-closed without secret and opens only with ga
   assert.equal(orchestratorRuntimeReadiness(ready).fileInputs,"configured");
 });
 
-test("GPTACT3 production activation workflow requires explicit authorization, secrets and a real paid-quota preflight",()=>{
+test("GPTACT3 production activation supports FREE Workers AI and preserves the paid OpenAI path",()=>{
   assert.match(workflow,/workflow_dispatch:/);
   assert.match(workflow,/push:/);
   assert.match(workflow,/gpt-production-request\.json/);
@@ -53,6 +57,10 @@ test("GPTACT3 production activation workflow requires explicit authorization, se
   assert.match(workflow,/wrangler secret put OPENAI_API_KEY/);
   assert.match(workflow,/wrangler deploy --config wrangler\.jsonc/);
   assert.match(workflow,/Live GPT \+ Web \+ attachment smoke test/);
+  assert.match(workflow,/Live FREE Workers AI \+ DOCX attachment smoke test/);
+  assert.match(workflow,/FREE_PROVIDER/);
+  assert.match(workflow,/WORKERS_AI_MARKDOWN_ENABLED/);
+  assert.match(workflow,/PRAVDA_FREE_DOC/);
   assert.match(workflow,/gpt-combined-smoke\.json/);
   assert.match(workflow,/sources/);
 });
@@ -70,7 +78,10 @@ test("GPTACT4 chat privacy is stateless at OpenAI and session-scoped in the brow
 test("GPTACT5 public chat routes to Worker and runtime status can report live provider",()=>{
   assert.match(chat,/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
   assert.match(chat,/configured_for_api_chat_execution/);
+  assert.match(chat,/configured_for_free_workers_ai_chat_execution/);
   assert.match(worker,/configured_for_api_chat_execution/);
+  assert.match(worker,/configured_for_free_workers_ai_chat_execution/);
+  assert.match(worker,/env\.AI\.toMarkdown/);
   assert.match(worker,/gpt_6_1_sol_live_governed/);
 });
 
@@ -135,8 +146,22 @@ test("GPTACT9 GPT activation preserves the separate CasePilot private-storage Hu
   assert.doesNotMatch(workflow,/wrangler r2 bucket create/);
 });
 
-test("GPTACT10 provider readiness requires GPT Web and attachment runtime gates",()=>{
-  assert.match(workflow,/providerExecution!=="configured_for_api_chat_execution"/);
-  assert.match(workflow,/externalResearchTools!=="configured"/);
-  assert.match(workflow,/fileInputs!=="configured"/);
+test("GPTACT10 provider readiness accepts the governed FREE document path without weakening the paid path",()=>{
+  assert.match(workflow,/configured_for_free_workers_ai_chat_execution/);
+  assert.match(workflow,/configured_workers_ai_markdown_conversion/);
+  assert.match(workflow,/configured_for_api_chat_execution/);
+  assert.match(workflow,/externalResearchTools/);
+  assert.match(workflow,/fileInputs/);
+});
+
+
+test("GPTACT11 FREE Workers AI is explicit, bounded and document-capable",()=>{
+  const config=JSON.parse(wrangler);
+  assert.equal(config.ai.binding,"AI");
+  assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
+  assert.match(worker,/freeWorkersAIConfigured/);
+  assert.match(worker,/convertFreeChatAttachments/);
+  assert.match(worker,/cloudflare_workers_ai_to_markdown/);
+  assert.match(worker,/FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED/);
+  assert.match(worker,/free_mode_professional_postflight_required/);
 });

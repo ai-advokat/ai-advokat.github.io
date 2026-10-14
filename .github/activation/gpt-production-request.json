@@ -24,12 +24,12 @@
   ],
   "note": "No API key is stored in this file. The workflow must fail before deployment if the secret or paid quota is unavailable.",
   "last_redeploy": {
-    "requested_on": "2026-10-14",
+    "requested_on": "2026-10-15",
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Redeploy the already-authorized GPT/Web/attachment production Worker from main after PR #273 opened public FREE mode without an owner/member key, raised the anonymous monthly AI allowance to 50, and preserved the 20-document upload contract, privacy gates, rate limits and Human Gate. No API key or governance gate is changed.",
-    "approval_text": "activate open FREE mode from merged main with provider, privacy and Human Gate preserved",
+    "reason": "Deploy true FREE public document chat using Cloudflare Workers AI binding and toMarkdown conversion for PDF/DOCX/images/text. OpenAI GPT-6.1 Sol remains optional and must not block FREE mode when its paid credit balance is exhausted. Preserve privacy routing, quota/rate limits, Human Gate, current-law verification rules, and the 20-document upload contract.",
+    "approval_text": "activate FREE Workers AI document mode while preserving paid GPT path and all legal governance gates",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
     "baseline_result": "CLOUDFLARE_R2_NOT_ENABLED_CODE_10042",
@@ -48,6 +48,10 @@
     "latency_budget_changed": false,
     "free_mode_open_without_key": true,
     "free_monthly_assistant_quota": 50,
-    "chat_max_attachments": 20
+    "chat_max_attachments": 20,
+    "free_provider": "workers_ai",
+    "free_provider_model": "@cf/zai-org/glm-4.7-flash",
+    "free_document_conversion": "workers_ai_to_markdown",
+    "openai_paid_provider_optional": true
   }
 }

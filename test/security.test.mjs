@@ -735,15 +735,26 @@ describe("regression and truthful capabilities", () => {
 describe("production AI binding guard", () => {
   const stripJsonc = (text) => text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
-  test("P1 the AI provider is only reachable after an atomic quota reservation", () => {
+  test("P1 every public Workers AI provider path is downstream of an atomic quota reservation", () => {
     const src = fs.readFileSync("src/index.js", "utf8");
-    const handler = src.slice(src.indexOf("async function handleAssistant("), src.indexOf("function handleWebSources("));
-    const reserve = handler.indexOf("reserveMonthlyQuota(");
-    const aiRun = handler.indexOf("env.AI.run(");
-    assert.ok(reserve > 0 && aiRun > 0, "handler must reserve quota and may call AI");
-    assert.ok(reserve < aiRun, "quota must be reserved before env.AI.run");
-    assert.ok(handler.indexOf("checkAssistantBurst(") < reserve, "burst check must precede reservation");
-    assert.equal((src.match(/env\.AI\.run\(/g) || []).length, 1, "no other code path may call Workers AI");
+
+    const assistant = src.slice(src.indexOf("async function handleAssistant("), src.indexOf("function handleWebSources("));
+    const assistantReserve = assistant.indexOf("reserveMonthlyQuota(");
+    const assistantAiRun = assistant.indexOf("env.AI.run(");
+    assert.ok(assistantReserve > 0 && assistantAiRun > 0, "article assistant must reserve quota and may call Workers AI");
+    assert.ok(assistantReserve < assistantAiRun, "article assistant quota must be reserved before env.AI.run");
+    assert.ok(assistant.indexOf("checkAssistantBurst(") < assistantReserve, "assistant burst check must precede reservation");
+
+    const chat = src.slice(src.indexOf("async function handleGPTChat("), src.indexOf("async function handleOrchestratorArchitecture("));
+    const chatBurst = chat.indexOf("checkAssistantBurst(");
+    const chatReserve = chat.indexOf("reserveMonthlyQuota(");
+    const freeProviderCall = chat.indexOf("runFreeWorkersAIChat(");
+    assert.ok(chatBurst > 0 && chatReserve > 0 && freeProviderCall > 0, "FREE chat must burst-check, reserve quota and call the bounded provider helper");
+    assert.ok(chatBurst < chatReserve && chatReserve < freeProviderCall, "FREE chat provider call must occur only after burst check and atomic reservation");
+
+    const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function handleGPTChat("));
+    assert.equal((helper.match(/env\.AI\.run\(/g) || []).length, 1, "FREE helper has exactly one Workers AI generation call");
+    assert.equal((src.match(/env\.AI\.run\(/g) || []).length, 2, "only the article assistant and FREE chat helper may call Workers AI");
   });
 
   test("P2 a production AI binding requires the quota protections to be present", () => {
