@@ -11,7 +11,7 @@ test("secure workspace exposes case picker and creation controls",()=>{
   assert.match(html,/id="createCase"/);
   assert.match(html,/id="newCaseTitle"/);
   assert.match(html,/Private Document Vault/);
-  assert.match(html,/Побарајте членство \/ активација/);
+  assert.match(html,/Побарајте пристап/);
   assert.match(html,/membership\.html#request/);
 });
 
@@ -48,12 +48,25 @@ test("forget access hides private case list and create controls",()=>{
 });
 
 
-test("secure workspace access screen explains new and existing case paths",()=>{
-  assert.match(html,/Отворете приватен правен предмет/);
-  assert.match(html,/Нов предмет/);
-  assert.match(html,/Постоечки предмет/);
-  assert.match(html,/Продолжи со membership key/);
-  assert.match(html,/Клучот се издава приватно по човечка проверка/);
+test("secure workspace first screen uses plain-language access",()=>{
+  assert.match(html,/Отворете го Вашиот правен предмет/);
+  assert.match(html,/Приватен код за пристап/);
+  assert.match(html,/Внесете го кодот што го добивте/);
+  assert.match(html,/id="loadCases"[^>]*>Продолжи</);
+  assert.match(html,/Кодот не се зачувува/);
+  assert.doesNotMatch(html,/>\s*Membership key\s*</);
+  assert.doesNotMatch(html,/>\s*Case ID\s*</);
+});
+
+test("direct existing-case code is hidden under an advanced disclosure",()=>{
+  const start=html.indexOf('<details class="advanced-access">');
+  const end=html.indexOf("</details>",start);
+  assert.ok(start>0 && end>start);
+  const block=html.slice(start,end);
+  assert.match(block,/Имам код за конкретен постоечки предмет/);
+  assert.match(block,/Код на предмет/);
+  assert.match(block,/id="caseId"/);
+  assert.match(block,/Отвори го предметот/);
 });
 
 test("validated empty account is guided directly to new-case creation",()=>{
@@ -71,4 +84,26 @@ test("membership key and Case ID support keyboard-first access",()=>{
   assert.match(js,/\$\("caseId"\)\.addEventListener\("keydown"/);
   assert.match(js,/\$\("loadCases"\)\.click\(\)/);
   assert.match(js,/\$\("openCase"\)\.click\(\)/);
+});
+
+
+test("simple post-access choice exposes one-click new case and plain-language case list",()=>{
+  assert.match(html,/id="casePickerTitle">Мои предмети</);
+  assert.match(html,/id="newCaseShortcut"[^>]*>➕ Нов предмет</);
+  assert.match(html,/id="createCaseTitle">Нов предмет</);
+  assert.match(html,/Креирај нов предмет/);
+  assert.match(html,/<th>Проверка<\/th>/);
+  assert.match(js,/item\.professionalUseLocked\?"Потребна":"Одобрена"/);
+  assert.match(js,/\$\("newCaseShortcut"\)\.addEventListener\("click"/);
+  assert.match(js,/newCaseTitle.*focus/s);
+});
+
+test("simple access wording does not leak internal terminology into user status messages",()=>{
+  const start=js.indexOf('$("loadCases").addEventListener');
+  const end=js.indexOf("function renderCasePicker",start);
+  const block=js.slice(start,end);
+  assert.match(block,/Внесете го приватниот код за пристап/);
+  assert.match(block,/Се проверува кодот/);
+  assert.doesNotMatch(block,/Внесете membership key/);
+  assert.doesNotMatch(block,/валиден Case ID/);
 });
