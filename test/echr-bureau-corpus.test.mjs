@@ -76,3 +76,22 @@ test("already-used best candidate is classified as duplicate artifact, never rep
   assert.doesNotMatch(fn,/filter\(record/);
   assert.match(fn,/usedIds\.has\(first\.record\.chunk_id\)/);
 });
+
+
+test("Bureau matcher uses extracted first-page PDF text as a binding signal",()=>{
+  const script=fs.readFileSync("scripts/bureau-echr-fulltext-intake.mjs","utf8");
+  assert.match(script,/function bestIndexRecord\(link,records,usedIds=new Set\(\),pdfText=""\)/);
+  assert.match(script,/slice\(0,5000\)/);
+  assert.match(script,/bestIndexRecord\(link,records,matchedIndexIds,text\)/);
+  assert.match(script,/link_filename_plus_pdf_first_page/);
+  assert.match(script,/match_diagnostics/);
+});
+
+
+test("Bureau intake extracts ECHR application numbers for later HUDOC binding",()=>{
+  const script=fs.readFileSync("scripts/bureau-echr-fulltext-intake.mjs","utf8");
+  assert.match(script,/function extractApplicationNumbers/);
+  assert.match(script,/\\d\{1,6\}.*\\d\{2,4\}/);
+  assert.match(script,/applicationNumbers=extractApplicationNumbers\(text\)/);
+  assert.match(script,/application_numbers:applicationNumbers/);
+});
