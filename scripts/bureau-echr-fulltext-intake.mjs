@@ -70,8 +70,9 @@ function candidateScore(seed,record){
   const jaccard=intersection/union;
   return Math.max(base,0.65*base+0.35*jaccard)+yearBonus;
 }
-function bestIndexRecord(link,records,usedIds=new Set()){
-  const seed=[link.anchorText,decodeURIComponent(link.filename||"").replace(/\.pdf$/i,"")].filter(Boolean).join(" ");
+function bestIndexRecord(link,records,usedIds=new Set(),pdfText=""){
+  const firstPageText=String(pdfText||"").slice(0,5000);
+  const seed=[link.anchorText,decodeURIComponent(link.filename||"").replace(/\.pdf$/i,""),firstPageText].filter(Boolean).join(" ");
   // Rank against ALL records. Never remove an already-used true candidate, because
   // doing so can make an unrelated unused record appear to be the best match.
   const ranked=records
@@ -109,6 +110,7 @@ async function main(){
   const matchedIndexIds=new Set();
   const processedPdfHashes=new Set();
   const duplicateArtifacts=[];
+  const matchDiagnostics=[];
   const failures=[];
   let processed=0,failed=0;
   for(const [i,link] of links.entries()){
@@ -125,9 +127,18 @@ async function main(){
       if(pdftotext.status!==0) throw new Error("pdftotext failed");
       const text=fs.readFileSync(txt,"utf8").trim();
       if(text.length<100) throw new Error("extracted text too short");
-      const match=bestIndexRecord(link,records,matchedIndexIds);
+      const match=bestIndexRecord(link,records,matchedIndexIds,text);
       const matched=match?.record||null;
       if(matched?.chunk_id){
+        matchDiagnostics.push({
+          source_url:link.url,
+          chunk_id:matched.chunk_id,
+          title:matched.title,
+          score:Math.round(match.score*10000)/10000,
+          margin:Math.round(match.margin*10000)/10000,
+          duplicate_artifact:match.duplicateArtifact,
+          method:"link_filename_plus_pdf_first_page"
+        });
         if(match.duplicateArtifact){
           duplicateArtifacts.push({
             chunk_id:matched.chunk_id,
@@ -195,6 +206,7 @@ async function main(){
     fulltext_chunks:out.length,
     matched_index_records:matchedIndexIds.size,
     unmatched_index_records:unmatchedIndexRecords,
+    match_diagnostics:matchDiagnostics,
     duplicate_artifacts:duplicateArtifacts,
     failures,
     governance:{
