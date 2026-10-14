@@ -3138,10 +3138,10 @@ function assistantError(request, status, error, message, extraHeaders={}) {
 }
 
 
-const CHAT_MAX_BYTES=6*1024*1024;
-const CHAT_MAX_ATTACHMENTS=5;
+const CHAT_MAX_BYTES=36*1024*1024;
+const CHAT_MAX_ATTACHMENTS=20;
 const CHAT_MAX_GUIDE_DOCUMENTS=2;
-const CHAT_ATTACHMENT_MAX_BASE64=5_500_000;
+const CHAT_ATTACHMENT_MAX_BASE64=8_500_000;
 const CHAT_GUIDE_DOCUMENT_MAX_BASE64=3_500_000;
 const GUIDE_DOCX_MIME="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const GUIDE_PDF_MIME="application/pdf";

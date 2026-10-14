@@ -402,9 +402,33 @@ test("CHAT34 quota exhaustion is distinguished from Human Gate and keeps documen
 test("CHAT35 owner access is free of the public FREE quota but remains authenticated",()=>{
   assert.match(html,/Owner \/ професионален пристап/);
   assert.match(html,/сопственикот на порталот овој пристап е бесплатен/);
-  const sql=fs.readFileSync("scripts/provision-founder-professional-access.sql","utf8");
+  const sql=fs.readFileSync("scripts/provision-owner-professional-access.sql","utf8");
   assert.match(sql,/owner-professional/);
   assert.match(sql,/monthly_quota,seat_limit,price_mkd/);
+  assert.match(sql,/1000000,3,0/);
+  assert.doesNotMatch(sql,/AIADV-OWNER-[A-Za-z0-9]{20,}/);
+});
+
+
+test("CHAT36 owner workspace accepts up to 20 document attachments",()=>{
+  assert.match(html,/до 20 PDF\/Word\/слики/);
+  assert.match(html,/id="aiChatFiles"[^>]*multiple/);
+  assert.match(chatJs,/const CHAT_ATTACHMENT_LIMIT=20/);
+  assert.match(chatJs,/const CHAT_ATTACHMENT_TOTAL_BYTES=24_000_000/);
+  assert.match(chatJs,/најмногу 20 документи/);
+  assert.doesNotMatch(chatJs,/slice\(0,CHAT_ATTACHMENT_LIMIT\)/);
+  assert.match(worker,/const CHAT_MAX_ATTACHMENTS=20/);
+  assert.match(worker,/const CHAT_MAX_BYTES=36\*1024\*1024/);
+  assert.match(worker,/const CHAT_ATTACHMENT_MAX_BASE64=8_500_000/);
+});
+
+
+test("CHAT37 owner provisioning workflow targets the files that actually exist",()=>{
+  const workflow=fs.readFileSync(".github/workflows/owner-professional-access.yml","utf8");
+  assert.match(workflow,/scripts\/provision-owner-professional-access\.sql/);
+  assert.match(workflow,/\.github\/workflows\/owner-professional-access\.yml/);
+  const sql=fs.readFileSync("scripts/provision-owner-professional-access.sql","utf8");
+  assert.match(sql,/owner-professional/);
   assert.match(sql,/1000000,3,0/);
   assert.doesNotMatch(sql,/AIADV-OWNER-[A-Za-z0-9]{20,}/);
 });
