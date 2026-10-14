@@ -639,6 +639,7 @@
         updateAssistantPlaceholder(assistantIndex,{
           ...confidentialCaseHandoffMessage(),
           meta:"Privacy gate · server preflight · public GPT call stopped",
+          guides:[],
           action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"}
         });
       }else if(d?.error==="gpt_provider_locked"){
