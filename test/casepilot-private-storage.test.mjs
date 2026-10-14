@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
   CASE_WORKSPACE_MAX_FILE_BYTES,
+  CASE_WORKSPACE_MAX_LARGE_FILE_BYTES,
+  CASE_MULTIPART_PART_BYTES,
+  CASE_MULTIPART_MAX_PARTS,
   validateCaseDocumentUploadMetadata
 } from "../src/case-workspace.js";
 
@@ -66,4 +69,26 @@ test("private upload signature gate covers legacy Word and common image formats"
   assert.match(worker,/mimeType==="image\/png"/);
   assert.match(worker,/mimeType==="image\/jpeg"/);
   assert.match(worker,/mimeType==="image\/webp"/);
+});
+
+test("protected multipart upload is bounded to 500 MB and 64 eight-MiB parts",()=>{
+  assert.equal(CASE_WORKSPACE_MAX_FILE_BYTES,25*1024*1024);
+  assert.equal(CASE_WORKSPACE_MAX_LARGE_FILE_BYTES,500*1024*1024);
+  assert.equal(CASE_MULTIPART_PART_BYTES,8*1024*1024);
+  assert.equal(CASE_MULTIPART_MAX_PARTS,64);
+  const start=worker.indexOf('if(tail==="documents/multipart/init")');
+  const end=worker.indexOf('if(tail==="documents/upload")',start);
+  assert.ok(start>0 && end>start);
+  const block=worker.slice(start,end);
+  assert.match(block,/caseWorkspaceMultipartReady/);
+  assert.match(block,/expectedSize<=CASE_WORKSPACE_MAX_FILE_BYTES/);
+  assert.match(block,/expectedSize>CASE_WORKSPACE_MAX_LARGE_FILE_BYTES/);
+  assert.match(block,/createMultipartUpload/);
+  assert.match(block,/resumeMultipartUpload/);
+  assert.match(block,/X-Part-SHA256/);
+  assert.match(block,/multipart_part_integrity_mismatch/);
+  assert.match(block,/multipart_parts_incomplete/);
+  assert.match(block,/file_signature_mismatch/);
+  assert.match(block,/storageState:"quarantined"/);
+  assert.match(block,/sourceEligibility:"locked_until_partitioned_extraction_and_human_gate"/);
 });

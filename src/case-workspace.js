@@ -4,6 +4,9 @@
 export const CASE_WORKSPACE_VERSION="1.0.0";
 export const CASE_WORKSPACE_DOCUMENT_LIMIT=20;
 export const CASE_WORKSPACE_MAX_FILE_BYTES=25*1024*1024;
+export const CASE_WORKSPACE_MAX_LARGE_FILE_BYTES=500*1024*1024;
+export const CASE_MULTIPART_PART_BYTES=8*1024*1024;
+export const CASE_MULTIPART_MAX_PARTS=64;
 export const CASE_WORKSPACE_ALLOWED_MIME_TYPES=Object.freeze([
   "application/pdf",
   "application/msword",
@@ -90,6 +93,14 @@ export function caseWorkspaceStorageReady(env){
     && typeof b.put==="function"
     && typeof b.get==="function"
     && typeof b.delete==="function";
+}
+
+export function caseWorkspaceMultipartReady(env){
+  const b=env?.CASE_FILES;
+  return caseWorkspaceStorageReady(env)
+    && typeof b.createMultipartUpload==="function"
+    && typeof b.resumeMultipartUpload==="function"
+    && typeof b.head==="function";
 }
 
 export function caseWorkspaceRuntimeState(env,{schemaReady=false}={}){

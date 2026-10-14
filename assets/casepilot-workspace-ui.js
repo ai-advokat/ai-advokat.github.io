@@ -67,7 +67,7 @@ function resetWorkspace(){
   currentCaseRole="";
   pendingCaseFiles=[];
   if($("caseFileInput")) $("caseFileInput").value="";
-  if($("caseFileSelection")) $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 25 MB по датотека · до 20 документи";
+  if($("caseFileSelection")) $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
   setWorkspaceVisible(false);
   $("caseTitle").textContent="—";
   $("caseLegalArea").textContent="—";
@@ -305,7 +305,7 @@ function setPendingCaseFiles(files){
     return false;
   }
   const incoming=all;
-  const invalid=incoming.filter(file=>!documentMimeForFile(file) || file.size>25*1024*1024);
+  const invalid=incoming.filter(file=>!documentMimeForFile(file) || file.size>500*1024*1024);
   if(invalid.length){
     $("documentStatus").textContent="Одбиени се неподдржани или преголеми датотеки: "+invalid.map(x=>x.name).join(", ");
     return false;
@@ -315,7 +315,7 @@ function setPendingCaseFiles(files){
   if(selection){
     selection.textContent=pendingCaseFiles.length
       ? pendingCaseFiles.map(file=>file.name+" ("+Math.max(1,Math.round(file.size/1024))+" KB)").join(" · ")
-      : "PDF · DOC · DOCX · PNG · JPG · WebP · до 25 MB по датотека · до 20 документи";
+      : "PDF · DOC · DOCX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
   }
   return true;
 }
@@ -453,6 +453,89 @@ $("refreshDocuments").addEventListener("click",async()=>{
   try{await loadDocuments();}finally{$("refreshDocuments").disabled=false;}
 });
 
+async function sha256HexFromBuffer(buffer){
+  const digest=await crypto.subtle.digest("SHA-256",buffer);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function uploadSmallPrivateFile(file,{pages=""}={}){
+  const mime=documentMimeForFile(file);
+  const headers=authHeaders({
+    "content-type":mime,
+    "X-File-Name":file.name
+  });
+  if(pages) headers["X-Page-Count"]=pages;
+  const response=await fetch(API_BASE+"/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/upload",{
+    method:"POST",
+    headers,
+    body:file
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok || !data.ok) throw new Error((data.error||("http_"+response.status))+" · "+file.name);
+  return data;
+}
+
+async function uploadLargePrivateFile(file,{pages=""}={}){
+  const mime=documentMimeForFile(file);
+  const init=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/multipart/init",{
+    method:"POST",
+    body:{
+      name:file.name,
+      mimeType:mime,
+      size:file.size,
+      pageCount:pages||null
+    }
+  });
+  const sessionId=init.uploadSessionId;
+  const partSize=Number(init.partSize);
+  const totalParts=Number(init.totalParts);
+  let completed=false;
+  try{
+    for(let partNumber=1;partNumber<=totalParts;partNumber++){
+      const start=(partNumber-1)*partSize;
+      const end=Math.min(file.size,start+partSize);
+      const blob=file.slice(start,end);
+      const buffer=await blob.arrayBuffer();
+      const sha256=await sha256HexFromBuffer(buffer);
+      $("documentStatus").textContent="Се поставува "+file.name+" · дел "+partNumber+"/"+totalParts+"…";
+      const response=await fetch(
+        API_BASE+"/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/multipart/"+encodeURIComponent(sessionId)+"/parts/"+partNumber,
+        {
+          method:"PUT",
+          headers:authHeaders({
+            "content-type":"application/octet-stream",
+            "X-Part-SHA256":sha256
+          }),
+          body:buffer
+        }
+      );
+      const part=await response.json().catch(()=>({}));
+      if(!response.ok || !part.ok) throw new Error((part.error||("http_"+response.status))+" · "+file.name+" · part "+partNumber);
+    }
+    const done=await api(
+      "/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/multipart/"+encodeURIComponent(sessionId)+"/complete",
+      {method:"POST",body:{}}
+    );
+    completed=true;
+    return done;
+  }finally{
+    if(!completed){
+      try{
+        await api(
+          "/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/multipart/"+encodeURIComponent(sessionId)+"/abort",
+          {method:"POST",body:{}}
+        );
+      }catch{}
+    }
+  }
+}
+
+async function uploadPrivateFile(file,{pages=""}={}){
+  return file.size<=25*1024*1024
+    ? uploadSmallPrivateFile(file,{pages})
+    : uploadLargePrivateFile(file,{pages});
+}
+
 $("uploadCaseFile").addEventListener("click",async()=>{
   if(!activeCaseId || !accessKey){
     $("documentStatus").textContent="Прво отворете предмет.";
@@ -469,7 +552,7 @@ $("uploadCaseFile").addEventListener("click",async()=>{
     $("documentStatus").textContent="Изберете или повлечете PDF, Word или слика.";
     return;
   }
-  const invalid=pendingCaseFiles.find(file=>!documentMimeForFile(file) || file.size>25*1024*1024);
+  const invalid=pendingCaseFiles.find(file=>!documentMimeForFile(file) || file.size>500*1024*1024);
   if(invalid){
     $("documentStatus").textContent="Неподдржана или преголема датотека: "+invalid.name;
     return;
@@ -480,25 +563,13 @@ $("uploadCaseFile").addEventListener("click",async()=>{
   let uploaded=0;
   try{
     for(const file of pendingCaseFiles){
-      const mime=documentMimeForFile(file);
-      const headers=authHeaders({
-        "content-type":mime,
-        "X-File-Name":file.name
-      });
-      if(pages) headers["X-Page-Count"]=pages;
-      const response=await fetch(API_BASE+"/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/upload",{
-        method:"POST",
-        headers,
-        body:file
-      });
-      const data=await response.json().catch(()=>({}));
-      if(!response.ok || !data.ok) throw new Error((data.error||("http_"+response.status))+" · "+file.name);
+      await uploadPrivateFile(file,{pages});
       uploaded++;
     }
     pendingCaseFiles=[];
     $("caseFileInput").value="";
     $("caseFilePages").value="";
-    $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 25 MB по датотека · до 20 документи";
+    $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
     $("documentStatus").textContent=uploaded+" датотек(и) се зачувани приватно. SHA-256 е пресметан server-side; AI ingestion останува посебно governed.";
     await openCaseById(activeCaseId);
   }catch(error){

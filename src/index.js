@@ -21,11 +21,15 @@ import { validateLegalClaim } from "./legal-claim-validator.js";
 import {
   CASE_WORKSPACE_DOCUMENT_LIMIT,
   CASE_WORKSPACE_MAX_FILE_BYTES,
+  CASE_WORKSPACE_MAX_LARGE_FILE_BYTES,
+  CASE_MULTIPART_PART_BYTES,
+  CASE_MULTIPART_MAX_PARTS,
   validateCaseDocumentUploadMetadata,
   caseWorkspacePlanAllowed,
   validateCaseWorkspaceCreate,
   caseWorkspaceId,
   caseWorkspaceStorageReady,
+  caseWorkspaceMultipartReady,
   caseWorkspaceRuntimeState,
   safeCaseWorkspaceView,
   safeCaseAuditMetadata
@@ -290,6 +294,18 @@ function caseDocumentBytesMatchMime(bytes,mimeType){
 function caseDocumentId(value){
   const id=String(value||"").trim();
   return /^DOC-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ? id : null;
+}
+
+function caseMultipartSessionId(value){
+  const id=String(value||"").trim();
+  return /^MPU-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ? id : null;
+}
+
+function expectedMultipartPartSize(expectedSize,partNumber,totalParts){
+  if(!Number.isInteger(expectedSize)||expectedSize<1) return null;
+  if(!Number.isInteger(partNumber)||partNumber<1||partNumber>totalParts) return null;
+  if(partNumber<totalParts) return CASE_MULTIPART_PART_BYTES;
+  return expectedSize-(CASE_MULTIPART_PART_BYTES*(totalParts-1));
 }
 
 function privateDocumentDownloadResponse(request,body,{mimeType,fileName}={}){
@@ -569,6 +585,18 @@ async function caseWorkspaceSchemaReady(env){
       "SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name IN ('case_workspaces','case_workspace_access','case_document_slots','case_audit_events')"
     ).first();
     return Number(row?.n||0)===4;
+  }catch{
+    return false;
+  }
+}
+
+async function caseMultipartSchemaReady(env){
+  if(!env?.DB) return false;
+  try{
+    const row=await env.DB.prepare(
+      "SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name IN ('case_multipart_uploads','case_multipart_parts')"
+    ).first();
+    return Number(row?.n||0)===2;
   }catch{
     return false;
   }
@@ -920,6 +948,211 @@ async function handleCaseWorkspaceApi(request,env,url){
     });
   }
 
+
+  if(tail==="documents/multipart/init"){
+    if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+    if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_document_write_role_required"},403);
+    if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
+    if(!caseWorkspaceMultipartReady(env)) return json(request,{ok:false,error:"private_case_multipart_storage_not_ready"},503);
+    if(!(await caseMultipartSchemaReady(env))) return json(request,{ok:false,error:"case_multipart_schema_not_ready"},503);
+
+    const parsed=await readLimitedJson(request,8192);
+    if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
+    const body=parsed.value||{};
+    const metadata=validateCaseDocumentUploadMetadata({
+      name:body.name,
+      mimeType:body.mimeType,
+      pageCount:body.pageCount
+    });
+    if(!metadata.ok) return json(request,{ok:false,error:"invalid_case_document",problems:metadata.errors},400);
+    const expectedSize=Number(body.size);
+    if(!Number.isInteger(expectedSize) || expectedSize<=CASE_WORKSPACE_MAX_FILE_BYTES || expectedSize>CASE_WORKSPACE_MAX_LARGE_FILE_BYTES){
+      return json(request,{ok:false,error:"invalid_large_document_size",minExclusive:CASE_WORKSPACE_MAX_FILE_BYTES,maxInclusive:CASE_WORKSPACE_MAX_LARGE_FILE_BYTES},400);
+    }
+    const totalParts=Math.ceil(expectedSize/CASE_MULTIPART_PART_BYTES);
+    if(totalParts<2 || totalParts>CASE_MULTIPART_MAX_PARTS) return json(request,{ok:false,error:"invalid_multipart_part_count"},400);
+
+    const usedRows=await env.DB.prepare(
+      "SELECT slot_number FROM case_document_slots WHERE case_id=? AND storage_state!='deleted' ORDER BY slot_number"
+    ).bind(caseId).all();
+    const used=new Set((usedRows.results||[]).map(row=>Number(row.slot_number)));
+    const documentLimit=Number(access.document_limit||CASE_WORKSPACE_DOCUMENT_LIMIT);
+    let slotNumber=null;
+    for(let i=1;i<=documentLimit;i++){if(!used.has(i)){slotNumber=i;break;}}
+    if(slotNumber===null) return json(request,{ok:false,error:"case_document_limit_reached"},409);
+
+    const documentId="DOC-"+crypto.randomUUID();
+    const sessionId="MPU-"+crypto.randomUUID();
+    const storageKey=`case-files/v1/${caseId}/${documentId}`;
+    const at=new Date().toISOString();
+    const expiresAt=new Date(Date.now()+2*60*60*1000).toISOString();
+    let multipart;
+    try{
+      multipart=await env.CASE_FILES.createMultipartUpload(storageKey,{
+        httpMetadata:{contentType:metadata.value.mimeType},
+        customMetadata:{caseId,documentId,uploadSessionId:sessionId}
+      });
+    }catch(error){
+      console.error("case_multipart_create_failed",String(error?.message||error).slice(0,180));
+      return json(request,{ok:false,error:"private_case_multipart_create_failed"},503);
+    }
+
+    try{
+      await env.DB.batch([
+        env.DB.prepare(
+          `INSERT INTO case_document_slots
+            (id,case_id,slot_number,original_name,mime_type,sha256,page_count,storage_key,storage_state,extraction_state,provenance_required,created_at,updated_at)
+           VALUES (?,?,?,?,?,NULL,?,?, 'quarantined','not_started',1,?,?)`
+        ).bind(documentId,caseId,slotNumber,metadata.value.originalName,metadata.value.mimeType,metadata.value.pageCount,storageKey,at,at),
+        env.DB.prepare(
+          `INSERT INTO case_multipart_uploads
+            (id,case_id,document_id,actor_account_id,storage_key,r2_upload_id,original_name,mime_type,expected_size,part_size,total_parts,page_count,state,expires_at,created_at,updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?, 'active',?,?,?)`
+        ).bind(sessionId,caseId,documentId,membership.accountId,storageKey,multipart.uploadId,metadata.value.originalName,metadata.value.mimeType,expectedSize,CASE_MULTIPART_PART_BYTES,totalParts,metadata.value.pageCount,expiresAt,at,at),
+        env.DB.prepare(
+          `UPDATE case_workspaces SET professional_use_locked=1,updated_at=? WHERE id=?`
+        ).bind(at,caseId),
+        env.DB.prepare(
+          `INSERT INTO case_audit_events
+            (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+           VALUES (?, ?, ?, 'document_quarantined', 'case_document', ?, ?, ?)`
+        ).bind("CAE-"+crypto.randomUUID(),caseId,membership.accountId,documentId,
+          safeCaseAuditMetadata({slotNumber,mimeType:metadata.value.mimeType,storageState:"quarantined",uploadMode:"multipart"}),at)
+      ]);
+    }catch(error){
+      console.error("case_multipart_metadata_reserve_failed",String(error?.message||error).slice(0,180));
+      try{await multipart.abort();}catch{}
+      return json(request,{ok:false,error:"case_multipart_metadata_reserve_failed"},500);
+    }
+
+    return json(request,{
+      ok:true,caseId,uploadSessionId:sessionId,documentId,slotNumber,
+      expectedSize,partSize:CASE_MULTIPART_PART_BYTES,totalParts,expiresAt,
+      storageState:"quarantined",
+      integrity:"per_part_sha256_plus_r2_etag",
+      ingestion:"locked_until_completion_and_extraction",
+      humanGate:{professionalUseLocked:true}
+    },201);
+  }
+
+  if(tail.startsWith("documents/multipart/")){
+    const segments=tail.slice("documents/multipart/".length).split("/").filter(Boolean);
+    const sessionId=caseMultipartSessionId(segments[0]);
+    if(!sessionId) return json(request,{ok:false,error:"case_multipart_session_not_found"},404);
+    if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_document_write_role_required"},403);
+    if(!caseWorkspaceMultipartReady(env)) return json(request,{ok:false,error:"private_case_multipart_storage_not_ready"},503);
+    if(!(await caseMultipartSchemaReady(env))) return json(request,{ok:false,error:"case_multipart_schema_not_ready"},503);
+
+    const session=await env.DB.prepare(
+      `SELECT * FROM case_multipart_uploads WHERE id=? AND case_id=? AND actor_account_id=? LIMIT 1`
+    ).bind(sessionId,caseId,membership.accountId).first();
+    if(!session) return json(request,{ok:false,error:"case_multipart_session_not_found"},404);
+    if(session.state!=="active") return json(request,{ok:false,error:"case_multipart_session_not_active",state:session.state},409);
+    if(Date.parse(session.expires_at)<=Date.now()) return json(request,{ok:false,error:"case_multipart_session_expired"},410);
+
+    const multipart=env.CASE_FILES.resumeMultipartUpload(session.storage_key,session.r2_upload_id);
+
+    if(segments.length===3 && segments[1]==="parts"){
+      if(request.method!=="PUT") return methodNotAllowed(request,"PUT, OPTIONS");
+      const partNumber=Number(segments[2]);
+      if(!Number.isInteger(partNumber) || partNumber<1 || partNumber>Number(session.total_parts)){
+        return json(request,{ok:false,error:"invalid_multipart_part_number"},400);
+      }
+      const expectedPartSize=expectedMultipartPartSize(Number(session.expected_size),partNumber,Number(session.total_parts));
+      const part=await readLimitedBytes(request,CASE_MULTIPART_PART_BYTES);
+      if(!part.ok) return json(request,{ok:false,error:part.error},part.status);
+      if(part.bytes.byteLength!==expectedPartSize){
+        return json(request,{ok:false,error:"multipart_part_size_mismatch",expected:expectedPartSize,actual:part.bytes.byteLength},400);
+      }
+      const claimed=String(request.headers.get("X-Part-SHA256")||"").toLowerCase();
+      const actual=await sha256BytesHex(part.bytes);
+      if(!/^[0-9a-f]{64}$/.test(claimed) || claimed!==actual){
+        return json(request,{ok:false,error:"multipart_part_integrity_mismatch"},400);
+      }
+      let uploaded;
+      try{
+        uploaded=await multipart.uploadPart(partNumber,part.bytes);
+      }catch(error){
+        console.error("case_multipart_part_upload_failed",String(error?.message||error).slice(0,180));
+        return json(request,{ok:false,error:"multipart_part_upload_failed"},503);
+      }
+      const at=new Date().toISOString();
+      await env.DB.prepare(
+        `INSERT INTO case_multipart_parts(upload_session_id,part_number,etag,size_bytes,sha256,created_at)
+         VALUES (?,?,?,?,?,?)
+         ON CONFLICT(upload_session_id,part_number) DO UPDATE SET etag=excluded.etag,size_bytes=excluded.size_bytes,sha256=excluded.sha256,created_at=excluded.created_at`
+      ).bind(sessionId,partNumber,String(uploaded.etag),part.bytes.byteLength,actual,at).run();
+      return json(request,{ok:true,uploadSessionId:sessionId,partNumber,size:part.bytes.byteLength,sha256:actual,etag:String(uploaded.etag)});
+    }
+
+    if(segments.length===2 && segments[1]==="complete"){
+      if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+      const partRows=await env.DB.prepare(
+        `SELECT part_number,etag,size_bytes,sha256 FROM case_multipart_parts WHERE upload_session_id=? ORDER BY part_number`
+      ).bind(sessionId).all();
+      const parts=partRows.results||[];
+      if(parts.length!==Number(session.total_parts)) return json(request,{ok:false,error:"multipart_parts_incomplete",received:parts.length,expected:Number(session.total_parts)},409);
+      let totalBytes=0;
+      for(let i=0;i<parts.length;i++){
+        const expectedNumber=i+1;
+        if(Number(parts[i].part_number)!==expectedNumber) return json(request,{ok:false,error:"multipart_part_sequence_invalid"},409);
+        const expectedSize=expectedMultipartPartSize(Number(session.expected_size),expectedNumber,Number(session.total_parts));
+        if(Number(parts[i].size_bytes)!==expectedSize) return json(request,{ok:false,error:"multipart_part_size_ledger_mismatch"},409);
+        totalBytes+=Number(parts[i].size_bytes);
+      }
+      if(totalBytes!==Number(session.expected_size)) return json(request,{ok:false,error:"multipart_total_size_mismatch"},409);
+      const manifestText=parts.map(p=>`${p.part_number}:${p.size_bytes}:${p.sha256}`).join("\n");
+      const manifestHash=await sha256BytesHex(new TextEncoder().encode(manifestText));
+      try{
+        await multipart.complete(parts.map(p=>({partNumber:Number(p.part_number),etag:String(p.etag)})));
+      }catch(error){
+        console.error("case_multipart_complete_failed",String(error?.message||error).slice(0,180));
+        return json(request,{ok:false,error:"multipart_complete_failed"},503);
+      }
+      const head=await env.CASE_FILES.head(session.storage_key);
+      if(!head || Number(head.size)!==Number(session.expected_size)){
+        await env.CASE_FILES.delete(session.storage_key).catch(()=>{});
+        await env.DB.prepare("UPDATE case_multipart_uploads SET state='failed',updated_at=? WHERE id=?").bind(new Date().toISOString(),sessionId).run().catch(()=>{});
+        return json(request,{ok:false,error:"multipart_completed_object_size_mismatch"},500);
+      }
+      const first=await env.CASE_FILES.get(session.storage_key,{range:{offset:0,length:16}});
+      const firstBytes=first ? new Uint8Array(await first.arrayBuffer()) : new Uint8Array();
+      if(!caseDocumentBytesMatchMime(firstBytes,session.mime_type)){
+        await env.CASE_FILES.delete(session.storage_key).catch(()=>{});
+        const at=new Date().toISOString();
+        await env.DB.batch([
+          env.DB.prepare("UPDATE case_multipart_uploads SET state='failed',integrity_manifest_sha256=?,updated_at=? WHERE id=?").bind(manifestHash,at,sessionId),
+          env.DB.prepare("UPDATE case_document_slots SET storage_state='quarantined',updated_at=? WHERE id=? AND case_id=?").bind(at,session.document_id,caseId)
+        ]);
+        return json(request,{ok:false,error:"file_signature_mismatch"},400);
+      }
+      const at=new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE case_multipart_uploads SET state='completed',integrity_manifest_sha256=?,updated_at=? WHERE id=?").bind(manifestHash,at,sessionId),
+        env.DB.prepare("UPDATE case_document_slots SET storage_state='quarantined',extraction_state='pending',updated_at=? WHERE id=? AND case_id=?").bind(at,session.document_id,caseId)
+      ]);
+      return json(request,{
+        ok:true,caseId,uploadSessionId:sessionId,documentId:session.document_id,
+        size:Number(session.expected_size),integrityManifestSha256:manifestHash,
+        storageState:"quarantined",extractionState:"pending",
+        sourceEligibility:"locked_until_partitioned_extraction_and_human_gate",
+        ingestion:"not_promoted_to_casepilot_source"
+      });
+    }
+
+    if(segments.length===2 && segments[1]==="abort"){
+      if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+      try{await multipart.abort();}catch{}
+      const at=new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE case_multipart_uploads SET state='aborted',updated_at=? WHERE id=?").bind(at,sessionId),
+        env.DB.prepare("UPDATE case_document_slots SET storage_state='deleted',updated_at=? WHERE id=? AND case_id=?").bind(at,session.document_id,caseId)
+      ]);
+      return json(request,{ok:true,uploadSessionId:sessionId,state:"aborted"});
+    }
+
+    return methodNotAllowed(request,"PUT, POST, OPTIONS");
+  }
 
   if(tail==="documents/upload"){
     if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
