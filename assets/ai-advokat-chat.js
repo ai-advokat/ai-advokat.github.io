@@ -30,10 +30,7 @@
   const toolsMenu=$("#aiChatTools");
   const topMenu=$("#aiChatMenu");
   const modeCaption=$("#aiChatModeCaption");
-  const chatMembershipKey=$("#aiChatMembershipKey");
-  const chatMembershipUse=$("#aiChatMembershipUse");
   const chatMembershipState=$("#aiChatMembershipState");
-  const ownerOpenBtn=$("#aiChatOwnerOpen");
   const ownerState=$("#aiChatOwnerState");
   document.querySelectorAll("[data-foreign-static]").forEach(btn=>{
     btn.addEventListener("click",()=>loadForeignEmploymentPrompt(btn));
@@ -507,14 +504,6 @@
     }
   }
 
-  if(ownerOpenBtn) ownerOpenBtn.addEventListener("click",()=>{
-    if(toolsMenu) toolsMenu.open=true;
-    setTimeout(()=>chatMembershipKey?.focus(),50);
-  });
-  if(chatMembershipUse) chatMembershipUse.addEventListener("click",verifyAndUseMembershipKey);
-  if(chatMembershipKey) chatMembershipKey.addEventListener("keydown",e=>{
-    if(e.key==="Enter"){e.preventDefault();verifyAndUseMembershipKey();}
-  });
   syncChatMembershipState();
 
   attachBtn.addEventListener("click",()=>fileInput.click());
@@ -564,40 +553,9 @@
     const key=sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
     return key?{"authorization":"Bearer "+key}:{};
   }
-  async function verifyAndUseMembershipKey(){
-    const key=String(chatMembershipKey?.value||"").trim();
-    if(!key){
-      if(chatMembershipState) chatMembershipState.textContent="Внесете професионален клуч.";
-      return;
-    }
-    if(chatMembershipUse) chatMembershipUse.disabled=true;
-    if(chatMembershipState) chatMembershipState.textContent="Проверка на клуч…";
-    try{
-      const r=await fetch(CHAT_API_BASE+"/api/membership/status",{
-        method:"GET",
-        headers:{"accept":"application/json","authorization":"Bearer "+key}
-      });
-      const d=await r.json().catch(()=>null);
-      if(!r.ok||!d?.ok) throw new Error("invalid");
-      sessionStorage.setItem("aiAdvokatMembershipKey",key);
-      sessionStorage.removeItem("ai_advokat_membership_key");
-      const m=d.membership||{};
-      if(chatMembershipState) chatMembershipState.textContent="Активен owner / "+String(m.planCode||"professional").toUpperCase()+" · преостанати "+String(m.remaining??"—")+" / "+String(m.monthlyQuota??"—");
-      if(chatMembershipKey) chatMembershipKey.value="";
-    }catch{
-      sessionStorage.removeItem("aiAdvokatMembershipKey");
-      sessionStorage.removeItem("ai_advokat_membership_key");
-      if(chatMembershipState) chatMembershipState.textContent="Клучот не е активен или не може да се потврди.";
-    }finally{
-      if(chatMembershipUse) chatMembershipUse.disabled=false;
-      syncChatMembershipState();
-    }
-  }
-
   function syncChatMembershipState(){
-    const key=sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
-    if(chatMembershipState) chatMembershipState.textContent=key?"Owner / професионален клуч е активен во оваа сесија.":"Нема активен професионален клуч";
-    if(ownerState) ownerState.textContent=key?"OWNER активен":"FREE режим";
+    if(chatMembershipState) chatMembershipState.textContent="FREE активен · не е потребен клуч";
+    if(ownerState) ownerState.textContent="FREE активен · без клуч";
   }
 
 
@@ -781,7 +739,7 @@
         const free=d.error==="free_quota_exhausted";
         updateAssistantPlaceholder(assistantIndex,{
           text:free
-            ?"Бесплатната месечна AI квота е исцрпена. Документите не беа анализирани од GPT и ги задржав локално за повторен обид. Отворете „Алатки → Професионален пристап“, внесете активен клуч и притиснете „Повтори“."
+            ?"FREE месечниот лимит е привремено исцрпен. Документите не беа анализирани од GPT и ги задржав локално за повторен обид."
             :"Месечната квота на активното членство е исцрпена. Документите не беа анализирани од GPT и ги задржав локално. Проверете го пакетот или квотата пред повторен обид.",
           meta:d.error+" · "+String(m.used??m.monthlyQuota??"—")+" / "+String(m.monthlyQuota??"—"),
           guides,
