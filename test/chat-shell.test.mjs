@@ -383,3 +383,28 @@ test("CHAT37 attachment UX supports drag drop paste and system file picking",()=
   assert.match(chatJs,/CHAT_ACCEPTED_MIME/);
   assert.match(chatCss,/\.ai-chat-composer\.is-dragover/);
 });
+
+
+test("CHAT34 quota exhaustion is distinguished from Human Gate and keeps document attachments for retry",()=>{
+  assert.match(html,/id="aiChatMembershipKey"/);
+  assert.match(html,/id="aiChatMembershipUse"/);
+  assert.match(html,/Owner \/ професионален пристап/);
+  assert.match(chatJs,/verifyAndUseMembershipKey/);
+  assert.match(chatJs,/\/api\/membership\/status/);
+  assert.match(chatJs,/free_quota_exhausted/);
+  assert.match(chatJs,/membership_quota_exhausted/);
+  assert.match(chatJs,/attachments=\[\.\.\.selectedFiles\]/);
+  assert.match(chatJs,/Документите не беа анализирани од GPT/);
+  assert.match(chatJs,/Quota gate stopped the request before provider document analysis/);
+});
+
+
+test("CHAT35 owner access is free of the public FREE quota but remains authenticated",()=>{
+  assert.match(html,/Owner \/ професионален пристап/);
+  assert.match(html,/сопственикот на порталот овој пристап е бесплатен/);
+  const sql=fs.readFileSync("scripts/provision-founder-professional-access.sql","utf8");
+  assert.match(sql,/owner-professional/);
+  assert.match(sql,/monthly_quota,seat_limit,price_mkd/);
+  assert.match(sql,/1000000,3,0/);
+  assert.doesNotMatch(sql,/AIADV-OWNER-[A-Za-z0-9]{20,}/);
+});

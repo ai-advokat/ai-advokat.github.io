@@ -28,6 +28,9 @@
   const toolsMenu=$("#aiChatTools");
   const topMenu=$("#aiChatMenu");
   const modeCaption=$("#aiChatModeCaption");
+  const chatMembershipKey=$("#aiChatMembershipKey");
+  const chatMembershipUse=$("#aiChatMembershipUse");
+  const chatMembershipState=$("#aiChatMembershipState");
   document.querySelectorAll("[data-foreign-static]").forEach(btn=>{
     btn.addEventListener("click",()=>loadForeignEmploymentPrompt(btn));
   });
@@ -495,6 +498,12 @@
     }
   }
 
+  if(chatMembershipUse) chatMembershipUse.addEventListener("click",verifyAndUseMembershipKey);
+  if(chatMembershipKey) chatMembershipKey.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){e.preventDefault();verifyAndUseMembershipKey();}
+  });
+  syncChatMembershipState();
+
   attachBtn.addEventListener("click",()=>fileInput.click());
   fileInput.addEventListener("change",()=>{
     addAttachmentFiles(fileInput.files,{source:"picker"});
@@ -541,6 +550,40 @@
     const key=sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
     return key?{"authorization":"Bearer "+key}:{};
   }
+  async function verifyAndUseMembershipKey(){
+    const key=String(chatMembershipKey?.value||"").trim();
+    if(!key){
+      if(chatMembershipState) chatMembershipState.textContent="Внесете професионален клуч.";
+      return;
+    }
+    if(chatMembershipUse) chatMembershipUse.disabled=true;
+    if(chatMembershipState) chatMembershipState.textContent="Проверка на клуч…";
+    try{
+      const r=await fetch(CHAT_API_BASE+"/api/membership/status",{
+        method:"GET",
+        headers:{"accept":"application/json","authorization":"Bearer "+key}
+      });
+      const d=await r.json().catch(()=>null);
+      if(!r.ok||!d?.ok) throw new Error("invalid");
+      sessionStorage.setItem("aiAdvokatMembershipKey",key);
+      sessionStorage.removeItem("ai_advokat_membership_key");
+      const m=d.membership||{};
+      if(chatMembershipState) chatMembershipState.textContent="Активен owner / "+String(m.planCode||"professional").toUpperCase()+" · преостанати "+String(m.remaining??"—")+" / "+String(m.monthlyQuota??"—");
+      if(chatMembershipKey) chatMembershipKey.value="";
+    }catch{
+      sessionStorage.removeItem("aiAdvokatMembershipKey");
+      sessionStorage.removeItem("ai_advokat_membership_key");
+      if(chatMembershipState) chatMembershipState.textContent="Клучот не е активен или не може да се потврди.";
+    }finally{
+      if(chatMembershipUse) chatMembershipUse.disabled=false;
+    }
+  }
+
+  function syncChatMembershipState(){
+    const key=sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
+    if(chatMembershipState) chatMembershipState.textContent=key?"Owner / професионален клуч е активен во оваа сесија.":"Нема активен професионален клуч";
+  }
+
 
   async function fallbackSourceAssistant(q){
     try{
@@ -713,9 +756,25 @@
           guides,
           sourceLabel:fallback.ok?fallback.sourceLabel:"Не е направен GPT повик и прилозите не се испратени."
         });
+      }else if(d?.error==="free_quota_exhausted" || d?.error==="membership_quota_exhausted"){
+        // The provider has not run: restore the local files so the user can activate
+        // professional access and retry without selecting the documents again.
+        attachments=[...selectedFiles];
+        renderAttachments();
+        const m=d?.membership||{};
+        const free=d.error==="free_quota_exhausted";
+        updateAssistantPlaceholder(assistantIndex,{
+          text:free
+            ?"Бесплатната месечна AI квота е исцрпена. Документите не беа анализирани од GPT и ги задржав локално за повторен обид. Отворете „Алатки → Професионален пристап“, внесете активен клуч и притиснете „Повтори“."
+            :"Месечната квота на активното членство е исцрпена. Документите не беа анализирани од GPT и ги задржав локално. Проверете го пакетот или квотата пред повторен обид.",
+          meta:d.error+" · "+String(m.used??m.monthlyQuota??"—")+" / "+String(m.monthlyQuota??"—"),
+          guides,
+          action:{label:"Планови и професионален пристап",href:"/membership.html"},
+          sourceLabel:"Quota gate stopped the request before provider document analysis. Прикачените датотеки се вратени локално во тековната browser сесија."
+        });
       }else{
         updateAssistantPlaceholder(assistantIndex,{
-          text:d?.message||"Оваа функција моментално е заклучена со Human Gate. Предложените водичи остануваат достапни.",
+          text:d?.message||"Ова барање не може безбедно да се заврши во моменталната состојба. Проверете го статусот и обидете се повторно.",
           meta:d?.error||"controlled state",
           guides,
           governance:d?.legalGovernance||null
