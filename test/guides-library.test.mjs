@@ -442,7 +442,7 @@ describe("Zoran guides library governance",()=>{
     assert.match(html,/39 јавно видливи каталошки записи/);
     assert.match(html,/Каталог v2\.4 · practical PDF \+ full-text \+ governed bot context/);
     assert.match(html,/36 практични јавни редакции 38–73/);
-    assert.match(html,/не ги прави официјален правен извор/);
+    assert.match(html,/не се прикажува како важечки закон/);
     assert.match(html,/Целосен текст: јавно активен/);
     assert.match(recordHtml,/Активен master артефакт/);
     assert.match(recordHtml,/јавен PDF:/);
