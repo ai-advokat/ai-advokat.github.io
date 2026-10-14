@@ -1,0 +1,18 @@
+{
+  "decision_id": "AI_ADVOKAT_CASE_MULTIPART_500MB_V1_2026-10-14",
+  "runtime_version": "case-multipart-500mb-1.0.0",
+  "migration": "0044_case_multipart_uploads.sql",
+  "activation_authorized": true,
+  "authorized_gates": [
+    "github_merge",
+    "production_schema_migration",
+    "production_runtime_deploy"
+  ],
+  "max_file_bytes": 524288000,
+  "part_size_bytes": 8388608,
+  "max_parts": 64,
+  "private_case_only": true,
+  "public_corpus_promotion_authorized": false,
+  "autonomous_legal_action_authorized": false,
+  "human_gate_required": true
+}
