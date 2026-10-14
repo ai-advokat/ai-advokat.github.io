@@ -11,6 +11,7 @@ const OFFICIAL_HOST_SUFFIXES=[
   "ustavensud.mk",
   "hudoc.echr.coe.int",
   "echr.coe.int",
+  "biroescp.gov.mk",
   "curia.europa.eu",
   "eur-lex.europa.eu",
   "icj-cij.org",

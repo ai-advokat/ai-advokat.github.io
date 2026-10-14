@@ -3650,6 +3650,80 @@ function caseLawSearchVariants(stem){
   return [...new Set([lower,upper,title])].map(x=>"%"+escapeLike(x)+"%");
 }
 
+const BUREAU_ECHR_INDEX_URLS=Object.freeze([
+  "https://ai-advokat.github.io/corpus/echr/north-macedonia-bureau-index-2026-2018.ndjson",
+  "https://ai-advokat.github.io/corpus/echr/north-macedonia-bureau-index-2017-2010.ndjson",
+  "https://ai-advokat.github.io/corpus/echr/north-macedonia-bureau-index-2009-2001.ndjson"
+]);
+
+function bureauEchrQueryLikely(q){
+  const n=normalizeText(q);
+  return [
+    "есчп","echr","european court","европски суд","стразбур","човекови права",
+    "конвенција","hudoc","против северна македонија","против република македонија"
+  ].some(x=>n.includes(normalizeText(x)));
+}
+
+function bureauEchrDiscoveryScore(title,terms){
+  const n=normalizeText(title||"");
+  let score=0;
+  for(const term of terms){
+    if(n.includes(term)) score+=3;
+    else if(term.length>=5 && n.includes(term.slice(0,Math.max(4,term.length-1)))) score+=1;
+  }
+  return score;
+}
+
+export async function bureauEchrDiscoveryContext(q,{limit=6}={}){
+  const empty={context:[],sources:[],records:[],state:"not_applicable",recordCount:301};
+  if(!bureauEchrQueryLikely(q)) return empty;
+  const terms=caseLawQueryTerms(q);
+  try{
+    const responses=await Promise.all(BUREAU_ECHR_INDEX_URLS.map(url=>fetch(url,{headers:{"accept":"application/x-ndjson,text/plain"}})));
+    if(responses.some(r=>!r.ok)) return {...empty,state:"official_index_unavailable"};
+    const texts=await Promise.all(responses.map(r=>r.text()));
+    const records=texts.flatMap(text=>text.split(/\r?\n/).filter(Boolean).map(line=>{
+      try{return JSON.parse(line);}catch{return null;}
+    }).filter(Boolean));
+    const ranked=records.map(record=>({...record,_score:bureauEchrDiscoveryScore(record.title,terms)}))
+      .filter(record=>record._score>0)
+      .sort((a,b)=>b._score-a._score || String(b.listing_period||"").localeCompare(String(a.listing_period||"")))
+      .slice(0,Math.max(1,Math.min(10,Number(limit||6))));
+    if(!ranked.length){
+      return {...empty,state:"official_index_no_title_match",recordCount:records.length};
+    }
+    return {
+      state:"official_domestic_echr_translation_discovery",
+      recordCount:records.length,
+      records:ranked,
+      context:ranked.map(record=>({
+        source:"Биро за застапување на РСМ пред ЕСЧП · официјален македонски индекс",
+        locator:String(record.listing_period||"")+(record.record_kind?" · "+record.record_kind:""),
+        version:"captured "+String(record.captured_on||"2026-10-11"),
+        text:[
+          "DISCOVERY_ONLY_ECHR_MK_TRANSLATION_INDEX.",
+          "Предмет: "+String(record.title||""),
+          "Официјален домашен извор: Биро за застапување на Република Северна Македонија пред Европскиот суд за човекови права.",
+          "Ова е македонски индекс/преводен извор за пронаоѓање. За application number, точен датум, конечност и материјален holding задолжително врзи со HUDOC.",
+          "Не претставувај го овој индекс како самостојно human-reviewed правно образложение."
+        ].join("\n")
+      })),
+      sources:ranked.map(record=>({
+        title:String(record.title||"ЕСЧП предмет"),
+        url:String(record.source_url||"https://biroescp.gov.mk/пресуди-и-одлуки-на-рм/"),
+        jurisdiction:"ECHR",
+        authorityClass:"official_domestic_echr_reference",
+        translationStatus:"official_domestic_reference",
+        hudocBindingRequired:true,
+        discoveryOnly:true
+      }))
+    };
+  }catch(error){
+    console.error("bureau_echr_index_discovery_failed",String(error?.message||error).slice(0,180));
+    return {...empty,state:"official_index_unavailable"};
+  }
+}
+
 function caseLawAuthorityScope(row){
   const jurisdiction=String(row?.jurisdiction||"").toUpperCase();
   if(jurisdiction==="ECHR") return "Convention case law. Apply according to ECHR authority and the concrete Convention issue.";
@@ -4114,14 +4188,15 @@ async function handleGPTChat(request,env){
 
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const initialPlan=buildAgentPlan(q);
-  const [guideContext,articleBundle,caseLawBundle,gazetteBundle]=await Promise.all([
+  const [guideContext,articleBundle,caseLawBundle,gazetteBundle,bureauEchrBundle]=await Promise.all([
     governedGuideContext(request,env,guideIds),
     governedArticleContext(env,q,initialPlan),
     governedCaseLawContext(env,q,initialPlan,{limit:4}),
-    governedGazetteChunkContext(env,q)
+    governedGazetteChunkContext(env,q),
+    bureauEchrDiscoveryContext(q,{limit:6})
   ]);
 
-  const corpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...guideDocumentCheck.context,...guideContext];
+  const corpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext];
   if(uiMode==="library" && corpusContext.length===0){
     corpusContext.push({
       source:"AI Advokat public library",
@@ -4420,7 +4495,13 @@ async function handleGPTChat(request,env){
       corpusPromotion:"human_gate_required"
     },
     legalSources:articleBundle.legalSources || [],
-    caseLawSources:caseLawBundle.sources || [],
+    caseLawSources:[...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
+    echrBureauDiscovery:{
+      state:bureauEchrBundle.state,
+      indexedRecords:bureauEchrBundle.recordCount,
+      matchedRecords:bureauEchrBundle.records?.length||0,
+      hudocBindingRequired:true
+    },
     guideSources:guideDocumentCheck.sources || [],
     guideLawDependencyGate:guideDocumentCheck.sources.length ? {
       primarySourceRequired:guidePrimaryLawRequired,
@@ -4434,7 +4515,7 @@ async function handleGPTChat(request,env){
     sourceMode,
     corpusContextCount:corpusContext.length,
     articleCorpusContextCount:articleBundle.context.length,
-    caseLawContextCount:caseLawBundle.context.length,
+    caseLawContextCount:caseLawBundle.context.length+bureauEchrBundle.context.length,
     caseLawState:caseLawBundle.state,
     articleCorpusState:articleBundle.state,
     legalCrossReferenceCount:Array.isArray(articleBundle.crossReferenceArticles)?articleBundle.crossReferenceArticles.length:0,

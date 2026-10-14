@@ -1,0 +1,31 @@
+name: ECHR Bureau MK full-text intake
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PDF text extractor
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Build official Macedonian ECHR full-text corpus
+        run: node scripts/bureau-echr-fulltext-intake.mjs /tmp/bureau-mk-fulltext.ndjson
+      - name: Validate corpus output
+        run: |
+          test -s /tmp/bureau-mk-fulltext.ndjson
+          grep -q '"full_case_text_ingested":true' /tmp/bureau-mk-fulltext.ndjson
+          grep -q '"hudoc_binding_required":true' /tmp/bureau-mk-fulltext.ndjson
+      - name: Upload governed intake artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bureau-echr-mk-fulltext
+          path: /tmp/bureau-mk-fulltext.ndjson
+          retention-days: 30
