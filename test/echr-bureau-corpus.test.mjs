@@ -62,4 +62,17 @@ test("Bureau matcher uses conservative unique second-pass matching",()=>{
   assert.match(script,/first\.score<0\.33/);
   assert.match(script,/matchedIndexIds/);
   assert.match(script,/bestIndexRecord\(link,records,matchedIndexIds\)/);
+  assert.match(script,/Rank against ALL records/);
+  assert.doesNotMatch(script,/\.filter\(record=>!record\?\.chunk_id \|\| !usedIds\.has/);
+  assert.match(script,/duplicateArtifact:Boolean/);
+  assert.match(script,/duplicateArtifacts\.push/);
+});
+
+
+test("already-used best candidate is classified as duplicate artifact, never replaced by an unrelated unused record",()=>{
+  const script=fs.readFileSync("scripts/bureau-echr-fulltext-intake.mjs","utf8");
+  const fn=script.slice(script.indexOf("function bestIndexRecord"),script.indexOf("function chunks"));
+  assert.match(fn,/\.map\(record=>\(\{record,score:candidateScore/);
+  assert.doesNotMatch(fn,/filter\(record/);
+  assert.match(fn,/usedIds\.has\(first\.record\.chunk_id\)/);
 });
