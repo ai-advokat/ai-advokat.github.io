@@ -4494,6 +4494,115 @@ async function handleGPTChat(request,env){
       ? "medium"
       : "low";
 
+  if(useFreeWorkersAI){
+    if(postflightRequiredForMission){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:"free_mode_professional_postflight_required",
+        message:"Ова барање бара current-law или high-stakes postflight проверка што FREE provider-от не ја заобиколува. Документите може да се сумираат и анализираат информативно, но за правен заклучок е потребна дополнителна професионална/primary-source проверка.",
+        legalGovernance:{
+          engine:"AI_ADVOKAT_LIOE_v1",
+          missionProfile,
+          releaseState:"BLOCKED_POSTFLIGHT_REQUIRED",
+          executionAuthorization:"RESEARCH_OUTPUT_ONLY",
+          humanReviewRequired:true
+        }
+      },409);
+    }
+
+    const freeResult=await runFreeWorkersAIChat(env,{
+      q,
+      attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
+      history:historyCheck.history,
+      corpusContext,
+      plan,
+      maxOutputTokens
+    });
+
+    if(!freeResult.ok){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:freeResult.error||"free_workers_ai_failed",
+        message:"FREE Workers AI не успеа да го обработи барањето или документите. Квотата не е потрошена; обидете се повторно или намалете/поделете ги прилозите.",
+        problems:freeResult.problems||null,
+        failureDetail:freeResult.detail||null,
+        model:String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),
+        runtime:{provider:"workers_ai_free",documentConversion:freeWorkersAIMarkdownConfigured(env)?"configured":"locked"}
+      },503);
+    }
+
+    const freeSourceMode=(attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
+      ? (corpusContext.length ? "workers_ai_free_documents_plus_governed_corpus" : "workers_ai_free_document_analysis")
+      : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
+
+    return json(request,{
+      ok:true,
+      answer:freeResult.text,
+      model:freeResult.model,
+      provider:"workers_ai_free",
+      conversationPersistence:freeResult.conversationPersistence,
+      historyItemsUsed:freeResult.historyItemsUsed,
+      sources:[],
+      sourcePolicy:{
+        version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
+        registeredExternalSources:0,
+        unregisteredExternalSources:0,
+        corpusPromotion:"human_gate_required"
+      },
+      legalSources:articleBundle.legalSources||[],
+      caseLawSources:[...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
+      echrBureauDiscovery:{
+        state:bureauEchrBundle.state,
+        indexedRecords:bureauEchrBundle.recordCount,
+        matchedRecords:bureauEchrBundle.records?.length||0,
+        hudocBindingRequired:true
+      },
+      guideSources:guideDocumentCheck.sources||[],
+      guideDocumentsUsed:guideDocumentCheck.attachments.length,
+      guideDocumentFingerprintsVerified:guideDocumentCheck.attachments.length>0,
+      webSearchUsed:false,
+      mode:plan.mode,
+      displayMode:"free_workers_ai",
+      sourceMode:freeSourceMode,
+      corpusContextCount:corpusContext.length,
+      articleCorpusContextCount:articleBundle.context.length,
+      caseLawContextCount:caseLawBundle.context.length+bureauEchrBundle.context.length,
+      caseLawState:caseLawBundle.state,
+      articleCorpusState:articleBundle.state,
+      articleCorpus:articleBundle.instrument ? {
+        instrument:articleBundle.instrument,
+        version:articleBundle.version,
+        versionBasis:articleBundle.versionBasis
+      } : null,
+      webSearch:"not_available_in_free_workers_ai_mode",
+      attachmentsUsed:attachmentCheck.attachments.length,
+      totalInputFilesUsed:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
+      convertedDocuments:freeResult.convertedDocuments,
+      reasoningEffort:"workers_ai_standard",
+      maxOutputTokens,
+      humanGate:"FREE Workers AI is research assistance only. Verify controlling law and primary sources and obtain human professional review before consequential reliance.",
+      governanceRunId:lioeRunId,
+      runtimeTelemetry:"free_provider_no_high_depth_release",
+      legalGovernance:lioeEngaged ? {
+        engine:"AI_ADVOKAT_LIOE_v1",
+        missionProfile,
+        releaseState:"FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED",
+        executionAuthorization:"RESEARCH_OUTPUT_ONLY",
+        humanReviewRequired:true,
+        postflightRequired:false,
+        warning:"FREE provider output is informational research assistance and does not establish current-law status."
+      } : null,
+      membership:{
+        planCode:"free",
+        monthlyQuota:quota,
+        used:reservation.used,
+        remaining:Math.max(0,quota-reservation.used)
+      }
+    });
+  }
+
   const result=await runOpenAIOrchestrator(env,{
     plan,
     input:q,
