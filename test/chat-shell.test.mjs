@@ -383,3 +383,17 @@ test("CHAT37 attachment UX supports drag drop paste and system file picking",()=
   assert.match(chatJs,/CHAT_ACCEPTED_MIME/);
   assert.match(chatCss,/\.ai-chat-composer\.is-dragover/);
 });
+
+
+test("CHAT34 quota exhaustion is distinguished from Human Gate and keeps document attachments for retry",()=>{
+  assert.match(html,/id="aiChatMembershipKey"/);
+  assert.match(html,/id="aiChatMembershipUse"/);
+  assert.match(html,/Професионален пристап/);
+  assert.match(chatJs,/verifyAndUseMembershipKey/);
+  assert.match(chatJs,/\/api\/membership\/status/);
+  assert.match(chatJs,/free_quota_exhausted/);
+  assert.match(chatJs,/membership_quota_exhausted/);
+  assert.match(chatJs,/attachments=\[\.\.\.selectedFiles\]/);
+  assert.match(chatJs,/Документите не беа анализирани од GPT/);
+  assert.match(chatJs,/Quota gate stopped the request before provider document analysis/);
+});
