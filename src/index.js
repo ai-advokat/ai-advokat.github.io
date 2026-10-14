@@ -3898,6 +3898,195 @@ function validateChatAttachments(payload){
   return {ok:true,attachments:out};
 }
 
+const FREE_WORKERS_AI_MODEL_FALLBACK="@cf/zai-org/glm-4.7-flash";
+const FREE_CHAT_MAX_DOC_CHARS_PER_FILE=32000;
+const FREE_CHAT_MAX_DOC_CHARS_TOTAL=140000;
+const FREE_CHAT_MAX_CORPUS_CHARS=45000;
+
+function freeWorkersAIConfigured(env){
+  return env?.FREE_CHAT_PROVIDER==="workers_ai"
+    && env?.AI
+    && typeof env.AI.run==="function";
+}
+
+function freeWorkersAIMarkdownConfigured(env){
+  return freeWorkersAIConfigured(env)
+    && env?.WORKERS_AI_MARKDOWN_ENABLED==="true"
+    && typeof env.AI.toMarkdown==="function";
+}
+
+function decodeBase64Bytes(raw){
+  const value=String(raw||"");
+  if(!value || !/^[A-Za-z0-9+/=]+$/.test(value)) return null;
+  try{
+    const binary=atob(value);
+    const bytes=new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    return bytes;
+  }catch{
+    return null;
+  }
+}
+
+function freeChatCorpusText(items){
+  let used=0;
+  const blocks=[];
+  for(const item of Array.isArray(items)?items:[]){
+    if(used>=FREE_CHAT_MAX_CORPUS_CHARS) break;
+    const source=String(item?.source||item?.source_identity||"AI Advokat governed source");
+    const locator=String(item?.locator||"");
+    const version=String(item?.version||item?.date||"");
+    const raw=String(item?.text||item?.content||"");
+    const remaining=FREE_CHAT_MAX_CORPUS_CHARS-used;
+    const text=raw.slice(0,Math.max(0,remaining));
+    if(!text) continue;
+    blocks.push("SOURCE: "+source+"\nLOCATOR: "+locator+"\nVERSION: "+version+"\n"+text);
+    used+=text.length;
+  }
+  return blocks.join("\n\n---\n\n");
+}
+
+async function convertFreeChatAttachments(env,attachments){
+  const docs=[];
+  const convert=[];
+  for(const attachment of Array.isArray(attachments)?attachments:[]){
+    if(attachment.kind==="text"){
+      docs.push({
+        name:attachment.name,
+        text:String(attachment.text||"").slice(0,FREE_CHAT_MAX_DOC_CHARS_PER_FILE),
+        convertedBy:"browser_text"
+      });
+      continue;
+    }
+    if(attachment.kind==="image"){
+      const m=String(attachment.dataUrl||"").match(/^data:([^;,]+);base64,(.+)$/i);
+      if(!m) return {ok:false,error:"free_document_decode_failed",problems:[attachment.name]};
+      const bytes=decodeBase64Bytes(m[2]);
+      if(!bytes) return {ok:false,error:"free_document_decode_failed",problems:[attachment.name]};
+      convert.push({name:attachment.name,blob:new Blob([bytes],{type:m[1]||attachment.mime||"application/octet-stream"})});
+      continue;
+    }
+    const bytes=decodeBase64Bytes(attachment.base64);
+    if(!bytes) return {ok:false,error:"free_document_decode_failed",problems:[attachment.name]};
+    convert.push({name:attachment.name,blob:new Blob([bytes],{type:attachment.mime||"application/octet-stream"})});
+  }
+
+  if(convert.length){
+    if(!freeWorkersAIMarkdownConfigured(env)){
+      return {ok:false,error:"free_document_conversion_unavailable",problems:convert.map(x=>x.name)};
+    }
+    let converted;
+    try{
+      converted=await env.AI.toMarkdown(convert,{
+        conversionOptions:{
+          output:{format:"text"},
+          pdf:{metadata:false}
+        }
+      });
+    }catch(error){
+      return {ok:false,error:"free_document_conversion_failed",problems:[String(error?.message||error).slice(0,180)]};
+    }
+    const results=Array.isArray(converted)?converted:[converted];
+    for(const result of results){
+      if(!result || result.format==="error" || typeof result.data!=="string"){
+        return {
+          ok:false,
+          error:"free_document_conversion_failed",
+          problems:[String(result?.name||"document")+": "+String(result?.error||"conversion failed").slice(0,160)]
+        };
+      }
+      docs.push({
+        name:String(result.name||"document"),
+        text:String(result.data||"").slice(0,FREE_CHAT_MAX_DOC_CHARS_PER_FILE),
+        convertedBy:"cloudflare_workers_ai_to_markdown"
+      });
+    }
+  }
+
+  let total=0;
+  const bounded=[];
+  for(const doc of docs){
+    if(total>=FREE_CHAT_MAX_DOC_CHARS_TOTAL) break;
+    const remaining=FREE_CHAT_MAX_DOC_CHARS_TOTAL-total;
+    const text=String(doc.text||"").slice(0,remaining);
+    if(!text) continue;
+    bounded.push({...doc,text});
+    total+=text.length;
+  }
+  return {ok:true,documents:bounded,totalChars:total};
+}
+
+async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusContext=[],plan,maxOutputTokens=1800}={}){
+  if(!freeWorkersAIConfigured(env)) return {ok:false,error:"free_workers_ai_not_configured"};
+  const converted=await convertFreeChatAttachments(env,attachments);
+  if(!converted.ok) return converted;
+
+  const historyText=(Array.isArray(history)?history:[])
+    .slice(-8)
+    .map(item=>(item.role==="assistant"?"ASSISTANT":"USER")+": "+String(item.text||"").slice(0,1800))
+    .join("\n");
+  const documentText=converted.documents.map((doc,index)=>
+    "[DOCUMENT "+(index+1)+"] "+doc.name+"\n"+doc.text
+  ).join("\n\n---\n\n");
+  const governed=freeChatCorpusText(corpusContext);
+  const missionProfile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
+
+  const system=[
+    "You are AI Advokat in FREE Workers AI mode.",
+    "Reply in the user's language.",
+    "Analyse only the user question, converted document text and governed AI Advokat source context supplied below.",
+    "Never invent document contents, missing pages, signatures, dates, parties, legal effects or source citations.",
+    "Keep document facts separate from legal rules. A document is evidence/content, not proof of current law.",
+    "If current law is not established by a governed primary source in the supplied context, say that current-law verification is still required.",
+    "Do not claim lawyer review, Human Gate approval, filing, representation or external action.",
+    "For consequential legal steps, clearly state that professional human review is required before reliance.",
+    "Do not silently use web search in this FREE mode."
+  ].join("\n");
+
+  const user=[
+    "MISSION_PROFILE: "+missionProfile,
+    "",
+    "USER QUESTION:",
+    String(q||""),
+    "",
+    historyText ? "SESSION HISTORY (context only, not authority):\n"+historyText : "",
+    documentText ? "ATTACHED DOCUMENT TEXT:\n"+documentText : "",
+    governed ? "GOVERNED AI ADVOKAT CONTEXT:\n"+governed : "",
+    "",
+    "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
+  ].filter(Boolean).join("\n\n");
+
+  let generated;
+  try{
+    generated=await env.AI.run(String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),{
+      messages:[
+        {role:"system",content:system},
+        {role:"user",content:user}
+      ],
+      max_tokens:Math.max(600,Math.min(2200,Number(maxOutputTokens)||1800)),
+      temperature:0.1
+    });
+  }catch(error){
+    return {ok:false,error:"free_workers_ai_provider_error",detail:String(error?.message||error).slice(0,180)};
+  }
+  const text=extractModelText(generated);
+  if(!text) return {ok:false,error:"free_workers_ai_empty_response"};
+
+  return {
+    ok:true,
+    text,
+    model:String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),
+    provider:"workers_ai_free",
+    providerCalls:1,
+    convertedDocuments:converted.documents.length,
+    webSearchUsed:false,
+    sources:[],
+    conversationPersistence:"browser_session_only_app_no_server_conversation_store",
+    historyItemsUsed:Array.isArray(history)?history.length:0,
+    humanGate:"required"
+  };
+}
+
 async function handleCasePilotCaseLawResearch(request,env){
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
   const contentType=(request.headers.get("content-type")||"").toLowerCase();
