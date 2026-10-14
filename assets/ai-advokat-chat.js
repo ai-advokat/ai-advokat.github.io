@@ -31,6 +31,18 @@
   document.querySelectorAll("[data-foreign-static]").forEach(btn=>{
     btn.addEventListener("click",()=>loadForeignEmploymentPrompt(btn));
   });
+  document.querySelectorAll("[data-echr-static]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const echrMode=String(btn.dataset.echrStatic||"search");
+      input.value=echrMode==="explain"
+        ? "Анализирај конкретен предмет на ЕСЧП за Северна Македонија. Прво пронајди го во официјалниот македонски корпус на Бирото, потоа врзи го со HUDOC и јасно наведи application number, датум, релевантни членови, исход и извор. Ако врската не е сигурна, кажи дека е потребна дополнителна проверка."
+        : "Пребарај ги официјалните македонски пресуди и одлуки на ЕСЧП за Северна Македонија. Користи го корпусот на Бирото за застапување пред ЕСЧП како домашен официјален извор и HUDOC за примарна проверка. Прикажи релевантни предмети со application number, датум, членови и точни извори.";
+      autoSize();
+      document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});
+      setTimeout(()=>input.focus(),350);
+    });
+  });
+
 
   let abortController=null;
   let mode="auto";
