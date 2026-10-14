@@ -70,14 +70,14 @@
     <div class="architecture" aria-label="Доказна архитектура">
       <div class="layer"><strong>1 · Извор / потекло</strong><br><span class="meta">Идентитет, издание, пар на извори и дигитален отпечаток.</span></div>
       <div class="layer"><strong>2 · Картичка за правен доказ</strong><br><span class="meta">Состојба на проверка, ревизија и независни контролни точки за објава.</span></div>
-      <div class="layer"><strong>3 · Citation & Authority Engine</strong><br><span class="meta">A1–A6 authority classification; AI synthesis никогаш не е правен авторитет.</span></div>
-      <div class="layer"><strong>4 · Legal Claim Validator</strong><br><span class="meta">Claim-level source, version/date, locator, verification и provenance.</span></div>
+      <div class="layer"><strong>3 · Мотор за цитати и авторитет</strong><br><span class="meta">Класификација на авторитет A1–A6; AI синтезата никогаш не е правен авторитет.</span></div>
+      <div class="layer"><strong>4 · Проверувач на правни тврдења</strong><br><span class="meta">Извор на ниво на тврдење, верзија/датум, локација, проверка и потекло.</span></div>
       <div class="layer"><strong>5 · Потекло на одговорот</strong><br><span class="meta">Трага од извор до конкретен AI одговор, без општа ознака „проверено“.</span></div>
       <div class="layer"><strong>6 · Регистар на човечка контрола</strong><br><span class="meta">Одлуката е врзана за предмет, контролна точка, верзија и дигитален отпечаток.</span></div>
       <div class="layer"><strong>7 · Ревизорска трага / историја на одлуки</strong><br><span class="meta">Временска реконструкција само со додавање, без имплицитни настани.</span></div>
-      <div class="layer"><strong>8 · Governed Legal Agent Architecture</strong><br><span class="meta">Chief Legal Orchestrator, bounded specialists, corpus-first knowledge и mandatory Verification & Citation Agent. <a href="/agent-architecture.html">Отвори архитектура →</a></span></div>
-      <div class="layer"><strong>9 · LIOE / Real Legal Run Records</strong><br><span class="meta">Variable legal mission depth, stress-test, именувани точки на човечка контрола и оперативно учење поткрепено со докази. <a href="/data/legal-runs/index.json">Run index →</a> · <a href="/data/legal-intelligence-metrics-baseline.json">Baseline →</a></span></div>
-      <div class="layer"><strong>10 · Open Legal Sources / Rights-Aware Ingest</strong><br><span class="meta">Authority, public access, reuse/licence, ingest and Human Review се одвоени. PUBLIC ≠ REUSABLE. <a href="/open-legal-sources.html">Отвори регистар →</a></span></div>
+      <div class="layer"><strong>8 · Контролирана архитектура на правни агенти</strong><br><span class="meta">Главен правен оркестратор, ограничени специјалисти, знаење што тргнува од корпусот и задолжителен агент за проверка и цитирање. <a href="/agent-architecture.html">Отвори архитектура →</a></span></div>
+      <div class="layer"><strong>9 · LIOE / Реални записи од правни извршувања</strong><br><span class="meta">Променлива длабочина на правната задача, стрес-тест, именувани точки на човечка контрола и оперативно учење поткрепено со докази. <a href="/data/legal-runs/index.json">Индекс на извршувања →</a> · <a href="/data/legal-intelligence-metrics-baseline.json">Почетна линија →</a></span></div>
+      <div class="layer"><strong>10 · Отворени правни извори / внес со почитување на правата</strong><br><span class="meta">Авторитетот, јавниот пристап, повторната употреба/лиценцата, внесот и човечката проверка се одвоени. ЈАВНО ≠ ДОЗВОЛЕНО ЗА ПОВТОРНА УПОТРЕБА. <a href="/open-legal-sources.html">Отвори регистар →</a></span></div>
     </div>
   </main>
 
@@ -141,11 +141,11 @@
       chips.className="chips";
       chips.append(
         item.epistemic_status==="verified_current" ? chip("Правно-изворно проверено","ok") : chip("Правна проверка во тек","warn"),
-        String(item.author_approval||"").startsWith("approved") ? chip("Авторски одобрено","ok") : chip("Авторско одобрување: pending","warn"),
-        item.public_release ? chip("Public release: approved","ok") : chip("Public release: closed"),
-        item.rag_eligible ? chip("AI/RAG: approved","ok") : chip("AI/RAG: closed"),
-        item.github_merge_approved ? chip("GitHub merge: approved","ok") : chip("GitHub merge: closed"),
-        item.production_corpus_write_approved ? chip("Production write: approved","ok") : chip("Production write: closed")
+        String(item.author_approval||"").startsWith("approved") ? chip("Авторски одобрено","ok") : chip("Авторско одобрување: во исчекување","warn"),
+        item.public_release ? chip("Јавна објава: одобрено","ok") : chip("Јавна објава: затворено"),
+        item.rag_eligible ? chip("AI/RAG: одобрено","ok") : chip("AI/RAG: затворено"),
+        item.github_merge_approved ? chip("GitHub спојување: одобрено","ok") : chip("GitHub спојување: затворено"),
+        item.production_corpus_write_approved ? chip("Продукциско запишување: одобрено","ok") : chip("Продукциско запишување: затворено")
       );
       article.append(chips);
 
