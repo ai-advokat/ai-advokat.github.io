@@ -55,10 +55,17 @@
     },
     {
       "from": 1991,
+      "to": 2002,
+      "method": "chronological_register_scan_provenance_then_controlled_extraction",
+      "register_support": "official_public_pdf_registers_image_primary",
+      "status": "source_registered_extraction_pending"
+    },
+    {
+      "from": 2003,
       "to": 2025,
       "method": "chronological_register_plus_issue_binding",
-      "register_support": "official_public_pdf_registers",
-      "status": "ready_for_backfill"
+      "register_support": "official_public_pdf_registers_machine_text_candidate",
+      "status": "ready_for_staging_backfill"
     },
     {
       "from": 2026,
@@ -78,5 +85,6 @@
     "act_purpose_must_be_source_grounded": true,
     "unsupported_purpose_inference": false
   },
-  "completion_rule": "A year is COMPLETE only when every official issue is accounted for, issue date and source URL are bound, acts are indexed, article-level references are parsed where available, and validation counts reconcile with the official source."
+  "completion_rule": "A year is COMPLETE only when every official issue is accounted for, issue date and source URL are bound, acts are indexed, article-level references are parsed where available, and validation counts reconcile with the official source.",
+  "provenance_manifest": "data/gazette-annual-registers-1991-2025.json"
 }
