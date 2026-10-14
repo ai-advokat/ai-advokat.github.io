@@ -1047,6 +1047,99 @@ async function handleCaseWorkspaceApi(request,env,url){
     },201);
   }
 
+  if(tail.startsWith("documents/") && tail.endsWith("/extract")){
+    const docTail=tail.slice("documents/".length);
+    const segments=docTail.split("/").filter(Boolean);
+    const documentId=caseDocumentId(segments[0]);
+    if(!documentId || segments.length!==2 || segments[1]!=="extract") return json(request,{ok:false,error:"case_document_not_found"},404);
+    if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+    if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_professional_write_role_required"},403);
+    if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
+
+    const row=await env.DB.prepare(
+      `SELECT id,original_name,mime_type,sha256,storage_key,storage_state,extraction_state
+         FROM case_document_slots
+        WHERE id=? AND case_id=?
+        LIMIT 1`
+    ).bind(documentId,caseId).first();
+    if(!row || row.storage_state==="deleted") return json(request,{ok:false,error:"case_document_not_found"},404);
+    if(row.storage_state!=="uploaded") return json(request,{ok:false,error:"case_document_not_ready_for_extraction",storageState:row.storage_state},409);
+
+    const object=await env.CASE_FILES.get(row.storage_key);
+    if(!object) return json(request,{ok:false,error:"case_document_storage_object_missing"},503);
+    if(Number(object.size||0)>CASE_INTELLIGENCE_PROVIDER_MAX_BYTES){
+      return json(request,{
+        ok:false,error:"case_document_partitioning_required",
+        maxBytes:CASE_INTELLIGENCE_PROVIDER_MAX_BYTES,
+        actualBytes:Number(object.size||0),
+        documentId
+      },409);
+    }
+
+    const bytes=new Uint8Array(await object.arrayBuffer());
+    const extraction=await runPrivateCaseDocumentExtraction(env,{
+      documentId,
+      fileName:row.original_name,
+      mimeType:row.mime_type,
+      bytes
+    });
+    if(!extraction.ok){
+      await env.DB.prepare(
+        "UPDATE case_document_slots SET extraction_state='failed',updated_at=? WHERE id=? AND case_id=?"
+      ).bind(new Date().toISOString(),documentId,caseId).run().catch(()=>{});
+      return json(request,{ok:false,error:extraction.error,problems:extraction.problems||null,detail:extraction.detail||null},503);
+    }
+
+    const derivedKey=`case-derived/v1/${caseId}/${documentId}/extraction.json`;
+    const derivedBytes=new TextEncoder().encode(JSON.stringify({
+      version:"CASE_DOCUMENT_EXTRACTION_V1",
+      caseId,
+      documentId,
+      sourceSha256:row.sha256||null,
+      model:extraction.model,
+      extraction:extraction.extraction
+    }));
+    const derivedSha256=await sha256BytesHex(derivedBytes);
+    try{
+      await env.CASE_FILES.put(derivedKey,derivedBytes,{
+        httpMetadata:{contentType:"application/json"},
+        customMetadata:{caseId,documentId,kind:"case_document_extraction_v1",derivedSha256}
+      });
+    }catch(error){
+      console.error("case_extraction_r2_write_failed",String(error?.message||error).slice(0,180));
+      return json(request,{ok:false,error:"case_extraction_storage_failed"},503);
+    }
+
+    const at=new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE case_document_slots SET extraction_state='complete',updated_at=? WHERE id=? AND case_id=?"
+      ).bind(at,documentId,caseId),
+      env.DB.prepare(
+        "UPDATE case_workspaces SET professional_use_locked=1,updated_at=? WHERE id=?"
+      ).bind(at,caseId),
+      env.DB.prepare(
+        `INSERT INTO case_audit_events
+          (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+         VALUES (?, ?, ?, 'analysis_requested', 'case_document', ?, ?, ?)`
+      ).bind(
+        "CAE-"+crypto.randomUUID(),caseId,membership.accountId,documentId,
+        safeCaseAuditMetadata({phase:"document_extraction",derivedSha256}),at
+      )
+    ]);
+
+    return json(request,{
+      ok:true,
+      caseId,
+      documentId,
+      extractionState:"complete",
+      derivedSha256,
+      extraction:extraction.extraction,
+      privacy:"private_case_derived_artifact_not_public_corpus",
+      humanGate:{professionalUseLocked:true}
+    });
+  }
+
   if(tail.startsWith("documents/")){
     const docTail=tail.slice("documents/".length);
     const segments=docTail.split("/").filter(Boolean);
