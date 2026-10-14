@@ -60,7 +60,7 @@ test("GPTACT3 production activation supports FREE Workers AI and preserves the p
   assert.match(workflow,/Live FREE Workers AI \+ DOCX attachment smoke test/);
   assert.match(workflow,/FREE_PROVIDER/);
   assert.match(workflow,/WORKERS_AI_MARKDOWN_ENABLED/);
-  assert.match(workflow,/PRAVDA_FREE_DOC/);
+  assert.match(workflow,/PRAVDAFREE777/);
   assert.match(workflow,/gpt-combined-smoke\.json/);
   assert.match(workflow,/sources/);
 });
@@ -164,4 +164,12 @@ test("GPTACT11 FREE Workers AI is explicit, bounded and document-capable",()=>{
   assert.match(worker,/cloudflare_workers_ai_to_markdown/);
   assert.match(worker,/FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED/);
   assert.match(worker,/free_mode_professional_postflight_required/);
+});
+
+
+test("GPTACT12 FREE document prompt treats extracted body as content and exact tokens stay exact",()=>{
+  assert.match(worker,/ATTACHED DOCUMENT TEXT is extracted document-body content/);
+  assert.match(worker,/copy it exactly before adding interpretation/);
+  assert.match(workflow,/PRAVDAFREE777/);
+  assert.doesNotMatch(workflow,/PRAVDA_FREE_DOC/);
 });
