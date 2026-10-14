@@ -23,20 +23,20 @@ describe("Legal Governance Dashboard",()=>{
   });
 
   test("LGD4 all downstream gates are presented independently",()=>{
-    for(const label of ["Public release","AI/RAG","GitHub merge","Production write"]){
+    for(const label of ["Јавна објава","AI/RAG","GitHub спојување","Продукциско запишување"]){
       assert.ok(page.includes(label));
     }
   });
 
   test("LGD5 evidence architecture is visibly complete",()=>{
     for(const label of [
-      "Source / Provenance",
-      "Legal Evidence Card",
-      "Citation & Authority Engine",
-      "Legal Claim Validator",
-      "Response Provenance",
-      "Human Gate Ledger",
-      "Audit Trail / Decision History"
+      "Извор / потекло",
+      "Картичка за правен доказ",
+      "Мотор за цитати и авторитет",
+      "Проверувач на правни тврдења",
+      "Потекло на одговорот",
+      "Регистар на човечка контрола",
+      "Ревизорска трага / историја на одлуки"
     ]) assert.ok(page.includes(label));
   });
 
@@ -45,7 +45,7 @@ describe("Legal Governance Dashboard",()=>{
   });
 
   test("LGD7 LIOE operational evidence is visible but read-only",()=>{
-    assert.match(page,/LIOE \/ Real Legal Run Records/);
+    assert.match(page,/LIOE \/ Реални записи од правни извршувања/);
     assert.match(page,/\/data\/legal-runs\/index\.json/);
     assert.match(page,/\/data\/legal-intelligence-metrics-baseline\.json/);
   });
