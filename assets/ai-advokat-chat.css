@@ -155,3 +155,16 @@
 .foreigners-features span{display:inline-flex;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:.8rem;font-weight:700}
 .foreigners-note{margin-top:16px!important;padding:11px 13px;border-left:3px solid var(--gold);background:var(--bg);border-radius:10px}
 @media(max-width:700px){.foreigners-card{grid-template-columns:1fr}.foreigners-icon{width:64px;height:64px;border-radius:18px}.foreigners-actions .btn,.foreigners-links .btn{width:100%;text-align:center}}
+
+
+/* Prominent legal modules directly below hero */
+.featured-modules{padding:34px 0 18px;background:var(--bg)}
+.featured-modules-head{margin-bottom:18px}
+.featured-modules-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.featured-module-card{display:grid;grid-template-columns:72px minmax(0,1fr);gap:18px;padding:22px;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:var(--shadow)}
+.featured-module-icon{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:1.9rem;background:var(--navy);color:white;border:1px solid color-mix(in srgb,var(--gold) 55%,transparent)}
+.featured-module-card h3{margin:6px 0 7px;font-size:1.35rem}
+.featured-module-card p{margin:0;color:var(--muted);line-height:1.55}
+.featured-module-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+@media(max-width:850px){.featured-modules-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.featured-module-card{grid-template-columns:1fr}.featured-module-actions .btn{width:100%}}
