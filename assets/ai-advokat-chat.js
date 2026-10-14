@@ -12,6 +12,8 @@
   const attachBtn=$("#aiChatAttach");
   const fileInput=$("#aiChatFiles");
   const attachmentsEl=$("#aiChatAttachments");
+  const dropZone=$("#aiChatDropZone");
+  const dropHint=$("#aiChatDropHint");
   const newChatBtn=$("#aiChatNew");
   const historyEl=$("#aiChatHistory");
   const provider=$("#aiChatProvider");
@@ -366,17 +368,9 @@
       chip.append(icon,name,rm);attachmentsEl.append(chip);
     });
   }
-  attachBtn.addEventListener("click",()=>fileInput.click());
-  fileInput.addEventListener("change",()=>{
-    const list=[...fileInput.files].slice(0,5);
-    const total=[...attachments,...list].reduce((n,f)=>n+(f.size||0),0);
-    if(total>4_000_000){alert("За оваа фаза вкупната големина на прилозите е ограничена на 4 MB.");fileInput.value="";return;}
-    attachments=[...attachments,...list].slice(0,5);
-    fileInput.value="";renderAttachments();
-  });
-
   function inferredMime(file){
-    if(file?.type) return file.type;
+    const declared=String(file?.type||"").toLowerCase();
+    if(declared && declared!=="application/octet-stream") return declared;
     const name=String(file?.name||"").toLowerCase();
     if(name.endsWith(".pdf")) return "application/pdf";
     if(name.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -389,6 +383,73 @@
     if(name.endsWith(".webp")) return "image/webp";
     return "application/octet-stream";
   }
+
+  const CHAT_ACCEPTED_MIME=new Set([
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain","text/markdown","text/csv","application/csv","application/json",
+    "image/png","image/jpeg","image/webp"
+  ]);
+  const CHAT_ATTACHMENT_TOTAL_BYTES=4_000_000;
+  const CHAT_ATTACHMENT_LIMIT=5;
+
+  function addAttachmentFiles(files,{source="picker"}={}){
+    const incoming=[...(files||[])].filter(Boolean);
+    if(!incoming.length) return;
+    const accepted=[];
+    const rejected=[];
+    for(const file of incoming){
+      const mime=inferredMime(file);
+      if(!CHAT_ACCEPTED_MIME.has(mime)){rejected.push(file.name||"датотека");continue;}
+      const duplicate=[...attachments,...accepted].some(x=>x.name===file.name&&x.size===file.size&&x.lastModified===file.lastModified);
+      if(!duplicate) accepted.push(file);
+    }
+    const merged=[...attachments,...accepted].slice(0,CHAT_ATTACHMENT_LIMIT);
+    const total=merged.reduce((n,file)=>n+(file.size||0),0);
+    if(total>CHAT_ATTACHMENT_TOTAL_BYTES){
+      alert("Вкупната големина на прилозите е ограничена на 4 MB во AI Chat.");
+      return;
+    }
+    attachments=merged;
+    renderAttachments();
+    if(dropHint){
+      const suffix=rejected.length ? ` · одбиени: ${rejected.join(", ")}` : "";
+      dropHint.textContent=`Прикачени: ${attachments.length}/${CHAT_ATTACHMENT_LIMIT}${suffix}`;
+      setTimeout(()=>{
+        if(dropHint) dropHint.textContent="Повлечете PDF, Word или слика тука · или притиснете + за избор од уред/датотечен провајдер";
+      },2600);
+    }
+  }
+
+  attachBtn.addEventListener("click",()=>fileInput.click());
+  fileInput.addEventListener("change",()=>{
+    addAttachmentFiles(fileInput.files,{source:"picker"});
+    fileInput.value="";
+  });
+
+  if(dropZone){
+    let dragDepth=0;
+    const stop=e=>{e.preventDefault();e.stopPropagation();};
+    dropZone.addEventListener("dragenter",e=>{stop(e);dragDepth++;dropZone.classList.add("is-dragover");});
+    dropZone.addEventListener("dragover",e=>{stop(e);dropZone.classList.add("is-dragover");});
+    dropZone.addEventListener("dragleave",e=>{
+      stop(e);dragDepth=Math.max(0,dragDepth-1);
+      if(dragDepth===0) dropZone.classList.remove("is-dragover");
+    });
+    dropZone.addEventListener("drop",e=>{
+      stop(e);dragDepth=0;dropZone.classList.remove("is-dragover");
+      addAttachmentFiles(e.dataTransfer?.files,{source:"drop"});
+    });
+  }
+
+  input.addEventListener("paste",e=>{
+    const files=e.clipboardData?.files;
+    if(files?.length){
+      e.preventDefault();
+      addAttachmentFiles(files,{source:"paste"});
+    }
+  });
 
   async function encodeFile(file){
     const mime=inferredMime(file);

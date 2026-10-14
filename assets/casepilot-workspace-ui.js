@@ -12,6 +12,7 @@ let activeCaseId="";
 let currentCaseLawCards=[];
 let currentWorkspaceData=null;
 let currentCaseRole="";
+let pendingCaseFiles=[];
 
 function authHeaders(extra={}){
   if(!accessKey) throw new Error("membership_key_required");
@@ -64,6 +65,9 @@ function resetWorkspace(){
   currentCaseLawCards=[];
   currentWorkspaceData=null;
   currentCaseRole="";
+  pendingCaseFiles=[];
+  if($("caseFileInput")) $("caseFileInput").value="";
+  if($("caseFileSelection")) $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 20 MB по датотека";
   setWorkspaceVisible(false);
   $("caseTitle").textContent="—";
   $("caseLegalArea").textContent="—";
@@ -284,10 +288,53 @@ function renderWorkspace(data){
 function documentMimeForFile(file){
   const name=String(file?.name||"").toLowerCase();
   if(file?.type==="application/pdf" || name.endsWith(".pdf")) return "application/pdf";
+  if(file?.type==="application/msword" || name.endsWith(".doc")) return "application/msword";
   if(file?.type==="application/vnd.openxmlformats-officedocument.wordprocessingml.document" || name.endsWith(".docx")){
     return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   }
+  if(file?.type==="image/png" || name.endsWith(".png")) return "image/png";
+  if(file?.type==="image/jpeg" || name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+  if(file?.type==="image/webp" || name.endsWith(".webp")) return "image/webp";
   return "";
+}
+
+function setPendingCaseFiles(files){
+  const incoming=[...(files||[])].filter(Boolean).slice(0,20);
+  const invalid=incoming.filter(file=>!documentMimeForFile(file) || file.size>20*1024*1024);
+  if(invalid.length){
+    $("documentStatus").textContent="Одбиени се неподдржани или преголеми датотеки: "+invalid.map(x=>x.name).join(", ");
+    return false;
+  }
+  pendingCaseFiles=incoming;
+  const selection=$("caseFileSelection");
+  if(selection){
+    selection.textContent=pendingCaseFiles.length
+      ? pendingCaseFiles.map(file=>file.name+" ("+Math.max(1,Math.round(file.size/1024))+" KB)").join(" · ")
+      : "PDF · DOC · DOCX · PNG · JPG · WebP · до 20 MB по датотека";
+  }
+  return true;
+}
+
+$("chooseCaseFiles").addEventListener("click",()=>$("caseFileInput").click());
+$("caseFileInput").addEventListener("change",()=>{
+  setPendingCaseFiles($("caseFileInput").files);
+});
+
+const caseDrop=$("caseFileDrop");
+if(caseDrop){
+  let depth=0;
+  const stop=e=>{e.preventDefault();e.stopPropagation();};
+  caseDrop.addEventListener("click",e=>{if(e.target===caseDrop) $("caseFileInput").click();});
+  caseDrop.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===" "){e.preventDefault();$("caseFileInput").click();}
+  });
+  caseDrop.addEventListener("dragenter",e=>{stop(e);depth++;caseDrop.classList.add("dragover");});
+  caseDrop.addEventListener("dragover",e=>{stop(e);caseDrop.classList.add("dragover");});
+  caseDrop.addEventListener("dragleave",e=>{stop(e);depth=Math.max(0,depth-1);if(depth===0) caseDrop.classList.remove("dragover");});
+  caseDrop.addEventListener("drop",e=>{
+    stop(e);depth=0;caseDrop.classList.remove("dragover");
+    setPendingCaseFiles(e.dataTransfer?.files);
+  });
 }
 
 async function loadDocuments(){
@@ -410,46 +457,53 @@ $("uploadCaseFile").addEventListener("click",async()=>{
     $("documentStatus").textContent="Reviewer пристапот е read-only.";
     return;
   }
-  const file=$("caseFileInput").files?.[0]||null;
-  if(!file){
-    $("documentStatus").textContent="Изберете PDF или DOCX документ.";
+  if(!pendingCaseFiles.length){
+    setPendingCaseFiles($("caseFileInput").files);
+  }
+  if(!pendingCaseFiles.length){
+    $("documentStatus").textContent="Изберете или повлечете PDF, Word или слика.";
     return;
   }
-  if(file.size>20*1024*1024){
-    $("documentStatus").textContent="Документот е поголем од 20 MB.";
+  const invalid=pendingCaseFiles.find(file=>!documentMimeForFile(file) || file.size>20*1024*1024);
+  if(invalid){
+    $("documentStatus").textContent="Неподдржана или преголема датотека: "+invalid.name;
     return;
   }
-  const mime=documentMimeForFile(file);
-  if(!mime){
-    $("documentStatus").textContent="Дозволени се само PDF и DOCX.";
-    return;
-  }
-  const pages=$("caseFilePages").value.trim();
+  const pages=pendingCaseFiles.length===1 ? $("caseFilePages").value.trim() : "";
   $("uploadCaseFile").disabled=true;
-  $("documentStatus").textContent="Се поставува приватниот документ…";
+  $("documentStatus").textContent="Се поставуваат "+pendingCaseFiles.length+" приватни датотеки…";
+  let uploaded=0;
   try{
-    const headers=authHeaders({
-      "content-type":mime,
-      "X-File-Name":file.name
-    });
-    if(pages) headers["X-Page-Count"]=pages;
-    const response=await fetch(API_BASE+"/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/upload",{
-      method:"POST",
-      headers,
-      body:file
-    });
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok || !data.ok) throw new Error(data.error||("http_"+response.status));
+    for(const file of pendingCaseFiles){
+      const mime=documentMimeForFile(file);
+      const headers=authHeaders({
+        "content-type":mime,
+        "X-File-Name":file.name
+      });
+      if(pages) headers["X-Page-Count"]=pages;
+      const response=await fetch(API_BASE+"/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/upload",{
+        method:"POST",
+        headers,
+        body:file
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok || !data.ok) throw new Error((data.error||("http_"+response.status))+" · "+file.name);
+      uploaded++;
+    }
+    pendingCaseFiles=[];
     $("caseFileInput").value="";
     $("caseFilePages").value="";
-    $("documentStatus").textContent="Документот е зачуван приватно. SHA-256 е пресметан server-side; AI ingestion сè уште е посебно governed.";
+    $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 20 MB по датотека";
+    $("documentStatus").textContent=uploaded+" датотек(и) се зачувани приватно. SHA-256 е пресметан server-side; AI ingestion останува посебно governed.";
     await openCaseById(activeCaseId);
   }catch(error){
-    $("documentStatus").textContent="Upload не успеа: "+String(error?.message||error);
+    $("documentStatus").textContent="Upload прекинат по "+uploaded+" успешни датотеки: "+String(error?.message||error);
+    await loadDocuments().catch(()=>{});
   }finally{
     $("uploadCaseFile").disabled=false;
   }
 });
+
 
 $("researchCaseLaw").addEventListener("click",async()=>{
   if(!activeCaseId || !accessKey){

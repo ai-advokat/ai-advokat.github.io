@@ -51,3 +51,18 @@ test("professional tools exposes the authenticated secure workspace",()=>{
   assert.match(toolsPage,/href="\/casepilot-workspace\.html"/);
   assert.match(toolsPage,/Отвори Secure Case Workspace/);
 });
+
+test("private document vault supports drag drop and multi-file PDF Word image selection",()=>{
+  for(const id of ["caseFileDrop","chooseCaseFiles","caseFileInput","caseFileSelection","uploadCaseFile"]){
+    assert.match(html,new RegExp('id="'+id+'"'));
+  }
+  assert.match(html,/\.pdf,\.doc,\.docx,\.png,\.jpg,\.jpeg,\.webp/);
+  assert.match(html,/caseFileInput" type="file" multiple hidden/);
+  assert.match(js,/setPendingCaseFiles/);
+  assert.match(js,/dataTransfer\?\.files/);
+  assert.match(js,/pendingCaseFiles/);
+  assert.match(js,/application\/msword/);
+  assert.match(js,/image\/png/);
+  assert.match(js,/image\/jpeg/);
+  assert.match(js,/image\/webp/);
+});

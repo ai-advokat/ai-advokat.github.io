@@ -1442,11 +1442,14 @@
           <div class="ai-chat-messages" id="aiChatMessages" aria-live="polite"></div>
 
           <div class="ai-chat-composer-zone">
-            <div class="ai-chat-composer">
+            <div class="ai-chat-composer" id="aiChatDropZone">
+              <div class="ai-chat-drop-hint" id="aiChatDropHint" aria-live="polite">
+                Повлечете PDF, Word или слика тука · или притиснете + за избор од уред/датотечен провајдер
+              </div>
               <div class="ai-chat-attachments" id="aiChatAttachments"></div>
               <div class="ai-chat-input">
                 <button class="ai-chat-iconbtn" id="aiChatAttach" type="button" aria-label="Прикачи датотека" title="Прикачи датотека">＋</button>
-                <input id="aiChatFiles" type="file" multiple hidden aria-label="Прикачи датотеки во AI Advokat" accept=".pdf,.doc,.docx,.txt,.md,.csv,.json,.png,.jpg,.jpeg,.webp" />
+                <input id="aiChatFiles" type="file" multiple hidden aria-label="Прикачи датотеки во AI Advokat" accept=".pdf,.doc,.docx,.txt,.md,.csv,.json,.png,.jpg,.jpeg,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp" />
                 <textarea id="aiChatInput" rows="1" maxlength="4000" aria-label="Порака до AI Advokat" placeholder="Прашајте го AI Advokat…"></textarea>
                 <button class="ai-chat-iconbtn" id="aiChatMic" type="button" aria-label="Диктирај" title="Диктирај">🎙</button>
                 <button class="ai-chat-send" id="aiChatSend" type="button" aria-label="Испрати" title="Испрати">➤</button>
@@ -1488,7 +1491,7 @@
                 <span class="ai-chat-mode-caption" id="aiChatModeCaption">Auto</span>
               </div>
             </div>
-            <p class="ai-chat-hint"><strong>Приватност:</strong> не внесувајте адвокатска тајна, матични броеви, здравствени или други чувствителни податоци. AI Advokat е истражувачка помош; важните правни чекори остануваат под човечка професионална контрола.</p>
+            <p class="ai-chat-hint"><strong>Приватност:</strong> не внесувајте адвокатска тајна, матични броеви, здравствени или други чувствителни податоци. Chat прилозите се обработуваат само како прилог на тековното барање и не се промовираат автоматски во правниот corpus. За доверливи предмети користете Secure Case Workspace. Важните правни чекори остануваат под човечка професионална контрола.</p>
           </div>
         </div>
 
