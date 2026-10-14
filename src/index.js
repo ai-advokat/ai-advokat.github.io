@@ -3148,7 +3148,6 @@ const GUIDE_PDF_MIME="application/pdf";
 const GUIDE_ALLOWED_MIME=new Set([GUIDE_DOCX_MIME,GUIDE_PDF_MIME]);
 const CHAT_ALLOWED_FILE_MIME=new Set([
   "application/pdf",
-  "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "text/csv",
   "application/csv",
@@ -5479,18 +5478,19 @@ async function handleOrchestratorArchitecture(request, env) {
     runtime:{
       architecture:readiness.architecture,
       orchestrationPattern:readiness.orchestrationPattern,
-      providerExecution:readiness.provider==="configured"
-        ? "configured_for_api_chat_execution"
-        : freeWorkersAIConfigured(env)
-          ? "configured_for_free_workers_ai_chat_execution"
+      providerExecution:freeWorkersAIConfigured(env)
+        ? "configured_for_free_workers_ai_chat_execution"
+        : readiness.provider==="configured"
+          ? "configured_for_api_chat_execution"
           : "locked",
       freeProvider:freeWorkersAIConfigured(env) ? "workers_ai_free" : "locked",
+      paidProviderExecution:readiness.provider==="configured" ? "configured_for_api_chat_execution" : "locked",
       nativeCorpusTool:readiness.nativeCorpusTool,
       externalResearchTools:readiness.externalResearchTools,
-      fileInputs:readiness.fileInputs==="configured"
-        ? "configured"
-        : freeWorkersAIMarkdownConfigured(env)
-          ? "configured_workers_ai_markdown_conversion"
+      fileInputs:freeWorkersAIMarkdownConfigured(env)
+        ? "configured_workers_ai_markdown_conversion"
+        : readiness.fileInputs==="configured"
+          ? "configured"
           : "locked",
       tracing:readiness.tracing,
       humanGate:readiness.humanGate,
@@ -5614,20 +5614,20 @@ async function handleCapabilities(request, env) {
       instrumentRegistry: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       articleCorpus: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
-      legalOrchestrator: orchestratorRuntimeReadiness(env).provider==="configured"
-        ? "gpt_6_1_sol_live_governed"
-        : freeWorkersAIConfigured(env)
-          ? "workers_ai_free_document_research_human_gate"
+      legalOrchestrator: freeWorkersAIConfigured(env)
+        ? "workers_ai_free_document_research_human_gate"
+        : orchestratorRuntimeReadiness(env).provider==="configured"
+          ? "gpt_6_1_sol_live_governed"
           : "architecture_v2_provider_locked",
       lioeRuntimeGovernance: env.LIOE_RUNTIME_GOVERNANCE_ENABLED==="true" ? "enabled" : "locked",
       lioePostflight: env.LIOE_POSTFLIGHT_ENABLED==="true" ? "enabled" : "locked",
       lioeSpecialistExecution: env.LIOE_SPECIALIST_EXECUTION_ENABLED==="true" ? "enabled" : "locked",
       lioeRuntimeTelemetry: lioeTelemetry,
       gptWebSearch: orchestratorRuntimeReadiness(env).externalResearchTools,
-      gptFileInputs: orchestratorRuntimeReadiness(env).fileInputs==="configured"
-        ? "configured"
-        : freeWorkersAIMarkdownConfigured(env)
-          ? "workers_ai_markdown_conversion"
+      gptFileInputs: freeWorkersAIMarkdownConfigured(env)
+        ? "workers_ai_markdown_conversion"
+        : orchestratorRuntimeReadiness(env).fileInputs==="configured"
+          ? "configured"
           : "locked",
       freeChatProvider:freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
