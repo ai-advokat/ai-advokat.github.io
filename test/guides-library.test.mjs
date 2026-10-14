@@ -438,9 +438,11 @@ describe("Zoran guides library governance",()=>{
     assert.equal(v2.ai_use,"reference_only_until_human_gate");
   });
 
-  test("G39 catalogue v2.3 opens bounded source text while preserving the separate PDF artifact gate",()=>{
+  test("G39 catalogue v2.4 exposes practical PDF/full-text products while preserving legal-authority boundaries",()=>{
     assert.match(html,/39 јавно видливи каталошки записи/);
-    assert.match(html,/Каталог v2\.3 · source-preserving full-text release/);
+    assert.match(html,/Каталог v2\.4 · practical PDF \+ full-text \+ governed bot context/);
+    assert.match(html,/36 практични јавни редакции 38–73/);
+    assert.match(html,/не ги прави официјален правен извор/);
     assert.match(html,/Целосен текст: јавно активен/);
     assert.match(recordHtml,/Активен master артефакт/);
     assert.match(recordHtml,/јавен PDF:/);
