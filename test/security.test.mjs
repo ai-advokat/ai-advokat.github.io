@@ -419,8 +419,8 @@ describe("assistant — AI safety", () => {
     const { env, raw } = freshEnv({ ai });
     const ip = nextIp();
     const subject = await security.anonymousSubject(assistantRequest("x", { ip }), env);
-    raw.prepare("INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests) VALUES (?,?,10)")
-      .run(subject, security.currentPeriod());
+    raw.prepare("INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests) VALUES (?,?,?)")
+      .run(subject, security.currentPeriod(), security.FREE_MONTHLY_ASSISTANT_QUOTA);
     const r = await call(env, assistantRequest("ЗРО член 12", { ip }));
     assert.equal(r.status, 429);
     assert.equal(ai.calls.length, 0);
@@ -626,12 +626,12 @@ describe("membership requests", () => {
 // ---------------------------------------------------------------------------
 
 describe("regression and truthful capabilities", () => {
-  test("R1 membership plans keep 199 / 399 / 999 MKD and FREE quota 10", async () => {
+  test("R1 membership plans keep 199 / 399 / 999 MKD and configured FREE quota", async () => {
     const { env } = freshEnv();
     const r = await call(env, new Request(BASE + "/api/membership/plans"));
     const prices = r.body.plans.map((p) => p.monthlyPriceMkd);
     for (const n of [199, 399, 999]) assert.ok(prices.includes(n));
-    assert.equal(r.body.plans.find((p) => p.code === "free").monthlyQuota, 10);
+    assert.equal(r.body.plans.find((p) => p.code === "free").monthlyQuota, security.FREE_MONTHLY_ASSISTANT_QUOTA);
   });
 
   test("R2 PWA and static assets are still served through ASSETS with security headers", async () => {
