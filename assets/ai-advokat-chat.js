@@ -111,6 +111,7 @@
             submission:data.submission,
             fees:data.fees,
             official_sources:data.official_sources,
+            secondary_sources:data.secondary_sources,
             verification:data.verification
           };
           const refText=JSON.stringify(referencePayload,null,2);
