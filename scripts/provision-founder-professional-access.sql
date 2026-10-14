@@ -28,11 +28,11 @@ ON CONFLICT(id) DO UPDATE SET
 INSERT INTO membership_access_keys
   (id,account_id,key_hash,key_prefix,label,status,expires_at)
 VALUES
-  ('key-owner-professional-primary','owner-professional','065390c47f802a21f71fb141fb821280d3dd2ccfd46bc3109eec5b831c6cc0db','AIADV-OWNER-uPrsIl','Owner professional access','active',NULL)
+  ('key-owner-professional-primary','owner-professional','b073d7ad4b41ce88e319ab16024da9c48da88f33498b8eaded480e22e08d0f95','AIADV-OWNER-KopJV9','Owner professional access','active',NULL)
 ON CONFLICT(id) DO UPDATE SET
   account_id='owner-professional',
-  key_hash='065390c47f802a21f71fb141fb821280d3dd2ccfd46bc3109eec5b831c6cc0db',
-  key_prefix='AIADV-OWNER-uPrsIl',
+  key_hash='b073d7ad4b41ce88e319ab16024da9c48da88f33498b8eaded480e22e08d0f95',
+  key_prefix='AIADV-OWNER-KopJV9',
   label='Owner professional access',
   status='active',
   expires_at=NULL;
