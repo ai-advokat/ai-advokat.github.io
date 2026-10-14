@@ -810,8 +810,9 @@
         && runtime.lioeSpecialistExecution==="enabled"
         && runtime.lioeRuntimeTelemetry==="ready";
       if(fullyReady) provider.textContent="GPT-6.1 Sol · LIVE governed";
+      else if(runtime.providerExecution==="configured_for_free_workers_ai_chat_execution") provider.textContent="FREE Workers AI · LIVE · документи";
       else if(runtime.providerExecution==="configured_for_api_chat_execution") provider.textContent="GPT-6.1 Sol · runtime partial · recovery required";
-      else provider.textContent="GPT-6.1 Sol · provider unavailable";
+      else provider.textContent="AI provider · недостапен";
     })
     .catch(()=>{provider.textContent="GPT runtime · недостапен";});
 
