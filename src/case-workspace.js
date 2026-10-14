@@ -3,7 +3,7 @@
 
 export const CASE_WORKSPACE_VERSION="1.0.0";
 export const CASE_WORKSPACE_DOCUMENT_LIMIT=20;
-export const CASE_WORKSPACE_MAX_FILE_BYTES=20*1024*1024;
+export const CASE_WORKSPACE_MAX_FILE_BYTES=25*1024*1024;
 export const CASE_WORKSPACE_ALLOWED_MIME_TYPES=Object.freeze([
   "application/pdf",
   "application/msword",

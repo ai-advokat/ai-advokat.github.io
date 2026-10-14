@@ -67,7 +67,7 @@ function resetWorkspace(){
   currentCaseRole="";
   pendingCaseFiles=[];
   if($("caseFileInput")) $("caseFileInput").value="";
-  if($("caseFileSelection")) $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 20 MB по датотека";
+  if($("caseFileSelection")) $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 25 MB по датотека · до 20 документи";
   setWorkspaceVisible(false);
   $("caseTitle").textContent="—";
   $("caseLegalArea").textContent="—";
@@ -299,8 +299,13 @@ function documentMimeForFile(file){
 }
 
 function setPendingCaseFiles(files){
-  const incoming=[...(files||[])].filter(Boolean).slice(0,20);
-  const invalid=incoming.filter(file=>!documentMimeForFile(file) || file.size>20*1024*1024);
+  const all=[...(files||[])].filter(Boolean);
+  if(all.length>20){
+    $("documentStatus").textContent="Во една операција може да поставите најмногу 20 документи.";
+    return false;
+  }
+  const incoming=all;
+  const invalid=incoming.filter(file=>!documentMimeForFile(file) || file.size>25*1024*1024);
   if(invalid.length){
     $("documentStatus").textContent="Одбиени се неподдржани или преголеми датотеки: "+invalid.map(x=>x.name).join(", ");
     return false;
@@ -310,7 +315,7 @@ function setPendingCaseFiles(files){
   if(selection){
     selection.textContent=pendingCaseFiles.length
       ? pendingCaseFiles.map(file=>file.name+" ("+Math.max(1,Math.round(file.size/1024))+" KB)").join(" · ")
-      : "PDF · DOC · DOCX · PNG · JPG · WebP · до 20 MB по датотека";
+      : "PDF · DOC · DOCX · PNG · JPG · WebP · до 25 MB по датотека · до 20 документи";
   }
   return true;
 }
@@ -464,7 +469,7 @@ $("uploadCaseFile").addEventListener("click",async()=>{
     $("documentStatus").textContent="Изберете или повлечете PDF, Word или слика.";
     return;
   }
-  const invalid=pendingCaseFiles.find(file=>!documentMimeForFile(file) || file.size>20*1024*1024);
+  const invalid=pendingCaseFiles.find(file=>!documentMimeForFile(file) || file.size>25*1024*1024);
   if(invalid){
     $("documentStatus").textContent="Неподдржана или преголема датотека: "+invalid.name;
     return;
@@ -493,7 +498,7 @@ $("uploadCaseFile").addEventListener("click",async()=>{
     pendingCaseFiles=[];
     $("caseFileInput").value="";
     $("caseFilePages").value="";
-    $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 20 MB по датотека";
+    $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 25 MB по датотека · до 20 документи";
     $("documentStatus").textContent=uploaded+" датотек(и) се зачувани приватно. SHA-256 е пресметан server-side; AI ingestion останува посебно governed.";
     await openCaseById(activeCaseId);
   }catch(error){
