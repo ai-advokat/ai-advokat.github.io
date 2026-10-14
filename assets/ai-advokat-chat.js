@@ -467,8 +467,8 @@
     "text/plain","text/markdown","text/csv","application/csv","application/json",
     "image/png","image/jpeg","image/webp"
   ]);
-  const CHAT_ATTACHMENT_TOTAL_BYTES=4_000_000;
-  const CHAT_ATTACHMENT_LIMIT=5;
+  const CHAT_ATTACHMENT_TOTAL_BYTES=24_000_000;
+  const CHAT_ATTACHMENT_LIMIT=20;
 
   function addAttachmentFiles(files,{source="picker"}={}){
     const incoming=[...(files||[])].filter(Boolean);
@@ -481,13 +481,17 @@
       const duplicate=[...attachments,...accepted].some(x=>x.name===file.name&&x.size===file.size&&x.lastModified===file.lastModified);
       if(!duplicate) accepted.push(file);
     }
-    const merged=[...attachments,...accepted].slice(0,CHAT_ATTACHMENT_LIMIT);
-    const total=merged.reduce((n,file)=>n+(file.size||0),0);
-    if(total>CHAT_ATTACHMENT_TOTAL_BYTES){
-      alert("Вкупната големина на прилозите е ограничена на 4 MB во AI Chat.");
+    const combined=[...attachments,...accepted];
+    if(combined.length>CHAT_ATTACHMENT_LIMIT){
+      alert("Во една AI Advokat сесија може да прикачите најмногу 20 документи. Отстранете дел од прилозите или започнете нова сесија.");
       return;
     }
-    attachments=merged;
+    const total=combined.reduce((n,file)=>n+(file.size||0),0);
+    if(total>CHAT_ATTACHMENT_TOTAL_BYTES){
+      alert("Вкупната големина на прилозите е ограничена на 24 MB по барање. Намалете ја големината или поделете ги документите во повеќе анализи во истата сесија.");
+      return;
+    }
+    attachments=combined;
     renderAttachments();
     if(dropHint){
       const suffix=rejected.length ? ` · одбиени: ${rejected.join(", ")}` : "";
