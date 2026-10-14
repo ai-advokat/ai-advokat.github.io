@@ -442,3 +442,13 @@ test("CHAT38 visible multi-upload control exposes the 20-document contract",()=>
   assert.match(chatJs,/attachmentCount\.textContent=attachments\.length\+" \/ "\+CHAT_ATTACHMENT_LIMIT/);
   assert.match(html,/20261015-owner-upload-v2/);
 });
+
+
+test("CHAT39 owner status is visible beside the uploader",()=>{
+  assert.match(html,/id="aiChatOwnerOpen"/);
+  assert.match(html,/id="aiChatOwnerState"/);
+  assert.match(html,/FREE режим/);
+  assert.match(chatJs,/OWNER активен/);
+  assert.match(chatJs,/toolsMenu\.open=true/);
+  assert.match(html,/20261015-owner-auth-v3/);
+});

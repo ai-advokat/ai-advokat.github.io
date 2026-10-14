@@ -33,6 +33,8 @@
   const chatMembershipKey=$("#aiChatMembershipKey");
   const chatMembershipUse=$("#aiChatMembershipUse");
   const chatMembershipState=$("#aiChatMembershipState");
+  const ownerOpenBtn=$("#aiChatOwnerOpen");
+  const ownerState=$("#aiChatOwnerState");
   document.querySelectorAll("[data-foreign-static]").forEach(btn=>{
     btn.addEventListener("click",()=>loadForeignEmploymentPrompt(btn));
   });
@@ -505,6 +507,10 @@
     }
   }
 
+  if(ownerOpenBtn) ownerOpenBtn.addEventListener("click",()=>{
+    if(toolsMenu) toolsMenu.open=true;
+    setTimeout(()=>chatMembershipKey?.focus(),50);
+  });
   if(chatMembershipUse) chatMembershipUse.addEventListener("click",verifyAndUseMembershipKey);
   if(chatMembershipKey) chatMembershipKey.addEventListener("keydown",e=>{
     if(e.key==="Enter"){e.preventDefault();verifyAndUseMembershipKey();}
@@ -584,12 +590,14 @@
       if(chatMembershipState) chatMembershipState.textContent="Клучот не е активен или не може да се потврди.";
     }finally{
       if(chatMembershipUse) chatMembershipUse.disabled=false;
+      syncChatMembershipState();
     }
   }
 
   function syncChatMembershipState(){
     const key=sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
     if(chatMembershipState) chatMembershipState.textContent=key?"Owner / професионален клуч е активен во оваа сесија.":"Нема активен професионален клуч";
+    if(ownerState) ownerState.textContent=key?"OWNER активен":"FREE режим";
   }
 
 
