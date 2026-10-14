@@ -95,6 +95,14 @@ export function caseWorkspaceStorageReady(env){
     && typeof b.delete==="function";
 }
 
+export function caseWorkspaceMultipartReady(env){
+  const b=env?.CASE_FILES;
+  return caseWorkspaceStorageReady(env)
+    && typeof b.createMultipartUpload==="function"
+    && typeof b.resumeMultipartUpload==="function"
+    && typeof b.head==="function";
+}
+
 export function caseWorkspaceRuntimeState(env,{schemaReady=false}={}){
   if(env?.CASE_WORKSPACE_ENABLED!=="true") return "locked";
   if(!schemaReady) return "schema_not_ready";
