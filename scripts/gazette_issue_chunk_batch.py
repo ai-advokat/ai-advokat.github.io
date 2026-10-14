@@ -96,6 +96,30 @@ def _clean_register_title_for_anchor(title):
     t=re.sub(r"(?<=[A-Za-zА-Яа-яЀ-ӿ])-\\s+(?=[A-Za-zА-Яа-яЀ-ӿ])","",t)
     return " ".join(t.split())
 
+def _compact_alnum(value):
+    return "".join(ch.lower() for ch in str(value) if ch.isalnum())
+
+def _compact_text_with_map(text):
+    chars=[]
+    positions=[]
+    for i,ch in enumerate(str(text)):
+        if ch.isalnum():
+            chars.append(ch.lower())
+            positions.append(i)
+    return "".join(chars),positions
+
+def _compact_title_anchor(text,title,min_chars=48,max_chars=120):
+    cleaned=_clean_register_title_for_anchor(title)
+    target=_compact_alnum(cleaned)
+    if len(target)<min_chars:
+        return None
+    needle=target[:min(max_chars,len(target))]
+    compact,positions=_compact_text_with_map(text)
+    idx=compact.rfind(needle)
+    if idx<0 or idx>=len(positions):
+        return None
+    return positions[idx]
+
 def _title_anchor_pattern(title,min_tokens=5,max_tokens=12):
     # Register ordinals are annual-index ordinals and are not guaranteed to be
     # printed as body markers inside the individual Gazette issue. For an exact
@@ -125,11 +149,18 @@ def find_act_boundaries(text, acts):
             title_pat=_title_anchor_pattern(act.get("title",""))
             matches=list(title_pat.finditer(text)) if title_pat else []
             method="act_title_anchor"
-        if matches:
+        compact_pos=None
+        if not matches:
+            compact_pos=_compact_title_anchor(text,act.get("title",""))
+            method="act_compact_title_anchor"
+        if matches or compact_pos is not None:
             # Contents/index copies often occur before the actual body. Prefer
             # the last exact structural/title occurrence in the issue.
-            m=matches[-1]
-            pos=m.start()
+            if matches:
+                m=matches[-1]
+                pos=m.start()
+            else:
+                pos=compact_pos
             hits.append((pos,act))
             methods[int(act["ordinal"])]=method
     hits.sort(key=lambda x:x[0])
@@ -244,12 +275,16 @@ def main():
                     text=txt.read_text("utf-8",errors="replace").strip()
                     local_pat=_title_anchor_pattern(a.get("title",""),min_tokens=5,max_tokens=10)
                     local_matches=list(local_pat.finditer(text)) if local_pat else []
+                    compact_pos=_compact_title_anchor(text,a.get("title",""))
                     if local_matches:
                         # Page range is already bound by the official register.
                         # A strict cleaned title match inside that range is an
                         # exact act anchor; start at the matched body title.
                         text=text[local_matches[-1].start():].strip()
                         boundary_method="act_title_anchor_page_bound"
+                    elif compact_pos is not None:
+                        text=text[compact_pos:].strip()
+                        boundary_method="act_compact_title_anchor_page_bound"
                     else:
                         boundary_method="page_fallback"
                 if len(text)<40:
