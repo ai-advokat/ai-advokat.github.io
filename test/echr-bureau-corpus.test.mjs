@@ -52,3 +52,14 @@ test("Bureau intake emits an auditable coverage manifest",()=>{
   assert.match(workflow,/m\.index_records!==301/);
   assert.match(workflow,/m\.processed_pdf_links<300/);
 });
+
+
+test("Bureau matcher uses conservative unique second-pass matching",()=>{
+  const script=fs.readFileSync("scripts/bureau-echr-fulltext-intake.mjs","utf8");
+  assert.match(script,/function candidateScore/);
+  assert.match(script,/function listingYear/);
+  assert.match(script,/margin<0\.035/);
+  assert.match(script,/first\.score<0\.33/);
+  assert.match(script,/matchedIndexIds/);
+  assert.match(script,/bestIndexRecord\(link,records,matchedIndexIds\)/);
+});
