@@ -53,7 +53,7 @@ test("secure workspace first screen uses plain-language access",()=>{
   assert.match(html,/Приватен код за пристап/);
   assert.match(html,/Внесете го кодот што го добивте/);
   assert.match(html,/id="loadCases"[^>]*>Продолжи</);
-  assert.match(html,/Кодот не се зачувува/);
+  assert.match(html,/Клучот не се зачувува/);
   assert.doesNotMatch(html,/>\s*Membership key\s*</);
   assert.doesNotMatch(html,/>\s*Case ID\s*</);
 });
@@ -75,7 +75,7 @@ test("validated empty account is guided directly to new-case creation",()=>{
   assert.ok(start>0 && end>start);
   const block=js.slice(start,end);
   assert.match(block,/const cases=Array\.isArray\(data\.cases\)\?data\.cases:\[\]/);
-  assert.match(block,/Немате активни предмети/);
+  assert.match(block,/Немате предмети/);
   assert.match(block,/createCaseCard.*scrollIntoView/s);
 });
 
