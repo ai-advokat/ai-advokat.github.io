@@ -39,16 +39,16 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 <section class="hero">
 <div class="eyebrow">Моите права во секојдневниот живот</div>
 <h1>Практични правни водичи</h1>
-<p class="lead">Јавен каталог на 39 контролирани записи доставени во проектот од адвокат Зоран Стојанкиќ. Секој запис има извор, датум, ниво на проверка, историја на верзии каде што постои и посебен детален приказ.</p>
-<div class="guard"><strong>Изворот прв.</strong> Водичите се секундарни авторски/редакциски материјали. Од 13.10.2026 целосниот source текст е јавно отворен за избрани записи за кои е лоцирана точната source датотека и статусот дозволува објава. Правните предупредувања се прикажуваат одделно и оригиналниот source текст не се „поправа“ тивко. Секој водич останува секундарен материјал и бара човечка правна ревизија; не се прикажува како важечки закон. PDF/DOCX објавувањето и трајното внесување во AI-базата остануваат одделни контролирани чекори.</div>
-<div class="build">Каталог v2.3 · source-preserving full-text release · 13.10.2026</div>
+<p class="lead">Јавен каталог на 39 контролирани записи доставени во проектот од адвокат Зоран Стојанкиќ. Во каталогот се интегрирани и 36 практични јавни редакции 38–73 со PDF, целосен текст и bot-runtime контекст. Секој запис има извор, датум, ниво на проверка, историја на верзии каде што постои и посебен детален приказ.</p>
+<div class="guard"><strong>Изворот прв.</strong> Водичите се секундарни авторски/редакциски материјали. Од 13.10.2026 целосниот source текст е јавно отворен за избрани записи за кои е лоцирана точната source датотека и статусот дозволува објава. Практичните редакции 38–73 се јавно достапни како посебни PDF/full-text изданија и ботот може да ги користи само како секундарен контекст. Правните предупредувања се прикажуваат одделно и оригиналниот source текст не се „поправа“ тивко. Секој водич останува секундарен материјал и бара човечка правна ревизија; не се прикажува како важечки закон. PDF/DOCX објавувањето и трајното внесување во AI-базата остануваат одделни контролирани чекори.</div>
+<div class="build">Каталог v2.4 · practical PDF + full-text + governed bot context · 14.10.2026</div>
 </section>
 
 <section class="stats" aria-label="Статистика на библиотеката">
 <div class="stat"><b id="countAll">39</b><span>јавно видливи записи</span></div>
 <div class="stat"><b id="countPrimary">37</b><span>активни/посебни записи</span></div>
 <div class="stat"><b id="countHistory">2</b><span>архивски верзии</span></div>
-<div class="stat"><b id="countDownloads">0</b><span>целосно отворени водичи</span></div>
+<div class="stat"><b id="countDownloads">36</b><span>јавни практични PDF редакции 38–73</span></div>
 </section>
 
 <section class="toolbar" aria-labelledby="libraryTitle">
@@ -68,7 +68,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 </select></label>
 <label>Подреди<select id="sort" aria-label="Подреди"><option value="number">По број</option><option value="title">По наслов</option><option value="category">По област</option><option value="date">По датум</option></select></label>
 </div>
-<div class="resultbar"><span id="resultCount">39 записи</span><span>Секој запис има траен линк; кога целосниот source текст е активиран, се појавува копче „Отвори цел водич“. PDF останува посебен артефакт.</span></div>
+<div class="resultbar"><span id="resultCount">39 записи</span><span>Секој запис има траен линк. Кај практичните редакции 38–73 се прикажуваат PDF и целосен текст; правната верификација се прикажува одделно и не се изедначува со јавната достапност.</span></div>
 </section>
 
 <section id="cards" class="grid" aria-live="polite"></section>
@@ -79,7 +79,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 <li>Претходните изданија не се бришат: се водат како <strong>историја на верзии</strong>.</li>
 <li>Краткиот Водич 26 останува посебен. Сеопфатниот управен водич V2.0 FINAL MASTER е тековен master. <strong>Јавното PDF-отворање е одобрено</strong>, но секој PDF се активира само по точна fingerprint и URL проверка.</li>
 <li>Каталогот е <strong>јавно активиран</strong> за 39 записи. На 13.10.2026 започна контролирано отворање на целосниот source текст за записите со лоциран source master и доволна activation состојба. Останатите не се претставуваат како целосно објавени.</li>
-<li>Public PDF release <strong>не</strong> е одобрение за јавно објавување DOCX, трајно внесување во AI-базата или професионална правна употреба без човечка проверка.</li>
+<li>Практичните редакции 38–73 имаат јавен PDF, full-text и governed bot context. Ова <strong>не</strong> ги прави официјален правен извор: роковите, правните лекови и важечката норма се проверуваат преку официјален извор и Human Gate.</li><li>Public PDF release <strong>не</strong> е одобрение за јавно објавување DOCX, трајно внесување во AI-базата или професионална правна употреба без човечка проверка.</li>
 <li id="numberingNote">Каталогот ја задржува изворната нумерација. Неприкажаните броеви 01–37 не значат дека водичите се откажани; тие едноставно не се дел од тековно доставениот и управуван сет.</li>
 <li>Правните рокови и статусот на прописите мора повторно да се проверат со официјален извор на датумот на конкретната употреба.</li>
 </ul>
@@ -123,8 +123,8 @@ function render(){
  document.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",()=>copyLink(b.dataset.copy,b)));
 }
 Promise.all([
- fetch("/data/guides.json?v=20261013-public-fulltext-v1",{cache:"no-store"}).then(r=>r.json()),
- fetch("/data/public-practical-guides-38-73.json?v=20261013",{cache:"no-store"}).then(r=>r.ok?r.json():({guides:[]})).catch(()=>({guides:[]}))
+ fetch("/data/guides.json?v=20261014-guides-v2-4",{cache:"no-store"}).then(r=>r.json()),
+ fetch("/data/public-practical-guides-38-73.json?v=20261014-guides-v2-4",{cache:"no-store"}).then(r=>r.ok?r.json():({guides:[]})).catch(()=>({guides:[]}))
 ]).then(([d,practical])=>{
  const base=d.records.filter(x=>x.catalog_public===true&&x.public_record_enabled===true);
  const byId=new Map(base.map(x=>[String(x.id),x]));
@@ -138,7 +138,7 @@ Promise.all([
  document.querySelector("#countAll").textContent=records.length;
  document.querySelector("#countPrimary").textContent=records.filter(x=>x.source_role!=="version_history").length;
  document.querySelector("#countHistory").textContent=records.filter(x=>x.source_role==="version_history").length;
- document.querySelector("#countDownloads").textContent=records.filter(x=>typeof x.public_fulltext==="string"&&x.public_fulltext.startsWith("/guides/fulltext/")).length;
+ document.querySelector("#countDownloads").textContent=records.filter(x=>x.source_role==="practical_public_edition_of_governed_source"&&typeof x.public_pdf==="string"&&x.public_pdf.startsWith("/guides/pdfs/")).length;
  render();
 }).catch(()=>{document.querySelector("#cards").innerHTML='<div class="empty">Каталогот моментално не може да се вчита.</div>';});
 ["q","cat","status","sort"].forEach(id=>document.querySelector("#"+id).addEventListener("input",render));
