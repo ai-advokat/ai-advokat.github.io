@@ -8,10 +8,14 @@ import {
 
 const worker=fs.readFileSync(new URL("../src/index.js",import.meta.url),"utf8");
 
-test("private document metadata accepts only bounded PDF/DOCX uploads",()=>{
+test("private document metadata accepts bounded PDF Word and common image uploads",()=>{
   assert.equal(CASE_WORKSPACE_MAX_FILE_BYTES,20*1024*1024);
   assert.equal(validateCaseDocumentUploadMetadata({name:"evidence.pdf",mimeType:"application/pdf",pageCount:"4"}).ok,true);
+  assert.equal(validateCaseDocumentUploadMetadata({name:"legacy.doc",mimeType:"application/msword"}).ok,true);
   assert.equal(validateCaseDocumentUploadMetadata({name:"contract.docx",mimeType:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}).ok,true);
+  assert.equal(validateCaseDocumentUploadMetadata({name:"scan.png",mimeType:"image/png"}).ok,true);
+  assert.equal(validateCaseDocumentUploadMetadata({name:"photo.jpeg",mimeType:"image/jpeg"}).ok,true);
+  assert.equal(validateCaseDocumentUploadMetadata({name:"evidence.webp",mimeType:"image/webp"}).ok,true);
   assert.equal(validateCaseDocumentUploadMetadata({name:"evidence.exe",mimeType:"application/octet-stream"}).ok,false);
   assert.equal(validateCaseDocumentUploadMetadata({name:"../evidence.pdf",mimeType:"application/pdf"}).ok,false);
   assert.equal(validateCaseDocumentUploadMetadata({name:"evidence.docx",mimeType:"application/pdf"}).ok,false);
@@ -54,4 +58,12 @@ test("private deletion removes object, relocks Human Gate and audits",()=>{
   assert.match(block,/env\.CASE_FILES\.delete\(row\.storage_key\)/);
   assert.match(block,/professional_use_locked=1/);
   assert.match(block,/'document_deleted'/);
+});
+
+test("private upload signature gate covers legacy Word and common image formats",()=>{
+  assert.match(worker,/mimeType==="application\/msword"/);
+  assert.match(worker,/bytes\[0\]===0xd0 && bytes\[1\]===0xcf/);
+  assert.match(worker,/mimeType==="image\/png"/);
+  assert.match(worker,/mimeType==="image\/jpeg"/);
+  assert.match(worker,/mimeType==="image\/webp"/);
 });
