@@ -52,7 +52,7 @@ test("CHAT4 citizen guide routing stays first and clickable",()=>{
 });
 
 test("CHAT5 attachment UX supports text, image and file payloads but remains privacy-gated",()=>{
-  assert.match(html,/accept="\.pdf,\.doc,\.docx,\.txt,\.md,\.csv,\.json,\.png,\.jpg,\.jpeg,\.webp"/);
+  assert.match(html,/accept="\.pdf,\.doc,\.docx,\.txt,\.md,\.csv,\.json,\.png,\.jpg,\.jpeg,\.webp,/);
   assert.match(chatJs,/kind:"image"/);
   assert.match(chatJs,/kind:"file"/);
   assert.match(chatJs,/kind:"text"/);
@@ -340,7 +340,7 @@ test("CHAT33 simple workspace keeps advanced controls behind compact menus",()=>
 });
 
 test("CHAT34 primary composer stays intentionally minimal while preserving full capability",()=>{
-  const composer=html.match(/<div class="ai-chat-composer">([\s\S]*?)<\/div>\s*<p class="ai-chat-hint">/)?.[1]||"";
+  const composer=html.match(/<div class="ai-chat-composer"[^>]*>([\s\S]*?)<\/div>\s*<p class="ai-chat-hint">/)?.[1]||"";
   assert.match(composer,/id="aiChatAttach"/);
   assert.match(composer,/id="aiChatInput"/);
   assert.match(composer,/id="aiChatMic"/);
@@ -370,4 +370,16 @@ test("CHAT36 case-law relevance participates in corpus routing without replacing
   assert.match(worker,/ai_advokat_case_law_first/);
   assert.match(worker,/ai_advokat_article_corpus_plus_case_law/);
   assert.match(worker,/assessLegalRuntimeRelease\(\{[\s\S]*articleBundle,[\s\S]*result,[\s\S]*postflight/);
+});
+
+test("CHAT37 attachment UX supports drag drop paste and system file picking",()=>{
+  assert.match(html,/id="aiChatDropZone"/);
+  assert.match(html,/id="aiChatDropHint"/);
+  assert.match(html,/Повлечете PDF, Word или слика/);
+  assert.match(chatJs,/addAttachmentFiles/);
+  assert.match(chatJs,/addEventListener\("dragenter"/);
+  assert.match(chatJs,/addEventListener\("drop"/);
+  assert.match(chatJs,/clipboardData\?\.files/);
+  assert.match(chatJs,/CHAT_ACCEPTED_MIME/);
+  assert.match(chatCss,/\.ai-chat-composer\.is-dragover/);
 });
