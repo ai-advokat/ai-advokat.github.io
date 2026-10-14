@@ -296,6 +296,18 @@ function caseDocumentId(value){
   return /^DOC-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ? id : null;
 }
 
+function caseMultipartSessionId(value){
+  const id=String(value||"").trim();
+  return /^MPU-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ? id : null;
+}
+
+function expectedMultipartPartSize(expectedSize,partNumber,totalParts){
+  if(!Number.isInteger(expectedSize)||expectedSize<1) return null;
+  if(!Number.isInteger(partNumber)||partNumber<1||partNumber>totalParts) return null;
+  if(partNumber<totalParts) return CASE_MULTIPART_PART_BYTES;
+  return expectedSize-(CASE_MULTIPART_PART_BYTES*(totalParts-1));
+}
+
 function privateDocumentDownloadResponse(request,body,{mimeType,fileName}={}){
   const safeName=String(fileName||"document").normalize("NFKC").replace(/[\r\n]/g," ").slice(0,180);
   const encoded=encodeURIComponent(safeName);
