@@ -106,12 +106,12 @@ async function openCaseById(caseId){
 $("loadCases").addEventListener("click",async()=>{
   const key=$("membershipKey").value.trim();
   if(!key){
-    $("accessStatus").textContent="Внесете membership key.";
+    $("accessStatus").textContent="Внесете го приватниот код за пристап.";
     return;
   }
   accessKey=key;
   $("loadCases").disabled=true;
-  $("accessStatus").textContent="Се вчитуваат вашите Secure Case Workspaces…";
+  $("accessStatus").textContent="Се проверува кодот и се вчитуваат Вашите предмети…";
   try{
     const data=await api("/api/cases");
     const cases=Array.isArray(data.cases)?data.cases:[];
@@ -119,9 +119,9 @@ $("loadCases").addEventListener("click",async()=>{
     $("casePickerCard").classList.remove("hidden");
     $("createCaseCard").classList.remove("hidden");
     if(cases.length){
-      $("accessStatus").textContent="Пристапот е потврден. Изберете постоечки предмет или креирајте нов.";
+      $("accessStatus").textContent="Пристапот е потврден. Изберете предмет или притиснете „Нов предмет“.";
     }else{
-      $("accessStatus").textContent="Пристапот е потврден. Немате активни предмети — креирајте нов Secure Case Workspace подолу.";
+      $("accessStatus").textContent="Пристапот е потврден. Немате предмети — започнете со „Нов предмет“.";
       $("createCaseCard").scrollIntoView({behavior:"smooth",block:"start"});
     }
   }catch(error){
@@ -153,22 +153,22 @@ $("openCase").addEventListener("click",async()=>{
   const key=$("membershipKey").value.trim();
   const caseId=$("caseId").value.trim();
   if(!key){
-    $("accessStatus").textContent="Внесете membership key.";
+    $("accessStatus").textContent="Внесете го приватниот код за пристап.";
     return;
   }
   if(!validCaseId(caseId)){
-    $("accessStatus").textContent="Внесете валиден Case ID.";
+    $("accessStatus").textContent="Внесете важечки код на предмет.";
     return;
   }
 
   accessKey=key;
   $("openCase").disabled=true;
-  $("accessStatus").textContent="Се отвора приватниот CasePilot workspace…";
+  $("accessStatus").textContent="Се отвора приватниот предмет…";
   try{
     await openCaseById(caseId);
     $("casePickerCard").classList.remove("hidden");
     $("createCaseCard").classList.remove("hidden");
-    $("accessStatus").textContent="Предметот е отворен. Membership key останува само во меморијата на оваа страница.";
+    $("accessStatus").textContent="Предметот е отворен. Приватниот код не се зачувува на уредот.";
   }catch(error){
     resetWorkspace();
     accessKey="";
@@ -183,7 +183,7 @@ function renderCasePicker(cases){
   clearNode(body);
   if(!cases.length){
     const tr=document.createElement("tr");
-    const cell=td("Немате активни Secure Case Workspaces.");
+    const cell=td("Немате активни предмети.");
     cell.colSpan=6;
     cell.className="muted";
     tr.appendChild(cell);
@@ -197,7 +197,7 @@ function renderCasePicker(cases){
     tr.appendChild(td(item.clientReference));
     tr.appendChild(td(item.legalArea));
     tr.appendChild(td(item.status));
-    tr.appendChild(td(item.professionalUseLocked?"LOCKED":"UNLOCKED"));
+    tr.appendChild(td(item.professionalUseLocked?"Потребна":"Одобрена"));
 
     const action=document.createElement("td");
     const button=document.createElement("button");
@@ -222,9 +222,15 @@ function renderCasePicker(cases){
   }
 }
 
+$("newCaseShortcut").addEventListener("click",()=>{
+  $("createCaseCard").classList.remove("hidden");
+  $("createCaseCard").scrollIntoView({behavior:"smooth",block:"start"});
+  setTimeout(()=>{$("newCaseTitle").focus();},250);
+});
+
 $("createCase").addEventListener("click",async()=>{
   if(!accessKey){
-    $("createCaseStatus").textContent="Прво потврдете membership key.";
+    $("createCaseStatus").textContent="Прво внесете го приватниот код и притиснете „Продолжи“.";
     return;
   }
   const title=$("newCaseTitle").value.trim();
@@ -237,7 +243,7 @@ $("createCase").addEventListener("click",async()=>{
   }
 
   $("createCase").disabled=true;
-  $("createCaseStatus").textContent="Се креира приватниот workspace…";
+  $("createCaseStatus").textContent="Се креира новиот предмет…";
   try{
     const data=await api("/api/cases",{
       method:"POST",
@@ -249,7 +255,7 @@ $("createCase").addEventListener("click",async()=>{
       }
     });
     const newCase=data.case||{};
-    $("createCaseStatus").textContent="Предметот е креиран и отворен. Private Document Vault е достапен; upload и Case Intelligence остануваат под provenance и Human Gate контроли.";
+    $("createCaseStatus").textContent="Предметот е креиран и отворен. Сега додадете ги документите и побарајте анализа.";
     $("newCaseTitle").value="";
     $("newClientReference").value="";
     $("newLegalArea").value="";
