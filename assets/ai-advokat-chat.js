@@ -105,15 +105,26 @@
           const data=await r.json();
           const section=mode==="first"?"first_time":mode==="renewal"?"renewal":null;
           const selected=section ? {[section]:data.checklists?.[section]} : data.checklists;
+          const referencePayload={
+            source:data.source,
+            selected_checklists:selected,
+            submission:data.submission,
+            fees:data.fees,
+            official_sources:data.official_sources,
+            secondary_sources:data.secondary_sources,
+            verification:data.verification
+          };
+          const refText=JSON.stringify(referencePayload,null,2);
+          const refFile=new File([refText],"mvr-foreign-employment-reference.json",{type:"application/json"});
+          const withoutOld=attachments.filter(a=>a.name!=="mvr-foreign-employment-reference.json");
+          attachments=[...withoutOld,refFile].slice(0,CHAT_ATTACHMENT_LIMIT);
+          renderAttachments();
           input.value=[
-            "AI Advokat, анализирај ја приложената институционална МВР чек-листа за привремен престој по основ вработување.",
-            "ВАЖНО: ова е транскрипција од фотографирани листи истакнати во МВР на 14.10.2026 и НЕ е сама по себе важечки правен извор.",
-            "Провери ја секоја ставка според важечките прописи и официјалните извори. Не претпоставувај актуелност на такси, рокови, канцеларија или посебни ослободувања.",
-            "Разликувај: (1) што пишува на листата, (2) што е потврдено со важечки правен извор, (3) што бара дополнителна проверка.",
-            "Особено провери: Закон за странци, условите за привремен престој, прописите за вработување/работа на странци, здравствено осигурување, неосудуваност, сместување, заверки/преводи и административни такси.",
-            "За секој правен заклучок наведи точен извор, член/одредба, верзија и датум. Ако нема сигурен официјален извор, кажи го тоа.",
-            "Институционални податоци за проверка:",
-            JSON.stringify({source:data.source,selected_checklists:selected,submission:data.submission,fees:data.fees,verification:data.verification},null,2)
+            "AI Advokat, анализирај го приложениот JSON референтен пакет за престој и вработување на странци.",
+            "Фотографираните МВР листи се практична институционална информација, не сами по себе важечки правен извор.",
+            "Одделно користи ги официјалните МВР и МНР веб-извори наведени во прилогот и не мешај патен лист за странци со дозвола за привремен престој.",
+            "Провери ја секоја ставка според важечките прописи и официјалните извори. Разликувај: што пишува на листата, што е правно потврдено и што бара дополнителна проверка.",
+            "За секој правен заклучок наведи точен извор, член/одредба, верзија и датум. Такси, рокови и ослободувања не преземај без проверка."
           ].join("\n\n");
           autoSize(); input.focus();
         }catch{
