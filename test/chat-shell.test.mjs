@@ -188,7 +188,7 @@ test("CHAT19 homepage exposes a private Guide Vault without public guide full-te
     assert.match(html,new RegExp('id="'+id+'"'));
   }
   assert.match(html,/assets\/guide-vault\.js/);
-  assert.match(html,/Guide Vault ги чува PDF\/DOCX датотеките само на овој уред/);
+  assert.match(html,/Приватната збирка водичи ги чува PDF\/DOCX датотеките само на овој уред/);
   assert.match(html,/aiGuideVaultFiles[^>]+application\/pdf/);
   assert.match(guideVaultJs,/indexedDB/);
   assert.match(guideVaultJs,/Pravni_vodichi_38_63_FULL_WORD_ALL/);
