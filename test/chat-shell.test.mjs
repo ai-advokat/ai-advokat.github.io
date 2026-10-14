@@ -331,7 +331,7 @@ test("CHAT32 pleading drafting is routed through consequential Human Gate",()=>{
 test("CHAT33 simple workspace keeps advanced controls behind compact menus",()=>{
   assert.match(html,/<details class="ai-chat-menu" id="aiChatMenu">[\s\S]*id="aiChatExport"/);
   assert.match(html,/<details class="ai-chat-tools" id="aiChatTools">[\s\S]*data-chat-mode="auto"[\s\S]*id="aiGuideVaultImport"/);
-  assert.match(html,/id="aiChatModeCaption">Auto</);
+  assert.match(html,/id="aiChatModeCaption">Автоматски</);
   assert.doesNotMatch(html,/ai-chat-provider-note/);
   assert.match(chatCss,/\.ai-chat-tools-panel/);
   assert.match(chatCss,/\.ai-chat-menu-panel/);
