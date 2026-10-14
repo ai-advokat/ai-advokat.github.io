@@ -4314,12 +4314,13 @@ async function handleGPTChat(request,env){
   if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
 
   const readiness=orchestratorRuntimeReadiness(env);
-  if(readiness.provider!=="configured"){
+  const freeProviderReady=freeWorkersAIConfigured(env);
+  if(readiness.provider!=="configured" && !freeProviderReady){
     return json(request,{
       ok:false,
       error:"gpt_provider_locked",
-      message:"GPT production orchestration is not ready on the server. Provider execution remains fail-closed.",
-      runtime:readiness
+      message:"Ниту платениот GPT provider ниту FREE Workers AI provider не се достапни. Provider execution останува fail-closed.",
+      runtime:{...readiness,freeProvider:"locked"}
     },503);
   }
 
@@ -4368,10 +4369,12 @@ async function handleGPTChat(request,env){
   const guideDocumentCheck=await validateGuideDocuments(request,env,payload.guideDocuments);
   if(!guideDocumentCheck.ok) return json(request,{ok:false,error:guideDocumentCheck.error},400);
 
-  if((attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) && env.OPENAI_FILE_INPUT_ENABLED!=="true"){
+  if((attachmentCheck.attachments.length || guideDocumentCheck.attachments.length)
+    && env.OPENAI_FILE_INPUT_ENABLED!=="true"
+    && !freeWorkersAIMarkdownConfigured(env)){
     return json(request,{
       ok:false,error:"attachment_processing_locked",
-      message:"Attachment and private guide processing is disabled by the server-side privacy/tool gate."
+      message:"Document processing is unavailable on both configured provider paths."
     },503);
   }
 
@@ -4421,6 +4424,16 @@ async function handleGPTChat(request,env){
       throw error;
     }
     quota=MEMBERSHIP_PLANS.free.monthlyQuota;
+  }
+
+  const useFreeWorkersAI=!membership && freeWorkersAIConfigured(env);
+  if(useFreeWorkersAI && webRequested){
+    return json(request,{
+      ok:false,
+      error:"free_mode_web_search_unavailable",
+      message:"FREE режимот користи Workers AI за документарна и source-backed анализа, но нема надворешно Web пребарување. Префрлете во Автоматски/Библиотека или користете платен provider кога ќе биде достапен.",
+      runtime:{provider:"workers_ai_free",webSearch:false}
+    },409);
   }
 
   const burst=await checkAssistantBurst(env,subject);
