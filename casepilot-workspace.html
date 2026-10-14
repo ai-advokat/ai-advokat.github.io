@@ -22,10 +22,10 @@
     table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#eef2f5}.scroll{overflow:auto}
     .file-drop{border:1.5px dashed var(--line);border-radius:14px;padding:16px;background:#f9fbfc;transition:.18s ease}.file-drop.dragover{border-color:var(--gold);background:var(--goldsoft)}.file-drop strong{display:block}.file-drop .selection{margin-top:8px;font-size:.86rem;color:var(--muted);word-break:break-word}
     .analysis-output{white-space:pre-wrap;word-break:break-word;border:1px solid var(--line);border-radius:14px;background:#f8fafb;padding:16px;max-height:720px;overflow:auto;font:0.88rem/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}.analysis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
-    .onboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}.onboard .step{border:1px solid var(--line);border-radius:14px;padding:14px;background:#f8fafb}.onboard .step b{display:block;margin-bottom:4px}.access-mode{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.access-mode .pill{background:#eef2f5}.privacy-lock{display:flex;gap:10px;align-items:flex-start}.privacy-lock .icon{font-size:1.35rem;line-height:1}.access-help{font-size:.88rem;color:var(--muted);margin-top:7px}.access-help a{font-weight:700}.access-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:end}
+    .simple-access{max-width:620px;margin:18px auto 0}.privacy-lock{display:flex;gap:10px;align-items:flex-start}.privacy-lock .icon{font-size:1.35rem;line-height:1}.access-help{font-size:.9rem;color:var(--muted);margin-top:8px}.access-help a{font-weight:700}.advanced-access{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}.advanced-access summary{cursor:pointer;color:var(--muted);font-weight:700}.choice-actions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.plain-steps{margin:10px 0 0;padding-left:22px;color:var(--muted)}
     .hidden{display:none!important}.pill{display:inline-flex;padding:4px 8px;border:1px solid var(--line);border-radius:999px;font-size:.78rem;font-weight:700}
     footer{padding:30px 0 45px;color:var(--muted);font-size:.88rem}
-    @media(max-width:800px){.grid2,.grid3,.onboard,.access-grid{grid-template-columns:1fr}}
+    @media(max-width:800px){.grid2,.grid3{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -38,60 +38,60 @@
 
 <main class="wrap">
   <section class="card" aria-labelledby="accessTitle">
-    <h2 id="accessTitle">1. Отворете приватен правен предмет</h2>
-    <p class="muted">Ова е професионалниот простор за реални клиентски предмети, лични податоци и доверливи документи. По потврден пристап можете да креирате нов предмет или да продолжите постоечки.</p>
+    <h2 id="accessTitle">Отворете го Вашиот правен предмет</h2>
+    <p class="muted">Овде безбедно ги чувате документите и барате AI Advokat да го анализира предметот.</p>
 
-    <div class="onboard" aria-label="Како работи Secure Case Workspace">
-      <div class="step"><b>1 · Потврдете пристап</b><span class="muted">Внесете го приватниот membership key издаден по Human Gate активација.</span></div>
-      <div class="step"><b>2 · Отворете или креирајте предмет</b><span class="muted">Case ID е потребен само ако сакате директно да отворите конкретен постоечки предмет.</span></div>
-      <div class="step"><b>3 · Прикачете и анализирајте</b><span class="muted">PDF/Word/слики → Document Vault → Case Intelligence → working draft → Human Gate.</span></div>
-    </div>
+    <div class="simple-access">
+      <label for="membershipKey"><strong>Приватен код за пристап</strong></label>
+      <input id="membershipKey" type="password" autocomplete="off" spellcheck="false" placeholder="Внесете го кодот што го добивте" aria-describedby="membershipHelp">
+      <div id="membershipHelp" class="access-help">Немате код? <a href="/membership.html#request">Побарајте пристап</a>.</div>
 
-    <div class="notice privacy-lock">
-      <span class="icon" aria-hidden="true">🔒</span>
-      <div><b>Клучот не се зачувува</b>Membership key живее само во меморијата на оваа отворена страница. Не се користат localStorage, sessionStorage или cookies за негово чување.</div>
-    </div>
-
-    <div class="access-grid" style="margin-top:16px">
-      <div>
-        <label for="membershipKey">Membership key</label>
-        <input id="membershipKey" type="password" autocomplete="off" spellcheck="false" placeholder="AIADV-..." aria-describedby="membershipHelp">
-        <div id="membershipHelp" class="access-help">Немате клуч? <a href="/membership.html#request">Побарајте членство / активација</a>. Клучот се издава приватно по човечка проверка.</div>
+      <div class="actions">
+        <button id="loadCases" class="primary" type="button">Продолжи</button>
+        <button id="forgetAccess" class="secondary" type="button">Исчисти</button>
       </div>
-      <div>
-        <label for="caseId">Case ID <span class="muted">(само за директно отворање)</span></label>
-        <input id="caseId" autocomplete="off" spellcheck="false" placeholder="CASE-xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx">
+      <p id="accessStatus" class="statusline muted" aria-live="polite"></p>
+
+      <div class="notice privacy-lock" style="margin-top:14px">
+        <span class="icon" aria-hidden="true">🔒</span>
+        <div><b>Кодот не се зачувува</b>Се користи само додека е отворена оваа страница.</div>
       </div>
+
+      <details class="advanced-access">
+        <summary>Имам код за конкретен постоечки предмет</summary>
+        <div style="margin-top:12px">
+          <label for="caseId">Код на предмет</label>
+          <input id="caseId" autocomplete="off" spellcheck="false" placeholder="Внесете го кодот на предметот">
+          <div class="actions">
+            <button id="openCase" class="secondary" type="button">Отвори го предметот</button>
+          </div>
+        </div>
+      </details>
+
+      <ol class="plain-steps">
+        <li>Внесете го приватниот код.</li>
+        <li>Изберете „Нов предмет“ или отворете предмет што веќе го имате.</li>
+        <li>Прикачете документи и притиснете „Анализирај го целиот предмет“.</li>
+      </ol>
     </div>
 
-    <div class="access-mode">
-      <span class="pill">Нов предмет → „Вчитај мои предмети“ → „Креирај предмет“</span>
-      <span class="pill">Постоечки предмет → внесете Case ID → „Отвори Case ID“</span>
-    </div>
-
-    <div class="actions">
-      <button id="loadCases" class="primary" type="button">Продолжи со membership key</button>
-      <button id="openCase" class="secondary" type="button">Отвори Case ID</button>
-      <button id="forgetAccess" class="secondary" type="button">Исчисти пристап</button>
-      <a class="btn secondary" href="/professional-tools.html#casepilot">Назад кон CasePilot</a>
-    </div>
-    <p id="accessStatus" class="statusline muted" aria-live="polite"></p>
+    <div class="actions"><a class="btn secondary" href="/professional-tools.html#casepilot">Назад</a></div>
   </section>
 
   <section id="casePickerCard" class="card hidden" aria-labelledby="casePickerTitle">
-    <h2 id="casePickerTitle">Мои Secure Case Workspaces</h2>
-    <p class="muted">Се прикажуваат само предметите до кои тековниот membership account има активен пристап.</p>
+    <h2 id="casePickerTitle">Мои предмети</h2>
+    <p class="muted">Овде се прикажуваат предметите до кои имате пристап.</p>
     <div class="scroll">
       <table>
-        <thead><tr><th>Предмет</th><th>Референца</th><th>Област</th><th>Статус</th><th>Human Gate</th><th></th></tr></thead>
+        <thead><tr><th>Предмет</th><th>Референца</th><th>Област</th><th>Статус</th><th>Проверка</th><th></th></tr></thead>
         <tbody id="casePickerBody"><tr><td colspan="6" class="muted">Нема вчитани предмети.</td></tr></tbody>
       </table>
     </div>
   </section>
 
   <section id="createCaseCard" class="card hidden" aria-labelledby="createCaseTitle">
-    <h2 id="createCaseTitle">Нов Secure Case Workspace</h2>
-    <p class="muted">Креира приватен case-scoped workspace. По креирањето веднаш се отвора Private Document Vault за PDF, Word и слики; upload, анализа и professional use остануваат под provenance и Human Gate контроли.</p>
+    <h2 id="createCaseTitle">Нов предмет</h2>
+    <p class="muted">Внесете краток назив. Потоа веднаш можете да додадете PDF, Word или слики и да побарате анализа.</p>
     <div class="grid2">
       <div>
         <label for="newCaseTitle">Назив на предмет</label>
@@ -111,7 +111,7 @@
       </div>
     </div>
     <div class="actions">
-      <button id="createCase" class="gold" type="button">Креирај предмет</button>
+      <button id="createCase" class="gold" type="button">Креирај нов предмет</button>
     </div>
     <p id="createCaseStatus" class="statusline muted" aria-live="polite"></p>
   </section>
