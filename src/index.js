@@ -91,6 +91,17 @@ import {
 } from "./casepilot-matter.js";
 import { mapWorkspaceToCasePilotShell } from "./casepilot-workspace-bridge.js";
 import { buildCaseLawComparison } from "./casepilot-case-law-bridge.js";
+import {
+  CASE_INTELLIGENCE_PROVIDER_MAX_BYTES,
+  CASE_DOCUMENT_EXTRACTION_SCHEMA,
+  validateCaseDocumentExtraction,
+  caseDocumentExtractionPrompt,
+  compactExtractionContext
+} from "./case-intelligence-runtime.js";
+import {
+  CASE_DRAFT_TYPES,
+  draftRequest
+} from "./case-intelligence.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import {
   OPEN_LEGAL_SOURCE_POLICY_VERSION,
@@ -1267,6 +1278,99 @@ async function handleCaseWorkspaceApi(request,env,url){
       humanGate:{professionalUseLocked:true},
       ingestion:"stored_private_not_ingested"
     },201);
+  }
+
+  if(tail.startsWith("documents/") && tail.endsWith("/extract")){
+    const docTail=tail.slice("documents/".length);
+    const segments=docTail.split("/").filter(Boolean);
+    const documentId=caseDocumentId(segments[0]);
+    if(!documentId || segments.length!==2 || segments[1]!=="extract") return json(request,{ok:false,error:"case_document_not_found"},404);
+    if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+    if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_professional_write_role_required"},403);
+    if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
+
+    const row=await env.DB.prepare(
+      `SELECT id,original_name,mime_type,sha256,storage_key,storage_state,extraction_state
+         FROM case_document_slots
+        WHERE id=? AND case_id=?
+        LIMIT 1`
+    ).bind(documentId,caseId).first();
+    if(!row || row.storage_state==="deleted") return json(request,{ok:false,error:"case_document_not_found"},404);
+    if(row.storage_state!=="uploaded") return json(request,{ok:false,error:"case_document_not_ready_for_extraction",storageState:row.storage_state},409);
+
+    const object=await env.CASE_FILES.get(row.storage_key);
+    if(!object) return json(request,{ok:false,error:"case_document_storage_object_missing"},503);
+    if(Number(object.size||0)>CASE_INTELLIGENCE_PROVIDER_MAX_BYTES){
+      return json(request,{
+        ok:false,error:"case_document_partitioning_required",
+        maxBytes:CASE_INTELLIGENCE_PROVIDER_MAX_BYTES,
+        actualBytes:Number(object.size||0),
+        documentId
+      },409);
+    }
+
+    const bytes=new Uint8Array(await object.arrayBuffer());
+    const extraction=await runPrivateCaseDocumentExtraction(env,{
+      documentId,
+      fileName:row.original_name,
+      mimeType:row.mime_type,
+      bytes
+    });
+    if(!extraction.ok){
+      await env.DB.prepare(
+        "UPDATE case_document_slots SET extraction_state='failed',updated_at=? WHERE id=? AND case_id=?"
+      ).bind(new Date().toISOString(),documentId,caseId).run().catch(()=>{});
+      return json(request,{ok:false,error:extraction.error,problems:extraction.problems||null,detail:extraction.detail||null},503);
+    }
+
+    const derivedKey=`case-derived/v1/${caseId}/${documentId}/extraction.json`;
+    const derivedBytes=new TextEncoder().encode(JSON.stringify({
+      version:"CASE_DOCUMENT_EXTRACTION_V1",
+      caseId,
+      documentId,
+      sourceSha256:row.sha256||null,
+      model:extraction.model,
+      extraction:extraction.extraction
+    }));
+    const derivedSha256=await sha256BytesHex(derivedBytes);
+    try{
+      await env.CASE_FILES.put(derivedKey,derivedBytes,{
+        httpMetadata:{contentType:"application/json"},
+        customMetadata:{caseId,documentId,kind:"case_document_extraction_v1",derivedSha256}
+      });
+    }catch(error){
+      console.error("case_extraction_r2_write_failed",String(error?.message||error).slice(0,180));
+      return json(request,{ok:false,error:"case_extraction_storage_failed"},503);
+    }
+
+    const at=new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE case_document_slots SET extraction_state='complete',updated_at=? WHERE id=? AND case_id=?"
+      ).bind(at,documentId,caseId),
+      env.DB.prepare(
+        "UPDATE case_workspaces SET professional_use_locked=1,updated_at=? WHERE id=?"
+      ).bind(at,caseId),
+      env.DB.prepare(
+        `INSERT INTO case_audit_events
+          (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+         VALUES (?, ?, ?, 'analysis_requested', 'case_document', ?, ?, ?)`
+      ).bind(
+        "CAE-"+crypto.randomUUID(),caseId,membership.accountId,documentId,
+        safeCaseAuditMetadata({phase:"document_extraction",derivedSha256}),at
+      )
+    ]);
+
+    return json(request,{
+      ok:true,
+      caseId,
+      documentId,
+      extractionState:"complete",
+      derivedSha256,
+      extraction:extraction.extraction,
+      privacy:"private_case_derived_artifact_not_public_corpus",
+      humanGate:{professionalUseLocked:true}
+    });
   }
 
   if(tail.startsWith("documents/")){
@@ -2862,6 +2966,89 @@ function bytesFromBase64(value){
 async function sha256BytesHex(bytes){
   const digest=await crypto.subtle.digest("SHA-256",bytes);
   return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function bytesToBase64(bytes){
+  let binary="";
+  const step=0x8000;
+  for(let i=0;i<bytes.length;i+=step){
+    binary+=String.fromCharCode(...bytes.subarray(i,Math.min(bytes.length,i+step)));
+  }
+  return btoa(binary);
+}
+
+function openAIOutputText(payload){
+  if(typeof payload?.output_text==="string" && payload.output_text.trim()) return payload.output_text.trim();
+  const chunks=[];
+  for(const item of Array.isArray(payload?.output)?payload.output:[]){
+    for(const part of Array.isArray(item?.content)?item.content:[]){
+      if(part?.type==="output_text" && typeof part?.text==="string") chunks.push(part.text);
+    }
+  }
+  return chunks.join("\n").trim();
+}
+
+async function runPrivateCaseDocumentExtraction(env,{documentId,fileName,mimeType,bytes}={}){
+  if(!env?.OPENAI_API_KEY || !env?.OPENAI_MODEL) return {ok:false,error:"case_intelligence_provider_not_configured"};
+  if(env.OPENAI_FILE_INPUT_ENABLED!=="true") return {ok:false,error:"case_intelligence_file_input_locked"};
+  if(!(bytes instanceof Uint8Array) || bytes.byteLength<1) return {ok:false,error:"case_intelligence_empty_document"};
+  if(bytes.byteLength>CASE_INTELLIGENCE_PROVIDER_MAX_BYTES) return {ok:false,error:"case_document_partitioning_required",maxBytes:CASE_INTELLIGENCE_PROVIDER_MAX_BYTES};
+
+  const prompt=caseDocumentExtractionPrompt({documentId,fileName,mimeType});
+  const parts=[{type:"input_text",text:prompt}];
+  const base64=bytesToBase64(bytes);
+  if(String(mimeType||"").startsWith("image/")){
+    parts.push({type:"input_image",image_url:`data:${mimeType};base64,${base64}`,detail:"high"});
+  }else{
+    parts.push({type:"input_file",file_data:`data:${mimeType};base64,${base64}`,filename:String(fileName||"document").slice(0,180)});
+  }
+
+  const body={
+    model:String(env.OPENAI_MODEL),
+    instructions:[
+      "Extract only source-supported information from the private document.",
+      "Return only the requested structured JSON schema.",
+      "Never infer legal validity, ownership, authenticity, kinship or legal effect beyond what the document itself states.",
+      "Use professional_review_required when a material point is uncertain.",
+      "Do not use web search or outside knowledge."
+    ].join("\n"),
+    input:[{role:"user",content:parts}],
+    reasoning:{effort:"low"},
+    max_output_tokens:6500,
+    store:false,
+    text:{
+      format:{
+        type:"json_schema",
+        name:"case_document_extraction_v1",
+        strict:true,
+        schema:CASE_DOCUMENT_EXTRACTION_SCHEMA
+      }
+    }
+  };
+
+  let response;
+  try{
+    response=await fetch("https://api.openai.com/v1/responses",{
+      method:"POST",
+      headers:{
+        "Authorization":`Bearer ${env.OPENAI_API_KEY}`,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify(body)
+    });
+  }catch(error){
+    return {ok:false,error:"case_intelligence_provider_network_error",detail:String(error?.message||error).slice(0,180)};
+  }
+  let payload=null;
+  try{payload=await response.json();}catch{}
+  if(!response.ok) return {ok:false,error:"case_intelligence_provider_response_error",status:response.status};
+  if(payload?.status!=="completed") return {ok:false,error:"case_intelligence_provider_incomplete",detail:String(payload?.incomplete_details?.reason||payload?.status||"unknown").slice(0,180)};
+  const raw=openAIOutputText(payload);
+  let extraction;
+  try{extraction=JSON.parse(raw);}catch{return {ok:false,error:"case_intelligence_invalid_provider_json"};}
+  const check=validateCaseDocumentExtraction(extraction);
+  if(!check.ok) return {ok:false,error:"case_intelligence_invalid_extraction",problems:check.errors.slice(0,20)};
+  return {ok:true,extraction,model:String(env.OPENAI_MODEL),responseId:payload?.id||null};
 }
 
 async function validateGuideDocuments(request,env,payload){
