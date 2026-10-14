@@ -2,6 +2,13 @@ name: ECHR Bureau MK full-text intake
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/bureau-echr-fulltext-intake.mjs"
+      - "corpus/echr/north-macedonia-bureau-index-*.ndjson"
+      - ".github/workflows/echr-bureau-fulltext-intake.yml"
   schedule:
     - cron: "23 3 * * 1"
 
