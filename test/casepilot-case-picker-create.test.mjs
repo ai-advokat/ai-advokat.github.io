@@ -10,7 +10,9 @@ test("secure workspace exposes case picker and creation controls",()=>{
   assert.match(html,/id="casePickerBody"/);
   assert.match(html,/id="createCase"/);
   assert.match(html,/id="newCaseTitle"/);
-  assert.match(html,/Document ingestion останува посебно fail-closed/);
+  assert.match(html,/Private Document Vault/);
+  assert.match(html,/Побарајте членство \/ активација/);
+  assert.match(html,/membership\.html#request/);
 });
 
 test("case listing is authenticated and case-scoped",()=>{
@@ -43,4 +45,30 @@ test("forget access hides private case list and create controls",()=>{
   assert.match(block,/casePickerCard.*classList\.add\("hidden"\)/s);
   assert.match(block,/createCaseCard.*classList\.add\("hidden"\)/s);
   assert.match(block,/accessKey=""/);
+});
+
+
+test("secure workspace access screen explains new and existing case paths",()=>{
+  assert.match(html,/Отворете приватен правен предмет/);
+  assert.match(html,/Нов предмет/);
+  assert.match(html,/Постоечки предмет/);
+  assert.match(html,/Продолжи со membership key/);
+  assert.match(html,/Клучот се издава приватно по човечка проверка/);
+});
+
+test("validated empty account is guided directly to new-case creation",()=>{
+  const start=js.indexOf('$("loadCases").addEventListener');
+  const end=js.indexOf('$("membershipKey").addEventListener',start);
+  assert.ok(start>0 && end>start);
+  const block=js.slice(start,end);
+  assert.match(block,/const cases=Array\.isArray\(data\.cases\)\?data\.cases:\[\]/);
+  assert.match(block,/Немате активни предмети/);
+  assert.match(block,/createCaseCard.*scrollIntoView/s);
+});
+
+test("membership key and Case ID support keyboard-first access",()=>{
+  assert.match(js,/\$\("membershipKey"\)\.addEventListener\("keydown"/);
+  assert.match(js,/\$\("caseId"\)\.addEventListener\("keydown"/);
+  assert.match(js,/\$\("loadCases"\)\.click\(\)/);
+  assert.match(js,/\$\("openCase"\)\.click\(\)/);
 });
