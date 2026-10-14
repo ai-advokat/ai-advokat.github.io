@@ -53,10 +53,10 @@ describe("frontend ↔ API contract", () => {
     for (const v of options("statusFilter")) assert.ok(statuses.has(v), `status option '${v}' is not accepted by /api/search`);
   });
 
-  test("FC4 the UI never labels a version 'current' unless it is current AND Human-Gate approved", () => {
+  test("FC4 the UI never labels a version 'current' unless it is current AND human-review approved", () => {
     const fn = index.slice(index.indexOf("function versionCurrencyText("), index.indexOf("function citationStatusLabel("));
     assert.match(fn, /v\.isCurrent && v\.humanReviewStatus==="approved"\) return T\("ТЕКОВНА/);
-    assert.match(fn, /НЕ е потврдена преку Human Gate/);
+    assert.match(fn, /НЕ е потврдена преку човечка контрола/);
     const cit = index.slice(index.indexOf("function citationStatusLabel("), index.indexOf("function versionList("));
     assert.match(cit, /c\.status==="current_consolidated" && approved\) return T\("ТЕКОВЕН · ПРОВЕРЕН"/);
   });
