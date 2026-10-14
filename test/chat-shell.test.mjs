@@ -385,32 +385,25 @@ test("CHAT37 attachment UX supports drag drop paste and system file picking",()=
 });
 
 
-test("CHAT34 quota exhaustion is distinguished from Human Gate and keeps document attachments for retry",()=>{
-  assert.match(html,/id="aiChatMembershipKey"/);
-  assert.match(html,/id="aiChatMembershipUse"/);
-  assert.match(html,/Owner \/ професионален пристап/);
-  assert.match(chatJs,/verifyAndUseMembershipKey/);
-  assert.match(chatJs,/\/api\/membership\/status/);
+test("CHAT34 FREE mode is open without owner or member key",()=>{
+  assert.doesNotMatch(html,/id="aiChatMembershipKey"/);
+  assert.doesNotMatch(html,/id="aiChatMembershipUse"/);
+  assert.doesNotMatch(html,/id="aiChatOwnerOpen"/);
+  assert.match(html,/FREE активен · не е потребен клуч/);
+  assert.match(chatJs,/FREE активен · без клуч/);
   assert.match(chatJs,/free_quota_exhausted/);
-  assert.match(chatJs,/membership_quota_exhausted/);
   assert.match(chatJs,/attachments=\[\.\.\.selectedFiles\]/);
-  assert.match(chatJs,/Документите не беа анализирани од GPT/);
-  assert.match(chatJs,/Quota gate stopped the request before provider document analysis/);
 });
 
 
-test("CHAT35 owner access is free of the public FREE quota but remains authenticated",()=>{
-  assert.match(html,/Owner \/ професионален пристап/);
-  assert.match(html,/сопственикот на порталот овој пристап е бесплатен/);
-  const sql=fs.readFileSync("scripts/provision-owner-professional-access.sql","utf8");
-  assert.match(sql,/owner-professional/);
-  assert.match(sql,/monthly_quota,seat_limit,price_mkd/);
-  assert.match(sql,/1000000,3,0/);
-  assert.doesNotMatch(sql,/AIADV-OWNER-[A-Za-z0-9]{20,}/);
+test("CHAT35 free mode keeps safety gates while removing key dependency",()=>{
+  assert.match(html,/FREE режим/);
+  assert.match(html,/rate-limit контроли/);
+  assert.match(html,/Human Gate/);
+  assert.doesNotMatch(chatJs,/verifyAndUseMembershipKey/);
 });
 
-
-test("CHAT36 owner workspace accepts up to 20 document attachments",()=>{
+test("CHAT36 FREE workspace accepts up to 20 document attachments",()=>{
   assert.match(html,/до 20 PDF\/Word\/слики/);
   assert.match(html,/id="aiChatFiles"[^>]*multiple/);
   assert.match(chatJs,/const CHAT_ATTACHMENT_LIMIT=20/);
@@ -444,11 +437,9 @@ test("CHAT38 visible multi-upload control exposes the 20-document contract",()=>
 });
 
 
-test("CHAT39 owner status is visible beside the uploader",()=>{
-  assert.match(html,/id="aiChatOwnerOpen"/);
+test("CHAT39 FREE status is visible beside the uploader",()=>{
   assert.match(html,/id="aiChatOwnerState"/);
-  assert.match(html,/FREE режим/);
-  assert.match(chatJs,/OWNER активен/);
-  assert.match(chatJs,/toolsMenu\.open=true/);
-  assert.match(html,/20261015-owner-auth-v3/);
+  assert.match(html,/FREE активен · без клуч/);
+  assert.doesNotMatch(html,/id="aiChatOwnerOpen"/);
+  assert.match(html,/20261015-free-open-v1/);
 });
