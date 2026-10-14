@@ -6,7 +6,11 @@ export const CASE_WORKSPACE_DOCUMENT_LIMIT=20;
 export const CASE_WORKSPACE_MAX_FILE_BYTES=20*1024*1024;
 export const CASE_WORKSPACE_ALLOWED_MIME_TYPES=Object.freeze([
   "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/png",
+  "image/jpeg",
+  "image/webp"
 ]);
 export const CASE_WORKSPACE_ALLOWED_PLANS=Object.freeze(["trial_pro","pro","office"]);
 export const CASE_WORKSPACE_ROLES=Object.freeze(["owner","lawyer","reviewer"]);
@@ -63,8 +67,15 @@ export function validateCaseDocumentUploadMetadata({name,mimeType,pageCount=null
   if(!originalName) errors.push("file_name_required");
   if(!CASE_WORKSPACE_ALLOWED_MIME_TYPES.includes(mime)) errors.push("unsupported_file_type");
   if(originalName && /[\\/]/.test(originalName)) errors.push("invalid_file_name");
-  if(originalName && mime==="application/pdf" && !/\.pdf$/i.test(originalName)) errors.push("file_extension_mismatch");
-  if(originalName && mime==="application/vnd.openxmlformats-officedocument.wordprocessingml.document" && !/\.docx$/i.test(originalName)) errors.push("file_extension_mismatch");
+  const extensions={
+    "application/pdf":/\.pdf$/i,
+    "application/msword":/\.doc$/i,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document":/\.docx$/i,
+    "image/png":/\.png$/i,
+    "image/jpeg":/\.(?:jpg|jpeg)$/i,
+    "image/webp":/\.webp$/i
+  };
+  if(originalName && extensions[mime] && !extensions[mime].test(originalName)) errors.push("file_extension_mismatch");
   let pages=null;
   if(pageCount!==null && pageCount!==undefined && pageCount!==""){
     pages=Number(pageCount);
