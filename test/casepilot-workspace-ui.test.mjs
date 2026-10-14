@@ -66,3 +66,10 @@ test("private document vault supports drag drop and multi-file PDF Word image se
   assert.match(js,/image\/jpeg/);
   assert.match(js,/image\/webp/);
 });
+
+test("private document batch is capped at 20 files and 25 MB each",()=>{
+  assert.match(html,/до 25 MB по датотека · до 20 документи/);
+  assert.match(js,/all\.length>20/);
+  assert.match(js,/25\*1024\*1024/);
+  assert.match(js,/најмногу 20 документи/);
+});
