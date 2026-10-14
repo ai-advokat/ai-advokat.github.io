@@ -59,7 +59,7 @@ jobs:
           fi
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
-          FREE_PROVIDER="$(node -e 'const c=require("./wrangler.jsonc"); process.stdout.write(c.vars?.FREE_CHAT_PROVIDER==="workers_ai"?"true":"false")')"
+          FREE_PROVIDER="$(node -e 'const fs=require("fs"); const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8")); process.stdout.write(c.vars?.FREE_CHAT_PROVIDER==="workers_ai"?"true":"false")')"
           echo "FREE_PROVIDER=$FREE_PROVIDER" >> "$GITHUB_ENV"
           if [ "$FREE_PROVIDER" != "true" ]; then
             test -n "$OPENAI_API_KEY"
