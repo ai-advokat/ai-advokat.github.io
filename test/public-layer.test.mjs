@@ -317,3 +317,13 @@ describe("accessibility regressions", () => {
     assert.ok(ratio("#9ec3e6", token(dark, "surface")) >= 4.5, "dark .tag colour");
   });
 });
+
+
+test("featured legal modules are visible directly below the hero",()=>{
+  assert.match(html,/id="featured-legal-modules"/);
+  assert.match(html,/Престој и вработување на странци/);
+  assert.match(html,/Пресуди и одлуки на ЕСЧП за Северна Македонија/);
+  assert.match(html,/data-echr-static="search"/);
+  assert.match(html,/data-foreign-static/);
+  assert.match(html,/20261014-featured-modules-v1/);
+});
