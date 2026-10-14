@@ -52,7 +52,7 @@ test("CHAT4 citizen guide routing stays first and clickable",()=>{
 });
 
 test("CHAT5 attachment UX supports text, image and file payloads but remains privacy-gated",()=>{
-  assert.match(html,/accept="\.pdf,\.doc,\.docx,\.txt,\.md,\.csv,\.json,\.png,\.jpg,\.jpeg,\.webp,/);
+  assert.match(html,/accept="\.pdf,\.docx,\.txt,\.md,\.csv,\.json,\.png,\.jpg,\.jpeg,\.webp,/);
   assert.match(chatJs,/kind:"image"/);
   assert.match(chatJs,/kind:"file"/);
   assert.match(chatJs,/kind:"text"/);
