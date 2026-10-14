@@ -145,7 +145,7 @@
         input.value=b.dataset.starter||b.textContent.trim(); autoSize(); input.focus();
       }));
       messagesEl.querySelectorAll("[data-foreign-employment]").forEach(b=>b.addEventListener("click",()=>loadForeignEmploymentPrompt(b)));
-      return;      return;
+      return;
     }
     chat.messages.forEach((m,idx)=>messagesEl.append(renderMessage(m,idx)));
     messagesEl.scrollTop=messagesEl.scrollHeight;
