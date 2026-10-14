@@ -1,4 +1,4 @@
-// SIMPLE_ACCESS_V1: plain-language access regression contract.
+// SIMPLE_ACCESS_V1: plain-language access regression contract. Trusted CI retrigger.
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
