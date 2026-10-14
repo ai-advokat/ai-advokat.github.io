@@ -56,7 +56,8 @@ describe("frontend ↔ API contract", () => {
   test("FC4 the UI never labels a version 'current' unless it is current AND Human-Gate approved", () => {
     const fn = index.slice(index.indexOf("function versionCurrencyText("), index.indexOf("function citationStatusLabel("));
     assert.match(fn, /v\.isCurrent && v\.humanReviewStatus==="approved"\) return T\("ТЕКОВНА/);
-    assert.match(fn, /НЕ е потврдена преку Human Gate/);
+    assert.match(fn, /НЕ е потврдена преку човечка контрола/);
+    assert.match(fn, /NOT confirmed through the Human Gate/);
     const cit = index.slice(index.indexOf("function citationStatusLabel("), index.indexOf("function versionList("));
     assert.match(cit, /c\.status==="current_consolidated" && approved\) return T\("ТЕКОВЕН · ПРОВЕРЕН"/);
   });
