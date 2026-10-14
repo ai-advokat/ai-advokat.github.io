@@ -29,3 +29,29 @@ test("bot prompt enforces source/version verification",()=>{
   assert.equal(data.fees.status,"must_verify_before_payment");
   assert.equal(data.submission.verification_required,true);
 });
+
+test("module includes separate official MVR and MFA references without conflating procedures",()=>{
+  assert.equal(data.official_sources.mvr_residence_registration.url,"https://mvr.gov.mk/mk-MK/prijavi-stranci");
+  assert.match(data.official_sources.mvr_residence_registration.rules_as_published.join("\n"),/12 часа/);
+  assert.match(data.official_sources.mvr_residence_registration.rules_as_published.join("\n"),/48 часа/);
+  assert.equal(data.official_sources.mvr_residence_registration.legal_anchor.article,"190");
+  assert.equal(data.official_sources.mfa_travel_document_for_foreigners.fee_as_published,"20 евра");
+  assert.match(data.official_sources.mfa_travel_document_for_foreigners.tariff_reference_as_published,/134/);
+  assert.match(data.official_sources.mfa_travel_document_for_foreigners.scope_warning,/не смее да се меша/);
+  assert.match(html,/Официјален МВР извор · пријава на престој/);
+  assert.match(html,/Официјален МНР извор · патен лист за странци/);
+});
+
+test("foreign-employment reference is sent as JSON attachment instead of oversized q payload",()=>{
+  assert.match(js,/new File\(\[refText\],"mvr-foreign-employment-reference\.json"/);
+  assert.match(js,/attachments=\[\.\.\.withoutOld,refFile\]/);
+  assert.doesNotMatch(js,/JSON\.stringify\(\{source:data\.source,selected_checklists:selected/);
+  const promptParts=[
+    "AI Advokat, анализирај го приложениот JSON референтен пакет за престој и вработување на странци.",
+    "Фотографираните МВР листи се практична институционална информација, не сами по себе важечки правен извор.",
+    "Одделно користи ги официјалните МВР и МНР веб-извори наведени во прилогот и не мешај патен лист за странци со дозвола за привремен престој.",
+    "Провери ја секоја ставка според важечките прописи и официјалните извори. Разликувај: што пишува на листата, што е правно потврдено и што бара дополнителна проверка.",
+    "За секој правен заклучок наведи точен извор, член/одредба, верзија и датум. Такси, рокови и ослободувања не преземај без проверка."
+  ];
+  assert.ok(promptParts.join("\n\n").length<4000);
+});
