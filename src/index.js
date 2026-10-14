@@ -109,6 +109,7 @@ import {
   publicOpenLegalSourceDirectory,
   openLegalSourcePolicySummary
 } from "./open-legal-sources-policy.js";
+import { detectConfidentialCasePrompt } from "./chat-privacy.js";
 
 const VERSION = "1.8.1";
 
@@ -4067,6 +4068,25 @@ async function handleGPTChat(request,env){
   const q=cleanQuery(payload.q,4000);
   if(q.length<2) return json(request,{ok:false,error:"query_too_short"},400);
 
+  const confidentiality=detectConfidentialCasePrompt(q);
+  if(confidentiality.confidential){
+    return json(request,{
+      ok:false,
+      error:"confidential_case_workspace_required",
+      message:"Ова барање содржи податоци што личат на конкретен доверлив правен предмет. За да не се испраќаат преку јавниот AI chat, користете Secure Case Workspace.",
+      action:{
+        label:"Отвори Secure Case Workspace",
+        href:"/casepilot-workspace.html"
+      },
+      privacy:{
+        providerCalled:false,
+        quotaConsumed:false,
+        publicChatProcessingStopped:true,
+        reasons:confidentiality.reasons
+      }
+    },422);
+  }
+
   const uiMode=["auto","library","web"].includes(payload.mode) ? payload.mode : "auto";
   const webRequested=uiMode==="web" || payload.webSearch===true;
   if(webRequested && env.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED!=="true"){
@@ -4234,8 +4254,9 @@ async function handleGPTChat(request,env){
     return json(request,{
       ok:false,
       error:result.error,
+      message:"AI runtime не успеа безбедно да го заврши ова барање. Барањето не е објавено како правен одговор; обидете се повторно или користете Secure Case Workspace за конкретен предмет.",
       problems:result.problems || null,
-      failureDetail:result.failureDetail || result.detail || null,
+      failureDetail:null,
       model:env.OPENAI_MODEL || null,
       governanceRunId:lioeRunId,
       runtimeTelemetry:telemetryState,
