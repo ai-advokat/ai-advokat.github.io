@@ -389,8 +389,8 @@ test("CHAT34 FREE mode is open without owner or member key",()=>{
   assert.doesNotMatch(html,/id="aiChatMembershipKey"/);
   assert.doesNotMatch(html,/id="aiChatMembershipUse"/);
   assert.doesNotMatch(html,/id="aiChatOwnerOpen"/);
-  assert.match(html,/FREE активен · не е потребен клуч/);
-  assert.match(chatJs,/FREE активен · без клуч/);
+  assert.match(html,/FREE активен · не е потребен клуч · документарна анализа преку Workers AI/);
+  assert.match(chatJs,/FREE активен · без клуч · Workers AI/);
   assert.match(chatJs,/free_quota_exhausted/);
   assert.match(chatJs,/attachments=\[\.\.\.selectedFiles\]/);
 });
@@ -433,13 +433,23 @@ test("CHAT38 visible multi-upload control exposes the 20-document contract",()=>
   assert.match(html,/id="aiChatAttachmentCount"/);
   assert.match(chatJs,/attachWideBtn/);
   assert.match(chatJs,/attachmentCount\.textContent=attachments\.length\+" \/ "\+CHAT_ATTACHMENT_LIMIT/);
-  assert.match(html,/20261015-free-open-v1/);
+  assert.match(html,/20261015-free-workers-ai-v2/);
 });
 
 
 test("CHAT39 FREE status is visible beside the uploader",()=>{
   assert.match(html,/id="aiChatOwnerState"/);
-  assert.match(html,/FREE активен · без клуч/);
+  assert.match(html,/FREE активен · без клуч · Workers AI/);
   assert.doesNotMatch(html,/id="aiChatOwnerOpen"/);
-  assert.match(html,/20261015-free-open-v1/);
+  assert.match(html,/20261015-free-workers-ai-v2/);
+});
+
+
+test("CHAT40 FREE Workers AI document fallback is visible and preserves 20-document upload",()=>{
+  assert.match(html,/FREE активен · без клуч · Workers AI/);
+  assert.match(html,/Прикачи документи \(до 20\)/);
+  assert.match(chatJs,/configured_for_free_workers_ai_chat_execution/);
+  assert.match(chatJs,/FREE Workers AI · LIVE · документи/);
+  assert.match(worker,/convertFreeChatAttachments/);
+  assert.match(worker,/env\.AI\.toMarkdown/);
 });
