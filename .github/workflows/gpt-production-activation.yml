@@ -59,9 +59,13 @@ jobs:
           fi
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
-          test -n "$OPENAI_API_KEY"
-          test "${#OPENAI_API_KEY}" -gt 20
-          echo "Activation prerequisites: PASS"
+          FREE_PROVIDER="$(node -e 'const c=require("./wrangler.jsonc"); process.stdout.write(c.vars?.FREE_CHAT_PROVIDER==="workers_ai"?"true":"false")')"
+          echo "FREE_PROVIDER=$FREE_PROVIDER" >> "$GITHUB_ENV"
+          if [ "$FREE_PROVIDER" != "true" ]; then
+            test -n "$OPENAI_API_KEY"
+            test "${#OPENAI_API_KEY}" -gt 20
+          fi
+          echo "Activation prerequisites: PASS · FREE_PROVIDER=$FREE_PROVIDER"
 
       - name: Verify exact governed GPT production configuration
         shell: bash
@@ -82,10 +86,6 @@ jobs:
           if(suite.synthetic_data_only!==true) throw new Error("Extended UAT must be synthetic-only");
           if(suite.suite_id!=="AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20") throw new Error("Unexpected extended UAT suite");
           if(suite.scenarios?.length!==20) throw new Error("Extended production UAT must contain exactly 20 scenarios");
-          console.log("20-scenario production legal UAT contract: PASS");
-          NODE
-          node <<'NODE'
-          const fs=require("fs");
           const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
           if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker name");
           if(c.vars?.OPENAI_MODEL!=="gpt-6.1-sol") throw new Error("Unexpected OpenAI model");
@@ -93,27 +93,40 @@ jobs:
           if(c.vars?.OPENAI_ORCHESTRATOR_ENABLED!=="true") throw new Error("GPT orchestrator gate not armed");
           if(c.vars?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED!=="true") throw new Error("Web search gate not armed");
           if(c.vars?.OPENAI_FILE_INPUT_ENABLED!=="true") throw new Error("Attachment input gate not armed");
+          if(c.vars?.FREE_CHAT_PROVIDER==="workers_ai"){
+            if(c.ai?.binding!=="AI") throw new Error("FREE Workers AI binding missing");
+            if(c.vars?.WORKERS_AI_MARKDOWN_ENABLED!=="true") throw new Error("Workers AI Markdown conversion not armed");
+            if(c.vars?.WORKERS_AI_CHAT_MODEL!=="@cf/zai-org/glm-4.7-flash") throw new Error("Unexpected FREE Workers AI model");
+          }
           const source=fs.readFileSync("src/agent-orchestrator.js","utf8");
           if(source.includes("/v1/conversations")) throw new Error("Durable Conversations API must not be used");
           if(!source.includes("store:false")) throw new Error("Responses store:false missing");
           const all=fs.readFileSync("wrangler.jsonc","utf8")+source+fs.readFileSync("assets/ai-advokat-chat.js","utf8");
           if(/sk-[A-Za-z0-9_-]{20,}/.test(all)) throw new Error("API key pattern found in repository source");
-          console.log("Governed GPT config: PASS");
+          console.log("Governed provider config: PASS");
           NODE
 
       - name: Verify GPT-6.1 Sol access with OpenAI
+        if: env.FREE_PROVIDER != 'true'
         shell: bash
         run: |
           set -euo pipefail
-          code="$(curl --silent --show-error --output /tmp/openai-model.json --write-out '%{http_code}'             -H "Authorization: Bearer $OPENAI_API_KEY"             https://api.openai.com/v1/models/gpt-6.1-sol)"
+          code="$(curl --silent --show-error --output /tmp/openai-model.json --write-out '%{http_code}' \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            https://api.openai.com/v1/models/gpt-6.1-sol)"
           test "$code" = "200"
           node -e 'const d=require("/tmp/openai-model.json"); if(d.id!=="gpt-6.1-sol") process.exit(1); console.log("OpenAI model access: PASS")'
 
       - name: Verify paid quota with a minimal Responses API preflight
+        if: env.FREE_PROVIDER != 'true'
         shell: bash
         run: |
           set -euo pipefail
-          code="$(curl --silent --show-error --output /tmp/openai-preflight.json --write-out '%{http_code}'             -H "Authorization: Bearer $OPENAI_API_KEY"             -H 'content-type: application/json'             -d '{"model":"gpt-6.1-sol","input":"Reply with only: PREFLIGHT_OK","reasoning":{"effort":"low"},"max_output_tokens":16,"store":false}'             https://api.openai.com/v1/responses)"
+          code="$(curl --silent --show-error --output /tmp/openai-preflight.json --write-out '%{http_code}' \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -H 'content-type: application/json' \
+            -d '{"model":"gpt-6.1-sol","input":"Reply with only: PREFLIGHT_OK","reasoning":{"effort":"low"},"max_output_tokens":16,"store":false}' \
+            https://api.openai.com/v1/responses)"
           test "$code" = "200"
           node <<'NODE'
           const d=require("/tmp/openai-preflight.json");
@@ -123,6 +136,7 @@ jobs:
           NODE
 
       - name: Install OpenAI API key as Cloudflare Worker secret
+        if: env.FREE_PROVIDER != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -147,7 +161,7 @@ jobs:
           if(request.private_document_upload_authorized!==false) {
             throw new Error("Unexpected Case Workspace private-upload authorization state");
           }
-          console.log("CasePilot storage gate: LOCKED as required; GPT provider activation may proceed independently.");
+          console.log("CasePilot storage gate: LOCKED as required; provider activation may proceed independently.");
           NODE
 
       - name: Deploy production Worker
@@ -162,15 +176,60 @@ jobs:
           node <<'NODE'
           const d=require("/tmp/orchestrator.json");
           if(!d.ok) throw new Error("orchestrator endpoint not ready");
-          if(d.runtime?.providerExecution!=="configured_for_api_chat_execution") {
-            throw new Error("GPT provider not configured after deploy: "+JSON.stringify(d.runtime));
+          const state=d.runtime?.providerExecution;
+          if(process.env.FREE_PROVIDER==="true"){
+            if(state!=="configured_for_free_workers_ai_chat_execution") {
+              throw new Error("FREE Workers AI provider not configured after deploy: "+JSON.stringify(d.runtime));
+            }
+            if(d.runtime?.fileInputs!=="configured_workers_ai_markdown_conversion") {
+              throw new Error("FREE document conversion not configured: "+JSON.stringify(d.runtime));
+            }
+          }else{
+            if(state!=="configured_for_api_chat_execution") throw new Error("GPT provider not configured after deploy: "+JSON.stringify(d.runtime));
+            if(d.runtime?.externalResearchTools!=="configured") throw new Error("Web search runtime not configured");
+            if(d.runtime?.fileInputs!=="configured") throw new Error("Attachment input runtime not configured");
           }
-          if(d.runtime?.externalResearchTools!=="configured") throw new Error("Web search runtime not configured");
-          if(d.runtime?.fileInputs!=="configured") throw new Error("Attachment input runtime not configured");
-          console.log("Provider readiness: PASS");
+          console.log("Provider readiness: PASS · "+state);
+          NODE
+
+      - name: Live FREE Workers AI + DOCX attachment smoke test
+        if: env.FREE_PROVIDER == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          python3 <<'PY'
+          import zipfile
+          with zipfile.ZipFile('/tmp/free-smoke.docx','w',zipfile.ZIP_DEFLATED) as z:
+              z.writestr('[Content_Types].xml','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>''')
+              z.writestr('_rels/.rels','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>''')
+              z.writestr('word/document.xml','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>PRAVDA_FREE_DOC</w:t></w:r></w:p></w:body></w:document>''')
+          PY
+          node <<'NODE' >/tmp/free-smoke-payload.json
+          const fs=require("fs");
+          const b64=fs.readFileSync("/tmp/free-smoke.docx").toString("base64");
+          process.stdout.write(JSON.stringify({
+            q:"Прочитај го DOCX прилогот и кажи кој точен тест-збор го содржи.",
+            mode:"auto",webSearch:false,history:[],guideIds:[],
+            attachments:[{kind:"file",name:"free-smoke.docx",mime:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",base64:b64}]
+          }));
+          NODE
+          curl --fail --retry 3 --retry-delay 2 \
+            -H 'content-type: application/json' \
+            --data-binary @/tmp/free-smoke-payload.json \
+            "$BASE/api/chat" -o /tmp/free-workers-ai-smoke.json
+          node <<'NODE'
+          const d=require("/tmp/free-workers-ai-smoke.json");
+          if(!d.ok) throw new Error("FREE Workers AI smoke failed: "+JSON.stringify(d));
+          if(d.provider!=="workers_ai_free") throw new Error("Unexpected FREE provider: "+d.provider);
+          if(d.attachmentsUsed!==1 || d.convertedDocuments!==1) throw new Error("DOCX was not converted/processed");
+          if(!String(d.answer||"").toUpperCase().includes("PRAVDA_FREE_DOC")) throw new Error("DOCX content missing from answer");
+          if(d.webSearchUsed!==false) throw new Error("FREE provider must not claim Web search");
+          console.log("LIVE FREE WORKERS AI + DOCX: PASS");
           NODE
 
       - name: Live GPT + Web + attachment smoke test
+        if: env.FREE_PROVIDER != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -192,6 +251,7 @@ jobs:
           NODE
 
       - name: Provision ephemeral synthetic UAT membership
+        if: env.FREE_PROVIDER != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -221,9 +281,9 @@ jobs:
           "
           echo "UAT_ACCOUNT_ID=$UAT_ACCOUNT_ID" >> "$GITHUB_ENV"
           echo "AI_ADVOCAT_UAT_MEMBERSHIP_KEY=$UAT_KEY" >> "$GITHUB_ENV"
-          echo "Ephemeral UAT membership provisioned."
 
       - name: Live governed legal UAT scenarios — 20-domain suite
+        if: env.FREE_PROVIDER != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -243,7 +303,6 @@ jobs:
               DELETE FROM membership_entitlements WHERE account_id='$UAT_ACCOUNT_ID';
               DELETE FROM membership_accounts WHERE id='$UAT_ACCOUNT_ID';
             "
-            echo "Ephemeral UAT membership cleaned."
           else
             echo "No ephemeral UAT membership to clean."
           fi
@@ -260,4 +319,5 @@ jobs:
             /tmp/openai-preflight.json
             /tmp/orchestrator.json
             /tmp/gpt-combined-smoke.json
+            /tmp/free-workers-ai-smoke.json
             /tmp/legal-uat-results.json
