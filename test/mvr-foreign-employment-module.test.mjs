@@ -55,3 +55,11 @@ test("foreign-employment reference is sent as JSON attachment instead of oversiz
   ];
   assert.ok(promptParts.join("\n\n").length<4000);
 });
+
+test("Nexa immigration.mk is governed as secondary comparison source only",()=>{
+  assert.equal(data.secondary_sources.nexa_immigration_mk.status,"comparison_only_not_authoritative");
+  assert.match(data.secondary_sources.nexa_immigration_mk.governance_rule,/Не смее да биде единствена основа/);
+  assert.ok(data.secondary_sources.nexa_immigration_mk.claims_requiring_primary_source_verification.length>=5);
+  assert.match(js,/secondary_sources:data\.secondary_sources/);
+  assert.match(html,/Секундарен практичен извор:/);
+});
