@@ -1,0 +1,36 @@
+name: CasePilot simple access test
+
+on:
+  pull_request:
+    paths:
+      - "casepilot-workspace.html"
+      - "assets/casepilot-workspace-ui.js"
+      - "test/casepilot-case-picker-create.test.mjs"
+      - ".github/workflows/casepilot-simple-access-test.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "casepilot-workspace.html"
+      - "assets/casepilot-workspace-ui.js"
+      - "test/casepilot-case-picker-create.test.mjs"
+      - ".github/workflows/casepilot-simple-access-test.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  simple-access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check
+        run: node --check assets/casepilot-workspace-ui.js
+      - name: Simple access regression test
+        run: node --no-warnings --test test/casepilot-case-picker-create.test.mjs
+      - name: Workspace privacy regression test
+        run: node --no-warnings --test test/casepilot-workspace-ui.test.mjs
