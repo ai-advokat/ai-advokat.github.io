@@ -85,12 +85,24 @@ def extract_full_issue(pdf,out):
     rc,_,err=run(["pdftotext","-layout",str(pdf),str(out)])
     return rc,err
 
-def _title_anchor_pattern(title,min_tokens=6,max_tokens=14):
+def _clean_register_title_for_anchor(title):
+    t=str(title)
+    # Two-column annual-register extraction can leak the neighbouring
+    # "issue/page" reference into the title. Remove only that structural noise
+    # for matching; the preserved source title itself is never rewritten.
+    t=re.sub(r"(?<!\\d)\\d{1,3}\\s*/\\s*\\d{1,5}(?!\\d)"," ",t)
+    t=re.sub(r"\\.{2,}"," ",t)
+    # Repair line-wrap hyphenation created by layout extraction.
+    t=re.sub(r"(?<=[A-Za-zА-Яа-яЀ-ӿ])-\\s+(?=[A-Za-zА-Яа-яЀ-ӿ])","",t)
+    return " ".join(t.split())
+
+def _title_anchor_pattern(title,min_tokens=5,max_tokens=12):
     # Register ordinals are annual-index ordinals and are not guaranteed to be
     # printed as body markers inside the individual Gazette issue. For an exact
-    # secondary anchor, require a substantial sequence of title words from the
-    # official register and tolerate only layout/punctuation separators.
-    words=[w for w in re.findall(r"[0-9A-Za-zА-Яа-яЀ-ӿ]+",str(title)) if len(w)>=2]
+    # secondary anchor, require a substantial sequence of cleaned title words
+    # and tolerate only layout/punctuation separators.
+    cleaned=_clean_register_title_for_anchor(title)
+    words=[w for w in re.findall(r"[0-9A-Za-zА-Яа-яЀ-ӿ]+",cleaned) if len(w)>=2]
     if len(words)<min_tokens:
         return None
     words=words[:max_tokens]
@@ -230,7 +242,16 @@ def main():
                     if rc!=0 or not txt.exists():
                         summary["skipped"].append({"issue":issue_no,"ordinal":a["ordinal"],"reason":"pdftotext_failed"}); continue
                     text=txt.read_text("utf-8",errors="replace").strip()
-                    boundary_method="page_fallback"
+                    local_pat=_title_anchor_pattern(a.get("title",""),min_tokens=5,max_tokens=10)
+                    local_matches=list(local_pat.finditer(text)) if local_pat else []
+                    if local_matches:
+                        # Page range is already bound by the official register.
+                        # A strict cleaned title match inside that range is an
+                        # exact act anchor; start at the matched body title.
+                        text=text[local_matches[-1].start():].strip()
+                        boundary_method="act_title_anchor_page_bound"
+                    else:
+                        boundary_method="page_fallback"
                 if len(text)<40:
                     summary["skipped"].append({"issue":issue_no,"ordinal":a["ordinal"],"reason":"text_too_short"}); continue
                 blocks=article_blocks(text)
