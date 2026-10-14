@@ -96,6 +96,31 @@
       messagesEl.querySelectorAll("[data-starter]").forEach(b=>b.addEventListener("click",()=>{
         input.value=b.dataset.starter||b.textContent.trim(); autoSize(); input.focus();
       }));
+      messagesEl.querySelectorAll("[data-foreign-employment]").forEach(b=>b.addEventListener("click",async()=>{
+        const mode=String(b.dataset.foreignEmployment||"verify");
+        b.disabled=true;
+        try{
+          const r=await fetch("/data/mvr-foreign-employment-checklists.json?v=20261014",{cache:"no-store"});
+          if(!r.ok) throw new Error("reference");
+          const data=await r.json();
+          const section=mode==="first"?"first_time":mode==="renewal"?"renewal":null;
+          const selected=section ? {[section]:data.checklists?.[section]} : data.checklists;
+          input.value=[
+            "AI Advokat, анализирај ја приложената институционална МВР чек-листа за привремен престој по основ вработување.",
+            "ВАЖНО: ова е транскрипција од фотографирани листи истакнати во МВР на 14.10.2026 и НЕ е сама по себе важечки правен извор.",
+            "Провери ја секоја ставка според важечките прописи и официјалните извори. Не претпоставувај актуелност на такси, рокови, канцеларија или посебни ослободувања.",
+            "Разликувај: (1) што пишува на листата, (2) што е потврдено со важечки правен извор, (3) што бара дополнителна проверка.",
+            "Особено провери: Закон за странци, условите за привремен престој, прописите за вработување/работа на странци, здравствено осигурување, неосудуваност, сместување, заверки/преводи и административни такси.",
+            "За секој правен заклучок наведи точен извор, член/одредба, верзија и датум. Ако нема сигурен официјален извор, кажи го тоа.",
+            "Институционални податоци за проверка:",
+            JSON.stringify({source:data.source,selected_checklists:selected,submission:data.submission,fees:data.fees,verification:data.verification},null,2)
+          ].join("\n\n");
+          autoSize(); input.focus();
+        }catch{
+          input.value="Провери ги актуелните услови и документи за привремен престој по основ вработување на странец во Северна Македонија — прв пат и продолжување. Користи официјални извори и наведи точни членови, верзии и такси.";
+          autoSize(); input.focus();
+        }finally{b.disabled=false;}
+      }));
       return;
     }
     chat.messages.forEach((m,idx)=>messagesEl.append(renderMessage(m,idx)));

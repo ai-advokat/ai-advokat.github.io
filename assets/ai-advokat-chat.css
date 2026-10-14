@@ -123,3 +123,22 @@
 .ai-chat-guide-state.active_with_warning{color:#8a5a00}
 .ai-chat-guide-state.review_required{color:var(--muted)}
 .ai-chat-guide-state.archive{color:var(--muted);font-style:italic}
+
+
+/* MVR foreign-employment reference module */
+.ai-chat-special-starter{grid-column:1/-1;display:flex;gap:11px;align-items:center;background:color-mix(in srgb,var(--surface) 86%,var(--gold) 14%)}
+.ai-chat-special-starter strong{display:block;font-size:.92rem}
+.ai-chat-special-starter small{display:block;margin-top:2px;color:var(--muted);font-size:.76rem}
+.ai-chat-special-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--navy);font-size:1.05rem;flex:0 0 auto}
+.ai-chat-reference-module{margin:12px 0 0;border:1px solid var(--line);border-radius:14px;background:var(--surface);text-align:left}
+.ai-chat-reference-module>summary{cursor:pointer;padding:12px 14px;font-weight:800}
+.ai-chat-reference-body{padding:0 14px 14px}
+.ai-chat-reference-body p{max-width:none;margin:8px 0 12px;text-align:left}
+.ai-chat-reference-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ai-chat-reference-grid section{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg)}
+.ai-chat-reference-grid h3{margin:0 0 8px;font-size:.95rem}
+.ai-chat-reference-grid ol{margin:0;padding-left:20px}
+.ai-chat-reference-grid li{margin:0 0 6px;line-height:1.45;font-size:.82rem}
+.ai-chat-reference-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.ai-chat-reference-actions .ai-chat-starter{flex:1 1 190px}
+@media(max-width:700px){.ai-chat-reference-grid{grid-template-columns:1fr}}
