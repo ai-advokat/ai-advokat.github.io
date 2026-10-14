@@ -70,6 +70,11 @@ test("GG5 Gazette API is read-only metadata and current status is Human-Gate bou
   assert.ok(!/event_text/.test(block),"Gazette public endpoint must not expose amendment full text");
   assert.ok(!/(INSERT|UPDATE|DELETE)\s+/i.test(block),"Gazette endpoint must not write D1");
   assert.match(worker,/\/api\/gazette-register/);
+  assert.match(block,/FROM legal_article_versions lav/);
+  assert.doesNotMatch(block,/v\.version_class/);
+  assert.doesNotMatch(block,/v\.application_from/);
+  assert.doesNotMatch(block,/v\.source_issue_number/);
+  assert.doesNotMatch(block,/v\.source_issue_date/);
 });
 
 test("GG6 Gazette page is a provenance product, not a Gazette replica",()=>{
