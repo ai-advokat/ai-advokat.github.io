@@ -88,3 +88,20 @@ test("foreigners module is a permanent dedicated portal section",()=>{
   assert.match(js,/querySelectorAll\("\[data-foreign-static\]"/);
   assert.match(js,/scrollIntoView\(\{behavior:"smooth",block:"start"\}\)/);
 });
+
+
+test("professional handbook is integrated as governed secondary context",()=>{
+  const g=data.professional_guide;
+  assert.equal(g.pages,11);
+  assert.equal(g.source_size_bytes,180241);
+  assert.equal(g.source_sha256,"d6f55191686415be2b940a6e5de8baa15610ed18acbd6b438fe9a037e86bc8bb");
+  assert.equal(g.legal_authority,false);
+  assert.equal(g.human_gate_required,true);
+  assert.ok(g.full_text.length>20000);
+  assert.match(g.full_text,/ПРОШИРЕН АДВОКАТСКИ ДЕЛ/);
+  assert.match(g.full_text,/90 до 5 дена/);
+  assert.match(g.full_text,/ГАРАНЦИЈА И ПИСМЕНА ИЗЈАВА/);
+  assert.match(g.bot_use_policy,/primary-source verification|примарен/i);
+  assert.match(js,/professional_guide:data\.professional_guide/);
+  assert.match(html,/\/guides\/fulltext\/prestoj-stranci-2026\//);
+});
