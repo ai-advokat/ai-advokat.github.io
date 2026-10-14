@@ -4,7 +4,7 @@
 //   * Every quota / rate-limit decision is a single atomic SQL statement (no read -> decide -> write).
 //   * Missing secrets fail closed.
 
-export const FREE_MONTHLY_ASSISTANT_QUOTA = 1000;
+export const FREE_MONTHLY_ASSISTANT_QUOTA = 50;
 export const ASSISTANT_BURST_LIMIT = 5;          // requests
 export const ASSISTANT_BURST_WINDOW_SECONDS = 60;
 export const MEMBERSHIP_REQUEST_HOURLY_LIMIT = 3;
