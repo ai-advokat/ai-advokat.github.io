@@ -4001,13 +4001,45 @@ async function handleGazetteRegister(request, env, url) {
   try{
     const vr=await env.DB.prepare(
       `SELECT li.canonical_key,li.title,li.short_title,
-              v.version_label,v.version_class,v.valid_from,v.application_from,v.valid_to,
-              v.is_current,v.human_review_status,v.source_url,
-              v.source_issue_number,v.source_issue_date,v.checksum_sha256
+              v.version_label,NULL AS version_class,v.valid_from,NULL AS application_from,v.valid_to,
+              v.is_current,v.human_review_status,
+              COALESCE(
+                v.source_url,
+                (SELECT lav.source_url
+                   FROM legal_article_versions lav
+                  WHERE lav.instrument_version_id=v.id
+                    AND lav.source_url IS NOT NULL
+                  ORDER BY COALESCE(lav.source_issue_date,lav.valid_from,'') DESC,lav.id DESC
+                  LIMIT 1)
+              ) AS source_url,
+              (SELECT lav.source_issue_number
+                 FROM legal_article_versions lav
+                WHERE lav.instrument_version_id=v.id
+                  AND lav.source_issue_number IS NOT NULL
+                ORDER BY COALESCE(lav.source_issue_date,lav.valid_from,'') DESC,lav.id DESC
+                LIMIT 1) AS source_issue_number,
+              (SELECT lav.source_issue_date
+                 FROM legal_article_versions lav
+                WHERE lav.instrument_version_id=v.id
+                  AND lav.source_issue_date IS NOT NULL
+                ORDER BY lav.source_issue_date DESC,lav.id DESC
+                LIMIT 1) AS source_issue_date,
+              v.checksum_sha256
          FROM instrument_versions v
          JOIN legal_instruments li ON li.id=v.instrument_id
-        WHERE v.source_issue_number IS NOT NULL OR v.source_issue_date IS NOT NULL
-        ORDER BY COALESCE(v.source_issue_date,v.application_from,v.valid_from) DESC,v.id DESC
+        WHERE v.source_url IS NOT NULL
+           OR EXISTS (
+                SELECT 1 FROM legal_article_versions lav
+                 WHERE lav.instrument_version_id=v.id
+                   AND (lav.source_issue_number IS NOT NULL OR lav.source_issue_date IS NOT NULL)
+              )
+        ORDER BY COALESCE(
+                   (SELECT MAX(lav.source_issue_date)
+                      FROM legal_article_versions lav
+                     WHERE lav.instrument_version_id=v.id),
+                   v.valid_from
+                 ) DESC,
+                 v.id DESC
         LIMIT ?`
     ).bind(limit).all();
     versions=(vr.results||[]).map(row=>({
