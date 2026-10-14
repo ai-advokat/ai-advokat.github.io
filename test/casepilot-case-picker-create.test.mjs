@@ -1,3 +1,4 @@
+// SIMPLE_ACCESS_V1: plain-language access regression contract.
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
