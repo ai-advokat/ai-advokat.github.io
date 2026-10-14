@@ -1344,6 +1344,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
 
     const at=new Date().toISOString();
+    await env.CASE_FILES.delete(`case-derived/v1/${caseId}/analysis/latest.md`).catch(()=>{});
     await env.DB.batch([
       env.DB.prepare(
         "UPDATE case_document_slots SET extraction_state='complete',updated_at=? WHERE id=? AND case_id=?"
@@ -1409,6 +1410,8 @@ async function handleCaseWorkspaceApi(request,env,url){
       if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
       if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
       await env.CASE_FILES.delete(row.storage_key);
+      await env.CASE_FILES.delete(`case-derived/v1/${caseId}/${documentId}/extraction.json`).catch(()=>{});
+      await env.CASE_FILES.delete(`case-derived/v1/${caseId}/analysis/latest.md`).catch(()=>{});
       const at=new Date().toISOString();
       await env.DB.batch([
         env.DB.prepare(
@@ -1699,10 +1702,10 @@ async function handleCaseWorkspaceApi(request,env,url){
       instruction,
       coverage:{
         documentCoverage:100,
-        evidenceCoverage:100,
+        evidenceCoverage:0,
         currentLawCoverage:articleBundle.state==="matched"?100:0,
-        unresolvedContradictions:0,
-        materialEvidenceGaps:0
+        unresolvedContradictions:1,
+        materialEvidenceGaps:1
       }
     });
     const result=await runOpenAIOrchestrator(env,{
