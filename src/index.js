@@ -1436,6 +1436,332 @@ async function handleCaseWorkspaceApi(request,env,url){
     return methodNotAllowed(request,"GET, HEAD, DELETE, OPTIONS");
   }
 
+  if(tail==="intelligence"){
+    if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+    const docs=await env.DB.prepare(
+      `SELECT id,slot_number,original_name,mime_type,storage_state,extraction_state,page_count,sha256
+         FROM case_document_slots
+        WHERE case_id=? AND storage_state!='deleted'
+        ORDER BY slot_number`
+    ).bind(caseId).all();
+    const rows=docs.results||[];
+    const latestKey=`case-derived/v1/${caseId}/analysis/latest.md`;
+    const latest=caseWorkspaceStorageReady(env) ? await env.CASE_FILES.head(latestKey).catch(()=>null) : null;
+    return json(request,{
+      ok:true,
+      caseId,
+      documents:rows,
+      counts:{
+        registered:rows.length,
+        extracted:rows.filter(r=>r.extraction_state==="complete").length,
+        pending:rows.filter(r=>r.extraction_state!=="complete").length
+      },
+      latestAnalysisAvailable:!!latest,
+      providerSingleDocumentLimitBytes:CASE_INTELLIGENCE_PROVIDER_MAX_BYTES,
+      doctrine:{
+        allActiveDocumentsMustBeExtracted:true,
+        privateDerivedArtifactsOnly:true,
+        currentLawVerificationRequired:true,
+        numericSuccessProbabilityProhibited:true,
+        humanGateRequired:true,
+        autonomousFiling:false
+      }
+    });
+  }
+
+  if(tail==="intelligence/analyze"){
+    if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+    if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_professional_write_role_required"},403);
+    if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
+    if(orchestratorRuntimeReadiness(env).provider!=="configured") return json(request,{ok:false,error:"case_intelligence_provider_not_configured"},503);
+
+    const docsResult=await env.DB.prepare(
+      `SELECT id,slot_number,original_name,mime_type,storage_state,extraction_state,page_count,sha256
+         FROM case_document_slots
+        WHERE case_id=? AND storage_state!='deleted'
+        ORDER BY slot_number`
+    ).bind(caseId).all();
+    const docs=docsResult.results||[];
+    if(!docs.length) return json(request,{ok:false,error:"case_intelligence_documents_required"},409);
+    const incomplete=docs.filter(d=>d.storage_state!=="uploaded" || d.extraction_state!=="complete");
+    if(incomplete.length){
+      return json(request,{
+        ok:false,error:"case_intelligence_extraction_incomplete",
+        documents:incomplete.map(d=>({id:d.id,name:d.original_name,storageState:d.storage_state,extractionState:d.extraction_state}))
+      },409);
+    }
+
+    const extractionPackets=[];
+    const privateContexts=[];
+    const issueHints=[];
+    let materialFacts=0;
+    let sourceBackedMaterialFacts=0;
+    for(const doc of docs){
+      const key=`case-derived/v1/${caseId}/${doc.id}/extraction.json`;
+      const object=await env.CASE_FILES.get(key);
+      if(!object) return json(request,{ok:false,error:"case_extraction_artifact_missing",documentId:doc.id},503);
+      let packet;
+      try{packet=JSON.parse(await object.text());}catch{return json(request,{ok:false,error:"case_extraction_artifact_invalid",documentId:doc.id},503);}
+      const extraction=packet?.extraction;
+      const check=validateCaseDocumentExtraction(extraction);
+      if(!check.ok) return json(request,{ok:false,error:"case_extraction_artifact_invalid",documentId:doc.id,problems:check.errors.slice(0,20)},503);
+      extractionPackets.push({document:doc,extraction});
+      privateContexts.push({
+        source:"PRIVATE_CASE_DOCUMENT · "+String(doc.original_name||doc.id),
+        locator:"Document ID "+doc.id,
+        version:"private derived extraction · source SHA-256 "+String(doc.sha256||"unknown"),
+        text:[
+          "AUTHORITY_ROLE: FACTUAL_EVIDENCE_ONLY_NOT_LEGAL_AUTHORITY",
+          "PRIVATE_CASE_MATERIAL: true",
+          "DO_NOT_TREAT_AS_PUBLIC_CORPUS: true",
+          compactExtractionContext(doc.id,extraction)
+        ].join("\n")
+      });
+      for(const hint of Array.isArray(extraction.legal_issue_hints)?extraction.legal_issue_hints:[]){
+        const value=String(hint||"").trim();
+        if(value && !issueHints.includes(value)) issueHints.push(value);
+      }
+      for(const fact of Array.isArray(extraction.facts)?extraction.facts:[]){
+        if(fact?.material!==true) continue;
+        materialFacts++;
+        if((Number.isInteger(fact.page)&&fact.page>0) || String(fact.locator||"").trim()) sourceBackedMaterialFacts++;
+      }
+    }
+
+    const lawQuery=[
+      String(access.legal_area||""),
+      String(access.title||""),
+      ...issueHints.slice(0,18)
+    ].filter(Boolean).join(" · ");
+    const task=[
+      "Подготви сеопфатна работна правна анализа на приватниот предмет.",
+      "Изгради: 1) case passport, 2) документарна хронологија, 3) лица/имот/договори и врски, 4) material fact → source matrix, 5) контрадикции, 6) недостасувачки докази, 7) правни прашања, 8) применливо право само кога е верификувано од governed legal context, 9) релевантна reviewed судска практика, 10) клиентска и спротивна теорија, 11) процесни ризици, 12) препорачана стратегија, 13) кои поднесоци може да се подготват.",
+      "За секој фактички заклучок наведи Document ID и page/locator од PRIVATE_CASE_DOCUMENT.",
+      "Не претставувај приватен документ како правен извор. Не измислувај рок, надлежност, сопственост, наследнички однос или правна важност.",
+      "Ако governed current-law context не потврдува правна норма, означи CURRENT-LAW VERIFICATION REQUIRED.",
+      "Не давај процент на успех. Прикажи evidence coverage, contradictions и gaps.",
+      "Ова е WORKING ANALYSIS — HUMAN GATE REQUIRED."
+    ].join("\n");
+
+    const initialPlan=buildAgentPlan(task+"\n"+lawQuery,{preferCorpus:true});
+    const [articleBundle,caseLawBundle,gazetteBundle]=await Promise.all([
+      governedArticleContext(env,lawQuery,initialPlan),
+      governedCaseLawContext(env,lawQuery,initialPlan,{limit:6}),
+      governedGazetteChunkContext(env,lawQuery)
+    ]);
+    const legalContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context];
+    const corpusContext=[...privateContexts,...legalContext];
+    const result=await runOpenAIOrchestrator(env,{
+      plan:initialPlan,
+      input:task+"\n\nCASE ROUTING HINTS:\n"+lawQuery,
+      corpusContext,
+      externalContext:[],
+      externalResearchEnabled:false,
+      webSearchEnabled:false,
+      attachments:[],
+      history:[],
+      maxOutputTokens:3600,
+      reasoningEffort:"medium"
+    });
+    if(!result.ok) return json(request,{ok:false,error:result.error,detail:result.failureDetail||result.detail||null},503);
+
+    const postflight=await runLegalPostflightVerifier(env,{
+      plan:initialPlan,
+      draft:result.text,
+      corpusContext,
+      webSources:[],
+      maxAttempts:1
+    });
+    if(!postflight.ok) return json(request,{ok:false,error:postflight.error||"case_intelligence_postflight_failed",issues:postflight.issues||[]},503);
+    const analysisText=String(postflight.corrected_answer||result.text||"").trim();
+    if(!analysisText) return json(request,{ok:false,error:"case_intelligence_empty_analysis"},503);
+
+    const evidenceCoverage=materialFacts===0 ? null : Math.round((sourceBackedMaterialFacts/materialFacts)*10000)/100;
+    const currentLawState=articleBundle.state==="matched" ? "governed_article_match" : String(articleBundle.state||"not_verified");
+    const analysisKey=`case-derived/v1/${caseId}/analysis/latest.md`;
+    const analysisBytes=new TextEncoder().encode(analysisText);
+    const analysisSha256=await sha256BytesHex(analysisBytes);
+    await env.CASE_FILES.put(analysisKey,analysisBytes,{
+      httpMetadata:{contentType:"text/markdown; charset=utf-8"},
+      customMetadata:{caseId,kind:"case_intelligence_analysis_v1",analysisSha256}
+    });
+    const at=new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare("UPDATE case_workspaces SET professional_use_locked=1,updated_at=? WHERE id=?").bind(at,caseId),
+      env.DB.prepare(
+        `INSERT INTO case_audit_events
+          (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+         VALUES (?, ?, ?, 'analysis_requested', 'case_workspace', ?, ?, ?)`
+      ).bind(
+        "CAE-"+crypto.randomUUID(),caseId,membership.accountId,caseId,
+        safeCaseAuditMetadata({
+          phase:"cross_document_synthesis",
+          documentCount:docs.length,
+          materialFacts,
+          sourceBackedMaterialFacts,
+          analysisSha256,
+          currentLawState
+        }),at
+      )
+    ]);
+
+    return json(request,{
+      ok:true,
+      caseId,
+      analysis:analysisText,
+      analysisSha256,
+      coverage:{
+        documentCoverage:100,
+        materialFacts,
+        sourceBackedMaterialFacts,
+        evidenceCoverage,
+        currentLawVerification:currentLawState,
+        reviewedCaseLaw:caseLawBundle.state,
+        gazetteContext:gazetteBundle.state
+      },
+      legalSources:articleBundle.legalSources||[],
+      caseLawSources:caseLawBundle.sources||[],
+      banner:"WORKING ANALYSIS — HUMAN GATE REQUIRED",
+      humanGate:{professionalUseLocked:true},
+      autonomousFiling:false
+    });
+  }
+
+  if(tail==="intelligence/draft"){
+    if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+    if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_professional_write_role_required"},403);
+    if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
+    const parsed=await readLimitedJson(request,16384);
+    if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
+    const body=parsed.value||{};
+    const draftType=String(body.draftType||"");
+    const instruction=cleanQuery(body.instruction,3000);
+    if(!CASE_DRAFT_TYPES.includes(draftType)) return json(request,{ok:false,error:"case_intelligence_invalid_draft_type"},400);
+    if(instruction.length<3) return json(request,{ok:false,error:"case_intelligence_draft_instruction_required"},400);
+
+    const analysisKey=`case-derived/v1/${caseId}/analysis/latest.md`;
+    const analysisObject=await env.CASE_FILES.get(analysisKey);
+    if(!analysisObject) return json(request,{ok:false,error:"case_intelligence_analysis_required"},409);
+    const analysisText=await analysisObject.text();
+
+    const docsResult=await env.DB.prepare(
+      `SELECT id,original_name,sha256,extraction_state,storage_state
+         FROM case_document_slots
+        WHERE case_id=? AND storage_state!='deleted'
+        ORDER BY slot_number`
+    ).bind(caseId).all();
+    const docs=docsResult.results||[];
+    if(docs.some(d=>d.extraction_state!=="complete" || d.storage_state!=="uploaded")){
+      return json(request,{ok:false,error:"case_intelligence_extraction_incomplete"},409);
+    }
+    const privateContexts=[];
+    for(const doc of docs){
+      const object=await env.CASE_FILES.get(`case-derived/v1/${caseId}/${doc.id}/extraction.json`);
+      if(!object) return json(request,{ok:false,error:"case_extraction_artifact_missing",documentId:doc.id},503);
+      const packet=JSON.parse(await object.text());
+      const extraction=packet?.extraction;
+      const check=validateCaseDocumentExtraction(extraction);
+      if(!check.ok) return json(request,{ok:false,error:"case_extraction_artifact_invalid",documentId:doc.id},503);
+      privateContexts.push({
+        source:"PRIVATE_CASE_DOCUMENT · "+String(doc.original_name||doc.id),
+        locator:"Document ID "+doc.id,
+        version:"private derived extraction · source SHA-256 "+String(doc.sha256||"unknown"),
+        text:"AUTHORITY_ROLE: FACTUAL_EVIDENCE_ONLY_NOT_LEGAL_AUTHORITY\n"+compactExtractionContext(doc.id,extraction)
+      });
+    }
+
+    const lawQuery=[String(access.legal_area||""),instruction,draftType].filter(Boolean).join(" · ");
+    const task=[
+      "Подготви "+draftType+" како целосен WORKING DRAFT врз основа на приватниот предмет и последната Case Intelligence анализа.",
+      "USER INSTRUCTION: "+instruction,
+      "Користи само source-backed факти од PRIVATE_CASE_DOCUMENT. За секој материјален фактички навод задржи Document ID + page/locator во работните белешки/прилози.",
+      "Правна основа, рокови, надлежност и правни лекови наведи само ако се потврдени од governed current-law context; инаку означи VERIFY BEFORE FILING.",
+      "Не сокривај adverse authority, контрадикции или missing evidence.",
+      "Не тврди дека документот е поднесен, потпишан или испратен.",
+      "На почеток стави: WORKING DRAFT — HUMAN GATE REQUIRED."
+    ].join("\n");
+    const plan=buildAgentPlan(task+"\n"+lawQuery,{preferCorpus:true});
+    const [articleBundle,caseLawBundle,gazetteBundle]=await Promise.all([
+      governedArticleContext(env,lawQuery,plan),
+      governedCaseLawContext(env,lawQuery,plan,{limit:6}),
+      governedGazetteChunkContext(env,lawQuery)
+    ]);
+    const corpusContext=[
+      ...privateContexts,
+      {source:"PRIVATE_CASE_ANALYSIS",locator:"latest analysis",version:"working",text:analysisText.slice(0,18000)},
+      ...articleBundle.context,
+      ...gazetteBundle.context,
+      ...caseLawBundle.context
+    ];
+    const requestContract=draftRequest({
+      caseId,
+      draftType,
+      instruction,
+      coverage:{
+        documentCoverage:100,
+        evidenceCoverage:100,
+        currentLawCoverage:articleBundle.state==="matched"?100:0,
+        unresolvedContradictions:0,
+        materialEvidenceGaps:0
+      }
+    });
+    const result=await runOpenAIOrchestrator(env,{
+      plan,
+      input:task,
+      corpusContext,
+      externalContext:[],
+      externalResearchEnabled:false,
+      webSearchEnabled:false,
+      attachments:[],
+      history:[],
+      maxOutputTokens:4200,
+      reasoningEffort:"medium"
+    });
+    if(!result.ok) return json(request,{ok:false,error:result.error,detail:result.failureDetail||result.detail||null},503);
+    const postflight=await runLegalPostflightVerifier(env,{
+      plan,
+      draft:result.text,
+      corpusContext,
+      webSources:[],
+      maxAttempts:1
+    });
+    if(!postflight.ok) return json(request,{ok:false,error:postflight.error||"case_draft_postflight_failed",issues:postflight.issues||[]},503);
+    const draftText=String(postflight.corrected_answer||result.text||"").trim();
+    const draftId="DRAFT-"+crypto.randomUUID();
+    const draftKey=`case-derived/v1/${caseId}/drafts/${draftId}.md`;
+    const draftBytes=new TextEncoder().encode(draftText);
+    const draftSha256=await sha256BytesHex(draftBytes);
+    await env.CASE_FILES.put(draftKey,draftBytes,{
+      httpMetadata:{contentType:"text/markdown; charset=utf-8"},
+      customMetadata:{caseId,draftId,draftType,kind:"case_working_draft_v1",draftSha256}
+    });
+    const at=new Date().toISOString();
+    await recordCaseAudit(env,{
+      caseId,
+      accountId:membership.accountId,
+      eventType:"analysis_requested",
+      objectType:"case_draft",
+      objectId:draftId,
+      metadata:{phase:"draft_preparation",draftType,draftSha256}
+    });
+    await env.DB.prepare("UPDATE case_workspaces SET professional_use_locked=1,updated_at=? WHERE id=?").bind(at,caseId).run();
+
+    return json(request,{
+      ok:true,
+      caseId,
+      draftId,
+      draftType,
+      draft:draftText,
+      draftSha256,
+      contract:requestContract,
+      banner:"WORKING DRAFT — HUMAN GATE REQUIRED",
+      humanGate:{professionalUseLocked:true},
+      filing:"forbidden",
+      signature:"forbidden",
+      externalTransmission:"forbidden"
+    });
+  }
+
   if(tail==="casepilot"){
     if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
     const result=await env.DB.prepare(
