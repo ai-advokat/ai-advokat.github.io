@@ -453,3 +453,19 @@ test("CHAT40 FREE Workers AI document fallback is visible and preserves 20-docum
   assert.match(worker,/convertFreeChatAttachments/);
   assert.match(worker,/env\.AI\.toMarkdown/);
 });
+
+
+test("CHAT41 legacy DOC is rejected in FREE document mode while DOCX remains accepted",()=>{
+  assert.doesNotMatch(html,/\.doc,/);
+  assert.doesNotMatch(html,/application\/msword/);
+  assert.doesNotMatch(chatJs,/"application\/msword"/);
+  assert.doesNotMatch(worker,/CHAT_ALLOWED_FILE_MIME=new Set\(\[[\s\S]*?"application\/msword"/);
+  assert.match(html,/\.docx/);
+  assert.match(worker,/application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document/);
+});
+
+test("CHAT42 deprecated owner key cannot silently force the paid provider",()=>{
+  assert.match(chatJs,/\^AIADV-OWNER-/);
+  assert.match(chatJs,/sessionStorage\.removeItem\("aiAdvokatMembershipKey"\)/);
+  assert.match(chatJs,/FREE активен · без клуч · Workers AI/);
+});
