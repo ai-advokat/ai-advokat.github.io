@@ -2642,6 +2642,89 @@ async function sha256BytesHex(bytes){
   return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 
+function bytesToBase64(bytes){
+  let binary="";
+  const step=0x8000;
+  for(let i=0;i<bytes.length;i+=step){
+    binary+=String.fromCharCode(...bytes.subarray(i,Math.min(bytes.length,i+step)));
+  }
+  return btoa(binary);
+}
+
+function openAIOutputText(payload){
+  if(typeof payload?.output_text==="string" && payload.output_text.trim()) return payload.output_text.trim();
+  const chunks=[];
+  for(const item of Array.isArray(payload?.output)?payload.output:[]){
+    for(const part of Array.isArray(item?.content)?item.content:[]){
+      if(part?.type==="output_text" && typeof part?.text==="string") chunks.push(part.text);
+    }
+  }
+  return chunks.join("\n").trim();
+}
+
+async function runPrivateCaseDocumentExtraction(env,{documentId,fileName,mimeType,bytes}={}){
+  if(!env?.OPENAI_API_KEY || !env?.OPENAI_MODEL) return {ok:false,error:"case_intelligence_provider_not_configured"};
+  if(env.OPENAI_FILE_INPUT_ENABLED!=="true") return {ok:false,error:"case_intelligence_file_input_locked"};
+  if(!(bytes instanceof Uint8Array) || bytes.byteLength<1) return {ok:false,error:"case_intelligence_empty_document"};
+  if(bytes.byteLength>CASE_INTELLIGENCE_PROVIDER_MAX_BYTES) return {ok:false,error:"case_document_partitioning_required",maxBytes:CASE_INTELLIGENCE_PROVIDER_MAX_BYTES};
+
+  const prompt=caseDocumentExtractionPrompt({documentId,fileName,mimeType});
+  const parts=[{type:"input_text",text:prompt}];
+  const base64=bytesToBase64(bytes);
+  if(String(mimeType||"").startsWith("image/")){
+    parts.push({type:"input_image",image_url:`data:${mimeType};base64,${base64}`,detail:"high"});
+  }else{
+    parts.push({type:"input_file",file_data:`data:${mimeType};base64,${base64}`,filename:String(fileName||"document").slice(0,180)});
+  }
+
+  const body={
+    model:String(env.OPENAI_MODEL),
+    instructions:[
+      "Extract only source-supported information from the private document.",
+      "Return only the requested structured JSON schema.",
+      "Never infer legal validity, ownership, authenticity, kinship or legal effect beyond what the document itself states.",
+      "Use professional_review_required when a material point is uncertain.",
+      "Do not use web search or outside knowledge."
+    ].join("\n"),
+    input:[{role:"user",content:parts}],
+    reasoning:{effort:"low"},
+    max_output_tokens:6500,
+    store:false,
+    text:{
+      format:{
+        type:"json_schema",
+        name:"case_document_extraction_v1",
+        strict:true,
+        schema:CASE_DOCUMENT_EXTRACTION_SCHEMA
+      }
+    }
+  };
+
+  let response;
+  try{
+    response=await fetch("https://api.openai.com/v1/responses",{
+      method:"POST",
+      headers:{
+        "Authorization":`Bearer ${env.OPENAI_API_KEY}`,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify(body)
+    });
+  }catch(error){
+    return {ok:false,error:"case_intelligence_provider_network_error",detail:String(error?.message||error).slice(0,180)};
+  }
+  let payload=null;
+  try{payload=await response.json();}catch{}
+  if(!response.ok) return {ok:false,error:"case_intelligence_provider_response_error",status:response.status};
+  if(payload?.status!=="completed") return {ok:false,error:"case_intelligence_provider_incomplete",detail:String(payload?.incomplete_details?.reason||payload?.status||"unknown").slice(0,180)};
+  const raw=openAIOutputText(payload);
+  let extraction;
+  try{extraction=JSON.parse(raw);}catch{return {ok:false,error:"case_intelligence_invalid_provider_json"};}
+  const check=validateCaseDocumentExtraction(extraction);
+  if(!check.ok) return {ok:false,error:"case_intelligence_invalid_extraction",problems:check.errors.slice(0,20)};
+  return {ok:true,extraction,model:String(env.OPENAI_MODEL),responseId:payload?.id||null};
+}
+
 async function validateGuideDocuments(request,env,payload){
   const input=Array.isArray(payload)?payload:[];
   if(input.length>CHAT_MAX_GUIDE_DOCUMENTS) return {ok:false,error:"too_many_guide_documents"};
