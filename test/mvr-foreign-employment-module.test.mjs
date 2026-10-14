@@ -29,3 +29,15 @@ test("bot prompt enforces source/version verification",()=>{
   assert.equal(data.fees.status,"must_verify_before_payment");
   assert.equal(data.submission.verification_required,true);
 });
+
+test("module includes separate official MVR and MFA references without conflating procedures",()=>{
+  assert.equal(data.official_sources.mvr_residence_registration.url,"https://mvr.gov.mk/mk-MK/prijavi-stranci");
+  assert.match(data.official_sources.mvr_residence_registration.rules_as_published.join("\n"),/12 часа/);
+  assert.match(data.official_sources.mvr_residence_registration.rules_as_published.join("\n"),/48 часа/);
+  assert.equal(data.official_sources.mvr_residence_registration.legal_anchor.article,"190");
+  assert.equal(data.official_sources.mfa_travel_document_for_foreigners.fee_as_published,"20 евра");
+  assert.match(data.official_sources.mfa_travel_document_for_foreigners.tariff_reference_as_published,/134/);
+  assert.match(data.official_sources.mfa_travel_document_for_foreigners.scope_warning,/не смее да се меша/);
+  assert.match(html,/Официјален МВР извор · пријава на престој/);
+  assert.match(html,/Официјален МНР извор · патен лист за странци/);
+});
