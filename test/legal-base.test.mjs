@@ -271,7 +271,7 @@ describe("versions, case law, documents", () => {
     assert.match(body, /заклучена и во подготовка/);
     assert.match(body, /хронологии/);
     assert.match(body, /доказни матрици/);
-    assert.match(body, /Human Gate/);
+    assert.match(body, /човечка контрола/);
   });
 
   test("VD5 the source-first ladder keeps its order and every Legal Base panel names its layer", () => {
