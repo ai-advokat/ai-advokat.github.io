@@ -28,8 +28,8 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Deploy true FREE public document chat using Cloudflare Workers AI binding and toMarkdown conversion for PDF/DOCX/images/text. OpenAI GPT-6.1 Sol remains optional and must not block FREE mode when its paid credit balance is exhausted. Preserve privacy routing, quota/rate limits, Human Gate, current-law verification rules, and the 20-document upload contract.",
-    "approval_text": "activate FREE Workers AI document mode while preserving paid GPT path and all legal governance gates",
+    "reason": "Retry the governed FREE Workers AI production activation after the first live DOCX smoke proved provider readiness and conversion count but the synthetic token with underscores was misinterpreted by the model. Use a standards-complete DOCX package, an unambiguous alphanumeric body token, and a stronger extracted-body instruction. No quota, privacy, Human Gate, current-law or provider-boundary weakening.",
+    "approval_text": "retry FREE Workers AI live DOCX smoke with unambiguous body token and all governance preserved",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
     "baseline_result": "CLOUDFLARE_R2_NOT_ENABLED_CODE_10042",
@@ -52,6 +52,8 @@
     "free_provider": "workers_ai",
     "free_provider_model": "@cf/zai-org/glm-4.7-flash",
     "free_document_conversion": "workers_ai_to_markdown",
-    "openai_paid_provider_optional": true
+    "openai_paid_provider_optional": true,
+    "free_document_smoke_token": "PRAVDAFREE777",
+    "free_document_smoke_version": "v2"
   }
 }
