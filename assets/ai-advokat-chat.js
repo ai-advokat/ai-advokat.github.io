@@ -113,6 +113,16 @@
     const content=document.createElement("div");content.className="ai-msg-content";content.textContent=m.text||"";
     body.append(head,content);
 
+    if(m.action && typeof m.action==="object"){
+      const href=String(m.action.href||"");
+      if(href.startsWith("/") && !href.startsWith("//")){
+        const actionBox=document.createElement("div");actionBox.className="ai-msg-tools";
+        const a=document.createElement("a");a.className="btn light";a.href=href;
+        a.textContent=String(m.action.label||"Отвори");
+        actionBox.append(a);body.append(actionBox);
+      }
+    }
+
     if(m.guides?.length){
       const grid=document.createElement("div");grid.className="ai-chat-guide-grid";
       m.guides.forEach(g=>{
@@ -545,6 +555,14 @@
                     :d.sourceMode==="ai_advokat_catalogue_context_first"
                       ?"AI Advokat catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
                       :(d.webSearchUsed===true?"External legal research · Web извори":"GPT general/proactive assistance")
+        });
+      }else if(d?.error==="confidential_case_workspace_required"){
+        updateAssistantPlaceholder(assistantIndex,{
+          text:d?.message||"Ова изгледа како конкретен доверлив правен предмет. Користете Secure Case Workspace.",
+          meta:"Privacy gate · public GPT call stopped",
+          guides:[],
+          action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"},
+          sourceLabel:"Барањето е запрено пред public GPT/provider execution. За конкретни предмети користете приватен case-scoped workspace."
         });
       }else if(d?.error==="gpt_provider_locked"){
         const fallback=selectedFiles.length?{ok:false,error:"attachments_need_gpt"}:await fallbackSourceAssistant(q);
