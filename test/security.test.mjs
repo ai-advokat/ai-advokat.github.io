@@ -752,7 +752,7 @@ describe("production AI binding guard", () => {
     assert.ok(chatBurst > 0 && chatReserve > 0 && freeProviderCall > 0, "FREE chat must burst-check, reserve quota and call the bounded provider helper");
     assert.ok(chatBurst < chatReserve && chatReserve < freeProviderCall, "FREE chat provider call must occur only after burst check and atomic reservation");
 
-    const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function loadGuideRegistry("));
+    const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function handleGPTChat("));
     assert.equal((helper.match(/env\.AI\.run\(/g) || []).length, 1, "FREE helper has exactly one Workers AI generation call");
     assert.equal((src.match(/env\.AI\.run\(/g) || []).length, 2, "only the article assistant and FREE chat helper may call Workers AI");
   });
