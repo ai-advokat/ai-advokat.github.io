@@ -11,12 +11,15 @@
     "OPENAI_ORCHESTRATOR_ENABLED": "true",
     "OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED": "true",
     "OPENAI_FILE_INPUT_ENABLED": "true",
-    "OPENAI_PROVIDER_ACTIVATION_STATE": "armed_secret_and_billing_required",
+    "OPENAI_PROVIDER_ACTIVATION_STATE": "optional_paid_provider_free_workers_ai_primary",
     "LIOE_RUNTIME_GOVERNANCE_ENABLED": "true",
     "LIOE_POSTFLIGHT_ENABLED": "true",
     "LIOE_RUNTIME_TELEMETRY_ENABLED": "true",
     "LIOE_SPECIALIST_EXECUTION_ENABLED": "true",
-    "CASE_WORKSPACE_ENABLED": "true"
+    "CASE_WORKSPACE_ENABLED": "true",
+    "FREE_CHAT_PROVIDER": "workers_ai",
+    "WORKERS_AI_CHAT_MODEL": "@cf/zai-org/glm-4.7-flash",
+    "WORKERS_AI_MARKDOWN_ENABLED": "true"
   },
   "assets": {
     "directory": "./",
@@ -39,5 +42,8 @@
         "database_id": "eb560e98-9fc0-408e-9c81-9b823ffde44d"
       }
     ]
+  },
+  "ai": {
+    "binding": "AI"
   }
 }
