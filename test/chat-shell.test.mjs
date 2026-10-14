@@ -375,7 +375,7 @@ test("CHAT36 case-law relevance participates in corpus routing without replacing
 test("CHAT37 attachment UX supports drag drop paste and system file picking",()=>{
   assert.match(html,/id="aiChatDropZone"/);
   assert.match(html,/id="aiChatDropHint"/);
-  assert.match(html,/Повлечете PDF, Word или слика/);
+  assert.match(html,/Повлечете до 20 PDF\/Word\/слики/);
   assert.match(chatJs,/addAttachmentFiles/);
   assert.match(chatJs,/addEventListener\("dragenter"/);
   assert.match(chatJs,/addEventListener\("drop"/);
@@ -416,7 +416,7 @@ test("CHAT36 owner workspace accepts up to 20 document attachments",()=>{
   assert.match(chatJs,/const CHAT_ATTACHMENT_LIMIT=20/);
   assert.match(chatJs,/const CHAT_ATTACHMENT_TOTAL_BYTES=24_000_000/);
   assert.match(chatJs,/најмногу 20 документи/);
-  assert.doesNotMatch(chatJs,/slice\(0,CHAT_ATTACHMENT_LIMIT\)/);
+  assert.doesNotMatch(chatJs,/const merged=\[\.\.\.attachments,\.\.\.accepted\]\.slice\(0,CHAT_ATTACHMENT_LIMIT\)/);
   assert.match(worker,/const CHAT_MAX_ATTACHMENTS=20/);
   assert.match(worker,/const CHAT_MAX_BYTES=36\*1024\*1024/);
   assert.match(worker,/const CHAT_ATTACHMENT_MAX_BASE64=8_500_000/);
@@ -431,4 +431,14 @@ test("CHAT37 owner provisioning workflow targets the files that actually exist",
   assert.match(sql,/owner-professional/);
   assert.match(sql,/1000000,3,0/);
   assert.doesNotMatch(sql,/AIADV-OWNER-[A-Za-z0-9]{20,}/);
+});
+
+
+test("CHAT38 visible multi-upload control exposes the 20-document contract",()=>{
+  assert.match(html,/id="aiChatAttachWide"/);
+  assert.match(html,/Прикачи документи \(до 20\)/);
+  assert.match(html,/id="aiChatAttachmentCount"/);
+  assert.match(chatJs,/attachWideBtn/);
+  assert.match(chatJs,/attachmentCount\.textContent=attachments\.length\+" \/ "\+CHAT_ATTACHMENT_LIMIT/);
+  assert.match(html,/20261015-owner-upload-v2/);
 });
