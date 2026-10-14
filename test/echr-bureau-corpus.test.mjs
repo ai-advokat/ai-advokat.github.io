@@ -38,3 +38,17 @@ test("AI chat has an official Bureau 301-record discovery lane",()=>{
   assert.match(worker,/indexedRecords:bureauEchrBundle\.recordCount/);
   assert.match(worker,/hudocBindingRequired:true/);
 });
+
+
+test("Bureau intake emits an auditable coverage manifest",()=>{
+  const script=fs.readFileSync("scripts/bureau-echr-fulltext-intake.mjs","utf8");
+  assert.match(script,/matched_index_records/);
+  assert.match(script,/unmatched_index_records/);
+  assert.match(script,/unique_processed_pdf_hashes/);
+  assert.match(script,/failures/);
+  assert.match(script,/professional_reliance_without_human_gate:false/);
+  const workflow=fs.readFileSync(".github/workflows/echr-bureau-fulltext-intake.yml","utf8");
+  assert.match(workflow,/bureau-mk-fulltext\.manifest\.json/);
+  assert.match(workflow,/m\.index_records!==301/);
+  assert.match(workflow,/m\.processed_pdf_links<300/);
+});

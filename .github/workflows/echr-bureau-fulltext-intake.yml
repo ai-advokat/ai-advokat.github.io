@@ -25,14 +25,18 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Build official Macedonian ECHR full-text corpus
         run: node scripts/bureau-echr-fulltext-intake.mjs /tmp/bureau-mk-fulltext.ndjson
-      - name: Validate corpus output
+      - name: Validate corpus output and coverage manifest
         run: |
           test -s /tmp/bureau-mk-fulltext.ndjson
+          test -s /tmp/bureau-mk-fulltext.manifest.json
           grep -q '"full_case_text_ingested":true' /tmp/bureau-mk-fulltext.ndjson
           grep -q '"hudoc_binding_required":true' /tmp/bureau-mk-fulltext.ndjson
+          node -e 'const fs=require("fs"); const m=JSON.parse(fs.readFileSync("/tmp/bureau-mk-fulltext.manifest.json","utf8")); if(m.index_records!==301) process.exit(2); if(m.processed_pdf_links<300) process.exit(3); if(m.governance.human_review_status!=="pending") process.exit(4); console.log(JSON.stringify({index_records:m.index_records,processed_pdf_links:m.processed_pdf_links,matched_index_records:m.matched_index_records,unmatched_index_records:m.unmatched_index_records.length,failed_pdf_links:m.failed_pdf_links,fulltext_chunks:m.fulltext_chunks}));'
       - name: Upload governed intake artifact
         uses: actions/upload-artifact@v4
         with:
           name: bureau-echr-mk-fulltext
-          path: /tmp/bureau-mk-fulltext.ndjson
+          path: |
+            /tmp/bureau-mk-fulltext.ndjson
+            /tmp/bureau-mk-fulltext.manifest.json
           retention-days: 30
