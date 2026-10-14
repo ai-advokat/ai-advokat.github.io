@@ -95,3 +95,14 @@ test("Bureau intake extracts ECHR application numbers for later HUDOC binding",(
   assert.match(script,/applicationNumbers=extractApplicationNumbers\(text\)/);
   assert.match(script,/application_numbers:applicationNumbers/);
 });
+
+
+test("Bureau content-aware matcher keeps PDF text separate from the link seed",()=>{
+  const script=fs.readFileSync("scripts/bureau-echr-fulltext-intake.mjs","utf8");
+  assert.match(script,/function titleContainedInTextScore/);
+  assert.match(script,/candidateScore\(linkSeed,pdfText,record\)/);
+  assert.match(script,/contentScore>=0\.80/);
+  assert.match(script,/first\.score<0\.55 \|\| margin<0\.05/);
+  assert.match(script,/independent_link_filename_and_pdf_title_containment/);
+  assert.doesNotMatch(script,/const seed=\[link\.anchorText,[\s\S]{0,160}firstPageText/);
+});
