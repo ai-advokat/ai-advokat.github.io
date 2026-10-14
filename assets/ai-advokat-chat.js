@@ -28,6 +28,9 @@
   const toolsMenu=$("#aiChatTools");
   const topMenu=$("#aiChatMenu");
   const modeCaption=$("#aiChatModeCaption");
+  document.querySelectorAll("[data-foreign-static]").forEach(btn=>{
+    btn.addEventListener("click",()=>loadForeignEmploymentPrompt(btn));
+  });
 
   let abortController=null;
   let mode="auto";
@@ -87,6 +90,51 @@
     const chat=current();
     return !chat || chat.messages.length===0;
   }
+  async function loadForeignEmploymentPrompt(buttonOrMode){
+    const button=buttonOrMode && typeof buttonOrMode==="object" ? buttonOrMode : null;
+    const mode=String(button ? button.dataset.foreignEmployment : (buttonOrMode||"verify"));
+    if(button) button.disabled=true;
+    try{
+      const r=await fetch("/data/mvr-foreign-employment-checklists.json?v=20261014",{cache:"no-store"});
+      if(!r.ok) throw new Error("reference");
+      const data=await r.json();
+      const section=mode==="first"?"first_time":mode==="renewal"?"renewal":null;
+      const selected=section ? {[section]:data.checklists?.[section]} : data.checklists;
+      const referencePayload={
+        source:data.source,
+        selected_checklists:selected,
+        submission:data.submission,
+        fees:data.fees,
+        official_sources:data.official_sources,
+        secondary_sources:data.secondary_sources,
+        verification:data.verification
+      };
+      const refText=JSON.stringify(referencePayload,null,2);
+      const refFile=new File([refText],"mvr-foreign-employment-reference.json",{type:"application/json"});
+      const withoutOld=attachments.filter(a=>a.name!=="mvr-foreign-employment-reference.json");
+      attachments=[...withoutOld,refFile].slice(0,CHAT_ATTACHMENT_LIMIT);
+      renderAttachments();
+      input.value=[
+        "AI Advokat, анализирај го приложениот JSON референтен пакет за престој и вработување на странци.",
+        mode==="first"?"Фокус: прво барање за привремен престој по основ вработување.":mode==="renewal"?"Фокус: продолжување на привремен престој по основ вработување.":"Фокус: провери ги документите и утврди што недостасува, што е застарено и што бара заверка или превод.",
+        "Фотографираните МВР листи се практична институционална информација, не сами по себе важечки правен извор.",
+        "Одделно користи ги официјалните МВР и МНР веб-извори наведени во прилогот и не мешај патен лист за странци со дозвола за привремен престој.",
+        "Провери ја секоја ставка според важечките прописи и официјалните извори. Разликувај: што пишува на листата, што е правно потврдено и што бара дополнителна проверка.",
+        "За секој правен заклучок наведи точен извор, член/одредба, верзија и датум. Такси, рокови и ослободувања не преземај без проверка."
+      ].join("\n\n");
+      autoSize();
+      document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});
+      setTimeout(()=>input.focus(),350);
+    }catch{
+      input.value="Провери ги актуелните услови и документи за привремен престој по основ вработување на странец во Северна Македонија — прв пат и продолжување. Користи официјални извори и наведи точни членови, верзии и такси.";
+      autoSize();
+      document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});
+      setTimeout(()=>input.focus(),350);
+    }finally{
+      if(button) button.disabled=false;
+    }
+  }
+
   function render(){
     renderHistory();
     messagesEl.replaceChildren();
@@ -96,43 +144,8 @@
       messagesEl.querySelectorAll("[data-starter]").forEach(b=>b.addEventListener("click",()=>{
         input.value=b.dataset.starter||b.textContent.trim(); autoSize(); input.focus();
       }));
-      messagesEl.querySelectorAll("[data-foreign-employment]").forEach(b=>b.addEventListener("click",async()=>{
-        const mode=String(b.dataset.foreignEmployment||"verify");
-        b.disabled=true;
-        try{
-          const r=await fetch("/data/mvr-foreign-employment-checklists.json?v=20261014",{cache:"no-store"});
-          if(!r.ok) throw new Error("reference");
-          const data=await r.json();
-          const section=mode==="first"?"first_time":mode==="renewal"?"renewal":null;
-          const selected=section ? {[section]:data.checklists?.[section]} : data.checklists;
-          const referencePayload={
-            source:data.source,
-            selected_checklists:selected,
-            submission:data.submission,
-            fees:data.fees,
-            official_sources:data.official_sources,
-            secondary_sources:data.secondary_sources,
-            verification:data.verification
-          };
-          const refText=JSON.stringify(referencePayload,null,2);
-          const refFile=new File([refText],"mvr-foreign-employment-reference.json",{type:"application/json"});
-          const withoutOld=attachments.filter(a=>a.name!=="mvr-foreign-employment-reference.json");
-          attachments=[...withoutOld,refFile].slice(0,CHAT_ATTACHMENT_LIMIT);
-          renderAttachments();
-          input.value=[
-            "AI Advokat, анализирај го приложениот JSON референтен пакет за престој и вработување на странци.",
-            "Фотографираните МВР листи се практична институционална информација, не сами по себе важечки правен извор.",
-            "Одделно користи ги официјалните МВР и МНР веб-извори наведени во прилогот и не мешај патен лист за странци со дозвола за привремен престој.",
-            "Провери ја секоја ставка според важечките прописи и официјалните извори. Разликувај: што пишува на листата, што е правно потврдено и што бара дополнителна проверка.",
-            "За секој правен заклучок наведи точен извор, член/одредба, верзија и датум. Такси, рокови и ослободувања не преземај без проверка."
-          ].join("\n\n");
-          autoSize(); input.focus();
-        }catch{
-          input.value="Провери ги актуелните услови и документи за привремен престој по основ вработување на странец во Северна Македонија — прв пат и продолжување. Користи официјални извори и наведи точни членови, верзии и такси.";
-          autoSize(); input.focus();
-        }finally{b.disabled=false;}
-      }));
-      return;
+      messagesEl.querySelectorAll("[data-foreign-employment]").forEach(b=>b.addEventListener("click",()=>loadForeignEmploymentPrompt(b)));
+      return;      return;
     }
     chat.messages.forEach((m,idx)=>messagesEl.append(renderMessage(m,idx)));
     messagesEl.scrollTop=messagesEl.scrollHeight;
