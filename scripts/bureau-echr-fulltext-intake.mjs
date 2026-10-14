@@ -79,6 +79,9 @@ async function main(){
   const records=loadIndex();
   const tmp=fs.mkdtempSync(path.join(os.tmpdir(),"ai-advokat-echr-"));
   const out=[];
+  const matchedIndexIds=new Set();
+  const processedPdfHashes=new Set();
+  const failures=[];
   let processed=0,failed=0;
   for(const [i,link] of links.entries()){
     try{
@@ -95,6 +98,8 @@ async function main(){
       const text=fs.readFileSync(txt,"utf8").trim();
       if(text.length<100) throw new Error("extracted text too short");
       const matched=bestIndexRecord(link,records);
+      if(matched?.chunk_id) matchedIndexIds.add(matched.chunk_id);
+      processedPdfHashes.add(sha);
       const title=matched?.title || link.anchorText || link.filename.replace(/\.pdf$/i,"");
       const pieces=chunks(text);
       pieces.forEach((piece,chunkIndex)=>out.push(JSON.stringify({
@@ -121,12 +126,55 @@ async function main(){
       processed++;
     }catch(error){
       failed++;
-      console.error("FAIL",link.url,String(error?.message||error));
+      const reason=String(error?.message||error);
+      failures.push({url:link.url,anchorText:link.anchorText||null,filename:link.filename||null,reason});
+      console.error("FAIL",link.url,reason);
     }
   }
   fs.mkdirSync(path.dirname(outPath),{recursive:true});
   fs.writeFileSync(outPath,out.join("\n")+"\n","utf8");
-  console.error(JSON.stringify({pdfLinks:links.length,processed,failed,chunks:out.length,outPath}));
+
+  const unmatchedIndexRecords=records
+    .filter(record=>record?.chunk_id && !matchedIndexIds.has(record.chunk_id))
+    .map(record=>({
+      chunk_id:record.chunk_id,
+      title:record.title,
+      listing_period:record.listing_period,
+      source_url:record.source_url
+    }));
+
+  const manifest={
+    generated_at:new Date().toISOString(),
+    source_index_url:INDEX_URL,
+    index_records:records.length,
+    pdf_links:links.length,
+    processed_pdf_links:processed,
+    unique_processed_pdf_hashes:processedPdfHashes.size,
+    failed_pdf_links:failed,
+    fulltext_chunks:out.length,
+    matched_index_records:matchedIndexIds.size,
+    unmatched_index_records:unmatchedIndexRecords,
+    failures,
+    governance:{
+      human_review_status:"pending",
+      hudoc_binding_required:true,
+      professional_reliance_without_human_gate:false
+    }
+  };
+  const manifestPath=outPath.replace(/\.ndjson$/i,"")+".manifest.json";
+  fs.writeFileSync(manifestPath,JSON.stringify(manifest,null,2)+"\n","utf8");
+  console.error(JSON.stringify({
+    pdfLinks:links.length,
+    processed,
+    failed,
+    chunks:out.length,
+    indexRecords:records.length,
+    matchedIndexRecords:matchedIndexIds.size,
+    unmatchedIndexRecords:unmatchedIndexRecords.length,
+    manifestPath,
+    outPath
+  }));
   if(processed<200) throw new Error("Too few PDFs processed safely: "+processed);
+  if(records.length!==301) throw new Error("Unexpected Bureau index record count: "+records.length);
 }
 main().catch(error=>{console.error(error);process.exit(1);});
