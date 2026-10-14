@@ -590,6 +590,18 @@ async function caseWorkspaceSchemaReady(env){
   }
 }
 
+async function caseMultipartSchemaReady(env){
+  if(!env?.DB) return false;
+  try{
+    const row=await env.DB.prepare(
+      "SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name IN ('case_multipart_uploads','case_multipart_parts')"
+    ).first();
+    return Number(row?.n||0)===2;
+  }catch{
+    return false;
+  }
+}
+
 async function caseWorkspaceAccess(env,caseId,accountId){
   return env.DB.prepare(
     `SELECT w.*,a.role
@@ -942,6 +954,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_document_write_role_required"},403);
     if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
     if(!caseWorkspaceMultipartReady(env)) return json(request,{ok:false,error:"private_case_multipart_storage_not_ready"},503);
+    if(!(await caseMultipartSchemaReady(env))) return json(request,{ok:false,error:"case_multipart_schema_not_ready"},503);
 
     const parsed=await readLimitedJson(request,8192);
     if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
@@ -1028,6 +1041,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!sessionId) return json(request,{ok:false,error:"case_multipart_session_not_found"},404);
     if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_document_write_role_required"},403);
     if(!caseWorkspaceMultipartReady(env)) return json(request,{ok:false,error:"private_case_multipart_storage_not_ready"},503);
+    if(!(await caseMultipartSchemaReady(env))) return json(request,{ok:false,error:"case_multipart_schema_not_ready"},503);
 
     const session=await env.DB.prepare(
       `SELECT * FROM case_multipart_uploads WHERE id=? AND case_id=? AND actor_account_id=? LIMIT 1`
