@@ -87,6 +87,17 @@ import {
 } from "./casepilot-matter.js";
 import { mapWorkspaceToCasePilotShell } from "./casepilot-workspace-bridge.js";
 import { buildCaseLawComparison } from "./casepilot-case-law-bridge.js";
+import {
+  CASE_INTELLIGENCE_PROVIDER_MAX_BYTES,
+  CASE_DOCUMENT_EXTRACTION_SCHEMA,
+  validateCaseDocumentExtraction,
+  caseDocumentExtractionPrompt,
+  compactExtractionContext
+} from "./case-intelligence-runtime.js";
+import {
+  CASE_DRAFT_TYPES,
+  draftRequest
+} from "./case-intelligence.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import {
   OPEN_LEGAL_SOURCE_POLICY_VERSION,
