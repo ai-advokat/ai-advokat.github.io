@@ -113,7 +113,7 @@
             "Особено провери: Закон за странци, условите за привремен престој, прописите за вработување/работа на странци, здравствено осигурување, неосудуваност, сместување, заверки/преводи и административни такси.",
             "За секој правен заклучок наведи точен извор, член/одредба, верзија и датум. Ако нема сигурен официјален извор, кажи го тоа.",
             "Институционални податоци за проверка:",
-            JSON.stringify({source:data.source,selected_checklists:selected,submission:data.submission,fees:data.fees,verification:data.verification},null,2)
+            JSON.stringify({source:data.source,selected_checklists:selected,submission:data.submission,fees:data.fees,official_sources:data.official_sources,verification:data.verification},null,2)
           ].join("\n\n");
           autoSize(); input.focus();
         }catch{
