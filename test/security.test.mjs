@@ -109,34 +109,36 @@ describe("assistant — anonymous FREE quota", () => {
     assert.equal(r.body.ok, true);
     assert.equal(r.body.membership.planCode, "free");
     assert.equal(r.body.membership.used, 1);
-    assert.equal(r.body.membership.remaining, 9);
+    assert.equal(r.body.membership.remaining, security.FREE_MONTHLY_ASSISTANT_QUOTA - 1);
   });
 
-  test("A2 the 11th FREE request in a month is refused with 429 and Retry-After", async () => {
+  test("A2 FREE quota still fails closed after the configured monthly limit", async () => {
     const { env, raw } = freshEnv();
     const ip = nextIp();
-    // Pre-fill 10 used requests for this subject (avoids tripping the 5/min burst limit).
+    const quota = security.FREE_MONTHLY_ASSISTANT_QUOTA;
     const subject = await security.anonymousSubject(assistantRequest("x", { ip }), env);
-    raw.prepare("INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests) VALUES (?,?,10)")
-      .run(subject, security.currentPeriod());
+    raw.prepare("INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests) VALUES (?,?,?)")
+      .run(subject, security.currentPeriod(), quota);
     const r = await call(env, assistantRequest("ЗРО член 12", { ip }));
     assert.equal(r.status, 429);
     assert.equal(r.body.error, "free_quota_exhausted");
     assert.ok(Number(r.headers.get("Retry-After")) > 0);
-    assert.equal(totalUsage(raw), 10, "counter must not exceed the quota");
+    assert.equal(totalUsage(raw), quota, "counter must not exceed the configured FREE quota");
   });
 
-  test("A2b ten sequential FREE requests succeed, the 11th fails (burst window respected)", async () => {
+  test("A2b final available FREE request succeeds and the next fails", async () => {
     const { env, raw } = freshEnv();
     const ip = nextIp();
-    const results = [];
-    for (let i = 0; i < 11; i++) {
-      // Clear only the burst window between calls; the monthly counter is untouched.
-      raw.prepare("DELETE FROM security_rate_limit_windows WHERE scope='assistant_burst'").run();
-      results.push((await call(env, assistantRequest("ЗРО член 12", { ip }))).status);
-    }
-    assert.deepEqual(results.slice(0, 10), Array(10).fill(200));
-    assert.equal(results[10], 429);
+    const quota = security.FREE_MONTHLY_ASSISTANT_QUOTA;
+    const subject = await security.anonymousSubject(assistantRequest("x", { ip }), env);
+    raw.prepare("INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests) VALUES (?,?,?)")
+      .run(subject, security.currentPeriod(), quota - 1);
+    let r = await call(env, assistantRequest("ЗРО член 12", { ip }));
+    assert.equal(r.status, 200);
+    raw.prepare("DELETE FROM security_rate_limit_windows WHERE scope='assistant_burst'").run();
+    r = await call(env, assistantRequest("ЗРО член 12", { ip }));
+    assert.equal(r.status, 429);
+    assert.equal(r.body.error, "free_quota_exhausted");
   });
 
   test("A3 30 parallel reservations with quota=10 yield exactly 10 successes", async () => {
@@ -166,8 +168,8 @@ describe("assistant — anonymous FREE quota", () => {
     const { env, raw } = freshEnv();
     const ip = nextIp();
     const subject = await security.anonymousSubject(assistantRequest("x", { ip }), env);
-    raw.prepare("INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests) VALUES (?,?,10)")
-      .run(subject, security.currentPeriod());
+    raw.prepare("INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests) VALUES (?,?,?)")
+      .run(subject, security.currentPeriod(), security.FREE_MONTHLY_ASSISTANT_QUOTA);
     const r = await call(env, assistantRequest("ЗРО член 12", { ip, key: "AIADV-not-a-real-key" }));
     assert.equal(r.status, 429);
     assert.equal(r.body.error, "free_quota_exhausted");
@@ -417,8 +419,8 @@ describe("assistant — AI safety", () => {
     const { env, raw } = freshEnv({ ai });
     const ip = nextIp();
     const subject = await security.anonymousSubject(assistantRequest("x", { ip }), env);
-    raw.prepare("INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests) VALUES (?,?,10)")
-      .run(subject, security.currentPeriod());
+    raw.prepare("INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests) VALUES (?,?,?)")
+      .run(subject, security.currentPeriod(), security.FREE_MONTHLY_ASSISTANT_QUOTA);
     const r = await call(env, assistantRequest("ЗРО член 12", { ip }));
     assert.equal(r.status, 429);
     assert.equal(ai.calls.length, 0);
@@ -624,12 +626,12 @@ describe("membership requests", () => {
 // ---------------------------------------------------------------------------
 
 describe("regression and truthful capabilities", () => {
-  test("R1 membership plans keep 199 / 399 / 999 MKD and FREE quota 10", async () => {
+  test("R1 membership plans keep 199 / 399 / 999 MKD and configured FREE quota", async () => {
     const { env } = freshEnv();
     const r = await call(env, new Request(BASE + "/api/membership/plans"));
     const prices = r.body.plans.map((p) => p.monthlyPriceMkd);
     for (const n of [199, 399, 999]) assert.ok(prices.includes(n));
-    assert.equal(r.body.plans.find((p) => p.code === "free").monthlyQuota, 10);
+    assert.equal(r.body.plans.find((p) => p.code === "free").monthlyQuota, security.FREE_MONTHLY_ASSISTANT_QUOTA);
   });
 
   test("R2 PWA and static assets are still served through ASSETS with security headers", async () => {
