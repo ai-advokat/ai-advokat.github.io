@@ -5481,10 +5481,17 @@ async function handleOrchestratorArchitecture(request, env) {
       orchestrationPattern:readiness.orchestrationPattern,
       providerExecution:readiness.provider==="configured"
         ? "configured_for_api_chat_execution"
-        : "locked",
+        : freeWorkersAIConfigured(env)
+          ? "configured_for_free_workers_ai_chat_execution"
+          : "locked",
+      freeProvider:freeWorkersAIConfigured(env) ? "workers_ai_free" : "locked",
       nativeCorpusTool:readiness.nativeCorpusTool,
       externalResearchTools:readiness.externalResearchTools,
-      fileInputs:readiness.fileInputs,
+      fileInputs:readiness.fileInputs==="configured"
+        ? "configured"
+        : freeWorkersAIMarkdownConfigured(env)
+          ? "configured_workers_ai_markdown_conversion"
+          : "locked",
       tracing:readiness.tracing,
       humanGate:readiness.humanGate,
       lioeRuntimeGovernance:env.LIOE_RUNTIME_GOVERNANCE_ENABLED==="true" ? "enabled" : "locked",
@@ -5609,13 +5616,20 @@ async function handleCapabilities(request, env) {
       retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
       legalOrchestrator: orchestratorRuntimeReadiness(env).provider==="configured"
         ? "gpt_6_1_sol_live_governed"
-        : "architecture_v2_provider_locked",
+        : freeWorkersAIConfigured(env)
+          ? "workers_ai_free_document_research_human_gate"
+          : "architecture_v2_provider_locked",
       lioeRuntimeGovernance: env.LIOE_RUNTIME_GOVERNANCE_ENABLED==="true" ? "enabled" : "locked",
       lioePostflight: env.LIOE_POSTFLIGHT_ENABLED==="true" ? "enabled" : "locked",
       lioeSpecialistExecution: env.LIOE_SPECIALIST_EXECUTION_ENABLED==="true" ? "enabled" : "locked",
       lioeRuntimeTelemetry: lioeTelemetry,
       gptWebSearch: orchestratorRuntimeReadiness(env).externalResearchTools,
-      gptFileInputs: orchestratorRuntimeReadiness(env).fileInputs,
+      gptFileInputs: orchestratorRuntimeReadiness(env).fileInputs==="configured"
+        ? "configured"
+        : freeWorkersAIMarkdownConfigured(env)
+          ? "workers_ai_markdown_conversion"
+          : "locked",
+      freeChatProvider:freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",
