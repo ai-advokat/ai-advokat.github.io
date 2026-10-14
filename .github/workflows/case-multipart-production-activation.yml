@@ -7,6 +7,11 @@ on:
         description: "Type ACTIVATE_CASE_MULTIPART_500MB"
         required: true
         type: string
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/activation/case-multipart-500mb-production-request.json"
+      - ".github/workflows/case-multipart-production-activation.yml"
 
 permissions:
   contents: read
@@ -32,10 +37,35 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Verify explicit activation confirmation
+      - name: Verify bounded activation authorization
         run: |
           set -euo pipefail
-          test "$CONFIRMATION" = "ACTIVATE_CASE_MULTIPART_500MB"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            test "$CONFIRMATION" = "ACTIVATE_CASE_MULTIPART_500MB"
+          fi
+          node <<'NODE'
+          const fs=require("fs");
+          const crypto=require("crypto");
+          const p=".github/activation/case-multipart-500mb-production-request.json";
+          const raw=fs.readFileSync(p);
+          const sha=crypto.createHash("sha256").update(raw).digest("hex");
+          const expected="eb2937b4f734cc1ff76c8103d7e37f57f5c6d96dd39512b3417276fb5fcb1ff4";
+          if(sha!==expected) throw new Error("Activation request fingerprint changed: "+sha);
+          const d=JSON.parse(raw);
+          if(d.activation_authorized!==true) throw new Error("Activation not authorised");
+          if(d.decision_id!=="AI_ADVOKAT_CASE_MULTIPART_500MB_V1_2026-10-14") throw new Error("Unexpected decision id");
+          if(d.runtime_version!=="case-multipart-500mb-1.0.0") throw new Error("Unexpected runtime version");
+          if(d.migration!=="0044_case_multipart_uploads.sql") throw new Error("Unexpected migration");
+          if(d.max_file_bytes!==524288000 || d.part_size_bytes!==8388608 || d.max_parts!==64) throw new Error("Unexpected multipart bounds");
+          if(d.private_case_only!==true || d.human_gate_required!==true) throw new Error("Private/Human Gate boundary missing");
+          if(d.public_corpus_promotion_authorized!==false) throw new Error("Corpus promotion must remain forbidden");
+          if(d.autonomous_legal_action_authorized!==false) throw new Error("Autonomous legal action must remain forbidden");
+          const gates=new Set(d.authorized_gates||[]);
+          for(const g of ["github_merge","production_schema_migration","production_runtime_deploy"]){
+            if(!gates.has(g)) throw new Error("Missing authorised gate: "+g);
+          }
+          console.log("Bounded 500 MB activation artifact: PASS");
+          NODE
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
 
