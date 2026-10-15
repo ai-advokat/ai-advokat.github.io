@@ -17,6 +17,7 @@ test("runtime contract is explicitly anchored to the 2017 Macedonian orthography
 test("Macedonian questions activate the language gate",()=>{
   assert.equal(shouldEnforceMacedonianOutput("Замолувам да ми направиш правна анализа на македонски."),true);
   assert.equal(shouldEnforceMacedonianOutput("Што предвидува законот?"),true);
+  assert.equal(shouldEnforceMacedonianOutput("izraboti mi tuzba za nadomest na steta so izmisleni podatoci"),true);
   assert.equal(shouldEnforceMacedonianOutput("Please answer in English."),false);
 });
 
@@ -34,6 +35,15 @@ test("Serbian Bulgarian Russian hybrid regression is rejected",()=>{
   assert.ok(check.reasons.includes("foreign_lexical_contamination"));
 });
 
+test("Bulgarian legal-drafting contamination from the reported lawsuit example is rejected",()=>{
+  const bad="Ищецът подава искова молба срещу ответникот и бара обезщетение. Случайни детали и разноски ќе ги утврди съдът.";
+  const check=assessMacedonianOutput(bad,{userText:"Изработи тужба за надомест на штета со измислени податоци."});
+  assert.equal(check.ok,false);
+  assert.ok(check.reasons.includes("foreign_cyrillic_letters"));
+  assert.ok(check.reasons.includes("foreign_lexical_contamination"));
+  assert.ok(check.foreignLexemes.some(x=>["искова","обезщетение","случайни","разноски"].includes(x)));
+});
+
 test("unrequested foreign-law substitution is rejected",()=>{
   const bad="Применете Български закон за наследство и проверете во Народен парламент.";
   const check=assessMacedonianOutput(bad,{userText:"Анализирај наследување во Северна Македонија."});
@@ -46,4 +56,11 @@ test("repair pass is source-preserving and non-expansive by contract",()=>{
   assert.equal(messages.length,2);
   assert.match(messages[0].content,/Do not add new facts, laws, citations, deadlines, legal effects or recommendations/);
   assert.match(messages[0].content,/Return only the corrected answer/);
+});
+
+
+test("repair system prompt explicitly forbids neighbouring-language legal forms",()=>{
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/съд, ищец, ответник/);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/надомест на штета/);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/Macedonian Latin transliteration/);
 });

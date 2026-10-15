@@ -2,14 +2,15 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V1";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V2";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
   "LANGUAGE CONTRACT — MACEDONIAN 2017.",
-  "When the user writes in Macedonian or explicitly requests Macedonian, answer exclusively in standard literary Macedonian, following the 2017 Правопис на македонскиот јазик.",
-  "Use Macedonian grammar, syntax, legal terminology and the Macedonian Cyrillic alphabet. Do not mix Serbian, Bulgarian, Russian, Croatian or other neighbouring-language forms into the answer.",
+  "When the user writes in Macedonian, uses recognisable Macedonian Latin transliteration, or explicitly requests Macedonian, answer exclusively in standard literary Macedonian using Macedonian Cyrillic, following the 2017 Правопис на македонскиот јазик.",
+  "Use Macedonian grammar, syntax, legal terminology and the Macedonian Cyrillic alphabet. Do not mix Serbian, Bulgarian, Russian, Croatian or hybrid neighbouring-language forms into the answer, even if the model or a retrieved source tends toward them.",
   "Do not use non-Macedonian Cyrillic letters such as ъ, ы, э, ё, ю, я, й, ь, щ, ђ or ћ in Macedonian prose.",
-  "Prefer natural Macedonian legal forms such as постапка, решение, подносител, барање, полномошно, правна основа and човечка проверка where context requires them.",
+  "Prefer natural Macedonian legal forms such as постапка, решение, подносител, тужител, тужен, тужба, барање, надомест на штета, правен лек, трошоци на постапката, полномошно, правна основа and човечка проверка where context requires them.",
+  "In Macedonian legal prose do not use Bulgarian forms such as съд, ищец, ответник, искова молба, обезщетение, съгласно, обжалване, възражение, разноски, случайни or Serbian forms such as поступак, тужилац, захтев, решење, трошкови and пуномоќ when a standard Macedonian equivalent is required.",
   "Foreign brands, technical identifiers, API paths, file names, statutory citation labels and genuinely verbatim source quotations may remain unchanged when necessary; otherwise transcribe foreign names and terms according to Macedonian orthography.",
   "If a foreign-language source is relevant, explain it in Macedonian and clearly distinguish any short verbatim quotation from your own prose.",
   "For a North Macedonian legal matter, never substitute Bulgarian, Serbian, Russian or another foreign law unless the user explicitly asks for that jurisdiction and the supplied governed sources support it.",
@@ -20,9 +21,16 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
 const FOREIGN_CYRILLIC_RE=/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/gu;
 
 const FOREIGN_LEXEMES=new Set([
+  // Serbian / Croatian contamination
   "поступак","поступку","поступци","подносилац","тужилац","захтев","захтеви","решење","решења",
+  "трошкови","надокнада","пуномоќ","приговор","парница",
+  // Russian contamination
   "документы","сведения","следует","является","которые","заявление","всего",
-  "становище","искане","следва","обжалвайте","пуномоќ"
+  // Bulgarian contamination with or without distinctive Bulgarian letters
+  "становище","искане","следва","обжалвайте","съд","съда","съдът","съдебен","съдебна","съдебно",
+  "ищец","ищецът","ответник","ответникът","искова","исковата","обезщетение","обезщетението",
+  "съгласно","обжалване","възражение","възражения","разноски","случайни","случаен","случайна",
+  "доказателства","молител","молителя"
 ]);
 
 const FOREIGN_JURISDICTION_PHRASES=[
@@ -55,8 +63,17 @@ export function shouldEnforceMacedonianOutput(userText){
   const cyrillic=(raw.match(/[\p{Script=Cyrillic}]/gu)||[]).length;
   if(cyrillic>=4 && cyrillic>=letters*0.55) return true;
   const words=new Set(normalizeWords(raw));
-  return ["што","кој","која","дали","треба","може","сакам","замолувам","направи","право","закон","суд","македонски"]
-    .some(w=>words.has(w));
+  if(["што","кој","која","дали","треба","може","сакам","замолувам","направи","изработи","тужба","право","закон","суд","македонски"]
+    .some(w=>words.has(w))) return true;
+
+  const latin=lower
+    .replace(/[^a-z0-9]+/g," ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const latinWords=new Set(latin);
+  return ["sto","koj","koja","dali","treba","moze","sakam","napravi","izraboti","tuzba","nadomest","steta","zakon","sud","makedonski","drugar"]
+    .some(w=>latinWords.has(w));
 }
 
 export function assessMacedonianOutput(text,{userText=""}={}){

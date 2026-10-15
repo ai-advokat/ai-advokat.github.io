@@ -3564,14 +3564,20 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
       providerShape:result.shape||null
     };
   }
+  const languagePass=await repairWorkersAIMacedonianIfNeeded(env,{
+    text:result.text,
+    userText:task,
+    maxOutputTokens:Math.max(900,Math.min(4800,Number(maxOutputTokens)||3600))
+  });
   return {
     ok:true,
-    text:result.text,
+    text:languagePass.text,
     model:result.model,
     provider:"workers_ai_private_case",
-    providerCalls:result.providerCalls||1,
+    providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
     languageStandard:shouldEnforceMacedonianOutput(task)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
-    languageRepaired:false
+    languageRepaired:languagePass.repaired===true,
+    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"unchecked_or_repair_incomplete"
   };
 }
 
@@ -4470,7 +4476,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     provider:"workers_ai_free",
     extraRules:[
       "You are running in AI Advokat FREE Workers AI mode.",
-      "Reply in the user's language. If that language is Macedonian, the Macedonian 2017 language contract above is mandatory.",
+      "If the user writes in Macedonian or recognisable Macedonian Latin transliteration, answer in standard literary Macedonian Cyrillic. The Macedonian 2017 language contract above is mandatory unless the user explicitly requests another language.",
       missionProfile==="GENERAL_BYPASS"
         ? "For ordinary non-legal tasks, use normal general model reasoning and knowledge. Do not force legal-source boilerplate."
         : "For legal/current-law claims, governed AI Advokat context controls. General model knowledge may explain generic concepts but may not establish current law, deadlines, jurisdiction, mandatory documents, remedies or legal effect.",
@@ -5475,10 +5481,16 @@ async function handleAssistant(request, env, url) {
       await releaseMonthlyQuota(env,{subject,period});
       reservation.used=Math.max(0,reservation.used-1);
     }else{
-      const candidate=String(generated||"").trim();
-      if(!candidate){
+      const primaryCandidate=String(generated||"").trim();
+      if(!primaryCandidate){
         aiError="empty_model_response_after_provider_contract";
       }else{
+        const languagePass=await repairWorkersAIMacedonianIfNeeded(env,{
+          text:primaryCandidate,
+          userText:q,
+          maxOutputTokens:1400
+        });
+        const candidate=String(languagePass.text||primaryCandidate).trim();
         const check=validateAnswerCitations(candidate,articles);
         if(check.ok){
           const normalizeRef=(value)=>String(value || "").normalize("NFKC").toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"");
