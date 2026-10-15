@@ -96,11 +96,15 @@ jobs:
             ["draft","Напиши краток работен пример на поднесок со измислени имиња. Означи дека е потребна човечка проверка."]
           ];
 
-          for(let round=1;round<=2;round++){
-            for(const [name,q] of scenarios){
-              const {answer}=await chat({q},name+" round "+round);
-              console.log(name+" round "+round+": PASS · "+answer.replace(/\s+/g," ").slice(0,120));
+          for(const [name,q] of scenarios){
+            const {answer}=await chat({q},name);
+            if(!/[\u0400-\u04FF]/u.test(answer)){
+              throw new Error(name+" final answer is not Macedonian/Cyrillic: "+answer.slice(0,500));
             }
+            if(/^\s*(need answer|user wants|the user|we need|provide|must answer)\b/i.test(answer)){
+              throw new Error(name+" leaked internal planning text: "+answer.slice(0,500));
+            }
+            console.log(name+": PASS · "+answer.replace(/\s+/g," ").slice(0,120));
           }
 
           const b64=fs.readFileSync("/tmp/ai-advokat-live-uat.docx").toString("base64");
