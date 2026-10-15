@@ -50,10 +50,11 @@ jobs:
               z.writestr('word/document.xml','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>KORENSKIUAT2026</w:t></w:r></w:p><w:sectPr/></w:body></w:document>''')
           PY
 
-      - name: Verify Macedonian 2017 language guard locally
-        run: node --no-warnings --test test/macedonian-language-guard.test.mjs
+      - name: Verify central prompt and Macedonian language contract locally
+        run: node --no-warnings --test test/ai-advokat-central-prompt.test.mjs test/macedonian-language-guard.test.mjs
 
       - name: Live Macedonian FREE chat and DOCX UAT
+        if: github.event_name == 'push'
         shell: bash
         run: |
           node <<'NODE'
