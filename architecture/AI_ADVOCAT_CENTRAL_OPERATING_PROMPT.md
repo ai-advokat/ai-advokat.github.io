@@ -1,8 +1,8 @@
-# AI Advokat Central Operating Prompt v3
+# AI Advokat Central Operating Prompt v4
 
 ## Status
 
-**ID:** `AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v3`
+**ID:** `AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v4`
 **Runtime source:** `/src/ai-advokat-central-prompt.js`
 **Governance role:** Shared behaviour contract for all user-facing AI Advokat synthesis paths.
 **Human Gate:** Unchanged.
@@ -15,7 +15,7 @@ The goal is **GPT-class conversational usefulness without impersonating ChatGPT/
 
 ## Priority 0 — Macedonian language constitution
 
-For every Macedonian-facing answer, the first and highest-priority language instruction is the operational contract based on **„Правопис на македонскиот јазик“, второ издание, Скопје, 2017**. It is injected before identity, task, provider, specialist and retrieved-source instructions. Bulgarian, Serbian, Russian or hybrid neighbouring-language output is invalid and must be repaired before display.
+For every Macedonian-facing answer, the first and highest-priority language instruction is the operational contract based on **„Правопис на македонскиот јазик“, второ издание, Скопје, 2017**. It is injected before identity, task, provider, specialist and retrieved-source instructions. Unambiguous Bulgarian, Serbian, Russian or hybrid neighbouring-language contamination is invalid and must be repaired before display. Valid Macedonian vocabulary is never rejected merely because the same or a cognate form exists in another Slavic language.
 
 ## Core operating doctrine
 
