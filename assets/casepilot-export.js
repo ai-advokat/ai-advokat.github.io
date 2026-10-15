@@ -5,7 +5,9 @@ import {
   caseExportMime,
   caseExportBlocks,
   renderCaseExportMarkdown,
+  renderCaseExportText,
   renderCaseExportCsv,
+  renderCaseExportJson,
   renderCaseExportDocxBytes,
   buildPdfFromJpegPages
 } from "../src/case-export.js";
@@ -173,7 +175,9 @@ export async function caseExportBlob(reportInput,format){
   if(!CASE_EXPORT_FORMATS.includes(format)) throw new Error("case_export_format_invalid");
   const report=reportInput?.exportVersion ? reportInput : normalizeCaseExportReport(reportInput);
   if(format==="md") return new Blob([renderCaseExportMarkdown(report)],{type:caseExportMime("md")});
+  if(format==="txt") return new Blob([renderCaseExportText(report)],{type:caseExportMime("txt")});
   if(format==="csv") return new Blob([renderCaseExportCsv(report)],{type:caseExportMime("csv")});
+  if(format==="json") return new Blob([renderCaseExportJson(report)],{type:caseExportMime("json")});
   if(format==="docx") return new Blob([renderCaseExportDocxBytes(report)],{type:caseExportMime("docx")});
   if(format==="png" || format==="jpg") return renderCaseExportImageBlob(report,format);
   const pdf=await renderCaseExportPdfBytes(report);
