@@ -76,11 +76,15 @@ test("COP8 OpenAI Chief inherits the same central contract for both general and 
   assert.match(legalPrompt,/governed sources and verified tool results control material legal propositions/i);
 });
 
-test("COP9 FREE Macedonian output has an actual runtime repair postflight",()=>{
+test("COP9 FREE Macedonian output has a bounded targeted runtime repair postflight",()=>{
   assert.match(worker,/async function repairWorkersAIMacedonianIfNeeded/);
-  assert.match(worker,/assessMacedonianOutput\(original,\{userText\}\)/);
-  assert.match(worker,/buildMacedonianRepairMessages\(\{text:original,userText\}\)/);
+  assert.match(worker,/let current=original/);
+  assert.match(worker,/assessment=assessMacedonianOutput\(current,\{userText\}\)/);
+  assert.match(worker,/for\(let attempt=0;attempt<2 && !assessment\.ok;attempt\+\+\)/);
+  assert.match(worker,/buildMacedonianRepairMessages\(\{text:current,userText\}\)/);
+  assert.match(worker,/STRICT TARGETED LANGUAGE REPAIR/);
   assert.match(worker,/const languagePass=await repairWorkersAIMacedonianIfNeeded/);
   assert.match(worker,/languageRepaired:languagePass\.repaired===true/);
   assert.match(worker,/languageQualityState:languagePass\.languageAssessment/);
+  assert.match(worker,/macedonianRepairProviderBudget:"max_two_conditional_extra_calls_per_free_turn"/);
 });
