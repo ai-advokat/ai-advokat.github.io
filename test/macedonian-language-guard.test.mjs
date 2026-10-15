@@ -90,9 +90,16 @@ test("deterministic cleanup removes remaining non-Macedonian Cyrillic letters",(
 
 
 test("expanded Bulgarian and Russian contamination is rejected and normalised",()=>{
-  const bad="Моля, настоящият документ съдържа информация и трябва да се провери. Данные должен да се приложат.";
+  const bad="Моля, настоящият документ съдържа информация и трябва да се провери. Данные следует да се приложат.";
   const check=assessMacedonianOutput(bad,{userText:"Одговори на литературен македонски."});
   assert.equal(check.ok,false);
   const clean=normaliseMacedonianGeneratedText(bad);
-  assert.doesNotMatch(clean,/\b(моля|настоящият|информация|трябва|данные|должен)\b/iu);
+  assert.doesNotMatch(clean,/\b(моля|настоящият|информация|трябва|данные|следует)\b/iu);
+});
+
+test("valid Macedonian legal vocabulary never trips the neighbouring-language guard",()=>{
+  const good="Судот е должен да ги земе предвид сите релевантни информации, а странката е должна да ги достави доказите навреме.";
+  const check=assessMacedonianOutput(good,{userText:"Направи правна анализа на литературен македонски."});
+  assert.equal(check.ok,true,JSON.stringify(check));
+  assert.equal(normaliseMacedonianGeneratedText(good),good);
 });
