@@ -5,6 +5,7 @@ import {
   caseExportMime,
   caseExportBlocks,
   renderCaseExportMarkdown,
+  renderCaseExportCsv,
   renderCaseExportDocxBytes,
   buildPdfFromJpegPages
 } from "../src/case-export.js";
@@ -104,6 +105,35 @@ function canvasToJpegBytes(canvas){
   });
 }
 
+function renderCaseExportPngBlob(reportInput){
+  if(typeof document==="undefined") throw new Error("case_export_png_browser_required");
+  const report=reportInput?.exportVersion ? reportInput : normalizeCaseExportReport(reportInput);
+  const width=1240, marginX=92, maxWidth=width-marginX*2;
+  const measure=document.createElement("canvas");
+  const mctx=measure.getContext("2d");
+  if(!mctx) throw new Error("case_export_canvas_unavailable");
+  const rows=[];
+  let y=92;
+  for(const block of caseExportBlocks(report)){
+    const spec=fontSpec(block.kind);
+    mctx.font=spec.font;
+    y+=spec.space;
+    const lines=wrapParagraph(mctx,block.text,maxWidth);
+    for(const line of lines){ rows.push({line,kind:block.kind,y}); y+=spec.line; }
+  }
+  const height=Math.max(480,Math.min(30000,y+120));
+  const canvas=document.createElement("canvas");
+  canvas.width=width; canvas.height=height;
+  const ctx=canvas.getContext("2d");
+  if(!ctx) throw new Error("case_export_canvas_unavailable");
+  ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,width,height); ctx.textBaseline="top";
+  for(const row of rows){
+    if(row.y>height-80) break;
+    const spec=fontSpec(row.kind); ctx.font=spec.font; ctx.fillStyle="#111111"; ctx.fillText(row.line,marginX,row.y);
+  }
+  return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("case_export_png_canvas_encode_failed")),"image/png"));
+}
+
 export async function renderCaseExportPdfBytes(reportInput){
   const report=reportInput?.exportVersion ? reportInput : normalizeCaseExportReport(reportInput);
   const layout=layoutPdf(report);
@@ -140,12 +170,10 @@ export async function renderCaseExportPdfBytes(reportInput){
 export async function caseExportBlob(reportInput,format){
   if(!CASE_EXPORT_FORMATS.includes(format)) throw new Error("case_export_format_invalid");
   const report=reportInput?.exportVersion ? reportInput : normalizeCaseExportReport(reportInput);
-  if(format==="md"){
-    return new Blob([renderCaseExportMarkdown(report)],{type:caseExportMime("md")});
-  }
-  if(format==="docx"){
-    return new Blob([renderCaseExportDocxBytes(report)],{type:caseExportMime("docx")});
-  }
+  if(format==="md") return new Blob([renderCaseExportMarkdown(report)],{type:caseExportMime("md")});
+  if(format==="csv") return new Blob([renderCaseExportCsv(report)],{type:caseExportMime("csv")});
+  if(format==="docx") return new Blob([renderCaseExportDocxBytes(report)],{type:caseExportMime("docx")});
+  if(format==="png") return renderCaseExportPngBlob(report);
   const pdf=await renderCaseExportPdfBytes(report);
   return new Blob([pdf],{type:caseExportMime("pdf")});
 }
@@ -178,12 +206,12 @@ export async function downloadCasePilotExportFromApi({
     },
     body:JSON.stringify({format,report})
   });
-  if(format==="pdf"){
+  if(format==="pdf" || format==="png"){
     const payload=await response.json().catch(()=>null);
     if(!response.ok || !payload?.ok || !payload?.exportModel){
       throw new Error(payload?.error||("case_export_http_"+response.status));
     }
-    return downloadCasePilotExport(payload.exportModel,"pdf",{filename:payload.filename||null});
+    return downloadCasePilotExport(payload.exportModel,format,{filename:payload.filename||null});
   }
   if(!response.ok){
     const payload=await response.json().catch(()=>null);
