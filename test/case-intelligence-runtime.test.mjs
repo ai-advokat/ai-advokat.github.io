@@ -70,8 +70,8 @@ test("CIR4 drafting stays working-copy only and verified-law bounded",()=>{
 });
 
 test("CIR5 document mutation invalidates derived analysis",()=>{
-  assert.match(worker,/delete\(\x60case-derived\/v1\/\$\{caseId\}\/analysis\/latest\.md\x60\)/);
-  assert.match(worker,/delete\(\x60case-derived\/v1\/\$\{caseId\}\/\$\{documentId\}\/extraction\.json\x60\)/);
+  assert.match(worker,/caseObjectDelete\(env,\x60case-derived\/v1\/\$\{caseId\}\/analysis\/latest\.md\x60\)/);
+  assert.match(worker,/caseObjectDelete\(env,\x60case-derived\/v1\/\$\{caseId\}\/\$\{documentId\}\/extraction\.json\x60\)/);
 });
 
 test("CIR6 extraction contract forbids unsupported factual completion",()=>{
