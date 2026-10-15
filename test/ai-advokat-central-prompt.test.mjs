@@ -84,4 +84,3 @@ test("COP9 FREE Macedonian output has an actual runtime repair postflight",()=>{
   assert.match(worker,/languageRepaired:languagePass\.repaired===true/);
   assert.match(worker,/languageQualityState:languagePass\.languageAssessment/);
 });
-
