@@ -22,7 +22,7 @@ export function workersAIRequestOptions({
   const safeMessages=Array.isArray(messages)?messages:[];
 
   // GPT-OSS on Workers AI supports the Responses API shape directly through
-  // env.AI.run(). Use it deliberately so reasoning effort is explicit and
+  // The Workers AI binding accepts this Responses shape directly. Use it deliberately so reasoning effort is explicit and
   // bounded instead of letting a Chat Completions response consume the whole
   // completion budget on hidden reasoning and return empty final content.
   if(resolved.includes("/gpt-oss-")){
