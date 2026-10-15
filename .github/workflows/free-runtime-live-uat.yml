@@ -90,6 +90,24 @@ jobs:
             return {answer,data};
           }
 
+          const searchResponse=await fetch(BASE+"/api/search?q="+encodeURIComponent("притвор")+"&type=all&status=all&limit=20",{
+            headers:{"accept":"application/json"}
+          });
+          const searchRaw=await searchResponse.text();
+          let searchData=null;
+          try{searchData=JSON.parse(searchRaw);}catch{}
+          if(!searchResponse.ok || !searchData?.ok || !Array.isArray(searchData.results)){
+            throw new Error("search detention HTTP "+searchResponse.status+" "+searchRaw.slice(0,1500));
+          }
+          const detention=searchData.results.find(item=>
+            item?.entityType==="guide"
+            && /притвор/i.test(String(item?.title||"")+" "+String(item?.snippet||""))
+          );
+          if(!detention){
+            throw new Error("audit search regression: 'притвор' returned no relevant guide: "+JSON.stringify(searchData.results.slice(0,8)));
+          }
+          console.log("search притвор: PASS · "+String(detention.title||"").slice(0,140));
+
           const scenarios=[
             ["basic","Одговори на македонски со една кратка реченица дека AI Advokat работи."],
             ["reminder","Направи ми потсетник за лице што треба да оди во притов."],
