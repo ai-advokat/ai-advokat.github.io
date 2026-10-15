@@ -103,3 +103,16 @@ test("valid Macedonian legal vocabulary never trips the neighbouring-language gu
   assert.equal(check.ok,true,JSON.stringify(check));
   assert.equal(normaliseMacedonianGeneratedText(good),good);
 });
+
+
+test("repair prompt contains Macedonian-native quality instructions",()=>{
+  const messages=buildMacedonianRepairMessages({
+    text:"пријстак приетување притбор",
+    userText:"Направи потсетник на македонски."
+  });
+  assert.match(messages[0].content,/МАКЕДОНСКА ЈАЗИЧНА РЕДАКЦИЈА/);
+  assert.match(messages[0].content,/не создавај непостоечки македонски зборови/i);
+  assert.match(messages[0].content,/постапка, поднесување, барање, решение, притвор/);
+  assert.match(messages[0].content,/немакедонски кирилични букви/i);
+  assert.match(messages[0].content,/замени го целиот збор со правилен македонски еквивалент/i);
+});
