@@ -2,9 +2,9 @@
 
 ## Status
 
-**ID:** `AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v1`  
-**Runtime source:** `/src/ai-advokat-central-prompt.js`  
-**Governance role:** Shared behaviour contract for all user-facing AI Advokat synthesis paths.  
+**ID:** `AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v1`
+**Runtime source:** `/src/ai-advokat-central-prompt.js`
+**Governance role:** Shared behaviour contract for all user-facing AI Advokat synthesis paths.
 **Human Gate:** Unchanged.
 
 ## Why this exists
