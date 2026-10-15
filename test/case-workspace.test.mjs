@@ -15,6 +15,8 @@ import {
 } from "../src/case-workspace.js";
 
 const migration=fs.readFileSync(new URL("../migrations/0029_secure_case_workspace.sql",import.meta.url),"utf8");
+const fallbackMigration=fs.readFileSync(new URL("../migrations/0045_case_private_d1_object_store.sql",import.meta.url),"utf8");
+const r2Wrangler=JSON.parse(fs.readFileSync(new URL("../wrangler.r2.jsonc",import.meta.url),"utf8"));
 const worker=fs.readFileSync(new URL("../src/index.js",import.meta.url),"utf8");
 const wrangler=JSON.parse(fs.readFileSync(new URL("../wrangler.jsonc",import.meta.url),"utf8"));
 
@@ -70,12 +72,13 @@ test("public case view omits tenant/account internals",()=>{
   assert.equal("ownerAccountId" in view,false);
 });
 
-test("storage state fails closed without private object storage binding",()=>{
+test("storage state fails closed unless governed R2 or D1 fallback is available",()=>{
   assert.equal(caseWorkspaceStorageReady({}),false);
   assert.equal(caseWorkspaceRuntimeState({CASE_WORKSPACE_ENABLED:"true"},{schemaReady:true}),"workspace_ready_storage_locked");
   const binding={put(){},get(){},delete(){}};
   assert.equal(caseWorkspaceStorageReady({CASE_FILES:binding}),true);
-  assert.equal(caseWorkspaceRuntimeState({CASE_WORKSPACE_ENABLED:"true",CASE_FILES:binding},{schemaReady:true}),"workspace_and_storage_ready");
+  assert.equal(caseWorkspaceStorageReady({DB:{},CASE_D1_FALLBACK_ENABLED:"true"}),true);
+  assert.equal(caseWorkspaceRuntimeState({CASE_WORKSPACE_ENABLED:"true",DB:{},CASE_D1_FALLBACK_ENABLED:"true"},{schemaReady:true}),"workspace_and_storage_ready");
   assert.equal(caseWorkspaceRuntimeState({CASE_WORKSPACE_ENABLED:"true"},{schemaReady:false}),"schema_not_ready");
 });
 
@@ -105,23 +108,29 @@ test("Worker case API requires membership and per-case account access",()=>{
   assert.match(worker,/a\.account_id=\? AND a\.status='active'/);
   assert.match(worker,/case_workspace_plan_required/);
   assert.match(worker,/private_case_metadata/);
-  assert.match(worker,/No document bytes are stored in D1/);
+  assert.match(worker,/Private document bytes are stored as bounded D1 chunks because R2 is unavailable/);
   assert.match(worker,/url\.pathname === "\/api\/cases" \|\| url\.pathname\.startsWith\("\/api\/cases\/"\)/);
 });
 
-test("case workspace runtime and separately authorized private storage are both armed",()=>{
+test("case workspace runtime and governed D1 fallback are armed",()=>{
   assert.equal(wrangler.vars.CASE_WORKSPACE_ENABLED,"true");
-  const binding=wrangler.r2_buckets?.find(x=>x.binding==="CASE_FILES");
-  assert.ok(binding,"CASE_FILES binding must remain present after the 2026-10-15 Human Gate");
-  assert.equal(caseWorkspaceRuntimeState({CASE_WORKSPACE_ENABLED:"true",CASE_FILES:{put(){},get(){},delete(){}}},{schemaReady:true}),"workspace_and_storage_ready");
+  assert.equal(wrangler.vars.CASE_D1_FALLBACK_ENABLED,"true");
+  assert.equal(wrangler.r2_buckets,undefined);
+  assert.equal(caseWorkspaceRuntimeState({CASE_WORKSPACE_ENABLED:"true",DB:{},CASE_D1_FALLBACK_ENABLED:"true"},{schemaReady:true}),"workspace_and_storage_ready");
   assert.match(worker,/professional_use_locked=1/);
   assert.match(worker,/autonomousFiling:false/);
 });
 
-test("canonical wrangler keeps private CASE_FILES R2 binding",()=>{
-  const cfg=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
-  const binding=cfg.r2_buckets?.find(x=>x.binding==="CASE_FILES");
-  assert.ok(binding,"CASE_FILES binding missing");
+test("optional R2 config preserves approved CASE_FILES buckets",()=>{
+  const binding=r2Wrangler.r2_buckets?.find(x=>x.binding==="CASE_FILES");
+  assert.ok(binding,"optional CASE_FILES binding missing");
   assert.equal(binding.bucket_name,"ai-advokat-case-files");
   assert.equal(binding.preview_bucket_name,"ai-advokat-case-files-staging");
+  assert.equal(r2Wrangler.vars.CASE_D1_FALLBACK_ENABLED,"true");
+});
+
+test("D1 fallback migration is private chunk storage only",()=>{
+  assert.match(fallbackMigration,/CREATE TABLE IF NOT EXISTS case_private_object_chunks/);
+  assert.match(fallbackMigration,/PRIMARY KEY \(object_key, chunk_index\)/);
+  assert.doesNotMatch(fallbackMigration,/legal_articles|article_chunks|legal_instruments/i);
 });
