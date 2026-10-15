@@ -114,3 +114,11 @@ test("case workspace runtime remains armed while private object storage stays Hu
   assert.equal(Array.isArray(wrangler.r2_buckets),false);
   assert.equal(caseWorkspaceRuntimeState({CASE_WORKSPACE_ENABLED:"true"},{schemaReady:true}),"workspace_ready_storage_locked");
 });
+
+test("canonical wrangler keeps private CASE_FILES R2 binding",()=>{
+  const cfg=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+  const binding=cfg.r2_buckets?.find(x=>x.binding==="CASE_FILES");
+  assert.ok(binding,"CASE_FILES binding missing");
+  assert.equal(binding.bucket_name,"ai-advokat-case-files");
+  assert.equal(binding.preview_bucket_name,"ai-advokat-case-files-staging");
+});
