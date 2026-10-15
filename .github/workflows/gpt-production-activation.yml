@@ -144,24 +144,26 @@ jobs:
           grep -Eq 'secret|Success|success|Uploaded' /tmp/secret-put.log || true
           echo "Cloudflare OpenAI secret installation completed."
 
-      - name: Preserve CasePilot private-storage Human Gate
+      - name: Preserve authorized CasePilot private-storage Human Gate
         shell: bash
         run: |
           set -euo pipefail
           node <<'NODE'
           const fs=require("fs");
           const config=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
-          const request=JSON.parse(fs.readFileSync(".github/activation/case-workspace-production-request.json","utf8"));
-          if(Array.isArray(config.r2_buckets) && config.r2_buckets.length) {
-            throw new Error("CASE_FILES R2 must remain unbound until private object storage receives a separate Human Gate approval");
+          const request=JSON.parse(fs.readFileSync(".github/activation/case-intelligence-e2e-production-request.json","utf8"));
+          const r2=config.r2_buckets?.find(x=>x.binding==="CASE_FILES");
+          if(!r2 || r2.bucket_name!=="ai-advokat-case-files" || r2.preview_bucket_name!=="ai-advokat-case-files-staging") {
+            throw new Error("Authorized CASE_FILES R2 binding is missing or incorrect");
           }
-          if(request.private_object_storage_activation_authorized!==false) {
-            throw new Error("Unexpected Case Workspace private-storage authorization state");
+          if(request.activation_authorized!==true) throw new Error("Case Intelligence E2E activation is not authorized");
+          if(request.private_object_storage_activation_authorized!==true) throw new Error("Private object storage authorization missing");
+          if(request.private_document_upload_authorized!==true) throw new Error("Private document upload authorization missing");
+          if(request.private_case_ai_execution_authorized!==true) throw new Error("Private case AI authorization missing");
+          if(request.autonomous_filing_authorized!==false || request.human_gate_required!==true) {
+            throw new Error("CasePilot Human Gate boundaries changed");
           }
-          if(request.private_document_upload_authorized!==false) {
-            throw new Error("Unexpected Case Workspace private-upload authorization state");
-          }
-          console.log("CasePilot storage gate: LOCKED as required; provider activation may proceed independently.");
+          console.log("CasePilot storage and private AI gates: AUTHORIZED · autonomous filing remains forbidden.");
           NODE
 
       - name: Deploy production Worker
