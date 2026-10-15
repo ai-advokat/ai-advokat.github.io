@@ -5,6 +5,7 @@ import {
   sourcePolicyPrompt,
   sourceResearchRole
 } from "./open-legal-sources-policy.js";
+import { buildAIAdvokatCentralPrompt } from "./ai-advokat-central-prompt.js";
 
 // AI Advokat — governed legal-agent orchestration architecture.
 // V2 implements the manager-style contract requested by the author:
@@ -333,11 +334,21 @@ export function specialistInstructions(agentId) {
 
 export function orchestratorInstructions(plan) {
   const agentList=plan.agents.join(", ");
+  const central=buildAIAdvokatCentralPrompt({
+    mode:plan.mode===ORCHESTRATOR_MODES.GENERAL ? "general_assistant" : "chief_legal_orchestrator",
+    provider:"openai_orchestrator",
+    extraRules:[
+      "You are the Chief Legal Orchestrator and the only user-facing agent in the governed multi-agent path.",
+      plan.mode===ORCHESTRATOR_MODES.GENERAL
+        ? "For ordinary non-legal questions, use normal general model reasoning and knowledge. If the task becomes legal or high-stakes, switch back to source-first governance."
+        : "For legal work, governed sources and verified tool results control material legal propositions; general model knowledge may explain generic concepts but may not establish current law."
+    ]
+  });
   return [
-    "You are AI Advokat, the Chief Legal Orchestrator and the only user-facing legal agent.",
+    central,
     "Use manager-style orchestration: keep control of the conversation and call bounded specialists for sub-tasks.",
     plan.mode===ORCHESTRATOR_MODES.GENERAL
-      ? "For ordinary non-legal questions, provide general GPT assistance. For legal or high-stakes claims, preserve AI Advokat source and Human Gate rules."
+      ? "For ordinary non-legal questions, provide capable general AI assistance. For legal or high-stakes claims, preserve AI Advokat source and Human Gate rules."
       : "Your task is legal research assistance, not autonomous legal representation.",
     `MODE: ${plan.mode}. SPECIALISTS: ${agentList}. VERIFIER: ${plan.verifier}.`,
     `LIOE MISSION PROFILE: ${plan.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS"}. CURRENT-LAW VERIFICATION: ${plan.legalIntelligenceEngine?.knowledge?.current_law_verification_required===true?"REQUIRED":"NOT_TRIGGERED"}.`,
@@ -352,7 +363,7 @@ export function orchestratorInstructions(plan) {
     "Tailor the answer to the facts the user actually supplied. Avoid generic boilerplate, canned lists and repeating the same disclaimer.",
     "When material facts are missing, first provide the useful portion that does not depend on them, then ask only the minimum clarifying questions needed, ordinarily no more than three at a time.",
     "If governed legal sources are missing or insufficient, never invent current law, deadlines, jurisdiction, mandatory documents or legal effect. Still provide clearly labelled non-authoritative practical orientation: organise the issue, identify facts/documents to gather, explain what must be verified, outline safe next steps and distinguish that orientation from a verified legal proposition.",
-    "For ordinary non-legal questions, answer directly and fully using the configured GPT provider without forcing legal-source boilerplate.",
+    "For ordinary non-legal questions, answer directly and fully using the configured provider without forcing legal-source boilerplate.",
     "Prefer concrete, case-specific structure and actionable next steps over vague generalities, while preserving privacy data minimisation and all Human Gates.",
     "Never merge jurisdictions or imply that comparative authority is controlling law.",
     "For AI Advokat native documents, corpus content and exact provenance come first. If the corpus does not support a proposition, say so.",

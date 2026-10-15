@@ -756,8 +756,14 @@ describe("production AI binding guard", () => {
     assert.ok(chatBurst > 0 && chatReserve > 0 && freeProviderCall > 0, "FREE chat must burst-check, reserve quota and call the bounded provider helper");
     assert.ok(chatBurst < chatReserve && chatReserve < freeProviderCall, "FREE chat provider call must occur only after burst check and atomic reservation");
 
+    const repairHelper = src.slice(src.indexOf("async function repairWorkersAIMacedonianIfNeeded("), src.indexOf("async function runFreeWorkersAIChat("));
+    assert.equal((repairHelper.match(/runWorkersAIText\(/g) || []).length, 1, "Macedonian repair owns exactly one bounded conditional provider call");
+    assert.match(repairHelper,/if\(!shouldEnforceMacedonianOutput\(userText\)\)/, "repair must be skipped when Macedonian output is not required");
+    assert.match(repairHelper,/if\(initial\.ok\)/, "repair must be skipped when the first answer already passes the language guard");
+
     const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function handleGPTChat("));
-    assert.equal((helper.match(/runWorkersAIText\(/g) || []).length, 1, "FREE public helper delegates exactly one generation to the central provider contract");
+    assert.equal((helper.match(/runWorkersAIText\(/g) || []).length, 1, "FREE public helper delegates one primary generation to the central provider contract");
+    assert.equal((helper.match(/repairWorkersAIMacedonianIfNeeded\(/g) || []).length, 1, "FREE public helper may invoke the bounded language repair only after primary generation");
 
     const privateHelpers = src.slice(src.indexOf("async function runPrivateWorkersAISynthesis("), src.indexOf("async function validateGuideDocuments"));
     assert.equal((privateHelpers.match(/runWorkersAIText\(/g) || []).length, 2, "private CasePilot synthesis and extraction each delegate one bounded call to the central provider");
@@ -775,7 +781,7 @@ describe("production AI binding guard", () => {
     assert.match(draftRoute,/runPrivateWorkersAISynthesis/, "draft free fallback must stay inside the case-scoped route");
 
     assert.equal((src.match(/env\.AI\.run\(/g) || []).length, 0, "raw Workers AI calls must not bypass the central provider contract");
-    assert.equal((src.match(/runWorkersAIText\(/g) || []).length, 4, "Workers AI generation entry points remain limited to article assistant, public FREE chat and two private CasePilot helpers");
+    assert.equal((src.match(/runWorkersAIText\(/g) || []).length, 5, "Workers AI generation entry points remain limited to article assistant, public FREE chat, one conditional Macedonian repair and two private CasePilot helpers");
   });
 
   test("P2 a production AI binding requires the quota protections to be present", () => {
