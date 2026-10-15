@@ -5,7 +5,7 @@
 // with the user's/system font without shipping a font binary in this repository.
 
 export const CASE_EXPORT_VERSION="1.0.0";
-export const CASE_EXPORT_FORMATS=Object.freeze(["md","docx","csv","png","pdf"]);
+export const CASE_EXPORT_FORMATS=Object.freeze(["md","docx","csv","png","jpg","pdf"]);
 export const CASE_EXPORT_MODES=Object.freeze(["working","professional"]);
 
 const MAX_SECTIONS=40;
@@ -169,6 +169,7 @@ export function caseExportMime(format){
   if(format==="docx") return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   if(format==="csv") return "text/csv; charset=utf-8";
   if(format==="png") return "image/png";
+  if(format==="jpg") return "image/jpeg";
   if(format==="pdf") return "application/pdf";
   throw new Error("case_export_format_invalid");
 }
