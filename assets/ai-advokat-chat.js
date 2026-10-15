@@ -20,7 +20,7 @@
   const historyEl=$("#aiChatHistory");
   const provider=$("#aiChatProvider");
   const modeBtns=[...root.querySelectorAll("[data-chat-mode]")];
-  const exportBtn=$("#aiChatExport");
+  const exportButtons=[...root.querySelectorAll("[data-chat-export]")];
   const micBtn=$("#aiChatMic");
   const emptyTemplate=$("#aiChatEmptyTemplate");
   const guideVaultImport=$("#aiGuideVaultImport");
@@ -781,20 +781,17 @@
   newChatBtn.addEventListener("click",()=>{
     const c=newState();chats.set(c.id,c);currentId=c.id;attachments=[];renderAttachments();render();save();input.focus();
   });
-  exportBtn.addEventListener("click",async()=>{
+  async function exportLatestDraft(format){
     if(topMenu) topMenu.open=false;
     const chat=current();
     const latestAssistant=[...chat.messages].reverse().find(m=>m?.role==="assistant" && String(m.text||"").trim());
-    if(!latestAssistant){
-      const text=chat.messages.map(m=>(m.role==="user"?"Вие":"AI Advokat")+":\n"+m.text).join("\n\n");
-      const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
-      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="AI-Advokat-razgovor.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
-      return;
-    }
-    exportBtn.disabled=true;
+    if(!latestAssistant) return;
+    const button=exportButtons.find(b=>b.dataset.chatExport===format);
+    if(button) button.disabled=true;
     try{
-      const mod=await import("/src/case-export.js");
-      const report=mod.normalizeCaseExportReport({
+      const mod=await import("/assets/casepilot-export.js");
+      const core=await import("/src/case-export.js");
+      const report=core.normalizeCaseExportReport({
         caseId:"CHAT-"+String(chat.id||"session").replace(/[^A-Za-z0-9._-]+/g,"-").slice(0,72),
         title:String(chat.title||"AI Advokat working draft").slice(0,220),
         caseVersion:"working-draft-1",
@@ -810,27 +807,16 @@
         sourceManifest:[],
         provenance:[]
       },{mode:"working"});
-      const bytes=mod.renderCaseExportDocxBytes(report);
-      const blob=new Blob([bytes],{type:mod.caseExportMime("docx")});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement("a");
-      a.href=url;
-      a.download="AI-Advokat-working-draft.docx";
-      a.rel="noopener";
-      a.click();
-      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      await mod.downloadCasePilotExport(report,format,{filename:"AI-Advokat-working-draft."+format});
     }catch(error){
-      console.error("chat_docx_export_failed",error);
-      const text=String(latestAssistant.text||"");
-      const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
-      const a=document.createElement("a");
-      a.href=URL.createObjectURL(blob);
-      a.download="AI-Advokat-working-draft.txt";
-      a.click();
-      setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+      console.error("chat_export_failed",format,error);
     }finally{
-      exportBtn.disabled=false;
+      if(button) button.disabled=false;
     }
+  }
+
+  exportButtons.forEach(button=>{
+    button.addEventListener("click",()=>exportLatestDraft(String(button.dataset.chatExport||"docx")));
   });
 
   if(micBtn){

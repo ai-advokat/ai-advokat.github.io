@@ -8,6 +8,9 @@ import {
   caseExportFilename,
   caseExportMime,
   renderCaseExportMarkdown,
+  renderCaseExportText,
+  renderCaseExportCsv,
+  renderCaseExportJson,
   renderCaseExportDocxBytes,
   buildPdfFromJpegPages
 } from "../src/case-export.js";
@@ -55,9 +58,9 @@ const base={
   humanGate:{status:"pending"}
 };
 
-test("EXP1 export engine exposes MD DOCX PDF and bounded working report",()=>{
+test("EXP1 export engine exposes all governed formats and bounded working report",()=>{
   assert.equal(CASE_EXPORT_VERSION,"1.0.0");
-  assert.deepEqual(CASE_EXPORT_FORMATS,["md","docx","pdf"]);
+  assert.deepEqual(CASE_EXPORT_FORMATS,["md","txt","docx","csv","json","png","jpg","pdf"]);
   const report=normalizeCaseExportReport(base,{mode:"working"});
   assert.equal(report.mode,"working");
   assert.equal(report.humanGate.status,"pending");
@@ -97,6 +100,25 @@ test("EXP3 Markdown is the canonical UTF-8 master with gate, manifest and proven
   assert.equal(caseExportMime("md"),"text/markdown; charset=utf-8");
 });
 
+test("EXP3B TXT CSV and JSON exports preserve governed report data",()=>{
+  const report=normalizeCaseExportReport(base,{mode:"working"});
+  const txt=renderCaseExportText(report);
+  const csv=renderCaseExportCsv(report);
+  const json=renderCaseExportJson(report);
+  assert.match(txt,/Оставински предмет — тест/);
+  assert.match(txt,/WORKING COPY — HUMAN GATE PENDING/);
+  assert.match(csv,/^\uFEFF"kind","section","heading","text","status","source_ids"/);
+  assert.match(csv,/Оставителот починал/);
+  const parsed=JSON.parse(json);
+  assert.equal(parsed.caseId,base.caseId);
+  assert.equal(parsed.humanGate.status,"pending");
+  assert.equal(caseExportMime("txt"),"text/plain; charset=utf-8");
+  assert.equal(caseExportMime("csv"),"text/csv; charset=utf-8");
+  assert.equal(caseExportMime("json"),"application/json; charset=utf-8");
+  assert.equal(caseExportMime("png"),"image/png");
+  assert.equal(caseExportMime("jpg"),"image/jpeg");
+});
+
 test("EXP4 DOCX is a real OpenXML ZIP and preserves Macedonian Cyrillic",()=>{
   const report=normalizeCaseExportReport(base,{mode:"working"});
   const bytes=renderCaseExportDocxBytes(report);
@@ -131,7 +153,12 @@ test("EXP5 PDF assembler emits a multi-page PDF container from browser JPEG page
 test("EXP6 filenames are stable, bounded and format-specific",()=>{
   const report=normalizeCaseExportReport(base,{mode:"working"});
   assert.equal(caseExportFilename(report,"md"),"CASE-123e4567-e89b-42d3-a456-426614174000-1.2-casepilot.md");
+  assert.equal(caseExportFilename(report,"txt"),"CASE-123e4567-e89b-42d3-a456-426614174000-1.2-casepilot.txt");
   assert.equal(caseExportFilename(report,"docx"),"CASE-123e4567-e89b-42d3-a456-426614174000-1.2-casepilot.docx");
+  assert.equal(caseExportFilename(report,"csv"),"CASE-123e4567-e89b-42d3-a456-426614174000-1.2-casepilot.csv");
+  assert.equal(caseExportFilename(report,"json"),"CASE-123e4567-e89b-42d3-a456-426614174000-1.2-casepilot.json");
+  assert.equal(caseExportFilename(report,"png"),"CASE-123e4567-e89b-42d3-a456-426614174000-1.2-casepilot.png");
+  assert.equal(caseExportFilename(report,"jpg"),"CASE-123e4567-e89b-42d3-a456-426614174000-1.2-casepilot.jpg");
   assert.equal(caseExportFilename(report,"pdf"),"CASE-123e4567-e89b-42d3-a456-426614174000-1.2-casepilot.pdf");
 });
 
@@ -148,11 +175,13 @@ test("EXP7 authenticated case API derives export mode server-side and never trus
   assert.match(worker,/caseExports: caseSchemaReady \? "md_docx_live_pdf_browser_rendered_human_gate_bound"/);
 });
 
-test("EXP8 browser PDF uses local canvas/system fonts and no bundled font or external PDF service",()=>{
+test("EXP8 browser PDF PNG and JPG use local canvas/system fonts and no external conversion service",()=>{
   assert.match(browser,/document\.createElement\("canvas"\)/);
   assert.match(browser,/toBlob/);
   assert.match(browser,/image\/jpeg/);
   assert.match(browser,/buildPdfFromJpegPages/);
+  assert.match(browser,/image\/png/);
+  assert.match(browser,/image\/jpeg/);
   assert.match(browser,/Segoe UI/);
   assert.match(browser,/Arial/);
   assert.doesNotMatch(browser,/\.ttf|\.otf|\.woff2?|pdf\.co|cloudconvert|ilovepdf/i);
