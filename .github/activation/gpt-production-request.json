@@ -28,8 +28,8 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Root runtime protocol correction after independent production UAT proved ordinary Macedonian prompts pass but a legal working-draft prompt can return choices with empty final content. GPT-OSS now uses Workers AI Responses API shape with explicit low reasoning effort and bounded max_output_tokens so hidden reasoning cannot silently consume the final-answer budget.",
-    "approval_text": "коренска protocol-level поправка: GPT-OSS Responses API со low reasoning и задолжителен non-empty final answer",
+    "reason": "Production redeploy for mandatory 2017 Macedonian literary-language runtime gate after live evidence showed Serbian, Bulgarian and Russian contamination in Macedonian legal output.",
+    "approval_text": "вгради литературен македонски јазик согласно Правописот од 2017 и не дозволувај мешавина од српски, бугарски и руски",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
     "baseline_result": "CLOUDFLARE_R2_NOT_ENABLED_CODE_10042",
@@ -68,6 +68,15 @@
     "free_provider_protocol": "responses_api_via_workers_binding",
     "free_reasoning_effort": "low",
     "final_answer_required": true,
-    "independent_live_uat_evidence": "FREE runtime live UAT #2: basic PASS, reminder PASS, legal draft empty final content"
+    "independent_live_uat_evidence": "FREE runtime live UAT #2: basic PASS, reminder PASS, legal draft empty final content",
+    "language_standard": "Правопис на македонскиот јазик, второ издание, Скопје 2017",
+    "language_runtime_guard": "src/macedonian-language-guard.js",
+    "language_fail_closed": true,
+    "foreign_cyrillic_guard": true,
+    "serbian_bulgarian_russian_lexical_guard": true,
+    "foreign_jurisdiction_substitution_guard": true,
+    "language_repair_pass": true,
+    "language_uat": "literary_macedonian_not_cyrillic_only",
+    "source_commit": "e677b3843790637df05562b6022130682d369402"
   }
 }
