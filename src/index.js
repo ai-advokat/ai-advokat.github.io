@@ -3352,7 +3352,7 @@ function caseD1FallbackReady(env){
 async function caseObjectPut(env,key,bytes,{httpMetadata={},customMetadata={}}={}){
   if(!(bytes instanceof Uint8Array)) bytes=new Uint8Array(bytes||[]);
   if(caseR2Ready(env)){
-    await caseObjectPut(env,key,bytes,{httpMetadata,customMetadata});
+    await env.CASE_FILES.put(key,bytes,{httpMetadata,customMetadata});
     return {backend:"r2",size:bytes.byteLength};
   }
   if(!caseD1FallbackReady(env)) throw new Error("private_case_storage_not_ready");
@@ -3423,7 +3423,7 @@ async function caseObjectHead(env,key){
 
 async function caseObjectDelete(env,key){
   if(caseR2Ready(env)){
-    await caseObjectDelete(env,key);
+    await env.CASE_FILES.delete(key);
     return;
   }
   if(caseD1FallbackReady(env)){
