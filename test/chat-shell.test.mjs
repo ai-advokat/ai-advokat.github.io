@@ -27,8 +27,11 @@ test("CHAT1 homepage exposes one primary AI Advokat conversation workspace",()=>
 test("CHAT2 modern assistant controls exist without copying third-party branding",()=>{
   for(const id of [
     "aiChatNew","aiChatHistory","aiChatAttach","aiChatFiles","aiChatMic",
-    "aiChatInput","aiChatSend","aiChatStop","aiChatExport"
+    "aiChatInput","aiChatSend","aiChatStop","aiChatMenu"
   ]) assert.match(html,new RegExp('id="'+id+'"'));
+  for(const format of ["docx","md","txt","csv","json","png","jpg","pdf"]){
+    assert.match(html,new RegExp('data-chat-export="'+format+'"'));
+  }
   assert.match(html,/data-chat-mode="auto"/);
   assert.match(html,/data-chat-mode="library"/);
   assert.match(html,/data-chat-mode="web"/);
@@ -40,7 +43,9 @@ test("CHAT3 chat shell keeps current-session history and offers copy, retry and 
   assert.match(chatJs,/sessionStorage/);
   assert.match(chatJs,/Копирај/);
   assert.match(chatJs,/Повтори/);
-  assert.match(chatJs,/AI-Advokat-razgovor\.txt/);
+  assert.match(chatJs,/exportLatestDraft/);
+  assert.match(chatJs,/downloadCasePilotExport/);
+  assert.match(chatJs,/data-chat-export/);
   assert.match(chatJs,/AbortController/);
 });
 
@@ -329,7 +334,7 @@ test("CHAT32 pleading drafting is routed through consequential Human Gate",()=>{
 
 
 test("CHAT33 simple workspace keeps advanced controls behind compact menus",()=>{
-  assert.match(html,/<details class="ai-chat-menu" id="aiChatMenu">[\s\S]*id="aiChatExport"/);
+  assert.match(html,/<details class="ai-chat-menu" id="aiChatMenu">[\s\S]*data-chat-export="docx"[\s\S]*data-chat-export="json"[\s\S]*data-chat-export="pdf"/);
   assert.match(html,/<details class="ai-chat-tools" id="aiChatTools">[\s\S]*data-chat-mode="auto"[\s\S]*id="aiGuideVaultImport"/);
   assert.match(html,/id="aiChatModeCaption">Автоматски</);
   assert.doesNotMatch(html,/ai-chat-provider-note/);
