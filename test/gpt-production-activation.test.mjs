@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { openAIOrchestratorConfigured, orchestratorRuntimeReadiness } from "../src/agent-orchestrator.js";
 
 const wrangler=fs.readFileSync("wrangler.jsonc","utf8");
+const r2Wrangler=fs.readFileSync("wrangler.r2.jsonc","utf8");
 const worker=fs.readFileSync("src/index.js","utf8");
 const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
 const chat=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
@@ -143,8 +144,10 @@ test("GPTACT9 GPT activation preserves the separately authorized CasePilot priva
   assert.match(workflow,/private_document_upload_authorized/);
   assert.match(workflow,/private_case_ai_execution_authorized/);
   assert.match(workflow,/autonomous filing remains forbidden/);
-  assert.match(wrangler,/"binding": "CASE_FILES"/);
-  assert.match(wrangler,/"r2_buckets"/);
+  assert.match(wrangler,/"CASE_D1_FALLBACK_ENABLED": "true"/);
+  assert.doesNotMatch(wrangler,/"r2_buckets"/);
+  assert.match(r2Wrangler,/"binding": "CASE_FILES"/);
+  assert.match(r2Wrangler,/"r2_buckets"/);
   assert.doesNotMatch(workflow,/wrangler r2 bucket create/);
 });
 
