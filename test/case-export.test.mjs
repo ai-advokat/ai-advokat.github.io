@@ -171,8 +171,8 @@ test("EXP7 authenticated case API derives export mode server-side and never trus
   assert.match(worker,/case_export_professional_human_gate_stale/);
   assert.match(worker,/eventType:"export_generated"/);
   assert.match(worker,/casepilot_canvas_pdf_v1/);
-  assert.match(worker,/browser_local_pdf_rendering_no_external_service/);
-  assert.match(worker,/caseExports: caseSchemaReady \? "md_docx_live_pdf_browser_rendered_human_gate_bound"/);
+  assert.match(worker,/browser_local_rendering_no_external_service/);
+  assert.match(worker,/caseExports: caseSchemaReady \? "md_txt_docx_csv_json_png_jpg_pdf_live_human_gate_bound"/);
 });
 
 test("EXP8 browser PDF PNG and JPG use local canvas/system fonts and no external conversion service",()=>{
