@@ -180,11 +180,14 @@ test("CHAT17 chat latency optimisations preserve governed routing",()=>{
   assert.match(worker,/Promise\.all\(\[/);
 });
 
-test("CHAT18 production UI status is readiness-driven rather than statically claiming LIVE",()=>{
-  assert.match(html,/GPT-6\.1 Sol · проверка на извршната околина/);
-  assert.match(html,/GPT-6\.1 Sol во позадина/);
-  assert.doesNotMatch(html,/id="aiChatProvider">GPT-6\.1 Sol · LIVE governed/);
-  assert.doesNotMatch(html,/production provider-от ќе биде активиран/);
+test("CHAT18 production UI status is readiness-driven and model-truthful",()=>{
+  assert.match(html,/Проверка на активниот AI provider\/model/);
+  assert.match(html,/FREE режимот користи Workers AI/);
+  assert.doesNotMatch(html,/GPT-6\.1 Sol во позадина/);
+  assert.doesNotMatch(html,/id="aiChatProvider">GPT-6\.1 Sol/);
+  assert.match(chatJs,/runtime\.freeProviderModel/);
+  assert.match(chatJs,/runtime\.paidProviderModel/);
+  assert.match(chatJs,/FREE Workers AI · /);
 });
 
 
@@ -299,11 +302,13 @@ test("CHAT29 L2-L4 use real bounded specialist execution before Chief synthesis"
 test("CHAT30 runtime status and network failures are fail-closed and user-visible",()=>{
   assert.match(chatJs,/const fullyReady=/);
   assert.match(chatJs,/lioeRuntimeTelemetry==="ready"/);
-  assert.match(chatJs,/GPT-6\.1 Sol · LIVE governed/);
+  assert.match(chatJs,/freeProviderModel/);
+  assert.match(chatJs,/paidProviderModel/);
   assert.match(chatJs,/runtime partial · recovery required/);
-  assert.match(chatJs,/GPT runtime · недостапен/);
+  assert.match(chatJs,/AI runtime · недостапен/);
   assert.match(chatJs,/Runtime\/API unavailable/);
   assert.match(chatJs,/Барањето не е обработено/);
+  assert.doesNotMatch(chatJs,/GPT-6\.1 Sol · LIVE governed/);
 });
 
 
