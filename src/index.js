@@ -4398,32 +4398,54 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
   if(!shouldEnforceMacedonianOutput(userText)){
     return {text:original,repaired:false,providerCalls:0,languageAssessment:null};
   }
-  const initial=assessMacedonianOutput(original,{userText});
-  if(initial.ok){
-    return {text:original,repaired:false,providerCalls:0,languageAssessment:initial};
+  let current=original;
+  let assessment=assessMacedonianOutput(current,{userText});
+  if(assessment.ok){
+    return {text:current,repaired:false,providerCalls:0,languageAssessment:assessment};
   }
-  const repair=await runWorkersAIText(env,{
-    messages:buildMacedonianRepairMessages({text:original,userText}),
-    maxOutputTokens:Math.max(700,Math.min(4200,Number(maxOutputTokens)||1800)),
-    temperature:0
-  });
-  if(!repair.ok){
-    return {
-      text:original,
-      repaired:false,
-      providerCalls:repair.providerCalls||1,
-      languageAssessment:initial,
-      repairError:repair.error||"macedonian_repair_failed"
-    };
+
+  let providerCalls=0;
+  let lastError=null;
+  for(let attempt=0;attempt<2 && !assessment.ok;attempt++){
+    const messages=buildMacedonianRepairMessages({text:current,userText});
+    const issueNote=[
+      "STRICT TARGETED LANGUAGE REPAIR.",
+      "The preceding draft failed the Macedonian 2017 language guard.",
+      "Detected reasons: "+(assessment.reasons||[]).join(", "),
+      assessment.foreignChars?.length ? "Forbidden/non-Macedonian Cyrillic characters detected: "+assessment.foreignChars.join(" ") : "",
+      assessment.foreignLexemes?.length ? "Foreign lexical forms detected: "+assessment.foreignLexemes.join(", ") : "",
+      "Correct only language contamination and grammar. Preserve the same meaning, facts, dates, numbers, identifiers, citation markers and overall structure.",
+      "Do not add new sections, examples, parties, legal rules or explanations. Return only the corrected draft."
+    ].filter(Boolean).join("\n");
+    messages[0]={...messages[0],content:String(messages[0].content||"")+"\n\n"+issueNote};
+
+    const repair=await runWorkersAIText(env,{
+      messages,
+      maxOutputTokens:Math.max(700,Math.min(4200,Number(maxOutputTokens)||1800)),
+      temperature:0
+    });
+    providerCalls+=repair.providerCalls||1;
+    if(!repair.ok){
+      lastError=repair.error||"macedonian_repair_failed";
+      break;
+    }
+
+    const candidate=String(repair.text||"").trim();
+    if(!candidate){
+      lastError="macedonian_repair_empty";
+      break;
+    }
+    current=candidate;
+    assessment=assessMacedonianOutput(current,{userText});
+    lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
   }
-  const repairedText=String(repair.text||"").trim();
-  const finalAssessment=assessMacedonianOutput(repairedText,{userText});
+
   return {
-    text:repairedText||original,
-    repaired:Boolean(repairedText)&&finalAssessment.ok,
-    providerCalls:repair.providerCalls||1,
-    languageAssessment:finalAssessment,
-    repairError:finalAssessment.ok?null:"macedonian_repair_still_noncompliant"
+    text:current||original,
+    repaired:current!==original && assessment.ok,
+    providerCalls,
+    languageAssessment:assessment,
+    repairError:assessment.ok?null:(lastError||"macedonian_repair_still_noncompliant")
   };
 }
 
@@ -6070,7 +6092,7 @@ async function handleCapabilities(request, env) {
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
       macedonianRepairPostflight:"conditional_workers_ai_postflight_v1",
-      macedonianRepairProviderBudget:"max_one_conditional_extra_call_per_free_turn",
+      macedonianRepairProviderBudget:"max_two_conditional_extra_calls_per_free_turn",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",

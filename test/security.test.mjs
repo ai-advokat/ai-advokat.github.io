@@ -757,9 +757,11 @@ describe("production AI binding guard", () => {
     assert.ok(chatBurst < chatReserve && chatReserve < freeProviderCall, "FREE chat provider call must occur only after burst check and atomic reservation");
 
     const repairHelper = src.slice(src.indexOf("async function repairWorkersAIMacedonianIfNeeded("), src.indexOf("async function runFreeWorkersAIChat("));
-    assert.equal((repairHelper.match(/runWorkersAIText\(/g) || []).length, 1, "Macedonian repair owns exactly one bounded conditional provider call");
+    assert.equal((repairHelper.match(/runWorkersAIText\(/g) || []).length, 1, "Macedonian repair owns one provider call-site regardless of retry count");
     assert.match(repairHelper,/if\(!shouldEnforceMacedonianOutput\(userText\)\)/, "repair must be skipped when Macedonian output is not required");
-    assert.match(repairHelper,/if\(initial\.ok\)/, "repair must be skipped when the first answer already passes the language guard");
+    assert.match(repairHelper,/if\(assessment\.ok\)/, "repair must be skipped when the first answer already passes the language guard");
+    assert.match(repairHelper,/for\(let attempt=0;attempt<2 && !assessment\.ok;attempt\+\+\)/, "language repair retries must be capped at two conditional attempts");
+    assert.match(repairHelper,/STRICT TARGETED LANGUAGE REPAIR/, "second-stage repair must stay targeted to language quality rather than re-analysis");
 
     const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function handleGPTChat("));
     assert.equal((helper.match(/runWorkersAIText\(/g) || []).length, 1, "FREE public helper delegates one primary generation to the central provider contract");
@@ -781,7 +783,7 @@ describe("production AI binding guard", () => {
     assert.match(draftRoute,/runPrivateWorkersAISynthesis/, "draft free fallback must stay inside the case-scoped route");
 
     assert.equal((src.match(/env\.AI\.run\(/g) || []).length, 0, "raw Workers AI calls must not bypass the central provider contract");
-    assert.equal((src.match(/runWorkersAIText\(/g) || []).length, 5, "Workers AI generation entry points remain limited to article assistant, public FREE chat, one conditional Macedonian repair and two private CasePilot helpers");
+    assert.equal((src.match(/runWorkersAIText\(/g) || []).length, 5, "Workers AI call-sites remain limited to article assistant, public FREE chat, one bounded Macedonian-repair loop and two private CasePilot helpers");
   });
 
   test("P2 a production AI binding requires the quota protections to be present", () => {
