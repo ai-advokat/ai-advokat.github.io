@@ -3336,6 +3336,101 @@ function bytesToBase64(bytes){
   return btoa(binary);
 }
 
+
+const CASE_D1_OBJECT_CHUNK_BYTES=900*1024;
+const CASE_D1_FALLBACK_MAX_BYTES=CASE_INTELLIGENCE_PROVIDER_MAX_BYTES;
+
+function caseR2Ready(env){
+  const b=env?.CASE_FILES;
+  return !!b && typeof b.put==="function" && typeof b.get==="function" && typeof b.delete==="function";
+}
+
+function caseD1FallbackReady(env){
+  return env?.CASE_D1_FALLBACK_ENABLED==="true" && !!env?.DB;
+}
+
+async function caseObjectPut(env,key,bytes,{httpMetadata={},customMetadata={}}={}){
+  if(!(bytes instanceof Uint8Array)) bytes=new Uint8Array(bytes||[]);
+  if(caseR2Ready(env)){
+    await env.CASE_FILES.put(key,bytes,{httpMetadata,customMetadata});
+    return {backend:"r2",size:bytes.byteLength};
+  }
+  if(!caseD1FallbackReady(env)) throw new Error("private_case_storage_not_ready");
+  if(bytes.byteLength>CASE_D1_FALLBACK_MAX_BYTES) throw new Error("d1_fallback_object_too_large");
+  const contentType=String(httpMetadata?.contentType||"application/octet-stream").slice(0,180);
+  const metadataJson=JSON.stringify(customMetadata||{}).slice(0,4000);
+  await env.DB.prepare("DELETE FROM case_private_object_chunks WHERE object_key=?").bind(key).run();
+  const statements=[];
+  let chunkIndex=0;
+  for(let offset=0;offset<bytes.byteLength;offset+=CASE_D1_OBJECT_CHUNK_BYTES){
+    const part=bytes.subarray(offset,Math.min(bytes.byteLength,offset+CASE_D1_OBJECT_CHUNK_BYTES));
+    statements.push(env.DB.prepare(
+      `INSERT INTO case_private_object_chunks
+        (object_key,chunk_index,chunk_b64,byte_length,content_type,metadata_json,created_at)
+       VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP)`
+    ).bind(key,chunkIndex++,bytesToBase64(part),part.byteLength,contentType,metadataJson));
+  }
+  if(statements.length===0){
+    statements.push(env.DB.prepare(
+      `INSERT INTO case_private_object_chunks
+        (object_key,chunk_index,chunk_b64,byte_length,content_type,metadata_json,created_at)
+       VALUES (?,0,'',0,?,?,CURRENT_TIMESTAMP)`
+    ).bind(key,contentType,metadataJson));
+  }
+  for(let i=0;i<statements.length;i+=20){
+    await env.DB.batch(statements.slice(i,i+20));
+  }
+  return {backend:"d1_fallback",size:bytes.byteLength};
+}
+
+async function caseObjectGet(env,key){
+  if(caseR2Ready(env)) return env.CASE_FILES.get(key);
+  if(!caseD1FallbackReady(env)) return null;
+  const rows=await env.DB.prepare(
+    "SELECT chunk_b64,byte_length,content_type,metadata_json FROM case_private_object_chunks WHERE object_key=? ORDER BY chunk_index"
+  ).bind(key).all();
+  const items=rows.results||[];
+  if(items.length===0) return null;
+  const parts=items.map(row=>bytesFromBase64(String(row.chunk_b64||""))).filter(Boolean);
+  if(parts.length!==items.length) return null;
+  const total=parts.reduce((n,p)=>n+p.byteLength,0);
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const part of parts){bytes.set(part,offset);offset+=part.byteLength;}
+  const contentType=String(items[0]?.content_type||"application/octet-stream");
+  return {
+    size:bytes.byteLength,
+    body:bytes,
+    httpMetadata:{contentType},
+    async arrayBuffer(){return bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);},
+    async text(){return new TextDecoder().decode(bytes);}
+  };
+}
+
+async function caseObjectHead(env,key){
+  if(caseR2Ready(env)) return env.CASE_FILES.head(key);
+  if(!caseD1FallbackReady(env)) return null;
+  const row=await env.DB.prepare(
+    "SELECT SUM(byte_length) AS size, MIN(content_type) AS content_type FROM case_private_object_chunks WHERE object_key=?"
+  ).bind(key).first();
+  if(!row || row.size===null || row.size===undefined) return null;
+  return {size:Number(row.size||0),httpMetadata:{contentType:String(row.content_type||"application/octet-stream")}};
+}
+
+async function caseObjectDelete(env,key){
+  if(caseR2Ready(env)){
+    await env.CASE_FILES.delete(key);
+    return;
+  }
+  if(caseD1FallbackReady(env)){
+    await env.DB.prepare("DELETE FROM case_private_object_chunks WHERE object_key=?").bind(key).run();
+  }
+}
+
+function caseStorageBackend(env){
+  return caseR2Ready(env) ? "r2" : caseD1FallbackReady(env) ? "d1_fallback" : "unavailable";
+}
+
 function openAIOutputText(payload){
   if(typeof payload?.output_text==="string" && payload.output_text.trim()) return payload.output_text.trim();
   const chunks=[];
