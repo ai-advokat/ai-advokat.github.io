@@ -4524,15 +4524,29 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     maxOutputTokens:tokenLimit
   });
 
+  const enforceMacedonian=shouldEnforceMacedonianOutput(q);
+  if(enforceMacedonian && languagePass.languageAssessment?.ok!==true){
+    return {
+      ok:false,
+      error:"free_workers_ai_language_quality_failed",
+      detail:null,
+      model:result.model,
+      provider:"workers_ai_free",
+      providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
+      languageStandard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
+      languageQualityState:"blocked_noncompliant_output"
+    };
+  }
+
   return {
     ok:true,
     text:languagePass.text,
     model:result.model,
     provider:"workers_ai_free",
     providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
-    languageStandard:shouldEnforceMacedonianOutput(q)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+    languageStandard:enforceMacedonian?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageRepaired:languagePass.repaired===true,
-    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"unchecked_or_repair_incomplete",
+    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"not_applicable",
     convertedDocuments:converted.documents.length,
     webSearchUsed:false,
     sources:[],
