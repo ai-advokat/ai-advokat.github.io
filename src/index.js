@@ -956,7 +956,7 @@ async function handleCaseWorkspaceApi(request,env,url){
       documentLimit:Number(access.document_limit||CASE_WORKSPACE_DOCUMENT_LIMIT),
       documents:result.results||[],
       upload:caseWorkspaceStorageReady(env) ? "storage_ready_ingestion_gate_required" : "locked_pending_private_object_storage",
-      note:"No document bytes are stored in D1."
+      note:caseStorageBackend(env)==="d1_fallback" ? "Private document bytes are stored as bounded D1 chunks because R2 is unavailable." : "Private document bytes are stored in governed object storage."
     });
   }
 
@@ -1179,8 +1179,9 @@ async function handleCaseWorkspaceApi(request,env,url){
     });
     if(!metadata.ok) return json(request,{ok:false,error:"invalid_case_document",problems:metadata.errors},400);
 
-    const file=await readLimitedBytes(request,CASE_WORKSPACE_MAX_FILE_BYTES);
-    if(!file.ok) return json(request,{ok:false,error:file.error},file.status);
+    const uploadLimit=caseR2Ready(env) ? CASE_WORKSPACE_MAX_FILE_BYTES : CASE_D1_FALLBACK_MAX_BYTES;
+    const file=await readLimitedBytes(request,uploadLimit);
+    if(!file.ok) return json(request,{ok:false,error:file.error,maxBytes:uploadLimit},file.status);
     if(!caseDocumentBytesMatchMime(file.bytes,metadata.value.mimeType)){
       return json(request,{ok:false,error:"file_signature_mismatch"},400);
     }
@@ -5905,11 +5906,12 @@ async function handleCapabilities(request, env) {
       membershipRequests: database.reachable && database.schemaReady && membershipRequestsConfigured(env) ? "manual_human_gate" : "blocked",
       citationAudit: "governed_preview",
       versionCompare: "governed_preview",
-      documentUpload: caseWorkspaceStorageReady(env) && caseSchemaReady ? "case_scoped_storage_ready_ingestion_gate_required" : "locked_private_storage",
+      documentUpload: caseWorkspaceStorageReady(env) && caseSchemaReady ? (caseStorageBackend(env)==="d1_fallback" ? "case_scoped_d1_fallback_ready_ingestion_gate_required" : "case_scoped_storage_ready_ingestion_gate_required") : "locked_private_storage",
       caseWorkspace: caseRuntime,
       caseExports: caseSchemaReady ? "md_docx_live_pdf_browser_rendered_human_gate_bound" : "locked",
       vectorize: "not_bound",
-      workersAI: env.AI ? "bound" : "not_bound"
+      workersAI: env.AI ? "bound" : "not_bound",
+      caseStorageBackend: caseStorageBackend(env)
     },
     coverage
   });
