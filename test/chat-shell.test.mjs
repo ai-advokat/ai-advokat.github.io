@@ -351,7 +351,7 @@ test("CHAT33 simple workspace keeps advanced controls behind compact menus",()=>
 });
 
 test("CHAT34 primary composer stays intentionally minimal while preserving full capability",()=>{
-  const composer=html.match(/<div class="ai-chat-composer"[^>]*>([\s\S]*?)<\/div>\s*<p class="ai-chat-hint">/)?.[1]||"";
+  const composer=html.match(/<div class="ai-chat-composer"[^>]*>([\s\S]*?)<\/div>\s*<details class="ai-chat-hint">/)?.[1]||"";
   assert.match(composer,/id="aiChatAttach"/);
   assert.match(composer,/id="aiChatInput"/);
   assert.match(composer,/id="aiChatMic"/);
