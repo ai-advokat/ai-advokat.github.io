@@ -4349,7 +4349,10 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     "Keep document facts separate from legal rules. A document is evidence/content, not proof of current law.",
     "If current law is not established by a governed primary source in the supplied context, say that current-law verification is still required.",
     "Do not claim lawyer review, Human Gate approval, filing, representation or external action.",
-    "For consequential legal steps, clearly state that professional human review is required before reliance.",
+    "When the user asks you to draft a lawsuit, appeal, objection, motion, request, legal opinion, letter, submission, contract-style text or other legal document, produce the COMPLETE working draft in the answer rather than merely describing a template.",
+    "Do not say that you cannot create Word/DOCX files. The AI Advokat browser interface can export the latest assistant working draft to DOCX; your job is to provide the complete document text.",
+    "Use placeholders or clearly fictional data when the user requests invented names/details, and never invent facts presented as real.",
+    "For consequential legal steps, clearly state that professional human review is required before reliance, but do not let that warning replace the requested working draft.",
     "Do not silently use web search in this FREE mode."
   ].join("\n");
 
@@ -4374,7 +4377,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   // Gemma is used here because GLM-4.7-Flash has returned successful-but-empty
   // responses in production for ordinary chat/document requests.
   const model=FREE_WORKERS_AI_SECONDARY_MODEL;
-  const tokenLimit=Math.max(600,Math.min(2200,Number(maxOutputTokens)||1800));
+  const tokenLimit=Math.max(900,Math.min(3800,Number(maxOutputTokens)||3200));
   let generated;
   try{
     generated=await env.AI.run(model,{
