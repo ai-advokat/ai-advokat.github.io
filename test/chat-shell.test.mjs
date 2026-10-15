@@ -459,7 +459,9 @@ test("CHAT40 FREE Workers AI document fallback is visible and preserves 20-docum
   assert.match(html,/FREE активен · без клуч · Workers AI/);
   assert.match(html,/Прикачи документи \(до 20\)/);
   assert.match(chatJs,/configured_for_free_workers_ai_chat_execution/);
-  assert.match(chatJs,/FREE Workers AI · LIVE · документи/);
+  assert.match(chatJs,/FREE Workers AI · /);
+  assert.match(chatJs,/runtime\.freeProviderModel/);
+  assert.match(worker,/freeProviderModel:freeWorkersAIConfigured\(env\)/);
   assert.match(worker,/convertFreeChatAttachments/);
   assert.match(worker,/env\.AI\.toMarkdown/);
 });
