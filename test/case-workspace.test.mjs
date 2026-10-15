@@ -109,10 +109,13 @@ test("Worker case API requires membership and per-case account access",()=>{
   assert.match(worker,/url\.pathname === "\/api\/cases" \|\| url\.pathname\.startsWith\("\/api\/cases\/"\)/);
 });
 
-test("case workspace runtime remains armed while private object storage stays Human-Gate locked",()=>{
+test("case workspace runtime and separately authorized private storage are both armed",()=>{
   assert.equal(wrangler.vars.CASE_WORKSPACE_ENABLED,"true");
-  assert.equal(Array.isArray(wrangler.r2_buckets),false);
-  assert.equal(caseWorkspaceRuntimeState({CASE_WORKSPACE_ENABLED:"true"},{schemaReady:true}),"workspace_ready_storage_locked");
+  const binding=wrangler.r2_buckets?.find(x=>x.binding==="CASE_FILES");
+  assert.ok(binding,"CASE_FILES binding must remain present after the 2026-10-15 Human Gate");
+  assert.equal(caseWorkspaceRuntimeState({CASE_WORKSPACE_ENABLED:"true",CASE_FILES:{}},{schemaReady:true}),"workspace_and_storage_ready");
+  assert.match(worker,/professional_use_locked=1/);
+  assert.match(worker,/autonomousFiling:false/);
 });
 
 test("canonical wrangler keeps private CASE_FILES R2 binding",()=>{
