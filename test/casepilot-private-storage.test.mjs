@@ -30,7 +30,8 @@ test("private upload is storage-gated, server-hashed and uses governed private s
   assert.ok(start>0 && end>start);
   const block=worker.slice(start,end);
   assert.match(block,/caseWorkspaceStorageReady\(env\)/);
-  assert.match(block,/const uploadLimit=caseR2Ready\(env\) \? CASE_WORKSPACE_MAX_FILE_BYTES : CASE_D1_FALLBACK_MAX_BYTES/);\n  assert.match(block,/readLimitedBytes\(request,uploadLimit\)/);
+  assert.match(block,/const uploadLimit=caseR2Ready\(env\) \? CASE_WORKSPACE_MAX_FILE_BYTES : CASE_D1_FALLBACK_MAX_BYTES/);
+  assert.match(block,/readLimitedBytes\(request,uploadLimit\)/);
   assert.match(block,/caseDocumentBytesMatchMime/);
   assert.match(block,/sha256BytesHex/);
   assert.match(block,/caseObjectPut\(env,/);
