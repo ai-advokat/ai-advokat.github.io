@@ -206,10 +206,17 @@ test("GPTACT13 unified Workers AI provider contract uses one configured producti
   assert.equal(options.chat_template_kwargs,undefined);
 });
 
-test("GPTACT14 Workers AI response extraction accepts final answer shapes but never hidden reasoning",()=>{
+test("GPTACT14 Workers AI response extraction accepts only final answer shapes and never reasoning items",()=>{
   assert.equal(extractWorkersAIText({response:"Здраво"}),"Здраво");
   assert.equal(extractWorkersAIText({choices:[{message:{content:"Одговор"}}]}),"Одговор");
-  assert.equal(extractWorkersAIText({reasoning:"hidden only"}),null);
+  assert.equal(extractWorkersAIText({
+    output:[
+      {type:"reasoning",content:[{type:"summary_text",text:"Need answer in Macedonian"}]},
+      {type:"message",content:[{type:"output_text",text:"AI Advokat работи."}]}
+    ]
+  }),"AI Advokat работи.");
+  assert.equal(extractWorkersAIText({type:"reasoning",content:"hidden only"}),null);
+  assert.equal(extractWorkersAIText({type:"summary_text",text:"hidden summary"}),null);
   assert.equal(extractWorkersAIText({response:"   ",reasoning:"hidden"}),null);
 });
 
