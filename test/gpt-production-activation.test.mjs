@@ -89,7 +89,9 @@ test("GPTACT5 public chat routes to Worker and runtime status can report live pr
   assert.match(worker,/configured_for_api_chat_execution/);
   assert.match(worker,/configured_for_free_workers_ai_chat_execution/);
   assert.match(worker,/env\.AI\.toMarkdown/);
-  assert.match(worker,/gpt_6_1_sol_live_governed/);
+  assert.match(worker,/paid_openai_live_governed/);
+  assert.match(worker,/freeChatModel:freeWorkersAIConfigured\(env\)/);
+  assert.match(worker,/paidChatModel:orchestratorRuntimeReadiness\(env\)\.provider==="configured"/);
 });
 
 test("GPTACT6 governance registry records explicit activation authorization while remaining not-live until preflight and smoke pass",()=>{
