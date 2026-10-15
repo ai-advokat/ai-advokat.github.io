@@ -1035,7 +1035,16 @@ async function runExport(format){
     $("exportStatus").textContent="Прво отворете предмет.";
     return;
   }
-  const button=format==="md"?$("exportMd"):format==="docx"?$("exportDocx"):$("exportPdf");
+  const button={
+    md:$("exportMd"),
+    txt:$("exportTxt"),
+    docx:$("exportDocx"),
+    csv:$("exportCsv"),
+    json:$("exportJson"),
+    png:$("exportPng"),
+    jpg:$("exportJpg"),
+    pdf:$("exportPdf")
+  }[format];
   button.disabled=true;
   $("exportStatus").textContent="Се подготвува governed "+format.toUpperCase()+" export…";
   try{
@@ -1056,8 +1065,13 @@ async function runExport(format){
   }
 }
 
-$("exportMd").addEventListener("click",()=>runExport("md"));
 $("exportDocx").addEventListener("click",()=>runExport("docx"));
+$("exportMd").addEventListener("click",()=>runExport("md"));
+$("exportTxt").addEventListener("click",()=>runExport("txt"));
+$("exportCsv").addEventListener("click",()=>runExport("csv"));
+$("exportJson").addEventListener("click",()=>runExport("json"));
+$("exportPng").addEventListener("click",()=>runExport("png"));
+$("exportJpg").addEventListener("click",()=>runExport("jpg"));
 $("exportPdf").addEventListener("click",()=>runExport("pdf"));
 
 $("refreshAudit").addEventListener("click",async()=>{
