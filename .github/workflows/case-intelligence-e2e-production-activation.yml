@@ -18,7 +18,7 @@ permissions:
 
 concurrency:
   group: ai-advokat-case-intelligence-e2e-production
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   activate:
