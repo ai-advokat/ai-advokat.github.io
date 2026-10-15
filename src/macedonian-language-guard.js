@@ -23,7 +23,7 @@ const FOREIGN_CYRILLIC_RE=/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/gu;
 const FOREIGN_LEXEMES=new Set([
   // Serbian / Croatian contamination
   "поступак","поступку","поступци","подносилац","тужилац","захтев","захтеви","решење","решења",
-  "трошкови","надокнада","пуномоќ","приговор","парница",
+  "трошкови","надокнада","пуномоќ",
   // Russian contamination
   "документы","сведения","следует","является","которые","заявление","всего",
   // Bulgarian contamination with or without distinctive Bulgarian letters
@@ -99,6 +99,86 @@ export function assessMacedonianOutput(text,{userText=""}={}){
     jurisdictionLeaks:jurisdictionLeaks.slice(0,8),
     standardVersion:MACEDONIAN_LANGUAGE_STANDARD_VERSION
   };
+}
+
+
+const DETERMINISTIC_LEXICAL_REPLACEMENTS=[
+  ["искова молба","тужба"],
+  ["обезщетението","надоместот на штета"],
+  ["обезщетение","надомест на штета"],
+  ["съгласно","согласно"],
+  ["обжалвайте","поднесете жалба"],
+  ["обжалване","жалба"],
+  ["възражения","приговори"],
+  ["възражение","приговор"],
+  ["разноски","трошоци"],
+  ["случайни","случајни"],
+  ["случаен","случаен"],
+  ["случайна","случајна"],
+  ["съдебен","судски"],
+  ["съдебна","судска"],
+  ["съдебно","судско"],
+  ["съдът","судот"],
+  ["съда","судот"],
+  ["съд","суд"],
+  ["ищецът","тужителот"],
+  ["ищец","тужител"],
+  ["ответникът","тужениот"],
+  ["ответник","тужен"],
+  ["доказателства","докази"],
+  ["молителя","подносителот"],
+  ["молител","подносител"],
+  ["поступку","постапката"],
+  ["поступци","постапки"],
+  ["поступак","постапка"],
+  ["подносилац","подносител"],
+  ["тужилац","тужител"],
+  ["захтеви","барања"],
+  ["захтев","барање"],
+  ["решења","решенија"],
+  ["решење","решение"],
+  ["трошкови","трошоци"],
+  ["надокнада","надомест"],
+  ["пуномоќ","полномошно"],
+  ["документы","документи"],
+  ["сведения","податоци"],
+  ["следует","треба"],
+  ["является","е"],
+  ["которые","кои"],
+  ["заявление","барање"],
+  ["всего","вкупно"],
+  ["становище","мислење"],
+  ["искане","барање"],
+  ["следва","треба"]
+];
+
+function preserveInitialCase(match,replacement){
+  if(!match) return replacement;
+  const first=match[0];
+  if(first===first.toLocaleUpperCase("mk") && first!==first.toLocaleLowerCase("mk")){
+    return replacement.charAt(0).toLocaleUpperCase("mk")+replacement.slice(1);
+  }
+  return replacement;
+}
+
+function escapeRegex(value){
+  return String(value).replace(/[.*+?^$(){}|[\]\\]/g,"\\$&");
+}
+
+export function normaliseMacedonianGeneratedText(text){
+  let value=String(text||"").normalize("NFKC");
+  for(const [from,to] of DETERMINISTIC_LEXICAL_REPLACEMENTS){
+    const re=new RegExp("(^|[^\\\\p{L}])("+escapeRegex(from)+")(?=$|[^\\\\p{L}])","giu");
+    value=value.replace(re,(full,prefix,word)=>prefix+preserveInitialCase(word,to));
+  }
+  const charMap=new Map([
+    ["Ђ","Ѓ"],["ђ","ѓ"],["Ћ","Ќ"],["ћ","ќ"],
+    ["Й","Ј"],["й","ј"],["Ы","И"],["ы","и"],["Э","Е"],["э","е"],
+    ["Ё","Јо"],["ё","јо"],["Ю","Ју"],["ю","ју"],["Я","Ја"],["я","ја"],
+    ["Щ","Шт"],["щ","шт"],["Ь",""],["ь",""],["Ъ","А"],["ъ","а"]
+  ]);
+  value=[...value].map(ch=>charMap.has(ch)?charMap.get(ch):ch).join("");
+  return value;
 }
 
 export function buildMacedonianRepairMessages({text,userText=""}={}){
