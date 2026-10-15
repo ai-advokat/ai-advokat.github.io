@@ -66,6 +66,7 @@ jobs:
           const EXPECTED_MODEL="@cf/openai/gpt-oss-20b";
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v2";
           const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V2";
+          const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
 
           async function waitForExpectedRuntime(){
             let last=null;
@@ -80,8 +81,9 @@ jobs:
                   && data?.ok===true
                   && caps.centralOperatingPrompt===EXPECTED_PROMPT
                   && caps.macedonianLanguageGuard===EXPECTED_LANGUAGE
+                  && caps.finalResponseQualityGate===EXPECTED_QUALITY
                   && caps.freeChatModel===EXPECTED_MODEL){
-                  console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.freeChatModel);
+                  console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel);
                   return;
                 }
               }catch(error){
