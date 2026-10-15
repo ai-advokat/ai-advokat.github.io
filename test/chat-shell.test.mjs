@@ -307,7 +307,8 @@ test("CHAT30 runtime status and network failures are fail-closed and user-visibl
   assert.match(chatJs,/runtime partial · recovery required/);
   assert.match(chatJs,/AI runtime · недостапен/);
   assert.match(chatJs,/Runtime\/API unavailable/);
-  assert.match(chatJs,/Барањето не е обработено/);
+  assert.match(chatJs,/Јавните правни извори и другите делови од порталот остануваат достапни/);
+  assert.match(chatJs,/Барањето не е изгубено/);
   assert.doesNotMatch(chatJs,/GPT-6\.1 Sol · LIVE governed/);
 });
 
