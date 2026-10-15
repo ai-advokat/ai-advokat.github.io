@@ -1121,16 +1121,16 @@ async function handleCaseWorkspaceApi(request,env,url){
         console.error("case_multipart_complete_failed",String(error?.message||error).slice(0,180));
         return json(request,{ok:false,error:"multipart_complete_failed"},503);
       }
-      const head=await env.CASE_FILES.head(session.storage_key);
+      const head=await caseObjectHead(env,session.storage_key);
       if(!head || Number(head.size)!==Number(session.expected_size)){
-        await env.CASE_FILES.delete(session.storage_key).catch(()=>{});
+        await caseObjectDelete(env,session.storage_key).catch(()=>{});
         await env.DB.prepare("UPDATE case_multipart_uploads SET state='failed',updated_at=? WHERE id=?").bind(new Date().toISOString(),sessionId).run().catch(()=>{});
         return json(request,{ok:false,error:"multipart_completed_object_size_mismatch"},500);
       }
-      const first=await env.CASE_FILES.get(session.storage_key,{range:{offset:0,length:16}});
+      const first=await caseObjectGet(env,session.storage_key,{range:{offset:0,length:16}});
       const firstBytes=first ? new Uint8Array(await first.arrayBuffer()) : new Uint8Array();
       if(!caseDocumentBytesMatchMime(firstBytes,session.mime_type)){
-        await env.CASE_FILES.delete(session.storage_key).catch(()=>{});
+        await caseObjectDelete(env,session.storage_key).catch(()=>{});
         const at=new Date().toISOString();
         await env.DB.batch([
           env.DB.prepare("UPDATE case_multipart_uploads SET state='failed',integrity_manifest_sha256=?,updated_at=? WHERE id=?").bind(manifestHash,at,sessionId),
@@ -1214,7 +1214,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
 
     try{
-      await env.CASE_FILES.put(storageKey,file.bytes,{
+      await caseObjectPut(env,storageKey,file.bytes,{
         httpMetadata:{contentType:metadata.value.mimeType},
         customMetadata:{caseId,documentId,sha256}
       });
@@ -1256,7 +1256,7 @@ async function handleCaseWorkspaceApi(request,env,url){
       ]);
     }catch(error){
       console.error("case_document_metadata_commit_failed",String(error?.message||error).slice(0,180));
-      await env.CASE_FILES.delete(storageKey).catch(()=>{});
+      await caseObjectDelete(env,storageKey).catch(()=>{});
       await env.DB.prepare("DELETE FROM case_document_slots WHERE id=? AND case_id=?")
         .bind(documentId,caseId).run().catch(()=>{});
       return json(request,{ok:false,error:"case_document_metadata_commit_failed"},500);
@@ -1299,7 +1299,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!row || row.storage_state==="deleted") return json(request,{ok:false,error:"case_document_not_found"},404);
     if(row.storage_state!=="uploaded") return json(request,{ok:false,error:"case_document_not_ready_for_extraction",storageState:row.storage_state},409);
 
-    const object=await env.CASE_FILES.get(row.storage_key);
+    const object=await caseObjectGet(env,row.storage_key);
     if(!object) return json(request,{ok:false,error:"case_document_storage_object_missing"},503);
     if(Number(object.size||0)>CASE_INTELLIGENCE_PROVIDER_MAX_BYTES){
       return json(request,{
@@ -1336,7 +1336,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     }));
     const derivedSha256=await sha256BytesHex(derivedBytes);
     try{
-      await env.CASE_FILES.put(derivedKey,derivedBytes,{
+      await caseObjectPut(env,derivedKey,derivedBytes,{
         httpMetadata:{contentType:"application/json"},
         customMetadata:{caseId,documentId,kind:"case_document_extraction_v1",derivedSha256}
       });
@@ -1346,7 +1346,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
 
     const at=new Date().toISOString();
-    await env.CASE_FILES.delete(`case-derived/v1/${caseId}/analysis/latest.md`).catch(()=>{});
+    await caseObjectDelete(env,`case-derived/v1/${caseId}/analysis/latest.md`).catch(()=>{});
     await env.DB.batch([
       env.DB.prepare(
         "UPDATE case_document_slots SET extraction_state='complete',updated_at=? WHERE id=? AND case_id=?"
@@ -1394,7 +1394,7 @@ async function handleCaseWorkspaceApi(request,env,url){
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
       if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
       if(row.storage_state!=="uploaded") return json(request,{ok:false,error:"case_document_not_available"},409);
-      const object=await env.CASE_FILES.get(row.storage_key);
+      const object=await caseObjectGet(env,row.storage_key);
       if(!object) return json(request,{ok:false,error:"case_document_storage_object_missing"},503);
       await recordCaseAudit(env,{
         caseId,accountId:membership.accountId,eventType:"document_downloaded",
@@ -1411,9 +1411,9 @@ async function handleCaseWorkspaceApi(request,env,url){
       if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_document_write_role_required"},403);
       if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
       if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
-      await env.CASE_FILES.delete(row.storage_key);
-      await env.CASE_FILES.delete(`case-derived/v1/${caseId}/${documentId}/extraction.json`).catch(()=>{});
-      await env.CASE_FILES.delete(`case-derived/v1/${caseId}/analysis/latest.md`).catch(()=>{});
+      await caseObjectDelete(env,row.storage_key);
+      await caseObjectDelete(env,`case-derived/v1/${caseId}/${documentId}/extraction.json`).catch(()=>{});
+      await caseObjectDelete(env,`case-derived/v1/${caseId}/analysis/latest.md`).catch(()=>{});
       const at=new Date().toISOString();
       await env.DB.batch([
         env.DB.prepare(
@@ -1451,7 +1451,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     ).bind(caseId).all();
     const rows=docs.results||[];
     const latestKey=`case-derived/v1/${caseId}/analysis/latest.md`;
-    const latest=caseWorkspaceStorageReady(env) ? await env.CASE_FILES.head(latestKey).catch(()=>null) : null;
+    const latest=caseWorkspaceStorageReady(env) ? await caseObjectHead(env,latestKey).catch(()=>null) : null;
     return json(request,{
       ok:true,
       caseId,
@@ -1505,7 +1505,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     let sourceBackedMaterialFacts=0;
     for(const doc of docs){
       const key=`case-derived/v1/${caseId}/${doc.id}/extraction.json`;
-      const object=await env.CASE_FILES.get(key);
+      const object=await caseObjectGet(env,key);
       if(!object) return json(request,{ok:false,error:"case_extraction_artifact_missing",documentId:doc.id},503);
       let packet;
       try{packet=JSON.parse(await object.text());}catch{return json(request,{ok:false,error:"case_extraction_artifact_invalid",documentId:doc.id},503);}
@@ -1599,7 +1599,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     const analysisKey=`case-derived/v1/${caseId}/analysis/latest.md`;
     const analysisBytes=new TextEncoder().encode(analysisText);
     const analysisSha256=await sha256BytesHex(analysisBytes);
-    await env.CASE_FILES.put(analysisKey,analysisBytes,{
+    await caseObjectPut(env,analysisKey,analysisBytes,{
       httpMetadata:{contentType:"text/markdown; charset=utf-8"},
       customMetadata:{caseId,kind:"case_intelligence_analysis_v1",analysisSha256,provider:analysisProvider}
     });
@@ -1659,7 +1659,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(instruction.length<3) return json(request,{ok:false,error:"case_intelligence_draft_instruction_required"},400);
 
     const analysisKey=`case-derived/v1/${caseId}/analysis/latest.md`;
-    const analysisObject=await env.CASE_FILES.get(analysisKey);
+    const analysisObject=await caseObjectGet(env,analysisKey);
     if(!analysisObject) return json(request,{ok:false,error:"case_intelligence_analysis_required"},409);
     const analysisText=await analysisObject.text();
 
@@ -1675,7 +1675,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
     const privateContexts=[];
     for(const doc of docs){
-      const object=await env.CASE_FILES.get(`case-derived/v1/${caseId}/${doc.id}/extraction.json`);
+      const object=await caseObjectGet(env,`case-derived/v1/${caseId}/${doc.id}/extraction.json`);
       if(!object) return json(request,{ok:false,error:"case_extraction_artifact_missing",documentId:doc.id},503);
       const packet=JSON.parse(await object.text());
       const extraction=packet?.extraction;
@@ -1764,7 +1764,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     const draftKey=`case-derived/v1/${caseId}/drafts/${draftId}.md`;
     const draftBytes=new TextEncoder().encode(draftText);
     const draftSha256=await sha256BytesHex(draftBytes);
-    await env.CASE_FILES.put(draftKey,draftBytes,{
+    await caseObjectPut(env,draftKey,draftBytes,{
       httpMetadata:{contentType:"text/markdown; charset=utf-8"},
       customMetadata:{caseId,draftId,draftType,kind:"case_working_draft_v1",draftSha256,provider:draftProvider}
     });
@@ -3352,7 +3352,7 @@ function caseD1FallbackReady(env){
 async function caseObjectPut(env,key,bytes,{httpMetadata={},customMetadata={}}={}){
   if(!(bytes instanceof Uint8Array)) bytes=new Uint8Array(bytes||[]);
   if(caseR2Ready(env)){
-    await env.CASE_FILES.put(key,bytes,{httpMetadata,customMetadata});
+    await caseObjectPut(env,key,bytes,{httpMetadata,customMetadata});
     return {backend:"r2",size:bytes.byteLength};
   }
   if(!caseD1FallbackReady(env)) throw new Error("private_case_storage_not_ready");
@@ -3383,8 +3383,8 @@ async function caseObjectPut(env,key,bytes,{httpMetadata={},customMetadata={}}={
   return {backend:"d1_fallback",size:bytes.byteLength};
 }
 
-async function caseObjectGet(env,key){
-  if(caseR2Ready(env)) return env.CASE_FILES.get(key);
+async function caseObjectGet(env,key,options={}){
+  if(caseR2Ready(env)) return env.CASE_FILES.get(key,options);
   if(!caseD1FallbackReady(env)) return null;
   const rows=await env.DB.prepare(
     "SELECT chunk_b64,byte_length,content_type,metadata_json FROM case_private_object_chunks WHERE object_key=? ORDER BY chunk_index"
@@ -3398,12 +3398,16 @@ async function caseObjectGet(env,key){
   let offset=0;
   for(const part of parts){bytes.set(part,offset);offset+=part.byteLength;}
   const contentType=String(items[0]?.content_type||"application/octet-stream");
+  const range=options?.range;
+  const view=range && Number.isInteger(Number(range.offset)) && Number.isInteger(Number(range.length))
+    ? bytes.subarray(Number(range.offset),Math.min(bytes.byteLength,Number(range.offset)+Number(range.length)))
+    : bytes;
   return {
-    size:bytes.byteLength,
-    body:bytes,
+    size:view.byteLength,
+    body:view,
     httpMetadata:{contentType},
-    async arrayBuffer(){return bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);},
-    async text(){return new TextDecoder().decode(bytes);}
+    async arrayBuffer(){return view.buffer.slice(view.byteOffset,view.byteOffset+view.byteLength);},
+    async text(){return new TextDecoder().decode(view);}
   };
 }
 
@@ -3419,7 +3423,7 @@ async function caseObjectHead(env,key){
 
 async function caseObjectDelete(env,key){
   if(caseR2Ready(env)){
-    await env.CASE_FILES.delete(key);
+    await caseObjectDelete(env,key);
     return;
   }
   if(caseD1FallbackReady(env)){
