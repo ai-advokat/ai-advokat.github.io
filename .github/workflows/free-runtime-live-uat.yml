@@ -1,0 +1,129 @@
+name: FREE runtime live UAT
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/free-runtime-live-uat.yml"
+      - "src/index.js"
+      - "src/workers-ai-provider.js"
+      - "wrangler.jsonc"
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/free-runtime-live-uat.yml"
+      - "src/index.js"
+      - "src/workers-ai-provider.js"
+      - "wrangler.jsonc"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: free-runtime-live-uat
+  cancel-in-progress: true
+
+jobs:
+  live-uat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build synthetic DOCX fixture
+        shell: bash
+        run: |
+          python3 <<'PY'
+          import zipfile
+          with zipfile.ZipFile('/tmp/ai-advokat-live-uat.docx','w',zipfile.ZIP_DEFLATED) as z:
+              z.writestr('[Content_Types].xml','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>''')
+              z.writestr('_rels/.rels','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>''')
+              z.writestr('word/_rels/document.xml.rels','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>''')
+              z.writestr('word/styles.xml','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>''')
+              z.writestr('word/document.xml','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>KORENSKIUAT2026</w:t></w:r></w:p><w:sectPr/></w:body></w:document>''')
+          PY
+
+      - name: Live Macedonian FREE chat and DOCX UAT
+        shell: bash
+        run: |
+          node <<'NODE'
+          (async()=>{
+          const fs=require("fs");
+          const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
+          const EXPECTED_MODEL="@cf/openai/gpt-oss-20b";
+
+          async function chat(payload,label){
+            const response=await fetch(BASE+"/api/chat",{
+              method:"POST",
+              headers:{"content-type":"application/json","accept":"application/json"},
+              body:JSON.stringify({
+                mode:"auto",
+                webSearch:false,
+                history:[],
+                guideIds:[],
+                attachments:[],
+                ...payload
+              })
+            });
+            const raw=await response.text();
+            let data=null;
+            try{data=JSON.parse(raw);}catch{}
+            if(!response.ok || !data?.ok){
+              throw new Error(label+" HTTP "+response.status+" "+raw.slice(0,1500));
+            }
+            if(data.provider!=="workers_ai_free"){
+              throw new Error(label+" unexpected provider "+String(data.provider));
+            }
+            if(data.model!==EXPECTED_MODEL){
+              throw new Error(label+" unexpected model "+String(data.model));
+            }
+            const answer=String(data.answer||"").trim();
+            if(answer.length<12){
+              throw new Error(label+" empty/too-short final answer "+JSON.stringify(data));
+            }
+            if(data.webSearchUsed!==false){
+              throw new Error(label+" incorrectly claimed web search");
+            }
+            return {answer,data};
+          }
+
+          const scenarios=[
+            ["basic","Одговори на македонски со една кратка реченица дека AI Advokat работи."],
+            ["reminder","Направи ми потсетник за лице што треба да оди во притов."],
+            ["draft","Напиши краток работен пример на поднесок со измислени имиња. Означи дека е потребна човечка проверка."]
+          ];
+
+          for(const [name,q] of scenarios){
+            const {answer}=await chat({q},name);
+            if(!/[\u0400-\u04FF]/u.test(answer)){
+              throw new Error(name+" final answer is not Macedonian/Cyrillic: "+answer.slice(0,500));
+            }
+            if(/^\s*(need answer|user wants|the user|we need|provide|must answer)\b/i.test(answer)){
+              throw new Error(name+" leaked internal planning text: "+answer.slice(0,500));
+            }
+            console.log(name+": PASS · "+answer.replace(/\s+/g," ").slice(0,120));
+          }
+
+          const b64=fs.readFileSync("/tmp/ai-advokat-live-uat.docx").toString("base64");
+          const {answer,data}=await chat({
+            q:"Прочитај го DOCX прилогот и врати ја точно алфанумеричката низа од телото на документот.",
+            attachments:[{
+              kind:"file",
+              name:"ai-advokat-live-uat.docx",
+              mime:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              base64:b64
+            }]
+          },"docx");
+          if(data.attachmentsUsed!==1 || data.convertedDocuments!==1){
+            throw new Error("DOCX conversion counters are wrong: "+JSON.stringify({attachmentsUsed:data.attachmentsUsed,convertedDocuments:data.convertedDocuments}));
+          }
+          if(!answer.toUpperCase().includes("KORENSKIUAT2026")){
+            throw new Error("DOCX content missing from final answer: "+answer.slice(0,1000));
+          }
+          console.log("docx: PASS");
+          console.log("FREE LIVE RUNTIME UAT: PASS");
+          })().catch(error=>{console.error(error);process.exit(1);});
+          NODE
