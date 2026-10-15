@@ -82,3 +82,20 @@ test("CIR6 extraction contract forbids unsupported factual completion",()=>{
   assert.match(domain,/accuracyClaimProhibited:true/);
   assert.match(domain,/syntheticAccuracyPercentage:null/);
 });
+
+
+test("CIR7 CasePilot has a private Workers AI fallback for extraction synthesis and drafting",()=>{
+  assert.match(worker,/runPrivateWorkersAIDocumentExtraction/);
+  assert.match(worker,/runPrivateWorkersAISynthesis/);
+  assert.match(worker,/workers_ai_private_case/);
+  assert.match(worker,/freeWorkersAIMarkdownConfigured/);
+  assert.match(worker,/freeWorkersAIConfigured/);
+  assert.match(worker,/CASE-SCOPED CONTEXT/);
+  assert.match(worker,/CURRENT-LAW VERIFICATION REQUIRED/);
+  assert.match(worker,/paidCaseProviderReady/);
+  assert.match(worker,/freeCaseProviderReady/);
+  assert.doesNotMatch(
+    worker.slice(worker.indexOf("async function runPrivateWorkersAISynthesis"),worker.indexOf("async function runPrivateCaseDocumentExtraction")),
+    /web_search|webSearchEnabled:true/
+  );
+});
