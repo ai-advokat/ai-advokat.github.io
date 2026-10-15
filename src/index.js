@@ -125,12 +125,17 @@ import {
   MACEDONIAN_2017_SYSTEM_RULES,
   assessMacedonianOutput,
   buildMacedonianRepairMessages,
+  normaliseMacedonianGeneratedText,
   shouldEnforceMacedonianOutput
 } from "./macedonian-language-guard.js";
 import {
   AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
   buildAIAdvokatCentralPrompt
 } from "./ai-advokat-central-prompt.js";
+import {
+  isFormalLegalDraftRequest,
+  finaliseFormalLegalDraft
+} from "./response-quality.js";
 
 const VERSION = "1.8.1";
 
@@ -4446,9 +4451,22 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
   }
 
+  let deterministicCleanupApplied=false;
+  if(!assessment.ok){
+    const deterministic=normaliseMacedonianGeneratedText(current||original);
+    const deterministicAssessment=assessMacedonianOutput(deterministic,{userText});
+    if(deterministic!==current){
+      current=deterministic;
+      deterministicCleanupApplied=true;
+    }
+    assessment=deterministicAssessment;
+    lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
+  }
+
   return {
     text:current||original,
     repaired:current!==original && assessment.ok,
+    deterministicCleanupApplied,
     providerCalls,
     languageAssessment:assessment,
     repairError:assessment.ok?null:(lastError||"macedonian_repair_still_noncompliant")
