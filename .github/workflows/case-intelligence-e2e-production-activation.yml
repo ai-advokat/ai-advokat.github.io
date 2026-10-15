@@ -1,0 +1,247 @@
+name: AI Advokat CasePilot end-to-end production activation
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type ACTIVATE_CASE_INTELLIGENCE_E2E"
+        required: true
+        type: string
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/case-intelligence-e2e-production-activation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-case-intelligence-e2e-production
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify bounded Human Gate authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            test "$CONFIRMATION" = "ACTIVATE_CASE_INTELLIGENCE_E2E"
+          fi
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          import {isGateApproved} from "./scripts/human-gate-ledger-validator.mjs";
+          const request=JSON.parse(fs.readFileSync(".github/activation/case-intelligence-e2e-production-request.json","utf8"));
+          if(request.decision_id!=="AI_ADVOKAT_CASE_INTELLIGENCE_E2E_V1_2026-10-15") throw new Error("Unexpected E2E decision");
+          if(request.activation_authorized!==true) throw new Error("E2E activation is not authorized");
+          if(request.private_document_upload_authorized!==true) throw new Error("Private upload not authorized");
+          if(request.private_object_storage_activation_authorized!==true) throw new Error("R2 not authorized");
+          if(request.private_case_ai_execution_authorized!==true) throw new Error("Private AI not authorized");
+          if(request.whole_case_analysis_authorized!==true || request.legal_draft_generation_authorized!==true) throw new Error("Analysis/draft not authorized");
+          if(request.autonomous_filing_authorized!==false || request.autonomous_signature_authorized!==false || request.autonomous_external_transmission_authorized!==false) throw new Error("Autonomous legal action boundary changed");
+          if(request.public_corpus_promotion_authorized!==false || request.human_gate_required!==true) throw new Error("Corpus/Human Gate boundary changed");
+          const ledger=JSON.parse(fs.readFileSync("data/human-gate-decision-ledger.json","utf8"));
+          const query={
+            subject_id:"case-intelligence-e2e-v1-2026-10-15",
+            artifact_version:request.decision_id,
+            artifact_fingerprint:{request_git_blob_sha:"55718d534169d349c16ae15426a04f8d25edf866"}
+          };
+          for(const gate of ["github_merge","provider_activation","production_runtime_deploy"]){
+            if(!isGateApproved(ledger.initial_records,{...query,gate_type:gate})) throw new Error("Human Gate not approved: "+gate);
+          }
+          for(const gate of ["production_corpus_write","corpus_promotion","rag_eligibility"]){
+            if(isGateApproved(ledger.initial_records,{...query,gate_type:gate})) throw new Error("Forbidden gate unexpectedly approved: "+gate);
+          }
+          console.log("CASE INTELLIGENCE E2E HUMAN GATE: PASS");
+          NODE
+
+      - name: Verify runtime and regression suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/index.js
+          node --check assets/casepilot-workspace-ui.js
+          npm run verify
+          npm run test:case-workspace
+          npm run test:casepilot-workspace-ui
+          npm run test:case-intelligence
+          npm run test:gpt-activation
+
+      - name: Verify canonical production bindings
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const r=c.r2_buckets?.find(x=>x.binding==="CASE_FILES");
+          if(!r || r.bucket_name!=="ai-advokat-case-files" || r.preview_bucket_name!=="ai-advokat-case-files-staging") throw new Error("CASE_FILES binding mismatch");
+          if(c.ai?.binding!=="AI") throw new Error("Workers AI binding missing");
+          if(c.vars?.FREE_CHAT_PROVIDER!=="workers_ai") throw new Error("Workers AI fallback not armed");
+          if(c.vars?.CASE_WORKSPACE_ENABLED!=="true") throw new Error("Case Workspace not armed");
+          console.log("PRODUCTION BINDINGS: PASS");
+          NODE
+
+      - name: Ensure private R2 buckets exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler r2 bucket list --config wrangler.jsonc | tee /tmp/r2-list.txt
+          grep -Fq "ai-advokat-case-files" /tmp/r2-list.txt || npx wrangler r2 bucket create ai-advokat-case-files --config wrangler.jsonc
+          grep -Fq "ai-advokat-case-files-staging" /tmp/r2-list.txt || npx wrangler r2 bucket create ai-advokat-case-files-staging --config wrangler.jsonc
+
+      - name: Verify required case schema is already present
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('case_workspaces','case_workspace_access','case_document_slots','case_audit_events','case_multipart_uploads') ORDER BY name;" | tee /tmp/case-schema.txt
+          for t in case_workspaces case_workspace_access case_document_slots case_audit_events case_multipart_uploads; do
+            grep -q "\"name\": \"$t\"" /tmp/case-schema.txt
+          done
+          echo "CASE SCHEMA: PASS"
+
+      - name: Deploy Worker with private storage and Workers AI fallback
+        run: npx wrangler deploy --keep-vars --config wrangler.jsonc | tee /tmp/case-e2e-deploy.txt
+
+      - name: Verify live capabilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          for attempt in $(seq 1 20); do
+            curl --fail --silent --show-error "$BASE/api/capabilities" -o /tmp/capabilities.json || true
+            if node <<'NODE'
+          const d=require("/tmp/capabilities.json");
+          if(!d.ok) process.exit(1);
+          if(d.capabilities?.caseWorkspace!=="workspace_and_storage_ready") process.exit(1);
+          if(d.capabilities?.documentUpload!=="case_scoped_storage_ready_ingestion_gate_required") process.exit(1);
+          NODE
+            then break; fi
+            sleep 3
+          done
+          node -e 'const d=require("/tmp/capabilities.json"); if(d.capabilities?.caseWorkspace!=="workspace_and_storage_ready") process.exit(2); console.log("LIVE CASE CAPABILITIES: PASS")'
+
+      - name: Provision ephemeral synthetic office account
+        shell: bash
+        run: |
+          set -euo pipefail
+          UAT_ACCOUNT_ID="case-e2e-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_ENTITLEMENT_ID="case-e2e-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_KEY_ID="case-e2e-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_KEY="casee2e_$(openssl rand -hex 24)"
+          UAT_KEY_HASH="$(printf '%s' "$UAT_KEY" | sha256sum | awk '{print $1}')"
+          UAT_KEY_PREFIX="${UAT_KEY:0:12}"
+          echo "::add-mask::$UAT_KEY"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            INSERT INTO membership_accounts(id,display_name,status) VALUES ('$UAT_ACCOUNT_ID','AI Advokat Case E2E Synthetic','active');
+            INSERT INTO membership_entitlements(id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+            VALUES ('$UAT_ENTITLEMENT_ID','$UAT_ACCOUNT_ID','office','active','manual',50,1,0,datetime('now','+2 hours'));
+            INSERT INTO membership_access_keys(id,account_id,key_hash,key_prefix,label,status,expires_at)
+            VALUES ('$UAT_KEY_ID','$UAT_ACCOUNT_ID','$UAT_KEY_HASH','$UAT_KEY_PREFIX','case e2e synthetic','active',datetime('now','+2 hours'));
+          "
+          echo "UAT_ACCOUNT_ID=$UAT_ACCOUNT_ID" >> "$GITHUB_ENV"
+          echo "CASE_E2E_KEY=$UAT_KEY" >> "$GITHUB_ENV"
+
+      - name: Create synthetic DOCX
+        shell: bash
+        run: |
+          python3 <<'PY'
+          import zipfile
+          body="SYNTHETIC CASE ONLY. Тужител: Александар Тестов. Тужен: Борис Примеров. На 10.10.2026 странките склучиле писмен договор за исплата на 1000 денари до 12.10.2026. Во синтетичкиот пример исплатата не е извршена до 14.10.2026. Ова не е реален предмет."
+          with zipfile.ZipFile('/tmp/case-e2e.docx','w',zipfile.ZIP_DEFLATED) as z:
+              z.writestr('[Content_Types].xml','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>''')
+              z.writestr('_rels/.rels','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>''')
+              z.writestr('word/document.xml',f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>{body}</w:t></w:r></w:p><w:sectPr/></w:body></w:document>''')
+          PY
+          test -s /tmp/case-e2e.docx
+
+      - name: Live upload extract analyze and lawsuit draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          test -n "${CASE_E2E_KEY:-}"
+
+          curl --fail --silent --show-error -H "Authorization: Bearer $CASE_E2E_KEY" -H "Content-Type: application/json"             --data '{"title":"Синтетички E2E предмет","clientReference":"CASE-E2E","legalArea":"облигационо право"}'             "$BASE/api/cases" -o /tmp/case-created.json
+          CASE_ID="$(node -e 'const d=require("/tmp/case-created.json"); if(!d.case?.id) process.exit(2); process.stdout.write(d.case.id)')"
+          echo "CASE_E2E_CASE_ID=$CASE_ID" >> "$GITHUB_ENV"
+
+          upload_code="$(curl --silent --show-error --output /tmp/case-upload.json --write-out '%{http_code}'             -H "Authorization: Bearer $CASE_E2E_KEY"             -H "Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document"             -H "X-File-Name: case-e2e.docx"             --data-binary @/tmp/case-e2e.docx             "$BASE/api/cases/$CASE_ID/documents/upload")"
+          test "$upload_code" = "201"
+          DOC_ID="$(node -e 'const d=require("/tmp/case-upload.json"); if(!d.document?.id) process.exit(2); process.stdout.write(d.document.id)')"
+          echo "CASE_E2E_DOC_ID=$DOC_ID" >> "$GITHUB_ENV"
+
+          curl --fail --silent --show-error -H "Authorization: Bearer $CASE_E2E_KEY" -H "Content-Type: application/json"             -d '{}' "$BASE/api/cases/$CASE_ID/documents/$DOC_ID/extract" -o /tmp/case-extract.json
+          node -e 'const d=require("/tmp/case-extract.json"); if(!d.ok||d.extractionState!=="complete"||!d.extraction?.summary) throw new Error(JSON.stringify(d)); console.log("LIVE DOCUMENT EXTRACTION: PASS")'
+
+          curl --fail --silent --show-error -H "Authorization: Bearer $CASE_E2E_KEY" -H "Content-Type: application/json"             -d '{}' "$BASE/api/cases/$CASE_ID/intelligence/analyze" -o /tmp/case-analysis.json
+          node -e 'const d=require("/tmp/case-analysis.json"); if(!d.ok||String(d.analysis||"").length<200) throw new Error(JSON.stringify(d)); if(!String(d.analysis).includes("HUMAN GATE")) throw new Error("analysis banner missing"); console.log("LIVE WHOLE-CASE ANALYSIS: PASS · "+d.provider)'
+
+          curl --fail --silent --show-error -H "Authorization: Bearer $CASE_E2E_KEY" -H "Content-Type: application/json"             --data '{"draftType":"lawsuit","instruction":"Подготви целосен синтетички нацрт на тужба само врз приложениот документ. Сите непотврдени правни елементи означи ги за проверка."}'             "$BASE/api/cases/$CASE_ID/intelligence/draft" -o /tmp/case-draft.json
+          node -e 'const d=require("/tmp/case-draft.json"); if(!d.ok||d.draftType!=="lawsuit"||String(d.draft||"").length<300) throw new Error(JSON.stringify(d)); if(!String(d.draft).includes("HUMAN GATE")) throw new Error("draft banner missing"); if(d.filing!=="forbidden"||d.signature!=="forbidden"||d.externalTransmission!=="forbidden") throw new Error("autonomous action boundary failed"); console.log("LIVE LAWSUIT WORKING DRAFT: PASS · "+d.provider)'
+
+      - name: Cleanup synthetic E2E case
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          if [ -n "${CASE_E2E_KEY:-}" ] && [ -n "${CASE_E2E_CASE_ID:-}" ] && [ -n "${CASE_E2E_DOC_ID:-}" ]; then
+            curl --silent --show-error -X DELETE -H "Authorization: Bearer $CASE_E2E_KEY"               "$BASE/api/cases/$CASE_E2E_CASE_ID/documents/$CASE_E2E_DOC_ID" >/tmp/case-delete.json
+          fi
+          if [ -n "${CASE_E2E_CASE_ID:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM case_audit_events WHERE case_id='$CASE_E2E_CASE_ID';
+              DELETE FROM casepilot_authority_classifications WHERE case_id='$CASE_E2E_CASE_ID';
+              DELETE FROM case_document_slots WHERE case_id='$CASE_E2E_CASE_ID';
+              DELETE FROM case_workspace_access WHERE case_id='$CASE_E2E_CASE_ID';
+              DELETE FROM case_workspaces WHERE id='$CASE_E2E_CASE_ID';
+            " || true
+          fi
+          if [ -n "${UAT_ACCOUNT_ID:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_access_keys WHERE account_id='$UAT_ACCOUNT_ID';
+              DELETE FROM membership_entitlements WHERE account_id='$UAT_ACCOUNT_ID';
+              DELETE FROM membership_accounts WHERE id='$UAT_ACCOUNT_ID';
+            " || true
+          fi
+          echo "E2E cleanup complete."
+
+      - name: Upload non-secret activation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-case-intelligence-e2e
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/r2-list.txt
+            /tmp/case-schema.txt
+            /tmp/case-e2e-deploy.txt
+            /tmp/capabilities.json
+            /tmp/case-upload.json
+            /tmp/case-extract.json
+            /tmp/case-analysis.json
+            /tmp/case-draft.json
