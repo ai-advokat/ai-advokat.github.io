@@ -4809,7 +4809,8 @@ async function handleGPTChat(request,env){
         message:"FREE Workers AI не успеа да го обработи барањето или документите. Квотата не е потрошена; обидете се повторно или намалете/поделете ги прилозите.",
         problems:freeResult.problems||null,
         failureDetail:freeResult.detail||null,
-        model:String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),
+        model:freeResult.model||resolveWorkersAITextModel(env),
+        providerShape:freeResult.providerShape||null,
         runtime:{provider:"workers_ai_free",documentConversion:freeWorkersAIMarkdownConfigured(env)?"configured":"locked"}
       },503);
     }
@@ -5286,19 +5287,20 @@ async function handleAssistant(request, env, url) {
   if(env.AI){
     let generated;
     let providerFailed=false;
-    try{
-      generated=await env.AI.run("@cf/zai-org/glm-4.7-flash",{
-        messages:[
-          {role:"system",content:ASSISTANT_SYSTEM_RULES},
-          {role:"user",content:buildAssistantUserMessage(q,instrument,articles,version)}
-        ],
-        max_tokens:1400,
-        temperature:0.1
-      });
-    }catch(error){
+    const providerResult=await runWorkersAIText(env,{
+      messages:[
+        {role:"system",content:ASSISTANT_SYSTEM_RULES},
+        {role:"user",content:buildAssistantUserMessage(q,instrument,articles,version)}
+      ],
+      maxOutputTokens:1400,
+      temperature:0.1
+    });
+    if(!providerResult.ok){
       providerFailed=true;
-      aiError=String(error?.message || error || "workers_ai_error").slice(0,240);
-      console.error("workers_ai_generation_failed",aiError);
+      aiError=String(providerResult.error||"workers_ai_error")+":"+String(providerResult.detail||JSON.stringify(providerResult.shape||{})).slice(0,240);
+      console.error("workers_ai_generation_failed",providerResult.model||resolveWorkersAITextModel(env),aiError);
+    }else{
+      generated=providerResult.text;
     }
 
     if(providerFailed){
@@ -5306,9 +5308,9 @@ async function handleAssistant(request, env, url) {
       await releaseMonthlyQuota(env,{subject,period});
       reservation.used=Math.max(0,reservation.used-1);
     }else{
-      const candidate=extractModelText(generated);
+      const candidate=String(generated||"").trim();
       if(!candidate){
-        aiError="empty_model_response:"+JSON.stringify(modelShapeSummary(generated));
+        aiError="empty_model_response_after_provider_contract";
       }else{
         const check=validateAnswerCitations(candidate,articles);
         if(check.ok){
