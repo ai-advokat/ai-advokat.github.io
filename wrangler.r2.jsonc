@@ -1,0 +1,57 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ai-advokat-github-io",
+  "main": "./src/index.js",
+  "compatibility_date": "2026-09-26",
+  "preview_urls": true,
+  "vars": {
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFKQHY3Quvb_8JqH",
+    "OPENAI_MODEL": "gpt-6.1-sol",
+    "OPENAI_REASONING_EFFORT": "medium",
+    "OPENAI_ORCHESTRATOR_ENABLED": "true",
+    "OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED": "true",
+    "OPENAI_FILE_INPUT_ENABLED": "true",
+    "OPENAI_PROVIDER_ACTIVATION_STATE": "optional_paid_provider_free_workers_ai_primary",
+    "LIOE_RUNTIME_GOVERNANCE_ENABLED": "true",
+    "LIOE_POSTFLIGHT_ENABLED": "true",
+    "LIOE_RUNTIME_TELEMETRY_ENABLED": "true",
+    "LIOE_SPECIALIST_EXECUTION_ENABLED": "true",
+    "CASE_WORKSPACE_ENABLED": "true",
+    "CASE_D1_FALLBACK_ENABLED": "true",
+    "FREE_CHAT_PROVIDER": "workers_ai",
+    "WORKERS_AI_CHAT_MODEL": "@cf/zai-org/glm-4.7-flash",
+    "WORKERS_AI_MARKDOWN_ENABLED": "true"
+  },
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ai-advokat-db",
+      "database_id": "12ece285-74bb-4f27-a025-2dbd1be6c59a",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "previews": {
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "ai-advokat-db-staging",
+        "database_id": "eb560e98-9fc0-408e-9c81-9b823ffde44d"
+      }
+    ]
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "r2_buckets": [
+    {
+      "binding": "CASE_FILES",
+      "bucket_name": "ai-advokat-case-files",
+      "preview_bucket_name": "ai-advokat-case-files-staging"
+    }
+  ]
+}
