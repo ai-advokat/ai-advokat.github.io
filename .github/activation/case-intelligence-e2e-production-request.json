@@ -1,0 +1,37 @@
+{
+  "decision_id": "AI_ADVOKAT_CASE_INTELLIGENCE_E2E_V1_2026-10-15",
+  "runtime_version": "case-intelligence-e2e-1.0.0",
+  "activation_authorized": true,
+  "authorized_on": "2026-10-15",
+  "authorized_by_role": "project_lead",
+  "evidence_text": "БОТОТ ДРУГАР НЕ Е ФУНКЦИОНАЛЕН, НЕ ОДГОВАРА, НЕ АНАЛИЗИРА, НЕ СИНТЕЗИРА, НЕ ПРАВИ ОД УБАЦЕНИ ПРЕДМЕТИ ТУЖБА И ОСТАНАТИ ДОКУМЕНТИ, НЕ ПРИМА ДОКУМЕНТИ.",
+  "authorized_gates": [
+    "github_merge",
+    "provider_activation",
+    "production_runtime_deploy"
+  ],
+  "private_document_upload_authorized": true,
+  "private_object_storage_activation_authorized": true,
+  "private_case_ai_execution_authorized": true,
+  "provider_mode": "workers_ai_private_case_with_optional_openai_private_case",
+  "document_intake_authorized": true,
+  "whole_case_analysis_authorized": true,
+  "legal_draft_generation_authorized": true,
+  "supported_draft_types": [
+    "lawsuit",
+    "appeal",
+    "objection",
+    "motion",
+    "request",
+    "legal_opinion",
+    "hearing_plan",
+    "evidence_request",
+    "registry_request"
+  ],
+  "public_corpus_promotion_authorized": false,
+  "autonomous_filing_authorized": false,
+  "autonomous_signature_authorized": false,
+  "autonomous_external_transmission_authorized": false,
+  "human_gate_required": true,
+  "note": "Authorizes private CasePilot document storage, intake, analysis, synthesis and working-draft generation. It does not authorize autonomous filing, signature, external transmission, public corpus promotion or final professional release without Human Gate."
+}
