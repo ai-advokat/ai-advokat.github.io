@@ -3,10 +3,16 @@
 // Reasoning fields are intentionally never surfaced as user-visible answer text.
 
 export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/openai/gpt-oss-20b";
+export const WORKERS_AI_REPAIR_MODEL_DEFAULT="@cf/qwen/qwen3-30b-a3b-fp8";
 
 export function resolveWorkersAITextModel(env){
   const model=String(env?.WORKERS_AI_CHAT_MODEL||WORKERS_AI_TEXT_MODEL_DEFAULT).trim();
   return model||WORKERS_AI_TEXT_MODEL_DEFAULT;
+}
+
+export function resolveWorkersAIRepairModel(env){
+  const model=String(env?.WORKERS_AI_REPAIR_MODEL||WORKERS_AI_REPAIR_MODEL_DEFAULT).trim();
+  return model||WORKERS_AI_REPAIR_MODEL_DEFAULT;
 }
 
 export function workersAIRequestOptions({
