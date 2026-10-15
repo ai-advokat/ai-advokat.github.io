@@ -179,6 +179,21 @@
     head.append(who,meta);
     const content=document.createElement("div");content.className="ai-msg-content";content.textContent=m.text||"";
     body.append(head,content);
+    let evidenceDetails=null;
+    let evidenceBody=null;
+    const appendEvidence=node=>{
+      if(!evidenceDetails){
+        evidenceDetails=document.createElement("details");
+        evidenceDetails.className="ai-msg-evidence";
+        const summary=document.createElement("summary");
+        summary.textContent="Извори и проверка";
+        evidenceBody=document.createElement("div");
+        evidenceBody.className="ai-msg-evidence-body";
+        evidenceDetails.append(summary,evidenceBody);
+        body.append(evidenceDetails);
+      }
+      evidenceBody.append(node);
+    };
 
     if(m.action && typeof m.action==="object"){
       const href=String(m.action.href||"");
@@ -229,7 +244,7 @@
         const a=document.createElement("a");a.className="btn light";a.href=g.url;a.textContent="Отвори →";
         card.append(text,a);grid.append(card);
       });
-      body.append(grid);
+      appendEvidence(grid);
     }
     if(m.governance){
       const box=document.createElement("div");box.className="ai-msg-source";
@@ -256,7 +271,7 @@
         specialists.textContent="Bounded specialists: "+(agents.length?agents.join(", "):"executed");
         box.append(specialists);
       }
-      body.append(box);
+      appendEvidence(box);
     }
     if(m.sourceLabel){
       const source=document.createElement("div");source.className="ai-msg-source";source.textContent=m.sourceLabel;body.append(source);
@@ -275,7 +290,7 @@
           const span=document.createElement("span");span.textContent=labelText;legalLinks.append(span);
         }
       });
-      if(legalLinks.childElementCount){legalBox.append(legalLinks);body.append(legalBox);}
+      if(legalLinks.childElementCount){legalBox.append(legalLinks);appendEvidence(legalBox);}
     }
     if(Array.isArray(m.caseLawSources) && m.caseLawSources.length){
       const caseBox=document.createElement("div");caseBox.className="ai-msg-source";
@@ -291,7 +306,7 @@
           const span=document.createElement("span");span.textContent=labelText;caseLinks.append(span);
         }
       });
-      if(caseLinks.childElementCount){caseBox.append(caseLinks);body.append(caseBox);}
+      if(caseLinks.childElementCount){caseBox.append(caseLinks);appendEvidence(caseBox);}
     }
     if(Array.isArray(m.guideSources) && m.guideSources.length){
       const guideBox=document.createElement("div");guideBox.className="ai-msg-source";
@@ -307,7 +322,7 @@
           const span=document.createElement("span");span.textContent=labelText;guideLinks.append(span);
         }
       });
-      if(guideLinks.childElementCount){guideBox.append(guideLinks);body.append(guideBox);}
+      if(guideLinks.childElementCount){guideBox.append(guideLinks);appendEvidence(guideBox);}
     }
     if(Array.isArray(m.sources) && m.sources.length){
       const sourceBox=document.createElement("div");sourceBox.className="ai-msg-source";
@@ -322,7 +337,7 @@
         a.textContent=(s?.title||("Извор "+(i+1))).slice(0,90);
         links.append(a);
       });
-      if(links.childElementCount){sourceBox.append(links);body.append(sourceBox);}
+      if(links.childElementCount){sourceBox.append(links);appendEvidence(sourceBox);}
     }
     const tools=document.createElement("div");tools.className="ai-msg-tools";
     const copy=document.createElement("button");copy.type="button";copy.textContent="Копирај";
