@@ -64,7 +64,7 @@ jobs:
           const fs=require("fs");
           const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
           const EXPECTED_MODEL="@cf/openai/gpt-oss-20b";
-          const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v4";
+          const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v5";
           const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V4";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
 
