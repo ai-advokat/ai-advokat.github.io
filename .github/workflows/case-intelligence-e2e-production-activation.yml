@@ -1,5 +1,5 @@
 name: AI Advokat CasePilot end-to-end production activation
-# retrigger: security-green-2026-10-15
+# retrigger: human-gate-sha-fix-2026-10-15
 
 on:
   workflow_dispatch:
