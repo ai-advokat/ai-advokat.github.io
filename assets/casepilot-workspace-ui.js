@@ -484,6 +484,35 @@ $("refreshDocuments").addEventListener("click",async()=>{
   try{await loadDocuments();}finally{$("refreshDocuments").disabled=false;}
 });
 
+async function extractPendingCaseDocuments(){
+  if(!activeCaseId || !accessKey) return {extracted:0,failed:[]};
+  await loadDocuments();
+  const active=currentDocuments.filter(row=>String(row.storage_state||"")!=="deleted");
+  let extracted=0;
+  const failed=[];
+  for(let i=0;i<active.length;i++){
+    const row=active[i];
+    if(String(row.extraction_state||"")==="complete") continue;
+    if(String(row.storage_state||"")!=="uploaded"){
+      failed.push({
+        id:row.id,
+        name:row.original_name,
+        error:"storage_state_"+String(row.storage_state||"not_ready")
+      });
+      continue;
+    }
+    $("documentStatus").textContent="AI intake "+(i+1)+"/"+active.length+": "+String(row.original_name||row.id)+"…";
+    try{
+      await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/"+encodeURIComponent(row.id)+"/extract",{method:"POST",body:{}});
+      extracted++;
+    }catch(error){
+      failed.push({id:row.id,name:row.original_name,error:String(error?.message||error)});
+    }
+  }
+  await loadDocuments();
+  return {extracted,failed};
+}
+
 async function loadIntelligenceReadiness(){
   if(!activeCaseId || !accessKey) return null;
   const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence");
@@ -525,25 +554,11 @@ $("analyzeEntireCase").addEventListener("click",async()=>{
     await loadDocuments();
     const active=currentDocuments.filter(row=>String(row.storage_state||"")!=="deleted");
     if(!active.length) throw new Error("Нема документи за анализа.");
-
-    for(let i=0;i<active.length;i++){
-      const row=active[i];
-      if(String(row.extraction_state||"")==="complete") continue;
-      if(String(row.storage_state||"")!=="uploaded"){
-        throw new Error("Документот „"+String(row.original_name||row.id)+"“ е "+String(row.storage_state||"not ready")+". Големите/quarantined документи мора прво да поминат partitioned extraction.");
-      }
-      $("intelligenceStatus").textContent="Document Intelligence "+(i+1)+"/"+active.length+": "+String(row.original_name||row.id)+"…";
-      try{
-        await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/"+encodeURIComponent(row.id)+"/extract",{method:"POST",body:{}});
-      }catch(error){
-        if(error.code==="case_document_partitioning_required"){
-          throw new Error("Документот „"+String(row.original_name||row.id)+"“ е преголем за single-document analysis и бара partitioned extraction.");
-        }
-        throw error;
-      }
+    const intake=await extractPendingCaseDocuments();
+    if(intake.failed.length){
+      throw new Error("AI intake не е завршен: "+intake.failed.map(x=>String(x.name||x.id)+": "+x.error).join(" | "));
     }
-
-    $("intelligenceStatus").textContent="Сите достапни документи се извлечени. Се гради evidence graph и правна анализа…";
+    $("intelligenceStatus").textContent="Сите документи се извлечени. Се гради evidence graph, хронологија, контрадикции и правна анализа…";
     const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence/analyze",{method:"POST",body:{}});
     $("caseIntelligenceResult").textContent=String(data.analysis||"");
     $("caseIntelligenceResult").hidden=false;
@@ -578,8 +593,26 @@ $("prepareCaseDraft").addEventListener("click",async()=>{
   }
   $("prepareCaseDraft").disabled=true;
   $("caseDraftResult").hidden=true;
-  $("caseDraftStatus").textContent="Се подготвува governed WORKING DRAFT…";
+  $("caseDraftStatus").textContent="Се проверуваат документите и анализата на предметот…";
   try{
+    await loadDocuments();
+    const active=currentDocuments.filter(row=>String(row.storage_state||"")!=="deleted");
+    if(!active.length) throw new Error("Нема документи од кои може да се подготви поднесок.");
+
+    const intake=await extractPendingCaseDocuments();
+    if(intake.failed.length){
+      throw new Error("AI intake не е завршен: "+intake.failed.map(x=>String(x.name||x.id)+": "+x.error).join(" | "));
+    }
+
+    let readiness=await loadIntelligenceReadiness();
+    if(!readiness?.latestAnalysisAvailable){
+      $("caseDraftStatus").textContent="Се анализира целиот предмет пред изработка на документот…";
+      await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence/analyze",{method:"POST",body:{}});
+      readiness=await loadIntelligenceReadiness();
+      if(!readiness?.latestAnalysisAvailable) throw new Error("case_intelligence_analysis_required");
+    }
+
+    $("caseDraftStatus").textContent="Се синтетизира governed WORKING DRAFT врз целиот предмет…";
     const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence/draft",{
       method:"POST",
       body:{draftType,instruction}
@@ -713,7 +746,14 @@ $("uploadCaseFile").addEventListener("click",async()=>{
     $("caseFileInput").value="";
     $("caseFilePages").value="";
     $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
-    $("documentStatus").textContent=uploaded+" датотек(и) се зачувани приватно. SHA-256 е пресметан server-side; AI ingestion останува посебно governed.";
+    $("documentStatus").textContent=uploaded+" датотек(и) се зачувани приватно. Започнува AI intake…";
+    await loadDocuments();
+    const intake=await extractPendingCaseDocuments();
+    if(intake.failed.length){
+      $("documentStatus").textContent="Документите се зачувани. AI intake: "+intake.extracted+" успешно, "+intake.failed.length+" бараат дополнителна обработка. "+intake.failed.map(x=>String(x.name||x.id)+": "+x.error).join(" | ");
+    }else{
+      $("documentStatus").textContent=uploaded+" документ(и) се зачувани и прочитани. Подготвени се за анализа и синтеза.";
+    }
     await openCaseById(activeCaseId);
   }catch(error){
     $("documentStatus").textContent="Upload прекинат по "+uploaded+" успешни датотеки: "+String(error?.message||error);
