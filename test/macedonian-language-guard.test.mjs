@@ -47,3 +47,15 @@ test("repair pass is source-preserving and non-expansive by contract",()=>{
   assert.match(messages[0].content,/Do not add new facts, laws, citations, deadlines, legal effects or recommendations/);
   assert.match(messages[0].content,/Return only the corrected answer/);
 });
+
+
+test("repair prompt contains Macedonian-native quality instructions",()=>{
+  const messages=buildMacedonianRepairMessages({
+    text:"пријстак приетување притбор",
+    userText:"Направи потсетник на македонски."
+  });
+  assert.match(messages[0].content,/МАКЕДОНСКА ЈАЗИЧНА РЕДАКЦИЈА/);
+  assert.match(messages[0].content,/не создавај непостоечки македонски зборови/i);
+  assert.match(messages[0].content,/постапка, поднесување, барање, решение, притвор/);
+  assert.match(messages[0].content,/немакедонски кирилични букви/i);
+});
