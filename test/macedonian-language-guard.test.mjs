@@ -13,6 +13,8 @@ test("runtime contract is explicitly anchored to the 2017 Macedonian orthography
   assert.match(MACEDONIAN_LANGUAGE_STANDARD_VERSION,/2017/);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/2017/);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/standard literary Macedonian/i);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/PRIORITY 0/);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/must not be shown to the user/);
 });
 
 test("Macedonian questions activate the language gate",()=>{
@@ -84,4 +86,13 @@ test("deterministic last-mile cleanup converts reported Bulgarian and Serbian le
 test("deterministic cleanup removes remaining non-Macedonian Cyrillic letters",()=>{
   const clean=normaliseMacedonianGeneratedText("Трябва да се провери съдът и ответникът.");
   assert.doesNotMatch(clean,/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/u);
+});
+
+
+test("expanded Bulgarian and Russian contamination is rejected and normalised",()=>{
+  const bad="Моля, настоящият документ съдържа информация и трябва да се провери. Данные должен да се приложат.";
+  const check=assessMacedonianOutput(bad,{userText:"Одговори на литературен македонски."});
+  assert.equal(check.ok,false);
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.doesNotMatch(clean,/\b(моля|настоящият|информация|трябва|данные|должен)\b/iu);
 });
