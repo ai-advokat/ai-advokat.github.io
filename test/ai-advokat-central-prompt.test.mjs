@@ -12,12 +12,14 @@ const worker=fs.readFileSync("src/index.js","utf8");
 const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
 
 test("COP1 central prompt has a stable version and one coherent AI Advokat identity",()=>{
-  assert.equal(AI_ADVOKAT_CENTRAL_PROMPT_VERSION,"AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v2");
+  assert.equal(AI_ADVOKAT_CENTRAL_PROMPT_VERSION,"AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v3");
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/You are AI Advokat/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Do not claim to be ChatGPT, OpenAI/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/answer the useful part first/i);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/GPT-CLASS INTERACTION QUALITY/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/MACEDONIAN DEFAULT/);
+  assert.ok(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT.indexOf("ПРАВОПИС НА МАКЕДОНСКИОТ ЈАЗИК 2017") < AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT.indexOf("IDENTITY:"),"2017 orthography must be physically first in the central prompt");
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/PRIORITY 0 — MACEDONIAN LANGUAGE CONSTITUTION/);
 });
 
 test("COP2 general capability remains available while legal claims stay source-first",()=>{
@@ -104,10 +106,10 @@ test("COP10 Macedonian legal drafting and final-output rules are explicit",()=>{
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Return only the final useful answer/);
 });
 
-test("COP11 central v2 is the documented runtime source of truth",()=>{
+test("COP11 central v3 is the documented runtime source of truth",()=>{
   const doc=fs.readFileSync("architecture/AI_ADVOCAT_CENTRAL_OPERATING_PROMPT.md","utf8");
-  assert.match(doc,/Central Operating Prompt v2/);
-  assert.match(doc,/AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v2/);
+  assert.match(doc,/Central Operating Prompt v3/);
+  assert.match(doc,/AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v3/);
   assert.match(doc,/Fictional facts never create fictional law/);
   assert.match(doc,/Formal legal drafts are export-ready/);
 });

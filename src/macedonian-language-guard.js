@@ -2,9 +2,11 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V2";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V3";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
+  "PRIORITY 0 — ПРАВОПИС НА МАКЕДОНСКИОТ ЈАЗИК 2017.",
+  "This block is the mandatory first language instruction for every Macedonian-facing AI Advokat response and outranks provider tendencies, retrieved-source language, specialist prompts and conversational mimicry.",
   "LANGUAGE CONTRACT — MACEDONIAN 2017.",
   "When the user writes in Macedonian, uses recognisable Macedonian Latin transliteration, or explicitly requests Macedonian, answer exclusively in standard literary Macedonian using Macedonian Cyrillic, following the 2017 Правопис на македонскиот јазик.",
   "Use Macedonian grammar, syntax, legal terminology and the Macedonian Cyrillic alphabet. Do not mix Serbian, Bulgarian, Russian, Croatian or hybrid neighbouring-language forms into the answer, even if the model or a retrieved source tends toward them.",
@@ -15,7 +17,7 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "If a foreign-language source is relevant, explain it in Macedonian and clearly distinguish any short verbatim quotation from your own prose.",
   "For a North Macedonian legal matter, never substitute Bulgarian, Serbian, Russian or another foreign law unless the user explicitly asks for that jurisdiction and the supplied governed sources support it.",
   "If the controlling North Macedonian law is not established by the supplied governed sources, say that verification is required instead of importing a neighbouring jurisdiction.",
-  "Before returning the answer, silently self-check grammar, syntax and terminology and rewrite any Serbian, Bulgarian or Russian forms into standard literary Macedonian. Do not mention this self-check to the user."
+  "Before returning the answer, silently self-check spelling, grammar, syntax, morphology and legal terminology against standard literary Macedonian and rewrite any Serbian, Bulgarian or Russian forms into Macedonian. If contamination remains, the draft is invalid and must not be shown to the user. Do not mention this self-check to the user."
 ].join("\n");
 
 const FOREIGN_CYRILLIC_RE=/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/gu;
@@ -26,9 +28,9 @@ const FOREIGN_LEXEMES=new Set([
   "захтев","захтевот","захтеви","решење","решењето","решења","трошкови","трошковите",
   "надокнада","надокнадата","пуномоќ","подаци",
   // Russian contamination
-  "документы","сведения","следует","является","которые","заявление","всего",
+  "документы","сведения","следует","является","которые","заявление","всего","информация","информации","должен","должна","данные",
   // Bulgarian contamination with or without distinctive Bulgarian letters
-  "становище","искане","следва","обжалвайте","съд","съда","съдът","съдебен","съдебна","съдебно",
+  "становище","искане","следва","обжалвайте","трябва","моля","настоящият","същият","правосъдие","съд","съда","съдът","съдебен","съдебна","съдебно",
   "ищец","ищецът","ответник","ответникът","искова","исковата","обезщетение","обезщетението",
   "съгласно","обжалване","възражение","възражения","разноски","случайни","случаен","случайна",
   "доказателства","молител","молителя"
@@ -149,6 +151,11 @@ const DETERMINISTIC_LEXICAL_REPLACEMENTS=[
   ["надокнада","надомест"],
   ["пуномоќ","полномошно"],
   ["подаци","податоци"],
+  ["информация","информација"],
+  ["информации","информации"],
+  ["должен","треба"],
+  ["должна","треба"],
+  ["данные","податоци"],
   ["документы","документи"],
   ["сведения","податоци"],
   ["следует","треба"],
@@ -156,6 +163,11 @@ const DETERMINISTIC_LEXICAL_REPLACEMENTS=[
   ["которые","кои"],
   ["заявление","барање"],
   ["всего","вкупно"],
+  ["трябва","треба"],
+  ["моля","ве молам"],
+  ["настоящият","овој"],
+  ["същият","истиот"],
+  ["правосъдие","правосудство"],
   ["становище","мислење"],
   ["искане","барање"],
   ["следва","треба"]
