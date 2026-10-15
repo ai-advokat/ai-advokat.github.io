@@ -130,7 +130,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8787"
 ]);
 
-const VALID_TYPES = new Set(["all", "source", "law", "case", "paper"]);
+const VALID_TYPES = new Set(["all", "source", "law", "case", "paper", "guide"]);
 const VALID_STATUSES = new Set(["all", "official", "verified", "pending"]);
 const VALID_JURISDICTIONS = new Set(["MK", "ECHR", "EU"]);
 const MAX_QUERY_LENGTH = 120;
@@ -2254,6 +2254,16 @@ function normalizeText(value) {
   return String(value ?? "").normalize("NFKC").toLocaleLowerCase("mk");
 }
 
+export function truncateAtWordBoundary(value,max=420){
+  const text=String(value??"").replace(/\s+/g," ").trim();
+  const limit=Math.max(20,Number(max)||420);
+  if(text.length<=limit) return text;
+  const candidate=text.slice(0,limit+1);
+  const boundary=Math.max(candidate.lastIndexOf(" "),candidate.lastIndexOf("\n"),candidate.lastIndexOf("\t"));
+  const cut=boundary>=Math.floor(limit*0.65) ? boundary : limit;
+  return text.slice(0,cut).trimEnd()+"…";
+}
+
 function clampLimit(value) {
   const n = Number.parseInt(value ?? "", 10);
   if (!Number.isFinite(n) || n < 1) return 12;
@@ -2564,6 +2574,76 @@ async function queryPublicCorpus(env, { q, type, status, jurisdiction, limit }) 
   return normalized;
 }
 
+function guideSearchStatus(record){
+  const activation=String(record?.activation_state||"");
+  const verification=String(record?.verification_level||"");
+  if(activation==="archive") return "pending";
+  if(activation==="active" && ["legal_verified","current_verified","verified"].includes(verification)) return "verified";
+  return "pending";
+}
+
+function guideSearchScore(record,target){
+  const title=normalizeText(record?.display_title||record?.title||"");
+  const scope=normalizeText(record?.scope||"");
+  const category=normalizeText([record?.category_label,record?.subcategory_label,record?.category].filter(Boolean).join(" "));
+  const body=normalizeText(record?.bot_text||"");
+  let score=0;
+  if(title===target) score+=200;
+  if(title.includes(target)) score+=120;
+  if(scope.includes(target)) score+=70;
+  if(category.includes(target)) score+=30;
+  if(body.includes(target)) score+=20;
+  for(const token of articleTokens(target)){
+    if(title.includes(token)) score+=18;
+    if(scope.includes(token)) score+=10;
+    if(category.includes(token)) score+=6;
+    if(body.includes(token)) score+=3;
+  }
+  return score;
+}
+
+async function searchPublicGuides(request,env,{q,status,limit}={}){
+  const [catalogue,practical]=await Promise.all([
+    loadGuideRegistry(request,env),
+    loadPublicPracticalGuideRegistry(request,env)
+  ]);
+  const byId=new Map();
+  for(const record of (Array.isArray(catalogue?.records)?catalogue.records:[])){
+    if(record?.catalog_public!==true || record?.activation_state==="archive") continue;
+    byId.set(String(record.id),record);
+  }
+  for(const record of (Array.isArray(practical?.guides)?practical.guides:[])){
+    if(record?.catalog_public!==true || record?.activation_state==="archive") continue;
+    byId.set(String(record.id),{...(byId.get(String(record.id))||{}),...record});
+  }
+  const target=normalizeText(q);
+  return [...byId.values()]
+    .map(record=>({record,score:guideSearchScore(record,target)}))
+    .filter(x=>x.score>0)
+    .sort((a,b)=>b.score-a.score || String(a.record.guide_no||"").localeCompare(String(b.record.guide_no||""),"mk",{numeric:true}))
+    .map(({record})=>{
+      const resultStatus=guideSearchStatus(record);
+      return {
+        entityType:"guide",
+        id:String(record.id||record.public_slug||record.guide_no||""),
+        title:String(record.display_title||record.title||"Практичен водич"),
+        meta:[
+          record.guide_no ? "Водич "+record.guide_no : null,
+          record.category_label||record.category||null,
+          record.verification_label||record.activation_label_mk||"Human Gate"
+        ].filter(Boolean).join(" · "),
+        snippet:truncateAtWordBoundary(record.scope||record.bot_text||"",280),
+        url:record.public_fulltext||record.public_pdf||record.public_record_url||null,
+        jurisdiction:"MK",
+        status:resultStatus,
+        rawStatus:record.activation_state||null,
+        date:record.edition_date||record.current_law_reviewed_on||null
+      };
+    })
+    .filter(item=>status==="all" || item.status===status)
+    .slice(0,Math.max(1,Number(limit)||12));
+}
+
 async function handleSearch(request, env, url) {
   if (request.method !== "GET" && request.method !== "HEAD") {
     return methodNotAllowed(request);
@@ -2605,21 +2685,25 @@ async function handleSearch(request, env, url) {
     }, 503);
   }
 
-  const results = await queryPublicCorpus(env, {
+  const corpusResults = type==="guide" ? [] : await queryPublicCorpus(env, {
     q,
     type,
     status,
     jurisdiction,
     limit
   });
+  const guideResults = (type==="all" || type==="guide")
+    ? await searchPublicGuides(request,env,{q,status,limit})
+    : [];
+  const results=[...corpusResults,...guideResults].slice(0,limit);
 
   return json(request, {
     ok: true,
-    mode: "read_only_public_corpus",
+    mode: "read_only_public_corpus_plus_guides",
     query: q,
     count: results.length,
     results,
-    humanGate: "Open and verify the primary source before professional reliance."
+    humanGate: "Guide matches are secondary navigation aids. Open and verify the controlling primary source before professional reliance."
   });
 }
 
@@ -5426,7 +5510,8 @@ async function handleAssistant(request, env, url) {
       version:{label:versionInfo.label,class:versionInfo.class,isCurrent:versionInfo.isCurrent,humanReviewStatus:versionInfo.humanReviewStatus},
       legalStatusOverlays:Array.isArray(a.legalStatusOverlays) ? a.legalStatusOverlays : [],
       reviewedRepresentation:a.reviewedRepresentation || null,
-      excerpt:articleTextForLegalSynthesis(a).replace(/\s+/g," ").slice(0,420)
+      excerpt:truncateAtWordBoundary(articleTextForLegalSynthesis(a),420),
+      excerptIsPartial:articleTextForLegalSynthesis(a).replace(/\s+/g," ").trim().length>420
     })),
     humanGate:"AI output is research assistance, not autonomous legal representation. Verify the controlling version and primary source and obtain human professional review before high-stakes reliance.",
     legalNotice:"/legal-notice.html",
@@ -5914,6 +5999,9 @@ async function handleCapabilities(request, env) {
           ? "configured"
           : "locked",
       freeChatProvider:freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
+      freeChatModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
+      paidChatProvider:orchestratorRuntimeReadiness(env).provider==="configured" ? "openai" : "locked",
+      paidChatModel:orchestratorRuntimeReadiness(env).provider==="configured" ? String(env.OPENAI_MODEL||"openai_configured_model") : null,
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",
