@@ -10,7 +10,7 @@ import { loadWorker } from "./load-worker.mjs";
 const { workerModule, security } = await loadWorker();
 const read = (p) => fs.readFileSync(p, "utf8");
 const PAGES = [
-  "index.html", "membership.html", "legal-notice.html", "privacy-policy.html", "ai-use-policy.html", "offline.html", "guides/index.html", "sluzben-vesnik/index.html", "guides/fulltext/besplatna-pravna-pomos/index.html", "guides/fulltext/izbor-na-advokat/index.html", "guides/fulltext/02-zrtva/index.html", "guides/fulltext/05-rabotno-voznemiruvanje/index.html", "professional-library/index.html", "professional-tools.html", "governance.html",
+  "index.html", "membership.html", "legal-notice.html", "privacy-policy.html", "ai-use-policy.html", "offline.html", "guides/index.html", "sluzben-vesnik/index.html", "guides/fulltext/besplatna-pravna-pomos/index.html", "guides/fulltext/izbor-na-advokat/index.html", "guides/fulltext/02-zrtva/index.html", "guides/fulltext/05-rabotno-voznemiruvanje/index.html", "guides/fulltext/prestoj-stranci-2026/index.html", "professional-library/index.html", "professional-tools.html", "governance.html",
   "scholar/index.html", "scholar/sindzir/index.html", "scholar/electronic-ai-evidence/index.html",
   "scholar/mobile-phone-privilege/index.html", "scholar/ai-legal-practice-judiciary/index.html"
 ];
@@ -77,6 +77,26 @@ describe("frontend ↔ API contract", () => {
   test("FC7 removed decorative controls stay removed (jurisdiction / research mode were never sent to the API)", () => {
     assert.ok(!/id="jurisdiction"/.test(index));
     assert.ok(!/id="researchMode"/.test(index));
+  });
+
+  test("FC8 global search treats public guides as first-class searchable records", () => {
+    assert.match(index, /<option value="guide" data-i18n="typeGuide">/);
+    assert.match(worker, /VALID_TYPES = new Set\(\["all", "source", "law", "case", "paper", "guide"\]\)/);
+    assert.match(worker, /searchPublicGuides/);
+    assert.match(worker, /read_only_public_guides_degraded/);
+    assert.match(worker, /public-practical-guides-38-73\.json/);
+    const practical=JSON.parse(read("data/public-practical-guides-38-73.json"));
+    const detention=practical.guides.find((g)=>String(g.guide_no)==="46");
+    assert.ok(detention, "guide 46 must exist for the audit query 'притвор'");
+    assert.match((detention.title+" "+detention.scope).toLocaleLowerCase("mk"), /притвор/);
+    assert.equal(detention.bot_runtime_enabled,true);
+  });
+
+  test("FC9 excerpts stop at word boundaries and are visibly labelled as excerpts", () => {
+    assert.equal(workerModule.truncateAtWordBoundary("еден два три четири пет",20),"еден два три четири…");
+    assert.match(index, /Извадок · скратено/);
+    assert.match(index, /Извадок од член · скратено/);
+    assert.match(worker, /excerptIsPartial/);
   });
 });
 
@@ -250,10 +270,11 @@ describe("links and metadata", () => {
     for (const p of PAGES) for (const m of read(p).matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) JSON.parse(m[1]);
   });
 
-  test("LM7 the WebP portrait exists and the PNG fallback is kept", () => {
+  test("LM7 the live author portrait uses the optimized WebP asset", () => {
     assert.ok(fs.existsSync("assets/zoran-stojankic.webp") && fs.statSync("assets/zoran-stojankic.webp").size < 200_000);
-    assert.match(index, /<source srcset="\/assets\/zoran-stojankic\.webp" type="image\/webp">/);
-    assert.ok(fs.existsSync("assets/zoran-stojankic.png"));
+    assert.match(index, /id="authorPortrait"[\s\S]*?src="\/assets\/zoran-stojankic\.webp"/);
+    const portraitBlock=index.slice(index.indexOf('<div class="portrait">'),index.indexOf('<div class="authorMeta">'));
+    assert.doesNotMatch(portraitBlock,/zoran-stojankic\.png/);
   });
 });
 
@@ -318,6 +339,24 @@ describe("accessibility regressions", () => {
   });
 });
 
+
+test("AUDIT1 public claims, privacy and human-gate UI match the active architecture",()=>{
+  const privacy=read("privacy-policy.html");
+  const foreigners=read("guides/fulltext/prestoj-stranci-2026/index.html");
+  assert.doesNotMatch(index,/Официјален домашен индекс од 301 предмет/);
+  assert.match(index,/Бројот на записи се чита од живиот корпус/);
+  assert.doesNotMatch(index,/GPT-6\.1 Sol во позадина/);
+  assert.match(index,/точниот активен provider\/model/);
+  assert.match(index,/Проверливост и Human Gate/);
+  assert.match(index,/releaseDecision/);
+  assert.match(privacy,/Верзија:<\/strong> 1\.2/);
+  assert.match(privacy,/Cloudflare Workers AI/);
+  assert.match(privacy,/Secure Case Workspace/);
+  assert.match(privacy,/не ветува автоматски рок на бришење/i);
+  assert.doesNotMatch(privacy,/Без јавен confidential workspace/);
+  assert.match(foreigners,/Печати \/ Зачувај како PDF/);
+  assert.match(foreigners,/window\.print\(\)/);
+});
 
 test("featured legal modules are visible directly below the hero",()=>{
   assert.match(index,/id="featured-legal-modules"/);

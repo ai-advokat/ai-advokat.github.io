@@ -4,16 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="index,follow">
+<meta name="description" content="AI Advokat професионален водич за привремен престој и работа на странци: прво одобрување, продолжување, документи, контролни листи и Human Gate.">
+<link rel="canonical" href="https://ai-advokat.github.io/guides/fulltext/prestoj-stranci-2026/">
 <title>Проширен адвокатски прирачник — престој и работа на странци | AI Advokat</title>
 <style>
 :root{--bg:#f4f6f8;--surface:#fff;--ink:#132033;--muted:#56667a;--line:#d9e0e7;--navy:#0c2038;--gold:#b9985b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}
+*{box-sizing:border-box}.skip{position:absolute;left:-9999px;top:8px;background:#fff;color:#132033;padding:10px 14px;border-radius:8px;z-index:10}.skip:focus{left:10px}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}
 a{color:inherit}.wrap{width:min(100% - 32px,980px);margin:auto}.top{background:var(--navy);color:#fff;padding:18px 0}.top a{text-decoration:none}.hero{padding:46px 0 26px}.tag{font-size:.78rem;font-weight:800;letter-spacing:.1em;color:#7b632f}.hero h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.02;margin:.35rem 0 1rem}.meta,.notice{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;margin:18px 0}.notice{border-left:4px solid var(--gold)}.actions{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.btn{display:inline-block;padding:11px 14px;border-radius:10px;text-decoration:none;font-weight:750;background:var(--surface);border:1px solid var(--line)}.btn.primary{background:var(--gold);border-color:var(--gold)}#guideText{white-space:pre-wrap;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 8px 28px rgba(12,32,56,.06);font-family:inherit;overflow-wrap:anywhere}.muted{color:var(--muted)}footer{padding:34px 0;color:var(--muted)}
+@media print{
+  .top,.actions,.printNote,footer{display:none!important}
+  body{background:#fff;color:#000}
+  .wrap{width:100%;max-width:none}
+  .hero{padding:0 0 16px}
+  .meta,.notice,#guideText{box-shadow:none;border-color:#aaa}
+  #guideText{white-space:pre-wrap;font-size:11pt}
+}
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Прескокни до главната содржина</a>
 <header class="top"><div class="wrap"><a href="/">← AI Advokat</a></div></header>
-<main class="wrap">
+<main class="wrap" id="main">
 <section class="hero">
 <span class="tag">ПРОФЕСИОНАЛЕН ПРАВЕН ВОДИЧ · HUMAN GATE</span>
 <h1>Проширен адвокатски прирачник — привремен престој и работа на странци</h1>
@@ -21,7 +32,9 @@ a{color:inherit}.wrap{width:min(100% - 32px,980px);margin:auto}.top{background:v
 <div class="actions">
 <a class="btn primary" href="/#foreigners-services">🛂 Отвори модул за странци</a>
 <a class="btn" href="/casepilot-workspace.html">🔒 Secure Case Workspace</a>
+<button class="btn" id="printGuide" type="button">🖨 Печати / Зачувај како PDF</button>
 </div>
+<p class="muted printNote">PDF-извозот се создава локално преку функцијата за печатење на вашиот прелистувач. Тоа е удобна работна копија на јавниот HTML, не службен образец и не нов примарен правен извор.</p>
 </section>
 <div class="notice"><strong>Правно ограничување.</strong> Овој документ е професионален работен модел, а не службен образец на МВР. Пред конкретно поднесување мора да се потврдат важечките закони, правилници, формулари, тарифи, рокови и индивидуални услови.</div>
 <div class="meta" id="meta">Се вчитува provenance…</div>
@@ -42,10 +55,12 @@ fetch("/data/mvr-foreign-employment-checklists.json?v=20261014-handbook-v1",{cac
  ].join(" · ");
  document.getElementById("guideText").textContent=g.full_text||"Целосниот текст не е достапен.";
 })
+
 .catch(()=>{
  document.getElementById("meta").textContent="Не може да се вчита provenance.";
  document.getElementById("guideText").textContent="Водичот моментално не може да се вчита.";
 });
+document.getElementById("printGuide").addEventListener("click",()=>window.print());
 </script>
 </body>
 </html>

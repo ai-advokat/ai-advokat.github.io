@@ -8,7 +8,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self' mailto:; upgrade-insecure-requests">
   <link rel="canonical" href="https://ai-advokat.github.io/privacy-policy.html">
-  <meta name="description" content="Политика за приватност на AI Advokat: кои податоци се обработуваат, аналитика само со согласност и безбедна употреба на AI Истражувачот.">
+  <meta name="description" content="Политика за приватност на AI Advokat: јавен FREE chat, Workers AI, Secure Case Workspace, прилози, аналитика и Human Gate.">
   <title>Политика за приватност · AI Advokat</title>
   <style>
     :root{--navy:#0c2038;--ink:#132033;--muted:#607080;--line:#d9e0e7;--bg:#f4f6f8;--surface:#fff;--gold:#b9985b}
@@ -26,14 +26,53 @@
 <body>
 <a class="skip" href="#main">Прескокни до главната содржина</a>
 <header class="top"><div class="wrap"><div class="brand">AI Advokat</div><div class="crumb"><a href="/">Почетна</a> · Политика за приватност</div></div></header>
-<main class="wrap" id="main"><article class="card"><h1>Политика за приватност</h1><p class="lead">Оваа политика опишува кои податоци може да се обработуваат при користење на јавниот портал AI Advokat и кои механизми за избор и ограничување се вградени во платформата.</p><p><strong>Верзија:</strong> 1.1 · <strong>Датум:</strong> 4 октомври 2026</p><section><h2>1. Минимизација на податоци</h2><p>AI Advokat е дизајниран како јавна правно-информативна платформа со принцип на минимизација. Корисниците не треба непотребно да внесуваат единствени матични броеви, адреси, здравствени податоци, информации за кривични постапки, адвокатска или друга професионална тајна, ниту други доверливи или чувствителни лични податоци во јавното AI поле.</p></section>
-<section><h2>2. AI прашања</h2><p>Кога AI функционалноста е активна, прашањето се испраќа до серверската инфраструктура потребна за генерирање на одговор и може да биде обработено од инфраструктурни/AI даватели вклучени во таа функција. Кодот на јавниот асистент не е наменет за создавање клиентско досие и не треба да се користи како канал за доверлива комуникација со адвокат.</p><p class="notice">Не внесувајте доверливи факти или лични податоци ако тие не се неопходни за општото правно истражување.</p></section>
-<section><h2>3. Google Analytics</h2><p>Порталот користи <strong>Google Analytics само по ваша согласност</strong> за основна статистика за посетеност и користење. Рекламно следење, ad personalization и Google Signals се исклучени во конфигурацијата на порталот. Ако не дадете согласност, analytics storage останува одбиен.</p></section>
-<section><h2>3. Прилози и разговорна сесија</h2><p>Новиот разговорен интерфејс може локално да прикаже избрани прилози и да чува кратка историја во тековната browser сесија. Додека GPT provider/privacy gate не е активиран, содржината на прилозите не се испраќа кон GPT provider. По активација, обработката на прилози е server-side контролирана. Порталот не создава траен OpenAI Conversation object: тековната историја се чува во browser sessionStorage, а Responses API повиците користат store:false.</p><p class="notice">Не прикачувајте адвокатска тајна, здравствени податоци, матични броеви или други чувствителни информации во јавниот AI интерфејс.</p></section>
-<section><h2>4. Согласност и локална поставка</h2><p>Изборот за аналитика се запишува локално во прелистувачот под клуч <code>ai_advokat_analytics_consent_v1</code>. Согласноста може да се промени преку контролата „Аналитика“ на порталот. При повлекување, порталот се обидува да ги отстрани сопствено достапните Google Analytics колачиња со префикс <code>_ga</code>.</p></section>
-<section><h2>5. Технички податоци</h2><p>Како и кај повеќето интернет услуги, хостинг/CDN/безбедносната инфраструктура може да обработува технички податоци потребни за испорака и заштита на услугата, како IP адреса, време на барање, URL, user-agent и безбедносни логови, согласно правилата на релевантните инфраструктурни даватели.</p></section>
-<section><h2>6. Контакт</h2><p>Ако испратите е-пошта, адресата и содржината на пораката ќе бидат обработени за да се одговори на вашето барање. За прашања поврзани со приватност: <a href="mailto:aiadvokat16@gmail.com">aiadvokat16@gmail.com</a>.</p></section>
-<section><h2>7. Без јавен confidential workspace</h2><p>Јавното поставување доверливи документи и клиентски досиеја останува заклучено додека не бидат воспоставени соодветни механизми за автентикација, контрола на пристап, безбедно складирање, рокови на чување и ревизиска трага.</p></section>
-<section><h2>English summary</h2><p class="notice"><strong>Privacy summary:</strong> do not submit unnecessary sensitive or confidential data. Analytics is consent-based and advertising features are disabled. Public AI queries may be processed by the infrastructure/AI services required to answer them and should not be treated as confidential lawyer-client communications.</p></section></article></main>
+<main class="wrap" id="main"><article class="card">
+<h1>Политика за приватност</h1>
+<p class="lead">Оваа политика ја опишува реалната поделба меѓу јавниот AI Advokat разговор и Secure Case Workspace, кои податоци се обработуваат и кои ограничувања се вградени во платформата.</p>
+<p><strong>Верзија:</strong> 1.2 · <strong>Датум:</strong> 15 октомври 2026</p>
+
+<section><h2>1. Минимизација и две различни работни зони</h2>
+<p><strong>Јавниот AI chat</strong> е наменет за општо правно истражување. Во него не внесувајте непотребни матични броеви, адреси, здравствени податоци, адвокатска или друга професионална тајна, детали од активни предмети или други доверливи информации.</p>
+<p><strong>Secure Case Workspace</strong> е одделна, case-scoped работна зона за конкретни предмети. Таа има посебна контрола на пристап и одвоени server-side патеки од јавниот chat. Кога работите со конкретен доверлив предмет, користете го тој простор наместо јавниот разговор.</p>
+</section>
+
+<section><h2>2. Јавен FREE AI chat и AI providers</h2>
+<p>Кога FREE AI режимот е активен, прашањата и дозволените прилози се испраќаат преку AI Advokat Worker инфраструктурата и може да бидат обработени од <strong>Cloudflare Workers AI</strong> и од сервисите потребни за конверзија/обработка на документот. Точниот активен provider/model се прикажува од runtime-от на порталот; порталот не треба да претставува платен OpenAI модел како активен ако тој не е навистина вклучен.</p>
+<p>Платена OpenAI патека може да се користи само кога server-side runtime контролите ја прикажуваат како активирана. Јавниот chat не треба да се третира како доверлив адвокат-клиент канал.</p>
+<p class="notice">Ако прашањето содржи обележја на конкретен доверлив правен предмет, јавниот интерфејс има privacy gate што го насочува корисникот кон Secure Case Workspace.</p>
+</section>
+
+<section><h2>3. Прилози и разговорна сесија во јавниот chat</h2>
+<p>Избраните прилози се прикажуваат локално пред испраќање. Кога корисникот испраќа барање, прилозите потребни за тој turn може да се пренесат до server-side AI обработката. Јавниот chat не ги запишува тие прилози како трајни case documents.</p>
+<p>Кратката историја на јавниот разговор се чува во <code>sessionStorage</code> на тековната browser сесија. Во локалната историја се зачувува разговорниот текст и ограничени метаподатоци за прилозите, а не самите binary прилози. Затворањето на browser сесијата може да ја отстрани таа локална sessionStorage состојба, зависно од однесувањето на прелистувачот.</p>
+<p class="notice">Не прикачувајте доверливи клиентски документи во јавниот chat. За таков материјал користете Secure Case Workspace.</p>
+</section>
+
+<section><h2>4. Secure Case Workspace</h2>
+<p>Secure Case Workspace користи посебен приватен пристап и case-scoped идентификатори. Податоците за предметот и документите што корисникот свесно ги внесува таму може да се чуваат server-side во конфигурираната Cloudflare инфраструктура потребна за функционирање на workspace-от. Во актуелната архитектура може да се користи ограничен D1 fallback storage кога одделниот R2 пат не е активен.</p>
+<p>Платформата <strong>не ветува автоматски рок на бришење што не е технички спроведен</strong>. Корисникот не треба да претпоставува дека case data автоматски исчезнува по определен број денови. Политиката за чување и бришење мора да следи реално имплементирани контроли и идните промени ќе бидат одразени во оваа политика.</p>
+<p>AI анализата, extraction и working drafts во Case Workspace остануваат под Human Gate. Системот не тврди дека автоматски поднел, потпишал или испратил правен акт.</p>
+</section>
+
+<section><h2>5. Аналитика</h2>
+<p>Порталот користи <strong>Google Analytics само по ваша согласност</strong> за основна статистика за посетеност и користење. Рекламно следење, ad personalization и Google Signals се исклучени во конфигурацијата на порталот. Изборот се запишува локално под клуч <code>ai_advokat_analytics_consent_v1</code>.</p>
+</section>
+
+<section><h2>6. Технички податоци и инфраструктура</h2>
+<p>Хостинг/CDN/безбедносната инфраструктура може да обработува технички податоци потребни за испорака и заштита на услугата, како IP адреса, време на барање, URL, user-agent и безбедносни логови, согласно правилата на релевантните инфраструктурни даватели.</p>
+</section>
+
+<section><h2>7. Human Gate и професионална употреба</h2>
+<p>AI output е работна/истражувачка помош. Human Gate значи дека релевантниот извор, верзијата, фактите и правниот заклучок мора да бидат проверени од човек пред професионално или високоризично потпирање. Human Gate не значи дека платформата автоматски обезбедила адвокатска проверка.</p>
+</section>
+
+<section><h2>8. Контакт</h2>
+<p>Ако испратите е-пошта, адресата и содржината на пораката ќе бидат обработени за да се одговори на вашето барање. За прашања поврзани со приватност: <a href="mailto:aiadvokat16@gmail.com">aiadvokat16@gmail.com</a>.</p>
+</section>
+
+<section><h2>English summary</h2>
+<p class="notice"><strong>Privacy summary:</strong> public AI chat and Secure Case Workspace are separate. Public FREE chat may send the current question and selected attachments through the AI Advokat Worker to Cloudflare Workers AI/document-conversion services and should not be used for confidential client material. Public chat history is session-scoped in the browser and public attachments are not stored as durable case documents by that chat path. Secure Case Workspace is a separate case-scoped server-side path where case data/documents may be stored in configured Cloudflare storage; no automatic deletion period is promised unless technically implemented. AI outputs remain subject to human professional review before consequential reliance.</p>
+</section>
+</article></main>
 <footer class="wrap"><div>AI Advokat · правно-информативна и истражувачка платформа</div><div class="links"><a href="/legal-notice.html">Правно известување</a><a href="/privacy-policy.html">Политика за приватност</a><a href="/ai-use-policy.html">AI и точност</a><a href="/">Почетна</a></div></footer>
 </body></html>
