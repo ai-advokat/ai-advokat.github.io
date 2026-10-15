@@ -775,7 +775,7 @@ describe("production AI binding guard", () => {
     assert.match(draftRoute,/runPrivateWorkersAISynthesis/, "draft free fallback must stay inside the case-scoped route");
 
     assert.equal((src.match(/env\.AI\.run\(/g) || []).length, 0, "raw Workers AI calls must not bypass the central provider contract");
-    assert.equal((src.match(/runWorkersAIText\(/g) || []).length, 5, "Workers AI generation entry points remain limited to article assistant, public FREE chat, two private CasePilot helpers and one bounded Macedonian-language repair gate");
+    assert.equal((src.match(/runWorkersAIText\(/g) || []).length, 4, "Workers AI generation entry points remain limited to article assistant, public FREE chat and two private CasePilot helpers");
   });
 
   test("P2 a production AI binding requires the quota protections to be present", () => {

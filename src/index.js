@@ -123,9 +123,7 @@ import {
 import {
   MACEDONIAN_LANGUAGE_STANDARD_VERSION,
   MACEDONIAN_2017_SYSTEM_RULES,
-  shouldEnforceMacedonianOutput,
-  assessMacedonianOutput,
-  buildMacedonianRepairMessages
+  shouldEnforceMacedonianOutput
 } from "./macedonian-language-guard.js";
 
 const VERSION = "1.8.1";
@@ -140,52 +138,6 @@ const ALLOWED_ORIGINS = new Set([
 const VALID_TYPES = new Set(["all", "source", "law", "case", "paper", "guide"]);
 const VALID_STATUSES = new Set(["all", "official", "verified", "pending"]);
 const VALID_JURISDICTIONS = new Set(["MK", "ECHR", "EU"]);
-
-async function enforceMacedonian2017Output(env,{text,userText,maxOutputTokens=1800,model=null}={}){
-  const original=String(text||"").trim();
-  if(!shouldEnforceMacedonianOutput(userText)){
-    return {ok:true,text:original,providerCalls:0,repaired:false,languageStandard:null};
-  }
-  const first=assessMacedonianOutput(original,{userText});
-  if(first.ok){
-    return {ok:true,text:original,providerCalls:0,repaired:false,languageStandard:first.standardVersion};
-  }
-  const repair=await runWorkersAIText(env,{
-    messages:buildMacedonianRepairMessages({text:original,userText}),
-    maxOutputTokens:Math.max(700,Math.min(4800,Number(maxOutputTokens)||1800)),
-    temperature:0,
-    model:model||null,
-    reasoningEffort:"low"
-  });
-  if(!repair.ok){
-    return {
-      ok:false,
-      error:"macedonian_language_repair_failed",
-      detail:String(repair.error||"repair_provider_failed").slice(0,200),
-      providerCalls:repair.providerCalls||1,
-      languageCheck:first,
-      languageStandard:MACEDONIAN_LANGUAGE_STANDARD_VERSION
-    };
-  }
-  const second=assessMacedonianOutput(repair.text,{userText});
-  if(!second.ok){
-    return {
-      ok:false,
-      error:"macedonian_language_quality_gate_failed",
-      detail:second.reasons.join(","),
-      providerCalls:repair.providerCalls||1,
-      languageCheck:second,
-      languageStandard:MACEDONIAN_LANGUAGE_STANDARD_VERSION
-    };
-  }
-  return {
-    ok:true,
-    text:String(repair.text||"").trim(),
-    providerCalls:repair.providerCalls||1,
-    repaired:true,
-    languageStandard:MACEDONIAN_LANGUAGE_STANDARD_VERSION
-  };
-}
 
 const MAX_QUERY_LENGTH = 120;
 const MAX_SEARCH_LIMIT = 20;
@@ -3602,29 +3554,14 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
       providerShape:result.shape||null
     };
   }
-  const languageGate=await enforceMacedonian2017Output(env,{
-    text:result.text,
-    userText:task,
-    maxOutputTokens:Math.max(900,Math.min(4800,Number(maxOutputTokens)||3600)),
-    model:result.model
-  });
-  if(!languageGate.ok){
-    return {
-      ok:false,
-      error:languageGate.error,
-      detail:languageGate.detail||null,
-      model:result.model,
-      providerShape:result.shape||null
-    };
-  }
   return {
     ok:true,
-    text:languageGate.text,
+    text:result.text,
     model:result.model,
     provider:"workers_ai_private_case",
-    providerCalls:(result.providerCalls||1)+(languageGate.providerCalls||0),
-    languageStandard:languageGate.languageStandard,
-    languageRepaired:languageGate.repaired
+    providerCalls:result.providerCalls||1,
+    languageStandard:shouldEnforceMacedonianOutput(task)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+    languageRepaired:false
   };
 }
 
@@ -4476,6 +4413,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     "Do not say that you cannot create Word/DOCX files. The AI Advokat browser interface can export the latest assistant working draft to DOCX; your job is to provide the complete document text.",
     "Use placeholders or clearly fictional data when the user requests invented names/details, and never invent facts presented as real.",
     "For consequential legal steps, clearly state that professional human review is required before reliance, but do not let that warning replace the requested working draft.",
+    "Never refuse a legal analysis or working draft merely because Human Gate review is required. Produce the bounded work product, mark uncertainty, and reserve final professional reliance for Human Gate.",
+    "Before returning Macedonian prose, silently self-check grammar, syntax and terminology and rewrite any Serbian, Bulgarian or Russian forms into standard literary Macedonian.",
     "Do not silently use web search in this FREE mode."
   ].join("\n");
 
@@ -4513,31 +4452,14 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     };
   }
 
-  const languageGate=await enforceMacedonian2017Output(env,{
-    text:result.text,
-    userText:q,
-    maxOutputTokens:tokenLimit,
-    model:result.model
-  });
-  if(!languageGate.ok){
-    return {
-      ok:false,
-      error:languageGate.error,
-      detail:languageGate.detail||null,
-      model:result.model,
-      providerCalls:(result.providerCalls||1)+(languageGate.providerCalls||0),
-      providerShape:result.shape||null
-    };
-  }
-
   return {
     ok:true,
-    text:languageGate.text,
+    text:result.text,
     model:result.model,
     provider:"workers_ai_free",
-    providerCalls:(result.providerCalls||1)+(languageGate.providerCalls||0),
-    languageStandard:languageGate.languageStandard,
-    languageRepaired:languageGate.repaired,
+    providerCalls:result.providerCalls||1,
+    languageStandard:shouldEnforceMacedonianOutput(q)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+    languageRepaired:false,
     convertedDocuments:converted.documents.length,
     webSearchUsed:false,
     sources:[],
@@ -4955,21 +4877,10 @@ async function handleGPTChat(request,env){
       : "low";
 
   if(useFreeWorkersAI){
-    if(postflightRequiredForMission){
-      await releaseMonthlyQuota(env,{subject,period});
-      return json(request,{
-        ok:false,
-        error:"free_mode_professional_postflight_required",
-        message:"Ова барање бара current-law или high-stakes postflight проверка што FREE provider-от не ја заобиколува. Документите може да се сумираат и анализираат информативно, но за правен заклучок е потребна дополнителна професионална/primary-source проверка.",
-        legalGovernance:{
-          engine:"AI_ADVOKAT_LIOE_v1",
-          missionProfile,
-          releaseState:"BLOCKED_POSTFLIGHT_REQUIRED",
-          executionAuthorization:"RESEARCH_OUTPUT_ONLY",
-          humanReviewRequired:true
-        }
-      },409);
-    }
+    // FREE mode must remain usable for research, analysis and complete working drafts.
+    // High-stakes/current-law missions are not blocked at generation time; they are
+    // released only as research/work-product with an explicit Human Gate.
+    const freeProfessionalGuard=postflightRequiredForMission;
 
     const freeResult=await runFreeWorkersAIChat(env,{
       q,
@@ -5054,8 +4965,10 @@ async function handleGPTChat(request,env){
         releaseState:"FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED",
         executionAuthorization:"RESEARCH_OUTPUT_ONLY",
         humanReviewRequired:true,
-        postflightRequired:false,
-        warning:"FREE provider output is informational research assistance and does not establish current-law status."
+        postflightRequired:freeProfessionalGuard,
+        warning:freeProfessionalGuard
+          ? "FREE provider output is a working research/draft result only. It does not establish current-law status and requires professional Human Gate review before consequential reliance."
+          : "FREE provider output is informational research assistance and does not establish current-law status."
       } : null,
       membership:{
         planCode:"free",
@@ -5481,19 +5394,7 @@ async function handleAssistant(request, env, url) {
       aiError=String(providerResult.error||"workers_ai_error")+":"+String(providerResult.detail||JSON.stringify(providerResult.shape||{})).slice(0,240);
       console.error("workers_ai_generation_failed",providerResult.model||resolveWorkersAITextModel(env),aiError);
     }else{
-      const languageGate=await enforceMacedonian2017Output(env,{
-        text:providerResult.text,
-        userText:q,
-        maxOutputTokens:1400,
-        model:providerResult.model
-      });
-      if(!languageGate.ok){
-        providerFailed=true;
-        aiError=languageGate.error+":"+String(languageGate.detail||"language_quality_gate").slice(0,200);
-        console.error("workers_ai_macedonian_language_gate_failed",providerResult.model||resolveWorkersAITextModel(env),aiError);
-      }else{
-        generated=languageGate.text;
-      }
+      generated=providerResult.text;
     }
 
     if(providerFailed){

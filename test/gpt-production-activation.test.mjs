@@ -179,7 +179,8 @@ test("GPTACT11 FREE Workers AI is explicit, bounded, document-capable and uses o
   assert.match(worker,/workers-ai-provider\.js/);
   assert.match(workflow,/gpt-oss-20b/);
   assert.match(workflow,/MULTI-SCENARIO UAT/);
-  assert.match(worker,/free_mode_professional_postflight_required/);
+  assert.doesNotMatch(worker,/error:"free_mode_professional_postflight_required"/);
+  assert.match(worker,/FREE provider output is a working research\/draft result only/);
 });
 
 

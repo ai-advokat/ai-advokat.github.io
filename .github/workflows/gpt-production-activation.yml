@@ -17,7 +17,7 @@ permissions:
 
 concurrency:
   group: ai-advokat-gpt-production-activation
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   activate:

@@ -28,8 +28,8 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Production redeploy for mandatory 2017 Macedonian literary-language runtime gate after live evidence showed Serbian, Bulgarian and Russian contamination in Macedonian legal output.",
-    "approval_text": "вгради литературен македонски јазик согласно Правописот од 2017 и не дозволувај мешавина од српски, бугарски и руски",
+    "reason": "Emergency usability recovery: remove FREE high-stakes generation hard-block and remove Macedonian language repair fail-closed path while preserving Human Gate, source verification, quota, privacy and no-autonomous-action controls.",
+    "approval_text": "порталот да биде функционален: FREE правната анализа и работните нацрти да не се блокираат; Human Gate да остане задолжителен",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
     "baseline_result": "CLOUDFLARE_R2_NOT_ENABLED_CODE_10042",
@@ -77,6 +77,17 @@
     "foreign_jurisdiction_substitution_guard": true,
     "language_repair_pass": true,
     "language_uat": "literary_macedonian_not_cyrillic_only",
-    "source_commit": "e677b3843790637df05562b6022130682d369402"
+    "source_commit": "e677b3843790637df05562b6022130682d369402",
+    "source_commit_base": "5ee02cef2bbc9321f8f8dfa2133d070c3c0ba069",
+    "emergency_usability_recovery": true,
+    "free_legal_generation_block_removed": true,
+    "free_high_stakes_release_mode": "RESEARCH_OUTPUT_ONLY_HUMAN_GATE_REQUIRED",
+    "macedonian_2017_prompt_enforcement": true,
+    "macedonian_runtime_fail_closed_removed": true,
+    "macedonian_second_provider_repair_removed": true,
+    "provider_call_count_preserved": true,
+    "quota_preserved": true,
+    "privacy_gate_preserved": true,
+    "autonomous_filing_authorized": false
   }
 }
