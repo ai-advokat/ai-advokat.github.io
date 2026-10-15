@@ -45,5 +45,12 @@
   },
   "ai": {
     "binding": "AI"
-  }
+  },
+  "r2_buckets": [
+    {
+      "binding": "CASE_FILES",
+      "bucket_name": "ai-advokat-case-files",
+      "preview_bucket_name": "ai-advokat-case-files-staging"
+    }
+  ]
 }
