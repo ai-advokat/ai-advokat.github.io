@@ -24,7 +24,7 @@ test("GPTACT1 production runtime is armed for the approved model but contains no
   assert.equal(config.ai?.binding,"AI");
   assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
   assert.equal(config.vars.WORKERS_AI_MARKDOWN_ENABLED,"true");
-  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/zai-org/glm-4.7-flash");
+  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/openai/gpt-oss-20b");
   assert.doesNotMatch(wrangler,/OPENAI_API_KEY/);
   assert.doesNotMatch(wrangler,/sk-[A-Za-z0-9_-]{20,}/);
 });
@@ -58,7 +58,7 @@ test("GPTACT3 production activation supports FREE Workers AI and preserves the p
   assert.match(workflow,/wrangler secret put OPENAI_API_KEY/);
   assert.match(workflow,/wrangler deploy --config wrangler\.jsonc/);
   assert.match(workflow,/Live GPT \+ Web \+ attachment smoke test/);
-  assert.match(workflow,/Live FREE Workers AI \+ DOCX attachment smoke test/);
+  assert.match(workflow,/Live FREE Workers AI multi-scenario runtime UAT \+ DOCX smoke/);
   assert.match(workflow,/FREE_PROVIDER/);
   assert.match(workflow,/WORKERS_AI_MARKDOWN_ENABLED/);
   assert.match(workflow,/PRAVDAFREE777/);
@@ -160,7 +160,7 @@ test("GPTACT10 provider readiness accepts the governed FREE document path withou
 });
 
 
-test("GPTACT11 FREE Workers AI is explicit, bounded and document-capable",()=>{
+test("GPTACT11 FREE Workers AI is explicit, bounded, document-capable and uses one provider contract",()=>{
   const config=JSON.parse(wrangler);
   assert.equal(config.ai.binding,"AI");
   assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
@@ -168,6 +168,9 @@ test("GPTACT11 FREE Workers AI is explicit, bounded and document-capable",()=>{
   assert.match(worker,/convertFreeChatAttachments/);
   assert.match(worker,/cloudflare_workers_ai_to_markdown/);
   assert.match(worker,/FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED/);
+  assert.match(worker,/workers-ai-provider\.js/);
+  assert.match(workflow,/gpt-oss-20b/);
+  assert.match(workflow,/MULTI-SCENARIO UAT/);
   assert.match(worker,/free_mode_professional_postflight_required/);
 });
 
