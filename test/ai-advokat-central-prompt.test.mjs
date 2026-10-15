@@ -88,3 +88,10 @@ test("COP9 FREE Macedonian output has a bounded targeted runtime repair postflig
   assert.match(worker,/languageQualityState:languagePass\.languageAssessment/);
   assert.match(worker,/macedonianRepairProviderBudget:"max_two_conditional_extra_calls_per_free_turn"/);
 });
+
+
+test("COP10 noncompliant Macedonian output is blocked after bounded repair",()=>{
+  assert.match(worker,/free_workers_ai_language_quality_failed/);
+  assert.match(worker,/languageQualityState:"blocked_noncompliant_output"/);
+  assert.match(worker,/languagePass\.languageAssessment\?\.ok!==true/);
+});
