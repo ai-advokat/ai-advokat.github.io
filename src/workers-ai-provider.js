@@ -50,7 +50,7 @@ export function workersAIRequestOptions({
 }
 
 export function extractWorkersAIText(value,depth=0){
-  if(depth>5 || value===null || value===undefined) return null;
+  if(depth>6 || value===null || value===undefined) return null;
   if(typeof value==="string"){
     const trimmed=value.trim();
     return trimmed||null;
@@ -64,26 +64,53 @@ export function extractWorkersAIText(value,depth=0){
   }
   if(typeof value!=="object") return null;
 
-  // Deliberately exclude "reasoning", "analysis" and chain-of-thought fields.
-  for(const key of ["response","output_text","text","content","answer"]){
+  const type=String(value.type||"").toLowerCase();
+  if(type==="reasoning" || type==="analysis" || type==="reasoning_summary" || type==="summary_text"){
+    return null;
+  }
+  if(type==="output_text"){
+    return extractWorkersAIText(value.text,depth+1);
+  }
+  if(type==="message"){
+    return extractWorkersAIText(value.content,depth+1);
+  }
+
+  // Explicit top-level final-answer fields are safe to prefer.
+  for(const key of ["response","output_text","answer"]){
     const found=extractWorkersAIText(value[key],depth+1);
     if(found) return found;
   }
 
-  const collections=[value.choices,value.output,value.data,value.result?.choices,value.response?.choices];
-  for(const collection of collections){
-    if(!Array.isArray(collection)) continue;
-    for(const choice of collection){
+  // Chat-Completions compatibility: only assistant message/delta content.
+  if(Array.isArray(value.choices)){
+    for(const choice of value.choices){
       const found=extractWorkersAIText(
-        choice?.message?.content
-        ?? choice?.delta?.content
-        ?? choice?.content
-        ?? choice?.text,
+        choice?.message?.content ?? choice?.delta?.content ?? choice?.text,
         depth+1
       );
       if(found) return found;
     }
   }
+
+  // Responses API: reasoning items are skipped by the type guard above; only
+  // message/output_text items can yield a user-visible final answer.
+  if(Array.isArray(value.output)){
+    for(const item of value.output){
+      const found=extractWorkersAIText(item,depth+1);
+      if(found) return found;
+    }
+  }
+
+  // Some Workers AI wrappers nest the provider result one level deeper.
+  if(value.result && typeof value.result==="object"){
+    const found=extractWorkersAIText(value.result,depth+1);
+    if(found) return found;
+  }
+  if(Array.isArray(value.data)){
+    const found=extractWorkersAIText(value.data,depth+1);
+    if(found) return found;
+  }
+
   return null;
 }
 
