@@ -123,6 +123,8 @@ import {
 import {
   MACEDONIAN_LANGUAGE_STANDARD_VERSION,
   MACEDONIAN_2017_SYSTEM_RULES,
+  assessMacedonianOutput,
+  buildMacedonianRepairMessages,
   shouldEnforceMacedonianOutput
 } from "./macedonian-language-guard.js";
 import {
@@ -4391,6 +4393,40 @@ async function convertFreeChatAttachments(env,attachments){
   return {ok:true,documents:bounded,totalChars:total};
 }
 
+async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800}={}){
+  const original=String(text||"");
+  if(!shouldEnforceMacedonianOutput(userText)){
+    return {text:original,repaired:false,providerCalls:0,languageAssessment:null};
+  }
+  const initial=assessMacedonianOutput(original,{userText});
+  if(initial.ok){
+    return {text:original,repaired:false,providerCalls:0,languageAssessment:initial};
+  }
+  const repair=await runWorkersAIText(env,{
+    messages:buildMacedonianRepairMessages({text:original,userText}),
+    maxOutputTokens:Math.max(700,Math.min(4200,Number(maxOutputTokens)||1800)),
+    temperature:0
+  });
+  if(!repair.ok){
+    return {
+      text:original,
+      repaired:false,
+      providerCalls:repair.providerCalls||1,
+      languageAssessment:initial,
+      repairError:repair.error||"macedonian_repair_failed"
+    };
+  }
+  const repairedText=String(repair.text||"").trim();
+  const finalAssessment=assessMacedonianOutput(repairedText,{userText});
+  return {
+    text:repairedText||original,
+    repaired:Boolean(repairedText)&&finalAssessment.ok,
+    providerCalls:repair.providerCalls||1,
+    languageAssessment:finalAssessment,
+    repairError:finalAssessment.ok?null:"macedonian_repair_still_noncompliant"
+  };
+}
+
 async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusContext=[],plan,maxOutputTokens=1800}={}){
   if(!freeWorkersAIConfigured(env)) return {ok:false,error:"free_workers_ai_not_configured"};
   const converted=await convertFreeChatAttachments(env,attachments);
@@ -4460,14 +4496,21 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     };
   }
 
+  const languagePass=await repairWorkersAIMacedonianIfNeeded(env,{
+    text:result.text,
+    userText:q,
+    maxOutputTokens:tokenLimit
+  });
+
   return {
     ok:true,
-    text:result.text,
+    text:languagePass.text,
     model:result.model,
     provider:"workers_ai_free",
-    providerCalls:result.providerCalls||1,
+    providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
     languageStandard:shouldEnforceMacedonianOutput(q)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
-    languageRepaired:false,
+    languageRepaired:languagePass.repaired===true,
+    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"unchecked_or_repair_incomplete",
     convertedDocuments:converted.documents.length,
     webSearchUsed:false,
     sources:[],
