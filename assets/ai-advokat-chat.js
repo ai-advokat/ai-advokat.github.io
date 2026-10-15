@@ -563,6 +563,7 @@
 
 
   async function fallbackSourceAssistant(q){
+    let assistantError="source_fallback_unavailable";
     try{
       const r=await fetch(CHAT_API_BASE+"/api/assistant",{method:"POST",headers:{"content-type":"application/json","accept":"application/json",...membershipHeaders()},body:JSON.stringify({q,instrument:"auto"})});
       const d=await r.json().catch(()=>null);
@@ -570,8 +571,31 @@
         const cite=(d.citations||[]).map(c=>"чл. "+c.articleNumber).join(", ");
         return {ok:true,text:d.answer,meta:"Source-backed режим",sourceLabel:cite?"Изворни членови: "+cite:"Одговор од проверливиот article-level корпус."};
       }
-      return {ok:false,error:d?.error||"source_fallback_unavailable"};
-    }catch{return {ok:false,error:"source_fallback_unavailable"};}
+      assistantError=d?.error||assistantError;
+    }catch{}
+
+    // Last-resort public-library fallback: never leave the whole portal unusable
+    // merely because AI generation is temporarily gated or redeploying.
+    try{
+      const url=CHAT_API_BASE+"/api/search?q="+encodeURIComponent(String(q||"").slice(0,120))+"&type=all&status=all&limit=5";
+      const r=await fetch(url,{headers:{"accept":"application/json"}});
+      const d=await r.json().catch(()=>null);
+      const rows=Array.isArray(d?.results)?d.results.slice(0,5):[];
+      if(r.ok&&d?.ok&&rows.length){
+        const body=rows.map((item,index)=>{
+          const title=String(item?.title||item?.name||"Резултат").trim();
+          const snippet=String(item?.snippet||item?.description||"").replace(/\s+/g," ").trim().slice(0,420);
+          return (index+1)+". "+title+(snippet?"\n"+snippet:"");
+        }).join("\n\n");
+        return {
+          ok:true,
+          text:"AI генерирањето е привремено недостапно, но јавната правна библиотека работи. Најрелевантни записи за вашето прашање се:\n\n"+body+"\n\nЗа правен заклучок проверете го примарниот извор и Human Gate.",
+          meta:"Јавна библиотека · резервен режим",
+          sourceLabel:"Детерминистички резултати од AI Advokat search; нема измислен AI одговор."
+        };
+      }
+    }catch{}
+    return {ok:false,error:assistantError};
   }
 
   function localConfidentialCasePrompt(value){
@@ -725,6 +749,18 @@
           guides:[],
           action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"}
         });
+      }else if(["free_mode_professional_postflight_required","macedonian_language_repair_failed","macedonian_language_quality_gate_failed","lioe_postflight_locked","lioe_runtime_governance_locked","lioe_observability_locked","web_search_locked","free_mode_web_search_unavailable"].includes(d?.error)){
+        attachments=[...selectedFiles];
+        renderAttachments();
+        const fallback=await fallbackSourceAssistant(q);
+        updateAssistantPlaceholder(assistantIndex,{
+          text:fallback.ok
+            ? fallback.text+(selectedFiles.length?"\n\nЗабелешка: прилозите останаа локално и не се вклучени во резервниот одговор; обидете се повторно со нив кога AI runtime ќе биде активен.":"")
+            : (d?.message||"AI runtime е привремено ограничен. Јавните извори и пребарувањето остануваат достапни."),
+          meta:fallback.ok?fallback.meta:(d?.error||"runtime_guard"),
+          guides,
+          sourceLabel:fallback.ok?fallback.sourceLabel:"Барањето не е изгубено; прилозите се задржани локално за повторен обид."
+        });
       }else if(d?.error==="gpt_provider_locked"){
         const fallback=selectedFiles.length?{ok:false,error:"attachments_need_gpt"}:await fallbackSourceAssistant(q);
         updateAssistantPlaceholder(assistantIndex,{
@@ -759,11 +795,14 @@
       }
     }catch(err){
       if(err?.name==="AbortError") updateAssistantPlaceholder(assistantIndex,{text:"Генерирањето е прекинато.",meta:"Stop"});
-      else updateAssistantPlaceholder(assistantIndex,{
-        text:"Не можам да воспоставам врска со AI runtime. Барањето не е обработено. Обидете се повторно по кратко време.",
-        meta:"Runtime/API unavailable",
-        sourceLabel:"Не е издаден правен одговор и не е направен успешен AI provider повик."
-      });
+      else{
+        const fallback=await fallbackSourceAssistant(q);
+        updateAssistantPlaceholder(assistantIndex,{
+          text:fallback.ok?fallback.text:"Не можам да воспоставам врска со AI runtime. Јавните правни извори и другите делови од порталот остануваат достапни; обидете се повторно.",
+          meta:fallback.ok?fallback.meta:"Runtime/API unavailable",
+          sourceLabel:fallback.ok?fallback.sourceLabel:"Не е издаден AI правен одговор."
+        });
+      }
     }finally{
       abortController=null;root.classList.remove("ai-chat-running");save();
     }
