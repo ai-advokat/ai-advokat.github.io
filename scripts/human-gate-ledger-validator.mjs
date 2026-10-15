@@ -20,7 +20,7 @@ function nonEmpty(v){
 }
 
 function validSha(v){
-  return typeof v==="string" && /^[0-9a-f]{64}$/.test(v);
+  return typeof v==="string" && (/^[0-9a-f]{40}$/.test(v) || /^[0-9a-f]{64}$/.test(v));
 }
 
 export function validateHumanGateDecision(record){
