@@ -113,7 +113,7 @@ test("case workspace runtime and separately authorized private storage are both 
   assert.equal(wrangler.vars.CASE_WORKSPACE_ENABLED,"true");
   const binding=wrangler.r2_buckets?.find(x=>x.binding==="CASE_FILES");
   assert.ok(binding,"CASE_FILES binding must remain present after the 2026-10-15 Human Gate");
-  assert.equal(caseWorkspaceRuntimeState({CASE_WORKSPACE_ENABLED:"true",CASE_FILES:{}},{schemaReady:true}),"workspace_and_storage_ready");
+  assert.equal(caseWorkspaceRuntimeState({CASE_WORKSPACE_ENABLED:"true",CASE_FILES:{put(){},get(){},delete(){}}},{schemaReady:true}),"workspace_and_storage_ready");
   assert.match(worker,/professional_use_locked=1/);
   assert.match(worker,/autonomousFiling:false/);
 });
