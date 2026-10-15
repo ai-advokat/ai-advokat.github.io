@@ -201,16 +201,18 @@ if (!worker.includes('case_workspace_membership_required') || !worker.includes("
 if (!worker.includes("Global confidential upload is disabled.")) {
   throw new Error("Global confidential document upload must remain disabled.");
 }
+if (wrangler.vars?.CASE_D1_FALLBACK_ENABLED!=="true") {
+  throw new Error("Governed CasePilot D1 fallback must remain explicitly armed while account-level R2 is unavailable.");
+}
 if (wrangler.r2_buckets) {
-  if (!Array.isArray(wrangler.r2_buckets) || wrangler.r2_buckets.length !== 1) {
-    throw new Error("Only one governed private R2 binding is permitted.");
-  }
-  const r2=wrangler.r2_buckets[0];
-  if (r2.binding!=="CASE_FILES"
-      || r2.bucket_name!=="ai-advokat-case-files"
-      || r2.preview_bucket_name!=="ai-advokat-case-files-staging") {
-    throw new Error("Private R2 binding must match the approved CASE_FILES production/staging buckets.");
-  }
+  throw new Error("Default production config must not require R2 while account-level R2 is unavailable.");
+}
+const r2Wrangler=JSON.parse(fs.readFileSync("wrangler.r2.jsonc","utf8"));
+const r2=r2Wrangler.r2_buckets?.[0];
+if (!r2 || r2.binding!=="CASE_FILES"
+    || r2.bucket_name!=="ai-advokat-case-files"
+    || r2.preview_bucket_name!=="ai-advokat-case-files-staging") {
+  throw new Error("Optional R2 config must preserve the approved CASE_FILES production/staging buckets.");
 }
 if (wrangler.ai) {
   const providerActivation=JSON.parse(fs.readFileSync(".github/activation/gpt-production-request.json","utf8"));
