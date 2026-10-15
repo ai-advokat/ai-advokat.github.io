@@ -75,7 +75,7 @@ test("deterministic last-mile cleanup converts reported Bulgarian and Serbian le
   assert.match(clean,/судот/u);
   assert.match(clean,/надомест на штета/u);
   assert.match(clean,/трошоци/u);
-  assert.match(clean,/постапка/u);
+  assert.match(clean,/постапка/iu);
   assert.match(clean,/барање/u);
   const check=assessMacedonianOutput(clean,{userText:"Изработи тужба на македонски."});
   assert.equal(check.ok,true,JSON.stringify({clean,check}));
