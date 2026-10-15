@@ -40,7 +40,9 @@ import {
   caseExportFilename,
   caseExportMime,
   renderCaseExportMarkdown,
+  renderCaseExportText,
   renderCaseExportCsv,
+  renderCaseExportJson,
   renderCaseExportDocxBytes
 } from "./case-export.js";
 import {
@@ -2109,9 +2111,13 @@ async function handleCaseWorkspaceApi(request,env,url){
 
     const body=format==="md"
       ? renderCaseExportMarkdown(exportModel)
-      : format==="csv"
-        ? renderCaseExportCsv(exportModel)
-        : renderCaseExportDocxBytes(exportModel);
+      : format==="txt"
+        ? renderCaseExportText(exportModel)
+        : format==="csv"
+          ? renderCaseExportCsv(exportModel)
+          : format==="json"
+            ? renderCaseExportJson(exportModel)
+            : renderCaseExportDocxBytes(exportModel);
     await recordCaseAudit(env,{
       caseId,accountId:membership.accountId,eventType:"export_generated",
       objectType:"case_export",objectId:filename,metadata:auditMeta
