@@ -3621,6 +3621,21 @@ async function runPrivateCaseDocumentExtraction(env,{documentId,fileName,mimeTyp
     }
   };
 
+  const workersFallback=async primaryFailure=>{
+    const fallback=await runPrivateWorkersAIDocumentExtraction(env,{documentId,fileName,mimeType,bytes});
+    if(fallback.ok){
+      return {
+        ...fallback,
+        failoverFrom:"openai_private_case",
+        failoverReason:String(primaryFailure?.error||"openai_provider_failure").slice(0,120)
+      };
+    }
+    return {
+      ...primaryFailure,
+      fallbackError:String(fallback?.error||"workers_ai_fallback_failed").slice(0,120)
+    };
+  };
+
   let response;
   try{
     response=await fetch("https://api.openai.com/v1/responses",{
@@ -3632,17 +3647,44 @@ async function runPrivateCaseDocumentExtraction(env,{documentId,fileName,mimeTyp
       body:JSON.stringify(body)
     });
   }catch(error){
-    return {ok:false,error:"case_intelligence_provider_network_error",detail:String(error?.message||error).slice(0,180)};
+    return workersFallback({
+      ok:false,
+      error:"case_intelligence_provider_network_error",
+      detail:String(error?.message||error).slice(0,180)
+    });
   }
   let payload=null;
   try{payload=await response.json();}catch{}
-  if(!response.ok) return {ok:false,error:"case_intelligence_provider_response_error",status:response.status};
-  if(payload?.status!=="completed") return {ok:false,error:"case_intelligence_provider_incomplete",detail:String(payload?.incomplete_details?.reason||payload?.status||"unknown").slice(0,180)};
+  if(!response.ok){
+    return workersFallback({
+      ok:false,
+      error:"case_intelligence_provider_response_error",
+      status:response.status,
+      detail:String(payload?.error?.code||payload?.error?.type||"openai_response_error").slice(0,180)
+    });
+  }
+  if(payload?.status!=="completed"){
+    return workersFallback({
+      ok:false,
+      error:"case_intelligence_provider_incomplete",
+      detail:String(payload?.incomplete_details?.reason||payload?.status||"unknown").slice(0,180)
+    });
+  }
   const raw=openAIOutputText(payload);
   let extraction;
-  try{extraction=JSON.parse(raw);}catch{return {ok:false,error:"case_intelligence_invalid_provider_json"};}
+  try{
+    extraction=JSON.parse(raw);
+  }catch{
+    return workersFallback({ok:false,error:"case_intelligence_invalid_provider_json"});
+  }
   const check=validateCaseDocumentExtraction(extraction);
-  if(!check.ok) return {ok:false,error:"case_intelligence_invalid_extraction",problems:check.errors.slice(0,20)};
+  if(!check.ok){
+    return workersFallback({
+      ok:false,
+      error:"case_intelligence_invalid_extraction",
+      problems:check.errors.slice(0,20)
+    });
+  }
   return {ok:true,extraction,model:String(env.OPENAI_MODEL),responseId:payload?.id||null,provider:"openai_private_case"};
 }
 
