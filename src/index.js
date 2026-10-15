@@ -4206,6 +4206,7 @@ function validateChatAttachments(payload){
 }
 
 const FREE_WORKERS_AI_MODEL_FALLBACK="@cf/zai-org/glm-4.7-flash";
+const FREE_WORKERS_AI_SECONDARY_MODEL="@cf/google/gemma-4-26b-a4b-it";
 const FREE_CHAT_MAX_DOC_CHARS_PER_FILE=32000;
 const FREE_CHAT_MAX_DOC_CHARS_TOTAL=140000;
 const FREE_CHAT_MAX_CORPUS_CHARS=45000;
@@ -4365,26 +4366,38 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
   ].filter(Boolean).join("\n\n");
 
+  const messages=[
+    {role:"system",content:system},
+    {role:"user",content:user}
+  ];
+  // Public FREE chat uses one governed Workers AI generation per quota reservation.
+  // Gemma is used here because GLM-4.7-Flash has returned successful-but-empty
+  // responses in production for ordinary chat/document requests.
+  const model=FREE_WORKERS_AI_SECONDARY_MODEL;
+  const tokenLimit=Math.max(600,Math.min(2200,Number(maxOutputTokens)||1800));
   let generated;
   try{
-    generated=await env.AI.run(String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),{
-      messages:[
-        {role:"system",content:system},
-        {role:"user",content:user}
-      ],
-      max_tokens:Math.max(600,Math.min(2200,Number(maxOutputTokens)||1800)),
+    generated=await env.AI.run(model,{
+      messages,
+      max_completion_tokens:tokenLimit,
       temperature:0.1
     });
   }catch(error){
     return {ok:false,error:"free_workers_ai_provider_error",detail:String(error?.message||error).slice(0,180)};
   }
   const text=extractModelText(generated);
-  if(!text) return {ok:false,error:"free_workers_ai_empty_response"};
+  if(!text){
+    return {
+      ok:false,
+      error:"free_workers_ai_empty_response",
+      detail:"FREE Workers AI returned no usable assistant text."
+    };
+  }
 
   return {
     ok:true,
     text,
-    model:String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),
+    model,
     provider:"workers_ai_free",
     providerCalls:1,
     convertedDocuments:converted.documents.length,
