@@ -6067,6 +6067,8 @@ async function handleCapabilities(request, env) {
       paidChatProvider:orchestratorRuntimeReadiness(env).provider==="configured" ? "openai" : "locked",
       paidChatModel:orchestratorRuntimeReadiness(env).provider==="configured" ? String(env.OPENAI_MODEL||"openai_configured_model") : null,
       centralOperatingPrompt:AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
+      macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
+      macedonianRepairPostflight:"conditional_workers_ai_postflight_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",
