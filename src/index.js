@@ -1331,6 +1331,7 @@ async function handleCaseWorkspaceApi(request,env,url){
       documentId,
       sourceSha256:row.sha256||null,
       model:extraction.model,
+      provider:extraction.provider||"unknown",
       extraction:extraction.extraction
     }));
     const derivedSha256=await sha256BytesHex(derivedBytes);
@@ -1477,7 +1478,9 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
     if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_professional_write_role_required"},403);
     if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
-    if(orchestratorRuntimeReadiness(env).provider!=="configured") return json(request,{ok:false,error:"case_intelligence_provider_not_configured"},503);
+    const paidCaseProviderReady=orchestratorRuntimeReadiness(env).provider==="configured";
+    const freeCaseProviderReady=freeWorkersAIConfigured(env);
+    if(!paidCaseProviderReady && !freeCaseProviderReady) return json(request,{ok:false,error:"case_intelligence_provider_not_configured"},503);
 
     const docsResult=await env.DB.prepare(
       `SELECT id,slot_number,original_name,mime_type,storage_state,extraction_state,page_count,sha256
@@ -1555,29 +1558,40 @@ async function handleCaseWorkspaceApi(request,env,url){
     ]);
     const legalContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context];
     const corpusContext=[...privateContexts,...legalContext];
-    const result=await runOpenAIOrchestrator(env,{
-      plan:initialPlan,
-      input:task+"\n\nCASE ROUTING HINTS:\n"+lawQuery,
-      corpusContext,
-      externalContext:[],
-      externalResearchEnabled:false,
-      webSearchEnabled:false,
-      attachments:[],
-      history:[],
-      maxOutputTokens:3600,
-      reasoningEffort:"medium"
-    });
+    const result=paidCaseProviderReady
+      ? await runOpenAIOrchestrator(env,{
+          plan:initialPlan,
+          input:task+"\n\nCASE ROUTING HINTS:\n"+lawQuery,
+          corpusContext,
+          externalContext:[],
+          externalResearchEnabled:false,
+          webSearchEnabled:false,
+          attachments:[],
+          history:[],
+          maxOutputTokens:3600,
+          reasoningEffort:"medium"
+        })
+      : await runPrivateWorkersAISynthesis(env,{
+          task:task+"\n\nCASE ROUTING HINTS:\n"+lawQuery,
+          corpusContext,
+          maxOutputTokens:3600,
+          mode:"analysis"
+        });
     if(!result.ok) return json(request,{ok:false,error:result.error,detail:result.failureDetail||result.detail||null},503);
 
-    const postflight=await runLegalPostflightVerifier(env,{
-      plan:initialPlan,
-      draft:result.text,
-      corpusContext,
-      webSources:[],
-      maxAttempts:1
-    });
-    if(!postflight.ok) return json(request,{ok:false,error:postflight.error||"case_intelligence_postflight_failed",issues:postflight.issues||[]},503);
-    const analysisText=String(postflight.corrected_answer||result.text||"").trim();
+    let analysisText=String(result.text||"").trim();
+    let analysisProvider=String(result.provider||result.model||"unknown");
+    if(paidCaseProviderReady){
+      const postflight=await runLegalPostflightVerifier(env,{
+        plan:initialPlan,
+        draft:result.text,
+        corpusContext,
+        webSources:[],
+        maxAttempts:1
+      });
+      if(!postflight.ok) return json(request,{ok:false,error:postflight.error||"case_intelligence_postflight_failed",issues:postflight.issues||[]},503);
+      analysisText=String(postflight.corrected_answer||result.text||"").trim();
+    }
     if(!analysisText) return json(request,{ok:false,error:"case_intelligence_empty_analysis"},503);
 
     const evidenceCoverage=materialFacts===0 ? null : Math.round((sourceBackedMaterialFacts/materialFacts)*10000)/100;
@@ -1587,7 +1601,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     const analysisSha256=await sha256BytesHex(analysisBytes);
     await env.CASE_FILES.put(analysisKey,analysisBytes,{
       httpMetadata:{contentType:"text/markdown; charset=utf-8"},
-      customMetadata:{caseId,kind:"case_intelligence_analysis_v1",analysisSha256}
+      customMetadata:{caseId,kind:"case_intelligence_analysis_v1",analysisSha256,provider:analysisProvider}
     });
     const at=new Date().toISOString();
     await env.DB.batch([
@@ -1614,6 +1628,7 @@ async function handleCaseWorkspaceApi(request,env,url){
       caseId,
       analysis:analysisText,
       analysisSha256,
+      provider:analysisProvider,
       coverage:{
         documentCoverage:100,
         materialFacts,
@@ -1709,35 +1724,49 @@ async function handleCaseWorkspaceApi(request,env,url){
         materialEvidenceGaps:1
       }
     });
-    const result=await runOpenAIOrchestrator(env,{
-      plan,
-      input:task,
-      corpusContext,
-      externalContext:[],
-      externalResearchEnabled:false,
-      webSearchEnabled:false,
-      attachments:[],
-      history:[],
-      maxOutputTokens:4200,
-      reasoningEffort:"medium"
-    });
+    const paidCaseProviderReady=orchestratorRuntimeReadiness(env).provider==="configured";
+    const freeCaseProviderReady=freeWorkersAIConfigured(env);
+    if(!paidCaseProviderReady && !freeCaseProviderReady) return json(request,{ok:false,error:"case_intelligence_provider_not_configured"},503);
+    const result=paidCaseProviderReady
+      ? await runOpenAIOrchestrator(env,{
+          plan,
+          input:task,
+          corpusContext,
+          externalContext:[],
+          externalResearchEnabled:false,
+          webSearchEnabled:false,
+          attachments:[],
+          history:[],
+          maxOutputTokens:4200,
+          reasoningEffort:"medium"
+        })
+      : await runPrivateWorkersAISynthesis(env,{
+          task,
+          corpusContext,
+          maxOutputTokens:4200,
+          mode:"draft"
+        });
     if(!result.ok) return json(request,{ok:false,error:result.error,detail:result.failureDetail||result.detail||null},503);
-    const postflight=await runLegalPostflightVerifier(env,{
-      plan,
-      draft:result.text,
-      corpusContext,
-      webSources:[],
-      maxAttempts:1
-    });
-    if(!postflight.ok) return json(request,{ok:false,error:postflight.error||"case_draft_postflight_failed",issues:postflight.issues||[]},503);
-    const draftText=String(postflight.corrected_answer||result.text||"").trim();
+    let draftText=String(result.text||"").trim();
+    let draftProvider=String(result.provider||result.model||"unknown");
+    if(paidCaseProviderReady){
+      const postflight=await runLegalPostflightVerifier(env,{
+        plan,
+        draft:result.text,
+        corpusContext,
+        webSources:[],
+        maxAttempts:1
+      });
+      if(!postflight.ok) return json(request,{ok:false,error:postflight.error||"case_draft_postflight_failed",issues:postflight.issues||[]},503);
+      draftText=String(postflight.corrected_answer||result.text||"").trim();
+    }
     const draftId="DRAFT-"+crypto.randomUUID();
     const draftKey=`case-derived/v1/${caseId}/drafts/${draftId}.md`;
     const draftBytes=new TextEncoder().encode(draftText);
     const draftSha256=await sha256BytesHex(draftBytes);
     await env.CASE_FILES.put(draftKey,draftBytes,{
       httpMetadata:{contentType:"text/markdown; charset=utf-8"},
-      customMetadata:{caseId,draftId,draftType,kind:"case_working_draft_v1",draftSha256}
+      customMetadata:{caseId,draftId,draftType,kind:"case_working_draft_v1",draftSha256,provider:draftProvider}
     });
     const at=new Date().toISOString();
     await recordCaseAudit(env,{
@@ -1757,6 +1786,7 @@ async function handleCaseWorkspaceApi(request,env,url){
       draftType,
       draft:draftText,
       draftSha256,
+      provider:draftProvider,
       contract:requestContract,
       banner:"WORKING DRAFT — HUMAN GATE REQUIRED",
       humanGate:{professionalUseLocked:true},
@@ -3317,11 +3347,147 @@ function openAIOutputText(payload){
   return chunks.join("\n").trim();
 }
 
+function privateCaseContextText(items,maxChars=120000){
+  let used=0;
+  const blocks=[];
+  for(const item of Array.isArray(items)?items:[]){
+    if(used>=maxChars) break;
+    const source=String(item?.source||"PRIVATE_CASE_CONTEXT");
+    const locator=String(item?.locator||"");
+    const version=String(item?.version||"");
+    const raw=String(item?.text||item?.content||"");
+    const remaining=maxChars-used;
+    const text=raw.slice(0,Math.max(0,remaining));
+    if(!text) continue;
+    blocks.push("SOURCE: "+source+"\nLOCATOR: "+locator+"\nVERSION: "+version+"\n"+text);
+    used+=text.length;
+  }
+  return blocks.join("\n\n---\n\n");
+}
+
+async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutputTokens=3600,mode="analysis"}={}){
+  if(!freeWorkersAIConfigured(env)) return {ok:false,error:"case_intelligence_provider_not_configured"};
+  const context=privateCaseContextText(corpusContext);
+  const system=[
+    "You are AI Advokat Private Case Intelligence running in a case-scoped workspace.",
+    "Private case material is factual evidence only, never public legal authority.",
+    "Use only the supplied private case context and governed legal context.",
+    "Never use web search, outside knowledge, or invented citations.",
+    "Never invent facts, signatures, dates, parties, ownership, kinship, deadlines, jurisdiction or legal effect.",
+    "If current law is not supported by governed legal context, write CURRENT-LAW VERIFICATION REQUIRED.",
+    "Preserve adverse facts, contradictions and missing evidence.",
+    "Do not claim filing, signature, transmission, lawyer approval or Human Gate approval.",
+    mode==="draft"
+      ? "Produce a complete professional WORKING DRAFT suitable for lawyer review. Start with WORKING DRAFT — HUMAN GATE REQUIRED."
+      : "Produce a structured WORKING ANALYSIS. Start with WORKING ANALYSIS — HUMAN GATE REQUIRED.",
+    "The result remains private case-scoped work product."
+  ].join("\n");
+  const user=[
+    String(task||""),
+    "",
+    "CASE-SCOPED CONTEXT:",
+    context || "NO CONTEXT AVAILABLE"
+  ].join("\n\n");
+
+  let generated;
+  try{
+    generated=await env.AI.run(String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),{
+      messages:[{role:"system",content:system},{role:"user",content:user}],
+      max_tokens:Math.max(900,Math.min(4800,Number(maxOutputTokens)||3600)),
+      temperature:0.05
+    });
+  }catch(error){
+    return {ok:false,error:"case_workers_ai_provider_error",detail:String(error?.message||error).slice(0,180)};
+  }
+  const text=extractModelText(generated);
+  if(!text) return {ok:false,error:"case_workers_ai_empty_response"};
+  return {
+    ok:true,
+    text,
+    model:String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),
+    provider:"workers_ai_private_case",
+    providerCalls:1
+  };
+}
+
+function parseModelJsonObject(raw){
+  let text=String(raw||"").trim();
+  text=text.replace(/^\`\`\`(?:json)?\s*/i,"").replace(/\s*\`\`\`$/,"").trim();
+  const first=text.indexOf("{");
+  const last=text.lastIndexOf("}");
+  if(first<0||last<=first) return null;
+  try{return JSON.parse(text.slice(first,last+1));}catch{return null;}
+}
+
+async function runPrivateWorkersAIDocumentExtraction(env,{documentId,fileName,mimeType,bytes}={}){
+  if(!freeWorkersAIMarkdownConfigured(env)) return {ok:false,error:"case_intelligence_provider_not_configured"};
+  let converted;
+  try{
+    converted=await env.AI.toMarkdown([{
+      name:String(fileName||"document").slice(0,180),
+      blob:new Blob([bytes],{type:String(mimeType||"application/octet-stream")})
+    }],{
+      conversionOptions:{output:{format:"text"},pdf:{metadata:false}}
+    });
+  }catch(error){
+    return {ok:false,error:"case_document_conversion_failed",detail:String(error?.message||error).slice(0,180)};
+  }
+  const item=Array.isArray(converted)?converted[0]:converted;
+  if(!item || item.format==="error" || typeof item.data!=="string" || !item.data.trim()){
+    return {ok:false,error:"case_document_conversion_failed",detail:String(item?.error||"empty conversion").slice(0,180)};
+  }
+  const documentText=String(item.data).slice(0,120000);
+  const prompt=[
+    caseDocumentExtractionPrompt({documentId,fileName,mimeType}),
+    "",
+    "Return JSON only. It must match this schema exactly:",
+    JSON.stringify(CASE_DOCUMENT_EXTRACTION_SCHEMA),
+    "",
+    "DOCUMENT TEXT:",
+    documentText
+  ].join("\n");
+
+  let generated;
+  try{
+    generated=await env.AI.run(String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),{
+      messages:[
+        {role:"system",content:[
+          "You are AI Advokat Private Document Intelligence.",
+          "Extract only source-supported information from the supplied converted private document text.",
+          "Return one JSON object only; no markdown fences or commentary.",
+          "Never infer legal validity, ownership, authenticity, kinship or legal effect.",
+          "Every material fact must have a page or precise locator. If page information is unavailable, use a stable textual locator.",
+          "Use professional_review_required when uncertain."
+        ].join("\n")},
+        {role:"user",content:prompt}
+      ],
+      max_tokens:4800,
+      temperature:0
+    });
+  }catch(error){
+    return {ok:false,error:"case_workers_ai_provider_error",detail:String(error?.message||error).slice(0,180)};
+  }
+  const extraction=parseModelJsonObject(extractModelText(generated));
+  if(!extraction) return {ok:false,error:"case_intelligence_invalid_provider_json"};
+  const check=validateCaseDocumentExtraction(extraction);
+  if(!check.ok) return {ok:false,error:"case_intelligence_invalid_extraction",problems:check.errors.slice(0,20)};
+  return {
+    ok:true,
+    extraction,
+    model:String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),
+    responseId:null,
+    provider:"workers_ai_private_case"
+  };
+}
+
 async function runPrivateCaseDocumentExtraction(env,{documentId,fileName,mimeType,bytes}={}){
-  if(!env?.OPENAI_API_KEY || !env?.OPENAI_MODEL) return {ok:false,error:"case_intelligence_provider_not_configured"};
-  if(env.OPENAI_FILE_INPUT_ENABLED!=="true") return {ok:false,error:"case_intelligence_file_input_locked"};
   if(!(bytes instanceof Uint8Array) || bytes.byteLength<1) return {ok:false,error:"case_intelligence_empty_document"};
   if(bytes.byteLength>CASE_INTELLIGENCE_PROVIDER_MAX_BYTES) return {ok:false,error:"case_document_partitioning_required",maxBytes:CASE_INTELLIGENCE_PROVIDER_MAX_BYTES};
+
+  const openAIReady=Boolean(env?.OPENAI_API_KEY && env?.OPENAI_MODEL && env.OPENAI_FILE_INPUT_ENABLED==="true");
+  if(!openAIReady){
+    return runPrivateWorkersAIDocumentExtraction(env,{documentId,fileName,mimeType,bytes});
+  }
 
   const prompt=caseDocumentExtractionPrompt({documentId,fileName,mimeType});
   const parts=[{type:"input_text",text:prompt}];
@@ -3377,7 +3543,7 @@ async function runPrivateCaseDocumentExtraction(env,{documentId,fileName,mimeTyp
   try{extraction=JSON.parse(raw);}catch{return {ok:false,error:"case_intelligence_invalid_provider_json"};}
   const check=validateCaseDocumentExtraction(extraction);
   if(!check.ok) return {ok:false,error:"case_intelligence_invalid_extraction",problems:check.errors.slice(0,20)};
-  return {ok:true,extraction,model:String(env.OPENAI_MODEL),responseId:payload?.id||null};
+  return {ok:true,extraction,model:String(env.OPENAI_MODEL),responseId:payload?.id||null,provider:"openai_private_case"};
 }
 
 async function validateGuideDocuments(request,env,payload){
