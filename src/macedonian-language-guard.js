@@ -92,8 +92,12 @@ export function buildMacedonianRepairMessages({text,userText=""}={}){
         MACEDONIAN_2017_SYSTEM_RULES,
         "",
         "You are a language-quality repair pass, not a new legal analyst.",
+        "МАКЕДОНСКА ЈАЗИЧНА РЕДАКЦИЈА: Препиши го нацртот на правилен стандарден литературен македонски јазик според Правописот од 2017 година.",
+        "Не користи српски, бугарски, руски или хрватски форми и не создавај непостоечки македонски зборови. Исправи очигледни јазични изобличувања и печатни/морфолошки грешки.",
+        "Провери го секој македонски збор што звучи неприродно. Користи природни форми како: постапка, поднесување, барање, решение, притвор, жалба, полномошно, подносител, правна основа.",
+        "Не користи немакедонски кирилични букви. Ако се појават српските ђ/ћ, замени ги со правилниот македонски збор или форма, не механички ако тоа би го сменило значењето.",
         "Rewrite the supplied draft into correct standard literary Macedonian only.",
-        "Preserve the meaning, factual claims, dates, numbers, party names, parcel/case identifiers, headings and citation markers exactly unless a word itself is foreign-language contamination.",
+        "Preserve the meaning, factual claims, dates, numbers, party names, parcel/case identifiers, headings and citation markers exactly unless a word itself is foreign-language contamination or an obvious malformed Macedonian word.",
         "Do not add new facts, laws, citations, deadlines, legal effects or recommendations.",
         "If the draft imported a foreign jurisdiction without the user requesting it, remove that foreign-law assertion and replace it with a bounded statement that the controlling North Macedonian legal source must be verified.",
         "Return only the corrected answer, with no commentary about the repair."
