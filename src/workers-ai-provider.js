@@ -9,19 +9,38 @@ export function resolveWorkersAITextModel(env){
   return model||WORKERS_AI_TEXT_MODEL_DEFAULT;
 }
 
-export function workersAIRequestOptions({model,messages,maxOutputTokens=1800,temperature=0.1,responseFormat=null}={}){
+export function workersAIRequestOptions({
+  model,
+  messages,
+  maxOutputTokens=1800,
+  temperature=0.1,
+  responseFormat=null,
+  reasoningEffort="low"
+}={}){
   const resolved=String(model||WORKERS_AI_TEXT_MODEL_DEFAULT);
   const maxTokens=Math.max(256,Math.min(6000,Number(maxOutputTokens)||1800));
+  const safeMessages=Array.isArray(messages)?messages:[];
+
+  // GPT-OSS on Workers AI supports the Responses API shape directly through
+  // The Workers AI binding accepts this Responses shape directly. Use it deliberately so reasoning effort is explicit and
+  // bounded instead of letting a Chat Completions response consume the whole
+  // completion budget on hidden reasoning and return empty final content.
+  if(resolved.includes("/gpt-oss-")){
+    return {
+      input:safeMessages,
+      reasoning:{effort:["low","medium","high"].includes(reasoningEffort)?reasoningEffort:"low"},
+      max_output_tokens:maxTokens
+    };
+  }
+
   const base={
-    messages:Array.isArray(messages)?messages:[],
+    messages:safeMessages,
     max_tokens:maxTokens,
     temperature:Number.isFinite(Number(temperature))?Number(temperature):0.1
   };
   if(responseFormat) base.response_format=responseFormat;
 
   // Gemma reasoning must be explicitly disabled when this model is selected.
-  // This keeps the provider contract final-answer-first instead of allowing
-  // the completion budget to be consumed by hidden thinking.
   if(resolved.includes("/gemma-4-")){
     base.chat_template_kwargs={enable_thinking:false};
     base.max_completion_tokens=maxTokens;
@@ -72,13 +91,27 @@ export function workersAIShapeSummary(value){
   if(value===null) return {type:"null"};
   if(Array.isArray(value)) return {type:"array",length:value.length};
   if(typeof value!=="object") return {type:typeof value};
+  const choice=Array.isArray(value.choices)?value.choices[0]:null;
+  const usage=value.usage&&typeof value.usage==="object"?value.usage:{};
+  const outputDetails=usage.output_tokens_details&&typeof usage.output_tokens_details==="object"
+    ? usage.output_tokens_details
+    : {};
   return {
     type:"object",
     keys:Object.keys(value).slice(0,20),
+    status:typeof value.status==="string"?value.status:null,
+    incompleteReason:value.incomplete_details?.reason||null,
     choiceCount:Array.isArray(value.choices)?value.choices.length:null,
+    choiceFinishReason:typeof choice?.finish_reason==="string"?choice.finish_reason:null,
+    choiceContentType:choice?.message ? typeof choice.message.content : null,
+    choiceContentLength:typeof choice?.message?.content==="string"?choice.message.content.length:null,
     outputCount:Array.isArray(value.output)?value.output.length:null,
+    outputTypes:Array.isArray(value.output)?value.output.slice(0,8).map(x=>String(x?.type||"unknown")):null,
     resultKeys:value.result&&typeof value.result==="object"?Object.keys(value.result).slice(0,12):null,
-    responseType:typeof value.response
+    responseType:typeof value.response,
+    inputTokens:Number.isFinite(Number(usage.input_tokens??usage.prompt_tokens))?Number(usage.input_tokens??usage.prompt_tokens):null,
+    outputTokens:Number.isFinite(Number(usage.output_tokens??usage.completion_tokens))?Number(usage.output_tokens??usage.completion_tokens):null,
+    reasoningTokens:Number.isFinite(Number(outputDetails.reasoning_tokens))?Number(outputDetails.reasoning_tokens):null
   };
 }
 
@@ -87,7 +120,8 @@ export async function runWorkersAIText(env,{
   maxOutputTokens=1800,
   temperature=0.1,
   responseFormat=null,
-  model=null
+  model=null,
+  reasoningEffort="low"
 }={}){
   if(!env?.AI || typeof env.AI.run!=="function"){
     return {ok:false,error:"workers_ai_not_configured"};
@@ -98,7 +132,8 @@ export async function runWorkersAIText(env,{
     messages,
     maxOutputTokens,
     temperature,
-    responseFormat
+    responseFormat,
+    reasoningEffort
   });
 
   let generated;
