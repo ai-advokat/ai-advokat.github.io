@@ -168,7 +168,7 @@ function escapeRegex(value){
 export function normaliseMacedonianGeneratedText(text){
   let value=String(text||"").normalize("NFKC");
   for(const [from,to] of DETERMINISTIC_LEXICAL_REPLACEMENTS){
-    const re=new RegExp("(^|[^\\\\p{L}])("+escapeRegex(from)+")(?=$|[^\\\\p{L}])","giu");
+    const re=new RegExp("(^|[^\\p{L}])("+escapeRegex(from)+")(?=$|[^\\p{L}])","giu");
     value=value.replace(re,(full,prefix,word)=>prefix+preserveInitialCase(word,to));
   }
   const charMap=new Map([
