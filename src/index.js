@@ -2677,7 +2677,8 @@ async function handleSearch(request, env, url) {
   }
 
   const database = await dbStatus(env);
-  if (!database.reachable || !database.schemaReady) {
+  const databaseReady=database.reachable && database.schemaReady;
+  if (!databaseReady && type!=="all" && type!=="guide") {
     return json(request, {
       ok: false,
       error: "database_not_ready",
@@ -2685,7 +2686,7 @@ async function handleSearch(request, env, url) {
     }, 503);
   }
 
-  const corpusResults = type==="guide" ? [] : await queryPublicCorpus(env, {
+  const corpusResults = (!databaseReady || type==="guide") ? [] : await queryPublicCorpus(env, {
     q,
     type,
     status,
@@ -2699,8 +2700,9 @@ async function handleSearch(request, env, url) {
 
   return json(request, {
     ok: true,
-    mode: "read_only_public_corpus_plus_guides",
+    mode: databaseReady ? "read_only_public_corpus_plus_guides" : "read_only_public_guides_degraded",
     query: q,
+    database,
     count: results.length,
     results,
     humanGate: "Guide matches are secondary navigation aids. Open and verify the controlling primary source before professional reliance."
@@ -5853,7 +5855,9 @@ async function handleOrchestratorArchitecture(request, env) {
           ? "configured_for_api_chat_execution"
           : "locked",
       freeProvider:freeWorkersAIConfigured(env) ? "workers_ai_free" : "locked",
+      freeProviderModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
       paidProviderExecution:readiness.provider==="configured" ? "configured_for_api_chat_execution" : "locked",
+      paidProviderModel:readiness.provider==="configured" ? String(env.OPENAI_MODEL||"openai_configured_model") : null,
       nativeCorpusTool:readiness.nativeCorpusTool,
       externalResearchTools:readiness.externalResearchTools,
       fileInputs:freeWorkersAIMarkdownConfigured(env)
@@ -5986,7 +5990,7 @@ async function handleCapabilities(request, env) {
       legalOrchestrator: freeWorkersAIConfigured(env)
         ? "workers_ai_free_document_research_human_gate"
         : orchestratorRuntimeReadiness(env).provider==="configured"
-          ? "gpt_6_1_sol_live_governed"
+          ? "paid_openai_live_governed"
           : "architecture_v2_provider_locked",
       lioeRuntimeGovernance: env.LIOE_RUNTIME_GOVERNANCE_ENABLED==="true" ? "enabled" : "locked",
       lioePostflight: env.LIOE_POSTFLIGHT_ENABLED==="true" ? "enabled" : "locked",
