@@ -89,15 +89,20 @@ export function validateCaseDocumentUploadMetadata({name,mimeType,pageCount=null
 
 export function caseWorkspaceStorageReady(env){
   const b=env?.CASE_FILES;
-  return !!b
+  const r2Ready=!!b
     && typeof b.put==="function"
     && typeof b.get==="function"
     && typeof b.delete==="function";
+  const d1FallbackReady=env?.CASE_D1_FALLBACK_ENABLED==="true" && !!env?.DB;
+  return r2Ready || d1FallbackReady;
 }
 
 export function caseWorkspaceMultipartReady(env){
   const b=env?.CASE_FILES;
-  return caseWorkspaceStorageReady(env)
+  return !!b
+    && typeof b.put==="function"
+    && typeof b.get==="function"
+    && typeof b.delete==="function"
     && typeof b.createMultipartUpload==="function"
     && typeof b.resumeMultipartUpload==="function"
     && typeof b.head==="function";
