@@ -781,12 +781,56 @@
   newChatBtn.addEventListener("click",()=>{
     const c=newState();chats.set(c.id,c);currentId=c.id;attachments=[];renderAttachments();render();save();input.focus();
   });
-  exportBtn.addEventListener("click",()=>{
+  exportBtn.addEventListener("click",async()=>{
     if(topMenu) topMenu.open=false;
     const chat=current();
-    const text=chat.messages.map(m=>(m.role==="user"?"Вие":"AI Advokat")+":\n"+m.text).join("\n\n");
-    const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
-    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="AI-Advokat-razgovor.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+    const latestAssistant=[...chat.messages].reverse().find(m=>m?.role==="assistant" && String(m.text||"").trim());
+    if(!latestAssistant){
+      const text=chat.messages.map(m=>(m.role==="user"?"Вие":"AI Advokat")+":\n"+m.text).join("\n\n");
+      const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="AI-Advokat-razgovor.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+      return;
+    }
+    exportBtn.disabled=true;
+    try{
+      const mod=await import("/src/case-export.js");
+      const report=mod.normalizeCaseExportReport({
+        caseId:"CHAT-"+String(chat.id||"session").replace(/[^A-Za-z0-9._-]+/g,"-").slice(0,72),
+        title:String(chat.title||"AI Advokat working draft").slice(0,220),
+        caseVersion:"working-draft-1",
+        generatedAt:new Date().toISOString(),
+        mode:"working",
+        humanGate:{status:"pending"},
+        summary:"AI Advokat working draft exported from the current browser session. Professional human review is required before reliance or external use.",
+        sections:[{
+          id:"working-draft",
+          title:"Working draft",
+          items:[{text:String(latestAssistant.text||"").slice(0,50000),status:"HUMAN GATE REQUIRED",sources:[]}]
+        }],
+        sourceManifest:[],
+        provenance:[]
+      },{mode:"working"});
+      const bytes=mod.renderCaseExportDocxBytes(report);
+      const blob=new Blob([bytes],{type:mod.caseExportMime("docx")});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;
+      a.download="AI-Advokat-working-draft.docx";
+      a.rel="noopener";
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+    }catch(error){
+      console.error("chat_docx_export_failed",error);
+      const text=String(latestAssistant.text||"");
+      const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download="AI-Advokat-working-draft.txt";
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+    }finally{
+      exportBtn.disabled=false;
+    }
   });
 
   if(micBtn){
