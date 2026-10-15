@@ -4370,42 +4370,27 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     {role:"system",content:system},
     {role:"user",content:user}
   ];
-  const primaryModel=String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK);
+  // Public FREE chat uses one governed Workers AI generation per quota reservation.
+  // Gemma is used here because GLM-4.7-Flash has returned successful-but-empty
+  // responses in production for ordinary chat/document requests.
+  const model=FREE_WORKERS_AI_SECONDARY_MODEL;
   const tokenLimit=Math.max(600,Math.min(2200,Number(maxOutputTokens)||1800));
   let generated;
   try{
-    generated=await env.AI.run(primaryModel,{
+    generated=await env.AI.run(model,{
       messages,
       max_completion_tokens:tokenLimit,
       temperature:0.1
     });
   }catch(error){
-    generated=null;
+    return {ok:false,error:"free_workers_ai_provider_error",detail:String(error?.message||error).slice(0,180)};
   }
-  let text=extractModelText(generated);
-  let model=primaryModel;
-  let providerCalls=1;
-
-  if(!text && primaryModel!==FREE_WORKERS_AI_SECONDARY_MODEL){
-    try{
-      const secondary=await env.AI.run(FREE_WORKERS_AI_SECONDARY_MODEL,{
-        messages,
-        max_completion_tokens:tokenLimit,
-        temperature:0.1
-      });
-      text=extractModelText(secondary);
-      if(text){
-        model=FREE_WORKERS_AI_SECONDARY_MODEL;
-        providerCalls=2;
-      }
-    }catch{}
-  }
-
+  const text=extractModelText(generated);
   if(!text){
     return {
       ok:false,
       error:"free_workers_ai_empty_response",
-      detail:"Primary and secondary FREE Workers AI models returned no usable assistant text."
+      detail:"FREE Workers AI returned no usable assistant text."
     };
   }
 
@@ -4414,7 +4399,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     text,
     model,
     provider:"workers_ai_free",
-    providerCalls,
+    providerCalls:1,
     convertedDocuments:converted.documents.length,
     webSearchUsed:false,
     sources:[],
