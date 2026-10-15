@@ -1,5 +1,5 @@
 {
-  "schema_version": "2.5",
+  "schema_version": "2.6",
   "architecture_id": "AI_ADVOKAT_GOVERNED_AGENT_ARCHITECTURE_v2",
   "generated_on": "2026-10-15",
   "owner_concept": "AI Advokat",
@@ -155,7 +155,7 @@
   },
   "product_experience": {
     "experience_id": "AI_ADVOCAT_GPT_STYLE_WORKSPACE_v1",
-    "approved_direction": "AI Advokat is the only visible assistant identity; GPT operates in the background.",
+    "approved_direction": "One simple AI Advokat conversation; source routing, legal metadata, research, verification and specialist execution remain in the background.",
     "public_ui": "original AI Advokat conversation workspace inspired by modern GPT interaction patterns; not a copy of third-party branding/trade dress",
     "controls": [
       "new_chat",
@@ -183,7 +183,15 @@
       "attachment_processing": "separate_privacy_tool_gate",
       "conversation_state": "browser_session_history_replayed_as_context",
       "responses_store": false,
-      "privacy_rule": "no durable OpenAI Conversation object; session context is retained in sessionStorage and sent only with the current request"
+      "privacy_rule": "no durable OpenAI Conversation object; session context is retained in sessionStorage and sent only with the current request",
+      "auto_external_research_when_local_insufficient": true,
+      "max_chat_attachments": 20,
+      "natural_language_export_intent": [
+        "docx",
+        "pdf",
+        "json",
+        "csv"
+      ]
     },
     "current_activation": {
       "shell_public_ready": true,
@@ -304,7 +312,7 @@
     "runtime_extension_note": "Regional Comparative Law Agent is a bounded runtime extension governed by the Open Legal Sources policy; the historical v2 manifest agent set remains backward-compatible."
   },
   "central_operating_prompt": {
-    "id": "AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v1",
+    "id": "AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v5",
     "runtime": "/src/ai-advokat-central-prompt.js",
     "governance_note": "/architecture/AI_ADVOCAT_CENTRAL_OPERATING_PROMPT.md",
     "purpose": "One coherent AI Advokat behaviour contract across public FREE chat, article-level research, private case intelligence and the Chief Legal Orchestrator.",
@@ -319,6 +327,15 @@
       "article_level_retrieval_assistant",
       "workers_ai_private_case_intelligence",
       "openai_chief_legal_orchestrator"
+    ],
+    "product_doctrine": "minimum visible controls; maximum governed legal knowledge in the background",
+    "external_research": "local-first; proactive authorised external research when governed primary support is insufficient",
+    "multi_document": "single-task synthesis across up to 20 supported attachments",
+    "output_formats": [
+      "docx",
+      "pdf",
+      "json",
+      "csv"
     ]
   }
 }
