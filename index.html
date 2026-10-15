@@ -3440,6 +3440,27 @@
     if(data.legalStatusWarning) frag.append(el("div",{class:"notice",style:"margin:10px 0"},el("b",{text:T("Статус на правниот текст","Legal text status")}),data.legalStatusWarning));
     frag.append(el("div",{class:"answerBody",text:data.answer || ""}));
 
+    if(data.answerProvenance){
+      const p=data.answerProvenance;
+      const hc=p.humanControl||{};
+      const box=el("div",{class:"versionBox"},
+        el("b",{text:T("Проверливост и Human Gate","Verification and Human Gate")})
+      );
+      const dl=el("dl",{});
+      const row=(k,v)=>{if(v!==null&&v!==undefined&&String(v)!=="") dl.append(el("dt",{text:k}),el("dd",{text:String(v)}));};
+      row(T("Статус на верификација","Verification state"),p.verificationState);
+      row(T("Човечка проверка","Human review"),hc.reviewState);
+      row(T("Одлука за објавување/употреба","Release decision"),hc.releaseDecision);
+      row(T("Верзија/датум на извор","Source version/date"),p.sourceVersionOrDate);
+      if(hc.reviewRequired===true){
+        box.append(dl,el("p",{class:"help",text:T(
+          "Овој AI излез не е човечки одобрен додека reviewState не покаже завршена професионална проверка и releaseDecision не е експлицитно авторизиран.",
+          "This AI output is not human-approved until reviewState records completed professional review and releaseDecision is explicitly authorized."
+        )}));
+      }else box.append(dl);
+      frag.append(box);
+    }
+
     const citations=el("div",{id:"assistantCitations",style:"margin-top:14px;display:grid;gap:8px"});
     if((data.citations || []).length) citations.append(el("b",{text:T("Изворни членови","Source articles")}));
     (data.citations || []).forEach(c=>{
