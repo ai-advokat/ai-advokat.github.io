@@ -5,6 +5,8 @@ on:
     paths:
       - ".github/workflows/free-runtime-live-uat.yml"
       - "src/index.js"
+      - "src/ai-advokat-central-prompt.js"
+      - "src/macedonian-language-guard.js"
       - "src/workers-ai-provider.js"
       - "wrangler.jsonc"
   push:
@@ -12,6 +14,8 @@ on:
     paths:
       - ".github/workflows/free-runtime-live-uat.yml"
       - "src/index.js"
+      - "src/ai-advokat-central-prompt.js"
+      - "src/macedonian-language-guard.js"
       - "src/workers-ai-provider.js"
       - "wrangler.jsonc"
 
@@ -114,7 +118,7 @@ jobs:
           const scenarios=[
             ["basic","Одговори на македонски со една кратка реченица дека AI Advokat работи."],
             ["reminder","Направи ми потсетник за лице што треба да оди во притов."],
-            ["draft","Напиши краток работен пример на поднесок со измислени имиња. Означи дека е потребна човечка проверка."]
+            ["draft","Изработи тужба за надомест на штета, со измислени податоци."]
           ];
 
           for(const [name,q] of scenarios){
@@ -132,6 +136,21 @@ jobs:
             }
             if(/^\s*(need answer|user wants|the user|we need|provide|must answer)\b/i.test(answer)){
               throw new Error(name+" leaked internal planning text: "+answer.slice(0,500));
+            }
+            if(name==="draft"){
+              const badLegal=["съд","ищец","ответник","искова","обезщетение","съгласно","обжалване","възражение","разноски","случайни","поступак","тужилац","захтев","решење","трошкови"];
+              if(badLegal.some(token=>new RegExp("(^|[^\\p{L}])"+token+"(?=$|[^\\p{L}])","u").test(lower))){
+                throw new Error("draft contains neighbouring-language legal contamination: "+answer.slice(0,1200));
+              }
+              if(/(^|\n)\s*(#{1,6}\s|\*\*|---\s*$|\|[^\n]+\|)/m.test(answer)){
+                throw new Error("draft contains raw Markdown decoration unsuitable for direct DOCX/PDF export: "+answer.slice(0,1200));
+              }
+              if(/\bчлен\s+\d+[а-яА-Я-]*/u.test(answer)){
+                throw new Error("draft invented/unverified article numbers despite no governed legal source context: "+answer.slice(0,1200));
+              }
+              if(!/тужб/iu.test(answer)){
+                throw new Error("draft did not produce the requested lawsuit text: "+answer.slice(0,1200));
+              }
             }
             console.log(name+": PASS · "+answer.replace(/\s+/g," ").slice(0,120));
           }
