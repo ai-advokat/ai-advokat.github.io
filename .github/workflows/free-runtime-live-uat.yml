@@ -163,7 +163,7 @@ jobs:
             if(/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/u.test(answer)){
               throw new Error(name+" contains non-Macedonian Cyrillic letters: "+answer.slice(0,500));
             }
-            const foreignTokens=["поступак","подносилац","тужилац","захтев","решење","документы","сведения","следует","является","становище","всего"];
+            const foreignTokens=["поступак","поступакот","подносилац","тужилац","захтев","решење","подаци","документы","сведения","следует","является","становище","всего"];
             const lower=answer.toLocaleLowerCase("mk");
             if(foreignTokens.some(token=>new RegExp("(^|[^\\p{L}])"+token+"(?=$|[^\\p{L}])","u").test(lower))){
               throw new Error(name+" contains Serbian/Bulgarian/Russian lexical contamination: "+answer.slice(0,500));
