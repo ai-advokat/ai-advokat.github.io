@@ -19,7 +19,7 @@ const manifest=JSON.parse(fs.readFileSync("data/agent-architecture-v2.json","utf
 test("CHAT1 homepage exposes one primary AI Advokat conversation workspace",()=>{
   assert.match(html,/id="ai-advokat-chat"/);
   assert.match(html,/id="aiAdvokatChat"/);
-  assert.match(html,/Опишете го правниот проблем со свои зборови/);
+  assert.match(html,/Напишете што ви треба или прикачете документи/);
   assert.match(html,/assets\/ai-advokat-chat\.css/);
   assert.match(html,/assets\/ai-advokat-chat\.js/);
 });
@@ -494,4 +494,29 @@ test("CHAT Word intent creates a per-response DOCX action",()=>{
   assert.match(chatJs,/exportAssistantMessage/);
   assert.match(chatJs,/chat_message_docx_export_failed/);
   assert.match(chatJs,/macedonian_language_quality_failed/);
+});
+
+
+test("CHAT36 natural-language format requests expose direct exports",()=>{
+  assert.match(chatJs,/requestedExportFormats/);
+  for(const format of ["docx","pdf","json","csv"]) assert.match(chatJs,new RegExp('formats\\.push\\("'+format+'"\\)'));
+  assert.match(chatJs,/documentExports:requestedExportFormats\(q\)/);
+});
+
+test("CHAT37 sources and governance are collapsed behind a simple answer",()=>{
+  assert.match(chatJs,/ai-msg-evidence/);
+  assert.match(chatJs,/Извори и проверка/);
+  assert.match(html,/<summary>Повеќе<\/summary>/);
+  assert.match(html,/Приватност и професионална употреба/);
+});
+
+test("CHAT38 GPT attachment analysis accepts the same twenty-file set as the composer",()=>{
+  const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(orchestrator,/attachments\)\?attachments:\[\]\)\.slice\(0,20\)/);
+});
+
+test("CHAT39 Auto mode can escalate unsupported legal questions to authorised external research",()=>{
+  assert.match(worker,/autoExternalResearchCandidate/);
+  assert.match(worker,/governedPrimarySupport/);
+  assert.match(worker,/if\(autoExternalResearchCandidate && !useFreeWorkersAI\) webRequested=true/);
 });
