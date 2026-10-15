@@ -28,8 +28,8 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Deploy the verified FREE Workers AI empty-response fix from PR #277 and align GPT production activation with the authorized governed D1 fallback storage path. Public FREE chat remains one AI generation per quota reservation; Human Gate and no-autonomous-action boundaries are preserved.",
-    "approval_text": "deploy verified FREE chat fix with governed D1 fallback and all governance preserved",
+    "reason": "Root-cause FREE runtime repair: remove split GLM/Gemma model truth, route all Workers AI text generation through one provider contract, use the production-supported Cloudflare-hosted gpt-oss-20b model, and require multi-scenario Macedonian live UAT plus DOCX smoke before production is accepted.",
+    "approval_text": "коренски да го направиме FREE runtime-от стабилен со еден provider contract и реални live UAT сценарија",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
     "baseline_result": "CLOUDFLARE_R2_NOT_ENABLED_CODE_10042",
@@ -50,7 +50,7 @@
     "free_monthly_assistant_quota": 50,
     "chat_max_attachments": 20,
     "free_provider": "workers_ai",
-    "free_provider_model": "@cf/google/gemma-4-26b-a4b-it",
+    "free_provider_model": "@cf/openai/gpt-oss-20b",
     "free_document_conversion": "workers_ai_to_markdown",
     "openai_paid_provider_optional": true,
     "free_document_smoke_token": "PRAVDAFREE777",
@@ -58,6 +58,12 @@
     "prior_public_model": "@cf/zai-org/glm-4.7-flash",
     "single_generation_per_quota_reservation": true,
     "d1_fallback_activation_supported": true,
-    "r2_required_for_this_redeploy": false
+    "r2_required_for_this_redeploy": false,
+    "prior_public_models": [
+      "@cf/zai-org/glm-4.7-flash",
+      "@cf/google/gemma-4-26b-a4b-it"
+    ],
+    "provider_contract": "src/workers-ai-provider.js",
+    "production_uat": "multi_scenario_macedonian_plus_docx"
   }
 }
