@@ -125,12 +125,17 @@ import {
   MACEDONIAN_2017_SYSTEM_RULES,
   assessMacedonianOutput,
   buildMacedonianRepairMessages,
+  normaliseMacedonianGeneratedText,
   shouldEnforceMacedonianOutput
 } from "./macedonian-language-guard.js";
 import {
   AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
   buildAIAdvokatCentralPrompt
 } from "./ai-advokat-central-prompt.js";
+import {
+  isFormalLegalDraftRequest,
+  finaliseFormalLegalDraft
+} from "./response-quality.js";
 
 const VERSION = "1.8.1";
 
@@ -3569,15 +3574,33 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
     userText:task,
     maxOutputTokens:Math.max(900,Math.min(4800,Number(maxOutputTokens)||3600))
   });
+  const languageRequired=shouldEnforceMacedonianOutput(task);
+  if(languageRequired && languagePass.languageAssessment?.ok!==true){
+    return {
+      ok:false,
+      error:"macedonian_language_quality_failed",
+      detail:languagePass.repairError||"macedonian_postflight_failed",
+      model:result.model,
+      providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0)
+    };
+  }
+  const finalText=(mode==="draft" || isFormalLegalDraftRequest(task))
+    ? finaliseFormalLegalDraft(languagePass.text,{
+        userText:task,
+        hasGovernedLegalContext:Boolean(String(context||"").trim())
+      })
+    : languagePass.text;
   return {
     ok:true,
-    text:languagePass.text,
+    text:finalText,
     model:result.model,
     provider:"workers_ai_private_case",
     providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
-    languageStandard:shouldEnforceMacedonianOutput(task)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+    languageStandard:languageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageRepaired:languagePass.repaired===true,
-    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"unchecked_or_repair_incomplete"
+    deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
+    formalDraftPostflight:(mode==="draft" || isFormalLegalDraftRequest(task)),
+    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"failed_closed"
   };
 }
 
@@ -4446,9 +4469,22 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
   }
 
+  let deterministicCleanupApplied=false;
+  if(!assessment.ok){
+    const deterministic=normaliseMacedonianGeneratedText(current||original);
+    const deterministicAssessment=assessMacedonianOutput(deterministic,{userText});
+    if(deterministic!==current){
+      current=deterministic;
+      deterministicCleanupApplied=true;
+    }
+    assessment=deterministicAssessment;
+    lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
+  }
+
   return {
     text:current||original,
     repaired:current!==original && assessment.ok,
+    deterministicCleanupApplied,
     providerCalls,
     languageAssessment:assessment,
     repairError:assessment.ok?null:(lastError||"macedonian_repair_still_noncompliant")
@@ -4529,16 +4565,36 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     userText:q,
     maxOutputTokens:tokenLimit
   });
+  const languageRequired=shouldEnforceMacedonianOutput(q);
+  if(languageRequired && languagePass.languageAssessment?.ok!==true){
+    return {
+      ok:false,
+      error:"macedonian_language_quality_failed",
+      detail:languagePass.repairError||"macedonian_postflight_failed",
+      model:result.model,
+      providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
+      provider:"workers_ai_free"
+    };
+  }
+  const formalDraft=isFormalLegalDraftRequest(q);
+  const finalText=formalDraft
+    ? finaliseFormalLegalDraft(languagePass.text,{
+        userText:q,
+        hasGovernedLegalContext:Boolean(String(governed||"").trim())
+      })
+    : languagePass.text;
 
   return {
     ok:true,
-    text:languagePass.text,
+    text:finalText,
     model:result.model,
     provider:"workers_ai_free",
     providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
-    languageStandard:shouldEnforceMacedonianOutput(q)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+    languageStandard:languageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageRepaired:languagePass.repaired===true,
-    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"unchecked_or_repair_incomplete",
+    deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
+    formalDraftPostflight:formalDraft,
+    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"failed_closed",
     convertedDocuments:converted.documents.length,
     webSearchUsed:false,
     sources:[],
@@ -5490,63 +5546,69 @@ async function handleAssistant(request, env, url) {
           userText:q,
           maxOutputTokens:1400
         });
-        const candidate=String(languagePass.text||primaryCandidate).trim();
-        const check=validateAnswerCitations(candidate,articles);
-        if(check.ok){
-          const normalizeRef=(value)=>String(value || "").normalize("NFKC").toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"");
-          const articleByRef=new Map();
-          for(const a of articles){
-            for(const ref of [a.articleNumberNormalized,a.articleNumber].filter(Boolean).map(normalizeRef)){
-              articleByRef.set(ref,a);
-            }
-          }
-          const versionAnchor=version?.version_label || null;
-          const versionIsApprovedCurrent=versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved";
-
-          const articleVerificationState=(a)=>{
-            if(Array.isArray(a.legalStatusOverlays) && a.legalStatusOverlays.some(o=>o.humanGateRequired)){
-              return "pending_verification";
-            }
-            if(versionIsApprovedCurrent){
-              return a.publicStatus==="current_verified" ? "verified_current" : "pending_verification";
-            }
-            if(a.status==="historical" && ["approved","reviewed"].includes(String(a.humanReviewStatus || ""))){
-              return "verified_historical";
-            }
-            return "pending_verification";
-          };
-
-          const claimChecks=(check.claims || []).map(claim=>{
-            const citedArticles=claim.cited.map(ref=>articleByRef.get(ref)).filter(Boolean);
-            const states=citedArticles.map(articleVerificationState);
-            const verificationState=versionIsApprovedCurrent
-              ? (states.length && states.every(x=>x==="verified_current") ? "verified_current" : "pending_verification")
-              : (states.length && states.every(x=>x==="verified_historical") ? "verified_historical" : "pending_verification");
-            return validateLegalClaim({
-              claim:claim.text,
-              claim_type:versionIsApprovedCurrent ? "current_law" : "historical_law",
-              risk:"high",
-              authority_class:"A1",
-              source_identity:citedArticles.map(a=>a.sourceUrl || instrument.title).join(" | "),
-              version_or_date:versionAnchor,
-              locator:citedArticles.map(a=>`Article ${a.articleNumber}`).join("; "),
-              verification_state:verificationState,
-              provenance:citedArticles.map(a=>`${a.sourceUrl || instrument.canonical_key}#article-${a.articleNumber}`).join(" | ")
-            });
-          });
-          const failedClaim=claimChecks.find(x=>x.decision!=="accept");
-          if(!failedClaim){
-            answer=candidate;
-            answerMode="workers_ai_source_backed";
-          }else{
-            aiError=`claim_guard_rejected:${failedClaim.reasons.join(",")}`;
-            console.warn("assistant_claim_guard_rejected",failedClaim.reasons.join(","));
-            answerMode="retrieval_only_claim_guard";
-          }
+        const languageRequired=shouldEnforceMacedonianOutput(q);
+        if(languageRequired && languagePass.languageAssessment?.ok!==true){
+          aiError="macedonian_language_quality_failed:"+(languagePass.repairError||"postflight_failed");
+          answerMode="retrieval_only_language_guard";
         }else{
-          aiError=`citation_guard_rejected:${check.reason}`;
-          console.warn("assistant_citation_guard_rejected",check.reason,(check.unexpected || []).slice(0,5).join(","));
-          answerMode="retrieval_only_citation_guard";
+          const candidate=String(languagePass.text||primaryCandidate).trim();
+          const check=validateAnswerCitations(candidate,articles);
+          if(check.ok){
+            const normalizeRef=(value)=>String(value || "").normalize("NFKC").toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"");
+            const articleByRef=new Map();
+            for(const a of articles){
+              for(const ref of [a.articleNumberNormalized,a.articleNumber].filter(Boolean).map(normalizeRef)){
+                articleByRef.set(ref,a);
+              }
+            }
+            const versionAnchor=version?.version_label || null;
+            const versionIsApprovedCurrent=versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved";
+
+            const articleVerificationState=(a)=>{
+              if(Array.isArray(a.legalStatusOverlays) && a.legalStatusOverlays.some(o=>o.humanGateRequired)){
+                return "pending_verification";
+              }
+              if(versionIsApprovedCurrent){
+                return a.publicStatus==="current_verified" ? "verified_current" : "pending_verification";
+              }
+              if(a.status==="historical" && ["approved","reviewed"].includes(String(a.humanReviewStatus || ""))){
+                return "verified_historical";
+              }
+              return "pending_verification";
+            };
+
+            const claimChecks=(check.claims || []).map(claim=>{
+              const citedArticles=claim.cited.map(ref=>articleByRef.get(ref)).filter(Boolean);
+              const states=citedArticles.map(articleVerificationState);
+              const verificationState=versionIsApprovedCurrent
+                ? (states.length && states.every(x=>x==="verified_current") ? "verified_current" : "pending_verification")
+                : (states.length && states.every(x=>x==="verified_historical") ? "verified_historical" : "pending_verification");
+              return validateLegalClaim({
+                claim:claim.text,
+                claim_type:versionIsApprovedCurrent ? "current_law" : "historical_law",
+                risk:"high",
+                authority_class:"A1",
+                source_identity:citedArticles.map(a=>a.sourceUrl || instrument.title).join(" | "),
+                version_or_date:versionAnchor,
+                locator:citedArticles.map(a=>`Article ${a.articleNumber}`).join("; "),
+                verification_state:verificationState,
+                provenance:citedArticles.map(a=>`${a.sourceUrl || instrument.canonical_key}#article-${a.articleNumber}`).join(" | ")
+              });
+            });
+            const failedClaim=claimChecks.find(x=>x.decision!=="accept");
+            if(!failedClaim){
+              answer=candidate;
+              answerMode="workers_ai_source_backed";
+            }else{
+              aiError=`claim_guard_rejected:${failedClaim.reasons.join(",")}`;
+              console.warn("assistant_claim_guard_rejected",failedClaim.reasons.join(","));
+              answerMode="retrieval_only_claim_guard";
+            }
+          }else{
+            aiError=`citation_guard_rejected:${check.reason}`;
+            console.warn("assistant_citation_guard_rejected",check.reason,(check.unexpected || []).slice(0,5).join(","));
+            answerMode="retrieval_only_citation_guard";
+          }
         }
       }
     }
@@ -6103,8 +6165,9 @@ async function handleCapabilities(request, env) {
       centralOperatingPrompt:AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
-      macedonianRepairPostflight:"conditional_workers_ai_postflight_v1",
+      macedonianRepairPostflight:"conditional_workers_ai_plus_deterministic_cleanup_v2",
       macedonianRepairProviderBudget:"max_two_conditional_extra_calls_per_free_turn",
+      finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",

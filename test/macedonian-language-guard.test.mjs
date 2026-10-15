@@ -5,7 +5,8 @@ import {
   MACEDONIAN_2017_SYSTEM_RULES,
   shouldEnforceMacedonianOutput,
   assessMacedonianOutput,
-  buildMacedonianRepairMessages
+  buildMacedonianRepairMessages,
+  normaliseMacedonianGeneratedText
 } from "../src/macedonian-language-guard.js";
 
 test("runtime contract is explicitly anchored to the 2017 Macedonian orthography",()=>{
@@ -63,4 +64,24 @@ test("repair system prompt explicitly forbids neighbouring-language legal forms"
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/съд, ищец, ответник/);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/надомест на штета/);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/Macedonian Latin transliteration/);
+});
+
+
+test("deterministic last-mile cleanup converts reported Bulgarian and Serbian legal contamination",()=>{
+  const bad="Ищецът подава искова молба пред съдът и бара обезщетение и разноски. Поступакот има захтев.";
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.match(clean,/Тужителот/u);
+  assert.match(clean,/тужба/u);
+  assert.match(clean,/судот/u);
+  assert.match(clean,/надомест на штета/u);
+  assert.match(clean,/трошоци/u);
+  assert.match(clean,/постапка/iu);
+  assert.match(clean,/барање/u);
+  const check=assessMacedonianOutput(clean,{userText:"Изработи тужба на македонски."});
+  assert.equal(check.ok,true,JSON.stringify({clean,check}));
+});
+
+test("deterministic cleanup removes remaining non-Macedonian Cyrillic letters",()=>{
+  const clean=normaliseMacedonianGeneratedText("Трябва да се провери съдът и ответникът.");
+  assert.doesNotMatch(clean,/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/u);
 });
