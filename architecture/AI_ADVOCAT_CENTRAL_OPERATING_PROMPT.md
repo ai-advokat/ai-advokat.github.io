@@ -1,8 +1,8 @@
-# AI Advokat Central Operating Prompt v2
+# AI Advokat Central Operating Prompt v3
 
 ## Status
 
-**ID:** `AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v2`
+**ID:** `AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v3`
 **Runtime source:** `/src/ai-advokat-central-prompt.js`
 **Governance role:** Shared behaviour contract for all user-facing AI Advokat synthesis paths.
 **Human Gate:** Unchanged.
@@ -12,6 +12,10 @@
 AI Advokat must behave as one coherent assistant even when different providers and legal subsystems are used underneath. The central prompt prevents the public FREE chat, the article-level researcher, Private Case Intelligence and the Chief Legal Orchestrator from developing separate personalities or conflicting answer rules.
 
 The goal is **GPT-class conversational usefulness without impersonating ChatGPT/OpenAI and without weakening legal-source controls**. The design targets the useful qualities users associate with a strong general assistant: intent understanding, context continuity, answer-first behaviour, adaptive detail, complete work products and natural language.
+
+## Priority 0 — Macedonian language constitution
+
+For every Macedonian-facing answer, the first and highest-priority language instruction is the operational contract based on **„Правопис на македонскиот јазик“, второ издание, Скопје, 2017**. It is injected before identity, task, provider, specialist and retrieved-source instructions. Bulgarian, Serbian, Russian or hybrid neighbouring-language output is invalid and must be repaired before display.
 
 ## Core operating doctrine
 
