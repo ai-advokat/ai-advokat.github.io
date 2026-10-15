@@ -5,7 +5,7 @@
 // with the user's/system font without shipping a font binary in this repository.
 
 export const CASE_EXPORT_VERSION="1.0.0";
-export const CASE_EXPORT_FORMATS=Object.freeze(["md","docx","pdf"]);
+export const CASE_EXPORT_FORMATS=Object.freeze(["md","docx","csv","png","pdf"]);
 export const CASE_EXPORT_MODES=Object.freeze(["working","professional"]);
 
 const MAX_SECTIONS=40;
@@ -167,6 +167,8 @@ export function caseExportFilename(report,format){
 export function caseExportMime(format){
   if(format==="md") return "text/markdown; charset=utf-8";
   if(format==="docx") return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  if(format==="csv") return "text/csv; charset=utf-8";
+  if(format==="png") return "image/png";
   if(format==="pdf") return "application/pdf";
   throw new Error("case_export_format_invalid");
 }
@@ -303,6 +305,37 @@ export function renderCaseExportMarkdown(reportInput){
   }
   out.push("");
   return out.join("\n");
+}
+
+export function renderCaseExportCsv(reportInput){
+  const report=reportInput?.exportVersion===CASE_EXPORT_VERSION ? reportInput : normalizeCaseExportReport(reportInput);
+  const rows=[["kind","section","heading","text","status","source_ids"]];
+  const esc=value=>{
+    const s=String(value??"");
+    return '"'+s.replace(/"/g,'""')+'"';
+  };
+  rows.push(["meta","","title",report.title,"",""]);
+  rows.push(["meta","","case_id",report.caseId,"",""]);
+  rows.push(["meta","","case_version",report.caseVersion,"",""]);
+  rows.push(["meta","","generated_at",report.generatedAt,"",""]);
+  rows.push(["meta","","human_gate",report.humanGate.status,"",""]);
+  if(report.summary) rows.push(["summary","","executive_summary",report.summary,"",""]);
+  for(const section of report.sections){
+    if(!section.items.length) rows.push(["section",section.title,"","","",""]);
+    for(const item of section.items){
+      rows.push([
+        "item",section.title,item.heading,item.text,item.status,
+        item.sources.map(s=>s.id).join("|")
+      ]);
+    }
+  }
+  for(const src of report.sourceManifest){
+    rows.push(["source_manifest","",src.title,[src.locator,src.version,src.sha256].filter(Boolean).join(" | "),"",src.id]);
+  }
+  for(const p of report.provenance){
+    rows.push(["provenance","",p.claimId,[p.locator,p.note].filter(Boolean).join(" | "),"",p.sourceId]);
+  }
+  return "\uFEFF"+rows.map(row=>row.map(esc).join(",")).join("\r\n")+"\r\n";
 }
 
 function xmlEscape(value){
