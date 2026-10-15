@@ -115,7 +115,9 @@ import {
 import { detectConfidentialCasePrompt } from "./chat-privacy.js";
 import {
   WORKERS_AI_TEXT_MODEL_DEFAULT,
+  WORKERS_AI_REPAIR_MODEL_DEFAULT,
   resolveWorkersAITextModel,
+  resolveWorkersAIRepairModel,
   extractWorkersAIText,
   workersAIShapeSummary,
   runWorkersAIText
@@ -4420,6 +4422,7 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     messages[0]={...messages[0],content:String(messages[0].content||"")+"\n\n"+issueNote};
 
     const repair=await runWorkersAIText(env,{
+      model:resolveWorkersAIRepairModel(env),
       messages,
       maxOutputTokens:Math.max(700,Math.min(4200,Number(maxOutputTokens)||1800)),
       temperature:0
@@ -6093,6 +6096,8 @@ async function handleCapabilities(request, env) {
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
       macedonianRepairPostflight:"conditional_workers_ai_postflight_v1",
       macedonianRepairProviderBudget:"max_two_conditional_extra_calls_per_free_turn",
+      macedonianRepairModel:resolveWorkersAIRepairModel(env),
+      macedonianRepairModelDefault:WORKERS_AI_REPAIR_MODEL_DEFAULT,
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",
