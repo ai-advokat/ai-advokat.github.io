@@ -175,3 +175,30 @@
 .ai-chat-upload-primary{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:9px 12px;font-weight:750}
 .ai-chat-upload-primary:hover,.ai-chat-upload-primary:focus-visible{border-color:var(--gold);outline:none}
 .ai-chat-upload-count{font-size:.82rem;font-weight:800;color:var(--muted);padding:5px 9px;border:1px solid var(--line);border-radius:999px;background:var(--bg)}
+
+
+.ai-msg-evidence{
+  margin-top:10px;
+  border-top:1px solid var(--line,#d9e0e7);
+  padding-top:7px;
+  font-size:.88rem;
+}
+.ai-msg-evidence>summary{
+  cursor:pointer;
+  color:var(--muted,#667085);
+  font-weight:600;
+  width:max-content;
+}
+.ai-msg-evidence-body{
+  display:grid;
+  gap:8px;
+  margin-top:8px;
+}
+.ai-chat-hint>summary{
+  cursor:pointer;
+  color:var(--muted,#667085);
+  font-weight:600;
+}
+.ai-chat-hint>p{
+  margin:.55rem 0 0;
+}

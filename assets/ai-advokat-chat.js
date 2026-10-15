@@ -179,6 +179,21 @@
     head.append(who,meta);
     const content=document.createElement("div");content.className="ai-msg-content";content.textContent=m.text||"";
     body.append(head,content);
+    let evidenceDetails=null;
+    let evidenceBody=null;
+    const appendEvidence=node=>{
+      if(!evidenceDetails){
+        evidenceDetails=document.createElement("details");
+        evidenceDetails.className="ai-msg-evidence";
+        const summary=document.createElement("summary");
+        summary.textContent="Извори и проверка";
+        evidenceBody=document.createElement("div");
+        evidenceBody.className="ai-msg-evidence-body";
+        evidenceDetails.append(summary,evidenceBody);
+        body.append(evidenceDetails);
+      }
+      evidenceBody.append(node);
+    };
 
     if(m.action && typeof m.action==="object"){
       const href=String(m.action.href||"");
@@ -190,20 +205,29 @@
       }
     }
 
-    if(m.documentExport?.format==="docx"){
+    const requestedExports=Array.isArray(m.documentExports)
+      ? m.documentExports
+      : (m.documentExport?.format ? [m.documentExport] : []);
+    if(requestedExports.length){
       const exportBox=document.createElement("div");exportBox.className="ai-msg-tools";
-      const download=document.createElement("button");download.type="button";download.className="btn light";
-      download.textContent=String(m.documentExport.label||"Преземи Word (.docx)");
-      download.addEventListener("click",async()=>{
-        download.disabled=true;
-        try{
-          await exportAssistantMessage(m,current(),"docx",String(m.documentExport.filename||"AI-Advokat-analysis.docx"));
-        }catch(error){
-          console.error("chat_message_docx_export_failed",error);
-          alert("Word документот не можеше да се создаде. Обидете се повторно.");
-        }finally{download.disabled=false;}
+      requestedExports.slice(0,4).forEach(spec=>{
+        const format=String(spec?.format||"").toLowerCase();
+        if(!["docx","pdf","json","csv"].includes(format)) return;
+        const download=document.createElement("button");download.type="button";download.className="btn light";
+        const labels={docx:"Преземи Word (.docx)",pdf:"Преземи PDF",json:"Преземи JSON",csv:"Преземи CSV"};
+        download.textContent=String(spec?.label||labels[format]||("Преземи "+format.toUpperCase()));
+        download.addEventListener("click",async()=>{
+          download.disabled=true;
+          try{
+            await exportAssistantMessage(m,current(),format,String(spec?.filename||("AI-Advokat-analysis."+format)));
+          }catch(error){
+            console.error("chat_message_export_failed",format,error);
+            alert("Документот не можеше да се создаде. Обидете се повторно.");
+          }finally{download.disabled=false;}
+        });
+        exportBox.append(download);
       });
-      exportBox.append(download);body.append(exportBox);
+      if(exportBox.childElementCount) body.append(exportBox);
     }
 
     if(m.guides?.length){
@@ -220,7 +244,7 @@
         const a=document.createElement("a");a.className="btn light";a.href=g.url;a.textContent="Отвори →";
         card.append(text,a);grid.append(card);
       });
-      body.append(grid);
+      appendEvidence(grid);
     }
     if(m.governance){
       const box=document.createElement("div");box.className="ai-msg-source";
@@ -247,7 +271,7 @@
         specialists.textContent="Bounded specialists: "+(agents.length?agents.join(", "):"executed");
         box.append(specialists);
       }
-      body.append(box);
+      appendEvidence(box);
     }
     if(m.sourceLabel){
       const source=document.createElement("div");source.className="ai-msg-source";source.textContent=m.sourceLabel;body.append(source);
@@ -266,7 +290,7 @@
           const span=document.createElement("span");span.textContent=labelText;legalLinks.append(span);
         }
       });
-      if(legalLinks.childElementCount){legalBox.append(legalLinks);body.append(legalBox);}
+      if(legalLinks.childElementCount){legalBox.append(legalLinks);appendEvidence(legalBox);}
     }
     if(Array.isArray(m.caseLawSources) && m.caseLawSources.length){
       const caseBox=document.createElement("div");caseBox.className="ai-msg-source";
@@ -282,7 +306,7 @@
           const span=document.createElement("span");span.textContent=labelText;caseLinks.append(span);
         }
       });
-      if(caseLinks.childElementCount){caseBox.append(caseLinks);body.append(caseBox);}
+      if(caseLinks.childElementCount){caseBox.append(caseLinks);appendEvidence(caseBox);}
     }
     if(Array.isArray(m.guideSources) && m.guideSources.length){
       const guideBox=document.createElement("div");guideBox.className="ai-msg-source";
@@ -298,7 +322,7 @@
           const span=document.createElement("span");span.textContent=labelText;guideLinks.append(span);
         }
       });
-      if(guideLinks.childElementCount){guideBox.append(guideLinks);body.append(guideBox);}
+      if(guideLinks.childElementCount){guideBox.append(guideLinks);appendEvidence(guideBox);}
     }
     if(Array.isArray(m.sources) && m.sources.length){
       const sourceBox=document.createElement("div");sourceBox.className="ai-msg-source";
@@ -313,7 +337,7 @@
         a.textContent=(s?.title||("Извор "+(i+1))).slice(0,90);
         links.append(a);
       });
-      if(links.childElementCount){sourceBox.append(links);body.append(sourceBox);}
+      if(links.childElementCount){sourceBox.append(links);appendEvidence(sourceBox);}
     }
     const tools=document.createElement("div");tools.className="ai-msg-tools";
     const copy=document.createElement("button");copy.type="button";copy.textContent="Копирај";
@@ -741,11 +765,11 @@
           caseLawSources:Array.isArray(d.caseLawSources)?d.caseLawSources:[],
           guideSources:Array.isArray(d.guideSources)?d.guideSources:[],
           governance:d.legalGovernance||null,
-          documentExport:wordDocumentRequested(q)?{
-            format:"docx",
-            label:"Преземи Word (.docx)",
-            filename:"AI-Advokat-analysis.docx"
-          }:null,
+          documentExports:requestedExportFormats(q).map(format=>({
+            format,
+            label:format==="docx"?"Преземи Word (.docx)":format==="pdf"?"Преземи PDF":format==="json"?"Преземи JSON":"Преземи CSV",
+            filename:"AI-Advokat-analysis."+format
+          })),
           sourceLabel:d.sourceMode==="ai_advokat_article_corpus_first"
             ?"AI Advokat article-level corpus first · верзија и Human Gate се прикажани во изворите."
             :d.sourceMode==="ai_advokat_article_corpus_plus_external_web"
@@ -841,10 +865,17 @@
   newChatBtn.addEventListener("click",()=>{
     const c=newState();chats.set(c.id,c);currentId=c.id;attachments=[];renderAttachments();render();save();input.focus();
   });
-  function wordDocumentRequested(value){
+  function requestedExportFormats(value){
     const text=String(value||"").normalize("NFKC").toLocaleLowerCase("mk");
-    return /(?:\bdocx\b|\bword\b|\bworld\b|ворд|word\s+format|world\s+format|во\s+word|во\s+world|word\s+документ|ворд\s+документ)/iu.test(text);
+    const formats=[];
+    if(/(?:\bdocx\b|\bword\b|\bworld\b|ворд|word\s+format|world\s+format|во\s+word|во\s+world|word\s+документ|ворд\s+документ)/iu.test(text)) formats.push("docx");
+    if(/(?:\bpdf\b|пдф|во\s+pdf|pdf\s+формат)/iu.test(text)) formats.push("pdf");
+    if(/(?:\bjson\b|џејсон|во\s+json)/iu.test(text)) formats.push("json");
+    if(/(?:\bcsv\b|во\s+csv|цсв)/iu.test(text)) formats.push("csv");
+    return [...new Set(formats)];
   }
+
+  function wordDocumentRequested(value){ return requestedExportFormats(value).includes("docx"); }
 
   async function exportAssistantMessage(message,chat,format="docx",filename=null){
     if(!message || message.role!=="assistant" || !String(message.text||"").trim()) return;

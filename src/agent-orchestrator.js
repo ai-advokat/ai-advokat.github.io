@@ -739,7 +739,7 @@ export async function runOpenAIOrchestrator(env, {
   ].join("\n");
 
   const userParts=[{type:"input_text",text:userContent}];
-  for(const attachment of (Array.isArray(attachments)?attachments:[]).slice(0,7)){
+  for(const attachment of (Array.isArray(attachments)?attachments:[]).slice(0,20)){
     if(!attachment || typeof attachment!=="object") continue;
     const filename=String(attachment.name || "attachment").slice(0,180);
     if(attachment.kind==="image" && typeof attachment.dataUrl==="string" && attachment.dataUrl.startsWith("data:image/")){

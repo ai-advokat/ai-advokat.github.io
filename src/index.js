@@ -137,7 +137,7 @@ import {
   finaliseFormalLegalDraft
 } from "./response-quality.js";
 
-const VERSION = "1.8.1";
+const VERSION = "1.9.0";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -4869,7 +4869,8 @@ async function handleGPTChat(request,env){
   }
 
   const uiMode=["auto","library","web"].includes(payload.mode) ? payload.mode : "auto";
-  const webRequested=uiMode==="web" || payload.webSearch===true;
+  let webRequested=uiMode==="web" || payload.webSearch===true;
+  const explicitWebRequested=webRequested;
   if(webRequested && env.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED!=="true"){
     return json(request,{
       ok:false,error:"web_search_locked",
@@ -4928,6 +4929,22 @@ async function handleGPTChat(request,env){
     || uiMode==="library"
     || (uiMode==="auto" && guideContext.length>0);
 
+  // In Auto mode the user should not need to understand source lanes or switch
+  // a Web toggle. If a legal task has no governed primary support locally,
+  // mark it for proactive external verification when the paid provider/tool
+  // gate is actually available. FREE Workers AI stays local/source-backed.
+  const governedPrimarySupport=
+    articleBundle.context.length>0
+    || gazetteBundle.context.length>0
+    || caseLawBundle.context.length>0
+    || bureauEchrBundle.context.length>0;
+  const autoExternalResearchCandidate=
+    uiMode==="auto"
+    && initialPlan.mode!==ORCHESTRATOR_MODES.GENERAL
+    && !governedPrimarySupport
+    && env.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"
+    && readiness.provider==="configured";
+
   const membership=await resolveMembership(request,env);
   let subject;
   let quota;
@@ -4944,7 +4961,8 @@ async function handleGPTChat(request,env){
   }
 
   const useFreeWorkersAI=!membership && freeWorkersAIConfigured(env);
-  if(useFreeWorkersAI && webRequested){
+  if(autoExternalResearchCandidate && !useFreeWorkersAI) webRequested=true;
+  if(useFreeWorkersAI && explicitWebRequested){
     return json(request,{
       ok:false,
       error:"free_mode_web_search_unavailable",
