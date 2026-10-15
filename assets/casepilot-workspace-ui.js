@@ -497,7 +497,7 @@ async function extractPendingCaseDocuments(){
       failed.push({
         id:row.id,
         name:row.original_name,
-        error:"storage_state_"+String(row.storage_state||"not_ready")
+        error:"Документот не е source-ready ("+String(row.storage_state||"not_ready")+"). Големите/quarantined документи бараат partitioned extraction."
       });
       continue;
     }
@@ -506,7 +506,10 @@ async function extractPendingCaseDocuments(){
       await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/documents/"+encodeURIComponent(row.id)+"/extract",{method:"POST",body:{}});
       extracted++;
     }catch(error){
-      failed.push({id:row.id,name:row.original_name,error:String(error?.message||error)});
+      const message=error?.code==="case_document_partitioning_required"
+        ? "Документот е преголем за single-document analysis и бара partitioned extraction."
+        : String(error?.message||error);
+      failed.push({id:row.id,name:row.original_name,error:message});
     }
   }
   await loadDocuments();
