@@ -28,8 +28,8 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Retry the governed FREE Workers AI production activation after the first live DOCX smoke proved provider readiness and conversion count but the synthetic token with underscores was misinterpreted by the model. Use a standards-complete DOCX package, an unambiguous alphanumeric body token, and a stronger extracted-body instruction. No quota, privacy, Human Gate, current-law or provider-boundary weakening.",
-    "approval_text": "retry FREE Workers AI live DOCX smoke with unambiguous body token and all governance preserved",
+    "reason": "Deploy the verified FREE Workers AI empty-response fix from PR #277 and align GPT production activation with the authorized governed D1 fallback storage path. Public FREE chat remains one AI generation per quota reservation; Human Gate and no-autonomous-action boundaries are preserved.",
+    "approval_text": "deploy verified FREE chat fix with governed D1 fallback and all governance preserved",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
     "baseline_result": "CLOUDFLARE_R2_NOT_ENABLED_CODE_10042",
@@ -50,10 +50,14 @@
     "free_monthly_assistant_quota": 50,
     "chat_max_attachments": 20,
     "free_provider": "workers_ai",
-    "free_provider_model": "@cf/zai-org/glm-4.7-flash",
+    "free_provider_model": "@cf/google/gemma-4-26b-a4b-it",
     "free_document_conversion": "workers_ai_to_markdown",
     "openai_paid_provider_optional": true,
     "free_document_smoke_token": "PRAVDAFREE777",
-    "free_document_smoke_version": "v2"
+    "free_document_smoke_version": "v2",
+    "prior_public_model": "@cf/zai-org/glm-4.7-flash",
+    "single_generation_per_quota_reservation": true,
+    "d1_fallback_activation_supported": true,
+    "r2_required_for_this_redeploy": false
   }
 }
