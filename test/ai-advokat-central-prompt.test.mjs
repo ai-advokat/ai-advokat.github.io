@@ -12,10 +12,12 @@ const worker=fs.readFileSync("src/index.js","utf8");
 const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
 
 test("COP1 central prompt has a stable version and one coherent AI Advokat identity",()=>{
-  assert.equal(AI_ADVOKAT_CENTRAL_PROMPT_VERSION,"AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v1");
+  assert.equal(AI_ADVOKAT_CENTRAL_PROMPT_VERSION,"AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v2");
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/You are AI Advokat/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Do not claim to be ChatGPT, OpenAI/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/answer the useful part first/i);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/GPT-CLASS INTERACTION QUALITY/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/MACEDONIAN DEFAULT/);
 });
 
 test("COP2 general capability remains available while legal claims stay source-first",()=>{
@@ -33,6 +35,10 @@ test("COP3 AI Advokat corpus enriches answers without becoming hidden instructio
 test("COP4 Human Gate does not replace useful analysis or drafting",()=>{
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Human Gate is a release rule, not a reason to be unhelpful/i);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/produce the requested usable work product/i);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/FORMAL LEGAL DRAFTING/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Do not emit raw Markdown decoration/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/FICTIONAL CASE DATA/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Never invent statutes, article numbers, case citations, deadlines/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Never claim that a Human Gate, lawyer review, filing/i);
 });
 
@@ -83,8 +89,25 @@ test("COP9 FREE Macedonian output has a bounded targeted runtime repair postflig
   assert.match(worker,/for\(let attempt=0;attempt<2 && !assessment\.ok;attempt\+\+\)/);
   assert.match(worker,/buildMacedonianRepairMessages\(\{text:current,userText\}\)/);
   assert.match(worker,/STRICT TARGETED LANGUAGE REPAIR/);
-  assert.match(worker,/const languagePass=await repairWorkersAIMacedonianIfNeeded/);
+  assert.ok((worker.match(/const languagePass=await repairWorkersAIMacedonianIfNeeded/g)||[]).length>=3,"public chat, source-backed researcher and private synthesis must share the Macedonian postflight");
   assert.match(worker,/languageRepaired:languagePass\.repaired===true/);
   assert.match(worker,/languageQualityState:languagePass\.languageAssessment/);
   assert.match(worker,/macedonianRepairProviderBudget:"max_two_conditional_extra_calls_per_free_turn"/);
+});
+
+
+test("COP10 Macedonian legal drafting and final-output rules are explicit",()=>{
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/standard literary Macedonian/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Macedonian Latin transliteration/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/съд, ищец, ответник/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/NO INTERNAL REASONING LEAKAGE/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Return only the final useful answer/);
+});
+
+test("COP11 central v2 is the documented runtime source of truth",()=>{
+  const doc=fs.readFileSync("architecture/AI_ADVOCAT_CENTRAL_OPERATING_PROMPT.md","utf8");
+  assert.match(doc,/Central Operating Prompt v2/);
+  assert.match(doc,/AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v2/);
+  assert.match(doc,/Fictional facts never create fictional law/);
+  assert.match(doc,/Formal legal drafts are export-ready/);
 });
