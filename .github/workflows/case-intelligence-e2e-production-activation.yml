@@ -97,28 +97,48 @@ jobs:
           node <<'NODE'
           const fs=require("fs");
           const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
-          const r=c.r2_buckets?.find(x=>x.binding==="CASE_FILES");
-          if(!r || r.bucket_name!=="ai-advokat-case-files" || r.preview_bucket_name!=="ai-advokat-case-files-staging") throw new Error("CASE_FILES binding mismatch");
+          if(c.r2_buckets) throw new Error("Default production config must not require R2 while account-level R2 is unavailable");
           if(c.ai?.binding!=="AI") throw new Error("Workers AI binding missing");
           if(c.vars?.FREE_CHAT_PROVIDER!=="workers_ai") throw new Error("Workers AI fallback not armed");
           if(c.vars?.CASE_WORKSPACE_ENABLED!=="true") throw new Error("Case Workspace not armed");
-          console.log("PRODUCTION BINDINGS: PASS");
+          if(c.vars?.CASE_D1_FALLBACK_ENABLED!=="true") throw new Error("CasePilot D1 fallback not armed");
+          const r2=JSON.parse(fs.readFileSync("wrangler.r2.jsonc","utf8"));
+          const binding=r2.r2_buckets?.find(x=>x.binding==="CASE_FILES");
+          if(!binding || binding.bucket_name!=="ai-advokat-case-files" || binding.preview_bucket_name!=="ai-advokat-case-files-staging") throw new Error("Optional CASE_FILES R2 config mismatch");
+          console.log("PRODUCTION BINDINGS: PASS · default D1 fallback · optional R2 preserved");
           NODE
 
-      - name: Ensure private R2 buckets exist
+      - name: Probe optional R2 and select private storage backend
         shell: bash
         run: |
           set -euo pipefail
-          npx wrangler r2 bucket list --config wrangler.jsonc | tee /tmp/r2-list.txt
-          grep -Fq "ai-advokat-case-files" /tmp/r2-list.txt || npx wrangler r2 bucket create ai-advokat-case-files --config wrangler.jsonc
-          grep -Fq "ai-advokat-case-files-staging" /tmp/r2-list.txt || npx wrangler r2 bucket create ai-advokat-case-files-staging --config wrangler.jsonc
+          set +e
+          npx wrangler r2 bucket list --config wrangler.r2.jsonc > /tmp/r2-list.txt 2>&1
+          r2_code=$?
+          set -e
+          if [ "$r2_code" -eq 0 ]; then
+            echo "CASE_STORAGE_MODE=r2_available_but_default_d1_fallback" >> "$GITHUB_ENV"
+            echo "R2 is available; governed optional config is preserved."
+          elif grep -q "code: 10042" /tmp/r2-list.txt || grep -q "Please enable R2" /tmp/r2-list.txt; then
+            echo "CASE_STORAGE_MODE=d1_fallback" >> "$GITHUB_ENV"
+            echo "R2 is account-disabled; using governed D1 fallback."
+          else
+            cat /tmp/r2-list.txt
+            exit "$r2_code"
+          fi
+
+      - name: Apply bounded D1 fallback object-store migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file migrations/0045_case_private_d1_object_store.sql | tee /tmp/case-d1-fallback-migration.txt
 
       - name: Verify required case schema is already present
         shell: bash
         run: |
           set -euo pipefail
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('case_workspaces','case_workspace_access','case_document_slots','case_audit_events','case_multipart_uploads') ORDER BY name;" | tee /tmp/case-schema.txt
-          for t in case_workspaces case_workspace_access case_document_slots case_audit_events case_multipart_uploads; do
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('case_workspaces','case_workspace_access','case_document_slots','case_audit_events','case_multipart_uploads','case_private_object_chunks') ORDER BY name;" | tee /tmp/case-schema.txt
+          for t in case_workspaces case_workspace_access case_document_slots case_audit_events case_multipart_uploads case_private_object_chunks; do
             grep -q "\"name\": \"$t\"" /tmp/case-schema.txt
           done
           echo "CASE SCHEMA: PASS"
@@ -137,12 +157,13 @@ jobs:
           const d=require("/tmp/capabilities.json");
           if(!d.ok) process.exit(1);
           if(d.capabilities?.caseWorkspace!=="workspace_and_storage_ready") process.exit(1);
-          if(d.capabilities?.documentUpload!=="case_scoped_storage_ready_ingestion_gate_required") process.exit(1);
+          if(!["case_scoped_storage_ready_ingestion_gate_required","case_scoped_d1_fallback_ready_ingestion_gate_required"].includes(d.capabilities?.documentUpload)) process.exit(1);
+          if(!["r2","d1_fallback"].includes(d.capabilities?.caseStorageBackend)) process.exit(1);
           NODE
             then break; fi
             sleep 3
           done
-          node -e 'const d=require("/tmp/capabilities.json"); if(d.capabilities?.caseWorkspace!=="workspace_and_storage_ready") process.exit(2); console.log("LIVE CASE CAPABILITIES: PASS")'
+          node -e 'const d=require("/tmp/capabilities.json"); if(d.capabilities?.caseWorkspace!=="workspace_and_storage_ready") process.exit(2); console.log("LIVE CASE CAPABILITIES: PASS · "+d.capabilities?.caseStorageBackend)'
 
       - name: Provision ephemeral synthetic office account
         shell: bash
@@ -214,6 +235,7 @@ jobs:
           fi
           if [ -n "${CASE_E2E_CASE_ID:-}" ]; then
             npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM case_private_object_chunks WHERE object_key LIKE 'case-files/v1/$CASE_E2E_CASE_ID/%' OR object_key LIKE 'case-derived/v1/$CASE_E2E_CASE_ID/%';
               DELETE FROM case_audit_events WHERE case_id='$CASE_E2E_CASE_ID';
               DELETE FROM casepilot_authority_classifications WHERE case_id='$CASE_E2E_CASE_ID';
               DELETE FROM case_document_slots WHERE case_id='$CASE_E2E_CASE_ID';
@@ -239,6 +261,7 @@ jobs:
           if-no-files-found: warn
           path: |
             /tmp/r2-list.txt
+            /tmp/case-d1-fallback-migration.txt
             /tmp/case-schema.txt
             /tmp/case-e2e-deploy.txt
             /tmp/capabilities.json
