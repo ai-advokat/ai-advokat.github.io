@@ -1,7 +1,7 @@
 {
   "schema_version": "1.2",
   "ledger_id": "AI_ADVOKAT_HUMAN_GATE_DECISION_LEDGER_v1",
-  "generated_on": "2026-10-10",
+  "generated_on": "2026-10-15",
   "doctrine": [
     "explicit_decision_only",
     "gate_isolation",
@@ -359,6 +359,48 @@
       },
       "implied_gates": [],
       "notes": "No implication to production_schema_migration; migration 0029 remains governed by the separate Secure Case Workspace artifact. No R2/private upload authorization."
+    },
+    {
+      "decision_id": "hg-2026-10-15-case-intelligence-e2e-github-merge",
+      "subject_id": "case-intelligence-e2e-v1-2026-10-15",
+      "gate_type": "github_merge",
+      "decision_state": "approved",
+      "decided_at": "2026-10-15",
+      "decision_basis": "Explicit project-lead instruction on 2026-10-15 that AI Advokat must receive uploaded legal documents, answer, analyze and synthesize the matter, and generate lawsuits and other legal working documents. Authorization is bounded to private CasePilot storage/intake, private AI execution and working-draft generation under Human Gate.",
+      "artifact_version": "AI_ADVOKAT_CASE_INTELLIGENCE_E2E_V1_2026-10-15",
+      "artifact_fingerprint": {
+        "request_git_blob_sha": "55718d534169d349c16ae15426a04f8d25edf866"
+      },
+      "implied_gates": [],
+      "notes": "Authorizes private document upload/R2 and private-case AI execution using Workers AI with optional OpenAI private path. Does not authorize autonomous filing, signature, external transmission, public corpus promotion, final professional release, or weakening of Human Gate."
+    },
+    {
+      "decision_id": "hg-2026-10-15-case-intelligence-e2e-provider-activation",
+      "subject_id": "case-intelligence-e2e-v1-2026-10-15",
+      "gate_type": "provider_activation",
+      "decision_state": "approved",
+      "decided_at": "2026-10-15",
+      "decision_basis": "Explicit project-lead instruction on 2026-10-15 that AI Advokat must receive uploaded legal documents, answer, analyze and synthesize the matter, and generate lawsuits and other legal working documents. Authorization is bounded to private CasePilot storage/intake, private AI execution and working-draft generation under Human Gate.",
+      "artifact_version": "AI_ADVOKAT_CASE_INTELLIGENCE_E2E_V1_2026-10-15",
+      "artifact_fingerprint": {
+        "request_git_blob_sha": "55718d534169d349c16ae15426a04f8d25edf866"
+      },
+      "implied_gates": [],
+      "notes": "Authorizes private document upload/R2 and private-case AI execution using Workers AI with optional OpenAI private path. Does not authorize autonomous filing, signature, external transmission, public corpus promotion, final professional release, or weakening of Human Gate."
+    },
+    {
+      "decision_id": "hg-2026-10-15-case-intelligence-e2e-runtime-deploy",
+      "subject_id": "case-intelligence-e2e-v1-2026-10-15",
+      "gate_type": "production_runtime_deploy",
+      "decision_state": "approved",
+      "decided_at": "2026-10-15",
+      "decision_basis": "Explicit project-lead instruction on 2026-10-15 that AI Advokat must receive uploaded legal documents, answer, analyze and synthesize the matter, and generate lawsuits and other legal working documents. Authorization is bounded to private CasePilot storage/intake, private AI execution and working-draft generation under Human Gate.",
+      "artifact_version": "AI_ADVOKAT_CASE_INTELLIGENCE_E2E_V1_2026-10-15",
+      "artifact_fingerprint": {
+        "request_git_blob_sha": "55718d534169d349c16ae15426a04f8d25edf866"
+      },
+      "implied_gates": [],
+      "notes": "Authorizes private document upload/R2 and private-case AI execution using Workers AI with optional OpenAI private path. Does not authorize autonomous filing, signature, external transmission, public corpus promotion, final professional release, or weakening of Human Gate."
     }
   ]
 }
