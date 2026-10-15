@@ -753,8 +753,24 @@ describe("production AI binding guard", () => {
     assert.ok(chatBurst < chatReserve && chatReserve < freeProviderCall, "FREE chat provider call must occur only after burst check and atomic reservation");
 
     const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function handleGPTChat("));
-    assert.equal((helper.match(/env\.AI\.run\(/g) || []).length, 1, "FREE helper has exactly one Workers AI generation call");
-    assert.equal((src.match(/env\.AI\.run\(/g) || []).length, 2, "only the article assistant and FREE chat helper may call Workers AI");
+    assert.equal((helper.match(/env\.AI\.run\(/g) || []).length, 1, "FREE public helper has exactly one Workers AI generation call");
+
+    const privateHelpers = src.slice(src.indexOf("async function runPrivateWorkersAISynthesis("), src.indexOf("async function validateGuideDocuments"));
+    assert.equal((privateHelpers.match(/env\.AI\.run\(/g) || []).length, 2, "private CasePilot helpers have exactly two bounded Workers AI calls");
+
+    const extractRoute=src.slice(src.indexOf('if(tail.startsWith("documents/") && tail.endsWith("/extract"))'),src.indexOf('if(tail.startsWith("documents/"))',src.indexOf('if(tail.startsWith("documents/") && tail.endsWith("/extract"))')+20));
+    assert.match(extractRoute,/\["owner","lawyer"\]\.includes/, "private document extraction must require a professional case role");
+    assert.match(extractRoute,/runPrivateCaseDocumentExtraction/, "private extraction route must use the bounded private helper");
+
+    const analyzeRoute=src.slice(src.indexOf('if(tail==="intelligence/analyze")'),src.indexOf('if(tail==="intelligence/draft")'));
+    assert.match(analyzeRoute,/\["owner","lawyer"\]\.includes/, "whole-case analysis must require a professional case role");
+    assert.match(analyzeRoute,/runPrivateWorkersAISynthesis/, "whole-case free fallback must stay inside the case-scoped route");
+
+    const draftRoute=src.slice(src.indexOf('if(tail==="intelligence/draft")'),src.indexOf('if(tail==="casepilot")',src.indexOf('if(tail==="intelligence/draft")')));
+    assert.match(draftRoute,/\["owner","lawyer"\]\.includes/, "draft generation must require a professional case role");
+    assert.match(draftRoute,/runPrivateWorkersAISynthesis/, "draft free fallback must stay inside the case-scoped route");
+
+    assert.equal((src.match(/env\.AI\.run\(/g) || []).length, 4, "Workers AI calls are limited to article assistant, public FREE chat and two private CasePilot helpers");
   });
 
   test("P2 a production AI binding requires the quota protections to be present", () => {
