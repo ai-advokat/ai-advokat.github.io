@@ -28,8 +28,8 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Root production fix for repeated Macedonian language failures: deploy Central Operating Prompt v4 and MK Orthography 2017 guard v4, allowing valid Macedonian legal vocabulary while rejecting only unambiguous foreign contamination. Includes prompt-driven DOCX output already merged in main.",
-    "approval_text": "Коренски да се реши: ботот да одговара на литературен македонски според Правопис 2017, без лажни блокади на правилни зборови, и при барање Word да враќа DOCX.",
+    "reason": "Deploy the simple full-knowledge AI Advokat experience: Central Operating Prompt v5, local-first legal knowledge, proactive authorised external research when governed local support is insufficient, twenty-document GPT synthesis, and natural-language DOCX/PDF/JSON/CSV output. Keep source governance, privacy and Human Gate in the background rather than cluttering the user interface.",
+    "approval_text": "AI Advokat да биде едноставен за корисникот, а полн со знаење во позадина: прашање или до 20 документи, автоматска правна база и надворешно истражување ако недостига извор, анализа/синтеза и директен DOCX/PDF/JSON/CSV резултат.",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
     "baseline_result": "CLOUDFLARE_R2_NOT_ENABLED_CODE_10042",
@@ -64,7 +64,7 @@
       "@cf/google/gemma-4-26b-a4b-it"
     ],
     "provider_contract": "src/workers-ai-provider.js",
-    "production_uat": "macedonian_v4_false_positive_regression_plus_legal_draft_plus_docx",
+    "production_uat": "simple_full_knowledge_v5_plus_macedonian_v4_plus_multidoc_exports",
     "free_provider_protocol": "responses_api_via_workers_binding",
     "free_reasoning_effort": "low",
     "final_answer_required": true,
@@ -77,7 +77,7 @@
     "foreign_jurisdiction_substitution_guard": true,
     "language_repair_pass": true,
     "language_uat": "literary_macedonian_not_cyrillic_only",
-    "source_commit": "516eacaf596755bc3fe2c3cb7415ae1fb1c2cbd4",
+    "source_commit": "65825dffe2a61231ab3bb4feb8ed3c6613e03de2",
     "source_commit_base": "5ee02cef2bbc9321f8f8dfa2133d070c3c0ba069",
     "emergency_usability_recovery": true,
     "free_legal_generation_block_removed": true,
@@ -89,11 +89,24 @@
     "quota_preserved": true,
     "privacy_gate_preserved": true,
     "autonomous_filing_authorized": false,
-    "central_operating_prompt": "AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v4",
+    "central_operating_prompt": "AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v5",
     "language_runtime_contract": "MK_ORTHOGRAPHY_2017_RUNTIME_V4",
     "language_guard_false_positive_policy": "reject_unambiguous_foreign_forms_only",
     "valid_macedonian_shared_slavic_vocabulary_allowed": true,
     "word_output_intent_enabled": true,
-    "word_output_source_commit": "0098659a5c8243c873d656ed5094c998441f9bd9"
+    "word_output_source_commit": "0098659a5c8243c873d656ed5094c998441f9bd9",
+    "simple_full_knowledge_chat": true,
+    "minimum_visible_controls": true,
+    "universal_legal_metadata_layer": true,
+    "local_first_external_if_needed": true,
+    "proactive_external_research_when_paid_tool_available": true,
+    "multi_document_synthesis": true,
+    "natural_language_export_formats": [
+      "docx",
+      "pdf",
+      "json",
+      "csv"
+    ],
+    "sources_and_governance_collapsed_by_default": true
   }
 }
