@@ -100,17 +100,23 @@ test("Case Intelligence UI exposes whole-case analysis and governed drafting",()
   assert.match(js,/\/intelligence\/draft/);
   assert.match(js,/case_document_partitioning_required/);
   assert.match(js,/Professional use останува под Human Gate/);
+  assert.match(js,/async function extractPendingCaseDocuments/);
 });
 
 test("whole-case UI fails closed if any active document is not source-ready",()=>{
-  const start=js.indexOf('$("analyzeEntireCase").addEventListener');
-  const end=js.indexOf('$("prepareCaseDraft").addEventListener',start);
-  assert.ok(start>0 && end>start);
-  const block=js.slice(start,end);
-  assert.match(block,/storage_state/);
-  assert.match(block,/extraction_state/);
-  assert.match(block,/partitioned extraction/);
-  assert.doesNotMatch(block,/Promise\.all\([^)]*extract/);
+  const helperStart=js.indexOf("async function extractPendingCaseDocuments");
+  const helperEnd=js.indexOf("async function loadIntelligenceReadiness",helperStart);
+  const analyzeStart=js.indexOf('$("analyzeEntireCase").addEventListener');
+  const analyzeEnd=js.indexOf('$("prepareCaseDraft").addEventListener',analyzeStart);
+  assert.ok(helperStart>0 && helperEnd>helperStart && analyzeStart>0 && analyzeEnd>analyzeStart);
+  const helper=js.slice(helperStart,helperEnd);
+  const analyze=js.slice(analyzeStart,analyzeEnd);
+  assert.match(helper,/storage_state/);
+  assert.match(helper,/extraction_state/);
+  assert.match(helper,/partitioned extraction/);
+  assert.match(analyze,/extractPendingCaseDocuments/);
+  assert.match(analyze,/intake\.failed/);
+  assert.doesNotMatch(helper,/Promise\.all\([^)]*extract/);
 });
 
 
