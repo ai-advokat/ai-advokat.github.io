@@ -153,8 +153,12 @@ jobs:
           const config=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
           const request=JSON.parse(fs.readFileSync(".github/activation/case-intelligence-e2e-production-request.json","utf8"));
           const r2=config.r2_buckets?.find(x=>x.binding==="CASE_FILES");
-          if(!r2 || r2.bucket_name!=="ai-advokat-case-files" || r2.preview_bucket_name!=="ai-advokat-case-files-staging") {
-            throw new Error("Authorized CASE_FILES R2 binding is missing or incorrect");
+          const r2Ready=Boolean(r2 && r2.bucket_name==="ai-advokat-case-files" && r2.preview_bucket_name==="ai-advokat-case-files-staging");
+          const d1FallbackReady=config.vars?.CASE_D1_FALLBACK_ENABLED==="true"
+            && Array.isArray(config.d1_databases)
+            && config.d1_databases.some(x=>x.binding==="DB");
+          if(!r2Ready && !d1FallbackReady) {
+            throw new Error("Neither governed CASE_FILES R2 nor bounded D1 fallback storage is configured");
           }
           if(request.activation_authorized!==true) throw new Error("Case Intelligence E2E activation is not authorized");
           if(request.private_object_storage_activation_authorized!==true) throw new Error("Private object storage authorization missing");
@@ -163,7 +167,7 @@ jobs:
           if(request.autonomous_filing_authorized!==false || request.human_gate_required!==true) {
             throw new Error("CasePilot Human Gate boundaries changed");
           }
-          console.log("CasePilot storage and private AI gates: AUTHORIZED · autonomous filing remains forbidden.");
+          console.log("CasePilot storage and private AI gates: AUTHORIZED · backend="+(r2Ready?"r2":"d1_fallback")+" · autonomous filing remains forbidden.");
           NODE
 
       - name: Deploy production Worker
