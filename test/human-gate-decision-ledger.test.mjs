@@ -88,3 +88,26 @@ test("HGL9 LIOE full-runtime release approvals are version and fingerprint bound
   }
   assert.equal(isGateApproved(ledger.initial_records,{...query,gate_type:"provider_activation"}),false);
 });
+
+
+test("HGL10 CasePilot E2E approval accepts exact Git blob SHA-1 fingerprint",()=>{
+  const query={
+    subject_id:"case-intelligence-e2e-v1-2026-10-15",
+    artifact_version:"AI_ADVOKAT_CASE_INTELLIGENCE_E2E_V1_2026-10-15",
+    artifact_fingerprint:{request_git_blob_sha:"55718d534169d349c16ae15426a04f8d25edf866"}
+  };
+  for(const gate of ["github_merge","provider_activation","production_runtime_deploy"]){
+    assert.equal(isGateApproved(ledger.initial_records,{...query,gate_type:gate}),true,gate);
+  }
+});
+
+test("HGL11 malformed non-SHA fingerprint remains fail-closed",()=>{
+  const rec={
+    ...ledger.initial_records.find(r=>r.decision_id==="hg-2026-10-15-case-intelligence-e2e-github-merge"),
+    decision_id:"hgl11-malformed",
+    artifact_fingerprint:{request_git_blob_sha:"not-a-sha"}
+  };
+  const result=validateHumanGateDecision(rec);
+  assert.equal(result.valid,false);
+  assert.ok(result.errors.includes("invalid_artifact_fingerprint"));
+});
