@@ -5924,7 +5924,7 @@ async function handleCapabilities(request, env) {
       versionCompare: "governed_preview",
       documentUpload: caseWorkspaceStorageReady(env) && caseSchemaReady ? (caseStorageBackend(env)==="d1_fallback" ? "case_scoped_d1_fallback_ready_ingestion_gate_required" : "case_scoped_storage_ready_ingestion_gate_required") : "locked_private_storage",
       caseWorkspace: caseRuntime,
-      caseExports: caseSchemaReady ? "md_docx_live_pdf_browser_rendered_human_gate_bound" : "locked",
+      caseExports: caseSchemaReady ? "md_txt_docx_csv_json_png_jpg_pdf_live_human_gate_bound" : "locked",
       vectorize: "not_bound",
       workersAI: env.AI ? "bound" : "not_bound",
       caseStorageBackend: caseStorageBackend(env)
