@@ -136,13 +136,15 @@ test("GPTACT7 architecture status is evidence-backed by the production runtime a
 });
 
 
-test("GPTACT9 GPT activation preserves the separate CasePilot private-storage Human Gate",()=>{
-  assert.match(workflow,/Preserve CasePilot private-storage Human Gate/);
+test("GPTACT9 GPT activation preserves the separately authorized CasePilot private-storage Human Gate",()=>{
+  assert.match(workflow,/Preserve authorized CasePilot private-storage Human Gate/);
+  assert.match(workflow,/case-intelligence-e2e-production-request\.json/);
   assert.match(workflow,/private_object_storage_activation_authorized/);
   assert.match(workflow,/private_document_upload_authorized/);
-  assert.match(workflow,/CasePilot storage gate: LOCKED as required/);
-  assert.doesNotMatch(wrangler,/"binding": "CASE_FILES"/);
-  assert.doesNotMatch(wrangler,/"r2_buckets"/);
+  assert.match(workflow,/private_case_ai_execution_authorized/);
+  assert.match(workflow,/autonomous filing remains forbidden/);
+  assert.match(wrangler,/"binding": "CASE_FILES"/);
+  assert.match(wrangler,/"r2_buckets"/);
   assert.doesNotMatch(workflow,/wrangler r2 bucket create/);
 });
 
