@@ -46,6 +46,9 @@ jobs:
               z.writestr('word/document.xml','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>KORENSKIUAT2026</w:t></w:r></w:p><w:sectPr/></w:body></w:document>''')
           PY
 
+      - name: Verify Macedonian 2017 language guard locally
+        run: node --no-warnings --test test/macedonian-language-guard.test.mjs
+
       - name: Live Macedonian FREE chat and DOCX UAT
         shell: bash
         run: |
@@ -118,6 +121,14 @@ jobs:
             const {answer}=await chat({q},name);
             if(!/[\u0400-\u04FF]/u.test(answer)){
               throw new Error(name+" final answer is not Macedonian/Cyrillic: "+answer.slice(0,500));
+            }
+            if(/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/u.test(answer)){
+              throw new Error(name+" contains non-Macedonian Cyrillic letters: "+answer.slice(0,500));
+            }
+            const foreignTokens=["поступак","подносилац","тужилац","захтев","решење","документы","сведения","следует","является","становище","всего"];
+            const lower=answer.toLocaleLowerCase("mk");
+            if(foreignTokens.some(token=>new RegExp("(^|[^\\p{L}])"+token+"(?=$|[^\\p{L}])","u").test(lower))){
+              throw new Error(name+" contains Serbian/Bulgarian/Russian lexical contamination: "+answer.slice(0,500));
             }
             if(/^\s*(need answer|user wants|the user|we need|provide|must answer)\b/i.test(answer)){
               throw new Error(name+" leaked internal planning text: "+answer.slice(0,500));

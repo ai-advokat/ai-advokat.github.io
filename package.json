@@ -101,7 +101,8 @@
     "test:gazette-chunk-runtime": "node --no-warnings --test test/gazette-chunk-runtime.test.mjs",
     "test:gazette-production-activation": "node --no-warnings --test test/gazette-production-activation.test.mjs",
     "test:case-intelligence": "node --no-warnings --test test/case-intelligence.test.mjs test/case-intelligence-runtime.test.mjs",
-    "test:echr-bureau-corpus": "node --no-warnings --test test/echr-bureau-corpus.test.mjs"
+    "test:echr-bureau-corpus": "node --no-warnings --test test/echr-bureau-corpus.test.mjs",
+    "test:macedonian-language": "node --no-warnings --test test/macedonian-language-guard.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
