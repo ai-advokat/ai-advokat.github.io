@@ -93,7 +93,7 @@ describe("frontend ↔ API contract", () => {
   });
 
   test("FC9 excerpts stop at word boundaries and are visibly labelled as excerpts", () => {
-    assert.equal(workerModule.truncateAtWordBoundary("еден два три четири пет",14),"еден два три…");
+    assert.equal(workerModule.truncateAtWordBoundary("еден два три четири пет",20),"еден два три четири…");
     assert.match(index, /Извадок · скратено/);
     assert.match(index, /Извадок од член · скратено/);
     assert.match(worker, /excerptIsPartial/);
