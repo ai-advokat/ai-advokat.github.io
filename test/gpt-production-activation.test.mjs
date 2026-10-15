@@ -197,8 +197,11 @@ test("GPTACT13 unified Workers AI provider contract uses one configured producti
     maxOutputTokens:900,
     temperature:0.1
   });
-  assert.equal(options.max_tokens,900);
-  assert.equal(options.temperature,0.1);
+  assert.deepEqual(options.input,[{role:"user",content:"test"}]);
+  assert.equal(options.max_output_tokens,900);
+  assert.deepEqual(options.reasoning,{effort:"low"});
+  assert.equal(options.max_tokens,undefined);
+  assert.equal(options.temperature,undefined);
   assert.equal(options.max_completion_tokens,undefined);
   assert.equal(options.chat_template_kwargs,undefined);
 });
@@ -224,4 +227,23 @@ test("GPTACT15 Workers AI provider contract fails explicitly on empty final outp
   assert.equal(result.model,"@cf/openai/gpt-oss-20b");
   assert.equal(result.providerCalls,1);
   assert.equal(result.shape.type,"object");
+});
+
+test("GPTACT16 GPT-OSS provider diagnostics expose only safe completion metadata",async()=>{
+  const env={
+    WORKERS_AI_CHAT_MODEL:"@cf/openai/gpt-oss-20b",
+    AI:{run:async()=>({
+      choices:[{finish_reason:"length",message:{content:""}}],
+      usage:{prompt_tokens:20,completion_tokens:400}
+    })}
+  };
+  const result=await runWorkersAIText(env,{
+    messages:[{role:"user",content:"test"}],
+    maxOutputTokens:400
+  });
+  assert.equal(result.ok,false);
+  assert.equal(result.shape.choiceFinishReason,"length");
+  assert.equal(result.shape.choiceContentLength,0);
+  assert.equal(result.shape.outputTokens,400);
+  assert.equal("reasoning" in result.shape,false);
 });
