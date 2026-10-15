@@ -190,6 +190,22 @@
       }
     }
 
+    if(m.documentExport?.format==="docx"){
+      const exportBox=document.createElement("div");exportBox.className="ai-msg-tools";
+      const download=document.createElement("button");download.type="button";download.className="btn light";
+      download.textContent=String(m.documentExport.label||"Преземи Word (.docx)");
+      download.addEventListener("click",async()=>{
+        download.disabled=true;
+        try{
+          await exportAssistantMessage(m,current(),"docx",String(m.documentExport.filename||"AI-Advokat-analysis.docx"));
+        }catch(error){
+          console.error("chat_message_docx_export_failed",error);
+          alert("Word документот не можеше да се создаде. Обидете се повторно.");
+        }finally{download.disabled=false;}
+      });
+      exportBox.append(download);body.append(exportBox);
+    }
+
     if(m.guides?.length){
       const grid=document.createElement("div");grid.className="ai-chat-guide-grid";
       m.guides.forEach(g=>{
@@ -725,6 +741,11 @@
           caseLawSources:Array.isArray(d.caseLawSources)?d.caseLawSources:[],
           guideSources:Array.isArray(d.guideSources)?d.guideSources:[],
           governance:d.legalGovernance||null,
+          documentExport:wordDocumentRequested(q)?{
+            format:"docx",
+            label:"Преземи Word (.docx)",
+            filename:"AI-Advokat-analysis.docx"
+          }:null,
           sourceLabel:d.sourceMode==="ai_advokat_article_corpus_first"
             ?"AI Advokat article-level corpus first · верзија и Human Gate се прикажани во изворите."
             :d.sourceMode==="ai_advokat_article_corpus_plus_external_web"
@@ -749,7 +770,7 @@
           guides:[],
           action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"}
         });
-      }else if(["free_mode_professional_postflight_required","macedonian_language_repair_failed","macedonian_language_quality_gate_failed","lioe_postflight_locked","lioe_runtime_governance_locked","lioe_observability_locked","web_search_locked","free_mode_web_search_unavailable"].includes(d?.error)){
+      }else if(["free_mode_professional_postflight_required","macedonian_language_repair_failed","macedonian_language_quality_failed","macedonian_language_quality_gate_failed","lioe_postflight_locked","lioe_runtime_governance_locked","lioe_observability_locked","web_search_locked","free_mode_web_search_unavailable"].includes(d?.error)){
         attachments=[...selectedFiles];
         renderAttachments();
         const fallback=await fallbackSourceAssistant(q);
@@ -820,6 +841,34 @@
   newChatBtn.addEventListener("click",()=>{
     const c=newState();chats.set(c.id,c);currentId=c.id;attachments=[];renderAttachments();render();save();input.focus();
   });
+  function wordDocumentRequested(value){
+    const text=String(value||"").normalize("NFKC").toLocaleLowerCase("mk");
+    return /(?:\bdocx\b|\bword\b|\bworld\b|ворд|word\s+format|world\s+format|во\s+word|во\s+world|word\s+документ|ворд\s+документ)/iu.test(text);
+  }
+
+  async function exportAssistantMessage(message,chat,format="docx",filename=null){
+    if(!message || message.role!=="assistant" || !String(message.text||"").trim()) return;
+    const mod=await import("/assets/casepilot-export.js");
+    const core=await import("/src/case-export.js");
+    const report=core.normalizeCaseExportReport({
+      caseId:"CHAT-"+String(chat?.id||"session").replace(/[^A-Za-z0-9._-]+/g,"-").slice(0,72),
+      title:String(chat?.title||"AI Advokat analysis").slice(0,220),
+      caseVersion:"working-draft-1",
+      generatedAt:new Date().toISOString(),
+      mode:"working",
+      humanGate:{status:"pending"},
+      summary:"AI Advokat working document generated from the requested analysis. Professional human review is required before consequential legal reliance or external use.",
+      sections:[{
+        id:"ai-advokat-output",
+        title:"AI Advokat - анализа / работен документ",
+        items:[{text:String(message.text||"").slice(0,50000),status:"HUMAN GATE REQUIRED",sources:[]}]
+      }],
+      sourceManifest:[],
+      provenance:[]
+    },{mode:"working"});
+    await mod.downloadCasePilotExport(report,format,{filename:filename||("AI-Advokat-analysis."+format)});
+  }
+
   async function exportLatestDraft(format){
     if(topMenu) topMenu.open=false;
     const chat=current();
@@ -828,25 +877,7 @@
     const button=exportButtons.find(b=>b.dataset.chatExport===format);
     if(button) button.disabled=true;
     try{
-      const mod=await import("/assets/casepilot-export.js");
-      const core=await import("/src/case-export.js");
-      const report=core.normalizeCaseExportReport({
-        caseId:"CHAT-"+String(chat.id||"session").replace(/[^A-Za-z0-9._-]+/g,"-").slice(0,72),
-        title:String(chat.title||"AI Advokat working draft").slice(0,220),
-        caseVersion:"working-draft-1",
-        generatedAt:new Date().toISOString(),
-        mode:"working",
-        humanGate:{status:"pending"},
-        summary:"AI Advokat working draft exported from the current browser session. Professional human review is required before reliance or external use.",
-        sections:[{
-          id:"working-draft",
-          title:"Working draft",
-          items:[{text:String(latestAssistant.text||"").slice(0,50000),status:"HUMAN GATE REQUIRED",sources:[]}]
-        }],
-        sourceManifest:[],
-        provenance:[]
-      },{mode:"working"});
-      await mod.downloadCasePilotExport(report,format,{filename:"AI-Advokat-working-draft."+format});
+      await exportAssistantMessage(latestAssistant,chat,format,"AI-Advokat-working-draft."+format);
     }catch(error){
       console.error("chat_export_failed",format,error);
     }finally{
