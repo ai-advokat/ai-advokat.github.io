@@ -50,6 +50,7 @@ jobs:
         shell: bash
         run: |
           node <<'NODE'
+          (async()=>{
           const fs=require("fs");
           const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
           const EXPECTED_MODEL="@cf/openai/gpt-oss-20b";
@@ -120,4 +121,5 @@ jobs:
           }
           console.log("docx: PASS");
           console.log("FREE LIVE RUNTIME UAT: PASS");
+          })().catch(error=>{console.error(error);process.exit(1);});
           NODE
