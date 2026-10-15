@@ -358,7 +358,7 @@ test("CHAT34 primary composer stays intentionally minimal while preserving full 
   assert.match(composer,/id="aiChatSend"/);
   assert.match(composer,/id="aiChatTools"/);
   assert.match(html,/Историјата се чува само во оваа сесија на прелистувачот/);
-  assert.match(html,/важните правни чекори остануваат под човечка професионална контрола/i);
+  assert.match(html,/последичните правни чекори остануваат под човечка професионална контрола/i);
 });
 
 
@@ -489,10 +489,10 @@ test("CHAT Word intent creates a per-response DOCX action",()=>{
   assert.match(chatJs,/\\bdocx\\b/);
   assert.match(chatJs,/\\bword\\b/);
   assert.match(chatJs,/\\bworld\\b/);
-  assert.match(chatJs,/documentExport:wordDocumentRequested\(q\)/);
+  assert.match(chatJs,/documentExports:requestedExportFormats\(q\)/);
   assert.match(chatJs,/Преземи Word \(\.docx\)/);
   assert.match(chatJs,/exportAssistantMessage/);
-  assert.match(chatJs,/chat_message_docx_export_failed/);
+  assert.match(chatJs,/chat_message_export_failed/);
   assert.match(chatJs,/macedonian_language_quality_failed/);
 });
 
