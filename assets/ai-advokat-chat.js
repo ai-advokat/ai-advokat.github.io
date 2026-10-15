@@ -728,8 +728,8 @@
       }else if(d?.error==="gpt_provider_locked"){
         const fallback=selectedFiles.length?{ok:false,error:"attachments_need_gpt"}:await fallbackSourceAssistant(q);
         updateAssistantPlaceholder(assistantIndex,{
-          text:fallback.ok?fallback.text:"GPT-6.1 Sol е подготвен како мотор во позадина, но production provider-от сè уште не е активиран. Во меѓувреме користете ги предложените водичи или напредниот source-backed AI Истражувач подолу.",
-          meta:fallback.ok?"Source-backed fallback":"GPT provider · чека активација",
+          text:fallback.ok?fallback.text:"Платениот AI provider не е активен за ова барање. FREE/source-backed патеките остануваат достапни кога нивните runtime контроли се активни; за прилози користете ја активната FREE Workers AI патека или Secure Case Workspace.",
+          meta:fallback.ok?"Source-backed fallback":"Paid provider · неактивен",
           guides,
           sourceLabel:fallback.ok?fallback.sourceLabel:"Не е направен GPT повик и прилозите не се испратени."
         });
@@ -742,8 +742,8 @@
         const free=d.error==="free_quota_exhausted";
         updateAssistantPlaceholder(assistantIndex,{
           text:free
-            ?"FREE месечниот лимит е привремено исцрпен. Документите не беа анализирани од GPT и ги задржав локално за повторен обид."
-            :"Месечната квота на активното членство е исцрпена. Документите не беа анализирани од GPT и ги задржав локално. Проверете го пакетот или квотата пред повторен обид.",
+            ?"FREE месечниот лимит е привремено исцрпен. Документите не беа испратени до AI provider за анализа и ги задржав локално за повторен обид."
+            :"Месечната квота на активното членство е исцрпена. Документите не беа испратени до AI provider за анализа и ги задржав локално. Проверете го пакетот или квотата пред повторен обид.",
           meta:d.error+" · "+String(m.used??m.monthlyQuota??"—")+" / "+String(m.monthlyQuota??"—"),
           guides,
           action:{label:"Планови и професионален пристап",href:"/membership.html"},
@@ -762,7 +762,7 @@
       else updateAssistantPlaceholder(assistantIndex,{
         text:"Не можам да воспоставам врска со AI runtime. Барањето не е обработено. Обидете се повторно по кратко време.",
         meta:"Runtime/API unavailable",
-        sourceLabel:"Не е издаден правен одговор и не е направен успешен GPT повик."
+        sourceLabel:"Не е издаден правен одговор и не е направен успешен AI provider повик."
       });
     }finally{
       abortController=null;root.classList.remove("ai-chat-running");save();
@@ -842,12 +842,17 @@
         && runtime.lioePostflight==="enabled"
         && runtime.lioeSpecialistExecution==="enabled"
         && runtime.lioeRuntimeTelemetry==="ready";
-      if(fullyReady) provider.textContent="GPT-6.1 Sol · LIVE governed";
-      else if(runtime.providerExecution==="configured_for_free_workers_ai_chat_execution") provider.textContent="FREE Workers AI · LIVE · документи";
-      else if(runtime.providerExecution==="configured_for_api_chat_execution") provider.textContent="GPT-6.1 Sol · runtime partial · recovery required";
-      else provider.textContent="AI provider · недостапен";
+      const freeModel=String(runtime.freeProviderModel||"").trim();
+      const paidModel=String(runtime.paidProviderModel||"").trim();
+      if(runtime.providerExecution==="configured_for_free_workers_ai_chat_execution"){
+        provider.textContent="FREE Workers AI · "+(freeModel||"активен модел")+" · LIVE";
+      }else if(fullyReady){
+        provider.textContent=(paidModel||"OpenAI provider")+" · LIVE governed";
+      }else if(runtime.providerExecution==="configured_for_api_chat_execution"){
+        provider.textContent=(paidModel||"OpenAI provider")+" · runtime partial · recovery required";
+      }else provider.textContent="AI provider · недостапен";
     })
-    .catch(()=>{provider.textContent="GPT runtime · недостапен";});
+    .catch(()=>{provider.textContent="AI runtime · недостапен";});
 
   load();syncModeUi();render();renderAttachments();autoSize();refreshGuideVaultStatus();
 })();
