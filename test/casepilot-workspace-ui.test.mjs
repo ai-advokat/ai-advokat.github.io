@@ -112,3 +112,28 @@ test("whole-case UI fails closed if any active document is not source-ready",()=
   assert.match(block,/partitioned extraction/);
   assert.doesNotMatch(block,/Promise\.all\([^)]*extract/);
 });
+
+
+test("CasePilot draft action self-heals intake and whole-case analysis prerequisites",()=>{
+  assert.match(js,/async function extractPendingCaseDocuments/);
+  const start=js.indexOf('$("prepareCaseDraft").addEventListener');
+  const end=js.indexOf("async function sha256HexFromBuffer",start);
+  assert.ok(start>0 && end>start);
+  const block=js.slice(start,end);
+  assert.match(block,/extractPendingCaseDocuments/);
+  assert.match(block,/loadIntelligenceReadiness/);
+  assert.match(block,/latestAnalysisAvailable/);
+  assert.match(block,/\/intelligence\/analyze/);
+  assert.match(block,/\/intelligence\/draft/);
+  assert.match(block,/WORKING DRAFT/);
+});
+
+test("successful private upload starts governed AI intake",()=>{
+  const start=js.indexOf('$("uploadCaseFile").addEventListener');
+  const end=js.indexOf('$("researchCaseLaw").addEventListener',start);
+  assert.ok(start>0 && end>start);
+  const block=js.slice(start,end);
+  assert.match(block,/Започнува AI intake/);
+  assert.match(block,/extractPendingCaseDocuments/);
+  assert.match(block,/зачувани и прочитани/);
+});
