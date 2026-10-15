@@ -7,6 +7,7 @@ on:
       - "src/index.js"
       - "src/ai-advokat-central-prompt.js"
       - "src/macedonian-language-guard.js"
+      - "src/response-quality.js"
       - "src/workers-ai-provider.js"
       - "wrangler.jsonc"
   push:
@@ -16,6 +17,7 @@ on:
       - "src/index.js"
       - "src/ai-advokat-central-prompt.js"
       - "src/macedonian-language-guard.js"
+      - "src/response-quality.js"
       - "src/workers-ai-provider.js"
       - "wrangler.jsonc"
 
@@ -50,8 +52,8 @@ jobs:
               z.writestr('word/document.xml','''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>KORENSKIUAT2026</w:t></w:r></w:p><w:sectPr/></w:body></w:document>''')
           PY
 
-      - name: Verify central prompt and Macedonian language contract locally
-        run: node --no-warnings --test test/ai-advokat-central-prompt.test.mjs test/macedonian-language-guard.test.mjs
+      - name: Verify central prompt, Macedonian language and final-response contracts locally
+        run: node --no-warnings --test test/ai-advokat-central-prompt.test.mjs test/macedonian-language-guard.test.mjs test/response-quality.test.mjs
 
       - name: Live Macedonian FREE chat and DOCX UAT
         if: github.event_name == 'push'
@@ -62,6 +64,35 @@ jobs:
           const fs=require("fs");
           const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
           const EXPECTED_MODEL="@cf/openai/gpt-oss-20b";
+          const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v2";
+          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V2";
+
+          async function waitForExpectedRuntime(){
+            let last=null;
+            for(let attempt=1;attempt<=60;attempt++){
+              try{
+                const response=await fetch(BASE+"/api/capabilities",{headers:{"accept":"application/json","cache-control":"no-cache"}});
+                const raw=await response.text();
+                const data=JSON.parse(raw);
+                last=data;
+                const caps=data?.capabilities||{};
+                if(response.ok
+                  && data?.ok===true
+                  && caps.centralOperatingPrompt===EXPECTED_PROMPT
+                  && caps.macedonianLanguageGuard===EXPECTED_LANGUAGE
+                  && caps.freeChatModel===EXPECTED_MODEL){
+                  console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.freeChatModel);
+                  return;
+                }
+              }catch(error){
+                last={error:String(error?.message||error)};
+              }
+              await new Promise(resolve=>setTimeout(resolve,3000));
+            }
+            throw new Error("expected runtime contract was not deployed before UAT: "+JSON.stringify(last).slice(0,1800));
+          }
+
+          await waitForExpectedRuntime();
 
           async function chat(payload,label){
             const response=await fetch(BASE+"/api/chat",{
