@@ -113,6 +113,13 @@ import {
   openLegalSourcePolicySummary
 } from "./open-legal-sources-policy.js";
 import { detectConfidentialCasePrompt } from "./chat-privacy.js";
+import {
+  WORKERS_AI_TEXT_MODEL_DEFAULT,
+  resolveWorkersAITextModel,
+  extractWorkersAIText,
+  workersAIShapeSummary,
+  runWorkersAIText
+} from "./workers-ai-provider.js";
 
 const VERSION = "1.8.1";
 
@@ -3041,67 +3048,8 @@ async function handleArticles(request, env, url) {
   });
 }
 
-function extractModelText(value, depth=0) {
-  if(depth>4 || value===null || value===undefined) return null;
-  if(typeof value==="string"){
-    const trimmed=value.trim();
-    return trimmed || null;
-  }
-  if(Array.isArray(value)){
-    for(const item of value){
-      if(typeof item==="string" && item.trim()) return item.trim();
-      if(item && typeof item==="object"){
-        for(const key of ["text","content","output_text","response"]){
-          const found=extractModelText(item[key],depth+1);
-          if(found) return found;
-        }
-      }
-    }
-    return null;
-  }
-  if(typeof value!=="object") return null;
-
-  const directKeys=["output_text","text","response","content","answer","result"];
-  for(const key of directKeys){
-    const found=extractModelText(value[key],depth+1);
-    if(found) return found;
-  }
-
-  const choiceCollections=[
-    value.choices,
-    value.output,
-    value.data,
-    value.result?.choices,
-    value.response?.choices
-  ];
-  for(const collection of choiceCollections){
-    if(!Array.isArray(collection)) continue;
-    for(const choice of collection){
-      const found=extractModelText(
-        choice?.message?.content
-        ?? choice?.delta?.content
-        ?? choice?.content
-        ?? choice?.text,
-        depth+1
-      );
-      if(found) return found;
-    }
-  }
-  return null;
-}
-
-function modelShapeSummary(value) {
-  if(value===null) return {type:"null"};
-  if(Array.isArray(value)) return {type:"array",length:value.length};
-  if(typeof value!=="object") return {type:typeof value};
-  return {
-    type:"object",
-    keys:Object.keys(value).slice(0,20),
-    choiceCount:Array.isArray(value.choices) ? value.choices.length : null,
-    resultKeys:value.result && typeof value.result==="object" ? Object.keys(value.result).slice(0,12) : null,
-    responseType:typeof value.response
-  };
-}
+const extractModelText=extractWorkersAIText;
+const modelShapeSummary=workersAIShapeSummary;
 
 function fallbackAssistantAnswer(q, instrument, articles) {
   if(!articles.length){
@@ -3498,24 +3446,26 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
     context || "NO CONTEXT AVAILABLE"
   ].join("\n\n");
 
-  let generated;
-  try{
-    generated=await env.AI.run(String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),{
-      messages:[{role:"system",content:system},{role:"user",content:user}],
-      max_tokens:Math.max(900,Math.min(4800,Number(maxOutputTokens)||3600)),
-      temperature:0.05
-    });
-  }catch(error){
-    return {ok:false,error:"case_workers_ai_provider_error",detail:String(error?.message||error).slice(0,180)};
+  const result=await runWorkersAIText(env,{
+    messages:[{role:"system",content:system},{role:"user",content:user}],
+    maxOutputTokens:Math.max(900,Math.min(4800,Number(maxOutputTokens)||3600)),
+    temperature:0.05
+  });
+  if(!result.ok){
+    return {
+      ok:false,
+      error:result.error==="workers_ai_empty_response"?"case_workers_ai_empty_response":"case_workers_ai_provider_error",
+      detail:result.detail||null,
+      model:result.model||resolveWorkersAITextModel(env),
+      providerShape:result.shape||null
+    };
   }
-  const text=extractModelText(generated);
-  if(!text) return {ok:false,error:"case_workers_ai_empty_response"};
   return {
     ok:true,
-    text,
-    model:String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),
+    text:result.text,
+    model:result.model,
     provider:"workers_ai_private_case",
-    providerCalls:1
+    providerCalls:result.providerCalls
   };
 }
 
@@ -3556,34 +3506,39 @@ async function runPrivateWorkersAIDocumentExtraction(env,{documentId,fileName,mi
     documentText
   ].join("\n");
 
-  let generated;
-  try{
-    generated=await env.AI.run(String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),{
-      messages:[
-        {role:"system",content:[
-          "You are AI Advokat Private Document Intelligence.",
-          "Extract only source-supported information from the supplied converted private document text.",
-          "Return one JSON object only; no markdown fences or commentary.",
-          "Never infer legal validity, ownership, authenticity, kinship or legal effect.",
-          "Every material fact must have a page or precise locator. If page information is unavailable, use a stable textual locator.",
-          "Use professional_review_required when uncertain."
-        ].join("\n")},
-        {role:"user",content:prompt}
-      ],
-      max_tokens:4800,
-      temperature:0
-    });
-  }catch(error){
-    return {ok:false,error:"case_workers_ai_provider_error",detail:String(error?.message||error).slice(0,180)};
+  const result=await runWorkersAIText(env,{
+    messages:[
+      {role:"system",content:[
+        "You are AI Advokat Private Document Intelligence.",
+        "Extract only source-supported information from the supplied converted private document text.",
+        "Return one JSON object only; no markdown fences or commentary.",
+        "Never infer legal validity, ownership, authenticity, kinship or legal effect.",
+        "Every material fact must have a page or precise locator. If page information is unavailable, use a stable textual locator.",
+        "Use professional_review_required when uncertain."
+      ].join("\n")},
+      {role:"user",content:prompt}
+    ],
+    maxOutputTokens:4800,
+    temperature:0,
+    responseFormat:{type:"json_object"}
+  });
+  if(!result.ok){
+    return {
+      ok:false,
+      error:result.error==="workers_ai_empty_response"?"case_intelligence_invalid_provider_json":"case_workers_ai_provider_error",
+      detail:result.detail||null,
+      model:result.model||resolveWorkersAITextModel(env),
+      providerShape:result.shape||null
+    };
   }
-  const extraction=parseModelJsonObject(extractModelText(generated));
-  if(!extraction) return {ok:false,error:"case_intelligence_invalid_provider_json"};
+  const extraction=parseModelJsonObject(result.text);
+  if(!extraction) return {ok:false,error:"case_intelligence_invalid_provider_json",providerShape:result.shape||null};
   const check=validateCaseDocumentExtraction(extraction);
   if(!check.ok) return {ok:false,error:"case_intelligence_invalid_extraction",problems:check.errors.slice(0,20)};
   return {
     ok:true,
     extraction,
-    model:String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),
+    model:result.model,
     responseId:null,
     provider:"workers_ai_private_case"
   };
@@ -4214,8 +4169,7 @@ function validateChatAttachments(payload){
   return {ok:true,attachments:out};
 }
 
-const FREE_WORKERS_AI_MODEL_FALLBACK="@cf/zai-org/glm-4.7-flash";
-const FREE_WORKERS_AI_SECONDARY_MODEL="@cf/google/gemma-4-26b-a4b-it";
+const FREE_WORKERS_AI_MODEL_FALLBACK=WORKERS_AI_TEXT_MODEL_DEFAULT;
 const FREE_CHAT_MAX_DOC_CHARS_PER_FILE=32000;
 const FREE_CHAT_MAX_DOC_CHARS_TOTAL=140000;
 const FREE_CHAT_MAX_CORPUS_CHARS=45000;
@@ -4382,36 +4336,29 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     {role:"system",content:system},
     {role:"user",content:user}
   ];
-  // Public FREE chat uses one governed Workers AI generation per quota reservation.
-  // Gemma is used here because GLM-4.7-Flash has returned successful-but-empty
-  // responses in production for ordinary chat/document requests.
-  const model=FREE_WORKERS_AI_SECONDARY_MODEL;
-  const tokenLimit=Math.max(900,Math.min(3800,Number(maxOutputTokens)||3200));
-  let generated;
-  try{
-    generated=await env.AI.run(model,{
-      messages,
-      max_completion_tokens:tokenLimit,
-      temperature:0.1
-    });
-  }catch(error){
-    return {ok:false,error:"free_workers_ai_provider_error",detail:String(error?.message||error).slice(0,180)};
-  }
-  const text=extractModelText(generated);
-  if(!text){
+  const tokenLimit=Math.max(900,Math.min(4800,Number(maxOutputTokens)||3200));
+  const result=await runWorkersAIText(env,{
+    messages,
+    maxOutputTokens:tokenLimit,
+    temperature:0.1
+  });
+  if(!result.ok){
     return {
       ok:false,
-      error:"free_workers_ai_empty_response",
-      detail:"FREE Workers AI returned no usable assistant text."
+      error:result.error==="workers_ai_empty_response"?"free_workers_ai_empty_response":"free_workers_ai_provider_error",
+      detail:result.detail||null,
+      model:result.model||resolveWorkersAITextModel(env),
+      providerCalls:result.providerCalls||1,
+      providerShape:result.shape||null
     };
   }
 
   return {
     ok:true,
-    text,
-    model,
+    text:result.text,
+    model:result.model,
     provider:"workers_ai_free",
-    providerCalls:1,
+    providerCalls:result.providerCalls,
     convertedDocuments:converted.documents.length,
     webSearchUsed:false,
     sources:[],
@@ -4862,7 +4809,8 @@ async function handleGPTChat(request,env){
         message:"FREE Workers AI не успеа да го обработи барањето или документите. Квотата не е потрошена; обидете се повторно или намалете/поделете ги прилозите.",
         problems:freeResult.problems||null,
         failureDetail:freeResult.detail||null,
-        model:String(env.WORKERS_AI_CHAT_MODEL||FREE_WORKERS_AI_MODEL_FALLBACK),
+        model:freeResult.model||resolveWorkersAITextModel(env),
+        providerShape:freeResult.providerShape||null,
         runtime:{provider:"workers_ai_free",documentConversion:freeWorkersAIMarkdownConfigured(env)?"configured":"locked"}
       },503);
     }
@@ -5339,19 +5287,20 @@ async function handleAssistant(request, env, url) {
   if(env.AI){
     let generated;
     let providerFailed=false;
-    try{
-      generated=await env.AI.run("@cf/zai-org/glm-4.7-flash",{
-        messages:[
-          {role:"system",content:ASSISTANT_SYSTEM_RULES},
-          {role:"user",content:buildAssistantUserMessage(q,instrument,articles,version)}
-        ],
-        max_tokens:1400,
-        temperature:0.1
-      });
-    }catch(error){
+    const providerResult=await runWorkersAIText(env,{
+      messages:[
+        {role:"system",content:ASSISTANT_SYSTEM_RULES},
+        {role:"user",content:buildAssistantUserMessage(q,instrument,articles,version)}
+      ],
+      maxOutputTokens:1400,
+      temperature:0.1
+    });
+    if(!providerResult.ok){
       providerFailed=true;
-      aiError=String(error?.message || error || "workers_ai_error").slice(0,240);
-      console.error("workers_ai_generation_failed",aiError);
+      aiError=String(providerResult.error||"workers_ai_error")+":"+String(providerResult.detail||JSON.stringify(providerResult.shape||{})).slice(0,240);
+      console.error("workers_ai_generation_failed",providerResult.model||resolveWorkersAITextModel(env),aiError);
+    }else{
+      generated=providerResult.text;
     }
 
     if(providerFailed){
@@ -5359,9 +5308,9 @@ async function handleAssistant(request, env, url) {
       await releaseMonthlyQuota(env,{subject,period});
       reservation.used=Math.max(0,reservation.used-1);
     }else{
-      const candidate=extractModelText(generated);
+      const candidate=String(generated||"").trim();
       if(!candidate){
-        aiError="empty_model_response:"+JSON.stringify(modelShapeSummary(generated));
+        aiError="empty_model_response_after_provider_contract";
       }else{
         const check=validateAnswerCitations(candidate,articles);
         if(check.ok){
@@ -5975,7 +5924,7 @@ async function handleCapabilities(request, env) {
       versionCompare: "governed_preview",
       documentUpload: caseWorkspaceStorageReady(env) && caseSchemaReady ? (caseStorageBackend(env)==="d1_fallback" ? "case_scoped_d1_fallback_ready_ingestion_gate_required" : "case_scoped_storage_ready_ingestion_gate_required") : "locked_private_storage",
       caseWorkspace: caseRuntime,
-      caseExports: caseSchemaReady ? "md_docx_live_pdf_browser_rendered_human_gate_bound" : "locked",
+      caseExports: caseSchemaReady ? "md_txt_docx_csv_json_png_jpg_pdf_live_human_gate_bound" : "locked",
       vectorize: "not_bound",
       workersAI: env.AI ? "bound" : "not_bound",
       caseStorageBackend: caseStorageBackend(env)

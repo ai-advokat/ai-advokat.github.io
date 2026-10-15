@@ -738,11 +738,14 @@ describe("production AI binding guard", () => {
   test("P1 every public Workers AI provider path is downstream of an atomic quota reservation", () => {
     const src = fs.readFileSync("src/index.js", "utf8");
 
+    const provider = fs.readFileSync("src/workers-ai-provider.js", "utf8");
+    assert.equal((provider.match(/env\.AI\.run\(/g) || []).length, 1, "central Workers AI provider contract owns the single raw AI.run call");
+
     const assistant = src.slice(src.indexOf("async function handleAssistant("), src.indexOf("function handleWebSources("));
     const assistantReserve = assistant.indexOf("reserveMonthlyQuota(");
-    const assistantAiRun = assistant.indexOf("env.AI.run(");
-    assert.ok(assistantReserve > 0 && assistantAiRun > 0, "article assistant must reserve quota and may call Workers AI");
-    assert.ok(assistantReserve < assistantAiRun, "article assistant quota must be reserved before env.AI.run");
+    const assistantProviderCall = assistant.indexOf("runWorkersAIText(");
+    assert.ok(assistantReserve > 0 && assistantProviderCall > 0, "article assistant must reserve quota and call the central Workers AI provider");
+    assert.ok(assistantReserve < assistantProviderCall, "article assistant quota must be reserved before central provider execution");
     assert.ok(assistant.indexOf("checkAssistantBurst(") < assistantReserve, "assistant burst check must precede reservation");
 
     const chat = src.slice(src.indexOf("async function handleGPTChat("), src.indexOf("async function handleOrchestratorArchitecture("));
@@ -753,10 +756,10 @@ describe("production AI binding guard", () => {
     assert.ok(chatBurst < chatReserve && chatReserve < freeProviderCall, "FREE chat provider call must occur only after burst check and atomic reservation");
 
     const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function handleGPTChat("));
-    assert.equal((helper.match(/env\.AI\.run\(/g) || []).length, 1, "FREE public helper has exactly one Workers AI generation call");
+    assert.equal((helper.match(/runWorkersAIText\(/g) || []).length, 1, "FREE public helper delegates exactly one generation to the central provider contract");
 
     const privateHelpers = src.slice(src.indexOf("async function runPrivateWorkersAISynthesis("), src.indexOf("async function validateGuideDocuments"));
-    assert.equal((privateHelpers.match(/env\.AI\.run\(/g) || []).length, 2, "private CasePilot helpers have exactly two bounded Workers AI calls");
+    assert.equal((privateHelpers.match(/runWorkersAIText\(/g) || []).length, 2, "private CasePilot synthesis and extraction each delegate one bounded call to the central provider");
 
     const extractRoute=src.slice(src.indexOf('if(tail.startsWith("documents/") && tail.endsWith("/extract"))'),src.indexOf('if(tail.startsWith("documents/"))',src.indexOf('if(tail.startsWith("documents/") && tail.endsWith("/extract"))')+20));
     assert.match(extractRoute,/\["owner","lawyer"\]\.includes/, "private document extraction must require a professional case role");
@@ -770,7 +773,8 @@ describe("production AI binding guard", () => {
     assert.match(draftRoute,/\["owner","lawyer"\]\.includes/, "draft generation must require a professional case role");
     assert.match(draftRoute,/runPrivateWorkersAISynthesis/, "draft free fallback must stay inside the case-scoped route");
 
-    assert.equal((src.match(/env\.AI\.run\(/g) || []).length, 4, "Workers AI calls are limited to article assistant, public FREE chat and two private CasePilot helpers");
+    assert.equal((src.match(/env\.AI\.run\(/g) || []).length, 0, "raw Workers AI calls must not bypass the central provider contract");
+    assert.equal((src.match(/runWorkersAIText\(/g) || []).length, 4, "Workers AI generation entry points remain limited to article assistant, public FREE chat and two private CasePilot helpers");
   });
 
   test("P2 a production AI binding requires the quota protections to be present", () => {

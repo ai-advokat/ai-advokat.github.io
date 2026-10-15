@@ -2,6 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { openAIOrchestratorConfigured, orchestratorRuntimeReadiness } from "../src/agent-orchestrator.js";
+import {
+  WORKERS_AI_TEXT_MODEL_DEFAULT,
+  workersAIRequestOptions,
+  extractWorkersAIText,
+  runWorkersAIText
+} from "../src/workers-ai-provider.js";
 
 const wrangler=fs.readFileSync("wrangler.jsonc","utf8");
 const r2Wrangler=fs.readFileSync("wrangler.r2.jsonc","utf8");
@@ -24,7 +30,7 @@ test("GPTACT1 production runtime is armed for the approved model but contains no
   assert.equal(config.ai?.binding,"AI");
   assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
   assert.equal(config.vars.WORKERS_AI_MARKDOWN_ENABLED,"true");
-  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/zai-org/glm-4.7-flash");
+  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/openai/gpt-oss-20b");
   assert.doesNotMatch(wrangler,/OPENAI_API_KEY/);
   assert.doesNotMatch(wrangler,/sk-[A-Za-z0-9_-]{20,}/);
 });
@@ -58,7 +64,7 @@ test("GPTACT3 production activation supports FREE Workers AI and preserves the p
   assert.match(workflow,/wrangler secret put OPENAI_API_KEY/);
   assert.match(workflow,/wrangler deploy --config wrangler\.jsonc/);
   assert.match(workflow,/Live GPT \+ Web \+ attachment smoke test/);
-  assert.match(workflow,/Live FREE Workers AI \+ DOCX attachment smoke test/);
+  assert.match(workflow,/Live FREE Workers AI multi-scenario runtime UAT \+ DOCX smoke/);
   assert.match(workflow,/FREE_PROVIDER/);
   assert.match(workflow,/WORKERS_AI_MARKDOWN_ENABLED/);
   assert.match(workflow,/PRAVDAFREE777/);
@@ -160,7 +166,7 @@ test("GPTACT10 provider readiness accepts the governed FREE document path withou
 });
 
 
-test("GPTACT11 FREE Workers AI is explicit, bounded and document-capable",()=>{
+test("GPTACT11 FREE Workers AI is explicit, bounded, document-capable and uses one provider contract",()=>{
   const config=JSON.parse(wrangler);
   assert.equal(config.ai.binding,"AI");
   assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
@@ -168,6 +174,9 @@ test("GPTACT11 FREE Workers AI is explicit, bounded and document-capable",()=>{
   assert.match(worker,/convertFreeChatAttachments/);
   assert.match(worker,/cloudflare_workers_ai_to_markdown/);
   assert.match(worker,/FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED/);
+  assert.match(worker,/workers-ai-provider\.js/);
+  assert.match(workflow,/gpt-oss-20b/);
+  assert.match(workflow,/MULTI-SCENARIO UAT/);
   assert.match(worker,/free_mode_professional_postflight_required/);
 });
 
@@ -177,4 +186,42 @@ test("GPTACT12 FREE document prompt treats extracted body as content and exact t
   assert.match(worker,/copy it exactly before adding interpretation/);
   assert.match(workflow,/PRAVDAFREE777/);
   assert.doesNotMatch(workflow,/PRAVDA_FREE_DOC/);
+});
+
+
+test("GPTACT13 unified Workers AI provider contract uses one configured production model",()=>{
+  assert.equal(WORKERS_AI_TEXT_MODEL_DEFAULT,"@cf/openai/gpt-oss-20b");
+  const options=workersAIRequestOptions({
+    model:WORKERS_AI_TEXT_MODEL_DEFAULT,
+    messages:[{role:"user",content:"test"}],
+    maxOutputTokens:900,
+    temperature:0.1
+  });
+  assert.equal(options.max_tokens,900);
+  assert.equal(options.temperature,0.1);
+  assert.equal(options.max_completion_tokens,undefined);
+  assert.equal(options.chat_template_kwargs,undefined);
+});
+
+test("GPTACT14 Workers AI response extraction accepts final answer shapes but never hidden reasoning",()=>{
+  assert.equal(extractWorkersAIText({response:"Здраво"}),"Здраво");
+  assert.equal(extractWorkersAIText({choices:[{message:{content:"Одговор"}}]}),"Одговор");
+  assert.equal(extractWorkersAIText({reasoning:"hidden only"}),null);
+  assert.equal(extractWorkersAIText({response:"   ",reasoning:"hidden"}),null);
+});
+
+test("GPTACT15 Workers AI provider contract fails explicitly on empty final output",async()=>{
+  const env={
+    WORKERS_AI_CHAT_MODEL:"@cf/openai/gpt-oss-20b",
+    AI:{run:async()=>({response:"",usage:{prompt_tokens:10,completion_tokens:0}})}
+  };
+  const result=await runWorkersAIText(env,{
+    messages:[{role:"user",content:"test"}],
+    maxOutputTokens:400
+  });
+  assert.equal(result.ok,false);
+  assert.equal(result.error,"workers_ai_empty_response");
+  assert.equal(result.model,"@cf/openai/gpt-oss-20b");
+  assert.equal(result.providerCalls,1);
+  assert.equal(result.shape.type,"object");
 });

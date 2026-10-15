@@ -96,7 +96,7 @@ jobs:
           if(c.vars?.FREE_CHAT_PROVIDER==="workers_ai"){
             if(c.ai?.binding!=="AI") throw new Error("FREE Workers AI binding missing");
             if(c.vars?.WORKERS_AI_MARKDOWN_ENABLED!=="true") throw new Error("Workers AI Markdown conversion not armed");
-            if(c.vars?.WORKERS_AI_CHAT_MODEL!=="@cf/zai-org/glm-4.7-flash") throw new Error("Unexpected FREE Workers AI model");
+            if(c.vars?.WORKERS_AI_CHAT_MODEL!=="@cf/openai/gpt-oss-20b") throw new Error("Unexpected FREE Workers AI model");
           }
           const source=fs.readFileSync("src/agent-orchestrator.js","utf8");
           if(source.includes("/v1/conversations")) throw new Error("Durable Conversations API must not be used");
@@ -198,12 +198,36 @@ jobs:
           console.log("Provider readiness: PASS · "+state);
           NODE
 
-      - name: Live FREE Workers AI + DOCX attachment smoke test
+      - name: Live FREE Workers AI multi-scenario runtime UAT + DOCX smoke
         if: env.FREE_PROVIDER == 'true'
         shell: bash
         run: |
           set -euo pipefail
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          node <<'NODE'
+          const base="https://ai-advokat-github-io.aiadvokat16.workers.dev";
+          const scenarios=[
+            "Одговори на македонски со една кратка реченица дека AI Advokat работи.",
+            "Направи ми краток потсетник за лице што треба да оди во притов.",
+            "Напиши љубезен краток потсетник со измислено име и датум."
+          ];
+          for(let round=1;round<=2;round++){
+            for(const q of scenarios){
+              const response=await fetch(base+"/api/chat",{
+                method:"POST",
+                headers:{"content-type":"application/json"},
+                body:JSON.stringify({q,mode:"auto",webSearch:false,history:[],guideIds:[],attachments:[]})
+              });
+              const d=await response.json().catch(()=>null);
+              if(!response.ok || !d?.ok) throw new Error("FREE runtime scenario failed: "+response.status+" "+JSON.stringify(d));
+              if(d.provider!=="workers_ai_free") throw new Error("Unexpected FREE provider: "+d.provider);
+              if(d.model!=="@cf/openai/gpt-oss-20b") throw new Error("Unexpected FREE model: "+d.model);
+              if(String(d.answer||"").trim().length<12) throw new Error("FREE runtime returned empty/too-short answer: "+JSON.stringify(d));
+              if(d.webSearchUsed!==false) throw new Error("FREE runtime must not claim Web search");
+            }
+          }
+          console.log("LIVE FREE WORKERS AI MULTI-SCENARIO UAT: PASS");
+          NODE
           python3 <<'PY'
           import zipfile
           with zipfile.ZipFile('/tmp/free-smoke.docx','w',zipfile.ZIP_DEFLATED) as z:
