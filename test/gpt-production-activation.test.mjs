@@ -2,6 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { openAIOrchestratorConfigured, orchestratorRuntimeReadiness } from "../src/agent-orchestrator.js";
+import {
+  WORKERS_AI_TEXT_MODEL_DEFAULT,
+  workersAIRequestOptions,
+  extractWorkersAIText,
+  runWorkersAIText
+} from "../src/workers-ai-provider.js";
 
 const wrangler=fs.readFileSync("wrangler.jsonc","utf8");
 const r2Wrangler=fs.readFileSync("wrangler.r2.jsonc","utf8");
@@ -180,4 +186,42 @@ test("GPTACT12 FREE document prompt treats extracted body as content and exact t
   assert.match(worker,/copy it exactly before adding interpretation/);
   assert.match(workflow,/PRAVDAFREE777/);
   assert.doesNotMatch(workflow,/PRAVDA_FREE_DOC/);
+});
+
+
+test("GPTACT13 unified Workers AI provider contract uses one configured production model",()=>{
+  assert.equal(WORKERS_AI_TEXT_MODEL_DEFAULT,"@cf/openai/gpt-oss-20b");
+  const options=workersAIRequestOptions({
+    model:WORKERS_AI_TEXT_MODEL_DEFAULT,
+    messages:[{role:"user",content:"test"}],
+    maxOutputTokens:900,
+    temperature:0.1
+  });
+  assert.equal(options.max_tokens,900);
+  assert.equal(options.temperature,0.1);
+  assert.equal(options.max_completion_tokens,undefined);
+  assert.equal(options.chat_template_kwargs,undefined);
+});
+
+test("GPTACT14 Workers AI response extraction accepts final answer shapes but never hidden reasoning",()=>{
+  assert.equal(extractWorkersAIText({response:"Здраво"}),"Здраво");
+  assert.equal(extractWorkersAIText({choices:[{message:{content:"Одговор"}}]}),"Одговор");
+  assert.equal(extractWorkersAIText({reasoning:"hidden only"}),null);
+  assert.equal(extractWorkersAIText({response:"   ",reasoning:"hidden"}),null);
+});
+
+test("GPTACT15 Workers AI provider contract fails explicitly on empty final output",async()=>{
+  const env={
+    WORKERS_AI_CHAT_MODEL:"@cf/openai/gpt-oss-20b",
+    AI:{run:async()=>({response:"",usage:{prompt_tokens:10,completion_tokens:0}})}
+  };
+  const result=await runWorkersAIText(env,{
+    messages:[{role:"user",content:"test"}],
+    maxOutputTokens:400
+  });
+  assert.equal(result.ok,false);
+  assert.equal(result.error,"workers_ai_empty_response");
+  assert.equal(result.model,"@cf/openai/gpt-oss-20b");
+  assert.equal(result.providerCalls,1);
+  assert.equal(result.shape.type,"object");
 });
