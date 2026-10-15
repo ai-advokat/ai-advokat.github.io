@@ -40,6 +40,7 @@ import {
   caseExportFilename,
   caseExportMime,
   renderCaseExportMarkdown,
+  renderCaseExportCsv,
   renderCaseExportDocxBytes
 } from "./case-export.js";
 import {
@@ -2090,7 +2091,7 @@ async function handleCaseWorkspaceApi(request,env,url){
 
     const filename=caseExportFilename(exportModel,format);
     const auditMeta={format,mode,caseVersion:exportModel.caseVersion,authorityClassificationCount:authorityClassifications.length};
-    if(format==="pdf"){
+    if(format==="pdf" || format==="png" || format==="jpg"){
       await recordCaseAudit(env,{
         caseId,accountId:membership.accountId,eventType:"export_generated",
         objectType:"case_export_model",objectId:filename,metadata:auditMeta
@@ -2100,15 +2101,17 @@ async function handleCaseWorkspaceApi(request,env,url){
         format,
         filename,
         mode,
-        renderer:"casepilot_canvas_pdf_v1",
+        renderer:format==="pdf"?"casepilot_canvas_pdf_v1":"casepilot_canvas_image_v1",
         exportModel,
-        privacy:"browser_local_pdf_rendering_no_external_service"
+        privacy:"browser_local_rendering_no_external_service"
       });
     }
 
     const body=format==="md"
       ? renderCaseExportMarkdown(exportModel)
-      : renderCaseExportDocxBytes(exportModel);
+      : format==="csv"
+        ? renderCaseExportCsv(exportModel)
+        : renderCaseExportDocxBytes(exportModel);
     await recordCaseAudit(env,{
       caseId,accountId:membership.accountId,eventType:"export_generated",
       objectType:"case_export",objectId:filename,metadata:auditMeta
