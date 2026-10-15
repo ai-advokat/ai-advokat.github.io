@@ -6022,6 +6022,7 @@ async function handleCapabilities(request, env) {
       freeChatModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
       paidChatProvider:orchestratorRuntimeReadiness(env).provider==="configured" ? "openai" : "locked",
       paidChatModel:orchestratorRuntimeReadiness(env).provider==="configured" ? String(env.OPENAI_MODEL||"openai_configured_model") : null,
+      centralOperatingPrompt:AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",
