@@ -136,3 +136,11 @@ test("COP14 legal answers are answer-first, source-transparent and corpus-active
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/SOURCE TRANSPARENCY/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/ACTIVE CORPUS USE/);
 });
+
+
+test("COP15 legal document requests can quality-escalate from FREE Workers AI to governed GPT",()=>{
+  assert.match(worker,/const anonymousLegalDocumentEscalation=/);
+  assert.match(worker,/initialPlan\.mode!==ORCHESTRATOR_MODES\.GENERAL/);
+  assert.match(worker,/attachmentCheck\.attachments\.length>0 \|\| guideDocumentCheck\.attachments\.length>0/);
+  assert.match(worker,/&& !anonymousLegalDocumentEscalation/);
+});
