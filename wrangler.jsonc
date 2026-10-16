@@ -11,7 +11,7 @@
     "OPENAI_ORCHESTRATOR_ENABLED": "true",
     "OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED": "true",
     "OPENAI_FILE_INPUT_ENABLED": "true",
-    "OPENAI_PROVIDER_ACTIVATION_STATE": "optional_paid_provider_free_workers_ai_primary",
+    "OPENAI_PROVIDER_ACTIVATION_STATE": "governed_openai_primary_workers_ai_fallback",
     "LIOE_RUNTIME_GOVERNANCE_ENABLED": "true",
     "LIOE_POSTFLIGHT_ENABLED": "true",
     "LIOE_RUNTIME_TELEMETRY_ENABLED": "true",
