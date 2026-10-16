@@ -28,7 +28,7 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Final root recovery package: governed GPT escalation for legal documents, Central Prompt v6, Macedonian Runtime V5, final fail-closed Macedonian release gate, malformed-generation rejection, wrong-language correction regression, and live synthetic inheritance-document UAT.",
+    "reason": "Fix activation #32 root cause: Cloudflare Workers AI free neuron quota was exhausted after successful deploy. Make governed GPT-6.1 Sol primary for FREE-quota and paid traffic when configured; retain Workers AI only as fallback; deployment no longer depends on Cloudflare free neuron UAT.",
     "approval_text": "Живиот тест покажа граматички и правно неупотреблив одговор при анализа на документ. За правни барања со прилог, квалитетот има предност: користи го конфигурираниот GPT-6.1 Sol со централниот промпт, правописната контрола и Human Gate.",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
@@ -127,6 +127,10 @@
     ],
     "malformed_generation_guard": true,
     "wrong_language_correction_live_uat": true,
-    "final_recovery_package": "AI_ADVOKAT_ROOT_QUALITY_RECOVERY_2026_10_16"
+    "final_recovery_package": "AI_ADVOKAT_ROOT_QUALITY_RECOVERY_2026_10_16",
+    "activation_32_root_cause": "cloudflare_workers_ai_daily_free_allocation_exhausted_10000_neurons",
+    "openai_primary_for_free_quota": true,
+    "workers_ai_fallback_only": true,
+    "cloudflare_neuron_quota_not_deploy_blocker": true
   }
 }
