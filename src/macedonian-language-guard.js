@@ -2,7 +2,7 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V4";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V5";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
   "PRIORITY 0 — ПРАВОПИС НА МАКЕДОНСКИОТ ЈАЗИК 2017.",
@@ -15,6 +15,8 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "In Macedonian legal prose do not use Bulgarian forms such as съд, ищец, ответник, искова молба, обезщетение, съгласно, обжалване, възражение, разноски, случайни or Serbian forms such as поступак, тужилац, захтев, решење, трошкови and пуномоќ when a standard Macedonian equivalent is required.",
   "Foreign brands, technical identifiers, API paths, file names, statutory citation labels and genuinely verbatim source quotations may remain unchanged when necessary; otherwise transcribe foreign names and terms according to Macedonian orthography.",
   "If a foreign-language source is relevant, explain it in Macedonian and clearly distinguish any short verbatim quotation from your own prose.",
+  "If the user reports that a previous answer was in Bulgarian, Serbian, Russian or another wrong language, treat that report as a hard language correction: regenerate the affected answer in Macedonian from the underlying task and context instead of continuing the contaminated wording.",
+  "A Macedonian-facing answer that is predominantly Bulgarian, Serbian or Russian is invalid even if it uses Cyrillic. Cyrillic alone is never evidence that the language requirement was satisfied.",
   "For a North Macedonian legal matter, never substitute Bulgarian, Serbian, Russian or another foreign law unless the user explicitly asks for that jurisdiction and the supplied governed sources support it.",
   "If the controlling North Macedonian law is not established by the supplied governed sources, say that verification is required instead of importing a neighbouring jurisdiction.",
   "Before returning the answer, silently self-check spelling, grammar, syntax, morphology and legal terminology against standard literary Macedonian and rewrite only unambiguous Serbian, Bulgarian or Russian contamination into Macedonian. Never reject or rewrite valid Macedonian words merely because the same spelling exists in another Slavic language. If unambiguous contamination remains, the draft is invalid and must not be shown to the user. Do not mention this self-check to the user."
@@ -33,7 +35,7 @@ const FOREIGN_LEXEMES=new Set([
   "становище","искане","следва","обжалвайте","трябва","моля","настоящият","същият","правосъдие","съд","съда","съдът","съдебен","съдебна","съдебно",
   "ищец","ищецът","ответник","ответникът","искова","исковата","обезщетение","обезщетението",
   "съгласно","обжалване","възражение","възражения","разноски","случайни","случаен","случайна",
-  "доказателства","молител","молителя"
+  "доказателства","молител","молителя","това","тази","тези","какво","защото","когато","всички","например","ще","някой","някои","който","която","които","према","уколико","такође","овде","није"
 ]);
 
 const FOREIGN_JURISDICTION_PHRASES=[
@@ -167,7 +169,25 @@ const DETERMINISTIC_LEXICAL_REPLACEMENTS=[
   ["правосъдие","правосудство"],
   ["становище","мислење"],
   ["искане","барање"],
-  ["следва","треба"]
+  ["следва","треба"],
+  ["това","ова"],
+  ["тази","оваа"],
+  ["тези","овие"],
+  ["какво","што"],
+  ["защото","затоа што"],
+  ["когато","кога"],
+  ["всички","сите"],
+  ["например","на пример"],
+  ["ще","ќе"],
+  ["някой","некој"],
+  ["някои","некои"],
+  ["който","кој"],
+  ["която","која"],
+  ["които","кои"],
+  ["према","според"],
+  ["уколико","доколку"],
+  ["такође","исто така"],
+  ["није","не е"]
 ];
 
 function preserveInitialCase(match,replacement){
