@@ -5250,6 +5250,29 @@ async function handleGPTChat(request,env){
 
   const finalAnswer=postflight.required ? postflight.corrected_answer : result.text;
 
+  // Final language release gate for the governed OpenAI path. The central prompt
+  // should already produce standard Macedonian, but no Macedonian-facing answer
+  // is released unless the deterministic cleanup + runtime assessment confirms
+  // the 2017 orthography contract. This is deliberately last-mile and fail-closed.
+  let governedFinalAnswer=String(finalAnswer||"").trim();
+  let governedLanguageQuality=null;
+  const governedLanguageRequired=shouldEnforceMacedonianOutput(q);
+  if(governedLanguageRequired){
+    governedFinalAnswer=normaliseMacedonianGeneratedText(governedFinalAnswer);
+    governedLanguageQuality=assessMacedonianOutput(governedFinalAnswer,{userText:q});
+    if(governedLanguageQuality.ok!==true){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:"macedonian_language_quality_failed",
+        message:"Одговорот не ја помина задолжителната јазична проверка според Правописот на македонскиот јазик (2017) и не е пуштен.",
+        languageStandard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
+        languageReasons:governedLanguageQuality.reasons||[],
+        governanceRunId:lioeRunId
+      },503);
+    }
+  }
+
   const articleMatched=articleBundle.state==="matched";
   const caseLawMatched=caseLawBundle.state==="matched";
   const guideFullTextUsed=guideDocumentCheck.attachments.length>0;
@@ -5336,8 +5359,10 @@ async function handleGPTChat(request,env){
 
   return json(request,{
     ok:true,
-    answer:finalAnswer,
+    answer:governedFinalAnswer,
     model:result.model,
+    languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+    languageQualityState:governedLanguageRequired?"verified_runtime":"not_required",
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,
     sources:result.sources || [],
