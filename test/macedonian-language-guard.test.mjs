@@ -116,3 +116,17 @@ test("repair prompt contains Macedonian-native quality instructions",()=>{
   assert.match(messages[0].content,/немакедонски кирилични букви/i);
   assert.match(messages[0].content,/замени го целиот збор со правилен македонски еквивалент/i);
 });
+
+
+test("Bulgarian prose without distinctive letters is still rejected",()=>{
+  const bad="Това е пример какво треба да направите, когато имате спор. Всички документи треба да се проверят.";
+  const check=assessMacedonianOutput(bad,{userText:"Одговори ми на македонски."});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.reasons.includes("foreign_lexical_contamination"));
+  assert.ok(check.foreignLexemes.some(x=>["това","какво","когато","всички"].includes(x)));
+});
+
+test("wrong-language user correction is explicit in the Macedonian runtime contract",()=>{
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/hard language correction/i);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/Cyrillic alone is never evidence/i);
+});
