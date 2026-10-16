@@ -51,7 +51,7 @@ test("GPTACT2 provider remains fail-closed without secret and opens only with ga
   assert.equal(orchestratorRuntimeReadiness(ready).fileInputs,"configured");
 });
 
-test("GPTACT3 production activation supports FREE Workers AI and preserves the paid OpenAI path",()=>{
+test("GPTACT3 production activation uses governed OpenAI primary with Workers AI fallback",()=>{
   assert.match(workflow,/workflow_dispatch:/);
   assert.match(workflow,/push:/);
   assert.match(workflow,/gpt-production-request\.json/);
@@ -64,7 +64,7 @@ test("GPTACT3 production activation supports FREE Workers AI and preserves the p
   assert.match(workflow,/wrangler secret put OPENAI_API_KEY/);
   assert.match(workflow,/wrangler deploy --config wrangler\.jsonc/);
   assert.match(workflow,/Live GPT \+ Web \+ attachment smoke test/);
-  assert.match(workflow,/Live FREE Workers AI multi-scenario runtime UAT \+ DOCX smoke/);
+  assert.doesNotMatch(workflow,/Live FREE Workers AI multi-scenario runtime UAT \+ DOCX smoke/);
   assert.match(workflow,/FREE_PROVIDER/);
   assert.match(workflow,/WORKERS_AI_MARKDOWN_ENABLED/);
   assert.match(workflow,/PRAVDAFREE777/);
@@ -159,9 +159,9 @@ test("GPTACT9 GPT activation preserves the separately authorized CasePilot priva
   assert.doesNotMatch(workflow,/wrangler r2 bucket create/);
 });
 
-test("GPTACT10 provider readiness accepts the governed FREE document path without weakening the paid path",()=>{
-  assert.match(workflow,/configured_for_free_workers_ai_chat_execution/);
-  assert.match(workflow,/configured_workers_ai_markdown_conversion/);
+test("GPTACT10 provider readiness requires governed OpenAI while retaining Workers AI fallback capability",()=>{
+  assert.match(worker,/configured_for_free_workers_ai_chat_execution/);
+  assert.match(worker,/configured_workers_ai_markdown_conversion/);
   assert.match(workflow,/configured_for_api_chat_execution/);
   assert.match(workflow,/externalResearchTools/);
   assert.match(workflow,/fileInputs/);
@@ -256,4 +256,11 @@ test("GPTACT16 GPT-OSS provider diagnostics expose only safe completion metadata
   assert.equal(result.shape.choiceContentLength,0);
   assert.equal(result.shape.outputTokens,400);
   assert.equal("reasoning" in result.shape,false);
+});
+
+
+test("GPTACT17 anonymous FREE quota uses governed OpenAI when configured and Workers AI only as fallback",()=>{
+  assert.match(worker,/const governedOpenAIAvailable=readiness\.provider==="configured"/);
+  assert.match(worker,/&& !governedOpenAIAvailable/);
+  assert.match(worker,/governed_openai_with_workers_ai_fallback/);
 });
