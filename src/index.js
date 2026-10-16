@@ -5069,7 +5069,7 @@ async function handleGPTChat(request,env){
       ? "medium"
       : "low";
 
-  if(useFreeWorkersAI){
+  const runWorkersFallbackResponse=async({fallbackReason=null,primaryProviderCalls=0}={})=>{
     // FREE mode must remain usable for research, analysis and complete working drafts.
     // High-stakes/current-law missions are not blocked at generation time; they are
     // released only as research/work-product with an explicit Human Gate.
@@ -5107,6 +5107,11 @@ async function handleGPTChat(request,env){
       answer:freeResult.text,
       model:freeResult.model,
       provider:"workers_ai_free",
+      providerFallback:fallbackReason ? {
+        from:"openai",
+        reason:String(fallbackReason),
+        primaryProviderCalls:Number(primaryProviderCalls||0)
+      } : null,
       languageStandard:freeResult.languageStandard,
       languageRepaired:freeResult.languageRepaired===true,
       conversationPersistence:freeResult.conversationPersistence,
@@ -5170,7 +5175,10 @@ async function handleGPTChat(request,env){
         remaining:Math.max(0,quota-reservation.used)
       }
     });
-  }
+  };
+
+
+  if(useFreeWorkersAI) return runWorkersFallbackResponse();
 
   const result=await runOpenAIOrchestrator(env,{
     plan,
