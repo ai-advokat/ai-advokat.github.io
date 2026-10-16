@@ -28,7 +28,7 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Fix activation #32 root cause: Cloudflare Workers AI free neuron quota was exhausted after successful deploy. Make governed GPT-6.1 Sol primary for FREE-quota and paid traffic when configured; retain Workers AI only as fallback; deployment no longer depends on Cloudflare free neuron UAT.",
+    "reason": "Fix activation #33: deployment itself succeeded, OpenAI preflight and billing passed, but readiness falsely reported Workers AI document conversion because status priority was reversed. Capability reporting now prefers governed OpenAI file inputs, stale security assertions are aligned, and OpenAI is explicitly marked production primary with Workers AI fallback.",
     "approval_text": "Живиот тест покажа граматички и правно неупотреблив одговор при анализа на документ. За правни барања со прилог, квалитетот има предност: користи го конфигурираниот GPT-6.1 Sol со централниот промпт, правописната контрола и Human Gate.",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
@@ -131,6 +131,11 @@
     "activation_32_root_cause": "cloudflare_workers_ai_daily_free_allocation_exhausted_10000_neurons",
     "openai_primary_for_free_quota": true,
     "workers_ai_fallback_only": true,
-    "cloudflare_neuron_quota_not_deploy_blocker": true
+    "cloudflare_neuron_quota_not_deploy_blocker": true,
+    "activation_33_deploy_succeeded": true,
+    "activation_33_failure": "readiness_status_priority_bug_plus_stale_security_assertions",
+    "openai_preflight_passed": true,
+    "openai_billing_quota_passed": true,
+    "production_worker_deployed_before_readiness_failure": true
   }
 }
