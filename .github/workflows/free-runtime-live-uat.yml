@@ -137,8 +137,16 @@ jobs:
             if(answer.length<12){
               throw new Error(label+" empty/too-short final answer "+JSON.stringify(data));
             }
-            if(data.webSearchUsed!==false){
-              throw new Error(label+" incorrectly claimed web search");
+            if(data.provider==="workers_ai_free" && data.webSearchUsed!==false){
+              throw new Error(label+" Workers AI incorrectly claimed web search");
+            }
+            if(data.provider==="openai" && data.webSearchUsed===true){
+              if(!Array.isArray(data.sources) || data.sources.length===0){
+                throw new Error(label+" OpenAI claimed web search without source provenance");
+              }
+              if(!data.sourcePolicy || typeof data.sourcePolicy!=="object"){
+                throw new Error(label+" OpenAI web research omitted source policy metadata");
+              }
             }
             return {answer,data};
           }
