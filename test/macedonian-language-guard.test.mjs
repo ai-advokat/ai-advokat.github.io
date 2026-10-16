@@ -130,3 +130,12 @@ test("wrong-language user correction is explicit in the Macedonian runtime contr
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/hard language correction/i);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/Cyrillic alone is never evidence/i);
 });
+
+
+test("reported malformed inheritance-answer vocabulary is rejected",()=>{
+  const bad="Анализа и препораки за последуствување. Во документот има прикаде, приречет и данишна ставка.";
+  const check=assessMacedonianOutput(bad,{userText:"Анализирај го оставинскиот предмет на македонски."});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.reasons.includes("malformed_macedonian_generation"));
+  assert.ok(check.malformedGeneration.some(x=>["последуствување","прикаде","приречет","данишна"].includes(x)));
+});
