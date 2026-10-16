@@ -6080,10 +6080,10 @@ async function handleOrchestratorArchitecture(request, env) {
       centralPromptVersion:AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
       nativeCorpusTool:readiness.nativeCorpusTool,
       externalResearchTools:readiness.externalResearchTools,
-      fileInputs:freeWorkersAIMarkdownConfigured(env)
-        ? "configured_workers_ai_markdown_conversion"
-        : readiness.fileInputs==="configured"
-          ? "configured"
+      fileInputs:readiness.fileInputs==="configured"
+        ? "configured"
+        : freeWorkersAIMarkdownConfigured(env)
+          ? "configured_workers_ai_markdown_conversion"
           : "locked",
       tracing:readiness.tracing,
       humanGate:readiness.humanGate,
@@ -6217,12 +6217,14 @@ async function handleCapabilities(request, env) {
       lioeSpecialistExecution: env.LIOE_SPECIALIST_EXECUTION_ENABLED==="true" ? "enabled" : "locked",
       lioeRuntimeTelemetry: lioeTelemetry,
       gptWebSearch: orchestratorRuntimeReadiness(env).externalResearchTools,
-      gptFileInputs: freeWorkersAIMarkdownConfigured(env)
-        ? "workers_ai_markdown_conversion"
-        : orchestratorRuntimeReadiness(env).fileInputs==="configured"
-          ? "configured"
+      gptFileInputs: orchestratorRuntimeReadiness(env).fileInputs==="configured"
+        ? "configured"
+        : freeWorkersAIMarkdownConfigured(env)
+          ? "workers_ai_markdown_conversion"
           : "locked",
-      freeChatProvider:freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
+      freeChatProvider:orchestratorRuntimeReadiness(env).provider==="configured"
+        ? "openai_governed"
+        : freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
       freeChatModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
       paidChatProvider:orchestratorRuntimeReadiness(env).provider==="configured" ? "openai" : "locked",
       paidChatModel:orchestratorRuntimeReadiness(env).provider==="configured" ? String(env.OPENAI_MODEL||"openai_configured_model") : null,
