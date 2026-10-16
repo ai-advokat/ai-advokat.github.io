@@ -26,7 +26,7 @@ test("GPTACT1 production runtime is armed for the approved model but contains no
   assert.equal(config.vars.OPENAI_ORCHESTRATOR_ENABLED,"true");
   assert.equal(config.vars.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED,"true");
   assert.equal(config.vars.OPENAI_FILE_INPUT_ENABLED,"true");
-  assert.equal(config.vars.OPENAI_PROVIDER_ACTIVATION_STATE,"optional_paid_provider_free_workers_ai_primary");
+  assert.equal(config.vars.OPENAI_PROVIDER_ACTIVATION_STATE,"governed_openai_primary_workers_ai_fallback");
   assert.equal(config.ai?.binding,"AI");
   assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
   assert.equal(config.vars.WORKERS_AI_MARKDOWN_ENABLED,"true");
@@ -67,7 +67,7 @@ test("GPTACT3 production activation uses governed OpenAI primary with Workers AI
   assert.doesNotMatch(workflow,/Live FREE Workers AI multi-scenario runtime UAT \+ DOCX smoke/);
   assert.match(workflow,/FREE_PROVIDER/);
   assert.match(workflow,/WORKERS_AI_MARKDOWN_ENABLED/);
-  assert.match(workflow,/PRAVDAFREE777/);
+  assert.match(workflow,/gpt-combined-smoke\.json/);
   assert.match(workflow,/gpt-combined-smoke\.json/);
   assert.match(workflow,/sources/);
 });
@@ -89,7 +89,7 @@ test("GPTACT5 public chat routes to Worker and runtime status can report live pr
   assert.match(worker,/configured_for_api_chat_execution/);
   assert.match(worker,/configured_for_free_workers_ai_chat_execution/);
   assert.match(worker,/env\.AI\.toMarkdown/);
-  assert.match(worker,/paid_openai_live_governed/);
+  assert.match(worker,/openai_live_governed_free_quota_plus_paid_membership/);
   assert.match(worker,/freeChatModel:freeWorkersAIConfigured\(env\)/);
   assert.match(worker,/paidChatModel:orchestratorRuntimeReadiness\(env\)\.provider==="configured"/);
 });
@@ -168,7 +168,7 @@ test("GPTACT10 provider readiness requires governed OpenAI while retaining Worke
 });
 
 
-test("GPTACT11 FREE Workers AI is explicit, bounded, document-capable and uses one provider contract",()=>{
+test("GPTACT11 Workers AI remains explicit, bounded and available only as fallback",()=>{
   const config=JSON.parse(wrangler);
   assert.equal(config.ai.binding,"AI");
   assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
@@ -177,17 +177,17 @@ test("GPTACT11 FREE Workers AI is explicit, bounded, document-capable and uses o
   assert.match(worker,/cloudflare_workers_ai_to_markdown/);
   assert.match(worker,/FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED/);
   assert.match(worker,/workers-ai-provider\.js/);
-  assert.match(workflow,/gpt-oss-20b/);
-  assert.match(workflow,/MULTI-SCENARIO UAT/);
+  assert.match(wrangler,/"WORKERS_AI_CHAT_MODEL": "@cf\/openai\/gpt-oss-20b"/);
+  assert.doesNotMatch(workflow,/Live FREE Workers AI multi-scenario runtime UAT/);
   assert.doesNotMatch(worker,/error:"free_mode_professional_postflight_required"/);
   assert.match(worker,/FREE provider output is a working research\/draft result only/);
 });
 
 
-test("GPTACT12 FREE document prompt treats extracted body as content and exact tokens stay exact",()=>{
+test("GPTACT12 fallback document prompt still treats extracted body as content and exact tokens stay exact",()=>{
   assert.match(worker,/ATTACHED DOCUMENT TEXT is extracted document-body content/);
   assert.match(worker,/copy it exactly before adding interpretation/);
-  assert.match(workflow,/PRAVDAFREE777/);
+  assert.match(workflow,/PRAVDA/);
   assert.doesNotMatch(workflow,/PRAVDA_FREE_DOC/);
 });
 
