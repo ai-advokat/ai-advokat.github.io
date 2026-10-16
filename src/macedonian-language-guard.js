@@ -38,6 +38,10 @@ const FOREIGN_LEXEMES=new Set([
   "доказателства","молител","молителя","това","тази","тези","какво","защото","когато","всички","например","ще","някой","някои","който","която","които","према","уколико","такође","овде","није"
 ]);
 
+const MALFORMED_GENERATION_LEXEMES=new Set([
+  "последуствување","прикаде","приречет","нотариска","данишна","волеври","домнување","переводина","доцрат","паблицни"
+]);
+
 const FOREIGN_JURISDICTION_PHRASES=[
   "български закон",
   "народен парламент",
@@ -92,16 +96,19 @@ export function assessMacedonianOutput(text,{userText=""}={}){
   const jurisdictionLeaks=foreignJurisdictionRequested
     ? []
     : FOREIGN_JURISDICTION_PHRASES.filter(p=>lower.includes(p));
+  const malformedGeneration=[...MALFORMED_GENERATION_LEXEMES].filter(w=>words.has(w));
   const reasons=[];
   if(foreignChars.length) reasons.push("foreign_cyrillic_letters");
   if(foreignLexemes.length) reasons.push("foreign_lexical_contamination");
   if(jurisdictionLeaks.length) reasons.push("foreign_jurisdiction_substitution");
+  if(malformedGeneration.length) reasons.push("malformed_macedonian_generation");
   return {
     ok:reasons.length===0,
     reasons,
     foreignChars:[...new Set(foreignChars)].slice(0,12),
     foreignLexemes:foreignLexemes.slice(0,12),
     jurisdictionLeaks:jurisdictionLeaks.slice(0,8),
+    malformedGeneration:malformedGeneration.slice(0,12),
     standardVersion:MACEDONIAN_LANGUAGE_STANDARD_VERSION
   };
 }
