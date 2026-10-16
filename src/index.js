@@ -4960,7 +4960,20 @@ async function handleGPTChat(request,env){
     quota=MEMBERSHIP_PLANS.free.monthlyQuota;
   }
 
-  const useFreeWorkersAI=!membership && freeWorkersAIConfigured(env);
+  // Quality escalation: anonymous FREE users may still use Workers AI for ordinary chat,
+  // but legal document analysis/drafting is routed to the configured governed OpenAI
+  // orchestrator when available. This prevents low-quality document synthesis from the
+  // small FREE model while keeping the public quota and Human Gate unchanged.
+  const anonymousLegalDocumentEscalation=
+    !membership
+    && readiness.provider==="configured"
+    && initialPlan.mode!==ORCHESTRATOR_MODES.GENERAL
+    && (attachmentCheck.attachments.length>0 || guideDocumentCheck.attachments.length>0);
+
+  const useFreeWorkersAI=!membership
+    && freeWorkersAIConfigured(env)
+    && !anonymousLegalDocumentEscalation;
+
   if(autoExternalResearchCandidate && !useFreeWorkersAI) webRequested=true;
   if(useFreeWorkersAI && explicitWebRequested){
     return json(request,{
