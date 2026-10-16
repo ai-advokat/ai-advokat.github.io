@@ -4321,6 +4321,27 @@ function freeWorkersAIMarkdownConfigured(env){
     && typeof env.AI.toMarkdown==="function";
 }
 
+const OPENAI_TO_WORKERS_FALLBACK_ERRORS=new Set([
+  "orchestrator_precondition_failed",
+  "openai_orchestrator_not_configured",
+  "openai_network_error",
+  "openai_response_error",
+  "openai_incomplete_response",
+  "openai_empty_response",
+  "specialist_execution_failed"
+]);
+
+function governedOpenAIWorkersFallbackConfigured(env){
+  return env?.OPENAI_PROVIDER_ACTIVATION_STATE==="governed_openai_primary_workers_ai_fallback"
+    && freeWorkersAIConfigured(env);
+}
+
+function openAIFailureEligibleForWorkersFallback(result,{explicitWebRequested=false}={}){
+  if(explicitWebRequested===true) return false;
+  const error=String(result?.error||"");
+  return OPENAI_TO_WORKERS_FALLBACK_ERRORS.has(error);
+}
+
 function decodeBase64Bytes(raw){
   const value=String(raw||"");
   if(!value || !/^[A-Za-z0-9+/=]+$/.test(value)) return null;
@@ -5048,7 +5069,7 @@ async function handleGPTChat(request,env){
       ? "medium"
       : "low";
 
-  if(useFreeWorkersAI){
+  const runWorkersFallbackResponse=async({fallbackReason=null,primaryProviderCalls=0}={})=>{
     // FREE mode must remain usable for research, analysis and complete working drafts.
     // High-stakes/current-law missions are not blocked at generation time; they are
     // released only as research/work-product with an explicit Human Gate.
@@ -5086,6 +5107,11 @@ async function handleGPTChat(request,env){
       answer:freeResult.text,
       model:freeResult.model,
       provider:"workers_ai_free",
+      providerFallback:fallbackReason ? {
+        from:"openai",
+        reason:String(fallbackReason),
+        primaryProviderCalls:Number(primaryProviderCalls||0)
+      } : null,
       languageStandard:freeResult.languageStandard,
       languageRepaired:freeResult.languageRepaired===true,
       conversationPersistence:freeResult.conversationPersistence,
@@ -5149,7 +5175,10 @@ async function handleGPTChat(request,env){
         remaining:Math.max(0,quota-reservation.used)
       }
     });
-  }
+  };
+
+
+  if(useFreeWorkersAI) return runWorkersFallbackResponse();
 
   const result=await runOpenAIOrchestrator(env,{
     plan,
@@ -5165,6 +5194,17 @@ async function handleGPTChat(request,env){
   });
 
   if(!result.ok){
+    const workersFallbackAllowed=
+      !membership
+      && governedOpenAIWorkersFallbackConfigured(env)
+      && openAIFailureEligibleForWorkersFallback(result,{explicitWebRequested});
+    if(workersFallbackAllowed){
+      return runWorkersFallbackResponse({
+        fallbackReason:result.error||"openai_primary_unavailable",
+        primaryProviderCalls:Number(result.providerCalls||0)
+      });
+    }
+
     await releaseMonthlyQuota(env,{subject,period});
     let telemetryState="not_applicable";
     if(lioeEngaged){

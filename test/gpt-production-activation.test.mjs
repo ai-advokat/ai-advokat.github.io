@@ -264,3 +264,23 @@ test("GPTACT17 anonymous FREE quota uses governed OpenAI when configured and Wor
   assert.match(worker,/&& !governedOpenAIAvailable/);
   assert.match(worker,/governed_openai_with_workers_ai_fallback/);
 });
+
+
+test("GPTACT19 governed OpenAI primary fails over to Workers AI without a second quota reservation",()=>{
+  assert.match(worker,/OPENAI_PROVIDER_ACTIVATION_STATE==="governed_openai_primary_workers_ai_fallback"/);
+  assert.match(worker,/OPENAI_TO_WORKERS_FALLBACK_ERRORS/);
+  assert.match(worker,/orchestrator_precondition_failed/);
+  assert.match(worker,/openAIFailureEligibleForWorkersFallback\(result,\{explicitWebRequested\}\)/);
+  assert.match(worker,/if\(workersFallbackAllowed\)\{[\s\S]*?return runWorkersFallbackResponse\(/);
+  assert.match(worker,/providerFallback:fallbackReason \?/);
+  const chat=worker.slice(worker.indexOf("async function handleGPTChat("),worker.indexOf("async function handleAssistant("));
+  const failure=chat.indexOf("if(!result.ok){");
+  const fallback=chat.indexOf("if(workersFallbackAllowed)",failure);
+  const release=chat.indexOf("await releaseMonthlyQuota(env,{subject,period});",failure);
+  assert.ok(failure>0 && fallback>failure && release>fallback,"fallback must run before releasing the single reserved user quota");
+  assert.equal((chat.match(/reserveMonthlyQuota\(env,\{subject,period,quota\}\)/g)||[]).length,1,"chat turn must reserve monthly quota exactly once");
+});
+
+test("GPTACT20 explicit Web requests fail closed instead of silently downgrading to no-Web fallback",()=>{
+  assert.match(worker,/if\(explicitWebRequested===true\) return false/);
+});
