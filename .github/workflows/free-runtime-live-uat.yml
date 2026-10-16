@@ -64,8 +64,8 @@ jobs:
           const fs=require("fs");
           const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
           const EXPECTED_MODEL="@cf/openai/gpt-oss-20b";
-          const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v5";
-          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V4";
+          const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v6";
+          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V5";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
 
           async function waitForExpectedRuntime(){
@@ -188,6 +188,53 @@ jobs:
               }
             }
             console.log(name+": PASS · "+answer.replace(/\s+/g," ").slice(0,120));
+          }
+
+          const legalDocPayload={
+            q:"Анализирај го приложениот измислен документ за оставинска постапка и подготви кратко професионално писмо до нотар. Не измислувај членови, рокови или правна постапка што не е потврдена.",
+            attachments:[{
+              kind:"text",
+              name:"synthetic-inheritance.txt",
+              mime:"text/plain",
+              text:"СИНТЕТИЧКИ ТЕСТ. Оставител: Илија Тестовски. Имот: КП 1234, КО Тест. Потенцијални наследници: Ана и Борис. Нема наведени рокови, членови од закон или судска одлука. Цел: писмо до нотар со барање за проверка на документацијата."
+            }]
+          };
+          {
+            const response=await fetch(BASE+"/api/chat",{
+              method:"POST",
+              headers:{"content-type":"application/json","accept":"application/json"},
+              body:JSON.stringify({mode:"auto",webSearch:false,history:[],guideIds:[],...legalDocPayload})
+            });
+            const raw=await response.text();
+            let data=null;
+            try{data=JSON.parse(raw);}catch{}
+            if(!response.ok || !data?.ok) throw new Error("legal-document-escalation HTTP "+response.status+" "+raw.slice(0,1800));
+            if(data.provider && data.provider!=="openai" && data.model!=="gpt-6.1-sol"){
+              throw new Error("legal-document-escalation did not use governed GPT path: "+JSON.stringify({provider:data.provider,model:data.model,displayMode:data.displayMode}));
+            }
+            if(data.model!=="gpt-6.1-sol"){
+              throw new Error("legal-document-escalation unexpected model "+String(data.model));
+            }
+            const answer=String(data.answer||"").trim();
+            if(answer.length<250) throw new Error("legal-document-escalation answer too short: "+answer);
+            const lower=answer.toLocaleLowerCase("mk");
+            const forbidden=["поступак","тужилац","захтев","решење","съд","ищец","ответник","искова","обезщетение","разноски","това","какво","когато","всички","прикаде","приречет","нотариска вписка","данишна ставка","последуствување"];
+            if(forbidden.some(token=>lower.includes(token))){
+              throw new Error("legal-document-escalation linguistic contamination: "+answer.slice(0,1600));
+            }
+            if(/\b(30|48|60)\s*(?:ден|дена|днев)/iu.test(answer)){
+              throw new Error("legal-document-escalation invented deadline: "+answer.slice(0,1600));
+            }
+            if(/\bчлен\s+\d+/iu.test(answer)){
+              throw new Error("legal-document-escalation invented article number without source context: "+answer.slice(0,1600));
+            }
+            if(!/нотар/iu.test(answer) || !/проверк/iu.test(answer)){
+              throw new Error("legal-document-escalation did not follow the requested task: "+answer.slice(0,1600));
+            }
+            if(data.languageQualityState && data.languageQualityState!=="verified_runtime"){
+              throw new Error("legal-document-escalation language gate not verified: "+String(data.languageQualityState));
+            }
+            console.log("legal-document-escalation: PASS · "+answer.replace(/\s+/g," ").slice(0,180));
           }
 
           const b64=fs.readFileSync("/tmp/ai-advokat-live-uat.docx").toString("base64");
