@@ -144,7 +144,7 @@ export const ORCHESTRATION_PATTERN = Object.freeze({
 
 const ROUTE_PATTERNS = Object.freeze({
   mk: /(?:македонск(?:о|ото|и|ата) право|северна македонија|република северна македонија|службен весник|лдбис|уставен суд|врховен суд|\bmk law\b|north macedonia law)/iu,
-  corpus: /(?:ai advokat|аи адвокат|зора(?:н|нот)|стојанкиќ|упатств(?:о|ата)|наш(?:и|ата) документ|во базата|корпус|водич(?:от|ите)?|knowledge base|native corpus)/iu,
+  corpus: /(?:\bai advokat\s+(?:corpus|knowledge base|database)\b|аи адвокат\s+(?:корпус|база|водич(?:и|ите)?)|зора(?:н|нот)|стојанкиќ|упатств(?:о|ата)|наш(?:и|ата) документ|во базата|корпус|водич(?:от|ите)?|knowledge base|native corpus)/iu,
   eu: /(?:\b(?:eu|european union|eur-lex|curia|cjeu|tfeu|teu|directive|regulation)\b|европска(?:та)? унија|право(?:то)? на европска(?:та)? унија|еур-лекс|курија|суд(?:от)? на правдата на европска(?:та)? унија)/iu,
   echr: /(?:\b(?:echr|ecthr|hudoc|european convention|strasbourg)\b|европски(?:от)? суд за човекови права|есчп|ехрч|европска(?:та)? конвенција за човекови права|худок)/iu,
   common: /(?:\b(?:common law|england|wales|uk law|united kingdom|us law|u\.s\.|united states|precedent|stare decisis)\b|англо[- ]?американско право|англо[- ]?саксонско право|англиско право|право(?:то)? на обединетото кралство|американско право|судски преседан)/iu,
