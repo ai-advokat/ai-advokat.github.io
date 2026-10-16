@@ -28,8 +28,8 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Deploy Zoran-requested AI Advokat answer-quality correction: Central Operating Prompt v6, Macedonian 2017 Runtime V5, hard wrong-language recovery, correction-aware re-analysis, answer-first legal structure, source transparency and active corpus use.",
-    "approval_text": "Зоран побара AI Адвокат да одговара квалитетно како современ GPT-систем, задолжително на стандарден македонски според Правопис 2017, да ја користи базата како збогатување, да не повторува погрешен одговор и веднаш да се коригира по забелешка.",
+    "reason": "Quality hotfix from live inheritance-document evidence: anonymous legal document analysis/drafting now escalates from FREE Workers AI to the configured governed GPT-6.1 Sol orchestrator when available; ordinary free chat remains on Workers AI.",
+    "approval_text": "Живиот тест покажа граматички и правно неупотреблив одговор при анализа на документ. За правни барања со прилог, квалитетот има предност: користи го конфигурираниот GPT-6.1 Sol со централниот промпт, правописната контрола и Human Gate.",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
     "baseline_result": "CLOUDFLARE_R2_NOT_ENABLED_CODE_10042",
@@ -112,6 +112,9 @@
     "wrong_language_regenerate_from_task": true,
     "legal_answer_architecture": "answer_first_facts_sources_analysis_options_next_steps",
     "source_transparency_required": true,
-    "active_corpus_use_required": true
+    "active_corpus_use_required": true,
+    "legal_document_quality_escalation": "anonymous_legal_documents_to_governed_openai_when_configured",
+    "free_general_chat_provider": "workers_ai",
+    "target_paid_model": "gpt-6.1-sol"
   }
 }
