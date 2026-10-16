@@ -24,12 +24,12 @@
   ],
   "note": "No API key is stored in this file. The workflow must fail before deployment if the secret or paid quota is unavailable.",
   "last_redeploy": {
-    "requested_on": "2026-10-15",
+    "requested_on": "2026-10-16",
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Deploy the simple full-knowledge AI Advokat experience: Central Operating Prompt v5, local-first legal knowledge, proactive authorised external research when governed local support is insufficient, twenty-document GPT synthesis, and natural-language DOCX/PDF/JSON/CSV output. Keep source governance, privacy and Human Gate in the background rather than cluttering the user interface.",
-    "approval_text": "AI Advokat да биде едноставен за корисникот, а полн со знаење во позадина: прашање или до 20 документи, автоматска правна база и надворешно истражување ако недостига извор, анализа/синтеза и директен DOCX/PDF/JSON/CSV резултат.",
+    "reason": "Deploy Zoran-requested AI Advokat answer-quality correction: Central Operating Prompt v6, Macedonian 2017 Runtime V5, hard wrong-language recovery, correction-aware re-analysis, answer-first legal structure, source transparency and active corpus use.",
+    "approval_text": "Зоран побара AI Адвокат да одговара квалитетно како современ GPT-систем, задолжително на стандарден македонски според Правопис 2017, да ја користи базата како збогатување, да не повторува погрешен одговор и веднаш да се коригира по забелешка.",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
     "baseline_result": "CLOUDFLARE_R2_NOT_ENABLED_CODE_10042",
@@ -89,8 +89,8 @@
     "quota_preserved": true,
     "privacy_gate_preserved": true,
     "autonomous_filing_authorized": false,
-    "central_operating_prompt": "AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v5",
-    "language_runtime_contract": "MK_ORTHOGRAPHY_2017_RUNTIME_V4",
+    "central_operating_prompt": "AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v6",
+    "language_runtime_contract": "MK_ORTHOGRAPHY_2017_RUNTIME_V5",
     "language_guard_false_positive_policy": "reject_unambiguous_foreign_forms_only",
     "valid_macedonian_shared_slavic_vocabulary_allowed": true,
     "word_output_intent_enabled": true,
@@ -107,6 +107,11 @@
       "json",
       "csv"
     ],
-    "sources_and_governance_collapsed_by_default": true
+    "sources_and_governance_collapsed_by_default": true,
+    "user_correction_reanalysis": true,
+    "wrong_language_regenerate_from_task": true,
+    "legal_answer_architecture": "answer_first_facts_sources_analysis_options_next_steps",
+    "source_transparency_required": true,
+    "active_corpus_use_required": true
   }
 }
