@@ -4321,6 +4321,27 @@ function freeWorkersAIMarkdownConfigured(env){
     && typeof env.AI.toMarkdown==="function";
 }
 
+const OPENAI_TO_WORKERS_FALLBACK_ERRORS=new Set([
+  "orchestrator_precondition_failed",
+  "openai_orchestrator_not_configured",
+  "openai_network_error",
+  "openai_response_error",
+  "openai_incomplete_response",
+  "openai_empty_response",
+  "specialist_execution_failed"
+]);
+
+function governedOpenAIWorkersFallbackConfigured(env){
+  return env?.OPENAI_PROVIDER_ACTIVATION_STATE==="governed_openai_primary_workers_ai_fallback"
+    && freeWorkersAIConfigured(env);
+}
+
+function openAIFailureEligibleForWorkersFallback(result,{explicitWebRequested=false}={}){
+  if(explicitWebRequested===true) return false;
+  const error=String(result?.error||"");
+  return OPENAI_TO_WORKERS_FALLBACK_ERRORS.has(error);
+}
+
 function decodeBase64Bytes(raw){
   const value=String(raw||"");
   if(!value || !/^[A-Za-z0-9+/=]+$/.test(value)) return null;
