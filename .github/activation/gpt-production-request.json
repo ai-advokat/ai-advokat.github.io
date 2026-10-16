@@ -28,7 +28,7 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Root quality recovery: legal documents escalate to governed GPT-6.1 Sol, Central Prompt v6 + Macedonian Runtime V5, final fail-closed Macedonian release gate, and expanded live UAT covering inheritance-document analysis, no invented deadlines/articles, and no neighbouring-language contamination.",
+    "reason": "Final root recovery package: governed GPT escalation for legal documents, Central Prompt v6, Macedonian Runtime V5, final fail-closed Macedonian release gate, malformed-generation rejection, wrong-language correction regression, and live synthetic inheritance-document UAT.",
     "approval_text": "Живиот тест покажа граматички и правно неупотреблив одговор при анализа на документ. За правни барања со прилог, квалитетот има предност: користи го конфигурираниот GPT-6.1 Sol со централниот промпт, правописната контрола и Human Gate.",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
@@ -124,6 +124,9 @@
       "no_invented_deadlines",
       "no_invented_article_numbers",
       "professional_notary_letter_task_following"
-    ]
+    ],
+    "malformed_generation_guard": true,
+    "wrong_language_correction_live_uat": true,
+    "final_recovery_package": "AI_ADVOKAT_ROOT_QUALITY_RECOVERY_2026_10_16"
   }
 }
