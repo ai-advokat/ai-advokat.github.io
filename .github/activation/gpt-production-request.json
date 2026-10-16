@@ -28,7 +28,7 @@
     "target_branch": "main",
     "suite_id": "AI_ADVOKAT_PRODUCTION_LEGAL_UAT_v2_20",
     "scenario_count": 20,
-    "reason": "Quality hotfix from live inheritance-document evidence: anonymous legal document analysis/drafting now escalates from FREE Workers AI to the configured governed GPT-6.1 Sol orchestrator when available; ordinary free chat remains on Workers AI.",
+    "reason": "Root quality recovery: legal documents escalate to governed GPT-6.1 Sol, Central Prompt v6 + Macedonian Runtime V5, final fail-closed Macedonian release gate, and expanded live UAT covering inheritance-document analysis, no invented deadlines/articles, and no neighbouring-language contamination.",
     "approval_text": "Живиот тест покажа граматички и правно неупотреблив одговор при анализа на документ. За правни барања со прилог, квалитетот има предност: користи го конфигурираниот GPT-6.1 Sol со централниот промпт, правописната контрола и Human Gate.",
     "supersedes_activation_run": 16,
     "baseline_run": 15,
@@ -115,6 +115,15 @@
     "active_corpus_use_required": true,
     "legal_document_quality_escalation": "anonymous_legal_documents_to_governed_openai_when_configured",
     "free_general_chat_provider": "workers_ai",
-    "target_paid_model": "gpt-6.1-sol"
+    "target_paid_model": "gpt-6.1-sol",
+    "root_quality_recovery": true,
+    "final_macedonian_release_gate": true,
+    "live_uat_scenarios_added": [
+      "synthetic_inheritance_document_analysis",
+      "macedonian_language_contamination",
+      "no_invented_deadlines",
+      "no_invented_article_numbers",
+      "professional_notary_letter_task_following"
+    ]
   }
 }
