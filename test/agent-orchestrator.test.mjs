@@ -63,6 +63,13 @@ describe("AI Advokat governed legal-agent architecture v2", () => {
     assert.equal(plan.rules.corpusFirst,false);
   });
 
+  test("mentioning the AI Advokat product name alone does not falsely force passive corpus mode", () => {
+    const plan=buildAgentPlan("Одговори на македонски со една кратка реченица дека AI Advokat работи.");
+    assert.equal(plan.mode,ORCHESTRATOR_MODES.GENERAL);
+    assert.deepEqual(plan.agents,[AGENT_ROLES.general.id]);
+    assert.equal(plan.rules.corpusFirst,false);
+  });
+
   test("single foreign jurisdiction routes only its specialist unless comparison is requested", () => {
     const eu=buildAgentPlan("Што вели правото на Европската Унија?");
     assert.deepEqual(eu.agents,[AGENT_ROLES.eu.id]);
