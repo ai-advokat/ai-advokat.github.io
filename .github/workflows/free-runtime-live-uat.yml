@@ -237,6 +237,22 @@ jobs:
             console.log("legal-document-escalation: PASS · "+answer.replace(/\s+/g," ").slice(0,180));
           }
 
+          {
+            const {answer}=await chat({
+              q:"Претходниот одговор беше на бугарски. Исправи го целосно и одговори само на стандарден македонски јазик.",
+              history:[{
+                role:"assistant",
+                text:"Това е становище. Ищецът подава искова молба и трябва да се провери съдът."
+              }]
+            },"wrong-language-correction");
+            const lower=answer.toLocaleLowerCase("mk");
+            const forbidden=["това","становище","ищец","искова","трябва","съдът","съд","обжалване","разноски"];
+            if(forbidden.some(token=>lower.includes(token))){
+              throw new Error("wrong-language-correction retained Bulgarian contamination: "+answer.slice(0,1200));
+            }
+            console.log("wrong-language-correction: PASS · "+answer.replace(/\s+/g," ").slice(0,160));
+          }
+
           const b64=fs.readFileSync("/tmp/ai-advokat-live-uat.docx").toString("base64");
           const {answer,data}=await chat({
             q:"Прочитај го DOCX прилогот и врати ја точно алфанумеричката низа од телото на документот.",
