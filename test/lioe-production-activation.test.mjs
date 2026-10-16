@@ -47,7 +47,7 @@ test("LIOE runtime flags are armed while provider activation stays separate",()=
   assert.equal(wrangler.vars.LIOE_POSTFLIGHT_ENABLED,"true");
   assert.equal(wrangler.vars.LIOE_RUNTIME_TELEMETRY_ENABLED,"true");
   assert.equal(wrangler.vars.LIOE_SPECIALIST_EXECUTION_ENABLED,"true");
-  assert.equal(wrangler.vars.OPENAI_PROVIDER_ACTIVATION_STATE,"optional_paid_provider_free_workers_ai_primary");
+  assert.equal(wrangler.vars.OPENAI_PROVIDER_ACTIVATION_STATE,"governed_openai_primary_workers_ai_fallback");
   assert.equal(wrangler.ai?.binding,"AI");
   assert.equal(wrangler.vars.FREE_CHAT_PROVIDER,"workers_ai");
   assert.ok(!("OPENAI_API_KEY" in wrangler.vars));

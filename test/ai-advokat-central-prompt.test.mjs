@@ -12,7 +12,7 @@ const worker=fs.readFileSync("src/index.js","utf8");
 const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
 
 test("COP1 central prompt has a stable version and one coherent AI Advokat identity",()=>{
-  assert.equal(AI_ADVOKAT_CENTRAL_PROMPT_VERSION,"AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v6");
+  assert.equal(AI_ADVOKAT_CENTRAL_PROMPT_VERSION,"AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7");
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/You are AI Advokat/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Do not claim to be ChatGPT, OpenAI/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/answer the useful part first/i);
@@ -106,16 +106,16 @@ test("COP10 Macedonian legal drafting and final-output rules are explicit",()=>{
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Return only the final useful answer/);
 });
 
-test("COP11 central v6 is the documented runtime source of truth",()=>{
+test("COP11 central v7 is the documented runtime source of truth",()=>{
   const doc=fs.readFileSync("architecture/AI_ADVOCAT_CENTRAL_OPERATING_PROMPT.md","utf8");
-  assert.match(doc,/Central Operating Prompt v6/);
-  assert.match(doc,/AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v6/);
+  assert.match(doc,/Central Operating Prompt v7/);
+  assert.match(doc,/AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7/);
   assert.match(doc,/Fictional facts never create fictional law/);
   assert.match(doc,/Formal legal drafts are export-ready/);
 });
 
 
-test("COP12 v6 keeps complexity in the background",()=>{
+test("COP12 v7 keeps complexity in the background",()=>{
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/UNIVERSAL LEGAL KNOWLEDGE LAYER/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/LOCAL-FIRST, EXTERNAL-IF-NEEDED/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/MULTI-DOCUMENT ANALYSIS/);
@@ -145,6 +145,24 @@ test("COP15 legal document requests can quality-escalate from FREE Workers AI to
   assert.match(worker,/&& !anonymousLegalDocumentEscalation/);
 });
 
+
+test("COP17 v7 encodes professional civil and criminal lawyer methodology without treating manuals as authority",()=>{
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/PROFESSIONAL LAWYER METHOD/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/CIVIL LITIGATION METHOD/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/FACT -> LEGAL NORM -> EVIDENCE -> CLAIM\/RELIEF/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/CRIMINAL DEFENCE METHOD/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/OFFENCE\/LEGAL CHARACTERISATION -> ELEMENTS -> FACTS -> EVIDENCE -> PROCEDURAL STAGE -> RISKS -> DEFENCE STRATEGY/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/METHODOLOGY IS NOT AUTHORITY/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/authored manuals, guides, checklists, templates/i);
+});
+
+test("COP18 v7 formal drafting is GPT-class but provider-truthful and Macedonian release-gated",()=>{
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/GPT-CLASS, NOT GPT-IMPERSONATION/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/DRAFT COMPLETENESS CONTRACT/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/court\/authority, parties, subject, facts, evidence, legal basis, requested relief\/petitum/i);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/LANGUAGE RELEASE GATE/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Bulgarian, Serbian or Russian legal terminology/i);
+});
 
 test("COP16 governed GPT has a final Macedonian release gate",()=>{
   assert.match(worker,/let governedFinalAnswer=String\(finalAnswer\|\|""\)\.trim\(\)/);
