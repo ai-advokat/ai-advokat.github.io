@@ -283,8 +283,14 @@ jobs:
               base64:b64
             }]
           },"docx");
-          if(data.attachmentsUsed!==1 || data.convertedDocuments!==1){
-            throw new Error("DOCX conversion counters are wrong: "+JSON.stringify({attachmentsUsed:data.attachmentsUsed,convertedDocuments:data.convertedDocuments}));
+          if(data.attachmentsUsed!==1){
+            throw new Error("DOCX attachment counter is wrong: "+JSON.stringify({provider:data.provider,attachmentsUsed:data.attachmentsUsed,convertedDocuments:data.convertedDocuments}));
+          }
+          if(data.provider==="workers_ai_free" && data.convertedDocuments!==1){
+            throw new Error("Workers AI DOCX conversion counter is wrong: "+JSON.stringify({attachmentsUsed:data.attachmentsUsed,convertedDocuments:data.convertedDocuments}));
+          }
+          if(data.provider==="openai" && data.convertedDocuments!==undefined && data.convertedDocuments!==null){
+            throw new Error("OpenAI direct file input unexpectedly claimed Workers conversion: "+JSON.stringify({convertedDocuments:data.convertedDocuments}));
           }
           if(!answer.toUpperCase().includes("KORENSKIUAT2026")){
             throw new Error("DOCX content missing from final answer: "+answer.slice(0,1000));
