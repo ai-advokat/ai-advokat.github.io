@@ -5406,6 +5406,8 @@ async function handleGPTChat(request,env){
   return json(request,{
     ok:true,
     answer:governedFinalAnswer,
+    provider:"openai",
+    providerFallback:null,
     model:result.model,
     languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageQualityState:governedLanguageRequired?"verified_runtime":"not_required",
