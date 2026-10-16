@@ -5194,6 +5194,17 @@ async function handleGPTChat(request,env){
   });
 
   if(!result.ok){
+    const workersFallbackAllowed=
+      !membership
+      && governedOpenAIWorkersFallbackConfigured(env)
+      && openAIFailureEligibleForWorkersFallback(result,{explicitWebRequested});
+    if(workersFallbackAllowed){
+      return runWorkersFallbackResponse({
+        fallbackReason:result.error||"openai_primary_unavailable",
+        primaryProviderCalls:Number(result.providerCalls||0)
+      });
+    }
+
     await releaseMonthlyQuota(env,{subject,period});
     let telemetryState="not_applicable";
     if(lioeEngaged){
