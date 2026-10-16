@@ -4970,8 +4970,14 @@ async function handleGPTChat(request,env){
     && initialPlan.mode!==ORCHESTRATOR_MODES.GENERAL
     && (attachmentCheck.attachments.length>0 || guideDocumentCheck.attachments.length>0);
 
+  // Production quality rule: when the governed OpenAI provider is configured,
+  // anonymous/FREE traffic still respects the FREE monthly quota but uses the
+  // governed GPT path. Workers AI is fallback-only, so exhaustion of Cloudflare's
+  // daily neuron allowance cannot take the public assistant offline.
+  const governedOpenAIAvailable=readiness.provider==="configured";
   const useFreeWorkersAI=!membership
     && freeWorkersAIConfigured(env)
+    && !governedOpenAIAvailable
     && !anonymousLegalDocumentEscalation;
 
   if(autoExternalResearchCandidate && !useFreeWorkersAI) webRequested=true;
@@ -6060,12 +6066,14 @@ async function handleOrchestratorArchitecture(request, env) {
     runtime:{
       architecture:readiness.architecture,
       orchestrationPattern:readiness.orchestrationPattern,
-      providerExecution:freeWorkersAIConfigured(env)
-        ? "configured_for_free_workers_ai_chat_execution"
-        : readiness.provider==="configured"
-          ? "configured_for_api_chat_execution"
+      providerExecution:readiness.provider==="configured"
+        ? "configured_for_api_chat_execution"
+        : freeWorkersAIConfigured(env)
+          ? "configured_for_free_workers_ai_chat_execution"
           : "locked",
-      freeProvider:freeWorkersAIConfigured(env) ? "workers_ai_free" : "locked",
+      freeProvider:readiness.provider==="configured"
+        ? "governed_openai_with_workers_ai_fallback"
+        : freeWorkersAIConfigured(env) ? "workers_ai_free" : "locked",
       freeProviderModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
       paidProviderExecution:readiness.provider==="configured" ? "configured_for_api_chat_execution" : "locked",
       paidProviderModel:readiness.provider==="configured" ? String(env.OPENAI_MODEL||"openai_configured_model") : null,
@@ -6199,10 +6207,10 @@ async function handleCapabilities(request, env) {
       instrumentRegistry: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       articleCorpus: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
-      legalOrchestrator: freeWorkersAIConfigured(env)
-        ? "workers_ai_free_document_research_human_gate"
-        : orchestratorRuntimeReadiness(env).provider==="configured"
-          ? "paid_openai_live_governed"
+      legalOrchestrator: orchestratorRuntimeReadiness(env).provider==="configured"
+        ? "openai_live_governed_free_quota_plus_paid_membership"
+        : freeWorkersAIConfigured(env)
+          ? "workers_ai_free_document_research_human_gate"
           : "architecture_v2_provider_locked",
       lioeRuntimeGovernance: env.LIOE_RUNTIME_GOVERNANCE_ENABLED==="true" ? "enabled" : "locked",
       lioePostflight: env.LIOE_POSTFLIGHT_ENABLED==="true" ? "enabled" : "locked",
