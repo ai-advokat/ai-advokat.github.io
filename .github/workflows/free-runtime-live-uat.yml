@@ -229,51 +229,34 @@ jobs:
             console.log(name+": PASS · "+answer.replace(/\s+/g," ").slice(0,120));
           }
 
-          const legalDocPayload={
-            q:"Анализирај го приложениот измислен документ за оставинска постапка и подготви кратко професионално писмо до нотар. Не измислувај членови, рокови или правна постапка што не е потврдена.",
-            attachments:[{
-              kind:"text",
-              name:"synthetic-inheritance.txt",
-              mime:"text/plain",
-              text:"СИНТЕТИЧКИ ТЕСТ. Оставител: Илија Тестовски. Имот: КП 1234, КО Тест. Потенцијални наследници: Ана и Борис. Нема наведени рокови, членови од закон или судска одлука. Цел: писмо до нотар со барање за проверка на документацијата."
-            }]
-          };
           {
             const response=await fetch(BASE+"/api/chat",{
               method:"POST",
               headers:{"content-type":"application/json","accept":"application/json"},
-              body:JSON.stringify({mode:"auto",webSearch:false,history:[],guideIds:[],...legalDocPayload})
+              body:JSON.stringify({
+                q:"Анализирај го приложениот измислен документ.",
+                mode:"auto",
+                webSearch:false,
+                history:[],
+                guideIds:[],
+                attachments:[{
+                  kind:"text",
+                  name:"synthetic-inheritance.txt",
+                  mime:"text/plain",
+                  text:"СИНТЕТИЧКИ ТЕСТ. Оставител: Илија Тестовски."
+                }]
+              })
             });
             const raw=await response.text();
             let data=null;
             try{data=JSON.parse(raw);}catch{}
-            if(!response.ok || !data?.ok) throw new Error("legal-document-escalation HTTP "+response.status+" "+raw.slice(0,1800));
-            if(data.provider && data.provider!=="openai" && data.model!=="gpt-6.1-sol"){
-              throw new Error("legal-document-escalation did not use governed GPT path: "+JSON.stringify({provider:data.provider,model:data.model,displayMode:data.displayMode}));
+            if(response.status!==422 || data?.error!=="public_attachment_secure_workspace_required"){
+              throw new Error("public-attachment privacy gate regression HTTP "+response.status+" "+raw.slice(0,1800));
             }
-            if(data.model!=="gpt-6.1-sol"){
-              throw new Error("legal-document-escalation unexpected model "+String(data.model));
+            if(data?.privacy?.providerCalled!==false || data?.privacy?.quotaConsumed!==false){
+              throw new Error("public-attachment privacy gate consumed provider/quota: "+raw.slice(0,1800));
             }
-            const answer=String(data.answer||"").trim();
-            if(answer.length<250) throw new Error("legal-document-escalation answer too short: "+answer);
-            const lower=answer.toLocaleLowerCase("mk");
-            const forbidden=["поступак","тужилац","захтев","решење","съд","ищец","ответник","искова","обезщетение","разноски","това","какво","когато","всички","прикаде","приречет","нотариска вписка","данишна ставка","последуствување"];
-            if(forbidden.some(token=>lower.includes(token))){
-              throw new Error("legal-document-escalation linguistic contamination: "+answer.slice(0,1600));
-            }
-            if(/\b(30|48|60)\s*(?:ден|дена|днев)/iu.test(answer)){
-              throw new Error("legal-document-escalation invented deadline: "+answer.slice(0,1600));
-            }
-            if(/\bчлен\s+\d+/iu.test(answer)){
-              throw new Error("legal-document-escalation invented article number without source context: "+answer.slice(0,1600));
-            }
-            if(!/нотар/iu.test(answer) || !/проверк/iu.test(answer)){
-              throw new Error("legal-document-escalation did not follow the requested task: "+answer.slice(0,1600));
-            }
-            if(data.languageQualityState && data.languageQualityState!=="verified_runtime"){
-              throw new Error("legal-document-escalation language gate not verified: "+String(data.languageQualityState));
-            }
-            console.log("legal-document-escalation: PASS · "+answer.replace(/\s+/g," ").slice(0,180));
+            console.log("public-attachment-secure-workspace-gate: PASS");
           }
 
           {
@@ -292,29 +275,35 @@ jobs:
             console.log("wrong-language-correction: PASS · "+answer.replace(/\s+/g," ").slice(0,160));
           }
 
-          const b64=fs.readFileSync("/tmp/ai-advokat-live-uat.docx").toString("base64");
-          const {answer,data}=await chat({
-            q:"Прочитај го DOCX прилогот и врати ја точно алфанумеричката низа од телото на документот.",
-            attachments:[{
-              kind:"file",
-              name:"ai-advokat-live-uat.docx",
-              mime:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-              base64:b64
-            }]
-          },"docx");
-          if(data.attachmentsUsed!==1){
-            throw new Error("DOCX attachment counter is wrong: "+JSON.stringify({provider:data.provider,attachmentsUsed:data.attachmentsUsed,convertedDocuments:data.convertedDocuments}));
+          {
+            const b64=fs.readFileSync("/tmp/ai-advokat-live-uat.docx").toString("base64");
+            const response=await fetch(BASE+"/api/chat",{
+              method:"POST",
+              headers:{"content-type":"application/json","accept":"application/json"},
+              body:JSON.stringify({
+                q:"Прочитај го DOCX прилогот.",
+                mode:"auto",
+                webSearch:false,
+                history:[],
+                guideIds:[],
+                attachments:[{
+                  kind:"file",
+                  name:"ai-advokat-live-uat.docx",
+                  mime:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                  base64:b64
+                }]
+              })
+            });
+            const raw=await response.text();
+            const data=JSON.parse(raw);
+            if(response.status!==422 || data?.error!=="public_attachment_secure_workspace_required"){
+              throw new Error("DOCX public privacy gate regression HTTP "+response.status+" "+raw.slice(0,1500));
+            }
+            if(data?.privacy?.providerCalled!==false || data?.privacy?.quotaConsumed!==false){
+              throw new Error("DOCX privacy gate consumed provider/quota");
+            }
+            console.log("docx-secure-workspace-gate: PASS");
           }
-          if(data.provider==="workers_ai_free" && data.convertedDocuments!==1){
-            throw new Error("Workers AI DOCX conversion counter is wrong: "+JSON.stringify({attachmentsUsed:data.attachmentsUsed,convertedDocuments:data.convertedDocuments}));
-          }
-          if(data.provider==="openai" && data.convertedDocuments!==undefined && data.convertedDocuments!==null){
-            throw new Error("OpenAI direct file input unexpectedly claimed Workers conversion: "+JSON.stringify({convertedDocuments:data.convertedDocuments}));
-          }
-          if(!answer.toUpperCase().includes("KORENSKIUAT2026")){
-            throw new Error("DOCX content missing from final answer: "+answer.slice(0,1000));
-          }
-          console.log("docx: PASS");
           console.log("FREE LIVE RUNTIME UAT: PASS");
           })().catch(error=>{console.error(error);process.exit(1);});
           NODE
