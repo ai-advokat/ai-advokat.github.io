@@ -23,8 +23,8 @@ test("module preserves both photographed MVR checklists",()=>{
 });
 
 test("bot prompt enforces source/version verification",()=>{
-  assert.match(js,/НЕ е сама по себе важечки правен извор/);
-  assert.match(js,/Провери ја секоја ставка според важечките прописи и официјалните извори/);
+  assert.match(js,/НЕ се сами по себе важечки правен извор/);
+  assert.match(js,/Провери ја секоја правна теза со важечки пропис и официјален извор/);
   assert.match(js,/точен извор, член\/одредба, верзија и датум/);
   assert.equal(data.fees.status,"must_verify_before_payment");
   assert.equal(data.submission.verification_required,true);
@@ -42,25 +42,19 @@ test("module includes separate official MVR and MFA references without conflatin
   assert.match(html,/Официјален МНР извор · патен лист за странци/);
 });
 
-test("foreign-employment reference is sent as JSON attachment instead of oversized q payload",()=>{
-  assert.match(js,/new File\(\[refText\],"mvr-foreign-employment-reference\.json"/);
-  assert.match(js,/attachments=\[\.\.\.withoutOld,refFile\]/);
-  assert.doesNotMatch(js,/JSON\.stringify\(\{source:data\.source,selected_checklists:selected/);
-  const promptParts=[
-    "AI Advokat, анализирај го приложениот JSON референтен пакет за престој и вработување на странци.",
-    "Фотографираните МВР листи се практична институционална информација, не сами по себе важечки правен извор.",
-    "Одделно користи ги официјалните МВР и МНР веб-извори наведени во прилогот и не мешај патен лист за странци со дозвола за привремен престој.",
-    "Провери ја секоја ставка според важечките прописи и официјалните извори. Разликувај: што пишува на листата, што е правно потврдено и што бара дополнителна проверка.",
-    "За секој правен заклучок наведи точен извор, член/одредба, верзија и датум. Такси, рокови и ослободувања не преземај без проверка."
-  ];
-  assert.ok(promptParts.join("\n\n").length<4000);
+test("foreign-employment public module is checklist-only and never attaches identity documents",()=>{
+  assert.doesNotMatch(js,/mvr-foreign-employment-reference\.json/);
+  assert.doesNotMatch(js,/new File\(\[refText\]/);
+  assert.match(js,/Не барај и не примај пасош, лична карта, уверение за неосудуваност/);
+  assert.match(js,/За конкретни документи упати кон Secure Case Workspace/);
+  assert.match(html,/Провери чек-листа/);
+  assert.match(html,/лични документи не се прикачуваат/);
 });
 
 test("Nexa immigration.mk is governed as secondary comparison source only",()=>{
   assert.equal(data.secondary_sources.nexa_immigration_mk.status,"comparison_only_not_authoritative");
   assert.match(data.secondary_sources.nexa_immigration_mk.governance_rule,/Не смее да биде единствена основа/);
   assert.ok(data.secondary_sources.nexa_immigration_mk.claims_requiring_primary_source_verification.length>=5);
-  assert.match(js,/secondary_sources:data\.secondary_sources/);
   assert.match(html,/Секундарен практичен извор:/);
 });
 
@@ -82,7 +76,7 @@ test("foreigners module is a permanent dedicated portal section",()=>{
   assert.match(html,/data-foreign-static/);
   assert.match(html,/>Прв пат<\/button>/);
   assert.match(html,/>Продолжување<\/button>/);
-  assert.match(html,/Провери документи/);
+  assert.match(html,/Провери чек-листа/);
   assert.match(html,/Secure Case Workspace/);
   assert.match(js,/function loadForeignEmploymentPrompt/);
   assert.match(js,/querySelectorAll\("\[data-foreign-static\]"/);
@@ -102,6 +96,5 @@ test("professional handbook is integrated as governed secondary context",()=>{
   assert.match(g.full_text,/90 до 5 дена/);
   assert.match(g.full_text,/ГАРАНЦИЈА И ПИСМЕНА ИЗЈАВА/);
   assert.match(g.bot_use_policy,/primary-source verification|примарен/i);
-  assert.match(js,/professional_guide:data\.professional_guide/);
   assert.match(html,/\/guides\/fulltext\/prestoj-stranci-2026\//);
 });
