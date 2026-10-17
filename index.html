@@ -1248,12 +1248,12 @@
           <div>
             <span class="tag" data-i18n="foreignTag">МВР · ПРЕСТОЈ · ВРАБОТУВАЊЕ</span>
             <h3 data-i18n="foreignTitle">Престој и вработување на странци</h3>
-            <p data-i18n="foreignText">Прв пат, продолжување и проверка на документи со официјални извори и Human Gate.</p>
+            <p data-i18n="foreignText">Прв пат, продолжување и проверка на чек-листи со официјални извори и човечка проверка.</p>
             <div class="featured-module-actions">
               <button class="btn primary" type="button" data-foreign-employment="first" data-foreign-static data-i18n="foreignFirst">Прв пат</button>
               <button class="btn light" type="button" data-foreign-employment="renewal" data-foreign-static data-i18n="foreignRenewal">Продолжување</button>
               <a class="btn light" href="#foreigners-services" data-i18n="foreignOpen">Отвори модул</a>
-              <a class="btn light" href="/guides/fulltext/prestoj-stranci-2026/" data-i18n="foreignGuide">📘 Адвокатски прирачник</a>
+              <a class="btn light" href="/guides/fulltext/prestoj-stranci-2026/" data-i18n="foreignGuide">📘 Водич за престој на странци</a>
             </div>
           </div>
         </article>
@@ -1262,7 +1262,7 @@
           <div>
             <span class="tag" data-i18n="echrFeaturedTag">ЕСЧП · МАКЕДОНСКИ КОРПУС</span>
             <h3 data-i18n="echrFeaturedTitle">Пресуди и одлуки на ЕСЧП за Северна Македонија</h3>
-            <p data-i18n="echrFeaturedText">Домашен discovery индекс на достапните записи, full-text intake и задолжително HUDOC врзување пред професионално потпирање. Бројот на записи се чита од живиот корпус, не од статично ветување.</p>
+            <p data-i18n="echrFeaturedText">Домашен индекс за пребарување на достапните записи, внес на целосен текст и задолжително HUDOC-поврзување пред професионално потпирање. Бројот на записи се чита од живиот корпус, не од статично ветување.</p>
             <div class="featured-module-actions">
               <button class="btn primary" type="button" data-echr-static="search" data-i18n="echrSearch">Пребарај ЕСЧП</button>
               <button class="btn light" type="button" data-echr-static="explain" data-i18n="echrAnalyze">Анализирај предмет</button>
@@ -1450,7 +1450,7 @@
       <div class="ai-chat-intro">
         <span class="tag">AI ADVOKAT</span>
         <h2 id="aiChatHeading">AI Advokat</h2>
-        <p data-i18n="aiChatIntro">Напишете што ви треба. Јавниот chat е само за текстуално правно истражување; документи од конкретни предмети се обработуваат во Secure Case Workspace.</p>
+        <p data-i18n="aiChatIntro">Напишете што ви треба. Јавниот разговор е само за текстуално правно истражување; документите од конкретни предмети се обработуваат во Заштитениот простор за предмети.</p>
       </div>
 
       <div class="ai-chat-wrap" id="aiAdvokatChat">
@@ -1467,7 +1467,7 @@
               <img src="/assets/app-icon.svg" width="30" height="30" alt="" aria-hidden="true">
               <div>
                 <strong>AI Advokat</strong>
-                <small id="aiChatProvider" data-i18n="chatProviderChecking">Проверка на активниот AI provider/model…</small>
+                <small id="aiChatProvider" data-i18n="chatProviderChecking">Проверка на активниот AI-провајдер/модел…</small>
               </div>
             </div>
             <div class="ai-chat-top-actions">
@@ -1476,7 +1476,7 @@
                 <summary class="ai-chat-topbtn" aria-label="Повеќе опции" title="Повеќе опции">⋯</summary>
                 <div class="ai-chat-menu-panel">
                   <div class="ai-chat-menu-status"><span class="ai-chat-status-dot"></span><span data-i18n="chatHumanControl">човечка контрола</span></div>
-                  <div class="ai-chat-menu-status"><span data-i18n="chatExportDraft">Извези working draft</span></div>
+                  <div class="ai-chat-menu-status"><span data-i18n="chatExportDraft">Извези работен нацрт</span></div>
                   <button class="ai-chat-menu-action" data-chat-export="docx" type="button">DOCX</button>
                   <button class="ai-chat-menu-action" data-chat-export="md" type="button">MD</button>
                   <button class="ai-chat-menu-action" data-chat-export="txt" type="button">TXT</button>
@@ -1495,20 +1495,20 @@
           <div class="ai-chat-composer-zone">
             <div class="ai-chat-composer" id="aiChatDropZone">
               <div class="ai-chat-upload-bar">
-                <button class="ai-chat-upload-primary" id="aiChatAttachWide" type="button" data-i18n="chatAttachDocs">🔒 Документи → Secure Case Workspace</button>
+                <button class="ai-chat-upload-primary" id="aiChatAttachWide" type="button" data-i18n="chatAttachDocs">🔒 Документи → Заштитен простор за предмети</button>
                 <span class="ai-chat-upload-count" id="aiChatAttachmentCount" aria-live="polite">јавен chat: без прилози</span>
-                <span class="ai-chat-upload-count" id="aiChatOwnerState" aria-live="polite" data-i18n="chatFreeState">FREE активен · јавен текстуален chat · Workers AI</span>
+                <span class="ai-chat-upload-count" id="aiChatOwnerState" aria-live="polite" data-i18n="chatFreeState">FREE активен · јавен текстуален разговор · Workers AI</span>
               </div>
               <div class="ai-guide-vault-bar" id="aiChatTurnstileRow">
                 <span class="ai-guide-vault-status" id="aiChatTurnstileState" role="status">Анти-бот проверка за FREE chat…</span>
                 <div id="aiChatTurnstileBox" aria-label="Cloudflare Turnstile анти-бот проверка"></div>
               </div>
               <div class="ai-chat-drop-hint" id="aiChatDropHint" aria-live="polite">
-                <span data-i18n="chatDropHint">Не прикачувајте документи во јавниот chat. За конкретни предмети користете Secure Case Workspace.</span>
+                <span data-i18n="chatDropHint">Не прикачувајте документи во јавниот разговор. За конкретни предмети користете го Заштитениот простор за предмети.</span>
               </div>
               <div class="ai-chat-attachments" id="aiChatAttachments"></div>
               <div class="ai-chat-input">
-                <button class="ai-chat-iconbtn" id="aiChatAttach" type="button" aria-label="Отвори Secure Case Workspace за документи" title="Документи само во Secure Case Workspace">🔒</button>
+                <button class="ai-chat-iconbtn" id="aiChatAttach" type="button" aria-label="Отвори го Заштитениот простор за предмети за документи" title="Документи само во Заштитениот простор за предмети">🔒</button>
                 <input id="aiChatFiles" type="file" multiple hidden disabled aria-label="Јавниот chat не прифаќа датотеки" accept=".pdf,.docx,.txt,.md,.csv,.json,.png,.jpg,.jpeg,.webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp" />
                 <textarea id="aiChatInput" rows="1" maxlength="4000" aria-label="Порака до AI Advokat" placeholder="Прашајте го AI Advokat…" data-i18n-placeholder="chatPlaceholder"></textarea>
                 <button class="ai-chat-iconbtn" id="aiChatMic" type="button" aria-label="Диктирај" title="Диктирај">🎙</button>
@@ -1539,9 +1539,9 @@
                     <div class="ai-chat-tools-group">
                       <strong>FREE режим</strong>
                       <div class="ai-guide-vault-bar">
-                        <span id="aiChatMembershipState" class="ai-guide-vault-status" role="status">FREE активен · јавен текстуален chat · Workers AI</span>
+                        <span id="aiChatMembershipState" class="ai-guide-vault-status" role="status">FREE активен · јавен текстуален разговор · Workers AI</span>
                       </div>
-                      <small class="ai-guide-vault-note">AI Advokat е отворен за користење без owner/member клуч. Анонимниот FREE chat бара Cloudflare Turnstile анти-бот проверка; остануваат rate-limit контролите, приватносните правила и Human Gate за правни заклучоци.</small>
+                      <small class="ai-guide-vault-note">AI Advokat е отворен за користење без owner/member клуч. Анонимниот FREE разговор бара Cloudflare Turnstile анти-бот проверка; остануваат rate-limit контролите, приватносните правила и Human Gate за правни заклучоци.</small>
                     </div>
                     <div class="ai-chat-tools-group">
                       <strong>Приватни водичи</strong>
@@ -1558,9 +1558,9 @@
                 <span class="ai-chat-mode-caption" id="aiChatModeCaption">Автоматски</span>
               </div>
             </div>
-            <details class="ai-chat-hint"><summary>Приватност и професионална употреба</summary><p>Не внесувајте адвокатска тајна, матични броеви, здравствени или други чувствителни податоци во јавниот разговор. Прилозите се обработуваат само за тековното барање и не се промовираат автоматски во правниот корпус. За доверлив предмет користете Secure Case Workspace; последичните правни чекори остануваат под човечка професионална контрола.</p></details>
+            <details class="ai-chat-hint"><summary>Приватност и професионална употреба</summary><p>Не внесувајте адвокатска тајна, матични броеви, здравствени или други чувствителни податоци во јавниот разговор. Прилозите се обработуваат само за тековното барање и не се промовираат автоматски во правниот корпус. За доверлив предмет користете го Заштитениот простор за предмети; последичните правни чекори остануваат под човечка професионална контрола.</p></details>
             <div class="ai-msg-tools" style="margin-top:8px">
-              <a class="btn light" href="/casepilot-workspace.html" id="secureCaseWorkspaceCta">🔒 Доверлив предмет? Отвори Secure Case Workspace</a>
+              <a class="btn light" href="/casepilot-workspace.html" id="secureCaseWorkspaceCta">🔒 Доверлив предмет? Отвори Заштитен простор за предмети</a>
             </div>
           </div>
         </div>
@@ -1657,7 +1657,7 @@
         <div class="foreigners-copy">
           <span class="tag">СТРАНЦИ · ПРЕСТОЈ И РАБОТА</span>
           <h2 id="foreignersServicesTitle">Престој и вработување на странци</h2>
-          <p>Посебен AI Advokat модул за подготовка и проверка на јавната чек-листа за привремен престој по основ вработување. Во јавниот chat се проверуваат условите, изворите, роковите и таксите; лични документи не се прикачуваат. За конкретни документи користете Secure Case Workspace.</p>
+          <p>Посебен AI Advokat модул за подготовка и проверка на јавната чек-листа за привремен престој по основ вработување. Во јавниот chat се проверуваат условите, изворите, роковите и таксите; лични документи не се прикачуваат. За конкретни документи користете го Заштитениот простор за предмети.</p>
           <div class="foreigners-actions" aria-label="Постапки за странци">
             <button class="btn primary" type="button" data-foreign-employment="first" data-foreign-static>Прв пат</button>
             <button class="btn light" type="button" data-foreign-employment="renewal" data-foreign-static>Продолжување</button>
@@ -1670,11 +1670,11 @@
             <span>✓ рокови и такси со проверка</span>
             <span>✓ финална checklist</span>
           </div>
-          <p class="foreigners-note"><strong>За доверливи документи:</strong> користете го Secure Case Workspace. Јавниот AI chat не е наменет за адвокатска тајна, матични броеви или други чувствителни податоци.</p>
+          <p class="foreigners-note"><strong>За доверливи документи:</strong> користете го Заштитениот простор за предмети. Јавниот AI chat не е наменет за адвокатска тајна, матични броеви или други чувствителни податоци.</p>
           <div class="foreigners-links">
             <a class="btn light" href="#ai-advokat-chat">Отвори AI Advokat</a>
-            <a class="btn light" href="/guides/fulltext/prestoj-stranci-2026/">📘 Адвокатски прирачник</a>
-            <a class="btn light" href="/casepilot-workspace.html">🔒 Secure Case Workspace</a>
+            <a class="btn light" href="/guides/fulltext/prestoj-stranci-2026/">📘 Водич за престој на странци</a>
+            <a class="btn light" href="/casepilot-workspace.html">🔒 Заштитен простор за предмети</a>
           </div>
         </div>
       </div>
@@ -1904,7 +1904,7 @@
 
           <div class="fact">
             <b data-i18n="publication">Публикации</b>
-            <span>AI Advokat · WPA Journal · Zenodo</span>
+            <span>AI Advokat · Zenodo</span>
           </div>
 
         </div>
@@ -1979,7 +1979,7 @@
         </div>
 
         <div class="card">
-          <b data-i18n="intLabel4">4. човечка контрола</b>
+          <b data-i18n="intLabel4">4. Човечка проверка</b>
           <small data-i18n="int4">
             Конечната правна проценка и објавување остануваат човечки.
           </small>
@@ -2167,12 +2167,12 @@
       startResearch:"Започни правно истражување", viewPapers:"Отвори трудови", installApp:"Инсталирај AI Advokat",
       trustLabel1:"Изворот прв", trustLabel2:"човечка контрола", trustLabel3:"Проверка на верзија", trustLabel4:"Поврзано со Zenodo",
       trust1:"Одговорите треба да покажуваат на што се потпираат.", trust2:"AI не ја заменува професионалната правна проценка.", trust3:"Правниот текст се чита со датум, верзија и важност.", trust4:"Четири авторски труда се објавени на Zenodo со DOI и имаат научни профили; нацртите се јасно означени.",
-      featuredTag:"ПОСЕБНИ ПРАВНИ МОДУЛИ", featuredTitle:"Директен пристап до специјализирани правни модули", featuredText:"Две видливи патеки за работа со странци и со македонскиот корпус на пресуди и одлуки на ЕСЧП.", foreignTag:"МВР · ПРЕСТОЈ · ВРАБОТУВАЊЕ", foreignTitle:"Престој и вработување на странци", foreignText:"Прв пат, продолжување и проверка на документи со официјални извори и Human Gate.", foreignFirst:"Прв пат", foreignRenewal:"Продолжување", foreignOpen:"Отвори модул", foreignGuide:"📘 Адвокатски прирачник", echrFeaturedTag:"ЕСЧП · МАКЕДОНСКИ КОРПУС", echrFeaturedTitle:"Пресуди и одлуки на ЕСЧП за Северна Македонија", echrFeaturedText:"Домашен discovery индекс на достапните записи, full-text intake и задолжително HUDOC врзување пред професионално потпирање. Бројот на записи се чита од живиот корпус, не од статично ветување.", echrSearch:"Пребарај ЕСЧП", echrAnalyze:"Анализирај предмет", echrOpenAi:"Отвори AI Advokat",
-      aiChatIntro:"Опишете го правниот проблем со свои зборови. FREE режимот користи Workers AI, а точниот активен provider/model се прикажува во самиот разговор. Платен provider се користи само кога е навистина активиран.", chatConversations:"Разговори", chatSessionNote:"Историјата се чува само во оваа сесија на прелистувачот.", chatProviderChecking:"Проверка на активниот AI provider/model…", chatHumanControl:"човечка контрола", chatExportDraft:"Извези working draft", chatAttachDocs:"🔒 Документи → Secure Case Workspace", chatFreeState:"FREE активен · јавен текстуален chat · Workers AI", chatDropHint:"Не прикачувајте документи во јавниот chat. За конкретни предмети користете Secure Case Workspace.", chatPlaceholder:"Прашајте го AI Advokat…",
+      featuredTag:"ПОСЕБНИ ПРАВНИ МОДУЛИ", featuredTitle:"Директен пристап до специјализирани правни модули", featuredText:"Две видливи патеки за работа со странци и со македонскиот корпус на пресуди и одлуки на ЕСЧП.", foreignTag:"МВР · ПРЕСТОЈ · ВРАБОТУВАЊЕ", foreignTitle:"Престој и вработување на странци", foreignText:"Прв пат, продолжување и проверка на чек-листи со официјални извори и човечка проверка.", foreignFirst:"Прв пат", foreignRenewal:"Продолжување", foreignOpen:"Отвори модул", foreignGuide:"📘 Водич за престој на странци", echrFeaturedTag:"ЕСЧП · МАКЕДОНСКИ КОРПУС", echrFeaturedTitle:"Пресуди и одлуки на ЕСЧП за Северна Македонија", echrFeaturedText:"Домашен индекс за пребарување на достапните записи, внес на целосен текст и задолжително HUDOC-поврзување пред професионално потпирање. Бројот на записи се чита од живиот корпус, не од статично ветување.", echrSearch:"Пребарај ЕСЧП", echrAnalyze:"Анализирај предмет", echrOpenAi:"Отвори AI Advokat",
+      aiChatIntro:"Опишете го правниот проблем со свои зборови. FREE режимот користи Workers AI, а точниот активен AI-провајдер/модел се прикажува во самиот разговор. Платен AI-провајдер се користи само кога е навистина активиран.", chatConversations:"Разговори", chatSessionNote:"Историјата се чува само во оваа сесија на прелистувачот.", chatProviderChecking:"Проверка на активниот AI-провајдер/модел…", chatHumanControl:"човечка контрола", chatExportDraft:"Извези работен нацрт", chatAttachDocs:"🔒 Документи → Заштитен простор за предмети", chatFreeState:"FREE активен · јавен текстуален разговор · Workers AI", chatDropHint:"Не прикачувајте документи во јавниот разговор. За конкретни предмети користете го Заштитениот простор за предмети.", chatPlaceholder:"Прашајте го AI Advokat…",
       sourceTag:"Правна база", sourceTitle:"Од извор до правен заклучок", sourceText:"Порталот е структуриран така што официјалниот текст, судската практика, стручната анализа и AI-синтезата никогаш не се мешаат без ознака.",
       cardLaws:"Закони и прописи", cardLawsText:"Регистарот се проширува закон-по-закон: прво официјални метаподатоци и доказно потекло, а потоа проверен текст член-по-член.",
       cardCases:"Судска практика", cardCasesText:"Директориум кон официјалните бази на судовите. Индексирана судска практика по суд, правно прашање и исход се додава постепено и се означува кога ќе биде достапна.",
-      cardEchr:"ЕСПЧ и меѓународни извори", cardEchrText:"HUDOC, EUR-Lex и домашниот discovery индекс се прикажуваат со јасна јурисдикција и статус. Секој предмет мора да остане врзан за примарниот извор пред професионално потпирање.",
+      cardEchr:"ЕСПЧ и меѓународни извори", cardEchrText:"HUDOC, EUR-Lex и домашниот индекс за пребарување се прикажуваат со јасна јурисдикција и статус. Секој предмет мора да остане врзан за примарниот извор пред професионално потпирање.",
       cardVersions:"Верзии и измени", cardVersionsText:"Споредба на стар и нов текст, со видливи датумски граници и правна важност.",
       cardCitations:"Проверка на цитати", cardCitationsText:"Контрола дали членот, предметот, DOI или изворот навистина го поддржува тврдењето.",
       cardDocs:"Документи и досиеја", cardDocsText:"Работни досиеја, хронологии, доказни матрици и правни белешки со човечко одобрување.",
@@ -2181,7 +2181,7 @@
       promptTitle:"Примери на прашања", pubTag:"ПУБЛИКАЦИИ", pubTitle:"Трудови и стручни анализи", pubText:"Zenodo-профилот е активен. Четири работни труда се објавени со регистрирани DOI и се вклучени во AI Advokat Zenodo Community. „Кочани – Пулс“ е означен како draft во подготовка за журналски труд.", zenodoStatus:"Статус на Zenodo",
       authorTag:"АВТОР", authorName:"Адвокат Зоран Стојанкиќ", authorBio:"Порталот е развиен како професионална правна платформа за систематизирање на законодавството, судската практика, стручните анализи и истражувањето поддржано од вештачка интелигенција. Zenodo-профилот е активен; четири труда се објавени со DOI, имаат научни профили и се вклучени во AI Advokat Zenodo Community.",
       focus:"Области на интерес", focusText:"Право · институционална одговорност · безбедност · медијација", researchIds:"Истражувачки идентификатори", zenodoReserved:"Zenodo · 4 објавени труда · 4 научни профили", contact:"Контакт", publication:"Публикации", zenodoDraftRecords:"Zenodo · 4 објавени труда · 4 научни профили",
-      aboutTag:"УПРАВУВАЊЕ", aboutTitle:"Како порталот ја чува доказната дисциплина", intLabel1:"1. Извор", intLabel2:"2. Доказно потекло", intLabel3:"3. AI нацрт", intLabel4:"4. човечка контрола",
+      aboutTag:"УПРАВУВАЊЕ", aboutTitle:"Како порталот ја чува доказната дисциплина", intLabel1:"1. Извор", intLabel2:"2. Доказно потекло", intLabel3:"3. AI нацрт", intLabel4:"4. Човечка проверка",
       int1:"Официјалниот документ се чува одделно од толкувањето.", int2:"Се бележат орган, датум, верзија и доказно потекло.", int3:"AI може да сумира и споредува, но мора да покаже извори.", int4:"Конечната правна проценка и објавување остануваат човечки.",
       disclaimerTitle:"Правна напомена", disclaimerText:"AI Advokat е правно-информативна и истражувачка платформа. AI-генерираната содржина може да содржи грешки, не создава сама по себе однос адвокат-клиент и не е замена за индивидуален правен совет. Официјалниот и важечки текст на правниот извор секогаш има предност; за рокови, кривична постапка и други високоризични прашања е задолжителна човечка професионална проверка.", privacyWarningTitle:"Не внесувајте доверливи податоци", privacyWarningText:"Ова е јавно поле за правно истражување. Не внесувајте имиња на странки, матични броеви, адреси, здравствени податоци, детали од активни предмети, адвокатска тајна или други доверливи податоци. Поставете го прашањето општо.", privacyPolicy:"Политика за приватност", aiPolicy:"AI, точност и човечка контрола", navMembership:"Членство", membershipKeyTitle:"Клуч за членство (опционално)", membershipKeyText:"Ако имате активно членство, внесете го приватниот клуч за да се примени вашиот пакет и месечната квота. Клучот се чува само во тековната сесија на прелистувачот и се испраќа само до AI Advokat API.", membershipKeyUse:"Користи клуч", membershipLink:"Планови и членство",
       footerSub:"Правен информациски портал и AI истражување", footerText:"Правни извори, авторски анализи и AI-поддржано истражување со проверливи извори и човечка финална контрола.", footerNavTitle:"Навигација", footerIntegrityTitle:"Интегритет", methodology:"Методологија", legalNotice:"Правна напомена", zenodoDoiRecords:"Zenodo · DOI-записи", rights:"Сите права задржани.", footerStatus:"Правно-информативна платформа · Изворот прв · човечка контрола",
@@ -2196,7 +2196,7 @@
       questionHelp:"Опишете го проблемот со свои зборови. AI Advokat прво ќе ви предложи релевантни кликабилни водичи; ако сакате анализа на закон, наведете го и законот/членот.",
       instrumentLabel:"Закон", instrumentHelp:"„Автоматски“ избира закон само кога називот или кратенката во прашањето е еднозначна.",
       dateLabel:"Датум на кој се однесува прашањето (опционално)", dateHelp:"Ако законот има повеќе верзии, датумот одредува која верзија се применува. Без датум, верзија се користи само кога може безбедно да се утврди; во спротивно системот ќе побара датум.",
-      scopeNote:"Опсег: Северна Македонија · 39 јавни практични водичи + корпус на закони на ниво на членте. Водичите се насочување, а правниот заклучок бара проверка на официјалниот извор и човечка контрола.",
+      scopeNote:"Опсег: Северна Македонија · 39 јавни практични водичи + корпус на закони на ниво на членови. Водичите се насочување, а правниот заклучок бара проверка на официјалниот извор и човечка контрола.",
       systemModeLabel:"Режим на системот:", answerHeading:"Резултат од AI истражувачот", membershipKeyLabel:"Клуч",
       coverageTitle:"Покриеност на корпусот", coverageText:"Закони со внесен текст член-по-член. Бројот на членови не значи дека текстот е потврден како тековен: статусот на верзијата се прикажува при секој одговор.", coverageLoading:"Се вчитува регистарот…",
       helpTitle:"Како да поставите прашање", help1:"Опишете го проблемот со свои зборови — на пример „ме повика полиција“, „сакам развод“ или „институцијата не ми одговара“.", help2:"Отворете го предложениот практичен водич; за анализа на конкретен закон наведете го законот, членот, поимот или рокот.", help3:"Ако законот има повеќе верзии (на пр. ЗПП), внесете датум.", help4:"Отворете ги прикажаните членови и официјалниот извор пред да се потпрете на одговорот.", help5:"Кога системот одбива да одговори (двосмислен закон, непозната верзија, тема без корпус), тоа е заштита — не грешка.",
@@ -3177,7 +3177,7 @@
           el("li",{text:T("хронологии на настани и процесни чекори","timelines of events and procedural steps")}),
           el("li",{text:T("доказни матрици (утврдени факти, наводи, спорни факти)","evidence matrices (established facts, allegations, disputed facts)")}),
           el("li",{text:T("работни белешки поврзани со членови и извори","working notes linked to articles and sources")}),
-          el("li",{text:T("човечка контрола преглед пред секоја употреба","Human Gate review before any use")})),
+          el("li",{text:T("човечка проверка пред секоја употреба","Human Gate review before any use")})),
         el("p",{class:"help",text:T("Ништо од ова сè уште не е вклучено. Не испраќајте доверливи документи по е-пошта до порталот.","None of this is enabled yet. Do not send confidential documents to the portal by e-mail.")}))));
   }
 
@@ -3449,7 +3449,7 @@
       const p=data.answerProvenance;
       const hc=p.humanControl||{};
       const box=el("div",{class:"versionBox"},
-        el("b",{text:T("Проверливост и Human Gate","Verification and Human Gate")})
+        el("b",{text:T("Проверливост и човечка проверка","Verification and Human Gate")})
       );
       const dl=el("dl",{});
       const row=(k,v)=>{if(v!==null&&v!==undefined&&String(v)!=="") dl.append(el("dt",{text:k}),el("dd",{text:String(v)}));};
