@@ -5,9 +5,9 @@
 | Plan | Monthly (MKD) | Annual (MKD) | AI questions / month | Seats | Trial |
 |---|---|---|---|---|---|
 | FREE | 0 | 0 | 10 | 1 | — |
-| START | 490 | 4.900 | 15 | 1 | — |
-| PRO | 1.490 | 14.900 | 45 | 1 | 7 days, after review |
-| OFFICE | 4.990 | 49.900 | 150 | 5 | — |
+| START | 490 | 4.900 | 10 | 1 | — |
+| PRO | 1.490 | 14.900 | 30 | 1 | 7 days, after review |
+| OFFICE | 4.990 | 49.900 | 100 | 5 | — |
 
 These values must match `MEMBERSHIP_PLANS` in `src/index.js`. `test/public-layer.test.mjs` fails if `membership.html` drifts.
 
