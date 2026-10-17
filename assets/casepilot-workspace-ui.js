@@ -562,7 +562,7 @@ $("analyzeEntireCase").addEventListener("click",async()=>{
       throw new Error("AI intake не е завршен: "+intake.failed.map(x=>String(x.name||x.id)+": "+x.error).join(" | "));
     }
     $("intelligenceStatus").textContent="Сите документи се извлечени. Се гради evidence graph, хронологија, контрадикции и правна анализа…";
-    const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence/analyze",{method:"POST",body:{}});
+    const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence/analyze",{method:"POST",body:{externalAiConsent:Boolean($("externalAiConsent")?.checked)}});
     $("caseIntelligenceResult").textContent=String(data.analysis||"");
     $("caseIntelligenceResult").hidden=false;
     $("intelligenceDocs").textContent=String(data.coverage?.documentCoverage??100)+"%";
@@ -610,7 +610,7 @@ $("prepareCaseDraft").addEventListener("click",async()=>{
     let readiness=await loadIntelligenceReadiness();
     if(!readiness?.latestAnalysisAvailable){
       $("caseDraftStatus").textContent="Се анализира целиот предмет пред изработка на документот…";
-      await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence/analyze",{method:"POST",body:{}});
+      await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence/analyze",{method:"POST",body:{externalAiConsent:Boolean($("externalAiConsent")?.checked)}});
       readiness=await loadIntelligenceReadiness();
       if(!readiness?.latestAnalysisAvailable) throw new Error("case_intelligence_analysis_required");
     }
@@ -618,7 +618,7 @@ $("prepareCaseDraft").addEventListener("click",async()=>{
     $("caseDraftStatus").textContent="Се синтетизира governed WORKING DRAFT врз целиот предмет…";
     const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/intelligence/draft",{
       method:"POST",
-      body:{draftType,instruction}
+      body:{draftType,instruction,externalAiConsent:Boolean($("externalAiConsent")?.checked)}
     });
     $("caseDraftResult").textContent=String(data.draft||"");
     $("caseDraftResult").hidden=false;
