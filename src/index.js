@@ -373,6 +373,10 @@ async function resolveMembership(request, env) {
   const key=membershipKeyFromRequest(request);
   if(!key || !env.DB) return null;
 
+  // P1 security boundary: deprecated owner-style browser keys are never valid
+  // membership credentials, even if a matching hash were accidentally seeded.
+  if(/^AIADV-OWNER-/i.test(key)) return null;
+
   const keyHash=await sha256Hex(key);
   const row=await env.DB.prepare(
     `SELECT k.account_id, k.status AS key_status, k.expires_at AS key_expires_at,
