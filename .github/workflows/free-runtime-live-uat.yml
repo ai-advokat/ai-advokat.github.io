@@ -195,7 +195,7 @@ jobs:
           ];
 
           for(const [name,q] of scenarios){
-            const {answer}=await chat({q},name);
+            const {answer,data}=await chat({q},name);
             if(!/[\u0400-\u04FF]/u.test(answer)){
               throw new Error(name+" final answer is not Macedonian/Cyrillic: "+answer.slice(0,500));
             }
