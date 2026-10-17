@@ -225,7 +225,8 @@ const MEMBERSHIP_PLANS = Object.freeze({
 });
 
 function paidOpenAIDailyRequestCap(env){
-  const n=Number(env?.OPENAI_GLOBAL_DAILY_REQUEST_CAP||0);
+  const raw=env?.OPENAI_GLOBAL_DAILY_REQUEST_CAP;
+  const n=raw===undefined || raw===null || raw==="" ? 50 : Number(raw);
   return Number.isInteger(n) && n>=1 && n<=10000 ? n : null;
 }
 
