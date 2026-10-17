@@ -6217,6 +6217,119 @@ async function lioeRuntimeTelemetryStatus(env){
   }
 }
 
+function configuredMkdRate(env,key){
+  const raw=env?.[key];
+  if(raw===undefined || raw===null || raw==="") return null;
+  const n=Number(raw);
+  return Number.isFinite(n) && n>=0 ? n : null;
+}
+
+async function handleInternalCostTelemetry(request,env){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const membership=await resolveMembership(request,env);
+  if(!membership) return json(request,{ok:false,error:"membership_required"},401);
+  if(membership.accountId!=="owner-professional") return json(request,{ok:false,error:"owner_professional_required"},403);
+  if(!env?.DB) return json(request,{ok:false,error:"database_not_ready"},503);
+
+  const url=new URL(request.url);
+  const requestedDays=Number(url.searchParams.get("days")||30);
+  const days=Number.isInteger(requestedDays)&&requestedDays>=1&&requestedDays<=90 ? requestedDays : 30;
+  const since="-"+days+" days";
+  let total,groups;
+  try{
+    [total,groups]=await Promise.all([
+      env.DB.prepare(
+        `SELECT COUNT(*) AS runs,
+                COALESCE(SUM(provider_calls),0) AS provider_calls,
+                COALESCE(SUM(input_tokens),0) AS input_tokens,
+                COALESCE(SUM(output_tokens),0) AS output_tokens,
+                COALESCE(SUM(total_tokens),0) AS total_tokens,
+                COALESCE(SUM(web_search_used),0) AS web_search_runs,
+                COALESCE(AVG(elapsed_ms),0) AS avg_elapsed_ms
+           FROM lioe_runtime_runs
+          WHERE finished_at >= datetime('now',?)`
+      ).bind(since).first(),
+      env.DB.prepare(
+        `SELECT COALESCE(model,'unknown') AS model,mission_profile,
+                COUNT(*) AS runs,
+                COALESCE(SUM(provider_calls),0) AS provider_calls,
+                COALESCE(SUM(input_tokens),0) AS input_tokens,
+                COALESCE(SUM(output_tokens),0) AS output_tokens,
+                COALESCE(SUM(total_tokens),0) AS total_tokens,
+                COALESCE(SUM(web_search_used),0) AS web_search_runs,
+                COALESCE(AVG(elapsed_ms),0) AS avg_elapsed_ms
+           FROM lioe_runtime_runs
+          WHERE finished_at >= datetime('now',?)
+          GROUP BY COALESCE(model,'unknown'),mission_profile
+          ORDER BY total_tokens DESC,runs DESC`
+      ).bind(since).all()
+    ]);
+  }catch(error){
+    const message=String(error?.message||error);
+    return json(request,{
+      ok:false,
+      error:/no such table/i.test(message)?"runtime_telemetry_migration_required":"runtime_telemetry_unavailable"
+    },503);
+  }
+
+  const inputRate=configuredMkdRate(env,"OPENAI_INPUT_MKD_PER_1M_TOKENS");
+  const outputRate=configuredMkdRate(env,"OPENAI_OUTPUT_MKD_PER_1M_TOKENS");
+  const marginMultiplier=configuredMkdRate(env,"PRICING_COST_MULTIPLIER");
+  const ratesConfigured=inputRate!==null && outputRate!==null;
+  const runs=Number(total?.runs||0);
+  const inputTokens=Number(total?.input_tokens||0);
+  const outputTokens=Number(total?.output_tokens||0);
+  const estimatedModelCostMkd=ratesConfigured
+    ? (inputTokens/1_000_000)*inputRate+(outputTokens/1_000_000)*outputRate
+    : null;
+  const avgEstimatedCostMkd=estimatedModelCostMkd!==null && runs>0 ? estimatedModelCostMkd/runs : null;
+
+  return json(request,{
+    ok:true,
+    privacy:"aggregated operational telemetry only; no prompts, answers, identities or case facts",
+    coverage:{
+      days,
+      scope:"LIOE governed OpenAI runs recorded in lioe_runtime_runs",
+      limitation:"General paid calls outside LIOE are not included unless separately instrumented."
+    },
+    totals:{
+      runs,
+      providerCalls:Number(total?.provider_calls||0),
+      inputTokens,
+      outputTokens,
+      totalTokens:Number(total?.total_tokens||0),
+      webSearchRuns:Number(total?.web_search_runs||0),
+      averageElapsedMs:Math.round(Number(total?.avg_elapsed_ms||0))
+    },
+    groups:(groups?.results||[]).map(row=>({
+      model:row.model,
+      missionProfile:row.mission_profile,
+      runs:Number(row.runs||0),
+      providerCalls:Number(row.provider_calls||0),
+      inputTokens:Number(row.input_tokens||0),
+      outputTokens:Number(row.output_tokens||0),
+      totalTokens:Number(row.total_tokens||0),
+      webSearchRuns:Number(row.web_search_runs||0),
+      averageElapsedMs:Math.round(Number(row.avg_elapsed_ms||0))
+    })),
+    costModel:{
+      ratesConfigured,
+      inputMkdPerMillionTokens:inputRate,
+      outputMkdPerMillionTokens:outputRate,
+      estimatedModelCostMkd:estimatedModelCostMkd===null?null:Number(estimatedModelCostMkd.toFixed(2)),
+      averageEstimatedModelCostMkdPerRun:avgEstimatedCostMkd===null?null:Number(avgEstimatedCostMkd.toFixed(2)),
+      pricingCostMultiplier:marginMultiplier,
+      indicativePriceFloorPerRunMkd:avgEstimatedCostMkd!==null&&marginMultiplier!==null
+        ? Number((avgEstimatedCostMkd*marginMultiplier).toFixed(2))
+        : null,
+      note:ratesConfigured
+        ? "Estimate uses configured MKD token rates only; web-search/tool fees are not inferred from incomplete telemetry."
+        : "Token rates are intentionally not guessed. Configure current provider rates before using this endpoint for price recalculation."
+    },
+    costGuard:{globalPaidDailyRequestCap:paidOpenAIDailyRequestCap(env)}
+  });
+}
+
 function handleOpenLegalSourcesPolicy(request){
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
   return json(request,{
@@ -6494,6 +6607,7 @@ export default {
     }
 
     if (url.pathname === "/api/capabilities") return handleCapabilities(request, env);
+    if (url.pathname === "/api/internal/cost-telemetry") return handleInternalCostTelemetry(request, env);
     if (url.pathname === "/api/orchestrator") return handleOrchestratorArchitecture(request, env);
     if (url.pathname === "/api/orchestrator/plan") return handleOrchestratorPlan(request, env);
     if (url.pathname === "/api/knowledge-intake-policy") return handleKnowledgeIntakePolicy(request);
