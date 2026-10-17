@@ -68,6 +68,7 @@ jobs:
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
           const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V6";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
+          const EXPECTED_FREE_POLICY="FREE_MK_FAST_RELEASE_V2";
 
           async function waitForExpectedRuntime(){
             let last=null;
@@ -83,8 +84,9 @@ jobs:
                   && caps.centralOperatingPrompt===EXPECTED_PROMPT
                   && caps.macedonianLanguageGuard===EXPECTED_LANGUAGE
                   && caps.finalResponseQualityGate===EXPECTED_QUALITY
-                  && caps.freeChatModel===EXPECTED_FREE_MODEL){
-                  console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel);
+                  && caps.freeChatModel===EXPECTED_FREE_MODEL
+                  && caps.freeRuntimePolicy===EXPECTED_FREE_POLICY){
+                  console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel+" · "+caps.freeRuntimePolicy);
                   return;
                 }
               }catch(error){
@@ -154,9 +156,14 @@ jobs:
                 throw new Error(label+" FREE provider call budget violated: "+JSON.stringify(data.performance));
               }
               const latency=Number(data?.performance?.serverLatencyMs||0);
-              if(latency>45000){
-                throw new Error(label+" FREE server latency budget exceeded: "+latency+"ms");
+              if(!Number.isFinite(latency) || latency<=0){
+                throw new Error(label+" FREE server latency telemetry missing: "+JSON.stringify(data.performance));
               }
+              const scenarioBudget={basic:15000,"employment-definition":15000,reminder:25000,draft:30000,"valid-mk-legal":15000,"wrong-language-correction":20000}[label]||45000;
+              if(latency>scenarioBudget){
+                throw new Error(label+" FREE server latency budget exceeded: "+latency+"ms > "+scenarioBudget+"ms");
+              }
+              console.log(label+" performance: "+latency+"ms · providerCalls="+calls+" · repairCalls="+Number(data?.performance?.languageRepairProviderCalls||0)+" · fastPrompt="+String(data?.performance?.fastPromptUsed===true));
             }
             return {answer,data};
           }
@@ -195,7 +202,7 @@ jobs:
             if(/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/u.test(answer)){
               throw new Error(name+" contains non-Macedonian Cyrillic letters: "+answer.slice(0,500));
             }
-            const foreignTokens=["поступак","поступакот","подносилац","тужилац","захтев","решење","подаци","документы","сведения","следует","является","становище","всего","наименование","помеѓуз","обврзки","непостојно","саответен","правопризнателството","точнаја","године","власни","банок","биоки","свраним"];
+            const foreignTokens=["поступак","поступакот","подносилац","тужилац","захтев","решење","подаци","документы","сведения","следует","является","становище","всего","наименование","помеѓуз","обврзки","непостојно","саответен","правопризнателството","точнаја","године","власни","банок","биоки","свраним,"ево"];
             const lower=answer.toLocaleLowerCase("mk");
             if(foreignTokens.some(token=>new RegExp("(^|[^\\p{L}])"+token+"(?=$|[^\\p{L}])","u").test(lower))){
               throw new Error(name+" contains Serbian/Bulgarian/Russian lexical contamination: "+answer.slice(0,500));
@@ -204,6 +211,9 @@ jobs:
               throw new Error(name+" leaked internal planning text: "+answer.slice(0,500));
             }
             if(name==="employment-definition"){
+              if(data.provider==="workers_ai_free" && data?.performance?.fastPromptUsed!==true){
+                throw new Error("employment-definition did not use compact FREE L0 prompt: "+JSON.stringify(data.performance));
+              }
               if(/[|]/u.test(answer) || answer.split("\n").length>14){
                 throw new Error("employment-definition should stay concise and avoid pseudo-tables: "+answer.slice(0,1200));
               }
