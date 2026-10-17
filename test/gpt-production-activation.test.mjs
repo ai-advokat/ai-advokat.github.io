@@ -89,7 +89,7 @@ test("GPTACT5 public chat routes to Worker and runtime status can report live pr
   assert.match(worker,/configured_for_api_chat_execution/);
   assert.match(worker,/configured_for_free_workers_ai_chat_execution/);
   assert.match(worker,/env\.AI\.toMarkdown/);
-  assert.match(worker,/openai_live_governed_free_quota_plus_paid_membership/);
+  assert.match(worker,/openai_paid_governed_workers_ai_free/);
   assert.match(worker,/freeChatModel:freeWorkersAIConfigured\(env\)/);
   assert.match(worker,/paidChatModel:orchestratorRuntimeReadiness\(env\)\.provider==="configured"/);
 });
@@ -259,10 +259,12 @@ test("GPTACT16 GPT-OSS provider diagnostics expose only safe completion metadata
 });
 
 
-test("GPTACT17 anonymous FREE quota uses governed OpenAI when configured and Workers AI only as fallback",()=>{
-  assert.match(worker,/const governedOpenAIAvailable=readiness\.provider==="configured"/);
-  assert.match(worker,/&& !governedOpenAIAvailable/);
-  assert.match(worker,/governed_openai_with_workers_ai_fallback/);
+test("GPTACT17 anonymous FREE is isolated from paid OpenAI and fails closed without Workers AI",()=>{
+  assert.match(worker,/const useFreeWorkersAI=!membership && freeProviderReady/);
+  assert.match(worker,/if\(!membership && !useFreeWorkersAI\)/);
+  assert.match(worker,/Платениот OpenAI provider не се користи како автоматска замена за анонимни барања/);
+  assert.match(worker,/freeChatProvider:freeWorkersAIConfigured\(env\) \? "workers_ai" : "locked"/);
+  assert.doesNotMatch(worker,/const governedOpenAIAvailable=readiness\.provider==="configured"/);
 });
 
 
