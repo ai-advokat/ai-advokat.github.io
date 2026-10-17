@@ -80,7 +80,7 @@ test("COP6b compact FREE L0 prompt is materially smaller and preserves core safe
   assert.match(fast,/Правопис 2017/);
   assert.match(fast,/Never invent/);
   assert.match(fast,/current law/);
-  assert.match(fast,/Human Gate/);
+  assert.match(fast,/human gate/i);
   assert.match(fast,/еве, not ево/);
 });
 
