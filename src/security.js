@@ -10,6 +10,7 @@ export const ASSISTANT_BURST_WINDOW_SECONDS = 60;
 export const MEMBERSHIP_REQUEST_HOURLY_LIMIT = 3;
 export const MEMBERSHIP_REQUEST_DAILY_LIMIT = 10;
 export const MIN_SALT_LENGTH = 32;
+export const MEMBERSHIP_KEY_PEPPER_MIN_LENGTH = 32;
 
 export class SecurityConfigError extends Error {
   constructor(code) {
@@ -74,7 +75,7 @@ export function networkPrefix(ip) {
   return `v6:${groups.slice(0, 4).join(":")}::/64`;
 }
 
-async function hmacHex(secret, message) {
+export async function hmacHex(secret, message) {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -88,6 +89,22 @@ async function hmacHex(secret, message) {
 
 export function saltIsConfigured(env) {
   return typeof env?.RATE_LIMIT_SALT === "string" && env.RATE_LIMIT_SALT.length >= MIN_SALT_LENGTH;
+}
+
+export function membershipKeyPepperConfigured(env) {
+  return typeof env?.MEMBERSHIP_KEY_PEPPER === "string"
+    && env.MEMBERSHIP_KEY_PEPPER.length >= MEMBERSHIP_KEY_PEPPER_MIN_LENGTH;
+}
+
+/**
+ * HMAC digest for membership/API access keys.
+ * The server-side pepper is never written to D1 and is required for every v2 key.
+ */
+export async function membershipKeyDigest(env, key) {
+  const value=String(key||"");
+  if(value.length<24) throw new SecurityConfigError("membership_key_invalid");
+  if(!membershipKeyPepperConfigured(env)) throw new SecurityConfigError("membership_key_pepper_missing");
+  return hmacHex(env.MEMBERSHIP_KEY_PEPPER, "ai-advokat/membership-key/v2/"+value);
 }
 
 /**
@@ -222,8 +239,9 @@ export async function releaseMonthlyQuota(env, { subject, period }) {
 
 export const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 export const TURNSTILE_ACTION = "membership_request";
+export const TURNSTILE_CHAT_ACTION = "public_chat";
 
-export async function verifyTurnstile(env, { token, remoteIp, allowedHostnames }) {
+export async function verifyTurnstile(env, { token, remoteIp, allowedHostnames, expectedAction=TURNSTILE_ACTION }) {
   if (typeof env?.TURNSTILE_SECRET !== "string" || !env.TURNSTILE_SECRET) {
     throw new SecurityConfigError("turnstile_secret_missing");
   }
@@ -250,7 +268,7 @@ export async function verifyTurnstile(env, { token, remoteIp, allowedHostnames }
   }
 
   if (!outcome || outcome.success !== true) return { ok: false, reason: "turnstile_invalid" };
-  if (outcome.action !== TURNSTILE_ACTION) return { ok: false, reason: "turnstile_action_mismatch" };
+  if (outcome.action !== expectedAction) return { ok: false, reason: "turnstile_action_mismatch" };
   if (!allowedHostnames.has(String(outcome.hostname || "").toLowerCase())) {
     return { ok: false, reason: "turnstile_hostname_mismatch" };
   }
