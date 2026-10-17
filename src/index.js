@@ -1531,8 +1531,19 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
     if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_professional_write_role_required"},403);
     if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
+    const parsedConsent=await readLimitedJson(request,4096);
+    if(!parsedConsent.ok) return json(request,{ok:false,error:parsedConsent.error},parsedConsent.status);
+    const consentBody=parsedConsent.value||{};
     const paidCaseProviderReady=orchestratorRuntimeReadiness(env).provider==="configured";
     const freeCaseProviderReady=freeWorkersAIConfigured(env);
+    if(paidCaseProviderReady && consentBody.externalAiConsent!==true){
+      return json(request,{
+        ok:false,
+        error:"external_ai_consent_required",
+        message:"Пред испраќање case-scoped содржина до надворешниот OpenAI provider е потребна изрична потврда за ова барање.",
+        privacy:{providerCalled:false,externalAiProcessing:false}
+      },409);
+    }
     if(!paidCaseProviderReady && !freeCaseProviderReady) return json(request,{ok:false,error:"case_intelligence_provider_not_configured"},503);
 
     const docsResult=await env.DB.prepare(
@@ -1706,6 +1717,14 @@ async function handleCaseWorkspaceApi(request,env,url){
     const parsed=await readLimitedJson(request,16384);
     if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
     const body=parsed.value||{};
+    if(orchestratorRuntimeReadiness(env).provider==="configured" && body.externalAiConsent!==true){
+      return json(request,{
+        ok:false,
+        error:"external_ai_consent_required",
+        message:"Пред испраќање case-scoped содржина до надворешниот OpenAI provider е потребна изрична потврда за овој нацрт.",
+        privacy:{providerCalled:false,externalAiProcessing:false}
+      },409);
+    }
     const draftType=String(body.draftType||"");
     const instruction=cleanQuery(body.instruction,3000);
     if(!CASE_DRAFT_TYPES.includes(draftType)) return json(request,{ok:false,error:"case_intelligence_invalid_draft_type"},400);
