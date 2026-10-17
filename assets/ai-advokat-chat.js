@@ -742,16 +742,6 @@
     const q=String(forcedText??input.value).trim();
     if(!q) return;
 
-    if(!hasMembershipKey() && !chatTurnstileToken){
-      if(chatTurnstileState){
-        chatTurnstileState.textContent=chatTurnstileReady
-          ? "Потврдете ја Turnstile проверката пред FREE барањето."
-          : "Почекајте или повторете ја anti-bot проверката за FREE chat.";
-      }
-      chatTurnstileBox?.scrollIntoView({behavior:"smooth",block:"nearest"});
-      return;
-    }
-
     if(localConfidentialCasePrompt(q)){
       input.value="";
       attachments=[];
@@ -766,6 +756,16 @@
       });
       addMessage(confidentialCaseHandoffMessage());
       save();
+      return;
+    }
+
+    if(!hasMembershipKey() && !chatTurnstileToken){
+      if(chatTurnstileState){
+        chatTurnstileState.textContent=chatTurnstileReady
+          ? "Потврдете ја Turnstile проверката пред FREE барањето."
+          : "Почекајте или повторете ја anti-bot проверката за FREE chat.";
+      }
+      chatTurnstileBox?.scrollIntoView({behavior:"smooth",block:"nearest"});
       return;
     }
 
