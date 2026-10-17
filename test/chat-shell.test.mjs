@@ -136,7 +136,8 @@ test("CHAT11b homepage cache-busts the current FREE chat runtime and PWA shell",
 test("CHAT12 GitHub Pages chat calls the Cloudflare Worker API, not the static origin",()=>{
   assert.match(chatJs,/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
   assert.match(chatJs,/CHAT_API_BASE\+"\/api\/chat"/);
-  assert.match(chatJs,/CHAT_API_BASE\+"\/api\/assistant"/);\n  assert.match(chatJs,/sessionId:currentId/);
+  assert.match(chatJs,/CHAT_API_BASE\+"\/api\/assistant"/);
+  assert.match(chatJs,/sessionId:currentId/);
 });
 
 
@@ -181,11 +182,13 @@ test("CHAT17 chat latency optimisations preserve governed routing",()=>{
   assert.match(worker,/missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE"/);
   assert.match(worker,/const consequentialLegal=/);
   assert.match(worker,/const lightweightLegal=/);
-  assert.match(worker,/maxOutputTokens=fastGeneral \? 700/);
+  assert.match(worker,/maxOutputTokens=fastGeneral \? 600/);
+  assert.match(worker,/missionProfile==="L0_INFORMATIONAL" \? 800/);
+  assert.match(worker,/missionProfile==="L1_VERIFIED_RESEARCH" \? 1200/);
   assert.match(worker,/missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE" \? 3200/);
   assert.match(worker,/missionProfile==="L3_CONSEQUENTIAL" \? 2800/);
   assert.match(worker,/missionProfile==="L2_STRATEGY_PROCEDURE" \? 2400/);
-  assert.match(worker,/lightweightLegal \? 2000/);
+  assert.match(worker,/lightweightLegal \? 1200/);
   assert.match(worker,/Promise\.all\(\[/);
 });
 
