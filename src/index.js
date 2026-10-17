@@ -6301,6 +6301,9 @@ async function handleCapabilities(request, env) {
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",
+      criminalCodeCorpus: (coverage.articleCorpusInstruments||[]).some(x=>x.canonicalKey==="mk:kz" && Number(x.articleCount)>0)
+        ? "article_corpus_present_human_gate_required"
+        : "official_2026_provenance_registered_article_corpus_pending",
       // Deliberately coarse: configuration details are not exposed publicly.
       assistantQuota: saltIsConfigured(env) ? "enforced" : "unavailable",
       membershipRequests: database.reachable && database.schemaReady && membershipRequestsConfigured(env) ? "manual_human_gate" : "blocked",
