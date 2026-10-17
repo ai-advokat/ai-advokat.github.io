@@ -111,40 +111,20 @@
     const mode=String(button ? button.dataset.foreignEmployment : (buttonOrMode||"verify"));
     if(button) button.disabled=true;
     try{
-      const r=await fetch("/data/mvr-foreign-employment-checklists.json?v=20261014",{cache:"no-store"});
-      if(!r.ok) throw new Error("reference");
-      const data=await r.json();
-      const section=mode==="first"?"first_time":mode==="renewal"?"renewal":null;
-      const selected=section ? {[section]:data.checklists?.[section]} : data.checklists;
-      const referencePayload={
-        source:data.source,
-        selected_checklists:selected,
-        submission:data.submission,
-        fees:data.fees,
-        official_sources:data.official_sources,
-        secondary_sources:data.secondary_sources,
-        professional_guide:data.professional_guide,
-        verification:data.verification
-      };
-      const refText=JSON.stringify(referencePayload,null,2);
-      const refFile=new File([refText],"mvr-foreign-employment-reference.json",{type:"application/json"});
-      const withoutOld=attachments.filter(a=>a.name!=="mvr-foreign-employment-reference.json");
-      attachments=[...withoutOld,refFile].slice(0,CHAT_ATTACHMENT_LIMIT);
+      attachments=[];
       renderAttachments();
       input.value=[
-        "AI Advokat, анализирај го приложениот JSON референтен пакет за престој и вработување на странци.",
-        mode==="first"?"Фокус: прво барање за привремен престој по основ вработување.":mode==="renewal"?"Фокус: продолжување на привремен престој по основ вработување.":"Фокус: провери ги документите и утврди што недостасува, што е застарено и што бара заверка или превод.",
-        "Фотографираните МВР листи се практична институционална информација, не сами по себе важечки правен извор.",
-        "Приложениот професионален адвокатски прирачник е секундарен работен материјал. Користи го за структура, контролни листи и модели, но секој рок, такса, задолжителен документ, правен лек и тековна правна теза провери ги со примарен официјален извор.",
-        "Одделно користи ги официјалните МВР и МНР веб-извори наведени во прилогот и не мешај патен лист за странци со дозвола за привремен престој.",
-        "Провери ја секоја ставка според важечките прописи и официјалните извори. Разликувај: што пишува на листата, што е правно потврдено и што бара дополнителна проверка.",
-        "За секој правен заклучок наведи точен извор, член/одредба, верзија и датум. Такси, рокови и ослободувања не преземај без проверка."
+        "AI Advokat, провери ја актуелноста на јавната МВР чек-листа за престој и вработување на странци.",
+        mode==="first"
+          ?"Фокус: прво барање за привремен престој по основ вработување."
+          :mode==="renewal"
+            ?"Фокус: продолжување на привремен престој по основ вработување."
+            :"Фокус: кои документи, заверки, преводи, рокови и такси треба да се проверат пред поднесување.",
+        "Фотографираните МВР листи се практична институционална информација и НЕ се сами по себе важечки правен извор.",
+        "Провери ја секоја правна теза со важечки пропис и официјален извор; наведи точен извор, член/одредба, верзија и датум.",
+        "Такси, рокови и задолжителни документи не преземај без тековна проверка.",
+        "Не барај и не примај пасош, лична карта, уверение за неосудуваност, договор со лични податоци или друг доверлив документ во јавниот chat. За конкретни документи упати кон Secure Case Workspace."
       ].join("\n\n");
-      autoSize();
-      document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});
-      setTimeout(()=>input.focus(),350);
-    }catch{
-      input.value="Провери ги актуелните услови и документи за привремен престој по основ вработување на странец во Северна Македонија — прв пат и продолжување. Користи официјални извори и наведи точни членови, верзии и такси.";
       autoSize();
       document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});
       setTimeout(()=>input.focus(),350);
@@ -510,59 +490,38 @@
   const CHAT_ATTACHMENT_TOTAL_BYTES=24_000_000;
   const CHAT_ATTACHMENT_LIMIT=20;
 
+  function openSecureAttachmentWorkspace(){
+    attachments=[];
+    renderAttachments();
+    if(dropHint) dropHint.textContent="Документи од конкретни предмети се обработуваат само во Secure Case Workspace.";
+    window.location.href="/casepilot-workspace.html";
+  }
+
   function addAttachmentFiles(files,{source="picker"}={}){
     const incoming=[...(files||[])].filter(Boolean);
     if(!incoming.length) return;
-    const accepted=[];
-    const rejected=[];
-    for(const file of incoming){
-      const mime=inferredMime(file);
-      if(!CHAT_ACCEPTED_MIME.has(mime)){rejected.push(file.name||"датотека");continue;}
-      const duplicate=[...attachments,...accepted].some(x=>x.name===file.name&&x.size===file.size&&x.lastModified===file.lastModified);
-      if(!duplicate) accepted.push(file);
-    }
-    const combined=[...attachments,...accepted];
-    if(combined.length>CHAT_ATTACHMENT_LIMIT){
-      alert("Во една AI Advokat сесија може да прикачите најмногу 20 документи. Отстранете дел од прилозите или започнете нова сесија.");
-      return;
-    }
-    const total=combined.reduce((n,file)=>n+(file.size||0),0);
-    if(total>CHAT_ATTACHMENT_TOTAL_BYTES){
-      alert("Вкупната големина на прилозите е ограничена на 24 MB по барање. Намалете ја големината или поделете ги документите во повеќе анализи во истата сесија.");
-      return;
-    }
-    attachments=combined;
-    renderAttachments();
-    if(dropHint){
-      const suffix=rejected.length ? ` · одбиени: ${rejected.join(", ")}` : "";
-      dropHint.textContent=`Прикачени: ${attachments.length}/${CHAT_ATTACHMENT_LIMIT}${suffix} · можете да додадете уште документи`;
-      setTimeout(()=>{
-        if(dropHint) dropHint.textContent="Повлечете до 20 PDF/Word/слики тука · или користете го копчето „Прикачи документи“";
-      },2600);
-    }
+    // P0 privacy gate: no user-supplied document/image bytes leave the browser
+    // through the public chat path. The server enforces the same rule.
+    openSecureAttachmentWorkspace();
   }
 
   syncChatMembershipState();
 
-  attachBtn.addEventListener("click",()=>fileInput.click());
-  if(attachWideBtn) attachWideBtn.addEventListener("click",()=>fileInput.click());
+  attachBtn.addEventListener("click",openSecureAttachmentWorkspace);
+  if(attachWideBtn) attachWideBtn.addEventListener("click",openSecureAttachmentWorkspace);
   fileInput.addEventListener("change",()=>{
-    addAttachmentFiles(fileInput.files,{source:"picker"});
+    if(fileInput.files?.length) openSecureAttachmentWorkspace();
     fileInput.value="";
   });
 
   if(dropZone){
-    let dragDepth=0;
     const stop=e=>{e.preventDefault();e.stopPropagation();};
-    dropZone.addEventListener("dragenter",e=>{stop(e);dragDepth++;dropZone.classList.add("is-dragover");});
-    dropZone.addEventListener("dragover",e=>{stop(e);dropZone.classList.add("is-dragover");});
-    dropZone.addEventListener("dragleave",e=>{
-      stop(e);dragDepth=Math.max(0,dragDepth-1);
-      if(dragDepth===0) dropZone.classList.remove("is-dragover");
-    });
+    dropZone.addEventListener("dragenter",stop);
+    dropZone.addEventListener("dragover",stop);
+    dropZone.addEventListener("dragleave",stop);
     dropZone.addEventListener("drop",e=>{
-      stop(e);dragDepth=0;dropZone.classList.remove("is-dragover");
-      addAttachmentFiles(e.dataTransfer?.files,{source:"drop"});
+      stop(e);
+      if(e.dataTransfer?.files?.length) openSecureAttachmentWorkspace();
     });
   }
 
@@ -570,7 +529,7 @@
     const files=e.clipboardData?.files;
     if(files?.length){
       e.preventDefault();
-      addAttachmentFiles(files,{source:"paste"});
+      openSecureAttachmentWorkspace();
     }
   });
 
@@ -597,8 +556,8 @@
       sessionStorage.removeItem("aiAdvokatMembershipKey");
       sessionStorage.removeItem("ai_advokat_membership_key");
     }
-    if(chatMembershipState) chatMembershipState.textContent="FREE активен · не е потребен клуч · документарна анализа преку Workers AI";
-    if(ownerState) ownerState.textContent="FREE активен · без клуч · Workers AI";
+    if(chatMembershipState) chatMembershipState.textContent="FREE активен · јавен текстуален chat · Workers AI";
+    if(ownerState) ownerState.textContent="FREE активен · јавен текстуален chat · Workers AI";
   }
 
 
@@ -786,7 +745,7 @@
                       ?"AI Advokat catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
                       :(d.webSearchUsed===true?"External legal research · Web извори":"GPT general/proactive assistance")
         });
-      }else if(d?.error==="confidential_case_workspace_required"){
+      }else if(["confidential_case_workspace_required","public_attachment_secure_workspace_required","public_history_secure_workspace_required"].includes(d?.error)){
         scrubConfidentialPublicTurn({userIndex,assistantIndex});
         updateAssistantPlaceholder(assistantIndex,{
           ...confidentialCaseHandoffMessage(),
