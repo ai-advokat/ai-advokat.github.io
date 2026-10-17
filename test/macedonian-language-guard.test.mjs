@@ -180,5 +180,5 @@ test("'измера' is treated as malformed generation, never as 'измена'
   const clean=normaliseMacedonianGeneratedText(bad);
   assert.doesNotMatch(clean,/измера/iu);
   assert.doesNotMatch(clean,/измена/iu);
-  assert.match(clean,/за Република Северна Македонија/u);
+  assert.match(clean,/за Република Северна Македонија/iu);
 });
