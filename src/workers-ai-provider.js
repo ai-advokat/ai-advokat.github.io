@@ -2,7 +2,7 @@
 // One source of truth for model selection, request parameters and response extraction.
 // Reasoning fields are intentionally never surfaced as user-visible answer text.
 
-export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/openai/gpt-oss-20b";
+export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/zai-org/glm-4.7-flash";
 
 export function resolveWorkersAITextModel(env){
   const model=String(env?.WORKERS_AI_CHAT_MODEL||WORKERS_AI_TEXT_MODEL_DEFAULT).trim();
@@ -148,7 +148,8 @@ export async function runWorkersAIText(env,{
   temperature=0.1,
   responseFormat=null,
   model=null,
-  reasoningEffort="low"
+  reasoningEffort="low",
+  sessionAffinity=null
 }={}){
   if(!env?.AI || typeof env.AI.run!=="function"){
     return {ok:false,error:"workers_ai_not_configured"};
@@ -163,9 +164,14 @@ export async function runWorkersAIText(env,{
     reasoningEffort
   });
 
+  const affinity=String(sessionAffinity||"").trim();
+  const bindingOptions=/^[A-Za-z0-9._:-]{8,128}$/.test(affinity)
+    ? {extraHeaders:{"x-session-affinity":affinity}}
+    : undefined;
+
   let generated;
   try{
-    generated=await env.AI.run(resolvedModel,options);
+    generated=await env.AI.run(resolvedModel,options,bindingOptions);
   }catch(error){
     return {
       ok:false,
