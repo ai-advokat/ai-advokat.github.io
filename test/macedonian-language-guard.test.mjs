@@ -139,3 +139,21 @@ test("reported malformed inheritance-answer vocabulary is rejected",()=>{
   assert.ok(check.reasons.includes("malformed_macedonian_generation"));
   assert.ok(check.malformedGeneration.some(x=>["последуствување","прикаде","приречет","данишна"].includes(x)));
 });
+
+
+test("real production hybrid ECHR answer is rejected and repaired",()=>{
+  const bad="ПРОСЕК ЗА ОФИЦИЈАЛНИ ПРЕСУДИ И ОДЛУКИ НА ЕСЧП ПОД ИЗМЕРА НА РЕПУБЛИКА СЕВЕРНА МАКЕДОНСКА. Сите цифри се исто така доступни во индексиот на Бирото за залагање пред ЕСЧП. Датумот е денот на низна одлука. Базиски белешки.";
+  const check=assessMacedonianOutput(bad,{userText:"Пребарај ги официјалните македонски пресуди и одлуки на ЕСЧП за Северна Македонија."});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.reasons.includes("foreign_lexical_contamination") || check.reasons.includes("contextual_language_contamination"));
+  const clean=normaliseMacedonianGeneratedText(bad);
+  const repaired=assessMacedonianOutput(clean,{userText:"Одговори на литературен македонски."});
+  assert.equal(repaired.ok,true,JSON.stringify({clean,repaired}));
+  assert.match(clean,/Преглед на официјални пресуди/iu);
+  assert.match(clean,/Република Северна Македонија/u);
+  assert.match(clean,/достапни/u);
+  assert.match(clean,/индексот/u);
+  assert.match(clean,/Бирото за застапување пред ЕСЧП/u);
+  assert.match(clean,/датумот на одлуката/u);
+  assert.match(clean,/Основни белешки/u);
+});
