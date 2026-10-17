@@ -373,6 +373,10 @@ async function resolveMembership(request, env) {
   const key=membershipKeyFromRequest(request);
   if(!key || !env.DB) return null;
 
+  // P1 security boundary: deprecated owner-style browser keys are never valid
+  // membership credentials, even if a matching hash were accidentally seeded.
+  if(/^AIADV-OWNER-/i.test(key)) return null;
+
   const keyHash=await sha256Hex(key);
   const row=await env.DB.prepare(
     `SELECT k.account_id, k.status AS key_status, k.expires_at AS key_expires_at,
@@ -6297,6 +6301,9 @@ async function handleCapabilities(request, env) {
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
       echrCorpus: coverage.echrRecords > 0 ? "live_corpus" : "directory_only",
+      criminalCodeCorpus: (coverage.articleCorpusInstruments||[]).some(x=>x.canonicalKey==="mk:kz" && Number(x.articleCount)>0)
+        ? "article_corpus_present_human_gate_required"
+        : "official_2026_provenance_registered_article_corpus_pending",
       // Deliberately coarse: configuration details are not exposed publicly.
       assistantQuota: saltIsConfigured(env) ? "enforced" : "unavailable",
       membershipRequests: database.reachable && database.schemaReady && membershipRequestsConfigured(env) ? "manual_human_gate" : "blocked",

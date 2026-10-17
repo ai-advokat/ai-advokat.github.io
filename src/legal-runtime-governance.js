@@ -39,6 +39,22 @@ function policyCompliantWebSourceCount(sources=[]){
   return count;
 }
 function profileId(plan){return plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";}
+export function estimateWeightedCreditUnits({plan,result={},attachmentCount=0,postflightMeta={}}={}){
+  const profile=profileId(plan);
+  const base={
+    GENERAL_BYPASS:1,
+    L0_INFORMATIONAL:1,
+    L1_VERIFIED_RESEARCH:2,
+    L2_STRATEGY_PROCEDURE:3,
+    L3_CONSEQUENTIAL:5,
+    L4_LEGAL_TRUTH_GOVERNANCE:8
+  }[profile]||1;
+  const providerCalls=(Number(postflightMeta?.primaryProviderCalls)||0)+(Number(postflightMeta?.providerCalls)||0);
+  const web=result?.webSearchUsed===true?1:0;
+  const attachments=Math.min(5,Math.ceil((Number(attachmentCount)||0)/2));
+  const extraCalls=Math.max(0,providerCalls-1);
+  return Math.min(25,Math.max(1,base+web+attachments+extraCalls));
+}
 function isHighDepth(profile){return ["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(profile);}
 function nativeCurrentVerified(articleBundle={}){
   const v=articleBundle?.version;
@@ -239,6 +255,7 @@ export function buildSanitisedRuntimeRecord({
     guide_context_count:Number(guideContextCount)||0,
     attachment_count:Number(attachmentCount)||0,
     provider_calls:(Number(postflightMeta?.primaryProviderCalls)||0)+(Number(postflightMeta?.providerCalls)||0),
+    estimated_credit_units:estimateWeightedCreditUnits({plan,result,attachmentCount,postflightMeta}),
     input_tokens:inputTokens||null,
     output_tokens:outputTokens||null,
     total_tokens:totalTokens||null,
@@ -251,6 +268,9 @@ export function buildSanitisedRuntimeRecord({
 export async function persistSanitisedRuntimeRecord(env,record){
   if(!env?.DB)return Object.freeze({ok:false,state:"database_not_bound"});
   try{
+    // Weighted credit units are deliberately derived from already-stored,
+    // privacy-minimised telemetry. They are not persisted as a new billing
+    // field, so cost calibration does not require a production schema change.
     await env.DB.prepare(
       `INSERT INTO lioe_runtime_runs (
         run_id,started_at,finished_at,mission_profile,problem_class,mode,source_mode,

@@ -116,6 +116,8 @@ test("sanitised telemetry contains no question answer history or source text",()
   });
   assert.equal(rec.total_tokens,210);
   assert.equal(rec.provider_calls,2);
+  assert.equal(rec.estimated_credit_units,5);
+  assert.equal(rec.telemetry_schema_version,"1.0");
   const keys=Object.keys(rec);
   for(const forbidden of ["question","answer","history","source_text","user_id","membership_key","attachment_text"]){
     assert.equal(keys.includes(forbidden),false);

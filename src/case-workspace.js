@@ -53,6 +53,11 @@ export function validateCaseWorkspaceCreate(payload){
   if(retentionUntil && !/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?Z)?$/.test(retentionUntil)){
     errors.push("invalid_retention_until");
   }
+  if(retentionUntil){
+    const parsed=Date.parse(retentionUntil.length===10 ? retentionUntil+"T23:59:59Z" : retentionUntil);
+    if(!Number.isFinite(parsed)) errors.push("invalid_retention_until");
+    else if(parsed<=Date.now()) errors.push("retention_until_must_be_future");
+  }
   return {ok:errors.length===0,errors,value:{title,clientReference,legalArea,retentionUntil}};
 }
 

@@ -643,6 +643,13 @@ describe("regression and truthful capabilities", () => {
     );
   });
 
+  test("R1b deprecated owner-style keys can never authenticate as membership", async () => {
+    const { env, raw } = freshEnv();
+    seedMembership(raw,{key:"AIADV-OWNER-legacy-secret",quota:100,plan:"pro"});
+    const r=await call(env,assistantRequest("ЗРО член 12",{key:"AIADV-OWNER-legacy-secret",ip:nextIp()}));
+    assert.notEqual(r.body?.membership?.planCode,"pro");
+  });
+
   test("R2 PWA and static assets are still served through ASSETS with security headers", async () => {
     const { env } = freshEnv();
     for (const path of ["/", "/manifest.webmanifest", "/service-worker.js", "/offline.html", "/membership.html"]) {
@@ -653,6 +660,12 @@ describe("regression and truthful capabilities", () => {
     for (const file of ["manifest.webmanifest", "service-worker.js", "offline.html"]) {
       assert.ok(fs.existsSync(file), file);
     }
+  });
+
+  test("R2b capabilities fail closed on Criminal Code article corpus when only 2026 provenance is registered", async () => {
+    const { env } = freshEnv();
+    const r = await call(env,new Request(BASE + "/api/capabilities"));
+    assert.equal(r.body.capabilities.criminalCodeCorpus,"official_2026_provenance_registered_article_corpus_pending");
   });
 
   test("R3 capabilities report case law / ECHR as directory-only when no records exist", async () => {
