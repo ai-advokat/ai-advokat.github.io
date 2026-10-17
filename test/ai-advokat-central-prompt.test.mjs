@@ -56,17 +56,9 @@ test("COP5 builder records runtime mode/provider and private-case boundary",()=>
 
 test("COP5b default Macedonian language contract is not duplicated in runtime prompt",()=>{
   const prompt=buildAIAdvokatCentralPrompt({languageRules:MACEDONIAN_2017_SYSTEM_RULES,mode:"general_assistant",provider:"workers_ai_free"});
-  const defaultPrompt=buildAIAdvokatCentralPrompt({mode:"general_assistant",provider:"workers_ai_free"});
   const marker="PRIORITY 0 — ПРАВОПИС НА МАКЕДОНСКИОТ ЈАЗИК 2017.";
-  assert.equal((defaultPrompt.match(new RegExp(marker.replace(/[.*+?^$(){}|[\]\\]/g,"\\test("COP5 builder records runtime mode/provider and private-case boundary",()=>{
-  const general=buildAIAdvokatCentralPrompt({mode:"general_assistant",provider:"workers_ai_free"});
-  assert.match(general,/RUNTIME MODE: general_assistant\. PROVIDER CLASS: workers_ai_free\./);
-  assert.match(general,/PUBLIC\/GENERAL MODE/);
-  const privatePrompt=buildAIAdvokatCentralPrompt({mode:"private_case_analysis",provider:"workers_ai_private_case",privateCase:true});
-  assert.match(privatePrompt,/PRIVATE CASE MODE/);
-  assert.match(privatePrompt,/case-scoped factual material/);
-});"),"g"))||[]).length,1);
-  assert.ok(defaultPrompt.length<AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT.length+1000,"runtime builder should add only bounded runtime metadata");
+  assert.equal(prompt.split(marker).length-1,1,"default Macedonian block must appear exactly once");
+  assert.ok(prompt.length<AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT.length+1000,"runtime builder should add only bounded runtime metadata");
   assert.match(prompt,/AI ADVOKAT CENTRAL OPERATING CONTRACT/);
 });
 
