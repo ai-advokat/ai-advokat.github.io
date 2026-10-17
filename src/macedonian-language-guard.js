@@ -16,6 +16,7 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "Foreign brands, technical identifiers, API paths, file names, statutory citation labels and genuinely verbatim source quotations may remain unchanged when necessary; otherwise transcribe foreign names and terms according to Macedonian orthography.",
   "If a foreign-language source is relevant, explain it in Macedonian and clearly distinguish any short verbatim quotation from your own prose.",
   "If the user reports that a previous answer was in Bulgarian, Serbian, Russian or another wrong language, treat that report as a hard language correction: regenerate the affected answer in Macedonian from the underlying task and context instead of continuing the contaminated wording.",
+  "Treat invented or semantically broken forms such as 'измера' in phrases like 'измера на Република Северна...' as malformed generation, not as a synonym, spelling variant or automatic correction to 'измена'. Rewrite the whole phrase according to its actual context.",
   "A Macedonian-facing answer that is predominantly Bulgarian, Serbian or Russian is invalid even if it uses Cyrillic. Cyrillic alone is never evidence that the language requirement was satisfied.",
   "For a North Macedonian legal matter, never substitute Bulgarian, Serbian, Russian or another foreign law unless the user explicitly asks for that jurisdiction and the supplied governed sources support it.",
   "If the controlling North Macedonian law is not established by the supplied governed sources, say that verification is required instead of importing a neighbouring jurisdiction.",
@@ -35,12 +36,34 @@ const FOREIGN_LEXEMES=new Set([
   "становище","искане","следва","обжалвайте","трябва","моля","настоящият","същият","правосъдие","съд","съда","съдът","съдебен","съдебна","съдебно",
   "ищец","ищецът","ответник","ответникът","искова","исковата","обезщетение","обезщетението",
   "съгласно","обжалване","възражение","възражения","разноски","случайни","случаен","случайна",
-  "доказателства","молител","молителя","това","тази","тези","какво","защото","когато","всички","например","ще","някой","някои","който","която","които","према","уколико","такође","овде","није"
+  "доказателства","молител","молителя","това","тази","тези","какво","защото","когато","всички","например","ще","някой","някои","който","която","които","према","уколико","такође","овде","није",
+  // Serbian/hybrid forms repeatedly observed in Macedonian-facing generations
+  "доступан","доступен","доступна","доступно","доступни","доступност","доступните"
 ]);
 
 const MALFORMED_GENERATION_LEXEMES=new Set([
-  "последуствување","прикаде","приречет","нотариска","данишна","волеври","домнување","переводина","доцрат","паблицни"
+  "последуствување","прикаде","приречет","нотариска","данишна","волеври","домнување","переводина","доцрат","паблицни",
+  "низна","индексиот","пресуд",
+  // Observed hallucinated/hybrid token. Do NOT reinterpret this as "измена".
+  // In phrases such as "ИЗМЕРА НА РЕПУБЛИКА СЕВЕРНА..." the whole phrase
+  // must be contextually rewritten, e.g. "за Република Северна Македонија".
+  "измера","измерата"
 ]);
+
+// Contextual phrases can be linguistically invalid even when each individual
+// token exists in Macedonian. Keep these narrowly scoped to observed hybrid
+// generation patterns so valid Macedonian vocabulary is not over-blocked.
+const CONTEXTUAL_CONTAMINATION_PHRASES=[
+  "бирото за залагање пред есчп",
+  "република северна македонска",
+  "под измера на",
+  "измера на република северна",
+  "денот на низна одлука",
+  "базиски белешки",
+  "просек за официјални пресуди",
+  "заглавие / пресуд",
+  "пресудни дела"
+];
 
 const FOREIGN_JURISDICTION_PHRASES=[
   "български закон",
@@ -97,11 +120,13 @@ export function assessMacedonianOutput(text,{userText=""}={}){
     ? []
     : FOREIGN_JURISDICTION_PHRASES.filter(p=>lower.includes(p));
   const malformedGeneration=[...MALFORMED_GENERATION_LEXEMES].filter(w=>words.has(w));
+  const contextualContamination=CONTEXTUAL_CONTAMINATION_PHRASES.filter(p=>lower.includes(p));
   const reasons=[];
   if(foreignChars.length) reasons.push("foreign_cyrillic_letters");
   if(foreignLexemes.length) reasons.push("foreign_lexical_contamination");
   if(jurisdictionLeaks.length) reasons.push("foreign_jurisdiction_substitution");
   if(malformedGeneration.length) reasons.push("malformed_macedonian_generation");
+  if(contextualContamination.length) reasons.push("contextual_language_contamination");
   return {
     ok:reasons.length===0,
     reasons,
@@ -109,12 +134,34 @@ export function assessMacedonianOutput(text,{userText=""}={}){
     foreignLexemes:foreignLexemes.slice(0,12),
     jurisdictionLeaks:jurisdictionLeaks.slice(0,8),
     malformedGeneration:malformedGeneration.slice(0,12),
+    contextualContamination:contextualContamination.slice(0,12),
     standardVersion:MACEDONIAN_LANGUAGE_STANDARD_VERSION
   };
 }
 
 
 const DETERMINISTIC_LEXICAL_REPLACEMENTS=[
+  // Real-world hybrid-output repair patterns observed in production.
+  ["измера на република северна македонија","за Република Северна Македонија"],
+  ["под измера на република северна македонија","за Република Северна Македонија"],
+  ["измера на република северна македонска","за Република Северна Македонија"],
+  ["под измера на република северна македонска","за Република Северна Македонија"],
+  ["просек за официјални пресуди","Преглед на официјални пресуди"],
+  ["под измера на","за"],
+  ["измера на република северна","за Република Северна"],
+  ["република северна македонска","Република Северна Македонија"],
+  ["бирото за залагање пред есчп","Бирото за застапување пред ЕСЧП"],
+  ["денот на низна одлука","датумот на одлуката"],
+  ["базиски белешки","Основни белешки"],
+  ["заглавие / пресуд","Предмет / пресуда"],
+  ["пресудни дела","пресуди и одлуки"],
+  ["доступните","достапните"],
+  ["доступност","достапност"],
+  ["доступни","достапни"],
+  ["доступен","достапен"],
+  ["доступна","достапна"],
+  ["доступно","достапно"],
+  ["индексиот","индексот"],
   ["искова молба","тужба"],
   ["обезщетението","надоместот на штета"],
   ["обезщетение","надомест на штета"],
