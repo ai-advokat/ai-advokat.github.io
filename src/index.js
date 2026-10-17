@@ -8,6 +8,8 @@ import {
   consumeWindow,
   currentPeriod,
   hasControlCharacters,
+  membershipKeyDigest,
+  membershipKeyPepperConfigured,
   pruneRateLimitWindows,
   releaseMonthlyQuota,
   reserveMonthlyQuota,
@@ -15,7 +17,8 @@ import {
   saltIsConfigured,
   secondsUntilNextMonth,
   validateAnswerCitations,
-  verifyTurnstile
+  verifyTurnstile,
+  TURNSTILE_CHAT_ACTION
 } from "./security.js";
 import { validateLegalClaim } from "./legal-claim-validator.js";
 import {
@@ -112,7 +115,7 @@ import {
   publicOpenLegalSourceDirectory,
   openLegalSourcePolicySummary
 } from "./open-legal-sources-policy.js";
-import { detectConfidentialCasePrompt } from "./chat-privacy.js";
+import { detectConfidentialCasePrompt, detectConfidentialDocumentText } from "./chat-privacy.js";
 import {
   WORKERS_AI_TEXT_MODEL_DEFAULT,
   resolveWorkersAITextModel,
@@ -373,15 +376,16 @@ async function resolveMembership(request, env) {
   const key=membershipKeyFromRequest(request);
   if(!key || !env.DB) return null;
 
-  const keyHash=await sha256Hex(key);
-  const row=await env.DB.prepare(
+  const selectByHash=async(hash,scheme)=>env.DB.prepare(
     `SELECT k.account_id, k.status AS key_status, k.expires_at AS key_expires_at,
+            k.key_hash_scheme, k.key_fingerprint,
             e.plan_code, e.status AS entitlement_status, e.monthly_quota, e.seat_limit,
             e.expires_at AS entitlement_expires_at, a.status AS account_status
        FROM membership_access_keys k
        JOIN membership_accounts a ON a.id=k.account_id
        JOIN membership_entitlements e ON e.account_id=a.id
       WHERE k.key_hash=?
+        AND k.key_hash_scheme=?
         AND k.status='active'
         AND a.status='active'
         AND e.status IN ('trial','active')
@@ -389,8 +393,21 @@ async function resolveMembership(request, env) {
         AND (e.expires_at IS NULL OR datetime(e.expires_at) > datetime('now'))
       ORDER BY CASE e.status WHEN 'active' THEN 0 ELSE 1 END, e.updated_at DESC
       LIMIT 1`
-  ).bind(keyHash).first();
+  ).bind(hash,scheme).first();
 
+  let row=null;
+  if(membershipKeyPepperConfigured(env)){
+    try{
+      row=await selectByHash(await membershipKeyDigest(env,key),"hmac_sha256_v2");
+    }catch(error){
+      if(!(error instanceof SecurityConfigError)) throw error;
+    }
+  }
+
+  if(!row && env.MEMBERSHIP_LEGACY_SHA256_ENABLED==="true"){
+    const legacy=await selectByHash(await sha256Hex(key),"sha256_legacy");
+    if(legacy?.account_id!=="owner-professional") row=legacy;
+  }
   if(!row) return null;
 
   return {
@@ -399,6 +416,8 @@ async function resolveMembership(request, env) {
     status:row.entitlement_status,
     monthlyQuota:Number(row.monthly_quota || 0),
     seats:Number(row.seat_limit || 1),
+    keyHashScheme:String(row.key_hash_scheme||"unknown"),
+    keyFingerprint:row.key_fingerprint||null,
     subjectKey:`account:${row.account_id}`
   };
 }
@@ -3787,6 +3806,39 @@ async function runPrivateCaseDocumentExtraction(env,{documentId,fileName,mimeTyp
   return {ok:true,extraction,model:String(env.OPENAI_MODEL),responseId:payload?.id||null,provider:"openai_private_case"};
 }
 
+async function scanGuideAttachmentsForConfidentiality(env,attachments){
+  const items=Array.isArray(attachments)?attachments:[];
+  if(!items.length) return {ok:true,scanned:0};
+  if(!freeWorkersAIMarkdownConfigured(env)){
+    return {ok:false,error:"guide_privacy_scan_unavailable",reasons:["markdown_conversion_required"]};
+  }
+  const convert=[];
+  for(const attachment of items){
+    const bytes=bytesFromBase64(attachment.base64);
+    if(!bytes) return {ok:false,error:"guide_privacy_scan_decode_failed",reasons:["decode_failed"]};
+    convert.push({name:String(attachment.name||"guide"),blob:new Blob([bytes],{type:attachment.mime||"application/octet-stream"})});
+  }
+  let converted;
+  try{
+    converted=await env.AI.toMarkdown(convert,{conversionOptions:{output:{format:"text"},pdf:{metadata:false}}});
+  }catch(error){
+    console.error("guide_privacy_markdown_failed",String(error?.message||error).slice(0,160));
+    return {ok:false,error:"guide_privacy_scan_unavailable",reasons:["conversion_failed"]};
+  }
+  const results=Array.isArray(converted)?converted:[converted];
+  if(results.length!==items.length) return {ok:false,error:"guide_privacy_scan_incomplete",reasons:["conversion_count_mismatch"]};
+  for(const result of results){
+    if(!result || result.format==="error" || typeof result.data!=="string"){
+      return {ok:false,error:"guide_privacy_scan_unavailable",reasons:["conversion_error"]};
+    }
+    const assessment=detectConfidentialDocumentText(String(result.data||"").slice(0,120000));
+    if(assessment.confidential){
+      return {ok:false,error:"confidential_document_secure_workspace_required",reasons:assessment.reasons};
+    }
+  }
+  return {ok:true,scanned:results.length};
+}
+
 async function validateGuideDocuments(request,env,payload){
   const input=Array.isArray(payload)?payload:[];
   if(input.length>CHAT_MAX_GUIDE_DOCUMENTS) return {ok:false,error:"too_many_guide_documents"};
@@ -3868,7 +3920,15 @@ async function validateGuideDocuments(request,env,payload){
     });
   }
 
-  return {ok:true,attachments,context,sources};
+  const privacyScan=await scanGuideAttachmentsForConfidentiality(env,attachments);
+  if(!privacyScan.ok){
+    return {
+      ok:false,
+      error:privacyScan.error,
+      privacy:{providerCalled:false,publicChatProcessingStopped:true,reasons:privacyScan.reasons||[]}
+    };
+  }
+  return {ok:true,attachments,context,sources,privacyScanned:privacyScan.scanned};
 }
 
 
@@ -4932,6 +4992,30 @@ async function handleGPTChat(request,env){
     },422);
   }
 
+  const membership=await resolveMembership(request,env);
+  if(!membership){
+    let turnstile;
+    try{
+      turnstile=await verifyTurnstile(env,{
+        token:payload.turnstileToken,
+        remoteIp:request.headers.get("CF-Connecting-IP"),
+        allowedHostnames:turnstileAllowedHostnames(env),
+        expectedAction:TURNSTILE_CHAT_ACTION
+      });
+    }catch(error){
+      if(error instanceof SecurityConfigError) return json(request,{ok:false,error:"free_chat_turnstile_unavailable"},503);
+      throw error;
+    }
+    if(!turnstile.ok){
+      const status=turnstile.reason==="turnstile_unavailable" ? 503 : 403;
+      return json(request,{
+        ok:false,
+        error:turnstile.reason==="turnstile_missing" ? "free_chat_turnstile_required" : "free_chat_turnstile_failed",
+        privacy:{providerCalled:false,quotaConsumed:false}
+      },status);
+    }
+  }
+
   const guideDocumentCheck=await validateGuideDocuments(request,env,payload.guideDocuments);
   if(!guideDocumentCheck.ok) return json(request,{ok:false,error:guideDocumentCheck.error},400);
 
@@ -4993,7 +5077,6 @@ async function handleGPTChat(request,env){
     && env.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"
     && readiness.provider==="configured";
 
-  const membership=await resolveMembership(request,env);
   let subject;
   let quota;
   if(membership){
