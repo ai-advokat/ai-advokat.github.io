@@ -4447,63 +4447,77 @@ async function convertFreeChatAttachments(env,attachments){
   return {ok:true,documents:bounded,totalChars:total};
 }
 
-async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800}={}){
+async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800,sessionAffinity=null}={}){
   const original=String(text||"");
   if(!shouldEnforceMacedonianOutput(userText)){
-    return {text:original,repaired:false,providerCalls:0,languageAssessment:null};
+    return {text:original,repaired:false,providerCalls:0,languageAssessment:null,deterministicCleanupApplied:false};
   }
+
   let current=original;
   let assessment=assessMacedonianOutput(current,{userText});
   if(assessment.ok){
-    return {text:current,repaired:false,providerCalls:0,languageAssessment:assessment};
+    return {text:current,repaired:false,providerCalls:0,languageAssessment:assessment,deterministicCleanupApplied:false};
   }
 
-  let providerCalls=0;
-  let lastError=null;
-  for(let attempt=0;attempt<2 && !assessment.ok;attempt++){
-    const messages=buildMacedonianRepairMessages({text:current,userText});
-    const issueNote=[
-      "STRICT TARGETED LANGUAGE REPAIR.",
-      "The preceding draft failed the Macedonian 2017 language guard.",
-      "Detected reasons: "+(assessment.reasons||[]).join(", "),
-      assessment.foreignChars?.length ? "Forbidden/non-Macedonian Cyrillic characters detected: "+assessment.foreignChars.join(" ") : "",
-      assessment.foreignLexemes?.length ? "Foreign lexical forms detected: "+assessment.foreignLexemes.join(", ") : "",
-      "Correct only language contamination and grammar. Preserve the same meaning, facts, dates, numbers, identifiers, citation markers and overall structure.",
-      "Do not add new sections, examples, parties, legal rules or explanations. Return only the corrected draft."
-    ].filter(Boolean).join("\n");
-    messages[0]={...messages[0],content:String(messages[0].content||"")+"\n\n"+issueNote};
-
-    const repair=await runWorkersAIText(env,{
-      messages,
-      maxOutputTokens:Math.max(700,Math.min(4200,Number(maxOutputTokens)||1800)),
-      temperature:0
-    });
-    providerCalls+=repair.providerCalls||1;
-    if(!repair.ok){
-      lastError=repair.error||"macedonian_repair_failed";
-      break;
+  // Fast path first: deterministic corrections are effectively free and avoid
+  // an extra model round-trip for known, unambiguous contamination.
+  let deterministicCleanupApplied=false;
+  const deterministicFirst=normaliseMacedonianGeneratedText(current);
+  if(deterministicFirst!==current){
+    current=deterministicFirst;
+    deterministicCleanupApplied=true;
+    assessment=assessMacedonianOutput(current,{userText});
+    if(assessment.ok){
+      return {
+        text:current,
+        repaired:true,
+        deterministicCleanupApplied:true,
+        providerCalls:0,
+        languageAssessment:assessment,
+        repairError:null
+      };
     }
+  }
 
+  // At most one targeted language-repair inference. The previous two-retry
+  // design multiplied latency on the exact turns most likely to be linguistically
+  // weak. A second failed repair now fails closed instead of making the user wait.
+  const messages=buildMacedonianRepairMessages({text:current,userText});
+  const issueNote=[
+    "STRICT TARGETED LANGUAGE REPAIR.",
+    "The preceding draft failed the Macedonian 2017 language guard.",
+    "Detected reasons: "+(assessment.reasons||[]).join(", "),
+    assessment.foreignChars?.length ? "Forbidden/non-Macedonian Cyrillic characters detected: "+assessment.foreignChars.join(" ") : "",
+    assessment.foreignLexemes?.length ? "Foreign lexical forms detected: "+assessment.foreignLexemes.join(", ") : "",
+    assessment.malformedGeneration?.length ? "Malformed generated words detected: "+assessment.malformedGeneration.join(", ") : "",
+    assessment.structuralAnomalies?.length ? "Malformed token shapes detected: "+assessment.structuralAnomalies.join(", ") : "",
+    "Correct only language contamination and grammar. Preserve the same meaning, facts, dates, numbers, identifiers, citation markers and overall structure.",
+    "Use simple established Macedonian vocabulary. Never invent a replacement word.",
+    "Do not add new sections, examples, parties, legal rules or explanations. Return only the corrected draft."
+  ].filter(Boolean).join("\n");
+  messages[0]={...messages[0],content:String(messages[0].content||"")+"\n\n"+issueNote};
+
+  const repair=await runWorkersAIText(env,{
+    messages,
+    maxOutputTokens:Math.max(500,Math.min(2600,Number(maxOutputTokens)||1400)),
+    temperature:0,
+    sessionAffinity
+  });
+  let providerCalls=repair.providerCalls||1;
+  let lastError=null;
+
+  if(!repair.ok){
+    lastError=repair.error||"macedonian_repair_failed";
+  }else{
     const candidate=String(repair.text||"").trim();
     if(!candidate){
       lastError="macedonian_repair_empty";
-      break;
+    }else{
+      current=normaliseMacedonianGeneratedText(candidate);
+      deterministicCleanupApplied=deterministicCleanupApplied || current!==candidate;
+      assessment=assessMacedonianOutput(current,{userText});
+      lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
     }
-    current=candidate;
-    assessment=assessMacedonianOutput(current,{userText});
-    lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
-  }
-
-  let deterministicCleanupApplied=false;
-  if(!assessment.ok){
-    const deterministic=normaliseMacedonianGeneratedText(current||original);
-    const deterministicAssessment=assessMacedonianOutput(deterministic,{userText});
-    if(deterministic!==current){
-      current=deterministic;
-      deterministicCleanupApplied=true;
-    }
-    assessment=deterministicAssessment;
-    lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
   }
 
   return {
