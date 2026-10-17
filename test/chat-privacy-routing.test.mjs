@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { detectConfidentialCasePrompt } from "../src/chat-privacy.js";
+import { detectConfidentialCasePrompt, detectConfidentialDocumentText } from "../src/chat-privacy.js";
 import fs from "node:fs";
 
 const worker=fs.readFileSync("src/index.js","utf8");
@@ -86,7 +86,7 @@ test("CPR8 server fallback scrubs confidential text from public session history"
   assert.match(ui,/Privacy-redacted/);
   assert.match(ui,/чувствителната содржина е отстранета од јавната session history/);
   assert.match(ui,/chat\.title="Доверлив правен предмет"/);
-  const branch=ui.indexOf('"confidential_case_workspace_required","public_attachment_secure_workspace_required","public_history_secure_workspace_required"');
+  const branch=ui.indexOf('"confidential_case_workspace_required","public_attachment_secure_workspace_required","public_history_secure_workspace_required","confidential_document_secure_workspace_required"');
   assert.ok(branch>0);
   const block=ui.slice(branch,branch+1400);
   assert.match(block,/scrubConfidentialPublicTurn\(\{userIndex,assistantIndex\}\)/);
@@ -129,4 +129,36 @@ test("CPR12 public browser file controls route directly to Secure Case Workspace
   assert.match(ui,/attachBtn\.addEventListener\("click",openSecureAttachmentWorkspace\)/);
   assert.match(ui,/if\(e\.dataTransfer\?\.files\?\.length\) openSecureAttachmentWorkspace\(\)/);
   assert.match(ui,/if\(files\?\.length\)[\s\S]*?openSecureAttachmentWorkspace\(\)/);
+});
+
+
+test("CPR13 extracted document privacy scan detects actual identifiers but not blank legal templates",()=>{
+  const sensitive=detectConfidentialDocumentText("К.бр. 101/26\nОбвинет: Име Презиме\nЕМБГ: 0101000450001\nemail user@example.com");
+  assert.equal(sensitive.confidential,true);
+  assert.ok(sensitive.reasons.includes("national_id_number"));
+  assert.ok(sensitive.reasons.includes("email_address"));
+
+  const template=detectConfidentialDocumentText("Во образецот внесете пасош број, адреса и контакт на барателот.");
+  assert.equal(template.confidential,false);
+});
+
+test("CPR14 fingerprint guide documents are Markdown-scanned before any public provider execution",()=>{
+  const validator=worker.indexOf("async function validateGuideDocuments");
+  const scan=worker.indexOf("scanGuideAttachmentsForConfidentiality",validator);
+  const provider=worker.indexOf("runOpenAIOrchestrator(env",validator);
+  assert.ok(validator>0 && scan>validator && provider>scan);
+  assert.match(worker,/confidential_document_secure_workspace_required/);
+  assert.match(worker,/detectConfidentialDocumentText/);
+});
+
+test("CPR15 anonymous public chat requires Turnstile before guide conversion, quota and provider",()=>{
+  const handler=worker.indexOf("async function handleGPTChat");
+  const turnstile=worker.indexOf("expectedAction:TURNSTILE_CHAT_ACTION",handler);
+  const guide=worker.indexOf("validateGuideDocuments",turnstile);
+  const quota=worker.indexOf("reserveMonthlyQuota",turnstile);
+  const provider=worker.indexOf("runOpenAIOrchestrator(env",turnstile);
+  assert.ok(handler>0 && turnstile>handler && guide>turnstile && quota>guide && provider>quota);
+  assert.match(worker.slice(turnstile,guide),/free_chat_turnstile_required/);
+  assert.match(worker.slice(turnstile,guide),/providerCalled:false/);
+  assert.match(worker.slice(turnstile,guide),/quotaConsumed:false/);
 });
