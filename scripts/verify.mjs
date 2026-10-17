@@ -3,6 +3,11 @@ import fs from "node:fs";
 const required = [
   "index.html",
   "assets/analytics.js",
+  "src/version.js",
+  "assets/membership.js",
+  "assets/membership.css",
+  "assets/home.js",
+  "assets/home.css",
   "scholar/ai-legal-practice-judiciary/index.html",
   "scholar/mobile-phone-privilege/index.html",
   "scholar/electronic-ai-evidence/index.html",
@@ -84,7 +89,14 @@ if (prod.database_id === preview.database_id) throw new Error("Preview must not 
 if (!migrationTarget || migrationTarget.database_id !== preview.database_id) {
   throw new Error("Preview migration target must match Preview D1.");
 }
-if (pkg.version !== "1.3.3") throw new Error("package.json version must be 1.3.3.");
+const versionSource=fs.readFileSync("src/version.js","utf8");
+const canonicalVersion=versionSource.match(/AI_ADVOCAT_VERSION\s*=\s*"([^"]+)"/)?.[1];
+if (!canonicalVersion) throw new Error("src/version.js must export AI_ADVOCAT_VERSION.");
+if (pkg.version !== canonicalVersion) throw new Error(`package.json version must match canonical runtime version ${canonicalVersion}.`);
+if (!worker.includes(`const VERSION = "${canonicalVersion}";`) &&
+    !(worker.includes('from "./version.js"') && worker.includes("const VERSION = AI_ADVOCAT_VERSION"))) {
+  throw new Error("Worker VERSION must match or import the canonical runtime version.");
+}
 for (const [name,expected] of Object.entries({
   LIOE_RUNTIME_GOVERNANCE_ENABLED:"true",
   LIOE_POSTFLIGHT_ENABLED:"true",
