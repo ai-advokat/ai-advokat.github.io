@@ -477,7 +477,7 @@ test("CHAT41 legacy DOC is rejected in FREE document mode while DOCX remains acc
 test("CHAT42 deprecated owner key cannot silently force the paid provider",()=>{
   assert.match(chatJs,/\^AIADV-OWNER-/);
   assert.match(chatJs,/sessionStorage\.removeItem\("aiAdvokatMembershipKey"\)/);
-  assert.match(chatJs,/FREE активен · без клуч · Workers AI/);
+  assert.match(chatJs,/FREE активен · јавен текстуален chat · Workers AI/);
 });
 
 
