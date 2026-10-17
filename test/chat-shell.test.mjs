@@ -127,6 +127,12 @@ test("CHAT11 session privacy uses store:false and never creates a durable OpenAI
   assert.equal(manifest.product_experience.backend_contract.responses_store,false);
 });
 
+test("CHAT11b homepage cache-busts the current FREE chat runtime and PWA shell",()=>{
+  assert.match(html,/ai-advokat-chat\.js\?v=20261018-free-chat-runtime-v2/);
+  const serviceWorker=fs.readFileSync("service-worker.js","utf8");
+  assert.match(serviceWorker,/ai-advokat-shell-v6/);
+});
+
 test("CHAT12 GitHub Pages chat calls the Cloudflare Worker API, not the static origin",()=>{
   assert.match(chatJs,/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
   assert.match(chatJs,/CHAT_API_BASE\+"\/api\/chat"/);
