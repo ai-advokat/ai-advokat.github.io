@@ -201,12 +201,27 @@ test("GPTACT13 unified Workers AI provider contract uses the fast multilingual p
     temperature:0.1
   });
   assert.deepEqual(options.messages,[{role:"user",content:"test"}]);
-  assert.equal(options.max_tokens,900);
+  assert.equal(options.max_completion_tokens,900);
+  assert.equal(options.max_tokens,undefined);
   assert.equal(options.temperature,0.1);
+  assert.deepEqual(options.chat_template_kwargs,{enable_thinking:false});
+  assert.equal(options.reasoning_effort,null);
   assert.equal(options.max_output_tokens,undefined);
   assert.equal(options.reasoning,undefined);
-  assert.equal(options.max_completion_tokens,undefined);
-  assert.equal(options.chat_template_kwargs,undefined);
+});
+
+
+
+test("GPTACT13b GLM FREE chat cannot spend the visible-output budget on hidden thinking",()=>{
+  const options=workersAIRequestOptions({
+    model:"@cf/zai-org/glm-4.7-flash",
+    messages:[{role:"user",content:"Што е договор за вработување?"}],
+    maxOutputTokens:800
+  });
+  assert.deepEqual(options.chat_template_kwargs,{enable_thinking:false});
+  assert.equal(options.reasoning_effort,null);
+  assert.equal(options.max_completion_tokens,800);
+  assert.equal(options.max_tokens,undefined);
 });
 
 test("GPTACT14 Workers AI response extraction accepts only final answer shapes and never reasoning items",()=>{
