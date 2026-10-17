@@ -138,11 +138,12 @@ test("COP14 legal answers are answer-first, source-transparent and corpus-active
 });
 
 
-test("COP15 legal document requests can quality-escalate from FREE Workers AI to governed GPT",()=>{
-  assert.match(worker,/const anonymousLegalDocumentEscalation=/);
-  assert.match(worker,/initialPlan\.mode!==ORCHESTRATOR_MODES\.GENERAL/);
-  assert.match(worker,/attachmentCheck\.attachments\.length>0 \|\| guideDocumentCheck\.attachments\.length>0/);
-  assert.match(worker,/&& !anonymousLegalDocumentEscalation/);
+test("COP15 anonymous FREE cannot quality-escalate into paid governed OpenAI",()=>{
+  assert.doesNotMatch(worker,/const anonymousLegalDocumentEscalation=/);
+  assert.match(worker,/const useFreeWorkersAI=!membership && freeProviderReady/);
+  assert.match(worker,/if\(!membership && !useFreeWorkersAI\)/);
+  assert.match(worker,/error:"free_provider_unavailable"/);
+  assert.match(worker,/paidFallback:false/);
 });
 
 
