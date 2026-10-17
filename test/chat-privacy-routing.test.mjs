@@ -86,9 +86,9 @@ test("CPR8 server fallback scrubs confidential text from public session history"
   assert.match(ui,/Privacy-redacted/);
   assert.match(ui,/чувствителната содржина е отстранета од јавната session history/);
   assert.match(ui,/chat\.title="Доверлив правен предмет"/);
-  const branch=ui.indexOf('d?.error==="confidential_case_workspace_required"');
+  const branch=ui.indexOf('"confidential_case_workspace_required","public_attachment_secure_workspace_required","public_history_secure_workspace_required"');
   assert.ok(branch>0);
-  const block=ui.slice(branch,branch+1100);
+  const block=ui.slice(branch,branch+1400);
   assert.match(block,/scrubConfidentialPublicTurn\(\{userIndex,assistantIndex\}\)/);
   assert.match(block,/guides:\[\]/);
 });
@@ -98,4 +98,35 @@ test("CPR9 public UI exposes the private workspace before confidential data entr
   assert.match(html,/id="secureCaseWorkspaceCta"/);
   assert.match(html,/Доверлив предмет\? Отвори Secure Case Workspace/);
   assert.match(html,/href="\/casepilot-workspace\.html"/);
+});
+
+
+test("CPR10 public user attachments fail closed before quota reservation and provider execution",()=>{
+  const gate=worker.indexOf("public_attachment_secure_workspace_required");
+  const quota=worker.indexOf("reserveMonthlyQuota",gate);
+  const provider=worker.indexOf("runOpenAIOrchestrator(env",gate);
+  assert.ok(gate>0 && quota>gate && provider>quota);
+  const block=worker.slice(gate,quota);
+  assert.match(block,/providerCalled:false/);
+  assert.match(block,/quotaConsumed:false/);
+  assert.match(block,/attachmentsAccepted:false/);
+  assert.match(block,/casepilot-workspace\.html/);
+});
+
+test("CPR11 confidential public history is checked before attachment processing and provider execution",()=>{
+  const historyGate=worker.indexOf("const confidentialHistory=historyCheck.history.some");
+  const attachment=worker.indexOf("const attachmentCheck=validateChatAttachments",historyGate);
+  const provider=worker.indexOf("runOpenAIOrchestrator(env",historyGate);
+  assert.ok(historyGate>0 && attachment>historyGate && provider>attachment);
+  assert.match(worker.slice(historyGate,attachment),/public_history_secure_workspace_required/);
+  assert.match(worker.slice(historyGate,attachment),/providerCalled:false/);
+  assert.match(worker.slice(historyGate,attachment),/quotaConsumed:false/);
+});
+
+test("CPR12 public browser file controls route directly to Secure Case Workspace",()=>{
+  assert.match(ui,/function openSecureAttachmentWorkspace\(\)/);
+  assert.match(ui,/window\.location\.href="\/casepilot-workspace\.html"/);
+  assert.match(ui,/attachBtn\.addEventListener\("click",openSecureAttachmentWorkspace\)/);
+  assert.match(ui,/if\(e\.dataTransfer\?\.files\?\.length\) openSecureAttachmentWorkspace\(\)/);
+  assert.match(ui,/if\(files\?\.length\)[\s\S]*?openSecureAttachmentWorkspace\(\)/);
 });

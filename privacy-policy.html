@@ -29,7 +29,7 @@
 <main class="wrap" id="main"><article class="card">
 <h1>Политика за приватност</h1>
 <p class="lead">Оваа политика ја опишува реалната поделба меѓу јавниот AI Advokat разговор и Secure Case Workspace, кои податоци се обработуваат и кои ограничувања се вградени во платформата.</p>
-<p><strong>Верзија:</strong> 1.2 · <strong>Датум:</strong> 15 октомври 2026</p>
+<p><strong>Верзија:</strong> 1.3 · <strong>Датум:</strong> 17 октомври 2026</p>
 
 <section><h2>1. Минимизација и две различни работни зони</h2>
 <p><strong>Јавниот AI chat</strong> е наменет за општо правно истражување. Во него не внесувајте непотребни матични броеви, адреси, здравствени податоци, адвокатска или друга професионална тајна, детали од активни предмети или други доверливи информации.</p>
@@ -37,19 +37,22 @@
 </section>
 
 <section><h2>2. Јавен FREE AI chat и AI providers</h2>
-<p>Кога FREE AI режимот е активен, прашањата и дозволените прилози се испраќаат преку AI Advokat Worker инфраструктурата и може да бидат обработени од <strong>Cloudflare Workers AI</strong> и од сервисите потребни за конверзија/обработка на документот. Точниот активен provider/model се прикажува од runtime-от на порталот; порталот не треба да претставува платен OpenAI модел како активен ако тој не е навистина вклучен.</p>
-<p>Платена OpenAI патека може да се користи само кога server-side runtime контролите ја прикажуваат како активирана. Јавниот chat не треба да се третира како доверлив адвокат-клиент канал.</p>
-<p class="notice">Ако прашањето содржи обележја на конкретен доверлив правен предмет, јавниот интерфејс има privacy gate што го насочува корисникот кон Secure Case Workspace.</p>
+<p><strong>FREE јавниот chat користи Cloudflare Workers AI</strong> кога тој runtime е достапен. Анонимното FREE барање не се префрла автоматски на платениот OpenAI provider. Ако FREE provider-от е недостапен, јавниот AI дел се затвора контролирано наместо барањето да се испрати на платена трета страна.</p>
+<p><strong>Платените AI патеки</strong> може да користат OpenAI само кога server-side runtime контролите го прикажуваат како активен. OpenAI е одделен обработувач од Cloudflare; при активирана платена патека содржината потребна за одговор може да се пренесе до OpenAI. Повиците се конфигурирани со <code>store:false</code>, но тоа не го претвора јавниот chat во доверлив адвокат-клиент канал.</p>
+<p>Кога е активирано надворешно Web пребарување во платена патека, делови од прашањето може да се користат како пребарувачки поими кај надворешни услуги. Затоа во јавниот chat не внесувајте имиња, идентификатори или доверливи факти од конкретен предмет.</p>
+<p class="notice">Ако прашањето или разговорната историја содржи обележја на конкретен доверлив правен предмет, јавниот интерфејс и серверот го стопираат барањето пред AI provider и го насочуваат корисникот кон Secure Case Workspace.</p>
 </section>
 
 <section><h2>3. Прилози и разговорна сесија во јавниот chat</h2>
-<p>Избраните прилози се прикажуваат локално пред испраќање. Кога корисникот испраќа барање, прилозите потребни за тој turn може да се пренесат до server-side AI обработката. Јавниот chat не ги запишува тие прилози како трајни case documents.</p>
-<p>Кратката историја на јавниот разговор се чува во <code>sessionStorage</code> на тековната browser сесија. Во локалната историја се зачувува разговорниот текст и ограничени метаподатоци за прилозите, а не самите binary прилози. Затворањето на browser сесијата може да ја отстрани таа локална sessionStorage состојба, зависно од однесувањето на прелистувачот.</p>
-<p class="notice">Не прикачувајте доверливи клиентски документи во јавниот chat. За таков материјал користете Secure Case Workspace.</p>
+<p><strong>Јавниот AI chat не прифаќа кориснички документи, слики или други прилози од конкретни предмети.</strong> Обидот за избор, влечење или paste на датотека го насочува корисникот кон Secure Case Workspace, а серверот дополнително одбива general-chat attachment payload пред квота и пред provider execution.</p>
+<p>Исклучок се само одделно управувани, fingerprint-верификувани професионални водичи што корисникот свесно ги вчитал во приватниот Guide Vault како секундарен истражувачки материјал; тие не смеат да содржат клиентски/предметни лични податоци и не се третираат како официјален извор на право.</p>
+<p>Кратката историја на јавниот разговор се чува во <code>sessionStorage</code> на тековната browser сесија. Серверот повторно ја проверува корисничката историја за обележја на доверлив конкретен предмет пред provider execution.</p>
+<p class="notice">Модулот за престој и вработување на странци во јавниот chat проверува чек-листи и извори. Пасош, лична карта, уверение за неосудуваност, договори со лични податоци и други конкретни документи се обработуваат само во Secure Case Workspace.</p>
 </section>
 
 <section><h2>4. Secure Case Workspace</h2>
 <p>Secure Case Workspace користи посебен приватен пристап и case-scoped идентификатори. Податоците за предметот и документите што корисникот свесно ги внесува таму може да се чуваат server-side во конфигурираната Cloudflare инфраструктура потребна за функционирање на workspace-от. Во актуелната архитектура може да се користи ограничен D1 fallback storage кога одделниот R2 пат не е активен.</p>
+<p>Case Intelligence може да испрати избрана содржина од предметот до конфигурираниот AI provider, вклучително OpenAI кога таа патека е активна. Затоа Secure Case Workspace е одделен од јавниот chat, но не се претставува како end-to-end encrypted vault и не се тврди дека содржината никогаш не ја обработува надворешен AI provider.</p>
 <p>Платформата <strong>не ветува автоматски рок на бришење што не е технички спроведен</strong>. Корисникот не треба да претпоставува дека case data автоматски исчезнува по определен број денови. Политиката за чување и бришење мора да следи реално имплементирани контроли и идните промени ќе бидат одразени во оваа политика.</p>
 <p>AI анализата, extraction и working drafts во Case Workspace остануваат под Human Gate. Системот не тврди дека автоматски поднел, потпишал или испратил правен акт.</p>
 </section>
@@ -71,7 +74,7 @@
 </section>
 
 <section><h2>English summary</h2>
-<p class="notice"><strong>Privacy summary:</strong> public AI chat and Secure Case Workspace are separate. Public FREE chat may send the current question and selected attachments through the AI Advokat Worker to Cloudflare Workers AI/document-conversion services and should not be used for confidential client material. Public chat history is session-scoped in the browser and public attachments are not stored as durable case documents by that chat path. Secure Case Workspace is a separate case-scoped server-side path where case data/documents may be stored in configured Cloudflare storage; no automatic deletion period is promised unless technically implemented. AI outputs remain subject to human professional review before consequential reliance.</p>
+<p class="notice"><strong>Privacy summary:</strong> public FREE chat uses Cloudflare Workers AI when available and does not automatically fall back to paid OpenAI. User-supplied documents and images are blocked from the public chat and must be handled in Secure Case Workspace. Public chat history is session-scoped and is rechecked for confidential-case signals before provider execution. Paid AI and Case Intelligence paths may use OpenAI when enabled. Secure Case Workspace may store case data/documents in configured Cloudflare storage; no automatic deletion period is promised unless technically implemented. AI outputs remain subject to human professional review before consequential reliance.</p>
 </section>
 </article></main>
 <footer class="wrap"><div>AI Advokat · правно-информативна и истражувачка платформа</div><div class="links"><a href="/legal-notice.html">Правно известување</a><a href="/privacy-policy.html">Политика за приватност</a><a href="/ai-use-policy.html">AI и точност</a><a href="/">Почетна</a></div></footer>

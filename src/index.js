@@ -4902,8 +4902,35 @@ async function handleGPTChat(request,env){
   const historyCheck=validateChatHistory(payload.history);
   if(!historyCheck.ok) return json(request,{ok:false,error:historyCheck.error},400);
 
+  const confidentialHistory=historyCheck.history.some(item=>
+    item.role==="user" && detectConfidentialCasePrompt(item.text).confidential
+  );
+  if(confidentialHistory){
+    return json(request,{
+      ok:false,
+      error:"public_history_secure_workspace_required",
+      message:"Јавната разговорна историја содржи податоци што личат на конкретен доверлив предмет. Продолжете во Secure Case Workspace.",
+      action:{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"},
+      privacy:{providerCalled:false,quotaConsumed:false,publicChatProcessingStopped:true}
+    },422);
+  }
+
   const attachmentCheck=validateChatAttachments(payload.attachments);
   if(!attachmentCheck.ok) return json(request,{ok:false,error:attachmentCheck.error},400);
+  if(attachmentCheck.attachments.length){
+    return json(request,{
+      ok:false,
+      error:"public_attachment_secure_workspace_required",
+      message:"Документите и сликите од конкретни предмети не се обработуваат во јавниот AI chat. Користете Secure Case Workspace.",
+      action:{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"},
+      privacy:{
+        providerCalled:false,
+        quotaConsumed:false,
+        publicChatProcessingStopped:true,
+        attachmentsAccepted:false
+      }
+    },422);
+  }
 
   const guideDocumentCheck=await validateGuideDocuments(request,env,payload.guideDocuments);
   if(!guideDocumentCheck.ok) return json(request,{ok:false,error:guideDocumentCheck.error},400);
