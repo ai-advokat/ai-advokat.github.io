@@ -6729,6 +6729,19 @@ export default {
     }
 
     if (!url.pathname.startsWith("/api/")) {
+      // One public canonical content origin. The workers.dev hostname is an API/
+      // deployment surface, not a second indexable copy of the portal.
+      if(url.hostname==="ai-advokat-github-io.aiadvokat16.workers.dev"){
+        const canonical=new URL(url.pathname+url.search,"https://ai-advokat.github.io");
+        return new Response(null,{
+          status:308,
+          headers:{
+            location:canonical.href,
+            "cache-control":"public, max-age=3600",
+            "x-robots-tag":"noindex, nofollow"
+          }
+        });
+      }
       return withSecurityHeaders(await env.ASSETS.fetch(request));
     }
 
