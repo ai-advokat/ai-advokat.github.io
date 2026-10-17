@@ -3600,6 +3600,8 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
     model:result.model,
     provider:"workers_ai_private_case",
     providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
+    languageRepairProviderCalls:languagePass.providerCalls||0,
+    latencyMs:Date.now()-startedAt,
     languageStandard:languageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
@@ -4531,6 +4533,7 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
 }
 
 async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusContext=[],plan,maxOutputTokens=1800,sessionAffinity=null}={}){
+  const startedAt=Date.now();
   if(!freeWorkersAIConfigured(env)) return {ok:false,error:"free_workers_ai_not_configured"};
   const converted=await convertFreeChatAttachments(env,attachments);
   if(!converted.ok) return converted;
@@ -4899,6 +4902,10 @@ async function handleGPTChat(request,env){
 
   const q=cleanQuery(payload.q,4000);
   if(q.length<2) return json(request,{ok:false,error:"query_too_short"},400);
+  const requestedSessionId=String(payload.sessionId||"").trim();
+  const sessionAffinity=/^[A-Za-z0-9._:-]{8,120}$/.test(requestedSessionId)
+    ? "chat:"+requestedSessionId
+    : null;
 
   const confidentiality=detectConfidentialCasePrompt(q);
   if(confidentiality.confidential){
@@ -5106,13 +5113,15 @@ async function handleGPTChat(request,env){
     : missionProfile==="L3_CONSEQUENTIAL" ? 2800
       : missionProfile==="L2_STRATEGY_PROCEDURE" ? 2400
         : 2000;
-  const maxOutputTokens=fastGeneral ? 700
-    : consequentialLegal ? legalMissionOutputTokens
-      : lightweightLegal ? 2000
-        : webRequested ? 2200
-          : articleBundle.state==="matched" ? 2200
-            : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1800
-              : 1600;
+  const maxOutputTokens=fastGeneral ? 600
+    : missionProfile==="L0_INFORMATIONAL" ? 800
+      : missionProfile==="L1_VERIFIED_RESEARCH" ? 1200
+        : consequentialLegal ? legalMissionOutputTokens
+          : lightweightLegal ? 1200
+            : webRequested ? 1800
+              : articleBundle.state==="matched" ? 1600
+                : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1600
+                  : 1200;
   const reasoningEffort=fastGeneral
     ? "low"
     : missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE"
@@ -5131,7 +5140,8 @@ async function handleGPTChat(request,env){
       history:historyCheck.history,
       corpusContext,
       plan,
-      maxOutputTokens
+      maxOutputTokens,
+      sessionAffinity
     });
 
     if(!freeResult.ok){
@@ -5166,6 +5176,13 @@ async function handleGPTChat(request,env){
       languageRepaired:freeResult.languageRepaired===true,
       conversationPersistence:freeResult.conversationPersistence,
       historyItemsUsed:freeResult.historyItemsUsed,
+      contaminatedAssistantHistoryDropped:freeResult.contaminatedAssistantHistoryDropped||0,
+      performance:{
+        providerCalls:freeResult.providerCalls||1,
+        languageRepairProviderCalls:freeResult.languageRepairProviderCalls||0,
+        serverLatencyMs:freeResult.latencyMs||null,
+        promptCaching:sessionAffinity?"session_affinity_enabled":"no_session_affinity"
+      },
       sources:[],
       sourcePolicy:{
         version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
@@ -6321,8 +6338,8 @@ async function handleCapabilities(request, env) {
       centralOperatingPrompt:AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
-      macedonianRepairPostflight:"conditional_workers_ai_plus_deterministic_cleanup_v2",
-      macedonianRepairProviderBudget:"max_two_conditional_extra_calls_per_free_turn",
+      macedonianRepairPostflight:"deterministic_first_plus_single_workers_ai_repair_v3",
+      macedonianRepairProviderBudget:"max_one_conditional_extra_call_per_free_turn",
       finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
