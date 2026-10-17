@@ -7,6 +7,7 @@ import {
   buildAIAdvokatCentralPrompt
 } from "../src/ai-advokat-central-prompt.js";
 import { buildAgentPlan, orchestratorInstructions } from "../src/agent-orchestrator.js";
+import { MACEDONIAN_2017_SYSTEM_RULES } from "../src/macedonian-language-guard.js";
 
 const worker=fs.readFileSync("src/index.js","utf8");
 const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
@@ -54,7 +55,7 @@ test("COP5 builder records runtime mode/provider and private-case boundary",()=>
 });
 
 test("COP5b default Macedonian language contract is not duplicated in runtime prompt",()=>{
-  const prompt=buildAIAdvokatCentralPrompt({languageRules:AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT.slice(0,0) || undefined,mode:"general_assistant",provider:"workers_ai_free"});
+  const prompt=buildAIAdvokatCentralPrompt({languageRules:MACEDONIAN_2017_SYSTEM_RULES,mode:"general_assistant",provider:"workers_ai_free"});
   const defaultPrompt=buildAIAdvokatCentralPrompt({mode:"general_assistant",provider:"workers_ai_free"});
   const marker="PRIORITY 0 — ПРАВОПИС НА МАКЕДОНСКИОТ ЈАЗИК 2017.";
   assert.equal((defaultPrompt.match(new RegExp(marker.replace(/[.*+?^$(){}|[\]\\]/g,"\\test("COP5 builder records runtime mode/provider and private-case boundary",()=>{
