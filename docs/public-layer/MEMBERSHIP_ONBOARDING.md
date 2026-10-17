@@ -5,9 +5,9 @@
 | Plan | Monthly (MKD) | Annual (MKD) | AI questions / month | Seats | Trial |
 |---|---|---|---|---|---|
 | FREE | 0 | 0 | 10 | 1 | — |
-| START | 199 | 1.990 | 100 | 1 | — |
-| PRO | 399 | 3.990 | 500 | 1 | 7 days, after review |
-| OFFICE | 999 | 9.990 | 2.000 | 5 | — |
+| START | 490 | 4.900 | 15 | 1 | — |
+| PRO | 1.490 | 14.900 | 45 | 1 | 7 days, after review |
+| OFFICE | 4.990 | 49.900 | 150 | 5 | — |
 
 These values must match `MEMBERSHIP_PLANS` in `src/index.js`. `test/public-layer.test.mjs` fails if `membership.html` drifts.
 
@@ -22,3 +22,5 @@ These values must match `MEMBERSHIP_PLANS` in `src/index.js`. `test/public-layer
 **What v1 does not have:** card payments, stored payment data, automatic renewal, automatic charging. A trial does not convert to a paid plan automatically.
 
 **Duplicate requests.** One pending request per e-mail per 24 hours. The form answers identically either way.
+
+**Cost-control note (2026-10-17).** Anonymous FREE chat is capped at 10 monthly requests and is routed only to Workers AI when that provider is available; it must not spill into paid OpenAI execution. Paid quotas are deliberately conservative pending measured LIOE token-cost telemetry and a later weighted-credit model.
