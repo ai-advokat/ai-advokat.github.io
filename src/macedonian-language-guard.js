@@ -16,6 +16,7 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "Foreign brands, technical identifiers, API paths, file names, statutory citation labels and genuinely verbatim source quotations may remain unchanged when necessary; otherwise transcribe foreign names and terms according to Macedonian orthography.",
   "If a foreign-language source is relevant, explain it in Macedonian and clearly distinguish any short verbatim quotation from your own prose.",
   "If the user reports that a previous answer was in Bulgarian, Serbian, Russian or another wrong language, treat that report as a hard language correction: regenerate the affected answer in Macedonian from the underlying task and context instead of continuing the contaminated wording.",
+  "Treat invented or semantically broken forms such as 'измера' in phrases like 'измера на Република Северна...' as malformed generation, not as a synonym, spelling variant or automatic correction to 'измена'. Rewrite the whole phrase according to its actual context.",
   "A Macedonian-facing answer that is predominantly Bulgarian, Serbian or Russian is invalid even if it uses Cyrillic. Cyrillic alone is never evidence that the language requirement was satisfied.",
   "For a North Macedonian legal matter, never substitute Bulgarian, Serbian, Russian or another foreign law unless the user explicitly asks for that jurisdiction and the supplied governed sources support it.",
   "If the controlling North Macedonian law is not established by the supplied governed sources, say that verification is required instead of importing a neighbouring jurisdiction.",
@@ -42,7 +43,11 @@ const FOREIGN_LEXEMES=new Set([
 
 const MALFORMED_GENERATION_LEXEMES=new Set([
   "последуствување","прикаде","приречет","нотариска","данишна","волеври","домнување","переводина","доцрат","паблицни",
-  "низна","индексиот","пресуд"
+  "низна","индексиот","пресуд",
+  // Observed hallucinated/hybrid token. Do NOT reinterpret this as "измена".
+  // In phrases such as "ИЗМЕРА НА РЕПУБЛИКА СЕВЕРНА..." the whole phrase
+  // must be contextually rewritten, e.g. "за Република Северна Македонија".
+  "измера","измерата"
 ]);
 
 // Contextual phrases can be linguistically invalid even when each individual
