@@ -2,7 +2,7 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V5";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V6";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
   "PRIORITY 0 — ПРАВОПИС НА МАКЕДОНСКИОТ ЈАЗИК 2017.",
@@ -17,6 +17,8 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "If a foreign-language source is relevant, explain it in Macedonian and clearly distinguish any short verbatim quotation from your own prose.",
   "If the user reports that a previous answer was in Bulgarian, Serbian, Russian or another wrong language, treat that report as a hard language correction: regenerate the affected answer in Macedonian from the underlying task and context instead of continuing the contaminated wording.",
   "Treat invented or semantically broken forms such as 'измера' in phrases like 'измера на Република Северна...' as malformed generation, not as a synonym, spelling variant or automatic correction to 'измена'. Rewrite the whole phrase according to its actual context.",
+  "Prefer ordinary standard Macedonian words over neighbouring-language calques. For example, use назив rather than наименование, and права и обврски rather than malformed forms such as обврзки/обврЗка.",
+  "If you are uncertain whether a rare or constructed word is standard Macedonian, rewrite the sentence with simpler established Macedonian vocabulary instead of inventing a form.",
   "A Macedonian-facing answer that is predominantly Bulgarian, Serbian or Russian is invalid even if it uses Cyrillic. Cyrillic alone is never evidence that the language requirement was satisfied.",
   "For a North Macedonian legal matter, never substitute Bulgarian, Serbian, Russian or another foreign law unless the user explicitly asks for that jurisdiction and the supplied governed sources support it.",
   "If the controlling North Macedonian law is not established by the supplied governed sources, say that verification is required instead of importing a neighbouring jurisdiction.",
@@ -38,7 +40,9 @@ const FOREIGN_LEXEMES=new Set([
   "съгласно","обжалване","възражение","възражения","разноски","случайни","случаен","случайна",
   "доказателства","молител","молителя","това","тази","тези","какво","защото","когато","всички","например","ще","някой","някои","който","която","които","према","уколико","такође","овде","није",
   // Serbian/hybrid forms repeatedly observed in Macedonian-facing generations
-  "доступан","доступен","доступна","доступно","доступни","доступност","доступните"
+  "доступан","доступен","доступна","доступно","доступни","доступност","доступните",
+  // Common neighbouring-language calques observed in production
+  "наименование","године","власни","точнаја"
 ]);
 
 const MALFORMED_GENERATION_LEXEMES=new Set([
@@ -47,7 +51,12 @@ const MALFORMED_GENERATION_LEXEMES=new Set([
   // Observed hallucinated/hybrid token. Do NOT reinterpret this as "измена".
   // In phrases such as "ИЗМЕРА НА РЕПУБЛИКА СЕВЕРНА..." the whole phrase
   // must be contextually rewritten, e.g. "за Република Северна Македонија".
-  "измера","измерата"
+  "измера","измерата",
+  // Production garbage/mixed morphology: these are not acceptable Macedonian.
+  "помеѓуз","обврзки","непостојно","изминливи","безубедни","разрешни","нешејствена",
+  "заклјучување","растирање","навикавајте","оборажување","договоренијатие","нејасноти",
+  "испорачивачки","кореспондентност","поатворено","сочетост","банок","биоки","свраним",
+  "почети","одбргува","празнправ","ријекот","саответен","правопризнателството","кадринот","олностон"
 ]);
 
 // Contextual phrases can be linguistically invalid even when each individual
@@ -121,12 +130,25 @@ export function assessMacedonianOutput(text,{userText=""}={}){
     : FOREIGN_JURISDICTION_PHRASES.filter(p=>lower.includes(p));
   const malformedGeneration=[...MALFORMED_GENERATION_LEXEMES].filter(w=>words.has(w));
   const contextualContamination=CONTEXTUAL_CONTAMINATION_PHRASES.filter(p=>lower.includes(p));
+  const rawTokens=value.match(/[\p{L}\p{N}_-]+/gu)||[];
+  const mixedScriptTokens=rawTokens.filter(token=>
+    /\p{Script=Cyrillic}/u.test(token) && /[A-Za-z]/u.test(token)
+  );
+  const internalCaseAnomalies=rawTokens.filter(token=>{
+    if(/[A-Za-z]/u.test(token) || !/\p{Script=Cyrillic}/u.test(token)) return false;
+    const letters=[...token].filter(ch=>/\p{L}/u.test(ch));
+    if(letters.length<2) return false;
+    const first=letters[0];
+    return /\p{Ll}/u.test(first) && letters.slice(1).some(ch=>/\p{Lu}/u.test(ch));
+  });
+  const structuralAnomalies=[...new Set([...mixedScriptTokens,...internalCaseAnomalies])].slice(0,12);
   const reasons=[];
   if(foreignChars.length) reasons.push("foreign_cyrillic_letters");
   if(foreignLexemes.length) reasons.push("foreign_lexical_contamination");
   if(jurisdictionLeaks.length) reasons.push("foreign_jurisdiction_substitution");
   if(malformedGeneration.length) reasons.push("malformed_macedonian_generation");
   if(contextualContamination.length) reasons.push("contextual_language_contamination");
+  if(structuralAnomalies.length) reasons.push("malformed_token_shape");
   return {
     ok:reasons.length===0,
     reasons,
@@ -135,6 +157,7 @@ export function assessMacedonianOutput(text,{userText=""}={}){
     jurisdictionLeaks:jurisdictionLeaks.slice(0,8),
     malformedGeneration:malformedGeneration.slice(0,12),
     contextualContamination:contextualContamination.slice(0,12),
+    structuralAnomalies,
     standardVersion:MACEDONIAN_LANGUAGE_STANDARD_VERSION
   };
 }
@@ -162,6 +185,10 @@ const DETERMINISTIC_LEXICAL_REPLACEMENTS=[
   ["доступна","достапна"],
   ["доступно","достапно"],
   ["индексиот","индексот"],
+  ["наименование","назив"],
+  ["обврзки","обврски"],
+  ["саответен","соодветен"],
+  ["банска сметка","банкарска сметка"],
   ["искова молба","тужба"],
   ["обезщетението","надоместот на штета"],
   ["обезщетение","надомест на штета"],
@@ -284,6 +311,7 @@ export function buildMacedonianRepairMessages({text,userText=""}={}){
         "МАКЕДОНСКА ЈАЗИЧНА РЕДАКЦИЈА: Препиши го нацртот на правилен стандарден литературен македонски јазик според Правописот од 2017 година.",
         "Не користи српски, бугарски, руски или хрватски форми и не создавај непостоечки македонски зборови. Исправи очигледни јазични изобличувања и печатни или морфолошки грешки.",
         "Провери ги неприродните правни форми и, кога контекстот го бара тоа, користи природни македонски облици како: постапка, поднесување, барање, решение, притвор, жалба, полномошно, подносител и правна основа.",
+        "Користи едноставен и природен македонски речник. Кажи назив, не наименование; права и обврски, не обврзки; банкарска сметка, не банска сметка. Не создавај нови зборови.",
         "Не користи немакедонски кирилични букви. Ако се појават такви форми, замени го целиот збор со правилен македонски еквивалент наместо механички да го пресловуваш ако тоа би го нарушило значењето.",
         "Rewrite the supplied draft into correct standard literary Macedonian only.",
         "Preserve the meaning, factual claims, dates, numbers, party names, parcel/case identifiers, headings and citation markers exactly unless a word itself is foreign-language contamination or an obvious malformed Macedonian word.",
