@@ -1,0 +1,11 @@
+# AI Advokat production ownership
+# Enforcement requires repository branch protection / rulesets to require CODEOWNERS review.
+
+* @ai-advokat
+
+/.github/ @ai-advokat
+/src/ @ai-advokat
+/migrations/ @ai-advokat
+/scripts/*.sql @ai-advokat
+/wrangler*.jsonc @ai-advokat
+/privacy-policy.html @ai-advokat

@@ -58,10 +58,10 @@ test("Bureau matcher uses conservative unique second-pass matching",()=>{
   const script=fs.readFileSync("scripts/bureau-echr-fulltext-intake.mjs","utf8");
   assert.match(script,/function candidateScore/);
   assert.match(script,/function listingYear/);
-  assert.match(script,/margin<0\.035/);
-  assert.match(script,/first\.score<0\.33/);
+  assert.match(script,/margin<0\.05/);
+  assert.match(script,/first\.score<0\.55/);
   assert.match(script,/matchedIndexIds/);
-  assert.match(script,/bestIndexRecord\(link,records,matchedIndexIds\)/);
+  assert.match(script,/bestIndexRecord\(link,records,matchedIndexIds,text\)/);
   assert.match(script,/Rank against ALL records/);
   assert.doesNotMatch(script,/\.filter\(record=>!record\?\.chunk_id \|\| !usedIds\.has/);
   assert.match(script,/duplicateArtifact:Boolean/);
@@ -81,9 +81,9 @@ test("already-used best candidate is classified as duplicate artifact, never rep
 test("Bureau matcher uses extracted first-page PDF text as a binding signal",()=>{
   const script=fs.readFileSync("scripts/bureau-echr-fulltext-intake.mjs","utf8");
   assert.match(script,/function bestIndexRecord\(link,records,usedIds=new Set\(\),pdfText=""\)/);
-  assert.match(script,/slice\(0,5000\)/);
+  assert.match(script,/slice\(0,8000\)/);
   assert.match(script,/bestIndexRecord\(link,records,matchedIndexIds,text\)/);
-  assert.match(script,/link_filename_plus_pdf_first_page/);
+  assert.match(script,/independent_link_filename_and_pdf_title_containment/);
   assert.match(script,/match_diagnostics/);
 });
 

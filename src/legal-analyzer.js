@@ -3,7 +3,7 @@
 // This module never fabricates official identifiers and never presents heuristic
 // completeness as statistical confidence.
 
-export const LEGAL_ANALYZER_VERSION = "1.0.0";
+export const LEGAL_ANALYZER_VERSION = "1.0.1";
 
 export const LEGAL_ANALYZER_DIMENSIONS = Object.freeze([
   "structural_integrity",
@@ -58,7 +58,7 @@ export function extractOfficialIdentifiers(textInput){
   const ecli=matchAll(text,/\b(ECLI:[A-Z]{2}:[A-Z0-9._-]+:[0-9]{4}:[A-Z0-9._-]+)\b/giu);
   const referenceNumbers=matchAll(
     text,
-    /\b((?:У\.?бр\.?|К\.?бр\.?|КПП?\.?бр\.?|П\.?бр\.?|Т\.?бр\.?|УСПИ?\.?бр\.?|Рев\.?бр\.?)\s*[A-ZА-Я0-9./-]{2,30})\b/giu
+    /(?<![\p{L}\p{N}])((?:У\.?бр\.?|К\.?бр\.?|КПП?\.?бр\.?|П\.?бр\.?|Т\.?бр\.?|УСПИ?\.?бр\.?|Рев\.?бр\.?)\s*[\p{L}\p{N}./-]{1,29}[\p{L}\p{N}])(?![\p{L}\p{N}])/giu
   );
   return Object.freeze({
     ecli,
@@ -138,7 +138,7 @@ export function extractPartiesAndAuthority(textInput){
   const text=cleanText(textInput);
   const authority=matchAll(
     text,
-    /\b((?:Основен|Апелационен|Врховен|Управен|Виш управен|Уставен)\s+(?:кривичен\s+)?суд[^\n,.;]{0,60})/giu,
+    /(?<![\p{L}\p{N}])((?:Основен|Апелационен|Врховен|Управен|Виш управен|Уставен)\s+(?:кривичен\s+)?суд[^\n,.;]{0,60})/giu,
     1,
     5
   );
