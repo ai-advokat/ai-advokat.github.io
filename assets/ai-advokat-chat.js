@@ -705,6 +705,7 @@
         signal:abortController.signal,
         body:JSON.stringify({
           q,
+          sessionId:currentId,
           mode:activeMode(),
           webSearch:activeMode()==="web",
           guideIds:guides.map(g=>g.id),

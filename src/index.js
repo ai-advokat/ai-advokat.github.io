@@ -3600,6 +3600,8 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
     model:result.model,
     provider:"workers_ai_private_case",
     providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
+    languageRepairProviderCalls:languagePass.providerCalls||0,
+    latencyMs:Date.now()-startedAt,
     languageStandard:languageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
@@ -4447,63 +4449,77 @@ async function convertFreeChatAttachments(env,attachments){
   return {ok:true,documents:bounded,totalChars:total};
 }
 
-async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800}={}){
+async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800,sessionAffinity=null}={}){
   const original=String(text||"");
   if(!shouldEnforceMacedonianOutput(userText)){
-    return {text:original,repaired:false,providerCalls:0,languageAssessment:null};
+    return {text:original,repaired:false,providerCalls:0,languageAssessment:null,deterministicCleanupApplied:false};
   }
+
   let current=original;
   let assessment=assessMacedonianOutput(current,{userText});
   if(assessment.ok){
-    return {text:current,repaired:false,providerCalls:0,languageAssessment:assessment};
+    return {text:current,repaired:false,providerCalls:0,languageAssessment:assessment,deterministicCleanupApplied:false};
   }
 
-  let providerCalls=0;
-  let lastError=null;
-  for(let attempt=0;attempt<2 && !assessment.ok;attempt++){
-    const messages=buildMacedonianRepairMessages({text:current,userText});
-    const issueNote=[
-      "STRICT TARGETED LANGUAGE REPAIR.",
-      "The preceding draft failed the Macedonian 2017 language guard.",
-      "Detected reasons: "+(assessment.reasons||[]).join(", "),
-      assessment.foreignChars?.length ? "Forbidden/non-Macedonian Cyrillic characters detected: "+assessment.foreignChars.join(" ") : "",
-      assessment.foreignLexemes?.length ? "Foreign lexical forms detected: "+assessment.foreignLexemes.join(", ") : "",
-      "Correct only language contamination and grammar. Preserve the same meaning, facts, dates, numbers, identifiers, citation markers and overall structure.",
-      "Do not add new sections, examples, parties, legal rules or explanations. Return only the corrected draft."
-    ].filter(Boolean).join("\n");
-    messages[0]={...messages[0],content:String(messages[0].content||"")+"\n\n"+issueNote};
-
-    const repair=await runWorkersAIText(env,{
-      messages,
-      maxOutputTokens:Math.max(700,Math.min(4200,Number(maxOutputTokens)||1800)),
-      temperature:0
-    });
-    providerCalls+=repair.providerCalls||1;
-    if(!repair.ok){
-      lastError=repair.error||"macedonian_repair_failed";
-      break;
+  // Fast path first: deterministic corrections are effectively free and avoid
+  // an extra model round-trip for known, unambiguous contamination.
+  let deterministicCleanupApplied=false;
+  const deterministicFirst=normaliseMacedonianGeneratedText(current);
+  if(deterministicFirst!==current){
+    current=deterministicFirst;
+    deterministicCleanupApplied=true;
+    assessment=assessMacedonianOutput(current,{userText});
+    if(assessment.ok){
+      return {
+        text:current,
+        repaired:true,
+        deterministicCleanupApplied:true,
+        providerCalls:0,
+        languageAssessment:assessment,
+        repairError:null
+      };
     }
+  }
 
+  // At most one targeted language-repair inference. The previous two-retry
+  // design multiplied latency on the exact turns most likely to be linguistically
+  // weak. A second failed repair now fails closed instead of making the user wait.
+  const messages=buildMacedonianRepairMessages({text:current,userText});
+  const issueNote=[
+    "STRICT TARGETED LANGUAGE REPAIR.",
+    "The preceding draft failed the Macedonian 2017 language guard.",
+    "Detected reasons: "+(assessment.reasons||[]).join(", "),
+    assessment.foreignChars?.length ? "Forbidden/non-Macedonian Cyrillic characters detected: "+assessment.foreignChars.join(" ") : "",
+    assessment.foreignLexemes?.length ? "Foreign lexical forms detected: "+assessment.foreignLexemes.join(", ") : "",
+    assessment.malformedGeneration?.length ? "Malformed generated words detected: "+assessment.malformedGeneration.join(", ") : "",
+    assessment.structuralAnomalies?.length ? "Malformed token shapes detected: "+assessment.structuralAnomalies.join(", ") : "",
+    "Correct only language contamination and grammar. Preserve the same meaning, facts, dates, numbers, identifiers, citation markers and overall structure.",
+    "Use simple established Macedonian vocabulary. Never invent a replacement word.",
+    "Do not add new sections, examples, parties, legal rules or explanations. Return only the corrected draft."
+  ].filter(Boolean).join("\n");
+  messages[0]={...messages[0],content:String(messages[0].content||"")+"\n\n"+issueNote};
+
+  const repair=await runWorkersAIText(env,{
+    messages,
+    maxOutputTokens:Math.max(500,Math.min(2600,Number(maxOutputTokens)||1400)),
+    temperature:0,
+    sessionAffinity
+  });
+  let providerCalls=repair.providerCalls||1;
+  let lastError=null;
+
+  if(!repair.ok){
+    lastError=repair.error||"macedonian_repair_failed";
+  }else{
     const candidate=String(repair.text||"").trim();
     if(!candidate){
       lastError="macedonian_repair_empty";
-      break;
+    }else{
+      current=normaliseMacedonianGeneratedText(candidate);
+      deterministicCleanupApplied=deterministicCleanupApplied || current!==candidate;
+      assessment=assessMacedonianOutput(current,{userText});
+      lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
     }
-    current=candidate;
-    assessment=assessMacedonianOutput(current,{userText});
-    lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
-  }
-
-  let deterministicCleanupApplied=false;
-  if(!assessment.ok){
-    const deterministic=normaliseMacedonianGeneratedText(current||original);
-    const deterministicAssessment=assessMacedonianOutput(deterministic,{userText});
-    if(deterministic!==current){
-      current=deterministic;
-      deterministicCleanupApplied=true;
-    }
-    assessment=deterministicAssessment;
-    lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
   }
 
   return {
@@ -4516,14 +4532,21 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
   };
 }
 
-async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusContext=[],plan,maxOutputTokens=1800}={}){
+async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusContext=[],plan,maxOutputTokens=1800,sessionAffinity=null}={}){
+  const startedAt=Date.now();
   if(!freeWorkersAIConfigured(env)) return {ok:false,error:"free_workers_ai_not_configured"};
   const converted=await convertFreeChatAttachments(env,attachments);
   if(!converted.ok) return converted;
 
-  const historyText=(Array.isArray(history)?history:[])
+  const languageRequired=shouldEnforceMacedonianOutput(q);
+  // Do not feed a linguistically contaminated assistant answer back into the
+  // next Macedonian turn. User history is preserved; only failed assistant
+  // generations are dropped so the model cannot learn/mimic its own bad output.
+  const safeHistory=(Array.isArray(history)?history:[])
     .slice(-8)
-    .map(item=>(item.role==="assistant"?"ASSISTANT":"USER")+": "+String(item.text||"").slice(0,1800))
+    .filter(item=>item?.role!=="assistant" || !languageRequired || assessMacedonianOutput(item?.text,{userText:q}).ok);
+  const historyText=safeHistory
+    .map(item=>(item.role==="assistant"?"ASSISTANT":"USER")+": "+String(item.text||"").slice(0,1600))
     .join("\n");
   const documentText=converted.documents.map((doc,index)=>
     "[DOCUMENT "+(index+1)+"] "+doc.name+"\n"+doc.text
@@ -4538,6 +4561,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     extraRules:[
       "You are running in AI Advokat FREE Workers AI mode.",
       "If the user writes in Macedonian or recognisable Macedonian Latin transliteration, answer in standard literary Macedonian Cyrillic. The Macedonian 2017 language contract above is mandatory unless the user explicitly requests another language.",
+      "Use simple, natural Macedonian vocabulary and short clear sentences. Prefer established forms such as назив, работник, работодавач, работно место, плата, права и обврски. Never invent words or use neighbouring-language calques such as наименование.",
+      "For a simple definition or everyday legal-information question, answer directly in 4-8 concise sentences. Do not produce a table, multi-column pseudo-table or long checklist unless the user asks for one.",
       missionProfile==="GENERAL_BYPASS"
         ? "For ordinary non-legal tasks, use normal general model reasoning and knowledge. Do not force legal-source boilerplate."
         : "For legal/current-law claims, governed AI Advokat context controls. General model knowledge may explain generic concepts but may not establish current law, deadlines, jurisdiction, mandatory documents, remedies or legal effect.",
@@ -4561,18 +4586,21 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     documentText ? "ATTACHED DOCUMENT TEXT:\n"+documentText : "",
     governed ? "GOVERNED AI ADVOKAT CONTEXT:\n"+governed : "",
     "",
-    "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
+    missionProfile==="L0_INFORMATIONAL"
+      ? "Answer directly and concisely. Use ordinary standard Macedonian; no table unless requested."
+      : "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
   ].filter(Boolean).join("\n\n");
 
   const messages=[
     {role:"system",content:system},
     {role:"user",content:user}
   ];
-  const tokenLimit=Math.max(900,Math.min(4800,Number(maxOutputTokens)||3200));
+  const tokenLimit=Math.max(400,Math.min(3200,Number(maxOutputTokens)||1400));
   const result=await runWorkersAIText(env,{
     messages,
     maxOutputTokens:tokenLimit,
-    temperature:0.1
+    temperature:0.05,
+    sessionAffinity
   });
   if(!result.ok){
     return {
@@ -4588,9 +4616,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   const languagePass=await repairWorkersAIMacedonianIfNeeded(env,{
     text:result.text,
     userText:q,
-    maxOutputTokens:tokenLimit
+    maxOutputTokens:tokenLimit,
+    sessionAffinity
   });
-  const languageRequired=shouldEnforceMacedonianOutput(q);
   if(languageRequired && languagePass.languageAssessment?.ok!==true){
     return {
       ok:false,
@@ -4624,7 +4652,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     webSearchUsed:false,
     sources:[],
     conversationPersistence:"browser_session_only_app_no_server_conversation_store",
-    historyItemsUsed:Array.isArray(history)?history.length:0,
+    historyItemsUsed:safeHistory.length,
+    contaminatedAssistantHistoryDropped:Math.max(0,(Array.isArray(history)?history.length:0)-safeHistory.length),
     humanGate:"required"
   };
 }
@@ -4873,6 +4902,10 @@ async function handleGPTChat(request,env){
 
   const q=cleanQuery(payload.q,4000);
   if(q.length<2) return json(request,{ok:false,error:"query_too_short"},400);
+  const requestedSessionId=String(payload.sessionId||"").trim();
+  const sessionAffinity=/^[A-Za-z0-9._:-]{8,120}$/.test(requestedSessionId)
+    ? "chat:"+requestedSessionId
+    : null;
 
   const confidentiality=detectConfidentialCasePrompt(q);
   if(confidentiality.confidential){
@@ -5080,13 +5113,15 @@ async function handleGPTChat(request,env){
     : missionProfile==="L3_CONSEQUENTIAL" ? 2800
       : missionProfile==="L2_STRATEGY_PROCEDURE" ? 2400
         : 2000;
-  const maxOutputTokens=fastGeneral ? 700
-    : consequentialLegal ? legalMissionOutputTokens
-      : lightweightLegal ? 2000
-        : webRequested ? 2200
-          : articleBundle.state==="matched" ? 2200
-            : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1800
-              : 1600;
+  const maxOutputTokens=fastGeneral ? 600
+    : missionProfile==="L0_INFORMATIONAL" ? 800
+      : missionProfile==="L1_VERIFIED_RESEARCH" ? 1200
+        : consequentialLegal ? legalMissionOutputTokens
+          : lightweightLegal ? 1200
+            : webRequested ? 1800
+              : articleBundle.state==="matched" ? 1600
+                : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1600
+                  : 1200;
   const reasoningEffort=fastGeneral
     ? "low"
     : missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE"
@@ -5105,7 +5140,8 @@ async function handleGPTChat(request,env){
       history:historyCheck.history,
       corpusContext,
       plan,
-      maxOutputTokens
+      maxOutputTokens,
+      sessionAffinity
     });
 
     if(!freeResult.ok){
@@ -5140,6 +5176,13 @@ async function handleGPTChat(request,env){
       languageRepaired:freeResult.languageRepaired===true,
       conversationPersistence:freeResult.conversationPersistence,
       historyItemsUsed:freeResult.historyItemsUsed,
+      contaminatedAssistantHistoryDropped:freeResult.contaminatedAssistantHistoryDropped||0,
+      performance:{
+        providerCalls:freeResult.providerCalls||1,
+        languageRepairProviderCalls:freeResult.languageRepairProviderCalls||0,
+        serverLatencyMs:freeResult.latencyMs||null,
+        promptCaching:sessionAffinity?"session_affinity_enabled":"no_session_affinity"
+      },
       sources:[],
       sourcePolicy:{
         version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
@@ -6295,8 +6338,8 @@ async function handleCapabilities(request, env) {
       centralOperatingPrompt:AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
-      macedonianRepairPostflight:"conditional_workers_ai_plus_deterministic_cleanup_v2",
-      macedonianRepairProviderBudget:"max_two_conditional_extra_calls_per_free_turn",
+      macedonianRepairPostflight:"deterministic_first_plus_single_workers_ai_repair_v3",
+      macedonianRepairProviderBudget:"max_one_conditional_extra_call_per_free_turn",
       finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",

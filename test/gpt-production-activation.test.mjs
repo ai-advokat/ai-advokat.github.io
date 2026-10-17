@@ -30,7 +30,7 @@ test("GPTACT1 production runtime is armed for the approved model but contains no
   assert.equal(config.ai?.binding,"AI");
   assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
   assert.equal(config.vars.WORKERS_AI_MARKDOWN_ENABLED,"true");
-  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/openai/gpt-oss-20b");
+  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/zai-org/glm-4.7-flash");
   assert.doesNotMatch(wrangler,/OPENAI_API_KEY/);
   assert.doesNotMatch(wrangler,/sk-[A-Za-z0-9_-]{20,}/);
 });
@@ -177,7 +177,7 @@ test("GPTACT11 Workers AI remains explicit, bounded and available only as fallba
   assert.match(worker,/cloudflare_workers_ai_to_markdown/);
   assert.match(worker,/FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED/);
   assert.match(worker,/workers-ai-provider\.js/);
-  assert.match(wrangler,/"WORKERS_AI_CHAT_MODEL": "@cf\/openai\/gpt-oss-20b"/);
+  assert.match(wrangler,/"WORKERS_AI_CHAT_MODEL": "@cf\/zai-org\/glm-4.7-flash"/);
   assert.doesNotMatch(workflow,/Live FREE Workers AI multi-scenario runtime UAT/);
   assert.doesNotMatch(worker,/error:"free_mode_professional_postflight_required"/);
   assert.match(worker,/FREE provider output is a working research\/draft result only/);
@@ -192,19 +192,19 @@ test("GPTACT12 fallback document prompt still treats extracted body as content a
 });
 
 
-test("GPTACT13 unified Workers AI provider contract uses one configured production model",()=>{
-  assert.equal(WORKERS_AI_TEXT_MODEL_DEFAULT,"@cf/openai/gpt-oss-20b");
+test("GPTACT13 unified Workers AI provider contract uses the fast multilingual production model",()=>{
+  assert.equal(WORKERS_AI_TEXT_MODEL_DEFAULT,"@cf/zai-org/glm-4.7-flash");
   const options=workersAIRequestOptions({
     model:WORKERS_AI_TEXT_MODEL_DEFAULT,
     messages:[{role:"user",content:"test"}],
     maxOutputTokens:900,
     temperature:0.1
   });
-  assert.deepEqual(options.input,[{role:"user",content:"test"}]);
-  assert.equal(options.max_output_tokens,900);
-  assert.deepEqual(options.reasoning,{effort:"low"});
-  assert.equal(options.max_tokens,undefined);
-  assert.equal(options.temperature,undefined);
+  assert.deepEqual(options.messages,[{role:"user",content:"test"}]);
+  assert.equal(options.max_tokens,900);
+  assert.equal(options.temperature,0.1);
+  assert.equal(options.max_output_tokens,undefined);
+  assert.equal(options.reasoning,undefined);
   assert.equal(options.max_completion_tokens,undefined);
   assert.equal(options.chat_template_kwargs,undefined);
 });
@@ -225,7 +225,7 @@ test("GPTACT14 Workers AI response extraction accepts only final answer shapes a
 
 test("GPTACT15 Workers AI provider contract fails explicitly on empty final output",async()=>{
   const env={
-    WORKERS_AI_CHAT_MODEL:"@cf/openai/gpt-oss-20b",
+    WORKERS_AI_CHAT_MODEL:"@cf/zai-org/glm-4.7-flash",
     AI:{run:async()=>({response:"",usage:{prompt_tokens:10,completion_tokens:0}})}
   };
   const result=await runWorkersAIText(env,{
@@ -234,9 +234,25 @@ test("GPTACT15 Workers AI provider contract fails explicitly on empty final outp
   });
   assert.equal(result.ok,false);
   assert.equal(result.error,"workers_ai_empty_response");
-  assert.equal(result.model,"@cf/openai/gpt-oss-20b");
+  assert.equal(result.model,"@cf/zai-org/glm-4.7-flash");
   assert.equal(result.providerCalls,1);
   assert.equal(result.shape.type,"object");
+});
+
+test("GPTACT15b Workers AI session affinity is forwarded only as a safe binding header",async()=>{
+  let seen=null;
+  const env={
+    WORKERS_AI_CHAT_MODEL:"@cf/zai-org/glm-4.7-flash",
+    AI:{run:async(...args)=>{seen=args;return {response:"Здраво"};}}
+  };
+  const result=await runWorkersAIText(env,{
+    messages:[{role:"user",content:"test"}],
+    maxOutputTokens:400,
+    sessionAffinity:"chat:12345678-abcd"
+  });
+  assert.equal(result.ok,true);
+  assert.equal(seen.length,3);
+  assert.equal(seen[2].extraHeaders["x-session-affinity"],"chat:12345678-abcd");
 });
 
 test("GPTACT16 GPT-OSS provider diagnostics expose only safe completion metadata",async()=>{

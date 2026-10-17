@@ -61,9 +61,18 @@ export function buildAIAdvokatCentralPrompt({
   extraRules=[]
 }={}){
   const extras=Array.isArray(extraRules)?extraRules:[extraRules];
+  const requestedLanguageRules=String(languageRules||"").trim();
+  // The default Macedonian 2017 contract is already physically first in
+  // AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT. Do not duplicate it on every request:
+  // duplication increases prefill latency and can make smaller FREE models
+  // over-focus on language mechanics instead of the user's task.
+  const extraLanguageRules=requestedLanguageRules
+    && requestedLanguageRules!==MACEDONIAN_2017_SYSTEM_RULES.trim()
+      ? requestedLanguageRules
+      : "";
   return [
     AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,
-    languageRules ? String(languageRules).trim() : "",
+    extraLanguageRules,
     "RUNTIME MODE: "+String(mode||"auto")+". PROVIDER CLASS: "+String(provider||"unspecified")+".",
     privateCase
       ? "PRIVATE CASE MODE: case-scoped factual material may be used only inside the authorised private workspace boundary; preserve provenance and do not leak case facts into public-chat assumptions."

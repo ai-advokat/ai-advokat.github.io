@@ -781,8 +781,10 @@ describe("production AI binding guard", () => {
     assert.equal((repairHelper.match(/runWorkersAIText\(/g) || []).length, 1, "Macedonian repair owns one provider call-site regardless of retry count");
     assert.match(repairHelper,/if\(!shouldEnforceMacedonianOutput\(userText\)\)/, "repair must be skipped when Macedonian output is not required");
     assert.match(repairHelper,/if\(assessment\.ok\)/, "repair must be skipped when the first answer already passes the language guard");
-    assert.match(repairHelper,/for\(let attempt=0;attempt<2 && !assessment\.ok;attempt\+\+\)/, "language repair retries must be capped at two conditional attempts");
-    assert.match(repairHelper,/STRICT TARGETED LANGUAGE REPAIR/, "second-stage repair must stay targeted to language quality rather than re-analysis");
+    assert.match(repairHelper,/const deterministicFirst=normaliseMacedonianGeneratedText\(current\)/, "known contamination must be repaired deterministically before another inference");
+    assert.doesNotMatch(repairHelper,/for\(let attempt=0;attempt<2 && !assessment\.ok;attempt\+\+\)/, "FREE language repair must not use the former two-retry loop");
+    assert.equal((repairHelper.match(/runWorkersAIText\(/g)||[]).length,1,"language repair has exactly one bounded provider call-site");
+    assert.match(repairHelper,/STRICT TARGETED LANGUAGE REPAIR/, "the one repair inference must stay targeted to language quality rather than re-analysis");
 
     const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function handleGPTChat("));
     assert.equal((helper.match(/runWorkersAIText\(/g) || []).length, 1, "FREE public helper delegates one primary generation to the central provider contract");
