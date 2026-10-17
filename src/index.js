@@ -216,9 +216,9 @@ const ORCID = Object.freeze({
 
 const MEMBERSHIP_PLANS = Object.freeze({
   free: { code:"free", name:"FREE", monthlyPriceMkd:0, annualPriceMkd:0, monthlyQuota:FREE_MONTHLY_ASSISTANT_QUOTA, seats:1, trialDays:0 },
-  start: { code:"start", name:"START", monthlyPriceMkd:490, annualPriceMkd:4900, monthlyQuota:15, seats:1, trialDays:0 },
-  pro: { code:"pro", name:"PRO", monthlyPriceMkd:1490, annualPriceMkd:14900, monthlyQuota:45, seats:1, trialDays:7 },
-  office: { code:"office", name:"OFFICE", monthlyPriceMkd:4990, annualPriceMkd:49900, monthlyQuota:150, seats:5, trialDays:0 }
+  start: { code:"start", name:"START", monthlyPriceMkd:490, annualPriceMkd:4900, monthlyQuota:10, seats:1, trialDays:0 },
+  pro: { code:"pro", name:"PRO", monthlyPriceMkd:1490, annualPriceMkd:14900, monthlyQuota:30, seats:1, trialDays:7 },
+  office: { code:"office", name:"OFFICE", monthlyPriceMkd:4990, annualPriceMkd:49900, monthlyQuota:100, seats:5, trialDays:0 }
 });
 
 function publicMembershipPlans() {
