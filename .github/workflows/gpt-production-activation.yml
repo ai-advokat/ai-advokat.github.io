@@ -96,7 +96,7 @@ jobs:
           if(c.vars?.FREE_CHAT_PROVIDER==="workers_ai"){
             if(c.ai?.binding!=="AI") throw new Error("FREE Workers AI binding missing");
             if(c.vars?.WORKERS_AI_MARKDOWN_ENABLED!=="true") throw new Error("Workers AI Markdown conversion not armed");
-            if(c.vars?.WORKERS_AI_CHAT_MODEL!=="@cf/openai/gpt-oss-20b") throw new Error("Unexpected FREE Workers AI model");
+            if(c.vars?.WORKERS_AI_CHAT_MODEL!=="@cf/zai-org/glm-4.7-flash") throw new Error("Unexpected FREE Workers AI model");
           }
           const source=fs.readFileSync("src/agent-orchestrator.js","utf8");
           if(source.includes("/v1/conversations")) throw new Error("Durable Conversations API must not be used");
