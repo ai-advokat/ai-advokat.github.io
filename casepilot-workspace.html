@@ -175,6 +175,12 @@
       <h2>4. Case Intelligence Engine</h2>
       <p class="muted">Го анализира целиот приватен предмет како единствен доказен record: документи → факти → хронологија → имот/лица/договори → контрадикции → missing evidence → применливо право → reviewed case law → стратегија. Секој материјален факт мора да остане врзан за Document ID и page/locator.</p>
       <div class="notice"><b>Accuracy-First</b>AI Advokat не прикажува измислен „99,99% успех“. Наместо тоа покажува Evidence Coverage, Current-Law Verification, контрадикции и празнини во доказите. Секој резултат е WORKING ANALYSIS додека Human Gate не е одобрен.</div>
+      <div class="notice" style="margin-top:12px">
+        <label for="externalAiConsent" style="display:flex;gap:10px;align-items:flex-start">
+          <input id="externalAiConsent" type="checkbox" style="width:auto;margin-top:4px">
+          <span><b>Надворешна AI обработка — изрична потврда</b>Кога governed OpenAI патеката е активна, избраната case-scoped содржина може да биде испратена до OpenAI за конкретната анализа/нацрт. Потврдата важи само додека полето е означено; без неа платениот надворешен provider е fail-closed.</span>
+        </label>
+      </div>
       <div class="actions">
         <button id="analyzeEntireCase" class="primary" type="button">Анализирај го целиот предмет</button>
         <button id="refreshIntelligence" class="secondary" type="button">Освежи readiness</button>
