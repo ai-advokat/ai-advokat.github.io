@@ -40,6 +40,17 @@ export function workersAIRequestOptions({
   };
   if(responseFormat) base.response_format=responseFormat;
 
+  // GLM-4.7-Flash is a reasoning-capable model and may otherwise spend the
+  // entire small FREE completion budget on hidden thinking, returning no final
+  // assistant text. FREE chat needs low-latency visible answers, so thinking is
+  // disabled explicitly and the current completion-token field is used.
+  if(resolved.includes("/glm-4.7-flash")){
+    base.chat_template_kwargs={enable_thinking:false};
+    base.reasoning_effort=null;
+    base.max_completion_tokens=maxTokens;
+    delete base.max_tokens;
+  }
+
   // Gemma reasoning must be explicitly disabled when this model is selected.
   if(resolved.includes("/gemma-4-")){
     base.chat_template_kwargs={enable_thinking:false};
