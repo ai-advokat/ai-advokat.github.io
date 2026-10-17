@@ -12,12 +12,13 @@ const { worker, workerModule, security } = await loadWorker();
 const BASE = "https://ai-advokat-github-io.aiadvokat16.workers.dev";
 const SALT = "test-salt-" + "x".repeat(40);
 const TURNSTILE_SECRET = "test-turnstile-secret";
+const MEMBERSHIP_KEY_PEPPER = "test-membership-pepper-" + "p".repeat(40);
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
 
-function freshEnv({ ai = null, salt = SALT, turnstile = TURNSTILE_SECRET } = {}) {
+function freshEnv({ ai = null, salt = SALT, turnstile = TURNSTILE_SECRET, membershipPepper = MEMBERSHIP_KEY_PEPPER } = {}) {
   const { d1, raw, stats } = createD1();
   // Synthetic article fixtures (the real corpus is loaded by the ingest workflows).
   // ZRO deliberately contains very common words ("како", "договор") so a lexical
@@ -39,6 +40,7 @@ function freshEnv({ ai = null, salt = SALT, turnstile = TURNSTILE_SECRET } = {})
   // null = secret deliberately absent (undefined would silently take the default)
   if (salt !== null) env.RATE_LIMIT_SALT = salt;
   if (turnstile !== null) env.TURNSTILE_SECRET = turnstile;
+  if (membershipPepper !== null) env.MEMBERSHIP_KEY_PEPPER = membershipPepper;
   if (ai) env.AI = ai;
   return { env, raw, stats };
 }
@@ -51,9 +53,12 @@ function seedMembership(raw, { key, quota, plan = "pro" }) {
     `INSERT INTO membership_entitlements(id,account_id,plan_code,status,billing_cycle,monthly_quota)
      VALUES (?,?,?,'active','monthly',?)`
   ).run(crypto.randomUUID(), accountId, plan, quota);
-  const hash = crypto.createHash("sha256").update(key).digest("hex");
-  raw.prepare("INSERT INTO membership_access_keys(id,account_id,key_hash,key_prefix,status) VALUES (?,?,?,?,'active')")
-    .run(crypto.randomUUID(), accountId, hash, key.slice(0, 8));
+  const hash = crypto.createHmac("sha256", MEMBERSHIP_KEY_PEPPER)
+    .update("ai-advokat/membership-key/v2/"+key)
+    .digest("hex");
+  const fingerprint="hmac2:"+hash.slice(0,12);
+  raw.prepare("INSERT INTO membership_access_keys(id,account_id,key_hash,key_prefix,status,key_hash_scheme,key_fingerprint) VALUES (?,?,?,?,'active','hmac_sha256_v2',?)")
+    .run(crypto.randomUUID(), accountId, hash, fingerprint, fingerprint);
   return accountId;
 }
 
@@ -155,9 +160,9 @@ describe("assistant — anonymous FREE quota", () => {
 
   test("A3b parallel requests through the Worker never exceed a member's quota", async () => {
     const { env, raw } = freshEnv();
-    seedMembership(raw, { key: "AIADV-parallel-key", quota: 3 });
+    seedMembership(raw, { key: "AIADV-parallel-key-2026-test-0001", quota: 3 });
     const responses = await Promise.all(
-      Array.from({ length: 5 }, () => call(env, assistantRequest("ЗРО член 12", { key: "AIADV-parallel-key", ip: nextIp() })))
+      Array.from({ length: 5 }, () => call(env, assistantRequest("ЗРО член 12", { key: "AIADV-parallel-key-2026-test-0001", ip: nextIp() })))
     );
     assert.equal(responses.filter((r) => r.status === 200).length, 3);
     assert.equal(responses.filter((r) => r.status === 429).length, 2);
@@ -170,17 +175,17 @@ describe("assistant — anonymous FREE quota", () => {
     const subject = await security.anonymousSubject(assistantRequest("x", { ip }), env);
     raw.prepare("INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests) VALUES (?,?,?)")
       .run(subject, security.currentPeriod(), security.FREE_MONTHLY_ASSISTANT_QUOTA);
-    const r = await call(env, assistantRequest("ЗРО член 12", { ip, key: "AIADV-not-a-real-key" }));
+    const r = await call(env, assistantRequest("ЗРО член 12", { ip, key: "AIADV-not-a-real-key-2026-test-0001" }));
     assert.equal(r.status, 429);
     assert.equal(r.body.error, "free_quota_exhausted");
   });
 
   test("A5 a valid plan is limited by its own entitlement quota", async () => {
     const { env, raw } = freshEnv();
-    seedMembership(raw, { key: "AIADV-valid-key", quota: 2, plan: "start" });
+    seedMembership(raw, { key: "AIADV-valid-key-2026-test-00000001", quota: 2, plan: "start" });
     const statuses = [];
     for (let i = 0; i < 3; i++) {
-      statuses.push(await call(env, assistantRequest("ЗРО член 12", { key: "AIADV-valid-key", ip: nextIp() })));
+      statuses.push(await call(env, assistantRequest("ЗРО член 12", { key: "AIADV-valid-key-2026-test-00000001", ip: nextIp() })));
     }
     assert.deepEqual(statuses.map((r) => r.status), [200, 200, 429]);
     assert.equal(statuses[0].body.membership.planCode, "start");

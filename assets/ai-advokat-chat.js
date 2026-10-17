@@ -32,6 +32,9 @@
   const modeCaption=$("#aiChatModeCaption");
   const chatMembershipState=$("#aiChatMembershipState");
   const ownerState=$("#aiChatOwnerState");
+  const chatTurnstileRow=$("#aiChatTurnstileRow");
+  const chatTurnstileBox=$("#aiChatTurnstileBox");
+  const chatTurnstileState=$("#aiChatTurnstileState");
   document.querySelectorAll("[data-foreign-static]").forEach(btn=>{
     btn.addEventListener("click",()=>loadForeignEmploymentPrompt(btn));
   });
@@ -53,6 +56,9 @@
   let attachments=[];
   let guideRegistryPromise=null;
   let currentId=null;
+  let chatTurnstileToken=null;
+  let chatTurnstileWidget=null;
+  let chatTurnstileReady=false;
   const chats=new Map();
 
   const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
@@ -506,6 +512,7 @@
   }
 
   syncChatMembershipState();
+  initChatTurnstile();
 
   attachBtn.addEventListener("click",openSecureAttachmentWorkspace);
   if(attachWideBtn) attachWideBtn.addEventListener("click",openSecureAttachmentWorkspace);
@@ -546,18 +553,92 @@
     return {kind:"file",name:file.name,mime,base64:comma>=0?dataUrl.slice(comma+1):""};
   }
 
+  function membershipKey(){
+    return sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
+  }
   function membershipHeaders(){
-    const key=sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
+    const key=membershipKey();
     return key?{"authorization":"Bearer "+key}:{};
   }
+  function hasMembershipKey(){ return Boolean(membershipKey()); }
+
   function syncChatMembershipState(){
-    const legacyOwner=sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
+    const legacyOwner=membershipKey();
     if(/^AIADV-OWNER-/i.test(legacyOwner)){
       sessionStorage.removeItem("aiAdvokatMembershipKey");
       sessionStorage.removeItem("ai_advokat_membership_key");
     }
-    if(chatMembershipState) chatMembershipState.textContent="FREE активен · јавен текстуален chat · Workers AI";
-    if(ownerState) ownerState.textContent="FREE активен · јавен текстуален chat · Workers AI";
+    const member=hasMembershipKey();
+    const label=member
+      ? "Членство · приватен session key · provider според активниот план"
+      : "FREE активен · јавен текстуален chat · Workers AI";
+    if(chatMembershipState) chatMembershipState.textContent=label;
+    if(ownerState) ownerState.textContent=label;
+    if(chatTurnstileRow) chatTurnstileRow.hidden=member;
+  }
+
+  function resetChatTurnstile(){
+    chatTurnstileToken=null;
+    if(chatTurnstileWidget!==null && window.turnstile){
+      try{window.turnstile.reset(chatTurnstileWidget);}catch{}
+    }
+    if(chatTurnstileState && !hasMembershipKey()){
+      chatTurnstileState.textContent="Потврдете ја анти-бот проверката пред следното FREE барање.";
+    }
+  }
+
+  async function initChatTurnstile(){
+    syncChatMembershipState();
+    if(hasMembershipKey()){
+      chatTurnstileReady=true;
+      if(chatTurnstileState) chatTurnstileState.textContent="Turnstile не е потребен за membership key.";
+      return;
+    }
+    if(chatTurnstileRow) chatTurnstileRow.hidden=false;
+    let siteKey=null;
+    try{
+      const r=await fetch(CHAT_API_BASE+"/api/membership/plans",{headers:{accept:"application/json"}});
+      const d=await r.json().catch(()=>null);
+      if(r.ok&&d?.ok) siteKey=d.turnstileSiteKey||null;
+    }catch{}
+    if(!siteKey){
+      if(chatTurnstileState) chatTurnstileState.textContent="FREE anti-bot проверката е привремено недостапна.";
+      return;
+    }
+
+    const render=()=>{
+      if(!window.turnstile || !chatTurnstileBox) return false;
+      if(chatTurnstileWidget!==null) return true;
+      chatTurnstileWidget=window.turnstile.render(chatTurnstileBox,{
+        sitekey:siteKey,
+        action:"public_chat",
+        callback:token=>{
+          chatTurnstileToken=String(token||"");
+          chatTurnstileReady=true;
+          if(chatTurnstileState) chatTurnstileState.textContent="Анти-бот проверката е успешна.";
+        },
+        "expired-callback":()=>{
+          chatTurnstileToken=null;
+          if(chatTurnstileState) chatTurnstileState.textContent="Анти-бот проверката истече. Потврдете повторно.";
+        },
+        "error-callback":()=>{
+          chatTurnstileToken=null;
+          chatTurnstileReady=false;
+          if(chatTurnstileState) chatTurnstileState.textContent="Анти-бот проверката не успеа. Обидете се повторно.";
+        }
+      });
+      return true;
+    };
+    if(render()) return;
+    const started=Date.now();
+    const wait=setInterval(()=>{
+      if(render() || Date.now()-started>10000){
+        clearInterval(wait);
+        if(chatTurnstileWidget===null && chatTurnstileState){
+          chatTurnstileState.textContent="FREE anti-bot проверката не се вчита. Освежете ја страницата.";
+        }
+      }
+    },200);
   }
 
 
@@ -678,6 +759,16 @@
       return;
     }
 
+    if(!hasMembershipKey() && !chatTurnstileToken){
+      if(chatTurnstileState){
+        chatTurnstileState.textContent=chatTurnstileReady
+          ? "Потврдете ја Turnstile проверката пред FREE барањето."
+          : "Почекајте или повторете ја anti-bot проверката за FREE chat.";
+      }
+      chatTurnstileBox?.scrollIntoView({behavior:"smooth",block:"nearest"});
+      return;
+    }
+
     const chat=current();setTitle(chat,q);
     const historyForApi=chat.messages
       .filter(m=>(m.role==="user"||m.role==="assistant") && m.text && m.text!=="Обработувам…")
@@ -710,7 +801,8 @@
           guideIds:guides.map(g=>g.id),
           guideDocuments,
           history:historyForApi,
-          attachments:encoded
+          attachments:encoded,
+          turnstileToken:chatTurnstileToken
         })
       });
       const d=await r.json().catch(()=>null);
@@ -745,13 +837,20 @@
                       ?"AI Advokat catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
                       :(d.webSearchUsed===true?"External legal research · Web извори":"GPT general/proactive assistance")
         });
-      }else if(["confidential_case_workspace_required","public_attachment_secure_workspace_required","public_history_secure_workspace_required"].includes(d?.error)){
+      }else if(["confidential_case_workspace_required","public_attachment_secure_workspace_required","public_history_secure_workspace_required","confidential_document_secure_workspace_required"].includes(d?.error)){
         scrubConfidentialPublicTurn({userIndex,assistantIndex});
         updateAssistantPlaceholder(assistantIndex,{
           ...confidentialCaseHandoffMessage(),
           meta:"Privacy gate · public GPT call stopped · server preflight",
           guides:[],
           action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"}
+        });
+      }else if(["free_chat_turnstile_required","free_chat_turnstile_failed"].includes(d?.error)){
+        updateAssistantPlaceholder(assistantIndex,{
+          text:"FREE јавниот chat бара успешна Cloudflare Turnstile анти-бот проверка. Потврдете ја проверката и испратете повторно.",
+          meta:"Anti-bot gate",
+          guides:[],
+          sourceLabel:"AI provider не е повикан и квотата не е потрошена."
         });
       }else if(["free_mode_professional_postflight_required","macedonian_language_repair_failed","macedonian_language_quality_failed","macedonian_language_quality_gate_failed","lioe_postflight_locked","lioe_runtime_governance_locked","lioe_observability_locked","web_search_locked","free_mode_web_search_unavailable"].includes(d?.error)){
         attachments=[...selectedFiles];
@@ -808,6 +907,7 @@
         });
       }
     }finally{
+      if(!hasMembershipKey()) resetChatTurnstile();
       abortController=null;root.classList.remove("ai-chat-running");save();
     }
   }

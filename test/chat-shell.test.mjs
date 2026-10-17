@@ -405,6 +405,9 @@ test("CHAT34 FREE mode is open for public text research without owner or member 
   assert.match(chatJs,/FREE активен · јавен текстуален chat · Workers AI/);
   assert.match(chatJs,/free_quota_exhausted/);
   assert.match(chatJs,/public_attachment_secure_workspace_required/);
+  assert.match(html,/id="aiChatTurnstileBox"/);
+  assert.match(chatJs,/action:"public_chat"/);
+  assert.match(chatJs,/turnstileToken:chatTurnstileToken/);
 });
 
 
@@ -426,14 +429,20 @@ test("CHAT36 public workspace accepts no user case attachments and server enforc
 });
 
 
-test("CHAT37 owner provisioning workflow targets the files that actually exist",()=>{
+test("CHAT37 owner provisioning rotates an expiring HMAC key without committed secret material",()=>{
   const workflow=fs.readFileSync(".github/workflows/owner-professional-access.yml","utf8");
-  assert.match(workflow,/scripts\/provision-owner-professional-access\.sql/);
-  assert.match(workflow,/\.github\/workflows\/owner-professional-access\.yml/);
-  const sql=fs.readFileSync("scripts/provision-owner-professional-access.sql","utf8");
-  assert.match(sql,/owner-professional/);
-  assert.match(sql,/1000000,3,0/);
-  assert.doesNotMatch(sql,/AIADV-OWNER-[A-Za-z0-9]{20,}/);
+  const renderer=fs.readFileSync("scripts/provision-owner-professional-access.mjs","utf8");
+  const tombstone=fs.readFileSync("scripts/provision-owner-professional-access.sql","utf8");
+  assert.match(workflow,/workflow_dispatch/);
+  assert.match(workflow,/MEMBERSHIP_KEY_PEPPER/);
+  assert.match(workflow,/OWNER_PROFESSIONAL_VALIDITY_DAYS: "180"/);
+  assert.match(workflow,/OWNER_PROFESSIONAL_MONTHLY_QUOTA: "200"/);
+  assert.match(workflow,/provision-owner-professional-access\.mjs/);
+  assert.match(renderer,/createHmac\("sha256",pepper\)/);
+  assert.match(renderer,/hmac_sha256_v2/);
+  assert.match(renderer,/status='revoked'/);
+  assert.doesNotMatch(tombstone,/[0-9a-f]{64}/i);
+  assert.doesNotMatch(tombstone,/AIADV-OWNER-[A-Za-z0-9]{20,}/);
 });
 
 

@@ -8,6 +8,8 @@ import {
   consumeWindow,
   currentPeriod,
   hasControlCharacters,
+  membershipKeyDigest,
+  membershipKeyPepperConfigured,
   pruneRateLimitWindows,
   releaseMonthlyQuota,
   reserveMonthlyQuota,
@@ -15,7 +17,8 @@ import {
   saltIsConfigured,
   secondsUntilNextMonth,
   validateAnswerCitations,
-  verifyTurnstile
+  verifyTurnstile,
+  TURNSTILE_CHAT_ACTION
 } from "./security.js";
 import { validateLegalClaim } from "./legal-claim-validator.js";
 import {
@@ -112,7 +115,7 @@ import {
   publicOpenLegalSourceDirectory,
   openLegalSourcePolicySummary
 } from "./open-legal-sources-policy.js";
-import { detectConfidentialCasePrompt } from "./chat-privacy.js";
+import { detectConfidentialCasePrompt, detectConfidentialDocumentText } from "./chat-privacy.js";
 import {
   WORKERS_AI_TEXT_MODEL_DEFAULT,
   resolveWorkersAITextModel,
@@ -220,6 +223,12 @@ const MEMBERSHIP_PLANS = Object.freeze({
   pro: { code:"pro", name:"PRO", monthlyPriceMkd:1490, annualPriceMkd:14900, monthlyQuota:30, seats:1, trialDays:7 },
   office: { code:"office", name:"OFFICE", monthlyPriceMkd:4990, annualPriceMkd:49900, monthlyQuota:100, seats:5, trialDays:0 }
 });
+
+function paidOpenAIDailyRequestCap(env){
+  const raw=env?.OPENAI_GLOBAL_DAILY_REQUEST_CAP;
+  const n=raw===undefined || raw===null || raw==="" ? 50 : Number(raw);
+  return Number.isInteger(n) && n>=1 && n<=10000 ? n : null;
+}
 
 function publicMembershipPlans() {
   return Object.values(MEMBERSHIP_PLANS).map(p=>({
@@ -373,15 +382,16 @@ async function resolveMembership(request, env) {
   const key=membershipKeyFromRequest(request);
   if(!key || !env.DB) return null;
 
-  const keyHash=await sha256Hex(key);
-  const row=await env.DB.prepare(
+  const selectByHash=async(hash,scheme)=>env.DB.prepare(
     `SELECT k.account_id, k.status AS key_status, k.expires_at AS key_expires_at,
+            k.key_hash_scheme, k.key_fingerprint,
             e.plan_code, e.status AS entitlement_status, e.monthly_quota, e.seat_limit,
             e.expires_at AS entitlement_expires_at, a.status AS account_status
        FROM membership_access_keys k
        JOIN membership_accounts a ON a.id=k.account_id
        JOIN membership_entitlements e ON e.account_id=a.id
       WHERE k.key_hash=?
+        AND k.key_hash_scheme=?
         AND k.status='active'
         AND a.status='active'
         AND e.status IN ('trial','active')
@@ -389,8 +399,21 @@ async function resolveMembership(request, env) {
         AND (e.expires_at IS NULL OR datetime(e.expires_at) > datetime('now'))
       ORDER BY CASE e.status WHEN 'active' THEN 0 ELSE 1 END, e.updated_at DESC
       LIMIT 1`
-  ).bind(keyHash).first();
+  ).bind(hash,scheme).first();
 
+  let row=null;
+  if(membershipKeyPepperConfigured(env)){
+    try{
+      row=await selectByHash(await membershipKeyDigest(env,key),"hmac_sha256_v2");
+    }catch(error){
+      if(!(error instanceof SecurityConfigError)) throw error;
+    }
+  }
+
+  if(!row && env.MEMBERSHIP_LEGACY_SHA256_ENABLED==="true"){
+    const legacy=await selectByHash(await sha256Hex(key),"sha256_legacy");
+    if(legacy?.account_id!=="owner-professional") row=legacy;
+  }
   if(!row) return null;
 
   return {
@@ -399,6 +422,8 @@ async function resolveMembership(request, env) {
     status:row.entitlement_status,
     monthlyQuota:Number(row.monthly_quota || 0),
     seats:Number(row.seat_limit || 1),
+    keyHashScheme:String(row.key_hash_scheme||"unknown"),
+    keyFingerprint:row.key_fingerprint||null,
     subjectKey:`account:${row.account_id}`
   };
 }
@@ -3787,6 +3812,39 @@ async function runPrivateCaseDocumentExtraction(env,{documentId,fileName,mimeTyp
   return {ok:true,extraction,model:String(env.OPENAI_MODEL),responseId:payload?.id||null,provider:"openai_private_case"};
 }
 
+async function scanGuideAttachmentsForConfidentiality(env,attachments){
+  const items=Array.isArray(attachments)?attachments:[];
+  if(!items.length) return {ok:true,scanned:0};
+  if(!freeWorkersAIMarkdownConfigured(env)){
+    return {ok:false,error:"guide_privacy_scan_unavailable",reasons:["markdown_conversion_required"]};
+  }
+  const convert=[];
+  for(const attachment of items){
+    const bytes=bytesFromBase64(attachment.base64);
+    if(!bytes) return {ok:false,error:"guide_privacy_scan_decode_failed",reasons:["decode_failed"]};
+    convert.push({name:String(attachment.name||"guide"),blob:new Blob([bytes],{type:attachment.mime||"application/octet-stream"})});
+  }
+  let converted;
+  try{
+    converted=await env.AI.toMarkdown(convert,{conversionOptions:{output:{format:"text"},pdf:{metadata:false}}});
+  }catch(error){
+    console.error("guide_privacy_markdown_failed",String(error?.message||error).slice(0,160));
+    return {ok:false,error:"guide_privacy_scan_unavailable",reasons:["conversion_failed"]};
+  }
+  const results=Array.isArray(converted)?converted:[converted];
+  if(results.length!==items.length) return {ok:false,error:"guide_privacy_scan_incomplete",reasons:["conversion_count_mismatch"]};
+  for(const result of results){
+    if(!result || result.format==="error" || typeof result.data!=="string"){
+      return {ok:false,error:"guide_privacy_scan_unavailable",reasons:["conversion_error"]};
+    }
+    const assessment=detectConfidentialDocumentText(String(result.data||"").slice(0,120000));
+    if(assessment.confidential){
+      return {ok:false,error:"confidential_document_secure_workspace_required",reasons:assessment.reasons};
+    }
+  }
+  return {ok:true,scanned:results.length};
+}
+
 async function validateGuideDocuments(request,env,payload){
   const input=Array.isArray(payload)?payload:[];
   if(input.length>CHAT_MAX_GUIDE_DOCUMENTS) return {ok:false,error:"too_many_guide_documents"};
@@ -3868,7 +3926,15 @@ async function validateGuideDocuments(request,env,payload){
     });
   }
 
-  return {ok:true,attachments,context,sources};
+  const privacyScan=await scanGuideAttachmentsForConfidentiality(env,attachments);
+  if(!privacyScan.ok){
+    return {
+      ok:false,
+      error:privacyScan.error,
+      privacy:{providerCalled:false,publicChatProcessingStopped:true,reasons:privacyScan.reasons||[]}
+    };
+  }
+  return {ok:true,attachments,context,sources,privacyScanned:privacyScan.scanned};
 }
 
 
@@ -4932,6 +4998,30 @@ async function handleGPTChat(request,env){
     },422);
   }
 
+  const membership=await resolveMembership(request,env);
+  if(!membership){
+    let turnstile;
+    try{
+      turnstile=await verifyTurnstile(env,{
+        token:payload.turnstileToken,
+        remoteIp:request.headers.get("CF-Connecting-IP"),
+        allowedHostnames:turnstileAllowedHostnames(env),
+        expectedAction:TURNSTILE_CHAT_ACTION
+      });
+    }catch(error){
+      if(error instanceof SecurityConfigError) return json(request,{ok:false,error:"free_chat_turnstile_unavailable"},503);
+      throw error;
+    }
+    if(!turnstile.ok){
+      const status=turnstile.reason==="turnstile_unavailable" ? 503 : 403;
+      return json(request,{
+        ok:false,
+        error:turnstile.reason==="turnstile_missing" ? "free_chat_turnstile_required" : "free_chat_turnstile_failed",
+        privacy:{providerCalled:false,quotaConsumed:false}
+      },status);
+    }
+  }
+
   const guideDocumentCheck=await validateGuideDocuments(request,env,payload.guideDocuments);
   if(!guideDocumentCheck.ok) return json(request,{ok:false,error:guideDocumentCheck.error},400);
 
@@ -4993,7 +5083,6 @@ async function handleGPTChat(request,env){
     && env.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"
     && readiness.provider==="configured";
 
-  const membership=await resolveMembership(request,env);
   let subject;
   let quota;
   if(membership){
@@ -5045,6 +5134,37 @@ async function handleGPTChat(request,env){
   }
 
   const plan=buildAgentPlan(q,{preferCorpus});
+
+  // Global paid-provider cost guard. This is deliberately independent from
+  // per-account quotas: even many valid memberships cannot exceed the daily
+  // server-side request ceiling. FREE Workers AI traffic never consumes it.
+  if(membership){
+    const globalDailyCap=paidOpenAIDailyRequestCap(env);
+    if(!globalDailyCap){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:"openai_global_cost_guard_not_configured",
+        message:"Платениот AI provider е привремено заклучен затоа што глобалниот дневен трошочен лимит не е конфигуриран."
+      },503);
+    }
+    const globalBudget=await consumeWindow(env,{
+      scope:"openai_paid_global_day",
+      subject:"openai:global",
+      limit:globalDailyCap,
+      windowSeconds:86400
+    });
+    if(!globalBudget.allowed){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:"openai_global_daily_cap_reached",
+        message:"Глобалниот дневен безбедносен лимит за платениот AI provider е достигнат. Ниту корисничката квота ниту нов provider повик не се потрошени.",
+        costGuard:{dailyRequestCap:globalDailyCap}
+      },503,{"Retry-After":String(globalBudget.retryAfter)});
+    }
+  }
+
   const lioeEngaged=plan.legalIntelligenceEngine?.engaged===true;
   const lioeRunStartedMs=Date.now();
   const lioeRunStartedAt=new Date(lioeRunStartedMs).toISOString();
@@ -6097,6 +6217,119 @@ async function lioeRuntimeTelemetryStatus(env){
   }
 }
 
+function configuredMkdRate(env,key){
+  const raw=env?.[key];
+  if(raw===undefined || raw===null || raw==="") return null;
+  const n=Number(raw);
+  return Number.isFinite(n) && n>=0 ? n : null;
+}
+
+async function handleInternalCostTelemetry(request,env){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const membership=await resolveMembership(request,env);
+  if(!membership) return json(request,{ok:false,error:"membership_required"},401);
+  if(membership.accountId!=="owner-professional") return json(request,{ok:false,error:"owner_professional_required"},403);
+  if(!env?.DB) return json(request,{ok:false,error:"database_not_ready"},503);
+
+  const url=new URL(request.url);
+  const requestedDays=Number(url.searchParams.get("days")||30);
+  const days=Number.isInteger(requestedDays)&&requestedDays>=1&&requestedDays<=90 ? requestedDays : 30;
+  const since="-"+days+" days";
+  let total,groups;
+  try{
+    [total,groups]=await Promise.all([
+      env.DB.prepare(
+        `SELECT COUNT(*) AS runs,
+                COALESCE(SUM(provider_calls),0) AS provider_calls,
+                COALESCE(SUM(input_tokens),0) AS input_tokens,
+                COALESCE(SUM(output_tokens),0) AS output_tokens,
+                COALESCE(SUM(total_tokens),0) AS total_tokens,
+                COALESCE(SUM(web_search_used),0) AS web_search_runs,
+                COALESCE(AVG(elapsed_ms),0) AS avg_elapsed_ms
+           FROM lioe_runtime_runs
+          WHERE finished_at >= datetime('now',?)`
+      ).bind(since).first(),
+      env.DB.prepare(
+        `SELECT COALESCE(model,'unknown') AS model,mission_profile,
+                COUNT(*) AS runs,
+                COALESCE(SUM(provider_calls),0) AS provider_calls,
+                COALESCE(SUM(input_tokens),0) AS input_tokens,
+                COALESCE(SUM(output_tokens),0) AS output_tokens,
+                COALESCE(SUM(total_tokens),0) AS total_tokens,
+                COALESCE(SUM(web_search_used),0) AS web_search_runs,
+                COALESCE(AVG(elapsed_ms),0) AS avg_elapsed_ms
+           FROM lioe_runtime_runs
+          WHERE finished_at >= datetime('now',?)
+          GROUP BY COALESCE(model,'unknown'),mission_profile
+          ORDER BY total_tokens DESC,runs DESC`
+      ).bind(since).all()
+    ]);
+  }catch(error){
+    const message=String(error?.message||error);
+    return json(request,{
+      ok:false,
+      error:/no such table/i.test(message)?"runtime_telemetry_migration_required":"runtime_telemetry_unavailable"
+    },503);
+  }
+
+  const inputRate=configuredMkdRate(env,"OPENAI_INPUT_MKD_PER_1M_TOKENS");
+  const outputRate=configuredMkdRate(env,"OPENAI_OUTPUT_MKD_PER_1M_TOKENS");
+  const marginMultiplier=configuredMkdRate(env,"PRICING_COST_MULTIPLIER");
+  const ratesConfigured=inputRate!==null && outputRate!==null;
+  const runs=Number(total?.runs||0);
+  const inputTokens=Number(total?.input_tokens||0);
+  const outputTokens=Number(total?.output_tokens||0);
+  const estimatedModelCostMkd=ratesConfigured
+    ? (inputTokens/1_000_000)*inputRate+(outputTokens/1_000_000)*outputRate
+    : null;
+  const avgEstimatedCostMkd=estimatedModelCostMkd!==null && runs>0 ? estimatedModelCostMkd/runs : null;
+
+  return json(request,{
+    ok:true,
+    privacy:"aggregated operational telemetry only; no prompts, answers, identities or case facts",
+    coverage:{
+      days,
+      scope:"LIOE governed OpenAI runs recorded in lioe_runtime_runs",
+      limitation:"General paid calls outside LIOE are not included unless separately instrumented."
+    },
+    totals:{
+      runs,
+      providerCalls:Number(total?.provider_calls||0),
+      inputTokens,
+      outputTokens,
+      totalTokens:Number(total?.total_tokens||0),
+      webSearchRuns:Number(total?.web_search_runs||0),
+      averageElapsedMs:Math.round(Number(total?.avg_elapsed_ms||0))
+    },
+    groups:(groups?.results||[]).map(row=>({
+      model:row.model,
+      missionProfile:row.mission_profile,
+      runs:Number(row.runs||0),
+      providerCalls:Number(row.provider_calls||0),
+      inputTokens:Number(row.input_tokens||0),
+      outputTokens:Number(row.output_tokens||0),
+      totalTokens:Number(row.total_tokens||0),
+      webSearchRuns:Number(row.web_search_runs||0),
+      averageElapsedMs:Math.round(Number(row.avg_elapsed_ms||0))
+    })),
+    costModel:{
+      ratesConfigured,
+      inputMkdPerMillionTokens:inputRate,
+      outputMkdPerMillionTokens:outputRate,
+      estimatedModelCostMkd:estimatedModelCostMkd===null?null:Number(estimatedModelCostMkd.toFixed(2)),
+      averageEstimatedModelCostMkdPerRun:avgEstimatedCostMkd===null?null:Number(avgEstimatedCostMkd.toFixed(2)),
+      pricingCostMultiplier:marginMultiplier,
+      indicativePriceFloorPerRunMkd:avgEstimatedCostMkd!==null&&marginMultiplier!==null
+        ? Number((avgEstimatedCostMkd*marginMultiplier).toFixed(2))
+        : null,
+      note:ratesConfigured
+        ? "Estimate uses configured MKD token rates only; web-search/tool fees are not inferred from incomplete telemetry."
+        : "Token rates are intentionally not guessed. Configure current provider rates before using this endpoint for price recalculation."
+    },
+    costGuard:{globalPaidDailyRequestCap:paidOpenAIDailyRequestCap(env)}
+  });
+}
+
 function handleOpenLegalSourcesPolicy(request){
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
   return json(request,{
@@ -6374,6 +6607,7 @@ export default {
     }
 
     if (url.pathname === "/api/capabilities") return handleCapabilities(request, env);
+    if (url.pathname === "/api/internal/cost-telemetry") return handleInternalCostTelemetry(request, env);
     if (url.pathname === "/api/orchestrator") return handleOrchestratorArchitecture(request, env);
     if (url.pathname === "/api/orchestrator/plan") return handleOrchestratorPlan(request, env);
     if (url.pathname === "/api/knowledge-intake-policy") return handleKnowledgeIntakePolicy(request);

@@ -1,11 +1,6 @@
 name: AI Advokat owner professional access
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "scripts/provision-owner-professional-access.sql"
-      - ".github/workflows/owner-professional-access.yml"
   workflow_dispatch:
 
 permissions:
@@ -23,6 +18,10 @@ jobs:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      OWNER_PROFESSIONAL_ACCESS_KEY: ${{ secrets.OWNER_PROFESSIONAL_ACCESS_KEY }}
+      MEMBERSHIP_KEY_PEPPER: ${{ secrets.MEMBERSHIP_KEY_PEPPER }}
+      OWNER_PROFESSIONAL_MONTHLY_QUOTA: "200"
+      OWNER_PROFESSIONAL_VALIDITY_DAYS: "180"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,10 +29,14 @@ jobs:
           node-version: "22"
       - name: Install pinned tooling
         run: npm install --ignore-scripts --no-audit --no-fund
-      - name: Fail closed if production credentials are missing
+      - name: Fail closed if production credentials or key material are missing
+        shell: bash
         run: |
+          set -euo pipefail
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
+          test ${#OWNER_PROFESSIONAL_ACCESS_KEY} -ge 40
+          test ${#MEMBERSHIP_KEY_PEPPER} -ge 32
       - name: Verify exact production D1 target
         run: |
           node <<'NODE'
@@ -44,17 +47,31 @@ jobs:
           if(!db || db.binding!=="DB" || db.database_name!=="ai-advokat-db") throw new Error("Unexpected D1 target");
           if(db.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production DB ID");
           NODE
-      - name: Verify membership schema exists
+      - name: Apply pending migrations
+        run: npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc
+      - name: Verify HMAC membership schema
         run: |
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('membership_accounts','membership_entitlements','membership_access_keys','membership_usage_monthly') ORDER BY name;" | tee /tmp/membership-schema.txt
-          for t in membership_accounts membership_entitlements membership_access_keys membership_usage_monthly; do grep -q "\"name\": \"$t\"" /tmp/membership-schema.txt; done
-      - name: Provision owner professional entitlement
-        run: npx wrangler d1 execute DB --remote --config wrangler.jsonc --file scripts/provision-owner-professional-access.sql
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "PRAGMA table_info(membership_access_keys);" | tee /tmp/membership-key-schema.txt
+          grep -q '"name": "key_hash_scheme"' /tmp/membership-key-schema.txt
+          grep -q '"name": "key_fingerprint"' /tmp/membership-key-schema.txt
+      - name: Render HMAC owner provisioning SQL without plaintext logging
+        run: |
+          umask 077
+          node scripts/provision-owner-professional-access.mjs /tmp/owner-access.sql | tee /tmp/owner-render-evidence.txt
+          test -s /tmp/owner-access.sql
+          ! grep -F "$OWNER_PROFESSIONAL_ACCESS_KEY" /tmp/owner-access.sql
+          ! grep -F "$MEMBERSHIP_KEY_PEPPER" /tmp/owner-access.sql
+      - name: Provision rotated owner professional entitlement
+        run: npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/owner-access.sql
+      - name: Remove temporary rendered SQL
+        if: always()
+        run: rm -f /tmp/owner-access.sql
       - name: Verify non-secret entitlement state
         run: |
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT a.id,a.status,e.plan_code,e.status AS entitlement_status,e.monthly_quota,e.seat_limit,k.key_prefix,k.status AS key_status FROM membership_accounts a JOIN membership_entitlements e ON e.account_id=a.id JOIN membership_access_keys k ON k.account_id=a.id WHERE a.id='owner-professional' AND k.id='key-owner-professional-primary';" | tee /tmp/owner-access.txt
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT a.id,a.status,e.plan_code,e.status AS entitlement_status,e.monthly_quota,e.seat_limit,k.key_hash_scheme,k.key_fingerprint,k.status AS key_status,k.expires_at FROM membership_accounts a JOIN membership_entitlements e ON e.account_id=a.id JOIN membership_access_keys k ON k.account_id=a.id WHERE a.id='owner-professional' AND k.status='active' ORDER BY k.created_at DESC LIMIT 1;" | tee /tmp/owner-access.txt
           grep -q '"plan_code": "office"' /tmp/owner-access.txt
-          grep -q '"monthly_quota": 1000000' /tmp/owner-access.txt
+          grep -q '"monthly_quota": 200' /tmp/owner-access.txt
+          grep -q '"key_hash_scheme": "hmac_sha256_v2"' /tmp/owner-access.txt
           grep -q '"key_status": "active"' /tmp/owner-access.txt
       - name: Upload non-secret evidence
         uses: actions/upload-artifact@v4
@@ -62,5 +79,6 @@ jobs:
           name: owner-professional-access-evidence
           retention-days: 14
           path: |
-            /tmp/membership-schema.txt
+            /tmp/membership-key-schema.txt
+            /tmp/owner-render-evidence.txt
             /tmp/owner-access.txt
