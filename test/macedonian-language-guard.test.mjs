@@ -213,3 +213,23 @@ test("unambiguous production calques get deterministic cleanup before any AI rep
 test("language runtime is V6 after structural-token and lexical-integrity hardening",()=>{
   assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V6");
 });
+
+
+test("live Serbian 'Ево' contamination is rejected and deterministically cleaned",()=>{
+  const bad="Ево на примерен нацрт на тужба за надомест на штета.";
+  const check=assessMacedonianOutput(bad,{userText:"Изработи тужба на македонски."});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.foreignLexemes.includes("ево"),JSON.stringify(check));
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.doesNotMatch(clean,/\bево\b/iu);
+  assert.match(clean,/Еве примерен нацрт/u);
+});
+
+test("awkward wrong-language correction phrase is normalised without changing substance",()=>{
+  const bad="Разбирај. Јас ќе ви одговорам исклучиво на стандарден македонски јазик.";
+  const check=assessMacedonianOutput(bad,{userText:"Претходниот одговор беше на бугарски. Одговори на македонски."});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.reasons.includes("contextual_language_contamination"));
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.match(clean,/Разбирам\. Ќе ви одговорам/u);
+});

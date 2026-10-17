@@ -4,7 +4,8 @@ import fs from "node:fs";
 import {
   AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
   AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,
-  buildAIAdvokatCentralPrompt
+  buildAIAdvokatCentralPrompt,
+  buildAIAdvokatFreeFastPrompt
 } from "../src/ai-advokat-central-prompt.js";
 import { buildAgentPlan, orchestratorInstructions } from "../src/agent-orchestrator.js";
 import { MACEDONIAN_2017_SYSTEM_RULES } from "../src/macedonian-language-guard.js";
@@ -62,13 +63,25 @@ test("COP5b default Macedonian language contract is not duplicated in runtime pr
   assert.match(prompt,/AI ADVOKAT CENTRAL OPERATING CONTRACT/);
 });
 
-test("COP6 all user-facing runtime paths call the same central prompt builder",()=>{
+test("COP6 runtime paths share governed prompt contracts while FREE L0 uses the compact contract",()=>{
   assert.match(worker,/const ASSISTANT_SYSTEM_RULES = buildAIAdvokatCentralPrompt\(/);
   assert.match(worker,/const system=buildAIAdvokatCentralPrompt\(\{[\s\S]*?workers_ai_private_case/);
-  assert.match(worker,/const system=buildAIAdvokatCentralPrompt\(\{[\s\S]*?workers_ai_free/);
+  assert.match(worker,/buildAIAdvokatFreeFastPrompt/);
+  assert.match(worker,/fastFreePrompt=missionProfile==="GENERAL_BYPASS" \|\| missionProfile==="L0_INFORMATIONAL"/);
   assert.match(orchestrator,/const central=buildAIAdvokatCentralPrompt\(/);
   assert.match(worker,/centralOperatingPrompt:AI_ADVOKAT_CENTRAL_PROMPT_VERSION/);
   assert.match(worker,/centralPromptVersion:AI_ADVOKAT_CENTRAL_PROMPT_VERSION/);
+});
+
+test("COP6b compact FREE L0 prompt is materially smaller and preserves core safeguards",()=>{
+  const fast=buildAIAdvokatFreeFastPrompt({missionProfile:"L0_INFORMATIONAL"});
+  const full=buildAIAdvokatCentralPrompt({mode:"legal_assistant",provider:"workers_ai_free"});
+  assert.ok(fast.length<full.length*0.45,JSON.stringify({fast:fast.length,full:full.length}));
+  assert.match(fast,/Правопис 2017/);
+  assert.match(fast,/Never invent/);
+  assert.match(fast,/current law/);
+  assert.match(fast,/human gate/i);
+  assert.match(fast,/еве, not ево/);
 });
 
 test("COP7 FREE mode no longer disables general intelligence for ordinary tasks",()=>{

@@ -130,7 +130,8 @@ import {
 } from "./macedonian-language-guard.js";
 import {
   AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
-  buildAIAdvokatCentralPrompt
+  buildAIAdvokatCentralPrompt,
+  buildAIAdvokatFreeFastPrompt
 } from "./ai-advokat-central-prompt.js";
 import {
   isFormalLegalDraftRequest,
@@ -138,6 +139,7 @@ import {
 } from "./response-quality.js";
 
 const VERSION = "1.9.0";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_FAST_RELEASE_V2";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -4554,27 +4556,37 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   const governed=freeChatCorpusText(corpusContext);
   const missionProfile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
 
-  const system=buildAIAdvokatCentralPrompt({
-    languageRules:MACEDONIAN_2017_SYSTEM_RULES,
-    mode:missionProfile==="GENERAL_BYPASS" ? "general_assistant" : "legal_assistant",
-    provider:"workers_ai_free",
-    extraRules:[
-      "You are running in AI Advokat FREE Workers AI mode.",
-      "If the user writes in Macedonian or recognisable Macedonian Latin transliteration, answer in standard literary Macedonian Cyrillic. The Macedonian 2017 language contract above is mandatory unless the user explicitly requests another language.",
-      "Use simple, natural Macedonian vocabulary and short clear sentences. Prefer established forms such as назив, работник, работодавач, работно место, плата, права и обврски. Never invent words or use neighbouring-language calques such as наименование.",
-      "For a simple definition or everyday legal-information question, answer directly in 4-8 concise sentences. Do not produce a table, multi-column pseudo-table or long checklist unless the user asks for one.",
-      missionProfile==="GENERAL_BYPASS"
-        ? "For ordinary non-legal tasks, use normal general model reasoning and knowledge. Do not force legal-source boilerplate."
-        : "For legal/current-law claims, governed AI Advokat context controls. General model knowledge may explain generic concepts but may not establish current law, deadlines, jurisdiction, mandatory documents, remedies or legal effect.",
-      "Text under ATTACHED DOCUMENT TEXT is extracted document-body content. If non-empty, treat it as readable content rather than filename/path metadata.",
-      "When the user asks for an exact token, identifier, name, date or phrase present in extracted document text, copy it exactly before adding interpretation.",
-      "Never invent document contents, missing pages, signatures, dates, parties, legal effects or source citations.",
-      "If current law is not established by a governed primary source in supplied context, say that current-law verification is still required and continue with the useful non-authoritative portion.",
-      "Do not say that you cannot create Word/DOCX files. The browser can export the latest working draft; provide the complete document text.",
-      "Use placeholders or clearly fictional data when the user requests invented names/details; never present invented facts as real.",
-      "Do not silently use web search in this FREE mode."
-    ]
-  });
+  const fastFreePrompt=missionProfile==="GENERAL_BYPASS" || missionProfile==="L0_INFORMATIONAL";
+  const fullFreeExtraRules=[
+    "You are running in AI Advokat FREE Workers AI mode.",
+    "If the user writes in Macedonian or recognisable Macedonian Latin transliteration, answer in standard literary Macedonian Cyrillic. The Macedonian 2017 language contract above is mandatory unless the user explicitly requests another language.",
+    "Use simple, natural Macedonian vocabulary and short clear sentences. Prefer established forms such as еве, назив, работник, работодавач, работно место, плата, права и обврски. Never invent words or use neighbouring-language calques such as ево or наименование.",
+    "For a simple definition or everyday legal-information question, answer directly in 4-8 concise sentences. Do not produce a table, multi-column pseudo-table or long checklist unless the user asks for one.",
+    missionProfile==="GENERAL_BYPASS"
+      ? "For ordinary non-legal tasks, use normal general model reasoning and knowledge. Do not force legal-source boilerplate."
+      : "For legal/current-law claims, governed AI Advokat context controls. General model knowledge may explain generic concepts but may not establish current law, deadlines, jurisdiction, mandatory documents, remedies or legal effect.",
+    "Text under ATTACHED DOCUMENT TEXT is extracted document-body content. If non-empty, treat it as readable content rather than filename/path metadata.",
+    "When the user asks for an exact token, identifier, name, date or phrase present in extracted document text, copy it exactly before adding interpretation.",
+    "Never invent document contents, missing pages, signatures, dates, parties, legal effects or source citations.",
+    "If current law is not established by a governed primary source in supplied context, say that current-law verification is still required and continue with the useful non-authoritative portion.",
+    "Do not say that you cannot create Word/DOCX files. The browser can export the latest working draft; provide the complete document text.",
+    "Use placeholders or clearly fictional data when the user requests invented names/details; never present invented facts as real.",
+    "Do not silently use web search in this FREE mode."
+  ];
+  const system=fastFreePrompt
+    ? buildAIAdvokatFreeFastPrompt({
+        missionProfile,
+        extraRules:[
+          "Do not silently use web search in FREE mode.",
+          governed ? "Governed AI Advokat source context is supplied below; use it when relevant and do not invent beyond it." : "No governed current-law source is guaranteed for this turn; explain generic concepts without inventing current-law authority."
+        ]
+      })
+    : buildAIAdvokatCentralPrompt({
+        languageRules:MACEDONIAN_2017_SYSTEM_RULES,
+        mode:"legal_assistant",
+        provider:"workers_ai_free",
+        extraRules:fullFreeExtraRules
+      });
 
   const user=[
     "MISSION_PROFILE: "+missionProfile,
@@ -4643,6 +4655,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     model:result.model,
     provider:"workers_ai_free",
     providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
+    languageRepairProviderCalls:languagePass.providerCalls||0,
+    latencyMs:Date.now()-startedAt,
+    fastPromptUsed:fastFreePrompt,
     languageStandard:languageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
@@ -5181,6 +5196,7 @@ async function handleGPTChat(request,env){
         providerCalls:freeResult.providerCalls||1,
         languageRepairProviderCalls:freeResult.languageRepairProviderCalls||0,
         serverLatencyMs:freeResult.latencyMs||null,
+        fastPromptUsed:freeResult.fastPromptUsed===true,
         promptCaching:sessionAffinity?"session_affinity_enabled":"no_session_affinity"
       },
       sources:[],
@@ -6333,6 +6349,7 @@ async function handleCapabilities(request, env) {
           : "locked",
       freeChatProvider:freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
       freeChatModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
+      freeRuntimePolicy:FREE_RUNTIME_POLICY_VERSION,
       paidChatProvider:orchestratorRuntimeReadiness(env).provider==="configured" ? "openai" : "locked",
       paidChatModel:orchestratorRuntimeReadiness(env).provider==="configured" ? String(env.OPENAI_MODEL||"openai_configured_model") : null,
       centralOperatingPrompt:AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
