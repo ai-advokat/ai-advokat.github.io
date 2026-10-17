@@ -1494,17 +1494,17 @@
           <div class="ai-chat-composer-zone">
             <div class="ai-chat-composer" id="aiChatDropZone">
               <div class="ai-chat-upload-bar">
-                <button class="ai-chat-upload-primary" id="aiChatAttachWide" type="button" data-i18n="chatAttachDocs">📎 Прикачи документи (до 20)</button>
-                <span class="ai-chat-upload-count" id="aiChatAttachmentCount" aria-live="polite">0 / 20</span>
-                <span class="ai-chat-upload-count" id="aiChatOwnerState" aria-live="polite" data-i18n="chatFreeState">FREE активен · без клуч · Workers AI</span>
+                <button class="ai-chat-upload-primary" id="aiChatAttachWide" type="button" data-i18n="chatAttachDocs">🔒 Документи → Secure Case Workspace</button>
+                <span class="ai-chat-upload-count" id="aiChatAttachmentCount" aria-live="polite">јавен chat: без прилози</span>
+                <span class="ai-chat-upload-count" id="aiChatOwnerState" aria-live="polite" data-i18n="chatFreeState">FREE активен · јавен текстуален chat · Workers AI</span>
               </div>
               <div class="ai-chat-drop-hint" id="aiChatDropHint" aria-live="polite">
-                <span data-i18n="chatDropHint">Повлечете до 20 PDF/Word/слики тука · или користете го копчето „Прикачи документи“</span>
+                <span data-i18n="chatDropHint">Не прикачувајте документи во јавниот chat. За конкретни предмети користете Secure Case Workspace.</span>
               </div>
               <div class="ai-chat-attachments" id="aiChatAttachments"></div>
               <div class="ai-chat-input">
-                <button class="ai-chat-iconbtn" id="aiChatAttach" type="button" aria-label="Прикачи датотека" title="Прикачи датотека">＋</button>
-                <input id="aiChatFiles" type="file" multiple hidden aria-label="Прикачи датотеки во AI Advokat" accept=".pdf,.docx,.txt,.md,.csv,.json,.png,.jpg,.jpeg,.webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp" />
+                <button class="ai-chat-iconbtn" id="aiChatAttach" type="button" aria-label="Отвори Secure Case Workspace за документи" title="Документи само во Secure Case Workspace">🔒</button>
+                <input id="aiChatFiles" type="file" multiple hidden disabled aria-label="Јавниот chat не прифаќа датотеки" accept=".pdf,.docx,.txt,.md,.csv,.json,.png,.jpg,.jpeg,.webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp" />
                 <textarea id="aiChatInput" rows="1" maxlength="4000" aria-label="Порака до AI Advokat" placeholder="Прашајте го AI Advokat…" data-i18n-placeholder="chatPlaceholder"></textarea>
                 <button class="ai-chat-iconbtn" id="aiChatMic" type="button" aria-label="Диктирај" title="Диктирај">🎙</button>
                 <button class="ai-chat-send" id="aiChatSend" type="button" aria-label="Испрати" title="Испрати">➤</button>
@@ -1534,7 +1534,7 @@
                     <div class="ai-chat-tools-group">
                       <strong>FREE режим</strong>
                       <div class="ai-guide-vault-bar">
-                        <span id="aiChatMembershipState" class="ai-guide-vault-status" role="status">FREE активен · не е потребен клуч · документарна анализа преку Workers AI</span>
+                        <span id="aiChatMembershipState" class="ai-guide-vault-status" role="status">FREE активен · јавен текстуален chat · Workers AI</span>
                       </div>
                       <small class="ai-guide-vault-note">AI Advokat е отворен за користење без owner/member клуч. Остануваат само безбедносните rate-limit контроли, приватносните правила и Human Gate за правни заклучоци.</small>
                     </div>
@@ -1652,11 +1652,11 @@
         <div class="foreigners-copy">
           <span class="tag">СТРАНЦИ · ПРЕСТОЈ И РАБОТА</span>
           <h2 id="foreignersServicesTitle">Престој и вработување на странци</h2>
-          <p>Посебен AI Advokat модул за подготовка и проверка на документи за привремен престој по основ вработување. Системот ги споредува приложените документи со официјалните МВР извори, важечките прописи и контролираните практични чек-листи.</p>
+          <p>Посебен AI Advokat модул за подготовка и проверка на јавната чек-листа за привремен престој по основ вработување. Во јавниот chat се проверуваат условите, изворите, роковите и таксите; лични документи не се прикачуваат. За конкретни документи користете Secure Case Workspace.</p>
           <div class="foreigners-actions" aria-label="Постапки за странци">
             <button class="btn primary" type="button" data-foreign-employment="first" data-foreign-static>Прв пат</button>
             <button class="btn light" type="button" data-foreign-employment="renewal" data-foreign-static>Продолжување</button>
-            <button class="btn light" type="button" data-foreign-employment="verify" data-foreign-static>📎 Провери документи</button>
+            <button class="btn light" type="button" data-foreign-employment="verify" data-foreign-static>Провери чек-листа</button>
           </div>
           <div class="foreigners-features">
             <span>✓ што е доставено</span>
@@ -2163,7 +2163,7 @@
       trustLabel1:"Изворот прв", trustLabel2:"човечка контрола", trustLabel3:"Проверка на верзија", trustLabel4:"Поврзано со Zenodo",
       trust1:"Одговорите треба да покажуваат на што се потпираат.", trust2:"AI не ја заменува професионалната правна проценка.", trust3:"Правниот текст се чита со датум, верзија и важност.", trust4:"Четири авторски труда се објавени на Zenodo со DOI и имаат научни профили; нацртите се јасно означени.",
       featuredTag:"ПОСЕБНИ ПРАВНИ МОДУЛИ", featuredTitle:"Директен пристап до специјализирани правни модули", featuredText:"Две видливи патеки за работа со странци и со македонскиот корпус на пресуди и одлуки на ЕСЧП.", foreignTag:"МВР · ПРЕСТОЈ · ВРАБОТУВАЊЕ", foreignTitle:"Престој и вработување на странци", foreignText:"Прв пат, продолжување и проверка на документи со официјални извори и Human Gate.", foreignFirst:"Прв пат", foreignRenewal:"Продолжување", foreignOpen:"Отвори модул", foreignGuide:"📘 Адвокатски прирачник", echrFeaturedTag:"ЕСЧП · МАКЕДОНСКИ КОРПУС", echrFeaturedTitle:"Пресуди и одлуки на ЕСЧП за Северна Македонија", echrFeaturedText:"Домашен discovery индекс на достапните записи, full-text intake и задолжително HUDOC врзување пред професионално потпирање. Бројот на записи се чита од живиот корпус, не од статично ветување.", echrSearch:"Пребарај ЕСЧП", echrAnalyze:"Анализирај предмет", echrOpenAi:"Отвори AI Advokat",
-      aiChatIntro:"Опишете го правниот проблем со свои зборови. FREE режимот користи Workers AI, а точниот активен provider/model се прикажува во самиот разговор. Платен provider се користи само кога е навистина активиран.", chatConversations:"Разговори", chatSessionNote:"Историјата се чува само во оваа сесија на прелистувачот.", chatProviderChecking:"Проверка на активниот AI provider/model…", chatHumanControl:"човечка контрола", chatExportDraft:"Извези working draft", chatAttachDocs:"📎 Прикачи документи (до 20)", chatFreeState:"FREE активен · без клуч · Workers AI", chatDropHint:"Повлечете до 20 PDF/Word/слики тука · или користете го копчето „Прикачи документи“", chatPlaceholder:"Прашајте го AI Advokat…",
+      aiChatIntro:"Опишете го правниот проблем со свои зборови. FREE режимот користи Workers AI, а точниот активен provider/model се прикажува во самиот разговор. Платен provider се користи само кога е навистина активиран.", chatConversations:"Разговори", chatSessionNote:"Историјата се чува само во оваа сесија на прелистувачот.", chatProviderChecking:"Проверка на активниот AI provider/model…", chatHumanControl:"човечка контрола", chatExportDraft:"Извези working draft", chatAttachDocs:"🔒 Документи → Secure Case Workspace", chatFreeState:"FREE активен · јавен текстуален chat · Workers AI", chatDropHint:"Не прикачувајте документи во јавниот chat. За конкретни предмети користете Secure Case Workspace.", chatPlaceholder:"Прашајте го AI Advokat…",
       sourceTag:"Правна база", sourceTitle:"Од извор до правен заклучок", sourceText:"Порталот е структуриран така што официјалниот текст, судската практика, стручната анализа и AI-синтезата никогаш не се мешаат без ознака.",
       cardLaws:"Закони и прописи", cardLawsText:"Регистарот се проширува закон-по-закон: прво официјални метаподатоци и доказно потекло, а потоа проверен текст член-по-член.",
       cardCases:"Судска практика", cardCasesText:"Директориум кон официјалните бази на судовите. Индексирана судска практика по суд, правно прашање и исход се додава постепено и се означува кога ќе биде достапна.",
