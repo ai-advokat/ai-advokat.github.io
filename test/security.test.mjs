@@ -662,6 +662,12 @@ describe("regression and truthful capabilities", () => {
     }
   });
 
+  test("R2b capabilities fail closed on Criminal Code article corpus when only 2026 provenance is registered", async () => {
+    const { env } = freshEnv();
+    const r = await call(env,new Request(BASE + "/api/capabilities"));
+    assert.equal(r.body.capabilities.criminalCodeCorpus,"official_2026_provenance_registered_article_corpus_pending");
+  });
+
   test("R3 capabilities report case law / ECHR as directory-only when no records exist", async () => {
     const { env } = freshEnv();
     const r = await call(env, new Request(BASE + "/api/capabilities"));
