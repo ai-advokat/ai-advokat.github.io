@@ -5196,6 +5196,7 @@ async function handleGPTChat(request,env){
         providerCalls:freeResult.providerCalls||1,
         languageRepairProviderCalls:freeResult.languageRepairProviderCalls||0,
         serverLatencyMs:freeResult.latencyMs||null,
+        fastPromptUsed:freeResult.fastPromptUsed===true,
         promptCaching:sessionAffinity?"session_affinity_enabled":"no_session_affinity"
       },
       sources:[],
