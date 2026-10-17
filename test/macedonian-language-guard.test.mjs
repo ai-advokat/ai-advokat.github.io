@@ -182,3 +182,34 @@ test("'измера' is treated as malformed generation, never as 'измена'
   assert.doesNotMatch(clean,/измена/iu);
   assert.match(clean,/за Република Северна Македонија/iu);
 });
+
+
+test("real employment-definition garbage answer is rejected root-and-branch",()=>{
+  const bad=[
+    "Наименование — Договорот опишува договорените услови помеѓуз работникот и работодавачот за ажурирање на рани работни облага.",
+    "Времетраење — Фиксно или непостојно, со можни изминливи датум.",
+    "Начинот на исплата е нпр. по банска сметка.",
+    "Точнаја деловна обврЗка треба да се извлече од деловните написи.",
+    "Договорот мора да е саответен закон и да е оценет за правопризнателството."
+  ].join(" ");
+  const check=assessMacedonianOutput(bad,{userText:"Што е договор за вработување?"});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.reasons.includes("foreign_lexical_contamination") || check.reasons.includes("malformed_macedonian_generation"));
+  assert.ok(check.reasons.includes("malformed_token_shape"),JSON.stringify(check));
+  assert.ok(check.foreignLexemes.includes("наименование"));
+  assert.ok(check.structuralAnomalies.some(x=>/обврЗка/u.test(x)));
+});
+
+test("unambiguous production calques get deterministic cleanup before any AI repair",()=>{
+  const clean=normaliseMacedonianGeneratedText("Наименование: права и обврзки; исплата по банска сметка; саответен услов.");
+  assert.match(clean,/Назив/u);
+  assert.match(clean,/обврски/u);
+  assert.match(clean,/банкарска сметка/u);
+  assert.match(clean,/соодветен/u);
+  const check=assessMacedonianOutput(clean,{userText:"Одговори на македонски."});
+  assert.equal(check.ok,true,JSON.stringify({clean,check}));
+});
+
+test("language runtime is V6 after structural-token and lexical-integrity hardening",()=>{
+  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V6");
+});
