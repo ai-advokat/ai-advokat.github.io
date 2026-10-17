@@ -4530,14 +4530,20 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
   };
 }
 
-async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusContext=[],plan,maxOutputTokens=1800}={}){
+async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusContext=[],plan,maxOutputTokens=1800,sessionAffinity=null}={}){
   if(!freeWorkersAIConfigured(env)) return {ok:false,error:"free_workers_ai_not_configured"};
   const converted=await convertFreeChatAttachments(env,attachments);
   if(!converted.ok) return converted;
 
-  const historyText=(Array.isArray(history)?history:[])
+  const languageRequired=shouldEnforceMacedonianOutput(q);
+  // Do not feed a linguistically contaminated assistant answer back into the
+  // next Macedonian turn. User history is preserved; only failed assistant
+  // generations are dropped so the model cannot learn/mimic its own bad output.
+  const safeHistory=(Array.isArray(history)?history:[])
     .slice(-8)
-    .map(item=>(item.role==="assistant"?"ASSISTANT":"USER")+": "+String(item.text||"").slice(0,1800))
+    .filter(item=>item?.role!=="assistant" || !languageRequired || assessMacedonianOutput(item?.text,{userText:q}).ok);
+  const historyText=safeHistory
+    .map(item=>(item.role==="assistant"?"ASSISTANT":"USER")+": "+String(item.text||"").slice(0,1600))
     .join("\n");
   const documentText=converted.documents.map((doc,index)=>
     "[DOCUMENT "+(index+1)+"] "+doc.name+"\n"+doc.text
@@ -4552,6 +4558,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     extraRules:[
       "You are running in AI Advokat FREE Workers AI mode.",
       "If the user writes in Macedonian or recognisable Macedonian Latin transliteration, answer in standard literary Macedonian Cyrillic. The Macedonian 2017 language contract above is mandatory unless the user explicitly requests another language.",
+      "Use simple, natural Macedonian vocabulary and short clear sentences. Prefer established forms such as назив, работник, работодавач, работно место, плата, права и обврски. Never invent words or use neighbouring-language calques such as наименование.",
+      "For a simple definition or everyday legal-information question, answer directly in 4-8 concise sentences. Do not produce a table, multi-column pseudo-table or long checklist unless the user asks for one.",
       missionProfile==="GENERAL_BYPASS"
         ? "For ordinary non-legal tasks, use normal general model reasoning and knowledge. Do not force legal-source boilerplate."
         : "For legal/current-law claims, governed AI Advokat context controls. General model knowledge may explain generic concepts but may not establish current law, deadlines, jurisdiction, mandatory documents, remedies or legal effect.",
@@ -4575,18 +4583,21 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     documentText ? "ATTACHED DOCUMENT TEXT:\n"+documentText : "",
     governed ? "GOVERNED AI ADVOKAT CONTEXT:\n"+governed : "",
     "",
-    "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
+    missionProfile==="L0_INFORMATIONAL"
+      ? "Answer directly and concisely. Use ordinary standard Macedonian; no table unless requested."
+      : "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
   ].filter(Boolean).join("\n\n");
 
   const messages=[
     {role:"system",content:system},
     {role:"user",content:user}
   ];
-  const tokenLimit=Math.max(900,Math.min(4800,Number(maxOutputTokens)||3200));
+  const tokenLimit=Math.max(400,Math.min(3200,Number(maxOutputTokens)||1400));
   const result=await runWorkersAIText(env,{
     messages,
     maxOutputTokens:tokenLimit,
-    temperature:0.1
+    temperature:0.05,
+    sessionAffinity
   });
   if(!result.ok){
     return {
@@ -4602,9 +4613,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   const languagePass=await repairWorkersAIMacedonianIfNeeded(env,{
     text:result.text,
     userText:q,
-    maxOutputTokens:tokenLimit
+    maxOutputTokens:tokenLimit,
+    sessionAffinity
   });
-  const languageRequired=shouldEnforceMacedonianOutput(q);
   if(languageRequired && languagePass.languageAssessment?.ok!==true){
     return {
       ok:false,
@@ -4638,7 +4649,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     webSearchUsed:false,
     sources:[],
     conversationPersistence:"browser_session_only_app_no_server_conversation_store",
-    historyItemsUsed:Array.isArray(history)?history.length:0,
+    historyItemsUsed:safeHistory.length,
+    contaminatedAssistantHistoryDropped:Math.max(0,(Array.isArray(history)?history.length:0)-safeHistory.length),
     humanGate:"required"
   };
 }
