@@ -216,9 +216,9 @@ const ORCID = Object.freeze({
 
 const MEMBERSHIP_PLANS = Object.freeze({
   free: { code:"free", name:"FREE", monthlyPriceMkd:0, annualPriceMkd:0, monthlyQuota:FREE_MONTHLY_ASSISTANT_QUOTA, seats:1, trialDays:0 },
-  start: { code:"start", name:"START", monthlyPriceMkd:199, annualPriceMkd:1990, monthlyQuota:100, seats:1, trialDays:0 },
-  pro: { code:"pro", name:"PRO", monthlyPriceMkd:399, annualPriceMkd:3990, monthlyQuota:500, seats:1, trialDays:7 },
-  office: { code:"office", name:"OFFICE", monthlyPriceMkd:999, annualPriceMkd:9990, monthlyQuota:2000, seats:5, trialDays:0 }
+  start: { code:"start", name:"START", monthlyPriceMkd:490, annualPriceMkd:4900, monthlyQuota:15, seats:1, trialDays:0 },
+  pro: { code:"pro", name:"PRO", monthlyPriceMkd:1490, annualPriceMkd:14900, monthlyQuota:45, seats:1, trialDays:7 },
+  office: { code:"office", name:"OFFICE", monthlyPriceMkd:4990, annualPriceMkd:49900, monthlyQuota:150, seats:5, trialDays:0 }
 });
 
 function publicMembershipPlans() {
@@ -4981,25 +4981,18 @@ async function handleGPTChat(request,env){
     quota=MEMBERSHIP_PLANS.free.monthlyQuota;
   }
 
-  // Quality escalation: anonymous FREE users may still use Workers AI for ordinary chat,
-  // but legal document analysis/drafting is routed to the configured governed OpenAI
-  // orchestrator when available. This prevents low-quality document synthesis from the
-  // small FREE model while keeping the public quota and Human Gate unchanged.
-  const anonymousLegalDocumentEscalation=
-    !membership
-    && readiness.provider==="configured"
-    && initialPlan.mode!==ORCHESTRATOR_MODES.GENERAL
-    && (attachmentCheck.attachments.length>0 || guideDocumentCheck.attachments.length>0);
-
-  // Production quality rule: when the governed OpenAI provider is configured,
-  // anonymous/FREE traffic still respects the FREE monthly quota but uses the
-  // governed GPT path. Workers AI is fallback-only, so exhaustion of Cloudflare's
-  // daily neuron allowance cannot take the public assistant offline.
-  const governedOpenAIAvailable=readiness.provider==="configured";
-  const useFreeWorkersAI=!membership
-    && freeWorkersAIConfigured(env)
-    && !governedOpenAIAvailable
-    && !anonymousLegalDocumentEscalation;
+  // P0 cost guard: anonymous/FREE traffic must never spill into the paid OpenAI path.
+  // FREE uses the separately configured Workers AI provider. If that provider is
+  // unavailable, the request fails closed instead of creating unbounded paid spend.
+  const useFreeWorkersAI=!membership && freeProviderReady;
+  if(!membership && !useFreeWorkersAI){
+    return json(request,{
+      ok:false,
+      error:"free_provider_unavailable",
+      message:"FREE AI режимот е привремено недостапен. Платениот OpenAI provider не се користи како автоматска замена за анонимни барања.",
+      runtime:{provider:"workers_ai_free",state:"unavailable",paidFallback:false}
+    },503);
+  }
 
   if(autoExternalResearchCandidate && !useFreeWorkersAI) webRequested=true;
   if(useFreeWorkersAI && explicitWebRequested){
@@ -6113,9 +6106,7 @@ async function handleOrchestratorArchitecture(request, env) {
         : freeWorkersAIConfigured(env)
           ? "configured_for_free_workers_ai_chat_execution"
           : "locked",
-      freeProvider:readiness.provider==="configured"
-        ? "governed_openai_with_workers_ai_fallback"
-        : freeWorkersAIConfigured(env) ? "workers_ai_free" : "locked",
+      freeProvider:freeWorkersAIConfigured(env) ? "workers_ai_free" : "locked",
       freeProviderModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
       paidProviderExecution:readiness.provider==="configured" ? "configured_for_api_chat_execution" : "locked",
       paidProviderModel:readiness.provider==="configured" ? String(env.OPENAI_MODEL||"openai_configured_model") : null,
@@ -6250,7 +6241,9 @@ async function handleCapabilities(request, env) {
       articleCorpus: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       retrievalAssistant: database.reachable && database.schemaReady ? (env.AI ? "live_source_backed_ai" : "live_retrieval_only") : "blocked",
       legalOrchestrator: orchestratorRuntimeReadiness(env).provider==="configured"
-        ? "openai_live_governed_free_quota_plus_paid_membership"
+        ? (freeWorkersAIConfigured(env)
+          ? "openai_paid_governed_workers_ai_free"
+          : "openai_paid_governed_free_locked")
         : freeWorkersAIConfigured(env)
           ? "workers_ai_free_document_research_human_gate"
           : "architecture_v2_provider_locked",
@@ -6264,9 +6257,7 @@ async function handleCapabilities(request, env) {
         : freeWorkersAIMarkdownConfigured(env)
           ? "workers_ai_markdown_conversion"
           : "locked",
-      freeChatProvider:orchestratorRuntimeReadiness(env).provider==="configured"
-        ? "openai_governed"
-        : freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
+      freeChatProvider:freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
       freeChatModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
       paidChatProvider:orchestratorRuntimeReadiness(env).provider==="configured" ? "openai" : "locked",
       paidChatModel:orchestratorRuntimeReadiness(env).provider==="configured" ? String(env.OPENAI_MODEL||"openai_configured_model") : null,
