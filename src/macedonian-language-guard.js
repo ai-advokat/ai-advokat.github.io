@@ -35,12 +35,29 @@ const FOREIGN_LEXEMES=new Set([
   "становище","искане","следва","обжалвайте","трябва","моля","настоящият","същият","правосъдие","съд","съда","съдът","съдебен","съдебна","съдебно",
   "ищец","ищецът","ответник","ответникът","искова","исковата","обезщетение","обезщетението",
   "съгласно","обжалване","възражение","възражения","разноски","случайни","случаен","случайна",
-  "доказателства","молител","молителя","това","тази","тези","какво","защото","когато","всички","например","ще","някой","някои","който","която","които","према","уколико","такође","овде","није"
+  "доказателства","молител","молителя","това","тази","тези","какво","защото","когато","всички","например","ще","някой","някои","който","която","които","према","уколико","такође","овде","није",
+  // Serbian/hybrid forms repeatedly observed in Macedonian-facing generations
+  "доступан","доступен","доступна","доступно","доступни","доступност","доступните"
 ]);
 
 const MALFORMED_GENERATION_LEXEMES=new Set([
-  "последуствување","прикаде","приречет","нотариска","данишна","волеври","домнување","переводина","доцрат","паблицни"
+  "последуствување","прикаде","приречет","нотариска","данишна","волеври","домнување","переводина","доцрат","паблицни",
+  "низна","индексиот","пресуд"
 ]);
+
+// Contextual phrases can be linguistically invalid even when each individual
+// token exists in Macedonian. Keep these narrowly scoped to observed hybrid
+// generation patterns so valid Macedonian vocabulary is not over-blocked.
+const CONTEXTUAL_CONTAMINATION_PHRASES=[
+  "бирото за залагање пред есчп",
+  "република северна македонска",
+  "под измера на",
+  "денот на низна одлука",
+  "базиски белешки",
+  "просек за официјални пресуди",
+  "заглавие / пресуд",
+  "пресудни дела"
+];
 
 const FOREIGN_JURISDICTION_PHRASES=[
   "български закон",
@@ -97,11 +114,13 @@ export function assessMacedonianOutput(text,{userText=""}={}){
     ? []
     : FOREIGN_JURISDICTION_PHRASES.filter(p=>lower.includes(p));
   const malformedGeneration=[...MALFORMED_GENERATION_LEXEMES].filter(w=>words.has(w));
+  const contextualContamination=CONTEXTUAL_CONTAMINATION_PHRASES.filter(p=>lower.includes(p));
   const reasons=[];
   if(foreignChars.length) reasons.push("foreign_cyrillic_letters");
   if(foreignLexemes.length) reasons.push("foreign_lexical_contamination");
   if(jurisdictionLeaks.length) reasons.push("foreign_jurisdiction_substitution");
   if(malformedGeneration.length) reasons.push("malformed_macedonian_generation");
+  if(contextualContamination.length) reasons.push("contextual_language_contamination");
   return {
     ok:reasons.length===0,
     reasons,
@@ -109,12 +128,29 @@ export function assessMacedonianOutput(text,{userText=""}={}){
     foreignLexemes:foreignLexemes.slice(0,12),
     jurisdictionLeaks:jurisdictionLeaks.slice(0,8),
     malformedGeneration:malformedGeneration.slice(0,12),
+    contextualContamination:contextualContamination.slice(0,12),
     standardVersion:MACEDONIAN_LANGUAGE_STANDARD_VERSION
   };
 }
 
 
 const DETERMINISTIC_LEXICAL_REPLACEMENTS=[
+  // Real-world hybrid-output repair patterns observed in production.
+  ["просек за официјални пресуди","Преглед на официјални пресуди"],
+  ["под измера на","за"],
+  ["република северна македонска","Република Северна Македонија"],
+  ["бирото за залагање пред есчп","Бирото за застапување пред ЕСЧП"],
+  ["денот на низна одлука","датумот на одлуката"],
+  ["базиски белешки","Основни белешки"],
+  ["заглавие / пресуд","Предмет / пресуда"],
+  ["пресудни дела","пресуди и одлуки"],
+  ["доступните","достапните"],
+  ["доступност","достапност"],
+  ["доступни","достапни"],
+  ["доступен","достапен"],
+  ["доступна","достапна"],
+  ["доступно","достапно"],
+  ["индексиот","индексот"],
   ["искова молба","тужба"],
   ["обезщетението","надоместот на штета"],
   ["обезщетение","надомест на штета"],
