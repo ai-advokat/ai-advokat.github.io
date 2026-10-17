@@ -63,10 +63,10 @@ jobs:
           (async()=>{
           const fs=require("fs");
           const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
-          const EXPECTED_FREE_MODEL="@cf/openai/gpt-oss-20b";
+          const EXPECTED_FREE_MODEL="@cf/zai-org/glm-4.7-flash";
           const EXPECTED_PAID_MODEL="gpt-6.1-sol";
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
-          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V5";
+          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V6";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
 
           async function waitForExpectedRuntime(){
@@ -148,6 +148,16 @@ jobs:
                 throw new Error(label+" OpenAI web research omitted source policy metadata");
               }
             }
+            if(data.provider==="workers_ai_free"){
+              const calls=Number(data?.performance?.providerCalls||0);
+              if(calls<1 || calls>2){
+                throw new Error(label+" FREE provider call budget violated: "+JSON.stringify(data.performance));
+              }
+              const latency=Number(data?.performance?.serverLatencyMs||0);
+              if(latency>45000){
+                throw new Error(label+" FREE server latency budget exceeded: "+latency+"ms");
+              }
+            }
             return {answer,data};
           }
 
@@ -171,6 +181,7 @@ jobs:
 
           const scenarios=[
             ["basic","Одговори на македонски со една кратка реченица дека AI Advokat работи."],
+            ["employment-definition","Што е договор за вработување?"],
             ["reminder","Направи ми потсетник за лице што треба да оди во притов."],
             ["draft","Изработи тужба за надомест на штета, со измислени податоци."],
             ["valid-mk-legal","Судот е должен да ги земе предвид сите релевантни информации, а странката е должна да ги достави доказите."]
@@ -184,13 +195,21 @@ jobs:
             if(/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/u.test(answer)){
               throw new Error(name+" contains non-Macedonian Cyrillic letters: "+answer.slice(0,500));
             }
-            const foreignTokens=["поступак","поступакот","подносилац","тужилац","захтев","решење","подаци","документы","сведения","следует","является","становище","всего"];
+            const foreignTokens=["поступак","поступакот","подносилац","тужилац","захтев","решење","подаци","документы","сведения","следует","является","становище","всего","наименование","помеѓуз","обврзки","непостојно","саответен","правопризнателството","точнаја","године","власни","банок","биоки","свраним"];
             const lower=answer.toLocaleLowerCase("mk");
             if(foreignTokens.some(token=>new RegExp("(^|[^\\p{L}])"+token+"(?=$|[^\\p{L}])","u").test(lower))){
               throw new Error(name+" contains Serbian/Bulgarian/Russian lexical contamination: "+answer.slice(0,500));
             }
             if(/^\s*(need answer|user wants|the user|we need|provide|must answer)\b/i.test(answer)){
               throw new Error(name+" leaked internal planning text: "+answer.slice(0,500));
+            }
+            if(name==="employment-definition"){
+              if(/[|]/u.test(answer) || answer.split("\n").length>14){
+                throw new Error("employment-definition should stay concise and avoid pseudo-tables: "+answer.slice(0,1200));
+              }
+              if(!/договор/iu.test(answer) || !/работн/iu.test(answer)){
+                throw new Error("employment-definition did not answer the requested concept: "+answer.slice(0,1200));
+              }
             }
             if(name==="draft"){
               const badLegal=["съд","ищец","ответник","искова","обезщетение","съгласно","обжалване","възражение","разноски","случайни","поступак","тужилац","захтев","решење","трошкови"];
