@@ -10,7 +10,7 @@ import {
 // membership identity, client fact or conversation history.
 
 export const LEGAL_RUNTIME_GOVERNANCE_VERSION="ai-advokat-lioe-runtime-1.0.0";
-export const LEGAL_RUNTIME_TELEMETRY_SCHEMA="1.0";
+export const LEGAL_RUNTIME_TELEMETRY_SCHEMA="1.1";
 
 function officialWebSourceCount(sources=[]){
   let count=0;
@@ -39,6 +39,22 @@ function policyCompliantWebSourceCount(sources=[]){
   return count;
 }
 function profileId(plan){return plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";}
+function weightedCreditUnits({plan,result={},attachmentCount=0,postflightMeta={}}={}){
+  const profile=profileId(plan);
+  const base={
+    GENERAL_BYPASS:1,
+    L0_INFORMATIONAL:1,
+    L1_VERIFIED_RESEARCH:2,
+    L2_STRATEGY_PROCEDURE:3,
+    L3_CONSEQUENTIAL:5,
+    L4_LEGAL_TRUTH_GOVERNANCE:8
+  }[profile]||1;
+  const providerCalls=(Number(postflightMeta?.primaryProviderCalls)||0)+(Number(postflightMeta?.providerCalls)||0);
+  const web=result?.webSearchUsed===true?1:0;
+  const attachments=Math.min(5,Math.ceil((Number(attachmentCount)||0)/2));
+  const extraCalls=Math.max(0,providerCalls-1);
+  return Math.min(25,Math.max(1,base+web+attachments+extraCalls));
+}
 function isHighDepth(profile){return ["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(profile);}
 function nativeCurrentVerified(articleBundle={}){
   const v=articleBundle?.version;
@@ -239,6 +255,7 @@ export function buildSanitisedRuntimeRecord({
     guide_context_count:Number(guideContextCount)||0,
     attachment_count:Number(attachmentCount)||0,
     provider_calls:(Number(postflightMeta?.primaryProviderCalls)||0)+(Number(postflightMeta?.providerCalls)||0),
+    estimated_credit_units:weightedCreditUnits({plan,result,attachmentCount,postflightMeta}),
     input_tokens:inputTokens||null,
     output_tokens:outputTokens||null,
     total_tokens:totalTokens||null,
@@ -261,8 +278,8 @@ export async function persistSanitisedRuntimeRecord(env,record){
         release_state,provider_state,postflight_required,first_pass_verification,
         verification_attempts,correction_required,web_search_used,official_web_source_count,
         external_source_count,article_context_count,guide_context_count,attachment_count,
-        provider_calls,input_tokens,output_tokens,total_tokens,elapsed_ms,model,telemetry_schema_version
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        provider_calls,estimated_credit_units,input_tokens,output_tokens,total_tokens,elapsed_ms,model,telemetry_schema_version
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(
       record.run_id,record.started_at,record.finished_at,record.mission_profile,record.problem_class,
       record.mode,record.source_mode,record.current_law_material,record.source_verification_state,
@@ -273,7 +290,7 @@ export async function persistSanitisedRuntimeRecord(env,record){
       record.postflight_required,record.first_pass_verification,record.verification_attempts,
       record.correction_required,record.web_search_used,record.official_web_source_count,
       record.external_source_count,record.article_context_count,record.guide_context_count,
-      record.attachment_count,record.provider_calls,record.input_tokens,record.output_tokens,
+      record.attachment_count,record.provider_calls,record.estimated_credit_units,record.input_tokens,record.output_tokens,
       record.total_tokens,record.elapsed_ms,record.model,record.telemetry_schema_version
     ).run();
     return Object.freeze({ok:true,state:"recorded"});
