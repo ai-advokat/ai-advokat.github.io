@@ -1,4 +1,4 @@
-# AI Advokat portal — Worker + Static Assets v1.5
+# AI Advokat portal — Worker + Static Assets v1.9.0
 
 AI Advokat is a legal information and AI-research portal with source-first research, visible provenance and a mandatory human-review gate.
 
@@ -29,9 +29,9 @@ The Worker exposes:
 - `/api/web-sources`, `/api/zenodo`, `/api/orcid` — directories and publication metadata
 - `/api/citation-audit`, `/api/versions`, `/api/documents`, `/api/cases` — governed preview / locked
 
-D1 is active. R2 and Vectorize remain disabled. Workers AI is bound in staging only; production AI activation is a separate Human Gate / cost decision (`scripts/verify.mjs` blocks a production `ai` binding).
+D1 is active. The public FREE chat is text-only, quota-controlled and uses Cloudflare Workers AI when that provider is available; it does not automatically spill into paid OpenAI. Paid membership paths may use governed OpenAI when configured. User case documents are handled only in CasePilot Secure Workspace, not in the public chat. R2 remains an optional private-case backend; the governed D1 fallback is available when explicitly enabled. Vectorize is not bound.
 
-No legal AI output or DOI is fabricated.
+All legal AI output remains subject to source/version controls and Human Gate. No DOI, legal source, case fact or current-law status may be fabricated.
 
 ## Security, quota and abuse prevention
 
@@ -41,11 +41,14 @@ Implemented in `src/security.js`; covered by `npm run test:security` (CI: `secur
 |---|---|
 | Anonymous identity | `anon:v1:` + HMAC-SHA256(`RATE_LIMIT_SALT`, client network). IPv4 = full address, IPv6 = /64. **No plaintext IP is stored.** Missing/short salt → anonymous assistant and membership requests fail closed (503). |
 | Assistant burst limit | 5 requests / 60 s per subject, exact fixed window in D1 (`security_rate_limit_windows`). An optional Cloudflare Rate Limiting binding `ASSISTANT_BURST` is used as an extra first filter if bound (Cloudflare documents it as eventually consistent, so D1 stays authoritative). |
-| Monthly quota | FREE = 10 assistant requests / calendar month (UTC). Members use their entitlement quota. An invalid or expired key is treated as anonymous FREE. |
+| Monthly quota | FREE = 10 assistant requests / calendar month (UTC). Launch paid quotas are START 10, PRO 30 and OFFICE 100. Invalid/expired membership keys do not unlock the paid provider; anonymous traffic remains on the FREE path. |
 | Atomic reservation | One `INSERT … ON CONFLICT DO UPDATE … WHERE assistant_requests < quota RETURNING` statement. Order: burst → validation → routing/retrieval → reservation → AI. Rejected routing and empty retrieval consume nothing. Reservation is returned only if the AI provider itself throws. |
 | Prompt boundaries | All rules live in the system message. Sources and the user question are placed in `<<<LEGAL_SOURCES>>>` / `<<<USER_QUESTION>>>` blocks; delimiter sequences and control/bidi characters are stripped from untrusted text. |
 | Citation guard | An AI answer is accepted only if it cites at least one article and every article it mentions (`[Член N]`, `член N`, `членот N`, `чл. N`) was retrieved. Otherwise the response falls back to retrieval-only (`mode: retrieval_only_citation_guard`). |
 | Membership requests | Server-side Turnstile (`siteverify`, `remoteip`, hostname + action `membership_request`); 3/hour and 10/day per HMAC subject; one pending request per e-mail per 24 h (identical response either way); body ≤ 4 KB; key whitelist; canonical e-mail validation; overlong or control-character input is rejected, not truncated. |
+| Anonymous FREE chat | Dedicated Turnstile action `public_chat`; public user attachments are blocked before quota/provider execution; fingerprint-approved guide files are text-scanned for actual personal identifiers before public provider use. |
+| Membership access keys | New keys use HMAC-SHA256 with server-side `MEMBERSHIP_KEY_PEPPER`; owner keys are rotated, expiring and bounded. Legacy SHA-256 compatibility is opt-in and never accepted for the owner account. |
+| Paid-provider cost guard | A server-side global daily paid-request ceiling applies independently from per-account quotas. Owner-only token telemetry is available at `/api/internal/cost-telemetry`; token prices are never guessed when rate configuration is absent. |
 
 ### Configuration
 
@@ -55,14 +58,17 @@ Implemented in `src/security.js`; covered by `npm run test:security` (CI: `secur
 | `TURNSTILE_SECRET` | secret | production + staging | Turnstile widget secret key. |
 | `TURNSTILE_SITE_KEY` | plain var | production + staging | Public site key; served by `/api/membership/plans`. If absent the membership form stays closed. |
 | `TURNSTILE_ALLOWED_HOSTNAMES` | plain var (optional) | as needed | Comma-separated extra hostnames accepted from Turnstile, in addition to the CORS origins. |
+| `MEMBERSHIP_KEY_PEPPER` | secret | production + provisioning environment | ≥ 32 high-entropy characters; must be identical for Worker validation and owner-key provisioning. |
+| `OPENAI_GLOBAL_DAILY_REQUEST_CAP` | plain var (optional) | production | Global paid-provider request ceiling; code defaults conservatively to 50/day if omitted. |
 | `ASSISTANT_BURST` | Rate Limiting binding (optional) | not configured | Not required; see above. |
 
 ```bash
 npx wrangler secret put RATE_LIMIT_SALT
 npx wrangler secret put TURNSTILE_SECRET
+npx wrangler secret put MEMBERSHIP_KEY_PEPPER
 ```
 
-Until `RATE_LIMIT_SALT` is set, the anonymous assistant returns `503 assistant_temporarily_unavailable` by design.
+Until the required security secrets are set, affected paths fail closed by design. Anonymous FREE chat additionally requires a valid Turnstile token; membership-key validation requires the HMAC pepper for v2 keys.
 
 ## Corpus safety (article-level legal corpus)
 
