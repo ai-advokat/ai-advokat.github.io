@@ -10,7 +10,7 @@ import {
 // membership identity, client fact or conversation history.
 
 export const LEGAL_RUNTIME_GOVERNANCE_VERSION="ai-advokat-lioe-runtime-1.0.0";
-export const LEGAL_RUNTIME_TELEMETRY_SCHEMA="1.1";
+export const LEGAL_RUNTIME_TELEMETRY_SCHEMA="1.0";
 
 function officialWebSourceCount(sources=[]){
   let count=0;
@@ -39,7 +39,7 @@ function policyCompliantWebSourceCount(sources=[]){
   return count;
 }
 function profileId(plan){return plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";}
-function weightedCreditUnits({plan,result={},attachmentCount=0,postflightMeta={}}={}){
+export function estimateWeightedCreditUnits({plan,result={},attachmentCount=0,postflightMeta={}}={}){
   const profile=profileId(plan);
   const base={
     GENERAL_BYPASS:1,
@@ -255,7 +255,7 @@ export function buildSanitisedRuntimeRecord({
     guide_context_count:Number(guideContextCount)||0,
     attachment_count:Number(attachmentCount)||0,
     provider_calls:(Number(postflightMeta?.primaryProviderCalls)||0)+(Number(postflightMeta?.providerCalls)||0),
-    estimated_credit_units:weightedCreditUnits({plan,result,attachmentCount,postflightMeta}),
+    estimated_credit_units:estimateWeightedCreditUnits({plan,result,attachmentCount,postflightMeta}),
     input_tokens:inputTokens||null,
     output_tokens:outputTokens||null,
     total_tokens:totalTokens||null,
@@ -268,6 +268,9 @@ export function buildSanitisedRuntimeRecord({
 export async function persistSanitisedRuntimeRecord(env,record){
   if(!env?.DB)return Object.freeze({ok:false,state:"database_not_bound"});
   try{
+    // Weighted credit units are deliberately derived from already-stored,
+    // privacy-minimised telemetry. They are not persisted as a new billing
+    // field, so cost calibration does not require a production schema change.
     await env.DB.prepare(
       `INSERT INTO lioe_runtime_runs (
         run_id,started_at,finished_at,mission_profile,problem_class,mode,source_mode,
@@ -278,8 +281,8 @@ export async function persistSanitisedRuntimeRecord(env,record){
         release_state,provider_state,postflight_required,first_pass_verification,
         verification_attempts,correction_required,web_search_used,official_web_source_count,
         external_source_count,article_context_count,guide_context_count,attachment_count,
-        provider_calls,estimated_credit_units,input_tokens,output_tokens,total_tokens,elapsed_ms,model,telemetry_schema_version
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        provider_calls,input_tokens,output_tokens,total_tokens,elapsed_ms,model,telemetry_schema_version
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(
       record.run_id,record.started_at,record.finished_at,record.mission_profile,record.problem_class,
       record.mode,record.source_mode,record.current_law_material,record.source_verification_state,
@@ -290,49 +293,12 @@ export async function persistSanitisedRuntimeRecord(env,record){
       record.postflight_required,record.first_pass_verification,record.verification_attempts,
       record.correction_required,record.web_search_used,record.official_web_source_count,
       record.external_source_count,record.article_context_count,record.guide_context_count,
-      record.attachment_count,record.provider_calls,record.estimated_credit_units,record.input_tokens,record.output_tokens,
+      record.attachment_count,record.provider_calls,record.input_tokens,record.output_tokens,
       record.total_tokens,record.elapsed_ms,record.model,record.telemetry_schema_version
     ).run();
     return Object.freeze({ok:true,state:"recorded"});
   }catch(error){
     const message=String(error?.message||error);
-
-    // Backward-compatible rollout: code may reach production before additive
-    // migration 0029. In that narrow case, preserve existing telemetry and
-    // report the cost-credit field as pending instead of dropping the run.
-    if(/estimated_credit_units/i.test(message) && /no such column|has no column|table .* has no column/i.test(message)){
-      try{
-        await env.DB.prepare(
-          `INSERT INTO lioe_runtime_runs (
-            run_id,started_at,finished_at,mission_profile,problem_class,mode,source_mode,
-            current_law_material,source_verification_state,temporal_verification_state,
-            jurisdiction_verification_state,human_review_required,required_gate_types_json,
-            specialist_agents_json,implementation_requested,execution_authorization,
-            legal_stress_test_state,adversarial_review_state,verification_state,outcome_state,
-            release_state,provider_state,postflight_required,first_pass_verification,
-            verification_attempts,correction_required,web_search_used,official_web_source_count,
-            external_source_count,article_context_count,guide_context_count,attachment_count,
-            provider_calls,input_tokens,output_tokens,total_tokens,elapsed_ms,model,telemetry_schema_version
-          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-        ).bind(
-          record.run_id,record.started_at,record.finished_at,record.mission_profile,record.problem_class,
-          record.mode,record.source_mode,record.current_law_material,record.source_verification_state,
-          record.temporal_verification_state,record.jurisdiction_verification_state,record.human_review_required,
-          record.required_gate_types_json,record.specialist_agents_json,record.implementation_requested,
-          record.execution_authorization,record.legal_stress_test_state,record.adversarial_review_state,
-          record.verification_state,record.outcome_state,record.release_state,record.provider_state,
-          record.postflight_required,record.first_pass_verification,record.verification_attempts,
-          record.correction_required,record.web_search_used,record.official_web_source_count,
-          record.external_source_count,record.article_context_count,record.guide_context_count,
-          record.attachment_count,record.provider_calls,record.input_tokens,record.output_tokens,
-          record.total_tokens,record.elapsed_ms,record.model,"1.0"
-        ).run();
-        return Object.freeze({ok:true,state:"recorded_legacy_cost_schema",migration:"0029_required"});
-      }catch(legacyError){
-        console.error("lioe_runtime_telemetry_legacy_write_failed",String(legacyError?.message||legacyError).slice(0,180));
-      }
-    }
-
     console.error("lioe_runtime_telemetry_write_failed",message.slice(0,180));
     return Object.freeze({
       ok:false,
