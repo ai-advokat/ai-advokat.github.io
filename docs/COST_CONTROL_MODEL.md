@@ -15,7 +15,7 @@ FREE is isolated to Workers AI. It must not automatically spill into paid OpenAI
 
 ## Weighted credit telemetry
 
-LIOE runtime telemetry schema 1.1 calculates a privacy-minimised `estimated_credit_units` value from mission depth, provider-call count, web-search use and attachment count. It does not store the user's question, answer, source text, attachment text, client identity or membership key.
+AI Advokat derives a privacy-minimised `estimated_credit_units` value from mission depth, provider-call count, web-search use and attachment count. The credit value is calculated from the existing sanitised runtime record and is not written as a new billing/database field. The underlying telemetry does not store the user's question, answer, source text, attachment text, client identity or membership key.
 
 Current weights are calibration-only and do not yet change customer billing:
 - GENERAL/L0: base 1
@@ -28,4 +28,4 @@ Current weights are calibration-only and do not yet change customer billing:
 - Additional provider calls: +1 each
 - Per-run telemetry cap: 25 credit units
 
-The commercial model may move from raw request quotas to weighted credits only after Human Gate review of real production telemetry and margin data. Monetary cost is not inferred from the credit unit.
+The commercial model may move from raw request quotas to weighted credits only after Human Gate review of real production telemetry and margin data. Monetary cost is not inferred from the credit unit, and no production schema migration is required for this calibration model.
