@@ -70,3 +70,39 @@ export function detectConfidentialCasePrompt(value){
     score
   });
 }
+
+
+/**
+ * Stronger document-body detector used only after trusted server-side text
+ * extraction. It looks for actual values, not merely template words, so
+ * professional guides are not blocked just because they mention "пасош" or
+ * "матичен број" as concepts.
+ */
+export function detectConfidentialDocumentText(value){
+  const text=String(value??"").normalize("NFKC");
+  if(!text.trim()) return Object.freeze({confidential:false,reasons:Object.freeze([]),score:0});
+
+  const reasons=[];
+  const actualValuePatterns=Object.freeze([
+    ["national_id_number",/(?<!\d)\d{13}(?!\d)/u],
+    ["email_address",/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu],
+    ["phone_number",/(?<!\d)(?:\+?389|0)\s*7\d(?:[\s/-]*\d){6,7}(?!\d)/u],
+    ["postal_address",/(?:ул\.?|улица|адреса)\s+[^\n,]{2,80}\s+бр\.?\s*\d+/iu],
+    ["identity_document_number",/(?:лична\s+карта|пасош)\s*(?:бр(?:ој)?\.?|number|no\.?)\s*[:#-]?\s*[A-ZА-ЯЃЌЉЊЏЅЈ0-9]{5,20}/iu],
+    ["bank_account",/(?:трансакциск[ао]\s+сметк[ааи]|IBAN)\s*[:#-]?\s*[A-Z]{0,2}\d[\d\s-]{10,32}/iu]
+  ]);
+
+  for(const [reason,pattern] of actualValuePatterns){
+    if(pattern.test(text)) reasons.push(reason);
+  }
+
+  const namedCase=/\b(?:К|П|У|КП|КОК)\.?\s*бр\.?\s*\d{1,8}\s*\/\s*\d{2,4}/iu.test(text);
+  const personLabel=/(?:обвинет(?:иот|ата)?|тужител(?:от|ката)?|тужен(?:иот|ата)?|оштетен(?:иот|ата)?|барател(?:от|ката)?)\s*[:\-]\s*[\p{L}][\p{L}\s.'-]{3,80}/iu.test(text);
+  if(namedCase && personLabel) reasons.push("named_case_record");
+
+  return Object.freeze({
+    confidential:reasons.length>0,
+    reasons:Object.freeze([...new Set(reasons)]),
+    score:reasons.length
+  });
+}
