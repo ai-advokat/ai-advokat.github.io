@@ -7,9 +7,9 @@ Membership v1 is a staging-first entitlement layer for the AI Advokat legal rese
 | Plan | Monthly | Annual | Monthly AI quota | Seats |
 |---|---:|---:|---:|---:|
 | FREE | 0 MKD | 0 MKD | target 10 | 1 |
-| START | 199 MKD | 1,990 MKD | 100 | 1 |
-| PRO | 399 MKD | 3,990 MKD | 500 | 1 |
-| OFFICE | 999 MKD | 9,990 MKD | 2,000 | 5 |
+| START | 490 MKD | 4,900 MKD | 15 | 1 |
+| PRO | 1,490 MKD | 14,900 MKD | 45 | 1 |
+| OFFICE | 4,990 MKD | 49,900 MKD | 150 | 5 |
 
 PRO supports a 7-day trial request. Trial activation remains Human-Gate controlled until secure account verification is implemented.
 
@@ -23,7 +23,7 @@ PRO supports a 7-day trial request. Trial activation remains Human-Gate controll
 - The browser keeps a pasted membership key only in sessionStorage.
 - Card payment remains locked until a payment provider is selected and integrated.
 - Bank-transfer activation is manual and requires Human Gate confirmation.
-- Public AI preview remains available during staged rollout; paid quotas are enforced for valid membership keys.
+- Public FREE AI uses Workers AI only and is capped at 10 monthly requests; it does not automatically spill into paid OpenAI. Paid quotas are enforced for valid membership keys.
 
 ## Activation flow
 
