@@ -157,3 +157,15 @@ test("real production hybrid ECHR answer is rejected and repaired",()=>{
   assert.match(clean,/датумот на одлуката/u);
   assert.match(clean,/Основни белешки/u);
 });
+
+test("exact invalid phrase 'ИЗМЕРА НА РЕПУБЛИКА СЕВЕРНА' is blocked",()=>{
+  const bad="ИЗМЕРА НА РЕПУБЛИКА СЕВЕРНА МАКЕДОНСКА. Податоците се доступни во индексот.";
+  const check=assessMacedonianOutput(bad,{userText:"Одговори на македонски."});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.reasons.includes("contextual_language_contamination") || check.reasons.includes("foreign_lexical_contamination"));
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.doesNotMatch(clean,/ИЗМЕРА НА РЕПУБЛИКА СЕВЕРНА/iu);
+  assert.doesNotMatch(clean,/доступни/iu);
+  assert.match(clean,/Република Северна Македонија/u);
+  assert.match(clean,/достапни/u);
+});
