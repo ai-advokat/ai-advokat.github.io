@@ -349,7 +349,7 @@ test("AUDIT1 public claims, privacy and human-gate UI match the active architect
   assert.match(index,/точниот активен provider\/model/);
   assert.match(index,/Проверливост и Human Gate/);
   assert.match(index,/releaseDecision/);
-  assert.match(privacy,/Верзија:<\/strong> 1\.2/);
+  assert.match(privacy,/Верзија:<\/strong> 1\.3/);
   assert.match(privacy,/Cloudflare Workers AI/);
   assert.match(privacy,/Secure Case Workspace/);
   assert.match(privacy,/не ветува автоматски рок на бришење/i);
