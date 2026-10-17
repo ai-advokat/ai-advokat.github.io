@@ -19,7 +19,8 @@ const manifest=JSON.parse(fs.readFileSync("data/agent-architecture-v2.json","utf
 test("CHAT1 homepage exposes one primary AI Advokat conversation workspace",()=>{
   assert.match(html,/id="ai-advokat-chat"/);
   assert.match(html,/id="aiAdvokatChat"/);
-  assert.match(html,/Напишете што ви треба или прикачете документи/);
+  assert.match(html,/Јавниот chat е само за текстуално правно истражување/);
+  assert.match(html,/Secure Case Workspace/);
   assert.match(html,/assets\/ai-advokat-chat\.css/);
   assert.match(html,/assets\/ai-advokat-chat\.js/);
 });
@@ -56,13 +57,15 @@ test("CHAT4 citizen guide routing stays first and clickable",()=>{
   assert.match(chatJs,/AIAdvokatGuideRouter/);
 });
 
-test("CHAT5 attachment UX supports text, image and file payloads but remains privacy-gated",()=>{
-  assert.match(html,/accept="\.pdf,\.docx,\.txt,\.md,\.csv,\.json,\.png,\.jpg,\.jpeg,\.webp,/);
-  assert.match(chatJs,/kind:"image"/);
-  assert.match(chatJs,/kind:"file"/);
-  assert.match(chatJs,/kind:"text"/);
-  assert.match(worker,/OPENAI_FILE_INPUT_ENABLED/);
-  assert.match(worker,/attachment_processing_locked/);
+test("CHAT5 public case attachments are blocked while governed guide documents stay separately controlled",()=>{
+  assert.match(html,/id="aiChatFiles"[^>]*disabled/);
+  assert.match(html,/Документи → Secure Case Workspace/);
+  assert.match(chatJs,/openSecureAttachmentWorkspace/);
+  assert.match(worker,/public_attachment_secure_workspace_required/);
+  assert.match(worker,/providerCalled:false/);
+  assert.match(worker,/quotaConsumed:false/);
+  assert.match(worker,/validateGuideDocuments/);
+  assert.match(worker,/guide_document_fingerprint_mismatch/);
   assert.equal(manifest.product_experience.current_activation.attachment_provider_processing,false);
 });
 
@@ -383,27 +386,25 @@ test("CHAT36 case-law relevance participates in corpus routing without replacing
   assert.match(worker,/assessLegalRuntimeRelease\(\{[\s\S]*articleBundle,[\s\S]*result,[\s\S]*postflight/);
 });
 
-test("CHAT37 attachment UX supports drag drop paste and system file picking",()=>{
+test("CHAT37 drag, paste and picker file attempts are handed off before public provider execution",()=>{
   assert.match(html,/id="aiChatDropZone"/);
   assert.match(html,/id="aiChatDropHint"/);
-  assert.match(html,/Повлечете до 20 PDF\/Word\/слики/);
-  assert.match(chatJs,/addAttachmentFiles/);
-  assert.match(chatJs,/addEventListener\("dragenter"/);
+  assert.match(html,/Не прикачувајте документи во јавниот chat/);
+  assert.match(chatJs,/openSecureAttachmentWorkspace/);
   assert.match(chatJs,/addEventListener\("drop"/);
   assert.match(chatJs,/clipboardData\?\.files/);
-  assert.match(chatJs,/CHAT_ACCEPTED_MIME/);
-  assert.match(chatCss,/\.ai-chat-composer\.is-dragover/);
+  assert.match(chatJs,/window\.location\.href="\/casepilot-workspace\.html"/);
 });
 
 
-test("CHAT34 FREE mode is open without owner or member key",()=>{
+test("CHAT34 FREE mode is open for public text research without owner or member key",()=>{
   assert.doesNotMatch(html,/id="aiChatMembershipKey"/);
   assert.doesNotMatch(html,/id="aiChatMembershipUse"/);
   assert.doesNotMatch(html,/id="aiChatOwnerOpen"/);
-  assert.match(html,/FREE активен · не е потребен клуч · документарна анализа преку Workers AI/);
-  assert.match(chatJs,/FREE активен · без клуч · Workers AI/);
+  assert.match(html,/FREE активен · јавен текстуален chat · Workers AI/);
+  assert.match(chatJs,/FREE активен · јавен текстуален chat · Workers AI/);
   assert.match(chatJs,/free_quota_exhausted/);
-  assert.match(chatJs,/attachments=\[\.\.\.selectedFiles\]/);
+  assert.match(chatJs,/public_attachment_secure_workspace_required/);
 });
 
 
@@ -414,16 +415,14 @@ test("CHAT35 free mode keeps safety gates while removing key dependency",()=>{
   assert.doesNotMatch(chatJs,/verifyAndUseMembershipKey/);
 });
 
-test("CHAT36 FREE workspace accepts up to 20 document attachments",()=>{
-  assert.match(html,/до 20 PDF\/Word\/слики/);
-  assert.match(html,/id="aiChatFiles"[^>]*multiple/);
-  assert.match(chatJs,/const CHAT_ATTACHMENT_LIMIT=20/);
-  assert.match(chatJs,/const CHAT_ATTACHMENT_TOTAL_BYTES=24_000_000/);
-  assert.match(chatJs,/најмногу 20 документи/);
-  assert.doesNotMatch(chatJs,/const merged=\[\.\.\.attachments,\.\.\.accepted\]\.slice\(0,CHAT_ATTACHMENT_LIMIT\)/);
-  assert.match(worker,/const CHAT_MAX_ATTACHMENTS=20/);
-  assert.match(worker,/const CHAT_MAX_BYTES=36\*1024\*1024/);
-  assert.match(worker,/const CHAT_ATTACHMENT_MAX_BASE64=8_500_000/);
+test("CHAT36 public workspace accepts no user case attachments and server enforces the boundary",()=>{
+  assert.match(html,/id="aiChatFiles"[^>]*disabled/);
+  assert.match(html,/јавен chat: без прилози/);
+  assert.match(chatJs,/no user-supplied document\/image bytes leave the browser/);
+  const gate=worker.indexOf("public_attachment_secure_workspace_required");
+  const quota=worker.indexOf("reserveMonthlyQuota",gate);
+  assert.ok(gate>0 && quota>gate);
+  assert.match(worker.slice(gate,quota),/attachmentsAccepted:false/);
 });
 
 
@@ -438,33 +437,31 @@ test("CHAT37 owner provisioning workflow targets the files that actually exist",
 });
 
 
-test("CHAT38 visible multi-upload control exposes the 20-document contract",()=>{
+test("CHAT38 visible document control points to the secure workspace instead of public upload",()=>{
   assert.match(html,/id="aiChatAttachWide"/);
-  assert.match(html,/Прикачи документи \(до 20\)/);
+  assert.match(html,/Документи → Secure Case Workspace/);
   assert.match(html,/id="aiChatAttachmentCount"/);
-  assert.match(chatJs,/attachWideBtn/);
-  assert.match(chatJs,/attachmentCount\.textContent=attachments\.length\+" \/ "\+CHAT_ATTACHMENT_LIMIT/);
-  assert.match(html,/20261015-free-workers-ai-v2/);
+  assert.match(html,/јавен chat: без прилози/);
+  assert.match(chatJs,/attachWideBtn\.addEventListener\("click",openSecureAttachmentWorkspace\)/);
 });
 
 
-test("CHAT39 FREE status is visible beside the uploader",()=>{
+test("CHAT39 FREE status is visible and truthful beside the secure-document handoff",()=>{
   assert.match(html,/id="aiChatOwnerState"/);
-  assert.match(html,/FREE активен · без клуч · Workers AI/);
+  assert.match(html,/FREE активен · јавен текстуален chat · Workers AI/);
   assert.doesNotMatch(html,/id="aiChatOwnerOpen"/);
-  assert.match(html,/20261015-free-workers-ai-v2/);
 });
 
 
-test("CHAT40 FREE Workers AI document fallback is visible and preserves 20-document upload",()=>{
-  assert.match(html,/FREE активен · без клуч · Workers AI/);
-  assert.match(html,/Прикачи документи \(до 20\)/);
+test("CHAT40 FREE Workers AI is visible while public attachments fail closed",()=>{
+  assert.match(html,/FREE активен · јавен текстуален chat · Workers AI/);
   assert.match(chatJs,/configured_for_free_workers_ai_chat_execution/);
   assert.match(chatJs,/FREE Workers AI · /);
   assert.match(chatJs,/runtime\.freeProviderModel/);
   assert.match(worker,/freeProviderModel:freeWorkersAIConfigured\(env\)/);
+  assert.match(worker,/public_attachment_secure_workspace_required/);
   assert.match(worker,/convertFreeChatAttachments/);
-  assert.match(worker,/env\.AI\.toMarkdown/);
+  assert.match(worker,/validateGuideDocuments/);
 });
 
 
@@ -510,9 +507,10 @@ test("CHAT37 sources and governance are collapsed behind a simple answer",()=>{
   assert.match(html,/Приватност и професионална употреба/);
 });
 
-test("CHAT38 GPT attachment analysis accepts the same twenty-file set as the composer",()=>{
+test("CHAT38 orchestrator retains bounded attachment capability for governed non-public paths",()=>{
   const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
   assert.match(orchestrator,/attachments\)\?attachments:\[\]\)\.slice\(0,20\)/);
+  assert.match(worker,/public_attachment_secure_workspace_required/);
 });
 
 test("CHAT39 Auto mode can escalate unsupported legal questions to authorised external research",()=>{
