@@ -22,6 +22,19 @@ test("extracts literal ECLI only",()=>{
   assert.deepEqual(ids.ecli,["ECLI:MK:VS:2026:123.1"]);
 });
 
+test("extracts Macedonian Cyrillic court reference numbers without ASCII word-boundary assumptions",()=>{
+  const ids=extractOfficialIdentifiers("Основен суд Скопје: К.бр. 101/26, П.бр. 55/2026 и У.бр. 2/2016.");
+  assert.deepEqual(ids.referenceNumbers,["К.бр. 101/26","П.бр. 55/2026","У.бр. 2/2016"]);
+});
+
+test("extracts Macedonian court authority at a Cyrillic boundary",()=>{
+  const a=analyzeLegalDocument({
+    filename:"odluka.txt",
+    text:"Пред Основен суд Скопје се води постапка К.бр. 101/26. Согласно член 12. На 10.10.2026 е донесена одлука."
+  });
+  assert.ok(a.reviewRow.authority.some(v=>/Основен суд Скопје/i.test(v)));
+});
+
 test("extracts article references",()=>{
   const refs=extractLegalReferences("Согласно член 26 став 2 и чл. 106 од Законот за општата управна постапка.");
   assert.ok(refs.articles.some(v=>v.includes("26")));
