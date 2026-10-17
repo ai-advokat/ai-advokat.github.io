@@ -169,3 +169,16 @@ test("exact invalid phrase 'ИЗМЕРА НА РЕПУБЛИКА СЕВЕРНА'
   assert.match(clean,/Република Северна Македонија/u);
   assert.match(clean,/достапни/u);
 });
+
+
+test("'измера' is treated as malformed generation, never as 'измена'",()=>{
+  const bad="ИЗМЕРА НА РЕПУБЛИКА СЕВЕРНА МАКЕДОНИЈА";
+  const check=assessMacedonianOutput(bad,{userText:"Одговори на македонски."});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.reasons.includes("malformed_macedonian_generation") || check.reasons.includes("contextual_language_contamination"));
+  assert.ok(check.malformedGeneration.includes("измера"));
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.doesNotMatch(clean,/измера/iu);
+  assert.doesNotMatch(clean,/измена/iu);
+  assert.match(clean,/за Република Северна Македонија/u);
+});
