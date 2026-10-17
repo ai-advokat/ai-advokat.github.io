@@ -643,6 +643,13 @@ describe("regression and truthful capabilities", () => {
     );
   });
 
+  test("R1b deprecated owner-style keys can never authenticate as membership", async () => {
+    const { env, raw } = freshEnv();
+    seedMembership(raw,{key:"AIADV-OWNER-legacy-secret",quota:100,plan:"pro"});
+    const r=await call(env,assistantRequest("ЗРО член 12",{key:"AIADV-OWNER-legacy-secret",ip:nextIp()}));
+    assert.notEqual(r.body?.membership?.planCode,"pro");
+  });
+
   test("R2 PWA and static assets are still served through ASSETS with security headers", async () => {
     const { env } = freshEnv();
     for (const path of ["/", "/manifest.webmanifest", "/service-worker.js", "/offline.html", "/membership.html"]) {
