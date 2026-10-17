@@ -2176,7 +2176,7 @@
       cardVersions:"Верзии и измени", cardVersionsText:"Споредба на стар и нов текст, со видливи датумски граници и правна важност.",
       cardCitations:"Проверка на цитати", cardCitationsText:"Контрола дали членот, предметот, DOI или изворот навистина го поддржува тврдењето.",
       cardDocs:"Документи и досиеја", cardDocsText:"Работни досиеја, хронологии, доказни матрици и правни белешки со човечко одобрување.",
-      researchTag:"AI ПРАВНО ИСТРАЖУВАЊЕ", researchTitle:"AI истражувач со доказна трага", researchText:"AI истражувачот работи врз истиот article-level корпус што е видлив во „Закони и прописи“. Секој одговор се врзува за една утврдена верзија на законот, ги прикажува изворните членови и останува под човечка контрола.",
+      researchTag:"AI ПРАВНО ИСТРАЖУВАЊЕ", researchTitle:"AI истражувач со доказна трага", researchText:"AI истражувачот работи врз истиот корпус на ниво на членови што е видлив во „Закони и прописи“. Секој одговор се врзува за една утврдена верзија на законот, ги прикажува изворните членови и останува под човечка контрола.",
       question:"Правно прашање", humanGate:"Човечка правна проверка е задолжителна", humanGateText:"AI-излезот е истражувачка помош. Не претставува адвокатско мислење, застапување или конечен правен совет додека не биде проверен и усвоен од овластен професионалец.",
       promptTitle:"Примери на прашања", pubTag:"ПУБЛИКАЦИИ", pubTitle:"Трудови и стручни анализи", pubText:"Zenodo-профилот е активен. Четири работни труда се објавени со регистрирани DOI и се вклучени во AI Advokat Zenodo Community. „Кочани – Пулс“ е означен како draft во подготовка за журналски труд.", zenodoStatus:"Статус на Zenodo",
       authorTag:"АВТОР", authorName:"Адвокат Зоран Стојанкиќ", authorBio:"Порталот е развиен како професионална правна платформа за систематизирање на законодавството, судската практика, стручните анализи и истражувањето поддржано од вештачка интелигенција. Zenodo-профилот е активен; четири труда се објавени со DOI, имаат научни профили и се вклучени во AI Advokat Zenodo Community.",
@@ -2963,7 +2963,7 @@
       T("Споредба на текстот на ист член во две верзии што backend-от ги враќа. Споредбата е текстуална и не утврдува правно дејство.","Compares the text of one article in two versions returned by the backend. The comparison is textual and does not determine legal effect."));
     root.append(el("div",{style:"grid-column:1/-1"},statusBanner("versions",
       "Споредбата работи само врз верзии што се внесени со датумски метаподатоци. Секоја верзија го покажува својот статус и човечка контрола.",
-      "The comparison works only on versions loaded with date metadata. Each version shows its own status and човечка контрола.")));
+      "The comparison works only on versions loaded with date metadata. Each version shows its own status and Human Gate.")));
     const lawSelect=el("select",{id:"versionLaw"});
     const article=el("input",{id:"versionArticle",type:"text",inputmode:"text",placeholder:T("на пр. 12 или 12-а","e.g. 12 or 12-a"),required:true});
     const show=el("button",{class:"btn primary",type:"submit"},T("Прикажи верзии","Show versions"));
@@ -3207,12 +3207,12 @@
     const gate=ZT.humanGateLabel(zppInstrument,lang);
     $("#zppAsOf").textContent=stale
       ? T(`Ознаките за состојба беа точни на ${ZT.formatDate(tl.statusAsOf,"mk")} и сега се повлечени до нова проверка.`,`The status labels were accurate on ${ZT.formatDate(tl.statusAsOf,"en")} and are now withdrawn until re-checked.`)
-      : T(`Ознаките за состојба важат на ${ZT.formatDate(tl.statusAsOf,"mk")}. човечка контрола (закон): ${gate}.`,`Status labels as of ${ZT.formatDate(tl.statusAsOf,"en")}. човечка контрола (law): ${gate}.`);
+      : T(`Ознаките за состојба важат на ${ZT.formatDate(tl.statusAsOf,"mk")}. Човечка проверка на законот: ${gate}.`,`Status labels as of ${ZT.formatDate(tl.statusAsOf,"en")}. Human Gate (law): ${gate}.`);
     root.replaceChildren(...tl.items.map(it=>{
       const phase=ZT.phaseFor(it,today);
       const dl=el("dl",{});
       ZT.dateRows(it,lang).forEach(r=>dl.append(el("dt",{text:r.label}),el("dd",{},r.iso ? el("time",{datetime:r.iso,text:r.value}) : el("span",{class:"help",style:"margin:0",text:r.value}))));
-      dl.append(el("dt",{text:T("човечка контрола (закон)","човечка контрола (law)")}),el("dd",{text:gate}));
+      dl.append(el("dt",{text:T("Човечка проверка на законот","Human Gate (law)")}),el("dd",{text:gate}));
       return el("li",{class:"zppItem","data-phase":phase.key},
         el("span",{class:"srcBadge",text:T("✓ Официјален извор · LDBIS","✓ Official source · LDBIS")}),
         el("p",{class:"gazette"},T("Сл. весник ","Off. Gazette "),it.gazette," ",el("small",{text:it.kindLabel[L]})),
@@ -3228,12 +3228,12 @@
         el("b",{text:T("Патека пред 2027: 7/2011 + 124/2015","Pre-2027 track: 7/2011 + 124/2015")}),
         stale ? T("Повторна проверка е потребна.","Re-check required.")
           : T(`Се применува до почетокот на примената на 151/2026 (${ZT.formatDate(next.applicationFrom,"mk")}). Не е потврдена како тековен пречистен текст. човечка контрола: ${gate}.`,
-              `Applies until 151/2026 begins to apply (${ZT.formatDate(next.applicationFrom,"en")}). Not confirmed as a current consolidated text. човечка контрола: ${gate}.`)),
+              `Applies until 151/2026 begins to apply (${ZT.formatDate(next.applicationFrom,"en")}). Not confirmed as a current consolidated text. Human Gate: ${gate}.`)),
       el("div",{class:"zppTrack"},
         el("b",{text:T("Патека од 2027: 151/2026","2027 track: 151/2026")}),
         stale ? T("Повторна проверка е потребна.","Re-check required.")
           : T(`Објавен и стапен во сила; примена од ${ZT.formatDate(next.applicationFrom,"mk")}. Сè уште не се применува. човечка контрола: ${gate}.`,
-              `Published and in force; application begins ${ZT.formatDate(next.applicationFrom,"en")}. Not yet applicable. човечка контрола: ${gate}.`)));
+              `Published and in force; application begins ${ZT.formatDate(next.applicationFrom,"en")}. Not yet applicable. Human Gate: ${gate}.`)));
   }
 
   function renderLayerLadder(){
@@ -3332,7 +3332,7 @@
   };
   const BASIS_LABELS={
     date:{mk:"Избрана според наведениот датум",en:"Selected by the date you entered"},
-    approved_current:{mk:"Тековна верзија потврдена преку човечка контрола",en:"Current version confirmed through the човечка контрола"},
+    approved_current:{mk:"Тековна верзија потврдена преку човечка контрола",en:"Current version confirmed through the Human Gate"},
     single_version:{mk:"Единствена внесена верзија на законот",en:"The only loaded version of the law"},
     single_unversioned:{mk:"Корпус без верзиски метаподатоци (legacy) — верзијата мора да се провери во официјалниот извор",en:"Corpus without version metadata (legacy) — check the version in the official source"}
   };
