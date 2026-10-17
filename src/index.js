@@ -224,6 +224,11 @@ const MEMBERSHIP_PLANS = Object.freeze({
   office: { code:"office", name:"OFFICE", monthlyPriceMkd:4990, annualPriceMkd:49900, monthlyQuota:100, seats:5, trialDays:0 }
 });
 
+function paidOpenAIDailyRequestCap(env){
+  const n=Number(env?.OPENAI_GLOBAL_DAILY_REQUEST_CAP||0);
+  return Number.isInteger(n) && n>=1 && n<=10000 ? n : null;
+}
+
 function publicMembershipPlans() {
   return Object.values(MEMBERSHIP_PLANS).map(p=>({
     code:p.code,
@@ -5128,6 +5133,37 @@ async function handleGPTChat(request,env){
   }
 
   const plan=buildAgentPlan(q,{preferCorpus});
+
+  // Global paid-provider cost guard. This is deliberately independent from
+  // per-account quotas: even many valid memberships cannot exceed the daily
+  // server-side request ceiling. FREE Workers AI traffic never consumes it.
+  if(membership){
+    const globalDailyCap=paidOpenAIDailyRequestCap(env);
+    if(!globalDailyCap){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:"openai_global_cost_guard_not_configured",
+        message:"Платениот AI provider е привремено заклучен затоа што глобалниот дневен трошочен лимит не е конфигуриран."
+      },503);
+    }
+    const globalBudget=await consumeWindow(env,{
+      scope:"openai_paid_global_day",
+      subject:"openai:global",
+      limit:globalDailyCap,
+      windowSeconds:86400
+    });
+    if(!globalBudget.allowed){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:"openai_global_daily_cap_reached",
+        message:"Глобалниот дневен безбедносен лимит за платениот AI provider е достигнат. Ниту корисничката квота ниту нов provider повик не се потрошени.",
+        costGuard:{dailyRequestCap:globalDailyCap}
+      },503,{"Retry-After":String(globalBudget.retryAfter)});
+    }
+  }
+
   const lioeEngaged=plan.legalIntelligenceEngine?.engaged===true;
   const lioeRunStartedMs=Date.now();
   const lioeRunStartedAt=new Date(lioeRunStartedMs).toISOString();
