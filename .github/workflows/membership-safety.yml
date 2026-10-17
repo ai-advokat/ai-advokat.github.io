@@ -37,9 +37,9 @@ jobs:
           grep -q 'monthlyPriceMkd:490' src/index.js
           grep -q 'monthlyPriceMkd:1490' src/index.js
           grep -q 'monthlyPriceMkd:4990' src/index.js
-          grep -q 'monthlyQuota:15' src/index.js
-          grep -q 'monthlyQuota:45' src/index.js
-          grep -q 'monthlyQuota:150' src/index.js
+          grep -q 'monthlyQuota:10' src/index.js
+          grep -q 'monthlyQuota:30' src/index.js
+          grep -q 'monthlyQuota:100' src/index.js
           grep -q 'cardPayments: "locked_until_provider_selected"' src/index.js
           grep -q 'membership_requests' migrations/0017_membership_v1.sql
           grep -q 'membership_access_keys' migrations/0017_membership_v1.sql
