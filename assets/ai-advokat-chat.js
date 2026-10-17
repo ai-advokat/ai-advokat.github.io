@@ -945,7 +945,7 @@
         && runtime.lioeRuntimeTelemetry==="ready";
       const freeModel=String(runtime.freeProviderModel||"").trim();
       const paidModel=String(runtime.paidProviderModel||"").trim();
-      if(runtime.providerExecution==="configured_for_free_workers_ai_chat_execution"){
+      if(runtime.freeProvider==="workers_ai_free" || runtime.providerExecution==="configured_for_free_workers_ai_chat_execution"){
         provider.textContent="FREE Workers AI · "+(freeModel||"активен модел")+" · LIVE";
       }else if(fullyReady){
         provider.textContent=(paidModel||"OpenAI provider")+" · LIVE governed";
