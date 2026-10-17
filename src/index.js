@@ -3519,6 +3519,127 @@ async function caseObjectDelete(env,key){
   }
 }
 
+
+async function deleteCaseObjectPrefix(env,prefix){
+  const safePrefix=String(prefix||"");
+  if(!safePrefix) return 0;
+  let deleted=0;
+
+  if(caseR2Ready(env) && typeof env.CASE_FILES.list==="function"){
+    let cursor=undefined;
+    do{
+      const page=await env.CASE_FILES.list({prefix:safePrefix,cursor,limit:100});
+      const objects=Array.isArray(page?.objects)?page.objects:[];
+      for(const item of objects){
+        const key=String(item?.key||"");
+        if(!key.startsWith(safePrefix)) continue;
+        await env.CASE_FILES.delete(key);
+        deleted++;
+      }
+      cursor=page?.truncated ? page?.cursor : undefined;
+    }while(cursor);
+  }
+
+  if(caseD1FallbackReady(env)){
+    const result=await env.DB.prepare(
+      "DELETE FROM case_private_object_chunks WHERE object_key LIKE ?"
+    ).bind(safePrefix+"%").run();
+    deleted+=Number(result?.meta?.changes||0);
+  }
+  return deleted;
+}
+
+async function enforceExpiredCaseRetention(env,{limit=50}={}){
+  if(!env?.DB) return {ok:false,error:"database_not_bound",casesDeleted:0};
+  const boundedLimit=Math.max(1,Math.min(200,Number(limit)||50));
+  const now=new Date().toISOString();
+  let rows;
+  try{
+    const result=await env.DB.prepare(
+      `SELECT id,owner_account_id,status,retention_until
+         FROM case_workspaces
+        WHERE status!='deleted'
+          AND (
+            status='delete_pending'
+            OR (retention_until IS NOT NULL AND datetime(retention_until) <= datetime(?))
+          )
+        ORDER BY COALESCE(retention_until,delete_requested_at,created_at)
+        LIMIT ?`
+    ).bind(now,boundedLimit).all();
+    rows=result.results||[];
+  }catch(error){
+    const message=String(error?.message||error);
+    if(/no such table/i.test(message)) return {ok:false,error:"case_workspace_schema_not_ready",casesDeleted:0};
+    throw error;
+  }
+
+  let casesDeleted=0;
+  let objectsDeleted=0;
+  for(const row of rows){
+    const caseId=caseWorkspaceId(row.id);
+    if(!caseId) continue;
+    const docs=await env.DB.prepare(
+      "SELECT id,storage_key FROM case_document_slots WHERE case_id=? AND storage_state!='deleted'"
+    ).bind(caseId).all();
+
+    for(const doc of docs.results||[]){
+      if(doc.storage_key){
+        await caseObjectDelete(env,String(doc.storage_key)).then(()=>{objectsDeleted++;}).catch(()=>{});
+      }
+      await caseObjectDelete(env,`case-derived/v1/${caseId}/${doc.id}/extraction.json`).then(()=>{objectsDeleted++;}).catch(()=>{});
+    }
+    await caseObjectDelete(env,`case-derived/v1/${caseId}/analysis/latest.md`).then(()=>{objectsDeleted++;}).catch(()=>{});
+    objectsDeleted+=await deleteCaseObjectPrefix(env,`case-derived/v1/${caseId}/drafts/`).catch(()=>0);
+
+    if(caseR2Ready(env) && typeof env.CASE_FILES.resumeMultipartUpload==="function"){
+      const sessions=await env.DB.prepare(
+        "SELECT storage_key,r2_upload_id,state FROM case_multipart_uploads WHERE case_id=?"
+      ).bind(caseId).all().catch(()=>({results:[]}));
+      for(const session of sessions.results||[]){
+        if(session.state==="active"){
+          try{await env.CASE_FILES.resumeMultipartUpload(session.storage_key,session.r2_upload_id).abort();}catch{}
+        }
+        if(session.storage_key){
+          await env.CASE_FILES.delete(session.storage_key).then(()=>{objectsDeleted++;}).catch(()=>{});
+        }
+      }
+    }
+
+    const at=new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE case_document_slots
+            SET original_name=NULL,mime_type=NULL,sha256=NULL,page_count=NULL,storage_key=NULL,
+                storage_state='deleted',extraction_state='not_started',updated_at=?
+          WHERE case_id=?`
+      ).bind(at,caseId),
+      env.DB.prepare(
+        `UPDATE case_workspaces
+            SET title='[deleted]',client_reference=NULL,legal_area=NULL,status='deleted',
+                professional_use_locked=1,retention_until=NULL,
+                delete_requested_at=COALESCE(delete_requested_at,?),updated_at=?
+          WHERE id=?`
+      ).bind(at,at,caseId),
+      env.DB.prepare("DELETE FROM case_workspace_access WHERE case_id=?").bind(caseId),
+      env.DB.prepare(
+        `UPDATE case_multipart_uploads
+            SET state=CASE WHEN state='completed' THEN state ELSE 'expired' END,updated_at=?
+          WHERE case_id=? AND state!='completed'`
+      ).bind(at,caseId),
+      env.DB.prepare(
+        `INSERT INTO case_audit_events
+          (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+         VALUES (?, ?, ?, 'delete_requested', 'case_workspace', ?, ?, ?)`
+      ).bind(
+        "CAE-"+crypto.randomUUID(),caseId,row.owner_account_id,caseId,
+        safeCaseAuditMetadata({reason:"retention_expired_or_delete_pending",newStatus:"deleted"}),at
+      )
+    ]);
+    casesDeleted++;
+  }
+  return {ok:true,casesDeleted,objectsDeleted,checkedAt:now};
+}
+
 function caseStorageBackend(env){
   return caseR2Ready(env) ? "r2" : caseD1FallbackReady(env) ? "d1_fallback" : "unavailable";
 }
@@ -6573,9 +6694,12 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // Opportunistic cleanup of expired rate-limit windows (~1% of API calls).
+    // Opportunistic housekeeping. Retention deletion is also exposed through the
+    // Worker scheduled() handler, but this keeps expiry enforcement alive even
+    // if a deployment temporarily lacks the cron trigger.
     if (url.pathname.startsWith("/api/") && env.DB && ctx?.waitUntil && Math.random() < 0.01) {
       ctx.waitUntil(pruneRateLimitWindows(env).catch(() => {}));
+      ctx.waitUntil(enforceExpiredCaseRetention(env,{limit:10}).catch(() => {}));
     }
 
     if (url.pathname.startsWith("/api/") && request.method === "OPTIONS") {
@@ -6686,5 +6810,12 @@ export default {
     }
 
     return json(request, { ok: false, error: "api_not_found" }, 404);
+  },
+
+  async scheduled(controller,env,ctx){
+    if(!env?.DB || !ctx?.waitUntil) return;
+    ctx.waitUntil(enforceExpiredCaseRetention(env,{limit:100}).catch(error=>{
+      console.error("case_retention_sweep_failed",String(error?.message||error).slice(0,160));
+    }));
   }
 };
