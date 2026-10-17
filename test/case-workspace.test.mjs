@@ -45,6 +45,10 @@ test("case creation accepts only bounded metadata and rejects extra fields",()=>
   const invalid=validateCaseWorkspaceCreate({title:"ok",retentionUntil:"tomorrow"});
   assert.equal(invalid.ok,false);
   assert.ok(invalid.errors.includes("invalid_retention_until"));
+
+  const expired=validateCaseWorkspaceCreate({title:"ok",retentionUntil:"2020-01-01"});
+  assert.equal(expired.ok,false);
+  assert.ok(expired.errors.includes("retention_until_must_be_future"));
 });
 
 test("case ids are opaque v4 UUID based identifiers",()=>{
