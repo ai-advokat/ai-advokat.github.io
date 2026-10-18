@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { workersAIRequestOptions, runWorkersAIText, WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT } from "../src/workers-ai-provider.js";
+import { WORKERS_AI_PROVIDER_CONTRACT_VERSION, workersAIRequestOptions, runWorkersAIText, WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT } from "../src/workers-ai-provider.js";
 
 test("WAP1 Qwen uses only documented synchronous chat parameters",()=>{
   const options=workersAIRequestOptions({
@@ -73,4 +73,13 @@ test("WAP5 empty primary and empty non-reasoning fallback fail closed after two 
   assert.equal(result.model,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT);
   assert.equal(result.modelFallback.reason,"empty_final_text");
   assert.deepEqual(models,["@cf/qwen/qwen3-30b-a3b-fp8",WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT]);
+});
+
+
+test("WAP6 provider contract version is explicit and capability-bound",()=>{
+  assert.equal(WORKERS_AI_PROVIDER_CONTRACT_VERSION,"WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT");
+  const worker=fs.readFileSync("src/index.js","utf8");
+  const workflow=fs.readFileSync(".github/workflows/free-runtime-live-uat.yml","utf8");
+  assert.match(worker,/freeProviderContract:WORKERS_AI_PROVIDER_CONTRACT_VERSION/);
+  assert.match(workflow,/caps\.freeProviderContract===EXPECTED_FREE_PROVIDER_CONTRACT/);
 });

@@ -123,6 +123,7 @@ import {
 import { detectConfidentialCasePrompt } from "./chat-privacy.js";
 import {
   WORKERS_AI_TEXT_MODEL_DEFAULT,
+  WORKERS_AI_PROVIDER_CONTRACT_VERSION,
   resolveWorkersAITextModel,
   resolveWorkersAIEmptyFallbackModel,
   extractWorkersAIText,
@@ -6987,6 +6988,7 @@ async function handleCapabilities(request, env) {
       freeChatProvider:freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
       freeChatModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
       freeChatFallbackModel:freeWorkersAIConfigured(env) ? resolveWorkersAIEmptyFallbackModel(env) : null,
+      freeProviderContract:WORKERS_AI_PROVIDER_CONTRACT_VERSION,
       freeRuntimePolicy:FREE_RUNTIME_POLICY_VERSION,
       paidChatProvider:orchestratorRuntimeReadiness(env).provider==="configured" ? "openai" : "locked",
       paidChatModel:orchestratorRuntimeReadiness(env).provider==="configured" ? String(env.OPENAI_MODEL||"openai_configured_model") : null,

@@ -78,6 +78,7 @@ jobs:
           const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V8";
           const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
           const EXPECTED_FINAL_OUTPUT_GATE="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
+          const EXPECTED_FREE_PROVIDER_CONTRACT="WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT";
 
           async function waitForExpectedRuntime(){
             let last=null;
@@ -100,8 +101,9 @@ jobs:
                   && caps.finalResponseQualityGate===EXPECTED_QUALITY
                   && caps.freeChatModel===EXPECTED_FREE_MODEL
                   && caps.freeChatFallbackModel===EXPECTED_FREE_FALLBACK_MODEL
+                  && caps.freeProviderContract===EXPECTED_FREE_PROVIDER_CONTRACT
                   && caps.freeRuntimePolicy===EXPECTED_FREE_POLICY){
-                  console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel+" · "+caps.freeRuntimePolicy);
+                  console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.freeProviderContract+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel+" · "+caps.freeRuntimePolicy);
                   return;
                 }
               }catch(error){
