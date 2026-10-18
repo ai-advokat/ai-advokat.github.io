@@ -221,6 +221,12 @@ test("CHAT18 production UI status is readiness-driven and model-truthful",()=>{
 });
 
 
+test("CHAT18a runtime exposes the exact canonical final-output gate version",()=>{
+  assert.match(worker,/CANONICAL_FINAL_OUTPUT_GATE_VERSION="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1"/);
+  assert.match(worker,/canonicalFinalOutputGate:CANONICAL_FINAL_OUTPUT_GATE_VERSION/);
+  assert.match(worker,/finalOutputGate:CANONICAL_FINAL_OUTPUT_GATE_VERSION/);
+});
+
 test("CHAT18b runtime publicly exposes canonical metadata standard V2",()=>{
   assert.match(worker,/\/api\/canonical-metadata-standard/);
   assert.match(worker,/CANONICAL_METADATA_STANDARD_VERSION/);
