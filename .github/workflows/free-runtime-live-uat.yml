@@ -245,7 +245,7 @@ jobs:
             throw new Error("draft output token cap invalid: "+JSON.stringify(data.performance));
             }
             }
-  if(name==="employment-definition"){
+            if(name==="employment-definition"){
               if(data.provider==="workers_ai_free" && data?.performance?.fastPromptUsed!==true){
                 throw new Error("employment-definition did not use compact FREE L0 prompt: "+JSON.stringify(data.performance));
               }
