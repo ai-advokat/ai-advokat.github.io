@@ -83,6 +83,8 @@ jobs:
                   && data?.ok===true
                   && caps.centralOperatingPrompt===EXPECTED_PROMPT
                   && caps.macedonianLanguageGuard===EXPECTED_LANGUAGE
+                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V3"
+                  && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V1"
                   && caps.finalResponseQualityGate===EXPECTED_QUALITY
                   && caps.freeChatModel===EXPECTED_FREE_MODEL
                   && caps.freeRuntimePolicy===EXPECTED_FREE_POLICY){
