@@ -61,3 +61,19 @@ test("GOA6 live smoke requires 8638 public metadata records and policy remains m
   assert.match(workflow,/ingestStatus!=="metadata_only"/);
   assert.match(workflow,/automatedBulkIngest!==false/);
 });
+
+
+test("GOA7 Gazette activation isolates 0046/0047 and never applies unauthorized CasePilot 0045",()=>{
+  assert.match(workflow,/\.tmp-gazette-migrations/);
+  assert.match(workflow,/migrations_dir="\.tmp-gazette-migrations"|migrations_dir=".tmp-gazette-migrations"|migrations_dir/);
+  assert.match(workflow,/0045_case_private_d1_object_store/);
+  assert.match(workflow,/0045 is pending and explicitly quarantined/);
+  assert.match(workflow,/Apply only Gazette metadata migrations/);
+  assert.match(workflow,/SCOPED MIGRATION ISOLATION: PASS/);
+  assert.doesNotMatch(workflow,/d1 migrations apply DB --remote --config wrangler\.jsonc \| tee \/tmp\/gazette-open-data-apply\.txt/);
+});
+
+test("GOA8 workflow includes both Gazette migration files in path trigger",()=>{
+  assert.match(workflow,/migrations\/0046_gazette_open_data_1944_2017\.sql/);
+  assert.match(workflow,/migrations\/0047_gazette_issue_metadata_backfill_1944_2017\.sql/);
+});
