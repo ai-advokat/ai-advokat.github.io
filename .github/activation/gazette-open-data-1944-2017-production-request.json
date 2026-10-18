@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "decision_id": "AI_ADVOKAT_GAZETTE_OPEN_DATA_1944_2017_PRODUCTION_ACTIVATION_2026-10-18",
+  "activation_authorized": true,
+  "authorized_on": "2026-10-18",
+  "authorized_by_role": "project_lead",
+  "authorization_source": "explicit_project_lead_request",
+  "target": {
+    "worker": "ai-advokat-github-io",
+    "database": "ai-advokat-db",
+    "database_id": "12ece285-74bb-4f27-a025-2dbd1be6c59a"
+  },
+  "migrations": [
+    "0046_gazette_open_data_1944_2017.sql"
+  ],
+  "source": {
+    "registry_id": "mk-official-gazette-data-gov-2017",
+    "dataset_id": "05342c32-f4a6-49c3-b8fa-5a555a6df6ff",
+    "resource_id": "9a039791-1abb-411f-bc04-bf136776a83a",
+    "snapshot_sha256": "4d111eb03ed0b8e877d151e030bf38096831cedc7a26f4a09121d9e6dfac5a18"
+  },
+  "scope": {
+    "production_schema_migration": true,
+    "source_registry_write": true,
+    "rights_overlay_write": true,
+    "runtime_source_policy_deploy": true,
+    "raw_xlsx_backfill": false,
+    "gazette_fulltext_import": false,
+    "legal_corpus_promotion": false,
+    "current_law_promotion": false,
+    "automated_bulk_ingest": false
+  },
+  "human_gate_required": true,
+  "fail_closed": true,
+  "note": "Authorizes only the metadata/provenance source registration for the official data.gov.mk Gazette issue dataset. It does not authorize raw dataset republication, Gazette full-text ingest, legal-corpus promotion or current-law status."
+}
