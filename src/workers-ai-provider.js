@@ -188,13 +188,17 @@ export async function runWorkersAIText(env,{
     ? {extraHeaders:{"x-session-affinity":affinity}}
     : undefined;
 
-  let generated;
   const boundedTimeout=Math.max(3000,Math.min(45000,Number(timeoutMs)||30000));
+  const callOnce=()=>Promise.race([
+    env.AI.run(resolvedModel,options,bindingOptions),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error("workers_ai_timeout_"+boundedTimeout)),boundedTimeout))
+  ]);
+
+  let generated;
+  let providerCalls=0;
   try{
-    generated=await Promise.race([
-      env.AI.run(resolvedModel,options,bindingOptions),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error("workers_ai_timeout_"+boundedTimeout)),boundedTimeout))
-    ]);
+    providerCalls+=1;
+    generated=await callOnce();
   }catch(error){
     const detail=String(error?.message||error).slice(0,240);
     return {
@@ -202,19 +206,46 @@ export async function runWorkersAIText(env,{
       error:detail.startsWith("workers_ai_timeout_")?"workers_ai_timeout":"workers_ai_provider_error",
       detail,
       model:resolvedModel,
-      providerCalls:1,
+      providerCalls,
       timeoutMs:boundedTimeout
     };
   }
 
-  const text=extractWorkersAIText(generated);
+  let text=extractWorkersAIText(generated);
+  let retryReason=null;
+
+  // Qwen/Workers AI can rarely return a syntactically valid provider payload
+  // without any usable final assistant text. Retry exactly once only for that
+  // empty-final condition. Normal responses stay single-call; timeouts and
+  // provider errors are not automatically retried, keeping latency bounded.
+  if(!text){
+    retryReason="empty_response";
+    try{
+      providerCalls+=1;
+      generated=await callOnce();
+      text=extractWorkersAIText(generated);
+    }catch(error){
+      const detail=String(error?.message||error).slice(0,240);
+      return {
+        ok:false,
+        error:detail.startsWith("workers_ai_timeout_")?"workers_ai_timeout":"workers_ai_provider_error",
+        detail,
+        model:resolvedModel,
+        providerCalls,
+        timeoutMs:boundedTimeout,
+        retryReason
+      };
+    }
+  }
+
   if(!text){
     return {
       ok:false,
       error:"workers_ai_empty_response",
-      detail:"Workers AI returned no usable final assistant text.",
+      detail:"Workers AI returned no usable final assistant text after one bounded empty-response retry.",
       model:resolvedModel,
-      providerCalls:1,
+      providerCalls,
+      retryReason,
       shape:workersAIShapeSummary(generated)
     };
   }
@@ -223,7 +254,8 @@ export async function runWorkersAIText(env,{
     ok:true,
     text,
     model:resolvedModel,
-    providerCalls:1,
+    providerCalls,
+    retryReason,
     timeoutMs:boundedTimeout,
     shape:workersAIShapeSummary(generated)
   };
