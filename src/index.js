@@ -4810,7 +4810,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     : buildAIAdvokatCentralPrompt({
         languageRules:MACEDONIAN_2017_SYSTEM_RULES,
         mode:"legal_assistant",
-        provider:freeResult.provider||"workers_ai_free",
+        provider:"workers_ai_free",
         extraRules:fullFreeExtraRules
       });
 
@@ -5480,7 +5480,7 @@ async function handleGPTChat(request,env){
       ok:true,
       answer:freeResult.text,
       model:freeResult.model,
-      provider:"workers_ai_free",
+      provider:freeResult.provider||"workers_ai_free",
       providerFallback:fallbackReason ? {
         from:"openai",
         reason:String(fallbackReason),
@@ -5503,7 +5503,14 @@ async function handleGPTChat(request,env){
         version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
         registeredExternalSources:0,
         unregisteredExternalSources:0,
-        corpusPromotion:"human_gate_required"
+        corpusPromotion:"human_gate_required",
+        canonicalProvenanceGate:{
+          version:CANONICAL_PROVENANCE_GATE_VERSION,
+          metadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
+          state:canonicalContextGate.state,
+          released:canonicalContextGate.context.length,
+          blocked:canonicalContextGate.blocked.length
+        }
       },
       legalSources:articleBundle.legalSources||[],
       caseLawSources:[...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
