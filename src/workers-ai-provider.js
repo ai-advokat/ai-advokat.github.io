@@ -40,6 +40,14 @@ export function workersAIRequestOptions({
   };
   if(responseFormat) base.response_format=responseFormat;
 
+  // Qwen3 is a reasoning-capable model. In FREE chat we need a fast visible
+  // answer rather than spending the bounded completion budget on hidden
+  // thinking. Cloudflare Workers AI supports chat_template_kwargs for
+  // reasoning-mode control, so disable thinking while keeping max_tokens.
+  if(resolved.includes("/qwen3-30b-a3b-fp8")){
+    base.chat_template_kwargs={enable_thinking:false};
+  }
+
   // Legacy GLM-4.7-Flash may otherwise spend the
   // entire small FREE completion budget on hidden thinking, returning no final
   // assistant text. FREE chat needs low-latency visible answers, so thinking is
@@ -80,7 +88,7 @@ export function extractWorkersAIText(value,depth=0){
   if(type==="reasoning" || type==="analysis" || type==="reasoning_summary" || type==="summary_text"){
     return null;
   }
-  if(type==="output_text"){
+  if(type==="output_text" || type==="text"){
     return extractWorkersAIText(value.text,depth+1);
   }
   if(type==="message"){
@@ -143,6 +151,9 @@ export function workersAIShapeSummary(value){
     choiceCount:Array.isArray(value.choices)?value.choices.length:null,
     choiceFinishReason:typeof choice?.finish_reason==="string"?choice.finish_reason:null,
     choiceContentType:choice?.message ? typeof choice.message.content : null,
+    choiceContentKeys:choice?.message?.content && typeof choice.message.content==="object" && !Array.isArray(choice.message.content)
+      ? Object.keys(choice.message.content).filter(key=>!/reason/i.test(key)).slice(0,8)
+      : null,
     choiceContentLength:typeof choice?.message?.content==="string"?choice.message.content.length:null,
     outputCount:Array.isArray(value.output)?value.output.length:null,
     outputTypes:Array.isArray(value.output)?value.output.slice(0,8).map(x=>String(x?.type||"unknown")):null,
