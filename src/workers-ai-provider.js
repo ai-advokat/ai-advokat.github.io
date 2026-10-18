@@ -40,14 +40,9 @@ export function workersAIRequestOptions({
   };
   if(responseFormat) base.response_format=responseFormat;
 
-  // Qwen3 is a reasoning-capable model. In FREE chat we need a fast visible
-  // answer rather than spending the bounded completion budget on hidden
-  // thinking. Cloudflare Workers AI supports chat_template_kwargs for
-  // reasoning-mode control, so disable thinking while keeping max_tokens.
-  if(resolved.includes("/qwen3-30b-a3b-fp8")){
-    base.chat_template_kwargs={enable_thinking:false};
-  }
-
+  // Qwen3 uses the documented synchronous chat-completions contract only.
+  // Do not send model-specific template kwargs that are outside the published
+  // Workers AI parameter schema; unsupported extras can yield unstable/empty output.
   // Legacy GLM-4.7-Flash may otherwise spend the
   // entire small FREE completion budget on hidden thinking, returning no final
   // assistant text. FREE chat needs low-latency visible answers, so thinking is
@@ -172,7 +167,8 @@ export async function runWorkersAIText(env,{
   responseFormat=null,
   model=null,
   reasoningEffort="low",
-  sessionAffinity=null
+  sessionAffinity=null,
+  timeoutMs=30000
 }={}){
   if(!env?.AI || typeof env.AI.run!=="function"){
     return {ok:false,error:"workers_ai_not_configured"};
@@ -193,15 +189,21 @@ export async function runWorkersAIText(env,{
     : undefined;
 
   let generated;
+  const boundedTimeout=Math.max(3000,Math.min(45000,Number(timeoutMs)||30000));
   try{
-    generated=await env.AI.run(resolvedModel,options,bindingOptions);
+    generated=await Promise.race([
+      env.AI.run(resolvedModel,options,bindingOptions),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error("workers_ai_timeout_"+boundedTimeout)),boundedTimeout))
+    ]);
   }catch(error){
+    const detail=String(error?.message||error).slice(0,240);
     return {
       ok:false,
-      error:"workers_ai_provider_error",
-      detail:String(error?.message||error).slice(0,240),
+      error:detail.startsWith("workers_ai_timeout_")?"workers_ai_timeout":"workers_ai_provider_error",
+      detail,
       model:resolvedModel,
-      providerCalls:1
+      providerCalls:1,
+      timeoutMs:boundedTimeout
     };
   }
 
@@ -222,6 +224,7 @@ export async function runWorkersAIText(env,{
     text,
     model:resolvedModel,
     providerCalls:1,
+    timeoutMs:boundedTimeout,
     shape:workersAIShapeSummary(generated)
   };
 }
