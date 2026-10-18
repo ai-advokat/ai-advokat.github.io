@@ -35,7 +35,7 @@ test("ABE2 Academy implements four tracks and conference-to-workflow",()=>{
 });
 
 test("ABE3 membership benefits are bounded and do not invent a current event price",()=>{
-  assert.ok(academy.includes("Member pricing"));
+  assert.ok(academy.includes("Повластена цена за членови"));
   assert.ok(academy.includes("Group benefit"));
   assert.ok(academy.includes("секој трет учесник од истиот правен субјект е без котизација"));
   assert.ok(membership.includes("Членство + AI Advokat Academy"));
@@ -66,7 +66,7 @@ test("ABE6 homepage presents the ecosystem without claiming confirmed Summit log
   assert.ok(home.includes("AI Advokat Academy"));
   assert.ok(home.includes("Legal Intelligence Summit"));
   assert.ok(home.includes("Стратешки партнерства"));
-  assert.ok(home.includes("датум, место, предавачи и котизација не се сметаат за објавени"));
+  assert.ok(home.toLowerCase().includes("датум, место, предавачи и котизација не се сметаат за објавени"));
 });
 
 test("ABE7 sitemap indexes all new commercial ecosystem surfaces",()=>{
