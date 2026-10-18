@@ -212,7 +212,7 @@ test("CHAT17c one canonical last-mile Macedonian gate protects every public AI r
 
 test("CHAT17d FREE consequential drafts have a bounded compact latency lane",()=>{
   const helper=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
-  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V6"/);
+  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V7"/);
   assert.match(helper,/const compactFreeDraft=formalDraftRequest/);
   assert.match(helper,/FREE FORMAL DRAFT LATENCY CONTRACT/);
   assert.match(helper,/Math\.min\(1000,requestedTokenLimit\)/);
