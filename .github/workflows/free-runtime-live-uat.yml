@@ -72,6 +72,7 @@ jobs:
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
           const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V4";
           const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V2";
+          const EXPECTED_FREE_PROVIDER_CONTRACT="WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT";
 
           async function waitForExpectedRuntime(){
             let last=null;
@@ -89,10 +90,11 @@ jobs:
                   && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V4"
                   && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V2"
                   && caps.canonicalMetadataStandard===EXPECTED_METADATA
+                  && caps.freeProviderContract===EXPECTED_FREE_PROVIDER_CONTRACT
                   && caps.finalResponseQualityGate===EXPECTED_QUALITY
                   && caps.freeChatModel===EXPECTED_FREE_MODEL
                   && caps.freeRuntimePolicy===EXPECTED_FREE_POLICY){
-                  console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel+" · "+caps.freeRuntimePolicy);
+                  console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.freeProviderContract+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel+" · "+caps.freeRuntimePolicy);
                   return;
                 }
               }catch(error){
