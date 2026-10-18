@@ -299,7 +299,7 @@ jobs:
             SELECT
               'data.gov.mk · ЈП Службен весник на РСМ — Изданија на Службен весник до 2017',
               'https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017',
-              'official_gazette_issue_metadata',
+              'official_gazette',
               'ЈП Службен весник на РСМ',
               'MK',
               'official',
@@ -321,7 +321,7 @@ jobs:
           " | tee /tmp/gazette-source-policy-verify.txt
           grep -q '"version": "46"' /tmp/gazette-source-policy-verify.txt
           grep -q '"version": "47"' /tmp/gazette-source-policy-verify.txt
-          grep -q '"source_type": "official_gazette_issue_metadata"' /tmp/gazette-source-policy-verify.txt
+          grep -q '"source_type": "official_gazette"' /tmp/gazette-source-policy-verify.txt
           grep -q '"ingest_status": "metadata_only"' /tmp/gazette-source-policy-verify.txt
           grep -q '"automated_bulk_ingest": 0' /tmp/gazette-source-policy-verify.txt
 
