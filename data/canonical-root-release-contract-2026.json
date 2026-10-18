@@ -14,6 +14,8 @@
     "human_gate_before_consequential_reliance"
   ],
   "covered_materials": [
+    "official_open_data_dataset",
+    "official_source_record",
     "official_gazette_issue",
     "law",
     "amendment_act",
@@ -52,7 +54,8 @@
       "effective_or_application_date",
       "verified_version_state"
     ],
-    "secondary_material_rule": "must remain legalAuthority=false and visibly secondary"
+    "secondary_material_rule": "must remain legalAuthority=false and visibly secondary",
+    "official_open_data_dataset_rule": "May establish issue identity, publication date/type and source provenance only. It never establishes the legal text, legal effect, effective/application date or current-law status of an act without separate official act/text binding and Human Gate."
   },
   "runtime_release": {
     "provider_context": "Every legal/quasi-legal context item passes CANONICAL_PROVENANCE_GATE immediately before provider synthesis.",
