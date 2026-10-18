@@ -1600,7 +1600,14 @@ async function handleCaseWorkspaceApi(request,env,url){
       governedCaseLawContext(env,lawQuery,initialPlan,{limit:6}),
       governedGazetteChunkContext(env,lawQuery)
     ]);
-    const legalContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context];
+    const rawLegalContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context];
+    const privateLegalProvenanceGate=enforceCanonicalContextProvenance(rawLegalContext);
+    const privateLegalBlockedNotice=provenanceBlockNotice(privateLegalProvenanceGate.blocked);
+    const legalContext=privateLegalBlockedNotice
+      ? [...privateLegalProvenanceGate.context,privateLegalBlockedNotice]
+      : privateLegalProvenanceGate.context;
+    // Private factual evidence stays outside the legal-authority gate; only the
+    // legal source layer is eligible for authority and is revalidated here.
     const corpusContext=[...privateContexts,...legalContext];
     const result=paidCaseProviderReady
       ? await runOpenAIOrchestrator(env,{
@@ -1749,12 +1756,20 @@ async function handleCaseWorkspaceApi(request,env,url){
       governedCaseLawContext(env,lawQuery,plan,{limit:6}),
       governedGazetteChunkContext(env,lawQuery)
     ]);
-    const corpusContext=[
-      ...privateContexts,
-      {source:"PRIVATE_CASE_ANALYSIS",locator:"latest analysis",version:"working",text:analysisText.slice(0,18000)},
+    const rawDraftLegalContext=[
       ...articleBundle.context,
       ...gazetteBundle.context,
       ...caseLawBundle.context
+    ];
+    const draftLegalProvenanceGate=enforceCanonicalContextProvenance(rawDraftLegalContext);
+    const draftLegalBlockedNotice=provenanceBlockNotice(draftLegalProvenanceGate.blocked);
+    const governedDraftLegalContext=draftLegalBlockedNotice
+      ? [...draftLegalProvenanceGate.context,draftLegalBlockedNotice]
+      : draftLegalProvenanceGate.context;
+    const corpusContext=[
+      ...privateContexts,
+      {source:"PRIVATE_CASE_ANALYSIS",locator:"latest analysis",version:"working",text:analysisText.slice(0,18000)},
+      ...governedDraftLegalContext
     ];
     const requestContract=draftRequest({
       caseId,
@@ -5472,9 +5487,11 @@ async function handleGPTChat(request,env){
       },503);
     }
 
-    const freeSourceMode=(attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
-      ? (corpusContext.length ? "workers_ai_free_documents_plus_governed_corpus" : "workers_ai_free_document_analysis")
-      : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
+    const freeSourceMode=freeResult.provider==="canonical_corpus_no_model"
+      ? "canonical_article_corpus_no_model"
+      : (attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
+        ? (corpusContext.length ? "workers_ai_free_documents_plus_governed_corpus" : "workers_ai_free_document_analysis")
+        : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
 
     return json(request,{
       ok:true,
@@ -6555,6 +6572,7 @@ function handleCanonicalMetadataStandard(request){
     ok:true,
     standard:CANONICAL_METADATA_STANDARD_VERSION,
     provenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
+    rootReleaseContract:"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1",
     doctrine:[
       "source_first",
       "metadata_before_ai",
@@ -6756,6 +6774,7 @@ async function handleCapabilities(request, env) {
       freeLatencyPolicy:"simple_turn_650_tokens_8s_provider_timeout_no_second_model_repair",
       canonicalProvenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
       canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
+      canonicalRootReleaseContract:"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1",
       finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
