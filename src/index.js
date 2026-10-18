@@ -4466,42 +4466,60 @@ async function convertFreeChatAttachments(env,attachments){
 async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800,sessionAffinity=null}={}){
   const original=String(text||"");
   if(!shouldEnforceMacedonianOutput(userText)){
-    return {text:original,repaired:false,providerCalls:0,languageAssessment:null,deterministicCleanupApplied:false};
+    return {
+      text:original,repaired:false,providerCalls:0,languageAssessment:null,
+      deterministicCleanupApplied:false,
+      releaseVerdict:{verdict:"RELEASE",severity:"not_applicable",gateVersion:MACEDONIAN_RELEASE_GATE_VERSION}
+    };
   }
 
   let current=original;
   let assessment=assessMacedonianOutput(current,{userText});
-  if(assessment.ok){
-    return {text:current,repaired:false,providerCalls:0,languageAssessment:assessment,deterministicCleanupApplied:false};
+  let releaseVerdict=macedonianReleaseVerdict(current,{userText});
+  if(releaseVerdict.verdict==="RELEASE"){
+    return {text:current,repaired:false,providerCalls:0,languageAssessment:assessment,deterministicCleanupApplied:false,releaseVerdict};
   }
 
-  // Fast path first: deterministic corrections are effectively free and avoid
-  // an extra model round-trip for known, unambiguous contamination.
+  // Deterministic cleanup is the first and cheapest repair layer.
   let deterministicCleanupApplied=false;
   const deterministicFirst=normaliseMacedonianGeneratedText(current);
   if(deterministicFirst!==current){
     current=deterministicFirst;
     deterministicCleanupApplied=true;
     assessment=assessMacedonianOutput(current,{userText});
-    if(assessment.ok){
+    releaseVerdict=macedonianReleaseVerdict(current,{userText});
+    if(releaseVerdict.verdict==="RELEASE"){
       return {
         text:current,
         repaired:true,
         deterministicCleanupApplied:true,
         providerCalls:0,
         languageAssessment:assessment,
+        releaseVerdict,
         repairError:null
       };
     }
   }
 
-  // At most one targeted language-repair inference. The previous two-retry
-  // design multiplied latency on the exact turns most likely to be linguistically
-  // weak. A second failed repair now fails closed instead of making the user wait.
+  // Severe corruption is never sent into another slow repair round. Fail closed
+  // immediately so the user never sees linguistic garbage and latency stays bounded.
+  if(releaseVerdict.verdict==="BLOCK"){
+    return {
+      text:current||original,
+      repaired:false,
+      deterministicCleanupApplied,
+      providerCalls:0,
+      languageAssessment:assessment,
+      releaseVerdict,
+      repairError:"macedonian_release_blocked"
+    };
+  }
+
+  // Only a repairable draft receives one targeted repair inference.
   const messages=buildMacedonianRepairMessages({text:current,userText});
   const issueNote=[
     "STRICT TARGETED LANGUAGE REPAIR.",
-    "The preceding draft failed the Macedonian 2017 language guard.",
+    "The preceding draft failed the Macedonian canonical release gate.",
     "Detected reasons: "+(assessment.reasons||[]).join(", "),
     assessment.foreignChars?.length ? "Forbidden/non-Macedonian Cyrillic characters detected: "+assessment.foreignChars.join(" ") : "",
     assessment.foreignLexemes?.length ? "Foreign lexical forms detected: "+assessment.foreignLexemes.join(", ") : "",
@@ -4515,11 +4533,11 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
 
   const repair=await runWorkersAIText(env,{
     messages,
-    maxOutputTokens:Math.max(500,Math.min(2600,Number(maxOutputTokens)||1400)),
+    maxOutputTokens:Math.max(420,Math.min(1800,Number(maxOutputTokens)||1000)),
     temperature:0,
     sessionAffinity
   });
-  let providerCalls=repair.providerCalls||1;
+  const providerCalls=repair.providerCalls||1;
   let lastError=null;
 
   if(!repair.ok){
@@ -4532,17 +4550,19 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
       current=normaliseMacedonianGeneratedText(candidate);
       deterministicCleanupApplied=deterministicCleanupApplied || current!==candidate;
       assessment=assessMacedonianOutput(current,{userText});
-      lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
+      releaseVerdict=macedonianReleaseVerdict(current,{userText});
+      lastError=releaseVerdict.verdict==="RELEASE"?null:"macedonian_repair_still_noncompliant";
     }
   }
 
   return {
     text:current||original,
-    repaired:current!==original && assessment.ok,
+    repaired:current!==original && releaseVerdict.verdict==="RELEASE",
     deterministicCleanupApplied,
     providerCalls,
     languageAssessment:assessment,
-    repairError:assessment.ok?null:(lastError||"macedonian_repair_still_noncompliant")
+    releaseVerdict,
+    repairError:releaseVerdict.verdict==="RELEASE"?null:(lastError||"macedonian_repair_still_noncompliant")
   };
 }
 
