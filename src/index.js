@@ -149,7 +149,7 @@ import {
 } from "./response-quality.js";
 
 const VERSION = "1.9.0";
-const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V5";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V6";
 const CANONICAL_FINAL_OUTPUT_GATE_VERSION="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
 
 const ALLOWED_ORIGINS = new Set([
@@ -4856,6 +4856,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     : runtimeProvenanceGate.context;
   const governed=freeChatCorpusText(runtimeCorpusContext);
   const missionProfile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
+  const formalDraftRequest=isFormalLegalDraftRequest(q);
+  const compactFreeDraft=formalDraftRequest && ["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile);
 
   const fastFreePrompt=missionProfile==="GENERAL_BYPASS" || missionProfile==="L0_INFORMATIONAL";
   const fullFreeExtraRules=[
@@ -4872,6 +4874,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     "If current law is not established by a governed primary source in supplied context, say that current-law verification is still required and continue with the useful non-authoritative portion.",
     "Do not say that you cannot create Word/DOCX files. The browser can export the latest working draft; provide the complete document text.",
     "Use placeholders or clearly fictional data when the user requests invented names/details; never present invented facts as real.",
+    compactFreeDraft
+      ? "FREE FORMAL DRAFT LATENCY CONTRACT: return one complete compact working draft, normally no more than about 700 words. Use only essential document sections; avoid commentary, tables, duplicated caveats and long boilerplate. Never invent article numbers or current-law propositions that are not supported by governed context."
+      : "For non-draft work, be concise and proportionate to the question.",
     "Do not silently use web search in this FREE mode."
   ];
   const system=fastFreePrompt
@@ -4901,7 +4906,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     "",
     missionProfile==="L0_INFORMATIONAL"
       ? "Answer directly and concisely. Use ordinary standard Macedonian; no table unless requested."
-      : "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
+      : compactFreeDraft
+        ? "Return only the complete compact working draft. Use clear placeholders or explicitly fictional data. Keep it within about 700 words and omit commentary before or after the document."
+        : "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
   ].filter(Boolean).join("\n\n");
 
   const messages=[
@@ -4912,7 +4919,11 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   // latency and also reduces the smaller model's tendency to drift into
   // overlong pseudo-tables and hybrid morphology.
   const requestedTokenLimit=Math.max(400,Math.min(3200,Number(maxOutputTokens)||1400));
-  const tokenLimit=fastFreePrompt ? Math.min(650,requestedTokenLimit) : requestedTokenLimit;
+  const tokenLimit=fastFreePrompt
+    ? Math.min(650,requestedTokenLimit)
+    : compactFreeDraft
+      ? Math.min(1000,requestedTokenLimit)
+      : requestedTokenLimit;
   const result=await runWorkersAIText(env,{
     messages,
     maxOutputTokens:tokenLimit,
@@ -4950,7 +4961,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
       provider:"workers_ai_free"
     };
   }
-  const formalDraft=isFormalLegalDraftRequest(q);
+  const formalDraft=formalDraftRequest;
   const finalText=formalDraft
     ? finaliseFormalLegalDraft(languagePass.text,{
         userText:q,
@@ -4980,6 +4991,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     languageRepairProviderCalls:languagePass.providerCalls||0,
     latencyMs:Date.now()-startedAt,
     fastPromptUsed:fastFreePrompt,
+    compactDraftUsed:compactFreeDraft,
+    outputTokenLimit:tokenLimit,
     languageStandard:languageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
