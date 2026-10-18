@@ -1,0 +1,164 @@
+name: Gazette open-data 1944-2017 production activation
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type ACTIVATE_GAZETTE_OPEN_DATA_1944_2017"
+        required: true
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/activation/gazette-open-data-1944-2017-production-request.json"
+      - ".github/workflows/gazette-open-data-1944-2017-production-activation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gazette-open-data-1944-2017-production-activation
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify exact Human Gate authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            test "$CONFIRMATION" = "ACTIVATE_GAZETTE_OPEN_DATA_1944_2017"
+          fi
+          node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync(".github/activation/gazette-open-data-1944-2017-production-request.json","utf8"));
+          if(d.activation_authorized!==true) throw new Error("Activation not authorized");
+          if(d.decision_id!=="AI_ADVOKAT_GAZETTE_OPEN_DATA_1944_2017_PRODUCTION_ACTIVATION_2026-10-18") throw new Error("Unexpected decision");
+          if(JSON.stringify(d.migrations)!==JSON.stringify(["0046_gazette_open_data_1944_2017.sql"])) throw new Error("Unexpected migration set");
+          if(d.target?.worker!=="ai-advokat-github-io") throw new Error("Unexpected Worker target");
+          if(d.target?.database!=="ai-advokat-db" || d.target?.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected D1 target");
+          for(const key of ["raw_xlsx_backfill","gazette_fulltext_import","legal_corpus_promotion","current_law_promotion","automated_bulk_ingest"]){
+            if(d.scope?.[key]!==false) throw new Error("Forbidden scope authorized: "+key);
+          }
+          if(d.human_gate_required!==true || d.fail_closed!==true) throw new Error("Human Gate/fail-closed contract changed");
+          console.log("GAZETTE OPEN-DATA HUMAN GATE: PASS");
+          NODE
+
+      - name: Verify repository contracts
+        run: |
+          node --check src/open-legal-sources-policy.js
+          node --test test/gazette-open-data-1944-2017.test.mjs
+          node --test test/open-legal-sources-runtime.test.mjs
+          node --test test/open-legal-sources-worker.test.mjs
+          node --test test/canonical-provenance-gate.test.mjs
+
+      - name: Verify exact production target
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker name");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1 target");
+          if(c.previews?.d1_databases?.[0]?.database_id===d.database_id) throw new Error("Production/staging collision");
+          console.log("EXACT PRODUCTION TARGET: PASS");
+          NODE
+
+      - name: Guard exact pending migration state
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/gazette-open-data-pending.txt
+          found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/gazette-open-data-pending.txt | sort -u || true)"
+          unexpected="$(printf '%s\n' "$found" | grep -Ev '^0046_gazette_open_data_1944_2017\.sql$' | sed '/^$/d' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected pending migrations:"
+            echo "$unexpected"
+            exit 1
+          fi
+          echo "PENDING MIGRATION GUARD: PASS"
+
+      - name: Apply migration 0046 if pending
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -q '0046_gazette_open_data_1944_2017.sql' /tmp/gazette-open-data-pending.txt; then
+            npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc | tee /tmp/gazette-open-data-apply.txt
+          else
+            echo "Migration 0046 already applied." | tee /tmp/gazette-open-data-apply.txt
+          fi
+
+      - name: Verify production provenance registration
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            SELECT version,description FROM schema_migrations WHERE version='46';
+            SELECT title,url,source_type,issuing_body,jurisdiction,source_status
+              FROM sources
+             WHERE url='https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017';
+            SELECT source_key,authority_status,reuse_status,ingest_status,automated_bulk_ingest,human_review_status
+              FROM open_legal_source_rights
+             WHERE source_key='mk-official-gazette-data-gov-2017';
+          " | tee /tmp/gazette-open-data-verify.txt
+          grep -q '"version": "46"' /tmp/gazette-open-data-verify.txt
+          grep -q '"source_type": "official_gazette_issue_metadata"' /tmp/gazette-open-data-verify.txt
+          grep -q '"source_key": "mk-official-gazette-data-gov-2017"' /tmp/gazette-open-data-verify.txt
+          grep -q '"ingest_status": "metadata_only"' /tmp/gazette-open-data-verify.txt
+          grep -q '"automated_bulk_ingest": 0' /tmp/gazette-open-data-verify.txt
+          echo "PRODUCTION PROVENANCE REGISTRATION: PASS"
+
+      - name: Deploy current Worker runtime
+        run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/gazette-open-data-deploy.txt
+
+      - name: Live source-policy smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/open-legal-sources-policy" -o /tmp/gazette-open-data-live.json
+          node <<'NODE'
+          const d=require("/tmp/gazette-open-data-live.json");
+          if(!d.ok) throw new Error("Open Legal Sources endpoint not ready");
+          if(d.policy?.sourceCount!==16) throw new Error("Unexpected governed source count: "+d.policy?.sourceCount);
+          const s=(d.sources||[]).find(x=>x.id==="mk-official-gazette-data-gov-2017");
+          if(!s) throw new Error("Gazette open-data runtime source missing");
+          if(s.ingestStatus!=="metadata_only" || s.automatedBulkIngest!==false) throw new Error("Gazette open-data rights gate changed");
+          console.log("LIVE GAZETTE OPEN-DATA SOURCE POLICY: PASS");
+          NODE
+
+      - name: Upload non-secret activation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gazette-open-data-1944-2017-production-activation
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/gazette-open-data-pending.txt
+            /tmp/gazette-open-data-apply.txt
+            /tmp/gazette-open-data-verify.txt
+            /tmp/gazette-open-data-deploy.txt
+            /tmp/gazette-open-data-live.json
