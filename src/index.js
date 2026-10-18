@@ -108,6 +108,7 @@ import {
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import {
   CANONICAL_PROVENANCE_GATE_VERSION,
+  CANONICAL_METADATA_STANDARD_VERSION,
   enforceCanonicalContextProvenance
 } from "./canonical-provenance-gate.js";
 import {
@@ -4631,7 +4632,7 @@ async function convertFreeChatAttachments(env,attachments){
   return {ok:true,documents:bounded,totalChars:total};
 }
 
-async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800,sessionAffinity=null}={}){
+async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800,sessionAffinity=null,allowProviderRepair=true}={}){
   const original=String(text||"");
   if(!shouldEnforceMacedonianOutput(userText)){
     return {
@@ -4683,7 +4684,22 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     };
   }
 
-  // Only a repairable draft receives one targeted repair inference.
+  // Fast/low-risk FREE paths use one provider call maximum. After deterministic
+  // cleanup they either release clean Macedonian or fail closed; they never pay
+  // latency for a second model round and never risk compounding bad language.
+  if(!allowProviderRepair){
+    return {
+      text:current||original,
+      repaired:false,
+      deterministicCleanupApplied,
+      providerCalls:0,
+      languageAssessment:assessment,
+      releaseVerdict:{...releaseVerdict,verdict:"BLOCK",severity:"strict_fast_path"},
+      repairError:"macedonian_fast_path_release_blocked"
+    };
+  }
+
+  // Only a repairable complex draft receives one targeted repair inference.
   const messages=buildMacedonianRepairMessages({text:current,userText});
   const issueNote=[
     "STRICT TARGETED LANGUAGE REPAIR.",
@@ -4829,7 +4845,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     text:result.text,
     userText:q,
     maxOutputTokens:tokenLimit,
-    sessionAffinity
+    sessionAffinity,
+    allowProviderRepair:!fastFreePrompt
   });
   if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
     return {
@@ -6617,9 +6634,10 @@ async function handleCapabilities(request, env) {
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
       macedonianReleaseGate:MACEDONIAN_RELEASE_GATE_VERSION,
-      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_single_repair_or_block_v4",
-      macedonianRepairProviderBudget:"severe_block_zero_extra_calls_repairable_max_one_extra_call",
+      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_fast_one_call_complex_single_repair_v5",
+      macedonianRepairProviderBudget:"fast_free_zero_extra_calls_complex_repairable_max_one_extra_call",
       canonicalProvenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
+      canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
       finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
