@@ -3977,6 +3977,26 @@ async function governedArticleContext(env,q,basePlan){
           "Human Gate "+versionInfo.humanReviewStatus,
           retrieval.versionBasis || "basis-unknown"
         ].join(" · "),
+        provenance:{
+          kind:"legal_article",
+          sourceIdentity:instrumentTitle,
+          authorityClass:"primary_official",
+          locator:"Член "+String(article.articleNumber||""),
+          releaseRole:"legal_authority",
+          legalAuthority:true,
+          humanReviewStatus:String(article.humanReviewStatus||"pending"),
+          versionHumanReviewStatus:String(versionInfo.humanReviewStatus||"pending"),
+          instrumentKey:String(instrument?.canonical_key||routing.key||""),
+          instrumentType:String(instrument?.instrument_type||"law"),
+          articleNumber:String(article.articleNumber||""),
+          versionLabel:String(versionInfo.label||""),
+          versionBasis:String(retrieval.versionBasis||""),
+          sourceIssueNumber:String(article.sourceIssueNumber||""),
+          sourceIssueDate:String(article.sourceIssueDate||""),
+          sourceUrl:String(sourceUrl||""),
+          sourceSha256:String(article.sourceSha256||""),
+          currentLawClaim:article.publicStatus==="current_verified" && versionInfo.isCurrent===true
+        },
         text:[
           "JURISDICTION: "+String(instrument?.jurisdiction || "MK"),
           "INSTRUMENT: "+instrumentTitle,
@@ -4008,7 +4028,15 @@ async function governedArticleContext(env,q,basePlan){
       };
     });
 
-    const legalSources=retrieval.articles.map(article=>({
+    const provenanceGate=enforceCanonicalContextProvenance(context);
+    const releasedArticleNumbers=new Set(
+      provenanceGate.context
+        .map(item=>String(item?.provenance?.articleNumber||""))
+        .filter(Boolean)
+    );
+    const releasedArticles=retrieval.articles.filter(article=>releasedArticleNumbers.has(String(article.articleNumber||"")));
+
+    const legalSources=releasedArticles.map(article=>({
       title:instrumentTitle+" · член "+String(article.articleNumber || "")+(article.referenceRole==="explicit_cross_reference" ? " · упатување од "+article.referenceOriginArticleNumbers.map(n=>"член "+n).join(", ") : ""),
       articleNumber:String(article.articleNumber || ""),
       url:article.sourceUrl || instrument?.canonical_source_url || null,
@@ -4023,12 +4051,18 @@ async function governedArticleContext(env,q,basePlan){
     }));
 
     return {
-      context,
+      context:provenanceGate.context,
       legalSources,
-      articles:retrieval.articles,
-      primaryArticles:retrieval.primaryArticles || retrieval.articles,
-      crossReferenceArticles:retrieval.crossReferenceArticles || [],
-      state:"matched",
+      articles:releasedArticles,
+      primaryArticles:(retrieval.primaryArticles || retrieval.articles).filter(article=>releasedArticleNumbers.has(String(article.articleNumber||""))),
+      crossReferenceArticles:(retrieval.crossReferenceArticles || []).filter(article=>releasedArticleNumbers.has(String(article.articleNumber||""))),
+      state:releasedArticles.length?"matched":(provenanceGate.blocked.length?"provenance_blocked":"no_relevant_articles"),
+      provenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:provenanceGate.state,
+        released:provenanceGate.context.length,
+        blocked:provenanceGate.blocked.length
+      },
       instrument:{
         canonicalKey:instrument?.canonical_key || routing.key,
         title:instrumentTitle,
