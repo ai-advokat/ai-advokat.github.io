@@ -115,7 +115,9 @@ test("COP9 FREE Macedonian output uses deterministic-first cleanup and at most o
   assert.ok((worker.match(/const languagePass=await repairWorkersAIMacedonianIfNeeded/g)||[]).length>=3,"public chat, source-backed researcher and private synthesis must share the Macedonian postflight");
   assert.match(worker,/languageRepaired:languagePass\.repaired===true/);
   assert.match(worker,/languageQualityState:languagePass\.releaseVerdict\?\.verdict==="RELEASE"/);
-  assert.match(worker,/macedonianRepairProviderBudget:"severe_block_zero_extra_calls_repairable_max_one_extra_call"/);
+  assert.match(worker,/macedonianRepairProviderBudget:"fast_free_zero_extra_calls_complex_repairable_max_one_extra_call"/);
+  assert.match(worker,/allowProviderRepair:!fastFreePrompt/);
+  assert.match(worker,/if\(!allowProviderRepair\)/);
 });
 
 
