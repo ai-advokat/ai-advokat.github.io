@@ -6576,8 +6576,8 @@ async function handleGazetteIssueIndex(request,env,url){
     const [rows,total,summary]=await Promise.all([
       env.DB.prepare(
         `SELECT publication_type,issue_number,issue_date,year,source_occurrences,
-                source_authority,dataset_id,resource_id,dataset_url,resource_url,snapshot_sha256,
-                source_class,human_review_status,runtime_eligible,legal_text_authority,current_law_authority
+                source_authority,source_class,human_review_status,
+                runtime_eligible,legal_text_authority,current_law_authority
            FROM gazette_issue_metadata${clause}
           ORDER BY issue_date DESC,publication_type,issue_number
           LIMIT ? OFFSET ?`
@@ -6613,9 +6613,9 @@ async function handleGazetteIssueIndex(request,env,url){
       },
       source:{
         publisher:"ЈП Службен весник на РСМ",
-        datasetUrl:"https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017",
-        resourceUrl:"https://data.gov.mk/dataset/05342c32-f4a6-49c3-b8fa-5a555a6df6ff/resource/9a039791-1abb-411f-bc04-bf136776a83a/download/izdanija-sluzben-vesnik-do-2017.xlsx",
-        snapshotSha256:"4d111eb03ed0b8e877d151e030bf38096831cedc7a26f4a09121d9e6dfac5a18"
+        classification:"PRIMARY_OFFICIAL_METADATA",
+        publicLinkExposed:false,
+        auditProvenanceRetainedInternally:true
       }
     });
   }catch(error){
