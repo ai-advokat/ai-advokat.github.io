@@ -107,6 +107,10 @@ import {
 } from "./case-intelligence.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import {
+  CANONICAL_PROVENANCE_GATE_VERSION,
+  enforceCanonicalContextProvenance
+} from "./canonical-provenance-gate.js";
+import {
   OPEN_LEGAL_SOURCE_POLICY_VERSION,
   OPEN_LEGAL_SOURCE_REGISTRY_ID,
   publicOpenLegalSourceDirectory,
@@ -122,8 +126,11 @@ import {
 } from "./workers-ai-provider.js";
 import {
   MACEDONIAN_LANGUAGE_STANDARD_VERSION,
+  MACEDONIAN_RELEASE_GATE_VERSION,
+  MACEDONIAN_RELEASE_BLOCK_MESSAGE,
   MACEDONIAN_2017_SYSTEM_RULES,
   assessMacedonianOutput,
+  macedonianReleaseVerdict,
   buildMacedonianRepairMessages,
   normaliseMacedonianGeneratedText,
   shouldEnforceMacedonianOutput
@@ -2880,7 +2887,10 @@ async function inferInstrumentKey(env,q,requested) {
 
   // Compatibility fallbacks while older environments converge to the alias registry.
   if(normalizedQuestion.includes("кривичната постапка") || normalizedQuestion.includes("кривична постапка")) return {key:"mk:zkp"};
-  if(normalizedQuestion.includes("работните односи") || normalizedQuestion.includes("работен однос")) return {key:"mk:zro"};
+  if([
+    "работните односи","работен однос","работниот однос","договор за вработување","договорот за вработување",
+    "работодавач","престанок на работен однос","отказ на договор","работно време","годишен одмор"
+  ].some(term=>normalizedQuestion.includes(term))) return {key:"mk:zro"};
 
   // No silent guess: auto mode stays explicit so a bare article number is not attributed to the wrong law.
   return {key:"auto"};
@@ -3889,9 +3899,11 @@ function chatQueryDate(q){
 
 function articleCorpusGateContext(message,{source="AI Advokat article-level legal corpus",locator="corpus routing",version="unresolved"}={}){
   return [{
+    contextRole:"governance_notice",
     source,
     locator,
     version,
+    provenance:{kind:"governance_notice"},
     text:[
       "CORPUS_GATE: "+String(message || "The governed article-level corpus cannot support this request."),
       "Do not replace this missing or unresolved native legal support with model memory.",
