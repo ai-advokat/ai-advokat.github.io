@@ -4810,7 +4810,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     : buildAIAdvokatCentralPrompt({
         languageRules:MACEDONIAN_2017_SYSTEM_RULES,
         mode:"legal_assistant",
-        provider:"workers_ai_free",
+        provider:freeResult.provider||"workers_ai_free",
         extraRules:fullFreeExtraRules
       });
 
@@ -5400,15 +5400,63 @@ async function handleGPTChat(request,env){
     // released only as research/work-product with an explicit Human Gate.
     const freeProfessionalGuard=postflightRequiredForMission;
 
-    const freeResult=await runFreeWorkersAIChat(env,{
-      q,
-      attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
-      history:historyCheck.history,
-      corpusContext,
-      plan,
-      maxOutputTokens,
-      sessionAffinity
-    });
+    // Canonical source-first fast lane: when a simple informational legal
+    // question is already supported by the governed article corpus, do not ask
+    // the smaller FREE model to paraphrase it. This removes avoidable latency
+    // and eliminates a major source of hybrid-language drift.
+    let freeResult=null;
+    const deterministicFreeEligible=
+      missionProfile==="L0_INFORMATIONAL"
+      && articleBundle.state==="matched"
+      && Array.isArray(articleBundle.articles)
+      && articleBundle.articles.length>0
+      && attachmentCheck.attachments.length===0
+      && guideDocumentCheck.attachments.length===0;
+    if(deterministicFreeEligible){
+      const canonicalText=normaliseMacedonianGeneratedText(
+        fallbackAssistantAnswer(q,articleBundle.instrument,articleBundle.articles)
+      );
+      const canonicalRelease=macedonianReleaseVerdict(canonicalText,{userText:q});
+      if(canonicalRelease.verdict==="RELEASE"){
+        freeResult={
+          ok:true,
+          text:canonicalText,
+          model:null,
+          provider:"canonical_corpus_no_model",
+          providerCalls:0,
+          languageRepairProviderCalls:0,
+          latencyMs:0,
+          fastPromptUsed:true,
+          languageStandard:shouldEnforceMacedonianOutput(q)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+          languageRepaired:false,
+          deterministicLanguageCleanup:true,
+          formalDraftPostflight:false,
+          languageQualityState:"verified_runtime",
+          languageReleaseGate:canonicalRelease,
+          canonicalProvenanceGate:{
+            version:CANONICAL_PROVENANCE_GATE_VERSION,
+            state:canonicalContextGate.state,
+            released:canonicalContextGate.context.length,
+            blocked:canonicalContextGate.blocked.length
+          },
+          convertedDocuments:0,
+          conversationPersistence:"browser_session_only_app_no_server_conversation_store",
+          historyItemsUsed:0,
+          contaminatedAssistantHistoryDropped:0
+        };
+      }
+    }
+    if(!freeResult){
+      freeResult=await runFreeWorkersAIChat(env,{
+        q,
+        attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
+        history:historyCheck.history,
+        corpusContext,
+        plan,
+        maxOutputTokens,
+        sessionAffinity
+      });
+    }
 
     if(!freeResult.ok){
       await releaseMonthlyQuota(env,{subject,period});
@@ -5444,7 +5492,7 @@ async function handleGPTChat(request,env){
       historyItemsUsed:freeResult.historyItemsUsed,
       contaminatedAssistantHistoryDropped:freeResult.contaminatedAssistantHistoryDropped||0,
       performance:{
-        providerCalls:freeResult.providerCalls||1,
+        providerCalls:Number(freeResult.providerCalls||0),
         languageRepairProviderCalls:freeResult.languageRepairProviderCalls||0,
         serverLatencyMs:freeResult.latencyMs||null,
         fastPromptUsed:freeResult.fastPromptUsed===true,
@@ -5470,7 +5518,7 @@ async function handleGPTChat(request,env){
       guideDocumentFingerprintsVerified:guideDocumentCheck.attachments.length>0,
       webSearchUsed:false,
       mode:plan.mode,
-      displayMode:"free_workers_ai",
+      displayMode:freeResult.provider==="canonical_corpus_no_model" ? "free_canonical_corpus" : "free_workers_ai",
       sourceMode:freeSourceMode,
       corpusContextCount:corpusContext.length,
       articleCorpusContextCount:articleBundle.context.length,
@@ -5486,7 +5534,7 @@ async function handleGPTChat(request,env){
       attachmentsUsed:attachmentCheck.attachments.length,
       totalInputFilesUsed:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
       convertedDocuments:freeResult.convertedDocuments,
-      reasoningEffort:"workers_ai_standard",
+      reasoningEffort:freeResult.provider==="canonical_corpus_no_model" ? "deterministic_source_first" : "workers_ai_standard",
       maxOutputTokens,
       humanGate:"FREE Workers AI is research assistance only. Verify controlling law and primary sources and obtain human professional review before consequential reliance.",
       governanceRunId:lioeRunId,
