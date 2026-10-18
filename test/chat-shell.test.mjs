@@ -210,6 +210,16 @@ test("CHAT17c one canonical last-mile Macedonian gate protects every public AI r
   assert.match(legacy,/macedonian_release_blocked/);
 });
 
+test("CHAT17d FREE consequential drafts have a bounded compact latency lane",()=>{
+  const helper=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
+  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V6"/);
+  assert.match(helper,/const compactFreeDraft=formalDraftRequest/);
+  assert.match(helper,/FREE FORMAL DRAFT LATENCY CONTRACT/);
+  assert.match(helper,/Math\.min\(1000,requestedTokenLimit\)/);
+  assert.match(helper,/compactDraftUsed:compactFreeDraft/);
+  assert.match(helper,/outputTokenLimit:tokenLimit/);
+});
+
 test("CHAT18 production UI status is readiness-driven and model-truthful",()=>{
   assert.match(html,/Проверка на активниот AI provider\/model/);
   assert.match(html,/FREE режимот користи Workers AI/);
