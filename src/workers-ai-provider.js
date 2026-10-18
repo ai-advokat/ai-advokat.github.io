@@ -3,6 +3,7 @@
 // Reasoning fields are intentionally never surfaced as user-visible answer text.
 
 export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/qwen/qwen3-30b-a3b-fp8";
+export const WORKERS_AI_REQUEST_CONTRACT_VERSION="WORKERS_AI_QWEN_VISIBLE_ANSWER_V4";
 
 export function resolveWorkersAITextModel(env){
   const model=String(env?.WORKERS_AI_CHAT_MODEL||WORKERS_AI_TEXT_MODEL_DEFAULT).trim();
@@ -33,8 +34,22 @@ export function workersAIRequestOptions({
     };
   }
 
+  const qwenMessages=resolved.includes("/qwen3-30b-a3b-fp8")
+    ? safeMessages.map(message=>({...message}))
+    : safeMessages;
+  if(resolved.includes("/qwen3-30b-a3b-fp8")){
+    for(let i=qwenMessages.length-1;i>=0;i--){
+      const message=qwenMessages[i];
+      if(message?.role!=="user" || typeof message?.content!=="string") continue;
+      if(!/\/no_think\b/i.test(message.content)){
+        message.content=message.content.trimEnd()+"\n\n/no_think";
+      }
+      break;
+    }
+  }
+
   const base={
-    messages:safeMessages,
+    messages:qwenMessages,
     max_tokens:maxTokens,
     temperature:Number.isFinite(Number(temperature))?Number(temperature):0.1
   };
@@ -95,6 +110,14 @@ export function extractWorkersAIText(value,depth=0){
     return extractWorkersAIText(value.content,depth+1);
   }
 
+  // Some Workers AI model adapters return the final assistant message as a
+  // nested object (for example in top-level response) rather than directly in
+  // choices[].message.content. Only explicit assistant content is eligible;
+  // reasoning_content is intentionally ignored.
+  if(String(value.role||"").toLowerCase()==="assistant" && Object.prototype.hasOwnProperty.call(value,"content")){
+    return extractWorkersAIText(value.content,depth+1);
+  }
+
   // Explicit top-level final-answer fields are safe to prefer.
   for(const key of ["response","output_text","answer"]){
     const found=extractWorkersAIText(value[key],depth+1);
@@ -150,11 +173,25 @@ export function workersAIShapeSummary(value){
     incompleteReason:value.incomplete_details?.reason||null,
     choiceCount:Array.isArray(value.choices)?value.choices.length:null,
     choiceFinishReason:typeof choice?.finish_reason==="string"?choice.finish_reason:null,
+    choiceMessageKeys:choice?.message&&typeof choice.message==="object"
+      ? Object.keys(choice.message).filter(key=>!/reason/i.test(key)).slice(0,8)
+      : null,
     choiceContentType:choice?.message ? typeof choice.message.content : null,
     choiceContentKeys:choice?.message?.content && typeof choice.message.content==="object" && !Array.isArray(choice.message.content)
       ? Object.keys(choice.message.content).filter(key=>!/reason/i.test(key)).slice(0,8)
       : null,
+    choiceContentArrayTypes:Array.isArray(choice?.message?.content)
+      ? choice.message.content.slice(0,8).map(item=>String(item?.type||typeof item))
+      : null,
     choiceContentLength:typeof choice?.message?.content==="string"?choice.message.content.length:null,
+    responseKeys:value.response&&typeof value.response==="object"&&!Array.isArray(value.response)
+      ? Object.keys(value.response).filter(key=>!/reason/i.test(key)).slice(0,12)
+      : null,
+    responseRole:value.response&&typeof value.response==="object" ? String(value.response.role||"")||null : null,
+    responseContentType:value.response&&typeof value.response==="object" ? typeof value.response.content : null,
+    responseContentArrayTypes:Array.isArray(value.response?.content)
+      ? value.response.content.slice(0,8).map(item=>String(item?.type||typeof item))
+      : null,
     outputCount:Array.isArray(value.output)?value.output.length:null,
     outputTypes:Array.isArray(value.output)?value.output.slice(0,8).map(x=>String(x?.type||"unknown")):null,
     resultKeys:value.result&&typeof value.result==="object"?Object.keys(value.result).slice(0,12):null,
