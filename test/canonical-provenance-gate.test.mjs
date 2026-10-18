@@ -29,8 +29,8 @@ const article=overrides=>({
 });
 
 test("canonical provenance gate version is stable",()=>{
-  assert.equal(CANONICAL_PROVENANCE_GATE_VERSION,"AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V2");
-  assert.equal(CANONICAL_METADATA_STANDARD_VERSION,"AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V2");
+  assert.equal(CANONICAL_PROVENANCE_GATE_VERSION,"AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V3");
+  assert.equal(CANONICAL_METADATA_STANDARD_VERSION,"AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3");
 });
 
 test("fully identified approved legal article is releasable",()=>{
@@ -199,12 +199,50 @@ test("authorial publication is metadata-rich secondary material, never legal aut
 });
 
 
-test("repository canonical metadata manifest matches runtime V2 contract",()=>{
-  const manifest=JSON.parse(fs.readFileSync("data/canonical-legal-metadata-standard-v2.json","utf8"));
+test("repository canonical metadata manifest matches runtime V3 contract",()=>{
+  const manifest=JSON.parse(fs.readFileSync("data/canonical-legal-metadata-standard-v3.json","utf8"));
   assert.equal(manifest.standard_id,CANONICAL_METADATA_STANDARD_VERSION);
-  for(const kind of ["legal_instrument","gazette_issue","legal_act","bylaw","rulebook","regulation","legal_article","case_law","guide","authorial_publication"]){
+  for(const kind of ["legal_instrument","gazette_issue","legal_act","bylaw","rulebook","regulation","instruction","tariff","official_guidance","legal_article","case_law","guide","authorial_publication"]){
     assert.ok(manifest.applies_to.includes(kind),kind);
     assert.ok(Array.isArray(manifest.canonical_rules[kind]),kind);
     assert.ok(manifest.canonical_rules[kind].length>0,kind);
   }
+});
+
+
+test("instruction and tariff use the same canonical official-act provenance gate",()=>{
+  const base={
+    sourceIdentity:"Службен весник",
+    authorityClass:"primary_official",
+    locator:"Сл. весник 20/2026",
+    releaseRole:"legal_authority",
+    legalAuthority:true,
+    humanReviewStatus:"approved",
+    title:"Тест акт",
+    issuer:"Надлежен орган",
+    issueNumber:"20/2026",
+    issueDate:"2026-02-10",
+    sourceUrl:"https://slvesnik.com.mk/test.pdf",
+    sourceSha256:"e".repeat(64),
+    currentLawClaim:true,
+    effectiveDate:"2026-02-18"
+  };
+  assert.equal(assessCanonicalProvenance({...base,kind:"instruction",actType:"instruction"}).ok,true);
+  assert.equal(assessCanonicalProvenance({...base,kind:"tariff",actType:"tariff"}).ok,true);
+});
+
+test("canonical root release contract binds metadata and language before AI release",()=>{
+  const contract=JSON.parse(fs.readFileSync("data/canonical-root-release-contract-2026.json","utf8"));
+  assert.equal(contract.contract_id,"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1");
+  assert.ok(contract.doctrine.includes("metadata_before_ai"));
+  assert.ok(contract.doctrine.includes("macedonian_2017_before_release"));
+  for(const kind of ["official_source_record","official_open_data_dataset","official_gazette_issue","law","bylaw","rulebook","regulation","instruction","tariff","case_law","guide","ai_response"]){
+    assert.ok(contract.covered_materials.includes(kind),kind);
+  }
+  for(const surface of ["public_free_chat","public_governed_openai_chat","legacy_source_backed_assistant","private_case_intelligence_analysis","private_case_working_draft"]){
+    assert.ok(contract.runtime_release.last_mile_release_scope.includes(surface),surface);
+  }
+  assert.match(contract.canonical_metadata.official_open_data_dataset_rule,/never establishes the legal text|never establishes/i);
+  assert.equal(contract.runtime_release.formatter_bypass,"forbidden");
+  assert.match(contract.runtime_release.final_gate_order,/canonical Macedonian last-mile release gate/);
 });

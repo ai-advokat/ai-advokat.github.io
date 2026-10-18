@@ -199,6 +199,32 @@ test("CHAT17b fast FREE Macedonian path is one-provider-call fail-closed",()=>{
   assert.match(worker,/fast_free_zero_extra_calls_complex_repairable_max_one_extra_call/);
 });
 
+test("CHAT17c one canonical last-mile Macedonian gate protects every public AI release surface",()=>{
+  assert.match(worker,/function canonicalMacedonianFinalRelease/);
+  const free=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
+  assert.match(free,/canonicalMacedonianFinalRelease\(finalText,q\)/);
+  const governed=worker.slice(worker.indexOf("async function handleGPTChat"),worker.indexOf("async function handleAssistant"));
+  assert.match(governed,/canonicalMacedonianFinalRelease\(governedFinalAnswer,q\)/);
+  const legacy=worker.slice(worker.indexOf("async function handleAssistant"),worker.indexOf("async function governedGazetteChunkContext"));
+  assert.match(legacy,/canonicalMacedonianFinalRelease\(answer,q\)/);
+  assert.match(legacy,/macedonian_release_blocked/);
+});
+
+test("CHAT17d FREE consequential drafts have a bounded compact latency lane",()=>{
+  const helper=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
+  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V8"/);
+  assert.match(helper,/const compactFreeDraft=formalDraftRequest/);
+  assert.match(helper,/FREE FORMAL DRAFT LATENCY CONTRACT/);
+  assert.match(helper,/Math\.min\(1000,requestedTokenLimit\)/);
+  assert.match(helper,/compactDraftUsed:compactFreeDraft/);
+  assert.match(helper,/outputTokenLimit:tokenLimit/);
+});
+
+test("CHAT17b FREE runtime exposes a truthful non-reasoning empty-response fallback",()=>{
+  assert.match(worker,/freeChatFallbackModel:freeWorkersAIConfigured\(env\) \? resolveWorkersAIEmptyFallbackModel\(env\) : null/);
+  assert.match(worker,/modelFallback:freeResult\.modelFallback\|\|null/);
+});
+
 test("CHAT18 production UI status is readiness-driven and model-truthful",()=>{
   assert.match(html,/Проверка на активниот AI provider\/model/);
   assert.match(html,/FREE режимот користи Workers AI/);
@@ -209,6 +235,12 @@ test("CHAT18 production UI status is readiness-driven and model-truthful",()=>{
   assert.match(chatJs,/FREE Workers AI · /);
 });
 
+
+test("CHAT18a runtime exposes the exact canonical final-output gate version",()=>{
+  assert.match(worker,/CANONICAL_FINAL_OUTPUT_GATE_VERSION="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1"/);
+  assert.match(worker,/canonicalFinalOutputGate:CANONICAL_FINAL_OUTPUT_GATE_VERSION/);
+  assert.match(worker,/finalOutputGate:CANONICAL_FINAL_OUTPUT_GATE_VERSION/);
+});
 
 test("CHAT18b runtime publicly exposes canonical metadata standard V2",()=>{
   assert.match(worker,/\/api\/canonical-metadata-standard/);
@@ -546,4 +578,12 @@ test("CHAT canonical Macedonian release block is surfaced directly without fallb
   assert.match(chatJs,/d\?\.error==="macedonian_release_blocked"/);
   assert.match(chatJs,/Macedonian Release Gate · BLOCK/);
   assert.match(chatJs,/Расипаниот AI-нацрт е блокиран пред објавување/);
+});
+
+
+test("CHAT canonical FREE formal drafts always use and expose the compact latency contract",()=>{
+  assert.match(worker,/const compactFreeDraft=formalDraftRequest;/);
+  assert.match(worker,/compactDraftUsed:freeResult\.compactDraftUsed===true/);
+  assert.match(worker,/outputTokenLimit:Number\(freeResult\.outputTokenLimit\|\|0\)\|\|null/);
+  assert.match(worker,/compactFreeDraft\s*\? Math\.min\(1000,requestedTokenLimit\)/);
 });

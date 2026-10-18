@@ -25,6 +25,19 @@ const SOURCE_ROWS=[
     "currentLawRole": "publication_provenance_primary"
   },
   {
+    "id": "mk-official-gazette-data-gov-2017",
+    "name": "data.gov.mk · ЈП Службен весник на РСМ — Изданија на Службен весник до 2017",
+    "canonicalUrl": "https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017",
+    "jurisdiction": "MK",
+    "authorityStatus": "primary_official",
+    "publicAccessStatus": "public_confirmed",
+    "reuseStatus": "terms_review_required",
+    "ingestStatus": "metadata_only",
+    "automatedBulkIngest": false,
+    "humanReviewStatus": "reviewed",
+    "currentLawRole": "historical_issue_identity_and_date_metadata_only"
+  },
+  {
     "id": "mk-ldbis",
     "name": "LDBIS / ЛДБИС — База на закони, други прописи и акти",
     "canonicalUrl": "https://ldbis.pravda.gov.mk/",

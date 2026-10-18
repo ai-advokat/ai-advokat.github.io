@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1",
+  "effective_date": "2026-10-18",
+  "purpose": "Единствен канонски production contract за правни метаподатоци, доказно потекло, јазична исправност и Human Gate.",
+  "doctrine": [
+    "source_first",
+    "metadata_before_ai",
+    "provenance_before_synthesis",
+    "version_and_effective_date_before_current_law",
+    "secondary_material_never_silently_becomes_authority",
+    "macedonian_2017_before_release",
+    "fail_closed_on_missing_metadata_or_language_failure",
+    "human_gate_before_consequential_reliance"
+  ],
+  "covered_materials": [
+    "official_open_data_dataset",
+    "official_source_record",
+    "official_gazette_issue",
+    "law",
+    "amendment_act",
+    "bylaw",
+    "rulebook",
+    "regulation",
+    "instruction",
+    "tariff",
+    "official_guidance",
+    "legal_article",
+    "gazette_chunk",
+    "case_law",
+    "echr_discovery_record",
+    "guide",
+    "authorial_publication",
+    "ai_response"
+  ],
+  "canonical_metadata": {
+    "common_required": [
+      "kind",
+      "sourceIdentity",
+      "authorityClass",
+      "locator",
+      "releaseRole",
+      "humanReviewStatus",
+      "legalAuthority"
+    ],
+    "official_authority_required": [
+      "sourceUrl",
+      "jurisdiction",
+      "source_or_text_fingerprint",
+      "version_or_date"
+    ],
+    "current_law_additional": [
+      "approved_human_gate",
+      "effective_or_application_date",
+      "verified_version_state"
+    ],
+    "secondary_material_rule": "must remain legalAuthority=false and visibly secondary",
+    "official_open_data_dataset_rule": "May establish issue identity, publication date/type and source provenance only. It never establishes the legal text, legal effect, effective/application date or current-law status of an act without separate official act/text binding and Human Gate."
+  },
+  "runtime_release": {
+    "provider_context": "Every legal/quasi-legal context item passes CANONICAL_PROVENANCE_GATE immediately before provider synthesis.",
+    "macedonian_output": "Every Macedonian-facing AI answer passes deterministic normalisation plus MACEDONIAN_RELEASE_GATE immediately before display.",
+    "failure_policy": "blocked material is excluded; failed Macedonian output is never shown as a valid answer.",
+    "free_latency": "Simple FREE informational turns use a short prompt, bounded output and no second provider repair; malformed output fails closed instead of adding slow repair loops.",
+    "last_mile_release_scope": [
+      "public_free_chat",
+      "public_governed_openai_chat",
+      "legacy_source_backed_assistant",
+      "private_case_intelligence_analysis",
+      "private_case_working_draft"
+    ],
+    "final_gate_order": "provider/postflight -> deterministic formatting -> canonical Macedonian last-mile release gate -> user-visible response",
+    "formatter_bypass": "forbidden",
+    "fail_closed_no_bad_text": "Any final Macedonian-facing generated text that does not receive RELEASE is not returned as a valid answer."
+  },
+  "human_gate": {
+    "required_for": [
+      "current_law_authority",
+      "consequential_legal_reliance",
+      "public_corpus_promotion",
+      "guide_authority_promotion",
+      "external_filing_signature_submission"
+    ]
+  }
+}

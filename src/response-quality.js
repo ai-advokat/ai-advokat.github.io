@@ -7,6 +7,33 @@ export function isFormalLegalDraftRequest(userText){
   return FORMAL_DRAFT_RE.test(String(userText||"").normalize("NFKC"));
 }
 
+export function requestedFormalDraftHeading(userText){
+  const text=String(userText||"").normalize("NFKC").toLocaleLowerCase("mk");
+  const candidates=[
+    [/(?:тужб|tuzb)/u,"ТУЖБА"],
+    [/(?:жалб|zalb)/u,"ЖАЛБА"],
+    [/(?:приговор|prigovor)/u,"ПРИГОВОР"],
+    [/(?:поднесок|поднес|podnes)/u,"ПОДНЕСОК"],
+    [/(?:барање|baranje)/u,"БАРАЊЕ"],
+    [/(?:полномош|polnomos)/u,"ПОЛНОМОШНО"],
+    [/правно\s+мислење/u,"ПРАВНО МИСЛЕЊЕ"],
+    [/(?:договор|dogovor)/u,"ДОГОВОР"]
+  ];
+  for(const [pattern,label] of candidates){
+    if(pattern.test(text)) return label;
+  }
+  return null;
+}
+
+export function ensureRequestedFormalDraftHeading(text,{userText=""}={}){
+  const clean=String(text||"").trim();
+  const heading=requestedFormalDraftHeading(userText);
+  if(!heading || !clean) return clean;
+  const firstLine=clean.split(/\n+/u).find(line=>String(line||"").trim())?.trim()||"";
+  if(firstLine.toLocaleUpperCase("mk").startsWith(heading)) return clean;
+  return heading+"\n\n"+clean;
+}
+
 function markdownTableRowToText(line){
   const cells=String(line||"").trim().replace(/^\||\|$/g,"").split("|").map(x=>x.trim()).filter(Boolean);
   if(!cells.length) return "";
@@ -51,5 +78,6 @@ export function replaceUngroundedArticleReferences(text,{userText="",hasGoverned
 
 export function finaliseFormalLegalDraft(text,{userText="",hasGovernedLegalContext=false}={}){
   const clean=cleanFormalDraftForExport(text);
-  return replaceUngroundedArticleReferences(clean,{userText,hasGovernedLegalContext});
+  const grounded=replaceUngroundedArticleReferences(clean,{userText,hasGovernedLegalContext});
+  return ensureRequestedFormalDraftHeading(grounded,{userText});
 }

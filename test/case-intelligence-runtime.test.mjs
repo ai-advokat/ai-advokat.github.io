@@ -99,3 +99,20 @@ test("CIR7 CasePilot has a private Workers AI fallback for extraction synthesis 
     /web_search|webSearchEnabled:true/
   );
 });
+
+
+test("CIR8 every private generated analysis/draft has the same canonical last-mile Macedonian release gate",()=>{
+  assert.match(worker,/function canonicalMacedonianFinalRelease/);
+  const privateHelper=worker.slice(worker.indexOf("async function runPrivateWorkersAISynthesis"),worker.indexOf("function parseModelJsonObject"));
+  assert.match(privateHelper,/const startedAt=Date\.now\(\)/);
+  assert.match(privateHelper,/canonicalMacedonianFinalRelease\(finalText,task\)/);
+  assert.match(privateHelper,/private_case_final_last_mile_language_gate_failed/);
+
+  const analysis=worker.slice(worker.indexOf('if\(tail==="intelligence\/analyze"\)'),worker.indexOf('if\(tail==="intelligence\/draft"\)'));
+  assert.match(analysis,/canonicalMacedonianFinalRelease\(analysisText,task\)/);
+  assert.match(analysis,/macedonian_release_blocked/);
+
+  const draft=worker.slice(worker.indexOf('if\(tail==="intelligence\/draft"\)'),worker.indexOf('if\(tail==="casepilot"\)'));
+  assert.match(draft,/canonicalMacedonianFinalRelease\(draftText,task\)/);
+  assert.match(draft,/macedonian_release_blocked/);
+});

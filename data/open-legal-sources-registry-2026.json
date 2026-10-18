@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "registry_id": "AI_ADVOKAT_OPEN_LEGAL_SOURCES_REGISTRY_2026",
-  "updated_on": "2026-10-12",
+  "updated_on": "2026-10-18",
   "purpose": "Rights-aware registry for public and open legal-source discovery, ingestion and provenance. Public accessibility never by itself authorizes bulk copying or republication.",
   "doctrine": [
     "official_origin_first",
@@ -78,6 +78,38 @@
       "human_review_status": "reviewed",
       "rights_checked_on": "2026-10-12",
       "note": "Official publication provenance. Treat bulk reuse as closed until terms/licensing are separately verified."
+    },
+    {
+      "id": "mk-official-gazette-data-gov-2017",
+      "jurisdiction": "MK",
+      "name": "data.gov.mk · ЈП Службен весник на РСМ — Изданија на Службен весник до 2017",
+      "canonical_url": "https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017",
+      "authority_status": "primary_official",
+      "public_access_status": "public_confirmed",
+      "reuse_status": "terms_review_required",
+      "ingest_status": "metadata_only",
+      "automated_bulk_ingest": false,
+      "allowed_now": [
+        "official_issue_metadata_registration",
+        "issue_number_date_type_reconciliation",
+        "historical_publication_name_reconciliation",
+        "source_linking_and_provenance"
+      ],
+      "blocked_until_review": [
+        "bulk_raw_dataset_republication",
+        "treating_issue_metadata_as_legal_text",
+        "treating_issue_metadata_as_current_law"
+      ],
+      "current_law_role": "historical_issue_identity_and_date_metadata_only",
+      "dataset_id": "05342c32-f4a6-49c3-b8fa-5a555a6df6ff",
+      "resource_id": "9a039791-1abb-411f-bc04-bf136776a83a",
+      "resource_url": "https://data.gov.mk/dataset/05342c32-f4a6-49c3-b8fa-5a555a6df6ff/resource/9a039791-1abb-411f-bc04-bf136776a83a/download/izdanija-sluzben-vesnik-do-2017.xlsx",
+      "source_snapshot_sha256": "4d111eb03ed0b8e877d151e030bf38096831cedc7a26f4a09121d9e6dfac5a18",
+      "rights_evidence_url": "https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017",
+      "rights_evidence_note": "Dataset metadata identifies the resource as isopen=true with licence 'Друго (Отворено)', while the CKAN QA block reports openness_score=0 and reason 'License not open'. AI Advokat therefore uses it as official metadata evidence and keeps bulk republication fail-closed until licence terms are reconciled.",
+      "human_review_status": "reviewed",
+      "rights_checked_on": "2026-10-18",
+      "provenance_manifest": "data/gazette-open-data-issues-1944-2017.json"
     },
     {
       "id": "mk-ldbis",
