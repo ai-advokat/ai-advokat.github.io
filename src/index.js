@@ -4049,8 +4049,10 @@ async function governedArticleContext(env,q,basePlan){
           sourceIdentity:instrumentTitle,
           authorityClass:"primary_official",
           locator:"Член "+String(article.articleNumber||""),
-          releaseRole:"legal_authority",
-          legalAuthority:true,
+          releaseRole:["reviewed","approved"].includes(String(article.humanReviewStatus||""))
+            ? "legal_authority"
+            : "research_source_only",
+          legalAuthority:["reviewed","approved"].includes(String(article.humanReviewStatus||"")),
           humanReviewStatus:String(article.humanReviewStatus||"pending"),
           versionHumanReviewStatus:String(versionInfo.humanReviewStatus||"pending"),
           instrumentKey:String(instrument?.canonical_key||routing.key||""),
