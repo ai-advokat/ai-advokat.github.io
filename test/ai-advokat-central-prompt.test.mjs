@@ -114,8 +114,8 @@ test("COP9 FREE Macedonian output uses deterministic-first cleanup and at most o
   assert.match(worker,/STRICT TARGETED LANGUAGE REPAIR/);
   assert.ok((worker.match(/const languagePass=await repairWorkersAIMacedonianIfNeeded/g)||[]).length>=3,"public chat, source-backed researcher and private synthesis must share the Macedonian postflight");
   assert.match(worker,/languageRepaired:languagePass\.repaired===true/);
-  assert.match(worker,/languageQualityState:languagePass\.languageAssessment/);
-  assert.match(worker,/macedonianRepairProviderBudget:"max_one_conditional_extra_call_per_free_turn"/);
+  assert.match(worker,/languageQualityState:languagePass\.releaseVerdict\?\.verdict==="RELEASE"/);
+  assert.match(worker,/macedonianRepairProviderBudget:"severe_block_zero_extra_calls_repairable_max_one_extra_call"/);
 });
 
 
@@ -190,6 +190,7 @@ test("COP16 governed GPT has a final Macedonian release gate",()=>{
   assert.match(worker,/let governedFinalAnswer=String\(finalAnswer\|\|""\)\.trim\(\)/);
   assert.match(worker,/governedLanguageRequired=shouldEnforceMacedonianOutput\(q\)/);
   assert.match(worker,/governedLanguageQuality=assessMacedonianOutput\(governedFinalAnswer,\{userText:q\}\)/);
-  assert.match(worker,/error:"macedonian_language_quality_failed"/);
+  assert.match(worker,/governedLanguageRelease=macedonianReleaseVerdict\(governedFinalAnswer,\{userText:q\}\)/);
+  assert.match(worker,/error:"macedonian_release_blocked"/);
   assert.match(worker,/answer:governedFinalAnswer/);
 });

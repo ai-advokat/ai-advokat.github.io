@@ -2,9 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   MACEDONIAN_LANGUAGE_STANDARD_VERSION,
+  MACEDONIAN_RELEASE_GATE_VERSION,
   MACEDONIAN_2017_SYSTEM_RULES,
   shouldEnforceMacedonianOutput,
   assessMacedonianOutput,
+  macedonianReleaseVerdict,
   buildMacedonianRepairMessages,
   normaliseMacedonianGeneratedText
 } from "../src/macedonian-language-guard.js";
@@ -210,8 +212,8 @@ test("unambiguous production calques get deterministic cleanup before any AI rep
   assert.equal(check.ok,true,JSON.stringify({clean,check}));
 });
 
-test("language runtime is V6 after structural-token and lexical-integrity hardening",()=>{
-  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V6");
+test("language runtime is V7 after structural-token and lexical-integrity hardening",()=>{
+  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V7");
 });
 
 
@@ -232,4 +234,36 @@ test("awkward wrong-language correction phrase is normalised without changing su
   assert.ok(check.reasons.includes("contextual_language_contamination"));
   const clean=normaliseMacedonianGeneratedText(bad);
   assert.match(clean,/Разбирам\. Ќе ви одговорам/u);
+});
+
+
+test("canonical release verdict blocks the real employment-definition garbage before another model call",()=>{
+  const bad=[
+    "Наименование — Договорот опишува договорените услови помеѓуз работникот и работодавачот за ажурирање на рани работни облага.",
+    "Времетраење — Фиксно или непостојно, со можни изминливи датум.",
+    "Начинот на исплата е нпр. по банска сметка.",
+    "Точнаја деловна обврЗка треба да се извлече од деловните написи.",
+    "Договорот мора да е саответен закон и да е оценет за правопризнателството."
+  ].join(" ");
+  const verdict=macedonianReleaseVerdict(bad,{userText:"Што е договор за вработување?"});
+  assert.equal(verdict.verdict,"BLOCK",JSON.stringify(verdict));
+  assert.equal(verdict.severity,"severe");
+  assert.equal(verdict.gateVersion,MACEDONIAN_RELEASE_GATE_VERSION);
+});
+
+test("single repairable contamination can be cleaned and then released",()=>{
+  const bad="Податоците се доступни во официјалниот извор.";
+  const first=macedonianReleaseVerdict(bad,{userText:"Одговори на македонски."});
+  assert.equal(first.verdict,"REPAIR",JSON.stringify(first));
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.match(clean,/достапни/u);
+  const final=macedonianReleaseVerdict(clean,{userText:"Одговори на македонски."});
+  assert.equal(final.verdict,"RELEASE",JSON.stringify(final));
+});
+
+test("clean concise Macedonian is released by V7 canonical gate",()=>{
+  const clean="Договорот за вработување ги уредува правата и обврските на работникот и работодавачот. За тековните законски услови треба да се провери важечкиот Закон за работните односи.";
+  const verdict=macedonianReleaseVerdict(clean,{userText:"Што е договор за вработување?"});
+  assert.equal(verdict.verdict,"RELEASE",JSON.stringify(verdict));
+  assert.equal(MACEDONIAN_RELEASE_GATE_VERSION,"FREE_MK_CANONICAL_RELEASE_V3");
 });

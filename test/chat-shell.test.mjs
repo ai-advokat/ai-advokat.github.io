@@ -128,9 +128,9 @@ test("CHAT11 session privacy uses store:false and never creates a durable OpenAI
 });
 
 test("CHAT11b homepage cache-busts the current FREE chat runtime and PWA shell",()=>{
-  assert.match(html,/ai-advokat-chat\.js\?v=20261018-free-chat-runtime-v3/);
+  assert.match(html,/ai-advokat-chat\.js\?v=20261018-canonical-release-v4/);
   const serviceWorker=fs.readFileSync("service-worker.js","utf8");
-  assert.match(serviceWorker,/ai-advokat-shell-v6/);
+  assert.match(serviceWorker,/ai-advokat-shell-v7/);
 });
 
 test("CHAT12 GitHub Pages chat calls the Cloudflare Worker API, not the static origin",()=>{
@@ -526,4 +526,11 @@ test("CHAT39 Auto mode can escalate unsupported legal questions to authorised ex
   assert.match(worker,/autoExternalResearchCandidate/);
   assert.match(worker,/governedPrimarySupport/);
   assert.match(worker,/if\(autoExternalResearchCandidate && !useFreeWorkersAI\) webRequested=true/);
+});
+
+
+test("CHAT canonical Macedonian release block is surfaced directly without fallback re-generation",()=>{
+  assert.match(chatJs,/d\?\.error==="macedonian_release_blocked"/);
+  assert.match(chatJs,/Macedonian Release Gate · BLOCK/);
+  assert.match(chatJs,/Расипаниот AI-нацрт е блокиран пред објавување/);
 });

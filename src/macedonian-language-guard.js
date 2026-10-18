@@ -2,7 +2,9 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V6";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V7";
+export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V3";
+export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="AI-нацртот не ја помина задолжителната јазична проверка за стандарден македонски јазик и затоа не е објавен. Барањето не е потрошено како валиден одговор; обидете се повторно или наведете го конкретниот закон за source-first анализа.";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
   "PRIORITY 0 — ПРАВОПИС НА МАКЕДОНСКИОТ ЈАЗИК 2017.",
@@ -163,6 +165,48 @@ export function assessMacedonianOutput(text,{userText=""}={}){
     standardVersion:MACEDONIAN_LANGUAGE_STANDARD_VERSION
   };
 }
+
+export function macedonianReleaseVerdict(text,{userText=""}={}){
+  if(!shouldEnforceMacedonianOutput(userText)){
+    return {verdict:"RELEASE",severity:"not_applicable",assessment:null,problems:[],gateVersion:MACEDONIAN_RELEASE_GATE_VERSION};
+  }
+  const assessment=assessMacedonianOutput(text,{userText});
+  const value=String(text||"").normalize("NFKC");
+  const words=normalizeWords(value);
+  const simpleDefinition=/^(?:што\s+е|што\s+значи|објасни(?:\s+ми)?|дефинирај)\b/iu.test(String(userText||"").trim());
+  const lines=value.split(/\r?\n/).filter(line=>line.trim()).length;
+  const tableLike=(value.match(/[—–|]/g)||[]).length;
+  const styleProblems=[];
+  if(simpleDefinition && words.length>180) styleProblems.push("simple_definition_overlong");
+  if(simpleDefinition && (lines>16 || tableLike>10)) styleProblems.push("simple_definition_overstructured");
+
+  if(assessment.ok && styleProblems.length===0){
+    return {verdict:"RELEASE",severity:"clean",assessment,problems:[],gateVersion:MACEDONIAN_RELEASE_GATE_VERSION};
+  }
+
+  const contaminationCount=
+    Number(assessment.foreignChars?.length||0)+
+    Number(assessment.foreignLexemes?.length||0)+
+    Number(assessment.malformedGeneration?.length||0)+
+    Number(assessment.contextualContamination?.length||0)+
+    Number(assessment.structuralAnomalies?.length||0);
+
+  const severe=
+    Number(assessment.structuralAnomalies?.length||0)>0 ||
+    Number(assessment.malformedGeneration?.length||0)>=2 ||
+    Number(assessment.foreignChars?.length||0)>=2 ||
+    Number(assessment.reasons?.length||0)>=2 ||
+    contaminationCount>=3;
+
+  return {
+    verdict:severe?"BLOCK":"REPAIR",
+    severity:severe?"severe":"repairable",
+    assessment,
+    problems:styleProblems,
+    gateVersion:MACEDONIAN_RELEASE_GATE_VERSION
+  };
+}
+
 
 
 const DETERMINISTIC_LEXICAL_REPLACEMENTS=[

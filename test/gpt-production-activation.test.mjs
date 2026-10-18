@@ -30,7 +30,7 @@ test("GPTACT1 production runtime is armed for the approved model but contains no
   assert.equal(config.ai?.binding,"AI");
   assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
   assert.equal(config.vars.WORKERS_AI_MARKDOWN_ENABLED,"true");
-  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/zai-org/glm-4.7-flash");
+  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/qwen/qwen3-30b-a3b-fp8");
   assert.doesNotMatch(wrangler,/OPENAI_API_KEY/);
   assert.doesNotMatch(wrangler,/sk-[A-Za-z0-9_-]{20,}/);
 });
@@ -177,7 +177,7 @@ test("GPTACT11 Workers AI remains explicit, bounded and available only as fallba
   assert.match(worker,/cloudflare_workers_ai_to_markdown/);
   assert.match(worker,/FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED/);
   assert.match(worker,/workers-ai-provider\.js/);
-  assert.match(wrangler,/"WORKERS_AI_CHAT_MODEL": "@cf\/zai-org\/glm-4.7-flash"/);
+  assert.match(wrangler,/"WORKERS_AI_CHAT_MODEL": "@cf\/qwen\/qwen3-30b-a3b-fp8"/);
   assert.doesNotMatch(workflow,/Live FREE Workers AI multi-scenario runtime UAT/);
   assert.doesNotMatch(worker,/error:"free_mode_professional_postflight_required"/);
   assert.match(worker,/FREE provider output is a working research\/draft result only/);
@@ -192,8 +192,8 @@ test("GPTACT12 fallback document prompt still treats extracted body as content a
 });
 
 
-test("GPTACT13 unified Workers AI provider contract uses the fast multilingual production model",()=>{
-  assert.equal(WORKERS_AI_TEXT_MODEL_DEFAULT,"@cf/zai-org/glm-4.7-flash");
+test("GPTACT13 unified Workers AI provider contract uses the canonical multilingual production model",()=>{
+  assert.equal(WORKERS_AI_TEXT_MODEL_DEFAULT,"@cf/qwen/qwen3-30b-a3b-fp8");
   const options=workersAIRequestOptions({
     model:WORKERS_AI_TEXT_MODEL_DEFAULT,
     messages:[{role:"user",content:"test"}],
@@ -201,18 +201,18 @@ test("GPTACT13 unified Workers AI provider contract uses the fast multilingual p
     temperature:0.1
   });
   assert.deepEqual(options.messages,[{role:"user",content:"test"}]);
-  assert.equal(options.max_completion_tokens,900);
-  assert.equal(options.max_tokens,undefined);
+  assert.equal(options.max_tokens,900);
+  assert.equal(options.max_completion_tokens,undefined);
   assert.equal(options.temperature,0.1);
-  assert.deepEqual(options.chat_template_kwargs,{enable_thinking:false});
-  assert.equal(options.reasoning_effort,null);
+  assert.equal(options.chat_template_kwargs,undefined);
+  assert.equal(options.reasoning_effort,undefined);
   assert.equal(options.max_output_tokens,undefined);
   assert.equal(options.reasoning,undefined);
 });
 
 
 
-test("GPTACT13b GLM FREE chat cannot spend the visible-output budget on hidden thinking",()=>{
+test("GPTACT13b legacy GLM override still disables hidden thinking if explicitly selected",()=>{
   const options=workersAIRequestOptions({
     model:"@cf/zai-org/glm-4.7-flash",
     messages:[{role:"user",content:"Што е договор за вработување?"}],
@@ -240,7 +240,7 @@ test("GPTACT14 Workers AI response extraction accepts only final answer shapes a
 
 test("GPTACT15 Workers AI provider contract fails explicitly on empty final output",async()=>{
   const env={
-    WORKERS_AI_CHAT_MODEL:"@cf/zai-org/glm-4.7-flash",
+    WORKERS_AI_CHAT_MODEL:"@cf/qwen/qwen3-30b-a3b-fp8",
     AI:{run:async()=>({response:"",usage:{prompt_tokens:10,completion_tokens:0}})}
   };
   const result=await runWorkersAIText(env,{
@@ -249,7 +249,7 @@ test("GPTACT15 Workers AI provider contract fails explicitly on empty final outp
   });
   assert.equal(result.ok,false);
   assert.equal(result.error,"workers_ai_empty_response");
-  assert.equal(result.model,"@cf/zai-org/glm-4.7-flash");
+  assert.equal(result.model,"@cf/qwen/qwen3-30b-a3b-fp8");
   assert.equal(result.providerCalls,1);
   assert.equal(result.shape.type,"object");
 });
@@ -257,7 +257,7 @@ test("GPTACT15 Workers AI provider contract fails explicitly on empty final outp
 test("GPTACT15b Workers AI session affinity is forwarded only as a safe binding header",async()=>{
   let seen=null;
   const env={
-    WORKERS_AI_CHAT_MODEL:"@cf/zai-org/glm-4.7-flash",
+    WORKERS_AI_CHAT_MODEL:"@cf/qwen/qwen3-30b-a3b-fp8",
     AI:{run:async(...args)=>{seen=args;return {response:"Здраво"};}}
   };
   const result=await runWorkersAIText(env,{

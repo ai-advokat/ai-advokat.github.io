@@ -289,6 +289,14 @@ describe("assistant — legal routing safety", () => {
     assert.equal(r.body.citations[0].articleNumber, "12");
   });
 
+  test("A9a exact employment-definition query canonically routes to ZRO", async () => {
+    const { env } = freshEnv();
+    const r = await call(env, assistantRequest("Што е договор за вработување?", { ip: nextIp() }));
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    assert.equal(r.body.instrument.canonicalKey, "mk:zro");
+    assert.ok(r.body.citations.some(c=>["5","12","13"].includes(String(c.articleNumber))));
+  });
+
   // Fixed on main by PR #43 (relevance gate in scoreArticle); kept as a regression test.
   test("A9b a law with no matching article is refused without consuming quota", async () => {
     const { env, raw } = freshEnv();
@@ -368,7 +376,7 @@ describe("assistant — AI safety", () => {
     const r = await call(env, assistantRequest("ЗРО член 12", { ip: nextIp() }));
     assert.equal(r.status, 200);
     assert.equal(r.body.mode, "workers_ai_source_backed");
-    assert.equal(r.body.answerProvenance.contract, "AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v1");
+    assert.equal(r.body.answerProvenance.contract, "AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v2");
     assert.equal(r.body.answerProvenance.humanControl.reviewState, "not_reviewed");
     assert.equal(r.body.answerProvenance.humanControl.releaseDecision, "not_authorized");
   });
@@ -780,7 +788,7 @@ describe("production AI binding guard", () => {
     const repairHelper = src.slice(src.indexOf("async function repairWorkersAIMacedonianIfNeeded("), src.indexOf("async function runFreeWorkersAIChat("));
     assert.equal((repairHelper.match(/runWorkersAIText\(/g) || []).length, 1, "Macedonian repair owns one provider call-site regardless of retry count");
     assert.match(repairHelper,/if\(!shouldEnforceMacedonianOutput\(userText\)\)/, "repair must be skipped when Macedonian output is not required");
-    assert.match(repairHelper,/if\(assessment\.ok\)/, "repair must be skipped when the first answer already passes the language guard");
+    assert.match(repairHelper,/if\(releaseVerdict\.verdict==="RELEASE"\)/, "repair must be skipped when the canonical release gate already approves the first answer");
     assert.match(repairHelper,/const deterministicFirst=normaliseMacedonianGeneratedText\(current\)/, "known contamination must be repaired deterministically before another inference");
     assert.doesNotMatch(repairHelper,/for\(let attempt=0;attempt<2 && !assessment\.ok;attempt\+\+\)/, "FREE language repair must not use the former two-retry loop");
     assert.equal((repairHelper.match(/runWorkersAIText\(/g)||[]).length,1,"language repair has exactly one bounded provider call-site");

@@ -98,8 +98,8 @@ export function seedArticles(raw, canonicalKey, articles, { status = "current_co
   const insert = raw.prepare(
     `INSERT INTO legal_article_versions
       (canonical_id,instrument_id,instrument_version_id,article_number,article_number_normalized,article_heading,
-       article_text,status,source_url,source_sha256,human_review_status)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+       article_text,status,source_issue_number,source_issue_date,source_url,source_sha256,human_review_status)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
   );
   for (const a of articles) {
     insert.run(
@@ -111,8 +111,10 @@ export function seedArticles(raw, canonicalKey, articles, { status = "current_co
       a.heading ?? null,
       a.text,
       a.status ?? status,
-      "https://example.invalid/source",
-      "0".repeat(64),
+      a.sourceIssueNumber ?? "TEST-1/2026",
+      a.sourceIssueDate ?? "2026-01-15",
+      a.sourceUrl ?? "https://example.invalid/source",
+      a.sourceSha256 ?? "0".repeat(64),
       a.review ?? review
     );
   }

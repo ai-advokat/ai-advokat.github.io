@@ -1,3 +1,5 @@
+import { enforceCanonicalContextProvenance } from "./canonical-provenance-gate.js";
+
 const MAX_GAZETTE_CHUNK_RESULTS=8;
 
 function norm(v){
@@ -43,7 +45,7 @@ export async function findGovernedGazetteChunks(env,q,{limit=6}={}){
 
 export function gazetteChunksToContext(bundle){
   if(!bundle || bundle.state!=="matched") return [];
-  return bundle.chunks.map(c=>({
+  const raw=bundle.chunks.map(c=>({
     source:"Службен весник · governed article chunk",
     locator:[
       c.source_issue_number?"бр. "+c.source_issue_number:null,
@@ -53,6 +55,26 @@ export function gazetteChunksToContext(bundle){
       c.item_number?"точка "+c.item_number:null
     ].filter(Boolean).join(" · "),
     version:c.current_law_eligible===1?"current-law-eligible-after-human-gate":"official-source-historical-or-versioned",
+    provenance:{
+      kind:"gazette_chunk",
+      sourceIdentity:String(c.source_publication_name||"Службен весник на Република Северна Македонија"),
+      authorityClass:String(c.authority_class||"primary_official"),
+      locator:[
+        c.source_issue_number?"бр. "+c.source_issue_number:null,
+        c.source_issue_date||null,
+        c.article_number?"член "+c.article_number:null
+      ].filter(Boolean).join(" · "),
+      releaseRole:"legal_authority",
+      legalAuthority:true,
+      humanReviewStatus:String(c.human_review_status||"pending"),
+      publicationName:String(c.source_publication_name||"Службен весник на Република Северна Македонија"),
+      issueNumber:String(c.source_issue_number||""),
+      issueDate:String(c.source_issue_date||""),
+      articleNumber:String(c.article_number||""),
+      sourceUrl:String(c.source_url||""),
+      textSha256:String(c.text_sha256||""),
+      currentLawClaim:Number(c.current_law_eligible)===1
+    },
     text:[
       "AUTHORITY_CLASS="+c.authority_class,
       "HUMAN_GATE="+c.human_review_status,
@@ -63,4 +85,6 @@ export function gazetteChunksToContext(bundle){
       c.text_content
     ].join("\n")
   }));
+  const gate=enforceCanonicalContextProvenance(raw);
+  return gate.context;
 }

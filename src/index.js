@@ -107,6 +107,10 @@ import {
 } from "./case-intelligence.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import {
+  CANONICAL_PROVENANCE_GATE_VERSION,
+  enforceCanonicalContextProvenance
+} from "./canonical-provenance-gate.js";
+import {
   OPEN_LEGAL_SOURCE_POLICY_VERSION,
   OPEN_LEGAL_SOURCE_REGISTRY_ID,
   publicOpenLegalSourceDirectory,
@@ -122,8 +126,11 @@ import {
 } from "./workers-ai-provider.js";
 import {
   MACEDONIAN_LANGUAGE_STANDARD_VERSION,
+  MACEDONIAN_RELEASE_GATE_VERSION,
+  MACEDONIAN_RELEASE_BLOCK_MESSAGE,
   MACEDONIAN_2017_SYSTEM_RULES,
   assessMacedonianOutput,
+  macedonianReleaseVerdict,
   buildMacedonianRepairMessages,
   normaliseMacedonianGeneratedText,
   shouldEnforceMacedonianOutput
@@ -139,7 +146,7 @@ import {
 } from "./response-quality.js";
 
 const VERSION = "1.9.0";
-const FREE_RUNTIME_POLICY_VERSION="FREE_MK_FAST_RELEASE_V2";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V3";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -2880,7 +2887,10 @@ async function inferInstrumentKey(env,q,requested) {
 
   // Compatibility fallbacks while older environments converge to the alias registry.
   if(normalizedQuestion.includes("кривичната постапка") || normalizedQuestion.includes("кривична постапка")) return {key:"mk:zkp"};
-  if(normalizedQuestion.includes("работните односи") || normalizedQuestion.includes("работен однос")) return {key:"mk:zro"};
+  if([
+    "работните односи","работен однос","работниот однос","договор за вработување","договорот за вработување",
+    "работодавач","престанок на работен однос","отказ на договор","работно време","годишен одмор"
+  ].some(term=>normalizedQuestion.includes(term))) return {key:"mk:zro"};
 
   // No silent guess: auto mode stays explicit so a bare article number is not attributed to the wrong law.
   return {key:"auto"};
@@ -3322,7 +3332,7 @@ async function governedGuideContext(request,env,guideIds){
     byId.set(id,{...(byId.get(id)||{}),...item});
   }
   const records=[...byId.values()];
-  return records
+  const rawContext=records
     .filter(r=>wanted.has(String(r.id)) && r.catalog_public===true && r.public_record_enabled===true)
     .map(r=>{
       const dependencyGate=evaluateGuideLawDependencies(r.id,dependencyRegistry,readinessLedger);
@@ -3332,11 +3342,39 @@ async function governedGuideContext(request,env,guideIds){
         r.bot_text.trim()
           ? sanitizeForPrompt(r.bot_text).slice(0,12000)
           : "";
+      const verificationState=String(r.verification_level||r.verification_label||r.status_label||"pending");
+      const activationState=String(r.activation_state||"pending");
+      const humanReviewStatus=["legal_verified","current_verified","verified"].includes(String(r.verification_level||""))
+        ? "approved"
+        : activationState==="active_with_warning" ? "reviewed" : "pending";
+      const fingerprint=[
+        r.public_pdf_sha256,
+        r.public_master_artifact?.pdf_sha256,
+        r.public_master_artifact?.docx_sha256,
+        r.candidate_artifact?.pdf_sha256,
+        r.candidate_artifact?.docx_sha256,
+        r.sha256
+      ].find(value=>/^[0-9a-f]{64}$/i.test(String(value||"")))||"";
       return {
         source:governedPublicText ? "AI Advokat governed public guide" : "AI Advokat public guide catalogue",
         locator:r.public_fulltext || r.public_record_url,
         version:r.verification_label || r.status_label || r.edition || "",
         dependencyGate,
+        provenance:{
+          kind:"guide",
+          sourceIdentity:"AI Advokat governed guide registry",
+          authorityClass:"secondary_reference",
+          locator:String(r.public_fulltext||r.public_record_url||""),
+          releaseRole:"secondary_only",
+          legalAuthority:false,
+          humanReviewStatus,
+          recordId:String(r.id||""),
+          title:String(r.display_title||r.title||""),
+          verificationState,
+          activationState,
+          fingerprint,
+          currentLawClaim:false
+        },
         text:[
           governedPublicText
             ? "GOVERNED PUBLIC GUIDE TEXT — secondary practical guidance only; never treat it as primary or official law."
@@ -3352,6 +3390,8 @@ async function governedGuideContext(request,env,guideIds){
         ].join("\n")
       };
     });
+  const provenanceGate=enforceCanonicalContextProvenance(rawContext);
+  return provenanceGate.context;
 }
 
 function guideBasename(value){
@@ -3581,11 +3621,13 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
     maxOutputTokens:Math.max(900,Math.min(4800,Number(maxOutputTokens)||3600))
   });
   const languageRequired=shouldEnforceMacedonianOutput(task);
-  if(languageRequired && languagePass.languageAssessment?.ok!==true){
+  if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
     return {
       ok:false,
-      error:"macedonian_language_quality_failed",
+      error:"macedonian_release_blocked",
+      message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:languagePass.repairError||"macedonian_postflight_failed",
+      releaseGate:languagePass.releaseVerdict||null,
       model:result.model,
       providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0)
     };
@@ -3608,7 +3650,8 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
     formalDraftPostflight:(mode==="draft" || isFormalLegalDraftRequest(task)),
-    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"failed_closed"
+    languageQualityState:languagePass.releaseVerdict?.verdict==="RELEASE"?"verified_runtime":"failed_closed",
+    languageReleaseGate:languagePass.releaseVerdict||null
   };
 }
 
@@ -3843,11 +3886,29 @@ async function validateGuideDocuments(request,env,payload){
     const title=String(record.display_title || record.title || guideId);
     const verification=String(record.verification_label || record.status_label || record.edition || "");
     const dependencyGate=evaluateGuideLawDependencies(guideId,dependencyRegistry,readinessLedger);
+    const guideHumanReviewStatus=["legal_verified","current_verified","verified"].includes(String(record.verification_level||""))
+      ? "approved"
+      : String(record.activation_state||"")==="active_with_warning" ? "reviewed" : "pending";
     context.push({
       source:"AI Advokat fingerprint-verified private guide · "+title,
       locator:String(record.public_record_url || ""),
       version:verification,
       dependencyGate,
+      provenance:{
+        kind:"fingerprint_verified_guide",
+        sourceIdentity:"AI Advokat private guide vault + governed registry",
+        authorityClass:"secondary_reference",
+        locator:String(record.public_record_url||name),
+        releaseRole:"secondary_only",
+        legalAuthority:false,
+        humanReviewStatus:guideHumanReviewStatus,
+        recordId:guideId,
+        title,
+        verificationState:String(record.verification_level||verification||"pending"),
+        activationState:String(record.activation_state||"pending"),
+        fingerprint:actualHash,
+        currentLawClaim:false
+      },
       text:[
         "FULL_GUIDE_DOCUMENT_ATTACHED: "+name,
         "GUIDE_ID: "+guideId,
@@ -3876,7 +3937,26 @@ async function validateGuideDocuments(request,env,payload){
     });
   }
 
-  return {ok:true,attachments,context,sources};
+  const provenanceGate=enforceCanonicalContextProvenance(context);
+  if(provenanceGate.blocked.length){
+    return {
+      ok:false,
+      error:"guide_document_provenance_gate_failed",
+      problems:provenanceGate.blocked
+    };
+  }
+  return {
+    ok:true,
+    attachments,
+    context:provenanceGate.context,
+    sources,
+    provenanceGate:{
+      version:CANONICAL_PROVENANCE_GATE_VERSION,
+      state:provenanceGate.state,
+      released:provenanceGate.context.length,
+      blocked:0
+    }
+  };
 }
 
 
@@ -3889,9 +3969,11 @@ function chatQueryDate(q){
 
 function articleCorpusGateContext(message,{source="AI Advokat article-level legal corpus",locator="corpus routing",version="unresolved"}={}){
   return [{
+    contextRole:"governance_notice",
     source,
     locator,
     version,
+    provenance:{kind:"governance_notice"},
     text:[
       "CORPUS_GATE: "+String(message || "The governed article-level corpus cannot support this request."),
       "Do not replace this missing or unresolved native legal support with model memory.",
@@ -3962,6 +4044,28 @@ async function governedArticleContext(env,q,basePlan){
           "Human Gate "+versionInfo.humanReviewStatus,
           retrieval.versionBasis || "basis-unknown"
         ].join(" · "),
+        provenance:{
+          kind:"legal_article",
+          sourceIdentity:instrumentTitle,
+          authorityClass:"primary_official",
+          locator:"Член "+String(article.articleNumber||""),
+          releaseRole:["reviewed","approved"].includes(String(article.humanReviewStatus||""))
+            ? "legal_authority"
+            : "research_source_only",
+          legalAuthority:["reviewed","approved"].includes(String(article.humanReviewStatus||"")),
+          humanReviewStatus:String(article.humanReviewStatus||"pending"),
+          versionHumanReviewStatus:String(versionInfo.humanReviewStatus||"pending"),
+          instrumentKey:String(instrument?.canonical_key||routing.key||""),
+          instrumentType:String(instrument?.instrument_type||"law"),
+          articleNumber:String(article.articleNumber||""),
+          versionLabel:String(versionInfo.label||""),
+          versionBasis:String(retrieval.versionBasis||""),
+          sourceIssueNumber:String(article.sourceIssueNumber||""),
+          sourceIssueDate:String(article.sourceIssueDate||""),
+          sourceUrl:String(sourceUrl||""),
+          sourceSha256:String(article.sourceSha256||""),
+          currentLawClaim:article.publicStatus==="current_verified" && versionInfo.isCurrent===true
+        },
         text:[
           "JURISDICTION: "+String(instrument?.jurisdiction || "MK"),
           "INSTRUMENT: "+instrumentTitle,
@@ -3993,7 +4097,15 @@ async function governedArticleContext(env,q,basePlan){
       };
     });
 
-    const legalSources=retrieval.articles.map(article=>({
+    const provenanceGate=enforceCanonicalContextProvenance(context);
+    const releasedArticleNumbers=new Set(
+      provenanceGate.context
+        .map(item=>String(item?.provenance?.articleNumber||""))
+        .filter(Boolean)
+    );
+    const releasedArticles=retrieval.articles.filter(article=>releasedArticleNumbers.has(String(article.articleNumber||"")));
+
+    const legalSources=releasedArticles.map(article=>({
       title:instrumentTitle+" · член "+String(article.articleNumber || "")+(article.referenceRole==="explicit_cross_reference" ? " · упатување од "+article.referenceOriginArticleNumbers.map(n=>"член "+n).join(", ") : ""),
       articleNumber:String(article.articleNumber || ""),
       url:article.sourceUrl || instrument?.canonical_source_url || null,
@@ -4008,12 +4120,18 @@ async function governedArticleContext(env,q,basePlan){
     }));
 
     return {
-      context,
+      context:provenanceGate.context,
       legalSources,
-      articles:retrieval.articles,
-      primaryArticles:retrieval.primaryArticles || retrieval.articles,
-      crossReferenceArticles:retrieval.crossReferenceArticles || [],
-      state:"matched",
+      articles:releasedArticles,
+      primaryArticles:(retrieval.primaryArticles || retrieval.articles).filter(article=>releasedArticleNumbers.has(String(article.articleNumber||""))),
+      crossReferenceArticles:(retrieval.crossReferenceArticles || []).filter(article=>releasedArticleNumbers.has(String(article.articleNumber||""))),
+      state:releasedArticles.length?"matched":(provenanceGate.blocked.length?"provenance_blocked":"no_relevant_articles"),
+      provenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:provenanceGate.state,
+        released:provenanceGate.context.length,
+        blocked:provenanceGate.blocked.length
+      },
       instrument:{
         canonicalKey:instrument?.canonical_key || routing.key,
         title:instrumentTitle,
@@ -4106,23 +4224,47 @@ export async function bureauEchrDiscoveryContext(q,{limit=6}={}){
     if(!ranked.length){
       return {...empty,state:"official_index_no_title_match",recordCount:records.length};
     }
-    return {
-      state:"official_domestic_echr_translation_discovery",
-      recordCount:records.length,
-      records:ranked,
-      context:ranked.map(record=>({
-        source:"Биро за застапување на РСМ пред ЕСЧП · официјален македонски индекс",
+    const rawContext=ranked.map(record=>({
+      source:"Биро за застапување на РСМ пред ЕСЧП · официјален македонски индекс",
+      locator:String(record.listing_period||"")+(record.record_kind?" · "+record.record_kind:""),
+      version:"captured "+String(record.captured_on||""),
+      provenance:{
+        kind:"echr_discovery",
+        sourceIdentity:"Биро за застапување на Република Северна Македонија пред ЕСЧП",
+        authorityClass:"official_supporting",
         locator:String(record.listing_period||"")+(record.record_kind?" · "+record.record_kind:""),
-        version:"captured "+String(record.captured_on||"2026-10-11"),
-        text:[
-          "DISCOVERY_ONLY_ECHR_MK_TRANSLATION_INDEX.",
-          "Предмет: "+String(record.title||""),
-          "Официјален домашен извор: Биро за застапување на Република Северна Македонија пред Европскиот суд за човекови права.",
-          "Ова е македонски индекс/преводен извор за пронаоѓање. За application number, точен датум, конечност и материјален holding задолжително врзи со HUDOC.",
-          "Не претставувај го овој индекс како самостојно human-reviewed правно образложение."
-        ].join("\n")
-      })),
-      sources:ranked.map(record=>({
+        releaseRole:"discovery_only",
+        legalAuthority:false,
+        humanReviewStatus:"not_legal_authority",
+        recordIdentity:String(record.title||""),
+        listingPeriod:String(record.listing_period||""),
+        capturedOn:String(record.captured_on||""),
+        sourceUrl:String(record.source_url||"https://biroescp.gov.mk/пресуди-и-одлуки-на-рм/"),
+        currentLawClaim:false
+      },
+      text:[
+        "DISCOVERY_ONLY_ECHR_MK_TRANSLATION_INDEX.",
+        "Предмет: "+String(record.title||""),
+        "Официјален домашен извор: Биро за застапување на Република Северна Македонија пред Европскиот суд за човекови права.",
+        "Ова е македонски индекс/преводен извор за пронаоѓање. За application number, точен датум, конечност и материјален holding задолжително врзи со HUDOC.",
+        "Не претставувај го овој индекс како самостојно human-reviewed правно образложение."
+      ].join("\n")
+    }));
+    const provenanceGate=enforceCanonicalContextProvenance(rawContext);
+    const releasedIdentities=new Set(provenanceGate.context.map(item=>String(item?.provenance?.recordIdentity||"")).filter(Boolean));
+    const releasedRecords=ranked.filter(record=>releasedIdentities.has(String(record.title||"")));
+    return {
+      state:releasedRecords.length?"official_domestic_echr_translation_discovery":(provenanceGate.blocked.length?"provenance_blocked":"official_index_no_title_match"),
+      recordCount:records.length,
+      records:releasedRecords,
+      context:provenanceGate.context,
+      provenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:provenanceGate.state,
+        released:provenanceGate.context.length,
+        blocked:provenanceGate.blocked.length
+      },
+      sources:releasedRecords.map(record=>({
         title:String(record.title||"ЕСЧП предмет"),
         url:String(record.source_url||"https://biroescp.gov.mk/пресуди-и-одлуки-на-рм/"),
         jurisdiction:"ECHR",
@@ -4217,6 +4359,25 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
           "authority Human Gate "+String(row.authority_review_status||"pending"),
           row.finality_status ? "finality "+row.finality_status : null
         ].filter(Boolean).join(" · "),
+        provenance:{
+          kind:"case_law",
+          sourceIdentity:String(row.source_title||row.court||"official court source"),
+          authorityClass:"court_official",
+          locator:[
+            row.case_number ? "Предмет "+row.case_number : row.case_title||null,
+            row.decision_date||null
+          ].filter(Boolean).join(" · "),
+          releaseRole:"legal_authority",
+          legalAuthority:true,
+          humanReviewStatus:String(row.human_review_status||"pending"),
+          authorityReviewStatus:String(row.authority_review_status||"pending"),
+          caseIdentity:String(row.case_number||row.case_title||""),
+          court:String(row.court||""),
+          jurisdiction:String(row.jurisdiction||""),
+          decisionDate:String(row.decision_date||""),
+          sourceUrl:String(sourceUrl||""),
+          currentLawClaim:false
+        },
         text:[
           "SOURCE_ROLE: OFFICIAL_REVIEWED_CASE_LAW",
           "CASE_LAW_IS_NOT_STATUTORY_TEXT: true",
@@ -4241,7 +4402,15 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
       };
     });
 
-    const sources=rows.map(row=>({
+    const provenanceGate=enforceCanonicalContextProvenance(context);
+    const releasedCaseIds=new Set(
+      provenanceGate.context
+        .map(item=>String(item?.provenance?.caseIdentity||""))
+        .filter(Boolean)
+    );
+    const releasedRows=rows.filter(row=>releasedCaseIds.has(String(row.case_number||row.case_title||"")));
+
+    const sources=releasedRows.map(row=>({
       title:[row.court||"Суд",row.case_number||row.case_title||"предмет"].filter(Boolean).join(" · "),
       caseTitle:row.case_title||null,
       court:row.court||null,
@@ -4256,7 +4425,18 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
       authorityReviewStatus:row.authority_review_status||null
     }));
 
-    return {context,sources,cases:rows,state:"matched"};
+    return {
+      context:provenanceGate.context,
+      sources,
+      cases:releasedRows,
+      state:releasedRows.length?"matched":(provenanceGate.blocked.length?"provenance_blocked":"no_reviewed_match"),
+      provenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:provenanceGate.state,
+        released:provenanceGate.context.length,
+        blocked:provenanceGate.blocked.length
+      }
+    };
   }catch(error){
     console.error("chat_case_law_lookup_failed",String(error?.message||error).slice(0,180));
     return {...empty,state:"unavailable"};
@@ -4454,42 +4634,60 @@ async function convertFreeChatAttachments(env,attachments){
 async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800,sessionAffinity=null}={}){
   const original=String(text||"");
   if(!shouldEnforceMacedonianOutput(userText)){
-    return {text:original,repaired:false,providerCalls:0,languageAssessment:null,deterministicCleanupApplied:false};
+    return {
+      text:original,repaired:false,providerCalls:0,languageAssessment:null,
+      deterministicCleanupApplied:false,
+      releaseVerdict:{verdict:"RELEASE",severity:"not_applicable",gateVersion:MACEDONIAN_RELEASE_GATE_VERSION}
+    };
   }
 
   let current=original;
   let assessment=assessMacedonianOutput(current,{userText});
-  if(assessment.ok){
-    return {text:current,repaired:false,providerCalls:0,languageAssessment:assessment,deterministicCleanupApplied:false};
+  let releaseVerdict=macedonianReleaseVerdict(current,{userText});
+  if(releaseVerdict.verdict==="RELEASE"){
+    return {text:current,repaired:false,providerCalls:0,languageAssessment:assessment,deterministicCleanupApplied:false,releaseVerdict};
   }
 
-  // Fast path first: deterministic corrections are effectively free and avoid
-  // an extra model round-trip for known, unambiguous contamination.
+  // Deterministic cleanup is the first and cheapest repair layer.
   let deterministicCleanupApplied=false;
   const deterministicFirst=normaliseMacedonianGeneratedText(current);
   if(deterministicFirst!==current){
     current=deterministicFirst;
     deterministicCleanupApplied=true;
     assessment=assessMacedonianOutput(current,{userText});
-    if(assessment.ok){
+    releaseVerdict=macedonianReleaseVerdict(current,{userText});
+    if(releaseVerdict.verdict==="RELEASE"){
       return {
         text:current,
         repaired:true,
         deterministicCleanupApplied:true,
         providerCalls:0,
         languageAssessment:assessment,
+        releaseVerdict,
         repairError:null
       };
     }
   }
 
-  // At most one targeted language-repair inference. The previous two-retry
-  // design multiplied latency on the exact turns most likely to be linguistically
-  // weak. A second failed repair now fails closed instead of making the user wait.
+  // Severe corruption is never sent into another slow repair round. Fail closed
+  // immediately so the user never sees linguistic garbage and latency stays bounded.
+  if(releaseVerdict.verdict==="BLOCK"){
+    return {
+      text:current||original,
+      repaired:false,
+      deterministicCleanupApplied,
+      providerCalls:0,
+      languageAssessment:assessment,
+      releaseVerdict,
+      repairError:"macedonian_release_blocked"
+    };
+  }
+
+  // Only a repairable draft receives one targeted repair inference.
   const messages=buildMacedonianRepairMessages({text:current,userText});
   const issueNote=[
     "STRICT TARGETED LANGUAGE REPAIR.",
-    "The preceding draft failed the Macedonian 2017 language guard.",
+    "The preceding draft failed the Macedonian canonical release gate.",
     "Detected reasons: "+(assessment.reasons||[]).join(", "),
     assessment.foreignChars?.length ? "Forbidden/non-Macedonian Cyrillic characters detected: "+assessment.foreignChars.join(" ") : "",
     assessment.foreignLexemes?.length ? "Foreign lexical forms detected: "+assessment.foreignLexemes.join(", ") : "",
@@ -4503,11 +4701,11 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
 
   const repair=await runWorkersAIText(env,{
     messages,
-    maxOutputTokens:Math.max(500,Math.min(2600,Number(maxOutputTokens)||1400)),
+    maxOutputTokens:Math.max(420,Math.min(1800,Number(maxOutputTokens)||1000)),
     temperature:0,
     sessionAffinity
   });
-  let providerCalls=repair.providerCalls||1;
+  const providerCalls=repair.providerCalls||1;
   let lastError=null;
 
   if(!repair.ok){
@@ -4520,17 +4718,19 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
       current=normaliseMacedonianGeneratedText(candidate);
       deterministicCleanupApplied=deterministicCleanupApplied || current!==candidate;
       assessment=assessMacedonianOutput(current,{userText});
-      lastError=assessment.ok?null:"macedonian_repair_still_noncompliant";
+      releaseVerdict=macedonianReleaseVerdict(current,{userText});
+      lastError=releaseVerdict.verdict==="RELEASE"?null:"macedonian_repair_still_noncompliant";
     }
   }
 
   return {
     text:current||original,
-    repaired:current!==original && assessment.ok,
+    repaired:current!==original && releaseVerdict.verdict==="RELEASE",
     deterministicCleanupApplied,
     providerCalls,
     languageAssessment:assessment,
-    repairError:assessment.ok?null:(lastError||"macedonian_repair_still_noncompliant")
+    releaseVerdict,
+    repairError:releaseVerdict.verdict==="RELEASE"?null:(lastError||"macedonian_repair_still_noncompliant")
   };
 }
 
@@ -4631,11 +4831,13 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     maxOutputTokens:tokenLimit,
     sessionAffinity
   });
-  if(languageRequired && languagePass.languageAssessment?.ok!==true){
+  if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
     return {
       ok:false,
-      error:"macedonian_language_quality_failed",
+      error:"macedonian_release_blocked",
+      message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:languagePass.repairError||"macedonian_postflight_failed",
+      releaseGate:languagePass.releaseVerdict||null,
       model:result.model,
       providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
       provider:"workers_ai_free"
@@ -4662,7 +4864,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
     formalDraftPostflight:formalDraft,
-    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"failed_closed",
+    languageQualityState:languagePass.releaseVerdict?.verdict==="RELEASE"?"verified_runtime":"failed_closed",
+    languageReleaseGate:languagePass.releaseVerdict||null,
     convertedDocuments:converted.documents.length,
     webSearchUsed:false,
     sources:[],
@@ -5385,17 +5588,20 @@ async function handleGPTChat(request,env){
   // the 2017 orthography contract. This is deliberately last-mile and fail-closed.
   let governedFinalAnswer=String(finalAnswer||"").trim();
   let governedLanguageQuality=null;
+  let governedLanguageRelease=null;
   const governedLanguageRequired=shouldEnforceMacedonianOutput(q);
   if(governedLanguageRequired){
     governedFinalAnswer=normaliseMacedonianGeneratedText(governedFinalAnswer);
     governedLanguageQuality=assessMacedonianOutput(governedFinalAnswer,{userText:q});
-    if(governedLanguageQuality.ok!==true){
+    governedLanguageRelease=macedonianReleaseVerdict(governedFinalAnswer,{userText:q});
+    if(governedLanguageRelease.verdict!=="RELEASE"){
       await releaseMonthlyQuota(env,{subject,period});
       return json(request,{
         ok:false,
-        error:"macedonian_language_quality_failed",
-        message:"Одговорот не ја помина задолжителната јазична проверка според Правописот на македонскиот јазик (2017) и не е пуштен.",
+        error:"macedonian_release_blocked",
+        message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
         languageStandard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
+        languageReleaseGate:governedLanguageRelease,
         languageReasons:governedLanguageQuality.reasons||[],
         governanceRunId:lioeRunId
       },503);
@@ -5493,6 +5699,7 @@ async function handleGPTChat(request,env){
     providerFallback:null,
     model:result.model,
     languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+    languageReleaseGate:governedLanguageRelease,
     languageQualityState:governedLanguageRequired?"verified_runtime":"not_required",
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,
@@ -5644,7 +5851,8 @@ async function handleAssistant(request, env, url) {
     },400);
   }
   const retrieval=await findRelevantArticles(env,routing.key,q,6,{date:dateCheck.date});
-  const {instrument,articles}=retrieval;
+  const {instrument}=retrieval;
+  const retrievedArticles=Array.isArray(retrieval.articles)?retrieval.articles:[];
   if(instrument && retrieval.versions && retrieval.reason && retrieval.reason!=="no_articles"){
     return json(request,{
       ok:false,
@@ -5660,7 +5868,7 @@ async function handleAssistant(request, env, url) {
     }
     return json(request,{ok:false,error:"instrument_not_found",message:"Не е утврден релевантен закон во достапниот корпус. Изберете закон од селекторот."},404);
   }
-  if(!articles.length){
+  if(!retrievedArticles.length){
     return json(request,{
       ok:false,
       error:"no_relevant_articles",
@@ -5669,7 +5877,56 @@ async function handleAssistant(request, env, url) {
     },404);
   }
 
-  // 5. Atomic quota reservation. The AI provider is never called without it.
+  // 5. Canonical provenance gate. Complete-but-pending official source text may
+  // remain available for bounded research, but it cannot be promoted to verified
+  // legal authority or current law until Human Gate approval.
+  const version=retrieval.version || null;
+  const versionInfo=summarizeVersion(version);
+  const provenanceCandidates=retrievedArticles.map(article=>({
+    source:"AI Advokat article-level legal corpus · "+instrument.title,
+    locator:"Член "+String(article.articleNumber||""),
+    version:String(versionInfo.label||""),
+    provenance:{
+      kind:"legal_article",
+      sourceIdentity:String(instrument.title||instrument.canonical_key||""),
+      authorityClass:"primary_official",
+      locator:"Член "+String(article.articleNumber||""),
+      releaseRole:["reviewed","approved"].includes(String(article.humanReviewStatus||""))
+        ? "legal_authority"
+        : "research_source_only",
+      legalAuthority:["reviewed","approved"].includes(String(article.humanReviewStatus||"")),
+      humanReviewStatus:String(article.humanReviewStatus||"pending"),
+      versionHumanReviewStatus:String(versionInfo.humanReviewStatus||"pending"),
+      instrumentKey:String(instrument.canonical_key||""),
+      instrumentType:String(instrument.instrument_type||"law"),
+      articleNumber:String(article.articleNumber||""),
+      versionLabel:String(versionInfo.label||""),
+      versionBasis:String(retrieval.versionBasis||""),
+      sourceIssueNumber:String(article.sourceIssueNumber||""),
+      sourceIssueDate:String(article.sourceIssueDate||""),
+      sourceUrl:String(article.sourceUrl||instrument.canonical_source_url||""),
+      sourceSha256:String(article.sourceSha256||""),
+      currentLawClaim:article.publicStatus==="current_verified" && versionInfo.isCurrent===true
+    },
+    text:articleTextForLegalSynthesis(article)
+  }));
+  const sourceProvenanceGate=enforceCanonicalContextProvenance(provenanceCandidates);
+  const releasedArticleNumbers=new Set(sourceProvenanceGate.context.map(item=>String(item?.provenance?.articleNumber||"")).filter(Boolean));
+  const articles=retrievedArticles.filter(article=>releasedArticleNumbers.has(String(article.articleNumber||"")));
+  if(!articles.length){
+    return json(request,{
+      ok:false,
+      error:"source_provenance_incomplete",
+      message:"Пронајдениот правен текст нема доволно комплетни канонски метаподатоци за AI употреба. Потребни се извор, број/датум, locator, fingerprint и Human Gate статус.",
+      provenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:sourceProvenanceGate.state,
+        blocked:sourceProvenanceGate.blocked.length
+      }
+    },409);
+  }
+
+  // 6. Atomic quota reservation. The AI provider is never called without it.
   const period=currentPeriod();
   const reservation=await reserveMonthlyQuota(env,{subject,period,quota});
   if(!reservation.reserved){
@@ -5683,9 +5940,7 @@ async function handleAssistant(request, env, url) {
     },429,{"Retry-After":String(secondsUntilNextMonth())});
   }
 
-  // 6. AI (optional) with strict source-only guard.
-  const version=retrieval.version || null;
-  const versionInfo=summarizeVersion(version);
+  // 7. AI (optional) with strict source-only guard.
   const legalStatusOverlays=legalStatusOverlaysForArticles(
     instrument.canonical_key,
     articles,
@@ -5734,8 +5989,8 @@ async function handleAssistant(request, env, url) {
           maxOutputTokens:1400
         });
         const languageRequired=shouldEnforceMacedonianOutput(q);
-        if(languageRequired && languagePass.languageAssessment?.ok!==true){
-          aiError="macedonian_language_quality_failed:"+(languagePass.repairError||"postflight_failed");
+        if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
+          aiError="macedonian_release_blocked:"+(languagePass.repairError||"postflight_failed");
           answerMode="retrieval_only_language_guard";
         }else{
           const candidate=String(languagePass.text||primaryCandidate).trim();
@@ -5825,8 +6080,14 @@ async function handleAssistant(request, env, url) {
     legalStatusWarning:warning,
     legalStatusOverlays,
     answerProvenance:{
-      contract:"AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v1",
-      runtimeValidation:"claim_level_citation_and_authority_v1",
+      contract:"AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v2",
+      runtimeValidation:"canonical_source_release_plus_claim_level_citation_and_authority_v2",
+      canonicalProvenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:sourceProvenanceGate.state,
+        released:sourceProvenanceGate.context.length,
+        blocked:sourceProvenanceGate.blocked.length
+      },
       sourceVersionOrDate:version?.version_label || null,
       verificationState:
         versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
@@ -6355,8 +6616,10 @@ async function handleCapabilities(request, env) {
       centralOperatingPrompt:AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
-      macedonianRepairPostflight:"deterministic_first_plus_single_workers_ai_repair_v3",
-      macedonianRepairProviderBudget:"max_one_conditional_extra_call_per_free_turn",
+      macedonianReleaseGate:MACEDONIAN_RELEASE_GATE_VERSION,
+      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_single_repair_or_block_v4",
+      macedonianRepairProviderBudget:"severe_block_zero_extra_calls_repairable_max_one_extra_call",
+      canonicalProvenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
       finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
