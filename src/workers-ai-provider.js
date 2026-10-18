@@ -2,7 +2,7 @@
 // One source of truth for model selection, request parameters and response extraction.
 // Reasoning fields are intentionally never surfaced as user-visible answer text.
 
-export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/zai-org/glm-4.7-flash";
+export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/qwen/qwen3-30b-a3b-fp8";
 
 export function resolveWorkersAITextModel(env){
   const model=String(env?.WORKERS_AI_CHAT_MODEL||WORKERS_AI_TEXT_MODEL_DEFAULT).trim();
@@ -40,13 +40,21 @@ export function workersAIRequestOptions({
   };
   if(responseFormat) base.response_format=responseFormat;
 
-  // GLM-4.7-Flash is a reasoning-capable model and may otherwise spend the
+  // Legacy GLM-4.7-Flash may otherwise spend the
   // entire small FREE completion budget on hidden thinking, returning no final
   // assistant text. FREE chat needs low-latency visible answers, so thinking is
   // disabled explicitly and the current completion-token field is used.
   if(resolved.includes("/glm-4.7-flash")){
     base.chat_template_kwargs={enable_thinking:false};
     base.reasoning_effort=null;
+    base.max_completion_tokens=maxTokens;
+    delete base.max_tokens;
+  }
+
+  // Qwen3 is the canonical FREE model: strong multilingual/instruction-following
+  // quality with a small active MoE footprint. Keep visible-answer latency bounded.
+  if(resolved.includes("/qwen3-30b-a3b-fp8")){
+    base.chat_template_kwargs={enable_thinking:false};
     base.max_completion_tokens=maxTokens;
     delete base.max_tokens;
   }
