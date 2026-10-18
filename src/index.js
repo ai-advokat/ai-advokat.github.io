@@ -109,6 +109,7 @@ import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chu
 import {
   CANONICAL_PROVENANCE_GATE_VERSION,
   CANONICAL_METADATA_STANDARD_VERSION,
+  CANONICAL_METADATA_REQUIRED_FIELDS,
   enforceCanonicalContextProvenance
 } from "./canonical-provenance-gate.js";
 import {
@@ -6450,8 +6451,31 @@ function handleOpenLegalSourcesPolicy(request){
       specialistPolicyPrompts:"enabled",
       webCitationAnnotation:"enabled",
       verificationPolicyContext:"enabled",
-      corpusPromotion:"separate_human_gate"
+      corpusPromotion:"separate_human_gate",
+      canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION
     }
+  });
+}
+
+function handleCanonicalMetadataStandard(request){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+  return json(request,{
+    ok:true,
+    standard:CANONICAL_METADATA_STANDARD_VERSION,
+    provenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
+    doctrine:[
+      "source_first",
+      "metadata_before_ai",
+      "exact_identity_and_locator",
+      "version_and_date_explicit",
+      "official_provenance_for_authority",
+      "fingerprint_where_content_is_stored_or_reused",
+      "human_gate_before_authoritative_release",
+      "secondary_material_never_silently_promoted",
+      "current_law_fails_closed_when_version_or_effective_date_is_unresolved"
+    ],
+    requiredFields:CANONICAL_METADATA_REQUIRED_FIELDS,
+    releaseRule:"No source with incomplete canonical metadata may be promoted into authoritative AI context."
   });
 }
 
@@ -6503,6 +6527,7 @@ async function handleOrchestratorArchitecture(request, env) {
       rightsGate:"enabled",
       webCitationAnnotation:"enabled",
       verificationIntegration:"enabled",
+      canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
       regionalComparative:"RS_SI_registered_HR_BA_ME_fail_closed_pending_validation"
     },
     doctrine:{
@@ -6726,6 +6751,7 @@ export default {
     if (url.pathname === "/api/orchestrator/plan") return handleOrchestratorPlan(request, env);
     if (url.pathname === "/api/knowledge-intake-policy") return handleKnowledgeIntakePolicy(request);
     if (url.pathname === "/api/open-legal-sources-policy") return handleOpenLegalSourcesPolicy(request);
+    if (url.pathname === "/api/canonical-metadata-standard") return handleCanonicalMetadataStandard(request);
     if (url.pathname === "/api/professional-workflows") {
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
       return json(request,{ok:true,version:"1.0.0",workflows:listLegalWorkflows(),humanGate:"required"});
