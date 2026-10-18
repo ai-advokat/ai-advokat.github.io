@@ -58,7 +58,17 @@
     "provider_context": "Every legal/quasi-legal context item passes CANONICAL_PROVENANCE_GATE immediately before provider synthesis.",
     "macedonian_output": "Every Macedonian-facing AI answer passes deterministic normalisation plus MACEDONIAN_RELEASE_GATE immediately before display.",
     "failure_policy": "blocked material is excluded; failed Macedonian output is never shown as a valid answer.",
-    "free_latency": "Simple FREE informational turns use a short prompt, bounded output and no second provider repair; malformed output fails closed instead of adding slow repair loops."
+    "free_latency": "Simple FREE informational turns use a short prompt, bounded output and no second provider repair; malformed output fails closed instead of adding slow repair loops.",
+    "last_mile_release_scope": [
+      "public_free_chat",
+      "public_governed_openai_chat",
+      "legacy_source_backed_assistant",
+      "private_case_intelligence_analysis",
+      "private_case_working_draft"
+    ],
+    "final_gate_order": "provider/postflight -> deterministic formatting -> canonical Macedonian last-mile release gate -> user-visible response",
+    "formatter_bypass": "forbidden",
+    "fail_closed_no_bad_text": "Any final Macedonian-facing generated text that does not receive RELEASE is not returned as a valid answer."
   },
   "human_gate": {
     "required_for": [
