@@ -285,3 +285,25 @@ test("contextual garbage from the production employment answer is blocked even w
   const verdict=macedonianReleaseVerdict(bad,{userText:"Што е договор за вработување?"});
   assert.equal(verdict.verdict,"BLOCK",JSON.stringify(verdict));
 });
+
+
+test("canonical release blocks the full live FREE hybrid-language failure pattern",()=>{
+  const bad=[
+    "Наименование — договорени услови помеѓуз работникот и работодавачот за работни облага.",
+    "Времетраење — фиксно или непостојно.",
+    "Описание за заштита со безубедни финансиски инфу.",
+    "Точнаја деловна обврЗка и платеное статус.",
+    "Сочетост со закона и године власни."
+  ].join("\n");
+  const check=assessMacedonianOutput(bad,{userText:"Што е договор за вработување?"});
+  const release=macedonianReleaseVerdict(bad,{userText:"Што е договор за вработување?"});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.equal(release.verdict,"BLOCK",JSON.stringify(release));
+});
+
+test("valid Macedonian 'обврска/обврски' remains valid",()=>{
+  const good="Договорот ги уредува правата и обврските на работникот и работодавачот.";
+  const check=assessMacedonianOutput(good,{userText:"Објасни ми на македонски."});
+  assert.equal(check.ok,true,JSON.stringify(check));
+  assert.equal(macedonianReleaseVerdict(good,{userText:"Објасни ми на македонски."}).verdict,"RELEASE");
+});
