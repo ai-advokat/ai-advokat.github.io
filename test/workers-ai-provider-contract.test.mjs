@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { workersAIRequestOptions } from "../src/workers-ai-provider.js";
+import { workersAIRequestOptions, runWorkersAIText } from "../src/workers-ai-provider.js";
 
 test("WAP1 Qwen uses only documented synchronous chat parameters",()=>{
   const options=workersAIRequestOptions({
@@ -31,4 +31,38 @@ test("WAP3 Qwen contract does not reintroduce undocumented template kwargs",()=>
   const provider=fs.readFileSync("src/workers-ai-provider.js","utf8");
   const qwenBlock=provider.slice(provider.indexOf("Qwen3 uses the documented"),provider.indexOf("// Legacy GLM"));
   assert.doesNotMatch(qwenBlock,/chat_template_kwargs\s*=/);
+});
+
+
+test("WAP4 empty final text gets exactly one bounded retry",async()=>{
+  let calls=0;
+  const env={AI:{run:async()=>{
+    calls+=1;
+    return calls===1 ? {response:""} : {response:"Готов одговор."};
+  }}};
+  const result=await runWorkersAIText(env,{
+    messages:[{role:"user",content:"Тест"}],
+    maxOutputTokens:400,
+    timeoutMs:3000
+  });
+  assert.equal(result.ok,true);
+  assert.equal(result.text,"Готов одговор.");
+  assert.equal(result.providerCalls,2);
+  assert.equal(result.retryReason,"empty_response");
+  assert.equal(calls,2);
+});
+
+test("WAP5 a second empty final fails closed after two calls",async()=>{
+  let calls=0;
+  const env={AI:{run:async()=>{calls+=1; return {response:""};}}};
+  const result=await runWorkersAIText(env,{
+    messages:[{role:"user",content:"Тест"}],
+    maxOutputTokens:400,
+    timeoutMs:3000
+  });
+  assert.equal(result.ok,false);
+  assert.equal(result.error,"workers_ai_empty_response");
+  assert.equal(result.providerCalls,2);
+  assert.equal(result.retryReason,"empty_response");
+  assert.equal(calls,2);
 });
