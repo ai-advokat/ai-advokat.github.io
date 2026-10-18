@@ -4720,7 +4720,8 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     messages,
     maxOutputTokens:Math.max(420,Math.min(1800,Number(maxOutputTokens)||1000)),
     temperature:0,
-    sessionAffinity
+    sessionAffinity,
+    timeoutMs:12000
   });
   const providerCalls=repair.providerCalls||1;
   let lastError=null;
@@ -4829,7 +4830,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     messages,
     maxOutputTokens:tokenLimit,
     temperature:0.05,
-    sessionAffinity
+    sessionAffinity,
+    timeoutMs:fastFreePrompt?12000:25000
   });
   if(!result.ok){
     return {
