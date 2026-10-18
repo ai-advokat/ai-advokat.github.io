@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Службен весник · Регистар на правни верзии · AI Advokat</title>
-<meta name="description" content="Read-only регистар на верзии и измени на закони врзани со број и датум на Службен весник, официјален извор, применливост и Human Gate статус.">
+<meta name="description" content="Read-only индекс на 8.638 официјални метаподаточни записи за изданија 1944–2017 и регистар на правни верзии, измени и Human Gate статус во AI Advokat.">
 <meta name="robots" content="index,follow,max-snippet:-1">
 <link rel="canonical" href="https://ai-advokat.github.io/sluzben-vesnik/">
 <meta property="og:type" content="website">
@@ -41,6 +41,27 @@ footer{border-top:1px solid var(--line);background:#fff;color:var(--muted);paddi
 <div class="stat"><b id="countVersions">—</b><span>верзии на прописи</span></div>
 <div class="stat"><b id="countAmendments">—</b><span>измени / настани</span></div>
 <div class="stat"><b id="countCurrent">—</b><span>Human-Gate тековни</span></div>
+</section>
+<section class="hero" style="margin-top:22px" id="official-issue-index">
+<div class="eyebrow">OFFICIAL ISSUE METADATA · 1944–2017 · DATA.GOV.MK</div>
+<h2 style="margin:.35rem 0 .7rem;font-size:1.55rem">Официјален индекс на изданија — 8.638 уникатни записи</h2>
+<p class="lead">Индексот е изграден од официјалниот податочен сет на ЈП „Службен весник на РСМ“: број на издание, точен датум и историски тип на публикација. Изворните 8.651 редови содржат 13 точни дупликати; canonical индексот ги задржува 8.638 уникатни комбинации тип + број + датум.</p>
+<div class="stats" style="margin-bottom:0">
+<div class="stat"><b id="metaCount">8.638</b><span>уникатни изданија</span></div>
+<div class="stat"><b id="metaYears">74</b><span>години покриеност</span></div>
+<div class="stat"><b id="metaTypes">7</b><span>историски типови</span></div>
+<div class="stat"><b>0</b><span>current-law тврдења од metadata</span></div>
+</div>
+<div class="guard"><strong>METADATA ONLY.</strong> Записот потврдува дека конкретно издание со тој број, датум и тип се наоѓа во официјалниот dataset. Не докажува кој акт или член е објавен во него, ниту дали некоја норма е важечка денес.</div>
+<div class="source-actions"><a class="btn primary" href="https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017" target="_blank" rel="noopener">Официјален data.gov.mk dataset</a></div>
+<div class="toolbar" style="margin-bottom:0"><div class="controls">
+<label for="issueQ">Број / датум<input id="issueQ" type="search" placeholder="72/2016 или 2016-04-12"></label>
+<label for="issueYear">Година<select id="issueYear"><option value="">Сите години</option></select></label>
+<label for="issueType">Тип<select id="issueType"><option value="">Сите типови</option></select></label>
+<label>Статус<input value="READ ONLY · HUMAN GATE" readonly></label>
+</div></div>
+<div id="issueStatus" class="empty" style="margin-top:16px">Се вчитува официјалниот индекс…</div>
+<section id="issueList" class="list" hidden style="margin-top:16px"></section>
 </section>
 <section class="hero" style="margin-top:22px">
 <div class="eyebrow">HYBRID LEGAL INTELLIGENCE · BOT RUNTIME</div>
@@ -102,6 +123,7 @@ fetch(API+"/api/gazette-hybrid-status",{cache:"no-store"}).then(function(r){retu
  if(!v.ok||!v.j.ok) throw new Error(v.j.error||"hybrid_unavailable");
  var c=v.j.counts||{};
  document.getElementById("hybridIssues").textContent=c.issues||0;
+ if(c.officialIssueMetadata!=null) document.getElementById("metaCount").textContent=Number(c.officialIssueMetadata).toLocaleString("mk-MK");
  document.getElementById("hybridArticles").textContent=c.articles||0;
  document.getElementById("hybridChunks").textContent=c.chunks||0;
  document.getElementById("hybridRuntime").textContent=c.runtimeEligibleChunks||0;
@@ -110,6 +132,47 @@ fetch(API+"/api/gazette-hybrid-status",{cache:"no-store"}).then(function(r){retu
  var state=document.getElementById("hybridState");
  state.innerHTML="<strong>Hybrid production слојот сè уште не е активен.</strong> Јавниот регистар останува read-only додека schema/runtime activation не заврши.";
 });
+
+var issueTypes=[
+ "СЛУЖБЕН ВЕСНИК НА РМ","СЛУЖБЕН ВЕСНИК НА СРМ","СЛУЖБЕН ВЕСНИК НА НРМ",
+ "СЛУЖБЕН ВЕСНИК НА ФЕМ ВО ДФЈ","СЛУЖБЕН ЛИСТ НА СФРЈ","СЛУЖБЕН ЛИСТ НА ФНРЈ","СЛУЖБЕН ЛИСТ НА ДФЈ"
+];
+(function(){
+ var yhtml="";for(var y=2017;y>=1944;y--) yhtml+='<option value="'+y+'">'+y+'</option>';
+ document.getElementById("issueYear").insertAdjacentHTML("beforeend",yhtml);
+ var thtml="";issueTypes.forEach(function(t){thtml+='<option value="'+esc(t)+'">'+esc(t)+'</option>';});
+ document.getElementById("issueType").insertAdjacentHTML("beforeend",thtml);
+})();
+var issueTimer=null;
+function loadIssueMetadata(){
+ var q=document.getElementById("issueQ").value.trim();
+ var year=document.getElementById("issueYear").value;
+ var type=document.getElementById("issueType").value;
+ var params=new URLSearchParams({limit:"100"});
+ if(q)params.set("q",q);if(year)params.set("year",year);if(type)params.set("type",type);
+ var status=document.getElementById("issueStatus"),list=document.getElementById("issueList");
+ status.hidden=false;status.className="empty";status.textContent="Се вчитува официјалниот индекс…";list.hidden=true;
+ fetch(API+"/api/gazette-issue-index?"+params.toString(),{cache:"no-store"}).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});}).then(function(v){
+   if(!v.ok||!v.j.ok)throw new Error(v.j.error||"unavailable");
+   var rows=Array.isArray(v.j.entries)?v.j.entries:[];
+   var coverage=v.j.coverage||{};
+   if(coverage.total!=null)document.getElementById("metaCount").textContent=Number(coverage.total).toLocaleString("mk-MK");
+   if(coverage.years!=null)document.getElementById("metaYears").textContent=coverage.years;
+   if(coverage.publicationTypes!=null)document.getElementById("metaTypes").textContent=coverage.publicationTypes;
+   status.hidden=false;status.innerHTML="<strong>"+Number(v.j.count||0).toLocaleString("mk-MK")+" пронајдени записи.</strong> Прикажани се најмногу 100. Извор: ЈП „Службен весник на РСМ“ / data.gov.mk.";
+   var html="";
+   rows.forEach(function(x){
+     html+='<article class="entry"><div class="entry-head"><div><h2>'+esc(x.publication_type)+' · бр. '+esc(x.issue_number)+'/'+esc(x.year)+'</h2><div class="meta">'+esc(x.issue_date)+' · PRIMARY OFFICIAL METADATA</div></div><div class="badges"><span class="pill ok">ОФИЦИЈАЛЕН METADATA ЗАПИС</span><span class="pill warn">НЕ Е ПРАВЕН ТЕКСТ</span></div></div><div class="details"><div><b>Број</b><span>'+esc(x.issue_number)+'</span></div><div><b>Датум</b><span>'+esc(x.issue_date)+'</span></div><div><b>Тип на издание</b><span>'+esc(x.publication_type)+'</span></div></div><div class="source-actions"><a class="btn primary" href="'+esc(x.dataset_url)+'" target="_blank" rel="noopener">Отвори официјален dataset</a></div></article>';
+   });
+   list.innerHTML=html||'<div class="empty">Нема записи за избраните филтри.</div>';list.hidden=false;
+ }).catch(function(){
+   status.className="error";status.innerHTML="<strong>Metadata индексот моментално не може да се вчита.</strong> Правниот runtime останува fail-closed.";
+ });
+}
+["issueQ","issueYear","issueType"].forEach(function(id){
+ document.getElementById(id).addEventListener("input",function(){clearTimeout(issueTimer);issueTimer=setTimeout(loadIssueMetadata,180);});
+});
+loadIssueMetadata();
 
 fetch(API+"/api/gazette-register?limit=500",{cache:"no-store"}).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});}).then(function(v){
  if(!v.ok||!v.j.ok) throw new Error(v.j.error||"unavailable");
