@@ -7,7 +7,8 @@ on:
       - "src/index.js"
       - "src/ai-advokat-central-prompt.js"
       - "src/macedonian-language-guard.js"
-      - "data/canonical-legal-metadata-standard-v2.json"
+      - "data/canonical-legal-metadata-standard-v3.json"
+      - "data/canonical-root-release-contract-2026.json"
       - "src/canonical-provenance-gate.js"
       - "src/response-quality.js"
       - "src/workers-ai-provider.js"
@@ -19,6 +20,9 @@ on:
       - "src/index.js"
       - "src/ai-advokat-central-prompt.js"
       - "src/macedonian-language-guard.js"
+      - "data/canonical-legal-metadata-standard-v3.json"
+      - "data/canonical-root-release-contract-2026.json"
+      - "src/canonical-provenance-gate.js"
       - "src/response-quality.js"
       - "src/workers-ai-provider.js"
       - "wrangler.jsonc"
@@ -66,12 +70,14 @@ jobs:
           const fs=require("fs");
           const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
           const EXPECTED_FREE_MODEL="@cf/qwen/qwen3-30b-a3b-fp8";
+          const EXPECTED_FREE_FALLBACK_MODEL="@cf/meta/llama-3.3-70b-instruct-fp8-fast";
           const EXPECTED_PAID_MODEL="gpt-6.1-sol";
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
-          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V8";
+          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V9";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
-          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V4";
-          const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V2";
+          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V8";
+          const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
+          const EXPECTED_FINAL_OUTPUT_GATE="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
           const EXPECTED_FREE_PROVIDER_CONTRACT="WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT";
 
           async function waitForExpectedRuntime(){
@@ -87,12 +93,15 @@ jobs:
                   && data?.ok===true
                   && caps.centralOperatingPrompt===EXPECTED_PROMPT
                   && caps.macedonianLanguageGuard===EXPECTED_LANGUAGE
-                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V4"
-                  && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V2"
+                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V5"
+                  && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V3"
+                  && caps.canonicalRootReleaseContract==="AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1"
                   && caps.canonicalMetadataStandard===EXPECTED_METADATA
-                  && caps.freeProviderContract===EXPECTED_FREE_PROVIDER_CONTRACT
+                  && caps.canonicalFinalOutputGate===EXPECTED_FINAL_OUTPUT_GATE
                   && caps.finalResponseQualityGate===EXPECTED_QUALITY
                   && caps.freeChatModel===EXPECTED_FREE_MODEL
+                  && caps.freeChatFallbackModel===EXPECTED_FREE_FALLBACK_MODEL
+                  && caps.freeProviderContract===EXPECTED_FREE_PROVIDER_CONTRACT
                   && caps.freeRuntimePolicy===EXPECTED_FREE_POLICY){
                   console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.freeProviderContract+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel+" · "+caps.freeRuntimePolicy);
                   return;
@@ -134,12 +143,26 @@ jobs:
                 throw new Error(label+" OpenAI primary response must not claim fallback "+JSON.stringify(data.providerFallback));
               }
             }else if(data.provider==="workers_ai_free"){
-              if(data.model!==EXPECTED_FREE_MODEL){
+              if(data.model!==EXPECTED_FREE_MODEL && data.model!==EXPECTED_FREE_FALLBACK_MODEL){
                 throw new Error(label+" unexpected Workers AI model "+String(data.model));
               }
-              if(data.providerFallback && data.providerFallback.from!=="openai"){
-                throw new Error(label+" invalid fallback provenance "+JSON.stringify(data.providerFallback));
+              if(data.model===EXPECTED_FREE_FALLBACK_MODEL){
+                if(!data.modelFallback
+                  || data.modelFallback.from!==EXPECTED_FREE_MODEL
+                  || data.modelFallback.to!==EXPECTED_FREE_FALLBACK_MODEL
+                  || data.modelFallback.reason!=="empty_final_text"){
+                  throw new Error(label+" fallback model provenance missing/invalid "+JSON.stringify(data.modelFallback));
+                }
+              }else if(data.modelFallback){
+                throw new Error(label+" primary Workers AI response must not claim model fallback "+JSON.stringify(data.modelFallback));
               }
+              if(data.providerFallback && data.providerFallback.from!=="openai"){
+                throw new Error(label+" invalid provider fallback provenance "+JSON.stringify(data.providerFallback));
+              }
+            }else if(data.provider==="canonical_corpus_no_model"){
+              if(data.model!==null && data.model!==undefined) throw new Error(label+" deterministic corpus lane must not expose an AI model");
+              if(Number(data?.performance?.providerCalls||0)!==0) throw new Error(label+" deterministic corpus lane made provider calls");
+              if(data.sourceMode!=="canonical_article_corpus_no_model") throw new Error(label+" deterministic corpus lane has wrong source mode");
             }else{
               throw new Error(label+" unexpected provider "+String(data.provider));
             }
@@ -158,7 +181,16 @@ jobs:
                 throw new Error(label+" OpenAI web research omitted source policy metadata");
               }
             }
-            if(data.provider==="workers_ai_free"){
+            if(!data?.sourcePolicy?.canonicalProvenanceGate
+              || data.sourcePolicy.canonicalProvenanceGate.version!=="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V3"
+              || data.sourcePolicy.canonicalProvenanceGate.metadataStandard!==EXPECTED_METADATA){
+              throw new Error(label+" canonical provenance metadata missing or stale: "+JSON.stringify(data?.sourcePolicy));
+            }
+            if(data.provider==="canonical_corpus_no_model"){
+              const calls=Number(data?.performance?.providerCalls||0);
+              if(calls!==0) throw new Error(label+" deterministic source-first lane must use zero provider calls");
+              console.log(label+" performance: deterministic corpus · providerCalls=0");
+            }else if(data.provider==="workers_ai_free"){
               const calls=Number(data?.performance?.providerCalls||0);
               if(calls<1 || calls>2){
                 throw new Error(label+" FREE provider call budget violated: "+JSON.stringify(data.performance));
@@ -218,6 +250,15 @@ jobs:
             if(/^\s*(need answer|user wants|the user|we need|provide|must answer)\b/i.test(answer)){
               throw new Error(name+" leaked internal planning text: "+answer.slice(0,500));
             }
+            if(name==="draft" && data.provider==="workers_ai_free"){
+            if(data?.performance?.compactDraftUsed!==true){
+            throw new Error("draft did not use compact FREE draft lane: "+JSON.stringify(data.performance));
+            }
+            const cap=Number(data?.performance?.outputTokenLimit||0);
+            if(!Number.isFinite(cap) || cap<400 || cap>1000){
+            throw new Error("draft output token cap invalid: "+JSON.stringify(data.performance));
+            }
+            }
             if(name==="employment-definition"){
               if(data.provider==="workers_ai_free" && data?.performance?.fastPromptUsed!==true){
                 throw new Error("employment-definition did not use compact FREE L0 prompt: "+JSON.stringify(data.performance));
@@ -276,6 +317,11 @@ jobs:
             }
             console.log("public-attachment-secure-workspace-gate: PASS");
           }
+
+          // Respect the real production burst limit (5 AI requests / 60s).
+          // The UAT must test the limiter, not accidentally trip it and report a false runtime regression.
+          console.log("waiting for production burst window reset before wrong-language correction");
+          await new Promise(resolve=>setTimeout(resolve,61000));
 
           {
             const {answer}=await chat({
