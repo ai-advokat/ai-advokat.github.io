@@ -5985,8 +5985,8 @@ async function handleAssistant(request, env, url) {
           maxOutputTokens:1400
         });
         const languageRequired=shouldEnforceMacedonianOutput(q);
-        if(languageRequired && languagePass.languageAssessment?.ok!==true){
-          aiError="macedonian_language_quality_failed:"+(languagePass.repairError||"postflight_failed");
+        if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
+          aiError="macedonian_release_blocked:"+(languagePass.repairError||"postflight_failed");
           answerMode="retrieval_only_language_guard";
         }else{
           const candidate=String(languagePass.text||primaryCandidate).trim();
