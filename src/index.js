@@ -3332,7 +3332,7 @@ async function governedGuideContext(request,env,guideIds){
     byId.set(id,{...(byId.get(id)||{}),...item});
   }
   const records=[...byId.values()];
-  return records
+  const rawContext=records
     .filter(r=>wanted.has(String(r.id)) && r.catalog_public===true && r.public_record_enabled===true)
     .map(r=>{
       const dependencyGate=evaluateGuideLawDependencies(r.id,dependencyRegistry,readinessLedger);
@@ -3342,11 +3342,39 @@ async function governedGuideContext(request,env,guideIds){
         r.bot_text.trim()
           ? sanitizeForPrompt(r.bot_text).slice(0,12000)
           : "";
+      const verificationState=String(r.verification_level||r.verification_label||r.status_label||"pending");
+      const activationState=String(r.activation_state||"pending");
+      const humanReviewStatus=["legal_verified","current_verified","verified"].includes(String(r.verification_level||""))
+        ? "approved"
+        : activationState==="active_with_warning" ? "reviewed" : "pending";
+      const fingerprint=[
+        r.public_pdf_sha256,
+        r.public_master_artifact?.pdf_sha256,
+        r.public_master_artifact?.docx_sha256,
+        r.candidate_artifact?.pdf_sha256,
+        r.candidate_artifact?.docx_sha256,
+        r.sha256
+      ].find(value=>/^[0-9a-f]{64}$/i.test(String(value||"")))||"";
       return {
         source:governedPublicText ? "AI Advokat governed public guide" : "AI Advokat public guide catalogue",
         locator:r.public_fulltext || r.public_record_url,
         version:r.verification_label || r.status_label || r.edition || "",
         dependencyGate,
+        provenance:{
+          kind:"guide",
+          sourceIdentity:"AI Advokat governed guide registry",
+          authorityClass:"secondary_reference",
+          locator:String(r.public_fulltext||r.public_record_url||""),
+          releaseRole:"secondary_only",
+          legalAuthority:false,
+          humanReviewStatus,
+          recordId:String(r.id||""),
+          title:String(r.display_title||r.title||""),
+          verificationState,
+          activationState,
+          fingerprint,
+          currentLawClaim:false
+        },
         text:[
           governedPublicText
             ? "GOVERNED PUBLIC GUIDE TEXT — secondary practical guidance only; never treat it as primary or official law."
@@ -3362,6 +3390,8 @@ async function governedGuideContext(request,env,guideIds){
         ].join("\n")
       };
     });
+  const provenanceGate=enforceCanonicalContextProvenance(rawContext);
+  return provenanceGate.context;
 }
 
 function guideBasename(value){
