@@ -4266,6 +4266,25 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
           "authority Human Gate "+String(row.authority_review_status||"pending"),
           row.finality_status ? "finality "+row.finality_status : null
         ].filter(Boolean).join(" · "),
+        provenance:{
+          kind:"case_law",
+          sourceIdentity:String(row.source_title||row.court||"official court source"),
+          authorityClass:"court_official",
+          locator:[
+            row.case_number ? "Предмет "+row.case_number : row.case_title||null,
+            row.decision_date||null
+          ].filter(Boolean).join(" · "),
+          releaseRole:"legal_authority",
+          legalAuthority:true,
+          humanReviewStatus:String(row.human_review_status||"pending"),
+          authorityReviewStatus:String(row.authority_review_status||"pending"),
+          caseIdentity:String(row.case_number||row.case_title||""),
+          court:String(row.court||""),
+          jurisdiction:String(row.jurisdiction||""),
+          decisionDate:String(row.decision_date||""),
+          sourceUrl:String(sourceUrl||""),
+          currentLawClaim:false
+        },
         text:[
           "SOURCE_ROLE: OFFICIAL_REVIEWED_CASE_LAW",
           "CASE_LAW_IS_NOT_STATUTORY_TEXT: true",
@@ -4290,7 +4309,15 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
       };
     });
 
-    const sources=rows.map(row=>({
+    const provenanceGate=enforceCanonicalContextProvenance(context);
+    const releasedCaseIds=new Set(
+      provenanceGate.context
+        .map(item=>String(item?.provenance?.caseIdentity||""))
+        .filter(Boolean)
+    );
+    const releasedRows=rows.filter(row=>releasedCaseIds.has(String(row.case_number||row.case_title||"")));
+
+    const sources=releasedRows.map(row=>({
       title:[row.court||"Суд",row.case_number||row.case_title||"предмет"].filter(Boolean).join(" · "),
       caseTitle:row.case_title||null,
       court:row.court||null,
@@ -4305,7 +4332,18 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
       authorityReviewStatus:row.authority_review_status||null
     }));
 
-    return {context,sources,cases:rows,state:"matched"};
+    return {
+      context:provenanceGate.context,
+      sources,
+      cases:releasedRows,
+      state:releasedRows.length?"matched":(provenanceGate.blocked.length?"provenance_blocked":"no_reviewed_match"),
+      provenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:provenanceGate.state,
+        released:provenanceGate.context.length,
+        blocked:provenanceGate.blocked.length
+      }
+    };
   }catch(error){
     console.error("chat_case_law_lookup_failed",String(error?.message||error).slice(0,180));
     return {...empty,state:"unavailable"};
