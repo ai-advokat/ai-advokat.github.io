@@ -196,6 +196,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            SELECT COUNT(*) AS n,
+                   MIN(issue_date) AS first_issue_date,
+                   MAX(issue_date) AS last_issue_date,
+                   COUNT(DISTINCT publication_type) AS publication_type_count,
+                   SUM(source_occurrences) AS source_occurrences,
+                   SUM(runtime_eligible) AS runtime_eligible,
+                   SUM(legal_text_authority) AS legal_text_authority,
+                   SUM(current_law_authority) AS current_law_authority
+              FROM gazette_issue_metadata;
+          " | tee /tmp/gazette-existing-final.txt
+          if grep -q '"n": 8638' /tmp/gazette-existing-final.txt              && grep -q '"first_issue_date": "1944-01-01"' /tmp/gazette-existing-final.txt              && grep -q '"last_issue_date": "2017-12-29"' /tmp/gazette-existing-final.txt              && grep -q '"publication_type_count": 7' /tmp/gazette-existing-final.txt              && grep -q '"source_occurrences": 8651' /tmp/gazette-existing-final.txt              && grep -q '"runtime_eligible": 0' /tmp/gazette-existing-final.txt              && grep -q '"legal_text_authority": 0' /tmp/gazette-existing-final.txt              && grep -q '"current_law_authority": 0' /tmp/gazette-existing-final.txt; then
+            touch /tmp/gazette-already-promoted
+            cp /tmp/gazette-existing-final.txt /tmp/gazette-stage-verify.txt
+            echo "Canonical production metadata index already promoted; staging reload skipped."
+            exit 0
+          fi
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "DELETE FROM gazette_issue_metadata_stage;" | tee /tmp/gazette-stage-clear.txt
           for f in /tmp/gazette-batches/batch_*.sql; do
             echo "Loading $f"
@@ -227,7 +244,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat >/tmp/gazette-promote.sql <<'SQL'
+          if [ ! -f /tmp/gazette-already-promoted ]; then
+            cat >/tmp/gazette-promote.sql <<'SQL'
           DELETE FROM gazette_issue_metadata;
           INSERT INTO gazette_issue_metadata
             (publication_type,issue_number,issue_date,year,source_row_first,source_occurrences,
@@ -240,7 +258,10 @@ jobs:
            ORDER BY issue_date,publication_type,issue_number;
           DELETE FROM gazette_issue_metadata_stage;
           SQL
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/gazette-promote.sql | tee /tmp/gazette-promote.txt
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/gazette-promote.sql | tee /tmp/gazette-promote.txt
+          else
+            echo "Canonical production metadata index already promoted." | tee /tmp/gazette-promote.txt
+          fi
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
             SELECT COUNT(*) AS n,MIN(issue_date) AS first_issue_date,MAX(issue_date) AS last_issue_date,
                    COUNT(DISTINCT publication_type) AS publication_type_count,
@@ -268,10 +289,27 @@ jobs:
           grep -q '"issue_date": "2016-04-12"' /tmp/gazette-production-verify.txt
           echo "PRODUCTION METADATA PROMOTION: PASS"
 
-      - name: Verify source-policy registration
+      - name: Verify and repair source-policy registration
         shell: bash
         run: |
           set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            INSERT INTO sources
+              (title,url,source_type,issuing_body,jurisdiction,source_status,publication_date,notes)
+            SELECT
+              'data.gov.mk · ЈП Службен весник на РСМ — Изданија на Службен весник до 2017',
+              'https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017',
+              'official_gazette_issue_metadata',
+              'ЈП Службен весник на РСМ',
+              'MK',
+              'official',
+              NULL,
+              'Official issue-level metadata dataset covering 1944-2017 by issue number, issue date and publication type. Metadata only.'
+            WHERE NOT EXISTS (
+              SELECT 1 FROM sources
+               WHERE url='https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017'
+            );
+          " | tee /tmp/gazette-source-registry-repair.txt
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
             SELECT version,description FROM schema_migrations WHERE version IN ('46','47') ORDER BY version;
             SELECT title,url,source_type,issuing_body,jurisdiction,source_status
@@ -325,10 +363,12 @@ jobs:
             /tmp/gazette-open-data-pending-after.txt
             /tmp/gazette-open-data-apply.txt
             /tmp/gazette-build.txt
+            /tmp/gazette-existing-final.txt
             /tmp/gazette-batches/summary.json
             /tmp/gazette-stage-verify.txt
             /tmp/gazette-promote.txt
             /tmp/gazette-production-verify.txt
+            /tmp/gazette-source-registry-repair.txt
             /tmp/gazette-source-policy-verify.txt
             /tmp/gazette-open-data-deploy.txt
             /tmp/gazette-live-index.json
