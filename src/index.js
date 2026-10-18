@@ -3886,11 +3886,29 @@ async function validateGuideDocuments(request,env,payload){
     const title=String(record.display_title || record.title || guideId);
     const verification=String(record.verification_label || record.status_label || record.edition || "");
     const dependencyGate=evaluateGuideLawDependencies(guideId,dependencyRegistry,readinessLedger);
+    const guideHumanReviewStatus=["legal_verified","current_verified","verified"].includes(String(record.verification_level||""))
+      ? "approved"
+      : String(record.activation_state||"")==="active_with_warning" ? "reviewed" : "pending";
     context.push({
       source:"AI Advokat fingerprint-verified private guide · "+title,
       locator:String(record.public_record_url || ""),
       version:verification,
       dependencyGate,
+      provenance:{
+        kind:"fingerprint_verified_guide",
+        sourceIdentity:"AI Advokat private guide vault + governed registry",
+        authorityClass:"secondary_reference",
+        locator:String(record.public_record_url||name),
+        releaseRole:"secondary_only",
+        legalAuthority:false,
+        humanReviewStatus:guideHumanReviewStatus,
+        recordId:guideId,
+        title,
+        verificationState:String(record.verification_level||verification||"pending"),
+        activationState:String(record.activation_state||"pending"),
+        fingerprint:actualHash,
+        currentLawClaim:false
+      },
       text:[
         "FULL_GUIDE_DOCUMENT_ATTACHED: "+name,
         "GUIDE_ID: "+guideId,
@@ -3919,7 +3937,26 @@ async function validateGuideDocuments(request,env,payload){
     });
   }
 
-  return {ok:true,attachments,context,sources};
+  const provenanceGate=enforceCanonicalContextProvenance(context);
+  if(provenanceGate.blocked.length){
+    return {
+      ok:false,
+      error:"guide_document_provenance_gate_failed",
+      problems:provenanceGate.blocked
+    };
+  }
+  return {
+    ok:true,
+    attachments,
+    context:provenanceGate.context,
+    sources,
+    provenanceGate:{
+      version:CANONICAL_PROVENANCE_GATE_VERSION,
+      state:provenanceGate.state,
+      released:provenanceGate.context.length,
+      blocked:0
+    }
+  };
 }
 
 
