@@ -3591,11 +3591,13 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
     maxOutputTokens:Math.max(900,Math.min(4800,Number(maxOutputTokens)||3600))
   });
   const languageRequired=shouldEnforceMacedonianOutput(task);
-  if(languageRequired && languagePass.languageAssessment?.ok!==true){
+  if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
     return {
       ok:false,
-      error:"macedonian_language_quality_failed",
+      error:"macedonian_release_blocked",
+      message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:languagePass.repairError||"macedonian_postflight_failed",
+      releaseGate:languagePass.releaseVerdict||null,
       model:result.model,
       providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0)
     };
@@ -3618,7 +3620,8 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
     formalDraftPostflight:(mode==="draft" || isFormalLegalDraftRequest(task)),
-    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"failed_closed"
+    languageQualityState:languagePass.releaseVerdict?.verdict==="RELEASE"?"verified_runtime":"failed_closed",
+    languageReleaseGate:languagePass.releaseVerdict||null
   };
 }
 
@@ -4663,11 +4666,13 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     maxOutputTokens:tokenLimit,
     sessionAffinity
   });
-  if(languageRequired && languagePass.languageAssessment?.ok!==true){
+  if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
     return {
       ok:false,
-      error:"macedonian_language_quality_failed",
+      error:"macedonian_release_blocked",
+      message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:languagePass.repairError||"macedonian_postflight_failed",
+      releaseGate:languagePass.releaseVerdict||null,
       model:result.model,
       providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
       provider:"workers_ai_free"
@@ -4694,7 +4699,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
     formalDraftPostflight:formalDraft,
-    languageQualityState:languagePass.languageAssessment?.ok===true?"verified_runtime":"failed_closed",
+    languageQualityState:languagePass.releaseVerdict?.verdict==="RELEASE"?"verified_runtime":"failed_closed",
+    languageReleaseGate:languagePass.releaseVerdict||null,
     convertedDocuments:converted.documents.length,
     webSearchUsed:false,
     sources:[],
