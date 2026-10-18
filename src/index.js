@@ -123,6 +123,7 @@ import { detectConfidentialCasePrompt } from "./chat-privacy.js";
 import {
   WORKERS_AI_TEXT_MODEL_DEFAULT,
   resolveWorkersAITextModel,
+  resolveWorkersAIEmptyFallbackModel,
   extractWorkersAIText,
   workersAIShapeSummary,
   runWorkersAIText
@@ -149,7 +150,7 @@ import {
 } from "./response-quality.js";
 
 const VERSION = "1.9.0";
-const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V7";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V8";
 const CANONICAL_FINAL_OUTPUT_GATE_VERSION="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
 
 const ALLOWED_ORIGINS = new Set([
@@ -4938,7 +4939,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
       detail:result.detail||null,
       model:result.model||resolveWorkersAITextModel(env),
       providerCalls:result.providerCalls||1,
-      providerShape:result.shape||null
+      providerShape:result.shape||null,
+      modelFallback:result.modelFallback||null
     };
   }
 
@@ -4947,7 +4949,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     userText:q,
     maxOutputTokens:tokenLimit,
     sessionAffinity,
-    allowProviderRepair:!fastFreePrompt
+    allowProviderRepair:!fastFreePrompt && !result.modelFallback
   });
   if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
     return {
@@ -4987,6 +4989,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     text:finalRelease.text,
     model:result.model,
     provider:"workers_ai_free",
+    primaryModel:result.primaryModel||resolveWorkersAITextModel(env),
+    modelFallback:result.modelFallback||null,
     providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
     languageRepairProviderCalls:languagePass.providerCalls||0,
     latencyMs:Date.now()-startedAt,
@@ -5569,6 +5573,7 @@ async function handleGPTChat(request,env){
         failureDetail:freeResult.detail||null,
         model:freeResult.model||resolveWorkersAITextModel(env),
         providerShape:freeResult.providerShape||null,
+        modelFallback:freeResult.modelFallback||null,
         runtime:{provider:"workers_ai_free",documentConversion:freeWorkersAIMarkdownConfigured(env)?"configured":"locked"}
       },503);
     }
@@ -5589,6 +5594,8 @@ async function handleGPTChat(request,env){
         reason:String(fallbackReason),
         primaryProviderCalls:Number(primaryProviderCalls||0)
       } : null,
+      primaryModel:freeResult.primaryModel||null,
+      modelFallback:freeResult.modelFallback||null,
       languageStandard:freeResult.languageStandard,
       languageRepaired:freeResult.languageRepaired===true,
       conversationPersistence:freeResult.conversationPersistence,
@@ -5601,6 +5608,7 @@ async function handleGPTChat(request,env){
         fastPromptUsed:freeResult.fastPromptUsed===true,
         compactDraftUsed:freeResult.compactDraftUsed===true,
         outputTokenLimit:Number(freeResult.outputTokenLimit||0)||null,
+        modelFallback:freeResult.modelFallback||null,
         promptCaching:sessionAffinity?"session_affinity_enabled":"no_session_affinity"
       },
       sources:[],
@@ -6863,6 +6871,7 @@ async function handleCapabilities(request, env) {
           : "locked",
       freeChatProvider:freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
       freeChatModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
+      freeChatFallbackModel:freeWorkersAIConfigured(env) ? resolveWorkersAIEmptyFallbackModel(env) : null,
       freeRuntimePolicy:FREE_RUNTIME_POLICY_VERSION,
       paidChatProvider:orchestratorRuntimeReadiness(env).provider==="configured" ? "openai" : "locked",
       paidChatModel:orchestratorRuntimeReadiness(env).provider==="configured" ? String(env.OPENAI_MODEL||"openai_configured_model") : null,
