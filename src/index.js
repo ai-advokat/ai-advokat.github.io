@@ -4222,23 +4222,47 @@ export async function bureauEchrDiscoveryContext(q,{limit=6}={}){
     if(!ranked.length){
       return {...empty,state:"official_index_no_title_match",recordCount:records.length};
     }
-    return {
-      state:"official_domestic_echr_translation_discovery",
-      recordCount:records.length,
-      records:ranked,
-      context:ranked.map(record=>({
-        source:"Биро за застапување на РСМ пред ЕСЧП · официјален македонски индекс",
+    const rawContext=ranked.map(record=>({
+      source:"Биро за застапување на РСМ пред ЕСЧП · официјален македонски индекс",
+      locator:String(record.listing_period||"")+(record.record_kind?" · "+record.record_kind:""),
+      version:"captured "+String(record.captured_on||""),
+      provenance:{
+        kind:"echr_discovery",
+        sourceIdentity:"Биро за застапување на Република Северна Македонија пред ЕСЧП",
+        authorityClass:"official_supporting",
         locator:String(record.listing_period||"")+(record.record_kind?" · "+record.record_kind:""),
-        version:"captured "+String(record.captured_on||"2026-10-11"),
-        text:[
-          "DISCOVERY_ONLY_ECHR_MK_TRANSLATION_INDEX.",
-          "Предмет: "+String(record.title||""),
-          "Официјален домашен извор: Биро за застапување на Република Северна Македонија пред Европскиот суд за човекови права.",
-          "Ова е македонски индекс/преводен извор за пронаоѓање. За application number, точен датум, конечност и материјален holding задолжително врзи со HUDOC.",
-          "Не претставувај го овој индекс како самостојно human-reviewed правно образложение."
-        ].join("\n")
-      })),
-      sources:ranked.map(record=>({
+        releaseRole:"discovery_only",
+        legalAuthority:false,
+        humanReviewStatus:"not_legal_authority",
+        recordIdentity:String(record.title||""),
+        listingPeriod:String(record.listing_period||""),
+        capturedOn:String(record.captured_on||""),
+        sourceUrl:String(record.source_url||"https://biroescp.gov.mk/пресуди-и-одлуки-на-рм/"),
+        currentLawClaim:false
+      },
+      text:[
+        "DISCOVERY_ONLY_ECHR_MK_TRANSLATION_INDEX.",
+        "Предмет: "+String(record.title||""),
+        "Официјален домашен извор: Биро за застапување на Република Северна Македонија пред Европскиот суд за човекови права.",
+        "Ова е македонски индекс/преводен извор за пронаоѓање. За application number, точен датум, конечност и материјален holding задолжително врзи со HUDOC.",
+        "Не претставувај го овој индекс како самостојно human-reviewed правно образложение."
+      ].join("\n")
+    }));
+    const provenanceGate=enforceCanonicalContextProvenance(rawContext);
+    const releasedIdentities=new Set(provenanceGate.context.map(item=>String(item?.provenance?.recordIdentity||"")).filter(Boolean));
+    const releasedRecords=ranked.filter(record=>releasedIdentities.has(String(record.title||"")));
+    return {
+      state:releasedRecords.length?"official_domestic_echr_translation_discovery":(provenanceGate.blocked.length?"provenance_blocked":"official_index_no_title_match"),
+      recordCount:records.length,
+      records:releasedRecords,
+      context:provenanceGate.context,
+      provenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:provenanceGate.state,
+        released:provenanceGate.context.length,
+        blocked:provenanceGate.blocked.length
+      },
+      sources:releasedRecords.map(record=>({
         title:String(record.title||"ЕСЧП предмет"),
         url:String(record.source_url||"https://biroescp.gov.mk/пресуди-и-одлуки-на-рм/"),
         jurisdiction:"ECHR",
