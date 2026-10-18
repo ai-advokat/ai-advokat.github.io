@@ -24,12 +24,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: gazette-open-data-1944-2017-production-activation
+  group: gazette-open-data-1944-2017-metadata-authorized-v2
   cancel-in-progress: false
 
 jobs:
   activate:
-    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
