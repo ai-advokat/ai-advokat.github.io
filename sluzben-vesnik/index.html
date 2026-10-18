@@ -43,7 +43,7 @@ footer{border-top:1px solid var(--line);background:#fff;color:var(--muted);paddi
 <div class="stat"><b id="countCurrent">—</b><span>Human-Gate тековни</span></div>
 </section>
 <section class="hero" style="margin-top:22px" id="official-issue-index">
-<div class="eyebrow">OFFICIAL ISSUE METADATA · 1944–2017 · DATA.GOV.MK</div>
+<div class="eyebrow">OFFICIAL ISSUE METADATA · 1944–2017</div>
 <h2 style="margin:.35rem 0 .7rem;font-size:1.55rem">Официјален индекс на изданија — 8.638 уникатни записи</h2>
 <p class="lead">Индексот е изграден од официјалниот податочен сет на ЈП „Службен весник на РСМ“: број на издание, точен датум и историски тип на публикација. Изворните 8.651 редови содржат 13 точни дупликати; canonical индексот ги задржува 8.638 уникатни комбинации тип + број + датум.</p>
 <div class="stats" style="margin-bottom:0">
@@ -53,7 +53,6 @@ footer{border-top:1px solid var(--line);background:#fff;color:var(--muted);paddi
 <div class="stat"><b>0</b><span>current-law тврдења од metadata</span></div>
 </div>
 <div class="guard"><strong>METADATA ONLY.</strong> Записот потврдува дека конкретно издание со тој број, датум и тип се наоѓа во официјалниот dataset. Не докажува кој акт или член е објавен во него, ниту дали некоја норма е важечка денес.</div>
-<div class="source-actions"><a class="btn primary" href="https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017" target="_blank" rel="noopener">Официјален data.gov.mk dataset</a></div>
 <div class="toolbar" style="margin-bottom:0"><div class="controls">
 <label for="issueQ">Број / датум<input id="issueQ" type="search" placeholder="72/2016 или 2016-04-12"></label>
 <label for="issueYear">Година<select id="issueYear"><option value="">Сите години</option></select></label>
@@ -159,10 +158,10 @@ function loadIssueMetadata(){
    if(coverage.total!=null)document.getElementById("metaCount").textContent=Number(coverage.total).toLocaleString("mk-MK");
    if(coverage.years!=null)document.getElementById("metaYears").textContent=coverage.years;
    if(coverage.publicationTypes!=null)document.getElementById("metaTypes").textContent=coverage.publicationTypes;
-   status.hidden=false;status.innerHTML="<strong>"+Number(v.j.count||0).toLocaleString("mk-MK")+" пронајдени записи.</strong> Прикажани се најмногу 100. Извор: ЈП „Службен весник на РСМ“ / data.gov.mk.";
+   status.hidden=false;status.innerHTML="<strong>"+Number(v.j.count||0).toLocaleString("mk-MK")+" пронајдени записи.</strong> Прикажани се најмногу 100. Извор: ЈП „Службен весник на РСМ“ · официјални метаподатоци.";
    var html="";
    rows.forEach(function(x){
-     html+='<article class="entry"><div class="entry-head"><div><h2>'+esc(x.publication_type)+' · бр. '+esc(x.issue_number)+'/'+esc(x.year)+'</h2><div class="meta">'+esc(x.issue_date)+' · PRIMARY OFFICIAL METADATA</div></div><div class="badges"><span class="pill ok">ОФИЦИЈАЛЕН METADATA ЗАПИС</span><span class="pill warn">НЕ Е ПРАВЕН ТЕКСТ</span></div></div><div class="details"><div><b>Број</b><span>'+esc(x.issue_number)+'</span></div><div><b>Датум</b><span>'+esc(x.issue_date)+'</span></div><div><b>Тип на издание</b><span>'+esc(x.publication_type)+'</span></div></div><div class="source-actions"><a class="btn primary" href="'+esc(x.dataset_url)+'" target="_blank" rel="noopener">Отвори официјален dataset</a></div></article>';
+     html+='<article class="entry"><div class="entry-head"><div><h2>'+esc(x.publication_type)+' · бр. '+esc(x.issue_number)+'/'+esc(x.year)+'</h2><div class="meta">'+esc(x.issue_date)+' · PRIMARY OFFICIAL METADATA</div></div><div class="badges"><span class="pill ok">ОФИЦИЈАЛЕН METADATA ЗАПИС</span><span class="pill warn">НЕ Е ПРАВЕН ТЕКСТ</span></div></div><div class="details"><div><b>Број</b><span>'+esc(x.issue_number)+'</span></div><div><b>Датум</b><span>'+esc(x.issue_date)+'</span></div><div><b>Тип на издание</b><span>'+esc(x.publication_type)+'</span></div></div><div class="source-actions"><span class="pill ok">ОФИЦИЈАЛНО ПОТЕКЛО ЕВИДЕНТИРАНО</span></div></article>';
    });
    list.innerHTML=html||'<div class="empty">Нема записи за избраните филтри.</div>';list.hidden=false;
  }).catch(function(){

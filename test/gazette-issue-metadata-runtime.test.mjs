@@ -60,6 +60,8 @@ test("GIM5 public Gazette page exposes the 1944-2017 official issue metadata ind
   assert.match(page,/1944–2017/);
   assert.match(page,/\/api\/gazette-issue-index/);
   assert.match(page,/METADATA ONLY|metadata only|метаподатоци/i);
+  assert.doesNotMatch(page,/href=["']https:\/\/data\.gov\.mk/i);
+  assert.doesNotMatch(page,/dataset_url/i);
 });
 
 test("GIM6 deterministic backfill verifies exact snapshot and canonical counts",()=>{
@@ -69,4 +71,24 @@ test("GIM6 deterministic backfill verifies exact snapshot and canonical counts",
   assert.match(script,/EXPECTED_TYPES = 7/);
   assert.match(script,/1944-01-01/);
   assert.match(script,/2017-12-29/);
+});
+
+
+test("GIM7 public issue-index contract does not expose upstream raw URLs",()=>{
+  const start=worker.indexOf("async function handleGazetteIssueIndex");
+  const end=worker.indexOf("async function handleGazetteChunks",start);
+  const block=worker.slice(start,end);
+  assert.ok(start>=0 && end>start);
+  assert.doesNotMatch(block,/datasetUrl:/);
+  assert.doesNotMatch(block,/resourceUrl:/);
+  assert.doesNotMatch(block,/snapshotSha256:/);
+  assert.doesNotMatch(block,/dataset_url,resource_url/);
+  assert.match(block,/publicLinkExposed:false/);
+  assert.match(block,/auditProvenanceRetainedInternally:true/);
+});
+
+test("GIM8 internal bot provenance still retains the official source URL",()=>{
+  const metadataModule=fs.readFileSync("src/gazette-issue-metadata.js","utf8");
+  assert.match(metadataModule,/sourceUrl:String\(i\.resource_url\|\|GAZETTE_OPEN_DATA_RESOURCE_URL\)/);
+  assert.match(metadataModule,/sourceSha256:String\(i\.snapshot_sha256\|\|GAZETTE_OPEN_DATA_SHA256\)/);
 });
