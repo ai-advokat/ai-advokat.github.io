@@ -177,7 +177,7 @@ test("GPTACT11 Workers AI remains explicit, bounded and available only as fallba
   assert.match(worker,/cloudflare_workers_ai_to_markdown/);
   assert.match(worker,/FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED/);
   assert.match(worker,/workers-ai-provider\.js/);
-  assert.match(wrangler,/"WORKERS_AI_CHAT_MODEL": "@cf\/zai-org\/glm-4.7-flash"/);
+  assert.match(wrangler,/"WORKERS_AI_CHAT_MODEL": "@cf\/qwen\/qwen3-30b-a3b-fp8"/);
   assert.doesNotMatch(workflow,/Live FREE Workers AI multi-scenario runtime UAT/);
   assert.doesNotMatch(worker,/error:"free_mode_professional_postflight_required"/);
   assert.match(worker,/FREE provider output is a working research\/draft result only/);
