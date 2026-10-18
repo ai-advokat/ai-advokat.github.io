@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CANONICAL_PROVENANCE_GATE_VERSION,
+  CANONICAL_METADATA_STANDARD_VERSION,
   assessCanonicalProvenance,
   enforceCanonicalContextProvenance
 } from "../src/canonical-provenance-gate.js";
@@ -27,7 +28,8 @@ const article=overrides=>({
 });
 
 test("canonical provenance gate version is stable",()=>{
-  assert.equal(CANONICAL_PROVENANCE_GATE_VERSION,"AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V1");
+  assert.equal(CANONICAL_PROVENANCE_GATE_VERSION,"AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V2");
+  assert.equal(CANONICAL_METADATA_STANDARD_VERSION,"AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V2");
 });
 
 test("fully identified approved legal article is releasable",()=>{
@@ -122,4 +124,75 @@ test("runtime enforcement physically removes provenance-defective source context
   assert.equal(gate.context[0].source,"good");
   assert.equal(gate.blocked.length,1);
   assert.equal(gate.state,"partial_release");
+});
+
+
+test("Official Gazette issue requires exact issue identity and fingerprint",()=>{
+  const issue={
+    kind:"gazette_issue",
+    sourceIdentity:"Службен весник на Република Северна Македонија",
+    authorityClass:"primary_official",
+    locator:"2026 · 151",
+    releaseRole:"source_registry",
+    legalAuthority:false,
+    humanReviewStatus:"reviewed",
+    publicationName:"Службен весник на Република Северна Македонија",
+    issueNumber:"151/2026",
+    issueDate:"2026-07-08",
+    sourceUrl:"https://slvesnik.com.mk/example.pdf",
+    sourceSha256:"c".repeat(64),
+    currentLawClaim:false
+  };
+  assert.equal(assessCanonicalProvenance(issue).ok,true);
+  const bad=assessCanonicalProvenance({...issue,sourceSha256:""});
+  assert.equal(bad.ok,false);
+  assert.ok(bad.missing.includes("sourceSha256"));
+});
+
+test("rulebook/bylaw cannot become current-law authority without act metadata and effective/application date",()=>{
+  const rulebook={
+    kind:"rulebook",
+    sourceIdentity:"Службен весник / надлежен орган",
+    authorityClass:"primary_official",
+    locator:"Правилник · Сл. весник 10/2026",
+    releaseRole:"legal_authority",
+    legalAuthority:true,
+    humanReviewStatus:"approved",
+    title:"Правилник за тест",
+    actType:"rulebook",
+    issuer:"Надлежен орган",
+    issueNumber:"10/2026",
+    issueDate:"2026-01-20",
+    sourceUrl:"https://slvesnik.com.mk/rulebook.pdf",
+    sourceSha256:"d".repeat(64),
+    currentLawClaim:true,
+    effectiveDate:"2026-01-28"
+  };
+  assert.equal(assessCanonicalProvenance(rulebook).ok,true);
+  const missingDate=assessCanonicalProvenance({...rulebook,effectiveDate:""});
+  assert.equal(missingDate.ok,false);
+  assert.ok(missingDate.problems.includes("current_law_act_requires_effective_or_application_date"));
+});
+
+test("authorial publication is metadata-rich secondary material, never legal authority",()=>{
+  const publication={
+    kind:"authorial_publication",
+    sourceIdentity:"Zenodo",
+    authorityClass:"open_repository",
+    locator:"10.5281/zenodo.23023442",
+    releaseRole:"secondary_only",
+    legalAuthority:false,
+    humanReviewStatus:"approved",
+    title:"Вештачката интелигенција во адвокатурата и судството",
+    author:"Зоран Стојанкиќ",
+    publicationState:"published",
+    publicationDate:"2026-09-30",
+    sourceUrl:"https://doi.org/10.5281/zenodo.23023442",
+    persistentIdentifier:"10.5281/zenodo.23023442",
+    currentLawClaim:false
+  };
+  assert.equal(assessCanonicalProvenance(publication).ok,true);
+  const bad=assessCanonicalProvenance({...publication,legalAuthority:true,releaseRole:"legal_authority"});
+  assert.equal(bad.ok,false);
+  assert.ok(bad.problems.includes("authorial_publication_must_remain_secondary_non_authority"));
 });
