@@ -212,8 +212,8 @@ test("unambiguous production calques get deterministic cleanup before any AI rep
   assert.equal(check.ok,true,JSON.stringify({clean,check}));
 });
 
-test("language runtime is V7 after structural-token and lexical-integrity hardening",()=>{
-  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V7");
+test("language runtime is V8 after canonical lexical-integrity hardening",()=>{
+  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V8");
 });
 
 
@@ -261,9 +261,27 @@ test("single repairable contamination can be cleaned and then released",()=>{
   assert.equal(final.verdict,"RELEASE",JSON.stringify(final));
 });
 
-test("clean concise Macedonian is released by V7 canonical gate",()=>{
+test("clean concise Macedonian is released by V8 canonical gate",()=>{
   const clean="Договорот за вработување ги уредува правата и обврските на работникот и работодавачот. За тековните законски услови треба да се провери важечкиот Закон за работните односи.";
   const verdict=macedonianReleaseVerdict(clean,{userText:"Што е договор за вработување?"});
   assert.equal(verdict.verdict,"RELEASE",JSON.stringify(verdict));
-  assert.equal(MACEDONIAN_RELEASE_GATE_VERSION,"FREE_MK_CANONICAL_RELEASE_V3");
+  assert.equal(MACEDONIAN_RELEASE_GATE_VERSION,"FREE_MK_CANONICAL_RELEASE_V4");
+});
+
+
+test("valid standard Macedonian 'обврска/обврски' is not falsely rejected",()=>{
+  const clean="Договорот создава права и обврски. Секоја договорна обврска треба да биде јасно определена.";
+  const check=assessMacedonianOutput(clean,{userText:"Одговори на македонски."});
+  assert.equal(check.ok,true,JSON.stringify(check));
+  const verdict=macedonianReleaseVerdict(clean,{userText:"Што е договорна обврска?"});
+  assert.equal(verdict.verdict,"RELEASE",JSON.stringify(verdict));
+});
+
+test("contextual garbage from the production employment answer is blocked even when individual words look Cyrillic",()=>{
+  const bad="Работни облага, корпорални документи, времена за радост, сочетост со закона и године власни.";
+  const check=assessMacedonianOutput(bad,{userText:"Што е договор за вработување?"});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.reasons.includes("contextual_language_contamination"));
+  const verdict=macedonianReleaseVerdict(bad,{userText:"Што е договор за вработување?"});
+  assert.equal(verdict.verdict,"BLOCK",JSON.stringify(verdict));
 });
