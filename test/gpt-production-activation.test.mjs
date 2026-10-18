@@ -30,7 +30,7 @@ test("GPTACT1 production runtime is armed for the approved model but contains no
   assert.equal(config.ai?.binding,"AI");
   assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
   assert.equal(config.vars.WORKERS_AI_MARKDOWN_ENABLED,"true");
-  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/zai-org/glm-4.7-flash");
+  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/qwen/qwen3-30b-a3b-fp8");
   assert.doesNotMatch(wrangler,/OPENAI_API_KEY/);
   assert.doesNotMatch(wrangler,/sk-[A-Za-z0-9_-]{20,}/);
 });
@@ -192,8 +192,8 @@ test("GPTACT12 fallback document prompt still treats extracted body as content a
 });
 
 
-test("GPTACT13 unified Workers AI provider contract uses the fast multilingual production model",()=>{
-  assert.equal(WORKERS_AI_TEXT_MODEL_DEFAULT,"@cf/zai-org/glm-4.7-flash");
+test("GPTACT13 unified Workers AI provider contract uses the canonical multilingual production model",()=>{
+  assert.equal(WORKERS_AI_TEXT_MODEL_DEFAULT,"@cf/qwen/qwen3-30b-a3b-fp8");
   const options=workersAIRequestOptions({
     model:WORKERS_AI_TEXT_MODEL_DEFAULT,
     messages:[{role:"user",content:"test"}],
@@ -214,7 +214,7 @@ test("GPTACT13 unified Workers AI provider contract uses the fast multilingual p
 
 test("GPTACT13b GLM FREE chat cannot spend the visible-output budget on hidden thinking",()=>{
   const options=workersAIRequestOptions({
-    model:"@cf/zai-org/glm-4.7-flash",
+    model:"@cf/qwen/qwen3-30b-a3b-fp8",
     messages:[{role:"user",content:"Што е договор за вработување?"}],
     maxOutputTokens:800
   });
@@ -240,7 +240,7 @@ test("GPTACT14 Workers AI response extraction accepts only final answer shapes a
 
 test("GPTACT15 Workers AI provider contract fails explicitly on empty final output",async()=>{
   const env={
-    WORKERS_AI_CHAT_MODEL:"@cf/zai-org/glm-4.7-flash",
+    WORKERS_AI_CHAT_MODEL:"@cf/qwen/qwen3-30b-a3b-fp8",
     AI:{run:async()=>({response:"",usage:{prompt_tokens:10,completion_tokens:0}})}
   };
   const result=await runWorkersAIText(env,{
@@ -249,7 +249,7 @@ test("GPTACT15 Workers AI provider contract fails explicitly on empty final outp
   });
   assert.equal(result.ok,false);
   assert.equal(result.error,"workers_ai_empty_response");
-  assert.equal(result.model,"@cf/zai-org/glm-4.7-flash");
+  assert.equal(result.model,"@cf/qwen/qwen3-30b-a3b-fp8");
   assert.equal(result.providerCalls,1);
   assert.equal(result.shape.type,"object");
 });
@@ -257,7 +257,7 @@ test("GPTACT15 Workers AI provider contract fails explicitly on empty final outp
 test("GPTACT15b Workers AI session affinity is forwarded only as a safe binding header",async()=>{
   let seen=null;
   const env={
-    WORKERS_AI_CHAT_MODEL:"@cf/zai-org/glm-4.7-flash",
+    WORKERS_AI_CHAT_MODEL:"@cf/qwen/qwen3-30b-a3b-fp8",
     AI:{run:async(...args)=>{seen=args;return {response:"Здраво"};}}
   };
   const result=await runWorkersAIText(env,{
