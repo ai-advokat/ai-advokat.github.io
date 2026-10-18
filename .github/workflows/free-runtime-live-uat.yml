@@ -7,7 +7,8 @@ on:
       - "src/index.js"
       - "src/ai-advokat-central-prompt.js"
       - "src/macedonian-language-guard.js"
-      - "data/canonical-legal-metadata-standard-v2.json"
+      - "data/canonical-legal-metadata-standard-v3.json"
+      - "data/canonical-root-release-contract-2026.json"
       - "src/canonical-provenance-gate.js"
       - "src/response-quality.js"
       - "src/workers-ai-provider.js"
@@ -68,10 +69,10 @@ jobs:
           const EXPECTED_FREE_MODEL="@cf/qwen/qwen3-30b-a3b-fp8";
           const EXPECTED_PAID_MODEL="gpt-6.1-sol";
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
-          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V8";
+          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V9";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
-          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V4";
-          const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V2";
+          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V5";
+          const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
 
           async function waitForExpectedRuntime(){
             let last=null;
@@ -86,8 +87,9 @@ jobs:
                   && data?.ok===true
                   && caps.centralOperatingPrompt===EXPECTED_PROMPT
                   && caps.macedonianLanguageGuard===EXPECTED_LANGUAGE
-                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V4"
-                  && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V2"
+                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V5"
+                  && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V3"
+                  && caps.canonicalRootReleaseContract==="AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1"
                   && caps.canonicalMetadataStandard===EXPECTED_METADATA
                   && caps.finalResponseQualityGate===EXPECTED_QUALITY
                   && caps.freeChatModel===EXPECTED_FREE_MODEL
@@ -138,6 +140,10 @@ jobs:
               if(data.providerFallback && data.providerFallback.from!=="openai"){
                 throw new Error(label+" invalid fallback provenance "+JSON.stringify(data.providerFallback));
               }
+            }else if(data.provider==="canonical_corpus_no_model"){
+              if(data.model!==null && data.model!==undefined) throw new Error(label+" deterministic corpus lane must not expose an AI model");
+              if(Number(data?.performance?.providerCalls||0)!==0) throw new Error(label+" deterministic corpus lane made provider calls");
+              if(data.sourceMode!=="canonical_article_corpus_no_model") throw new Error(label+" deterministic corpus lane has wrong source mode");
             }else{
               throw new Error(label+" unexpected provider "+String(data.provider));
             }
@@ -156,7 +162,16 @@ jobs:
                 throw new Error(label+" OpenAI web research omitted source policy metadata");
               }
             }
-            if(data.provider==="workers_ai_free"){
+            if(!data?.sourcePolicy?.canonicalProvenanceGate
+              || data.sourcePolicy.canonicalProvenanceGate.version!=="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V3"
+              || data.sourcePolicy.canonicalProvenanceGate.metadataStandard!==EXPECTED_METADATA){
+              throw new Error(label+" canonical provenance metadata missing or stale: "+JSON.stringify(data?.sourcePolicy));
+            }
+            if(data.provider==="canonical_corpus_no_model"){
+              const calls=Number(data?.performance?.providerCalls||0);
+              if(calls!==0) throw new Error(label+" deterministic source-first lane must use zero provider calls");
+              console.log(label+" performance: deterministic corpus · providerCalls=0");
+            }else if(data.provider==="workers_ai_free"){
               const calls=Number(data?.performance?.providerCalls||0);
               if(calls<1 || calls>2){
                 throw new Error(label+" FREE provider call budget violated: "+JSON.stringify(data.performance));
