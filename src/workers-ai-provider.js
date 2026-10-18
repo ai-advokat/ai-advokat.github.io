@@ -4,10 +4,16 @@
 
 export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/qwen/qwen3-30b-a3b-fp8";
 export const WORKERS_AI_PROVIDER_CONTRACT_VERSION="WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT";
+export const WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT="@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 export function resolveWorkersAITextModel(env){
   const model=String(env?.WORKERS_AI_CHAT_MODEL||WORKERS_AI_TEXT_MODEL_DEFAULT).trim();
   return model||WORKERS_AI_TEXT_MODEL_DEFAULT;
+}
+
+export function resolveWorkersAIEmptyFallbackModel(env){
+  const model=String(env?.WORKERS_AI_EMPTY_FALLBACK_MODEL||WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT).trim();
+  return model||WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT;
 }
 
 export function workersAIRequestOptions({
@@ -174,9 +180,9 @@ export async function runWorkersAIText(env,{
   if(!env?.AI || typeof env.AI.run!=="function"){
     return {ok:false,error:"workers_ai_not_configured"};
   }
-  const resolvedModel=String(model||resolveWorkersAITextModel(env));
-  const options=workersAIRequestOptions({
-    model:resolvedModel,
+  const primaryModel=String(model||resolveWorkersAITextModel(env));
+  const primaryOptions=workersAIRequestOptions({
+    model:primaryModel,
     messages,
     maxOutputTokens,
     temperature,
@@ -189,33 +195,83 @@ export async function runWorkersAIText(env,{
     ? {extraHeaders:{"x-session-affinity":affinity}}
     : undefined;
 
-  let generated;
   const boundedTimeout=Math.max(3000,Math.min(45000,Number(timeoutMs)||30000));
+  const callOnce=(callModel,callOptions)=>Promise.race([
+    env.AI.run(callModel,callOptions,bindingOptions),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error("workers_ai_timeout_"+boundedTimeout)),boundedTimeout))
+  ]);
+
+  let generated;
+  let providerCalls=0;
+  let activeModel=primaryModel;
+  let modelFallback=null;
   try{
-    generated=await Promise.race([
-      env.AI.run(resolvedModel,options,bindingOptions),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error("workers_ai_timeout_"+boundedTimeout)),boundedTimeout))
-    ]);
+    providerCalls+=1;
+    generated=await callOnce(primaryModel,primaryOptions);
   }catch(error){
     const detail=String(error?.message||error).slice(0,240);
     return {
       ok:false,
       error:detail.startsWith("workers_ai_timeout_")?"workers_ai_timeout":"workers_ai_provider_error",
       detail,
-      model:resolvedModel,
-      providerCalls:1,
+      model:primaryModel,
+      primaryModel,
+      providerCalls,
       timeoutMs:boundedTimeout
     };
   }
 
-  const text=extractWorkersAIText(generated);
+  let text=extractWorkersAIText(generated);
+
+  // Qwen3 is a reasoning model and can occasionally exhaust max_tokens before
+  // producing a final assistant message. Cloudflare's documented Qwen3 schema
+  // exposes no disable-thinking switch. For this exact empty-final condition,
+  // perform one and only one fallback call with a stable non-reasoning
+  // instruction model. Normal responses remain single-call.
+  if(!text){
+    const fallbackModel=resolveWorkersAIEmptyFallbackModel(env);
+    activeModel=fallbackModel;
+    modelFallback={
+      from:primaryModel,
+      to:fallbackModel,
+      reason:"empty_final_text"
+    };
+    const fallbackOptions=workersAIRequestOptions({
+      model:fallbackModel,
+      messages,
+      maxOutputTokens,
+      temperature,
+      responseFormat,
+      reasoningEffort:"low"
+    });
+    try{
+      providerCalls+=1;
+      generated=await callOnce(fallbackModel,fallbackOptions);
+      text=extractWorkersAIText(generated);
+    }catch(error){
+      const detail=String(error?.message||error).slice(0,240);
+      return {
+        ok:false,
+        error:detail.startsWith("workers_ai_timeout_")?"workers_ai_timeout":"workers_ai_provider_error",
+        detail,
+        model:activeModel,
+        primaryModel,
+        providerCalls,
+        timeoutMs:boundedTimeout,
+        modelFallback
+      };
+    }
+  }
+
   if(!text){
     return {
       ok:false,
       error:"workers_ai_empty_response",
-      detail:"Workers AI returned no usable final assistant text.",
-      model:resolvedModel,
-      providerCalls:1,
+      detail:"Workers AI returned no usable final assistant text after the single bounded non-reasoning fallback.",
+      model:activeModel,
+      primaryModel,
+      providerCalls,
+      modelFallback,
       shape:workersAIShapeSummary(generated)
     };
   }
@@ -223,8 +279,10 @@ export async function runWorkersAIText(env,{
   return {
     ok:true,
     text,
-    model:resolvedModel,
-    providerCalls:1,
+    model:activeModel,
+    primaryModel,
+    providerCalls,
+    modelFallback,
     timeoutMs:boundedTimeout,
     shape:workersAIShapeSummary(generated)
   };
