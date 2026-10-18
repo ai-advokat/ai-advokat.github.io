@@ -3,6 +3,7 @@
 // Reasoning fields are intentionally never surfaced as user-visible answer text.
 
 export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/qwen/qwen3-30b-a3b-fp8";
+export const WORKERS_AI_PROVIDER_CONTRACT_VERSION="WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT";
 
 export function resolveWorkersAITextModel(env){
   const model=String(env?.WORKERS_AI_CHAT_MODEL||WORKERS_AI_TEXT_MODEL_DEFAULT).trim();
