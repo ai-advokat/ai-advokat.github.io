@@ -52,7 +52,7 @@ test("GIM4 production worker exposes read-only issue index and bot metadata lane
   assert.match(worker,/handleGazetteIssueIndex/);
   assert.match(worker,/\/api\/gazette-issue-index/);
   assert.match(worker,/findGazetteIssueMetadata\(env,q/);
-  assert.match(worker,/gazetteIssueMetadataBundle\.context/);
+  assert.match(worker,/gazetteIssueMetadataToContext\(issueMetadataBundle\)/);
 });
 
 test("GIM5 public Gazette page exposes the 1944-2017 official issue metadata index",()=>{
