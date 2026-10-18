@@ -3,8 +3,8 @@
 // identity, authority, locator, release role and Human Gate state.
 // Primary/current-law authority additionally requires official provenance.
 
-export const CANONICAL_PROVENANCE_GATE_VERSION="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V2";
-export const CANONICAL_METADATA_STANDARD_VERSION="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V2";
+export const CANONICAL_PROVENANCE_GATE_VERSION="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V3";
+export const CANONICAL_METADATA_STANDARD_VERSION="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
 
 const SHA256=/^[0-9a-f]{64}$/i;
 const REVIEWED=new Set(["reviewed","approved"]);
@@ -36,6 +36,12 @@ export const CANONICAL_METADATA_REQUIRED_FIELDS=Object.freeze({
   legal_instrument:["instrumentKey","title","instrumentType","jurisdiction","sourceUrl","sourceSha256","versionLabel"],
   gazette_issue:["publicationName","issueNumber","issueDate","sourceUrl","sourceSha256"],
   legal_act:["title","actType","issuer","issueNumber","issueDate","sourceUrl","sourceSha256"],
+  bylaw:["title","actType","issuer","issueNumber","issueDate","sourceUrl","sourceSha256"],
+  rulebook:["title","actType","issuer","issueNumber","issueDate","sourceUrl","sourceSha256"],
+  regulation:["title","actType","issuer","issueNumber","issueDate","sourceUrl","sourceSha256"],
+  instruction:["title","actType","issuer","issueNumber","issueDate","sourceUrl","sourceSha256"],
+  tariff:["title","actType","issuer","issueNumber","issueDate","sourceUrl","sourceSha256"],
+  official_guidance:["title","issuer","jurisdiction","sourceUrl","sourceSha256","sourceDate"],
   legal_article:["instrumentKey","articleNumber","versionLabel","sourceIssueNumber","sourceIssueDate","sourceUrl","sourceSha256"],
   gazette_chunk:["publicationName","issueNumber","issueDate","articleNumber","sourceUrl","textSha256"],
   case_law:["caseIdentity","court","jurisdiction","decisionDate","sourceUrl","authorityReviewStatus"],
@@ -65,8 +71,11 @@ export function assessCanonicalProvenance(provenance){
   }else if(kind==="gazette_issue"){
     requireFields(missing,p,["publicationName","issueNumber","issueDate"]);
     requireOfficialFingerprint(missing,p);
-  }else if(kind==="legal_act" || kind==="bylaw" || kind==="rulebook" || kind==="regulation"){
+  }else if(["legal_act","bylaw","rulebook","regulation","instruction","tariff"].includes(kind)){
     requireFields(missing,p,["title","actType","issuer","issueNumber","issueDate"]);
+    requireOfficialFingerprint(missing,p);
+  }else if(kind==="official_guidance"){
+    requireFields(missing,p,["title","issuer","jurisdiction","sourceDate"]);
     requireOfficialFingerprint(missing,p);
   }else if(kind==="legal_article"){
     requireFields(missing,p,["instrumentKey","articleNumber","versionLabel","sourceIssueNumber","sourceIssueDate"]);
@@ -105,7 +114,7 @@ export function assessCanonicalProvenance(provenance){
     if(p.versionHumanReviewStatus!==undefined && String(p.versionHumanReviewStatus||"")!=="approved"){
       problems.push("current_law_requires_approved_version_gate");
     }
-    if(["legal_act","bylaw","rulebook","regulation","legal_instrument"].includes(kind)){
+    if(["legal_act","bylaw","rulebook","regulation","instruction","tariff","legal_instrument"].includes(kind)){
       if(!present(p.effectiveDate) && !present(p.applicationDate)){
         problems.push("current_law_act_requires_effective_or_application_date");
       }
@@ -122,6 +131,14 @@ export function assessCanonicalProvenance(provenance){
   }
   if(kind==="official_source_record" && p.releaseRole!=="source_registry"){
     problems.push("official_source_record_must_remain_source_registry");
+  }
+  if(["guide","fingerprint_verified_guide","authorial_publication"].includes(kind) && p.currentLawClaim===true){
+    problems.push("secondary_material_cannot_establish_current_law");
+  }
+  if(["bylaw","rulebook","regulation","instruction","tariff"].includes(kind)
+     && p.legalAuthority===true
+     && !["primary_official","official_supporting"].includes(String(p.authorityClass||""))){
+    problems.push("secondary_act_authority_class_invalid");
   }
 
   return {

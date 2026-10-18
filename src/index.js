@@ -110,7 +110,8 @@ import {
   CANONICAL_PROVENANCE_GATE_VERSION,
   CANONICAL_METADATA_STANDARD_VERSION,
   CANONICAL_METADATA_REQUIRED_FIELDS,
-  enforceCanonicalContextProvenance
+  enforceCanonicalContextProvenance,
+  provenanceBlockNotice
 } from "./canonical-provenance-gate.js";
 import {
   OPEN_LEGAL_SOURCE_POLICY_VERSION,
@@ -148,7 +149,7 @@ import {
 } from "./response-quality.js";
 
 const VERSION = "1.9.0";
-const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V4";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V5";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -1599,7 +1600,14 @@ async function handleCaseWorkspaceApi(request,env,url){
       governedCaseLawContext(env,lawQuery,initialPlan,{limit:6}),
       governedGazetteChunkContext(env,lawQuery)
     ]);
-    const legalContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context];
+    const rawLegalContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context];
+    const privateLegalProvenanceGate=enforceCanonicalContextProvenance(rawLegalContext);
+    const privateLegalBlockedNotice=provenanceBlockNotice(privateLegalProvenanceGate.blocked);
+    const legalContext=privateLegalBlockedNotice
+      ? [...privateLegalProvenanceGate.context,privateLegalBlockedNotice]
+      : privateLegalProvenanceGate.context;
+    // Private factual evidence stays outside the legal-authority gate; only the
+    // legal source layer is eligible for authority and is revalidated here.
     const corpusContext=[...privateContexts,...legalContext];
     const result=paidCaseProviderReady
       ? await runOpenAIOrchestrator(env,{
@@ -1748,12 +1756,20 @@ async function handleCaseWorkspaceApi(request,env,url){
       governedCaseLawContext(env,lawQuery,plan,{limit:6}),
       governedGazetteChunkContext(env,lawQuery)
     ]);
-    const corpusContext=[
-      ...privateContexts,
-      {source:"PRIVATE_CASE_ANALYSIS",locator:"latest analysis",version:"working",text:analysisText.slice(0,18000)},
+    const rawDraftLegalContext=[
       ...articleBundle.context,
       ...gazetteBundle.context,
       ...caseLawBundle.context
+    ];
+    const draftLegalProvenanceGate=enforceCanonicalContextProvenance(rawDraftLegalContext);
+    const draftLegalBlockedNotice=provenanceBlockNotice(draftLegalProvenanceGate.blocked);
+    const governedDraftLegalContext=draftLegalBlockedNotice
+      ? [...draftLegalProvenanceGate.context,draftLegalBlockedNotice]
+      : draftLegalProvenanceGate.context;
+    const corpusContext=[
+      ...privateContexts,
+      {source:"PRIVATE_CASE_ANALYSIS",locator:"latest analysis",version:"working",text:analysisText.slice(0,18000)},
+      ...governedDraftLegalContext
     ];
     const requestContract=draftRequest({
       caseId,
@@ -4771,7 +4787,14 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   const documentText=converted.documents.map((doc,index)=>
     "[DOCUMENT "+(index+1)+"] "+doc.name+"\n"+doc.text
   ).join("\n\n---\n\n");
-  const governed=freeChatCorpusText(corpusContext);
+  // Defence in depth: provider helpers enforce provenance again even if a caller
+  // already gated the context. No incomplete legal source reaches Workers AI.
+  const runtimeProvenanceGate=enforceCanonicalContextProvenance(corpusContext);
+  const runtimeBlockedNotice=provenanceBlockNotice(runtimeProvenanceGate.blocked);
+  const runtimeCorpusContext=runtimeBlockedNotice
+    ? [...runtimeProvenanceGate.context,runtimeBlockedNotice]
+    : runtimeProvenanceGate.context;
+  const governed=freeChatCorpusText(runtimeCorpusContext);
   const missionProfile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
 
   const fastFreePrompt=missionProfile==="GENERAL_BYPASS" || missionProfile==="L0_INFORMATIONAL";
@@ -4825,13 +4848,17 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     {role:"system",content:system},
     {role:"user",content:user}
   ];
-  const tokenLimit=Math.max(400,Math.min(3200,Number(maxOutputTokens)||1400));
+  // Simple FREE questions must be fast and concise. A short hard cap reduces
+  // latency and also reduces the smaller model's tendency to drift into
+  // overlong pseudo-tables and hybrid morphology.
+  const requestedTokenLimit=Math.max(400,Math.min(3200,Number(maxOutputTokens)||1400));
+  const tokenLimit=fastFreePrompt ? Math.min(650,requestedTokenLimit) : requestedTokenLimit;
   const result=await runWorkersAIText(env,{
     messages,
     maxOutputTokens:tokenLimit,
-    temperature:0.05,
+    temperature:0,
     sessionAffinity,
-    timeoutMs:fastFreePrompt?12000:25000
+    timeoutMs:fastFreePrompt?8000:20000
   });
   if(!result.ok){
     return {
@@ -4886,6 +4913,12 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     formalDraftPostflight:formalDraft,
     languageQualityState:languagePass.releaseVerdict?.verdict==="RELEASE"?"verified_runtime":"failed_closed",
     languageReleaseGate:languagePass.releaseVerdict||null,
+    canonicalProvenanceGate:{
+      version:CANONICAL_PROVENANCE_GATE_VERSION,
+      state:runtimeProvenanceGate.state,
+      released:runtimeProvenanceGate.context.length,
+      blocked:runtimeProvenanceGate.blocked.length
+    },
     convertedDocuments:converted.documents.length,
     webSearchUsed:false,
     sources:[],
@@ -5229,12 +5262,14 @@ async function handleGPTChat(request,env){
     bureauEchrDiscoveryContext(q,{limit:6})
   ]);
 
-  const corpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext];
-  if(uiMode==="library" && corpusContext.length===0){
-    corpusContext.push({
+  const rawCorpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext];
+  if(uiMode==="library" && rawCorpusContext.length===0){
+    rawCorpusContext.push({
+      contextRole:"governance_notice",
       source:"AI Advokat public library",
       locator:"library routing",
       version:"current public catalogue",
+      provenance:{kind:"governance_notice"},
       text:[
         "CORPUS_NOT_SUPPORTED: No matching governed public AI Advokat record was supplied for this question.",
         "Do not silently replace the missing library support with model knowledge.",
@@ -5242,6 +5277,14 @@ async function handleGPTChat(request,env){
       ].join("\n")
     });
   }
+  // Canonical last-mile provenance gate: every legal/quasi-legal item is
+  // revalidated immediately before any provider can see it. This prevents
+  // future retrieval paths from bypassing metadata/version/Human Gate rules.
+  const canonicalContextGate=enforceCanonicalContextProvenance(rawCorpusContext);
+  const blockedNotice=provenanceBlockNotice(canonicalContextGate.blocked);
+  const corpusContext=blockedNotice
+    ? [...canonicalContextGate.context,blockedNotice]
+    : canonicalContextGate.context;
 
   // Explicit Web mode must not be mislabeled as passive_corpus merely because the
   // UI suggested a guide. Article-level Macedonian law remains corpus-first.
@@ -5372,15 +5415,63 @@ async function handleGPTChat(request,env){
     // released only as research/work-product with an explicit Human Gate.
     const freeProfessionalGuard=postflightRequiredForMission;
 
-    const freeResult=await runFreeWorkersAIChat(env,{
-      q,
-      attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
-      history:historyCheck.history,
-      corpusContext,
-      plan,
-      maxOutputTokens,
-      sessionAffinity
-    });
+    // Canonical source-first fast lane: when a simple informational legal
+    // question is already supported by the governed article corpus, do not ask
+    // the smaller FREE model to paraphrase it. This removes avoidable latency
+    // and eliminates a major source of hybrid-language drift.
+    let freeResult=null;
+    const deterministicFreeEligible=
+      missionProfile==="L0_INFORMATIONAL"
+      && articleBundle.state==="matched"
+      && Array.isArray(articleBundle.articles)
+      && articleBundle.articles.length>0
+      && attachmentCheck.attachments.length===0
+      && guideDocumentCheck.attachments.length===0;
+    if(deterministicFreeEligible){
+      const canonicalText=normaliseMacedonianGeneratedText(
+        fallbackAssistantAnswer(q,articleBundle.instrument,articleBundle.articles)
+      );
+      const canonicalRelease=macedonianReleaseVerdict(canonicalText,{userText:q});
+      if(canonicalRelease.verdict==="RELEASE"){
+        freeResult={
+          ok:true,
+          text:canonicalText,
+          model:null,
+          provider:"canonical_corpus_no_model",
+          providerCalls:0,
+          languageRepairProviderCalls:0,
+          latencyMs:0,
+          fastPromptUsed:true,
+          languageStandard:shouldEnforceMacedonianOutput(q)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+          languageRepaired:false,
+          deterministicLanguageCleanup:true,
+          formalDraftPostflight:false,
+          languageQualityState:"verified_runtime",
+          languageReleaseGate:canonicalRelease,
+          canonicalProvenanceGate:{
+            version:CANONICAL_PROVENANCE_GATE_VERSION,
+            state:canonicalContextGate.state,
+            released:canonicalContextGate.context.length,
+            blocked:canonicalContextGate.blocked.length
+          },
+          convertedDocuments:0,
+          conversationPersistence:"browser_session_only_app_no_server_conversation_store",
+          historyItemsUsed:0,
+          contaminatedAssistantHistoryDropped:0
+        };
+      }
+    }
+    if(!freeResult){
+      freeResult=await runFreeWorkersAIChat(env,{
+        q,
+        attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
+        history:historyCheck.history,
+        corpusContext,
+        plan,
+        maxOutputTokens,
+        sessionAffinity
+      });
+    }
 
     if(!freeResult.ok){
       await releaseMonthlyQuota(env,{subject,period});
@@ -5396,15 +5487,17 @@ async function handleGPTChat(request,env){
       },503);
     }
 
-    const freeSourceMode=(attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
-      ? (corpusContext.length ? "workers_ai_free_documents_plus_governed_corpus" : "workers_ai_free_document_analysis")
-      : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
+    const freeSourceMode=freeResult.provider==="canonical_corpus_no_model"
+      ? "canonical_article_corpus_no_model"
+      : (attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
+        ? (corpusContext.length ? "workers_ai_free_documents_plus_governed_corpus" : "workers_ai_free_document_analysis")
+        : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
 
     return json(request,{
       ok:true,
       answer:freeResult.text,
       model:freeResult.model,
-      provider:"workers_ai_free",
+      provider:freeResult.provider||"workers_ai_free",
       providerFallback:fallbackReason ? {
         from:"openai",
         reason:String(fallbackReason),
@@ -5416,7 +5509,7 @@ async function handleGPTChat(request,env){
       historyItemsUsed:freeResult.historyItemsUsed,
       contaminatedAssistantHistoryDropped:freeResult.contaminatedAssistantHistoryDropped||0,
       performance:{
-        providerCalls:freeResult.providerCalls||1,
+        providerCalls:Number(freeResult.providerCalls||0),
         languageRepairProviderCalls:freeResult.languageRepairProviderCalls||0,
         serverLatencyMs:freeResult.latencyMs||null,
         fastPromptUsed:freeResult.fastPromptUsed===true,
@@ -5427,7 +5520,14 @@ async function handleGPTChat(request,env){
         version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
         registeredExternalSources:0,
         unregisteredExternalSources:0,
-        corpusPromotion:"human_gate_required"
+        corpusPromotion:"human_gate_required",
+        canonicalProvenanceGate:{
+          version:CANONICAL_PROVENANCE_GATE_VERSION,
+          metadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
+          state:canonicalContextGate.state,
+          released:canonicalContextGate.context.length,
+          blocked:canonicalContextGate.blocked.length
+        }
       },
       legalSources:articleBundle.legalSources||[],
       caseLawSources:[...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
@@ -5442,7 +5542,7 @@ async function handleGPTChat(request,env){
       guideDocumentFingerprintsVerified:guideDocumentCheck.attachments.length>0,
       webSearchUsed:false,
       mode:plan.mode,
-      displayMode:"free_workers_ai",
+      displayMode:freeResult.provider==="canonical_corpus_no_model" ? "free_canonical_corpus" : "free_workers_ai",
       sourceMode:freeSourceMode,
       corpusContextCount:corpusContext.length,
       articleCorpusContextCount:articleBundle.context.length,
@@ -5458,7 +5558,7 @@ async function handleGPTChat(request,env){
       attachmentsUsed:attachmentCheck.attachments.length,
       totalInputFilesUsed:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
       convertedDocuments:freeResult.convertedDocuments,
-      reasoningEffort:"workers_ai_standard",
+      reasoningEffort:freeResult.provider==="canonical_corpus_no_model" ? "deterministic_source_first" : "workers_ai_standard",
       maxOutputTokens,
       humanGate:"FREE Workers AI is research assistance only. Verify controlling law and primary sources and obtain human professional review before consequential reliance.",
       governanceRunId:lioeRunId,
@@ -5728,7 +5828,14 @@ async function handleGPTChat(request,env){
       version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
       registeredExternalSources:(result.sources||[]).filter(s=>s.registered===true).length,
       unregisteredExternalSources:(result.sources||[]).filter(s=>s.registered!==true).length,
-      corpusPromotion:"human_gate_required"
+      corpusPromotion:"human_gate_required",
+      canonicalProvenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        metadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
+        state:canonicalContextGate.state,
+        released:canonicalContextGate.context.length,
+        blocked:canonicalContextGate.blocked.length
+      }
     },
     legalSources:articleBundle.legalSources || [],
     caseLawSources:[...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
@@ -6465,6 +6572,7 @@ function handleCanonicalMetadataStandard(request){
     ok:true,
     standard:CANONICAL_METADATA_STANDARD_VERSION,
     provenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
+    rootReleaseContract:"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1",
     doctrine:[
       "source_first",
       "metadata_before_ai",
@@ -6661,10 +6769,12 @@ async function handleCapabilities(request, env) {
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
       macedonianReleaseGate:MACEDONIAN_RELEASE_GATE_VERSION,
-      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_fast_one_call_complex_single_repair_v5",
+      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_fast_fail_closed_complex_single_repair_v6",
       macedonianRepairProviderBudget:"fast_free_zero_extra_calls_complex_repairable_max_one_extra_call",
+      freeLatencyPolicy:"simple_turn_650_tokens_8s_provider_timeout_no_second_model_repair",
       canonicalProvenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
       canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
+      canonicalRootReleaseContract:"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1",
       finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
