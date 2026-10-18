@@ -70,11 +70,12 @@ jobs:
           const fs=require("fs");
           const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
           const EXPECTED_FREE_MODEL="@cf/qwen/qwen3-30b-a3b-fp8";
+          const EXPECTED_FREE_FALLBACK_MODEL="@cf/meta/llama-3.3-70b-instruct-fp8-fast";
           const EXPECTED_PAID_MODEL="gpt-6.1-sol";
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
           const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V9";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
-          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V7";
+          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V8";
           const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
           const EXPECTED_FINAL_OUTPUT_GATE="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
 
@@ -98,6 +99,7 @@ jobs:
                   && caps.canonicalFinalOutputGate===EXPECTED_FINAL_OUTPUT_GATE
                   && caps.finalResponseQualityGate===EXPECTED_QUALITY
                   && caps.freeChatModel===EXPECTED_FREE_MODEL
+                  && caps.freeChatFallbackModel===EXPECTED_FREE_FALLBACK_MODEL
                   && caps.freeRuntimePolicy===EXPECTED_FREE_POLICY){
                   console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel+" · "+caps.freeRuntimePolicy);
                   return;
@@ -139,11 +141,21 @@ jobs:
                 throw new Error(label+" OpenAI primary response must not claim fallback "+JSON.stringify(data.providerFallback));
               }
             }else if(data.provider==="workers_ai_free"){
-              if(data.model!==EXPECTED_FREE_MODEL){
+              if(data.model!==EXPECTED_FREE_MODEL && data.model!==EXPECTED_FREE_FALLBACK_MODEL){
                 throw new Error(label+" unexpected Workers AI model "+String(data.model));
               }
+              if(data.model===EXPECTED_FREE_FALLBACK_MODEL){
+                if(!data.modelFallback
+                  || data.modelFallback.from!==EXPECTED_FREE_MODEL
+                  || data.modelFallback.to!==EXPECTED_FREE_FALLBACK_MODEL
+                  || data.modelFallback.reason!=="empty_final_text"){
+                  throw new Error(label+" fallback model provenance missing/invalid "+JSON.stringify(data.modelFallback));
+                }
+              }else if(data.modelFallback){
+                throw new Error(label+" primary Workers AI response must not claim model fallback "+JSON.stringify(data.modelFallback));
+              }
               if(data.providerFallback && data.providerFallback.from!=="openai"){
-                throw new Error(label+" invalid fallback provenance "+JSON.stringify(data.providerFallback));
+                throw new Error(label+" invalid provider fallback provenance "+JSON.stringify(data.providerFallback));
               }
             }else if(data.provider==="canonical_corpus_no_model"){
               if(data.model!==null && data.model!==undefined) throw new Error(label+" deterministic corpus lane must not expose an AI model");
