@@ -69,6 +69,7 @@ jobs:
           const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V7";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
           const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V3";
+          const EXPECTED_WORKERS_CONTRACT="WORKERS_AI_QWEN_VISIBLE_ANSWER_V4";
 
           async function waitForExpectedRuntime(){
             let last=null;
@@ -87,8 +88,9 @@ jobs:
                   && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V1"
                   && caps.finalResponseQualityGate===EXPECTED_QUALITY
                   && caps.freeChatModel===EXPECTED_FREE_MODEL
+                  && caps.workersAIRequestContract===EXPECTED_WORKERS_CONTRACT
                   && caps.freeRuntimePolicy===EXPECTED_FREE_POLICY){
-                  console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel+" · "+caps.freeRuntimePolicy);
+                  console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel+" · "+caps.workersAIRequestContract+" · "+caps.freeRuntimePolicy);
                   return;
                 }
               }catch(error){
