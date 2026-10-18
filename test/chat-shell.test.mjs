@@ -210,6 +210,12 @@ test("CHAT18 production UI status is readiness-driven and model-truthful",()=>{
 });
 
 
+test("CHAT18b runtime publicly exposes canonical metadata standard V2",()=>{
+  assert.match(worker,/\/api\/canonical-metadata-standard/);
+  assert.match(worker,/CANONICAL_METADATA_STANDARD_VERSION/);
+  assert.match(worker,/canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION/);
+});
+
 test("CHAT19 homepage exposes a private Guide Vault without public guide full-text publication",()=>{
   for(const id of ["aiGuideVaultImport","aiGuideVaultClear","aiGuideVaultFiles","aiGuideVaultStatus"]){
     assert.match(html,new RegExp('id="'+id+'"'));
