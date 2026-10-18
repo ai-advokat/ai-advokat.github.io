@@ -106,6 +106,7 @@ import {
   draftRequest
 } from "./case-intelligence.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
+import { findGazetteIssueMetadata, gazetteIssueMetadataToContext } from "./gazette-issue-metadata.js";
 import {
   CANONICAL_PROVENANCE_GATE_VERSION,
   CANONICAL_METADATA_STANDARD_VERSION,
@@ -6362,8 +6363,119 @@ async function handleAssistant(request, env, url) {
 }
 
 async function governedGazetteChunkContext(env,q){
-  const bundle=await findGovernedGazetteChunks(env,q,{limit:6});
-  return {...bundle,context:gazetteChunksToContext(bundle)};
+  const [chunkBundle,issueMetadataBundle]=await Promise.all([
+    findGovernedGazetteChunks(env,q,{limit:6}),
+    findGazetteIssueMetadata(env,q,{limit:6})
+  ]);
+  const chunkContext=gazetteChunksToContext(chunkBundle);
+  const issueMetadataContext=gazetteIssueMetadataToContext(issueMetadataBundle);
+  const context=[...chunkContext,...issueMetadataContext];
+  const state=context.length
+    ? "matched"
+    : (chunkBundle.state==="unavailable" && issueMetadataBundle.state==="unavailable" ? "unavailable" : "no_match");
+  return {
+    state,
+    chunks:chunkBundle.chunks||[],
+    issueMetadata:issueMetadataBundle.issues||[],
+    issueMetadataState:issueMetadataBundle.state,
+    context
+  };
+}
+
+async function handleGazetteIssueIndex(request,env,url){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+
+  const q=cleanQuery(url.searchParams.get("q"),160);
+  const yearRaw=String(url.searchParams.get("year")||"").trim();
+  const type=cleanQuery(url.searchParams.get("type"),120);
+  const rawLimit=Number(url.searchParams.get("limit")||100);
+  const rawOffset=Number(url.searchParams.get("offset")||0);
+  const limit=Number.isFinite(rawLimit)?Math.max(20,Math.min(250,Math.floor(rawLimit))):100;
+  const offset=Number.isFinite(rawOffset)?Math.max(0,Math.min(10000,Math.floor(rawOffset))):0;
+
+  const where=[];
+  const binds=[];
+  if(/^\d{4}$/.test(yearRaw)){
+    where.push("year=?");
+    binds.push(Number(yearRaw));
+  }
+  if(type){
+    where.push("publication_type=?");
+    binds.push(type);
+  }
+  if(q){
+    const nq=q.toLowerCase();
+    const pair=nq.match(/(?:бр\.?|број)?\s*([0-9]{1,4})\s*\/\s*((?:19|20)[0-9]{2})/u);
+    const iso=nq.match(/\b((?:19|20)[0-9]{2}-[01][0-9]-[0-3][0-9])\b/u);
+    if(pair){
+      where.push("issue_number=?");
+      binds.push(pair[1]);
+      where.push("year=?");
+      binds.push(Number(pair[2]));
+    }else if(iso){
+      where.push("issue_date=?");
+      binds.push(iso[1]);
+    }else{
+      where.push("(issue_number LIKE ? OR issue_date LIKE ? OR publication_type LIKE ?)");
+      const like="%"+q+"%";
+      binds.push(like,like,like);
+    }
+  }
+
+  const clause=where.length ? " WHERE "+where.join(" AND ") : "";
+  try{
+    const [rows,total,summary]=await Promise.all([
+      env.DB.prepare(
+        `SELECT publication_type,issue_number,issue_date,year,source_occurrences,
+                source_authority,dataset_id,resource_id,dataset_url,resource_url,snapshot_sha256,
+                source_class,human_review_status,runtime_eligible,legal_text_authority,current_law_authority
+           FROM gazette_issue_metadata${clause}
+          ORDER BY issue_date DESC,publication_type,issue_number
+          LIMIT ? OFFSET ?`
+      ).bind(...binds,limit,offset).all(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM gazette_issue_metadata${clause}`).bind(...binds).first(),
+      env.DB.prepare(
+        `SELECT COUNT(*) AS n,MIN(issue_date) AS first_issue_date,MAX(issue_date) AS last_issue_date,
+                COUNT(DISTINCT year) AS year_count,COUNT(DISTINCT publication_type) AS publication_type_count,
+                SUM(CASE WHEN legal_text_authority=1 THEN 1 ELSE 0 END) AS legal_text_authority_count,
+                SUM(CASE WHEN current_law_authority=1 THEN 1 ELSE 0 END) AS current_law_authority_count
+           FROM gazette_issue_metadata`
+      ).first()
+    ]);
+    return json(request,{
+      ok:true,
+      mode:"official_issue_metadata_index",
+      metadataOnly:true,
+      count:Number(total?.n||0),
+      limit,
+      offset,
+      entries:rows.results||[],
+      coverage:{
+        total:Number(summary?.n||0),
+        firstIssueDate:summary?.first_issue_date||null,
+        lastIssueDate:summary?.last_issue_date||null,
+        years:Number(summary?.year_count||0),
+        publicationTypes:Number(summary?.publication_type_count||0)
+      },
+      authority:{
+        legalTextAuthorityCount:Number(summary?.legal_text_authority_count||0),
+        currentLawAuthorityCount:Number(summary?.current_law_authority_count||0),
+        doctrine:"Овој индекс потврдува само идентитет, датум и тип на издание. Не го докажува текстот на акт, член, влегување во сила или тековно право."
+      },
+      source:{
+        publisher:"ЈП Службен весник на РСМ",
+        datasetUrl:"https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017",
+        resourceUrl:"https://data.gov.mk/dataset/05342c32-f4a6-49c3-b8fa-5a555a6df6ff/resource/9a039791-1abb-411f-bc04-bf136776a83a/download/izdanija-sluzben-vesnik-do-2017.xlsx",
+        snapshotSha256:"4d111eb03ed0b8e877d151e030bf38096831cedc7a26f4a09121d9e6dfac5a18"
+      }
+    });
+  }catch(error){
+    return json(request,{ok:false,error:"gazette_issue_metadata_unavailable",message:String(error?.message||error).slice(0,180)},503);
+  }
 }
 
 async function handleGazetteRegister(request, env, url) {
@@ -6534,7 +6646,8 @@ async function handleGazetteHybridStatus(request,env){
     return json(request,{ok:false,error:"database_not_ready",database},503);
   }
   try{
-    const [issues,acts,articles,chunks,consolidated]=await Promise.all([
+    const [metadataIssues,issues,acts,articles,chunks,consolidated]=await Promise.all([
+      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status IN ('reviewed','approved') THEN 1 ELSE 0 END) AS reviewed FROM gazette_issue_metadata").first(),
       env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_issues").first(),
       env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_acts").first(),
       env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_act_articles").first(),
@@ -6546,6 +6659,8 @@ async function handleGazetteHybridStatus(request,env){
       product:"AI Advokat · Gazette Hybrid Legal Intelligence",
       runtimeConnected:true,
       counts:{
+        officialIssueMetadata:Number(metadataIssues?.n||0),
+        reviewedOfficialIssueMetadata:Number(metadataIssues?.reviewed||0),
         issues:Number(issues?.n||0),
         acts:Number(acts?.n||0),
         articles:Number(articles?.n||0),
@@ -7001,6 +7116,7 @@ export default {
     if (url.pathname === "/api/chat") return handleGPTChat(request, env);
     if (url.pathname === "/api/legal-analyzer/verify") return handleLegalAnalyzerVerify(request, env);
     if (url.pathname === "/api/casepilot/case-law") return handleCasePilotCaseLawResearch(request, env);
+    if (url.pathname === "/api/gazette-issue-index") return handleGazetteIssueIndex(request, env, url);
     if (url.pathname === "/api/gazette-register") return handleGazetteRegister(request, env, url);
     if (url.pathname === "/api/gazette-chunks") return handleGazetteChunks(request, env, url);
     if (url.pathname === "/api/gazette-hybrid-status") return handleGazetteHybridStatus(request, env);
