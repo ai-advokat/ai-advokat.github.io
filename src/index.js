@@ -4857,7 +4857,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   const governed=freeChatCorpusText(runtimeCorpusContext);
   const missionProfile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
   const formalDraftRequest=isFormalLegalDraftRequest(q);
-  const compactFreeDraft=formalDraftRequest && ["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile);
+  const compactFreeDraft=formalDraftRequest;
 
   const fastFreePrompt=missionProfile==="GENERAL_BYPASS" || missionProfile==="L0_INFORMATIONAL";
   const fullFreeExtraRules=[
@@ -5599,6 +5599,8 @@ async function handleGPTChat(request,env){
         languageRepairProviderCalls:freeResult.languageRepairProviderCalls||0,
         serverLatencyMs:freeResult.latencyMs||null,
         fastPromptUsed:freeResult.fastPromptUsed===true,
+        compactDraftUsed:freeResult.compactDraftUsed===true,
+        outputTokenLimit:Number(freeResult.outputTokenLimit||0)||null,
         promptCaching:sessionAffinity?"session_affinity_enabled":"no_session_affinity"
       },
       sources:[],
