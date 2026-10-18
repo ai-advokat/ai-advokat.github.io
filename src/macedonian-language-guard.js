@@ -2,8 +2,8 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V7";
-export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V3";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V8";
+export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V4";
 export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="AI-нацртот не ја помина задолжителната јазична проверка за стандарден македонски јазик и затоа не е објавен. Барањето не е потрошено како валиден одговор; обидете се повторно или наведете го конкретниот закон за source-first анализа.";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
@@ -20,6 +20,7 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "If the user reports that a previous answer was in Bulgarian, Serbian, Russian or another wrong language, treat that report as a hard language correction: regenerate the affected answer in Macedonian from the underlying task and context instead of continuing the contaminated wording.",
   "Treat invented or semantically broken forms such as 'измера' in phrases like 'измера на Република Северна...' as malformed generation, not as a synonym, spelling variant or automatic correction to 'измена'. Rewrite the whole phrase according to its actual context.",
   "Prefer ordinary standard Macedonian words over neighbouring-language calques. For example, use назив rather than наименование, and права и обврски rather than malformed forms such as обврзки/обврЗка.",
+  "The standard Macedonian words обврска and обврски are valid and must not be rejected or rewritten merely because a surrounding model-generated sentence is defective.",
   "If you are uncertain whether a rare or constructed word is standard Macedonian, rewrite the sentence with simpler established Macedonian vocabulary instead of inventing a form.",
   "A Macedonian-facing answer that is predominantly Bulgarian, Serbian or Russian is invalid even if it uses Cyrillic. Cyrillic alone is never evidence that the language requirement was satisfied.",
   "For a North Macedonian legal matter, never substitute Bulgarian, Serbian, Russian or another foreign law unless the user explicitly asks for that jurisdiction and the supplied governed sources support it.",
@@ -75,7 +76,15 @@ const CONTEXTUAL_CONTAMINATION_PHRASES=[
   "заглавие / пресуд",
   "пресудни дела",
   "разбирај. јас ќе",
-  "разбирај! јас ќе"
+  "разбирај! јас ќе",
+  "работни облага",
+  "корпорални документи",
+  "времена за радост",
+  "точнаја деловна",
+  "сочетост со закона",
+  "године власни",
+  "платеное статус",
+  "заарендни записи"
 ];
 
 const FOREIGN_JURISDICTION_PHRASES=[
