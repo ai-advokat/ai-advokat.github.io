@@ -5847,7 +5847,8 @@ async function handleAssistant(request, env, url) {
     },400);
   }
   const retrieval=await findRelevantArticles(env,routing.key,q,6,{date:dateCheck.date});
-  const {instrument,articles}=retrieval;
+  const {instrument}=retrieval;
+  const retrievedArticles=Array.isArray(retrieval.articles)?retrieval.articles:[];
   if(instrument && retrieval.versions && retrieval.reason && retrieval.reason!=="no_articles"){
     return json(request,{
       ok:false,
@@ -5863,7 +5864,7 @@ async function handleAssistant(request, env, url) {
     }
     return json(request,{ok:false,error:"instrument_not_found",message:"Не е утврден релевантен закон во достапниот корпус. Изберете закон од селекторот."},404);
   }
-  if(!articles.length){
+  if(!retrievedArticles.length){
     return json(request,{
       ok:false,
       error:"no_relevant_articles",
@@ -5872,7 +5873,56 @@ async function handleAssistant(request, env, url) {
     },404);
   }
 
-  // 5. Atomic quota reservation. The AI provider is never called without it.
+  // 5. Canonical provenance gate. Complete-but-pending official source text may
+  // remain available for bounded research, but it cannot be promoted to verified
+  // legal authority or current law until Human Gate approval.
+  const version=retrieval.version || null;
+  const versionInfo=summarizeVersion(version);
+  const provenanceCandidates=retrievedArticles.map(article=>({
+    source:"AI Advokat article-level legal corpus · "+instrument.title,
+    locator:"Член "+String(article.articleNumber||""),
+    version:String(versionInfo.label||""),
+    provenance:{
+      kind:"legal_article",
+      sourceIdentity:String(instrument.title||instrument.canonical_key||""),
+      authorityClass:"primary_official",
+      locator:"Член "+String(article.articleNumber||""),
+      releaseRole:["reviewed","approved"].includes(String(article.humanReviewStatus||""))
+        ? "legal_authority"
+        : "research_source_only",
+      legalAuthority:["reviewed","approved"].includes(String(article.humanReviewStatus||"")),
+      humanReviewStatus:String(article.humanReviewStatus||"pending"),
+      versionHumanReviewStatus:String(versionInfo.humanReviewStatus||"pending"),
+      instrumentKey:String(instrument.canonical_key||""),
+      instrumentType:String(instrument.instrument_type||"law"),
+      articleNumber:String(article.articleNumber||""),
+      versionLabel:String(versionInfo.label||""),
+      versionBasis:String(retrieval.versionBasis||""),
+      sourceIssueNumber:String(article.sourceIssueNumber||""),
+      sourceIssueDate:String(article.sourceIssueDate||""),
+      sourceUrl:String(article.sourceUrl||instrument.canonical_source_url||""),
+      sourceSha256:String(article.sourceSha256||""),
+      currentLawClaim:article.publicStatus==="current_verified" && versionInfo.isCurrent===true
+    },
+    text:articleTextForLegalSynthesis(article)
+  }));
+  const sourceProvenanceGate=enforceCanonicalContextProvenance(provenanceCandidates);
+  const releasedArticleNumbers=new Set(sourceProvenanceGate.context.map(item=>String(item?.provenance?.articleNumber||"")).filter(Boolean));
+  const articles=retrievedArticles.filter(article=>releasedArticleNumbers.has(String(article.articleNumber||"")));
+  if(!articles.length){
+    return json(request,{
+      ok:false,
+      error:"source_provenance_incomplete",
+      message:"Пронајдениот правен текст нема доволно комплетни канонски метаподатоци за AI употреба. Потребни се извор, број/датум, locator, fingerprint и Human Gate статус.",
+      provenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:sourceProvenanceGate.state,
+        blocked:sourceProvenanceGate.blocked.length
+      }
+    },409);
+  }
+
+  // 6. Atomic quota reservation. The AI provider is never called without it.
   const period=currentPeriod();
   const reservation=await reserveMonthlyQuota(env,{subject,period,quota});
   if(!reservation.reserved){
@@ -5886,9 +5936,7 @@ async function handleAssistant(request, env, url) {
     },429,{"Retry-After":String(secondsUntilNextMonth())});
   }
 
-  // 6. AI (optional) with strict source-only guard.
-  const version=retrieval.version || null;
-  const versionInfo=summarizeVersion(version);
+  // 7. AI (optional) with strict source-only guard.
   const legalStatusOverlays=legalStatusOverlaysForArticles(
     instrument.canonical_key,
     articles,
@@ -6028,8 +6076,14 @@ async function handleAssistant(request, env, url) {
     legalStatusWarning:warning,
     legalStatusOverlays,
     answerProvenance:{
-      contract:"AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v1",
-      runtimeValidation:"claim_level_citation_and_authority_v1",
+      contract:"AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v2",
+      runtimeValidation:"canonical_source_release_plus_claim_level_citation_and_authority_v2",
+      canonicalProvenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:sourceProvenanceGate.state,
+        released:sourceProvenanceGate.context.length,
+        blocked:sourceProvenanceGate.blocked.length
+      },
       sourceVersionOrDate:version?.version_label || null,
       verificationState:
         versionInfo.isCurrent && versionInfo.humanReviewStatus==="approved"
