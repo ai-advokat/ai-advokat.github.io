@@ -176,7 +176,7 @@ jobs:
           set -euo pipefail
           curl --fail --location --retry 5 --retry-delay 3 "$SOURCE_URL" -o /tmp/gazette.xlsx
           echo "4d111eb03ed0b8e877d151e030bf38096831cedc7a26f4a09121d9e6dfac5a18  /tmp/gazette.xlsx" | sha256sum --check
-          python3 scripts/gazette_open_data_backfill.py --input /tmp/gazette.xlsx --out-dir /tmp/gazette-batches --batch-size 300 | tee /tmp/gazette-build.txt
+          python3 scripts/gazette_open_data_backfill.py --input /tmp/gazette.xlsx --out-dir /tmp/gazette-batches --batch-size 50 | tee /tmp/gazette-build.txt
           python3 - <<'PY'
           import json
           d=json.load(open("/tmp/gazette-batches/summary.json",encoding="utf-8"))
