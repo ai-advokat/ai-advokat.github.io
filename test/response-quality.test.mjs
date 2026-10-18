@@ -4,6 +4,8 @@ import {
   isFormalLegalDraftRequest,
   cleanFormalDraftForExport,
   replaceUngroundedArticleReferences,
+  requestedFormalDraftHeading,
+  ensureRequestedFormalDraftHeading,
   finaliseFormalLegalDraft
 } from "../src/response-quality.js";
 
@@ -72,4 +74,27 @@ test("RQ6 final formal draft is export-ready and authority-safe",()=>{
   });
   assert.match(final,/ТУЖБА/);
   assert.doesNotMatch(final,/###|\*\*|член 77/);
+});
+
+
+test("RQ7 requested formal document type is deterministically restored as the first heading",()=>{
+  assert.equal(requestedFormalDraftHeading("Изработи тужба за надомест на штета."),"ТУЖБА");
+  assert.equal(requestedFormalDraftHeading("Подготви жалба против решението."),"ЖАЛБА");
+  const fixed=ensureRequestedFormalDraftHeading("До Основен граѓански суд\nТужител: [ИМЕ]",{
+    userText:"Изработи тужба за надомест на штета, со измислени податоци."
+  });
+  assert.match(fixed,/^ТУЖБА\n\n/u);
+  const already=ensureRequestedFormalDraftHeading("ТУЖБА\n\nДо судот",{
+    userText:"Изработи тужба."
+  });
+  assert.equal(already,"ТУЖБА\n\nДо судот");
+});
+
+test("RQ8 finaliser never returns a requested lawsuit without a lawsuit heading",()=>{
+  const final=finaliseFormalLegalDraft("Суд за граѓански правни односи\nТужител: [ИМЕ]\nТужен: [ИМЕ]",{
+    userText:"Изработи тужба за надомест на штета, со измислени податоци.",
+    hasGovernedLegalContext:false
+  });
+  assert.match(final,/^ТУЖБА\n\n/u);
+  assert.match(final,/Тужител:/u);
 });
