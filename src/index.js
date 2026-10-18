@@ -146,7 +146,7 @@ import {
 } from "./response-quality.js";
 
 const VERSION = "1.9.0";
-const FREE_RUNTIME_POLICY_VERSION="FREE_MK_FAST_RELEASE_V2";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V3";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -6556,8 +6556,10 @@ async function handleCapabilities(request, env) {
       centralOperatingPrompt:AI_ADVOKAT_CENTRAL_PROMPT_VERSION,
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
-      macedonianRepairPostflight:"deterministic_first_plus_single_workers_ai_repair_v3",
-      macedonianRepairProviderBudget:"max_one_conditional_extra_call_per_free_turn",
+      macedonianReleaseGate:MACEDONIAN_RELEASE_GATE_VERSION,
+      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_single_repair_or_block_v4",
+      macedonianRepairProviderBudget:"severe_block_zero_extra_calls_repairable_max_one_extra_call",
+      canonicalProvenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
       finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
