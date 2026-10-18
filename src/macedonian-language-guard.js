@@ -2,8 +2,8 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V8";
-export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V4";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V9";
+export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V5";
 export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="AI-нацртот не ја помина задолжителната јазична проверка за стандарден македонски јазик и затоа не е објавен. Барањето не е потрошено како валиден одговор; обидете се повторно или наведете го конкретниот закон за source-first анализа.";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
@@ -59,7 +59,10 @@ const MALFORMED_GENERATION_LEXEMES=new Set([
   "помеѓуз","обврзки","непостојно","изминливи","безубедни","разрешни","нешејствена",
   "заклјучување","растирање","навикавајте","оборажување","договоренијатие","нејасноти",
   "испорачивачки","кореспондентност","поатворено","сочетост","банок","биоки","свраним",
-  "почети","одбргува","празнправ","ријекот","саответен","правопризнателството","кадринот","олностон"
+  "почети","одбргува","празнправ","ријекот","саответен","правопризнателството","кадринот","олностон",
+  // Additional malformed / foreign-production forms observed in live FREE output.
+  "облага","описание","премири","задолжености","пластираши","задовољство","оборажувања",
+  "испорачивачки","договоренијатие","платеное","точнаја","власни"
 ]);
 
 // Contextual phrases can be linguistically invalid even when each individual
@@ -84,7 +87,12 @@ const CONTEXTUAL_CONTAMINATION_PHRASES=[
   "сочетост со закона",
   "године власни",
   "платеное статус",
-  "заарендни записи"
+  "заарендни записи",
+  "месечното платено",
+  "тело работникот",
+  "фискална кореспондентност",
+  "земна/мпз",
+  "правопризнателството"
 ];
 
 const FOREIGN_JURISDICTION_PHRASES=[
@@ -186,8 +194,8 @@ export function macedonianReleaseVerdict(text,{userText=""}={}){
   const lines=value.split(/\r?\n/).filter(line=>line.trim()).length;
   const tableLike=(value.match(/[—–|]/g)||[]).length;
   const styleProblems=[];
-  if(simpleDefinition && words.length>180) styleProblems.push("simple_definition_overlong");
-  if(simpleDefinition && (lines>16 || tableLike>10)) styleProblems.push("simple_definition_overstructured");
+  if(simpleDefinition && words.length>120) styleProblems.push("simple_definition_overlong");
+  if(simpleDefinition && (lines>10 || tableLike>6)) styleProblems.push("simple_definition_overstructured");
 
   if(assessment.ok && styleProblems.length===0){
     return {verdict:"RELEASE",severity:"clean",assessment,problems:[],gateVersion:MACEDONIAN_RELEASE_GATE_VERSION};
