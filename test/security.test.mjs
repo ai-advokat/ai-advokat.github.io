@@ -289,6 +289,14 @@ describe("assistant — legal routing safety", () => {
     assert.equal(r.body.citations[0].articleNumber, "12");
   });
 
+  test("A9a exact employment-definition query canonically routes to ZRO", async () => {
+    const { env } = freshEnv();
+    const r = await call(env, assistantRequest("Што е договор за вработување?", { ip: nextIp() }));
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    assert.equal(r.body.instrument.canonicalKey, "mk:zro");
+    assert.ok(r.body.citations.some(c=>["5","12","13"].includes(String(c.articleNumber))));
+  });
+
   // Fixed on main by PR #43 (relevance gate in scoreArticle); kept as a regression test.
   test("A9b a law with no matching article is refused without consuming quota", async () => {
     const { env, raw } = freshEnv();
