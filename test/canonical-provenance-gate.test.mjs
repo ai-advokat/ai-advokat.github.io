@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -195,4 +196,15 @@ test("authorial publication is metadata-rich secondary material, never legal aut
   const bad=assessCanonicalProvenance({...publication,legalAuthority:true,releaseRole:"legal_authority"});
   assert.equal(bad.ok,false);
   assert.ok(bad.problems.includes("authorial_publication_must_remain_secondary_non_authority"));
+});
+
+
+test("repository canonical metadata manifest matches runtime V2 contract",()=>{
+  const manifest=JSON.parse(fs.readFileSync("data/canonical-legal-metadata-standard-v2.json","utf8"));
+  assert.equal(manifest.standard_id,CANONICAL_METADATA_STANDARD_VERSION);
+  for(const kind of ["legal_instrument","gazette_issue","legal_act","bylaw","rulebook","regulation","legal_article","case_law","guide","authorial_publication"]){
+    assert.ok(manifest.applies_to.includes(kind),kind);
+    assert.ok(Array.isArray(manifest.canonical_rules[kind]),kind);
+    assert.ok(manifest.canonical_rules[kind].length>0,kind);
+  }
 });
