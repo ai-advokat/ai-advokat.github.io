@@ -5588,17 +5588,20 @@ async function handleGPTChat(request,env){
   // the 2017 orthography contract. This is deliberately last-mile and fail-closed.
   let governedFinalAnswer=String(finalAnswer||"").trim();
   let governedLanguageQuality=null;
+  let governedLanguageRelease=null;
   const governedLanguageRequired=shouldEnforceMacedonianOutput(q);
   if(governedLanguageRequired){
     governedFinalAnswer=normaliseMacedonianGeneratedText(governedFinalAnswer);
     governedLanguageQuality=assessMacedonianOutput(governedFinalAnswer,{userText:q});
-    if(governedLanguageQuality.ok!==true){
+    governedLanguageRelease=macedonianReleaseVerdict(governedFinalAnswer,{userText:q});
+    if(governedLanguageRelease.verdict!=="RELEASE"){
       await releaseMonthlyQuota(env,{subject,period});
       return json(request,{
         ok:false,
-        error:"macedonian_language_quality_failed",
-        message:"Одговорот не ја помина задолжителната јазична проверка според Правописот на македонскиот јазик (2017) и не е пуштен.",
+        error:"macedonian_release_blocked",
+        message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
         languageStandard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
+        languageReleaseGate:governedLanguageRelease,
         languageReasons:governedLanguageQuality.reasons||[],
         governanceRunId:lioeRunId
       },503);
@@ -5696,6 +5699,7 @@ async function handleGPTChat(request,env){
     providerFallback:null,
     model:result.model,
     languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+    languageReleaseGate:governedLanguageRelease,
     languageQualityState:governedLanguageRequired?"verified_runtime":"not_required",
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,
