@@ -108,6 +108,8 @@ import {
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import {
   CANONICAL_PROVENANCE_GATE_VERSION,
+  CANONICAL_METADATA_STANDARD_VERSION,
+  CANONICAL_METADATA_REQUIRED_FIELDS,
   enforceCanonicalContextProvenance
 } from "./canonical-provenance-gate.js";
 import {
@@ -4631,7 +4633,7 @@ async function convertFreeChatAttachments(env,attachments){
   return {ok:true,documents:bounded,totalChars:total};
 }
 
-async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800,sessionAffinity=null}={}){
+async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800,sessionAffinity=null,allowProviderRepair=true}={}){
   const original=String(text||"");
   if(!shouldEnforceMacedonianOutput(userText)){
     return {
@@ -4683,7 +4685,22 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     };
   }
 
-  // Only a repairable draft receives one targeted repair inference.
+  // Fast/low-risk FREE paths use one provider call maximum. After deterministic
+  // cleanup they either release clean Macedonian or fail closed; they never pay
+  // latency for a second model round and never risk compounding bad language.
+  if(!allowProviderRepair){
+    return {
+      text:current||original,
+      repaired:false,
+      deterministicCleanupApplied,
+      providerCalls:0,
+      languageAssessment:assessment,
+      releaseVerdict:{...releaseVerdict,verdict:"BLOCK",severity:"strict_fast_path"},
+      repairError:"macedonian_fast_path_release_blocked"
+    };
+  }
+
+  // Only a repairable complex draft receives one targeted repair inference.
   const messages=buildMacedonianRepairMessages({text:current,userText});
   const issueNote=[
     "STRICT TARGETED LANGUAGE REPAIR.",
@@ -4829,7 +4846,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     text:result.text,
     userText:q,
     maxOutputTokens:tokenLimit,
-    sessionAffinity
+    sessionAffinity,
+    allowProviderRepair:!fastFreePrompt
   });
   if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
     return {
@@ -6433,8 +6451,31 @@ function handleOpenLegalSourcesPolicy(request){
       specialistPolicyPrompts:"enabled",
       webCitationAnnotation:"enabled",
       verificationPolicyContext:"enabled",
-      corpusPromotion:"separate_human_gate"
+      corpusPromotion:"separate_human_gate",
+      canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION
     }
+  });
+}
+
+function handleCanonicalMetadataStandard(request){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
+  return json(request,{
+    ok:true,
+    standard:CANONICAL_METADATA_STANDARD_VERSION,
+    provenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
+    doctrine:[
+      "source_first",
+      "metadata_before_ai",
+      "exact_identity_and_locator",
+      "version_and_date_explicit",
+      "official_provenance_for_authority",
+      "fingerprint_where_content_is_stored_or_reused",
+      "human_gate_before_authoritative_release",
+      "secondary_material_never_silently_promoted",
+      "current_law_fails_closed_when_version_or_effective_date_is_unresolved"
+    ],
+    requiredFields:CANONICAL_METADATA_REQUIRED_FIELDS,
+    releaseRule:"No source with incomplete canonical metadata may be promoted into authoritative AI context."
   });
 }
 
@@ -6486,6 +6527,7 @@ async function handleOrchestratorArchitecture(request, env) {
       rightsGate:"enabled",
       webCitationAnnotation:"enabled",
       verificationIntegration:"enabled",
+      canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
       regionalComparative:"RS_SI_registered_HR_BA_ME_fail_closed_pending_validation"
     },
     doctrine:{
@@ -6617,9 +6659,10 @@ async function handleCapabilities(request, env) {
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
       macedonianReleaseGate:MACEDONIAN_RELEASE_GATE_VERSION,
-      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_single_repair_or_block_v4",
-      macedonianRepairProviderBudget:"severe_block_zero_extra_calls_repairable_max_one_extra_call",
+      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_fast_one_call_complex_single_repair_v5",
+      macedonianRepairProviderBudget:"fast_free_zero_extra_calls_complex_repairable_max_one_extra_call",
       canonicalProvenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
+      canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
       finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
@@ -6708,6 +6751,7 @@ export default {
     if (url.pathname === "/api/orchestrator/plan") return handleOrchestratorPlan(request, env);
     if (url.pathname === "/api/knowledge-intake-policy") return handleKnowledgeIntakePolicy(request);
     if (url.pathname === "/api/open-legal-sources-policy") return handleOpenLegalSourcesPolicy(request);
+    if (url.pathname === "/api/canonical-metadata-standard") return handleCanonicalMetadataStandard(request);
     if (url.pathname === "/api/professional-workflows") {
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
       return json(request,{ok:true,version:"1.0.0",workflows:listLegalWorkflows(),humanGate:"required"});

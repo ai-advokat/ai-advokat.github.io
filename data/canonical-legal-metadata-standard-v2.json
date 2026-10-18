@@ -1,0 +1,158 @@
+{
+  "schema_version": "2.0",
+  "standard_id": "AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V2",
+  "updated_on": "2026-10-18",
+  "doctrine": [
+    "source_first",
+    "metadata_before_ai",
+    "exact_identity_and_locator",
+    "version_and_date_explicit",
+    "official_provenance_for_authority",
+    "fingerprint_where_content_is_stored_or_reused",
+    "human_gate_before_authoritative_release",
+    "secondary_material_never_silently_promoted",
+    "current_law_fails_closed_when_version_or_effective_date_is_unresolved"
+  ],
+  "applies_to": [
+    "official_source_record",
+    "legal_instrument",
+    "gazette_issue",
+    "legal_act",
+    "bylaw",
+    "rulebook",
+    "regulation",
+    "legal_article",
+    "gazette_chunk",
+    "case_law",
+    "guide",
+    "echr_discovery",
+    "authorial_publication"
+  ],
+  "common_required_fields": [
+    "kind",
+    "sourceIdentity",
+    "authorityClass",
+    "locator",
+    "releaseRole",
+    "humanReviewStatus",
+    "legalAuthority"
+  ],
+  "canonical_rules": {
+    "official_source_record": [
+      "sourceUrl",
+      "jurisdiction",
+      "accessStatus",
+      "reuseStatus",
+      "ingestStatus",
+      "rightsCheckedOn"
+    ],
+    "legal_instrument": [
+      "instrumentKey",
+      "title",
+      "instrumentType",
+      "jurisdiction",
+      "sourceUrl",
+      "sourceSha256",
+      "versionLabel"
+    ],
+    "gazette_issue": [
+      "publicationName",
+      "issueNumber",
+      "issueDate",
+      "sourceUrl",
+      "sourceSha256"
+    ],
+    "legal_act": [
+      "title",
+      "actType",
+      "issuer",
+      "issueNumber",
+      "issueDate",
+      "sourceUrl",
+      "sourceSha256"
+    ],
+    "bylaw": [
+      "title",
+      "actType",
+      "issuer",
+      "issueNumber",
+      "issueDate",
+      "sourceUrl",
+      "sourceSha256"
+    ],
+    "rulebook": [
+      "title",
+      "actType",
+      "issuer",
+      "issueNumber",
+      "issueDate",
+      "sourceUrl",
+      "sourceSha256"
+    ],
+    "regulation": [
+      "title",
+      "actType",
+      "issuer",
+      "issueNumber",
+      "issueDate",
+      "sourceUrl",
+      "sourceSha256"
+    ],
+    "legal_article": [
+      "instrumentKey",
+      "articleNumber",
+      "versionLabel",
+      "sourceIssueNumber",
+      "sourceIssueDate",
+      "sourceUrl",
+      "sourceSha256"
+    ],
+    "gazette_chunk": [
+      "publicationName",
+      "issueNumber",
+      "issueDate",
+      "articleNumber",
+      "sourceUrl",
+      "textSha256"
+    ],
+    "case_law": [
+      "caseIdentity",
+      "court",
+      "jurisdiction",
+      "decisionDate",
+      "sourceUrl",
+      "authorityReviewStatus"
+    ],
+    "guide": [
+      "recordId",
+      "title",
+      "verificationState",
+      "activationState",
+      "fingerprint"
+    ],
+    "echr_discovery": [
+      "recordIdentity",
+      "listingPeriod",
+      "capturedOn",
+      "sourceUrl"
+    ],
+    "authorial_publication": [
+      "title",
+      "author",
+      "publicationState",
+      "publicationDate",
+      "sourceUrl"
+    ]
+  },
+  "current_law_release": {
+    "humanReviewStatus": "approved",
+    "versionHumanReviewStatus": "approved_when_versioned",
+    "requires_effective_or_application_date_for_acts": true,
+    "unresolved_state": "blocked"
+  },
+  "non_authority_classes": {
+    "guide": "secondary_only",
+    "authorial_publication": "secondary_only",
+    "echr_discovery": "discovery_only"
+  }
+}

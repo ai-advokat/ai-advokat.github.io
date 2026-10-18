@@ -192,6 +192,13 @@ test("CHAT17 chat latency optimisations preserve governed routing",()=>{
   assert.match(worker,/Promise\.all\(\[/);
 });
 
+test("CHAT17b fast FREE Macedonian path is one-provider-call fail-closed",()=>{
+  assert.match(worker,/allowProviderRepair:!fastFreePrompt/);
+  assert.match(worker,/if\(!allowProviderRepair\)/);
+  assert.match(worker,/macedonian_fast_path_release_blocked/);
+  assert.match(worker,/fast_free_zero_extra_calls_complex_repairable_max_one_extra_call/);
+});
+
 test("CHAT18 production UI status is readiness-driven and model-truthful",()=>{
   assert.match(html,/Проверка на активниот AI provider\/model/);
   assert.match(html,/FREE режимот користи Workers AI/);
@@ -202,6 +209,12 @@ test("CHAT18 production UI status is readiness-driven and model-truthful",()=>{
   assert.match(chatJs,/FREE Workers AI · /);
 });
 
+
+test("CHAT18b runtime publicly exposes canonical metadata standard V2",()=>{
+  assert.match(worker,/\/api\/canonical-metadata-standard/);
+  assert.match(worker,/CANONICAL_METADATA_STANDARD_VERSION/);
+  assert.match(worker,/canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION/);
+});
 
 test("CHAT19 homepage exposes a private Guide Vault without public guide full-text publication",()=>{
   for(const id of ["aiGuideVaultImport","aiGuideVaultClear","aiGuideVaultFiles","aiGuideVaultStatus"]){
