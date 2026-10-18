@@ -239,4 +239,9 @@ test("canonical root release contract binds metadata and language before AI rele
   for(const kind of ["official_gazette_issue","law","bylaw","rulebook","regulation","instruction","tariff","case_law","guide","ai_response"]){
     assert.ok(contract.covered_materials.includes(kind),kind);
   }
+  for(const surface of ["public_free_chat","public_governed_openai_chat","legacy_source_backed_assistant","private_case_intelligence_analysis","private_case_working_draft"]){
+    assert.ok(contract.runtime_release.last_mile_release_scope.includes(surface),surface);
+  }
+  assert.equal(contract.runtime_release.formatter_bypass,"forbidden");
+  assert.match(contract.runtime_release.final_gate_order,/canonical Macedonian last-mile release gate/);
 });
