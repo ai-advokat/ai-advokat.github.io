@@ -3637,7 +3637,8 @@ function canonicalMacedonianFinalRelease(text,userText){
   };
 }
 
-async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutputTokens=3600,mode="analysis"}={}){\n  const startedAt=Date.now();
+async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutputTokens=3600,mode="analysis"}={}){
+  const startedAt=Date.now();
   if(!freeWorkersAIConfigured(env)) return {ok:false,error:"case_intelligence_provider_not_configured"};
   const context=privateCaseContextText(corpusContext);
   const system=buildAIAdvokatCentralPrompt({
