@@ -32,6 +32,18 @@
   },
   "official_sources": [
     {
+      "kind": "data_gov_official_issue_metadata",
+      "title": "data.gov.mk · ЈП Службен весник на РСМ — Изданија на Службен весник до 2017",
+      "url": "https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017",
+      "resource_url": "https://data.gov.mk/dataset/05342c32-f4a6-49c3-b8fa-5a555a6df6ff/resource/9a039791-1abb-411f-bc04-bf136776a83a/download/izdanija-sluzben-vesnik-do-2017.xlsx",
+      "role": "official_issue_metadata_backbone",
+      "verified_range": "1944-2017",
+      "source_rows": 8651,
+      "canonical_unique_rows_after_exact_dedupe": 8638,
+      "manifest": "data/gazette-open-data-issues-1944-2017.json",
+      "legal_text_authority": false
+    },
+    {
       "kind": "free_issue_archive",
       "title": "ЈП Службен весник — Бесплатен пристап до изданија",
       "url": "https://www.slvesnik.com.mk/besplaten-pristap-do-izdanija.nspx",
@@ -49,19 +61,26 @@
     {
       "from": 1944,
       "to": 1990,
-      "method": "issue_by_issue_official_archive",
-      "register_support": "not_confirmed_as_public_chronological_register",
-      "status": "planned"
+      "method": "official_data_gov_issue_metadata_plus_issue_by_issue_official_archive",
+      "register_support": "official_data_gov_dataset_1944_2017",
+      "status": "official_issue_metadata_backbone_registered_reconciliation_pending"
     },
     {
       "from": 1991,
       "to": 2002,
-      "method": "chronological_register_scan_provenance_then_controlled_extraction",
-      "register_support": "official_public_pdf_registers_image_primary",
-      "status": "source_registered_extraction_pending"
+      "method": "data_gov_issue_metadata_plus_chronological_register_scan_provenance_then_controlled_extraction",
+      "register_support": "official_data_gov_dataset_1944_2017_plus_official_public_pdf_registers",
+      "status": "official_issue_metadata_backbone_registered_act_extraction_pending"
     },
     {
       "from": 2003,
+      "to": 2017,
+      "method": "data_gov_issue_metadata_plus_chronological_register_plus_issue_binding",
+      "register_support": "official_data_gov_dataset_1944_2017_plus_official_public_pdf_registers",
+      "status": "official_issue_metadata_backbone_registered_ready_for_act_reconciliation"
+    },
+    {
+      "from": 2018,
       "to": 2025,
       "method": "chronological_register_plus_issue_binding",
       "register_support": "official_public_pdf_registers_machine_text_candidate",
@@ -83,8 +102,10 @@
     "article_text_publication": "only_if_separately_authorized_and_source-bound",
     "current_law_label_requires_human_gate": true,
     "act_purpose_must_be_source_grounded": true,
-    "unsupported_purpose_inference": false
+    "unsupported_purpose_inference": false,
+    "official_issue_metadata_is_not_legal_text": true,
+    "dataset_bulk_republication_requires_separate_rights_clearance": true
   },
-  "completion_rule": "A year is COMPLETE only when every official issue is accounted for, issue date and source URL are bound, acts are indexed, article-level references are parsed where available, and validation counts reconcile with the official source.",
+  "completion_rule": "A year is COMPLETE only when every official issue is accounted for and reconciled against the strongest available official issue-metadata source, issue date and source URL are bound, acts are indexed, article-level references are parsed where available, and validation counts reconcile with the official source. Issue-level metadata alone never establishes act text, legal effect or current-law status.",
   "provenance_manifest": "data/gazette-annual-registers-1991-2025.json"
 }
