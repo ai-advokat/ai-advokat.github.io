@@ -30,11 +30,11 @@
         "role": "secondary_authorial_knowledge_layer"
       },
       "pdf": {
-        "source_file": "ZKP_Komentar_v6.pdf",
-        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-        "size_bytes": 0,
-        "pages": 1231,
-        "note": "PDF reference was rendered/validated from DOCX; publication PDF is not stored in this registry branch."
+        "source_file": "ZKP_Komentar_v6_AI_ADVOKAT_BRAND_CLEAN_RC.pdf",
+        "sha256": "c2d9a67aa0fcbbdd53bf46a76c79fca3361d549108f0c4232f3eb1e455c96d13",
+        "size_bytes": 14743973,
+        "pages": 1229,
+        "note": "LibreOffice-rendered brand-clean release candidate from the supplied DOCX; not publicly released."
       },
       "scope": "570 членови, вклучително 267-а и 567-а. За секој член се раздвојуваат законски текст, авторски коментар, практична примена, стратегија, грешки, поврзани одредби и работни формулации.",
       "strengths": [
@@ -59,7 +59,12 @@
       "ai_use": "blocked_for_rag_until_commentary_ingest_gate",
       "professional_use": "human_review_required",
       "public_files": false,
-      "brand": "AI Advokat"
+      "brand": "AI Advokat",
+      "brand_clean_candidate": {
+        "docx_sha256": "9c498bda7738e849765b63acbbf762dea1d00caaf05c13f920d4046ae09c82a9",
+        "jsonl_sha256": "41c752759680b35e0f8ff98ab8b6088dd96fbfe69dd04e23147f3be939544c97",
+        "canonical_brand": "AI Advokat"
+      }
     },
     {
       "id": "criminal-procedure-manual-2026",
