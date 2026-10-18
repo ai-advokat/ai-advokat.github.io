@@ -3,10 +3,16 @@
 // Reasoning fields are intentionally never surfaced as user-visible answer text.
 
 export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/qwen/qwen3-30b-a3b-fp8";
+export const WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT="@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 export function resolveWorkersAITextModel(env){
   const model=String(env?.WORKERS_AI_CHAT_MODEL||WORKERS_AI_TEXT_MODEL_DEFAULT).trim();
   return model||WORKERS_AI_TEXT_MODEL_DEFAULT;
+}
+
+export function resolveWorkersAIEmptyFallbackModel(env){
+  const model=String(env?.WORKERS_AI_EMPTY_FALLBACK_MODEL||WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT).trim();
+  return model||WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT;
 }
 
 export function workersAIRequestOptions({
@@ -173,9 +179,9 @@ export async function runWorkersAIText(env,{
   if(!env?.AI || typeof env.AI.run!=="function"){
     return {ok:false,error:"workers_ai_not_configured"};
   }
-  const resolvedModel=String(model||resolveWorkersAITextModel(env));
-  const options=workersAIRequestOptions({
-    model:resolvedModel,
+  const primaryModel=String(model||resolveWorkersAITextModel(env));
+  const primaryOptions=workersAIRequestOptions({
+    model:primaryModel,
     messages,
     maxOutputTokens,
     temperature,
@@ -189,40 +195,57 @@ export async function runWorkersAIText(env,{
     : undefined;
 
   const boundedTimeout=Math.max(3000,Math.min(45000,Number(timeoutMs)||30000));
-  const callOnce=()=>Promise.race([
-    env.AI.run(resolvedModel,options,bindingOptions),
+  const callOnce=(callModel,callOptions)=>Promise.race([
+    env.AI.run(callModel,callOptions,bindingOptions),
     new Promise((_,reject)=>setTimeout(()=>reject(new Error("workers_ai_timeout_"+boundedTimeout)),boundedTimeout))
   ]);
 
   let generated;
   let providerCalls=0;
+  let activeModel=primaryModel;
+  let modelFallback=null;
   try{
     providerCalls+=1;
-    generated=await callOnce();
+    generated=await callOnce(primaryModel,primaryOptions);
   }catch(error){
     const detail=String(error?.message||error).slice(0,240);
     return {
       ok:false,
       error:detail.startsWith("workers_ai_timeout_")?"workers_ai_timeout":"workers_ai_provider_error",
       detail,
-      model:resolvedModel,
+      model:primaryModel,
+      primaryModel,
       providerCalls,
       timeoutMs:boundedTimeout
     };
   }
 
   let text=extractWorkersAIText(generated);
-  let retryReason=null;
 
-  // Qwen/Workers AI can rarely return a syntactically valid provider payload
-  // without any usable final assistant text. Retry exactly once only for that
-  // empty-final condition. Normal responses stay single-call; timeouts and
-  // provider errors are not automatically retried, keeping latency bounded.
+  // Qwen3 is a reasoning model and can occasionally exhaust max_tokens before
+  // producing a final assistant message. Cloudflare's documented Qwen3 schema
+  // exposes no disable-thinking switch. For this exact empty-final condition,
+  // perform one and only one fallback call with a stable non-reasoning
+  // instruction model. Normal responses remain single-call.
   if(!text){
-    retryReason="empty_response";
+    const fallbackModel=resolveWorkersAIEmptyFallbackModel(env);
+    activeModel=fallbackModel;
+    modelFallback={
+      from:primaryModel,
+      to:fallbackModel,
+      reason:"empty_final_text"
+    };
+    const fallbackOptions=workersAIRequestOptions({
+      model:fallbackModel,
+      messages,
+      maxOutputTokens,
+      temperature,
+      responseFormat,
+      reasoningEffort:"low"
+    });
     try{
       providerCalls+=1;
-      generated=await callOnce();
+      generated=await callOnce(fallbackModel,fallbackOptions);
       text=extractWorkersAIText(generated);
     }catch(error){
       const detail=String(error?.message||error).slice(0,240);
@@ -230,10 +253,11 @@ export async function runWorkersAIText(env,{
         ok:false,
         error:detail.startsWith("workers_ai_timeout_")?"workers_ai_timeout":"workers_ai_provider_error",
         detail,
-        model:resolvedModel,
+        model:activeModel,
+        primaryModel,
         providerCalls,
         timeoutMs:boundedTimeout,
-        retryReason
+        modelFallback
       };
     }
   }
@@ -242,10 +266,11 @@ export async function runWorkersAIText(env,{
     return {
       ok:false,
       error:"workers_ai_empty_response",
-      detail:"Workers AI returned no usable final assistant text after one bounded empty-response retry.",
-      model:resolvedModel,
+      detail:"Workers AI returned no usable final assistant text after the single bounded non-reasoning fallback.",
+      model:activeModel,
+      primaryModel,
       providerCalls,
-      retryReason,
+      modelFallback,
       shape:workersAIShapeSummary(generated)
     };
   }
@@ -253,9 +278,10 @@ export async function runWorkersAIText(env,{
   return {
     ok:true,
     text,
-    model:resolvedModel,
+    model:activeModel,
+    primaryModel,
     providerCalls,
-    retryReason,
+    modelFallback,
     timeoutMs:boundedTimeout,
     shape:workersAIShapeSummary(generated)
   };
