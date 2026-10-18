@@ -237,14 +237,14 @@ jobs:
               throw new Error(name+" leaked internal planning text: "+answer.slice(0,500));
             }
             if(name==="draft" && data.provider==="workers_ai_free"){
-    if(data?.performance?.compactDraftUsed!==true){
-      throw new Error("draft did not use compact FREE draft lane: "+JSON.stringify(data.performance));
-    }
-    const cap=Number(data?.performance?.outputTokenLimit||0);
-    if(!Number.isFinite(cap) || cap<400 || cap>1000){
-      throw new Error("draft output token cap invalid: "+JSON.stringify(data.performance));
-    }
-  }
+            if(data?.performance?.compactDraftUsed!==true){
+            throw new Error("draft did not use compact FREE draft lane: "+JSON.stringify(data.performance));
+            }
+            const cap=Number(data?.performance?.outputTokenLimit||0);
+            if(!Number.isFinite(cap) || cap<400 || cap>1000){
+            throw new Error("draft output token cap invalid: "+JSON.stringify(data.performance));
+            }
+            }
   if(name==="employment-definition"){
               if(data.provider==="workers_ai_free" && data?.performance?.fastPromptUsed!==true){
                 throw new Error("employment-definition did not use compact FREE L0 prompt: "+JSON.stringify(data.performance));
