@@ -201,20 +201,20 @@ test("GPTACT13 unified Workers AI provider contract uses the canonical multiling
     temperature:0.1
   });
   assert.deepEqual(options.messages,[{role:"user",content:"test"}]);
-  assert.equal(options.max_completion_tokens,900);
-  assert.equal(options.max_tokens,undefined);
+  assert.equal(options.max_tokens,900);
+  assert.equal(options.max_completion_tokens,undefined);
   assert.equal(options.temperature,0.1);
-  assert.deepEqual(options.chat_template_kwargs,{enable_thinking:false});
-  assert.equal(options.reasoning_effort,null);
+  assert.equal(options.chat_template_kwargs,undefined);
+  assert.equal(options.reasoning_effort,undefined);
   assert.equal(options.max_output_tokens,undefined);
   assert.equal(options.reasoning,undefined);
 });
 
 
 
-test("GPTACT13b GLM FREE chat cannot spend the visible-output budget on hidden thinking",()=>{
+test("GPTACT13b legacy GLM override still disables hidden thinking if explicitly selected",()=>{
   const options=workersAIRequestOptions({
-    model:"@cf/qwen/qwen3-30b-a3b-fp8",
+    model:"@cf/zai-org/glm-4.7-flash",
     messages:[{role:"user",content:"Што е договор за вработување?"}],
     maxOutputTokens:800
   });
