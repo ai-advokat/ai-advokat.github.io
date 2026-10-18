@@ -51,13 +51,6 @@ export function workersAIRequestOptions({
     delete base.max_tokens;
   }
 
-  // Qwen3 is the canonical FREE model: strong multilingual/instruction-following
-  // quality with a small active MoE footprint. Keep visible-answer latency bounded.
-  if(resolved.includes("/qwen3-30b-a3b-fp8")){
-    base.chat_template_kwargs={enable_thinking:false};
-    base.max_completion_tokens=maxTokens;
-    delete base.max_tokens;
-  }
 
   // Gemma reasoning must be explicitly disabled when this model is selected.
   if(resolved.includes("/gemma-4-")){
