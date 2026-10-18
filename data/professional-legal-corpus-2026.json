@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "corpus_id": "AI_ADVOKAT_PROFESSIONAL_LEGAL_CORPUS_2026",
-  "generated_on": "2026-10-03",
+  "generated_on": "2026-10-19",
   "doctrine": [
     "source_first",
     "version_aware",
@@ -80,6 +80,23 @@
           "id": "last-set-family-law",
           "lane": "legal_source_review",
           "epistemic_status": "pending_verification"
+        }
+      ]
+    },
+    {
+      "id": "zkp_commentary_v6_2026",
+      "kind": "authorial_legal_commentary",
+      "count": 1,
+      "items": [
+        {
+          "id": "zkp-commentary-v6-2026",
+          "lane": "author_approved_candidate",
+          "epistemic_status": "verified_historical",
+          "verification_date": "2026-10-18",
+          "content_role": "authorial_analysis",
+          "primary_law_dependency": "mk:zkp",
+          "record_count": 570,
+          "rag_status": "separate_human_gate_required"
         }
       ]
     }
