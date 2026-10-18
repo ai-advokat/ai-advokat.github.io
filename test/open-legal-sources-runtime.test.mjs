@@ -40,6 +40,7 @@ test("URL classification recognises registered hosts and subdomains",()=>{
   assert.equal(classifyOpenLegalSource("https://www.sud.mk/example")?.id,"mk-judicial-portal");
   assert.equal(classifyOpenLegalSource("https://eur-lex.europa.eu/legal-content/EN/TXT/")?.id,"eu-eurlex");
   assert.equal(classifyOpenLegalSource("https://fp.pravno-informacioni-sistem.rs/example")?.id,"rs-pravno-informacioni-sistem");
+  assert.equal(classifyOpenLegalSource("https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017")?.id,"mk-official-gazette-data-gov-2017");
   assert.equal(classifyOpenLegalSource("https://example.com/not-registered"),null);
 });
 
@@ -68,6 +69,7 @@ test("rights gate separates citation, metadata, full text and corpus promotion",
   const crossref=classifyOpenLegalSource("https://www.crossref.org/");
   const zenodo=classifyOpenLegalSource("https://zenodo.org/");
   const ldbis=classifyOpenLegalSource("https://ldbis.pravda.gov.mk/");
+  const gazetteData=classifyOpenLegalSource("https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017");
 
   assert.equal(rightsGateForSource(eurlex,{operation:"research_citation"}).allowed,true);
   assert.equal(rightsGateForSource(eurlex,{operation:"fulltext_ingest"}).allowed,true);
@@ -77,6 +79,9 @@ test("rights gate separates citation, metadata, full text and corpus promotion",
   assert.equal(rightsGateForSource(zenodo,{operation:"fulltext_ingest",recordLicense:"CC-BY-4.0"}).allowed,true);
   assert.equal(rightsGateForSource(ldbis,{operation:"fulltext_ingest"}).allowed,false);
   assert.equal(rightsGateForSource(ldbis,{operation:"corpus_promotion"}).allowed,false);
+  assert.equal(rightsGateForSource(gazetteData,{operation:"metadata_ingest"}).allowed,true);
+  assert.equal(rightsGateForSource(gazetteData,{operation:"fulltext_ingest"}).allowed,false);
+  assert.equal(rightsGateForSource(gazetteData,{operation:"corpus_promotion"}).allowed,false);
 });
 
 test("external citations receive source-policy annotations",()=>{
@@ -108,10 +113,10 @@ test("specialist prompts carry the Open Legal Sources doctrine",()=>{
 
 test("public directory and summary expose bounded policy state",()=>{
   const directory=publicOpenLegalSourceDirectory();
-  assert.equal(directory.length,15);
+  assert.equal(directory.length,16);
   assert.ok(directory.every(x=>x.id&&x.url&&x.reuseStatus&&x.ingestStatus));
   const summary=openLegalSourcePolicySummary();
-  assert.equal(summary.sourceCount,15);
+  assert.equal(summary.sourceCount,16);
   assert.equal(summary.doctrine,"PUBLIC != REUSABLE");
 });
 

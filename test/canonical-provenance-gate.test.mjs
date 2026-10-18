@@ -236,12 +236,13 @@ test("canonical root release contract binds metadata and language before AI rele
   assert.equal(contract.contract_id,"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1");
   assert.ok(contract.doctrine.includes("metadata_before_ai"));
   assert.ok(contract.doctrine.includes("macedonian_2017_before_release"));
-  for(const kind of ["official_gazette_issue","law","bylaw","rulebook","regulation","instruction","tariff","case_law","guide","ai_response"]){
+  for(const kind of ["official_source_record","official_open_data_dataset","official_gazette_issue","law","bylaw","rulebook","regulation","instruction","tariff","case_law","guide","ai_response"]){
     assert.ok(contract.covered_materials.includes(kind),kind);
   }
   for(const surface of ["public_free_chat","public_governed_openai_chat","legacy_source_backed_assistant","private_case_intelligence_analysis","private_case_working_draft"]){
     assert.ok(contract.runtime_release.last_mile_release_scope.includes(surface),surface);
   }
+  assert.match(contract.canonical_metadata.official_open_data_dataset_rule,/never establishes the legal text|never establishes/i);
   assert.equal(contract.runtime_release.formatter_bypass,"forbidden");
   assert.match(contract.runtime_release.final_gate_order,/canonical Macedonian last-mile release gate/);
 });
