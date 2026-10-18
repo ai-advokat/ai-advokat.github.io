@@ -182,8 +182,8 @@
     .nav{
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      gap:22px;
+      justify-content:flex-start;
+      gap:18px;
       min-height:76px
     }
 
@@ -226,14 +226,33 @@
 
     .links{
       display:flex;
-      gap:18px;
+      flex:1 1 auto;
+      flex-wrap:wrap;
+      justify-content:flex-start;
+      gap:4px 16px;
       align-items:center;
-      font-size:.93rem
+      align-content:center;
+      font-size:.92rem;
+      font-weight:750;
+      line-height:1.15
     }
 
     .links a{
       padding:9px 0;
-      border-bottom:2px solid transparent
+      border-bottom:2px solid transparent;
+      font-size:inherit;
+      font-weight:inherit;
+      white-space:nowrap
+    }
+
+    @media (min-width:1021px){
+      .header .container.nav{
+        width:calc(100% - 24px);
+        max-width:none;
+        margin-left:12px;
+        margin-right:12px;
+        padding:7px 0
+      }
     }
 
     .links a:hover{border-bottom-color:var(--gold)}
@@ -1136,9 +1155,6 @@
       <a href="/academy/" data-i18n="navAcademy">Academy</a>
       <a href="/summit/" data-i18n="navSummit">Summit</a>
       <a href="/partners/" data-i18n="navPartners">Партнерства</a>
-      <a href="/academy/" data-i18n="navAcademy">Academy</a>
-      <a href="/summit/" data-i18n="navSummit">Summit</a>
-      <a href="/partners/" data-i18n="navPartners">Партнерства</a>
       <a href="/membership.html" data-i18n="navMembership">Членство</a>
       <a href="#about" data-i18n="navAbout">За порталот</a>
     </nav>
@@ -1166,6 +1182,9 @@
       <a href="/governance.html" data-i18n="navGovernance">Проверливост</a>
       <a href="#publications" data-i18n="navPublications">Трудови</a>
       <a href="#author" data-i18n="navAuthor">Автор</a>
+      <a href="/academy/" data-i18n="navAcademy">Academy</a>
+      <a href="/summit/" data-i18n="navSummit">Summit</a>
+      <a href="/partners/" data-i18n="navPartners">Партнерства</a>
       <a href="/membership.html" data-i18n="navMembership">Членство</a>
       <a href="#about" data-i18n="navAbout">За порталот</a>
     </div>
