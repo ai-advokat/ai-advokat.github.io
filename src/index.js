@@ -150,6 +150,7 @@ import {
 
 const VERSION = "1.9.0";
 const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V5";
+const CANONICAL_FINAL_OUTPUT_GATE_VERSION="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -6657,6 +6658,7 @@ function handleCanonicalMetadataStandard(request){
     standard:CANONICAL_METADATA_STANDARD_VERSION,
     provenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
     rootReleaseContract:"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1",
+    finalOutputGate:CANONICAL_FINAL_OUTPUT_GATE_VERSION,
     doctrine:[
       "source_first",
       "metadata_before_ai",
@@ -6859,6 +6861,7 @@ async function handleCapabilities(request, env) {
       canonicalProvenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
       canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
       canonicalRootReleaseContract:"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1",
+      canonicalFinalOutputGate:CANONICAL_FINAL_OUTPUT_GATE_VERSION,
       finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
