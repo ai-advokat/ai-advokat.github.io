@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { workersAIRequestOptions } from "../src/workers-ai-provider.js";
+import { WORKERS_AI_PROVIDER_CONTRACT_VERSION, workersAIRequestOptions } from "../src/workers-ai-provider.js";
 
 test("WAP1 Qwen uses only documented synchronous chat parameters",()=>{
   const options=workersAIRequestOptions({
@@ -31,4 +31,13 @@ test("WAP3 Qwen contract does not reintroduce undocumented template kwargs",()=>
   const provider=fs.readFileSync("src/workers-ai-provider.js","utf8");
   const qwenBlock=provider.slice(provider.indexOf("Qwen3 uses the documented"),provider.indexOf("// Legacy GLM"));
   assert.doesNotMatch(qwenBlock,/chat_template_kwargs\s*=/);
+});
+
+
+test("WAP4 provider contract version is explicit and capability-bound",()=>{
+  assert.equal(WORKERS_AI_PROVIDER_CONTRACT_VERSION,"WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT");
+  const worker=fs.readFileSync("src/index.js","utf8");
+  const workflow=fs.readFileSync(".github/workflows/free-runtime-live-uat.yml","utf8");
+  assert.match(worker,/freeProviderContract:WORKERS_AI_PROVIDER_CONTRACT_VERSION/);
+  assert.match(workflow,/caps\.freeProviderContract===EXPECTED_FREE_PROVIDER_CONTRACT/);
 });
