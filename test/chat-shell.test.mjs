@@ -574,3 +574,11 @@ test("CHAT canonical Macedonian release block is surfaced directly without fallb
   assert.match(chatJs,/Macedonian Release Gate · BLOCK/);
   assert.match(chatJs,/Расипаниот AI-нацрт е блокиран пред објавување/);
 });
+
+
+test("CHAT canonical FREE formal drafts always use and expose the compact latency contract",()=>{
+  assert.match(worker,/const compactFreeDraft=formalDraftRequest;/);
+  assert.match(worker,/compactDraftUsed:freeResult\.compactDraftUsed===true/);
+  assert.match(worker,/outputTokenLimit:Number\(freeResult\.outputTokenLimit\|\|0\)\|\|null/);
+  assert.match(worker,/compactFreeDraft\s*\? Math\.min\(1000,requestedTokenLimit\)/);
+});
