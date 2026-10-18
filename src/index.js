@@ -6474,7 +6474,7 @@ async function handleGazetteIssueIndex(request,env,url){
       }
     });
   }catch(error){
-    return json(request,{ok:false,error:"gazette_issue_metadata_unavailable",message:String(error?.message||error).slice(0,180)},503);
+    return json(request,{ok:false,error:"gazette_register_unavailable",message:String(error?.message||error).slice(0,180)},503);
   }
 }
 
