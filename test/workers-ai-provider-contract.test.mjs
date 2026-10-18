@@ -17,13 +17,13 @@ test("WAP1 Qwen uses only documented synchronous chat parameters",()=>{
   assert.equal("reasoning_effort" in options,false);
 });
 
-test("WAP2 provider contract has bounded timeout and FREE fast path passes 12s",()=>{
+test("WAP2 provider contract has bounded timeout and canonical FREE fast path uses 8s",()=>{
   const provider=fs.readFileSync("src/workers-ai-provider.js","utf8");
   const worker=fs.readFileSync("src/index.js","utf8");
   assert.match(provider,/timeoutMs=30000/);
   assert.match(provider,/Promise\.race\(/);
   assert.match(provider,/workers_ai_timeout/);
-  assert.match(worker,/timeoutMs:fastFreePrompt\?12000:25000/);
+  assert.match(worker,/timeoutMs:fastFreePrompt\?8000:20000/);
   assert.match(worker,/timeoutMs:12000/);
 });
 
