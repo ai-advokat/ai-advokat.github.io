@@ -110,7 +110,8 @@ import {
   CANONICAL_PROVENANCE_GATE_VERSION,
   CANONICAL_METADATA_STANDARD_VERSION,
   CANONICAL_METADATA_REQUIRED_FIELDS,
-  enforceCanonicalContextProvenance
+  enforceCanonicalContextProvenance,
+  provenanceBlockNotice
 } from "./canonical-provenance-gate.js";
 import {
   OPEN_LEGAL_SOURCE_POLICY_VERSION,
@@ -148,7 +149,7 @@ import {
 } from "./response-quality.js";
 
 const VERSION = "1.9.0";
-const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V4";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V5";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -4771,7 +4772,14 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   const documentText=converted.documents.map((doc,index)=>
     "[DOCUMENT "+(index+1)+"] "+doc.name+"\n"+doc.text
   ).join("\n\n---\n\n");
-  const governed=freeChatCorpusText(corpusContext);
+  // Defence in depth: provider helpers enforce provenance again even if a caller
+  // already gated the context. No incomplete legal source reaches Workers AI.
+  const runtimeProvenanceGate=enforceCanonicalContextProvenance(corpusContext);
+  const runtimeBlockedNotice=provenanceBlockNotice(runtimeProvenanceGate.blocked);
+  const runtimeCorpusContext=runtimeBlockedNotice
+    ? [...runtimeProvenanceGate.context,runtimeBlockedNotice]
+    : runtimeProvenanceGate.context;
+  const governed=freeChatCorpusText(runtimeCorpusContext);
   const missionProfile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
 
   const fastFreePrompt=missionProfile==="GENERAL_BYPASS" || missionProfile==="L0_INFORMATIONAL";
@@ -4825,13 +4833,17 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     {role:"system",content:system},
     {role:"user",content:user}
   ];
-  const tokenLimit=Math.max(400,Math.min(3200,Number(maxOutputTokens)||1400));
+  // Simple FREE questions must be fast and concise. A short hard cap reduces
+  // latency and also reduces the smaller model's tendency to drift into
+  // overlong pseudo-tables and hybrid morphology.
+  const requestedTokenLimit=Math.max(400,Math.min(3200,Number(maxOutputTokens)||1400));
+  const tokenLimit=fastFreePrompt ? Math.min(650,requestedTokenLimit) : requestedTokenLimit;
   const result=await runWorkersAIText(env,{
     messages,
     maxOutputTokens:tokenLimit,
-    temperature:0.05,
+    temperature:0,
     sessionAffinity,
-    timeoutMs:fastFreePrompt?12000:25000
+    timeoutMs:fastFreePrompt?8000:20000
   });
   if(!result.ok){
     return {
@@ -4886,6 +4898,12 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     formalDraftPostflight:formalDraft,
     languageQualityState:languagePass.releaseVerdict?.verdict==="RELEASE"?"verified_runtime":"failed_closed",
     languageReleaseGate:languagePass.releaseVerdict||null,
+    canonicalProvenanceGate:{
+      version:CANONICAL_PROVENANCE_GATE_VERSION,
+      state:runtimeProvenanceGate.state,
+      released:runtimeProvenanceGate.context.length,
+      blocked:runtimeProvenanceGate.blocked.length
+    },
     convertedDocuments:converted.documents.length,
     webSearchUsed:false,
     sources:[],
@@ -5229,12 +5247,14 @@ async function handleGPTChat(request,env){
     bureauEchrDiscoveryContext(q,{limit:6})
   ]);
 
-  const corpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext];
-  if(uiMode==="library" && corpusContext.length===0){
-    corpusContext.push({
+  const rawCorpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext];
+  if(uiMode==="library" && rawCorpusContext.length===0){
+    rawCorpusContext.push({
+      contextRole:"governance_notice",
       source:"AI Advokat public library",
       locator:"library routing",
       version:"current public catalogue",
+      provenance:{kind:"governance_notice"},
       text:[
         "CORPUS_NOT_SUPPORTED: No matching governed public AI Advokat record was supplied for this question.",
         "Do not silently replace the missing library support with model knowledge.",
@@ -5242,6 +5262,14 @@ async function handleGPTChat(request,env){
       ].join("\n")
     });
   }
+  // Canonical last-mile provenance gate: every legal/quasi-legal item is
+  // revalidated immediately before any provider can see it. This prevents
+  // future retrieval paths from bypassing metadata/version/Human Gate rules.
+  const canonicalContextGate=enforceCanonicalContextProvenance(rawCorpusContext);
+  const blockedNotice=provenanceBlockNotice(canonicalContextGate.blocked);
+  const corpusContext=blockedNotice
+    ? [...canonicalContextGate.context,blockedNotice]
+    : canonicalContextGate.context;
 
   // Explicit Web mode must not be mislabeled as passive_corpus merely because the
   // UI suggested a guide. Article-level Macedonian law remains corpus-first.
@@ -5728,7 +5756,14 @@ async function handleGPTChat(request,env){
       version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
       registeredExternalSources:(result.sources||[]).filter(s=>s.registered===true).length,
       unregisteredExternalSources:(result.sources||[]).filter(s=>s.registered!==true).length,
-      corpusPromotion:"human_gate_required"
+      corpusPromotion:"human_gate_required",
+      canonicalProvenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        metadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
+        state:canonicalContextGate.state,
+        released:canonicalContextGate.context.length,
+        blocked:canonicalContextGate.blocked.length
+      }
     },
     legalSources:articleBundle.legalSources || [],
     caseLawSources:[...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
@@ -6661,8 +6696,9 @@ async function handleCapabilities(request, env) {
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
       macedonianReleaseGate:MACEDONIAN_RELEASE_GATE_VERSION,
-      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_fast_one_call_complex_single_repair_v5",
+      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_fast_fail_closed_complex_single_repair_v6",
       macedonianRepairProviderBudget:"fast_free_zero_extra_calls_complex_repairable_max_one_extra_call",
+      freeLatencyPolicy:"simple_turn_650_tokens_8s_provider_timeout_no_second_model_repair",
       canonicalProvenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
       canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
       finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
