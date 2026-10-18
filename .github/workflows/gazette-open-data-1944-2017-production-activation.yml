@@ -108,7 +108,69 @@ jobs:
           set -euo pipefail
           npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/gazette-open-data-pending.txt
           found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/gazette-open-data-pending.txt | sort -u || true)"
-          unexpected="$(printf '%s\n' "$found" | grep -Ev '^(0045_case_private_d1_object_store|0046_gazette_open_data_1944_2017|0047_gazette_issue_metadata_backfill_1944_2017)\.sql
+          unexpected="$(printf '%s\\n' "$found" | grep -Ev '^(0045_case_private_d1_object_store|0046_gazette_open_data_1944_2017|0047_gazette_issue_metadata_backfill_1944_2017)\\.sql$' | sed '/^$/d' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected pending migrations:"
+            echo "$unexpected"
+            exit 1
+          fi
+          if printf '%s\\n' "$found" | grep -q '^0045_case_private_d1_object_store\\.sql$'; then
+            touch /tmp/gazette-0045-was-pending
+            echo "0045 is pending and explicitly quarantined from this activation."
+          fi
+          echo "GLOBAL PENDING MIGRATION GUARD: PASS"
+
+      - name: Build Gazette-only Wrangler migration scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp-gazette-migrations .tmp-wrangler-gazette.jsonc
+          mkdir -p .tmp-gazette-migrations
+          cp migrations/0046_gazette_open_data_1944_2017.sql .tmp-gazette-migrations/
+          cp migrations/0047_gazette_issue_metadata_backfill_1944_2017.sql .tmp-gazette-migrations/
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(!d || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected D1 target");
+          d.migrations_dir=".tmp-gazette-migrations";
+          delete d.migrations_pattern;
+          fs.writeFileSync(".tmp-wrangler-gazette.jsonc",JSON.stringify(c,null,2)+"\\n");
+          NODE
+          npx wrangler d1 migrations list DB --remote --config .tmp-wrangler-gazette.jsonc | tee /tmp/gazette-scoped-pending.txt
+          scoped="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\\.sql' /tmp/gazette-scoped-pending.txt | sort -u || true)"
+          invalid="$(printf '%s\\n' "$scoped" | grep -Ev '^(0046_gazette_open_data_1944_2017|0047_gazette_issue_metadata_backfill_1944_2017)\\.sql$' | sed '/^$/d' || true)"
+          if [ -n "$invalid" ]; then
+            echo "Gazette-only scope unexpectedly contains:"
+            echo "$invalid"
+            exit 1
+          fi
+          echo "GAZETTE-ONLY MIGRATION SCOPE: PASS"
+
+      - name: Apply only Gazette metadata migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq '0046_gazette_open_data_1944_2017\\.sql|0047_gazette_issue_metadata_backfill_1944_2017\\.sql' /tmp/gazette-scoped-pending.txt; then
+            npx wrangler d1 migrations apply DB --remote --config .tmp-wrangler-gazette.jsonc | tee /tmp/gazette-open-data-apply.txt
+          else
+            echo "Gazette migrations already applied." | tee /tmp/gazette-open-data-apply.txt
+          fi
+
+      - name: Verify Gazette migrations applied and 0045 remains quarantined
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/gazette-open-data-pending-after.txt
+          if grep -Eq '0046_gazette_open_data_1944_2017\\.sql|0047_gazette_issue_metadata_backfill_1944_2017\\.sql' /tmp/gazette-open-data-pending-after.txt; then
+            echo "Gazette migration remains pending after scoped apply."
+            exit 1
+          fi
+          if [ -f /tmp/gazette-0045-was-pending ] && ! grep -q '0045_case_private_d1_object_store\\.sql' /tmp/gazette-open-data-pending-after.txt; then
+            echo "0045 was applied even though this activation did not authorize it."
+            exit 1
+          fi
+          echo "SCOPED MIGRATION ISOLATION: PASS"
       - name: Download exact official XLSX snapshot
         shell: bash
         run: |
