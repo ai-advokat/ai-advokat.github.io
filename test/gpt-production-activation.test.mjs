@@ -204,7 +204,7 @@ test("GPTACT13 unified Workers AI provider contract uses the canonical multiling
   assert.equal(options.max_tokens,900);
   assert.equal(options.max_completion_tokens,undefined);
   assert.equal(options.temperature,0.1);
-  assert.equal(options.chat_template_kwargs,undefined);
+  assert.deepEqual(options.chat_template_kwargs,{enable_thinking:false});
   assert.equal(options.reasoning_effort,undefined);
   assert.equal(options.max_output_tokens,undefined);
   assert.equal(options.reasoning,undefined);
@@ -227,6 +227,11 @@ test("GPTACT13b legacy GLM override still disables hidden thinking if explicitly
 test("GPTACT14 Workers AI response extraction accepts only final answer shapes and never reasoning items",()=>{
   assert.equal(extractWorkersAIText({response:"Здраво"}),"Здраво");
   assert.equal(extractWorkersAIText({choices:[{message:{content:"Одговор"}}]}),"Одговор");
+  assert.equal(extractWorkersAIText({choices:[{message:{content:{type:"text",text:"Краен одговор"}}}]}),"Краен одговор");
+  assert.equal(extractWorkersAIText({choices:[{message:{content:[
+    {type:"reasoning",text:"скриено"},
+    {type:"text",text:"Видлив одговор"}
+  ]}}]}),"Видлив одговор");
   assert.equal(extractWorkersAIText({
     output:[
       {type:"reasoning",content:[{type:"summary_text",text:"Need answer in Macedonian"}]},
