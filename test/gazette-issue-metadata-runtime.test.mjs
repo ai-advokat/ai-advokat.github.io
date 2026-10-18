@@ -51,7 +51,7 @@ test("GIM3 metadata scoring prefers exact issue/date without creating legal auth
 test("GIM4 production worker exposes read-only issue index and bot metadata lane",()=>{
   assert.match(worker,/handleGazetteIssueIndex/);
   assert.match(worker,/\/api\/gazette-issue-index/);
-  assert.match(worker,/governedGazetteIssueMetadataContext/);
+  assert.match(worker,/findGazetteIssueMetadata\(env,q/);
   assert.match(worker,/gazetteIssueMetadataBundle\.context/);
 });
 
