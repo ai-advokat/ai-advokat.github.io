@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { openAIOrchestratorConfigured, orchestratorRuntimeReadiness } from "../src/agent-orchestrator.js";
 import {
   WORKERS_AI_TEXT_MODEL_DEFAULT,
+  WORKERS_AI_REQUEST_CONTRACT_VERSION,
   workersAIRequestOptions,
   extractWorkersAIText,
   runWorkersAIText
@@ -194,13 +195,18 @@ test("GPTACT12 fallback document prompt still treats extracted body as content a
 
 test("GPTACT13 unified Workers AI provider contract uses the canonical multilingual production model",()=>{
   assert.equal(WORKERS_AI_TEXT_MODEL_DEFAULT,"@cf/qwen/qwen3-30b-a3b-fp8");
+  assert.equal(WORKERS_AI_REQUEST_CONTRACT_VERSION,"WORKERS_AI_QWEN_VISIBLE_ANSWER_V4");
+  const originalMessages=[{role:"user",content:"test"}];
   const options=workersAIRequestOptions({
     model:WORKERS_AI_TEXT_MODEL_DEFAULT,
-    messages:[{role:"user",content:"test"}],
+    messages:originalMessages,
     maxOutputTokens:900,
     temperature:0.1
   });
-  assert.deepEqual(options.messages,[{role:"user",content:"test"}]);
+  assert.equal(options.messages.length,1);
+  assert.equal(options.messages[0].role,"user");
+  assert.match(options.messages[0].content,/test[\s\S]*\/no_think$/);
+  assert.deepEqual(originalMessages,[{role:"user",content:"test"}],"request hardening must not mutate caller history");
   assert.equal(options.max_tokens,900);
   assert.equal(options.max_completion_tokens,undefined);
   assert.equal(options.temperature,0.1);
@@ -227,6 +233,9 @@ test("GPTACT13b legacy GLM override still disables hidden thinking if explicitly
 test("GPTACT14 Workers AI response extraction accepts only final answer shapes and never reasoning items",()=>{
   assert.equal(extractWorkersAIText({response:"Здраво"}),"Здраво");
   assert.equal(extractWorkersAIText({choices:[{message:{content:"Одговор"}}]}),"Одговор");
+  assert.equal(extractWorkersAIText({response:{role:"assistant",content:"Финален одговор"}}),"Финален одговор");
+  assert.equal(extractWorkersAIText({response:{role:"assistant",content:[{type:"text",text:"Финален структуриран одговор"}]}}),"Финален структуриран одговор");
+  assert.equal(extractWorkersAIText({response:{role:"assistant",content:null,reasoning_content:"скриено размислување"}}),null);
   assert.equal(extractWorkersAIText({choices:[{message:{content:{type:"text",text:"Краен одговор"}}}]}),"Краен одговор");
   assert.equal(extractWorkersAIText({choices:[{message:{content:[
     {type:"reasoning",text:"скриено"},
@@ -327,4 +336,13 @@ test("GPTACT20 explicit Web requests fail closed instead of silently downgrading
 test("GPTACT21 successful governed and fallback responses expose truthful provider provenance",()=>{
   assert.match(worker,/answer:governedFinalAnswer,[\s\S]*?provider:"openai",[\s\S]*?providerFallback:null,[\s\S]*?model:result\.model/);
   assert.match(worker,/provider:"workers_ai_free",[\s\S]*?providerFallback:fallbackReason \?/);
+});
+
+
+test("GPTACT20 public capabilities expose the exact Workers AI request contract to prevent stale-deploy UAT",()=>{
+  assert.match(worker,/workersAIRequestContract:WORKERS_AI_REQUEST_CONTRACT_VERSION/);
+  const liveWorkflow=fs.readFileSync(".github/workflows/free-runtime-live-uat.yml","utf8");
+  assert.match(liveWorkflow,/EXPECTED_WORKERS_CONTRACT="WORKERS_AI_QWEN_VISIBLE_ANSWER_V4"/);
+  assert.match(liveWorkflow,/caps\.workersAIRequestContract===EXPECTED_WORKERS_CONTRACT/);
+  assert.match(liveWorkflow,/if: github\.event_name == 'push'/);
 });
