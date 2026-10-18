@@ -290,6 +290,11 @@ jobs:
             console.log("public-attachment-secure-workspace-gate: PASS");
           }
 
+          // Respect the real production burst limit (5 AI requests / 60s).
+          // The UAT must test the limiter, not accidentally trip it and report a false runtime regression.
+          console.log("waiting for production burst window reset before wrong-language correction");
+          await new Promise(resolve=>setTimeout(resolve,61000));
+
           {
             const {answer}=await chat({
               q:"Претходниот одговор беше на бугарски. Исправи го целосно и одговори само на стандарден македонски јазик.",
