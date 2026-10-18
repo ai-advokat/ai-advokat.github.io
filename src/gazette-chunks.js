@@ -1,4 +1,4 @@
-import { enforceCanonicalContextProvenance, provenanceBlockNotice } from "./canonical-provenance-gate.js";
+import { enforceCanonicalContextProvenance } from "./canonical-provenance-gate.js";
 
 const MAX_GAZETTE_CHUNK_RESULTS=8;
 
@@ -86,6 +86,5 @@ export function gazetteChunksToContext(bundle){
     ].join("\n")
   }));
   const gate=enforceCanonicalContextProvenance(raw);
-  const notice=provenanceBlockNotice(gate.blocked);
-  return notice?[...gate.context,notice]:gate.context;
+  return gate.context;
 }
