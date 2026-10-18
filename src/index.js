@@ -106,11 +106,13 @@ import {
   draftRequest
 } from "./case-intelligence.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
+import { findGazetteIssueMetadata, gazetteIssueMetadataToContext } from "./gazette-issue-metadata.js";
 import {
   CANONICAL_PROVENANCE_GATE_VERSION,
   CANONICAL_METADATA_STANDARD_VERSION,
   CANONICAL_METADATA_REQUIRED_FIELDS,
-  enforceCanonicalContextProvenance
+  enforceCanonicalContextProvenance,
+  provenanceBlockNotice
 } from "./canonical-provenance-gate.js";
 import {
   OPEN_LEGAL_SOURCE_POLICY_VERSION,
@@ -123,6 +125,7 @@ import {
   WORKERS_AI_TEXT_MODEL_DEFAULT,
   WORKERS_AI_PROVIDER_CONTRACT_VERSION,
   resolveWorkersAITextModel,
+  resolveWorkersAIEmptyFallbackModel,
   extractWorkersAIText,
   workersAIShapeSummary,
   runWorkersAIText
@@ -149,7 +152,8 @@ import {
 } from "./response-quality.js";
 
 const VERSION = "1.9.0";
-const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V4";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V8";
+const CANONICAL_FINAL_OUTPUT_GATE_VERSION="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
@@ -1600,7 +1604,14 @@ async function handleCaseWorkspaceApi(request,env,url){
       governedCaseLawContext(env,lawQuery,initialPlan,{limit:6}),
       governedGazetteChunkContext(env,lawQuery)
     ]);
-    const legalContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context];
+    const rawLegalContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context];
+    const privateLegalProvenanceGate=enforceCanonicalContextProvenance(rawLegalContext);
+    const privateLegalBlockedNotice=provenanceBlockNotice(privateLegalProvenanceGate.blocked);
+    const legalContext=privateLegalBlockedNotice
+      ? [...privateLegalProvenanceGate.context,privateLegalBlockedNotice]
+      : privateLegalProvenanceGate.context;
+    // Private factual evidence stays outside the legal-authority gate; only the
+    // legal source layer is eligible for authority and is revalidated here.
     const corpusContext=[...privateContexts,...legalContext];
     const result=paidCaseProviderReady
       ? await runOpenAIOrchestrator(env,{
@@ -1637,6 +1648,17 @@ async function handleCaseWorkspaceApi(request,env,url){
       analysisText=String(postflight.corrected_answer||result.text||"").trim();
     }
     if(!analysisText) return json(request,{ok:false,error:"case_intelligence_empty_analysis"},503);
+    const analysisLanguageRelease=canonicalMacedonianFinalRelease(analysisText,task);
+    if(!analysisLanguageRelease.ok){
+      return json(request,{
+        ok:false,
+        error:"macedonian_release_blocked",
+        message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
+        languageReleaseGate:analysisLanguageRelease.releaseGate,
+        languageReasons:analysisLanguageRelease.quality?.reasons||[]
+      },503);
+    }
+    analysisText=analysisLanguageRelease.text;
 
     const evidenceCoverage=materialFacts===0 ? null : Math.round((sourceBackedMaterialFacts/materialFacts)*10000)/100;
     const currentLawState=articleBundle.state==="matched" ? "governed_article_match" : String(articleBundle.state||"not_verified");
@@ -1749,12 +1771,20 @@ async function handleCaseWorkspaceApi(request,env,url){
       governedCaseLawContext(env,lawQuery,plan,{limit:6}),
       governedGazetteChunkContext(env,lawQuery)
     ]);
-    const corpusContext=[
-      ...privateContexts,
-      {source:"PRIVATE_CASE_ANALYSIS",locator:"latest analysis",version:"working",text:analysisText.slice(0,18000)},
+    const rawDraftLegalContext=[
       ...articleBundle.context,
       ...gazetteBundle.context,
       ...caseLawBundle.context
+    ];
+    const draftLegalProvenanceGate=enforceCanonicalContextProvenance(rawDraftLegalContext);
+    const draftLegalBlockedNotice=provenanceBlockNotice(draftLegalProvenanceGate.blocked);
+    const governedDraftLegalContext=draftLegalBlockedNotice
+      ? [...draftLegalProvenanceGate.context,draftLegalBlockedNotice]
+      : draftLegalProvenanceGate.context;
+    const corpusContext=[
+      ...privateContexts,
+      {source:"PRIVATE_CASE_ANALYSIS",locator:"latest analysis",version:"working",text:analysisText.slice(0,18000)},
+      ...governedDraftLegalContext
     ];
     const requestContract=draftRequest({
       caseId,
@@ -1804,6 +1834,17 @@ async function handleCaseWorkspaceApi(request,env,url){
       if(!postflight.ok) return json(request,{ok:false,error:postflight.error||"case_draft_postflight_failed",issues:postflight.issues||[]},503);
       draftText=String(postflight.corrected_answer||result.text||"").trim();
     }
+    const draftLanguageRelease=canonicalMacedonianFinalRelease(draftText,task);
+    if(!draftLanguageRelease.ok){
+      return json(request,{
+        ok:false,
+        error:"macedonian_release_blocked",
+        message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
+        languageReleaseGate:draftLanguageRelease.releaseGate,
+        languageReasons:draftLanguageRelease.quality?.reasons||[]
+      },503);
+    }
+    draftText=draftLanguageRelease.text;
     const draftId="DRAFT-"+crypto.randomUUID();
     const draftKey=`case-derived/v1/${caseId}/drafts/${draftId}.md`;
     const draftBytes=new TextEncoder().encode(draftText);
@@ -3576,7 +3617,32 @@ function privateCaseContextText(items,maxChars=120000){
   return blocks.join("\n\n---\n\n");
 }
 
+function canonicalMacedonianFinalRelease(text,userText){
+  const original=String(text||"").trim();
+  const languageRequired=shouldEnforceMacedonianOutput(userText);
+  if(!languageRequired){
+    return {
+      ok:Boolean(original),
+      text:original,
+      languageRequired:false,
+      quality:null,
+      releaseGate:{verdict:"RELEASE",severity:"not_applicable",gateVersion:MACEDONIAN_RELEASE_GATE_VERSION}
+    };
+  }
+  const normalized=normaliseMacedonianGeneratedText(original);
+  const quality=assessMacedonianOutput(normalized,{userText});
+  const releaseGate=macedonianReleaseVerdict(normalized,{userText});
+  return {
+    ok:Boolean(normalized) && releaseGate.verdict==="RELEASE",
+    text:normalized,
+    languageRequired:true,
+    quality,
+    releaseGate
+  };
+}
+
 async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutputTokens=3600,mode="analysis"}={}){
+  const startedAt=Date.now();
   if(!freeWorkersAIConfigured(env)) return {ok:false,error:"case_intelligence_provider_not_configured"};
   const context=privateCaseContextText(corpusContext);
   const system=buildAIAdvokatCentralPrompt({
@@ -3641,9 +3707,21 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
         hasGovernedLegalContext:Boolean(String(context||"").trim())
       })
     : languagePass.text;
+  const finalRelease=canonicalMacedonianFinalRelease(finalText,task);
+  if(!finalRelease.ok){
+    return {
+      ok:false,
+      error:"macedonian_release_blocked",
+      message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
+      detail:"private_case_final_last_mile_language_gate_failed",
+      releaseGate:finalRelease.releaseGate,
+      model:result.model,
+      providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0)
+    };
+  }
   return {
     ok:true,
-    text:finalText,
+    text:finalRelease.text,
     model:result.model,
     provider:"workers_ai_private_case",
     providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
@@ -4772,8 +4850,17 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   const documentText=converted.documents.map((doc,index)=>
     "[DOCUMENT "+(index+1)+"] "+doc.name+"\n"+doc.text
   ).join("\n\n---\n\n");
-  const governed=freeChatCorpusText(corpusContext);
+  // Defence in depth: provider helpers enforce provenance again even if a caller
+  // already gated the context. No incomplete legal source reaches Workers AI.
+  const runtimeProvenanceGate=enforceCanonicalContextProvenance(corpusContext);
+  const runtimeBlockedNotice=provenanceBlockNotice(runtimeProvenanceGate.blocked);
+  const runtimeCorpusContext=runtimeBlockedNotice
+    ? [...runtimeProvenanceGate.context,runtimeBlockedNotice]
+    : runtimeProvenanceGate.context;
+  const governed=freeChatCorpusText(runtimeCorpusContext);
   const missionProfile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
+  const formalDraftRequest=isFormalLegalDraftRequest(q);
+  const compactFreeDraft=formalDraftRequest;
 
   const fastFreePrompt=missionProfile==="GENERAL_BYPASS" || missionProfile==="L0_INFORMATIONAL";
   const fullFreeExtraRules=[
@@ -4790,6 +4877,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     "If current law is not established by a governed primary source in supplied context, say that current-law verification is still required and continue with the useful non-authoritative portion.",
     "Do not say that you cannot create Word/DOCX files. The browser can export the latest working draft; provide the complete document text.",
     "Use placeholders or clearly fictional data when the user requests invented names/details; never present invented facts as real.",
+    compactFreeDraft
+      ? "FREE FORMAL DRAFT LATENCY CONTRACT: return one complete compact working draft, normally no more than about 700 words. Use only essential document sections; avoid commentary, tables, duplicated caveats and long boilerplate. Never invent article numbers or current-law propositions that are not supported by governed context."
+      : "For non-draft work, be concise and proportionate to the question.",
     "Do not silently use web search in this FREE mode."
   ];
   const system=fastFreePrompt
@@ -4819,20 +4909,30 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     "",
     missionProfile==="L0_INFORMATIONAL"
       ? "Answer directly and concisely. Use ordinary standard Macedonian; no table unless requested."
-      : "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
+      : compactFreeDraft
+        ? "Return only the complete compact working draft. Use clear placeholders or explicitly fictional data. Keep it within about 700 words and omit commentary before or after the document."
+        : "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
   ].filter(Boolean).join("\n\n");
 
   const messages=[
     {role:"system",content:system},
     {role:"user",content:user}
   ];
-  const tokenLimit=Math.max(400,Math.min(3200,Number(maxOutputTokens)||1400));
+  // Simple FREE questions must be fast and concise. A short hard cap reduces
+  // latency and also reduces the smaller model's tendency to drift into
+  // overlong pseudo-tables and hybrid morphology.
+  const requestedTokenLimit=Math.max(400,Math.min(3200,Number(maxOutputTokens)||1400));
+  const tokenLimit=fastFreePrompt
+    ? Math.min(650,requestedTokenLimit)
+    : compactFreeDraft
+      ? Math.min(1000,requestedTokenLimit)
+      : requestedTokenLimit;
   const result=await runWorkersAIText(env,{
     messages,
     maxOutputTokens:tokenLimit,
-    temperature:0.05,
+    temperature:0,
     sessionAffinity,
-    timeoutMs:fastFreePrompt?12000:25000
+    timeoutMs:fastFreePrompt?8000:20000
   });
   if(!result.ok){
     return {
@@ -4841,7 +4941,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
       detail:result.detail||null,
       model:result.model||resolveWorkersAITextModel(env),
       providerCalls:result.providerCalls||1,
-      providerShape:result.shape||null
+      providerShape:result.shape||null,
+      modelFallback:result.modelFallback||null
     };
   }
 
@@ -4850,7 +4951,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     userText:q,
     maxOutputTokens:tokenLimit,
     sessionAffinity,
-    allowProviderRepair:!fastFreePrompt
+    allowProviderRepair:!fastFreePrompt && !result.modelFallback
   });
   if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
     return {
@@ -4864,29 +4965,52 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
       provider:"workers_ai_free"
     };
   }
-  const formalDraft=isFormalLegalDraftRequest(q);
+  const formalDraft=formalDraftRequest;
   const finalText=formalDraft
     ? finaliseFormalLegalDraft(languagePass.text,{
         userText:q,
         hasGovernedLegalContext:Boolean(String(governed||"").trim())
       })
     : languagePass.text;
+  const finalRelease=canonicalMacedonianFinalRelease(finalText,q);
+  if(!finalRelease.ok){
+    return {
+      ok:false,
+      error:"macedonian_release_blocked",
+      message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
+      detail:"final_last_mile_language_gate_failed",
+      releaseGate:finalRelease.releaseGate,
+      model:result.model,
+      providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
+      provider:"workers_ai_free"
+    };
+  }
 
   return {
     ok:true,
-    text:finalText,
+    text:finalRelease.text,
     model:result.model,
     provider:"workers_ai_free",
+    primaryModel:result.primaryModel||resolveWorkersAITextModel(env),
+    modelFallback:result.modelFallback||null,
     providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
     languageRepairProviderCalls:languagePass.providerCalls||0,
     latencyMs:Date.now()-startedAt,
     fastPromptUsed:fastFreePrompt,
+    compactDraftUsed:compactFreeDraft,
+    outputTokenLimit:tokenLimit,
     languageStandard:languageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
     formalDraftPostflight:formalDraft,
     languageQualityState:languagePass.releaseVerdict?.verdict==="RELEASE"?"verified_runtime":"failed_closed",
     languageReleaseGate:languagePass.releaseVerdict||null,
+    canonicalProvenanceGate:{
+      version:CANONICAL_PROVENANCE_GATE_VERSION,
+      state:runtimeProvenanceGate.state,
+      released:runtimeProvenanceGate.context.length,
+      blocked:runtimeProvenanceGate.blocked.length
+    },
     convertedDocuments:converted.documents.length,
     webSearchUsed:false,
     sources:[],
@@ -5230,12 +5354,14 @@ async function handleGPTChat(request,env){
     bureauEchrDiscoveryContext(q,{limit:6})
   ]);
 
-  const corpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext];
-  if(uiMode==="library" && corpusContext.length===0){
-    corpusContext.push({
+  const rawCorpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext];
+  if(uiMode==="library" && rawCorpusContext.length===0){
+    rawCorpusContext.push({
+      contextRole:"governance_notice",
       source:"AI Advokat public library",
       locator:"library routing",
       version:"current public catalogue",
+      provenance:{kind:"governance_notice"},
       text:[
         "CORPUS_NOT_SUPPORTED: No matching governed public AI Advokat record was supplied for this question.",
         "Do not silently replace the missing library support with model knowledge.",
@@ -5243,6 +5369,14 @@ async function handleGPTChat(request,env){
       ].join("\n")
     });
   }
+  // Canonical last-mile provenance gate: every legal/quasi-legal item is
+  // revalidated immediately before any provider can see it. This prevents
+  // future retrieval paths from bypassing metadata/version/Human Gate rules.
+  const canonicalContextGate=enforceCanonicalContextProvenance(rawCorpusContext);
+  const blockedNotice=provenanceBlockNotice(canonicalContextGate.blocked);
+  const corpusContext=blockedNotice
+    ? [...canonicalContextGate.context,blockedNotice]
+    : canonicalContextGate.context;
 
   // Explicit Web mode must not be mislabeled as passive_corpus merely because the
   // UI suggested a guide. Article-level Macedonian law remains corpus-first.
@@ -5373,15 +5507,63 @@ async function handleGPTChat(request,env){
     // released only as research/work-product with an explicit Human Gate.
     const freeProfessionalGuard=postflightRequiredForMission;
 
-    const freeResult=await runFreeWorkersAIChat(env,{
-      q,
-      attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
-      history:historyCheck.history,
-      corpusContext,
-      plan,
-      maxOutputTokens,
-      sessionAffinity
-    });
+    // Canonical source-first fast lane: when a simple informational legal
+    // question is already supported by the governed article corpus, do not ask
+    // the smaller FREE model to paraphrase it. This removes avoidable latency
+    // and eliminates a major source of hybrid-language drift.
+    let freeResult=null;
+    const deterministicFreeEligible=
+      missionProfile==="L0_INFORMATIONAL"
+      && articleBundle.state==="matched"
+      && Array.isArray(articleBundle.articles)
+      && articleBundle.articles.length>0
+      && attachmentCheck.attachments.length===0
+      && guideDocumentCheck.attachments.length===0;
+    if(deterministicFreeEligible){
+      const canonicalText=normaliseMacedonianGeneratedText(
+        fallbackAssistantAnswer(q,articleBundle.instrument,articleBundle.articles)
+      );
+      const canonicalRelease=macedonianReleaseVerdict(canonicalText,{userText:q});
+      if(canonicalRelease.verdict==="RELEASE"){
+        freeResult={
+          ok:true,
+          text:canonicalText,
+          model:null,
+          provider:"canonical_corpus_no_model",
+          providerCalls:0,
+          languageRepairProviderCalls:0,
+          latencyMs:0,
+          fastPromptUsed:true,
+          languageStandard:shouldEnforceMacedonianOutput(q)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+          languageRepaired:false,
+          deterministicLanguageCleanup:true,
+          formalDraftPostflight:false,
+          languageQualityState:"verified_runtime",
+          languageReleaseGate:canonicalRelease,
+          canonicalProvenanceGate:{
+            version:CANONICAL_PROVENANCE_GATE_VERSION,
+            state:canonicalContextGate.state,
+            released:canonicalContextGate.context.length,
+            blocked:canonicalContextGate.blocked.length
+          },
+          convertedDocuments:0,
+          conversationPersistence:"browser_session_only_app_no_server_conversation_store",
+          historyItemsUsed:0,
+          contaminatedAssistantHistoryDropped:0
+        };
+      }
+    }
+    if(!freeResult){
+      freeResult=await runFreeWorkersAIChat(env,{
+        q,
+        attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
+        history:historyCheck.history,
+        corpusContext,
+        plan,
+        maxOutputTokens,
+        sessionAffinity
+      });
+    }
 
     if(!freeResult.ok){
       await releaseMonthlyQuota(env,{subject,period});
@@ -5393,34 +5575,42 @@ async function handleGPTChat(request,env){
         failureDetail:freeResult.detail||null,
         model:freeResult.model||resolveWorkersAITextModel(env),
         providerShape:freeResult.providerShape||null,
+        modelFallback:freeResult.modelFallback||null,
         runtime:{provider:"workers_ai_free",documentConversion:freeWorkersAIMarkdownConfigured(env)?"configured":"locked"}
       },503);
     }
 
-    const freeSourceMode=(attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
-      ? (corpusContext.length ? "workers_ai_free_documents_plus_governed_corpus" : "workers_ai_free_document_analysis")
-      : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
+    const freeSourceMode=freeResult.provider==="canonical_corpus_no_model"
+      ? "canonical_article_corpus_no_model"
+      : (attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
+        ? (corpusContext.length ? "workers_ai_free_documents_plus_governed_corpus" : "workers_ai_free_document_analysis")
+        : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
 
     return json(request,{
       ok:true,
       answer:freeResult.text,
       model:freeResult.model,
-      provider:"workers_ai_free",
+      provider:freeResult.provider||"workers_ai_free",
       providerFallback:fallbackReason ? {
         from:"openai",
         reason:String(fallbackReason),
         primaryProviderCalls:Number(primaryProviderCalls||0)
       } : null,
+      primaryModel:freeResult.primaryModel||null,
+      modelFallback:freeResult.modelFallback||null,
       languageStandard:freeResult.languageStandard,
       languageRepaired:freeResult.languageRepaired===true,
       conversationPersistence:freeResult.conversationPersistence,
       historyItemsUsed:freeResult.historyItemsUsed,
       contaminatedAssistantHistoryDropped:freeResult.contaminatedAssistantHistoryDropped||0,
       performance:{
-        providerCalls:freeResult.providerCalls||1,
+        providerCalls:Number(freeResult.providerCalls||0),
         languageRepairProviderCalls:freeResult.languageRepairProviderCalls||0,
         serverLatencyMs:freeResult.latencyMs||null,
         fastPromptUsed:freeResult.fastPromptUsed===true,
+        compactDraftUsed:freeResult.compactDraftUsed===true,
+        outputTokenLimit:Number(freeResult.outputTokenLimit||0)||null,
+        modelFallback:freeResult.modelFallback||null,
         promptCaching:sessionAffinity?"session_affinity_enabled":"no_session_affinity"
       },
       sources:[],
@@ -5428,7 +5618,14 @@ async function handleGPTChat(request,env){
         version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
         registeredExternalSources:0,
         unregisteredExternalSources:0,
-        corpusPromotion:"human_gate_required"
+        corpusPromotion:"human_gate_required",
+        canonicalProvenanceGate:{
+          version:CANONICAL_PROVENANCE_GATE_VERSION,
+          metadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
+          state:canonicalContextGate.state,
+          released:canonicalContextGate.context.length,
+          blocked:canonicalContextGate.blocked.length
+        }
       },
       legalSources:articleBundle.legalSources||[],
       caseLawSources:[...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
@@ -5443,7 +5640,7 @@ async function handleGPTChat(request,env){
       guideDocumentFingerprintsVerified:guideDocumentCheck.attachments.length>0,
       webSearchUsed:false,
       mode:plan.mode,
-      displayMode:"free_workers_ai",
+      displayMode:freeResult.provider==="canonical_corpus_no_model" ? "free_canonical_corpus" : "free_workers_ai",
       sourceMode:freeSourceMode,
       corpusContextCount:corpusContext.length,
       articleCorpusContextCount:articleBundle.context.length,
@@ -5459,7 +5656,7 @@ async function handleGPTChat(request,env){
       attachmentsUsed:attachmentCheck.attachments.length,
       totalInputFilesUsed:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
       convertedDocuments:freeResult.convertedDocuments,
-      reasoningEffort:"workers_ai_standard",
+      reasoningEffort:freeResult.provider==="canonical_corpus_no_model" ? "deterministic_source_first" : "workers_ai_standard",
       maxOutputTokens,
       humanGate:"FREE Workers AI is research assistance only. Verify controlling law and primary sources and obtain human professional review before consequential reliance.",
       governanceRunId:lioeRunId,
@@ -5608,26 +5805,23 @@ async function handleGPTChat(request,env){
   // is released unless the deterministic cleanup + runtime assessment confirms
   // the 2017 orthography contract. This is deliberately last-mile and fail-closed.
   let governedFinalAnswer=String(finalAnswer||"").trim();
-  let governedLanguageQuality=null;
-  let governedLanguageRelease=null;
   const governedLanguageRequired=shouldEnforceMacedonianOutput(q);
-  if(governedLanguageRequired){
-    governedFinalAnswer=normaliseMacedonianGeneratedText(governedFinalAnswer);
-    governedLanguageQuality=assessMacedonianOutput(governedFinalAnswer,{userText:q});
-    governedLanguageRelease=macedonianReleaseVerdict(governedFinalAnswer,{userText:q});
-    if(governedLanguageRelease.verdict!=="RELEASE"){
-      await releaseMonthlyQuota(env,{subject,period});
-      return json(request,{
-        ok:false,
-        error:"macedonian_release_blocked",
-        message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
-        languageStandard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
-        languageReleaseGate:governedLanguageRelease,
-        languageReasons:governedLanguageQuality.reasons||[],
-        governanceRunId:lioeRunId
-      },503);
-    }
+  const governedFinalRelease=canonicalMacedonianFinalRelease(governedFinalAnswer,q);
+  const governedLanguageQuality=governedFinalRelease.quality;
+  const governedLanguageRelease=governedFinalRelease.releaseGate;
+  if(!governedFinalRelease.ok){
+    await releaseMonthlyQuota(env,{subject,period});
+    return json(request,{
+      ok:false,
+      error:"macedonian_release_blocked",
+      message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
+      languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+      languageReleaseGate:governedLanguageRelease,
+      languageReasons:governedLanguageQuality?.reasons||[],
+      governanceRunId:lioeRunId
+    },503);
   }
+  governedFinalAnswer=governedFinalRelease.text;
 
   const articleMatched=articleBundle.state==="matched";
   const caseLawMatched=caseLawBundle.state==="matched";
@@ -5729,7 +5923,14 @@ async function handleGPTChat(request,env){
       version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
       registeredExternalSources:(result.sources||[]).filter(s=>s.registered===true).length,
       unregisteredExternalSources:(result.sources||[]).filter(s=>s.registered!==true).length,
-      corpusPromotion:"human_gate_required"
+      corpusPromotion:"human_gate_required",
+      canonicalProvenanceGate:{
+        version:CANONICAL_PROVENANCE_GATE_VERSION,
+        metadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
+        state:canonicalContextGate.state,
+        released:canonicalContextGate.context.length,
+        blocked:canonicalContextGate.blocked.length
+      }
     },
     legalSources:articleBundle.legalSources || [],
     caseLawSources:[...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
@@ -6084,6 +6285,21 @@ async function handleAssistant(request, env, url) {
       answer=answer+"\n\nСтатусно предупредување: "+noticeText;
     }
   }
+  const assistantFinalRelease=canonicalMacedonianFinalRelease(answer,q);
+  if(!assistantFinalRelease.ok){
+    if(reservation.used>0){
+      await releaseMonthlyQuota(env,{subject,period});
+      reservation.used=Math.max(0,reservation.used-1);
+    }
+    return json(request,{
+      ok:false,
+      error:"macedonian_release_blocked",
+      message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
+      languageReleaseGate:assistantFinalRelease.releaseGate,
+      languageReasons:assistantFinalRelease.quality?.reasons||[]
+    },503);
+  }
+  answer=assistantFinalRelease.text;
 
   return json(request,{
     ok:true,
@@ -6156,8 +6372,23 @@ async function handleAssistant(request, env, url) {
 }
 
 async function governedGazetteChunkContext(env,q){
-  const bundle=await findGovernedGazetteChunks(env,q,{limit:6});
-  return {...bundle,context:gazetteChunksToContext(bundle)};
+  const [chunkBundle,issueMetadataBundle]=await Promise.all([
+    findGovernedGazetteChunks(env,q,{limit:6}),
+    findGazetteIssueMetadata(env,q,{limit:6})
+  ]);
+  const chunkContext=gazetteChunksToContext(chunkBundle);
+  const issueMetadataContext=gazetteIssueMetadataToContext(issueMetadataBundle);
+  const context=[...chunkContext,...issueMetadataContext];
+  const state=context.length
+    ? "matched"
+    : (chunkBundle.state==="unavailable" && issueMetadataBundle.state==="unavailable" ? "unavailable" : "no_match");
+  return {
+    state,
+    chunks:chunkBundle.chunks||[],
+    issueMetadata:issueMetadataBundle.issues||[],
+    issueMetadataState:issueMetadataBundle.state,
+    context
+  };
 }
 
 async function handleGazetteRegister(request, env, url) {
@@ -6296,6 +6527,102 @@ async function handleGazetteRegister(request, env, url) {
   });
 }
 
+async function handleGazetteIssueIndex(request,env,url){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+
+  const q=cleanQuery(url.searchParams.get("q"),160);
+  const yearRaw=String(url.searchParams.get("year")||"").trim();
+  const type=cleanQuery(url.searchParams.get("type"),120);
+  const rawLimit=Number(url.searchParams.get("limit")||100);
+  const rawOffset=Number(url.searchParams.get("offset")||0);
+  const limit=Number.isFinite(rawLimit)?Math.max(20,Math.min(250,Math.floor(rawLimit))):100;
+  const offset=Number.isFinite(rawOffset)?Math.max(0,Math.min(10000,Math.floor(rawOffset))):0;
+
+  const where=[];
+  const binds=[];
+  if(/^\d{4}$/.test(yearRaw)){
+    where.push("year=?");
+    binds.push(Number(yearRaw));
+  }
+  if(type){
+    where.push("publication_type=?");
+    binds.push(type);
+  }
+  if(q){
+    const nq=q.toLowerCase();
+    const pair=nq.match(/(?:бр\.?|број)?\s*([0-9]{1,4})\s*\/\s*((?:19|20)[0-9]{2})/u);
+    const iso=nq.match(/\b((?:19|20)[0-9]{2}-[01][0-9]-[0-3][0-9])\b/u);
+    if(pair){
+      where.push("issue_number=?");
+      binds.push(pair[1]);
+      where.push("year=?");
+      binds.push(Number(pair[2]));
+    }else if(iso){
+      where.push("issue_date=?");
+      binds.push(iso[1]);
+    }else{
+      where.push("(issue_number LIKE ? OR issue_date LIKE ? OR publication_type LIKE ?)");
+      const like="%"+q+"%";
+      binds.push(like,like,like);
+    }
+  }
+
+  const clause=where.length ? " WHERE "+where.join(" AND ") : "";
+  try{
+    const [rows,total,summary]=await Promise.all([
+      env.DB.prepare(
+        `SELECT publication_type,issue_number,issue_date,year,source_occurrences,
+                source_authority,dataset_id,resource_id,dataset_url,resource_url,snapshot_sha256,
+                source_class,human_review_status,runtime_eligible,legal_text_authority,current_law_authority
+           FROM gazette_issue_metadata${clause}
+          ORDER BY issue_date DESC,publication_type,issue_number
+          LIMIT ? OFFSET ?`
+      ).bind(...binds,limit,offset).all(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM gazette_issue_metadata${clause}`).bind(...binds).first(),
+      env.DB.prepare(
+        `SELECT COUNT(*) AS n,MIN(issue_date) AS first_issue_date,MAX(issue_date) AS last_issue_date,
+                COUNT(DISTINCT year) AS year_count,COUNT(DISTINCT publication_type) AS publication_type_count,
+                SUM(CASE WHEN legal_text_authority=1 THEN 1 ELSE 0 END) AS legal_text_authority_count,
+                SUM(CASE WHEN current_law_authority=1 THEN 1 ELSE 0 END) AS current_law_authority_count
+           FROM gazette_issue_metadata`
+      ).first()
+    ]);
+    return json(request,{
+      ok:true,
+      mode:"official_issue_metadata_index",
+      metadataOnly:true,
+      count:Number(total?.n||0),
+      limit,
+      offset,
+      entries:rows.results||[],
+      coverage:{
+        total:Number(summary?.n||0),
+        firstIssueDate:summary?.first_issue_date||null,
+        lastIssueDate:summary?.last_issue_date||null,
+        years:Number(summary?.year_count||0),
+        publicationTypes:Number(summary?.publication_type_count||0)
+      },
+      authority:{
+        legalTextAuthorityCount:Number(summary?.legal_text_authority_count||0),
+        currentLawAuthorityCount:Number(summary?.current_law_authority_count||0),
+        doctrine:"Овој индекс потврдува само идентитет, датум и тип на издание. Не го докажува текстот на акт, член, влегување во сила или тековно право."
+      },
+      source:{
+        publisher:"ЈП Службен весник на РСМ",
+        datasetUrl:"https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017",
+        resourceUrl:"https://data.gov.mk/dataset/05342c32-f4a6-49c3-b8fa-5a555a6df6ff/resource/9a039791-1abb-411f-bc04-bf136776a83a/download/izdanija-sluzben-vesnik-do-2017.xlsx",
+        snapshotSha256:"4d111eb03ed0b8e877d151e030bf38096831cedc7a26f4a09121d9e6dfac5a18"
+      }
+    });
+  }catch(error){
+    return json(request,{ok:false,error:"gazette_register_unavailable",message:String(error?.message||error).slice(0,180)},503);
+  }
+}
+
 async function handleGazetteChunks(request,env,url){
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
   const database=await dbStatus(env);
@@ -6328,7 +6655,8 @@ async function handleGazetteHybridStatus(request,env){
     return json(request,{ok:false,error:"database_not_ready",database},503);
   }
   try{
-    const [issues,acts,articles,chunks,consolidated]=await Promise.all([
+    const [metadataIssues,issues,acts,articles,chunks,consolidated]=await Promise.all([
+      env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status IN ('reviewed','approved') THEN 1 ELSE 0 END) AS reviewed FROM gazette_issue_metadata").first(),
       env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_issues").first(),
       env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_acts").first(),
       env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN human_review_status='approved' THEN 1 ELSE 0 END) AS approved FROM gazette_act_articles").first(),
@@ -6340,6 +6668,8 @@ async function handleGazetteHybridStatus(request,env){
       product:"AI Advokat · Gazette Hybrid Legal Intelligence",
       runtimeConnected:true,
       counts:{
+        officialIssueMetadata:Number(metadataIssues?.n||0),
+        reviewedOfficialIssueMetadata:Number(metadataIssues?.reviewed||0),
         issues:Number(issues?.n||0),
         acts:Number(acts?.n||0),
         articles:Number(articles?.n||0),
@@ -6466,6 +6796,8 @@ function handleCanonicalMetadataStandard(request){
     ok:true,
     standard:CANONICAL_METADATA_STANDARD_VERSION,
     provenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
+    rootReleaseContract:"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1",
+    finalOutputGate:CANONICAL_FINAL_OUTPUT_GATE_VERSION,
     doctrine:[
       "source_first",
       "metadata_before_ai",
@@ -6655,6 +6987,7 @@ async function handleCapabilities(request, env) {
           : "locked",
       freeChatProvider:freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
       freeChatModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
+      freeChatFallbackModel:freeWorkersAIConfigured(env) ? resolveWorkersAIEmptyFallbackModel(env) : null,
       freeProviderContract:WORKERS_AI_PROVIDER_CONTRACT_VERSION,
       freeRuntimePolicy:FREE_RUNTIME_POLICY_VERSION,
       paidChatProvider:orchestratorRuntimeReadiness(env).provider==="configured" ? "openai" : "locked",
@@ -6663,10 +6996,13 @@ async function handleCapabilities(request, env) {
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
       macedonianReleaseGate:MACEDONIAN_RELEASE_GATE_VERSION,
-      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_fast_one_call_complex_single_repair_v5",
+      macedonianRepairPostflight:"canonical_release_gate_deterministic_first_fast_fail_closed_complex_single_repair_v6",
       macedonianRepairProviderBudget:"fast_free_zero_extra_calls_complex_repairable_max_one_extra_call",
+      freeLatencyPolicy:"simple_turn_650_tokens_8s_provider_timeout_no_second_model_repair",
       canonicalProvenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
       canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
+      canonicalRootReleaseContract:"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1",
+      canonicalFinalOutputGate:CANONICAL_FINAL_OUTPUT_GATE_VERSION,
       finalResponseQualityGate:"formal_draft_export_cleanup_and_ungrounded_article_filter_v1",
       knowledgeIntake: "classification_policy_live_document_ingest_locked",
       caseLawCorpus: coverage.caseLawRecords > 0 ? "live_corpus" : "directory_only",
@@ -6791,6 +7127,7 @@ export default {
     if (url.pathname === "/api/chat") return handleGPTChat(request, env);
     if (url.pathname === "/api/legal-analyzer/verify") return handleLegalAnalyzerVerify(request, env);
     if (url.pathname === "/api/casepilot/case-law") return handleCasePilotCaseLawResearch(request, env);
+    if (url.pathname === "/api/gazette-issue-index") return handleGazetteIssueIndex(request, env, url);
     if (url.pathname === "/api/gazette-register") return handleGazetteRegister(request, env, url);
     if (url.pathname === "/api/gazette-chunks") return handleGazetteChunks(request, env, url);
     if (url.pathname === "/api/gazette-hybrid-status") return handleGazetteHybridStatus(request, env);
