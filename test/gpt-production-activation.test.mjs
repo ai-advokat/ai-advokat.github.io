@@ -254,9 +254,12 @@ test("GPTACT15 Workers AI provider contract fails explicitly on empty final outp
   });
   assert.equal(result.ok,false);
   assert.equal(result.error,"workers_ai_empty_response");
-  assert.equal(result.model,"@cf/qwen/qwen3-30b-a3b-fp8");
+  assert.equal(result.primaryModel,"@cf/qwen/qwen3-30b-a3b-fp8");
+  assert.equal(result.model,"@cf/meta/llama-3.3-70b-instruct-fp8-fast");
   assert.equal(result.providerCalls,2);
-  assert.equal(result.retryReason,"empty_response");
+  assert.equal(result.modelFallback.reason,"empty_final_text");
+  assert.equal(result.modelFallback.from,"@cf/qwen/qwen3-30b-a3b-fp8");
+  assert.equal(result.modelFallback.to,"@cf/meta/llama-3.3-70b-instruct-fp8-fast");
   assert.equal(result.shape.type,"object");
 });
 
