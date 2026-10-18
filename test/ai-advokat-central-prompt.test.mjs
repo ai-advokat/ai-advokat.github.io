@@ -190,6 +190,7 @@ test("COP16 governed GPT has a final Macedonian release gate",()=>{
   assert.match(worker,/let governedFinalAnswer=String\(finalAnswer\|\|""\)\.trim\(\)/);
   assert.match(worker,/governedLanguageRequired=shouldEnforceMacedonianOutput\(q\)/);
   assert.match(worker,/governedLanguageQuality=assessMacedonianOutput\(governedFinalAnswer,\{userText:q\}\)/);
-  assert.match(worker,/error:"macedonian_language_quality_failed"/);
+  assert.match(worker,/governedLanguageRelease=macedonianReleaseVerdict\(governedFinalAnswer,\{userText:q\}\)/);
+  assert.match(worker,/error:"macedonian_release_blocked"/);
   assert.match(worker,/answer:governedFinalAnswer/);
 });
