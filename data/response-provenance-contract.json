@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0",
-  "contract_id": "AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v1",
+  "schema_version": "2.0",
+  "contract_id": "AI_ADVOKAT_RESPONSE_PROVENANCE_CONTRACT_v2",
   "generated_on": "2026-10-03",
   "chain": [
     "source",
@@ -70,5 +70,105 @@
     "human_review_missing_blocks_release",
     "mixed_verification_response_cannot_be_overall_verified",
     "superseded_source_cannot_support_current_law"
-  ]
+  ],
+  "updated_on": "2026-10-18",
+  "canonical_runtime_gate": {
+    "version": "AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V1",
+    "stage": "before_provider_context_release",
+    "fail_closed": true,
+    "applies_to": [
+      "legal_article",
+      "official_gazette_issue_act_and_article_chunk",
+      "case_law",
+      "guide",
+      "fingerprint_verified_guide",
+      "echr_discovery"
+    ],
+    "mandatory_common_metadata": [
+      "source_identity",
+      "authority_class",
+      "locator",
+      "release_role",
+      "legal_authority_boolean",
+      "human_review_status"
+    ],
+    "primary_legal_authority_requires": [
+      "official_or_canonical_source_url",
+      "version_or_date",
+      "stable_locator",
+      "source_fingerprint_or_equivalent_provenance",
+      "reviewed_or_approved_human_gate"
+    ],
+    "current_law_requires": [
+      "approved_human_gate",
+      "approved_version_gate_when_versioned",
+      "official_source_provenance",
+      "temporal_applicability"
+    ],
+    "secondary_material_rules": [
+      "guides_must_remain_secondary_non_authority",
+      "guide_fulltext_requires_exact_sha256_fingerprint_binding",
+      "echr_domestic_index_is_discovery_only_until_hudoc_binding",
+      "secondary_material_never_silently_replaces_primary_authority"
+    ],
+    "blocked_context_policy": [
+      "exclude_before_ai_synthesis",
+      "do_not_reconstruct_from_model_memory",
+      "repair_corpus_metadata_before_authoritative_reuse"
+    ]
+  },
+  "source_classes": {
+    "official_gazette": {
+      "required": [
+        "publication",
+        "issue_number",
+        "issue_date",
+        "act_or_article_locator",
+        "source_url",
+        "sha256_or_text_sha256",
+        "human_review_status"
+      ]
+    },
+    "law_or_regulation": {
+      "required": [
+        "instrument_identity",
+        "instrument_type",
+        "gazette_reference",
+        "version_or_effective_date",
+        "source_url",
+        "sha256",
+        "human_review_status"
+      ],
+      "includes": [
+        "law",
+        "rulebook",
+        "bylaw",
+        "instruction",
+        "decision",
+        "tariff",
+        "other_regulation"
+      ]
+    },
+    "case_law": {
+      "required": [
+        "court",
+        "case_identity",
+        "jurisdiction",
+        "decision_date",
+        "source_url",
+        "case_review_status",
+        "authority_review_status"
+      ]
+    },
+    "guide": {
+      "required": [
+        "record_id",
+        "title",
+        "edition_or_verification_state",
+        "activation_state",
+        "sha256_fingerprint",
+        "secondary_authority_role"
+      ]
+    }
+  }
 }
