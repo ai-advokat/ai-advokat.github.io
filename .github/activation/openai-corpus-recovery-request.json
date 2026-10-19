@@ -1,0 +1,16 @@
+{
+  "audit_authorized": true,
+  "mode": "read_only",
+  "decision_id": "AI_ADVOCAT_OPENAI_CORPUS_RECOVERY_2026-10-19",
+  "requested_for": "AI Advokat 4 migration from Paragraf.mk / OpenAI File Search Vector Stores",
+  "target_period": "2026-03-01/2026-05-31",
+  "expected_legacy_scale": {
+    "court_decisions_approx": 10000,
+    "indexed_segments_or_embeddings_approx": 100000,
+    "laws_approx": 600,
+    "legal_templates_approx": 1500
+  },
+  "allow_delete": false,
+  "allow_mutation": false,
+  "requested_at": "2026-10-19"
+}
