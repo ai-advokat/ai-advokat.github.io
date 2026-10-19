@@ -10,7 +10,7 @@ import { loadWorker } from "./load-worker.mjs";
 const { workerModule, security } = await loadWorker();
 const read = (p) => fs.readFileSync(p, "utf8");
 const PAGES = [
-  "index.html", "academy/index.html", "summit/index.html", "partners/index.html", "membership.html", "legal-notice.html", "privacy-policy.html", "ai-use-policy.html", "offline.html", "guides/index.html", "sluzben-vesnik/index.html", "guides/fulltext/besplatna-pravna-pomos/index.html", "guides/fulltext/izbor-na-advokat/index.html", "guides/fulltext/02-zrtva/index.html", "guides/fulltext/05-rabotno-voznemiruvanje/index.html", "guides/fulltext/prestoj-stranci-2026/index.html", "professional-library/index.html", "professional-tools.html", "governance.html",
+  "index.html", "academy/index.html", "summit/index.html", "partners/index.html", "membership.html", "guides/zkp-commentary/index.html", "legal-notice.html", "privacy-policy.html", "ai-use-policy.html", "offline.html", "guides/index.html", "sluzben-vesnik/index.html", "guides/fulltext/besplatna-pravna-pomos/index.html", "guides/fulltext/izbor-na-advokat/index.html", "guides/fulltext/02-zrtva/index.html", "guides/fulltext/05-rabotno-voznemiruvanje/index.html", "guides/fulltext/prestoj-stranci-2026/index.html", "professional-library/index.html", "professional-tools.html", "governance.html",
   "scholar/index.html", "scholar/sindzir/index.html", "scholar/electronic-ai-evidence/index.html",
   "scholar/mobile-phone-privilege/index.html", "scholar/ai-legal-practice-judiciary/index.html"
 ];
