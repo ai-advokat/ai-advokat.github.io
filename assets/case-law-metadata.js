@@ -16,16 +16,23 @@ $("batchFiles").addEventListener("change",e=>{
 $("processBatch").addEventListener("click",async()=>{
   if(!files.length){$("batchStatus").textContent="Изберете датотеки.";return;}
   $("processBatch").disabled=true;
-  $("batchStatus").textContent="Локална обработка…";
+  $("batchStatus").textContent="Локална обработка и SHA-256 fingerprint…";
   try{
     const docs=[];
     for(const file of files){
       const text=await file.text();
-      docs.push({filename:file.name,text,sourceClass:"local_unverified"});
+      const sourceSha256=await sha256Hex(await file.arrayBuffer());
+      docs.push({
+        filename:file.name,
+        text,
+        sourceClass:"local_unverified",
+        sourceSha256,
+        sourceHashBasis:"original_file_bytes_sha256"
+      });
     }
     batch=buildCaseLawMetadataBatch(docs);
     render();
-    $("batchStatus").textContent=`Обработени: ${batch.recordCount}. Human Gate останува задолжителен.`;
+    $("batchStatus").textContent=`Обработени: ${batch.recordCount}. Дупликати по hash: ${batch.duplicateHashCount||0}. Human Gate останува задолжителен.`;
   }catch(error){
     batch=null;
     $("batchStatus").textContent="Грешка: "+String(error?.message||error);
@@ -35,12 +42,23 @@ $("processBatch").addEventListener("click",async()=>{
   }
 });
 
-$("processSingle").addEventListener("click",()=>{
+$("processSingle").addEventListener("click",async()=>{
   const text=$("singleText").value;
   if(!text.trim()) return;
   try{
-    const record=extractCaseLawMetadata(text,{filename:$("singleName").value||"presuda.txt"});
-    batch={records:[record],recordCount:1,humanGateRequired:true};
+    const bytes=new TextEncoder().encode(text);
+    const sourceSha256=await sha256Hex(bytes);
+    const record=extractCaseLawMetadata(text,{
+      filename:$("singleName").value||"presuda.txt",
+      sourceSha256,
+      sourceHashBasis:"normalized_text_utf8_sha256"
+    });
+    batch={
+      records:[{...record,duplicateReview:{status:"unique_hash",duplicateOfIndex:null}}],
+      recordCount:1,
+      duplicateHashCount:0,
+      humanGateRequired:true
+    };
     render();
   }catch(error){
     batch=null;
@@ -64,11 +82,23 @@ $("exportNdjson").addEventListener("click",()=>{
 });
 $("exportCsv").addEventListener("click",()=>{
   if(!batch) return;
-  const cols=["filename","court","caseNumber","decisionDate","decisionType","legalArea","ecli","echrApplications","completeness","privacyReview","humanGate"];
+  const cols=["filename","sourceSha256","duplicateStatus","court","caseNumber","decisionDate","decisionDateIso","recordKind","decisionType","legalArea","ecli","echrApplications","completeness","privacyReview","humanGate"];
   const rows=batch.records.map(r=>[
-    r.sourceIdentity.filename,r.court,r.caseNumber,r.decisionDate,r.decisionType,r.legalArea?.value,
-    r.ecli?.primary,(r.echr?.applicationNumbers||[]).join(" | "),r.completeness?.score,
-    r.privacyReview?.required?"required":"no_flag","pending"
+    r.sourceIdentity.filename,
+    r.sourceIdentity.sourceSha256,
+    r.duplicateReview?.status,
+    r.court,
+    r.caseNumber,
+    r.decisionDate,
+    r.decisionDateIso,
+    r.recordKind,
+    r.decisionType,
+    r.legalArea?.value,
+    r.ecli?.primary,
+    (r.echr?.applicationNumbers||[]).join(" | "),
+    r.completeness?.score,
+    r.privacyReview?.required?"required":"no_flag",
+    "pending"
   ]);
   const csv=[cols,...rows].map(row=>row.map(v=>'"'+String(v??"").replaceAll('"','""')+'"').join(",")).join("\n");
   download("\uFEFF"+csv,"ai-advokat-case-law-review.csv","text/csv;charset=utf-8");
@@ -85,12 +115,17 @@ function render(){
   for(const r of records){
     const tr=document.createElement("tr");
     const values=[
-      r.sourceIdentity.filename,r.court||"—",r.caseNumber||"—",r.decisionDate||"—",
-      r.decisionType||"—",r.legalArea?.value||"—",r.ecli?.primary||"—",
+      r.sourceIdentity.filename,
+      r.court||"—",
+      r.caseNumber||"—",
+      r.decisionDateIso||r.decisionDate||"—",
+      r.decisionType||"—",
+      r.legalArea?.value||"—",
+      r.ecli?.primary||"—",
       [...(r.echr?.applicationNumbers||[]),...(r.echr?.ecli||[])].join("; ")||"—",
       `${r.completeness?.score??0}%`,
       r.privacyReview?.required?"ПРОВЕРКА":"нема flag",
-      "PENDING"
+      r.duplicateReview?.status==="duplicate_content_hash"?"DUPLICATE · PENDING":"PENDING"
     ];
     values.forEach((value,i)=>{
       const td=document.createElement("td");
@@ -104,6 +139,12 @@ function render(){
     });
     body.appendChild(tr);
   }
+}
+
+async function sha256Hex(data){
+  const bytes=data instanceof ArrayBuffer?data:data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength);
+  const digest=await crypto.subtle.digest("SHA-256",bytes);
+  return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
 }
 
 function download(content,name,type){
