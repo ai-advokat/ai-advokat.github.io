@@ -105,10 +105,18 @@
       "findings": [],
       "status": "published_restricted_commercial",
       "status_label": "Објавено на Zenodo · DOI 10.5281/zenodo.23476734 · Restricted full text · комерцијално издание",
-      "ai_use": "not_ingested_without_separate_human_gate",
+      "ai_use": "not_ingested_without_separate_rag_human_gate",
       "professional_use": "human_review_required",
       "public_files": false,
-      "purchase_contact": "aiadvokat16@gmail.com"
+      "purchase_contact": "aiadvokat16@gmail.com",
+      "purchase_page": "https://ai-advokat.github.io/books/priracnik-krivicni-predmeti/",
+      "pricing": {
+        "currency": "EUR",
+        "individual_intro": 69,
+        "individual_regular": 99,
+        "office_from": 199,
+        "payment_mode": "manual_human_gate"
+      }
     },
     {
       "id": "echr-north-macedonia-manual-v4-2",
