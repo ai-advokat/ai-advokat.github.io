@@ -1,0 +1,86 @@
+name: OpenAI legal corpus recovery audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type RECOVER_OPENAI_CORPUS_READ_ONLY"
+        required: true
+        type: string
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/activation/openai-corpus-recovery-request.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-openai-corpus-recovery-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_PROJECT_ID: ${{ secrets.OPENAI_PROJECT_ID }}
+      OPENAI_ORG_ID: ${{ secrets.OPENAI_ORG_ID }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify explicit read-only authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$OPENAI_API_KEY"
+          test "${#OPENAI_API_KEY}" -gt 20
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            test "$CONFIRMATION" = "RECOVER_OPENAI_CORPUS_READ_ONLY"
+          else
+            node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync(".github/activation/openai-corpus-recovery-request.json","utf8"));
+          if(d.audit_authorized!==true) throw new Error("Corpus recovery audit is not authorized");
+          if(d.mode!=="read_only") throw new Error("Only read_only mode is permitted");
+          if(d.decision_id!=="AI_ADVOCAT_OPENAI_CORPUS_RECOVERY_2026-10-19") throw new Error("Unexpected decision id");
+          if(d.allow_delete!==false || d.allow_mutation!==false) throw new Error("Mutation is forbidden");
+          console.log("Read-only recovery authorization: PASS");
+          NODE
+          fi
+
+      - name: Syntax check recovery tool
+        run: node --check scripts/openai-corpus-recovery-audit.mjs
+
+      - name: Inventory OpenAI Vector Stores and Files without mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/openai-corpus-recovery-audit.mjs | tee /tmp/openai-corpus-recovery-safe.log
+          grep -q '^OPENAI_CORPUS_RECOVERY_SAFE_SUMMARY=' /tmp/openai-corpus-recovery-safe.log
+
+      - name: Publish only non-sensitive aggregate summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/ai-advokat-openai-recovery/safe-summary.json ]; then
+            echo "## OpenAI legal corpus recovery - safe aggregate" >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/ai-advokat-openai-recovery/safe-summary.json >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+            echo "Detailed resource IDs, vector-store names, file names and contents were not uploaded or printed." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Security boundary
+        if: always()
+        run: |
+          echo "READ-ONLY ONLY: no vector store, file, project, secret, Worker or database mutation was performed."
+          rm -rf /tmp/ai-advokat-openai-recovery
