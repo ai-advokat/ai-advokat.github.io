@@ -1,9 +1,10 @@
-export const CASE_LAW_METADATA_VERSION = "1.0.0";
+export const CASE_LAW_METADATA_VERSION = "1.1.0";
 export const CASE_LAW_METADATA_SCHEMA = "AI_ADVOCAT_CASE_LAW_METADATA_V1";
 
 const CONTROL=/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u;
 const MAX_TEXT=2_000_000;
 const MAX_BATCH=500;
+const SOURCE_CLASSES=new Set(["local_unverified","official_public","licensed_secondary_export"]);
 
 function clean(value,max=MAX_TEXT){
   if(typeof value!=="string") throw new TypeError("case_law_text_required");
@@ -38,6 +39,34 @@ function snippet(text,re,max=1600){
   const m=text.match(re);
   if(!m) return null;
   return String(m[1]??m[0]).replace(/\s+/g," ").trim().slice(0,max)||null;
+}
+function normalizeSourceClass(value){
+  const v=String(value||"local_unverified").trim();
+  if(!SOURCE_CLASSES.has(v)) throw new TypeError("case_law_source_class_invalid");
+  return v;
+}
+function normalizeSourceUrl(value){
+  if(value===null||value===undefined||value==="") return null;
+  const text=String(value).trim();
+  let url;
+  try{url=new URL(text);}catch{throw new TypeError("case_law_source_url_invalid");}
+  return url.href;
+}
+function normalizeSha256(value){
+  if(value===null||value===undefined||value==="") return null;
+  const v=String(value).trim().toLowerCase();
+  if(!/^[a-f0-9]{64}$/.test(v)) throw new TypeError("case_law_source_sha256_invalid");
+  return v;
+}
+
+export function normalizeDecisionDateCandidate(value){
+  const raw=String(value??"").trim();
+  const m=raw.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
+  if(!m) return null;
+  const day=Number(m[1]),month=Number(m[2]),year=Number(m[3]);
+  const d=new Date(Date.UTC(year,month-1,day));
+  if(d.getUTCFullYear()!==year||d.getUTCMonth()!==month-1||d.getUTCDate()!==day) return null;
+  return `${String(year).padStart(4,"0")}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
 }
 
 export function extractLiteralEcli(textInput){
@@ -82,6 +111,17 @@ export function extractDecisionType(textInput){
     /(?<![\p{L}\p{N}])(ПРЕСУДА|РЕШЕНИЕ|ОДЛУКА|ЗАКЛУЧОК|НАРЕДБА|ОПРЕДЕЛЕНИЕ)(?![\p{L}\p{N}])/u,
     /(?<![\p{L}\p{N}])(пресуда|решение|одлука|заклучок|наредба|определение)(?![\p{L}\p{N}])/iu
   ]);
+}
+
+export function classifyRecordKind(decisionType){
+  const value=String(decisionType||"").toLocaleLowerCase("mk");
+  if(value==="пресуда") return "judgment";
+  if(value==="решение") return "ruling";
+  if(value==="одлука") return "decision";
+  if(value==="заклучок") return "conclusion";
+  if(value==="наредба") return "order";
+  if(value==="определение") return "order";
+  return "unknown";
 }
 
 export function extractLegalArea(textInput){
@@ -168,8 +208,32 @@ export function deterministicMetadataCompleteness(record){
   });
 }
 
-export function extractCaseLawMetadata(textInput,{filename="judgment.txt",sourceUrl=null,sourceClass="local_unverified"}={}){
+function sourceBindingState({sourceClass,sourceUrl,sourceSha256}){
+  const reasons=[];
+  if(sourceClass==="local_unverified") reasons.push("source_class_unverified");
+  if(!sourceUrl) reasons.push("official_source_url_missing");
+  if(!sourceSha256) reasons.push("source_sha256_missing");
+  if(sourceUrl && !sourceUrl.startsWith("https://")) reasons.push("source_url_not_https");
+  const stagingCandidate=sourceClass!=="local_unverified" && Boolean(sourceUrl) && Boolean(sourceSha256) && sourceUrl.startsWith("https://");
+  return Object.freeze({
+    status:stagingCandidate?"claimed_source_bound_pending_verification":"discovery_only_unbound",
+    officialBindingVerified:false,
+    stagingCandidate,
+    reasons:Object.freeze(reasons)
+  });
+}
+
+export function extractCaseLawMetadata(textInput,{
+  filename="judgment.txt",
+  sourceUrl=null,
+  sourceClass="local_unverified",
+  sourceSha256=null,
+  sourceHashBasis=null
+}={}){
   const text=clean(textInput);
+  const normalizedSourceClass=normalizeSourceClass(sourceClass);
+  const normalizedSourceUrl=normalizeSourceUrl(sourceUrl);
+  const normalizedSourceSha256=normalizeSha256(sourceSha256);
   const caseNumbers=extractDomesticCaseNumbers(text);
   const literalEcli=extractLiteralEcli(text);
   const court=extractCourt(text);
@@ -179,21 +243,39 @@ export function extractCaseLawMetadata(textInput,{filename="judgment.txt",source
   const citations=extractLegalCitations(text);
   const echr=extractEchrCompatibility(text);
   const privacyFlags=detectPrivacyReviewFlags(text);
+  const decisionDate=dates[0]||null;
+  const decisionDateIso=dates.map(normalizeDecisionDateCandidate).find(Boolean)||null;
+  const binding=sourceBindingState({
+    sourceClass:normalizedSourceClass,
+    sourceUrl:normalizedSourceUrl,
+    sourceSha256:normalizedSourceSha256
+  });
   const record={
     schemaVersion:CASE_LAW_METADATA_SCHEMA,
     processorVersion:CASE_LAW_METADATA_VERSION,
     kind:"case_law",
-    sourceIdentity:{filename:String(filename).slice(0,240),sourceUrl:sourceUrl||null,sourceClass},
-    authorityClass:sourceClass==="official_primary"?"official_primary":"unverified_or_secondary",
-    locator:sourceUrl||String(filename).slice(0,240),
+    recordKind:classifyRecordKind(decisionType),
+    sourceIdentity:{
+      filename:String(filename).slice(0,240),
+      sourceUrl:normalizedSourceUrl,
+      sourceClass:normalizedSourceClass,
+      sourceSha256:normalizedSourceSha256,
+      sourceHashBasis:sourceHashBasis?String(sourceHashBasis).slice(0,120):null
+    },
+    sourceBinding:binding,
+    authorityClass:"unverified_or_secondary",
+    locator:normalizedSourceUrl||String(filename).slice(0,240),
     releaseRole:"working_metadata",
     humanReviewStatus:"pending",
+    authorityReviewStatus:"pending",
     legalAuthority:"not_verified",
     jurisdiction:"MK",
     court,
     caseNumber:caseNumbers[0]||null,
     caseNumberCandidates:caseNumbers,
-    decisionDate:dates[0]||null,
+    relatedCaseNumbers:caseNumbers.slice(1),
+    decisionDate,
+    decisionDateIso,
     decisionDateCandidates:dates,
     decisionType,
     legalArea,
@@ -213,67 +295,115 @@ export function extractCaseLawMetadata(textInput,{filename="judgment.txt",source
 export function buildCaseLawMetadataBatch(documents=[]){
   if(!Array.isArray(documents)) throw new TypeError("case_law_documents_array_required");
   if(documents.length>MAX_BATCH) throw new TypeError("case_law_batch_limit_exceeded");
-  const records=documents.map((d,i)=>extractCaseLawMetadata(d?.text,{
+  const raw=documents.map((d,i)=>extractCaseLawMetadata(d?.text,{
     filename:d?.filename||`judgment-${i+1}.txt`,
     sourceUrl:d?.sourceUrl||null,
-    sourceClass:d?.sourceClass||"local_unverified"
+    sourceClass:d?.sourceClass||"local_unverified",
+    sourceSha256:d?.sourceSha256||null,
+    sourceHashBasis:d?.sourceHashBasis||null
   }));
+  const seenHashes=new Map();
+  let duplicateHashCount=0;
+  const records=raw.map((r,i)=>{
+    const hash=r.sourceIdentity.sourceSha256;
+    let duplicateOfIndex=null;
+    let status="not_evaluated";
+    if(hash){
+      if(seenHashes.has(hash)){
+        duplicateOfIndex=seenHashes.get(hash);
+        status="duplicate_content_hash";
+        duplicateHashCount++;
+      }else{
+        seenHashes.set(hash,i);
+        status="unique_hash";
+      }
+    }
+    return Object.freeze({
+      ...r,
+      duplicateReview:Object.freeze({status,duplicateOfIndex})
+    });
+  });
   return Object.freeze({
     schemaVersion:CASE_LAW_METADATA_SCHEMA,
     processorVersion:CASE_LAW_METADATA_VERSION,
     recordCount:records.length,
+    duplicateHashCount,
     records:Object.freeze(records),
     humanGateRequired:true,
     officialIdentifierGeneration:false
   });
 }
 
-export function buildGovernedCaseLawNdjson(batch,{runId="local-case-law-metadata",sourceProvider="Local batch",licenseOrAccessBasis="user_supplied",authorizedExport=false}={}){
+export function buildGovernedCaseLawNdjson(batch,{
+  runId="local-case-law-metadata",
+  sourceProvider="Local batch",
+  licenseOrAccessBasis="user_supplied",
+  authorizedExport=false
+}={}){
   if(!batch||!Array.isArray(batch.records)) throw new TypeError("case_law_batch_required");
   const manifest={
     type:"case_law_manifest",
+    schema_version:CASE_LAW_METADATA_SCHEMA,
+    processor_version:CASE_LAW_METADATA_VERSION,
     run_id:String(runId),
     source_class:"local_unverified",
     source_provider:String(sourceProvider),
     authorized_export:Boolean(authorizedExport),
     license_or_access_basis:String(licenseOrAccessBasis),
     discovery_only:true,
+    binding_required:true,
     human_gate_required:true,
-    production_eligible:false
+    production_eligible:false,
+    note:"This workbench export is intentionally not accepted as official/import-ready provenance until a separate source-binding step verifies the originating URL and source fingerprint."
   };
-  const rows=batch.records.map((r,i)=>({
-    type:"case_law_case",
-    case_key:`local:${i+1}:${r.caseNumber||"unidentified"}`,
-    case_title:null,
-    court:r.court||"Непознат суд — pending Human Gate",
-    case_number:r.caseNumber,
-    jurisdiction:"MK",
-    legal_area:r.legalArea?.value||null,
-    decision_date:r.decisionDate,
-    outcome_summary:r.disposition,
-    reasoning_summary:null,
-    source_url:r.sourceIdentity.sourceUrl,
-    source_sha256:null,
-    source_product:"case-law-metadata-workbench",
-    source_record_id:r.caseNumber||null,
-    external_ids:{
-      ...(r.ecli.primary?{ecli:r.ecli.primary}:{}),
-      ...(r.caseNumber?{domestic_case_number:r.caseNumber}:{})
-    },
-    finality_status:r.finalityStatus,
-    authority:{
-      court_level:"unknown",
-      decision_type:r.decisionType||"decision",
-      precedential_weight:"unknown",
-      outcome_side:"neutral",
-      convention_articles:r.echr.conventionArticles.join("; ")||null,
-      domestic_articles:r.citations.articles.join("; ")||null,
-      legal_issue_keys:r.legalArea?.value||null,
-      importance_level:null
-    },
-    holdings:[],
-    human_review_status:"pending",
-    authority_review_status:"pending"
-  }));
+  const rows=batch.records.map((r,i)=>{
+    const sourceHash=r.sourceIdentity.sourceSha256;
+    const workingTitle=r.caseNumber?`${r.court||"Непознат суд"} · ${r.caseNumber}`:`Работен запис ${i+1}`;
+    return {
+      type:"case_law_case",
+      case_key:sourceHash?`sha256:${sourceHash}`:`local:${i+1}:${r.caseNumber||"unidentified"}`,
+      case_title:workingTitle,
+      working_title:true,
+      court:r.court||"Непознат суд — pending Human Gate",
+      case_number:r.caseNumber,
+      jurisdiction:"MK",
+      legal_area:r.legalArea?.value||null,
+      decision_date:r.decisionDateIso||r.decisionDate,
+      displayed_decision_date:r.decisionDate,
+      record_kind:r.recordKind,
+      outcome_summary:r.disposition,
+      reasoning_summary:null,
+      source_url:r.sourceIdentity.sourceUrl,
+      source_sha256:sourceHash,
+      source_hash_basis:r.sourceIdentity.sourceHashBasis,
+      source_product:"case-law-metadata-workbench",
+      source_record_id:r.caseNumber||null,
+      external_ids:{
+        ...(r.ecli.primary?{ecli:r.ecli.primary}:{}),
+        ...(r.caseNumber?{domestic_case_number:r.caseNumber}:{}),
+        ...(r.echr.applicationNumbers.length?{echr_application_number:r.echr.applicationNumbers}:{}),
+        ...(r.echr.hudocItemIds.length?{hudoc_item_id:r.echr.hudocItemIds}:{})
+      },
+      finality_status:r.finalityStatus,
+      authority:{
+        court_level:"unknown",
+        decision_type:r.decisionType||"decision",
+        precedential_weight:"unknown",
+        outcome_side:"neutral",
+        convention_articles:r.echr.conventionArticles.join("; ")||null,
+        domestic_articles:r.citations.articles.join("; ")||null,
+        legal_issue_keys:r.legalArea?.value||null,
+        importance_level:null
+      },
+      holdings:[],
+      duplicate_review:r.duplicateReview||null,
+      discovery_only:true,
+      official_binding_verified:false,
+      production_eligible:false,
+      human_gate_required:true,
+      human_review_status:"pending",
+      authority_review_status:"pending"
+    };
+  });
   return [JSON.stringify(manifest),...rows.map(x=>JSON.stringify(x))].join("\n")+"\n";
 }
