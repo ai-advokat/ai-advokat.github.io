@@ -68,3 +68,4 @@ https://ai-advokat.github.io/scholar/sindzir/paper.pdf
 https://ai-advokat.github.io/scholar/electronic-ai-evidence/paper.pdf
 https://ai-advokat.github.io/scholar/mobile-phone-privilege/paper.pdf
 https://ai-advokat.github.io/scholar/ai-legal-practice-judiciary/paper.pdf
+https://ai-advokat.github.io/scholar/laskarci/paper.pdf
