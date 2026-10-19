@@ -61,3 +61,4 @@ https://ai-advokat.github.io/guides/record.html?g=60
 https://ai-advokat.github.io/guides/record.html?g=61
 https://ai-advokat.github.io/guides/record.html?g=62
 https://ai-advokat.github.io/guides/record.html?g=63
+https://ai-advokat.github.io/guides/zkp-commentary/
