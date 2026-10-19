@@ -48,3 +48,6 @@ INSERT OR IGNORE INTO zkp_commentary_releases
 VALUES
   ('zkp-commentary-v6-2026','Коментар на Законот за кривичната постапка','6','Адвокат Зоран Стојанкиќ',
    'd933779ef07d3f6a21e1a2e3593d79610707ce8b06439bbbda005ea3bfa3d860',570,'authorial_analysis','pending',0);
+
+INSERT OR IGNORE INTO schema_migrations(version, description)
+VALUES ('48', 'Create governed ZKP Commentary v6 secondary authorial layer');
