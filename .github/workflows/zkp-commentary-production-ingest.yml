@@ -1,0 +1,261 @@
+name: ZKP Commentary v6 production ingest
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/zkp-commentary-production-ingest.yml"
+      - "migrations/0048_zkp_commentary_v6_secondary_layer.sql"
+      - "scripts/zkp-commentary-jsonl-to-sql.mjs"
+      - "scripts/normalize-zkp-commentary-v6.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-zkp-commentary-production-ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest-commentary:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      EXPECTED_SOURCE_SHA256: "5a6a691cf616599c1648ab9749a34d388f7c4b5fea8b49ecfd3b4f409903c363"
+      RELEASE_ID: "zkp-commentary-v6-2026"
+      SECURE_INGEST_DIR: "secure-ingest/zkp-commentary-v6"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify exact production target
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a"){
+            throw new Error("Unexpected production D1");
+          }
+          const p=c.previews?.d1_databases?.[0];
+          if(p?.database_id===d.database_id) throw new Error("Production/staging collision");
+          console.log("EXACT PRODUCTION TARGET: PASS");
+          NODE
+
+      - name: Production preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT MAX(CAST(version AS INTEGER)) AS schema_version FROM schema_migrations; SELECT COUNT(*) AS zkp_articles FROM legal_article_versions WHERE instrument_id=(SELECT id FROM legal_instruments WHERE canonical_key='mk:zkp');" \
+            | tee /tmp/commentary-preflight.txt
+          grep -q '"zkp_articles": 570' /tmp/commentary-preflight.txt
+          echo "PRODUCTION PREFLIGHT: PASS"
+
+      - name: Apply commentary schema only
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --file migrations/0048_zkp_commentary_v6_secondary_layer.sql
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT id,edition,source_sha256,record_count,authority_role,human_gate_status,active FROM zkp_commentary_releases WHERE id='zkp-commentary-v6-2026';" \
+            | tee /tmp/commentary-schema.txt
+          grep -q '"id": "zkp-commentary-v6-2026"' /tmp/commentary-schema.txt
+          grep -q '"source_sha256": "5a6a691cf616599c1648ab9749a34d388f7c4b5fea8b49ecfd3b4f409903c363"' /tmp/commentary-schema.txt
+          echo "COMMENTARY SCHEMA: PASS"
+
+      - name: Exit cleanly if exact release is already active
+        id: already
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT COUNT(*) AS rows, (SELECT human_gate_status FROM zkp_commentary_releases WHERE id='zkp-commentary-v6-2026') AS gate, (SELECT active FROM zkp_commentary_releases WHERE id='zkp-commentary-v6-2026') AS active FROM zkp_commentary_articles WHERE release_id='zkp-commentary-v6-2026';" \
+            | tee /tmp/commentary-existing.txt
+          if grep -q '"rows": 570' /tmp/commentary-existing.txt && grep -q '"gate": "approved"' /tmp/commentary-existing.txt && grep -q '"active": 1' /tmp/commentary-existing.txt; then
+            echo "active=true" >> "$GITHUB_OUTPUT"
+            echo "EXACT COMMENTARY RELEASE ALREADY ACTIVE"
+          else
+            echo "active=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate one-run import public key
+        if: steps.already.outputs.active != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out /tmp/zkp-import-private.pem >/dev/null 2>&1
+          openssl pkey -in /tmp/zkp-import-private.pem -pubout -out /tmp/zkp-import-public.pem >/dev/null 2>&1
+          chmod 600 /tmp/zkp-import-private.pem
+          PUB_B64="$(base64 -w0 /tmp/zkp-import-public.pem)"
+          echo "ZKP_IMPORT_PUBLIC_KEY_B64=$PUB_B64"
+          echo "PUBLIC KEY READY — waiting for encrypted payload on main"
+
+      - name: Wait for encrypted payload
+        if: steps.already.outputs.active != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          for i in $(seq 1 120); do
+            git fetch --quiet origin main
+            if git cat-file -e "origin/main:$SECURE_INGEST_DIR/manifest.json" 2>/dev/null; then
+              rm -rf "$SECURE_INGEST_DIR"
+              git checkout origin/main -- "$SECURE_INGEST_DIR"
+              found=1
+              echo "Encrypted payload discovered on attempt $i"
+              break
+            fi
+            echo "Encrypted payload not yet present — attempt $i/120"
+            sleep 10
+          done
+          test "$found" = "1"
+
+      - name: Decrypt and verify exact source
+        if: steps.already.outputs.active != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST="$SECURE_INGEST_DIR/manifest.json"
+          test "$(jq -r '.schema_version' "$MANIFEST")" = "1.0"
+          test "$(jq -r '.release_id' "$MANIFEST")" = "$RELEASE_ID"
+          test "$(jq -r '.plaintext_sha256' "$MANIFEST")" = "$EXPECTED_SOURCE_SHA256"
+          test "$(jq -r '.cipher' "$MANIFEST")" = "AES-256-CBC+HMAC-SHA256"
+          test "$(jq -r '.key_wrap' "$MANIFEST")" = "RSA-OAEP-SHA256"
+
+          mapfile -t CHUNKS < <(jq -r '.chunks[]' "$MANIFEST")
+          test "${#CHUNKS[@]}" -ge 1
+          : > /tmp/payload.b64
+          for part in "${CHUNKS[@]}"; do
+            test -f "$SECURE_INGEST_DIR/$part"
+            cat "$SECURE_INGEST_DIR/$part" >> /tmp/payload.b64
+          done
+          base64 -d /tmp/payload.b64 > /tmp/payload.enc
+
+          CIPHER_SHA="$(sha256sum /tmp/payload.enc | cut -d' ' -f1)"
+          test "$CIPHER_SHA" = "$(jq -r '.ciphertext_sha256' "$MANIFEST")"
+
+          jq -r '.encrypted_key_b64' "$MANIFEST" | base64 -d > /tmp/key.enc
+          openssl pkeyutl -decrypt \
+            -inkey /tmp/zkp-import-private.pem \
+            -pkeyopt rsa_padding_mode:oaep \
+            -pkeyopt rsa_oaep_md:sha256 \
+            -in /tmp/key.enc -out /tmp/keymaterial.bin
+
+          test "$(wc -c < /tmp/keymaterial.bin)" = "64"
+          AES_KEY_HEX="$(dd if=/tmp/keymaterial.bin bs=1 count=32 status=none | xxd -p -c 256)"
+          HMAC_KEY_HEX="$(dd if=/tmp/keymaterial.bin bs=1 skip=32 count=32 status=none | xxd -p -c 256)"
+          IV_HEX="$(jq -r '.iv_hex' "$MANIFEST")"
+          EXPECTED_HMAC="$(jq -r '.hmac_sha256' "$MANIFEST")"
+          ACTUAL_HMAC="$(openssl dgst -sha256 -mac HMAC -macopt hexkey:$HMAC_KEY_HEX /tmp/payload.enc | awk '{print $2}')"
+          test "$ACTUAL_HMAC" = "$EXPECTED_HMAC"
+
+          openssl enc -d -aes-256-cbc -K "$AES_KEY_HEX" -iv "$IV_HEX" -in /tmp/payload.enc -out /tmp/payload.jsonl.gz
+          gunzip -c /tmp/payload.jsonl.gz > /tmp/zkp-commentary-v6.jsonl
+          ACTUAL_SOURCE_SHA="$(sha256sum /tmp/zkp-commentary-v6.jsonl | cut -d' ' -f1)"
+          test "$ACTUAL_SOURCE_SHA" = "$EXPECTED_SOURCE_SHA256"
+          test "$(wc -l < /tmp/zkp-commentary-v6.jsonl)" = "570"
+
+          node scripts/normalize-zkp-commentary-v6.mjs \
+            /tmp/zkp-commentary-v6.jsonl \
+            /tmp/zkp-commentary-v6-normalized.jsonl \
+            /tmp/zkp-commentary-normalization-report.json
+          grep -q '"source_sha256_verified": true' /tmp/zkp-commentary-normalization-report.json
+          grep -q '"article_coverage_verified": true' /tmp/zkp-commentary-normalization-report.json
+          echo "ENCRYPTED SOURCE VERIFICATION: PASS"
+
+      - name: Generate and import 570 commentary records
+        if: steps.already.outputs.active != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/zkp-commentary-jsonl-to-sql.mjs \
+            /tmp/zkp-commentary-v6.jsonl \
+            /tmp/zkp-commentary-v6-import.sql
+          test -s /tmp/zkp-commentary-v6-import.sql
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --file /tmp/zkp-commentary-v6-import.sql
+
+      - name: Human Gate activation
+        if: steps.already.outputs.active != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "UPDATE zkp_commentary_releases SET human_gate_status='approved',active=1,approved_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id='zkp-commentary-v6-2026' AND source_sha256='5a6a691cf616599c1648ab9749a34d388f7c4b5fea8b49ecfd3b4f409903c363' AND record_count=570;"
+          echo "HUMAN GATE ACTIVATION APPLIED"
+
+      - name: Read-back verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT id,edition,source_sha256,record_count,authority_role,human_gate_status,active,approved_at FROM zkp_commentary_releases WHERE id='zkp-commentary-v6-2026'; SELECT COUNT(*) AS commentary_count, COUNT(DISTINCT article_number) AS unique_articles FROM zkp_commentary_articles WHERE release_id='zkp-commentary-v6-2026'; SELECT article_number,article_title,risk_level,source_label FROM zkp_commentary_articles WHERE release_id='zkp-commentary-v6-2026' AND article_number IN ('1','12','267-а','329','445','502','551','567-а','568') ORDER BY id;" \
+            | tee /tmp/commentary-readback.txt
+          grep -q '"source_sha256": "5a6a691cf616599c1648ab9749a34d388f7c4b5fea8b49ecfd3b4f409903c363"' /tmp/commentary-readback.txt
+          grep -q '"human_gate_status": "approved"' /tmp/commentary-readback.txt
+          grep -q '"active": 1' /tmp/commentary-readback.txt
+          grep -q '"commentary_count": 570' /tmp/commentary-readback.txt
+          grep -q '"unique_articles": 570' /tmp/commentary-readback.txt
+          grep -q '"article_number": "267-а"' /tmp/commentary-readback.txt
+          grep -q '"article_number": "567-а"' /tmp/commentary-readback.txt
+          echo "COMMENTARY READ-BACK: PASS"
+
+      - name: Deploy production Worker
+        run: npx wrangler deploy --config wrangler.jsonc
+
+      - name: Live production smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 8 --retry-delay 3 "$BASE/api/health" -o /tmp/live-health.json
+          curl --fail --retry 8 --retry-delay 3 \
+            -H 'content-type: application/json' \
+            -d '{"q":"Објасни го практично член 12 од ЗКП и наведи што треба да провери бранителот.","instrument":"mk:zkp"}' \
+            "$BASE/api/assistant" -o /tmp/live-commentary-assistant.json
+          node <<'NODE'
+          const fs=require("fs");
+          const h=JSON.parse(fs.readFileSync("/tmp/live-health.json","utf8"));
+          const a=JSON.parse(fs.readFileSync("/tmp/live-commentary-assistant.json","utf8"));
+          if(!h.ok) throw new Error("health failed");
+          if(!a.ok || a.instrument?.canonicalKey!=="mk:zkp") throw new Error("assistant failed");
+          if(!(a.citations||[]).some(c=>String(c.articleNumber)==="12")) throw new Error("article 12 citation missing");
+          console.log("LIVE COMMENTARY-AWARE ASSISTANT: PASS");
+          NODE
+
+      - name: Upload activation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: zkp-commentary-v6-production-ingest-evidence
+          retention-days: 30
+          path: |
+            /tmp/commentary-preflight.txt
+            /tmp/commentary-schema.txt
+            /tmp/commentary-existing.txt
+            /tmp/zkp-commentary-normalization-report.json
+            /tmp/commentary-readback.txt
+            /tmp/live-health.json
+            /tmp/live-commentary-assistant.json
