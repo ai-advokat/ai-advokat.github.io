@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "id": "zkp-commentary-v6-2026",
+  "title": "Коментар на Законот за кривичната постапка",
+  "version": "6",
+  "author": "Адвокат Зоран Стојанкиќ",
+  "brand": "AI Advokat",
+  "record_count": 570,
+  "coverage": {
+    "from": "1",
+    "to": "568",
+    "includes": [
+      "267-а",
+      "567-а"
+    ]
+  },
+  "source_files": {
+    "docx": {
+      "name": "ZKP_Komentar_v6 (3).docx",
+      "sha256": "834e9d6fea81cd3c8b3f4fb30bb76186dc199680f60b464a3b9a82457560a3dd"
+    },
+    "jsonl": {
+      "name": "AI_ADVOKAT_ZKP_baza_v6.jsonl",
+      "sha256": "5a6a691cf616599c1648ab9749a34d388f7c4b5fea8b49ecfd3b4f409903c363"
+    }
+  },
+  "classification": "legal_reference_document",
+  "authority_role": "authorial_analysis",
+  "primary_law_dependency": "mk:zkp",
+  "retrieval_contract": [
+    "official_statutory_text_first",
+    "authorial_commentary_second",
+    "judicial_practice_separate",
+    "ai_synthesis_labelled",
+    "human_gate_for_professional_reliance"
+  ],
+  "portal_status": "registered",
+  "rag_status": "human_gate_required",
+  "production_corpus_write": false,
+  "notes": "The commentary database is a secondary authored layer and must never override or impersonate the governed official ZKP corpus."
+}

@@ -150,6 +150,7 @@ import {
   isFormalLegalDraftRequest,
   finaliseFormalLegalDraft
 } from "./response-quality.js";
+import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commentary.js";
 
 const VERSION = "1.9.0";
 const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V8";
@@ -3245,7 +3246,7 @@ const ASSISTANT_SYSTEM_RULES = buildAIAdvokatCentralPrompt({
   ]
 });
 
-function buildAssistantUserMessage(q, instrument, articles, version=null) {
+function buildAssistantUserMessage(q, instrument, articles, version=null, commentaryBundle=null) {
   const sources=articles.map(a=>{
     const notices=Array.isArray(a.legalStatusOverlays) && a.legalStatusOverlays.length
       ? a.legalStatusOverlays.map(o=>[
@@ -3280,6 +3281,13 @@ function buildAssistantUserMessage(q, instrument, articles, version=null) {
     sources,
     "<<<END_LEGAL_SOURCES>>>",
     "",
+    ...(commentaryBundle?.items?.length ? [
+      "<<<AUTHORIAL_COMMENTARY>>>",
+      "ROLE: secondary authorial analysis by Attorney Zoran Stojankich. It does not establish current law and never overrides LEGAL_SOURCES.",
+      commentaryPromptBlock(commentaryBundle,{maxChars:12000}),
+      "<<<END_AUTHORIAL_COMMENTARY>>>",
+      ""
+    ] : []),
     "<<<USER_QUESTION>>>",
     sanitizeForPrompt(q),
     "<<<END_USER_QUESTION>>>"
@@ -4186,6 +4194,26 @@ async function governedArticleContext(env,q,basePlan){
     );
     const releasedArticles=retrieval.articles.filter(article=>releasedArticleNumbers.has(String(article.articleNumber||"")));
 
+    const commentaryContext=[];
+    const commentarySources=[];
+    if((instrument?.canonical_key||routing.key)==="mk:zkp" && releasedArticles.length){
+      try{
+        const bundle=await findZkpCommentaryByArticles(env,releasedArticles.map(a=>a.articleNumber),{requireApproved:true});
+        for(const item of bundle.items||[]){
+          commentaryContext.push({
+            source:"Коментар на ЗКП · адвокат Зоран Стојанкиќ",
+            locator:"Член "+item.articleNumber+" · авторски коментар",
+            version:"Верзија "+String(bundle.release?.edition||"6")+" · secondary authorial analysis · Human Gate "+String(bundle.release?.humanGateStatus||"unknown"),
+            provenance:{kind:"authorial_commentary",sourceIdentity:"Коментар на Законот за кривичната постапка",authorityClass:"secondary_reference",locator:"Член "+item.articleNumber,releaseRole:"secondary_authorial_analysis",legalAuthority:false,humanReviewStatus:String(bundle.release?.humanGateStatus||"unknown"),instrumentKey:"mk:zkp",articleNumber:item.articleNumber,versionLabel:"v"+String(bundle.release?.edition||"6"),sourceSha256:String(bundle.release?.sourceSha256||""),recordSha256:String(item.recordSha256||""),currentLawClaim:false},
+            text:["ROLE: AUTHORIAL COMMENTARY — not statutory text.","ARTICLE: "+item.articleNumber,"TITLE: "+item.articleTitle,"COMMENTARY: "+(item.commentary||[]).join(" "),"PRACTICAL_APPLICATION: "+(item.practice||[]).join(" "),"COMMON_ERRORS: "+(item.commonErrors||[]).join(" "),"FORMULATIONS: "+(item.formulations||[]).join(" "),"RELATED_PROVISIONS: "+(item.relatedProvisions||[]).join(" | "),"PRACTICAL_USE: "+String(item.practicalUse||""),"RISK_LEVEL: "+String(item.riskLevel||"")].join("\n").slice(0,5200)
+          });
+          commentarySources.push({title:"Коментар на ЗКП · член "+item.articleNumber+" · Зоран Стојанкиќ",articleNumber:item.articleNumber,url:null,status:"secondary_authorial_analysis",humanReviewStatus:String(bundle.release?.humanGateStatus||"unknown"),version:"v"+String(bundle.release?.edition||"6"),authorityRole:"authorial_analysis"});
+        }
+      }catch(error){
+        console.error("chat_zkp_commentary_lookup_failed",String(error?.message||error).slice(0,180));
+      }
+    }
+
     const legalSources=releasedArticles.map(article=>({
       title:instrumentTitle+" · член "+String(article.articleNumber || "")+(article.referenceRole==="explicit_cross_reference" ? " · упатување од "+article.referenceOriginArticleNumbers.map(n=>"член "+n).join(", ") : ""),
       articleNumber:String(article.articleNumber || ""),
@@ -4201,8 +4229,8 @@ async function governedArticleContext(env,q,basePlan){
     }));
 
     return {
-      context:provenanceGate.context,
-      legalSources,
+      context:[...provenanceGate.context,...commentaryContext],
+      legalSources:[...legalSources,...commentarySources],
       articles:releasedArticles,
       primaryArticles:(retrieval.primaryArticles || retrieval.articles).filter(article=>releasedArticleNumbers.has(String(article.articleNumber||""))),
       crossReferenceArticles:(retrieval.crossReferenceArticles || []).filter(article=>releasedArticleNumbers.has(String(article.articleNumber||""))),
@@ -6135,6 +6163,14 @@ async function handleAssistant(request, env, url) {
   const sourceProvenanceGate=enforceCanonicalContextProvenance(provenanceCandidates);
   const releasedArticleNumbers=new Set(sourceProvenanceGate.context.map(item=>String(item?.provenance?.articleNumber||"")).filter(Boolean));
   const articles=retrievedArticles.filter(article=>releasedArticleNumbers.has(String(article.articleNumber||"")));
+  let commentaryBundle={release:null,items:[]};
+  if(instrument?.canonical_key==="mk:zkp" && articles.length){
+    try{
+      commentaryBundle=await findZkpCommentaryByArticles(env,articles.map(a=>a.articleNumber),{requireApproved:true});
+    }catch(error){
+      console.error("zkp_commentary_lookup_failed",String(error?.message||error).slice(0,180));
+    }
+  }
   if(!articles.length){
     return json(request,{
       ok:false,
@@ -6183,7 +6219,7 @@ async function handleAssistant(request, env, url) {
     const providerResult=await runWorkersAIText(env,{
       messages:[
         {role:"system",content:ASSISTANT_SYSTEM_RULES},
-        {role:"user",content:buildAssistantUserMessage(q,instrument,articles,version)}
+        {role:"user",content:buildAssistantUserMessage(q,instrument,articles,version,commentaryBundle)}
       ],
       maxOutputTokens:1400,
       temperature:0.1

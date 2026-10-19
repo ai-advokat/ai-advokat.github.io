@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_on": "2026-10-03",
+  "generated_on": "2026-10-19",
   "collection": {
     "id": "zoran-professional-legal-library",
     "title_mk": "Стручна библиотека",
@@ -10,6 +10,62 @@
     "rag_policy": "no_ingestion_until_source_and_version_audit_pass"
   },
   "records": [
+    {
+      "id": "zkp-commentary-v6-2026",
+      "type": "legal_commentary",
+      "title": "Коментар на Законот за кривичната постапка",
+      "subtitle": "Целосен практичен коментар по членови 1–568 · Верзија 6",
+      "author": "Адвокат Зоран Стојанкиќ",
+      "platform": "AI Advokat",
+      "place_year": "Скопје, 2026",
+      "docx": {
+        "source_file": "ZKP_Komentar_v6 (3).docx",
+        "sha256": "834e9d6fea81cd3c8b3f4fb30bb76186dc199680f60b464a3b9a82457560a3dd",
+        "size_bytes": 1258291
+      },
+      "database": {
+        "source_file": "AI_ADVOKAT_ZKP_baza_v6.jsonl",
+        "sha256": "5a6a691cf616599c1648ab9749a34d388f7c4b5fea8b49ecfd3b4f409903c363",
+        "records": 570,
+        "role": "secondary_authorial_knowledge_layer"
+      },
+      "pdf": {
+        "source_file": "ZKP_Komentar_v6_AI_ADVOKAT_BRAND_CLEAN_RC.pdf",
+        "sha256": "c2d9a67aa0fcbbdd53bf46a76c79fca3361d549108f0c4232f3eb1e455c96d13",
+        "size_bytes": 14743973,
+        "pages": 1229,
+        "note": "LibreOffice-rendered brand-clean release candidate from the supplied DOCX; not publicly released."
+      },
+      "scope": "570 членови, вклучително 267-а и 567-а. За секој член се раздвојуваат законски текст, авторски коментар, практична примена, стратегија, грешки, поврзани одредби и работни формулации.",
+      "strengths": [
+        "Законскиот текст е одделен од авторскиот коментар и се третира како различен изворен слој.",
+        "JSONL базата овозможува член-по-член пребарување и машинско поврзување со AI Advokat.",
+        "Верзија 6 е резултат на посебна проверка спрема пречистениот текст и Human Gate за финална професионална употреба."
+      ],
+      "findings": [
+        {
+          "severity": "P1",
+          "code": "secondary_layer_not_primary_law",
+          "text": "Коментарот и JSONL базата се авторски секундарен слој. Ниту една авторска формулација не смее да се прикажува како важечки закон без контролен официјален извор."
+        },
+        {
+          "severity": "P2",
+          "code": "case_law_enrichment_next_phase",
+          "text": "ЕСЧП, Врховен суд и друга релевантна судска практика се планиран посебен enrichment слој со сопствен provenance и verification gate."
+        }
+      ],
+      "status": "portal_registered_secondary_layer",
+      "status_label": "Регистриран во портал · секундарен авторски слој · Human Gate пред production AI ingest",
+      "ai_use": "blocked_for_rag_until_commentary_ingest_gate",
+      "professional_use": "human_review_required",
+      "public_files": false,
+      "brand": "AI Advokat",
+      "brand_clean_candidate": {
+        "docx_sha256": "9c498bda7738e849765b63acbbf762dea1d00caaf05c13f920d4046ae09c82a9",
+        "jsonl_sha256": "41c752759680b35e0f8ff98ab8b6088dd96fbfe69dd04e23147f3be939544c97",
+        "canonical_brand": "AI Advokat"
+      }
+    },
     {
       "id": "criminal-procedure-manual-2026",
       "type": "professional_manual",

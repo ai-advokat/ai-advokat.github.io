@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_on": "2026-10-03",
+  "generated_on": "2026-10-19",
   "standard": "AI_ADVOKAT_PROFESSIONAL_PUBLICATION_STANDARD_v1.0",
   "doctrine": "source_first_human_gate",
   "gates": {
@@ -11,6 +11,21 @@
     "github_merge": "explicit_and_separate"
   },
   "pipeline": [
+    {
+      "id": "zkp-commentary-v6-2026",
+      "kind": "legal_commentary_and_machine_database",
+      "title": "Коментар на Законот за кривичната постапка · Верзија 6",
+      "status": "portal_registry_integrated",
+      "notes": "570-членска авторска база е регистрирана како секундарен слој. Законскиот текст останува под официјалниот ZKP corpus; авторскиот коментар не смее да се маскира како примарно право. Бренд: AI Advokat (без генерациски број).",
+      "author_approval": "legal_text_verified_by_author_2026-10-18_commentary_release_gate_separate",
+      "public_release": false,
+      "rag_eligible": false,
+      "github_merge_approved": false,
+      "production_corpus_write_approved": false,
+      "source_docx_sha256": "834e9d6fea81cd3c8b3f4fb30bb76186dc199680f60b464a3b9a82457560a3dd",
+      "source_jsonl_sha256": "5a6a691cf616599c1648ab9749a34d388f7c4b5fea8b49ecfd3b4f409903c363",
+      "record_count": 570
+    },
     {
       "id": "practical-guides-batch-1",
       "kind": "practical_guides",
