@@ -15,7 +15,7 @@ test("ABE1 public navigation exposes Academy, Summit and partnerships",()=>{
     assert.ok(home.includes(`href="${path}"`));
     assert.ok(membership.includes(`href="${path}"`));
   }
-  assert.ok(home.includes('navAcademy:"Academy"'));
+  assert.ok(home.includes('navAcademy:"Nenad Lex Nova Academy"'));
   assert.ok(home.includes('navSummit:"Summit"'));
   assert.ok(home.includes('navPartners:"Партнерства"'));
   assert.ok(home.includes('navPartners:"Partnerships"'));
@@ -38,7 +38,7 @@ test("ABE3 membership benefits are bounded and do not invent a current event pri
   assert.ok(academy.includes("Повластена цена за членови"));
   assert.ok(academy.includes("Group benefit"));
   assert.ok(academy.includes("секој трет учесник од истиот правен субјект е без котизација"));
-  assert.ok(membership.includes("Членство + AI Advokat Academy"));
+  assert.ok(membership.includes("Членство + Nenad Lex Nova Academy"));
   assert.ok(membership.includes("OFFICE / Team"));
   assert.ok(membership.includes("до 5 места"));
   assert.doesNotMatch(academy,/25\.900|31\.900|36\.900|52\.900|57\.900|71\.900/);
@@ -63,7 +63,7 @@ test("ABE5 partner programme protects legal independence",()=>{
 
 test("ABE6 homepage presents the ecosystem without claiming confirmed Summit logistics",()=>{
   assert.ok(home.includes('id="ecosystem"'));
-  assert.ok(home.includes("AI Advokat Academy"));
+  assert.ok(home.includes("Nenad Lex Nova Academy"));
   assert.ok(home.includes("Legal Intelligence Summit"));
   assert.ok(home.includes("Стратешки партнерства"));
   assert.ok(home.toLowerCase().includes("датум, место, предавачи и котизација не се сметаат за објавени"));
