@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="mk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Водич за користење на Коментарот на ЗКП и базата · AI Advokat</title>
+  <meta name="description" content="Практичен водич за користење на Коментарот на Законот за кривичната постапка, JSONL базата од 570 записи и AI Advokat со јасна хиерархија на извори и Human Gate.">
+  <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
+  <link rel="canonical" href="https://ai-advokat.github.io/guides/zkp-commentary-usage/">
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <style>
+    :root{--bg:#f4f6f8;--s:#fff;--ink:#102033;--muted:#5a6878;--line:#d9e1e8;--navy:#0c2038;--navy2:#173d66;--gold:#b9985b;--soft:#eef3f8;--ok:#1f6c4d;--warn:#8a5a00;--red:#9b1c1c}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.62 system-ui,-apple-system,Segoe UI,sans-serif}a{color:#173d66}.wrap{max-width:1120px;margin:auto;padding:0 20px}.skip{position:absolute;left:-9999px;top:8px;background:#fff;padding:10px 14px;border-radius:8px;z-index:30}.skip:focus{left:10px}header{background:var(--navy);color:#fff}.nav{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:17px 0;flex-wrap:wrap}.brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:850}.brand img{width:38px;height:38px;border-radius:10px;object-fit:cover;object-position:left center}.nav nav{display:flex;gap:15px;flex-wrap:wrap}.nav nav a{color:#fff;text-decoration:none}.hero{background:linear-gradient(135deg,#071524,#173d66);color:#fff;padding:68px 0}.eyebrow{font-size:.76rem;font-weight:850;letter-spacing:.11em;text-transform:uppercase;color:#f0d39c}.hero h1{font-size:clamp(2.2rem,5vw,4.4rem);line-height:1.02;letter-spacing:-.04em;margin:12px 0 18px;max-width:980px}.hero p{max-width:850px;color:#d9e6ef;font-size:1.1rem;margin:0}.status{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}.pill{display:inline-flex;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);font-size:.82rem;font-weight:750}.main{padding:50px 0 70px}.notice{background:#fff8e8;border-left:5px solid var(--gold);padding:17px 19px;border-radius:0 12px 12px 0;margin-bottom:24px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card,.section{background:var(--s);border:1px solid var(--line);border-radius:16px;padding:22px}.card h2,.card h3,.section h2{margin:.15rem 0 .65rem}.card p,.section p{color:var(--muted)}.steps{counter-reset:s;display:grid;gap:10px;padding:0;list-style:none}.steps li{counter-increment:s;display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}.steps li:before{content:counter(s);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--navy);color:white;font-weight:850}.ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}.ladder div{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);font-size:.9rem;font-weight:750}.schema{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.schema code{display:block;background:#0b1726;color:#d8e7f3;padding:10px;border-radius:10px;overflow-wrap:anywhere}.example{border-left:4px solid var(--navy2);padding:12px 15px;background:var(--soft);border-radius:0 10px 10px 0;margin:10px 0}.small{font-size:.88rem;color:var(--muted)}footer{background:#071524;color:#d9e4ee;padding:28px 0;margin-top:50px}.foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}.foot a{color:#d9e4ee}
+    @media(max-width:820px){.grid{grid-template-columns:1fr}.ladder{grid-template-columns:repeat(2,1fr)}.schema{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:520px){.ladder,.schema{grid-template-columns:1fr}.hero{padding:50px 0}}
+  </style>
+</head>
+<body>
+<a class="skip" href="#main">Прескокни до главната содржина</a>
+<header><div class="wrap nav"><a class="brand" href="/"><img src="/assets/ai-advokat-hero-brand.webp?v=2" alt="">AI Advokat</a><nav aria-label="Главна навигација"><a href="/">Почетна</a><a href="/professional-library/">Стручна библиотека</a><a href="/guides/">Водичи</a><a href="/governance.html">Human Gate</a></nav></div></header>
+
+<section class="hero"><div class="wrap">
+  <div class="eyebrow">ZKP COMMENTARY · DATABASE · HUMAN GATE</div>
+  <h1>Водич за користење на Коментарот на ЗКП и базата</h1>
+  <p>Практичен работен модел за користење на Коментарот на Законот за кривичната постапка, член-по-член базата од 570 записи и AI Advokat без мешање на законскиот текст, авторскиот коментар и AI синтезата.</p>
+  <div class="status"><span class="pill">Верзија 2.0 · 2026</span><span class="pill">570 записи</span><span class="pill">чл. 1–568 + 267-а + 567-а</span><span class="pill">AI Advokat</span></div>
+</div></section>
+
+<main id="main" class="main"><div class="wrap">
+  <div class="notice"><strong>Основно правило:</strong> Коментарот и базата се секундарен авторски слој. Важечкиот закон и официјалните/судските извори остануваат контролен авторитет. AI одговорот е работна синтеза и не ја заменува професионалната проверка.</div>
+
+  <section class="section">
+    <h2>1. Хиерархија на користење</h2>
+    <div class="ladder">
+      <div>1 · Закон и официјален извор</div><div>2 · Судска практика</div><div>3 · Коментар на ЗКП</div><div>4 · AI синтеза + Human Gate</div>
+    </div>
+    <p class="small">Кога постои разлика меѓу авторскиот коментар и официјалниот важечки текст, предност има официјалниот извор.</p>
+  </section>
+
+  <div class="grid" style="margin-top:18px">
+    <article class="card"><h2>2. Четири режими на работа</h2>
+      <p><strong>По член:</strong> кога е познат релевантниот член од ЗКП.</p>
+      <p><strong>По процесна фаза:</strong> предистражна постапка, истрага, обвинение, главна расправа, пресуда, правни лекови или посебни постапки.</p>
+      <p><strong>По практичен проблем:</strong> притвор, претрес, незаконит доказ, сведок, вештачење, жалба и слично.</p>
+      <p><strong>По адвокатска задача:</strong> приговор, предлог, барање, жалба, стратегија или работна формулација.</p>
+    </article>
+    <article class="card"><h2>3. Што содржи еден запис</h2>
+      <div class="schema">
+        <code>article_number</code><code>article_title</code><code>law_text</code><code>commentary</code><code>practice</code><code>common_errors</code><code>formulations</code><code>related_provisions</code><code>systematics</code><code>procedure_phase</code><code>actors</code><code>topics</code>
+      </div>
+      <p class="small">Кај обогатените записи дополнително се користат related_articles, practical_use и risk_level.</p>
+    </article>
+  </div>
+
+  <section class="section" style="margin-top:18px">
+    <h2>4. Седумчекорен работен тек</h2>
+    <ol class="steps">
+      <li><div><strong>Определи ја процесната фаза.</strong><br><span class="small">Не почнувај само од клучен збор; утврди каде се наоѓа предметот.</span></div></li>
+      <li><div><strong>Пронајди го релевантниот член.</strong><br><span class="small">Провери го законскиот текст и неговиот статус/верзија.</span></div></li>
+      <li><div><strong>Прочитај го авторскиот коментар.</strong><br><span class="small">Одделно од законскиот текст: правна смисла, практична примена и стратегија.</span></div></li>
+      <li><div><strong>Провери поврзани одредби.</strong><br><span class="small">Еден член ретко функционира изолирано.</span></div></li>
+      <li><div><strong>Провери судска практика и официјални извори.</strong><br><span class="small">Особено кога се потпираш на стандард, рок или спорно толкување.</span></div></li>
+      <li><div><strong>Користи AI Advokat за синтеза.</strong><br><span class="small">Барај јасно раздвојување: закон → коментар → практика → заклучок.</span></div></li>
+      <li><div><strong>Human Gate.</strong><br><span class="small">Пред поднесок, совет или процесна одлука, адвокатот ја проверува применливоста врз конкретните факти и доказите.</span></div></li>
+    </ol>
+  </section>
+
+  <div class="grid" style="margin-top:18px">
+    <article class="card"><h2>5. Quick Start</h2>
+      <div class="example"><strong>Пример 1 — познат член</strong><br>„Прикажи го член 12 од ЗКП. Оддели го законскиот текст од Коментарот, поврзаните членови и практичната адвокатска примена.“</div>
+      <div class="example"><strong>Пример 2 — практичен проблем</strong><br>„Кои одредби и процесни ризици се релевантни за издвојување незаконит доказ? Наведи го официјалниот законски слој прво.“</div>
+      <div class="example"><strong>Пример 3 — правен лек</strong><br>„Подготви работна анализа за жалбен основ, но означи кои делови доаѓаат од ЗКП, кои од Коментарот и кои се AI синтеза.“</div>
+    </article>
+    <article class="card"><h2>6. Што не смее да се прави</h2>
+      <p>Не се цитира AI одговор како да е закон.</p>
+      <p>Не се претставува авторскиот коментар како официјален извор.</p>
+      <p>Не се користи работна формулација без приспособување на фактите и доказите.</p>
+      <p>Не се претпоставува дека верзијата на законскиот текст е тековна без проверка на важечката состојба.</p>
+      <p>Не се меша судска практика со авторска интерпретација без provenance.</p>
+    </article>
+  </div>
+
+  <section class="section" style="margin-top:18px">
+    <h2>7. Статус на базата и production користење</h2>
+    <p>Базата содржи <strong>570 уникатни записи</strong>: членовите 1–568, плус 267-а и 567-а. Секој запис има законски текст и авторски коментар. Коментарот е регистриран како <strong>secondary authorial knowledge layer</strong>.</p>
+    <p>Production AI користењето е fail-closed: Коментарот не смее да се вклучи како активен runtime слој додека production ingest, read-back проверката и Human Gate активацијата не завршат. До тогаш овој водич ја дефинира правилната методологија на употреба, но не тврди дека секој запис е веќе live во ботот.</p>
+  </section>
+
+  <section class="section" style="margin-top:18px">
+    <h2>8. Препорачана форма на AI одговор</h2>
+    <p><strong>A. Релевантен законски текст</strong> → <strong>B. Верзија/извор</strong> → <strong>C. Авторски коментар</strong> → <strong>D. Поврзани одредби</strong> → <strong>E. Судска практика</strong> → <strong>F. Практична примена</strong> → <strong>G. Ризици/отворени прашања</strong> → <strong>H. Human Gate.</strong></p>
+    <p class="small">Овој редослед е дизајниран за да не се изгуби границата меѓу примарното право, секундарната анализа и AI синтезата.</p>
+  </section>
+</div></main>
+
+<footer><div class="wrap foot"><div><strong>AI Advokat</strong><br><span class="small" style="color:#b9c9d7">Правото, организирано. AI, под човечка контрола.</span></div><div><a href="/professional-library/">Стручна библиотека</a> · <a href="/governance.html">Проверливост</a> · <a href="/ai-use-policy.html">AI и Human Gate</a></div></div></footer>
+</body>
+</html>
