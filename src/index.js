@@ -3245,7 +3245,7 @@ const ASSISTANT_SYSTEM_RULES = buildAIAdvokatCentralPrompt({
   ]
 });
 
-function buildAssistantUserMessage(q, instrument, articles, version=null) {
+function buildAssistantUserMessage(q, instrument, articles, version=null, commentaryBundle=null) {
   const sources=articles.map(a=>{
     const notices=Array.isArray(a.legalStatusOverlays) && a.legalStatusOverlays.length
       ? a.legalStatusOverlays.map(o=>[
@@ -6183,7 +6183,7 @@ async function handleAssistant(request, env, url) {
     const providerResult=await runWorkersAIText(env,{
       messages:[
         {role:"system",content:ASSISTANT_SYSTEM_RULES},
-        {role:"user",content:buildAssistantUserMessage(q,instrument,articles,version)}
+        {role:"user",content:buildAssistantUserMessage(q,instrument,articles,version,commentaryBundle)}
       ],
       maxOutputTokens:1400,
       temperature:0.1
