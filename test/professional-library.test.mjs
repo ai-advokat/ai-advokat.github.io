@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 const data=JSON.parse(fs.readFileSync("data/professional-library.json","utf8"));
 const html=fs.readFileSync("professional-library/index.html","utf8");
+const sales=fs.readFileSync("books/priracnik-krivicni-predmeti/index.html","utf8");
 describe("professional library governance",()=>{
  test("PL1 reviewed professional works are uniquely registered",()=>{
    assert.ok(data.records.length>=3);
@@ -49,5 +50,11 @@ describe("professional library governance",()=>{
    assert.equal(manual.purchase_page,"https://ai-advokat.github.io/books/priracnik-krivicni-predmeti/");
    assert.equal(manual.pricing.payment_mode,"manual_human_gate");
    assert.match(html,/Комерцијален пристап и нарачка/);
+ }); test("PL7 commercial page is human-gated and never exposes the restricted PDF",()=>{
+   assert.match(sales,/€69/);
+   assert.match(sales,/од €199/);
+   assert.match(sales,/нема автоматска наплата/i);
+   assert.match(sales,/10\.5281\/zenodo\.23476734/);
+   assert.ok(!sales.includes("COMMERCIAL_FINAL_DOI_23476734.pdf"));
  });
 });
