@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from "node:fs";
+import crypto from "node:crypto";
 
 const [inputPath, outputPath, reportPath] = process.argv.slice(2);
 if (!inputPath || !outputPath || !reportPath) {
@@ -7,7 +8,11 @@ if (!inputPath || !outputPath || !reportPath) {
   process.exit(2);
 }
 
-const lines = fs.readFileSync(inputPath, "utf8").split(/\r?\n/).filter(Boolean);
+const rawBytes = fs.readFileSync(inputPath);
+const sourceSha256 = crypto.createHash("sha256").update(rawBytes).digest("hex");
+const EXPECTED_SOURCE_SHA256 = "5a6a691cf616599c1648ab9749a34d388f7c4b5fea8b49ecfd3b4f409903c363";
+if (sourceSha256 !== EXPECTED_SOURCE_SHA256) throw new Error(`Source SHA-256 mismatch: expected ${EXPECTED_SOURCE_SHA256}, got ${sourceSha256}`);
+const lines = rawBytes.toString("utf8").split(/\r?\n/).filter(Boolean);
 const rows = lines.map((line, i) => {
   try { return JSON.parse(line); } catch { throw new Error(`Invalid JSONL at line ${i + 1}`); }
 });
@@ -50,12 +55,23 @@ for (const row of rows) {
   row.brand = "AI Advokat";
 }
 
+const expectedNumbers=[...Array.from({length:568},(_,i)=>String(i+1))];
+expectedNumbers.splice(267,0,"267-а");
+expectedNumbers.splice(expectedNumbers.length-1,0,"567-а");
+if (seen.size!==expectedNumbers.length || expectedNumbers.some(n=>!seen.has(n))) {
+  const missing=expectedNumbers.filter(n=>!seen.has(n));
+  const unexpected=[...seen].filter(n=>!expectedNumbers.includes(n));
+  throw new Error(`Article coverage mismatch; missing=${missing.join(",")||"none"}; unexpected=${unexpected.join(",")||"none"}`);
+}
 if (emptyLawText) throw new Error(`Law text missing in ${emptyLawText} records`);
 if (emptyCommentary) throw new Error(`Commentary missing in ${emptyCommentary} records`);
 
 fs.writeFileSync(outputPath, rows.map(x => JSON.stringify(x)).join("\n") + "\n");
 fs.writeFileSync(reportPath, JSON.stringify({
   schema_version: "1.0",
+  source_sha256: sourceSha256,
+  source_sha256_verified: true,
+  article_coverage_verified: true,
   records: rows.length,
   unique_articles: seen.size,
   brand_fixes: brandFixes,
