@@ -64,3 +64,7 @@ https://ai-advokat.github.io/guides/record.html?g=61
 https://ai-advokat.github.io/guides/record.html?g=62
 https://ai-advokat.github.io/guides/record.html?g=63
 https://ai-advokat.github.io/guides/zkp-commentary/
+https://ai-advokat.github.io/scholar/sindzir/paper.pdf
+https://ai-advokat.github.io/scholar/electronic-ai-evidence/paper.pdf
+https://ai-advokat.github.io/scholar/mobile-phone-privilege/paper.pdf
+https://ai-advokat.github.io/scholar/ai-legal-practice-judiciary/paper.pdf
