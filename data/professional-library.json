@@ -6,7 +6,7 @@
     "title_mk": "Стручна библиотека",
     "platform": "AI Advokat",
     "owner_note": "Стручни прирачници и монографски изданија на адвокат Зоран Стојанкиќ",
-    "public_download_policy": "locked_until_human_gate",
+    "public_download_policy": "per_record_human_gate_and_rights",
     "rag_policy": "no_ingestion_until_source_and_version_audit_pass"
   },
   "records": [
@@ -69,49 +69,46 @@
     {
       "id": "criminal-procedure-manual-2026",
       "type": "professional_manual",
-      "title": "Прирачник за адвокати во кривична постапка",
+      "title": "Прирачник за адвокати во кривични предмети",
       "subtitle": "Практична методологија, правна анализа, доказна стратегија и обрасци",
       "author": "Адвокат Зоран Стојанкиќ",
+      "publisher": "AI Advokat",
       "place_year": "Скопје, 2026",
+      "version": "3.4",
+      "publication_date": "2026-10-19",
+      "doi": "10.5281/zenodo.23476734",
+      "concept_doi": "10.5281/zenodo.23476733",
+      "zenodo_url": "https://zenodo.org/records/23476734",
+      "access": "restricted",
+      "rights": "© 2026 Zoran Stojankich. All rights reserved.",
+      "commercial_access": true,
       "pdf": {
-        "source_file": "Priracnik_za_advokati_vo_krivicna_postapka_CELOSEN_REPAIRED (3).pdf",
-        "sha256": "6e742633c80a49d14936c90d29be68c8008727b2b2d266e3889d69db196120a3",
-        "size_bytes": 2046475,
-        "pages": 272
+        "source_file": "Zoran_Stojankich_Priracnik_Advokati_Krivicni_Predmeti_v3.4_COMMERCIAL_FINAL_DOI_23476734.pdf",
+        "sha256": "04b949dc7a1a1c57d0380b033ab7d85113ac1ac28238d16b782aa2fa76f00c23",
+        "md5": "af28c85c6469d33e80782b9e406733cb",
+        "size_bytes": 14484937,
+        "pages": 1147,
+        "access": "Zenodo restricted"
       },
       "docx": {
-        "source_file": "Priracnik_za_advokati_vo_krivicna_postapka_CELOSEN.docx",
-        "sha256": "b32ae175aca1cc7024febddef07f93a9c81fa2ac534544bedceaa500aab7323a",
-        "size_bytes": 450915
+        "source_file": "Zoran_Stojankich_Priracnik_Advokati_Krivicni_Predmeti_v3.4_COMMERCIAL_FINAL_DOI_23476734.docx",
+        "sha256": "984efa037505287d589609197ef0ecde1c89d212595a7559c58591121712ed0e",
+        "size_bytes": 783522,
+        "access": "private_author_master"
       },
-      "scope": "32 глави и 10 прилози: од прв контакт со клиент, полициска/обвинителска фаза, притвор и докази, до главна расправа, жалби, ЕСЧП, правни лица, обрасци и финална методологија.",
+      "scope": "77 глави, 10 тематски дела и 22 практични прилози: професионална методологија за прием и организација на предмет, правна и доказна анализа, притвор, главна расправа, правни лекови, дигитални докази, посебни категории кривични дела, ЕСЧП перспектива, контролни листи, матрици и практични адвокатски формули.",
       "strengths": [
-        "Јасна авторска и правна напомена дека прирачникот не го заменува важечкиот закон и судската практика.",
-        "Практична структура со контролни листи и blank-field табела за законски членови наместо лажно фиксирање на членови.",
-        "Изразен Human Gate: конкретните рокови, членови и институти мора повторно да се проверуваат."
+        "Финално издание v3.4 со затворен Human Gate и DOI регистриран преку Zenodo.",
+        "Целосниот PDF е Restricted; јавни се библиографскиот запис, DOI и метаподатоците, а комерцијалниот full-text не се дистрибуира бесплатно.",
+        "Издавачкиот master содржи права, професионална правна напомена, AI/Human Gate disclosure и проверлив publication metadata."
       ],
-      "findings": [
-        {
-          "severity": "P1",
-          "code": "separate_corporate_liability_law_reference",
-          "text": "Во листата за нормативна проверка се споменува „Закон за кривична одговорност на правни лица“. Корпоративната кривична одговорност е уредена во Кривичниот законик, вклучително член 28-а и поврзаните одредби; формулацијата треба да се коригира пред публикација."
-        },
-        {
-          "severity": "P2",
-          "code": "duplicate_section_headings",
-          "text": "Во PDF-от има видливи повторувања на дел/глава наслови (на пр. Дел VI и Глава 27), што треба да се исчисти пред јавна публикација."
-        },
-        {
-          "severity": "P2",
-          "code": "source_apparatus_upgrade",
-          "text": "За професионално цитирање треба да се додаде консолидиран изворен/библиографски апарат со датум на нормативен пресек и официјални извори."
-        }
-      ],
-      "status": "revision_required",
-      "status_label": "Содржински силен нацрт • потребни нормативна и издавачка корекција пред Human Gate",
-      "ai_use": "blocked_for_rag_until_revision",
+      "findings": [],
+      "status": "published_restricted_commercial",
+      "status_label": "Објавено на Zenodo · DOI 10.5281/zenodo.23476734 · Restricted full text · комерцијално издание",
+      "ai_use": "not_ingested_without_separate_human_gate",
       "professional_use": "human_review_required",
-      "public_files": false
+      "public_files": false,
+      "purchase_contact": "aiadvokat16@gmail.com"
     },
     {
       "id": "echr-north-macedonia-manual-v4-2",
