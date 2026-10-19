@@ -36,9 +36,19 @@ function sqlText(value) {
 function sqlJson(value, fallback) {
   return sqlText(JSON.stringify(value === undefined ? fallback : value));
 }
+function cleanBrand(value) {
+  if (typeof value === "string") {
+    return value.replace(/АИ АДВОКАТ 4/g, "АИ АДВОКАТ").replace(/AI ADVOKAT 4/g, "AI Advokat");
+  }
+  if (Array.isArray(value)) return value.map(cleanBrand);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, cleanBrand(v)]));
+  }
+  return value;
+}
 function canonicalRecord(row) {
   return {
-    ...row,
+    ...cleanBrand(row),
     source: SOURCE_LABEL,
     brand: "AI Advokat",
     knowledge_role: "authorial_analysis",
@@ -63,20 +73,20 @@ for (const row of rows) {
   const values = [
     sqlText(RELEASE_ID),
     sqlText(number),
-    sqlText(row.article_title || ""),
-    sqlJson(row.law_text, []),
-    sqlJson(row.commentary, []),
-    sqlJson(row.practice, []),
-    sqlJson(row.common_errors, []),
-    sqlJson(row.formulations, []),
-    sqlJson(row.related_provisions, []),
-    row.systematics ? sqlJson(row.systematics, {}) : "NULL",
-    row.procedure_phase ? sqlJson(row.procedure_phase, []) : "NULL",
-    row.actors ? sqlJson(row.actors, []) : "NULL",
-    row.topics ? sqlJson(row.topics, []) : "NULL",
-    row.related_articles ? sqlJson(row.related_articles, []) : "NULL",
-    sqlText(row.practical_use || ""),
-    sqlText(row.risk_level || ""),
+    sqlText(normalized.article_title || ""),
+    sqlJson(normalized.law_text, []),
+    sqlJson(normalized.commentary, []),
+    sqlJson(normalized.practice, []),
+    sqlJson(normalized.common_errors, []),
+    sqlJson(normalized.formulations, []),
+    sqlJson(normalized.related_provisions, []),
+    normalized.systematics ? sqlJson(normalized.systematics, {}) : "NULL",
+    normalized.procedure_phase ? sqlJson(normalized.procedure_phase, []) : "NULL",
+    normalized.actors ? sqlJson(normalized.actors, []) : "NULL",
+    normalized.topics ? sqlJson(normalized.topics, []) : "NULL",
+    normalized.related_articles ? sqlJson(normalized.related_articles, []) : "NULL",
+    sqlText(normalized.practical_use || ""),
+    sqlText(normalized.risk_level || ""),
     sqlText(SOURCE_LABEL),
     sqlText(recordSha256)
   ];
