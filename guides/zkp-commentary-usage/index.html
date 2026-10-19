@@ -11,6 +11,7 @@
   <style>
     :root{--bg:#f4f6f8;--s:#fff;--ink:#102033;--muted:#5a6878;--line:#d9e1e8;--navy:#0c2038;--navy2:#173d66;--gold:#b9985b;--soft:#eef3f8;--ok:#1f6c4d;--warn:#8a5a00;--red:#9b1c1c}
     *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.62 system-ui,-apple-system,Segoe UI,sans-serif}a{color:#173d66}.wrap{max-width:1120px;margin:auto;padding:0 20px}.skip{position:absolute;left:-9999px;top:8px;background:#fff;padding:10px 14px;border-radius:8px;z-index:30}.skip:focus{left:10px}header{background:var(--navy);color:#fff}.nav{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:17px 0;flex-wrap:wrap}.brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:850}.brand img{width:38px;height:38px;border-radius:10px;object-fit:cover;object-position:left center}.nav nav{display:flex;gap:15px;flex-wrap:wrap}.nav nav a{color:#fff;text-decoration:none}.hero{background:linear-gradient(135deg,#071524,#173d66);color:#fff;padding:68px 0}.eyebrow{font-size:.76rem;font-weight:850;letter-spacing:.11em;text-transform:uppercase;color:#f0d39c}.hero h1{font-size:clamp(2.2rem,5vw,4.4rem);line-height:1.02;letter-spacing:-.04em;margin:12px 0 18px;max-width:980px}.hero p{max-width:850px;color:#d9e6ef;font-size:1.1rem;margin:0}.status{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}.pill{display:inline-flex;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);font-size:.82rem;font-weight:750}.main{padding:50px 0 70px}.notice{background:#fff8e8;border-left:5px solid var(--gold);padding:17px 19px;border-radius:0 12px 12px 0;margin-bottom:24px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card,.section{background:var(--s);border:1px solid var(--line);border-radius:16px;padding:22px}.card h2,.card h3,.section h2{margin:.15rem 0 .65rem}.card p,.section p{color:var(--muted)}.steps{counter-reset:s;display:grid;gap:10px;padding:0;list-style:none}.steps li{counter-increment:s;display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}.steps li:before{content:counter(s);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--navy);color:white;font-weight:850}.ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}.ladder div{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);font-size:.9rem;font-weight:750}.schema{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.schema code{display:block;background:#0b1726;color:#d8e7f3;padding:10px;border-radius:10px;overflow-wrap:anywhere}.example{border-left:4px solid var(--navy2);padding:12px 15px;background:var(--soft);border-radius:0 10px 10px 0;margin:10px 0}.small{font-size:.88rem;color:var(--muted)}footer{background:#071524;color:#d9e4ee;padding:28px 0;margin-top:50px}.foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}.foot a{color:#d9e4ee}
+    .docs-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.doc{display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid var(--line);border-radius:13px;background:var(--soft)}.doc strong{font-size:1.02rem}.doc .meta{font-size:.82rem;color:var(--muted)}.doc-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}.doc-btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 11px;border-radius:9px;text-decoration:none;font-weight:800;border:1px solid #b9c6d2;background:#fff;color:var(--navy2)}.doc-btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}.doc.missing{border-style:dashed;background:#fffaf0}.doc .status-note{font-size:.86rem;color:var(--warn)}
     @media(max-width:820px){.grid{grid-template-columns:1fr}.ladder{grid-template-columns:repeat(2,1fr)}.schema{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:520px){.ladder,.schema{grid-template-columns:1fr}.hero{padding:50px 0}}
   </style>
@@ -90,6 +91,44 @@
     <h2>8. Препорачана форма на AI одговор</h2>
     <p><strong>A. Релевантен законски текст</strong> → <strong>B. Верзија/извор</strong> → <strong>C. Авторски коментар</strong> → <strong>D. Поврзани одредби</strong> → <strong>E. Судска практика</strong> → <strong>F. Практична примена</strong> → <strong>G. Ризици/отворени прашања</strong> → <strong>H. Human Gate.</strong></p>
     <p class="small">Овој редослед е дизајниран за да не се изгуби границата меѓу примарното право, секундарната анализа и AI синтезата.</p>
+  </section>
+
+  <section class="section" style="margin-top:18px">
+    <h2>9. Документи и прилози за Коментарот на ЗКП</h2>
+    <p>На едно место се собрани јавните материјали што ја придружуваат оваа тема. Секој документ подолу води кон реална датотека или реална HTML-страница во репозиториумот.</p>
+    <div class="docs-grid">
+      <article class="doc">
+        <strong>FINAL MASTER v2.0 — Водич за Коментарот на ЗКП и базата</strong>
+        <span class="meta">HTML · канонска јавна верзија</span>
+        <div class="doc-actions"><a class="doc-btn primary" href="/guides/zkp-commentary/">Отвори документ</a></div>
+      </article>
+      <article class="doc">
+        <strong>Quick Start v2.0</strong>
+        <span class="meta">Markdown · практичен почетен водич</span>
+        <div class="doc-actions"><a class="doc-btn primary" href="/docs/zkp-commentary/QUICK_START_v2.0.md">Отвори / преземи</a></div>
+      </article>
+      <article class="doc">
+        <strong>Schema Notes v2.0</strong>
+        <span class="meta">Markdown · структура на 570-записниот корпус</span>
+        <div class="doc-actions"><a class="doc-btn primary" href="/docs/zkp-commentary/SCHEMA_NOTES_v2.0.md">Отвори / преземи</a></div>
+      </article>
+      <article class="doc">
+        <strong>ZKP Commentary v6 — Portal Integration Note</strong>
+        <span class="meta">Markdown · интеграција во Стручната библиотека и AI Advokat</span>
+        <div class="doc-actions"><a class="doc-btn primary" href="/docs/professional-library/ZKP_COMMENTARY_V6_PORTAL_INTEGRATION_2026-10-19.md">Отвори / преземи</a></div>
+      </article>
+      <article class="doc">
+        <strong>ZKP Commentary v6 — Manifest</strong>
+        <span class="meta">JSON · fingerprints, улога на корпусот и release metadata</span>
+        <div class="doc-actions"><a class="doc-btn primary" href="/data/zkp-commentary-v6-manifest.json">Отвори / преземи</a></div>
+      </article>
+      <article class="doc missing">
+        <strong>Коментар на ЗКП v6 — целосен авторски MASTER</strong>
+        <span class="meta">DOCX · 1231 страници · автор: адвокат Зоран Стојанкиќ</span>
+        <span class="status-note"><strong>Статус:</strong> master-датотеката постои во авторската библиотека, но не е физички објавена во јавниот GitHub репозиториум. Затоа овде намерно нема лажен или мртов download-линк.</span>
+      </article>
+    </div>
+    <p class="small">PDF-копија на целосниот MASTER не е пронајдена во јавниот репозиториум. Таа треба да се објави како вистинска датотека пред да се активира PDF-копче на оваа страница.</p>
   </section>
 </div></main>
 
