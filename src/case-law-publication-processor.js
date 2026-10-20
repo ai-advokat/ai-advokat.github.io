@@ -71,8 +71,12 @@ export function extractCaseLawDiscoveryRegister(textInput,{sourceId="supplied-ca
     const matches=[...line.matchAll(REGISTER_CASE_RE)];
     if(matches.length===0){
       if(line.length<=160 && !/[.;:]$/u.test(line)){
-        if(!currentTopic) currentTopic=line;
-        else currentSubtopic=line;
+        if(/^\p{Lu}/u.test(line)){
+          currentTopic=line;
+          currentSubtopic=null;
+        }else{
+          currentSubtopic=line;
+        }
       }
       continue;
     }
