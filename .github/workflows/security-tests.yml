@@ -161,6 +161,10 @@ jobs:
         run: npm run test:security
       - name: Legal parser regression tests
         run: npm run test:legal-parser
+      - name: Real supplied ZKP and Criminal Code source regressions
+        run: |
+          node --check scripts/parse-mk-legal-text.mjs
+          npm run test:real-mk-law-source-regressions
       - name: Corpus safety foundation tests (parser v0.3, QA validator, migration 0023, version-aware retrieval)
         run: npm run test:corpus-safety
       - name: Corpus foundation v1.1 tests (multi-source validator, amendment engine)
