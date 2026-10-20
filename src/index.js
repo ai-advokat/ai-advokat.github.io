@@ -151,6 +151,7 @@ import {
   finaliseFormalLegalDraft
 } from "./response-quality.js";
 import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commentary.js";
+import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, scholarlyContextItems } from "./scholarly-literature.js";
 
 const VERSION = "1.9.0";
 const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V8";
@@ -2753,7 +2754,7 @@ async function handleSearch(request, env, url) {
 
   const database = await dbStatus(env);
   const databaseReady=database.reachable && database.schemaReady;
-  if (!databaseReady && type!=="all" && type!=="guide") {
+  if (!databaseReady && type!=="all" && type!=="guide" && type!=="paper") {
     return json(request, {
       ok: false,
       error: "database_not_ready",
@@ -2771,16 +2772,21 @@ async function handleSearch(request, env, url) {
   const guideResults = (type==="all" || type==="guide")
     ? await searchPublicGuides(request,env,{q,status,limit})
     : [];
-  const results=[...corpusResults,...guideResults].slice(0,limit);
+  const scholarlyResults = (type==="all" || type==="paper")
+    ? await searchPublicScholarly(request,env,{q,limit})
+    : [];
+  const results=[...corpusResults,...guideResults,...scholarlyResults]
+    .sort((a,b)=>(Number(b.relevanceScore||0)-Number(a.relevanceScore||0)))
+    .slice(0,limit);
 
   return json(request, {
     ok: true,
-    mode: databaseReady ? "read_only_public_corpus_plus_guides" : "read_only_public_guides_degraded",
+    mode: databaseReady ? "read_only_public_corpus_plus_guides_plus_scholarly" : "read_only_public_guides_and_scholarly_degraded",
     query: q,
     database,
     count: results.length,
     results,
-    humanGate: "Guide matches are secondary navigation aids. Open and verify the controlling primary source before professional reliance."
+    humanGate: "Guide and scholarly matches are secondary navigation/context aids. Open and verify the controlling primary source before professional reliance."
   });
 }
 
@@ -3241,12 +3247,13 @@ const ASSISTANT_SYSTEM_RULES = buildAIAdvokatCentralPrompt({
     "If an article is historical or needs_version_review, state that it is not Human-Gate confirmed as current.",
     "If LEGAL_STATUS_NOTICES says pending_constitutional_review, state that the proceeding is pending and preserve the stated case reference; do not claim repeal, annulment or loss of effect unless the notice explicitly says so.",
     "If TEXT_REPRESENTATION is reviewed_derived, use REVIEWED_TEXT as the reviewed structural/amendment representation while preserving the distinction from current-law Human Gate confirmation.",
+    "SCHOLARLY_CONTEXT, when present, is secondary doctrine or bibliographic discovery only. It may explain debate, issue spotting and research leads, but every current-law proposition must still be supported by LEGAL_SOURCES. Never attribute a substantive conclusion to an article when only its title/metadata is supplied.",
     "For deadlines, criminal procedure, detention, remedies, limitation periods and other high-risk issues, keep the answer useful but explicitly require professional Human Gate review before reliance.",
     "Preferred structure when it helps: Краток одговор; Правна основа; Примена/објаснување; Ограничувања и што треба да се провери."
   ]
 });
 
-function buildAssistantUserMessage(q, instrument, articles, version=null, commentaryBundle=null) {
+function buildAssistantUserMessage(q, instrument, articles, version=null, commentaryBundle=null, scholarlyRecords=[]) {
   const sources=articles.map(a=>{
     const notices=Array.isArray(a.legalStatusOverlays) && a.legalStatusOverlays.length
       ? a.legalStatusOverlays.map(o=>[
@@ -3288,6 +3295,12 @@ function buildAssistantUserMessage(q, instrument, articles, version=null, commen
       "<<<END_AUTHORIAL_COMMENTARY>>>",
       ""
     ] : []),
+    ...(Array.isArray(scholarlyRecords) && scholarlyRecords.length ? [
+      "<<<SCHOLARLY_CONTEXT>>>",
+      scholarlyPromptBlock(scholarlyRecords,{maxChars:9000}),
+      "<<<END_SCHOLARLY_CONTEXT>>>",
+      ""
+    ] : []),
     "<<<USER_QUESTION>>>",
     sanitizeForPrompt(q),
     "<<<END_USER_QUESTION>>>"
@@ -3314,6 +3327,32 @@ const CHAT_ALLOWED_FILE_MIME=new Set([
   "application/csv",
   "application/json"
 ]);
+
+async function loadScholarlyRegistry(request,env){
+  if(!env.ASSETS) return null;
+  try{
+    const assetUrl=new URL("/data/scholarly-legal-literature-2026.json",request.url);
+    const response=await env.ASSETS.fetch(new Request(assetUrl,{method:"GET"}));
+    if(!response.ok) return null;
+    const data=await response.json();
+    return data && typeof data==="object" ? data : null;
+  }catch{
+    return null;
+  }
+}
+
+async function findGovernedScholarly(request,env,q,{limit=5}={}){
+  const registry=await loadScholarlyRegistry(request,env);
+  if(!registry) return {records:[],context:[]};
+  const records=findScholarlyRecords(registry,q,{limit});
+  return {records,context:scholarlyContextItems(records)};
+}
+
+async function searchPublicScholarly(request,env,{q,limit=8}={}){
+  const registry=await loadScholarlyRegistry(request,env);
+  if(!registry) return [];
+  return scholarlySearchItems(registry,q,{limit});
+}
 
 async function loadGuideRegistry(request,env){
   if(!env.ASSETS) return null;
@@ -5378,15 +5417,16 @@ async function handleGPTChat(request,env){
 
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const initialPlan=buildAgentPlan(q);
-  const [guideContext,articleBundle,caseLawBundle,gazetteBundle,bureauEchrBundle]=await Promise.all([
+  const [guideContext,articleBundle,caseLawBundle,gazetteBundle,bureauEchrBundle,scholarlyBundle]=await Promise.all([
     governedGuideContext(request,env,guideIds),
     governedArticleContext(env,q,initialPlan),
     governedCaseLawContext(env,q,initialPlan,{limit:4}),
     governedGazetteChunkContext(env,q),
-    bureauEchrDiscoveryContext(q,{limit:6})
+    bureauEchrDiscoveryContext(q,{limit:6}),
+    findGovernedScholarly(request,env,q,{limit:5})
   ]);
 
-  const rawCorpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext];
+  const rawCorpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext,...scholarlyBundle.context];
   if(uiMode==="library" && rawCorpusContext.length===0){
     rawCorpusContext.push({
       contextRole:"governance_notice",
@@ -5417,7 +5457,7 @@ async function handleGPTChat(request,env){
     || caseLawBundle.context.length>0
     || guideDocumentCheck.context.length>0
     || uiMode==="library"
-    || (uiMode==="auto" && guideContext.length>0);
+    || (uiMode==="auto" && (guideContext.length>0 || scholarlyBundle.context.length>0));
 
   // In Auto mode the user should not need to understand source lanes or switch
   // a Web toggle. If a legal task has no governed primary support locally,
@@ -6175,6 +6215,13 @@ async function handleAssistant(request, env, url) {
       console.error("zkp_commentary_lookup_failed",String(error?.message||error).slice(0,180));
     }
   }
+  let scholarlyRecords=[];
+  try{
+    const scholarly=await findGovernedScholarly(request,env,q,{limit:4});
+    scholarlyRecords=scholarly.records;
+  }catch(error){
+    console.error("scholarly_lookup_failed",String(error?.message||error).slice(0,180));
+  }
   if(!articles.length){
     return json(request,{
       ok:false,
@@ -6223,7 +6270,7 @@ async function handleAssistant(request, env, url) {
     const providerResult=await runWorkersAIText(env,{
       messages:[
         {role:"system",content:ASSISTANT_SYSTEM_RULES},
-        {role:"user",content:buildAssistantUserMessage(q,instrument,articles,version,commentaryBundle)}
+        {role:"user",content:buildAssistantUserMessage(q,instrument,articles,version,commentaryBundle,scholarlyRecords)}
       ],
       maxOutputTokens:1400,
       temperature:0.1
