@@ -118,6 +118,8 @@ export function isDecisionCandidate(link){
   const label=String(link?.label||"").toLocaleLowerCase("mk");
   if(/\.(?:pdf|docx?|rtf)(?:\?|$)/iu.test(u)) return true;
   const caseNumber=/(?:рев\.?|квп|кзз|гзз|вкж|к\.?бр\.?|п\.?бр\.?|т\.?бр\.?)\s*[\w./-]*\d/iu.test(label);
+  const genericNavigation=/^(?:одлуки|судска\s+пракса|пребарување\s+одлуки)$/iu.test(label.trim());
+  if(genericNavigation && !caseNumber) return false;
   const decisionWord=/(?:пресуд|решени|одлук|judg|decision)/iu.test(label);
   const detailUrl=/(?:detail|decision|judg|case|document|act|presud|odluk|reshen|resen|id=|item=|predmet)/iu.test(u);
   return caseNumber || (decisionWord && detailUrl);
