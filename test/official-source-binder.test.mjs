@@ -43,6 +43,21 @@ test("LDBIS is an official legal-instrument source candidate without blanket bul
   assert.equal(b.reuseStatus,"terms_review_required");
 });
 
+test("official supporting/history sources do not become primary MK-law staging",()=>{
+  for(const url of [
+    "https://ener.gov.mk/Default.aspx?item=test",
+    "https://www.sobranie.mk/test"
+  ]){
+    const b=bindOfficialSource({sourceUrl:url,sourceSha256:hash,route:"legal_instrument",registrySources:sources});
+    assert.equal(b.registryMatched,true);
+    assert.equal(b.officialOriginCandidate,true);
+    assert.equal(b.routeCompatible,true);
+    assert.equal(b.primaryForRoute,false);
+    assert.equal(b.metadataStagingEligible,false);
+    assert.ok(b.reasons.includes("source_is_official_but_not_primary_for_this_ingest_lane"));
+  }
+});
+
 test("judicial portal and Supreme Court are recognized for case-law staging only",()=>{
   for(const url of [
     "https://www.sud.mk/test/decision",
