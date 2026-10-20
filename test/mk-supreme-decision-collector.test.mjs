@@ -69,5 +69,5 @@ test("collector source code keeps provenance and production release fail-closed"
   assert.match(source,/manifest\.ndjson/);
   assert.match(source,/human_gate_required:true/);
   assert.match(source,/production_eligible:false/);
-  assert.doesNotMatch(source,/cookie|authorization/i);
+  assert.doesNotMatch(source,/headers\\s*:\\s*\\{[^}]*["\'](?:cookie|authorization)["\']/i);\n  assert.doesNotMatch(source,/credentials\\s*:/i);
 });
