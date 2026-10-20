@@ -1,13 +1,22 @@
 {
   "schema_version": "1.0",
-  "generated_on": "2026-10-19",
+  "generated_on": "2026-10-20",
   "collection": {
     "id": "zoran-professional-legal-library",
     "title_mk": "Стручна библиотека",
     "platform": "AI Advokat",
     "owner_note": "Стручни прирачници и монографски изданија на адвокат Зоран Стојанкиќ",
     "public_download_policy": "per_record_human_gate_and_rights",
-    "rag_policy": "no_ingestion_until_source_and_version_audit_pass"
+    "rag_policy": "no_ingestion_until_source_and_version_audit_pass",
+    "subtitle_mk": "Авторски професионални дела, научно-стручна литература и историски практични извори",
+    "scholarly_registry": "/data/scholarly-legal-literature-2026.json",
+    "library_layers": [
+      "primary_and_official_sources_linked_elsewhere",
+      "authorial_professional_works",
+      "peer_reviewed_scholarly_secondary_literature",
+      "historical_professional_practice",
+      "human_gate"
+    ]
   },
   "records": [
     {
@@ -166,6 +175,33 @@
       "ai_use": "blocked_for_rag_until_version_closeout",
       "professional_use": "human_review_required",
       "public_files": false
+    }
+  ],
+  "scholarly_collections": [
+    {
+      "id": "maclc-macedonian-journal-criminal-law-criminology",
+      "title": "Македонска ревија за казнено право и криминологија",
+      "role": "peer_reviewed_scholarly_secondary_literature",
+      "issn": "1409-5327",
+      "issue_coverage": "1994; 2014–2025 во доставената/официјално листана архива",
+      "detailed_issue_metadata": [
+        2017,
+        2022,
+        2024,
+        2025
+      ],
+      "source_url": "http://www.maclc.mk/publications",
+      "current_law_authority": false,
+      "human_gate_required": true
+    },
+    {
+      "id": "criminal-defence-advocacy-manual-2009",
+      "title": "Прирачник за адвокатски вештини за одбрана во кривичната постапка",
+      "role": "historical_professional_practice",
+      "publication_year": 2009,
+      "current_law_mapping_required": true,
+      "current_law_authority": false,
+      "human_gate_required": true
     }
   ]
 }
