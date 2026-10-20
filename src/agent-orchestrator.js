@@ -85,8 +85,8 @@ export const AGENT_ROLES = Object.freeze({
     label: "AI Advokat Knowledge Agent",
     jurisdiction: "AI_ADVOCAT_CORPUS",
     authorityBoundary: "native_material_only_until_explicit_external_research_step",
-    preferredSources: ["AI Advokat governed corpus", "author-approved internal instructions", "governed guides/publications"],
-    purpose: "Answers from Zoran Stojankich / AI Advokat native materials first, preserving exact document provenance and corpus boundaries."
+    preferredSources: ["AI Advokat governed corpus", "author-approved internal instructions", "governed guides/publications", "peer-reviewed scholarly legal literature"],
+    purpose: "Answers from Zoran Stojankich / AI Advokat native materials first, including governed scholarly literature as secondary doctrine, while preserving exact document provenance, authority hierarchy and corpus boundaries."
   }),
   verify: Object.freeze({
     id: "verification_citation",
