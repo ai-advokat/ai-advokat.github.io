@@ -1,8 +1,10 @@
+import {classifyInternationalDocument} from "./international-legal-classifier.js";
+
 // AI Advokat governed document ingest router.
 // Deterministic routing only: it never changes legal authority, never fabricates
 // identifiers and never bypasses the Human Gate.
 
-export const DOCUMENT_INGEST_ROUTER_VERSION = "1.0.0";
+export const DOCUMENT_INGEST_ROUTER_VERSION = "1.1.0";
 export const DOCUMENT_INGEST_ROUTER_SCHEMA = "AI_ADVOCAT_DOCUMENT_ROUTE_V1";
 
 const CONTROL=/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u;
@@ -138,6 +140,7 @@ export function classifyDocumentForIngest(textInput){
   const law=lawSignals(text);
   const caseLaw=caseLawSignals(text);
   const other=otherLegalSignals(text);
+  const international=classifyInternationalDocument(text);
 
   let route="manual_review";
   let reason="insufficient_or_conflicting_structural_signals";
@@ -149,6 +152,10 @@ export function classifyDocumentForIngest(textInput){
   if(structuralConflict){
     route="manual_review";
     reason="strong_law_and_case_law_structures_conflict";
+  }else if(international.documentSubtype!=="unknown"){
+    route=international.route;
+    reason="international_document_subtype_"+international.documentSubtype;
+    autoRouteAllowed=international.route==="case_law";
   }else if(law.score>=7 && law.score>=caseLaw.score+3){
     route="legal_instrument";
     reason="standalone_article_structure_and_normative_signals";
@@ -174,7 +181,10 @@ export function classifyDocumentForIngest(textInput){
       otherLegal:other.score,
       statisticalConfidence:null
     }),
-    signals:Object.freeze({legalInstrument:law,caseLaw,otherLegal:other}),
+    documentSubtype:international.documentSubtype,
+    authorityClass:international.authorityClass,
+    privacyRisk:international.privacyRisk,
+    signals:Object.freeze({legalInstrument:law,caseLaw,otherLegal:other,international}),
     downstream:pipelineFor(route),
     humanGateRequired:true,
     generatedOfficialIdentifier:false
