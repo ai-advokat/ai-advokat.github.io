@@ -11,6 +11,7 @@ import {
 } from "../src/international-legal-classifier.js";
 import {parseIcsidRecentHtml} from "../scripts/icsid-recent-event-intake.mjs";
 import {extractNorthMacedoniaUhriRecords} from "../scripts/uhri-north-macedonia-intake.mjs";
+import {classifyDocumentForIngest} from "../src/document-ingest-router.js";
 
 const registry=JSON.parse(fs.readFileSync("data/international-legal-source-registry-2026.json","utf8"));
 const fixtures=JSON.parse(fs.readFileSync("data/regression/international-legal-regression-fixtures-2026.json","utf8"));
@@ -140,4 +141,17 @@ test("supplied MK laws remain version/provenance tests, not automatic current la
   const kz=fixtures.mk_legal_instruments.find(x=>x.id==="criminal-code-unofficial-consolidated");
   assert.equal(kz.source_status,"unofficial_consolidated_text");
   assert.ok(kz.regression_features.includes("lettered_articles"));
+});
+
+
+test("main document router exposes governed international subtypes",()=>{
+  const bulletin=classifyDocumentForIngest("БИЛТЕН на судската практика на Врховен суд 2016-2017");
+  assert.equal(bulletin.route,"review_only");
+  assert.equal(bulletin.documentSubtype,"official_case_law_bulletin");
+  assert.equal(bulletin.autoRouteAllowed,false);
+
+  const ngo=classifyDocumentForIngest("Месечен извештај за човековите права во Република Македонија");
+  assert.equal(ngo.route,"review_only");
+  assert.equal(ngo.documentSubtype,"human_rights_monitoring_report");
+  assert.equal(ngo.privacyRisk,"elevated");
 });
