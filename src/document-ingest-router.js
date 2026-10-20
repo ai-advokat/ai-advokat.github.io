@@ -4,7 +4,7 @@ import {classifyInternationalDocument} from "./international-legal-classifier.js
 // Deterministic routing only: it never changes legal authority, never fabricates
 // identifiers and never bypasses the Human Gate.
 
-export const DOCUMENT_INGEST_ROUTER_VERSION = "1.1.0";
+export const DOCUMENT_INGEST_ROUTER_VERSION = "1.2.0";
 export const DOCUMENT_INGEST_ROUTER_SCHEMA = "AI_ADVOCAT_DOCUMENT_ROUTE_V1";
 
 const CONTROL=/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u;
@@ -39,11 +39,12 @@ function lawSignals(text){
     /^\s*ЧЛЕН\s+[0-9]+(?:\s*[-–—]?\s*[А-ШЃЅЈЉЊЌЏа-шѓѕјљњќџ])?\s*\.?\s*$/gimu,
     1000
   );
-  const lawTitle=has(text,/^\s*(?:ЗАКОН|УСТАВ|УРЕДБА|ПРАВИЛНИК|ПРАВИЛА|УПАТСТВО|ТАРИФА)(?![\p{L}\p{N}])[^\n]{0,180}$/imu);
+  const lawTitle=has(text,/^\s*(?:ЗАКОН|(?:[А-ШЃЅЈЉЊЌЏ]+\s+){0,4}ЗАКОНИК|УСТАВ|УРЕДБА|ПРАВИЛНИК|ПРАВИЛА|УПАТСТВО|ТАРИФА)(?![\p{L}\p{N}])[^\n]{0,180}$/imu);
   const amendingLaw=has(text,/ЗАКОН\s+ЗА\s+(?:ИЗМЕНУВАЊЕ|ДОПОЛНУВАЊЕ|ИЗМЕНУВАЊЕ\s+И\s+ДОПОЛНУВАЊЕ)\s+НА\s+ЗАКОНОТ/iu);
   const gazette=has(text,/Службен\s+весник\s+на\s+Република(?:\s+Северна)?\s+Македонија/iu);
   const chapterCount=countMatches(text,/^\s*(?:ГЛАВА|ДЕЛ|ОДДЕЛ)\s+(?:[IVXLC]+|[0-9]+)(?![\p{L}\p{N}])/gimu,100);
   const promulgation=has(text,/СЕ\s+ПРОГЛАСУВА\s+ЗАКОНОТ/iu);
+  const unofficialConsolidated=has(text,/(?:Неофицијален|Неофицијално)\s+пречистен\s+текст/iu);
 
   let score=0;
   if(articleHeaderCount>=5) score+=7;
@@ -62,7 +63,8 @@ function lawSignals(text){
     amendingLaw,
     gazette,
     chapterCount,
-    promulgation
+    promulgation,
+    unofficialConsolidated
   });
 }
 
@@ -211,6 +213,8 @@ export function classifyDocumentForIngest(textInput){
     documentSubtype:international.documentSubtype,
     authorityClass:international.authorityClass,
     privacyRisk:international.privacyRisk,
+    sourceStatusHint:law.unofficialConsolidated ? "unofficial_consolidated_text" : "source_status_unresolved",
+    currentLawVerified:false,
     signals:Object.freeze({legalInstrument:law,caseLaw,otherLegal:other,international}),
     downstream:pipelineFor(route,international.documentSubtype),
     humanGateRequired:true,

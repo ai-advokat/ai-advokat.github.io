@@ -67,6 +67,33 @@ const EDITORIAL_NOTE_PATTERNS = [
   /^\s*\[?\s*(?:Членот|Ставот|Точката|Алинејата)\s+(?:е|се)\s+(?:изменет|дополнет|избришан|бришан)/iu,
   /\((?:изменет|дополнет|избришан)\s+со(?![\p{L}])/iu
 ];
+
+// Constitutional Court status notes in unofficial/consolidated texts are legal-status
+// evidence, not normative article text. They are preserved verbatim and force Human Gate.
+// The matcher is intentionally conservative and only recognizes an explicit annul/repeal
+// verb together with a target article and an explicit Constitutional Court reference.
+function constitutionalCourtStatusNote(value="") {
+  const text=compact(value);
+  const target=`([0-9]+(?:\\s*[${DASHES}]\\s*[A-Za-z${CYR_LOWER}${CYR_UPPER}])?)`;
+  const patterns=[
+    new RegExp(`Се\\s+(поништува|укинува)\\s+член\\s+${target}[^\\n]{0,220}?Уставн(?:иот|и)\\s+суд`, "iu"),
+    new RegExp(`Уставн(?:иот|и)\\s+суд[^\\n]{0,260}?(поништен|укинат)\\s+(?:е\\s+)?член\\s+${target}`, "iu"),
+    new RegExp(`Со\\s+Одлука[^\\n]{0,260}?(?:поништен|укинат)\\s+(?:е\\s+)?член\\s+${target}`, "iu")
+  ];
+  for (const re of patterns) {
+    const m=text.match(re);
+    if (!m) continue;
+    const rawTarget=m[2] || m[1];
+    const verb=(m[1] || "").toLocaleLowerCase("mk");
+    const targetArticle=normalizeArticleNumber(rawTarget);
+    return {
+      action:/поништ/u.test(verb) || /поништен/u.test(text) ? "annulled" : "repealed_or_annulled",
+      target_article:targetArticle,
+      source_text:text
+    };
+  }
+  return null;
+}
 // Heading that opens the transitional/final provisions (it sits at the end of the previous article's body).
 const TRANSITIONAL_HEADING_RE = /^\s*(?:[IVXLC]+\.?\s+)?(?:ПРЕОДНИ\s+И\s+ЗАВРШНИ\s+ОДРЕДБИ|ПРЕОДНИ\s+ОДРЕДБИ|ЗАВРШНИ\s+ОДРЕДБИ|ЗАВРШНА\s+ОДРЕДБА|ПРЕОДНА\s+И\s+ЗАВРШНА\s+ОДРЕДБА)\s*$/u;
 // Short line that looks like an article header but is not a valid one ("ЧЛЕН 5", "Член5", "Член 5)", "Член 5-аб").
@@ -252,7 +279,19 @@ export function parseLegalText(text, meta, { strict = true } = {}) {
       continue;
     }
 
+    const constitutionalStatusSeen=new Set();
     raw.bodyLines.forEach((l, k) => {
+      const statusWindow=[l,raw.bodyLines[k+1]||""].join(" ");
+      const courtStatus=constitutionalCourtStatusNote(statusWindow);
+      if (courtStatus) {
+        const key=courtStatus.action+"|"+courtStatus.target_article;
+        if (!constitutionalStatusSeen.has(key)) {
+          constitutionalStatusSeen.add(key);
+          add("stop", "constitutional_court_status_note",
+            `Constitutional Court status note targets article ${courtStatus.target_article} (${courtStatus.action}); preserve source wording and resolve legal status through official lineage before current-law use.`,
+            courtStatus.target_article, raw.bodyStartLine + k);
+        }
+      }
       for (const p of HEADER_FOOTER_PATTERNS) {
         if (p.re.test(l)) {
           add("warning", "possible_header_footer",

@@ -119,7 +119,8 @@
     "test:international-legal-intelligence": "node --no-warnings --test test/international-legal-intelligence.test.mjs test/case-law-publication-processor.test.mjs",
     "icsid:recent-events": "node scripts/icsid-recent-event-intake.mjs",
     "ohchr:uhri-mk": "node scripts/uhri-north-macedonia-intake.mjs",
-    "test:case-law-publications": "node --no-warnings --test test/case-law-publication-processor.test.mjs"
+    "test:case-law-publications": "node --no-warnings --test test/case-law-publication-processor.test.mjs",
+    "test:real-mk-law-source-regressions": "node --no-warnings --test test/real-mk-law-source-regressions.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
