@@ -133,7 +133,7 @@ node scripts/collect-and-stage-mk-supreme-decisions.mjs \
 
 The GitHub workflow `Supreme Court case-law intake` provides the same 50/100 workflow through `workflow_dispatch`.
 
-PDF/DOC/DOCX content is never decoded by pretending that binary bytes are text. Such files remain `needs_text_extraction` until a real parser is used.
+PDF/DOC/DOCX/RTF content is never decoded by pretending binary bytes are text. The direct intake uses deterministic extractors: Poppler `pdftotext` for PDF, ZIP/XML parsing for DOCX, `antiword` for legacy DOC and `unrtf` for RTF. If the required extractor is unavailable, fails, or returns no text, the record remains `needs_text_extraction` and cannot silently enter metadata staging.
 
 ## 6. Why the Industrial v5 prototype is not copied directly
 
