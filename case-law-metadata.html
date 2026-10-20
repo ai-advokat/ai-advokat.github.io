@@ -24,8 +24,8 @@
       <div class="card">
         <h2>1. Масовен внес</h2>
         <div class="drop">
-          <strong>До 500 локални текстуални датотеки</strong>
-          <p class="muted">TXT, MD, CSV, JSON. Содржината останува во browser.</p>
+          <strong>До 500 локални текстуални датотеки · SHA-256 fingerprint</strong>
+          <p class="muted">TXT, MD, CSV, JSON. Содржината останува во browser. За секоја датотека локално се пресметува SHA-256 за provenance и откривање точни дупликати.</p>
           <label class="btn secondary" for="batchFiles">Избери датотеки</label>
           <input id="batchFiles" type="file" multiple accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json">
         </div>
@@ -60,7 +60,7 @@
         <button id="exportNdjson" class="secondary" disabled type="button">NDJSON за corpus review</button>
         <button id="exportCsv" class="secondary" disabled type="button">CSV Review Table</button>
       </div>
-      <p class="muted">NDJSON извозот е <b>discovery-only</b> и <b>production_eligible=false</b> додека официјалниот извор и Human Gate не се потврдени.</p>
+      <p class="muted">NDJSON извозот е <b>discovery-only</b> и <b>production_eligible=false</b> додека официјалниот URL, fingerprint-от на изворот и Human Gate не се потврдени. Идентичен SHA-256 се означува како можен дупликат, но не се брише автоматски.</p>
     </section>
 
     <section class="card">
