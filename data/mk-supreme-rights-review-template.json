@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "source_id": "mk-supreme-court",
+  "source_name": "Врховен суд на Република Северна Македонија",
+  "source_url": "https://www.vrhoven.sud.mk/",
+  "reviewed_on": null,
+  "reviewed_by": null,
+  "basis": null,
+  "approved_for_bounded_automated_retrieval": false,
+  "scope": {
+    "public_decisions_only": true,
+    "max_documents_per_run": 100,
+    "minimum_delay_ms": 1500,
+    "credentials_or_private_areas": false,
+    "bulk_mirroring": false
+  },
+  "notes": "Human Gate template. Set approval to true only after the current public-site terms/robots/reuse position has been reviewed and the intended bounded retrieval is documented."
+}
