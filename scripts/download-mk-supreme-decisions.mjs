@@ -232,8 +232,8 @@ function loadUrlFile(file){
 export async function run(options){
   const userAgent="AIAdvokatResearchBot/1.0 (+https://ai-advokat.github.io/)";
   const explicit=loadUrlFile(options.urlFile);
-  const indexes=options.indexUrls.map(x=>normalizeOfficialUrl(x).href);
-  if(!explicit.length && !indexes.length) throw new TypeError("supreme_index_url_or_url_file_required");
+  const rawIndexes=options.indexUrls.length ? options.indexUrls : (options.urlFile ? [] : ["https://www.vrhoven.sud.mk/"]);
+  const indexes=rawIndexes.map(x=>normalizeOfficialUrl(x).href);
   const rights=loadRightsReview(options.rightsReview);
   if(options.execute && !rights) throw new Error("rights_review_required_for_bounded_automated_retrieval");
 
@@ -337,7 +337,7 @@ export async function run(options){
 
 function help(){
   return "AI Advokat Supreme Court public-decision collector\n\n"+
-    "Discovery only:\n  node scripts/download-mk-supreme-decisions.mjs --index-url https://www.vrhoven.sud.mk/... --limit 50 --dry-run\n\n"+
+    "Discovery only (official Supreme Court homepage is the default entry point):\n  node scripts/download-mk-supreme-decisions.mjs --limit 50 --dry-run\n\n"+
     "Explicit URL queue:\n  node scripts/download-mk-supreme-decisions.mjs --url-file urls.txt --limit 50 --dry-run\n\n"+
     "Bounded download after documented rights review:\n  node scripts/download-mk-supreme-decisions.mjs --url-file urls.txt --limit 50 --execute --rights-review rights-review.json\n\n"+
     "Rules: HTTPS + official Supreme Court host only; max 100; minimum 1500 ms delay; robots respected; no cookies/login; SHA-256 + manifest; Human Gate remains required.";
