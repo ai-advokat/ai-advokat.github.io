@@ -28,7 +28,7 @@ test("supreme collector accepts only official Supreme Court HTTPS hosts",()=>{
 });
 
 test("supreme collector respects robots longest-match rules",()=>{
-  const groups=parseRobots("User-agent: *\\nDisallow: /private\\nAllow: /private/public\\n");
+  const groups=parseRobots("User-agent: *\nDisallow: /private\nAllow: /private/public\n");
   assert.equal(robotsAllows(groups,"/decisions"),true);
   assert.equal(robotsAllows(groups,"/private/x"),false);
   assert.equal(robotsAllows(groups,"/private/public/a"),true);
@@ -69,6 +69,6 @@ test("collector source code keeps provenance and production release fail-closed"
   assert.match(source,/manifest\.ndjson/);
   assert.match(source,/human_gate_required:true/);
   assert.match(source,/production_eligible:false/);
-  assert.doesNotMatch(source,/headers\\s*:\\s*\\{[^}]*["\'](?:cookie|authorization)["\']/i);
-  assert.doesNotMatch(source,/credentials\\s*:/i);
+  assert.doesNotMatch(source,/headers\s*:\s*\{[^}]*["'](?:cookie|authorization)["']/i);
+  assert.doesNotMatch(source,/credentials\s*:/i);
 });
