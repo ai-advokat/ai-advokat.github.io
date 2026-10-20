@@ -117,6 +117,14 @@ jobs:
         run: npm run test:case-law-chat
       - name: Governed case-law import tests
         run: npm run test:case-law-import
+      - name: International legal intelligence and source-watch safety
+        run: |
+          node --check src/international-legal-classifier.js
+          node --check src/echr-findings.js
+          node --check src/case-law-publication-processor.js
+          node --check scripts/icsid-recent-event-intake.mjs
+          node --check scripts/uhri-north-macedonia-intake.mjs
+          npm run test:international-legal-intelligence
       - name: Case-law production hardening tests
         run: |
           python3 -m py_compile scripts/extract-case-law-document-text.py
