@@ -13,7 +13,7 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
 
-export const PARSER_VERSION = "mk-legal-article-v0.3.1";
+export const PARSER_VERSION = "mk-legal-article-v0.3.0";
 
 function norm(s="") {
   return String(s).normalize("NFKC").replace(/\r\n?/g, "\n");
