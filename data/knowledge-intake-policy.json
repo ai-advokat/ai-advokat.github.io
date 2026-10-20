@@ -28,6 +28,11 @@
       "default_rag_eligible": false
     },
     {
+      "id": "scholarly_legal_literature",
+      "meaning": "Peer-reviewed or professional scholarly literature used for doctrine, context, comparative analysis, issue spotting and citation discovery. It is a secondary source and never establishes current law by itself.",
+      "default_rag_eligible": false
+    },
+    {
       "id": "research_working_material",
       "meaning": "Draft/research material that remains internal until separately reviewed.",
       "default_rag_eligible": false
@@ -45,6 +50,7 @@
     "classify",
     "assign_authority_role",
     "legal_source_review_if_applicable",
+    "scholarly_source_metadata_and_rights_review",
     "author_human_gate_if_applicable",
     "separate_rag_gate",
     "separate_publication_or_production_gate"
