@@ -113,15 +113,15 @@ export function readableTextForDownloadedFile(filePath,contentType="",options={}
     const text=htmlToPlainText(bytes.toString("utf8"));
     return {status:"ready",text,extraction:"html_to_text",extractedTextSha256:sha256Text(text),extractedTextPath:null};
   }
-  if([".txt",".md",".csv",".json"].includes(ext)||type.startsWith("text/")){
-    const text=bytes.toString("utf8").trim();
-    return {status:"ready",text,extraction:"utf8_text",extractedTextSha256:sha256Text(text),extractedTextPath:null};
-  }
   const binary=ext===".pdf"||type.includes("pdf")||[".doc",".docx",".rtf"].includes(ext)||type.includes("word")||type.includes("rtf");
   if(binary){
     const extractedDir=options.extractedDir||path.join(path.dirname(filePath),"extracted-text");
     const outName=path.basename(filePath).replace(/\.[^.]+$/,"")+".txt";
     return extractBinaryText(filePath,path.join(extractedDir,outName));
+  }
+  if([".txt",".md",".csv",".json"].includes(ext)||type.startsWith("text/")){
+    const text=bytes.toString("utf8").trim();
+    return {status:"ready",text,extraction:"utf8_text",extractedTextSha256:sha256Text(text),extractedTextPath:null};
   }
   return {status:"needs_text_extraction",text:null,extraction:"unsupported_binary_not_guessed",reason:"unsupported_document_type"};
 }
