@@ -2773,7 +2773,7 @@ async function handleSearch(request, env, url) {
     ? await searchPublicGuides(request,env,{q,status,limit})
     : [];
   const scholarlyResults = (type==="all" || type==="paper")
-    ? await searchPublicScholarly(request,env,{q,limit})
+    ? await searchPublicScholarly(request,env,{q,status,limit})
     : [];
   const results=[...corpusResults,...guideResults,...scholarlyResults]
     .sort((a,b)=>(Number(b.relevanceScore||0)-Number(a.relevanceScore||0)))
@@ -3348,7 +3348,8 @@ async function findGovernedScholarly(request,env,q,{limit=5}={}){
   return {records,context:scholarlyContextItems(records)};
 }
 
-async function searchPublicScholarly(request,env,{q,limit=8}={}){
+async function searchPublicScholarly(request,env,{q,status="all",limit=8}={}){
+  if(!["all","verified"].includes(String(status||"all"))) return [];
   const registry=await loadScholarlyRegistry(request,env);
   if(!registry) return [];
   return scholarlySearchItems(registry,q,{limit});
