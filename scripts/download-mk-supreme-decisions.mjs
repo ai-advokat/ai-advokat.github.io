@@ -116,9 +116,34 @@ export function extractLinks(html, baseUrl){
 export function isDecisionCandidate(link){
   const u=String(link?.url||"").toLocaleLowerCase("mk");
   const label=String(link?.label||"").toLocaleLowerCase("mk");
-  const hay=`${u} ${label}`;
   if(/\.(?:pdf|docx?|rtf)(?:\?|$)/iu.test(u)) return true;
-  return /(пресуд|решени|одлук|рев\.?|квп|кзз|гзз|вкж|предмет|судска[-_\s]*пракса|judg|decision|case)/iu.test(hay);
+  const caseNumber=/(?:рев\.?|квп|кзз|гзз|вкж|к\.?бр\.?|п\.?бр\.?|т\.?бр\.?)\s*[\w./-]*\d/iu.test(label);
+  const decisionWord=/(?:пресуд|решени|одлук|judg|decision)/iu.test(label);
+  const detailUrl=/(?:detail|decision|judg|case|document|act|presud|odluk|reshen|resen|id=|item=|predmet)/iu.test(u);
+  return caseNumber || (decisionWord && detailUrl);
+}
+
+export function extractSameHostGetFormActions(html,baseUrl){
+  const base=normalizeOfficialUrl(baseUrl);
+  const out=[];
+  const seen=new Set();
+  const formRe=/<form\b([^>]*)>/giu;
+  for(const m of String(html).matchAll(formRe)){
+    const attrs=m[1]||"";
+    const method=(attrs.match(/\bmethod\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/iu)?.slice(1).find(Boolean)||"get").toLowerCase();
+    if(method!=="get") continue;
+    const actionRaw=attrs.match(/\baction\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/iu)?.slice(1).find(Boolean)||base.href;
+    let url;
+    try{url=new URL(decodeHtml(actionRaw),base);}catch{continue;}
+    if(url.protocol!=="https:" || !OFFICIAL_HOSTS.has(url.hostname.toLowerCase())) continue;
+    const hay=(url.pathname+" "+url.search).toLocaleLowerCase("mk");
+    if(!/(decision|odluk|presud|search|predmet|case|praksa|practice)/iu.test(hay)) continue;
+    url.hash="";
+    if(seen.has(url.href)) continue;
+    seen.add(url.href);
+    out.push(url.href);
+  }
+  return out;
 }
 
 export function isLikelyIndexLink(link){
@@ -210,7 +235,11 @@ async function discoverFromIndexes(indexUrls,{limit,maxPages,userAgent,delayMs})
     const {response,buf}=await fetchWithPolicy(url,{userAgent,maxBytes:5*1024*1024});
     const ct=response.headers.get("content-type")||"";
     if(!/html/i.test(ct)) continue;
-    const links=extractLinks(buf.toString("utf8"),url);
+    const html=buf.toString("utf8");
+    const links=extractLinks(html,url);
+    for(const action of extractSameHostGetFormActions(html,url)){
+      if(!visited.has(action) && queue.length<maxPages*5) queue.push(action);
+    }
     for(const link of links){
       if(isDecisionCandidate(link) && !candidateSeen.has(link.url)){
         candidateSeen.add(link.url);
