@@ -151,3 +151,92 @@ test("governed NDJSON can preserve official-public source class without promotin
   assert.equal(rows[0].production_eligible,false);
   assert.equal(rows[1].official_binding_verified,false);
 });
+
+
+test("direct retrieval evidence is preserved but remains pending Human Gate",()=>{
+  const sha="e".repeat(64);
+  const url="https://www.vrhoven.sud.mk/decision?id=99";
+  const r=extractCaseLawMetadata(
+    "Врховен суд на Република Северна Македонија\nРев.бр. 99/2026\nПРЕСУДА\n20.10.2026",
+    {
+      sourceUrl:url,
+      sourceClass:"official_public",
+      sourceSha256:sha,
+      sourceHashBasis:"downloaded_original_bytes_sha256",
+      sourceBindingEvidence:{
+        verification_method:"direct_https_retrieval_sha256",
+        source_url:url,
+        source_sha256:sha,
+        remote_content_hash_verified:true,
+        retrieved_at:"2026-10-20T08:00:00Z"
+      },
+      textExtraction:{
+        method:"pdf_pdftotext",
+        extractedTextSha256:"f".repeat(64),
+        extractedTextPath:"extracted-text/099.txt"
+      }
+    }
+  );
+  assert.equal(r.sourceBinding.remoteContentHashVerified,true);
+  assert.equal(r.sourceBinding.officialBindingVerified,false);
+  assert.equal(r.sourceBinding.evidence.human_gate_status,"pending");
+  assert.equal(r.sourceIdentity.textExtraction.method,"pdf_pdftotext");
+  assert.equal(r.sourceIdentity.textExtraction.extractedTextSha256,"f".repeat(64));
+});
+
+test("direct retrieval evidence fails closed on URL or SHA mismatch",()=>{
+  const sha="a".repeat(64);
+  assert.throws(()=>extractCaseLawMetadata("Врховен суд\nРев.бр. 1/2026\nПРЕСУДА",{
+    sourceUrl:"https://www.vrhoven.sud.mk/a",
+    sourceClass:"official_public",
+    sourceSha256:sha,
+    sourceBindingEvidence:{
+      verification_method:"direct_https_retrieval_sha256",
+      source_url:"https://www.vrhoven.sud.mk/b",
+      source_sha256:sha,
+      remote_content_hash_verified:true
+    }
+  }),/url_mismatch/);
+  assert.throws(()=>extractCaseLawMetadata("Врховен суд\nРев.бр. 1/2026\nПРЕСУДА",{
+    sourceUrl:"https://www.vrhoven.sud.mk/a",
+    sourceClass:"official_public",
+    sourceSha256:sha,
+    sourceBindingEvidence:{
+      verification_method:"direct_https_retrieval_sha256",
+      source_url:"https://www.vrhoven.sud.mk/a",
+      source_sha256:"b".repeat(64),
+      remote_content_hash_verified:true
+    }
+  }),/sha256_mismatch/);
+});
+
+test("governed NDJSON exports pending source-binding and extraction provenance",()=>{
+  const sha="c".repeat(64);
+  const url="https://www.vrhoven.sud.mk/decision?id=77";
+  const batch=buildCaseLawMetadataBatch([{
+    filename:"77.pdf",
+    text:"Врховен суд на Република Северна Македонија\nРев.бр. 77/2026\nПРЕСУДА\n20.10.2026",
+    sourceUrl:url,
+    sourceClass:"official_public",
+    sourceSha256:sha,
+    sourceHashBasis:"downloaded_original_bytes_sha256",
+    sourceBindingEvidence:{
+      verification_method:"direct_https_retrieval_sha256",
+      source_url:url,
+      source_sha256:sha,
+      remote_content_hash_verified:true,
+      retrieved_at:"2026-10-20T08:00:00Z"
+    },
+    textExtraction:{
+      method:"pdf_pdftotext",
+      extractedTextSha256:"d".repeat(64),
+      extractedTextPath:"extracted-text/77.txt"
+    }
+  }]);
+  const rows=buildGovernedCaseLawNdjson(batch,{sourceClass:"official_public"}).trim().split("\n").map(JSON.parse);
+  assert.equal(rows[1].official_binding_verified,false);
+  assert.equal(rows[1].discovery_only,true);
+  assert.equal(rows[1].source_binding.remote_content_hash_verified,true);
+  assert.equal(rows[1].source_binding.human_gate_status,"pending");
+  assert.equal(rows[1].text_extraction.method,"pdf_pdftotext");
+});

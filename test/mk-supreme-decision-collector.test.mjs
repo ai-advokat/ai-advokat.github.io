@@ -68,6 +68,10 @@ test("collector source code keeps provenance and production release fail-closed"
   const source=fs.readFileSync("scripts/download-mk-supreme-decisions.mjs","utf8");
   assert.match(source,/sha256/);
   assert.match(source,/manifest\.ndjson/);
+  assert.match(source,/direct_https_retrieval_sha256/);
+  assert.match(source,/remote_content_hash_verified:true/);
+  assert.match(source,/human_gate_status:"pending"/);
+  assert.match(source,/official_binding_verified:false/);
   assert.match(source,/human_gate_required:true/);
   assert.match(source,/production_eligible:false/);
   assert.doesNotMatch(source,/headers\s*:\s*\{[^}]*["'](?:cookie|authorization)["']/i);

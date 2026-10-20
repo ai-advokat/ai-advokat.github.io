@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "gate_type": "case_law_source_binding",
+  "decision_state": "pending",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "decision_basis": null,
+  "records": [
+    {
+      "source_url": "https://www.vrhoven.sud.mk/REPLACE-WITH-EXACT-PUBLIC-DECISION-URL",
+      "source_sha256": "REPLACE-WITH-64-HEX-SHA256"
+    }
+  ],
+  "notes": "Copy only exact URL + SHA-256 pairs from case-law-review.ndjson. Set decision_state=approved only after Human Gate verifies the source-binding evidence. This gate does not imply corpus promotion, public release, or authority review."
+}

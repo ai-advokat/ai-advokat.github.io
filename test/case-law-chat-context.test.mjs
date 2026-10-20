@@ -59,6 +59,14 @@ function seedCaseLaw(){
   insertAuthority.run(secondaryId,"other","decision","unknown","neutral",null,"ЗКП","притвор жалба","reviewed");
   insertAuthority.run(echrId,"international","decision","strong_persuasive","neutral","Article 2",null,"effective investigation medical negligence ефективна истрага медицинска небрежност","reviewed");
 
+  const insertProvenance=raw.prepare(`INSERT INTO case_law_provenance
+    (case_law_id,source_class,source_provider,source_url,source_sha256,discovery_only,official_binding_verified,human_review_status)
+    VALUES (?,?,?,?,?,?,?,?)`);
+  insertProvenance.run(goodId,"official_primary","Supreme Court","https://www.vrhoven.sud.mk/test-case","a".repeat(64),0,1,"reviewed");
+  insertProvenance.run(pendingId,"official_primary","Supreme Court","https://www.vrhoven.sud.mk/test-case","b".repeat(64),0,1,"reviewed");
+  insertProvenance.run(secondaryId,"licensed_secondary","Paragraf.mk","https://paragraf.mk/private-case","c".repeat(64),1,0,"reviewed");
+  insertProvenance.run(echrId,"official_primary","European Court of Human Rights","https://hudoc.echr.coe.int/eng?i=001-test","d".repeat(64),0,1,"reviewed");
+
   raw.prepare(`INSERT INTO case_law_holdings(case_law_id,holding_type,proposition,source_locator,human_review_status)
     VALUES (?,?,?,?,?)`).run(goodId,"principle","Притворот бара конкретно образложена нужност и разгледување на поблага мерка.","§ test","reviewed");
 
@@ -75,6 +83,7 @@ test("CLC1 legal chat retrieves only official + case-reviewed + authority-review
   assert.equal(out.sources.length,1);
   assert.equal(out.sources[0].humanReviewStatus,"reviewed");
   assert.equal(out.sources[0].authorityReviewStatus,"reviewed");
+  assert.equal(out.sources[0].officialBindingVerified,true);
   assert.match(out.context[0].text,/SOURCE_ROLE: OFFICIAL_REVIEWED_CASE_LAW/);
   assert.match(out.context[0].text,/CASE_LAW_IS_NOT_STATUTORY_TEXT: true/);
   assert.match(out.context[0].text,/REVIEWED_HOLDINGS:/);

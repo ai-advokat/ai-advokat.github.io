@@ -29,6 +29,7 @@ function normalizeRole(value){
 export function caseLawRecordEligible(record){
   if(!record||typeof record!=="object") return false;
   if(String(record.source_status||"")!=="official") return false;
+  if(!(record.official_binding_verified===true || Number(record.official_binding_verified)===1)) return false;
   if(!reviewed(record.human_review_status)) return false;
   if(!reviewed(record.authority_review_status)) return false;
   const url=record.source_url||record.registry_source_url;
@@ -62,6 +63,7 @@ export function toCasePilotAuthorityCard(record,{role=null,roleReason=null}={}){
     sourceUrl,
     humanReviewStatus:String(record.human_review_status),
     authorityReviewStatus:String(record.authority_review_status),
+    officialBindingVerified:true,
     sourceClass:"official_reviewed_case_law",
     humanGateRequired:true
   });
@@ -100,6 +102,7 @@ export function buildCaseLawComparison(records,{roleAssignments={}}={}){
     rejected:Object.freeze(rejected),
     safeguards:Object.freeze({
       officialSourcesOnly:true,
+      verifiedSourceBindingRequired:true,
       dualHumanReviewRequired:true,
       favourableOutcomeDoesNotImplySupportingRole:true,
       adverseAuthorityMustNotBeHidden:true,

@@ -26,6 +26,7 @@ const base={
   reasoning_summary:"Судот ја оценува нужноста.",
   source_url:"https://www.vrhoven.sud.mk/test-case",
   source_status:"official",
+  official_binding_verified:1,
   human_review_status:"reviewed",
   authority_review_status:"reviewed"
 };
@@ -33,6 +34,7 @@ const base={
 test("only official dual-reviewed records are eligible",()=>{
   assert.equal(caseLawRecordEligible(base),true);
   assert.equal(caseLawRecordEligible({...base,source_status:"verified"}),false);
+  assert.equal(caseLawRecordEligible({...base,official_binding_verified:0}),false);
   assert.equal(caseLawRecordEligible({...base,human_review_status:"pending"}),false);
   assert.equal(caseLawRecordEligible({...base,authority_review_status:"pending"}),false);
   assert.equal(caseLawRecordEligible({...base,source_url:"http://example.com"}),false);
@@ -44,6 +46,7 @@ test("authority cards preserve source and review state",()=>{
   assert.match(card.sourceUrl,/vrhoven/);
   assert.equal(card.sourceClass,"official_reviewed_case_law");
   assert.equal(card.humanGateRequired,true);
+  assert.equal(card.officialBindingVerified,true);
   assert.equal(card.authorityReviewStatus,"reviewed");
 });
 
@@ -90,6 +93,9 @@ test("Worker case-law research endpoint is query-only and privacy bounded",()=>{
   const block=worker.slice(start,end);
   assert.match(block,/private_matter_content_not_accepted/);
   assert.match(block,/governedCaseLawContext/);
+  assert.match(worker,/case_law_provenance/);
+  assert.match(worker,/official_binding_verified=1/);
+  assert.match(worker,/discovery_only=0/);
   assert.match(block,/reviewed_official_case_law_only/);
   assert.match(block,/dualHumanReviewRequired:true/);
   assert.match(block,/adverseAuthorityMustNotBeHidden:true/);

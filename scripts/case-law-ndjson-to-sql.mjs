@@ -79,6 +79,91 @@ function sourceStatusFor(manifest,url){
   throw new Error("Unsupported source_class");
 }
 
+function governedBindingState(manifest,item,sourceUrl){
+  if(manifest.source_class!=="official_public"){
+    if(item.official_binding_verified===true) throw new Error("Secondary source cannot claim official binding");
+    return {sourceClass:"licensed_secondary",officialBinding:0,discoveryOnly:1};
+  }
+
+  if(item.official_binding_verified!==true){
+    return {sourceClass:"official_primary",officialBinding:0,discoveryOnly:1};
+  }
+
+  const evidence=item.source_binding;
+  if(!evidence || typeof evidence!=="object" || Array.isArray(evidence)){
+    throw new Error("Verified official binding requires source_binding evidence");
+  }
+  const method=requireText(evidence.verification_method,"source_binding.verification_method",120);
+  if(!["direct_https_retrieval_sha256","official_remote_hash_match"].includes(method)){
+    throw new Error("Unsupported official binding verification method");
+  }
+  if(evidence.remote_content_hash_verified!==true){
+    throw new Error("Verified official binding requires remote_content_hash_verified=true");
+  }
+  const evidenceUrl=parseHttps(evidence.source_url,"source_binding.source_url");
+  if(evidenceUrl.href!==sourceUrl.href){
+    throw new Error("Verified official binding source URL mismatch");
+  }
+  const evidenceSha=requireText(evidence.source_sha256,"source_binding.source_sha256",64).toLowerCase();
+  if(!validSha(evidenceSha) || evidenceSha!==String(item.source_sha256).toLowerCase()){
+    throw new Error("Verified official binding SHA-256 mismatch");
+  }
+  if(!["approved","reviewed"].includes(String(evidence.human_gate_status||"").toLowerCase())){
+    throw new Error("Verified official binding requires approved Human Gate");
+  }
+  requireText(evidence.reviewed_by,"source_binding.reviewed_by",240);
+  requireText(evidence.reviewed_at,"source_binding.reviewed_at",80);
+  return {sourceClass:"official_primary",officialBinding:1,discoveryOnly:0};
+}
+
+
+function provenanceAuditFields(item,sourceUrl){
+  let remoteContentHashVerified=0;
+  let bindingVerificationMethod=null;
+  let bindingReviewedBy=null;
+  let bindingReviewedAt=null;
+  const evidence=item.source_binding;
+  if(evidence!==null && evidence!==undefined){
+    if(typeof evidence!=="object" || Array.isArray(evidence)) throw new Error("Invalid source_binding evidence");
+    bindingVerificationMethod=requireText(evidence.verification_method,"source_binding.verification_method",120);
+    if(!["direct_https_retrieval_sha256","official_remote_hash_match"].includes(bindingVerificationMethod)){
+      throw new Error("Unsupported source_binding verification method");
+    }
+    if(evidence.remote_content_hash_verified!==true) throw new Error("source_binding remote hash must be verified");
+    const evidenceUrl=parseHttps(evidence.source_url,"source_binding.source_url");
+    if(evidenceUrl.href!==sourceUrl.href) throw new Error("source_binding source URL mismatch");
+    const evidenceSha=String(evidence.source_sha256||"").toLowerCase();
+    if(!validSha(evidenceSha)||evidenceSha!==String(item.source_sha256||"").toLowerCase()){
+      throw new Error("source_binding SHA-256 mismatch");
+    }
+    remoteContentHashVerified=1;
+    bindingReviewedBy=optionalText(evidence.reviewed_by,240);
+    bindingReviewedAt=optionalText(evidence.reviewed_at,80);
+  }
+
+  let extractionMethod=null;
+  let extractedTextSha256=null;
+  if(item.text_extraction!==null && item.text_extraction!==undefined){
+    if(typeof item.text_extraction!=="object" || Array.isArray(item.text_extraction)){
+      throw new Error("Invalid text_extraction metadata");
+    }
+    extractionMethod=optionalText(item.text_extraction.method,120);
+    extractedTextSha256=optionalText(item.text_extraction.extractedTextSha256,64);
+    if(extractedTextSha256 && !validSha(extractedTextSha256)){
+      throw new Error("Invalid extracted_text_sha256");
+    }
+  }
+
+  return {
+    remoteContentHashVerified,
+    bindingVerificationMethod,
+    bindingReviewedBy,
+    bindingReviewedAt,
+    extractionMethod,
+    extractedTextSha256
+  };
+}
+
 export function generateCaseLawImportSql(ndjsonText){
   const rows=String(ndjsonText||"").split(/\r?\n/).filter(Boolean).map(JSON.parse);
   rows.forEach((row,i)=>assertNoSecrets(row,"row["+i+"]"));
@@ -171,15 +256,20 @@ export function generateCaseLawImportSql(ndjsonText){
       ].join(",")+");"
     );
 
-    const sourceClass=manifest.source_class==="official_public" ? "official_primary" : "licensed_secondary";
-    const officialBinding=manifest.source_class==="official_public" ? 1 : 0;
-    const discoveryOnly=manifest.source_class==="official_public" ? 0 : 1;
+    const binding=governedBindingState(manifest,item,sourceUrl);
+    const sourceClass=binding.sourceClass;
+    const officialBinding=binding.officialBinding;
+    const discoveryOnly=binding.discoveryOnly;
+    const audit=provenanceAuditFields(item,sourceUrl);
+    const provenanceReviewStatus=officialBinding===1 ? "approved" : "pending";
     sql.push(
-      "INSERT INTO case_law_provenance(case_law_id,source_class,source_provider,source_product,source_url,source_sha256,source_record_id,discovery_only,official_binding_verified,license_or_access_basis,imported_batch_key,human_review_status) SELECT "+
+      "INSERT INTO case_law_provenance(case_law_id,source_class,source_provider,source_product,source_url,source_sha256,source_record_id,discovery_only,official_binding_verified,license_or_access_basis,imported_batch_key,human_review_status,remote_content_hash_verified,binding_verification_method,binding_reviewed_by,binding_reviewed_at,extraction_method,extracted_text_sha256) SELECT "+
       [
         caseIdExpr,sqlString(sourceClass),sqlString(provider),sqlString(sourceProduct),sqlString(sourceUrl.href),
         sqlString(String(item.source_sha256).toLowerCase()),sqlString(sourceRecordId),String(discoveryOnly),String(officialBinding),
-        sqlString(manifest.license_or_access_basis||null),sqlString(runId),"'pending'"
+        sqlString(manifest.license_or_access_basis||null),sqlString(runId),sqlString(provenanceReviewStatus),
+        String(audit.remoteContentHashVerified),sqlString(audit.bindingVerificationMethod),sqlString(audit.bindingReviewedBy),
+        sqlString(audit.bindingReviewedAt),sqlString(audit.extractionMethod),sqlString(audit.extractedTextSha256)
       ].join(",")+
       " WHERE NOT EXISTS (SELECT 1 FROM case_law_provenance WHERE case_law_id="+caseIdExpr+" AND source_url="+sqlString(sourceUrl.href)+" AND COALESCE(source_sha256,'')="+sqlString(String(item.source_sha256).toLowerCase())+");"
     );

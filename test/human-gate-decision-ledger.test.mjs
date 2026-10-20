@@ -111,3 +111,21 @@ test("HGL11 malformed non-SHA fingerprint remains fail-closed",()=>{
   assert.equal(result.valid,false);
   assert.ok(result.errors.includes("invalid_artifact_fingerprint"));
 });
+
+
+test("HGL12 case-law source binding is an isolated fingerprint-bound gate",()=>{
+  assert.ok(ledger.gate_types.includes("case_law_source_binding"));
+  assert.ok(ledger.invariants.includes("case_law_source_binding_does_not_imply_corpus_promotion_or_public_release"));
+  const synthetic={
+    decision_id:"hgl12-binding",
+    subject_id:"case-law-binding-test",
+    gate_type:"case_law_source_binding",
+    decision_state:"approved",
+    decided_at:"2026-10-20T09:30:00+02:00",
+    decision_basis:"Exact official URL and SHA-256 reviewed.",
+    artifact_version:"CASE_LAW_SOURCE_BINDING_V1",
+    artifact_fingerprint:{source_sha256:"a".repeat(64)},
+    implied_gates:[]
+  };
+  assert.equal(validateHumanGateDecision(synthetic).valid,true);
+});

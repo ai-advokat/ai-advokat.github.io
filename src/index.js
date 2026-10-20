@@ -4422,7 +4422,7 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
       "SELECT cl.id,cl.case_title,cl.court,cl.case_number,cl.jurisdiction,cl.legal_area, "+
       "cl.decision_date,cl.outcome_summary,cl.reasoning_summary,cl.source_url, "+
       "cl.finality_status,cl.human_review_status, "+
-      "s.title AS source_title,s.url AS registry_source_url,s.source_status, "+
+      "s.title AS source_title,s.url AS registry_source_url,s.source_status,1 AS official_binding_verified, "+
       "cla.court_level,cla.chamber_or_section,cla.decision_type,cla.precedential_weight, "+
       "cla.outcome_side,cla.convention_articles,cla.domestic_articles,cla.legal_issue_keys, "+
       "cla.finality_date,cla.importance_level,cla.human_review_status AS authority_review_status, "+
@@ -4431,7 +4431,9 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
       "FROM case_law cl "+
       "JOIN sources s ON s.id=cl.source_id AND s.source_status='official' "+
       "JOIN case_law_authority cla ON cla.case_law_id=cl.id AND cla.human_review_status IN ('approved','reviewed') "+
-      "WHERE cl.human_review_status IN ('approved','reviewed') AND ("+conditions.join(" OR ")+") "+
+      "WHERE cl.human_review_status IN ('approved','reviewed') "+
+      "AND EXISTS (SELECT 1 FROM case_law_provenance clp WHERE clp.case_law_id=cl.id AND clp.official_binding_verified=1 AND clp.discovery_only=0 AND clp.human_review_status IN ('approved','reviewed')) "+
+      "AND ("+conditions.join(" OR ")+") "+
       "ORDER BY cl.decision_date DESC,cl.id DESC LIMIT ?";
     const result=await env.DB.prepare(sql).bind(...bindings,candidateLimit).all();
 
@@ -4480,6 +4482,7 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
           legalAuthority:true,
           humanReviewStatus:String(row.human_review_status||"pending"),
           authorityReviewStatus:String(row.authority_review_status||"pending"),
+          officialBindingVerified:Number(row.official_binding_verified)===1,
           caseIdentity:String(row.case_number||row.case_title||""),
           court:String(row.court||""),
           jurisdiction:String(row.jurisdiction||""),
@@ -4531,7 +4534,8 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
       outcomeRole:row.outcome_side||null,
       url:row.source_url||row.registry_source_url||null,
       humanReviewStatus:row.human_review_status||null,
-      authorityReviewStatus:row.authority_review_status||null
+      authorityReviewStatus:row.authority_review_status||null,
+      officialBindingVerified:Number(row.official_binding_verified)===1
     }));
 
     return {

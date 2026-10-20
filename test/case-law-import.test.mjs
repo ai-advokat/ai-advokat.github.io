@@ -168,7 +168,7 @@ test("CLI8 external identifiers and source provenance are preserved without auto
   assert.match(out.sql,/INSERT OR IGNORE INTO case_law_external_ids/);
   assert.match(out.sql,/ECLI:EU:C:2026:1/);
   assert.match(out.sql,/62026CJ0001/);
-  assert.doesNotMatch(out.sql,/human_review_status[^\n]*reviewed/i);
+  assert.doesNotMatch(out.sql,/'reviewed'/i);
 });
 
 test("CLI9 licensed Paragraf Lex Nova LexAI lineage remains discovery-only until official binding",()=>{
@@ -225,4 +225,125 @@ test("CLI11 secondary global aggregators cannot masquerade as official-public co
       /outside the approved official host set/
     );
   }
+});
+
+
+test("CLI12 official-public staging does not self-promote source binding",()=>{
+  const out=generateCaseLawImportSql(ndjson([manifest(),caseRow({
+    official_binding_verified:false,
+    discovery_only:true
+  })]));
+  assert.match(out.sql,/official_primary/);
+  const provenanceLine=out.sql.split("\n").find(line=>line.includes("INSERT INTO case_law_provenance"));
+  assert.ok(provenanceLine);
+  assert.match(provenanceLine,/,1,0,/);
+  assert.doesNotMatch(provenanceLine,/,0,1,/);
+});
+
+test("CLI13 claimed verified official binding fails without exact evidence and Human Gate",()=>{
+  assert.throws(
+    ()=>generateCaseLawImportSql(ndjson([manifest(),caseRow({official_binding_verified:true})])),
+    /source_binding evidence/
+  );
+  assert.throws(
+    ()=>generateCaseLawImportSql(ndjson([manifest(),caseRow({
+      official_binding_verified:true,
+      source_binding:{
+        verification_method:"direct_https_retrieval_sha256",
+        remote_content_hash_verified:true,
+        source_url:"https://www.vrhoven.sud.mk/test",
+        source_sha256:"a".repeat(64),
+        human_gate_status:"pending",
+        reviewed_by:"Reviewer",
+        reviewed_at:"2026-10-20T09:30:00+02:00"
+      }
+    })])),
+    /approved Human Gate/
+  );
+});
+
+test("CLI14 exact verified binding evidence leaves discovery only after Human Gate",()=>{
+  const row=caseRow({
+    official_binding_verified:true,
+    source_binding:{
+      verification_method:"direct_https_retrieval_sha256",
+      remote_content_hash_verified:true,
+      source_url:"https://www.vrhoven.sud.mk/test",
+      source_sha256:"a".repeat(64),
+      human_gate_status:"approved",
+      reviewed_by:"Human Gate reviewer",
+      reviewed_at:"2026-10-20T09:30:00+02:00"
+    }
+  });
+  const out=generateCaseLawImportSql(ndjson([manifest(),row]));
+  assert.match(out.sql,/official_primary/);
+  const provenanceLine=out.sql.split("\n").find(line=>line.includes("INSERT INTO case_law_provenance"));
+  assert.ok(provenanceLine);
+  assert.match(provenanceLine,/,0,1,/);
+  assert.match(provenanceLine,/'approved'/);
+});
+
+test("CLI15 verified binding rejects URL or hash mismatch",()=>{
+  const baseBinding={
+    verification_method:"direct_https_retrieval_sha256",
+    remote_content_hash_verified:true,
+    source_url:"https://www.vrhoven.sud.mk/test",
+    source_sha256:"a".repeat(64),
+    human_gate_status:"approved",
+    reviewed_by:"Human Gate reviewer",
+    reviewed_at:"2026-10-20T09:30:00+02:00"
+  };
+  assert.throws(
+    ()=>generateCaseLawImportSql(ndjson([manifest(),caseRow({
+      official_binding_verified:true,
+      source_binding:{...baseBinding,source_url:"https://www.vrhoven.sud.mk/other"}
+    })])),
+    /URL mismatch/
+  );
+  assert.throws(
+    ()=>generateCaseLawImportSql(ndjson([manifest(),caseRow({
+      official_binding_verified:true,
+      source_binding:{...baseBinding,source_sha256:"b".repeat(64)}
+    })])),
+    /SHA-256 mismatch/
+  );
+});
+
+
+test("CLI16 extraction and binding audit fields are persisted into provenance SQL",()=>{
+  const sha="a".repeat(64);
+  const extracted="f".repeat(64);
+  const row=caseRow({
+    official_binding_verified:false,
+    source_binding:{
+      verification_method:"direct_https_retrieval_sha256",
+      remote_content_hash_verified:true,
+      source_url:"https://www.vrhoven.sud.mk/test",
+      source_sha256:sha,
+      human_gate_status:"pending"
+    },
+    text_extraction:{
+      method:"pdf_pdftotext",
+      extractedTextSha256:extracted
+    }
+  });
+  const out=generateCaseLawImportSql(ndjson([manifest(),row]));
+  const provenanceLine=out.sql.split("\n").find(line=>line.includes("INSERT INTO case_law_provenance"));
+  assert.ok(provenanceLine);
+  assert.match(provenanceLine,/remote_content_hash_verified/);
+  assert.match(provenanceLine,/binding_verification_method/);
+  assert.match(provenanceLine,/extraction_method/);
+  assert.match(provenanceLine,/extracted_text_sha256/);
+  assert.match(provenanceLine,/direct_https_retrieval_sha256/);
+  assert.match(provenanceLine,/pdf_pdftotext/);
+  assert.match(provenanceLine,new RegExp(extracted));
+});
+
+test("CLI17 malformed extraction audit hash fails closed",()=>{
+  assert.throws(
+    ()=>generateCaseLawImportSql(ndjson([manifest(),caseRow({
+      text_extraction:{method:"pdf_pdftotext",extractedTextSha256:"bad"}
+    })])),
+    /Invalid extracted_text_sha256/
+  );
 });

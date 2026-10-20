@@ -117,6 +117,10 @@ jobs:
         run: npm run test:case-law-chat
       - name: Governed case-law import tests
         run: npm run test:case-law-import
+      - name: Case-law production hardening tests
+        run: |
+          python3 -m py_compile scripts/extract-case-law-document-text.py
+          npm run test:case-law-hardening
       - name: Private Guide Vault tests
         run: npm run test:guide-vault
       - name: GPT-style AI Advokat workspace tests

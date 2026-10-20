@@ -127,3 +127,34 @@ Outputs add:
 
 All remain `production_eligible=false` and require official-source/privacy
 review plus Human Gate.
+
+
+## 6. Source-binding and rights evidence gates
+
+Direct HTTPS retrieval now records source-binding evidence for each downloaded decision:
+
+- exact final official URL;
+- original-byte SHA-256;
+- retrieval timestamp;
+- verification method `direct_https_retrieval_sha256`;
+- `remote_content_hash_verified=true`;
+- `human_gate_status=pending`.
+
+This evidence does **not** self-promote a record. A separate fingerprint-bound Human Gate review is applied with:
+
+```bash
+node scripts/apply-case-law-source-binding-review.mjs \
+  case-law-review.ndjson \
+  case-law-source-binding-review.json \
+  case-law-review-bound.ndjson
+```
+
+The approval must name the exact URL + SHA-256 pair for each approved record. The importer rejects a claim of `official_binding_verified=true` without this evidence and approved Human Gate metadata.
+
+For retrieval rights/robots evidence, use:
+
+```bash
+node scripts/capture-mk-supreme-rights-evidence.mjs
+```
+
+This captures the official homepage, `robots.txt`, and same-host copyright/terms/policy pages with SHA-256 and timestamp. It never auto-approves retrieval rights. Human review must still produce `data/mk-supreme-rights-review.json`.
