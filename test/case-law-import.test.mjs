@@ -234,8 +234,10 @@ test("CLI12 official-public staging does not self-promote source binding",()=>{
     discovery_only:true
   })]));
   assert.match(out.sql,/official_primary/);
-  assert.match(out.sql,/,1,0,/);
-  assert.doesNotMatch(out.sql,/,0,1,/);
+  const provenanceLine=out.sql.split("\n").find(line=>line.includes("INSERT INTO case_law_provenance"));
+  assert.ok(provenanceLine);
+  assert.match(provenanceLine,/,1,0,/);
+  assert.doesNotMatch(provenanceLine,/,0,1,/);
 });
 
 test("CLI13 claimed verified official binding fails without exact evidence and Human Gate",()=>{
@@ -260,7 +262,7 @@ test("CLI13 claimed verified official binding fails without exact evidence and H
   );
 });
 
-test("CLI14 exact verified binding evidence may leave discovery after Human Gate",()=>{
+test("CLI14 exact verified binding evidence leaves discovery only after Human Gate",()=>{
   const row=caseRow({
     official_binding_verified:true,
     source_binding:{
@@ -275,7 +277,10 @@ test("CLI14 exact verified binding evidence may leave discovery after Human Gate
   });
   const out=generateCaseLawImportSql(ndjson([manifest(),row]));
   assert.match(out.sql,/official_primary/);
-  assert.match(out.sql,/,0,1,/);
+  const provenanceLine=out.sql.split("\n").find(line=>line.includes("INSERT INTO case_law_provenance"));
+  assert.ok(provenanceLine);
+  assert.match(provenanceLine,/,0,1,/);
+  assert.match(provenanceLine,/'approved'/);
 });
 
 test("CLI15 verified binding rejects URL or hash mismatch",()=>{
@@ -301,5 +306,44 @@ test("CLI15 verified binding rejects URL or hash mismatch",()=>{
       source_binding:{...baseBinding,source_sha256:"b".repeat(64)}
     })])),
     /SHA-256 mismatch/
+  );
+});
+
+
+test("CLI16 extraction and binding audit fields are persisted into provenance SQL",()=>{
+  const sha="a".repeat(64);
+  const extracted="f".repeat(64);
+  const row=caseRow({
+    official_binding_verified:false,
+    source_binding:{
+      verification_method:"direct_https_retrieval_sha256",
+      remote_content_hash_verified:true,
+      source_url:"https://www.vrhoven.sud.mk/test",
+      source_sha256:sha,
+      human_gate_status:"pending"
+    },
+    text_extraction:{
+      method:"pdf_pdftotext",
+      extractedTextSha256:extracted
+    }
+  });
+  const out=generateCaseLawImportSql(ndjson([manifest(),row]));
+  const provenanceLine=out.sql.split("\n").find(line=>line.includes("INSERT INTO case_law_provenance"));
+  assert.ok(provenanceLine);
+  assert.match(provenanceLine,/remote_content_hash_verified/);
+  assert.match(provenanceLine,/binding_verification_method/);
+  assert.match(provenanceLine,/extraction_method/);
+  assert.match(provenanceLine,/extracted_text_sha256/);
+  assert.match(provenanceLine,/direct_https_retrieval_sha256/);
+  assert.match(provenanceLine,/pdf_pdftotext/);
+  assert.match(provenanceLine,new RegExp(extracted));
+});
+
+test("CLI17 malformed extraction audit hash fails closed",()=>{
+  assert.throws(
+    ()=>generateCaseLawImportSql(ndjson([manifest(),caseRow({
+      text_extraction:{method:"pdf_pdftotext",extractedTextSha256:"bad"}
+    })])),
+    /Invalid extracted_text_sha256/
   );
 });
