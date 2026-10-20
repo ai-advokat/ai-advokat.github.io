@@ -79,6 +79,43 @@ function sourceStatusFor(manifest,url){
   throw new Error("Unsupported source_class");
 }
 
+function governedBindingState(manifest,item,sourceUrl){
+  if(manifest.source_class!=="official_public"){
+    if(item.official_binding_verified===true) throw new Error("Secondary source cannot claim official binding");
+    return {sourceClass:"licensed_secondary",officialBinding:0,discoveryOnly:1};
+  }
+
+  if(item.official_binding_verified!==true){
+    return {sourceClass:"official_primary",officialBinding:0,discoveryOnly:1};
+  }
+
+  const evidence=item.source_binding;
+  if(!evidence || typeof evidence!=="object" || Array.isArray(evidence)){
+    throw new Error("Verified official binding requires source_binding evidence");
+  }
+  const method=requireText(evidence.verification_method,"source_binding.verification_method",120);
+  if(!["direct_https_retrieval_sha256","official_remote_hash_match"].includes(method)){
+    throw new Error("Unsupported official binding verification method");
+  }
+  if(evidence.remote_content_hash_verified!==true){
+    throw new Error("Verified official binding requires remote_content_hash_verified=true");
+  }
+  const evidenceUrl=parseHttps(evidence.source_url,"source_binding.source_url");
+  if(evidenceUrl.href!==sourceUrl.href){
+    throw new Error("Verified official binding source URL mismatch");
+  }
+  const evidenceSha=requireText(evidence.source_sha256,"source_binding.source_sha256",64).toLowerCase();
+  if(!validSha(evidenceSha) || evidenceSha!==String(item.source_sha256).toLowerCase()){
+    throw new Error("Verified official binding SHA-256 mismatch");
+  }
+  if(!["approved","reviewed"].includes(String(evidence.human_gate_status||"").toLowerCase())){
+    throw new Error("Verified official binding requires approved Human Gate");
+  }
+  requireText(evidence.reviewed_by,"source_binding.reviewed_by",240);
+  requireText(evidence.reviewed_at,"source_binding.reviewed_at",80);
+  return {sourceClass:"official_primary",officialBinding:1,discoveryOnly:0};
+}
+
 export function generateCaseLawImportSql(ndjsonText){
   const rows=String(ndjsonText||"").split(/\r?\n/).filter(Boolean).map(JSON.parse);
   rows.forEach((row,i)=>assertNoSecrets(row,"row["+i+"]"));
@@ -171,9 +208,10 @@ export function generateCaseLawImportSql(ndjsonText){
       ].join(",")+");"
     );
 
-    const sourceClass=manifest.source_class==="official_public" ? "official_primary" : "licensed_secondary";
-    const officialBinding=manifest.source_class==="official_public" ? 1 : 0;
-    const discoveryOnly=manifest.source_class==="official_public" ? 0 : 1;
+    const binding=governedBindingState(manifest,item,sourceUrl);
+    const sourceClass=binding.sourceClass;
+    const officialBinding=binding.officialBinding;
+    const discoveryOnly=binding.discoveryOnly;
     sql.push(
       "INSERT INTO case_law_provenance(case_law_id,source_class,source_provider,source_product,source_url,source_sha256,source_record_id,discovery_only,official_binding_verified,license_or_access_basis,imported_batch_key,human_review_status) SELECT "+
       [
