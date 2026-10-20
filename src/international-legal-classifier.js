@@ -132,6 +132,7 @@ export function classifyOhchrMechanism(value){
 export function classifyInternationalDocument(textInput){
   const text=clean(textInput);
   const v=lower(text);
+  const head=lower(text.slice(0,16000));
 
   let documentSubtype="unknown";
   let route="manual_review";
@@ -167,19 +168,19 @@ export function classifyInternationalDocument(textInput){
     documentSubtype="ohchr_treaty_body_output";
     route="review_only";
     authorityClass="un_human_rights_mechanism_output";
-  }else if(/icsid/.test(v) && /mediation rules/.test(v)){
-    documentSubtype="icsid_mediation_rules";
-    route="review_only";
-    authorityClass="official_international_procedural_rules";
-  }else if(/icsid/.test(v) && /fact-finding rules/.test(v)){
-    documentSubtype="icsid_fact_finding_rules";
-    route="review_only";
-    authorityClass="official_international_procedural_rules";
-  }else if(/icsid/.test(v) && /additional facility/.test(v)){
+  }else if(/icsid/.test(head) && /additional facility\s+rules and regulations/.test(head)){
     documentSubtype="icsid_additional_facility_rules";
     route="review_only";
     authorityClass="official_international_procedural_rules";
-  }else if(/icsid/.test(v) && /convention on the settlement of investment disputes/.test(v)){
+  }else if(/icsid/.test(head) && /mediation rules and regulations/.test(head)){
+    documentSubtype="icsid_mediation_rules";
+    route="review_only";
+    authorityClass="official_international_procedural_rules";
+  }else if(/icsid/.test(head) && /fact-finding\s+rules and regulations/.test(head)){
+    documentSubtype="icsid_fact_finding_rules";
+    route="review_only";
+    authorityClass="official_international_procedural_rules";
+  }else if(/icsid/.test(head) && (/convention,\s*regulations\s+and\s+rules/.test(head) || /convention on the settlement of investment disputes/.test(head))){
     documentSubtype="icsid_convention_or_rules";
     route="review_only";
     authorityClass="official_international_treaty_or_procedural_rules";
