@@ -3,7 +3,7 @@
 // SHA-256 fingerprint. It never claims remote-content equality and never
 // promotes a record to reviewed/authoritative status without Human Gate.
 
-export const OFFICIAL_SOURCE_BINDER_VERSION = "1.0.0";
+export const OFFICIAL_SOURCE_BINDER_VERSION = "1.1.0";
 export const OFFICIAL_SOURCE_BINDING_SCHEMA = "AI_ADVOCAT_SOURCE_BINDING_V1";
 
 const OFFICIAL_AUTHORITY_STATUSES=new Set([
@@ -25,7 +25,18 @@ const OFFICIAL_CASE_AUTHORITY_CLASSES=new Set([
   "international_court_case_law",
   "comparative_human_rights_case_law",
   "international_criminal_case_law",
-  "official_domestic_echr_reference"
+  "official_domestic_echr_reference",
+  "originating_international_court"
+]);
+
+const OFFICIAL_INTERNATIONAL_REFERENCE_CLASSES=new Set([
+  "official_international_dispute_registry",
+  "official_treaty_and_procedural_rules",
+  "official_procedural_rules",
+  "official_un_human_rights_dataset",
+  "official_un_treaty_body_document_registry",
+  "official_domestic_mirror_and_discovery",
+  "originating_international_court"
 ]);
 
 function parseHttpsUrl(value){
@@ -89,7 +100,7 @@ function sourcePolicy(source){
   const access=source?.access||source?.public_access_status||null;
   const officialByStatus=OFFICIAL_AUTHORITY_STATUSES.has(authorityStatus);
   const officialByCaseClass=OFFICIAL_CASE_AUTHORITY_CLASSES.has(authorityClass);
-  const officialByAccess=access==="official_public" || access==="official_public_legacy";
+  const officialByAccess=String(access||"").startsWith("official_public");
   const secondary=/secondary/i.test(String(authorityStatus||"")) ||
     /secondary/i.test(String(authorityClass||"")) ||
     access==="commercial_secondary";
@@ -119,6 +130,10 @@ function routeCompatibility(route,source,policy){
       policy.authorityStatus==="eu_official" ||
       OFFICIAL_CASE_AUTHORITY_CLASSES.has(policy.authorityClass);
   }
+  if(route==="international_reference"){
+    return OFFICIAL_INTERNATIONAL_REFERENCE_CLASSES.has(policy.authorityClass) ||
+      OFFICIAL_CASE_AUTHORITY_CLASSES.has(policy.authorityClass);
+  }
   return false;
 }
 
@@ -130,7 +145,7 @@ export function bindOfficialSource({
 }={}){
   const url=parseHttpsUrl(sourceUrl);
   const hash=normalizeSha(sourceSha256);
-  if(!["legal_instrument","case_law"].includes(route)){
+  if(!["legal_instrument","case_law","international_reference"].includes(route)){
     throw new TypeError("source_binding_route_invalid");
   }
 
@@ -172,11 +187,12 @@ export function bindOfficialSource({
     ["terms_review_required","mixed_rights","record_level_license_required","restricted"].includes(reuseStatus);
   const primaryBindingRequired=Boolean(source?.official_binding_required_before_gpt_case_law_context) ||
     Boolean(source?.hudoc_binding_required) ||
+    Boolean(source?.originating_binding_source) ||
     /secondary/i.test(String(policy.authorityClass||""));
 
   const primaryForRoute=route==="legal_instrument"
     ? source?.jurisdiction==="MK" && policy.authorityStatus==="primary_official"
-    : policy.official && compatible;
+    : policy.official && compatible && !primaryBindingRequired;
   const metadataStagingEligible=policy.official && compatible && primaryForRoute && !primaryBindingRequired;
   const reasons=[];
   if(!policy.official) reasons.push(policy.secondary?"secondary_source_not_official_origin":"source_not_official_for_binding");
