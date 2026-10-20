@@ -107,7 +107,8 @@ export async function collectAndStageSupremeDecisions(options){
       sourceUrl:rec.final_url||rec.source_url,
       sourceClass:"official_public",
       sourceSha256:rec.sha256,
-      sourceHashBasis:"downloaded_original_bytes_sha256"
+      sourceHashBasis:"downloaded_original_bytes_sha256",
+      sourceBindingEvidence:rec.source_binding||null
     });
   }
 
