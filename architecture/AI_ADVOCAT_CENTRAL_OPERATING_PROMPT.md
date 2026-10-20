@@ -103,3 +103,8 @@ CI contains dedicated central-prompt and Macedonian-language regression tests. T
 - formal legal drafting avoids raw Markdown unless requested;
 - fictional example facts do not authorise fictional legal authorities;
 - the language postflight is available to public chat, source-backed research and Private Case Intelligence.
+
+
+## Scholarly doctrine boundary
+
+Central Prompt v7 also governs scholarly and historical-practice context. Peer-reviewed literature is useful for doctrine, issue spotting, comparative reasoning and citation discovery, but it is not current-law authority. Metadata-only journal records may be surfaced as research leads without attributing unverified substantive conclusions to the authors. Historical advocacy manuals may inform professional method only after any old statutory references and institutional roles are remapped to verified current law.
