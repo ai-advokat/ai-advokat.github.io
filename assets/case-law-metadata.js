@@ -3,10 +3,12 @@ import {
   buildCaseLawMetadataBatch,
   buildGovernedCaseLawNdjson
 } from "/src/case-law-metadata-processor.js";
+import { classifyDocumentForIngest } from "/src/document-ingest-router.js";
 
 const $=id=>document.getElementById(id);
 let files=[];
 let batch=null;
+let routingSkipped=[];
 
 $("batchFiles").addEventListener("change",e=>{
   files=Array.from(e.target.files||[]).slice(0,500);
@@ -19,8 +21,14 @@ $("processBatch").addEventListener("click",async()=>{
   $("batchStatus").textContent="Локална обработка и SHA-256 fingerprint…";
   try{
     const docs=[];
+    routingSkipped=[];
     for(const file of files){
       const text=await file.text();
+      const routing=classifyDocumentForIngest(text);
+      if(routing.route!=="case_law" || !routing.autoRouteAllowed){
+        routingSkipped.push({filename:file.name,route:routing.route,reason:routing.reason});
+        continue;
+      }
       const sourceSha256=await sha256Hex(await file.arrayBuffer());
       docs.push({
         filename:file.name,
@@ -30,9 +38,17 @@ $("processBatch").addEventListener("click",async()=>{
         sourceHashBasis:"original_file_bytes_sha256"
       });
     }
+    if(!docs.length){
+      batch=null;
+      render();
+      const names=routingSkipped.slice(0,5).map(x=>x.filename).join(", ");
+      $("batchStatus").textContent=`Ниту еден документ не е безбедно рутиран како судска одлука. Користете Governed Document Router. ${names}`;
+      return;
+    }
     batch=buildCaseLawMetadataBatch(docs);
     render();
-    $("batchStatus").textContent=`Обработени: ${batch.recordCount}. Дупликати по hash: ${batch.duplicateHashCount||0}. Human Gate останува задолжителен.`;
+    const skipped=routingSkipped.length?` Пренасочени/задржани за review: ${routingSkipped.length}.`:"";
+    $("batchStatus").textContent=`Обработени судски одлуки: ${batch.recordCount}. Дупликати по hash: ${batch.duplicateHashCount||0}.${skipped} Human Gate останува задолжителен.`;
   }catch(error){
     batch=null;
     $("batchStatus").textContent="Грешка: "+String(error?.message||error);
@@ -46,6 +62,13 @@ $("processSingle").addEventListener("click",async()=>{
   const text=$("singleText").value;
   if(!text.trim()) return;
   try{
+    const routing=classifyDocumentForIngest(text);
+    if(routing.route!=="case_law" || !routing.autoRouteAllowed){
+      batch=null;
+      render();
+      $("batchStatus").textContent=`Документот не е безбедно класифициран како судска одлука (${routing.route}). Користете Governed Document Router.`;
+      return;
+    }
     const bytes=new TextEncoder().encode(text);
     const sourceSha256=await sha256Hex(bytes);
     const record=extractCaseLawMetadata(text,{
@@ -68,7 +91,7 @@ $("processSingle").addEventListener("click",async()=>{
 });
 
 $("clearBatch").addEventListener("click",()=>{
-  files=[]; batch=null; $("batchFiles").value=""; $("singleText").value="";
+  files=[]; batch=null; routingSkipped=[]; $("batchFiles").value=""; $("singleText").value="";
   $("batchStatus").textContent="Нема избрани датотеки."; render();
 });
 
