@@ -143,12 +143,12 @@ export function classifyDocumentForIngest(textInput){
   let reason="insufficient_or_conflicting_structural_signals";
   let autoRouteAllowed=false;
 
-  const margin=Math.abs(law.score-caseLaw.score);
-  const bothStrong=law.score>=7 && caseLaw.score>=7;
+  const structuralConflict=law.score>=7 && caseLaw.score>=7 &&
+    caseLaw.decisionHeader && law.articleHeaderCount>=2;
 
-  if(bothStrong && margin<3){
+  if(structuralConflict){
     route="manual_review";
-    reason="strong_law_and_case_law_signals_conflict";
+    reason="strong_law_and_case_law_structures_conflict";
   }else if(law.score>=7 && law.score>=caseLaw.score+3){
     route="legal_instrument";
     reason="standalone_article_structure_and_normative_signals";
