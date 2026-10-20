@@ -212,3 +212,23 @@ test("Taleski is an inadmissibility decision and never a merits ruling on pardon
   assert.equal(r.inadmissibilityPresent,true);
   assert.equal(r.meritsDetermined,false);
 });
+
+
+test("ECHR judicial-independence fixtures preserve delivery and finality as separate lifecycle states",()=>{
+  for(const id of ["ilievska-zdraveva-v-north-macedonia","ribarev-v-north-macedonia"]){
+    const item=fixtures.echr_cases.find(x=>x.id===id);
+    assert.ok(item,id);
+    assert.equal(item.judgment_date,"2025-11-13");
+    assert.equal(item.final_date,"2026-02-13");
+    assert.deepEqual(item.lifecycle,["delivered","pending_finality","final"]);
+    assert.ok(item.expected_findings.some(x=>x.article==="6 § 1"&&x.result==="violation"));
+  }
+});
+
+test("ICSID rulebook subtype classification uses the front matter, not incidental later section names",()=>{
+  const convention=classifyInternationalDocument("ICSID CONVENTION, REGULATIONS AND RULES\nCONVENTION ON THE SETTLEMENT OF INVESTMENT DISPUTES BETWEEN STATES AND NATIONALS OF OTHER STATES\n... later: MEDIATION RULES");
+  assert.equal(convention.documentSubtype,"icsid_convention_or_rules");
+
+  const additional=classifyInternationalDocument("ICSID ADDITIONAL FACILITY RULES AND REGULATIONS\n... page header ICSID FACT-FINDING RULES");
+  assert.equal(additional.documentSubtype,"icsid_additional_facility_rules");
+});
