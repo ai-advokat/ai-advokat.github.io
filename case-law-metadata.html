@@ -13,7 +13,7 @@
   </style>
 </head>
 <body>
-  <header class="top"><div class="wrap"><h1>AI Advokat · Судски метаподатоци</h1><p>Масовна детерминистичка обработка на македонски судски одлуки · ECLI/HUDOC compatibility · Human Gate</p></div></header>
+  <header class="top"><div class="wrap"><h1>AI Advokat · Судски метаподатоци</h1><p>Масовна детерминистичка обработка на македонски судски одлуки · MK publication review · ECLI/Dublin Core · HUDOC · Human Gate</p></div></header>
   <main class="wrap">
     <section class="card">
       <div class="notice"><b>Fail-closed правила.</b> Алатката не генерира ECLI, не претставува „комплетност“ како точност и не прогласува метаподаток за официјален без Human Gate. Македонска одлука добива ECLI само ако таков идентификатор постои во самиот извор или во официјален регистар.</div>
@@ -43,7 +43,7 @@
         <div class="actions">
           <button id="processSingle" class="primary" type="button">Анализирај</button>
         </div>
-        <p class="muted">ECLI се зачувува само ако е буквално присутен. HUDOC полињата се водат одделно од домашните идентификатори.</p>
+        <p class="muted">ECLI се зачувува само ако е буквално присутен или подоцна е врзан со проверен официјален регистар. Дополнително се извлекуваат судија/совет, улоги на странки (review-only), правни лекови, трошоци/вредност, санкции и претходни одлуки. HUDOC полињата се водат одделно од домашните идентификатори.</p>
       </div>
     </section>
 
@@ -67,15 +67,15 @@
       <h2>Review Table</h2>
       <div class="scroll">
         <table>
-          <thead><tr><th>Датотека</th><th>Суд</th><th>Број</th><th>Датум</th><th>Вид</th><th>Област</th><th>ECLI</th><th>ЕСЧП/HUDOC</th><th>Комплетност</th><th>Privacy</th><th>Human Gate</th></tr></thead>
-          <tbody id="rows"><tr><td colspan="11" class="muted">Нема резултати.</td></tr></tbody>
+          <thead><tr><th>Датотека</th><th>Суд</th><th>Број</th><th>Датум</th><th>Вид</th><th>Област</th><th>Судија/совет</th><th>ECLI</th><th>ЕСЧП/HUDOC</th><th>Правен лек</th><th>Комплетност</th><th>Privacy</th><th>Human Gate</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="13" class="muted">Нема резултати.</td></tr></tbody>
         </table>
       </div>
     </section>
 
     <section class="card">
       <h2>Правна рамка за објавување</h2>
-      <p class="muted">Метаподатоците за јавна објава мора да поминат посебна проверка за тековните правила за објавување и анонимизација. Алатката само означува ризици; не врши автоматска правна анонимизација.</p>
+      <p class="muted">Метаподатоците за јавна објава мора да поминат посебна проверка за тековните правила за објавување и анонимизација. Алатката само означува ризици; не врши автоматска правна анонимизација. ECLI-профилот ги подготвува Dublin Core полињата (извор, суд, држава, датум, јазик, вид и предмет), но не создава национален ECLI. HUDOC-профилот ги чува ЕСЧП референците одделно.</p>
       <div class="actions"><a class="btn secondary" href="/document-router.html">Mixed Document Router</a><a class="btn secondary" href="/professional-tools.html">Назад кон Professional Tools</a><a class="btn secondary" href="/casepilot-workspace.html">Secure Case Workspace</a></div>
     </section>
   </main>
