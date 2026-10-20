@@ -306,17 +306,43 @@ export function deterministicMetadataCompleteness(record){
   });
 }
 
-function sourceBindingState({sourceClass,sourceUrl,sourceSha256}){
+function sourceBindingState({sourceClass,sourceUrl,sourceSha256,evidence=null}){
   const reasons=[];
   if(sourceClass==="local_unverified") reasons.push("source_class_unverified");
   if(!sourceUrl) reasons.push("official_source_url_missing");
   if(!sourceSha256) reasons.push("source_sha256_missing");
   if(sourceUrl && !sourceUrl.startsWith("https://")) reasons.push("source_url_not_https");
   const stagingCandidate=sourceClass!=="local_unverified" && Boolean(sourceUrl) && Boolean(sourceSha256) && sourceUrl.startsWith("https://");
+
+  let normalizedEvidence=null;
+  if(evidence!==null && evidence!==undefined){
+    if(typeof evidence!=="object" || Array.isArray(evidence)) throw new TypeError("case_law_source_binding_evidence_invalid");
+    const method=String(evidence.verification_method||"").trim();
+    const evidenceUrl=normalizeSourceUrl(evidence.source_url||null);
+    const evidenceSha=normalizeSha256(evidence.source_sha256||null);
+    if(!["direct_https_retrieval_sha256","official_remote_hash_match"].includes(method)){
+      throw new TypeError("case_law_source_binding_method_invalid");
+    }
+    if(evidence.remote_content_hash_verified!==true) throw new TypeError("case_law_remote_hash_verification_required");
+    if(evidenceUrl!==sourceUrl) throw new TypeError("case_law_source_binding_url_mismatch");
+    if(evidenceSha!==sourceSha256) throw new TypeError("case_law_source_binding_sha256_mismatch");
+    normalizedEvidence=Object.freeze({
+      verification_method:method,
+      source_url:evidenceUrl,
+      source_sha256:evidenceSha,
+      remote_content_hash_verified:true,
+      retrieved_at:evidence.retrieved_at?String(evidence.retrieved_at).slice(0,80):null,
+      human_gate_status:"pending",
+      official_binding_verified:false
+    });
+  }
+
   return Object.freeze({
-    status:stagingCandidate?"claimed_source_bound_pending_verification":"discovery_only_unbound",
+    status:normalizedEvidence?"direct_retrieval_verified_pending_human_gate":stagingCandidate?"claimed_source_bound_pending_verification":"discovery_only_unbound",
     officialBindingVerified:false,
+    remoteContentHashVerified:Boolean(normalizedEvidence),
     stagingCandidate,
+    evidence:normalizedEvidence,
     reasons:Object.freeze(reasons)
   });
 }
@@ -326,7 +352,8 @@ export function extractCaseLawMetadata(textInput,{
   sourceUrl=null,
   sourceClass="local_unverified",
   sourceSha256=null,
-  sourceHashBasis=null
+  sourceHashBasis=null,
+  sourceBindingEvidence=null
 }={}){
   const text=clean(textInput);
   const normalizedSourceClass=normalizeSourceClass(sourceClass);
@@ -349,7 +376,8 @@ export function extractCaseLawMetadata(textInput,{
   const binding=sourceBindingState({
     sourceClass:normalizedSourceClass,
     sourceUrl:normalizedSourceUrl,
-    sourceSha256:normalizedSourceSha256
+    sourceSha256:normalizedSourceSha256,
+    evidence:sourceBindingEvidence
   });
   const recordKind=classifyRecordKind(decisionType);
   const ecliMetadata=buildEcliMetadataProfile({
@@ -429,7 +457,8 @@ export function buildCaseLawMetadataBatch(documents=[]){
     sourceUrl:d?.sourceUrl||null,
     sourceClass:d?.sourceClass||"local_unverified",
     sourceSha256:d?.sourceSha256||null,
-    sourceHashBasis:d?.sourceHashBasis||null
+    sourceHashBasis:d?.sourceHashBasis||null,
+    sourceBindingEvidence:d?.sourceBindingEvidence||null
   }));
   const seenHashes=new Map();
   let duplicateHashCount=0;
@@ -535,6 +564,7 @@ export function buildGovernedCaseLawNdjson(batch,{
       remedy_and_financial:r.remedyAndFinancial||null,
       holdings:[],
       duplicate_review:r.duplicateReview||null,
+      source_binding:r.sourceBinding?.evidence||null,
       discovery_only:true,
       official_binding_verified:false,
       production_eligible:false,
