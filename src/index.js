@@ -2781,7 +2781,8 @@ async function handleSearch(request, env, url) {
 
   return json(request, {
     ok: true,
-    mode: databaseReady ? "read_only_public_corpus_plus_guides_plus_scholarly" : "read_only_public_guides_and_scholarly_degraded",
+    mode: databaseReady ? "read_only_public_corpus_plus_guides" : "read_only_public_guides_degraded",
+    scholarlyLayer: "secondary_metadata_context",
     query: q,
     database,
     count: results.length,
