@@ -4,6 +4,7 @@
   const MEASUREMENT_ID = "G-4F0STVL2EF";
   const CONSENT_KEY = "ai_advokat_analytics_consent_v1";
   const TAG_ID = "ai-advokat-google-tag";
+  const YOUTUBE_CHANNEL_URL = "https://www.youtube.com/@ZoranStojankich";
 
   window.dataLayer = window.dataLayer || [];
   window.gtag = window.gtag || function gtag(){ window.dataLayer.push(arguments); };
@@ -154,14 +155,50 @@
     };
   }
 
+  function makeOfficialChannelLink(location) {
+    const mk = (document.documentElement.lang || "").toLowerCase().startsWith("mk");
+    const link = document.createElement("a");
+    link.href = YOUTUBE_CHANNEL_URL;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.dataset.aiAdvokatYoutube = location;
+    link.textContent = location === "footer" ? "▶ YouTube · Zoran Stojankich" : "▶ YouTube";
+    link.setAttribute(
+      "aria-label",
+      mk ? "Официјален YouTube канал на Зоран Стојанкиќ и AI Advokat" : "Official YouTube channel of Zoran Stojankich and AI Advokat"
+    );
+    link.title = mk ? "Отвори го официјалниот YouTube канал" : "Open the official YouTube channel";
+    link.style.fontWeight = "850";
+    link.style.color = "var(--gold, #b9985b)";
+    return link;
+  }
+
+  function installOfficialChannelLinks() {
+    const targets = [
+      { root: document.querySelector("header .links"), location: "header" },
+      { root: document.querySelector("#mobileMenu > div"), location: "mobile" },
+      {
+        root: document.querySelector('footer nav[aria-label="Навигација во подножје"]') || document.querySelector("footer nav"),
+        location: "footer"
+      }
+    ];
+
+    targets.forEach(({ root, location }) => {
+      if (!root || root.querySelector(`[data-ai-advokat-youtube="${location}"]`)) return;
+      root.appendChild(makeOfficialChannelLink(location));
+    });
+  }
+
   if (initialConsent === "granted") loadGoogleTag();
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
+      installOfficialChannelLinks();
       updateSettingsButton();
       showConsentPanel(false);
     }, { once: true });
   } else {
+    installOfficialChannelLinks();
     updateSettingsButton();
     showConsentPanel(false);
   }
