@@ -12,6 +12,7 @@ import {
 import {parseIcsidRecentHtml} from "../scripts/icsid-recent-event-intake.mjs";
 import {extractNorthMacedoniaUhriRecords} from "../scripts/uhri-north-macedonia-intake.mjs";
 import {classifyDocumentForIngest} from "../src/document-ingest-router.js";
+import {extractEchrStructuredMetadata} from "../src/echr-findings.js";
 
 const registry=JSON.parse(fs.readFileSync("data/international-legal-source-registry-2026.json","utf8"));
 const fixtures=JSON.parse(fs.readFileSync("data/regression/international-legal-regression-fixtures-2026.json","utf8"));
@@ -154,4 +155,60 @@ test("main document router exposes governed international subtypes",()=>{
   assert.equal(ngo.route,"review_only");
   assert.equal(ngo.documentSubtype,"human_rights_monitoring_report");
   assert.equal(ngo.privacyRisk,"elevated");
+});
+
+
+test("D.H. operative part preserves mixed violation and non-violation findings by article",()=>{
+  const text=`
+JUDGMENT
+Application no. 44033/17
+FOR THESE REASONS, THE COURT, UNANIMOUSLY,
+Declares the complaints concerning Article 3 and Article 8 of the Convention admissible and the remainder of the application inadmissible;
+Holds that there has been a violation of Article 3 of the Convention concerning the lack of access to food, water and a toilet;
+Holds that there has been no violation of Article 3 of the Convention concerning adequate medical treatment in respect of the second, third and fourth applicants;
+Holds that there has been a violation of Article 8 of the Convention as a result of the publication of the applicants' photographs by the Ministry;
+Holds that there has been no violation of Article 8 of the Convention on account of the publication of the applicants' photographs in certain media outlets;
+Holds that there is no need to examine the complaint under Article 6 of the Convention;
+`;
+  const r=extractEchrStructuredMetadata(text);
+  assert.equal(r.documentType,"judgment");
+  assert.ok(r.applicationNumbers.includes("44033/17"));
+  assert.ok(r.findings.some(x=>x.article==="3"&&x.result==="violation"));
+  assert.ok(r.findings.some(x=>x.article==="3"&&x.result==="no_violation"));
+  assert.ok(r.findings.some(x=>x.article==="8"&&x.result==="violation"));
+  assert.ok(r.findings.some(x=>x.article==="8"&&x.result==="no_violation"));
+  assert.ok(r.findings.some(x=>x.article==="6"&&x.result==="no_separate_examination"));
+  assert.equal(r.meritsDetermined,true);
+});
+
+test("Mitrov Macedonian operative text extracts Article 6 violation without inventing a second merits finding",()=>{
+  const text=`
+МИТРОВ ПРОТИВ РЕПУБЛИКА МАКЕДОНИЈА ПРЕСУДА
+жалба бр. 45959/09
+ОД ТИЕ ПРИЧИНИ, СУДОТ, ЕДНОГЛАСНО
+1. Ја прогласува жалбата за допуштена;
+2. Смета дека има повреда на членот 6 од Конвенцијата во поглед на жалбените наводи за непристрасноста на основниот суд;
+3. Смета дека нема потреба да ја преиспита жалбата во однос на останатите жалбени наводи согласно членот 6 став 1 од Конвенцијата;
+`;
+  const r=extractEchrStructuredMetadata(text);
+  assert.equal(r.documentType,"judgment");
+  assert.ok(r.applicationNumbers.includes("45959/09"));
+  assert.ok(r.findings.some(x=>x.article==="6"&&x.result==="violation"));
+  assert.ok(r.findings.some(x=>x.article==="6 став 1"&&x.result==="no_separate_examination"));
+});
+
+test("Taleski is an inadmissibility decision and never a merits ruling on pardons",()=>{
+  const text=`
+ТАЛЕСКИ против СЕВЕРНА МАКЕДОНИЈА И ДРУГИ АПЛИКАЦИИ (ОДЛУКА)
+апликација бр. 77796/17
+Судот смета дека конкретните жалбени наводи на апликантите по основ на членот 6 се преуранети и мора да бидат отфрлени согласно членот 35 ст. 1 и 4 од Конвенцијата поради неисцрпување на домашните правни лекови.
+Од овие причини, Судот едногласно,
+Одлучи да ги спои апликациите;
+Ги прогласи апликациите за недопуштени.
+`;
+  const r=extractEchrStructuredMetadata(text);
+  assert.equal(r.documentType,"decision");
+  assert.ok(r.applicationNumbers.includes("77796/17"));
+  assert.equal(r.inadmissibilityPresent,true);
+  assert.equal(r.meritsDetermined,false);
 });
