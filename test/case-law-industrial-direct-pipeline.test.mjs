@@ -61,3 +61,20 @@ test("rights evidence capture is evidence-only and cannot auto-approve",()=>{
   assert.match(source,/human_review_required:true/);
   assert.doesNotMatch(source,/approved_for_bounded_automated_retrieval\s*:\s*true/);
 });
+
+
+test("case-law audit migration persists binding and extraction evidence",()=>{
+  const migration=fs.readFileSync("migrations/0049_case_law_binding_extraction_audit.sql","utf8");
+  for(const column of [
+    "remote_content_hash_verified",
+    "binding_verification_method",
+    "binding_reviewed_by",
+    "binding_reviewed_at",
+    "extraction_method",
+    "extracted_text_sha256"
+  ]){
+    assert.match(migration,new RegExp(column));
+  }
+  assert.match(migration,/schema_migrations/);
+  assert.match(migration,/'49'/);
+});
