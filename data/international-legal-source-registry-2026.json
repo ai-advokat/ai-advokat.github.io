@@ -110,7 +110,7 @@
       "id": "ohchr-uhri",
       "family": "UN_HUMAN_RIGHTS",
       "authority_class": "official_un_human_rights_dataset",
-      "url": "https://uhri.ohchr.org/en",
+      "url": "https://uhri.ohchr.org/",
       "data_page": "https://uhri.ohchr.org/en/our-data-api",
       "full_json_export": "https://uhri.ohchr.org/api/uhri/export-results/export-full-en.json",
       "access": "official_public_dataset",
@@ -123,7 +123,8 @@
       ],
       "completeness_note": "The source warns that individual mechanisms, countries and years may be incomplete because of processing backlogs.",
       "authority_note": "Recommendations and observations retain their mechanism and document identity and are not domestic judgments.",
-      "human_gate_required": true
+      "human_gate_required": true,
+      "portal_url": "https://uhri.ohchr.org/en"
     },
     {
       "id": "ohchr-treaty-body-database",
