@@ -61,8 +61,8 @@ export function extractEchrDocumentIdentity(textInput){
     if(/application|апликаци|жалб/iu.test(head.slice(Math.max(0,m.index-120),m.index+40))) applications.push(m[1]);
   }
   const app=[...new Set(applications)].slice(0,30);
-  const isDecision=/\(DECISION\)|\(ОДЛУКА\)|\bDECISION\b|\bОДЛУКА\b/iu.test(head);
-  const isJudgment=/\bJUDGMENT\b|\bПРЕСУДА\b/iu.test(head);
+  const isDecision=/\(DECISION\)|\(ОДЛУКА\)|\bDECISION\b|ОДЛУКА/iu.test(head);
+  const isJudgment=/\bJUDGMENT\b|ПРЕСУДА/iu.test(head);
   let documentType="unknown";
   if(isDecision && !isJudgment) documentType="decision";
   else if(isJudgment) documentType="judgment";
