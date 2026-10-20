@@ -108,7 +108,7 @@ function otherLegalSignals(text){
   return Object.freeze({score,contract,submission,powerOfAttorney,administrativeAct});
 }
 
-function pipelineFor(route){
+function pipelineFor(route,documentSubtype="unknown"){
   if(route==="legal_instrument"){
     return Object.freeze({
       id:"mk_legal_text_pipeline",
@@ -125,6 +125,33 @@ function pipelineFor(route){
       importer:"scripts/case-law-ndjson-to-sql.mjs",
       requiredMetadata:Object.freeze(["source_url","source_sha256"]),
       note:"Metadata extraction never generates ECLI and remains pending official-source binding and Human Gate."
+    });
+  }
+  if(["official_case_law_bulletin","case_law_discovery_register"].includes(documentSubtype)){
+    return Object.freeze({
+      id:"case_law_publication_review",
+      processor:"src/case-law-publication-processor.js",
+      requiredMetadata:Object.freeze(["source_url","source_sha256"]),
+      note:"Bulletin and discovery-register records remain discovery/review material; excerpts never self-promote to complete originating judgments."
+    });
+  }
+  if(documentSubtype==="human_rights_monitoring_report"){
+    return Object.freeze({
+      id:"secondary_human_rights_review",
+      analyzer:"src/legal-analyzer.js",
+      requiredMetadata:Object.freeze(["source_url","source_sha256"]),
+      privacyMinimisationRequired:true,
+      personSearchIndexAllowed:false,
+      note:"Secondary monitoring material remains non-binding and elevated-privacy review only."
+    });
+  }
+  if(documentSubtype.startsWith("icsid_") || documentSubtype.startsWith("ohchr_")){
+    return Object.freeze({
+      id:"international_legal_reference_review",
+      classifier:"src/international-legal-classifier.js",
+      sourceRegistry:"data/international-legal-source-registry-2026.json",
+      requiredMetadata:Object.freeze(["source_url","source_sha256"]),
+      note:"International procedural rules and UN mechanism outputs retain source-specific legal effect and remain behind Human Gate."
     });
   }
   return Object.freeze({
@@ -185,7 +212,7 @@ export function classifyDocumentForIngest(textInput){
     authorityClass:international.authorityClass,
     privacyRisk:international.privacyRisk,
     signals:Object.freeze({legalInstrument:law,caseLaw,otherLegal:other,international}),
-    downstream:pipelineFor(route),
+    downstream:pipelineFor(route,international.documentSubtype),
     humanGateRequired:true,
     generatedOfficialIdentifier:false
   });
