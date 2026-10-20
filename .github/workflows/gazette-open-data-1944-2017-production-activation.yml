@@ -101,13 +101,13 @@ jobs:
           console.log("EXACT PRODUCTION TARGET: PASS");
           NODE
 
-      - name: Guard pending migrations and quarantine unrelated 0045
+      - name: Guard pending migrations and quarantine unrelated migrations
         shell: bash
         run: |
           set -euo pipefail
           npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/gazette-open-data-pending.txt
           found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/gazette-open-data-pending.txt | sort -u || true)"
-          unexpected="$(printf '%s\n' "$found" | grep -Ev '^(0045_case_private_d1_object_store|0046_gazette_open_data_1944_2017|0047_gazette_issue_metadata_backfill_1944_2017)[.]sql$' | sed '/^$/d' || true)"
+          unexpected="$(printf '%s\n' "$found" | grep -Ev '^(0045_case_private_d1_object_store|0046_gazette_open_data_1944_2017|0047_gazette_issue_metadata_backfill_1944_2017|0048_zkp_commentary_v6_secondary_layer|0049_case_law_binding_extraction_audit)[.]sql$' | sed '/^$/d' || true)"
           if [ -n "$unexpected" ]; then
             echo "Unexpected pending migrations:"
             echo "$unexpected"
@@ -116,6 +116,14 @@ jobs:
           if printf '%s\n' "$found" | grep -q '^0045_case_private_d1_object_store[.]sql$'; then
             touch /tmp/gazette-0045-was-pending
             echo "0045 is pending and explicitly quarantined from this activation."
+          fi
+          if printf '%s\n' "$found" | grep -q '^0048_zkp_commentary_v6_secondary_layer[.]sql$'; then
+            touch /tmp/gazette-0048-was-pending
+            echo "0048 is pending and explicitly quarantined from this activation."
+          fi
+          if printf '%s\n' "$found" | grep -q '^0049_case_law_binding_extraction_audit[.]sql$'; then
+            touch /tmp/gazette-0049-was-pending
+            echo "0049 is pending and explicitly quarantined from this activation."
           fi
           echo "GLOBAL PENDING MIGRATION GUARD: PASS"
 
@@ -156,7 +164,7 @@ jobs:
             echo "Gazette migrations already applied." | tee /tmp/gazette-open-data-apply.txt
           fi
 
-      - name: Verify Gazette migrations applied and 0045 remains quarantined
+      - name: Verify Gazette migrations applied and unrelated migrations remain quarantined
         shell: bash
         run: |
           set -euo pipefail
@@ -167,6 +175,14 @@ jobs:
           fi
           if [ -f /tmp/gazette-0045-was-pending ] && ! grep -q '0045_case_private_d1_object_store[.]sql' /tmp/gazette-open-data-pending-after.txt; then
             echo "0045 was applied even though this activation did not authorize it."
+            exit 1
+          fi
+          if [ -f /tmp/gazette-0048-was-pending ] && ! grep -q '0048_zkp_commentary_v6_secondary_layer[.]sql' /tmp/gazette-open-data-pending-after.txt; then
+            echo "0048 was applied even though this activation did not authorize it."
+            exit 1
+          fi
+          if [ -f /tmp/gazette-0049-was-pending ] && ! grep -q '0049_case_law_binding_extraction_audit[.]sql' /tmp/gazette-open-data-pending-after.txt; then
+            echo "0049 was applied even though this activation did not authorize it."
             exit 1
           fi
           echo "SCOPED MIGRATION ISOLATION: PASS"
