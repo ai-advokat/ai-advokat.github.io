@@ -76,12 +76,12 @@ export function scholarlyPromptBlock(records,{maxChars=9000}={}){
     "AUTHORITY_ROLE: "+clean(r.authorityRole||"scholarly_secondary_reference")+"; LEGAL_AUTHORITY=false; CURRENT_LAW_AUTHORITY=false",
     "TEXT_STATUS: "+(r.metadataOnly?"metadata_or_contents_only_not_article_fulltext":"governed_secondary_text"),
     r.warning?"WARNING: "+clean(r.warning):null,r.sourceUrl?"SOURCE: "+clean(r.sourceUrl):null
-  ].filter(Boolean).join("\\n")).join("\\n\\n---\\n\\n");
+  ].filter(Boolean).join("\n")).join("\n\n---\n\n");
   return ["ROLE: SCHOLARLY/PROFESSIONAL SECONDARY CONTEXT ONLY.",
     "USE: doctrine, issue spotting, scholarly debate, comparative framing, historical professional method and citation discovery.",
     "DO NOT USE ALONE FOR: current law, article numbers, deadlines, mandatory procedural requirements, or binding case outcomes.",
     "METADATA RULE: when article full text is not present, state only what title/metadata supports; do not attribute substantive conclusions to the author.",
-    "HISTORICAL RULE: old practice manuals may guide advocacy method, but statutory citations and institutions must be remapped to independently verified current law.","",blocks].join("\\n").slice(0,Math.max(1000,Number(maxChars)||9000));
+    "HISTORICAL RULE: old practice manuals may guide advocacy method, but statutory citations and institutions must be remapped to independently verified current law.","",blocks].join("\n").slice(0,Math.max(1000,Number(maxChars)||9000));
 }
 
 export function scholarlyContextItems(records){
