@@ -71,4 +71,5 @@ test("collector source code keeps provenance and production release fail-closed"
   assert.match(source,/production_eligible:false/);
   assert.doesNotMatch(source,/headers\s*:\s*\{[^}]*["'](?:cookie|authorization)["']/i);
   assert.doesNotMatch(source,/credentials\s*:/i);
+  assert.match(source,/https:\/\/www\.vrhoven\.sud\.mk\//);
 });
