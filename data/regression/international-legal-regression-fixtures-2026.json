@@ -6,25 +6,54 @@
     {
       "id": "dh-and-others-v-north-macedonia",
       "document_type": "judgment",
-      "application_numbers": ["44033/17"],
+      "application_numbers": [
+        "44033/17"
+      ],
       "judgment_date": "2023-07-18",
       "final_date": "2023-10-18",
       "expected_findings": [
-        {"article": "3", "aspect": "food_water_toilet", "result": "violation"},
-        {"article": "3", "aspect": "medical_treatment", "result": "no_violation"},
-        {"article": "8", "aspect": "ministry_website_photos", "result": "violation"},
-        {"article": "8", "aspect": "media_publication", "result": "no_violation"},
-        {"article": "6", "result": "no_separate_examination"}
+        {
+          "article": "3",
+          "aspect": "food_water_toilet",
+          "result": "violation"
+        },
+        {
+          "article": "3",
+          "aspect": "medical_treatment",
+          "result": "no_violation"
+        },
+        {
+          "article": "8",
+          "aspect": "ministry_website_photos",
+          "result": "violation"
+        },
+        {
+          "article": "8",
+          "aspect": "media_publication",
+          "result": "no_violation"
+        },
+        {
+          "article": "6",
+          "result": "no_separate_examination"
+        }
       ],
-      "privacy": {"applicant_names_disclosed": false}
+      "privacy": {
+        "applicant_names_disclosed": false
+      }
     },
     {
       "id": "vasilkoski-and-others",
       "document_type": "judgment",
-      "application_numbers": ["28169/08"],
+      "application_numbers": [
+        "28169/08"
+      ],
       "judgment_date": "2010-10-28",
       "expected_findings": [
-        {"article": "5 § 3", "result": "violation", "topic": "individualised_detention_reasoning"}
+        {
+          "article": "5 § 3",
+          "result": "violation",
+          "topic": "individualised_detention_reasoning"
+        }
       ],
       "translation_status": "informational_macedonian_translation",
       "duplicate_fixture_required": true
@@ -32,22 +61,90 @@
     {
       "id": "mitrov-v-macedonia",
       "document_type": "judgment",
-      "application_numbers": ["45959/09"],
+      "application_numbers": [
+        "45959/09"
+      ],
       "judgment_date": "2016-06-02",
       "expected_findings": [
-        {"article": "6 § 1", "result": "violation", "topic": "objective_judicial_impartiality"},
-        {"article": "6 § 1", "result": "no_separate_examination", "topic": "other_article_6_complaints"}
+        {
+          "article": "6 § 1",
+          "result": "violation",
+          "topic": "objective_judicial_impartiality"
+        },
+        {
+          "article": "6 § 1",
+          "result": "no_separate_examination",
+          "topic": "other_article_6_complaints"
+        }
       ]
     },
     {
       "id": "taleski-and-others",
       "document_type": "decision",
-      "application_numbers": ["77796/17"],
+      "application_numbers": [
+        "77796/17"
+      ],
       "joined_applications": true,
       "decision_date": "2023-02-16",
       "outcome": "inadmissible",
-      "inadmissibility_basis": ["non_exhaustion_of_domestic_remedies", "prematurity"],
+      "inadmissibility_basis": [
+        "non_exhaustion_of_domestic_remedies",
+        "prematurity"
+      ],
       "merits_on_pardons": "not_determined"
+    },
+    {
+      "id": "ilievska-zdraveva-v-north-macedonia",
+      "document_type": "judgment",
+      "application_numbers": [
+        "19689/21",
+        "42794/22"
+      ],
+      "judgment_date": "2025-11-13",
+      "final_date": "2026-02-13",
+      "expected_findings": [
+        {
+          "article": "6 § 1",
+          "result": "violation",
+          "topic": "access_to_court"
+        }
+      ],
+      "lifecycle": [
+        "delivered",
+        "pending_finality",
+        "final"
+      ],
+      "domestic_context": [
+        "state_judicial_council",
+        "supreme_court_appeal_panel",
+        "remittal"
+      ]
+    },
+    {
+      "id": "ribarev-v-north-macedonia",
+      "document_type": "judgment",
+      "application_numbers": [
+        "39987/22"
+      ],
+      "judgment_date": "2025-11-13",
+      "final_date": "2026-02-13",
+      "expected_findings": [
+        {
+          "article": "6 § 1",
+          "result": "violation",
+          "topic": "access_to_court"
+        }
+      ],
+      "lifecycle": [
+        "delivered",
+        "pending_finality",
+        "final"
+      ],
+      "domestic_context": [
+        "judicial_discipline",
+        "state_judicial_council",
+        "supreme_court_appeal_panel"
+      ]
     }
   ],
   "domestic_and_secondary_documents": [
@@ -93,7 +190,11 @@
       "expected_route": "legal_instrument",
       "source_status": "unofficial_consolidated_text",
       "current_law_status_from_file_alone": "not_verified",
-      "regression_features": ["lettered_articles", "constitutional_court_annulment_note", "amendment_lineage_notes"]
+      "regression_features": [
+        "lettered_articles",
+        "constitutional_court_annulment_note",
+        "amendment_lineage_notes"
+      ]
     }
   ],
   "icsid_rules": [
