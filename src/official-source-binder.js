@@ -174,10 +174,14 @@ export function bindOfficialSource({
     Boolean(source?.hudoc_binding_required) ||
     /secondary/i.test(String(policy.authorityClass||""));
 
-  const metadataStagingEligible=policy.official && compatible && !primaryBindingRequired;
+  const primaryForRoute=route==="legal_instrument"
+    ? source?.jurisdiction==="MK" && policy.authorityStatus==="primary_official"
+    : policy.official && compatible;
+  const metadataStagingEligible=policy.official && compatible && primaryForRoute && !primaryBindingRequired;
   const reasons=[];
   if(!policy.official) reasons.push(policy.secondary?"secondary_source_not_official_origin":"source_not_official_for_binding");
   if(!compatible) reasons.push("source_not_compatible_with_document_route");
+  if(compatible && !primaryForRoute) reasons.push("source_is_official_but_not_primary_for_this_ingest_lane");
   if(primaryBindingRequired) reasons.push("primary_origin_binding_still_required");
   if(rightsReviewRequired) reasons.push("reuse_or_bulk_rights_require_separate_review");
 
@@ -198,6 +202,7 @@ export function bindOfficialSource({
     registryMatched:true,
     officialOriginCandidate:policy.official,
     routeCompatible:compatible,
+    primaryForRoute,
     metadataStagingEligible,
     bulkIngestEligible:metadataStagingEligible && automatedBulkIngest,
     rightsReviewRequired,
