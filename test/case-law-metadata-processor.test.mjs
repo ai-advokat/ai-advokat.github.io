@@ -90,3 +90,41 @@ test("governed NDJSON export remains discovery-only and production-ineligible",(
   assert.equal(rows[1].human_review_status,"pending");
   assert.match(rows[1].case_title,/Рев\.бр\. 5\/2025/);
 });
+
+
+test("extended metadata keeps ECLI metadata profile separate from ECLI assignment",()=>{
+  const r=extractCaseLawMetadata(
+    "ВРХОВЕН СУД НА РЕПУБЛИКА СЕВЕРНА МАКЕДОНИЈА\nРев.бр. 44/2026\nПРЕСУДА\nод 05.10.2026\nсудија-известител Ана Стојановска\nчлен 8 од Законот за судовите.",
+    {sourceUrl:"https://www.vrhoven.sud.mk/decision?id=44"}
+  );
+  assert.equal(r.ecli.primary,null);
+  assert.equal(r.standards.ecliMetadata["dcterms:isVersionOf"],null);
+  assert.equal(r.standards.ecliMetadata["dcterms:creator"],r.court);
+  assert.equal(r.standards.ecliMetadata["dcterms:coverage"],"MK");
+  assert.equal(r.standards.ecliMetadata["dcterms:date"],"2026-10-05");
+  assert.equal(r.standards.ecliMetadata.generatedEcli,false);
+  assert.ok(r.judicialActors.judges.includes("Ана Стојановска"));
+});
+
+test("extended metadata captures review-only parties remedies and financial fields",()=>{
+  const r=extractCaseLawMetadata(
+    "Основен суд Скопје\nП.бр. 12/2026\nПРЕСУДА\n10.10.2026\nТужител: Петар Петров\nТужен: Друштво АД\nВредност на спорот: 120.000 денари\nПарнични трошоци: 15.000 денари\nПротив пресудата е дозволена жалба во рок од 15 дена."
+  );
+  assert.ok(r.partyRoles.plaintiff.some(x=>x.includes("Петар")));
+  assert.ok(r.partyRoles.defendant.some(x=>x.includes("Друштво")));
+  assert.equal(r.partyRoles.publicationUse,"review_only");
+  assert.match(r.remedyAndFinancial.disputeValue,/120\.000/);
+  assert.match(r.remedyAndFinancial.costs,/15\.000/);
+  assert.equal(r.remedyAndFinancial.appealDeadline,"15 дена");
+  assert.ok(r.privacyReview.flags.includes("party_identity_publication_review_required"));
+  assert.equal(r.publicationReview.ruleProfile,"MK_CASE_PUBLICATION_ART9_POST_U5_2025");
+});
+
+test("literal ECLI remains the only ECLI assigned into the Dublin Core profile",()=>{
+  const ecli="ECLI:CE:ECHR:2026:0512JUD003795421";
+  const r=extractCaseLawMetadata(ecli+" Application no. 37954/21. Art. 6 § 1 of the Convention.");
+  assert.equal(r.ecli.primary,ecli);
+  assert.equal(r.standards.ecliMetadata["dcterms:isVersionOf"],ecli);
+  assert.equal(r.standards.ecliMetadata.officialEcliAssigned,true);
+  assert.equal(r.generatedOfficialIdentifier,false);
+});
