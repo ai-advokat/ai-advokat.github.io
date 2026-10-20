@@ -16,7 +16,9 @@ test("case-law metadata processor never fabricates domestic ECLI",()=>{
 
 test("case-law metadata processor preserves literal ECHR ECLI and HUDOC-compatible metadata",()=>{
   const r=extractCaseLawMetadata("ECLI:CE:ECHR:2026:0512JUD003795421. Application no. 37954/21. Art. 6 § 1 of the Convention.");
-  assert.equal(r.ecli.primary,"ECLI:CE:ECHR:2026:0512JUD003795421");
+  assert.equal(r.ecli.primary,null);
+  assert.ok(r.ecli.referenceValues.includes("ECLI:CE:ECHR:2026:0512JUD003795421"));
+  assert.ok(r.echr.ecli.includes("ECLI:CE:ECHR:2026:0512JUD003795421"));
   assert.deepEqual(r.echr.applicationNumbers,["37954/21"]);
   assert.ok(r.echr.conventionArticles.includes("6 § 1"));
 });
@@ -120,12 +122,16 @@ test("extended metadata captures review-only parties remedies and financial fiel
   assert.equal(r.publicationReview.ruleProfile,"MK_CASE_PUBLICATION_ART9_POST_U5_2025");
 });
 
-test("literal ECLI remains the only ECLI assigned into the Dublin Core profile",()=>{
-  const ecli="ECLI:CE:ECHR:2026:0512JUD003795421";
-  const r=extractCaseLawMetadata(ecli+" Application no. 37954/21. Art. 6 § 1 of the Convention.");
-  assert.equal(r.ecli.primary,ecli);
-  assert.equal(r.standards.ecliMetadata["dcterms:isVersionOf"],ecli);
-  assert.equal(r.standards.ecliMetadata.officialEcliAssigned,true);
+test("literal domestic ECLI alone can identify the domestic record while ECHR ECLI remains a reference",()=>{
+  const domestic="ECLI:MK:SOURCECOURT:2026:123";
+  const echr="ECLI:CE:ECHR:2026:0512JUD003795421";
+  const r=extractCaseLawMetadata(domestic+" "+echr+" Application no. 37954/21. Art. 6 § 1 of the Convention.");
+  assert.equal(r.ecli.primary,domestic);
+  assert.equal(r.standards.ecliMetadata["dcterms:isVersionOf"],domestic);
+  assert.equal(r.standards.ecliMetadata.sourceEcliPresent,true);
+  assert.equal(r.standards.ecliMetadata.officialEcliVerified,false);
+  assert.ok(r.ecli.referenceValues.includes(echr));
+  assert.ok(r.echr.ecli.includes(echr));
   assert.equal(r.generatedOfficialIdentifier,false);
 });
 
