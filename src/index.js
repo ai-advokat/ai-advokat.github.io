@@ -3343,9 +3343,12 @@ async function loadScholarlyRegistry(request,env){
 
 async function findGovernedScholarly(request,env,q,{limit=5}={}){
   const registry=await loadScholarlyRegistry(request,env);
-  if(!registry) return {records:[],context:[]};
-  const records=findScholarlyRecords(registry,q,{limit});
-  return {records,context:scholarlyContextItems(records)};
+  if(!registry) return {records:[],context:[],provenanceGate:null};
+  const candidateRecords=findScholarlyRecords(registry,q,{limit});
+  const gate=enforceCanonicalContextProvenance(scholarlyContextItems(candidateRecords));
+  const releasedIds=new Set(gate.context.map(x=>String(x?.provenance?.recordId||"")).filter(Boolean));
+  const records=candidateRecords.filter(x=>releasedIds.has(String(x.id||"")));
+  return {records,context:gate.context,provenanceGate:gate};
 }
 
 async function searchPublicScholarly(request,env,{q,status="all",limit=8}={}){
@@ -6429,6 +6432,17 @@ async function handleAssistant(request, env, url) {
         releaseDecision:"not_authorized"
       }
     },
+    scholarlyContext:scholarlyRecords.map(r=>({
+      title:r.title,
+      authors:r.authors||[],
+      publication:r.collectionTitle||r.publisher||null,
+      year:r.year||null,
+      volume:r.volume||null,
+      issue:r.issue||null,
+      authorityRole:r.authorityRole,
+      legalAuthority:false,
+      textStatus:r.metadataOnly ? "metadata_or_contents_only" : "governed_secondary_text"
+    })),
     citations:articles.map(a=>({
       articleNumber:a.articleNumber,
       heading:a.heading,
