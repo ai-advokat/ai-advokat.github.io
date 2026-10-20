@@ -110,7 +110,8 @@
     "supreme:discover": "node scripts/download-mk-supreme-decisions.mjs",
     "test:case-law-metadata": "node --no-warnings --test test/case-law-metadata-processor.test.mjs",
     "test:supreme-direct-staging": "node --no-warnings --test test/mk-supreme-decision-collector.test.mjs test/mk-supreme-direct-staging.test.mjs",
-    "supreme:stage": "node scripts/collect-and-stage-mk-supreme-decisions.mjs"
+    "supreme:stage": "node scripts/collect-and-stage-mk-supreme-decisions.mjs",
+    "test:case-law-intake": "node --no-warnings --test test/case-law-metadata-processor.test.mjs test/mk-supreme-decision-collector.test.mjs test/mk-supreme-direct-staging.test.mjs test/case-law-industrial-direct-pipeline.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
