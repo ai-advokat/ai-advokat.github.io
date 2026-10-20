@@ -343,18 +343,29 @@ export async function run(options){
     const filename=`${base}${ext}`;
     fs.writeFileSync(path.join(outDir,filename),fetched.buf);
 
+    const retrievedAt=new Date().toISOString();
+    const finalUrl=normalizeOfficialUrl(fetched.url||u.href).href;
     const rec={
       type:"mk_supreme_public_decision_download",
       source_id:"mk-supreme-court",
       source_url:u.href,
-      final_url:fetched.url,
+      final_url:finalUrl,
       filename,
       content_type:ct||null,
       bytes:fetched.buf.length,
       sha256:hash,
-      retrieved_at:new Date().toISOString(),
+      retrieved_at:retrievedAt,
       duplicate_of:duplicateOf,
       rights_reviewed:true,
+      source_binding:{
+        verification_method:"direct_https_retrieval_sha256",
+        source_url:finalUrl,
+        source_sha256:hash,
+        remote_content_hash_verified:true,
+        retrieved_at:retrievedAt,
+        human_gate_status:"pending",
+        official_binding_verified:false
+      },
       human_gate_required:true,
       production_eligible:false
     };
