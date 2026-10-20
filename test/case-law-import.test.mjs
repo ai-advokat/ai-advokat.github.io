@@ -168,7 +168,7 @@ test("CLI8 external identifiers and source provenance are preserved without auto
   assert.match(out.sql,/INSERT OR IGNORE INTO case_law_external_ids/);
   assert.match(out.sql,/ECLI:EU:C:2026:1/);
   assert.match(out.sql,/62026CJ0001/);
-  assert.doesNotMatch(out.sql,/human_review_status[^\n]*reviewed/i);
+  assert.doesNotMatch(out.sql,/'reviewed'/i);
 });
 
 test("CLI9 licensed Paragraf Lex Nova LexAI lineage remains discovery-only until official binding",()=>{
