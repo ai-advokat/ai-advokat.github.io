@@ -130,3 +130,16 @@ All public release, AI/RAG, merge and production-write gates remain fail-closed 
 The distinctive feature of AI Advokat is not that it can generate more text.
 
 It is that every consequential legal statement can be placed inside a visible chain of **source → version → verification → authorial responsibility → human approval → controlled use**.
+
+
+## Scholarly doctrine and historical professional practice
+
+The Professional Legal Corpus may contain peer-reviewed journal metadata, doctrinal literature and historical professional manuals as **secondary** knowledge layers.
+
+- Scholarly literature may support doctrine, comparative analysis, issue spotting, research leads and citation discovery.
+- Bibliographic or table-of-contents metadata proves only that a publication/article exists and what its title/metadata states; it does not prove the article's substantive conclusion.
+- Historical professional manuals may inform advocacy method and professional skills, but old article numbers, institutions and procedural roles must be mapped to independently verified current law.
+- No scholarly or historical-practice record establishes current law, a deadline, a mandatory procedural rule or a binding case outcome.
+- Material legal propositions still require the source hierarchy, version/date verification and Human Gate.
+
+The shared scholarly registry is `data/scholarly-legal-literature-2026.json`. It is used by the Professional Library, AI Advokat as secondary context, and Nenad Lex Nova Academy as a research/reading layer.
