@@ -198,8 +198,10 @@
 
     targets.forEach(({ root, location }) => {
       if (!root) return;
-      if (!root.querySelector(`[data-ai-advokat-author-hub="${location}"]`)) root.appendChild(makeAuthorHubLink(location));
-      if (!root.querySelector(`[data-ai-advokat-youtube="${location}"]`)) root.appendChild(makeOfficialChannelLink(location));
+      const hasAuthorHub = root.querySelector('[href="/authors/zoran-stojankic/"], [href="/authors/zoran-stojankic/#publications"]');
+      const hasYoutube = root.querySelector('a[href="https://www.youtube.com/@ZoranStojankich"]');
+      if (!hasAuthorHub && !root.querySelector(`[data-ai-advokat-author-hub="${location}"]`)) root.appendChild(makeAuthorHubLink(location));
+      if (!hasYoutube && !root.querySelector(`[data-ai-advokat-youtube="${location}"]`)) root.appendChild(makeOfficialChannelLink(location));
     });
   }
 
