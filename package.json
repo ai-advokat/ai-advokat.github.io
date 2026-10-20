@@ -111,7 +111,11 @@
     "test:case-law-metadata": "node --no-warnings --test test/case-law-metadata-processor.test.mjs",
     "test:supreme-direct-staging": "node --no-warnings --test test/mk-supreme-decision-collector.test.mjs test/mk-supreme-direct-staging.test.mjs",
     "supreme:stage": "node scripts/collect-and-stage-mk-supreme-decisions.mjs",
-    "test:case-law-intake": "node --no-warnings --test test/case-law-metadata-processor.test.mjs test/mk-supreme-decision-collector.test.mjs test/mk-supreme-direct-staging.test.mjs test/case-law-industrial-direct-pipeline.test.mjs"
+    "test:case-law-intake": "node --no-warnings --test test/case-law-metadata-processor.test.mjs test/mk-supreme-decision-collector.test.mjs test/mk-supreme-direct-staging.test.mjs test/case-law-industrial-direct-pipeline.test.mjs",
+    "test:case-law-source-binding": "node --no-warnings --test test/case-law-source-binding-review.test.mjs test/case-law-import.test.mjs",
+    "test:case-law-hardening": "node --no-warnings --test test/case-law-metadata-processor.test.mjs test/case-law-source-binding-review.test.mjs test/case-law-import.test.mjs test/mk-supreme-decision-collector.test.mjs test/mk-supreme-direct-staging.test.mjs test/case-law-industrial-direct-pipeline.test.mjs test/casepilot-case-law-bridge.test.mjs test/casepilot-case-law-direct-research.test.mjs",
+    "case-law:bind-source": "node scripts/apply-case-law-source-binding-review.mjs",
+    "supreme:rights-evidence": "node scripts/capture-mk-supreme-rights-evidence.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
