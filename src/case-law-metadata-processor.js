@@ -150,7 +150,7 @@ export function extractJudicialActors(textInput){
   const text=clean(textInput);
   const judges=matchAll(
     text,
-    /(?:судија(?:та)?|судија[-\s]*известител|известител|претседател(?:от)?\s+на\s+советот)\s*[:\-–—]?\s*([А-ШЃЅЈЉЊЌЏ][\p{L}'’.-]+(?:\s+[А-ШЃЅЈЉЊЌЏ][\p{L}'’.-]+){1,3})/giu,
+    /(?:судија[-\s]*известител|судија(?:та)?|известител|претседател(?:от)?\s+на\s+советот)\s*[:\-–—]?\s*([А-ШЃЅЈЉЊЌЏ][\p{L}'’.-]+(?:\s+[А-ШЃЅЈЉЊЌЏ][\p{L}'’.-]+){1,3})/giu,
     1,
     20
   );
@@ -196,7 +196,7 @@ export function extractRemedyAndFinancialMetadata(textInput){
     /((?:жалба|ревизија|вонреден\s+правен\s+лек)[^\n]{0,260})/iu
   ]);
   const appealDeadline=firstMatch(text,[
-    /(?:жалба|ревизија)[^\n]{0,120}?во\s+рок\s+од\s+(\d+\s+(?:ден|дена|денови))/iu
+    /(?:жалба|ревизија)[^\n]{0,120}?во\s+рок\s+од\s+(\d+\s+(?:денови|дена|ден))/iu
   ]);
   const previousDecisions=matchAll(
     text,
