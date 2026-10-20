@@ -461,16 +461,18 @@ export function buildCaseLawMetadataBatch(documents=[]){
 export function buildGovernedCaseLawNdjson(batch,{
   runId="local-case-law-metadata",
   sourceProvider="Local batch",
+  sourceClass="local_unverified",
   licenseOrAccessBasis="user_supplied",
   authorizedExport=false
 }={}){
+  const normalizedManifestSourceClass=normalizeSourceClass(sourceClass);
   if(!batch||!Array.isArray(batch.records)) throw new TypeError("case_law_batch_required");
   const manifest={
     type:"case_law_manifest",
     schema_version:CASE_LAW_METADATA_SCHEMA,
     processor_version:CASE_LAW_METADATA_VERSION,
     run_id:String(runId),
-    source_class:"local_unverified",
+    source_class:normalizedManifestSourceClass,
     source_provider:String(sourceProvider),
     authorized_export:Boolean(authorizedExport),
     license_or_access_basis:String(licenseOrAccessBasis),
@@ -501,6 +503,7 @@ export function buildGovernedCaseLawNdjson(batch,{
       source_sha256:sourceHash,
       source_hash_basis:r.sourceIdentity.sourceHashBasis,
       source_product:"case-law-metadata-workbench",
+      source_class:r.sourceIdentity.sourceClass,
       source_record_id:r.caseNumber||null,
       external_ids:{
         ...(r.ecli.primary?{ecli:r.ecli.primary}:{}),
