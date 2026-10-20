@@ -105,7 +105,9 @@
     "test:case-intelligence": "node --no-warnings --test test/case-intelligence.test.mjs test/case-intelligence-runtime.test.mjs",
     "test:echr-bureau-corpus": "node --no-warnings --test test/echr-bureau-corpus.test.mjs",
     "test:macedonian-language": "node --no-warnings --test test/macedonian-language-guard.test.mjs",
-    "test:document-routing": "node --no-warnings --test test/document-ingest-router.test.mjs test/official-source-binder.test.mjs test/document-router-ui.test.mjs"
+    "test:document-routing": "node --no-warnings --test test/document-ingest-router.test.mjs test/official-source-binder.test.mjs test/document-router-ui.test.mjs",
+    "test:supreme-collector": "node --no-warnings --test test/mk-supreme-decision-collector.test.mjs",
+    "supreme:discover": "node scripts/download-mk-supreme-decisions.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
