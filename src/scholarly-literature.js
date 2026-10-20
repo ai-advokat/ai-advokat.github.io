@@ -83,3 +83,34 @@ export function scholarlyPromptBlock(records,{maxChars=9000}={}){
     "METADATA RULE: when article full text is not present, state only what title/metadata supports; do not attribute substantive conclusions to the author.",
     "HISTORICAL RULE: old practice manuals may guide advocacy method, but statutory citations and institutions must be remapped to independently verified current law.","",blocks].join("\\n").slice(0,Math.max(1000,Number(maxChars)||9000));
 }
+
+export function scholarlyContextItems(records){
+  return (Array.isArray(records)?records:[]).filter(r=>r?.sourceSha256).map(r=>({
+    contextRole:"scholarly_secondary",
+    source:r.collectionTitle||r.publisher||"Scholarly literature",
+    locator:[
+      r.year?String(r.year):null,
+      r.volume?"год. "+r.volume:null,
+      r.issue?"бр. "+r.issue:null,
+      r.title
+    ].filter(Boolean).join(" · "),
+    version:r.year?String(r.year):"historical",
+    provenance:{
+      kind:"scholarly_literature",
+      sourceIdentity:String(r.collectionId||r.publisher||"scholarly_collection"),
+      authorityClass:String(r.authorityRole||"scholarly_secondary_reference"),
+      locator:String(r.title||""),
+      releaseRole:"secondary_only",
+      humanReviewStatus:"reviewed",
+      legalAuthority:false,
+      currentLawClaim:false,
+      recordId:String(r.id||""),
+      title:String(r.title||""),
+      publicationTitle:String(r.collectionTitle||r.publisher||"Scholarly literature"),
+      publicationYear:String(r.year||"historical"),
+      sourceState:String(r.sourceState||"metadata_only"),
+      fingerprint:String(r.sourceSha256||"")
+    },
+    text:scholarlyPromptBlock([r],{maxChars:2600})
+  }));
+}
