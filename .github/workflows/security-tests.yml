@@ -16,6 +16,9 @@ on:
       - "docs/standards/**"
       - "data/publication-governance.json"
       - "data/professional-legal-corpus-2026.json"
+      - "data/scholarly-legal-literature-2026.json"
+      - "data/knowledge-intake-policy.json"
+      - "academy/**"
       - "data/legal-evidence-cards.json"
       - "data/citation-authority-engine.json"
       - "data/response-provenance-contract.json"
@@ -139,6 +142,10 @@ jobs:
         run: npm run test:guides-human-gate-pack
       - name: Professional Library governance tests
         run: npm run test:professional-library
+      - name: Scholarly literature, bot and Lex Nova Academy governance
+        run: |
+          node --check src/scholarly-literature.js
+          npm run test:scholarly-literature
       - name: Professional publication governance tests
         run: npm run test:publication-governance
       - name: Professional Legal Corpus 2026 tests

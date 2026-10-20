@@ -7,6 +7,7 @@ export const KNOWLEDGE_CLASSES = Object.freeze({
   LEGAL_REFERENCE: "legal_reference_document",
   USER_GUIDE: "user_facing_guide",
   RESEARCH_WORKING: "research_working_material",
+  SCHOLARLY: "scholarly_legal_literature",
   UNCLASSIFIED: "unclassified_pending_review"
 });
 
@@ -38,6 +39,8 @@ export const KNOWLEDGE_INTAKE_POLICY = Object.freeze({
     "official_guidance",
     "authorial_analysis",
     "secondary_reference",
+    "scholarly_secondary_reference",
+    "historical_professional_practice",
     "user_facing_education"
   ])
 });
@@ -95,6 +98,9 @@ export function createKnowledgeIntakeRecord({
         : "not_a_primary_law_claim",
       userFacing:cls===KNOWLEDGE_CLASSES.USER_GUIDE
         ? "secondary_authorial_material_human_review_required"
+        : "not_applicable",
+      scholarly:cls===KNOWLEDGE_CLASSES.SCHOLARLY
+        ? "secondary_doctrine_only_current_law_requires_primary_source_crosscheck"
         : "not_applicable",
       modelFallback:"never_silently_replace_missing_native_support_with_general_model_knowledge"
     }),

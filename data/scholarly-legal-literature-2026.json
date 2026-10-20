@@ -1,0 +1,812 @@
+{
+  "schema_version": "1.0",
+  "registry_id": "AI_ADVOKAT_SCHOLARLY_LEGAL_LITERATURE_2026",
+  "updated_on": "2026-10-20",
+  "doctrine": [
+    "scholarship_is_secondary_authority",
+    "publication_year_and_issue_must_be_preserved",
+    "historical_manuals_require_current_law_mapping",
+    "cited_law_and_case_law_require_independent_verification",
+    "metadata_discovery_does_not_equal_fulltext_rights",
+    "human_gate_for_professional_reliance"
+  ],
+  "journal": {
+    "id": "maclc-macedonian-journal-criminal-law-criminology",
+    "title_mk": "Македонска ревија за казнено право и криминологија",
+    "title_en": "Macedonian Journal of Criminal Law and Criminology",
+    "issn": "1409-5327",
+    "publisher_mk": "Здружение за кривично право и криминологија на Македонија",
+    "source_url": "http://www.maclc.mk/publications",
+    "authority_role": "scholarly_secondary_reference",
+    "peer_review": "fully_blinded_double_peer_review",
+    "indexing": [
+      "HeinOnline",
+      "EBSCO Criminal Justice Abstracts"
+    ],
+    "rights": {
+      "redistribution": "allowed_with_attribution",
+      "commercial_use": "prohibited",
+      "author_copyright_retained": true,
+      "first_publication_right": "journal",
+      "note": "Use only the rights statement actually published by the journal; article-specific third-party material may still require separate review."
+    },
+    "current_law_authority": false,
+    "issues": [
+      {
+        "volume": 1,
+        "issue": "1",
+        "year": 1994,
+        "source_state": "listed_on_official_publications_page"
+      },
+      {
+        "volume": 21,
+        "issue": "1",
+        "year": 2014,
+        "source_state": "listed_on_official_publications_page"
+      },
+      {
+        "volume": 22,
+        "issue": "1",
+        "year": 2015,
+        "source_state": "listed_on_official_publications_page"
+      },
+      {
+        "volume": 23,
+        "issue": "1",
+        "year": 2016,
+        "source_state": "listed_on_official_publications_page"
+      },
+      {
+        "volume": 23,
+        "issue": "2",
+        "year": 2016,
+        "source_state": "listed_on_official_publications_page"
+      },
+      {
+        "id": "maclc-2017-v24-n1",
+        "volume": 24,
+        "issue": "1",
+        "year": 2017,
+        "source_state": "issue_contents_supplied",
+        "source_sha256": "204317c956ab547ac198104d39dcead01a305c463579a86478acd6b6a909fd55",
+        "themes": [
+          "sentencing",
+          "alternative_measures",
+          "probation",
+          "mandatory_defence",
+          "judicial_independence",
+          "recidivism",
+          "crime_prevention"
+        ],
+        "articles": [
+          {
+            "authors": [
+              "Методија Каневчев"
+            ],
+            "title": "За некои (контроверзни) решенија од Законот за определување на видот и одмерување на висината на казната"
+          },
+          {
+            "authors": [
+              "Норберт Костер"
+            ],
+            "title": "Одмерување на казната во германското право",
+            "comparative_jurisdiction": "DE"
+          },
+          {
+            "authors": [
+              "Милан Шкулиќ"
+            ],
+            "title": "Основни споредбеноправни механизми за одмерување на казнита и за условниот отпуст",
+            "comparative": true
+          },
+          {
+            "authors": [
+              "Никола Тупанчески",
+              "Александра Деаноска-Трендафилова"
+            ],
+            "title": "Една година од примената на Законот за одредување на видот и одмерување на висината на казната – проблеми и предизвици"
+          },
+          {
+            "authors": [
+              "Лидија Раичевиќ"
+            ],
+            "title": "Објективна категоризација на кривично дело"
+          },
+          {
+            "authors": [
+              "Ацо Тасев"
+            ],
+            "title": "Независност на судството и улогата на судот во одредувањето на видот и одмерувањето на висината на казната"
+          },
+          {
+            "authors": [
+              "Леонид Трпеноски"
+            ],
+            "title": "Промените во делот на одмерувањето на казните - чекор во погрешен правец"
+          },
+          {
+            "authors": [
+              "Иванка Јакимовска",
+              "Златко Јакимовски"
+            ],
+            "title": "Судско одмерување на казните во Република Македонија: теоретски согледувања, практични проблеми и предлог реформи"
+          },
+          {
+            "authors": [
+              "Љупчо Арнаудовски"
+            ],
+            "title": "Алтернативните мерки и санкции во казнената политика на судовите во Република Македонија"
+          },
+          {
+            "authors": [
+              "Методија Каневчев"
+            ],
+            "title": "Извршување на општокорисната работа и куќниот затвор според Законот за пробација"
+          },
+          {
+            "authors": [
+              "Александра Груевска – Дракулевски"
+            ],
+            "title": "Помеѓу казната затвор и условната осуда: предности и негативни страни од (не)примената на алтернативните мерки и на казната затвор"
+          },
+          {
+            "authors": [
+              "Џемали Саити"
+            ],
+            "title": "Нормативни и практични претпоставки за примена на алтернативните мерки"
+          },
+          {
+            "authors": [
+              "Бобан Мисоски"
+            ],
+            "title": "Законот за пробација и мерките за обезбедување присуство во кривичната постапка"
+          },
+          {
+            "authors": [
+              "Елена Мујоска Трпевска"
+            ],
+            "title": "За (не)примената на алтернативите на затворот во македонската судска пракса"
+          },
+          {
+            "authors": [
+              "Мимоза Салтирова"
+            ],
+            "title": "Хуманизација, ресоцијализација и реинтеграција низ Законот за пробација"
+          },
+          {
+            "authors": [
+              "Тамара Витларова"
+            ],
+            "title": "Алтернативната мерка-општокорисна работа во казнено-правниот систем на Република Македонија"
+          },
+          {
+            "authors": [
+              "Гордана Лажетиќ-Бужаровска",
+              "Сунчица Димитријоска"
+            ],
+            "title": "Извештај од истражувањето: Ризик-факторите за повторништвото кај децата заради подобра превенција на детското престапништво"
+          },
+          {
+            "authors": [
+              "Гордан Калајџиев",
+              "Воислав Стојановски",
+              "Андреј Божиновски"
+            ],
+            "title": "Анализа за зајакнување на можностите за задолжителна одбрана во кривичната постапка"
+          },
+          {
+            "authors": [
+              "Весна Стефановска"
+            ],
+            "title": "Кривичните санкции и превенција на криминалот"
+          },
+          {
+            "authors": [
+              "Сунчана Роксандиќ Видличка"
+            ],
+            "title": "Транзициони правни мерки и примена на правото за економски криминалитет во Хрватска: Што може Македонија и балканските земји да научат од нив?",
+            "comparative": true
+          }
+        ],
+        "artifact_scope": "contents_and_front_matter_only",
+        "artifact_pages": 8,
+        "artifact_size_bytes": 128931,
+        "article_index_complete_for_supplied_contents": true
+      },
+      {
+        "volume": 24,
+        "issue": "2",
+        "year": 2017,
+        "source_state": "listed_on_official_publications_page"
+      },
+      {
+        "volume": 25,
+        "issue": "1",
+        "year": 2018,
+        "source_state": "listed_on_official_publications_page"
+      },
+      {
+        "volume": 26,
+        "issue": "1-2",
+        "year": 2019,
+        "source_state": "listed_on_official_publications_page"
+      },
+      {
+        "volume": 27,
+        "issue": "1-2",
+        "year": 2020,
+        "source_state": "listed_on_official_publications_page"
+      },
+      {
+        "volume": 28,
+        "issue": "1-2",
+        "year": 2021,
+        "source_state": "listed_on_official_publications_page"
+      },
+      {
+        "id": "maclc-2022-v29-n1-2",
+        "volume": 29,
+        "issue": "1-2",
+        "year": 2022,
+        "source_state": "issue_contents_supplied",
+        "source_sha256": "a464b39e3e831bd1ec48e82f498cc998d59395a46a94319b73320acf4acac421",
+        "open_access_statement_present": true,
+        "themes": [
+          "criminal_law",
+          "criminal_procedure",
+          "house_arrest",
+          "corruption",
+          "traffic_crime",
+          "juvenile_delinquency",
+          "public_procurement"
+        ],
+        "articles": [
+          {
+            "authors": [
+              "Александра Груевска Дракулевски",
+              "Александра Деаноска Трендафилова"
+            ],
+            "title": "Кривично-правна заштита на службени и други лица кои вршат работи од областа на безбедноста"
+          },
+          {
+            "authors": [
+              "Доан Сулејманоски"
+            ],
+            "title": "Ширење на лажни вести и нивниот казнено правен контекст"
+          },
+          {
+            "authors": [
+              "Александар Тумановски"
+            ],
+            "title": "Електронски алки – решение за зголема примена на куќен притвор?"
+          },
+          {
+            "authors": [
+              "Лазар Нанев",
+              "Гордана Лажетиќ",
+              "Иван Анастасовски",
+              "Фатиме Фетаи"
+            ],
+            "title": "Истражување: Ваучерот - начин на финансирање на спортот или извор на корупција?"
+          },
+          {
+            "authors": [
+              "Александра Груевска Дракулевски"
+            ],
+            "title": "Сообраќајната деликвенција во Република Северна Македонија: за потребата од воведување нова инкриминација во Кривичниот законик - безобзирно управување со моторно возило"
+          },
+          {
+            "authors": [
+              "Драгана Батиќ"
+            ],
+            "title": "Родителска некомпетентност како фактор на ризик за детско престапништво"
+          },
+          {
+            "authors": [
+              "Blerta Ahmedi"
+            ],
+            "title": "The Phenomenology of Child Delinquency in the Republic of North Macedonia: 2006-2021"
+          },
+          {
+            "authors": [
+              "Илија Јованов"
+            ],
+            "title": "Превенција на корупцијата и правна заштита во постапките за јавни набавки"
+          },
+          {
+            "authors": [
+              "Марија Гроздановска"
+            ],
+            "title": "Правата на осудените лица во време на пандемија од КОВИД 19"
+          },
+          {
+            "authors": [
+              "Љирим Кадриу"
+            ],
+            "title": "Погодности на осудените лица во системот на извршување на кривичните санкции во Република Северна Македонија „низ призмата“ на домашната и меѓународната регулатива"
+          },
+          {
+            "authors": [
+              "Ивана Шумановска-Спасовска",
+              "Елена Давитковска",
+              "Весна Гоцева"
+            ],
+            "title": "Остварување на правната заштита против акти донесени од прекршочни органи"
+          },
+          {
+            "authors": [
+              "Елена Мујоска Трпевска"
+            ],
+            "title": "Остварување на правото на здрава животна средина: добри практики и преглед на судската практика на ЕСЧП"
+          }
+        ],
+        "artifact_scope": "contents_and_front_matter_only",
+        "artifact_pages": 8,
+        "artifact_size_bytes": 313892,
+        "article_index_complete_for_supplied_contents": true
+      },
+      {
+        "volume": 30,
+        "issue": "1-2",
+        "year": 2023,
+        "source_state": "listed_on_official_publications_page"
+      },
+      {
+        "id": "maclc-2024-v31-n1-2",
+        "volume": 31,
+        "issue": "1-2",
+        "year": 2024,
+        "source_state": "issue_contents_supplied",
+        "source_sha256": "b10ef7c9b0bab9c549a44a914550ac94d522b05e54c45b68cae4514bb3de32db",
+        "themes": [
+          "confiscation",
+          "criminal_procedure",
+          "restrictive_measures",
+          "special_investigative_measures",
+          "interrogation",
+          "extradition",
+          "european_arrest_warrant"
+        ],
+        "articles": [
+          {
+            "authors": [
+              "Александра Груевска Дракулевски",
+              "Александра Деаноска Трендафилова"
+            ],
+            "title": "Конфискацијата на имот и имотна корист во кривична постапка наспроти конфискацијата на имот во граѓанска постапка во македонското право"
+          },
+          {
+            "authors": [
+              "Гордан Калајџиев"
+            ],
+            "title": "Црни денови за уставниот поредок - анализа на предложените измени во Законот за рестрикции"
+          },
+          {
+            "authors": [
+              "Сашо М. Стојановски",
+              "Гордана Лажетиќ"
+            ],
+            "title": "Споредбена анализа на посебните истражни мерки во светлината на измените на Законот за кривичната постапка на Република Северна Македонија"
+          },
+          {
+            "authors": [
+              "Дивна Илиќ Димоски"
+            ],
+            "title": "За забранетите и спорните методи на испитување на обвинетиот во кривичната постапка"
+          },
+          {
+            "authors": [
+              "Дамир Приморац",
+              "Маја Пилиќ",
+              "Андреј Божиновски"
+            ],
+            "title": "Симултани европски налози за апсење и барања за екстрадиција меѓу земјите членки на Европската унија и трети земји преку судската практика на Судот на правдата на Европската унија и нејзините импликации за Северна Македонија",
+            "comparative": true
+          },
+          {
+            "authors": [
+              "Зденко Коњиќ",
+              "Андреј Божиновски"
+            ],
+            "title": "Повеќе-системска анализа: формирање соодветен модел на хрватскиот Innocence проект во контекст на погрешно осудените лица",
+            "comparative": true
+          },
+          {
+            "authors": [
+              "Леонид Трпеноски"
+            ],
+            "title": "Доказна вредност на изјавите дадени на полициските службеници"
+          },
+          {
+            "authors": [
+              "Олга Кошевалиска",
+              "Розе Сурловска Ристевска"
+            ],
+            "title": "Етничко профилирање и криминал од омраза како обележја на антициганизмот"
+          },
+          {
+            "authors": [
+              "Марјан Габеров"
+            ],
+            "title": "Феноменолошки одлики на сторителите на кривичното дело разбојништво во Република Северна Македонија"
+          },
+          {
+            "authors": [
+              "Розе Сурловска"
+            ],
+            "title": "Криминолошки аспекти на трговијата со луѓе со посебен осврт на децата Роми"
+          },
+          {
+            "authors": [
+              "Миле Зечевиќ"
+            ],
+            "title": "Компаративен преглед на разузнавачко-безбедносните служби во Европа",
+            "comparative": true
+          },
+          {
+            "authors": [
+              "Гордана Лажетиќ",
+              "Елена Мујоска Трпевска"
+            ],
+            "title": "Специјализиран третман: клуч за успешна ресоцијализација и адаптација на осудените лица"
+          },
+          {
+            "authors": [
+              "Илија Јованов"
+            ],
+            "title": "Предности од примената на алтернативните санкции во сузбивањето на криминалитетот"
+          },
+          {
+            "authors": [
+              "Гордана Лажетиќ",
+              "Невена Петровска",
+              "Тања Кикерекова"
+            ],
+            "title": "Поважните измени во Законот за правда за децата во светлината на тенденциите и состојбите со детското престапништво"
+          },
+          {
+            "authors": [
+              "Африм Османи",
+              "Назмије Шаќири"
+            ],
+            "title": "Улогата на воспитно-поправните домови во ресоцијализацијата на децата: предизвици и можности"
+          },
+          {
+            "authors": [
+              "Доан Сулејманоски"
+            ],
+            "title": "Врсничкото насилство како облик на детско престапништво кај учениците"
+          }
+        ],
+        "artifact_scope": "contents_and_front_matter_only",
+        "artifact_pages": 10,
+        "artifact_size_bytes": 340150,
+        "article_index_complete_for_supplied_contents": true
+      },
+      {
+        "id": "maclc-2025-v32-n1-2",
+        "volume": 32,
+        "issue": "1-2",
+        "year": 2025,
+        "source_state": "issue_contents_supplied",
+        "source_sha256": "fad13c054d7686af72739ce187b441ce1794ab2e7bc98593a8ad98da33b92d33",
+        "themes": [
+          "money_laundering",
+          "abuse_of_office",
+          "forced_marriage",
+          "homicide",
+          "eu_financial_interests",
+          "non_bis_in_idem",
+          "ecocide",
+          "child_sexual_abuse",
+          "fraud"
+        ],
+        "articles": [
+          {
+            "authors": [
+              "Гордан Калајџиев"
+            ],
+            "title": "За некои аспекти од инкриминацијата на перењето пари"
+          },
+          {
+            "authors": [
+              "Александра Деаноска Трендафилова"
+            ],
+            "title": "Злоупотребата на службената положба и овластување ‒ една година по измените на Кривичниот законик од септември 2023 година"
+          },
+          {
+            "authors": [
+              "Filip Novaković"
+            ],
+            "title": "Between Law and Reality: Prosecuting Forced Marriage in Bosnia and Herzegovina",
+            "comparative": true
+          },
+          {
+            "authors": [
+              "Олга Кошевалиска",
+              "Ѓорѓи Манчев"
+            ],
+            "title": "Од форензички факт до правна квалификација: убиство на подмолен начин во судската практика"
+          },
+          {
+            "authors": [
+              "Нина Маџовска-Наумовска"
+            ],
+            "title": "Инкриминирање на штетата нанесена на финансиските интереси на Европската унија во кривичното законодавство на Република Северна Македонија"
+          },
+          {
+            "authors": [
+              "Магдалена Илиевска"
+            ],
+            "title": "Принципот non bis in idem како клучен постулат на казненото право – концептуален и критички осврт"
+          },
+          {
+            "authors": [
+              "Марјан Габеров"
+            ],
+            "title": "Кривичното дело екоцид во функција на заштита на животната средина"
+          },
+          {
+            "authors": [
+              "Мартина Дранговска Мартинова"
+            ],
+            "title": "Дигитална трансформација на сексуалната злоупотреба и експлоатација на деца: потреба од нови казненоправни категории во Северна Македонија"
+          },
+          {
+            "authors": [
+              "Тамара Витларова Смилевска"
+            ],
+            "title": "Кривичното дело „измама“ од чл. 247 од Кривичниот законик во судската практика"
+          },
+          {
+            "authors": [
+              "Сара Анастасовска"
+            ],
+            "title": "Кривичното дело перење пари и други приноси од казниво дело и предикативните кривични дела според степенот на ризик"
+          },
+          {
+            "authors": [
+              "Damir Primorac"
+            ],
+            "title": "Reopening of Criminal Proceedings and Subsequent DNA Analysis for Reviewing and Correcting Judicial Errors and Exonerating Innocent Persons"
+          },
+          {
+            "authors": [
+              "Гордан Калајџиев"
+            ],
+            "title": "Процесни и уставно-правни проблеми на докажувањето на предикативното дело кај перењето пари"
+          },
+          {
+            "authors": [
+              "Nevena Aljinović"
+            ],
+            "title": "Comparative Analysis of Special Evidentiary Actions in the Selected Countries of the Continental Legal Tradition: Croatia, Germany, Austria, and Italy",
+            "comparative": true
+          },
+          {
+            "authors": [
+              "Дивна Илиќ Димоски"
+            ],
+            "title": "Кон поквалитетни вештачења во судските постапки – новиот предлог-закон за вештачење"
+          },
+          {
+            "authors": [
+              "Весна Трајановска"
+            ],
+            "title": "Процесната способност на сведокот во кривичната постапка"
+          },
+          {
+            "authors": [
+              "Maja Pilić"
+            ],
+            "title": "Content of the Right to Protection of Private and Family Home and the Right to Protection of Personal Data When Using DNA Analysis as Evidence in Criminal Proceedings"
+          },
+          {
+            "authors": [
+              "Марија Гроздановска"
+            ],
+            "title": "Праксата на Европскиот суд за човекови права во однос на притворот и нејзините импликации врз правниот систем на Република Северна Македонија"
+          },
+          {
+            "authors": [
+              "Леонид Трпеноски"
+            ],
+            "title": "Технички или конвенциски проблеми во Законот за кривичната постапка"
+          },
+          {
+            "authors": [
+              "Мартин Илиевски"
+            ],
+            "title": "Еднаквоста на оружјата како правен принцип во кривичната постапка и неговата примена во македонското кривично право"
+          },
+          {
+            "authors": [
+              "Никола Тупанчески",
+              "Гордана Лажетиќ",
+              "Гордан Калајџиев",
+              "Александра Груевска Дракулевски",
+              "Александра Деаноска Трендафилова",
+              "Бобан Мисоски",
+              "Дивна Илиќ Димоски"
+            ],
+            "title": "Движење на криминалот и казнената политика на судовите во Република Северна Македонија во периодот 2017–2023 година"
+          },
+          {
+            "authors": [
+              "Николчо Спасевски"
+            ],
+            "title": "Златен триаголник: трговија со дрога, трговија со оружје и тероризам"
+          },
+          {
+            "authors": [
+              "Панче Коцев"
+            ],
+            "title": "Феноменолошките одлики на сторителите на кривичните дела тероризам и терористичка организација во Република С. Македонија"
+          },
+          {
+            "authors": [
+              "Nazmije Shaqiri",
+              "Afrim Osmani"
+            ],
+            "title": "Neighborhood Factors and Juvenile Delinquency in North Macedonia"
+          },
+          {
+            "authors": [
+              "Викторија Костадиноска"
+            ],
+            "title": "Пресумпција на невиност и слобода на говор: етичка одговорност на новинарите"
+          },
+          {
+            "authors": [
+              "Гордана Лажетиќ",
+              "Никола Тупанчески",
+              "Александра Груевска Дракулевски",
+              "Елена Мујоска Трпевска"
+            ],
+            "title": "Унапредување на правната рамка за извршување на санкциите"
+          },
+          {
+            "authors": [
+              "Илија Јованов"
+            ],
+            "title": "Современи реформи во извршувањето на кривичните санкции: ресоцијализацијата како основа на казнената политика"
+          },
+          {
+            "authors": [
+              "Никола Тупанчески",
+              "Елена Мујоска Трпевска"
+            ],
+            "title": "Улогата на Народниот правобранител во заштитата од нечовечко и понижувачко постапување во затворскиот систем"
+          },
+          {
+            "authors": [
+              "Тијана Ангова Хаџиева"
+            ],
+            "title": "Криминолошка анализа на профилите на сторители најпогодни за примена на пробациски мерки"
+          },
+          {
+            "authors": [
+              "Олга Кошевалиска",
+              "Иван Буралиев"
+            ],
+            "title": "Детското престапништво во Северна Македонија (2017–2024): феноменолошка анализа и импликации за политиките на превенција"
+          },
+          {
+            "authors": [
+              "Гордана Лажетиќ",
+              "Александра Груевска Дракулевски"
+            ],
+            "title": "Приказ на публикацијата: Gathering of Electronic Evidence from Online Providers in Administrative Punitive Proceedings (S. Tosza, S. Lannier, Eds.)",
+            "review": true
+          }
+        ],
+        "artifact_scope": "contents_and_front_matter_only",
+        "artifact_pages": 12,
+        "artifact_size_bytes": 356987,
+        "article_index_complete_for_supplied_contents": true
+      }
+    ]
+  },
+  "professional_practice": [
+    {
+      "id": "criminal-defence-advocacy-manual-2009",
+      "type": "historical_professional_manual",
+      "title": "Прирачник за адвокатски вештини за одбрана во кривичната постапка",
+      "publisher": "Македонско здружение на млади правници",
+      "publication_date": "2009-03",
+      "source_sha256": "4e282c1a5a99b9c760aa8d8365b4971594188e23eacc705eea87ffb1c4d6b63e",
+      "authors": [
+        "Емил Мифтари",
+        "Драган Гоџо",
+        "Александар Гоџо",
+        "Филип Медарски",
+        "Симеон Петровски",
+        "Холгер Хембах",
+        "Доналд Бисон",
+        "Флориан Рацесбергер"
+      ],
+      "origin_note": "Developed from practical-skills seminars implemented with OSCE cooperation; project support acknowledged from the Government of the United States.",
+      "knowledge_role": "historical_professional_practice",
+      "current_law_authority": false,
+      "current_law_mapping_required": true,
+      "chapters": [
+        "Упатство за стратегија за одбрана",
+        "Увид во списите на кривичен предмет",
+        "Истражување на фактите на случајот во кривична постапка",
+        "Одбрана со притвор пред судење",
+        "Поднесоци и пракса со поднесоци",
+        "Распит на сведоци",
+        "Распит на вештаци",
+        "Завршен збор на бранителот во кривична постапка",
+        "Одбрана и право на одбрана во жалбена постапка",
+        "Вонредни правни лекови",
+        "Поведување постапка пред Европскиот суд за човекови права и критериуми за прифатливост",
+        "Преговарање и медијаторство во кривичната постапка",
+        "Спогодување во САД",
+        "Правна етика и професионална одговорност"
+      ],
+      "practice_use": [
+        "case_theory",
+        "client_interview",
+        "file_review",
+        "fact_investigation",
+        "detention_defence",
+        "legal_drafting",
+        "witness_examination",
+        "expert_examination",
+        "closing_argument",
+        "appeal_strategy",
+        "extraordinary_remedies",
+        "echr_application",
+        "mediation",
+        "professional_ethics"
+      ],
+      "warning": "The manual predates the 2010 Criminal Procedure Law architecture. Article numbers, institutions and procedural roles must be remapped to verified current law before professional reliance.",
+      "human_gate_required": true,
+      "artifact_pages": 138,
+      "artifact_size_bytes": 1531569,
+      "artifact_scope": "full_supplied_manual",
+      "runtime_text_scope": "metadata_and_chapter_index_only_until_rights_review"
+    }
+  ],
+  "unresolved_artifacts": [
+    {
+      "id": "maclc-legacy-contents-unknown-issue",
+      "source_sha256": "d78d13cb3963e24883a416cfaaba9c7f72c31f805b03b90262cc8e0d13a2eaeb",
+      "duplicate_count": 2,
+      "source_state": "issue_identity_pending",
+      "note": "Two supplied files are exact SHA-256 duplicates. Contents are indexed for discovery only until volume/year/issue identity is verified."
+    }
+  ],
+  "runtime_policy": {
+    "use_for": [
+      "doctrinal_context",
+      "issue_spotting",
+      "comparative_analysis",
+      "historical_practice_method",
+      "reading_recommendations",
+      "citation_discovery"
+    ],
+    "never_use_alone_for": [
+      "current_law",
+      "article_numbers",
+      "deadlines",
+      "binding_case_outcomes",
+      "procedural_requirements"
+    ],
+    "require_primary_source_crosscheck_for_material_legal_claims": true,
+    "human_gate_required": true
+  },
+  "academy_policy": {
+    "programme": "Nenad Lex Nova Academy",
+    "use_for": [
+      "reading_lists",
+      "seminar_preparation",
+      "research_assignments",
+      "comparative_discussion",
+      "advocacy_skills",
+      "source_methodology"
+    ],
+    "label_required": "Научна/стручна литература — секундарен извор"
+  }
+}

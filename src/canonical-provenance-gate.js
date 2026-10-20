@@ -47,7 +47,8 @@ export const CANONICAL_METADATA_REQUIRED_FIELDS=Object.freeze({
   case_law:["caseIdentity","court","jurisdiction","decisionDate","sourceUrl","authorityReviewStatus"],
   guide:["recordId","title","verificationState","activationState","fingerprint"],
   echr_discovery:["recordIdentity","listingPeriod","capturedOn","sourceUrl"],
-  authorial_publication:["title","author","publicationState","publicationDate","sourceUrl"]
+  authorial_publication:["title","author","publicationState","publicationDate","sourceUrl"],
+  scholarly_literature:["recordId","title","publicationTitle","publicationYear","sourceState","fingerprint"]
 });
 
 export function assessCanonicalProvenance(provenance){
@@ -93,6 +94,9 @@ export function assessCanonicalProvenance(provenance){
   }else if(kind==="echr_discovery"){
     requireFields(missing,p,["recordIdentity","listingPeriod","capturedOn"]);
     addMissing(missing,"sourceUrl",p.sourceUrl,validHttp);
+  }else if(kind==="scholarly_literature"){
+    requireFields(missing,p,["recordId","title","publicationTitle","publicationYear","sourceState"]);
+    addMissing(missing,"fingerprint",p.fingerprint,validSha);
   }else if(kind==="authorial_publication"){
     requireFields(missing,p,["title","author","publicationState","publicationDate"]);
     addMissing(missing,"sourceUrl",p.sourceUrl,validHttp);
@@ -123,6 +127,9 @@ export function assessCanonicalProvenance(provenance){
   if((kind==="guide" || kind==="fingerprint_verified_guide") && p.legalAuthority!==false){
     problems.push("guide_must_remain_secondary_non_authority");
   }
+  if(kind==="scholarly_literature" && (p.legalAuthority!==false || p.currentLawClaim===true)){
+    problems.push("scholarly_literature_must_remain_secondary_non_authority");
+  }
   if(kind==="authorial_publication" && p.legalAuthority!==false){
     problems.push("authorial_publication_must_remain_secondary_non_authority");
   }
@@ -132,7 +139,7 @@ export function assessCanonicalProvenance(provenance){
   if(kind==="official_source_record" && p.releaseRole!=="source_registry"){
     problems.push("official_source_record_must_remain_source_registry");
   }
-  if(["guide","fingerprint_verified_guide","authorial_publication"].includes(kind) && p.currentLawClaim===true){
+  if(["guide","fingerprint_verified_guide","authorial_publication","scholarly_literature"].includes(kind) && p.currentLawClaim===true){
     problems.push("secondary_material_cannot_establish_current_law");
   }
   if(["bylaw","rulebook","regulation","instruction","tariff"].includes(kind)

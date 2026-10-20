@@ -99,6 +99,31 @@
           "rag_status": "separate_human_gate_required"
         }
       ]
+    },
+    {
+      "id": "scholarly_legal_literature_2026",
+      "kind": "peer_reviewed_and_professional_secondary_sources",
+      "count": 2,
+      "items": [
+        {
+          "id": "maclc-macedonian-journal-criminal-law-criminology",
+          "lane": "legal_source_review",
+          "epistemic_status": "verified_historical",
+          "verification_date": "2026-10-20",
+          "content_role": "scholarly_secondary_reference",
+          "coverage": "official issue list plus supplied detailed contents for 2017, 2022, 2024 and 2025",
+          "rag_status": "secondary_context_metadata_only_unless_fulltext_separately_verified"
+        },
+        {
+          "id": "criminal-defence-advocacy-manual-2009",
+          "lane": "legal_source_review",
+          "epistemic_status": "verified_historical",
+          "verification_date": "2026-10-20",
+          "content_role": "historical_professional_practice",
+          "current_law_mapping_required": true,
+          "rag_status": "methodology_and_issue_spotting_only_until_current_law_mapping"
+        }
+      ]
     }
   ],
   "future_collections": [
@@ -135,6 +160,8 @@
   "content_roles": [
     "authorial_analysis",
     "secondary_reference",
-    "ai_synthesis"
+    "ai_synthesis",
+    "scholarly_secondary_reference",
+    "historical_professional_practice"
   ]
 }
