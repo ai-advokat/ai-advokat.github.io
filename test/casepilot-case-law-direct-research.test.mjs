@@ -13,6 +13,7 @@ const reviewedRecord={
   jurisdiction:"MK",
   decision_date:"2026-01-10",
   source_status:"official",
+  official_binding_verified:1,
   source_url:"https://example.invalid/case/7",
   human_review_status:"reviewed",
   authority_review_status:"approved",
