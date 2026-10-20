@@ -353,12 +353,24 @@ export function extractCaseLawMetadata(textInput,{
   sourceClass="local_unverified",
   sourceSha256=null,
   sourceHashBasis=null,
-  sourceBindingEvidence=null
+  sourceBindingEvidence=null,
+  textExtraction=null
 }={}){
   const text=clean(textInput);
   const normalizedSourceClass=normalizeSourceClass(sourceClass);
   const normalizedSourceUrl=normalizeSourceUrl(sourceUrl);
   const normalizedSourceSha256=normalizeSha256(sourceSha256);
+  let normalizedTextExtraction=null;
+  if(textExtraction!==null && textExtraction!==undefined){
+    if(typeof textExtraction!=="object" || Array.isArray(textExtraction)) throw new TypeError("case_law_text_extraction_invalid");
+    const method=String(textExtraction.method||"").trim().slice(0,120);
+    const extractedTextSha256=textExtraction.extractedTextSha256?normalizeSha256(textExtraction.extractedTextSha256):null;
+    normalizedTextExtraction=Object.freeze({
+      method:method||null,
+      extractedTextSha256,
+      extractedTextPath:textExtraction.extractedTextPath?String(textExtraction.extractedTextPath).slice(0,500):null
+    });
+  }
   const caseNumbers=extractDomesticCaseNumbers(text);
   const literalEcli=extractLiteralEcli(text);
   const court=extractCourt(text);
@@ -399,7 +411,8 @@ export function extractCaseLawMetadata(textInput,{
       sourceUrl:normalizedSourceUrl,
       sourceClass:normalizedSourceClass,
       sourceSha256:normalizedSourceSha256,
-      sourceHashBasis:sourceHashBasis?String(sourceHashBasis).slice(0,120):null
+      sourceHashBasis:sourceHashBasis?String(sourceHashBasis).slice(0,120):null,
+      textExtraction:normalizedTextExtraction
     },
     sourceBinding:binding,
     authorityClass:"unverified_or_secondary",
@@ -458,7 +471,8 @@ export function buildCaseLawMetadataBatch(documents=[]){
     sourceClass:d?.sourceClass||"local_unverified",
     sourceSha256:d?.sourceSha256||null,
     sourceHashBasis:d?.sourceHashBasis||null,
-    sourceBindingEvidence:d?.sourceBindingEvidence||null
+    sourceBindingEvidence:d?.sourceBindingEvidence||null,
+    textExtraction:d?.textExtraction||null
   }));
   const seenHashes=new Map();
   let duplicateHashCount=0;
@@ -536,6 +550,7 @@ export function buildGovernedCaseLawNdjson(batch,{
       source_url:r.sourceIdentity.sourceUrl,
       source_sha256:sourceHash,
       source_hash_basis:r.sourceIdentity.sourceHashBasis,
+      text_extraction:r.sourceIdentity.textExtraction||null,
       source_product:"case-law-metadata-workbench",
       source_class:r.sourceIdentity.sourceClass,
       source_record_id:r.caseNumber||null,
