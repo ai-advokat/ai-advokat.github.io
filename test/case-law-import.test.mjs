@@ -226,3 +226,80 @@ test("CLI11 secondary global aggregators cannot masquerade as official-public co
     );
   }
 });
+
+
+test("CLI12 official-public staging does not self-promote source binding",()=>{
+  const out=generateCaseLawImportSql(ndjson([manifest(),caseRow({
+    official_binding_verified:false,
+    discovery_only:true
+  })]));
+  assert.match(out.sql,/official_primary/);
+  assert.match(out.sql,/,1,0,/);
+  assert.doesNotMatch(out.sql,/,0,1,/);
+});
+
+test("CLI13 claimed verified official binding fails without exact evidence and Human Gate",()=>{
+  assert.throws(
+    ()=>generateCaseLawImportSql(ndjson([manifest(),caseRow({official_binding_verified:true})])),
+    /source_binding evidence/
+  );
+  assert.throws(
+    ()=>generateCaseLawImportSql(ndjson([manifest(),caseRow({
+      official_binding_verified:true,
+      source_binding:{
+        verification_method:"direct_https_retrieval_sha256",
+        remote_content_hash_verified:true,
+        source_url:"https://www.vrhoven.sud.mk/test",
+        source_sha256:"a".repeat(64),
+        human_gate_status:"pending",
+        reviewed_by:"Reviewer",
+        reviewed_at:"2026-10-20T09:30:00+02:00"
+      }
+    })])),
+    /approved Human Gate/
+  );
+});
+
+test("CLI14 exact verified binding evidence may leave discovery after Human Gate",()=>{
+  const row=caseRow({
+    official_binding_verified:true,
+    source_binding:{
+      verification_method:"direct_https_retrieval_sha256",
+      remote_content_hash_verified:true,
+      source_url:"https://www.vrhoven.sud.mk/test",
+      source_sha256:"a".repeat(64),
+      human_gate_status:"approved",
+      reviewed_by:"Human Gate reviewer",
+      reviewed_at:"2026-10-20T09:30:00+02:00"
+    }
+  });
+  const out=generateCaseLawImportSql(ndjson([manifest(),row]));
+  assert.match(out.sql,/official_primary/);
+  assert.match(out.sql,/,0,1,/);
+});
+
+test("CLI15 verified binding rejects URL or hash mismatch",()=>{
+  const baseBinding={
+    verification_method:"direct_https_retrieval_sha256",
+    remote_content_hash_verified:true,
+    source_url:"https://www.vrhoven.sud.mk/test",
+    source_sha256:"a".repeat(64),
+    human_gate_status:"approved",
+    reviewed_by:"Human Gate reviewer",
+    reviewed_at:"2026-10-20T09:30:00+02:00"
+  };
+  assert.throws(
+    ()=>generateCaseLawImportSql(ndjson([manifest(),caseRow({
+      official_binding_verified:true,
+      source_binding:{...baseBinding,source_url:"https://www.vrhoven.sud.mk/other"}
+    })])),
+    /URL mismatch/
+  );
+  assert.throws(
+    ()=>generateCaseLawImportSql(ndjson([manifest(),caseRow({
+      official_binding_verified:true,
+      source_binding:{...baseBinding,source_sha256:"b".repeat(64)}
+    })])),
+    /SHA-256 mismatch/
+  );
+});
