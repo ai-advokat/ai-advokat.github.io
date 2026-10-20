@@ -52,7 +52,7 @@ export function parseArgs(argv=process.argv.slice(2)){
 }
 
 export function parseRobots(text=""){
-  const lines=String(text).split(/\r?\n/).map(x=>x.replace(/#.*$/,"").trim()).filter(Boolean);
+  const normalized=String(text).replace(/\\n/g,"\n");\n  const lines=normalized.split(/\r?\n/).map(x=>x.replace(/#.*$/,"").trim()).filter(Boolean);
   const groups=[];
   let current=null;
   for(const line of lines){
