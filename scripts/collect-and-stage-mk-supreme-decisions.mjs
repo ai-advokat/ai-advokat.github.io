@@ -122,6 +122,7 @@ export async function collectAndStageSupremeDecisions(options){
     buildGovernedCaseLawNdjson(batch,{
       runId:"mk-supreme-"+Date.now(),
       sourceProvider:"Врховен суд на Република Северна Македонија",
+      sourceClass:"official_public",
       licenseOrAccessBasis:"official_public_bounded_retrieval_pending_human_gate",
       authorizedExport:false
     })
