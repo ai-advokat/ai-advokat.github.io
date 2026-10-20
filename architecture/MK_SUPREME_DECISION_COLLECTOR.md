@@ -24,14 +24,15 @@ The collector does **not** create ECLI, does not bypass authentication, does not
 
 ## 1. Discovery only
 
-Use the public Supreme Court page that lists/searches decisions:
+The official Supreme Court homepage is now the default discovery entry point. Its navigation contains the public **Одлуки / Пребарување одлуки / Судска пракса** surfaces, so the normal first run is:
 
 ```bash
 node scripts/download-mk-supreme-decisions.mjs \
-  --index-url "https://www.vrhoven.sud.mk/..." \
   --limit 50 \
   --dry-run
 ```
+
+You may still override the starting page explicitly with `--index-url` if the portal structure changes.
 
 The command writes `queue.json` under `work/mk-supreme-decisions/YYYY-MM-DD/`.
 
