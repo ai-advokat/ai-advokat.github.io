@@ -1,4 +1,4 @@
-export const CASE_LAW_METADATA_VERSION = "1.1.0";
+export const CASE_LAW_METADATA_VERSION = "1.2.0";
 export const CASE_LAW_METADATA_SCHEMA = "AI_ADVOCAT_CASE_LAW_METADATA_V1";
 
 const CONTROL=/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u;
@@ -146,6 +146,67 @@ export function extractLegalCitations(textInput){
   return Object.freeze({articles:unique(articles,80),laws:unique(laws,50)});
 }
 
+export function extractJudicialActors(textInput){
+  const text=clean(textInput);
+  const judges=matchAll(
+    text,
+    /(?:судија(?:та)?|судија[-\s]*известител|известител|претседател(?:от)?\s+на\s+советот)\s*[:\-–—]?\s*([А-ШЃЅЈЉЊЌЏ][\p{L}'’.-]+(?:\s+[А-ШЃЅЈЉЊЌЏ][\p{L}'’.-]+){1,3})/giu,
+    1,
+    20
+  );
+  return Object.freeze({
+    judges:Object.freeze(judges),
+    panelDetected:/совет(?:от)?\s+составен\s+од|во\s+состав/u.test(text),
+    sourceOnly:true
+  });
+}
+
+export function extractPartyRoleMentions(textInput){
+  const text=clean(textInput);
+  const roles={
+    plaintiff:[/(?:тужител(?:от)?|барател(?:от)?|жалител(?:от)?|подносител(?:от)?)\s*[:\-–—]?\s*([^\n,;]{2,180})/giu],
+    defendant:[/(?:тужен(?:иот)?|ответник(?:от)?|жалена\s+страна)\s*[:\-–—]?\s*([^\n,;]{2,180})/giu],
+    accused:[/(?:обвинет(?:иот|ата)?|осуден(?:иот|ата)?)\s*[:\-–—]?\s*([^\n,;]{2,180})/giu]
+  };
+  const out={};
+  for(const [role,patterns] of Object.entries(roles)){
+    out[role]=unique(patterns.flatMap(re=>matchAll(text,re,1,10)),10);
+  }
+  return Object.freeze({
+    ...out,
+    publicationUse:"review_only",
+    note:"Party identities are extracted only for Human Gate review; publication treatment follows the current Macedonian publication/privacy rules."
+  });
+}
+
+export function extractRemedyAndFinancialMetadata(textInput){
+  const text=clean(textInput);
+  const disputeValue=firstMatch(text,[
+    /(?:вредност\s+на\s+спорот|побарување|износ)\s*[:\-–—]?\s*([\d.,\s]+\s*(?:денари|МКД|EUR|евра))/iu
+  ]);
+  const costs=firstMatch(text,[
+    /(?:судски|парнични)?\s*трошоци\s*[:\-–—]?\s*([\d.,\s]+\s*(?:денари|МКД|EUR|евра))/iu,
+    /(?:на\s+име\s+на\s+трошоци|трошоци\s+во\s+износ\s+од)\s*([\d.,\s]+\s*(?:денари|МКД|EUR|евра))/iu
+  ]);
+  const sentence=firstMatch(text,[
+    /(?:се\s+осудува\s+на|казна\s+затвор\s+во\s+траење\s+од|парична\s+казна\s+во\s+износ\s+од)\s*([^\n.;]{2,240})/iu
+  ]);
+  const appeal=firstMatch(text,[
+    /((?:против\s+оваа\s+одлука|против\s+пресудата|против\s+решението)[^\n]{0,320})/iu,
+    /((?:жалба|ревизија|вонреден\s+правен\s+лек)[^\n]{0,260})/iu
+  ]);
+  const appealDeadline=firstMatch(text,[
+    /(?:жалба|ревизија)[^\n]{0,120}?во\s+рок\s+од\s+(\d+\s+(?:ден|дена|денови))/iu
+  ]);
+  const previousDecisions=matchAll(
+    text,
+    /(?:поништува|укинува|преиначува|потврдува)[^\n]{0,100}?(?:пресуда|решение|одлука)[^\n]{0,80}?((?:[А-ШA-Z]{1,8}\.?\s*)?(?:бр\.?\s*)?[\p{L}\p{N}./-]{2,48})/giu,
+    1,
+    20
+  );
+  return Object.freeze({disputeValue,costs,sentence,appeal,appealDeadline,previousDecisions:Object.freeze(previousDecisions)});
+}
+
 export function extractEchrCompatibility(textInput){
   const text=clean(textInput);
   const echrEcli=matchAll(text,/\b(ECLI:CE:ECHR:[0-9]{4}:[A-Z0-9.]+)\b/giu,1,20);
@@ -161,6 +222,36 @@ export function extractEchrCompatibility(textInput){
     hudocItemIds,
     conventionArticles,
     hudocCompatibleFields:["case_title","application_number","respondent_state","document_type","date","importance","conclusion","articles","keywords","domestic_law","strasbourg_case_law","ecli"]
+  });
+}
+
+export function buildEcliMetadataProfile({
+  sourceUrl=null,
+  ecli=null,
+  court=null,
+  decisionDateIso=null,
+  recordKind="unknown",
+  legalArea=null,
+  citations=null
+}={}){
+  const subjects=unique([
+    legalArea?.value||null,
+    ...(citations?.laws||[]),
+    ...(citations?.articles||[]).map(x=>`Article ${x}`)
+  ],80);
+  return Object.freeze({
+    profile:"ECLI Council Conclusions 2019/C 360/01 · Dublin Core aligned working profile",
+    "dcterms:identifier":sourceUrl||null,
+    "dcterms:isVersionOf":ecli?.primary||null,
+    "dcterms:creator":court||null,
+    "dcterms:coverage":"MK",
+    "dcterms:date":decisionDateIso||null,
+    "dcterms:language":"mk",
+    "dcterms:type":recordKind||"unknown",
+    "dcterms:subject":Object.freeze(subjects),
+    officialEcliAssigned:Boolean(ecli?.primary),
+    generatedEcli:false,
+    note:"The metadata profile can be populated without assigning a domestic ECLI. ECLI itself is accepted only from the source or a verified official registry."
   });
 }
 
@@ -185,6 +276,8 @@ export function detectPrivacyReviewFlags(textInput){
   if(/(?:\+389|0)\s*\d{1,2}[\s\/-]*\d{3}[\s\/-]*\d{3,4}/u.test(text)) flags.push("phone_present");
   if(/(?:сведок|оштетен(?:иот|ата)?|малолетн(?:ик|о|а)|жртва)/iu.test(text)) flags.push("special_anonymisation_review_required");
   if(/(?:адреса|живеалиште|престојувалиште|седиште)\s*[:\-]/iu.test(text)) flags.push("address_field_present");
+  if(/(?:ЕМБС|единствен\s+матичен\s+број\s+на\s+субјект)/iu.test(text)) flags.push("legal_entity_registry_identifier_review_required");
+  if(/(?:тужител(?:от)?|тужен(?:иот)?|барател(?:от)?|жалител(?:от)?|обвинет(?:иот|ата)?)/iu.test(text)) flags.push("party_identity_publication_review_required");
   return Object.freeze(unique(flags,20));
 }
 
@@ -242,6 +335,9 @@ export function extractCaseLawMetadata(textInput,{
   const legalArea=extractLegalArea(text);
   const citations=extractLegalCitations(text);
   const echr=extractEchrCompatibility(text);
+  const judicialActors=extractJudicialActors(text);
+  const partyRoles=extractPartyRoleMentions(text);
+  const remedyAndFinancial=extractRemedyAndFinancialMetadata(text);
   const privacyFlags=detectPrivacyReviewFlags(text);
   const decisionDate=dates[0]||null;
   const decisionDateIso=dates.map(normalizeDecisionDateCandidate).find(Boolean)||null;
@@ -250,11 +346,21 @@ export function extractCaseLawMetadata(textInput,{
     sourceUrl:normalizedSourceUrl,
     sourceSha256:normalizedSourceSha256
   });
+  const recordKind=classifyRecordKind(decisionType);
+  const ecliMetadata=buildEcliMetadataProfile({
+    sourceUrl:normalizedSourceUrl,
+    ecli:literalEcli,
+    court,
+    decisionDateIso,
+    recordKind,
+    legalArea,
+    citations
+  });
   const record={
     schemaVersion:CASE_LAW_METADATA_SCHEMA,
     processorVersion:CASE_LAW_METADATA_VERSION,
     kind:"case_law",
-    recordKind:classifyRecordKind(decisionType),
+    recordKind,
     sourceIdentity:{
       filename:String(filename).slice(0,240),
       sourceUrl:normalizedSourceUrl,
@@ -283,9 +389,27 @@ export function extractCaseLawMetadata(textInput,{
     ecli:literalEcli,
     citations,
     disposition:extractDisposition(text),
+    judicialActors,
+    partyRoles,
+    remedyAndFinancial,
     echr,
+    standards:Object.freeze({
+      ecliMetadata,
+      hudoc:Object.freeze({
+        compatibilityFields:echr.hudocCompatibleFields,
+        applicationNumbers:echr.applicationNumbers,
+        itemIds:echr.hudocItemIds,
+        conventionArticles:echr.conventionArticles,
+        ecli:echr.ecli
+      })
+    }),
     privacyReview:{required:privacyFlags.length>0,flags:privacyFlags,automaticRedactionPerformed:false},
-    publicationReview:{required:true,status:"pending",note:"Public release requires current Macedonian publication/anonymisation review and Human Gate."},
+    publicationReview:{
+      required:true,
+      status:"pending",
+      ruleProfile:"MK_CASE_PUBLICATION_ART9_POST_U5_2025",
+      note:"Human Gate must verify the current Macedonian publication/anonymisation rule before public release. No automatic legal anonymisation claim is made."
+    },
     generatedOfficialIdentifier:false
   };
   record.completeness=deterministicMetadataCompleteness(record);
@@ -395,6 +519,12 @@ export function buildGovernedCaseLawNdjson(batch,{
         legal_issue_keys:r.legalArea?.value||null,
         importance_level:null
       },
+      standards:{
+        ecli_metadata:r.standards?.ecliMetadata||null,
+        hudoc:r.standards?.hudoc||null
+      },
+      judicial_actors:r.judicialActors||null,
+      remedy_and_financial:r.remedyAndFinancial||null,
       holdings:[],
       duplicate_review:r.duplicateReview||null,
       discovery_only:true,
