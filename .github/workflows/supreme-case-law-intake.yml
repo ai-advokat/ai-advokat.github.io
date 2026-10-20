@@ -36,6 +36,22 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Use Python 3
+        if: inputs.mode == 'execute'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic document extractors
+        if: inputs.mode == 'execute'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils antiword unrtf
+          pdftotext -v
+          antiword -h >/dev/null 2>&1 || true
+          unrtf --version
+
       - name: Validate requested limit
         shell: bash
         run: |
@@ -58,6 +74,13 @@ jobs:
       - name: Bounded retrieval and metadata staging
         if: inputs.mode == 'execute'
         run: node scripts/collect-and-stage-mk-supreme-decisions.mjs --limit "${{ inputs.limit }}" --execute --rights-review data/mk-supreme-rights-review.json
+
+      - name: Verify staged outputs remain fail-closed
+        if: inputs.mode == 'execute'
+        shell: bash
+        run: |
+          test -n "$(find work/mk-supreme-decisions -name case-law-review.ndjson -print -quit)"
+          node -e 'const fs=require("fs"),path=require("path");function walk(d){for(const n of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,n.name);if(n.isDirectory())walk(p);else if(n.name==="case-law-review.ndjson"){for(const line of fs.readFileSync(p,"utf8").trim().split(/\n/)){const r=JSON.parse(line);if(r.type==="case_law_case"&&(r.production_eligible!==false||r.human_gate_required!==true||r.official_binding_verified!==false))process.exit(2)}}}}walk("work/mk-supreme-decisions");'
 
       - name: Upload intake artifact
         if: always()
