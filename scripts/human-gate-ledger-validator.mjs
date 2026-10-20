@@ -8,7 +8,8 @@ const VALID_GATES=new Set([
   "corpus_promotion",
   "provider_activation",
   "production_schema_migration",
-  "production_runtime_deploy"
+  "production_runtime_deploy",
+  "case_law_source_binding"
 ]);
 
 const VALID_STATES=new Set([
