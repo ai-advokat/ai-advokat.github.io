@@ -63,7 +63,7 @@ export function scholarlySearchItems(registry,q,{limit=8}={}){
     snippet:record.sourceType==="historical_professional_manual"?"Историски практичен прирачник. Методологијата е секундарен извор; старите членови и институции се мапираат кон важечкото право.":"Научна/стручна литература — секундарен извор. Важечкото право се проверува од примарни извори.",
     url:record.sourceUrl||null,jurisdiction:"MK",status:"verified",rawStatus:"metadata_only_secondary",date:record.year?String(record.year):null,
     authorityClass:record.authorityRole,legalAuthority:false,relevanceScore:record.relevanceScore
-  })));
+  }));
 }
 
 export function scholarlyPromptBlock(records,{maxChars=9000}={}){
