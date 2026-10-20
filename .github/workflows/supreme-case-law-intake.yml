@@ -92,6 +92,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mk-supreme-case-law-intake-${{ github.run_id }}
-          path: work/mk-supreme-decisions/
+          path: |
+            work/mk-supreme-decisions/
+            work/mk-supreme-rights/
           if-no-files-found: warn
           retention-days: 14
