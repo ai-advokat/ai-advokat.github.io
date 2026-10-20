@@ -154,13 +154,13 @@ export function extractJudicialActors(textInput){
   const text=clean(textInput);
   const judges=matchAll(
     text,
-    /(?:судија[-\s]*известител|судија(?:та)?|известител|претседател(?:от)?\s+на\s+советот)\s*[:\-–—]?\s*([А-ШЃЅЈЉЊЌЏ][\p{L}'’.-]+(?:\s+[А-ШЃЅЈЉЊЌЏ][\p{L}'’.-]+){1,3})/giu,
+    /(?:судија[-\t ]*известител|судија(?:та)?|известител|претседател(?:от)?[\t ]+на[\t ]+советот)[\t ]*[:\-–—]?[\t ]*([А-ШЃЅЈЉЊЌЏ][\p{L}'’.-]+(?:[\t ]+[А-ШЃЅЈЉЊЌЏ][\p{L}'’.-]+){1,3})/giu,
     1,
     20
   );
   return Object.freeze({
     judges:Object.freeze(judges),
-    panelDetected:/совет(?:от)?\s+составен\s+од|во\s+состав/u.test(text),
+    panelDetected:/совет(?:от)?\s+составен\s+од|во\s+состав/iu.test(text),
     sourceOnly:true
   });
 }
