@@ -20,7 +20,8 @@
     "corpus_promotion",
     "provider_activation",
     "production_schema_migration",
-    "production_runtime_deploy"
+    "production_runtime_deploy",
+    "case_law_source_binding"
   ],
   "decision_states": [
     "pending",
@@ -48,7 +49,8 @@
     "missing_decision_means_not_approved",
     "current_law_verification_gate_is_distinct_from_corpus_promotion",
     "provider_activation_requires_its_own_explicit_decision",
-    "github_merge_does_not_imply_production_schema_migration_or_runtime_deploy"
+    "github_merge_does_not_imply_production_schema_migration_or_runtime_deploy",
+    "case_law_source_binding_does_not_imply_corpus_promotion_or_public_release"
   ],
   "initial_records": [
     {
