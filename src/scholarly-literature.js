@@ -1,9 +1,9 @@
 // Governed scholarly literature helpers. Bibliographic metadata is secondary context, never current law.
 export const SCHOLARLY_LITERATURE_VERSION="1.0.0";
 
-const clean=v=>String(v||"").normalize("NFKC").replace(/\\s+/g," ").trim();
+const clean=v=>String(v||"").normalize("NFKC").replace(/\s+/g," ").trim();
 const norm=v=>clean(v).toLocaleLowerCase("mk");
-function tokens(v){return [...new Set(norm(v).replace(/[^\\p{L}\\p{N}§-]+/gu," ").split(/\\s+/u).filter(x=>x.length>=3).slice(0,32))];}
+function tokens(v){return [...new Set(norm(v).replace(/[^\p{L}\p{N}§-]+/gu," ").split(/\s+/u).filter(x=>x.length>=3).slice(0,32))];}
 
 export function flattenScholarlyRegistry(registry){
   const out=[];
