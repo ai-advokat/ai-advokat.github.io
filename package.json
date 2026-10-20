@@ -107,7 +107,11 @@
     "test:macedonian-language": "node --no-warnings --test test/macedonian-language-guard.test.mjs",
     "test:document-routing": "node --no-warnings --test test/document-ingest-router.test.mjs test/official-source-binder.test.mjs test/document-router-ui.test.mjs",
     "test:supreme-collector": "node --no-warnings --test test/mk-supreme-decision-collector.test.mjs",
-    "supreme:discover": "node scripts/download-mk-supreme-decisions.mjs"
+    "supreme:discover": "node scripts/download-mk-supreme-decisions.mjs",
+    "test:case-law-metadata": "node --no-warnings --test test/case-law-metadata-processor.test.mjs",
+    "test:supreme-direct-staging": "node --no-warnings --test test/mk-supreme-decision-collector.test.mjs test/mk-supreme-direct-staging.test.mjs",
+    "supreme:stage": "node scripts/collect-and-stage-mk-supreme-decisions.mjs",
+    "test:case-law-intake": "node --no-warnings --test test/case-law-metadata-processor.test.mjs test/mk-supreme-decision-collector.test.mjs test/mk-supreme-direct-staging.test.mjs test/case-law-industrial-direct-pipeline.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"

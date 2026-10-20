@@ -1,0 +1,69 @@
+name: Supreme Court case-law intake
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Maximum public decisions in this run"
+        required: true
+        default: "50"
+        type: choice
+        options:
+          - "50"
+          - "100"
+      mode:
+        description: "Discovery only, or bounded retrieval + metadata staging"
+        required: true
+        default: "discovery"
+        type: choice
+        options:
+          - discovery
+          - execute
+
+permissions:
+  contents: read
+
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate requested limit
+        shell: bash
+        run: |
+          case "${{ inputs.limit }}" in
+            50|100) ;;
+            *) echo "Unsupported limit"; exit 2 ;;
+          esac
+
+      - name: Discovery
+        if: inputs.mode == 'discovery'
+        run: node scripts/collect-and-stage-mk-supreme-decisions.mjs --limit "${{ inputs.limit }}" --dry-run
+
+      - name: Verify Human Gate retrieval approval
+        if: inputs.mode == 'execute'
+        shell: bash
+        run: |
+          test -f data/mk-supreme-rights-review.json
+          node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("data/mk-supreme-rights-review.json","utf8"));if(x.source_id!=="mk-supreme-court"||x.approved_for_bounded_automated_retrieval!==true||!x.reviewed_on||!x.reviewed_by||!x.basis){process.exit(2)}'
+
+      - name: Bounded retrieval and metadata staging
+        if: inputs.mode == 'execute'
+        run: node scripts/collect-and-stage-mk-supreme-decisions.mjs --limit "${{ inputs.limit }}" --execute --rights-review data/mk-supreme-rights-review.json
+
+      - name: Upload intake artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mk-supreme-case-law-intake-${{ github.run_id }}
+          path: work/mk-supreme-decisions/
+          if-no-files-found: warn
+          retention-days: 14

@@ -105,7 +105,7 @@ $("exportNdjson").addEventListener("click",()=>{
 });
 $("exportCsv").addEventListener("click",()=>{
   if(!batch) return;
-  const cols=["filename","sourceSha256","duplicateStatus","court","caseNumber","decisionDate","decisionDateIso","recordKind","decisionType","legalArea","ecli","echrApplications","completeness","privacyReview","humanGate"];
+  const cols=["filename","sourceSha256","duplicateStatus","court","caseNumber","decisionDate","decisionDateIso","recordKind","decisionType","legalArea","judges","ecli","ecliCreator","ecliCoverage","echrApplications","appeal","appealDeadline","disputeValue","costs","completeness","privacyReview","humanGate"];
   const rows=batch.records.map(r=>[
     r.sourceIdentity.filename,
     r.sourceIdentity.sourceSha256,
@@ -117,8 +117,15 @@ $("exportCsv").addEventListener("click",()=>{
     r.recordKind,
     r.decisionType,
     r.legalArea?.value,
+    (r.judicialActors?.judges||[]).join(" | "),
     r.ecli?.primary,
+    r.standards?.ecliMetadata?.["dcterms:creator"],
+    r.standards?.ecliMetadata?.["dcterms:coverage"],
     (r.echr?.applicationNumbers||[]).join(" | "),
+    r.remedyAndFinancial?.appeal,
+    r.remedyAndFinancial?.appealDeadline,
+    r.remedyAndFinancial?.disputeValue,
+    r.remedyAndFinancial?.costs,
     r.completeness?.score,
     r.privacyReview?.required?"required":"no_flag",
     "pending"
@@ -134,7 +141,7 @@ function render(){
   $("mPrivacy").textContent=String(records.filter(r=>r.privacyReview?.required).length);
   for(const id of ["exportJson","exportNdjson","exportCsv"]) $(id).disabled=!records.length;
   const body=$("rows"); body.innerHTML="";
-  if(!records.length){body.innerHTML='<tr><td colspan="11" class="muted">Нема резултати.</td></tr>';return;}
+  if(!records.length){body.innerHTML='<tr><td colspan="13" class="muted">Нема резултати.</td></tr>';return;}
   for(const r of records){
     const tr=document.createElement("tr");
     const values=[
@@ -144,17 +151,19 @@ function render(){
       r.decisionDateIso||r.decisionDate||"—",
       r.decisionType||"—",
       r.legalArea?.value||"—",
+      (r.judicialActors?.judges||[]).join("; ")||"—",
       r.ecli?.primary||"—",
       [...(r.echr?.applicationNumbers||[]),...(r.echr?.ecli||[])].join("; ")||"—",
+      r.remedyAndFinancial?.appealDeadline||r.remedyAndFinancial?.appeal||"—",
       `${r.completeness?.score??0}%`,
       r.privacyReview?.required?"ПРОВЕРКА":"нема flag",
       r.duplicateReview?.status==="duplicate_content_hash"?"DUPLICATE · PENDING":"PENDING"
     ];
     values.forEach((value,i)=>{
       const td=document.createElement("td");
-      if(i===8||i===9||i===10){
+      if(i===10||i===11||i===12){
         const span=document.createElement("span");
-        span.className="tag "+(i===9&&r.privacyReview?.required?"danger":i===10?"warn":"ok");
+        span.className="tag "+(i===11&&r.privacyReview?.required?"danger":i===12?"warn":"ok");
         span.textContent=String(value);
         td.appendChild(span);
       }else td.textContent=String(value);

@@ -9,6 +9,7 @@ import {
   parseRobots,
   robotsAllows,
   extractLinks,
+  extractSameHostGetFormActions,
   isDecisionCandidate,
   loadRightsReview,
   MAX_LIMIT
@@ -72,4 +73,23 @@ test("collector source code keeps provenance and production release fail-closed"
   assert.doesNotMatch(source,/headers\s*:\s*\{[^}]*["'](?:cookie|authorization)["']/i);
   assert.doesNotMatch(source,/credentials\s*:/i);
   assert.match(source,/https:\/\/www\.vrhoven\.sud\.mk\//);
+});
+
+
+test("collector distinguishes navigation from actual decision candidates",()=>{
+  assert.equal(isDecisionCandidate({url:"https://www.vrhoven.sud.mk/odluki",label:"Одлуки"}),false);
+  assert.equal(isDecisionCandidate({url:"https://www.vrhoven.sud.mk/decision?id=55",label:"Одлука Рев.бр.55/2026"}),true);
+  assert.equal(isDecisionCandidate({url:"https://www.vrhoven.sud.mk/files/55.pdf",label:""}),true);
+});
+
+test("collector discovers only same-host GET decision-search forms",()=>{
+  const html=[
+    '<form method="get" action="/Search/Decisions"></form>',
+    '<form method="post" action="/Search/Decisions"></form>',
+    '<form method="get" action="https://example.com/search"></form>'
+  ].join("");
+  assert.deepEqual(
+    extractSameHostGetFormActions(html,"https://www.vrhoven.sud.mk/"),
+    ["https://www.vrhoven.sud.mk/Search/Decisions"]
+  );
 });
