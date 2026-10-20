@@ -23,11 +23,15 @@ main{padding:34px 0 70px}.hero{background:linear-gradient(135deg,#fff,#edf4fa);b
 .list{display:grid;gap:12px}.entry{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px}.entry-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap}.entry h2{font-size:1.08rem;margin:0 0 6px}.meta{color:var(--muted);font-size:.88rem}.badges{display:flex;gap:6px;flex-wrap:wrap}.pill{display:inline-block;border-radius:999px;padding:4px 8px;background:var(--soft);font-size:.75rem;font-weight:850;color:var(--blue)}.pill.ok{background:#e7f4ed;color:var(--ok)}.pill.warn{background:#fff1d6;color:var(--warn)}.pill.pending{background:#f3eeee;color:var(--red)}.details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 18px;margin-top:14px}.details div{padding-top:8px;border-top:1px solid var(--line)}.details b{display:block;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.details span{display:block;margin-top:3px}.source-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.btn{display:inline-block;border-radius:9px;padding:9px 12px;text-decoration:none;font-weight:800;border:1px solid var(--line);background:#fff}.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}.empty,.error{background:#fff;border:1px dashed var(--line);border-radius:14px;padding:22px;color:var(--muted)}
 footer{border-top:1px solid var(--line);background:#fff;color:var(--muted);padding:24px 0}
 @media(max-width:850px){.stats{grid-template-columns:1fr 1fr}.controls{grid-template-columns:1fr 1fr}.details{grid-template-columns:1fr 1fr}}@media(max-width:560px){.stats,.controls,.details{grid-template-columns:1fr}}
+/* ZORAN_GAZETTE_ALERT_CSS_START */
+.alertPanel{background:linear-gradient(135deg,#fff8e8,#fff);border:1px solid #ead8b2;border-radius:18px;padding:24px;margin:22px 0;box-shadow:var(--shadow)}.alertPanel h2{margin:.3rem 0 .6rem;font-size:1.55rem}.alertPanel p{color:var(--muted)}.alertForm{display:grid;grid-template-columns:1.5fr 1fr 1.2fr auto;gap:10px;align-items:end;margin-top:16px}.alertForm label{display:block;font-size:.82rem;font-weight:850}.alertForm input,.alertForm select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff;min-height:44px}.alertStatus{margin-top:12px;padding:11px 13px;border-radius:10px;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:.9rem}.alertStatus.saved{border-color:#bddbc9;color:var(--ok);background:#edf8f2}.privacyMini{font-size:.82rem;color:var(--muted);margin-top:10px}@media(max-width:900px){.alertForm{grid-template-columns:1fr 1fr}}@media(max-width:560px){.alertForm{grid-template-columns:1fr}}
+/* ZORAN_GAZETTE_ALERT_CSS_END */
 </style>
+<script defer src="/assets/analytics.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Прескокни до главната содржина</a>
-<header><div class="wrap top"><strong>AI Advokat · Службен весник</strong><nav><a href="/">Почетна</a><a href="/guides/">Водичи</a><a href="/open-legal-sources.html">Правни извори</a><a href="/governance.html">Проверливост</a></nav></div></header>
+<header><div class="wrap top"><strong>AI Advokat · Службен весник</strong><nav><a href="/">Почетна</a><a href="/guides/">Водичи</a><a href="/open-legal-sources.html">Правни извори</a><a href="/authors/zoran-stojankic/">Трудови</a><a href="/governance.html">Проверливост</a></nav></div></header>
 <main id="main"><div class="wrap">
 <section class="hero">
 <div class="eyebrow">OFFICIAL GAZETTE PROVENANCE · READ ONLY</div>
@@ -36,6 +40,22 @@ footer{border-top:1px solid var(--line);background:#fff;color:var(--muted);paddi
 <div class="guard"><strong>Ова не е копија на „Службен весник“.</strong> AI Advokat прикажува provenance и метаподатоци од сопствениот правен corpus и упатува кон официјалните јавни извори. Не се заобиколува претплата и не се презема претплатничка содржина. ЈП „Службен весник“ има посебен бесплатен пристап до интегрални изданија и хронолошки регистри; за конечна професионална проверка важи официјалната публикација и применливата верзија на конкретниот датум.</div>
 <div class="source-actions"><a class="btn primary" href="https://www.slvesnik.com.mk/besplaten-pristap-do-izdanija.nspx" target="_blank" rel="noopener">Бесплатен пристап до изданија</a><a class="btn" href="https://slvesnik.com.mk/Issues/634836914B1C2C48A528E23A94A0CD4B.pdf/hronoloshki-registri.nspx" target="_blank" rel="noopener">Хронолошки регистри</a></div>
 </section>
+<!-- ZORAN_GAZETTE_ALERT_START -->
+<section class="alertPanel" id="legal-alert" aria-labelledby="legalAlertTitle">
+  <div class="eyebrow">ПРАВЕН АЛАРМ · ЛОКАЛНА ПРЕФЕРЕНЦИЈА · PRIVACY FIRST</div>
+  <h2 id="legalAlertTitle">Следете број, пропис, институција или правна област</h2>
+  <p>Зачувајте што сакате да следите во овој прелистувач и подгответе барање за известување. Додека не се активира посебен backend со согласност и одјава, AI Advokat <strong>не тврди дека автоматски испраќа е-пораки</strong>.</p>
+  <form class="alertForm" id="gazetteAlertForm">
+    <div><label for="alertKeyword">Клучен збор / пропис / институција</label><input id="alertKeyword" name="keyword" type="text" maxlength="120" placeholder="на пр. ЗКП, Министерство за правда"></div>
+    <div><label for="alertScope">Опфат</label><select id="alertScope" name="scope"><option value="all">Сите нови записи</option><option value="law">Закони и измени</option><option value="bylaw">Правилници и подзаконски акти</option><option value="municipal">Локални гласила</option></select></div>
+    <div><label for="alertEmail">Е-пошта (по избор)</label><input id="alertEmail" name="email" type="email" autocomplete="email" placeholder="име@example.com"></div>
+    <button class="btn primary" type="submit">Зачувај избор</button>
+  </form>
+  <div class="source-actions"><a class="btn" id="gazetteAlertMail" href="mailto:aiadvokat16@gmail.com?subject=Правен%20аларм%20-%20барање">Испрати барање по е-пошта</a><button class="btn" id="gazetteAlertClear" type="button">Избриши локален избор</button></div>
+  <div class="alertStatus" id="gazetteAlertStatus" role="status">Нема зачувана локална преференција.</div>
+  <div class="privacyMini">Локалното зачувување користи localStorage на вашиот уред. Адресата не се испраќа на сервер со копчето „Зачувај избор“.</div>
+</section>
+<!-- ZORAN_GAZETTE_ALERT_END -->
 <section class="stats" aria-label="Статистика">
 <div class="stat"><b id="countAll">—</b><span>регистрирани записи</span></div>
 <div class="stat"><b id="countVersions">—</b><span>верзии на прописи</span></div>
@@ -192,5 +212,10 @@ fetch(API+"/api/gazette-register?limit=500",{cache:"no-store"}).then(function(r)
 ["q","year","kind","review"].forEach(function(id){document.getElementById(id).addEventListener("input",render);});
 })();
 </script>
+<!-- ZORAN_GAZETTE_ALERT_SCRIPT_START -->
+<script>
+(function(){"use strict";var key="aiAdvokatGazetteAlertV1",form=document.getElementById("gazetteAlertForm"),keyword=document.getElementById("alertKeyword"),scope=document.getElementById("alertScope"),email=document.getElementById("alertEmail"),status=document.getElementById("gazetteAlertStatus"),mail=document.getElementById("gazetteAlertMail"),clear=document.getElementById("gazetteAlertClear");if(!form)return;function safe(value){return String(value||"").replace(/[\r\n]+/g," ").slice(0,160);}function updateMail(){var body="Сакам да добивам известување за: "+safe(keyword.value)+"%0AОпфат: "+encodeURIComponent(scope.value)+"%0AЕ-пошта: "+encodeURIComponent(email.value||"не е внесена");mail.href="mailto:aiadvokat16@gmail.com?subject="+encodeURIComponent("Правен аларм - барање")+"&body="+body;}function showSaved(record){status.className="alertStatus saved";status.textContent="Зачувано локално: "+(record.keyword||"сите записи")+" · "+record.scope+". Автоматско испраќање е-пошта сè уште не е активирано.";}try{var saved=JSON.parse(localStorage.getItem(key)||"null");if(saved){keyword.value=saved.keyword||"";scope.value=saved.scope||"all";email.value=saved.email||"";showSaved(saved);}}catch(e){}updateMail();form.addEventListener("submit",function(event){event.preventDefault();var record={keyword:safe(keyword.value),scope:scope.value,email:safe(email.value),updated_at:new Date().toISOString()};try{localStorage.setItem(key,JSON.stringify(record));showSaved(record);}catch(e){status.className="alertStatus";status.textContent="Прелистувачот не дозволи локално зачувување. Користете го копчето за е-пошта.";}updateMail();});[keyword,scope,email].forEach(function(el){el.addEventListener("input",updateMail);});clear.addEventListener("click",function(){try{localStorage.removeItem(key);}catch(e){}keyword.value="";scope.value="all";email.value="";status.className="alertStatus";status.textContent="Локалната преференција е избришана.";updateMail();});})();
+</script>
+<!-- ZORAN_GAZETTE_ALERT_SCRIPT_END -->
 </body>
 </html>
