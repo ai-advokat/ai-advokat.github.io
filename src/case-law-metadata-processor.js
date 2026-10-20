@@ -1,4 +1,6 @@
-export const CASE_LAW_METADATA_VERSION = "1.3.0";
+import {extractEchrStructuredMetadata} from "./echr-findings.js";
+
+export const CASE_LAW_METADATA_VERSION = "1.4.0";
 export const CASE_LAW_METADATA_SCHEMA = "AI_ADVOCAT_CASE_LAW_METADATA_V1";
 
 const CONTROL=/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u;
@@ -220,12 +222,20 @@ export function extractEchrCompatibility(textInput){
   ],30);
   const applicationNumbers=matchAll(text,/(?:апликаци(?:ја|јата)|application(?:\s+no\.)?|ЕСЧП|ECHR)[^\n]{0,80}?\b(\d{1,6}\/\d{2})\b/giu,1,20);
   const hudocItemIds=matchAll(text,/hudoc\.echr\.coe\.int\/(?:eng|fre)\?i=(\d{3}-\d+)/giu,1,20);
+  const structured=extractEchrStructuredMetadata(text);
   return Object.freeze({
     ecli:echrEcli,
-    applicationNumbers,
+    applicationNumbers:unique([...applicationNumbers,...structured.applicationNumbers],30),
     hudocItemIds,
     conventionArticles,
-    hudocCompatibleFields:["case_title","application_number","respondent_state","document_type","date","importance","conclusion","articles","keywords","domestic_law","strasbourg_case_law","ecli"]
+    documentType:structured.documentType,
+    findings:structured.findings,
+    meritsDetermined:structured.meritsDetermined,
+    inadmissibilityPresent:structured.inadmissibilityPresent,
+    anonymisedApplicants:structured.anonymisedApplicants,
+    finalDateSourceText:structured.finalDateSourceText,
+    hudocCompatibleFields:["case_title","application_number","respondent_state","document_type","date","importance","conclusion","articles","keywords","domestic_law","strasbourg_case_law","ecli","findings"],
+    note:"Structured ECHR findings are extracted from the operative text only and remain pending HUDOC source binding and Human Gate."
   });
 }
 

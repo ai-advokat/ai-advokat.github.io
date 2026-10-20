@@ -1,0 +1,55 @@
+name: International legal source watch
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * *"
+    - cron: "43 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  icsid-events:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '17 4 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect official ICSID recent events
+        run: node scripts/icsid-recent-event-intake.mjs /tmp/icsid-recent-events.ndjson
+      - name: Validate governed ICSID artifact
+        run: |
+          test -s /tmp/icsid-recent-events.ndjson
+          test -s /tmp/icsid-recent-events.manifest.json
+          grep -q '"human_review_required":true' /tmp/icsid-recent-events.ndjson
+          node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("/tmp/icsid-recent-events.manifest.json","utf8"));if(!m.event_count)process.exit(2);if(m.governance.document_downloaded!==false)process.exit(3);if(m.governance.production_eligible!==false)process.exit(4);'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: icsid-recent-events
+          path: |
+            /tmp/icsid-recent-events.ndjson
+            /tmp/icsid-recent-events.manifest.json
+          retention-days: 30
+
+  uhri-north-macedonia:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '43 4 * * 1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect official UHRI records for North Macedonia
+        run: node scripts/uhri-north-macedonia-intake.mjs /tmp/uhri-north-macedonia.ndjson
+      - name: Validate governed UHRI artifact
+        run: |
+          test -s /tmp/uhri-north-macedonia.ndjson
+          test -s /tmp/uhri-north-macedonia.manifest.json
+          grep -q '"legal_effect":"recommendation_or_observation_not_domestic_judgment"' /tmp/uhri-north-macedonia.ndjson
+          node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("/tmp/uhri-north-macedonia.manifest.json","utf8"));if(!m.north_macedonia_records)process.exit(2);if(m.governance.recommendation_is_not_judgment!==true)process.exit(3);if(m.governance.production_eligible!==false)process.exit(4);'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: uhri-north-macedonia
+          path: |
+            /tmp/uhri-north-macedonia.ndjson
+            /tmp/uhri-north-macedonia.manifest.json
+          retention-days: 30

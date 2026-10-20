@@ -1,8 +1,10 @@
+import {classifyInternationalDocument} from "./international-legal-classifier.js";
+
 // AI Advokat governed document ingest router.
 // Deterministic routing only: it never changes legal authority, never fabricates
 // identifiers and never bypasses the Human Gate.
 
-export const DOCUMENT_INGEST_ROUTER_VERSION = "1.0.0";
+export const DOCUMENT_INGEST_ROUTER_VERSION = "1.1.0";
 export const DOCUMENT_INGEST_ROUTER_SCHEMA = "AI_ADVOCAT_DOCUMENT_ROUTE_V1";
 
 const CONTROL=/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u;
@@ -106,7 +108,7 @@ function otherLegalSignals(text){
   return Object.freeze({score,contract,submission,powerOfAttorney,administrativeAct});
 }
 
-function pipelineFor(route){
+function pipelineFor(route,documentSubtype="unknown"){
   if(route==="legal_instrument"){
     return Object.freeze({
       id:"mk_legal_text_pipeline",
@@ -125,6 +127,33 @@ function pipelineFor(route){
       note:"Metadata extraction never generates ECLI and remains pending official-source binding and Human Gate."
     });
   }
+  if(["official_case_law_bulletin","case_law_discovery_register"].includes(documentSubtype)){
+    return Object.freeze({
+      id:"case_law_publication_review",
+      processor:"src/case-law-publication-processor.js",
+      requiredMetadata:Object.freeze(["source_url","source_sha256"]),
+      note:"Bulletin and discovery-register records remain discovery/review material; excerpts never self-promote to complete originating judgments."
+    });
+  }
+  if(documentSubtype==="human_rights_monitoring_report"){
+    return Object.freeze({
+      id:"secondary_human_rights_review",
+      analyzer:"src/legal-analyzer.js",
+      requiredMetadata:Object.freeze(["source_url","source_sha256"]),
+      privacyMinimisationRequired:true,
+      personSearchIndexAllowed:false,
+      note:"Secondary monitoring material remains non-binding and elevated-privacy review only."
+    });
+  }
+  if(documentSubtype.startsWith("icsid_") || documentSubtype.startsWith("ohchr_")){
+    return Object.freeze({
+      id:"international_legal_reference_review",
+      classifier:"src/international-legal-classifier.js",
+      sourceRegistry:"data/international-legal-source-registry-2026.json",
+      requiredMetadata:Object.freeze(["source_url","source_sha256"]),
+      note:"International procedural rules and UN mechanism outputs retain source-specific legal effect and remain behind Human Gate."
+    });
+  }
   return Object.freeze({
     id:"legal_analyzer_review",
     analyzer:"src/legal-analyzer.js",
@@ -138,6 +167,7 @@ export function classifyDocumentForIngest(textInput){
   const law=lawSignals(text);
   const caseLaw=caseLawSignals(text);
   const other=otherLegalSignals(text);
+  const international=classifyInternationalDocument(text);
 
   let route="manual_review";
   let reason="insufficient_or_conflicting_structural_signals";
@@ -149,6 +179,10 @@ export function classifyDocumentForIngest(textInput){
   if(structuralConflict){
     route="manual_review";
     reason="strong_law_and_case_law_structures_conflict";
+  }else if(international.documentSubtype!=="unknown"){
+    route=international.route;
+    reason="international_document_subtype_"+international.documentSubtype;
+    autoRouteAllowed=international.route==="case_law";
   }else if(law.score>=7 && law.score>=caseLaw.score+3){
     route="legal_instrument";
     reason="standalone_article_structure_and_normative_signals";
@@ -174,8 +208,11 @@ export function classifyDocumentForIngest(textInput){
       otherLegal:other.score,
       statisticalConfidence:null
     }),
-    signals:Object.freeze({legalInstrument:law,caseLaw,otherLegal:other}),
-    downstream:pipelineFor(route),
+    documentSubtype:international.documentSubtype,
+    authorityClass:international.authorityClass,
+    privacyRisk:international.privacyRisk,
+    signals:Object.freeze({legalInstrument:law,caseLaw,otherLegal:other,international}),
+    downstream:pipelineFor(route,international.documentSubtype),
     humanGateRequired:true,
     generatedOfficialIdentifier:false
   });

@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0",
+  "registry_id": "AI_ADVOKAT_INTERNATIONAL_LEGAL_SOURCE_REGISTRY_2026",
+  "updated_on": "2026-10-20",
+  "doctrine": [
+    "originating_official_source_first",
+    "preserve_proceeding_regime_and_document_type",
+    "event_status_is_not_document_status",
+    "publication_does_not_equal_legal_effect",
+    "translations_and_mirrors_never_silently_replace_originating_text",
+    "confidential_material_never_ingested_from_non_public_surfaces",
+    "recommendation_is_not_judgment",
+    "human_gate_for_material_legal_propositions"
+  ],
+  "north_macedonia_identity": {
+    "state_id": "MK",
+    "canonical_name": "Republic of North Macedonia",
+    "aliases": [
+      "North Macedonia",
+      "Republic of North Macedonia",
+      "Republic of Macedonia",
+      "Macedonia, former Yugoslav Republic of",
+      "former Yugoslav Republic of Macedonia",
+      "the former Yugoslav Republic of Macedonia",
+      "Северна Македонија",
+      "Република Северна Македонија",
+      "Република Македонија"
+    ],
+    "rule": "Preserve the source label and normalize only into a separate canonical state identity."
+  },
+  "sources": [
+    {
+      "id": "echr-hudoc",
+      "family": "ECHR",
+      "authority_class": "originating_international_court",
+      "url": "https://hudoc.echr.coe.int/",
+      "access": "official_public",
+      "role": "canonical_case_metadata_and_case_document",
+      "human_gate_required": true
+    },
+    {
+      "id": "mk-echr-representation-bureau",
+      "family": "ECHR",
+      "authority_class": "official_domestic_mirror_and_discovery",
+      "url": "https://biroescp.gov.mk/",
+      "access": "official_public",
+      "role": "north_macedonia_case_discovery_and_domestic_translation",
+      "originating_binding_source": "echr-hudoc",
+      "human_gate_required": true
+    },
+    {
+      "id": "icsid-cases",
+      "family": "ICSID",
+      "authority_class": "official_international_dispute_registry",
+      "url": "https://icsid.worldbank.org/cases",
+      "recent_registered": "https://icsid.worldbank.org/cases/recent",
+      "recent_constituted": "https://icsid.worldbank.org/cases/recent?type=constituted",
+      "recent_published": "https://icsid.worldbank.org/cases/recent?type=published",
+      "recent_concluded": "https://icsid.worldbank.org/cases/recent?type=concluded",
+      "access": "official_public",
+      "event_discovery": true,
+      "automatic_document_republication": false,
+      "rights_note": "Use public registry metadata for discovery. Published documents remain governed by the applicable ICSID publication and confidentiality rules.",
+      "human_gate_required": true
+    },
+    {
+      "id": "icsid-convention-rules-2022",
+      "family": "ICSID",
+      "authority_class": "official_treaty_and_procedural_rules",
+      "url": "https://icsid.worldbank.org/rules-regulations/convention",
+      "effective_from": "2022-07-01",
+      "regime": "icsid_convention",
+      "article_54_enforcement_only_for_convention_awards": true,
+      "human_gate_required": true
+    },
+    {
+      "id": "icsid-additional-facility-rules-2022",
+      "family": "ICSID",
+      "authority_class": "official_procedural_rules",
+      "url": "https://icsid.worldbank.org/rules-regulations/additional-facility",
+      "effective_from": "2022-07-01",
+      "regime": "additional_facility",
+      "icsid_convention_applies": false,
+      "article_54_enforcement": false,
+      "human_gate_required": true
+    },
+    {
+      "id": "icsid-mediation-rules-2022",
+      "family": "ICSID",
+      "authority_class": "official_procedural_rules",
+      "url": "https://icsid.worldbank.org/rules-regulations/mediation",
+      "effective_from": "2022-07-01",
+      "regime": "mediation",
+      "default_output_effect": "non_imposed_consensual_resolution_or_termination_notice",
+      "default_confidentiality": true,
+      "human_gate_required": true
+    },
+    {
+      "id": "icsid-fact-finding-rules-2022",
+      "family": "ICSID",
+      "authority_class": "official_procedural_rules",
+      "url": "https://icsid.worldbank.org/rules-regulations/fact-finding",
+      "effective_from": "2022-07-01",
+      "regime": "fact_finding",
+      "default_report_binding": false,
+      "default_confidentiality": true,
+      "human_gate_required": true
+    },
+    {
+      "id": "ohchr-uhri",
+      "family": "UN_HUMAN_RIGHTS",
+      "authority_class": "official_un_human_rights_dataset",
+      "url": "https://uhri.ohchr.org/",
+      "data_page": "https://uhri.ohchr.org/en/our-data-api",
+      "full_json_export": "https://uhri.ohchr.org/api/uhri/export-results/export-full-en.json",
+      "access": "official_public_dataset",
+      "reuse_status": "official_dataset_public_integration",
+      "update_cadence": "daily",
+      "contains": [
+        "treaty_body_country_specific_observations_and_recommendations",
+        "special_procedures_country_specific_observations_and_recommendations",
+        "universal_periodic_review_recommendations"
+      ],
+      "completeness_note": "The source warns that individual mechanisms, countries and years may be incomplete because of processing backlogs.",
+      "authority_note": "Recommendations and observations retain their mechanism and document identity and are not domestic judgments.",
+      "human_gate_required": true,
+      "portal_url": "https://uhri.ohchr.org/en"
+    },
+    {
+      "id": "ohchr-treaty-body-database",
+      "family": "UN_HUMAN_RIGHTS",
+      "authority_class": "official_un_treaty_body_document_registry",
+      "url": "https://tbinternet.ohchr.org/",
+      "access": "official_public",
+      "role": "treaty_status_reporting_cycles_and_source_documents",
+      "human_gate_required": true
+    }
+  ],
+  "icsid_event_taxonomy": [
+    "registered",
+    "tribunal_constituted",
+    "document_published",
+    "concluded"
+  ],
+  "icsid_document_taxonomy": [
+    "award",
+    "decision",
+    "decision_on_annulment",
+    "procedural_order",
+    "dissenting_opinion",
+    "party_submission",
+    "non_disputing_party_submission",
+    "supplementary_decision",
+    "rectification",
+    "interpretation",
+    "unclassified_published_document"
+  ],
+  "ohchr_mechanism_taxonomy": [
+    "treaty_body",
+    "special_procedures",
+    "upr"
+  ]
+}
