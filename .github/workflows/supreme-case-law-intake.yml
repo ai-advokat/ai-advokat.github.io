@@ -18,6 +18,7 @@ on:
         type: choice
         options:
           - discovery
+          - policy-evidence
           - execute
 
 permissions:
@@ -63,6 +64,10 @@ jobs:
       - name: Discovery
         if: inputs.mode == 'discovery'
         run: node scripts/collect-and-stage-mk-supreme-decisions.mjs --limit "${{ inputs.limit }}" --dry-run
+
+      - name: Capture rights and robots evidence
+        if: inputs.mode == 'policy-evidence'
+        run: node scripts/capture-mk-supreme-rights-evidence.mjs
 
       - name: Verify Human Gate retrieval approval
         if: inputs.mode == 'execute'
