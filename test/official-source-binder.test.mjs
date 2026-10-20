@@ -8,7 +8,8 @@ import {
 
 const openRegistry=JSON.parse(fs.readFileSync("data/open-legal-sources-registry-2026.json","utf8"));
 const caseRegistry=JSON.parse(fs.readFileSync("data/case-law-source-registry-2026.json","utf8"));
-const sources=combineGovernedSourceRegistries(openRegistry,caseRegistry);
+const internationalRegistry=JSON.parse(fs.readFileSync("data/international-legal-source-registry-2026.json","utf8"));
+const sources=combineGovernedSourceRegistries(openRegistry,caseRegistry,internationalRegistry);
 const hash="a".repeat(64);
 
 test("official Gazette law origin is recognized but bulk reuse remains fail-closed",()=>{
@@ -138,4 +139,40 @@ test("invalid SHA-256 and wrong document/source lane are rejected",()=>{
   });
   assert.equal(wrongLane.routeCompatible,false);
   assert.equal(wrongLane.metadataStagingEligible,false);
+});
+
+
+test("international official registries bind as governed reference sources without production promotion",()=>{
+  const hash="d".repeat(64);
+  for(const url of [
+    "https://icsid.worldbank.org/cases/case-database/case-detail?CaseNo=ARB%2F23%2F31",
+    "https://uhri.ohchr.org/api/uhri/export-results/export-full-en.json",
+    "https://tbinternet.ohchr.org/_layouts/15/TreatyBodyExternal/countries.aspx?CountryCode=MKD"
+  ]){
+    const b=bindOfficialSource({
+      sourceUrl:url,
+      sourceSha256:hash,
+      route:"international_reference",
+      registrySources:sources
+    });
+    assert.equal(b.registryMatched,true,url);
+    assert.equal(b.officialOriginCandidate,true,url);
+    assert.equal(b.routeCompatible,true,url);
+    assert.equal(b.officialBindingVerified,false,url);
+    assert.equal(b.humanGateRequired,true,url);
+  }
+});
+
+test("Bureau mirror stays non-primary until HUDOC binding even in international-reference lane",()=>{
+  const b=bindOfficialSource({
+    sourceUrl:"https://biroescp.gov.mk/пресуди-и-одлуки-на-рм/example.pdf",
+    sourceSha256:"e".repeat(64),
+    route:"international_reference",
+    registrySources:sources
+  });
+  assert.equal(b.sourceId,"mk-echr-representation-bureau");
+  assert.equal(b.primaryBindingRequired,true);
+  assert.equal(b.primaryForRoute,false);
+  assert.equal(b.metadataStagingEligible,false);
+  assert.ok(b.reasons.includes("primary_origin_binding_still_required"));
 });
