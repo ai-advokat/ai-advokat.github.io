@@ -261,12 +261,13 @@ export function generateCaseLawImportSql(ndjsonText){
     const officialBinding=binding.officialBinding;
     const discoveryOnly=binding.discoveryOnly;
     const audit=provenanceAuditFields(item,sourceUrl);
+    const provenanceReviewStatus=officialBinding===1 ? "approved" : "pending";
     sql.push(
       "INSERT INTO case_law_provenance(case_law_id,source_class,source_provider,source_product,source_url,source_sha256,source_record_id,discovery_only,official_binding_verified,license_or_access_basis,imported_batch_key,human_review_status,remote_content_hash_verified,binding_verification_method,binding_reviewed_by,binding_reviewed_at,extraction_method,extracted_text_sha256) SELECT "+
       [
         caseIdExpr,sqlString(sourceClass),sqlString(provider),sqlString(sourceProduct),sqlString(sourceUrl.href),
         sqlString(String(item.source_sha256).toLowerCase()),sqlString(sourceRecordId),String(discoveryOnly),String(officialBinding),
-        sqlString(manifest.license_or_access_basis||null),sqlString(runId),"'pending'",
+        sqlString(manifest.license_or_access_basis||null),sqlString(runId),sqlString(provenanceReviewStatus),
         String(audit.remoteContentHashVerified),sqlString(audit.bindingVerificationMethod),sqlString(audit.bindingReviewedBy),
         sqlString(audit.bindingReviewedAt),sqlString(audit.extractionMethod),sqlString(audit.extractedTextSha256)
       ].join(",")+
