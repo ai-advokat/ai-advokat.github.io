@@ -92,3 +92,38 @@ Each run creates:
 - `manifest.ndjson` — one provenance record per downloaded file, including source URL, final URL, MIME type, byte size, SHA-256, retrieval time and duplicate relationship.
 
 The manifest and documents are review inputs. They are not authoritative corpus records until the existing Case-Law Metadata Processor, official-source binding and Human Gate stages are completed.
+
+
+## 5. Direct metadata staging
+
+For the integrated collector + metadata pipeline use:
+
+```bash
+node scripts/collect-and-stage-mk-supreme-decisions.mjs --limit 50 --dry-run
+```
+
+After the bounded-retrieval rights review has been approved and saved as
+`data/mk-supreme-rights-review.json`:
+
+```bash
+node scripts/collect-and-stage-mk-supreme-decisions.mjs \
+  --limit 50 \
+  --execute \
+  --rights-review data/mk-supreme-rights-review.json
+```
+
+The same flow is available from GitHub Actions through the manually triggered
+**Supreme Court case-law intake** workflow, with a choice of 50 or 100 records.
+
+The direct staging layer processes HTML/text immediately. PDF, DOC and DOCX are
+preserved with their original SHA-256 and marked `needs_text_extraction`; binary
+content is never treated as text.
+
+Outputs add:
+
+- `case-law-metadata.json`;
+- `case-law-review.ndjson`;
+- `staging-summary.json`.
+
+All remain `production_eligible=false` and require official-source/privacy
+review plus Human Gate.
