@@ -128,3 +128,20 @@ test("literal ECLI remains the only ECLI assigned into the Dublin Core profile",
   assert.equal(r.standards.ecliMetadata.officialEcliAssigned,true);
   assert.equal(r.generatedOfficialIdentifier,false);
 });
+
+
+test("governed NDJSON can preserve official-public source class without promoting authority",()=>{
+  const hash="d".repeat(64);
+  const b=buildCaseLawMetadataBatch([{
+    filename:"supreme.html",
+    text:"Врховен суд. Рев.бр. 8/2026. ПРЕСУДА 05.10.2026.",
+    sourceUrl:"https://www.vrhoven.sud.mk/decision?id=8",
+    sourceClass:"official_public",
+    sourceSha256:hash
+  }]);
+  const rows=buildGovernedCaseLawNdjson(b,{sourceClass:"official_public"}).trim().split("\n").map(JSON.parse);
+  assert.equal(rows[0].source_class,"official_public");
+  assert.equal(rows[1].source_class,"official_public");
+  assert.equal(rows[0].production_eligible,false);
+  assert.equal(rows[1].official_binding_verified,false);
+});
