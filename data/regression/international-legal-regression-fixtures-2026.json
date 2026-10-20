@@ -1,0 +1,120 @@
+{
+  "schema_version": "1.0",
+  "fixture_id": "AI_ADVOCAT_REAL_WORLD_LEGAL_REGRESSION_2026",
+  "purpose": "Metadata-only regression expectations derived from supplied legal materials. These fixtures do not republish full source documents and do not confer production authority.",
+  "echr_cases": [
+    {
+      "id": "dh-and-others-v-north-macedonia",
+      "document_type": "judgment",
+      "application_numbers": ["44033/17"],
+      "judgment_date": "2023-07-18",
+      "final_date": "2023-10-18",
+      "expected_findings": [
+        {"article": "3", "aspect": "food_water_toilet", "result": "violation"},
+        {"article": "3", "aspect": "medical_treatment", "result": "no_violation"},
+        {"article": "8", "aspect": "ministry_website_photos", "result": "violation"},
+        {"article": "8", "aspect": "media_publication", "result": "no_violation"},
+        {"article": "6", "result": "no_separate_examination"}
+      ],
+      "privacy": {"applicant_names_disclosed": false}
+    },
+    {
+      "id": "vasilkoski-and-others",
+      "document_type": "judgment",
+      "application_numbers": ["28169/08"],
+      "judgment_date": "2010-10-28",
+      "expected_findings": [
+        {"article": "5 § 3", "result": "violation", "topic": "individualised_detention_reasoning"}
+      ],
+      "translation_status": "informational_macedonian_translation",
+      "duplicate_fixture_required": true
+    },
+    {
+      "id": "mitrov-v-macedonia",
+      "document_type": "judgment",
+      "application_numbers": ["45959/09"],
+      "judgment_date": "2016-06-02",
+      "expected_findings": [
+        {"article": "6 § 1", "result": "violation", "topic": "objective_judicial_impartiality"},
+        {"article": "6 § 1", "result": "no_separate_examination", "topic": "other_article_6_complaints"}
+      ]
+    },
+    {
+      "id": "taleski-and-others",
+      "document_type": "decision",
+      "application_numbers": ["77796/17"],
+      "joined_applications": true,
+      "decision_date": "2023-02-16",
+      "outcome": "inadmissible",
+      "inadmissibility_basis": ["non_exhaustion_of_domestic_remedies", "prematurity"],
+      "merits_on_pardons": "not_determined"
+    }
+  ],
+  "domestic_and_secondary_documents": [
+    {
+      "id": "civil-commercial-case-discovery-register-2018-2019",
+      "expected_subtype": "case_law_discovery_register",
+      "expected_route": "review_only",
+      "rule": "Case identifiers with malformed or incomplete formatting are preserved verbatim and flagged for review, never silently repaired."
+    },
+    {
+      "id": "supreme-court-bulletin-2016-2017",
+      "expected_subtype": "official_case_law_bulletin",
+      "expected_route": "review_only",
+      "child_record_types": [
+        "general_session_conclusion",
+        "legal_opinion",
+        "department_conclusion",
+        "headnote_sentenca",
+        "significant_decision",
+        "judgment_excerpt",
+        "reasonable_time_decision"
+      ],
+      "rule": "A headnote or excerpt is never represented as a complete judgment."
+    },
+    {
+      "id": "human-rights-monthly-report-2013-02",
+      "expected_subtype": "human_rights_monitoring_report",
+      "expected_route": "review_only",
+      "authority_status": "secondary_non_binding",
+      "privacy_risk": "elevated",
+      "rule": "No person-search database is generated from sensitive case narratives."
+    }
+  ],
+  "mk_legal_instruments": [
+    {
+      "id": "zkp-2010-supplied-pdf",
+      "expected_route": "legal_instrument",
+      "current_law_status_from_file_alone": "not_verified",
+      "rule": "Promulgation and historical adoption metadata do not prove current-law status in 2026."
+    },
+    {
+      "id": "criminal-code-unofficial-consolidated",
+      "expected_route": "legal_instrument",
+      "source_status": "unofficial_consolidated_text",
+      "current_law_status_from_file_alone": "not_verified",
+      "regression_features": ["lettered_articles", "constitutional_court_annulment_note", "amendment_lineage_notes"]
+    }
+  ],
+  "icsid_rules": [
+    {
+      "regime": "icsid_convention",
+      "award_article_54_enforcement": true
+    },
+    {
+      "regime": "additional_facility",
+      "icsid_convention_applies": false,
+      "award_article_54_enforcement": false
+    },
+    {
+      "regime": "mediation",
+      "mediator_can_impose_resolution": false,
+      "default_confidentiality": true
+    },
+    {
+      "regime": "fact_finding",
+      "default_report_binding": false,
+      "default_confidentiality": true
+    }
+  ]
+}
