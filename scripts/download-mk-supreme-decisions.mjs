@@ -43,10 +43,10 @@ export function parseArgs(argv=process.argv.slice(2)){
     else if(a==="--dry-run") out.dryRun=true;
     else if(a==="--rights-review") out.rightsReview=argv[++i];
     else if(a==="--help" || a==="-h") out.help=true;
-    else throw new TypeError(\`unknown_argument:\${a}\`);
+    else throw new TypeError(`unknown_argument:${a}`);
   }
   if(!Number.isInteger(out.limit)||out.limit<1||out.limit>MAX_LIMIT) throw new TypeError("supreme_limit_must_be_1_to_100");
-  if(!Number.isInteger(out.delayMs)||out.delayMs<MIN_DELAY_MS) throw new TypeError(\`supreme_delay_min_\${MIN_DELAY_MS}\`);
+  if(!Number.isInteger(out.delayMs)||out.delayMs<MIN_DELAY_MS) throw new TypeError(`supreme_delay_min_${MIN_DELAY_MS}`);
   if(!Number.isInteger(out.maxPages)||out.maxPages<1||out.maxPages>30) throw new TypeError("supreme_max_pages_must_be_1_to_30");
   return out;
 }
@@ -115,13 +115,13 @@ export function extractLinks(html, baseUrl){
 export function isDecisionCandidate(link){
   const u=String(link?.url||"").toLocaleLowerCase("mk");
   const label=String(link?.label||"").toLocaleLowerCase("mk");
-  const hay=\`\${u} \${label}\`;
+  const hay=`${u} ${label}`;
   if(/\.(?:pdf|docx?|rtf)(?:\?|$)/iu.test(u)) return true;
   return /(пресуд|решени|одлук|рев\.?|квп|кзз|гзз|вкж|предмет|судска[-_\s]*пракса|judg|decision|case)/iu.test(hay);
 }
 
 export function isLikelyIndexLink(link){
-  const hay=\`\${link?.url||""} \${link?.label||""}\`.toLocaleLowerCase("mk");
+  const hay=`${link?.url||""} ${link?.label||""}`.toLocaleLowerCase("mk");
   return /(одлук|пресуд|судска[-_\s]*пракса|предмет|search|page=|страна|следн|next|архив)/iu.test(hay);
 }
 
@@ -148,17 +148,17 @@ async function fetchWithPolicy(url,{userAgent,timeoutMs=30000,maxBytes=MAX_FILE_
     });
     if([301,302,303,307,308].includes(response.status)){
       const loc=response.headers.get("location");
-      if(!loc) throw new Error(\`redirect_without_location:\${response.status}\`);
+      if(!loc) throw new Error(`redirect_without_location:${response.status}`);
       const target=normalizeOfficialUrl(new URL(loc,url).href);
       return fetchWithPolicy(target.href,{userAgent,timeoutMs,maxBytes});
     }
     if(response.status===429 || response.status===503){
       const retry=Number(response.headers.get("retry-after"));
-      const err=new Error(\`retryable_http_\${response.status}\`);
+      const err=new Error(`retryable_http_${response.status}`);
       err.retryAfter=Number.isFinite(retry)?retry*1000:null;
       throw err;
     }
-    if(!response.ok) throw new Error(\`http_\${response.status}\`);
+    if(!response.ok) throw new Error(`http_${response.status}`);
     const declared=Number(response.headers.get("content-length"));
     if(Number.isFinite(declared) && declared>maxBytes) throw new Error("supreme_file_too_large");
     const buf=Buffer.from(await response.arrayBuffer());
@@ -174,11 +174,11 @@ async function ensureRobots(base,userAgent){
   try{
     const r=await fetch(robotsUrl,{headers:{"user-agent":userAgent},redirect:"manual"});
     if(r.status===404) return {url:robotsUrl,status:"not_present",groups:[]};
-    if(!r.ok) throw new Error(\`robots_http_\${r.status}\`);
+    if(!r.ok) throw new Error(`robots_http_${r.status}`);
     const text=await r.text();
     return {url:robotsUrl,status:"loaded",groups:parseRobots(text),text};
   }catch(error){
-    throw new Error(\`robots_check_failed:\${error?.message||error}\`);
+    throw new Error(`robots_check_failed:${error?.message||error}`);
   }
 }
 
@@ -205,7 +205,7 @@ async function discoverFromIndexes(indexUrls,{limit,maxPages,userAgent,delayMs})
     visited.add(url);
     robots ||= await ensureRobots(url,userAgent);
     const u=normalizeOfficialUrl(url);
-    if(!robotsAllows(robots.groups,u.pathname,userAgent)) throw new Error(\`robots_disallow:\${u.pathname}\`);
+    if(!robotsAllows(robots.groups,u.pathname,userAgent)) throw new Error(`robots_disallow:${u.pathname}`);
     const {response,buf}=await fetchWithPolicy(url,{userAgent,maxBytes:5*1024*1024});
     const ct=response.headers.get("content-type")||"";
     if(!/html/i.test(ct)) continue;
@@ -307,8 +307,8 @@ export async function run(options){
     if(!duplicateOf) hashSeen.set(hash,u.href);
 
     const ext=extensionFor(ct,u.href);
-    const base=safeName(\`\${String(i+1).padStart(3,"0")}_\${item.label||path.basename(u.pathname)||"decision"}\`);
-    const filename=\`\${base}\${ext}\`;
+    const base=safeName(`${String(i+1).padStart(3,"0")}_${item.label||path.basename(u.pathname)||"decision"}`);
+    const filename=`${base}${ext}`;
     fs.writeFileSync(path.join(outDir,filename),fetched.buf);
 
     const rec={
@@ -342,7 +342,7 @@ function help(){
     "Rules: HTTPS + official Supreme Court host only; max 100; minimum 1500 ms delay; robots respected; no cookies/login; SHA-256 + manifest; Human Gate remains required.";
 }
 
-if(import.meta.url===\`file://\${process.argv[1]}\`){
+if(import.meta.url===`file://${process.argv[1]}`){
   try{
     const opts=parseArgs();
     if(opts.help){
