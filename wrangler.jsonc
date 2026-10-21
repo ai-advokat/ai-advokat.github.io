@@ -5,6 +5,7 @@
   "compatibility_date": "2026-09-26",
   "preview_urls": true,
   "vars": {
+    "ALARM_ENABLED": "false",
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFKQHY3Quvb_8JqH",
     "OPENAI_MODEL": "gpt-6.1-sol",
     "OPENAI_REASONING_EFFORT": "medium",
