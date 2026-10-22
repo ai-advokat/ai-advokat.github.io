@@ -1,0 +1,23 @@
+{
+  "version": "3.0",
+  "release_date": "2026-10-22",
+  "status": "public_working_draft",
+  "release_basis": "Sande explicitly requested creating the Columns section and publishing the column first on AI Advokat on 2026-10-22; paper deferred to Zenodo.",
+  "author_final_approval": "pending_not_inferred",
+  "peer_reviewed": false,
+  "doi": null,
+  "rag_eligible": false,
+  "production_corpus_write": false,
+  "files": [
+    {
+      "path": "/kolumni/digitalna-zarabotka/kolumna.docx",
+      "sha256": "3af6b9353836d14723e22fd60321cb0bb9f74d8916addcd2f7cafd094b8f419f",
+      "bytes": 43710
+    },
+    {
+      "path": "/kolumni/digitalna-zarabotka/kolumna.pdf",
+      "sha256": "ea388fc81c2e2d57faff25f172476ddd2cf47e6eaf6343632e66b2187097ac29",
+      "bytes": 103785
+    }
+  ]
+}
