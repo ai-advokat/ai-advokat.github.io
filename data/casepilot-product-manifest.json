@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "module_id": "casepilot-secure-workspace",
+  "product_name": "CasePilot Secure Workspace",
+  "parent_platform": "AI Advokat",
+  "owner_author": "Zoran Stojankich",
+  "status": "production",
+  "public_entry": "/casepilot/",
+  "private_workspace": "/casepilot-workspace.html",
+  "access_request": "/membership.html#request",
+  "separation_policy": {
+    "public_chat_private_documents": false,
+    "membership_required": true,
+    "case_scoped_storage": true,
+    "plaintext_access_key_in_repository": false,
+    "human_gate_required": true,
+    "autonomous_filing": false,
+    "autonomous_signature": false,
+    "autonomous_external_transmission": false
+  },
+  "development_tracks": [
+    "access_membership",
+    "private_document_vault",
+    "case_intelligence_engine",
+    "governed_legal_research",
+    "drafting_and_export",
+    "audit_and_decision_history"
+  ],
+  "canonical_principles": [
+    "source_first",
+    "provenance",
+    "current_law_verification",
+    "human_gate",
+    "privacy_by_separation"
+  ]
+}
