@@ -1,0 +1,114 @@
+name: Zoran temporary professional test access
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/activation/zoran-professional-test-access.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-zoran-professional-test-access
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify bounded owner-authorized test access request
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
+          if(d.activation_authorized!==true) throw new Error("Test access not authorized");
+          if(d.purpose!=="owner_professional_testing") throw new Error("Unexpected purpose");
+          if(d.plan_code!=="office") throw new Error("Unexpected plan");
+          if(d.status!=="active") throw new Error("Unexpected entitlement status");
+          if(!/^[a-f0-9]{64}$/.test(d.access_key_hash)) throw new Error("Invalid access key hash");
+          if(!/^zoki_test_/.test(d.access_key_prefix)) throw new Error("Unexpected key prefix");
+          const expiry=Date.parse(d.expires_at);
+          if(!Number.isFinite(expiry) || expiry<=Date.now()) throw new Error("Invalid expiry");
+          if(expiry-Date.now()>15*24*60*60*1000) throw new Error("Test access exceeds bounded expiry");
+          if(d.autonomous_filing!==false || d.autonomous_signature!==false || d.autonomous_external_transmission!==false) throw new Error("Professional safety boundary changed");
+          if(d.human_gate_required!==true) throw new Error("Human Gate must remain required");
+          console.log("Bounded owner test access authorization: PASS");
+          NODE
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Verify membership schema exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            SELECT name FROM sqlite_master
+            WHERE type='table'
+              AND name IN ('membership_accounts','membership_entitlements','membership_access_keys')
+            ORDER BY name;
+          " | tee /tmp/zoran-access-schema.txt
+          for t in membership_accounts membership_entitlements membership_access_keys; do
+            grep -q "$t" /tmp/zoran-access-schema.txt
+          done
+
+      - name: Activate bounded Zoran test membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' > /tmp/zoran-access.sql
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
+          const q=v=>"'" + String(v).replaceAll("'","''") + "'";
+          console.log("DELETE FROM membership_usage_monthly WHERE subject_key="+q("account:"+d.account_id)+";");
+          console.log("DELETE FROM membership_access_keys WHERE account_id="+q(d.account_id)+";");
+          console.log("DELETE FROM membership_entitlements WHERE account_id="+q(d.account_id)+";");
+          console.log("INSERT INTO membership_accounts(id,display_name,status) VALUES ("+[q(d.account_id),q(d.display_name),q("active")].join(",")+") ON CONFLICT(id) DO UPDATE SET display_name=excluded.display_name,status='active',updated_at=CURRENT_TIMESTAMP;");
+          console.log("INSERT INTO membership_entitlements(id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at) VALUES ("+[q(d.entitlement_id),q(d.account_id),q(d.plan_code),q(d.status),q("manual"),String(d.monthly_quota),String(d.seat_limit),"0",q(d.expires_at)].join(",")+");");
+          console.log("INSERT INTO membership_access_keys(id,account_id,key_hash,key_prefix,label,status,expires_at) VALUES ("+[q(d.key_id),q(d.account_id),q(d.access_key_hash),q(d.access_key_prefix),q("Owner-authorized temporary professional testing"),q("active"),q(d.expires_at)].join(",")+");");
+          NODE
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/zoran-access.sql
+          rm -f /tmp/zoran-access.sql
+
+      - name: Verify active access without revealing credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' > /tmp/zoran-access-verify.sql
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
+          const q=v=>"'" + String(v).replaceAll("'","''") + "'";
+          console.log("SELECT a.id,a.status,e.plan_code,e.status AS entitlement_status,e.expires_at,k.status AS key_status,k.expires_at AS key_expires_at FROM membership_accounts a JOIN membership_entitlements e ON e.account_id=a.id JOIN membership_access_keys k ON k.account_id=a.id WHERE a.id="+q(d.account_id)+";");
+          NODE
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/zoran-access-verify.sql | tee /tmp/zoran-access-verify.txt
+          rm -f /tmp/zoran-access-verify.sql
+          grep -q '"plan_code": "office"' /tmp/zoran-access-verify.txt
+          grep -q '"entitlement_status": "active"' /tmp/zoran-access-verify.txt
+          grep -q '"key_status": "active"' /tmp/zoran-access-verify.txt
+          echo "ZORAN TEMPORARY PROFESSIONAL TEST ACCESS: ACTIVE"
+
+      - name: Upload redacted evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: zoran-professional-test-access-evidence
+          retention-days: 14
+          path: |
+            /tmp/zoran-access-schema.txt
+            /tmp/zoran-access-verify.txt
