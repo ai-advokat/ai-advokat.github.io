@@ -12,12 +12,12 @@
   "status": "active",
   "monthly_quota": 100,
   "seat_limit": 1,
-  "access_key_prefix": "zoki_test_0e",
-  "access_key_hash": "cd2a635e720f994ee3fc1e1d8a5d045feb819f1ff2ad20b691e0ffba2d025c3f",
+  "access_key_prefix": "zoki_case_Nm",
+  "access_key_hash": "f09b54f64ec63d9dc6d3053448d89cdf9a5cd365122cab59228bcf5c0691f50c",
   "expires_at": "2026-11-05T16:00:00Z",
   "human_gate_required": true,
   "autonomous_filing": false,
   "autonomous_signature": false,
   "autonomous_external_transmission": false,
-  "notes": "Temporary owner-authorized professional test access. Plaintext access key is held only for handoff to the owner and is not stored in GitHub."
+  "notes": "Temporary owner-authorized professional test access. Credential rotated on 2026-10-22 for Secure Case Workspace handoff. Plaintext access key is never stored in GitHub."
 }
