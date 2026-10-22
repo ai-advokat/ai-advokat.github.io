@@ -43,6 +43,7 @@ jobs:
           if(d.purpose!=="owner_professional_testing") throw new Error("Unexpected purpose");
           if(d.plan_code!=="office") throw new Error("Unexpected plan");
           if(d.status!=="active") throw new Error("Unexpected entitlement status");
+          if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email||"")) throw new Error("Invalid account email");
           if(!/^[a-f0-9]{64}$/.test(d.access_key_hash)) throw new Error("Invalid access key hash");
           if(!/^zoki_test_/.test(d.access_key_prefix)) throw new Error("Unexpected key prefix");
           const expiry=Date.parse(d.expires_at);
@@ -80,7 +81,7 @@ jobs:
           console.log("DELETE FROM membership_usage_monthly WHERE subject_key="+q("account:"+d.account_id)+";");
           console.log("DELETE FROM membership_access_keys WHERE account_id="+q(d.account_id)+";");
           console.log("DELETE FROM membership_entitlements WHERE account_id="+q(d.account_id)+";");
-          console.log("INSERT INTO membership_accounts(id,display_name,status) VALUES ("+[q(d.account_id),q(d.display_name),q("active")].join(",")+") ON CONFLICT(id) DO UPDATE SET display_name=excluded.display_name,status='active',updated_at=CURRENT_TIMESTAMP;");
+          console.log("INSERT INTO membership_accounts(id,display_name,email,status) VALUES ("+[q(d.account_id),q(d.display_name),q(d.email),q("active")].join(",")+") ON CONFLICT(id) DO UPDATE SET display_name=excluded.display_name,email=excluded.email,status='active',updated_at=CURRENT_TIMESTAMP;");
           console.log("INSERT INTO membership_entitlements(id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at) VALUES ("+[q(d.entitlement_id),q(d.account_id),q(d.plan_code),q(d.status),q("manual"),String(d.monthly_quota),String(d.seat_limit),"0",q(d.expires_at)].join(",")+");");
           console.log("INSERT INTO membership_access_keys(id,account_id,key_hash,key_prefix,label,status,expires_at) VALUES ("+[q(d.key_id),q(d.account_id),q(d.access_key_hash),q(d.access_key_prefix),q("Owner-authorized temporary professional testing"),q("active"),q(d.expires_at)].join(",")+");");
           NODE
@@ -95,14 +96,18 @@ jobs:
           const fs=require("fs");
           const d=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
           const q=v=>"'" + String(v).replaceAll("'","''") + "'";
-          console.log("SELECT a.id,a.status,e.plan_code,e.status AS entitlement_status,e.expires_at,k.status AS key_status,k.expires_at AS key_expires_at FROM membership_accounts a JOIN membership_entitlements e ON e.account_id=a.id JOIN membership_access_keys k ON k.account_id=a.id WHERE a.id="+q(d.account_id)+";");
+          console.log("SELECT a.id,a.email,a.status,e.plan_code,e.status AS entitlement_status,e.expires_at,k.status AS key_status,k.expires_at AS key_expires_at FROM membership_accounts a JOIN membership_entitlements e ON e.account_id=a.id JOIN membership_access_keys k ON k.account_id=a.id WHERE a.id="+q(d.account_id)+";");
           NODE
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/zoran-access-verify.sql | tee /tmp/zoran-access-verify.txt
           rm -f /tmp/zoran-access-verify.sql
-          grep -q '"plan_code": "office"' /tmp/zoran-access-verify.txt
-          grep -q '"entitlement_status": "active"' /tmp/zoran-access-verify.txt
-          grep -q '"key_status": "active"' /tmp/zoran-access-verify.txt
-          echo "ZORAN TEMPORARY PROFESSIONAL TEST ACCESS: ACTIVE"
+          node <<'NODE'
+          const fs=require("fs");
+          const raw=fs.readFileSync("/tmp/zoran-access-verify.txt","utf8");
+          if(!raw.includes("office")) throw new Error("Office entitlement not observed");
+          if(!raw.includes("active")) throw new Error("Active state not observed");
+          if(!raw.includes("zstojankik@gmail.com")) throw new Error("Account email not observed");
+          console.log("ZORAN TEMPORARY PROFESSIONAL TEST ACCESS: ACTIVE");
+          NODE
 
       - name: Upload redacted evidence
         uses: actions/upload-artifact@v4
