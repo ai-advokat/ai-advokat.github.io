@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="index,follow,max-snippet:-1">
+<title>CasePilot Secure Workspace · AI Advokat</title>
+<meta name="description" content="CasePilot е одвоениот професионален модул на AI Advokat за приватни правни предмети, доказна анализа, документи, governed правни извори и Human Gate.">
+<link rel="canonical" href="https://ai-advokat.github.io/casepilot/">
+<style>
+:root{--navy:#071a2e;--blue:#173d66;--gold:#b9985b;--bg:#f4f7fa;--surface:#fff;--ink:#132033;--muted:#5c6978;--line:#d9e2ea;--soft:#edf3f8;--ok:#176746;--shadow:0 18px 48px rgba(8,26,45,.10)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}a{color:inherit}.wrap{width:min(1120px,calc(100% - 30px));margin:auto}
+header{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:56px 0}.eyebrow{font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#f0d59f;font-size:.78rem}h1{font-size:clamp(2.5rem,6vw,5rem);line-height:1;letter-spacing:-.045em;margin:.25em 0}.lead{max-width:850px;color:#dce8f2;font-size:1.08rem}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:11px 15px;border-radius:11px;text-decoration:none;font-weight:850;border:1px solid rgba(255,255,255,.25)}.primary{background:var(--gold);color:#102033;border-color:var(--gold)}.ghost{background:rgba(255,255,255,.08);color:#fff}
+main{padding:36px 0 64px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:21px;box-shadow:var(--shadow)}.card h2,.card h3{margin-top:0}.card p{color:var(--muted)}.pill{display:inline-flex;padding:5px 9px;border-radius:999px;background:#e8f4ed;color:var(--ok);font-weight:850;font-size:.75rem}.wide{grid-column:1/-1}.boundary{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.item{background:var(--soft);border-radius:12px;padding:14px}.item b{display:block;margin-bottom:4px}.steps{margin:0;padding-left:22px}.steps li{margin:8px 0}.note{border-left:4px solid var(--gold);background:#fff8e8;padding:14px 16px;border-radius:0 12px 12px 0;color:#5d513a}footer{padding:26px 0 42px;color:var(--muted);font-size:.9rem}
+@media(max-width:820px){.grid,.boundary{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">CASEPILOT · PRIVATE CASE INTELLIGENCE · HUMAN GATE</div>
+    <h1>CasePilot Secure Workspace</h1>
+    <p class="lead">Посебен професионален модул на AI Advokat за доверливи правни предмети. CasePilot ги одвојува приватните документи и предметната анализа од јавниот AI chat и ги води низ case-scoped storage, доказно потекло, governed правни извори и задолжителна човечка професионална контрола.</p>
+    <div class="actions">
+      <a class="btn primary" href="/casepilot-workspace.html">🔒 Отвори приватен предмет</a>
+      <a class="btn ghost" href="/membership.html#request">Побарај пристап</a>
+      <a class="btn ghost" href="/">AI Advokat</a>
+    </div>
+  </div>
+</header>
+<main class="wrap">
+  <section class="grid" aria-label="CasePilot architecture">
+    <article class="card"><span class="pill">ОДВОЕН МОДУЛ</span><h2>Приватен предмет</h2><p>Membership пристапот и предметните документи се одвоени од јавниот разговор. Приватниот код не се зачувува во прелистувачот.</p></article>
+    <article class="card"><span class="pill">SOURCE-FIRST</span><h2>Докази и provenance</h2><p>Секој материјален факт треба да остане врзан за Document ID, locator/страница и SHA-256 трага.</p></article>
+    <article class="card"><span class="pill">HUMAN GATE</span><h2>Адвокатска контрола</h2><p>AI изработува работна анализа и нацрти; професионалната одлука, употребата и финалниот правен чекор остануваат човечки.</p></article>
+
+    <article class="card wide">
+      <h2>Што го развиваме посебно</h2>
+      <div class="boundary">
+        <div class="item"><b>1. Access & Membership</b>Ротација и ревокација на приватни кодови, entitlement, seat/quota и audit.</div>
+        <div class="item"><b>2. Private Document Vault</b>Case-scoped upload/download/delete, hash, retention и document provenance.</div>
+        <div class="item"><b>3. Case Intelligence Engine</b>Факти, хронологија, лица, имот, договори, контрадикции и missing evidence.</div>
+        <div class="item"><b>4. Governed Legal Research</b>Важечко право, reviewed case law, source hierarchy и current-law verification.</div>
+        <div class="item"><b>5. Drafting & Export</b>WORKING DRAFT, DOCX/PDF/MD export и Human Gate пред професионална употреба.</div>
+        <div class="item"><b>6. Audit & Decision History</b>Кој пристапил, што е изменето, што е анализирано и кога е одобрена човечката одлука.</div>
+      </div>
+    </article>
+
+    <article class="card wide">
+      <h2>Како се користи</h2>
+      <ol class="steps">
+        <li>Внесете го приватниот membership код и отворете или создадете предмет.</li>
+        <li>Прикачете ги доверливите документи во Private Document Vault.</li>
+        <li>Побарајте „Анализирај го целиот предмет“ за evidence-first работна анализа.</li>
+        <li>Проверете ги изворите, контрадикциите, применливото право и празнините во доказите.</li>
+        <li>Подгответе работен поднесок и поминете низ Human Gate пред професионална употреба.</li>
+      </ol>
+      <p class="note"><strong>Граница:</strong> CasePilot не е автоматски судија, не ветува процент на успех и не смее автономно да поднесува, потпишува или испраќа правни документи.</p>
+    </article>
+  </section>
+</main>
+<footer><div class="wrap">CasePilot · AI Advokat · приватен професионален модул · source-first · Human Gate</div></footer>
+</body>
+</html>
