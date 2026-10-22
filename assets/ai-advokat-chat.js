@@ -304,6 +304,22 @@
       });
       if(guideLinks.childElementCount){guideBox.append(guideLinks);appendEvidence(guideBox);}
     }
+    if(Array.isArray(m.publicationSources) && m.publicationSources.length){
+      const publicationBox=document.createElement("div");publicationBox.className="ai-msg-source";
+      const publicationLabel=document.createElement("strong");publicationLabel.textContent="Авторски трудови";
+      publicationBox.append(publicationLabel);
+      const publicationLinks=document.createElement("div");publicationLinks.className="ai-msg-tools";
+      m.publicationSources.slice(0,6).forEach((src,i)=>{
+        const href=safeHttpUrl(src?.url);
+        const labelText=(src?.title||("Труд "+(i+1))).slice(0,120);
+        if(href){
+          const a=document.createElement("a");a.href=href;a.target="_blank";a.rel="noopener noreferrer";a.textContent=labelText;publicationLinks.append(a);
+        }else{
+          const span=document.createElement("span");span.textContent=labelText;publicationLinks.append(span);
+        }
+      });
+      if(publicationLinks.childElementCount){publicationBox.append(publicationLinks);appendEvidence(publicationBox);}
+    }
     if(Array.isArray(m.sources) && m.sources.length){
       const sourceBox=document.createElement("div");sourceBox.className="ai-msg-source";
       const label=document.createElement("strong");label.textContent="Web извори";
@@ -724,14 +740,17 @@
           legalSources:Array.isArray(d.legalSources)?d.legalSources:[],
           caseLawSources:Array.isArray(d.caseLawSources)?d.caseLawSources:[],
           guideSources:Array.isArray(d.guideSources)?d.guideSources:[],
+          publicationSources:Array.isArray(d.publicationSources)?d.publicationSources:[],
           governance:d.legalGovernance||null,
           documentExports:requestedExportFormats(q).map(format=>({
             format,
             label:format==="docx"?"Преземи Word (.docx)":format==="pdf"?"Преземи PDF":format==="json"?"Преземи JSON":"Преземи CSV",
             filename:"AI-Advokat-analysis."+format
           })),
-          sourceLabel:d.sourceMode==="ai_advokat_article_corpus_first"
-            ?"AI Advokat article-level corpus first · верзија и Human Gate се прикажани во изворите."
+          sourceLabel:d.sourceMode==="workers_ai_free_authorial_publication_context" || d.sourceMode==="ai_advokat_authorial_publication_context"
+            ?"AI Advokat авторски трудови · секундарен извор · DOI/Zenodo + Human Gate; не е извор на важечко право."
+            :d.sourceMode==="ai_advokat_article_corpus_first"
+              ?"AI Advokat article-level corpus first · верзија и Human Gate се прикажани во изворите."
             :d.sourceMode==="ai_advokat_article_corpus_plus_external_web"
               ?"AI Advokat article-level corpus + одделно означено Web истражување."
               :d.sourceMode==="ai_advokat_article_corpus_gate"
