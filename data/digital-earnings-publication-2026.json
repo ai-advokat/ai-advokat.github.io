@@ -1,0 +1,30 @@
+{
+  "record_id": 23557648,
+  "doi": "10.5281/zenodo.23557648",
+  "concept_doi": "10.5281/zenodo.23557647",
+  "status": "published",
+  "version": "3.0",
+  "publication_date": "2026-10-22",
+  "language": "en",
+  "resource_type": "preprint",
+  "peer_reviewed": false,
+  "license": "CC-BY-NC-ND-4.0",
+  "author_approval_date": "2026-10-22",
+  "source_record": "https://zenodo.org/records/23557648",
+  "rag_eligible": false,
+  "production_corpus_write": false,
+  "files": [
+    {
+      "path": "/scholar/digital-earnings/paper.pdf",
+      "sha256": "a8728dc5bea59b52d610932f3a77f75c0665e631db33e8fc7aa55a8b1eea07c5",
+      "md5": "6b86ec82aa84fe99adc5ea55ed7196de",
+      "bytes": 334150
+    },
+    {
+      "path": "/scholar/digital-earnings/paper.docx",
+      "sha256": "9bb33fed4074c6b7522fa4fad9861f38b1032665cfd7ec2a9614f55f463e406a",
+      "md5": "4f06c1d74ea55a09a0e949eecd0b5f06",
+      "bytes": 65874
+    }
+  ]
+}
