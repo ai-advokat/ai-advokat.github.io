@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_on": "2026-10-20",
+  "generated_on": "2026-10-22",
   "author": {
     "name_mk": "Зоран Стојанкиќ",
     "name_en": "Zoran Stojankich",
@@ -9,6 +9,37 @@
   },
   "records": [
     {
+      "id": "digital-earnings-2026",
+      "type": "preprint",
+      "type_label_mk": "Препринт",
+      "title_mk": "Данок на дигиталната заработка во Македонија: Законска обврска, двојно оданочување и правна сигурност на граѓаните",
+      "title_en": "Taxation of Digital Earnings in North Macedonia: Statutory Obligations, Double Taxation and Legal Certainty for Citizens",
+      "subtitle_mk": "Британско-англиско издание · верзија 3.0 · без журналска научна рецензија",
+      "field_mk": "Даночно право и дигитална заработка",
+      "keywords_mk": [
+        "дигитална заработка",
+        "даночен кредит",
+        "двојно оданочување",
+        "електронска достава",
+        "застарување"
+      ],
+      "languages": [
+        "en"
+      ],
+      "year": 2026,
+      "publication_date": "2026-10-22",
+      "version": "3.0",
+      "status": "published_open",
+      "status_label_mk": "Објавено на Zenodo · препринт",
+      "access": "open",
+      "access_label_mk": "Отворен целосен текст",
+      "doi": "10.5281/zenodo.23557648",
+      "zenodo_url": "https://zenodo.org/records/23557648",
+      "landing_url": "/scholar/digital-earnings/",
+      "pdf_url": "/scholar/digital-earnings/paper.pdf",
+      "citation": "Stojankich, Z. (2026). Taxation of Digital Earnings in North Macedonia: Statutory Obligations, Double Taxation and Legal Certainty for Citizens (Version 3.0) [Preprint]. AI Advokat. https://doi.org/10.5281/zenodo.23557648"
+    },
+    {
       "id": "chain-2026",
       "type": "working_paper",
       "type_label_mk": "Научно-стручен труд",
@@ -16,8 +47,16 @@
       "title_en": "“CHAIN” — Plea Agreements, Guilty Pleas and the Limits of Criminal Justice",
       "subtitle_mk": "Организиран финансиски криминал, конфискација и еднаквост во казнувањето",
       "field_mk": "Кривично право и кривична постапка",
-      "keywords_mk": ["спогодување", "признавање вина", "финансиски криминал", "конфискација"],
-      "languages": ["mk", "en"],
+      "keywords_mk": [
+        "спогодување",
+        "признавање вина",
+        "финансиски криминал",
+        "конфискација"
+      ],
+      "languages": [
+        "mk",
+        "en"
+      ],
       "year": 2026,
       "publication_date": "2026-09-28",
       "version": "1.0",
@@ -39,8 +78,16 @@
       "title_en": "Electronic and AI-Generated Evidence in Judicial Proceedings",
       "subtitle_mk": "Автентичност, интегритет, deepfake, синџир на чување и ефективно оспорување",
       "field_mk": "Доказно право и вештачка интелигенција",
-      "keywords_mk": ["електронски докази", "AI докази", "deepfake", "синџир на чување"],
-      "languages": ["mk", "en"],
+      "keywords_mk": [
+        "електронски докази",
+        "AI докази",
+        "deepfake",
+        "синџир на чување"
+      ],
+      "languages": [
+        "mk",
+        "en"
+      ],
       "year": 2026,
       "publication_date": "2026-09-28",
       "version": "1.0",
@@ -62,8 +109,16 @@
       "title_en": "Searching a Mobile Phone and the Protection of Legal Professional Privilege",
       "subtitle_mk": "Електронски докази, независно филтрирање и доверлива правна помош",
       "field_mk": "Кривична постапка и адвокатска тајна",
-      "keywords_mk": ["мобилен телефон", "адвокатска тајна", "електронски докази", "приватност"],
-      "languages": ["mk", "en"],
+      "keywords_mk": [
+        "мобилен телефон",
+        "адвокатска тајна",
+        "електронски докази",
+        "приватност"
+      ],
+      "languages": [
+        "mk",
+        "en"
+      ],
       "year": 2026,
       "publication_date": "2026-09-28",
       "version": "1.0",
@@ -85,8 +140,16 @@
       "title_en": "Artificial Intelligence in the Legal Profession and the Judiciary",
       "subtitle_mk": "Правни граници, доказна употреба на AI и правото на правично судење",
       "field_mk": "AI, адвокатура и судство",
-      "keywords_mk": ["вештачка интелигенција", "адвокатура", "судство", "правично судење"],
-      "languages": ["mk", "en"],
+      "keywords_mk": [
+        "вештачка интелигенција",
+        "адвокатура",
+        "судство",
+        "правично судење"
+      ],
+      "languages": [
+        "mk",
+        "en"
+      ],
       "year": 2026,
       "publication_date": "2026-09-28",
       "version": "1.0",
@@ -108,8 +171,16 @@
       "title_en": "Laskarci – Individual Criminal Responsibility, Institutional Accountability and Political Responsibility",
       "subtitle_mk": "Двојазично македонско-англиско издание",
       "field_mk": "Кривична, институционална и политичка одговорност",
-      "keywords_mk": ["Ласкарци", "кривична одговорност", "институционална отчетност", "политичка одговорност"],
-      "languages": ["mk", "en"],
+      "keywords_mk": [
+        "Ласкарци",
+        "кривична одговорност",
+        "институционална отчетност",
+        "политичка одговорност"
+      ],
+      "languages": [
+        "mk",
+        "en"
+      ],
       "year": 2026,
       "publication_date": "2026-10-19",
       "version": "1.0",
@@ -131,8 +202,15 @@
       "title_en": "Manual for Lawyers in Criminal Cases",
       "subtitle_mk": "Верзија 3.4 · 77 глави · 10 дела · 22 прилози · 1147 страници",
       "field_mk": "Кривична постапка и адвокатска практика",
-      "keywords_mk": ["кривична постапка", "одбрана", "докази", "ЕСЧП"],
-      "languages": ["mk"],
+      "keywords_mk": [
+        "кривична постапка",
+        "одбрана",
+        "докази",
+        "ЕСЧП"
+      ],
+      "languages": [
+        "mk"
+      ],
       "year": 2026,
       "publication_date": "2026-10-19",
       "version": "3.4",
@@ -153,8 +231,15 @@
       "title_en": "Commentary on the Criminal Procedure Act",
       "subtitle_mk": "Целосен практичен коментар по членови 1–568 · Верзија 6",
       "field_mk": "Кривична постапка",
-      "keywords_mk": ["ЗКП", "коментар", "член-по-член", "практична примена"],
-      "languages": ["mk"],
+      "keywords_mk": [
+        "ЗКП",
+        "коментар",
+        "член-по-член",
+        "практична примена"
+      ],
+      "languages": [
+        "mk"
+      ],
       "year": 2026,
       "version": "6",
       "status": "human_gate",
@@ -171,8 +256,15 @@
       "title_en": "Practical Manual on ECtHR Case Law in Cases against North Macedonia",
       "subtitle_mk": "Стручна правна монографија · V4.2",
       "field_mk": "Европско право за човекови права",
-      "keywords_mk": ["ЕСЧП", "HUDOC", "човекови права", "Северна Македонија"],
-      "languages": ["mk"],
+      "keywords_mk": [
+        "ЕСЧП",
+        "HUDOC",
+        "човекови права",
+        "Северна Македонија"
+      ],
+      "languages": [
+        "mk"
+      ],
       "year": 2026,
       "version": "4.2",
       "status": "publication_fix_required",
