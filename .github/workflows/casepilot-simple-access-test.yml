@@ -4,16 +4,22 @@ on:
   pull_request:
     paths:
       - "casepilot-workspace.html"
+      - "casepilot/index.html"
+      - "data/casepilot-product-manifest.json"
       - "assets/casepilot-workspace-ui.js"
       - "test/casepilot-case-picker-create.test.mjs"
+      - "test/casepilot-product-separation.test.mjs"
       - ".github/workflows/casepilot-simple-access-test.yml"
   push:
     branches:
       - main
     paths:
       - "casepilot-workspace.html"
+      - "casepilot/index.html"
+      - "data/casepilot-product-manifest.json"
       - "assets/casepilot-workspace-ui.js"
       - "test/casepilot-case-picker-create.test.mjs"
+      - "test/casepilot-product-separation.test.mjs"
       - ".github/workflows/casepilot-simple-access-test.yml"
 
 permissions:
@@ -34,3 +40,5 @@ jobs:
         run: node --no-warnings --test test/casepilot-case-picker-create.test.mjs
       - name: Workspace privacy regression test
         run: node --no-warnings --test test/casepilot-workspace-ui.test.mjs
+      - name: CasePilot product separation test
+        run: node --no-warnings --test test/casepilot-product-separation.test.mjs
