@@ -152,6 +152,7 @@ import {
 } from "./response-quality.js";
 import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commentary.js";
 import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, scholarlyContextItems } from "./scholarly-literature.js";
+import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
 
 const VERSION = "1.9.0";
 const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V8";
@@ -2775,7 +2776,10 @@ async function handleSearch(request, env, url) {
   const scholarlyResults = (type==="all" || type==="paper")
     ? await searchPublicScholarly(request,env,{q,status,limit})
     : [];
-  const results=[...corpusResults,...guideResults,...scholarlyResults]
+  const authorialResults = (type==="all" || type==="paper")
+    ? await searchPublicAuthorialPublications(request,env,{q,status,limit})
+    : [];
+  const results=[...corpusResults,...guideResults,...scholarlyResults,...authorialResults]
     .sort((a,b)=>(Number(b.relevanceScore||0)-Number(a.relevanceScore||0)))
     .slice(0,limit);
 
@@ -3340,6 +3344,42 @@ async function loadScholarlyRegistry(request,env){
   }catch{
     return null;
   }
+}
+
+async function loadAuthorialPublicationRegistry(request,env){
+  if(!env.ASSETS) return null;
+  try{
+    const assetUrl=new URL("/data/zoran-stojankic-publications.json",request.url);
+    const response=await env.ASSETS.fetch(new Request(assetUrl,{method:"GET"}));
+    if(!response.ok) return null;
+    const data=await response.json();
+    return data && typeof data==="object" ? data : null;
+  }catch{
+    return null;
+  }
+}
+
+async function findGovernedAuthorialPublications(request,env,q,{limit=5}={}){
+  const registry=await loadAuthorialPublicationRegistry(request,env);
+  if(!registry) return {records:[],context:[],sources:[],provenanceGate:null};
+  const candidateRecords=findAuthorialPublicationRecords(registry,q,{limit});
+  const gate=enforceCanonicalContextProvenance(authorialPublicationContextItems(candidateRecords));
+  const releasedIds=new Set(gate.context.map(x=>String(x?.provenance?.locator||"")).filter(Boolean));
+  const records=candidateRecords.filter(x=>releasedIds.has(String(x.doi||x.landingUrl||x.id||"")));
+  return {
+    records,
+    context:gate.context,
+    sources:authorialPublicationSources(records),
+    provenanceGate:gate
+  };
+}
+
+async function searchPublicAuthorialPublications(request,env,{q,status="all",limit=8}={}){
+  if(!["all","verified","pending"].includes(String(status||"all"))) return [];
+  const registry=await loadAuthorialPublicationRegistry(request,env);
+  if(!registry) return [];
+  const items=authorialPublicationSearchItems(registry,q,{limit});
+  return items.filter(item=>status==="all" || item.status===status);
 }
 
 async function findGovernedScholarly(request,env,q,{limit=5}={}){
@@ -5422,16 +5462,17 @@ async function handleGPTChat(request,env){
 
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const initialPlan=buildAgentPlan(q);
-  const [guideContext,articleBundle,caseLawBundle,gazetteBundle,bureauEchrBundle,scholarlyBundle]=await Promise.all([
+  const [guideContext,articleBundle,caseLawBundle,gazetteBundle,bureauEchrBundle,scholarlyBundle,authorialBundle]=await Promise.all([
     governedGuideContext(request,env,guideIds),
     governedArticleContext(env,q,initialPlan),
     governedCaseLawContext(env,q,initialPlan,{limit:4}),
     governedGazetteChunkContext(env,q),
     bureauEchrDiscoveryContext(q,{limit:6}),
-    findGovernedScholarly(request,env,q,{limit:5})
+    findGovernedScholarly(request,env,q,{limit:5}),
+    findGovernedAuthorialPublications(request,env,q,{limit:5})
   ]);
 
-  const rawCorpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext,...scholarlyBundle.context];
+  const rawCorpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext,...scholarlyBundle.context,...authorialBundle.context];
   if(uiMode==="library" && rawCorpusContext.length===0){
     rawCorpusContext.push({
       contextRole:"governance_notice",
@@ -5462,7 +5503,7 @@ async function handleGPTChat(request,env){
     || caseLawBundle.context.length>0
     || guideDocumentCheck.context.length>0
     || uiMode==="library"
-    || (uiMode==="auto" && (guideContext.length>0 || scholarlyBundle.context.length>0));
+    || (uiMode==="auto" && (guideContext.length>0 || scholarlyBundle.context.length>0 || authorialBundle.context.length>0));
 
   // In Auto mode the user should not need to understand source lanes or switch
   // a Web toggle. If a legal task has no governed primary support locally,
@@ -5661,7 +5702,9 @@ async function handleGPTChat(request,env){
       ? "canonical_article_corpus_no_model"
       : (attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
         ? (corpusContext.length ? "workers_ai_free_documents_plus_governed_corpus" : "workers_ai_free_document_analysis")
-        : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
+        : authorialBundle.context.length
+          ? "workers_ai_free_authorial_publication_context"
+          : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
 
     return json(request,{
       ok:true,
@@ -5713,6 +5756,7 @@ async function handleGPTChat(request,env){
         hudocBindingRequired:true
       },
       guideSources:guideDocumentCheck.sources||[],
+      publicationSources:authorialBundle.sources||[],
       guideDocumentsUsed:guideDocumentCheck.attachments.length,
       guideDocumentFingerprintsVerified:guideDocumentCheck.attachments.length>0,
       webSearchUsed:false,
@@ -5934,9 +5978,11 @@ async function handleGPTChat(request,env){
                             ? "ai_advokat_article_corpus_first"
                             : articleBundle.context.length
                               ? "ai_advokat_article_corpus_gate"
-                              : guideContext.length
-                                ? "ai_advokat_catalogue_context_first"
-                                : "gpt_general_or_proactive";
+                              : authorialBundle.context.length
+                                ? "ai_advokat_authorial_publication_context"
+                                : guideContext.length
+                                  ? "ai_advokat_catalogue_context_first"
+                                  : "gpt_general_or_proactive";
 
   const runtimeAssessment=assessLegalRuntimeRelease({
     plan,
@@ -6018,6 +6064,7 @@ async function handleGPTChat(request,env){
       hudocBindingRequired:true
     },
     guideSources:guideDocumentCheck.sources || [],
+    publicationSources:authorialBundle.sources || [],
     guideLawDependencyGate:guideDocumentCheck.sources.length ? {
       primarySourceRequired:guidePrimaryLawRequired,
       states:[...new Set(guideDocumentCheck.sources.map(s=>s.lawDependencyGate).filter(Boolean))]
