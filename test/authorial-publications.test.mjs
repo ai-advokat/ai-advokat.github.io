@@ -65,3 +65,15 @@ test("draft Kocani record is never represented as a verified published work",()=
     assert.notEqual(draft.rawStatus,"published_open");
   }
 });
+
+
+test("public scholarly surfaces stay synchronized with the six-work registry",()=>{
+  const homepage=fs.readFileSync("index.html","utf8");
+  const laskarci=fs.readFileSync("scholar/laskarci/index.html","utf8");
+  assert.match(homepage,/10\.5281\/zenodo\.23557648/);
+  assert.match(homepage,/Preprint, Version 3\.0/);
+  assert.match(homepage,/10\.5281\/zenodo\.23467865/);
+  assert.match(homepage,/The latter five are Working paper, Version 1\.0/);
+  assert.doesNotMatch(laskarci,/Judicial Independence, Reasoned Judgments and the Limits of Political Speech/);
+  assert.match(laskarci,/\(Version 1\.0\) \[Working paper\]\. AI Advokat\./);
+});
