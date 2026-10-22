@@ -1,3 +1,4 @@
+import { handleLegalAlarm } from "./legal-alarm.js";
 import {
   FREE_MONTHLY_ASSISTANT_QUOTA,
   MEMBERSHIP_REQUEST_DAILY_LIMIT,
@@ -7202,6 +7203,8 @@ function withSecurityHeaders(response) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith("/api/legal-alarm/")) return handleLegalAlarm(request, env);
 
     // Opportunistic cleanup of expired rate-limit windows (~1% of API calls).
     if (url.pathname.startsWith("/api/") && env.DB && ctx?.waitUntil && Math.random() < 0.01) {

@@ -9,6 +9,7 @@
     "deploy": "wrangler deploy",
     "verify": "node scripts/verify.mjs",
     "test": "node --no-warnings --test test/*.test.mjs",
+    "test:legal-alarm": "node --no-warnings --test test/legal-alarm.test.mjs",
     "db:migrate:staging": "wrangler d1 migrations apply PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc",
     "db:status:staging": "wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\"",
     "db:status:production": "wrangler d1 execute ai-advokat-db --remote --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\"",
