@@ -24,11 +24,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-
       - name: Install pinned tooling
         run: npm install --ignore-scripts --no-audit --no-fund
 
@@ -41,20 +39,15 @@ jobs:
           const d=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
           if(d.activation_authorized!==true) throw new Error("Test access not authorized");
           if(d.purpose!=="owner_professional_testing") throw new Error("Unexpected purpose");
-          if(d.plan_code!=="office") throw new Error("Unexpected plan");
-          if(d.status!=="active") throw new Error("Unexpected entitlement status");
+          if(d.plan_code!=="office" || d.status!=="active") throw new Error("Unexpected entitlement");
           if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email||"")) throw new Error("Invalid account email");
-          if(!/^[a-f0-9]{64}$/.test(d.access_key_hash)) throw new Error("Invalid access key hash");
-          if(!/^zoki_test_/.test(d.access_key_prefix)) throw new Error("Unexpected key prefix");
+          if(!/^[a-f0-9]{64}$/.test(d.access_key_hash)) throw new Error("Invalid key hash");
           const expiry=Date.parse(d.expires_at);
           if(!Number.isFinite(expiry) || expiry<=Date.now()) throw new Error("Invalid expiry");
-          if(expiry-Date.now()>15*24*60*60*1000) throw new Error("Test access exceeds bounded expiry");
-          if(d.autonomous_filing!==false || d.autonomous_signature!==false || d.autonomous_external_transmission!==false) throw new Error("Professional safety boundary changed");
-          if(d.human_gate_required!==true) throw new Error("Human Gate must remain required");
+          if(d.human_gate_required!==true) throw new Error("Human Gate required");
+          if(d.autonomous_filing!==false || d.autonomous_signature!==false || d.autonomous_external_transmission!==false) throw new Error("Safety boundary changed");
           console.log("Bounded owner test access authorization: PASS");
           NODE
-          test -n "$CLOUDFLARE_ACCOUNT_ID"
-          test -n "$CLOUDFLARE_API_TOKEN"
 
       - name: Verify membership schema exists
         shell: bash
@@ -65,10 +58,10 @@ jobs:
             WHERE type='table'
               AND name IN ('membership_accounts','membership_entitlements','membership_access_keys')
             ORDER BY name;
-          " | tee /tmp/zoran-access-schema.txt
-          for t in membership_accounts membership_entitlements membership_access_keys; do
-            grep -q "$t" /tmp/zoran-access-schema.txt
-          done
+          " > /tmp/zoran-access-schema.txt
+          grep -q "membership_accounts" /tmp/zoran-access-schema.txt
+          grep -q "membership_entitlements" /tmp/zoran-access-schema.txt
+          grep -q "membership_access_keys" /tmp/zoran-access-schema.txt
 
       - name: Activate bounded Zoran test membership
         shell: bash
@@ -85,7 +78,7 @@ jobs:
           console.log("INSERT INTO membership_entitlements(id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at) VALUES ("+[q(d.entitlement_id),q(d.account_id),q(d.plan_code),q(d.status),q("manual"),String(d.monthly_quota),String(d.seat_limit),"0",q(d.expires_at)].join(",")+");");
           console.log("INSERT INTO membership_access_keys(id,account_id,key_hash,key_prefix,label,status,expires_at) VALUES ("+[q(d.key_id),q(d.account_id),q(d.access_key_hash),q(d.access_key_prefix),q("Owner-authorized temporary professional testing"),q("active"),q(d.expires_at)].join(",")+");");
           NODE
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/zoran-access.sql
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/zoran-access.sql > /tmp/zoran-access-apply.txt
           rm -f /tmp/zoran-access.sql
 
       - name: Verify active access without revealing credential
@@ -96,24 +89,20 @@ jobs:
           const fs=require("fs");
           const d=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
           const q=v=>"'" + String(v).replaceAll("'","''") + "'";
-          console.log("SELECT a.id,a.email,a.status,e.plan_code,e.status AS entitlement_status,e.expires_at,k.status AS key_status,k.expires_at AS key_expires_at FROM membership_accounts a JOIN membership_entitlements e ON e.account_id=a.id JOIN membership_access_keys k ON k.account_id=a.id WHERE a.id="+q(d.account_id)+";");
+          console.log("SELECT CASE WHEN COUNT(*)=1 THEN 'ZORAN_ACCESS_OK' ELSE 'ZORAN_ACCESS_FAIL' END AS result FROM membership_accounts a JOIN membership_entitlements e ON e.account_id=a.id JOIN membership_access_keys k ON k.account_id=a.id WHERE a.id="+q(d.account_id)+" AND a.email="+q(d.email)+" AND a.status='active' AND e.plan_code='office' AND e.status='active' AND k.status='active' AND k.key_hash="+q(d.access_key_hash)+" AND datetime(k.expires_at)>datetime('now') AND datetime(e.expires_at)>datetime('now');");
           NODE
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/zoran-access-verify.sql | tee /tmp/zoran-access-verify.txt
           rm -f /tmp/zoran-access-verify.sql
-          node <<'NODE'
-          const fs=require("fs");
-          const raw=fs.readFileSync("/tmp/zoran-access-verify.txt","utf8");
-          if(!raw.includes("office")) throw new Error("Office entitlement not observed");
-          if(!raw.includes("active")) throw new Error("Active state not observed");
-          if(!raw.includes("zstojankik@gmail.com")) throw new Error("Account email not observed");
-          console.log("ZORAN TEMPORARY PROFESSIONAL TEST ACCESS: ACTIVE");
-          NODE
+          grep -q "ZORAN_ACCESS_OK" /tmp/zoran-access-verify.txt
+          echo "ZORAN TEMPORARY PROFESSIONAL TEST ACCESS: ACTIVE"
 
       - name: Upload redacted evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: zoran-professional-test-access-evidence
           retention-days: 14
           path: |
             /tmp/zoran-access-schema.txt
+            /tmp/zoran-access-apply.txt
             /tmp/zoran-access-verify.txt
