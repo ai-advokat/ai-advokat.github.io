@@ -1,0 +1,22 @@
+{
+  "decision_id": "AI_ADVOKAT_ZORAN_PROFESSIONAL_TEST_ACCESS_2026-10-22",
+  "activation_authorized": true,
+  "authorization_basis": "Owner requested temporary access to test AI Advokat professional features.",
+  "purpose": "owner_professional_testing",
+  "display_name": "Zoran Stojankich",
+  "account_id": "zoran-test-67006a3a74bf",
+  "entitlement_id": "zent-bb4d357123a6e5a0",
+  "key_id": "zkey-035814fdd163c216",
+  "plan_code": "office",
+  "status": "active",
+  "monthly_quota": 100,
+  "seat_limit": 1,
+  "access_key_prefix": "zoki_test_D3",
+  "access_key_hash": "dc4e874877482c9b987f3e324672bac0ee0a4134191acd906a42f4a784f285f3",
+  "expires_at": "2026-11-05T16:00:28Z",
+  "human_gate_required": true,
+  "autonomous_filing": false,
+  "autonomous_signature": false,
+  "autonomous_external_transmission": false,
+  "notes": "Temporary owner-authorized professional test access. Plaintext access key is not stored in GitHub."
+}
