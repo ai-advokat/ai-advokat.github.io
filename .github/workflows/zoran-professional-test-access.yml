@@ -85,14 +85,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node <<'NODE' > /tmp/zoran-access-verify.sql
+          SQL="$(node <<'NODE'
           const fs=require("fs");
           const d=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
           const q=v=>"'" + String(v).replaceAll("'","''") + "'";
-          console.log("SELECT CASE WHEN COUNT(*)=1 THEN 'ZORAN_ACCESS_OK' ELSE 'ZORAN_ACCESS_FAIL' END AS result FROM membership_accounts a JOIN membership_entitlements e ON e.account_id=a.id JOIN membership_access_keys k ON k.account_id=a.id WHERE a.id="+q(d.account_id)+" AND a.email="+q(d.email)+" AND a.status='active' AND e.plan_code='office' AND e.status='active' AND k.status='active' AND k.key_hash="+q(d.access_key_hash)+" AND datetime(k.expires_at)>datetime('now') AND datetime(e.expires_at)>datetime('now');");
+          process.stdout.write("SELECT CASE WHEN COUNT(*)=1 THEN 'ZORAN_ACCESS_OK' ELSE 'ZORAN_ACCESS_FAIL' END AS result FROM membership_accounts a JOIN membership_entitlements e ON e.account_id=a.id JOIN membership_access_keys k ON k.account_id=a.id WHERE a.id="+q(d.account_id)+" AND a.email="+q(d.email)+" AND a.status='active' AND e.plan_code='office' AND e.status='active' AND k.status='active' AND k.key_hash="+q(d.access_key_hash)+" AND datetime(k.expires_at)>datetime('now') AND datetime(e.expires_at)>datetime('now');");
           NODE
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/zoran-access-verify.sql | tee /tmp/zoran-access-verify.txt
-          rm -f /tmp/zoran-access-verify.sql
+          )"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "$SQL" | tee /tmp/zoran-access-verify.txt
           grep -q "ZORAN_ACCESS_OK" /tmp/zoran-access-verify.txt
           echo "ZORAN TEMPORARY PROFESSIONAL TEST ACCESS: ACTIVE"
 
