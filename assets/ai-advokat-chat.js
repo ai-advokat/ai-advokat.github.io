@@ -510,7 +510,7 @@
     attachments=[];
     renderAttachments();
     if(dropHint) dropHint.textContent="Документи од конкретни предмети се обработуваат само во Secure Case Workspace.";
-    window.location.href="/casepilot/";
+    window.location.href="/casepilot-workspace.html";
   }
 
   function addAttachmentFiles(files,{source="picker"}={}){
@@ -648,7 +648,7 @@
       text:"Ова изгледа како конкретен доверлив правен предмет. Не го испратив преку јавниот AI chat и не ја задржав чувствителната содржина во јавната session history. Отворете Secure Case Workspace, внесете го предметот таму и прикачете ги документите за Case Intelligence анализа.",
       meta:"Privacy gate · local preflight",
       guides:[],
-      action:{label:"Отвори Secure Case Workspace",href:"/casepilot/"},
+      action:{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"},
       sourceLabel:"Public chat processing stopped before network/provider execution. Конкретните предмети се обработуваат во приватен case-scoped workspace."
     };
   }
@@ -771,7 +771,7 @@
           ...confidentialCaseHandoffMessage(),
           meta:"Privacy gate · public GPT call stopped · server preflight",
           guides:[],
-          action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot/"}
+          action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"}
         });
       }else if(d?.error==="macedonian_release_blocked"){
         attachments=[...selectedFiles];
