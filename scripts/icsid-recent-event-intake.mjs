@@ -131,7 +131,7 @@ export async function collectIcsidRecentEvents(){
   const coverage=[];
   for(const source of SOURCES){
     const html=await boundedFetch(source.url);
-    const parsed=parseIcsidRecentHtml(html,source);
+    const parsed=parseIcsidRecentHtml(html,{eventType:source.eventType,sourceUrl:source.url});
     if(parsed.length===0) throw new Error("icsid_zero_events_"+source.eventType);
     events.push(...parsed);
     coverage.push({event_type:source.eventType,source_url:source.url,count:parsed.length});
