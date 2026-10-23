@@ -10,7 +10,7 @@ import {
 // membership identity, client fact or conversation history.
 
 export const LEGAL_RUNTIME_GOVERNANCE_VERSION="ai-advokat-lioe-runtime-1.0.0";
-export const LEGAL_RUNTIME_TELEMETRY_SCHEMA="1.0";
+export const LEGAL_RUNTIME_TELEMETRY_SCHEMA="1.1";
 
 function officialWebSourceCount(sources=[]){
   let count=0;
@@ -261,6 +261,14 @@ export function buildSanitisedRuntimeRecord({
     total_tokens:totalTokens||null,
     elapsed_ms:Math.max(0,Number(elapsedMs)||0),
     model:result?.model||null,
+    error_code:typeof result?.error==="string"?result.error.slice(0,80):null,
+    http_status:Number.isFinite(Number(result?.status))?Number(result.status):null,
+    response_status:typeof result?.responseStatus==="string"?result.responseStatus.slice(0,80):null,
+    incomplete_reason:typeof result?.failureDetail==="string"?result.failureDetail.slice(0,120):null,
+    provider_request_id:typeof result?.requestId==="string"?result.requestId.slice(0,180):null,
+    provider_response_id:typeof result?.responseId==="string"?result.responseId.slice(0,180):null,
+    provider_timeout_ms:Number.isFinite(Number(result?.timeoutMs))?Number(result.timeoutMs):null,
+    provider_attempts_json:JSON.stringify(Array.isArray(result?.providerAttempts)?result.providerAttempts.slice(0,2):[]),
     telemetry_schema_version:LEGAL_RUNTIME_TELEMETRY_SCHEMA
   });
 }
@@ -281,8 +289,10 @@ export async function persistSanitisedRuntimeRecord(env,record){
         release_state,provider_state,postflight_required,first_pass_verification,
         verification_attempts,correction_required,web_search_used,official_web_source_count,
         external_source_count,article_context_count,guide_context_count,attachment_count,
-        provider_calls,input_tokens,output_tokens,total_tokens,elapsed_ms,model,telemetry_schema_version
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        provider_calls,input_tokens,output_tokens,total_tokens,elapsed_ms,model,
+        error_code,http_status,response_status,incomplete_reason,provider_request_id,
+        provider_response_id,provider_timeout_ms,provider_attempts_json,telemetry_schema_version
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(
       record.run_id,record.started_at,record.finished_at,record.mission_profile,record.problem_class,
       record.mode,record.source_mode,record.current_law_material,record.source_verification_state,
@@ -294,7 +304,9 @@ export async function persistSanitisedRuntimeRecord(env,record){
       record.correction_required,record.web_search_used,record.official_web_source_count,
       record.external_source_count,record.article_context_count,record.guide_context_count,
       record.attachment_count,record.provider_calls,record.input_tokens,record.output_tokens,
-      record.total_tokens,record.elapsed_ms,record.model,record.telemetry_schema_version
+      record.total_tokens,record.elapsed_ms,record.model,record.error_code,record.http_status,
+      record.response_status,record.incomplete_reason,record.provider_request_id,record.provider_response_id,
+      record.provider_timeout_ms,record.provider_attempts_json,record.telemetry_schema_version
     ).run();
     return Object.freeze({ok:true,state:"recorded"});
   }catch(error){
