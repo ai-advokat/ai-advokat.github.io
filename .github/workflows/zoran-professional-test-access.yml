@@ -71,7 +71,7 @@ jobs:
           const fs=require("fs");
           const d=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
           const q=v=>"'" + String(v).replaceAll("'","''") + "'";
-          console.log("DELETE FROM membership_usage_monthly WHERE subject_key="+q("account:"+d.account_id)+";");
+          if(d.reset_usage===true) console.log("DELETE FROM membership_usage_monthly WHERE subject_key="+q("account:"+d.account_id)+";");
           console.log("DELETE FROM membership_access_keys WHERE account_id="+q(d.account_id)+";");
           console.log("DELETE FROM membership_entitlements WHERE account_id="+q(d.account_id)+";");
           console.log("INSERT INTO membership_accounts(id,display_name,email,status) VALUES ("+[q(d.account_id),q(d.display_name),q(d.email),q("active")].join(",")+") ON CONFLICT(id) DO UPDATE SET display_name=excluded.display_name,email=excluded.email,status='active',updated_at=CURRENT_TIMESTAMP;");

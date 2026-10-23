@@ -1,4 +1,8 @@
 import { detectConfidentialCasePrompt } from '../src/chat-privacy.js';
+import { readDeviceAccess, saveDeviceAccess, forgetDeviceAccess } from './bot-device-access.mjs';
+// Accessing localStorage itself can throw when browser storage is disabled.
+let deviceStorage;
+try { deviceStorage = window.localStorage; } catch {}
 
 const $ = id => document.getElementById(id);
 const base = location.hostname.endsWith('workers.dev') ? location.origin : 'https://ai-advokat-github-io.aiadvokat16.workers.dev';
@@ -80,14 +84,18 @@ $('loginForm').onsubmit = async event => {
   try {
     const data = await request('/api/membership/status',{token:candidate,signal:AbortSignal.timeout(20000)});
     if (epoch !== generation || !$('login').open) return;
-    reset(); key = candidate; busy(false); $('login').close();
+    reset(); key = candidate;
+    forgetDeviceAccess(deviceStorage);
+    const remembered = $('rememberAccess').checked && saveDeviceAccess(deviceStorage,candidate);
+    busy(false); $('login').close();
     status('Професионален пристап · ' + data.membership.planCode + ' · OpenAI се проверува при секое барање.');
+    if ($('rememberAccess').checked && !remembered) status('Пристапот е активен, но прелистувачот не дозволува да се запомни.');
     $('question').focus();
   } catch { $('loginStatus').textContent = 'Клучот не е активен или услугата не е достапна. Обидете се повторно.'; }
   finally { $('loginSubmit').disabled = false; }
 };
 $('newChat').onclick = () => { reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Внесете професионален клуч преку ⋯.'); };
-$('logout').onclick = () => { key = ''; reset(); $('login').close(); status('Сесијата е избришана.'); };
+$('logout').onclick = () => { key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Сесијата и зачуваниот пристап се избришани.'); };
 $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => { $('question').style.height = 'auto'; $('question').style.height = Math.min($('question').scrollHeight,180) + 'px'; };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
@@ -115,7 +123,7 @@ $('composer').onsubmit = async event => {
     status('Одговорот е работен материјал. Проверете ги наведените извори.');
   } catch (error) {
     if (epoch !== generation) return;
-    if (error.status === 401) { key = ''; status('Пристапот истекол. Внесете активен клуч преку ⋯.'); }
+    if (error.status === 401) { key = ''; forgetDeviceAccess(deviceStorage); status('Пристапот истекол. Внесете активен код преку ⋯.'); }
     else if (error.name === 'AbortError') status('Барањето е запрено или истече времето за одговор. Можете да се обидете повторно.');
     else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
     $('question').value = q;
@@ -124,6 +132,22 @@ $('composer').onsubmit = async event => {
     if (epoch === generation) { pending = null; busy(false); $('question').focus(); }
   }
 };
+async function restoreAccess() {
+  const saved = readDeviceAccess(deviceStorage);
+  if (!saved) return;
+  const epoch = generation;
+  status('Го проверувам зачуваниот пристап…');
+  try {
+    await request('/api/membership/status',{token:saved,signal:AbortSignal.timeout(20000)});
+    if (epoch !== generation) return;
+    key = saved; busy(false); status('Добредојдовте. Подготвено за разговор.');
+  } catch(error) {
+    if (epoch !== generation) return;
+    if (error.status === 401) forgetDeviceAccess(deviceStorage);
+    status('Пристапот не може да се потврди. Отворете ⋯ → Професионален пристап.');
+  }
+}
+restoreAccess();
 $('exportChat').onclick = () => {
   if (!history.length) { status('Сè уште нема завршен разговор за преземање.'); return; }
   const text = 'AI Advokat — работен разговор\nПотребна е професионална проверка.\n\n' + history.map(m => (m.role === 'user' ? 'Вие' : 'AI Advokat') + ':\n' + m.text).join('\n\n');

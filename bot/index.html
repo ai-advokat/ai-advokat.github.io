@@ -17,10 +17,10 @@
       <button id="newChat" type="button">Нов разговор</button>
       <button id="exportChat" type="button">Преземи разговор (.txt)</button>
       <button id="access" type="button">Професионален пристап</button>
-      <button id="logout" type="button">Заврши и избриши ја сесијата</button>
+      <button id="logout" type="button">Одјави се и заборави го пристапот</button>
       <a href="/professional-library/" target="_blank" rel="noopener noreferrer">Материјали и библиотека ↗</a>
       <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">Приватни предмети ↗</a>
-      <p>Разговорот и клучот се чуваат само во меморијата на оваа страница. Со освежување се бришат. Приватните предмети имаат сопствено чување.</p>
+      <p>Разговорот се брише со освежување. Пристапот се памети до 7 дена само ако го изберете тоа при најавување. Приватните предмети имаат сопствено чување.</p>
     </nav></details>
   </header>
   <main>
@@ -28,7 +28,7 @@
       <div id="welcome"><div class="mark">A</div><h1>На што работиме денес?</h1><p>Прашајте слободно. Правните извори ги проверуваме во позадина.</p></div>
     </section>
     <div class="bottom">
-      <div id="status" role="status">Внесете го професионалниот клуч преку менито ⋯ за да започнете.</div>
+      <div id="status" role="status">Отворете ⋯ → Професионален пристап за првото поставување.</div>
       <form id="composer">
         <details id="plus"><summary aria-label="Додај материјали" title="Додај материјали">+</summary><div class="plus-panel">
           <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">Прикачи документи во приватен предмет ↗</a>
@@ -41,8 +41,9 @@
       <p class="footnote">AI може да погреши. Проверете ги изворите пред професионална употреба. Доверливи податоци внесувајте преку „+“.</p>
     </div>
   </main>
-  <dialog id="login"><form id="loginForm"><h2>Вашиот професионален пристап</h2><p>Внесете го приватниот AI Advokat клуч. Не внесувајте OpenAI API клуч.</p>
-    <label for="key">Приватен клуч</label><input id="key" type="password" autocomplete="off" spellcheck="false" required>
+  <dialog id="login"><form id="loginForm"><h2>Вашиот професионален пристап</h2><p>Санде може да го постави пристапот за вас. Потребен е само вашиот приватен код за влез.</p>
+    <label for="key">Код за влез</label><input id="key" type="password" autocomplete="off" spellcheck="false" required>
+    <label class="remember"><input id="rememberAccess" type="checkbox"> Запомни ме на овој личен уред до 7 дена</label><p class="remember-note">Изберете само на ваш уред: секој што го користи овој прелистувач ќе може да пристапи до ботот. Одјавувањето го отстранува зачуваниот код.</p>
     <p id="loginStatus" role="status"></p><div class="dialog-actions"><button id="closeLogin" type="button">Откажи</button><button id="loginSubmit" type="submit">Продолжи</button></div>
   </form></dialog>
 </body>
