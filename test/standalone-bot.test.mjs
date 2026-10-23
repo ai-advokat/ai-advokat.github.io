@@ -53,6 +53,21 @@ test('professional bot keeps high-depth paid drafting and one transient recovery
 });
 
 
+test('standalone bot preserves professional feature parity controls',()=>{
+  const html=fs.readFileSync('bot/index.html','utf8');
+  const source=fs.readFileSync('assets/standalone-bot.js','utf8');
+  assert.match(html,/id="mic"/);
+  assert.match(html,/Правен анализатор/);
+  assert.match(html,/CasePilot/);
+  assert.match(html,/Прикачи документи \/ Secure Case Workspace/);
+  assert.match(html,/data-export="docx"/);
+  assert.match(html,/data-export="pdf"/);
+  assert.match(source,/SpeechRecognition \|\| window\.webkitSpeechRecognition/);
+  assert.match(source,/refreshRuntimeStatus/);
+  assert.match(source,/exportLatestAssistant/);
+});
+
+
 test('P0 professional recovery keeps two bounded attempts and no uncontrolled Workers AI fallback',()=>{
   const source=fs.readFileSync('src/index.js','utf8');
   const orchestrator=fs.readFileSync('src/agent-orchestrator.js','utf8');
@@ -63,13 +78,12 @@ test('P0 professional recovery keeps two bounded attempts and no uncontrolled Wo
   assert.match(source,/sanitiseProviderAttempt\(retry,2\)/);
   assert.match(source,/OPENAI_RETRY_BACKOFF_MS\|\|250/);
   assert.match(source,/!membership\s*&&\s*governedOpenAIWorkersFallbackConfigured/);
-  assert.match(orchestrator,/OPENAI_PROVIDER_TIMEOUT_MS\|\|45000/);
-  assert.match(orchestrator,/signal:AbortSignal\.timeout\(providerTimeoutMs\)/);
+  assert.match(orchestrator,/OPENAI_PROVIDER_TIMEOUT_MS,45000,deadlineAt/);
+  assert.match(orchestrator,/AbortSignal\.timeout\(providerTimeoutMs\)/);
   assert.match(governance,/provider_attempts_json/);
   assert.match(migration,/ADD COLUMN error_code TEXT/);
   assert.match(migration,/ADD COLUMN provider_attempts_json TEXT/);
 });
-
 
 test('professional request deadline is shared across specialist chief retry and postflight',()=>{
   const source=fs.readFileSync('src/index.js','utf8');
