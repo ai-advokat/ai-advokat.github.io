@@ -5,3 +5,5 @@
 
 /* Shared brand artwork, kept proportional on desktop and mobile. */
 header{padding-left:12px}.brand{display:flex;align-items:center}.brand img{display:block;width:112px;height:auto;border-radius:6px}.footer-brand{display:flex;justify-content:center;margin-top:8px}.footer-brand img{display:block;width:100px;height:auto;border-radius:6px}@media(max-width:600px){header{padding-left:8px}.brand img{width:96px}.footer-brand img{width:80px}}
+
+#materialsDialog{max-width:640px;max-height:85dvh;overflow:auto}.material-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}.material-links a{padding:12px;border:1px solid var(--line);border-radius:10px;font-size:14px;text-decoration:none}.material-links a:hover{background:var(--user)}#researchMode{display:block;width:100%;margin-top:8px;padding:10px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px}#importGuides,#plusMaterials{padding:12px;background:var(--user);border-radius:8px;font-size:14px}

@@ -1,3 +1,4 @@
+import { localGuideDocuments } from './bot-materials.mjs';
 import { detectConfidentialCasePrompt } from '../src/chat-privacy.js';
 import { readDeviceAccess, saveDeviceAccess, forgetDeviceAccess } from './bot-device-access.mjs';
 // Accessing localStorage itself can throw when browser storage is disabled.
@@ -69,6 +70,7 @@ async function guideIds(q, signal) {
 }
 function reset() {
   generation++; pending?.abort(); pending = null; history = []; sessionId = crypto.randomUUID();
+  $('useLocalGuides').checked = false;
   $('messages').replaceChildren(welcome.cloneNode(true)); $('question').value = ''; $('question').style.height = '';
   $('menu').open = false; busy(false);
 }
@@ -95,7 +97,7 @@ $('loginForm').onsubmit = async event => {
   finally { $('loginSubmit').disabled = false; }
 };
 $('newChat').onclick = () => { reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Внесете професионален клуч преку ⋯.'); };
-$('logout').onclick = () => { key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Сесијата и зачуваниот пристап се избришани.'); };
+$('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Сесијата и зачуваниот пристап се избришани.'); };
 $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => { $('question').style.height = 'auto'; $('question').style.height = Math.min($('question').scrollHeight,180) + 'px'; };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
@@ -116,7 +118,8 @@ $('composer').onsubmit = async event => {
   status('Ги проверувам материјалите и го подготвувам одговорот…');
   try {
     const ids = await guideIds(q,controller.signal);
-    const data = await request('/api/bot',{signal:controller.signal,body:{q,sessionId,mode:'auto',guideIds:ids,history:history.slice(-8),attachments:[]}});
+    const guideDocuments = await localGuideDocuments(window.AIAdvokatGuideVault,ids,$('useLocalGuides').checked);
+    const data = await request('/api/bot',{signal:controller.signal,body:{q,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data);
     history.push({role:'user',text:q},{role:'assistant',text:String(data.answer || '').slice(0,4000)}); history = history.slice(-24);
@@ -154,4 +157,29 @@ $('exportChat').onclick = () => {
   const url = URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));
   const a = document.createElement('a'); a.href = url; a.download = 'AI-Advokat-razgovor.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
   $('menu').open = false;
+};
+
+async function vaultStatus() {
+  try {
+    const state = await window.AIAdvokatGuideVault?.summary();
+    $('vaultStatus').textContent = state?.available ? state.count + ' проверени водичи на овој прелистувач.' : 'Локалното чување не е достапно.';
+  } catch { $('vaultStatus').textContent = 'Локалната збирка не може да се прочита.'; }
+}
+function openMaterials() { $('menu').open = false; $('plus').open = false; $('materialsDialog').showModal(); vaultStatus(); }
+$('materials').onclick = openMaterials;
+$('plusMaterials').onclick = openMaterials;
+$('closeMaterials').onclick = () => $('materialsDialog').close();
+$('importGuides').onclick = () => $('guideFiles').click();
+$('guideFiles').onchange = async () => {
+  const files = [...$('guideFiles').files]; $('guideFiles').value = '';
+  if (!files.length) return;
+  $('importGuides').disabled = true;
+  $('vaultStatus').textContent = 'Ги проверувам оригиналните датотеки…';
+  try {
+    const response = await fetch('/data/guides.json',{cache:'no-store'});
+    if (!response.ok) throw new Error('Регистарот не е достапен.');
+    const result = await window.AIAdvokatGuideVault.importFiles(files,await response.json());
+    $('vaultStatus').textContent = 'Вчитани: ' + result.imported + ' · одбиени: ' + result.rejected + ' · прескокнати: ' + result.skipped + '.';
+  } catch { $('vaultStatus').textContent = 'Вчитувањето не успеа. Проверете ги датотеките и пристапот до регистарот.'; }
+  finally { $('importGuides').disabled = false; }
 };
