@@ -31,18 +31,29 @@ function message(role, text, model = '') {
   article.scrollIntoView({block:'end'});
   return article;
 }
-function sources(article, data) {
-  const rows = ['sources','legalSources','caseLawSources','guideSources','publicationSources'].flatMap(k => Array.isArray(data[k]) ? data[k] : []);
+function sources(article, data, guides = []) {
+  // Guides matched in the browser are sent to the server as context, so the reader sees them as sources too.
+  const guideRows = guides.map(g => ({title: 'Водич: ' + (g.title || g.id), url: g.url ? new URL(g.url, location.origin).href : ''}));
+  const rows = [...['sources','legalSources','caseLawSources','guideSources','publicationSources'].flatMap(k => Array.isArray(data[k]) ? data[k] : []), ...guideRows];
   const details = document.createElement('details'); details.className = 'sources';
   const summary = document.createElement('summary'); summary.textContent = 'Извори'; details.append(summary);
   const seen = new Set();
   for (const row of rows) {
+    const label = String(row.title || row.label || row.name || '').trim();
     const raw = row.url || row.sourceUrl || row.source_url;
-    let url; try { url = new URL(raw); } catch { continue; }
-    if (url.protocol !== 'https:' || seen.has(url.href)) continue;
-    seen.add(url.href);
-    const a = document.createElement('a'); a.href = url.href; a.target = '_blank'; a.rel = 'noopener noreferrer';
-    a.textContent = row.title || row.label || row.name || url.hostname; details.append(a);
+    let url = null; try { url = new URL(raw); } catch {}
+    if (url && url.protocol === 'https:') {
+      if (seen.has(url.href)) continue;
+      seen.add(url.href);
+      const a = document.createElement('a'); a.href = url.href; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.textContent = label || url.hostname; details.append(a);
+    } else if (label && !seen.has('label:' + label)) {
+      // Sources without a public URL (e.g. the approved ZKP commentary) are shown as plain text, never dropped.
+      seen.add('label:' + label);
+      const span = document.createElement('span'); span.className = 'source-text'; span.textContent = label;
+      span.style.cssText = 'display:block;padding:5px 0;color:var(--muted)';
+      details.append(span);
+    }
   }
   if (seen.size) article.append(details);
 }
@@ -59,13 +70,13 @@ async function request(path, {token=key, body, signal} = {}) {
   }
   return data;
 }
-async function guideIds(q, signal) {
+async function guideMatches(q, signal) {
   try {
     const responses = await Promise.all(['/data/guides.json','/data/public-practical-guides-38-73.json'].map(url => fetch(url,{signal})));
     const data = await Promise.all(responses.map(r => r.ok ? r.json() : {}));
     const records = new Map((data[0].records || []).map(r => [String(r.id),r]));
     for (const row of data[1].guides || []) records.set(String(row.id),{...records.get(String(row.id)),...row});
-    return (window.AIAdvokatGuideRouter?.routeGuides(q,[...records.values()],{limit:3,minScore:10}) || []).map(r => r.id);
+    return window.AIAdvokatGuideRouter?.routeGuides(q,[...records.values()],{limit:3,minScore:10}) || [];
   } catch { return []; }
 }
 function reset() {
@@ -117,11 +128,11 @@ $('composer').onsubmit = async event => {
   message('user',q); $('question').value = ''; $('question').style.height = '';
   status('Ги проверувам материјалите и го подготвувам одговорот…');
   try {
-    const ids = await guideIds(q,controller.signal);
+    const guides = await guideMatches(q,controller.signal), ids = guides.map(g => g.id);
     const guideDocuments = await localGuideDocuments(window.AIAdvokatGuideVault,ids,$('useLocalGuides').checked);
     const data = await request('/api/bot',{signal:controller.signal,body:{q,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
-    const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data);
+    const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data,guides);
     history.push({role:'user',text:q},{role:'assistant',text:String(data.answer || '').slice(0,4000)}); history = history.slice(-24);
     status('Одговорот е работен материјал. Проверете ги наведените извори.');
   } catch (error) {
