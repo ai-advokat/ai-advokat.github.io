@@ -1,0 +1,123 @@
+name: AI Advokat P0 0050 offline verifier v2
+
+on:
+  push:
+    branches: ["ops/p0-0050-controlled-production-retry"]
+    paths:
+      - ".github/workflows/p0-0050-offline-verifier-v2.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SOURCE_JOB_ID: "120697258778"
+      EXPORT_SHA: "f1ebebd8c8af072881b982464ea09ffe660e71f7ecbe920f2706aa4decc84784"
+      EXPORT_BYTES: "13880343"
+      CANDIDATE_SHA: "1d65b251343cab4b1329d8cc8478e8948d363750"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Recover verified export privately
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN"             "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/jobs/$SOURCE_JOB_ID/logs" -o /tmp/source.log
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          s=Path("/tmp/source.log").read_text(errors="replace")
+          m=re.search(r'https://[^\s]+\.sql\?X-Amz-Expires=3600[^\s]+',s)
+          if not m: raise SystemExit("export reference unavailable")
+          Path("/tmp/url").write_text(m.group(0))
+          PY
+          curl -fsSL "$(cat /tmp/url)" -o /tmp/prod.sql
+          rm -f /tmp/url /tmp/source.log
+          test "$(sha256sum /tmp/prod.sql | cut -d' ' -f1)" = "$EXPORT_SHA"
+          test "$(stat -c '%s' /tmp/prod.sql)" = "$EXPORT_BYTES"
+
+      - name: Full local mirror and prestate
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/mirror
+          npx wrangler d1 execute DB --local --persist-to=/tmp/mirror --config wrangler.jsonc --file=/tmp/prod.sql >/tmp/import.log 2>&1
+          npx wrangler d1 migrations list DB --local --persist-to=/tmp/mirror --config wrangler.jsonc | tee /tmp/pending-before.txt
+          found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/pending-before.txt | sort -u || true)"
+          expected="$(printf '%s\n' 0045_case_private_d1_object_store.sql 0048_zkp_commentary_v6_secondary_layer.sql 0049_case_law_binding_extraction_audit.sql 0050_lioe_provider_diagnostics.sql)"
+          test "$found" = "$expected"
+          npx wrangler d1 execute DB --local --persist-to=/tmp/mirror --config wrangler.jsonc             --command "SELECT COUNT(*) AS d1_forbidden FROM d1_migrations WHERE name IN ('0045_case_private_d1_object_store.sql','0048_zkp_commentary_v6_secondary_layer.sql','0049_case_law_binding_extraction_audit.sql'); SELECT COUNT(*) AS t45 FROM sqlite_master WHERE type='table' AND name='case_private_object_chunks'; SELECT COUNT(*) AS t48 FROM sqlite_master WHERE type='table' AND name IN ('zkp_commentary_releases','zkp_commentary_articles'); SELECT COUNT(*) AS c49 FROM pragma_table_info('case_law_provenance') WHERE name IN ('remote_content_hash_verified','binding_verification_method','binding_reviewed_by','binding_reviewed_at','extraction_method','extracted_text_sha256'); SELECT COUNT(*) AS v50 FROM schema_migrations WHERE version='50';"             | tee /tmp/prestate.txt
+          grep -q '"d1_forbidden": 0' /tmp/prestate.txt
+          grep -q '"t45": 1' /tmp/prestate.txt
+          grep -q '"t48": 2' /tmp/prestate.txt
+          grep -q '"c49": 0' /tmp/prestate.txt
+          grep -q '"v50": 0' /tmp/prestate.txt
+
+      - name: Apply only 0050 locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/m0050 && mkdir -p /tmp/m0050
+          git show "$CANDIDATE_SHA:migrations/0050_lioe_provider_diagnostics.sql" > /tmp/m0050/0050_lioe_provider_diagnostics.sql
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          c.d1_databases[0].migrations_dir="/tmp/m0050";
+          fs.writeFileSync("/tmp/w0050.jsonc",JSON.stringify(c,null,2)+"\n");
+          NODE
+          npx wrangler d1 migrations apply DB --local --persist-to=/tmp/mirror --config /tmp/w0050.jsonc | tee /tmp/apply1.txt
+
+      - name: Verify isolation and replay prevention
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --local --persist-to=/tmp/mirror --config wrangler.jsonc             --command "SELECT COUNT(*) AS s50 FROM schema_migrations WHERE version='50'; SELECT COUNT(*) AS d50 FROM d1_migrations WHERE name='0050_lioe_provider_diagnostics.sql'; SELECT COUNT(*) AS d1_forbidden FROM d1_migrations WHERE name IN ('0045_case_private_d1_object_store.sql','0048_zkp_commentary_v6_secondary_layer.sql','0049_case_law_binding_extraction_audit.sql'); SELECT COUNT(*) AS t45 FROM sqlite_master WHERE type='table' AND name='case_private_object_chunks'; SELECT COUNT(*) AS t48 FROM sqlite_master WHERE type='table' AND name IN ('zkp_commentary_releases','zkp_commentary_articles'); SELECT COUNT(*) AS c49 FROM pragma_table_info('case_law_provenance') WHERE name IN ('remote_content_hash_verified','binding_verification_method','binding_reviewed_by','binding_reviewed_at','extraction_method','extracted_text_sha256'); SELECT COUNT(*) AS c50 FROM pragma_table_info('lioe_runtime_runs') WHERE name IN ('error_code','http_status','response_status','incomplete_reason','provider_request_id','provider_response_id','provider_timeout_ms','provider_attempts_json');"             | tee /tmp/poststate.txt
+          grep -q '"s50": 1' /tmp/poststate.txt
+          grep -q '"d50": 1' /tmp/poststate.txt
+          grep -q '"d1_forbidden": 0' /tmp/poststate.txt
+          grep -q '"t45": 1' /tmp/poststate.txt
+          grep -q '"t48": 2' /tmp/poststate.txt
+          grep -q '"c49": 0' /tmp/poststate.txt
+          grep -q '"c50": 8' /tmp/poststate.txt
+
+          npx wrangler d1 migrations list DB --local --persist-to=/tmp/mirror --config wrangler.jsonc | tee /tmp/pending-after.txt
+          after="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/pending-after.txt | sort -u || true)"
+          expected_after="$(printf '%s\n' 0045_case_private_d1_object_store.sql 0048_zkp_commentary_v6_secondary_layer.sql 0049_case_law_binding_extraction_audit.sql)"
+          test "$after" = "$expected_after"
+
+          npx wrangler d1 migrations apply DB --local --persist-to=/tmp/mirror --config /tmp/w0050.jsonc | tee /tmp/apply2.txt
+          npx wrangler d1 execute DB --local --persist-to=/tmp/mirror --config wrangler.jsonc             --command "SELECT COUNT(*) AS s50 FROM schema_migrations WHERE version='50'; SELECT COUNT(*) AS d50 FROM d1_migrations WHERE name='0050_lioe_provider_diagnostics.sql';" | tee /tmp/replay.txt
+          grep -q '"s50": 1' /tmp/replay.txt
+          grep -q '"d50": 1' /tmp/replay.txt
+
+      - name: Upload sanitised proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0-0050-offline-v2-proof
+          retention-days: 30
+          path: |
+            /tmp/pending-before.txt
+            /tmp/prestate.txt
+            /tmp/apply1.txt
+            /tmp/poststate.txt
+            /tmp/pending-after.txt
+            /tmp/apply2.txt
+            /tmp/replay.txt
+          if-no-files-found: error
+
+      - name: Remove local copy
+        if: always()
+        run: rm -rf /tmp/prod.sql /tmp/mirror /tmp/m0050 /tmp/w0050.jsonc /tmp/import.log
