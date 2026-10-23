@@ -69,3 +69,22 @@ test('P0 professional recovery keeps two bounded attempts and no uncontrolled Wo
   assert.match(migration,/ADD COLUMN error_code TEXT/);
   assert.match(migration,/ADD COLUMN provider_attempts_json TEXT/);
 });
+
+
+test('professional request deadline is shared across specialist chief retry and postflight',()=>{
+  const source=fs.readFileSync('src/index.js','utf8');
+  const orchestrator=fs.readFileSync('src/agent-orchestrator.js','utf8');
+  const client=fs.readFileSync('assets/standalone-bot.js','utf8');
+  assert.match(source,/PROFESSIONAL_REQUEST_BUDGET_MS\|\|160000/);
+  assert.match(source,/Math\.min\(170000,Math\.max\(120000/);
+  assert.match(source,/professionalRequestDeadlineAt=Date\.now\(\)\+professionalRequestBudgetMs/);
+  assert.match(source,/professionalRequestDeadlineAt-Date\.now\(\)>=10000/);
+  assert.ok((source.match(/deadlineAt:professionalRequestDeadlineAt/g)||[]).length>=3);
+  assert.match(orchestrator,/OPENAI_SPECIALIST_TIMEOUT_MS,30000,deadlineAt/);
+  assert.match(orchestrator,/OPENAI_PROVIDER_TIMEOUT_MS,45000,deadlineAt/);
+  assert.match(orchestrator,/OPENAI_POSTFLIGHT_TIMEOUT_MS,45000,deadlineAt/);
+  assert.match(orchestrator,/specialist_deadline_exhausted/);
+  assert.match(orchestrator,/openai_request_deadline_exhausted/);
+  assert.match(orchestrator,/legal_postflight_deadline_exhausted/);
+  assert.match(client,/setTimeout\(\(\) => controller\.abort\(\),180000\)/);
+});
