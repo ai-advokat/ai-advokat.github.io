@@ -77,3 +77,22 @@ test("public scholarly surfaces stay synchronized with the six-work registry",()
   assert.doesNotMatch(laskarci,/Judicial Independence, Reasoned Judgments and the Limits of Political Speech/);
   assert.match(laskarci,/\(Version 1\.0\) \[Working paper\]\. AI Advokat\./);
 });
+
+
+test("published works carry their public scholar-page abstract into bot context",()=>{
+  const records=flattenAuthorialPublicationRegistry(registry).filter(x=>x.status==="published_open");
+  assert.equal(records.length,6);
+  for(const item of records) assert.ok(item.abstractEn.length>200,item.id+" needs an abstract");
+  const hits=findAuthorialPublicationRecords(registry,"претрес на мобилен телефон адвокатска тајна",{limit:3});
+  const gate=enforceCanonicalContextProvenance(authorialPublicationContextItems(hits));
+  assert.equal(gate.blocked.length,0,JSON.stringify(gate.blocked));
+  assert.ok(gate.context.some(x=>/ABSTRACT_EN: .*privilege/i.test(x.text)));
+  for(const item of gate.context) assert.equal(item.provenance.legalAuthority,false);
+});
+
+test("restricted manual and unpublished records stay without abstracts",()=>{
+  for(const raw of registry.records.filter(x=>x.status!=="published_open")){
+    assert.equal(raw.abstract_en,undefined,raw.id);
+    assert.equal(raw.abstract_mk,undefined,raw.id);
+  }
+});

@@ -31,18 +31,29 @@ function message(role, text, model = '') {
   article.scrollIntoView({block:'end'});
   return article;
 }
-function sources(article, data) {
-  const rows = ['sources','legalSources','caseLawSources','guideSources','publicationSources'].flatMap(k => Array.isArray(data[k]) ? data[k] : []);
+function sources(article, data, guides = []) {
+  // Guides matched in the browser are sent to the server as context, so the reader sees them as sources too.
+  const guideRows = guides.map(g => ({title: 'Водич: ' + (g.title || g.id), url: g.url ? new URL(g.url, location.origin).href : ''}));
+  const rows = [...['sources','legalSources','caseLawSources','guideSources','publicationSources'].flatMap(k => Array.isArray(data[k]) ? data[k] : []), ...guideRows];
   const details = document.createElement('details'); details.className = 'sources';
   const summary = document.createElement('summary'); summary.textContent = 'Извори'; details.append(summary);
   const seen = new Set();
   for (const row of rows) {
+    const label = String(row.title || row.label || row.name || '').trim();
     const raw = row.url || row.sourceUrl || row.source_url;
-    let url; try { url = new URL(raw); } catch { continue; }
-    if (url.protocol !== 'https:' || seen.has(url.href)) continue;
-    seen.add(url.href);
-    const a = document.createElement('a'); a.href = url.href; a.target = '_blank'; a.rel = 'noopener noreferrer';
-    a.textContent = row.title || row.label || row.name || url.hostname; details.append(a);
+    let url = null; try { url = new URL(raw); } catch {}
+    if (url && url.protocol === 'https:') {
+      if (seen.has(url.href)) continue;
+      seen.add(url.href);
+      const a = document.createElement('a'); a.href = url.href; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.textContent = label || url.hostname; details.append(a);
+    } else if (label && !seen.has('label:' + label)) {
+      // Sources without a public URL (e.g. the approved ZKP commentary) are shown as plain text, never dropped.
+      seen.add('label:' + label);
+      const span = document.createElement('span'); span.className = 'source-text'; span.textContent = label;
+      span.style.cssText = 'display:block;padding:5px 0;color:var(--muted)';
+      details.append(span);
+    }
   }
   if (seen.size) article.append(details);
 }
@@ -59,13 +70,13 @@ async function request(path, {token=key, body, signal} = {}) {
   }
   return data;
 }
-async function guideIds(q, signal) {
+async function guideMatches(q, signal) {
   try {
     const responses = await Promise.all(['/data/guides.json','/data/public-practical-guides-38-73.json'].map(url => fetch(url,{signal})));
     const data = await Promise.all(responses.map(r => r.ok ? r.json() : {}));
     const records = new Map((data[0].records || []).map(r => [String(r.id),r]));
     for (const row of data[1].guides || []) records.set(String(row.id),{...records.get(String(row.id)),...row});
-    return (window.AIAdvokatGuideRouter?.routeGuides(q,[...records.values()],{limit:3,minScore:10}) || []).map(r => r.id);
+    return window.AIAdvokatGuideRouter?.routeGuides(q,[...records.values()],{limit:3,minScore:10}) || [];
   } catch { return []; }
 }
 function reset() {
@@ -101,6 +112,22 @@ $('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; for
 $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => { $('question').style.height = 'auto'; $('question').style.height = Math.min($('question').scrollHeight,180) + 'px'; };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SpeechRecognitionCtor) $('mic').hidden = true;
+else $('mic').onclick = () => {
+  const rec = new SpeechRecognitionCtor();
+  rec.lang = 'mk-MK'; rec.interimResults = false; rec.maxAlternatives = 1;
+  status('Слушам… зборувајте на македонски.');
+  rec.onresult = event => {
+    const spoken = String(event.results?.[0]?.[0]?.transcript || '').trim();
+    if (!spoken) return;
+    $('question').value = ($('question').value + ' ' + spoken).trim();
+    $('question').dispatchEvent(new Event('input'));
+    status('Диктирањето е внесено. Проверете го текстот и испратете.');
+  };
+  rec.onerror = () => status('Диктирањето не успеа. Можете да продолжите со пишување.');
+  rec.start();
+};
 $('question').addEventListener('paste', event => { if (event.clipboardData?.files?.length) { event.preventDefault(); $('plus').open = true; status('Прикачете ги документите во приватниот простор преку „+“.'); } });
 $('composer').addEventListener('dragover', event => event.preventDefault());
 $('composer').addEventListener('drop', event => { event.preventDefault(); $('plus').open = true; status('Документите се прикачуваат во приватниот простор преку „+“.'); });
@@ -117,11 +144,11 @@ $('composer').onsubmit = async event => {
   message('user',q); $('question').value = ''; $('question').style.height = '';
   status('Ги проверувам материјалите и го подготвувам одговорот…');
   try {
-    const ids = await guideIds(q,controller.signal);
+    const guides = await guideMatches(q,controller.signal), ids = guides.map(g => g.id);
     const guideDocuments = await localGuideDocuments(window.AIAdvokatGuideVault,ids,$('useLocalGuides').checked);
     const data = await request('/api/bot',{signal:controller.signal,body:{q,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
-    const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data);
+    const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data,guides);
     history.push({role:'user',text:q},{role:'assistant',text:String(data.answer || '').slice(0,4000)}); history = history.slice(-24);
     status('Одговорот е работен материјал. Проверете ги наведените извори.');
   } catch (error) {
@@ -151,6 +178,47 @@ async function restoreAccess() {
   }
 }
 restoreAccess();
+async function exportLatestAssistant(format) {
+  const latest=[...history].reverse().find(item=>item.role==='assistant' && String(item.text||'').trim());
+  if(!latest){ status('Сè уште нема AI одговор за извоз.'); return; }
+  if(['txt','md'].includes(format)){
+    const ext=format;
+    const body=format==='md' ? '# AI Advokat — работен одговор\n\n'+latest.text : 'AI Advokat — работен одговор\n\n'+latest.text;
+    const url=URL.createObjectURL(new Blob([body],{type:'text/plain;charset=utf-8'}));
+    const a=document.createElement('a'); a.href=url; a.download='AI-Advokat-working-draft.'+ext; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000); return;
+  }
+  try{
+    const mod=await import('/assets/casepilot-export.js');
+    const core=await import('/src/case-export.js');
+    const report=core.normalizeCaseExportReport({
+      title:'AI Advokat — работен одговор',
+      summary:latest.text,
+      sections:[{title:'AI Advokat',content:latest.text}],
+      humanGate:'Потребна е професионална човечка проверка пред последична употреба.'
+    });
+    await mod.downloadCasePilotExport(report,format,{filename:'AI-Advokat-working-draft.'+format});
+  }catch{
+    status('Извозот во '+format.toUpperCase()+' не успеа. Обидете се со TXT или MD.');
+  }
+}
+for(const button of document.querySelectorAll('[data-export]')){
+  button.addEventListener('click',()=>exportLatestAssistant(String(button.dataset.export||'txt')));
+}
+
+async function refreshRuntimeStatus(){
+  const node=$('runtimeStatus'); if(!node) return;
+  try{
+    const response=await fetch(base+'/api/orchestrator',{headers:{accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(15000)});
+    if(!response.ok) throw new Error('runtime_'+response.status);
+    const data=await response.json(); const runtime=data?.runtime||{};
+    const paid=String(runtime.paidProviderModel||'OpenAI').trim();
+    const ready=runtime.providerExecution==='configured_for_api_chat_execution';
+    node.textContent=ready ? 'AI runtime: '+paid+' · активен' : 'AI runtime: делумно активен — проверете provider/runtime поставки.';
+  }catch{ node.textContent='AI runtime: моментално недостапен за проверка.'; }
+}
+refreshRuntimeStatus();
+
 $('exportChat').onclick = () => {
   if (!history.length) { status('Сè уште нема завршен разговор за преземање.'); return; }
   const text = 'AI Advokat — работен разговор\nПотребна е професионална проверка.\n\n' + history.map(m => (m.role === 'user' ? 'Вие' : 'AI Advokat') + ':\n' + m.text).join('\n\n');

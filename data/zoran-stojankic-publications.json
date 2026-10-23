@@ -37,7 +37,9 @@
       "zenodo_url": "https://zenodo.org/records/23557648",
       "landing_url": "/scholar/digital-earnings/",
       "pdf_url": "/scholar/digital-earnings/paper.pdf",
-      "citation": "Stojankich, Z. (2026). Taxation of Digital Earnings in North Macedonia: Statutory Obligations, Double Taxation and Legal Certainty for Citizens (Version 3.0) [Preprint]. AI Advokat. https://doi.org/10.5281/zenodo.23557648"
+      "citation": "Stojankich, Z. (2026). Taxation of Digital Earnings in North Macedonia: Statutory Obligations, Double Taxation and Legal Certainty for Citizens (Version 3.0) [Preprint]. AI Advokat. https://doi.org/10.5281/zenodo.23557648",
+      "abstract_en": "This preprint examines the taxation of income earned through digital platforms by individuals resident in North Macedonia. It distinguishes income classification, the tax base, foreign withholding and the domestic foreign tax credit, with particular attention to electronic service, limitation periods and legal certainty. The study combines doctrinal analysis, selected scholarly literature and a limited comparison with Serbia and international platform-reporting frameworks. Hypothetical examples and nine practical appendices illustrate an evidential protocol linking platform statements, bank receipts and the procedural case file.",
+      "abstract_source": "/scholar/digital-earnings/ (public AI Advokat scholar page)"
     },
     {
       "id": "chain-2026",
@@ -68,7 +70,9 @@
       "zenodo_url": "https://zenodo.org/records/22981744",
       "landing_url": "/scholar/sindzir/",
       "pdf_url": "/scholar/sindzir/paper.pdf",
-      "citation": "Stojankich, Z. (2026). “CHAIN” — Plea Agreements, Guilty Pleas and the Limits of Criminal Justice (Version 1.0) [Working paper]. Zenodo. https://doi.org/10.5281/zenodo.22981744"
+      "citation": "Stojankich, Z. (2026). “CHAIN” — Plea Agreements, Guilty Pleas and the Limits of Criminal Justice (Version 1.0) [Working paper]. Zenodo. https://doi.org/10.5281/zenodo.22981744",
+      "abstract_en": "The criminal case publicly known as “Chain” provides a significant case study for contemporary North Macedonian criminal law and criminal procedure. Its legal relevance lies not only in the scale of the prosecutorial allegations, the number of natural and legal persons involved, and the alleged loss to the State Budget, but also in the different procedural routes through which individual criminal liability has been, or continues to be, determined: plea agreements concluded before the main hearing, guilty pleas entered during trial, and ordinary evidential proceedings against the remaining defendants. The central thesis is that plea bargaining and guilty pleas are legitimate and necessary instruments of modern criminal procedure, but their use in organised, high-value financial crime must be accompanied by enhanced safeguards of legality, voluntariness, proportionality, individualisation, confiscation, judicial scrutiny and transparent reasoning.",
+      "abstract_source": "/scholar/sindzir/ (public AI Advokat scholar page)"
     },
     {
       "id": "electronic-ai-evidence-2026",
@@ -99,7 +103,9 @@
       "zenodo_url": "https://zenodo.org/records/23017531",
       "landing_url": "/scholar/electronic-ai-evidence/",
       "pdf_url": "/scholar/electronic-ai-evidence/paper.pdf",
-      "citation": "Stojankich, Z. (2026). Electronic and AI-Generated Evidence in Judicial Proceedings (Version 1.0) [Working paper]. Zenodo. https://doi.org/10.5281/zenodo.23017531"
+      "citation": "Stojankich, Z. (2026). Electronic and AI-Generated Evidence in Judicial Proceedings (Version 1.0) [Working paper]. Zenodo. https://doi.org/10.5281/zenodo.23017531",
+      "abstract_en": "This paper examines electronic and AI-generated evidence as a distinct evidential phenomenon that is reshaping the factual, technical and procedural foundations of judicial decision-making. Its central thesis is that electronic form does not, in itself, diminish evidential value, but it does require verifiable safeguards concerning provenance, integrity, context and the manner of acquisition. With AI-generated and synthetic content, traditional visual or auditory persuasiveness is no longer sufficient. Courts must distinguish admissibility, authenticity, integrity, reliability and evidential weight, while a party must have a genuine opportunity to examine the methodology, data, tool version, error rate and chain of custody. The practical contribution consists of a five-stage test for judicial assessment, a chain-of-custody model, a protocol for suspected deepfakes, questions for expert witnesses and checklists for lawyers and courts.",
+      "abstract_source": "/scholar/electronic-ai-evidence/ (public AI Advokat scholar page)"
     },
     {
       "id": "mobile-phone-privilege-2026",
@@ -130,7 +136,9 @@
       "zenodo_url": "https://zenodo.org/records/23021388",
       "landing_url": "/scholar/mobile-phone-privilege/",
       "pdf_url": "/scholar/mobile-phone-privilege/paper.pdf",
-      "citation": "Stojankich, Z. (2026). Searching a Mobile Phone and the Protection of Legal Professional Privilege (Version 1.0) [Working paper]. Zenodo. https://doi.org/10.5281/zenodo.23021388"
+      "citation": "Stojankich, Z. (2026). Searching a Mobile Phone and the Protection of Legal Professional Privilege (Version 1.0) [Working paper]. Zenodo. https://doi.org/10.5281/zenodo.23021388",
+      "abstract_en": "Searching a mobile phone may expose legal advice, defence strategy and the confidential records of several clients. Lawful seizure of the device does not, by itself, justify unrestricted examination of its contents. The paper examines the relationship between powers to obtain electronic evidence and the protection of legal professional privilege in North Macedonian law. Particular attention is given to a client’s phone, a lawyer’s phone, mixed-content devices, cloud access and suspicion of criminal involvement by a lawyer. Its principal conclusion is that protection must operate before confidential material becomes available to the prosecution team. The proposed model combines sealed preservation, limited technical acquisition, independent filtering and judicial determination of disputed confidentiality.",
+      "abstract_source": "/scholar/mobile-phone-privilege/ (public AI Advokat scholar page)"
     },
     {
       "id": "ai-legal-practice-judiciary-2026",
@@ -161,7 +169,9 @@
       "zenodo_url": "https://zenodo.org/records/23023442",
       "landing_url": "/scholar/ai-legal-practice-judiciary/",
       "pdf_url": "/scholar/ai-legal-practice-judiciary/paper.pdf",
-      "citation": "Stojankich, Z. (2026). Artificial Intelligence in the Legal Profession and the Judiciary (Version 1.0) [Working paper]. Zenodo. https://doi.org/10.5281/zenodo.23023442"
+      "citation": "Stojankich, Z. (2026). Artificial Intelligence in the Legal Profession and the Judiciary (Version 1.0) [Working paper]. Zenodo. https://doi.org/10.5281/zenodo.23023442",
+      "abstract_en": "This paper examines the use of artificial intelligence in legal practice and the judiciary as a question of professional responsibility, the law of evidence and fundamental procedural safeguards. Its central thesis is that AI can materially improve legal research, case organisation, evidential analysis and access to justice, but only where it remains subject to meaningful human control, verifiable sources, documented use and clearly allocated responsibility. Particular attention is given to automated decision-making, algorithmic bias, generative errors, deepfake content, chain of custody, expert evidence, access to the model and liability for damage. The paper concludes by proposing a functional test for permissible use: lawful purpose, necessity, data quality, explainability, human oversight, effective contestability and an individualised decision.",
+      "abstract_source": "/scholar/ai-legal-practice-judiciary/ (public AI Advokat scholar page)"
     },
     {
       "id": "laskarci-2026",
@@ -192,7 +202,9 @@
       "zenodo_url": "https://zenodo.org/records/23467865",
       "landing_url": "/scholar/laskarci/",
       "pdf_url": "/scholar/laskarci/paper.pdf",
-      "citation": "Stojankich, Z. (2026). Laskarci – Individual Criminal Responsibility, Institutional Accountability and Political Responsibility (Version 1.0) [Working paper]. AI Advokat. https://doi.org/10.5281/zenodo.23467865"
+      "citation": "Stojankich, Z. (2026). Laskarci – Individual Criminal Responsibility, Institutional Accountability and Political Responsibility (Version 1.0) [Working paper]. AI Advokat. https://doi.org/10.5281/zenodo.23467865",
+      "abstract_en": "This bilingual Macedonian–English working paper examines the Laskarci bus accident through the interconnected concepts of individual criminal responsibility, institutional accountability and political responsibility. The analysis distinguishes criminal liability, which is determined through judicial proceedings, from broader institutional and political forms of accountability. Particular attention is given to the responsibilities of public institutions, regulatory and supervisory mechanisms, road-traffic safety, and the need for systemic learning from major public-safety failures.",
+      "abstract_source": "/scholar/laskarci/ (public AI Advokat scholar page)"
     },
     {
       "id": "criminal-procedure-manual-2026",
