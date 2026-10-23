@@ -19,6 +19,7 @@ import {
   orchestratorInstructions,
   specialistExecutionRequired,
   runBoundedSpecialists,
+  runOpenAIOrchestrator,
   runLegalPostflightVerifier
 } from "../src/agent-orchestrator.js";
 import {
