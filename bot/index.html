@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="mk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <title>AI Advokat · Разговор</title>
+  <link rel="icon" href="/assets/app-icon.svg">
+  <link rel="stylesheet" href="/assets/standalone-bot.css">
+  <script defer src="/assets/guide-router.js"></script>
+  <script type="module" src="/assets/standalone-bot.js"></script>
+</head>
+<body>
+  <header><a href="/bot/" class="brand">AI Advokat <span>за вашата работа</span></a>
+    <details id="menu"><summary aria-label="Разговор и поставки">⋯</summary><nav aria-label="Поставки">
+      <button id="newChat" type="button">Нов разговор</button>
+      <button id="exportChat" type="button">Преземи разговор (.txt)</button>
+      <button id="access" type="button">Професионален пристап</button>
+      <button id="logout" type="button">Заврши и избриши ја сесијата</button>
+      <a href="/professional-library/" target="_blank" rel="noopener noreferrer">Материјали и библиотека ↗</a>
+      <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">Приватни предмети ↗</a>
+      <p>Разговорот и клучот се чуваат само во меморијата на оваа страница. Со освежување се бришат. Приватните предмети имаат сопствено чување.</p>
+    </nav></details>
+  </header>
+  <main>
+    <section id="messages" aria-label="Разговор" aria-live="polite" aria-relevant="additions text">
+      <div id="welcome"><div class="mark">A</div><h1>На што работиме денес?</h1><p>Прашајте слободно. Правните извори ги проверуваме во позадина.</p></div>
+    </section>
+    <div class="bottom">
+      <div id="status" role="status">Внесете го професионалниот клуч преку менито ⋯ за да започнете.</div>
+      <form id="composer">
+        <details id="plus"><summary aria-label="Додај материјали" title="Додај материјали">+</summary><div class="plus-panel">
+          <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">Прикачи документи во приватен предмет ↗</a>
+          <p>Документите и конкретните предмети се анализираат во приватниот простор. Овој разговор служи за правно истражување.</p>
+        </div></details>
+        <textarea id="question" rows="1" maxlength="4000" aria-label="Порака" placeholder="Прашајте го AI Advokat…"></textarea>
+        <button id="send" type="submit" aria-label="Испрати" disabled>↑</button>
+        <button id="stop" type="button" aria-label="Запри" hidden>■</button>
+      </form>
+      <p class="footnote">AI може да погреши. Проверете ги изворите пред професионална употреба. Доверливи податоци внесувајте преку „+“.</p>
+    </div>
+  </main>
+  <dialog id="login"><form id="loginForm"><h2>Вашиот професионален пристап</h2><p>Внесете го приватниот AI Advokat клуч. Не внесувајте OpenAI API клуч.</p>
+    <label for="key">Приватен клуч</label><input id="key" type="password" autocomplete="off" spellcheck="false" required>
+    <p id="loginStatus" role="status"></p><div class="dialog-actions"><button id="closeLogin" type="button">Откажи</button><button id="loginSubmit" type="submit">Продолжи</button></div>
+  </form></dialog>
+</body>
+</html>

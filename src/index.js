@@ -5359,12 +5359,16 @@ async function handleLegalAnalyzerVerify(request,env){
   });
 }
 
-async function handleGPTChat(request,env){
+async function handleGPTChat(request,env,{openAIOnly=false}={}){
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
   const contentType=(request.headers.get("content-type") || "").toLowerCase();
   if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
 
   const readiness=orchestratorRuntimeReadiness(env);
+  // The standalone professional bot never degrades into anonymous/FREE chat.
+  const botMembership=openAIOnly ? await resolveMembership(request,env) : null;
+  if(openAIOnly && !botMembership) return json(request,{ok:false,error:"bot_membership_required",message:"Внесете активен професионален клуч."},401);
+  if(openAIOnly && readiness.provider!=="configured") return json(request,{ok:false,error:"gpt_provider_locked",message:"OpenAI моментално не е достапен. Обидете се повторно подоцна."},503);
   const freeProviderReady=freeWorkersAIConfigured(env);
   if(readiness.provider!=="configured" && !freeProviderReady){
     return json(request,{
@@ -5522,7 +5526,7 @@ async function handleGPTChat(request,env){
     && env.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"
     && readiness.provider==="configured";
 
-  const membership=await resolveMembership(request,env);
+  const membership=botMembership || await resolveMembership(request,env);
   let subject;
   let quota;
   if(membership){
@@ -7278,6 +7282,7 @@ export default {
     if (url.pathname === "/api/articles") return handleArticles(request, env, url);
     if (url.pathname === "/api/assistant") return handleAssistant(request, env, url);
     if (url.pathname === "/api/chat") return handleGPTChat(request, env);
+    if (url.pathname === "/api/bot") return handleGPTChat(request, env, {openAIOnly:true});
     if (url.pathname === "/api/legal-analyzer/verify") return handleLegalAnalyzerVerify(request, env);
     if (url.pathname === "/api/casepilot/case-law") return handleCasePilotCaseLawResearch(request, env);
     if (url.pathname === "/api/gazette-issue-index") return handleGazetteIssueIndex(request, env, url);
