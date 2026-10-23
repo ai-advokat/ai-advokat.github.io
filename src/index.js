@@ -5814,6 +5814,12 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
   if(useFreeWorkersAI) return runWorkersFallbackResponse();
 
+  const configuredProfessionalBudget=Number(env?.PROFESSIONAL_REQUEST_BUDGET_MS||160000);
+  const professionalRequestBudgetMs=Number.isFinite(configuredProfessionalBudget)
+    ? Math.min(170000,Math.max(120000,Math.trunc(configuredProfessionalBudget)))
+    : 160000;
+  const professionalRequestDeadlineAt=Date.now()+professionalRequestBudgetMs;
+
   const sanitiseProviderAttempt=(value,attempt)=>Object.freeze({
     attempt,
     error:String(value?.error||"").slice(0,80)||null,
@@ -5839,7 +5845,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
     history:historyCheck.history,
     maxOutputTokens,
-    reasoningEffort
+    reasoningEffort,
+    deadlineAt:professionalRequestDeadlineAt
   });
 
   let providerRecovery=null;
@@ -5855,7 +5862,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     const retryableResponseStatus=result.error==="openai_response_error"
       && [429,500,502,503,504].includes(transientStatus);
     const retryable=transientPrimaryErrors.has(String(result.error||""))
-      && (result.error!=="openai_response_error" || retryableResponseStatus);
+      && (result.error!=="openai_response_error" || retryableResponseStatus)
+      && (professionalRequestDeadlineAt-Date.now()>=10000);
     if(retryable){
       const first=result;
       const retryUsesWeb=explicitWebRequested ? webRequested : false;
@@ -5881,7 +5889,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
         history:historyCheck.history,
         maxOutputTokens:Math.min(6000,Math.max(maxOutputTokens,incompleteRecoveryBudget,missionProfile==="L3_CONSEQUENTIAL"?5200:maxOutputTokens)),
-        reasoningEffort:["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort
+        reasoningEffort:["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort,
+        deadlineAt:professionalRequestDeadlineAt
       });
       const a=first.usage||{};
       const b=retry.usage||{};
@@ -5984,7 +5993,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     draft:result.text,
     corpusContext,
     webSources:result.sources||[],
-    maxAttempts:1
+    maxAttempts:1,
+    deadlineAt:professionalRequestDeadlineAt
   });
 
   if(!postflight.ok){
