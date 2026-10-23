@@ -11,3 +11,6 @@ ALTER TABLE lioe_runtime_runs ADD COLUMN provider_request_id TEXT;
 ALTER TABLE lioe_runtime_runs ADD COLUMN provider_response_id TEXT;
 ALTER TABLE lioe_runtime_runs ADD COLUMN provider_timeout_ms INTEGER;
 ALTER TABLE lioe_runtime_runs ADD COLUMN provider_attempts_json TEXT;
+
+INSERT OR IGNORE INTO schema_migrations(version,description)
+VALUES ('50','LIOE privacy-safe provider failure diagnostics');
