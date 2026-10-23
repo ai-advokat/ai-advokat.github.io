@@ -527,8 +527,20 @@ function mergeWebSources(...groups){
   return out;
 }
 
+function boundedProviderTimeout(envValue,fallbackMs,deadlineAt,{minStartMs=8000,maxMs=90000}={}){
+  const configured=Number(envValue||fallbackMs);
+  const stageMs=Number.isFinite(configured)
+    ? Math.min(maxMs,Math.max(1000,Math.trunc(configured)))
+    : fallbackMs;
+  const deadline=Number(deadlineAt||0);
+  if(!Number.isFinite(deadline)||deadline<=0) return {ok:true,timeoutMs:stageMs,remainingMs:null};
+  const remainingMs=Math.max(0,deadline-Date.now());
+  if(remainingMs<minStartMs) return {ok:false,timeoutMs:0,remainingMs};
+  return {ok:true,timeoutMs:Math.min(stageMs,remainingMs),remainingMs};
+}
+
 async function runOneBoundedSpecialist(env,{
-  agentId,input,missionProfile,corpusContext=[],webSearchEnabled=false
+  agentId,input,missionProfile,corpusContext=[],webSearchEnabled=false,deadlineAt=null
 }={}){
   const role=ROLE_BY_ID[agentId];
   if(!role) return {ok:false,error:"unknown_specialist",agentId,providerCalls:0};
@@ -560,15 +572,26 @@ async function runOneBoundedSpecialist(env,{
     } : {})
   };
 
+  const timeout=boundedProviderTimeout(env?.OPENAI_SPECIALIST_TIMEOUT_MS,30000,deadlineAt,{minStartMs:8000,maxMs:60000});
+  if(!timeout.ok){
+    return {ok:false,error:"specialist_deadline_exhausted",agentId,providerCalls:0,timeoutMs:0};
+  }
   let response;
   try{
     response=await fetch("https://api.openai.com/v1/responses",{
       method:"POST",
       headers:{"Authorization":`Bearer ${env.OPENAI_API_KEY}`,"Content-Type":"application/json"},
-      body:JSON.stringify(body)
+      body:JSON.stringify(body),
+      signal:AbortSignal.timeout(timeout.timeoutMs)
     });
   }catch(error){
-    return {ok:false,error:"specialist_network_error",agentId,providerCalls:1,detail:String(error?.message||error).slice(0,160)};
+    const timedOut=error?.name==="TimeoutError" || error?.name==="AbortError";
+    return {
+      ok:false,
+      error:timedOut?"specialist_timeout_error":"specialist_network_error",
+      agentId,providerCalls:1,timeoutMs:timedOut?timeout.timeoutMs:null,
+      detail:String(error?.message||error).slice(0,160)
+    };
   }
   let payload=null;
   try{payload=await response.json();}catch{}
@@ -593,7 +616,7 @@ async function runOneBoundedSpecialist(env,{
 }
 
 export async function runBoundedSpecialists(env,{
-  plan,input,corpusContext=[],webSearchEnabled=false
+  plan,input,corpusContext=[],webSearchEnabled=false,deadlineAt=null
 }={}){
   if(!specialistExecutionRequired(plan)){
     return Object.freeze({
@@ -616,7 +639,8 @@ export async function runBoundedSpecialists(env,{
     agentId,input,
     missionProfile:plan?.legalIntelligenceEngine?.mission_profile?.id,
     corpusContext,
-    webSearchEnabled
+    webSearchEnabled,
+    deadlineAt
   })));
 
   const failed=results.find(x=>!x.ok);
@@ -663,7 +687,8 @@ export async function runOpenAIOrchestrator(env, {
   attachments=[],
   history=[],
   maxOutputTokens=1600,
-  reasoningEffort=null
+  reasoningEffort=null,
+  deadlineAt=null
 }={}) {
   if(!openAIOrchestratorConfigured(env)){
     return {ok:false,error:"openai_orchestrator_not_configured"};
@@ -680,12 +705,14 @@ export async function runOpenAIOrchestrator(env, {
     plan,
     input,
     corpusContext,
-    webSearchEnabled:webSearchEnabled && externalResearchEnabled
+    webSearchEnabled:webSearchEnabled && externalResearchEnabled,
+    deadlineAt
   });
   if(!specialistStage.ok){
     const profile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
     const transientSpecialistErrors=new Set([
       "specialist_network_error",
+      "specialist_timeout_error",
       "specialist_response_error",
       "specialist_incomplete",
       "specialist_incomplete_response",
@@ -801,6 +828,15 @@ export async function runOpenAIOrchestrator(env, {
     } : {})
   };
 
+  const chiefTimeout=boundedProviderTimeout(env?.OPENAI_PROVIDER_TIMEOUT_MS,45000,deadlineAt,{minStartMs:8000,maxMs:90000});
+  if(!chiefTimeout.ok){
+    return {
+      ok:false,error:"openai_request_deadline_exhausted",timeoutMs:0,
+      providerCalls:Number(specialistStage.providerCalls||0),
+      usage:specialistStage.usage||{inputTokens:0,outputTokens:0,totalTokens:0}
+    };
+  }
+  const providerTimeoutMs=chiefTimeout.timeoutMs;
   let response;
   try{
     response=await fetch("https://api.openai.com/v1/responses",{
@@ -809,17 +845,40 @@ export async function runOpenAIOrchestrator(env, {
         "Authorization":`Bearer ${env.OPENAI_API_KEY}`,
         "Content-Type":"application/json"
       },
-      body:JSON.stringify(body)
+      body:JSON.stringify(body),
+      signal:AbortSignal.timeout(providerTimeoutMs)
     });
   }catch(error){
-    return {ok:false,error:"openai_network_error",detail:String(error?.message || error).slice(0,180)};
+    const timedOut=error?.name==="TimeoutError" || error?.name==="AbortError";
+    return {
+      ok:false,
+      error:timedOut?"openai_timeout_error":"openai_network_error",
+      detail:String(error?.message || error).slice(0,180),
+      timeoutMs:timedOut?providerTimeoutMs:null,
+      providerCalls:Number(specialistStage.providerCalls||0)+1,
+      usage:specialistStage.usage||{inputTokens:0,outputTokens:0,totalTokens:0}
+    };
   }
 
   let payload=null;
   try{ payload=await response.json(); }catch{}
+  const requestId=response.headers.get("x-request-id")||null;
+  const responseId=typeof payload?.id==="string" ? payload.id : null;
+  const chiefUsage=extractOpenAIUsage(payload);
+  const failureUsage=Object.freeze({
+    inputTokens:Number(specialistStage.usage?.inputTokens||0)+chiefUsage.inputTokens,
+    outputTokens:Number(specialistStage.usage?.outputTokens||0)+chiefUsage.outputTokens,
+    totalTokens:Number(specialistStage.usage?.totalTokens||0)+chiefUsage.totalTokens
+  });
+  const failureBase={
+    providerCalls:Number(specialistStage.providerCalls||0)+1,
+    usage:failureUsage,
+    requestId,
+    responseId
+  };
 
   if(!response.ok){
-    return {ok:false,error:"openai_response_error",status:response.status};
+    return {ok:false,error:"openai_response_error",status:response.status,...failureBase};
   }
 
   // Legal answers must never be returned from a truncated/refused/incomplete
@@ -829,17 +888,17 @@ export async function runOpenAIOrchestrator(env, {
       ok:false,
       error:"openai_incomplete_response",
       responseStatus:typeof payload?.status==="string" ? payload.status : "unknown",
-      failureDetail:typeof payload?.incomplete_details?.reason==="string" ? payload.incomplete_details.reason.slice(0,180) : null
+      failureDetail:typeof payload?.incomplete_details?.reason==="string" ? payload.incomplete_details.reason.slice(0,180) : null,
+      ...failureBase
     };
   }
 
   const text=extractOpenAIResponseText(payload);
-  if(!text) return {ok:false,error:"openai_empty_response"};
+  if(!text) return {ok:false,error:"openai_empty_response",...failureBase};
   const chiefSources=annotateExternalSources(extractOpenAIWebCitations(payload),{agentId:AGENT_ROLES.chief.id});
   const sources=mergeWebSources(specialistStage.sources,chiefSources);
   const chiefWebSearchUsed=Array.isArray(payload?.output) && payload.output.some(item=>item?.type==="web_search_call");
   const webSearchUsed=specialistStage.webSearchUsed===true||chiefWebSearchUsed;
-  const chiefUsage=extractOpenAIUsage(payload);
   const combinedUsage=Object.freeze({
     inputTokens:Number(specialistStage.usage?.inputTokens||0)+chiefUsage.inputTokens,
     outputTokens:Number(specialistStage.usage?.outputTokens||0)+chiefUsage.outputTokens,
@@ -914,7 +973,8 @@ export async function runLegalPostflightVerifier(env,{
   draft,
   corpusContext=[],
   webSources=[],
-  maxAttempts=2
+  maxAttempts=2,
+  deadlineAt=null
 }={}){
   if(!postflightRequired(plan)){
     return Object.freeze({
@@ -993,6 +1053,10 @@ export async function runLegalPostflightVerifier(env,{
       }
     };
 
+    const timeout=boundedProviderTimeout(env?.OPENAI_POSTFLIGHT_TIMEOUT_MS,45000,deadlineAt,{minStartMs:8000,maxMs:60000});
+    if(!timeout.ok){
+      return {ok:false,required:true,error:"legal_postflight_deadline_exhausted",attempts:attempt-1,providerCalls:attempt-1,usage:aggregate};
+    }
     let response;
     try{
       response=await fetch("https://api.openai.com/v1/responses",{
@@ -1001,11 +1065,18 @@ export async function runLegalPostflightVerifier(env,{
           "Authorization":`Bearer ${env.OPENAI_API_KEY}`,
           "Content-Type":"application/json"
         },
-        body:JSON.stringify(body)
+        body:JSON.stringify(body),
+        signal:AbortSignal.timeout(timeout.timeoutMs)
       });
     }catch(error){
-      if(attempt<limit) continue;
-      return {ok:false,required:true,error:"legal_postflight_network_error",attempts,providerCalls:attempts,detail:String(error?.message||error).slice(0,180),usage:aggregate};
+      const timedOut=error?.name==="TimeoutError" || error?.name==="AbortError";
+      if(attempt<limit && (!deadlineAt || Number(deadlineAt)-Date.now()>=8000)) continue;
+      return {
+        ok:false,required:true,
+        error:timedOut?"legal_postflight_timeout_error":"legal_postflight_network_error",
+        attempts,providerCalls:attempts,timeoutMs:timedOut?timeout.timeoutMs:null,
+        detail:String(error?.message||error).slice(0,180),usage:aggregate
+      };
     }
 
     let payload=null;
@@ -1019,11 +1090,11 @@ export async function runLegalPostflightVerifier(env,{
 
     if(!response.ok){
       const transientStatus=[429,500,502,503,504].includes(Number(response.status||0));
-      if(transientStatus && attempt<limit) continue;
+      if(transientStatus && attempt<limit && (!deadlineAt || Number(deadlineAt)-Date.now()>=8000)) continue;
       return {ok:false,required:true,error:"legal_postflight_response_error",status:response.status,attempts,providerCalls:attempts,usage:aggregate};
     }
     if(payload?.status!=="completed"){
-      if(attempt<limit) continue;
+      if(attempt<limit && (!deadlineAt || Number(deadlineAt)-Date.now()>=8000)) continue;
       return {
         ok:false,
         required:true,
@@ -1039,12 +1110,12 @@ export async function runLegalPostflightVerifier(env,{
     let verdict;
     try{verdict=JSON.parse(text||"");}
     catch{
-      if(attempt<limit) continue;
+      if(attempt<limit && (!deadlineAt || Number(deadlineAt)-Date.now()>=8000)) continue;
       return {ok:false,required:true,error:"legal_postflight_invalid_json",attempts,providerCalls:attempts,usage:aggregate};
     }
 
     if(!["PASS","REVISE","FAIL"].includes(verdict?.verdict)){
-      if(attempt<limit) continue;
+      if(attempt<limit && (!deadlineAt || Number(deadlineAt)-Date.now()>=8000)) continue;
       return {ok:false,required:true,error:"legal_postflight_invalid_verdict",attempts,providerCalls:attempts,usage:aggregate};
     }
 
@@ -1078,7 +1149,7 @@ export async function runLegalPostflightVerifier(env,{
 
     answer=String(verdict.corrected_answer||"").trim();
     if(!answer){
-      if(attempt<limit) continue;
+      if(attempt<limit && (!deadlineAt || Number(deadlineAt)-Date.now()>=8000)) continue;
       return {ok:false,required:true,error:"legal_postflight_empty_revision",attempts,firstPass:false,providerCalls:attempts,usage:aggregate};
     }
 

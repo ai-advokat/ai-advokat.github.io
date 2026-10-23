@@ -19,6 +19,7 @@ import {
   orchestratorInstructions,
   specialistExecutionRequired,
   runBoundedSpecialists,
+  runOpenAIOrchestrator,
   runLegalPostflightVerifier
 } from "../src/agent-orchestrator.js";
 import {
@@ -386,6 +387,46 @@ test("single-pass legal postflight may release verifier-corrected text only as R
 
 
 
+test("OpenAI chief failure metadata distinguishes incomplete, HTTP and timeout without legal content",async()=>{
+  const originalFetch=globalThis.fetch;
+  try{
+    const plan=buildAgentPlan("Кои се законските услови за ревизија во граѓанска постапка?");
+    globalThis.fetch=async()=>new Response(JSON.stringify({
+      id:"resp_incomplete",status:"incomplete",incomplete_details:{reason:"max_output_tokens"},
+      usage:{input_tokens:40,output_tokens:20,total_tokens:60}
+    }),{status:200,headers:{"content-type":"application/json","x-request-id":"req_incomplete"}});
+    const incomplete=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-test",OPENAI_PROVIDER_TIMEOUT_MS:"12000"
+    },{plan,input:"Кои се условите?",maxOutputTokens:900});
+    assert.equal(incomplete.ok,false);
+    assert.equal(incomplete.error,"openai_incomplete_response");
+    assert.equal(incomplete.responseStatus,"incomplete");
+    assert.equal(incomplete.failureDetail,"max_output_tokens");
+    assert.equal(incomplete.requestId,"req_incomplete");
+    assert.equal(incomplete.responseId,"resp_incomplete");
+    assert.equal(incomplete.providerCalls,1);
+    assert.equal(incomplete.usage.totalTokens,60);
+
+    globalThis.fetch=async()=>new Response(JSON.stringify({error:{message:"busy"}}),{status:503,headers:{"content-type":"application/json","x-request-id":"req_503"}});
+    const httpFail=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-test"
+    },{plan,input:"Кои се условите?",maxOutputTokens:900});
+    assert.equal(httpFail.error,"openai_response_error");
+    assert.equal(httpFail.status,503);
+    assert.equal(httpFail.requestId,"req_503");
+
+    globalThis.fetch=async()=>{ throw new DOMException("timed out","TimeoutError"); };
+    const timeout=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-test",OPENAI_PROVIDER_TIMEOUT_MS:"11000"
+    },{plan,input:"Кои се условите?",maxOutputTokens:900});
+    assert.equal(timeout.error,"openai_timeout_error");
+    assert.equal(timeout.timeoutMs,11000);
+    assert.equal(timeout.providerCalls,1);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
 test("postflight PASS is compact and preserves the original draft without echoing it",async()=>{
   const originalFetch=globalThis.fetch;
   let captured=null;
@@ -659,4 +700,129 @@ test("professional pleading depth survives L3 verification",()=>{
   assert.match(agentSource,/SPECIALIST_RUNTIME_DEGRADED/);
   assert.match(agentSource,/must never reduce a substantial pleading to a short template/);
   assert.match(agentSource,/profile==="L3_CONSEQUENTIAL"\s*\? 5000/);
+});
+
+
+function slowProviderUntilAbort(){
+  return (_url,options={})=>new Promise((resolve,reject)=>{
+    const signal=options.signal;
+    const keepAlive=setTimeout(()=>resolve(new Response(JSON.stringify({
+      status:"completed",output_text:"LATE_PROVIDER_RESPONSE",
+      usage:{input_tokens:1,output_tokens:1,total_tokens:2}
+    }),{status:200,headers:{"content-type":"application/json"}})),5000);
+    const abort=()=>{
+      clearTimeout(keepAlive);
+      reject(new DOMException("timed out","AbortError"));
+    };
+    if(signal?.aborted){ abort(); return; }
+    signal?.addEventListener("abort",abort,{once:true});
+  });
+}
+
+test("shared deadline functionally aborts a slow chief provider call",async()=>{
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=(...args)=>{calls+=1;return slowProviderUntilAbort()(...args);};
+  try{
+    const plan=buildAgentPlan("Работникот добил отказ и бара правна анализа.");
+    const started=Date.now();
+    const result=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test",
+      OPENAI_PROVIDER_TIMEOUT_MS:"1000"
+    },{
+      plan,input:"Работникот добил отказ и бара правна анализа.",
+      maxOutputTokens:900,
+      deadlineAt:Date.now()+9000
+    });
+    assert.equal(result.ok,false);
+    assert.equal(result.error,"openai_timeout_error");
+    assert.equal(result.providerCalls,1);
+    assert.equal(calls,1);
+    assert.ok(Date.now()-started<4000);
+    assert.equal(Object.hasOwn(result,"text"),false);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test("shared deadline functionally aborts slow bounded specialists",async()=>{
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=(...args)=>{calls+=1;return slowProviderUntilAbort()(...args);};
+  try{
+    const plan=buildAgentPlan("Спореди две правни опции за жалба и нивните ризици.");
+    const started=Date.now();
+    const stage=await runBoundedSpecialists({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test",
+      LIOE_SPECIALIST_EXECUTION_ENABLED:"true",
+      OPENAI_SPECIALIST_TIMEOUT_MS:"1000"
+    },{
+      plan,input:"Спореди две правни опции за жалба и нивните ризици.",
+      deadlineAt:Date.now()+9000
+    });
+    assert.equal(stage.ok,false);
+    assert.equal(stage.error,"specialist_timeout_error");
+    assert.ok(stage.providerCalls>=1);
+    assert.ok(calls>=1);
+    assert.ok(Date.now()-started<4000);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test("mandatory postflight timeout never releases the unverified draft",async()=>{
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=(...args)=>{calls+=1;return slowProviderUntilAbort()(...args);};
+  try{
+    const plan=buildAgentPlan("Спореди ги опциите, процесниот ризик и доказите за жалба.");
+    const unsafeDraft="Овој текст не смее да се пушти без проверка.";
+    const started=Date.now();
+    const verdict=await runLegalPostflightVerifier({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test",
+      OPENAI_POSTFLIGHT_TIMEOUT_MS:"1000"
+    },{
+      plan,draft:unsafeDraft,corpusContext:[],webSources:[],
+      maxAttempts:1,
+      deadlineAt:Date.now()+9000
+    });
+    assert.equal(verdict.ok,false);
+    assert.equal(verdict.error,"legal_postflight_timeout_error");
+    assert.equal(verdict.providerCalls,1);
+    assert.equal(calls,1);
+    assert.ok(Date.now()-started<4000);
+    assert.notEqual(verdict.corrected_answer,unsafeDraft);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test("exhausted shared deadline prevents a new chief provider call",async()=>{
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=async()=>{calls+=1;throw new Error("provider must not start");};
+  try{
+    const plan=buildAgentPlan("Работникот добил отказ и бара правна анализа.");
+    const result=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test"
+    },{
+      plan,input:"Работникот добил отказ и бара правна анализа.",
+      maxOutputTokens:900,
+      deadlineAt:Date.now()+100
+    });
+    assert.equal(result.ok,false);
+    assert.equal(result.error,"openai_request_deadline_exhausted");
+    assert.equal(result.providerCalls,0);
+    assert.equal(calls,0);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
 });
