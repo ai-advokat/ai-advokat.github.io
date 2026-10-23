@@ -5843,6 +5843,13 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     if(retryable){
       const first=result;
       const retryUsesWeb=explicitWebRequested ? webRequested : false;
+      const incompleteRecoveryBudget=result.error==="openai_incomplete_response"
+        ? (missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE" ? 5600
+          : missionProfile==="L3_CONSEQUENTIAL" ? 5200
+            : missionProfile==="L2_STRATEGY_PROCEDURE" ? 4200
+              : missionProfile==="L1_VERIFIED_RESEARCH" ? 2600
+                : 2200)
+        : maxOutputTokens;
       const retry=await runOpenAIOrchestrator(env,{
         plan,
         input:q,
@@ -5852,7 +5859,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         webSearchEnabled:retryUsesWeb,
         attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
         history:historyCheck.history,
-        maxOutputTokens:Math.min(6000,Math.max(maxOutputTokens,missionProfile==="L3_CONSEQUENTIAL"?5200:maxOutputTokens)),
+        maxOutputTokens:Math.min(6000,Math.max(maxOutputTokens,incompleteRecoveryBudget,missionProfile==="L3_CONSEQUENTIAL"?5200:maxOutputTokens)),
         reasoningEffort:["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort
       });
       if(retry.ok){

@@ -443,6 +443,48 @@ test("postflight incomplete response preserves provider reason for diagnosis",as
   }
 });
 
+test("postflight retries a transient incomplete verifier response and then releases PASS",async()=>{
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=async()=>{
+    calls+=1;
+    if(calls===1){
+      return new Response(JSON.stringify({
+        status:"incomplete",
+        incomplete_details:{reason:"server_busy"},
+        usage:{input_tokens:20,output_tokens:5,total_tokens:25}
+      }),{status:200,headers:{"content-type":"application/json"}});
+    }
+    return new Response(JSON.stringify({
+      status:"completed",
+      output_text:JSON.stringify({
+        verdict:"PASS",stress_test:"PASS",adversarial_review:"PASS",
+        source_integrity:"PARTIAL",temporal_integrity:"PARTIAL",
+        jurisdiction_integrity:"PARTIAL",human_gate:"REQUIRED",
+        issues:[],corrected_answer:""
+      }),
+      usage:{input_tokens:30,output_tokens:10,total_tokens:40}
+    }),{status:200,headers:{"content-type":"application/json"}});
+  };
+  try{
+    const plan=buildAgentPlan("Спореди ги опциите, процесниот ризик и доказите за оспорување отказ и враќање на работа.");
+    const original="Професионален работен нацрт.";
+    const verdict=await runLegalPostflightVerifier({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test"
+    },{plan,draft:original,corpusContext:[],webSources:[],maxAttempts:2});
+    assert.equal(verdict.ok,true);
+    assert.equal(verdict.verdict,"PASS");
+    assert.equal(verdict.corrected_answer,original);
+    assert.equal(verdict.attempts,2);
+    assert.equal(verdict.providerCalls,2);
+    assert.equal(calls,2);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
 test("structured legal postflight fails closed after verifier FAIL",async()=>{
   const originalFetch=globalThis.fetch;
   globalThis.fetch=async()=>new Response(JSON.stringify({
@@ -597,6 +639,16 @@ test("postflight REVISE is bounded without compressing L3 pleadings",()=>{
   assert.match(agentSource,/profile==="L3_CONSEQUENTIAL"\s*\? 5000/);
 });
 
+
+test("Zoran labour-dismissal analysis gets a larger retry budget after incomplete OpenAI output",()=>{
+  const prompt="Работникот добил отказ, но смета дека причините во решението не се точни. Направи професионална анализа што треба да се провери и кои докази се важни.";
+  const plan=buildAgentPlan(prompt);
+  assert.equal(plan.legalIntelligenceEngine.mission_profile.id,"L0_INFORMATIONAL");
+  assert.match(workerSource,/result\.error==="openai_incomplete_response"/);
+  assert.match(workerSource,/missionProfile==="L1_VERIFIED_RESEARCH" \? 2600/);
+  assert.match(workerSource,/: 2200\)/);
+  assert.match(agentSource,/"specialist_incomplete"/);
+});
 
 test("professional pleading depth survives L3 verification",()=>{
   const plan=buildAgentPlan("Направи ми тужба за враќање на работник на работа.");

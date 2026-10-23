@@ -687,6 +687,7 @@ export async function runOpenAIOrchestrator(env, {
     const transientSpecialistErrors=new Set([
       "specialist_network_error",
       "specialist_response_error",
+      "specialist_incomplete",
       "specialist_incomplete_response",
       "specialist_empty_response"
     ]);
@@ -1003,6 +1004,7 @@ export async function runLegalPostflightVerifier(env,{
         body:JSON.stringify(body)
       });
     }catch(error){
+      if(attempt<limit) continue;
       return {ok:false,required:true,error:"legal_postflight_network_error",attempts,providerCalls:attempts,detail:String(error?.message||error).slice(0,180),usage:aggregate};
     }
 
@@ -1016,9 +1018,12 @@ export async function runLegalPostflightVerifier(env,{
     };
 
     if(!response.ok){
+      const transientStatus=[429,500,502,503,504].includes(Number(response.status||0));
+      if(transientStatus && attempt<limit) continue;
       return {ok:false,required:true,error:"legal_postflight_response_error",status:response.status,attempts,providerCalls:attempts,usage:aggregate};
     }
     if(payload?.status!=="completed"){
+      if(attempt<limit) continue;
       return {
         ok:false,
         required:true,
@@ -1034,10 +1039,12 @@ export async function runLegalPostflightVerifier(env,{
     let verdict;
     try{verdict=JSON.parse(text||"");}
     catch{
+      if(attempt<limit) continue;
       return {ok:false,required:true,error:"legal_postflight_invalid_json",attempts,providerCalls:attempts,usage:aggregate};
     }
 
     if(!["PASS","REVISE","FAIL"].includes(verdict?.verdict)){
+      if(attempt<limit) continue;
       return {ok:false,required:true,error:"legal_postflight_invalid_verdict",attempts,providerCalls:attempts,usage:aggregate};
     }
 
@@ -1071,6 +1078,7 @@ export async function runLegalPostflightVerifier(env,{
 
     answer=String(verdict.corrected_answer||"").trim();
     if(!answer){
+      if(attempt<limit) continue;
       return {ok:false,required:true,error:"legal_postflight_empty_revision",attempts,firstPass:false,providerCalls:attempts,usage:aggregate};
     }
 
