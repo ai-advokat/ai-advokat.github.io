@@ -1,4 +1,9 @@
+import { localGuideDocuments } from './bot-materials.mjs';
 import { detectConfidentialCasePrompt } from '../src/chat-privacy.js';
+import { readDeviceAccess, saveDeviceAccess, forgetDeviceAccess } from './bot-device-access.mjs';
+// Accessing localStorage itself can throw when browser storage is disabled.
+let deviceStorage;
+try { deviceStorage = window.localStorage; } catch {}
 
 const $ = id => document.getElementById(id);
 const base = location.hostname.endsWith('workers.dev') ? location.origin : 'https://ai-advokat-github-io.aiadvokat16.workers.dev';
@@ -65,6 +70,7 @@ async function guideIds(q, signal) {
 }
 function reset() {
   generation++; pending?.abort(); pending = null; history = []; sessionId = crypto.randomUUID();
+  $('useLocalGuides').checked = false;
   $('messages').replaceChildren(welcome.cloneNode(true)); $('question').value = ''; $('question').style.height = '';
   $('menu').open = false; busy(false);
 }
@@ -80,14 +86,18 @@ $('loginForm').onsubmit = async event => {
   try {
     const data = await request('/api/membership/status',{token:candidate,signal:AbortSignal.timeout(20000)});
     if (epoch !== generation || !$('login').open) return;
-    reset(); key = candidate; busy(false); $('login').close();
+    reset(); key = candidate;
+    forgetDeviceAccess(deviceStorage);
+    const remembered = $('rememberAccess').checked && saveDeviceAccess(deviceStorage,candidate);
+    busy(false); $('login').close();
     status('Професионален пристап · ' + data.membership.planCode + ' · OpenAI се проверува при секое барање.');
+    if ($('rememberAccess').checked && !remembered) status('Пристапот е активен, но прелистувачот не дозволува да се запомни.');
     $('question').focus();
   } catch { $('loginStatus').textContent = 'Клучот не е активен или услугата не е достапна. Обидете се повторно.'; }
   finally { $('loginSubmit').disabled = false; }
 };
 $('newChat').onclick = () => { reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Внесете професионален клуч преку ⋯.'); };
-$('logout').onclick = () => { key = ''; reset(); $('login').close(); status('Сесијата е избришана.'); };
+$('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Сесијата и зачуваниот пристап се избришани.'); };
 $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => { $('question').style.height = 'auto'; $('question').style.height = Math.min($('question').scrollHeight,180) + 'px'; };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
@@ -108,14 +118,15 @@ $('composer').onsubmit = async event => {
   status('Ги проверувам материјалите и го подготвувам одговорот…');
   try {
     const ids = await guideIds(q,controller.signal);
-    const data = await request('/api/bot',{signal:controller.signal,body:{q,sessionId,mode:'auto',guideIds:ids,history:history.slice(-8),attachments:[]}});
+    const guideDocuments = await localGuideDocuments(window.AIAdvokatGuideVault,ids,$('useLocalGuides').checked);
+    const data = await request('/api/bot',{signal:controller.signal,body:{q,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data);
     history.push({role:'user',text:q},{role:'assistant',text:String(data.answer || '').slice(0,4000)}); history = history.slice(-24);
     status('Одговорот е работен материјал. Проверете ги наведените извори.');
   } catch (error) {
     if (epoch !== generation) return;
-    if (error.status === 401) { key = ''; status('Пристапот истекол. Внесете активен клуч преку ⋯.'); }
+    if (error.status === 401) { key = ''; forgetDeviceAccess(deviceStorage); status('Пристапот истекол. Внесете активен код преку ⋯.'); }
     else if (error.name === 'AbortError') status('Барањето е запрено или истече времето за одговор. Можете да се обидете повторно.');
     else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
     $('question').value = q;
@@ -124,10 +135,51 @@ $('composer').onsubmit = async event => {
     if (epoch === generation) { pending = null; busy(false); $('question').focus(); }
   }
 };
+async function restoreAccess() {
+  const saved = readDeviceAccess(deviceStorage);
+  if (!saved) return;
+  const epoch = generation;
+  status('Го проверувам зачуваниот пристап…');
+  try {
+    await request('/api/membership/status',{token:saved,signal:AbortSignal.timeout(20000)});
+    if (epoch !== generation) return;
+    key = saved; busy(false); status('Добредојдовте. Подготвено за разговор.');
+  } catch(error) {
+    if (epoch !== generation) return;
+    if (error.status === 401) forgetDeviceAccess(deviceStorage);
+    status('Пристапот не може да се потврди. Отворете ⋯ → Професионален пристап.');
+  }
+}
+restoreAccess();
 $('exportChat').onclick = () => {
   if (!history.length) { status('Сè уште нема завршен разговор за преземање.'); return; }
   const text = 'AI Advokat — работен разговор\nПотребна е професионална проверка.\n\n' + history.map(m => (m.role === 'user' ? 'Вие' : 'AI Advokat') + ':\n' + m.text).join('\n\n');
   const url = URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));
   const a = document.createElement('a'); a.href = url; a.download = 'AI-Advokat-razgovor.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
   $('menu').open = false;
+};
+
+async function vaultStatus() {
+  try {
+    const state = await window.AIAdvokatGuideVault?.summary();
+    $('vaultStatus').textContent = state?.available ? state.count + ' проверени водичи на овој прелистувач.' : 'Локалното чување не е достапно.';
+  } catch { $('vaultStatus').textContent = 'Локалната збирка не може да се прочита.'; }
+}
+function openMaterials() { $('menu').open = false; $('plus').open = false; $('materialsDialog').showModal(); vaultStatus(); }
+$('materials').onclick = openMaterials;
+$('plusMaterials').onclick = openMaterials;
+$('closeMaterials').onclick = () => $('materialsDialog').close();
+$('importGuides').onclick = () => $('guideFiles').click();
+$('guideFiles').onchange = async () => {
+  const files = [...$('guideFiles').files]; $('guideFiles').value = '';
+  if (!files.length) return;
+  $('importGuides').disabled = true;
+  $('vaultStatus').textContent = 'Ги проверувам оригиналните датотеки…';
+  try {
+    const response = await fetch('/data/guides.json',{cache:'no-store'});
+    if (!response.ok) throw new Error('Регистарот не е достапен.');
+    const result = await window.AIAdvokatGuideVault.importFiles(files,await response.json());
+    $('vaultStatus').textContent = 'Вчитани: ' + result.imported + ' · одбиени: ' + result.rejected + ' · прескокнати: ' + result.skipped + '.';
+  } catch { $('vaultStatus').textContent = 'Вчитувањето не успеа. Проверете ги датотеките и пристапот до регистарот.'; }
+  finally { $('importGuides').disabled = false; }
 };
