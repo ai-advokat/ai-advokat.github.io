@@ -589,10 +589,12 @@ test("natural Macedonian legal-domain prompts never bypass legal governance",()=
 });
 
 
-test("postflight REVISE is explicitly bounded for synchronous production latency",()=>{
-  assert.match(agentSource,/normally no more than 800 words/);
+test("postflight REVISE is bounded without compressing L3 pleadings",()=>{
   assert.match(agentSource,/maxItems:6/);
-  assert.match(agentSource,/must not repeat long evidence lists or source metadata/);
+  assert.match(agentSource,/For non-formal answers, remain concise/);
+  assert.match(agentSource,/PRESERVE DEPTH/);
+  assert.match(agentSource,/must never reduce a substantial pleading to a short template/);
+  assert.match(agentSource,/profile==="L3_CONSEQUENTIAL"\s*\? 5000/);
 });
 
 
