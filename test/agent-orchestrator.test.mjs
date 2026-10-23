@@ -704,13 +704,18 @@ test("professional pleading depth survives L3 verification",()=>{
 
 
 function slowProviderUntilAbort(){
-  return (_url,options={})=>new Promise((_resolve,reject)=>{
+  return (_url,options={})=>new Promise((resolve,reject)=>{
     const signal=options.signal;
-    if(signal?.aborted){
+    const keepAlive=setTimeout(()=>resolve(new Response(JSON.stringify({
+      status:"completed",output_text:"LATE_PROVIDER_RESPONSE",
+      usage:{input_tokens:1,output_tokens:1,total_tokens:2}
+    }),{status:200,headers:{"content-type":"application/json"}})),5000);
+    const abort=()=>{
+      clearTimeout(keepAlive);
       reject(new DOMException("timed out","AbortError"));
-      return;
-    }
-    signal?.addEventListener("abort",()=>reject(new DOMException("timed out","AbortError")),{once:true});
+    };
+    if(signal?.aborted){ abort(); return; }
+    signal?.addEventListener("abort",abort,{once:true});
   });
 }
 
