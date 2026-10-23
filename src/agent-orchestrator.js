@@ -801,6 +801,10 @@ export async function runOpenAIOrchestrator(env, {
     } : {})
   };
 
+  const configuredTimeout=Number(env?.OPENAI_PROVIDER_TIMEOUT_MS||45000);
+  const providerTimeoutMs=Number.isFinite(configuredTimeout)
+    ? Math.min(90000,Math.max(10000,Math.trunc(configuredTimeout)))
+    : 45000;
   let response;
   try{
     response=await fetch("https://api.openai.com/v1/responses",{
@@ -809,17 +813,40 @@ export async function runOpenAIOrchestrator(env, {
         "Authorization":`Bearer ${env.OPENAI_API_KEY}`,
         "Content-Type":"application/json"
       },
-      body:JSON.stringify(body)
+      body:JSON.stringify(body),
+      signal:AbortSignal.timeout(providerTimeoutMs)
     });
   }catch(error){
-    return {ok:false,error:"openai_network_error",detail:String(error?.message || error).slice(0,180)};
+    const timedOut=error?.name==="TimeoutError" || error?.name==="AbortError";
+    return {
+      ok:false,
+      error:timedOut?"openai_timeout_error":"openai_network_error",
+      detail:String(error?.message || error).slice(0,180),
+      timeoutMs:timedOut?providerTimeoutMs:null,
+      providerCalls:Number(specialistStage.providerCalls||0)+1,
+      usage:specialistStage.usage||{inputTokens:0,outputTokens:0,totalTokens:0}
+    };
   }
 
   let payload=null;
   try{ payload=await response.json(); }catch{}
+  const requestId=response.headers.get("x-request-id")||null;
+  const responseId=typeof payload?.id==="string" ? payload.id : null;
+  const chiefUsage=extractOpenAIUsage(payload);
+  const failureUsage=Object.freeze({
+    inputTokens:Number(specialistStage.usage?.inputTokens||0)+chiefUsage.inputTokens,
+    outputTokens:Number(specialistStage.usage?.outputTokens||0)+chiefUsage.outputTokens,
+    totalTokens:Number(specialistStage.usage?.totalTokens||0)+chiefUsage.totalTokens
+  });
+  const failureBase={
+    providerCalls:Number(specialistStage.providerCalls||0)+1,
+    usage:failureUsage,
+    requestId,
+    responseId
+  };
 
   if(!response.ok){
-    return {ok:false,error:"openai_response_error",status:response.status};
+    return {ok:false,error:"openai_response_error",status:response.status,...failureBase};
   }
 
   // Legal answers must never be returned from a truncated/refused/incomplete
@@ -829,17 +856,17 @@ export async function runOpenAIOrchestrator(env, {
       ok:false,
       error:"openai_incomplete_response",
       responseStatus:typeof payload?.status==="string" ? payload.status : "unknown",
-      failureDetail:typeof payload?.incomplete_details?.reason==="string" ? payload.incomplete_details.reason.slice(0,180) : null
+      failureDetail:typeof payload?.incomplete_details?.reason==="string" ? payload.incomplete_details.reason.slice(0,180) : null,
+      ...failureBase
     };
   }
 
   const text=extractOpenAIResponseText(payload);
-  if(!text) return {ok:false,error:"openai_empty_response"};
+  if(!text) return {ok:false,error:"openai_empty_response",...failureBase};
   const chiefSources=annotateExternalSources(extractOpenAIWebCitations(payload),{agentId:AGENT_ROLES.chief.id});
   const sources=mergeWebSources(specialistStage.sources,chiefSources);
   const chiefWebSearchUsed=Array.isArray(payload?.output) && payload.output.some(item=>item?.type==="web_search_call");
   const webSearchUsed=specialistStage.webSearchUsed===true||chiefWebSearchUsed;
-  const chiefUsage=extractOpenAIUsage(payload);
   const combinedUsage=Object.freeze({
     inputTokens:Number(specialistStage.usage?.inputTokens||0)+chiefUsage.inputTokens,
     outputTokens:Number(specialistStage.usage?.outputTokens||0)+chiefUsage.outputTokens,
