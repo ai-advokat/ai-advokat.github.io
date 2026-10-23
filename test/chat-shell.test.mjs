@@ -381,7 +381,8 @@ test("CHAT31 synchronous LIOE path is latency-bounded without bypassing postflig
   assert.match(orchestrator,/postflightOutputTokens/);
   assert.match(orchestrator,/profile==="L3_CONSEQUENTIAL"/);
   assert.match(orchestrator,/corrected_answer to the empty string/);
-  assert.match(orchestrator,/For non-formal answers, remain concise/);\n  assert.match(orchestrator,/PRESERVE DEPTH/);
+  assert.match(orchestrator,/For non-formal answers, remain concise/);
+  assert.match(orchestrator,/PRESERVE DEPTH/);
   assert.match(orchestrator,/do not FAIL solely because the source set is incomplete/);
   assert.match(orchestrator,/provisionalRevision:true/);
   assert.match(worker,/postflightVerdict:postflight\.verdict/);
