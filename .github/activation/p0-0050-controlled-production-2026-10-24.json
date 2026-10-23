@@ -1,0 +1,48 @@
+{
+  "decision_id": "AI_ADVOKAT_P0_0050_CONTROLLED_PRODUCTION_2026-10-24",
+  "subject_id": "p0-provider-diagnostics-0050-2026-10-24",
+  "owner": "Zoran Stojankich",
+  "owner_approval_at": "2026-10-24T00:44:00+02:00",
+  "activation_authorized": true,
+  "candidate_sha": "1d65b251343cab4b1329d8cc8478e8948d363750",
+  "migration_file": "migrations/0050_lioe_provider_diagnostics.sql",
+  "migration_blob_sha": "f10b6623401c9afec6680fb45afa6c8674d4c291",
+  "target": {
+    "worker": "ai-advokat-github-io",
+    "database": "ai-advokat-db",
+    "database_id": "12ece285-74bb-4f27-a025-2dbd1be6c59a"
+  },
+  "gates": {
+    "read_only_backup_preflight": true,
+    "production_schema_migration": true,
+    "production_runtime_deploy": true,
+    "limited_paid_ai_smoke": true
+  },
+  "prerequisites": {
+    "valid_d1_export": true,
+    "time_travel_bookmark": true,
+    "restore_validation": true,
+    "exact_pending_set_only_0050": true,
+    "schema_verification_before_runtime": true
+  },
+  "invariants": {
+    "human_gate_unchanged": true,
+    "lioe_unchanged": true,
+    "source_verification_unchanged": true,
+    "membership_policy_unchanged": true,
+    "privacy_unchanged": true,
+    "provider_activation_change": false,
+    "secret_change": false,
+    "corpus_promotion": false,
+    "autonomous_legal_action": false
+  },
+  "smoke_scope": [
+    "health_and_orchestrator_readiness",
+    "membership_fail_closed_without_provider_call",
+    "openai_revision_comparative_legal_smoke",
+    "openai_labour_draft_postflight_smoke",
+    "lioe_telemetry_readback"
+  ],
+  "sql_export_policy": "Validate a full SQL export and local restore on the ephemeral production runner. Do not upload the full database export to this public repository; persist only non-secret SHA-256/size/bookmark evidence. Time Travel bookmark is the durable rollback anchor.",
+  "stop_policy": "Fail closed at the first unmet prerequisite. Do not auto-restore or broaden scope."
+}

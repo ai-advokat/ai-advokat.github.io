@@ -403,6 +403,36 @@
       },
       "implied_gates": [],
       "notes": "Authorizes private document upload/R2 and private-case AI execution using Workers AI with optional OpenAI private path. Does not authorize autonomous filing, signature, external transmission, public corpus promotion, final professional release, or weakening of Human Gate."
+    },
+    {
+      "decision_id": "hg-2026-10-24-p0-0050-production-schema",
+      "subject_id": "p0-provider-diagnostics-0050-2026-10-24",
+      "gate_type": "production_schema_migration",
+      "decision_state": "approved",
+      "decided_at": "2026-10-24T00:44:00+02:00",
+      "decision_basis": "Explicit owner approval by Zoran Stojankich on 2026-10-24 at 00:44 Europe/Skopje: approved read-only backup/preflight preparation; production schema migration 0050 only after a valid D1 export, Time Travel bookmark and successful preflight; runtime deployment of exact candidate 1d65b251343cab4b1329d8cc8478e8948d363750 only after successful 0050 verification; and the limited production AI smoke tests listed in the approved plan.",
+      "artifact_version": "AI_ADVOKAT_P0_0050_1d65b251_2026-10-24",
+      "artifact_fingerprint": {
+        "candidate_git_sha": "1d65b251343cab4b1329d8cc8478e8948d363750",
+        "migration_git_blob_sha": "f10b6623401c9afec6680fb45afa6c8674d4c291"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to migration 0050 after a valid D1 export, Time Travel bookmark and successful exact pending-set preflight. It does not authorize provider activation/rotation, corpus promotion, RAG promotion, current-law promotion or autonomous legal action."
+    },
+    {
+      "decision_id": "hg-2026-10-24-p0-0050-runtime-deploy",
+      "subject_id": "p0-provider-diagnostics-0050-2026-10-24",
+      "gate_type": "production_runtime_deploy",
+      "decision_state": "approved",
+      "decided_at": "2026-10-24T00:44:00+02:00",
+      "decision_basis": "Explicit owner approval by Zoran Stojankich on 2026-10-24 at 00:44 Europe/Skopje: approved read-only backup/preflight preparation; production schema migration 0050 only after a valid D1 export, Time Travel bookmark and successful preflight; runtime deployment of exact candidate 1d65b251343cab4b1329d8cc8478e8948d363750 only after successful 0050 verification; and the limited production AI smoke tests listed in the approved plan.",
+      "artifact_version": "AI_ADVOKAT_P0_0050_1d65b251_2026-10-24",
+      "artifact_fingerprint": {
+        "candidate_git_sha": "1d65b251343cab4b1329d8cc8478e8948d363750",
+        "migration_git_blob_sha": "f10b6623401c9afec6680fb45afa6c8674d4c291"
+      },
+      "implied_gates": [],
+      "notes": "Approval is limited to deployment of exact candidate 1d65b251343cab4b1329d8cc8478e8948d363750 only after successful migration 0050 verification. No provider change is authorized."
     }
   ]
 }

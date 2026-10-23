@@ -1,0 +1,335 @@
+name: AI Advokat P0 0050 controlled production activation
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/p0-0050-controlled-production.yml"
+      - ".github/activation/p0-0050-controlled-production-2026-10-24.json"
+      - "data/human-gate-decision-ledger.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-p0-0050-controlled-production
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      CANDIDATE_SHA: "1d65b251343cab4b1329d8cc8478e8948d363750"
+      MIGRATION_BLOB_SHA: "f10b6623401c9afec6680fb45afa6c8674d4c291"
+      SUBJECT_ID: "p0-provider-diagnostics-0050-2026-10-24"
+      ARTIFACT_VERSION: "AI_ADVOKAT_P0_0050_1d65b251_2026-10-24"
+      DB_ID: "12ece285-74bb-4f27-a025-2dbd1be6c59a"
+
+    steps:
+      - name: Checkout control commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify exact owner authorization and isolated Human Gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          import {execFileSync} from "node:child_process";
+          import {isGateApproved} from "./scripts/human-gate-ledger-validator.mjs";
+          const d=JSON.parse(fs.readFileSync(".github/activation/p0-0050-controlled-production-2026-10-24.json","utf8"));
+          const candidate=process.env.CANDIDATE_SHA;
+          const mig=process.env.MIGRATION_BLOB_SHA;
+          if(d.activation_authorized!==true) throw new Error("Activation artifact is not authorized");
+          if(d.owner!=="Zoran Stojankich") throw new Error("Unexpected owner");
+          if(d.candidate_sha!==candidate || d.migration_blob_sha!==mig) throw new Error("Candidate/migration binding mismatch");
+          if(d.target?.worker!=="ai-advokat-github-io" || d.target?.database!=="ai-advokat-db" || d.target?.database_id!==process.env.DB_ID) throw new Error("Unexpected production target");
+          for(const key of ["read_only_backup_preflight","production_schema_migration","production_runtime_deploy","limited_paid_ai_smoke"]){
+            if(d.gates?.[key]!==true) throw new Error("Missing explicit owner gate: "+key);
+          }
+          if(d.invariants?.provider_activation_change!==false || d.invariants?.secret_change!==false || d.invariants?.corpus_promotion!==false) throw new Error("Forbidden scope widened");
+          const actualBlob=execFileSync("git",["rev-parse",candidate+":migrations/0050_lioe_provider_diagnostics.sql"],{encoding:"utf8"}).trim();
+          if(actualBlob!==mig) throw new Error("Migration blob changed: "+actualBlob);
+          const ledger=JSON.parse(fs.readFileSync("data/human-gate-decision-ledger.json","utf8"));
+          const query={subject_id:process.env.SUBJECT_ID,artifact_version:process.env.ARTIFACT_VERSION,artifact_fingerprint:{candidate_git_sha:candidate,migration_git_blob_sha:mig}};
+          for(const gate of ["production_schema_migration","production_runtime_deploy"]){
+            if(!isGateApproved(ledger.initial_records,{...query,gate_type:gate})) throw new Error("Human Gate not approved: "+gate);
+          }
+          if(isGateApproved(ledger.initial_records,{...query,gate_type:"provider_activation"})) throw new Error("Provider activation must not be implied");
+          console.log("OWNER AUTHORIZATION + HUMAN GATES: PASS");
+          NODE
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$OPENAI_API_KEY"
+          test "${#OPENAI_API_KEY}" -gt 20
+
+      - name: Materialize exact approved candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/p0candidate
+          mkdir -p /tmp/p0candidate
+          git archive "$CANDIDATE_SHA" | tar -x -C /tmp/p0candidate
+          cd /tmp/p0candidate
+          test "$(git --git-dir="$GITHUB_WORKSPACE/.git" rev-parse "$CANDIDATE_SHA:migrations/0050_lioe_provider_diagnostics.sql")" = "$MIGRATION_BLOB_SHA"
+          npm install --ignore-scripts --no-audit --no-fund
+          node --check src/index.js
+          node --check src/agent-orchestrator.js
+          node --check src/legal-runtime-governance.js
+          npm run test:agent-orchestrator
+          npm run test:legal-runtime-governance
+          echo "$CANDIDATE_SHA" > /tmp/p0-candidate-sha.txt
+
+      - name: Verify exact production target and Time Travel support
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/p0candidate
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          const p=c.previews?.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!==process.env.DB_ID) throw new Error("Unexpected production D1");
+          if(p?.database_id===d.database_id) throw new Error("Production/staging collision");
+          if(c.vars?.OPENAI_MODEL!=="gpt-6.1-sol") throw new Error("Professional model policy changed");
+          for(const k of ["LIOE_RUNTIME_GOVERNANCE_ENABLED","LIOE_POSTFLIGHT_ENABLED","LIOE_RUNTIME_TELEMETRY_ENABLED","LIOE_SPECIALIST_EXECUTION_ENABLED"]){
+            if(c.vars?.[k]!=="true") throw new Error(k+" is not armed");
+          }
+          console.log("EXACT PRODUCTION TARGET + GOVERNANCE CONTRACT: PASS");
+          NODE
+          npx wrangler d1 info DB --config wrangler.jsonc --json | tee /tmp/p0-d1-info.json
+          grep -Eq '"version"[[:space:]]*:[[:space:]]*"production"' /tmp/p0-d1-info.json
+
+      - name: Capture Time Travel bookmark and validate full D1 export before any write
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/p0candidate
+          npx wrangler d1 time-travel info DB --config wrangler.jsonc --json | tee /tmp/p0-time-travel.json
+          node <<'NODE'
+          const fs=require("fs");
+          const x=JSON.parse(fs.readFileSync("/tmp/p0-time-travel.json","utf8"));
+          const bookmark=x?.bookmark||x?.result?.bookmark;
+          if(typeof bookmark!=="string" || bookmark.length<20) throw new Error("Time Travel bookmark missing");
+          fs.writeFileSync("/tmp/p0-bookmark.txt",bookmark+"\n");
+          console.log("TIME TRAVEL BOOKMARK: CAPTURED");
+          NODE
+          rm -f /tmp/ai-advokat-db-pre-p0-0050.sql /tmp/p0-restore-check.sqlite
+          npx wrangler d1 export DB --remote --config wrangler.jsonc --output=/tmp/ai-advokat-db-pre-p0-0050.sql
+          test -s /tmp/ai-advokat-db-pre-p0-0050.sql
+          sha256sum /tmp/ai-advokat-db-pre-p0-0050.sql | tee /tmp/p0-export.sha256
+          stat -c '%s' /tmp/ai-advokat-db-pre-p0-0050.sql | tee /tmp/p0-export-size.txt
+          python3 - <<'PY'
+          import sqlite3, pathlib
+          sql_path=pathlib.Path("/tmp/ai-advokat-db-pre-p0-0050.sql")
+          assert sql_path.stat().st_size > 0
+          db=sqlite3.connect("/tmp/p0-restore-check.sqlite")
+          db.executescript(sql_path.read_text(encoding="utf-8"))
+          row=db.execute("SELECT MAX(CAST(version AS INTEGER)) FROM schema_migrations").fetchone()
+          assert row and row[0] is not None
+          cols=[r[1] for r in db.execute("PRAGMA table_info(lioe_runtime_runs)").fetchall()]
+          assert "run_id" in cols
+          db.close()
+          print("FULL SQL EXPORT LOCAL RESTORE VALIDATION: PASS")
+          PY
+          {
+            echo "candidate=$CANDIDATE_SHA"
+            echo "database_id=$DB_ID"
+            echo "export_sha256=$(cut -d' ' -f1 /tmp/p0-export.sha256)"
+            echo "export_bytes=$(cat /tmp/p0-export-size.txt)"
+            echo "bookmark=$(cat /tmp/p0-bookmark.txt)"
+            echo "sql_export_retention=ephemeral_runner_only_due_public_repo_privacy"
+            echo "durable_rollback=time_travel_bookmark"
+          } > /tmp/p0-backup-metadata.txt
+
+      - name: Exact read-only production preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/p0candidate
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/p0-pending-before.txt
+          found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/p0-pending-before.txt | sort -u || true)"
+          expected="0050_lioe_provider_diagnostics.sql"
+          if [ "$found" != "$expected" ]; then
+            echo "Unexpected pending migration set: $found"
+            exit 1
+          fi
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT version,description FROM schema_migrations ORDER BY CAST(version AS INTEGER) DESC LIMIT 5; SELECT COUNT(*) AS v50 FROM schema_migrations WHERE version='50'; PRAGMA table_info(lioe_runtime_runs);" | tee /tmp/p0-prestate.txt
+          grep -q '"v50": 0' /tmp/p0-prestate.txt
+          for col in error_code http_status response_status incomplete_reason provider_request_id provider_response_id provider_timeout_ms provider_attempts_json; do
+            if grep -q "\"name\": \"$col\"" /tmp/p0-prestate.txt; then
+              echo "Unexpected pre-existing column: $col"
+              exit 1
+            fi
+          done
+          echo "EXACT PRE-MIGRATION PREFLIGHT: PASS"
+
+      - name: Persist non-secret pre-migration backup evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0-0050-pre-migration-backup-evidence
+          retention-days: 30
+          path: |
+            /tmp/p0-candidate-sha.txt
+            /tmp/p0-d1-info.json
+            /tmp/p0-time-travel.json
+            /tmp/p0-bookmark.txt
+            /tmp/p0-export.sha256
+            /tmp/p0-export-size.txt
+            /tmp/p0-backup-metadata.txt
+            /tmp/p0-pending-before.txt
+            /tmp/p0-prestate.txt
+          if-no-files-found: error
+
+      - name: Apply only migration 0050 after backup and preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/p0candidate
+          npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc | tee /tmp/p0-0050-apply.txt
+
+      - name: Verify migration 0050 and schema convergence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/p0candidate
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/p0-pending-after.txt
+          if grep -q '0050_lioe_provider_diagnostics.sql' /tmp/p0-pending-after.txt; then
+            echo "0050 remains pending"
+            exit 1
+          fi
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT version,description FROM schema_migrations WHERE version='50'; PRAGMA table_info(lioe_runtime_runs);" | tee /tmp/p0-schema-after.txt
+          grep -q '"version": "50"' /tmp/p0-schema-after.txt
+          grep -q 'LIOE privacy-safe provider failure diagnostics' /tmp/p0-schema-after.txt
+          for col in error_code http_status response_status incomplete_reason provider_request_id provider_response_id provider_timeout_ms provider_attempts_json; do
+            grep -q "\"name\": \"$col\"" /tmp/p0-schema-after.txt
+          done
+          echo "MIGRATION 0050 VERIFICATION: PASS"
+
+      - name: Verify database health before runtime deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 5 --retry-delay 2 "$BASE/api/health" | tee /tmp/p0-health-before-deploy.json
+          grep -q '"ok": true' /tmp/p0-health-before-deploy.json
+          grep -q '"schemaVersion": "50"' /tmp/p0-health-before-deploy.json
+
+      - name: Deploy exact approved candidate after schema verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/p0candidate
+          npx wrangler deploy --config wrangler.jsonc | tee /tmp/p0-runtime-deploy.txt
+          grep -q 'Current Version ID:' /tmp/p0-runtime-deploy.txt
+
+      - name: Verify live governed runtime and membership fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 6 --retry-delay 2 "$BASE/api/health" -o /tmp/p0-health.json
+          curl --fail --retry 6 --retry-delay 2 "$BASE/api/orchestrator" -o /tmp/p0-orchestrator.json
+          curl --fail --retry 6 --retry-delay 2 "$BASE/api/capabilities" -o /tmp/p0-capabilities.json
+          node <<'NODE'
+          const h=require("/tmp/p0-health.json");
+          const o=require("/tmp/p0-orchestrator.json");
+          const c=require("/tmp/p0-capabilities.json");
+          if(!h.ok || h.database?.reachable!==true || h.database?.schemaReady!==true || String(h.database?.schemaVersion)!=="50") throw new Error("Health/schema not ready");
+          if(!o.ok || o.runtime?.lioeRuntimeTelemetry!=="ready" || o.runtime?.lioePostflight!=="enabled" || o.runtime?.lioeSpecialistExecution!=="enabled") throw new Error("Governed orchestrator not ready");
+          if(c.capabilities?.legalOrchestrator!=="gpt_6_1_sol_live_governed" || c.capabilities?.lioeRuntimeTelemetry!=="ready") throw new Error("Capabilities mismatch");
+          console.log("LIVE GOVERNED RUNTIME: PASS");
+          NODE
+          code="$(curl --silent --show-error --output /tmp/p0-bot-unauth.json --write-out '%{http_code}' -H 'content-type: application/json' -d '{"q":"Здраво"}' "$BASE/api/bot")"
+          test "$code" = "401"
+          grep -q 'bot_membership_required' /tmp/p0-bot-unauth.json
+          echo "PROFESSIONAL MEMBERSHIP FAIL-CLOSED: PASS · PROVIDER NOT CALLED"
+
+      - name: Limited paid AI smoke - revision and mandatory postflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 2 --retry-delay 2             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Спореди две можни толкувања на условите за дозволеност на ревизија во граѓанска постапка, со процесни ризици и ограничувања. Не измислувај важечки праг или рок ако не е потврден.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/chat" -o /tmp/p0-revision-smoke.json
+          node <<'NODE'
+          const d=require("/tmp/p0-revision-smoke.json");
+          if(!d.ok) throw new Error("Revision smoke failed: "+JSON.stringify(d).slice(0,1600));
+          if(d.provider!=="openai" || d.model!=="gpt-6.1-sol") throw new Error("Unexpected Professional provider/model");
+          if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error("LIOE metadata missing");
+          if(d.legalGovernance?.postflightRequired!==true) throw new Error("Mandatory postflight not required");
+          if(d.runtimeTelemetry!=="recorded" || !d.governanceRunId) throw new Error("Telemetry not recorded");
+          require("fs").writeFileSync("/tmp/p0-revision-run-id.txt",d.governanceRunId);
+          console.log("REVISION LEGAL SMOKE: PASS");
+          NODE
+
+      - name: Limited paid AI smoke - labour draft and mandatory postflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 2 --retry-delay 2             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Направи ми тужба за враќање на работник на работа.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/chat" -o /tmp/p0-labour-smoke.json
+          node <<'NODE'
+          const d=require("/tmp/p0-labour-smoke.json");
+          if(!d.ok) throw new Error("Labour draft smoke failed: "+JSON.stringify(d).slice(0,1600));
+          if(d.provider!=="openai" || d.model!=="gpt-6.1-sol") throw new Error("Unexpected Professional provider/model");
+          if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1" || d.legalGovernance?.postflightRequired!==true) throw new Error("L3/postflight governance missing");
+          if(d.runtimeTelemetry!=="recorded" || !d.governanceRunId) throw new Error("Telemetry not recorded");
+          require("fs").writeFileSync("/tmp/p0-labour-run-id.txt",d.governanceRunId);
+          console.log("LABOUR DRAFT SMOKE: PASS");
+          NODE
+
+      - name: Read back LIOE telemetry for both paid smokes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/p0candidate
+          R1="$(cat /tmp/p0-revision-run-id.txt)"
+          R2="$(cat /tmp/p0-labour-run-id.txt)"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT run_id,mission_profile,verification_state,release_state,postflight_required,provider_calls,total_tokens,error_code,http_status,response_status,incomplete_reason,provider_timeout_ms,telemetry_schema_version FROM lioe_runtime_runs WHERE run_id IN ('$R1','$R2') ORDER BY run_id;" | tee /tmp/p0-telemetry-readback.txt
+          grep -q "\"run_id\": \"$R1\"" /tmp/p0-telemetry-readback.txt
+          grep -q "\"run_id\": \"$R2\"" /tmp/p0-telemetry-readback.txt
+          grep -q '"telemetry_schema_version": "1.1"' /tmp/p0-telemetry-readback.txt
+          echo "LIOE TELEMETRY READBACK: PASS"
+
+      - name: Upload non-secret controlled activation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0-0050-controlled-production-evidence
+          retention-days: 30
+          path: |
+            /tmp/p0-candidate-sha.txt
+            /tmp/p0-backup-metadata.txt
+            /tmp/p0-pending-before.txt
+            /tmp/p0-prestate.txt
+            /tmp/p0-0050-apply.txt
+            /tmp/p0-pending-after.txt
+            /tmp/p0-schema-after.txt
+            /tmp/p0-health-before-deploy.json
+            /tmp/p0-runtime-deploy.txt
+            /tmp/p0-health.json
+            /tmp/p0-orchestrator.json
+            /tmp/p0-capabilities.json
+            /tmp/p0-bot-unauth.json
+            /tmp/p0-telemetry-readback.txt
+          if-no-files-found: error
+
+      - name: Controlled activation result
+        run: |
+          echo "P0 0050 CONTROLLED PRODUCTION ACTIVATION: PASS"
+          echo "Exact candidate: $CANDIDATE_SHA"
+          echo "Migration 0050 verified before exact candidate deployment."
+          echo "Human Gate, LIOE, source verification, membership policy and provider policy preserved."
