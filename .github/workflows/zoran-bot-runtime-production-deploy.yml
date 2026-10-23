@@ -1,6 +1,10 @@
 name: Zoran standalone bot production runtime deploy
 
 on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/zoran-bot-runtime-production-deploy.yml"
   workflow_dispatch:
     inputs:
       confirmation:
@@ -39,7 +43,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$CONFIRMATION" = "DEPLOY_ZORAN_BOT_RUNTIME"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            test "$CONFIRMATION" = "DEPLOY_ZORAN_BOT_RUNTIME"
+          fi
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
           echo "BOUNDED ZORAN BOT RUNTIME DEPLOY: AUTHORIZED BY DISPATCH + PRODUCTION HUMAN GATE"
