@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadWorker } from './load-worker.mjs';
@@ -30,4 +31,12 @@ test('standalone bot retains confidential-case rejection before provider executi
   const result=await response.json();
   assert.equal(result.error,'confidential_case_workspace_required');
   assert.equal(result.privacy.providerCalled,false);
+});
+
+
+test('first-time users can trigger access from the send action',()=>{
+  const source=fs.readFileSync('assets/standalone-bot.js','utf8');
+  assert.ok(source.includes("$('send').disabled = value;"));
+  assert.ok(!source.includes("$('send').disabled = value || !key;"));
+  assert.ok(source.includes("Најпрво внесете го вашиот приватен код за влез."));
 });
