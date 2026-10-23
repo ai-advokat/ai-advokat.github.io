@@ -386,6 +386,46 @@ test("single-pass legal postflight may release verifier-corrected text only as R
 
 
 
+test("OpenAI chief failure metadata distinguishes incomplete, HTTP and timeout without legal content",async()=>{
+  const originalFetch=globalThis.fetch;
+  try{
+    const plan=buildAgentPlan("Кои се законските услови за ревизија во граѓанска постапка?");
+    globalThis.fetch=async()=>new Response(JSON.stringify({
+      id:"resp_incomplete",status:"incomplete",incomplete_details:{reason:"max_output_tokens"},
+      usage:{input_tokens:40,output_tokens:20,total_tokens:60}
+    }),{status:200,headers:{"content-type":"application/json","x-request-id":"req_incomplete"}});
+    const incomplete=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-test",OPENAI_PROVIDER_TIMEOUT_MS:"12000"
+    },{plan,input:"Кои се условите?",maxOutputTokens:900});
+    assert.equal(incomplete.ok,false);
+    assert.equal(incomplete.error,"openai_incomplete_response");
+    assert.equal(incomplete.responseStatus,"incomplete");
+    assert.equal(incomplete.failureDetail,"max_output_tokens");
+    assert.equal(incomplete.requestId,"req_incomplete");
+    assert.equal(incomplete.responseId,"resp_incomplete");
+    assert.equal(incomplete.providerCalls,1);
+    assert.equal(incomplete.usage.totalTokens,60);
+
+    globalThis.fetch=async()=>new Response(JSON.stringify({error:{message:"busy"}}),{status:503,headers:{"content-type":"application/json","x-request-id":"req_503"}});
+    const httpFail=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-test"
+    },{plan,input:"Кои се условите?",maxOutputTokens:900});
+    assert.equal(httpFail.error,"openai_response_error");
+    assert.equal(httpFail.status,503);
+    assert.equal(httpFail.requestId,"req_503");
+
+    globalThis.fetch=async()=>{ throw new DOMException("timed out","TimeoutError"); };
+    const timeout=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-test",OPENAI_PROVIDER_TIMEOUT_MS:"11000"
+    },{plan,input:"Кои се условите?",maxOutputTokens:900});
+    assert.equal(timeout.error,"openai_timeout_error");
+    assert.equal(timeout.timeoutMs,11000);
+    assert.equal(timeout.providerCalls,1);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
 test("postflight PASS is compact and preserves the original draft without echoing it",async()=>{
   const originalFetch=globalThis.fetch;
   let captured=null;
