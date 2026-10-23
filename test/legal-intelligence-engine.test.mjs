@@ -142,3 +142,12 @@ test("run record starts blocked and does not invent verification",()=>{
   assert.equal(r.release_status,"BLOCKED");
   assert.equal(r.outcome_state,"UNKNOWN");
 });
+
+
+test("labor reinstatement complaint is L3 consequential",()=>{
+  const p=buildLegalIntelligencePlan("Направи ми тужба за враќање на работник на работа.",{selectedAgents:["macedonian_law"]});
+  assert.equal(p.mission_profile.id,"L3_CONSEQUENTIAL");
+  assert.equal(p.authority_and_human_gate.human_review_required,true);
+  assert.ok(p.authority_and_human_gate.required_gate_types.includes("author_approval"));
+  assert.equal(p.implementation.no_autonomous_filing,true);
+});

@@ -190,7 +190,9 @@ test("COP18 v7 formal drafting is GPT-class but provider-truthful and Macedonian
 
 test("COP16 governed GPT has a final Macedonian release gate",()=>{
   assert.match(worker,/function canonicalMacedonianFinalRelease/);
-  assert.match(worker,/let governedFinalAnswer=String\(finalAnswer\|\|""\)\.trim\(\)/);
+  assert.match(worker,/const formalDraftRequest=isFormalLegalDraftRequest\(q\)/);
+  assert.match(worker,/finaliseFormalLegalDraft\(finalAnswer/);
+  assert.match(worker,/hasGovernedLegalContext:articleBundle\.context\.length>0/);
   assert.match(worker,/governedLanguageRequired=shouldEnforceMacedonianOutput\(q\)/);
   assert.match(worker,/governedFinalRelease=canonicalMacedonianFinalRelease\(governedFinalAnswer,q\)/);
   assert.match(worker,/governedLanguageQuality=governedFinalRelease\.quality/);

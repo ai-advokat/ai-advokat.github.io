@@ -5605,24 +5605,28 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const missionProfile=plan.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
   const consequentialLegal=["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile);
   const lightweightLegal=["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(missionProfile);
-  const legalMissionOutputTokens=missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE" ? 3200
-    : missionProfile==="L3_CONSEQUENTIAL" ? 2800
-      : missionProfile==="L2_STRATEGY_PROCEDURE" ? 2400
-        : 2000;
+  const legalMissionOutputTokens=missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE" ? 5200
+    : missionProfile==="L3_CONSEQUENTIAL" ? 4800
+      : missionProfile==="L2_STRATEGY_PROCEDURE" ? 3600
+        : 2200;
   const maxOutputTokens=fastGeneral ? 600
-    : missionProfile==="L0_INFORMATIONAL" ? 800
-      : missionProfile==="L1_VERIFIED_RESEARCH" ? 1200
+    : missionProfile==="L0_INFORMATIONAL" ? 900
+      : missionProfile==="L1_VERIFIED_RESEARCH" ? 1500
         : consequentialLegal ? legalMissionOutputTokens
-          : lightweightLegal ? 1200
-            : webRequested ? 1800
-              : articleBundle.state==="matched" ? 1600
-                : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1600
-                  : 1200;
+          : lightweightLegal ? 1500
+            : webRequested ? 2200
+              : articleBundle.state==="matched" ? 1800
+                : (attachmentCheck.attachments.length || guideDocumentCheck.attachments.length) ? 1800
+                  : 1400;
   const reasoningEffort=fastGeneral
     ? "low"
-    : missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE"
-      ? "medium"
-      : "low";
+    : ["L4_LEGAL_TRUTH_GOVERNANCE","L3_CONSEQUENTIAL"].includes(missionProfile)
+      ? "high"
+      : missionProfile==="L2_STRATEGY_PROCEDURE"
+        ? "medium"
+        : missionProfile==="L1_VERIFIED_RESEARCH"
+          ? "medium"
+          : "low";
 
   const runWorkersFallbackResponse=async({fallbackReason=null,primaryProviderCalls=0}={})=>{
     // FREE mode must remain usable for research, analysis and complete working drafts.
@@ -5810,7 +5814,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
   if(useFreeWorkersAI) return runWorkersFallbackResponse();
 
-  const result=await runOpenAIOrchestrator(env,{
+  let result=await runOpenAIOrchestrator(env,{
     plan,
     input:q,
     corpusContext,
@@ -5822,6 +5826,55 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     maxOutputTokens,
     reasoningEffort
   });
+
+  let providerRecovery=null;
+  if(!result.ok && membership){
+    const transientPrimaryErrors=new Set([
+      "openai_network_error",
+      "openai_empty_response",
+      "openai_incomplete_response",
+      "openai_response_error"
+    ]);
+    const transientStatus=Number(result.status||0);
+    const retryableResponseStatus=result.error==="openai_response_error"
+      && [429,500,502,503,504].includes(transientStatus);
+    const retryable=transientPrimaryErrors.has(String(result.error||""))
+      && (result.error!=="openai_response_error" || retryableResponseStatus);
+    if(retryable){
+      const first=result;
+      const retryUsesWeb=explicitWebRequested ? webRequested : false;
+      const retry=await runOpenAIOrchestrator(env,{
+        plan,
+        input:q,
+        corpusContext,
+        externalContext:[],
+        externalResearchEnabled:retryUsesWeb,
+        webSearchEnabled:retryUsesWeb,
+        attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
+        history:historyCheck.history,
+        maxOutputTokens:Math.min(6000,Math.max(maxOutputTokens,missionProfile==="L3_CONSEQUENTIAL"?5200:maxOutputTokens)),
+        reasoningEffort:["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort
+      });
+      if(retry.ok){
+        const a=first.usage||{};
+        const b=retry.usage||{};
+        result={
+          ...retry,
+          providerCalls:Number(first.providerCalls||1)+Number(retry.providerCalls||1),
+          usage:{
+            inputTokens:Number(a.inputTokens||0)+Number(b.inputTokens||0),
+            outputTokens:Number(a.outputTokens||0)+Number(b.outputTokens||0),
+            totalTokens:Number(a.totalTokens||0)+Number(b.totalTokens||0)
+          }
+        };
+        providerRecovery={
+          recovered:true,
+          firstError:String(first.error||"provider_failure"),
+          retryWebSearch:retryUsesWeb
+        };
+      }
+    }
+  }
 
   if(!result.ok){
     const workersFallbackAllowed=
@@ -5926,11 +5979,22 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
   const finalAnswer=postflight.required ? postflight.corrected_answer : result.text;
 
+  // Formal professional drafts on the paid OpenAI path receive the same
+  // deterministic export/safety finaliser as the FREE/private drafting paths.
+  // This preserves the requested document heading/structure while removing only
+  // ungrounded article references when governed current-law context is absent.
+  const formalDraftRequest=isFormalLegalDraftRequest(q);
+  let governedFinalAnswer=formalDraftRequest
+    ? finaliseFormalLegalDraft(finalAnswer,{
+        userText:q,
+        hasGovernedLegalContext:articleBundle.context.length>0
+      })
+    : String(finalAnswer||"").trim();
+
   // Final language release gate for the governed OpenAI path. The central prompt
   // should already produce standard Macedonian, but no Macedonian-facing answer
   // is released unless the deterministic cleanup + runtime assessment confirms
   // the 2017 orthography contract. This is deliberately last-mile and fail-closed.
-  let governedFinalAnswer=String(finalAnswer||"").trim();
   const governedLanguageRequired=shouldEnforceMacedonianOutput(q);
   const governedFinalRelease=canonicalMacedonianFinalRelease(governedFinalAnswer,q);
   const governedLanguageQuality=governedFinalRelease.quality;
@@ -6040,6 +6104,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     answer:governedFinalAnswer,
     provider:"openai",
     providerFallback:null,
+    providerRecovery,
     model:result.model,
     languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageReleaseGate:governedLanguageRelease,

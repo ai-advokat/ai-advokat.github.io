@@ -413,7 +413,7 @@ test("postflight PASS is compact and preserves the original draft without echoin
     assert.equal(verdict.ok,true);
     assert.equal(verdict.verdict,"PASS");
     assert.equal(verdict.corrected_answer,original);
-    assert.equal(captured.max_output_tokens,2400);
+    assert.equal(captured.max_output_tokens,5000);
     assert.match(captured.instructions,/set corrected_answer to the empty string/);
     assert.match(captured.instructions,/do not FAIL solely because the source set is incomplete/);
   }finally{
@@ -589,8 +589,22 @@ test("natural Macedonian legal-domain prompts never bypass legal governance",()=
 });
 
 
-test("postflight REVISE is explicitly bounded for synchronous production latency",()=>{
-  assert.match(agentSource,/normally no more than 800 words/);
+test("postflight REVISE is bounded without compressing L3 pleadings",()=>{
   assert.match(agentSource,/maxItems:6/);
-  assert.match(agentSource,/must not repeat long evidence lists or source metadata/);
+  assert.match(agentSource,/For non-formal answers, remain concise/);
+  assert.match(agentSource,/PRESERVE DEPTH/);
+  assert.match(agentSource,/must never reduce a substantial pleading to a short template/);
+  assert.match(agentSource,/profile==="L3_CONSEQUENTIAL"\s*\? 5000/);
+});
+
+
+test("professional pleading depth survives L3 verification",()=>{
+  const plan=buildAgentPlan("Направи ми тужба за враќање на работник на работа.");
+  assert.equal(plan.legalIntelligenceEngine.mission_profile.id,"L3_CONSEQUENTIAL");
+  const instructions=orchestratorInstructions(plan);
+  assert.match(instructions,/PROFESSIONAL PLEADING DEPTH/);
+  assert.match(instructions,/LABOUR DISMISSAL DRAFTING METHOD/);
+  assert.match(agentSource,/SPECIALIST_RUNTIME_DEGRADED/);
+  assert.match(agentSource,/must never reduce a substantial pleading to a short template/);
+  assert.match(agentSource,/profile==="L3_CONSEQUENTIAL"\s*\? 5000/);
 });

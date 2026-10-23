@@ -676,19 +676,45 @@ export async function runOpenAIOrchestrator(env, {
 
   const model=env.OPENAI_MODEL.trim();
 
-  const specialistStage=await runBoundedSpecialists(env,{
+  let specialistStage=await runBoundedSpecialists(env,{
     plan,
     input,
     corpusContext,
     webSearchEnabled:webSearchEnabled && externalResearchEnabled
   });
   if(!specialistStage.ok){
-    return {
-      ok:false,
-      error:specialistStage.error||"specialist_execution_failed",
-      failedAgent:specialistStage.failedAgent||null,
-      failureDetail:specialistStage.failureDetail||null,
-      providerCalls:specialistStage.providerCalls||0,
+    const profile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
+    const transientSpecialistErrors=new Set([
+      "specialist_network_error",
+      "specialist_response_error",
+      "specialist_incomplete_response",
+      "specialist_empty_response"
+    ]);
+    const mayDegrade=["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL"].includes(profile)
+      && transientSpecialistErrors.has(String(specialistStage.error||""));
+    if(!mayDegrade){
+      return {
+        ok:false,
+        error:specialistStage.error||"specialist_execution_failed",
+        failedAgent:specialistStage.failedAgent||null,
+        failureDetail:specialistStage.failureDetail||null,
+        providerCalls:specialistStage.providerCalls||0,
+        usage:specialistStage.usage||{inputTokens:0,outputTokens:0,totalTokens:0}
+      };
+    }
+    specialistStage={
+      ok:true,
+      executed:true,
+      degraded:true,
+      degradedReason:String(specialistStage.error||"specialist_execution_failed"),
+      findings:[{
+        agentId:specialistStage.failedAgent||"bounded_specialist",
+        label:"Specialist runtime degraded",
+        text:"SPECIALIST_RUNTIME_DEGRADED. Continue with a useful working draft, but do not infer current law, deadlines, mandatory procedure or jurisdiction from the failed specialist. Mark unsupported legal propositions for verification and preserve the Human Gate."
+      }],
+      sources:[],
+      webSearchUsed:false,
+      providerCalls:Number(specialistStage.providerCalls||0),
       usage:specialistStage.usage||{inputTokens:0,outputTokens:0,totalTokens:0}
     };
   }
@@ -927,10 +953,12 @@ export async function runLegalPostflightVerifier(env,{
     ].join("\n");
 
     const postflightOutputTokens=profile==="L4_LEGAL_TRUTH_GOVERNANCE"
-      ? 2600
+      ? 4400
       : profile==="L3_CONSEQUENTIAL"
-        ? 2400
-        : 2000;
+        ? 5000
+        : profile==="L2_STRATEGY_PROCEDURE"
+          ? 3200
+          : 2200;
     const body={
       model:env.OPENAI_MODEL.trim(),
       instructions:[
@@ -945,7 +973,9 @@ export async function runLegalPostflightVerifier(env,{
         "For L4, the corrected answer must not claim current-law/corpus/RAG/production/provider mutation without the named Human Gate.",
         "If governed evidence is insufficient to verify current law, do not FAIL solely because the source set is incomplete. If the draft can be made safe, verdict REVISE: remove or clearly qualify unsupported current-law claims, deadlines, sanctions, jurisdictional assertions and mandatory-document claims; preserve useful non-authoritative practical orientation and state what must be verified.",
         "Use FAIL only when the draft cannot be made materially safe and useful from the supplied evidence without inventing law or authority.",
-        "If the draft can be made safe and materially correct from the supplied evidence, verdict REVISE and provide a complete corrected_answer. The corrected answer must be concise (normally no more than 800 words), preserve the useful core, change only what is necessary for safety/correctness, and must not repeat long evidence lists or source metadata already present.",
+        "If the draft can be made safe and materially correct from the supplied evidence, verdict REVISE and provide a complete corrected_answer. Change only what is necessary for safety/correctness; do not rewrite a strong draft into a generic summary.",
+        "For L3 formal legal drafts, PRESERVE DEPTH: keep the document structure, material factual allegations/placeholders, evidence mapping, grounds, petitum/requested relief, costs, annexes and Human Gate. Remove or qualify only unsupported legal propositions, deadlines, jurisdictional assertions or mandatory procedural claims. A verifier correction must never reduce a substantial pleading to a short template merely because current law is not fully verified.",
+        "For non-formal answers, remain concise and avoid repeating long evidence lists or source metadata already present.",
         "If verdict PASS, set corrected_answer to the empty string. The runtime will preserve the original verified draft; do not waste output tokens by echoing it."
       ].join("\n"),
       input:[{role:"user",content:[{type:"input_text",text:input}]}],

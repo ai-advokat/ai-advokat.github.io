@@ -5,6 +5,10 @@ on:
     branches: ["main"]
     paths:
       - ".github/workflows/zoran-bot-runtime-production-deploy.yml"
+      - "src/index.js"
+      - "src/agent-orchestrator.js"
+      - "src/ai-advokat-central-prompt.js"
+      - "src/response-quality.js"
   workflow_dispatch:
     inputs:
       confirmation:
