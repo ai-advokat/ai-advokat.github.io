@@ -701,3 +701,123 @@ test("professional pleading depth survives L3 verification",()=>{
   assert.match(agentSource,/must never reduce a substantial pleading to a short template/);
   assert.match(agentSource,/profile==="L3_CONSEQUENTIAL"\s*\? 5000/);
 });
+
+
+function slowProviderUntilAbort(){
+  return (_url,options={})=>new Promise((_resolve,reject)=>{
+    const signal=options.signal;
+    if(signal?.aborted){
+      reject(new DOMException("timed out","AbortError"));
+      return;
+    }
+    signal?.addEventListener("abort",()=>reject(new DOMException("timed out","AbortError")),{once:true});
+  });
+}
+
+test("shared deadline functionally aborts a slow chief provider call",async()=>{
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=(...args)=>{calls+=1;return slowProviderUntilAbort()(...args);};
+  try{
+    const plan=buildAgentPlan("Работникот добил отказ и бара правна анализа.");
+    const started=Date.now();
+    const result=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test",
+      OPENAI_PROVIDER_TIMEOUT_MS:"1000"
+    },{
+      plan,input:"Работникот добил отказ и бара правна анализа.",
+      maxOutputTokens:900,
+      deadlineAt:Date.now()+9000
+    });
+    assert.equal(result.ok,false);
+    assert.equal(result.error,"openai_timeout_error");
+    assert.equal(result.providerCalls,1);
+    assert.equal(calls,1);
+    assert.ok(Date.now()-started<4000);
+    assert.equal(Object.hasOwn(result,"text"),false);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test("shared deadline functionally aborts slow bounded specialists",async()=>{
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=(...args)=>{calls+=1;return slowProviderUntilAbort()(...args);};
+  try{
+    const plan=buildAgentPlan("Спореди две правни опции за жалба и нивните ризици.");
+    const started=Date.now();
+    const stage=await runBoundedSpecialists({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test",
+      LIOE_SPECIALIST_EXECUTION_ENABLED:"true",
+      OPENAI_SPECIALIST_TIMEOUT_MS:"1000"
+    },{
+      plan,input:"Спореди две правни опции за жалба и нивните ризици.",
+      deadlineAt:Date.now()+9000
+    });
+    assert.equal(stage.ok,false);
+    assert.equal(stage.error,"specialist_timeout_error");
+    assert.ok(stage.providerCalls>=1);
+    assert.ok(calls>=1);
+    assert.ok(Date.now()-started<4000);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test("mandatory postflight timeout never releases the unverified draft",async()=>{
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=(...args)=>{calls+=1;return slowProviderUntilAbort()(...args);};
+  try{
+    const plan=buildAgentPlan("Спореди ги опциите, процесниот ризик и доказите за жалба.");
+    const unsafeDraft="Овој текст не смее да се пушти без проверка.";
+    const started=Date.now();
+    const verdict=await runLegalPostflightVerifier({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test",
+      OPENAI_POSTFLIGHT_TIMEOUT_MS:"1000"
+    },{
+      plan,draft:unsafeDraft,corpusContext:[],webSources:[],
+      maxAttempts:1,
+      deadlineAt:Date.now()+9000
+    });
+    assert.equal(verdict.ok,false);
+    assert.equal(verdict.error,"legal_postflight_timeout_error");
+    assert.equal(verdict.providerCalls,1);
+    assert.equal(calls,1);
+    assert.ok(Date.now()-started<4000);
+    assert.notEqual(verdict.corrected_answer,unsafeDraft);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test("exhausted shared deadline prevents a new chief provider call",async()=>{
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=async()=>{calls+=1;throw new Error("provider must not start");};
+  try{
+    const plan=buildAgentPlan("Работникот добил отказ и бара правна анализа.");
+    const result=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test"
+    },{
+      plan,input:"Работникот добил отказ и бара правна анализа.",
+      maxOutputTokens:900,
+      deadlineAt:Date.now()+100
+    });
+    assert.equal(result.ok,false);
+    assert.equal(result.error,"openai_request_deadline_exhausted");
+    assert.equal(result.providerCalls,0);
+    assert.equal(calls,0);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
