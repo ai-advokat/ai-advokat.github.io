@@ -5814,6 +5814,21 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
   if(useFreeWorkersAI) return runWorkersFallbackResponse();
 
+  const sanitiseProviderAttempt=(value,attempt)=>Object.freeze({
+    attempt,
+    error:String(value?.error||"").slice(0,80)||null,
+    httpStatus:Number.isFinite(Number(value?.status))?Number(value.status):null,
+    responseStatus:typeof value?.responseStatus==="string"?value.responseStatus.slice(0,80):null,
+    incompleteReason:typeof value?.failureDetail==="string"?value.failureDetail.slice(0,120):null,
+    timeoutMs:Number.isFinite(Number(value?.timeoutMs))?Number(value.timeoutMs):null,
+    requestId:typeof value?.requestId==="string"?value.requestId.slice(0,180):null,
+    responseId:typeof value?.responseId==="string"?value.responseId.slice(0,180):null,
+    providerCalls:Number(value?.providerCalls||0),
+    inputTokens:Number(value?.usage?.inputTokens||0),
+    outputTokens:Number(value?.usage?.outputTokens||0),
+    totalTokens:Number(value?.usage?.totalTokens||0)
+  });
+
   let result=await runOpenAIOrchestrator(env,{
     plan,
     input:q,
@@ -5831,6 +5846,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   if(!result.ok && membership){
     const transientPrimaryErrors=new Set([
       "openai_network_error",
+      "openai_timeout_error",
       "openai_empty_response",
       "openai_incomplete_response",
       "openai_response_error"
@@ -5843,6 +5859,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     if(retryable){
       const first=result;
       const retryUsesWeb=explicitWebRequested ? webRequested : false;
+      const configuredBackoff=Number(env?.OPENAI_RETRY_BACKOFF_MS||250);
+      const retryBackoffMs=Number.isFinite(configuredBackoff)
+        ? Math.min(1000,Math.max(0,Math.trunc(configuredBackoff)))
+        : 250;
+      if(retryBackoffMs>0) await new Promise(resolve=>setTimeout(resolve,retryBackoffMs));
       const incompleteRecoveryBudget=result.error==="openai_incomplete_response"
         ? (missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE" ? 5600
           : missionProfile==="L3_CONSEQUENTIAL" ? 5200
@@ -5862,22 +5883,36 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         maxOutputTokens:Math.min(6000,Math.max(maxOutputTokens,incompleteRecoveryBudget,missionProfile==="L3_CONSEQUENTIAL"?5200:maxOutputTokens)),
         reasoningEffort:["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort
       });
+      const a=first.usage||{};
+      const b=retry.usage||{};
+      const combinedUsage={
+        inputTokens:Number(a.inputTokens||0)+Number(b.inputTokens||0),
+        outputTokens:Number(a.outputTokens||0)+Number(b.outputTokens||0),
+        totalTokens:Number(a.totalTokens||0)+Number(b.totalTokens||0)
+      };
+      const providerAttempts=[
+        sanitiseProviderAttempt(first,1),
+        sanitiseProviderAttempt(retry,2)
+      ];
       if(retry.ok){
-        const a=first.usage||{};
-        const b=retry.usage||{};
         result={
           ...retry,
           providerCalls:Number(first.providerCalls||1)+Number(retry.providerCalls||1),
-          usage:{
-            inputTokens:Number(a.inputTokens||0)+Number(b.inputTokens||0),
-            outputTokens:Number(a.outputTokens||0)+Number(b.outputTokens||0),
-            totalTokens:Number(a.totalTokens||0)+Number(b.totalTokens||0)
-          }
+          usage:combinedUsage,
+          providerAttempts
         };
         providerRecovery={
           recovered:true,
           firstError:String(first.error||"provider_failure"),
-          retryWebSearch:retryUsesWeb
+          retryWebSearch:retryUsesWeb,
+          retryBackoffMs
+        };
+      }else{
+        result={
+          ...retry,
+          providerCalls:Number(first.providerCalls||1)+Number(retry.providerCalls||1),
+          usage:combinedUsage,
+          providerAttempts
         };
       }
     }
@@ -5896,6 +5931,15 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     }
 
     await releaseMonthlyQuota(env,{subject,period});
+    if(!Array.isArray(result.providerAttempts)){
+      result={...result,providerAttempts:[sanitiseProviderAttempt(result,1)]};
+    }
+    console.error("openai_orchestrator_failure",JSON.stringify({
+      governanceRunId:lioeRunId,
+      model:String(env.OPENAI_MODEL||""),
+      attempts:result.providerAttempts,
+      missionProfile
+    }));
     let telemetryState="not_applicable";
     if(lioeEngaged){
       const finishedAt=new Date().toISOString();
