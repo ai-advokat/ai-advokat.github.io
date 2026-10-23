@@ -51,3 +51,21 @@ test('professional bot keeps high-depth paid drafting and one transient recovery
   assert.match(source,/retryUsesWeb=explicitWebRequested \? webRequested : false/);
   assert.match(source,/finaliseFormalLegalDraft\(finalAnswer/);
 });
+
+
+test('P0 professional recovery keeps two bounded attempts and no uncontrolled Workers AI fallback',()=>{
+  const source=fs.readFileSync('src/index.js','utf8');
+  const orchestrator=fs.readFileSync('src/agent-orchestrator.js','utf8');
+  const governance=fs.readFileSync('src/legal-runtime-governance.js','utf8');
+  const migration=fs.readFileSync('migrations/0050_lioe_provider_diagnostics.sql','utf8');
+  assert.match(source,/providerAttempts=\[/);
+  assert.match(source,/sanitiseProviderAttempt\(first,1\)/);
+  assert.match(source,/sanitiseProviderAttempt\(retry,2\)/);
+  assert.match(source,/OPENAI_RETRY_BACKOFF_MS\|\|250/);
+  assert.match(source,/!membership\s*&&\s*governedOpenAIWorkersFallbackConfigured/);
+  assert.match(orchestrator,/OPENAI_PROVIDER_TIMEOUT_MS\|\|45000/);
+  assert.match(orchestrator,/signal:AbortSignal\.timeout\(providerTimeoutMs\)/);
+  assert.match(governance,/provider_attempts_json/);
+  assert.match(migration,/ADD COLUMN error_code TEXT/);
+  assert.match(migration,/ADD COLUMN provider_attempts_json TEXT/);
+});
