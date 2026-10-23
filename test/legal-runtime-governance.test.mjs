@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   LEGAL_RUNTIME_GOVERNANCE_VERSION,
+  LEGAL_RUNTIME_TELEMETRY_SCHEMA,
   legalPostflightRequired,
   assessLegalRuntimeRelease,
   buildSanitisedRuntimeRecord
@@ -117,9 +118,42 @@ test("sanitised telemetry contains no question answer history or source text",()
   assert.equal(rec.total_tokens,210);
   assert.equal(rec.provider_calls,2);
   assert.equal(rec.estimated_credit_units,5);
-  assert.equal(rec.telemetry_schema_version,"1.0");
+  assert.equal(rec.telemetry_schema_version,"1.1");
   const keys=Object.keys(rec);
   for(const forbidden of ["question","answer","history","source_text","user_id","membership_key","attachment_text"]){
     assert.equal(keys.includes(forbidden),false);
+  }
+});
+
+
+test("failure telemetry keeps bounded provider diagnostics but no legal content",()=>{
+  const p=plan("L0_INFORMATIONAL");
+  const a=assessLegalRuntimeRelease({plan:p,articleBundle:{state:"instrument_not_resolved",context:[],legalSources:[]},result:{ok:false},postflight:{verdict:"FAIL"}});
+  const rec=buildSanitisedRuntimeRecord({
+    runId:"LIOE-RT-P0",startedAt:"2026-10-23T21:01:00Z",finishedAt:"2026-10-23T21:01:02Z",elapsedMs:2000,
+    plan:p,assessment:a,articleBundle:{context:[]},sourceMode:"provider_failure",
+    result:{
+      ok:false,error:"openai_incomplete_response",status:503,responseStatus:"incomplete",failureDetail:"max_output_tokens",
+      requestId:"req_safe",responseId:"resp_safe",timeoutMs:45000,providerCalls:2,
+      usage:{inputTokens:120,outputTokens:80,totalTokens:200},
+      providerAttempts:[
+        {attempt:1,error:"openai_incomplete_response",httpStatus:null,responseStatus:"incomplete",incompleteReason:"max_output_tokens",requestId:"req_1",responseId:"resp_1",providerCalls:1,inputTokens:60,outputTokens:40,totalTokens:100},
+        {attempt:2,error:"openai_response_error",httpStatus:503,responseStatus:null,incompleteReason:null,requestId:"req_2",responseId:null,providerCalls:1,inputTokens:60,outputTokens:40,totalTokens:100}
+      ]
+    },
+    postflightMeta:{attempts:0,providerCalls:0,primaryProviderCalls:2}
+  });
+  assert.equal(LEGAL_RUNTIME_TELEMETRY_SCHEMA,"1.1");
+  assert.equal(rec.error_code,"openai_incomplete_response");
+  assert.equal(rec.http_status,503);
+  assert.equal(rec.response_status,"incomplete");
+  assert.equal(rec.incomplete_reason,"max_output_tokens");
+  assert.equal(rec.provider_request_id,"req_safe");
+  assert.equal(rec.provider_response_id,"resp_safe");
+  assert.equal(rec.provider_timeout_ms,45000);
+  assert.equal(JSON.parse(rec.provider_attempts_json).length,2);
+  const serialised=JSON.stringify(rec);
+  for(const forbidden of ["Работникот","ревизија во граѓанска","Bearer ","sk-"]){
+    assert.equal(serialised.includes(forbidden),false);
   }
 });
