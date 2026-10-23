@@ -13,7 +13,7 @@ const welcome = $('welcome').cloneNode(true);
 
 function status(text) { $('status').textContent = text; }
 function busy(value) {
-  $('send').disabled = value || !key;
+  $('send').disabled = value;
   $('stop').hidden = !value;
   $('send').hidden = value;
   $('question').disabled = value;
@@ -107,7 +107,7 @@ $('composer').addEventListener('drop', event => { event.preventDefault(); $('plu
 $('composer').onsubmit = async event => {
   event.preventDefault(); const q = $('question').value.trim();
   if (pending || q.length < 2) return;
-  if (!key) { $('access').click(); return; }
+  if (!key) { status('Најпрво внесете го вашиот приватен код за влез.'); $('access').click(); return; }
   if (detectConfidentialCasePrompt(q).confidential) {
     $('question').value = ''; $('plus').open = true;
     status('Ова личи на доверлив предмет. Не е испратено. Продолжете во приватниот простор преку „+“.'); return;
