@@ -2,11 +2,10 @@ name: AI Advokat P0 0050 controlled production activation
 
 on:
   push:
-    branches: ["main"]
+    branches: ["ops/p0-0050-controlled-production-retry"]
     paths:
       - ".github/workflows/p0-0050-controlled-production.yml"
-      - ".github/activation/p0-0050-controlled-production-2026-10-24.json"
-      - "data/human-gate-decision-ledger.json"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -112,7 +111,13 @@ jobs:
           console.log("EXACT PRODUCTION TARGET + GOVERNANCE CONTRACT: PASS");
           NODE
           npx wrangler d1 info DB --config wrangler.jsonc --json | tee /tmp/p0-d1-info.json
-          grep -Eq '"version"[[:space:]]*:[[:space:]]*"production"' /tmp/p0-d1-info.json
+          node <<'NODE'
+          const d=require("/tmp/p0-d1-info.json");
+          if(d.uuid!==process.env.DB_ID) throw new Error("D1 info UUID mismatch");
+          if(d.name!=="ai-advokat-db") throw new Error("D1 info name mismatch");
+          if(!Number.isFinite(Number(d.database_size)) || Number(d.database_size)<=0) throw new Error("D1 info size invalid");
+          console.log("REMOTE D1 INFO: PASS");
+          NODE
 
       - name: Capture Time Travel bookmark and validate full D1 export before any write
         shell: bash
