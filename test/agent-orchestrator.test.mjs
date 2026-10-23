@@ -467,7 +467,7 @@ test("postflight retries a transient incomplete verifier response and then relea
     }),{status:200,headers:{"content-type":"application/json"}});
   };
   try{
-    const plan=buildAgentPlan("Работникот добил отказ, но смета дека причините во решението не се точни. Направи професионална анализа што треба да се провери и кои докази се важни.");
+    const plan=buildAgentPlan("Спореди ги опциите, процесниот ризик и доказите за оспорување отказ и враќање на работа.");
     const original="Професионален работен нацрт.";
     const verdict=await runLegalPostflightVerifier({
       OPENAI_ORCHESTRATOR_ENABLED:"true",
@@ -639,6 +639,16 @@ test("postflight REVISE is bounded without compressing L3 pleadings",()=>{
   assert.match(agentSource,/profile==="L3_CONSEQUENTIAL"\s*\? 5000/);
 });
 
+
+test("Zoran labour-dismissal analysis gets a larger retry budget after incomplete OpenAI output",()=>{
+  const prompt="Работникот добил отказ, но смета дека причините во решението не се точни. Направи професионална анализа што треба да се провери и кои докази се важни.";
+  const plan=buildAgentPlan(prompt);
+  assert.equal(plan.legalIntelligenceEngine.mission_profile.id,"L0_INFORMATIONAL");
+  assert.match(workerSource,/result\.error==="openai_incomplete_response"/);
+  assert.match(workerSource,/missionProfile==="L1_VERIFIED_RESEARCH" \? 2600/);
+  assert.match(workerSource,/: 2200\)/);
+  assert.match(agentSource,/"specialist_incomplete"/);
+});
 
 test("professional pleading depth survives L3 verification",()=>{
   const plan=buildAgentPlan("Направи ми тужба за враќање на работник на работа.");
