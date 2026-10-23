@@ -687,6 +687,7 @@ export async function runOpenAIOrchestrator(env, {
     const transientSpecialistErrors=new Set([
       "specialist_network_error",
       "specialist_response_error",
+      "specialist_incomplete",
       "specialist_incomplete_response",
       "specialist_empty_response"
     ]);
