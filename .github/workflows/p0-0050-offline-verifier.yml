@@ -1,0 +1,126 @@
+name: AI Advokat P0 0050 offline full-mirror verifier
+
+on:
+  push:
+    branches: ["ops/p0-0050-controlled-production-retry"]
+    paths:
+      - ".github/workflows/p0-0050-offline-verifier.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SOURCE_JOB_ID: "120697258778"
+      EXPECTED_EXPORT_SHA256: "f1ebebd8c8af072881b982464ea09ffe660e71f7ecbe920f2706aa4decc84784"
+      EXPECTED_EXPORT_BYTES: "13880343"
+      CANDIDATE_SHA: "1d65b251343cab4b1329d8cc8478e8948d363750"
+      MIGRATION_BLOB_SHA: "f10b6623401c9afec6680fb45afa6c8674d4c291"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Acquire previously-created export without printing signed URL
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error             -H "Authorization: Bearer $GH_TOKEN"             -H "Accept: application/vnd.github+json"             "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/jobs/$SOURCE_JOB_ID/logs"             -o /tmp/source.log
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          s=Path("/tmp/source.log").read_text(errors="replace")
+          m=re.search(r'https://[^\s]+\.sql\?X-Amz-Expires=3600[^\s]+',s)
+          if not m: raise SystemExit("export URL unavailable")
+          Path("/tmp/url").write_text(m.group(0))
+          Path("/tmp/url").chmod(0o600)
+          print("Signed export reference recovered; value suppressed")
+          PY
+          curl --fail --location --silent --show-error "$(cat /tmp/url)" -o /tmp/prod.sql
+          rm -f /tmp/url /tmp/source.log
+          test "$(sha256sum /tmp/prod.sql | cut -d' ' -f1)" = "$EXPECTED_EXPORT_SHA256"
+          test "$(stat -c '%s' /tmp/prod.sql)" = "$EXPECTED_EXPORT_BYTES"
+
+      - name: Build full local D1 mirror
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$CANDIDATE_SHA:migrations/0050_lioe_provider_diagnostics.sql")" = "$MIGRATION_BLOB_SHA"
+          rm -rf /tmp/p0mirror
+          npx wrangler d1 execute DB --local --persist-to=/tmp/p0mirror --config wrangler.jsonc --file=/tmp/prod.sql >/tmp/import.log 2>&1
+          npx wrangler d1 migrations list DB --local --persist-to=/tmp/p0mirror --config wrangler.jsonc | tee /tmp/pending-before.txt
+          found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/pending-before.txt | sort -u || true)"
+          expected="$(printf '%s\n' 0045_case_private_d1_object_store.sql 0048_zkp_commentary_v6_secondary_layer.sql 0049_case_law_binding_extraction_audit.sql 0050_lioe_provider_diagnostics.sql)"
+          test "$found" = "$expected"
+
+      - name: Apply isolated 0050 locally only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/m0050
+          git show "$CANDIDATE_SHA:migrations/0050_lioe_provider_diagnostics.sql" > /tmp/m0050/0050_lioe_provider_diagnostics.sql
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          c.d1_databases[0].migrations_dir="/tmp/m0050";
+          delete c.d1_databases[0].migrations_table;
+          fs.writeFileSync("/tmp/wrangler0050.jsonc",JSON.stringify(c,null,2)+"\n");
+          NODE
+          npx wrangler d1 migrations list DB --local --persist-to=/tmp/p0mirror --config /tmp/wrangler0050.jsonc | tee /tmp/isolated-before.txt
+          test "$(grep -Eo '0050_lioe_provider_diagnostics\.sql' /tmp/isolated-before.txt | sort -u)" = "0050_lioe_provider_diagnostics.sql"
+          npx wrangler d1 migrations apply DB --local --persist-to=/tmp/p0mirror --config /tmp/wrangler0050.jsonc | tee /tmp/apply0050.txt
+
+      - name: Verify ledgers, columns, isolation and no reapply
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --local --persist-to=/tmp/p0mirror --config wrangler.jsonc             --command "SELECT COUNT(*) AS internal_0050 FROM schema_migrations WHERE version='50'; SELECT COUNT(*) AS cloudflare_0050 FROM d1_migrations WHERE name='0050_lioe_provider_diagnostics.sql'; SELECT COUNT(*) AS cloudflare_forbidden FROM d1_migrations WHERE name IN ('0045_case_private_d1_object_store.sql','0048_zkp_commentary_v6_secondary_layer.sql','0049_case_law_binding_extraction_audit.sql'); SELECT COUNT(*) AS forbidden_0045_table FROM sqlite_master WHERE type='table' AND name='case_private_object_chunks'; SELECT COUNT(*) AS forbidden_0048_tables FROM sqlite_master WHERE type='table' AND name IN ('zkp_commentary_releases','zkp_commentary_articles'); SELECT COUNT(*) AS forbidden_0049_columns FROM pragma_table_info('case_law_provenance') WHERE name IN ('remote_content_hash_verified','binding_verification_method','binding_reviewed_by','binding_reviewed_at','extraction_method','extracted_text_sha256'); PRAGMA table_info(lioe_runtime_runs);"             | tee /tmp/proof.txt
+          grep -q '"internal_0050": 1' /tmp/proof.txt
+          grep -q '"cloudflare_0050": 1' /tmp/proof.txt
+          grep -q '"cloudflare_forbidden": 0' /tmp/proof.txt
+          grep -q '"forbidden_0045_table": 0' /tmp/proof.txt
+          grep -q '"forbidden_0048_tables": 0' /tmp/proof.txt
+          grep -q '"forbidden_0049_columns": 0' /tmp/proof.txt
+          for c in error_code http_status response_status incomplete_reason provider_request_id provider_response_id provider_timeout_ms provider_attempts_json; do grep -q "\"name\": \"$c\"" /tmp/proof.txt; done
+
+          npx wrangler d1 migrations list DB --local --persist-to=/tmp/p0mirror --config wrangler.jsonc | tee /tmp/pending-after.txt
+          after="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/pending-after.txt | sort -u || true)"
+          expected_after="$(printf '%s\n' 0045_case_private_d1_object_store.sql 0048_zkp_commentary_v6_secondary_layer.sql 0049_case_law_binding_extraction_audit.sql)"
+          test "$after" = "$expected_after"
+
+          npx wrangler d1 migrations apply DB --local --persist-to=/tmp/p0mirror --config /tmp/wrangler0050.jsonc | tee /tmp/second-apply.txt
+          npx wrangler d1 execute DB --local --persist-to=/tmp/p0mirror --config wrangler.jsonc             --command "SELECT COUNT(*) AS internal_0050 FROM schema_migrations WHERE version='50'; SELECT COUNT(*) AS cloudflare_0050 FROM d1_migrations WHERE name='0050_lioe_provider_diagnostics.sql';"             | tee /tmp/reapply.txt
+          grep -q '"internal_0050": 1' /tmp/reapply.txt
+          grep -q '"cloudflare_0050": 1' /tmp/reapply.txt
+
+      - name: Upload sanitised proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0-0050-offline-full-mirror-proof
+          retention-days: 30
+          path: |
+            /tmp/pending-before.txt
+            /tmp/isolated-before.txt
+            /tmp/apply0050.txt
+            /tmp/proof.txt
+            /tmp/pending-after.txt
+            /tmp/second-apply.txt
+            /tmp/reapply.txt
+          if-no-files-found: error
+
+      - name: Remove full local database copy
+        if: always()
+        run: rm -rf /tmp/prod.sql /tmp/p0mirror /tmp/m0050 /tmp/wrangler0050.jsonc /tmp/import.log
