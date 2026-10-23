@@ -40,3 +40,14 @@ test('first-time users can trigger access from the send action',()=>{
   assert.ok(!source.includes("$('send').disabled = value || !key;"));
   assert.ok(source.includes("Најпрво внесете го вашиот приватен код за влез."));
 });
+
+
+test('professional bot keeps high-depth paid drafting and one transient recovery',()=>{
+  const source=fs.readFileSync('src/index.js','utf8');
+  assert.match(source,/missionProfile==="L3_CONSEQUENTIAL" \? 4800/);
+  assert.match(source,/\["L4_LEGAL_TRUTH_GOVERNANCE","L3_CONSEQUENTIAL"\]\.includes\(missionProfile\)[\s\S]*\? "high"/);
+  assert.match(source,/let providerRecovery=null;/);
+  assert.match(source,/transientPrimaryErrors/);
+  assert.match(source,/retryUsesWeb=explicitWebRequested \? webRequested : false/);
+  assert.match(source,/finaliseFormalLegalDraft\(finalAnswer/);
+});
