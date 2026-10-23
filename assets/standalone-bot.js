@@ -101,6 +101,22 @@ $('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; for
 $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => { $('question').style.height = 'auto'; $('question').style.height = Math.min($('question').scrollHeight,180) + 'px'; };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SpeechRecognitionCtor) $('mic').hidden = true;
+else $('mic').onclick = () => {
+  const rec = new SpeechRecognitionCtor();
+  rec.lang = 'mk-MK'; rec.interimResults = false; rec.maxAlternatives = 1;
+  status('Слушам… зборувајте на македонски.');
+  rec.onresult = event => {
+    const spoken = String(event.results?.[0]?.[0]?.transcript || '').trim();
+    if (!spoken) return;
+    $('question').value = ($('question').value + ' ' + spoken).trim();
+    $('question').dispatchEvent(new Event('input'));
+    status('Диктирањето е внесено. Проверете го текстот и испратете.');
+  };
+  rec.onerror = () => status('Диктирањето не успеа. Можете да продолжите со пишување.');
+  rec.start();
+};
 $('question').addEventListener('paste', event => { if (event.clipboardData?.files?.length) { event.preventDefault(); $('plus').open = true; status('Прикачете ги документите во приватниот простор преку „+“.'); } });
 $('composer').addEventListener('dragover', event => event.preventDefault());
 $('composer').addEventListener('drop', event => { event.preventDefault(); $('plus').open = true; status('Документите се прикачуваат во приватниот простор преку „+“.'); });
@@ -151,6 +167,47 @@ async function restoreAccess() {
   }
 }
 restoreAccess();
+async function exportLatestAssistant(format) {
+  const latest=[...history].reverse().find(item=>item.role==='assistant' && String(item.text||'').trim());
+  if(!latest){ status('Сè уште нема AI одговор за извоз.'); return; }
+  if(['txt','md'].includes(format)){
+    const ext=format;
+    const body=format==='md' ? '# AI Advokat — работен одговор\n\n'+latest.text : 'AI Advokat — работен одговор\n\n'+latest.text;
+    const url=URL.createObjectURL(new Blob([body],{type:'text/plain;charset=utf-8'}));
+    const a=document.createElement('a'); a.href=url; a.download='AI-Advokat-working-draft.'+ext; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000); return;
+  }
+  try{
+    const mod=await import('/assets/casepilot-export.js');
+    const core=await import('/src/case-export.js');
+    const report=core.normalizeCaseExportReport({
+      title:'AI Advokat — работен одговор',
+      summary:latest.text,
+      sections:[{title:'AI Advokat',content:latest.text}],
+      humanGate:'Потребна е професионална човечка проверка пред последична употреба.'
+    });
+    await mod.downloadCasePilotExport(report,format,{filename:'AI-Advokat-working-draft.'+format});
+  }catch{
+    status('Извозот во '+format.toUpperCase()+' не успеа. Обидете се со TXT или MD.');
+  }
+}
+for(const button of document.querySelectorAll('[data-export]')){
+  button.addEventListener('click',()=>exportLatestAssistant(String(button.dataset.export||'txt')));
+}
+
+async function refreshRuntimeStatus(){
+  const node=$('runtimeStatus'); if(!node) return;
+  try{
+    const response=await fetch(base+'/api/orchestrator',{headers:{accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(15000)});
+    if(!response.ok) throw new Error('runtime_'+response.status);
+    const data=await response.json(); const runtime=data?.runtime||{};
+    const paid=String(runtime.paidProviderModel||'OpenAI').trim();
+    const ready=runtime.providerExecution==='configured_for_api_chat_execution';
+    node.textContent=ready ? 'AI runtime: '+paid+' · активен' : 'AI runtime: делумно активен — проверете provider/runtime поставки.';
+  }catch{ node.textContent='AI runtime: моментално недостапен за проверка.'; }
+}
+refreshRuntimeStatus();
+
 $('exportChat').onclick = () => {
   if (!history.length) { status('Сè уште нема завршен разговор за преземање.'); return; }
   const text = 'AI Advokat — работен разговор\nПотребна е професионална проверка.\n\n' + history.map(m => (m.role === 'user' ? 'Вие' : 'AI Advokat') + ':\n' + m.text).join('\n\n');
