@@ -51,3 +51,18 @@ test('professional bot keeps high-depth paid drafting and one transient recovery
   assert.match(source,/retryUsesWeb=explicitWebRequested \? webRequested : false/);
   assert.match(source,/finaliseFormalLegalDraft\(finalAnswer/);
 });
+
+
+test('standalone bot preserves professional feature parity controls',()=>{
+  const html=fs.readFileSync('bot/index.html','utf8');
+  const source=fs.readFileSync('assets/standalone-bot.js','utf8');
+  assert.match(html,/id="mic"/);
+  assert.match(html,/Правен анализатор/);
+  assert.match(html,/CasePilot/);
+  assert.match(html,/Прикачи документи \/ Secure Case Workspace/);
+  assert.match(html,/data-export="docx"/);
+  assert.match(html,/data-export="pdf"/);
+  assert.match(source,/SpeechRecognition \|\| window\.webkitSpeechRecognition/);
+  assert.match(source,/refreshRuntimeStatus/);
+  assert.match(source,/exportLatestAssistant/);
+});

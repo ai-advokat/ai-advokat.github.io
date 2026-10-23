@@ -38,6 +38,7 @@
           <p>Документите и конкретните предмети се анализираат во приватниот простор. Овој разговор служи за правно истражување.</p>
         </div></details>
         <textarea id="question" rows="1" maxlength="4000" aria-label="Порака" placeholder="Прашајте го AI Advokat…"></textarea>
+        <button id="mic" type="button" aria-label="Диктирај" title="Диктирај">🎙</button>
         <button id="send" type="submit" aria-label="Испрати" disabled>↑</button>
         <button id="stop" type="button" aria-label="Запри" hidden>■</button>
       </form>
@@ -50,8 +51,16 @@
     <p>Ботот пребарува поврзани правни извори според прашањето. Каталошки запис не значи достапен целосен текст или потврдено важечко право.</p>
     <label for="researchMode">Пребарување</label>
     <select id="researchMode"><option value="auto">Автоматски — библиотека и проверка на интернет</option><option value="library">Само поврзаната библиотека</option><option value="web">Истражување на интернет</option></select>
+    <p id="runtimeStatus" role="status">Го проверувам AI runtime…</p>
     <p>Интернет-пребарувањето зависи од активниот пристап и серверските поставки.</p>
-    <div class="material-links"><a href="/" target="_blank" rel="noopener noreferrer">Целосен портал: закони и пребарување ↗</a><a href="/guides/" target="_blank" rel="noopener noreferrer">Правни водичи ↗</a><a href="/professional-library/" target="_blank" rel="noopener noreferrer">Професионална библиотека и коментари ↗</a><a href="/sluzben-vesnik/" target="_blank" rel="noopener noreferrer">Службен весник и правен аларм ↗</a><a href="/scholar/" target="_blank" rel="noopener noreferrer">Научни трудови ↗</a><a href="/authors/zoran-stojankic/" target="_blank" rel="noopener noreferrer">Авторски материјали на Зоран ↗</a><a href="/kolumni/" target="_blank" rel="noopener noreferrer">Колумни ↗</a><a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">Приватни предмети и анализа на документи ↗</a><a href="/document-router.html" target="_blank" rel="noopener noreferrer">Прием и распределба на документи ↗</a><a href="/case-law-metadata.html" target="_blank" rel="noopener noreferrer">Судски пресуди и метаподатоци ↗</a><a href="/professional-tools.html" target="_blank" rel="noopener noreferrer">Професионални алатки ↗</a></div>
+    <h3>Извоз на последниот AI одговор</h3>
+    <div class="dialog-actions export-actions">
+      <button type="button" data-export="docx">DOCX</button>
+      <button type="button" data-export="pdf">PDF</button>
+      <button type="button" data-export="txt">TXT</button>
+      <button type="button" data-export="md">MD</button>
+    </div>
+    <div class="material-links"><a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">📎 Прикачи документи / Secure Case Workspace ↗</a><a href="/professional-tools.html#analyzer" target="_blank" rel="noopener noreferrer">⚖ Правен анализатор ↗</a><a href="/professional-tools.html#casepilot" target="_blank" rel="noopener noreferrer">CasePilot ↗</a><a href="/" target="_blank" rel="noopener noreferrer">Целосен портал: закони и пребарување ↗</a><a href="/guides/" target="_blank" rel="noopener noreferrer">Правни водичи ↗</a><a href="/professional-library/" target="_blank" rel="noopener noreferrer">Професионална библиотека и коментари ↗</a><a href="/sluzben-vesnik/" target="_blank" rel="noopener noreferrer">Службен весник и правен аларм ↗</a><a href="/scholar/" target="_blank" rel="noopener noreferrer">Научни трудови ↗</a><a href="/authors/zoran-stojankic/" target="_blank" rel="noopener noreferrer">Авторски материјали на Зоран ↗</a><a href="/kolumni/" target="_blank" rel="noopener noreferrer">Колумни ↗</a><a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">Приватни предмети и анализа на документи ↗</a><a href="/document-router.html" target="_blank" rel="noopener noreferrer">Прием и распределба на документи ↗</a><a href="/case-law-metadata.html" target="_blank" rel="noopener noreferrer">Судски пресуди и метаподатоци ↗</a><a href="/professional-tools.html" target="_blank" rel="noopener noreferrer">Професионални алатки ↗</a></div>
     <h3>Мои проверени водичи</h3>
     <p>Вчитајте ги оригиналните PDF/DOCX водичи или нивниот ZIP-пакет. Се прифаќаат само датотеки што се совпаѓаат со регистарот. Приватни предмети внесувајте во заштитениот простор.</p>
     <button id="importGuides" type="button">Вчитај водичи</button>
