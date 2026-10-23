@@ -1,0 +1,48 @@
+{
+  "record_type": "AI_ADVOKAT_P0_0050_DIAGNOSTIC_AUDIT",
+  "recorded_on": "2026-10-24",
+  "source_run_id": 40036528126,
+  "source_job_id": 120697258778,
+  "source_commit": "f5d38a7130ae3ace11b26409a30cd4350158e1ef",
+  "candidate_sha": "1d65b251343cab4b1329d8cc8478e8948d363750",
+  "production_database_id": "12ece285-74bb-4f27-a025-2dbd1be6c59a",
+  "owner_authorization_scope": "preparation_and_verification_only_after_diagnostic_review; no new production migration/deploy/change",
+  "verified_results": {
+    "owner_and_human_gate_check": "PASS",
+    "exact_candidate_materialization": "PASS",
+    "production_target_check": "PASS",
+    "time_travel_bookmark_capture": "PASS",
+    "full_d1_export": "PASS",
+    "local_sql_restore_validation": "PASS",
+    "exact_pending_set_preflight": "FAIL_CLOSED"
+  },
+  "backup_evidence": {
+    "export_sha256": "f1ebebd8c8af072881b982464ea09ffe660e71f7ecbe920f2706aa4decc84784",
+    "export_bytes": 13880343,
+    "time_travel_bookmark_value": "REDACTED_NOT_PERSISTED",
+    "bookmark_captured": true,
+    "signed_export_url_exposed_in_public_log": true,
+    "signed_export_url_not_reproduced_here": true,
+    "signed_export_url_issued_at_utc": "2026-10-23T22:56:10Z",
+    "signed_export_url_nominal_expiry_utc": "2026-10-23T23:56:10Z",
+    "full_sql_export_persisted_as_github_artifact": false
+  },
+  "pending_migrations_observed": [
+    "0045_case_private_d1_object_store.sql",
+    "0048_zkp_commentary_v6_secondary_layer.sql",
+    "0049_case_law_binding_extraction_audit.sql",
+    "0050_lioe_provider_diagnostics.sql"
+  ],
+  "production_write_status": {
+    "migration_0050_applied": false,
+    "migrations_0045_0048_0049_applied": false,
+    "controlled_runtime_deploy_executed": false,
+    "paid_ai_smoke_executed": false
+  },
+  "next_preparation": {
+    "public_log_cleanup": "manual GitHub run deletion required; connected GitHub tool supports workflow GET/rerun but not delete-run/log endpoint",
+    "future_export_logging": "Wrangler export stdout/stderr suppressed so signed URLs are not printed",
+    "migration_0050_strategy": "isolated migrations_dir containing only 0050; default pending migrations 0045/0048/0049 must remain untouched",
+    "activation_status": "NOT_AUTHORIZED"
+  }
+}
