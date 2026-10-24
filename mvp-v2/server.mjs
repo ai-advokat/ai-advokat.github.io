@@ -69,7 +69,8 @@ export function groupProfessionalBlockersForReview(blockers=[]){
         ...codes.map(code=>'Check: '+code),
         ...summaries.map(summary=>'Reason: '+summary)
       ].join('\n'),
-      status:'BLOCK'
+      status:'BLOCK',
+      sources:Object.freeze([])
     });
   }));
 }
