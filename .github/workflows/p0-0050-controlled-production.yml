@@ -117,6 +117,8 @@ jobs:
           UAT_KEY_HASH="$(printf '%s' "$UAT_KEY" | sha256sum | awk '{print $1}')"
           UAT_KEY_PREFIX="${UAT_KEY:0:12}"
           echo "::add-mask::$UAT_KEY"
+          echo "P0_UAT_ACCOUNT_ID=$UAT_ACCOUNT_ID" >> "$GITHUB_ENV"
+          echo "P0_UAT_MEMBERSHIP_KEY=$UAT_KEY" >> "$GITHUB_ENV"
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
             DELETE FROM membership_usage_monthly WHERE subject_key='account:$UAT_ACCOUNT_ID';
             DELETE FROM security_rate_limit_windows WHERE subject_key='account:$UAT_ACCOUNT_ID';
@@ -134,8 +136,6 @@ jobs:
             VALUES
               ('$UAT_KEY_ID','$UAT_ACCOUNT_ID','$UAT_KEY_HASH','$UAT_KEY_PREFIX','ephemeral P0 0050 production smoke','active',datetime('now','+1 hour'));
           " > /tmp/p0-uat-provision.txt
-          echo "P0_UAT_ACCOUNT_ID=$UAT_ACCOUNT_ID" >> "$GITHUB_ENV"
-          echo "P0_UAT_MEMBERSHIP_KEY=$UAT_KEY" >> "$GITHUB_ENV"
           echo "EPHEMERAL PROFESSIONAL SMOKE MEMBERSHIP: PROVISIONED (credential masked)"
 
       - name: Limited paid AI smoke - revision and mandatory postflight
@@ -149,7 +149,7 @@ jobs:
             -H "X-Membership-Key: $P0_UAT_MEMBERSHIP_KEY" \
             -H 'Origin: https://ai-advokat.github.io' \
             -d '{"q":"Спореди две можни толкувања на условите за дозволеност на ревизија во граѓанска постапка, со процесни ризици и ограничувања. Не измислувај важечки праг или рок ако не е потврден.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
-            "$BASE/api/chat")"
+            "$BASE/api/bot")"
           test "$code" = "200"
           node <<'NODE'
           const d=require("/tmp/p0-revision-smoke.json");
@@ -172,7 +172,7 @@ jobs:
             -H "X-Membership-Key: $P0_UAT_MEMBERSHIP_KEY" \
             -H 'Origin: https://ai-advokat.github.io' \
             -d '{"q":"Направи ми тужба за враќање на работник на работа.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
-            "$BASE/api/chat")"
+            "$BASE/api/bot")"
           test "$code" = "200"
           node <<'NODE'
           const d=require("/tmp/p0-labour-smoke.json");
