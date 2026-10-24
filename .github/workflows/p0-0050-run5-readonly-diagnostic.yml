@@ -1,4 +1,4 @@
-name: AI Advokat P0 0050 run5 read-only diagnostic
+name: AI Advokat P0 0050 attempt2 read-only diagnostic
 
 on:
   push:
@@ -42,52 +42,54 @@ jobs:
           console.log("EXACT PRODUCTION D1 TARGET: PASS");
           NODE
 
-      - name: Read recent LIOE telemetry only
+      - name: Read attempt2 Professional telemetry only
         shell: bash
         run: |
           set -euo pipefail
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
-            SELECT run_id,started_at,finished_at,mission_profile,provider_state,
-                   verification_state,release_state,postflight_required,
-                   provider_calls,total_tokens,model,error_code,http_status,
-                   response_status,incomplete_reason,provider_request_id,
-                   provider_response_id,provider_timeout_ms,provider_attempts_json,
-                   telemetry_schema_version
+            SELECT run_id,started_at,finished_at,mission_profile,
+                   provider_state,verification_state,outcome_state,release_state,
+                   postflight_required,first_pass_verification,verification_attempts,
+                   correction_required,web_search_used,article_context_count,
+                   provider_calls,input_tokens,output_tokens,total_tokens,elapsed_ms,
+                   model,error_code,http_status,response_status,incomplete_reason,
+                   provider_timeout_ms,telemetry_schema_version
               FROM lioe_runtime_runs
-             WHERE run_id='LIOE-RT-20261024004146-7c64b56d'
-             LIMIT 1;
-          " | tee /tmp/p0-run5-lioe-telemetry.txt
-          grep -q 'LIOE-RT-20261024004146-7c64b56d' /tmp/p0-run5-lioe-telemetry.txt
-          echo "READ-ONLY LIOE ATTEMPT TELEMETRY: PASS"
+             WHERE started_at >= '2026-10-24T01:18:40.000Z'
+               AND started_at <= '2026-10-24T01:22:10.000Z'
+             ORDER BY started_at;
+          " | tee /tmp/p0-attempt2-lioe-telemetry.txt
+          grep -q '"run_id"' /tmp/p0-attempt2-lioe-telemetry.txt
+          echo "READ-ONLY ATTEMPT2 LIOE TELEMETRY: PASS"
 
-      - name: Verify run5 synthetic membership cleanup
+      - name: Verify attempt2 synthetic membership cleanup
         shell: bash
         run: |
           set -euo pipefail
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
             SELECT
-              (SELECT COUNT(*) FROM membership_accounts WHERE id='p0-0050-smoke-40046196790-1') AS accounts,
-              (SELECT COUNT(*) FROM membership_entitlements WHERE account_id='p0-0050-smoke-40046196790-1') AS entitlements,
-              (SELECT COUNT(*) FROM membership_access_keys WHERE account_id='p0-0050-smoke-40046196790-1') AS access_keys,
-              (SELECT COUNT(*) FROM membership_usage_monthly WHERE subject_key='account:p0-0050-smoke-40046196790-1') AS usage_rows,
-              (SELECT COUNT(*) FROM security_rate_limit_windows WHERE subject_key='account:p0-0050-smoke-40046196790-1') AS rate_limit_rows;
-          " | tee /tmp/p0-run5-cleanup-check.txt
+              (SELECT COUNT(*) FROM membership_accounts WHERE id='p0-0050-smoke-40046196790-2') AS accounts,
+              (SELECT COUNT(*) FROM membership_entitlements WHERE account_id='p0-0050-smoke-40046196790-2') AS entitlements,
+              (SELECT COUNT(*) FROM membership_access_keys WHERE account_id='p0-0050-smoke-40046196790-2') AS access_keys,
+              (SELECT COUNT(*) FROM membership_usage_monthly WHERE subject_key='account:p0-0050-smoke-40046196790-2') AS usage_rows,
+              (SELECT COUNT(*) FROM security_rate_limit_windows WHERE subject_key='account:p0-0050-smoke-40046196790-2') AS rate_limit_rows;
+          " | tee /tmp/p0-attempt2-cleanup-check.txt
           node <<'NODE'
           const fs=require("fs");
-          const s=fs.readFileSync("/tmp/p0-run5-cleanup-check.txt","utf8");
+          const s=fs.readFileSync("/tmp/p0-attempt2-cleanup-check.txt","utf8");
           for(const k of ["accounts","entitlements","access_keys","usage_rows","rate_limit_rows"]){
             const m=s.match(new RegExp('"'+k+'"\\s*:\\s*(\\d+)'));
-            if(!m || Number(m[1])!==0) throw new Error("Run5 cleanup not complete for "+k);
+            if(!m || Number(m[1])!==0) throw new Error("Attempt2 cleanup not complete for "+k);
           }
-          console.log("RUN5 SYNTHETIC MEMBERSHIP CLEANUP: PASS");
+          console.log("ATTEMPT2 SYNTHETIC MEMBERSHIP CLEANUP: PASS");
           NODE
 
       - name: Upload redacted read-only evidence
         uses: actions/upload-artifact@v4
         with:
-          name: p0-0050-run5-readonly-diagnostic
+          name: p0-0050-attempt2-readonly-diagnostic
           retention-days: 14
           path: |
-            /tmp/p0-run5-lioe-telemetry.txt
-            /tmp/p0-run5-cleanup-check.txt
+            /tmp/p0-attempt2-lioe-telemetry.txt
+            /tmp/p0-attempt2-cleanup-check.txt
           if-no-files-found: error
