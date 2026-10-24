@@ -93,7 +93,9 @@ const DOMAIN_SIGNALS=Object.freeze({
   ])
 });
 
-const AUXILIARY_DOMAINS=new Set(["access_to_justice","civil_procedure"]);\n\nconst CROSS_DOMAIN_RULES=Object.freeze({
+const AUXILIARY_DOMAINS=new Set(["access_to_justice","civil_procedure"]);
+
+const CROSS_DOMAIN_RULES=Object.freeze({
   labour_social:Object.freeze({civil_procedure:"civil_procedure_support_for_labour_dispute"}),
   family_property:Object.freeze({civil_procedure:"civil_procedure_support_for_family_property_dispute"}),
   property_law:Object.freeze({civil_procedure:"civil_procedure_support_for_property_dispute"}),
