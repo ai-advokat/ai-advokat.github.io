@@ -1,7 +1,7 @@
 // AI ADVOKAT 4 MVP v2 — isolated JSON dossier -> Legal Document AST adapter.
 // Synthetic/working use only. No provider, network, persistence, filing or production action.
 
-export const MVP_V2_VERSION = '2.0.0-test';
+export const MVP_V2_VERSION = '2.0.1-uat';
 export const PR_B_HEAD = 'f649672172e5b558f5f89084684949cc5590ca0b';
 export const PR_C_HEAD = 'f106b3da14671828d0b8eaa6b2a1308ccf5b0b66';
 
@@ -21,6 +21,29 @@ function lines(value){
   return text(value).split(/\r?\n/).map(text).filter(Boolean);
 }
 function unique(list){ return [...new Set(list.map(text).filter(Boolean))]; }
+function evidenceNorm(value){ return text(value).toLowerCase().replace(/[^\p{L}\p{N}.]+/gu,' ').replace(/\s+/g,' ').trim(); }
+function deliveryDate(value){
+  const m=/(\d{2})[.\/-](\d{2})[.\/-](\d{4})/.exec(text(value));
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : '';
+}
+function semanticEvidenceTitles(d){
+  const supplied=unique(lines(d.otherEvidence));
+  const out=[]; const exact=new Set();
+  const add=title=>{ const key=evidenceNorm(title); if(!key||exact.has(key)) return; exact.add(key); out.push(title); };
+  for(const title of supplied) add(title);
+  add('Договор за вработување');
+  add('Одлука за отказ');
+  if(text(d.emailText)) add('Е-пошта од раководител');
+  if(text(d.receiveDate)){
+    const hasMatchingDelivery=supplied.some(title=>{
+      if(!/повратница|врачува/i.test(title)) return false;
+      const date=deliveryDate(title);
+      return !date || date===text(d.receiveDate);
+    });
+    if(!hasMatchingDelivery) add('Доказ за врачување / повратница');
+  }
+  return out;
+}
 
 export function validateMvpDossier(input){
   const d = input && typeof input === 'object' && !Array.isArray(input)
@@ -70,13 +93,7 @@ export function mapMvpDossierToLegalAst(input,{generatedAt='2026-10-24T21:00:00Z
   }
   const d=validation.data;
 
-  const rawEvidence=unique([
-    ...lines(d.otherEvidence),
-    'Договор за вработување',
-    'Одлука за отказ',
-    ...(text(d.emailText)?['Е-пошта од раководител']:[]),
-    ...(text(d.receiveDate)?['Доказ за врачување / повратница']:[])
-  ]);
+  const rawEvidence=semanticEvidenceTitles(d);
 
   const evidence=rawEvidence.map((title,index)=>({
     id:`E-${index+1}`,
