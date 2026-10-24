@@ -4,6 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 import {legalDocumentExportBundle} from '../src/legal-document-export.js';
+import {prepareMvpV2Integration} from './casepilot-integration.mjs';
 import {
   PROFESSIONAL_DOCX_ENGINE_VERSION,
   PROFESSIONAL_DOCX_PROFILE,
@@ -50,7 +51,9 @@ async function readJson(req){
 }
 
 function workingBundleFromPayload(payload){
-  const dossier=payload?.dossier && typeof payload.dossier==='object' ? payload.dossier : payload;
+  const rawDossier=payload?.dossier && typeof payload.dossier==='object' ? payload.dossier : payload;
+  const integration=prepareMvpV2Integration(rawDossier);
+  const dossier=integration.dossier;
   const validation=validateMvpDossier(dossier);
   if(!validation.ok){
     const e=new Error('mvp_v2_required_fields_missing'); e.status=422; e.missing=[...validation.missing]; throw e;
@@ -58,16 +61,17 @@ function workingBundleFromPayload(payload){
   const ast=mapMvpDossierToLegalAst(dossier,{generatedAt:new Date().toISOString()});
   // Deliberately ignore payload.humanGate / payload.serverHumanGate.
   const bundle=legalDocumentExportBundle(ast,{mode:'working',serverHumanGate:SERVER_HUMAN_GATE});
-  return {dossier,ast,bundle};
+  return {dossier,ast,bundle,integration};
 }
 
 export function analyzeMvpV2Payload(payload){
-  const {ast,bundle}=workingBundleFromPayload(payload);
+  const {ast,bundle,integration}=workingBundleFromPayload(payload);
   return {
     ok:true,
     mvpVersion:MVP_V2_VERSION,
     prBHead:PR_B_HEAD,
     prCHead:PR_C_HEAD,
+    prAHead:'95f666a795354681264f073060ebe9ed5817dfe5',
     mode:'working',
     humanGate:bundle.readiness.humanGate,
     professionalReady:bundle.readiness.professionalReady,
@@ -76,7 +80,15 @@ export function analyzeMvpV2Payload(payload){
     courtReport:bundle.courtReport,
     reviewAnnexReport:bundle.reviewAnnexReport,
     docxProfile:PROFESSIONAL_DOCX_PROFILE,
-    docxEngineVersion:PROFESSIONAL_DOCX_ENGINE_VERSION
+    docxEngineVersion:PROFESSIONAL_DOCX_ENGINE_VERSION,
+    domainRouting:integration.domainRouting,
+    casePilot:{
+      matterVersion:integration.casePilot.matterVersion,
+      exportAdapterVersion:integration.casePilot.exportAdapterVersion,
+      readiness:integration.casePilot.readiness,
+      matter:integration.casePilot.matter,
+      report:integration.casePilot.report
+    }
   };
 }
 
@@ -133,7 +145,7 @@ export function createMvpV2Server(){
       const url=new URL(req.url,`http://${HOST}`);
       if(req.method==='GET' && (url.pathname==='/'||url.pathname==='/index.html')) return serveIndex(res);
       if(req.method==='GET' && url.pathname==='/api/health'){
-        return json(res,200,{ok:true,mvpVersion:MVP_V2_VERSION,prBHead:PR_B_HEAD,prCHead:PR_C_HEAD,mode:'working',serverHumanGate:'pending',production:false,providerCalls:false});
+        return json(res,200,{ok:true,mvpVersion:MVP_V2_VERSION,prAHead:'95f666a795354681264f073060ebe9ed5817dfe5',prBHead:PR_B_HEAD,prCHead:PR_C_HEAD,mode:'working',serverHumanGate:'pending',production:false,providerCalls:false});
       }
       if(req.method==='GET' && url.pathname==='/api/fixture') return json(res,200,{ok:true,dossier:syntheticMvpV2Fixture()});
       if(req.method==='POST' && url.pathname==='/api/analyze'){
