@@ -78,7 +78,9 @@ test('P0 professional recovery keeps two bounded attempts and no uncontrolled Wo
   assert.match(source,/sanitiseProviderAttempt\(retry,2\)/);
   assert.match(source,/OPENAI_RETRY_BACKOFF_MS\|\|250/);
   assert.match(source,/!membership\s*&&\s*governedOpenAIWorkersFallbackConfigured/);
-  assert.match(orchestrator,/OPENAI_PROVIDER_TIMEOUT_MS,45000,deadlineAt/);
+  assert.match(orchestrator,/chiefFallbackTimeoutMs=\["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"\]\.includes\(missionProfile\)/);
+  assert.match(orchestrator,/\? 70000\s*:\s*45000/);
+  assert.match(orchestrator,/OPENAI_PROVIDER_TIMEOUT_MS,chiefFallbackTimeoutMs,deadlineAt/);
   assert.match(orchestrator,/AbortSignal\.timeout\(providerTimeoutMs\)/);
   assert.match(governance,/provider_attempts_json/);
   assert.match(migration,/ADD COLUMN error_code TEXT/);
@@ -95,7 +97,7 @@ test('professional request deadline is shared across specialist chief retry and 
   assert.match(source,/professionalRequestDeadlineAt-Date\.now\(\)>=10000/);
   assert.ok((source.match(/deadlineAt:professionalRequestDeadlineAt/g)||[]).length>=3);
   assert.match(orchestrator,/OPENAI_SPECIALIST_TIMEOUT_MS,30000,deadlineAt/);
-  assert.match(orchestrator,/OPENAI_PROVIDER_TIMEOUT_MS,45000,deadlineAt/);
+  assert.match(orchestrator,/OPENAI_PROVIDER_TIMEOUT_MS,chiefFallbackTimeoutMs,deadlineAt/);
   assert.match(orchestrator,/OPENAI_POSTFLIGHT_TIMEOUT_MS,45000,deadlineAt/);
   assert.match(orchestrator,/specialist_deadline_exhausted/);
   assert.match(orchestrator,/openai_request_deadline_exhausted/);
