@@ -9,6 +9,8 @@ import {
   filterGuideRecordsForLegalDomain
 } from "../src/legal-domain-router.js";
 import { governedGuideContext } from "../src/index.js";
+import { loadWorker } from "./load-worker.mjs";
+import { createD1 } from "./d1-shim.mjs";
 
 const guides=JSON.parse(fs.readFileSync("data/guides.json","utf8"));
 const records=guides.records;
@@ -145,4 +147,64 @@ test("LDR-12 cross-domain compatibility requires a concrete reason and implement
   const source=fs.readFileSync("src/legal-domain-router.js","utf8");
   assert.doesNotMatch(source,/api\.openai\.com|OPENAI_API_KEY|\/v1\/responses|wrangler|migration/i);
   assert.doesNotMatch(source,/\bfetch\s*\(/);
+});
+
+
+test("LDR-CHAT-NEG-01 /api/chat rejects an incompatible browser-selected administrative guide before provider context",async()=>{
+  const {worker}=await loadWorker();
+  const {d1}=createD1();
+  const providerCalls=[];
+  const assetFiles={
+    "/data/guides.json":"data/guides.json",
+    "/data/public-practical-guides-38-73.json":"data/public-practical-guides-38-73.json",
+    "/data/guide-law-dependencies-2026.json":"data/guide-law-dependencies-2026.json",
+    "/data/mk-current-law-readiness-2026.json":"data/mk-current-law-readiness-2026.json"
+  };
+  const env={
+    DB:d1,
+    RATE_LIMIT_SALT:"offline-legal-domain-router-test-salt-2026-10-24",
+    FREE_CHAT_PROVIDER:"workers_ai",
+    WORKERS_AI_CHAT_MODEL:"@cf/qwen/qwen3-30b-a3b-fp8",
+    LIOE_RUNTIME_GOVERNANCE_ENABLED:"true",
+    LIOE_POSTFLIGHT_ENABLED:"true",
+    LIOE_RUNTIME_TELEMETRY_ENABLED:"true",
+    ASSETS:{fetch:async req=>{
+      const path=new URL(req.url).pathname;
+      const file=assetFiles[path];
+      return file
+        ? new Response(fs.readFileSync(file,"utf8"),{status:200,headers:{"content-type":"application/json"}})
+        : new Response("not found",{status:404});
+    }},
+    AI:{run:async(model,input)=>{
+      providerCalls.push({model,input});
+      return {
+        response:"Ова е работен правен одговор. За конкретна постапка проверете ги важечките прописи, роковите и надлежноста во официјални извори пред професионална употреба."
+      };
+    }}
+  };
+  const question="Работодавачот ми даде отказ и барам враќање на работа.";
+  const request=new Request("https://ai-advokat.github.io/api/chat",{
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "CF-Connecting-IP":"198.51.100.87"
+    },
+    body:JSON.stringify({
+      q:question,
+      mode:"auto",
+      guideIds:["guide-administrative-v2"]
+    })
+  });
+
+  const response=await worker.fetch(request,env,{waitUntil(){}});
+  assert.equal(response.status,200);
+  const body=await response.json();
+  assert.equal(body.ok,true);
+  assert.ok(providerCalls.length>=1);
+
+  const providerInput=JSON.stringify(providerCalls.map(call=>call.input));
+  assert.match(providerInput,/Работодавачот ми даде отказ/);
+  assert.doesNotMatch(providerInput,/guide-administrative-v2/i);
+  assert.doesNotMatch(providerInput,/Водич низ управната постапка и управниот спор/i);
+  assert.doesNotMatch(providerInput,/GOVERNED PUBLIC GUIDE TEXT[\\s\\S]*управн/i);
 });
