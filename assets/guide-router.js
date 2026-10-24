@@ -26,7 +26,9 @@
     integrity:"integrity"
   });
 
-  const AUXILIARY_DOMAINS=new Set(["access_to_justice","civil_procedure"]);\n\n  const DOMAIN_SIGNALS=Object.freeze({
+  const AUXILIARY_DOMAINS=new Set(["access_to_justice","civil_procedure"]);
+
+  const DOMAIN_SIGNALS=Object.freeze({
     labour_social:Object.freeze([
       ["враќање на работа",22],["врати на работа",20],["работен однос",18],["договор за вработување",16],
       ["работно место",12],["вознемирување на работно место",18],["работник",12],["работодавач",12],
