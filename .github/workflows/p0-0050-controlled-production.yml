@@ -1,4 +1,4 @@
-name: AI Advokat P0 0050 post-activation verification
+name: AI Advokat P0 0050 professional post-activation verification
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ai-advokat-p0-0050-post-activation-verification
+  group: ai-advokat-p0-0050-professional-post-activation-verification
   cancel-in-progress: false
 
 jobs:
@@ -105,47 +105,86 @@ jobs:
           grep -q 'bot_membership_required' /tmp/p0-bot-unauth.json
           echo "PROFESSIONAL MEMBERSHIP FAIL-CLOSED: PASS · PROVIDER NOT CALLED"
 
+      - name: Provision ephemeral synthetic Professional smoke membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/p0candidate
+          UAT_ACCOUNT_ID="p0-0050-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_ENTITLEMENT_ID="p0-0050-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_KEY_ID="p0-0050-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          UAT_KEY="p0uat_$(openssl rand -hex 24)"
+          UAT_KEY_HASH="$(printf '%s' "$UAT_KEY" | sha256sum | awk '{print $1}')"
+          UAT_KEY_PREFIX="${UAT_KEY:0:12}"
+          echo "::add-mask::$UAT_KEY"
+          echo "P0_UAT_ACCOUNT_ID=$UAT_ACCOUNT_ID" >> "$GITHUB_ENV"
+          echo "P0_UAT_MEMBERSHIP_KEY=$UAT_KEY" >> "$GITHUB_ENV"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$UAT_ACCOUNT_ID';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$UAT_ACCOUNT_ID';
+            DELETE FROM membership_access_keys WHERE account_id='$UAT_ACCOUNT_ID';
+            DELETE FROM membership_entitlements WHERE account_id='$UAT_ACCOUNT_ID';
+            DELETE FROM membership_accounts WHERE id='$UAT_ACCOUNT_ID';
+            INSERT INTO membership_accounts(id,display_name,status)
+            VALUES ('$UAT_ACCOUNT_ID','AI Advokat P0 Synthetic Smoke','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+            VALUES
+              ('$UAT_ENTITLEMENT_ID','$UAT_ACCOUNT_ID','office','active','manual',10,1,0,datetime('now','+1 hour'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+            VALUES
+              ('$UAT_KEY_ID','$UAT_ACCOUNT_ID','$UAT_KEY_HASH','$UAT_KEY_PREFIX','ephemeral P0 0050 production smoke','active',datetime('now','+1 hour'));
+          " > /tmp/p0-uat-provision.txt
+          echo "EPHEMERAL PROFESSIONAL SMOKE MEMBERSHIP: PROVISIONED (credential masked)"
+
       - name: Limited paid AI smoke - revision and mandatory postflight
         shell: bash
         run: |
           set -euo pipefail
+          test -n "${P0_UAT_MEMBERSHIP_KEY:-}"
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
-          curl --fail --retry 2 --retry-delay 2 \
+          code="$(curl --silent --show-error --output /tmp/p0-revision-smoke.json --write-out '%{http_code}' \
             -H 'content-type: application/json' \
+            -H "X-Membership-Key: $P0_UAT_MEMBERSHIP_KEY" \
             -H 'Origin: https://ai-advokat.github.io' \
             -d '{"q":"Спореди две можни толкувања на условите за дозволеност на ревизија во граѓанска постапка, со процесни ризици и ограничувања. Не измислувај важечки праг или рок ако не е потврден.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
-            "$BASE/api/chat" -o /tmp/p0-revision-smoke.json
+            "$BASE/api/bot")"
+          test "$code" = "200"
           node <<'NODE'
           const d=require("/tmp/p0-revision-smoke.json");
           if(!d.ok) throw new Error("Revision smoke failed: "+JSON.stringify(d).slice(0,1600));
-          if(d.provider!=="openai" || d.model!=="gpt-6.1-sol") throw new Error("Unexpected Professional provider/model");
+          if(d.provider!=="openai" || d.model!=="gpt-6.1-sol") throw new Error("Unexpected Professional provider/model: "+JSON.stringify({provider:d.provider,model:d.model}));
           if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1" || d.legalGovernance?.postflightRequired!==true) throw new Error("Revision governance missing");
           if(d.runtimeTelemetry!=="recorded" || !d.governanceRunId) throw new Error("Revision telemetry not recorded");
           require("fs").writeFileSync("/tmp/p0-revision-run-id.txt",d.governanceRunId);
-          console.log("REVISION LEGAL SMOKE: PASS");
+          console.log("REVISION PROFESSIONAL LEGAL SMOKE: PASS");
           NODE
 
       - name: Limited paid AI smoke - labour draft and mandatory postflight
         shell: bash
         run: |
           set -euo pipefail
+          test -n "${P0_UAT_MEMBERSHIP_KEY:-}"
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
-          curl --fail --retry 2 --retry-delay 2 \
+          code="$(curl --silent --show-error --output /tmp/p0-labour-smoke.json --write-out '%{http_code}' \
             -H 'content-type: application/json' \
+            -H "X-Membership-Key: $P0_UAT_MEMBERSHIP_KEY" \
             -H 'Origin: https://ai-advokat.github.io' \
             -d '{"q":"Направи ми тужба за враќање на работник на работа.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
-            "$BASE/api/chat" -o /tmp/p0-labour-smoke.json
+            "$BASE/api/bot")"
+          test "$code" = "200"
           node <<'NODE'
           const d=require("/tmp/p0-labour-smoke.json");
           if(!d.ok) throw new Error("Labour draft smoke failed: "+JSON.stringify(d).slice(0,1600));
-          if(d.provider!=="openai" || d.model!=="gpt-6.1-sol") throw new Error("Unexpected Professional provider/model");
+          if(d.provider!=="openai" || d.model!=="gpt-6.1-sol") throw new Error("Unexpected Professional provider/model: "+JSON.stringify({provider:d.provider,model:d.model}));
           if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1" || d.legalGovernance?.postflightRequired!==true) throw new Error("Labour governance missing");
           if(d.runtimeTelemetry!=="recorded" || !d.governanceRunId) throw new Error("Labour telemetry not recorded");
           require("fs").writeFileSync("/tmp/p0-labour-run-id.txt",d.governanceRunId);
-          console.log("LABOUR DRAFT SMOKE: PASS");
+          console.log("LABOUR PROFESSIONAL DRAFT SMOKE: PASS");
           NODE
 
-      - name: Read back LIOE telemetry for both paid smokes
+      - name: Read back LIOE telemetry for both Professional smokes
         shell: bash
         run: |
           set -euo pipefail
@@ -158,10 +197,30 @@ jobs:
           grep -q '"telemetry_schema_version": "1.1"' /tmp/p0-telemetry-readback.txt
           echo "LIOE TELEMETRY READBACK: PASS"
 
+      - name: Cleanup ephemeral synthetic Professional smoke membership
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/p0candidate
+          if [ -n "${P0_UAT_ACCOUNT_ID:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$P0_UAT_ACCOUNT_ID';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$P0_UAT_ACCOUNT_ID';
+              DELETE FROM membership_access_keys WHERE account_id='$P0_UAT_ACCOUNT_ID';
+              DELETE FROM membership_entitlements WHERE account_id='$P0_UAT_ACCOUNT_ID';
+              DELETE FROM membership_accounts WHERE id='$P0_UAT_ACCOUNT_ID';
+            " > /tmp/p0-uat-cleanup.txt
+            echo "EPHEMERAL PROFESSIONAL SMOKE MEMBERSHIP: CLEANED"
+          else
+            echo "No ephemeral Professional smoke membership to clean."
+          fi
+
       - name: Upload non-secret post-activation verification evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: p0-0050-post-activation-verification-evidence
+          name: p0-0050-professional-post-activation-verification-evidence
           retention-days: 30
           path: |
             /tmp/p0-pending-post-activation.txt
@@ -171,11 +230,12 @@ jobs:
             /tmp/p0-capabilities.json
             /tmp/p0-bot-unauth.json
             /tmp/p0-telemetry-readback.txt
-          if-no-files-found: error
+            /tmp/p0-uat-cleanup.txt
+          if-no-files-found: ignore
 
-      - name: Post-activation verification result
+      - name: Professional post-activation verification result
         run: |
-          echo "P0 0050 POST-ACTIVATION VERIFICATION: PASS"
+          echo "P0 0050 PROFESSIONAL POST-ACTIVATION VERIFICATION: PASS"
           echo "Deployed Worker Version ID from activation run #3: $EXPECTED_WORKER_VERSION_ID"
           echo "Migration 0050 remains converged; 0045/0048/0049 remain pending."
-          echo "Governed runtime, membership fail-closed, legal smokes and telemetry readback verified."
+          echo "Governed runtime, Professional membership routing, two legal smokes and telemetry readback verified."
