@@ -144,7 +144,7 @@ jobs:
           set -euo pipefail
           test -n "${P0_UAT_MEMBERSHIP_KEY:-}"
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
-          code="$(curl --silent --show-error --output /tmp/p0-revision-smoke.json --write-out '%{http_code}' --retry 2 --retry-delay 2 \
+          code="$(curl --silent --show-error --output /tmp/p0-revision-smoke.json --write-out '%{http_code}' \
             -H 'content-type: application/json' \
             -H "X-Membership-Key: $P0_UAT_MEMBERSHIP_KEY" \
             -H 'Origin: https://ai-advokat.github.io' \
@@ -167,7 +167,7 @@ jobs:
           set -euo pipefail
           test -n "${P0_UAT_MEMBERSHIP_KEY:-}"
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
-          code="$(curl --silent --show-error --output /tmp/p0-labour-smoke.json --write-out '%{http_code}' --retry 2 --retry-delay 2 \
+          code="$(curl --silent --show-error --output /tmp/p0-labour-smoke.json --write-out '%{http_code}' \
             -H 'content-type: application/json' \
             -H "X-Membership-Key: $P0_UAT_MEMBERSHIP_KEY" \
             -H 'Origin: https://ai-advokat.github.io' \
