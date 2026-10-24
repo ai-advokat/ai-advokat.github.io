@@ -107,7 +107,12 @@ function runXml(text,{bold=false,italic=false,size=20}={}){
     italic?"<w:i/>":"",
     '<w:sz w:val="'+size+'"/><w:szCs w:val="'+size+'"/>'
   ].join("");
-  return '<w:r><w:rPr>'+rPr+'</w:rPr><w:t xml:space="preserve">'+xmlEscape(text||" ")+'</w:t></w:r>';
+  const lines=String(text||" ").split(/\r?\n/);
+  return lines.map((line,index)=>
+    '<w:r><w:rPr>'+rPr+'</w:rPr>'+
+    (index?'<w:br/>':'')+
+    '<w:t xml:space="preserve">'+xmlEscape(line||" ")+'</w:t></w:r>'
+  ).join("");
 }
 
 function paragraph(text,{
@@ -167,6 +172,7 @@ function numberingXml(){
     '<w:num w:numId="3"><w:abstractNumId w:val="1"/></w:num>'+
     '<w:num w:numId="4"><w:abstractNumId w:val="1"/></w:num>'+
     '<w:num w:numId="5"><w:abstractNumId w:val="1"/></w:num>'+
+    '<w:num w:numId="6"><w:abstractNumId w:val="1"/></w:num>'+
     '</w:numbering>';
 }
 
@@ -319,13 +325,13 @@ function courtDocumentXml(bundle,options){
   ));
 
   body.push(sectionHeading("Доказни предлози"));
-  body.push(listItems(evidence.length?evidence:["[ДОКАЗНИ ПРЕДЛОЗИ]"],3));
+  body.push(listItems(evidence.length?evidence:["[ДОКАЗНИ ПРЕДЛОЗИ]"],4));
 
   body.push(sectionHeading("Тужбено барање"));
-  body.push(listItems(petitum.length?petitum:["[ТУЖБЕНО БАРАЊЕ]"],4,{bold:true}));
+  body.push(listItems(petitum.length?petitum:["[ТУЖБЕНО БАРАЊЕ]"],5,{bold:true}));
 
   body.push(sectionHeading("Прилози"));
-  body.push(listItems(attachments.length?attachments:["[ПРИЛОЗИ]"],5));
+  body.push(listItems(attachments.length?attachments:["[ПРИЛОЗИ]"],6));
 
   body.push(paragraph(place+", "+date,{style:"LegalSignature",align:"right",keepLines:true}));
   body.push(paragraph(signature,{style:"LegalSignature",align:"right",bold:true,keepLines:true}));
