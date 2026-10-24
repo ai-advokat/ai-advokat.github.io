@@ -4,6 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 import {legalDocumentExportBundle} from '../src/legal-document-export.js';
+import {renderCaseExportDocxBytes} from '../src/case-export.js';
 import {prepareMvpV2Integration} from './casepilot-integration.mjs';
 import {
   PROFESSIONAL_DOCX_ENGINE_VERSION,
@@ -50,6 +51,38 @@ async function readJson(req){
   catch{const e=new Error('invalid_json');e.status=400;throw e;}
 }
 
+
+export function groupProfessionalBlockersForReview(blockers=[]){
+  const groups=new Map();
+  for(const blocker of blockers){
+    const objectId=String(blocker?.objectId||'unknown');
+    const key=objectId;
+    if(!groups.has(key)) groups.set(key,[]);
+    groups.get(key).push(blocker);
+  }
+  return Object.freeze([...groups.entries()].map(([objectId,items])=>{
+    const codes=items.map(x=>String(x.code||'blocker'));
+    const summaries=[...new Set(items.map(x=>String(x.summary||'').trim()).filter(Boolean))];
+    return Object.freeze({
+      heading:(items.length>1 ? 'grouped · ' : '')+objectId+(items.length>1 ? ` · ${items.length} checks` : ''),
+      text:[
+        ...codes.map(code=>'Check: '+code),
+        ...summaries.map(summary=>'Reason: '+summary)
+      ].join('\n'),
+      status:'BLOCK'
+    });
+  }));
+}
+
+export function groupReviewAnnexForPresentation(report,blockers=[]){
+  if(!report||typeof report!=='object') return report;
+  const sections=(report.sections||[]).map(section=>{
+    if(section.id!=='professional-blockers') return section;
+    return Object.freeze({...section,items:groupProfessionalBlockersForReview(blockers)});
+  });
+  return Object.freeze({...report,sections:Object.freeze(sections)});
+}
+
 function workingBundleFromPayload(payload){
   const rawDossier=payload?.dossier && typeof payload.dossier==='object' ? payload.dossier : payload;
   const integration=prepareMvpV2Integration(rawDossier);
@@ -78,7 +111,7 @@ export function analyzeMvpV2Payload(payload){
     blockers:bundle.readiness.blockers,
     ast,
     courtReport:bundle.courtReport,
-    reviewAnnexReport:bundle.reviewAnnexReport,
+    reviewAnnexReport:groupReviewAnnexForPresentation(bundle.reviewAnnexReport,bundle.readiness.blockers),
     docxProfile:PROFESSIONAL_DOCX_PROFILE,
     docxEngineVersion:PROFESSIONAL_DOCX_ENGINE_VERSION,
     domainRouting:integration.domainRouting,
@@ -93,7 +126,11 @@ export function analyzeMvpV2Payload(payload){
 }
 
 export function renderMvpV2WorkingDocx(payload,{review=false}={}){
-  const {ast}=workingBundleFromPayload(payload);
+  const {ast,bundle}=workingBundleFromPayload(payload);
+  if(review){
+    const grouped=groupReviewAnnexForPresentation(bundle.reviewAnnexReport,bundle.readiness.blockers);
+    return renderCaseExportDocxBytes(grouped);
+  }
   const result=renderProfessionalLegalDocxBundle(ast,{
     mode:'working',
     serverHumanGate:SERVER_HUMAN_GATE,
@@ -103,7 +140,7 @@ export function renderMvpV2WorkingDocx(payload,{review=false}={}){
     signature:'[ПОТПИС]',
     pleadingHeading:'Т У Ж Б А'
   });
-  return review?result.reviewAnnex:result.courtDocument;
+  return result.courtDocument;
 }
 
 export function attemptMvpV2ProfessionalDocx(payload){
