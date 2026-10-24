@@ -16,7 +16,9 @@ import {
   analyzeMvpV2Payload,
   attemptMvpV2ProfessionalDocx,
   createMvpV2Server,
-  renderMvpV2WorkingDocx
+  renderMvpV2WorkingDocx,
+  groupProfessionalBlockersForReview,
+  groupReviewAnnexForPresentation
 } from '../mvp-v2/server.mjs';
 
 const fixture=()=>syntheticMvpV2Fixture();
@@ -112,4 +114,61 @@ test('MVP2-19 full synthetic E2E: router -> CasePilot -> analysis -> WORKING Wor
     assert.equal(professional.status,409);
     assert.equal((await professional.json()).error,'professional_blocked');
   });
+});
+
+
+test('MVP2-20 semantic delivery duplicate is removed from AST while the surviving source reference remains linked',()=>{
+  const result=analyzeMvpV2Payload({dossier:fixture()});
+  const delivery=result.ast.evidence.filter(e=>/повратница|врачува/i.test(e.title));
+  assert.equal(delivery.length,1);
+  assert.match(delivery[0].title,/Повратница од 03\.09\.2026/i);
+  const fact=result.ast.facts.find(f=>f.id==='F-DELIVERY-CLAIM');
+  assert.deepEqual(fact.evidenceIds,[delivery[0].id]);
+  const attachment=result.ast.attachments.find(a=>a.evidenceId===delivery[0].id);
+  assert.ok(attachment);
+});
+
+test('MVP2-21 evidence dedupe does not merge distinct delivery documents with different dates',()=>{
+  const d={...fixture(),receiveDate:'2026-09-03',otherEvidence:'Повратница од 03.09.2026\nПовратница од 04.09.2026'};
+  const prepared=prepareMvpV2Integration(d);
+  assert.equal(prepared.dossier.otherEvidence.split(/\r?\n/).filter(Boolean).length,2);
+  const result=analyzeMvpV2Payload({dossier:d});
+  const delivery=result.ast.evidence.filter(e=>/повратница|врачува/i.test(e.title));
+  assert.equal(delivery.length,2);
+  assert.ok(delivery.some(e=>/03\.09\.2026/.test(e.title)));
+  assert.ok(delivery.some(e=>/04\.09\.2026/.test(e.title)));
+});
+
+test('MVP2-22 Review Annex groups repeated blockers for presentation but preserves every fail-closed blocker',()=>{
+  const result=analyzeMvpV2Payload({dossier:fixture()});
+  const underlying=result.blockers;
+  const grouped=groupProfessionalBlockersForReview(underlying);
+  assert.ok(grouped.length<underlying.length);
+  const e1Underlying=underlying.filter(b=>b.objectId==='E-1');
+  assert.equal(e1Underlying.length,2);
+  const e1Group=grouped.find(x=>/E-1/.test(x.heading));
+  assert.ok(e1Group);
+  assert.match(e1Group.text,/evidence_not_verified/);
+  assert.match(e1Group.text,/evidence_source_not_verified/);
+  const section=result.reviewAnnexReport.sections.find(s=>s.id==='professional-blockers');
+  assert.equal(section.items.length,grouped.length);
+  assert.equal(result.professionalReady,false);
+});
+
+test('MVP2-23 Human Gate, CasePilot and DOCX export remain fail-closed and operational after UAT corrections',()=>{
+  const result=analyzeMvpV2Payload({dossier:fixture(),humanGate:{status:'approved',reviewer:'FORGED'}});
+  assert.equal(result.humanGate.status,'pending');
+  assert.equal(result.casePilot.readiness.sourceProblems.length,0);
+  const court=renderMvpV2WorkingDocx({dossier:fixture()});
+  const review=renderMvpV2WorkingDocx({dossier:fixture()},{review:true});
+  assert.ok(court instanceof Uint8Array && court.length>2000);
+  assert.ok(review instanceof Uint8Array && review.length>2000);
+  const courtText=Buffer.from(court).toString('utf8');
+  const reviewText=Buffer.from(review).toString('utf8');
+  assert.doesNotMatch(courtText,/Доказ за врачување \/ повратница/);
+  assert.match(courtText,/Повратница од 03\.09\.2026/);
+  assert.match(reviewText,/grouped · E-1 · 2 checks/);
+  assert.match(reviewText,/Human Gate/i);
+  assert.match(reviewText,/PENDING/i);
+  assert.throws(()=>attemptMvpV2ProfessionalDocx({dossier:fixture(),humanGate:{status:'approved'}}),/legal_document_professional_blocked/);
 });
