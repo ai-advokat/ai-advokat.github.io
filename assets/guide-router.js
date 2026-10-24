@@ -26,7 +26,7 @@
     integrity:"integrity"
   });
 
-  const DOMAIN_SIGNALS=Object.freeze({
+  const AUXILIARY_DOMAINS=new Set(["access_to_justice","civil_procedure"]);\n\n  const DOMAIN_SIGNALS=Object.freeze({
     labour_social:Object.freeze([
       ["враќање на работа",22],["врати на работа",20],["работен однос",18],["договор за вработување",16],
       ["работно место",12],["вознемирување на работно место",18],["работник",12],["работодавач",12],
@@ -167,7 +167,7 @@
       return {domain,score,matchedSignals};
     }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score || a.domain.localeCompare(b.domain));
     const top=ranked[0],second=ranked[1];
-    if(!top || top.score<10 || (second && second.score>=10 && top.score-second.score<=2)){
+    if(!top || top.score<10 || (second && !AUXILIARY_DOMAINS.has(second.domain) && second.score>=10 && top.score-second.score<=2)){
       return {routingState:"UNRESOLVED",primaryDomain:"unknown",secondaryDomains:[],ranked};
     }
     return {
