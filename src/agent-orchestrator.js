@@ -828,7 +828,11 @@ export async function runOpenAIOrchestrator(env, {
     } : {})
   };
 
-  const chiefTimeout=boundedProviderTimeout(env?.OPENAI_PROVIDER_TIMEOUT_MS,45000,deadlineAt,{minStartMs:8000,maxMs:90000});
+  const missionProfile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
+  const chiefFallbackTimeoutMs=["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)
+    ? 70000
+    : 45000;
+  const chiefTimeout=boundedProviderTimeout(env?.OPENAI_PROVIDER_TIMEOUT_MS,chiefFallbackTimeoutMs,deadlineAt,{minStartMs:8000,maxMs:90000});
   if(!chiefTimeout.ok){
     return {
       ok:false,error:"openai_request_deadline_exhausted",timeoutMs:0,
