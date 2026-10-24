@@ -17,6 +17,19 @@ import {
   renderCaseExportDocxBytes
 } from "../src/case-export.js";
 
+import {
+  createMatter,
+  documentRecord,
+  claim,
+  evidenceItem,
+  claimEvidenceLink,
+  contradiction,
+  aiFinding,
+  decideAIFinding,
+  addMatterObject
+} from "../src/casepilot-matter.js";
+import { casePilotMatterToExportReport } from "../src/casepilot-export-adapter.js";
+
 const SHA_A="a".repeat(64);
 const SHA_B="b".repeat(64);
 const SHA_C="c".repeat(64);
@@ -218,6 +231,71 @@ function professionalFixture(){
   return input;
 }
 
+function casePilotRegressionFixture(){
+  let matter=createMatter({
+    matterId:"CASE-CP-REG-001",
+    title:"CasePilot конкретен regression fixture",
+    legalArea:"labour",
+    phase:"working",
+    version:"2.1"
+  });
+  matter=addMatterObject(matter,"documents",documentRecord({
+    id:"DOC-CP-1",
+    title:"Синтетичка одлука",
+    sha256:"1".repeat(64),
+    pageCount:4
+  }));
+  matter=addMatterObject(matter,"documents",documentRecord({
+    id:"DOC-CP-2",
+    title:"Синтетичка е-пошта",
+    sha256:"2".repeat(64),
+    pageCount:2
+  }));
+  matter=addMatterObject(matter,"claims",claim({
+    id:"CL-CP-1",
+    text:"Работодавачот навел дека немало одобрено отсуство.",
+    sourceId:"DOC-CP-1",
+    page:2,
+    status:"disputed"
+  }));
+  matter=addMatterObject(matter,"evidence",evidenceItem({
+    id:"EV-CP-1",
+    title:"Е-пошта со спротивна индикација",
+    sourceId:"DOC-CP-2",
+    page:1,
+    notes:"Конкретен CasePilot regression fixture."
+  }));
+  matter=addMatterObject(matter,"claim_evidence",claimEvidenceLink({
+    id:"LINK-CP-1",
+    claimId:"CL-CP-1",
+    evidenceId:"EV-CP-1",
+    supportType:"contradicts",
+    weakness:"Автентичноста и овластувањето остануваат за проверка."
+  }));
+  matter=addMatterObject(matter,"contradictions",contradiction({
+    id:"CON-CP-1",
+    left:{text:"Нема одобрение.",sourceId:"DOC-CP-1",page:2},
+    right:{text:"Работи од дома според договор.",sourceId:"DOC-CP-2",page:1},
+    meaning:"Материјална противречност во доказниот материјал.",
+    question:"Која верзија е поткрепена по проверка на изворите?"
+  }));
+  let finding=aiFinding({
+    id:"AI-CP-1",
+    text:"Постои противречност што бара адвокатска оценка.",
+    sources:[
+      {sourceId:"DOC-CP-1",page:2},
+      {sourceId:"DOC-CP-2",page:1}
+    ]
+  });
+  finding=decideAIFinding(finding,{
+    decision:"accepted",
+    lawyer:"Regression Reviewer",
+    decidedAt:"2026-10-24T17:45:00Z"
+  });
+  matter=addMatterObject(matter,"ai_findings",finding);
+  return matter;
+}
+
 test("LDE-01 normalizes structured Legal Document AST and preserves required collections",()=>{
   const ast=normalizeLegalDocumentAst(workingFixture());
   assert.equal(ast.version,LEGAL_DOCUMENT_AST_VERSION);
@@ -322,13 +400,15 @@ test("LDE-10 DOCX structural audit preserves Cyrillic, warnings, and court/revie
     assert.match(text,/\[Content_Types\]\.xml/);
     assert.match(text,/word\/document\.xml/);
     assert.match(text,/word\/styles\.xml/);
-    assert.match(text,/WORKING COPY — HUMAN GATE PENDING/);
   }
   const courtText=new TextDecoder().decode(out.courtDocument);
   const reviewText=new TextDecoder().decode(out.reviewAnnex);
+  assert.match(courtText,/WORKING DRAFT — NOT FOR FILING/);
   assert.match(courtText,/Фактичка основа/);
   assert.match(courtText,/Тужбено барање/);
-  assert.doesNotMatch(courtText,/INTERNAL REVIEW ANNEX/);
+  assert.doesNotMatch(courtText,/INTERNAL REVIEW ANNEX|Human Gate|Source manifest|Provenance appendix/);
+  assert.doesNotMatch(courtText,/Reviewer:|Decision reference:|Decision time:|Status:\s/);
+  assert.match(reviewText,/WORKING COPY — HUMAN GATE PENDING/);
   assert.match(reviewText,/INTERNAL REVIEW ANNEX/);
   assert.match(reviewText,/Противречности/);
 });
@@ -341,6 +421,10 @@ test("LDE-11 semantic visual-control contract keeps warning first and annex sepa
     courtHasPetitum:true,
     courtHasAttachments:true,
     courtContainsInternalReviewAnnex:false,
+    courtContainsHumanGateMetadata:false,
+    courtContainsReviewStatusMetadata:false,
+    courtContainsSourceManifest:false,
+    courtContainsProvenance:false,
     reviewContainsInternalReviewAnnex:true,
     reviewHasContradictions:true,
     reviewHasBlockers:true
@@ -391,4 +475,179 @@ test("LDE-15 synthetic professional fixture never becomes a filing/signature/tra
   assert.equal(bundle.mode,"professional");
   assert.ok(bundle.courtReport);
   assert.ok(bundle.reviewAnnexReport);
+});
+
+
+test("LDE-16 negative Human Gate matrix blocks forged approval and invalid decision metadata",()=>{
+  const forged=professionalFixture();
+  assert.throws(
+    ()=>legalDocumentExportBundle(forged,{
+      mode:"professional",
+      serverHumanGate:{status:"pending"}
+    }),
+    /legal_document_professional_blocked/
+  );
+
+  const missingReviewer=professionalFixture();
+  let ready=legalDocumentReadiness(missingReviewer,{
+    serverHumanGate:{
+      status:"approved",
+      reviewer:"   ",
+      decidedAt:"2026-10-24T17:50:00Z",
+      decisionRef:"HG-SERVER-1"
+    }
+  });
+  assert.equal(ready.professionalReady,false);
+  assert.ok(ready.blockers.some(x=>x.code==="human_gate_not_approved"));
+
+  const missingDecision=professionalFixture();
+  ready=legalDocumentReadiness(missingDecision,{
+    serverHumanGate:{
+      status:"approved",
+      reviewer:"Valid Reviewer",
+      decidedAt:"2026-10-24T17:50:00Z",
+      decisionRef:""
+    }
+  });
+  assert.equal(ready.professionalReady,false);
+  assert.ok(ready.blockers.some(x=>x.code==="human_gate_not_approved"));
+
+  const invalidTimestamp=professionalFixture();
+  assert.throws(
+    ()=>legalDocumentReadiness(invalidTimestamp,{
+      serverHumanGate:{
+        status:"approved",
+        reviewer:"Valid Reviewer",
+        decidedAt:"not-a-date",
+        decisionRef:"HG-SERVER-2"
+      }
+    }),
+    /legal_document_human_gate_decided_at_invalid/
+  );
+
+  const openBlocker=professionalFixture();
+  openBlocker.blockers[0].status="open";
+  delete openBlocker.blockers[0].resolution;
+  assert.throws(
+    ()=>legalDocumentExportBundle(openBlocker,{mode:"professional"}),
+    /legal_document_professional_blocked/
+  );
+});
+
+test("LDE-17 AST referential-integrity matrix fails closed before PROFESSIONAL export",()=>{
+  const duplicateFact=professionalFixture();
+  duplicateFact.facts.push(structuredClone(duplicateFact.facts[0]));
+  assert.throws(
+    ()=>legalDocumentExportBundle(duplicateFact,{mode:"professional"}),
+    /legal_document_duplicate_fact_id/
+  );
+
+  const missingEvidence=professionalFixture();
+  missingEvidence.facts[0].evidenceIds=["E-NOT-FOUND"];
+  assert.throws(
+    ()=>legalDocumentExportBundle(missingEvidence,{mode:"professional"}),
+    /legal_document_fact_evidence_not_found/
+  );
+
+  const invalidAuthority=professionalFixture();
+  invalidAuthority.legalBases[0].authority.verificationStatus="unverified";
+  assert.throws(
+    ()=>legalDocumentExportBundle(invalidAuthority,{mode:"professional"}),
+    /legal_document_unverified_authority_not_allowed/
+  );
+
+  const missingContradictionDocument=professionalFixture();
+  missingContradictionDocument.contradictions[0].right={type:"evidence",id:"E-DOCUMENT-NOT-FOUND"};
+  assert.throws(
+    ()=>legalDocumentExportBundle(missingContradictionDocument,{mode:"professional"}),
+    /legal_document_contradiction_ref_not_found/
+  );
+
+  const missingAttachmentEvidence=professionalFixture();
+  missingAttachmentEvidence.attachments[0].evidenceId="E-ATTACHMENT-NOT-FOUND";
+  assert.throws(
+    ()=>legalDocumentExportBundle(missingAttachmentEvidence,{mode:"professional"}),
+    /legal_document_attachment_evidence_not_found/
+  );
+});
+
+test("LDE-18 Court DOCX does not leak Review Annex, Human Gate, source or review metadata",()=>{
+  const input=professionalFixture();
+  const out=renderLegalDocumentDocxBundle(input,{mode:"professional"});
+  const courtText=new TextDecoder().decode(out.courtDocument);
+  const reviewText=new TextDecoder().decode(out.reviewAnnex);
+
+  assert.match(courtText,/PROFESSIONAL COPY/);
+  assert.match(courtText,/Фактичка основа/);
+  assert.match(courtText,/Тужбено барање/);
+  assert.doesNotMatch(courtText,/INTERNAL REVIEW ANNEX/);
+  assert.doesNotMatch(courtText,/Human Gate|Reviewer:|Decision reference:|Decision time:/i);
+  assert.doesNotMatch(courtText,/Synthetic Reviewer|HG-SYN-001/);
+  assert.doesNotMatch(courtText,/PROFESSIONAL blockers|Што не докажува:|Што мора да се провери:/);
+  assert.doesNotMatch(courtText,/Source manifest|Provenance appendix|Status:\s/);
+  assert.doesNotMatch(courtText,/SRC-E[123]|LAW-SYN-1/);
+
+  assert.match(reviewText,/INTERNAL REVIEW ANNEX/);
+  assert.match(reviewText,/Human Gate/);
+  assert.match(reviewText,/Synthetic Reviewer/);
+  assert.match(reviewText,/HG-SYN-001/);
+  assert.match(reviewText,/PROFESSIONAL blockers/);
+});
+
+test("LDE-19 concrete CasePilot regression fixture preserves the existing default export contract",()=>{
+  const matter=casePilotRegressionFixture();
+  const adapter=casePilotMatterToExportReport(matter,{summary:"Конкретен CasePilot regression export."});
+  assert.equal(adapter.caseId,"CASE-CP-REG-001");
+  assert.ok(adapter.sections.some(s=>s.id==="claim-evidence"));
+  assert.ok(adapter.sections.some(s=>s.id==="contradictions"));
+  assert.ok(adapter.sections.some(s=>s.id==="ai-findings"));
+  assert.equal(adapter.sourceManifest.length,2);
+  assert.ok(adapter.provenance.some(p=>p.claimId==="CL-CP-1"));
+  assert.ok(adapter.provenance.some(p=>p.claimId==="AI-CP-1"));
+
+  const normalized=normalizeCaseExportReport({
+    ...adapter,
+    generatedAt:"2026-10-24T18:00:00Z"
+  },{mode:"working"});
+  const bytes=renderCaseExportDocxBytes(normalized);
+  const text=new TextDecoder().decode(bytes);
+
+  assert.equal(normalized.exportVersion,CASE_EXPORT_VERSION);
+  assert.match(text,/CasePilot конкретен regression fixture/);
+  assert.match(text,/Claim → Evidence матрица/);
+  assert.match(text,/Противречности/);
+  assert.match(text,/AI Findings Register/);
+  assert.match(text,/Source manifest/);
+  assert.match(text,/Human Gate/);
+  assert.match(text,/Provenance appendix/);
+  assert.match(text,/DOC-CP-1/);
+  assert.match(text,/Regression Reviewer/);
+});
+
+test("LDE-20 CasePilot default renderer still emits governance appendices while PR-B court profile does not",()=>{
+  const report=normalizeCaseExportReport({
+    caseId:"CASE-CP-DEFAULT",
+    title:"CasePilot default contract control",
+    caseVersion:"1.0",
+    generatedAt:"2026-10-24T18:05:00Z",
+    sections:[{
+      id:"s",
+      title:"Контролна секција",
+      items:[{heading:"Тест",text:"Содржина",status:"WORKING",sources:[]}]
+    }],
+    sourceManifest:[],
+    provenance:[],
+    humanGate:{status:"pending"}
+  },{mode:"working"});
+  const defaultText=new TextDecoder().decode(renderCaseExportDocxBytes(report));
+  assert.match(defaultText,/WORKING COPY — HUMAN GATE PENDING/);
+  assert.match(defaultText,/Source manifest/);
+  assert.match(defaultText,/Human Gate/);
+  assert.match(defaultText,/Provenance appendix/);
+
+  const courtText=new TextDecoder().decode(
+    renderLegalDocumentDocxBundle(workingFixture(),{mode:"working"}).courtDocument
+  );
+  assert.match(courtText,/WORKING DRAFT — NOT FOR FILING/);
+  assert.doesNotMatch(courtText,/Source manifest|Human Gate|Provenance appendix/);
 });
