@@ -369,7 +369,7 @@ function blocker(code,objectId,summary){
 }
 
 export function legalDocumentReadiness(astInput,{serverHumanGate=null}={}){
-  const ast=astInput?.version===LEGAL_DOCUMENT_AST_VERSION?astInput:normalizeLegalDocumentAst(astInput);
+  const ast=astInput?.version===LEGAL_DOCUMENT_AST_VERSION&&astInput?.exportVersion===LEGAL_DOCUMENT_EXPORT_VERSION\n    ? astInput\n    : normalizeLegalDocumentAst(astInput);
   const gate=normalizeHumanGate(serverHumanGate||ast.humanGate);
   const blockers=[];
 
@@ -397,10 +397,16 @@ export function legalDocumentReadiness(astInput,{serverHumanGate=null}={}){
     if(evidence.requiredForProfessional&&evidence.verificationStatus!=="verified"){
       blockers.push(blocker("evidence_not_verified",evidence.id,evidence.title));
     }
+    if(evidence.requiredForProfessional&&evidence.source.verificationStatus!=="verified"){
+      blockers.push(blocker("evidence_source_not_verified",evidence.id,evidence.title));
+    }
   }
   for(const basis of ast.legalBases){
     if(basis.requiredForProfessional&&basis.status!=="verified"){
       blockers.push(blocker("legal_basis_not_verified",basis.id,basis.proposition));
+    }
+    if(basis.requiredForProfessional&&basis.status==="verified"&&(!basis.authority||basis.authority.verificationStatus!=="verified")){
+      blockers.push(blocker("legal_basis_source_not_verified",basis.id,basis.proposition));
     }
   }
   for(const arg of ast.arguments){
@@ -679,7 +685,7 @@ function buildReports(ast,mode,gate,readiness){
 
 export function legalDocumentExportBundle(astInput,{mode="working",serverHumanGate=null}={}){
   if(!LEGAL_DOCUMENT_EXPORT_MODES.includes(mode)) throw new Error("legal_document_export_mode_invalid");
-  const ast=astInput?.version===LEGAL_DOCUMENT_AST_VERSION?astInput:normalizeLegalDocumentAst(astInput);
+  const ast=astInput?.version===LEGAL_DOCUMENT_AST_VERSION&&astInput?.exportVersion===LEGAL_DOCUMENT_EXPORT_VERSION\n    ? astInput\n    : normalizeLegalDocumentAst(astInput);
   const readiness=legalDocumentReadiness(ast,{serverHumanGate});
   if(mode==="professional"&&!readiness.professionalReady){
     throw new Error("legal_document_professional_blocked");
