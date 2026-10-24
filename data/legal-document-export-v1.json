@@ -19,7 +19,8 @@
       "WORKING/PROFESSIONAL release gates",
       "CasePilot export adapter reuse",
       "automatic structural DOCX tests",
-      "semantic visual-control contract"
+      "semantic visual-control contract",
+      "court-output governance metadata exclusion"
     ],
     "prCExcluded": [
       "professional DOCX typography redesign",
@@ -61,9 +62,12 @@
   },
   "compatibility": {
     "casePilotExportVersion": "1.0.0",
-    "casePilotExportFileModified": false,
+    "casePilotExportFileModified": true,
     "productionRouteAdded": false,
-    "externalProviderCallAdded": false
+    "externalProviderCallAdded": false,
+    "casePilotExportChange": "backward-compatible low-level block DOCX renderer; existing default report renderer unchanged",
+    "casePilotDefaultGovernanceAppendicesPreserved": true,
+    "courtProfileGovernanceAppendicesExcluded": true
   },
   "acceptance": [
     {
@@ -125,6 +129,26 @@
     {
       "id": "LDE-15",
       "criterion": "Professional export is not filing/signature/transmission"
+    },
+    {
+      "id": "LDE-16",
+      "criterion": "Negative Human Gate matrix blocks forged approval, invalid reviewer/decision metadata and unresolved blockers"
+    },
+    {
+      "id": "LDE-17",
+      "criterion": "AST referential-integrity matrix blocks duplicate, missing and invalid references"
+    },
+    {
+      "id": "LDE-18",
+      "criterion": "Court DOCX excludes Review Annex, Human Gate, source/provenance and review-status metadata"
+    },
+    {
+      "id": "LDE-19",
+      "criterion": "Concrete CasePilot matter fixture preserves default export contract and governance appendices"
+    },
+    {
+      "id": "LDE-20",
+      "criterion": "CasePilot default renderer and PR-B sanitized court profile remain behaviorally separated"
     }
   ]
 }
