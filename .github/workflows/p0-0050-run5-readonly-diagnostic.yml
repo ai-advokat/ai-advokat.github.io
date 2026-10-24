@@ -1,0 +1,92 @@
+name: AI Advokat P0 0050 run5 read-only diagnostic
+
+on:
+  push:
+    branches:
+      - "ops/p0-0050-run5-readonly-diagnostic"
+    paths:
+      - ".github/workflows/p0-0050-run5-readonly-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify exact production D1 target
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
+          console.log("EXACT PRODUCTION D1 TARGET: PASS");
+          NODE
+
+      - name: Read recent LIOE telemetry only
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            SELECT run_id,started_at,finished_at,mission_profile,provider_state,
+                   verification_state,release_state,postflight_required,
+                   provider_calls,total_tokens,model,error_code,http_status,
+                   response_status,incomplete_reason,provider_timeout_ms,
+                   telemetry_schema_version
+              FROM lioe_runtime_runs
+             WHERE started_at >= '2026-10-24T00:40:00.000Z'
+             ORDER BY started_at DESC
+             LIMIT 12;
+          " | tee /tmp/p0-run5-lioe-telemetry.txt
+          echo "READ-ONLY LIOE TELEMETRY: PASS"
+
+      - name: Verify run5 synthetic membership cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            SELECT
+              (SELECT COUNT(*) FROM membership_accounts WHERE id='p0-0050-smoke-40046196790-1') AS accounts,
+              (SELECT COUNT(*) FROM membership_entitlements WHERE account_id='p0-0050-smoke-40046196790-1') AS entitlements,
+              (SELECT COUNT(*) FROM membership_access_keys WHERE account_id='p0-0050-smoke-40046196790-1') AS access_keys,
+              (SELECT COUNT(*) FROM membership_usage_monthly WHERE subject_key='account:p0-0050-smoke-40046196790-1') AS usage_rows,
+              (SELECT COUNT(*) FROM security_rate_limit_windows WHERE subject_key='account:p0-0050-smoke-40046196790-1') AS rate_limit_rows;
+          " | tee /tmp/p0-run5-cleanup-check.txt
+          node <<'NODE'
+          const fs=require("fs");
+          const s=fs.readFileSync("/tmp/p0-run5-cleanup-check.txt","utf8");
+          for(const k of ["accounts","entitlements","access_keys","usage_rows","rate_limit_rows"]){
+            const m=s.match(new RegExp('"'+k+'"\\s*:\\s*(\\d+)'));
+            if(!m || Number(m[1])!==0) throw new Error("Run5 cleanup not complete for "+k);
+          }
+          console.log("RUN5 SYNTHETIC MEMBERSHIP CLEANUP: PASS");
+          NODE
+
+      - name: Upload redacted read-only evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0-0050-run5-readonly-diagnostic
+          retention-days: 14
+          path: |
+            /tmp/p0-run5-lioe-telemetry.txt
+            /tmp/p0-run5-cleanup-check.txt
+          if-no-files-found: error
