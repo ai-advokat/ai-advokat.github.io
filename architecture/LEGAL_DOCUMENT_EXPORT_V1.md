@@ -6,7 +6,7 @@ Status: **DRAFT / ISOLATED / PRODUCTION NO-GO**
 
 PR-B turns the successful local TEST LAB v0.1-v0.3 proof-of-concept into a reusable legal-document domain and export adapter.
 
-It does **not** replace the existing CasePilot export engine and does not introduce professional DOCX styling. The existing `src/case-export.js` remains the canonical export/container contract. PR-B adds a governed Legal Document AST above it.
+It does **not** replace the existing CasePilot export engine and does not introduce professional DOCX styling. The existing `src/case-export.js` remains the canonical export/container contract. PR-B adds a governed Legal Document AST above it. Final independent review adds one backward-compatible low-level block renderer to that engine so PR-B can produce a sanitized Court DOCX without changing the existing CasePilot default export behavior.
 
 ## Boundaries
 
@@ -19,6 +19,7 @@ PR-B owns:
 - WORKING vs PROFESSIONAL release gate;
 - separate court-document and internal Review Annex reports;
 - adapter reuse of the existing CasePilot DOCX export contract;
+- sanitized Court DOCX output that excludes internal governance/review metadata;
 - structural DOCX and semantic visual-control tests.
 
 PR-B explicitly does **not** own:
@@ -84,15 +85,17 @@ The separate Review Annex contains:
 
 The Review Annex is always a WORKING internal document and is never a filing artifact.
 
+The Court DOCX intentionally excludes Internal Review Annex content, Human Gate reviewer/timestamp/decision-reference metadata, internal `Status:` markers, Source Manifest, Provenance appendix and source-ID/locator lines. These remain available in the internal review/export model where appropriate.
+
 ## WORKING mode
 
 WORKING export is allowed while review items remain open.
 
-The existing CasePilot export contract places a visible:
+The PR-B Court profile places a visible:
 
-`WORKING COPY — HUMAN GATE PENDING`
+`WORKING DRAFT — NOT FOR FILING`
 
-warning in the export.
+warning in the Court DOCX without exposing Human Gate metadata. The unchanged default CasePilot export continues to use its existing `WORKING COPY — HUMAN GATE PENDING` governance warning.
 
 WORKING does not imply legal validity, court readiness or Human Gate approval.
 
@@ -122,13 +125,14 @@ PR-B deliberately imports and reuses:
 
 - `normalizeCaseExportReport`
 - `renderCaseExportDocxBytes`
+- `renderCaseExportDocxBlocksBytes`
 - `caseExportBlocks`
 
 from `src/case-export.js`.
 
-PR-B does not modify that file.
+The final-review change to `src/case-export.js` is backward-compatible: it exposes a low-level DOCX block renderer while leaving the existing `renderCaseExportDocxBytes(report)` behavior unchanged. Concrete CasePilot regression fixtures verify that the default CasePilot DOCX still emits its Source Manifest, Human Gate and Provenance appendix.
 
-This preserves existing CasePilot export behavior and keeps PR-C free to focus only on professional DOCX presentation if separately authorized.
+This preserves the existing CasePilot contract while allowing PR-B to sanitize only the Court DOCX content profile. PR-C remains limited to professional presentation/styling if separately authorized.
 
 ## Visual control in PR-B
 
@@ -136,7 +140,8 @@ Because PR-C owns typography/layout redesign, PR-B's visual-control scope is sem
 
 - warning appears immediately after the document title;
 - court document contains facts, petitum and attachments;
-- internal Review Annex content never enters the court report;
+- internal Review Annex content never enters the Court DOCX;
+- Human Gate reviewer/decision metadata, internal statuses, Source Manifest and Provenance appendix do not enter the Court DOCX;
 - Review Annex visibly identifies itself as internal/not-for-filing;
 - Macedonian Cyrillic survives the DOCX OpenXML package;
 - the underlying DOCX container remains the existing CasePilot implementation.
@@ -155,6 +160,8 @@ PR-B adds:
 - no deploy operation;
 - no filing/signature/transmission path;
 - no production route.
+
+Final independent review additionally covers forged/invalid Human Gate metadata, duplicate/missing AST references, court/review zero-leak assertions and a concrete CasePilot matter regression fixture.
 
 PR #386 and PR #387 remain outside this branch.
 
