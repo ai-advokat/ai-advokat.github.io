@@ -50,14 +50,15 @@ jobs:
             SELECT run_id,started_at,finished_at,mission_profile,provider_state,
                    verification_state,release_state,postflight_required,
                    provider_calls,total_tokens,model,error_code,http_status,
-                   response_status,incomplete_reason,provider_timeout_ms,
+                   response_status,incomplete_reason,provider_request_id,
+                   provider_response_id,provider_timeout_ms,provider_attempts_json,
                    telemetry_schema_version
               FROM lioe_runtime_runs
-             WHERE started_at >= '2026-10-24T00:40:00.000Z'
-             ORDER BY started_at DESC
-             LIMIT 12;
+             WHERE run_id='LIOE-RT-20261024004146-7c64b56d'
+             LIMIT 1;
           " | tee /tmp/p0-run5-lioe-telemetry.txt
-          echo "READ-ONLY LIOE TELEMETRY: PASS"
+          grep -q 'LIOE-RT-20261024004146-7c64b56d' /tmp/p0-run5-lioe-telemetry.txt
+          echo "READ-ONLY LIOE ATTEMPT TELEMETRY: PASS"
 
       - name: Verify run5 synthetic membership cleanup
         shell: bash
