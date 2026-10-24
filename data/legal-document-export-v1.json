@@ -1,0 +1,130 @@
+{
+  "version": "1.0.0",
+  "id": "LEGAL_DOCUMENT_EXPORT_V1",
+  "status": "draft_isolated_pr_b",
+  "baseCommit": "ec7cafce17b1b5d8ec902ceccf09f14d109c5624",
+  "ownerConstraints": {
+    "production": false,
+    "merge": false,
+    "migrations": false,
+    "paidProviderTests": false,
+    "realClientData": false,
+    "pr386Untouched": true,
+    "pr387Untouched": true
+  },
+  "scope": {
+    "prB": [
+      "Legal Document AST",
+      "court document vs internal Review Annex separation",
+      "WORKING/PROFESSIONAL release gates",
+      "CasePilot export adapter reuse",
+      "automatic structural DOCX tests",
+      "semantic visual-control contract"
+    ],
+    "prCExcluded": [
+      "professional DOCX typography redesign",
+      "court-specific style packs",
+      "advanced numbering/layout engine",
+      "headers/footers/page-number styling",
+      "production activation"
+    ]
+  },
+  "astCollections": [
+    "parties",
+    "facts",
+    "evidence",
+    "legalBases",
+    "arguments",
+    "contradictions",
+    "petitum",
+    "attachments",
+    "blockers",
+    "humanGate"
+  ],
+  "professionalGate": {
+    "humanGate": "recorded approved decision required",
+    "contradictions": "all required contradictions resolved",
+    "materialFacts": "unverified/missing blocked; disputed requires recorded resolution",
+    "evidence": "verified evidence and verified source required",
+    "legalBases": "verified legal basis and verified authority source required",
+    "arguments": "required arguments approved",
+    "petitum": "required petitum items approved",
+    "blockers": "all mandatory blockers resolved",
+    "failureMode": "fail_closed"
+  },
+  "authorityPolicy": {
+    "synthesizeLegalCitations": false,
+    "unverifiedCitationPromotion": false,
+    "synthesizeCaseLaw": false,
+    "synthesizeFacts": false,
+    "synthesizeEvidence": false
+  },
+  "compatibility": {
+    "casePilotExportVersion": "1.0.0",
+    "casePilotExportFileModified": false,
+    "productionRouteAdded": false,
+    "externalProviderCallAdded": false
+  },
+  "acceptance": [
+    {
+      "id": "LDE-01",
+      "criterion": "Structured AST normalizes required legal-document collections"
+    },
+    {
+      "id": "LDE-02",
+      "criterion": "Court document and internal Review Annex are separate exports"
+    },
+    {
+      "id": "LDE-03",
+      "criterion": "Unresolved contradiction remains formal and blocks PROFESSIONAL"
+    },
+    {
+      "id": "LDE-04",
+      "criterion": "Human Gate alone cannot bypass mandatory blockers"
+    },
+    {
+      "id": "LDE-05",
+      "criterion": "PROFESSIONAL succeeds only after all gates resolve"
+    },
+    {
+      "id": "LDE-06",
+      "criterion": "Unverified authority/citation cannot be promoted"
+    },
+    {
+      "id": "LDE-07",
+      "criterion": "AST graph references fail closed"
+    },
+    {
+      "id": "LDE-08",
+      "criterion": "Evidence analysis states proves / does-not-prove / verification-required"
+    },
+    {
+      "id": "LDE-09",
+      "criterion": "Unverified legal propositions are excluded from authoritative court citations"
+    },
+    {
+      "id": "LDE-10",
+      "criterion": "DOCX structural audit preserves Cyrillic, warning, and separation"
+    },
+    {
+      "id": "LDE-11",
+      "criterion": "Semantic visual-control contract preserves warning and section separation"
+    },
+    {
+      "id": "LDE-12",
+      "criterion": "Existing CasePilot export contract remains executable"
+    },
+    {
+      "id": "LDE-13",
+      "criterion": "Server Human Gate overrides payload gate"
+    },
+    {
+      "id": "LDE-14",
+      "criterion": "PR-B module is provider/migration/transmission free"
+    },
+    {
+      "id": "LDE-15",
+      "criterion": "Professional export is not filing/signature/transmission"
+    }
+  ]
+}
