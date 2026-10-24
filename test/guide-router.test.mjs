@@ -153,3 +153,27 @@ test("CGR15 ZPP and ZKP dependent routes expose their canonical dependency keys"
   assert.ok(detention);
   assert.ok(detention.lawDependencies.some(x=>x.key==="mk:zkp"));
 });
+
+
+test("CGR16 domain-aware guide routing blocks the verified administrative false positive for a labour reinstatement claim",()=>{
+  const q="Направи ми тужба за враќање на работник на работа.";
+  const routed=Router.routeGuides(q,records,{limit:6,minScore:10});
+  assert.ok(routed.some(x=>x.id==="guide-05-workplace"));
+  assert.ok(!routed.some(x=>x.id==="guide-administrative-v2"));
+  assert.equal(routed.find(x=>x.id==="guide-05-workplace")?.legalDomain,"labour_social");
+});
+
+test("CGR17 generic pleading words alone fail safe instead of selecting a verified cross-domain guide",()=>{
+  assert.deepEqual(Router.routeGuides("Направи ми тужба.",records,{limit:6,minScore:10}),[]);
+});
+
+test("CGR18 domain-aware routing preserves Cyrillic Latin parity and administrative regressions",()=>{
+  const labourMk=Router.routeGuides("Работодавачот ми даде отказ и сакам враќање на работа.",records,{limit:6,minScore:10});
+  const labourLat=Router.routeGuides("rabotodavacot mi dade otkaz i sakam vrakanje na rabota",records,{limit:6,minScore:10});
+  assert.ok(labourMk.some(x=>x.id==="guide-05-workplace"));
+  assert.ok(labourLat.some(x=>x.id==="guide-05-workplace"));
+  assert.ok(!labourMk.some(x=>x.id==="guide-administrative-v2"));
+  assert.ok(!labourLat.some(x=>x.id==="guide-administrative-v2"));
+  assert.ok(ids("жалба против управно решение").includes("guide-52-full-word-2026"));
+  assert.ok(ids("тужба пред управен суд").includes("guide-53-full-word-2026"));
+});
