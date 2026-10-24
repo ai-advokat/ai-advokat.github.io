@@ -6,6 +6,7 @@
 import {
   normalizeCaseExportReport,
   renderCaseExportDocxBytes,
+  renderCaseExportDocxBlocksBytes,
   caseExportBlocks
 } from "./case-export.js";
 
@@ -705,18 +706,40 @@ export function legalDocumentExportBundle(astInput,{mode="working",serverHumanGa
   });
 }
 
+function courtDocumentBlocks(report){
+  const all=caseExportBlocks(report);
+  const sourceManifestIndex=all.findIndex(block=>block.kind==="heading1"&&block.text==="Source manifest");
+  const core=(sourceManifestIndex>=0?all.slice(0,sourceManifestIndex):all)
+    .filter(block=>block.kind!=="source")
+    .filter(block=>!(block.kind==="meta"&&/^Status:\s/i.test(block.text)));
+  return Object.freeze(core.map((block,index)=>{
+    if(index===1&&block.kind==="warning"){
+      return Object.freeze({
+        kind:"warning",
+        text:report.mode==="professional" ? "PROFESSIONAL COPY" : "WORKING DRAFT — NOT FOR FILING"
+      });
+    }
+    return block;
+  }));
+}
+
 export function renderLegalDocumentDocxBundle(astInput,options={}){
   const bundle=legalDocumentExportBundle(astInput,options);
+  const courtBlocks=courtDocumentBlocks(bundle.courtReport);
   return Object.freeze({
     ...bundle,
-    courtDocument:renderCaseExportDocxBytes(bundle.courtReport),
+    courtDocument:renderCaseExportDocxBlocksBytes({
+      title:bundle.courtReport.title,
+      generatedAt:bundle.courtReport.generatedAt,
+      blocks:courtBlocks
+    }),
     reviewAnnex:renderCaseExportDocxBytes(bundle.reviewAnnexReport)
   });
 }
 
 export function legalDocumentVisualControl(astInput,options={}){
   const bundle=legalDocumentExportBundle(astInput,options);
-  const court=caseExportBlocks(bundle.courtReport);
+  const court=courtDocumentBlocks(bundle.courtReport);
   const review=caseExportBlocks(bundle.reviewAnnexReport);
   const courtText=court.map(x=>x.text).join("\n");
   const reviewText=review.map(x=>x.text).join("\n");
@@ -726,6 +749,10 @@ export function legalDocumentVisualControl(astInput,options={}){
     courtHasPetitum:courtText.includes("Тужбено барање"),
     courtHasAttachments:courtText.includes("Прилози"),
     courtContainsInternalReviewAnnex:courtText.includes("INTERNAL REVIEW ANNEX"),
+    courtContainsHumanGateMetadata:/Human Gate|Reviewer:|Decision reference:|Decision time:/i.test(courtText),
+    courtContainsReviewStatusMetadata:/Status:\s/i.test(courtText),
+    courtContainsSourceManifest:courtText.includes("Source manifest"),
+    courtContainsProvenance:courtText.includes("Provenance appendix"),
     reviewContainsInternalReviewAnnex:reviewText.includes("INTERNAL REVIEW ANNEX"),
     reviewHasContradictions:reviewText.includes("Противречности"),
     reviewHasBlockers:reviewText.includes("PROFESSIONAL blockers")
