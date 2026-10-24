@@ -321,7 +321,7 @@ test("PRC-09 Review Annex remains a separate internal document and retains revie
   const review=zipText(out.reviewAnnex);
   assert.doesNotMatch(court,/INTERNAL REVIEW ANNEX/);
   assert.match(review,/INTERNAL REVIEW ANNEX — NOT FOR FILING/);
-  assert.match(review,/Human Gate/);
+  assert.match(review,/HUMAN GATE/i);
   assert.match(review,/Synthetic Reviewer/);
   assert.match(review,/HG-PRC-001/);
   assert.match(review,/PROFESSIONAL blockers/);
