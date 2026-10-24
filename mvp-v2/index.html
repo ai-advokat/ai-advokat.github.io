@@ -9,7 +9,7 @@
 </style>
 </head>
 <body>
-<header class="top"><div><h1>⚖ AI ADVOKAT 4</h1><small>MVP v2 · изолирана PR-B + PR-C интеграциска лабораторија</small></div><span class="tag">WORKING ONLY · LOCAL SERVER</span></header>
+<header class="top"><div><h1>⚖ AI ADVOKAT 4</h1><small>MVP v2 · изолирана PR-A + CasePilot + PR-B + PR-C интеграциска лабораторија</small></div><span class="tag">WORKING ONLY · LOCAL SERVER</span></header>
 <main class="shell">
 <div class="banner"><strong>Цел:</strong> еден целосен синтетички предмет: внесување → Legal Document AST → анализа/Review Annex → WORKING Word преку Professional DOCX Engine. Нема GPT/provider, production API, вистински клиентски податоци или PROFESSIONAL одобрување.</div>
 <div class="layout">
@@ -30,7 +30,7 @@
 </section>
 <section class="panel">
 <h2>2. Интеграциски резултат</h2>
-<div class="statusgrid"><div class="statuscard"><b>Server</b><span id="serverState">проверка…</span></div><div class="statuscard"><b>Human Gate</b><span id="gateState">PENDING</span></div><div class="statuscard"><b>PR-B</b><span id="prb">—</span></div><div class="statuscard"><b>PR-C</b><span id="prc">—</span></div></div>
+<div class="statusgrid"><div class="statuscard"><b>Server</b><span id="serverState">проверка…</span></div><div class="statuscard"><b>Human Gate</b><span id="gateState">PENDING</span></div><div class="statuscard"><b>PR-A Router</b><span id="pra">—</span></div><div class="statuscard"><b>CasePilot</b><span id="casepilot">—</span></div><div class="statuscard"><b>PR-B</b><span id="prb">—</span></div><div class="statuscard"><b>PR-C</b><span id="prc">—</span></div></div>
 <div class="tabs"><button data-tab="analysis" class="active">Анализа</button><button data-tab="draft">Тужба</button><button data-tab="review">Адвокатска проверка</button><button data-tab="evidence">Докази</button><button data-tab="ast">AST</button></div>
 <div id="viewAnalysis" class="screen active"><div class="warning">WORKING режим. Правната основа, рокот, надлежноста и доказите не се правно верификувани.</div><div id="analysisContent"><p class="muted">Вчитајте пример и притиснете „Анализирај предмет“.</p></div></div>
 <div id="viewDraft" class="screen"><div id="draftContent" class="paper"><p class="muted">Нацртот ќе се појави тука.</p></div></div>
@@ -41,7 +41,7 @@
 <p id="actionStatus" class="sub" style="margin-top:12px">PROFESSIONAL е server-side fail-closed.</p>
 </section>
 </div>
-<p class="footer">AI ADVOKAT 4 MVP v2 · синтетички тест · PR #388/#389 остануваат Draft и непроменети · без production/provider повици</p>
+<p class="footer">AI ADVOKAT 4 MVP v2 · синтетички тест · PR #387/#388/#389 остануваат Draft и непроменети · без production/provider повици</p>
 </main>
 <script>
 'use strict';
@@ -52,11 +52,11 @@ function dossier(){return Object.fromEntries(IDS.map(k=>[k,$(k).value.trim()]));
 function fill(d){IDS.forEach(k=>$(k).value=d?.[k]||'');}
 function download(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 async function api(path,opts={}){const r=await fetch(path,{cache:'no-store',...opts});const type=r.headers.get('content-type')||'';if(!r.ok){let x={};try{x=await r.json()}catch{}const e=new Error(x.message||x.error||('HTTP '+r.status));e.status=r.status;e.data=x;throw e}return type.includes('json')?r.json():r.blob()}
-async function health(){try{const h=await api('/api/health');$('serverState').textContent='OK';$('gateState').textContent=h.serverHumanGate.toUpperCase();$('prb').textContent=h.prBHead.slice(0,8);$('prc').textContent=h.prCHead.slice(0,8)}catch{$('serverState').textContent='НЕРАБОТИ'}}
+async function health(){try{const h=await api('/api/health');$('serverState').textContent='OK';$('gateState').textContent=h.serverHumanGate.toUpperCase();$('pra').textContent=h.prAHead.slice(0,8);$('casepilot').textContent='READY';$('prb').textContent=h.prBHead.slice(0,8);$('prc').textContent=h.prCHead.slice(0,8)}catch{$('serverState').textContent='НЕРАБОТИ'}}
 function section(report,id){return report?.sections?.find(s=>s.id===id)||{items:[]}}
-function render(data){last=data;$('gateState').textContent=String(data.humanGate?.status||'pending').toUpperCase();$('prb').textContent=data.prBHead.slice(0,8);$('prc').textContent=data.prCHead.slice(0,8);
+function render(data){last=data;$('gateState').textContent=String(data.humanGate?.status||'pending').toUpperCase();$('pra').textContent=data.prAHead.slice(0,8);$('casepilot').textContent=data.casePilot?.readiness?.sourceProblems?.length===0?'OK':'CHECK';$('prb').textContent=data.prBHead.slice(0,8);$('prc').textContent=data.prCHead.slice(0,8);
  const a=data.ast,b=data.blockers||[];
- $('analysisContent').innerHTML='<div class="ok"><b>AST прифатен од PR-B.</b> '+a.facts.length+' факти · '+a.evidence.length+' докази · '+a.contradictions.length+' противречности</div><h3>PROFESSIONAL readiness</h3><div class="issue"><b>BLOCKED</b> — '+b.length+' blocker(s). Server Human Gate: '+esc(data.humanGate.status.toUpperCase())+'.</div><h3>Факти</h3><ol class="list">'+a.facts.map(f=>'<li><b>'+esc(f.id)+'</b> ['+esc(f.status)+'] '+esc(f.text)+'</li>').join('')+'</ol><h3>Противречности</h3>'+(a.contradictions.length?a.contradictions.map(c=>'<div class="issue"><b>'+esc(c.id)+'</b> '+esc(c.summary)+'</div>').join(''):'<p>Нема евидентирани.</p>');
+ $('analysisContent').innerHTML='<div class="ok"><b>PR-A Router:</b> '+esc(data.domainRouting.primaryDomain)+' / '+esc(data.domainRouting.routingState)+' · <b>CasePilot:</b> '+esc(data.casePilot.matter.objects.documents.length)+' документи, '+esc(data.casePilot.matter.objects.evidence.length)+' докази, '+esc(data.casePilot.matter.objects.contradictions.length)+' противречности</div><div class="ok"><b>AST прифатен од PR-B.</b> '+a.facts.length+' факти · '+a.evidence.length+' докази · '+a.contradictions.length+' противречности</div><h3>PROFESSIONAL readiness</h3><div class="issue"><b>BLOCKED</b> — '+b.length+' blocker(s). Server Human Gate: '+esc(data.humanGate.status.toUpperCase())+'.</div><h3>Факти</h3><ol class="list">'+a.facts.map(f=>'<li><b>'+esc(f.id)+'</b> ['+esc(f.status)+'] '+esc(f.text)+'</li>').join('')+'</ol><h3>Противречности</h3>'+(a.contradictions.length?a.contradictions.map(c=>'<div class="issue"><b>'+esc(c.id)+'</b> '+esc(c.summary)+'</div>').join(''):'<p>Нема евидентирани.</p>');
  const facts=section(data.courtReport,'facts').items, legal=[...section(data.courtReport,'legal-bases').items,...section(data.courtReport,'legal-arguments').items], ev=section(data.courtReport,'evidence-proposals').items, pet=section(data.courtReport,'petitum').items, att=section(data.courtReport,'attachments').items;
  $('draftContent').innerHTML='<div class="warning"><b>РАБОТЕН НАЦРТ — НЕ Е ЗА ПОДНЕСУВАЊЕ</b></div><p><b>ДО:</b> '+esc(a.court)+'</p><p><b>ТУЖИТЕЛ:</b> '+esc(a.parties[0]?.name||'')+'</p><p><b>ТУЖЕН:</b> '+esc(a.parties[1]?.name||'')+'</p><h3>Т У Ж Б А</h3><h4>I. ФАКТИЧКА СОСТОЈБА</h4>'+facts.map((x,i)=>'<p>'+(i+1)+'. '+esc(x.text)+'</p>').join('')+'<h4>II. ПРАВНА ОСНОВА</h4>'+legal.map((x,i)=>'<p>'+(i+1)+'. '+esc([x.heading,x.text].filter(Boolean).join(' — '))+'</p>').join('')+'<h4>III. ДОКАЗНИ ПРЕДЛОЗИ</h4>'+ev.map((x,i)=>'<p>'+(i+1)+'. '+esc([x.heading,x.text].filter(Boolean).join(' — '))+'</p>').join('')+'<h4>IV. ТУЖБЕНО БАРАЊЕ</h4>'+pet.map((x,i)=>'<p><b>'+(i+1)+'. '+esc(x.text)+'</b></p>').join('')+'<h4>V. ПРИЛОЗИ</h4>'+att.map((x,i)=>'<p>'+(i+1)+'. '+esc(x.text)+'</p>').join('');
  $('reviewContent').innerHTML='<div class="warning"><b>INTERNAL REVIEW ANNEX — NOT FOR FILING</b></div>'+data.reviewAnnexReport.sections.map(s=>'<h3>'+esc(s.title)+'</h3>'+(s.items.length?s.items.map(x=>'<p>☐ <b>'+esc(x.heading||'')+'</b> '+esc(x.text||'')+(x.status?' <span class="muted">['+esc(x.status)+']</span>':'')+'</p>').join(''):'<p>—</p>')).join('');
