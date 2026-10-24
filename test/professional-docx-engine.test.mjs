@@ -324,7 +324,7 @@ test("PRC-09 Review Annex remains a separate internal document and retains revie
   assert.match(review,/HUMAN GATE/i);
   assert.match(review,/Synthetic Reviewer/);
   assert.match(review,/HG-PRC-001/);
-  assert.match(review,/PROFESSIONAL blockers/);
+  assert.match(review,/PROFESSIONAL BLOCKERS/i);
 });
 
 test("PRC-10 PROFESSIONAL remains fail-closed when PR-B Human Gate or blockers are unresolved",()=>{
