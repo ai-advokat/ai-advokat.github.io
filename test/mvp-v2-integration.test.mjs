@@ -110,7 +110,7 @@ test('MVP2-07 PROFESSIONAL rendering is fail-closed while mandatory blockers and
 });
 
 test('MVP2-08 pinned PR-B/PR-C contracts and professional profile are explicit',()=>{
-  assert.equal(MVP_V2_VERSION,'2.0.0-test');
+  assert.equal(MVP_V2_VERSION,'2.0.1-uat');
   assert.equal(PR_B_HEAD,'f649672172e5b558f5f89084684949cc5590ca0b');
   assert.equal(PR_C_HEAD,'f106b3da14671828d0b8eaa6b2a1308ccf5b0b66');
   assert.equal(PROFESSIONAL_DOCX_ENGINE_VERSION,'1.0.0');
