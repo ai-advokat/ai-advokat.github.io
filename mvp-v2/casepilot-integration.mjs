@@ -35,13 +35,17 @@ function lines(v){return t(v).split(/\r?\n/).map(t).filter(Boolean);}
 
 function evidenceKey(value){
   const s=t(value).toLowerCase();
-  if(/договор.*вработ|вработ.*договор/.test(s)) return 'contract';
-  if(/одлука.*отказ|отказ.*одлука/.test(s)) return 'dismissal';
-  if(/е-?пошта|email|мејл/.test(s)) return 'email';
-  if(/повратница|врачува/.test(s)) return 'delivery';
-  if(/интерна.*евиденц|евиденц.*интерна/.test(s)) return 'internal-record';
-  if(/лог.*извештај|извештај.*лог/.test(s)) return 'report-log';
-  return s.replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+  const normalized=s.replace(/[^\p{L}\p{N}.\/-]+/gu,' ').replace(/\s+/g,' ').trim();
+  if(/договор.*вработ|вработ.*договор/.test(s)) return 'contract:'+normalized;
+  if(/одлука.*отказ|отказ.*одлука/.test(s)) return 'dismissal:'+normalized;
+  if(/е-?пошта|email|мејл/.test(s)) return 'email:'+normalized;
+  if(/повратница|врачува/.test(s)){
+    const m=/(\d{2})[.\/-](\d{2})[.\/-](\d{4})/.exec(s);
+    return m ? 'delivery:'+m[3]+'-'+m[2]+'-'+m[1]+':'+normalized : 'delivery:'+normalized;
+  }
+  if(/интерна.*евиденц|евиденц.*интерна/.test(s)) return 'internal-record:'+normalized;
+  if(/лог.*извештај|извештај.*лог/.test(s)) return 'report-log:'+normalized;
+  return normalized;
 }
 
 export function dedupeMvpEvidence(value){
