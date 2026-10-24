@@ -93,7 +93,7 @@ const DOMAIN_SIGNALS=Object.freeze({
   ])
 });
 
-const CROSS_DOMAIN_RULES=Object.freeze({
+const AUXILIARY_DOMAINS=new Set(["access_to_justice","civil_procedure"]);\n\nconst CROSS_DOMAIN_RULES=Object.freeze({
   labour_social:Object.freeze({civil_procedure:"civil_procedure_support_for_labour_dispute"}),
   family_property:Object.freeze({civil_procedure:"civil_procedure_support_for_family_property_dispute"}),
   property_law:Object.freeze({civil_procedure:"civil_procedure_support_for_property_dispute"}),
@@ -167,7 +167,7 @@ export function classifyLegalDomain(question){
       ranked:Object.freeze(ranked)
     });
   }
-  if(second && second.score>=10 && (top.score-second.score)<=2){
+  if(second && !AUXILIARY_DOMAINS.has(second.domain) && second.score>=10 && (top.score-second.score)<=2){
     return Object.freeze({
       version:LEGAL_DOMAIN_ROUTER_VERSION,
       routingState:"UNRESOLVED",
