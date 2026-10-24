@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "status": "draft_pr_a_isolated",
+  "scope": "LEGAL_DOMAIN_ROUTER_ONLY",
+  "baseline_sha": "ec7cafce17b1b5d8ec902ceccf09f14d109c5624",
+  "owner_constraints": {
+    "production_changes": false,
+    "merge_authorized": false,
+    "migrations": false,
+    "secrets_changes": false,
+    "real_client_data": false,
+    "additional_provider_calls": false,
+    "pr_386_untouched": true
+  },
+  "policy": {
+    "primary_secondary_domains_explicit": true,
+    "unresolved_fails_safe": true,
+    "server_revalidation_independent_of_browser": true,
+    "cross_domain_requires_reason": true,
+    "verification_status_never_changes_authority_class": true,
+    "verification_bonus_after_domain_compatibility": true
+  },
+  "domains": [
+    "labour_social",
+    "civil_private",
+    "civil_procedure",
+    "administrative_law",
+    "criminal_substantive",
+    "criminal_procedure",
+    "family_property",
+    "property_law",
+    "civil_compensation",
+    "private_notarial",
+    "human_rights",
+    "access_to_justice",
+    "integrity",
+    "public_information",
+    "general_legal",
+    "unknown"
+  ],
+  "category_map": {
+    "labour_social": "labour_social",
+    "administrative_law": "administrative_law",
+    "criminal_justice": "criminal_procedure",
+    "family_property": "family_property",
+    "civil_compensation": "civil_compensation",
+    "private_notarial": "private_notarial",
+    "access_to_justice": "access_to_justice",
+    "integrity": "integrity"
+  },
+  "acceptance_criteria": [
+    "LDR-01 labour reinstatement query resolves to labour_social",
+    "LDR-02 administrative guide is excluded from labour model context",
+    "LDR-03 verification bonus cannot rescue an incompatible source",
+    "LDR-04 administrative-court claim remains administrative_law",
+    "LDR-05 appeal against administrative decision remains administrative_law",
+    "LDR-06 workplace discrimination/harassment remains labour_social",
+    "LDR-07 generic pleading language alone fails safe as unknown/UNRESOLVED",
+    "LDR-08 Cyrillic and common Latin transliteration produce equivalent domain routing",
+    "LDR-09 server rejects incompatible browser-selected guide IDs",
+    "LDR-10 existing administrative guide-routing regressions remain passing",
+    "LDR-11 guide routing never promotes a guide to current-law authority",
+    "LDR-12 implementation adds no provider call, migration, secret or production dependency"
+  ]
+}

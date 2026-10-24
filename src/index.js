@@ -66,6 +66,9 @@ import {
   guideLawGatePrompt
 } from "./guide-law-governance.js";
 import {
+  filterGuideRecordsForLegalDomain
+} from "./legal-domain-router.js";
+import {
   AGENT_ROLES,
   ORCHESTRATOR_MODES,
   ORCHESTRATION_PATTERN,
@@ -3452,7 +3455,7 @@ async function loadCurrentLawReadinessLedger(request,env){
   }
 }
 
-async function governedGuideContext(request,env,guideIds){
+export async function governedGuideContext(request,env,guideIds,question=""){
   const wanted=new Set((Array.isArray(guideIds)?guideIds:[]).map(x=>String(x)).slice(0,5));
   if(!wanted.size) return [];
   const [data,practical,dependencyRegistry,readinessLedger]=await Promise.all([
@@ -3469,9 +3472,15 @@ async function governedGuideContext(request,env,guideIds){
     byId.set(id,{...(byId.get(id)||{}),...item});
   }
   const records=[...byId.values()];
-  const rawContext=records
-    .filter(r=>wanted.has(String(r.id)) && r.catalog_public===true && r.public_record_enabled===true)
+  // Defence in depth: browser guide routing is advisory only. The Worker
+  // independently reclassifies the legal domain and rejects incompatible IDs
+  // before any guide text can enter governed model context.
+  const domainRouting=filterGuideRecordsForLegalDomain(records,question,[...wanted]);
+  const decisionById=new Map(domainRouting.decisions.map(d=>[String(d.id),d.compatibility]));
+  const rawContext=domainRouting.allowed
+    .filter(r=>r.catalog_public===true && r.public_record_enabled===true)
     .map(r=>{
+      const compatibility=decisionById.get(String(r.id));
       const dependencyGate=evaluateGuideLawDependencies(r.id,dependencyRegistry,readinessLedger);
       const governedPublicText=
         r.bot_runtime_enabled===true &&
@@ -3510,7 +3519,10 @@ async function governedGuideContext(request,env,guideIds){
           verificationState,
           activationState,
           fingerprint,
-          currentLawClaim:false
+          currentLawClaim:false,
+          legalDomain:compatibility?.sourceDomain||"unknown",
+          domainCompatibility:compatibility?.state||"UNRESOLVED",
+          crossDomainReason:compatibility?.reason||"domain_compatibility_unresolved"
         },
         text:[
           governedPublicText
@@ -3519,6 +3531,9 @@ async function governedGuideContext(request,env,guideIds){
           "TITLE: "+String(r.display_title || r.title || ""),
           "SCOPE: "+String(r.scope || ""),
           "CATEGORY: "+String(r.category_label || ""),
+          "LEGAL_DOMAIN: "+String(compatibility?.sourceDomain||"unknown"),
+          "DOMAIN_COMPATIBILITY: "+String(compatibility?.state||"UNRESOLVED"),
+          "DOMAIN_REASON: "+String(compatibility?.reason||"domain_compatibility_unresolved"),
           "AI_READING: "+String(r.ai_reading || "not_authorized"),
           "LEGAL_AUTHORITY: false",
           guideLawGatePrompt(dependencyGate),
@@ -5468,7 +5483,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const initialPlan=buildAgentPlan(q);
   const [guideContext,articleBundle,caseLawBundle,gazetteBundle,bureauEchrBundle,scholarlyBundle,authorialBundle]=await Promise.all([
-    governedGuideContext(request,env,guideIds),
+    governedGuideContext(request,env,guideIds,q),
     governedArticleContext(env,q,initialPlan),
     governedCaseLawContext(env,q,initialPlan,{limit:4}),
     governedGazetteChunkContext(env,q),

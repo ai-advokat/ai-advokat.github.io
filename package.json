@@ -122,7 +122,8 @@
     "ohchr:uhri-mk": "node scripts/uhri-north-macedonia-intake.mjs",
     "test:case-law-publications": "node --no-warnings --test test/case-law-publication-processor.test.mjs",
     "test:real-mk-law-source-regressions": "node --no-warnings --test test/real-mk-law-source-regressions.test.mjs",
-    "test:scholarly-literature": "node --no-warnings --test test/scholarly-literature.test.mjs"
+    "test:scholarly-literature": "node --no-warnings --test test/scholarly-literature.test.mjs",
+    "test:legal-domain-router": "node --no-warnings --test test/legal-domain-router.test.mjs test/guide-router.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
