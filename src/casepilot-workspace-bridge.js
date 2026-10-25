@@ -24,6 +24,8 @@ function validSha(value){
 export function slotEligibleForCasePilot(slot){
   if(!slot||typeof slot!=="object") return false;
   if(typeof slot.id!=="string"||!slot.id.trim()) return false;
+  const storageState=String(slot.storage_state||"").toLowerCase();
+  if(["deleted","quarantined","reserved"].includes(storageState)) return false;
   if(!validSha(slot.sha256)) return false;
   if(!Number.isInteger(Number(slot.page_count))||Number(slot.page_count)<1) return false;
   return true;
