@@ -1363,6 +1363,16 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
 
     const bytes=new Uint8Array(await object.arrayBuffer());
+    const integrity=await verifyCaseDocumentSha256(env,{
+      caseId,documentId,accountId:membership.accountId,expectedSha256:row.sha256,bytes
+    });
+    if(!integrity.ok){
+      return json(request,{
+        ok:false,error:integrity.error,documentId,
+        expectedSha256:integrity.expectedSha256,actualSha256:integrity.actualSha256,
+        storageState:"quarantined",humanGate:{professionalUseLocked:true}
+      },409);
+    }
     const extraction=await runPrivateCaseDocumentExtraction(env,{
       documentId,
       fileName:row.original_name,
@@ -1448,12 +1458,27 @@ async function handleCaseWorkspaceApi(request,env,url){
       if(row.storage_state!=="uploaded") return json(request,{ok:false,error:"case_document_not_available"},409);
       const object=await caseObjectGet(env,row.storage_key);
       if(!object) return json(request,{ok:false,error:"case_document_storage_object_missing"},503);
+      let downloadBody=request.method==="HEAD" ? null : object.body;
+      if(request.method!=="HEAD" && /^[0-9a-f]{64}$/i.test(String(row.sha256||""))){
+        const bytes=new Uint8Array(await object.arrayBuffer());
+        const integrity=await verifyCaseDocumentSha256(env,{
+          caseId,documentId,accountId:membership.accountId,expectedSha256:row.sha256,bytes
+        });
+        if(!integrity.ok){
+          return json(request,{
+            ok:false,error:integrity.error,documentId,
+            expectedSha256:integrity.expectedSha256,actualSha256:integrity.actualSha256,
+            storageState:"quarantined",humanGate:{professionalUseLocked:true}
+          },409);
+        }
+        downloadBody=bytes;
+      }
       await recordCaseAudit(env,{
         caseId,accountId:membership.accountId,eventType:"document_downloaded",
         objectType:"case_document",objectId:documentId,
         metadata:{slotNumber:row.slot_number,mimeType:row.mime_type,storageState:row.storage_state}
       });
-      return privateDocumentDownloadResponse(request,request.method==="HEAD" ? null : object.body,{
+      return privateDocumentDownloadResponse(request,downloadBody,{
         mimeType:row.mime_type,
         fileName:row.original_name||"document"
       });
@@ -3571,6 +3596,46 @@ function bytesFromBase64(value){
 async function sha256BytesHex(bytes){
   const digest=await crypto.subtle.digest("SHA-256",bytes);
   return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function quarantineCaseDocumentIntegrityMismatch(env,{caseId,documentId,accountId,expectedSha256,actualSha256}={}){
+  const at=new Date().toISOString();
+  await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE case_document_slots
+          SET storage_state='quarantined',extraction_state='failed',updated_at=?
+        WHERE id=? AND case_id=?`
+    ).bind(at,documentId,caseId),
+    env.DB.prepare(
+      `UPDATE case_workspaces
+          SET professional_use_locked=1,updated_at=?
+        WHERE id=?`
+    ).bind(at,caseId),
+    env.DB.prepare(
+      `INSERT INTO case_audit_events
+        (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
+       VALUES (?, ?, ?, 'document_quarantined', 'case_document', ?, ?, ?)`
+    ).bind(
+      "CAE-"+crypto.randomUUID(),caseId,accountId,documentId,
+      safeCaseAuditMetadata({
+        reason:"sha256_mismatch",
+        storageState:"quarantined",
+        expectedSha256:String(expectedSha256||"").slice(0,64),
+        actualSha256:String(actualSha256||"").slice(0,64)
+      }),at
+    )
+  ]);
+}
+
+async function verifyCaseDocumentSha256(env,{caseId,documentId,accountId,expectedSha256,bytes}={}){
+  const expected=String(expectedSha256||"").toLowerCase();
+  if(!/^[0-9a-f]{64}$/.test(expected)) return {ok:true,actualSha256:null};
+  const actual=await sha256BytesHex(bytes);
+  if(actual===expected) return {ok:true,actualSha256:actual};
+  await quarantineCaseDocumentIntegrityMismatch(env,{
+    caseId,documentId,accountId,expectedSha256:expected,actualSha256:actual
+  });
+  return {ok:false,error:"case_document_integrity_mismatch",expectedSha256:expected,actualSha256:actual};
 }
 
 function bytesToBase64(bytes){
