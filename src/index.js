@@ -1491,6 +1491,7 @@ async function handleCaseWorkspaceApi(request,env,url){
       await caseObjectDelete(env,row.storage_key);
       await caseObjectDelete(env,`case-derived/v1/${caseId}/${documentId}/extraction.json`).catch(()=>{});
       await caseObjectDelete(env,`case-derived/v1/${caseId}/analysis/latest.md`).catch(()=>{});
+      await caseObjectDeletePrefix(env,`case-derived/v1/${caseId}/drafts/`);
       const at=new Date().toISOString();
       await env.DB.batch([
         env.DB.prepare(
@@ -3739,6 +3740,26 @@ async function caseObjectDelete(env,key){
   }
   if(caseD1FallbackReady(env)){
     await env.DB.prepare("DELETE FROM case_private_object_chunks WHERE object_key=?").bind(key).run();
+  }
+}
+
+async function caseObjectDeletePrefix(env,prefix){
+  const safePrefix=String(prefix||"");
+  if(!safePrefix) throw new Error("private_case_storage_prefix_required");
+  if(caseR2Ready(env)){
+    if(typeof env.CASE_FILES.list!=="function") throw new Error("private_case_storage_list_not_ready");
+    let cursor=undefined;
+    for(;;){
+      const listed=await env.CASE_FILES.list({prefix:safePrefix,cursor,limit:1000});
+      const keys=(listed?.objects||[]).map(item=>String(item?.key||"")).filter(key=>key.startsWith(safePrefix));
+      if(keys.length) await env.CASE_FILES.delete(keys);
+      if(!listed?.truncated || !listed?.cursor) break;
+      cursor=listed.cursor;
+    }
+    return;
+  }
+  if(caseD1FallbackReady(env)){
+    await env.DB.prepare("DELETE FROM case_private_object_chunks WHERE object_key LIKE ?").bind(safePrefix+"%").run();
   }
 }
 
