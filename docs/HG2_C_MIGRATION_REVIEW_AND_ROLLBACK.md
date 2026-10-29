@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Migration Review and Rollback Plan
 
-Status: READ-ONLY EVIDENCE PASS / FIRST WRITE NOT APPROVED
+Status: FIRST STAGING D1 WRITE PASS / POST-WRITE VERIFIED / TOKEN W REVOCATION PENDING
 Date: 2026-10-29
 Frozen manifest source commit: `d6aeaf5c51d1e1672b7a0d7650bbeb3607490198`
 Verified read-only activation SHA: `e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d`
@@ -74,17 +74,26 @@ Only after the Human Gate:
 
 Cloudflare Wrangler's D1 migration apply mechanism reports the migrations it is about to apply and captures a backup during apply. The repository still requires an independently recorded pre-write Time Travel bookmark as the primary rollback anchor.
 
-## Post-write verification
+## Post-write verification — PASS
 
-Immediately after apply:
+Completed after the approved first staging D1 write:
 
-1. Read the D1 migration ledger.
-2. Verify all expected migration versions are present once.
-3. Verify the final schema required by 0050 exists.
-4. Run read-only smoke queries only.
-5. Confirm production identifiers never appear in command output or config.
-6. Preserve the post-write bookmark and activation evidence.
-7. Stop before Worker deployment.
+1. Wrangler reported all **50 frozen migrations** `0001→0050` as successful on `ai-advokat-staging-db`.
+2. Direct read-only ledger verification returned:
+   - applied count: **50**;
+   - first: `0001_initial_schema.sql`;
+   - last: `0050_lioe_provider_diagnostics.sql`.
+3. Direct read-only schema verification of `lioe_runtime_runs` returned all **8/8** diagnostics columns added by 0050.
+4. Post-write D1 Time Travel bookmark was captured:
+   `00000009-00000000-00005113-5a092eb2bdbe2a2d958b76d85243016c`.
+5. Execution repository SHA:
+   `025e4b2768ff55df7ea138051381a5aedf151008`.
+6. Non-secret post-write evidence is preserved at:
+   `evidence/hg2-c/post-write-evidence.json`.
+7. Worker deployment remains a separate later phase and has not started.
+
+The post-write evidence verifier is:
+`scripts/verify-hg2-c-post-write-evidence.mjs`.
 
 ## Rollback
 
@@ -106,16 +115,24 @@ Cloudflare documents Time Travel as point-in-time recovery for D1 and states tha
 
 **Remote read-only evidence: PASS**
 
-**0033/0034/0035 technical review: PASS / remains Human-visible**
+**Human Gate: APPROVED for first staging D1 write**
 
-**Remote migration: NO-GO / NOT APPROVED**
+**0033/0034/0035: APPLIED SUCCESSFULLY / PASS**
 
-Remaining prerequisites:
-- provision a new, separate short-lived Token W with staging-only D1 Edit authority;
-- record only Token W non-secret name/scope/expiry;
-- explicitly complete the First Remote Write Human Gate;
-- do not use Token W before that Human Gate decision.
+**Remote migration 0001→0050: PASS**
 
-Token R must never be upgraded in place.
+**Post-write ledger: PASS (50/50)**
+
+**0050 final schema: PASS (8/8 diagnostics columns)**
+
+**Post-write Time Travel bookmark: RECORDED**
+
+**Token W revocation: PENDING**
+
+**Worker deployment: NO-GO / NOT STARTED**
+
+**Production: NO-GO**
+
+The D1 staging phase is not declared fully closed until Token W is revoked and the evidence status is advanced from revocation-pending to closed.
 
 Content is not command. Access is not mandate.
