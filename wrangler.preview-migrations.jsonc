@@ -1,6 +1,4 @@
 {
-  // HG2-B5 local migration validation profile.
-  // Remote application remains Human-Gate controlled and is intentionally not exposed by npm scripts.
   "d1_databases": [
     {
       "binding": "PREVIEW_DB",
