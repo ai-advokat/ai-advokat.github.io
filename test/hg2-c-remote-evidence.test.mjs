@@ -23,8 +23,12 @@ function validEvidence() {
     staging_database_name: "ai-advokat-staging-db",
     staging_database_id: "309f72b8-8711-47fc-bea7-fbd1d649561d",
     migration_count_expected: 50,
+    migration_count_remote_applied: 0,
     migration_count_remote_unapplied: 50,
     migration_set_exact_match: true,
+    migration_state_basis: "pristine-empty-d1",
+    migration_ledger_present: false,
+    remote_user_table_count: 0,
     d1_backend_time_travel_capable: true,
     bookmark_evidence_present: true,
     pre_write_bookmark: "00000085-0000024c-00004c6d-8e61117bf38d7adb71b934ebbf891683",
@@ -69,4 +73,24 @@ test("missing exact rollback bookmark is rejected", () => {
   evidence.pre_write_bookmark = "";
   const result = runEvidence(evidence);
   assert.notEqual(result.status, 0);
+});
+
+test("non-zero applied migration count is rejected", () => {
+  const evidence = validEvidence();
+  evidence.migration_count_remote_applied = 1;
+  evidence.migration_count_remote_unapplied = 49;
+  evidence.migration_state_basis = "existing-d1-migrations-ledger";
+  evidence.migration_ledger_present = true;
+  evidence.remote_user_table_count = 1;
+  const result = runEvidence(evidence);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /remote applied migration count is not zero/);
+});
+
+test("pristine evidence with a ledger is rejected", () => {
+  const evidence = validEvidence();
+  evidence.migration_ledger_present = true;
+  const result = runEvidence(evidence);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /pristine D1 must not report a migration ledger/);
 });
