@@ -23,8 +23,11 @@ function lines(value){
 function unique(list){ return [...new Set(list.map(text).filter(Boolean))]; }
 function evidenceNorm(value){ return text(value).toLowerCase().replace(/[^\p{L}\p{N}.]+/gu,' ').replace(/\s+/g,' ').trim(); }
 function deliveryDate(value){
-  const m=/(\d{2})[.\/-](\d{2})[.\/-](\d{4})/.exec(text(value));
-  return m ? `${m[3]}-${m[2]}-${m[1]}` : '';
+  const v=text(value);
+  const iso=/\b(\d{4})-(\d{2})-(\d{2})\b/.exec(v);
+  if(iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dmy=/(\d{2})[.\/](\d{2})[.\/](\d{4})/.exec(v);
+  return dmy ? `${dmy[3]}-${dmy[2]}-${dmy[1]}` : '';
 }
 function semanticEvidenceTitles(d){
   const supplied=unique(lines(d.otherEvidence));
