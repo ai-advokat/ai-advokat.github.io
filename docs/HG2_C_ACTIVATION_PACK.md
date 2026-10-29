@@ -21,7 +21,9 @@ Production resources are explicitly outside this activation pack.
 ## Activation order
 
 1. Re-verify staging account, Worker and D1 identifiers.
-2. Approve a **least-privilege credential path scoped only to the dedicated staging account**.
+2. Provision the approved split least-privilege credential path from `docs/HG2_C_CREDENTIAL_STRATEGY.md`:
+   - Token A: staging-account D1 migration authority only;
+   - Token B: Editor scoped only to the existing `ai-advokat-staging` Worker.
 3. Record the exact activation commit SHA.
 4. Enumerate the exact remote migration files to be applied; no wildcard or implicit migration set.
 5. Verify rollback/restore procedure and capture pre-action D1 state.
@@ -46,7 +48,8 @@ Production resources are explicitly outside this activation pack.
 - security tests — PASS
 - exact migration manifest — RECORDED
 - rollback plan — RECORDED
-- dedicated least-privilege credential path — APPROVED
+- split least-privilege credential design — VERIFIED
+- staging credentials — NOT PROVISIONED / HUMAN-CONTROLLED
 - exact activation SHA — RECORDED
 
 ## Rollback rule
@@ -55,7 +58,9 @@ If any identity mismatch, unexpected public URL, wrong binding, failed migration
 
 ## Current blocker
 
-**B3 credential isolation remains unresolved.** The available Cloudflare UI path previously observed would grant broader account-wide authority than the intended staging-only mandate. Until a credential mechanism is independently verified to be appropriately scoped, remote activation remains **NO-GO**.
+**B3 design is resolved; credential provisioning is not yet performed.** Current Cloudflare authorization documentation supports account-owned API tokens and per-Worker Editor scope. Direct D1 access requires D1 permission; because the D1 lives in a dedicated staging account, any product/account-level D1 authority remains isolated from production. The activation plan therefore uses two separate credentials and keeps token creation and first use behind the Human Gate.
+
+Remote activation remains **NO-GO** until the two staging-only credentials are provisioned, their non-secret scopes are recorded, and the exact migration manifest and rollback evidence are complete.
 
 ## Human Gate
 
