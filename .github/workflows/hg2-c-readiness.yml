@@ -1,0 +1,42 @@
+name: HG2-C repository readiness
+# Credential strategy: docs/HG2_C_CREDENTIAL_STRATEGY.md (no secrets in repository)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "wrangler.staging.jsonc"
+      - "wrangler.preview-migrations.jsonc"
+      - "package.json"
+      - "scripts/hg2-c-readiness.mjs"
+      - "scripts/staging-safety-preflight.mjs"
+      - "scripts/staging-cicd-safety.mjs"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+jobs:
+  repository-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --ignore-scripts
+      - run: npm run test:staging-safety
+      - run: npm run test:staging-cicd-safety
+      - run: npm run test:hg2-c-readiness
+      - run: npm run db:migrate:staging:local
+      - name: Assert remote staging commands remain fail-closed
+        run: |
+          set +e
+          npm run db:migrate:staging
+          a=$?
+          npm run db:status:staging
+          b=$?
+          set -e
+          test "$a" -eq 2
+          test "$b" -eq 2
+          echo "HG2-C remote command guards: PASS"

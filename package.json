@@ -11,7 +11,7 @@
     "test": "node --no-warnings --test test/*.test.mjs",
     "test:legal-alarm": "node --no-warnings --test test/legal-alarm.test.mjs",
     "db:migrate:staging": "node scripts/block-remote-staging-migration.mjs",
-    "db:status:staging": "wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\"",
+    "db:status:staging": "node scripts/block-remote-staging-access.mjs",
     "db:status:production": "wrangler d1 execute ai-advokat-db --remote --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\"",
     "test:legal-parser": "node --test scripts/test-legal-parser.mjs",
     "check:legal-parser": "node --check scripts/parse-mk-legal-text.mjs && node --check scripts/legal-ndjson-to-sql.mjs",
@@ -125,7 +125,8 @@
     "test:scholarly-literature": "node --no-warnings --test test/scholarly-literature.test.mjs",
     "db:migrate:staging:local": "wrangler d1 migrations apply PREVIEW_DB --local --config wrangler.preview-migrations.jsonc --persist-to .wrangler/state/hg2-b5",
     "test:staging-safety": "node scripts/staging-safety-preflight.mjs",
-    "test:staging-cicd-safety": "node scripts/staging-cicd-safety.mjs"
+    "test:staging-cicd-safety": "node scripts/staging-cicd-safety.mjs",
+    "test:hg2-c-readiness": "node scripts/hg2-c-readiness.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
