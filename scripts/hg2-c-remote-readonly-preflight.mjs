@@ -22,11 +22,18 @@ if (process.env.CLOUDFLARE_ACCOUNT_ID !== EXPECTED_ACCOUNT) {
 if (!process.env.CLOUDFLARE_API_TOKEN) {
   fail("CLOUDFLARE_API_TOKEN is required but must never be stored in the repository");
 }
-if (!process.env.HG2_C_TOKEN_A_NAME) {
-  fail("HG2_C_TOKEN_A_NAME is required for non-secret credential provenance");
+if (!process.env.HG2_C_TOKEN_R_NAME) {
+  fail("HG2_C_TOKEN_R_NAME is required for non-secret credential provenance");
 }
-if (!process.env.HG2_C_TOKEN_A_SCOPE_SUMMARY) {
-  fail("HG2_C_TOKEN_A_SCOPE_SUMMARY is required for non-secret credential provenance");
+if (!process.env.HG2_C_TOKEN_R_SCOPE_SUMMARY) {
+  fail("HG2_C_TOKEN_R_SCOPE_SUMMARY is required for non-secret credential provenance");
+}
+const tokenRScope = process.env.HG2_C_TOKEN_R_SCOPE_SUMMARY;
+if (!tokenRScope.includes(EXPECTED_ACCOUNT) || !/D1\s+Read/i.test(tokenRScope)) {
+  fail("Token R scope summary must identify the dedicated staging account and D1 Read");
+}
+if (/D1\s+(Edit|Write)|account-wide|all\s+accounts|12ece285-74bb-4f27-a025-2dbd1be6c59a|\bai-advokat-db\b/i.test(tokenRScope)) {
+  fail("Token R must be read-only and must not include broad or production authority");
 }
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
@@ -141,9 +148,9 @@ const evidence = {
   bookmark_evidence_present: true,
   pre_write_bookmark: preWriteBookmark,
   activation_git_sha: activationSha,
-  token_a_name: process.env.HG2_C_TOKEN_A_NAME,
-  token_a_scope_summary: process.env.HG2_C_TOKEN_A_SCOPE_SUMMARY,
-  token_a_expires_at: process.env.HG2_C_TOKEN_A_EXPIRES_AT || null,
+  token_r_name: process.env.HG2_C_TOKEN_R_NAME,
+  token_r_scope_summary: process.env.HG2_C_TOKEN_R_SCOPE_SUMMARY,
+  token_r_expires_at: process.env.HG2_C_TOKEN_R_EXPIRES_AT || null,
   verified_at_utc: new Date().toISOString(),
   note: "No token value is emitted. No migration apply, restore, deploy, execute, create, delete, route or production action is performed."
 };
