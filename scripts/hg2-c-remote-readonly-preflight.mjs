@@ -7,6 +7,7 @@ const EXPECTED_DB = "ai-advokat-staging-db";
 const EXPECTED_DB_ID = "309f72b8-8711-47fc-bea7-fbd1d649561d";
 const CONFIG = "wrangler.preview-migrations.jsonc";
 const MANIFEST = "evidence/hg2-c/migration-manifest.json";
+const EXPECTED_TOKEN_R_SCOPE_SUMMARY = "D1 Read staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority";
 
 function fail(message) {
   console.error("HG2-C REMOTE READ-ONLY PREFLIGHT FAIL:", message);
@@ -29,11 +30,8 @@ if (!process.env.HG2_C_TOKEN_R_SCOPE_SUMMARY) {
   fail("HG2_C_TOKEN_R_SCOPE_SUMMARY is required for non-secret credential provenance");
 }
 const tokenRScope = process.env.HG2_C_TOKEN_R_SCOPE_SUMMARY;
-if (!tokenRScope.includes(EXPECTED_ACCOUNT) || !/D1\s+Read/i.test(tokenRScope)) {
-  fail("Token R scope summary must identify the dedicated staging account and D1 Read");
-}
-if (/D1\s+(Edit|Write)|account-wide|all\s+accounts|12ece285-74bb-4f27-a025-2dbd1be6c59a|\bai-advokat-db\b/i.test(tokenRScope)) {
-  fail("Token R must be read-only and must not include broad or production authority");
+if (tokenRScope !== EXPECTED_TOKEN_R_SCOPE_SUMMARY) {
+  fail("Token R scope summary must exactly match the approved staging-only D1 Read scope");
 }
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
