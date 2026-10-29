@@ -34,7 +34,7 @@ jobs:
       - name: Current-law readiness gate
         run: npm run test:current-law-readiness
 
-  remote-readonly:
+  production-readonly:
     if: github.event_name != 'pull_request'
     needs: offline-readiness
     runs-on: ubuntu-latest
@@ -51,29 +51,35 @@ jobs:
       - name: Install pinned tooling
         run: npm install --ignore-scripts --no-audit --no-fund
 
-      - name: Fail closed if Cloudflare secrets are missing
+      - name: Fail closed if production read-only credentials are missing
         shell: bash
         run: |
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
 
-      - name: Verify production and staging identities
+      - name: Verify production identity and dedicated staging isolation
         shell: bash
         run: |
           node <<'NODE'
           const fs=require("fs");
           const strip=(s)=>s.replace(/\/\*[\s\S]*?\*\//g,"").replace(/^\s*\/\/.*$/gm,"");
           const prod=JSON.parse(strip(fs.readFileSync("wrangler.jsonc","utf8")));
-          const preview=JSON.parse(strip(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8")));
+          const staging=JSON.parse(strip(fs.readFileSync("wrangler.staging.jsonc","utf8")));
+          const migration=JSON.parse(strip(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8")));
           const p=prod.d1_databases?.[0];
-          const s=preview.d1_databases?.[0];
+          const s=staging.d1_databases?.[0];
+          const m=migration.d1_databases?.[0];
+
           if(!p || p.database_name!=="ai-advokat-db" || p.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1 identity");
-          if(!s || s.binding!=="PREVIEW_DB" || s.database_name!=="ai-advokat-db-staging" || s.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") throw new Error("Unexpected staging D1 identity");
+          if(!s || s.binding!=="DB" || s.database_name!=="ai-advokat-staging-db" || s.database_id!=="309f72b8-8711-47fc-bea7-fbd1d649561d") throw new Error("Unexpected dedicated staging D1 identity");
+          if(!m || m.binding!=="PREVIEW_DB" || m.database_name!==s.database_name || m.database_id!==s.database_id) throw new Error("Local migration target does not match dedicated staging D1");
           if(p.database_id===s.database_id) throw new Error("Production and staging must be different databases");
-          console.log("D1 TARGET IDENTITIES: PASS");
+          if(staging.workers_dev!==false || staging.preview_urls!==false) throw new Error("Dedicated staging exposure must remain disabled");
+          console.log("PRODUCTION D1 IDENTITY: PASS");
+          console.log("DEDICATED STAGING IDENTITY: PASS / REMOTE DATA CHECK DEFERRED UNTIL HG2-C");
           NODE
 
-      - name: Read-only snapshot state query
+      - name: Read-only production snapshot state query
         shell: bash
         run: |
           set -euo pipefail
@@ -97,9 +103,8 @@ jobs:
                 ORDER BY li.canonical_key;"
 
           npx wrangler d1 execute ai-advokat-db --remote --json --command "$SQL" > /tmp/current-law-production.json
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "$SQL" > /tmp/current-law-staging.json
 
-      - name: Assert exact snapshot states
+      - name: Assert exact production snapshot states
         shell: bash
         run: |
           node <<'NODE'
@@ -125,43 +130,36 @@ jobs:
             }
           };
 
-          function rows(path){
-            const j=JSON.parse(fs.readFileSync(path,"utf8"));
-            return j?.[0]?.results ?? [];
-          }
+          const j=JSON.parse(fs.readFileSync("/tmp/current-law-production.json","utf8"));
+          const byKey=new Map((j?.[0]?.results ?? []).map(r=>[r.canonical_key,r]));
 
-          function classify(target,row,e){
+          function classify(row,e){
             const n=Number(row?.article_count||0);
             const nulls=Number(row?.null_version_count||0);
             if(n===0) return "absent";
-            if(n!==e.rows) throw new Error(`${target} ${row.canonical_key}: unexpected article count ${n}; expected ${e.rows}`);
-            if(Number(row.source_url_count)!==1 || row.source_url!==e.url) throw new Error(`${target} ${row.canonical_key}: source URL drift`);
-            if(Number(row.source_hash_count)!==1 || row.source_sha256!==e.sha) throw new Error(`${target} ${row.canonical_key}: source SHA-256 drift`);
-
+            if(n!==e.rows) throw new Error(`${row.canonical_key}: unexpected article count ${n}; expected ${e.rows}`);
+            if(Number(row.source_url_count)!==1 || row.source_url!==e.url) throw new Error(`${row.canonical_key}: source URL drift`);
+            if(Number(row.source_hash_count)!==1 || row.source_sha256!==e.sha) throw new Error(`${row.canonical_key}: source SHA-256 drift`);
             if(nulls===e.rows){
-              if(Number(row.distinct_bound_versions)!==0) throw new Error(`${target} ${row.canonical_key}: mixed unbound/bound state`);
+              if(Number(row.distinct_bound_versions)!==0) throw new Error(`${row.canonical_key}: mixed unbound/bound state`);
               return "legacy_unbound_exact_snapshot";
             }
-
             if(nulls===0){
-              if(Number(row.distinct_bound_versions)!==1) throw new Error(`${target} ${row.canonical_key}: expected exactly one bound version`);
-              if(Number(row.version_label_count)!==1 || row.version_label!==e.label) throw new Error(`${target} ${row.canonical_key}: unexpected version label`);
-              if(Number(row.max_is_current)!==0) throw new Error(`${target} ${row.canonical_key}: snapshot was promoted to current`);
-              if(Number(row.approved_bound_rows)!==0) throw new Error(`${target} ${row.canonical_key}: snapshot was Human-Gate approved unexpectedly`);
+              if(Number(row.distinct_bound_versions)!==1) throw new Error(`${row.canonical_key}: expected exactly one bound version`);
+              if(Number(row.version_label_count)!==1 || row.version_label!==e.label) throw new Error(`${row.canonical_key}: unexpected version label`);
+              if(Number(row.max_is_current)!==0) throw new Error(`${row.canonical_key}: snapshot was promoted to current`);
+              if(Number(row.approved_bound_rows)!==0) throw new Error(`${row.canonical_key}: snapshot was Human-Gate approved unexpectedly`);
               return "bound_exact_snapshot";
             }
-
-            throw new Error(`${target} ${row.canonical_key}: partial version binding (${nulls}/${e.rows} NULL)`);
+            throw new Error(`${row.canonical_key}: partial version binding (${nulls}/${e.rows} NULL)`);
           }
 
-          for(const [target,path] of [["production","/tmp/current-law-production.json"],["staging","/tmp/current-law-staging.json"]]){
-            const byKey=new Map(rows(path).map(r=>[r.canonical_key,r]));
-            const state={};
-            for(const [key,e] of Object.entries(expected)){
-              const row=byKey.get(key) ?? {canonical_key:key,article_count:0,null_version_count:0};
-              state[key]=classify(target,row,e);
-            }
-            console.log(target.toUpperCase(),JSON.stringify(state));
+          const state={};
+          for(const [key,e] of Object.entries(expected)){
+            const row=byKey.get(key) ?? {canonical_key:key,article_count:0,null_version_count:0};
+            state[key]=classify(row,e);
           }
+          console.log("PRODUCTION",JSON.stringify(state));
+          console.log("STAGING","REMOTE CHECK DEFERRED UNTIL HG2-C");
           console.log("CURRENT-LAW READ-ONLY D1 PREFLIGHT: PASS");
           NODE
