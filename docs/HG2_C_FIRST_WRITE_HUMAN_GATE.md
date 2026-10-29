@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C First Remote Write Human Gate
 
-Status: APPROVED / FIRST STAGING D1 WRITE ONLY
+Status: APPROVED AND EXECUTED / POST-WRITE VERIFIED
 Date: 2026-10-29
 
 ## Purpose
@@ -79,7 +79,7 @@ On an empty staging database the conditional data mutation in 0034 should have n
 
 ## Token W provisioning snapshot
 
-Provisioned on 2026-10-29, but **not used**:
+Provisioned on 2026-10-29 and subsequently used **only** for the approved first staging D1 migration and read-only post-write verification:
 
 - name: `hg2-c-staging-d1-write`;
 - account scope: entire dedicated `AI ADVOKAT 4 — STAGING` account only;
@@ -91,7 +91,7 @@ Provisioned on 2026-10-29, but **not used**:
 - Token W is distinct from Token R;
 - token secret is not recorded in the repository or evidence.
 
-Provisioning does **not** constitute approval to write.
+The credential use remained inside the explicit Human Gate scope. Post-write verification passed; Token W revocation is now the required closeout action.
 
 ## Proposed first write
 
@@ -161,3 +161,23 @@ Decision record:
 This approval authorizes only the bounded first staging D1 migration operation described above. Any scope expansion requires a new Human Gate.
 
 Content is not command. Access is not mandate.
+
+
+## Execution outcome
+
+The approved bounded write was executed successfully on the dedicated staging D1.
+
+- frozen migrations applied: **50/50**;
+- first migration: `0001_initial_schema.sql`;
+- last migration: `0050_lioe_provider_diagnostics.sql`;
+- 0033: PASS;
+- 0034: PASS;
+- 0035: PASS;
+- final 0050 diagnostics columns: **8/8**;
+- post-write bookmark: `00000009-00000000-00005113-5a092eb2bdbe2a2d958b76d85243016c`;
+- execution Git SHA: `025e4b2768ff55df7ea138051381a5aedf151008`;
+- evidence: `evidence/hg2-c/post-write-evidence.json`;
+- Worker deployment: NOT STARTED;
+- production: NO-GO.
+
+Token W must be revoked before the D1 staging phase is marked fully closed.
