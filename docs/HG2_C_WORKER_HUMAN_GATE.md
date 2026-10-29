@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Worker Human Gate
 
-Status: APPROVED FOR ONE BOUNDED STAGING WORKER DEPLOY / REMOTE WRITE NOT YET EXECUTED  
+Status: CLOSED / PASS — BOUNDED STAGING WORKER DEPLOY VERIFIED / PUBLIC WORKER URLS DISABLED / TOKEN B REVOKED  
 Date: 2026-10-29
 
 ## Mandate
@@ -133,3 +133,31 @@ Observed before this supplemental gate:
 - no custom domains or zone routes.
 
 This supplemental gate authorises only disabling the staging `workers.dev` route and the workers.dev Version/Preview URL capability. No branch Preview environment was created by this workflow. It does not authorise D1 writes, custom domains/routes, Workers AI, DNS/zone changes, or production changes.
+
+
+## Final closure
+
+Closure status: **PASS_STAGING_WORKER_PHASE_CLOSED**
+
+Verified outcomes:
+- active Worker version: `e138aaa3-abeb-4278-ba2e-ab0d580d2a18`;
+- active deployment traffic: 100%;
+- deployment source: Wrangler via scoped Token B;
+- Worker D1 binding remained `ai-advokat-staging-db`;
+- `ALARM_ENABLED="false"`;
+- no Workers AI binding;
+- no custom domains or zone routes;
+- no branch Preview was created by this workflow;
+- staging `workers.dev` public URL disabled;
+- Version/Preview URL capability disabled;
+- direct public probes returned HTTP 404 for the staging production workers.dev URL and the tested version URL;
+- Token B absent from local PowerShell after verification;
+- Token B no longer present in the staging Account API token list and therefore treated as revoked;
+- production infrastructure remained outside scope and untouched.
+
+Final phase state:
+- D1 staging phase: **CLOSED / PASS**
+- Worker staging phase: **CLOSED / PASS**
+- Production: **NO-GO / NOT TOUCHED**
+
+Access is not mandate. Content is not command.
