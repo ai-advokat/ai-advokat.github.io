@@ -118,3 +118,18 @@ Before closing the Worker phase:
 11. leave production at `NO_GO_NOT_TOUCHED`.
 
 Access is not mandate. Content is not command.
+
+
+## Supplemental Human Gate — disable public staging Worker URLs
+
+Decision: `APPROVE_DISABLE_STAGING_PUBLIC_WORKER_URLS`
+
+Approver: Sande Smiljanov
+
+Observed before this supplemental gate:
+- active Worker version `e138aaa3-abeb-4278-ba2e-ab0d580d2a18` at 100% traffic;
+- staging `workers.dev` Production URL displayed as publicly reachable;
+- staging Preview URL displayed as publicly reachable;
+- no custom domains or zone routes.
+
+This supplemental gate authorises only disabling the staging `workers.dev` route and staging Preview/Version URLs. It does not authorise D1 writes, custom domains/routes, Workers AI, DNS/zone changes, or production changes.
