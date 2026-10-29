@@ -172,3 +172,45 @@ test('MVP2-23 Human Gate, CasePilot and DOCX export remain fail-closed and opera
   assert.match(reviewText,/PENDING/i);
   assert.throws(()=>attemptMvpV2ProfessionalDocx({dossier:fixture(),humanGate:{status:'approved'}}),/legal_document_professional_blocked/);
 });
+
+
+test('MVP2-24 delivery claim links to exact dated evidence or generated placeholder, never a different-date receipt',()=>{
+  const d={
+    ...fixture(),
+    receiveDate:'2026-09-03',
+    otherEvidence:'Договор за вработување\nОдлука за отказ\nПовратница од 04.09.2026'
+  };
+  const result=analyzeMvpV2Payload({dossier:d});
+  const delivery=result.ast.evidence.filter(e=>/повратница|врачува/i.test(e.title));
+  const wrongDate=delivery.find(e=>/04\.09\.2026/.test(e.title));
+  const placeholder=delivery.find(e=>/^Доказ за врачување \/ повратница$/i.test(e.title));
+  const fact=result.ast.facts.find(f=>f.id==='F-DELIVERY-CLAIM');
+  assert.ok(wrongDate);
+  assert.ok(placeholder);
+  assert.deepEqual(fact.evidenceIds,[placeholder.id]);
+  assert.notDeepEqual(fact.evidenceIds,[wrongDate.id]);
+});
+
+test('MVP2-25 CasePilot does not invent optional email, delivery, or internal-record documents when omitted',()=>{
+  const d={
+    ...fixture(),
+    emailText:'',
+    receiveDate:'',
+    recordDate:'',
+    otherEvidence:'Договор за вработување\nОдлука за отказ'
+  };
+  const cp=buildMvpV2CasePilotBundle(d);
+  const documentIds=new Set(cp.matter.objects.documents.map(x=>x.id));
+  const evidenceIds=new Set(cp.matter.objects.evidence.map(x=>x.id));
+  const claimIds=new Set(cp.matter.objects.claims.map(x=>x.id));
+
+  assert.equal(documentIds.has('DOC-EMAIL'),false);
+  assert.equal(documentIds.has('DOC-DELIVERY'),false);
+  assert.equal(documentIds.has('DOC-RECORD'),false);
+  assert.equal(evidenceIds.has('EV-EMAIL'),false);
+  assert.equal(evidenceIds.has('EV-DELIVERY'),false);
+  assert.equal(evidenceIds.has('EV-RECORD'),false);
+  assert.equal(claimIds.has('CL-WORKER'),false);
+  assert.ok(cp.matter.objects.evidence_gaps.some(x=>x.id==='GAP-WORKER-CLAIM'));
+  assert.equal(cp.readiness.sourceProblems.length,0);
+});
