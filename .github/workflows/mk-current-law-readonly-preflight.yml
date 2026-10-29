@@ -36,7 +36,7 @@ jobs:
 
 
   identity-isolation-gate:
-    needs: [offline-readiness, identity-isolation-gate]
+    needs: offline-readiness
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -62,7 +62,7 @@ jobs:
 
   production-readonly:
     if: github.event_name != 'pull_request'
-    needs: offline-readiness
+    needs: [offline-readiness, identity-isolation-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
