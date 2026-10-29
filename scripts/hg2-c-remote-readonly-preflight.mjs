@@ -67,8 +67,9 @@ function currentGitSha() {
 }
 
 function runWrangler(args, label) {
-  const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
-  const result = spawnSync(npxCommand, ["--no-install", "wrangler", ...args], {
+  const wranglerCli = path.resolve("node_modules", "wrangler", "bin", "wrangler.js");
+  if (!fs.existsSync(wranglerCli)) fail("local Wrangler CLI not found");
+  const result = spawnSync(process.execPath, [wranglerCli, ...args], {
     encoding: "utf8",
     env: { ...process.env, CLOUDFLARE_ACCOUNT_ID: EXPECTED_ACCOUNT },
     shell: false
