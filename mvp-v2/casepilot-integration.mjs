@@ -32,6 +32,10 @@ export const PR_A_HEAD='95f666a795354681264f073060ebe9ed5817dfe5';
 
 function t(v){return String(v??'').normalize('NFKC').trim();}
 function lines(v){return t(v).split(/\r?\n/).map(t).filter(Boolean);}
+function deliveryEvidenceDate(value){
+  const m=/(\d{2})[.\/-](\d{2})[.\/-](\d{4})/.exec(t(value));
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : '';
+}
 
 function evidenceKey(value){
   const s=t(value).toLowerCase();
@@ -40,8 +44,8 @@ function evidenceKey(value){
   if(/одлука.*отказ|отказ.*одлука/.test(s)) return 'dismissal:'+normalized;
   if(/е-?пошта|email|мејл/.test(s)) return 'email:'+normalized;
   if(/повратница|врачува/.test(s)){
-    const m=/(\d{2})[.\/-](\d{2})[.\/-](\d{4})/.exec(s);
-    return m ? 'delivery:'+m[3]+'-'+m[2]+'-'+m[1]+':'+normalized : 'delivery:'+normalized;
+    const date=deliveryEvidenceDate(s);
+    return date ? 'delivery:'+date+':'+normalized : 'delivery:'+normalized;
   }
   if(/интерна.*евиденц|евиденц.*интерна/.test(s)) return 'internal-record:'+normalized;
   if(/лог.*извештај|извештај.*лог/.test(s)) return 'report-log:'+normalized;
@@ -98,7 +102,11 @@ export function buildMvpV2CasePilotMatter(input){
   const hasEmailDocument=Boolean(
     t(d.emailText) || suppliedEvidence.some(x=>/е-?пошта|email|мејл/i.test(x))
   );
-  const hasDeliveryDocument=suppliedEvidence.some(x=>/повратница|врачува/i.test(x));
+  const deliveryDocuments=suppliedEvidence.filter(x=>/повратница|врачува/i.test(x));
+  const hasDeliveryDocument=deliveryDocuments.length>0;
+  const hasMatchingDeliveryDocument=Boolean(
+    t(d.receiveDate) && deliveryDocuments.some(x=>deliveryEvidenceDate(x)===t(d.receiveDate))
+  );
   const hasInternalRecordDocument=suppliedEvidence.some(x=>/интерна.*евиденц|евиденц.*интерна/i.test(x));
 
   const docs=[
@@ -120,7 +128,7 @@ export function buildMvpV2CasePilotMatter(input){
   matter=add(matter,'participants',participant({id:'P-EMPLOYER',name:t(d.defendant),role:'тужен / работодавач',sourceId:'DOC-CONTRACT',page:1}));
 
   matter=add(matter,'timeline',timelineEvent({id:'T-DISMISSAL',date:t(d.dismissDate)||null,text:'Донесена е наведена одлука за отказ '+t(d.decisionNo)+'.',sourceId:'DOC-DISMISSAL',page:1,status:'confirmed_from_source'}));
-  if(t(d.receiveDate)&&hasDeliveryDocument){
+  if(t(d.receiveDate)&&hasMatchingDeliveryDocument){
     matter=add(matter,'timeline',timelineEvent({id:'T-DELIVERY-CLAIM',date:t(d.receiveDate),text:'Наведен датум на врачување според странката.',sourceId:'DOC-DELIVERY',page:1,status:'indication'}));
   }
   if(t(d.recordDate)&&hasInternalRecordDocument){
@@ -175,7 +183,7 @@ export function buildMvpV2CasePilotMatter(input){
   }
   if(
     t(d.receiveDate)&&t(d.recordDate)&&t(d.receiveDate)!==t(d.recordDate)
-    && hasDeliveryDocument&&hasInternalRecordDocument
+    && hasMatchingDeliveryDocument&&hasInternalRecordDocument
   ){
     matter=add(matter,'contradictions',contradiction({
       id:'CP-CON-2',
@@ -200,12 +208,12 @@ export function buildMvpV2CasePilotMatter(input){
       collectionPlan:'Да се приложи оригинална е-пошта, порака или друг релевантен доказ и да се провери автентичноста.'
     }));
   }
-  if(t(d.receiveDate)&&!hasDeliveryDocument){
+  if(t(d.receiveDate)&&!hasMatchingDeliveryDocument){
     matter=add(matter,'evidence_gaps',evidenceGap({
       id:'GAP-DELIVERY',
-      issue:'Наведен е датум на врачување, но не е приложен доказ за врачување.',
-      whyMaterial:'Роковите не смеат да се врзуваат за непостоечки регистриран документ.',
-      collectionPlan:'Да се приложи повратница, потврда за прием или друг оригинален доказ за врачување.'
+      issue:'Наведен е датум на врачување, но нема приложен доказ со истиот датум.',
+      whyMaterial:'Роковите не смеат да се врзуваат за повратница со друг датум или за непостоечки регистриран документ.',
+      collectionPlan:'Да се приложи и провери повратница, потврда за прием или друг оригинален доказ што го потврдува наведениот датум.'
     }));
   }
   if(t(d.recordDate)&&!hasInternalRecordDocument){
