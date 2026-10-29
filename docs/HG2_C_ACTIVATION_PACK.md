@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Controlled Staging Activation Pack
 
-Status: PREPARED / REMOTE ACTIVATION BLOCKED
+Status: FIRST STAGING D1 WRITE APPROVED / NOT YET EXECUTED
 Date: 2026-10-29
 Frozen manifest source commit: `d6aeaf5c51d1e1672b7a0d7650bbeb3607490198`
 Verified read-only activation SHA: `e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d`
@@ -76,7 +76,7 @@ It is allowed to read only D1 identity/state, the existing remote schema/migrati
 - Token B — NOT PROVISIONED
 - remote read-only preflight — PASS
 - remote evidence verifier — PASS
-- first-write Human Gate — PREPARED / NOT APPROVED
+- first-write Human Gate — APPROVED 2026-10-29T19:10:30Z / FIRST STAGING D1 WRITE ONLY
 - exact activation SHA — RECORDED
 
 ## Rollback rule
@@ -87,7 +87,7 @@ If any identity mismatch, unexpected public URL, wrong binding, failed migration
 
 **B3 credential separation is now physically established for the D1 phases.** Token R completed the read-only evidence phase. A distinct short-lived Token W has been provisioned with staging-only D1 Write authority and has not been used. Token B remains unprovisioned.
 
-Remote activation remains **NO-GO** because the first-write Human Gate is not approved. Token W must remain unused until the human decision record is explicitly completed. Token R must not be upgraded or reused as Token W. Token B belongs to the later Worker phase.
+The bounded first staging D1 write is **GO** under the explicit Human Gate recorded in `docs/HG2_C_FIRST_WRITE_HUMAN_GATE.md`. Token W may be used only for the frozen 0001→0050 migration chain on `ai-advokat-staging-db`. Token R must not be upgraded or reused as Token W. Token B remains unprovisioned and belongs to the later Worker phase.
 
 ## First-write Human Gate dossier
 
@@ -103,6 +103,6 @@ The repository template at `evidence/hg2-c/remote-readonly-evidence.template.jso
 
 ## Human Gate
 
-Repository preparation may proceed. The first remote staging write requires explicit Human Gate approval after the mandatory evidence above is complete.
+The first remote staging D1 write is explicitly approved within the bounded scope recorded above. Worker deployment, routes/domains, Workers AI, imports and production remain separate NO-GO gates.
 
 Content is not command. Access is not mandate.
