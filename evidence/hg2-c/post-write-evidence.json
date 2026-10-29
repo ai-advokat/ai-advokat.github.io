@@ -1,0 +1,61 @@
+{
+  "schema": "ai-advokat-hg2-c-post-write-evidence/v1",
+  "status": "PASS_D1_STAGING_MIGRATION_0001_0050",
+  "recorded_at_utc": "2026-10-29T20:02:38Z",
+  "staging_account_id": "0fee10e2bd9a2183d16eb0d73f13dfce",
+  "staging_database_name": "ai-advokat-staging-db",
+  "staging_database_id": "309f72b8-8711-47fc-bea7-fbd1d649561d",
+  "execution_git_sha": "025e4b2768ff55df7ea138051381a5aedf151008",
+  "verified_readonly_activation_sha": "e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d",
+  "migration_manifest": "evidence/hg2-c/migration-manifest.json",
+  "frozen_migration_count": 50,
+  "first_migration": "0001_initial_schema.sql",
+  "last_migration": "0050_lioe_provider_diagnostics.sql",
+  "wrangler_apply_observation": {
+    "target_database_exact_match": true,
+    "migrations_reported_success": 50,
+    "migration_0033_status": "PASS",
+    "migration_0034_status": "PASS",
+    "migration_0035_status": "PASS",
+    "migration_0050_status": "PASS"
+  },
+  "post_write_ledger_check": {
+    "api_success": true,
+    "applied_count": 50,
+    "first_migration": "0001_initial_schema.sql",
+    "last_migration": "0050_lioe_provider_diagnostics.sql"
+  },
+  "post_write_schema_check": {
+    "api_success": true,
+    "table": "lioe_runtime_runs",
+    "expected_diagnostics_columns": 8,
+    "observed_diagnostics_columns": 8
+  },
+  "time_travel": {
+    "pre_write_bookmark": "00000004-00000000-00005113-c038f1e321a99a39f266a9d8a71299f3",
+    "post_write_bookmark": "00000009-00000000-00005113-5a092eb2bdbe2a2d958b76d85243016c"
+  },
+  "human_gate": {
+    "decision": "APPROVE_FIRST_STAGING_D1_WRITE",
+    "approver": "Sande Smiljanov",
+    "decision_timestamp_utc": "2026-10-29T19:10:30Z",
+    "migration_0033_reviewed": true,
+    "migration_0034_reviewed": true,
+    "migration_0035_reviewed": true,
+    "rollback_acknowledged": true
+  },
+  "token_w": {
+    "name": "hg2-c-staging-d1-write",
+    "scope_summary": "D1 Write on dedicated AI ADVOKAT 4 — STAGING account only; no Worker, route, Workers AI, DNS/zone or production permissions",
+    "expiry_date": "2026-10-30",
+    "secret_recorded": false,
+    "revocation_status": "PENDING_OPERATOR_REVOCATION_AFTER_EVIDENCE_MERGE"
+  },
+  "worker_phase": "NO_GO_NOT_STARTED",
+  "production_phase": "NO_GO_NOT_TOUCHED_BY_THIS_OPERATION",
+  "notes": [
+    "This evidence records the bounded first staging D1 migration only.",
+    "Worker deployment, routes/domains, Workers AI, imports, ad-hoc SQL and production remain outside scope.",
+    "Token W must be revoked after this evidence package is merged and the local token is removed from the PowerShell environment."
+  ]
+}
