@@ -6,6 +6,10 @@ const source = fs.readFileSync("scripts/hg2-c-remote-readonly-preflight.mjs", "u
 
 test("HG2-C remote preflight is staging-only and explicitly gated", () => {
   assert.match(source, /HG2_C_REMOTE_READONLY_APPROVED/);
+  assert.match(source, /HG2_C_TOKEN_R_NAME/);
+  assert.match(source, /HG2_C_TOKEN_R_SCOPE_SUMMARY/);
+  assert.match(source, /D1\\s\+Read/);
+  assert.doesNotMatch(source, /HG2_C_TOKEN_A_/);
   assert.match(source, /0fee10e2bd9a2183d16eb0d73f13dfce/);
   assert.match(source, /ai-advokat-staging-db/);
   assert.match(source, /309f72b8-8711-47fc-bea7-fbd1d649561d/);
@@ -38,4 +42,9 @@ test("HG2-C remote preflight never emits the token value", () => {
   assert.ok(!source.includes("console.log(process.env.CLOUDFLARE_API_TOKEN)"));
   assert.ok(!source.includes("console.error(process.env.CLOUDFLARE_API_TOKEN)"));
   assert.match(source, /No token value is emitted/);
+});
+
+test("HG2-C remote preflight rejects write-capable Token R scope", () => {
+  assert.match(source, /D1\\s\+\(Edit\|Write\)/);
+  assert.match(source, /Token R must be read-only/);
 });
