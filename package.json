@@ -127,7 +127,9 @@
     "test:staging-safety": "node scripts/staging-safety-preflight.mjs",
     "test:staging-cicd-safety": "node scripts/staging-cicd-safety.mjs",
     "test:hg2-c-readiness": "node scripts/hg2-c-readiness.mjs",
-    "test:hg2-c-migration-manifest": "node scripts/verify-hg2-c-migration-manifest.mjs"
+    "test:hg2-c-migration-manifest": "node scripts/verify-hg2-c-migration-manifest.mjs",
+    "test:hg2-c-remote-readonly-contract": "node --no-warnings --test test/hg2-c-remote-readonly-preflight.test.mjs",
+    "preflight:staging:remote-readonly": "node scripts/hg2-c-remote-readonly-preflight.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"

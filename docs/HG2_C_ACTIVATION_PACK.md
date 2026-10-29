@@ -47,12 +47,21 @@ The first remote staging migration is bound to:
 
 Any migration-set drift returns the phase to **NO-GO**.
 
+## Remote read-only evidence gate
+
+Before the first write, execute only the Human-controlled read-only preflight defined in:
+- `docs/HG2_C_REMOTE_READONLY_PREFLIGHT.md`;
+- `scripts/hg2-c-remote-readonly-preflight.mjs`.
+
+It is allowed to read only D1 identity/state, unapplied migration names and the current Time Travel bookmark. It contains no apply/restore/deploy/execute capability.
+
 ## Mandatory pre-activation evidence
 
 - `npm run test:staging-safety` — PASS
 - `npm run test:staging-cicd-safety` — PASS
 - `npm run test:hg2-c-readiness` — PASS
 - `npm run test:hg2-c-migration-manifest` — PASS
+- `npm run test:hg2-c-remote-readonly-contract` — PASS
 - `npm run db:migrate:staging:local` — PASS
 - full repository test suite — PASS
 - security tests — PASS
@@ -60,6 +69,7 @@ Any migration-set drift returns the phase to **NO-GO**.
 - rollback plan — RECORDED; pre-write Time Travel bookmark still required
 - split least-privilege credential design — VERIFIED
 - staging credentials — NOT PROVISIONED / HUMAN-CONTROLLED
+- remote read-only preflight — PREPARED / NOT EXECUTED
 - exact activation SHA — RECORDED
 
 ## Rollback rule
