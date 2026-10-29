@@ -38,7 +38,7 @@ jobs:
 
 
   identity-isolation-gate:
-    needs: [offline-source-gate, identity-isolation-gate]
+    needs: offline-source-gate
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -64,7 +64,7 @@ jobs:
 
   production-readonly:
     if: github.event_name != 'pull_request'
-    needs: offline-source-gate
+    needs: [offline-source-gate, identity-isolation-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
@@ -78,6 +78,12 @@ jobs:
 
       - name: Install tooling
         run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Fail closed if production read-only credentials are missing
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
 
       - name: Read ZRO snapshot state
         shell: bash
@@ -103,7 +109,7 @@ jobs:
                 GROUP BY li.canonical_key;"
           npx wrangler d1 execute ai-advokat-db --remote --json --command "$SQL" > /tmp/zro-prod.json
 
-      - name: Assert exact non-current snapshot in production and staging
+      - name: Assert exact non-current production snapshot
         shell: bash
         run: |
           node <<'NODE'
@@ -141,7 +147,7 @@ jobs:
                 GROUP BY source_issue_number ORDER BY source_issue_number;"
           npx wrangler d1 execute ai-advokat-db --remote --json --command "$SQL" > /tmp/zro-events-prod.json
 
-      - name: Assert governed event topology
+      - name: Assert governed production event topology
         shell: bash
         run: |
           node <<'NODE'
