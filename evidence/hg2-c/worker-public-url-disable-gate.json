@@ -1,0 +1,30 @@
+{
+  "schema": "ai-advokat-hg2-c-worker-public-url-disable-gate/v1",
+  "status": "APPROVED_PENDING_DASHBOARD_EXECUTION",
+  "recorded_date": "2026-10-29",
+  "staging_account_id": "0fee10e2bd9a2183d16eb0d73f13dfce",
+  "worker_name": "ai-advokat-staging",
+  "active_version_id": "e138aaa3-abeb-4278-ba2e-ab0d580d2a18",
+  "dashboard_observation_before_change": {
+    "active_deployment_traffic_percent": 100,
+    "workers_dev_url_displayed": true,
+    "preview_url_displayed": true,
+    "custom_domains_or_zone_routes": false
+  },
+  "human_gate": {
+    "decision": "APPROVE_DISABLE_STAGING_PUBLIC_WORKER_URLS",
+    "approver": "Sande Smiljanov",
+    "scope": [
+      "disable staging workers.dev public URL",
+      "disable staging Preview/Version URLs"
+    ]
+  },
+  "explicitly_not_authorized": [
+    "D1 write",
+    "custom domain or route changes",
+    "Workers AI",
+    "DNS or zone changes",
+    "production infrastructure"
+  ],
+  "production_phase": "NO_GO_NOT_TOUCHED"
+}
