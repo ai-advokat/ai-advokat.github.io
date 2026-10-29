@@ -214,3 +214,18 @@ test('MVP2-25 CasePilot does not invent optional email, delivery, or internal-re
   assert.ok(cp.matter.objects.evidence_gaps.some(x=>x.id==='GAP-WORKER-CLAIM'));
   assert.equal(cp.readiness.sourceProblems.length,0);
 });
+
+
+test('MVP2-26 CasePilot leaves a mismatched delivery-date claim unanchored and records an evidence gap',()=>{
+  const d={
+    ...fixture(),
+    receiveDate:'2026-09-03',
+    otherEvidence:'Договор за вработување\nОдлука за отказ\nПовратница од 04.09.2026'
+  };
+  const result=analyzeMvpV2Payload({dossier:d});
+  const timelineIds=new Set(result.casePilot.matter.objects.timeline.map(x=>x.id));
+  const gapIds=new Set(result.casePilot.matter.objects.evidence_gaps.map(x=>x.id));
+  assert.equal(timelineIds.has('T-DELIVERY-CLAIM'),false);
+  assert.equal(gapIds.has('GAP-DELIVERY'),true);
+  assert.equal(result.casePilot.readiness.sourceProblems.length,0);
+});
