@@ -1,4 +1,5 @@
 name: HG2-C repository readiness
+# Credential strategy: docs/HG2_C_CREDENTIAL_STRATEGY.md (no secrets in repository)
 
 on:
   workflow_dispatch:
