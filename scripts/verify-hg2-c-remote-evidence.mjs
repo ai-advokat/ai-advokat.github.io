@@ -48,12 +48,12 @@ if (evidence.d1_backend_time_travel_capable !== true) fail("D1 Time Travel capab
 if (evidence.bookmark_evidence_present !== true) fail("bookmark evidence flag is not true");
 if (typeof evidence.pre_write_bookmark !== "string" || evidence.pre_write_bookmark.trim().length < 16) fail("exact pre-write bookmark missing");
 if (!/^[0-9a-f]{40}$/.test(evidence.activation_git_sha || "")) fail("activation Git SHA missing or invalid");
-if (typeof evidence.token_a_name !== "string" || !evidence.token_a_name.trim()) fail("non-secret Token A name missing");
-if (typeof evidence.token_a_scope_summary !== "string" || !evidence.token_a_scope_summary.trim()) fail("Token A scope summary missing");
-if (!evidence.token_a_scope_summary.includes(EXPECTED.account)) fail("Token A scope summary must identify the dedicated staging account");
-if (!/D1/i.test(evidence.token_a_scope_summary)) fail("Token A scope summary must identify D1 authority");
-if (/12ece285-74bb-4f27-a025-2dbd1be6c59a|\\bai-advokat-db\\b|all\\s+accounts|account-wide/i.test(evidence.token_a_scope_summary)) {
-  fail("Token A scope summary contains production or overly broad authority/reference");
+if (typeof evidence.token_r_name !== "string" || !evidence.token_r_name.trim()) fail("non-secret Token R name missing");
+if (typeof evidence.token_r_scope_summary !== "string" || !evidence.token_r_scope_summary.trim()) fail("Token R scope summary missing");
+if (!evidence.token_r_scope_summary.includes(EXPECTED.account)) fail("Token R scope summary must identify the dedicated staging account");
+if (!/D1\s+Read/i.test(evidence.token_r_scope_summary)) fail("Token R scope summary must identify D1 Read authority");
+if (/D1\s+(Edit|Write)|12ece285-74bb-4f27-a025-2dbd1be6c59a|\\bai-advokat-db\\b|all\\s+accounts|account-wide/i.test(evidence.token_r_scope_summary)) {
+  fail("Token R scope summary contains write, production, or overly broad authority/reference");
 }
 const verifiedAt = Date.parse(evidence.verified_at_utc || "");
 if (!Number.isFinite(verifiedAt)) fail("verification timestamp missing or invalid");
