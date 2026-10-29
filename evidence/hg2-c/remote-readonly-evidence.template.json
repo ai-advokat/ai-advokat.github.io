@@ -14,5 +14,9 @@
   "note": "Template only. Never place token values or secrets in this evidence file.",
   "token_r_name": "REPLACE_WITH_NON_SECRET_READ_TOKEN_NAME",
   "token_r_scope_summary": "D1 Read staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority",
-  "token_r_expires_at": null
+  "token_r_expires_at": null,
+  "migration_count_remote_applied": 0,
+  "migration_state_basis": "REPLACE_WITH_pristine-empty-d1_OR_existing-d1-migrations-ledger",
+  "migration_ledger_present": false,
+  "remote_user_table_count": 0
 }
