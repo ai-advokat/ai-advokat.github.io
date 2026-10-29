@@ -8,7 +8,7 @@ test("HG2-C remote preflight is staging-only and explicitly gated", () => {
   assert.match(source, /HG2_C_REMOTE_READONLY_APPROVED/);
   assert.match(source, /HG2_C_TOKEN_R_NAME/);
   assert.match(source, /HG2_C_TOKEN_R_SCOPE_SUMMARY/);
-  assert.match(source, /D1\\s\+Read/);
+  assert.ok(source.includes("D1 Read staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority"));
   assert.doesNotMatch(source, /HG2_C_TOKEN_A_/);
   assert.match(source, /0fee10e2bd9a2183d16eb0d73f13dfce/);
   assert.match(source, /ai-advokat-staging-db/);
