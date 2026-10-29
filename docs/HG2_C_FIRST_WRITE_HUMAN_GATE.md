@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C First Remote Write Human Gate
 
-Status: PREPARED / NOT APPROVED
+Status: APPROVED / FIRST STAGING D1 WRITE ONLY
 Date: 2026-10-29
 
 ## Purpose
@@ -136,26 +136,28 @@ If rollback is required, use the captured pre-write Time Travel bookmark only af
 
 ## Decision record
 
-Current decision state: **NOT APPROVED**.
+Current decision state: **APPROVED — FIRST STAGING D1 WRITE ONLY**.
 
-Before the first write, record:
+The human approver explicitly entered `APPROVE_FIRST_STAGING_D1_WRITE` on 2026-10-29.
 
-- Decision: `APPROVE_FIRST_STAGING_D1_WRITE` or `NO_GO`
-- Human approver:
-- Decision timestamp UTC:
-- Activation Git SHA:
-- Pre-write bookmark:
-- Token R non-secret scope summary:
-- Token W non-secret scope summary:
-- Token R and Token W are distinct: YES/NO
+Decision record:
+
+- Decision: `APPROVE_FIRST_STAGING_D1_WRITE`
+- Human approver: Sande Smiljanov
+- Decision timestamp UTC: `2026-10-29T19:10:30Z`
+- Activation Git SHA: `e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d`
+- Pre-write bookmark: `00000004-00000000-00005113-c038f1e321a99a39f266a9d8a71299f3`
+- Token R non-secret scope summary: `D1 Read staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority`
+- Token W non-secret scope summary: `D1 Write on dedicated AI ADVOKAT 4 — STAGING account only; expires 2026-10-30; no Worker, route, Workers AI, DNS/zone or production permissions`
+- Token R and Token W are distinct: YES
 - Migration manifest: `evidence/hg2-c/migration-manifest.json`
-- Remote evidence file:
-- 0033 reviewed: YES/NO
-- 0034 reviewed: YES/NO
-- 0035 reviewed: YES/NO
-- Rollback acknowledged: YES/NO
-- Notes:
+- Remote evidence file: local non-secret evidence `.wrangler/state/hg2-c/remote-readonly-evidence.json`, verifier PASS
+- 0033 reviewed: YES
+- 0034 reviewed: YES
+- 0035 reviewed: YES
+- Rollback acknowledged: YES
+- Notes: Approval is limited strictly to applying the frozen 0001→0050 migration chain to `ai-advokat-staging-db` in the dedicated staging account. Worker deploy, routes/custom domains, Workers AI, imports, ad-hoc SQL, production D1, production Worker, production secrets and any broader retry remain NO-GO. Governance-only commits after the verified activation SHA do not alter the frozen migration set; the migration manifest must still PASS immediately before execution.
 
-No approval exists until this record is explicitly completed by the human decision-maker.
+This approval authorizes only the bounded first staging D1 migration operation described above. Any scope expansion requires a new Human Gate.
 
 Content is not command. Access is not mandate.
