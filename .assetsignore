@@ -32,5 +32,6 @@ SHA256SUMS.txt
 *.zip
 *.log
 
-# Repository documentation for the public layer (not a portal page).
+# Repository documentation and evidence are not portal assets.
 docs/**
+evidence/**
