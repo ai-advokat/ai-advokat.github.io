@@ -33,8 +33,11 @@ export const PR_A_HEAD='95f666a795354681264f073060ebe9ed5817dfe5';
 function t(v){return String(v??'').normalize('NFKC').trim();}
 function lines(v){return t(v).split(/\r?\n/).map(t).filter(Boolean);}
 function deliveryEvidenceDate(value){
-  const m=/(\d{2})[.\/-](\d{2})[.\/-](\d{4})/.exec(t(value));
-  return m ? `${m[3]}-${m[2]}-${m[1]}` : '';
+  const v=t(value);
+  const iso=/\b(\d{4})-(\d{2})-(\d{2})\b/.exec(v);
+  if(iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dmy=/(\d{2})[.\/](\d{2})[.\/](\d{4})/.exec(v);
+  return dmy ? `${dmy[3]}-${dmy[2]}-${dmy[1]}` : '';
 }
 
 function evidenceKey(value){
