@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
+import { execFileSync } from "node:child_process";
 
 const manifestPath = "evidence/hg2-c/migration-manifest.json";
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
@@ -23,6 +24,25 @@ function gitBlobSha(buffer) {
   return crypto.createHash("sha1").update(header).update(buffer).digest("hex");
 }
 
+function readCanonicalGitBlob(path) {
+  try {
+    return execFileSync("git", ["show", `HEAD:${path}`], {
+      encoding: null,
+      maxBuffer: 20 * 1024 * 1024
+    });
+  } catch {
+    fail(`cannot read canonical Git blob: ${path}`);
+  }
+}
+
+const migrationChanges = execFileSync(
+  "git",
+  ["status", "--porcelain", "--", "migrations"],
+  { encoding: "utf8" }
+).trim();
+
+if (migrationChanges) fail("migration working tree is not clean");
+
 if (manifest.status !== "FROZEN_REPOSITORY_ONLY_REMOTE_NO_GO") fail("manifest status is not fail-closed");
 if (manifest.staging_account_id !== EXPECTED.account) fail("staging account mismatch");
 if (manifest.staging_database_name !== EXPECTED.databaseName) fail("staging database name mismatch");
@@ -45,7 +65,7 @@ for (let i = 0; i < manifest.files.length; i++) {
   if (!item.path.split("/").pop().startsWith(expectedPrefix)) fail(`non-contiguous migration sequence at ${item.path}`);
   if (actual[i] !== item.path) fail(`migration path mismatch: manifest=${item.path} actual=${actual[i]}`);
 
-  const bytes = fs.readFileSync(item.path);
+  const bytes = readCanonicalGitBlob(item.path);
   if (bytes.length !== item.size_bytes) fail(`size mismatch: ${item.path}`);
   const sha = gitBlobSha(bytes);
   if (sha !== item.git_blob_sha) fail(`Git blob SHA mismatch: ${item.path}`);
