@@ -75,14 +75,14 @@ const securityTxt = fs.readFileSync(".well-known/security.txt", "utf8");
 const analytics = fs.readFileSync("assets/analytics.js", "utf8");
 
 const prod = wrangler.d1_databases?.[0];
-const preview = wrangler.previews?.d1_databases?.[0];
+const stagingDb = stagingWrangler.d1_databases?.[0];
 const migrationTarget = previewMigrations.d1_databases?.[0];
 
 if (!prod || prod.database_name !== "ai-advokat-db") throw new Error("Production D1 binding is invalid.");
-if (!preview || preview.database_name !== "ai-advokat-db-staging") throw new Error("Preview D1 binding is invalid.");
-if (prod.database_id === preview.database_id) throw new Error("Preview must not use production D1.");
-if (!migrationTarget || migrationTarget.database_id !== preview.database_id) {
-  throw new Error("Preview migration target must match Preview D1.");
+if (!stagingDb || stagingDb.database_name !== "ai-advokat-staging-db") throw new Error("Dedicated staging D1 binding is invalid.");
+if (prod.database_id === stagingDb.database_id) throw new Error("Dedicated staging must not use production D1.");
+if (!migrationTarget || migrationTarget.database_id !== stagingDb.database_id || migrationTarget.database_name !== stagingDb.database_name) {
+  throw new Error("Local migration target must match the dedicated staging D1 configuration.");
 }
 if (pkg.version !== "1.3.3") throw new Error("package.json version must be 1.3.3.");
 for (const [name,expected] of Object.entries({
