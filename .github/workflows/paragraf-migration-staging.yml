@@ -6,6 +6,8 @@ on:
       - "migrations/**"
       - "scripts/validate-paragraf-import.mjs"
       - "scripts/staging-safety-preflight.mjs"
+      - "scripts/staging-cicd-safety.mjs"
+      - ".github/workflows/*staging*.yml"
       - "scripts/block-remote-staging-migration.mjs"
       - "migration/paragraf/**"
       - "wrangler.staging.jsonc"
@@ -38,6 +40,7 @@ jobs:
       - name: Verify repository safety invariants
         run: |
           npm run test:staging-safety
+          npm run test:staging-cicd-safety
           node --check scripts/validate-paragraf-import.mjs
           node scripts/validate-paragraf-import.mjs migration/paragraf/public-manifest.sample.jsonl
           npm run verify
