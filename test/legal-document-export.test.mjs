@@ -651,3 +651,25 @@ test("LDE-20 CasePilot default renderer still emits governance appendices while 
   assert.match(courtText,/WORKING DRAFT — NOT FOR FILING/);
   assert.doesNotMatch(courtText,/Source manifest|Human Gate|Provenance appendix/);
 });
+
+
+test("LDE-21 public version stamps cannot bypass AST normalization or authority validation",()=>{
+  const normalized=normalizeLegalDocumentAst(professionalFixture());
+  const forged=structuredClone(normalized);
+  forged.legalBases[0]={
+    ...forged.legalBases[0],
+    requiredForProfessional:false,
+    citation:"FORGED UNVERIFIED AUTHORITY",
+    authority:null
+  };
+  assert.equal(forged.version,LEGAL_DOCUMENT_AST_VERSION);
+  assert.equal(forged.exportVersion,normalized.exportVersion);
+  assert.throws(
+    ()=>legalDocumentReadiness(forged),
+    /legal_document_unverified_authority_not_allowed/
+  );
+  assert.throws(
+    ()=>legalDocumentExportBundle(forged,{mode:"professional"}),
+    /legal_document_unverified_authority_not_allowed/
+  );
+});
