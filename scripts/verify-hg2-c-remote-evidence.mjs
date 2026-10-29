@@ -42,8 +42,22 @@ if (evidence.staging_account_id !== EXPECTED.account) fail("staging account mism
 if (evidence.staging_database_name !== EXPECTED.databaseName) fail("staging database name mismatch");
 if (evidence.staging_database_id !== EXPECTED.databaseId) fail("staging database UUID mismatch");
 if (evidence.migration_count_expected !== EXPECTED.migrationCount) fail("expected migration count mismatch");
+if (evidence.migration_count_remote_applied !== 0) fail("remote applied migration count is not zero");
 if (evidence.migration_count_remote_unapplied !== EXPECTED.migrationCount) fail("remote unapplied migration count is not 50");
 if (evidence.migration_set_exact_match !== true) fail("remote migration set did not exactly match frozen manifest");
+if (!["pristine-empty-d1", "existing-d1-migrations-ledger"].includes(evidence.migration_state_basis)) {
+  fail("migration state basis is missing or unsupported");
+}
+if (typeof evidence.migration_ledger_present !== "boolean") fail("migration ledger presence flag missing");
+if (!Number.isInteger(evidence.remote_user_table_count) || evidence.remote_user_table_count < 0) {
+  fail("remote table count missing or invalid");
+}
+if (evidence.migration_state_basis === "pristine-empty-d1") {
+  if (evidence.migration_ledger_present !== false) fail("pristine D1 must not report a migration ledger");
+  if (evidence.remote_user_table_count !== 0) fail("pristine D1 must report zero user tables");
+} else if (evidence.migration_ledger_present !== true) {
+  fail("ledger-based migration evidence must report the ledger as present");
+}
 if (evidence.d1_backend_time_travel_capable !== true) fail("D1 Time Travel capability not verified");
 if (evidence.bookmark_evidence_present !== true) fail("bookmark evidence flag is not true");
 if (typeof evidence.pre_write_bookmark !== "string" || evidence.pre_write_bookmark.trim().length < 16) fail("exact pre-write bookmark missing");
