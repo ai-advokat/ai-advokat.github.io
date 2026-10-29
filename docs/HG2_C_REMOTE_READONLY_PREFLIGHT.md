@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Remote Read-Only Preflight Runbook
 
-Status: CORRECTED / READ-ONLY RE-EXECUTION REQUIRED
+Status: PASS / VERIFIED READ-ONLY EVIDENCE
 Date: 2026-10-29
 
 ## Purpose
@@ -86,6 +86,26 @@ Record only non-secret evidence:
 - exact-match result against the frozen manifest;
 - pre-write Time Travel bookmark;
 - timestamp of verification.
+
+## Verified PASS — 2026-10-29
+
+The read-only preflight completed successfully and the evidence verifier returned **PASS**.
+
+Verified non-secret evidence:
+- activation Git SHA: `e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d`;
+- staging account ID: `0fee10e2bd9a2183d16eb0d73f13dfce`;
+- D1: `ai-advokat-staging-db`;
+- D1 UUID: `309f72b8-8711-47fc-bea7-fbd1d649561d`;
+- applied migrations: 0;
+- unapplied frozen migrations: 50;
+- migration-state basis: pristine application schema;
+- reserved D1 system table `_cf_KV` accepted as non-application schema;
+- Time Travel capability: verified;
+- pre-write bookmark: `00000004-00000000-00005113-c038f1e321a99a39f266a9d8a71299f3`;
+- Token R remained D1 Read only.
+
+The local evidence file verified by the operator was:
+`.wrangler/state/hg2-c/remote-readonly-evidence.json`
 
 ## After PASS
 

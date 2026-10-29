@@ -11,6 +11,26 @@ A Human Gate may be considered only after a real read-only preflight using **Tok
 
 `node scripts/verify-hg2-c-remote-evidence.mjs <evidence.json>`
 
+## Verified read-only evidence snapshot
+
+Machine-verified PASS on 2026-10-29:
+
+- activation Git SHA: `e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d`;
+- staging account: `0fee10e2bd9a2183d16eb0d73f13dfce`;
+- staging D1: `ai-advokat-staging-db`;
+- D1 UUID: `309f72b8-8711-47fc-bea7-fbd1d649561d`;
+- migration count expected: 50;
+- remote applied migrations: 0;
+- remote unapplied migrations: 50;
+- migration state: pristine application schema;
+- accepted reserved D1 system table: `_cf_KV`;
+- Time Travel: verified;
+- pre-write bookmark: `00000004-00000000-00005113-c038f1e321a99a39f266a9d8a71299f3`;
+- Token R: staging-only D1 Read;
+- evidence verifier: **PASS**.
+
+This snapshot is evidence, not approval.
+
 ## Mandatory evidence
 
 All items below must be present:
@@ -35,7 +55,13 @@ All items below must be present:
 
 ## Critical migration acknowledgement
 
-The Human Gate must explicitly acknowledge:
+Technical re-review against the frozen SQL completed on 2026-10-29 and confirmed:
+
+- 0033 performs the documented audit-table rebuild/copy/drop/rename sequence;
+- 0034 performs the documented conditional duplicate supersession and unique-index replacement;
+- 0035 performs the documented audit-table rebuild/copy/drop/rename sequence.
+
+These remain Human-visible risk items. The Human Gate must explicitly acknowledge:
 
 - **0033** — audit table rebuild / copy / drop / rename;
 - **0034** — conditional duplicate-row supersession and index replacement;
@@ -93,6 +119,8 @@ Rollback is **not automatic**.
 If rollback is required, use the captured pre-write Time Travel bookmark only after a separate destructive Human Gate because restore overwrites the staging database in place.
 
 ## Decision record
+
+Current decision state: **NOT APPROVED**.
 
 Before the first write, record:
 

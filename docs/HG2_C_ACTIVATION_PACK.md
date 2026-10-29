@@ -2,7 +2,8 @@
 
 Status: PREPARED / REMOTE ACTIVATION BLOCKED
 Date: 2026-10-29
-Base commit: `c97c867f358f385348eb9817655d8c08712e3eb1`
+Frozen manifest source commit: `d6aeaf5c51d1e1672b7a0d7650bbeb3607490198`
+Verified read-only activation SHA: `e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d`
 
 ## Scope
 
@@ -67,13 +68,14 @@ It is allowed to read only D1 identity/state, the existing remote schema/migrati
 - full repository test suite — PASS
 - security tests — PASS
 - exact migration manifest — FROZEN (50 files, 0001→0050)
-- rollback plan — RECORDED; pre-write Time Travel bookmark still required
+- rollback plan — RECORDED
+- pre-write Time Travel bookmark — VERIFIED / RECORDED
 - split least-privilege credential design — VERIFIED
 - Token R — PROVISIONED / D1 READ ONLY / HUMAN-CONTROLLED
 - Token W — NOT PROVISIONED
 - Token B — NOT PROVISIONED
-- remote read-only preflight — PARTIAL OBSERVATION COMPLETE / CORRECTED RE-EXECUTION REQUIRED
-- remote evidence verifier — PREPARED / CI TESTED
+- remote read-only preflight — PASS
+- remote evidence verifier — PASS
 - first-write Human Gate — PREPARED / NOT APPROVED
 - exact activation SHA — RECORDED
 
@@ -85,7 +87,7 @@ If any identity mismatch, unexpected public URL, wrong binding, failed migration
 
 **B3 design is resolved; Token R has been provisioned with D1 Read only.** Token W and Token B remain unprovisioned. Current Cloudflare authorization supports separate D1 Read and D1 Edit permissions plus per-Worker Editor scope. The activation path therefore separates remote evidence (Token R), migration write (Token W), and Worker deployment (Token B).
 
-Remote activation remains **NO-GO**. Token R is the only credential needed for the next read-only evidence step. Token W must not be provisioned until Token R evidence passes. Token B belongs to the later Worker phase.
+Remote activation remains **NO-GO** because the first-write Human Gate is not approved. The Token R evidence phase is complete and PASS. The next credential, if the human decision process proceeds, is a new separate short-lived Token W with staging-only D1 Edit authority. Token R must not be upgraded. Token B belongs to the later Worker phase.
 
 ## First-write Human Gate dossier
 
