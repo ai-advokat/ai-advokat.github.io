@@ -1,0 +1,18 @@
+{
+  "status": "HG2_C_REMOTE_READONLY_PREFLIGHT_PASS",
+  "staging_account_id": "0fee10e2bd9a2183d16eb0d73f13dfce",
+  "staging_database_name": "ai-advokat-staging-db",
+  "staging_database_id": "309f72b8-8711-47fc-bea7-fbd1d649561d",
+  "migration_count_expected": 50,
+  "migration_count_remote_unapplied": 50,
+  "migration_set_exact_match": true,
+  "d1_backend_time_travel_capable": true,
+  "bookmark_evidence_present": true,
+  "pre_write_bookmark": "REPLACE_WITH_REAL_BOOKMARK",
+  "activation_git_sha": "REPLACE_WITH_40_HEX_GIT_SHA",
+  "token_a_name": "REPLACE_WITH_NON_SECRET_TOKEN_NAME",
+  "token_a_scope_summary": "D1 staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority",
+  "token_a_expires_at": null,
+  "verified_at_utc": "REPLACE_WITH_ISO_8601_UTC_TIMESTAMP",
+  "note": "Template only. Never place token values or secrets in this evidence file."
+}
