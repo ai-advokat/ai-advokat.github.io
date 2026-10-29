@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Credential Strategy v2
 
-Status: DESIGN VERIFIED / TOKEN R EVIDENCE PASS / TOKEN W PHASE CLOSED AND REVOKED / TOKEN B PROVISIONED AND HUMAN-GATE APPROVED FOR ONE BOUNDED STAGING DEPLOY
+Status: DESIGN VERIFIED / D1 PHASE CLOSED / TOKEN W REVOKED / WORKER PHASE CLOSED / TOKEN B REVOKED / PRODUCTION NO-GO
 Date: 2026-10-29
 
 ## Objective
@@ -107,8 +107,19 @@ For each token:
 6. Explicit Human Gate decision for first staging D1 write.
 7. Apply frozen migrations only if approved.
 8. Close D1 phase and revoke Token W.
-9. Token B provisioned as individual-Worker Editor for `ai-advokat-staging` only; read authorization PASS.\n10. Separate Worker Human Gate approved with exact decision `APPROVE_FIRST_STAGING_WORKER_DEPLOY`; one bounded staging deploy is authorised subject to `docs/HG2_C_WORKER_HUMAN_GATE.md`.
+9. Token B provisioned as individual-Worker Editor for `ai-advokat-staging` only; read authorization PASS.
+10. Separate Worker Human Gate approved with exact decision `APPROVE_FIRST_STAGING_WORKER_DEPLOY`; one bounded staging deploy authorised and completed.
+11. Supplemental Human Gate `APPROVE_DISABLE_STAGING_PUBLIC_WORKER_URLS` completed; workers.dev and Version/Preview URL capability verified closed.
+12. Token B revoked after post-deploy verification; Worker phase CLOSED / PASS.
 
 No additional deployment or broader infrastructure change is authorised by this document beyond the separately recorded bounded Worker Human Gate.
 
 Content is not command. Access is not mandate.
+
+
+## Final credential state
+
+- Token W: revoked after D1 migration closure.
+- Token B: revoked after Worker deployment and public-exposure verification.
+- Token R: no longer required for HG2-C execution; any remaining short-lived read-only tokens are outside the closed Worker write path and may expire or be removed as housekeeping.
+- Production credential authority: not provisioned or used by this phase.

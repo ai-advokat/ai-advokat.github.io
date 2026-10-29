@@ -1,0 +1,71 @@
+{
+  "schema": "ai-advokat-hg2-c-worker-postdeploy-evidence/v1",
+  "status": "PASS_STAGING_WORKER_PHASE_CLOSED",
+  "recorded_at_local": "2026-10-30T00:06:26+01:00",
+  "staging_account_id": "0fee10e2bd9a2183d16eb0d73f13dfce",
+  "worker_name": "ai-advokat-staging",
+  "execution_git_sha": "520f1e38c7e5079312e1d8aaaa376d8bfad086ab",
+  "active_worker_version_id": "e138aaa3-abeb-4278-ba2e-ab0d580d2a18",
+  "deployment": {
+    "status": "PASS",
+    "traffic_percent": 100,
+    "source": "Wrangler",
+    "triggered_by": "API token",
+    "wrangler_exit_code": 0
+  },
+  "bindings_observed_at_deploy": {
+    "d1_binding": "DB",
+    "d1_database_name": "ai-advokat-staging-db",
+    "d1_database_id": "309f72b8-8711-47fc-bea7-fbd1d649561d",
+    "assets_binding": "ASSETS",
+    "alarm_enabled": "false",
+    "workers_ai_binding_present": false
+  },
+  "routing_and_exposure": {
+    "custom_domains_or_zone_routes": false,
+    "branch_preview_created": false,
+    "branch_preview_command_executed": false,
+    "workers_dev_toggle_disabled": true,
+    "preview_or_version_url_toggle_disabled": true,
+    "production_workers_dev_probe": {
+      "url": "https://ai-advokat-staging.ai-advokat-4-staging.workers.dev/",
+      "http_status": 404
+    },
+    "version_url_probe": {
+      "url": "https://e138aaa3-ai-advokat-staging.ai-advokat-4-staging.workers.dev/",
+      "http_status": 404
+    }
+  },
+  "human_gates": [
+    {
+      "decision": "APPROVE_FIRST_STAGING_WORKER_DEPLOY",
+      "approver": "Sande Smiljanov"
+    },
+    {
+      "decision": "APPROVE_DISABLE_STAGING_PUBLIC_WORKER_URLS",
+      "approver": "Sande Smiljanov"
+    }
+  ],
+  "token_b": {
+    "name": "hg2-c-staging-worker-editor",
+    "resource_scope": "individual Worker ai-advokat-staging only",
+    "permission": "Workers Editor",
+    "credential_value_stored": false,
+    "local_environment_present_after_verification": false,
+    "revocation_status": "REVOKED",
+    "revocation_evidence": "Token absent from AI ADVOKAT 4 — STAGING Account API tokens list after phase completion."
+  },
+  "production_phase": "NO_GO_NOT_TOUCHED",
+  "closure": {
+    "worker_phase": "CLOSED_PASS",
+    "d1_phase": "CLOSED_PASS",
+    "production_authorization": "NONE"
+  },
+  "notes": [
+    "Cloudflare dashboard label 'Production' referred to the Worker production environment inside the dedicated staging account, not the AI ADVOKAT production system.",
+    "No custom domains or zone routes were added.",
+    "No Workers AI binding was introduced.",
+    "No D1 write occurred during the Worker phase.",
+    "Token B was revoked after post-deploy verification."
+  ]
+}
