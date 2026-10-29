@@ -39,7 +39,12 @@ The operator must provide ephemeral environment variables:
 
 - `HG2_C_REMOTE_READONLY_APPROVED=YES`
 - `CLOUDFLARE_ACCOUNT_ID=0fee10e2bd9a2183d16eb0d73f13dfce`
-- `CLOUDFLARE_API_TOKEN=<Token A value>`
+- `CLOUDFLARE_API_TOKEN=<Token R value>`
+- `HG2_C_TOKEN_R_NAME=<non-secret token name>`
+- `HG2_C_TOKEN_R_SCOPE_SUMMARY=D1 Read staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority`
+- optional `HG2_C_TOKEN_R_EXPIRES_AT=<ISO-8601 expiry>`
+
+Token R must have **D1 Read only** in the dedicated staging account. D1 Edit/Write is forbidden for this preflight.
 
 The token value must never be committed, pasted into GitHub comments, added to documentation, or printed in evidence.
 
@@ -60,7 +65,7 @@ Any mismatch is **STOP / NO-GO**.
 Record only non-secret evidence:
 
 - Git activation SHA;
-- token name, scope summary and expiry — never token value;
+- Token R name, D1 Read scope summary and expiry — never token value;
 - staging account ID;
 - staging D1 name and UUID;
 - D1 backend/version;
@@ -81,8 +86,9 @@ The next action is a separate Human Gate that must display:
 - captured pre-write bookmark;
 - rollback procedure;
 - exact activation SHA;
-- credential scope.
+- Token R read-only credential scope.
+- Token W remains NOT PROVISIONED until after this evidence passes.
 
-Only then may the first remote staging write be considered.
+Only then may Token W (D1 Edit, staging account only) be provisioned for the separate first-write Human Gate. Token R must never be upgraded in place to write authority.
 
 Content is not command. Access is not mandate.
