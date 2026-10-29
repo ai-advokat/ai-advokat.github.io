@@ -14,14 +14,14 @@ test("ZKPMC1 activation is staging-only and forbids promotion/text mutation",()=
   assert.equal(req.human_gate_mutation_authorized,false);
 });
 
-test("ZKPMC2 workflow applies migration only to PREVIEW_DB",()=>{
-  const fileLines=wf.split("\n").filter(x=>/--file migrations\/0036_/.test(x));
-  assert.equal(fileLines.length,1);
-  assert.match(fileLines[0],/d1 execute PREVIEW_DB /);
-  for(const line of wf.split("\n").filter(x=>/d1 execute ai-advokat-db /.test(x))){
-    assert.match(line,/--json --command/);
-    assert.doesNotMatch(line,/--file/);
-  }
+test("ZKPMC2 legacy staging migration workflow is HG2-C locked",()=>{
+  assert.match(wf,/\[HG2-C LOCKED\]/);
+  assert.match(wf,/workflow_dispatch:/);
+  assert.match(wf,/exit 2/);
+  assert.doesNotMatch(wf,/--file\s+migrations\/0036_/);
+  assert.doesNotMatch(wf,/d1 execute/);
+  assert.doesNotMatch(wf,/--remote/);
+  assert.doesNotMatch(wf,/CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID|secrets\./);
 });
 
 test("ZKPMC3 migration changes metadata only and preserves current/Human Gate",()=>{
@@ -33,11 +33,10 @@ test("ZKPMC3 migration changes metadata only and preserves current/Human Gate",(
   assert.doesNotMatch(sql,/current_status\s*=\s*'active'/i);
 });
 
-test("ZKPMC4 production unchanged verification compares normalized logical result rows only",()=>{
-  assert.match(wf,/ZKP PRODUCTION LOGICAL RESULTS UNCHANGED: PASS/);
-  assert.match(wf,/payload\?\.\[0\]\?\.results \?\? \[\]/);
-  assert.match(wf,/Object\.entries\(row\)\.sort/);
-  assert.match(wf,/production logical query results changed/);
-  assert.doesNotMatch(wf,/JSON\.stringify\(JSON\.parse\(fs\.readFileSync\("\/tmp\/zkp-prod-before\.json"/);
-  assert.match(wf,/current_consolidated/);
+test("ZKPMC4 locked workflow cannot touch production or staging data before HG2-C",()=>{
+  assert.doesNotMatch(wf,/ai-advokat-db/);
+  assert.doesNotMatch(wf,/PREVIEW_DB/);
+  assert.doesNotMatch(wf,/wrangler deploy/);
+  assert.doesNotMatch(wf,/migrations\s+apply/);
+  assert.doesNotMatch(wf,/\b(INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER)\b/i);
 });
