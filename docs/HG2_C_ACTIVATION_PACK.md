@@ -70,6 +70,8 @@ It is allowed to read only D1 identity/state, unapplied migration names and the 
 - split least-privilege credential design — VERIFIED
 - staging credentials — NOT PROVISIONED / HUMAN-CONTROLLED
 - remote read-only preflight — PREPARED / NOT EXECUTED
+- remote evidence verifier — PREPARED / CI TESTED
+- first-write Human Gate — PREPARED / NOT APPROVED
 - exact activation SHA — RECORDED
 
 ## Rollback rule
@@ -81,6 +83,18 @@ If any identity mismatch, unexpected public URL, wrong binding, failed migration
 **B3 design is resolved; credential provisioning is not yet performed.** Current Cloudflare authorization documentation supports account-owned API tokens and per-Worker Editor scope. Direct D1 access requires D1 permission; because the D1 lives in a dedicated staging account, any product/account-level D1 authority remains isolated from production. The activation plan therefore uses two separate credentials and keeps token creation and first use behind the Human Gate.
 
 Remote activation remains **NO-GO** until the two staging-only credentials are provisioned, their non-secret scopes are recorded, and the exact migration manifest and rollback evidence are complete.
+
+## First-write Human Gate dossier
+
+The first remote staging write may be considered only with:
+- a real non-secret remote evidence record produced by the read-only preflight;
+- `scripts/verify-hg2-c-remote-evidence.mjs` — PASS;
+- `docs/HG2_C_FIRST_WRITE_HUMAN_GATE.md` explicitly completed by the human decision-maker;
+- exact pre-write Time Travel bookmark recorded;
+- exact activation Git SHA recorded;
+- 0033/0034/0035 explicitly reviewed.
+
+The repository template at `evidence/hg2-c/remote-readonly-evidence.template.json` is not evidence and must never be treated as a PASS record.
 
 ## Human Gate
 

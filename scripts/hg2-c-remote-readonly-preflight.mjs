@@ -22,12 +22,43 @@ if (process.env.CLOUDFLARE_ACCOUNT_ID !== EXPECTED_ACCOUNT) {
 if (!process.env.CLOUDFLARE_API_TOKEN) {
   fail("CLOUDFLARE_API_TOKEN is required but must never be stored in the repository");
 }
+if (!process.env.HG2_C_TOKEN_A_NAME) {
+  fail("HG2_C_TOKEN_A_NAME is required for non-secret credential provenance");
+}
+if (!process.env.HG2_C_TOKEN_A_SCOPE_SUMMARY) {
+  fail("HG2_C_TOKEN_A_SCOPE_SUMMARY is required for non-secret credential provenance");
+}
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
 if (manifest.staging_account_id !== EXPECTED_ACCOUNT ||
     manifest.staging_database_name !== EXPECTED_DB ||
     manifest.staging_database_id !== EXPECTED_DB_ID) {
   fail("frozen manifest target identity mismatch");
+}
+
+function findStringByKey(value, wantedKey) {
+  if (value && typeof value === "object") {
+    for (const [key, child] of Object.entries(value)) {
+      if (key === wantedKey && typeof child === "string" && child.trim()) return child.trim();
+      const nested = findStringByKey(child, wantedKey);
+      if (nested) return nested;
+    }
+  }
+  if (Array.isArray(value)) {
+    for (const child of value) {
+      const nested = findStringByKey(child, wantedKey);
+      if (nested) return nested;
+    }
+  }
+  return null;
+}
+
+function currentGitSha() {
+  const result = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8", shell: false });
+  if (result.status !== 0) fail("cannot determine activation Git SHA");
+  const sha = (result.stdout || "").trim();
+  if (!/^[0-9a-f]{40}$/.test(sha)) fail("invalid activation Git SHA");
+  return sha;
 }
 
 function runWrangler(args, label) {
@@ -85,6 +116,18 @@ const bookmarkText = timeTravel.stdout.trim();
 if (!bookmarkText || !/bookmark/i.test(bookmarkText)) {
   fail("Time Travel bookmark evidence was not returned");
 }
+let bookmarkJson;
+try {
+  bookmarkJson = JSON.parse(bookmarkText);
+} catch {
+  fail("Time Travel JSON output could not be parsed");
+}
+const preWriteBookmark = findStringByKey(bookmarkJson, "bookmark");
+if (!preWriteBookmark || preWriteBookmark.length < 16) {
+  fail("exact pre-write Time Travel bookmark could not be extracted");
+}
+
+const activationSha = currentGitSha();
 
 const evidence = {
   status: "HG2_C_REMOTE_READONLY_PREFLIGHT_PASS",
@@ -96,6 +139,12 @@ const evidence = {
   migration_set_exact_match: true,
   d1_backend_time_travel_capable: true,
   bookmark_evidence_present: true,
+  pre_write_bookmark: preWriteBookmark,
+  activation_git_sha: activationSha,
+  token_a_name: process.env.HG2_C_TOKEN_A_NAME,
+  token_a_scope_summary: process.env.HG2_C_TOKEN_A_SCOPE_SUMMARY,
+  token_a_expires_at: process.env.HG2_C_TOKEN_A_EXPIRES_AT || null,
+  verified_at_utc: new Date().toISOString(),
   note: "No token value is emitted. No migration apply, restore, deploy, execute, create, delete, route or production action is performed."
 };
 
