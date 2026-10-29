@@ -1,6 +1,6 @@
 {
   "schema": "ai-advokat-hg2-c-post-write-evidence/v1",
-  "status": "PASS_POST_WRITE_VERIFIED_TOKEN_W_REVOCATION_PENDING",
+  "status": "PASS_D1_STAGING_PHASE_CLOSED",
   "recorded_at_utc": "2026-10-29T20:02:38Z",
   "staging_account_id": "0fee10e2bd9a2183d16eb0d73f13dfce",
   "staging_database_name": "ai-advokat-staging-db",
@@ -48,14 +48,15 @@
     "name": "hg2-c-staging-d1-write",
     "scope_summary": "D1 Write staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no Worker, route, Workers AI, DNS/zone or production permissions",
     "expiry_date": "2026-10-30",
-    "revocation_status": "PENDING_OPERATOR_REVOCATION_AFTER_EVIDENCE_MERGE",
-    "credential_value_stored": false
+    "revocation_status": "REVOKED",
+    "credential_value_stored": false,
+    "revocation_observed_at_utc": "2026-10-29T20:12:50Z"
   },
   "worker_phase": "NO_GO_NOT_STARTED",
   "production_phase": "NO_GO_NOT_TOUCHED_BY_THIS_OPERATION",
   "notes": [
     "This evidence records the bounded first staging D1 migration only.",
     "Worker deployment, routes/domains, Workers AI, imports, ad-hoc SQL and production remain outside scope.",
-    "Token W must be revoked after this evidence package is merged and the local token is removed from the PowerShell environment."
+    "Token W was revoked after successful post-write verification and is no longer listed among active account API tokens."
   ]
 }
