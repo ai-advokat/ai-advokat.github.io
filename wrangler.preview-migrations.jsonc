@@ -1,9 +1,11 @@
 {
+  // HG2-B5 local migration validation profile.
+  // Remote application remains Human-Gate controlled and is intentionally not exposed by npm scripts.
   "d1_databases": [
     {
       "binding": "PREVIEW_DB",
-      "database_name": "ai-advokat-db-staging",
-      "database_id": "eb560e98-9fc0-408e-9c81-9b823ffde44d",
+      "database_name": "ai-advokat-staging-db",
+      "database_id": "309f72b8-8711-47fc-bea7-fbd1d649561d",
       "migrations_dir": "migrations"
     }
   ]
