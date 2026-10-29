@@ -126,7 +126,8 @@
     "db:migrate:staging:local": "wrangler d1 migrations apply PREVIEW_DB --local --config wrangler.preview-migrations.jsonc --persist-to .wrangler/state/hg2-b5",
     "test:staging-safety": "node scripts/staging-safety-preflight.mjs",
     "test:staging-cicd-safety": "node scripts/staging-cicd-safety.mjs",
-    "test:hg2-c-readiness": "node scripts/hg2-c-readiness.mjs"
+    "test:hg2-c-readiness": "node scripts/hg2-c-readiness.mjs",
+    "test:hg2-c-migration-manifest": "node scripts/verify-hg2-c-migration-manifest.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
