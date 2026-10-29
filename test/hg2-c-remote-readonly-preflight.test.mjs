@@ -44,7 +44,8 @@ test("HG2-C remote preflight never emits the token value", () => {
   assert.match(source, /No token value is emitted/);
 });
 
-test("HG2-C remote preflight rejects write-capable Token R scope", () => {
-  assert.match(source, /D1\\s\+\(Edit\|Write\)/);
-  assert.match(source, /Token R must be read-only/);
+test("HG2-C remote preflight accepts only the canonical Token R scope summary", () => {
+  assert.match(source, /EXPECTED_TOKEN_R_SCOPE_SUMMARY/);
+  assert.match(source, /must exactly match the approved staging-only D1 Read scope/);
+  assert.doesNotMatch(source, /HG2_C_TOKEN_W_/);
 });
