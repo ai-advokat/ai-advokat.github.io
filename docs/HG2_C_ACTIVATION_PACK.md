@@ -21,9 +21,10 @@ Production resources are explicitly outside this activation pack.
 ## Activation order
 
 1. Re-verify staging account, Worker and D1 identifiers.
-2. Provision the approved split least-privilege credential path from `docs/HG2_C_CREDENTIAL_STRATEGY.md`:
-   - Token A: staging-account D1 migration authority only;
-   - Token B: Editor scoped only to the existing `ai-advokat-staging` Worker.
+2. Follow the approved three-token least-privilege path from `docs/HG2_C_CREDENTIAL_STRATEGY.md`:
+   - Token R: D1 Read only for remote evidence;
+   - Token W: separate short-lived D1 Edit token, provisioned only after read-only evidence passes and before the first-write Human Gate;
+   - Token B: Editor scoped only to the existing `ai-advokat-staging` Worker, used only in the later Worker phase.
 3. Record the exact activation commit SHA.
 4. Enumerate the exact remote migration files to be applied; no wildcard or implicit migration set.
 5. Verify rollback/restore procedure and capture pre-action D1 state.
@@ -80,9 +81,9 @@ If any identity mismatch, unexpected public URL, wrong binding, failed migration
 
 ## Current blocker
 
-**B3 design is resolved; credential provisioning is not yet performed.** Current Cloudflare authorization documentation supports account-owned API tokens and per-Worker Editor scope. Direct D1 access requires D1 permission; because the D1 lives in a dedicated staging account, any product/account-level D1 authority remains isolated from production. The activation plan therefore uses two separate credentials and keeps token creation and first use behind the Human Gate.
+**B3 design is resolved; credential provisioning is not yet performed.** Current Cloudflare authorization supports separate D1 Read and D1 Edit permissions plus per-Worker Editor scope. The activation path therefore separates remote evidence (Token R), migration write (Token W), and Worker deployment (Token B).
 
-Remote activation remains **NO-GO** until the two staging-only credentials are provisioned, their non-secret scopes are recorded, and the exact migration manifest and rollback evidence are complete.
+Remote activation remains **NO-GO**. Token R is the only credential needed for the next read-only evidence step. Token W must not be provisioned until Token R evidence passes. Token B belongs to the later Worker phase.
 
 ## First-write Human Gate dossier
 
