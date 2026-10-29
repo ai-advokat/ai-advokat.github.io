@@ -132,7 +132,9 @@
     "preflight:staging:remote-readonly": "node scripts/hg2-c-remote-readonly-preflight.mjs",
     "test:hg2-c-remote-evidence": "node --no-warnings --test test/hg2-c-remote-evidence.test.mjs",
     "verify:hg2-c-remote-evidence": "node scripts/verify-hg2-c-remote-evidence.mjs",
-    "test:hg2-c-credential-separation": "node --no-warnings --test test/hg2-c-credential-separation.test.mjs"
+    "test:hg2-c-credential-separation": "node --no-warnings --test test/hg2-c-credential-separation.test.mjs",
+    "test:hg2-c-post-write-evidence": "node --no-warnings --test test/hg2-c-post-write-evidence.test.mjs",
+    "verify:hg2-c-post-write-evidence": "node scripts/verify-hg2-c-post-write-evidence.mjs evidence/hg2-c/post-write-evidence.json"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
