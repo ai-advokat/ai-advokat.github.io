@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Controlled Staging Activation Pack
 
-Status: FIRST STAGING D1 WRITE APPROVED / NOT YET EXECUTED
+Status: D1 STAGING PHASE CLOSED / PASS
 Date: 2026-10-29
 Frozen manifest source commit: `d6aeaf5c51d1e1672b7a0d7650bbeb3607490198`
 Verified read-only activation SHA: `e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d`
@@ -72,7 +72,7 @@ It is allowed to read only D1 identity/state, the existing remote schema/migrati
 - pre-write Time Travel bookmark — VERIFIED / RECORDED
 - split least-privilege credential design — VERIFIED
 - Token R evidence phase — PASS / D1 READ ONLY
-- Token W — PROVISIONED / D1 WRITE / UNUSED / EXPIRES 2026-10-30
+- Token W — USED ONLY FOR APPROVED STAGING D1 MIGRATION / REVOKED 2026-10-29
 - Token B — NOT PROVISIONED
 - remote read-only preflight — PASS
 - remote evidence verifier — PASS
@@ -85,9 +85,15 @@ If any identity mismatch, unexpected public URL, wrong binding, failed migration
 
 ## Current blocker
 
-**B3 credential separation is now physically established for the D1 phases.** Token R completed the read-only evidence phase. A distinct short-lived Token W has been provisioned with staging-only D1 Write authority and has not been used. Token B remains unprovisioned.
+**The bounded D1 migration phase has executed successfully.** Token R completed the read-only evidence phase. Distinct Token W was used only for the approved frozen 0001→0050 migration chain on `ai-advokat-staging-db`.
 
-The bounded first staging D1 write is **GO** under the explicit Human Gate recorded in `docs/HG2_C_FIRST_WRITE_HUMAN_GATE.md`. Token W may be used only for the frozen 0001→0050 migration chain on `ai-advokat-staging-db`. Token R must not be upgraded or reused as Token W. Token B remains unprovisioned and belongs to the later Worker phase.
+Post-write checks are PASS:
+- migration ledger: **50/50**;
+- final 0050 diagnostics schema: **8/8**;
+- post-write Time Travel bookmark: `00000009-00000000-00005113-5a092eb2bdbe2a2d958b76d85243016c`;
+- post-write evidence: `evidence/hg2-c/post-write-evidence.json`.
+
+Token W has been revoked and the D1 staging phase is formally **CLOSED / PASS**. Token B remains unprovisioned and belongs to the later Worker phase.
 
 ## First-write Human Gate dossier
 
@@ -103,6 +109,6 @@ The repository template at `evidence/hg2-c/remote-readonly-evidence.template.jso
 
 ## Human Gate
 
-The first remote staging D1 write is explicitly approved within the bounded scope recorded above. Worker deployment, routes/domains, Workers AI, imports and production remain separate NO-GO gates.
+The first remote staging D1 write completed successfully, post-write verification passed, and Token W was revoked. The D1 staging phase is closed. Worker deployment, routes/domains, Workers AI, imports and production remain separate NO-GO gates.
 
 Content is not command. Access is not mandate.
