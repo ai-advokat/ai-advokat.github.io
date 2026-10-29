@@ -54,7 +54,7 @@ Before the first write, execute only the Human-controlled read-only preflight de
 - `docs/HG2_C_REMOTE_READONLY_PREFLIGHT.md`;
 - `scripts/hg2-c-remote-readonly-preflight.mjs`.
 
-It is allowed to read only D1 identity/state, unapplied migration names and the current Time Travel bookmark. It contains no apply/restore/deploy/execute capability.
+It is allowed to read only D1 identity/state, the existing remote schema/migration ledger through fixed single-SELECT queries, and the current Time Travel bookmark. It contains no migration-list initialization, apply/restore/deploy/execute capability.
 
 ## Mandatory pre-activation evidence
 
@@ -69,8 +69,10 @@ It is allowed to read only D1 identity/state, unapplied migration names and the 
 - exact migration manifest — FROZEN (50 files, 0001→0050)
 - rollback plan — RECORDED; pre-write Time Travel bookmark still required
 - split least-privilege credential design — VERIFIED
-- staging credentials — NOT PROVISIONED / HUMAN-CONTROLLED
-- remote read-only preflight — PREPARED / NOT EXECUTED
+- Token R — PROVISIONED / D1 READ ONLY / HUMAN-CONTROLLED
+- Token W — NOT PROVISIONED
+- Token B — NOT PROVISIONED
+- remote read-only preflight — PARTIAL OBSERVATION COMPLETE / CORRECTED RE-EXECUTION REQUIRED
 - remote evidence verifier — PREPARED / CI TESTED
 - first-write Human Gate — PREPARED / NOT APPROVED
 - exact activation SHA — RECORDED
@@ -81,7 +83,7 @@ If any identity mismatch, unexpected public URL, wrong binding, failed migration
 
 ## Current blocker
 
-**B3 design is resolved; credential provisioning is not yet performed.** Current Cloudflare authorization supports separate D1 Read and D1 Edit permissions plus per-Worker Editor scope. The activation path therefore separates remote evidence (Token R), migration write (Token W), and Worker deployment (Token B).
+**B3 design is resolved; Token R has been provisioned with D1 Read only.** Token W and Token B remain unprovisioned. Current Cloudflare authorization supports separate D1 Read and D1 Edit permissions plus per-Worker Editor scope. The activation path therefore separates remote evidence (Token R), migration write (Token W), and Worker deployment (Token B).
 
 Remote activation remains **NO-GO**. Token R is the only credential needed for the next read-only evidence step. Token W must not be provisioned until Token R evidence passes. Token B belongs to the later Worker phase.
 
