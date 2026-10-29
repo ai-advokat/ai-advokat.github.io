@@ -14,11 +14,11 @@ test("HG2-C credential architecture separates read, write and deploy authority",
   assert.match(strategy, /Never combine Token R, Token W and Token B/);
 });
 
-test("remote preflight is bound to Token R and refuses write authority", () => {
+test("remote preflight is bound only to canonical Token R read scope", () => {
   assert.match(preflight, /HG2_C_TOKEN_R_NAME/);
   assert.match(preflight, /HG2_C_TOKEN_R_SCOPE_SUMMARY/);
-  assert.match(preflight, /D1\\s\+Read/);
-  assert.match(preflight, /D1\\s\+\(Edit\|Write\)/);
+  assert.ok(preflight.includes("D1 Read staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority"));
+  assert.match(preflight, /must exactly match the approved staging-only D1 Read scope/);
   assert.doesNotMatch(preflight, /HG2_C_TOKEN_A_/);
   assert.doesNotMatch(preflight, /HG2_C_TOKEN_W_/);
 });
