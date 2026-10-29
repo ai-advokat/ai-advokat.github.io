@@ -17,6 +17,9 @@ on:
       - "scripts/verify-hg2-c-remote-evidence.mjs"
       - "test/hg2-c-remote-evidence.test.mjs"
       - "evidence/hg2-c/remote-readonly-evidence.template.json"
+      - "docs/HG2_C_CREDENTIAL_STRATEGY.md"
+      - "docs/HG2_C_TOKEN_PROVISIONING_RUNBOOK.md"
+      - "test/hg2-c-credential-separation.test.mjs"
       - "evidence/hg2-c/migration-manifest.json"
       - "migrations/**"
       - ".github/workflows/**"
@@ -39,6 +42,7 @@ jobs:
       - run: npm run test:hg2-c-migration-manifest
       - run: npm run test:hg2-c-remote-readonly-contract
       - run: npm run test:hg2-c-remote-evidence
+      - run: npm run test:hg2-c-credential-separation
       - run: npm run db:migrate:staging:local
       - name: Assert remote staging commands remain fail-closed
         run: |

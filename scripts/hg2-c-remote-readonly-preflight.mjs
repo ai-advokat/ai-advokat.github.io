@@ -7,6 +7,7 @@ const EXPECTED_DB = "ai-advokat-staging-db";
 const EXPECTED_DB_ID = "309f72b8-8711-47fc-bea7-fbd1d649561d";
 const CONFIG = "wrangler.preview-migrations.jsonc";
 const MANIFEST = "evidence/hg2-c/migration-manifest.json";
+const EXPECTED_TOKEN_R_SCOPE_SUMMARY = "D1 Read staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority";
 
 function fail(message) {
   console.error("HG2-C REMOTE READ-ONLY PREFLIGHT FAIL:", message);
@@ -22,11 +23,15 @@ if (process.env.CLOUDFLARE_ACCOUNT_ID !== EXPECTED_ACCOUNT) {
 if (!process.env.CLOUDFLARE_API_TOKEN) {
   fail("CLOUDFLARE_API_TOKEN is required but must never be stored in the repository");
 }
-if (!process.env.HG2_C_TOKEN_A_NAME) {
-  fail("HG2_C_TOKEN_A_NAME is required for non-secret credential provenance");
+if (!process.env.HG2_C_TOKEN_R_NAME) {
+  fail("HG2_C_TOKEN_R_NAME is required for non-secret credential provenance");
 }
-if (!process.env.HG2_C_TOKEN_A_SCOPE_SUMMARY) {
-  fail("HG2_C_TOKEN_A_SCOPE_SUMMARY is required for non-secret credential provenance");
+if (!process.env.HG2_C_TOKEN_R_SCOPE_SUMMARY) {
+  fail("HG2_C_TOKEN_R_SCOPE_SUMMARY is required for non-secret credential provenance");
+}
+const tokenRScope = process.env.HG2_C_TOKEN_R_SCOPE_SUMMARY;
+if (tokenRScope !== EXPECTED_TOKEN_R_SCOPE_SUMMARY) {
+  fail("Token R scope summary must exactly match the approved staging-only D1 Read scope");
 }
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
@@ -141,9 +146,9 @@ const evidence = {
   bookmark_evidence_present: true,
   pre_write_bookmark: preWriteBookmark,
   activation_git_sha: activationSha,
-  token_a_name: process.env.HG2_C_TOKEN_A_NAME,
-  token_a_scope_summary: process.env.HG2_C_TOKEN_A_SCOPE_SUMMARY,
-  token_a_expires_at: process.env.HG2_C_TOKEN_A_EXPIRES_AT || null,
+  token_r_name: process.env.HG2_C_TOKEN_R_NAME,
+  token_r_scope_summary: process.env.HG2_C_TOKEN_R_SCOPE_SUMMARY,
+  token_r_expires_at: process.env.HG2_C_TOKEN_R_EXPIRES_AT || null,
   verified_at_utc: new Date().toISOString(),
   note: "No token value is emitted. No migration apply, restore, deploy, execute, create, delete, route or production action is performed."
 };

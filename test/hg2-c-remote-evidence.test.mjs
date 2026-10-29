@@ -29,9 +29,9 @@ function validEvidence() {
     bookmark_evidence_present: true,
     pre_write_bookmark: "00000085-0000024c-00004c6d-8e61117bf38d7adb71b934ebbf891683",
     activation_git_sha: "1234567890abcdef1234567890abcdef12345678",
-    token_a_name: "hg2-c-staging-d1-migration",
-    token_a_scope_summary: "D1 staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority",
-    token_a_expires_at: "2026-10-30T00:00:00Z",
+    token_r_name: "hg2-c-staging-d1-readonly",
+    token_r_scope_summary: "D1 Read staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority",
+    token_r_expires_at: "2026-10-30T00:00:00Z",
     verified_at_utc: "2026-10-29T12:45:00Z"
   };
 }
@@ -52,7 +52,14 @@ test("secret-bearing evidence keys are rejected", () => {
 
 test("wrong or broad credential scope is rejected", () => {
   const evidence = validEvidence();
-  evidence.token_a_scope_summary = "D1 account-wide authority for all accounts";
+  evidence.token_r_scope_summary = "D1 account-wide authority for all accounts";
+  const result = runEvidence(evidence);
+  assert.notEqual(result.status, 0);
+});
+
+test("write-capable preflight credential scope is rejected", () => {
+  const evidence = validEvidence();
+  evidence.token_r_scope_summary = "D1 Edit for account 0fee10e2bd9a2183d16eb0d73f13dfce";
   const result = runEvidence(evidence);
   assert.notEqual(result.status, 0);
 });
