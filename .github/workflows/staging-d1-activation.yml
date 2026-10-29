@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Fail closed until dedicated staging activation
         run: |
-          echo "::error::LOCKED: legacy workflow 'staging-d1-activation.yml' references the pre-isolation staging architecture."
-          echo "It must not access the old staging D1, production account staging resources, remote migrations, deployments, imports, bindings, routes, or storage."
-          echo "Re-authorisation requires the dedicated AI ADVOKAT 4 — STAGING account, verified HG2-C credentials, exact resource identities, and a new evidence pack."
+          echo "::error::LOCKED: staging workflow 'staging-d1-activation.yml' is disabled before HG2-C."
+          echo "Only .github/workflows/paragraf-migration-staging.yml may execute staging-related validation, and it is local-only."
+          echo "No Cloudflare credential, remote D1 operation, migration, deploy, binding, route, domain, import, or storage action is authorised here."
           exit 2
