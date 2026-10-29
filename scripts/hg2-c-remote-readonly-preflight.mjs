@@ -67,7 +67,8 @@ function currentGitSha() {
 }
 
 function runWrangler(args, label) {
-  const result = spawnSync("npx", ["--no-install", "wrangler", ...args], {
+  const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
+  const result = spawnSync(npxCommand, ["--no-install", "wrangler", ...args], {
     encoding: "utf8",
     env: { ...process.env, CLOUDFLARE_ACCOUNT_ID: EXPECTED_ACCOUNT },
     shell: false
