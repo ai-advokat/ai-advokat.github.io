@@ -87,12 +87,18 @@ const info = runWrangler(
   ["d1", "info", EXPECTED_DB, "--json", "--config", CONFIG],
   "d1 info"
 );
-const infoText = info.stdout + info.stderr;
-if (!infoText.includes(EXPECTED_DB) && !infoText.includes(EXPECTED_DB_ID)) {
-  fail("d1 info output does not identify the expected staging database");
+let infoJson;
+try {
+  infoJson = JSON.parse(info.stdout.trim());
+} catch {
+  fail("d1 info JSON output could not be parsed");
 }
-if (!/production/i.test(infoText)) {
-  fail("D1 backend version was not verified as production/Time-Travel capable");
+if (infoJson.name !== EXPECTED_DB || infoJson.uuid !== EXPECTED_DB_ID) {
+  fail("d1 info JSON does not identify the expected staging database");
+}
+const reportedVersion = findStringByKey(infoJson, "version");
+if (reportedVersion && reportedVersion.toLowerCase() !== "production") {
+  fail(`unexpected D1 backend version: ${reportedVersion}`);
 }
 
 // READ ONLY: list unapplied migrations. No apply command exists in this script.
