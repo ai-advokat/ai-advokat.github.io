@@ -94,56 +94,89 @@ export function buildMvpV2CasePilotMatter(input){
     version:'0.3'
   });
 
+  const suppliedEvidence=lines(d.otherEvidence);
+  const hasEmailDocument=Boolean(
+    t(d.emailText) || suppliedEvidence.some(x=>/е-?пошта|email|мејл/i.test(x))
+  );
+  const hasDeliveryDocument=suppliedEvidence.some(x=>/повратница|врачува/i.test(x));
+  const hasInternalRecordDocument=suppliedEvidence.some(x=>/интерна.*евиденц|евиденц.*интерна/i.test(x));
+
   const docs=[
     documentRecord({id:'DOC-CONTRACT',title:'Договор за вработување',sha256:'1'.repeat(64),pageCount:3}),
-    documentRecord({id:'DOC-DISMISSAL',title:'Одлука за отказ',sha256:'2'.repeat(64),pageCount:2}),
-    documentRecord({id:'DOC-EMAIL',title:'Е-пошта од раководител',sha256:'3'.repeat(64),pageCount:1}),
-    documentRecord({id:'DOC-DELIVERY',title:'Доказ за врачување / повратница',sha256:'4'.repeat(64),pageCount:1}),
-    documentRecord({id:'DOC-RECORD',title:'Интерна евиденција',sha256:'5'.repeat(64),pageCount:1})
+    documentRecord({id:'DOC-DISMISSAL',title:'Одлука за отказ',sha256:'2'.repeat(64),pageCount:2})
   ];
+  if(hasEmailDocument){
+    docs.push(documentRecord({id:'DOC-EMAIL',title:'Е-пошта од раководител',sha256:'3'.repeat(64),pageCount:1}));
+  }
+  if(hasDeliveryDocument){
+    docs.push(documentRecord({id:'DOC-DELIVERY',title:'Доказ за врачување / повратница',sha256:'4'.repeat(64),pageCount:1}));
+  }
+  if(hasInternalRecordDocument){
+    docs.push(documentRecord({id:'DOC-RECORD',title:'Интерна евиденција',sha256:'5'.repeat(64),pageCount:1}));
+  }
   for(const doc of docs) matter=add(matter,'documents',doc);
 
   matter=add(matter,'participants',participant({id:'P-WORKER',name:t(d.plaintiff),role:'тужител / работник',sourceId:'DOC-CONTRACT',page:1}));
   matter=add(matter,'participants',participant({id:'P-EMPLOYER',name:t(d.defendant),role:'тужен / работодавач',sourceId:'DOC-CONTRACT',page:1}));
 
   matter=add(matter,'timeline',timelineEvent({id:'T-DISMISSAL',date:t(d.dismissDate)||null,text:'Донесена е наведена одлука за отказ '+t(d.decisionNo)+'.',sourceId:'DOC-DISMISSAL',page:1,status:'confirmed_from_source'}));
-  if(t(d.receiveDate)) matter=add(matter,'timeline',timelineEvent({id:'T-DELIVERY-CLAIM',date:t(d.receiveDate),text:'Наведен датум на врачување според странката.',sourceId:'DOC-DELIVERY',page:1,status:'indication'}));
-  if(t(d.recordDate)) matter=add(matter,'timeline',timelineEvent({id:'T-DELIVERY-RECORD',date:t(d.recordDate),text:'Наведен датум на врачување според интерната евиденција.',sourceId:'DOC-RECORD',page:1,status:'indication'}));
+  if(t(d.receiveDate)&&hasDeliveryDocument){
+    matter=add(matter,'timeline',timelineEvent({id:'T-DELIVERY-CLAIM',date:t(d.receiveDate),text:'Наведен датум на врачување според странката.',sourceId:'DOC-DELIVERY',page:1,status:'indication'}));
+  }
+  if(t(d.recordDate)&&hasInternalRecordDocument){
+    matter=add(matter,'timeline',timelineEvent({id:'T-DELIVERY-RECORD',date:t(d.recordDate),text:'Наведен датум на врачување според интерната евиденција.',sourceId:'DOC-RECORD',page:1,status:'indication'}));
+  }
 
   matter=add(matter,'legal_issues',legalIssue({
     id:'LI-1',
     title:'Законитост на отказ и враќање на работа',
     question:'Дали се исполнети материјалните и процесните услови за оспорување на отказот и барање враќање на работа?',
-    sourceIds:['DOC-DISMISSAL','DOC-CONTRACT','DOC-EMAIL']
+    sourceIds:['DOC-DISMISSAL','DOC-CONTRACT',hasEmailDocument?'DOC-EMAIL':null].filter(Boolean)
   }));
 
   matter=add(matter,'claims',claim({id:'CL-EMPLOYER',text:t(d.employerClaim),sourceId:'DOC-DISMISSAL',page:1,status:'disputed'}));
-  matter=add(matter,'claims',claim({id:'CL-WORKER',text:t(d.workerClaim),sourceId:'DOC-EMAIL',page:1,status:'disputed'}));
+  if(hasEmailDocument){
+    matter=add(matter,'claims',claim({id:'CL-WORKER',text:t(d.workerClaim),sourceId:'DOC-EMAIL',page:1,status:'disputed'}));
+  }
 
   const evidence=[
     evidenceItem({id:'EV-CONTRACT',title:'Договор за вработување',sourceId:'DOC-CONTRACT',page:1,notes:'Работен однос и работно место.'}),
-    evidenceItem({id:'EV-DISMISSAL',title:'Одлука за отказ',sourceId:'DOC-DISMISSAL',page:1,notes:'Содржина и образложение на отказната одлука.'}),
-    evidenceItem({id:'EV-EMAIL',title:'Е-пошта од раководител',sourceId:'DOC-EMAIL',page:1,notes:t(d.emailText)||'Синтетичка е-пошта за проверка.'}),
-    evidenceItem({id:'EV-DELIVERY',title:'Доказ за врачување / повратница',sourceId:'DOC-DELIVERY',page:1,notes:'Датумот на врачување мора да се провери.'}),
-    evidenceItem({id:'EV-RECORD',title:'Интерна евиденција',sourceId:'DOC-RECORD',page:1,notes:'Синтетичка интерна евиденција.'})
+    evidenceItem({id:'EV-DISMISSAL',title:'Одлука за отказ',sourceId:'DOC-DISMISSAL',page:1,notes:'Содржина и образложение на отказната одлука.'})
   ];
+  if(hasEmailDocument){
+    evidence.push(evidenceItem({id:'EV-EMAIL',title:'Е-пошта од раководител',sourceId:'DOC-EMAIL',page:1,notes:t(d.emailText)||'Наведена е-пошта за проверка.'}));
+  }
+  if(hasDeliveryDocument){
+    evidence.push(evidenceItem({id:'EV-DELIVERY',title:'Доказ за врачување / повратница',sourceId:'DOC-DELIVERY',page:1,notes:'Датумот на врачување мора да се провери.'}));
+  }
+  if(hasInternalRecordDocument){
+    evidence.push(evidenceItem({id:'EV-RECORD',title:'Интерна евиденција',sourceId:'DOC-RECORD',page:1,notes:'Наведена интерна евиденција за проверка.'}));
+  }
   for(const e of evidence) matter=add(matter,'evidence',e);
 
   matter=add(matter,'claim_evidence',claimEvidenceLink({
-    id:'CE-EMPLOYER',claimId:'CL-EMPLOYER',evidenceId:'EV-DISMISSAL',supportType:'supports',counterevidenceIds:['EV-EMAIL']
+    id:'CE-EMPLOYER',
+    claimId:'CL-EMPLOYER',
+    evidenceId:'EV-DISMISSAL',
+    supportType:'supports',
+    counterevidenceIds:hasEmailDocument?['EV-EMAIL']:[]
   }));
-  matter=add(matter,'claim_evidence',claimEvidenceLink({
-    id:'CE-WORKER',claimId:'CL-WORKER',evidenceId:'EV-EMAIL',supportType:'supports',counterevidenceIds:['EV-DISMISSAL']
-  }));
-
-  matter=add(matter,'contradictions',contradiction({
-    id:'CP-CON-1',
-    left:{text:t(d.employerClaim),sourceId:'DOC-DISMISSAL',page:1},
-    right:{text:t(d.workerClaim),sourceId:'DOC-EMAIL',page:1},
-    meaning:'Спротивставени тврдења за оправданоста/одобрението на спорното отсуство или работа од дома.',
-    question:'Кој документ и која фактичка околност ја потврдуваат конечната верзија?'
-  }));
-  if(t(d.receiveDate)&&t(d.recordDate)&&t(d.receiveDate)!==t(d.recordDate)){
+  if(hasEmailDocument){
+    matter=add(matter,'claim_evidence',claimEvidenceLink({
+      id:'CE-WORKER',claimId:'CL-WORKER',evidenceId:'EV-EMAIL',supportType:'supports',counterevidenceIds:['EV-DISMISSAL']
+    }));
+    matter=add(matter,'contradictions',contradiction({
+      id:'CP-CON-1',
+      left:{text:t(d.employerClaim),sourceId:'DOC-DISMISSAL',page:1},
+      right:{text:t(d.workerClaim),sourceId:'DOC-EMAIL',page:1},
+      meaning:'Спротивставени тврдења за оправданоста/одобрението на спорното отсуство или работа од дома.',
+      question:'Кој документ и која фактичка околност ја потврдуваат конечната верзија?'
+    }));
+  }
+  if(
+    t(d.receiveDate)&&t(d.recordDate)&&t(d.receiveDate)!==t(d.recordDate)
+    && hasDeliveryDocument&&hasInternalRecordDocument
+  ){
     matter=add(matter,'contradictions',contradiction({
       id:'CP-CON-2',
       left:{text:'Врачување според странката: '+t(d.receiveDate),sourceId:'DOC-DELIVERY',page:1},
@@ -159,6 +192,30 @@ export function buildMvpV2CasePilotMatter(input){
     whyMaterial:'Без проверена правна основа не смее да се отклучи PROFESSIONAL употреба.',
     collectionPlan:'Проверка на важечкиот закон, роковите, надлежноста и евентуалната претходна правна заштита.'
   }));
+  if(!hasEmailDocument){
+    matter=add(matter,'evidence_gaps',evidenceGap({
+      id:'GAP-WORKER-CLAIM',
+      issue:'Тврдењето на работникот нема приложен документарен извор во досието.',
+      whyMaterial:'CasePilot не смее да претстави непостоечка е-пошта како регистриран доказ.',
+      collectionPlan:'Да се приложи оригинална е-пошта, порака или друг релевантен доказ и да се провери автентичноста.'
+    }));
+  }
+  if(t(d.receiveDate)&&!hasDeliveryDocument){
+    matter=add(matter,'evidence_gaps',evidenceGap({
+      id:'GAP-DELIVERY',
+      issue:'Наведен е датум на врачување, но не е приложен доказ за врачување.',
+      whyMaterial:'Роковите не смеат да се врзуваат за непостоечки регистриран документ.',
+      collectionPlan:'Да се приложи повратница, потврда за прием или друг оригинален доказ за врачување.'
+    }));
+  }
+  if(t(d.recordDate)&&!hasInternalRecordDocument){
+    matter=add(matter,'evidence_gaps',evidenceGap({
+      id:'GAP-INTERNAL-RECORD',
+      issue:'Наведен е датум од интерна евиденција, но интерниот запис не е приложен.',
+      whyMaterial:'Интерна евиденција не смее да се прикажува како документ ако не е доставена.',
+      collectionPlan:'Да се приложи и провери релевантниот интерен запис.'
+    }));
+  }
   matter=add(matter,'procedural_risks',proceduralRisk({
     id:'RISK-DEADLINE',
     title:'Рок за правна заштита',
@@ -168,8 +225,13 @@ export function buildMvpV2CasePilotMatter(input){
   }));
   matter=add(matter,'ai_findings',aiFinding({
     id:'AI-1',
-    text:'Постојат материјални противречности и невeрификувани докази што бараат адвокатска проверка.',
-    sources:[{sourceId:'DOC-DISMISSAL',page:1},{sourceId:'DOC-EMAIL',page:1}],
+    text:hasEmailDocument
+      ? 'Постојат материјални противречности и невeрификувани докази што бараат адвокатска проверка.'
+      : 'Постојат невeрификувани тврдења и недостасува документарен извор за тврдењето на работникот.',
+    sources:[
+      {sourceId:'DOC-DISMISSAL',page:1},
+      ...(hasEmailDocument?[{sourceId:'DOC-EMAIL',page:1}]:[])
+    ],
     status:'professional_review_required'
   }));
 
