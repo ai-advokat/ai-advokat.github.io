@@ -252,3 +252,26 @@ test('MVP2-27 ISO-formatted matching receipt is recognized by both AST and CaseP
   assert.equal(gapIds.has('GAP-DELIVERY'),false);
   assert.equal(result.casePilot.readiness.sourceProblems.length,0);
 });
+
+
+test('MVP2-28 hyphenated DMY matching receipt remains supported by both AST and CasePilot',()=>{
+  const d={
+    ...fixture(),
+    receiveDate:'2026-09-03',
+    recordDate:'',
+    otherEvidence:'Договор за вработување\nОдлука за отказ\nПовратница од 03-09-2026'
+  };
+  const result=analyzeMvpV2Payload({dossier:d});
+
+  const delivery=result.ast.evidence.filter(e=>/повратница|врачува/i.test(e.title));
+  const dmyReceipt=delivery.find(e=>/03-09-2026/.test(e.title));
+  const fact=result.ast.facts.find(f=>f.id==='F-DELIVERY-CLAIM');
+  assert.ok(dmyReceipt);
+  assert.deepEqual(fact.evidenceIds,[dmyReceipt.id]);
+
+  const timelineIds=new Set(result.casePilot.matter.objects.timeline.map(x=>x.id));
+  const gapIds=new Set(result.casePilot.matter.objects.evidence_gaps.map(x=>x.id));
+  assert.equal(timelineIds.has('T-DELIVERY-CLAIM'),true);
+  assert.equal(gapIds.has('GAP-DELIVERY'),false);
+  assert.equal(result.casePilot.readiness.sourceProblems.length,0);
+});
