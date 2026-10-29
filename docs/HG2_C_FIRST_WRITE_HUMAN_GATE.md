@@ -48,7 +48,7 @@ All items below must be present:
 - D1 Time Travel capability: verified;
 - exact pre-write Time Travel bookmark;
 - Token R name, **D1 Read-only** scope summary and expiry if any — never token value;
-- Token W name, **D1 Edit staging-only** scope summary and expiry — never token value;
+- Token W name, **D1 Write staging-only** scope summary and expiry — never token value;
 - Token R and Token W are distinct credentials; neither is combined with Worker permissions;
 - 0033/0034/0035 Human Review acknowledged;
 - rollback procedure acknowledged.
@@ -73,9 +73,25 @@ On an empty staging database the conditional data mutation in 0034 should have n
 
 1. Token R is used only for the read-only preflight.
 2. The evidence verifier must PASS.
-3. Token W is then provisioned as a separate short-lived **D1 Edit** credential in the dedicated staging account.
+3. Token W is provisioned as a separate short-lived **D1 Write** credential in the dedicated staging account.
 4. Token W must not be used before the decision record below is explicitly approved.
-5. Token R must never be upgraded in place to D1 Edit.
+5. Token R must never be upgraded in place to D1 Write.
+
+## Token W provisioning snapshot
+
+Provisioned on 2026-10-29, but **not used**:
+
+- name: `hg2-c-staging-d1-write`;
+- account scope: entire dedicated `AI ADVOKAT 4 — STAGING` account only;
+- permission: **D1 Write**;
+- start date: 2026-10-29;
+- expiration date: 2026-10-30;
+- IP filtering: all IP addresses;
+- no Worker, route, Workers AI, DNS/zone or production permissions were present in the reviewed token summary;
+- Token W is distinct from Token R;
+- token secret is not recorded in the repository or evidence.
+
+Provisioning does **not** constitute approval to write.
 
 ## Proposed first write
 
@@ -104,7 +120,7 @@ Return to **NO-GO** immediately if any of these are observed:
 - remote application schema exists without a trustworthy `d1_migrations` ledger;
 - any unexpected remote system/application table appears beyond the explicitly accepted reserved `_cf_KV`;
 - pre-write bookmark missing;
-- Token R contains any D1 Edit/Write authority;
+- Token R contains any D1 Write/Edit authority;
 - Token W includes production, all-account, Worker, route, zone/DNS or Workers AI authority;
 - Token R and Token W are the same credential;
 - D1 backend is not Time-Travel capable;
