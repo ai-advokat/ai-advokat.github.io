@@ -229,3 +229,26 @@ test('MVP2-26 CasePilot leaves a mismatched delivery-date claim unanchored and r
   assert.equal(gapIds.has('GAP-DELIVERY'),true);
   assert.equal(result.casePilot.readiness.sourceProblems.length,0);
 });
+
+
+test('MVP2-27 ISO-formatted matching receipt is recognized by both AST and CasePilot layers',()=>{
+  const d={
+    ...fixture(),
+    receiveDate:'2026-09-03',
+    recordDate:'',
+    otherEvidence:'Договор за вработување\nОдлука за отказ\nПовратница од 2026-09-03'
+  };
+  const result=analyzeMvpV2Payload({dossier:d});
+
+  const delivery=result.ast.evidence.filter(e=>/повратница|врачува/i.test(e.title));
+  const isoReceipt=delivery.find(e=>/2026-09-03/.test(e.title));
+  const fact=result.ast.facts.find(f=>f.id==='F-DELIVERY-CLAIM');
+  assert.ok(isoReceipt);
+  assert.deepEqual(fact.evidenceIds,[isoReceipt.id]);
+
+  const timelineIds=new Set(result.casePilot.matter.objects.timeline.map(x=>x.id));
+  const gapIds=new Set(result.casePilot.matter.objects.evidence_gaps.map(x=>x.id));
+  assert.equal(timelineIds.has('T-DELIVERY-CLAIM'),true);
+  assert.equal(gapIds.has('GAP-DELIVERY'),false);
+  assert.equal(result.casePilot.readiness.sourceProblems.length,0);
+});
