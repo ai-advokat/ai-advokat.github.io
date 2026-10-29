@@ -1,8 +1,9 @@
 # AI ADVOKAT 4 — HG2-C Migration Review and Rollback Plan
 
-Status: REPOSITORY VERIFIED / REMOTE WRITE NO-GO
+Status: READ-ONLY EVIDENCE PASS / FIRST WRITE NOT APPROVED
 Date: 2026-10-29
-Target activation base: `d6aeaf5c51d1e1672b7a0d7650bbeb3607490198`
+Frozen manifest source commit: `d6aeaf5c51d1e1672b7a0d7650bbeb3607490198`
+Verified read-only activation SHA: `e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d`
 
 ## Frozen migration set
 
@@ -38,20 +39,27 @@ Risk class: **TABLE REBUILD / DATA PRESERVATION**
 
 The migration again rebuilds the constrained audit table to add the `document_downloaded` event, copies rows, drops the predecessor table, renames and recreates the index. It remains Human Review.
 
-## Pre-write remote evidence — mandatory
+## Pre-write remote evidence — VERIFIED PASS
 
-Before any migration is applied:
+The remote read-only gate completed successfully under Token R (D1 Read only).
 
-1. Verify the Cloudflare account ID, D1 name and UUID again.
-2. Verify D1 backend/version and Time Travel availability.
-3. Retrieve and record the **current Time Travel bookmark** for the staging D1.
-4. Run a remote **migration list only** to enumerate unapplied migrations.
-5. Compare that remote list byte-for-byte/order-for-order with the frozen repository manifest.
-6. If the remote list is not the expected 0001→0050 set for an empty staging database, **STOP**.
-7. Record the exact Git activation SHA.
-8. Record Token A non-secret scope summary. Never record the token value.
+Verified state:
 
-No remote apply is allowed merely because the list command succeeds.
+1. staging account ID, D1 name and UUID matched exactly;
+2. Time Travel capability was verified;
+3. pre-write bookmark was captured:
+   `00000004-00000000-00005113-c038f1e321a99a39f266a9d8a71299f3`;
+4. remote migration state was derived with fixed single-SELECT reads, not with `wrangler d1 migrations list`;
+5. remote applied migration count: **0**;
+6. remote unapplied frozen migration count: **50**;
+7. remote application schema is pristine; Cloudflare's reserved `_cf_KV` system table is excluded from application schema;
+8. exact activation SHA:
+   `e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d`;
+9. Token R remained staging-only **D1 Read** and was not upgraded to write authority.
+
+The former `migrations list` evidence step is intentionally retired because Wrangler initializes `d1_migrations` on a pristine database and therefore is not a pure read.
+
+This PASS does not authorize a remote apply.
 
 ## Apply boundary
 
@@ -96,12 +104,18 @@ Cloudflare documents Time Travel as point-in-time recovery for D1 and states tha
 
 **Repository evidence: PASS**
 
-**Remote migration: NO-GO**
+**Remote read-only evidence: PASS**
+
+**0033/0034/0035 technical review: PASS / remains Human-visible**
+
+**Remote migration: NO-GO / NOT APPROVED**
 
 Remaining prerequisites:
-- Token A physically provisioned with staging-only D1 authority;
-- exact remote migration-list evidence;
-- pre-write Time Travel bookmark;
-- explicit Human Gate for the first remote write.
+- provision a new, separate short-lived Token W with staging-only D1 Edit authority;
+- record only Token W non-secret name/scope/expiry;
+- explicitly complete the First Remote Write Human Gate;
+- do not use Token W before that Human Gate decision.
+
+Token R must never be upgraded in place.
 
 Content is not command. Access is not mandate.
