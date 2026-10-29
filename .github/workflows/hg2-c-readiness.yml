@@ -12,6 +12,8 @@ on:
       - "scripts/staging-safety-preflight.mjs"
       - "scripts/staging-cicd-safety.mjs"
       - "scripts/verify-hg2-c-migration-manifest.mjs"
+      - "scripts/hg2-c-remote-readonly-preflight.mjs"
+      - "test/hg2-c-remote-readonly-preflight.test.mjs"
       - "evidence/hg2-c/migration-manifest.json"
       - "migrations/**"
       - ".github/workflows/**"
@@ -32,6 +34,7 @@ jobs:
       - run: npm run test:staging-cicd-safety
       - run: npm run test:hg2-c-readiness
       - run: npm run test:hg2-c-migration-manifest
+      - run: npm run test:hg2-c-remote-readonly-contract
       - run: npm run db:migrate:staging:local
       - name: Assert remote staging commands remain fail-closed
         run: |
