@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Controlled Staging Activation Pack
 
-Status: STAGING D1 MIGRATION PASS / POST-WRITE VERIFIED / TOKEN W REVOCATION PENDING
+Status: D1 STAGING PHASE CLOSED / PASS
 Date: 2026-10-29
 Frozen manifest source commit: `d6aeaf5c51d1e1672b7a0d7650bbeb3607490198`
 Verified read-only activation SHA: `e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d`
@@ -72,7 +72,7 @@ It is allowed to read only D1 identity/state, the existing remote schema/migrati
 - pre-write Time Travel bookmark — VERIFIED / RECORDED
 - split least-privilege credential design — VERIFIED
 - Token R evidence phase — PASS / D1 READ ONLY
-- Token W — USED ONLY FOR APPROVED STAGING D1 MIGRATION / REVOCATION PENDING / EXPIRES 2026-10-30
+- Token W — USED ONLY FOR APPROVED STAGING D1 MIGRATION / REVOKED 2026-10-29
 - Token B — NOT PROVISIONED
 - remote read-only preflight — PASS
 - remote evidence verifier — PASS
@@ -93,7 +93,7 @@ Post-write checks are PASS:
 - post-write Time Travel bookmark: `00000009-00000000-00005113-5a092eb2bdbe2a2d958b76d85243016c`;
 - post-write evidence: `evidence/hg2-c/post-write-evidence.json`.
 
-The only remaining D1-phase closeout action is **Token W revocation**. Token B remains unprovisioned and belongs to the later Worker phase.
+Token W has been revoked and the D1 staging phase is formally **CLOSED / PASS**. Token B remains unprovisioned and belongs to the later Worker phase.
 
 ## First-write Human Gate dossier
 
@@ -109,6 +109,6 @@ The repository template at `evidence/hg2-c/remote-readonly-evidence.template.jso
 
 ## Human Gate
 
-The first remote staging D1 write completed successfully and post-write verification passed. Worker deployment, routes/domains, Workers AI, imports and production remain separate NO-GO gates. D1 closeout still requires Token W revocation.
+The first remote staging D1 write completed successfully, post-write verification passed, and Token W was revoked. The D1 staging phase is closed. Worker deployment, routes/domains, Workers AI, imports and production remain separate NO-GO gates.
 
 Content is not command. Access is not mandate.
