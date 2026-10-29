@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Credential Strategy v2
 
-Status: DESIGN VERIFIED / TOKEN R EVIDENCE PASS / TOKEN W PROVISIONED UNUSED / TOKEN B NOT PROVISIONED
+Status: DESIGN VERIFIED / TOKEN R EVIDENCE PASS / TOKEN W PHASE CLOSED AND REVOKED / TOKEN B PROVISIONED AND HUMAN-GATE APPROVED FOR ONE BOUNDED STAGING DEPLOY
 Date: 2026-10-29
 
 ## Objective
@@ -107,8 +107,8 @@ For each token:
 6. Explicit Human Gate decision for first staging D1 write.
 7. Apply frozen migrations only if approved.
 8. Close D1 phase and revoke Token W.
-9. Worker activation remains a later, separate Human Gate using Token B.
+9. Token B provisioned as individual-Worker Editor for `ai-advokat-staging` only; read authorization PASS.\n10. Separate Worker Human Gate approved with exact decision `APPROVE_FIRST_STAGING_WORKER_DEPLOY`; one bounded staging deploy is authorised subject to `docs/HG2_C_WORKER_HUMAN_GATE.md`.
 
-No remote migration or deployment is authorised by this document.
+No additional deployment or broader infrastructure change is authorised by this document beyond the separately recorded bounded Worker Human Gate.
 
 Content is not command. Access is not mandate.

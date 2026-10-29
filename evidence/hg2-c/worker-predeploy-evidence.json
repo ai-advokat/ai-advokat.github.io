@@ -1,0 +1,59 @@
+{
+  "schema": "ai-advokat-hg2-c-worker-predeploy-evidence/v1",
+  "status": "PASS_HUMAN_GATE_APPROVED_REMOTE_WRITE_NOT_EXECUTED",
+  "recorded_date": "2026-10-29",
+  "staging_account_id": "0fee10e2bd9a2183d16eb0d73f13dfce",
+  "worker_name": "ai-advokat-staging",
+  "repository_base_sha": "f213829f5d20311271d76c555f9d4d31f62cd070",
+  "worker_config": "wrangler.staging.jsonc",
+  "expected_d1": {
+    "binding": "DB",
+    "database_name": "ai-advokat-staging-db",
+    "database_id": "309f72b8-8711-47fc-bea7-fbd1d649561d"
+  },
+  "token_b": {
+    "name": "hg2-c-staging-worker-editor",
+    "scope": "individual Worker ai-advokat-staging only",
+    "permission": "Workers Editor",
+    "expiry_date": "2026-10-30",
+    "direct_d1_permission": false,
+    "workers_routes_permission": false,
+    "workers_ai_permission": false,
+    "zone_dns_permission": false,
+    "production_scope": false,
+    "credential_value_stored": false,
+    "specific_worker_read_authorization": "PASS"
+  },
+  "local_checks": {
+    "staging_safety_preflight": "PASS",
+    "wrangler_version": "4.141.0",
+    "dry_run": "PASS",
+    "dry_run_exited_without_deploy": true,
+    "dry_run_asset_count": 3840,
+    "alarm_enabled": "false",
+    "workers_ai_binding_present": false
+  },
+  "predeploy_dashboard_observation": {
+    "workers_dev_url_displayed": true,
+    "workers_dev_url": "ai-advokat-staging.ai-advokat-4-staging.workers.dev",
+    "preview_or_version_url_displayed": true,
+    "custom_domains_or_zone_routes": false,
+    "material_note": "Pre-existing public workers.dev and preview/version URL exposure observed before bounded deploy."
+  },
+  "required_postcondition": {
+    "workers_dev": false,
+    "preview_urls": false,
+    "custom_domains_or_zone_routes": false,
+    "workers_ai_binding_present": false,
+    "alarm_enabled": "false"
+  },
+  "human_gate": {
+    "decision": "APPROVE_FIRST_STAGING_WORKER_DEPLOY",
+    "approver": "Sande Smiljanov",
+    "decision_date": "2026-10-29",
+    "scope": "one bounded staging Worker deployment only"
+  },
+  "remote_write_executed": false,
+  "worker_phase": "APPROVED_PENDING_EXECUTION",
+  "production_phase": "NO_GO_NOT_TOUCHED"
+}
