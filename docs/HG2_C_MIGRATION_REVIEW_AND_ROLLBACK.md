@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Migration Review and Rollback Plan
 
-Status: FIRST STAGING D1 WRITE PASS / POST-WRITE VERIFIED / TOKEN W REVOCATION PENDING
+Status: D1 STAGING PHASE CLOSED / PASS
 Date: 2026-10-29
 Frozen manifest source commit: `d6aeaf5c51d1e1672b7a0d7650bbeb3607490198`
 Verified read-only activation SHA: `e2e3efc7d513269555dfa2a60ac7a9c7b7a4288d`
@@ -127,12 +127,12 @@ Cloudflare documents Time Travel as point-in-time recovery for D1 and states tha
 
 **Post-write Time Travel bookmark: RECORDED**
 
-**Token W revocation: PENDING**
+**Token W revocation: REVOKED**
 
 **Worker deployment: NO-GO / NOT STARTED**
 
 **Production: NO-GO**
 
-The D1 staging phase is not declared fully closed until Token W is revoked and the evidence status is advanced from revocation-pending to closed.
+Token W was revoked after post-write verification. The evidence status is `PASS_D1_STAGING_PHASE_CLOSED`; the D1 staging phase is formally closed.
 
 Content is not command. Access is not mandate.
