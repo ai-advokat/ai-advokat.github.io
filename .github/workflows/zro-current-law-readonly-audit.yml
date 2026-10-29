@@ -36,9 +36,35 @@ jobs:
       - name: ZRO source/reconstruction readiness
         run: npm run test:zro-current-status-recheck
 
-  live-readonly:
-    if: github.event_name != 'pull_request'
+
+  identity-isolation-gate:
     needs: offline-source-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify production identity and dedicated staging isolation
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const strip=(s)=>s.replace(/\/\*[\s\S]*?\*\//g,"").replace(/^\s*\/\/.*$/gm,"");
+          const p=JSON.parse(strip(fs.readFileSync("wrangler.jsonc","utf8"))).d1_databases?.[0];
+          const staging=JSON.parse(strip(fs.readFileSync("wrangler.staging.jsonc","utf8")));
+          const d=staging.d1_databases?.[0];
+          const m=JSON.parse(strip(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"))).d1_databases?.[0];
+          if(!p || p.database_name!=="ai-advokat-db" || p.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-staging-db" || d.database_id!=="309f72b8-8711-47fc-bea7-fbd1d649561d") throw new Error("Unexpected dedicated staging D1");
+          if(!m || m.binding!=="PREVIEW_DB" || m.database_name!==d.database_name || m.database_id!==d.database_id) throw new Error("Local migration target mismatch");
+          if(p.database_id===d.database_id) throw new Error("D1 identity collision");
+          if(staging.workers_dev!==false || staging.preview_urls!==false) throw new Error("Dedicated staging exposure must remain disabled");
+          if(Object.prototype.hasOwnProperty.call(staging,"ai")) throw new Error("Workers AI binding must remain absent before HG2-C");
+          console.log("DEDICATED STAGING IDENTITY / ISOLATION: PASS");
+          NODE
+
+  production-readonly:
+    if: github.event_name != 'pull_request'
+    needs: [offline-source-gate, identity-isolation-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
@@ -53,21 +79,11 @@ jobs:
       - name: Install tooling
         run: npm install --ignore-scripts --no-audit --no-fund
 
-      - name: Verify exact D1 identities
+      - name: Fail closed if production read-only credentials are missing
         shell: bash
         run: |
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
-          node <<'NODE'
-          const fs=require("fs");
-          const strip=(s)=>s.replace(/\/\*[\s\S]*?\*\//g,"").replace(/^\s*\/\/.*$/gm,"");
-          const p=JSON.parse(strip(fs.readFileSync("wrangler.jsonc","utf8"))).d1_databases?.[0];
-          const s=JSON.parse(strip(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"))).d1_databases?.[0];
-          if(!p || p.database_name!=="ai-advokat-db" || p.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
-          if(!s || s.binding!=="PREVIEW_DB" || s.database_name!=="ai-advokat-db-staging" || s.database_id!=="eb560e98-9fc0-408e-9c81-9b823ffde44d") throw new Error("Unexpected staging D1");
-          if(p.database_id===s.database_id) throw new Error("D1 identity collision");
-          console.log("D1 IDENTITIES: PASS");
-          NODE
 
       - name: Read ZRO snapshot state
         shell: bash
@@ -92,9 +108,8 @@ jobs:
                 WHERE li.canonical_key='mk:zro'
                 GROUP BY li.canonical_key;"
           npx wrangler d1 execute ai-advokat-db --remote --json --command "$SQL" > /tmp/zro-prod.json
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "$SQL" > /tmp/zro-stg.json
 
-      - name: Assert exact non-current snapshot in production and staging
+      - name: Assert exact non-current production snapshot
         shell: bash
         run: |
           node <<'NODE'
@@ -105,19 +120,19 @@ jobs:
             sha:"f0b178227052c960ef9d86218a98b005654550c1b78633858b9fc1a6ccf5d655",
             label:"official-consolidated-snapshot-through-111/2023"
           };
-          for(const [name,path] of [["production","/tmp/zro-prod.json"],["staging","/tmp/zro-stg.json"]]){
-            const row=JSON.parse(fs.readFileSync(path,"utf8"))?.[0]?.results?.[0];
-            if(!row) throw new Error(name+": missing ZRO state");
-            if(Number(row.article_count)!==expected.count) throw new Error(name+": article count drift");
-            if(Number(row.null_version_count)!==0 || Number(row.bound_versions)!==1) throw new Error(name+": version binding drift");
-            if(Number(row.url_count)!==1 || row.source_url!==expected.url) throw new Error(name+": source URL drift");
-            if(Number(row.hash_count)!==1 || row.source_sha256!==expected.sha) throw new Error(name+": source hash drift");
-            if(row.version_label!==expected.label) throw new Error(name+": version label drift");
-            if(Number(row.max_is_current)!==0) throw new Error(name+": current version promotion detected");
-            if(Number(row.approved_version_rows)!==0 || Number(row.approved_article_rows)!==0) throw new Error(name+": Human Gate approval detected");
-            if(Number(row.current_article_rows)!==0) throw new Error(name+": current_consolidated article detected");
-            console.log(name.toUpperCase()+" ZRO SNAPSHOT: PASS");
-          }
+          const name="production";
+          const row=JSON.parse(fs.readFileSync("/tmp/zro-prod.json","utf8"))?.[0]?.results?.[0];
+          if(!row) throw new Error(name+": missing ZRO state");
+          if(Number(row.article_count)!==expected.count) throw new Error(name+": article count drift");
+          if(Number(row.null_version_count)!==0 || Number(row.bound_versions)!==1) throw new Error(name+": version binding drift");
+          if(Number(row.url_count)!==1 || row.source_url!==expected.url) throw new Error(name+": source URL drift");
+          if(Number(row.hash_count)!==1 || row.source_sha256!==expected.sha) throw new Error(name+": source hash drift");
+          if(row.version_label!==expected.label) throw new Error(name+": version label drift");
+          if(Number(row.max_is_current)!==0) throw new Error(name+": current version promotion detected");
+          if(Number(row.approved_version_rows)!==0 || Number(row.approved_article_rows)!==0) throw new Error(name+": Human Gate approval detected");
+          if(Number(row.current_article_rows)!==0) throw new Error(name+": current_consolidated article detected");
+          console.log("PRODUCTION ZRO SNAPSHOT: PASS");
+          console.log("STAGING ZRO SNAPSHOT: REMOTE CHECK DEFERRED UNTIL HG2-C");
           NODE
 
       - name: Read 2025 amendment-event state
@@ -131,23 +146,14 @@ jobs:
                   AND source_issue_number IN ('39/2025','74/2025','124/2025')
                 GROUP BY source_issue_number ORDER BY source_issue_number;"
           npx wrangler d1 execute ai-advokat-db --remote --json --command "$SQL" > /tmp/zro-events-prod.json
-          npx wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --json --command "$SQL" > /tmp/zro-events-stg.json
 
-      - name: Assert governed event topology
+      - name: Assert governed production event topology
         shell: bash
         run: |
           node <<'NODE'
           const fs=require("fs");
           const expected={"39/2025":4,"74/2025":26,"124/2025":2};
           const rows=p=>JSON.parse(fs.readFileSync(p,"utf8"))?.[0]?.results??[];
-
-          const stg=rows("/tmp/zro-events-stg.json");
-          const sm=Object.fromEntries(stg.map(r=>[r.source_issue_number,Number(r.event_count)]));
-          for(const [issue,count] of Object.entries(expected)){
-            if(sm[issue]!==count) throw new Error("staging amendment event topology drift: "+JSON.stringify(sm));
-          }
-          if(Object.keys(sm).length!==Object.keys(expected).length) throw new Error("staging has unexpected amendment issue(s): "+JSON.stringify(sm));
-          if(stg.some(r=>Number(r.approved_count)!==0)) throw new Error("staging amendment events unexpectedly approved");
 
           const prod=rows("/tmp/zro-events-prod.json");
           const total=prod.reduce((n,r)=>n+Number(r.event_count||0),0);
@@ -160,7 +166,7 @@ jobs:
             if(Object.keys(pm).length!==Object.keys(expected).length) throw new Error("production has unexpected amendment issue(s): "+JSON.stringify(pm));
             if(prod.some(r=>Number(r.approved_count)!==0)) throw new Error("production amendment events unexpectedly approved");
           }
-          console.log("STAGING ZRO EVENTS: PASS 32");
           console.log("PRODUCTION ZRO EVENTS: "+(total===0?"ABSENT":"FULL_PENDING_32"));
+          console.log("STAGING ZRO EVENTS: REMOTE CHECK DEFERRED UNTIL HG2-C");
           console.log("ZRO CURRENT-LAW READ-ONLY AUDIT: PASS");
           NODE
