@@ -115,7 +115,16 @@ export function mapMvpDossierToLegalAst(input,{generatedAt='2026-10-24T21:00:00Z
   const contractId=eid(/договор/);
   const dismissalId=eid(/отказ|одлука/);
   const emailId=text(d.emailText)?eid(/е-?пошта|email|мејл/):null;
-  const deliveryId=text(d.receiveDate)?eid(/врач|поврат/):null;
+  const deliveryId=text(d.receiveDate)
+    ? evidence.find(e=>{
+        if(!/врач|поврат/i.test(e.title)) return false;
+        const date=deliveryDate(e.title);
+        if(date) return date===text(d.receiveDate);
+        // semanticEvidenceTitles creates this undated placeholder only when no
+        // supplied delivery document matches the claimed delivery date.
+        return /^Доказ за врачување \/ повратница$/i.test(e.title);
+      })?.id || null
+    : null;
 
   const facts=[
     {id:'F-1',text:`Работниот однос е наведен со почеток ${dateLabel(d.startDate)} на работното место ${text(d.job)}.`,status:'unverified',requiredForProfessional:true,evidenceIds:contractId?[contractId]:[]},
