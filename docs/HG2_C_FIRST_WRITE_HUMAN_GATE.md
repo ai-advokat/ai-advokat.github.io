@@ -7,7 +7,7 @@ Date: 2026-10-29
 
 This is the final decision gate before the first remote write to the dedicated staging D1.
 
-A Human Gate may be considered only after a real read-only preflight has produced non-secret evidence and that evidence passes:
+A Human Gate may be considered only after a real read-only preflight using **Token R (D1 Read only)** has produced non-secret evidence and that evidence passes:
 
 `node scripts/verify-hg2-c-remote-evidence.mjs <evidence.json>`
 
@@ -24,7 +24,9 @@ All items below must be present:
 - exact migration-set match: true;
 - D1 Time Travel capability: verified;
 - exact pre-write Time Travel bookmark;
-- Token A name, scope summary and expiry if any — never token value;
+- Token R name, **D1 Read-only** scope summary and expiry if any — never token value;
+- Token W name, **D1 Edit staging-only** scope summary and expiry — never token value;
+- Token R and Token W are distinct credentials; neither is combined with Worker permissions;
 - 0033/0034/0035 Human Review acknowledged;
 - rollback procedure acknowledged.
 
@@ -37,6 +39,14 @@ The Human Gate must explicitly acknowledge:
 - **0035** — audit table rebuild / copy / drop / rename.
 
 On an empty staging database the conditional data mutation in 0034 should have no rows to change, but this must not be assumed without the remote evidence showing the expected empty/unapplied state.
+
+## Credential sequence before decision
+
+1. Token R is used only for the read-only preflight.
+2. The evidence verifier must PASS.
+3. Token W is then provisioned as a separate short-lived **D1 Edit** credential in the dedicated staging account.
+4. Token W must not be used before the decision record below is explicitly approved.
+5. Token R must never be upgraded in place to D1 Edit.
 
 ## Proposed first write
 
@@ -63,7 +73,9 @@ Return to **NO-GO** immediately if any of these are observed:
 - account/D1 identity mismatch;
 - remote migration list differs from the frozen manifest;
 - pre-write bookmark missing;
-- Token A scope includes production or broader-than-approved authority;
+- Token R contains any D1 Edit/Write authority;
+- Token W includes production, all-account, Worker, route, zone/DNS or Workers AI authority;
+- Token R and Token W are the same credential;
 - D1 backend is not Time-Travel capable;
 - migration application reports an unexpected file/order;
 - post-write ledger/schema does not exactly match;
@@ -84,7 +96,9 @@ Before the first write, record:
 - Decision timestamp UTC:
 - Activation Git SHA:
 - Pre-write bookmark:
-- Token A non-secret scope summary:
+- Token R non-secret scope summary:
+- Token W non-secret scope summary:
+- Token R and Token W are distinct: YES/NO
 - Migration manifest: `evidence/hg2-c/migration-manifest.json`
 - Remote evidence file:
 - 0033 reviewed: YES/NO
