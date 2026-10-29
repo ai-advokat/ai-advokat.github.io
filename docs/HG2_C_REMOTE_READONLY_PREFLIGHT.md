@@ -58,8 +58,10 @@ The preflight passes only if:
 - account ID exactly matches the dedicated staging account;
 - D1 identity matches `ai-advokat-staging-db` / `309f72b8-8711-47fc-bea7-fbd1d649561d`;
 - D1 Time Travel capability is proven by a successful read-only Time Travel query and a current bookmark;
-- remote schema inspection is one of:
-  - a pristine D1 with zero user tables; or
+- remote schema inspection distinguishes Cloudflare's reserved D1 system table `_cf_KV` from application tables;
+- the only accepted reserved D1 system-table allowlist entry is `_cf_KV`; any other unexpected table remains STOP / NO-GO;
+- remote application schema inspection is one of:
+  - a pristine D1 with zero application tables (the reserved `_cf_KV` may still be present); or
   - an existing `d1_migrations` ledger that can be read without modification;
 - no unmanaged schema exists outside the migration ledger;
 - remote applied migration count is zero;
@@ -78,7 +80,8 @@ Record only non-secret evidence:
 - D1 Time Travel capability;
 - migration-state basis (`pristine-empty-d1` or existing ledger);
 - migration-ledger presence flag;
-- remote user-table count;
+- remote application-table count;
+- observed reserved D1 system tables (currently only `_cf_KV` is accepted);
 - exact remote applied and unapplied migration counts;
 - exact-match result against the frozen manifest;
 - pre-write Time Travel bookmark;

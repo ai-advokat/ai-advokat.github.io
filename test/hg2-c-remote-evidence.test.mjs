@@ -29,6 +29,7 @@ function validEvidence() {
     migration_state_basis: "pristine-empty-d1",
     migration_ledger_present: false,
     remote_user_table_count: 0,
+    d1_system_tables_observed: ["_cf_KV"],
     d1_backend_time_travel_capable: true,
     bookmark_evidence_present: true,
     pre_write_bookmark: "00000085-0000024c-00004c6d-8e61117bf38d7adb71b934ebbf891683",
@@ -93,4 +94,12 @@ test("pristine evidence with a ledger is rejected", () => {
   const result = runEvidence(evidence);
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /pristine D1 must not report a migration ledger/);
+});
+
+test("unexpected D1 system table evidence is rejected", () => {
+  const evidence = validEvidence();
+  evidence.d1_system_tables_observed = ["_cf_KV", "_cf_UNKNOWN"];
+  const result = runEvidence(evidence);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /unexpected D1 system tables observed/);
 });

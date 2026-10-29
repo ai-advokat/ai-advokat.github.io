@@ -18,5 +18,8 @@
   "migration_count_remote_applied": 0,
   "migration_state_basis": "REPLACE_WITH_pristine-empty-d1_OR_existing-d1-migrations-ledger",
   "migration_ledger_present": false,
-  "remote_user_table_count": 0
+  "remote_user_table_count": 0,
+  "d1_system_tables_observed": [
+    "_cf_KV"
+  ]
 }

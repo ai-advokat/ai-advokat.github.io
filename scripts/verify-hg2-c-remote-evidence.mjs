@@ -52,6 +52,13 @@ if (typeof evidence.migration_ledger_present !== "boolean") fail("migration ledg
 if (!Number.isInteger(evidence.remote_user_table_count) || evidence.remote_user_table_count < 0) {
   fail("remote table count missing or invalid");
 }
+if (!Array.isArray(evidence.d1_system_tables_observed)) {
+  fail("D1 system table evidence missing");
+}
+const unexpectedSystemTables = evidence.d1_system_tables_observed.filter((name) => name !== "_cf_KV");
+if (unexpectedSystemTables.length > 0) {
+  fail(`unexpected D1 system tables observed: ${unexpectedSystemTables.join(", ")}`);
+}
 if (evidence.migration_state_basis === "pristine-empty-d1") {
   if (evidence.migration_ledger_present !== false) fail("pristine D1 must not report a migration ledger");
   if (evidence.remote_user_table_count !== 0) fail("pristine D1 must report zero user tables");

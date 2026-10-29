@@ -27,6 +27,8 @@ test("HG2-C remote preflight contains only approved read operations", () => {
 
   assert.match(source, /SELECT name FROM sqlite_master/);
   assert.match(source, /SELECT name FROM "d1_migrations"/);
+  assert.match(source, /KNOWN_D1_SYSTEM_TABLES = new Set\(\["_cf_KV"\]\)/);
+  assert.doesNotMatch(source, /KNOWN_D1_SYSTEM_TABLES = new Set\(\["[^"]+",\s*"[^"]+"/);
   assert.match(source, /only SELECT statements are allowed/);
   assert.match(source, /multiple SQL statements are forbidden/);
 
