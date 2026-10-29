@@ -34,6 +34,32 @@ jobs:
       - name: Current-law readiness gate
         run: npm run test:current-law-readiness
 
+
+  identity-isolation-gate:
+    needs: [offline-readiness, identity-isolation-gate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify production identity and dedicated staging isolation
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const strip=(s)=>s.replace(/\/\*[\s\S]*?\*\//g,"").replace(/^\s*\/\/.*$/gm,"");
+          const p=JSON.parse(strip(fs.readFileSync("wrangler.jsonc","utf8"))).d1_databases?.[0];
+          const staging=JSON.parse(strip(fs.readFileSync("wrangler.staging.jsonc","utf8")));
+          const d=staging.d1_databases?.[0];
+          const m=JSON.parse(strip(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8"))).d1_databases?.[0];
+          if(!p || p.database_name!=="ai-advokat-db" || p.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-staging-db" || d.database_id!=="309f72b8-8711-47fc-bea7-fbd1d649561d") throw new Error("Unexpected dedicated staging D1");
+          if(!m || m.binding!=="PREVIEW_DB" || m.database_name!==d.database_name || m.database_id!==d.database_id) throw new Error("Local migration target mismatch");
+          if(p.database_id===d.database_id) throw new Error("D1 identity collision");
+          if(staging.workers_dev!==false || staging.preview_urls!==false) throw new Error("Dedicated staging exposure must remain disabled");
+          if(Object.prototype.hasOwnProperty.call(staging,"ai")) throw new Error("Workers AI binding must remain absent before HG2-C");
+          console.log("DEDICATED STAGING IDENTITY / ISOLATION: PASS");
+          NODE
+
   production-readonly:
     if: github.event_name != 'pull_request'
     needs: offline-readiness
@@ -56,28 +82,6 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
-
-      - name: Verify production identity and dedicated staging isolation
-        shell: bash
-        run: |
-          node <<'NODE'
-          const fs=require("fs");
-          const strip=(s)=>s.replace(/\/\*[\s\S]*?\*\//g,"").replace(/^\s*\/\/.*$/gm,"");
-          const prod=JSON.parse(strip(fs.readFileSync("wrangler.jsonc","utf8")));
-          const staging=JSON.parse(strip(fs.readFileSync("wrangler.staging.jsonc","utf8")));
-          const migration=JSON.parse(strip(fs.readFileSync("wrangler.preview-migrations.jsonc","utf8")));
-          const p=prod.d1_databases?.[0];
-          const s=staging.d1_databases?.[0];
-          const m=migration.d1_databases?.[0];
-
-          if(!p || p.database_name!=="ai-advokat-db" || p.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1 identity");
-          if(!s || s.binding!=="DB" || s.database_name!=="ai-advokat-staging-db" || s.database_id!=="309f72b8-8711-47fc-bea7-fbd1d649561d") throw new Error("Unexpected dedicated staging D1 identity");
-          if(!m || m.binding!=="PREVIEW_DB" || m.database_name!==s.database_name || m.database_id!==s.database_id) throw new Error("Local migration target does not match dedicated staging D1");
-          if(p.database_id===s.database_id) throw new Error("Production and staging must be different databases");
-          if(staging.workers_dev!==false || staging.preview_urls!==false) throw new Error("Dedicated staging exposure must remain disabled");
-          console.log("PRODUCTION D1 IDENTITY: PASS");
-          console.log("DEDICATED STAGING IDENTITY: PASS / REMOTE DATA CHECK DEFERRED UNTIL HG2-C");
-          NODE
 
       - name: Read-only production snapshot state query
         shell: bash
