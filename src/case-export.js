@@ -365,9 +365,9 @@ function wParagraph(text,{style="Normal",bold=false}={}){
   return parts.map(line=>`<w:p><w:pPr><w:pStyle w:val="${style}"/></w:pPr><w:r>${bold?"<w:rPr><w:b/></w:rPr>":""}<w:t xml:space="preserve">${xmlEscape(line||" ")}</w:t></w:r></w:p>`).join("");
 }
 
-function docxDocumentXml(report){
+function docxDocumentXmlFromBlocks(blocks){
   const body=[];
-  for(const block of caseExportBlocks(report)){
+  for(const block of blocks){
     const style=block.kind==="title" ? "Title"
       : block.kind==="heading1" ? "Heading1"
       : block.kind==="heading2" ? "Heading2"
@@ -379,6 +379,10 @@ function docxDocumentXml(report){
   body.push('<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>');
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body.join("")}</w:body></w:document>`;
+}
+
+function docxDocumentXml(report){
+  return docxDocumentXmlFromBlocks(caseExportBlocks(report));
 }
 
 function docxStylesXml(){
@@ -453,11 +457,10 @@ function zipStore(entries){
   return concatBytes([...locals,...centrals,end]);
 }
 
-export function renderCaseExportDocxBytes(reportInput){
-  const report=reportInput?.exportVersion===CASE_EXPORT_VERSION ? reportInput : normalizeCaseExportReport(reportInput);
+function renderDocxPackage({title,generatedAt,documentXml}){
   const core=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-<dc:title>${xmlEscape(report.title)}</dc:title><dc:creator>AI Advokat CasePilot</dc:creator><cp:lastModifiedBy>AI Advokat CasePilot</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${xmlEscape(report.generatedAt)}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${xmlEscape(report.generatedAt)}</dcterms:modified></cp:coreProperties>`;
+<dc:title>${xmlEscape(title)}</dc:title><dc:creator>AI Advokat CasePilot</dc:creator><cp:lastModifiedBy>AI Advokat CasePilot</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${xmlEscape(generatedAt)}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${xmlEscape(generatedAt)}</dcterms:modified></cp:coreProperties>`;
   const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -476,10 +479,42 @@ export function renderCaseExportDocxBytes(reportInput){
     {name:"[Content_Types].xml",data:contentTypes},
     {name:"_rels/.rels",data:rels},
     {name:"docProps/core.xml",data:core},
-    {name:"word/document.xml",data:docxDocumentXml(report)},
+    {name:"word/document.xml",data:documentXml},
     {name:"word/styles.xml",data:docxStylesXml()},
     {name:"word/_rels/document.xml.rels",data:docRels}
   ]);
+}
+
+export function renderCaseExportDocxBytes(reportInput){
+  const report=reportInput?.exportVersion===CASE_EXPORT_VERSION ? reportInput : normalizeCaseExportReport(reportInput);
+  return renderDocxPackage({
+    title:report.title,
+    generatedAt:report.generatedAt,
+    documentXml:docxDocumentXml(report)
+  });
+}
+
+export function renderCaseExportDocxBlocksBytes({title,generatedAt,blocks}={}){
+  const safeTitle=cleanText(title,{max:240,required:true,label:"title"});
+  const safeGeneratedAt=isoDate(generatedAt||new Date().toISOString());
+  if(!Array.isArray(blocks) || blocks.length===0 || blocks.length>5000){
+    throw new Error("case_export_docx_blocks_invalid");
+  }
+  const allowed=new Set(["title","warning","meta","heading1","heading2","body","source"]);
+  const safeBlocks=blocks.map(block=>{
+    if(!block||typeof block!=="object"||Array.isArray(block)||!allowed.has(block.kind)){
+      throw new Error("case_export_docx_block_invalid");
+    }
+    return Object.freeze({
+      kind:block.kind,
+      text:cleanText(block.text,{max:MAX_ITEM_TEXT,required:true,label:"docx_block_text"})
+    });
+  });
+  return renderDocxPackage({
+    title:safeTitle,
+    generatedAt:safeGeneratedAt,
+    documentXml:docxDocumentXmlFromBlocks(safeBlocks)
+  });
 }
 
 function asciiBytes(value){

@@ -1,0 +1,134 @@
+{
+  "version": "1.0.0",
+  "id": "PROFESSIONAL_DOCX_ENGINE_V1",
+  "status": "draft_isolated_pr_c",
+  "dependency": {
+    "type": "stacked_pr",
+    "parentPr": 388,
+    "parentBranch": "feat/legal-document-export-v1-pr-b-20261024",
+    "parentHead": "f649672172e5b558f5f89084684949cc5590ca0b",
+    "rationale": "PR-C formats the governed Legal Document AST and must not duplicate or merge PR-B into main."
+  },
+  "ownerConstraints": {
+    "production": false,
+    "merge": false,
+    "migrations": false,
+    "paidProviderTests": false,
+    "realClientData": false,
+    "pr386Untouched": true,
+    "pr387Untouched": true,
+    "pr388RemainsDraft": true
+  },
+  "profile": {
+    "court": "legal-court-v1",
+    "review": "legal-review-v1",
+    "page": "A4",
+    "font": "Verdana",
+    "fontSizePt": 10,
+    "marginsMm": 25,
+    "lineSpacing": "1.15",
+    "nativeNumbering": [
+      "upperRoman",
+      "decimal"
+    ],
+    "footer": "page-number-only"
+  },
+  "courtBlocks": [
+    "court",
+    "parties",
+    "subject",
+    "pleading_heading",
+    "facts",
+    "legal_basis",
+    "evidence_proposals",
+    "petitum",
+    "attachments",
+    "signature"
+  ],
+  "layoutControls": [
+    "keepNext",
+    "keepLines",
+    "cantSplit",
+    "page-break-safe-section-order"
+  ],
+  "zeroLeak": {
+    "courtExcludes": [
+      "Internal Review Annex",
+      "Human Gate reviewer/timestamp/decision reference",
+      "source IDs and locators",
+      "Source Manifest",
+      "Provenance appendix",
+      "internal status metadata",
+      "comments",
+      "customXml"
+    ],
+    "documentProperties": "generic non-case-specific court metadata",
+    "footer": "page number only"
+  },
+  "professionalGate": {
+    "source": "PR-B legalDocumentExportBundle",
+    "failureMode": "fail_closed",
+    "humanGateAloneInsufficient": true
+  },
+  "casePilotCompatibility": {
+    "defaultCasePilotStylingModified": false,
+    "defaultCasePilotRendererCalledByPrC": false,
+    "regressionRequired": true
+  },
+  "acceptance": [
+    {
+      "id": "PRC-01"
+    },
+    {
+      "id": "PRC-02"
+    },
+    {
+      "id": "PRC-03"
+    },
+    {
+      "id": "PRC-04"
+    },
+    {
+      "id": "PRC-05"
+    },
+    {
+      "id": "PRC-06"
+    },
+    {
+      "id": "PRC-07"
+    },
+    {
+      "id": "PRC-08"
+    },
+    {
+      "id": "PRC-09"
+    },
+    {
+      "id": "PRC-10"
+    },
+    {
+      "id": "PRC-11"
+    },
+    {
+      "id": "PRC-12"
+    },
+    {
+      "id": "PRC-13"
+    },
+    {
+      "id": "PRC-14"
+    },
+    {
+      "id": "PRC-15"
+    },
+    {
+      "id": "PRC-16"
+    }
+  ],
+  "prDExcluded": [
+    "substantive legal-quality scoring",
+    "citation completeness adjudication",
+    "legal reasoning quality gate",
+    "production activation"
+  ]
+}
