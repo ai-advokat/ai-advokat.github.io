@@ -1,7 +1,7 @@
 # AI ADVOKAT 4 — HG2-B6 Staging CI/CD Design
 
-Status: DESIGN / REPOSITORY-ONLY  
-Date: 2026-10-29  
+Status: DESIGN / REPOSITORY-ONLY
+Date: 2026-10-29
 Production activation: NOT AUTHORISED
 
 ## Authoritative staging resources
