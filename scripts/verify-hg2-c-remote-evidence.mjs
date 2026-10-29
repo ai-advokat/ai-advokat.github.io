@@ -52,8 +52,8 @@ if (typeof evidence.token_a_name !== "string" || !evidence.token_a_name.trim()) 
 if (typeof evidence.token_a_scope_summary !== "string" || !evidence.token_a_scope_summary.trim()) fail("Token A scope summary missing");
 if (!evidence.token_a_scope_summary.includes(EXPECTED.account)) fail("Token A scope summary must identify the dedicated staging account");
 if (!/D1/i.test(evidence.token_a_scope_summary)) fail("Token A scope summary must identify D1 authority");
-if (/production|12ece285-74bb-4f27-a025-2dbd1be6c59a|ai-advokat-db\b/i.test(evidence.token_a_scope_summary)) {
-  fail("Token A scope summary contains production authority/reference");
+if (/12ece285-74bb-4f27-a025-2dbd1be6c59a|\\bai-advokat-db\\b|all\\s+accounts|account-wide/i.test(evidence.token_a_scope_summary)) {
+  fail("Token A scope summary contains production or overly broad authority/reference");
 }
 const verifiedAt = Date.parse(evidence.verified_at_utc || "");
 if (!Number.isFinite(verifiedAt)) fail("verification timestamp missing or invalid");
