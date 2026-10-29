@@ -370,9 +370,9 @@ function blocker(code,objectId,summary){
 }
 
 export function legalDocumentReadiness(astInput,{serverHumanGate=null}={}){
-  const ast=astInput?.version===LEGAL_DOCUMENT_AST_VERSION&&astInput?.exportVersion===LEGAL_DOCUMENT_EXPORT_VERSION
-    ? astInput
-    : normalizeLegalDocumentAst(astInput);
+  // Always normalize caller-supplied ASTs. Version fields are public metadata and
+  // must never act as a trust marker that bypasses authority/source validation.
+  const ast=normalizeLegalDocumentAst(astInput);
   const gate=normalizeHumanGate(serverHumanGate||ast.humanGate);
   const blockers=[];
 
@@ -688,9 +688,9 @@ function buildReports(ast,mode,gate,readiness){
 
 export function legalDocumentExportBundle(astInput,{mode="working",serverHumanGate=null}={}){
   if(!LEGAL_DOCUMENT_EXPORT_MODES.includes(mode)) throw new Error("legal_document_export_mode_invalid");
-  const ast=astInput?.version===LEGAL_DOCUMENT_AST_VERSION&&astInput?.exportVersion===LEGAL_DOCUMENT_EXPORT_VERSION
-    ? astInput
-    : normalizeLegalDocumentAst(astInput);
+  // Treat every external AST as untrusted input, even when it carries the current
+  // version/exportVersion fields. Normalization is the authority-validation gate.
+  const ast=normalizeLegalDocumentAst(astInput);
   const readiness=legalDocumentReadiness(ast,{serverHumanGate});
   if(mode==="professional"&&!readiness.professionalReady){
     throw new Error("legal_document_professional_blocked");
