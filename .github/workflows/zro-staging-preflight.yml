@@ -1,4 +1,4 @@
-name: ZRO staging preflight [HG2-C LOCKED]
+name: zro-staging-preflight [HG2-C LOCKED]
 
 on:
   workflow_dispatch:
@@ -7,12 +7,12 @@ permissions:
   contents: read
 
 jobs:
-  hg2-c-human-gate-required:
+  hg2-c-lock:
     runs-on: ubuntu-latest
     steps:
-      - name: Fail closed before any remote staging action
+      - name: Fail closed until dedicated staging activation
         run: |
-          echo "::error::LOCKED: this legacy staging workflow is disabled under HG2-B6."
-          echo "The previous staging target and credentials are obsolete after staging-account isolation."
-          echo "Remote D1 access, Worker deployment, routes, domains, bindings, imports, and migrations require the later HG2-C activation package."
+          echo "::error::LOCKED: staging workflow 'zro-staging-preflight.yml' is disabled before HG2-C."
+          echo "Only .github/workflows/paragraf-migration-staging.yml may execute staging-related validation, and it is local-only."
+          echo "No Cloudflare credential, remote D1 operation, migration, deploy, binding, route, domain, import, or storage action is authorised here."
           exit 2

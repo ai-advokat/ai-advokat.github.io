@@ -4,29 +4,32 @@ import fs from "node:fs";
 
 const wf=fs.readFileSync(".github/workflows/zro-human-gate-review-packets.yml","utf8");
 
-test("ZRO-WF1 Human Gate packet builder runs from main or manual dispatch",()=>{
-  assert.match(wf,/branches:\s*\n\s*- main/);
+test("ZRO-WF1 legacy remote Human Gate builder is visibly HG2-C locked",()=>{
+  assert.match(wf,/\[HG2-C LOCKED\]/);
   assert.match(wf,/workflow_dispatch:/);
+  assert.doesNotMatch(wf,/branches:\s*\n\s*- main/);
+  assert.match(wf,/exit 2/);
 });
 
-test("ZRO-WF2 workflow reads staging only and never targets production D1 for SQL execution",()=>{
-  const execLines=wf.split("\n").filter(x=>/wrangler d1 execute/.test(x));
-  assert.ok(execLines.length>=3);
-  for(const line of execLines){
-    assert.match(line,/d1 execute PREVIEW_DB /,line);
-    assert.doesNotMatch(line,/d1 execute ai-advokat-db /,line);
-  }
+test("ZRO-WF2 locked workflow has no Cloudflare credential or remote D1 capability",()=>{
+  assert.doesNotMatch(wf,/CLOUDFLARE_API_TOKEN/);
+  assert.doesNotMatch(wf,/CLOUDFLARE_ACCOUNT_ID/);
+  assert.doesNotMatch(wf,/secrets\./);
+  assert.doesNotMatch(wf,/wrangler d1 execute/);
+  assert.doesNotMatch(wf,/--remote/);
+  assert.doesNotMatch(wf,/wrangler deploy/);
 });
 
-test("ZRO-WF3 workflow contains no migration file application or SQL mutations",()=>{
+test("ZRO-WF3 locked workflow contains no migration application or SQL mutation",()=>{
+  assert.doesNotMatch(wf,/migrations\s+apply/);
   assert.doesNotMatch(wf,/--file\s+migrations\//);
-  assert.doesNotMatch(wf,/\b(INSERT|UPDATE|DELETE|REPLACE)\b/i);
+  assert.doesNotMatch(wf,/\b(INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER)\b/i);
 });
 
-test("ZRO-WF4 packet builder fails closed on exact article/event topology",()=>{
-  assert.match(wf,/assert len\(articles\)==26/);
-  assert.match(wf,/assert len\(events\)==32/);
-  assert.match(wf,/assert len\(packet_list\)==27/);
-  assert.match(wf,/current_consolidated/);
-  assert.match(wf,/HUMAN GATE PACKET BUILD: PASS/);
+test("ZRO-WF4 offline Human Gate pack remains the governed pre-HG2-C evidence source",()=>{
+  const p=JSON.parse(fs.readFileSync("ingest/mk/audits/zro-human-gate-pack-2026-10-12.json","utf8"));
+  assert.equal(p.status,"HUMAN_GATE_PACK_READY_NOT_APPROVED");
+  assert.equal(p.human_gate_approved,false);
+  assert.equal(p.database_write_authorized,false);
+  assert.equal(p.reconstruction.unique_changed_or_inserted_article_count,27);
 });
