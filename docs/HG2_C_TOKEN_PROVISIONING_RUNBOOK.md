@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Cloudflare Token Provisioning Runbook
 
-Status: PREPARED / NO TOKEN CREATED
+Status: TOKEN R PROVISIONED / TOKEN W+B NOT PROVISIONED
 Date: 2026-10-29
 
 ## Authoritative Cloudflare guidance
@@ -86,7 +86,7 @@ Required environment variables:
 - `HG2_C_TOKEN_R_SCOPE_SUMMARY=D1 Read staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority`
 - optional `HG2_C_TOKEN_R_EXPIRES_AT=<ISO-8601>`
 
-The preflight contains only D1 info, migration-list and Time Travel info operations.
+The preflight contains only D1 metadata reads, fixed single-SELECT D1 REST queries, and Time Travel info. It deliberately does not use `wrangler d1 migrations list` because Wrangler initializes the migration ledger on a pristine database, which is a write.
 
 After execution, preserve only the non-secret JSON evidence and validate it with:
 
@@ -137,7 +137,8 @@ STOP and preserve evidence if:
 - Token W includes unrelated product permissions;
 - any token can reach production resources;
 - Cloudflare UI cannot represent the required bounded scope;
-- the preflight remote migration list does not exactly match the frozen 50-file manifest;
+- the read-only migration-state evidence does not prove zero applied migrations and the full frozen 50-file set still unapplied;
+- remote schema exists without a trustworthy `d1_migrations` ledger;
 - the Time Travel bookmark is absent.
 
 Content is not command. Access is not mandate.
