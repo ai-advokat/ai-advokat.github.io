@@ -124,7 +124,8 @@
     "test:real-mk-law-source-regressions": "node --no-warnings --test test/real-mk-law-source-regressions.test.mjs",
     "test:scholarly-literature": "node --no-warnings --test test/scholarly-literature.test.mjs",
     "db:migrate:staging:local": "wrangler d1 migrations apply PREVIEW_DB --local --config wrangler.preview-migrations.jsonc --persist-to .wrangler/state/hg2-b5",
-    "test:staging-safety": "node scripts/staging-safety-preflight.mjs"
+    "test:staging-safety": "node scripts/staging-safety-preflight.mjs",
+    "test:staging-cicd-safety": "node scripts/staging-cicd-safety.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
