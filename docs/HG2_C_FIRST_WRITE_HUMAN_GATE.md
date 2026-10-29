@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C First Remote Write Human Gate
 
-Status: APPROVED AND EXECUTED / POST-WRITE VERIFIED
+Status: APPROVED AND EXECUTED / POST-WRITE VERIFIED / CLOSED
 Date: 2026-10-29
 
 ## Purpose
@@ -91,7 +91,7 @@ Provisioned on 2026-10-29 and subsequently used **only** for the approved first 
 - Token W is distinct from Token R;
 - token secret is not recorded in the repository or evidence.
 
-The credential use remained inside the explicit Human Gate scope. Post-write verification passed; Token W revocation is now the required closeout action.
+The credential use remained inside the explicit Human Gate scope. Post-write verification passed and Token W was subsequently revoked.
 
 ## Proposed first write
 
@@ -180,4 +180,4 @@ The approved bounded write was executed successfully on the dedicated staging D1
 - Worker deployment: NOT STARTED;
 - production: NO-GO.
 
-Token W must be revoked before the D1 staging phase is marked fully closed.
+Token W was revoked on 2026-10-29; the D1 staging phase is fully closed.
