@@ -14,6 +14,9 @@ on:
       - "scripts/verify-hg2-c-migration-manifest.mjs"
       - "scripts/hg2-c-remote-readonly-preflight.mjs"
       - "test/hg2-c-remote-readonly-preflight.test.mjs"
+      - "scripts/verify-hg2-c-remote-evidence.mjs"
+      - "test/hg2-c-remote-evidence.test.mjs"
+      - "evidence/hg2-c/remote-readonly-evidence.template.json"
       - "evidence/hg2-c/migration-manifest.json"
       - "migrations/**"
       - ".github/workflows/**"
@@ -35,6 +38,7 @@ jobs:
       - run: npm run test:hg2-c-readiness
       - run: npm run test:hg2-c-migration-manifest
       - run: npm run test:hg2-c-remote-readonly-contract
+      - run: npm run test:hg2-c-remote-evidence
       - run: npm run db:migrate:staging:local
       - name: Assert remote staging commands remain fail-closed
         run: |
