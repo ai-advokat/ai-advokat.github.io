@@ -23,7 +23,7 @@ All items below must be present:
 - remote applied migration count: 0;
 - remote unapplied migration count: 50;
 - migration-state basis recorded;
-- no unmanaged remote schema outside the migration ledger;
+- no unmanaged remote application schema outside the migration ledger; Cloudflare's reserved `_cf_KV` system table is not application schema;
 - exact migration-set match: true;
 - D1 Time Travel capability: verified;
 - exact pre-write Time Travel bookmark;
@@ -75,7 +75,8 @@ Return to **NO-GO** immediately if any of these are observed:
 
 - account/D1 identity mismatch;
 - read-only migration-state evidence differs from the frozen manifest;
-- remote schema exists without a trustworthy `d1_migrations` ledger;
+- remote application schema exists without a trustworthy `d1_migrations` ledger;
+- any unexpected remote system/application table appears beyond the explicitly accepted reserved `_cf_KV`;
 - pre-write bookmark missing;
 - Token R contains any D1 Edit/Write authority;
 - Token W includes production, all-account, Worker, route, zone/DNS or Workers AI authority;
