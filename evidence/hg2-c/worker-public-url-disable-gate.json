@@ -8,15 +8,17 @@
   "dashboard_observation_before_change": {
     "active_deployment_traffic_percent": 100,
     "workers_dev_url_displayed": true,
-    "preview_url_displayed": true,
-    "custom_domains_or_zone_routes": false
+    "custom_domains_or_zone_routes": false,
+    "preview_or_version_url_capability_displayed": true,
+    "branch_preview_created": false,
+    "branch_preview_command_executed": false
   },
   "human_gate": {
     "decision": "APPROVE_DISABLE_STAGING_PUBLIC_WORKER_URLS",
     "approver": "Sande Smiljanov",
     "scope": [
       "disable staging workers.dev public URL",
-      "disable staging Preview/Version URLs"
+      "disable workers.dev Version/Preview URL capability"
     ]
   },
   "explicitly_not_authorized": [
