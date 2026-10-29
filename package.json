@@ -10,7 +10,7 @@
     "verify": "node scripts/verify.mjs",
     "test": "node --no-warnings --test test/*.test.mjs",
     "test:legal-alarm": "node --no-warnings --test test/legal-alarm.test.mjs",
-    "db:migrate:staging": "wrangler d1 migrations apply PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc",
+    "db:migrate:staging": "node scripts/block-remote-staging-migration.mjs",
     "db:status:staging": "wrangler d1 execute PREVIEW_DB --remote --config wrangler.preview-migrations.jsonc --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\"",
     "db:status:production": "wrangler d1 execute ai-advokat-db --remote --command \"SELECT version, applied_at, description FROM schema_migrations ORDER BY applied_at DESC;\"",
     "test:legal-parser": "node --test scripts/test-legal-parser.mjs",
@@ -122,7 +122,9 @@
     "ohchr:uhri-mk": "node scripts/uhri-north-macedonia-intake.mjs",
     "test:case-law-publications": "node --no-warnings --test test/case-law-publication-processor.test.mjs",
     "test:real-mk-law-source-regressions": "node --no-warnings --test test/real-mk-law-source-regressions.test.mjs",
-    "test:scholarly-literature": "node --no-warnings --test test/scholarly-literature.test.mjs"
+    "test:scholarly-literature": "node --no-warnings --test test/scholarly-literature.test.mjs",
+    "db:migrate:staging:local": "wrangler d1 migrations apply PREVIEW_DB --local --config wrangler.preview-migrations.jsonc --persist-to .wrangler/state/hg2-b5",
+    "test:staging-safety": "node scripts/staging-safety-preflight.mjs"
   },
   "devDependencies": {
     "wrangler": "4.141.0"
