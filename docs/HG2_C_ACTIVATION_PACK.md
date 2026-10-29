@@ -24,7 +24,7 @@ Production resources are explicitly outside this activation pack.
 1. Re-verify staging account, Worker and D1 identifiers.
 2. Follow the approved three-token least-privilege path from `docs/HG2_C_CREDENTIAL_STRATEGY.md`:
    - Token R: D1 Read only for remote evidence;
-   - Token W: separate short-lived D1 Edit token, provisioned only after read-only evidence passes and before the first-write Human Gate;
+   - Token W: separate short-lived D1 Write token, provisioned after read-only evidence PASS and held unused until the first-write Human Gate;
    - Token B: Editor scoped only to the existing `ai-advokat-staging` Worker, used only in the later Worker phase.
 3. Record the exact activation commit SHA.
 4. Enumerate the exact remote migration files to be applied; no wildcard or implicit migration set.
@@ -71,8 +71,8 @@ It is allowed to read only D1 identity/state, the existing remote schema/migrati
 - rollback plan — RECORDED
 - pre-write Time Travel bookmark — VERIFIED / RECORDED
 - split least-privilege credential design — VERIFIED
-- Token R — PROVISIONED / D1 READ ONLY / HUMAN-CONTROLLED
-- Token W — NOT PROVISIONED
+- Token R evidence phase — PASS / D1 READ ONLY
+- Token W — PROVISIONED / D1 WRITE / UNUSED / EXPIRES 2026-10-30
 - Token B — NOT PROVISIONED
 - remote read-only preflight — PASS
 - remote evidence verifier — PASS
@@ -85,9 +85,9 @@ If any identity mismatch, unexpected public URL, wrong binding, failed migration
 
 ## Current blocker
 
-**B3 design is resolved; Token R has been provisioned with D1 Read only.** Token W and Token B remain unprovisioned. Current Cloudflare authorization supports separate D1 Read and D1 Edit permissions plus per-Worker Editor scope. The activation path therefore separates remote evidence (Token R), migration write (Token W), and Worker deployment (Token B).
+**B3 credential separation is now physically established for the D1 phases.** Token R completed the read-only evidence phase. A distinct short-lived Token W has been provisioned with staging-only D1 Write authority and has not been used. Token B remains unprovisioned.
 
-Remote activation remains **NO-GO** because the first-write Human Gate is not approved. The Token R evidence phase is complete and PASS. The next credential, if the human decision process proceeds, is a new separate short-lived Token W with staging-only D1 Edit authority. Token R must not be upgraded. Token B belongs to the later Worker phase.
+Remote activation remains **NO-GO** because the first-write Human Gate is not approved. Token W must remain unused until the human decision record is explicitly completed. Token R must not be upgraded or reused as Token W. Token B belongs to the later Worker phase.
 
 ## First-write Human Gate dossier
 

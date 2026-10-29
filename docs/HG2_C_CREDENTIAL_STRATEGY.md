@@ -1,13 +1,13 @@
 # AI ADVOKAT 4 — HG2-C Credential Strategy v2
 
-Status: DESIGN VERIFIED / TOKEN R PROVISIONED / TOKEN W+B NOT PROVISIONED
+Status: DESIGN VERIFIED / TOKEN R EVIDENCE PASS / TOKEN W PROVISIONED UNUSED / TOKEN B NOT PROVISIONED
 Date: 2026-10-29
 
 ## Objective
 
 Use the minimum credential authority for each HG2-C action, inside the dedicated `AI ADVOKAT 4 — STAGING` Cloudflare account only. Production authority is forbidden.
 
-Cloudflare's current permission model distinguishes D1 Read from D1 Edit and supports granular account-owned API tokens with Wrangler. Therefore the read-only evidence phase and the migration-write phase must not share a write-capable credential.
+Cloudflare's current permission model distinguishes D1 Read from write-capable D1 Write/Edit authority and supports granular account-owned API tokens with Wrangler. Therefore the read-only evidence phase and the migration-write phase must not share a write-capable credential.
 
 ## Architecture
 
@@ -41,11 +41,11 @@ Token R must be incapable of applying migrations or modifying D1.
 
 Purpose: apply the already frozen and Human-approved 0001→0050 migration set.
 
-Token W is **not provisioned until Token R evidence passes** and the first-write dossier is ready for decision.
+Token W is provisioned only after Token R evidence passes and the first-write dossier is ready for decision. It remains unused until explicit Human Gate approval.
 
 Required authority:
 - dedicated staging account only;
-- **D1 Edit/Write** only;
+- **D1 Write** only (Cloudflare UI terminology; write-capable D1 permission);
 - no Workers permissions;
 - no Workers Routes;
 - no Workers AI;
@@ -92,7 +92,7 @@ For each token:
 3. Confirm production accounts/resources are absent.
 4. Confirm unnecessary permissions are absent.
 5. Confirm Token R has D1 Read and no D1 Edit.
-6. Confirm Token W has D1 Edit and no unrelated product permissions.
+6. Confirm Token W has D1 Write and no unrelated product permissions.
 7. Confirm Token B has Editor only for the existing staging Worker and no route permissions.
 8. Use each token only for its single intended phase.
 9. Revoke/disable temporary credentials when their phase closes.
@@ -103,7 +103,7 @@ For each token:
 2. Execute remote read-only preflight — evidence only.
 3. Verify remote evidence — machine gate.
 4. Review first-write dossier.
-5. Provision Token W — human-controlled security action.
+5. Provision Token W — COMPLETED as a distinct short-lived staging-only D1 Write token; do not use it yet.
 6. Explicit Human Gate decision for first staging D1 write.
 7. Apply frozen migrations only if approved.
 8. Close D1 phase and revoke Token W.

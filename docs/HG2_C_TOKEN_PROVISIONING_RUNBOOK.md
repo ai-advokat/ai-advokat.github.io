@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Cloudflare Token Provisioning Runbook
 
-Status: TOKEN R PROVISIONED / TOKEN W+B NOT PROVISIONED
+Status: TOKEN R EVIDENCE PASS / TOKEN W PROVISIONED UNUSED / TOKEN B NOT PROVISIONED
 Date: 2026-10-29
 
 ## Authoritative Cloudflare guidance
@@ -8,7 +8,7 @@ Date: 2026-10-29
 This runbook follows the current Cloudflare authorization model:
 
 - granular Wrangler authorization uses **account-owned API tokens**;
-- D1 exposes separate **D1 Read** and **D1 Edit** permissions;
+- D1 exposes separate **D1 Read** and write-capable **D1 Write/Edit** permissions; the current Cloudflare token review UI displays the write permission as **D1 Write**;
 - API tokens can be constrained to an account/product and, where available, a resource;
 - an existing Worker can be deployed with **Editor** scoped to that individual Worker;
 - routes/custom domains require additional route permissions and are outside HG2-C.
@@ -104,7 +104,7 @@ When the first-write Human Gate is ready for decision:
 2. Name:
    `hg2-c-staging-d1-write`
 3. Scope: dedicated staging account only.
-4. Permission: **D1 Edit** only.
+4. Permission: **D1 Write** only (write-capable D1 permission; some Cloudflare references historically label this D1 Edit).
 5. No Workers, routes, AI, DNS/zone, storage, token-management or production permissions.
 6. Prefer a short TTL.
 7. Record only the non-secret name/scope/expiry.
@@ -112,6 +112,17 @@ When the first-write Human Gate is ready for decision:
 9. Revoke/disable Token W immediately after migration and post-write verification unless a later Human Gate expressly authorizes retention.
 
 Token R must never be edited/upgraded into Token W.
+
+### Token W non-secret record — provisioned 2026-10-29
+
+- name: `hg2-c-staging-d1-write`;
+- account scope: entire dedicated `AI ADVOKAT 4 — STAGING` account;
+- permission shown by Cloudflare: **D1 Write**;
+- start: 2026-10-29;
+- expiry: 2026-10-30;
+- IP filtering: all IP addresses;
+- secret: never recorded;
+- use status: **NOT USED / awaiting explicit First-Write Human Gate approval**.
 
 ## Phase B — Worker token, later
 
