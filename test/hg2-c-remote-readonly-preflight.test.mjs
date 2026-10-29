@@ -16,15 +16,22 @@ test("HG2-C remote preflight is staging-only and explicitly gated", () => {
   assert.doesNotMatch(source, /12ece285-74bb-4f27-a025-2dbd1be6c59a/);
 });
 
-test("HG2-C remote preflight contains only approved Wrangler read operations", () => {
-  const allowed = [
+test("HG2-C remote preflight contains only approved read operations", () => {
+  const allowedWrangler = [
     '["d1", "info"',
-    '["d1", "migrations", "list"',
     '["d1", "time-travel", "info"'
   ];
-  for (const fragment of allowed) assert.ok(source.includes(fragment), `missing allowed read op: ${fragment}`);
+  for (const fragment of allowedWrangler) {
+    assert.ok(source.includes(fragment), `missing allowed Wrangler read op: ${fragment}`);
+  }
+
+  assert.match(source, /SELECT name FROM sqlite_master/);
+  assert.match(source, /SELECT name FROM "d1_migrations"/);
+  assert.match(source, /only SELECT statements are allowed/);
+  assert.match(source, /multiple SQL statements are forbidden/);
 
   const forbiddenCommandFragments = [
+    '["d1", "migrations", "list"',
     '["d1", "migrations", "apply"',
     '["d1", "time-travel", "restore"',
     '["d1", "execute"',

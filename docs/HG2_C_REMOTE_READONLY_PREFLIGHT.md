@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Remote Read-Only Preflight Runbook
 
-Status: PREPARED / NOT EXECUTED
+Status: CORRECTED / READ-ONLY RE-EXECUTION REQUIRED
 Date: 2026-10-29
 
 ## Purpose
@@ -9,7 +9,7 @@ This runbook is the final evidence-only step before the first staging write. It 
 
 1. the credential is operating inside the dedicated staging account;
 2. the remote D1 is the expected staging database and supports Time Travel;
-3. the remote unapplied migration set exactly matches the frozen 50-file manifest.
+3. the remote migration state proves that all 50 frozen migrations remain unapplied without creating or modifying any D1 table.
 
 The executable is:
 
@@ -17,16 +17,19 @@ The executable is:
 
 ## Hard safety boundary
 
-The preflight contains only these Wrangler operations:
+The preflight contains only these remote read operations:
 
-- `d1 info`;
-- `d1 migrations list --remote`;
-- `d1 time-travel info`.
+- Wrangler `d1 info`;
+- fixed, single-statement `SELECT` queries against the D1 REST `/query` endpoint to inspect `sqlite_master` and, only if already present, `d1_migrations`;
+- Wrangler `d1 time-travel info`.
+
+`wrangler d1 migrations list --remote` is intentionally forbidden in the read-only phase because Wrangler initializes `d1_migrations` before listing migrations on a pristine database. That initialization is a remote write.
 
 It does **not** contain:
 
 - `d1 migrations apply`;
 - `d1 execute`;
+- `d1 migrations list --remote`;
 - `d1 time-travel restore`;
 - Worker deploy;
 - route/domain operations;
@@ -54,9 +57,13 @@ The preflight passes only if:
 
 - account ID exactly matches the dedicated staging account;
 - D1 identity matches `ai-advokat-staging-db` / `309f72b8-8711-47fc-bea7-fbd1d649561d`;
-- D1 backend reports Time-Travel-capable production storage;
-- remote unapplied migration list contains exactly the frozen `0001`→`0050` files;
-- a current Time Travel bookmark is returned.
+- D1 Time Travel capability is proven by a successful read-only Time Travel query and a current bookmark;
+- remote schema inspection is one of:
+  - a pristine D1 with zero user tables; or
+  - an existing `d1_migrations` ledger that can be read without modification;
+- no unmanaged schema exists outside the migration ledger;
+- remote applied migration count is zero;
+- therefore the complete frozen `0001`→`0050` set remains unapplied.
 
 Any mismatch is **STOP / NO-GO**.
 
@@ -68,9 +75,12 @@ Record only non-secret evidence:
 - Token R name, D1 Read scope summary and expiry — never token value;
 - staging account ID;
 - staging D1 name and UUID;
-- D1 backend/version;
-- exact remote unapplied migration count;
-- exact-match result against frozen manifest;
+- D1 Time Travel capability;
+- migration-state basis (`pristine-empty-d1` or existing ledger);
+- migration-ledger presence flag;
+- remote user-table count;
+- exact remote applied and unapplied migration counts;
+- exact-match result against the frozen manifest;
 - pre-write Time Travel bookmark;
 - timestamp of verification.
 

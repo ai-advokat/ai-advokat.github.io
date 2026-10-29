@@ -1,6 +1,6 @@
 # AI ADVOKAT 4 — HG2-C Credential Strategy v2
 
-Status: DESIGN VERIFIED / TOKENS NOT PROVISIONED
+Status: DESIGN VERIFIED / TOKEN R PROVISIONED / TOKEN W+B NOT PROVISIONED
 Date: 2026-10-29
 
 ## Objective
@@ -29,8 +29,11 @@ Required authority:
 
 Allowed use:
 - D1 identity/info;
-- list unapplied migrations;
+- fixed single-SELECT reads of `sqlite_master` and, only when already present, `d1_migrations`;
+- derive the exact unapplied migration set without creating migration bookkeeping state;
 - obtain the current Time Travel bookmark.
+
+`wrangler d1 migrations list` is not allowed under Token R on a pristine database because Wrangler initializes `d1_migrations` before listing, which requires a write.
 
 Token R must be incapable of applying migrations or modifying D1.
 

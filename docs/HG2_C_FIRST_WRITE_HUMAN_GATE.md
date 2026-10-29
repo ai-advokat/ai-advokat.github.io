@@ -20,7 +20,10 @@ All items below must be present:
 - exact D1 UUID: `309f72b8-8711-47fc-bea7-fbd1d649561d`;
 - exact activation Git SHA;
 - frozen migration manifest count: 50;
+- remote applied migration count: 0;
 - remote unapplied migration count: 50;
+- migration-state basis recorded;
+- no unmanaged remote schema outside the migration ledger;
 - exact migration-set match: true;
 - D1 Time Travel capability: verified;
 - exact pre-write Time Travel bookmark;
@@ -71,7 +74,8 @@ Out of scope:
 Return to **NO-GO** immediately if any of these are observed:
 
 - account/D1 identity mismatch;
-- remote migration list differs from the frozen manifest;
+- read-only migration-state evidence differs from the frozen manifest;
+- remote schema exists without a trustworthy `d1_migrations` ledger;
 - pre-write bookmark missing;
 - Token R contains any D1 Edit/Write authority;
 - Token W includes production, all-account, Worker, route, zone/DNS or Workers AI authority;
