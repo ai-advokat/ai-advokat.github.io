@@ -8,6 +8,9 @@ const EXPECTED_DB_ID = "309f72b8-8711-47fc-bea7-fbd1d649561d";
 const CONFIG = "wrangler.preview-migrations.jsonc";
 const MANIFEST = "evidence/hg2-c/migration-manifest.json";
 const EXPECTED_TOKEN_R_SCOPE_SUMMARY = "D1 Read staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority";
+const D1_QUERY_ENDPOINT = `https://api.cloudflare.com/client/v4/accounts/${EXPECTED_ACCOUNT}/d1/database/${EXPECTED_DB_ID}/query`;
+const USER_TABLES_SQL = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name";
+const APPLIED_MIGRATIONS_SQL = 'SELECT name FROM "d1_migrations" ORDER BY id';
 
 function fail(message) {
   console.error("HG2-C REMOTE READ-ONLY PREFLIGHT FAIL:", message);
@@ -58,6 +61,58 @@ function findStringByKey(value, wantedKey) {
   return null;
 }
 
+function assertSingleSelect(sql, label) {
+  const normalized = sql.trim();
+  if (!/^SELECT\b/i.test(normalized)) fail(`${label}: only SELECT statements are allowed`);
+  const withoutTrailingSemicolon = normalized.replace(/;\s*$/, "");
+  if (withoutTrailingSemicolon.includes(";")) fail(`${label}: multiple SQL statements are forbidden`);
+}
+
+async function queryD1ReadOnly(sql, label) {
+  assertSingleSelect(sql, label);
+
+  let response;
+  try {
+    response = await fetch(D1_QUERY_ENDPOINT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ sql })
+    });
+  } catch (error) {
+    fail(`${label}: ${error.message}`);
+  }
+
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    fail(`${label}: Cloudflare API response was not valid JSON`);
+  }
+
+  if (!response.ok || payload.success !== true) {
+    const errors = Array.isArray(payload.errors) ? payload.errors : [];
+    const detail = errors
+      .map((item) => `${item.code ?? "unknown"} ${item.message ?? "unknown error"}`)
+      .join(" | ");
+    fail(`${label}: ${detail || `HTTP ${response.status}`}`);
+  }
+
+  const batches = Array.isArray(payload.result)
+    ? payload.result
+    : (payload.result ? [payload.result] : []);
+
+  for (const batch of batches) {
+    if (batch && batch.success === false) fail(`${label}: D1 query batch reported failure`);
+  }
+
+  return batches.flatMap((batch) =>
+    Array.isArray(batch?.results) ? batch.results : []
+  );
+}
+
 function currentGitSha() {
   const result = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8", shell: false });
   if (result.status !== 0) fail("cannot determine activation Git SHA");
@@ -101,23 +156,54 @@ if (reportedVersion && reportedVersion.toLowerCase() !== "production") {
   fail(`unexpected D1 backend version: ${reportedVersion}`);
 }
 
-// READ ONLY: list unapplied migrations. No apply command exists in this script.
-const migrationList = runWrangler(
-  ["d1", "migrations", "list", EXPECTED_DB, "--remote", "--config", CONFIG],
-  "d1 migrations list"
-);
-const actualNames = [...new Set(
-  (migrationList.stdout.match(/\b\d{4}_[A-Za-z0-9_.-]+\.sql\b/g) || [])
-)].sort();
+// READ ONLY: inspect remote schema and migration ledger with fixed single-SELECT queries.
+// Wrangler "d1 migrations list" is intentionally not used because it initializes
+// the d1_migrations table on a pristine database, which is a write.
 const expectedNames = manifest.files.map(x => path.basename(x.path)).sort();
 
+const tableRows = await queryD1ReadOnly(USER_TABLES_SQL, "read remote table inventory");
+const remoteTables = [...new Set(
+  tableRows
+    .map((row) => typeof row?.name === "string" ? row.name.trim() : "")
+    .filter(Boolean)
+)].sort();
+
+let appliedNames = [];
+let migrationStateBasis;
+let migrationLedgerPresent = false;
+
+if (remoteTables.length === 0) {
+  migrationStateBasis = "pristine-empty-d1";
+} else if (remoteTables.includes("d1_migrations")) {
+  migrationLedgerPresent = true;
+  migrationStateBasis = "existing-d1-migrations-ledger";
+
+  const migrationRows = await queryD1ReadOnly(
+    APPLIED_MIGRATIONS_SQL,
+    "read remote migration ledger"
+  );
+  appliedNames = [...new Set(
+    migrationRows
+      .map((row) => typeof row?.name === "string" ? row.name.trim() : "")
+      .filter(Boolean)
+  )].sort();
+
+  const applicationTables = remoteTables.filter((name) => name !== "d1_migrations");
+  if (appliedNames.length === 0 && applicationTables.length > 0) {
+    fail("remote schema exists without applied migration records");
+  }
+} else {
+  fail("remote schema exists without a d1_migrations ledger");
+}
+
+const unexpectedApplied = appliedNames.filter((name) => !expectedNames.includes(name));
+if (unexpectedApplied.length > 0) {
+  fail(`remote migration ledger contains unknown entries: ${unexpectedApplied.join(", ")}`);
+}
+
+const actualNames = expectedNames.filter((name) => !appliedNames.includes(name));
 if (actualNames.length !== expectedNames.length) {
   fail(`remote unapplied migration count ${actualNames.length} != frozen count ${expectedNames.length}`);
-}
-for (let i = 0; i < expectedNames.length; i++) {
-  if (actualNames[i] !== expectedNames[i]) {
-    fail(`remote migration list differs at index ${i}: ${actualNames[i]} != ${expectedNames[i]}`);
-  }
 }
 
 // READ ONLY: capture current rollback bookmark. Restore is intentionally absent.
@@ -148,8 +234,12 @@ const evidence = {
   staging_database_name: EXPECTED_DB,
   staging_database_id: EXPECTED_DB_ID,
   migration_count_expected: expectedNames.length,
+  migration_count_remote_applied: appliedNames.length,
   migration_count_remote_unapplied: actualNames.length,
   migration_set_exact_match: true,
+  migration_state_basis: migrationStateBasis,
+  migration_ledger_present: migrationLedgerPresent,
+  remote_user_table_count: remoteTables.length,
   d1_backend_time_travel_capable: true,
   bookmark_evidence_present: true,
   pre_write_bookmark: preWriteBookmark,
@@ -158,7 +248,7 @@ const evidence = {
   token_r_scope_summary: process.env.HG2_C_TOKEN_R_SCOPE_SUMMARY,
   token_r_expires_at: process.env.HG2_C_TOKEN_R_EXPIRES_AT || null,
   verified_at_utc: new Date().toISOString(),
-  note: "No token value is emitted. No migration apply, restore, deploy, execute, create, delete, route or production action is performed."
+  note: "No token value is emitted. Migration state is read with fixed single-SELECT D1 REST queries; no migrations list, apply, restore, deploy, execute, create, delete, route or production action is performed."
 };
 
 console.log(JSON.stringify(evidence, null, 2));
