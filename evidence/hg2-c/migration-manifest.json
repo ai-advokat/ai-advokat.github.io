@@ -1,0 +1,319 @@
+{
+  "schema": "ai-advokat-hg2-c-migration-manifest/v1",
+  "status": "FROZEN_REPOSITORY_ONLY_REMOTE_NO_GO",
+  "date": "2026-10-29",
+  "source_commit": "d6aeaf5c51d1e1672b7a0d7650bbeb3607490198",
+  "staging_account_id": "0fee10e2bd9a2183d16eb0d73f13dfce",
+  "staging_database_name": "ai-advokat-staging-db",
+  "staging_database_id": "309f72b8-8711-47fc-bea7-fbd1d649561d",
+  "migration_count": 50,
+  "first_migration": "migrations/0001_initial_schema.sql",
+  "last_migration": "migrations/0050_lioe_provider_diagnostics.sql",
+  "critical_human_review": [
+    "migrations/0033_casepilot_audit_event_schema.sql",
+    "migrations/0034_casepilot_authority_classification_unique_issue.sql",
+    "migrations/0035_case_document_download_audit.sql"
+  ],
+  "files": [
+    {
+      "ordinal": 1,
+      "path": "migrations/0001_initial_schema.sql",
+      "git_blob_sha": "f2b5754963e2108cbfefd0175cca6dd7b1838b08",
+      "size_bytes": 4230
+    },
+    {
+      "ordinal": 2,
+      "path": "migrations/0002_public_source_seed.sql",
+      "git_blob_sha": "521517dac4c14482219f6e7a3e5af15a953d2b13",
+      "size_bytes": 2639
+    },
+    {
+      "ordinal": 3,
+      "path": "migrations/0003_five_publications.sql",
+      "git_blob_sha": "c368901f4fdc6b6dfcdf67cb363ff60fef603ec0",
+      "size_bytes": 4420
+    },
+    {
+      "ordinal": 4,
+      "path": "migrations/0004_paragraf_import_landing.sql",
+      "git_blob_sha": "170f13c9ab5d18c36f49f0cdc4ed3b4aa11310c2",
+      "size_bytes": 2118
+    },
+    {
+      "ordinal": 5,
+      "path": "migrations/0005_paragraf_corpus_gate.sql",
+      "git_blob_sha": "971cfc9e72de332af9e1a1f1c66ab875267bbabf",
+      "size_bytes": 828
+    },
+    {
+      "ordinal": 6,
+      "path": "migrations/0006_official_legal_source_registry.sql",
+      "git_blob_sha": "f1248a0d0d8a96a492d34807cc6a01411b7f2a5a",
+      "size_bytes": 2929
+    },
+    {
+      "ordinal": 7,
+      "path": "migrations/0007_publication_zenodo_alignment.sql",
+      "git_blob_sha": "343eb49d7da44893fc9e5790179bc88bf805c694",
+      "size_bytes": 2368
+    },
+    {
+      "ordinal": 8,
+      "path": "migrations/0008_kocani_wpa_journal_issue1.sql",
+      "git_blob_sha": "14cad3c67571b0ff517daac24b211236e2321820",
+      "size_bytes": 742
+    },
+    {
+      "ordinal": 9,
+      "path": "migrations/0009_kocani_issue1_compat.sql",
+      "git_blob_sha": "82ac007da98a264b8eb7f98a859a4b42deaaf6a7",
+      "size_bytes": 755
+    },
+    {
+      "ordinal": 10,
+      "path": "migrations/0010_macedonian_legal_source_registry.sql",
+      "git_blob_sha": "1ac0550f25f73667851a693dab5d8c08e449c033",
+      "size_bytes": 5832
+    },
+    {
+      "ordinal": 11,
+      "path": "migrations/0011_article_level_legal_corpus.sql",
+      "git_blob_sha": "dadbcda408e38bb282d74407521b2d61b84b6487",
+      "size_bytes": 4346
+    },
+    {
+      "ordinal": 12,
+      "path": "migrations/0012_case_law_authority.sql",
+      "git_blob_sha": "6bc0d60bc156d74955cd496dc266632895a8a3ea",
+      "size_bytes": 3296
+    },
+    {
+      "ordinal": 13,
+      "path": "migrations/0013_judicial_and_official_source_graph.sql",
+      "git_blob_sha": "4611bd7d0af918d4a9f61253b5b21e45b9f0b6f4",
+      "size_bytes": 11347
+    },
+    {
+      "ordinal": 14,
+      "path": "migrations/0014_stable_instrument_keys.sql",
+      "git_blob_sha": "2d0af1414b796df9a2947811d7505eedcd652003",
+      "size_bytes": 2794
+    },
+    {
+      "ordinal": 15,
+      "path": "migrations/0015_amendment_event_provenance.sql",
+      "git_blob_sha": "aeea4d3a5a8786ba5f1e896cd5ddcab8a9f90609",
+      "size_bytes": 846
+    },
+    {
+      "ordinal": 16,
+      "path": "migrations/0016_article_version_candidates.sql",
+      "git_blob_sha": "ac3a3f1aae5e2347819755e3ec5432607f810651",
+      "size_bytes": 1596
+    },
+    {
+      "ordinal": 17,
+      "path": "migrations/0017_membership_v1.sql",
+      "git_blob_sha": "524f76ae6abfa68a22b18a7ea602acfaa6d4f193",
+      "size_bytes": 4035
+    },
+    {
+      "ordinal": 18,
+      "path": "migrations/0018_zkp_instrument_metadata.sql",
+      "git_blob_sha": "265abad0c281366c1cfdb7050cfe50710d75152b",
+      "size_bytes": 2677
+    },
+    {
+      "ordinal": 19,
+      "path": "migrations/0019_law_intake_batch_1.sql",
+      "git_blob_sha": "feca63de869838be62b210e6d471c37f8aca88d5",
+      "size_bytes": 14035
+    },
+    {
+      "ordinal": 20,
+      "path": "migrations/0020_kz_2026_correction_provenance.sql",
+      "git_blob_sha": "eee2abf32feee5d7568c8c54f75e3c7249760884",
+      "size_bytes": 1593
+    },
+    {
+      "ordinal": 21,
+      "path": "migrations/0021_canonical_source_reconciliation.sql",
+      "git_blob_sha": "bbdd3893fdafb5d56b5d8423084e348918b4858c",
+      "size_bytes": 10269
+    },
+    {
+      "ordinal": 22,
+      "path": "migrations/0022_security_rate_limits.sql",
+      "git_blob_sha": "144703aebda9be6eb4576cfb7cf9f84db8eb8291",
+      "size_bytes": 1096
+    },
+    {
+      "ordinal": 23,
+      "path": "migrations/0023_corpus_safety_foundation.sql",
+      "git_blob_sha": "6d3b42195bc42cc30d65b030e95f99d061a31c04",
+      "size_bytes": 7012
+    },
+    {
+      "ordinal": 24,
+      "path": "migrations/0024_zi_legacy_version_backfill.sql",
+      "git_blob_sha": "3e1ca2fc0e53961241643f2b2a01bbb1d4fc2af9",
+      "size_bytes": 7023
+    },
+    {
+      "ordinal": 25,
+      "path": "migrations/0025_zro_legacy_version_backfill.sql",
+      "git_blob_sha": "9cb237d8a01fe839fae2e12c7953362db60b887b",
+      "size_bytes": 7550
+    },
+    {
+      "ordinal": 26,
+      "path": "migrations/0026_zkp_legacy_version_backfill.sql",
+      "git_blob_sha": "b6d46fa24a32c2c6076956baada2e71f795937f6",
+      "size_bytes": 7105
+    },
+    {
+      "ordinal": 27,
+      "path": "migrations/0027_zpp_validity_window_correction.sql",
+      "git_blob_sha": "f1b3131cbf33695aeca51416b879d19f63454a6e",
+      "size_bytes": 884
+    },
+    {
+      "ordinal": 28,
+      "path": "migrations/0028_lioe_runtime_telemetry.sql",
+      "git_blob_sha": "e16e46a067dc795e68db87102b1a7b2687dbb4bb",
+      "size_bytes": 3058
+    },
+    {
+      "ordinal": 29,
+      "path": "migrations/0029_secure_case_workspace.sql",
+      "git_blob_sha": "b1b52db3489c063d0255e171be4e2c77e1123441",
+      "size_bytes": 4302
+    },
+    {
+      "ordinal": 30,
+      "path": "migrations/0030_case_law_source_graph_v2.sql",
+      "git_blob_sha": "ca766cffb98a68821a7cbd94ecbb27b596db212b",
+      "size_bytes": 3795
+    },
+    {
+      "ordinal": 31,
+      "path": "migrations/0031_case_law_identifiers_and_provenance.sql",
+      "git_blob_sha": "904dfdda582256f03ebdf447083c65fca5b62f31",
+      "size_bytes": 3614
+    },
+    {
+      "ordinal": 32,
+      "path": "migrations/0032_casepilot_authority_classifications.sql",
+      "git_blob_sha": "31f6548c3dc00e64951d3a077df1a6cd809bd70e",
+      "size_bytes": 1448
+    },
+    {
+      "ordinal": 33,
+      "path": "migrations/0033_casepilot_audit_event_schema.sql",
+      "git_blob_sha": "7f51449833d141e45af499e68af575eb627a3859",
+      "size_bytes": 1699
+    },
+    {
+      "ordinal": 34,
+      "path": "migrations/0034_casepilot_authority_classification_unique_issue.sql",
+      "git_blob_sha": "15531f732737d808a34d9e0a4080f5662e612cbb",
+      "size_bytes": 1503
+    },
+    {
+      "ordinal": 35,
+      "path": "migrations/0035_case_document_download_audit.sql",
+      "git_blob_sha": "d2fe5199d71a0bd47fd0bac1b6bae8bbdbf6e3bd",
+      "size_bytes": 1574
+    },
+    {
+      "ordinal": 36,
+      "path": "migrations/0036_zkp_entry_application_metadata_correction.sql",
+      "git_blob_sha": "1049161f4de80eb17736d08bd777de5c3ff5ca00",
+      "size_bytes": 3238
+    },
+    {
+      "ordinal": 37,
+      "path": "migrations/0037_open_legal_sources_registry.sql",
+      "git_blob_sha": "a69585a5345def009c57a3b06f7540f8a63defa9",
+      "size_bytes": 5885
+    },
+    {
+      "ordinal": 38,
+      "path": "migrations/0038_gazette_comprehensive_archive.sql",
+      "git_blob_sha": "84402f15ca4084b6fcac910873f2210378ca9837",
+      "size_bytes": 4318
+    },
+    {
+      "ordinal": 39,
+      "path": "migrations/0039_gazette_act_purpose_metadata.sql",
+      "git_blob_sha": "9282911d97e896a31967ace356dbc142d22b3cfa",
+      "size_bytes": 698
+    },
+    {
+      "ordinal": 40,
+      "path": "migrations/0040_gazette_hybrid_legal_intelligence.sql",
+      "git_blob_sha": "7078c8094a3daed000f1171ff925b00668928b7a",
+      "size_bytes": 4130
+    },
+    {
+      "ordinal": 41,
+      "path": "migrations/0041_gazette_article_chunks.sql",
+      "git_blob_sha": "6572c679e8d832701544883b268d644d6c739453",
+      "size_bytes": 3167
+    },
+    {
+      "ordinal": 42,
+      "path": "migrations/0042_gazette_consolidated_texts.sql",
+      "git_blob_sha": "be39bcf96785fe3ce707f093a8e7d18fd79502dd",
+      "size_bytes": 2726
+    },
+    {
+      "ordinal": 43,
+      "path": "migrations/0043_gazette_schema_migration_ledger.sql",
+      "git_blob_sha": "bdf28861d3665dfb8ae0e134e87c2e38eaa1d4c6",
+      "size_bytes": 695
+    },
+    {
+      "ordinal": 44,
+      "path": "migrations/0044_case_multipart_uploads.sql",
+      "git_blob_sha": "9cfbecb2d41b25e763594ce79a091f75ed3a8ab0",
+      "size_bytes": 2312
+    },
+    {
+      "ordinal": 45,
+      "path": "migrations/0045_case_private_d1_object_store.sql",
+      "git_blob_sha": "2f8fce9f93bfcbb0e2df5bb8e2e18788192aaac1",
+      "size_bytes": 1043
+    },
+    {
+      "ordinal": 46,
+      "path": "migrations/0046_gazette_open_data_1944_2017.sql",
+      "git_blob_sha": "2c5af7c6f100f2acb6ee4fcf0e7808e73e3095c2",
+      "size_bytes": 2046
+    },
+    {
+      "ordinal": 47,
+      "path": "migrations/0047_gazette_issue_metadata_backfill_1944_2017.sql",
+      "git_blob_sha": "69be57b536e199948c1b5e8cd8e5073778a5b4d7",
+      "size_bytes": 2503
+    },
+    {
+      "ordinal": 48,
+      "path": "migrations/0048_zkp_commentary_v6_secondary_layer.sql",
+      "git_blob_sha": "1e0b42e8b4ffcb3524b1420663750fc00e5e7b90",
+      "size_bytes": 2319
+    },
+    {
+      "ordinal": 49,
+      "path": "migrations/0049_case_law_binding_extraction_audit.sql",
+      "git_blob_sha": "63eebbe7594614c06676ac039b83c593fbb1345b",
+      "size_bytes": 1003
+    },
+    {
+      "ordinal": 50,
+      "path": "migrations/0050_lioe_provider_diagnostics.sql",
+      "git_blob_sha": "f10b6623401c9afec6680fb45afa6c8674d4c291",
+      "size_bytes": 914
+    }
+  ]
+}

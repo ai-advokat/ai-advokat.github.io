@@ -38,16 +38,26 @@ Production resources are explicitly outside this activation pack.
 9. Verify Worker identity, D1 binding identity and absence of public exposure.
 10. Stop. Any AI binding, route/domain, storage activation, imports, corpus writes, or production action require a separate Human Gate.
 
+## Frozen migration evidence
+
+The first remote staging migration is bound to:
+- `evidence/hg2-c/migration-manifest.json` — exactly 50 migrations, 0001→0050;
+- `scripts/verify-hg2-c-migration-manifest.mjs` — deterministic path/size/Git-blob verification;
+- `docs/HG2_C_MIGRATION_REVIEW_AND_ROLLBACK.md` — 0033/0034/0035 Human Review and Time Travel rollback procedure.
+
+Any migration-set drift returns the phase to **NO-GO**.
+
 ## Mandatory pre-activation evidence
 
 - `npm run test:staging-safety` — PASS
 - `npm run test:staging-cicd-safety` — PASS
 - `npm run test:hg2-c-readiness` — PASS
+- `npm run test:hg2-c-migration-manifest` — PASS
 - `npm run db:migrate:staging:local` — PASS
 - full repository test suite — PASS
 - security tests — PASS
-- exact migration manifest — RECORDED
-- rollback plan — RECORDED
+- exact migration manifest — FROZEN (50 files, 0001→0050)
+- rollback plan — RECORDED; pre-write Time Travel bookmark still required
 - split least-privilege credential design — VERIFIED
 - staging credentials — NOT PROVISIONED / HUMAN-CONTROLLED
 - exact activation SHA — RECORDED
