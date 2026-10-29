@@ -10,6 +10,7 @@ const MANIFEST = "evidence/hg2-c/migration-manifest.json";
 const EXPECTED_TOKEN_R_SCOPE_SUMMARY = "D1 Read staging-only authority for account 0fee10e2bd9a2183d16eb0d73f13dfce; no production authority";
 const D1_QUERY_ENDPOINT = `https://api.cloudflare.com/client/v4/accounts/${EXPECTED_ACCOUNT}/d1/database/${EXPECTED_DB_ID}/query`;
 const USER_TABLES_SQL = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name";
+const KNOWN_D1_SYSTEM_TABLES = new Set(["_cf_KV"]);
 const APPLIED_MIGRATIONS_SQL = 'SELECT name FROM "d1_migrations" ORDER BY id';
 
 function fail(message) {
@@ -168,13 +169,16 @@ const remoteTables = [...new Set(
     .filter(Boolean)
 )].sort();
 
+const d1SystemTablesObserved = remoteTables.filter((name) => KNOWN_D1_SYSTEM_TABLES.has(name));
+const applicationTables = remoteTables.filter((name) => !KNOWN_D1_SYSTEM_TABLES.has(name));
+
 let appliedNames = [];
 let migrationStateBasis;
 let migrationLedgerPresent = false;
 
-if (remoteTables.length === 0) {
+if (applicationTables.length === 0) {
   migrationStateBasis = "pristine-empty-d1";
-} else if (remoteTables.includes("d1_migrations")) {
+} else if (applicationTables.includes("d1_migrations")) {
   migrationLedgerPresent = true;
   migrationStateBasis = "existing-d1-migrations-ledger";
 
@@ -188,12 +192,12 @@ if (remoteTables.length === 0) {
       .filter(Boolean)
   )].sort();
 
-  const applicationTables = remoteTables.filter((name) => name !== "d1_migrations");
-  if (appliedNames.length === 0 && applicationTables.length > 0) {
-    fail("remote schema exists without applied migration records");
+  const domainTables = applicationTables.filter((name) => name !== "d1_migrations");
+  if (appliedNames.length === 0 && domainTables.length > 0) {
+    fail("remote application schema exists without applied migration records");
   }
 } else {
-  fail("remote schema exists without a d1_migrations ledger");
+  fail("remote application schema exists without a d1_migrations ledger");
 }
 
 const unexpectedApplied = appliedNames.filter((name) => !expectedNames.includes(name));
@@ -239,7 +243,8 @@ const evidence = {
   migration_set_exact_match: true,
   migration_state_basis: migrationStateBasis,
   migration_ledger_present: migrationLedgerPresent,
-  remote_user_table_count: remoteTables.length,
+  remote_user_table_count: applicationTables.length,
+  d1_system_tables_observed: d1SystemTablesObserved,
   d1_backend_time_travel_capable: true,
   bookmark_evidence_present: true,
   pre_write_bookmark: preWriteBookmark,
