@@ -3,12 +3,13 @@
   "name": "ai-advokat-staging",
   "main": "./src/index.js",
   "compatibility_date": "2026-09-26",
-  "preview_urls": true,
+  "workers_dev": false,
+  "preview_urls": false,
 
   "vars": {
     "ALARM_ENABLED": "false",
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFKQHY3Quvb_8JqH",
-    "TURNSTILE_ALLOWED_HOSTNAMES": "ai-advokat-staging.aiadvokat16.workers.dev"
+    "TURNSTILE_ALLOWED_HOSTNAMES": "ai-advokat-staging.ai-advokat-4-staging.workers.dev"
   },
 
   "assets": {
@@ -20,13 +21,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "ai-advokat-db-staging",
-      "database_id": "eb560e98-9fc0-408e-9c81-9b823ffde44d",
-      "migrations_dir": "migrations"
+      "database_name": "ai-advokat-staging-db",
+      "database_id": "309f72b8-8711-47fc-bea7-fbd1d649561d"
     }
-  ],
-
-  "ai": {
-    "binding": "AI"
-  }
+  ]
 }
