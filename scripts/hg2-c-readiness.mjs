@@ -4,7 +4,8 @@ const EXPECTED_ACCOUNT = "0fee10e2bd9a2183d16eb0d73f13dfce";
 const EXPECTED_WORKER = "ai-advokat-staging";
 const EXPECTED_DB = "ai-advokat-staging-db";
 const EXPECTED_DB_ID = "309f72b8-8711-47fc-bea7-fbd1d649561d";
-const PRODUCTION_DB_ID = "12ece285-74bb-4f27-a025-2dbd1be6c59a";\nconst PROD_WORKER = "ai-advokat-github-io";
+const PRODUCTION_DB_ID = "12ece285-74bb-4f27-a025-2dbd1be6c59a";
+const PROD_WORKER = "ai-advokat-github-io";
 
 function fail(message) {
   console.error("HG2-C READINESS FAIL:", message);
