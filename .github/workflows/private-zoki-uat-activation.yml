@@ -1,0 +1,112 @@
+name: Private Zoki staging UAT activation
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type APPROVE_PRIVATE_ZOKI_STAGING_UAT"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-private-zoki-staging-uat
+  cancel-in-progress: false
+
+jobs:
+  uat:
+    environment: staging-uat
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    if: ${{ github.repository == 'ai-advokat/ai-advokat.github.io' && github.ref == 'refs/heads/main' }}
+    env:
+      UAT_HUMAN_GATE: ${{ inputs.confirmation }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Verify immutable approved dispatch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "PRIVATE ZOKI UAT: DISPATCH SHA PINNED"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install immutable pinned tooling
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm ls wrangler@4.156.0 --depth=0
+
+      - name: Verify canonical UAT pack before remote activation
+        run: node scripts/verify-private-zoki-uat-pack.mjs
+
+      - name: Verify explicit Human Gate and required isolated credentials
+        shell: bash
+        env:
+          HG2_C_UAT_WORKER_TOKEN_B: ${{ secrets.HG2_C_UAT_WORKER_TOKEN_B }}
+          HG2_C_UAT_D1_TOKEN_W: ${{ secrets.HG2_C_UAT_D1_TOKEN_W }}
+          HG2_C_UAT_ACCESS_TOKEN_A: ${{ secrets.HG2_C_UAT_ACCESS_TOKEN_A }}
+          UAT_OPENAI_API_KEY: ${{ secrets.UAT_OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$UAT_HUMAN_GATE" = "APPROVE_PRIVATE_ZOKI_STAGING_UAT"
+          test -n "$HG2_C_UAT_WORKER_TOKEN_B"
+          test -n "$HG2_C_UAT_D1_TOKEN_W"
+          test -n "$HG2_C_UAT_ACCESS_TOKEN_A"
+          test -n "$UAT_OPENAI_API_KEY"
+          echo "PRIVATE ZOKI STAGING UAT: MAIN REF + HUMAN GATE ACCEPTED"
+
+      - name: Run bounded remote staging UAT
+        id: execute_uat
+        continue-on-error: true
+        shell: bash
+        env:
+          HG2_C_UAT_WORKER_TOKEN_B: ${{ secrets.HG2_C_UAT_WORKER_TOKEN_B }}
+          HG2_C_UAT_D1_TOKEN_W: ${{ secrets.HG2_C_UAT_D1_TOKEN_W }}
+          HG2_C_UAT_ACCESS_TOKEN_A: ${{ secrets.HG2_C_UAT_ACCESS_TOKEN_A }}
+          UAT_OPENAI_API_KEY: ${{ secrets.UAT_OPENAI_API_KEY }}
+        run: |
+          set +e
+          timeout --signal=TERM --kill-after=60s 30m node scripts/run-private-zoki-staging-activation.mjs
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
+
+      - name: Independent staging cleanup
+        id: cleanup
+        if: always()
+        continue-on-error: true
+        shell: bash
+        env:
+          HG2_C_UAT_WORKER_TOKEN_B: ${{ secrets.HG2_C_UAT_WORKER_TOKEN_B }}
+          HG2_C_UAT_D1_TOKEN_W: ${{ secrets.HG2_C_UAT_D1_TOKEN_W }}
+          HG2_C_UAT_ACCESS_TOKEN_A: ${{ secrets.HG2_C_UAT_ACCESS_TOKEN_A }}
+        run: |
+          timeout --signal=TERM --kill-after=30s 15m node scripts/cleanup-private-zoki-staging-activation.mjs
+
+      - name: Final UAT and cleanup gate
+        if: always()
+        run: node scripts/verify-private-zoki-one-button-result.mjs
+
+      - name: Upload non-secret UAT evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-zoki-staging-uat-evidence
+          retention-days: 30
+          path: |
+            artifacts/private-zoki-one-button-uat-evidence.json
+            artifacts/private-zoki-uat-run.json
+            artifacts/private-zoki-uat-progress.json
+            artifacts/private-zoki-one-button-uat-state.json
+          if-no-files-found: warn
