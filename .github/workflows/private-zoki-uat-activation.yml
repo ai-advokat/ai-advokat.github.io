@@ -27,7 +27,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.sha }}
+
+      - name: Verify immutable approved dispatch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "PRIVATE ZOKI UAT: DISPATCH SHA PINNED"
 
       - uses: actions/setup-node@v4
         with:
