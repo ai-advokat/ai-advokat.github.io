@@ -4,6 +4,7 @@ const manifestPath=process.argv[2]||"uat/private-zoki-uat-scenarios.json";
 const manifest=JSON.parse(fs.readFileSync(manifestPath,"utf8"));
 const base=String(process.env.UAT_BASE_URL||"").replace(/\/$/,"");
 const membershipKey=String(process.env.UAT_MEMBERSHIP_KEY||"");
+const expectedOrigin=String(process.env.UAT_EXPECTED_ORIGIN||"").replace(/\/$/,"");
 const accessClientId=String(process.env.CF_ACCESS_CLIENT_ID||"");
 const accessClientSecret=String(process.env.CF_ACCESS_CLIENT_SECRET||"");
 const timeoutMs=Math.max(10000,Math.min(90000,Number(process.env.UAT_REQUEST_TIMEOUT_MS||60000)));
@@ -11,6 +12,9 @@ const timeoutMs=Math.max(10000,Math.min(90000,Number(process.env.UAT_REQUEST_TIM
 const fail=m=>{console.error("PRIVATE ZOKI UAT EXECUTOR FAIL:",m);process.exit(1);};
 if(!base) fail("UAT_BASE_URL is required");
 if(!membershipKey) fail("UAT_MEMBERSHIP_KEY is required");
+if(!expectedOrigin) fail("UAT_EXPECTED_ORIGIN is required");
+if(new URL(base).origin!==new URL(expectedOrigin).origin) fail("UAT_BASE_URL does not match UAT_EXPECTED_ORIGIN");
+if(/ai-advokat-github-io\.aiadvokat16\.workers\.dev$/i.test(new URL(base).hostname)) fail("production workers.dev origin is forbidden");
 if(manifest?.endpoint!=="/api/bot") fail("manifest endpoint mismatch");
 if(manifest?.cycles_required!==2) fail("manifest must require two cycles");
 if(manifest?.production_authorization!==false) fail("production authorization must remain false");
