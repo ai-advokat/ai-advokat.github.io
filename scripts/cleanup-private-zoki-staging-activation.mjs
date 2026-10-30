@@ -133,7 +133,7 @@ const cleanup={
   startedAt:new Date().toISOString(),
   accessRevokedBeforeMembershipCleanup:false,
   quiescenceMs:0,
-  membershipDeletes:{usage:false,keys:false,entitlements:false,account:false,verifiedAbsent:false},
+  membershipDeletes:{usage:false,rateLimits:false,keys:false,entitlements:false,account:false,verifiedAbsent:false},
   workersDevDisabled:false,
   openAISecretRemoved:false,
   baselineRedeployed:false,
@@ -227,7 +227,8 @@ if(state.membership?.accountId){
     ["keys",()=>d1("DELETE FROM membership_access_keys WHERE account_id=?",[accountId])],
     ["entitlements",()=>d1("DELETE FROM membership_entitlements WHERE account_id=?",[accountId])],
     ["account",()=>d1("DELETE FROM membership_accounts WHERE id=?",[accountId])],
-    ["usage",()=>d1("DELETE FROM membership_usage_monthly WHERE subject_key=?",["account:"+accountId])]
+    ["usage",()=>d1("DELETE FROM membership_usage_monthly WHERE subject_key=?",["account:"+accountId])],
+    ["rateLimits",()=>d1("DELETE FROM security_rate_limit_windows WHERE subject_key=?",["account:"+accountId])]
   ];
   for(const [name,fn] of ops){
     try{
@@ -256,7 +257,8 @@ if(state.membership?.accountId){
       d1("SELECT COUNT(*) AS n FROM membership_accounts WHERE id=?",[accountId]),
       d1("SELECT COUNT(*) AS n FROM membership_access_keys WHERE account_id=?",[accountId]),
       d1("SELECT COUNT(*) AS n FROM membership_entitlements WHERE account_id=?",[accountId]),
-      d1("SELECT COUNT(*) AS n FROM membership_usage_monthly WHERE subject_key=?",["account:"+accountId])
+      d1("SELECT COUNT(*) AS n FROM membership_usage_monthly WHERE subject_key=?",["account:"+accountId]),
+      d1("SELECT COUNT(*) AS n FROM security_rate_limit_windows WHERE subject_key=?",["account:"+accountId])
     ]);
     const counts=checks.map(x=>Number(firstResultRows(x)[0]?.n||0));
     cleanup.membershipDeletes.verifiedAbsent=counts.every(n=>n===0);
@@ -265,7 +267,7 @@ if(state.membership?.accountId){
     recordError("membership_verify",error);
   }
 }else{
-  cleanup.membershipDeletes={usage:true,keys:true,entitlements:true,account:true,verifiedAbsent:true};
+  cleanup.membershipDeletes={usage:true,rateLimits:true,keys:true,entitlements:true,account:true,verifiedAbsent:true};
 }
 
 cleanup.finishedAt=new Date().toISOString();
