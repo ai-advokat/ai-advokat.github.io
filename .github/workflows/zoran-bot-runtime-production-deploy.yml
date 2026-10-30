@@ -35,6 +35,9 @@ jobs:
       - name: Install pinned tooling
         run: npm install --ignore-scripts --no-audit --no-fund
 
+      - name: Block production deploy on high or critical dependency vulnerabilities
+        run: npm audit --audit-level=high
+
       - name: Verify explicit bounded deployment authorization
         shell: bash
         run: |
