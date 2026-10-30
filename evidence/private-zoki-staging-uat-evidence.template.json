@@ -1,0 +1,46 @@
+{
+  "schema": "ai-advokat-private-zoki-staging-evidence/v1",
+  "recordedAt": null,
+  "humanGate": "APPROVE_PRIVATE_ZOKI_STAGING_UAT",
+  "stagingAccountId": "0fee10e2bd9a2183d16eb0d73f13dfce",
+  "workerName": "ai-advokat-staging",
+  "databaseName": "ai-advokat-staging-db",
+  "databaseId": "309f72b8-8711-47fc-bea7-fbd1d649561d",
+  "productionTouched": false,
+  "publicExposure": false,
+  "aiProvider": {
+    "secretPresent": false,
+    "scope": "dedicated_staging_only",
+    "provider": "OpenAI",
+    "model": null
+  },
+  "privateAccess": {
+    "enabled": false,
+    "publiclyReachable": false,
+    "mechanism": null,
+    "approvedOrigin": null
+  },
+  "temporaryMembership": {
+    "accountId": null,
+    "keyPrefix": null,
+    "monthlyQuota": 40,
+    "expiresAt": null,
+    "persistentZokiEntitlementUsed": false,
+    "startsAt": null
+  },
+  "cleanupPlan": {
+    "prepared": true,
+    "temporaryMembershipDeleteSqlPrepared": true,
+    "providerSecretRemovalAfterUat": false,
+    "accessCredentialRevocationAfterUat": false
+  },
+  "uatExecution": {
+    "cyclesRequired": 2,
+    "scenariosPerCycle": 10,
+    "executed": false,
+    "passed": null,
+    "totalPassed": null,
+    "totalExpected": 20
+  },
+  "notes": []
+}
