@@ -122,3 +122,32 @@ test("cleanup operation budgets fit inside the independent cleanup window",()=>{
   assert.match(cleanup,/attempts=2/);
   assert.match(cleanup,/timeout:90000/);
 });
+
+
+test("UAT workflow dispatches only from main and checks out main explicitly",()=>{
+  assert.match(workflow,/if: \$\{\{ github\.repository == 'ai-advokat\/ai-advokat\.github\.io' && github\.ref == 'refs\/heads\/main' \}\}/);
+  assert.match(workflow,/with:\s*\n\s*ref: main/);
+  assert.match(workflow,/test "\$GITHUB_REF" = "refs\/heads\/main"/);
+});
+
+test("UAT tooling install is lockfile-based and has no job-wide staging secrets",()=>{
+  assert.match(workflow,/npm ci --ignore-scripts --no-audit --no-fund/);
+  assert.match(workflow,/npm ls wrangler@4\.156\.0 --depth=0/);
+  assert.ok(fs.existsSync("package-lock.json"));
+  const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
+  assert.equal(lock.lockfileVersion,3);
+  assert.equal(lock.packages?.["node_modules/wrangler"]?.version,"4.156.0");
+  assert.match(String(lock.packages?.["node_modules/wrangler"]?.integrity||""),/^sha512-/);
+
+  const jobEnvBlock=workflow.match(/\n    env:\n([\s\S]*?)\n\n    steps:/)?.[1]||"";
+  for(const name of [
+    "HG2_C_UAT_WORKER_TOKEN_B",
+    "HG2_C_UAT_D1_TOKEN_W",
+    "HG2_C_UAT_ACCESS_TOKEN_A",
+    "UAT_OPENAI_API_KEY"
+  ]){
+    assert.doesNotMatch(jobEnvBlock,new RegExp(name));
+  }
+  assert.match(workflow,/Run bounded remote staging UAT[\s\S]*HG2_C_UAT_WORKER_TOKEN_B:[\s\S]*UAT_OPENAI_API_KEY:/);
+  assert.match(workflow,/Independent staging cleanup[\s\S]*HG2_C_UAT_WORKER_TOKEN_B:[\s\S]*HG2_C_UAT_ACCESS_TOKEN_A:/);
+});
