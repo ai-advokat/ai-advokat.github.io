@@ -56,8 +56,8 @@ function selectProfile(q,{mode=null}={}){
   if(has(q,L4_SIGNALS))return LEGAL_MISSION_PROFILES.L4_LEGAL_TRUTH_GOVERNANCE;
   if(LEGAL_ACTION_HUMAN_GATE_PATTERN.test(q)||has(q,ACTION_SIGNALS)||ACTION_DRAFT_PATTERN.test(q)||MK_ACTION_DRAFT_PATTERN.test(q))return LEGAL_MISSION_PROFILES.L3_CONSEQUENTIAL;
   const comparative=has(q,["спореди","compare","comparative","компаратив","versus"]);
-  if(PROFESSIONAL_LEGAL_OPINION_PATTERN.test(q)||MK_PROCEDURE_PREP_PATTERN.test(q)||comparative||has(q,STRATEGY_SIGNALS))return LEGAL_MISSION_PROFILES.L2_STRATEGY_PROCEDURE;
-  if(has(q,CURRENT_LAW_SIGNALS)||has(q,TEMPORAL_SIGNALS)||has(q,["истраж","research","правна анализа","legal analysis"]))return LEGAL_MISSION_PROFILES.L1_VERIFIED_RESEARCH;
+  if(MK_PROCEDURE_PREP_PATTERN.test(q)||comparative||has(q,STRATEGY_SIGNALS))return LEGAL_MISSION_PROFILES.L2_STRATEGY_PROCEDURE;
+  if(PROFESSIONAL_LEGAL_OPINION_PATTERN.test(q)||has(q,CURRENT_LAW_SIGNALS)||has(q,TEMPORAL_SIGNALS)||has(q,["истраж","research","правна анализа","legal analysis"]))return LEGAL_MISSION_PROFILES.L1_VERIFIED_RESEARCH;
   return LEGAL_MISSION_PROFILES.L0_INFORMATIONAL;
 }
 
@@ -102,6 +102,7 @@ export function buildLegalIntelligencePlan(question="",options={}){
   const humanReviewRequired=!generalBypass && (
     ["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(profile.id)
     || currentLawRequired
+    || PROFESSIONAL_LEGAL_OPINION_PATTERN.test(q)
     || options.highStakes===true
   );
   const legalStressRequired=["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(profile.id);
