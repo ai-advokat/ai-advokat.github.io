@@ -1,0 +1,52 @@
+name: Private Zoki UAT
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type RUN_PRIVATE_ZOKI_UAT"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  private-zoki-uat:
+    environment: staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CONFIRMATION: ${{ inputs.confirmation }}
+      STAGING_BASE_URL: ${{ secrets.ZOKI_STAGING_BASE_URL }}
+      ZOKI_STAGING_MEMBERSHIP_KEY: ${{ secrets.ZOKI_STAGING_MEMBERSHIP_KEY }}
+      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+      UAT_REQUEST_TIMEOUT_MS: "60000"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify explicit private UAT Human Gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$CONFIRMATION" = "RUN_PRIVATE_ZOKI_UAT"
+          test -n "$STAGING_BASE_URL"
+          test -n "$ZOKI_STAGING_MEMBERSHIP_KEY"
+          echo "PRIVATE ZOKI UAT: MANUAL HUMAN GATE ACCEPTED"
+
+      - name: Run two consecutive private professional UAT cycles
+        run: node scripts/private-zoki-uat.mjs
+
+      - name: Upload non-secret UAT evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-zoki-uat-evidence
+          retention-days: 30
+          path: artifacts/private-zoki-uat-report.json
