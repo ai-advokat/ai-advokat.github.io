@@ -12,6 +12,8 @@ const membershipMinGapMs=Math.max(13000,Number(process.env.UAT_MEMBERSHIP_MIN_GA
 const maxRateLimitRetries=2;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let lastMembershipStartedAt=0;
+const progressPath="artifacts/private-zoki-uat-progress.json";
+const governanceRunIds=new Set();
 
 const fail=m=>{console.error("PRIVATE ZOKI UAT EXECUTOR FAIL:",m);process.exit(1);};
 if(!base) fail("UAT_BASE_URL is required");
@@ -72,6 +74,20 @@ const report={
   cycles:[],
   totalExpected:manifest.scenarios.length*manifest.cycles_required
 };
+fs.mkdirSync("artifacts",{recursive:true});
+function persistProgress(extra={}){
+  const tmp=progressPath+".tmp";
+  fs.writeFileSync(tmp,JSON.stringify({
+    schema:"ai-advokat-private-zoki-uat-progress/v1",
+    startedAt:report.startedAt,
+    updatedAt:new Date().toISOString(),
+    origin:report.origin,
+    governanceRunIds:[...governanceRunIds],
+    ...extra
+  },null,2));
+  fs.renameSync(tmp,progressPath);
+}
+persistProgress({status:"RUNNING"});
 
 let totalPassed=0;
 for(let cycle=1;cycle<=manifest.cycles_required;cycle++){
@@ -98,16 +114,21 @@ for(let cycle=1;cycle<=manifest.cycles_required;cycle++){
         console.log(`[RATE_LIMIT] cycle=${cycle} scenario=${scenario.id} retryInMs=${waitMs}`);
         await sleep(waitMs);
       }
+      const governanceRunId=typeof payload?.governanceRunId==="string" && /^LIOE-RT-[A-Za-z0-9-]+$/.test(payload.governanceRunId)
+        ? payload.governanceRunId
+        : null;
+      if(governanceRunId) governanceRunIds.add(governanceRunId);
       const assertions=(scenario.assertions||[]).map(a=>({
         path:a.path,op:a.op,pass:assertionPass(payload,a)
       }));
       const pass=response.status===scenario.expect_status && assertions.every(a=>a.pass);
       if(pass) totalPassed++;
-      result={id:scenario.id,status:response.status,expectedStatus:scenario.expect_status,pass,assertions,attempts,elapsedMs:Date.now()-started};
+      result={id:scenario.id,status:response.status,expectedStatus:scenario.expect_status,pass,assertions,attempts,governanceRunId,elapsedMs:Date.now()-started};
     }catch(error){
       result={id:scenario.id,status:null,expectedStatus:scenario.expect_status,pass:false,error:String(error).slice(0,300),elapsedMs:Date.now()-started};
     }
     results.push(result);
+    persistProgress({status:"RUNNING",cycle,scenarioId:scenario.id});
     console.log(`[${result.pass?"PASS":"FAIL"}] cycle=${cycle} scenario=${scenario.id} status=${result.status}`);
   }
   report.cycles.push({cycle,pass:results.every(r=>r.pass),results});
@@ -116,8 +137,9 @@ for(let cycle=1;cycle<=manifest.cycles_required;cycle++){
 report.finishedAt=new Date().toISOString();
 report.totalPassed=totalPassed;
 report.pass=totalPassed===report.totalExpected && report.cycles.every(c=>c.pass);
-fs.mkdirSync("artifacts",{recursive:true});
+report.governanceRunIds=[...governanceRunIds];
 fs.writeFileSync("artifacts/private-zoki-uat-run.json",JSON.stringify(report,null,2));
+persistProgress({status:report.pass?"PASS":"FAIL",finishedAt:report.finishedAt,totalPassed:report.totalPassed,totalExpected:report.totalExpected});
 
 if(!report.pass) fail(`expected ${report.totalExpected}/${report.totalExpected}, got ${totalPassed}/${report.totalExpected}`);
 console.log(`PRIVATE ZOKI UAT: PASS ${totalPassed}/${report.totalExpected}`);
