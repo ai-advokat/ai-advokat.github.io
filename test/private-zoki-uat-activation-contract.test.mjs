@@ -121,6 +121,8 @@ test("cleanup operation budgets fit inside the independent cleanup window",()=>{
   assert.match(cleanup,/timeoutMs=15000/);
   assert.match(cleanup,/attempts=2/);
   assert.match(cleanup,/timeout:90000/);
+  assert.match(cleanup,/QUIESCENCE_MS=180000/);
+  assert.match(cleanup,/delete UAT telemetry batch/);
 });
 
 
@@ -170,7 +172,7 @@ test("cleanup revokes external access before membership cleanup and verifies usa
   assert.ok(disableAt>=0);
   assert.ok(accessAt>disableAt);
   assert.ok(membershipAt>accessAt);
-  assert.match(cleanup,/QUIESCENCE_MS=70000/);
+  assert.match(cleanup,/QUIESCENCE_MS=180000/);
   assert.match(cleanup,/membership_usage_monthly WHERE subject_key=\?/);
   assert.match(cleanup,/final usage sweep/);
   assert.match(cleanup,/SELECT COUNT\(\*\) AS n FROM membership_usage_monthly/);
@@ -202,8 +204,8 @@ test("private UAT keeps required LIOE telemetry enabled and makes it ephemeral",
   assert.match(uatRunner,/payload\?\.governanceRunId/);
   assert.match(runner,/telemetryWindowStartedAt/);
   assert.match(runner,/telemetryWindowEndedAt/);
-  assert.match(cleanup,/DELETE FROM lioe_runtime_runs WHERE run_id=\?/);
-  assert.match(cleanup,/SELECT COUNT\(\*\) AS n FROM lioe_runtime_runs WHERE run_id=\?/);
+  assert.match(cleanup,/DELETE FROM lioe_runtime_runs WHERE run_id IN/);
+  assert.match(cleanup,/SELECT COUNT\(\*\) AS n FROM lioe_runtime_runs WHERE run_id IN/);
   assert.match(cleanup,/SELECT run_id FROM lioe_runtime_runs WHERE started_at >= \? AND started_at <= \?/);
   assert.match(cleanup,/windowVerifiedEmpty/);
 });
