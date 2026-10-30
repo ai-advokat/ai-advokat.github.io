@@ -1,4 +1,4 @@
-name: Zoran temporary professional test access
+name: Zoran professional access
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ai-advokat-zoran-professional-test-access
+  group: ai-advokat-zoran-professional-access
   cancel-in-progress: false
 
 jobs:
@@ -30,23 +30,23 @@ jobs:
       - name: Install pinned tooling
         run: npm install --ignore-scripts --no-audit --no-fund
 
-      - name: Verify bounded owner-authorized test access request
+      - name: Verify bounded owner-authorized professional access request
         shell: bash
         run: |
           set -euo pipefail
           node <<'NODE'
           const fs=require("fs");
           const d=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
-          if(d.activation_authorized!==true) throw new Error("Test access not authorized");
-          if(d.purpose!=="owner_professional_testing") throw new Error("Unexpected purpose");
+          if(d.activation_authorized!==true) throw new Error("Professional access not authorized");
+          if(d.purpose!=="owner_professional_access") throw new Error("Unexpected purpose");
+          if(d.access_mode!=="permanent_until_revoked") throw new Error("Unexpected access mode");
           if(d.plan_code!=="office" || d.status!=="active") throw new Error("Unexpected entitlement");
           if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email||"")) throw new Error("Invalid account email");
           if(!/^[a-f0-9]{64}$/.test(d.access_key_hash)) throw new Error("Invalid key hash");
-          const expiry=Date.parse(d.expires_at);
-          if(!Number.isFinite(expiry) || expiry<=Date.now()) throw new Error("Invalid expiry");
+          if(d.expires_at!==null) throw new Error("Permanent access must have null expiry");
           if(d.human_gate_required!==true) throw new Error("Human Gate required");
           if(d.autonomous_filing!==false || d.autonomous_signature!==false || d.autonomous_external_transmission!==false) throw new Error("Safety boundary changed");
-          console.log("Bounded owner test access authorization: PASS");
+          console.log("Bounded owner permanent access authorization: PASS");
           NODE
 
       - name: Verify membership schema exists
@@ -63,7 +63,7 @@ jobs:
           grep -q "membership_entitlements" /tmp/zoran-access-schema.txt
           grep -q "membership_access_keys" /tmp/zoran-access-schema.txt
 
-      - name: Activate bounded Zoran test membership
+      - name: Activate bounded Zoran permanent membership
         shell: bash
         run: |
           set -euo pipefail
@@ -75,8 +75,8 @@ jobs:
           console.log("DELETE FROM membership_access_keys WHERE account_id="+q(d.account_id)+";");
           console.log("DELETE FROM membership_entitlements WHERE account_id="+q(d.account_id)+";");
           console.log("INSERT INTO membership_accounts(id,display_name,email,status) VALUES ("+[q(d.account_id),q(d.display_name),q(d.email),q("active")].join(",")+") ON CONFLICT(id) DO UPDATE SET display_name=excluded.display_name,email=excluded.email,status='active',updated_at=CURRENT_TIMESTAMP;");
-          console.log("INSERT INTO membership_entitlements(id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at) VALUES ("+[q(d.entitlement_id),q(d.account_id),q(d.plan_code),q(d.status),q("manual"),String(d.monthly_quota),String(d.seat_limit),"0",q(d.expires_at)].join(",")+");");
-          console.log("INSERT INTO membership_access_keys(id,account_id,key_hash,key_prefix,label,status,expires_at) VALUES ("+[q(d.key_id),q(d.account_id),q(d.access_key_hash),q(d.access_key_prefix),q("Owner-authorized temporary professional testing"),q("active"),q(d.expires_at)].join(",")+");");
+          console.log("INSERT INTO membership_entitlements(id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at) VALUES ("+[q(d.entitlement_id),q(d.account_id),q(d.plan_code),q(d.status),q("manual"),String(d.monthly_quota),String(d.seat_limit),"0","NULL"].join(",")+");");
+          console.log("INSERT INTO membership_access_keys(id,account_id,key_hash,key_prefix,label,status,expires_at) VALUES ("+[q(d.key_id),q(d.account_id),q(d.access_key_hash),q(d.access_key_prefix),q("Owner-authorized permanent professional access"),q("active"),"NULL"].join(",")+");");
           NODE
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/zoran-access.sql > /tmp/zoran-access-apply.txt
           rm -f /tmp/zoran-access.sql
@@ -89,18 +89,18 @@ jobs:
           const fs=require("fs");
           const d=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
           const q=v=>"'" + String(v).replaceAll("'","''") + "'";
-          process.stdout.write("SELECT CASE WHEN COUNT(*)=1 THEN 'ZORAN_ACCESS_OK' ELSE 'ZORAN_ACCESS_FAIL' END AS result FROM membership_accounts a JOIN membership_entitlements e ON e.account_id=a.id JOIN membership_access_keys k ON k.account_id=a.id WHERE a.id="+q(d.account_id)+" AND a.email="+q(d.email)+" AND a.status='active' AND e.plan_code='office' AND e.status='active' AND k.status='active' AND k.key_hash="+q(d.access_key_hash)+" AND datetime(k.expires_at)>datetime('now') AND datetime(e.expires_at)>datetime('now');");
+          process.stdout.write("SELECT CASE WHEN COUNT(*)=1 THEN 'ZORAN_ACCESS_OK' ELSE 'ZORAN_ACCESS_FAIL' END AS result FROM membership_accounts a JOIN membership_entitlements e ON e.account_id=a.id JOIN membership_access_keys k ON k.account_id=a.id WHERE a.id="+q(d.account_id)+" AND a.email="+q(d.email)+" AND a.status='active' AND e.plan_code='office' AND e.status='active' AND k.status='active' AND k.key_hash="+q(d.access_key_hash)+" AND k.expires_at IS NULL AND e.expires_at IS NULL;");
           NODE
           )"
           npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "$SQL" | tee /tmp/zoran-access-verify.txt
           grep -q "ZORAN_ACCESS_OK" /tmp/zoran-access-verify.txt
-          echo "ZORAN TEMPORARY PROFESSIONAL TEST ACCESS: ACTIVE"
+          echo "ZORAN PROFESSIONAL ACCESS: ACTIVE - NO EXPIRY"
 
       - name: Upload redacted evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: zoran-professional-test-access-evidence
+          name: zoran-professional-access-evidence
           retention-days: 14
           path: |
             /tmp/zoran-access-schema.txt
