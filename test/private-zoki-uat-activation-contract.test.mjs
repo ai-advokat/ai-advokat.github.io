@@ -250,13 +250,22 @@ test("professional legal-opinion fact review uses lightweight paid runtime setti
   assert.match(orchestratorSource,/professionalFactReview[\s\S]{0,240}\? 60000/);
 });
 
-test("paid Macedonian repair is bounded and only allowed for REPAIR verdicts",()=>{
+test("paid Macedonian repair is bounded, language-only, and still fail-closed",()=>{
   const indexSource=fs.readFileSync("src/index.js","utf8");
   const orchestratorSource=fs.readFileSync("src/agent-orchestrator.js","utf8");
-  assert.match(indexSource,/governedLanguageRelease\?\.verdict==="REPAIR" && membership/);
-  assert.doesNotMatch(indexSource,/governedLanguageRelease\?\.verdict==="BLOCK" && membership/);
+  assert.match(indexSource,/\["REPAIR","BLOCK"\]\.includes/);
+  assert.match(indexSource,/!governedLanguageReasons\.includes\("foreign_jurisdiction_substitution"\)/);
   assert.match(indexSource,/runOpenAIMacedonianRepair/);
+  assert.match(indexSource,/if\(!governedFinalRelease\.ok\)/);
   assert.match(orchestratorSource,/reasoning:\{effort:"low"\}/);
   assert.match(orchestratorSource,/OPENAI_LANGUAGE_REPAIR_TIMEOUT_MS/);
   assert.match(indexSource,/openai_language_repair_still_noncompliant/);
+});
+
+
+test("private UAT evidence retains sanitized language reason codes without response text",()=>{
+  const uatRunner=fs.readFileSync("scripts/run-private-zoki-uat.mjs","utf8");
+  assert.match(uatRunner,/languageReasons:Array\.isArray\(payload\?\.languageReasons\)/);
+  assert.match(uatRunner,/slice\(0,8\)/);
+  assert.doesNotMatch(uatRunner,/answer:payload\?\.answer/);
 });
