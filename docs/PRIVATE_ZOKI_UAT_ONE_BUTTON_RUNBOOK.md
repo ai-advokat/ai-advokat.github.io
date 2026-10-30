@@ -28,6 +28,14 @@ Create or use the GitHub Environment:
 
 `staging-uat`
 
+Before adding secrets, configure its deployment protection rules:
+
+- allowed deployment branch/ref: `main` only;
+- required reviewer: at least one human approver who is not bypassed;
+- do not allow administrators to bypass the reviewer gate for this UAT lane if your GitHub plan exposes that control.
+
+The workflow also independently rejects every ref except `refs/heads/main` and explicitly checks out `main`. The Environment rule is the second security boundary and must be configured before the first live UAT.
+
 Store exactly four secrets there. Do not use repository-wide production secrets.
 
 ### 1. HG2_C_UAT_WORKER_TOKEN_B
@@ -80,9 +88,13 @@ Use a staging-only OpenAI project key with a bounded test budget.
 
 The key is attached to the staging Worker only for the UAT window and is deleted during cleanup. Never use a production project key for this lane.
 
+## Immutable toolchain
+
+The repository includes `package-lock.json` with lockfileVersion 3 and Wrangler pinned to `4.156.0` with npm integrity metadata. The workflow installs tooling with `npm ci --ignore-scripts --no-audit --no-fund` before any staging secret is exposed to a step.
+
 ## Run
 
-GitHub → Actions → **Private Zoki staging UAT activation** → Run workflow.
+GitHub → Actions → **Private Zoki staging UAT activation** → choose branch `main` → Run workflow.
 
 Confirmation input must be exactly:
 
