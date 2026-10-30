@@ -7,6 +7,8 @@ const WORKER="ai-advokat-staging";
 const DB_ID="309f72b8-8711-47fc-bea7-fbd1d649561d";
 const STATE_PATH="artifacts/private-zoki-one-button-uat-state.json";
 const EVIDENCE_PATH="artifacts/private-zoki-one-button-uat-evidence.json";
+const UAT_PROGRESS_PATH="artifacts/private-zoki-uat-progress.json";
+const UAT_RUN_PATH="artifacts/private-zoki-uat-run.json";
 const QUIESCENCE_MS=70000;
 
 function fail(message){ throw new Error(message); }
@@ -116,7 +118,7 @@ const state=fs.existsSync(STATE_PATH)
       access:{serviceTokenName:null,serviceTokenId:null,appName:null,appId:null},
       worker:{uatDeployAttempted:false,openAISecretAddAttempted:false,workersDevEnableAttempted:false},
       membership:{accountId:null,provisionAttempted:false},
-      uat:{executed:false,passed:false,totalPassed:null,totalExpected:20},
+      uat:{executed:false,passed:false,totalPassed:null,totalExpected:20,telemetryWindowStartedAt:null,telemetryWindowEndedAt:null,governanceRunIds:[]},
       runError:"state file missing"
     };
 const evidence=fs.existsSync(EVIDENCE_PATH)
@@ -133,6 +135,7 @@ const cleanup={
   startedAt:new Date().toISOString(),
   accessRevokedBeforeMembershipCleanup:false,
   quiescenceMs:0,
+  telemetry:{capturedRunIds:0,windowRunIds:0,deletedRunIds:0,verifiedAbsent:false,windowVerifiedEmpty:false},
   membershipDeletes:{usage:false,rateLimits:false,keys:false,entitlements:false,account:false,verifiedAbsent:false},
   workersDevDisabled:false,
   openAISecretRemoved:false,
@@ -220,7 +223,88 @@ if(state.membership?.accountId && state.worker?.workersDevEnableAttempted){
   cleanup.quiescenceMs=QUIESCENCE_MS;
 }
 
-// 3) Remove membership state only after the request path is closed and quiescent.
+// 3) Remove UAT-only LIOE telemetry after the request path is closed and quiescent.
+{
+  const runIds=new Set();
+  const addRunIds=value=>{
+    for(const id of Array.isArray(value)?value:[]){
+      if(typeof id==="string" && /^LIOE-RT-[A-Za-z0-9-]+$/.test(id)) runIds.add(id);
+    }
+  };
+  addRunIds(state.uat?.governanceRunIds);
+
+  for(const file of [UAT_PROGRESS_PATH,UAT_RUN_PATH]){
+    try{
+      if(!fs.existsSync(file)) continue;
+      const payload=JSON.parse(fs.readFileSync(file,"utf8"));
+      addRunIds(payload?.governanceRunIds);
+    }catch(error){
+      recordError("telemetry_evidence_read",error);
+    }
+  }
+  cleanup.telemetry.capturedRunIds=runIds.size;
+
+  const windowStart=state.uat?.telemetryWindowStartedAt||null;
+  const windowEnd=state.uat?.telemetryWindowEndedAt||cleanup.startedAt;
+  if(windowStart){
+    try{
+      const payload=await retry("enumerate UAT telemetry window",()=>d1(
+        "SELECT run_id FROM lioe_runtime_runs WHERE started_at >= ? AND started_at <= ? ORDER BY started_at",
+        [windowStart,windowEnd]
+      ));
+      const windowIds=firstResultRows(payload)
+        .map(row=>String(row?.run_id||""))
+        .filter(id=>/^LIOE-RT-[A-Za-z0-9-]+$/.test(id));
+      cleanup.telemetry.windowRunIds=windowIds.length;
+      for(const id of windowIds) runIds.add(id);
+    }catch(error){
+      recordError("telemetry_window_enumerate",error);
+    }
+  }
+
+  for(const id of runIds){
+    try{
+      await retry("delete UAT telemetry "+id,()=>d1("DELETE FROM lioe_runtime_runs WHERE run_id=?",[id]));
+      cleanup.telemetry.deletedRunIds++;
+    }catch(error){
+      recordError("telemetry_delete",error);
+    }
+  }
+
+  try{
+    let remaining=0;
+    for(const id of runIds){
+      const payload=await d1("SELECT COUNT(*) AS n FROM lioe_runtime_runs WHERE run_id=?",[id]);
+      remaining+=Number(firstResultRows(payload)[0]?.n||0);
+    }
+    cleanup.telemetry.verifiedAbsent=remaining===0;
+    if(!cleanup.telemetry.verifiedAbsent){
+      recordError("telemetry_verify",new Error("captured UAT telemetry rows remain"));
+    }
+  }catch(error){
+    recordError("telemetry_verify",error);
+  }
+
+  if(windowStart){
+    try{
+      const payload=await d1(
+        "SELECT COUNT(*) AS n FROM lioe_runtime_runs WHERE started_at >= ? AND started_at <= ?",
+        [windowStart,windowEnd]
+      );
+      cleanup.telemetry.windowVerifiedEmpty=Number(firstResultRows(payload)[0]?.n||0)===0;
+      if(!cleanup.telemetry.windowVerifiedEmpty){
+        recordError("telemetry_window_verify",new Error("UAT telemetry window still contains rows"));
+      }
+    }catch(error){
+      recordError("telemetry_window_verify",error);
+    }
+  }else{
+    cleanup.telemetry.windowVerifiedEmpty=true;
+  }
+  if(runIds.size===0 && !windowStart) cleanup.telemetry.verifiedAbsent=true;
+}
+
+// 4) Remove membership state only after the request path is closed and quiescent.
 if(state.membership?.accountId){
   const accountId=state.membership.accountId;
   const ops=[
@@ -273,6 +357,8 @@ if(state.membership?.accountId){
 cleanup.finishedAt=new Date().toISOString();
 const cleanupOk=
   cleanup.accessRevokedBeforeMembershipCleanup===true &&
+  cleanup.telemetry.verifiedAbsent===true &&
+  cleanup.telemetry.windowVerifiedEmpty===true &&
   cleanup.membershipDeletes.verifiedAbsent===true &&
   cleanup.workersDevDisabled===true &&
   cleanup.openAISecretRemoved===true &&
