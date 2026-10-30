@@ -34,7 +34,7 @@ Before adding secrets, configure its deployment protection rules:
 - required reviewer: at least one human approver who is not bypassed;
 - do not allow administrators to bypass the reviewer gate for this UAT lane if your GitHub plan exposes that control.
 
-The workflow also independently rejects every ref except `refs/heads/main` and explicitly checks out `main`. The Environment rule is the second security boundary and must be configured before the first live UAT.
+The workflow also independently rejects every ref except `refs/heads/main` and checks out the immutable dispatch SHA from that protected ref. The Environment rule is the second security boundary and must be configured before the first live UAT.
 
 Store exactly four secrets there. Do not use repository-wide production secrets.
 
@@ -105,7 +105,7 @@ The workflow performs:
 1. canonical UAT pack verification;
 2. closed-baseline verification;
 3. temporary Cloudflare Access service token + application;
-4. bounded staging runtime deployment with OpenAI orchestration enabled, external research/file tools disabled, and persistent LIOE runtime telemetry disabled;
+4. bounded staging runtime deployment with OpenAI orchestration enabled, external research/file tools disabled, and governed LIOE runtime telemetry enabled only for the UAT window;
 5. temporary staging OpenAI secret;
 6. Access-protected `workers.dev` activation;
 7. isolated two-hour UAT membership with quota 40;
@@ -124,7 +124,8 @@ The job is not PASS unless all are true:
 - temporary OpenAI Worker secret removed;
 - baseline `wrangler.staging.jsonc` redeployed;
 - Access application deleted;
-- Access service token deleted.
+- Access service token deleted;
+- every captured UAT `governanceRunId` removed from `lioe_runtime_runs` and the exact UAT telemetry window verified empty.
 
 A 20/20 test with failed cleanup is not a final PASS.
 
@@ -133,9 +134,10 @@ A 20/20 test with failed cleanup is not a final PASS.
 The workflow uploads only non-secret evidence:
 
 - `artifacts/private-zoki-uat-run.json`
+- `artifacts/private-zoki-uat-progress.json`
 - `artifacts/private-zoki-one-button-uat-evidence.json`
 
-No membership key, Access client secret, OpenAI API key or Cloudflare API token is written to evidence.
+No membership key, Access client secret, OpenAI API key or Cloudflare API token is written to evidence. The progress artifact stores only non-secret UAT status and returned `governanceRunId` values needed for deterministic telemetry cleanup.
 
 ## Release boundary
 
