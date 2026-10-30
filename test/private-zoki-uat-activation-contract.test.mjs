@@ -221,3 +221,10 @@ test("runtime fails closed on private staging UAT without the ephemeral ingress 
   assert.match(source,/X-AI-Advokat-UAT-Token/);
   assert.match(source,/uat_ingress_denied/);
 });
+
+
+test("private UAT allows a bounded 90-second request window for professional legal turns",()=>{
+  assert.match(runner,/UAT_REQUEST_TIMEOUT_MS:"90000"/);
+  const uatRunner=fs.readFileSync("scripts/run-private-zoki-uat.mjs","utf8");
+  assert.match(uatRunner,/Math\.min\(90000/);
+});
