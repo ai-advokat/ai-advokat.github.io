@@ -9,7 +9,7 @@ const STATE_PATH="artifacts/private-zoki-one-button-uat-state.json";
 const EVIDENCE_PATH="artifacts/private-zoki-one-button-uat-evidence.json";
 const UAT_PROGRESS_PATH="artifacts/private-zoki-uat-progress.json";
 const UAT_RUN_PATH="artifacts/private-zoki-uat-run.json";
-const QUIESCENCE_MS=70000;
+const QUIESCENCE_MS=180000;
 
 function fail(message){ throw new Error(message); }
 function env(name){
@@ -262,27 +262,34 @@ if(state.membership?.accountId && state.worker?.workersDevEnableAttempted){
     }
   }
 
-  for(const id of runIds){
+  const ids=[...runIds];
+  if(ids.length){
+    const placeholders=ids.map(()=>"?").join(",");
     try{
-      await retry("delete UAT telemetry "+id,()=>d1("DELETE FROM lioe_runtime_runs WHERE run_id=?",[id]));
-      cleanup.telemetry.deletedRunIds++;
+      await retry("delete UAT telemetry batch",()=>d1(
+        `DELETE FROM lioe_runtime_runs WHERE run_id IN (${placeholders})`,
+        ids
+      ));
+      cleanup.telemetry.deletedRunIds=ids.length;
     }catch(error){
       recordError("telemetry_delete",error);
     }
-  }
 
-  try{
-    let remaining=0;
-    for(const id of runIds){
-      const payload=await d1("SELECT COUNT(*) AS n FROM lioe_runtime_runs WHERE run_id=?",[id]);
-      remaining+=Number(firstResultRows(payload)[0]?.n||0);
+    try{
+      const payload=await d1(
+        `SELECT COUNT(*) AS n FROM lioe_runtime_runs WHERE run_id IN (${placeholders})`,
+        ids
+      );
+      const remaining=Number(firstResultRows(payload)[0]?.n||0);
+      cleanup.telemetry.verifiedAbsent=remaining===0;
+      if(!cleanup.telemetry.verifiedAbsent){
+        recordError("telemetry_verify",new Error("captured UAT telemetry rows remain"));
+      }
+    }catch(error){
+      recordError("telemetry_verify",error);
     }
-    cleanup.telemetry.verifiedAbsent=remaining===0;
-    if(!cleanup.telemetry.verifiedAbsent){
-      recordError("telemetry_verify",new Error("captured UAT telemetry rows remain"));
-    }
-  }catch(error){
-    recordError("telemetry_verify",error);
+  }else{
+    cleanup.telemetry.verifiedAbsent=true;
   }
 
   if(windowStart){
@@ -301,7 +308,6 @@ if(state.membership?.accountId && state.worker?.workersDevEnableAttempted){
   }else{
     cleanup.telemetry.windowVerifiedEmpty=true;
   }
-  if(runIds.size===0 && !windowStart) cleanup.telemetry.verifiedAbsent=true;
 }
 
 // 4) Remove membership state only after the request path is closed and quiescent.
