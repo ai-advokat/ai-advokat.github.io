@@ -98,7 +98,7 @@ The workflow performs:
 5. a cryptographically random ephemeral `UAT_INGRESS_TOKEN` Worker secret generated inside the run;
 6. `workers.dev` activation only after the staging runtime can fail closed on `X-AI-Advokat-UAT-Token`;
 7. isolated two-hour UAT membership with quota 40;
-8. 10 scenarios × 2 cycles;
+8. 10 scenarios × 2 cycles, with at most one bounded retry for transport failures or explicitly recognised transient provider/postflight 503 errors;
 9. PASS only at 20/20;
 10. unconditional cleanup;
 11. baseline staging redeploy;
