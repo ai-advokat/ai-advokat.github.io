@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 
 const workflow=fs.readFileSync(".github/workflows/private-zoki-uat-activation.yml","utf8");
 const runner=fs.readFileSync("scripts/run-private-zoki-staging-activation.mjs","utf8");
+const cleanup=fs.readFileSync("scripts/cleanup-private-zoki-staging-activation.mjs","utf8");
+const finalGate=fs.readFileSync("scripts/verify-private-zoki-one-button-result.mjs","utf8");
 
 test("private Zoki UAT workflow is manual, exact-gated and staging-environment bound",()=>{
   assert.match(workflow,/workflow_dispatch:/);
@@ -42,31 +44,65 @@ test("orchestrator protects the temporary public hostname with Access before ena
   assert.match(runner,/service_token/);
 });
 
-test("orchestrator executes canonical 20/20 UAT and always contains cleanup paths",()=>{
+test("orchestrator executes canonical 20/20 UAT and persists non-secret recovery state",()=>{
   assert.match(runner,/scripts\/run-private-zoki-uat\.mjs/);
   assert.match(runner,/totalPassed!==20/);
-  assert.match(runner,/DELETE FROM membership_access_keys/);
-  assert.match(runner,/DELETE FROM membership_entitlements/);
-  assert.match(runner,/DELETE FROM membership_accounts/);
-  assert.match(runner,/secrets\/OPENAI_API_KEY/);
-  assert.match(runner,/enabled:false,previews_enabled:false/);
-  assert.match(runner,/restore baseline staging config/);
-  assert.match(runner,/access\/service_tokens\/\$\{serviceTokenId\}/);
+  assert.match(runner,/private-zoki-one-button-uat-state\.json/);
+  assert.match(runner,/writeJsonAtomic/);
+  assert.match(runner,/UAT_PASS_PENDING_INDEPENDENT_CLEANUP/);
 });
 
-test("orchestrator does not print generated membership or Access secrets",()=>{
-  assert.doesNotMatch(runner,/console\.(?:log|error)\([^\n]*(?:membershipKey|accessClientSecret|UAT_OPENAI_API_KEY)/);
-  assert.doesNotMatch(runner,/privateMembershipKey/);
+test("workflow preserves cleanup after execution timeout",()=>{
+  assert.match(workflow,/timeout --signal=TERM --kill-after=60s 30m node scripts\/run-private-zoki-staging-activation\.mjs/);
+  assert.match(workflow,/Independent staging cleanup/);
+  assert.match(workflow,/if: always\(\)/);
+  assert.match(workflow,/timeout --signal=TERM --kill-after=30s 10m node scripts\/cleanup-private-zoki-staging-activation\.mjs/);
+  assert.match(workflow,/Final UAT and cleanup gate/);
 });
 
+test("cleanup attempts membership deletes independently and verifies absence",()=>{
+  assert.match(cleanup,/membership cleanup /);
+  assert.match(cleanup,/DELETE FROM membership_usage_monthly/);
+  assert.match(cleanup,/DELETE FROM membership_access_keys/);
+  assert.match(cleanup,/DELETE FROM membership_entitlements/);
+  assert.match(cleanup,/DELETE FROM membership_accounts/);
+  assert.match(cleanup,/for\(const \[name,fn\] of ops\)/);
+  assert.match(cleanup,/verifiedAbsent/);
+  assert.match(cleanup,/SELECT COUNT\(\*\) AS n FROM membership_accounts/);
+});
+
+test("cleanup restores every temporary staging capability independently",()=>{
+  assert.match(cleanup,/enabled:false,previews_enabled:false/);
+  assert.match(cleanup,/secrets\/OPENAI_API_KEY/);
+  assert.match(cleanup,/restore baseline staging config/);
+  assert.match(cleanup,/access\/apps\/\$\{id\}/);
+  assert.match(cleanup,/access\/service_tokens\/\$\{id\}/);
+  assert.match(cleanup,/cleanup\.errors\.length===0/);
+});
+
+test("final gate requires 20/20 plus verified cleanup and production untouched",()=>{
+  assert.match(finalGate,/PASS_CLEANUP_VERIFIED/);
+  assert.match(finalGate,/totalPassed\|\|0\)!==20/);
+  assert.match(finalGate,/productionTouched!==false/);
+  assert.match(finalGate,/cleanup errors remain/);
+});
 
 test("temporary Wrangler config stays at repository root so relative main/assets paths remain valid",()=>{
   assert.match(runner,/path\.resolve\("wrangler\.private-zoki-uat\.jsonc"\)/);
   assert.doesNotMatch(runner,/path\.resolve\("\.wrangler","private-zoki-uat/);
 });
 
-test("D1 helper rejects inner failed result batches before success or cleanup can be recorded",()=>{
-  assert.match(runner,/const batches=Array\.isArray\(payload\?\.result\)/);
-  assert.match(runner,/batch\?\.success!==true/);
-  assert.match(runner,/D1 query batch failed/);
+test("D1 helpers reject inner failed result batches before success can be recorded",()=>{
+  for(const source of [runner,cleanup]){
+    assert.match(source,/const batches=Array\.isArray\(payload\?\.result\)/);
+    assert.match(source,/batch\?\.success!==true/);
+    assert.match(source,/D1 query batch failed/);
+  }
+});
+
+test("runner and cleanup do not print generated membership or Access secrets",()=>{
+  for(const source of [runner,cleanup]){
+    assert.doesNotMatch(source,/console\.(?:log|error)\([^\n]*(?:membershipKey|accessClientSecret|UAT_OPENAI_API_KEY)/);
+    assert.doesNotMatch(source,/privateMembershipKey/);
+  }
 });
