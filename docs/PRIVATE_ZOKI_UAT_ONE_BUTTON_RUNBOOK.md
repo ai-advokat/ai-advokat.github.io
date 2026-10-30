@@ -105,7 +105,7 @@ The workflow performs:
 1. canonical UAT pack verification;
 2. closed-baseline verification;
 3. temporary Cloudflare Access service token + application;
-4. bounded staging runtime deployment with OpenAI orchestration enabled and external research/file tools disabled;
+4. bounded staging runtime deployment with OpenAI orchestration enabled, external research/file tools disabled, and persistent LIOE runtime telemetry disabled;
 5. temporary staging OpenAI secret;
 6. Access-protected `workers.dev` activation;
 7. isolated two-hour UAT membership with quota 40;
