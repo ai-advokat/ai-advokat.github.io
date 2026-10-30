@@ -183,3 +183,11 @@ test("UAT checkout is pinned to the immutable dispatch SHA",()=>{
   assert.match(workflow,/test "\$\(git rev-parse HEAD\)" = "\$GITHUB_SHA"/);
   assert.doesNotMatch(workflow,/ref: main/);
 });
+
+
+test("cleanup removes and verifies temporary UAT rate-limit state",()=>{
+  assert.match(cleanup,/DELETE FROM security_rate_limit_windows WHERE subject_key=\?/);
+  assert.match(cleanup,/SELECT COUNT\(\*\) AS n FROM security_rate_limit_windows WHERE subject_key=\?/);
+  assert.match(cleanup,/rateLimits:false/);
+  assert.match(cleanup,/rateLimits:true/);
+});
