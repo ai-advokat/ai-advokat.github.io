@@ -8,6 +8,19 @@
 
   "vars": {
     "ALARM_ENABLED": "false",
+    "UAT_RUNTIME_IDENTITY": "AI_ADVOKAT_4_DEDICATED_STAGING",
+    "UAT_WORKER_NAME": "ai-advokat-staging",
+    "UAT_DATABASE_NAME": "ai-advokat-staging-db",
+    "OPENAI_MODEL": "gpt-6.1-sol",
+    "OPENAI_REASONING_EFFORT": "medium",
+    "OPENAI_ORCHESTRATOR_ENABLED": "true",
+    "OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED": "false",
+    "OPENAI_FILE_INPUT_ENABLED": "false",
+    "OPENAI_PROVIDER_ACTIVATION_STATE": "staging_private_uat_only",
+    "LIOE_RUNTIME_GOVERNANCE_ENABLED": "true",
+    "LIOE_POSTFLIGHT_ENABLED": "true",
+    "LIOE_RUNTIME_TELEMETRY_ENABLED": "true",
+    "LIOE_SPECIALIST_EXECUTION_ENABLED": "true",
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFKQHY3Quvb_8JqH",
     "TURNSTILE_ALLOWED_HOSTNAMES": "ai-advokat-staging.ai-advokat-4-staging.workers.dev"
   },
