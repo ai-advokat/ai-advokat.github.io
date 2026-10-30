@@ -229,7 +229,7 @@ try{
     OPENAI_PROVIDER_ACTIVATION_STATE:"staging_private_uat_only",
     LIOE_RUNTIME_GOVERNANCE_ENABLED:"true",
     LIOE_POSTFLIGHT_ENABLED:"true",
-    LIOE_RUNTIME_TELEMETRY_ENABLED:"true",
+    LIOE_RUNTIME_TELEMETRY_ENABLED:"false",
     LIOE_SPECIALIST_EXECUTION_ENABLED:"true"
   };
   uatConfig.workers_dev=false;
