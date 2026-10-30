@@ -26,6 +26,15 @@ if(doc.privateAccess?.publiclyReachable!==false) fail("staging surface must not 
 if(doc.temporaryMembership?.accountId?.startsWith("UAT-ZOKI-")!==true) fail("temporary UAT membership account id invalid");
 if(Number(doc.temporaryMembership?.monthlyQuota||0)<20) fail("temporary UAT quota below 20");
 if(doc.temporaryMembership?.persistentZokiEntitlementUsed!==false) fail("persistent Zoki entitlement must not be used");
+
+const startsAt=Date.parse(doc.temporaryMembership?.startsAt||"");
+const expiresAt=Date.parse(doc.temporaryMembership?.expiresAt||"");
+if(!Number.isFinite(startsAt)) fail("temporary membership startsAt must be valid ISO date");
+if(!Number.isFinite(expiresAt)) fail("temporary membership expiresAt must be valid ISO date");
+if(expiresAt<=startsAt) fail("temporary membership expiry must be after start");
+if(expiresAt-startsAt>4*60*60*1000) fail("temporary membership lifetime exceeds four hours");
+
 if(doc.cleanupPlan?.prepared!==true) fail("cleanup plan missing");
+if(doc.cleanupPlan?.temporaryMembershipDeleteSqlPrepared!==true) fail("temporary membership cleanup SQL not prepared");
 
 console.log("PRIVATE ZOKI STAGING ACTIVATION EVIDENCE: PASS");
