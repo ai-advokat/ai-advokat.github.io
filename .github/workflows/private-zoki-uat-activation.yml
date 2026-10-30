@@ -107,5 +107,6 @@ jobs:
           path: |
             artifacts/private-zoki-one-button-uat-evidence.json
             artifacts/private-zoki-uat-run.json
+            artifacts/private-zoki-uat-progress.json
             artifacts/private-zoki-one-button-uat-state.json
           if-no-files-found: warn
