@@ -7352,6 +7352,23 @@ export default {
       return withSecurityHeaders(await env.ASSETS.fetch(request));
     }
 
+    if (url.pathname === "/api/uat-identity") {
+      if (request.method !== "GET" && request.method !== "HEAD") return methodNotAllowed(request);
+      if (env.UAT_RUNTIME_IDENTITY !== "AI_ADVOKAT_4_DEDICATED_STAGING") {
+        return json(request,{ok:false,error:"not_found"},404);
+      }
+      const database = await dbStatus(env);
+      return json(request,{
+        ok:true,
+        identity:"AI_ADVOKAT_4_DEDICATED_STAGING",
+        workerName:env.UAT_WORKER_NAME || null,
+        databaseName:env.UAT_DATABASE_NAME || null,
+        database,
+        productionAuthorized:false,
+        uatOnly:true
+      },200);
+    }
+
     if (url.pathname === "/api/health") {
       if (request.method !== "GET" && request.method !== "HEAD") return methodNotAllowed(request);
 
