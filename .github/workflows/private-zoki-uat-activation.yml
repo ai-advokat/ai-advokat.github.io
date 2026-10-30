@@ -51,8 +51,28 @@ jobs:
           test -n "$UAT_OPENAI_API_KEY"
           echo "PRIVATE ZOKI STAGING UAT: HUMAN GATE ACCEPTED"
 
-      - name: Run bounded remote staging UAT with automatic cleanup
-        run: node scripts/run-private-zoki-staging-activation.mjs
+      - name: Run bounded remote staging UAT
+        id: execute_uat
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          timeout --signal=TERM --kill-after=60s 30m node scripts/run-private-zoki-staging-activation.mjs
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
+
+      - name: Independent staging cleanup
+        id: cleanup
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          timeout --signal=TERM --kill-after=30s 10m node scripts/cleanup-private-zoki-staging-activation.mjs
+
+      - name: Final UAT and cleanup gate
+        if: always()
+        run: node scripts/verify-private-zoki-one-button-result.mjs
 
       - name: Upload non-secret UAT evidence
         if: always()
@@ -63,4 +83,5 @@ jobs:
           path: |
             artifacts/private-zoki-one-button-uat-evidence.json
             artifacts/private-zoki-uat-run.json
+            artifacts/private-zoki-one-button-uat-state.json
           if-no-files-found: warn
