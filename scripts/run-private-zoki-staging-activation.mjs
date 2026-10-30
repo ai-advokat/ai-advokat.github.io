@@ -15,6 +15,7 @@ const GATE="APPROVE_PRIVATE_ZOKI_STAGING_UAT";
 const RUN_KEY=(String(process.env.GITHUB_RUN_ID||Date.now())+"-"+String(process.env.GITHUB_RUN_ATTEMPT||"1")).replace(/[^A-Za-z0-9_-]/g,"");
 const STATE_PATH="artifacts/private-zoki-one-button-uat-state.json";
 const EVIDENCE_PATH="artifacts/private-zoki-one-button-uat-evidence.json";
+const UAT_PROGRESS_PATH="artifacts/private-zoki-uat-progress.json";
 
 function fail(message){ throw new Error(message); }
 function env(name){
@@ -137,7 +138,7 @@ const state={
   access:{serviceTokenName:"AI ADVOKAT 4 Private Zoki UAT "+RUN_KEY,serviceTokenId:null,appName:"AI ADVOKAT 4 Private Zoki UAT "+RUN_KEY,appId:null},
   worker:{uatDeployAttempted:false,uatDeployed:false,openAISecretAddAttempted:false,openAISecretAdded:false,workersDevEnableAttempted:false,workersDevEnabled:false},
   membership:{accountId:"UAT-ZOKI-"+RUN_KEY,provisionAttempted:false,provisioned:false},
-  uat:{executed:false,passed:false,totalPassed:null,totalExpected:20},
+  uat:{executed:false,passed:false,totalPassed:null,totalExpected:20,telemetryWindowStartedAt:null,telemetryWindowEndedAt:null,governanceRunIds:[]},
   runError:null
 };
 const evidence={
@@ -229,7 +230,7 @@ try{
     OPENAI_PROVIDER_ACTIVATION_STATE:"staging_private_uat_only",
     LIOE_RUNTIME_GOVERNANCE_ENABLED:"true",
     LIOE_POSTFLIGHT_ENABLED:"true",
-    LIOE_RUNTIME_TELEMETRY_ENABLED:"false",
+    LIOE_RUNTIME_TELEMETRY_ENABLED:"true",
     LIOE_SPECIALIST_EXECUTION_ENABLED:"true"
   };
   uatConfig.workers_dev=false;
@@ -303,12 +304,18 @@ try{
   }
   if(!healthOk) fail("Access-protected staging health route did not become ready");
 
+  state.uat.telemetryWindowStartedAt=new Date().toISOString();
+  persist();
   runUat(membershipKey,accessClientId,accessClientSecret);
+  state.uat.telemetryWindowEndedAt=new Date().toISOString();
   state.uat.executed=true;
   evidence.uat.executed=true;
   const report=JSON.parse(fs.readFileSync("artifacts/private-zoki-uat-run.json","utf8"));
   state.uat.passed=report?.pass===true;
   state.uat.totalPassed=Number(report?.totalPassed||0);
+  state.uat.governanceRunIds=Array.isArray(report?.governanceRunIds)
+    ? [...new Set(report.governanceRunIds.filter(x=>typeof x==="string" && /^LIOE-RT-[A-Za-z0-9-]+$/.test(x)))]
+    : [];
   evidence.uat.passed=state.uat.passed;
   evidence.uat.totalPassed=state.uat.totalPassed;
   if(!state.uat.passed || state.uat.totalPassed!==20) fail("UAT did not achieve 20/20");
@@ -316,6 +323,19 @@ try{
   persist();
   console.log("PRIVATE ZOKI STAGING UAT EXECUTION: PASS 20/20 · CLEANUP REQUIRED");
 }catch(error){
+  if(state.uat.telemetryWindowStartedAt && !state.uat.telemetryWindowEndedAt){
+    state.uat.telemetryWindowEndedAt=new Date().toISOString();
+  }
+  try{
+    if(fs.existsSync(UAT_PROGRESS_PATH)){
+      const progress=JSON.parse(fs.readFileSync(UAT_PROGRESS_PATH,"utf8"));
+      state.uat.governanceRunIds=[...new Set([
+        ...(state.uat.governanceRunIds||[]),
+        ...((Array.isArray(progress?.governanceRunIds)?progress.governanceRunIds:[])
+          .filter(x=>typeof x==="string" && /^LIOE-RT-[A-Za-z0-9-]+$/.test(x)))
+      ])];
+    }
+  }catch{}
   state.runError=String(error?.message||error).slice(0,1000);
   evidence.error=state.runError;
   evidence.finalStatus="UAT_FAIL_PENDING_INDEPENDENT_CLEANUP";
