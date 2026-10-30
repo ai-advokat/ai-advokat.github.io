@@ -58,3 +58,15 @@ test("orchestrator does not print generated membership or Access secrets",()=>{
   assert.doesNotMatch(runner,/console\.(?:log|error)\([^\n]*(?:membershipKey|accessClientSecret|UAT_OPENAI_API_KEY)/);
   assert.doesNotMatch(runner,/privateMembershipKey/);
 });
+
+
+test("temporary Wrangler config stays at repository root so relative main/assets paths remain valid",()=>{
+  assert.match(runner,/path\.resolve\("wrangler\.private-zoki-uat\.jsonc"\)/);
+  assert.doesNotMatch(runner,/path\.resolve\("\.wrangler","private-zoki-uat/);
+});
+
+test("D1 helper rejects inner failed result batches before success or cleanup can be recorded",()=>{
+  assert.match(runner,/const batches=Array\.isArray\(payload\?\.result\)/);
+  assert.match(runner,/batch\?\.success!==true/);
+  assert.match(runner,/D1 query batch failed/);
+});
