@@ -72,7 +72,7 @@ for (const name of fs.readdirSync(workflowsDir).filter(n => /\.ya?ml$/i.test(n))
     if (!text.includes("APPROVE_PRIVATE_ZOKI_STAGING_UAT")) fail("approved UAT workflow missing exact Human Gate");
     if (!text.includes("environment: staging-uat")) fail("approved UAT workflow must use staging-uat environment");
     if (!text.includes("node scripts/run-private-zoki-staging-activation.mjs")) fail("approved UAT workflow must call the bounded orchestrator");
-    if (text.includes(PROD_WORKER || "ai-advokat-github-io")) fail("approved UAT workflow references production Worker");
+    if (text.includes(PROD_WORKER)) fail("approved UAT workflow references production Worker");
     if (text.includes("wrangler.jsonc")) fail("approved UAT workflow must not reference production Wrangler config");
     const foundSecrets=[...text.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(m=>m[1]);
     const unique=new Set(foundSecrets);
