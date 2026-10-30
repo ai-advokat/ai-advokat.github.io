@@ -153,10 +153,12 @@ test("labor reinstatement complaint is L3 consequential",()=>{
 });
 
 
-test("professional employment-termination fact review is L2 and requires Human Gate",()=>{
+test("professional employment-termination fact review is L1 with Human Review, not strategy depth",()=>{
   const p=buildLegalIntelligencePlan("Работник добил отказ. Направи професионална листа на факти што адвокат треба да ги провери пред да даде правно мислење. Не претпоставувај непознати факти.",{selectedAgents:["macedonian_law"]});
-  assert.equal(p.mission_profile.id,"L2_STRATEGY_PROCEDURE");
+  assert.equal(p.mission_profile.id,"L1_VERIFIED_RESEARCH");
   assert.equal(p.authority_and_human_gate.human_review_required,true);
+  assert.equal(p.legal_stress_test.required,false);
+  assert.equal(p.adversarial_review.required,false);
   assert.equal(p.implementation.no_autonomous_filing,true);
 });
 
