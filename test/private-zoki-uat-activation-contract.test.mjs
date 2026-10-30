@@ -176,3 +176,10 @@ test("cleanup revokes external access before membership cleanup and verifies usa
   assert.match(cleanup,/SELECT COUNT\(\*\) AS n FROM membership_usage_monthly/);
   assert.match(cleanup,/accessRevokedBeforeMembershipCleanup===true/);
 });
+
+
+test("UAT checkout is pinned to the immutable dispatch SHA",()=>{
+  assert.match(workflow,/ref: \$\{\{ github\.sha \}\}/);
+  assert.match(workflow,/test "\$\(git rev-parse HEAD\)" = "\$GITHUB_SHA"/);
+  assert.doesNotMatch(workflow,/ref: main/);
+});
