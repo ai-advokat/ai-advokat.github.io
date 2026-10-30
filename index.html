@@ -494,7 +494,108 @@
       width:100%;
       height:100%;
       border:0;
-      display:block
+      display:block;
+      pointer-events:none
+    }
+
+    .promoFrameWrap{
+      position:relative;
+      cursor:pointer
+    }
+
+    .promoLaunch{
+      position:absolute;
+      inset:0;
+      z-index:2;
+      border:0;
+      background:linear-gradient(180deg,rgba(2,9,19,.04),rgba(2,9,19,.34));
+      color:#fff;
+      display:grid;
+      place-items:center;
+      cursor:pointer
+    }
+
+    .promoLaunchIcon{
+      width:74px;
+      height:74px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:rgba(7,21,36,.82);
+      border:1px solid rgba(244,208,127,.62);
+      box-shadow:0 14px 32px rgba(0,0,0,.34);
+      font-size:1.65rem;
+      line-height:1;
+      transform:translateX(2px)
+    }
+
+    .promoLaunch:focus-visible{
+      outline:3px solid var(--gold);
+      outline-offset:4px
+    }
+
+    body.promoModalOpen{
+      overflow:hidden
+    }
+
+    .promoVideoModal{
+      position:fixed;
+      inset:0;
+      z-index:10050;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      background:rgba(2,9,19,.97);
+      backdrop-filter:blur(12px)
+    }
+
+    .promoVideoModal[hidden]{
+      display:none
+    }
+
+    .promoVideoStage{
+      position:relative;
+      width:min(94vw,720px);
+      height:min(94vh,1280px);
+      aspect-ratio:9/16;
+      border-radius:24px;
+      overflow:hidden;
+      border:1px solid rgba(244,208,127,.52);
+      background:#020913;
+      box-shadow:0 28px 80px rgba(0,0,0,.52)
+    }
+
+    .promoVideoStage iframe{
+      width:100%;
+      height:100%;
+      border:0;
+      display:block;
+      background:#020913
+    }
+
+    .promoVideoClose{
+      position:absolute;
+      top:16px;
+      right:16px;
+      z-index:4;
+      width:48px;
+      height:48px;
+      border-radius:50%;
+      border:1px solid rgba(255,255,255,.28);
+      background:rgba(7,21,36,.86);
+      color:#fff;
+      font-size:1.6rem;
+      line-height:1;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      box-shadow:0 10px 26px rgba(0,0,0,.3)
+    }
+
+    .promoVideoClose:focus-visible{
+      outline:3px solid var(--gold);
+      outline-offset:3px
     }
 
     .promoVisualSide{
@@ -1389,7 +1490,7 @@
             Отвори трудови
           </a>
 
-          <a class="btn secondary" href="#official-promo" data-i18n="promoVideo">
+          <a class="btn secondary" href="https://share.descript.com/view/Qa1ysVFxdFJ" data-promo-open data-i18n="promoVideo">
             ▶ Промо видео
           </a>
 
@@ -1439,7 +1540,7 @@
           <h2 id="officialPromoTitle" data-i18n="promoTitle">AI Advokat во професионална правна средина</h2>
           <p data-i18n="promoText">24-секундно визуелно претставување на порталот — правни извори, AI истражување, Human Gate и професионална примена, со оригинална EthnoJazz музичка подлога без нарација.</p>
           <div class="actions">
-            <a class="btn primary" href="https://share.descript.com/view/Qa1ysVFxdFJ" target="_blank" rel="noopener noreferrer" data-i18n="promoOpen">Отвори го промо видеото</a>
+            <a class="btn primary" href="https://share.descript.com/view/Qa1ysVFxdFJ" data-promo-open data-i18n="promoOpen">Отвори го промо видеото</a>
           </div>
           <div class="promoMeta" aria-label="Видео информации">
             <span>24 sec</span>
@@ -1448,7 +1549,10 @@
           </div>
         </div>
         <div class="promoFrameWrap">
-          <iframe class="promoFrame" src="https://share.descript.com/view/Qa1ysVFxdFJ" title="AI Advokat official promo video" loading="lazy" allow="fullscreen" allowfullscreen></iframe>
+          <iframe class="promoFrame" src="https://share.descript.com/view/Qa1ysVFxdFJ" title="AI Advokat official promo video preview" loading="lazy" allow="fullscreen" allowfullscreen tabindex="-1"></iframe>
+          <button class="promoLaunch" type="button" data-promo-open aria-label="Отвори го AI Advokat промо видеото на цел екран">
+            <span class="promoLaunchIcon" aria-hidden="true">▶</span>
+          </button>
         </div>
         <div class="promoVisualSide" aria-hidden="true">
           <div class="promoVisualCrop"></div>
@@ -1458,6 +1562,13 @@
       </div>
     </div>
   </section>
+
+  <div id="promoVideoModal" class="promoVideoModal" hidden role="dialog" aria-modal="true" aria-label="AI Advokat official promo video">
+    <div class="promoVideoStage">
+      <button id="promoVideoClose" class="promoVideoClose" type="button" aria-label="Затвори го видеото">×</button>
+      <iframe id="promoModalFrame" title="AI Advokat official promo video" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+    </div>
+  </div>
 
   <section id="featured-legal-modules" class="featured-modules" aria-labelledby="featuredModulesTitle">
     <div class="container">
@@ -3945,6 +4056,52 @@
       answerBox.removeAttribute("aria-busy");
       $("#askBtn").disabled=false;
     }
+  });
+
+  const PROMO_VIDEO_URL="https://share.descript.com/view/Qa1ysVFxdFJ";
+  const promoVideoModal=$("#promoVideoModal");
+  const promoModalFrame=$("#promoModalFrame");
+  const promoVideoClose=$("#promoVideoClose");
+  let promoReturnFocus=null;
+
+  async function openPromoVideo(event){
+    if(event) event.preventDefault();
+    promoReturnFocus=document.activeElement;
+    promoModalFrame.src=PROMO_VIDEO_URL+"?autoplay=1";
+    promoVideoModal.hidden=false;
+    document.body.classList.add("promoModalOpen");
+    promoVideoClose.focus();
+    try{
+      if(promoVideoModal.requestFullscreen && !document.fullscreenElement){
+        await promoVideoModal.requestFullscreen();
+      }
+    }catch{
+      /* Full-viewport modal remains active when browser fullscreen is unavailable. */
+    }
+  }
+
+  async function closePromoVideo(){
+    if(promoVideoModal.hidden) return;
+    promoModalFrame.src="";
+    promoVideoModal.hidden=true;
+    document.body.classList.remove("promoModalOpen");
+    try{
+      if(document.fullscreenElement===promoVideoModal && document.exitFullscreen){
+        await document.exitFullscreen();
+      }
+    }catch{}
+    if(promoReturnFocus && promoReturnFocus.focus) promoReturnFocus.focus();
+  }
+
+  document.querySelectorAll("[data-promo-open]").forEach(node=>{
+    node.addEventListener("click",openPromoVideo);
+  });
+  promoVideoClose.addEventListener("click",closePromoVideo);
+  promoVideoModal.addEventListener("click",e=>{
+    if(e.target===promoVideoModal) closePromoVideo();
+  });
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape" && !promoVideoModal.hidden) closePromoVideo();
   });
 
   let modalReturnFocus=null;
