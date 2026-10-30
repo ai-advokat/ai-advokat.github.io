@@ -244,7 +244,9 @@ if(evidence.uat?.passed===true && Number(evidence.uat?.totalPassed||0)===20 && c
   evidence.finalStatus=evidence.uat?.passed===true ? "UAT_PASS_CLEANUP_FAIL" : "UAT_FAIL_CLEANUP_FAIL";
 }
 evidence.finishedAt=new Date().toISOString();
-fs.writeFileSync(EVIDENCE_PATH,JSON.stringify(evidence,null,2));
+const evidenceTmp=EVIDENCE_PATH+".tmp";
+fs.writeFileSync(evidenceTmp,JSON.stringify(evidence,null,2));
+fs.renameSync(evidenceTmp,EVIDENCE_PATH);
 
 if(!cleanupOk){
   console.error("PRIVATE ZOKI STAGING CLEANUP: FAIL");
