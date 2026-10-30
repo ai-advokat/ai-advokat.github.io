@@ -1,8 +1,9 @@
 {
-  "decision_id": "AI_ADVOKAT_ZORAN_ACCESS_HANDOFF_2026-10-30_R4",
+  "decision_id": "AI_ADVOKAT_ZORAN_PERMANENT_ACCESS_2026-10-30_R5",
   "activation_authorized": true,
-  "authorization_basis": "Owner explicitly approved a new private Zoki access code on 2026-10-30.",
-  "purpose": "owner_professional_testing",
+  "authorization_basis": "Owner explicitly approved ZOKI PERMANENT ACCESS - NO EXPIRY on 2026-10-30.",
+  "purpose": "owner_professional_access",
+  "access_mode": "permanent_until_revoked",
   "display_name": "Zoran Stojankich",
   "email": "zstojankik@gmail.com",
   "account_id": "zoran-test-67006a3a74bf",
@@ -14,11 +15,11 @@
   "seat_limit": 1,
   "access_key_prefix": "zoki_110c818",
   "access_key_hash": "87312bda60d20a952df3ba544efbb276a31207211997ee8f9cea305f243a97e8",
-  "expires_at": "2026-11-05T16:00:00Z",
+  "expires_at": null,
   "human_gate_required": true,
   "autonomous_filing": false,
   "autonomous_signature": false,
   "autonomous_external_transmission": false,
-  "notes": "Fresh Zoki-only credential rotation after production release. Same account, permissions, quota and expiry; preserve usage. Plaintext remains outside GitHub and is handed privately to Zoran.",
+  "notes": "Permanent Zoki professional access. Same account, key, permissions, quota and seat count; no automatic expiry. Access remains revocable by explicit owner action.",
   "reset_usage": false
 }
