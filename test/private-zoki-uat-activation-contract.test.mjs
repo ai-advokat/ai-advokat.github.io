@@ -193,7 +193,26 @@ test("cleanup removes and verifies temporary UAT rate-limit state",()=>{
 });
 
 
-test("private UAT does not persist LIOE runtime telemetry",()=>{
-  assert.match(runner,/LIOE_RUNTIME_TELEMETRY_ENABLED:"false"/);
-  assert.doesNotMatch(runner,/LIOE_RUNTIME_TELEMETRY_ENABLED:"true"/);
+test("private UAT keeps required LIOE telemetry enabled and makes it ephemeral",()=>{
+  const uatRunner=fs.readFileSync("scripts/run-private-zoki-uat.mjs","utf8");
+  assert.match(runner,/LIOE_RUNTIME_TELEMETRY_ENABLED:"true"/);
+  assert.doesNotMatch(runner,/LIOE_RUNTIME_TELEMETRY_ENABLED:"false"/);
+  assert.match(uatRunner,/private-zoki-uat-progress\.json/);
+  assert.match(uatRunner,/governanceRunIds/);
+  assert.match(uatRunner,/payload\?\.governanceRunId/);
+  assert.match(runner,/telemetryWindowStartedAt/);
+  assert.match(runner,/telemetryWindowEndedAt/);
+  assert.match(cleanup,/DELETE FROM lioe_runtime_runs WHERE run_id=\?/);
+  assert.match(cleanup,/SELECT COUNT\(\*\) AS n FROM lioe_runtime_runs WHERE run_id=\?/);
+  assert.match(cleanup,/SELECT run_id FROM lioe_runtime_runs WHERE started_at >= \? AND started_at <= \?/);
+  assert.match(cleanup,/windowVerifiedEmpty/);
+});
+
+
+test("final cleanup gate requires ephemeral telemetry removal as well as membership removal",()=>{
+  assert.match(cleanup,/cleanup\.telemetry\.verifiedAbsent===true/);
+  assert.match(cleanup,/cleanup\.telemetry\.windowVerifiedEmpty===true/);
+  assert.match(cleanup,/capturedRunIds/);
+  assert.match(cleanup,/windowRunIds/);
+  assert.match(cleanup,/deletedRunIds/);
 });
