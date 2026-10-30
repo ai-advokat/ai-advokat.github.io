@@ -85,6 +85,7 @@ function classifyProblem(q,profile){
   if(profile.id==="GENERAL_BYPASS")return"general_assistance";
   if(profile.id==="L4_LEGAL_TRUTH_GOVERNANCE")return"legal_truth_and_governance";
   if(profile.id==="L3_CONSEQUENTIAL")return"consequential_legal_action_support";
+  if(profile.id==="L1_VERIFIED_RESEARCH" && PROFESSIONAL_LEGAL_OPINION_PATTERN.test(q))return"professional_legal_opinion_fact_review";
   if(has(q,["рок","deadline","limitation","жалба"]))return"procedure_and_deadline";
   if(has(q,["спореди","compare","comparative","компаратив"]))return"comparative_legal_research";
   if(has(q,GUIDE_SIGNALS))return"legal_orientation_and_guides";
