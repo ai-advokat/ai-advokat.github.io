@@ -166,7 +166,7 @@ test("private UAT paces authenticated scenarios and honors Retry-After",()=>{
 test("cleanup revokes external access before membership cleanup and verifies usage absence",()=>{
   const disableAt=cleanup.indexOf("disable workers.dev");
   const accessAt=cleanup.indexOf("delete Access app");
-  const membershipAt=cleanup.indexOf("membership cleanup "+name");
+  const membershipAt=cleanup.indexOf('membership cleanup "+name');
   assert.ok(disableAt>=0);
   assert.ok(accessAt>disableAt);
   assert.ok(membershipAt>accessAt);
