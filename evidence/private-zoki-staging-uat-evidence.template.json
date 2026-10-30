@@ -25,7 +25,8 @@
     "keyPrefix": null,
     "monthlyQuota": 40,
     "expiresAt": null,
-    "persistentZokiEntitlementUsed": false
+    "persistentZokiEntitlementUsed": false,
+    "startsAt": null
   },
   "cleanupPlan": {
     "prepared": true,
