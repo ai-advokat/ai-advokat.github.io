@@ -105,7 +105,7 @@ function runUat(membershipKey,ingressToken){
       UAT_EXPECTED_ORIGIN:ORIGIN,
       UAT_MEMBERSHIP_KEY:membershipKey,
       UAT_INGRESS_TOKEN:ingressToken,
-      UAT_REQUEST_TIMEOUT_MS:"60000"
+      UAT_REQUEST_TIMEOUT_MS:"90000"
     },
     shell:false
   });

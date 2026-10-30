@@ -151,3 +151,19 @@ test("labor reinstatement complaint is L3 consequential",()=>{
   assert.ok(p.authority_and_human_gate.required_gate_types.includes("author_approval"));
   assert.equal(p.implementation.no_autonomous_filing,true);
 });
+
+
+test("professional employment-termination fact review is L2 and requires Human Gate",()=>{
+  const p=buildLegalIntelligencePlan("Работник добил отказ. Направи професионална листа на факти што адвокат треба да ги провери пред да даде правно мислење. Не претпоставувај непознати факти.",{selectedAgents:["macedonian_law"]});
+  assert.equal(p.mission_profile.id,"L2_STRATEGY_PROCEDURE");
+  assert.equal(p.authority_and_human_gate.human_review_required,true);
+  assert.equal(p.implementation.no_autonomous_filing,true);
+});
+
+test("explicit filing/signing/external-send Human Gate request is L3 consequential",()=>{
+  const p=buildLegalIntelligencePlan("Хипотетички клиент бара веднаш да се поднесе тужба. Направи анализа, но јасно задржи човечко одобрување пред потпис, поднесување или надворешно испраќање.",{selectedAgents:["macedonian_law"]});
+  assert.equal(p.mission_profile.id,"L3_CONSEQUENTIAL");
+  assert.equal(p.authority_and_human_gate.human_review_required,true);
+  assert.ok(p.authority_and_human_gate.required_gate_types.includes("author_approval"));
+  assert.equal(p.implementation.no_autonomous_filing,true);
+});
