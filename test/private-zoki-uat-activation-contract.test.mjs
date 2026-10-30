@@ -124,9 +124,9 @@ test("cleanup operation budgets fit inside the independent cleanup window",()=>{
 });
 
 
-test("UAT workflow dispatches only from main and checks out main explicitly",()=>{
+test("UAT workflow dispatches only from main and checks out the immutable dispatch SHA",()=>{
   assert.match(workflow,/if: \$\{\{ github\.repository == 'ai-advokat\/ai-advokat\.github\.io' && github\.ref == 'refs\/heads\/main' \}\}/);
-  assert.match(workflow,/with:\s*\n\s*ref: main/);
+  assert.match(workflow,/with:\s*\n\s*ref: \$\{\{ github\.sha \}\}/);
   assert.match(workflow,/test "\$GITHUB_REF" = "refs\/heads\/main"/);
 });
 
