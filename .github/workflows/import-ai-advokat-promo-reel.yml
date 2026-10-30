@@ -1,0 +1,42 @@
+name: Import AI Advokat promo reel MP4
+
+on:
+  push:
+    paths:
+      - ".github/workflows/import-ai-advokat-promo-reel.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  import-promo-reel:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download clean promo reel MP4
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 --retry-delay 2 \
+            'https://media.descriptusercontent.com/v3/proxy/remux?url=https%3A%2F%2Fapi.descript.com%2Fv2%2Fpublished_projects%2Fbc1b86e9-d95a-4663-9d6c-2365201695a3%2Fhls%3Fexpiration%3D1793493967243%26signature%3D8212d9bf637cd8c1e37f8681445f13608a65c4e056e01bd9365f278be4d2c4ab&filename=AI+Advokat+Promo.mp4&mediaCacheBucketName=production-273614-media-cache&expiration=1793490367&signature=caa79fbb3ff0a7c0a0d0a7378f33a5efb1f16923249069413af63735e44661c4' \
+            -o assets/ai-advokat-promo-reel-2026-10-26.mp4
+          test -s assets/ai-advokat-promo-reel-2026-10-26.mp4
+          size="$(stat -c%s assets/ai-advokat-promo-reel-2026-10-26.mp4)"
+          test "$size" -gt 100000
+          file assets/ai-advokat-promo-reel-2026-10-26.mp4
+          echo "Remaining Descript references:"
+          grep -R -n -E 'share\.descript\.com|aZSpAi3Zj9h|Qa1ysVFxdFJ' \
+            --exclude-dir=.git --exclude='import-ai-advokat-promo-reel.yml' . || true
+
+      - name: Commit promo reel asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/ai-advokat-promo-reel-2026-10-26.mp4
+          git commit -m "assets: add self-hosted AI Advokat promo reel"
+          git push
