@@ -1,0 +1,49 @@
+name: TEMP generate package lock for UAT hardening
+
+on:
+  push:
+    branches:
+      - chore/one-button-private-zoki-uat-20261030
+    paths:
+      - package.json
+      - .github/workflows/generate-package-lock-temp.yml
+
+permissions:
+  contents: write
+
+jobs:
+  generate-lock:
+    if: ${{ github.repository == 'ai-advokat/ai-advokat.github.io' && github.ref == 'refs/heads/chore/one-button-private-zoki-uat-20261030' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chore/one-button-private-zoki-uat-20261030
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Generate lockfile without lifecycle scripts
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Verify lockfile pins Wrangler
+        run: |
+          node -e 'const p=require("./package-lock.json"); if(p.lockfileVersion<3) process.exit(2); if(p.packages?.["node_modules/wrangler"]?.version!=="4.156.0") process.exit(3); console.log("LOCKFILE WRANGLER PIN: PASS")'
+
+      - name: Commit generated lockfile if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "ai-advokat-lock-bot"
+          git config user.email "aiadvokat16@gmail.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "package-lock.json already current"
+            exit 0
+          fi
+          git commit -m "Lock UAT toolchain dependencies"
+          git push origin HEAD:chore/one-button-private-zoki-uat-20261030
