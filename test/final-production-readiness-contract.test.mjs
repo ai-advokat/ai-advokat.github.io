@@ -46,7 +46,10 @@ test("final production readiness verifies live provider and fail-closed bot stat
   assert.match(source,/\/api\/bot/);
   assert.match(source,/bot_membership_required/);
   assert.match(source,/configured_for_api_chat_execution/);
-  assert.match(source,/gpt_6_1_sol_live_governed/);
+  assert.match(source,/openai_paid_governed_workers_ai_free/);
+  assert.match(source,/paidChatProvider/);
+  assert.match(source,/paidChatModel/);
+  assert.match(source,/freeChatProvider/);
 });
 
 test("final production readiness uses a minimal store-false OpenAI preflight",()=>{
