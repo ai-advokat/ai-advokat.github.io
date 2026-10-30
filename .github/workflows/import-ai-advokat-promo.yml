@@ -1,0 +1,39 @@
+name: Import AI Advokat official promo MP4
+
+on:
+  push:
+    paths:
+      - ".github/workflows/import-ai-advokat-promo.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  import-promo:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download clean promo MP4
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 --retry-delay 2 \
+            'https://media.descriptusercontent.com/v3/proxy/remux?url=https%3A%2F%2Fapi.descript.com%2Fv2%2Fpublished_projects%2F4c63d09b-56ea-4b80-9424-7c89b079ec27%2Fhls%3Fexpiration%3D1793493568049%26signature%3D546e5b645295a8d5227926648fe239cedc9b1af76935a7d0623a232f13a2f416&filename=AI+Advokat+Official+Promo.mp4&mediaCacheBucketName=production-273614-media-cache&expiration=1793489968&signature=dff6eee9a2192da760c6036bd04a6a68fe30bb3947fbfc303dbb44a73dd79e3d' \
+            -o assets/ai-advokat-official-promo.mp4
+          test -s assets/ai-advokat-official-promo.mp4
+          size="$(stat -c%s assets/ai-advokat-official-promo.mp4)"
+          test "$size" -gt 100000
+          file assets/ai-advokat-official-promo.mp4
+
+      - name: Commit promo asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/ai-advokat-official-promo.mp4
+          git commit -m "assets: add self-hosted AI Advokat official promo"
+          git push
