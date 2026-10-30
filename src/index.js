@@ -7330,9 +7330,23 @@ function withSecurityHeaders(response) {
   });
 }
 
+function privateUatIngressAllowed(request, env) {
+  if (env?.OPENAI_PROVIDER_ACTIVATION_STATE !== "staging_private_uat_only") return true;
+  const expected=String(env?.UAT_INGRESS_TOKEN||"");
+  const provided=String(request.headers.get("X-AI-Advokat-UAT-Token")||"");
+  if(!expected || !provided || expected.length!==provided.length) return false;
+  let diff=0;
+  for(let i=0;i<expected.length;i++) diff|=expected.charCodeAt(i)^provided.charCodeAt(i);
+  return diff===0;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if(!privateUatIngressAllowed(request,env)){
+      return json(request,{ok:false,error:"uat_ingress_denied"},404);
+    }
 
     if (url.pathname.startsWith("/api/legal-alarm/")) return handleLegalAlarm(request, env);
 
