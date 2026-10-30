@@ -46,11 +46,22 @@ async function api(url,token,{method="GET",body=null}={}){
 }
 async function d1(sql,params=[]){
   const token=env("HG2_C_UAT_D1_TOKEN_W");
-  return api(
+  const payload=await api(
     `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/d1/database/${DB_ID}/query`,
     token,
     {method:"POST",body:{sql,params}}
   );
+  const batches=Array.isArray(payload?.result)
+    ? payload.result
+    : (payload?.result ? [payload.result] : []);
+  if(!batches.length) fail("D1 query returned no result batch");
+  for(const batch of batches){
+    if(batch?.success!==true){
+      const detail=String(batch?.error||batch?.message||"D1 batch reported failure").slice(0,500);
+      fail("D1 query batch failed: "+detail);
+    }
+  }
+  return payload;
 }
 function runWrangler(config,label){
   const cli=path.resolve("node_modules","wrangler","bin","wrangler.js");
@@ -190,8 +201,7 @@ try{
   };
   uatConfig.workers_dev=false;
   uatConfig.preview_urls=false;
-  uatConfigPath=path.resolve(".wrangler","private-zoki-uat.json");
-  fs.mkdirSync(path.dirname(uatConfigPath),{recursive:true});
+  uatConfigPath=path.resolve("wrangler.private-zoki-uat.jsonc");
   fs.writeFileSync(uatConfigPath,JSON.stringify(uatConfig,null,2));
   runWrangler(uatConfigPath,"deploy staging UAT config");
   deployedUatConfig=true;
