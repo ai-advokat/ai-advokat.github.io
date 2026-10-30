@@ -1,0 +1,66 @@
+name: Private Zoki staging UAT activation
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type APPROVE_PRIVATE_ZOKI_STAGING_UAT"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-private-zoki-staging-uat
+  cancel-in-progress: false
+
+jobs:
+  uat:
+    environment: staging-uat
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      UAT_HUMAN_GATE: ${{ inputs.confirmation }}
+      HG2_C_UAT_WORKER_TOKEN_B: ${{ secrets.HG2_C_UAT_WORKER_TOKEN_B }}
+      HG2_C_UAT_D1_TOKEN_W: ${{ secrets.HG2_C_UAT_D1_TOKEN_W }}
+      HG2_C_UAT_ACCESS_TOKEN_A: ${{ secrets.HG2_C_UAT_ACCESS_TOKEN_A }}
+      UAT_OPENAI_API_KEY: ${{ secrets.UAT_OPENAI_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-fund
+
+      - name: Verify canonical UAT pack before remote activation
+        run: node scripts/verify-private-zoki-uat-pack.mjs
+
+      - name: Verify explicit Human Gate and required isolated credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$UAT_HUMAN_GATE" = "APPROVE_PRIVATE_ZOKI_STAGING_UAT"
+          test -n "$HG2_C_UAT_WORKER_TOKEN_B"
+          test -n "$HG2_C_UAT_D1_TOKEN_W"
+          test -n "$HG2_C_UAT_ACCESS_TOKEN_A"
+          test -n "$UAT_OPENAI_API_KEY"
+          echo "PRIVATE ZOKI STAGING UAT: HUMAN GATE ACCEPTED"
+
+      - name: Run bounded remote staging UAT with automatic cleanup
+        run: node scripts/run-private-zoki-staging-activation.mjs
+
+      - name: Upload non-secret UAT evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-zoki-staging-uat-evidence
+          retention-days: 30
+          path: |
+            artifacts/private-zoki-one-button-uat-evidence.json
+            artifacts/private-zoki-uat-run.json
+          if-no-files-found: warn
