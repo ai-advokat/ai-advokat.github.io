@@ -60,7 +60,6 @@ const approvedUatWorkflow = "private-zoki-uat-activation.yml";
 const approvedUatSecrets = new Set([
   "HG2_C_UAT_WORKER_TOKEN_B",
   "HG2_C_UAT_D1_TOKEN_W",
-  "HG2_C_UAT_ACCESS_TOKEN_A",
   "UAT_OPENAI_API_KEY"
 ]);
 for (const name of fs.readdirSync(workflowsDir).filter(n => /\.ya?ml$/i.test(n))) {
@@ -78,7 +77,7 @@ for (const name of fs.readdirSync(workflowsDir).filter(n => /\.ya?ml$/i.test(n))
     const foundSecrets=[...text.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(m=>m[1]);
     const unique=new Set(foundSecrets);
     if (unique.size!==approvedUatSecrets.size || [...unique].some(x=>!approvedUatSecrets.has(x))) {
-      fail("approved UAT workflow secret set differs from the four isolated staging credentials");
+      fail("approved UAT workflow secret set differs from the three isolated external staging credentials");
     }
     continue;
   }
