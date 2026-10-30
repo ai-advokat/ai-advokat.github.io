@@ -152,9 +152,14 @@ const evidence={
   cleanup:{status:"PENDING"},
   finalStatus:"RUNNING"
 };
+function writeJsonAtomic(file,value){
+  const tmp=file+".tmp";
+  fs.writeFileSync(tmp,JSON.stringify(value,null,2));
+  fs.renameSync(tmp,file);
+}
 const persist=()=>{
-  fs.writeFileSync(STATE_PATH,JSON.stringify(state,null,2));
-  fs.writeFileSync(EVIDENCE_PATH,JSON.stringify(evidence,null,2));
+  writeJsonAtomic(STATE_PATH,state);
+  writeJsonAtomic(EVIDENCE_PATH,evidence);
 };
 persist();
 
