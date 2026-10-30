@@ -56,7 +56,7 @@ test("workflow preserves cleanup after execution timeout",()=>{
   assert.match(workflow,/timeout --signal=TERM --kill-after=60s 30m node scripts\/run-private-zoki-staging-activation\.mjs/);
   assert.match(workflow,/Independent staging cleanup/);
   assert.match(workflow,/if: always\(\)/);
-  assert.match(workflow,/timeout --signal=TERM --kill-after=30s 10m node scripts\/cleanup-private-zoki-staging-activation\.mjs/);
+  assert.match(workflow,/timeout --signal=TERM --kill-after=30s 15m node scripts\/cleanup-private-zoki-staging-activation\.mjs/);
   assert.match(workflow,/Final UAT and cleanup gate/);
 });
 
@@ -105,4 +105,20 @@ test("runner and cleanup do not print generated membership or Access secrets",()
     assert.doesNotMatch(source,/console\.(?:log|error)\([^\n]*(?:membershipKey|accessClientSecret|UAT_OPENAI_API_KEY)/);
     assert.doesNotMatch(source,/privateMembershipKey/);
   }
+});
+
+
+test("cleanup recovery traverses all Access result pages before declaring deletion complete",()=>{
+  assert.match(cleanup,/page=\$\{page\}&per_page=100/);
+  assert.match(cleanup,/result_info\?\.total_pages/);
+  assert.match(cleanup,/if\(page>=totalPages\) break/);
+  assert.match(cleanup,/Access pagination exceeded safety bound/);
+});
+
+test("cleanup operation budgets fit inside the independent cleanup window",()=>{
+  assert.match(workflow,/timeout-minutes: 50/);
+  assert.match(workflow,/kill-after=30s 15m node scripts\/cleanup-private-zoki-staging-activation\.mjs/);
+  assert.match(cleanup,/timeoutMs=15000/);
+  assert.match(cleanup,/attempts=2/);
+  assert.match(cleanup,/timeout:90000/);
 });
