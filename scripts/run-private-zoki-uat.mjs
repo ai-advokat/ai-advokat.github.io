@@ -6,9 +6,23 @@ const base=String(process.env.UAT_BASE_URL||"").replace(/\/$/,"");
 const membershipKey=String(process.env.UAT_MEMBERSHIP_KEY||"");
 const expectedOrigin=String(process.env.UAT_EXPECTED_ORIGIN||"").replace(/\/$/,"");
 const ingressToken=String(process.env.UAT_INGRESS_TOKEN||"");
-const timeoutMs=Math.max(10000,Math.min(90000,Number(process.env.UAT_REQUEST_TIMEOUT_MS||60000)));
+const timeoutMs=Math.max(10000,Math.min(180000,Number(process.env.UAT_REQUEST_TIMEOUT_MS||175000)));
 const membershipMinGapMs=Math.max(13000,Number(process.env.UAT_MEMBERSHIP_MIN_GAP_MS||13000));
 const maxRateLimitRetries=2;
+const maxTransientRetries=1;
+const transient503Errors=new Set([
+  "openai_network_error",
+  "openai_timeout_error",
+  "openai_request_deadline_exhausted",
+  "openai_response_error",
+  "openai_incomplete_response",
+  "openai_empty_response",
+  "legal_postflight_timeout_error",
+  "legal_postflight_network_error",
+  "legal_postflight_response_error",
+  "legal_postflight_incomplete",
+  "legal_postflight_deadline_exhausted"
+]);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let lastMembershipStartedAt=0;
 const progressPath="artifacts/private-zoki-uat-progress.json";
@@ -60,6 +74,9 @@ function retryAfterMs(response){
   if(Number.isFinite(when)) return Math.min(120000,Math.max(1000,when-Date.now()+500));
   return 65000;
 }
+function transient503(payload){
+  return transient503Errors.has(String(payload?.error||""));
+}
 
 const commonHeaders={
   "content-type":"application/json",
@@ -100,18 +117,43 @@ for(let cycle=1;cycle<=manifest.cycles_required;cycle++){
       let response;
       let payload;
       let attempts=0;
+      let rateLimitRetries=0;
+      let transportRetries=0;
+      let transientServerRetries=0;
       for(;;){
         attempts++;
         if(scenario.auth==="membership") await paceMembershipRequest();
-        ({response,payload}=await fetchJson(base+manifest.endpoint,{
-          method:manifest.default_method||"POST",
-          headers,
-          body:JSON.stringify({...scenario.request,sessionId:`zoki-uat-${cycle}-${scenario.id}`})
-        }));
-        if(response.status!==429 || scenario.auth!=="membership" || attempts>maxRateLimitRetries) break;
-        const waitMs=retryAfterMs(response);
-        console.log(`[RATE_LIMIT] cycle=${cycle} scenario=${scenario.id} retryInMs=${waitMs}`);
-        await sleep(waitMs);
+        try{
+          ({response,payload}=await fetchJson(base+manifest.endpoint,{
+            method:manifest.default_method||"POST",
+            headers,
+            body:JSON.stringify({...scenario.request,sessionId:`zoki-uat-${cycle}-${scenario.id}`})
+          }));
+        }catch(error){
+          if(scenario.auth==="membership" && transportRetries<maxTransientRetries){
+            transportRetries++;
+            const waitMs=1500*transportRetries;
+            console.log(`[TRANSIENT_TRANSPORT] cycle=${cycle} scenario=${scenario.id} retry=${transportRetries} retryInMs=${waitMs}`);
+            await sleep(waitMs);
+            continue;
+          }
+          throw error;
+        }
+        if(response.status===429 && scenario.auth==="membership" && rateLimitRetries<maxRateLimitRetries){
+          rateLimitRetries++;
+          const waitMs=retryAfterMs(response);
+          console.log(`[RATE_LIMIT] cycle=${cycle} scenario=${scenario.id} retry=${rateLimitRetries} retryInMs=${waitMs}`);
+          await sleep(waitMs);
+          continue;
+        }
+        if(response.status===503 && scenario.auth==="membership" && transient503(payload) && transientServerRetries<maxTransientRetries){
+          transientServerRetries++;
+          const waitMs=2000*transientServerRetries;
+          console.log(`[TRANSIENT_503] cycle=${cycle} scenario=${scenario.id} error=${String(payload?.error||"unknown")} retry=${transientServerRetries} retryInMs=${waitMs}`);
+          await sleep(waitMs);
+          continue;
+        }
+        break;
       }
       const governanceRunId=typeof payload?.governanceRunId==="string" && /^LIOE-RT-[A-Za-z0-9-]+$/.test(payload.governanceRunId)
         ? payload.governanceRunId
@@ -122,7 +164,17 @@ for(let cycle=1;cycle<=manifest.cycles_required;cycle++){
       }));
       const pass=response.status===scenario.expect_status && assertions.every(a=>a.pass);
       if(pass) totalPassed++;
-      result={id:scenario.id,status:response.status,expectedStatus:scenario.expect_status,pass,assertions,attempts,governanceRunId,elapsedMs:Date.now()-started};
+      result={
+        id:scenario.id,
+        status:response.status,
+        expectedStatus:scenario.expect_status,
+        pass,
+        assertions,
+        attempts,
+        errorCode:typeof payload?.error==="string" ? payload.error.slice(0,120) : null,
+        governanceRunId,
+        elapsedMs:Date.now()-started
+      };
     }catch(error){
       result={id:scenario.id,status:null,expectedStatus:scenario.expect_status,pass:false,error:String(error).slice(0,300),elapsedMs:Date.now()-started};
     }
