@@ -154,7 +154,8 @@ test("private UAT paces authenticated scenarios and honors Retry-After",()=>{
   assert.match(uatRunner,/membershipMinGapMs/);
   assert.match(uatRunner,/13000/);
   assert.match(uatRunner,/paceMembershipRequest/);
-  assert.match(uatRunner,/response\.status!==429/);
+  assert.match(uatRunner,/response\.status===429/);
+  assert.match(uatRunner,/rateLimitRetries<maxRateLimitRetries/);
   assert.match(uatRunner,/retry-after/);
   assert.match(uatRunner,/RATE_LIMIT/);
 });
@@ -223,8 +224,19 @@ test("runtime fails closed on private staging UAT without the ephemeral ingress 
 });
 
 
-test("private UAT allows a bounded 90-second request window for professional legal turns",()=>{
-  assert.match(runner,/UAT_REQUEST_TIMEOUT_MS:"90000"/);
+test("private UAT client window covers the bounded professional runtime budget",()=>{
+  assert.match(runner,/UAT_REQUEST_TIMEOUT_MS:"175000"/);
   const uatRunner=fs.readFileSync("scripts/run-private-zoki-uat.mjs","utf8");
-  assert.match(uatRunner,/Math\.min\(90000/);
+  assert.match(uatRunner,/Math\.min\(180000/);
+});
+
+test("private UAT retries only bounded transient transport and provider failures",()=>{
+  const uatRunner=fs.readFileSync("scripts/run-private-zoki-uat.mjs","utf8");
+  assert.match(uatRunner,/maxTransientRetries=1/);
+  assert.match(uatRunner,/TRANSIENT_TRANSPORT/);
+  assert.match(uatRunner,/TRANSIENT_503/);
+  assert.match(uatRunner,/transient503Errors/);
+  assert.match(uatRunner,/openai_timeout_error/);
+  assert.match(uatRunner,/legal_postflight_timeout_error/);
+  assert.match(uatRunner,/errorCode:typeof payload\?\.error/);
 });
