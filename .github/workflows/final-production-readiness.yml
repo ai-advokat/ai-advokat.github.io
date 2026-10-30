@@ -190,7 +190,10 @@ jobs:
           if(o.runtime?.providerExecution!=="configured_for_api_chat_execution") throw new Error("Production provider is not configured");
           if(o.runtime?.lioeRuntimeGovernance!=="enabled") throw new Error("LIOE runtime governance is not enabled");
           if(o.runtime?.lioePostflight!=="enabled") throw new Error("LIOE postflight is not enabled");
-          if(c.capabilities?.legalOrchestrator!=="gpt_6_1_sol_live_governed") throw new Error("Production legal orchestrator capability mismatch");
+          if(c.capabilities?.legalOrchestrator!=="openai_paid_governed_workers_ai_free") throw new Error("Production legal orchestrator capability mismatch");
+          if(c.capabilities?.paidChatProvider!=="openai") throw new Error("Production paid chat provider mismatch");
+          if(c.capabilities?.paidChatModel!=="gpt-6.1-sol") throw new Error("Production paid chat model mismatch");
+          if(c.capabilities?.freeChatProvider!=="workers_ai") throw new Error("Production free chat provider mismatch");
           console.log("LIVE PRODUCTION HEALTH + ORCHESTRATOR + CAPABILITIES: PASS");
           NODE
 
