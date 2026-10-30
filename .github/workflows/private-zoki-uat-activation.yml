@@ -54,7 +54,6 @@ jobs:
         env:
           HG2_C_UAT_WORKER_TOKEN_B: ${{ secrets.HG2_C_UAT_WORKER_TOKEN_B }}
           HG2_C_UAT_D1_TOKEN_W: ${{ secrets.HG2_C_UAT_D1_TOKEN_W }}
-          HG2_C_UAT_ACCESS_TOKEN_A: ${{ secrets.HG2_C_UAT_ACCESS_TOKEN_A }}
           UAT_OPENAI_API_KEY: ${{ secrets.UAT_OPENAI_API_KEY }}
         run: |
           set -euo pipefail
@@ -62,7 +61,6 @@ jobs:
           test "$UAT_HUMAN_GATE" = "APPROVE_PRIVATE_ZOKI_STAGING_UAT"
           test -n "$HG2_C_UAT_WORKER_TOKEN_B"
           test -n "$HG2_C_UAT_D1_TOKEN_W"
-          test -n "$HG2_C_UAT_ACCESS_TOKEN_A"
           test -n "$UAT_OPENAI_API_KEY"
           echo "PRIVATE ZOKI STAGING UAT: MAIN REF + HUMAN GATE ACCEPTED"
 
@@ -73,7 +71,6 @@ jobs:
         env:
           HG2_C_UAT_WORKER_TOKEN_B: ${{ secrets.HG2_C_UAT_WORKER_TOKEN_B }}
           HG2_C_UAT_D1_TOKEN_W: ${{ secrets.HG2_C_UAT_D1_TOKEN_W }}
-          HG2_C_UAT_ACCESS_TOKEN_A: ${{ secrets.HG2_C_UAT_ACCESS_TOKEN_A }}
           UAT_OPENAI_API_KEY: ${{ secrets.UAT_OPENAI_API_KEY }}
         run: |
           set +e
@@ -90,7 +87,6 @@ jobs:
         env:
           HG2_C_UAT_WORKER_TOKEN_B: ${{ secrets.HG2_C_UAT_WORKER_TOKEN_B }}
           HG2_C_UAT_D1_TOKEN_W: ${{ secrets.HG2_C_UAT_D1_TOKEN_W }}
-          HG2_C_UAT_ACCESS_TOKEN_A: ${{ secrets.HG2_C_UAT_ACCESS_TOKEN_A }}
         run: |
           timeout --signal=TERM --kill-after=30s 15m node scripts/cleanup-private-zoki-staging-activation.mjs
 

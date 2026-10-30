@@ -91,32 +91,14 @@ function firstResultRows(payload){
   const batch=Array.isArray(payload?.result) ? payload.result[0] : payload?.result;
   return Array.isArray(batch?.results) ? batch.results : [];
 }
-async function findAccessByName(token,endpoint,name){
-  const matches=[];
-  let page=1;
-  for(;;){
-    const payload=await api(
-      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/access/${endpoint}?page=${page}&per_page=100`,
-      token
-    );
-    const list=Array.isArray(payload?.result) ? payload.result : [];
-    matches.push(...list.filter(x=>String(x?.name||"")===name));
-    const totalPages=Math.max(1,Number(payload?.result_info?.total_pages||1));
-    if(page>=totalPages) break;
-    page++;
-    if(page>100) fail("Access pagination exceeded safety bound");
-  }
-  return matches;
-}
-
 fs.mkdirSync("artifacts",{recursive:true});
 const state=fs.existsSync(STATE_PATH)
   ? JSON.parse(fs.readFileSync(STATE_PATH,"utf8"))
   : {
-      schema:"ai-advokat-private-zoki-one-button-state/v2",
+      schema:"ai-advokat-private-zoki-one-button-state/v3",
       target:{accountId:ACCOUNT,worker:WORKER,databaseId:DB_ID},
-      access:{serviceTokenName:null,serviceTokenId:null,appName:null,appId:null},
-      worker:{uatDeployAttempted:false,openAISecretAddAttempted:false,workersDevEnableAttempted:false},
+      ingress:{mode:"ephemeral_worker_secret",header:"X-AI-Advokat-UAT-Token"},
+      worker:{uatDeployAttempted:false,openAISecretAddAttempted:false,ingressSecretAddAttempted:false,workersDevEnableAttempted:false},
       membership:{accountId:null,provisionAttempted:false},
       uat:{executed:false,passed:false,totalPassed:null,totalExpected:20,telemetryWindowStartedAt:null,telemetryWindowEndedAt:null,governanceRunIds:[]},
       runError:"state file missing"
@@ -124,7 +106,7 @@ const state=fs.existsSync(STATE_PATH)
 const evidence=fs.existsSync(EVIDENCE_PATH)
   ? JSON.parse(fs.readFileSync(EVIDENCE_PATH,"utf8"))
   : {
-      schema:"ai-advokat-private-zoki-one-button-uat/v2",
+      schema:"ai-advokat-private-zoki-one-button-uat/v3",
       target:state.target,
       productionTouched:false,
       uat:state.uat,
@@ -133,15 +115,14 @@ const evidence=fs.existsSync(EVIDENCE_PATH)
 
 const cleanup={
   startedAt:new Date().toISOString(),
-  accessRevokedBeforeMembershipCleanup:false,
+  requestPathRevokedBeforeMembershipCleanup:false,
   quiescenceMs:0,
   telemetry:{capturedRunIds:0,windowRunIds:0,deletedRunIds:0,verifiedAbsent:false,windowVerifiedEmpty:false},
   membershipDeletes:{usage:false,rateLimits:false,keys:false,entitlements:false,account:false,verifiedAbsent:false},
   workersDevDisabled:false,
   openAISecretRemoved:false,
+  ingressSecretRemoved:false,
   baselineRedeployed:false,
-  accessAppDeleted:false,
-  serviceTokenDeleted:false,
   errors:[]
 };
 const recordError=(label,error)=>cleanup.errors.push({label,message:String(error?.message||error).slice(0,700)});
@@ -157,37 +138,6 @@ if(state.worker?.workersDevEnableAttempted){
     cleanup.workersDevDisabled=true;
   }catch(error){ recordError("workers_dev_disable",error); }
 }else cleanup.workersDevDisabled=true;
-
-const accessToken=String(process.env.HG2_C_UAT_ACCESS_TOKEN_A||"");
-if(accessToken){
-  try{
-    let appIds=[];
-    if(state.access?.appId) appIds=[state.access.appId];
-    else if(state.access?.appName) appIds=(await findAccessByName(accessToken,"apps",state.access.appName)).map(x=>String(x?.id||"")).filter(Boolean);
-    for(const id of appIds){
-      await retry("delete Access app",()=>api(
-        `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/access/apps/${id}`,
-        accessToken,{method:"DELETE"}
-      ));
-    }
-    cleanup.accessAppDeleted=true;
-  }catch(error){ recordError("access_app_delete",error); }
-
-  try{
-    let tokenIds=[];
-    if(state.access?.serviceTokenId) tokenIds=[state.access.serviceTokenId];
-    else if(state.access?.serviceTokenName) tokenIds=(await findAccessByName(accessToken,"service_tokens",state.access.serviceTokenName)).map(x=>String(x?.id||"")).filter(Boolean);
-    for(const id of tokenIds){
-      await retry("delete Access service token",()=>api(
-        `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/access/service_tokens/${id}`,
-        accessToken,{method:"DELETE"}
-      ));
-    }
-    cleanup.serviceTokenDeleted=true;
-  }catch(error){ recordError("service_token_delete",error); }
-}else{
-  recordError("access_token_missing",new Error("HG2_C_UAT_ACCESS_TOKEN_A unavailable to cleanup"));
-}
 
 // 2) Remove provider capability and restore the closed baseline.
 if(state.worker?.openAISecretAddAttempted){
@@ -205,6 +155,21 @@ if(state.worker?.openAISecretAddAttempted){
   }
 }else cleanup.openAISecretRemoved=true;
 
+if(state.worker?.ingressSecretAddAttempted){
+  try{
+    await retry("remove staging UAT ingress secret",()=>api(
+      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/workers/scripts/${WORKER}/secrets/UAT_INGRESS_TOKEN`,
+      env("HG2_C_UAT_WORKER_TOKEN_B"),
+      {method:"DELETE"}
+    ));
+    cleanup.ingressSecretRemoved=true;
+  }catch(error){
+    const msg=String(error?.message||error);
+    if(/404|not found/i.test(msg)) cleanup.ingressSecretRemoved=true;
+    else recordError("uat_ingress_secret_remove",error);
+  }
+}else cleanup.ingressSecretRemoved=true;
+
 if(state.worker?.uatDeployAttempted){
   try{
     await retry("restore baseline staging config",async()=>runWrangler("wrangler.staging.jsonc","restore baseline staging config"));
@@ -212,10 +177,9 @@ if(state.worker?.uatDeployAttempted){
   }catch(error){ recordError("baseline_redeploy",error); }
 }else cleanup.baselineRedeployed=true;
 
-cleanup.accessRevokedBeforeMembershipCleanup=
+cleanup.requestPathRevokedBeforeMembershipCleanup=
   cleanup.workersDevDisabled===true &&
-  cleanup.accessAppDeleted===true &&
-  cleanup.serviceTokenDeleted===true;
+  cleanup.ingressSecretRemoved===true;
 
 // Allow any request that had already resolved membership before revocation to finish.
 if(state.membership?.accountId && state.worker?.workersDevEnableAttempted){
@@ -362,15 +326,14 @@ if(state.membership?.accountId){
 
 cleanup.finishedAt=new Date().toISOString();
 const cleanupOk=
-  cleanup.accessRevokedBeforeMembershipCleanup===true &&
+  cleanup.requestPathRevokedBeforeMembershipCleanup===true &&
   cleanup.telemetry.verifiedAbsent===true &&
   cleanup.telemetry.windowVerifiedEmpty===true &&
   cleanup.membershipDeletes.verifiedAbsent===true &&
   cleanup.workersDevDisabled===true &&
   cleanup.openAISecretRemoved===true &&
+  cleanup.ingressSecretRemoved===true &&
   cleanup.baselineRedeployed===true &&
-  cleanup.accessAppDeleted===true &&
-  cleanup.serviceTokenDeleted===true &&
   cleanup.errors.length===0;
 
 evidence.cleanup=cleanup;

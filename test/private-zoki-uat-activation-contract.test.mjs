@@ -16,12 +16,11 @@ test("private Zoki UAT workflow is manual, exact-gated and staging-environment b
   assert.doesNotMatch(workflow,/schedule:/);
 });
 
-test("private Zoki UAT workflow uses exactly four isolated secret references",()=>{
+test("private Zoki UAT workflow uses exactly three isolated external secret references",()=>{
   const names=[...workflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(m=>m[1]);
   assert.deepEqual(new Set(names),new Set([
     "HG2_C_UAT_WORKER_TOKEN_B",
     "HG2_C_UAT_D1_TOKEN_W",
-    "HG2_C_UAT_ACCESS_TOKEN_A",
     "UAT_OPENAI_API_KEY"
   ]));
 });
@@ -35,13 +34,15 @@ test("orchestrator is bound to dedicated staging and rejects production identiti
   assert.match(runner,/production identity detected in staging config/);
 });
 
-test("orchestrator protects the temporary public hostname with Access before enabling workers.dev",()=>{
-  const accessApp=runner.indexOf("/access/apps");
+test("orchestrator protects the temporary public hostname with an ephemeral Worker ingress secret before enabling workers.dev",()=>{
+  const ingress=runner.indexOf('name:"UAT_INGRESS_TOKEN"');
   const enable=runner.indexOf("enabled:true,previews_enabled:false");
-  assert.ok(accessApp>=0);
-  assert.ok(enable>accessApp);
-  assert.match(runner,/decision:"non_identity"/);
-  assert.match(runner,/service_token/);
+  assert.ok(ingress>=0);
+  assert.ok(enable>ingress);
+  assert.match(runner,/randomBytes\(32\)\.toString\("base64url"\)/);
+  assert.match(runner,/X-AI-Advokat-UAT-Token/);
+  assert.doesNotMatch(runner,/\/access\/apps/);
+  assert.doesNotMatch(runner,/\/access\/service_tokens/);
 });
 
 test("orchestrator executes canonical 20/20 UAT and persists non-secret recovery state",()=>{
@@ -74,9 +75,10 @@ test("cleanup attempts membership deletes independently and verifies absence",()
 test("cleanup restores every temporary staging capability independently",()=>{
   assert.match(cleanup,/enabled:false,previews_enabled:false/);
   assert.match(cleanup,/secrets\/OPENAI_API_KEY/);
+  assert.match(cleanup,/secrets\/UAT_INGRESS_TOKEN/);
   assert.match(cleanup,/restore baseline staging config/);
-  assert.match(cleanup,/access\/apps\/\$\{id\}/);
-  assert.match(cleanup,/access\/service_tokens\/\$\{id\}/);
+  assert.doesNotMatch(cleanup,/access\/apps/);
+  assert.doesNotMatch(cleanup,/access\/service_tokens/);
   assert.match(cleanup,/cleanup\.errors\.length===0/);
 });
 
@@ -100,19 +102,11 @@ test("D1 helpers reject inner failed result batches before success can be record
   }
 });
 
-test("runner and cleanup do not print generated membership or Access secrets",()=>{
+test("runner and cleanup do not print generated membership or ingress/provider secrets",()=>{
   for(const source of [runner,cleanup]){
-    assert.doesNotMatch(source,/console\.(?:log|error)\([^\n]*(?:membershipKey|accessClientSecret|UAT_OPENAI_API_KEY)/);
+    assert.doesNotMatch(source,/console\.(?:log|error)\([^\n]*(?:membershipKey|uatIngressToken|UAT_INGRESS_TOKEN|UAT_OPENAI_API_KEY)/);
     assert.doesNotMatch(source,/privateMembershipKey/);
   }
-});
-
-
-test("cleanup recovery traverses all Access result pages before declaring deletion complete",()=>{
-  assert.match(cleanup,/page=\$\{page\}&per_page=100/);
-  assert.match(cleanup,/result_info\?\.total_pages/);
-  assert.match(cleanup,/if\(page>=totalPages\) break/);
-  assert.match(cleanup,/Access pagination exceeded safety bound/);
 });
 
 test("cleanup operation budgets fit inside the independent cleanup window",()=>{
@@ -145,13 +139,13 @@ test("UAT tooling install is lockfile-based and has no job-wide staging secrets"
   for(const name of [
     "HG2_C_UAT_WORKER_TOKEN_B",
     "HG2_C_UAT_D1_TOKEN_W",
-    "HG2_C_UAT_ACCESS_TOKEN_A",
     "UAT_OPENAI_API_KEY"
   ]){
     assert.doesNotMatch(jobEnvBlock,new RegExp(name));
   }
   assert.match(workflow,/Run bounded remote staging UAT[\s\S]*HG2_C_UAT_WORKER_TOKEN_B:[\s\S]*UAT_OPENAI_API_KEY:/);
-  assert.match(workflow,/Independent staging cleanup[\s\S]*HG2_C_UAT_WORKER_TOKEN_B:[\s\S]*HG2_C_UAT_ACCESS_TOKEN_A:/);
+  assert.match(workflow,/Independent staging cleanup[\s\S]*HG2_C_UAT_WORKER_TOKEN_B:[\s\S]*HG2_C_UAT_D1_TOKEN_W:/);
+  assert.doesNotMatch(workflow,/HG2_C_UAT_ACCESS_TOKEN_A/);
 });
 
 
@@ -167,16 +161,16 @@ test("private UAT paces authenticated scenarios and honors Retry-After",()=>{
 
 test("cleanup revokes external access before membership cleanup and verifies usage absence",()=>{
   const disableAt=cleanup.indexOf("disable workers.dev");
-  const accessAt=cleanup.indexOf("delete Access app");
+  const ingressAt=cleanup.indexOf("remove staging UAT ingress secret");
   const membershipAt=cleanup.indexOf('membership cleanup "+name');
   assert.ok(disableAt>=0);
-  assert.ok(accessAt>disableAt);
-  assert.ok(membershipAt>accessAt);
+  assert.ok(ingressAt>disableAt);
+  assert.ok(membershipAt>ingressAt);
   assert.match(cleanup,/QUIESCENCE_MS=180000/);
   assert.match(cleanup,/membership_usage_monthly WHERE subject_key=\?/);
   assert.match(cleanup,/final usage sweep/);
   assert.match(cleanup,/SELECT COUNT\(\*\) AS n FROM membership_usage_monthly/);
-  assert.match(cleanup,/accessRevokedBeforeMembershipCleanup===true/);
+  assert.match(cleanup,/requestPathRevokedBeforeMembershipCleanup===true/);
 });
 
 
@@ -217,4 +211,13 @@ test("final cleanup gate requires ephemeral telemetry removal as well as members
   assert.match(cleanup,/capturedRunIds/);
   assert.match(cleanup,/windowRunIds/);
   assert.match(cleanup,/deletedRunIds/);
+});
+
+
+test("runtime fails closed on private staging UAT without the ephemeral ingress token",()=>{
+  const source=fs.readFileSync("src/index.js","utf8");
+  assert.match(source,/OPENAI_PROVIDER_ACTIVATION_STATE !== "staging_private_uat_only"/);
+  assert.match(source,/UAT_INGRESS_TOKEN/);
+  assert.match(source,/X-AI-Advokat-UAT-Token/);
+  assert.match(source,/uat_ingress_denied/);
 });

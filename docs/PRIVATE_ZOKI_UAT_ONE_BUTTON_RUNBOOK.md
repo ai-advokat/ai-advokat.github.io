@@ -36,7 +36,7 @@ Before adding secrets, configure its deployment protection rules:
 
 The workflow also independently rejects every ref except `refs/heads/main` and checks out the immutable dispatch SHA from that protected ref. The Environment rule is the second security boundary and must be configured before the first live UAT.
 
-Store exactly four secrets there. Do not use repository-wide production secrets.
+Store exactly three execution secrets there. Do not use repository-wide production secrets.
 
 ### 1. HG2_C_UAT_WORKER_TOKEN_B
 
@@ -69,20 +69,9 @@ Must not include Workers, routes, DNS/zone, Access or production authority.
 
 This token creates only one temporary `UAT-ZOKI-` membership and deletes it in cleanup.
 
-### 3. HG2_C_UAT_ACCESS_TOKEN_A
+### 3. UAT_OPENAI_API_KEY
 
-Cloudflare account-owned API token.
 
-Scope:
-- dedicated staging account only;
-- Access: Apps and Policies Write;
-- Access: Service Tokens Write.
-
-Must not include Workers, D1, DNS/zone or production authority.
-
-The workflow creates a short-lived service token and Access application before enabling `workers.dev`, then deletes both during cleanup.
-
-### 4. UAT_OPENAI_API_KEY
 
 Use a staging-only OpenAI project key with a bounded test budget.
 
@@ -104,10 +93,10 @@ The workflow performs:
 
 1. canonical UAT pack verification;
 2. closed-baseline verification;
-3. temporary Cloudflare Access service token + application;
-4. bounded staging runtime deployment with OpenAI orchestration enabled, external research/file tools disabled, and governed LIOE runtime telemetry enabled only for the UAT window;
-5. temporary staging OpenAI secret;
-6. Access-protected `workers.dev` activation;
+3. bounded staging runtime deployment with OpenAI orchestration enabled, external research/file tools disabled, and governed LIOE runtime telemetry enabled only for the UAT window;
+4. temporary staging OpenAI secret;
+5. a cryptographically random ephemeral `UAT_INGRESS_TOKEN` Worker secret generated inside the run;
+6. `workers.dev` activation only after the staging runtime can fail closed on `X-AI-Advokat-UAT-Token`;
 7. isolated two-hour UAT membership with quota 40;
 8. 10 scenarios × 2 cycles;
 9. PASS only at 20/20;
@@ -123,8 +112,7 @@ The job is not PASS unless all are true:
 - `workers.dev` disabled again;
 - temporary OpenAI Worker secret removed;
 - baseline `wrangler.staging.jsonc` redeployed;
-- Access application deleted;
-- Access service token deleted;
+- temporary `UAT_INGRESS_TOKEN` Worker secret removed;
 - every captured UAT `governanceRunId` removed from `lioe_runtime_runs` and the exact UAT telemetry window verified empty.
 
 A 20/20 test with failed cleanup is not a final PASS.
@@ -137,7 +125,7 @@ The workflow uploads only non-secret evidence:
 - `artifacts/private-zoki-uat-progress.json`
 - `artifacts/private-zoki-one-button-uat-evidence.json`
 
-No membership key, Access client secret, OpenAI API key or Cloudflare API token is written to evidence. The progress artifact stores only non-secret UAT status and returned `governanceRunId` values needed for deterministic telemetry cleanup.
+No membership key, ephemeral ingress token, OpenAI API key or Cloudflare API token is written to evidence. The progress artifact stores only non-secret UAT status and returned `governanceRunId` values needed for deterministic telemetry cleanup.
 
 ## Release boundary
 
