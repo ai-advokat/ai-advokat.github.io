@@ -1,0 +1,88 @@
+{
+  "schema": "ai-advokat-private-zoki-uat/v1",
+  "product": "AI ADVOKAT 4",
+  "mode": "PRIVATE PROFESSIONAL UAT",
+  "cycles_required": 2,
+  "scenarios": [
+    {
+      "id": "01_conversation",
+      "expect_status": 200,
+      "assertions": [
+        "ok=true",
+        "provider=openai",
+        "answer_nonempty"
+      ]
+    },
+    {
+      "id": "02_legal_question",
+      "expect_status": 200,
+      "assertions": [
+        "ok=true",
+        "provider=openai",
+        "answer_nonempty"
+      ]
+    },
+    {
+      "id": "03_employment_termination",
+      "expect_status": 200,
+      "assertions": [
+        "humanReviewRequired=true"
+      ]
+    },
+    {
+      "id": "04_strategy",
+      "expect_status": 200,
+      "assertions": [
+        "humanReviewRequired=true"
+      ]
+    },
+    {
+      "id": "05_formal_draft",
+      "expect_status": 200,
+      "assertions": [
+        "languageReleaseGate=RELEASE",
+        "answer_nonempty"
+      ]
+    },
+    {
+      "id": "06_macedonian_language",
+      "expect_status": 200,
+      "assertions": [
+        "languageQualityState=verified_runtime",
+        "languageReleaseGate=RELEASE"
+      ]
+    },
+    {
+      "id": "07_document_workproduct",
+      "expect_status": 200,
+      "assertions": [
+        "answer_nonempty"
+      ]
+    },
+    {
+      "id": "08_human_gate",
+      "expect_status": 200,
+      "assertions": [
+        "humanReviewRequired=true",
+        "executionAuthorization=NO_EXTERNAL_ACTION"
+      ]
+    },
+    {
+      "id": "09_confidential_case",
+      "expect_status": 422,
+      "assertions": [
+        "error=confidential_case_workspace_required",
+        "providerCalled=false"
+      ]
+    },
+    {
+      "id": "10_anonymous_fail_closed",
+      "expect_status": 401,
+      "assertions": [
+        "error=bot_membership_required"
+      ]
+    }
+  ],
+  "pass_rule": "All 10 scenarios must pass in two consecutive cycles.",
+  "production_authorization": false
+}
