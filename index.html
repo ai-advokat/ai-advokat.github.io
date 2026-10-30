@@ -417,6 +417,114 @@
       color:#c8d8e6
     }
 
+    .officialPromo{
+      padding:46px 0;
+      background:linear-gradient(180deg,#eef3f7 0%,#f7f9fb 100%)
+    }
+
+    .promoShell{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(260px,350px);
+      gap:34px;
+      align-items:center;
+      background:#071524;
+      color:#fff;
+      border:1px solid #193a5a;
+      border-radius:26px;
+      padding:30px;
+      box-shadow:0 18px 48px rgba(7,21,36,.16)
+    }
+
+    .promoCopy h2{
+      font-size:clamp(2rem,4vw,3.2rem);
+      line-height:1.05;
+      margin:8px 0 14px
+    }
+
+    .promoCopy p{
+      color:#c9d7e4;
+      max-width:680px;
+      margin:0 0 18px
+    }
+
+    .promoMeta{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin:18px 0 0
+    }
+
+    .promoMeta span{
+      display:inline-flex;
+      align-items:center;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);
+      color:#dbe7f1;
+      font-size:.82rem;
+      font-weight:700
+    }
+
+    .promoFrameWrap{
+      width:min(100%,350px);
+      aspect-ratio:9/16;
+      margin:auto;
+      overflow:hidden;
+      border-radius:22px;
+      border:1px solid rgba(244,208,127,.42);
+      background:#020913;
+      box-shadow:0 16px 38px rgba(0,0,0,.34)
+    }
+
+    .promoFrame{
+      width:100%;
+      height:100%;
+      border:0;
+      display:block
+    }
+
+    .visualPromo{
+      padding:44px 0 54px;
+      background:var(--surface2)
+    }
+
+    .visualPromoGrid{
+      display:grid;
+      grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);
+      gap:30px;
+      align-items:center
+    }
+
+    .visualPromoImage{
+      margin:0;
+      background:#071524;
+      border-radius:22px;
+      padding:10px;
+      border:1px solid var(--line);
+      box-shadow:0 14px 34px rgba(12,32,56,.10)
+    }
+
+    .visualPromoImage img{
+      display:block;
+      width:100%;
+      height:auto;
+      border-radius:15px;
+      aspect-ratio:400/229;
+      object-fit:cover
+    }
+
+    .visualPromoCopy h2{
+      margin:7px 0 12px;
+      font-size:clamp(1.8rem,3vw,2.7rem);
+      line-height:1.08
+    }
+
+    .visualPromoCopy p{
+      color:var(--muted);
+      margin:0 0 18px
+    }
+
     section{padding:72px 0}
 
     .sectionHead{
@@ -1101,8 +1209,15 @@
       .zppTracks{grid-template-columns:1fr 1fr}
     }
 
+    @media (max-width:860px){
+      .promoShell,.visualPromoGrid{grid-template-columns:1fr}
+      .promoShell{padding:22px}
+      .promoFrameWrap{width:min(100%,320px)}
+      .visualPromoCopy{order:-1}
+    }
+
     @media print{
-      .topbar,.header,.heroActions,.searchPanel,.btn,.menuBtn,.utility,.modal{display:none!important}
+      .topbar,.header,.heroActions,.searchPanel,.btn,.menuBtn,.utility,.modal,.officialPromo,.visualPromo{display:none!important}
       .hero{background:white;color:black;padding:24px 0}
       .hero p{color:#333}
       .card,.assistantPanel{box-shadow:none}
@@ -1225,6 +1340,10 @@
             Отвори трудови
           </a>
 
+          <a class="btn secondary" href="#official-promo" data-i18n="promoVideo">
+            ▶ Промо видео
+          </a>
+
           <button class="btn secondary" id="installAppBtn" type="button" hidden data-i18n="installApp">
             Инсталирај AI Advokat
           </button>
@@ -1260,6 +1379,29 @@
         </div>
       </div>
 
+    </div>
+  </section>
+
+  <section id="official-promo" class="officialPromo" aria-labelledby="officialPromoTitle">
+    <div class="container">
+      <div class="promoShell">
+        <div class="promoCopy">
+          <span class="tag" data-i18n="promoTag">OFFICIAL PROMO · AI ADVOCAT</span>
+          <h2 id="officialPromoTitle" data-i18n="promoTitle">AI Advokat во професионална правна средина</h2>
+          <p data-i18n="promoText">24-секундно визуелно претставување на порталот — правни извори, AI истражување, Human Gate и професионална примена, со оригинална EthnoJazz музичка подлога без нарација.</p>
+          <div class="actions">
+            <a class="btn primary" href="https://share.descript.com/view/Qa1ysVFxdFJ" target="_blank" rel="noopener noreferrer" data-i18n="promoOpen">Отвори го промо видеото</a>
+          </div>
+          <div class="promoMeta" aria-label="Видео информации">
+            <span>24 sec</span>
+            <span>9:16</span>
+            <span>EthnoJazz · No Voice</span>
+          </div>
+        </div>
+        <div class="promoFrameWrap">
+          <iframe class="promoFrame" src="https://share.descript.com/view/Qa1ysVFxdFJ" title="AI Advokat official promo video" loading="lazy" allow="fullscreen" allowfullscreen></iframe>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -2116,6 +2258,20 @@
     </div>
   </section>
 
+  <section id="visual-identity" class="visualPromo" aria-labelledby="visualPromoTitle">
+    <div class="container visualPromoGrid">
+      <figure class="visualPromoImage">
+        <img src="/assets/ai-advokat-promo-mosaic.webp?v=20261030" alt="AI Advokat промо визуели во професионална правна средина" width="400" height="229" loading="lazy" decoding="async">
+      </figure>
+      <div class="visualPromoCopy">
+        <span class="tag" data-i18n="visualTag">AI ADVOCAT · VISUAL IDENTITY</span>
+        <h2 id="visualPromoTitle" data-i18n="visualTitle">Правото, организирано. Визуелно препознатливо.</h2>
+        <p data-i18n="visualText">Избраните промо кадри го претставуваат AI Advokat како современа правна работна средина: извори, анализа, судска практика и AI под човечка контрола.</p>
+        <a class="btn light" href="#official-promo" data-i18n="visualAction">Погледни го официјалното промо видео ↑</a>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer>
@@ -2278,7 +2434,9 @@
       eyebrow:"AI АДВОКАТ · ЧОВЕЧКА ПРОВЕРКА",
       heroTitle:"Правото, организирано. AI, под човечка контрола.",
       heroText:"Едно место за прописи, судска практика, правни анализи, документи и истражување со вештачка интелигенција — со видливи извори, верзии и задолжителна човечка проверка.",
-      startResearch:"Започни правно истражување", viewPapers:"Отвори трудови", installApp:"Инсталирај AI Advokat",
+      startResearch:"Започни правно истражување", viewPapers:"Отвори трудови", promoVideo:"▶ Промо видео", installApp:"Инсталирај AI Advokat",
+      promoTag:"OFFICIAL PROMO · AI ADVOCAT", promoTitle:"AI Advokat во професионална правна средина", promoText:"24-секундно визуелно претставување на порталот — правни извори, AI истражување, Human Gate и професионална примена, со оригинална EthnoJazz музичка подлога без нарација.", promoOpen:"Отвори го промо видеото",
+      visualTag:"AI ADVOCAT · VISUAL IDENTITY", visualTitle:"Правото, организирано. Визуелно препознатливо.", visualText:"Избраните промо кадри го претставуваат AI Advokat како современа правна работна средина: извори, анализа, судска практика и AI под човечка контрола.", visualAction:"Погледни го официјалното промо видео ↑",
       ecosystemTag:"AI ADVOCAT ECOSYSTEM", ecosystemTitle:"Од правна информација до професионален екосистем", ecosystemText:"AI Advokat ги поврзува платформата, професионалната едукација, тимската употреба, идните настани и партнерствата — без мешање на комерцијалниот слој со правните извори и Human Gate.", ecosystemAcademyTitle:"Nenad Lex Nova Academy", ecosystemAcademyText:"Практични правни и AI Legal Intelligence програми што продолжуваат во извори, водичи, AI истражување, симулација и Human Gate.", ecosystemAcademyAction:"Отвори Nenad Lex Nova Academy →", ecosystemSummitTitle:"Legal Intelligence Summit", ecosystemSummitText:"Концепт за регионален професионален настан. Датум, место, предавачи и котизација не се сметаат за објавени додека не бидат потврдени.", ecosystemSummitAction:"Отвори Summit концепт →", ecosystemPartnersTitle:"Стратешки партнерства", ecosystemPartnersText:"Едукативни, технолошки и event партнерства со експлицитно правило: партнерите не влијаат врз правни одговори, извори или Human Gate.", ecosystemPartnersAction:"Отвори партнерства →",
       trustLabel1:"Изворот прв", trustLabel2:"човечка контрола", trustLabel3:"Проверка на верзија", trustLabel4:"Поврзано со Zenodo",
       trust1:"Одговорите треба да покажуваат на што се потпираат.", trust2:"AI не ја заменува професионалната правна проценка.", trust3:"Правниот текст се чита со датум, верзија и важност.", trust4:"Шест авторски труда се објавени на Zenodo со DOI и имаат научни профили; нацртите се јасно означени.",
@@ -2328,7 +2486,9 @@
       eyebrow:"AI ADVOCATE · HUMAN REVIEW",
       heroTitle:"Law, organized. AI, under human control.",
       heroText:"One place for legislation, case law, legal analysis, documents and AI-assisted research — with visible sources, versions and mandatory human review.",
-      startResearch:"Start legal research", viewPapers:"View publications", installApp:"Install AI Advokat",
+      startResearch:"Start legal research", viewPapers:"View publications", promoVideo:"▶ Promo video", installApp:"Install AI Advokat",
+      promoTag:"OFFICIAL PROMO · AI ADVOCAT", promoTitle:"AI Advokat in a professional legal environment", promoText:"A 24-second visual presentation of the portal — legal sources, AI research, the Human Gate and professional use, with an original EthnoJazz soundtrack and no narration.", promoOpen:"Open the promo video",
+      visualTag:"AI ADVOCAT · VISUAL IDENTITY", visualTitle:"Law, organized. Visually distinctive.", visualText:"Selected promo frames present AI Advokat as a contemporary legal workspace for sources, analysis, case law and AI under human control.", visualAction:"Watch the official promo video ↑",
       ecosystemTag:"AI ADVOCAT ECOSYSTEM", ecosystemTitle:"From legal information to a professional ecosystem", ecosystemText:"AI Advokat connects the platform, professional education, team use, future events and partnerships — without mixing the commercial layer with legal sources or the Human Gate.", ecosystemAcademyTitle:"Nenad Lex Nova Academy", ecosystemAcademyText:"Practical legal and AI Legal Intelligence programmes that continue into sources, guides, AI research, simulations and the Human Gate.", ecosystemAcademyAction:"Open Nenad Lex Nova Academy →", ecosystemSummitTitle:"Legal Intelligence Summit", ecosystemSummitText:"A concept for a regional professional event. Date, venue, speakers and fees are not published until formally confirmed.", ecosystemSummitAction:"Open Summit concept →", ecosystemPartnersTitle:"Strategic partnerships", ecosystemPartnersText:"Education, technology and event partnerships with an explicit rule: partners do not influence legal answers, source ranking or Human Gate outcomes.", ecosystemPartnersAction:"Open partnerships →",
       trustLabel1:"Source-first", trustLabel2:"Human Gate", trustLabel3:"Version-aware", trustLabel4:"Zenodo-linked",
       trust1:"Answers should show what they rely on.", trust2:"AI does not replace professional legal judgment.", trust3:"Legal text is read with date, version and validity.", trust4:"Six author papers are published on Zenodo with DOIs and have Scholar pages; drafts are clearly labelled.",
