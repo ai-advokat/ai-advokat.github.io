@@ -7,6 +7,7 @@ const WORKER="ai-advokat-staging";
 const DB_ID="309f72b8-8711-47fc-bea7-fbd1d649561d";
 const STATE_PATH="artifacts/private-zoki-one-button-uat-state.json";
 const EVIDENCE_PATH="artifacts/private-zoki-one-button-uat-evidence.json";
+const QUIESCENCE_MS=70000;
 
 function fail(message){ throw new Error(message); }
 function env(name){
@@ -130,6 +131,8 @@ const evidence=fs.existsSync(EVIDENCE_PATH)
 
 const cleanup={
   startedAt:new Date().toISOString(),
+  accessRevokedBeforeMembershipCleanup:false,
+  quiescenceMs:0,
   membershipDeletes:{usage:false,keys:false,entitlements:false,account:false,verifiedAbsent:false},
   workersDevDisabled:false,
   openAISecretRemoved:false,
@@ -140,38 +143,7 @@ const cleanup={
 };
 const recordError=(label,error)=>cleanup.errors.push({label,message:String(error?.message||error).slice(0,700)});
 
-if(state.membership?.accountId){
-  const accountId=state.membership.accountId;
-  const ops=[
-    ["usage",()=>d1("DELETE FROM membership_usage_monthly WHERE subject_key=?",["account:"+accountId])],
-    ["keys",()=>d1("DELETE FROM membership_access_keys WHERE account_id=?",[accountId])],
-    ["entitlements",()=>d1("DELETE FROM membership_entitlements WHERE account_id=?",[accountId])],
-    ["account",()=>d1("DELETE FROM membership_accounts WHERE id=?",[accountId])]
-  ];
-  for(const [name,fn] of ops){
-    try{
-      await retry("membership cleanup "+name,fn);
-      cleanup.membershipDeletes[name]=true;
-    }catch(error){
-      recordError("membership_"+name,error);
-    }
-  }
-  try{
-    const checks=await Promise.all([
-      d1("SELECT COUNT(*) AS n FROM membership_accounts WHERE id=?",[accountId]),
-      d1("SELECT COUNT(*) AS n FROM membership_access_keys WHERE account_id=?",[accountId]),
-      d1("SELECT COUNT(*) AS n FROM membership_entitlements WHERE account_id=?",[accountId])
-    ]);
-    const counts=checks.map(x=>Number(firstResultRows(x)[0]?.n||0));
-    cleanup.membershipDeletes.verifiedAbsent=counts.every(n=>n===0);
-    if(!cleanup.membershipDeletes.verifiedAbsent) recordError("membership_verify",new Error("temporary membership rows remain"));
-  }catch(error){
-    recordError("membership_verify",error);
-  }
-}else{
-  cleanup.membershipDeletes={usage:true,keys:true,entitlements:true,account:true,verifiedAbsent:true};
-}
-
+// 1) Revoke the external request path before touching membership rows.
 if(state.worker?.workersDevEnableAttempted){
   try{
     await retry("disable workers.dev",()=>api(
@@ -182,28 +154,6 @@ if(state.worker?.workersDevEnableAttempted){
     cleanup.workersDevDisabled=true;
   }catch(error){ recordError("workers_dev_disable",error); }
 }else cleanup.workersDevDisabled=true;
-
-if(state.worker?.openAISecretAddAttempted){
-  try{
-    await retry("remove staging OpenAI secret",()=>api(
-      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/workers/scripts/${WORKER}/secrets/OPENAI_API_KEY`,
-      env("HG2_C_UAT_WORKER_TOKEN_B"),
-      {method:"DELETE"}
-    ));
-    cleanup.openAISecretRemoved=true;
-  }catch(error){
-    const msg=String(error?.message||error);
-    if(/404|not found/i.test(msg)) cleanup.openAISecretRemoved=true;
-    else recordError("openai_secret_remove",error);
-  }
-}else cleanup.openAISecretRemoved=true;
-
-if(state.worker?.uatDeployAttempted){
-  try{
-    await retry("restore baseline staging config",async()=>runWrangler("wrangler.staging.jsonc","restore baseline staging config"));
-    cleanup.baselineRedeployed=true;
-  }catch(error){ recordError("baseline_redeploy",error); }
-}else cleanup.baselineRedeployed=true;
 
 const accessToken=String(process.env.HG2_C_UAT_ACCESS_TOKEN_A||"");
 if(accessToken){
@@ -236,8 +186,91 @@ if(accessToken){
   recordError("access_token_missing",new Error("HG2_C_UAT_ACCESS_TOKEN_A unavailable to cleanup"));
 }
 
+// 2) Remove provider capability and restore the closed baseline.
+if(state.worker?.openAISecretAddAttempted){
+  try{
+    await retry("remove staging OpenAI secret",()=>api(
+      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/workers/scripts/${WORKER}/secrets/OPENAI_API_KEY`,
+      env("HG2_C_UAT_WORKER_TOKEN_B"),
+      {method:"DELETE"}
+    ));
+    cleanup.openAISecretRemoved=true;
+  }catch(error){
+    const msg=String(error?.message||error);
+    if(/404|not found/i.test(msg)) cleanup.openAISecretRemoved=true;
+    else recordError("openai_secret_remove",error);
+  }
+}else cleanup.openAISecretRemoved=true;
+
+if(state.worker?.uatDeployAttempted){
+  try{
+    await retry("restore baseline staging config",async()=>runWrangler("wrangler.staging.jsonc","restore baseline staging config"));
+    cleanup.baselineRedeployed=true;
+  }catch(error){ recordError("baseline_redeploy",error); }
+}else cleanup.baselineRedeployed=true;
+
+cleanup.accessRevokedBeforeMembershipCleanup=
+  cleanup.workersDevDisabled===true &&
+  cleanup.accessAppDeleted===true &&
+  cleanup.serviceTokenDeleted===true;
+
+// Allow any request that had already resolved membership before revocation to finish.
+if(state.membership?.accountId && state.worker?.workersDevEnableAttempted){
+  await sleep(QUIESCENCE_MS);
+  cleanup.quiescenceMs=QUIESCENCE_MS;
+}
+
+// 3) Remove membership state only after the request path is closed and quiescent.
+if(state.membership?.accountId){
+  const accountId=state.membership.accountId;
+  const ops=[
+    ["keys",()=>d1("DELETE FROM membership_access_keys WHERE account_id=?",[accountId])],
+    ["entitlements",()=>d1("DELETE FROM membership_entitlements WHERE account_id=?",[accountId])],
+    ["account",()=>d1("DELETE FROM membership_accounts WHERE id=?",[accountId])],
+    ["usage",()=>d1("DELETE FROM membership_usage_monthly WHERE subject_key=?",["account:"+accountId])]
+  ];
+  for(const [name,fn] of ops){
+    try{
+      await retry("membership cleanup "+name,fn);
+      cleanup.membershipDeletes[name]=true;
+    }catch(error){
+      recordError("membership_"+name,error);
+    }
+  }
+
+  // One final usage sweep catches any late quota write from a request that was
+  // already in flight when the external request path was revoked.
+  try{
+    await sleep(3000);
+    await retry("membership cleanup final usage sweep",()=>d1(
+      "DELETE FROM membership_usage_monthly WHERE subject_key=?",
+      ["account:"+accountId]
+    ));
+    cleanup.membershipDeletes.usage=true;
+  }catch(error){
+    recordError("membership_usage_final_sweep",error);
+  }
+
+  try{
+    const checks=await Promise.all([
+      d1("SELECT COUNT(*) AS n FROM membership_accounts WHERE id=?",[accountId]),
+      d1("SELECT COUNT(*) AS n FROM membership_access_keys WHERE account_id=?",[accountId]),
+      d1("SELECT COUNT(*) AS n FROM membership_entitlements WHERE account_id=?",[accountId]),
+      d1("SELECT COUNT(*) AS n FROM membership_usage_monthly WHERE subject_key=?",["account:"+accountId])
+    ]);
+    const counts=checks.map(x=>Number(firstResultRows(x)[0]?.n||0));
+    cleanup.membershipDeletes.verifiedAbsent=counts.every(n=>n===0);
+    if(!cleanup.membershipDeletes.verifiedAbsent) recordError("membership_verify",new Error("temporary membership or usage rows remain"));
+  }catch(error){
+    recordError("membership_verify",error);
+  }
+}else{
+  cleanup.membershipDeletes={usage:true,keys:true,entitlements:true,account:true,verifiedAbsent:true};
+}
+
 cleanup.finishedAt=new Date().toISOString();
 const cleanupOk=
+  cleanup.accessRevokedBeforeMembershipCleanup===true &&
   cleanup.membershipDeletes.verifiedAbsent===true &&
   cleanup.workersDevDisabled===true &&
   cleanup.openAISecretRemoved===true &&
