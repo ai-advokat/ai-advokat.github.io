@@ -1,14 +1,6 @@
 name: Zoran standalone bot production runtime deploy
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/zoran-bot-runtime-production-deploy.yml"
-      - "src/index.js"
-      - "src/agent-orchestrator.js"
-      - "src/ai-advokat-central-prompt.js"
-      - "src/response-quality.js"
   workflow_dispatch:
     inputs:
       confirmation:
@@ -43,16 +35,17 @@ jobs:
       - name: Install pinned tooling
         run: npm install --ignore-scripts --no-audit --no-fund
 
+      - name: Block production deploy on high or critical dependency vulnerabilities
+        run: npm audit --audit-level=high
+
       - name: Verify explicit bounded deployment authorization
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            test "$CONFIRMATION" = "DEPLOY_ZORAN_BOT_RUNTIME"
-          fi
+          test "$CONFIRMATION" = "DEPLOY_ZORAN_BOT_RUNTIME"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
-          echo "BOUNDED ZORAN BOT RUNTIME DEPLOY: AUTHORIZED BY DISPATCH + PRODUCTION HUMAN GATE"
+          echo "BOUNDED ZORAN BOT RUNTIME DEPLOY: AUTHORIZED BY MANUAL DISPATCH + PRODUCTION HUMAN GATE"
 
       - name: Verify standalone bot runtime contract
         shell: bash
@@ -84,7 +77,10 @@ jobs:
           curl --fail --retry 5 --retry-delay 2 "$BASE/api/health" | tee /tmp/zoran-bot-health.json
           grep -q '"ok": true' /tmp/zoran-bot-health.json
 
-          code="$(curl --silent --show-error --output /tmp/zoran-bot-unauth.json --write-out '%{http_code}'             -H 'content-type: application/json'             -d '{"q":"Здраво"}'             "$BASE/api/bot")"
+          code="$(curl --silent --show-error --output /tmp/zoran-bot-unauth.json --write-out '%{http_code}' \
+            -H 'content-type: application/json' \
+            -d '{"q":"Здраво"}' \
+            "$BASE/api/bot")"
           test "$code" = "401"
           grep -q 'bot_membership_required' /tmp/zoran-bot-unauth.json
           echo "LIVE /api/bot ROUTE: PRESENT · MEMBERSHIP FAIL-CLOSED · PROVIDER NOT CALLED"
