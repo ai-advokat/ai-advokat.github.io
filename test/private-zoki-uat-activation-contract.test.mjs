@@ -191,3 +191,9 @@ test("cleanup removes and verifies temporary UAT rate-limit state",()=>{
   assert.match(cleanup,/rateLimits:false/);
   assert.match(cleanup,/rateLimits:true/);
 });
+
+
+test("private UAT does not persist LIOE runtime telemetry",()=>{
+  assert.match(runner,/LIOE_RUNTIME_TELEMETRY_ENABLED:"false"/);
+  assert.doesNotMatch(runner,/LIOE_RUNTIME_TELEMETRY_ENABLED:"true"/);
+});
