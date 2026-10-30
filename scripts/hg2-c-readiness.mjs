@@ -4,7 +4,7 @@ const EXPECTED_ACCOUNT = "0fee10e2bd9a2183d16eb0d73f13dfce";
 const EXPECTED_WORKER = "ai-advokat-staging";
 const EXPECTED_DB = "ai-advokat-staging-db";
 const EXPECTED_DB_ID = "309f72b8-8711-47fc-bea7-fbd1d649561d";
-const PRODUCTION_DB_ID = "12ece285-74bb-4f27-a025-2dbd1be6c59a";
+const PRODUCTION_DB_ID = "12ece285-74bb-4f27-a025-2dbd1be6c59a";\nconst PROD_WORKER = "ai-advokat-github-io";
 
 function fail(message) {
   console.error("HG2-C READINESS FAIL:", message);
@@ -55,9 +55,33 @@ if (!localMigration.includes("--local") || localMigration.includes("--remote")) 
 }
 
 const workflowsDir = ".github/workflows";
+const approvedUatWorkflow = "private-zoki-uat-activation.yml";
+const approvedUatSecrets = new Set([
+  "HG2_C_UAT_WORKER_TOKEN_B",
+  "HG2_C_UAT_D1_TOKEN_W",
+  "HG2_C_UAT_ACCESS_TOKEN_A",
+  "UAT_OPENAI_API_KEY"
+]);
 for (const name of fs.readdirSync(workflowsDir).filter(n => /\.ya?ml$/i.test(n))) {
   const text = fs.readFileSync(`${workflowsDir}/${name}`, "utf8");
-  if (text.includes(PRODUCTION_DB_ID) && /staging/i.test(name)) fail(`${name} references production D1`);
+  if (text.includes(PRODUCTION_DB_ID) && (/staging/i.test(name) || name===approvedUatWorkflow)) {
+    fail(`${name} references production D1`);
+  }
+
+  if (name===approvedUatWorkflow) {
+    if (!text.includes("APPROVE_PRIVATE_ZOKI_STAGING_UAT")) fail("approved UAT workflow missing exact Human Gate");
+    if (!text.includes("environment: staging-uat")) fail("approved UAT workflow must use staging-uat environment");
+    if (!text.includes("node scripts/run-private-zoki-staging-activation.mjs")) fail("approved UAT workflow must call the bounded orchestrator");
+    if (text.includes(PROD_WORKER || "ai-advokat-github-io")) fail("approved UAT workflow references production Worker");
+    if (text.includes("wrangler.jsonc")) fail("approved UAT workflow must not reference production Wrangler config");
+    const foundSecrets=[...text.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(m=>m[1]);
+    const unique=new Set(foundSecrets);
+    if (unique.size!==approvedUatSecrets.size || [...unique].some(x=>!approvedUatSecrets.has(x))) {
+      fail("approved UAT workflow secret set differs from the four isolated staging credentials");
+    }
+    continue;
+  }
+
   if (/staging/i.test(name)) {
     for (const forbidden of ["CLOUDFLARE_API_TOKEN","CLOUDFLARE_ACCOUNT_ID","secrets.","--remote","wrangler deploy"]) {
       if (text.includes(forbidden)) fail(`${name} contains pre-HG2-C remote capability: ${forbidden}`);
@@ -71,4 +95,4 @@ if (!design.includes(EXPECTED_ACCOUNT) || !design.includes(EXPECTED_DB_ID) || !d
 }
 
 console.log("HG2-C REPOSITORY READINESS: PASS");
-console.log("Remote activation remains BLOCKED pending dedicated least-privilege credential path and Human Gate.");
+console.log("Remote staging remains BLOCKED except the exact manual Private Zoki UAT lane after Human Gate, isolated credentials and automatic cleanup.");
