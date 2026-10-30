@@ -154,7 +154,7 @@ test("private UAT paces authenticated scenarios and honors Retry-After",()=>{
   assert.match(uatRunner,/membershipMinGapMs/);
   assert.match(uatRunner,/13000/);
   assert.match(uatRunner,/paceMembershipRequest/);
-  assert.match(uatRunner,/response\.status!==429/);
+  assert.match(uatRunner,/response\.status===429/);\n  assert.match(uatRunner,/rateLimitRetries<maxRateLimitRetries/);
   assert.match(uatRunner,/retry-after/);
   assert.match(uatRunner,/RATE_LIMIT/);
 });
