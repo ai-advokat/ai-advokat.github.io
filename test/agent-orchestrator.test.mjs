@@ -649,9 +649,10 @@ test("L3 pleading draft uses one bounded MK specialist with hardened completion 
   assert.match(agentSource,/failureDetail/);
 });
 
-test("L3/L4 chief provider gets a larger bounded default timeout without weakening explicit overrides",()=>{
+test("chief provider keeps bounded defaults for consequential and professional fact-review missions",()=>{
   assert.match(agentSource,/\["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"\]\.includes\(missionProfile\)/);
-  assert.match(agentSource,/\? 70000\s*:\s*45000/);
+  assert.match(agentSource,/professionalFactReview[\s\S]{0,220}\? 60000[\s\S]{0,120}: 45000/);
+  assert.match(agentSource,/\? 70000[\s\S]{0,220}: 45000/);
   assert.match(agentSource,/boundedProviderTimeout\(env\?\.OPENAI_PROVIDER_TIMEOUT_MS,chiefFallbackTimeoutMs,deadlineAt,\{minStartMs:8000,maxMs:90000\}\)/);
 });
 

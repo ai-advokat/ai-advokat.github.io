@@ -6,6 +6,7 @@ import {
   sourceResearchRole
 } from "./open-legal-sources-policy.js";
 import { buildAIAdvokatCentralPrompt } from "./ai-advokat-central-prompt.js";
+import { buildMacedonianRepairMessages } from "./macedonian-language-guard.js";
 
 // AI Advokat — governed legal-agent orchestration architecture.
 // V2 implements the manager-style contract requested by the author:
@@ -677,6 +678,49 @@ function compactSpecialistFindings(stage){
   return findings.map((f,i)=>`[${i+1}] ${f.label} (${f.agentId})\n${String(f.text||"").slice(0,2400)}`).join("\n\n---\n\n");
 }
 
+export async function runOpenAIMacedonianRepair(env,{
+  text,userText,maxOutputTokens=2200,deadlineAt=null
+}={}){
+  if(!openAIOrchestratorConfigured(env)) return {ok:false,error:"openai_language_repair_not_configured",providerCalls:0};
+  const messages=buildMacedonianRepairMessages({text,userText});
+  const timeout=boundedProviderTimeout(env?.OPENAI_LANGUAGE_REPAIR_TIMEOUT_MS,30000,deadlineAt,{minStartMs:6000,maxMs:45000});
+  if(!timeout.ok) return {ok:false,error:"openai_language_repair_deadline_exhausted",providerCalls:0,timeoutMs:0};
+  const body={
+    model:env.OPENAI_MODEL.trim(),
+    instructions:String(messages?.[0]?.content||""),
+    reasoning:{effort:"low"},
+    input:[{role:"user",content:[{type:"input_text",text:String(messages?.[1]?.content||"")}]}],
+    max_output_tokens:Math.max(700,Math.min(3200,Number(maxOutputTokens)||2200)),
+    store:false
+  };
+  let response;
+  try{
+    response=await fetch("https://api.openai.com/v1/responses",{
+      method:"POST",
+      headers:{"Authorization":`Bearer ${env.OPENAI_API_KEY}`,"Content-Type":"application/json"},
+      body:JSON.stringify(body),
+      signal:AbortSignal.timeout(timeout.timeoutMs)
+    });
+  }catch(error){
+    const timedOut=error?.name==="TimeoutError" || error?.name==="AbortError";
+    return {
+      ok:false,
+      error:timedOut?"openai_language_repair_timeout":"openai_language_repair_network_error",
+      timeoutMs:timedOut?timeout.timeoutMs:null,
+      providerCalls:1,
+      usage:{inputTokens:0,outputTokens:0,totalTokens:0}
+    };
+  }
+  let payload=null;
+  try{payload=await response.json();}catch{}
+  const usage=extractOpenAIUsage(payload);
+  if(!response.ok) return {ok:false,error:"openai_language_repair_response_error",status:response.status,providerCalls:1,usage};
+  if(payload?.status!=="completed") return {ok:false,error:"openai_language_repair_incomplete",providerCalls:1,usage};
+  const repaired=extractOpenAIResponseText(payload);
+  if(!repaired) return {ok:false,error:"openai_language_repair_empty",providerCalls:1,usage};
+  return {ok:true,text:repaired,providerCalls:1,usage};
+}
+
 export async function runOpenAIOrchestrator(env, {
   plan,
   input,
@@ -829,9 +873,12 @@ export async function runOpenAIOrchestrator(env, {
   };
 
   const missionProfile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
+  const professionalFactReview=plan?.legalIntelligenceEngine?.problem_class==="professional_legal_opinion_fact_review";
   const chiefFallbackTimeoutMs=["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)
     ? 70000
-    : 45000;
+    : professionalFactReview
+      ? 60000
+      : 45000;
   const chiefTimeout=boundedProviderTimeout(env?.OPENAI_PROVIDER_TIMEOUT_MS,chiefFallbackTimeoutMs,deadlineAt,{minStartMs:8000,maxMs:90000});
   if(!chiefTimeout.ok){
     return {

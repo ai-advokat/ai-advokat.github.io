@@ -240,3 +240,23 @@ test("private UAT retries only bounded transient transport and provider failures
   assert.match(uatRunner,/legal_postflight_timeout_error/);
   assert.match(uatRunner,/errorCode:typeof payload\?\.error/);
 });
+
+
+test("professional legal-opinion fact review uses lightweight paid runtime settings",()=>{
+  const indexSource=fs.readFileSync("src/index.js","utf8");
+  const orchestratorSource=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(indexSource,/professionalFactReview \? 900/);
+  assert.match(indexSource,/professionalFactReview \? "low" : "medium"/);
+  assert.match(orchestratorSource,/professionalFactReview[\s\S]{0,240}\? 60000/);
+});
+
+test("paid Macedonian repair is bounded and only allowed for REPAIR verdicts",()=>{
+  const indexSource=fs.readFileSync("src/index.js","utf8");
+  const orchestratorSource=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  assert.match(indexSource,/governedLanguageRelease\?\.verdict==="REPAIR" && membership/);
+  assert.doesNotMatch(indexSource,/governedLanguageRelease\?\.verdict==="BLOCK" && membership/);
+  assert.match(indexSource,/runOpenAIMacedonianRepair/);
+  assert.match(orchestratorSource,/reasoning:\{effort:"low"\}/);
+  assert.match(orchestratorSource,/OPENAI_LANGUAGE_REPAIR_TIMEOUT_MS/);
+  assert.match(indexSource,/openai_language_repair_still_noncompliant/);
+});

@@ -73,6 +73,7 @@ import {
   buildExecutionGraph,
   orchestratorRuntimeReadiness,
   runOpenAIOrchestrator,
+  runOpenAIMacedonianRepair,
   runLegalPostflightVerifier
 } from "./agent-orchestrator.js";
 import {
@@ -5603,6 +5604,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     && guideDocumentCheck.attachments.length===0
     && corpusContext.length===0;
   const missionProfile=plan.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
+  const legalProblemClass=plan.legalIntelligenceEngine?.problem_class||"general_assistance";
+  const professionalFactReview=missionProfile==="L1_VERIFIED_RESEARCH"
+    && legalProblemClass==="professional_legal_opinion_fact_review";
   const consequentialLegal=["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile);
   const lightweightLegal=["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(missionProfile);
   const legalMissionOutputTokens=missionProfile==="L4_LEGAL_TRUTH_GOVERNANCE" ? 5200
@@ -5611,7 +5615,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         : 2200;
   const maxOutputTokens=fastGeneral ? 600
     : missionProfile==="L0_INFORMATIONAL" ? 900
-      : missionProfile==="L1_VERIFIED_RESEARCH" ? 1500
+      : professionalFactReview ? 900
+        : missionProfile==="L1_VERIFIED_RESEARCH" ? 1500
         : consequentialLegal ? legalMissionOutputTokens
           : lightweightLegal ? 1500
             : webRequested ? 2200
@@ -5625,7 +5630,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       : missionProfile==="L2_STRATEGY_PROCEDURE"
         ? "medium"
         : missionProfile==="L1_VERIFIED_RESEARCH"
-          ? "medium"
+          ? (professionalFactReview ? "low" : "medium")
           : "low";
 
   const runWorkersFallbackResponse=async({fallbackReason=null,primaryProviderCalls=0}={})=>{
@@ -6057,9 +6062,61 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   // is released unless the deterministic cleanup + runtime assessment confirms
   // the 2017 orthography contract. This is deliberately last-mile and fail-closed.
   const governedLanguageRequired=shouldEnforceMacedonianOutput(q);
-  const governedFinalRelease=canonicalMacedonianFinalRelease(governedFinalAnswer,q);
-  const governedLanguageQuality=governedFinalRelease.quality;
-  const governedLanguageRelease=governedFinalRelease.releaseGate;
+  let governedFinalRelease=canonicalMacedonianFinalRelease(governedFinalAnswer,q);
+  let governedLanguageQuality=governedFinalRelease.quality;
+  let governedLanguageRelease=governedFinalRelease.releaseGate;
+  let governedLanguageRepair={attempted:false,repaired:false,providerCalls:0,error:null};
+
+  // Fail closed first. Only a repairable Macedonian result may receive one
+  // bounded language-only regeneration. Severe/BLOCK output is never repaired
+  // into release and no legal facts, authorities or recommendations may be added.
+  if(!governedFinalRelease.ok && governedLanguageRelease?.verdict==="REPAIR" && membership){
+    governedLanguageRepair.attempted=true;
+    const repair=await runOpenAIMacedonianRepair(env,{
+      text:governedFinalAnswer,
+      userText:q,
+      maxOutputTokens:Math.min(3200,Math.max(900,maxOutputTokens)),
+      deadlineAt:professionalRequestDeadlineAt
+    });
+    governedLanguageRepair={
+      attempted:true,
+      repaired:false,
+      providerCalls:Number(repair.providerCalls||0),
+      error:repair.ok?null:String(repair.error||"openai_language_repair_failed")
+    };
+    if(repair.ok){
+      const repairUsage=repair.usage||{};
+      const primaryUsage=result.usage||{};
+      result={
+        ...result,
+        providerCalls:Number(result.providerCalls||0)+Number(repair.providerCalls||0),
+        usage:{
+          inputTokens:Number(primaryUsage.inputTokens||0)+Number(repairUsage.inputTokens||0),
+          outputTokens:Number(primaryUsage.outputTokens||0)+Number(repairUsage.outputTokens||0),
+          totalTokens:Number(primaryUsage.totalTokens||0)+Number(repairUsage.totalTokens||0)
+        }
+      };
+      const repairedCandidate=formalDraftRequest
+        ? finaliseFormalLegalDraft(repair.text,{
+            userText:q,
+            hasGovernedLegalContext:articleBundle.context.length>0
+          })
+        : String(repair.text||"").trim();
+      const repairedRelease=canonicalMacedonianFinalRelease(repairedCandidate,q);
+      if(repairedRelease.ok){
+        governedFinalAnswer=repairedRelease.text;
+        governedFinalRelease=repairedRelease;
+        governedLanguageQuality=repairedRelease.quality;
+        governedLanguageRelease=repairedRelease.releaseGate;
+        governedLanguageRepair={...governedLanguageRepair,repaired:true,error:null};
+      }else{
+        governedLanguageQuality=repairedRelease.quality;
+        governedLanguageRelease=repairedRelease.releaseGate;
+        governedLanguageRepair={...governedLanguageRepair,error:"openai_language_repair_still_noncompliant"};
+      }
+    }
+  }
+
   if(!governedFinalRelease.ok){
     await releaseMonthlyQuota(env,{subject,period});
     return json(request,{
@@ -6069,6 +6126,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
       languageReleaseGate:governedLanguageRelease,
       languageReasons:governedLanguageQuality?.reasons||[],
+      languageRepair:governedLanguageRepair,
       governanceRunId:lioeRunId
     },503);
   }
@@ -6170,6 +6228,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageReleaseGate:governedLanguageRelease,
     languageQualityState:governedLanguageRequired?"verified_runtime":"not_required",
+    languageRepaired:governedLanguageRepair.repaired===true,
+    languageRepairProviderCalls:Number(governedLanguageRepair.providerCalls||0),
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,
     sources:result.sources || [],
