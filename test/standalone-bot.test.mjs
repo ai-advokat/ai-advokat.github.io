@@ -79,7 +79,8 @@ test('P0 professional recovery keeps two bounded attempts and no uncontrolled Wo
   assert.match(source,/OPENAI_RETRY_BACKOFF_MS\|\|250/);
   assert.match(source,/!membership\s*&&\s*governedOpenAIWorkersFallbackConfigured/);
   assert.match(orchestrator,/chiefFallbackTimeoutMs=\["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"\]\.includes\(missionProfile\)/);
-  assert.match(orchestrator,/\? 70000\s*:\s*45000/);
+  assert.match(orchestrator,/professionalFactReview[\s\S]{0,220}\? 60000[\s\S]{0,120}: 45000/);
+  assert.match(orchestrator,/\? 70000[\s\S]{0,220}: 45000/);
   assert.match(orchestrator,/OPENAI_PROVIDER_TIMEOUT_MS,chiefFallbackTimeoutMs,deadlineAt/);
   assert.match(orchestrator,/AbortSignal\.timeout\(providerTimeoutMs\)/);
   assert.match(governance,/provider_attempts_json/);
