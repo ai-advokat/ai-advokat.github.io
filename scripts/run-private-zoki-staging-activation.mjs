@@ -94,7 +94,7 @@ function runWrangler(config,label){
     fail(label+" failed: "+stderr);
   }
 }
-function runUat(membershipKey,accessId,accessSecret){
+function runUat(membershipKey,ingressToken){
   const result=spawnSync(process.execPath,["scripts/run-private-zoki-uat.mjs"],{
     encoding:"utf8",
     timeout:25*60*1000,
@@ -104,8 +104,7 @@ function runUat(membershipKey,accessId,accessSecret){
       UAT_BASE_URL:ORIGIN,
       UAT_EXPECTED_ORIGIN:ORIGIN,
       UAT_MEMBERSHIP_KEY:membershipKey,
-      CF_ACCESS_CLIENT_ID:accessId,
-      CF_ACCESS_CLIENT_SECRET:accessSecret,
+      UAT_INGRESS_TOKEN:ingressToken,
       UAT_REQUEST_TIMEOUT_MS:"60000"
     },
     shell:false
@@ -119,7 +118,6 @@ function runUat(membershipKey,accessId,accessSecret){
 if(String(process.env.UAT_HUMAN_GATE||"")!==GATE) fail("exact UAT Human Gate is required");
 
 const workerToken=env("HG2_C_UAT_WORKER_TOKEN_B");
-const accessToken=env("HG2_C_UAT_ACCESS_TOKEN_A");
 env("HG2_C_UAT_D1_TOKEN_W");
 env("UAT_OPENAI_API_KEY");
 
@@ -132,23 +130,23 @@ if(JSON.stringify(staging).includes(PROD_DB_ID) || JSON.stringify(staging).inclu
 
 fs.mkdirSync("artifacts",{recursive:true});
 const state={
-  schema:"ai-advokat-private-zoki-one-button-state/v2",
+  schema:"ai-advokat-private-zoki-one-button-state/v3",
   runKey:RUN_KEY,
   target:{accountId:ACCOUNT,worker:WORKER,databaseName:DB_NAME,databaseId:DB_ID,origin:ORIGIN},
-  access:{serviceTokenName:"AI ADVOKAT 4 Private Zoki UAT "+RUN_KEY,serviceTokenId:null,appName:"AI ADVOKAT 4 Private Zoki UAT "+RUN_KEY,appId:null},
-  worker:{uatDeployAttempted:false,uatDeployed:false,openAISecretAddAttempted:false,openAISecretAdded:false,workersDevEnableAttempted:false,workersDevEnabled:false},
+  ingress:{mode:"ephemeral_worker_secret",header:"X-AI-Advokat-UAT-Token"},
+  worker:{uatDeployAttempted:false,uatDeployed:false,openAISecretAddAttempted:false,openAISecretAdded:false,ingressSecretAddAttempted:false,ingressSecretAdded:false,workersDevEnableAttempted:false,workersDevEnabled:false},
   membership:{accountId:"UAT-ZOKI-"+RUN_KEY,provisionAttempted:false,provisioned:false},
   uat:{executed:false,passed:false,totalPassed:null,totalExpected:20,telemetryWindowStartedAt:null,telemetryWindowEndedAt:null,governanceRunIds:[]},
   runError:null
 };
 const evidence={
-  schema:"ai-advokat-private-zoki-one-button-uat/v2",
+  schema:"ai-advokat-private-zoki-one-button-uat/v3",
   startedAt:new Date().toISOString(),
   humanGate:GATE,
   target:state.target,
   productionTouched:false,
   preflight:{baselineClosed:false,openAISecretAbsent:false},
-  temporary:{accessAppCreated:false,serviceTokenCreated:false,workersDevEnabled:false,openAISecretAdded:false,membershipProvisioned:false},
+  temporary:{ingressSecretAdded:false,workersDevEnabled:false,openAISecretAdded:false,membershipProvisioned:false},
   uat:state.uat,
   cleanup:{status:"PENDING"},
   finalStatus:"RUNNING"
@@ -165,8 +163,7 @@ const persist=()=>{
 persist();
 
 let membershipKey=null;
-let accessClientId=null;
-let accessClientSecret=null;
+let uatIngressToken=randomBytes(32).toString("base64url");
 let uatConfigPath=null;
 
 try{
@@ -183,40 +180,8 @@ try{
   );
   const names=(secrets?.result||[]).map(x=>String(x?.name||""));
   if(names.includes("OPENAI_API_KEY")) fail("staging already has OPENAI_API_KEY; refuse to overwrite unknown state");
+  if(names.includes("UAT_INGRESS_TOKEN")) fail("staging already has UAT_INGRESS_TOKEN; refuse to overwrite unknown state");
   evidence.preflight.openAISecretAbsent=true;
-  persist();
-
-  const svc=await api(
-    `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/access/service_tokens`,
-    accessToken,
-    {method:"POST",body:{name:state.access.serviceTokenName,duration:"2h"}}
-  );
-  state.access.serviceTokenId=String(svc?.result?.id||"");
-  accessClientId=String(svc?.result?.client_id||"");
-  accessClientSecret=String(svc?.result?.client_secret||"");
-  if(!state.access.serviceTokenId || !accessClientId || !accessClientSecret) fail("Access service token creation returned incomplete credentials");
-  evidence.temporary.serviceTokenCreated=true;
-  persist();
-
-  const app=await api(
-    `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/access/apps`,
-    accessToken,
-    {method:"POST",body:{
-      name:state.access.appName,
-      type:"self_hosted",
-      domain:HOST,
-      session_duration:"1h",
-      policies:[{
-        name:"Private Zoki UAT service auth",
-        decision:"non_identity",
-        precedence:1,
-        include:[{service_token:{token_id:state.access.serviceTokenId}}]
-      }]
-    }}
-  );
-  state.access.appId=String(app?.result?.id||"");
-  if(!state.access.appId) fail("Access application creation did not return id");
-  evidence.temporary.accessAppCreated=true;
   persist();
 
   const uatConfig=structuredClone(staging);
@@ -252,6 +217,17 @@ try{
   );
   state.worker.openAISecretAdded=true;
   evidence.temporary.openAISecretAdded=true;
+  persist();
+
+  state.worker.ingressSecretAddAttempted=true;
+  persist();
+  await api(
+    `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/workers/scripts/${WORKER}/secrets`,
+    workerToken,
+    {method:"PUT",body:{name:"UAT_INGRESS_TOKEN",text:uatIngressToken,type:"secret_text"}}
+  );
+  state.worker.ingressSecretAdded=true;
+  evidence.temporary.ingressSecretAdded=true;
   persist();
 
   state.worker.workersDevEnableAttempted=true;
@@ -290,11 +266,11 @@ try{
   evidence.temporary.membership={accountId:state.membership.accountId,keyPrefix:prefix,startsAt:starts.toISOString(),expiresAt:expires.toISOString(),quota:40};
   persist();
 
-  const accessHeaders={"CF-Access-Client-Id":accessClientId,"CF-Access-Client-Secret":accessClientSecret};
+  const ingressHeaders={"X-AI-Advokat-UAT-Token":uatIngressToken};
   let healthOk=false;
   for(let attempt=1;attempt<=12;attempt++){
     try{
-      const response=await fetch(ORIGIN+"/api/health",{headers:accessHeaders,signal:AbortSignal.timeout(15000)});
+      const response=await fetch(ORIGIN+"/api/health",{headers:ingressHeaders,signal:AbortSignal.timeout(15000)});
       if(response.ok){
         const body=await response.json().catch(()=>null);
         if(body?.ok===true){ healthOk=true; break; }
@@ -302,11 +278,11 @@ try{
     }catch{}
     await new Promise(r=>setTimeout(r,5000));
   }
-  if(!healthOk) fail("Access-protected staging health route did not become ready");
+  if(!healthOk) fail("ingress-protected staging health route did not become ready");
 
   state.uat.telemetryWindowStartedAt=new Date().toISOString();
   persist();
-  runUat(membershipKey,accessClientId,accessClientSecret);
+  runUat(membershipKey,uatIngressToken);
   state.uat.telemetryWindowEndedAt=new Date().toISOString();
   state.uat.executed=true;
   evidence.uat.executed=true;
@@ -344,6 +320,6 @@ try{
   process.exitCode=1;
 }finally{
   membershipKey=null;
-  accessClientSecret=null;
+  uatIngressToken=null;
   if(uatConfigPath){ try{fs.unlinkSync(uatConfigPath);}catch{} }
 }
