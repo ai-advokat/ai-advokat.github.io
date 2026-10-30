@@ -16,7 +16,7 @@ function env(name){
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
-async function api(url,token,{method="GET",body=null,timeoutMs=30000}={}){
+async function api(url,token,{method="GET",body=null,timeoutMs=15000}={}){
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),timeoutMs);
   try{
@@ -43,13 +43,13 @@ async function api(url,token,{method="GET",body=null,timeoutMs=30000}={}){
     clearTimeout(timer);
   }
 }
-async function retry(label,fn,{attempts=3}={}){
+async function retry(label,fn,{attempts=2}={}){
   let last;
   for(let i=1;i<=attempts;i++){
     try{ return await fn(); }
     catch(error){
       last=error;
-      if(i<attempts) await sleep(1500*i);
+      if(i<attempts) await sleep(1000*i);
     }
   }
   throw new Error(label+": "+String(last?.message||last));
@@ -72,7 +72,7 @@ function runWrangler(config,label){
   if(!fs.existsSync(cli)) fail("Wrangler CLI not installed");
   const result=spawnSync(process.execPath,[cli,"deploy","--config",config],{
     encoding:"utf8",
-    timeout:120000,
+    timeout:90000,
     killSignal:"SIGTERM",
     env:{
       ...process.env,
@@ -89,9 +89,21 @@ function firstResultRows(payload){
   return Array.isArray(batch?.results) ? batch.results : [];
 }
 async function findAccessByName(token,endpoint,name){
-  const payload=await api(`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/access/${endpoint}`,token);
-  const list=Array.isArray(payload?.result) ? payload.result : [];
-  return list.filter(x=>String(x?.name||"")===name);
+  const matches=[];
+  let page=1;
+  for(;;){
+    const payload=await api(
+      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/access/${endpoint}?page=${page}&per_page=100`,
+      token
+    );
+    const list=Array.isArray(payload?.result) ? payload.result : [];
+    matches.push(...list.filter(x=>String(x?.name||"")===name));
+    const totalPages=Math.max(1,Number(payload?.result_info?.total_pages||1));
+    if(page>=totalPages) break;
+    page++;
+    if(page>100) fail("Access pagination exceeded safety bound");
+  }
+  return matches;
 }
 
 fs.mkdirSync("artifacts",{recursive:true});
