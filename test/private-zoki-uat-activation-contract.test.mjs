@@ -151,3 +151,28 @@ test("UAT tooling install is lockfile-based and has no job-wide staging secrets"
   assert.match(workflow,/Run bounded remote staging UAT[\s\S]*HG2_C_UAT_WORKER_TOKEN_B:[\s\S]*UAT_OPENAI_API_KEY:/);
   assert.match(workflow,/Independent staging cleanup[\s\S]*HG2_C_UAT_WORKER_TOKEN_B:[\s\S]*HG2_C_UAT_ACCESS_TOKEN_A:/);
 });
+
+
+test("private UAT paces authenticated scenarios and honors Retry-After",()=>{
+  const uatRunner=fs.readFileSync("scripts/run-private-zoki-uat.mjs","utf8");
+  assert.match(uatRunner,/membershipMinGapMs/);
+  assert.match(uatRunner,/13000/);
+  assert.match(uatRunner,/paceMembershipRequest/);
+  assert.match(uatRunner,/response\.status!==429/);
+  assert.match(uatRunner,/retry-after/);
+  assert.match(uatRunner,/RATE_LIMIT/);
+});
+
+test("cleanup revokes external access before membership cleanup and verifies usage absence",()=>{
+  const disableAt=cleanup.indexOf("disable workers.dev");
+  const accessAt=cleanup.indexOf("delete Access app");
+  const membershipAt=cleanup.indexOf("membership cleanup "+name");
+  assert.ok(disableAt>=0);
+  assert.ok(accessAt>disableAt);
+  assert.ok(membershipAt>accessAt);
+  assert.match(cleanup,/QUIESCENCE_MS=70000/);
+  assert.match(cleanup,/membership_usage_monthly WHERE subject_key=\?/);
+  assert.match(cleanup,/final usage sweep/);
+  assert.match(cleanup,/SELECT COUNT\(\*\) AS n FROM membership_usage_monthly/);
+  assert.match(cleanup,/accessRevokedBeforeMembershipCleanup===true/);
+});
