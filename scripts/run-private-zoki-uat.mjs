@@ -172,6 +172,9 @@ for(let cycle=1;cycle<=manifest.cycles_required;cycle++){
         assertions,
         attempts,
         errorCode:typeof payload?.error==="string" ? payload.error.slice(0,120) : null,
+        languageReasons:Array.isArray(payload?.languageReasons)
+          ? payload.languageReasons.slice(0,8).map(x=>String(x).slice(0,80))
+          : [],
         governanceRunId,
         elapsedMs:Date.now()-started
       };

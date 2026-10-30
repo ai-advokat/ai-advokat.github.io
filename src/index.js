@@ -6070,7 +6070,16 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   // Fail closed first. Only a repairable Macedonian result may receive one
   // bounded language-only regeneration. Severe/BLOCK output is never repaired
   // into release and no legal facts, authorities or recommendations may be added.
-  if(!governedFinalRelease.ok && governedLanguageRelease?.verdict==="REPAIR" && membership){
+  const governedLanguageReasons=Array.isArray(governedLanguageQuality?.reasons)
+    ? governedLanguageQuality.reasons.map(x=>String(x))
+    : [];
+  const governedLanguageRepairEligible=
+    !governedFinalRelease.ok
+    && membership
+    && ["REPAIR","BLOCK"].includes(String(governedLanguageRelease?.verdict||""))
+    && !governedLanguageReasons.includes("foreign_jurisdiction_substitution");
+
+  if(governedLanguageRepairEligible){
     governedLanguageRepair.attempted=true;
     const repair=await runOpenAIMacedonianRepair(env,{
       text:governedFinalAnswer,
@@ -6126,6 +6135,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
       languageReleaseGate:governedLanguageRelease,
       languageReasons:governedLanguageQuality?.reasons||[],
+      languageRepairEligible:governedLanguageRepairEligible,
       languageRepair:governedLanguageRepair,
       governanceRunId:lioeRunId
     },503);
