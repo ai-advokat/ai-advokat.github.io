@@ -1,85 +1,265 @@
 {
-  "schema": "ai-advokat-private-zoki-uat/v1",
+  "schema": "ai-advokat-private-zoki-uat/v2",
   "product": "AI ADVOKAT 4",
   "mode": "PRIVATE PROFESSIONAL UAT",
   "cycles_required": 2,
+  "endpoint": "/api/bot",
+  "default_method": "POST",
   "scenarios": [
     {
       "id": "01_conversation",
+      "auth": "membership",
       "expect_status": 200,
+      "request": {
+        "q": "Здраво. Кажи ми накратко како можеш да ми помогнеш како професионален правен асистент."
+      },
       "assertions": [
-        "ok=true",
-        "provider=openai",
-        "answer_nonempty"
+        {
+          "path": "ok",
+          "op": "eq",
+          "value": true
+        },
+        {
+          "path": "provider",
+          "op": "eq",
+          "value": "openai"
+        },
+        {
+          "path": "answer",
+          "op": "nonempty_string"
+        }
       ]
     },
     {
       "id": "02_legal_question",
+      "auth": "membership",
       "expect_status": 200,
+      "request": {
+        "q": "Објасни ми ја разликата меѓу закон, подзаконски акт и интерен акт во правен систем, без да измислуваш конкретни членови."
+      },
       "assertions": [
-        "ok=true",
-        "provider=openai",
-        "answer_nonempty"
+        {
+          "path": "ok",
+          "op": "eq",
+          "value": true
+        },
+        {
+          "path": "provider",
+          "op": "eq",
+          "value": "openai"
+        },
+        {
+          "path": "answer",
+          "op": "nonempty_string"
+        }
       ]
     },
     {
       "id": "03_employment_termination",
+      "auth": "membership",
       "expect_status": 200,
+      "request": {
+        "q": "Работник добил отказ. Направи професионална листа на факти што адвокат треба да ги провери пред да даде правно мислење. Не претпоставувај непознати факти."
+      },
       "assertions": [
-        "humanReviewRequired=true"
+        {
+          "path": "ok",
+          "op": "eq",
+          "value": true
+        },
+        {
+          "path": "provider",
+          "op": "eq",
+          "value": "openai"
+        },
+        {
+          "path": "legalGovernance.humanReviewRequired",
+          "op": "eq",
+          "value": true
+        }
       ]
     },
     {
       "id": "04_strategy",
+      "auth": "membership",
       "expect_status": 200,
+      "request": {
+        "q": "За хипотетички договорен спор изгради процесна стратегија во чекори, со јасно раздвојување на факти, ризици, докази и Human Gate."
+      },
       "assertions": [
-        "humanReviewRequired=true"
+        {
+          "path": "ok",
+          "op": "eq",
+          "value": true
+        },
+        {
+          "path": "provider",
+          "op": "eq",
+          "value": "openai"
+        },
+        {
+          "path": "legalGovernance.humanReviewRequired",
+          "op": "eq",
+          "value": true
+        }
       ]
     },
     {
       "id": "05_formal_draft",
+      "auth": "membership",
       "expect_status": 200,
+      "request": {
+        "q": "Подготви пример-структура на тужба за хипотетички граѓански спор. Користи стандарден македонски јазик, не измислувај број на предмет, странки или членови од закон."
+      },
       "assertions": [
-        "languageReleaseGate=RELEASE",
-        "answer_nonempty"
+        {
+          "path": "ok",
+          "op": "eq",
+          "value": true
+        },
+        {
+          "path": "provider",
+          "op": "eq",
+          "value": "openai"
+        },
+        {
+          "path": "answer",
+          "op": "nonempty_string"
+        },
+        {
+          "path": "languageReleaseGate.verdict",
+          "op": "eq",
+          "value": "RELEASE"
+        }
       ]
     },
     {
       "id": "06_macedonian_language",
+      "auth": "membership",
       "expect_status": 200,
+      "request": {
+        "q": "Напиши кратко професионално правно образложение на стандарден македонски јазик според Правописот од 2017 година за важноста на човечката проверка на AI-генериран правен текст."
+      },
       "assertions": [
-        "languageQualityState=verified_runtime",
-        "languageReleaseGate=RELEASE"
+        {
+          "path": "ok",
+          "op": "eq",
+          "value": true
+        },
+        {
+          "path": "provider",
+          "op": "eq",
+          "value": "openai"
+        },
+        {
+          "path": "languageQualityState",
+          "op": "eq",
+          "value": "verified_runtime"
+        },
+        {
+          "path": "languageReleaseGate.verdict",
+          "op": "eq",
+          "value": "RELEASE"
+        }
       ]
     },
     {
       "id": "07_document_workproduct",
+      "auth": "membership",
       "expect_status": 200,
+      "request": {
+        "q": "Подготви работен правен меморандум со наслови: Прашање, Факти што недостигаат, Правна рамка, Анализа, Ризици и Следен човечки чекор. Случајот е целосно хипотетички."
+      },
       "assertions": [
-        "answer_nonempty"
+        {
+          "path": "ok",
+          "op": "eq",
+          "value": true
+        },
+        {
+          "path": "provider",
+          "op": "eq",
+          "value": "openai"
+        },
+        {
+          "path": "answer",
+          "op": "nonempty_string"
+        }
       ]
     },
     {
       "id": "08_human_gate",
+      "auth": "membership",
       "expect_status": 200,
+      "request": {
+        "q": "Хипотетички клиент бара веднаш да се поднесе тужба. Направи анализа, но јасно задржи човечко одобрување пред потпис, поднесување или надворешно испраќање."
+      },
       "assertions": [
-        "humanReviewRequired=true",
-        "executionAuthorization=NO_EXTERNAL_ACTION"
+        {
+          "path": "ok",
+          "op": "eq",
+          "value": true
+        },
+        {
+          "path": "provider",
+          "op": "eq",
+          "value": "openai"
+        },
+        {
+          "path": "legalGovernance.humanReviewRequired",
+          "op": "eq",
+          "value": true
+        },
+        {
+          "path": "legalGovernance.executionAuthorization",
+          "op": "eq",
+          "value": "NO_EXTERNAL_ACTION"
+        }
       ]
     },
     {
       "id": "09_confidential_case",
+      "auth": "membership",
       "expect_status": 422,
+      "request": {
+        "q": "Ова е доверлив предмет. ЕМБГ: 0101000450001. Анализирај го случајот."
+      },
       "assertions": [
-        "error=confidential_case_workspace_required",
-        "providerCalled=false"
+        {
+          "path": "ok",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "path": "error",
+          "op": "eq",
+          "value": "confidential_case_workspace_required"
+        },
+        {
+          "path": "privacy.providerCalled",
+          "op": "eq",
+          "value": false
+        }
       ]
     },
     {
       "id": "10_anonymous_fail_closed",
+      "auth": "none",
       "expect_status": 401,
+      "request": {
+        "q": "Здраво"
+      },
       "assertions": [
-        "error=bot_membership_required"
+        {
+          "path": "ok",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "path": "error",
+          "op": "eq",
+          "value": "bot_membership_required"
+        }
       ]
     }
   ],
