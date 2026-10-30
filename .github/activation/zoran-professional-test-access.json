@@ -1,24 +1,111 @@
-{
-  "decision_id": "AI_ADVOKAT_ZORAN_ACCESS_HANDOFF_2026-10-23_R3",
-  "activation_authorized": true,
-  "authorization_basis": "Owner requested temporary access to test AI Advokat professional features.",
-  "purpose": "owner_professional_testing",
-  "display_name": "Zoran Stojankich",
-  "email": "zstojankik@gmail.com",
-  "account_id": "zoran-test-67006a3a74bf",
-  "entitlement_id": "zent-bb4d357123a6e5a0",
-  "key_id": "zkey-52940cefb2127e59",
-  "plan_code": "office",
-  "status": "active",
-  "monthly_quota": 100,
-  "seat_limit": 1,
-  "access_key_prefix": "zoki_e5b70",
-  "access_key_hash": "8785b4f5bc23c1221d3c5a2de2d62c8f53ad48b1c6a11f778bcaa73708458afc",
-  "expires_at": "2026-11-05T16:00:00Z",
-  "human_gate_required": true,
-  "autonomous_filing": false,
-  "autonomous_signature": false,
-  "autonomous_external_transmission": false,
-  "notes": "Final private handoff rotation after production runtime deploy. Same account, permissions, quota and expiry; preserve usage. Plaintext remains outside GitHub and is handed directly to Zoran.",
-  "reset_usage": false
-}
+# AI Advokat 4 — Final Production Release Record
+
+## 1. Release identity
+- Product: AI Advokat 4
+- Runtime version: 1.9.0
+- Release date: 2026-10-30
+- Owner: Zoran Stojankikj
+- Primary class: Legal AI platform / software
+- Status: RELEASED VERIFIED
+- Released Git commit: ae2800269c7c5999e628aee37d6e1c3cc9a1d45f
+- Cloudflare Worker: ai-advokat-github-io
+- Production Worker version ID: 9673ed32-1f6d-41a9-b45e-bfc6dd6d0c7c
+- Production endpoint: https://ai-advokat-github-io.aiadvokat16.workers.dev
+
+## 2. Included release scope
+This release contains the bounded current Worker runtime deployed from the exact released Git commit above. The deployment did not apply D1 migrations and did not change secrets.
+
+Release evidence files:
+- zoran-bot-runtime-deploy.txt
+- zoran-bot-health.json
+- zoran-bot-unauth.json
+
+## 3. Acceptance results
+- Full repository test suite on released commit: PASS
+- Security test suite on released commit: PASS
+- Final read-only production readiness gate: PASS
+- Exact production target and isolation check: PASS
+- Production D1 schema readiness: PASS
+- OpenAI gpt-6.1-sol model/quota readiness: PASS
+- Live health check after deploy: PASS
+- D1 bound/reachable/schemaReady: PASS
+- Unauthenticated /api/bot fail-closed contract: PASS
+- Provider not called for unauthenticated /api/bot request: PASS
+- Deployment evidence artifact upload: PASS
+
+## 4. Verification summary
+Post-deploy health evidence reports:
+- ok: true
+- service: AI Advokat
+- version: 1.9.0
+- architecture: worker-plus-static-assets-plus-d1
+- publicMode: read_only
+- humanGate: true
+- database.bound: true
+- database.reachable: true
+- database.schemaReady: true
+- database.schemaVersion: 50
+
+Unauthenticated bot evidence reports:
+- ok: false
+- error: bot_membership_required
+- message: Внесете активен професионален клуч.
+
+Deployment evidence reports:
+- Worker uploaded successfully
+- Worker triggers deployed successfully
+- Current Version ID: 9673ed32-1f6d-41a9-b45e-bfc6dd6d0c7c
+- OPENAI_MODEL: gpt-6.1-sol
+- OPENAI_ORCHESTRATOR_ENABLED: true
+- LIOE_RUNTIME_GOVERNANCE_ENABLED: true
+- LIOE_POSTFLIGHT_ENABLED: true
+- LIOE_RUNTIME_TELEMETRY_ENABLED: true
+- LIOE_SPECIALIST_EXECUTION_ENABLED: true
+
+## 5. Provenance
+GitHub Actions production deploy run:
+- Run ID: 41129715201
+- Run number: 6
+- Conclusion: success
+- Released commit: ae2800269c7c5999e628aee37d6e1c3cc9a1d45f
+
+Final production readiness run:
+- Run ID: 41129336853
+- Run number: 2
+- Conclusion: success
+
+Production evidence artifact:
+- Artifact ID: 13011953971
+- Artifact name: zoran-bot-runtime-production-evidence
+- Artifact SHA-256: d6a33abbe0e5e9d50fe6f1a449738665b12c5ece46badd84fe1e8285d4848075
+
+## 6. Scope exclusions / known limitations
+- PR #387 (Draft PR-A: domain-aware legal source routing) is not part of this release.
+- PR #252 (Simplify Secure Case Workspace access on latest main) is not part of this release.
+- These open PRs must be treated as future-version work and must not be assumed to be live.
+- GitHub Actions emitted a Node.js 20 deprecation warning for upstream action packages; it did not block or invalidate the successful production deployment.
+- The current evidence pack does not record the previous stable Cloudflare Worker version ID. Before any manual rollback, identify the target stable version in Cloudflare Workers > Deployments or via Wrangler deployment/version listing.
+
+## 7. Rollback / recovery
+For this bounded runtime release, use a Cloudflare Worker version rollback rather than the broader production-runtime-recovery workflow.
+
+Cloudflare documents that a Worker can be rolled back to a previously deployed version from the dashboard or with `wrangler rollback`. A rollback creates a new deployment pointing to the selected prior Worker version; connected resources are not themselves changed by the rollback. Compatibility with any changed external resource must still be checked before rollback.
+
+Do not use the broader `production-runtime-recovery.yml` as the default rollback for this release, because that workflow includes migration and secret-restoration operations beyond the bounded runtime release scope.
+
+## 8. Human Gate
+Explicit production approval received:
+`ОДОБРУВАМ PRODUCTION DEPLOY — DEPLOY_ZORAN_BOT_RUNTIME`
+
+Human Gate status: SATISFIED AND EXECUTED
+
+## 9. Post-release status
+- Production deployment: VERIFIED
+- Live health: VERIFIED
+- Membership boundary: VERIFIED FAIL-CLOSED
+- Source/production drift at release close: NONE — main remains on the released commit
+- PP-12 status: PASS
+- Final product status: RELEASED VERIFIED
+
+## 10. Operating handoff
+Treat commit `ae2800269c7c5999e628aee37d6e1c3cc9a1d45f` and Worker version `9673ed32-1f6d-41a9-b45e-bfc6dd6d0c7c` as the release baseline. Any future feature, migration, secret change, corpus promotion, or production deployment starts a new governed change cycle and requires its own evidence and Human Gate where applicable.
