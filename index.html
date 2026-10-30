@@ -424,15 +424,23 @@
 
     .promoShell{
       display:grid;
-      grid-template-columns:minmax(0,1fr) minmax(240px,320px) minmax(300px,430px);
-      gap:26px;
-      align-items:center;
+      grid-template-columns:minmax(260px,350px) minmax(300px,360px);
+      gap:24px 30px;
+      align-items:start;
+      justify-content:center;
       background:#071524;
       color:#fff;
       border:1px solid #193a5a;
       border-radius:26px;
       padding:30px;
       box-shadow:0 18px 48px rgba(7,21,36,.16)
+    }
+
+    .promoCopy{
+      grid-column:1/-1;
+      max-width:900px;
+      margin:0 auto;
+      text-align:center
     }
 
     .promoCopy h2{
@@ -443,14 +451,19 @@
 
     .promoCopy p{
       color:#c9d7e4;
-      max-width:680px;
-      margin:0 0 18px
+      max-width:760px;
+      margin:0 auto 18px
+    }
+
+    .promoCopy .actions{
+      justify-content:center
     }
 
     .promoMeta{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
+      justify-content:center;
       margin:18px 0 0
     }
 
@@ -469,7 +482,7 @@
     .promoFrameWrap{
       width:min(100%,350px);
       aspect-ratio:9/16;
-      margin:auto;
+      margin:0 auto;
       overflow:hidden;
       border-radius:22px;
       border:1px solid rgba(244,208,127,.42);
@@ -485,30 +498,28 @@
     }
 
     .promoVisualSide{
+      width:min(100%,360px);
       margin:0;
-      background:rgba(255,255,255,.04);
+      display:grid;
+      grid-template-rows:repeat(3,1fr);
+      gap:12px;
+      align-self:stretch
+    }
+
+    .promoVisualCrop{
+      min-height:0;
+      aspect-ratio:16/9;
+      border-radius:16px;
       border:1px solid rgba(244,208,127,.28);
-      border-radius:20px;
-      padding:10px;
-      box-shadow:0 16px 34px rgba(0,0,0,.24)
+      background-image:url("/assets/ai-advokat-promo-mosaic.webp?v=20261031");
+      background-size:200% 200%;
+      background-repeat:no-repeat;
+      box-shadow:0 12px 28px rgba(0,0,0,.22)
     }
 
-    .promoVisualSide img{
-      display:block;
-      width:100%;
-      height:auto;
-      border-radius:14px;
-      object-fit:cover
-    }
-
-    .promoVisualSide figcaption{
-      margin-top:9px;
-      color:#cbd8e4;
-      font-size:.78rem;
-      text-align:center;
-      letter-spacing:.04em;
-      text-transform:uppercase
-    }
+    .promoVisualCrop:nth-child(1){background-position:left top}
+    .promoVisualCrop:nth-child(2){background-position:right top}
+    .promoVisualCrop:nth-child(3){background-position:left bottom}
 
     .visualPromo{
       padding:44px 0 54px;
@@ -1242,15 +1253,15 @@
     }
 
     @media (max-width:1120px){
-      .promoShell{grid-template-columns:minmax(0,1fr) minmax(240px,320px)}
-      .promoVisualSide{grid-column:1/-1}
+      .promoShell{grid-template-columns:minmax(240px,320px) minmax(260px,320px)}
     }
 
     @media (max-width:860px){
       .promoShell,.visualPromoGrid{grid-template-columns:1fr}
       .promoShell{padding:22px}
+      .promoCopy{grid-column:auto}
       .promoFrameWrap{width:min(100%,320px)}
-      .promoVisualSide{grid-column:auto}
+      .promoVisualSide{width:min(100%,320px);margin:0 auto}
       .visualPromoCopy{order:-1}
     }
 
@@ -1439,10 +1450,11 @@
         <div class="promoFrameWrap">
           <iframe class="promoFrame" src="https://share.descript.com/view/Qa1ysVFxdFJ" title="AI Advokat official promo video" loading="lazy" allow="fullscreen" allowfullscreen></iframe>
         </div>
-        <figure class="promoVisualSide">
-          <img src="/assets/ai-advokat-promo-mosaic.webp?v=20261031" alt="Четири AI Advokat промо визуели во професионална правна средина" width="400" height="229" loading="lazy" decoding="async">
-          <figcaption>AI Advokat · Visual Identity</figcaption>
-        </figure>
+        <div class="promoVisualSide" aria-hidden="true">
+          <div class="promoVisualCrop"></div>
+          <div class="promoVisualCrop"></div>
+          <div class="promoVisualCrop"></div>
+        </div>
       </div>
     </div>
   </section>
