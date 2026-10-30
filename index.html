@@ -566,11 +566,12 @@
       box-shadow:0 28px 80px rgba(0,0,0,.52)
     }
 
-    .promoVideoStage iframe{
+    .promoVideoStage video{
       width:100%;
       height:100%;
       border:0;
       display:block;
+      object-fit:contain;
       background:#020913
     }
 
@@ -1490,7 +1491,7 @@
             Отвори трудови
           </a>
 
-          <a class="btn secondary" href="https://share.descript.com/view/Qa1ysVFxdFJ" data-promo-open data-i18n="promoVideo">
+          <a class="btn secondary" href="/assets/ai-advokat-official-promo.mp4" data-promo-open data-i18n="promoVideo">
             ▶ Промо видео
           </a>
 
@@ -1540,7 +1541,7 @@
           <h2 id="officialPromoTitle" data-i18n="promoTitle">AI Advokat во професионална правна средина</h2>
           <p data-i18n="promoText">24-секундно визуелно претставување на порталот — правни извори, AI истражување, Human Gate и професионална примена, со оригинална EthnoJazz музичка подлога без нарација.</p>
           <div class="actions">
-            <a class="btn primary" href="https://share.descript.com/view/Qa1ysVFxdFJ" data-promo-open data-i18n="promoOpen">Отвори го промо видеото</a>
+            <a class="btn primary" href="/assets/ai-advokat-official-promo.mp4" data-promo-open data-i18n="promoOpen">Отвори го промо видеото</a>
           </div>
           <div class="promoMeta" aria-label="Видео информации">
             <span>24 sec</span>
@@ -1549,7 +1550,7 @@
           </div>
         </div>
         <div class="promoFrameWrap">
-          <iframe class="promoFrame" src="https://share.descript.com/view/Qa1ysVFxdFJ" title="AI Advokat official promo video preview" loading="lazy" allow="fullscreen" allowfullscreen tabindex="-1"></iframe>
+          <video class="promoFrame" src="/assets/ai-advokat-official-promo.mp4" muted playsinline preload="metadata" aria-label="AI Advokat official promo video preview" tabindex="-1"></video>
           <button class="promoLaunch" type="button" data-promo-open aria-label="Отвори го AI Advokat промо видеото на цел екран">
             <span class="promoLaunchIcon" aria-hidden="true">▶</span>
           </button>
@@ -1566,7 +1567,9 @@
   <div id="promoVideoModal" class="promoVideoModal" hidden role="dialog" aria-modal="true" aria-label="AI Advokat official promo video">
     <div class="promoVideoStage">
       <button id="promoVideoClose" class="promoVideoClose" type="button" aria-label="Затвори го видеото">×</button>
-      <iframe id="promoModalFrame" title="AI Advokat official promo video" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+      <video id="promoModalVideo" controls playsinline preload="metadata" aria-label="AI Advokat official promo video">
+        <source src="/assets/ai-advokat-official-promo.mp4" type="video/mp4">
+      </video>
     </div>
   </div>
 
@@ -4058,18 +4061,19 @@
     }
   });
 
-  const PROMO_VIDEO_URL="https://share.descript.com/view/Qa1ysVFxdFJ";
   const promoVideoModal=$("#promoVideoModal");
-  const promoModalFrame=$("#promoModalFrame");
+  const promoModalVideo=$("#promoModalVideo");
   const promoVideoClose=$("#promoVideoClose");
   let promoReturnFocus=null;
 
   async function openPromoVideo(event){
     if(event) event.preventDefault();
     promoReturnFocus=document.activeElement;
-    promoModalFrame.src=PROMO_VIDEO_URL+"?autoplay=1";
     promoVideoModal.hidden=false;
     document.body.classList.add("promoModalOpen");
+    promoModalVideo.currentTime=0;
+    promoModalVideo.muted=false;
+    const playPromise=promoModalVideo.play();
     promoVideoClose.focus();
     try{
       if(promoVideoModal.requestFullscreen && !document.fullscreenElement){
@@ -4078,11 +4082,17 @@
     }catch{
       /* Full-viewport modal remains active when browser fullscreen is unavailable. */
     }
+    try{
+      await playPromise;
+    }catch{
+      /* Native controls remain visible if a browser blocks autoplay with sound. */
+    }
   }
 
   async function closePromoVideo(){
     if(promoVideoModal.hidden) return;
-    promoModalFrame.src="";
+    promoModalVideo.pause();
+    promoModalVideo.currentTime=0;
     promoVideoModal.hidden=true;
     document.body.classList.remove("promoModalOpen");
     try{
