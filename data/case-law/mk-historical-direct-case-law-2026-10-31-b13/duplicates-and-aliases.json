@@ -1,0 +1,79 @@
+{
+  "cross_batch_authority_duplicates": [
+    {
+      "source_file": "149a_1.doc",
+      "source_file_sha256": "20f866eee38f6dc079e87f4d36152d17cf168344205ce235359d300ad8ae5bcf",
+      "normalized_text_sha256": "8cd19e3e310b0f57a8e7c47ab7a4692d7d4a6520ae871292cd18932df99f7b77",
+      "case_number_key": "REV-700/1994",
+      "decision_date": "13.09.1995",
+      "source_doc_entry": "149-A",
+      "existing_record_id": "B5-REV-700/1994",
+      "match_basis": [
+        "case_number",
+        "decision_date",
+        "headnote_proposition"
+      ],
+      "treatment": "provenance_alias_only_not_new_canonical_record"
+    }
+  ],
+  "cross_batch_case_identifier_conflicts": [
+    {
+      "source_file": "156.doc",
+      "case_number_key": "REV-624/1993",
+      "decision_date": "04.11.1993",
+      "b13_record_id": "B13-COLLV-156-REV-623-624-1993",
+      "b13_collection_locator": "156",
+      "b13_holding": "disciplinary proceeding cannot continue after employment already ended on another basis",
+      "existing_record_id": "B10-REV-624/1993",
+      "b10_collection_locator": "176",
+      "b10_holding": "former director lacks standing to challenge appointment of acting director",
+      "treatment": "do_not_merge_or_overwrite; preserve both source propositions pending original-decision verification"
+    }
+  ],
+  "source_metadata_anomalies": [
+    {
+      "source_file": "6.doc",
+      "field": "OLE Title",
+      "source_value": "235",
+      "content_entry": "6",
+      "treatment": "preserve OLE title; use content entry for source-document identity; no silent rewrite"
+    },
+    {
+      "source_file": "6-a.doc",
+      "field": "OLE Title",
+      "source_value": "235",
+      "content_entry": "6-A",
+      "treatment": "preserve OLE title; use content entry for source-document identity; no silent rewrite"
+    }
+  ],
+  "publication_locator_conflicts": [
+    {
+      "source_file": "154.doc",
+      "case_number_key": "REV-628/1993",
+      "source_doc_locator": "154",
+      "collection_locator": "155",
+      "treatment": "preserve both locators; bind by case number/date/text; require Human Gate for locator correction"
+    },
+    {
+      "source_file": "155.doc",
+      "case_number_key": "REV-609/1994",
+      "source_doc_locator": "155",
+      "collection_locator": "155-A",
+      "treatment": "preserve both locators; bind by case number/date/text; require Human Gate for locator correction"
+    }
+  ],
+  "source_text_anomalies": [
+    {
+      "source_file": "150.doc",
+      "case_number_key": "REV-1135/1993",
+      "type": "internal_date_conflict",
+      "source_literals": [
+        "14.01.1993 / period 3-8.01.199[truncated]",
+        "14.01.1991 / period 3-8.01.1991"
+      ],
+      "treatment": "preserve both source literals; do not infer correction; verify against original decision before relying on the date proposition"
+    }
+  ],
+  "within_batch_duplicates": [],
+  "aliases": []
+}
