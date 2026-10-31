@@ -20,7 +20,17 @@
       "url": "https://ustavensud.mk/",
       "access": "official_public",
       "ingest": "public_metadata_and_public_decisions",
-      "identifier": "U/UZ/BZSP or other official reference"
+      "identifier": "U/UZ/BZSP or other official reference",
+      "additional_corpus_ids": [
+        "mk-judicial-reference-batch-2026-10-31-b3"
+      ],
+      "user_supplied_official_publication_periods": [
+        "2003",
+        "2017"
+      ],
+      "original_decision_binding_required_before_gpt_case_law_context": true,
+      "historical_current_law_gate": true,
+      "authority_note": "Official Constitutional Court collections are high-value constitutional-review authority. Preserve exact U-number, decision type, operative effect and historical legal context; bind material propositions to the originating official decision and verify later legal effect/current law where relevant."
     },
     {
       "id": "mk-supreme-court",
@@ -302,7 +312,10 @@
       "historical_current_law_gate": true,
       "original_decision_binding_required_before_gpt_case_law_context": true,
       "authority_note": "Supreme Court publications are high-value authority/discovery material. Preserve exact subtype and historical legal context. A publication extract does not automatically prove current-law status or remote binding to the original decision.",
-      "privacy_minimisation": true
+      "privacy_minimisation": true,
+      "additional_corpus_ids": [
+        "mk-judicial-reference-batch-2026-10-31-b3"
+      ]
     },
     {
       "id": "mk-appellate-skopje-bulletins",
@@ -318,8 +331,23 @@
       "authority_note": "Bulletins may support bulletin-level discovery and citation after Human Gate. Original decision URL/hash and authority review remain separate gates.",
       "privacy_minimisation": true,
       "additional_corpus_ids": [
-        "mk-appellate-publications-batch-2026-10-31-b2"
-      ]
+        "mk-appellate-publications-batch-2026-10-31-b2",
+        "mk-judicial-reference-batch-2026-10-31-b3"
+      ],
+      "covered_bulletins": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "12"
+      ],
+      "current_law_verification_required": true
     },
     {
       "id": "mk-professional-vitlarov-chavdar-case-collection",
@@ -405,6 +433,66 @@
       "current_law_verification_required": true,
       "authority_note": "Joint appellate conclusions are interpretive coordination material, not ordinary judgments. Preserve meeting date, participating courts, legal question and conclusion. Do not present them as Supreme Court precedent or current law without verifying the governing legislation and any later higher-court position.",
       "privacy_minimisation": true
+    },
+    {
+      "id": "mk-notary-chamber-publications",
+      "jurisdiction": "MK",
+      "authority_class": "professional_institutional_notarial_reference",
+      "official_name": "Нотарска комора на Република Македонија — стручни публикации / Нотариус",
+      "url": "https://www.nkrm.org.mk/",
+      "access": "user_supplied_professional_publication_copy_pending_current_source_verification",
+      "ingest": "historical_guidance_forms_disciplinary_reference",
+      "corpus_id": "mk-judicial-reference-batch-2026-10-31-b3",
+      "source_role": "institutional_notarial_reference_not_court_case_law",
+      "current_law_verification_required": true,
+      "official_binding_required_before_gpt_case_law_context": true,
+      "authority_note": "Historical Notary Chamber guidance, forms, Q&A and disciplinary material are institutional/professional references, not court precedent. Verify current legislation and current Chamber rules before present-law use."
+    },
+    {
+      "id": "mk-civil-commercial-case-register-2018-2019",
+      "jurisdiction": "MK",
+      "authority_class": "unverified_case_number_discovery_index",
+      "official_name": "Регистар на судски одлуки — ГЖ/ТСЖ 2018–2019 (user-supplied)",
+      "url": null,
+      "access": "user_supplied_unverified_register",
+      "ingest": "case_number_and_topic_discovery_only",
+      "corpus_id": "mk-judicial-reference-batch-2026-10-31-b3",
+      "source_role": "topic_to_case_number_register",
+      "official_binding_required_before_gpt_case_law_context": true,
+      "current_law_verification_required": true,
+      "forbidden_authority_use": [
+        "not_a_holding_source",
+        "not_proof_of_outcome",
+        "not_current_law"
+      ],
+      "authority_note": "Use only to discover candidate case numbers/topics. The register does not establish the holding, outcome, finality or authoritative text of a decision."
+    },
+    {
+      "id": "mk-simulated-contracts-secondary-compilation",
+      "jurisdiction": "MK/HR",
+      "authority_class": "secondary_mixed_jurisdiction_case_practice_compilation",
+      "official_name": "Привидни договори — тематска компилација на судска практика (user-supplied)",
+      "url": null,
+      "access": "user_supplied_secondary_compilation",
+      "ingest": "topic_and_case_number_discovery_only",
+      "corpus_id": "mk-judicial-reference-batch-2026-10-31-b3",
+      "official_binding_required_before_gpt_case_law_context": true,
+      "current_law_verification_required": true,
+      "authority_note": "Mixed-jurisdiction secondary compilation. Bind each cited proposition to the originating Macedonian, Croatian or other court source before material legal use; never collapse foreign cases into North Macedonian authority."
+    },
+    {
+      "id": "rs-inheritance-secondary-extract",
+      "jurisdiction": "RS",
+      "authority_class": "comparative_secondary_legal_reference",
+      "official_name": "Обим наследникове одговорности за дугове — secondary Serbian extract",
+      "url": null,
+      "access": "user_supplied_secondary_extract",
+      "ingest": "comparative_reference_only",
+      "corpus_id": "mk-judicial-reference-batch-2026-10-31-b3",
+      "forbidden_authority_use": [
+        "not_north_macedonian_authority"
+      ],
+      "authority_note": "Serbian-law comparative material only. Do not cite or rank as North Macedonian authority."
     }
   ],
   "target_case_record": {
