@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {normalizeCaseNumber,caseAliases,matchOne} from '../scripts/match-mk-supreme-case-number.mjs';
 
 test('normalizes Macedonian case numbers without inventing identifiers',()=>{
@@ -26,4 +27,22 @@ test('resolver stays unresolved rather than inventing a URL',()=>{
   assert.equal(hit.resolver_status,'unresolved');
   assert.equal(hit.matched_source_url,null);
   assert.equal(hit.do_not_invent_url,true);
+});
+
+
+test('release metadata and source registry preserve Human Gate boundaries',()=>{
+  const manifest=JSON.parse(fs.readFileSync('data/case-law/as-stip-bulletins-v2/manifest.json','utf8'));
+  const qc=JSON.parse(fs.readFileSync('data/case-law/as-stip-bulletins-v2/qc-summary.json','utf8'));
+  const priority=JSON.parse(fs.readFileSync('data/case-law/as-stip-bulletins-v2/priority-human-gate.json','utf8'));
+  const supreme=fs.readFileSync('data/case-law/as-stip-bulletins-v2/supreme-binding-queue.ndjson','utf8').trim().split(/\r?\n/).map(JSON.parse);
+  const registry=JSON.parse(fs.readFileSync('data/case-law-source-registry-2026.json','utf8'));
+  const source=registry.sources.find(x=>x.id==='mk-appellate-stip-bulletins');
+  assert.equal(manifest.qc.record_count,388);
+  assert.equal(qc.production_eligible,false);
+  assert.equal(qc.human_gate_required,true);
+  assert.equal(priority.record_count,31);
+  assert.equal(supreme.length,34);
+  assert.ok(supreme.every(x=>x.official_binding_verified===false&&x.human_gate_required===true));
+  assert.equal(source?.url,'https://www.asstip.mk/');
+  assert.equal(source?.original_decision_binding_required_before_gpt_case_law_context,true);
 });
