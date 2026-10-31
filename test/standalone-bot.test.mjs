@@ -151,3 +151,14 @@ test('professional runtime treats language quality as non-blocking QA',()=>{
   assert.ok(source.includes('foreign_jurisdiction_substitution_blocked'));
   assert.ok(source.includes('governedFinalRelease.deliveryState'));
 });
+
+
+test('bot menu and tool surfaces use leading symbols consistently',()=>{
+  const html=fs.readFileSync('bot/index.html','utf8');
+  assert.match(html,/＋ Нов разговор/);
+  assert.match(html,/⇩ Преземи разговор/);
+  assert.match(html,/◫ Материјали и алатки/);
+  assert.match(html,/✓ Професионален пристап/);
+  assert.match(html,/▣ CasePilot/);
+  assert.match(html,/⚖ Судски пресуди и метаподатоци/);
+});
