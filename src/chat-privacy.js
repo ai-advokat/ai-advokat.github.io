@@ -70,3 +70,37 @@ export function detectConfidentialCasePrompt(value){
     score
   });
 }
+
+
+const LOCAL_REDACTION_RULES=Object.freeze([
+  ["national_id_with_label",/(?:ЕМБГ|EMBG|матичен\s+број)\s*[:#-]?\s*(?:\d[\s./-]*){13}/giu,"личен идентификатор [МАСКИРАН]"],
+  ["national_id_number",/(?<!\d)\d{13}(?!\d)/gu,"[МАСКИРАН ЛИЧЕН ИДЕНТИФИКАТОР]"],
+  ["national_id_label",/(?:ЕМБГ|EMBG|матичен\s+број)/giu,"личен идентификатор"],
+  ["identity_document",/(?:лична\s+карта|пасош)\s*(?:бр(?:ој)?\.?|number|no\.?)\s*[:#-]?\s*[A-ZА-Я0-9/-]{3,30}/giu,"личен документ [МАСКИРАН БРОЈ]"],
+  ["email",/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu,"[МАСКИРАНА Е-ПОШТА]"],
+  ["phone",/(?<!\d)(?:\+?389|0)\s*7\d(?:[\s/-]*\d){6,7}(?!\d)/gu,"[МАСКИРАН ТЕЛЕФОН]"],
+  ["street_address",/(?:ул\.?|улица|адреса)\s+[^\n,]{2,80}\s+бр\.?\s*\d+/giu,"[МАСКИРАНА АДРЕСА]"]
+]);
+
+export function redactConfidentialCasePrompt(value){
+  const original=String(value??"").normalize("NFKC");
+  let text=original;
+  const redactions=[];
+  for(const [reason,pattern,replacement] of LOCAL_REDACTION_RULES){
+    pattern.lastIndex=0;
+    if(pattern.test(text)){
+      pattern.lastIndex=0;
+      text=text.replace(pattern,replacement);
+      redactions.push(reason);
+    }
+  }
+  text=text.replace(/[ \t]{2,}/gu," ").trim();
+  const post=detectConfidentialCasePrompt(text);
+  return Object.freeze({
+    text,
+    changed:text!==original.trim(),
+    redactions:Object.freeze([...new Set(redactions)]),
+    safeToSend:!post.confidential,
+    remainingReasons:post.reasons
+  });
+}
