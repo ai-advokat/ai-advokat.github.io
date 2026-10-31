@@ -1,0 +1,326 @@
+{
+  "schema": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_KEY_INDEX_V2",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b9",
+  "records": [
+    {
+      "record_id": "B9-REV-199/1995",
+      "authority_id": "REV-199/1995",
+      "case_number_key": "REV-199/1995",
+      "decision_date": "24.01.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "девизни штедни влогови",
+        "пасивна легитимација на банка",
+        "државна гаранција",
+        "исплата на девизи"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-803/1993",
+      "authority_id": "REV-803/1993",
+      "case_number_key": "REV-803/1993",
+      "decision_date": "24.08.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "ортаклук",
+        "смрт на ортак",
+        "наследници",
+        "изгубена добивка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-130/1991",
+      "authority_id": "REV-130/1991",
+      "case_number_key": "REV-130/1991",
+      "decision_date": "14.02.1991",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "наследување",
+        "писмен тестамент",
+        "сведоци",
+        "форма на тестамент"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-691/1993",
+      "authority_id": "REV-691/1993",
+      "case_number_key": "REV-691/1993",
+      "decision_date": "04.11.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "наследување",
+        "недостојност",
+        "обврска за издржување",
+        "нужна помош"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-731/1993",
+      "authority_id": "REV-731/1993",
+      "case_number_key": "REV-731/1993",
+      "decision_date": "19.10.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "сопственост на стан",
+        "JNA стан",
+        "наследување",
+        "идеален дел"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-753/1995",
+      "authority_id": "REV-753/1995",
+      "case_number_key": "REV-753/1995",
+      "decision_date": "23.05.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "доживотна издршка",
+        "недостаток на форма",
+        "сведок роднина",
+        "конвалидација"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-693/1990",
+      "authority_id": "REV-693/1990",
+      "case_number_key": "REV-693/1990",
+      "decision_date": "30.10.1990",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "доживотна издршка",
+        "раскин",
+        "неисполнување",
+        "вина"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-329/1990",
+      "authority_id": "REV-329/1990",
+      "case_number_key": "REV-329/1990",
+      "decision_date": "08.05.1990",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "доживотна издршка",
+        "казна затвор",
+        "раскин",
+        "исполнување од семејство"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-825/1995",
+      "authority_id": "REV-825/1995",
+      "case_number_key": "REV-825/1995",
+      "decision_date": "28.05.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "доживотна издршка",
+        "сведок роднина",
+        "конвалидација",
+        "целосно исполнување"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-200/1991",
+      "authority_id": "REV-200/1991",
+      "case_number_key": "REV-200/1991",
+      "decision_date": "12.03.1991",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "доживотна издршка",
+        "изменети околности",
+        "заедница на живот",
+        "раскин"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-GZZ-1/1991",
+      "authority_id": "GZZ-1/1991",
+      "case_number_key": "GZZ-1/1991",
+      "decision_date": "05.02.1991",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "начело на специјализација",
+        "недвижност",
+        "катастарски ознаки",
+        "пренос на сопственост"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-813/1995",
+      "authority_id": "REV-813/1995",
+      "case_number_key": "REV-813/1995",
+      "decision_date": "23.05.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "забрана reformatio in peius",
+        "жалба",
+        "повлекување тужба",
+        "второстепена постапка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-999/1993",
+      "authority_id": "REV-999/1993",
+      "case_number_key": "REV-999/1993",
+      "decision_date": "14.09.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "дополнение на жалба",
+        "нови факти",
+        "жалбен рок",
+        "второстепена постапка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-1488/1993",
+      "authority_id": "REV-1488/1993",
+      "case_number_key": "REV-1488/1993",
+      "decision_date": "18.01.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "вредност на спор",
+        "странска валута",
+        "дозволеност на ревизија",
+        "курс на валута"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-1388/1994",
+      "authority_id": "REV-1388/1994",
+      "case_number_key": "REV-1388/1994",
+      "decision_date": "23.03.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "ревизија",
+        "трошоци на спор",
+        "споредно барање",
+        "недозволеност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-305/1995",
+      "authority_id": "REV-305/1995",
+      "case_number_key": "REV-305/1995",
+      "decision_date": "21.02.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "рок за ревизија",
+        "полномошник",
+        "достава",
+        "ненавременост"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-1140/1993",
+      "authority_id": "REV-1140/1993",
+      "case_number_key": "REV-1140/1993",
+      "decision_date": "02.12.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "главно барање",
+        "камата",
+        "споредно барање",
+        "дозволеност на ревизија"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-368/1995",
+      "authority_id": "REV-368/1995",
+      "case_number_key": "REV-368/1995",
+      "decision_date": "19.09.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "рок за ревизија",
+        "отказ на полномошно",
+        "достава",
+        "вонреден правен лек"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-633/1993",
+      "authority_id": "REV-633/1993",
+      "case_number_key": "REV-633/1993",
+      "decision_date": "22.06.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "ревизија",
+        "суштествена повреда",
+        "наводи од жалба",
+        "второстепена пресуда"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B9-REV-198/1995",
+      "authority_id": "REV-198/1995",
+      "case_number_key": "REV-198/1995",
+      "decision_date": "16.01.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "повлекување ревизија",
+        "откажување од ревизија",
+        "недозволеност",
+        "вонреден правен лек"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    }
+  ]
+}

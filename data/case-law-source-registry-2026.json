@@ -319,14 +319,16 @@
         "mk-historical-direct-case-law-2026-10-31-b5",
         "mk-historical-direct-case-law-2026-10-31-b6",
         "mk-historical-direct-case-law-2026-10-31-b7",
-        "mk-historical-direct-case-law-2026-10-31-b8"
+        "mk-historical-direct-case-law-2026-10-31-b8",
+        "mk-historical-direct-case-law-2026-10-31-b9"
       ],
       "direct_extract_batch_ids": [
         "mk-historical-direct-case-law-2026-10-31-b4",
         "mk-historical-direct-case-law-2026-10-31-b5",
         "mk-historical-direct-case-law-2026-10-31-b6",
         "mk-historical-direct-case-law-2026-10-31-b7",
-        "mk-historical-direct-case-law-2026-10-31-b8"
+        "mk-historical-direct-case-law-2026-10-31-b8",
+        "mk-historical-direct-case-law-2026-10-31-b9"
       ]
     },
     {
@@ -531,13 +533,15 @@
         "mk-historical-direct-case-law-2026-10-31-b5",
         "mk-historical-direct-case-law-2026-10-31-b6",
         "mk-historical-direct-case-law-2026-10-31-b7",
-        "mk-historical-direct-case-law-2026-10-31-b8"
+        "mk-historical-direct-case-law-2026-10-31-b8",
+        "mk-historical-direct-case-law-2026-10-31-b9"
       ],
       "direct_extract_batch_ids": [
         "mk-historical-direct-case-law-2026-10-31-b5",
         "mk-historical-direct-case-law-2026-10-31-b6",
         "mk-historical-direct-case-law-2026-10-31-b7",
-        "mk-historical-direct-case-law-2026-10-31-b8"
+        "mk-historical-direct-case-law-2026-10-31-b8",
+        "mk-historical-direct-case-law-2026-10-31-b9"
       ],
       "source_metadata_anomaly_policy": "Preserve source-file metadata conflicts as provenance flags; legal identity follows verified textual content, case number, date and publication locator. Do not silently rewrite source metadata."
     },

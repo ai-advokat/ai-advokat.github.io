@@ -1,0 +1,29 @@
+{
+  "cross_batch_case_duplicates": [],
+  "within_batch_duplicates": [],
+  "aliases": [],
+  "source_metadata_anomalies": [],
+  "supplied_entry_numbers": [
+    "107",
+    "108",
+    "109",
+    "112",
+    "115",
+    "116",
+    "117",
+    "118",
+    "119",
+    "120",
+    "223",
+    "224",
+    "225",
+    "226",
+    "227",
+    "228",
+    "229",
+    "230",
+    "231",
+    "232"
+  ],
+  "unprovided_entries_not_inferred": true
+}
