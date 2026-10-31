@@ -1,0 +1,122 @@
+[
+  {
+    "file": "51.doc",
+    "sha256": "09e1200ed55a342bab9bb7b0448a11d1b5fc56aa992d8a283da003e84a4db598",
+    "normalized_text_sha256": "d94e38d87fa4a04b1a7519c71ee1a7ffc7b55edc1c97fb468bf435821cf9fb58",
+    "size_bytes": 31744
+  },
+  {
+    "file": "52.doc",
+    "sha256": "d5ee4bf574c44bbefe8366e80226c7dc4d4e4bff340d3c5096b7cc3882050f21",
+    "normalized_text_sha256": "b6ca486e8c8ba90ac2bad0f97c910cbd60764f58bb926f7fb38c3765bbad3a3a",
+    "size_bytes": 28160
+  },
+  {
+    "file": "53.doc",
+    "sha256": "b84604f43219f8f16efbc750f072f075f8b21c6148e4eba9133ffe273242c26f",
+    "normalized_text_sha256": "70776af3a37bb881ad95fa62530c97803f905a023297c3a1befc9c3464e1866e",
+    "size_bytes": 25088
+  },
+  {
+    "file": "53a.doc",
+    "sha256": "73750a7c6388d0001c874d06eb85ae79468a8c9770a3dd3d8ced7e97416f7501",
+    "normalized_text_sha256": "5063dd93b9f11dcbec7d1c7d4ddbfee021b5e2a476bd16ac344b66cdc478da77",
+    "size_bytes": 27136
+  },
+  {
+    "file": "54.doc",
+    "sha256": "c7f4b5eff8e75e0ee7db3222846c23db5bedc450673505f2ef9ba7426fc70040",
+    "normalized_text_sha256": "8c7426754e42a45c2d30b14be46e719654dea13dd6cd55e8499942c295311b1d",
+    "size_bytes": 33280
+  },
+  {
+    "file": "55.doc",
+    "sha256": "44f7ee5787a7c28afffc09cafd8e3dcba0d9e9cf663f72bf36abbb8be4b4dd54",
+    "normalized_text_sha256": "251588c3c42a034bc93c2f5ff0023e0f26cac898d4c263ca489c81171d4f25e9",
+    "size_bytes": 30208
+  },
+  {
+    "file": "55a.doc",
+    "sha256": "00267a70ab6a2c52fa0d88d01d70f71f8d61c31c2907c4b78a7bd85691ffcf51",
+    "normalized_text_sha256": "b2a73e0e6f7fe1c294e88758c98ca226320283632db6ca470e76091e10e29790",
+    "size_bytes": 26624
+  },
+  {
+    "file": "56.doc",
+    "sha256": "6d2065a7565901639af2d715c9df36acbcee19d1930513dcc120cb37bc2b8d0f",
+    "normalized_text_sha256": "fe4377c2ef8ad626e13d960348a6bfceed5bde74d3bcdab321727a87db9cc89a",
+    "size_bytes": 27648
+  },
+  {
+    "file": "57.doc",
+    "sha256": "c04bc7752b1dce6e345116065255ef260b0c64629ce86139ef646b4ed082d061",
+    "normalized_text_sha256": "c73a73ed6fb18b7db817690d4613e45bc776a1011f7e4c022000042e6ac395a8",
+    "size_bytes": 25600
+  },
+  {
+    "file": "58.doc",
+    "sha256": "462deb9357e48a711ab107d5e7580cc1284a4b03a17732932cf7713e79d3ff6c",
+    "normalized_text_sha256": "d0a8e4bc6aee7b1b6b89881058208fde74703177939d1afe6d4d483e2859cbfb",
+    "size_bytes": 27136
+  },
+  {
+    "file": "59.doc",
+    "sha256": "934db66366b983cc01da12ee59eff4d0c19b1c1d7de6cb9429bcd683ce87fe17",
+    "normalized_text_sha256": "50b4bf9e743ee28b2fea750949189f81d93cb0430132874f86a2867bbceb27c8",
+    "size_bytes": 28160
+  },
+  {
+    "file": "60.doc",
+    "sha256": "9b5afac40959756598a88d6d2fe4e9e7390cb40b82ba92144f66955cfb548fa4",
+    "normalized_text_sha256": "f4b4755be0d1266cb8d3092c57dd23ed8a553edeaaca48f5fad137981dda38df",
+    "size_bytes": 25088
+  },
+  {
+    "file": "61.doc",
+    "sha256": "4c4da21f420a2ab3e8156335f762a4f16b77d7b3436a55dadf62c65dc10fa015",
+    "normalized_text_sha256": "e6bb928d252fab0b622bcf783ef97f81e72f7dcd15d4ad45adda494b3b576875",
+    "size_bytes": 26112
+  },
+  {
+    "file": "62.doc",
+    "sha256": "2a4e550afb5396bafd4727192546b74772475725a822bdb0ce49c0979c1e1863",
+    "normalized_text_sha256": "79717fda5b0b2dc6e1c929958572bc1fae925d6eb53ad0ad4329b29656ffd7bf",
+    "size_bytes": 26624
+  },
+  {
+    "file": "63.doc",
+    "sha256": "fddc61bed210f2e9e851cbc14862918f50e5ad10feed5d9180bab8b6530b7321",
+    "normalized_text_sha256": "f8b6bda4e9a92889c55192c38692045247969b68ee4a59e07d2bde45a04cbbc5",
+    "size_bytes": 30208
+  },
+  {
+    "file": "64.doc",
+    "sha256": "cf05fa614998cf87556f1a40598a1cc4a1b9de017d09fc969ac543fda8073943",
+    "normalized_text_sha256": "8f4e49e85df84f4a6155d62a8f4084b4adddff51bf9e50c68336401cd075ffa4",
+    "size_bytes": 40960
+  },
+  {
+    "file": "64-a.doc",
+    "sha256": "be5dc0fb5b098ded4061513ead0f52fc65dee00ff34d40b4a44e67dbb417733c",
+    "normalized_text_sha256": "fd5036f6456c7407e5a054a67609f4a19207882656c32a56d504c2d3edd8094f",
+    "size_bytes": 33280
+  },
+  {
+    "file": "65.doc",
+    "sha256": "fae5d8c8ef9c2129d3e6be8ce1617be432c04cf4dec274b462ea91707ee046f5",
+    "normalized_text_sha256": "33e7a734135c9fbf89be97c1fba5414d1a920af39107f81167de009567ee5664",
+    "size_bytes": 25600
+  },
+  {
+    "file": "66.doc",
+    "sha256": "2b76e3b081d3265c537b159e438a4c21bcd0914385d334d33bc15e016aacb233",
+    "normalized_text_sha256": "4f39d92bdc4c78d711bfa6bbeb7db3f7e7965a2f273947393a2a96243397ce63",
+    "size_bytes": 27136
+  },
+  {
+    "file": "67.doc",
+    "sha256": "82a4da9eec5d5280addeca70717f5e7b9b242582511b37bc07b36cecbaa4081b",
+    "normalized_text_sha256": "b632402b08557719214bf424a24834c23672eede06f7ffac4337759b0ff9580f",
+    "size_bytes": 28160
+  }
+]
