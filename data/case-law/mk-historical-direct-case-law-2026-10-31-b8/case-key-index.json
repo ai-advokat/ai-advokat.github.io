@@ -1,0 +1,326 @@
+{
+  "schema": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_KEY_INDEX_V2",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b8",
+  "records": [
+    {
+      "record_id": "B8-REV-1288/1993",
+      "authority_id": "REV-1288/1993",
+      "case_number_key": "REV-1288/1993",
+      "decision_date": "16.11.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "странска валута",
+        "затезна камата",
+        "домицилна камата",
+        "денарска противвредност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-GVP-8/1994",
+      "authority_id": "GVP-8/1994",
+      "case_number_key": "GVP-8/1994",
+      "decision_date": "18.10.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "увоз на нафта",
+        "надоместоци",
+        "фискални давачки",
+        "камата"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-GZZ-72/1994",
+      "authority_id": "GZZ-72/1994",
+      "case_number_key": "GZZ-72/1994",
+      "decision_date": "22.11.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "данок",
+        "поврат на данок",
+        "законска камата",
+        "доцнење"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-1391/1993",
+      "authority_id": "REV-1391/1993",
+      "case_number_key": "REV-1391/1993",
+      "decision_date": "19.04.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "купопродажба",
+        "материјални недостатоци",
+        "намалување цена",
+        "стекнување без основ"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-525/1995",
+      "authority_id": "REV-525/1995",
+      "case_number_key": "REV-525/1995",
+      "decision_date": "17.04.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "закуп",
+        "закупнина",
+        "еднострана измена",
+        "согласност на волји"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-576/1992",
+      "authority_id": "REV-576/1992",
+      "case_number_key": "REV-576/1992",
+      "decision_date": "29.12.1992",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "угостителска остава",
+        "вагон за спиење",
+        "кражба",
+        "надомест на штета"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-1300/1993",
+      "authority_id": "REV-1300/1993",
+      "case_number_key": "REV-1300/1993",
+      "decision_date": "16.11.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "складирање",
+        "пожар",
+        "одговорност на складиштар",
+        "неизбежна околност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-539/1995",
+      "authority_id": "REV-539/1995",
+      "case_number_key": "REV-539/1995",
+      "decision_date": "20.03.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "гаранција",
+        "писмена форма",
+        "усна изјава",
+        "ништовност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-12/1991",
+      "authority_id": "REV-12/1991",
+      "case_number_key": "REV-12/1991",
+      "decision_date": "08.01.1991",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "штеден влог",
+        "фиксна камата",
+        "домицилна камата",
+        "писмен договор"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-785/1995",
+      "authority_id": "REV-785/1995",
+      "case_number_key": "REV-785/1995",
+      "decision_date": "18.10.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "градење",
+        "електроенергетска согласност",
+        "продажна цена",
+        "дополнителни трошоци"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-123/1994",
+      "authority_id": "REV-123/1994",
+      "case_number_key": "REV-123/1994",
+      "decision_date": "22.11.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "договор за дело",
+        "активна легитимација",
+        "доверени предмети",
+        "надомест на штета"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-1238/1994",
+      "authority_id": "REV-1238/1994",
+      "case_number_key": "REV-1238/1994",
+      "decision_date": "15.06.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "договор за дело",
+        "изведувач",
+        "раскинување",
+        "надомест на штета"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-830/1994",
+      "authority_id": "REV-830/1994",
+      "case_number_key": "REV-830/1994",
+      "decision_date": "18.10.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "радиодифузија",
+        "одјава приемник",
+        "надомест",
+        "запечатување"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-573/1994",
+      "authority_id": "REV-573/1994",
+      "case_number_key": "REV-573/1994",
+      "decision_date": "07.09.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "PTT услуги",
+        "телефонски приклучок",
+        "пренесување",
+        "државна сукцесија"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-938/1993",
+      "authority_id": "REV-938/1993",
+      "case_number_key": "REV-938/1993",
+      "decision_date": "16.09.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "PTT услуги",
+        "телефонски број",
+        "стручно вештачење",
+        "објективна потреба"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-263/1995",
+      "authority_id": "REV-263/1995",
+      "case_number_key": "REV-263/1995",
+      "decision_date": "07.02.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "радиодифузија",
+        "телевизиски приемник",
+        "семејно домаќинство",
+        "надомест"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-1355/1994",
+      "authority_id": "REV-1355/1994",
+      "case_number_key": "REV-1355/1994",
+      "decision_date": "14.03.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "банкарско право",
+        "злоупотреба на чекови",
+        "сторнирање",
+        "надомест на штета"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-1326/1994",
+      "authority_id": "REV-1326/1994",
+      "case_number_key": "REV-1326/1994",
+      "decision_date": "18.04.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "банкарско право",
+        "тековна сметка",
+        "општи услови",
+        "несправедлива клаузула"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-1066/1993",
+      "authority_id": "REV-1066/1993",
+      "case_number_key": "REV-1066/1993",
+      "decision_date": "30.09.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "банкарско право",
+        "украдени чекови",
+        "сторнирање",
+        "одговорност на банка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B8-REV-1631/1994",
+      "authority_id": "REV-1631/1994",
+      "case_number_key": "REV-1631/1994",
+      "decision_date": "14.11.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "банкарско право",
+        "тековна сметка",
+        "раскинување договор",
+        "затезна камата"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    }
+  ]
+}

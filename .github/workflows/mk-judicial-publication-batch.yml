@@ -11,7 +11,7 @@ on:
       - "data/case-law/mk-historical-direct-case-law-2026-10-31-b4/**"
       - "data/case-law/mk-historical-direct-case-law-2026-10-31-b5/**"
       - "data/case-law/mk-historical-direct-case-law-2026-10-31-b6/**"
-      - "data/case-law/mk-historical-direct-case-law-2026-10-31-b7/**"
+      - "data/case-law/mk-historical-direct-case-law-2026-10-31-b7/**"\n      - "data/case-law/mk-historical-direct-case-law-2026-10-31-b8/**"
       - "data/case-law-source-registry-2026.json"
       - "scripts/validate-mk-judicial-publication-batch.mjs"
       - "scripts/validate-mk-appellate-publication-batch.mjs"
@@ -19,7 +19,7 @@ on:
       - "scripts/validate-mk-historical-direct-case-law-b4.mjs"
       - "scripts/validate-mk-historical-direct-case-law-b5.mjs"
       - "scripts/validate-mk-historical-direct-case-law-b6.mjs"
-      - "scripts/validate-mk-historical-direct-case-law-b7.mjs"
+      - "scripts/validate-mk-historical-direct-case-law-b7.mjs"\n      - "scripts/validate-mk-historical-direct-case-law-b8.mjs"
       - ".github/workflows/mk-judicial-publication-batch.yml"
   workflow_dispatch:
 
@@ -45,7 +45,7 @@ jobs:
         run: node scripts/validate-mk-historical-direct-case-law-b6.mjs data/case-law/mk-historical-direct-case-law-2026-10-31-b6
       - name: Validate historical direct case-law batch B7
         run: node scripts/validate-mk-historical-direct-case-law-b7.mjs data/case-law/mk-historical-direct-case-law-2026-10-31-b7
-      - name: Existing case-law source registry regression
+      - name: Validate historical direct case-law batch B8\n        run: node scripts/validate-mk-historical-direct-case-law-b8.mjs data/case-law/mk-historical-direct-case-law-2026-10-31-b8\n      - name: Existing case-law source registry regression
         run: node --test test/case-law-source-registry.test.mjs
       - name: Existing case-law chat gate regression
         run: node --test test/case-law-chat-context.test.mjs
@@ -60,5 +60,5 @@ jobs:
             data/case-law/mk-historical-direct-case-law-2026-10-31-b4/**
             data/case-law/mk-historical-direct-case-law-2026-10-31-b5/**
             data/case-law/mk-historical-direct-case-law-2026-10-31-b6/**
-            data/case-law/mk-historical-direct-case-law-2026-10-31-b7/**
+            data/case-law/mk-historical-direct-case-law-2026-10-31-b7/**\n            data/case-law/mk-historical-direct-case-law-2026-10-31-b8/**
           retention-days: 30
