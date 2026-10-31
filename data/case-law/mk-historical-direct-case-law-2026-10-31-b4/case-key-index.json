@@ -1,0 +1,866 @@
+{
+  "schema": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_KEY_INDEX_V1",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b4",
+  "records": [
+    {
+      "id": "B4-REV-59-1991",
+      "f": [
+        "111.doc"
+      ],
+      "k": [
+        "REV-59/1991"
+      ],
+      "d": "9.04.1991",
+      "p": 279,
+      "t": [
+        "наследно право",
+        "устен тестамент"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-REV-1325-1994",
+      "f": [
+        "113.doc"
+      ],
+      "k": [
+        "REV-1325/1994"
+      ],
+      "d": "29.06.1995",
+      "p": 282,
+      "t": [
+        "наследно право",
+        "застареност",
+        "сопственост"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-REV-1590-1994",
+      "f": [
+        "114.doc"
+      ],
+      "k": [
+        "REV-1590/1994"
+      ],
+      "d": "7.11.1995",
+      "p": 283,
+      "t": [
+        "наследно право",
+        "исклучување од наследство",
+        "товар на докажување"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-G-2-1990",
+      "f": [
+        "177.doc"
+      ],
+      "k": [
+        "G-2/1990"
+      ],
+      "d": "13.03.1990",
+      "p": 370,
+      "t": [
+        "авторско право",
+        "мурал",
+        "сопственост"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-9-1993",
+      "f": [
+        "247.doc"
+      ],
+      "k": [
+        "GZZ-9/1993"
+      ],
+      "d": "4.03.1993",
+      "p": 435,
+      "t": [
+        "наследно право",
+        "устен тестамент",
+        "вонпроцесна постапка"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-REV-388-1995",
+      "f": [
+        "248.doc"
+      ],
+      "k": [
+        "REV-388/1995"
+      ],
+      "d": "20.03.1996",
+      "p": 436,
+      "t": [
+        "наследно право",
+        "прогласување тестамент",
+        "застареност"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-REV-1422-1994",
+      "f": [
+        "249.doc"
+      ],
+      "k": [
+        "REV-1422/1994"
+      ],
+      "d": "4.03.1995",
+      "p": 437,
+      "t": [
+        "наследно право",
+        "ревизија",
+        "прекин на оставинска постапка"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-51-1996",
+      "f": [
+        "257a.doc",
+        "267.doc"
+      ],
+      "k": [
+        "GZZ-51/1996"
+      ],
+      "d": "20.11.1996",
+      "p": [
+        446,
+        461
+      ],
+      "t": [
+        "извршување",
+        "извршна исправа",
+        "хипотека",
+        "камата"
+      ],
+      "multi": 2,
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-42-1994",
+      "f": [
+        "258a.doc"
+      ],
+      "k": [
+        "GZZ-42/1994"
+      ],
+      "d": "16.10.1996",
+      "p": 449,
+      "t": [
+        "трговско право",
+        "ДОО",
+        "правно следбеништво",
+        "извршување"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-55-1994",
+      "f": [
+        "259.doc"
+      ],
+      "k": [
+        "GZZ-55/1994"
+      ],
+      "d": "27.09.1994",
+      "p": 451,
+      "t": [
+        "извршување",
+        "клаузула за правосилност",
+        "извршност"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-SS-559-1994",
+      "f": [
+        "260.doc"
+      ],
+      "k": [
+        "SS-559/1994"
+      ],
+      "d": "7.04.1994",
+      "p": 452,
+      "c": "Стопански суд на Македонија",
+      "t": [
+        "извршување",
+        "ново побарување"
+      ],
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-37-1994",
+      "f": [
+        "261.doc"
+      ],
+      "k": [
+        "GZZ-37/1994"
+      ],
+      "d": "26.05.1994",
+      "p": 453,
+      "t": [
+        "извршување",
+        "работен однос",
+        "директор",
+        "мандат"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-81-1994",
+      "f": [
+        "262.doc"
+      ],
+      "k": [
+        "GZZ-81/1994"
+      ],
+      "d": "22.06.1995",
+      "p": 454,
+      "t": [
+        "извршување",
+        "владение",
+        "сопственост"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-REV-471-1993",
+      "f": [
+        "263.doc"
+      ],
+      "k": [
+        "REV-471/1993"
+      ],
+      "d": "16.12.1993",
+      "p": 456,
+      "t": [
+        "извршување",
+        "недопуштеност",
+        "приговор"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-SS-475-1994",
+      "f": [
+        "264.doc"
+      ],
+      "k": [
+        "SS-475/1994"
+      ],
+      "d": "18.03.1994",
+      "p": 457,
+      "c": "Стопански суд на Македонија",
+      "t": [
+        "извршување",
+        "веродостојна исправа",
+        "приговор"
+      ],
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-107-1993",
+      "f": [
+        "266.doc"
+      ],
+      "k": [
+        "GZZ-107/1993",
+        "REV-1318/1993"
+      ],
+      "d": "21.12.1993",
+      "p": 460,
+      "t": [
+        "хипотека",
+        "трето лице",
+        "извршување"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-REV-5-1995",
+      "f": [
+        "268.doc"
+      ],
+      "k": [
+        "REV-5/1995"
+      ],
+      "d": "20.04.1995",
+      "p": 462,
+      "t": [
+        "привремена мерка",
+        "ревизија"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-65-1995",
+      "f": [
+        "269.doc"
+      ],
+      "k": [
+        "GZZ-65/1995"
+      ],
+      "d": "12.09.1995",
+      "p": 463,
+      "t": [
+        "привремена мерка",
+        "ненадоместлива штета",
+        "работен спор"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-REV-386-1996",
+      "f": [
+        "270.doc"
+      ],
+      "k": [
+        "REV-386/1996"
+      ],
+      "d": "14.11.1996",
+      "p": 465,
+      "t": [
+        "договор",
+        "недвижност",
+        "привремена мерка",
+        "ништовност"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-106-1993",
+      "f": [
+        "157.doc"
+      ],
+      "k": [
+        "GZZ-106/1993"
+      ],
+      "d": "10.02.1994",
+      "p": 344,
+      "t": [
+        "работни односи",
+        "дисциплинска постапка",
+        "достава"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-REV-389-1990",
+      "f": [
+        "164.doc"
+      ],
+      "k": [
+        "REV-389/1990"
+      ],
+      "d": "28.06.1990",
+      "p": 353,
+      "t": [
+        "станбено право",
+        "активна легитимација"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-REV-185-1994",
+      "f": [
+        "165.doc"
+      ],
+      "k": [
+        "REV-185/1994"
+      ],
+      "d": "26.05.1994",
+      "p": 354,
+      "t": [
+        "станбено право",
+        "отказ",
+        "станбен кредит"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-19-1993",
+      "f": [
+        "246.doc"
+      ],
+      "k": [
+        "GZZ-19/1993"
+      ],
+      "d": "25.03.1993",
+      "p": 434,
+      "t": [
+        "вонпроцесна постапка",
+        "ненавремена жалба"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-REV-1125-1994",
+      "f": [
+        "253.doc"
+      ],
+      "k": [
+        "REV-1125/1994"
+      ],
+      "d": "30.05.1995",
+      "p": 442,
+      "t": [
+        "градежно земјиште",
+        "заедничко дворно место",
+        "вонпроцесна постапка"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-REV-873-1994",
+      "f": [
+        "254.doc"
+      ],
+      "k": [
+        "REV-873/1994"
+      ],
+      "d": "29.11.1994",
+      "p": 443,
+      "t": [
+        "судско порамнување",
+        "физичка делба",
+        "вонпроцесна постапка"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-39-1991",
+      "f": [
+        "255.doc"
+      ],
+      "k": [
+        "GZZ-39/1991"
+      ],
+      "d": "13.06.1991",
+      "p": 444,
+      "t": [
+        "судско порамнување",
+        "жалба",
+        "ништовност"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-SS-617-1994",
+      "f": [
+        "256.doc"
+      ],
+      "k": [
+        "SS-617/1994"
+      ],
+      "d": "7.04.1994",
+      "p": 445,
+      "c": "Стопански суд на Македонија",
+      "t": [
+        "извршување",
+        "зголемување побарување"
+      ],
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-110-1992",
+      "f": [
+        "257.doc"
+      ],
+      "k": [
+        "GZZ-110/1992"
+      ],
+      "d": "3.11.1992",
+      "p": 445,
+      "t": [
+        "извршување",
+        "пензиско осигурување",
+        "извршна исправа"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-G-8-1995",
+      "f": [
+        "272.doc"
+      ],
+      "k": [
+        "G-8/1995"
+      ],
+      "d": "12.09.1995",
+      "p": 468,
+      "t": [
+        "политички партии",
+        "судски регистар"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-105-1995",
+      "f": [
+        "273.doc"
+      ],
+      "k": [
+        "GZZ-105/1995"
+      ],
+      "d": "11.04.1996",
+      "p": 470,
+      "t": [
+        "судски регистар",
+        "директор",
+        "избор на орган"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-84-1993",
+      "f": [
+        "274.doc"
+      ],
+      "k": [
+        "GZZ-84/1993"
+      ],
+      "d": "30.09.1993",
+      "p": 471,
+      "t": [
+        "судски регистар",
+        "поделба на претпријатие"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-136-1992",
+      "f": [
+        "275.doc"
+      ],
+      "k": [
+        "GZZ-136/1992"
+      ],
+      "d": "18.03.1993",
+      "p": 471,
+      "t": [
+        "судски регистар",
+        "земјоделска задруга",
+        "ВД директор"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-SS-5-1995",
+      "f": [
+        "276.doc"
+      ],
+      "k": [
+        "SS-5/1995"
+      ],
+      "d": "1.02.1995",
+      "p": 472,
+      "c": "Стопански суд на Македонија",
+      "t": [
+        "судски регистар",
+        "Јавно правобранителство",
+        "рокови"
+      ],
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-1-1996",
+      "f": [
+        "277.doc"
+      ],
+      "k": [
+        "GZZ-1/1996"
+      ],
+      "d": "6.02.1996",
+      "p": 474,
+      "t": [
+        "акционерско друштво",
+        "управен одбор",
+        "судски регистар"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-49-1996",
+      "f": [
+        "278.doc"
+      ],
+      "k": [
+        "GZZ-49/1996"
+      ],
+      "d": "11.12.1996",
+      "p": 474,
+      "t": [
+        "ВД директор",
+        "стручна спрема",
+        "судски регистар"
+      ],
+      "recovered": true,
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-40-1993",
+      "f": [
+        "279.doc"
+      ],
+      "k": [
+        "GZZ-40/1993"
+      ],
+      "d": "13.07.1993",
+      "p": 476,
+      "t": [
+        "судски регистар",
+        "второстепен суд",
+        "докази"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-R-35-1996",
+      "f": [
+        "280.doc"
+      ],
+      "k": [
+        "R-35/1996"
+      ],
+      "d": "10.12.1996",
+      "p": 478,
+      "t": [
+        "политички партии",
+        "стварна надлежност",
+        "судски регистар"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GZZ-20-1996",
+      "f": [
+        "281.doc"
+      ],
+      "k": [
+        "GZZ-20/1996"
+      ],
+      "d": "3.07.1996",
+      "p": 479,
+      "t": [
+        "застапување",
+        "работнички совет",
+        "судски регистар"
+      ],
+      "c": "Врховен суд на Република Македонија",
+      "kind": "decision",
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    },
+    {
+      "id": "B4-GENERAL-SESSION-1996-07-12",
+      "f": [
+        "начелен став.doc"
+      ],
+      "k": [],
+      "d": "12.07.1996",
+      "p": 19,
+      "c": "Врховен суд на Република Македонија — Општа седница",
+      "kind": "principled_legal_opinion",
+      "t": [
+        "начелно правно мислење",
+        "судски такси",
+        "откуп на стан",
+        "рати"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true,
+      "current_law_verification_required": true,
+      "original_decision_binding_verified": false
+    }
+  ]
+}
