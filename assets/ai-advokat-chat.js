@@ -148,6 +148,44 @@
     chat.messages.forEach((m,idx)=>messagesEl.append(renderMessage(m,idx)));
     messagesEl.scrollTop=messagesEl.scrollHeight;
   }
+  function createLegalPulseLoader(){
+    const loader=document.createElement("div");
+    loader.className="ai-legal-pulse";
+    loader.setAttribute("role","status");
+    loader.setAttribute("aria-live","polite");
+    loader.setAttribute("aria-label","AI Advokat го подготвува одговорот");
+
+    const orbit=document.createElement("div");
+    orbit.className="ai-legal-pulse-orbit";
+    orbit.setAttribute("aria-hidden","true");
+
+    const ringA=document.createElement("span");ringA.className="ai-legal-pulse-ring ring-a";
+    const ringB=document.createElement("span");ringB.className="ai-legal-pulse-ring ring-b";
+    const glow=document.createElement("span");glow.className="ai-legal-pulse-glow";
+
+    const pair=document.createElement("div");
+    pair.className="ai-legal-pulse-pair";
+    const left=document.createElement("span");left.className="ai-legal-section section-left";left.textContent="§";
+    const right=document.createElement("span");right.className="ai-legal-section section-right";right.textContent="§";
+    pair.append(left,right);
+    orbit.append(ringA,ringB,glow,pair);
+
+    const copy=document.createElement("div");copy.className="ai-legal-pulse-copy";
+    const title=document.createElement("strong");title.textContent="AI Advokat го подготвува одговорот…";
+    const sub=document.createElement("span");sub.textContent="Source-first · Governed AI · Human Review";
+    copy.append(title,sub);
+
+    const pulse=document.createElement("div");pulse.className="ai-legal-pulse-track";pulse.setAttribute("aria-hidden","true");
+    ["Извори","Анализа","Правен тест","Human Gate"].forEach((label,index)=>{
+      const item=document.createElement("span");item.className="ai-legal-pulse-step";item.style.setProperty("--pulse-order",String(index));
+      const dot=document.createElement("i");const text=document.createElement("b");text.textContent=label;
+      item.append(dot,text);pulse.append(item);
+    });
+
+    loader.append(orbit,copy,pulse);
+    return loader;
+  }
+
   function renderMessage(m,idx){
     const article=document.createElement("article");
     article.className="ai-msg "+(m.role==="user"?"user":"assistant");
@@ -157,7 +195,14 @@
     const who=document.createElement("strong");who.textContent=m.role==="user"?"Вие":"AI Advokat";
     const meta=document.createElement("small");meta.className="meta";meta.textContent=m.meta||"";
     head.append(who,meta);
-    const content=document.createElement("div");content.className="ai-msg-content";content.textContent=m.text||"";
+    const content=document.createElement("div");content.className="ai-msg-content";
+    const isPreparing=m.role==="assistant" && m.text==="Обработувам…";
+    if(isPreparing){
+      article.classList.add("ai-msg-preparing");
+      content.append(createLegalPulseLoader());
+    }else{
+      content.textContent=m.text||"";
+    }
     body.append(head,content);
     let evidenceDetails=null;
     let evidenceBody=null;
