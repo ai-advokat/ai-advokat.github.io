@@ -1,0 +1,27 @@
+{
+  "type": "case_law_corpus_manifest",
+  "corpus_id": "as-stip-bulletins-v2",
+  "schema_version": "AS_ST_CASE_LAW_CITATION_V2.1",
+  "generated_at": "2026-10-31T17:28:00.552511+00:00",
+  "status": "RELEASE_CANDIDATE_HUMAN_GATE",
+  "production_eligible": false,
+  "source_stats": [
+    {"filename":"07-BiltenBr1-2.pdf","bulletin":"1-2","pages":36,"pdf_sha256":"6fe880f564b3f7665fd3e6013f2c17652c709d46b04834ee61ddbf0ea275a25e","target_record_count":23,"extracted_record_count":23,"candidate_endpoint_count":29},
+    {"filename":"08-BiltenBr3.pdf","bulletin":"3","pages":60,"pdf_sha256":"39daecd3d9cc7c4f47fc2637f227d8f829b351d2530f482afc8eeee8441996e6","target_record_count":23,"extracted_record_count":23,"candidate_endpoint_count":28},
+    {"filename":"10-BiltenBr5.pdf","bulletin":"5","pages":59,"pdf_sha256":"1168dfac2c7d02d4be97820c5bc19dd16238858d9002d242b21341842f12ff13","target_record_count":33,"extracted_record_count":33,"candidate_endpoint_count":33},
+    {"filename":"01-BiltenBr6.pdf","bulletin":"6","pages":979,"pdf_sha256":"ab3c8087e4207227b962d34d45e1cb3ee285141aaa8d7ae1e68f93a3170f96a2","target_record_count":50,"extracted_record_count":50,"candidate_endpoint_count":0},
+    {"filename":"02-BiltenBr7.pdf","bulletin":"7","pages":386,"pdf_sha256":"aaea2f00f8d9ef6dcb7c8c5c23022bce083f1a9017ba3730d05f4aab122ed287","target_record_count":173,"extracted_record_count":173,"candidate_endpoint_count":189},
+    {"filename":"03-BiltenBr8.pdf","bulletin":"8","pages":209,"pdf_sha256":"416b8853ee7ce5c8b9edd3d081c5b2cec5fcc01554dcb0cfe0368130180592cc","target_record_count":86,"extracted_record_count":86,"candidate_endpoint_count":95}
+  ],
+  "qc": {
+    "record_count":388,"expected_total":388,"source_count":6,"records_with_case_number":388,"records_with_decision_date":374,"records_with_holding":388,"records_with_articles":375,"records_with_laws":374,"records_with_supreme_refs":29,"supreme_reference_count":34,"official_lookup_queue_count":388,"duplicate_groups":83,
+    "qc_flag_counts":{"missing_or_invalid_decision_date:missing":13,"low_endpoint_confidence":17,"missing_or_invalid_decision_date:impossible":1},
+    "production_eligible":false,"human_gate_required":true
+  },
+  "rules": [
+    "Bulletin copies are treated as source-backed official court publication material but original-decision binding remains separate.",
+    "No record may enter governed GPT case-law context until source/authority Human Gate and required provenance gates pass.",
+    "Historical statutory citations are not current-law verification.",
+    "Official lookup resolver must never invent a URL when exact official source binding fails."
+  ]
+}
