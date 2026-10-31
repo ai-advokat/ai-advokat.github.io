@@ -202,3 +202,52 @@
 .ai-chat-hint>p{
   margin:.55rem 0 0;
 }
+
+
+/* AIAdvokat4 · LexNova UX professional workbench */
+.ai-prof-workbench{
+  margin:12px 0 8px;
+  padding:12px;
+  border:1px solid rgba(185,152,91,.45);
+  border-radius:16px;
+  background:linear-gradient(145deg,rgba(12,32,56,.98),rgba(23,61,102,.96));
+  color:#fff;
+  box-shadow:0 14px 34px rgba(12,32,56,.16)
+}
+.ai-prof-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.ai-prof-head strong{display:block;font-size:.92rem;letter-spacing:.01em}
+.ai-prof-head small{display:block;margin-top:2px;color:#cbd8e5;font-size:.72rem}
+.ai-prof-badge{flex:none;border:1px solid rgba(240,219,171,.65);border-radius:999px;padding:4px 8px;color:#f3dca7;font-size:.62rem;font-weight:800;letter-spacing:.06em}
+.ai-prof-chain{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}
+.ai-prof-step{min-width:0;text-align:left;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.07);color:#fff;padding:10px 11px;cursor:pointer;transition:.18s ease}
+.ai-prof-step:hover,.ai-prof-step:focus-visible{background:rgba(255,255,255,.13);border-color:rgba(240,219,171,.72);outline:none;transform:translateY(-1px)}
+.ai-prof-step b{display:block;color:#f0d79f;font-size:.76rem}
+.ai-prof-step span{display:block;margin-top:3px;color:#d7e0e9;font-size:.68rem;line-height:1.35}
+.ai-prof-arrow{color:#d5b46f;font-weight:900}
+.ai-prof-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.ai-prof-actions button{border:1px solid rgba(255,255,255,.18);border-radius:999px;background:#fff;color:#132033;padding:6px 10px;font-size:.72rem;font-weight:780;cursor:pointer}
+.ai-prof-actions button:hover,.ai-prof-actions button:focus-visible{border-color:#d5b46f;outline:2px solid rgba(213,180,111,.28);outline-offset:1px}
+.ai-prof-evidence{margin-top:10px;border:1px solid rgba(255,255,255,.15);border-radius:12px;background:rgba(4,15,27,.46);padding:11px;color:#eaf0f6;font-size:.76rem}
+.ai-prof-evidence h4{margin:0 0 8px;color:#f0d79f;font-size:.82rem}
+.ai-prof-evidence p{margin:6px 0}
+.ai-prof-evidence ul{margin:7px 0 0;padding-left:18px}
+.ai-prof-evidence li{margin:5px 0}
+.ai-prof-evidence a{color:#fff;text-decoration:underline;text-underline-offset:2px}
+.ai-prof-evidence .ai-prof-status{display:inline-flex;margin-right:6px;margin-bottom:6px;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:3px 7px}
+.ai-prof-evidence .ai-prof-gate{color:#f6d998;font-weight:800}
+.ai-prof-analyzer-dialog{width:min(820px,calc(100vw - 24px));max-height:88vh;border:0;border-radius:18px;padding:0;background:#f8fafc;color:#132033;box-shadow:0 30px 90px rgba(0,0,0,.35)}
+.ai-prof-analyzer-dialog::backdrop{background:rgba(5,18,31,.72)}
+.ai-prof-analyzer-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 16px;background:#0c2038;color:#fff;border-bottom:3px solid #b9985b}
+.ai-prof-analyzer-head strong{display:block}.ai-prof-analyzer-head small{display:block;color:#cfdae5}
+.ai-prof-analyzer-head button{border:0;background:transparent;color:#fff;font-size:1.35rem;cursor:pointer}
+.ai-prof-analyzer-body{padding:16px;overflow:auto}
+.ai-prof-analyzer-body textarea{width:100%;min-height:220px;border:1px solid #d9e0e7;border-radius:12px;padding:12px;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;resize:vertical}
+.ai-prof-analyzer-controls{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.ai-prof-analyzer-controls button{border:0;border-radius:10px;padding:9px 12px;font-weight:750;cursor:pointer}
+.ai-prof-analyzer-controls .primary{background:#0c2038;color:#fff}.ai-prof-analyzer-controls .secondary{background:#e9eef3;color:#132033}
+.ai-prof-analyzer-result{border:1px solid #d9e0e7;border-radius:12px;background:#fff;padding:12px;min-height:80px}
+.ai-prof-analyzer-result pre{white-space:pre-wrap;word-break:break-word;margin:0;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+@media(max-width:760px){
+  .ai-prof-head{display:block}.ai-prof-badge{display:inline-flex;margin-top:8px}
+  .ai-prof-chain{grid-template-columns:1fr}.ai-prof-arrow{transform:rotate(90deg);justify-self:center}
+}
