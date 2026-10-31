@@ -225,3 +225,12 @@ test("COP21 case prediction uses active session context and calibrated scenarios
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/analytical estimate, not a statistical probability/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/do not ask the user to repeat facts that are already present/);
 });
+
+
+test("COP22 resolves MVR shorthand to official source titles without re-asking",()=>{
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/OFFICIAL-TITLE AND ABBREVIATION RESOLUTION/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Закон за внатрешни работи/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Закон за полиција/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Колективен договор на МВР/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/MINOR TYPO TOLERANCE/);
+});
