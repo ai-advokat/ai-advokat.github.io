@@ -74,7 +74,7 @@ window.fetch = async function(input, init={}){
   return response;
 };
 
-await import('./standalone-bot.js');
+await import('./standalone-bot.js?v=20261031-legal-pulse-r2');
 
 const $=id=>document.getElementById(id);
 const qs=(s,r=document)=>r.querySelector(s);

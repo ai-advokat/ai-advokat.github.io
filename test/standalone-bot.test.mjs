@@ -123,3 +123,16 @@ test('worker uses bounded conversation routing context for legal follow-ups',()=
   assert.match(source,/contextualFollowUp/);
   assert.match(source,/researchInput:routingQuery/);
 });
+
+
+test('legal pulse assets are cache-busted and runtime-styled',()=>{
+  const html=fs.readFileSync('bot/index.html','utf8');
+  const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  const core=fs.readFileSync('assets/standalone-bot.js','utf8');
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261031-legal-pulse-r2/);
+  assert.match(html,/standalone-bot-vnext\.css\?v=20261031-legal-pulse-r2/);
+  assert.match(vnext,/import\('\.\/standalone-bot\.js\?v=20261031-legal-pulse-r2'\)/);
+  assert.match(core,/function ensureLegalPulseStyles\(\)/);
+  assert.match(core,/id = 'legalPulseRuntimeStyle'/);
+  assert.match(core,/const pulse = responsePulse\(\)/);
+});
