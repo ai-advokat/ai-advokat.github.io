@@ -60,3 +60,37 @@ test('vNext deduplicates identical in-flight user turns',()=>{
   assert.ok(source.includes("last?.role==='user'"));
   assert.ok(source.includes("String(last.text||'').trim()===q"));
 });
+
+
+test('vNext message actions provide copy, edit/reuse, repeat and source access',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  const css=fs.readFileSync('assets/standalone-bot-vnext.css','utf8');
+  assert.match(source,/function ensureMessageActions\(article\)/);
+  assert.match(source,/⧉ Копирај/);
+  assert.match(source,/✎ Уреди/);
+  assert.match(source,/↺ Повтори/);
+  assert.match(source,/▤ Извори/);
+  assert.match(source,/navigator\.clipboard\.writeText/);
+  assert.match(source,/setComposerText/);
+  assert.match(css,/\.vnext-message-actions/);
+  assert.match(css,/\.vnext-message-action/);
+});
+
+test('vNext gives visible symbols to right-side tabs, actions and global tools',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  assert.match(source,/▤<\/span> Извори/);
+  assert.match(source,/◫<\/span> Контекст/);
+  assert.match(source,/✓<\/span> Human Gate/);
+  assert.match(source,/◇<\/span> Артефакт/);
+  assert.match(source,/▣ Отвори CasePilot/);
+  assert.match(source,/⇩ Извези DOCX/);
+  assert.match(source,/⌁ Анализатор/);
+  assert.match(source,/◎ Предиктор/);
+});
+
+test('vNext privacy copy keeps local redaction as default and workspace as necessity-based',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  assert.match(source,/Идентификаторите се маскираат локално/);
+  assert.match(source,/оригиналниот документ или точниот идентитет/);
+  assert.match(source,/Препознатливите лични идентификатори се маскираат локално/);
+});
