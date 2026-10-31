@@ -1,0 +1,19 @@
+{
+  "input_pdf_count":20,
+  "unique_document_count":11,
+  "internal_exact_duplicate_copy_count":9,
+  "cross_batch_existing_unique_document_count":7,
+  "new_canonical_bulletin_count":4,
+  "new_publication_item_count":197,
+  "new_domestic_appellate_record_count":191,
+  "new_echr_secondary_reference_count":6,
+  "domestic_records_with_case_number":189,
+  "domestic_records_missing_case_number":2,
+  "domestic_records_with_decision_date":129,
+  "unique_domestic_case_number_count":186,
+  "same_case_multi_headnote_group_count":2,
+  "supreme_reference_occurrence_count":93,
+  "unique_supreme_reference_count":93,
+  "production_eligible":false,
+  "human_gate_required":true
+}
