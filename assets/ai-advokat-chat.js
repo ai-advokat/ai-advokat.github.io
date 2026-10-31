@@ -148,6 +148,40 @@
     chat.messages.forEach((m,idx)=>messagesEl.append(renderMessage(m,idx)));
     messagesEl.scrollTop=messagesEl.scrollHeight;
   }
+  function createLegalPulseLoader(){
+    const loader=document.createElement("div");
+    loader.className="ai-legal-pulse";
+    loader.setAttribute("role","status");
+    loader.setAttribute("aria-live","polite");
+    loader.setAttribute("aria-label","AI Advokat го подготвува одговорот");
+
+    const mark=document.createElement("div");
+    mark.className="ai-legal-pulse-mark";
+    mark.setAttribute("aria-hidden","true");
+
+    const ring=document.createElement("span");
+    ring.className="ai-legal-pulse-ring";
+
+    const pair=document.createElement("span");
+    pair.className="ai-legal-pulse-pair";
+    const left=document.createElement("span");left.className="ai-legal-section section-left";left.textContent="§";
+    const right=document.createElement("span");right.className="ai-legal-section section-right";right.textContent="§";
+    pair.append(left,right);
+    mark.append(ring,pair);
+
+    const copy=document.createElement("span");
+    copy.className="ai-legal-pulse-copy";
+    copy.textContent="AI Advokat подготвува одговор…";
+
+    const dots=document.createElement("span");
+    dots.className="ai-legal-pulse-dots";
+    dots.setAttribute("aria-hidden","true");
+    for(let i=0;i<3;i++){const dot=document.createElement("i");dot.style.setProperty("--dot-order",String(i));dots.append(dot);}
+
+    loader.append(mark,copy,dots);
+    return loader;
+  }
+
   function renderMessage(m,idx){
     const article=document.createElement("article");
     article.className="ai-msg "+(m.role==="user"?"user":"assistant");
@@ -157,7 +191,14 @@
     const who=document.createElement("strong");who.textContent=m.role==="user"?"Вие":"AI Advokat";
     const meta=document.createElement("small");meta.className="meta";meta.textContent=m.meta||"";
     head.append(who,meta);
-    const content=document.createElement("div");content.className="ai-msg-content";content.textContent=m.text||"";
+    const content=document.createElement("div");content.className="ai-msg-content";
+    const isPreparing=m.role==="assistant" && m.text==="Обработувам…";
+    if(isPreparing){
+      article.classList.add("ai-msg-preparing");
+      content.append(createLegalPulseLoader());
+    }else{
+      content.textContent=m.text||"";
+    }
     body.append(head,content);
     let evidenceDetails=null;
     let evidenceBody=null;

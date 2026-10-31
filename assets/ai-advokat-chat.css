@@ -251,3 +251,137 @@
   .ai-prof-head{display:block}.ai-prof-badge{display:inline-flex;margin-top:8px}
   .ai-prof-chain{grid-template-columns:1fr}.ai-prof-arrow{transform:rotate(90deg);justify-self:center}
 }
+
+
+/* PROTOTYPE — miniature AI Advokat Legal Pulse loader.
+   Dual § mark recalls the Lex Nova / Paragraf visual legacy.
+   Compact by design: it signals only that the response is being prepared. */
+.ai-msg-preparing .ai-msg-content{padding:0;background:transparent}
+.ai-legal-pulse{
+  --pulse-gold:#d8b56a;
+  --pulse-gold-hot:#ffd88b;
+  --pulse-lilac:#7f45d9;
+  --pulse-lilac-hot:#b16cff;
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  width:auto;
+  max-width:100%;
+  min-height:42px;
+  padding:5px 9px 5px 6px;
+  border:1px solid rgba(216,181,106,.34);
+  border-radius:999px;
+  background:linear-gradient(135deg,rgba(7,24,44,.96),rgba(18,36,62,.96));
+  box-shadow:0 5px 14px rgba(4,15,29,.12);
+  color:#fff;
+}
+.ai-legal-pulse-mark{
+  position:relative;
+  flex:none;
+  width:44px;
+  height:34px;
+  display:grid;
+  place-items:center;
+}
+.ai-legal-pulse-ring{
+  position:absolute;
+  inset:2px 1px;
+  border:1px solid rgba(216,181,106,.58);
+  border-radius:50%;
+  transform:rotate(12deg);
+  box-shadow:0 0 6px rgba(127,69,217,.18);
+  animation:aiLegalMiniOrbit 3.8s linear infinite;
+}
+.ai-legal-pulse-ring::before,
+.ai-legal-pulse-ring::after{
+  content:"";
+  position:absolute;
+  width:4px;
+  height:4px;
+  top:50%;
+  border-radius:50%;
+  transform:translateY(-50%);
+}
+.ai-legal-pulse-ring::before{
+  left:-2px;
+  background:var(--pulse-lilac-hot);
+  box-shadow:0 0 5px rgba(177,108,255,.8);
+}
+.ai-legal-pulse-ring::after{
+  right:-2px;
+  background:var(--pulse-gold-hot);
+  box-shadow:0 0 5px rgba(255,216,139,.8);
+}
+.ai-legal-pulse-pair{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  gap:0;
+}
+.ai-legal-section{
+  display:inline-block;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:25px;
+  line-height:.86;
+  font-weight:700;
+  transform-origin:50% 52%;
+}
+.ai-legal-section.section-left{
+  color:var(--pulse-gold-hot);
+  text-shadow:0 0 5px rgba(255,216,139,.48);
+  animation:aiLegalMiniLeft 2.5s ease-in-out infinite;
+}
+.ai-legal-section.section-right{
+  color:#d9b2ff;
+  text-shadow:0 0 5px rgba(177,108,255,.48);
+  animation:aiLegalMiniRight 2.5s ease-in-out infinite;
+}
+.ai-legal-pulse-copy{
+  min-width:0;
+  color:#e8edf4;
+  font-size:.72rem;
+  line-height:1.2;
+  font-weight:650;
+  white-space:nowrap;
+}
+.ai-legal-pulse-dots{
+  flex:none;
+  display:flex;
+  gap:3px;
+  padding-right:1px;
+}
+.ai-legal-pulse-dots i{
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#66788c;
+  animation:aiLegalMiniDot 1.35s ease-in-out infinite;
+  animation-delay:calc(var(--dot-order) * .18s);
+}
+@keyframes aiLegalMiniOrbit{to{transform:rotate(372deg)}}
+@keyframes aiLegalMiniLeft{
+  0%,100%{transform:rotateY(0deg) rotateZ(-2deg)}
+  50%{transform:rotateY(180deg) rotateZ(2deg)}
+}
+@keyframes aiLegalMiniRight{
+  0%,100%{transform:rotateY(0deg) rotateZ(2deg)}
+  50%{transform:rotateY(-180deg) rotateZ(-2deg)}
+}
+@keyframes aiLegalMiniDot{
+  0%,100%{background:#66788c;transform:scale(.8);opacity:.55}
+  45%{background:var(--pulse-lilac-hot);transform:scale(1.18);opacity:1}
+  70%{background:var(--pulse-gold-hot);transform:scale(1);opacity:.9}
+}
+@media(max-width:520px){
+  .ai-legal-pulse{gap:6px;min-height:38px;padding:4px 8px 4px 5px}
+  .ai-legal-pulse-mark{width:39px;height:30px}
+  .ai-legal-section{font-size:22px}
+  .ai-legal-pulse-copy{font-size:.66rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .ai-legal-pulse-ring,
+  .ai-legal-section,
+  .ai-legal-pulse-dots i{animation:none!important}
+}
