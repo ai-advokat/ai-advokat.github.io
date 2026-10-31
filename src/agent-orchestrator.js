@@ -724,6 +724,7 @@ export async function runOpenAIMacedonianRepair(env,{
 export async function runOpenAIOrchestrator(env, {
   plan,
   input,
+  researchInput=null,
   corpusContext=[],
   externalContext=[],
   externalResearchEnabled=false,
@@ -747,7 +748,7 @@ export async function runOpenAIOrchestrator(env, {
 
   let specialistStage=await runBoundedSpecialists(env,{
     plan,
-    input,
+    input:String(researchInput||input||""),
     corpusContext,
     webSearchEnabled:webSearchEnabled && externalResearchEnabled,
     deadlineAt
