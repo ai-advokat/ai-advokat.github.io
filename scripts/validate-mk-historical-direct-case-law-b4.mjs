@@ -51,7 +51,7 @@ ok(index.records.filter(r=>r.c==="Стопански суд на Македон�
 ok(index.records.filter(r=>r.kind==="principled_legal_opinion").length===1,"index:opinion_count");
 ok(index.records.some(r=>r.id==="B4-GZZ-49-1996"&&r.recovered===true),"index:recovered_278");
 ok(index.records.some(r=>r.id==="B4-GZZ-51-1996"&&r.multi===2&&r.f.length===2),"index:multiheadnote");
-ok(new Set(keys).size===38,"index:unique_case_keys");
+ok(new Set(keys).size===39,"index:unique_case_keys");
 
 ok(Array.isArray(multi)&&multi.length===1,"multi:count");
 ok(multi[0]?.case_number_keys?.[0]==="GZZ-51/1996","multi:key");
