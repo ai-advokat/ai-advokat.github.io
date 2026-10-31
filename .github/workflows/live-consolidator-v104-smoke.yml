@@ -1,0 +1,61 @@
+name: Live Legal Formatter v10.4 Consolidator smoke
+
+on:
+  push:
+    branches:
+      - test/live-consolidator-v104-smoke
+    paths:
+      - ".github/workflows/live-consolidator-v104-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify live Consolidator and exact engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            page_ok=0
+            engine_ok=0
+            vnext_ok=0
+
+            if curl -L --fail --silent --show-error --max-time 30               'https://ai-advokat.github.io/consolidator/' -o /tmp/consolidator.html; then
+              if grep -q 'AI Advokat · Консолидатор' /tmp/consolidator.html                 && grep -q '/assets/legal-formatter-v10.4/lfcore.js' /tmp/consolidator.html                 && grep -q 'buildResolutionWorkflow' /tmp/consolidator.html; then
+                page_ok=1
+              fi
+            fi
+
+            if curl -L --fail --silent --show-error --max-time 30               'https://ai-advokat.github.io/assets/legal-formatter-v10.4/lfcore.js' -o /tmp/lfcore.js; then
+              if echo 'f72b84934ee5adc4fe2f7b94c2bfe42eee32a314144a3b518ea9dfcd0431f5e3  /tmp/lfcore.js' | sha256sum -c -; then
+                engine_ok=1
+              fi
+            fi
+
+            if curl -L --fail --silent --show-error --max-time 30               'https://ai-advokat.github.io/assets/standalone-bot-vnext.js' -o /tmp/vnext.js; then
+              if grep -q "window.open('/consolidator/'" /tmp/vnext.js                 && ! grep -q 'CONSOLIDATOR MODE' /tmp/vnext.js; then
+                vnext_ok=1
+              fi
+            fi
+
+            if [ "$page_ok" -eq 1 ] && [ "$engine_ok" -eq 1 ] && [ "$vnext_ok" -eq 1 ]; then
+              node - <<'NODE'
+              const C=require('/tmp/lfcore.js');
+              if(C.version!=='10.4.0') throw new Error('wrong_live_version_'+C.version);
+              for(const k of ['consolidate','resolveReferences','buildResolutionWorkflow','applyResolutionsToLaw','buildPublicationPackage']){
+                if(typeof C[k]!=='function') throw new Error('missing_live_'+k);
+              }
+              console.log('LIVE_LFCORE_V104_PASS',C.version);
+              NODE
+              echo 'LIVE_CONSOLIDATOR_V104_PASS'
+              exit 0
+            fi
+
+            echo "attempt=$i page=$page_ok engine=$engine_ok vnext=$vnext_ok"
+            sleep 5
+          done
+          echo 'Live deployment did not converge to exact v10.4 Consolidator.' >&2
+          exit 1
