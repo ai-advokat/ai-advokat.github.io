@@ -73,7 +73,6 @@ import {
   buildExecutionGraph,
   orchestratorRuntimeReadiness,
   runOpenAIOrchestrator,
-  runOpenAIMacedonianRepair,
   runLegalPostflightVerifier
 } from "./agent-orchestrator.js";
 import {
@@ -4849,84 +4848,19 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     }
   }
 
-  // Severe corruption is never sent into another slow repair round. Fail closed
-  // immediately so the user never sees linguistic garbage and latency stays bounded.
-  if(releaseVerdict.verdict==="BLOCK"){
-    return {
-      text:current||original,
-      repaired:false,
-      deterministicCleanupApplied,
-      providerCalls:0,
-      languageAssessment:assessment,
-      releaseVerdict,
-      repairError:"macedonian_release_blocked"
-    };
-  }
-
-  // Fast/low-risk FREE paths use one provider call maximum. After deterministic
-  // cleanup they either release clean Macedonian or fail closed; they never pay
-  // latency for a second model round and never risk compounding bad language.
-  if(!allowProviderRepair){
-    return {
-      text:current||original,
-      repaired:false,
-      deterministicCleanupApplied,
-      providerCalls:0,
-      languageAssessment:assessment,
-      releaseVerdict:{...releaseVerdict,verdict:"BLOCK",severity:"strict_fast_path"},
-      repairError:"macedonian_fast_path_release_blocked"
-    };
-  }
-
-  // Only a repairable complex draft receives one targeted repair inference.
-  const messages=buildMacedonianRepairMessages({text:current,userText});
-  const issueNote=[
-    "STRICT TARGETED LANGUAGE REPAIR.",
-    "The preceding draft failed the Macedonian canonical release gate.",
-    "Detected reasons: "+(assessment.reasons||[]).join(", "),
-    assessment.foreignChars?.length ? "Forbidden/non-Macedonian Cyrillic characters detected: "+assessment.foreignChars.join(" ") : "",
-    assessment.foreignLexemes?.length ? "Foreign lexical forms detected: "+assessment.foreignLexemes.join(", ") : "",
-    assessment.malformedGeneration?.length ? "Malformed generated words detected: "+assessment.malformedGeneration.join(", ") : "",
-    assessment.structuralAnomalies?.length ? "Malformed token shapes detected: "+assessment.structuralAnomalies.join(", ") : "",
-    "Correct only language contamination and grammar. Preserve the same meaning, facts, dates, numbers, identifiers, citation markers and overall structure.",
-    "Use simple established Macedonian vocabulary. Never invent a replacement word.",
-    "Do not add new sections, examples, parties, legal rules or explanations. Return only the corrected draft."
-  ].filter(Boolean).join("\n");
-  messages[0]={...messages[0],content:String(messages[0].content||"")+"\n\n"+issueNote};
-
-  const repair=await runWorkersAIText(env,{
-    messages,
-    maxOutputTokens:Math.max(420,Math.min(1800,Number(maxOutputTokens)||1000)),
-    temperature:0,
-    sessionAffinity,
-    timeoutMs:12000
-  });
-  const providerCalls=repair.providerCalls||1;
-  let lastError=null;
-
-  if(!repair.ok){
-    lastError=repair.error||"macedonian_repair_failed";
-  }else{
-    const candidate=String(repair.text||"").trim();
-    if(!candidate){
-      lastError="macedonian_repair_empty";
-    }else{
-      current=normaliseMacedonianGeneratedText(candidate);
-      deterministicCleanupApplied=deterministicCleanupApplied || current!==candidate;
-      assessment=assessMacedonianOutput(current,{userText});
-      releaseVerdict=macedonianReleaseVerdict(current,{userText});
-      lastError=releaseVerdict.verdict==="RELEASE"?null:"macedonian_repair_still_noncompliant";
-    }
-  }
-
+  // Product policy: language quality is a QA signal, not a reason to suppress
+  // an otherwise useful legal answer. Deterministic cleanup is the only runtime
+  // language repair step; no second provider call is spent on style-only repair.
+  // Substantive foreign-jurisdiction substitution is handled by the final
+  // delivery policy as a legal-safety blocker.
   return {
     text:current||original,
-    repaired:current!==original && releaseVerdict.verdict==="RELEASE",
+    repaired:current!==original,
     deterministicCleanupApplied,
-    providerCalls,
+    providerCalls:0,
     languageAssessment:assessment,
     releaseVerdict,
-    repairError:releaseVerdict.verdict==="RELEASE"?null:(lastError||"macedonian_repair_still_noncompliant")
+    repairError:releaseVerdict.verdict==="RELEASE"?null:"language_quality_warning"
   };
 }
 
