@@ -1,0 +1,7 @@
+{
+  "release_pack_name": "MK_HISTORICAL_CASE_LAW_DIRECT_BATCH_B13_RC1.zip",
+  "payload_tree_sha256": "56b39871eda1469610cd37d868b7e7ab2a2be2fbe3d721cb7b7a82a77dfee74d",
+  "status": "controlled_human_gate_artifact",
+  "production_eligible": false,
+  "handoff_archive_sha256_note": "Final ZIP SHA-256 is reported externally after packaging; it is intentionally not self-embedded."
+}
