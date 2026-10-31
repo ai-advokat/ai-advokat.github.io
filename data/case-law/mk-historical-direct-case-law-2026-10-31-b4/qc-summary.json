@@ -1,0 +1,12 @@
+{
+  "input_file_count": 40,
+  "canonical_authority_record_count": 39,
+  "same_case_multi_headnote_group_count": 1,
+  "supreme_decision_record_count": 34,
+  "commercial_court_record_count": 4,
+  "supreme_principled_opinion_count": 1,
+  "publication_bound_to_collection_v_count": 39,
+  "production_eligible": false,
+  "human_gate_required": true,
+  "fatal_defects": []
+}
