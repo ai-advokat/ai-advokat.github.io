@@ -255,6 +255,81 @@
         "automated_systems"
       ],
       "authority_note": "Useful legal-information institute for human/manual discovery. The supplied public notice states that BAILII Terms of Service prohibit bulk downloading, scraping and automated systems. Originating court or authorized report remains the authority."
+    },
+    {
+      "id": "mk-supreme-court-publication-archive",
+      "jurisdiction": "MK",
+      "authority_class": "highest_domestic_case_law_publication_archive",
+      "official_name": "Врховен суд на Република Македонија — историски збирки и билтени на судска практика",
+      "url": "https://www.vrhoven.sud.mk/",
+      "access": "user_supplied_publication_copies_pending_remote_binding",
+      "ingest": "publication_metadata_case_number_and_interpretive_authority_candidates",
+      "corpus_id": "mk-judicial-publications-batch-2026-10-31",
+      "authority_subtypes": [
+        "Начелни правни мислења",
+        "Начелни ставови",
+        "Правни мислења и заклучоци",
+        "Сентенци",
+        "поединечни судски одлуки"
+      ],
+      "historical_current_law_gate": true,
+      "original_decision_binding_required_before_gpt_case_law_context": true,
+      "authority_note": "Supreme Court publications are high-value authority/discovery material. Preserve exact subtype and historical legal context. A publication extract does not automatically prove current-law status or remote binding to the original decision.",
+      "privacy_minimisation": true
+    },
+    {
+      "id": "mk-appellate-skopje-bulletins",
+      "jurisdiction": "MK",
+      "authority_class": "appellate_case_law_publication_reference",
+      "official_name": "Апелационен суд Скопје — Билтени на судска практика",
+      "url": "https://www.asskopje.mk/",
+      "access": "user_supplied_official_publication_copy_pending_remote_binding",
+      "ingest": "bulletin_headnotes_conclusions_case_metadata",
+      "corpus_id": "mk-judicial-publications-batch-2026-10-31",
+      "source_role": "official_appellate_bulletin",
+      "original_decision_binding_required_before_gpt_case_law_context": true,
+      "authority_note": "Bulletins may support bulletin-level discovery and citation after Human Gate. Original decision URL/hash and authority review remain separate gates.",
+      "privacy_minimisation": true
+    },
+    {
+      "id": "mk-professional-vitlarov-chavdar-case-collection",
+      "jurisdiction": "MK/ECHR",
+      "authority_class": "professional_secondary_case_law_reference",
+      "official_name": "Збирка на судски одлуки — Тодор Витларов / Кирил Чавдар",
+      "url": null,
+      "access": "user_supplied_publication_copy",
+      "ingest": "metadata_and_discovery_only_pending_primary_source_binding",
+      "corpus_id": "mk-judicial-publications-batch-2026-10-31",
+      "official_binding_required_before_gpt_case_law_context": true,
+      "authority_note": "Professional secondary compilation. Use for discovery and cross-reference; material propositions require binding to the originating court or HUDOC source."
+    },
+    {
+      "id": "echr-aire-macedonia-2015-review",
+      "jurisdiction": "ECHR/MK",
+      "authority_class": "secondary_echr_reference",
+      "official_name": "AIRE Centre — Судска пракса на Европскиот суд за човекови права во однос на Македонија до крајот на 2015 година",
+      "url": "https://www.airecentre.org/",
+      "access": "user_supplied_publication_copy",
+      "ingest": "secondary_case_index_and_topic_discovery",
+      "corpus_id": "mk-judicial-publications-batch-2026-10-31",
+      "hudoc_binding_required": true,
+      "authority_note": "Secondary ECHR review prepared with domestic representation bodies; HUDOC remains the primary source for exact application metadata, authoritative text and holding."
+    },
+    {
+      "id": "mk-court-rules-training-questions",
+      "jurisdiction": "MK",
+      "authority_class": "procedural_training_reference",
+      "official_name": "Судски деловник — прашања/тест материјал",
+      "url": null,
+      "access": "user_supplied_training_material",
+      "ingest": "training_reference_only",
+      "corpus_id": "mk-judicial-publications-batch-2026-10-31",
+      "forbidden_authority_use": [
+        "not_case_law",
+        "not_normative_text",
+        "not_current_law_without_official_rule_verification"
+      ],
+      "authority_note": "Questionnaire/training material. Never rank as a judgment or substitute it for the official consolidated Court Rules."
     }
   ],
   "target_case_record": {
