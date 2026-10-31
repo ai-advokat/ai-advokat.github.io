@@ -1,0 +1,38 @@
+name: Live AI Advokat Bot vNext smoke
+
+on:
+  push:
+    paths:
+      - ".github/workflows/live-bot-vnext-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify public vNext bot
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 15); do
+            curl -L --fail --silent --show-error --max-time 30               'https://ai-advokat.github.io/bot/' -o /tmp/bot.html || true
+            if grep -q '/assets/standalone-bot-vnext.js' /tmp/bot.html               && grep -q '/assets/standalone-bot-vnext.css' /tmp/bot.html; then
+              break
+            fi
+            if [ "$i" -eq 15 ]; then
+              echo "Live /bot/ did not converge to vNext." >&2
+              exit 1
+            fi
+            sleep 5
+          done
+
+          curl -L --fail --silent --show-error --max-time 30             'https://ai-advokat.github.io/assets/standalone-bot-vnext.js' -o /tmp/vnext.js
+          curl -L --fail --silent --show-error --max-time 30             'https://ai-advokat.github.io/assets/standalone-bot-vnext.css' -o /tmp/vnext.css
+
+          grep -q 'Professional Workspace' /tmp/vnext.js
+          grep -q 'Human Gate' /tmp/vnext.js
+          grep -q 'vnext-shell' /tmp/vnext.css
+          echo "LIVE_BOT_VNEXT_PASS"
