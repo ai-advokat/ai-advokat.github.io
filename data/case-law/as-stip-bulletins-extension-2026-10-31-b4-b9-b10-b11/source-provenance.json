@@ -1,0 +1,29 @@
+{
+  "input_pdf_count":20,
+  "internal_exact_duplicate_pairs":[
+    ["01-BiltenBr6_1.pdf","01-BiltenBr6_2.pdf","ab3c8087e4207227b962d34d45e1cb3ee285141aaa8d7ae1e68f93a3170f96a2"],
+    ["02-BiltenBr7_1.pdf","02-BiltenBr7_2.pdf","aaea2f00f8d9ef6dcb7c8c5c23022bce083f1a9017ba3730d05f4aab122ed287"],
+    ["03-BiltenBr8_1.pdf","03-BiltenBr8_2.pdf","416b8853ee7ce5c8b9edd3d081c5b2cec5fcc01554dcb0cfe0368130180592cc"],
+    ["04--Bilten+Br.9.pdf","04--Bilten+Br_1.9.pdf","aa8c7883d004b1f3258944ad1e92cf6774e61ebc9ba60c3989f5d558df0be070"],
+    ["05-Bilten+br.11+AS+Stip+za+web.pdf","05-Bilten+br_1.11+AS+Stip+za+web.pdf","bdffebe820ebded2c576aad47e9a8f5a326b6f21cb2323d27e48ceb504f6c32b"],
+    ["06-Bilten+br.+10+-+za+web.pdf","06-Bilten+br_1.+10+-+za+web.pdf","b69e794e2327dbd0ae5909eb9fa31c2c7888ac828d36b181b949f1060a70beeb"],
+    ["07-BiltenBr1-2_1.pdf","07-BiltenBr1-2_2.pdf","6fe880f564b3f7665fd3e6013f2c17652c709d46b04834ee61ddbf0ea275a25e"],
+    ["08-BiltenBr3_1.pdf","08-BiltenBr3_2.pdf","39daecd3d9cc7c4f47fc2637f227d8f829b351d2530f482afc8eeee8441996e6"],
+    ["09-BiltenBr4.pdf","09-BiltenBr4_1.pdf","295b48373260540c69cbd66e887b2b3dec49505ec9ac09e967544be2a99971d3"]
+  ],
+  "cross_batch_existing_unique_documents":[
+    {"bulletin":"1-2","sha256":"6fe880f564b3f7665fd3e6013f2c17652c709d46b04834ee61ddbf0ea275a25e","existing_corpus":"as-stip-bulletins-v2"},
+    {"bulletin":"3","sha256":"39daecd3d9cc7c4f47fc2637f227d8f829b351d2530f482afc8eeee8441996e6","existing_corpus":"as-stip-bulletins-v2"},
+    {"bulletin":"5","sha256":"1168dfac2c7d02d4be97820c5bc19dd16238858d9002d242b21341842f12ff13","existing_corpus":"as-stip-bulletins-v2"},
+    {"bulletin":"6","sha256":"ab3c8087e4207227b962d34d45e1cb3ee285141aaa8d7ae1e68f93a3170f96a2","existing_corpus":"as-stip-bulletins-v2"},
+    {"bulletin":"7","sha256":"aaea2f00f8d9ef6dcb7c8c5c23022bce083f1a9017ba3730d05f4aab122ed287","existing_corpus":"as-stip-bulletins-v2"},
+    {"bulletin":"8","sha256":"416b8853ee7ce5c8b9edd3d081c5b2cec5fcc01554dcb0cfe0368130180592cc","existing_corpus":"as-stip-bulletins-v2"},
+    {"document":"joint_appellate_labour_meeting_2012-03-02","sha256":"0abaa578e4180923e87c593d4ba5ffbaed1c6fed224a32474e3c6b18efb2b521","existing_corpus":"mk-appellate-publications-batch-2026-10-31-b2"}
+  ],
+  "new_canonical_documents":[
+    {"bulletin":"4","filename":"09-BiltenBr4.pdf","sha256":"295b48373260540c69cbd66e887b2b3dec49505ec9ac09e967544be2a99971d3"},
+    {"bulletin":"9","filename":"04--Bilten+Br.9.pdf","sha256":"aa8c7883d004b1f3258944ad1e92cf6774e61ebc9ba60c3989f5d558df0be070"},
+    {"bulletin":"10","filename":"06-Bilten+br.+10+-+za+web.pdf","sha256":"b69e794e2327dbd0ae5909eb9fa31c2c7888ac828d36b181b949f1060a70beeb"},
+    {"bulletin":"11","filename":"05-Bilten+br.11+AS+Stip+za+web.pdf","sha256":"bdffebe820ebded2c576aad47e9a8f5a326b6f21cb2323d27e48ceb504f6c32b"}
+  ]
+}
