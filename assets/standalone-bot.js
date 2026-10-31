@@ -31,6 +31,21 @@ function message(role, text, model = '') {
   article.scrollIntoView({block:'end'});
   return article;
 }
+function responsePulse() {
+  $('welcome')?.remove();
+  const article = document.createElement('article');
+  article.className = 'message assistant response-pending';
+  article.setAttribute('role','status');
+  article.setAttribute('aria-live','polite');
+  article.setAttribute('aria-label','AI Advokat го подготвува одговорот');
+  const pulse = document.createElement('div');
+  pulse.className = 'legal-pulse';
+  pulse.innerHTML = '<span class="legal-pulse-mark" aria-hidden="true"><span class="legal-pulse-ring"></span><span class="legal-pulse-pair"><span class="legal-pulse-sec legal-pulse-left">§</span><span class="legal-pulse-sec legal-pulse-right">§</span></span></span><span class="legal-pulse-copy">AI Advokat подготвува одговор…</span><span class="legal-pulse-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
+  article.append(pulse);
+  $('messages').append(article);
+  article.scrollIntoView({block:'end'});
+  return article;
+}
 function sources(article, data, guides = []) {
   // Guides matched in the browser are sent to the server as context, so the reader sees them as sources too.
   const guideRows = guides.map(g => ({title: 'Водич: ' + (g.title || g.id), url: g.url ? new URL(g.url, location.origin).href : ''}));
@@ -142,22 +157,26 @@ $('composer').onsubmit = async event => {
   const epoch = generation, controller = new AbortController(); pending = controller; busy(true);
   const timeout = setTimeout(() => controller.abort(),180000);
   message('user',q); $('question').value = ''; $('question').style.height = '';
+  const pulse = responsePulse();
   status('Ги проверувам материјалите и го подготвувам одговорот…');
   try {
     const guides = await guideMatches(q,controller.signal), ids = guides.map(g => g.id);
     const guideDocuments = await localGuideDocuments(window.AIAdvokatGuideVault,ids,$('useLocalGuides').checked);
     const data = await request('/api/bot',{signal:controller.signal,body:{q,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
+    pulse.remove();
     const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data,guides);
     history.push({role:'user',text:q},{role:'assistant',text:String(data.answer || '').slice(0,4000)}); history = history.slice(-24);
     status('Одговорот е работен материјал. Проверете ги наведените извори.');
   } catch (error) {
+    pulse.remove();
     if (epoch !== generation) return;
     if (error.status === 401) { key = ''; forgetDeviceAccess(deviceStorage); status('Пристапот истекол. Внесете активен код преку ⋯.'); }
     else if (error.name === 'AbortError') status('Барањето е запрено или истече времето за одговор. Можете да се обидете повторно.');
     else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
     $('question').value = q;
   } finally {
+    pulse.remove();
     clearTimeout(timeout);
     if (epoch === generation) { pending = null; busy(false); $('question').focus(); }
   }
