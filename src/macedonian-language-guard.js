@@ -3,7 +3,7 @@
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
 export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V9";
-export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V5";
+export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V6";
 export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="Одговорот е запрен затоа што јазичната проверка откри непобарано право од друга јурисдикција. Ова е правно-безбедносна, а не стилска блокада; потребна е проверка на важечките извори за Северна Македонија.";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
