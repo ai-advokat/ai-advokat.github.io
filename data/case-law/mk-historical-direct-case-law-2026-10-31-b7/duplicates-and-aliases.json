@@ -1,0 +1,35 @@
+{
+  "cross_batch_case_duplicates": [],
+  "within_batch_duplicates": [],
+  "aliases": [],
+  "source_metadata_anomalies": [
+    {
+      "source_file": "70(1).doc",
+      "field": "ole_title",
+      "observed": "64-A",
+      "content_identity": "entry 70 / REV-563/1994",
+      "disposition": "preserved; legal identity follows textual content, case number, date and publication locator"
+    },
+    {
+      "source_file": "75(1).doc",
+      "field": "filename_label",
+      "observed": "75",
+      "content_identity": "entry 75-A / REV-1278/1995",
+      "disposition": "preserved; filename label does not override content identity"
+    },
+    {
+      "source_file": "75a(1).doc",
+      "field": "filename_label",
+      "observed": "75-A",
+      "content_identity": "entry 75 / REV-1449/1994",
+      "disposition": "preserved; filename label does not override content identity"
+    },
+    {
+      "source_file": "80(1).doc",
+      "field": "ole_title",
+      "observed": "177",
+      "content_identity": "entry 80 / REV-836/1994",
+      "disposition": "preserved; legal identity follows textual content, case number, date and publication locator"
+    }
+  ]
+}
