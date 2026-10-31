@@ -1,0 +1,27 @@
+{
+  "type": "mk_historical_direct_case_law_batch_manifest",
+  "schema_version": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_LAW_V2",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b7",
+  "generated_at": "2026-10-31",
+  "status": "RELEASE_CANDIDATE_HUMAN_GATE",
+  "input_file_count": 20,
+  "canonical_authority_record_count": 20,
+  "supreme_court_record_count": 16,
+  "commercial_court_record_count": 4,
+  "judgment_record_count": 9,
+  "order_record_count": 11,
+  "cross_batch_case_duplicate_count": 0,
+  "publication_bound_to_collection_v_count": 20,
+  "source_metadata_anomaly_count": 4,
+  "production_eligible": false,
+  "human_gate_required": true,
+  "source_policy": [
+    "Exact source file and normalized text hashes are preserved.",
+    "Collection V publication binding is verified by entry number, case number and date; it is not remote/original-decision binding.",
+    "Supreme Court and Commercial Court records remain distinct authority classes.",
+    "Every item is historical and requires current-law verification before present-law reliance.",
+    "Source OLE-title and filename/content conflicts are preserved as provenance flags and are never silently rewritten.",
+    "No party identities are expanded or deanonymized beyond the supplied source.",
+    "No ECLI, URL, later treatment, current-law status or binding force is invented."
+  ]
+}
