@@ -1,0 +1,332 @@
+{
+  "schema": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_KEY_INDEX_V2",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b6",
+  "records": [
+    {
+      "record_id": "B6-REV-201/1994",
+      "authority_id": "REV-201/1994",
+      "case_number_key": "REV-201/1994",
+      "decision_date": "10.06.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "облигационо право",
+        "типски договор",
+        "судска заштита",
+        "надомест на штета"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-720/1995",
+      "authority_id": "REV-720/1995",
+      "case_number_key": "REV-720/1995",
+      "decision_date": "09.05.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "облигационо право",
+        "заем",
+        "недозволена цел",
+        "комар",
+        "натурална облигација"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-463/1993",
+      "authority_id": "REV-463/1993",
+      "case_number_key": "REV-463/1993",
+      "decision_date": "16.09.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "облигационо право",
+        "заем",
+        "странска валута",
+        "извршување"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-GZZ-31/1996",
+      "authority_id": "GZZ-31/1996",
+      "case_number_key": "GZZ-31/1996",
+      "decision_date": "19.09.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "облигационо право",
+        "договорна камата",
+        "заем",
+        "когентна норма"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-GZZ-7/1996",
+      "authority_id": "GZZ-7/1996",
+      "case_number_key": "GZZ-7/1996",
+      "decision_date": "11.04.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "облигационо право",
+        "ништовност",
+        "прикриен договор",
+        "општествен капитал",
+        "недвижност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-98/1994",
+      "authority_id": "REV-98/1994",
+      "case_number_key": "REV-98/1994",
+      "decision_date": "01.03.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "облигационо право",
+        "ништовност",
+        "реституција",
+        "недвижност",
+        "еднаква вредност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-280/1996",
+      "authority_id": "REV-280/1996",
+      "case_number_key": "REV-280/1996",
+      "decision_date": "05.11.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "станбено право",
+        "закуп",
+        "станарско право",
+        "уставносудска одлука"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-249/1990",
+      "authority_id": "REV-249/1990",
+      "case_number_key": "REV-249/1990",
+      "decision_date": "15.05.1990",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "облигационо право",
+        "договор за дело",
+        "лични способности",
+        "наследници"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-619/1994",
+      "authority_id": "REV-619/1994",
+      "case_number_key": "REV-619/1994",
+      "decision_date": "23.04.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "облигационо право",
+        "толкување на договор",
+        "цесија",
+        "застапување",
+        "активна легитимација"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-401/1990",
+      "authority_id": "REV-401/1990",
+      "case_number_key": "REV-401/1990",
+      "decision_date": "14.06.1990",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "надомест на штета",
+        "општина",
+        "градежна инспекција",
+        "бесправни објекти"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-1258/1993",
+      "authority_id": "REV-1258/1993",
+      "case_number_key": "REV-1258/1993",
+      "decision_date": "03.02.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "надомест на штета",
+        "водовод",
+        "сообраќајна незгода",
+        "вина"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-25/1990",
+      "authority_id": "REV-25/1990",
+      "case_number_key": "REV-25/1990",
+      "decision_date": "18.01.1990",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "надомест на штета",
+        "урбанистички план",
+        "општина",
+        "функционална вредност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-71/1994",
+      "authority_id": "REV-71/1994",
+      "case_number_key": "REV-71/1994",
+      "decision_date": "19.05.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "шумско право",
+        "надомест на штета",
+        "сопствена шума",
+        "бесправна сеча"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-153/1995",
+      "authority_id": "REV-153/1995",
+      "case_number_key": "REV-153/1995",
+      "decision_date": "23.01.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "заштита на природа",
+        "национален парк",
+        "надомест на штета",
+        "активна легитимација"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-1334/1994",
+      "authority_id": "REV-1334/1994",
+      "case_number_key": "REV-1334/1994",
+      "decision_date": "11.07.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "надомест на штета",
+        "моторно возило",
+        "пазарна вредност",
+        "амортизација"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-11/1993",
+      "authority_id": "REV-11/1993",
+      "case_number_key": "REV-11/1993",
+      "decision_date": "11.05.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "игри на среќа",
+        "лото",
+        "изгубена добивка",
+        "одговорност за работник",
+        "општи услови"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-698/1993",
+      "authority_id": "REV-698/1993",
+      "case_number_key": "REV-698/1993",
+      "decision_date": "02.11.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "надомест на штета",
+        "воен рок",
+        "ЈНА",
+        "пасивна легитимација",
+        "државна сукцесија"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-418/1990",
+      "authority_id": "REV-418/1990",
+      "case_number_key": "REV-418/1990",
+      "decision_date": "07.06.1990",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "надомест на штета",
+        "опасен предмет",
+        "објективна одговорност",
+        "производ"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-286/1991",
+      "authority_id": "REV-286/1991",
+      "case_number_key": "REV-286/1991",
+      "decision_date": "09.04.1991",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "надомест на штета",
+        "рибарство",
+        "ловостој",
+        "ценовник"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B6-REV-1175/1993",
+      "authority_id": "REV-1175/1993",
+      "case_number_key": "REV-1175/1993",
+      "decision_date": "01.02.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "надомест на штета",
+        "животно",
+        "сопственик",
+        "придонес на оштетен"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    }
+  ]
+}
