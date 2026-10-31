@@ -46,3 +46,20 @@ test('release metadata and source registry preserve Human Gate boundaries',()=>{
   assert.equal(source?.url,'https://www.asstip.mk/');
   assert.equal(source?.original_decision_binding_required_before_gpt_case_law_context,true);
 });
+
+
+test('Stip composite v3 extension remains gated and preserves source anomalies',()=>{
+  const ext=JSON.parse(fs.readFileSync('data/case-law/as-stip-bulletins-extension-2026-10-31-b4-b9-b10-b11/manifest.json','utf8'));
+  const v3=JSON.parse(fs.readFileSync('data/case-law/as-stip-bulletins-v3/manifest.json','utf8'));
+  const registry=JSON.parse(fs.readFileSync('data/case-law-source-registry-2026.json','utf8'));
+  const source=registry.sources.find(x=>x.id==='mk-appellate-stip-bulletins');
+  assert.equal(ext.new_domestic_appellate_record_count,191);
+  assert.equal(ext.new_echr_secondary_reference_count,6);
+  assert.equal(ext.source_stats.find(x=>x.source_id==='AS-ST-B10').internal_label_conflict,true);
+  assert.equal(v3.domestic_publication_record_count,579);
+  assert.equal(v3.production_eligible,false);
+  assert.equal(v3.human_gate_required,true);
+  assert.equal(source?.composite_corpus_id,'as-stip-bulletins-v3');
+  assert.deepEqual(source?.covered_bulletins,['1-2','3','4','5','6','7','8','9','10','11']);
+  assert.equal(source?.current_law_verification_required,true);
+});
