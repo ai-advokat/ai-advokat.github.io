@@ -250,16 +250,14 @@ test("professional legal-opinion fact review uses lightweight paid runtime setti
   assert.match(orchestratorSource,/professionalFactReview[\s\S]{0,240}\? 60000/);
 });
 
-test("paid Macedonian repair is bounded, language-only, and still fail-closed",()=>{
+test("paid Macedonian QA is deterministic, zero-extra-call, and blocks only substantive jurisdiction leakage",()=>{
   const indexSource=fs.readFileSync("src/index.js","utf8");
-  const orchestratorSource=fs.readFileSync("src/agent-orchestrator.js","utf8");
-  assert.match(indexSource,/\["REPAIR","BLOCK"\]\.includes/);
-  assert.match(indexSource,/!governedLanguageReasons\.includes\("foreign_jurisdiction_substitution"\)/);
-  assert.match(indexSource,/runOpenAIMacedonianRepair/);
+  assert.match(indexSource,/const governedLanguageRepairEligible=false/);
+  assert.doesNotMatch(indexSource,/runOpenAIMacedonianRepair\(env/);
   assert.match(indexSource,/if\(!governedFinalRelease\.ok\)/);
-  assert.match(orchestratorSource,/reasoning:\{effort:"low"\}/);
-  assert.match(orchestratorSource,/OPENAI_LANGUAGE_REPAIR_TIMEOUT_MS/);
-  assert.match(indexSource,/openai_language_repair_still_noncompliant/);
+  assert.match(indexSource,/foreign_jurisdiction_substitution_blocked/);
+  assert.match(indexSource,/governedFinalRelease\.deliveryState/);
+  assert.match(indexSource,/zero_extra_language_repair_calls/);
 });
 
 
