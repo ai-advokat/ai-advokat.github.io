@@ -233,7 +233,8 @@ function ensureMessageActions(article){
     evidence.onclick=()=>openEvidence('sources');
     actions.append(repeat,evidence);
   }
-  article.append(actions);
+  const sourceBlock=article.querySelector('.sources,.vnext-source-tray');
+  if(sourceBlock) article.insertBefore(actions,sourceBlock); else article.append(actions);
 }
 
 function renderThreadList(){
