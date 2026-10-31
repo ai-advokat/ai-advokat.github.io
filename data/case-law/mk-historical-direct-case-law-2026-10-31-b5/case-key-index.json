@@ -1,0 +1,294 @@
+{
+  "schema": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_KEY_INDEX_V2",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b5",
+  "records": [
+    {
+      "record_id": "B5-REV-954/1994",
+      "authority_id": "REV-954/1994",
+      "case_number_key": "REV-954/1994",
+      "decision_date": "10.11.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "водно право",
+        "хидромелиорација",
+        "наводнување",
+        "надоместок"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-REV-299/1995",
+      "authority_id": "REV-299/1995",
+      "case_number_key": "REV-299/1995",
+      "decision_date": "21.02.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "трговско право",
+        "акции",
+        "ништовност",
+        "основ на обврзување"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-REV-761/1993",
+      "authority_id": "REV-761/1993",
+      "case_number_key": "REV-761/1993",
+      "decision_date": "02.11.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "облигационо право",
+        "подарок",
+        "недвижност",
+        "форма на договор"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-GZZ-66/1990",
+      "authority_id": "GZZ-66/1990",
+      "case_number_key": "GZZ-66/1990",
+      "decision_date": "18.09.1990",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "договор за доживотна издршка",
+        "ништовност",
+        "конкуренција на договори"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-REV-219/1990",
+      "authority_id": "REV-219/1990",
+      "case_number_key": "REV-219/1990",
+      "decision_date": "17.04.1990",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "договор за доживотна издршка",
+        "ништовност",
+        "морал",
+        "смрт"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-REV-968/1994",
+      "authority_id": "REV-968/1994",
+      "case_number_key": "REV-968/1994",
+      "decision_date": "18.04.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "работни односи",
+        "штета",
+        "правен интерес",
+        "утврдителна тужба"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-REV-76/1995",
+      "authority_id": "REV-76/1995",
+      "case_number_key": "REV-76/1995",
+      "decision_date": "19.12.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "работни односи",
+        "дисциплинска постапка",
+        "надомест на штета",
+        "придонес на оштетен"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-REV-843/1992",
+      "authority_id": "REV-843/1992",
+      "case_number_key": "REV-843/1992",
+      "decision_date": "18.03.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "работни односи",
+        "неостварена заработувачка",
+        "дисциплинска мерка",
+        "надомест на штета"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-REV-700/1994",
+      "authority_id": "REV-700/1994",
+      "case_number_key": "REV-700/1994",
+      "decision_date": "13.09.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "работни односи",
+        "пензиско осигурување",
+        "здравствено осигурување",
+        "придонеси"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-GZZ-27/1995",
+      "authority_id": "GZZ-27/1995",
+      "case_number_key": "GZZ-27/1995",
+      "decision_date": "26.09.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "камата",
+        "тужбено барање",
+        "определеност на барање",
+        "штета"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-REV-1164/1994",
+      "authority_id": "REV-1164/1994",
+      "case_number_key": "REV-1164/1994",
+      "decision_date": "28.04.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "наследно право",
+        "оставинска постапка",
+        "ревизија",
+        "издвојување од оставина"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-REV-1605/1994",
+      "authority_id": "REV-1605/1994",
+      "case_number_key": "REV-1605/1994",
+      "decision_date": "21.11.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "наследно право",
+        "исправка на решение",
+        "ревизија",
+        "вонпроцесна постапка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-REV-1253/1995",
+      "authority_id": "REV-1253/1995",
+      "case_number_key": "REV-1253/1995",
+      "decision_date": "05.11.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "наследно право",
+        "повторување на постапка",
+        "ревизија",
+        "вонпроцесна постапка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-GZZ-113/1994",
+      "authority_id": "GZZ-113/1994",
+      "case_number_key": "GZZ-113/1994",
+      "decision_date": "06.04.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "извршување",
+        "трошоци на постапка",
+        "затезна камата",
+        "извршна исправа"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-GZZ-19/1995",
+      "authority_id": "GZZ-19/1995",
+      "case_number_key": "GZZ-19/1995",
+      "decision_date": "25.05.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "извршување",
+        "камата",
+        "пресметка",
+        "приговор"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-GENERAL-SESSION-1996-06-17",
+      "authority_id": "GENERAL-SESSION-1996-06-17",
+      "case_number_key": null,
+      "decision_date": "17.06.1996",
+      "court": "Врховен суд на Република Македонија — Општа седница",
+      "authority_kind": "principled_stance",
+      "topics_mk": [
+        "работни односи",
+        "надомест на штета",
+        "неостварена заработувачка",
+        "трошоци за живот",
+        "затезна камата"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-CIVIL-DIVISION-LEGAL-OPINION-1996-02-26",
+      "authority_id": "CIVIL-DIVISION-LEGAL-OPINION-1996-02-26",
+      "case_number_key": null,
+      "decision_date": "26.02.1996",
+      "court": "Врховен суд на Република Македонија — Граѓанско одделение",
+      "authority_kind": "department_legal_opinion",
+      "topics_mk": [
+        "затезна камата",
+        "конформна метода",
+        "анатоцизам",
+        "член 279 ЗОО"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B5-GENERAL-SESSION-1994-03-18",
+      "authority_id": "GENERAL-SESSION-1994-03-18",
+      "case_number_key": null,
+      "decision_date": "18.03.1994",
+      "court": "Врховен суд на Република Македонија — Општа седница",
+      "authority_kind": "principled_stance",
+      "topics_mk": [
+        "наследно право",
+        "правосилност",
+        "оставина",
+        "издвојување од оставина"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    }
+  ]
+}
