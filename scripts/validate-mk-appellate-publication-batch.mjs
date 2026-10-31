@@ -71,9 +71,7 @@ add(aliasKeys.size===449,`index:alias_unique:${aliasKeys.size}`);
 add(qc.production_eligible===false,"qc:production");
 add(qc.human_gate_required===true,"qc:human_gate");
 if(errors.length){
-  console.error("MK_APPELLATE_PUBLICATION_BATCH_VALIDATION_FAILED
-"+errors.join("
-"));
+  console.error("MK_APPELLATE_PUBLICATION_BATCH_VALIDATION_FAILED\\n"+errors.join("\\n"));
   process.exit(1);
 }
 console.log(JSON.stringify({ok:true,corpusId:manifest.corpus_id,newCanonicalSources:manifest.new_canonical_source_count,internalDuplicates:manifest.internal_duplicate_copy_count,crossBatchDuplicates:manifest.cross_batch_duplicate_copy_count,globalCaseCandidates:globalCases.size,retrievalAliasKeys:aliasKeys.size,authorityPageMarkers:manifest.authority_page_marker_count,productionEligible:false,humanGateRequired:true},null,2));
