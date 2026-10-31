@@ -188,3 +188,20 @@ test("CLSRC13 B3 governed reference lanes preserve authority boundaries",()=>{
   assert.equal(rs.jurisdiction,"RS");
   assert.ok(rs.forbidden_authority_use.includes("not_north_macedonian_authority"));
 });
+
+
+test("CLSRC14 historical direct B4 preserves publication and authority boundaries",()=>{
+  const byId=new Map(registry.sources.map(x=>[x.id,x]));
+  const cid="mk-historical-direct-case-law-2026-10-31-b4";
+  const archive=byId.get("mk-supreme-court-publication-archive");
+  assert.ok(archive.additional_corpus_ids.includes(cid));
+  const coll=byId.get("mk-supreme-collection-v-1990-1996");
+  assert.equal(coll.authority_class,"historical_supreme_court_publication_collection");
+  assert.equal(coll.original_decision_binding_required_before_gpt_case_law_context,true);
+  assert.equal(coll.historical_current_law_gate,true);
+  assert.match(coll.authority_note,/does not prove remote\/original-decision binding/i);
+  const commercial=byId.get("mk-historical-commercial-court-extracts");
+  assert.equal(commercial.authority_class,"historical_commercial_court_case_law_extract");
+  assert.equal(commercial.current_law_verification_required,true);
+  assert.equal(commercial.original_decision_binding_required_before_gpt_case_law_context,true);
+});
