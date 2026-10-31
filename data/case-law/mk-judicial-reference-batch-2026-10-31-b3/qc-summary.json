@@ -1,0 +1,16 @@
+{
+  "input_file_count": 20,
+  "new_canonical_source_count": 10,
+  "duplicate_or_alias_file_count": 10,
+  "internal_binary_exact_duplicate_count": 1,
+  "cross_batch_or_derived_alias_count": 9,
+  "direct_supreme_authority_record_count": 3,
+  "case_number_discovery_candidate_count": 1828,
+  "production_eligible": false,
+  "human_gate_required": true,
+  "fatal_defects": 0,
+  "notes": [
+    "No production activation performed.",
+    "All new sources preserve authority class and routing boundaries."
+  ]
+}
