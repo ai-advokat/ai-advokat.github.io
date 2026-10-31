@@ -918,6 +918,231 @@
     });
   }
 
+
+  // AIAdvokat4 · LexNova UX professional workbench.
+  // Frontend orchestration only: existing governed backend, privacy gate and CasePilot boundaries remain authoritative.
+  const AIADV4_WORKBENCH=Object.freeze({
+    label:"AIAdvokat4",
+    ux:"LexNova UX",
+    analyzerVersion:"1.0.1",
+    consolidatorVersion:"10.4",
+    predictorMode:"governed_scenario_risk_casepilot",
+    backend:"AI Advokat governed backend"
+  });
+  window.AIAdvokat4Workbench=AIADV4_WORKBENCH;
+
+  const workbenchPanel=document.getElementById("aiWorkbenchPanel");
+  let lastAnalyzerResult=null;
+
+  function latestAssistantMessage(){
+    const chat=current();
+    return [...(chat?.messages||[])].reverse().find(m=>m?.role==="assistant" && String(m.text||"").trim())||null;
+  }
+
+  function flattenWorkbenchSources(message){
+    if(!message) return [];
+    const specs=[
+      ["Правен извор","legalSources"],
+      ["Судска практика","caseLawSources"],
+      ["Водич","guideSources"],
+      ["Авторски труд","publicationSources"],
+      ["Web извор","sources"]
+    ];
+    const seen=new Set();
+    const out=[];
+    for(const [kind,key] of specs){
+      for(const row of Array.isArray(message[key])?message[key]:[]){
+        const title=String(row?.title||row?.label||row?.name||kind).trim().slice(0,160);
+        const url=safeHttpUrl(row?.url||row?.sourceUrl||row?.source_url||"");
+        const sig=(url||title).toLowerCase();
+        if(!sig||seen.has(sig)) continue;
+        seen.add(sig);
+        out.push({kind,title,url});
+      }
+    }
+    return out.slice(0,30);
+  }
+
+  function showWorkbenchPanel(){
+    if(!workbenchPanel) return;
+    workbenchPanel.hidden=false;
+    workbenchPanel.scrollIntoView({behavior:"smooth",block:"nearest"});
+  }
+
+  function renderWorkbenchSources(){
+    if(!workbenchPanel) return;
+    const m=latestAssistantMessage();
+    workbenchPanel.replaceChildren();
+    const h=document.createElement("h4");h.textContent="Sources · проверлив контекст";workbenchPanel.append(h);
+    if(m?.sourceLabel){
+      const p=document.createElement("p");p.textContent=String(m.sourceLabel);workbenchPanel.append(p);
+    }
+    const rows=flattenWorkbenchSources(m);
+    if(!rows.length){
+      const p=document.createElement("p");
+      p.textContent="Во последниот AI одговор нема прикажани извори. Поставете прашање со source-backed режим или користете Библиотека / Веб.";
+      workbenchPanel.append(p);
+    }else{
+      const ul=document.createElement("ul");
+      rows.forEach((row,index)=>{
+        const li=document.createElement("li");
+        const prefix=document.createElement("strong");prefix.textContent=row.kind+" "+(index+1)+": ";li.append(prefix);
+        if(row.url){
+          const a=document.createElement("a");a.href=row.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=row.title;li.append(a);
+        }else li.append(document.createTextNode(row.title));
+        ul.append(li);
+      });
+      workbenchPanel.append(ul);
+    }
+    showWorkbenchPanel();
+  }
+
+  function renderWorkbenchHumanGate(){
+    if(!workbenchPanel) return;
+    const m=latestAssistantMessage();
+    const g=m?.governance||null;
+    workbenchPanel.replaceChildren();
+    const h=document.createElement("h4");h.textContent="Human Gate · governed legal review";workbenchPanel.append(h);
+    const gate=document.createElement("p");gate.className="ai-prof-gate";
+    gate.textContent="HUMAN GATE REQUIRED — правен заклучок, поднесување, потпис или друга последична професионална употреба бара човечка проверка.";
+    workbenchPanel.append(gate);
+    const statuses=[];
+    if(g?.legalStatus) statuses.push("Legal status: "+g.legalStatus);
+    if(g?.executionAuthorization) statuses.push("Execution: "+g.executionAuthorization);
+    if(g?.humanReviewRequired===true) statuses.push("Human review: required");
+    if(Array.isArray(g?.requiredGateTypes)&&g.requiredGateTypes.length) statuses.push("Gates: "+g.requiredGateTypes.join(", "));
+    if(g?.specialistExecution?.executed===true){
+      const agents=Array.isArray(g.specialistExecution.agents)?g.specialistExecution.agents:[];
+      statuses.push("Bounded specialists: "+(agents.length?agents.join(", "):"executed"));
+    }
+    if(!statuses.length) statuses.push("Последниот одговор нема дополнителен governance payload; основниот Human Gate останува задолжителен.");
+    statuses.forEach(text=>{
+      const span=document.createElement("span");span.className="ai-prof-status";span.textContent=text;workbenchPanel.append(span);
+    });
+    const p=document.createElement("p");
+    p.textContent="За доверлив клиентски предмет користете CasePilot / Secure Case Workspace; јавниот chat не е case vault.";
+    workbenchPanel.append(p);
+    showWorkbenchPanel();
+  }
+
+  function governedPredictorPrompt(){
+    return "PREDICTOR MODE — GOVERNED SCENARIO / RISK ENGINE + CASEPILOT INTELLIGENCE. "+
+      "Анализирај го прашањето преку најмалку три сценарија: поволно, мешано и неповолно. "+
+      "Не давај процент на успех, не гарантирај исход и не претставувај претпоставка како факт. "+
+      "За секое сценарио оддели: (1) одлучувачки факти, (2) доказна поддршка, (3) применлива правна основа и source status, "+
+      "(4) спротивни аргументи/authority, (5) процесни и доказни ризици, (6) празнини во доказите, "+
+      "(7) што би го сменило сценариото. Ако станува збор за доверлив конкретен предмет, запреј го јавниот пат и насочи во Secure Case Workspace / CasePilot. "+
+      "Заврши со HUMAN GATE REQUIRED.\n\nПрашање/предмет: ";
+  }
+
+  function predictorFromAnalyzerResult(result){
+    const r=result?.reviewRow||{};
+    const parts=[
+      "PREDICTOR MODE — GOVERNED SCENARIO / RISK ENGINE + CASEPILOT INTELLIGENCE.",
+      "Користи го следниот deterministic Legal Analyzer v"+String(result?.version||AIADV4_WORKBENCH.analyzerVersion)+" snapshot само како извлечен работен контекст, не како конечен правен заклучок:",
+      "Тип: "+String(r.documentType||"unknown"),
+      "Орган: "+(Array.isArray(r.authority)&&r.authority.length?r.authority.join("; "):"не е извлечен"),
+      "Број: "+String(r.referenceNumber||"не е извлечен"),
+      "Закони: "+(Array.isArray(r.laws)&&r.laws.length?r.laws.join("; "):"не се извлечени"),
+      "Членови: "+(Array.isArray(r.articles)&&r.articles.length?r.articles.join("; "):"не се извлечени"),
+      "Рокови: "+(Array.isArray(r.deadlines)&&r.deadlines.length?r.deadlines.join("; "):"не се извлечени"),
+      "Source verification: "+String(r.sourceVerification||"not_verified"),
+      "",
+      "Изгради поволно, мешано и неповолно сценарио. Без проценти и без гаранција. Провери примарни извори и заврши со HUMAN GATE REQUIRED."
+    ];
+    return parts.join("\n").slice(0,3900);
+  }
+
+  function ensureAnalyzerDialog(){
+    let d=document.getElementById("aiProfAnalyzerDialog");
+    if(d) return d;
+    d=document.createElement("dialog");
+    d.id="aiProfAnalyzerDialog";
+    d.className="ai-prof-analyzer-dialog";
+    d.innerHTML=
+      '<div class="ai-prof-analyzer-head"><div><strong>Legal Analyzer v1.0.1</strong><small>deterministic · local browser analysis · Human Gate</small></div><button type="button" data-analyzer-close aria-label="Затвори">×</button></div>'+
+      '<div class="ai-prof-analyzer-body">'+
+      '<p>Текстот се анализира локално во browser преку постојниот <code>src/legal-analyzer.js</code>. Официјални идентификатори не се измислуваат.</p>'+
+      '<textarea id="aiProfAnalyzerText" maxlength="250000" placeholder="Залепете правен текст..."></textarea>'+
+      '<div class="ai-prof-analyzer-controls"><button class="primary" type="button" data-analyzer-run>Анализирај</button><button class="secondary" type="button" data-analyzer-predictor disabled>Продолжи → Предиктор</button></div>'+
+      '<div class="ai-prof-analyzer-result" id="aiProfAnalyzerResult">Нема анализа.</div>'+
+      '</div>';
+    document.body.append(d);
+    d.querySelector("[data-analyzer-close]")?.addEventListener("click",()=>d.close());
+    d.addEventListener("click",event=>{if(event.target===d)d.close();});
+    d.querySelector("[data-analyzer-run]")?.addEventListener("click",async()=>{
+      const text=String(d.querySelector("#aiProfAnalyzerText")?.value||"").trim();
+      const host=d.querySelector("#aiProfAnalyzerResult");
+      const next=d.querySelector("[data-analyzer-predictor]");
+      if(!text){host.textContent="Внесете правен текст.";next.disabled=true;return;}
+      host.textContent="Анализирам локално…";
+      next.disabled=true;
+      try{
+        const mod=await import("/src/legal-analyzer.js");
+        const result=mod.analyzeLegalDocument({filename:"AIAdvokat4-chat-input.txt",text,sourceVerification:"not_verified"});
+        if(String(result.version)!==String(mod.LEGAL_ANALYZER_VERSION)) throw new Error("legal_analyzer_version_mismatch");
+        lastAnalyzerResult=result;
+        const r=result.reviewRow||{};
+        const summary={
+          version:result.version,
+          documentType:r.documentType,
+          authority:r.authority,
+          referenceNumber:r.referenceNumber,
+          laws:r.laws,
+          articles:r.articles,
+          deadlines:r.deadlines,
+          completeness:r.completeness,
+          provenance:result.provenance,
+          humanGate:result.humanGate
+        };
+        const pre=document.createElement("pre");pre.textContent=JSON.stringify(summary,null,2);
+        host.replaceChildren(pre);
+        next.disabled=false;
+      }catch(error){
+        lastAnalyzerResult=null;
+        host.textContent="Analyzer error: "+String(error?.message||error);
+      }
+    });
+    d.querySelector("[data-analyzer-predictor]")?.addEventListener("click",()=>{
+      if(!lastAnalyzerResult) return;
+      input.value=predictorFromAnalyzerResult(lastAnalyzerResult);
+      autoSize();
+      d.close();
+      document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});
+      setTimeout(()=>input.focus(),250);
+    });
+    return d;
+  }
+
+  function runAIAdvokat4Action(action){
+    if(action==="consolidator"){window.open("/consolidator/","_blank","noopener");return;}
+    if(action==="analyzer"){
+      const d=ensureAnalyzerDialog();
+      const area=d.querySelector("#aiProfAnalyzerText");
+      if(area && !area.value.trim() && input.value.trim()) area.value=input.value.trim();
+      d.showModal();
+      return;
+    }
+    if(action==="predictor"){
+      input.value=governedPredictorPrompt();
+      autoSize();
+      document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});
+      setTimeout(()=>input.focus(),250);
+      return;
+    }
+    if(action==="casepilot"){window.open("/casepilot-workspace.html","_blank","noopener");return;}
+    if(action==="sources"){renderWorkbenchSources();return;}
+    if(action==="human-gate"){renderWorkbenchHumanGate();return;}
+  }
+
+  document.querySelectorAll("[data-ai-workbench]").forEach(button=>{
+    button.addEventListener("click",event=>{
+      event.preventDefault();
+      runAIAdvokat4Action(String(button.dataset.aiWorkbench||""));
+      if(toolsMenu) toolsMenu.open=false;
+    });
+  });
+
   fetch(CHAT_API_BASE+"/api/orchestrator",{headers:{"accept":"application/json"}})
     .then(async r=>{
       if(!r.ok) throw new Error("runtime_"+r.status);
