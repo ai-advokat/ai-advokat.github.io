@@ -843,3 +843,18 @@ test("session history envelope explicitly forbids invented prior context",()=>{
   assert.match(agentSource,/COREFERENCE RULE: use this history to resolve/);
   assert.match(agentSource,/Never invent missing prior context/);
 });
+
+
+test("case prediction and whole-case follow-ups stay in governed legal strategy mode",()=>{
+  for(const q of [
+    "Направи ми предикција за овој предмет.",
+    "Направи ми анализа за целиот предмет."
+  ]){
+    const plan=buildAgentPlan(q);
+    assert.notEqual(plan.mode,ORCHESTRATOR_MODES.GENERAL,q);
+    assert.ok(plan.agents.includes(AGENT_ROLES.mk.id),q);
+    assert.equal(plan.legalIntelligenceEngine.mission_profile.id,"L2_STRATEGY_PROCEDURE",q);
+    assert.equal(plan.legalIntelligenceEngine.knowledge.current_law_verification_required,true,q);
+    assert.equal(plan.legalIntelligenceEngine.authority_and_human_gate.human_review_required,true,q);
+  }
+});
