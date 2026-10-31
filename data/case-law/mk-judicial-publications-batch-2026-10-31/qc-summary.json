@@ -1,0 +1,14 @@
+{
+  "input_pdf_count": 20,
+  "canonical_source_count": 17,
+  "duplicate_copy_count": 3,
+  "text_quality_counts": {
+    "machine_readable": 13,
+    "ocr_required": 4
+  },
+  "citation_candidate_count": 2209,
+  "interpretive_authority_candidate_count": 561,
+  "ocr_queue_count": 4,
+  "production_eligible": false,
+  "human_gate_required": true
+}
