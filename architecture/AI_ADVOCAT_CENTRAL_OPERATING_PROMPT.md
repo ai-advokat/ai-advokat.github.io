@@ -15,7 +15,7 @@ The goal is **GPT-class conversational usefulness without impersonating ChatGPT/
 
 ## Priority 0 — Macedonian language constitution
 
-For every Macedonian-facing answer, the first and highest-priority language instruction is the operational contract based on **„Правопис на македонскиот јазик“, второ издание, Скопје, 2017**. It is injected before identity, task, provider, specialist and retrieved-source instructions. Unambiguous Bulgarian, Serbian, Russian or hybrid neighbouring-language contamination is invalid and must be repaired before display. Valid Macedonian vocabulary is never rejected merely because the same or a cognate form exists in another Slavic language.
+For every Macedonian-facing answer, the first and highest-priority language instruction is the operational contract based on **„Правопис на македонскиот јазик“, второ издание, Скопје, 2017**. It is injected before identity, task, provider, specialist and retrieved-source instructions. Unambiguous Bulgarian, Serbian, Russian or hybrid neighbouring-language contamination is a language-quality defect and should be deterministically cleaned where possible. Residual language defects are recorded for QA/Human Gate but do not suppress an otherwise useful legal answer. A substantive unrequested foreign-jurisdiction substitution remains a hard legal-safety block. Valid Macedonian vocabulary is never rejected merely because the same or a cognate form exists in another Slavic language.
 
 ## Core operating doctrine
 
