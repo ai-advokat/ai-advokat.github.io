@@ -305,7 +305,7 @@ function renderEvidence(){
     if(!t.latestSources.length){ body.append(emptyCard('Нема прикажани извори','Кога backend ќе врати правни извори, тие ќе се појават тука. Ова не значи дека нема правна рамка — само дека за овој thread нема зачуван source payload.')); return; }
     t.latestSources.forEach((row,i)=>{
       const card=mk('section',{class:'vnext-evidence-card'}); card.append(mk('span',{class:'vnext-evidence-num',text:String(i+1).padStart(2,'0')}),mk('strong',{text:row.label}));
-      const u=safeUrl(row.url); if(u){const a=mk('button',{type:'button',class:'vnext-open-source',text:'Отвори извор →'}); a.onclick=()=>openArtifact(row); card.append(a);} else card.append(mk('small',{text:'Изворот е наведен без јавен URL.'})); body.append(card);
+      const u=safeUrl(row.url); if(u){const a=mk('button',{type:'button',class:'vnext-open-source',text:'↗ Отвори извор'}); a.onclick=()=>openArtifact(row); card.append(a);} else card.append(mk('small',{text:'Изворот е наведен без јавен URL.'})); body.append(card);
     }); return;
   }
   if(workspace.panelTab==='context'){
@@ -315,9 +315,9 @@ function renderEvidence(){
   if(workspace.panelTab==='human'){
     const card=mk('section',{class:'vnext-human-card'}); card.innerHTML='<span class="vnext-status-pill">HUMAN GATE</span><h3>Потребна е професионална проверка</h3><p>AI одговорите и извозите се работен материјал. Нема автоматско потпишување, поднесување, испраќање или правно овластување.</p>';
     const actions=mk('div',{class:'vnext-panel-actions'});
-    const cp=mk('button',{type:'button',text:'Отвори CasePilot'}); cp.onclick=()=>window.open('/casepilot-workspace.html','_blank','noopener');
-    const docx=mk('button',{type:'button',text:'Извези DOCX'}); docx.onclick=()=>exportActive('docx');
-    const pdf=mk('button',{type:'button',text:'Извези PDF'}); pdf.onclick=()=>exportActive('pdf'); actions.append(cp,docx,pdf); card.append(actions); body.append(card); return;
+    const cp=mk('button',{type:'button',text:'▣ Отвори CasePilot'}); cp.onclick=()=>window.open('/casepilot-workspace.html','_blank','noopener');
+    const docx=mk('button',{type:'button',text:'⇩ Извези DOCX'}); docx.onclick=()=>exportActive('docx');
+    const pdf=mk('button',{type:'button',text:'⇩ Извези PDF'}); pdf.onclick=()=>exportActive('pdf'); actions.append(cp,docx,pdf); card.append(actions); body.append(card); return;
   }
   if(workspace.lastArtifact){ renderArtifact(workspace.lastArtifact); }
   else body.append(emptyCard('Нема отворен артефакт','Кликнете правен извор, citation chip или интерна правна референца.'));
@@ -330,7 +330,7 @@ function renderArtifact(row){
   if(!u){card.append(mk('p',{text:'Нема јавен URL за директен преглед.'}));body.append(card);return;}
   if(u.origin===location.origin){ const frame=mk('iframe',{class:'vnext-artifact-frame',src:u.href,title:row.label||'Правен извор'}); card.append(frame); }
   else { card.append(mk('p',{text:'Надворешните извори се отвораат во посебен таб за да се почитуваат нивните безбедносни политики.'})); }
-  const a=mk('a',{href:u.href,target:'_blank',rel:'noopener noreferrer',class:'vnext-artifact-open',text:'Отвори оригинал ↗'}); card.append(a); body.append(card);
+  const a=mk('a',{href:u.href,target:'_blank',rel:'noopener noreferrer',class:'vnext-artifact-open',text:'↗ Отвори оригинал'}); card.append(a); body.append(card);
 }
 
 function openEvidence(tab){ if(tab) workspace.panelTab=tab; workspace.panelOpen=true; document.documentElement.classList.add('vnext-evidence-open'); renderEvidence(); }
@@ -342,7 +342,7 @@ function openGlobalSearch(){ const d=$('vnextSearchDialog'); d.showModal(); $('v
 function renderGlobalSearch(){
   const host=$('vnextSearchResults'); if(!host) return; const q=String($('vnextGlobalSearch')?.value||'').trim().toLowerCase(); host.replaceChildren();
   const tools=[
-    ['Анализатор','analyzer'],['Консолидатор','consolidator'],['Предиктор','predictor'],['Правни извори','sources'],['Судска практика','cases'],['CasePilot','casepilot'],['Документи','documents'],['Workflows','workflows'],['Human Gate','review'],['Library','library']
+    ['⌁ Анализатор','analyzer'],['≋ Консолидатор','consolidator'],['◎ Предиктор','predictor'],['▤ Правни извори','sources'],['⚖ Судска практика','cases'],['▣ CasePilot','casepilot'],['▧ Документи','documents'],['◇ Workflows','workflows'],['✓ Human Gate','review'],['◫ Library','library']
   ];
   const matches=workspace.threads.filter(t=>!q||t.title.toLowerCase().includes(q)||t.history.some(m=>String(m.text||'').toLowerCase().includes(q))).slice(0,8);
   if(matches.length){host.append(mk('small',{class:'vnext-search-group',text:'Разговори'}));matches.forEach(t=>{const b=mk('button',{type:'button',text:t.title});b.onclick=()=>{$('vnextSearchDialog').close();switchThread(t.id)};host.append(b);});}
