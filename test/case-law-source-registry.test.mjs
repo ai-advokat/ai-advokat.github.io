@@ -156,3 +156,35 @@ test("CLSRC12 appellate bulletin and joint-meeting lanes remain provenance-gated
   assert.equal(joint.current_law_verification_required,true);
   assert.match(joint.authority_note,/not ordinary judgments/i);
 });
+
+
+test("CLSRC13 B3 governed reference lanes preserve authority boundaries",()=>{
+  const byId=new Map(registry.sources.map(x=>[x.id,x]));
+  const cid="mk-judicial-reference-batch-2026-10-31-b3";
+  const constitutional=byId.get("mk-constitutional-court");
+  assert.ok(constitutional.additional_corpus_ids.includes(cid));
+  assert.equal(constitutional.original_decision_binding_required_before_gpt_case_law_context,true);
+  assert.equal(constitutional.historical_current_law_gate,true);
+
+  const skopje=byId.get("mk-appellate-skopje-bulletins");
+  assert.ok(skopje.additional_corpus_ids.includes(cid));
+  assert.ok(skopje.covered_bulletins.includes("12"));
+  assert.equal(skopje.current_law_verification_required,true);
+
+  const notary=byId.get("mk-notary-chamber-publications");
+  assert.equal(notary.authority_class,"professional_institutional_notarial_reference");
+  assert.equal(notary.current_law_verification_required,true);
+  assert.match(notary.authority_note,/not court precedent/i);
+
+  const register=byId.get("mk-civil-commercial-case-register-2018-2019");
+  assert.equal(register.ingest,"case_number_and_topic_discovery_only");
+  assert.ok(register.forbidden_authority_use.includes("not_a_holding_source"));
+
+  const mixed=byId.get("mk-simulated-contracts-secondary-compilation");
+  assert.match(mixed.authority_class,/secondary_mixed_jurisdiction/);
+  assert.equal(mixed.official_binding_required_before_gpt_case_law_context,true);
+
+  const rs=byId.get("rs-inheritance-secondary-extract");
+  assert.equal(rs.jurisdiction,"RS");
+  assert.ok(rs.forbidden_authority_use.includes("not_north_macedonian_authority"));
+});
