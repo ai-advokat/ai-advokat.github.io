@@ -155,12 +155,13 @@ function buildWorkflowDialog(){
     <button data-prompt="Изгради хронологија на предметот од дадените факти. Оддели потврдени факти, спорни факти, докази, правни прашања и следни чекори."><strong>Case Chronology</strong><span>Факти · докази · спорни точки · задачи</span></button>
     <button data-prompt="Направи source verification audit на претходниот одговор. За секое материјално правно тврдење наведи дали има примарен извор, важечка верзија и што останува непотврдено."><strong>Source Check</strong><span>Authority · version · provenance</span></button>
     <button data-prompt="Спореди ги двете верзии на документот. Издвои суштински промени, правен ефект, ризици и прашања за Human Gate. Не измислувај разлики што не се во документите."><strong>Redline / Compare</strong><span>Промени · ефект · ризик · review</span></button>
-    <button data-prompt="CONSOLIDATOR MODE. Консолидирај ги доставените правни текстови, измени и извори во проверлива верзиска мапа. Оддели: основен текст, секоја измена, effective date, application date, преодни одредби, уставносудски ефекти и финална работна редакција. Класифицирај ја како official consolidated, editorial consolidated или working consolidation. Никогаш не прогласувај current law без governed official-source verification и Human Gate."><strong>Консолидатор</strong><span>Верзии · amendment chain · provenance · Human Gate</span></button>
+    <button data-vnext-tool="consolidator"><strong>Консолидатор</strong><span>v10.4 · official consolidated / editorial consolidated / working consolidation · provenance · Human Gate</span></button>
     <button data-prompt="PREDICTOR MODE — GOVERNED SCENARIO ANALYSIS. Не давај процент на успех и не гарантирај исход. Изгради најмалку три сценарија: поволно, мешано и неповолно. За секое наведи: одлучувачки факти, докази, применлива правна основа и source status, спротивни аргументи/authority, процесни ризици, што недостига и кои факти би го смениле сценариото. Ако задачата содржи доверлив предмет или клиентски податоци, насочи ја анализата во Secure Case Workspace / CasePilot. Заврши со HUMAN GATE REQUIRED."><strong>Предиктор</strong><span>Сценарија · фактори · ризици · без лажни проценти</span></button>
   </div><p class="vnext-dialog-note">Овие Workflows не се автономно поднесување или потпишување. Тие подготвуваат работна задача за постојниот AI Advokat backend.</p>`;
   document.body.append(d);
   qs('[data-close]',d).onclick=()=>d.close();
   qsa('[data-prompt]',d).forEach(b=>b.onclick=()=>{ $('question').value=b.dataset.prompt; $('question').dispatchEvent(new Event('input')); d.close(); $('question').focus(); });
+  qsa('[data-vnext-tool="consolidator"]',d).forEach(b=>b.onclick=()=>{d.close();window.open('/consolidator/','_blank','noopener');});
 }
 
 function buildSearchDialog(){
@@ -286,10 +287,7 @@ function runAction(action){
   qsa('.vnext-nav button').forEach(b=>b.classList.toggle('active',b.dataset.vnextAction===action));
   if(action==='assistant'){ closeMobileSidebar(); $('question')?.focus(); return; }
   if(action==='analyzer'){window.open('/professional-tools.html#analyzer','_blank','noopener');return;}
-  if(action==='consolidator'){
-    $('question').value='CONSOLIDATOR MODE. Консолидирај ги правните текстови/измени што ќе ги наведам. Изгради проверлива amendment chain и provenance: основен текст → секоја измена → effective date → application date → преодни/завршни одредби → уставносудски ефекти → работна редакција. Разликувај official consolidated, editorial consolidated и working consolidation. Не прогласувај важечко право без governed official-source verification. HUMAN GATE REQUIRED.\n\nМатеријал/закон: ';
-    $('question').dispatchEvent(new Event('input')); closeMobileSidebar(); $('question').focus(); return;
-  }
+  if(action==='consolidator'){window.open('/consolidator/','_blank','noopener');return;}
   if(action==='predictor'){
     $('question').value='PREDICTOR MODE — GOVERNED SCENARIO ANALYSIS. Анализирај го прашањето преку поволно, мешано и неповолно сценарио. Не давај процент на успех и не гарантирај исход. За секое сценарио наведи одлучувачки факти, доказна поддршка, применлива правна основа и source status, спротивни аргументи/authority, процесни ризици, празнини во доказите и што би го сменило сценариото. Ако станува збор за доверлив клиентски предмет, насочи ме во Secure Case Workspace / CasePilot. HUMAN GATE REQUIRED.\n\nПрашање/предмет: ';
     $('question').dispatchEvent(new Event('input')); closeMobileSidebar(); $('question').focus(); return;
