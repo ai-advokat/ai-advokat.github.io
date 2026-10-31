@@ -1,0 +1,14 @@
+{
+  "cross_batch_case_duplicates": [],
+  "within_batch_duplicates": [],
+  "aliases": [],
+  "source_metadata_anomalies": [
+    {
+      "source_file": "63.doc",
+      "field": "ole_title",
+      "observed": "64-A",
+      "content_identity": "entry 63 / REV-1334/1994",
+      "disposition": "preserved; not used as legal identity"
+    }
+  ]
+}
