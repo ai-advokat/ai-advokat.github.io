@@ -1,6 +1,18 @@
 name: AS Stip case-law corpus review
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "data/case-law/as-stip-bulletins-v2/**"
+      - "data/case-law/as-stip-bulletins-extension-2026-10-31-b4-b9-b10-b11/**"
+      - "data/case-law/as-stip-bulletins-v3/**"
+      - "data/case-law-source-registry-2026.json"
+      - "scripts/validate-as-stip-case-law-release-metadata.mjs"
+      - "scripts/validate-as-stip-bulletin-extension.mjs"
+      - "test/as-stip-case-law-corpus.test.mjs"
+      - ".github/workflows/as-stip-case-law-corpus.yml"
   workflow_dispatch:
     inputs:
       run_official_discovery:
@@ -17,9 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate committed release metadata and Human Gate boundary
+      - name: Validate committed v2 release metadata and Human Gate boundary
         run: node scripts/validate-as-stip-case-law-release-metadata.mjs data/case-law/as-stip-bulletins-v2
-      - name: Resolver unit tests
+      - name: Validate B4/B9/B10/B11 extension and composite v3
+        run: node scripts/validate-as-stip-bulletin-extension.mjs data/case-law/as-stip-bulletins-extension-2026-10-31-b4-b9-b10-b11
+      - name: Resolver and corpus regression tests
         run: node --test test/as-stip-case-law-corpus.test.mjs
       - name: Optional bounded Supreme discovery
         if: ${{ inputs.run_official_discovery }}
@@ -35,11 +49,9 @@ jobs:
         with:
           name: as-stip-case-law-human-gate
           path: |
-            data/case-law/as-stip-bulletins-v2/manifest.json
-            data/case-law/as-stip-bulletins-v2/qc-summary.json
-            data/case-law/as-stip-bulletins-v2/priority-human-gate.json
-            data/case-law/as-stip-bulletins-v2/duplicates.json
-            data/case-law/as-stip-bulletins-v2/supreme-binding-queue.ndjson
+            data/case-law/as-stip-bulletins-v2/**
+            data/case-law/as-stip-bulletins-extension-2026-10-31-b4-b9-b10-b11/**
+            data/case-law/as-stip-bulletins-v3/**
             work/as-stip-supreme-discovery/**
           if-no-files-found: warn
           retention-days: 30
