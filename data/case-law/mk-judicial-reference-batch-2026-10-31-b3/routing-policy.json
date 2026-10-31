@@ -1,0 +1,14 @@
+{
+  "production_eligible": false,
+  "human_gate_required": true,
+  "routes": {
+    "constitutional_review_official_publication": "constitutional-authority-candidate -> original decision binding -> legal-effect check -> Human Gate",
+    "appellate_case_law_publication_reference": "bulletin discovery/citation -> original judgment binding when material -> current-law check -> Human Gate",
+    "historical_highest_domestic_case_law_extract": "historical Supreme candidate -> original/source collection binding -> current-law check -> Human Gate",
+    "historical_supreme_interpretive_authority": "exact subtype preserved -> historical-scope check -> current-law check -> Human Gate",
+    "unverified_case_number_discovery_index": "query expansion only; never cite as holding",
+    "professional_institutional_notarial_reference": "historical professional/institutional reference only; verify current legislation",
+    "comparative_secondary_legal_reference": "comparative-only; never North Macedonian authority",
+    "secondary_mixed_jurisdiction_case_practice_compilation": "discovery only; bind cited case to originating court first"
+  }
+}
