@@ -6,8 +6,10 @@ on:
       - main
     paths:
       - "data/case-law/mk-judicial-publications-batch-2026-10-31/**"
+      - "data/case-law/mk-appellate-publications-batch-2026-10-31-b2/**"
       - "data/case-law-source-registry-2026.json"
       - "scripts/validate-mk-judicial-publication-batch.mjs"
+      - "scripts/validate-mk-appellate-publication-batch.mjs"
       - ".github/workflows/mk-judicial-publication-batch.yml"
   workflow_dispatch:
 
@@ -19,15 +21,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate governed publication batch
+      - name: Validate governed judicial publication batch
         run: node scripts/validate-mk-judicial-publication-batch.mjs data/case-law/mk-judicial-publications-batch-2026-10-31
+      - name: Validate governed appellate publication batch B2
+        run: node scripts/validate-mk-appellate-publication-batch.mjs data/case-law/mk-appellate-publications-batch-2026-10-31-b2
       - name: Existing case-law source registry regression
         run: node --test test/case-law-source-registry.test.mjs
       - name: Existing case-law chat gate regression
         run: node --test test/case-law-chat-context.test.mjs
-      - name: Human Gate metadata artifact
+      - name: Human Gate metadata artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mk-judicial-publications-batch-2026-10-31
-          path: data/case-law/mk-judicial-publications-batch-2026-10-31/**
+          name: mk-judicial-publications-2026-10-31
+          path: |
+            data/case-law/mk-judicial-publications-batch-2026-10-31/**
+            data/case-law/mk-appellate-publications-batch-2026-10-31-b2/**
           retention-days: 30
