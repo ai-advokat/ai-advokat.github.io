@@ -1,0 +1,28 @@
+{
+  "type": "mk_historical_direct_case_law_batch_manifest",
+  "schema_version": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_LAW_V1",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b4",
+  "generated_at": "2026-10-31",
+  "status": "RELEASE_CANDIDATE_HUMAN_GATE",
+  "input_file_count": 40,
+  "canonical_authority_record_count": 39,
+  "same_case_multi_headnote_group_count": 1,
+  "supreme_decision_record_count": 34,
+  "commercial_court_record_count": 4,
+  "supreme_principled_opinion_count": 1,
+  "publication_bound_to_collection_v_count": 39,
+  "production_eligible": false,
+  "human_gate_required": true,
+  "publication_source": {
+    "source_id": "mk-supreme-collection-v-1990-1996",
+    "title": "Збирка на судски одлуки 1990–1996 — Книга V",
+    "pdf_sha256": "89eff6a56a156ad7c722bcee5af6b8748f2100e90158b8a36dff0cb782a24c78"
+  },
+  "rules": [
+    "Standalone extracts are publication-bound to Collection V but not treated as remote original decisions.",
+    "All records are historical and require current-law verification before present-law use.",
+    "Multiple headnotes for the same case/date are merged as one authority record with multiple propositions.",
+    "Commercial Court decisions remain a distinct authority class from Supreme Court decisions.",
+    "Principled legal opinion preserves its General Session subtype and is not relabelled as a judgment."
+  ]
+}
