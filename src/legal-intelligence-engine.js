@@ -29,7 +29,7 @@ const LEGAL_SIGNALS=[
 ];
 const CURRENT_LAW_SIGNALS=["важечко","важечки","важечката","денес","сега","current law","currently in force","applicable law","најнова верзија","latest law"];
 const TEMPORAL_SIGNALS=["влегува во сила","влегување во сила","почнува да се применува","почеток на примена","датум на примена","временска применливост","применливост","преодни одредби","application date","effective date","commencement","transitional provision","објавен но","published but"];
-const STRATEGY_SIGNALS=["стратег","опции","спореди","ризик","процесен","рок за","жалба","предикциј","прогноз","исход","шанси","веројатност","процент на успех","remedy","strategy","options","compare","procedural","deadline","limitation","case plan","case prediction","case outcome","predict"];
+const STRATEGY_SIGNALS=["стратег","опции","спореди","ризик","процесен","рок за","жалба","предикциј","прогноз","исход","шанси","веројатност","процент на успех","remedy","strategy","options","compare","procedural","deadline","limitation","case plan","case prediction","case outcome","predict","анализа на предмет","анализа за целиот предмет","анализирај го предмет","целиот предмет","whole case analysis","analyse the whole case","analyze the whole case"];
 const ACTION_SIGNALS=[
   "финален поднесок","поднесок за поднесување","испрати до суд","поднеси до суд","поднеси го",
   "подготви тужба","изготви тужба","состави тужба","нацрт тужба","подготви жалба","изготви жалба","состави жалба",
@@ -84,6 +84,7 @@ function currentLawVerification(q,profile){
 function classifyProblem(q,profile){
   if(profile.id==="GENERAL_BYPASS")return"general_assistance";
   if(has(q,["предикциј","прогноз","исход","шанси","веројатност","процент на успех","case prediction","case outcome","predict"]))return"case_outcome_prediction";
+  if(has(q,["анализа на предмет","анализа за целиот предмет","анализирај го предмет","целиот предмет","whole case analysis","analyse the whole case","analyze the whole case"]))return"whole_case_analysis";
   if(profile.id==="L4_LEGAL_TRUTH_GOVERNANCE")return"legal_truth_and_governance";
   if(profile.id==="L3_CONSEQUENTIAL")return"consequential_legal_action_support";
   if(profile.id==="L1_VERIFIED_RESEARCH" && PROFESSIONAL_LEGAL_OPINION_PATTERN.test(q))return"professional_legal_opinion_fact_review";
