@@ -1,0 +1,45 @@
+name: AS Stip case-law corpus review
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_official_discovery:
+        description: 'Run bounded Supreme Court discovery (dry-run only)'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate-corpus-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate committed release metadata and Human Gate boundary
+        run: node scripts/validate-as-stip-case-law-release-metadata.mjs data/case-law/as-stip-bulletins-v2
+      - name: Resolver unit tests
+        run: node --test test/as-stip-case-law-corpus.test.mjs
+      - name: Optional bounded Supreme discovery
+        if: ${{ inputs.run_official_discovery }}
+        run: |
+          rm -rf work/as-stip-supreme-discovery
+          node scripts/download-mk-supreme-decisions.mjs --limit 100 --max-pages 12 --dry-run --out work/as-stip-supreme-discovery
+          node scripts/match-mk-supreme-case-number.mjs \
+            --targets data/case-law/as-stip-bulletins-v2/supreme-binding-queue.ndjson \
+            --official-candidates work/as-stip-supreme-discovery/queue.json \
+            --out work/as-stip-supreme-discovery/matches.ndjson
+      - name: Human Gate review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: as-stip-case-law-human-gate
+          path: |
+            data/case-law/as-stip-bulletins-v2/manifest.json
+            data/case-law/as-stip-bulletins-v2/qc-summary.json
+            data/case-law/as-stip-bulletins-v2/priority-human-gate.json
+            data/case-law/as-stip-bulletins-v2/duplicates.json
+            data/case-law/as-stip-bulletins-v2/supreme-binding-queue.ndjson
+            work/as-stip-supreme-discovery/**
+          if-no-files-found: warn
+          retention-days: 30
