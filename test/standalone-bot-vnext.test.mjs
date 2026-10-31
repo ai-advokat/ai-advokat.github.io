@@ -8,7 +8,7 @@ test('standalone bot vNext exposes unified professional workspace without replac
   const css=fs.readFileSync('assets/standalone-bot-vnext.css','utf8');
   assert.match(html,/standalone-bot-vnext\.css/);
   assert.match(html,/standalone-bot-vnext\.js/);
-  assert.match(source,/await import\('\.\/standalone-bot\.js\?v=20261031-legal-pulse-r2'\)/);
+  assert.match(source,/await import\('\.\/standalone-bot\.js\?v=20261031-runtime-r3'\)/);
   assert.match(source,/\/api\\\/bot/);
   assert.match(source,/body\.history=thread\.history\.slice\(-12\)/);
   assert.match(source,/Правен асистент/);
@@ -51,4 +51,12 @@ test('Zoki core trio keeps predictor and consolidation inside governance boundar
   assert.match(source,/HUMAN GATE REQUIRED/);
   assert.match(source,/Не давај процент на успех/);
   assert.doesNotMatch(source,/\b\d{1,3}%\s*(успех|шанса|веројатност)/i);
+});
+
+
+test('vNext deduplicates identical in-flight user turns',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  assert.ok(source.includes("const last=thread.history.at(-1)"));
+  assert.ok(source.includes("last?.role==='user'"));
+  assert.ok(source.includes("String(last.text||'').trim()===q"));
 });
