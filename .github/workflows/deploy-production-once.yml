@@ -1,0 +1,62 @@
+name: One-time production runtime update
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deploy-production-once.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  verify-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact main commit
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify repository
+        run: npm run verify
+
+      - name: Run security regression suite
+        run: npm run test:security
+
+      - name: Run runtime governance regression suite
+        run: npm run test:legal-runtime-governance
+
+      - name: Run GPT production activation regression suite
+        run: npm run test:gpt-activation
+
+      - name: Run case-law regression suite
+        run: |
+          npm run test:case-law-sources
+          npm run test:case-law-chat
+          node --test test/as-stip-case-law-corpus.test.mjs
+
+      - name: Deploy current main to Cloudflare Workers
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Record deployed commit
+        run: |
+          echo "AI Advokat production runtime update"
+          echo "commit=${GITHUB_SHA}"
+          echo "worker=ai-advokat-github-io"
