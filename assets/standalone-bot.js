@@ -1,5 +1,5 @@
 import { localGuideDocuments } from './bot-materials.mjs';
-import { detectConfidentialCasePrompt } from '../src/chat-privacy.js';
+import { detectConfidentialCasePrompt, redactConfidentialCasePrompt } from '../src/chat-privacy.js';
 import { readDeviceAccess, saveDeviceAccess, forgetDeviceAccess } from './bot-device-access.mjs';
 // Accessing localStorage itself can throw when browser storage is disabled.
 let deviceStorage;
@@ -177,24 +177,38 @@ $('composer').onsubmit = async event => {
   event.preventDefault(); const q = $('question').value.trim();
   if (pending || q.length < 2) return;
   if (!key) { status('Најпрво внесете го вашиот приватен код за влез.'); $('access').click(); return; }
-  if (detectConfidentialCasePrompt(q).confidential) {
-    $('question').value = ''; $('plus').open = true;
-    status('Ова личи на доверлив предмет. Не е испратено. Продолжете во приватниот простор преку „+“.'); return;
+
+  let outboundQ=q, privacyRedacted=false;
+  const privacy=detectConfidentialCasePrompt(q);
+  if (privacy.confidential) {
+    const redacted=redactConfidentialCasePrompt(q);
+    if (redacted.changed && redacted.safeToSend) {
+      outboundQ=redacted.text;
+      privacyRedacted=true;
+    } else {
+      status('Овој текст содржи доверливи детали што не можам сигурно да ги маскирам автоматски. Ништо не е испратено. Можете да ги отстраните идентификаторите и повторно да испратите, или да го користите „+“ само ако точните податоци се неопходни за документот.');
+      return;
+    }
   }
+
   const epoch = generation, controller = new AbortController(); pending = controller; busy(true);
   const timeout = setTimeout(() => controller.abort(),180000);
-  message('user',q); $('question').value = ''; $('question').style.height = '';
+  message('user',outboundQ); $('question').value = ''; $('question').style.height = '';
   const pulse = responsePulse();
-  status('Ги проверувам материјалите и го подготвувам одговорот…');
+  status(privacyRedacted
+    ? 'Чувствителните идентификатори се маскирани локално и оригиналните вредности не се испратени. Го подготвувам одговорот…'
+    : 'Ги проверувам материјалите и го подготвувам одговорот…');
   try {
-    const guides = await guideMatches(q,controller.signal), ids = guides.map(g => g.id);
+    const guides = await guideMatches(outboundQ,controller.signal), ids = guides.map(g => g.id);
     const guideDocuments = await localGuideDocuments(window.AIAdvokatGuideVault,ids,$('useLocalGuides').checked);
-    const data = await request('/api/bot',{signal:controller.signal,body:{q,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
+    const data = await request('/api/bot',{signal:controller.signal,body:{q:outboundQ,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     pulse.remove();
     const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data);
-    history.push({role:'user',text:q},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
-    status('Одговорот е работен материјал. Проверете ги наведените извори.');
+    history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
+    status(privacyRedacted
+      ? 'Одговорот е работен материјал. Личните идентификатори беа маскирани локално и не беа испратени.'
+      : 'Одговорот е работен материјал. Проверете ги наведените извори.');
   } catch (error) {
     pulse.remove();
     if (epoch !== generation) return;
