@@ -18,6 +18,15 @@ test('standalone bot vNext exposes unified professional workspace without replac
   assert.match(source,/Документи/);
   assert.match(source,/Workflows/);
   assert.match(source,/Human Gate/);
+  assert.match(source,/data-vnext-action="analyzer"/);
+  assert.match(source,/data-vnext-action="consolidator"/);
+  assert.match(source,/data-vnext-action="predictor"/);
+  assert.match(source,/professional-tools\.html#analyzer/);
+  assert.match(source,/official consolidated/);
+  assert.match(source,/editorial consolidated/);
+  assert.match(source,/working consolidation/);
+  assert.match(source,/PREDICTOR MODE/);
+  assert.match(source,/Не давај процент на успех/);
   assert.match(source,/Global Search/);
   assert.match(source,/vnext-legal-ref/);
   assert.match(source,/casepilot-workspace\.html/);
@@ -29,4 +38,17 @@ test('vNext keeps session thread content out of persistent browser storage',()=>
   const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
   assert.doesNotMatch(source,/localStorage\.setItem\([^,]*(thread|history|conversation)/i);
   assert.match(source,/const THEME_KEY=/);
+});
+
+
+test('Zoki core trio keeps predictor and consolidation inside governance boundaries',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  const analyzer=fs.readFileSync('src/legal-analyzer.js','utf8');
+  const caseIntelligence=fs.readFileSync('src/case-intelligence.js','utf8');
+  assert.match(analyzer,/LEGAL_ANALYZER_VERSION = "1\.0\.1"/);
+  assert.match(analyzer,/risk_assessment/);
+  assert.match(caseIntelligence,/strategy_synthesis/);
+  assert.match(source,/HUMAN GATE REQUIRED/);
+  assert.match(source,/Не давај процент на успех/);
+  assert.doesNotMatch(source,/\b\d{1,3}%\s*(успех|шанса|веројатност)/i);
 });
