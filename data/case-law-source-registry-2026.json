@@ -315,10 +315,12 @@
       "privacy_minimisation": true,
       "additional_corpus_ids": [
         "mk-judicial-reference-batch-2026-10-31-b3",
-        "mk-historical-direct-case-law-2026-10-31-b4"
+        "mk-historical-direct-case-law-2026-10-31-b4",
+        "mk-historical-direct-case-law-2026-10-31-b5"
       ],
       "direct_extract_batch_ids": [
-        "mk-historical-direct-case-law-2026-10-31-b4"
+        "mk-historical-direct-case-law-2026-10-31-b4",
+        "mk-historical-direct-case-law-2026-10-31-b5"
       ]
     },
     {
@@ -511,12 +513,20 @@
       "authority_subtypes": [
         "поединечни одлуки на Врховниот суд",
         "одлуки на Стопанскиот суд на Македонија",
-        "начелни правни мислења"
+        "начелни правни мислења",
+        "начелни ставови",
+        "правни мислења на судски оддел"
       ],
       "historical_current_law_gate": true,
       "original_decision_binding_required_before_gpt_case_law_context": true,
-      "authority_note": "Publication-level match to Collection V strengthens provenance but does not prove remote/original-decision binding or present-law validity.",
-      "privacy_minimisation": true
+      "authority_note": "Publication-level matching to Collection V strengthens provenance but does not prove remote/original-decision binding or present-law validity. B5 also preserves General Session principled stances and Civil Division legal opinions as distinct interpretive authority kinds.",
+      "privacy_minimisation": true,
+      "additional_corpus_ids": [
+        "mk-historical-direct-case-law-2026-10-31-b5"
+      ],
+      "direct_extract_batch_ids": [
+        "mk-historical-direct-case-law-2026-10-31-b5"
+      ]
     },
     {
       "id": "mk-historical-commercial-court-extracts",
