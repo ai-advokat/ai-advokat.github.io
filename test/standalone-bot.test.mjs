@@ -136,3 +136,18 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   assert.match(core,/id = 'legalPulseRuntimeStyle'/);
   assert.match(core,/const pulse = responsePulse\(\)/);
 });
+
+
+test('visible transcript suppresses duplicate consecutive user bubbles',()=>{
+  const source=fs.readFileSync('assets/standalone-bot.js','utf8');
+  assert.ok(source.includes("const normalizedText=String(text||'').trim()"));
+  assert.ok(source.includes("lastText && lastText===normalizedText"));
+});
+
+test('professional runtime treats language quality as non-blocking QA',()=>{
+  const source=fs.readFileSync('src/index.js','utf8');
+  assert.ok(source.includes('macedonianDeliveryVerdict'));
+  assert.ok(source.includes('const governedLanguageRepairEligible=false'));
+  assert.ok(source.includes('foreign_jurisdiction_substitution_blocked'));
+  assert.ok(source.includes('governedFinalRelease.deliveryState'));
+});
