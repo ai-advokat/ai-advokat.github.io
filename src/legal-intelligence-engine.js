@@ -78,7 +78,8 @@ function requiredGateTypes(q,profile){
 }
 
 function currentLawVerification(q,profile){
-  return profile.id!=="GENERAL_BYPASS" && (has(q,CURRENT_LAW_SIGNALS)||has(q,TEMPORAL_SIGNALS)||profile.id==="L4_LEGAL_TRUTH_GOVERNANCE");
+  const outcomeAnalysis=has(q,["предикциј","прогноз","исход","шанси","веројатност","процент на успех","case prediction","case outcome","predict","анализа на предмет","анализа за целиот предмет","анализирај го предмет","целиот предмет","whole case analysis","analyse the whole case","analyze the whole case"]);
+  return profile.id!=="GENERAL_BYPASS" && (has(q,CURRENT_LAW_SIGNALS)||has(q,TEMPORAL_SIGNALS)||outcomeAnalysis||profile.id==="L4_LEGAL_TRUTH_GOVERNANCE");
 }
 
 function classifyProblem(q,profile){
