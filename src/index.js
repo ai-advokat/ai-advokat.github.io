@@ -5849,6 +5849,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   let result=await runOpenAIOrchestrator(env,{
     plan,
     input:q,
+    researchInput:routingQuery,
     corpusContext,
     externalContext:[],
     externalResearchEnabled:webRequested,
@@ -5893,6 +5894,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       const retry=await runOpenAIOrchestrator(env,{
         plan,
         input:q,
+        researchInput:routingQuery,
         corpusContext,
         externalContext:[],
         externalResearchEnabled:retryUsesWeb,
