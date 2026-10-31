@@ -170,3 +170,20 @@ test("explicit filing/signing/external-send Human Gate request is L3 consequenti
   assert.ok(p.authority_and_human_gate.required_gate_types.includes("author_approval"));
   assert.equal(p.implementation.no_autonomous_filing,true);
 });
+
+
+test("case prediction is L2 strategy with analytical-not-statistical safeguards",()=>{
+  const p=buildLegalIntelligencePlan("Направи ми предикција за овој предмет.");
+  assert.equal(p.mission_profile.id,"L2_STRATEGY_PROCEDURE");
+  assert.equal(p.problem_class,"case_outcome_prediction");
+  assert.equal(p.authority_and_human_gate.human_review_required,true);
+  assert.equal(p.assurance.case_prediction_is_analytical_not_statistical,true);
+  assert.equal(p.assurance.prediction_must_surface_adverse_factors,true);
+});
+
+test("whole-case analysis follow-up is L2 rather than general bypass",()=>{
+  const p=buildLegalIntelligencePlan("Направи ми анализа за целиот предмет.");
+  assert.equal(p.mission_profile.id,"L2_STRATEGY_PROCEDURE");
+  assert.equal(p.problem_class,"whole_case_analysis");
+  assert.equal(p.legal_stress_test.required,true);
+});

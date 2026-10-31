@@ -46,10 +46,10 @@ function responsePulse() {
   article.scrollIntoView({block:'end'});
   return article;
 }
-function sources(article, data, guides = []) {
-  // Guides matched in the browser are sent to the server as context, so the reader sees them as sources too.
-  const guideRows = guides.map(g => ({title: 'Водич: ' + (g.title || g.id), url: g.url ? new URL(g.url, location.origin).href : ''}));
-  const rows = [...['sources','legalSources','caseLawSources','guideSources','publicationSources'].flatMap(k => Array.isArray(data[k]) ? data[k] : []), ...guideRows];
+function sources(article, data) {
+  // Display only source rows returned by the governed backend. Browser-side guide
+  // matches are routing hints, not proof that the final answer relied on a guide.
+  const rows = ['sources','legalSources','caseLawSources','guideSources','publicationSources'].flatMap(k => Array.isArray(data[k]) ? data[k] : []);
   const details = document.createElement('details'); details.className = 'sources';
   const summary = document.createElement('summary'); summary.textContent = 'Извори'; details.append(summary);
   const seen = new Set();
@@ -165,8 +165,8 @@ $('composer').onsubmit = async event => {
     const data = await request('/api/bot',{signal:controller.signal,body:{q,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     pulse.remove();
-    const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data,guides);
-    history.push({role:'user',text:q},{role:'assistant',text:String(data.answer || '').slice(0,4000)}); history = history.slice(-24);
+    const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data);
+    history.push({role:'user',text:q},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
     status('Одговорот е работен материјал. Проверете ги наведените извори.');
   } catch (error) {
     pulse.remove();

@@ -123,6 +123,7 @@ import {
   openLegalSourcePolicySummary
 } from "./open-legal-sources-policy.js";
 import { detectConfidentialCasePrompt } from "./chat-privacy.js";
+import { buildLegalRoutingQuery, isContextDependentLegalFollowUp } from "./legal-conversation-context.js";
 import {
   WORKERS_AI_TEXT_MODEL_DEFAULT,
   WORKERS_AI_PROVIDER_CONTRACT_VERSION,
@@ -5427,6 +5428,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const confidentialHistory=historyCheck.history.some(item=>
     item.role==="user" && detectConfidentialCasePrompt(item.text).confidential
   );
+  const contextualFollowUp=isContextDependentLegalFollowUp(q);
+  const routingQuery=buildLegalRoutingQuery(q,historyCheck.history);
   if(confidentialHistory){
     return json(request,{
       ok:false,
@@ -5467,15 +5470,16 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   }
 
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
+  const effectiveGuideIds=contextualFollowUp ? [] : guideIds;
   const initialPlan=buildAgentPlan(q);
   const [guideContext,articleBundle,caseLawBundle,gazetteBundle,bureauEchrBundle,scholarlyBundle,authorialBundle]=await Promise.all([
-    governedGuideContext(request,env,guideIds),
-    governedArticleContext(env,q,initialPlan),
-    governedCaseLawContext(env,q,initialPlan,{limit:4}),
-    governedGazetteChunkContext(env,q),
-    bureauEchrDiscoveryContext(q,{limit:6}),
-    findGovernedScholarly(request,env,q,{limit:5}),
-    findGovernedAuthorialPublications(request,env,q,{limit:5})
+    governedGuideContext(request,env,effectiveGuideIds),
+    governedArticleContext(env,routingQuery,initialPlan),
+    governedCaseLawContext(env,routingQuery,initialPlan,{limit:4}),
+    governedGazetteChunkContext(env,routingQuery),
+    bureauEchrDiscoveryContext(routingQuery,{limit:6}),
+    findGovernedScholarly(request,env,routingQuery,{limit:5}),
+    findGovernedAuthorialPublications(request,env,routingQuery,{limit:5})
   ]);
 
   const rawCorpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext,...scholarlyBundle.context,...authorialBundle.context];
@@ -5774,6 +5778,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       guideDocumentsUsed:guideDocumentCheck.attachments.length,
       guideDocumentFingerprintsVerified:guideDocumentCheck.attachments.length>0,
       webSearchUsed:false,
+      contextualFollowUp,
+      routingContextUsed:routingQuery!==q,
       mode:plan.mode,
       displayMode:freeResult.provider==="canonical_corpus_no_model" ? "free_canonical_corpus" : "free_workers_ai",
       sourceMode:freeSourceMode,
@@ -5843,6 +5849,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   let result=await runOpenAIOrchestrator(env,{
     plan,
     input:q,
+    researchInput:routingQuery,
     corpusContext,
     externalContext:[],
     externalResearchEnabled:webRequested,
@@ -5887,6 +5894,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       const retry=await runOpenAIOrchestrator(env,{
         plan,
         input:q,
+        researchInput:routingQuery,
         corpusContext,
         externalContext:[],
         externalResearchEnabled:retryUsesWeb,
@@ -6242,6 +6250,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     languageRepairProviderCalls:Number(governedLanguageRepair.providerCalls||0),
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,
+    contextualFollowUp,
+    routingContextUsed:routingQuery!==q,
     sources:result.sources || [],
     sourcePolicy:{
       version:OPEN_LEGAL_SOURCE_POLICY_VERSION,

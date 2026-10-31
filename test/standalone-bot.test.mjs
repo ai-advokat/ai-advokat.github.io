@@ -105,3 +105,21 @@ test('professional request deadline is shared across specialist chief retry and 
   assert.match(orchestrator,/legal_postflight_deadline_exhausted/);
   assert.match(client,/setTimeout\(\(\) => controller\.abort\(\),180000\)/);
 });
+
+
+test('standalone bot does not display browser-only guide matches as authorities',()=>{
+  const client=fs.readFileSync('assets/standalone-bot.js','utf8');
+  assert.match(client,/Display only source rows returned by the governed backend/);
+  assert.doesNotMatch(client,/const guideRows = guides\.map/);
+  assert.match(client,/sources\(article,data\)/);
+  assert.match(client,/slice\(0,6000\)/);
+});
+
+test('worker uses bounded conversation routing context for legal follow-ups',()=>{
+  const source=fs.readFileSync('src/index.js','utf8');
+  assert.match(source,/buildLegalRoutingQuery/);
+  assert.match(source,/const routingQuery=buildLegalRoutingQuery\(q,historyCheck\.history\)/);
+  assert.match(source,/governedArticleContext\(env,routingQuery,initialPlan\)/);
+  assert.match(source,/contextualFollowUp/);
+  assert.match(source,/researchInput:routingQuery/);
+});

@@ -216,3 +216,12 @@ test("COP20 legal characterisation selects the primary specific norm and preserv
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/CIVIL\/CRIMINAL TERMINOLOGY DISCIPLINE/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/SOURCE RELEVANCE GATE/);
 });
+
+
+test("COP21 case prediction uses active session context and calibrated scenarios",()=>{
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/CASE OUTCOME PREDICTION METHOD/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/PREDICTION CALIBRATION/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/adopted working hypothetical facts/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/analytical estimate, not a statistical probability/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/do not ask the user to repeat facts that are already present/);
+});
