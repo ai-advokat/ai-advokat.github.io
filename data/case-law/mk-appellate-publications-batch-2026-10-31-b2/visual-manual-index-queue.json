@@ -1,0 +1,14 @@
+[
+  {
+    "source_id": "mk-joint-appellate-civil-meeting-2018-04",
+    "filename": "zaqpisnik_4apelacii_april_2018_gragansko.pdf",
+    "pdf_sha256": "286aa3c53a922d7403575da57b419dbe4235c67a705405fca438800fae0538d1",
+    "page_count": 12,
+    "status": "visual_manual_index_required",
+    "reason": "image-only Macedonian scan; no reliable embedded text",
+    "known_document_type": "joint_appellate_civil_meeting_minutes",
+    "meeting_dates": "2018-04-12/13",
+    "production_eligible": false,
+    "human_gate_required": true
+  }
+]
