@@ -42,14 +42,7 @@ jobs:
             fi
 
             if [ "$page_ok" -eq 1 ] && [ "$engine_ok" -eq 1 ] && [ "$vnext_ok" -eq 1 ]; then
-              node - <<'NODE'
-              const C=require('/tmp/lfcore.js');
-              if(C.version!=='10.4.0') throw new Error('wrong_live_version_'+C.version);
-              for(const k of ['consolidate','resolveReferences','buildResolutionWorkflow','applyResolutionsToLaw','buildPublicationPackage']){
-                if(typeof C[k]!=='function') throw new Error('missing_live_'+k);
-              }
-              console.log('LIVE_LFCORE_V104_PASS',C.version);
-              NODE
+              node -e "const C=require('/tmp/lfcore.js'); if(C.version!=='10.4.0') throw new Error('wrong_live_version_'+C.version); for(const k of ['consolidate','resolveReferences','buildResolutionWorkflow','applyResolutionsToLaw','buildPublicationPackage']) if(typeof C[k]!=='function') throw new Error('missing_live_'+k); console.log('LIVE_LFCORE_V104_PASS',C.version);"
               echo 'LIVE_CONSOLIDATOR_V104_PASS'
               exit 0
             fi
