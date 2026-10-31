@@ -253,202 +253,135 @@
 }
 
 
-/* PROTOTYPE — AI Advokat Legal Pulse loader.
-   Dual § mark recalls the Lex Nova / Paragraf visual legacy while the animation
-   communicates only "response preparation", not fabricated backend stages. */
+/* PROTOTYPE — miniature AI Advokat Legal Pulse loader.
+   Dual § mark recalls the Lex Nova / Paragraf visual legacy.
+   Compact by design: it signals only that the response is being prepared. */
 .ai-msg-preparing .ai-msg-content{padding:0;background:transparent}
 .ai-legal-pulse{
   --pulse-gold:#d8b56a;
   --pulse-gold-hot:#ffd88b;
   --pulse-lilac:#7f45d9;
   --pulse-lilac-hot:#b16cff;
-  --pulse-navy:#07182c;
   position:relative;
-  overflow:hidden;
-  display:grid;
-  justify-items:center;
-  gap:12px;
-  min-height:270px;
-  padding:28px 24px 20px;
-  border:1px solid color-mix(in srgb,var(--pulse-gold) 52%,transparent);
-  border-radius:18px;
-  background:
-    radial-gradient(circle at 50% 36%,rgba(127,69,217,.18),transparent 26%),
-    radial-gradient(circle at 50% 42%,rgba(216,181,106,.12),transparent 42%),
-    linear-gradient(145deg,#07182c 0%,#0a2039 55%,#07182c 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.025),
-    0 16px 42px rgba(4,15,29,.24);
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  width:auto;
+  max-width:100%;
+  min-height:42px;
+  padding:5px 9px 5px 6px;
+  border:1px solid rgba(216,181,106,.34);
+  border-radius:999px;
+  background:linear-gradient(135deg,rgba(7,24,44,.96),rgba(18,36,62,.96));
+  box-shadow:0 5px 14px rgba(4,15,29,.12);
   color:#fff;
 }
-.ai-legal-pulse::before{
-  content:"";
-  position:absolute;
-  inset:-42% -25%;
-  background:conic-gradient(from 0deg,transparent 0 28%,rgba(177,108,255,.10) 37%,transparent 46% 68%,rgba(255,216,139,.09) 77%,transparent 86%);
-  animation:aiLegalAura 11s linear infinite;
-  pointer-events:none;
-}
-.ai-legal-pulse-orbit{
+.ai-legal-pulse-mark{
   position:relative;
-  width:168px;
-  height:126px;
+  flex:none;
+  width:44px;
+  height:34px;
   display:grid;
   place-items:center;
-  isolation:isolate;
 }
 .ai-legal-pulse-ring{
   position:absolute;
-  inset:16px 2px;
+  inset:2px 1px;
+  border:1px solid rgba(216,181,106,.58);
   border-radius:50%;
-  border:1px solid rgba(216,181,106,.65);
-  box-shadow:0 0 12px rgba(216,181,106,.18);
-}
-.ai-legal-pulse-ring.ring-a{
-  transform:rotate(10deg);
-  animation:aiLegalOrbitA 4.8s linear infinite;
-}
-.ai-legal-pulse-ring.ring-b{
-  inset:8px 18px;
-  border-color:rgba(177,108,255,.72);
-  box-shadow:0 0 14px rgba(127,69,217,.25);
-  transform:rotate(-14deg);
-  animation:aiLegalOrbitB 3.9s linear infinite reverse;
+  transform:rotate(12deg);
+  box-shadow:0 0 6px rgba(127,69,217,.18);
+  animation:aiLegalMiniOrbit 3.8s linear infinite;
 }
 .ai-legal-pulse-ring::before,
 .ai-legal-pulse-ring::after{
   content:"";
   position:absolute;
-  width:7px;
-  height:7px;
+  width:4px;
+  height:4px;
   top:50%;
   border-radius:50%;
   transform:translateY(-50%);
-  background:var(--pulse-gold-hot);
-  box-shadow:0 0 10px var(--pulse-gold-hot),0 0 20px rgba(255,216,139,.45);
 }
-.ai-legal-pulse-ring::before{left:-4px}
-.ai-legal-pulse-ring::after{right:-4px}
-.ai-legal-pulse-ring.ring-b::before,
-.ai-legal-pulse-ring.ring-b::after{
+.ai-legal-pulse-ring::before{
+  left:-2px;
   background:var(--pulse-lilac-hot);
-  box-shadow:0 0 10px var(--pulse-lilac-hot),0 0 20px rgba(177,108,255,.45);
+  box-shadow:0 0 5px rgba(177,108,255,.8);
 }
-.ai-legal-pulse-glow{
-  position:absolute;
-  width:92px;
-  height:68px;
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(216,181,106,.20),rgba(127,69,217,.12) 46%,transparent 72%);
-  filter:blur(5px);
-  animation:aiLegalGlow 2.1s ease-in-out infinite alternate;
+.ai-legal-pulse-ring::after{
+  right:-2px;
+  background:var(--pulse-gold-hot);
+  box-shadow:0 0 5px rgba(255,216,139,.8);
 }
 .ai-legal-pulse-pair{
   position:relative;
   z-index:2;
   display:flex;
   align-items:center;
-  gap:3px;
-  transform:translateY(2px);
+  gap:0;
 }
 .ai-legal-section{
   display:inline-block;
   font-family:Georgia,"Times New Roman",serif;
-  font-size:72px;
-  line-height:.9;
+  font-size:25px;
+  line-height:.86;
   font-weight:700;
-  color:var(--pulse-gold-hot);
-  text-shadow:
-    0 0 8px rgba(255,216,139,.6),
-    0 0 26px rgba(216,181,106,.38);
   transform-origin:50% 52%;
 }
 .ai-legal-section.section-left{
-  animation:aiLegalSectionLeft 2.9s cubic-bezier(.55,.08,.45,.95) infinite;
+  color:var(--pulse-gold-hot);
+  text-shadow:0 0 5px rgba(255,216,139,.48);
+  animation:aiLegalMiniLeft 2.5s ease-in-out infinite;
 }
 .ai-legal-section.section-right{
-  color:#f1bf81;
-  text-shadow:
-    0 0 8px rgba(241,191,129,.55),
-    0 0 25px rgba(177,108,255,.36);
-  animation:aiLegalSectionRight 2.9s cubic-bezier(.55,.08,.45,.95) infinite;
+  color:#d9b2ff;
+  text-shadow:0 0 5px rgba(177,108,255,.48);
+  animation:aiLegalMiniRight 2.5s ease-in-out infinite;
 }
 .ai-legal-pulse-copy{
-  position:relative;
-  z-index:2;
-  display:grid;
-  gap:4px;
-  text-align:center;
-}
-.ai-legal-pulse-copy strong{
-  font-family:Georgia,"Times New Roman",serif;
-  color:#f1d69b;
-  font-size:1.02rem;
-  font-weight:700;
-  letter-spacing:.01em;
-}
-.ai-legal-pulse-copy span{
-  color:#c9d5e3;
-  font-size:.72rem;
-  letter-spacing:.045em;
-}
-.ai-legal-pulse-track{
-  position:relative;
-  z-index:2;
-  width:min(100%,560px);
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:8px;
-  margin-top:2px;
-}
-.ai-legal-pulse-step{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
   min-width:0;
-  color:#9fb0c3;
-  font-size:.66rem;
+  color:#e8edf4;
+  font-size:.72rem;
+  line-height:1.2;
+  font-weight:650;
   white-space:nowrap;
 }
-.ai-legal-pulse-step i{
-  width:6px;
-  height:6px;
+.ai-legal-pulse-dots{
   flex:none;
+  display:flex;
+  gap:3px;
+  padding-right:1px;
+}
+.ai-legal-pulse-dots i{
+  width:4px;
+  height:4px;
   border-radius:50%;
-  background:#5d6f84;
-  box-shadow:0 0 0 3px rgba(93,111,132,.12);
-  animation:aiLegalStep 2.8s ease-in-out infinite;
-  animation-delay:calc(var(--pulse-order) * .46s);
+  background:#66788c;
+  animation:aiLegalMiniDot 1.35s ease-in-out infinite;
+  animation-delay:calc(var(--dot-order) * .18s);
 }
-.ai-legal-pulse-step b{font-weight:650}
-@keyframes aiLegalAura{to{transform:rotate(360deg)}}
-@keyframes aiLegalOrbitA{to{transform:rotate(370deg)}}
-@keyframes aiLegalOrbitB{to{transform:rotate(-374deg)}}
-@keyframes aiLegalGlow{from{opacity:.55;transform:scale(.92)}to{opacity:1;transform:scale(1.12)}}
-@keyframes aiLegalSectionLeft{
-  0%,100%{transform:rotateY(0deg) rotateZ(-3deg) scale(1)}
-  50%{transform:rotateY(180deg) rotateZ(3deg) scale(1.06)}
+@keyframes aiLegalMiniOrbit{to{transform:rotate(372deg)}}
+@keyframes aiLegalMiniLeft{
+  0%,100%{transform:rotateY(0deg) rotateZ(-2deg)}
+  50%{transform:rotateY(180deg) rotateZ(2deg)}
 }
-@keyframes aiLegalSectionRight{
-  0%,100%{transform:rotateY(0deg) rotateZ(3deg) scale(1)}
-  50%{transform:rotateY(-180deg) rotateZ(-3deg) scale(1.06)}
+@keyframes aiLegalMiniRight{
+  0%,100%{transform:rotateY(0deg) rotateZ(2deg)}
+  50%{transform:rotateY(-180deg) rotateZ(-2deg)}
 }
-@keyframes aiLegalStep{
-  0%,18%,100%{background:#5d6f84;box-shadow:0 0 0 3px rgba(93,111,132,.12)}
-  38%,60%{background:var(--pulse-lilac-hot);box-shadow:0 0 8px rgba(177,108,255,.9),0 0 0 3px rgba(177,108,255,.12)}
-  68%,82%{background:var(--pulse-gold-hot);box-shadow:0 0 8px rgba(255,216,139,.9),0 0 0 3px rgba(255,216,139,.12)}
+@keyframes aiLegalMiniDot{
+  0%,100%{background:#66788c;transform:scale(.8);opacity:.55}
+  45%{background:var(--pulse-lilac-hot);transform:scale(1.18);opacity:1}
+  70%{background:var(--pulse-gold-hot);transform:scale(1);opacity:.9}
 }
-@media(max-width:640px){
-  .ai-legal-pulse{min-height:238px;padding:22px 14px 16px}
-  .ai-legal-pulse-orbit{width:146px;height:108px}
-  .ai-legal-section{font-size:62px}
-  .ai-legal-pulse-track{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:9px}
+@media(max-width:520px){
+  .ai-legal-pulse{gap:6px;min-height:38px;padding:4px 8px 4px 5px}
+  .ai-legal-pulse-mark{width:39px;height:30px}
+  .ai-legal-section{font-size:22px}
+  .ai-legal-pulse-copy{font-size:.66rem}
 }
 @media(prefers-reduced-motion:reduce){
-  .ai-legal-pulse::before,
   .ai-legal-pulse-ring,
-  .ai-legal-pulse-glow,
   .ai-legal-section,
-  .ai-legal-pulse-step i{animation:none!important}
+  .ai-legal-pulse-dots i{animation:none!important}
 }
