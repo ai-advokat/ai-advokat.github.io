@@ -23,7 +23,7 @@ add(manifest.machine_readable_new_source_count===15,"manifest:machine_readable")
 add(manifest.visual_manual_index_source_count===1,"manifest:visual_manual");
 add(manifest.global_unique_case_number_candidate_count===453,"manifest:global_case_count");
 add(manifest.source_case_number_candidate_count_sum===457,"manifest:source_case_sum");
-add(manifest.authority_page_marker_count===177,"manifest:authority_pages");
+add(manifest.authority_page_marker_count===177,"manifest:authority_pages");\nadd(manifest.retrieval_alias_key_unique_count===449,"manifest:alias_keys");
 add(Array.isArray(manifest.sources)&&manifest.sources.length===16,"manifest:sources");
 
 const ids=new Set();
@@ -52,22 +52,22 @@ add(manual[0]?.human_gate_required===true,"manual:human_gate");
 add(index.schema_version==="AI_ADVOCAT_CASE_NUMBER_DISCOVERY_INDEX_V1","index:schema");
 add(index.corpus_id===manifest.corpus_id,"index:corpus");
 add(index.production_eligible===false,"index:production");
-const indexIds=new Set(index.sources.map(x=>x.source_id));
+const indexIds=new Set(index.sources.map(x=>x.source_id));\nadd(index.retrieval_alias_key_unique_count===449,"index:alias_key_count");
 for(const x of index.sources) add(ids.has(x.source_id),`index:unknown_source:${x.source_id}`);
-let caseSum=0; const globalCases=new Set();
+let caseSum=0; const globalCases=new Set(); const aliasKeys=new Set();
 for(const x of index.sources){
   for(const c of x.cases||[]){
     add(typeof c.n==="string"&&c.n.length>2,`index:case_number:${x.source_id}`);
     add(Number.isInteger(c.p)&&c.p>0,`index:page:${x.source_id}`);
-    caseSum++; globalCases.add(c.n);
+    caseSum++; globalCases.add(c.n); aliasKeys.add(c.k);\n    add(typeof c.k==="string"&&c.k.length>2,`index:alias_key:${x.source_id}`);
   }
 }
 add(caseSum===457,`index:case_sum:${caseSum}`);
-add(globalCases.size===453,`index:global_unique:${globalCases.size}`);
+add(globalCases.size===453,`index:global_unique:${globalCases.size}`);\nadd(aliasKeys.size===449,`index:alias_unique:${aliasKeys.size}`);
 add(qc.production_eligible===false,"qc:production");
 add(qc.human_gate_required===true,"qc:human_gate");
 if(errors.length){
   console.error("MK_APPELLATE_PUBLICATION_BATCH_VALIDATION_FAILED\n"+errors.join("\n"));
   process.exit(1);
 }
-console.log(JSON.stringify({ok:true,corpusId:manifest.corpus_id,newCanonicalSources:manifest.new_canonical_source_count,internalDuplicates:manifest.internal_duplicate_copy_count,crossBatchDuplicates:manifest.cross_batch_duplicate_copy_count,globalCaseCandidates:globalCases.size,authorityPageMarkers:manifest.authority_page_marker_count,productionEligible:false,humanGateRequired:true},null,2));
+console.log(JSON.stringify({ok:true,corpusId:manifest.corpus_id,newCanonicalSources:manifest.new_canonical_source_count,internalDuplicates:manifest.internal_duplicate_copy_count,crossBatchDuplicates:manifest.cross_batch_duplicate_copy_count,globalCaseCandidates:globalCases.size,retrievalAliasKeys:aliasKeys.size,authorityPageMarkers:manifest.authority_page_marker_count,productionEligible:false,humanGateRequired:true},null,2));
