@@ -201,3 +201,18 @@ test("COP16 governed GPT has a final Macedonian release gate",()=>{
   assert.match(worker,/error:"macedonian_release_blocked"/);
   assert.match(worker,/answer:governedFinalAnswer/);
 });
+
+
+test("COP19 conversation referents are history-grounded and never invented",()=>{
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/CONVERSATION CONTINUITY AND REFERENT RESOLUTION/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Never invent a prior example, event, person, transaction or legal issue/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/use it directly and do not ask the user to repeat it/);
+});
+
+test("COP20 legal characterisation selects the primary specific norm and preserves civil-criminal boundaries",()=>{
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/PRIMARY LEGAL CHARACTERISATION/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/ARTICLE-IDENTIFICATION ANSWERS/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/exact verified primary article and paragraph/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/CIVIL\/CRIMINAL TERMINOLOGY DISCIPLINE/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/SOURCE RELEVANCE GATE/);
+});
