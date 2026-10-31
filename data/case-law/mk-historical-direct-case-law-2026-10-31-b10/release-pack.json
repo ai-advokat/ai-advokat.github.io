@@ -4,4 +4,4 @@
   "status": "controlled_human_gate_artifact",
   "production_eligible": false,
   "handoff_archive_sha256_note": "Final ZIP SHA-256 is reported externally after packaging; it is intentionally not self-embedded."
-}\n
+}
