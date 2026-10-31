@@ -55,7 +55,10 @@ window.fetch = async function(input, init={}){
   body.history=thread.history.slice(-12).map(({role,text})=>({role,text}));
   body.sessionId=thread.sessionId;
   if(q){
-    thread.history.push({role:'user',text:q,time:now()});
+    const last=thread.history.at(-1);
+    if(!(last?.role==='user' && String(last.text||'').trim()===q)){
+      thread.history.push({role:'user',text:q,time:now()});
+    }
     if(thread.title==='Нов разговор') thread.title=titleFrom(q);
     thread.updatedAt=now();
     window.dispatchEvent(new CustomEvent('aiadvokat:vnext-thread-change'));
@@ -74,7 +77,7 @@ window.fetch = async function(input, init={}){
   return response;
 };
 
-await import('./standalone-bot.js?v=20261031-legal-pulse-r2');
+await import('./standalone-bot.js?v=20261031-runtime-r3');
 
 const $=id=>document.getElementById(id);
 const qs=(s,r=document)=>r.querySelector(s);
