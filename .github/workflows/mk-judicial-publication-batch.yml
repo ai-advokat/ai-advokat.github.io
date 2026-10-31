@@ -1,0 +1,25 @@
+name: MK judicial publication batch review
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate governed publication batch
+        run: node scripts/validate-mk-judicial-publication-batch.mjs data/case-law/mk-judicial-publications-batch-2026-10-31
+      - name: Existing case-law source registry regression
+        run: node --test test/case-law-source-registry.test.mjs
+      - name: Existing case-law chat gate regression
+        run: node --test test/case-law-chat-context.test.mjs
+      - name: Human Gate metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mk-judicial-publications-batch-2026-10-31
+          path: data/case-law/mk-judicial-publications-batch-2026-10-31/**
+          retention-days: 30
