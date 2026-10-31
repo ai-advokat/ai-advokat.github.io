@@ -10,6 +10,6 @@ Coverage:
 - Appellate Court Gostivar: Bulletin No. 2 (September 2014).
 - Joint appellate materials: labour-dispute conclusions of 2 March 2012 and civil meeting minutes of 12-13 April 2018.
 
-Deterministic local extraction detected 453 globally distinct case-number discovery candidates across the 15 machine-readable new sources and 177 page-level markers for conclusions, headnotes/sentences, or legal-opinion sections. The April 2018 civil minutes are image-only and remain in a visual/manual indexing queue.
+Deterministic local extraction detected 453 distinct source-form case-number candidate strings across the 15 machine-readable new sources, reduced to 449 retrieval alias keys after safe punctuation/year normalization, plus 177 page-level markers for conclusions, headnotes/sentences, or legal-opinion sections. The April 2018 civil minutes are image-only and remain in a visual/manual indexing queue.
 
 No record is production-citable merely because it appears in a bulletin. Original-decision binding, current-law verification, and the existing Human Gate remain required.
