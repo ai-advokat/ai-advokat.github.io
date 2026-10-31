@@ -1,0 +1,27 @@
+name: Video codec smoke 2026-10-31
+
+on:
+  push:
+    branches:
+      - test/video-codec-smoke-20261031
+    paths:
+      - ".github/workflows/video-codec-smoke-20261031.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect both promo videos
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in             assets/ai-advokat-official-promo.mp4             assets/ai-advokat-promo-reel-2026-10-26.mp4
+          do
+            echo "=== $f ==="
+            file "$f"
+            ffprobe -v error               -show_entries stream=index,codec_name,codec_long_name,profile,codec_type,pix_fmt,width,height,r_frame_rate,sample_rate,channels               -show_entries format=format_name,duration,size,bit_rate               -of json "$f"
+          done
