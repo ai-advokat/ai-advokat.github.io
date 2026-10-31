@@ -155,34 +155,30 @@
     loader.setAttribute("aria-live","polite");
     loader.setAttribute("aria-label","AI Advokat го подготвува одговорот");
 
-    const orbit=document.createElement("div");
-    orbit.className="ai-legal-pulse-orbit";
-    orbit.setAttribute("aria-hidden","true");
+    const mark=document.createElement("div");
+    mark.className="ai-legal-pulse-mark";
+    mark.setAttribute("aria-hidden","true");
 
-    const ringA=document.createElement("span");ringA.className="ai-legal-pulse-ring ring-a";
-    const ringB=document.createElement("span");ringB.className="ai-legal-pulse-ring ring-b";
-    const glow=document.createElement("span");glow.className="ai-legal-pulse-glow";
+    const ring=document.createElement("span");
+    ring.className="ai-legal-pulse-ring";
 
-    const pair=document.createElement("div");
+    const pair=document.createElement("span");
     pair.className="ai-legal-pulse-pair";
     const left=document.createElement("span");left.className="ai-legal-section section-left";left.textContent="§";
     const right=document.createElement("span");right.className="ai-legal-section section-right";right.textContent="§";
     pair.append(left,right);
-    orbit.append(ringA,ringB,glow,pair);
+    mark.append(ring,pair);
 
-    const copy=document.createElement("div");copy.className="ai-legal-pulse-copy";
-    const title=document.createElement("strong");title.textContent="AI Advokat го подготвува одговорот…";
-    const sub=document.createElement("span");sub.textContent="Source-first · Governed AI · Human Review";
-    copy.append(title,sub);
+    const copy=document.createElement("span");
+    copy.className="ai-legal-pulse-copy";
+    copy.textContent="AI Advokat подготвува одговор…";
 
-    const pulse=document.createElement("div");pulse.className="ai-legal-pulse-track";pulse.setAttribute("aria-hidden","true");
-    ["Извори","Анализа","Правен тест","Human Gate"].forEach((label,index)=>{
-      const item=document.createElement("span");item.className="ai-legal-pulse-step";item.style.setProperty("--pulse-order",String(index));
-      const dot=document.createElement("i");const text=document.createElement("b");text.textContent=label;
-      item.append(dot,text);pulse.append(item);
-    });
+    const dots=document.createElement("span");
+    dots.className="ai-legal-pulse-dots";
+    dots.setAttribute("aria-hidden","true");
+    for(let i=0;i<3;i++){const dot=document.createElement("i");dot.style.setProperty("--dot-order",String(i));dots.append(dot);}
 
-    loader.append(orbit,copy,pulse);
+    loader.append(mark,copy,dots);
     return loader;
   }
 
