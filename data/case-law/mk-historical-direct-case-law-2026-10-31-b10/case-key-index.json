@@ -1,0 +1,387 @@
+{
+  "schema": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_KEY_INDEX_V2",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b10",
+  "records": [
+    {
+      "record_id": "B10-GZZ-71/1995",
+      "authority_id": "GZZ-71/1995+REV-395/1995",
+      "case_number_key": "GZZ-71/1995",
+      "k": [
+        "GZZ-71/1995",
+        "REV-395/1995"
+      ],
+      "decision_date": "24.01.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "активна легитимација",
+        "судско порамнување",
+        "државен стан",
+        "правен континуитет на орган"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-REV-624/1993",
+      "authority_id": "REV-624/1993",
+      "case_number_key": "REV-624/1993",
+      "k": [
+        "REV-624/1993"
+      ],
+      "decision_date": "04.11.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "активна легитимација",
+        "вд директор",
+        "разрешување директор",
+        "материјалноправен однос"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-REV-1277/1993",
+      "authority_id": "REV-1277/1993",
+      "case_number_key": "REV-1277/1993",
+      "k": [
+        "REV-1277/1993"
+      ],
+      "decision_date": "09.11.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "адвокатска тарифа",
+        "отказ на полномошно",
+        "награда на адвокат",
+        "повлекување тужба"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-REV-10114/1992",
+      "authority_id": "REV-10114/1992",
+      "case_number_key": "REV-10114/1992",
+      "k": [
+        "REV-10114/1992"
+      ],
+      "decision_date": "11.02.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "нематеријална штета",
+        "кривична пресуда",
+        "врзаност на парничен суд",
+        "поделена одговорност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-REV-898/1993",
+      "authority_id": "REV-898/1993",
+      "case_number_key": "REV-898/1993",
+      "k": [
+        "REV-898/1993"
+      ],
+      "decision_date": "24.08.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "апсолутна ненадлежност",
+        "јавно добро",
+        "паркирање",
+        "управна надлежност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-GZZ-35/1993",
+      "authority_id": "GZZ-35/1993",
+      "case_number_key": "GZZ-35/1993",
+      "k": [
+        "GZZ-35/1993"
+      ],
+      "decision_date": "07.09.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "состав на суд",
+        "судија поединец",
+        "судски совет",
+        "суштествена повреда на постапка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-R-55/1995",
+      "authority_id": "R-55/1995",
+      "case_number_key": "R-55/1995",
+      "k": [
+        "R-55/1995"
+      ],
+      "decision_date": "13.06.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "делегација на суд",
+        "физичка безбедност",
+        "пристап до суд",
+        "важни причини"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-R-6/1993",
+      "authority_id": "R-6/1993",
+      "case_number_key": "R-6/1993",
+      "k": [
+        "R-6/1993"
+      ],
+      "decision_date": "04.03.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "месна надлежност",
+        "спогодба за надлежност",
+        "прилог кон тужба",
+        "општа месна надлежност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-REV-505/1995",
+      "authority_id": "REV-505/1995",
+      "case_number_key": "REV-505/1995",
+      "k": [
+        "REV-505/1995"
+      ],
+      "decision_date": "15.02.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "способност на странка",
+        "заедница на сопственици",
+        "станбена зграда",
+        "извршување"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-GZZ-53/1994",
+      "authority_id": "GZZ-53/1994",
+      "case_number_key": "GZZ-53/1994",
+      "k": [
+        "GZZ-53/1994"
+      ],
+      "decision_date": "29.11.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "адвокатско полномошно",
+        "извршна постапка",
+        "процесни трошоци",
+        "овластувања на полномошник"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-REV-202/1993",
+      "authority_id": "REV-202/1993",
+      "case_number_key": "REV-202/1993",
+      "k": [
+        "REV-202/1993"
+      ],
+      "decision_date": "11.03.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "рок за жалба",
+        "неработен ден",
+        "сабота",
+        "поднесување по пошта"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-REV-870/1993",
+      "authority_id": "REV-870/1993",
+      "case_number_key": "REV-870/1993",
+      "k": [
+        "REV-870/1993"
+      ],
+      "decision_date": "23.09.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "дозволеност на ревизија",
+        "вредност на спор",
+        "неуредна тужба",
+        "судска такса"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-REV-824/1994",
+      "authority_id": "REV-824/1994",
+      "case_number_key": "REV-824/1994",
+      "k": [
+        "REV-824/1994"
+      ],
+      "decision_date": "20.09.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "ревизија",
+        "правосилно завршување",
+        "приговор за ненавременост",
+        "процесно решение"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-GZZ-4/1995",
+      "authority_id": "GZZ-4/1995",
+      "case_number_key": "GZZ-4/1995",
+      "k": [
+        "GZZ-4/1995"
+      ],
+      "decision_date": "06.07.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "барање за заштита на законитоста",
+        "правосилност",
+        "посебна жалба",
+        "привремена мерка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-GZ-7/1994",
+      "authority_id": "GZ-7/1994",
+      "case_number_key": "GZ-7/1994",
+      "k": [
+        "GZ-7/1994"
+      ],
+      "decision_date": "29.11.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "повторување на постапка",
+        "жалба",
+        "ревизија",
+        "смеќавање на владение"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-REV-1491/1994",
+      "authority_id": "REV-1491/1994",
+      "case_number_key": "REV-1491/1994",
+      "k": [
+        "REV-1491/1994"
+      ],
+      "decision_date": "20.10.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "камата",
+        "споредно барање",
+        "дозволеност на ревизија",
+        "главно барање"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-REV-1395/1994",
+      "authority_id": "REV-1395/1994",
+      "case_number_key": "REV-1395/1994",
+      "k": [
+        "REV-1395/1994"
+      ],
+      "decision_date": "24.10.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "стварна ненадлежност",
+        "месна ненадлежност",
+        "ревизија",
+        "правосилно завршување"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-REV-611/1993",
+      "authority_id": "REV-611/1993",
+      "case_number_key": "REV-611/1993",
+      "k": [
+        "REV-611/1993"
+      ],
+      "decision_date": "15.06.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "ревизија",
+        "дополнително образложение",
+        "рок",
+        "нови причини за побивање"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-SSZ-798/1994",
+      "authority_id": "SSZ-798/1994",
+      "case_number_key": "SSZ-798/1994",
+      "k": [
+        "SSZ-798/1994"
+      ],
+      "decision_date": "09.05.1994",
+      "court": "Стопански суд на Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "повлекување тужба",
+        "претседател на совет",
+        "главна расправа",
+        "член 499 ЗПП"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B10-SSZ-1113/1991",
+      "authority_id": "SSZ-1113/1991",
+      "case_number_key": "SSZ-1113/1991",
+      "k": [
+        "SSZ-1113/1991"
+      ],
+      "decision_date": "10.06.1991",
+      "court": "Стопански суд на Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "спор од мала вредност",
+        "тужба",
+        "противтужба",
+        "судење во отсуство"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    }
+  ]
+}\n

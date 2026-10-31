@@ -1,0 +1,32 @@
+{
+  "cross_batch_case_duplicates": [],
+  "within_batch_duplicates": [],
+  "aliases": [
+    {
+      "record_id": "B10-GZZ-71/1995",
+      "primary": "GZZ-71/1995",
+      "related": [
+        "REV-395/1995"
+      ],
+      "source_label": "Gzz.br.71/95 и Rev.br.395/95"
+    }
+  ],
+  "source_metadata_anomalies": [],
+  "source_text_anomalies": [
+    {
+      "entry": "186",
+      "file": "186.doc",
+      "issue": "Internal filing-date conflict: 30.03.1992 versus 30.03.1993",
+      "treatment": "preserved_without_silent_correction"
+    }
+  ],
+  "source_case_number_notes": [
+    {
+      "entry": "179",
+      "file": "179.doc",
+      "printed_case_number": "Rev.br.10114/92",
+      "treatment": "preserved_exactly_without_inference"
+    }
+  ],
+  "unprovided_entries_not_inferred": true
+}\n

@@ -1,0 +1,28 @@
+{
+  "input_files": 20,
+  "canonical_records": 20,
+  "case_identifiers": 21,
+  "supreme_court_records": 18,
+  "commercial_court_records": 2,
+  "judgments": 4,
+  "orders": 16,
+  "cross_batch_case_duplicates": 0,
+  "collection_v_bound": 20,
+  "source_hashes_present": 20,
+  "text_hashes_present": 20,
+  "source_metadata_anomalies": 0,
+  "source_text_anomalies": 1,
+  "multi_case_number_records": 1,
+  "fatal_defects": [],
+  "production_eligible": false,
+  "human_gate_required": true,
+  "verification": {
+    "source_files_readable": true,
+    "case_numbers_dates_parsed": true,
+    "authority_kind_separation": true,
+    "collection_v_publication_match": true,
+    "cross_batch_dedup_b2_b9": true,
+    "ole_titles_match_entry_numbers": true,
+    "source_conflicts_preserved_not_silently_corrected": true
+  }
+}\n
