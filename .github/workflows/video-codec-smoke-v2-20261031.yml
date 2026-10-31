@@ -1,0 +1,29 @@
+name: Video codec smoke v2 2026-10-31
+
+on:
+  push:
+    branches:
+      - test/video-codec-smoke-20261031
+    paths:
+      - ".github/workflows/video-codec-smoke-v2-20261031.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect both promo videos
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in assets/ai-advokat-official-promo.mp4 assets/ai-advokat-promo-reel-2026-10-26.mp4; do
+            echo "=== $f ==="
+            file "$f"
+            echo "size=$(stat -c%s "$f")"
+            echo "codec markers:"
+            strings "$f" | grep -E '^(avc1|hvc1|hev1|mp4a|av01|vp09)$' | sort -u || true
+            test -s "$f"
+          done
