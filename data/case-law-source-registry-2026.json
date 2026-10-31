@@ -317,12 +317,14 @@
         "mk-judicial-reference-batch-2026-10-31-b3",
         "mk-historical-direct-case-law-2026-10-31-b4",
         "mk-historical-direct-case-law-2026-10-31-b5",
-        "mk-historical-direct-case-law-2026-10-31-b6"
+        "mk-historical-direct-case-law-2026-10-31-b6",
+        "mk-historical-direct-case-law-2026-10-31-b7"
       ],
       "direct_extract_batch_ids": [
         "mk-historical-direct-case-law-2026-10-31-b4",
         "mk-historical-direct-case-law-2026-10-31-b5",
-        "mk-historical-direct-case-law-2026-10-31-b6"
+        "mk-historical-direct-case-law-2026-10-31-b6",
+        "mk-historical-direct-case-law-2026-10-31-b7"
       ]
     },
     {
@@ -521,15 +523,17 @@
       ],
       "historical_current_law_gate": true,
       "original_decision_binding_required_before_gpt_case_law_context": true,
-      "authority_note": "Publication-level matching to Collection V strengthens provenance but does not prove remote/original-decision binding or present-law validity. B5 also preserves General Session principled stances and Civil Division legal opinions as distinct interpretive authority kinds.",
+      "authority_note": "Publication-level matching to Collection V strengthens provenance but does not prove remote/original-decision binding or present-law validity. Direct extract batches preserve Supreme Court and Commercial Court authority classes separately, plus interpretive authority subtypes where present.",
       "privacy_minimisation": true,
       "additional_corpus_ids": [
         "mk-historical-direct-case-law-2026-10-31-b5",
-        "mk-historical-direct-case-law-2026-10-31-b6"
+        "mk-historical-direct-case-law-2026-10-31-b6",
+        "mk-historical-direct-case-law-2026-10-31-b7"
       ],
       "direct_extract_batch_ids": [
         "mk-historical-direct-case-law-2026-10-31-b5",
-        "mk-historical-direct-case-law-2026-10-31-b6"
+        "mk-historical-direct-case-law-2026-10-31-b6",
+        "mk-historical-direct-case-law-2026-10-31-b7"
       ],
       "source_metadata_anomaly_policy": "Preserve source-file metadata conflicts as provenance flags; legal identity follows verified textual content, case number, date and publication locator. Do not silently rewrite source metadata."
     },
@@ -544,7 +548,13 @@
       "corpus_id": "mk-historical-direct-case-law-2026-10-31-b4",
       "current_law_verification_required": true,
       "original_decision_binding_required_before_gpt_case_law_context": true,
-      "authority_note": "Historical Commercial Court decisions remain distinct from Supreme Court decisions and require current-law/original-source verification before material present-law use."
+      "authority_note": "Historical Commercial Court decisions remain distinct from Supreme Court decisions and require current-law/original-source verification before material present-law use.",
+      "additional_corpus_ids": [
+        "mk-historical-direct-case-law-2026-10-31-b7"
+      ],
+      "direct_extract_batch_ids": [
+        "mk-historical-direct-case-law-2026-10-31-b7"
+      ]
     }
   ],
   "target_case_record": {
