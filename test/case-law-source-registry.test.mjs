@@ -205,3 +205,20 @@ test("CLSRC14 historical direct B4 preserves publication and authority boundarie
   assert.equal(commercial.current_law_verification_required,true);
   assert.equal(commercial.original_decision_binding_required_before_gpt_case_law_context,true);
 });
+
+
+test("CLSRC15 historical direct B5 preserves decision and interpretive authority boundaries",()=>{
+  const byId=new Map(registry.sources.map(x=>[x.id,x]));
+  const cid="mk-historical-direct-case-law-2026-10-31-b5";
+  const archive=byId.get("mk-supreme-court-publication-archive");
+  assert.ok(archive.additional_corpus_ids.includes(cid));
+  assert.ok(archive.direct_extract_batch_ids.includes(cid));
+  const coll=byId.get("mk-supreme-collection-v-1990-1996");
+  assert.ok(coll.additional_corpus_ids.includes(cid));
+  assert.ok(coll.direct_extract_batch_ids.includes(cid));
+  assert.equal(coll.historical_current_law_gate,true);
+  assert.equal(coll.original_decision_binding_required_before_gpt_case_law_context,true);
+  assert.ok(coll.authority_subtypes.includes("начелни ставови"));
+  assert.ok(coll.authority_subtypes.includes("правни мислења на судски оддел"));
+  assert.match(coll.authority_note,/distinct interpretive authority kinds/i);
+});
