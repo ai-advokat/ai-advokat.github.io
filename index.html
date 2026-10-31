@@ -15,7 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/app-icon.svg" />
-  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261015-free-workers-ai-v2" />
+  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261031-aiadvokat4-workbench" />
   <meta name="application-name" content="AI Advokat" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -1852,6 +1852,35 @@
                 <button class="ai-chat-stop" id="aiChatStop" type="button" aria-label="Стоп" title="Стоп">■</button>
               </div>
 
+              <section class="ai-prof-workbench" id="aiProfessionalWorkbench" aria-label="AI Advokat professional workbench">
+                <div class="ai-prof-head">
+                  <div>
+                    <strong>AIAdvokat4 · LexNova UX</strong>
+                    <small>AI Advokat governed backend · source-first · Human Gate</small>
+                  </div>
+                  <span class="ai-prof-badge">PROFESSIONAL WORKBENCH</span>
+                </div>
+                <div class="ai-prof-chain" aria-label="Legal intelligence workflow">
+                  <button class="ai-prof-step" type="button" data-ai-workbench="consolidator">
+                    <b>1 · КОНСОЛИДАТОР</b><span>Legal Formatter v10.4 CORE</span>
+                  </button>
+                  <span class="ai-prof-arrow" aria-hidden="true">→</span>
+                  <button class="ai-prof-step" type="button" data-ai-workbench="analyzer">
+                    <b>2 · АНАЛИЗАТОР</b><span>Legal Analyzer v1.0.1</span>
+                  </button>
+                  <span class="ai-prof-arrow" aria-hidden="true">→</span>
+                  <button class="ai-prof-step" type="button" data-ai-workbench="predictor">
+                    <b>3 · ПРЕДИКТОР</b><span>Governed scenarios · risk · CasePilot</span>
+                  </button>
+                </div>
+                <div class="ai-prof-actions">
+                  <button type="button" data-ai-workbench="casepilot">CasePilot</button>
+                  <button type="button" data-ai-workbench="sources">Sources</button>
+                  <button type="button" data-ai-workbench="human-gate">Human Gate</button>
+                </div>
+                <div class="ai-prof-evidence" id="aiWorkbenchPanel" hidden aria-live="polite"></div>
+              </section>
+
               <div class="ai-chat-composer-footer">
                 <details class="ai-chat-tools" id="aiChatTools">
                   <summary>Повеќе</summary>
@@ -1865,12 +1894,16 @@
                       </div>
                     </div>
                     <div class="ai-chat-tools-group">
-                      <strong>Професионални алатки</strong>
+                      <strong>AIAdvokat4 · Professional Workbench</strong>
                       <div class="ai-chat-modes" aria-label="Професионални алатки">
-                        <a class="ai-chat-tool-action" href="/professional-tools.html#analyzer">Правен анализатор</a>
-                        <a class="ai-chat-tool-action" href="/professional-tools.html#casepilot">CasePilot</a>
+                        <button class="ai-chat-tool-action" type="button" data-ai-workbench="consolidator">Консолидатор v10.4</button>
+                        <button class="ai-chat-tool-action" type="button" data-ai-workbench="analyzer">Анализатор v1.0.1</button>
+                        <button class="ai-chat-tool-action" type="button" data-ai-workbench="predictor">Предиктор</button>
+                        <button class="ai-chat-tool-action" type="button" data-ai-workbench="casepilot">CasePilot</button>
+                        <button class="ai-chat-tool-action" type="button" data-ai-workbench="sources">Sources</button>
+                        <button class="ai-chat-tool-action" type="button" data-ai-workbench="human-gate">Human Gate</button>
                       </div>
-                      <small class="ai-guide-vault-note">Документарна анализа и CasePilot работат со проверливи извори и човечка контрола. Доверливи предмети не се внесуваат во јавниот слој.</small>
+                      <small class="ai-guide-vault-note">LexNova UX + AI Advokat governed backend. Consolidator е exact Legal Formatter v10.4 CORE; Analyzer е deterministic Legal Analyzer v1.0.1; Predictor работи со governed сценарија и CasePilot граници, без проценти и без гаранции.</small>
                     </div>
                     <div class="ai-chat-tools-group">
                       <strong>FREE режим</strong>
@@ -4266,7 +4299,7 @@
   loadCapabilities();
 </script>
 <script src="/assets/guide-vault.js?v=20261005-private-vault-v2"></script>
-<script src="/assets/ai-advokat-chat.js?v=20261018-canonical-release-v4"></script>
+<script src="/assets/ai-advokat-chat.js?v=20261031-aiadvokat4-workbench"></script>
 
 </body>
 </html>
