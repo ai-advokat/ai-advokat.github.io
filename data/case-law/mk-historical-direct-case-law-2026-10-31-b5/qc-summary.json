@@ -1,0 +1,19 @@
+{
+  "input_files": 18,
+  "canonical_records": 18,
+  "decision_records": 15,
+  "interpretive_authorities": 3,
+  "cross_batch_case_duplicates": 0,
+  "collection_v_bound": 18,
+  "source_hashes_present": 18,
+  "text_hashes_present": 18,
+  "fatal_defects": [],
+  "production_eligible": false,
+  "human_gate_required": true,
+  "verification": {
+    "source_files_readable": true,
+    "case_numbers_dates_parsed": true,
+    "authority_kind_separation": true,
+    "collection_v_publication_match": true
+  }
+}
