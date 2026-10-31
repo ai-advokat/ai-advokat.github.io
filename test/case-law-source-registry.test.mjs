@@ -138,3 +138,21 @@ test("CLSRC11 Judicial Portal search results fail closed until record kind and d
   }
   assert.equal(p.privacy_minimisation,true);
 });
+
+
+test("CLSRC12 appellate bulletin and joint-meeting lanes remain provenance-gated",()=>{
+  const byId=new Map(registry.sources.map(x=>[x.id,x]));
+  for(const id of ["mk-appellate-skopje-bulletins","mk-appellate-bitola-bulletins","mk-appellate-gostivar-bulletins","mk-joint-appellate-meeting-materials"]){
+    assert.ok(byId.has(id),id);
+  }
+  for(const id of ["mk-appellate-skopje-bulletins","mk-appellate-bitola-bulletins","mk-appellate-gostivar-bulletins"]){
+    const s=byId.get(id);
+    assert.equal(s.authority_class,"appellate_case_law_publication_reference");
+    assert.equal(s.original_decision_binding_required_before_gpt_case_law_context,true);
+    assert.equal(s.privacy_minimisation,true);
+  }
+  const joint=byId.get("mk-joint-appellate-meeting-materials");
+  assert.equal(joint.authority_class,"joint_appellate_interpretive_reference");
+  assert.equal(joint.current_law_verification_required,true);
+  assert.match(joint.authority_note,/not ordinary judgments/i);
+});
