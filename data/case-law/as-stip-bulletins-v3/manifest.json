@@ -1,0 +1,16 @@
+{
+  "type":"as_stip_composite_corpus_manifest",
+  "corpus_id":"as-stip-bulletins-v3",
+  "status":"RELEASE_CANDIDATE_HUMAN_GATE",
+  "production_eligible":false,
+  "human_gate_required":true,
+  "components":[
+    {"corpus_id":"as-stip-bulletins-v2","bulletins":["1-2","3","5","6","7","8"],"publication_record_count":388},
+    {"extension_id":"as-stip-bulletins-ext-2026-10-31-b4-b9-b10-b11","bulletins":["4","9","10","11"],"domestic_publication_record_count":191,"echr_secondary_reference_count":6}
+  ],
+  "bulletin_coverage":["1-2","3","4","5","6","7","8","9","10","11"],
+  "source_count":10,
+  "domestic_publication_record_count":579,
+  "echr_secondary_reference_count":6,
+  "activation_note":"Composite manifest only. Existing governedCaseLawContext must not switch to v3 until official-binding/current-law/Human Gate requirements are satisfied."
+}
