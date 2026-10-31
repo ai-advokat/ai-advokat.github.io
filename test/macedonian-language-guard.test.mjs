@@ -7,6 +7,7 @@ import {
   shouldEnforceMacedonianOutput,
   assessMacedonianOutput,
   macedonianReleaseVerdict,
+  macedonianDeliveryVerdict,
   buildMacedonianRepairMessages,
   normaliseMacedonianGeneratedText
 } from "../src/macedonian-language-guard.js";
@@ -16,7 +17,7 @@ test("runtime contract is explicitly anchored to the 2017 Macedonian orthography
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/2017/);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/standard literary Macedonian/i);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/PRIORITY 0/);
-  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/must not be shown to the user/);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/must not suppress an otherwise useful legal answer/);
 });
 
 test("Macedonian questions activate the language gate",()=>{
@@ -265,7 +266,7 @@ test("clean concise Macedonian is released by V9 canonical gate",()=>{
   const clean="Договорот за вработување ги уредува правата и обврските на работникот и работодавачот. За тековните законски услови треба да се провери важечкиот Закон за работните односи.";
   const verdict=macedonianReleaseVerdict(clean,{userText:"Што е договор за вработување?"});
   assert.equal(verdict.verdict,"RELEASE",JSON.stringify(verdict));
-  assert.equal(MACEDONIAN_RELEASE_GATE_VERSION,"FREE_MK_CANONICAL_RELEASE_V5");
+  assert.equal(MACEDONIAN_RELEASE_GATE_VERSION,"FREE_MK_CANONICAL_RELEASE_V6");
 });
 
 
@@ -306,4 +307,22 @@ test("valid Macedonian 'обврска/обврски' remains valid",()=>{
   const check=assessMacedonianOutput(good,{userText:"Објасни ми на македонски."});
   assert.equal(check.ok,true,JSON.stringify(check));
   assert.equal(macedonianReleaseVerdict(good,{userText:"Објасни ми на македонски."}).verdict,"RELEASE");
+});
+
+
+test("language-only contamination is a QA warning, not a functional block",()=>{
+  const bad="Ево на примерен нацрт на тужба со едно нецелосно наименование.";
+  const delivery=macedonianDeliveryVerdict(bad,{userText:"Изработи тужба на македонски."});
+  assert.equal(delivery.deliver,true,JSON.stringify(delivery));
+  assert.equal(delivery.legalSafetyBlock,false);
+  assert.ok(["verified_runtime","released_with_language_warning"].includes(delivery.state));
+  assert.ok(delivery.text.length>0);
+});
+
+test("unrequested foreign-jurisdiction substitution remains a legal-safety block",()=>{
+  const bad="Применете Български закон за наследство и проверете во Народен парламент.";
+  const delivery=macedonianDeliveryVerdict(bad,{userText:"Анализирај наследување во Северна Македонија."});
+  assert.equal(delivery.deliver,false,JSON.stringify(delivery));
+  assert.equal(delivery.legalSafetyBlock,true);
+  assert.equal(delivery.state,"blocked_foreign_jurisdiction");
 });

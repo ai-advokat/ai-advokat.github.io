@@ -129,10 +129,36 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const html=fs.readFileSync('bot/index.html','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261031-legal-pulse-r2/);
-  assert.match(html,/standalone-bot-vnext\.css\?v=20261031-legal-pulse-r2/);
-  assert.match(vnext,/import\('\.\/standalone-bot\.js\?v=20261031-legal-pulse-r2'\)/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261031-runtime-r3/);
+  assert.match(html,/standalone-bot-vnext\.css\?v=20261031-runtime-r3/);
+  assert.match(vnext,/import\('\.\/standalone-bot\.js\?v=20261031-runtime-r3'\)/);
   assert.match(core,/function ensureLegalPulseStyles\(\)/);
   assert.match(core,/id = 'legalPulseRuntimeStyle'/);
   assert.match(core,/const pulse = responsePulse\(\)/);
+});
+
+
+test('visible transcript suppresses duplicate consecutive user bubbles',()=>{
+  const source=fs.readFileSync('assets/standalone-bot.js','utf8');
+  assert.ok(source.includes("const normalizedText=String(text||'').trim()"));
+  assert.ok(source.includes("lastText && lastText===normalizedText"));
+});
+
+test('professional runtime treats language quality as non-blocking QA',()=>{
+  const source=fs.readFileSync('src/index.js','utf8');
+  assert.ok(source.includes('macedonianDeliveryVerdict'));
+  assert.ok(source.includes('const governedLanguageRepairEligible=false'));
+  assert.ok(source.includes('foreign_jurisdiction_substitution_blocked'));
+  assert.ok(source.includes('governedFinalRelease.deliveryState'));
+});
+
+
+test('bot menu and tool surfaces use leading symbols consistently',()=>{
+  const html=fs.readFileSync('bot/index.html','utf8');
+  assert.match(html,/＋ Нов разговор/);
+  assert.match(html,/⇩ Преземи разговор/);
+  assert.match(html,/◫ Материјали и алатки/);
+  assert.match(html,/✓ Професионален пристап/);
+  assert.match(html,/▣ CasePilot/);
+  assert.match(html,/⚖ Судски пресуди и метаподатоци/);
 });

@@ -55,7 +55,10 @@ window.fetch = async function(input, init={}){
   body.history=thread.history.slice(-12).map(({role,text})=>({role,text}));
   body.sessionId=thread.sessionId;
   if(q){
-    thread.history.push({role:'user',text:q,time:now()});
+    const last=thread.history.at(-1);
+    if(!(last?.role==='user' && String(last.text||'').trim()===q)){
+      thread.history.push({role:'user',text:q,time:now()});
+    }
     if(thread.title==='Нов разговор') thread.title=titleFrom(q);
     thread.updatedAt=now();
     window.dispatchEvent(new CustomEvent('aiadvokat:vnext-thread-change'));
@@ -74,7 +77,7 @@ window.fetch = async function(input, init={}){
   return response;
 };
 
-await import('./standalone-bot.js?v=20261031-legal-pulse-r2');
+await import('./standalone-bot.js?v=20261031-runtime-r3');
 
 const $=id=>document.getElementById(id);
 const qs=(s,r=document)=>r.querySelector(s);
@@ -128,19 +131,19 @@ function buildShell(){
     <div class="vnext-history-head"><span>Историја · оваа сесија</span><button id="vnextTheme" type="button" class="vnext-icon" aria-label="Промени тема">◐</button></div>
     <input id="vnextThreadSearch" class="vnext-thread-search" type="search" placeholder="Пребарај разговори…" aria-label="Пребарај разговори">
     <div id="vnextThreadList" class="vnext-thread-list"></div>
-    <div class="vnext-side-foot"><strong>Source-first · Human Gate</strong><span>Разговорите од vNext history не се чуваат трајно. Доверливи предмети → Secure Case Workspace.</span></div>`;
+    <div class="vnext-side-foot"><strong>Source-first · Human Gate</strong><span>Разговорите од vNext history не се чуваат трајно. Идентификаторите се маскираат локално; Secure Case Workspace користете го кога е неопходен оригиналниот документ или точниот идентитет.</span></div>`;
   evidence.innerHTML=`
     <div class="vnext-evidence-head"><div><strong id="vnextPanelTitle">Извори</strong><small id="vnextPanelSub">Проверлив контекст за активниот разговор</small></div><button id="vnextEvidenceClose" class="vnext-icon" type="button" aria-label="Затвори панел">×</button></div>
     <div class="vnext-evidence-tabs" role="tablist">
-      <button class="active" data-panel="sources" type="button">Извори</button>
-      <button data-panel="context" type="button">Контекст</button>
-      <button data-panel="human" type="button">Human Gate</button>
-      <button data-panel="artifact" type="button">Артефакт</button>
+      <button class="active" data-panel="sources" type="button"><span aria-hidden="true">▤</span> Извори</button>
+      <button data-panel="context" type="button"><span aria-hidden="true">◫</span> Контекст</button>
+      <button data-panel="human" type="button"><span aria-hidden="true">✓</span> Human Gate</button>
+      <button data-panel="artifact" type="button"><span aria-hidden="true">◇</span> Артефакт</button>
     </div>
     <div id="vnextPanelBody" class="vnext-panel-body"></div>`;
 
   const tools=mk('div',{class:'vnext-header-tools'});
-  tools.innerHTML='<button id="vnextMobileMenu" type="button" aria-label="Отвори workspace мени">☰</button><button id="vnextHeaderSearch" type="button" aria-label="Пребарај">⌕</button><button id="vnextHeaderEvidence" type="button">Извори</button>';
+  tools.innerHTML='<button id="vnextMobileMenu" type="button" aria-label="Отвори workspace мени">☰</button><button id="vnextHeaderSearch" type="button" aria-label="Пребарај">⌕</button><button id="vnextHeaderEvidence" type="button">▤ Извори</button>';
   header.insertBefore(tools,header.lastElementChild);
   buildWorkflowDialog(); buildSearchDialog();
 }
@@ -149,14 +152,14 @@ function buildWorkflowDialog(){
   const d=mk('dialog',{id:'vnextWorkflowDialog',class:'vnext-dialog'});
   d.innerHTML=`<div class="vnext-dialog-head"><div><strong>AI Advokat Workflows</strong><small>Структурирани почетоци врз governed backend</small></div><button type="button" data-close>×</button></div>
   <div class="vnext-workflow-grid">
-    <button data-prompt="Истражи го правното прашање source-first. Прво утврди применливи официјални извори и важечка верзија, потоа дај анализа, ризици и отворени прашања."><strong>Правно истражување</strong><span>Извори → правило → анализа → ризици</span></button>
-    <button data-prompt="Подготви професионален правен меморандум со: прашање, релевантни факти, правна рамка, анализа, спротивни аргументи, заклучок и Human Gate точки за проверка."><strong>Правен меморандум</strong><span>Issue · Facts · Law · Analysis · Conclusion</span></button>
-    <button data-prompt="Прегледај го договорниот проблем. Издвои обврски, рокови, ризични клаузули, можни повреди, докази што недостигаат и точки за човечка проверка."><strong>Contract Review</strong><span>Клаузули · ризици · недостиг на докази</span></button>
-    <button data-prompt="Изгради хронологија на предметот од дадените факти. Оддели потврдени факти, спорни факти, докази, правни прашања и следни чекори."><strong>Case Chronology</strong><span>Факти · докази · спорни точки · задачи</span></button>
-    <button data-prompt="Направи source verification audit на претходниот одговор. За секое материјално правно тврдење наведи дали има примарен извор, важечка верзија и што останува непотврдено."><strong>Source Check</strong><span>Authority · version · provenance</span></button>
-    <button data-prompt="Спореди ги двете верзии на документот. Издвои суштински промени, правен ефект, ризици и прашања за Human Gate. Не измислувај разлики што не се во документите."><strong>Redline / Compare</strong><span>Промени · ефект · ризик · review</span></button>
-    <button data-vnext-tool="consolidator"><strong>Консолидатор</strong><span>v10.4 · official consolidated / editorial consolidated / working consolidation · provenance · Human Gate</span></button>
-    <button data-prompt="PREDICTOR MODE — GOVERNED SCENARIO ANALYSIS. Не давај процент на успех и не гарантирај исход. Изгради најмалку три сценарија: поволно, мешано и неповолно. За секое наведи: одлучувачки факти, докази, применлива правна основа и source status, спротивни аргументи/authority, процесни ризици, што недостига и кои факти би го смениле сценариото. Ако задачата содржи доверлив предмет или клиентски податоци, насочи ја анализата во Secure Case Workspace / CasePilot. Заврши со HUMAN GATE REQUIRED."><strong>Предиктор</strong><span>Сценарија · фактори · ризици · без лажни проценти</span></button>
+    <button data-prompt="Истражи го правното прашање source-first. Прво утврди применливи официјални извори и важечка верзија, потоа дај анализа, ризици и отворени прашања."><strong>⌕ Правно истражување</strong><span>Извори → правило → анализа → ризици</span></button>
+    <button data-prompt="Подготви професионален правен меморандум со: прашање, релевантни факти, правна рамка, анализа, спротивни аргументи, заклучок и Human Gate точки за проверка."><strong>▧ Правен меморандум</strong><span>Issue · Facts · Law · Analysis · Conclusion</span></button>
+    <button data-prompt="Прегледај го договорниот проблем. Издвои обврски, рокови, ризични клаузули, можни повреди, докази што недостигаат и точки за човечка проверка."><strong>≋ Contract Review</strong><span>Клаузули · ризици · недостиг на докази</span></button>
+    <button data-prompt="Изгради хронологија на предметот од дадените факти. Оддели потврдени факти, спорни факти, докази, правни прашања и следни чекори."><strong>⌁ Case Chronology</strong><span>Факти · докази · спорни точки · задачи</span></button>
+    <button data-prompt="Направи source verification audit на претходниот одговор. За секое материјално правно тврдење наведи дали има примарен извор, важечка верзија и што останува непотврдено."><strong>▤ Source Check</strong><span>Authority · version · provenance</span></button>
+    <button data-prompt="Спореди ги двете верзии на документот. Издвои суштински промени, правен ефект, ризици и прашања за Human Gate. Не измислувај разлики што не се во документите."><strong>⇄ Redline / Compare</strong><span>Промени · ефект · ризик · review</span></button>
+    <button data-vnext-tool="consolidator"><strong>≋ Консолидатор</strong><span>v10.4 · official consolidated / editorial consolidated / working consolidation · provenance · Human Gate</span></button>
+    <button data-prompt="PREDICTOR MODE — GOVERNED SCENARIO ANALYSIS. Не давај процент на успех и не гарантирај исход. Изгради најмалку три сценарија: поволно, мешано и неповолно. За секое наведи: одлучувачки факти, докази, применлива правна основа и source status, спротивни аргументи/authority, процесни ризици, што недостига и кои факти би го смениле сценариото. Ако точниот идентитет или оригиналниот доверлив документ се неопходни за задачата, користи Secure Case Workspace / CasePilot; инаку продолжи со локално маскирани идентификатори. Заврши со HUMAN GATE REQUIRED."><strong>◎ Предиктор</strong><span>Сценарија · фактори · ризици · без лажни проценти</span></button>
   </div><p class="vnext-dialog-note">Овие Workflows не се автономно поднесување или потпишување. Тие подготвуваат работна задача за постојниот AI Advokat backend.</p>`;
   document.body.append(d);
   qs('[data-close]',d).onclick=()=>d.close();
@@ -169,6 +172,69 @@ function buildSearchDialog(){
   d.innerHTML=`<div class="vnext-dialog-head"><div><strong>Global Search</strong><small>Разговори, workspaces и алатки</small></div><button type="button" data-close>×</button></div><input id="vnextGlobalSearch" type="search" placeholder="Пребарај разговор, CasePilot, извор…" autocomplete="off"><div id="vnextSearchResults" class="vnext-search-results"></div>`;
   document.body.append(d); qs('[data-close]',d).onclick=()=>d.close();
   $('vnextGlobalSearch').addEventListener('input',renderGlobalSearch);
+}
+
+async function copyText(value){
+  const text=String(value||'').trim();
+  if(!text) return false;
+  try{
+    await navigator.clipboard.writeText(text);
+    return true;
+  }catch{
+    const area=document.createElement('textarea');
+    area.value=text; area.setAttribute('readonly',''); area.style.position='fixed'; area.style.opacity='0';
+    document.body.append(area); area.select();
+    let ok=false;
+    try{ok=document.execCommand('copy');}catch{}
+    area.remove(); return ok;
+  }
+}
+function setComposerText(value){
+  const q=$('question'); if(!q) return;
+  q.value=String(value||'').trim();
+  q.dispatchEvent(new Event('input',{bubbles:true}));
+  q.focus();
+}
+function priorUserText(article){
+  let node=article?.previousElementSibling;
+  while(node){
+    if(node.classList?.contains('message') && node.classList.contains('user')){
+      return String(node.querySelector('.text')?.dataset.vnextOriginalText||node.querySelector('.text')?.textContent||'').trim();
+    }
+    node=node.previousElementSibling;
+  }
+  const history=activeThread().history;
+  for(let i=history.length-1;i>=0;i--) if(history[i]?.role==='user') return String(history[i].text||'').trim();
+  return '';
+}
+function ensureMessageActions(article){
+  if(!article?.classList?.contains('message') || article.querySelector('.vnext-message-actions')) return;
+  if(article.classList.contains('response-pending')) return;
+  const body=article.querySelector('.text'); if(!body) return;
+  if(!body.dataset.vnextOriginalText) body.dataset.vnextOriginalText=String(body.textContent||'').trim();
+  const original=body.dataset.vnextOriginalText;
+  const actions=mk('div',{class:'vnext-message-actions','aria-label':'Акции за порака'});
+  const copy=mk('button',{type:'button',class:'vnext-message-action',title:'Копирај','aria-label':'Копирај порака',text:'⧉ Копирај'});
+  copy.onclick=async()=>{
+    const ok=await copyText(original);
+    const previous=copy.textContent;
+    copy.textContent=ok?'✓ Копирано':'! Не успеа';
+    setTimeout(()=>{copy.textContent=previous;},1200);
+  };
+  actions.append(copy);
+  if(article.classList.contains('user')){
+    const edit=mk('button',{type:'button',class:'vnext-message-action',title:'Уреди и повторно употреби','aria-label':'Уреди прашање',text:'✎ Уреди'});
+    edit.onclick=()=>setComposerText(original);
+    actions.append(edit);
+  }else if(article.classList.contains('assistant')){
+    const repeat=mk('button',{type:'button',class:'vnext-message-action',title:'Повтори го прашањето','aria-label':'Повтори го прашањето',text:'↺ Повтори'});
+    repeat.onclick=()=>setComposerText(priorUserText(article));
+    const evidence=mk('button',{type:'button',class:'vnext-message-action',title:'Отвори ги изворите','aria-label':'Отвори ги изворите',text:'▤ Извори'});
+    evidence.onclick=()=>openEvidence('sources');
+    actions.append(repeat,evidence);
+  }
+  const sourceBlock=article.querySelector('.sources,.vnext-source-tray');
+  if(sourceBlock) article.insertBefore(actions,sourceBlock); else article.append(actions);
 }
 
 function renderThreadList(){
@@ -200,7 +266,7 @@ function renderTranscript(t){
   }
   for(const item of t.history){
     const a=mk('article',{class:'message '+item.role}); const body=mk('div',{class:'text',text:item.text}); a.append(body);
-    if(item.role==='assistant'&&item.model) a.append(mk('small',{text:item.model})); host.append(a); enhanceLegalMarkers(body);
+    if(item.role==='assistant'&&item.model) a.append(mk('small',{text:item.model})); host.append(a); ensureMessageActions(a); enhanceLegalMarkers(body);
   }
   if(t.latestSources.length) addSourceTray(qs('.message.assistant:last-of-type',host),t.latestSources);
   host.scrollTop=host.scrollHeight;
@@ -226,6 +292,7 @@ function enhanceLegalMarkers(node){
   frag.append(document.createTextNode(text.slice(last))); node.replaceChildren(frag); node.dataset.vnextMarkers='1';
 }
 function scanMessages(){
+  qsa('.message.user,.message.assistant').forEach(ensureMessageActions);
   qsa('.message.assistant .text').forEach(enhanceLegalMarkers);
   const last=qs('.message.assistant:last-of-type'); if(last) addSourceTray(last,activeThread().latestSources);
 }
@@ -233,25 +300,25 @@ function scanMessages(){
 function renderEvidence(){
   const body=$('vnextPanelBody'); if(!body) return; const t=activeThread(); body.replaceChildren();
   qsa('.vnext-evidence-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.panel===workspace.panelTab));
-  const titles={sources:['Извори','Проверлив контекст за активниот разговор'],context:['Контекст','Избран режим, библиотека и thread'],human:['Human Gate','Човечка проверка пред последична употреба'],artifact:['Артефакт','Преглед на правен извор или работен материјал']};
+  const titles={sources:['▤ Извори','Проверлив контекст за активниот разговор'],context:['◫ Контекст','Избран режим, библиотека и thread'],human:['✓ Human Gate','Човечка проверка пред последична употреба'],artifact:['◇ Артефакт','Преглед на правен извор или работен материјал']};
   $('vnextPanelTitle').textContent=titles[workspace.panelTab][0]; $('vnextPanelSub').textContent=titles[workspace.panelTab][1];
   if(workspace.panelTab==='sources'){
     if(!t.latestSources.length){ body.append(emptyCard('Нема прикажани извори','Кога backend ќе врати правни извори, тие ќе се појават тука. Ова не значи дека нема правна рамка — само дека за овој thread нема зачуван source payload.')); return; }
     t.latestSources.forEach((row,i)=>{
       const card=mk('section',{class:'vnext-evidence-card'}); card.append(mk('span',{class:'vnext-evidence-num',text:String(i+1).padStart(2,'0')}),mk('strong',{text:row.label}));
-      const u=safeUrl(row.url); if(u){const a=mk('button',{type:'button',class:'vnext-open-source',text:'Отвори извор →'}); a.onclick=()=>openArtifact(row); card.append(a);} else card.append(mk('small',{text:'Изворот е наведен без јавен URL.'})); body.append(card);
+      const u=safeUrl(row.url); if(u){const a=mk('button',{type:'button',class:'vnext-open-source',text:'↗ Отвори извор'}); a.onclick=()=>openArtifact(row); card.append(a);} else card.append(mk('small',{text:'Изворот е наведен без јавен URL.'})); body.append(card);
     }); return;
   }
   if(workspace.panelTab==='context'){
     const mode=$('researchMode')?.selectedOptions?.[0]?.textContent||'Автоматски'; const guides=$('useLocalGuides')?.checked?'Вклучени':'Исклучени';
-    body.append(infoCard('Активен thread',t.title),infoCard('Research mode',mode),infoCard('Проверени локални водичи',guides),infoCard('Модел',t.model||'Се прикажува по AI одговор'),infoCard('Privacy boundary','Доверливи клиентски предмети не се праќаат преку обичниот thread; се насочуваат во Secure Case Workspace.')); return;
+    body.append(infoCard('Активен thread',t.title),infoCard('Research mode',mode),infoCard('Проверени локални водичи',guides),infoCard('Модел',t.model||'Се прикажува по AI одговор'),infoCard('Privacy boundary','Препознатливите лични идентификатори се маскираат локално пред испраќање. Secure Case Workspace е потребен кога за задачата е неопходен оригиналниот документ или точниот идентитет.')); return;
   }
   if(workspace.panelTab==='human'){
     const card=mk('section',{class:'vnext-human-card'}); card.innerHTML='<span class="vnext-status-pill">HUMAN GATE</span><h3>Потребна е професионална проверка</h3><p>AI одговорите и извозите се работен материјал. Нема автоматско потпишување, поднесување, испраќање или правно овластување.</p>';
     const actions=mk('div',{class:'vnext-panel-actions'});
-    const cp=mk('button',{type:'button',text:'Отвори CasePilot'}); cp.onclick=()=>window.open('/casepilot-workspace.html','_blank','noopener');
-    const docx=mk('button',{type:'button',text:'Извези DOCX'}); docx.onclick=()=>exportActive('docx');
-    const pdf=mk('button',{type:'button',text:'Извези PDF'}); pdf.onclick=()=>exportActive('pdf'); actions.append(cp,docx,pdf); card.append(actions); body.append(card); return;
+    const cp=mk('button',{type:'button',text:'▣ Отвори CasePilot'}); cp.onclick=()=>window.open('/casepilot-workspace.html','_blank','noopener');
+    const docx=mk('button',{type:'button',text:'⇩ Извези DOCX'}); docx.onclick=()=>exportActive('docx');
+    const pdf=mk('button',{type:'button',text:'⇩ Извези PDF'}); pdf.onclick=()=>exportActive('pdf'); actions.append(cp,docx,pdf); card.append(actions); body.append(card); return;
   }
   if(workspace.lastArtifact){ renderArtifact(workspace.lastArtifact); }
   else body.append(emptyCard('Нема отворен артефакт','Кликнете правен извор, citation chip или интерна правна референца.'));
@@ -264,7 +331,7 @@ function renderArtifact(row){
   if(!u){card.append(mk('p',{text:'Нема јавен URL за директен преглед.'}));body.append(card);return;}
   if(u.origin===location.origin){ const frame=mk('iframe',{class:'vnext-artifact-frame',src:u.href,title:row.label||'Правен извор'}); card.append(frame); }
   else { card.append(mk('p',{text:'Надворешните извори се отвораат во посебен таб за да се почитуваат нивните безбедносни политики.'})); }
-  const a=mk('a',{href:u.href,target:'_blank',rel:'noopener noreferrer',class:'vnext-artifact-open',text:'Отвори оригинал ↗'}); card.append(a); body.append(card);
+  const a=mk('a',{href:u.href,target:'_blank',rel:'noopener noreferrer',class:'vnext-artifact-open',text:'↗ Отвори оригинал'}); card.append(a); body.append(card);
 }
 
 function openEvidence(tab){ if(tab) workspace.panelTab=tab; workspace.panelOpen=true; document.documentElement.classList.add('vnext-evidence-open'); renderEvidence(); }
@@ -276,7 +343,7 @@ function openGlobalSearch(){ const d=$('vnextSearchDialog'); d.showModal(); $('v
 function renderGlobalSearch(){
   const host=$('vnextSearchResults'); if(!host) return; const q=String($('vnextGlobalSearch')?.value||'').trim().toLowerCase(); host.replaceChildren();
   const tools=[
-    ['Анализатор','analyzer'],['Консолидатор','consolidator'],['Предиктор','predictor'],['Правни извори','sources'],['Судска практика','cases'],['CasePilot','casepilot'],['Документи','documents'],['Workflows','workflows'],['Human Gate','review'],['Library','library']
+    ['⌁ Анализатор','analyzer'],['≋ Консолидатор','consolidator'],['◎ Предиктор','predictor'],['▤ Правни извори','sources'],['⚖ Судска практика','cases'],['▣ CasePilot','casepilot'],['▧ Документи','documents'],['◇ Workflows','workflows'],['✓ Human Gate','review'],['◫ Library','library']
   ];
   const matches=workspace.threads.filter(t=>!q||t.title.toLowerCase().includes(q)||t.history.some(m=>String(m.text||'').toLowerCase().includes(q))).slice(0,8);
   if(matches.length){host.append(mk('small',{class:'vnext-search-group',text:'Разговори'}));matches.forEach(t=>{const b=mk('button',{type:'button',text:t.title});b.onclick=()=>{$('vnextSearchDialog').close();switchThread(t.id)};host.append(b);});}
@@ -289,7 +356,7 @@ function runAction(action){
   if(action==='analyzer'){window.open('/professional-tools.html#analyzer','_blank','noopener');return;}
   if(action==='consolidator'){window.open('/consolidator/','_blank','noopener');return;}
   if(action==='predictor'){
-    $('question').value='PREDICTOR MODE — GOVERNED SCENARIO ANALYSIS. Анализирај го прашањето преку поволно, мешано и неповолно сценарио. Не давај процент на успех и не гарантирај исход. За секое сценарио наведи одлучувачки факти, доказна поддршка, применлива правна основа и source status, спротивни аргументи/authority, процесни ризици, празнини во доказите и што би го сменило сценариото. Ако станува збор за доверлив клиентски предмет, насочи ме во Secure Case Workspace / CasePilot. HUMAN GATE REQUIRED.\n\nПрашање/предмет: ';
+    $('question').value='PREDICTOR MODE — GOVERNED SCENARIO ANALYSIS. Анализирај го прашањето преку поволно, мешано и неповолно сценарио. Не давај процент на успех и не гарантирај исход. За секое сценарио наведи одлучувачки факти, доказна поддршка, применлива правна основа и source status, спротивни аргументи/authority, процесни ризици, празнини во доказите и што би го сменило сценариото. Ако точниот идентитет или оригиналниот документ се неопходни, користи Secure Case Workspace / CasePilot; инаку продолжи со локално маскирани идентификатори. HUMAN GATE REQUIRED.\n\nПрашање/предмет: ';
     $('question').dispatchEvent(new Event('input')); closeMobileSidebar(); $('question').focus(); return;
   }
   if(action==='sources'){openEvidence('sources');return;}

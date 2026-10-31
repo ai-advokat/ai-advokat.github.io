@@ -3,8 +3,8 @@
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
 export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V9";
-export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V5";
-export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="AI-нацртот не ја помина задолжителната јазична проверка за стандарден македонски јазик и затоа не е објавен. Барањето не е потрошено како валиден одговор; обидете се повторно или наведете го конкретниот закон за source-first анализа.";
+export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V6";
+export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="Одговорот е запрен затоа што јазичната проверка откри непобарано право од друга јурисдикција. Ова е правно-безбедносна, а не стилска блокада; потребна е проверка на важечките извори за Северна Македонија.";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
   "PRIORITY 0 — ПРАВОПИС НА МАКЕДОНСКИОТ ЈАЗИК 2017.",
@@ -25,7 +25,7 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "A Macedonian-facing answer that is predominantly Bulgarian, Serbian or Russian is invalid even if it uses Cyrillic. Cyrillic alone is never evidence that the language requirement was satisfied.",
   "For a North Macedonian legal matter, never substitute Bulgarian, Serbian, Russian or another foreign law unless the user explicitly asks for that jurisdiction and the supplied governed sources support it.",
   "If the controlling North Macedonian law is not established by the supplied governed sources, say that verification is required instead of importing a neighbouring jurisdiction.",
-  "Before returning the answer, silently self-check spelling, grammar, syntax, morphology and legal terminology against standard literary Macedonian and rewrite only unambiguous Serbian, Bulgarian or Russian contamination into Macedonian. Never reject or rewrite valid Macedonian words merely because the same spelling exists in another Slavic language. If unambiguous contamination remains, the draft is invalid and must not be shown to the user. Do not mention this self-check to the user."
+  "Before returning the answer, silently self-check spelling, grammar, syntax, morphology and legal terminology against standard literary Macedonian and rewrite only unambiguous Serbian, Bulgarian or Russian contamination into Macedonian. Never reject or rewrite valid Macedonian words merely because the same spelling exists in another Slavic language. Residual language-quality defects must be recorded for human review but must not suppress an otherwise useful legal answer; only substantive legal-safety defects such as unrequested foreign-jurisdiction substitution may block release. Do not mention this self-check to the user."
 ].join("\n");
 
 const FOREIGN_CYRILLIC_RE=/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/gu;
@@ -180,6 +180,44 @@ export function assessMacedonianOutput(text,{userText=""}={}){
     contextualContamination:contextualContamination.slice(0,12),
     structuralAnomalies,
     standardVersion:MACEDONIAN_LANGUAGE_STANDARD_VERSION
+  };
+}
+
+
+export function macedonianDeliveryVerdict(text,{userText=""}={}){
+  const original=String(text||"").normalize("NFKC").trim();
+  const languageRequired=shouldEnforceMacedonianOutput(userText);
+  if(!languageRequired){
+    return {
+      deliver:Boolean(original),
+      clean:true,
+      text:original,
+      languageRequired:false,
+      legalSafetyBlock:false,
+      quality:null,
+      releaseGate:{verdict:"RELEASE",severity:"not_applicable",gateVersion:MACEDONIAN_RELEASE_GATE_VERSION},
+      state:"not_required"
+    };
+  }
+  const normalized=normaliseMacedonianGeneratedText(original);
+  const quality=assessMacedonianOutput(normalized,{userText});
+  const releaseGate=macedonianReleaseVerdict(normalized,{userText});
+  const legalSafetyBlock=Array.isArray(quality?.reasons)
+    && quality.reasons.includes("foreign_jurisdiction_substitution");
+  const clean=releaseGate.verdict==="RELEASE";
+  return {
+    deliver:Boolean(normalized) && !legalSafetyBlock,
+    clean,
+    text:normalized,
+    languageRequired:true,
+    legalSafetyBlock,
+    quality,
+    releaseGate,
+    state:legalSafetyBlock
+      ? "blocked_foreign_jurisdiction"
+      : clean
+        ? "verified_runtime"
+        : "released_with_language_warning"
   };
 }
 

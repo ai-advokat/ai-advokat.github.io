@@ -22,9 +22,15 @@ function busy(value) {
 }
 function message(role, text, model = '') {
   $('welcome')?.remove();
+  const normalizedText=String(text||'').trim();
+  if(role==='user'){
+    const last=$('messages')?.lastElementChild;
+    const lastText=last?.classList?.contains('user') ? String(last.querySelector('.text')?.textContent||'').trim() : '';
+    if(lastText && lastText===normalizedText) return last;
+  }
   const article = document.createElement('article');
   article.className = 'message ' + role;
-  const body = document.createElement('div'); body.className = 'text'; body.textContent = text;
+  const body = document.createElement('div'); body.className = 'text'; body.textContent = normalizedText;
   article.append(body);
   if (model) { const meta = document.createElement('small'); meta.textContent = model; article.append(meta); }
   $('messages').append(article);

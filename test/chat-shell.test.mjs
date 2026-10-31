@@ -192,14 +192,15 @@ test("CHAT17 chat latency optimisations preserve governed routing",()=>{
   assert.match(worker,/Promise\.all\(\[/);
 });
 
-test("CHAT17b fast FREE Macedonian path is one-provider-call fail-closed",()=>{
+test("CHAT17b fast FREE Macedonian path uses deterministic non-blocking QA with zero extra language calls",()=>{
   assert.match(worker,/allowProviderRepair:!fastFreePrompt/);
-  assert.match(worker,/if\(!allowProviderRepair\)/);
-  assert.match(worker,/macedonian_fast_path_release_blocked/);
-  assert.match(worker,/fast_free_zero_extra_calls_complex_repairable_max_one_extra_call/);
+  assert.match(worker,/providerCalls:0/);
+  assert.match(worker,/language_quality_warning/);
+  assert.match(worker,/zero_extra_language_repair_calls/);
+  assert.doesNotMatch(worker,/runOpenAIMacedonianRepair\(env/);
 });
 
-test("CHAT17c one canonical last-mile Macedonian gate protects every public AI release surface",()=>{
+test("CHAT17c one canonical last-mile Macedonian policy protects every public surface without language-only refusal",()=>{
   assert.match(worker,/function canonicalMacedonianFinalRelease/);
   const free=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
   assert.match(free,/canonicalMacedonianFinalRelease\(finalText,q\)/);
@@ -207,12 +208,13 @@ test("CHAT17c one canonical last-mile Macedonian gate protects every public AI r
   assert.match(governed,/canonicalMacedonianFinalRelease\(governedFinalAnswer,q\)/);
   const legacy=worker.slice(worker.indexOf("async function handleAssistant"),worker.indexOf("async function governedGazetteChunkContext"));
   assert.match(legacy,/canonicalMacedonianFinalRelease\(answer,q\)/);
-  assert.match(legacy,/macedonian_release_blocked/);
+  assert.match(legacy,/foreign_jurisdiction_substitution_blocked/);
+  assert.doesNotMatch(legacy,/error:"macedonian_release_blocked"/);
 });
 
 test("CHAT17d FREE consequential drafts have a bounded compact latency lane",()=>{
   const helper=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
-  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V8"/);
+  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V9"/);
   assert.match(helper,/const compactFreeDraft=formalDraftRequest/);
   assert.match(helper,/FREE FORMAL DRAFT LATENCY CONTRACT/);
   assert.match(helper,/Math\.min\(1000,requestedTokenLimit\)/);

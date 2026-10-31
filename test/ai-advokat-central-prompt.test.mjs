@@ -106,18 +106,14 @@ test("COP8 OpenAI Chief inherits the same central contract for both general and 
   assert.match(legalPrompt,/governed sources and verified tool results control material legal propositions/i);
 });
 
-test("COP9 FREE Macedonian output uses deterministic-first cleanup and at most one repair inference",()=>{
+test("COP9 FREE Macedonian output uses deterministic cleanup without a second language provider call",()=>{
   assert.match(worker,/async function repairWorkersAIMacedonianIfNeeded/);
   assert.match(worker,/const deterministicFirst=normaliseMacedonianGeneratedText\(current\)/);
   assert.doesNotMatch(worker,/for\(let attempt=0;attempt<2 && !assessment\.ok;attempt\+\+\)/);
-  assert.match(worker,/buildMacedonianRepairMessages\(\{text:current,userText\}\)/);
-  assert.match(worker,/STRICT TARGETED LANGUAGE REPAIR/);
   assert.ok((worker.match(/const languagePass=await repairWorkersAIMacedonianIfNeeded/g)||[]).length>=3,"public chat, source-backed researcher and private synthesis must share the Macedonian postflight");
-  assert.match(worker,/languageRepaired:languagePass\.repaired===true/);
-  assert.match(worker,/languageQualityState:languagePass\.releaseVerdict\?\.verdict==="RELEASE"/);
-  assert.match(worker,/macedonianRepairProviderBudget:"fast_free_zero_extra_calls_complex_repairable_max_one_extra_call"/);
-  assert.match(worker,/allowProviderRepair:!fastFreePrompt/);
-  assert.match(worker,/if\(!allowProviderRepair\)/);
+  assert.match(worker,/providerCalls:0/);
+  assert.match(worker,/repairError:releaseVerdict\.verdict==="RELEASE"\?null:"language_quality_warning"/);
+  assert.doesNotMatch(worker,/runOpenAIMacedonianRepair\(env/);
 });
 
 
@@ -184,21 +180,21 @@ test("COP18 v7 formal drafting is GPT-class but provider-truthful and Macedonian
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/GPT-CLASS, NOT GPT-IMPERSONATION/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/DRAFT COMPLETENESS CONTRACT/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/court\/authority, parties, subject, facts, evidence, legal basis, requested relief\/petitum/i);
-  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/LANGUAGE RELEASE GATE/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/LANGUAGE QUALITY GATE/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Bulgarian, Serbian or Russian legal terminology/i);
 });
 
-test("COP16 governed GPT has a final Macedonian release gate",()=>{
+test("COP16 governed GPT keeps language QA non-blocking but blocks foreign-jurisdiction substitution",()=>{
   assert.match(worker,/function canonicalMacedonianFinalRelease/);
+  assert.match(worker,/macedonianDeliveryVerdict/);
   assert.match(worker,/const formalDraftRequest=isFormalLegalDraftRequest\(q\)/);
   assert.match(worker,/finaliseFormalLegalDraft\(finalAnswer/);
-  assert.match(worker,/hasGovernedLegalContext:articleBundle\.context\.length>0/);
   assert.match(worker,/governedLanguageRequired=shouldEnforceMacedonianOutput\(q\)/);
   assert.match(worker,/governedFinalRelease=canonicalMacedonianFinalRelease\(governedFinalAnswer,q\)/);
-  assert.match(worker,/governedLanguageQuality=governedFinalRelease\.quality/);
-  assert.match(worker,/governedLanguageRelease=governedFinalRelease\.releaseGate/);
+  assert.match(worker,/const governedLanguageRepairEligible=false/);
   assert.match(worker,/if\(!governedFinalRelease\.ok\)/);
-  assert.match(worker,/error:"macedonian_release_blocked"/);
+  assert.match(worker,/error:"foreign_jurisdiction_substitution_blocked"/);
+  assert.match(worker,/languageQualityState:governedLanguageRequired\?governedFinalRelease\.deliveryState/);
   assert.match(worker,/answer:governedFinalAnswer/);
 });
 
@@ -224,4 +220,13 @@ test("COP21 case prediction uses active session context and calibrated scenarios
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/adopted working hypothetical facts/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/analytical estimate, not a statistical probability/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/do not ask the user to repeat facts that are already present/);
+});
+
+
+test("COP22 resolves MVR shorthand to official source titles without re-asking",()=>{
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/OFFICIAL-TITLE AND ABBREVIATION RESOLUTION/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Закон за внатрешни работи/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Закон за полиција/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Колективен договор на МВР/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/MINOR TYPO TOLERANCE/);
 });
