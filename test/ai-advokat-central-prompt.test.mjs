@@ -180,7 +180,7 @@ test("COP18 v7 formal drafting is GPT-class but provider-truthful and Macedonian
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/GPT-CLASS, NOT GPT-IMPERSONATION/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/DRAFT COMPLETENESS CONTRACT/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/court\/authority, parties, subject, facts, evidence, legal basis, requested relief\/petitum/i);
-  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/LANGUAGE RELEASE GATE/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/LANGUAGE QUALITY GATE/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Bulgarian, Serbian or Russian legal terminology/i);
 });
 
