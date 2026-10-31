@@ -284,7 +284,7 @@ function runAction(action){
   if(action==='review'){openEvidence('human');return;}
   if(action==='casepilot'){window.open('/casepilot-workspace.html','_blank','noopener');return;}
   if(action==='cases'){window.open('/case-law-metadata.html','_blank','noopener');return;}
-  if(action==='documents'){openEvidence('human');return;}
+  if(action==='documents'){const d=$('materialsDialog');d?.showModal();setTimeout(()=>qs('.export-actions',d)?.scrollIntoView({block:'center'}),0);return;}
   if(action==='workflows'){$('vnextWorkflowDialog').showModal();return;}
   if(action==='library'){$('materialsDialog')?.showModal();return;}
 }
@@ -329,7 +329,7 @@ function wire(){
   $('vnextThreadSearch').addEventListener('input',renderThreadList);
   $('vnextSearchLaunch').onclick=openGlobalSearch; $('vnextHeaderSearch').onclick=openGlobalSearch;
   $('vnextHeaderEvidence').onclick=()=>openEvidence('sources'); $('vnextEvidenceClose').onclick=closeEvidence;
-  $('vnextMobileMenu').onclick=openMobileSidebar; $('vnextSidebarClose').onclick=closeMobileSidebar;
+  $('vnextMobileMenu').onclick=openMobileSidebar; $('vnextSidebarClose').onclick=closeSidebar;
   $('vnextTheme').onclick=cycleTheme;
   qsa('.vnext-nav button').forEach(b=>b.onclick=()=>runAction(b.dataset.vnextAction));
   qsa('.vnext-evidence-tabs button').forEach(b=>b.onclick=()=>{workspace.panelTab=b.dataset.panel;renderEvidence();});
@@ -338,7 +338,7 @@ function wire(){
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openGlobalSearch();}
     if(e.key==='Escape'){closeMobileSidebar(); if(matchMedia('(max-width:1180px)').matches) closeEvidence();}
   });
-  matchMedia('(prefers-color-scheme:dark)').addEventListener?.('change',()=>{if((localStorage.getItem(THEME_KEY)||'auto')==='auto')applyTheme('auto');});
+  matchMedia('(prefers-color-scheme:dark)').addEventListener?.('change',()=>{if(readTheme()==='auto')applyTheme('auto');});
   if($('newChat')) $('newChat').onclick=()=>createNewThread();
   if($('logout')) $('logout').onclick=()=>{coreLogout?.call($('logout'));workspace.threads=[];makeThread();renderThreadList();renderEvidence();};
   window.addEventListener('aiadvokat:vnext-thread-change',()=>{renderThreadList();renderEvidence();});
