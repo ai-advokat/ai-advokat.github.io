@@ -1,0 +1,13 @@
+{
+  "input_pdf_count": 20,
+  "new_canonical_source_count": 16,
+  "internal_duplicate_copy_count": 2,
+  "cross_batch_duplicate_copy_count": 2,
+  "machine_readable_new_source_count": 15,
+  "visual_manual_index_source_count": 1,
+  "global_unique_case_number_candidate_count": 453,
+  "source_case_number_candidate_count_sum": 457,
+  "authority_page_marker_count": 177,
+  "production_eligible": false,
+  "human_gate_required": true
+}
