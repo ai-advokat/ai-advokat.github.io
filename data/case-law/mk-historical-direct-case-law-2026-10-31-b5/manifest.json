@@ -1,0 +1,24 @@
+{
+  "type": "mk_historical_direct_case_law_batch_manifest",
+  "schema_version": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_LAW_V2",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b5",
+  "generated_at": "2026-10-31",
+  "status": "RELEASE_CANDIDATE_HUMAN_GATE",
+  "input_file_count": 18,
+  "canonical_authority_record_count": 18,
+  "supreme_decision_record_count": 15,
+  "general_session_principled_stance_count": 2,
+  "civil_division_legal_opinion_count": 1,
+  "cross_batch_case_duplicate_count": 0,
+  "publication_bound_to_collection_v_count": 18,
+  "production_eligible": false,
+  "human_gate_required": true,
+  "source_policy": [
+    "Exact source file and normalized text hashes are preserved.",
+    "Decision records, General Session principled stances and Division legal opinions retain distinct authority kinds.",
+    "Collection V publication binding is not equivalent to remote/original-decision binding.",
+    "Every item is historical and requires current-law verification before present-law reliance.",
+    "No party identities are expanded or deanonymized beyond the supplied source.",
+    "No ECLI, URL, treatment, current-law status or binding force is invented."
+  ]
+}
