@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { detectConfidentialCasePrompt } from "../src/chat-privacy.js";
+import { detectConfidentialCasePrompt, redactConfidentialCasePrompt } from "../src/chat-privacy.js";
 import fs from "node:fs";
 
 const worker=fs.readFileSync("src/index.js","utf8");
@@ -129,4 +129,24 @@ test("CPR12 public browser file controls route directly to Secure Case Workspace
   assert.match(ui,/attachBtn\.addEventListener\("click",openSecureAttachmentWorkspace\)/);
   assert.match(ui,/if\(e\.dataTransfer\?\.files\?\.length\) openSecureAttachmentWorkspace\(\)/);
   assert.match(ui,/if\(files\?\.length\)[\s\S]*?openSecureAttachmentWorkspace\(\)/);
+});
+
+
+test("CPR13 local redaction removes national identifiers and contact details before provider use",()=>{
+  const raw="Тужба за оставинска постапка. ЕМБГ: 0101000450001, e-mail user@example.com, телефон 071 123 456.";
+  const masked=redactConfidentialCasePrompt(raw);
+  assert.equal(masked.changed,true);
+  assert.equal(masked.safeToSend,true);
+  assert.doesNotMatch(masked.text,/0101000450001/);
+  assert.doesNotMatch(masked.text,/user@example\.com/i);
+  assert.doesNotMatch(masked.text,/071\s*123\s*456/);
+  assert.match(masked.text,/МАСКИРАН/);
+  assert.equal(detectConfidentialCasePrompt(masked.text).confidential,false);
+});
+
+test("CPR14 local redaction does not silently downgrade an unresolved confidential narrative",()=>{
+  const raw=("Предмет: оставинска постапка. КП 2236, ИЛ 5032, тужба и судски предмет. ".repeat(30)).trim();
+  const masked=redactConfidentialCasePrompt(raw);
+  assert.equal(masked.safeToSend,false);
+  assert.equal(masked.changed,false);
 });
