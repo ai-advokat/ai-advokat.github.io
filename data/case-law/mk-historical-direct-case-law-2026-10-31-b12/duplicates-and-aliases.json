@@ -1,0 +1,30 @@
+{
+  "cross_batch_case_duplicates": [],
+  "within_batch_duplicates": [],
+  "aliases": [],
+  "source_metadata_anomalies": [],
+  "source_text_anomalies": [],
+  "supplied_entry_numbers": [
+    "129",
+    "130",
+    "131",
+    "132",
+    "133",
+    "133-A",
+    "134",
+    "135",
+    "136",
+    "139",
+    "140",
+    "141",
+    "142",
+    "142-A",
+    "142-B",
+    "143",
+    "144",
+    "145",
+    "146",
+    "147"
+  ],
+  "unprovided_entries_not_inferred": true
+}
