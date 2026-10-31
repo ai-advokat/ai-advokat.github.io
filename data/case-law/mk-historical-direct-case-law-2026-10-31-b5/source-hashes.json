@@ -1,0 +1,110 @@
+[
+  {
+    "file": "43.doc",
+    "sha256": "685476738d7b9b98c4617ddd1cb665c6365773e283a60040fd18a952b58aaca5",
+    "normalized_text_sha256": "75791d43f7affbd4bad40b64160f3631453e03d3e3c641cf408cce7997fa667b",
+    "size_bytes": 25600
+  },
+  {
+    "file": "49.doc",
+    "sha256": "a914030e8354ff20b31f0347defc167131b61d2df3df59bcd9f9a720301df8ed",
+    "normalized_text_sha256": "f4c4004490d747b64e63bac0c773297856c021942ff93213a8b3c62dc1029744",
+    "size_bytes": 31744
+  },
+  {
+    "file": "50.doc",
+    "sha256": "596bf3e1adca7320c7844c88804217126f2df5f9814fdace822e4b180af32499",
+    "normalized_text_sha256": "a2d228cd8b93b67bdd908e9cd074040f8deeae81bcaa51c427f143283893f5ec",
+    "size_bytes": 31232
+  },
+  {
+    "file": "121.doc",
+    "sha256": "e6179b9fc4f709073348a0cd0b649561eac3094527ecd0f4e922090fe43a0a2b",
+    "normalized_text_sha256": "1da3c933dcb7425ee5dc32d63c33cc0177c5f2f2484898420071d990d039df75",
+    "size_bytes": 27136
+  },
+  {
+    "file": "122.doc",
+    "sha256": "364022b0ed1f7ab66e2d7a7e95d47f3472921fe9a72a7d3df82f6126d2b61a37",
+    "normalized_text_sha256": "717985548672938fe1fee2f009b6fad55da9f4b7fe3d2b52bbed18459adc3211",
+    "size_bytes": 27648
+  },
+  {
+    "file": "137.doc",
+    "sha256": "6093f0bd75ef8f1efd1bfebdacaa347e656938a9789fc77280893f35db86269c",
+    "normalized_text_sha256": "2ecd60dbfd9221e617618c946bfd0110cfd49856972ae755ccb91d2f6ce406ab",
+    "size_bytes": 26624
+  },
+  {
+    "file": "138.doc",
+    "sha256": "30b09e30bea261c81d7f89207ad50aa5e8df054cab420183f5288199a35be502",
+    "normalized_text_sha256": "353a59bc0bcb342460289e26e01c7023c8cca0ca55d8ed2249d344946711e978",
+    "size_bytes": 26112
+  },
+  {
+    "file": "148.doc",
+    "sha256": "0b9112cf5c20b3aea2a2b7b5a4d737392b20e3527ea5d1ad4604656711fe48e8",
+    "normalized_text_sha256": "a130dc9a84c1b783b92d4538360b21a50dda9702b8efe543a9ce65667b441e3e",
+    "size_bytes": 26624
+  },
+  {
+    "file": "149a.doc",
+    "sha256": "e7b22f998bb52d28b7de3c10e28ce96a03bbb39d3fe560a4542672739192cba1",
+    "normalized_text_sha256": "e91a9538bb648a6688e74b7a78152f6073f32308b0d092dcaef2ae443b5f8f38",
+    "size_bytes": 25088
+  },
+  {
+    "file": "197.doc",
+    "sha256": "79374b69e259d584fbe06403866348cfb6c83765b0b883516ac655ec2b7eb22c",
+    "normalized_text_sha256": "25ca01148ab1445893d3ccdd4901a65cb67ce2d2f52dd654dd24bd1a2d21591e",
+    "size_bytes": 25600
+  },
+  {
+    "file": "250.doc",
+    "sha256": "9653cabfd34bcb5d20bcb7fa11896ebae91d957397cf50f0cd466c2fe755e98c",
+    "normalized_text_sha256": "117830d6fb6965e25887b956aa91bead35daa296f20a5a9582dfbd0f15783351",
+    "size_bytes": 26624
+  },
+  {
+    "file": "251.doc",
+    "sha256": "b16702ebd362b2cbb12b724058cc1d73b7f54fc6baee6615567bd97330ad301a",
+    "normalized_text_sha256": "5c797763a268d5ba449681a1b763cf661e4aea18ac9a223e757d59ab891de62a",
+    "size_bytes": 25600
+  },
+  {
+    "file": "252.doc",
+    "sha256": "c0ea049d9213e8e1dcb54455f4c26e39d8ff7c67b1ce6743db0d1ff63087c2a4",
+    "normalized_text_sha256": "5dd669c0cb8092ad66a45cdb85ff269fcdf49e9c0ee92f7b9fcacb0438a5cb70",
+    "size_bytes": 25088
+  },
+  {
+    "file": "258.doc",
+    "sha256": "4d8fcc66261b817637efd500e0b989c9435edd6941b200e0ac46e3fa15d249ba",
+    "normalized_text_sha256": "ffa0cffc0b6018732cd94191f057166fde326df6697c5c72b9b2f597b8cd2442",
+    "size_bytes": 28160
+  },
+  {
+    "file": "265.doc",
+    "sha256": "0d0f9d475c9fa15950c61abc7e114240816eb1bf16ee8961d4425a7889950320",
+    "normalized_text_sha256": "c4179b85eef023a5002404f7c9aff008f7b72954133bf3b0992ba31dd1b14c80",
+    "size_bytes": 28160
+  },
+  {
+    "file": "nacelen stav.doc",
+    "sha256": "4e4577908811bc397f060a7c65ee499f254d152d742a694d2c37451efb1e3b5d",
+    "normalized_text_sha256": "66840994a06000314a3877fe8f39bd3f3ecbedd3cd7323b6c24272f232c72e56",
+    "size_bytes": 40448
+  },
+  {
+    "file": "pravno mislenje1.doc",
+    "sha256": "386dfd6bec1c1ae65fd9b28954d4074417c83deb0e9a7a72c5165956e8db05ec",
+    "normalized_text_sha256": "48c4303d90056ec4151d4bbe038532daf10927e95343864a004a2d1f1d4afbd8",
+    "size_bytes": 33280
+  },
+  {
+    "file": "Vrhovniot sud na Republika Makedonija nadle.doc",
+    "sha256": "69e93620a276835a537f0675d3b73b4f8ab51fad9995572107fdbdcee777d40a",
+    "normalized_text_sha256": "83db7a398b87ddedcee8f3a33c960d4ffe434d8bd411359b292bd17b65189507",
+    "size_bytes": 24576
+  }
+]
