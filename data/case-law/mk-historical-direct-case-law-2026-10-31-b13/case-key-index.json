@@ -1,0 +1,302 @@
+{
+  "schema": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_KEY_INDEX_V2",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b13",
+  "records": [
+    {
+      "record_id": "B13-R-14/1990",
+      "authority_id": "R-14/1990",
+      "case_number_key": "R-14/1990",
+      "decision_date": "15.03.1990",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "семејно право",
+        "татковство",
+        "рок за тужба"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-R-83/1994",
+      "authority_id": "R-83/1994",
+      "case_number_key": "R-83/1994",
+      "decision_date": "22.11.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "семејно право",
+        "вонбрачно татковство",
+        "рок за оспорување"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-1246/1993",
+      "authority_id": "REV-1246/1993",
+      "case_number_key": "REV-1246/1993",
+      "decision_date": "11.01.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "семејно право",
+        "издршка",
+        "извршување"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-225/1991",
+      "authority_id": "REV-225/1991",
+      "case_number_key": "REV-225/1991",
+      "decision_date": "21.03.1991",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "семејно право",
+        "издршка",
+        "намалување"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-124/1995",
+      "authority_id": "REV-124/1995",
+      "case_number_key": "REV-124/1995",
+      "decision_date": "05.11.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "семејно право",
+        "издршка",
+        "студент",
+        "болест"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-1222/1993",
+      "authority_id": "REV-1222/1993",
+      "case_number_key": "REV-1222/1993",
+      "decision_date": "16.11.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "семејно право",
+        "заеднички имот",
+        "игри на среќа"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-1140/1995",
+      "authority_id": "REV-1140/1995",
+      "case_number_key": "REV-1140/1995",
+      "decision_date": "05.11.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "семејно право",
+        "подароци",
+        "посебен имот",
+        "заеднички имот"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-925/1992",
+      "authority_id": "REV-925/1992",
+      "case_number_key": "REV-925/1992",
+      "decision_date": "28.01.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "работни односи",
+        "дисциплинска одговорност",
+        "вина"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-1488/1995",
+      "authority_id": "REV-1488/1995",
+      "case_number_key": "REV-1488/1995",
+      "decision_date": "25.12.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "работни односи",
+        "отказ",
+        "парична казна",
+        "судска контрола"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-1135/1993",
+      "authority_id": "REV-1135/1993",
+      "case_number_key": "REV-1135/1993",
+      "decision_date": "28.03.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "работни односи",
+        "боледување",
+        "неоправдано отсуство"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-143/1995",
+      "authority_id": "REV-143/1995",
+      "case_number_key": "REV-143/1995",
+      "decision_date": "14.12.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "работни односи",
+        "спогодбен престанок",
+        "отпремнина",
+        "технолошки вишок"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-1022/1992",
+      "authority_id": "REV-1022/1992",
+      "case_number_key": "REV-1022/1992",
+      "decision_date": "09.02.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "работни односи",
+        "судска заштита",
+        "рок за тужба"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-1073/1994",
+      "authority_id": "REV-1073/1994",
+      "case_number_key": "REV-1073/1994",
+      "decision_date": "19.09.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "работни односи",
+        "стечај",
+        "враќање на работа",
+        "надомест на штета"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-628/1993",
+      "authority_id": "REV-628/1993",
+      "case_number_key": "REV-628/1993",
+      "decision_date": "14.09.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "работни односи",
+        "дисциплинска одговорност",
+        "парична казна"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-609/1994",
+      "authority_id": "REV-609/1994",
+      "case_number_key": "REV-609/1994",
+      "decision_date": "04.04.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "работни односи",
+        "дисциплинска постапка",
+        "докажување",
+        "сведоци"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-677/1994",
+      "authority_id": "REV-677/1994",
+      "case_number_key": "REV-677/1994",
+      "decision_date": "22.09.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "работни односи",
+        "претходна заштита",
+        "процесна претпоставка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-REV-1295/1994",
+      "authority_id": "REV-1295/1994",
+      "case_number_key": "REV-1295/1994",
+      "decision_date": "11.07.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "работни односи",
+        "повторување постапка",
+        "дисциплинска постапка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-COLLV-156-REV-623-624-1993",
+      "authority_id": "COLLV-156-REV-623-624-1993",
+      "case_number_key": "REV-623/1993",
+      "case_number_keys": [
+        "REV-623/1993",
+        "REV-624/1993"
+      ],
+      "decision_date": "04.11.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment_headnote_multiple_cases",
+      "topics_mk": [
+        "работни односи",
+        "дисциплинска постапка",
+        "престанок на работен однос"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B13-GENERAL-SESSION-1994-12-26-STRIKE",
+      "authority_id": "GENERAL-SESSION-1994-12-26-STRIKE",
+      "case_number_key": null,
+      "decision_date": "26.12.1994",
+      "court": "Врховен суд на Република Македонија — Општа седница",
+      "authority_kind": "principled_stance",
+      "topics_mk": [
+        "работни односи",
+        "штрајк",
+        "начелен став",
+        "неоправдано отсуство"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    }
+  ]
+}
