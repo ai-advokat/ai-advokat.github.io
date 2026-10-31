@@ -1,0 +1,23 @@
+[
+  {
+    "canonical_source_id": "mk-supreme-bulletin-2016-2017",
+    "canonical_pdf_sha256": "9d58043e1bdfe158a20045f9d21f36ebb6dcd081c7f1feac1948f8c45bc2e6e3",
+    "duplicate_filename": "4-Билтен+Врховен+Суд 2016-2017.pdf",
+    "duplicate_pdf_sha256": "d12a34c64508a06b908b3bacb4a056264a4ae43adc9b4ec3941dba3338e9f1c2",
+    "duplicate_kind": "normalized_text_exact"
+  },
+  {
+    "canonical_source_id": "mk-supreme-collection-xi-2004-2014",
+    "canonical_pdf_sha256": "8e3535b085a002b0f9cb0182bbad6839d685976504a17b87f42a1ef7ec4190ea",
+    "duplicate_filename": "14-zbirka na sudski odluki-2004-2014-RM..pdf",
+    "duplicate_pdf_sha256": "d0db5044d7e205e8abd7ba2dc9cf3727994b3cd89309a3a92ab4aa5d927b4a14",
+    "duplicate_kind": "normalized_text_exact"
+  },
+  {
+    "canonical_source_id": "mk-supreme-collection-xi-2004-2014",
+    "canonical_pdf_sha256": "8e3535b085a002b0f9cb0182bbad6839d685976504a17b87f42a1ef7ec4190ea",
+    "duplicate_filename": "3-zbirka na sudski odluki 2004-2014-vs-rm..pdf",
+    "duplicate_pdf_sha256": "b9c16233ffa05ea2b9351d11db8f3928debd8be6a627c4ede84bed96f836cc9d",
+    "duplicate_kind": "normalized_text_exact"
+  }
+]
