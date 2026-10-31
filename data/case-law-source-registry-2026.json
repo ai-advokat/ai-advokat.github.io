@@ -523,7 +523,7 @@
       ],
       "historical_current_law_gate": true,
       "original_decision_binding_required_before_gpt_case_law_context": true,
-      "authority_note": "Publication-level matching to Collection V strengthens provenance but does not prove remote/original-decision binding or present-law validity. Direct extract batches preserve Supreme Court and Commercial Court authority classes separately, plus interpretive authority subtypes where present.",
+      "authority_note": "Publication-level matching to Collection V strengthens provenance but does not prove remote/original-decision binding or present-law validity. Direct extract batches preserve Supreme Court and Commercial Court authority classes separately, while General Session principled stances and Civil Division legal opinions remain distinct interpretive authority kinds.",
       "privacy_minimisation": true,
       "additional_corpus_ids": [
         "mk-historical-direct-case-law-2026-10-31-b5",
