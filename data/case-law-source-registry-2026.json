@@ -289,7 +289,10 @@
       "source_role": "official_appellate_bulletin",
       "original_decision_binding_required_before_gpt_case_law_context": true,
       "authority_note": "Bulletins may support bulletin-level discovery and citation after Human Gate. Original decision URL/hash and authority review remain separate gates.",
-      "privacy_minimisation": true
+      "privacy_minimisation": true,
+      "additional_corpus_ids": [
+        "mk-appellate-publications-batch-2026-10-31-b2"
+      ]
     },
     {
       "id": "mk-professional-vitlarov-chavdar-case-collection",
@@ -330,6 +333,51 @@
         "not_current_law_without_official_rule_verification"
       ],
       "authority_note": "Questionnaire/training material. Never rank as a judgment or substitute it for the official consolidated Court Rules."
+    },
+    {
+      "id": "mk-appellate-bitola-bulletins",
+      "jurisdiction": "MK",
+      "authority_class": "appellate_case_law_publication_reference",
+      "official_name": "Апелационен суд Битола — Билтени на судска пракса",
+      "url": "https://www.asbitola.mk/",
+      "access": "user_supplied_official_publication_copy_pending_remote_binding",
+      "ingest": "bulletin_headnotes_conclusions_case_metadata",
+      "corpus_id": "mk-appellate-publications-batch-2026-10-31-b2",
+      "source_role": "official_appellate_bulletin",
+      "original_decision_binding_required_before_gpt_case_law_context": true,
+      "historical_current_law_gate": true,
+      "authority_note": "Official court bulletins may support publication-level discovery and citation after Human Gate. Preserve separately selected decision headnotes, department conclusions, joint appellate conclusions and professional articles. Original judgment binding and current-law verification remain separate gates.",
+      "privacy_minimisation": true
+    },
+    {
+      "id": "mk-appellate-gostivar-bulletins",
+      "jurisdiction": "MK",
+      "authority_class": "appellate_case_law_publication_reference",
+      "official_name": "Апелационен суд Гостивар — Билтени на судска пракса",
+      "url": "https://www.asgostivar.mk/",
+      "access": "user_supplied_official_publication_copy_pending_remote_binding",
+      "ingest": "bulletin_headnotes_decisions_conclusions_case_metadata",
+      "corpus_id": "mk-appellate-publications-batch-2026-10-31-b2",
+      "source_role": "official_appellate_bulletin",
+      "original_decision_binding_required_before_gpt_case_law_context": true,
+      "historical_current_law_gate": true,
+      "authority_note": "Official court bulletin material may be used for discovery and publication-level citation after Human Gate. Where the bulletin identifies a Supreme Court review decision, that reference is a binding candidate only until the Supreme source is independently retrieved and verified.",
+      "privacy_minimisation": true
+    },
+    {
+      "id": "mk-joint-appellate-meeting-materials",
+      "jurisdiction": "MK",
+      "authority_class": "joint_appellate_interpretive_reference",
+      "official_name": "Заеднички работни средби на Апелационите судови Битола, Гостивар, Скопје и Штип",
+      "url": null,
+      "access": "user_supplied_official_judicial_material",
+      "ingest": "joint_meeting_questions_conclusions_and_minutes",
+      "corpus_id": "mk-appellate-publications-batch-2026-10-31-b2",
+      "source_role": "joint_appellate_meeting_conclusions",
+      "original_decision_binding_required_before_gpt_case_law_context": false,
+      "current_law_verification_required": true,
+      "authority_note": "Joint appellate conclusions are interpretive coordination material, not ordinary judgments. Preserve meeting date, participating courts, legal question and conclusion. Do not present them as Supreme Court precedent or current law without verifying the governing legislation and any later higher-court position.",
+      "privacy_minimisation": true
     }
   ],
   "target_case_record": {
