@@ -833,3 +833,13 @@ test("exhausted shared deadline prevents a new chief provider call",async()=>{
     globalThis.fetch=originalFetch;
   }
 });
+
+
+test("chief final citations control the user-facing external source list",()=>{
+  assert.match(agentSource,/const sources=chiefSources\.length[\s\S]*?mergeWebSources\(chiefSources\)[\s\S]*?: mergeWebSources\(specialistStage\.sources\)/);
+});
+
+test("session history envelope explicitly forbids invented prior context",()=>{
+  assert.match(agentSource,/COREFERENCE RULE: use this history to resolve/);
+  assert.match(agentSource,/Never invent missing prior context/);
+});
