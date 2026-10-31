@@ -828,6 +828,7 @@ export async function runOpenAIOrchestrator(env, {
     "<<<END_BOUNDED_SPECIALIST_FINDINGS>>>",
     "",
     "<<<SESSION_HISTORY_CONTEXT_ONLY_NOT_AUTHORITY>>>",
+    "COREFERENCE RULE: use this history to resolve 'this/that/above/previous example' only when the referent is actually present. Never invent missing prior context.",
     historyContext,
     "<<<END_SESSION_HISTORY_CONTEXT_ONLY_NOT_AUTHORITY>>>",
     "",
@@ -947,7 +948,12 @@ export async function runOpenAIOrchestrator(env, {
   const text=extractOpenAIResponseText(payload);
   if(!text) return {ok:false,error:"openai_empty_response",...failureBase};
   const chiefSources=annotateExternalSources(extractOpenAIWebCitations(payload),{agentId:AGENT_ROLES.chief.id});
-  const sources=mergeWebSources(specialistStage.sources,chiefSources);
+  // User-facing source list follows the final chief answer. Specialist citations are
+  // a fallback only when the chief produced no external citations, preventing
+  // peripheral research hits from appearing as if they supported the final answer.
+  const sources=chiefSources.length
+    ? mergeWebSources(chiefSources)
+    : mergeWebSources(specialistStage.sources);
   const chiefWebSearchUsed=Array.isArray(payload?.output) && payload.output.some(item=>item?.type==="web_search_call");
   const webSearchUsed=specialistStage.webSearchUsed===true||chiefWebSearchUsed;
   const combinedUsage=Object.freeze({
