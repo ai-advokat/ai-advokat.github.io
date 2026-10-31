@@ -11,7 +11,7 @@
   "source_hashes_present": 20,
   "text_hashes_present": 20,
   "source_metadata_anomalies": 0,
-  "source_text_anomalies": 0,
+  "source_text_anomalies": 1,
   "fatal_defects": [],
   "production_eligible": false,
   "human_gate_required": true,
@@ -21,6 +21,7 @@
     "authority_kind_separation": true,
     "collection_v_publication_match": true,
     "cross_batch_dedup_b4_b11": true,
-    "ole_titles_match_entry_numbers": true
+    "ole_titles_match_entry_numbers": true,
+    "cross_record_source_reference_conflict_preserved": true
   }
 }

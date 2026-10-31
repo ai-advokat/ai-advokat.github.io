@@ -14,7 +14,7 @@
   "cross_batch_case_duplicate_count": 0,
   "publication_bound_to_collection_v_count": 20,
   "source_metadata_anomaly_count": 0,
-  "source_text_anomaly_count": 0,
+  "source_text_anomaly_count": 1,
   "non_contiguous_batch": true,
   "supplied_entry_numbers": [
     "129",
@@ -46,6 +46,7 @@
     "Only supplied entry numbers are recorded; entries 137 and 138 are not inferred or marked processed.",
     "Collection V publication binding does not equal remote/original-decision binding.",
     "Every item is historical and requires current-law verification before present-law reliance.",
-    "No ECLI, URL, later treatment, current-law status or binding force is invented."
+    "No ECLI, URL, later treatment, current-law status or binding force is invented.",
+    "A cross-record source-reference conflict between entries 142 and 142-A (Official Gazette 29/94 vs 24/94 for the General Collective Agreement for the Economy) is preserved without silent correction."
   ]
 }

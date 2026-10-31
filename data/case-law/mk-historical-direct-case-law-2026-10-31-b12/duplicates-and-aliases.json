@@ -3,7 +3,19 @@
   "within_batch_duplicates": [],
   "aliases": [],
   "source_metadata_anomalies": [],
-  "source_text_anomalies": [],
+  "source_text_anomalies": [
+    {
+      "type": "cross_record_source_reference_conflict",
+      "entries": [
+        "142",
+        "142-A"
+      ],
+      "field": "Official Gazette reference for the General Collective Agreement for the Economy of the Republic of Macedonia",
+      "entry_142_value": "Службен весник на РМ бр.29/94",
+      "entry_142_A_value": "Службен весник на РМ бр.24/94",
+      "treatment": "preserve both source literals; do not silently reconcile; verify against official gazette before present-law or historical proposition reliance"
+    }
+  ],
   "supplied_entry_numbers": [
     "129",
     "130",
