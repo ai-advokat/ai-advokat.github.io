@@ -72,7 +72,34 @@
       "source_role": "official_court_bulletin_headnotes_and_case_metadata",
       "original_decision_binding_required_before_gpt_case_law_context": true,
       "authority_note": "The supplied court bulletins may support bulletin-level citation and discovery after Human Gate. A bulletin extract does not by itself prove remote binding to the original judgment. Original decision URL/hash and authority review remain separate gates.",
-      "privacy_minimisation": true
+      "privacy_minimisation": true,
+      "composite_corpus_id": "as-stip-bulletins-v3",
+      "additional_corpus_ids": [
+        "as-stip-bulletins-ext-2026-10-31-b4-b9-b10-b11"
+      ],
+      "covered_bulletins": [
+        "1-2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11"
+      ],
+      "composite_publication_record_count": 579,
+      "extension_echr_secondary_reference_count": 6,
+      "current_law_verification_required": true,
+      "source_anomalies": [
+        {
+          "bulletin": "10",
+          "cover_number": "10",
+          "intro_number": "9",
+          "treatment": "preserve cover identity and record internal label conflict"
+        }
+      ]
     },
     {
       "id": "mk-ministry-court-directory",
