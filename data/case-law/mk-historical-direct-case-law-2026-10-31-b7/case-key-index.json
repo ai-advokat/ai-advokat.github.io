@@ -1,0 +1,326 @@
+{
+  "schema": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_KEY_INDEX_V2",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b7",
+  "records": [
+    {
+      "record_id": "B7-REV-23/1991",
+      "authority_id": "REV-23/1991",
+      "case_number_key": "REV-23/1991",
+      "decision_date": "30.05.1991",
+      "court": "Врховен суд на Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "нематеријална штета",
+        "срам",
+        "душевни болки",
+        "член 200 ЗОО"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-1281/1995",
+      "authority_id": "REV-1281/1995",
+      "case_number_key": "REV-1281/1995",
+      "decision_date": "06.11.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "нематеријална штета",
+        "душевни болки",
+        "судска постапка",
+        "член 200 ЗОО"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-274/1993",
+      "authority_id": "REV-274/1993",
+      "case_number_key": "REV-274/1993",
+      "decision_date": "08.04.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "нематеријална штета",
+        "смрт на посинок",
+        "очув",
+        "трајна заедница на живот"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-563/1994",
+      "authority_id": "REV-563/1994",
+      "case_number_key": "REV-563/1994",
+      "decision_date": "07.09.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "осигурување",
+        "моторно возило",
+        "спогодбено утврдување штета",
+        "комисиски записник"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-1209/1995",
+      "authority_id": "REV-1209/1995",
+      "case_number_key": "REV-1209/1995",
+      "decision_date": "23.10.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "осигурување од одговорност",
+        "правно дејство на пресуда",
+        "директен штетник",
+        "осигурувач"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-1387/1993",
+      "authority_id": "REV-1387/1993",
+      "case_number_key": "REV-1387/1993",
+      "decision_date": "08.02.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "надомест на штета",
+        "одземени штедни влогови",
+        "извршна исправа",
+        "претходно барање"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-1086/1994",
+      "authority_id": "REV-1086/1994",
+      "case_number_key": "REV-1086/1994",
+      "decision_date": "15.06.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "облигационо право",
+        "принуда",
+        "неосновано плаќање",
+        "законски средства"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-SSZ-365/1993",
+      "authority_id": "SSZ-365/1993",
+      "case_number_key": "SSZ-365/1993",
+      "decision_date": "12.03.1993",
+      "court": "Стопански суд на Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "пребивање",
+        "компензација",
+        "камата",
+        "член 336 ЗОО"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-527/1995",
+      "authority_id": "REV-527/1995",
+      "case_number_key": "REV-527/1995",
+      "decision_date": "03.04.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "застареност",
+        "надомест на штета",
+        "административен пренос",
+        "земјиште"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-1278/1995",
+      "authority_id": "REV-1278/1995",
+      "case_number_key": "REV-1278/1995",
+      "decision_date": "06.11.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "купопродажба",
+        "стан",
+        "доцнење со предавање",
+        "надомест на штета"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-1449/1994",
+      "authority_id": "REV-1449/1994",
+      "case_number_key": "REV-1449/1994",
+      "decision_date": "21.11.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "ништовност",
+        "реституција",
+        "земјиште",
+        "застареност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-GZZ-64/1995",
+      "authority_id": "GZZ-64/1995",
+      "case_number_key": "GZZ-64/1995",
+      "decision_date": "24.01.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "банкарско право",
+        "тековна сметка",
+        "негативно салдо",
+        "затезна камата"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-SSZ-1247/1992",
+      "authority_id": "SSZ-1247/1992",
+      "case_number_key": "SSZ-1247/1992",
+      "decision_date": "08.07.1992",
+      "court": "Стопански суд на Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "затезна камата",
+        "присилен пропис",
+        "ништовност",
+        "член 277 ЗОО"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-395/1993",
+      "authority_id": "REV-395/1993",
+      "case_number_key": "REV-395/1993",
+      "decision_date": "06.07.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "доцнење",
+        "паричен долг",
+        "надомест на штета",
+        "разлика во цена"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-1119/1994",
+      "authority_id": "REV-1119/1994",
+      "case_number_key": "REV-1119/1994",
+      "decision_date": "15.11.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "доцнење",
+        "затезна камата",
+        "инфлација",
+        "надомест на штета"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-836/1994",
+      "authority_id": "REV-836/1994",
+      "case_number_key": "REV-836/1994",
+      "decision_date": "13.09.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "затезна камата",
+        "анатоцизам",
+        "камата на камата",
+        "службена должност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-856/1994",
+      "authority_id": "REV-856/1994",
+      "case_number_key": "REV-856/1994",
+      "decision_date": "13.12.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "затезна камата",
+        "капитализација",
+        "главен долг",
+        "член 279 ЗОО"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-SSZ-404/1994",
+      "authority_id": "SSZ-404/1994",
+      "case_number_key": "SSZ-404/1994",
+      "decision_date": "10.03.1994",
+      "court": "Стопански суд на Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "рок на плаќање",
+        "фактура",
+        "општи узанси",
+        "парична обврска"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-REV-733/1993",
+      "authority_id": "REV-733/1993",
+      "case_number_key": "REV-733/1993",
+      "decision_date": "09.09.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "странска валута",
+        "инфлација",
+        "еднаква вредност на давањата",
+        "курс на денот на исплата"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B7-SSZ-264/1994",
+      "authority_id": "SSZ-264/1994",
+      "case_number_key": "SSZ-264/1994",
+      "decision_date": "22.02.1995",
+      "court": "Стопански суд на Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "размена на стоки",
+        "затезна камата",
+        "непарична обврска",
+        "доцнење"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    }
+  ]
+}
