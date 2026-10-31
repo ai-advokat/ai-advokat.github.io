@@ -140,6 +140,7 @@ import {
   MACEDONIAN_2017_SYSTEM_RULES,
   assessMacedonianOutput,
   macedonianReleaseVerdict,
+  macedonianDeliveryVerdict,
   buildMacedonianRepairMessages,
   normaliseMacedonianGeneratedText,
   shouldEnforceMacedonianOutput
@@ -1658,7 +1659,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!analysisLanguageRelease.ok){
       return json(request,{
         ok:false,
-        error:"macedonian_release_blocked",
+        error:"foreign_jurisdiction_substitution_blocked",
         message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
         languageReleaseGate:analysisLanguageRelease.releaseGate,
         languageReasons:analysisLanguageRelease.quality?.reasons||[]
@@ -1844,7 +1845,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!draftLanguageRelease.ok){
       return json(request,{
         ok:false,
-        error:"macedonian_release_blocked",
+        error:"foreign_jurisdiction_substitution_blocked",
         message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
         languageReleaseGate:draftLanguageRelease.releaseGate,
         languageReasons:draftLanguageRelease.quality?.reasons||[]
@@ -3713,26 +3714,16 @@ function privateCaseContextText(items,maxChars=120000){
 }
 
 function canonicalMacedonianFinalRelease(text,userText){
-  const original=String(text||"").trim();
-  const languageRequired=shouldEnforceMacedonianOutput(userText);
-  if(!languageRequired){
-    return {
-      ok:Boolean(original),
-      text:original,
-      languageRequired:false,
-      quality:null,
-      releaseGate:{verdict:"RELEASE",severity:"not_applicable",gateVersion:MACEDONIAN_RELEASE_GATE_VERSION}
-    };
-  }
-  const normalized=normaliseMacedonianGeneratedText(original);
-  const quality=assessMacedonianOutput(normalized,{userText});
-  const releaseGate=macedonianReleaseVerdict(normalized,{userText});
+  const delivery=macedonianDeliveryVerdict(text,{userText});
   return {
-    ok:Boolean(normalized) && releaseGate.verdict==="RELEASE",
-    text:normalized,
-    languageRequired:true,
-    quality,
-    releaseGate
+    ok:delivery.deliver,
+    clean:delivery.clean,
+    text:delivery.text,
+    languageRequired:delivery.languageRequired,
+    quality:delivery.quality,
+    releaseGate:delivery.releaseGate,
+    deliveryState:delivery.state,
+    legalSafetyBlock:delivery.legalSafetyBlock
   };
 }
 
@@ -3785,17 +3776,6 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
     maxOutputTokens:Math.max(900,Math.min(4800,Number(maxOutputTokens)||3600))
   });
   const languageRequired=shouldEnforceMacedonianOutput(task);
-  if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
-    return {
-      ok:false,
-      error:"macedonian_release_blocked",
-      message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
-      detail:languagePass.repairError||"macedonian_postflight_failed",
-      releaseGate:languagePass.releaseVerdict||null,
-      model:result.model,
-      providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0)
-    };
-  }
   const finalText=(mode==="draft" || isFormalLegalDraftRequest(task))
     ? finaliseFormalLegalDraft(languagePass.text,{
         userText:task,
@@ -3806,7 +3786,7 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
   if(!finalRelease.ok){
     return {
       ok:false,
-      error:"macedonian_release_blocked",
+      error:"foreign_jurisdiction_substitution_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:"private_case_final_last_mile_language_gate_failed",
       releaseGate:finalRelease.releaseGate,
@@ -3826,7 +3806,7 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
     formalDraftPostflight:(mode==="draft" || isFormalLegalDraftRequest(task)),
-    languageQualityState:languagePass.releaseVerdict?.verdict==="RELEASE"?"verified_runtime":"failed_closed",
+    languageQualityState:finalRelease.deliveryState,
     languageReleaseGate:languagePass.releaseVerdict||null
   };
 }
@@ -5072,18 +5052,6 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     sessionAffinity,
     allowProviderRepair:!fastFreePrompt && !result.modelFallback
   });
-  if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
-    return {
-      ok:false,
-      error:"macedonian_release_blocked",
-      message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
-      detail:languagePass.repairError||"macedonian_postflight_failed",
-      releaseGate:languagePass.releaseVerdict||null,
-      model:result.model,
-      providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
-      provider:"workers_ai_free"
-    };
-  }
   const formalDraft=formalDraftRequest;
   const finalText=formalDraft
     ? finaliseFormalLegalDraft(languagePass.text,{
@@ -5095,7 +5063,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   if(!finalRelease.ok){
     return {
       ok:false,
-      error:"macedonian_release_blocked",
+      error:"foreign_jurisdiction_substitution_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:"final_last_mile_language_gate_failed",
       releaseGate:finalRelease.releaseGate,
@@ -5122,7 +5090,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
     formalDraftPostflight:formalDraft,
-    languageQualityState:languagePass.releaseVerdict?.verdict==="RELEASE"?"verified_runtime":"failed_closed",
+    languageQualityState:finalRelease.deliveryState,
     languageReleaseGate:languagePass.releaseVerdict||null,
     canonicalProvenanceGate:{
       version:CANONICAL_PROVENANCE_GATE_VERSION,
@@ -6075,75 +6043,25 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   let governedLanguageRelease=governedFinalRelease.releaseGate;
   let governedLanguageRepair={attempted:false,repaired:false,providerCalls:0,error:null};
 
-  // Fail closed first. Only a repairable Macedonian result may receive one
-  // bounded language-only regeneration. Severe/BLOCK output is never repaired
-  // into release and no legal facts, authorities or recommendations may be added.
+  // Product policy: language quality must not suppress useful legal functionality.
+  // Deterministic cleanup has already run inside canonicalMacedonianFinalRelease.
+  // Do not spend a second provider call for style-only repair. Only substantive
+  // foreign-jurisdiction substitution remains a legal-safety blocker.
   const governedLanguageReasons=Array.isArray(governedLanguageQuality?.reasons)
     ? governedLanguageQuality.reasons.map(x=>String(x))
     : [];
-  const governedLanguageRepairEligible=
-    !governedFinalRelease.ok
-    && membership
-    && ["REPAIR","BLOCK"].includes(String(governedLanguageRelease?.verdict||""))
-    && !governedLanguageReasons.includes("foreign_jurisdiction_substitution");
-
-  if(governedLanguageRepairEligible){
-    governedLanguageRepair.attempted=true;
-    const repair=await runOpenAIMacedonianRepair(env,{
-      text:governedFinalAnswer,
-      userText:q,
-      maxOutputTokens:Math.min(3200,Math.max(900,maxOutputTokens)),
-      deadlineAt:professionalRequestDeadlineAt
-    });
-    governedLanguageRepair={
-      attempted:true,
-      repaired:false,
-      providerCalls:Number(repair.providerCalls||0),
-      error:repair.ok?null:String(repair.error||"openai_language_repair_failed")
-    };
-    if(repair.ok){
-      const repairUsage=repair.usage||{};
-      const primaryUsage=result.usage||{};
-      result={
-        ...result,
-        providerCalls:Number(result.providerCalls||0)+Number(repair.providerCalls||0),
-        usage:{
-          inputTokens:Number(primaryUsage.inputTokens||0)+Number(repairUsage.inputTokens||0),
-          outputTokens:Number(primaryUsage.outputTokens||0)+Number(repairUsage.outputTokens||0),
-          totalTokens:Number(primaryUsage.totalTokens||0)+Number(repairUsage.totalTokens||0)
-        }
-      };
-      const repairedCandidate=formalDraftRequest
-        ? finaliseFormalLegalDraft(repair.text,{
-            userText:q,
-            hasGovernedLegalContext:articleBundle.context.length>0
-          })
-        : String(repair.text||"").trim();
-      const repairedRelease=canonicalMacedonianFinalRelease(repairedCandidate,q);
-      if(repairedRelease.ok){
-        governedFinalAnswer=repairedRelease.text;
-        governedFinalRelease=repairedRelease;
-        governedLanguageQuality=repairedRelease.quality;
-        governedLanguageRelease=repairedRelease.releaseGate;
-        governedLanguageRepair={...governedLanguageRepair,repaired:true,error:null};
-      }else{
-        governedLanguageQuality=repairedRelease.quality;
-        governedLanguageRelease=repairedRelease.releaseGate;
-        governedLanguageRepair={...governedLanguageRepair,error:"openai_language_repair_still_noncompliant"};
-      }
-    }
-  }
+  const governedLanguageRepairEligible=false;
 
   if(!governedFinalRelease.ok){
     await releaseMonthlyQuota(env,{subject,period});
     return json(request,{
       ok:false,
-      error:"macedonian_release_blocked",
+      error:"foreign_jurisdiction_substitution_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
       languageReleaseGate:governedLanguageRelease,
       languageReasons:governedLanguageQuality?.reasons||[],
-      languageRepairEligible:governedLanguageRepairEligible,
+      languageRepairEligible:false,
       languageRepair:governedLanguageRepair,
       governanceRunId:lioeRunId
     },503);
@@ -6245,7 +6163,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     model:result.model,
     languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageReleaseGate:governedLanguageRelease,
-    languageQualityState:governedLanguageRequired?"verified_runtime":"not_required",
+    languageQualityState:governedLanguageRequired?governedFinalRelease.deliveryState:"not_required",
     languageRepaired:governedLanguageRepair.repaired===true,
     languageRepairProviderCalls:Number(governedLanguageRepair.providerCalls||0),
     conversationPersistence:result.conversationPersistence,
@@ -6561,11 +6479,12 @@ async function handleAssistant(request, env, url) {
           maxOutputTokens:1400
         });
         const languageRequired=shouldEnforceMacedonianOutput(q);
-        if(languageRequired && languagePass.releaseVerdict?.verdict!=="RELEASE"){
-          aiError="macedonian_release_blocked:"+(languagePass.repairError||"postflight_failed");
-          answerMode="retrieval_only_language_guard";
+        const candidateDelivery=canonicalMacedonianFinalRelease(languagePass.text||primaryCandidate,q);
+        if(languageRequired && !candidateDelivery.ok){
+          aiError="foreign_jurisdiction_substitution_blocked";
+          answerMode="retrieval_only_legal_safety_guard";
         }else{
-          const candidate=String(languagePass.text||primaryCandidate).trim();
+          const candidate=String(candidateDelivery.text||languagePass.text||primaryCandidate).trim();
           const check=validateAnswerCitations(candidate,articles);
           if(check.ok){
             const normalizeRef=(value)=>String(value || "").normalize("NFKC").toLocaleLowerCase("mk").replace(/[–—]/g,"-").replace(/\s+/g,"");
@@ -6643,7 +6562,7 @@ async function handleAssistant(request, env, url) {
     }
     return json(request,{
       ok:false,
-      error:"macedonian_release_blocked",
+      error:"foreign_jurisdiction_substitution_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       languageReleaseGate:assistantFinalRelease.releaseGate,
       languageReasons:assistantFinalRelease.quality?.reasons||[]
