@@ -1,0 +1,42 @@
+[
+  {
+    "source_id": "mk-supreme-collection-iii-1980-1984",
+    "filename": "10-Збирка+на+судски+одлуки+1980-1984+-+Книга+III.pdf",
+    "pdf_sha256": "99e8d919d3cbfd15baa761fde2f345a94950059ecf4ac59b808d1ca4c527e506",
+    "page_count": 565,
+    "status": "pending_macedonian_ocr_or_manual_index",
+    "reason": "insufficient_reliable_machine_text",
+    "production_eligible": false,
+    "human_gate_required": true
+  },
+  {
+    "source_id": "mk-supreme-collection-ii-1975-1979",
+    "filename": "12-Збирка+на+судски+одлуки+1975+-+1979+-+Книга+II.pdf",
+    "pdf_sha256": "8ca84eb702ed78d30f5125cde2e288851d418805c76845169b90efe4b3e3b2e5",
+    "page_count": 575,
+    "status": "pending_macedonian_ocr_or_manual_index",
+    "reason": "insufficient_reliable_machine_text",
+    "production_eligible": false,
+    "human_gate_required": true
+  },
+  {
+    "source_id": "mk-supreme-collection-viii-1999",
+    "filename": "5-Збирка+на+судски+одлуки+1999+-+Книга+VIII.pdf",
+    "pdf_sha256": "4381149be20a9b185a3696f6d1751c823652813d014def1f89385f439b2e0133",
+    "page_count": 378,
+    "status": "pending_macedonian_ocr_or_manual_index",
+    "reason": "insufficient_reliable_machine_text",
+    "production_eligible": false,
+    "human_gate_required": true
+  },
+  {
+    "source_id": "mk-supreme-collection-vi-1997",
+    "filename": "7-Збирка+на+судски+одлуки+1997+-+Книга+VI.pdf",
+    "pdf_sha256": "589ff20acbc2c64eae5f917fee5a3a9a143a8aab9d3b4553784e8c0934fa99c8",
+    "page_count": 321,
+    "status": "pending_macedonian_ocr_or_manual_index",
+    "reason": "insufficient_reliable_machine_text",
+    "production_eligible": false,
+    "human_gate_required": true
+  }
+]
