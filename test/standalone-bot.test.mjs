@@ -121,4 +121,5 @@ test('worker uses bounded conversation routing context for legal follow-ups',()=
   assert.match(source,/const routingQuery=buildLegalRoutingQuery\(q,historyCheck\.history\)/);
   assert.match(source,/governedArticleContext\(env,routingQuery,initialPlan\)/);
   assert.match(source,/contextualFollowUp/);
+  assert.match(source,/researchInput:routingQuery/);
 });
