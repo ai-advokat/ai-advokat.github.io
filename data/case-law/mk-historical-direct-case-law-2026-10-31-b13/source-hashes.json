@@ -1,0 +1,182 @@
+[
+  {
+    "file": "2.doc",
+    "size_bytes": 25600,
+    "sha256": "4caf9333a1fb7e6017b857b73ea8e689800fb9f79da115d79b582c4c5e447d3a",
+    "normalized_text_sha256": "bc7cc0f9825b7b87569979a8deefc94854d3479ea8a4220292ee7d3d85ff1a8e",
+    "ole_title": "2",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "3.doc",
+    "size_bytes": 26624,
+    "sha256": "f7bb3033230f208224ca9f652fff6f70b9643b53298b18a205fc12eb485d85b4",
+    "normalized_text_sha256": "76013d358267dc3106e31d0b299b0bbcdf0bf963bb8cb5ebdaa96de6775f8512",
+    "ole_title": "3",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "4.doc",
+    "size_bytes": 27136,
+    "sha256": "cdb66121df12c7c114111c932fe6542e90ff0e996137133a03463a9adb6e44b3",
+    "normalized_text_sha256": "09e95267286f018aafedd77ceb155057b581afdfb4725ccecda5bd3c852798ad",
+    "ole_title": "4",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "5.doc",
+    "size_bytes": 29696,
+    "sha256": "a986d83a19a225c36e9e4da0181433836a4af0c08d9917ce9791f9342636cb65",
+    "normalized_text_sha256": "6debe103bceb938bfa5bcf8ce67112b9f2556587e2d0086e16f6475660a719d2",
+    "ole_title": "5",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "5a.doc",
+    "size_bytes": 27136,
+    "sha256": "2b78cb08acf8b82b70a2a0b1ac87705de4d8919f4c0230c7ee609aebf0e76312",
+    "normalized_text_sha256": "0c03498458ed552472c12f1132e51a7adf33d00a792c4fbc329dec248e8ca448",
+    "ole_title": "5-A Obvrskata na roditelite za izdr`uvawe na decata po nivnoto polnoletstvo do redovnoto zavr{uvawe na {koluvaweto, podrazbira izdr`uvawe i na decata-vonredni studenti, dokolku so statusot na vonredni studenti se steknale poradi bolest",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "6.doc",
+    "size_bytes": 28160,
+    "sha256": "d2f36cfada17b8e15bc702a106eeb9ae24620dd37eed3f40d1ffc876bc114c7a",
+    "normalized_text_sha256": "813cdf3363810262e544c1741f73d94e52a29035aa86aba62778677d37ae49c5",
+    "ole_title": "235",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "6-a.doc",
+    "size_bytes": 28160,
+    "sha256": "9492e42469c039f3e5bc321dd8881be2c0e5970231d3dc515c62ce895c19e2a8",
+    "normalized_text_sha256": "2dcc2752bd6ea87a8c3f952e6cc22ad24322c2d34c0c666efa771986694c2406",
+    "ole_title": "235",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "149.doc",
+    "size_bytes": 34304,
+    "sha256": "f560be428d4ca87ab97d2ce3c458c1aceb784ef2771677860fcaf9b57ffdf16f",
+    "normalized_text_sha256": "bc1b1c0a2b18fafcd1f729c473ab779aeacbf9c1672430282e3833d4cd81dd7e",
+    "ole_title": "149",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "149a_1.doc",
+    "size_bytes": 25088,
+    "sha256": "20f866eee38f6dc079e87f4d36152d17cf168344205ce235359d300ad8ae5bcf",
+    "normalized_text_sha256": "8cd19e3e310b0f57a8e7c47ab7a4692d7d4a6520ae871292cd18932df99f7b77",
+    "ole_title": "149-A",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "149b.doc",
+    "size_bytes": 29696,
+    "sha256": "44978e674a87570617bc17b9300deb94f525c6c9bd389ddb21d2d19bd97788d8",
+    "normalized_text_sha256": "31dcc5c7f4aaed445017503e538cb19ee289eabf7a61331b436377142dc07034",
+    "ole_title": "149-B",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "150.doc",
+    "size_bytes": 31744,
+    "sha256": "1501b7eaa4606691ef2f152ffc38ee9d084c37287c1ec5cc4346d72fbe3dd64b",
+    "normalized_text_sha256": "2234df8a0e7110fd16c16aa801ad51bd9c48479a029ee20699d31f0f20f860d1",
+    "ole_title": "150",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "151.doc",
+    "size_bytes": 30720,
+    "sha256": "0e215e851258c8cdda037638e6800497b26b97243a876ac7c99b8ee4e97ee4f9",
+    "normalized_text_sha256": "cf2d9a31e6b2004d3e10d37502b6cbef255317711eb3baf1f7eee7587d640f1f",
+    "ole_title": "151",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "152.doc",
+    "size_bytes": 25088,
+    "sha256": "2157c6d2eef84d147b5dde4ae32130343788c7e6bc929ada74be279fac779c06",
+    "normalized_text_sha256": "cedfafbb4f48b6444bdee891c53af1866ec6cdbdd219d09477d814c6f999fdd4",
+    "ole_title": "152",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "153.doc",
+    "size_bytes": 27136,
+    "sha256": "bf57db98e97fd44a9d4d661f3bca30e4eca1ee90efd86136003e95ed474bc27c",
+    "normalized_text_sha256": "7068b657402a4a25b8ba061ca9728fd5c9a8528c26e3ffe39c1fc4604ae35769",
+    "ole_title": "153",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "154.doc",
+    "size_bytes": 29696,
+    "sha256": "a67fbc0a5b62fabffdf56faf82d820d2d656698b29837b2861a1491dbdcf41b4",
+    "normalized_text_sha256": "5b0366d037729ae72052c00fa68dd3c80c48684a22b003b4fdecef89f65f833c",
+    "ole_title": "154",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "155.doc",
+    "size_bytes": 27648,
+    "sha256": "630f6b17fefcde4a7d70029ea81c47810a850e441beb2266fbf2b146e2129a61",
+    "normalized_text_sha256": "ff23bdda564bb0658a152cbf2120b084783f556fd9500c07c5b37f72b689e118",
+    "ole_title": "155",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "156.doc",
+    "size_bytes": 27648,
+    "sha256": "0fa28c91e5198da17819425cc3d92c4e99cb2ca302d76a83f7accdc003999cf8",
+    "normalized_text_sha256": "57a37cd04382363edffd04248b3bf37c6a62306c13ce228fdf41903034319ec4",
+    "ole_title": "156",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "158.doc",
+    "size_bytes": 27136,
+    "sha256": "f242bb31afbbf2b02c6024e784918ef6c8e1754ba376b4019ff4e42dd3aba484",
+    "normalized_text_sha256": "72588bbf7d539807fac1a8e57df41b0bb7084287df55821d7ff011d7de4b38a3",
+    "ole_title": "158",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "159.doc",
+    "size_bytes": 29696,
+    "sha256": "836b603f7f012777d80d0ca4efe1af03b1470c1d095def55847576b92bbd2c11",
+    "normalized_text_sha256": "4b765d31a72c418125550b7113c84e004d8473f9c7130ad0cd2fcc5d8db27556",
+    "ole_title": "159",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  },
+  {
+    "file": "VRHOVEN SUD NA REPUBLIKA MAKEDONIJA.doc",
+    "size_bytes": 25088,
+    "sha256": "5368a1b02777c0e792e5d58836e2fa8d7511923331a6da562158e5e78aa1a291",
+    "normalized_text_sha256": "c8505a138054cfe9af6dcca4af60ce90d1130db29a8101f650b9bb1b40fd95c4",
+    "ole_title": "VRHOVEN SUD NA REPUBLIKA MAKEDONIJA",
+    "ole_author": "ASTRA",
+    "source_format": "OLE2 Word .doc"
+  }
+]
