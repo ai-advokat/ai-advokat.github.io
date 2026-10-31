@@ -131,7 +131,7 @@ function buildShell(){
     <div class="vnext-history-head"><span>Историја · оваа сесија</span><button id="vnextTheme" type="button" class="vnext-icon" aria-label="Промени тема">◐</button></div>
     <input id="vnextThreadSearch" class="vnext-thread-search" type="search" placeholder="Пребарај разговори…" aria-label="Пребарај разговори">
     <div id="vnextThreadList" class="vnext-thread-list"></div>
-    <div class="vnext-side-foot"><strong>Source-first · Human Gate</strong><span>Разговорите од vNext history не се чуваат трајно. Доверливи предмети → Secure Case Workspace.</span></div>`;
+    <div class="vnext-side-foot"><strong>Source-first · Human Gate</strong><span>Разговорите од vNext history не се чуваат трајно. Идентификаторите се маскираат локално; Secure Case Workspace користете го кога е неопходен оригиналниот документ или точниот идентитет.</span></div>`;
   evidence.innerHTML=`
     <div class="vnext-evidence-head"><div><strong id="vnextPanelTitle">Извори</strong><small id="vnextPanelSub">Проверлив контекст за активниот разговор</small></div><button id="vnextEvidenceClose" class="vnext-icon" type="button" aria-label="Затвори панел">×</button></div>
     <div class="vnext-evidence-tabs" role="tablist">
@@ -159,7 +159,7 @@ function buildWorkflowDialog(){
     <button data-prompt="Направи source verification audit на претходниот одговор. За секое материјално правно тврдење наведи дали има примарен извор, важечка верзија и што останува непотврдено."><strong>▤ Source Check</strong><span>Authority · version · provenance</span></button>
     <button data-prompt="Спореди ги двете верзии на документот. Издвои суштински промени, правен ефект, ризици и прашања за Human Gate. Не измислувај разлики што не се во документите."><strong>⇄ Redline / Compare</strong><span>Промени · ефект · ризик · review</span></button>
     <button data-vnext-tool="consolidator"><strong>≋ Консолидатор</strong><span>v10.4 · official consolidated / editorial consolidated / working consolidation · provenance · Human Gate</span></button>
-    <button data-prompt="PREDICTOR MODE — GOVERNED SCENARIO ANALYSIS. Не давај процент на успех и не гарантирај исход. Изгради најмалку три сценарија: поволно, мешано и неповолно. За секое наведи: одлучувачки факти, докази, применлива правна основа и source status, спротивни аргументи/authority, процесни ризици, што недостига и кои факти би го смениле сценариото. Ако задачата содржи доверлив предмет или клиентски податоци, насочи ја анализата во Secure Case Workspace / CasePilot. Заврши со HUMAN GATE REQUIRED."><strong>◎ Предиктор</strong><span>Сценарија · фактори · ризици · без лажни проценти</span></button>
+    <button data-prompt="PREDICTOR MODE — GOVERNED SCENARIO ANALYSIS. Не давај процент на успех и не гарантирај исход. Изгради најмалку три сценарија: поволно, мешано и неповолно. За секое наведи: одлучувачки факти, докази, применлива правна основа и source status, спротивни аргументи/authority, процесни ризици, што недостига и кои факти би го смениле сценариото. Ако точниот идентитет или оригиналниот доверлив документ се неопходни за задачата, користи Secure Case Workspace / CasePilot; инаку продолжи со локално маскирани идентификатори. Заврши со HUMAN GATE REQUIRED."><strong>◎ Предиктор</strong><span>Сценарија · фактори · ризици · без лажни проценти</span></button>
   </div><p class="vnext-dialog-note">Овие Workflows не се автономно поднесување или потпишување. Тие подготвуваат работна задача за постојниот AI Advokat backend.</p>`;
   document.body.append(d);
   qs('[data-close]',d).onclick=()=>d.close();
@@ -310,7 +310,7 @@ function renderEvidence(){
   }
   if(workspace.panelTab==='context'){
     const mode=$('researchMode')?.selectedOptions?.[0]?.textContent||'Автоматски'; const guides=$('useLocalGuides')?.checked?'Вклучени':'Исклучени';
-    body.append(infoCard('Активен thread',t.title),infoCard('Research mode',mode),infoCard('Проверени локални водичи',guides),infoCard('Модел',t.model||'Се прикажува по AI одговор'),infoCard('Privacy boundary','Доверливи клиентски предмети не се праќаат преку обичниот thread; се насочуваат во Secure Case Workspace.')); return;
+    body.append(infoCard('Активен thread',t.title),infoCard('Research mode',mode),infoCard('Проверени локални водичи',guides),infoCard('Модел',t.model||'Се прикажува по AI одговор'),infoCard('Privacy boundary','Препознатливите лични идентификатори се маскираат локално пред испраќање. Secure Case Workspace е потребен кога за задачата е неопходен оригиналниот документ или точниот идентитет.')); return;
   }
   if(workspace.panelTab==='human'){
     const card=mk('section',{class:'vnext-human-card'}); card.innerHTML='<span class="vnext-status-pill">HUMAN GATE</span><h3>Потребна е професионална проверка</h3><p>AI одговорите и извозите се работен материјал. Нема автоматско потпишување, поднесување, испраќање или правно овластување.</p>';
@@ -355,7 +355,7 @@ function runAction(action){
   if(action==='analyzer'){window.open('/professional-tools.html#analyzer','_blank','noopener');return;}
   if(action==='consolidator'){window.open('/consolidator/','_blank','noopener');return;}
   if(action==='predictor'){
-    $('question').value='PREDICTOR MODE — GOVERNED SCENARIO ANALYSIS. Анализирај го прашањето преку поволно, мешано и неповолно сценарио. Не давај процент на успех и не гарантирај исход. За секое сценарио наведи одлучувачки факти, доказна поддршка, применлива правна основа и source status, спротивни аргументи/authority, процесни ризици, празнини во доказите и што би го сменило сценариото. Ако станува збор за доверлив клиентски предмет, насочи ме во Secure Case Workspace / CasePilot. HUMAN GATE REQUIRED.\n\nПрашање/предмет: ';
+    $('question').value='PREDICTOR MODE — GOVERNED SCENARIO ANALYSIS. Анализирај го прашањето преку поволно, мешано и неповолно сценарио. Не давај процент на успех и не гарантирај исход. За секое сценарио наведи одлучувачки факти, доказна поддршка, применлива правна основа и source status, спротивни аргументи/authority, процесни ризици, празнини во доказите и што би го сменило сценариото. Ако точниот идентитет или оригиналниот документ се неопходни, користи Secure Case Workspace / CasePilot; инаку продолжи со локално маскирани идентификатори. HUMAN GATE REQUIRED.\n\nПрашање/предмет: ';
     $('question').dispatchEvent(new Event('input')); closeMobileSidebar(); $('question').focus(); return;
   }
   if(action==='sources'){openEvidence('sources');return;}
