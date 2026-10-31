@@ -1,0 +1,30 @@
+[
+  {
+    "canonical_source_id": "mk-appellate-bitola-bulletin-2012",
+    "canonical_filename": "2-Bilten+2012+-+ASBITOLA-s-5.pdf",
+    "duplicate_filename": "Bilten+2012+-+ASBITOLA.pdf",
+    "duplicate_pdf_sha256": "327e7c448fe921319f37ec9070a95b8240f0398bfecabf6040e55b2e4ac57ea9",
+    "duplicate_kind": "normalized_text_exact"
+  },
+  {
+    "canonical_source_id": "mk-appellate-bitola-bulletin-2015-2017",
+    "canonical_filename": "4-bilten_2017-s-10-s-10.pdf",
+    "duplicate_filename": "bilten_2017.pdf",
+    "duplicate_pdf_sha256": "8cb15bc8d3cd991125a426d60c381ae8ae315ad09d415c9d167a7dcbc2393662",
+    "duplicate_kind": "normalized_text_exact"
+  },
+  {
+    "canonical_source_id": "mk-appellate-skopje-bulletin-9",
+    "duplicate_filename": "Bilten+br.9-s-3.pdf",
+    "duplicate_pdf_sha256": "099b7ab0a4be980781ef56e526be96fefc95fe2146277ea04218937257c30b93",
+    "duplicate_kind": "same_publication_as_prior_batch",
+    "prior_corpus_id": "mk-judicial-publications-batch-2026-10-31"
+  },
+  {
+    "canonical_source_id": "mk-appellate-skopje-bulletin-10",
+    "duplicate_filename": "Bilten+br.10-s-1.pdf",
+    "duplicate_pdf_sha256": "df5285999f8ce9124abbfcdfb02dbc8e2c80b3296905e980e971ce3846633090",
+    "duplicate_kind": "same_publication_as_prior_batch",
+    "prior_corpus_id": "mk-judicial-publications-batch-2026-10-31"
+  }
+]
