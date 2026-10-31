@@ -1,6 +1,14 @@
 name: MK judicial publication batch review
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "data/case-law/mk-judicial-publications-batch-2026-10-31/**"
+      - "data/case-law-source-registry-2026.json"
+      - "scripts/validate-mk-judicial-publication-batch.mjs"
+      - ".github/workflows/mk-judicial-publication-batch.yml"
   workflow_dispatch:
 
 permissions:
