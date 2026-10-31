@@ -1,0 +1,6 @@
+{
+  "release_pack_name": "MK_HISTORICAL_CASE_LAW_DIRECT_BATCH_B4_RC1.zip",
+  "archive_sha256": "c6241a4e393414bd1de16e27e6d9f7fa71f75ccb1e7f18ece20d435e10f56b62",
+  "status": "controlled_human_gate_artifact",
+  "production_eligible": false
+}
