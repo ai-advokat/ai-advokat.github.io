@@ -36,3 +36,16 @@ html[data-vnext-theme="light"]{--bg:var(--vcream);--panel:var(--vpanel);--ink:va
 @media(max-width:840px){.vnext-shell{grid-template-columns:1fr}.vnext-sidebar{position:fixed;z-index:40;left:0;top:0;bottom:0;width:min(290px,88vw);transform:translateX(-105%);transition:transform .22s ease;box-shadow:var(--vshadow)}.vnext-sidebar-open .vnext-sidebar{transform:translateX(0)}#vnextMobileMenu{display:block}.vnext-center>main{padding:0 12px}.vnext-center>header{padding:0 10px}.vnext-header-tools{margin-right:4px}.vnext-header-tools #vnextHeaderEvidence{display:none}.vnext-center>header .brand img{width:84px}}
 @media(max-width:600px){.vnext-workflow-grid{grid-template-columns:1fr}.vnext-center>header{height:58px;flex-basis:58px}.vnext-center>main{height:calc(100dvh - 58px)}.vnext-header-tools button{padding:6px!important}.vnext-evidence-tabs{grid-template-columns:repeat(2,1fr)}}
 @media(prefers-reduced-motion:reduce){.vnext-sidebar,.vnext-evidence{transition:none}}
+
+
+@media(min-width:1181px){
+  html.vnext-sidebar-collapsed .vnext-shell{grid-template-columns:0 minmax(0,1fr) 340px}
+  html.vnext-sidebar-collapsed .vnext-sidebar{display:none}
+  html.vnext-sidebar-collapsed #vnextMobileMenu{display:block}
+  html.vnext-evidence-collapsed .vnext-shell{grid-template-columns:260px minmax(0,1fr) 0}
+  html.vnext-evidence-collapsed .vnext-evidence{display:none}
+  html.vnext-sidebar-collapsed.vnext-evidence-collapsed .vnext-shell{grid-template-columns:0 minmax(0,1fr) 0}
+}
+@media(max-width:1180px){
+  html.vnext-evidence-collapsed .vnext-evidence{transform:translateX(105%)}
+}
