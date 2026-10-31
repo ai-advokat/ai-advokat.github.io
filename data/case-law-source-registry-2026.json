@@ -316,11 +316,13 @@
       "additional_corpus_ids": [
         "mk-judicial-reference-batch-2026-10-31-b3",
         "mk-historical-direct-case-law-2026-10-31-b4",
-        "mk-historical-direct-case-law-2026-10-31-b5"
+        "mk-historical-direct-case-law-2026-10-31-b5",
+        "mk-historical-direct-case-law-2026-10-31-b6"
       ],
       "direct_extract_batch_ids": [
         "mk-historical-direct-case-law-2026-10-31-b4",
-        "mk-historical-direct-case-law-2026-10-31-b5"
+        "mk-historical-direct-case-law-2026-10-31-b5",
+        "mk-historical-direct-case-law-2026-10-31-b6"
       ]
     },
     {
@@ -522,11 +524,14 @@
       "authority_note": "Publication-level matching to Collection V strengthens provenance but does not prove remote/original-decision binding or present-law validity. B5 also preserves General Session principled stances and Civil Division legal opinions as distinct interpretive authority kinds.",
       "privacy_minimisation": true,
       "additional_corpus_ids": [
-        "mk-historical-direct-case-law-2026-10-31-b5"
+        "mk-historical-direct-case-law-2026-10-31-b5",
+        "mk-historical-direct-case-law-2026-10-31-b6"
       ],
       "direct_extract_batch_ids": [
-        "mk-historical-direct-case-law-2026-10-31-b5"
-      ]
+        "mk-historical-direct-case-law-2026-10-31-b5",
+        "mk-historical-direct-case-law-2026-10-31-b6"
+      ],
+      "source_metadata_anomaly_policy": "Preserve source-file metadata conflicts as provenance flags; legal identity follows verified textual content, case number, date and publication locator. Do not silently rewrite source metadata."
     },
     {
       "id": "mk-historical-commercial-court-extracts",
