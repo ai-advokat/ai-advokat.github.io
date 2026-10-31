@@ -1,0 +1,68 @@
+[
+  {
+    "filename": "10-BiltenBr5_2.pdf",
+    "sha256": "1168dfac2c7d02d4be97820c5bc19dd16238858d9002d242b21341842f12ff13",
+    "duplicate_kind": "cross_batch_binary_exact",
+    "canonical": "as-stip-bulletins-v2 / Bulletin 5"
+  },
+  {
+    "filename": "bilten_2011_1.pdf",
+    "sha256": "db623aec6598f86b351b73b8954521186fc88c8cc352884b0de5bf92b28c3ad0",
+    "duplicate_kind": "cross_batch_same_text_publication",
+    "canonical": "mk-appellate-bitola-bulletin-2011"
+  },
+  {
+    "filename": "06-bilten_2017.pdf",
+    "sha256": "72ce6badeb1a3c7cc95b8257eb46c9daac4319809ed5f8577911239b773a0a41",
+    "duplicate_kind": "cross_batch_same_text_publication",
+    "canonical": "mk-appellate-bitola-bulletin-2015-2017"
+  },
+  {
+    "filename": "BILTEN2018.pdf",
+    "sha256": "a96dd073fa399e28efff8d79bbc0e93553c2985863f437445725ad2b2b9ec1f3",
+    "duplicate_kind": "cross_batch_same_text_publication",
+    "canonical": "mk-appellate-bitola-bulletin-2018"
+  },
+  {
+    "filename": "Bilten-br.7.pdf",
+    "sha256": "e1c46fdd9b368f59a2707fa86ea52e426ce1213569f630d696996ef05835efa0",
+    "duplicate_kind": "cross_batch_same_text_publication",
+    "canonical": "mk-appellate-skopje-bulletin-7"
+  },
+  {
+    "filename": "BiltenBr5.pdf",
+    "sha256": "d97305298b926688af5b537ed3ba124167aab191f1fb46ab6d66ddefdb7da5a5",
+    "duplicate_kind": "cross_batch_same_publication_variant",
+    "canonical": "as-stip-bulletins-v2 / Bulletin 5",
+    "note": "same substantive text after removing shifted page numbers and court headers"
+  },
+  {
+    "filename": "BILTEN-2017-USRM_1..pdf",
+    "sha256": "a2c6a9f9f39544d5b39e84bbee0f0150d029c0a5d7ba589a9c2967869f7a6ddb",
+    "duplicate_kind": "internal_binary_exact",
+    "canonical": "mk-constitutional-court-decisions-2017"
+  },
+  {
+    "filename": "sudski-odluki-vitlarov-cavdar.pdf",
+    "sha256": "97a1efb8f87ddbcec909c7937c2d2f4da8e12d6e8d7100e1c1fac31996d95d33",
+    "duplicate_kind": "cross_batch_same_text_publication",
+    "canonical": "mk-professional-case-collection-vitlarov-chavdar-2009"
+  },
+  {
+    "filename": "sudski-odluki-мк-чАВДАР.pdf",
+    "sha256": "7c177d3ab31615fb305aac3f1914014ab6b55bba5caa03a197f81f06ced1b39f",
+    "duplicate_kind": "cross_batch_same_text_publication",
+    "canonical": "mk-professional-case-collection-vitlarov-chavdar-2009"
+  },
+  {
+    "filename": "sudska praksa-MK..docx",
+    "sha256": "b9ac8fd70464167c7e8b5d2ee245d73dc4367c33eecacbc7ea690be404a0f774",
+    "duplicate_kind": "derived_extract_of_existing_bulletin_record",
+    "canonical": "as-stip-bulletins-v3 / Bulletin 9",
+    "case_aliases": [
+      "ГЖ116/2013",
+      "РЕВ2572/2013"
+    ],
+    "note": "derived extract, not an independent authority source"
+  }
+]
