@@ -1,0 +1,326 @@
+{
+  "schema": "AI_ADVOCAT_HISTORICAL_DIRECT_CASE_KEY_INDEX_V2",
+  "corpus_id": "mk-historical-direct-case-law-2026-10-31-b11",
+  "records": [
+    {
+      "record_id": "B11-REV-787/1994",
+      "authority_id": "REV-787/1994",
+      "case_number_key": "REV-787/1994",
+      "decision_date": "20.09.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "работен однос",
+        "определено време",
+        "судска заштита",
+        "рокови"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-1551/1994",
+      "authority_id": "REV-1551/1994",
+      "case_number_key": "REV-1551/1994",
+      "decision_date": "01.11.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "конкурс",
+        "високо образование",
+        "хабилитација",
+        "важечко право"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-1531/1994",
+      "authority_id": "REV-1531/1994",
+      "case_number_key": "REV-1531/1994",
+      "decision_date": "26.10.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "конкурс",
+        "асистенти",
+        "рецензиона комисија",
+        "научно-истражувачка дејност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-1411/1994",
+      "authority_id": "REV-1411/1994",
+      "case_number_key": "REV-1411/1994",
+      "decision_date": "29.06.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "работен однос",
+        "стручно оспособување",
+        "преквалификација",
+        "судска заштита"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-1630/1994",
+      "authority_id": "REV-1630/1994",
+      "case_number_key": "REV-1630/1994",
+      "decision_date": "26.10.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "judgment",
+      "topics_mk": [
+        "конкурс",
+        "асистенти",
+        "рецензиона комисија",
+        "научно-истражувачка дејност"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-GZZ-99/1993",
+      "authority_id": "GZZ-99/1993",
+      "case_number_key": "GZZ-99/1993",
+      "decision_date": "16.11.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "мирување на постапка",
+        "повлекување тужба",
+        "временско важење",
+        "ЗПП"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-287/1995",
+      "authority_id": "REV-287/1995",
+      "case_number_key": "REV-287/1995",
+      "decision_date": "07.02.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "изостанок на тужен",
+        "мирување",
+        "главна расправа",
+        "преиначување тужба"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-1091/1994",
+      "authority_id": "REV-1091/1994",
+      "case_number_key": "REV-1091/1994",
+      "decision_date": "13.06.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "вештачење",
+        "слободно судиско уверение",
+        "стручно знаење",
+        "суштествена повреда"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-545/1993",
+      "authority_id": "REV-545/1993",
+      "case_number_key": "REV-545/1993",
+      "decision_date": "28.09.1993",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "сослушување странки",
+        "предупредување",
+        "изостанок",
+        "суштествена повреда"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-5/1990",
+      "authority_id": "REV-5/1990",
+      "case_number_key": "REV-5/1990",
+      "decision_date": "27.02.1990",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "контрадикторни докази",
+        "образложение пресуда",
+        "оценка на докази",
+        "суштествена повреда"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-892/1995",
+      "authority_id": "REV-892/1995",
+      "case_number_key": "REV-892/1995",
+      "decision_date": "19.06.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "преуранета тужба",
+        "втасување побарување",
+        "мериторно одлучување",
+        "процесна постапка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-663/1995",
+      "authority_id": "REV-663/1995",
+      "case_number_key": "REV-663/1995",
+      "decision_date": "23.04.1995",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "мирување на постапка",
+        "рок",
+        "повлекување тужба",
+        "продолжување постапка"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-SSZ-361/1991",
+      "authority_id": "SSZ-361/1991",
+      "case_number_key": "SSZ-361/1991",
+      "decision_date": "22.02.1991",
+      "court": "Стопански суд на Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "пресудена работа",
+        "стекнување без основ",
+        "извршна исправа",
+        "res judicata"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-1338/1995",
+      "authority_id": "REV-1338/1995",
+      "case_number_key": "REV-1338/1995",
+      "decision_date": "20.11.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "пресудена работа",
+        "правен основ",
+        "правна квалификација",
+        "истоветност на барање"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-GZZ-70/1995",
+      "authority_id": "GZZ-70/1995",
+      "case_number_key": "GZZ-70/1995",
+      "decision_date": "11.01.1996",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "судско порамнување",
+        "поништување",
+        "продолжување постапка",
+        "процес"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-SSZ-588/1995",
+      "authority_id": "SSZ-588/1995",
+      "case_number_key": "SSZ-588/1995",
+      "decision_date": "08.11.1995",
+      "court": "Стопански суд на Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "исправка на решение",
+        "процесни трошоци",
+        "очигледна грешка",
+        "ЗПП"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-1075/1993",
+      "authority_id": "REV-1075/1993",
+      "case_number_key": "REV-1075/1993",
+      "decision_date": "19.04.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "дополнување одлука",
+        "процесни трошоци",
+        "рок 15 дена",
+        "ненавременост"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-846/1992",
+      "authority_id": "REV-846/1992",
+      "case_number_key": "REV-846/1992",
+      "decision_date": "15.12.1992",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "поука за правен лек",
+        "жалбен рок",
+        "ненавременост",
+        "законски рок"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-1155/1994",
+      "authority_id": "REV-1155/1994",
+      "case_number_key": "REV-1155/1994",
+      "decision_date": "10.11.1994",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "состав на суд",
+        "советување и гласање",
+        "судии поротници",
+        "суштествена повреда"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    },
+    {
+      "record_id": "B11-REV-10/1991",
+      "authority_id": "REV-10/1991",
+      "case_number_key": "REV-10/1991",
+      "decision_date": "08.01.1991",
+      "court": "Врховен суд на Република Македонија",
+      "authority_kind": "order",
+      "topics_mk": [
+        "непотпишана жалба",
+        "дополнување жалба",
+        "суштествена повреда",
+        "правен лек"
+      ],
+      "production_eligible": false,
+      "human_gate_required": true
+    }
+  ]
+}

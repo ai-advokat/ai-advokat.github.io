@@ -1,0 +1,142 @@
+[
+  {
+    "file": "123.doc",
+    "sha256": "1bb6c6273970df4e9f232de0ae52d7803daa43798c669f6bdb7b93d568ef9ace",
+    "normalized_text_sha256": "8304832477fa820b18a59fc9bac326835918b01bbefae6431e50acd8dde89abf",
+    "size_bytes": 30208,
+    "ole_title": "123"
+  },
+  {
+    "file": "124.doc",
+    "sha256": "28622a25627aa5b6f173200916fd793ea5b4fee429500436d2a47d281c991653",
+    "normalized_text_sha256": "d56c45c8794a532e690da71b733180deb52f9259039858cb9692c1403abdec90",
+    "size_bytes": 28672,
+    "ole_title": "124"
+  },
+  {
+    "file": "125.doc",
+    "sha256": "d5de6b697cfc739dae8a1c6b06c3163e1d1f7ffef436ff745b744d219fd775ad",
+    "normalized_text_sha256": "f76b23afd0d1b44f88673bbdb75025c9591e591e09fcf7f537fea99d47567d03",
+    "size_bytes": 26624,
+    "ole_title": "125"
+  },
+  {
+    "file": "126.doc",
+    "sha256": "494671b4c54a162d4d3b19dcaee0634634a2a4ea52529ddc54c11a4dc418bab5",
+    "normalized_text_sha256": "b1bca53d0fdbe728d6ba2ea7b7d4e6d62fa261cc4d978c234960f87e88dfb498",
+    "size_bytes": 27136,
+    "ole_title": "126"
+  },
+  {
+    "file": "127.doc",
+    "sha256": "c5593b8d0620fe336cbd8cd3261fac945e53df500479bc494ca87ed4fac79f84",
+    "normalized_text_sha256": "11aeeda4c7ae19c8d8d2973a1f89e4d9d737f66b107c356cf4c01e47940adf1f",
+    "size_bytes": 28160,
+    "ole_title": "127"
+  },
+  {
+    "file": "208.doc",
+    "sha256": "dc204b328f207a9135904d1586700a4eb955f08696c583c1ba2123e68cf4d52e",
+    "normalized_text_sha256": "a5a4eb36e42117fbd7dd5c4a743b01fc6bbcd95e43f9c8b4e403ce792638bc86",
+    "size_bytes": 25600,
+    "ole_title": "208"
+  },
+  {
+    "file": "209.doc",
+    "sha256": "99ca6f244b0706a5ddccffefaba56a47eb970bd70379a022eb69f4e2431c7c02",
+    "normalized_text_sha256": "b98d5735ab8c3d004d392d69b7761039cca4d85e89b6819666394f370b6d9f2c",
+    "size_bytes": 25600,
+    "ole_title": "209"
+  },
+  {
+    "file": "210.doc",
+    "sha256": "2470627a6d4a6e214e3ddf9d660674a7e60348a029bdb4a809271f5724aa5b29",
+    "normalized_text_sha256": "20316732361221cce0c08d65202083e18919a4c2368b86a2f2356a8e0dba4601",
+    "size_bytes": 27648,
+    "ole_title": "210"
+  },
+  {
+    "file": "211.doc",
+    "sha256": "6d54ba50a7bd6d7ba399b15258190c688bb1117fc18914df6ced757424c40a5b",
+    "normalized_text_sha256": "6cd5a5e1757b43df6bc094e863bfabf9fc2496321679eecb812035a4d1da0028",
+    "size_bytes": 25600,
+    "ole_title": "211"
+  },
+  {
+    "file": "212.doc",
+    "sha256": "a82c739a65f5845a18d7301797c7ff7a3492f10d68ba42002b0cc06a45db1165",
+    "normalized_text_sha256": "c5528d3d933c8de9535b270ff56f2dd029f5c4fc3afcae268b82e48ebac00e87",
+    "size_bytes": 26624,
+    "ole_title": "212"
+  },
+  {
+    "file": "213.doc",
+    "sha256": "ae8d34507cded410ea5a399028f96b49e6b220ec38d8fb8c236daeeae0c0f1c1",
+    "normalized_text_sha256": "6d850a14a8db9454206e958136ef8ec527f28fa5f67563eeda50c2dc53143200",
+    "size_bytes": 26112,
+    "ole_title": "213"
+  },
+  {
+    "file": "214.doc",
+    "sha256": "9370aeabd867bf419eb6da65c197521f8f2bf359879fa0011052a6f6de3953bc",
+    "normalized_text_sha256": "d56b42a5ac132272d903e0772d5763df9c9761fd1cd1b323605f2cc893d7aacc",
+    "size_bytes": 27648,
+    "ole_title": "214"
+  },
+  {
+    "file": "215.doc",
+    "sha256": "0669975caf3f2f6622490f540fc00b0634b3fd290aa15c0edd4491e427a176ed",
+    "normalized_text_sha256": "d872cf51b08860ef5ff6812a4cbf3dc700b29c895a8b798d8d52885f588f2a89",
+    "size_bytes": 24576,
+    "ole_title": "215"
+  },
+  {
+    "file": "216.doc",
+    "sha256": "bd19996985cfd9d06a0baf86c565aea3b60a82da4856ef533f9d9bd7a418919e",
+    "normalized_text_sha256": "808ad1cf3cbbd713ae753177ef127f507d3d4e9cc4b044f9700af9b47e44be80",
+    "size_bytes": 25600,
+    "ole_title": "216"
+  },
+  {
+    "file": "217.doc",
+    "sha256": "f969f375330c9230940f51089e4eccf1a3fdc773fafa190f28aa2a61354de422",
+    "normalized_text_sha256": "c336f76d02f8d1899af52b20205f5f72d18cac57887ecdf5f4ad7d7a9b6d7696",
+    "size_bytes": 25088,
+    "ole_title": "217"
+  },
+  {
+    "file": "218.doc",
+    "sha256": "a1f58e66f9cc20c8e6873a4fe7495931f36fd25835a586b5ad29824cd3fa078f",
+    "normalized_text_sha256": "bc558b1720d78955475ea78f6379e9386aa8b02a38497fd10035d82eec3b4503",
+    "size_bytes": 25600,
+    "ole_title": "218"
+  },
+  {
+    "file": "219.doc",
+    "sha256": "e923f26bd0e7ba9cfc6396a4f395fbb0b8cfabe2ddfdb47a0a8a52fcf860fbb6",
+    "normalized_text_sha256": "e5e656594a2ae36bda38f3739488313082e7ad582b584929c8e5bab075939de9",
+    "size_bytes": 25600,
+    "ole_title": "219"
+  },
+  {
+    "file": "220.doc",
+    "sha256": "2af231b1543620019d77178b30fdd8ec8c2a01f3597641f10a7141ac61157da0",
+    "normalized_text_sha256": "f2bb13591db1e393536d71fd24969b4d09a26b949e2617d9e7a3228263cf49b9",
+    "size_bytes": 25088,
+    "ole_title": "220"
+  },
+  {
+    "file": "221.doc",
+    "sha256": "81f692d605667c5ea8c0217b25707aef4440519b872160329c67be813724b874",
+    "normalized_text_sha256": "b29f77a10ef754cee0fb3d76437d7f93e2047272834805803ef6e2658a0d65bf",
+    "size_bytes": 28160,
+    "ole_title": "221"
+  },
+  {
+    "file": "222.doc",
+    "sha256": "dae83060727912938c227bbf13da7924685d1dc73df723a8d3d08df8cb238091",
+    "normalized_text_sha256": "2f9dc26ae404975e93947341eff8f1f2f1b17f0ec86eda57ef13e45eb13b19b5",
+    "size_bytes": 26112,
+    "ole_title": "222"
+  }
+]

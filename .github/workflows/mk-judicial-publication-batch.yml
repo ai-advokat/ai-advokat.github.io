@@ -15,6 +15,7 @@ on:
       - "data/case-law/mk-historical-direct-case-law-2026-10-31-b8/**"
       - "data/case-law/mk-historical-direct-case-law-2026-10-31-b9/**"
       - "data/case-law/mk-historical-direct-case-law-2026-10-31-b10/**"
+      - "data/case-law/mk-historical-direct-case-law-2026-10-31-b11/**"
       - "data/case-law-source-registry-2026.json"
       - "scripts/validate-mk-judicial-publication-batch.mjs"
       - "scripts/validate-mk-appellate-publication-batch.mjs"
@@ -26,6 +27,7 @@ on:
       - "scripts/validate-mk-historical-direct-case-law-b8.mjs"
       - "scripts/validate-mk-historical-direct-case-law-b9.mjs"
       - "scripts/validate-mk-historical-direct-case-law-b10.mjs"
+      - "scripts/validate-mk-historical-direct-case-law-b11.mjs"
       - ".github/workflows/mk-judicial-publication-batch.yml"
   workflow_dispatch:
 
@@ -57,6 +59,8 @@ jobs:
         run: node scripts/validate-mk-historical-direct-case-law-b9.mjs data/case-law/mk-historical-direct-case-law-2026-10-31-b9
       - name: Validate historical direct case-law batch B10
         run: node scripts/validate-mk-historical-direct-case-law-b10.mjs data/case-law/mk-historical-direct-case-law-2026-10-31-b10
+      - name: Validate historical direct case-law batch B11
+        run: node scripts/validate-mk-historical-direct-case-law-b11.mjs data/case-law/mk-historical-direct-case-law-2026-10-31-b11
       - name: Existing case-law source registry regression
         run: node --test test/case-law-source-registry.test.mjs
       - name: Existing case-law chat gate regression
@@ -76,4 +80,5 @@ jobs:
             data/case-law/mk-historical-direct-case-law-2026-10-31-b8/**
             data/case-law/mk-historical-direct-case-law-2026-10-31-b9/**
             data/case-law/mk-historical-direct-case-law-2026-10-31-b10/**
+            data/case-law/mk-historical-direct-case-law-2026-10-31-b11/**
           retention-days: 30
