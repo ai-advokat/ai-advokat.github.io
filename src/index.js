@@ -6498,10 +6498,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   let governedLanguageRelease=governedFinalRelease.releaseGate;
   let governedLanguageRepair={attempted:false,repaired:false,providerCalls:0,error:null};
 
-  // Product policy: language quality must not suppress useful legal functionality.
-  // Deterministic cleanup has already run inside canonicalMacedonianFinalRelease.
-  // Do not spend a second provider call for style-only repair. Only substantive
-  // foreign-jurisdiction substitution remains a legal-safety blocker.
+  // Pravopis 2017 strict release policy: the governed OpenAI path is also
+  // fail-closed at the final language gate. Residual detected neighbouring-
+  // language contamination or malformed Macedonian prose is not released.
+  // The central prompt should normally prevent this; if not, Human Gate/retry
+  // is preferred over publishing linguistically contaminated legal prose.
   const governedLanguageReasons=Array.isArray(governedLanguageQuality?.reasons)
     ? governedLanguageQuality.reasons.map(x=>String(x))
     : [];
