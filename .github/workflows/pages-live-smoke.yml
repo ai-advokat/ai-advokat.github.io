@@ -1,0 +1,42 @@
+name: AI Advokat Pages live smoke
+
+on:
+  push:
+    branches:
+      - gh-pages
+    paths:
+      - "bot/index.html"
+      - "assets/standalone-bot.js"
+      - "assets/standalone-bot.css"
+      - "assets/standalone-bot-vnext.js"
+      - "assets/standalone-bot-vnext.css"
+      - "assets/standalone-bot-reliability.js"
+      - ".github/workflows/pages-live-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-live-pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wait for public Pages release and verify exact bot marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://ai-advokat.github.io/bot/?pages_smoke=${GITHUB_SHA}"
+          ok=0
+          for i in $(seq 1 40); do
+            if curl --fail --silent --show-error --location               -H 'Cache-Control: no-cache'               "$URL" -o /tmp/bot-live.html; then
+              if grep -q 'pages-release: 20261101-pages-r9' /tmp/bot-live.html                 && grep -q 'standalone-bot-vnext.js?v=20261101-access-r7' /tmp/bot-live.html                 && ! grep -Fq '\\n  <link rel="stylesheet"' /tmp/bot-live.html; then
+                ok=1
+                break
+              fi
+            fi
+            sleep 3
+          done
+          test "$ok" = "1"
+          echo "LIVE GITHUB PAGES BOT: pages-r9 marker present"
+          echo "LIVE GITHUB PAGES BOT: access-r7 bundle present"
+          echo "LIVE GITHUB PAGES BOT: stray literal newline absent"
