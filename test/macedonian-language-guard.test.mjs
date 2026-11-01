@@ -374,3 +374,18 @@ test("V11 strict Pravopis gate still releases clean standard Macedonian",()=>{
   assert.equal(good.deliver,true);
   assert.equal(good.clean,true);
 });
+
+
+test("live phrase директна примера is rejected and deterministically repaired",()=>{
+  const bad='Не постои директна примера за овој поднесок.';
+  const check=assessMacedonianOutput(bad,{userText:"Направи ми тужба на македонски."});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.reasons.includes("contextual_language_contamination"),JSON.stringify(check));
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.match(clean,/директен пример/u);
+  assert.doesNotMatch(clean,/директна примера/u);
+  assert.equal(
+    assessMacedonianOutput(clean,{userText:"Направи ми тужба на македонски."}).ok,
+    true
+  );
+});
