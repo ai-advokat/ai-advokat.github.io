@@ -77,7 +77,7 @@ window.fetch = async function(input, init={}){
   return response;
 };
 
-await import('./standalone-bot.js?v=20261031-runtime-r3');
+await import('./standalone-bot.js?v=20261101-ui-r5');
 
 const $=id=>document.getElementById(id);
 const qs=(s,r=document)=>r.querySelector(s);
@@ -116,19 +116,19 @@ function buildShell(){
     <button class="vnext-new" id="vnextNewThread" type="button">＋ Нов разговор</button>
     <button class="vnext-search-launch" id="vnextSearchLaunch" type="button"><span>⌕</span><span>Пребарај</span><kbd>Ctrl K</kbd></button>
     <nav class="vnext-nav" aria-label="Работни модули">
-      <button data-vnext-action="assistant" class="active">◈ <span>Правен асистент</span></button>
-      <button data-vnext-action="analyzer">⌁ <span>Анализатор</span></button>
-      <button data-vnext-action="consolidator">≋ <span>Консолидатор</span></button>
-      <button data-vnext-action="predictor">◎ <span>Предиктор</span></button>
-      <button data-vnext-action="sources">▤ <span>Правни извори</span></button>
-      <button data-vnext-action="cases">⚖ <span>Судска практика</span></button>
-      <button data-vnext-action="casepilot">▣ <span>CasePilot</span></button>
-      <button data-vnext-action="documents">▧ <span>Документи</span></button>
-      <button data-vnext-action="workflows">◇ <span>Workflows</span></button>
-      <button data-vnext-action="review">✓ <span>Human Gate</span></button>
-      <button data-vnext-action="library">◫ <span>Library</span></button>
+      <button data-vnext-action="assistant" class="active"><span class="vnext-nav-symbol" aria-hidden="true">◈</span><span>Правен асистент</span></button>
+      <button data-vnext-action="analyzer"><span class="vnext-nav-symbol" aria-hidden="true">⌁</span><span>Анализатор</span></button>
+      <button data-vnext-action="consolidator"><span class="vnext-nav-symbol" aria-hidden="true">≋</span><span>Консолидатор</span></button>
+      <button data-vnext-action="predictor"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Предиктор</span></button>
+      <button data-vnext-action="sources"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>Правни извори</span></button>
+      <button data-vnext-action="cases"><span class="vnext-nav-symbol" aria-hidden="true">⚖</span><span>Судска практика</span></button>
+      <button data-vnext-action="casepilot"><span class="vnext-nav-symbol" aria-hidden="true">▣</span><span>CasePilot</span></button>
+      <button data-vnext-action="documents"><span class="vnext-nav-symbol" aria-hidden="true">▧</span><span>Документи</span></button>
+      <button data-vnext-action="workflows"><span class="vnext-nav-symbol" aria-hidden="true">◇</span><span>Workflows</span></button>
+      <button data-vnext-action="review"><span class="vnext-nav-symbol" aria-hidden="true">✓</span><span>Human Gate</span></button>
+      <button data-vnext-action="library"><span class="vnext-nav-symbol" aria-hidden="true">◫</span><span>Library</span></button>
     </nav>
-    <div class="vnext-history-head"><span>Историја · оваа сесија</span><button id="vnextTheme" type="button" class="vnext-icon" aria-label="Промени тема">◐</button></div>
+    <div class="vnext-history-head"><span>◷ Историја · оваа сесија</span><button id="vnextTheme" type="button" class="vnext-icon" aria-label="Промени тема" title="Промени тема">◐</button></div>
     <input id="vnextThreadSearch" class="vnext-thread-search" type="search" placeholder="Пребарај разговори…" aria-label="Пребарај разговори">
     <div id="vnextThreadList" class="vnext-thread-list"></div>
     <div class="vnext-side-foot"><strong>Source-first · Human Gate</strong><span>Разговорите од vNext history не се чуваат трајно. Идентификаторите се маскираат локално; Secure Case Workspace користете го кога е неопходен оригиналниот документ или точниот идентитет.</span></div>`;
@@ -223,18 +223,26 @@ function ensureMessageActions(article){
   };
   actions.append(copy);
   if(article.classList.contains('user')){
-    const edit=mk('button',{type:'button',class:'vnext-message-action',title:'Уреди и повторно употреби','aria-label':'Уреди прашање',text:'✎ Уреди'});
+    const edit=mk('button',{type:'button',class:'vnext-message-action',title:'Уреди го прашањето','aria-label':'Уреди прашање',text:'✎ Уреди'});
     edit.onclick=()=>setComposerText(original);
-    actions.append(edit);
-  }else if(article.classList.contains('assistant')){
     const repeat=mk('button',{type:'button',class:'vnext-message-action',title:'Повтори го прашањето','aria-label':'Повтори го прашањето',text:'↺ Повтори'});
+    repeat.onclick=()=>setComposerText(original);
+    actions.append(edit,repeat);
+  }else if(article.classList.contains('assistant')){
+    const repeat=mk('button',{type:'button',class:'vnext-message-action',title:'Повтори го претходното прашање','aria-label':'Повтори го претходното прашање',text:'↺ Повтори'});
     repeat.onclick=()=>setComposerText(priorUserText(article));
     const evidence=mk('button',{type:'button',class:'vnext-message-action',title:'Отвори ги изворите','aria-label':'Отвори ги изворите',text:'▤ Извори'});
     evidence.onclick=()=>openEvidence('sources');
-    actions.append(repeat,evidence);
+    const review=mk('button',{type:'button',class:'vnext-message-action',title:'Отвори Human Gate','aria-label':'Отвори Human Gate',text:'✓ Проверка'});
+    review.onclick=()=>openEvidence('human');
+    const docx=mk('button',{type:'button',class:'vnext-message-action',title:'Извези ја оваа порака во DOCX','aria-label':'Извези во DOCX',text:'▧ DOCX'});
+    docx.onclick=()=>exportMessageText(original,'docx');
+    const pdf=mk('button',{type:'button',class:'vnext-message-action',title:'Извези ја оваа порака во PDF','aria-label':'Извези во PDF',text:'▧ PDF'});
+    pdf.onclick=()=>exportMessageText(original,'pdf');
+    actions.append(repeat,evidence,review,docx,pdf);
   }
-  const sourceBlock=article.querySelector('.sources,.vnext-source-tray');
-  if(sourceBlock) article.insertBefore(actions,sourceBlock); else article.append(actions);
+  article.classList.add('has-vnext-actions');
+  article.insertBefore(actions,body);
 }
 
 function renderThreadList(){
@@ -368,18 +376,23 @@ function runAction(action){
   if(action==='library'){$('materialsDialog')?.showModal();return;}
 }
 
-async function exportActive(format){
-  const t=activeThread(); const latest=[...t.history].reverse().find(m=>m.role==='assistant'&&String(m.text||'').trim());
-  if(!latest){$('status').textContent='Сè уште нема AI одговор за извоз.';return;}
+async function exportMessageText(value,format){
+  const text=String(value||'').trim();
+  if(!text){$('status').textContent='Нема содржина за извоз.';return;}
   if(['txt','md'].includes(format)){
-    const text=format==='md'?'# AI Advokat — работен одговор\n\n'+latest.text:'AI Advokat — работен одговор\n\n'+latest.text;
-    const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'})); const a=mk('a',{href:url,download:'AI-Advokat-working-draft.'+format});a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;
+    const body=format==='md'?'# AI Advokat — работен одговор\n\n'+text:'AI Advokat — работен одговор\n\n'+text;
+    const url=URL.createObjectURL(new Blob([body],{type:'text/plain;charset=utf-8'})); const a=mk('a',{href:url,download:'AI-Advokat-working-draft.'+format});a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;
   }
   try{
     const mod=await import('./casepilot-export.js'); const core=await import('../src/case-export.js');
-    const report=core.normalizeCaseExportReport({title:'AI Advokat — работен одговор',summary:latest.text,sections:[{title:'AI Advokat',content:latest.text}],humanGate:'Потребна е професионална човечка проверка пред последична употреба.'});
+    const report=core.normalizeCaseExportReport({title:'AI Advokat — работен одговор',summary:text,sections:[{title:'AI Advokat',content:text}],humanGate:'Потребна е професионална човечка проверка пред последична употреба.'});
     await mod.downloadCasePilotExport(report,format,{filename:'AI-Advokat-working-draft.'+format});
   }catch{$('status').textContent='Извозот во '+format.toUpperCase()+' не успеа. Обидете се со TXT или MD.';}
+}
+async function exportActive(format){
+  const t=activeThread(); const latest=[...t.history].reverse().find(m=>m.role==='assistant'&&String(m.text||'').trim());
+  if(!latest){$('status').textContent='Сè уште нема AI одговор за извоз.';return;}
+  return exportMessageText(latest.text,format);
 }
 function exportThread(){
   const t=activeThread(); if(!t.history.length){$('status').textContent='Сè уште нема завршен разговор за преземање.';return;}
@@ -408,7 +421,7 @@ function wire(){
   $('vnextThreadSearch').addEventListener('input',renderThreadList);
   $('vnextSearchLaunch').onclick=openGlobalSearch; $('vnextHeaderSearch').onclick=openGlobalSearch;
   $('vnextHeaderEvidence').onclick=()=>openEvidence('sources'); $('vnextEvidenceClose').onclick=closeEvidence;
-  $('vnextMobileMenu').onclick=openMobileSidebar; $('vnextSidebarClose').onclick=closeSidebar;
+  $('vnextMobileMenu').onclick=openMobileSidebar; $('vnextSidebarClose').onclick=closeMobileSidebar;
   $('vnextTheme').onclick=cycleTheme;
   qsa('.vnext-nav button').forEach(b=>b.onclick=()=>runAction(b.dataset.vnextAction));
   qsa('.vnext-evidence-tabs button').forEach(b=>b.onclick=()=>{workspace.panelTab=b.dataset.panel;renderEvidence();});
