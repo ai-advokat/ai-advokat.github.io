@@ -152,6 +152,7 @@ import {
 } from "./ai-advokat-central-prompt.js";
 import {
   isFormalLegalDraftRequest,
+  hasProceduralInstrumentMismatch,
   finaliseFormalLegalDraft
 } from "./response-quality.js";
 import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commentary.js";
@@ -5190,9 +5191,14 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   const governed=freeChatCorpusText(runtimeCorpusContext);
   const missionProfile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
   const formalDraftRequest=isFormalLegalDraftRequest(q);
+  const proceduralInstrumentMismatch=formalDraftRequest && hasProceduralInstrumentMismatch(q);
   const compactFreeDraft=formalDraftRequest;
 
-  const fastFreePrompt=missionProfile==="GENERAL_BYPASS" || missionProfile==="L0_INFORMATIONAL";
+  // Formal legal drafting must never use the stripped-down fast prompt.
+  // It needs the full language contract, legal terminology discipline and
+  // one bounded Macedonian repair pass before release.
+  const fastFreePrompt=(missionProfile==="GENERAL_BYPASS" || missionProfile==="L0_INFORMATIONAL")
+    && !formalDraftRequest;
   const fullFreeExtraRules=[
     "You are running in AI Advokat FREE Workers AI mode.",
     "If the user writes in Macedonian or recognisable Macedonian Latin transliteration, answer in standard literary Macedonian Cyrillic. The Macedonian 2017 language contract above is mandatory unless the user explicitly requests another language.",
@@ -5207,6 +5213,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     "If current law is not established by a governed primary source in supplied context, say that current-law verification is still required and continue with the useful non-authoritative portion.",
     "Do not say that you cannot create Word/DOCX files. The browser can export the latest working draft; provide the complete document text.",
     "Use placeholders or clearly fictional data when the user requests invented names/details; never present invented facts as real.",
+    proceduralInstrumentMismatch
+      ? "PROCEDURAL-INSTRUMENT SAFETY: the user used a lawsuit term for facts that linguistically indicate a possible criminal-law event. Do not force the document into a civil lawsuit. Explain briefly that the exact procedural instrument must be verified from the applicable law and facts; use a neutral working-draft heading unless governed authority establishes the correct instrument. Do not invent an offence article or filing rule."
+      : null,
     compactFreeDraft
       ? "FREE FORMAL DRAFT LATENCY CONTRACT: return one complete compact working draft, normally no more than about 700 words. Use only essential document sections; avoid commentary, tables, duplicated caveats and long boilerplate. Never invent article numbers or current-law propositions that are not supported by governed context."
       : "For non-draft work, be concise and proportionate to the question.",
@@ -5237,10 +5246,12 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     documentText ? "ATTACHED DOCUMENT TEXT:\n"+documentText : "",
     governed ? "GOVERNED AI ADVOKAT CONTEXT:\n"+governed : "",
     "",
-    missionProfile==="L0_INFORMATIONAL"
-      ? "Answer directly and concisely. Use ordinary standard Macedonian; no table unless requested."
-      : compactFreeDraft
-        ? "Return only the complete compact working draft. Use clear placeholders or explicitly fictional data. Keep it within about 700 words and omit commentary before or after the document."
+    compactFreeDraft
+      ? (proceduralInstrumentMismatch
+          ? "Return one complete compact neutral working draft. Do not title it ТУЖБА merely because the user used that word. State briefly that the exact procedural instrument requires verification, then provide the useful factual structure with placeholders. Keep it within about 700 words."
+          : "Return only the complete compact working draft. Use clear placeholders or explicitly fictional data. Keep it within about 700 words and omit commentary before or after the document.")
+      : missionProfile==="L0_INFORMATIONAL"
+        ? "Answer directly and concisely. Use ordinary standard Macedonian; no table unless requested."
         : "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
   ].filter(Boolean).join("\n\n");
 
