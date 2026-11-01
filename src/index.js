@@ -160,7 +160,7 @@ import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, schol
 import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
 
 const VERSION = "1.9.0";
-const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V9";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V10_LANGUAGE_FIREWALL";
 const CANONICAL_FINAL_OUTPUT_GATE_VERSION="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
 
 const ALLOWED_ORIGINS = new Set([
@@ -3774,7 +3774,10 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
   const languagePass=await repairWorkersAIMacedonianIfNeeded(env,{
     text:result.text,
     userText:task,
-    maxOutputTokens:Math.max(900,Math.min(4800,Number(maxOutputTokens)||3600))
+    maxOutputTokens:Math.max(900,Math.min(4800,Number(maxOutputTokens)||3600)),
+    allowProviderRepair:true,
+    forceEditorialPass:true,
+    primaryModel:result.model
   });
   const languageRequired=shouldEnforceMacedonianOutput(task);
   const finalText=(mode==="draft" || isFormalLegalDraftRequest(task))
@@ -3784,7 +3787,7 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
       })
     : languagePass.text;
   const finalRelease=canonicalMacedonianFinalRelease(finalText,task);
-  if(!finalRelease.ok){
+  if(languagePass.hardBlock || !finalRelease.ok){
     return {
       ok:false,
       error:"macedonian_language_release_blocked",
@@ -3806,6 +3809,9 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
     languageStandard:languageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageRepaired:languagePass.repaired===true,
     deterministicLanguageCleanup:languagePass.deterministicCleanupApplied===true,
+    languageEditorRequired:languagePass.editorRequired===true,
+    languageEditorPassed:languagePass.editorPassed===true,
+    languageEditorModel:languagePass.editorModel||null,
     formalDraftPostflight:(mode==="draft" || isFormalLegalDraftRequest(task)),
     languageQualityState:finalRelease.deliveryState,
     languageReleaseGate:languagePass.releaseVerdict||null
@@ -5085,12 +5091,30 @@ async function convertFreeChatAttachments(env,attachments){
   return {ok:true,documents:bounded,totalChars:total};
 }
 
-async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTokens=1800,sessionAffinity=null,allowProviderRepair=true}={}){
+function resolveMacedonianLanguageEditorModel(env,primaryModel=""){
+  const configured=String(env?.WORKERS_AI_MK_EDITOR_MODEL||"").trim();
+  const preferred=configured||resolveWorkersAIEmptyFallbackModel(env);
+  const primary=String(primaryModel||"").trim();
+  if(!primary || preferred!==primary) return preferred;
+  const alternate=resolveWorkersAITextModel(env);
+  return alternate!==primary ? alternate : preferred;
+}
+
+async function repairWorkersAIMacedonianIfNeeded(env,{
+  text,
+  userText,
+  maxOutputTokens=1800,
+  sessionAffinity=null,
+  allowProviderRepair=true,
+  forceEditorialPass=false,
+  primaryModel=null
+}={}){
   const original=String(text||"");
   if(!shouldEnforceMacedonianOutput(userText)){
     return {
       text:original,repaired:false,providerCalls:0,languageAssessment:null,
-      deterministicCleanupApplied:false,
+      deterministicCleanupApplied:false,editorRequired:false,editorPassed:false,
+      editorModel:null,hardBlock:false,
       releaseVerdict:{verdict:"RELEASE",severity:"not_applicable",gateVersion:MACEDONIAN_RELEASE_GATE_VERSION}
     };
   }
@@ -5098,11 +5122,15 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
   let current=original;
   let assessment=assessMacedonianOutput(current,{userText});
   let releaseVerdict=macedonianReleaseVerdict(current,{userText});
-  if(releaseVerdict.verdict==="RELEASE"){
-    return {text:current,repaired:false,providerCalls:0,languageAssessment:assessment,deterministicCleanupApplied:false,releaseVerdict};
+
+  if(releaseVerdict.verdict==="RELEASE" && !forceEditorialPass){
+    return {
+      text:current,repaired:false,providerCalls:0,languageAssessment:assessment,
+      deterministicCleanupApplied:false,editorRequired:false,editorPassed:false,
+      editorModel:null,hardBlock:false,releaseVerdict
+    };
   }
 
-  // Deterministic cleanup is the first and cheapest repair layer.
   let deterministicCleanupApplied=false;
   const deterministicFirst=normaliseMacedonianGeneratedText(current);
   if(deterministicFirst!==current){
@@ -5110,26 +5138,23 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     deterministicCleanupApplied=true;
     assessment=assessMacedonianOutput(current,{userText});
     releaseVerdict=macedonianReleaseVerdict(current,{userText});
-    if(releaseVerdict.verdict==="RELEASE"){
+    if(releaseVerdict.verdict==="RELEASE" && !forceEditorialPass){
       return {
-        text:current,
-        repaired:true,
-        deterministicCleanupApplied:true,
-        providerCalls:0,
-        languageAssessment:assessment,
-        releaseVerdict,
-        repairError:null
+        text:current,repaired:true,providerCalls:0,languageAssessment:assessment,
+        deterministicCleanupApplied:true,editorRequired:false,editorPassed:false,
+        editorModel:null,hardBlock:false,releaseVerdict,repairError:null
       };
     }
   }
 
-  // Pravopis 2017 strict mode: one bounded language-only repair attempt is
-  // allowed after deterministic cleanup. It may not add law, facts or sources.
-  if(allowProviderRepair && env?.AI){
+  const editorRequired=forceEditorialPass || releaseVerdict.verdict!=="RELEASE";
+  if(editorRequired && allowProviderRepair && env?.AI){
+    const editorModel=resolveMacedonianLanguageEditorModel(env,primaryModel);
     const repairResult=await runWorkersAIText(env,{
       messages:buildMacedonianRepairMessages({text:current||original,userText}),
       maxOutputTokens:Math.max(500,Math.min(3200,Number(maxOutputTokens)||1800)),
       temperature:0,
+      model:editorModel,
       sessionAffinity,
       timeoutMs:12000
     });
@@ -5144,13 +5169,34 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
         providerCalls:Number(repairResult.providerCalls||1),
         languageAssessment:repairedAssessment,
         releaseVerdict:repairedVerdict,
-        repairError:repairedVerdict.verdict==="RELEASE"?null:"language_quality_blocked_after_repair"
+        editorRequired:true,
+        editorPassed:repairedVerdict.verdict==="RELEASE",
+        editorModel:repairResult.model||editorModel,
+        hardBlock:repairedVerdict.verdict!=="RELEASE",
+        repairError:repairedVerdict.verdict==="RELEASE"?null:"language_quality_blocked_after_editor"
       };
     }
+    return {
+      text:current||original,
+      repaired:current!==original,
+      deterministicCleanupApplied,
+      providerCalls:Number(repairResult?.providerCalls||0),
+      languageAssessment:assessment,
+      releaseVerdict:{
+        verdict:"BLOCK",
+        severity:"language_editor_unavailable",
+        assessment,
+        problems:["mandatory_language_editor_failed"],
+        gateVersion:MACEDONIAN_RELEASE_GATE_VERSION
+      },
+      editorRequired:true,
+      editorPassed:false,
+      editorModel:editorModel,
+      hardBlock:true,
+      repairError:"mandatory_language_editor_failed"
+    };
   }
 
-  // Strict professional release: residual detected language contamination is
-  // not released. The last-mile delivery gate will fail closed.
   return {
     text:current||original,
     repaired:current!==original,
@@ -5158,7 +5204,11 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     providerCalls:0,
     languageAssessment:assessment,
     releaseVerdict,
-    repairError:releaseVerdict.verdict==="RELEASE"?null:"language_quality_blocked"
+    editorRequired,
+    editorPassed:false,
+    editorModel:null,
+    hardBlock:editorRequired,
+    repairError:editorRequired?"mandatory_language_editor_not_run":null
   };
 }
 
@@ -5292,7 +5342,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     userText:q,
     maxOutputTokens:tokenLimit,
     sessionAffinity,
-    allowProviderRepair:!fastFreePrompt && !result.modelFallback
+    allowProviderRepair:languageRequired,
+    forceEditorialPass:languageRequired && (formalDraftRequest || missionProfile!=="GENERAL_BYPASS"),
+    primaryModel:result.model
   });
   const formalDraft=formalDraftRequest;
   const finalText=formalDraft
@@ -5302,7 +5354,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
       })
     : languagePass.text;
   const finalRelease=canonicalMacedonianFinalRelease(finalText,q);
-  if(!finalRelease.ok){
+  if(languagePass.hardBlock || !finalRelease.ok){
     return {
       ok:false,
       error:"macedonian_language_release_blocked",
@@ -7194,11 +7246,14 @@ async function handleAssistant(request, env, url) {
         const languagePass=await repairWorkersAIMacedonianIfNeeded(env,{
           text:primaryCandidate,
           userText:q,
-          maxOutputTokens:1400
+          maxOutputTokens:1400,
+          allowProviderRepair:true,
+          forceEditorialPass:true,
+          primaryModel:providerResult.model
         });
         const languageRequired=shouldEnforceMacedonianOutput(q);
         const candidateDelivery=canonicalMacedonianFinalRelease(languagePass.text||primaryCandidate,q);
-        if(languageRequired && !candidateDelivery.ok){
+        if(languageRequired && (languagePass.hardBlock || !candidateDelivery.ok)){
           aiError="macedonian_language_release_blocked";
           answerMode="retrieval_only_legal_safety_guard";
         }else{
