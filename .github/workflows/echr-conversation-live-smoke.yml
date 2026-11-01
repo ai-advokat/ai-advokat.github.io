@@ -1,0 +1,98 @@
+name: ECHR conversation live smoke
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/index.js"
+      - "src/legal-conversation-context.js"
+      - "corpus/echr/**"
+      - ".github/workflows/echr-conversation-live-smoke.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-echr-conversation-live-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify source contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/index.js
+          node --check src/legal-conversation-context.js
+          node --test test/legal-conversation-context.test.mjs test/echr-bureau-corpus.test.mjs
+
+      - name: Verify broad ECHR list and contextual follow-up live
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          FIRST='Сакам да те замолам да ми ги дадеш сите судски пресуди на Македонски граѓани кои што ги добиле против Република Македонија во Стразбур. Однапред многу ти благодарам, Со почит, Александар'
+          FOLLOW='Токму на тие мислев, Ве молам дајте ми ги тие податоци,'
+
+          node -e 'const fs=require("fs"); fs.writeFileSync("/tmp/echr-first-body.json",JSON.stringify({q:process.env.FIRST,mode:"auto",webSearch:false,history:[],guideIds:[],guideDocuments:[],attachments:[]}));' 
+          code="$(curl -sS --retry 5 --retry-delay 2 --max-time 90 -w '%{http_code}' -o /tmp/echr-first.json             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             --data-binary @/tmp/echr-first-body.json             "$BASE/api/chat")"
+          test "$code" = "200"
+
+          FIRST="$FIRST" FOLLOW="$FOLLOW" node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync("/tmp/echr-first.json","utf8"));
+          if(!d.ok) throw new Error("first ECHR request returned ok=false");
+          if(d.provider!=="canonical_corpus_no_model") throw new Error("unexpected provider: "+d.provider);
+          if(d.displayMode!=="canonical_echr_bureau_judgment_index") throw new Error("unexpected displayMode: "+d.displayMode);
+          if(d.sourceMode!=="official_domestic_echr_index_no_model") throw new Error("unexpected sourceMode: "+d.sourceMode);
+          if(d.performance?.providerCalls!==0) throw new Error("model provider was called");
+          const s=d.echrBureauIndexStatus||{};
+          if(s.state!=="matched" || !(s.selectedRecords>0) || !(s.totalIndexRecords>=s.selectedRecords)) throw new Error("ECHR index status invalid");
+          if(s.outcomeQualification!=="HUDOC_BINDING_REQUIRED") throw new Error("HUDOC outcome gate missing");
+          const rows=Array.isArray(d.echrBureauIndex)?d.echrBureauIndex:[];
+          if(rows.length!==s.selectedRecords) throw new Error("structured ECHR rows mismatch");
+          if(rows.some(r=>r.recordKind!=="judgment_listing")) throw new Error("non-judgment leaked into judgment-only result");
+          if(!String(d.answer||"").includes("не ги означува сите наведени пресуди како победи")) throw new Error("win-classification safety warning missing");
+          if(!String(d.humanGate||"").includes("HUDOC")) throw new Error("HUDOC Human Gate missing");
+          if(Array.isArray(d.publicationSources) && d.publicationSources.length) throw new Error("authorial publication sources leaked into ECHR lane");
+          const history=[
+            {role:"user",text:process.env.FIRST},
+            {role:"assistant",text:"Достапен е официјален индекс на Бирото за застапување пред ЕСЧП."}
+          ];
+          fs.writeFileSync("/tmp/echr-follow-body.json",JSON.stringify({q:process.env.FOLLOW,mode:"auto",webSearch:false,history,guideIds:[],guideDocuments:[],attachments:[]}));
+          console.log(JSON.stringify({firstSelected:s.selectedRecords,total:s.totalIndexRecords,snapshot:s.snapshotCapturedOn}));
+          NODE
+
+          code="$(FIRST="$FIRST" FOLLOW="$FOLLOW" curl -sS --retry 5 --retry-delay 2 --max-time 90 -w '%{http_code}' -o /tmp/echr-follow.json             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             --data-binary @/tmp/echr-follow-body.json             "$BASE/api/chat")"
+          test "$code" = "200"
+
+          node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync("/tmp/echr-follow.json","utf8"));
+          if(!d.ok) throw new Error("ECHR follow-up returned ok=false");
+          if(d.provider!=="canonical_corpus_no_model") throw new Error("follow-up escaped deterministic lane");
+          if(d.displayMode!=="canonical_echr_bureau_judgment_index") throw new Error("follow-up lost judgment-list context");
+          if(d.performance?.providerCalls!==0) throw new Error("follow-up called a model");
+          if(!(d.echrBureauIndexStatus?.selectedRecords>0)) throw new Error("follow-up returned no ECHR records");
+          if(!String(d.humanGate||"").includes("HUDOC")) throw new Error("follow-up HUDOC gate missing");
+          console.log("ECHR BROAD LIST + CONTEXTUAL FOLLOW-UP LIVE: PASS");
+          NODE
+        env:
+          FIRST: "Сакам да те замолам да ми ги дадеш сите судски пресуди на Македонски граѓани кои што ги добиле против Република Македонија во Стразбур. Однапред многу ти благодарам, Со почит, Александар"
+          FOLLOW: "Токму на тие мислев, Ве молам дајте ми ги тие податоци,"
+
+      - name: Upload non-secret ECHR smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: echr-conversation-live-smoke
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/echr-first.json
+            /tmp/echr-follow.json
