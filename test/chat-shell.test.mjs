@@ -216,7 +216,7 @@ test("CHAT17c one strict Pravopis last-mile policy protects every public surface
 
 test("CHAT17d FREE consequential drafts have a bounded compact latency lane",()=>{
   const helper=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
-  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V10_LANGUAGE_FIREWALL"/);
+  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V11_DEDICATED_EDITOR_FALLBACK"/);
   assert.match(helper,/const compactFreeDraft=formalDraftRequest/);
   assert.match(helper,/FREE FORMAL DRAFT LATENCY CONTRACT/);
   assert.match(helper,/Math\.min\(1000,requestedTokenLimit\)/);
@@ -226,6 +226,7 @@ test("CHAT17d FREE consequential drafts have a bounded compact latency lane",()=
 
 test("CHAT17b FREE runtime exposes a truthful non-reasoning empty-response fallback",()=>{
   assert.match(worker,/freeChatFallbackModel:freeWorkersAIConfigured\(env\) \? resolveWorkersAIEmptyFallbackModel\(env\) : null/);
+  assert.match(worker,/freeLanguageEditorModel:freeWorkersAIConfigured\(env\)/);
   assert.match(worker,/modelFallback:freeResult\.modelFallback\|\|null/);
 });
 
@@ -591,4 +592,13 @@ test("CHAT canonical FREE formal drafts always use and expose the compact latenc
   assert.match(worker,/compactDraftUsed:freeResult\.compactDraftUsed===true/);
   assert.match(worker,/outputTokenLimit:Number\(freeResult\.outputTokenLimit\|\|0\)\|\|null/);
   assert.match(worker,/compactFreeDraft\s*\? Math\.min\(1000,requestedTokenLimit\)/);
+});
+
+
+test("CHAT17e every generated Macedonian FREE answer uses the dedicated editor or a deterministic safe fallback",()=>{
+  const helper=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
+  assert.match(helper,/forceEditorialPass:languageRequired/);
+  assert.match(worker,/WORKERS_AI_MK_EDITOR_MODEL_DEFAULT="@cf\/zai-org\/glm-4\.7-flash"/);
+  assert.match(helper,/deterministicProceduralInstrumentFallback/);
+  assert.match(helper,/deterministicLanguageFallbackUsed/);
 });

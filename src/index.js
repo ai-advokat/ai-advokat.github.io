@@ -153,6 +153,7 @@ import {
 import {
   isFormalLegalDraftRequest,
   hasProceduralInstrumentMismatch,
+  deterministicProceduralInstrumentFallback,
   finaliseFormalLegalDraft
 } from "./response-quality.js";
 import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commentary.js";
@@ -160,7 +161,7 @@ import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, schol
 import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
 
 const VERSION = "1.9.0";
-const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V10_LANGUAGE_FIREWALL";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V11_DEDICATED_EDITOR_FALLBACK";
 const CANONICAL_FINAL_OUTPUT_GATE_VERSION="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
 
 const ALLOWED_ORIGINS = new Set([
@@ -5091,11 +5092,15 @@ async function convertFreeChatAttachments(env,attachments){
   return {ok:true,documents:bounded,totalChars:total};
 }
 
+const WORKERS_AI_MK_EDITOR_MODEL_DEFAULT="@cf/zai-org/glm-4.7-flash";
+
 function resolveMacedonianLanguageEditorModel(env,primaryModel=""){
   const configured=String(env?.WORKERS_AI_MK_EDITOR_MODEL||"").trim();
-  const preferred=configured||resolveWorkersAIEmptyFallbackModel(env);
+  const preferred=configured||WORKERS_AI_MK_EDITOR_MODEL_DEFAULT;
   const primary=String(primaryModel||"").trim();
   if(!primary || preferred!==primary) return preferred;
+  const fallback=resolveWorkersAIEmptyFallbackModel(env);
+  if(fallback && fallback!==primary) return fallback;
   const alternate=resolveWorkersAITextModel(env);
   return alternate!==primary ? alternate : preferred;
 }
@@ -5156,7 +5161,8 @@ async function repairWorkersAIMacedonianIfNeeded(env,{
       temperature:0,
       model:editorModel,
       sessionAffinity,
-      timeoutMs:12000
+      timeoutMs:12000,
+      allowEmptyFallback:false
     });
     if(repairResult.ok && String(repairResult.text||"").trim()){
       const repairedText=normaliseMacedonianGeneratedText(String(repairResult.text||"").trim());
@@ -5343,7 +5349,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     maxOutputTokens:tokenLimit,
     sessionAffinity,
     allowProviderRepair:languageRequired,
-    forceEditorialPass:languageRequired && (formalDraftRequest || missionProfile!=="GENERAL_BYPASS"),
+    forceEditorialPass:languageRequired,
     primaryModel:result.model
   });
   const formalDraft=formalDraftRequest;
@@ -5353,14 +5359,38 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
         hasGovernedLegalContext:Boolean(String(governed||"").trim())
       })
     : languagePass.text;
-  const finalRelease=canonicalMacedonianFinalRelease(finalText,q);
-  if(languagePass.hardBlock || !finalRelease.ok){
+  let finalRelease=canonicalMacedonianFinalRelease(finalText,q);
+  let deterministicLanguageFallbackUsed=false;
+  let deterministicLanguageFallbackReason=null;
+
+  // If a formal request itself uses the wrong procedural label for a likely
+  // criminal event, never return contaminated prose or a bare 503. The model
+  // generation remains blocked, but a controlled source-free Macedonian
+  // working scaffold can be released because it adds no statute, article,
+  // deadline, jurisdiction or legal effect.
+  if((languagePass.hardBlock || !finalRelease.ok) && formalDraft && proceduralInstrumentMismatch){
+    const fallbackText=deterministicProceduralInstrumentFallback({userText:q});
+    const fallbackRelease=canonicalMacedonianFinalRelease(fallbackText,q);
+    if(fallbackText && fallbackRelease.ok){
+      finalRelease=fallbackRelease;
+      deterministicLanguageFallbackUsed=true;
+      deterministicLanguageFallbackReason=languagePass.hardBlock
+        ? "blocked_model_or_editor_generation"
+        : "final_postflight_language_gate";
+    }
+  }
+
+  if(!deterministicLanguageFallbackUsed && (languagePass.hardBlock || !finalRelease.ok)){
     return {
       ok:false,
       error:"macedonian_language_release_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:"final_last_mile_language_gate_failed",
       releaseGate:finalRelease.releaseGate,
+      editorRequired:languagePass.editorRequired===true,
+      editorPassed:languagePass.editorPassed===true,
+      editorModel:languagePass.editorModel||null,
+      editorError:languagePass.repairError||null,
       model:result.model,
       providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
       provider:"workers_ai_free"
@@ -5386,6 +5416,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     languageEditorRequired:languagePass.editorRequired===true,
     languageEditorPassed:languagePass.editorPassed===true,
     languageEditorModel:languagePass.editorModel||null,
+    deterministicLanguageFallbackUsed,
+    deterministicLanguageFallbackReason,
     formalDraftPostflight:formalDraft,
     languageQualityState:finalRelease.deliveryState,
     languageReleaseGate:languagePass.releaseVerdict||null,
@@ -6223,9 +6255,14 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       return json(request,{
         ok:false,
         error:freeResult.error||"free_workers_ai_failed",
-        message:"FREE Workers AI не успеа да го обработи барањето или документите. Квотата не е потрошена; обидете се повторно или намалете/поделете ги прилозите.",
+        message:freeResult.message||"FREE Workers AI не успеа да го обработи барањето или документите. Квотата не е потрошена; обидете се повторно.",
         problems:freeResult.problems||null,
         failureDetail:freeResult.detail||null,
+        languageReleaseGate:freeResult.releaseGate||null,
+        languageEditorRequired:freeResult.editorRequired===true,
+        languageEditorPassed:freeResult.editorPassed===true,
+        languageEditorModel:freeResult.editorModel||null,
+        languageEditorError:freeResult.editorError||null,
         model:freeResult.model||resolveWorkersAITextModel(env),
         providerShape:freeResult.providerShape||null,
         modelFallback:freeResult.modelFallback||null,
@@ -6264,6 +6301,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         languageEditorRequired:freeResult.languageEditorRequired===true,
         languageEditorPassed:freeResult.languageEditorPassed===true,
         languageEditorModel:freeResult.languageEditorModel||null,
+        deterministicLanguageFallbackUsed:freeResult.deterministicLanguageFallbackUsed===true,
+        deterministicLanguageFallbackReason:freeResult.deterministicLanguageFallbackReason||null,
         serverLatencyMs:freeResult.latencyMs||null,
         fastPromptUsed:freeResult.fastPromptUsed===true,
         compactDraftUsed:freeResult.compactDraftUsed===true,
@@ -8096,6 +8135,7 @@ async function handleCapabilities(request, env) {
       freeChatProvider:freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
       freeChatModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
       freeChatFallbackModel:freeWorkersAIConfigured(env) ? resolveWorkersAIEmptyFallbackModel(env) : null,
+      freeLanguageEditorModel:freeWorkersAIConfigured(env) ? resolveMacedonianLanguageEditorModel(env,resolveWorkersAITextModel(env)) : null,
       freeProviderContract:WORKERS_AI_PROVIDER_CONTRACT_VERSION,
       freeRuntimePolicy:FREE_RUNTIME_POLICY_VERSION,
       paidChatProvider:orchestratorRuntimeReadiness(env).provider==="configured" ? "openai" : "locked",
@@ -8104,9 +8144,9 @@ async function handleCapabilities(request, env) {
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
       macedonianReleaseGate:MACEDONIAN_RELEASE_GATE_VERSION,
-      macedonianRepairPostflight:"deterministic_cleanup_nonblocking_qa_foreign_jurisdiction_hard_block_v7",
-      macedonianRepairProviderBudget:"zero_extra_language_repair_calls",
-      freeLatencyPolicy:"simple_turn_650_tokens_8s_provider_timeout_no_second_model_repair",
+      macedonianRepairPostflight:"deterministic_cleanup_dedicated_editor_fail_closed_v13",
+      macedonianRepairProviderBudget:"one_bounded_dedicated_editor_call_for_macedonian_output",
+      freeLatencyPolicy:"quality_first_macedonian_editor_12s_bounded_primary_8s_or_20s",
       canonicalProvenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
       canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
       canonicalRootReleaseContract:"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1",

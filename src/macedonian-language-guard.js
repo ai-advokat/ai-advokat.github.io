@@ -2,7 +2,7 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V12_LANGUAGE_FIREWALL";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V13_DEDICATED_EDITOR";
 
 export const MACEDONIAN_ORTHOGRAPHY_2017_SOURCE=Object.freeze({
   id:"MK-ORTHOGRAPHY-2017-2ED",
@@ -26,7 +26,7 @@ export const MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE=Object.freeze([
   {id:"R396",topic:"headings",policy:"Насловот стои во нов ред, почнува со голема буква и нема точка на крајот."},
   {id:"LEGAL-NUMBERING",topic:"legal_numbering",policy:"Општите именки со конкретен број се со мала буква: член 5, став 1, табела 1."}
 ]);
-export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V8_LANGUAGE_FIREWALL";
+export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V9_DEDICATED_EDITOR";
 export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="Одговорот не е прикажан затоа што задолжителната македонска јазична проверка не помина. Системот откри остаточна јазична контаминација, изобличена македонска форма, неуспешна задолжителна редакција или непобарано право од друга јурисдикција. Ве молиме повторете го барањето; правната содржина не се пушта додека јазичниот release gate не помине.";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
@@ -129,6 +129,14 @@ const CONTEXTUAL_CONTAMINATION_PHRASES=[
   "правопризнателството"
 ];
 
+const GENERATED_ONLY_FOREIGN_PHRASES=[
+  "во склад со",
+  "торговска друштва",
+  "торговско друштво",
+  "трговска друштва",
+  "еоод"
+];
+
 const FOREIGN_JURISDICTION_PHRASES=[
   "български закон",
   "народен парламент",
@@ -180,6 +188,8 @@ export function assessMacedonianOutput(text,{userText=""}={}){
   const q=String(userText||"").normalize("NFKC").toLocaleLowerCase("mk");
   const foreignJurisdictionRequested=/(бугар|срби|руси|bulgar|serbia|russia)/iu.test(q);
   const lower=value.toLocaleLowerCase("mk");
+  const generatedOnlyContamination=GENERATED_ONLY_FOREIGN_PHRASES
+    .filter(p=>lower.includes(p) && !q.includes(p));
   const jurisdictionLeaks=foreignJurisdictionRequested
     ? []
     : FOREIGN_JURISDICTION_PHRASES.filter(p=>lower.includes(p));
@@ -203,6 +213,7 @@ export function assessMacedonianOutput(text,{userText=""}={}){
   if(jurisdictionLeaks.length) reasons.push("foreign_jurisdiction_substitution");
   if(malformedGeneration.length) reasons.push("malformed_macedonian_generation");
   if(contextualContamination.length) reasons.push("contextual_language_contamination");
+  if(generatedOnlyContamination.length) reasons.push("generated_foreign_language_contamination");
   if(structuralAnomalies.length) reasons.push("malformed_token_shape");
   return {
     ok:reasons.length===0,
@@ -212,6 +223,7 @@ export function assessMacedonianOutput(text,{userText=""}={}){
     jurisdictionLeaks:jurisdictionLeaks.slice(0,8),
     malformedGeneration:malformedGeneration.slice(0,12),
     contextualContamination:contextualContamination.slice(0,12),
+    generatedOnlyContamination:generatedOnlyContamination.slice(0,12),
     structuralAnomalies,
     standardVersion:MACEDONIAN_LANGUAGE_STANDARD_VERSION
   };
@@ -278,6 +290,7 @@ export function macedonianReleaseVerdict(text,{userText=""}={}){
     Number(assessment.foreignLexemes?.length||0)+
     Number(assessment.malformedGeneration?.length||0)+
     Number(assessment.contextualContamination?.length||0)+
+    Number(assessment.generatedOnlyContamination?.length||0)+
     Number(assessment.structuralAnomalies?.length||0);
 
   const severe=
@@ -322,6 +335,10 @@ const DETERMINISTIC_LEXICAL_REPLACEMENTS=[
   ["индексиот","индексот"],
   ["директна примера","директен пример"],
   ["директна пример","директен пример"],
+  ["во склад со","во согласност со"],
+  ["торговска друштва","трговско друштво"],
+  ["торговско друштво","трговско друштво"],
+  ["трговска друштва","трговско друштво"],
   ["ево на примерен","Еве примерен"],
   ["ево на пример","Еве пример"],
   ["ево","еве"],

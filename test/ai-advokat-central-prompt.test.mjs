@@ -247,9 +247,18 @@ test("COP23 pre-litigation notices cannot be silently converted into lawsuits",(
 
 test("COP19 canonical Macedonian standard is fail-closed and allows a bounded independent editor pass",()=>{
   const doc=fs.readFileSync("MACEDONIAN_LANGUAGE_STANDARD.md","utf8");
-  assert.match(doc,/Заеднички јазичен и терминолошки стандард v1\.3/);
+  assert.match(doc,/Заеднички јазичен и терминолошки стандард v1\.4/);
   assert.match(doc,/независна release-брана/u);
   assert.match(doc,/еден ограничен јазичен editor-повик/u);
   assert.match(doc,/fail-closed/u);
   assert.doesNotMatch(doc,/јазичната контрола не смее да прави втор provider повик/u);
+});
+
+
+test("COP24 V13 exposes the dedicated Macedonian editor and truthful capability policy",()=>{
+  assert.match(worker,/WORKERS_AI_MK_EDITOR_MODEL_DEFAULT="@cf\/zai-org\/glm-4\.7-flash"/);
+  assert.match(worker,/freeLanguageEditorModel:freeWorkersAIConfigured\(env\)/);
+  assert.match(worker,/one_bounded_dedicated_editor_call_for_macedonian_output/);
+  assert.match(worker,/quality_first_macedonian_editor_12s_bounded_primary_8s_or_20s/);
+  assert.doesNotMatch(worker,/zero_extra_language_repair_calls/);
 });

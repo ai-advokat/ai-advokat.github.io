@@ -1,4 +1,4 @@
-# Заеднички јазичен и терминолошки стандард v1.3
+# Заеднички јазичен и терминолошки стандард v1.4
 
 ## Статус
 Канонски јазичен стандард за македонските интерфејси и јавни текстови на MediCareMK, AI Advokat, WPA / WPA Institute / WPA Journal и Sasho & Popac Archive.
@@ -55,7 +55,7 @@ AI Advokat не смее да се потпира само на општа ин�
 - production UAT задолжително вклучува пример со бугарска контаминација без потпирање само на буквата „ъ“.
 
 
-## Runtime language firewall · v1.3
+## Runtime language firewall · v1.4
 Канонската патека за македонски правен одговор е:
 
 `генератор → deterministic cleanup → независна јазична редакција кога е задолжителна/потребна → deterministic release gate → RELEASE или BLOCK`.
@@ -66,3 +66,11 @@ AI Advokat не смее да се потпира само на општа ин�
 - точните цитати, броеви на предмети, членови што веќе се изворно поткрепени, URL, DOI, имиња и идентификатори се зачувуваат;
 - ако editor-пасот е недостапен или не ја помине последната проверка, системот fail-closed го задржува одговорот и прикажува контролирана порака за јазична проверка;
 - UI не смее да прикажува „успешен“ правен одговор ако canonical Macedonian release gate не е поминат.
+
+
+### Dedicated editor policy · v1.4
+- Default Macedonian language editor: `@cf/zai-org/glm-4.7-flash`, unless an explicit governed runtime override is configured.
+- The editor model is independent from the primary generation model and from the empty-response fallback role.
+- Every Macedonian-facing generated answer uses the editor pass before final release; deterministic corpus answers remain model-free.
+- Generated neighbouring-language phrases that were not supplied by the user, including Serbian/Bulgarian legal or company-form contamination, are release-blocking.
+- A process-instrument mismatch may use a deterministic Macedonian working scaffold when the generated/editor text is blocked; this fallback adds no statute, article, deadline, jurisdiction or legal effect.

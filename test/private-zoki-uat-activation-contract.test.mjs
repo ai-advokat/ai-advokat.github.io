@@ -257,7 +257,9 @@ test("paid Macedonian QA is deterministic and strict at final Pravopis release",
   assert.match(indexSource,/if\(!governedFinalRelease\.ok\)/);
   assert.match(indexSource,/macedonian_language_release_blocked/);
   assert.match(indexSource,/governedFinalRelease\.deliveryState/);
-  assert.match(indexSource,/zero_extra_language_repair_calls/);
+  const paidBlock=indexSource.slice(indexSource.indexOf("async function handleGPTChat"),indexSource.indexOf("async function handleAssistant"));
+  assert.doesNotMatch(paidBlock,/repairWorkersAIMacedonianIfNeeded\(/);
+  assert.doesNotMatch(paidBlock,/runOpenAIMacedonianRepair\(env/);
 });
 
 

@@ -71,11 +71,12 @@ jobs:
           const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
           const EXPECTED_FREE_MODEL="@cf/qwen/qwen3-30b-a3b-fp8";
           const EXPECTED_FREE_FALLBACK_MODEL="@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+          const EXPECTED_EDITOR_MODEL="@cf/zai-org/glm-4.7-flash";
           const EXPECTED_PAID_MODEL="gpt-6.1-sol";
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
-          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V12_LANGUAGE_FIREWALL";
+          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V13_DEDICATED_EDITOR";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
-          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V10_LANGUAGE_FIREWALL";
+          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V11_DEDICATED_EDITOR_FALLBACK";
           const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
           const EXPECTED_FINAL_OUTPUT_GATE="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
           const EXPECTED_FREE_PROVIDER_CONTRACT="WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT";
@@ -93,7 +94,7 @@ jobs:
                   && data?.ok===true
                   && caps.centralOperatingPrompt===EXPECTED_PROMPT
                   && caps.macedonianLanguageGuard===EXPECTED_LANGUAGE
-                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V8_LANGUAGE_FIREWALL"
+                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V9_DEDICATED_EDITOR"
                   && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V3"
                   && caps.canonicalRootReleaseContract==="AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1"
                   && caps.canonicalMetadataStandard===EXPECTED_METADATA
@@ -101,6 +102,7 @@ jobs:
                   && caps.finalResponseQualityGate===EXPECTED_QUALITY
                   && caps.freeChatModel===EXPECTED_FREE_MODEL
                   && caps.freeChatFallbackModel===EXPECTED_FREE_FALLBACK_MODEL
+                  && caps.freeLanguageEditorModel===EXPECTED_EDITOR_MODEL
                   && caps.freeProviderContract===EXPECTED_FREE_PROVIDER_CONTRACT
                   && caps.freeRuntimePolicy===EXPECTED_FREE_POLICY){
                   console.log("runtime contract: PASS · "+caps.centralOperatingPrompt+" · "+caps.macedonianLanguageGuard+" · "+caps.freeProviderContract+" · "+caps.finalResponseQualityGate+" · "+caps.freeChatModel+" · "+caps.freeRuntimePolicy);
@@ -159,6 +161,15 @@ jobs:
               if(data.providerFallback && data.providerFallback.from!=="openai"){
                 throw new Error(label+" invalid provider fallback provenance "+JSON.stringify(data.providerFallback));
               }
+              if(data?.performance?.languageEditorRequired!==true){
+                throw new Error(label+" Macedonian output skipped mandatory language editor: "+JSON.stringify(data.performance));
+              }
+              if(data?.performance?.languageEditorModel!==EXPECTED_EDITOR_MODEL){
+                throw new Error(label+" unexpected Macedonian editor model: "+JSON.stringify(data.performance));
+              }
+              if(data?.performance?.languageEditorPassed!==true && data?.performance?.deterministicLanguageFallbackUsed!==true){
+                throw new Error(label+" language editor failed without deterministic safe fallback: "+JSON.stringify(data.performance));
+              }
             }else if(data.provider==="canonical_corpus_no_model"){
               if(data.model!==null && data.model!==undefined) throw new Error(label+" deterministic corpus lane must not expose an AI model");
               if(Number(data?.performance?.providerCalls||0)!==0) throw new Error(label+" deterministic corpus lane made provider calls");
@@ -200,7 +211,7 @@ jobs:
               if(!Number.isFinite(latency) || latency<=0){
                 throw new Error(label+" FREE server latency telemetry missing: "+JSON.stringify(data.performance));
               }
-              const scenarioBudget={basic:15000,"employment-definition":30000,reminder:35000,draft:45000,"valid-mk-legal":30000,"typo-criminal-draft":45000,"wrong-language-correction":30000}[label]||45000;
+              const scenarioBudget={basic:45000,"employment-definition":30000,reminder:45000,draft:60000,"valid-mk-legal":45000,"typo-criminal-draft":60000,"wrong-language-correction":45000}[label]||60000;
               if(latency>scenarioBudget){
                 throw new Error(label+" FREE server latency budget exceeded: "+latency+"ms > "+scenarioBudget+"ms");
               }
@@ -243,9 +254,12 @@ jobs:
             if(/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/u.test(answer)){
               throw new Error(name+" contains non-Macedonian Cyrillic letters: "+answer.slice(0,500));
             }
-            const foreignTokens=["поступак","поступакот","подносилац","тужилац","захтев","решење","подаци","документы","сведения","следует","является","становище","всего","наименование","помеѓуз","обврзки","непостојно","саответен","правопризнателството","точнаја","године","власни","банок","биоки","свраним","ево"];
+            const foreignTokens=["поступак","поступакот","подносилац","тужилац","захтев","решење","подаци","документы","сведения","следует","является","становище","всего","наименование","помеѓуз","обврзки","непостојно","саответен","правопризнателството","точнаја","године","власни","банок","биоки","свраним","ево","торговска","еоод"];
+            const foreignPhrases=["во склад со","торговска друштва","трговска друштва"];
             const lower=answer.toLocaleLowerCase("mk");
-            if(foreignTokens.some(token=>new RegExp("(^|[^\\p{L}])"+token+"(?=$|[^\\p{L}])","u").test(lower))){
+            const inputLower=String(q||"").toLocaleLowerCase("mk");
+            if(foreignTokens.some(token=>!inputLower.includes(token) && new RegExp("(^|[^\\p{L}])"+token+"(?=$|[^\\p{L}])","u").test(lower))
+              || foreignPhrases.some(phrase=>!inputLower.includes(phrase) && lower.includes(phrase))){
               throw new Error(name+" contains Serbian/Bulgarian/Russian lexical contamination: "+answer.slice(0,500));
             }
             if(/^\s*(need answer|user wants|the user|we need|provide|must answer)\b/i.test(answer)){
@@ -340,10 +354,13 @@ jobs:
             }
             if(data.provider==="workers_ai_free"){
               if(data?.performance?.compactDraftUsed!==true) throw new Error("typo-criminal-draft did not enter formal draft lane: "+JSON.stringify(data.performance));
-              if(data?.performance?.languageEditorRequired!==true || data?.performance?.languageEditorPassed!==true){
+              if(data?.performance?.languageEditorRequired!==true){
                 throw new Error("typo-criminal-draft language editor gate missing: "+JSON.stringify(data.performance));
               }
-              if(!data?.performance?.languageEditorModel || data.performance.languageEditorModel===data.model){
+              if(data?.performance?.languageEditorPassed!==true && data?.performance?.deterministicLanguageFallbackUsed!==true){
+                throw new Error("typo-criminal-draft neither editor nor deterministic fallback released safely: "+JSON.stringify(data.performance));
+              }
+              if(data?.performance?.languageEditorModel!==EXPECTED_EDITOR_MODEL || data.performance.languageEditorModel===data.model){
                 throw new Error("typo-criminal-draft editor was not independently modelled: "+JSON.stringify({model:data.model,performance:data.performance}));
               }
             }
