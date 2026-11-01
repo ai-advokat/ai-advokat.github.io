@@ -6261,6 +6261,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       performance:{
         providerCalls:Number(freeResult.providerCalls||0),
         languageRepairProviderCalls:freeResult.languageRepairProviderCalls||0,
+        languageEditorRequired:freeResult.languageEditorRequired===true,
+        languageEditorPassed:freeResult.languageEditorPassed===true,
+        languageEditorModel:freeResult.languageEditorModel||null,
         serverLatencyMs:freeResult.latencyMs||null,
         fastPromptUsed:freeResult.fastPromptUsed===true,
         compactDraftUsed:freeResult.compactDraftUsed===true,
