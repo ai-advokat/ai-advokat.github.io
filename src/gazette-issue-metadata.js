@@ -75,6 +75,66 @@ export async function findGazetteIssueMetadata(env,q,{limit=6}={}){
   }
 }
 
+function gazetteReviewLabel(value){
+  const raw=String(value||"").trim().toLowerCase();
+  if(raw==="approved") return "ОДОБРЕНО (approved)";
+  if(raw==="reviewed") return "ПРЕГЛЕДАНО (reviewed)";
+  if(raw==="pending") return "ЧЕКА ПРОВЕРКА (pending)";
+  return raw ? raw : "НЕПОЗНАТО";
+}
+
+function gazetteBoolLabel(value){
+  return Number(value)===1 ? "ДА" : "НЕ";
+}
+
+function gazetteDisplayDate(value){
+  const raw=String(value||"").trim();
+  const m=raw.match(/^((?:19|20)\d{2})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : raw;
+}
+
+export function formatGazetteIssueMetadataAnswer(issues){
+  const rows=Array.isArray(issues)?issues.filter(Boolean):[];
+  if(!rows.length) return "Нема канонски metadata запис за бараното издание.";
+
+  const lines=["Метаподатоци од официјалниот индекс на изданија на „Службен весник“:"];
+  rows.forEach((i,index)=>{
+    if(rows.length>1) lines.push("",`Запис ${index+1}`);
+    const iso=String(i.issue_date||"").trim();
+    const displayDate=gazetteDisplayDate(iso);
+    lines.push(
+      `• Вид на издание: ${String(i.publication_type||"Службен весник")}`,
+      `• Број на издание: ${String(i.issue_number||"—")}/${String(i.year||"—")}`,
+      `• Датум на издание: ${displayDate||"—"}${displayDate&&iso&&displayDate!==iso?` (${iso})`:""}`,
+      `• Година: ${String(i.year||"—")}`,
+      `• Издавач / изворен орган: ${String(i.source_authority||"ЈП „Службен весник на РСМ“")}`,
+      `• Класа на извор: ${String(i.source_class||"primary_official_metadata")}`,
+      `• Статус на човечка проверка: ${gazetteReviewLabel(i.human_review_status)}`,
+      `• Дозволен за metadata runtime: ${gazetteBoolLabel(i.runtime_eligible)}`,
+      `• Појавувања во изворниот snapshot: ${Number(i.source_occurrences||1)}`,
+      `• Прв изворен ред во snapshot: ${String(i.source_row_first??"—")}`,
+      `• Авторитет за текст на акт/член: ${gazetteBoolLabel(i.legal_text_authority)}`,
+      `• Авторитет за тековно важечко право: ${gazetteBoolLabel(i.current_law_authority)}`
+    );
+  });
+
+  const first=rows[0];
+  lines.push(
+    "",
+    "Доказно потекло:",
+    `• Dataset ID: ${String(first.dataset_id||"—")}`,
+    `• Resource ID: ${String(first.resource_id||"—")}`,
+    `• Dataset каталог: ${String(first.dataset_url||GAZETTE_OPEN_DATA_DATASET_URL)}`,
+    `• Snapshot SHA-256: ${String(first.snapshot_sha256||GAZETTE_OPEN_DATA_SHA256)}`,
+    "",
+    "Правна граница:",
+    "• Овој запис е PRIMARY OFFICIAL METADATA: го потврдува идентитетот на изданието, бројот, датумот и типот.",
+    "• Не го докажува текстот на конкретен акт или член, датумот на стапување во сила, ниту тековната важност на право.",
+    "• Ако ви треба содржината на овој број (кои акти се објавени), мора да се врзе официјалниот full-text извор; metadata индексот не смее да ја измислува."
+  );
+  return lines.join("\n");
+}
+
 export function gazetteIssueMetadataToContext(bundle){
   if(!bundle || bundle.state!=="matched") return [];
   const raw=bundle.issues.map(i=>({
