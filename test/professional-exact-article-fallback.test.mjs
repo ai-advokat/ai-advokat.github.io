@@ -14,7 +14,7 @@ function bundle(overrides={}){
     articleNumber:"12",
     articleNumberNormalized:"12",
     heading:null,
-    text:"(1) Работодавачот и работникот се должни да ги почитуваат законите и другите применливи извори.\n(2) Со договор не може да се утврдат помали права од законските.\n(3) Може да се утврдат поповолни права за работникот.",
+    text:"(1) Работодавачот и работникот се должни да ги почитуваат законите и другите применливи извори.\n(2) Со договор не може да се утврдат помали права од законските.\n(3) Може да се утврдат поповолни права за работникот.\n(4) Правата утврдени со Устав, закон и колективен договор не можат да се одземаат или ограничат.\n\nII ДОГОВОР ЗА ВРАБОТУВАЊЕ\nДоговор за вработување",
     status:"historical",
     publicStatus:"historical",
     humanReviewStatus:"pending",
@@ -58,8 +58,14 @@ test("exact ZRO Article 12 survives provider failure as canonical source-only re
   assert.match(out.answer,/Член 12 од Закон за работните односи/);
   assert.match(out.answer,/official-consolidated-snapshot-through-111\/2023/);
   assert.match(out.answer,/through-111\/2023/);
-  assert.match(out.answer,/не ја означувам како „важечки текст“/);
-  assert.match(out.answer,/provider-от не беше достапен/);
+  assert.match(out.answer,/не го означува како „важечки текст“/);
+  assert.match(out.answer,/дополнителната AI синтеза моментално не беше достапна/);
+  assert.match(out.answer,/Клучни точки од самиот текст/);
+  assert.match(out.answer,/Став \(4\)/);
+  assert.match(out.answer,/Верзија достапна во AI Advokat corpus/);
+  assert.match(out.answer,/Проверка на членот \(Human Gate\): во очекување \(pending\)/);
+  assert.doesNotMatch(out.answer,/II ДОГОВОР ЗА ВРАБОТУВАЊЕ/);
+  assert.doesNotMatch(out.answer,/\nДоговор за вработување\s*$/);
   assert.doesNotMatch(out.answer,/член 13/i);
 });
 
@@ -100,7 +106,7 @@ test("raw source text is preferred over reviewed derivation and legal-status ove
   assert.ok(out);
   assert.match(out.answer,/RAW SOURCE ARTICLE TEXT/);
   assert.doesNotMatch(out.answer,/DERIVED REVIEWED TEXT/);
-  assert.match(out.answer,/Посебни legal-status предупредувања/);
+  assert.match(out.answer,/Посебни предупредувања за правниот статус/);
   assert.match(out.answer,/U\.br\.1\/2026/);
   assert.match(out.answer,/статус проверен до: 2026-10-11/);
 });

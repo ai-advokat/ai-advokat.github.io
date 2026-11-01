@@ -28,14 +28,34 @@ function makeThread(){
   workspace.threads.unshift(thread); workspace.activeId=thread.id; return thread;
 }
 function activeThread(){ return workspace.threads.find(t=>t.id===workspace.activeId) || workspace.threads[0] || makeThread(); }
+function sourceRowLabel(row){
+  const explicit=String(row?.title||row?.label||row?.name||row?.citation||'').trim();
+  if(explicit) return explicit;
+  const instrument=String(row?.instrumentTitle||row?.instrument||row?.sourceIdentity||'').trim();
+  const articleNumber=String(row?.articleNumber||'').trim();
+  if(instrument&&articleNumber) return instrument+' · член '+articleNumber;
+  if(instrument) return instrument;
+  if(articleNumber) return 'Правен извор · член '+articleNumber;
+  return 'Правен извор';
+}
+function sourceRowMeta(row){
+  const parts=[];
+  if(row?.version) parts.push('верзија '+String(row.version));
+  if(row?.humanReviewStatus) parts.push('член: '+String(row.humanReviewStatus));
+  if(row?.versionHumanReviewStatus) parts.push('верзија: '+String(row.versionHumanReviewStatus));
+  return parts.join(' · ');
+}
 function flattenSources(data){
   const rows=[]; const seen=new Set();
   for(const key of SOURCE_KEYS){
     for(const row of Array.isArray(data?.[key])?data[key]:[]){
-      const label=String(row?.title||row?.label||row?.name||row?.citation||'Извор').trim();
+      const label=sourceRowLabel(row);
       const raw=String(row?.url||row?.sourceUrl||row?.source_url||'').trim();
-      const sig=(raw||label).toLowerCase(); if(!sig||seen.has(sig)) continue; seen.add(sig);
-      rows.push({label,url:raw,kind:key});
+      const articleNumber=String(row?.articleNumber||'').trim();
+      const version=String(row?.version||'').trim();
+      const sig=[raw,articleNumber,label,version].join('|').toLowerCase();
+      if(!sig||seen.has(sig)) continue; seen.add(sig);
+      rows.push({label,url:raw,kind:key,meta:sourceRowMeta(row),articleNumber,version});
     }
   }
   return rows.slice(0,40);
@@ -280,9 +300,12 @@ function renderTranscript(t){
 
 function addSourceTray(article,rows){
   if(!article||article.querySelector('.vnext-source-tray')||!rows.length) return;
-  const tray=mk('div',{class:'vnext-source-tray'}); tray.append(mk('span',{text:'Извори'}));
+  const tray=mk('div',{class:'vnext-source-tray'});
+  tray.append(mk('span',{text:rows.length===1?'Извор':'Извори'}));
   rows.slice(0,5).forEach((row,i)=>{
-    const b=mk('button',{type:'button',text:String(i+1),'aria-label':'Отвори извор '+(i+1)}); b.title=row.label; b.onclick=()=>openArtifact(row); tray.append(b);
+    const b=mk('button',{type:'button',text:' · '+String(i+1),'aria-label':'Отвори извор '+(i+1)});
+    b.title=row.meta ? row.label+' · '+row.meta : row.label;
+    b.onclick=()=>openArtifact(row); tray.append(b);
   }); article.append(tray);
 }
 function enhanceLegalMarkers(node){
@@ -311,8 +334,13 @@ function renderEvidence(){
   if(workspace.panelTab==='sources'){
     if(!t.latestSources.length){ body.append(emptyCard('Нема прикажани извори','Кога backend ќе врати правни извори, тие ќе се појават тука. Ова не значи дека нема правна рамка — само дека за овој thread нема зачуван source payload.')); return; }
     t.latestSources.forEach((row,i)=>{
-      const card=mk('section',{class:'vnext-evidence-card'}); card.append(mk('span',{class:'vnext-evidence-num',text:String(i+1).padStart(2,'0')}),mk('strong',{text:row.label}));
-      const u=safeUrl(row.url); if(u){const a=mk('button',{type:'button',class:'vnext-open-source',text:'↗ Отвори извор'}); a.onclick=()=>openArtifact(row); card.append(a);} else card.append(mk('small',{text:'Изворот е наведен без јавен URL.'})); body.append(card);
+      const card=mk('section',{class:'vnext-evidence-card'});
+      card.append(mk('span',{class:'vnext-evidence-num',text:String(i+1).padStart(2,'0')}),mk('strong',{text:row.label}));
+      if(row.meta) card.append(mk('small',{text:row.meta}));
+      const u=safeUrl(row.url);
+      if(u){const a=mk('button',{type:'button',class:'vnext-open-source',text:'↗ Отвори оригинал'}); a.onclick=()=>openArtifact(row); card.append(a);}
+      else card.append(mk('small',{text:'Изворот е наведен без јавен URL.'}));
+      body.append(card);
     }); return;
   }
   if(workspace.panelTab==='context'){
