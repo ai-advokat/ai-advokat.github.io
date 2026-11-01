@@ -274,25 +274,50 @@ def _page_two_column_split(page):
 def normalize_register_layout(text):
     return "\f".join(_page_two_column_split(p) for p in text.split("\f"))
 
-def parse_register_text(text, year, source_url, source_sha):
-    text=normalize_register_layout(text)
+def join_register_parts(parts):
+    """Join wrapped register lines without preserving PDF line-break hyphenation."""
+    cleaned=[]
+    for raw in parts:
+        part=" ".join(str(raw or "").split()).strip()
+        if not part:
+            continue
+        if cleaned and cleaned[-1].endswith("-") and part[:1].islower():
+            cleaned[-1]=cleaned[-1][:-1]+part
+        else:
+            cleaned.append(part)
+    return " ".join(cleaned).strip()
+
+def parse_register_text(text, year, source_url, source_sha, normalize_columns=True):
+    if normalize_columns:
+        text=normalize_register_layout(text)
     lines=[" ".join(x.split()) for x in text.splitlines()]
     entries=[]; unresolved=[]; current=None
     ordinal_re=re.compile(r"^(\d{1,6})\.\s*(.*)$")
     ref_re=re.compile(r"(?<!\d)(\d{1,3})\s*/\s*(\d{1,5})\s*$")
+    date_prefix_re=re.compile(r"^\d{1,2}\.\d{1,2}\.\d{2,4}\b")
     for line in lines:
         if not line: continue
         if "СЛУЖБЕН ВЕСНИК" in line.upper() and "РЕГИСТАР" in line.upper(): continue
-        m=ordinal_re.match(line)
-        if m:
-            if current:
-                unresolved.append(current)
-            current={"ordinal":int(m.group(1)),"parts":[m.group(2)] if m.group(2) else []}
-        elif current:
+
+        # A wrapped title may legitimately continue with a date, e.g.:
+        # "01.01.2003 до 31.12.2003 година ... 12/7".
+        # The old ordinal regex misread the leading "01." as a new register ordinal.
+        if current and date_prefix_re.match(line):
             current["parts"].append(line)
         else:
+            m=ordinal_re.match(line)
+            if m:
+                if current:
+                    unresolved.append(current)
+                current={"ordinal":int(m.group(1)),"parts":[m.group(2)] if m.group(2) else []}
+            elif current:
+                current["parts"].append(line)
+            else:
+                continue
+
+        if not current:
             continue
-        joined=" ".join(current["parts"]).strip()
+        joined=join_register_parts(current["parts"])
         rm=ref_re.search(joined)
         if rm:
             issue=rm.group(1); page=rm.group(2)
@@ -318,6 +343,10 @@ def parse_register_text(text, year, source_url, source_sha):
 
 def pdftotext(pdf_path, txt_path):
     p=subprocess.run(["pdftotext","-layout",str(pdf_path),str(txt_path)],capture_output=True,text=True)
+    return p.returncode,p.stderr[-1000:]
+
+def mutool_text(pdf_path, txt_path):
+    p=subprocess.run(["mutool","draw","-F","txt","-o",str(txt_path),str(pdf_path)],capture_output=True,text=True)
     return p.returncode,p.stderr[-1000:]
 
 def main():
@@ -349,17 +378,58 @@ def main():
             pdf=out/"pdf"/f"{year}.pdf"; pdf.write_bytes(raw)
             sha=sha256_bytes(raw)
             txt=out/"text"/f"{year}.txt"
-            rc,err=pdftotext(pdf,txt)
-            text=txt.read_text("utf-8",errors="replace") if txt.exists() else ""
-            if source_profile=="scan_image_primary" or rc!=0 or len(text.strip())<500:
-                row.update({"status":"needs_ocr_or_manual_extraction","register_sha256":sha,"pdftotext_error":err})
+            if source_profile=="scan_image_primary":
+                row.update({
+                    "status":"needs_ocr_or_manual_extraction",
+                    "register_sha256":sha,
+                    "extractor":"none_scan_image_primary"
+                })
                 (out/"registers"/f"{year}.json").write_text(json.dumps(row,ensure_ascii=False,indent=2),"utf-8")
                 summary["years"].append(row); time.sleep(args.delay); continue
-            entries,unresolved=parse_register_text(text,year,final,sha)
+
+            # Machine-text registers are extracted with MuPDF first. A controlled
+            # 2005 comparison showed far cleaner reading order and dramatically
+            # fewer unresolved register rows than pdftotext -layout.
+            extractor="mupdf_txt"
+            rc,err=mutool_text(pdf,txt)
+            text=txt.read_text("utf-8",errors="replace") if txt.exists() else ""
+            normalize_columns=False
+
+            # Keep the older Poppler layout mode only as a bounded fallback.
+            if rc!=0 or len(text.strip())<500:
+                extractor="poppler_layout_fallback"
+                rc,err=pdftotext(pdf,txt)
+                text=txt.read_text("utf-8",errors="replace") if txt.exists() else ""
+                normalize_columns=True
+
+            if rc!=0 or len(text.strip())<500:
+                row.update({
+                    "status":"needs_ocr_or_manual_extraction",
+                    "register_sha256":sha,
+                    "extractor":extractor,
+                    "extractor_error":err
+                })
+                (out/"registers"/f"{year}.json").write_text(json.dumps(row,ensure_ascii=False,indent=2),"utf-8")
+                summary["years"].append(row); time.sleep(args.delay); continue
+
+            entries,unresolved=parse_register_text(
+                text,year,final,sha,normalize_columns=normalize_columns
+            )
             for entry in entries:
                 entry["transport_tls_verified"]=transport.get("X-AI-Advokat-TLS")=="verified"
                 entry["transport_state"]=transport.get("X-AI-Advokat-TLS")
-            row.update({"status":"parsed_pending_reconciliation","register_url":final,"register_sha256":sha,"transport_tls_verified":transport.get("X-AI-Advokat-TLS")=="verified","transport_state":transport.get("X-AI-Advokat-TLS"),"act_count":len(entries),"unresolved_count":len(unresolved)})
+            row.update({
+                "status":"parsed_pending_reconciliation",
+                "register_url":final,
+                "register_sha256":sha,
+                "transport_tls_verified":transport.get("X-AI-Advokat-TLS")=="verified",
+                "transport_state":transport.get("X-AI-Advokat-TLS"),
+                "extractor":extractor,
+                "extractor_version":"mupdf_text_v1" if extractor=="mupdf_txt" else "poppler_layout_fallback_v1",
+                "normalize_columns":normalize_columns,
+                "act_count":len(entries),
+                "unresolved_count":len(unresolved)
+            })
             issues=issue_inventory.get(year,[])
             issue_nums={int(x["issue_number"]) for x in issues if str(x.get("issue_number","")).isdigit()}
             referenced={int(x["issue_number"]) for x in entries if str(x.get("issue_number","")).isdigit()}
