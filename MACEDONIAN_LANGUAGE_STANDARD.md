@@ -1,4 +1,4 @@
-# Заеднички јазичен и терминолошки стандард v1.5
+# Заеднички јазичен и терминолошки стандард v1.6
 
 ## Статус
 Канонски јазичен стандард за македонските интерфејси и јавни текстови на MediCareMK, AI Advokat, WPA / WPA Institute / WPA Journal и Sasho & Popac Archive.
@@ -55,7 +55,7 @@ AI Advokat не смее да се потпира само на општа ин�
 - production UAT задолжително вклучува пример со бугарска контаминација без потпирање само на буквата „ъ“.
 
 
-## Runtime language firewall · v1.5
+## Runtime language firewall · v1.6
 Канонската патека за македонски правен одговор е:
 
 `генератор → deterministic cleanup → независна јазична редакција кога е задолжителна/потребна → deterministic release gate → RELEASE или BLOCK`.
@@ -68,7 +68,7 @@ AI Advokat не смее да се потпира само на општа ин�
 - UI не смее да прикажува „успешен“ правен одговор ако canonical Macedonian release gate не е поминат.
 
 
-### Dedicated editor policy · v1.5
+### Dedicated editor policy · v1.6
 - Default Macedonian language editor: `@cf/zai-org/glm-4.7-flash`, unless an explicit governed runtime override is configured.
 - The editor model is independent from the primary generation model and from the empty-response fallback role.
 - Every Macedonian-facing generated answer uses the editor pass before final release; deterministic corpus answers remain model-free.
@@ -76,9 +76,16 @@ AI Advokat не смее да се потпира само на општа ин�
 - A process-instrument mismatch may use a deterministic Macedonian working scaffold when the generated/editor text is blocked; this fallback adds no statute, article, deadline, jurisdiction or legal effect.
 
 
-### Canonical-clean availability rule · v1.5
+### Canonical-clean availability rule · v1.6
 - Секој генериран македонски одговор прави bounded editor-attempt кога runtime политиката го бара тоа.
 - Editor-от не е release authority. Неговиот излез мора повторно да го помине canonical Macedonian release gate.
 - Ако editor-от е технички недостапен, или неговиот излез е полош, системот може да се врати само на pre-editor текст што веќе независно има `RELEASE` по deterministic cleanup + canonical gate.
 - Овој fallback не смее да се користи ако pre-editor текстот има `REPAIR` или `BLOCK`; тогаш одговорот останува блокиран.
 - Runtime telemetry мора јасно да покаже дали editor-от поминал, дали е користен canonical-clean fallback и зошто.
+
+
+### Formal-draft authority fallback · v1.6
+- Чист јазик не е доволен за формален правен нацрт: без governed правен контекст не смеат да се измислуваат конкретен суд, обвинителска улога, странска правна форма, член, рок или јурисдикција.
+- За поддржани генерички класи на документи, ако моделскиот нацрт падне на јазичниот или authority gate, може да се употреби детерминистички неутрален шаблон.
+- Детерминистичкиот шаблон мора да користи placeholders/неутрални полиња и видлив Human Gate за надлежност, правна основа, рокови и докази.
+- Овој fallback не создава ново право и не заменува governed source-backed drafting кога таков контекст е достапен.
