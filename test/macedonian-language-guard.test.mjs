@@ -418,3 +418,22 @@ test("V14 blocks generated Bulgarian company forms but preserves an exact user-s
   const preserved=assessMacedonianOutput(supplied,{userText:"Компанијата е EOOD. Објасни го записот на македонски."});
   assert.equal(preserved.ok,true,JSON.stringify(preserved));
 });
+
+
+test("V14 deterministic cleanup converts generated Bulgarian EOOD to Macedonian DOOEL",()=>{
+  const bad="Тужен: Тест ЕООД, со седиште во Скопје.";
+  const before=assessMacedonianOutput(bad,{userText:"Изработи тужба за надомест на штета, со измислени податоци."});
+  assert.equal(before.ok,false,JSON.stringify(before));
+  assert.ok(before.generatedOnlyContamination.includes("еоод"),JSON.stringify(before));
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.match(clean,/Тест ДООЕЛ/u);
+  assert.doesNotMatch(clean,/ЕООД/u);
+  const after=assessMacedonianOutput(clean,{userText:"Изработи тужба за надомест на штета, со измислени податоци."});
+  assert.equal(after.ok,true,JSON.stringify({clean,after}));
+});
+
+test("V14 protected verbatim source span preserves EOOD",()=>{
+  const input='Изворниот запис гласи: „Тест ЕООД“.';
+  const clean=normaliseMacedonianGeneratedText(input);
+  assert.ok(clean.includes('„Тест ЕООД“'));
+});
