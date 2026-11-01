@@ -33,7 +33,7 @@ jobs:
       - name: Install PDF tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y poppler-utils
+          sudo apt-get install -y poppler-utils mupdf-tools
 
       - name: Build exact 2025 official-source inventory
         run: |
