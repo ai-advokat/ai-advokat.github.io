@@ -14,7 +14,7 @@ const welcome = $('welcome').cloneNode(true);
 function status(text) { $('status').textContent = text; }
 function busy(value) {
   const hasQuestion = String($('question')?.value || '').trim().length >= 2;
-  $('send').disabled = value || !hasQuestion;
+  $('send').disabled = value || (!!key && !hasQuestion);
   $('stop').hidden = !value;
   $('send').hidden = value;
   $('question').disabled = value;
@@ -151,6 +151,7 @@ $('loginForm').onsubmit = async event => {
     const remembered = $('rememberAccess').checked && saveDeviceAccess(deviceStorage,candidate);
     busy(false); $('login').close();
     status('Професионален пристап · ' + data.membership.planCode + ' · OpenAI се проверува при секое барање.');
+    if ($('question').value.trim().length >= 2) $('send').disabled = false;
     if ($('rememberAccess').checked && !remembered) status('Пристапот е активен, но прелистувачот не дозволува да се запомни.');
     $('question').focus();
   } catch { $('loginStatus').textContent = 'Клучот не е активен или услугата не е достапна. Обидете се повторно.'; }
@@ -162,7 +163,7 @@ $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => {
   $('question').style.height = 'auto';
   $('question').style.height = Math.min($('question').scrollHeight,180) + 'px';
-  if (!pending) $('send').disabled = $('question').value.trim().length < 2;
+  if (!pending) $('send').disabled = !!key && $('question').value.trim().length < 2;
 };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
 const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -186,8 +187,13 @@ $('composer').addEventListener('dragover', event => event.preventDefault());
 $('composer').addEventListener('drop', event => { event.preventDefault(); $('plus').open = true; status('Документите се прикачуваат во приватниот простор преку „+“.'); });
 $('composer').onsubmit = async event => {
   event.preventDefault(); const q = $('question').value.trim();
-  if (pending || q.length < 2) return;
-  if (!key) { status('Најпрво внесете го вашиот приватен код за влез.'); $('access').click(); return; }
+  if (pending) return;
+  if (!key) {
+    status('Најпрво внесете го вашиот приватен код за влез.');
+    $('access').click();
+    return;
+  }
+  if (q.length < 2) return;
 
   let outboundQ=q, privacyRedacted=false;
   const privacy=detectConfidentialCasePrompt(q);
