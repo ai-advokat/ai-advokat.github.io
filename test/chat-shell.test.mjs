@@ -598,7 +598,7 @@ test("CHAT canonical FREE formal drafts always use and expose the compact latenc
 test("CHAT17e every generated Macedonian FREE answer uses the dedicated editor or a deterministic safe fallback",()=>{
   const helper=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
   assert.match(helper,/forceEditorialPass:languageRequired/);
-  assert.match(helper,/WORKERS_AI_MK_EDITOR_MODEL_DEFAULT="@cf\/zai-org\/glm-4\.7-flash"/);
+  assert.match(worker,/WORKERS_AI_MK_EDITOR_MODEL_DEFAULT="@cf\/zai-org\/glm-4\.7-flash"/);
   assert.match(helper,/deterministicProceduralInstrumentFallback/);
   assert.match(helper,/deterministicLanguageFallbackUsed/);
 });
