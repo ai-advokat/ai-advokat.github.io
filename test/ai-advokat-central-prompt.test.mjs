@@ -106,14 +106,15 @@ test("COP8 OpenAI Chief inherits the same central contract for both general and 
   assert.match(legalPrompt,/governed sources and verified tool results control material legal propositions/i);
 });
 
-test("COP9 FREE Macedonian output uses deterministic cleanup without a second language provider call",()=>{
+test("COP9 FREE Macedonian output uses deterministic cleanup, one bounded repair pass and strict Pravopis release",()=>{
   assert.match(worker,/async function repairWorkersAIMacedonianIfNeeded/);
   assert.match(worker,/const deterministicFirst=normaliseMacedonianGeneratedText\(current\)/);
-  assert.doesNotMatch(worker,/for\(let attempt=0;attempt<2 && !assessment\.ok;attempt\+\+\)/);
   assert.ok((worker.match(/const languagePass=await repairWorkersAIMacedonianIfNeeded/g)||[]).length>=3,"public chat, source-backed researcher and private synthesis must share the Macedonian postflight");
-  assert.match(worker,/providerCalls:0/);
-  assert.match(worker,/repairError:releaseVerdict\.verdict==="RELEASE"\?null:"language_quality_warning"/);
-  assert.doesNotMatch(worker,/runOpenAIMacedonianRepair\(env/);
+  assert.match(worker,/messages:buildMacedonianRepairMessages\(\{text:current\|\|original,userText\}\)/);
+  assert.match(worker,/timeoutMs:12000/);
+  assert.match(worker,/language_quality_blocked_after_repair/);
+  assert.match(worker,/language_quality_blocked/);
+  assert.doesNotMatch(worker,/language_quality_warning/);
 });
 
 
