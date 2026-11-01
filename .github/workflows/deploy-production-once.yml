@@ -226,3 +226,5 @@ jobs:
           echo "worker=ai-advokat-github-io"
 
 # trigger-zro12-source-gap-r14: 2026-11-01
+
+# trigger-exact-article-polish-r15: 2026-11-01
