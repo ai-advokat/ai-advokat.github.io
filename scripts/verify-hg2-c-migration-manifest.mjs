@@ -9,9 +9,9 @@ const EXPECTED = {
   account: "0fee10e2bd9a2183d16eb0d73f13dfce",
   databaseName: "ai-advokat-staging-db",
   databaseId: "309f72b8-8711-47fc-bea7-fbd1d649561d",
-  count: 50,
+  count: 51,
   first: "migrations/0001_initial_schema.sql",
-  last: "migrations/0050_lioe_provider_diagnostics.sql"
+  last: "migrations/0051_gazette_issue_contents_index.sql"
 };
 
 function fail(message) {
@@ -47,7 +47,7 @@ if (manifest.status !== "FROZEN_REPOSITORY_ONLY_REMOTE_NO_GO") fail("manifest st
 if (manifest.staging_account_id !== EXPECTED.account) fail("staging account mismatch");
 if (manifest.staging_database_name !== EXPECTED.databaseName) fail("staging database name mismatch");
 if (manifest.staging_database_id !== EXPECTED.databaseId) fail("staging database UUID mismatch");
-if (manifest.migration_count !== EXPECTED.count || manifest.files?.length !== EXPECTED.count) fail("expected exactly 50 frozen migrations");
+if (manifest.migration_count !== EXPECTED.count || manifest.files?.length !== EXPECTED.count) fail("expected exactly 51 frozen migrations");
 if (manifest.first_migration !== EXPECTED.first) fail("unexpected first migration");
 if (manifest.last_migration !== EXPECTED.last) fail("unexpected last migration");
 
