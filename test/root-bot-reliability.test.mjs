@@ -17,7 +17,7 @@ test("shared frontend runtime guard loads before both bot bundles",()=>{
   const botBundle=bot.indexOf("standalone-bot-vnext.js?v=20261101-root-r9");
   assert.ok(mainGuard>=0 && mainBundle>mainGuard);
   assert.ok(botGuard>=0 && botBundle>botGuard);
-  assert.match(guard,/UI-.*BOOT-TIMEOUT/);
+  assert.match(guard,/const code="UI-"/);\n  assert.match(guard,/report\("main","boot-timeout"/);\n  assert.match(guard,/report\("external","boot-timeout"/);
   assert.match(guard,/AIAdvokatFrontendGuard/);
   assert.match(guard,/markReady/);
   assert.match(guard,/unhandledrejection/);
