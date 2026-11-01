@@ -128,7 +128,7 @@ test("CHAT11 session privacy uses store:false and never creates a durable OpenAI
 });
 
 test("CHAT11b homepage cache-busts the current FREE chat runtime and PWA shell",()=>{
-  assert.match(html,/ai-advokat-chat\.js\?v=20261101-root-r12-complete/);
+  assert.match(html,/ai-advokat-chat\.js\?v=20261101-root-r13-gazette-acts/);
   const serviceWorker=fs.readFileSync("service-worker.js","utf8");
   assert.match(serviceWorker,/ai-advokat-shell-v7/);
 });
