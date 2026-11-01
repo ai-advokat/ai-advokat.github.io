@@ -4,6 +4,7 @@ import fs from "node:fs";
 import {
   isFormalLegalDraftRequest,
   hasProceduralInstrumentMismatch,
+  deterministicProceduralInstrumentFallback,
   applyProceduralInstrumentSafety,
   cleanFormalDraftForExport,
   replaceUngroundedArticleReferences,
@@ -157,8 +158,9 @@ test("RQ14 formal drafts are excluded from the stripped-down FREE fast prompt",(
   const worker=fs.readFileSync("src/index.js","utf8");
   assert.match(worker,/const fastFreePrompt=\(missionProfile===\"GENERAL_BYPASS\" \|\| missionProfile===\"L0_INFORMATIONAL\"\)\s*&& !formalDraftRequest;/);
   assert.match(worker,/allowProviderRepair:languageRequired/);
-  assert.match(worker,/forceEditorialPass:languageRequired && \(formalDraftRequest \|\| missionProfile!==\"GENERAL_BYPASS\"\)/);
-  assert.match(worker,/languagePass\.hardBlock \|\| !finalRelease\.ok/);
+  assert.match(worker,/forceEditorialPass:languageRequired/);
+  assert.match(worker,/deterministicProceduralInstrumentFallback/);
+  assert.match(worker,/deterministicLanguageFallbackUsed/);
 });
 
 
@@ -168,4 +170,15 @@ test("RQ15 Macedonian legal drafting uses an independent fail-closed language ed
   assert.match(worker,/model:editorModel/);
   assert.match(worker,/mandatory_language_editor_failed/);
   assert.match(worker,/hardBlock:true/);
+});
+
+
+test("RQ16 ambiguous criminal draft has a deterministic clean Macedonian fallback",()=>{
+  const q="Направи ми Туѓба за кражба на велосипед, со измислени податоци.";
+  const out=deterministicProceduralInstrumentFallback({userText:q});
+  assert.match(out,/^РАБОТЕН НАЦРТ · ПРОЦЕСЕН ИНСТРУМЕНТ ЗА ПРОВЕРКА/u);
+  assert.match(out,/РАБОТЕН ПРИМЕР СО ИЗМИСЛЕНИ ПОДАТОЦИ/u);
+  assert.match(out,/Надлежен орган: \[ДА СЕ УТВРДИ ПО ПРОФЕСИОНАЛНА ПРОВЕРКА\]/u);
+  assert.doesNotMatch(out,/^ТУЖБА\b/mu);
+  assert.doesNotMatch(out,/\bчлен\s+\d+/iu);
 });
