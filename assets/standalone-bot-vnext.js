@@ -392,6 +392,9 @@ function takeOverExports(){
 }
 
 const THEME_KEY='aiadvokat-vnext-theme';
+function readTheme(){
+  try{return localStorage.getItem(THEME_KEY)||'auto';}catch{return 'auto';}
+}
 function setTheme(mode){
   const allowed=['auto','light','dark']; if(!allowed.includes(mode)) mode='auto';
   localStorage.setItem(THEME_KEY,mode); applyTheme(mode); updateThemeButton(mode);
@@ -408,7 +411,7 @@ function wire(){
   $('vnextThreadSearch').addEventListener('input',renderThreadList);
   $('vnextSearchLaunch').onclick=openGlobalSearch; $('vnextHeaderSearch').onclick=openGlobalSearch;
   $('vnextHeaderEvidence').onclick=()=>openEvidence('sources'); $('vnextEvidenceClose').onclick=closeEvidence;
-  $('vnextMobileMenu').onclick=openMobileSidebar; $('vnextSidebarClose').onclick=closeSidebar;
+  $('vnextMobileMenu').onclick=openMobileSidebar; $('vnextSidebarClose').onclick=closeMobileSidebar;
   $('vnextTheme').onclick=cycleTheme;
   qsa('.vnext-nav button').forEach(b=>b.onclick=()=>runAction(b.dataset.vnextAction));
   qsa('.vnext-evidence-tabs button').forEach(b=>b.onclick=()=>{workspace.panelTab=b.dataset.panel;renderEvidence();});
