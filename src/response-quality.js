@@ -146,6 +146,80 @@ export function deterministicProceduralInstrumentFallback({userText=""}={}){
   ].join("\n");
 }
 
+function isGenericCivilDamagesDraftRequest(userText){
+  const text=String(userText||"").normalize("NFKC").toLocaleLowerCase("mk");
+  return /(?:ту[жѓ]б|tuzb)/iu.test(text)
+    && /надомест/iu.test(text)
+    && /штет/iu.test(text)
+    && !hasProceduralInstrumentMismatch(text);
+}
+
+export function formalDraftAuthoritySafety(text,{userText="",hasGovernedLegalContext=false}={}){
+  if(hasGovernedLegalContext) return {ok:true,problems:[]};
+  const value=String(text||"").normalize("NFKC");
+  const q=String(userText||"").normalize("NFKC").toLocaleLowerCase("mk");
+  const problems=[];
+
+  if(isGenericCivilDamagesDraftRequest(userText)){
+    if(/(?:суд\s+за\s+кривич|кривичен\s+суд|државн(?:иот|и)?\s+обвинител|јавн(?:иот|и)?\s+обвинител)/iu.test(value)){
+      problems.push("civil_draft_criminal_role_or_court");
+    }
+  }
+
+  const generatedSpecificCourt=/(?:основен|апелационен|врховен|уставен)\s+(?:граѓански\s+|кривичен\s+)?суд(?:\s+во\s+[\p{L}-]+)?/iu.exec(value)?.[0]||"";
+  if(generatedSpecificCourt && !q.includes(generatedSpecificCourt.toLocaleLowerCase("mk"))){
+    problems.push("unsourced_specific_court");
+  }
+
+  if(/\b(?:еоод|eood)\b/iu.test(value) && !/\b(?:еоод|eood)\b/iu.test(q)){
+    problems.push("generated_foreign_company_form");
+  }
+
+  return {ok:problems.length===0,problems:[...new Set(problems)]};
+}
+
+export function deterministicCivilDamagesFallback({userText=""}={}){
+  if(!isGenericCivilDamagesDraftRequest(userText)) return null;
+  return [
+    "ТУЖБА ЗА НАДОМЕСТ НА ШТЕТА",
+    "",
+    "До: [НАДЛЕЖЕН СУД — ДА СЕ УТВРДИ ПО ПРОФЕСИОНАЛНА ПРОВЕРКА]",
+    "",
+    "Тужител: [ИЗМИСЛЕНО ИМЕ И ПРЕЗИМЕ / НАЗИВ]",
+    "Адреса / седиште: [ИЗМИСЛЕН ПОДАТОК]",
+    "",
+    "Тужен: [ИЗМИСЛЕНО ИМЕ И ПРЕЗИМЕ / НАЗИВ]",
+    "Адреса / седиште: [ИЗМИСЛЕН ПОДАТОК]",
+    "",
+    "Предмет: Надомест на штета",
+    "Вредност на спорот: [ИЗНОС — ДА СЕ УТВРДИ]",
+    "",
+    "ФАКТИЧКА ОСНОВА",
+    "На [ИЗМИСЛЕН ДАТУМ], во [ИЗМИСЛЕНО МЕСТО], настанал настан од кој, според работниот пример, тужителот претрпел штета. Точниот опис на дејствијата, причинската врска, видот и висината на штетата треба да се внесат според доказите во конкретниот предмет.",
+    "",
+    "ДОКАЗИ",
+    "1. [ДОКУМЕНТ / ДОГОВОР / СМЕТКА — АКО ПОСТОИ]",
+    "2. [ФОТОГРАФИИ / СНИМКИ — АКО СЕ ЗАКОНСКИ ДОСТАПНИ]",
+    "3. [СВЕДОК — АКО ПОСТОИ]",
+    "4. [СТРУЧЕН НАОД ИЛИ ДРУГ ДОКАЗ — АКО Е РЕЛЕВАНТЕН]",
+    "",
+    "ТУЖБЕНО БАРАЊЕ — РАБОТЕН ПРИМЕР",
+    "Се предлага, по професионална проверка на надлежноста, правната основа и доказите, тужениот да биде задолжен да му исплати на тужителот [ИЗНОС] денари на име надомест на штета. Евентуалната камата, трошоците и точната формулација на барањето се внесуваат само по проверка на важечкиот закон и конкретниот предмет.",
+    "",
+    "Место и датум: [ДА СЕ ВНЕСАТ]",
+    "Потпис: [ДА СЕ ВНЕСЕ]",
+    "",
+    "ЧОВЕЧКА ПРОВЕРКА",
+    "Пред поднесување мора да се проверат надлежниот суд, процесната дозволеност, роковите, правната основа, доказите, висината на побарувањето, каматата и судските трошоци. Овој текст е работен пример со неутрални податоци и не претставува конечен правен поднесок."
+  ].join("\n");
+}
+
+export function deterministicFormalDraftFallback({userText=""}={}){
+  return deterministicProceduralInstrumentFallback({userText})
+    || deterministicCivilDamagesFallback({userText})
+    || null;
+}
+
 export function finaliseFormalLegalDraft(text,{userText="",hasGovernedLegalContext=false}={}){
   const clean=cleanFormalDraftForExport(text);
   const grounded=replaceUngroundedArticleReferences(clean,{userText,hasGovernedLegalContext});
