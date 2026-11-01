@@ -1,0 +1,13 @@
+# Critical AI Advokat runtime assets must never be served stale.
+# Legal correctness and runtime consistency take priority over long-lived JS caching.
+/bot/*
+  Cache-Control: no-store, max-age=0
+
+/assets/*.js
+  Cache-Control: no-store, max-age=0
+
+/assets/*.mjs
+  Cache-Control: no-store, max-age=0
+
+/src/*.js
+  Cache-Control: no-store, max-age=0
