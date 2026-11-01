@@ -207,11 +207,11 @@ test('visible transcript suppresses duplicate consecutive user bubbles',()=>{
   assert.ok(source.includes("lastText && lastText===normalizedText"));
 });
 
-test('professional runtime treats language quality as non-blocking QA',()=>{
+test('professional runtime applies strict Pravopis final language QA',()=>{
   const source=fs.readFileSync('src/index.js','utf8');
   assert.ok(source.includes('macedonianDeliveryVerdict'));
   assert.ok(source.includes('const governedLanguageRepairEligible=false'));
-  assert.ok(source.includes('foreign_jurisdiction_substitution_blocked'));
+  assert.ok(source.includes('macedonian_language_release_blocked'));
   assert.ok(source.includes('governedFinalRelease.deliveryState'));
 });
 
