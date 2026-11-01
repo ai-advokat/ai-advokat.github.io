@@ -157,3 +157,36 @@ test("failure telemetry keeps bounded provider diagnostics but no legal content"
     assert.equal(serialised.includes(forbidden),false);
   }
 });
+
+test("released source fallback records overall success while primary provider remains failed",()=>{
+  const p=plan("L1_VERIFIED_RESEARCH",{current:true});
+  const a=assessLegalRuntimeRelease({
+    plan:p,
+    articleBundle:{state:"matched",version:{isCurrent:false,humanReviewStatus:"pending"},context:[{}],legalSources:[{}]},
+    result:{ok:false,sources:[],webSearchUsed:false},
+    postflight:{verdict:"REVISE",temporal_integrity:"PENDING"}
+  });
+  const rec=buildSanitisedRuntimeRecord({
+    runId:"LIOE-RT-FALLBACK",startedAt:"2026-11-01T15:43:25Z",finishedAt:"2026-11-01T15:43:29Z",elapsedMs:4000,
+    plan:p,assessment:a,articleBundle:{context:[{}]},sourceMode:"provider_failure_canonical_article_fallback",
+    result:{
+      ok:false,
+      releasedFallback:true,
+      primaryProviderFailed:true,
+      error:"openai_response_error",
+      status:429,
+      providerCalls:2,
+      providerAttempts:[
+        {attempt:1,error:"openai_response_error",httpStatus:429,providerCalls:1},
+        {attempt:2,error:"openai_response_error",httpStatus:429,providerCalls:1}
+      ]
+    },
+    postflightMeta:{attempts:0,providerCalls:0,primaryProviderCalls:2}
+  });
+  assert.equal(rec.outcome_state,"SUCCESS");
+  assert.equal(rec.provider_state,"FAILED");
+  assert.equal(rec.error_code,"openai_response_error");
+  assert.equal(rec.http_status,429);
+  assert.equal(rec.source_mode,"provider_failure_canonical_article_fallback");
+  assert.equal(JSON.parse(rec.provider_attempts_json).length,2);
+});

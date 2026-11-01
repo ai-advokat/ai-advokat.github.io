@@ -237,9 +237,9 @@ export function buildSanitisedRuntimeRecord({
     legal_stress_test_state:String(assessment?.legalStressTestState||"NOT_REQUIRED"),
     adversarial_review_state:String(assessment?.adversarialReviewState||"NOT_REQUIRED"),
     verification_state:String(assessment?.verificationState||"PENDING"),
-    outcome_state:result?.ok===true?"SUCCESS":"FAILURE",
+    outcome_state:(result?.ok===true || result?.releasedFallback===true)?"SUCCESS":"FAILURE",
     release_state:String(assessment?.releaseState||"BLOCKED"),
-    provider_state:result?.ok===true?"COMPLETED":"FAILED",
+    provider_state:result?.primaryProviderFailed===true ? "FAILED" : (result?.ok===true?"COMPLETED":"FAILED"),
     postflight_required:assessment?.postflightRequired===true?1:0,
     first_pass_verification:postflightMeta?.attempts
       ? (postflightMeta.firstPass===true?1:0)

@@ -4709,6 +4709,124 @@ function openAIFailureEligibleForWorkersFallback(result,{explicitWebRequested=fa
   return OPENAI_TO_WORKERS_FALLBACK_ERRORS.has(error);
 }
 
+function articleNumbersFromQuestion(q){
+  const text=String(q||"").normalize("NFKC");
+  const found=[];
+  const add=value=>{
+    const n=normalizeText(value||"").replace(/[–—−‑]/g,"-").replace(/\s+/g,"");
+    if(n && !found.includes(n)) found.push(n);
+  };
+  const marker=/(?:член(?:от|ови|овите)?|article(?:s)?)\s*([0-9]+(?:[-–—−‑][\p{L}]+)?)/giu;
+  for(const match of text.matchAll(marker)){
+    add(match[1]);
+    let rest=text.slice((match.index||0)+match[0].length,(match.index||0)+match[0].length+120);
+    // Collect only an immediately coordinated/ranged article tail. Stop once
+    // ordinary prose (e.g. "од ЗРО"/"of the Act") begins, so unrelated numbers
+    // later in the sentence cannot accidentally become article references.
+    for(let guard=0;guard<12;guard++){
+      let tail=rest.match(/^\s*(?:,|и(?![\p{L}\p{N}])|and\b|до(?![\p{L}\p{N}])|through\b)\s*([0-9]+(?:[-–—−‑][\p{L}]+)?)/iu);
+      if(!tail){
+        // Numeric range: 12-13. A true Macedonian article suffix such as 104-а
+        // was already consumed by the marker because the suffix is a letter.
+        tail=rest.match(/^\s*[-–—−‑]\s*([0-9]+)\b/u);
+      }
+      if(!tail) break;
+      add(tail[1]);
+      rest=rest.slice(tail[0].length);
+    }
+  }
+  return found;
+}
+
+function exactArticleNumberFromQuestion(q){
+  const numbers=articleNumbersFromQuestion(q);
+  return numbers.length===1 ? numbers[0] : null;
+}
+
+export function professionalCanonicalArticleFallback({q,articleBundle,missionProfile,explicitWebRequested=false,attachmentCount=0,guideDocumentCount=0}={}){
+  if(explicitWebRequested===true) return null;
+  if(!["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(String(missionProfile||""))) return null;
+  if(Number(attachmentCount||0)>0 || Number(guideDocumentCount||0)>0) return null;
+  if(articleBundle?.state!=="matched") return null;
+
+  const requested=exactArticleNumberFromQuestion(q);
+  if(!requested) return null;
+  const candidates=Array.isArray(articleBundle?.primaryArticles) && articleBundle.primaryArticles.length
+    ? articleBundle.primaryArticles
+    : (Array.isArray(articleBundle?.articles)?articleBundle.articles:[]);
+  const article=candidates.find(a=>
+    normalizeText(a?.articleNumberNormalized||a?.articleNumber||"").replace(/[–—]/g,"-").replace(/\s+/g,"")===requested
+  );
+  if(!article) return null;
+
+  const source=(Array.isArray(articleBundle?.legalSources)?articleBundle.legalSources:[])
+    .find(s=>normalizeText(s?.articleNumber||"").replace(/[–—]/g,"-").replace(/\s+/g,"")===requested)
+    || (Array.isArray(articleBundle?.legalSources)?articleBundle.legalSources[0]:null)
+    || null;
+  // Exact-text fallback must use the raw source-faithful article text. A reviewed
+  // derived representation is useful for synthesis, but it must never be silently
+  // presented as verbatim statutory text when the provider is unavailable.
+  const rawText=String(article?.text||article?.article_text||"").trim();
+  if(!rawText) return null;
+
+  const version=articleBundle?.version||{};
+  const instrument=articleBundle?.instrument||{};
+  const currentVerified=
+    version?.isCurrent===true
+    && version?.humanReviewStatus==="approved"
+    && article?.publicStatus==="current_verified"
+    && article?.humanReviewStatus==="approved";
+  const displayText=rawText.length>16000
+    ? rawText.slice(0,16000).trim()+"\n\n[Приказот е скратен поради должина; отворете го наведениот официјален извор за целиот текст.]"
+    : rawText;
+  const sourceIssue=article?.sourceIssueNumber||source?.sourceIssueNumber||null;
+  const sourceDate=article?.sourceIssueDate||source?.sourceIssueDate||null;
+  const sourceUrl=article?.sourceUrl||source?.url||null;
+  const heading=String(article?.heading||"").trim();
+  const overlays=Array.isArray(article?.legalStatusOverlays)?article.legalStatusOverlays:[];
+  const overlayLines=overlays.map(overlay=>{
+    const warning=String(overlay?.warningMk||"").trim();
+    const meta=[
+      overlay?.type ? "тип: "+String(overlay.type) : null,
+      overlay?.caseNumber ? "предмет: "+String(overlay.caseNumber) : null,
+      overlay?.statusAsOf||overlay?.asOf ? "статус проверен до: "+String(overlay.statusAsOf||overlay.asOf) : null,
+      overlay?.legalEffect ? "правен ефект: "+String(overlay.legalEffect) : null
+    ].filter(Boolean).join(" · ");
+    return "• "+(warning||meta||"Постои посебно legal-status предупредување за овој член.")+(warning&&meta ? " ["+meta+"]" : "");
+  });
+
+  const answer=[
+    "Член "+String(article.articleNumber||requested)+" од "+String(instrument.title||"релевантниот закон"),
+    heading ? "Наслов: "+heading : null,
+    "",
+    "Текст од governed article-level corpus:",
+    displayText,
+    "",
+    "Извор и верзија:",
+    "• Production corpus snapshot: "+String(version?.label||"неутврдена верзија"),
+    sourceIssue ? "• Изворна линија/број: "+String(sourceIssue)+(sourceDate ? " · "+String(sourceDate) : "") : null,
+    sourceUrl ? "• Официјален/канонски извор во corpus: "+String(sourceUrl) : null,
+    "• Article Human Gate: "+String(article?.humanReviewStatus||"pending"),
+    "• Version Human Gate: "+String(version?.humanReviewStatus||"pending"),
+    ...(overlayLines.length ? ["","Посебни legal-status предупредувања:",...overlayLines] : []),
+    "",
+    currentVerified
+      ? "Статус: оваа article-level верзија е Human-Gate потврдена како тековна во AI Advokat. И понатаму е потребна професионална човечка проверка пред последично правно дејство."
+      : "Статус: изворниот текст е пронајден и може да се прикаже како source-backed истражувачки материјал, но AI Advokat нема Human-Gate потврда дека ова е тековно важечката верзија. Затоа не ја означувам како „важечки текст“. За професионално потпирање проверете го официјалниот извор, поновите измени и применливиот датум.",
+    "",
+    "Забелешка: AI provider-от не беше достапен за дополнителна синтеза, па наместо да измислувам толкување го прикажувам governed изворниот текст и неговиот точен статус."
+  ].filter(v=>v!==null).join("\n");
+
+  return Object.freeze({
+    answer,
+    article,
+    source,
+    currentVerified,
+    version,
+    instrument
+  });
+}
+
 function decodeBase64Bytes(raw){
   const value=String(raw||"");
   if(!value || !/^[A-Za-z0-9+/=]+$/.test(value)) return null;
@@ -5843,6 +5961,147 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   }
 
   if(!result.ok){
+    const canonicalArticleFallback=membership
+      ? professionalCanonicalArticleFallback({
+          q,
+          articleBundle,
+          missionProfile,
+          explicitWebRequested,
+          attachmentCount:attachmentCheck.attachments.length,
+          guideDocumentCount:guideDocumentCheck.attachments.length
+        })
+      : null;
+
+    if(canonicalArticleFallback){
+      await releaseMonthlyQuota(env,{subject,period});
+      reservation.used=Math.max(0,reservation.used-1);
+      if(!Array.isArray(result.providerAttempts)){
+        result={...result,providerAttempts:[sanitiseProviderAttempt(result,1)]};
+      }
+      console.warn("openai_provider_failure_canonical_article_fallback",JSON.stringify({
+        governanceRunId:lioeRunId,
+        error:String(result.error||"provider_failure"),
+        status:Number(result.status||0)||null,
+        article:String(canonicalArticleFallback.article?.articleNumber||""),
+        missionProfile
+      }));
+
+      const fallbackAssessment=assessLegalRuntimeRelease({
+        plan,
+        articleBundle,
+        result:{...result,ok:false},
+        postflight:{verdict:"REVISE",temporal_integrity:"PENDING"}
+      });
+      let fallbackTelemetry="not_applicable";
+      if(lioeEngaged){
+        const finishedAt=new Date().toISOString();
+        const record=buildSanitisedRuntimeRecord({
+          runId:lioeRunId,
+          startedAt:lioeRunStartedAt,
+          finishedAt,
+          elapsedMs:Date.now()-lioeRunStartedMs,
+          plan,
+          assessment:fallbackAssessment,
+          result:{...result,ok:false,releasedFallback:true,primaryProviderFailed:true},
+          articleBundle,
+          guideContextCount:guideContext.length+guideDocumentCheck.context.length,
+          attachmentCount:0,
+          sourceMode:"provider_failure_canonical_article_fallback",
+          postflightMeta:{
+            attempts:0,
+            firstPass:false,
+            providerCalls:0,
+            primaryProviderCalls:Number(result.providerCalls||0)
+          }
+        });
+        fallbackTelemetry=env.LIOE_RUNTIME_TELEMETRY_ENABLED==="true"
+          ? (await persistSanitisedRuntimeRecord(env,record)).state
+          : "disabled";
+      }
+
+      const exactLegalSources=(articleBundle.legalSources||[]).filter(src=>
+        normalizeText(src?.articleNumber||"").replace(/[–—]/g,"-").replace(/\s+/g,"")===
+        normalizeText(canonicalArticleFallback.article?.articleNumber||"").replace(/[–—]/g,"-").replace(/\s+/g,"")
+      );
+
+      return json(request,{
+        ok:true,
+        answer:canonicalArticleFallback.answer,
+        provider:"canonical_corpus_no_model",
+        providerFallback:{
+          from:"openai",
+          reason:String(result.error||"provider_failure"),
+          httpStatus:Number(result.status||0)||null,
+          attempts:Array.isArray(result.providerAttempts)?result.providerAttempts.length:1
+        },
+        providerRecovery:null,
+        model:null,
+        languageStandard:shouldEnforceMacedonianOutput(q)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+        conversationPersistence:"browser_session_only_app_no_server_conversation_store",
+        historyItemsUsed:historyCheck.history.length,
+        contextualFollowUp,
+        routingContextUsed:routingQuery!==q,
+        sources:[],
+        sourcePolicy:{
+          version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
+          registeredExternalSources:0,
+          unregisteredExternalSources:0,
+          corpusPromotion:"human_gate_required",
+          canonicalProvenanceGate:{
+            version:CANONICAL_PROVENANCE_GATE_VERSION,
+            metadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
+            state:canonicalContextGate.state,
+            released:canonicalContextGate.context.length,
+            blocked:canonicalContextGate.blocked.length
+          }
+        },
+        legalSources:exactLegalSources.length?exactLegalSources:(articleBundle.legalSources||[]),
+        caseLawSources:[],
+        guideSources:[],
+        publicationSources:[],
+        webSearchUsed:false,
+        mode:plan.mode,
+        displayMode:"professional_canonical_article_fallback",
+        sourceMode:"provider_failure_canonical_article_fallback",
+        corpusContextCount:articleBundle.context.length,
+        articleCorpusContextCount:articleBundle.context.length,
+        articleCorpusState:articleBundle.state,
+        articleCorpus:articleBundle.instrument ? {
+          instrument:articleBundle.instrument,
+          version:articleBundle.version,
+          versionBasis:articleBundle.versionBasis
+        } : null,
+        reasoningEffort:"deterministic_source_first",
+        maxOutputTokens:0,
+        humanGate:canonicalArticleFallback.currentVerified
+          ? "Source-backed research; final professional responsibility remains human."
+          : "Current-law Human Gate is not approved for this version. Verify the official source and applicable version/date before professional reliance.",
+        governanceRunId:lioeRunId,
+        runtimeTelemetry:fallbackTelemetry,
+        legalGovernance:lioeEngaged ? {
+          engine:"AI_ADVOKAT_LIOE_v1",
+          missionProfile,
+          currentLawMaterial:fallbackAssessment.currentLawMaterial,
+          sourceVerificationState:fallbackAssessment.sourceVerificationState,
+          temporalVerificationState:fallbackAssessment.temporalVerificationState,
+          jurisdictionVerificationState:fallbackAssessment.jurisdictionVerificationState,
+          verificationState:"SOURCE_BACKED_PROVIDER_FALLBACK",
+          releaseState:fallbackAssessment.releaseState,
+          executionAuthorization:"RESEARCH_OUTPUT_ONLY",
+          humanReviewRequired:true,
+          postflightRequired:false,
+          postflightBypassReason:"deterministic_canonical_source_fallback_no_model",
+          warning:fallbackAssessment.warningMk
+        } : null,
+        membership:{
+          planCode:membership.planCode,
+          monthlyQuota:quota,
+          used:reservation.used,
+          remaining:Math.max(0,quota-reservation.used)
+        }
+      });
+    }
+
     const workersFallbackAllowed=
       !membership
       && governedOpenAIWorkersFallbackConfigured(env)
