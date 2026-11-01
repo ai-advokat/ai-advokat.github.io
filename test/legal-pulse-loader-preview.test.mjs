@@ -14,6 +14,13 @@ test("AI Advokat response placeholder renders the miniature dual-section Legal P
   assert.match(chat,/ai-legal-pulse-dots/);
 });
 
+test("Legal Pulse remains visibly present even for deterministic fast responses",()=>{
+  assert.match(chat,/const MIN_PREPARING_PULSE_MS=900/);
+  assert.match(chat,/async function keepPreparingPulseVisible\(startedAt\)/);
+  assert.match(chat,/const preparingStartedAt=Date\.now\(\)/);
+  assert.match(chat,/await keepPreparingPulseVisible\(preparingStartedAt\)/);
+});
+
 test("Legal Pulse is intentionally miniature and inline",()=>{
   assert.match(css,/display:inline-flex/);
   assert.match(css,/min-height:42px/);
