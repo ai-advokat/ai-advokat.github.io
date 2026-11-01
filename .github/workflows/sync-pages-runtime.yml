@@ -47,8 +47,8 @@ jobs:
           node --check assets/standalone-bot.js
           node --check assets/standalone-bot-vnext.js
           node --check assets/standalone-bot-reliability.js
-          grep -q 'ai-advokat-chat.js?v=20261101-vnext-r10' index.html
-          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' bot/index.html
+          grep -q 'ai-advokat-chat.js?v=20261101-root-r9' index.html
+          grep -q 'standalone-bot.js?v=20261101-core-r10' bot/index.html\n          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' bot/index.html
           grep -q "location.hostname === 'ai-advokat.github.io'" bot/index.html
           echo "PAGES SYNC SOURCE CONTRACT: PASS"
 
@@ -95,7 +95,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin gh-pages:refs/remotes/origin/gh-pages
-          for f in index.html bot/index.html assets/ai-advokat-chat.js assets/frontend-runtime-guard.js assets/standalone-bot-vnext.js; do
+          for f in index.html bot/index.html assets/ai-advokat-chat.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/standalone-bot-vnext.js; do
             main_blob="$(git rev-parse "$GITHUB_SHA:$f")"
             pages_blob="$(git rev-parse "origin/gh-pages:$f")"
             test "$main_blob" = "$pages_blob"
