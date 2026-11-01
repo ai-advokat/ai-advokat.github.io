@@ -4382,7 +4382,7 @@ function bureauEchrDiscoveryScore(title,terms){
   return score;
 }
 
-function bureauEchrBroadIndexRequest(q){
+export function bureauEchrBroadIndexRequest(q){
   const n=normalizeText(q);
   if(!bureauEchrQueryLikely(n)) return false;
   const broad=/(?:^|\s)(?:сите|целосен|целосна|целосно|комплетен|комплетна|комплетно|список|листа|all|complete)(?:\s|$)/iu.test(n)
@@ -4391,12 +4391,12 @@ function bureauEchrBroadIndexRequest(q){
   return broad && object;
 }
 
-function bureauEchrJudgmentsOnlyRequest(q){
+export function bureauEchrJudgmentsOnlyRequest(q){
   const n=normalizeText(q);
   return /(?:пресуд|judgment)/iu.test(n) && !/(?:одлук|decision)/iu.test(n);
 }
 
-function bureauEchrOutcomeClaimRequested(q){
+export function bureauEchrOutcomeClaimRequested(q){
   const n=normalizeText(q);
   return /(?:добил|добиле|добила|побед|успеш|won|win|violation|повреда)/iu.test(n);
 }
@@ -4416,7 +4416,7 @@ function bureauEchrPeriodSortValue(value){
   return match ? Number(match[0]) : 0;
 }
 
-function formatBureauEchrIndexAnswer(records,{judgmentsOnly=false,outcomeClaimRequested=false}={}){
+export function formatBureauEchrIndexAnswer(records,{judgmentsOnly=false,outcomeClaimRequested=false}={}){
   const rows=Array.isArray(records)?records:[];
   const judgmentEntries=rows.filter(r=>r.record_kind==="judgment_listing");
   const decisionEntries=rows.filter(r=>r.record_kind==="decision_listing");
