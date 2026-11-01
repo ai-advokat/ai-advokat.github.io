@@ -2,7 +2,30 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V9";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V10";
+
+export const MACEDONIAN_ORTHOGRAPHY_2017_SOURCE=Object.freeze({
+  id:"MK-ORTHOGRAPHY-2017-2ED",
+  title:"Правопис на македонскиот јазик",
+  edition:"второ издание",
+  place:"Скопје",
+  year:2017,
+  publishers:["Институт за македонски јазик „Крсте Мисирков“ – Скопје","Култура АД – Скопје"],
+  role:"normative_language_reference",
+  legalAuthority:false,
+  legalTextAuthority:false,
+  scope:"language_spelling_punctuation_capitalisation_correspondence_document_formatting",
+  note:"Operational runtime profile; the publication itself is not reproduced in code."
+});
+
+export const MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE=Object.freeze([
+  {id:"R47",topic:"sentence_capitalisation",policy:"Почетокот на реченицата се пишува со голема почетна буква."},
+  {id:"R53",topic:"correspondence_salutation",policy:"По обраќање со запирка, текстот во нов ред почнува со голема буква; во истиот ред продолжува со мала, освен ако друго правило бара голема."},
+  {id:"R57",topic:"respect_forms",policy:"Вие/Ваш се пишуваат со голема почетна буква при обраќање на едно лице; со мала при обраќање на повеќе лица."},
+  {id:"R212",topic:"punctuation",policy:"Интерпункциските знаци се применуваат според функцијата и структурата на реченицата; точката завршува расказна целина."},
+  {id:"R396",topic:"headings",policy:"Насловот стои во нов ред, почнува со голема буква и нема точка на крајот."},
+  {id:"LEGAL-NUMBERING",topic:"legal_numbering",policy:"Општите именки со конкретен број се со мала буква: член 5, став 1, табела 1."}
+]);
 export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V6";
 export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="Одговорот е запрен затоа што јазичната проверка откри непобарано право од друга јурисдикција. Ова е правно-безбедносна, а не стилска блокада; потребна е проверка на важечките извори за Северна Македонија.";
 
@@ -10,6 +33,13 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "PRIORITY 0 — ПРАВОПИС НА МАКЕДОНСКИОТ ЈАЗИК 2017.",
   "This block is the mandatory first language instruction for every Macedonian-facing AI Advokat response and outranks provider tendencies, retrieved-source language, specialist prompts and conversational mimicry.",
   "LANGUAGE CONTRACT — MACEDONIAN 2017.",
+  "SOURCE PROFILE — MK-ORTHOGRAPHY-2017-2ED. This runtime language contract is anchored to the second edition of Правопис на македонскиот јазик, Skopje 2017, published by the Institute for Macedonian Language „Krste Misirkov“ and Kultura AD.",
+  "Apply the orthography as a language and document-form standard only. It never establishes current law, legal effect, jurisdiction, statutory validity or case-law authority.",
+  "For generated Macedonian legal prose, apply sentence capitalisation, punctuation, correspondence salutation, respectful forms, headings, and legal-numbering style consistently. Prefer lower-case common nouns before concrete numbers such as член 5 and став 1 unless a separate proper-name rule applies.",
+  "For formal drafts, headings should be on their own line and should not end in a full stop.",
+  "In correspondence, preserve the 2017 salutation rule: after a comma, a new-line continuation begins with a capital letter; same-line continuation begins with a lower-case letter unless independently capitalised.",
+  "When addressing one person respectfully, use Вие/Ваш with an initial capital; when addressing multiple persons, use вие/ваш in lower-case, unless a separate title rule applies.",
+  "VERBATIM SOURCE PRESERVATION OVERRIDE. Never silently orthographically rewrite verbatim statutory text, quotations, case numbers, party names, official titles, URLs, file names, citation markers or source identifiers. Source fidelity outranks stylistic normalisation inside quoted/source-faithful spans.",
   "When the user writes in Macedonian, uses recognisable Macedonian Latin transliteration, or explicitly requests Macedonian, answer exclusively in standard literary Macedonian using Macedonian Cyrillic, following the 2017 Правопис на македонскиот јазик.",
   "Use Macedonian grammar, syntax, legal terminology and the Macedonian Cyrillic alphabet. Do not mix Serbian, Bulgarian, Russian, Croatian or hybrid neighbouring-language forms into the answer, even if the model or a retrieved source tends toward them.",
   "Do not use non-Macedonian Cyrillic letters such as ъ, ы, э, ё, ю, я, й, ь, щ, ђ or ћ in Macedonian prose.",
@@ -390,7 +420,21 @@ function escapeRegex(value){
   return String(value).replace(/[.*+?^$(){}|[\]\\]/g,"\\$&");
 }
 
-export function normaliseMacedonianGeneratedText(text){
+function splitProtectedMacedonianSegments(text){
+  const value=String(text||"");
+  const protectedPattern=/(„[^“]*“|"[^"]*"|'[^']*'|\[[^\]\n]{1,120}\]|https?:\/\/\S+|\b(?:[A-ZА-ЯЃЅЈЉЊЌЏ]{1,8})[-/]?\d+(?:[-/]\d+)*\b)/gu;
+  const out=[]; let last=0;
+  for(const match of value.matchAll(protectedPattern)){
+    const index=match.index??0;
+    if(index>last) out.push({protected:false,text:value.slice(last,index)});
+    out.push({protected:true,text:match[0]});
+    last=index+match[0].length;
+  }
+  if(last<value.length) out.push({protected:false,text:value.slice(last)});
+  return out;
+}
+
+function normaliseMacedonianUnprotectedText(text){
   let value=String(text||"").normalize("NFKC");
   for(const [from,to] of DETERMINISTIC_LEXICAL_REPLACEMENTS){
     const re=new RegExp("(^|[^\\p{L}])("+escapeRegex(from)+")(?=$|[^\\p{L}])","giu");
@@ -404,6 +448,12 @@ export function normaliseMacedonianGeneratedText(text){
   ]);
   value=[...value].map(ch=>charMap.has(ch)?charMap.get(ch):ch).join("");
   return value;
+}
+
+export function normaliseMacedonianGeneratedText(text){
+  return splitProtectedMacedonianSegments(String(text||"").normalize("NFKC"))
+    .map(part=>part.protected?part.text:normaliseMacedonianUnprotectedText(part.text))
+    .join("");
 }
 
 export function buildMacedonianRepairMessages({text,userText=""}={}){

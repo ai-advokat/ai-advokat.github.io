@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   MACEDONIAN_LANGUAGE_STANDARD_VERSION,
+  MACEDONIAN_ORTHOGRAPHY_2017_SOURCE,
+  MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE,
   MACEDONIAN_RELEASE_GATE_VERSION,
   MACEDONIAN_2017_SYSTEM_RULES,
   shouldEnforceMacedonianOutput,
@@ -213,8 +215,14 @@ test("unambiguous production calques get deterministic cleanup before any AI rep
   assert.equal(check.ok,true,JSON.stringify({clean,check}));
 });
 
-test("language runtime is V9 after canonical root hardening",()=>{
-  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V9");
+test("language runtime is V10 and source-profile anchored to Orthography 2017 second edition",()=>{
+  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V10");
+  assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.year,2017);
+  assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.edition,"второ издание");
+  assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.legalAuthority,false);
+  assert.ok(MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE.some(r=>r.id==="R53"));
+  assert.ok(MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE.some(r=>r.id==="R57"));
+  assert.ok(MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE.some(r=>r.id==="R396"));
 });
 
 
@@ -325,4 +333,22 @@ test("unrequested foreign-jurisdiction substitution remains a legal-safety block
   assert.equal(delivery.deliver,false,JSON.stringify(delivery));
   assert.equal(delivery.legalSafetyBlock,true);
   assert.equal(delivery.state,"blocked_foreign_jurisdiction");
+});
+
+
+test("Orthography 2017 contract preserves verbatim source-like spans while cleaning surrounding prose",()=>{
+  const input='Ево вовед. „Съдът и ответникът“ [Член 12] https://example.com/акт Ево крај.';
+  const clean=normaliseMacedonianGeneratedText(input);
+  assert.match(clean,/Еве вовед/u);
+  assert.ok(clean.includes('„Съдът и ответникът“'));
+  assert.ok(clean.includes('[Член 12]'));
+  assert.ok(clean.includes('https://example.com/акт'));
+  assert.match(clean,/Еве крај/u);
+});
+
+test("Orthography 2017 system contract separates language authority from legal authority",()=>{
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/never establishes current law/i);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/VERBATIM SOURCE PRESERVATION OVERRIDE/);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/член 5/u);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/став 1/u);
 });
