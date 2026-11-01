@@ -93,6 +93,27 @@ test("main workspace matches external bot interaction parity beyond labels",()=>
   assert.match(chat,/Governed corpus · без модел/);
 });
 
+test("top menu matches external bot conversation and Professional-access controls",()=>{
+  for(const id of ["aiChatMenuNew","aiChatExportConversation","aiChatMaterialsTop","aiChatProfessionalAccess","aiChatLogout","aiChatAccessDialog","aiChatAccessForm","aiChatRememberAccess"]){
+    assert.match(home,new RegExp('id="'+id+'"'));
+  }
+  assert.match(home,/Преземи разговор \(\.txt\)/);
+  assert.match(home,/Материјали и алатки/);
+  assert.match(home,/Професионален пристап/);
+  assert.match(home,/Одјави се и заборави го пристапот/);
+  assert.match(home,/Не внесувајте OpenAI API клуч/);
+  assert.match(chat,/CHAT_API_BASE\+"\/api\/membership\/status"/);
+  assert.match(chat,/import\("\/assets\/bot-device-access\.mjs"\)/);
+  assert.match(chat,/saveDeviceAccess/);
+  assert.match(chat,/readDeviceAccess/);
+  assert.match(chat,/forgetDeviceAccess/);
+  assert.match(chat,/\^sk-/);
+  assert.match(chat,/function exportCurrentConversation\(\)/);
+  assert.match(chat,/AI-Advokat-razgovor\.txt/);
+  assert.match(chat,/FREE активен · јавен текстуален chat · Workers AI/);
+  assert.match(chat,/Професионален пристап · /);
+});
+
 test("Sources and Human Gate panels use existing governed response fields",()=>{
   for(const key of ["legalSources","caseLawSources","guideSources","publicationSources","sources"]){
     assert.match(chat,new RegExp('"'+key+'"'));
