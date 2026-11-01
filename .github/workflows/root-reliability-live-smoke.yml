@@ -29,9 +29,9 @@ jobs:
           node --check assets/standalone-bot-vnext.js
           node --check assets/frontend-runtime-guard.js
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' index.html
-          grep -q 'ai-advokat-chat.js?v=20261101-vnext-r10' index.html
+          grep -q 'ai-advokat-chat.js?v=20261101-root-r9' index.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' bot/index.html
-          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' bot/index.html
+          grep -q 'standalone-bot.js?v=20261101-core-r10' bot/index.html\n          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' bot/index.html
           echo "RELEASE SOURCE CONTRACT: PASS"
 
       - name: Verify GitHub Pages serves root-r9 bundles
@@ -43,9 +43,9 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-home.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/bot/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-bot.html || true
             if grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-home.html 2>/dev/null \
-              && grep -q 'ai-advokat-chat.js?v=20261101-vnext-r10' /tmp/pages-home.html 2>/dev/null \
+              && grep -q 'ai-advokat-chat.js?v=20261101-root-r9' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-bot.html 2>/dev/null \
-              && grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/pages-bot.html 2>/dev/null; then
+              && grep -q 'standalone-bot.js?v=20261101-core-r10' /tmp/pages-bot.html 2>/dev/null \\\n              && grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/pages-bot.html 2>/dev/null; then
               ok=1
               break
             fi
@@ -62,9 +62,9 @@ jobs:
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/" -o /tmp/worker-home.html
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/bot/" -o /tmp/worker-bot.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-home.html
-          grep -q 'ai-advokat-chat.js?v=20261101-vnext-r10' /tmp/worker-home.html
+          grep -q 'ai-advokat-chat.js?v=20261101-root-r9' /tmp/worker-home.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-bot.html
-          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/worker-bot.html
+          grep -q 'standalone-bot.js?v=20261101-core-r10' /tmp/worker-bot.html\n          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/worker-bot.html
 
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/api/health" -o /tmp/root-health.json
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/api/orchestrator" -o /tmp/root-orchestrator.json
