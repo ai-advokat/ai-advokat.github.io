@@ -444,4 +444,18 @@ function wire(){
   new MutationObserver(()=>scanMessages()).observe($('messages'),{childList:true,subtree:true});
 }
 
-buildShell(); takeOverExports(); wire(); applyTheme(); updateThemeButton(); renderThreadList(); renderEvidence(); scanMessages();
+function bootStage(stage,fn){
+  try{fn();return true;}
+  catch(error){
+    window.AIAdvokatFrontendGuard?.report?.('external',stage,error);
+    return false;
+  }
+}
+const shellReady=bootStage('build-shell',buildShell);
+bootStage('exports',takeOverExports);
+const wiringReady=bootStage('wire-controls',wire);
+bootStage('theme',()=>{applyTheme();updateThemeButton();});
+bootStage('thread-list',renderThreadList);
+bootStage('evidence',renderEvidence);
+bootStage('message-scan',scanMessages);
+if(shellReady&&wiringReady) window.AIAdvokatFrontendGuard?.markReady?.('external');
