@@ -60,7 +60,8 @@ test("main workspace has standalone-bot parity on left modules and right evidenc
   }
   assert.match(css,/grid-template-columns:248px minmax\(0,1fr\) 326px/);
   assert.match(chat,/window\.open\("\/case-law-metadata\.html"/);
-  assert.match(chat,/window\.open\("\/professional-library\//);
+  assert.match(chat,/openMaterialsDialog\("library"\)/);
+  assert.match(chat,/href="\/professional-library\/" target="_blank"/);
   assert.match(chat,/ensureWorkflowDialog/);
   assert.match(chat,/openWorkspaceSearch/);
   assert.match(chat,/aiChatHistorySearch/);
