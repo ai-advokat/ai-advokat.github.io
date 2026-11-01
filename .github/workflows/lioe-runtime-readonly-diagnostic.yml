@@ -1,0 +1,95 @@
+name: LIOE runtime telemetry read-only diagnostic
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/diagnostics/lioe-runtime-article12-20261101.json"
+      - ".github/workflows/lioe-runtime-readonly-diagnostic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-lioe-runtime-readonly-diagnostic
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify diagnostic privacy boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node <<'NODE'
+          const fs=require("fs");
+          const p=".github/diagnostics/lioe-runtime-article12-20261101.json";
+          const d=JSON.parse(fs.readFileSync(p,"utf8"));
+          if(d.purpose!=="read_only_lioe_runtime_failure_diagnostic") throw new Error("unexpected purpose");
+          if(!Array.isArray(d.run_ids)||d.run_ids.length!==2) throw new Error("expected two run ids");
+          for(const id of d.run_ids){
+            if(!/^LIOE-RT-\d{14}-[0-9a-f]{8}$/.test(id)) throw new Error("invalid run id");
+          }
+          console.log("LIOE DIAGNOSTIC PRIVACY BOUNDARY: PASS");
+          NODE
+
+      - name: Read only runtime telemetry for exact run ids
+        shell: bash
+        run: |
+          set -euo pipefail
+          SQL="$(node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync(".github/diagnostics/lioe-runtime-article12-20261101.json","utf8"));
+          const q=v=>"'" + String(v).replaceAll("'","''") + "'";
+          const ids=d.run_ids.map(q).join(",");
+          process.stdout.write(
+            "SELECT run_id,started_at,finished_at,mission_profile,problem_class,mode,source_mode,"+
+            "current_law_material,source_verification_state,temporal_verification_state,jurisdiction_verification_state,"+
+            "human_review_required,verification_state,outcome_state,release_state,provider_state,postflight_required,"+
+            "first_pass_verification,verification_attempts,correction_required,web_search_used,official_web_source_count,"+
+            "external_source_count,article_context_count,guide_context_count,attachment_count,provider_calls,"+
+            "elapsed_ms,model,error_code,http_status,response_status,incomplete_reason,provider_timeout_ms,"+
+            "provider_attempts_json,telemetry_schema_version "+
+            "FROM lioe_runtime_runs WHERE run_id IN ("+ids+") ORDER BY started_at;"
+          );
+          NODE
+          )"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --json --command "$SQL" | tee /tmp/lioe-runtime-diagnostic.json
+          node <<'NODE'
+          const fs=require("fs");
+          const raw=JSON.parse(fs.readFileSync("/tmp/lioe-runtime-diagnostic.json","utf8"));
+          const rows=Array.isArray(raw)?(raw[0]?.results||[]):(raw?.results||[]);
+          if(rows.length!==2) throw new Error("expected two telemetry rows, got "+rows.length);
+          for(const row of rows){
+            if(!row.run_id || !String(row.run_id).startsWith("LIOE-RT-")) throw new Error("bad row");
+          }
+          console.log("LIOE RUNTIME TELEMETRY READ: PASS");
+          NODE
+
+      - name: Upload non-secret diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lioe-runtime-article12-diagnostic
+          retention-days: 7
+          if-no-files-found: error
+          path: /tmp/lioe-runtime-diagnostic.json
