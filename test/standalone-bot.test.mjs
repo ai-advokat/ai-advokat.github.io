@@ -170,7 +170,7 @@ test('fresh mobile device can activate send and reach governed access flow',()=>
   const source=fs.readFileSync('assets/standalone-bot.js','utf8');
   const html=fs.readFileSync('bot/index.html','utf8');
   assert.match(source,/const hasQuestion = String\(\$\('question'\)\?\.value \|\| ''\)\.trim\(\)\.length >= 2/);
-  assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = \$\('question'\)\.value\.trim\(\)\.length < 2/);
+  assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = !!key && \$\('question'\)\.value\.trim\(\)\.length < 2/);
   assert.match(source,/busy\(false\);\s*restoreAccess\(\);/);
   assert.match(source,/if \(!key\) \{[\s\S]{0,180}\$\('access'\)\.click\(\)/);
   assert.match(source,/if \(q\.length < 2\) return;/);
