@@ -243,3 +243,13 @@ test('core composer boot is independent and privacy dependency failure is fail-c
   assert.match(core,/Ништо не е испратено/);
   assert.match(core,/window\.AIAdvokatCoreReady = true/);
 });
+
+test('fallback runtime labels are provenance-truthful and source counts are readable',()=>{
+  const client=fs.readFileSync('assets/standalone-bot.js','utf8');
+  assert.match(client,/function responseRuntimeLabel\(data\)/);
+  assert.match(client,/canonical_corpus_no_model'\) return 'Governed corpus · без модел'/);
+  assert.match(client,/professional_exact_article_source_gap'\) return 'Source\/Version Gate'/);
+  assert.doesNotMatch(client,/data\.model \|\| 'OpenAI'/);
+  assert.match(client,/summary\.textContent = \(seen\.size === 1 \? 'Извор' : 'Извори'\) \+ ' · ' \+ seen\.size/);
+  assert.match(client,/\[url\?\.href \|\| '', articleNumber, label, version\]\.join\('\|'\)/);
+});
