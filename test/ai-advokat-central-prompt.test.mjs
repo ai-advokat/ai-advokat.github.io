@@ -185,7 +185,7 @@ test("COP18 v7 formal drafting is GPT-class but provider-truthful and Macedonian
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Bulgarian, Serbian or Russian legal terminology/i);
 });
 
-test("COP16 governed GPT keeps language QA non-blocking but blocks foreign-jurisdiction substitution",()=>{
+test("COP16 governed GPT applies the same strict Macedonian final release gate",()=>{
   assert.match(worker,/function canonicalMacedonianFinalRelease/);
   assert.match(worker,/macedonianDeliveryVerdict/);
   assert.match(worker,/const formalDraftRequest=isFormalLegalDraftRequest\(q\)/);
@@ -194,7 +194,7 @@ test("COP16 governed GPT keeps language QA non-blocking but blocks foreign-juris
   assert.match(worker,/governedFinalRelease=canonicalMacedonianFinalRelease\(governedFinalAnswer,q\)/);
   assert.match(worker,/const governedLanguageRepairEligible=false/);
   assert.match(worker,/if\(!governedFinalRelease\.ok\)/);
-  assert.match(worker,/error:"foreign_jurisdiction_substitution_blocked"/);
+  assert.match(worker,/error:"macedonian_language_release_blocked"/);
   assert.match(worker,/languageQualityState:governedLanguageRequired\?governedFinalRelease\.deliveryState/);
   assert.match(worker,/answer:governedFinalAnswer/);
 });
