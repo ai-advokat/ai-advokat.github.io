@@ -74,9 +74,9 @@ jobs:
           const EXPECTED_EDITOR_MODEL="@cf/zai-org/glm-4.7-flash";
           const EXPECTED_PAID_MODEL="gpt-6.1-sol";
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
-          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V13_DEDICATED_EDITOR";
+          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V14_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
-          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V11_DEDICATED_EDITOR_FALLBACK";
+          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V12_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
           const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
           const EXPECTED_FINAL_OUTPUT_GATE="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
           const EXPECTED_FREE_PROVIDER_CONTRACT="WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT";
@@ -94,7 +94,7 @@ jobs:
                   && data?.ok===true
                   && caps.centralOperatingPrompt===EXPECTED_PROMPT
                   && caps.macedonianLanguageGuard===EXPECTED_LANGUAGE
-                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V9_DEDICATED_EDITOR"
+                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V10_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK"
                   && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V3"
                   && caps.canonicalRootReleaseContract==="AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1"
                   && caps.canonicalMetadataStandard===EXPECTED_METADATA
@@ -167,8 +167,10 @@ jobs:
               if(data?.performance?.languageEditorModel!==EXPECTED_EDITOR_MODEL){
                 throw new Error(label+" unexpected Macedonian editor model: "+JSON.stringify(data.performance));
               }
-              if(data?.performance?.languageEditorPassed!==true && data?.performance?.deterministicLanguageFallbackUsed!==true){
-                throw new Error(label+" language editor failed without deterministic safe fallback: "+JSON.stringify(data.performance));
+              if(data?.performance?.languageEditorPassed!==true
+                && data?.performance?.languageEditorFallbackUsed!==true
+                && data?.performance?.deterministicLanguageFallbackUsed!==true){
+                throw new Error(label+" language editor failed without an independently verified fallback: "+JSON.stringify(data.performance));
               }
             }else if(data.provider==="canonical_corpus_no_model"){
               if(data.model!==null && data.model!==undefined) throw new Error(label+" deterministic corpus lane must not expose an AI model");
@@ -357,8 +359,10 @@ jobs:
               if(data?.performance?.languageEditorRequired!==true){
                 throw new Error("typo-criminal-draft language editor gate missing: "+JSON.stringify(data.performance));
               }
-              if(data?.performance?.languageEditorPassed!==true && data?.performance?.deterministicLanguageFallbackUsed!==true){
-                throw new Error("typo-criminal-draft neither editor nor deterministic fallback released safely: "+JSON.stringify(data.performance));
+              if(data?.performance?.languageEditorPassed!==true
+                && data?.performance?.languageEditorFallbackUsed!==true
+                && data?.performance?.deterministicLanguageFallbackUsed!==true){
+                throw new Error("typo-criminal-draft has no verified editor/fallback release path: "+JSON.stringify(data.performance));
               }
               if(data?.performance?.languageEditorModel!==EXPECTED_EDITOR_MODEL || data.performance.languageEditorModel===data.model){
                 throw new Error("typo-criminal-draft editor was not independently modelled: "+JSON.stringify({model:data.model,performance:data.performance}));

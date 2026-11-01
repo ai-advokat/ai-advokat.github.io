@@ -1,4 +1,4 @@
-# Заеднички јазичен и терминолошки стандард v1.4
+# Заеднички јазичен и терминолошки стандард v1.5
 
 ## Статус
 Канонски јазичен стандард за македонските интерфејси и јавни текстови на MediCareMK, AI Advokat, WPA / WPA Institute / WPA Journal и Sasho & Popac Archive.
@@ -55,7 +55,7 @@ AI Advokat не смее да се потпира само на општа ин�
 - production UAT задолжително вклучува пример со бугарска контаминација без потпирање само на буквата „ъ“.
 
 
-## Runtime language firewall · v1.4
+## Runtime language firewall · v1.5
 Канонската патека за македонски правен одговор е:
 
 `генератор → deterministic cleanup → независна јазична редакција кога е задолжителна/потребна → deterministic release gate → RELEASE или BLOCK`.
@@ -68,9 +68,17 @@ AI Advokat не смее да се потпира само на општа ин�
 - UI не смее да прикажува „успешен“ правен одговор ако canonical Macedonian release gate не е поминат.
 
 
-### Dedicated editor policy · v1.4
+### Dedicated editor policy · v1.5
 - Default Macedonian language editor: `@cf/zai-org/glm-4.7-flash`, unless an explicit governed runtime override is configured.
 - The editor model is independent from the primary generation model and from the empty-response fallback role.
 - Every Macedonian-facing generated answer uses the editor pass before final release; deterministic corpus answers remain model-free.
 - Generated neighbouring-language phrases that were not supplied by the user, including Serbian/Bulgarian legal or company-form contamination, are release-blocking.
 - A process-instrument mismatch may use a deterministic Macedonian working scaffold when the generated/editor text is blocked; this fallback adds no statute, article, deadline, jurisdiction or legal effect.
+
+
+### Canonical-clean availability rule · v1.5
+- Секој генериран македонски одговор прави bounded editor-attempt кога runtime политиката го бара тоа.
+- Editor-от не е release authority. Неговиот излез мора повторно да го помине canonical Macedonian release gate.
+- Ако editor-от е технички недостапен, или неговиот излез е полош, системот може да се врати само на pre-editor текст што веќе независно има `RELEASE` по deterministic cleanup + canonical gate.
+- Овој fallback не смее да се користи ако pre-editor текстот има `REPAIR` или `BLOCK`; тогаш одговорот останува блокиран.
+- Runtime telemetry мора јасно да покаже дали editor-от поминал, дали е користен canonical-clean fallback и зошто.
