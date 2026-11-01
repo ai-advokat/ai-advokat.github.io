@@ -55,30 +55,30 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Verify live Macedonian V10 runtime contract
+      - name: Verify live Macedonian V11 Strict runtime contract
         shell: bash
         run: |
           set -euo pipefail
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
           ok=0
           for attempt in $(seq 1 60); do
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/api/capabilities?deploy_verify=$GITHUB_RUN_ID-$attempt" -o /tmp/v10-capabilities.json || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/api/capabilities?deploy_verify=$GITHUB_RUN_ID-$attempt" -o /tmp/v11-capabilities.json || true
             if node <<'NODE'
           const fs=require("fs");
-          let d={}; try{d=JSON.parse(fs.readFileSync("/tmp/v10-capabilities.json","utf8"));}catch{}
+          let d={}; try{d=JSON.parse(fs.readFileSync("/tmp/v11-capabilities.json","utf8"));}catch{}
           const c=d.capabilities||{};
           const pass=d.ok===true
-            && c.macedonianLanguageGuard==="MK_ORTHOGRAPHY_2017_RUNTIME_V10"
-            && c.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V6"
+            && c.macedonianLanguageGuard==="MK_ORTHOGRAPHY_2017_RUNTIME_V11_STRICT"
+            && c.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V7_STRICT_ORTHOGRAPHY"
             && c.freeRuntimePolicy==="FREE_MK_CANONICAL_RELEASE_V9";
           if(!pass) process.exit(1);
           NODE
             then
               ok=1
-              echo "MACEDONIAN V10 LIVE CAPABILITY CONTRACT: PASS on attempt $attempt"
+              echo "MACEDONIAN V11 STRICT LIVE CAPABILITY CONTRACT: PASS on attempt $attempt"
               break
             fi
-            echo "Waiting for Macedonian V10 runtime contract (attempt $attempt/60)."
+            echo "Waiting for Macedonian V11 Strict runtime contract (attempt $attempt/60)."
             sleep 3
           done
           test "$ok" = "1"
