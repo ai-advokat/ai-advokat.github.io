@@ -32,6 +32,15 @@
   const modeCaption=$("#aiChatModeCaption");
   const chatMembershipState=$("#aiChatMembershipState");
   const ownerState=$("#aiChatOwnerState");
+  const requiredChatElements={
+    messagesEl,input,sendBtn,stopBtn,attachBtn,fileInput,attachmentsEl,
+    newChatBtn,historyEl,provider,emptyTemplate
+  };
+  const missingChatElements=Object.entries(requiredChatElements).filter(([,value])=>!value).map(([name])=>name);
+  if(missingChatElements.length){
+    window.AIAdvokatFrontendGuard?.report?.("main","dom-contract",new Error("missing:"+missingChatElements.join(",")));
+    return;
+  }
   document.querySelectorAll("[data-foreign-static]").forEach(btn=>{
     btn.addEventListener("click",()=>loadForeignEmploymentPrompt(btn));
   });
@@ -1179,7 +1188,11 @@
   document.querySelectorAll("[data-ai-workbench]").forEach(button=>{
     button.addEventListener("click",event=>{
       event.preventDefault();
-      runAIAdvokat4Action(String(button.dataset.aiWorkbench||""));
+      try{
+        runAIAdvokat4Action(String(button.dataset.aiWorkbench||""));
+      }catch(error){
+        window.AIAdvokatFrontendGuard?.report?.("main","workbench-action",error);
+      }
       if(toolsMenu) toolsMenu.open=false;
     });
   });
@@ -1209,5 +1222,10 @@
     })
     .catch(()=>{provider.textContent="AI runtime · недостапен";});
 
-  load();syncModeUi();render();renderAttachments();autoSize();refreshGuideVaultStatus();
+  try{
+    load();syncModeUi();render();renderAttachments();autoSize();refreshGuideVaultStatus();
+    window.AIAdvokatFrontendGuard?.markReady?.("main");
+  }catch(error){
+    window.AIAdvokatFrontendGuard?.report?.("main","boot",error);
+  }
 })();
