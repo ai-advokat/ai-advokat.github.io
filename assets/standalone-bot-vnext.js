@@ -405,16 +405,22 @@ function takeOverExports(){
 }
 
 const THEME_KEY='aiadvokat-vnext-theme';
+function readTheme(){
+  try{return localStorage.getItem(THEME_KEY)||'auto';}catch{return 'auto';}
+}
+function writeTheme(mode){
+  try{localStorage.setItem(THEME_KEY,mode);}catch{}
+}
 function setTheme(mode){
   const allowed=['auto','light','dark']; if(!allowed.includes(mode)) mode='auto';
-  localStorage.setItem(THEME_KEY,mode); applyTheme(mode); updateThemeButton(mode);
+  writeTheme(mode); applyTheme(mode); updateThemeButton(mode);
 }
-function applyTheme(mode=localStorage.getItem(THEME_KEY)||'auto'){
+function applyTheme(mode=readTheme()){
   const actual=mode==='auto'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):mode;
   document.documentElement.dataset.vnextTheme=actual; document.documentElement.dataset.vnextThemeMode=mode;
 }
-function updateThemeButton(mode=localStorage.getItem(THEME_KEY)||'auto'){$('vnextTheme')?.setAttribute('title','Тема: '+mode);}
-function cycleTheme(){ const m=localStorage.getItem(THEME_KEY)||'auto'; setTheme(m==='auto'?'light':m==='light'?'dark':'auto'); }
+function updateThemeButton(mode=readTheme()){$('vnextTheme')?.setAttribute('title','Тема: '+mode);}
+function cycleTheme(){ const m=readTheme(); setTheme(m==='auto'?'light':m==='light'?'dark':'auto'); }
 
 function wire(){
   $('vnextNewThread').onclick=createNewThread;
