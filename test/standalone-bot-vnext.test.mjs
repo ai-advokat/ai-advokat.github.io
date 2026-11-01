@@ -100,3 +100,14 @@ test('vNext privacy copy keeps local redaction as default and workspace as neces
   assert.match(source,/оригиналниот документ или точниот идентитет/);
   assert.match(source,/Препознатливите лични идентификатори се маскираат локално/);
 });
+
+
+test('vNext source tray keeps article identity, metadata and readable separators',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  assert.match(source,/function sourceRowLabel\(row\)/);
+  assert.match(source,/function sourceRowMeta\(row\)/);
+  assert.match(source,/\[raw,articleNumber,label,version\]\.join\('\|'\)/);
+  assert.match(source,/text:' · '\+String\(i\+1\)/);
+  assert.match(source,/text:row\.meta/);
+  assert.match(source,/↗ Отвори оригинал/);
+});
