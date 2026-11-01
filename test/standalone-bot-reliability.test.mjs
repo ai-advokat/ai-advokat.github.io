@@ -16,3 +16,13 @@ test('Zoran bot reliability guard is isolated and fail-visible',()=>{
   assert.doesNotMatch(guard,/setTimeout/);
   assert.doesNotMatch(guard,/Workers AI/);
 });
+
+
+test('vNext menus bind to defined handlers before navigation actions',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  assert.match(source,/vnextSidebarClose'\)\.onclick=closeMobileSidebar/);
+  assert.doesNotMatch(source,/onclick=closeSidebar/);
+  assert.match(source,/function readTheme\(\)/);
+  assert.match(source,/qsa\('\.vnext-nav button'\)\.forEach/);
+  assert.match(source,/qsa\('\.vnext-evidence-tabs button'\)\.forEach/);
+});
