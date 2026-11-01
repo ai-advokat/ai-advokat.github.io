@@ -21,6 +21,7 @@ body{overflow:hidden;background:var(--vcream)!important;color:var(--vink)!import
 .vnext-nav{position:static!important;width:auto!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;display:grid;gap:2px}
 .vnext-nav button{display:flex!important;align-items:center;gap:9px;width:100%;padding:9px 10px!important;border-radius:9px!important;color:var(--vmuted)!important;font-size:13px!important;text-align:left}
 .vnext-nav button:hover,.vnext-nav button.active{background:var(--vsoft)!important;color:var(--vink)!important}.vnext-nav button.active{font-weight:750;box-shadow:inset 3px 0 var(--vgold)}
+.vnext-nav-symbol{width:1.25em;min-width:1.25em;display:inline-grid;place-items:center;font-weight:800;color:var(--vnavy2);font-size:1.05em}.vnext-nav button.active .vnext-nav-symbol{color:var(--vgold)}
 .vnext-history-head{margin-top:4px;display:flex;justify-content:space-between;align-items:center;padding:0 4px;color:var(--vmuted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:800}
 .vnext-thread-search{width:100%;border:1px solid var(--vline);background:var(--vcream);color:var(--vink);border-radius:9px;padding:8px 10px;font-size:12px;outline:none}.vnext-thread-search:focus{border-color:var(--vgold)}
 .vnext-thread-list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:3px;min-height:80px}.vnext-thread{display:grid;grid-template-columns:minmax(0,1fr) 28px;align-items:center;border-radius:9px}.vnext-thread.active{background:var(--vsoft)}.vnext-thread-open{padding:9px!important;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--vmuted)!important}.vnext-thread.active .vnext-thread-open{color:var(--vink)!important;font-weight:700}.vnext-thread-rename{opacity:0;color:var(--vmuted)!important}.vnext-thread:hover .vnext-thread-rename{opacity:1}
@@ -48,4 +49,84 @@ html[data-vnext-theme="light"]{--bg:var(--vcream);--panel:var(--vpanel);--ink:va
 }
 @media(max-width:1180px){
   html.vnext-evidence-collapsed .vnext-evidence{transform:translateX(105%)}
+}
+
+
+/* Legal Pulse — visible only while an AI response is pending */
+.message.response-pending{margin-bottom:18px}
+.legal-pulse{--pulse-gold:#d8b56a;--pulse-goldhot:#ffd88b;--pulse-lilac:#7f45d9;--pulse-lilachot:#b16cff;position:relative;display:inline-flex;align-items:center;gap:6px;width:auto;max-width:100%;min-height:36px;padding:3px 8px 3px 5px;border:1px solid rgba(216,181,106,.34);border-radius:999px;background:linear-gradient(135deg,rgba(7,24,44,.96),rgba(18,36,62,.96));box-shadow:0 5px 14px rgba(4,15,29,.12);color:#fff}
+.legal-pulse-mark{position:relative;flex:none;width:36px;height:28px;display:grid;place-items:center}
+.legal-pulse-ring{position:absolute;inset:2px 1px;border:1px solid rgba(216,181,106,.58);border-radius:50%;transform:rotate(12deg);box-shadow:0 0 6px rgba(127,69,217,.18);animation:legalPulseOrbit 3.8s linear infinite}
+.legal-pulse-ring:before,.legal-pulse-ring:after{content:"";position:absolute;width:4px;height:4px;top:50%;border-radius:50%;transform:translateY(-50%)}
+.legal-pulse-ring:before{left:-2px;background:var(--pulse-lilachot);box-shadow:0 0 5px rgba(177,108,255,.8)}
+.legal-pulse-ring:after{right:-2px;background:var(--pulse-goldhot);box-shadow:0 0 5px rgba(255,216,139,.8)}
+.legal-pulse-pair{position:relative;z-index:2;display:flex;align-items:center}
+.legal-pulse-sec{display:inline-block;font-family:Georgia,"Times New Roman",serif;font-size:20px;line-height:.86;font-weight:700;transform-origin:50% 52%}
+.legal-pulse-left{color:var(--pulse-goldhot);text-shadow:0 0 5px rgba(255,216,139,.48);animation:legalPulseLeft 2.5s ease-in-out infinite}
+.legal-pulse-right{color:#d9b2ff;text-shadow:0 0 5px rgba(177,108,255,.48);animation:legalPulseRight 2.5s ease-in-out infinite}
+.legal-pulse-copy{min-width:0;color:#e8edf4;font-size:.68rem;line-height:1.2;font-weight:650;white-space:nowrap}
+.legal-pulse-dots{display:flex;gap:3px}
+.legal-pulse-dots i{width:4px;height:4px;border-radius:50%;background:#66788c;animation:legalPulseDot 1.35s ease-in-out infinite}
+.legal-pulse-dots i:nth-child(2){animation-delay:.18s}.legal-pulse-dots i:nth-child(3){animation-delay:.36s}
+@keyframes legalPulseOrbit{to{transform:rotate(372deg)}}@keyframes legalPulseLeft{0%,100%{transform:rotateY(0) rotateZ(-2deg)}50%{transform:rotateY(180deg) rotateZ(2deg)}}@keyframes legalPulseRight{0%,100%{transform:rotateY(0) rotateZ(2deg)}50%{transform:rotateY(-180deg) rotateZ(-2deg)}}@keyframes legalPulseDot{0%,100%{background:#66788c;transform:scale(.8);opacity:.55}45%{background:var(--pulse-lilachot);transform:scale(1.18);opacity:1}70%{background:var(--pulse-goldhot);transform:scale(1);opacity:.9}}
+@media(max-width:520px){.legal-pulse{gap:5px;min-height:34px;padding:3px 7px 3px 4px}.legal-pulse-mark{width:33px;height:25px}.legal-pulse-sec{font-size:18px}.legal-pulse-copy{font-size:.64rem}}
+@media(prefers-reduced-motion:reduce){.legal-pulse-ring,.legal-pulse-sec,.legal-pulse-dots i{animation:none!important}}
+
+
+/* Message action bar: visible above each message bubble, copy-first and keyboard accessible. */
+.message.has-vnext-actions{overflow:visible}
+.message.user.has-vnext-actions{background:transparent;padding:0;border-radius:0}
+.message.user.has-vnext-actions>.text{background:var(--user);padding:14px 20px;border-radius:22px 22px 5px 22px}
+.vnext-message-actions{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  max-width:100%;
+  margin:0 0 6px;
+  padding:1px 0 2px;
+  opacity:1;
+  scrollbar-width:none;
+}
+.vnext-message-actions::-webkit-scrollbar{display:none}
+.vnext-message-action{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-height:27px;
+  padding:4px 8px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--panel);
+  color:var(--muted);
+  font-size:10.5px;
+  line-height:1;
+  white-space:nowrap;
+  flex:0 0 auto;
+}
+.vnext-message-action:hover{color:var(--ink);background:var(--user);border-color:rgba(185,152,91,.55)}
+.vnext-message-action:focus-visible{outline:2px solid rgba(185,152,91,.68);outline-offset:2px}
+.message.user .vnext-message-actions{justify-content:flex-end}
+.message.assistant .vnext-message-actions{justify-content:flex-start}
+
+/* Every right-side function gets a visible leading symbol. */
+.vnext-evidence-tabs button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+}
+.vnext-evidence-tabs button span[aria-hidden="true"]{
+  width:1.05em;
+  display:inline-grid;
+  place-items:center;
+  font-weight:700;
+}
+#vnextHeaderEvidence{display:inline-flex;align-items:center;gap:5px}
+
+@media(max-width:600px){
+  .vnext-message-actions{gap:4px;margin:0 0 5px}
+  .vnext-message-action{min-height:25px;padding:4px 7px;font-size:9.5px}
+  .message.user.has-vnext-actions>.text{padding:12px 16px}
 }

@@ -1,5 +1,5 @@
 import { localGuideDocuments } from './bot-materials.mjs';
-import { detectConfidentialCasePrompt } from '../src/chat-privacy.js';
+import { detectConfidentialCasePrompt, redactConfidentialCasePrompt } from '../src/chat-privacy.js';
 import { readDeviceAccess, saveDeviceAccess, forgetDeviceAccess } from './bot-device-access.mjs';
 // Accessing localStorage itself can throw when browser storage is disabled.
 let deviceStorage;
@@ -13,7 +13,8 @@ const welcome = $('welcome').cloneNode(true);
 
 function status(text) { $('status').textContent = text; }
 function busy(value) {
-  $('send').disabled = value;
+  const hasQuestion = String($('question')?.value || '').trim().length >= 2;
+  $('send').disabled = value || (!!key && !hasQuestion);
   $('stop').hidden = !value;
   $('send').hidden = value;
   $('question').disabled = value;
@@ -22,19 +23,67 @@ function busy(value) {
 }
 function message(role, text, model = '') {
   $('welcome')?.remove();
+  const normalizedText=String(text||'').trim();
+  if(role==='user'){
+    const last=$('messages')?.lastElementChild;
+    const lastText=last?.classList?.contains('user') ? String(last.querySelector('.text')?.textContent||'').trim() : '';
+    if(lastText && lastText===normalizedText) return last;
+  }
   const article = document.createElement('article');
   article.className = 'message ' + role;
-  const body = document.createElement('div'); body.className = 'text'; body.textContent = text;
+  const body = document.createElement('div'); body.className = 'text'; body.textContent = normalizedText;
   article.append(body);
   if (model) { const meta = document.createElement('small'); meta.textContent = model; article.append(meta); }
   $('messages').append(article);
   article.scrollIntoView({block:'end'});
   return article;
 }
-function sources(article, data, guides = []) {
-  // Guides matched in the browser are sent to the server as context, so the reader sees them as sources too.
-  const guideRows = guides.map(g => ({title: 'Водич: ' + (g.title || g.id), url: g.url ? new URL(g.url, location.origin).href : ''}));
-  const rows = [...['sources','legalSources','caseLawSources','guideSources','publicationSources'].flatMap(k => Array.isArray(data[k]) ? data[k] : []), ...guideRows];
+function ensureLegalPulseStyles() {
+  if (document.getElementById('legalPulseRuntimeStyle')) return;
+  const style = document.createElement('style');
+  style.id = 'legalPulseRuntimeStyle';
+  style.textContent = `
+    .message.response-pending{margin-bottom:18px}
+    .legal-pulse{--pulse-gold:#d8b56a;--pulse-goldhot:#ffd88b;--pulse-lilachot:#b16cff;position:relative;display:inline-flex;align-items:center;gap:6px;width:auto;max-width:100%;min-height:36px;padding:3px 8px 3px 5px;border:1px solid rgba(216,181,106,.34);border-radius:999px;background:linear-gradient(135deg,rgba(7,24,44,.96),rgba(18,36,62,.96));box-shadow:0 5px 14px rgba(4,15,29,.12);color:#fff}
+    .legal-pulse-mark{position:relative;flex:none;width:36px;height:28px;display:grid;place-items:center}
+    .legal-pulse-ring{position:absolute;inset:2px 1px;border:1px solid rgba(216,181,106,.58);border-radius:50%;transform:rotate(12deg);box-shadow:0 0 6px rgba(127,69,217,.18);animation:legalPulseOrbit 3.8s linear infinite}
+    .legal-pulse-ring:before,.legal-pulse-ring:after{content:"";position:absolute;width:4px;height:4px;top:50%;border-radius:50%;transform:translateY(-50%)}
+    .legal-pulse-ring:before{left:-2px;background:var(--pulse-lilachot);box-shadow:0 0 5px rgba(177,108,255,.8)}
+    .legal-pulse-ring:after{right:-2px;background:var(--pulse-goldhot);box-shadow:0 0 5px rgba(255,216,139,.8)}
+    .legal-pulse-pair{position:relative;z-index:2;display:flex;align-items:center}
+    .legal-pulse-sec{display:inline-block;font-family:Georgia,"Times New Roman",serif;font-size:20px;line-height:.86;font-weight:700;transform-origin:50% 52%}
+    .legal-pulse-left{color:var(--pulse-goldhot);text-shadow:0 0 5px rgba(255,216,139,.48);animation:legalPulseLeft 2.5s ease-in-out infinite}
+    .legal-pulse-right{color:#d9b2ff;text-shadow:0 0 5px rgba(177,108,255,.48);animation:legalPulseRight 2.5s ease-in-out infinite}
+    .legal-pulse-copy{min-width:0;color:#e8edf4;font-size:.68rem;line-height:1.2;font-weight:650;white-space:nowrap}
+    .legal-pulse-dots{display:flex;gap:3px}.legal-pulse-dots i{width:4px;height:4px;border-radius:50%;background:#66788c;animation:legalPulseDot 1.35s ease-in-out infinite}
+    .legal-pulse-dots i:nth-child(2){animation-delay:.18s}.legal-pulse-dots i:nth-child(3){animation-delay:.36s}
+    @keyframes legalPulseOrbit{to{transform:rotate(372deg)}}@keyframes legalPulseLeft{0%,100%{transform:rotateY(0) rotateZ(-2deg)}50%{transform:rotateY(180deg) rotateZ(2deg)}}@keyframes legalPulseRight{0%,100%{transform:rotateY(0) rotateZ(2deg)}50%{transform:rotateY(-180deg) rotateZ(-2deg)}}@keyframes legalPulseDot{0%,100%{background:#66788c;transform:scale(.8);opacity:.55}45%{background:var(--pulse-lilachot);transform:scale(1.18);opacity:1}70%{background:var(--pulse-goldhot);transform:scale(1);opacity:.9}}
+    @media(max-width:520px){.legal-pulse{gap:5px;min-height:34px;padding:3px 7px 3px 4px}.legal-pulse-mark{width:33px;height:25px}.legal-pulse-sec{font-size:18px}.legal-pulse-copy{font-size:.64rem}}
+    @media(prefers-reduced-motion:reduce){.legal-pulse-ring,.legal-pulse-sec,.legal-pulse-dots i{animation:none!important}}
+  `;
+  document.head.append(style);
+}
+
+function responsePulse() {
+  ensureLegalPulseStyles();
+  $('welcome')?.remove();
+  const article = document.createElement('article');
+  article.className = 'message assistant response-pending';
+  article.setAttribute('role','status');
+  article.setAttribute('aria-live','polite');
+  article.setAttribute('aria-label','AI Advokat го подготвува одговорот');
+  const pulse = document.createElement('div');
+  pulse.className = 'legal-pulse';
+  pulse.innerHTML = '<span class="legal-pulse-mark" aria-hidden="true"><span class="legal-pulse-ring"></span><span class="legal-pulse-pair"><span class="legal-pulse-sec legal-pulse-left">§</span><span class="legal-pulse-sec legal-pulse-right">§</span></span></span><span class="legal-pulse-copy">AI Advokat подготвува одговор…</span><span class="legal-pulse-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
+  article.append(pulse);
+  $('messages').append(article);
+  article.scrollIntoView({block:'end'});
+  return article;
+}
+function sources(article, data) {
+  // Display only source rows returned by the governed backend. Browser-side guide
+  // matches are routing hints, not proof that the final answer relied on a guide.
+  const rows = ['sources','legalSources','caseLawSources','guideSources','publicationSources'].flatMap(k => Array.isArray(data[k]) ? data[k] : []);
   const details = document.createElement('details'); details.className = 'sources';
   const summary = document.createElement('summary'); summary.textContent = 'Извори'; details.append(summary);
   const seen = new Set();
@@ -102,6 +151,7 @@ $('loginForm').onsubmit = async event => {
     const remembered = $('rememberAccess').checked && saveDeviceAccess(deviceStorage,candidate);
     busy(false); $('login').close();
     status('Професионален пристап · ' + data.membership.planCode + ' · OpenAI се проверува при секое барање.');
+    if ($('question').value.trim().length >= 2) $('send').disabled = false;
     if ($('rememberAccess').checked && !remembered) status('Пристапот е активен, но прелистувачот не дозволува да се запомни.');
     $('question').focus();
   } catch { $('loginStatus').textContent = 'Клучот не е активен или услугата не е достапна. Обидете се повторно.'; }
@@ -110,7 +160,11 @@ $('loginForm').onsubmit = async event => {
 $('newChat').onclick = () => { reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Внесете професионален клуч преку ⋯.'); };
 $('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Сесијата и зачуваниот пристап се избришани.'); };
 $('stop').onclick = () => pending?.abort();
-$('question').oninput = () => { $('question').style.height = 'auto'; $('question').style.height = Math.min($('question').scrollHeight,180) + 'px'; };
+$('question').oninput = () => {
+  $('question').style.height = 'auto';
+  $('question').style.height = Math.min($('question').scrollHeight,180) + 'px';
+  if (!pending) $('send').disabled = !!key && $('question').value.trim().length < 2;
+};
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
 const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (!SpeechRecognitionCtor) $('mic').hidden = true;
@@ -133,31 +187,54 @@ $('composer').addEventListener('dragover', event => event.preventDefault());
 $('composer').addEventListener('drop', event => { event.preventDefault(); $('plus').open = true; status('Документите се прикачуваат во приватниот простор преку „+“.'); });
 $('composer').onsubmit = async event => {
   event.preventDefault(); const q = $('question').value.trim();
-  if (pending || q.length < 2) return;
-  if (!key) { status('Најпрво внесете го вашиот приватен код за влез.'); $('access').click(); return; }
-  if (detectConfidentialCasePrompt(q).confidential) {
-    $('question').value = ''; $('plus').open = true;
-    status('Ова личи на доверлив предмет. Не е испратено. Продолжете во приватниот простор преку „+“.'); return;
+  if (pending) return;
+  if (!key) {
+    status('Најпрво внесете го вашиот приватен код за влез.');
+    $('access').click();
+    return;
   }
+  if (q.length < 2) return;
+
+  let outboundQ=q, privacyRedacted=false;
+  const privacy=detectConfidentialCasePrompt(q);
+  if (privacy.confidential) {
+    const redacted=redactConfidentialCasePrompt(q);
+    if (redacted.changed && redacted.safeToSend) {
+      outboundQ=redacted.text;
+      privacyRedacted=true;
+    } else {
+      status('Овој текст содржи доверливи детали што не можам сигурно да ги маскирам автоматски. Ништо не е испратено. Можете да ги отстраните идентификаторите и повторно да испратите, или да го користите „+“ само ако точните податоци се неопходни за документот.');
+      return;
+    }
+  }
+
   const epoch = generation, controller = new AbortController(); pending = controller; busy(true);
   const timeout = setTimeout(() => controller.abort(),180000);
-  message('user',q); $('question').value = ''; $('question').style.height = '';
-  status('Ги проверувам материјалите и го подготвувам одговорот…');
+  message('user',outboundQ); $('question').value = ''; $('question').style.height = '';
+  const pulse = responsePulse();
+  status(privacyRedacted
+    ? 'Чувствителните идентификатори се маскирани локално и оригиналните вредности не се испратени. Го подготвувам одговорот…'
+    : 'Ги проверувам материјалите и го подготвувам одговорот…');
   try {
-    const guides = await guideMatches(q,controller.signal), ids = guides.map(g => g.id);
+    const guides = await guideMatches(outboundQ,controller.signal), ids = guides.map(g => g.id);
     const guideDocuments = await localGuideDocuments(window.AIAdvokatGuideVault,ids,$('useLocalGuides').checked);
-    const data = await request('/api/bot',{signal:controller.signal,body:{q,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
+    const data = await request('/api/bot',{signal:controller.signal,body:{q:outboundQ,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
-    const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data,guides);
-    history.push({role:'user',text:q},{role:'assistant',text:String(data.answer || '').slice(0,4000)}); history = history.slice(-24);
-    status('Одговорот е работен материјал. Проверете ги наведените извори.');
+    pulse.remove();
+    const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data);
+    history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
+    status(privacyRedacted
+      ? 'Одговорот е работен материјал. Личните идентификатори беа маскирани локално и не беа испратени.'
+      : 'Одговорот е работен материјал. Проверете ги наведените извори.');
   } catch (error) {
+    pulse.remove();
     if (epoch !== generation) return;
     if (error.status === 401) { key = ''; forgetDeviceAccess(deviceStorage); status('Пристапот истекол. Внесете активен код преку ⋯.'); }
     else if (error.name === 'AbortError') status('Барањето е запрено или истече времето за одговор. Можете да се обидете повторно.');
     else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
     $('question').value = q;
   } finally {
+    pulse.remove();
     clearTimeout(timeout);
     if (epoch === generation) { pending = null; busy(false); $('question').focus(); }
   }
@@ -177,6 +254,9 @@ async function restoreAccess() {
     status('Пристапот не може да се потврди. Отворете ⋯ → Професионален пристап.');
   }
 }
+// Ensure a fresh device can type and submit a question even before access is restored.
+// If no key exists, submit opens the governed professional-access dialog instead of appearing inert.
+busy(false);
 restoreAccess();
 async function exportLatestAssistant(format) {
   const latest=[...history].reverse().find(item=>item.role==='assistant' && String(item.text||'').trim());
