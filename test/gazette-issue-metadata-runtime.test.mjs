@@ -32,6 +32,13 @@ test("GIM2 parser recognises exact Gazette number/year and date",()=>{
   assert.equal(d.usable,true);
 });
 
+test("GIM2b parser tolerates natural Macedonian inflection and common veslnik typo",()=>{
+  const q=extractGazetteIssueNeedles("Те молам достави ми ги дата податоците од Службениот веслник број 1 од 2009 година");
+  assert.deepEqual(q,{issueNumber:"1",year:"2009",issueDate:null,explicitSignal:true,usable:true});
+  const correct=extractGazetteIssueNeedles("Службениот весник број 1 од 2009 година");
+  assert.deepEqual(correct,{issueNumber:"1",year:"2009",issueDate:null,explicitSignal:true,usable:true});
+});
+
 test("GIM3 metadata scoring prefers exact issue/date without creating legal authority",()=>{
   const row={publication_type:"СЛУЖБЕН ВЕСНИК НА РМ",issue_number:"72",issue_date:"2016-04-12",year:2016};
   assert.ok(scoreGazetteIssueMetadata(row,"Службен весник 72/2016")>1000);
