@@ -175,7 +175,8 @@ export async function runWorkersAIText(env,{
   model=null,
   reasoningEffort="low",
   sessionAffinity=null,
-  timeoutMs=30000
+  timeoutMs=30000,
+  allowEmptyFallback=true
 }={}){
   if(!env?.AI || typeof env.AI.run!=="function"){
     return {ok:false,error:"workers_ai_not_configured"};
@@ -228,7 +229,7 @@ export async function runWorkersAIText(env,{
   // exposes no disable-thinking switch. For this exact empty-final condition,
   // perform one and only one fallback call with a stable non-reasoning
   // instruction model. Normal responses remain single-call.
-  if(!text){
+  if(!text && allowEmptyFallback){
     const fallbackModel=resolveWorkersAIEmptyFallbackModel(env);
     activeModel=fallbackModel;
     modelFallback={
