@@ -7,9 +7,25 @@ let saveDeviceAccess = () => false;
 let forgetDeviceAccess = () => {};
 window.AIAdvokatCoreDependencies = Object.freeze({materials:'loading',privacy:'loading',access:'loading'});
 
+async function loadPrivacyRuntime(){
+  try {
+    return await import('./chat-privacy-browser.js?v=20261101-privacy-r12');
+  } catch (primaryError) {
+    try {
+      const legacy = await import('/src/chat-privacy.js?v=20261101-privacy-compat-r1');
+      try { console.warn('ai_advokat_privacy_runtime_fallback','legacy_bridge_used'); } catch {}
+      return legacy;
+    } catch (legacyError) {
+      const error = new Error('privacy_runtime_unavailable');
+      error.cause = { primaryError, legacyError };
+      throw error;
+    }
+  }
+}
+
 const dependenciesReady = Promise.allSettled([
   import('./bot-materials.mjs'),
-  import('./chat-privacy-browser.js?v=20261101-privacy-r11'),
+  loadPrivacyRuntime(),
   import('./bot-device-access.mjs'),
 ]).then(results => {
   const materialsModule = results[0].status === 'fulfilled' ? results[0].value : {};
