@@ -73,9 +73,9 @@ jobs:
           const EXPECTED_FREE_FALLBACK_MODEL="@cf/meta/llama-3.3-70b-instruct-fp8-fast";
           const EXPECTED_PAID_MODEL="gpt-6.1-sol";
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
-          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V11_STRICT";
+          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V12_LANGUAGE_FIREWALL";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
-          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V9";
+          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V10_LANGUAGE_FIREWALL";
           const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
           const EXPECTED_FINAL_OUTPUT_GATE="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
           const EXPECTED_FREE_PROVIDER_CONTRACT="WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT";
@@ -93,7 +93,7 @@ jobs:
                   && data?.ok===true
                   && caps.centralOperatingPrompt===EXPECTED_PROMPT
                   && caps.macedonianLanguageGuard===EXPECTED_LANGUAGE
-                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V7_STRICT_ORTHOGRAPHY"
+                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V8_LANGUAGE_FIREWALL"
                   && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V3"
                   && caps.canonicalRootReleaseContract==="AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1"
                   && caps.canonicalMetadataStandard===EXPECTED_METADATA
@@ -192,14 +192,15 @@ jobs:
               console.log(label+" performance: deterministic corpus · providerCalls=0");
             }else if(data.provider==="workers_ai_free"){
               const calls=Number(data?.performance?.providerCalls||0);
-              if(calls<1 || calls>2){
+              const maxCalls=data?.performance?.languageEditorRequired===true ? 3 : 2;
+              if(calls<1 || calls>maxCalls){
                 throw new Error(label+" FREE provider call budget violated: "+JSON.stringify(data.performance));
               }
               const latency=Number(data?.performance?.serverLatencyMs||0);
               if(!Number.isFinite(latency) || latency<=0){
                 throw new Error(label+" FREE server latency telemetry missing: "+JSON.stringify(data.performance));
               }
-              const scenarioBudget={basic:15000,"employment-definition":15000,reminder:25000,draft:30000,"valid-mk-legal":15000,"wrong-language-correction":20000}[label]||45000;
+              const scenarioBudget={basic:15000,"employment-definition":30000,reminder:35000,draft:45000,"valid-mk-legal":30000,"typo-criminal-draft":45000,"wrong-language-correction":30000}[label]||45000;
               if(latency>scenarioBudget){
                 throw new Error(label+" FREE server latency budget exceeded: "+latency+"ms > "+scenarioBudget+"ms");
               }
@@ -320,8 +321,34 @@ jobs:
 
           // Respect the real production burst limit (5 AI requests / 60s).
           // The UAT must test the limiter, not accidentally trip it and report a false runtime regression.
-          console.log("waiting for production burst window reset before wrong-language correction");
+          console.log("waiting for production burst window reset before language-firewall regressions");
           await new Promise(resolve=>setTimeout(resolve,61000));
+
+          {
+            const {answer,data}=await chat({
+              q:"Здраво AI Advokat. Те молам направи ми Туѓба за кражба на велосипед, со измислени податоци."
+            },"typo-criminal-draft");
+            const lower=answer.toLocaleLowerCase("mk");
+            if(/директна примера|зајава за истрага/iu.test(answer)){
+              throw new Error("typo-criminal-draft retained the reported malformed language: "+answer.slice(0,1200));
+            }
+            if(/^\s*ТУЖБА\b/mu.test(answer)){
+              throw new Error("typo-criminal-draft incorrectly forced a civil lawsuit heading: "+answer.slice(0,1200));
+            }
+            if(!/РАБОТЕН НАЦРТ|процесен инструмент/iu.test(answer)){
+              throw new Error("typo-criminal-draft missing procedural-instrument safety framing: "+answer.slice(0,1200));
+            }
+            if(data.provider==="workers_ai_free"){
+              if(data?.performance?.compactDraftUsed!==true) throw new Error("typo-criminal-draft did not enter formal draft lane: "+JSON.stringify(data.performance));
+              if(data?.performance?.languageEditorRequired!==true || data?.performance?.languageEditorPassed!==true){
+                throw new Error("typo-criminal-draft language editor gate missing: "+JSON.stringify(data.performance));
+              }
+              if(!data?.performance?.languageEditorModel || data.performance.languageEditorModel===data.model){
+                throw new Error("typo-criminal-draft editor was not independently modelled: "+JSON.stringify({model:data.model,performance:data.performance}));
+              }
+            }
+            console.log("typo-criminal-draft: PASS · "+answer.replace(/\s+/g," ").slice(0,180));
+          }
 
           {
             const {answer}=await chat({
