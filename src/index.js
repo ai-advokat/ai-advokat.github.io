@@ -4827,6 +4827,45 @@ export function professionalCanonicalArticleFallback({q,articleBundle,missionPro
   });
 }
 
+
+export function professionalExactArticleSourceGapFallback({q,articleBundle,missionProfile,explicitWebRequested=false,attachmentCount=0,guideDocumentCount=0}={}){
+  if(explicitWebRequested===true) return null;
+  if(!["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(String(missionProfile||""))) return null;
+  if(Number(attachmentCount||0)>0 || Number(guideDocumentCount||0)>0) return null;
+  const requested=exactArticleNumberFromQuestion(q);
+  if(!requested) return null;
+
+  const state=String(articleBundle?.state||"");
+  const versionGapStates=new Set([
+    "version_required",
+    "version_ambiguous",
+    "version_metadata_missing",
+    "version_date_unverifiable",
+    "version_not_applicable_on_date",
+    "version_not_yet_applicable",
+    "version_no_longer_applicable"
+  ]);
+  if(!versionGapStates.has(state)) return null;
+
+  const instrument=articleBundle?.instrument||{};
+  const title=String(instrument?.title||"релевантниот закон");
+  const reason=VERSION_ERROR_MESSAGES[state]||"Верзијата на законот не може безбедно да се утврди од governed corpus.";
+  const answer=[
+    "Не можам безбедно да го прикажам член "+requested+" од "+title+" како важечки текст во оваа сесија.",
+    "",
+    "Причина: "+reason,
+    "",
+    "Што можам да потврдам:",
+    "• Законот е идентификуван: "+title+".",
+    "• Бараниот член е: "+requested+".",
+    "• AI Advokat не избира произволно една од повеќе верзии и не измислува важечка содржина.",
+    "",
+    "Следен безбеден чекор: наведете релевантен датум или користете Auto/Web проверка на официјален извор за да се утврди точната применлива верзија. До тогаш, ова е SOURCE/VERSION GAP, а не правен одговор за важечката содржина на членот."
+  ].join("\n");
+
+  return Object.freeze({answer,state,requested,instrument,reason});
+}
+
 function decodeBase64Bytes(raw){
   const value=String(raw||"");
   if(!value || !/^[A-Za-z0-9+/=]+$/.test(value)) return null;
@@ -5540,10 +5579,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   // mark it for proactive external verification when the paid provider/tool
   // gate is actually available. FREE Workers AI stays local/source-backed.
   const governedPrimarySupport=
-    articleBundle.context.length>0
-    || gazetteBundle.context.length>0
-    || caseLawBundle.context.length>0
-    || bureauEchrBundle.context.length>0;
+    articleBundle.state==="matched"
+    || gazetteBundle.state==="matched"
+    || caseLawBundle.state==="matched";
   const autoExternalResearchCandidate=
     uiMode==="auto"
     && initialPlan.mode!==ORCHESTRATOR_MODES.GENERAL
@@ -5972,6 +6010,17 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         })
       : null;
 
+    const exactArticleSourceGapFallback=membership
+      ? professionalExactArticleSourceGapFallback({
+          q,
+          articleBundle,
+          missionProfile,
+          explicitWebRequested,
+          attachmentCount:attachmentCheck.attachments.length,
+          guideDocumentCount:guideDocumentCheck.attachments.length
+        })
+      : null;
+
     if(canonicalArticleFallback){
       await releaseMonthlyQuota(env,{subject,period});
       reservation.used=Math.max(0,reservation.used-1);
@@ -6093,6 +6142,77 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           postflightBypassReason:"deterministic_canonical_source_fallback_no_model",
           warning:fallbackAssessment.warningMk
         } : null,
+        membership:{
+          planCode:membership.planCode,
+          monthlyQuota:quota,
+          used:reservation.used,
+          remaining:Math.max(0,quota-reservation.used)
+        }
+      });
+    }
+
+
+    if(exactArticleSourceGapFallback){
+      await releaseMonthlyQuota(env,{subject,period});
+      reservation.used=Math.max(0,reservation.used-1);
+      console.warn("openai_provider_failure_exact_article_source_gap",JSON.stringify({
+        governanceRunId:lioeRunId,
+        error:String(result.error||"provider_failure"),
+        status:Number(result.status||0)||null,
+        article:exactArticleSourceGapFallback.requested,
+        articleCorpusState:exactArticleSourceGapFallback.state,
+        missionProfile
+      }));
+      return json(request,{
+        ok:true,
+        answer:exactArticleSourceGapFallback.answer,
+        provider:null,
+        providerFallback:{
+          from:"openai",
+          reason:String(result.error||"provider_failure"),
+          httpStatus:Number(result.status||0)||null,
+          attempts:Array.isArray(result.providerAttempts)?result.providerAttempts.length:1
+        },
+        model:null,
+        conversationPersistence:"browser_session_only_app_no_server_conversation_store",
+        historyItemsUsed:historyCheck.history.length,
+        contextualFollowUp,
+        routingContextUsed:routingQuery!==q,
+        sources:[],
+        legalSources:[],
+        caseLawSources:[],
+        guideSources:[],
+        publicationSources:[],
+        webSearchUsed:false,
+        mode:plan.mode,
+        displayMode:"professional_exact_article_source_gap",
+        sourceMode:"exact_article_version_gap_provider_fallback",
+        corpusContextCount:articleBundle.context.length,
+        articleCorpusContextCount:articleBundle.context.length,
+        articleCorpusState:articleBundle.state,
+        articleCorpus:articleBundle.instrument ? {
+          instrument:articleBundle.instrument,
+          version:articleBundle.version,
+          versionBasis:articleBundle.versionBasis
+        } : null,
+        reasoningEffort:"deterministic_source_gap",
+        maxOutputTokens:0,
+        humanGate:"Current-law version is unresolved. Verify the official source/version before professional reliance.",
+        governanceRunId:lioeRunId,
+        runtimeTelemetry:"source_gap_no_legal_answer",
+        legalGovernance:{
+          engine:"AI_ADVOKAT_LIOE_v1",
+          missionProfile,
+          sourceVerificationState:"PENDING",
+          temporalVerificationState:"PENDING",
+          jurisdictionVerificationState:"VERIFIED",
+          verificationState:"SOURCE_VERSION_GAP",
+          releaseState:"SOURCE_GAP_RESEARCH_ONLY",
+          executionAuthorization:"RESEARCH_OUTPUT_ONLY",
+          humanReviewRequired:true,
+          postflightRequired:false,
+          postflightBypassReason:"no_legal_answer_released"
+        },
         membership:{
           planCode:membership.planCode,
           monthlyQuota:quota,
