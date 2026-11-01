@@ -5774,7 +5774,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     ]);
     const transientStatus=Number(result.status||0);
     const retryableResponseStatus=result.error==="openai_response_error"
-      && [429,500,502,503,504].includes(transientStatus);
+      && [408,429,500,502,503,504].includes(transientStatus);
     const retryable=transientPrimaryErrors.has(String(result.error||""))
       && (result.error!=="openai_response_error" || retryableResponseStatus)
       && (professionalRequestDeadlineAt-Date.now()>=10000);
