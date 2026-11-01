@@ -797,7 +797,9 @@ describe("production AI binding guard", () => {
     assert.match(repairHelper,/allowEmptyFallback:false/, "language editor must remain exactly one bounded model call without provider fallback");
     assert.doesNotMatch(repairHelper,/for\(let attempt=0;attempt<2 && !assessment\.ok;attempt\+\+\)/, "language repair must not use the former two-retry loop");
     assert.match(repairHelper,/language_quality_blocked_after_editor/, "residual language defects must fail closed after the bounded editor pass");
-    assert.match(repairHelper,/mandatory_language_editor_failed/, "mandatory editor failure must fail closed");
+    assert.match(repairHelper,/editor_unavailable_canonical_clean_fallback/, "editor outage may fall back only to an independently canonical-clean pre-editor text");
+    assert.match(repairHelper,/if\(releaseVerdict\.verdict===\"RELEASE\"\)/, "canonical-clean fallback must be explicitly gated on RELEASE");
+    assert.match(repairHelper,/mandatory_language_editor_failed/, "editor failure must still fail closed when the pre-editor text is not canonical-clean");
 
     const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function handleGPTChat("));
     assert.equal((helper.match(/runWorkersAIText\(/g) || []).length, 1, "FREE public helper delegates one primary generation to the central provider contract");
@@ -958,5 +960,7 @@ test("production language firewall P2 uses a dedicated editor and a deterministi
   assert.match(src,/forceEditorialPass:languageRequired/);
   assert.match(src,/deterministicProceduralInstrumentFallback/);
   assert.match(src,/deterministicLanguageFallbackUsed/);
+  assert.match(src,/languageEditorFallbackUsed/);
+  assert.match(src,/editor_unavailable_canonical_clean_fallback/);
   assert.match(src,/freeLanguageEditorModel:freeWorkersAIConfigured\(env\)/);
 });
