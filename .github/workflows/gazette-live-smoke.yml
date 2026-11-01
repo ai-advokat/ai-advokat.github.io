@@ -58,6 +58,44 @@ jobs:
           console.log(JSON.stringify({hybrid:s.counts,registerCount:r.count,chunkState:c.state,chunkCount:c.count},null,2));
           NODE
 
+      - name: Verify exact main-chat Gazette metadata answer
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          code="$(curl -sS --retry 5 --retry-delay 3 --max-time 60 -w "%{http_code}" -o /tmp/gazette-chat.json \
+            -H 'content-type: application/json' \
+            -H 'Origin: https://ai-advokat.github.io' \
+            -d '{"q":"Да те замолам да ми дадеш мета дата податоци од Службен весник број. 1 од 2016 година, со почит","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
+            "$BASE/api/chat")"
+          test "$code" = "200"
+          node - <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync("/tmp/gazette-chat.json","utf8"));
+          if(!d.ok) throw new Error("gazette main chat returned ok=false: "+JSON.stringify(d));
+          if(d.provider!=="canonical_corpus_no_model") throw new Error("unexpected provider: "+d.provider);
+          if(d.sourceMode!=="canonical_gazette_issue_metadata_no_model") throw new Error("unexpected sourceMode: "+d.sourceMode);
+          const a=String(d.answer||"");
+          for(const needle of [
+            "Вид на издание:",
+            "Број на издание: 1/2016",
+            "05.01.2016 (2016-01-05)",
+            "Dataset ID:",
+            "Resource ID:",
+            "Snapshot SHA-256:",
+            "Авторитет за текст на акт/член: НЕ",
+            "Авторитет за тековно важечко право: НЕ",
+            "metadata индексот не смее да ја измислува"
+          ]) if(!a.includes(needle)) throw new Error("missing Gazette answer field: "+needle);
+          const rows=Array.isArray(d.gazetteIssueMetadata)?d.gazetteIssueMetadata:[];
+          if(rows.length<1) throw new Error("structured gazetteIssueMetadata missing");
+          const g=rows[0];
+          if(String(g.issueNumber)!=="1" || Number(g.year)!==2016 || String(g.issueDate)!=="2016-01-05") throw new Error("wrong canonical issue identity");
+          if(!g.datasetId || !g.resourceId || !g.snapshotSha256) throw new Error("provenance identifiers missing");
+          if(g.legalTextAuthority!==false || g.currentLawAuthority!==false) throw new Error("metadata authority boundary widened");
+          if(!String(d.humanGate||"").includes("Metadata only.") || !String(d.humanGate||"").includes("официјалниот текст")) throw new Error("Gazette Human Gate boundary missing");
+          console.log("MAIN CHAT GAZETTE 1/2016 COMPLETE METADATA: PASS");
+          NODE
+
       - name: Verify public Gazette portal
         run: |
           set -euo pipefail
