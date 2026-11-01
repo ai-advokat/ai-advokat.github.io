@@ -48,7 +48,7 @@ jobs:
         run: |
           npm install --ignore-scripts --no-audit --no-fund
           sudo apt-get update
-          sudo apt-get install -y poppler-utils
+          sudo apt-get install -y poppler-utils mupdf-tools
 
       - name: Verify exact Human Gate authorization
         shell: bash
