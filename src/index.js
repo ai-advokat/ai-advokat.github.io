@@ -3785,7 +3785,7 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
   if(!finalRelease.ok){
     return {
       ok:false,
-      error:"foreign_jurisdiction_substitution_blocked",
+      error:"macedonian_language_release_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:"private_case_final_last_mile_language_gate_failed",
       releaseGate:finalRelease.releaseGate,
@@ -5042,11 +5042,34 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     }
   }
 
-  // Product policy: language quality is a QA signal, not a reason to suppress
-  // an otherwise useful legal answer. Deterministic cleanup is the only runtime
-  // language repair step; no second provider call is spent on style-only repair.
-  // Substantive foreign-jurisdiction substitution is handled by the final
-  // delivery policy as a legal-safety blocker.
+  // Pravopis 2017 strict mode: one bounded language-only repair attempt is
+  // allowed after deterministic cleanup. It may not add law, facts or sources.
+  if(allowProviderRepair && env?.AI){
+    const repairResult=await runWorkersAIText(env,{
+      messages:buildMacedonianRepairMessages({text:current||original,userText}),
+      maxOutputTokens:Math.max(500,Math.min(3200,Number(maxOutputTokens)||1800)),
+      temperature:0,
+      sessionAffinity,
+      timeoutMs:12000
+    });
+    if(repairResult.ok && String(repairResult.text||"").trim()){
+      const repairedText=normaliseMacedonianGeneratedText(String(repairResult.text||"").trim());
+      const repairedAssessment=assessMacedonianOutput(repairedText,{userText});
+      const repairedVerdict=macedonianReleaseVerdict(repairedText,{userText});
+      return {
+        text:repairedText,
+        repaired:true,
+        deterministicCleanupApplied,
+        providerCalls:Number(repairResult.providerCalls||1),
+        languageAssessment:repairedAssessment,
+        releaseVerdict:repairedVerdict,
+        repairError:repairedVerdict.verdict==="RELEASE"?null:"language_quality_blocked_after_repair"
+      };
+    }
+  }
+
+  // Strict professional release: residual detected language contamination is
+  // not released. The last-mile delivery gate will fail closed.
   return {
     text:current||original,
     repaired:current!==original,
@@ -5054,7 +5077,7 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     providerCalls:0,
     languageAssessment:assessment,
     releaseVerdict,
-    repairError:releaseVerdict.verdict==="RELEASE"?null:"language_quality_warning"
+    repairError:releaseVerdict.verdict==="RELEASE"?null:"language_quality_blocked"
   };
 }
 
@@ -5191,7 +5214,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   if(!finalRelease.ok){
     return {
       ok:false,
-      error:"foreign_jurisdiction_substitution_blocked",
+      error:"macedonian_language_release_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:"final_last_mile_language_gate_failed",
       releaseGate:finalRelease.releaseGate,
