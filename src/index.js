@@ -4709,9 +4709,25 @@ function openAIFailureEligibleForWorkersFallback(result,{explicitWebRequested=fa
   return OPENAI_TO_WORKERS_FALLBACK_ERRORS.has(error);
 }
 
+function articleNumbersFromQuestion(q){
+  const text=String(q||"").normalize("NFKC");
+  const found=[];
+  const add=value=>{
+    const n=normalizeText(value||"").replace(/[–—−‑]/g,"-").replace(/\s+/g,"");
+    if(n && !found.includes(n)) found.push(n);
+  };
+  for(const match of text.matchAll(/(?:член(?:от|ови|овите)?|article(?:s)?)\s*([0-9]+(?:[-–—−‑][\p{L}]+)?)/giu)){
+    add(match[1]);
+  }
+  for(const match of text.matchAll(/(?:членови|членовите|articles)\s+([0-9]+(?:[-–—−‑][\p{L}]+)?(?:\s*(?:,|и|and)\s*[0-9]+(?:[-–—−‑][\p{L}]+)?)*)/giu)){
+    for(const n of String(match[1]||"").match(/[0-9]+(?:[-–—−‑][\p{L}]+)?/gu)||[]) add(n);
+  }
+  return found;
+}
+
 function exactArticleNumberFromQuestion(q){
-  const match=String(q||"").normalize("NFKC").match(/(?:член(?:от)?|article)\s*([0-9]+(?:[-–—][\p{L}]+)?)/iu);
-  return match ? normalizeText(match[1]).replace(/[–—]/g,"-").replace(/\s+/g,"") : null;
+  const numbers=articleNumbersFromQuestion(q);
+  return numbers.length===1 ? numbers[0] : null;
 }
 
 export function professionalCanonicalArticleFallback({q,articleBundle,missionProfile,explicitWebRequested=false,attachmentCount=0,guideDocumentCount=0}={}){
@@ -4734,7 +4750,10 @@ export function professionalCanonicalArticleFallback({q,articleBundle,missionPro
     .find(s=>normalizeText(s?.articleNumber||"").replace(/[–—]/g,"-").replace(/\s+/g,"")===requested)
     || (Array.isArray(articleBundle?.legalSources)?articleBundle.legalSources[0]:null)
     || null;
-  const rawText=String(articleTextForLegalSynthesis(article)||"").trim();
+  // Exact-text fallback must use the raw source-faithful article text. A reviewed
+  // derived representation is useful for synthesis, but it must never be silently
+  // presented as verbatim statutory text when the provider is unavailable.
+  const rawText=String(article?.text||article?.article_text||"").trim();
   if(!rawText) return null;
 
   const version=articleBundle?.version||{};
@@ -4751,6 +4770,17 @@ export function professionalCanonicalArticleFallback({q,articleBundle,missionPro
   const sourceDate=article?.sourceIssueDate||source?.sourceIssueDate||null;
   const sourceUrl=article?.sourceUrl||source?.url||null;
   const heading=String(article?.heading||"").trim();
+  const overlays=Array.isArray(article?.legalStatusOverlays)?article.legalStatusOverlays:[];
+  const overlayLines=overlays.map(overlay=>{
+    const warning=String(overlay?.warningMk||"").trim();
+    const meta=[
+      overlay?.type ? "тип: "+String(overlay.type) : null,
+      overlay?.caseNumber ? "предмет: "+String(overlay.caseNumber) : null,
+      overlay?.statusAsOf||overlay?.asOf ? "статус проверен до: "+String(overlay.statusAsOf||overlay.asOf) : null,
+      overlay?.legalEffect ? "правен ефект: "+String(overlay.legalEffect) : null
+    ].filter(Boolean).join(" · ");
+    return "• "+(warning||meta||"Постои посебно legal-status предупредување за овој член.")+(warning&&meta ? " ["+meta+"]" : "");
+  });
 
   const answer=[
     "Член "+String(article.articleNumber||requested)+" од "+String(instrument.title||"релевантниот закон"),
@@ -4765,6 +4795,7 @@ export function professionalCanonicalArticleFallback({q,articleBundle,missionPro
     sourceUrl ? "• Официјален/канонски извор во corpus: "+String(sourceUrl) : null,
     "• Article Human Gate: "+String(article?.humanReviewStatus||"pending"),
     "• Version Human Gate: "+String(version?.humanReviewStatus||"pending"),
+    ...(overlayLines.length ? ["","Посебни legal-status предупредувања:",...overlayLines] : []),
     "",
     currentVerified
       ? "Статус: оваа article-level верзија е Human-Gate потврдена како тековна во AI Advokat. И понатаму е потребна професионална човечка проверка пред последично правно дејство."
