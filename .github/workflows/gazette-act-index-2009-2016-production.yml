@@ -1,0 +1,237 @@
+name: Gazette act-index 2009 and 2016 production activation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/activation/gazette-act-index-2009-2016-production-request.json"
+      - ".github/workflows/gazette-act-index-2009-2016-production.yml"
+      - "scripts/gazette_backfill_wave1.py"
+      - "scripts/gazette_act_index_sql.py"
+      - "src/gazette-issue-contents.js"
+      - "src/index.js"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gazette-act-index-2009-2016-production
+  cancel-in-progress: false
+
+jobs:
+  activate-act-index:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling and PDF parser
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Verify explicit act-index authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync(".github/activation/gazette-act-index-2009-2016-production-request.json","utf8"));
+          if(d.activation_authorized!==true) throw new Error("act-index activation not authorized");
+          if(d.act_index_metadata_promotion_authorized!==true) throw new Error("act-index metadata promotion not authorized");
+          if(d.full_text_promotion_authorized!==false) throw new Error("full text must remain locked");
+          if(d.current_law_promotion_authorized!==false) throw new Error("current-law promotion must remain locked");
+          if(JSON.stringify(d.years)!==JSON.stringify([2009,2016])) throw new Error("unexpected year set");
+          if(d.human_review_status_on_ingest!=="pending") throw new Error("ingest must remain pending Human Gate");
+          if(d.production_worker!=="ai-advokat-github-io" || d.production_database!=="ai-advokat-db") throw new Error("unexpected production target");
+          console.log("GAZETTE ACT-INDEX AUTHORIZATION: PASS");
+          NODE
+
+      - name: Harvest official 2009 chronological register
+        run: |
+          python3 scripts/gazette_backfill_wave1.py \
+            --from-year 2009 --to-year 2009 \
+            --out /tmp/gazette-2009 --delay 0.5
+
+      - name: Harvest official 2016 chronological register
+        run: |
+          python3 scripts/gazette_backfill_wave1.py \
+            --from-year 2016 --to-year 2016 \
+            --out /tmp/gazette-2016 --delay 0.5
+
+      - name: Validate zero-unresolved register extraction
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for year in (2009,2016):
+              d=json.loads(Path(f"/tmp/gazette-{year}/summary.json").read_text())
+              row=next(x for x in d["years"] if int(x["year"])==year)
+              assert str(row["status"]).startswith("parsed"), row
+              assert int(row.get("act_count",0))>0, row
+              assert int(row.get("unresolved_count",0))==0, row
+              assert len(str(row.get("register_sha256","")))==64, row
+              assert str(row.get("register_url","")).startswith("http"), row
+              print(year,row["status"],row["act_count"],row.get("referenced_issue_count"))
+          PY
+
+      - name: Reconcile referenced issue numbers with reviewed official issue-metadata backbone
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          values=[]
+          expected={}
+          for year in (2009,2016):
+              acts=[json.loads(x) for x in Path(f"/tmp/gazette-{year}/acts/{year}.ndjson").read_text().splitlines() if x.strip()]
+              issues=sorted({str(x["issue_number"]) for x in acts},key=lambda x:int(x))
+              expected[year]=issues
+              values.extend(f"({year},'{x.replace(chr(39),chr(39)*2)}')" for x in issues)
+          sql="WITH expected(year,issue_number) AS (VALUES "+",".join(values)+""")
+SELECT COUNT(*) AS missing_count
+FROM expected e
+LEFT JOIN gazette_issue_metadata g ON g.year=e.year AND g.issue_number=e.issue_number
+WHERE g.issue_number IS NULL;
+"""
+          Path("/tmp/gazette-reconcile.sql").write_text(sql)
+          Path("/tmp/gazette-reconcile-expected.json").write_text(json.dumps(expected,ensure_ascii=False,indent=2))
+          PY
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/gazette-reconcile.sql | tee /tmp/gazette-reconcile.txt
+          grep -Eq '"missing_count"[[:space:]]*:[[:space:]]*0|missing_count[[:space:]]*0' /tmp/gazette-reconcile.txt
+
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "SELECT year,COUNT(*) AS n FROM gazette_issue_metadata WHERE year IN (2009,2016) GROUP BY year ORDER BY year;" | tee /tmp/gazette-year-counts.txt
+          node <<'NODE'
+          const fs=require("fs");
+          const manifest=JSON.parse(fs.readFileSync("data/gazette-open-data-issues-1944-2017.json","utf8"));
+          const txt=fs.readFileSync("/tmp/gazette-year-counts.txt","utf8");
+          for(const year of [2009,2016]){
+            const expected=Number(manifest.year_counts[String(year)]);
+            if(!expected) throw new Error("missing manifest year count "+year);
+            const re=new RegExp('"year"\\s*:\\s*'+year+'[\\s\\S]{0,120}?"n"\\s*:\\s*'+expected);
+            if(!re.test(txt)) throw new Error("production metadata count mismatch for "+year+" expected "+expected);
+          }
+          console.log("OFFICIAL ISSUE BACKBONE RECONCILIATION: PASS");
+          NODE
+
+      - name: Build metadata-only act-index SQL
+        run: |
+          python3 scripts/gazette_act_index_sql.py \
+            --year-base 2009=/tmp/gazette-2009 \
+            --year-base 2016=/tmp/gazette-2016 \
+            --out-sql /tmp/gazette-act-index.sql | tee /tmp/gazette-act-index-summary.json
+          test -s /tmp/gazette-act-index.sql
+          grep -q "official_register_index_only" /tmp/gazette-act-index.sql
+          grep -q "human_review_status" /tmp/gazette-act-index.sql
+
+      - name: Apply act-index metadata to production D1
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/gazette-act-index.sql | tee /tmp/gazette-act-index-apply.txt
+
+      - name: Verify production issue-to-all-acts index
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            SELECT gi.year,gi.issue_number,COUNT(ga.id) AS act_count,
+                   MIN(ga.ordinal_in_issue) AS first_ordinal,MAX(ga.ordinal_in_issue) AS last_ordinal,
+                   SUM(CASE WHEN ga.human_review_status='pending' THEN 1 ELSE 0 END) AS pending_count
+              FROM gazette_issues gi
+              JOIN gazette_acts ga ON ga.issue_id=gi.id
+             WHERE (gi.year=2009 AND gi.issue_number='1')
+                OR (gi.year=2016 AND gi.issue_number='1')
+             GROUP BY gi.year,gi.issue_number
+             ORDER BY gi.year;" | tee /tmp/gazette-issue1-counts.txt
+          node <<'NODE'
+          const fs=require("fs");
+          const txt=fs.readFileSync("/tmp/gazette-issue1-counts.txt","utf8");
+          for(const year of [2009,2016]){
+            const re=new RegExp('"year"\\s*:\\s*'+year+'[\\s\\S]{0,250}?"issue_number"\\s*:\\s*"1"[\\s\\S]{0,250}?"act_count"\\s*:\\s*([1-9][0-9]*)');
+            if(!re.test(txt)) throw new Error("issue 1 act list missing for "+year);
+          }
+          console.log("ISSUE 1/2009 + 1/2016 ACT INDEX: PASS");
+          NODE
+
+      - name: Wait for Worker deployment propagation
+        run: sleep 20
+
+      - name: Verify live issue-contents API and exact chat behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          for year in 2009 2016; do
+            ok=0
+            for attempt in $(seq 1 12); do
+              code="$(curl -sS --max-time 30 -w '%{http_code}' -o "/tmp/contents-$year.json" "$BASE/api/gazette-issue-contents?year=$year&issue=1" || true)"
+              if [ "$code" = "200" ]; then ok=1; break; fi
+              sleep 5
+            done
+            test "$ok" = "1"
+          done
+          curl -sS --max-time 60 -o /tmp/chat-2016.json \
+            -H 'content-type: application/json' \
+            -H 'Origin: https://ai-advokat.github.io' \
+            -d '{"q":"Да те замолам да ми дадеш мета дата податоци и сите закони, одлуки, правилници и останати акти од Службен весник број 1 од 2016 година","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
+            "$BASE/api/chat"
+          node <<'NODE'
+          const fs=require("fs");
+          for(const year of [2009,2016]){
+            const d=JSON.parse(fs.readFileSync("/tmp/contents-"+year+".json","utf8"));
+            if(!d.ok || d.state!=="matched" || !(d.total>0)) throw new Error("live issue contents missing "+year);
+            if(!Array.isArray(d.acts) || d.acts.length!==d.total) throw new Error("act list not complete payload "+year);
+            for(let i=0;i<d.acts.length;i++){
+              if(d.acts[i].ordinalInIssue!==i+1) throw new Error("issue order broken "+year+" at "+i);
+            }
+          }
+          const chat=JSON.parse(fs.readFileSync("/tmp/chat-2016.json","utf8"));
+          if(!chat.ok) throw new Error("live Gazette chat failed");
+          const a=String(chat.answer||"");
+          for(const needle of ["Содржина на бројот:","Вкупно индексирани акти:","Статус на листата:","Граница на употреба:"]){
+            if(!a.includes(needle)) throw new Error("missing chat issue-content section: "+needle);
+          }
+          if(!Array.isArray(chat.gazetteIssueContents?.acts) || chat.gazetteIssueContents.acts.length<1) throw new Error("structured issue contents missing");
+          if(chat.gazetteIssueContents.acts.length!==chat.gazetteIssueContents.total) throw new Error("structured act total mismatch");
+          console.log("LIVE GAZETTE ISSUE -> ALL ACTS: PASS");
+          NODE
+
+      - name: Upload non-secret activation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gazette-act-index-2009-2016-production
+          retention-days: 30
+          if-no-files-found: ignore
+          path: |
+            /tmp/gazette-2009/summary.json
+            /tmp/gazette-2009/registers
+            /tmp/gazette-2009/acts
+            /tmp/gazette-2016/summary.json
+            /tmp/gazette-2016/registers
+            /tmp/gazette-2016/acts
+            /tmp/gazette-reconcile.txt
+            /tmp/gazette-reconcile-expected.json
+            /tmp/gazette-year-counts.txt
+            /tmp/gazette-act-index-summary.json
+            /tmp/gazette-act-index-apply.txt
+            /tmp/gazette-issue1-counts.txt
+            /tmp/contents-2009.json
+            /tmp/contents-2016.json
+            /tmp/chat-2016.json
