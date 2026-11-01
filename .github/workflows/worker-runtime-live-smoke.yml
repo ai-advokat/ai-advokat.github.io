@@ -1,0 +1,92 @@
+name: AI Advokat Worker runtime live smoke
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/worker-runtime-live-smoke.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-worker-runtime-live-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Worker serves current frontend assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/" -o /tmp/worker-home.html
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/bot/" -o /tmp/worker-bot.html
+          grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-home.html
+          grep -q 'ai-advokat-chat.js?v=20261101-root-r9' /tmp/worker-home.html
+          grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-bot.html
+          grep -q 'standalone-bot-vnext.js?v=20261101-root-r9' /tmp/worker-bot.html
+          echo "WORKER FRONTEND ROOT-R9: PASS"
+
+      - name: Verify production health and orchestrator
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/health" -o /tmp/worker-health.json
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/orchestrator" -o /tmp/worker-orchestrator.json
+          node <<'NODE'
+          const h=require("/tmp/worker-health.json");
+          const o=require("/tmp/worker-orchestrator.json");
+          if(!h.ok || h.database?.reachable!==true || h.database?.schemaReady!==true) throw new Error("health/database not ready");
+          if(!o.ok || o.runtime?.providerExecution!=="configured_for_api_chat_execution") throw new Error("provider not ready");
+          if(o.runtime?.lioeRuntimeGovernance!=="enabled" || o.runtime?.lioePostflight!=="enabled" || o.runtime?.lioeSpecialistExecution!=="enabled") throw new Error("LIOE not ready");
+          console.log("WORKER HEALTH + ORCHESTRATOR: PASS");
+          NODE
+
+      - name: Verify browser CORS and main AI Advokat live chat
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl -sS --fail -D /tmp/worker-cors.txt -o /dev/null             -X OPTIONS             -H 'Origin: https://ai-advokat.github.io'             -H 'Access-Control-Request-Method: POST'             -H 'Access-Control-Request-Headers: content-type'             "$BASE/api/chat"
+          grep -qi '^access-control-allow-origin: https://ai-advokat.github.io' /tmp/worker-cors.txt
+          curl -fsSL --max-time 120             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Одговори кратко и вклучи ја ознаката WORKER_SMOKE_OK.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/chat" -o /tmp/worker-chat.json
+          node <<'NODE'
+          const d=require("/tmp/worker-chat.json");
+          if(!d.ok) throw new Error("chat not ok");
+          if(!String(d.answer||"").trim()) throw new Error("empty chat answer");
+          if(!String(d.answer||"").includes("WORKER_SMOKE_OK")) throw new Error("marker missing");
+          console.log("MAIN AI ADVOKAT LIVE CHAT: PASS");
+          NODE
+
+      - name: Verify Professional bot route is live and fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          code="$(curl -sS --max-time 30 -o /tmp/worker-bot-unauth.json -w '%{http_code}'             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Здраво"}'             "$BASE/api/bot")"
+          test "$code" = "401"
+          grep -q 'bot_membership_required' /tmp/worker-bot-unauth.json
+          echo "PROFESSIONAL /api/bot LIVE + FAIL-CLOSED: PASS"
+
+      - name: Upload non-secret Worker smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-worker-runtime-live-smoke
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/worker-home.html
+            /tmp/worker-bot.html
+            /tmp/worker-health.json
+            /tmp/worker-orchestrator.json
+            /tmp/worker-cors.txt
+            /tmp/worker-chat.json
+            /tmp/worker-bot-unauth.json
