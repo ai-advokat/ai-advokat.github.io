@@ -114,6 +114,14 @@ test("top menu matches external bot conversation and Professional-access control
   assert.match(chat,/Професионален пристап · /);
 });
 
+test("Gazette issue contents are preserved and rendered in the evidence rail",()=>{
+  assert.match(chat,/gazetteIssueContents:d\.gazetteIssueContents/);
+  assert.match(chat,/const gazetteContents=m\?\.gazetteIssueContents/);
+  assert.match(chat,/Содржина на бројот/);
+  assert.match(chat,/Вкупно акти:/);
+  assert.match(chat,/Human review:/);
+});
+
 test("Sources and Human Gate panels use existing governed response fields",()=>{
   for(const key of ["legalSources","caseLawSources","guideSources","publicationSources","sources"]){
     assert.match(chat,new RegExp('"'+key+'"'));
