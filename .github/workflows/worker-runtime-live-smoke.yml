@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify Worker serves exact R12 frontend bytes
+      - name: Verify Worker serves exact R13 frontend bytes
         shell: bash
         run: |
           set -euo pipefail
@@ -41,8 +41,8 @@ jobs:
           deployed=0
           for attempt in $(seq 1 40); do
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r12&smoke=$nonce" -o /tmp/worker-bot.html || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261101-core-r12&smoke=$nonce" -o /tmp/worker-core.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r13&smoke=$nonce" -o /tmp/worker-bot.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261101-core-r13&smoke=$nonce" -o /tmp/worker-core.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/chat-privacy-browser.js?v=20261101-privacy-r12&smoke=$nonce" -o /tmp/worker-privacy-primary.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/src/chat-privacy.js?v=20261101-privacy-compat-r1&smoke=$nonce" -o /tmp/worker-privacy-compat.js || true
 
@@ -56,7 +56,7 @@ jobs:
               && [ "$live_privacy_primary" = "$expected_privacy_primary" ] \
               && [ "$live_privacy_compat" = "$expected_privacy_compat" ]; then
               deployed=1
-              echo "WORKER R12 BYTE PARITY: PASS on attempt $attempt"
+              echo "WORKER R13 BYTE PARITY: PASS on attempt $attempt"
               break
             fi
             echo "Worker deployment not yet at expected commit (attempt $attempt/40)."
@@ -64,8 +64,8 @@ jobs:
           done
           test "$deployed" = "1"
 
-          grep -q 'name="ai-advokat-release" content="core-r12"' /tmp/worker-bot.html
-          grep -q 'standalone-bot.js?v=20261101-core-r12' /tmp/worker-bot.html
+          grep -q 'name="ai-advokat-release" content="core-r13"' /tmp/worker-bot.html
+          grep -q 'standalone-bot.js?v=20261101-core-r13' /tmp/worker-bot.html
           grep -q "import('./chat-privacy-browser.js?v=20261101-privacy-r12')" /tmp/worker-core.js
           grep -q "import('/src/chat-privacy.js?v=20261101-privacy-compat-r1')" /tmp/worker-core.js
           grep -q 'detectConfidentialCasePrompt' /tmp/worker-privacy-primary.js
@@ -75,10 +75,17 @@ jobs:
 
           legacy_code="$(curl -sS --max-time 30 -o /dev/null -D /tmp/worker-legacy-release-headers.txt -w '%{http_code}' "$BASE/bot/?release=core-r10")"
           test "$legacy_code" = "302"
-          grep -qi '^location: .*release=core-r12' /tmp/worker-legacy-release-headers.txt
+          grep -qi '^location: .*release=core-r13' /tmp/worker-legacy-release-headers.txt
           grep -qi '^clear-site-data: "cache"' /tmp/worker-legacy-release-headers.txt
-          grep -qi '^x-ai-advokat-release: core-r12' /tmp/worker-legacy-release-headers.txt
+          grep -qi '^x-ai-advokat-release: core-r13' /tmp/worker-legacy-release-headers.txt
           echo "LEGACY CORE-R10 SELF-HEAL REDIRECT: PASS"
+
+          legacy_r12_code="$(curl -sS --max-time 30 -o /dev/null -D /tmp/worker-legacy-r12-release-headers.txt -w '%{http_code}' "$BASE/bot/?release=core-r12")"
+          test "$legacy_r12_code" = "302"
+          grep -qi '^location: .*release=core-r13' /tmp/worker-legacy-r12-release-headers.txt
+          grep -qi '^clear-site-data: "cache"' /tmp/worker-legacy-r12-release-headers.txt
+          grep -qi '^x-ai-advokat-release: core-r13' /tmp/worker-legacy-r12-release-headers.txt
+          echo "LEGACY CORE-R12 SELF-HEAL REDIRECT: PASS"
 
       - name: Verify production health and orchestrator
         shell: bash

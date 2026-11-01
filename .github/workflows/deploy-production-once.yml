@@ -55,7 +55,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Verify exact live R12 frontend deployment
+      - name: Verify exact live R13 frontend deployment
         shell: bash
         run: |
           set -euo pipefail
@@ -69,8 +69,8 @@ jobs:
           deployed=0
           for attempt in $(seq 1 40); do
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r12&deploy_verify=$nonce" -o /tmp/deploy-bot.html || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261101-core-r12&deploy_verify=$nonce" -o /tmp/deploy-core.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r13&deploy_verify=$nonce" -o /tmp/deploy-bot.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261101-core-r13&deploy_verify=$nonce" -o /tmp/deploy-core.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/chat-privacy-browser.js?v=20261101-privacy-r12&deploy_verify=$nonce" -o /tmp/deploy-privacy-primary.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/src/chat-privacy.js?v=20261101-privacy-compat-r1&deploy_verify=$nonce" -o /tmp/deploy-privacy-compat.js || true
 
@@ -84,20 +84,27 @@ jobs:
               && [ "$live_privacy_primary" = "$expected_privacy_primary" ] \
               && [ "$live_privacy_compat" = "$expected_privacy_compat" ]; then
               deployed=1
-              echo "EXTERNAL BOT R12 LIVE BYTE PARITY: PASS on attempt $attempt"
+              echo "EXTERNAL BOT R13 LIVE BYTE PARITY: PASS on attempt $attempt"
               break
             fi
-            echo "Waiting for exact R12 production bytes (attempt $attempt/40)."
+            echo "Waiting for exact R13 production bytes (attempt $attempt/40)."
             sleep 3
           done
           test "$deployed" = "1"
 
           legacy_code="$(curl -sS --max-time 30 -o /dev/null -D /tmp/deploy-legacy-headers.txt -w '%{http_code}' "$BASE/bot/?release=core-r10")"
           test "$legacy_code" = "302"
-          grep -qi '^location: .*release=core-r12' /tmp/deploy-legacy-headers.txt
+          grep -qi '^location: .*release=core-r13' /tmp/deploy-legacy-headers.txt
           grep -qi '^clear-site-data: "cache"' /tmp/deploy-legacy-headers.txt
-          grep -qi '^x-ai-advokat-release: core-r12' /tmp/deploy-legacy-headers.txt
-          echo "LEGACY CORE-R10 SELF-HEAL: PASS"
+          grep -qi '^x-ai-advokat-release: core-r13' /tmp/deploy-legacy-headers.txt
+          echo "LEGACY CORE-R10 SELF-HEAL TO R13: PASS"
+
+          legacy_r12_code="$(curl -sS --max-time 30 -o /dev/null -D /tmp/deploy-legacy-r12-headers.txt -w '%{http_code}' "$BASE/bot/?release=core-r12")"
+          test "$legacy_r12_code" = "302"
+          grep -qi '^location: .*release=core-r13' /tmp/deploy-legacy-r12-headers.txt
+          grep -qi '^clear-site-data: "cache"' /tmp/deploy-legacy-r12-headers.txt
+          grep -qi '^x-ai-advokat-release: core-r13' /tmp/deploy-legacy-r12-headers.txt
+          echo "LEGACY CORE-R12 SELF-HEAL TO R13: PASS"
 
       - name: Provision ephemeral R13 Professional smoke membership
         shell: bash
