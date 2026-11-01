@@ -11,7 +11,7 @@ function norm(v){
 
 export function extractGazetteIssueNeedles(q){
   const raw=norm(q);
-  const explicitSignal=/(службен\s+(?:весник|лист)|сл\.?\s*(?:весник|лист)|газет|official\s+gazette)/u.test(raw);
+  const explicitSignal=/(службен(?:иот|и)?\s+(?:весник(?:от)?|веслник(?:от)?|лист(?:от)?)|сл\.?\s*(?:весник|веслник|лист)|газет|official\s+gazette)/u.test(raw);
   const pair=raw.match(/(?:бр\.?|број)?\s*([0-9]{1,4})\s*\/\s*((?:19|20)[0-9]{2})/u);
   const isoDate=raw.match(/\b((?:19|20)[0-9]{2}-[01][0-9]-[0-3][0-9])\b/u);
   const mkDate=raw.match(/\b([0-3]?[0-9])[.\/-]([01]?[0-9])[.\/-]((?:19|20)[0-9]{2})\b/u);
