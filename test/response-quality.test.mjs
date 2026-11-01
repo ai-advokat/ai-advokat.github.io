@@ -4,7 +4,10 @@ import fs from "node:fs";
 import {
   isFormalLegalDraftRequest,
   hasProceduralInstrumentMismatch,
+  formalDraftAuthoritySafety,
   deterministicProceduralInstrumentFallback,
+  deterministicCivilDamagesFallback,
+  deterministicFormalDraftFallback,
   applyProceduralInstrumentSafety,
   cleanFormalDraftForExport,
   replaceUngroundedArticleReferences,
@@ -159,7 +162,8 @@ test("RQ14 formal drafts are excluded from the stripped-down FREE fast prompt",(
   assert.match(worker,/const fastFreePrompt=\(missionProfile===\"GENERAL_BYPASS\" \|\| missionProfile===\"L0_INFORMATIONAL\"\)\s*&& !formalDraftRequest;/);
   assert.match(worker,/allowProviderRepair:languageRequired/);
   assert.match(worker,/forceEditorialPass:languageRequired/);
-  assert.match(worker,/deterministicProceduralInstrumentFallback/);
+  assert.match(worker,/formalDraftAuthoritySafety/);
+  assert.match(worker,/deterministicFormalDraftFallback/);
   assert.match(worker,/deterministicLanguageFallbackUsed/);
 });
 
@@ -181,4 +185,35 @@ test("RQ16 ambiguous criminal draft has a deterministic clean Macedonian fallbac
   assert.match(out,/Надлежен орган: \[ДА СЕ УТВРДИ ПО ПРОФЕСИОНАЛНА ПРОВЕРКА\]/u);
   assert.doesNotMatch(out,/^ТУЖБА\b/mu);
   assert.doesNotMatch(out,/\bчлен\s+\d+/iu);
+});
+
+
+test("RQ17 unsourced civil-damages draft blocks invented criminal court, prosecutor and foreign company form",()=>{
+  const q="Изработи тужба за надомест на штета, со измислени податоци.";
+  const bad=[
+    "ТУЖБА ЗА НАДОМЕСТ НА ШТЕТА",
+    "До Суд за кривични дела во Скопје",
+    "Подносител: Државниот обвинител",
+    "Тужен: Торговска друштва ЕООД"
+  ].join("\n");
+  const check=formalDraftAuthoritySafety(bad,{userText:q,hasGovernedLegalContext:false});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.problems.includes("civil_draft_criminal_role_or_court"),JSON.stringify(check));
+  assert.ok(check.problems.includes("generated_foreign_company_form"),JSON.stringify(check));
+});
+
+test("RQ18 deterministic civil-damages fallback is neutral, complete enough for review and authority-safe",()=>{
+  const q="Изработи тужба за надомест на штета, со измислени податоци.";
+  const out=deterministicCivilDamagesFallback({userText:q});
+  assert.match(out,/^ТУЖБА ЗА НАДОМЕСТ НА ШТЕТА/u);
+  assert.match(out,/\[НАДЛЕЖЕН СУД — ДА СЕ УТВРДИ ПО ПРОФЕСИОНАЛНА ПРОВЕРКА\]/u);
+  assert.match(out,/Тужител:/u);
+  assert.match(out,/Тужен:/u);
+  assert.match(out,/ТУЖБЕНО БАРАЊЕ — РАБОТЕН ПРИМЕР/u);
+  assert.match(out,/ЧОВЕЧКА ПРОВЕРКА/u);
+  assert.doesNotMatch(out,/\b(?:ЕООД|EOOD)\b/iu);
+  assert.doesNotMatch(out,/суд\s+за\s+кривич|државн(?:иот|и)?\s+обвинител/iu);
+  assert.doesNotMatch(out,/\bчлен\s+\d+/iu);
+  assert.equal(formalDraftAuthoritySafety(out,{userText:q,hasGovernedLegalContext:false}).ok,true);
+  assert.equal(deterministicFormalDraftFallback({userText:q}),out);
 });
