@@ -1,37 +1,47 @@
-const dependencyResults = await Promise.allSettled([
+let localGuideDocuments = async () => [];
+let privacyRuntimeReady = false;
+let detectConfidentialCasePrompt = () => ({confidential:true});
+let redactConfidentialCasePrompt = () => ({changed:false,safeToSend:false,text:''});
+let readDeviceAccess = () => '';
+let saveDeviceAccess = () => false;
+let forgetDeviceAccess = () => {};
+window.AIAdvokatCoreDependencies = Object.freeze({materials:'loading',privacy:'loading',access:'loading'});
+
+const dependenciesReady = Promise.allSettled([
   import('./bot-materials.mjs'),
   import('../src/chat-privacy.js'),
   import('./bot-device-access.mjs'),
-]);
-const materialsModule = dependencyResults[0].status === 'fulfilled' ? dependencyResults[0].value : {};
-const privacyModule = dependencyResults[1].status === 'fulfilled' ? dependencyResults[1].value : {};
-const accessModule = dependencyResults[2].status === 'fulfilled' ? dependencyResults[2].value : {};
-const localGuideDocuments = typeof materialsModule.localGuideDocuments === 'function'
-  ? materialsModule.localGuideDocuments
-  : async () => [];
-const privacyRuntimeReady =
-  typeof privacyModule.detectConfidentialCasePrompt === 'function'
-  && typeof privacyModule.redactConfidentialCasePrompt === 'function';
-const detectConfidentialCasePrompt = privacyRuntimeReady
-  ? privacyModule.detectConfidentialCasePrompt
-  : () => ({confidential:true});
-const redactConfidentialCasePrompt = privacyRuntimeReady
-  ? privacyModule.redactConfidentialCasePrompt
-  : () => ({changed:false,safeToSend:false,text:''});
-const readDeviceAccess = typeof accessModule.readDeviceAccess === 'function'
-  ? accessModule.readDeviceAccess
-  : () => '';
-const saveDeviceAccess = typeof accessModule.saveDeviceAccess === 'function'
-  ? accessModule.saveDeviceAccess
-  : () => false;
-const forgetDeviceAccess = typeof accessModule.forgetDeviceAccess === 'function'
-  ? accessModule.forgetDeviceAccess
-  : () => {};
-window.AIAdvokatCoreDependencies = Object.freeze({
-  materials: dependencyResults[0].status,
-  privacy: dependencyResults[1].status,
-  access: dependencyResults[2].status,
+]).then(results => {
+  const materialsModule = results[0].status === 'fulfilled' ? results[0].value : {};
+  const privacyModule = results[1].status === 'fulfilled' ? results[1].value : {};
+  const accessModule = results[2].status === 'fulfilled' ? results[2].value : {};
+
+  if (typeof materialsModule.localGuideDocuments === 'function') {
+    localGuideDocuments = materialsModule.localGuideDocuments;
+  }
+  privacyRuntimeReady =
+    typeof privacyModule.detectConfidentialCasePrompt === 'function'
+    && typeof privacyModule.redactConfidentialCasePrompt === 'function';
+  if (privacyRuntimeReady) {
+    detectConfidentialCasePrompt = privacyModule.detectConfidentialCasePrompt;
+    redactConfidentialCasePrompt = privacyModule.redactConfidentialCasePrompt;
+  }
+  if (typeof accessModule.readDeviceAccess === 'function') readDeviceAccess = accessModule.readDeviceAccess;
+  if (typeof accessModule.saveDeviceAccess === 'function') saveDeviceAccess = accessModule.saveDeviceAccess;
+  if (typeof accessModule.forgetDeviceAccess === 'function') forgetDeviceAccess = accessModule.forgetDeviceAccess;
+
+  window.AIAdvokatCoreDependencies = Object.freeze({
+    materials: results[0].status,
+    privacy: results[1].status,
+    access: results[2].status,
+  });
+  if (results[2].status === 'fulfilled') restoreAccess();
+  return results;
+}).catch(error => {
+  window.AIAdvokatFrontendGuard?.report?.('external','core-dependencies',error);
+  return [];
 });
+
 // Accessing localStorage itself can throw when browser storage is disabled.
 let deviceStorage;
 try { deviceStorage = window.localStorage; } catch {}
@@ -226,9 +236,16 @@ $('composer').onsubmit = async event => {
   }
   if (q.length < 2) return;
   if (!privacyRuntimeReady) {
-    status('Заштитниот privacy модул не се вчита. Ништо не е испратено. Освежете ја страницата и обидете се повторно.');
-    window.AIAdvokatFrontendGuard?.report?.('external','privacy-runtime',new Error('privacy_dependency_unavailable'));
-    return;
+    status('Го вчитувам заштитниот privacy модул…');
+    await Promise.race([
+      dependenciesReady,
+      new Promise(resolve => setTimeout(resolve,3000)),
+    ]);
+    if (!privacyRuntimeReady) {
+      status('Заштитниот privacy модул не се вчита. Ништо не е испратено. Освежете ја страницата и обидете се повторно.');
+      window.AIAdvokatFrontendGuard?.report?.('external','privacy-runtime',new Error('privacy_dependency_unavailable'));
+      return;
+    }
   }
 
   let outboundQ=q, privacyRedacted=false;
@@ -296,7 +313,6 @@ busy(false);
 window.AIAdvokatCoreReady = true;
 document.documentElement.dataset.botCoreRuntime = 'ready';
 window.dispatchEvent(new CustomEvent('aiadvokat:core-ready'));
-restoreAccess();
 async function exportLatestAssistant(format) {
   const latest=[...history].reverse().find(item=>item.role==='assistant' && String(item.text||'').trim());
   if(!latest){ status('Сè уште нема AI одговор за извоз.'); return; }
