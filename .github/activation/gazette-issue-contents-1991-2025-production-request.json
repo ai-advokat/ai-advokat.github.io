@@ -1,0 +1,36 @@
+{
+  "activation_authorized": true,
+  "decision_id": "AI_ADVOKAT_GAZETTE_ISSUE_CONTENTS_1991_2025_2026-11-01",
+  "decision_date": "2026-11-01",
+  "decision_owner": "Project owner Human Gate",
+  "authorization_basis": "Explicit project instruction to list every law, decision, rulebook and all other registered items from the requested Official Gazette issue.",
+  "target": {
+    "worker": "ai-advokat-github-io",
+    "database": "ai-advokat-db",
+    "database_id": "12ece285-74bb-4f27-a025-2dbd1be6c59a"
+  },
+  "migrations": [
+    "0051_gazette_issue_contents_index.sql"
+  ],
+  "scope": {
+    "official_chronological_register_harvest_1991_2025": true,
+    "issue_by_issue_contents_index": true,
+    "deterministic_reconciliation": true,
+    "runtime_issue_contents_lookup": true,
+    "fulltext_import": false,
+    "article_text_promotion": false,
+    "current_law_promotion": false,
+    "autonomous_legal_interpretation": false
+  },
+  "governance": {
+    "metadata_only": true,
+    "source_class": "primary_official_chronological_register_metadata",
+    "verification_status": "reconciled",
+    "human_review_status": "pending",
+    "legal_text_authority": false,
+    "current_law_authority": false,
+    "complete_claim_definition": "Complete only against a reconciled official chronological register year with zero unresolved register entries.",
+    "fail_closed": true
+  },
+  "human_gate_required": true
+}
