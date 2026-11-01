@@ -4716,11 +4716,24 @@ function articleNumbersFromQuestion(q){
     const n=normalizeText(value||"").replace(/[–—−‑]/g,"-").replace(/\s+/g,"");
     if(n && !found.includes(n)) found.push(n);
   };
-  for(const match of text.matchAll(/(?:член(?:от|ови|овите)?|article(?:s)?)\s*([0-9]+(?:[-–—−‑][\p{L}]+)?)/giu)){
+  const marker=/(?:член(?:от|ови|овите)?|article(?:s)?)\s*([0-9]+(?:[-–—−‑][\p{L}]+)?)/giu;
+  for(const match of text.matchAll(marker)){
     add(match[1]);
-  }
-  for(const match of text.matchAll(/(?:членови|членовите|articles)\s+([0-9]+(?:[-–—−‑][\p{L}]+)?(?:\s*(?:,|и|and)\s*[0-9]+(?:[-–—−‑][\p{L}]+)?)*)/giu)){
-    for(const n of String(match[1]||"").match(/[0-9]+(?:[-–—−‑][\p{L}]+)?/gu)||[]) add(n);
+    let rest=text.slice((match.index||0)+match[0].length,(match.index||0)+match[0].length+120);
+    // Collect only an immediately coordinated/ranged article tail. Stop once
+    // ordinary prose (e.g. "од ЗРО"/"of the Act") begins, so unrelated numbers
+    // later in the sentence cannot accidentally become article references.
+    for(let guard=0;guard<12;guard++){
+      let tail=rest.match(/^\s*(?:,|и\b|and\b|до\b|through\b)\s*([0-9]+(?:[-–—−‑][\p{L}]+)?)/iu);
+      if(!tail){
+        // Numeric range: 12-13. A true Macedonian article suffix such as 104-а
+        // was already consumed by the marker because the suffix is a letter.
+        tail=rest.match(/^\s*[-–—−‑]\s*([0-9]+)\b/u);
+      }
+      if(!tail) break;
+      add(tail[1]);
+      rest=rest.slice(tail[0].length);
+    }
   }
   return found;
 }
