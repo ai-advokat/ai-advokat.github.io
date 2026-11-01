@@ -69,6 +69,37 @@ test("canonical article fallback is bounded to exact low-depth article research"
   assert.equal(professionalCanonicalArticleFallback({q:EXACT_Q,articleBundle:bundle(),missionProfile:"L1_VERIFIED_RESEARCH",attachmentCount:1}),null);
   assert.equal(professionalCanonicalArticleFallback({q:"Што уредува ЗРО?",articleBundle:bundle(),missionProfile:"L1_VERIFIED_RESEARCH"}),null);
   assert.equal(professionalCanonicalArticleFallback({q:"Што уредува член 13 од ЗРО?",articleBundle:bundle(),missionProfile:"L1_VERIFIED_RESEARCH"}),null);
+  assert.equal(professionalCanonicalArticleFallback({q:"Спореди член 12 и член 13 од ЗРО.",articleBundle:bundle(),missionProfile:"L1_VERIFIED_RESEARCH"}),null);
+  assert.equal(professionalCanonicalArticleFallback({q:"Спореди ги членовите 12 и 13 од ЗРО.",articleBundle:bundle(),missionProfile:"L1_VERIFIED_RESEARCH"}),null);
+});
+
+test("raw source text is preferred over reviewed derivation and legal-status overlays are preserved",()=>{
+  const b=bundle();
+  b.articles[0]={
+    ...b.articles[0],
+    text:"RAW SOURCE ARTICLE TEXT",
+    reviewedText:"DERIVED REVIEWED TEXT",
+    reviewedRepresentation:{
+      id:"derived-12",
+      currentLawAuthority:false,
+      humanGateApproved:false
+    },
+    legalStatusOverlays:[{
+      type:"pending_constitutional_review",
+      caseNumber:"U.br.1/2026",
+      statusAsOf:"2026-10-11",
+      legalEffect:"none_identified",
+      warningMk:"Постои проверено посебно предупредување за правниот статус."
+    }]
+  };
+  b.primaryArticles=b.articles;
+  const out=professionalCanonicalArticleFallback({q:EXACT_Q,articleBundle:b,missionProfile:"L1_VERIFIED_RESEARCH"});
+  assert.ok(out);
+  assert.match(out.answer,/RAW SOURCE ARTICLE TEXT/);
+  assert.doesNotMatch(out.answer,/DERIVED REVIEWED TEXT/);
+  assert.match(out.answer,/Посебни legal-status предупредувања/);
+  assert.match(out.answer,/U\.br\.1\/2026/);
+  assert.match(out.answer,/статус проверен до: 2026-10-11/);
 });
 
 test("only Human-Gate approved current article/version may be labelled current verified",()=>{
