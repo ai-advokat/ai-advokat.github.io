@@ -965,6 +965,7 @@
           guideSources:Array.isArray(d.guideSources)?d.guideSources:[],
           publicationSources:Array.isArray(d.publicationSources)?d.publicationSources:[],
           gazetteIssueMetadata:Array.isArray(d.gazetteIssueMetadata)?d.gazetteIssueMetadata:[],
+          gazetteIssueContents:d.gazetteIssueContents&&typeof d.gazetteIssueContents==="object"?d.gazetteIssueContents:null,
           governance:d.legalGovernance||null,
           humanGate:d.humanGate||null,
           documentExports:requestedExportFormats(q).map(format=>({
@@ -1426,6 +1427,7 @@
       const rows=flattenWorkbenchSources(m);
       if(m?.sourceLabel) evidenceBody.append(evidenceCard("Статус на изворите",String(m.sourceLabel)));
       const gazetteRows=Array.isArray(m?.gazetteIssueMetadata)?m.gazetteIssueMetadata:[];
+      const gazetteContents=m?.gazetteIssueContents&&typeof m.gazetteIssueContents==="object"?m.gazetteIssueContents:null;
       gazetteRows.forEach((g,index)=>{
         const authority=[
           "Издание: "+String(g.publicationType||"—"),
@@ -1445,7 +1447,24 @@
         ].filter(Boolean).join("\n");
         evidenceBody.append(evidenceCard("Службен весник · metadata "+(index+1),authority,{className:"ai-evidence-gate"}));
       });
-      if(!rows.length && !gazetteRows.length){
+      if(gazetteContents){
+        const acts=Array.isArray(gazetteContents.acts)?gazetteContents.acts:[];
+        evidenceBody.append(evidenceCard(
+          "Содржина на бројот",
+          "Вкупно акти: "+String(gazetteContents.total??acts.length)+" · Human Gate: "+(gazetteContents.allReviewed===true?"проверено":"pending"),
+          {className:"ai-evidence-gate"}
+        ));
+        acts.forEach((act,index)=>{
+          const detail=[
+            String(index+1)+". ["+String(act.actTypeLabel||act.actType||"Друго")+"] "+String(act.title||"Без наслов"),
+            act.issuer?"Доносител: "+act.issuer:"",
+            act.pageStart!=null?"Страница: "+String(act.pageStart)+(act.pageEnd!=null&&act.pageEnd!==act.pageStart?"-"+String(act.pageEnd):""):"",
+            "Human review: "+String(act.humanReviewStatus||"pending")
+          ].filter(Boolean).join("\n");
+          evidenceBody.append(evidenceCard("Акт "+String(index+1),detail,{url:act.sourceUrl||null}));
+        });
+      }
+      if(!rows.length && !gazetteRows.length && !gazetteContents){
         evidenceBody.append(evidenceCard("Нема прикажани извори","Последниот AI одговор нема source payload. Користете Правни извори, Library или поставете source-first прашање."));
       }else{
         rows.forEach((row,index)=>evidenceBody.append(evidenceCard(row.kind+" · "+(index+1),row.title,{url:row.url||null})));
