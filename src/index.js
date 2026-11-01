@@ -6011,7 +6011,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         serverLatencyMs:0,
         fastPromptUsed:true
       },
-      humanGate:"Issue metadata and contents-register metadata only. За текстот, правното дејство и тековната важност на конкретен акт проверете го официјалниот full-text и применливата верзија."
+      humanGate:"Metadata only. Метаподатоците не се авторитет за текстот на актот или за тековно важечкото право. За правниот текст, правното дејство и тековната важност проверете го официјалниот текст и применливата верзија."
     });
   }
 
