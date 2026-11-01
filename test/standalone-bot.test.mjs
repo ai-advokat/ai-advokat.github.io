@@ -236,6 +236,8 @@ test('core composer boot is independent and privacy dependency failure is fail-c
   assert.doesNotMatch(vnext,/await import.*standalone-bot/);
   assert.match(core,/Promise\.allSettled/);
   assert.match(core,/privacyRuntimeReady/);
+  assert.ok(core.includes("import('./chat-privacy-browser.js?v=20261101-privacy-r11')"));
+  assert.ok(!core.includes("../src/chat-privacy.js"));
   assert.match(core,/Ништо не е испратено/);
   assert.match(core,/window\.AIAdvokatCoreReady = true/);
 });

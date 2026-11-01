@@ -9,7 +9,7 @@ window.AIAdvokatCoreDependencies = Object.freeze({materials:'loading',privacy:'l
 
 const dependenciesReady = Promise.allSettled([
   import('./bot-materials.mjs'),
-  import('../src/chat-privacy.js'),
+  import('./chat-privacy-browser.js?v=20261101-privacy-r11'),
   import('./bot-device-access.mjs'),
 ]).then(results => {
   const materialsModule = results[0].status === 'fulfilled' ? results[0].value : {};
