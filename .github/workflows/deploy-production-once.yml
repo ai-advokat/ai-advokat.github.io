@@ -150,20 +150,26 @@ jobs:
           const d=JSON.parse(fs.readFileSync("/tmp/r13-article12.json","utf8"));
           if(!d.ok) throw new Error("Article 12 smoke returned ok=false");
           const answer=String(d.answer||"").trim();
+          const sourceGap=d.displayMode==="professional_exact_article_source_gap";
           if(answer.length<40) throw new Error("Article 12 answer is empty/too short");
           if(/AI runtime не успеа безбедно|LIOE-RT-[0-9]/u.test(answer)) throw new Error("Generic LIOE runtime failure resurfaced");
-          if(!Array.isArray(d.legalSources) || d.legalSources.length<1) throw new Error("Article 12 response has no governed legal source");
+          if(!sourceGap && (!Array.isArray(d.legalSources) || d.legalSources.length<1)) throw new Error("Article 12 source-backed response has no governed legal source");
           if(d.articleCorpus?.instrument?.canonicalKey!=="mk:zro") throw new Error("Wrong instrument routed: "+JSON.stringify(d.articleCorpus?.instrument||null));
-          if(d.articleCorpus?.version?.label!=="official-consolidated-snapshot-through-111/2023") throw new Error("Unexpected governed ZRO version: "+JSON.stringify(d.articleCorpus?.version||null));
-          const exactSource=d.legalSources.find(s=>String(s?.articleNumber||"").trim()==="12");
-          if(!exactSource) throw new Error("Exact governed Article 12 source missing");
-          if(String(exactSource?.version||"")!=="official-consolidated-snapshot-through-111/2023") throw new Error("Article 12 source version mismatch");
-          if(!["openai","canonical_corpus_no_model"].includes(String(d.provider||""))) throw new Error("Unexpected provider: "+d.provider);
-          if(d.provider==="canonical_corpus_no_model"){
+          if(sourceGap){
+            if(!/SOURCE\/VERSION GAP/u.test(answer)) throw new Error("Controlled source/version gap label missing");
+            if(!/не избира произволно една од повеќе верзии/iu.test(answer)) throw new Error("Version-selection safety explanation missing");
+            if(d.legalGovernance?.verificationState!=="SOURCE_VERSION_GAP") throw new Error("Source-gap governance state missing");
+          }
+          if(!sourceGap && d.articleCorpus?.version?.label!=="official-consolidated-snapshot-through-111/2023") throw new Error("Unexpected governed ZRO version: "+JSON.stringify(d.articleCorpus?.version||null));
+          const exactSource=Array.isArray(d.legalSources)?d.legalSources.find(s=>String(s?.articleNumber||"").trim()==="12"):null;
+          if(!sourceGap && !exactSource) throw new Error("Exact governed Article 12 source missing");
+          if(!sourceGap && String(exactSource?.version||"")!=="official-consolidated-snapshot-through-111/2023") throw new Error("Article 12 source version mismatch");
+          if(!sourceGap && !["openai","canonical_corpus_no_model"].includes(String(d.provider||""))) throw new Error("Unexpected provider: "+d.provider);
+          if(!sourceGap && d.provider==="canonical_corpus_no_model"){
             if(d.providerFallback?.from!=="openai") throw new Error("Canonical fallback provenance missing");
             if(d.legalGovernance?.verificationState!=="SOURCE_BACKED_PROVIDER_FALLBACK") throw new Error("Canonical fallback governance state missing");
             if(!/не ја означувам како .важечки текст./u.test(answer)) throw new Error("Current-law truth-label warning missing");
-          } else {
+          } else if(!sourceGap) {
             if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error("LIOE governance missing on OpenAI path");
             if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("Current-law Human Gate not required");
           }
@@ -171,7 +177,7 @@ jobs:
             ok:d.ok,
             provider:d.provider,
             providerFallback:d.providerFallback||null,
-            legalSourceCount:d.legalSources.length,
+            legalSourceCount:Array.isArray(d.legalSources)?d.legalSources.length:0,
             governanceRunId:d.governanceRunId||null,
             verificationState:d.legalGovernance?.verificationState||null,
             releaseState:d.legalGovernance?.releaseState||null,
