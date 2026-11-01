@@ -75,7 +75,7 @@ jobs:
           const EXPECTED_PAID_MODEL="gpt-6.1-sol";
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
           const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V15_DETERMINISTIC_FORMAL_DRAFT_FALLBACK";
-          const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
+          const EXPECTED_QUALITY="formal_draft_export_cleanup_ungrounded_article_and_authority_guard_v2";
           const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V13_DETERMINISTIC_FORMAL_DRAFT_FALLBACK";
           const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
           const EXPECTED_FINAL_OUTPUT_GATE="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
@@ -100,6 +100,7 @@ jobs:
                   && caps.canonicalMetadataStandard===EXPECTED_METADATA
                   && caps.canonicalFinalOutputGate===EXPECTED_FINAL_OUTPUT_GATE
                   && caps.finalResponseQualityGate===EXPECTED_QUALITY
+                  && caps.formalDraftFallbackPolicy==="supported_unsourced_classes_deterministic_authority_safe_v15"
                   && caps.freeChatModel===EXPECTED_FREE_MODEL
                   && caps.freeChatFallbackModel===EXPECTED_FREE_FALLBACK_MODEL
                   && caps.freeLanguageEditorModel===EXPECTED_EDITOR_MODEL
