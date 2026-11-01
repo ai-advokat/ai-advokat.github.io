@@ -155,11 +155,13 @@ function isGenericCivilDamagesDraftRequest(userText){
 }
 
 export function formalDraftAuthoritySafety(text,{userText="",hasGovernedLegalContext=false}={}){
-  if(hasGovernedLegalContext) return {ok:true,problems:[]};
   const value=String(text||"").normalize("NFKC");
   const q=String(userText||"").normalize("NFKC").toLocaleLowerCase("mk");
   const problems=[];
 
+  // A civil damages draft must never acquire criminal-procedure roles or a
+  // criminal court merely because a model generated them. This remains unsafe
+  // even when some governed legal context exists.
   if(isGenericCivilDamagesDraftRequest(userText)){
     if(/(?:суд\s+за\s+кривич|кривичен\s+суд|државн(?:иот|и)?\s+обвинител|јавн(?:иот|и)?\s+обвинител)/iu.test(value)){
       problems.push("civil_draft_criminal_role_or_court");
@@ -167,10 +169,14 @@ export function formalDraftAuthoritySafety(text,{userText="",hasGovernedLegalCon
   }
 
   const generatedSpecificCourt=/(?:основен|апелационен|врховен|уставен)\s+(?:граѓански\s+|кривичен\s+)?суд(?:\s+во\s+[\p{L}-]+)?/iu.exec(value)?.[0]||"";
-  if(generatedSpecificCourt && !q.includes(generatedSpecificCourt.toLocaleLowerCase("mk"))){
+  if(!hasGovernedLegalContext
+     && generatedSpecificCourt
+     && !q.includes(generatedSpecificCourt.toLocaleLowerCase("mk"))){
     problems.push("unsourced_specific_court");
   }
 
+  // A neighbouring-jurisdiction company form is never invented by the draft
+  // engine. Preserve it only if the user actually supplied it.
   if(/\b(?:еоод|eood)\b/iu.test(value) && !/\b(?:еоод|eood)\b/iu.test(q)){
     problems.push("generated_foreign_company_form");
   }
