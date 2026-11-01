@@ -131,9 +131,10 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const html=fs.readFileSync('bot/index.html','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-root-r9/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-vnext-r10/);
   assert.match(html,/standalone-bot-vnext\.css\?v=20261101-ui-r5/);
-  assert.match(vnext,/import\('\.\/standalone-bot\.js\?v=20261101-access-r7'\)/);
+  assert.match(html,/standalone-bot\.js\?v=20261101-core-r10/);
+  assert.doesNotMatch(vnext,/standalone-bot\.js/);
   assert.match(core,/function ensureLegalPulseStyles\(\)/);
   assert.match(core,/id = 'legalPulseRuntimeStyle'/);
   assert.match(core,/const pulse = responsePulse\(\)/);
@@ -171,10 +172,11 @@ test('fresh mobile device can activate send and reach governed access flow',()=>
   const html=fs.readFileSync('bot/index.html','utf8');
   assert.match(source,/const hasQuestion = String\(\$\('question'\)\?\.value \|\| ''\)\.trim\(\)\.length >= 2/);
   assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = !!key && \$\('question'\)\.value\.trim\(\)\.length < 2/);
-  assert.match(source,/busy\(false\);\s*restoreAccess\(\);/);
+  assert.match(source,/busy\(false\);\s*window\.AIAdvokatCoreReady = true/);
+  assert.match(source,/if \(results\[2\]\.status === 'fulfilled'\) restoreAccess\(\);/);
   assert.match(source,/if \(!key\) \{[\s\S]{0,180}\$\('access'\)\.click\(\)/);
   assert.match(source,/if \(q\.length < 2\) return;/);
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-root-r9/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-vnext-r10/);
 });
 
 
@@ -222,4 +224,18 @@ test('bot menu and tool surfaces use leading symbols consistently',()=>{
   assert.match(html,/✓ Професионален пристап/);
   assert.match(html,/▣ CasePilot/);
   assert.match(html,/⚖ Судски пресуди и метаподатоци/);
+});
+
+test('core composer boot is independent and privacy dependency failure is fail-closed',()=>{
+  const html=fs.readFileSync('bot/index.html','utf8');
+  const core=fs.readFileSync('assets/standalone-bot.js','utf8');
+  const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  const corePos=html.indexOf('standalone-bot.js?v=20261101-core-r10');
+  const vnextPos=html.indexOf('standalone-bot-vnext.js?v=20261101-vnext-r10');
+  assert.ok(corePos>=0 && vnextPos>corePos);
+  assert.doesNotMatch(vnext,/await import.*standalone-bot/);
+  assert.match(core,/Promise\.allSettled/);
+  assert.match(core,/privacyRuntimeReady/);
+  assert.match(core,/Ништо не е испратено/);
+  assert.match(core,/window\.AIAdvokatCoreReady = true/);
 });

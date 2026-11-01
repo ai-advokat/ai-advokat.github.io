@@ -8,7 +8,8 @@ test('standalone bot vNext exposes unified professional workspace without replac
   const css=fs.readFileSync('assets/standalone-bot-vnext.css','utf8');
   assert.match(html,/standalone-bot-vnext\.css/);
   assert.match(html,/standalone-bot-vnext\.js/);
-  assert.match(source,/await import\('\.\/standalone-bot\.js\?v=20261101-access-r7'\)/);
+  assert.ok(html.includes('standalone-bot.js?v=20261101-core-r10'));
+  assert.doesNotMatch(source,/standalone-bot\\.js/);
   assert.match(source,/\/api\\\/bot/);
   assert.match(source,/body\.history=thread\.history\.slice\(-12\)/);
   assert.match(source,/Правен асистент/);
