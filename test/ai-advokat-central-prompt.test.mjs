@@ -63,11 +63,11 @@ test("COP5b default Macedonian language contract is not duplicated in runtime pr
   assert.match(prompt,/AI ADVOKAT CENTRAL OPERATING CONTRACT/);
 });
 
-test("COP6 runtime paths share governed prompt contracts while FREE L0 uses the compact contract",()=>{
+test("COP6 runtime paths share governed prompt contracts while FREE L0 compact mode excludes formal drafts",()=>{
   assert.match(worker,/const ASSISTANT_SYSTEM_RULES = buildAIAdvokatCentralPrompt\(/);
   assert.match(worker,/const system=buildAIAdvokatCentralPrompt\(\{[\s\S]*?workers_ai_private_case/);
   assert.match(worker,/buildAIAdvokatFreeFastPrompt/);
-  assert.match(worker,/fastFreePrompt=missionProfile==="GENERAL_BYPASS" \|\| missionProfile==="L0_INFORMATIONAL"/);
+  assert.match(worker,/const fastFreePrompt=\(missionProfile==="GENERAL_BYPASS" \|\| missionProfile==="L0_INFORMATIONAL"\)[\s\S]*?&& !formalDraftRequest/);
   assert.match(orchestrator,/const central=buildAIAdvokatCentralPrompt\(/);
   assert.match(worker,/centralOperatingPrompt:AI_ADVOKAT_CENTRAL_PROMPT_VERSION/);
   assert.match(worker,/centralPromptVersion:AI_ADVOKAT_CENTRAL_PROMPT_VERSION/);
@@ -106,14 +106,17 @@ test("COP8 OpenAI Chief inherits the same central contract for both general and 
   assert.match(legalPrompt,/governed sources and verified tool results control material legal propositions/i);
 });
 
-test("COP9 FREE Macedonian output uses deterministic cleanup, one bounded repair pass and strict Pravopis release",()=>{
+test("COP9 Macedonian legal output uses deterministic cleanup, independent editor and fail-closed release",()=>{
   assert.match(worker,/async function repairWorkersAIMacedonianIfNeeded/);
   assert.match(worker,/const deterministicFirst=normaliseMacedonianGeneratedText\(current\)/);
   assert.ok((worker.match(/const languagePass=await repairWorkersAIMacedonianIfNeeded/g)||[]).length>=3,"public chat, source-backed researcher and private synthesis must share the Macedonian postflight");
   assert.match(worker,/messages:buildMacedonianRepairMessages\(\{text:current\|\|original,userText\}\)/);
+  assert.match(worker,/resolveMacedonianLanguageEditorModel/);
+  assert.match(worker,/model:editorModel/);
   assert.match(worker,/timeoutMs:12000/);
-  assert.match(worker,/language_quality_blocked_after_repair/);
-  assert.match(worker,/language_quality_blocked/);
+  assert.match(worker,/language_quality_blocked_after_editor/);
+  assert.match(worker,/mandatory_language_editor_failed/);
+  assert.match(worker,/hardBlock:true/);
   assert.doesNotMatch(worker,/language_quality_warning/);
 });
 
@@ -239,4 +242,14 @@ test("COP23 pre-litigation notices cannot be silently converted into lawsuits",(
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Do not relabel it as ТУЖБА/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/do not invent a court or authority addressee/i);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/never invent a mandatory pre-suit notice, statutory article, response deadline, specialised court or legal effect/i);
+});
+
+
+test("COP19 canonical Macedonian standard is fail-closed and allows a bounded independent editor pass",()=>{
+  const doc=fs.readFileSync("MACEDONIAN_LANGUAGE_STANDARD.md","utf8");
+  assert.match(doc,/Заеднички јазичен и терминолошки стандард v1\.3/);
+  assert.match(doc,/независна release-брана/u);
+  assert.match(doc,/еден ограничен јазичен editor-повик/u);
+  assert.match(doc,/fail-closed/u);
+  assert.doesNotMatch(doc,/јазичната контрола не смее да прави втор provider повик/u);
 });

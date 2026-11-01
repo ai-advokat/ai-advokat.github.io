@@ -2,7 +2,7 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V11_STRICT";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V12_LANGUAGE_FIREWALL";
 
 export const MACEDONIAN_ORTHOGRAPHY_2017_SOURCE=Object.freeze({
   id:"MK-ORTHOGRAPHY-2017-2ED",
@@ -26,8 +26,8 @@ export const MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE=Object.freeze([
   {id:"R396",topic:"headings",policy:"Насловот стои во нов ред, почнува со голема буква и нема точка на крајот."},
   {id:"LEGAL-NUMBERING",topic:"legal_numbering",policy:"Општите именки со конкретен број се со мала буква: член 5, став 1, табела 1."}
 ]);
-export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V7_STRICT_ORTHOGRAPHY";
-export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="Одговорот не е пуштен затоа што задолжителната проверка според Правописот на македонскиот јазик од 2017 година не помина. Системот откри остаточна јазична контаминација, изобличена македонска форма или непобарано право од друга јурисдикција. Потребна е повторна јазична/правна проверка пред прикажување.";
+export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V8_LANGUAGE_FIREWALL";
+export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="Одговорот не е прикажан затоа што задолжителната македонска јазична проверка не помина. Системот откри остаточна јазична контаминација, изобличена македонска форма, неуспешна задолжителна редакција или непобарано право од друга јурисдикција. Ве молиме повторете го барањето; правната содржина не се пушта додека јазичниот release gate не помине.";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
   "PRIORITY 0 — ПРАВОПИС НА МАКЕДОНСКИОТ ЈАЗИК 2017.",
@@ -42,6 +42,8 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "VERBATIM SOURCE PRESERVATION OVERRIDE. Never silently orthographically rewrite verbatim statutory text, quotations, case numbers, party names, official titles, URLs, file names, citation markers or source identifiers. Source fidelity outranks stylistic normalisation inside quoted/source-faithful spans.",
   "When the user writes in Macedonian, uses recognisable Macedonian Latin transliteration, or explicitly requests Macedonian, answer exclusively in standard literary Macedonian using Macedonian Cyrillic, following the 2017 Правопис на македонскиот јазик.",
   "Use Macedonian grammar, syntax, legal terminology and the Macedonian Cyrillic alphabet. Do not mix Serbian, Bulgarian, Russian, Croatian or hybrid neighbouring-language forms into the answer, even if the model or a retrieved source tends toward them.",
+  "LANGUAGE FIREWALL: for Macedonian legal/professional output, a model generation is never the release authority. A separate language-editor pass may be mandatory, and the final deterministic gate may block delivery.",
+  "LANGUAGE EDITOR BOUNDARY: the editor may correct language only. It must not add, remove or change material facts, legal rules, article numbers, deadlines, holdings, citations, source status or legal effect.",
   "Do not use non-Macedonian Cyrillic letters such as ъ, ы, э, ё, ю, я, й, ь, щ, ђ or ћ in Macedonian prose.",
   "Prefer natural Macedonian legal forms such as постапка, решение, подносител, тужител, тужен, тужба, барање, надомест на штета, правен лек, трошоци на постапката, полномошно, правна основа and човечка проверка where context requires them.",
   "In Macedonian legal prose do not use Bulgarian forms such as съд, ищец, ответник, искова молба, обезщетение, съгласно, обжалване, възражение, разноски, случайни or Serbian forms such as поступак, тужилац, захтев, решење, трошкови and пуномоќ when a standard Macedonian equivalent is required.",
@@ -108,6 +110,8 @@ const CONTEXTUAL_CONTAMINATION_PHRASES=[
   "просек за официјални пресуди",
   "заглавие / пресуд",
   "пресудни дела",
+  "директна примера",
+  "директна пример",
   "разбирај. јас ќе",
   "разбирај! јас ќе",
   "работни облага",
@@ -316,6 +320,8 @@ const DETERMINISTIC_LEXICAL_REPLACEMENTS=[
   ["доступна","достапна"],
   ["доступно","достапно"],
   ["индексиот","индексот"],
+  ["директна примера","директен пример"],
+  ["директна пример","директен пример"],
   ["ево на примерен","Еве примерен"],
   ["ево на пример","Еве пример"],
   ["ево","еве"],
@@ -464,6 +470,7 @@ export function buildMacedonianRepairMessages({text,userText=""}={}){
         MACEDONIAN_2017_SYSTEM_RULES,
         "",
         "You are a language-quality repair pass, not a new legal analyst.",
+        "You are the independent Macedonian language editor in a fail-closed release firewall. You have no legal-authority role.",
         "МАКЕДОНСКА ЈАЗИЧНА РЕДАКЦИЈА: Препиши го нацртот на правилен стандарден литературен македонски јазик според Правописот од 2017 година.",
         "Не користи српски, бугарски, руски или хрватски форми и не создавај непостоечки македонски зборови. Исправи очигледни јазични изобличувања и печатни или морфолошки грешки.",
         "Провери ги неприродните правни форми и, кога контекстот го бара тоа, користи природни македонски облици како: постапка, поднесување, барање, решение, притвор, жалба, полномошно, подносител и правна основа.",

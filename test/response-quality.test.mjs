@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import {
   isFormalLegalDraftRequest,
+  hasProceduralInstrumentMismatch,
+  applyProceduralInstrumentSafety,
   cleanFormalDraftForExport,
   replaceUngroundedArticleReferences,
   requestedFormalDraftHeading,
@@ -113,4 +116,56 @@ test("RQ9 pre-litigation notice is classified before the embedded lawsuit word",
   );
   assert.match(final,/^ОПОМЕНА ПРЕД ПОВЕДУВАЊЕ СУДСКА ПОСТАПКА\n\n/u);
   assert.doesNotMatch(final,/^ТУЖБА\n/mu);
+});
+
+
+test("RQ10 obvious typo Туѓба is still detected as a formal legal draft request",()=>{
+  assert.equal(isFormalLegalDraftRequest("Направи ми Туѓба за кражба на велосипед."),true);
+});
+
+test("RQ11 criminal-event wording does not force a civil lawsuit heading",()=>{
+  const q="Направи ми Туѓба за кражба на велосипед.";
+  assert.equal(hasProceduralInstrumentMismatch(q),true);
+  assert.equal(
+    requestedFormalDraftHeading(q),
+    "РАБОТЕН НАЦРТ · ПРОЦЕСЕН ИНСТРУМЕНТ ЗА ПРОВЕРКА"
+  );
+  const final=finaliseFormalLegalDraft(
+    "ТУЖБА\n\nОпис на настанот: велосипедот е одземен од непознато лице.",
+    {userText:q,hasGovernedLegalContext:false}
+  );
+  assert.match(final,/^РАБОТЕН НАЦРТ · ПРОЦЕСЕН ИНСТРУМЕНТ ЗА ПРОВЕРКА/u);
+  assert.match(final,/точниот процесен инструмент/u);
+  assert.doesNotMatch(final,/^ТУЖБА\b/mu);
+});
+
+test("RQ12 civil-remedy wording keeps a lawsuit request eligible for civil drafting",()=>{
+  const q="Изработи тужба за надомест на штета поради измама.";
+  assert.equal(hasProceduralInstrumentMismatch(q),false);
+  assert.equal(requestedFormalDraftHeading(q),"ТУЖБА");
+});
+
+test("RQ13 procedural safety strips an unsafe forced lawsuit heading",()=>{
+  const q="Направи тужба за кражба.";
+  const out=applyProceduralInstrumentSafety("ТУЖБА\n\nДо надлежен орган", {userText:q});
+  assert.match(out,/^РАБОТЕН НАЦРТ/u);
+  assert.doesNotMatch(out,/^ТУЖБА\b/mu);
+});
+
+
+test("RQ14 formal drafts are excluded from the stripped-down FREE fast prompt",()=>{
+  const worker=fs.readFileSync("src/index.js","utf8");
+  assert.match(worker,/const fastFreePrompt=\(missionProfile===\"GENERAL_BYPASS\" \|\| missionProfile===\"L0_INFORMATIONAL\"\)\s*&& !formalDraftRequest;/);
+  assert.match(worker,/allowProviderRepair:languageRequired/);
+  assert.match(worker,/forceEditorialPass:languageRequired && \(formalDraftRequest \|\| missionProfile!==\"GENERAL_BYPASS\"\)/);
+  assert.match(worker,/languagePass\.hardBlock \|\| !finalRelease\.ok/);
+});
+
+
+test("RQ15 Macedonian legal drafting uses an independent fail-closed language editor",()=>{
+  const worker=fs.readFileSync("src/index.js","utf8");
+  assert.match(worker,/resolveMacedonianLanguageEditorModel/);
+  assert.match(worker,/model:editorModel/);
+  assert.match(worker,/mandatory_language_editor_failed/);
+  assert.match(worker,/hardBlock:true/);
 });

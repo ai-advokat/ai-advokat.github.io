@@ -192,11 +192,12 @@ test("CHAT17 chat latency optimisations preserve governed routing",()=>{
   assert.match(worker,/Promise\.all\(\[/);
 });
 
-test("CHAT17b fast FREE Macedonian path uses deterministic strict QA with zero extra language calls",()=>{
-  assert.match(worker,/allowProviderRepair:!fastFreePrompt/);
-  assert.match(worker,/providerCalls:0/);
-  assert.match(worker,/language_quality_blocked/);
-  assert.match(worker,/zero_extra_language_repair_calls/);
+test("CHAT17b Macedonian legal output uses a bounded independent editor and fail-closed release",()=>{
+  assert.match(worker,/allowProviderRepair:languageRequired/);
+  assert.match(worker,/resolveMacedonianLanguageEditorModel/);
+  assert.match(worker,/model:editorModel/);
+  assert.match(worker,/mandatory_language_editor_failed/);
+  assert.match(worker,/hardBlock:true/);
   assert.doesNotMatch(worker,/language_quality_warning/);
   assert.doesNotMatch(worker,/runOpenAIMacedonianRepair\(env/);
 });
@@ -215,7 +216,7 @@ test("CHAT17c one strict Pravopis last-mile policy protects every public surface
 
 test("CHAT17d FREE consequential drafts have a bounded compact latency lane",()=>{
   const helper=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
-  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V9"/);
+  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V10_LANGUAGE_FIREWALL"/);
   assert.match(helper,/const compactFreeDraft=formalDraftRequest/);
   assert.match(helper,/FREE FORMAL DRAFT LATENCY CONTRACT/);
   assert.match(helper,/Math\.min\(1000,requestedTokenLimit\)/);

@@ -215,8 +215,8 @@ test("unambiguous production calques get deterministic cleanup before any AI rep
   assert.equal(check.ok,true,JSON.stringify({clean,check}));
 });
 
-test("language runtime is V11 strict and source-profile anchored to Orthography 2017 second edition",()=>{
-  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V11_STRICT");
+test("language runtime is V12 firewall and source-profile anchored to Orthography 2017 second edition",()=>{
+  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V12_LANGUAGE_FIREWALL");
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.year,2017);
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.edition,"второ издание");
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.legalAuthority,false);
@@ -270,11 +270,11 @@ test("single repairable contamination can be cleaned and then released",()=>{
   assert.equal(final.verdict,"RELEASE",JSON.stringify(final));
 });
 
-test("clean concise Macedonian is released by V11 strict canonical gate",()=>{
+test("clean concise Macedonian is released by V12 firewall canonical gate",()=>{
   const clean="Договорот за вработување ги уредува правата и обврските на работникот и работодавачот. За тековните законски услови треба да се провери важечкиот Закон за работните односи.";
   const verdict=macedonianReleaseVerdict(clean,{userText:"Што е договор за вработување?"});
   assert.equal(verdict.verdict,"RELEASE",JSON.stringify(verdict));
-  assert.equal(MACEDONIAN_RELEASE_GATE_VERSION,"FREE_MK_CANONICAL_RELEASE_V7_STRICT_ORTHOGRAPHY");
+  assert.equal(MACEDONIAN_RELEASE_GATE_VERSION,"FREE_MK_CANONICAL_RELEASE_V8_LANGUAGE_FIREWALL");
 });
 
 
@@ -355,7 +355,7 @@ test("Orthography 2017 system contract separates language authority from legal a
 });
 
 
-test("V11 strict Pravopis gate blocks residual neighbouring-language contamination after normalisation",()=>{
+test("V12 language firewall gate blocks residual neighbouring-language contamination after normalisation",()=>{
   const bad=macedonianDeliveryVerdict("Ова прашање е овде, но одговорот мора да биде на стандарден македонски.",{userText:"Те молам одговори ми на македонски."});
   assert.equal(bad.deliver,false,JSON.stringify(bad));
   assert.equal(bad.clean,false);
@@ -363,14 +363,36 @@ test("V11 strict Pravopis gate blocks residual neighbouring-language contaminati
   assert.ok(bad.quality.reasons.includes("foreign_lexical_contamination"));
 });
 
-test("V11 strict Pravopis gate blocks malformed Macedonian generation such as vtorarni",()=>{
+test("V12 language firewall gate blocks malformed Macedonian generation such as vtorarni",()=>{
   const bad=macedonianDeliveryVerdict("Овие извори се вторарни и не се доволни.",{userText:"Те молам одговори ми на македонски."});
   assert.equal(bad.deliver,false);
   assert.ok(bad.quality.reasons.includes("malformed_macedonian_generation"));
 });
 
-test("V11 strict Pravopis gate still releases clean standard Macedonian",()=>{
+test("V12 language firewall gate still releases clean standard Macedonian",()=>{
   const good=macedonianDeliveryVerdict("Овие извори се секундарни и не можат да го заменат официјалниот правен извор.",{userText:"Те молам одговори ми на македонски."});
   assert.equal(good.deliver,true);
   assert.equal(good.clean,true);
+});
+
+
+test("live phrase директна примера is rejected and deterministically repaired",()=>{
+  const bad='Не постои директна примера за овој поднесок.';
+  const check=assessMacedonianOutput(bad,{userText:"Направи ми тужба на македонски."});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  assert.ok(check.reasons.includes("contextual_language_contamination"),JSON.stringify(check));
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.match(clean,/директен пример/u);
+  assert.doesNotMatch(clean,/директна примера/u);
+  assert.equal(
+    assessMacedonianOutput(clean,{userText:"Направи ми тужба на македонски."}).ok,
+    true
+  );
+});
+
+
+test("V12 runtime contract explicitly separates language-editor authority from legal authority",()=>{
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/LANGUAGE FIREWALL/);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/LANGUAGE EDITOR BOUNDARY/);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/must not add, remove or change material facts/i);
 });

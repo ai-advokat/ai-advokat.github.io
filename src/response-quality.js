@@ -1,7 +1,18 @@
 // Final user-facing response quality helpers.
 // Deterministic postflight only: no source expansion, no new legal reasoning.
 
-const FORMAL_DRAFT_RE=/(?:опомена|opomena|тужб|жалб|приговор|поднесок|поднес|барање|договор|полномош|правно\s+мислење|tuzb|zalb|prigovor|podnes|baranje|dogovor|polnomos)/iu;
+const FORMAL_DRAFT_RE=/(?:опомена|opomena|ту[жѓ]б|жалб|приговор|поднесок|поднес|барање|договор|полномош|правно\s+мислење|tuzb|zalb|prigovor|podnes|baranje|dogovor|polnomos)/iu;
+
+const CRIMINAL_EVENT_DRAFT_RE=/(?:кражб|разбојништ|измам|фалсифик|напад|закан|насил|убиств|поткуп|проневер|кривичн(?:о|а)\s+дел)/iu;
+const CIVIL_REMEDY_DRAFT_RE=/(?:надомест|штет|исплат|враќањ|сопственост|долг|побарувањ|неосновано\s+збогатување)/iu;
+
+export function hasProceduralInstrumentMismatch(userText){
+  const text=String(userText||"").normalize("NFKC");
+  const lawsuitRequested=/(?:ту[жѓ]б|tuzb)/iu.test(text);
+  return lawsuitRequested
+    && CRIMINAL_EVENT_DRAFT_RE.test(text)
+    && !CIVIL_REMEDY_DRAFT_RE.test(text);
+}
 
 export function isFormalLegalDraftRequest(userText){
   return FORMAL_DRAFT_RE.test(String(userText||"").normalize("NFKC"));
@@ -11,7 +22,9 @@ export function requestedFormalDraftHeading(userText){
   const text=String(userText||"").normalize("NFKC").toLocaleLowerCase("mk");
   const candidates=[
     [/(?:опомена|opomena)(?:\s+пред\s+(?:поведување\s+)?(?:тужб|tuzb))?/u,"ОПОМЕНА ПРЕД ПОВЕДУВАЊЕ СУДСКА ПОСТАПКА"],
-    [/(?:тужб|tuzb)/u,"ТУЖБА"],
+    [/(?:ту[жѓ]б|tuzb)/u,hasProceduralInstrumentMismatch(text)
+      ? "РАБОТЕН НАЦРТ · ПРОЦЕСЕН ИНСТРУМЕНТ ЗА ПРОВЕРКА"
+      : "ТУЖБА"],
     [/(?:жалб|zalb)/u,"ЖАЛБА"],
     [/(?:приговор|prigovor)/u,"ПРИГОВОР"],
     [/(?:поднесок|поднес|podnes)/u,"ПОДНЕСОК"],
@@ -77,8 +90,25 @@ export function replaceUngroundedArticleReferences(text,{userText="",hasGoverned
   });
 }
 
+export function applyProceduralInstrumentSafety(text,{userText=""}={}){
+  let clean=String(text||"").trim();
+  if(!hasProceduralInstrumentMismatch(userText) || !clean) return clean;
+
+  const heading="РАБОТЕН НАЦРТ · ПРОЦЕСЕН ИНСТРУМЕНТ ЗА ПРОВЕРКА";
+  const note="Забелешка: Барањето опишува можен кривично-правен настан. Не се претпоставува дека „тужба“ е точниот процесен инструмент; видот на поднесокот мора да се провери според важечкиот закон и конкретните факти.";
+
+  clean=clean.replace(/^\s*ТУЖБА(?:[^\n]*)?\s*(?:\n+|$)/iu,"").trim();
+  clean=clean.replace(/^\s*TUZBA(?:[^\n]*)?\s*(?:\n+|$)/iu,"").trim();
+
+  if(clean.toLocaleUpperCase("mk").startsWith(heading)){
+    return clean.includes(note) ? clean : heading+"\n\n"+note+"\n\n"+clean.slice(heading.length).trim();
+  }
+  return heading+"\n\n"+note+(clean?"\n\n"+clean:"");
+}
+
 export function finaliseFormalLegalDraft(text,{userText="",hasGovernedLegalContext=false}={}){
   const clean=cleanFormalDraftForExport(text);
   const grounded=replaceUngroundedArticleReferences(clean,{userText,hasGovernedLegalContext});
-  return ensureRequestedFormalDraftHeading(grounded,{userText});
+  const instrumentSafe=applyProceduralInstrumentSafety(grounded,{userText});
+  return ensureRequestedFormalDraftHeading(instrumentSafe,{userText});
 }
