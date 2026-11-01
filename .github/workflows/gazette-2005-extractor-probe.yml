@@ -1,0 +1,133 @@
+name: Gazette 2005 extractor probe
+
+on:
+  push:
+    branches:
+      - experiment/gazette-register-extractor-2005
+    paths:
+      - ".github/workflows/gazette-2005-extractor-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PDF extractors
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils mupdf-tools
+
+      - name: Fetch exact official 2005 register through governed fetch helper
+        run: |
+          python3 - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          spec=importlib.util.spec_from_file_location("g","scripts/gazette_backfill_wave1.py")
+          g=importlib.util.module_from_spec(spec); spec.loader.exec_module(g)
+          raw,final,transport=g.fetch_register_pdf(2005,None)
+          assert raw.startswith(b"%PDF")
+          Path("/tmp/reg2005.pdf").write_bytes(raw)
+          Path("/tmp/fetch.json").write_text(__import__("json").dumps({
+            "url":final,"sha256":g.sha256_bytes(raw),"transport":transport
+          },ensure_ascii=False,indent=2))
+          PY
+
+      - name: Extract with independent text engines and modes
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdftotext -layout /tmp/reg2005.pdf /tmp/poppler-layout.txt
+          pdftotext -raw /tmp/reg2005.pdf /tmp/poppler-raw.txt
+          pdftotext /tmp/reg2005.pdf /tmp/poppler-default.txt
+          mutool draw -F txt -o /tmp/mupdf.txt /tmp/reg2005.pdf
+
+      - name: Score extraction fidelity
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          CYR=r"А-ЯЃЅЈЉЊЌЏа-яѓѕјљњќџ"
+          out={}
+          for name in ["poppler-layout","poppler-raw","poppler-default","mupdf"]:
+              text=Path("/tmp/"+name+".txt").read_text("utf-8",errors="replace")
+              lines=text.splitlines()
+              refs=re.findall(r"(?m)(?<!\d)(\d{1,3})\s*/\s*(\d{1,5})\s*$",text)
+              ords=re.findall(r"(?m)^\s*(\d{1,6})\.\s+",text)
+              issue1=[(a,b) for a,b in refs if a=="1"]
+              spaced=len(re.findall(rf"(?u)\b[{CYR}]\s+[{CYR}]\b",text))
+              known="Обрасци од 1 до 6 на Државната изборна комисија"
+              compact=re.sub(r"\s+"," ",text)
+              pos=compact.find("Обрасци")
+              snippet=compact[max(0,pos-160):pos+420] if pos>=0 else ""
+              out[name]={
+                "chars":len(text),"lines":len(lines),"reference_pairs":len(refs),
+                "ordinal_lines":len(ords),"issue1_reference_pairs":issue1[:50],
+                "issue1_reference_count":len(issue1),"single_letter_spacing_score":spaced,
+                "known_phrase_exact":known in compact,"obrasci_snippet":snippet
+              }
+          Path("/tmp/extractor-score.json").write_text(json.dumps(out,ensure_ascii=False,indent=2)+"\n")
+          print(json.dumps(out,ensure_ascii=False,indent=2))
+          PY
+
+      - name: Parse each extraction with conservative line parser
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          def parse(text):
+              lines=[" ".join(x.split()) for x in text.splitlines()]
+              entries=[]; unresolved=[]; current=None
+              ordinal_re=re.compile(r"^(\d{1,6})\.\s*(.*)$")
+              ref_re=re.compile(r"(?<!\d)(\d{1,3})\s*/\s*(\d{1,5})\s*$")
+              for line in lines:
+                  if not line: continue
+                  m=ordinal_re.match(line)
+                  if m:
+                      if current: unresolved.append(current)
+                      current={"ordinal":int(m.group(1)),"parts":[m.group(2)] if m.group(2) else []}
+                  elif current:
+                      current["parts"].append(line)
+                  else:
+                      continue
+                  joined=" ".join(current["parts"]).strip()
+                  rm=ref_re.search(joined)
+                  if rm:
+                      title=joined[:rm.start()].strip(" .…·-")
+                      if title:
+                          entries.append({"ordinal":current["ordinal"],"issue":rm.group(1),"page":int(rm.group(2)),"title":title})
+                      else: unresolved.append(current)
+                      current=None
+              if current: unresolved.append(current)
+              return entries,unresolved
+          report={}
+          for name in ["poppler-layout","poppler-raw","poppler-default","mupdf"]:
+              text=Path("/tmp/"+name+".txt").read_text("utf-8",errors="replace")
+              entries,unresolved=parse(text)
+              issue1=[x for x in entries if x["issue"]=="1"]
+              report[name]={
+                "entries":len(entries),"unresolved":len(unresolved),
+                "issue1_count":len(issue1),"issue1":issue1[:40]
+              }
+          Path("/tmp/parser-report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n")
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+
+      - name: Upload extractor evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gazette-2005-extractor-probe
+          retention-days: 7
+          path: |
+            /tmp/fetch.json
+            /tmp/extractor-score.json
+            /tmp/parser-report.json
+            /tmp/poppler-layout.txt
+            /tmp/poppler-raw.txt
+            /tmp/poppler-default.txt
+            /tmp/mupdf.txt
