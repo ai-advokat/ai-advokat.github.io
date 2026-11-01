@@ -186,10 +186,43 @@ jobs:
             exit 1
           fi
           echo "SCOPED MIGRATION ISOLATION: PASS"
+      - name: Reuse already-verified production metadata index before external refresh
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            SELECT COUNT(*) AS n,
+                   MIN(issue_date) AS first_issue_date,
+                   MAX(issue_date) AS last_issue_date,
+                   COUNT(DISTINCT year) AS year_count,
+                   COUNT(DISTINCT publication_type) AS publication_type_count,
+                   SUM(source_occurrences) AS source_occurrences,
+                   SUM(legal_text_authority) AS legal_text_authority,
+                   SUM(current_law_authority) AS current_law_authority
+              FROM gazette_issue_metadata;
+          " | tee /tmp/gazette-preexisting-index.txt
+          if grep -q '"n": 8638' /tmp/gazette-preexisting-index.txt \
+             && grep -q '"first_issue_date": "1944-01-01"' /tmp/gazette-preexisting-index.txt \
+             && grep -q '"last_issue_date": "2017-12-29"' /tmp/gazette-preexisting-index.txt \
+             && grep -q '"year_count": 74' /tmp/gazette-preexisting-index.txt \
+             && grep -q '"publication_type_count": 7' /tmp/gazette-preexisting-index.txt \
+             && grep -q '"source_occurrences": 8651' /tmp/gazette-preexisting-index.txt \
+             && grep -q '"legal_text_authority": 0' /tmp/gazette-preexisting-index.txt \
+             && grep -q '"current_law_authority": 0' /tmp/gazette-preexisting-index.txt; then
+            touch /tmp/gazette-already-promoted
+            echo "PREEXISTING CANONICAL GAZETTE INDEX: VERIFIED · 8638 records"
+          else
+            echo "Preexisting index is incomplete; exact official snapshot refresh is required."
+          fi
+
       - name: Download exact official XLSX snapshot
         shell: bash
         run: |
           set -euo pipefail
+          if [ -f /tmp/gazette-already-promoted ]; then
+            echo "Verified 8638-record canonical index already exists; external refresh skipped."
+            exit 0
+          fi
           curl --fail --location --retry 5 --retry-delay 3 "$SOURCE_URL" -o /tmp/gazette.xlsx
           echo "4d111eb03ed0b8e877d151e030bf38096831cedc7a26f4a09121d9e6dfac5a18  /tmp/gazette.xlsx" | sha256sum --check
           python3 scripts/gazette_open_data_backfill.py --input /tmp/gazette.xlsx --out-dir /tmp/gazette-batches --batch-size 50 | tee /tmp/gazette-build.txt
@@ -350,7 +383,11 @@ jobs:
           set -euo pipefail
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
           curl --fail --retry 6 --retry-delay 3 "$BASE/api/gazette-issue-index?q=72%2F2016&limit=20" -o /tmp/gazette-live-index.json
+          curl --fail --retry 6 --retry-delay 3 "$BASE/api/gazette-issue-index?q=1%2F2010&limit=20" -o /tmp/gazette-live-2010.json
           curl --fail --retry 6 --retry-delay 3 "$BASE/api/gazette-hybrid-status" -o /tmp/gazette-live-status.json
+          curl --fail --retry 6 --retry-delay 3 -H 'content-type: application/json' \
+            -d '{"q":"Те молам дај ми ги мета дата податоците од Службен весник број. 1 од 2010 година, со почит","mode":"auto","webSearch":false,"history":[],"guideIds":[],"attachments":[]}' \
+            "$BASE/api/chat" -o /tmp/gazette-live-chat-2010.json
           curl --fail --retry 6 --retry-delay 3 "$BASE/api/open-legal-sources-policy" -o /tmp/gazette-open-data-live.json
           node <<'NODE'
           const idx=require("/tmp/gazette-live-index.json");
@@ -358,6 +395,15 @@ jobs:
           if(idx.coverage?.total!==8638) throw new Error("Unexpected total: "+idx.coverage?.total);
           if(idx.authority?.legalTextAuthorityCount!==0 || idx.authority?.currentLawAuthorityCount!==0) throw new Error("Metadata authority leak");
           if(!idx.entries.some(x=>String(x.issue_number)==="72" && x.issue_date==="2016-04-12")) throw new Error("72/2016 reconciliation missing");
+          const idx2010=require("/tmp/gazette-live-2010.json");
+          if(!idx2010.ok || idx2010.count<1) throw new Error("1/2010 issue metadata missing");
+          if(!idx2010.entries.some(x=>String(x.issue_number)==="1" && Number(x.year)===2010)) throw new Error("1/2010 canonical row missing");
+          const chat2010=require("/tmp/gazette-live-chat-2010.json");
+          if(!chat2010.ok) throw new Error("1/2010 chat lane failed: "+JSON.stringify(chat2010).slice(0,800));
+          if(chat2010.sourceMode!=="canonical_gazette_issue_metadata_no_model") throw new Error("1/2010 did not use deterministic Gazette lane");
+          if(chat2010.provider!=="canonical_corpus_no_model") throw new Error("1/2010 unexpectedly called AI provider");
+          if(Number(chat2010?.performance?.providerCalls||0)!==0) throw new Error("1/2010 deterministic lane consumed provider calls");
+          if(!Array.isArray(chat2010.gazetteIssueMetadata) || !chat2010.gazetteIssueMetadata.some(x=>x.issueNumber==="1" && x.year===2010)) throw new Error("1/2010 metadata missing from chat response");
           const status=require("/tmp/gazette-live-status.json");
           if(!status.ok || status.counts?.officialIssueMetadata!==8638) throw new Error("Hybrid status metadata count mismatch");
           const policy=require("/tmp/gazette-open-data-live.json");
@@ -379,6 +425,7 @@ jobs:
             /tmp/gazette-open-data-pending-after.txt
             /tmp/gazette-open-data-apply.txt
             /tmp/gazette-build.txt
+            /tmp/gazette-preexisting-index.txt
             /tmp/gazette-existing-final.txt
             /tmp/gazette-batches/summary.json
             /tmp/gazette-stage-verify.txt
@@ -388,5 +435,7 @@ jobs:
             /tmp/gazette-source-policy-verify.txt
             /tmp/gazette-open-data-deploy.txt
             /tmp/gazette-live-index.json
+            /tmp/gazette-live-2010.json
+            /tmp/gazette-live-chat-2010.json
             /tmp/gazette-live-status.json
             /tmp/gazette-open-data-live.json
