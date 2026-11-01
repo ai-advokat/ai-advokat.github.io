@@ -55,10 +55,54 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      - name: Verify exact live R12 external bot deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+
+          expected_bot="$(sha256sum bot/index.html | awk '{print $1}')"
+          expected_core="$(sha256sum assets/standalone-bot.js | awk '{print $1}')"
+          expected_privacy_primary="$(sha256sum assets/chat-privacy-browser.js | awk '{print $1}')"
+          expected_privacy_compat="$(sha256sum src/chat-privacy.js | awk '{print $1}')"
+
+          deployed=0
+          for attempt in $(seq 1 40); do
+            nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r12&deploy_verify=$nonce" -o /tmp/deploy-bot.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261101-core-r12&deploy_verify=$nonce" -o /tmp/deploy-core.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/chat-privacy-browser.js?v=20261101-privacy-r12&deploy_verify=$nonce" -o /tmp/deploy-privacy-primary.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/src/chat-privacy.js?v=20261101-privacy-compat-r1&deploy_verify=$nonce" -o /tmp/deploy-privacy-compat.js || true
+
+            live_bot="$(sha256sum /tmp/deploy-bot.html 2>/dev/null | awk '{print $1}' || true)"
+            live_core="$(sha256sum /tmp/deploy-core.js 2>/dev/null | awk '{print $1}' || true)"
+            live_privacy_primary="$(sha256sum /tmp/deploy-privacy-primary.js 2>/dev/null | awk '{print $1}' || true)"
+            live_privacy_compat="$(sha256sum /tmp/deploy-privacy-compat.js 2>/dev/null | awk '{print $1}' || true)"
+
+            if [ "$live_bot" = "$expected_bot" ] \
+              && [ "$live_core" = "$expected_core" ] \
+              && [ "$live_privacy_primary" = "$expected_privacy_primary" ] \
+              && [ "$live_privacy_compat" = "$expected_privacy_compat" ]; then
+              deployed=1
+              echo "EXTERNAL BOT R12 LIVE BYTE PARITY: PASS on attempt $attempt"
+              break
+            fi
+            echo "Waiting for exact R12 production bytes (attempt $attempt/40)."
+            sleep 3
+          done
+          test "$deployed" = "1"
+
+          legacy_code="$(curl -sS --max-time 30 -o /dev/null -D /tmp/deploy-legacy-headers.txt -w '%{http_code}' "$BASE/bot/?release=core-r10")"
+          test "$legacy_code" = "302"
+          grep -qi '^location: .*release=core-r12' /tmp/deploy-legacy-headers.txt
+          grep -qi '^clear-site-data: "cache"' /tmp/deploy-legacy-headers.txt
+          grep -qi '^x-ai-advokat-release: core-r12' /tmp/deploy-legacy-headers.txt
+          echo "LEGACY CORE-R10 SELF-HEAL: PASS"
+
       - name: Record deployed commit
         run: |
           echo "AI Advokat production runtime update"
           echo "commit=${GITHUB_SHA}"
           echo "worker=ai-advokat-github-io"
 
-# trigger-core-composer-r10: 2026-11-01
+# trigger-core-composer-r12: 2026-11-01
