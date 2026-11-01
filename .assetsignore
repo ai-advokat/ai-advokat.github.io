@@ -6,6 +6,7 @@ node_modules/**
 .DS_Store
 
 src/**
+!src/chat-privacy.js
 migrations/**
 ingest/**
 scripts/**
