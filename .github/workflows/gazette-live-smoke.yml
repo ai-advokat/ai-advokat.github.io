@@ -92,7 +92,7 @@ jobs:
           if(String(g.issueNumber)!=="1" || Number(g.year)!==2016 || String(g.issueDate)!=="2016-01-05") throw new Error("wrong canonical issue identity");
           if(!g.datasetId || !g.resourceId || !g.snapshotSha256) throw new Error("provenance identifiers missing");
           if(g.legalTextAuthority!==false || g.currentLawAuthority!==false) throw new Error("metadata authority boundary widened");
-          if(!String(d.humanGate||"").includes("не се изведуваат")) throw new Error("Gazette Human Gate boundary missing");
+          if(!String(d.humanGate||"").includes("Metadata only.") || !String(d.humanGate||"").includes("официјалниот текст")) throw new Error("Gazette Human Gate boundary missing");
           console.log("MAIN CHAT GAZETTE 1/2016 COMPLETE METADATA: PASS");
           NODE
 
