@@ -1,0 +1,161 @@
+name: AI Advokat root reliability live smoke
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/root-reliability-live-smoke.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-root-reliability-live-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify release source contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/index.js
+          node --check assets/ai-advokat-chat.js
+          node --check assets/standalone-bot-vnext.js
+          node --check assets/frontend-runtime-guard.js
+          grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' index.html
+          grep -q 'ai-advokat-chat.js?v=20261101-root-r9' index.html
+          grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' bot/index.html
+          grep -q 'standalone-bot-vnext.js?v=20261101-root-r9' bot/index.html
+          echo "RELEASE SOURCE CONTRACT: PASS"
+
+      - name: Verify GitHub Pages serves root-r9 bundles
+        shell: bash
+        run: |
+          set -euo pipefail
+          ok=0
+          for i in $(seq 1 20); do
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-home.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/bot/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-bot.html || true
+            if grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-home.html 2>/dev/null \
+              && grep -q 'ai-advokat-chat.js?v=20261101-root-r9' /tmp/pages-home.html 2>/dev/null \
+              && grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-bot.html 2>/dev/null \
+              && grep -q 'standalone-bot-vnext.js?v=20261101-root-r9' /tmp/pages-bot.html 2>/dev/null; then
+              ok=1
+              break
+            fi
+            sleep 3
+          done
+          test "$ok" = "1"
+          echo "GITHUB PAGES ROOT-R9 ASSETS: PASS"
+
+      - name: Verify Worker static assets and runtime health
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/" -o /tmp/worker-home.html
+          curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/bot/" -o /tmp/worker-bot.html
+          grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-home.html
+          grep -q 'ai-advokat-chat.js?v=20261101-root-r9' /tmp/worker-home.html
+          grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-bot.html
+          grep -q 'standalone-bot-vnext.js?v=20261101-root-r9' /tmp/worker-bot.html
+
+          curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/api/health" -o /tmp/root-health.json
+          curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/api/orchestrator" -o /tmp/root-orchestrator.json
+          node <<'NODE'
+          const h=require("/tmp/root-health.json");
+          const o=require("/tmp/root-orchestrator.json");
+          if(!h.ok) throw new Error("health_not_ok");
+          if(h.database?.reachable!==true || h.database?.schemaReady!==true) throw new Error("database_not_ready");
+          if(!o.ok) throw new Error("orchestrator_not_ok");
+          if(o.runtime?.providerExecution!=="configured_for_api_chat_execution") throw new Error("paid_provider_not_ready");
+          if(o.runtime?.lioeRuntimeGovernance!=="enabled") throw new Error("lioe_governance_not_enabled");
+          if(o.runtime?.lioePostflight!=="enabled") throw new Error("lioe_postflight_not_enabled");
+          if(o.runtime?.lioeSpecialistExecution!=="enabled") throw new Error("lioe_specialists_not_enabled");
+          console.log("WORKER ROOT-R9 + HEALTH + ORCHESTRATOR: PASS");
+          NODE
+
+      - name: Verify browser CORS and main AI chat live response
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl -sS --fail -D /tmp/root-cors.txt -o /dev/null \
+            -X OPTIONS \
+            -H 'Origin: https://ai-advokat.github.io' \
+            -H 'Access-Control-Request-Method: POST' \
+            -H 'Access-Control-Request-Headers: content-type' \
+            "$BASE/api/chat"
+          grep -qi '^access-control-allow-origin: https://ai-advokat.github.io' /tmp/root-cors.txt
+
+          curl -fsSL --max-time 90 \
+            -H 'content-type: application/json' \
+            -H 'Origin: https://ai-advokat.github.io' \
+            -d '{"q":"Одговори кратко и вклучи ја ознаката ROOT_SMOKE_OK.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
+            "$BASE/api/chat" -o /tmp/root-chat.json
+
+          node <<'NODE'
+          const d=require("/tmp/root-chat.json");
+          if(!d.ok) throw new Error("main_chat_not_ok: "+JSON.stringify(d));
+          if(!String(d.answer||"").trim()) throw new Error("main_chat_empty_answer");
+          if(!String(d.answer||"").includes("ROOT_SMOKE_OK")) throw new Error("main_chat_marker_missing");
+          console.log("MAIN AI ADVOKAT LIVE CHAT: PASS");
+          NODE
+
+      - name: Verify professional bot route is live and membership fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          code="$(curl -sS --max-time 30 -o /tmp/root-bot-unauth.json -w '%{http_code}' \
+            -H 'content-type: application/json' \
+            -H 'Origin: https://ai-advokat.github.io' \
+            -d '{"q":"Здраво"}' \
+            "$BASE/api/bot")"
+          test "$code" = "401"
+          grep -q 'bot_membership_required' /tmp/root-bot-unauth.json
+          echo "PROFESSIONAL /api/bot LIVE + FAIL-CLOSED: PASS"
+
+      - name: Write release evidence summary
+        shell: bash
+        run: |
+          cat > /tmp/root-live-smoke-summary.txt <<EOF
+          AI ADVOKAT ROOT RELIABILITY LIVE SMOKE
+          Commit: $GITHUB_SHA
+          GitHub Pages root-r9 assets: PASS
+          Worker root-r9 assets: PASS
+          Production health/database: PASS
+          Orchestrator/OpenAI/LIOE readiness: PASS
+          Browser CORS: PASS
+          Main AI Advokat live chat: PASS
+          Professional /api/bot route: PASS (unauthenticated fail-closed)
+          Membership mutation performed: NO
+          D1 write performed by this smoke: NO
+          Secret mutation performed: NO
+          EOF
+          cat /tmp/root-live-smoke-summary.txt
+
+      - name: Upload non-secret smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-root-reliability-live-smoke
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/pages-home.html
+            /tmp/pages-bot.html
+            /tmp/worker-home.html
+            /tmp/worker-bot.html
+            /tmp/root-health.json
+            /tmp/root-orchestrator.json
+            /tmp/root-cors.txt
+            /tmp/root-chat.json
+            /tmp/root-bot-unauth.json
+            /tmp/root-live-smoke-summary.txt
