@@ -133,7 +133,8 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
   assert.match(html,/standalone-bot-vnext\.js\?v=20261101-vnext-r10/);
   assert.match(html,/standalone-bot-vnext\.css\?v=20261101-ui-r5/);
-  assert.match(vnext,/import\('\.\/standalone-bot\.js\?v=20261101-access-r7'\)/);
+  assert.match(html,/standalone-bot\.js\?v=20261101-core-r10/);
+  assert.doesNotMatch(vnext,/standalone-bot\.js/);
   assert.match(core,/function ensureLegalPulseStyles\(\)/);
   assert.match(core,/id = 'legalPulseRuntimeStyle'/);
   assert.match(core,/const pulse = responsePulse\(\)/);
@@ -223,4 +224,17 @@ test('bot menu and tool surfaces use leading symbols consistently',()=>{
   assert.match(html,/▣ CasePilot/);
   assert.match(html,/⚖ Судски пресуди и метаподатоци/);
 });
-\n\ntest('core composer boot is independent and privacy dependency failure is fail-closed',()=>{\n  const html=fs.readFileSync('bot/index.html','utf8');\n  const core=fs.readFileSync('assets/standalone-bot.js','utf8');\n  const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');\n  const corePos=html.indexOf('standalone-bot.js?v=20261101-core-r10');\n  const vnextPos=html.indexOf('standalone-bot-vnext.js?v=20261101-vnext-r10');\n  assert.ok(corePos>=0 && vnextPos>corePos);\n  assert.doesNotMatch(vnext,/await import\\(['"]\\.\\/standalone-bot/);\n  assert.match(core,/Promise\\.allSettled/);\n  assert.match(core,/privacyRuntimeReady/);\n  assert.match(core,/Ништо не е испратено/);\n  assert.match(core,/window\\.AIAdvokatCoreReady = true/);\n});\n
+
+test('core composer boot is independent and privacy dependency failure is fail-closed',()=>{
+  const html=fs.readFileSync('bot/index.html','utf8');
+  const core=fs.readFileSync('assets/standalone-bot.js','utf8');
+  const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  const corePos=html.indexOf('standalone-bot.js?v=20261101-core-r10');
+  const vnextPos=html.indexOf('standalone-bot-vnext.js?v=20261101-vnext-r10');
+  assert.ok(corePos>=0 && vnextPos>corePos);
+  assert.doesNotMatch(vnext,/await import.*standalone-bot/);
+  assert.match(core,/Promise\.allSettled/);
+  assert.match(core,/privacyRuntimeReady/);
+  assert.match(core,/Ништо не е испратено/);
+  assert.match(core,/window\.AIAdvokatCoreReady = true/);
+});
