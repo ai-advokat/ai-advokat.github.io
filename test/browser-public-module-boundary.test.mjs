@@ -13,15 +13,16 @@ const PUBLIC_SHARED=new Set([
   "src/official-source-binder.js"
 ]);
 
-const PUBLIC_CLIENT_FILES=[
-  "assets/ai-advokat-chat.js",
-  "assets/case-law-metadata.js",
-  "assets/casepilot-export.js",
-  "assets/document-router.js",
-  "assets/professional-tools.js",
-  "assets/standalone-bot-vnext.js",
-  "assets/standalone-bot.js"
-];
+function walkJs(dir){
+  const out=[];
+  for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
+    const path=dir+"/"+entry.name;
+    if(entry.isDirectory()) out.push(...walkJs(path));
+    else if(/\.(?:js|mjs)$/i.test(entry.name)) out.push(path);
+  }
+  return out;
+}
+const PUBLIC_CLIENT_FILES=walkJs("assets");
 
 function browserSrcTargets(source){
   const out=new Set();
