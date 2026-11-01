@@ -5161,7 +5161,8 @@ async function repairWorkersAIMacedonianIfNeeded(env,{
       temperature:0,
       model:editorModel,
       sessionAffinity,
-      timeoutMs:12000
+      timeoutMs:12000,
+      allowEmptyFallback:false
     });
     if(repairResult.ok && String(repairResult.text||"").trim()){
       const repairedText=normaliseMacedonianGeneratedText(String(repairResult.text||"").trim());
