@@ -207,6 +207,21 @@
     return loader;
   }
 
+  const MIN_PREPARING_PULSE_MS=900;
+  async function keepPreparingPulseVisible(startedAt){
+    const elapsed=Math.max(0,Date.now()-Number(startedAt||0));
+    const remaining=Math.max(0,MIN_PREPARING_PULSE_MS-elapsed);
+    if(remaining>0) await new Promise(resolve=>setTimeout(resolve,remaining));
+  }
+
+  function responseRuntimeLabel(data){
+    const model=String(data?.model||"").trim();
+    if(model) return model;
+    if(data?.provider==="canonical_corpus_no_model") return "Governed corpus · без модел";
+    if(data?.displayMode==="professional_exact_article_source_gap") return "Source/Version Gate";
+    return String(data?.provider||"AI Advokat").trim()||"AI Advokat";
+  }
+
   function renderMessage(m,idx){
     const article=document.createElement("article");
     article.className="ai-msg "+(m.role==="user"?"user":"assistant");
@@ -408,7 +423,9 @@
     if(m.role==="user"){
       const edit=document.createElement("button");edit.type="button";edit.textContent="✎ Уреди";
       edit.onclick=()=>{input.value=String(m.text||"");autoSize();input.focus();};
-      tools.append(edit);
+      const repeat=document.createElement("button");repeat.type="button";repeat.textContent="↺ Повтори";
+      repeat.onclick=()=>{input.value=String(m.text||"");autoSize();input.focus();};
+      tools.append(edit,repeat);
     }
     if(m.role==="assistant"){
       const retry=document.createElement("button");retry.type="button";retry.textContent="↺ Повтори";
@@ -786,6 +803,7 @@
     const guidePromise=guideMatches(q);
     const encodePromise=Promise.all(selectedFiles.map(f=>encodeFile(f)));
     const assistantIndex=current().messages.length;
+    const preparingStartedAt=Date.now();
     addMessage({role:"assistant",text:"Обработувам…",meta:"AI Advokat",guides:[]});
     root.classList.add("ai-chat-running");
     abortController=new AbortController();
@@ -810,17 +828,20 @@
         })
       });
       const d=await r.json().catch(()=>null);
+      await keepPreparingPulseVisible(preparingStartedAt);
       if(r.ok&&d?.ok){
         updateAssistantPlaceholder(assistantIndex,{
           text:d.answer,
-          meta:(d.model||"GPT")+" · "+(d.displayMode||d.mode||"auto")+" · session-private",
+          meta:responseRuntimeLabel(d)+" · "+(d.displayMode||d.mode||"auto")+" · session-private",
           guides,
           sources:Array.isArray(d.sources)?d.sources:[],
           legalSources:Array.isArray(d.legalSources)?d.legalSources:[],
           caseLawSources:Array.isArray(d.caseLawSources)?d.caseLawSources:[],
           guideSources:Array.isArray(d.guideSources)?d.guideSources:[],
           publicationSources:Array.isArray(d.publicationSources)?d.publicationSources:[],
+          gazetteIssueMetadata:Array.isArray(d.gazetteIssueMetadata)?d.gazetteIssueMetadata:[],
           governance:d.legalGovernance||null,
+          humanGate:d.humanGate||null,
           documentExports:requestedExportFormats(q).map(format=>({
             format,
             label:format==="docx"?"Преземи Word (.docx)":format==="pdf"?"Преземи PDF":format==="json"?"Преземи JSON":"Преземи CSV",
@@ -842,7 +863,9 @@
                     ?"Fingerprint-верификувани целосни водичи · секундарен материјал под Human Gate."
                     :d.sourceMode==="ai_advokat_catalogue_context_first"
                       ?"AI Advokat catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
-                      :(d.webSearchUsed===true?"External legal research · Web извори":"GPT general/proactive assistance")
+                      :d.sourceMode==="canonical_gazette_issue_metadata_no_model"
+                        ?"ЈП „Службен весник на РСМ“ · PRIMARY OFFICIAL METADATA · deterministic/no-model · не е доказ за текст на акт или тековно право."
+                        :(d.webSearchUsed===true?"External legal research · Web извори":"GPT general/proactive assistance")
         });
       }else if(["confidential_case_workspace_required","public_attachment_secure_workspace_required","public_history_secure_workspace_required"].includes(d?.error)){
         scrubConfidentialPublicTurn({userIndex,assistantIndex});
@@ -906,6 +929,7 @@
         });
       }
     }catch(err){
+      await keepPreparingPulseVisible(preparingStartedAt);
       if(err?.name==="AbortError") updateAssistantPlaceholder(assistantIndex,{text:"Генерирањето е прекинато.",meta:"Stop"});
       else{
         const fallback=await fallbackSourceAssistant(q);
