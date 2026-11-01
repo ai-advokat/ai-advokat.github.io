@@ -129,9 +129,9 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const html=fs.readFileSync('bot/index.html','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
-  assert.match(html,/standalone-bot-vnext\\.js\\?v=20261101-mobile-r6/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-mobile-r6/);
   assert.match(html,/standalone-bot-vnext\.css\?v=20261101-ui-r5/);
-  assert.match(vnext,/import\('\.\/standalone-bot\\.js\\?v=20261101-mobile-r6'\)/);
+  assert.match(vnext,/import\('\.\/standalone-bot\.js\?v=20261101-mobile-r6'\)/);
   assert.match(core,/function ensureLegalPulseStyles\(\)/);
   assert.match(core,/id = 'legalPulseRuntimeStyle'/);
   assert.match(core,/const pulse = responsePulse\(\)/);
