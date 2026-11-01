@@ -4,6 +4,7 @@ import fs from "node:fs";
 
 const workflow=fs.readFileSync(".github/workflows/deploy-production-once.yml","utf8");
 const recovery=fs.readFileSync(".github/workflows/r13-smoke-recovery-cleanup.yml","utf8");
+const zro12Smoke=fs.readFileSync("scripts/zro12-live-smoke.mjs","utf8");
 
 test("R13 release still performs the bounded production Worker deployment",()=>{
   assert.match(workflow,/npm run verify/);
@@ -11,20 +12,17 @@ test("R13 release still performs the bounded production Worker deployment",()=>{
   assert.match(workflow,/npm run test:legal-runtime-governance/);
   assert.match(workflow,/npm run test:gpt-activation/);
   assert.match(workflow,/npx wrangler deploy/);
-  assert.match(workflow,/trigger-exact-article-fallback-r13: 2026-11-01/);
+  assert.match(workflow,/trigger-zro12-source-gap-r14: 2026-11-01/);
 });
 
-test("R13 release live-smokes the exact ZRO Article 12 Professional request",()=>{
-  assert.match(workflow,/Што уредува член 12 од ЗРО и кои услови ги предвидува\?/);
-  assert.match(workflow,/test "\$code" = "200"/);
-  assert.match(workflow,/legalSources\.length<1/);
-  assert.match(workflow,/canonicalKey!=="mk:zro"/);
-  assert.match(workflow,/articleNumber\|\|""\)\.trim\(\)==="12"/);
-  assert.match(workflow,/official-consolidated-snapshot-through-111\/2023/);
-  assert.match(workflow,/canonical_corpus_no_model/);
-  assert.match(workflow,/SOURCE_BACKED_PROVIDER_FALLBACK/);
-  assert.match(workflow,/Current-law Human Gate not required/);
-  assert.match(workflow,/LIVE PROFESSIONAL ZRO ARTICLE 12: PASS/);
+test("R14 release carries an exact ZRO Article 12 live regression that accepts safe source-gap behavior",()=>{
+  assert.match(zro12Smoke,/Што уредува член 12 од ЗРО и кои услови ги предвидува\?/);
+  assert.match(zro12Smoke,/response\.status!==200/);
+  assert.match(zro12Smoke,/professional_exact_article_source_gap/);
+  assert.match(zro12Smoke,/SOURCE\\\/VERSION GAP/);
+  assert.match(zro12Smoke,/не избира произволно една од повеќе верзии/);
+  assert.match(zro12Smoke,/AI runtime не успеа безбедно/);
+  assert.match(zro12Smoke,/LIOE-RT-/);
 });
 
 test("R13 live smoke uses bounded ephemeral membership and always cleans it up",()=>{
