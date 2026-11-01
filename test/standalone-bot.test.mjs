@@ -131,7 +131,7 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const html=fs.readFileSync('bot/index.html','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-access-r7/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-runtime-r8/);
   assert.match(html,/standalone-bot-vnext\.css\?v=20261101-ui-r5/);
   assert.match(vnext,/import\('\.\/standalone-bot\.js\?v=20261101-access-r7'\)/);
   assert.match(core,/function ensureLegalPulseStyles\(\)/);
@@ -174,7 +174,7 @@ test('fresh mobile device can activate send and reach governed access flow',()=>
   assert.match(source,/busy\(false\);\s*restoreAccess\(\);/);
   assert.match(source,/if \(!key\) \{[\s\S]{0,180}\$\('access'\)\.click\(\)/);
   assert.match(source,/if \(q\.length < 2\) return;/);
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-access-r7/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-runtime-r8/);
 });
 
 
@@ -185,6 +185,17 @@ test('fresh-device access submit stays tappable before question entry and stray 
   assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = !!key && \$\('question'\)\.value\.trim\(\)\.length < 2/);
   assert.doesNotMatch(html,/\\n\s*<link rel="stylesheet"/);
   assert.match(html,/standalone-bot\.css\?v=20261101-access-r7/);
+});
+
+
+test('vNext runtime handlers are defined and storage-safe',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  assert.match(source,/vnextSidebarClose'\)\.onclick=closeMobileSidebar/);
+  assert.doesNotMatch(source,/onclick=closeSidebar/);
+  assert.match(source,/function readTheme\(\)/);
+  assert.match(source,/function writeTheme\(mode\)/);
+  assert.match(source,/function applyTheme\(mode=readTheme\(\)\)/);
+  assert.match(source,/function cycleTheme\(\)\{ const m=readTheme\(\)/);
 });
 
 
