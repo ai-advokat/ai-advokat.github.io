@@ -15,7 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/app-icon.svg" />
-  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261031-aiadvokat4-workbench" />
+  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261101-root-parity-r10" />
   <meta name="application-name" content="AI Advokat" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -1794,11 +1794,27 @@
       </div>
 
       <div class="ai-chat-wrap" id="aiAdvokatChat">
-        <aside class="ai-chat-side" aria-label="Разговори">
+        <aside class="ai-chat-side ai-chat-workspace-side" aria-label="AI Advokat professional workspace">
           <div class="brandMini"><img src="/assets/app-icon.svg" alt=""><span>AI Advokat</span></div>
+          <button class="ai-workspace-new" id="aiWorkspaceNew" type="button">＋ Нов разговор</button>
+          <button class="ai-workspace-search-launch" id="aiWorkspaceSearchLaunch" type="button"><span>⌕</span><span>Пребарај</span><kbd>Ctrl K</kbd></button>
+          <nav class="ai-workspace-nav" aria-label="Работни модули">
+            <button class="active" type="button" data-ai-workbench="assistant"><span aria-hidden="true">◈</span><span>Правен асистент</span></button>
+            <button type="button" data-ai-workbench="analyzer"><span aria-hidden="true">⌁</span><span>Анализатор</span></button>
+            <button type="button" data-ai-workbench="consolidator"><span aria-hidden="true">≋</span><span>Консолидатор</span></button>
+            <button type="button" data-ai-workbench="predictor"><span aria-hidden="true">◎</span><span>Предиктор</span></button>
+            <button type="button" data-ai-workbench="sources"><span aria-hidden="true">▤</span><span>Правни извори</span></button>
+            <button type="button" data-ai-workbench="cases"><span aria-hidden="true">⚖</span><span>Судска практика</span></button>
+            <button type="button" data-ai-workbench="casepilot"><span aria-hidden="true">▣</span><span>CasePilot</span></button>
+            <button type="button" data-ai-workbench="documents"><span aria-hidden="true">▧</span><span>Документи</span></button>
+            <button type="button" data-ai-workbench="workflows"><span aria-hidden="true">◇</span><span>Workflows</span></button>
+            <button type="button" data-ai-workbench="human-gate"><span aria-hidden="true">✓</span><span>Human Gate</span></button>
+            <button type="button" data-ai-workbench="library"><span aria-hidden="true">◫</span><span>Library</span></button>
+          </nav>
           <div class="ai-chat-side-label" data-i18n="chatConversations">Разговори</div>
+          <input class="ai-workspace-thread-search" id="aiChatHistorySearch" type="search" placeholder="Пребарај разговори…" aria-label="Пребарај разговори">
           <div class="ai-chat-history" id="aiChatHistory"></div>
-          <div class="ai-chat-side-note" data-i18n="chatSessionNote">Историјата се чува само во оваа сесија на прелистувачот.</div>
+          <div class="ai-chat-side-note"><strong>Source-first · Human Gate</strong><br>Историјата е само за оваа сесија. Доверливи документи и точни лични идентификатори се обработуваат во Secure Case Workspace.</div>
         </aside>
 
         <div class="ai-chat-main">
@@ -1811,6 +1827,7 @@
               </div>
             </div>
             <div class="ai-chat-top-actions">
+              <button class="ai-chat-topbtn ai-workspace-evidence-toggle" id="aiWorkspaceEvidenceToggle" type="button" aria-label="Отвори извори и проверка" title="Извори и проверка">▤</button>
               <button class="ai-chat-topbtn" id="aiChatNew" type="button" aria-label="Нов разговор" title="Нов разговор">＋</button>
               <details class="ai-chat-menu" id="aiChatMenu">
                 <summary class="ai-chat-topbtn" aria-label="Повеќе опции" title="Повеќе опции">⋯</summary>
@@ -1933,6 +1950,20 @@
             </div>
           </div>
         </div>
+
+        <aside class="ai-chat-evidence" id="aiChatEvidence" aria-label="Извори, контекст и Human Gate">
+          <div class="ai-evidence-head">
+            <div><strong id="aiEvidenceTitle">Извори</strong><small id="aiEvidenceSubtitle">Проверлив контекст за активниот разговор</small></div>
+            <button class="ai-evidence-close" id="aiEvidenceClose" type="button" aria-label="Затвори панел">×</button>
+          </div>
+          <div class="ai-evidence-tabs" role="tablist" aria-label="Професионален контекст">
+            <button class="active" type="button" data-ai-evidence-tab="sources"><span aria-hidden="true">▤</span> Извори</button>
+            <button type="button" data-ai-evidence-tab="context"><span aria-hidden="true">◫</span> Контекст</button>
+            <button type="button" data-ai-evidence-tab="human"><span aria-hidden="true">✓</span> Human Gate</button>
+            <button type="button" data-ai-evidence-tab="artifact"><span aria-hidden="true">◇</span> Артефакт</button>
+          </div>
+          <div class="ai-evidence-body" id="aiChatEvidenceBody" aria-live="polite"></div>
+        </aside>
 
         <template id="aiChatEmptyTemplate">
           <div class="ai-chat-empty">
@@ -4302,7 +4333,7 @@
 </script>
 <script src="/assets/guide-vault.js?v=20261005-private-vault-v2"></script>
 <script src="/assets/frontend-runtime-guard.js?v=20261101-root-r1"></script>
-<script src="/assets/ai-advokat-chat.js?v=20261101-root-r9"></script>
+<script src="/assets/ai-advokat-chat.js?v=20261101-root-r10-parity"></script>
 
 </body>
 </html>
