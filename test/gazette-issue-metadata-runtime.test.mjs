@@ -13,6 +13,7 @@ const migration=fs.readFileSync("migrations/0047_gazette_issue_metadata_backfill
 const worker=fs.readFileSync("src/index.js","utf8");
 const page=fs.readFileSync("sluzben-vesnik/index.html","utf8");
 const script=fs.readFileSync("scripts/gazette_open_data_backfill.py","utf8");
+const liveSmoke=fs.readFileSync(".github/workflows/gazette-live-smoke.yml","utf8");
 
 test("GIM1 canonical metadata table keys identity by publication type + number + exact date",()=>{
   assert.match(migration,/UNIQUE\(publication_type, issue_number, issue_date\)/);
@@ -154,4 +155,14 @@ test("GIM10 exact Gazette lane exposes canonical metadata-only Human Gate",()=>{
   assert.match(block,/не се авторитет за текстот на актот/u);
   assert.match(block,/официјалниот текст/u);
   assert.doesNotMatch(block,/официјалниот full-text/u);
+});
+
+
+test("GIM11 Gazette live smoke polls the deployed runtime contract instead of sleeping blindly",()=>{
+  assert.match(liveSmoke,/Wait for deployed Gazette runtime contract/);
+  assert.match(liveSmoke,/for attempt in \$\(seq 1 30\)/);
+  assert.match(liveSmoke,/gate\.includes\("Metadata only\."\)/);
+  assert.match(liveSmoke,/gate\.includes\("официјалниот текст"\)/u);
+  assert.doesNotMatch(liveSmoke,/Wait briefly for Worker propagation/);
+  assert.doesNotMatch(liveSmoke,/run: sleep 12/);
 });
