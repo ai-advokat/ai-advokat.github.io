@@ -1,0 +1,19 @@
+{
+  "decision_id": "AI_ADVOKAT_GAZETTE_ACT_INDEX_2009_2016_2026-11-01",
+  "activation_authorized": true,
+  "requested_capability": "For a requested Official Gazette issue, list every indexed act in publication order: laws, decisions, rulebooks, decrees, resolutions and all other entries.",
+  "years": [2009, 2016],
+  "source": "official_chronological_register",
+  "promotion_class": "official_act_index_metadata",
+  "act_index_metadata_promotion_authorized": true,
+  "full_text_promotion_authorized": false,
+  "current_law_promotion_authorized": false,
+  "human_review_status_on_ingest": "pending",
+  "runtime_may_display_pending_records": true,
+  "runtime_pending_label_required": true,
+  "completion_requires_zero_unresolved_entries": true,
+  "completion_requires_issue_inventory_reconciliation": true,
+  "production_worker": "ai-advokat-github-io",
+  "production_database": "ai-advokat-db",
+  "human_gate": "Act-index metadata may be displayed as official-register-derived and pending Human Gate; it must not be represented as proof of current legal validity or as full text."
+}
