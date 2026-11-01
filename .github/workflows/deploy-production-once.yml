@@ -55,7 +55,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Verify exact live R12 frontend deployment
+      - name: Verify exact live R13 frontend deployment
         shell: bash
         run: |
           set -euo pipefail
