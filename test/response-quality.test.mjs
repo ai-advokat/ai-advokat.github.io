@@ -156,5 +156,16 @@ test("RQ13 procedural safety strips an unsafe forced lawsuit heading",()=>{
 test("RQ14 formal drafts are excluded from the stripped-down FREE fast prompt",()=>{
   const worker=fs.readFileSync("src/index.js","utf8");
   assert.match(worker,/const fastFreePrompt=\(missionProfile===\"GENERAL_BYPASS\" \|\| missionProfile===\"L0_INFORMATIONAL\"\)\s*&& !formalDraftRequest;/);
-  assert.match(worker,/allowProviderRepair:!fastFreePrompt && !result\.modelFallback/);
+  assert.match(worker,/allowProviderRepair:languageRequired/);
+  assert.match(worker,/forceEditorialPass:languageRequired && \(formalDraftRequest \|\| missionProfile!==\"GENERAL_BYPASS\"\)/);
+  assert.match(worker,/languagePass\.hardBlock \|\| !finalRelease\.ok/);
+});
+
+
+test("RQ15 Macedonian legal drafting uses an independent fail-closed language editor",()=>{
+  const worker=fs.readFileSync("src/index.js","utf8");
+  assert.match(worker,/resolveMacedonianLanguageEditorModel/);
+  assert.match(worker,/model:editorModel/);
+  assert.match(worker,/mandatory_language_editor_failed/);
+  assert.match(worker,/hardBlock:true/);
 });
