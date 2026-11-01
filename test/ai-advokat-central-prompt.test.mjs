@@ -247,7 +247,7 @@ test("COP23 pre-litigation notices cannot be silently converted into lawsuits",(
 
 test("COP19 canonical Macedonian standard is fail-closed and allows a bounded independent editor pass",()=>{
   const doc=fs.readFileSync("MACEDONIAN_LANGUAGE_STANDARD.md","utf8");
-  assert.match(doc,/Заеднички јазичен и терминолошки стандард v1\.5/);
+  assert.match(doc,/Заеднички јазичен и терминолошки стандард v1\.6/);
   assert.match(doc,/независна release-брана/u);
   assert.match(doc,/еден ограничен јазичен editor-повик/u);
   assert.match(doc,/fail-closed/u);
@@ -255,7 +255,7 @@ test("COP19 canonical Macedonian standard is fail-closed and allows a bounded in
 });
 
 
-test("COP24 V14 exposes editor-attempt canonical-clean fallback truthfully",()=>{
+test("COP24 V15 preserves editor-attempt canonical-clean fallback truthfully",()=>{
   assert.match(worker,/WORKERS_AI_MK_EDITOR_MODEL_DEFAULT="@cf\/zai-org\/glm-4\.7-flash"/);
   assert.match(worker,/freeLanguageEditorModel:freeWorkersAIConfigured\(env\)/);
   assert.match(worker,/one_bounded_editor_attempt_then_canonical_clean_fallback_only/);
@@ -264,11 +264,20 @@ test("COP24 V14 exposes editor-attempt canonical-clean fallback truthfully",()=>
 });
 
 
-test("COP25 V14 editor failure can release only independently canonical-clean text",()=>{
+test("COP25 V15 editor failure can release only independently canonical-clean text",()=>{
   assert.match(worker,/editor_unavailable_canonical_clean_fallback/);
   assert.match(worker,/editor_output_rejected_canonical_clean_fallback/);
   assert.match(worker,/if\(releaseVerdict\.verdict===\"RELEASE\"\)/);
   assert.match(worker,/editorFallbackUsed:true/);
   assert.match(worker,/hardBlock:false/);
   assert.match(worker,/mandatory_language_editor_failed/);
+});
+
+
+test("COP26 V15 formal drafts add an authority gate and deterministic safe fallback",()=>{
+  assert.match(worker,/formalDraftAuthoritySafety/);
+  assert.match(worker,/deterministicFormalDraftFallback/);
+  assert.match(worker,/formal_draft_authority_blocked/);
+  assert.match(worker,/formalDraftFallbackPolicy:"supported_unsourced_classes_deterministic_authority_safe_v15"/);
+  assert.match(worker,/finalResponseQualityGate:"formal_draft_export_cleanup_ungrounded_article_and_authority_guard_v2"/);
 });
