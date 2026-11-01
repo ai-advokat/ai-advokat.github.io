@@ -116,6 +116,11 @@ jobs:
         run: npm run test:gazette-chunk-runtime
       - name: Gazette production activation contract
         run: npm run test:gazette-production-activation
+      - name: Gazette issue-to-all-acts index safety
+        run: |
+          node --check src/gazette-issue-contents.js
+          python3 -m py_compile scripts/gazette_act_index_sql.py
+          node --test test/gazette-issue-contents.test.mjs
       - name: Governed case-law chat context tests
         run: npm run test:case-law-chat
       - name: Governed case-law import tests
