@@ -71,6 +71,9 @@ test("canonical article fallback is bounded to exact low-depth article research"
   assert.equal(professionalCanonicalArticleFallback({q:"Што уредува член 13 од ЗРО?",articleBundle:bundle(),missionProfile:"L1_VERIFIED_RESEARCH"}),null);
   assert.equal(professionalCanonicalArticleFallback({q:"Спореди член 12 и член 13 од ЗРО.",articleBundle:bundle(),missionProfile:"L1_VERIFIED_RESEARCH"}),null);
   assert.equal(professionalCanonicalArticleFallback({q:"Спореди ги членовите 12 и 13 од ЗРО.",articleBundle:bundle(),missionProfile:"L1_VERIFIED_RESEARCH"}),null);
+  assert.equal(professionalCanonicalArticleFallback({q:"Спореди член 12 и 13 од ЗРО.",articleBundle:bundle(),missionProfile:"L1_VERIFIED_RESEARCH"}),null);
+  assert.equal(professionalCanonicalArticleFallback({q:"Спореди членови 12-13 од ЗРО.",articleBundle:bundle(),missionProfile:"L1_VERIFIED_RESEARCH"}),null);
+  assert.equal(professionalCanonicalArticleFallback({q:"Compare articles 12 through 13 of the employment law.",articleBundle:bundle(),missionProfile:"L1_VERIFIED_RESEARCH"}),null);
 });
 
 test("raw source text is preferred over reviewed derivation and legal-status overlays are preserved",()=>{
