@@ -794,6 +794,7 @@ describe("production AI binding guard", () => {
     assert.match(repairHelper,/messages:buildMacedonianRepairMessages/, "repair call must use the language-only repair contract");
     assert.match(repairHelper,/temperature:0/, "language repair must be deterministic");
     assert.match(repairHelper,/timeoutMs:12000/, "language repair must have a bounded timeout");
+    assert.match(repairHelper,/allowEmptyFallback:false/, "language editor must remain exactly one bounded model call without provider fallback");
     assert.doesNotMatch(repairHelper,/for\(let attempt=0;attempt<2 && !assessment\.ok;attempt\+\+\)/, "language repair must not use the former two-retry loop");
     assert.match(repairHelper,/language_quality_blocked_after_editor/, "residual language defects must fail closed after the bounded editor pass");
     assert.match(repairHelper,/mandatory_language_editor_failed/, "mandatory editor failure must fail closed");
@@ -802,7 +803,7 @@ describe("production AI binding guard", () => {
     assert.equal((helper.match(/runWorkersAIText\(/g) || []).length, 1, "FREE public helper delegates one primary generation to the central provider contract");
     assert.equal((helper.match(/repairWorkersAIMacedonianIfNeeded\(/g) || []).length, 1, "FREE public helper may invoke the bounded language repair only after primary generation");
     assert.match(helper,/allowProviderRepair:languageRequired/, "Macedonian output may invoke the bounded editor after the quota-reserved primary call");
-    assert.match(helper,/forceEditorialPass:languageRequired && \(formalDraftRequest \|\| missionProfile!==\"GENERAL_BYPASS\"\)/, "professional Macedonian legal output must force the editor pass");
+    assert.match(helper,/forceEditorialPass:languageRequired/, "every generated Macedonian FREE output must force the dedicated editor pass");
 
     const privateHelpers = src.slice(src.indexOf("async function runPrivateWorkersAISynthesis("), src.indexOf("async function validateGuideDocuments"));
     assert.equal((privateHelpers.match(/runWorkersAIText\(/g) || []).length, 2, "private CasePilot synthesis and extraction each delegate one bounded call to the central provider");
@@ -948,4 +949,14 @@ describe("final audit follow-up", () => {
     const ok = await call(env, membershipRequest(validPayload(), { ip: "198.51.100.200" }));
     assert.equal(ok.status, 202, "the victim can still submit a real request");
   });
+});
+
+
+test("production language firewall P2 uses a dedicated editor and a deterministic process-safe fallback",()=>{
+  const src=fs.readFileSync("src/index.js","utf8");
+  assert.match(src,/WORKERS_AI_MK_EDITOR_MODEL_DEFAULT="@cf\/zai-org\/glm-4\.7-flash"/);
+  assert.match(src,/forceEditorialPass:languageRequired/);
+  assert.match(src,/deterministicProceduralInstrumentFallback/);
+  assert.match(src,/deterministicLanguageFallbackUsed/);
+  assert.match(src,/freeLanguageEditorModel:freeWorkersAIConfigured\(env\)/);
 });
