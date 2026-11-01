@@ -118,12 +118,21 @@
     [...chats.values()].slice().reverse()
       .filter(c=>!q || String(c.title||"").toLocaleLowerCase("mk").includes(q) || (c.messages||[]).some(m=>String(m?.text||"").toLocaleLowerCase("mk").includes(q)))
       .forEach(c=>{
-        const b=document.createElement("button");
-        b.type="button"; b.textContent=c.title; b.title=c.title;
-        if(c.id===currentId) b.classList.add("active");
-        b.onclick=()=>{currentId=c.id;attachments=[];renderAttachments();render();save();};
-        historyEl.append(b);
+        const row=document.createElement("div");row.className="ai-chat-history-row"+(c.id===currentId?" active":"");
+        const open=document.createElement("button");open.type="button";open.className="ai-chat-history-open";open.textContent=c.title;open.title=c.title;
+        open.onclick=()=>{currentId=c.id;attachments=[];renderAttachments();render();save();};
+        const rename=document.createElement("button");rename.type="button";rename.className="ai-chat-history-rename";rename.textContent="⋯";rename.title="Преименувај разговор";rename.setAttribute("aria-label","Преименувај разговор");
+        rename.onclick=event=>{event.stopPropagation();renameChatThread(c.id);};
+        row.append(open,rename);historyEl.append(row);
       });
+  }
+  function renameChatThread(id){
+    const chat=chats.get(id);if(!chat) return;
+    const next=window.prompt("Име на разговорот:",String(chat.title||"Нов разговор"));
+    if(next?.trim()){
+      chat.title=next.trim().replace(/\s+/g," ").slice(0,90);
+      chat.updatedAt=now();save();renderHistory();
+    }
   }
   function empty(){
     const chat=current();
@@ -991,6 +1000,18 @@
     await mod.downloadCasePilotExport(report,format,{filename:filename||("AI-Advokat-analysis."+format)});
   }
 
+  function exportPlainAssistantMessage(message,format="txt",filename=null){
+    if(!message || message.role!=="assistant" || !String(message.text||"").trim()) return;
+    const fmt=format==="md"?"md":"txt";
+    const text=String(message.text||"").trim();
+    const body=fmt==="md"
+      ? "# AI Advokat — работен одговор\n\n"+text+"\n\n> HUMAN GATE REQUIRED — потребна е професионална човечка проверка пред последична употреба.\n"
+      : "AI Advokat — работен одговор\n\n"+text+"\n\nHUMAN GATE REQUIRED — потребна е професионална човечка проверка пред последична употреба.\n";
+    const url=URL.createObjectURL(new Blob([body],{type:"text/plain;charset=utf-8"}));
+    const a=document.createElement("a");a.href=url;a.download=filename||("AI-Advokat-working-draft."+fmt);a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+
   async function exportLatestDraft(format){
     if(topMenu) topMenu.open=false;
     const chat=current();
@@ -1260,7 +1281,27 @@
     if(evidenceTab==="sources"){
       const rows=flattenWorkbenchSources(m);
       if(m?.sourceLabel) evidenceBody.append(evidenceCard("Статус на изворите",String(m.sourceLabel)));
-      if(!rows.length){
+      const gazetteRows=Array.isArray(m?.gazetteIssueMetadata)?m.gazetteIssueMetadata:[];
+      gazetteRows.forEach((g,index)=>{
+        const authority=[
+          "Издание: "+String(g.publicationType||"—"),
+          "Број: "+String(g.issueNumber||"—")+"/"+String(g.year||"—"),
+          "Датум: "+String(g.issueDate||"—"),
+          "Изворен орган: "+String(g.sourceAuthority||"—"),
+          "Класа: "+String(g.sourceClass||"—"),
+          "Human review: "+String(g.humanReviewStatus||"—"),
+          "Metadata runtime: "+(g.runtimeEligible===true?"ДА":"НЕ"),
+          "Source occurrences: "+String(g.sourceOccurrences??"—"),
+          "Source row: "+String(g.sourceRowFirst??"—"),
+          "Legal-text authority: "+(g.legalTextAuthority===true?"ДА":"НЕ"),
+          "Current-law authority: "+(g.currentLawAuthority===true?"ДА":"НЕ"),
+          g.datasetId?"Dataset ID: "+g.datasetId:"",
+          g.resourceId?"Resource ID: "+g.resourceId:"",
+          g.snapshotSha256?"Snapshot SHA-256: "+g.snapshotSha256:""
+        ].filter(Boolean).join("\n");
+        evidenceBody.append(evidenceCard("Службен весник · metadata "+(index+1),authority,{className:"ai-evidence-gate"}));
+      });
+      if(!rows.length && !gazetteRows.length){
         evidenceBody.append(evidenceCard("Нема прикажани извори","Последниот AI одговор нема source payload. Користете Правни извори, Library или поставете source-first прашање."));
       }else{
         rows.forEach((row,index)=>evidenceBody.append(evidenceCard(row.kind+" · "+(index+1),row.title,{url:row.url||null})));
@@ -1282,6 +1323,7 @@
     if(evidenceTab==="human"){
       const g=m?.governance||null;
       evidenceBody.append(evidenceCard("HUMAN GATE REQUIRED","Правен заклучок, поднесување, потпис или друга последична професионална употреба бара проверка од адвокат/овластен професионалец.",{className:"ai-evidence-gate"}));
+      if(m?.humanGate) evidenceBody.append(evidenceCard("Ограничување за овој одговор",String(m.humanGate),{className:"ai-evidence-gate"}));
       const states=[];
       if(g?.missionProfile) states.push("Mission: "+g.missionProfile);
       if(g?.releaseState) states.push("Release: "+g.releaseState);
@@ -1301,11 +1343,77 @@
       evidenceBody.append(evidenceCard("Последен работен одговор",String(m.text||"").slice(0,900),{meta:"Working draft · Human Gate required"}));
       const actions=document.createElement("div");actions.className="ai-evidence-actions";
       for(const [fmt,label] of [["docx","⇩ DOCX"],["pdf","⇩ PDF"],["md","⇩ MD"],["txt","⇩ TXT"]]){
-        const b=document.createElement("button");b.type="button";b.textContent=label;b.onclick=()=>exportAssistantMessage(m,chat,fmt,"AI-Advokat-working-draft."+fmt);actions.append(b);
+        const b=document.createElement("button");b.type="button";b.textContent=label;b.onclick=()=>["txt","md"].includes(fmt)?exportPlainAssistantMessage(m,fmt,"AI-Advokat-working-draft."+fmt):exportAssistantMessage(m,chat,fmt,"AI-Advokat-working-draft."+fmt);actions.append(b);
       }
       const cp=document.createElement("a");cp.href="/casepilot-workspace.html";cp.target="_blank";cp.rel="noopener noreferrer";cp.textContent="▣ Отвори CasePilot";actions.append(cp);
       evidenceBody.append(actions);
     }
+  }
+
+  function latestAssistantForMaterials(){
+    return [...(current()?.messages||[])].reverse().find(m=>m?.role==="assistant" && String(m.text||"").trim() && m.text!=="Обработувам…")||null;
+  }
+
+  function ensureMaterialsDialog(){
+    let d=document.getElementById("aiWorkspaceMaterialsDialog");
+    if(d) return d;
+    d=document.createElement("dialog");d.id="aiWorkspaceMaterialsDialog";d.className="ai-workspace-search-dialog ai-materials-dialog";
+    d.innerHTML=`<div class="ai-workspace-dialog-head"><div><strong>◫ Материјали и алатки</strong><small>Истиот governed toolbox како во надворешниот AI Advokat</small></div><button type="button" data-close>×</button></div>
+      <div class="ai-materials-body">
+        <section class="ai-materials-section"><strong>⌕ Пребарување</strong><div class="ai-materials-mode">
+          <button type="button" data-materials-mode="auto">Автоматски</button>
+          <button type="button" data-materials-mode="library">Само библиотека</button>
+          <button type="button" data-materials-mode="web">Веб истражување</button>
+        </div><small>Режимот го користи истиот AI Advokat governed backend; Web режимот зависи од активниот runtime.</small></section>
+        <section class="ai-materials-section"><strong>⇩ Извоз на последниот AI одговор</strong><div class="ai-evidence-actions">
+          <button type="button" data-materials-export="docx">▧ DOCX</button>
+          <button type="button" data-materials-export="pdf">▧ PDF</button>
+          <button type="button" data-materials-export="txt">▤ TXT</button>
+          <button type="button" data-materials-export="md">◇ MD</button>
+        </div></section>
+        <section class="ai-materials-section"><strong>◫ Мои проверени водичи</strong><div class="ai-evidence-actions">
+          <button type="button" data-materials-guides="import">⇧ Вчитај водичи</button>
+          <button type="button" data-materials-guides="clear">× Избриши локални</button>
+        </div><small>PDF/DOCX/ZIP се користат само кога fingerprint се совпаѓа со регистарот. Тие се секундарен материјал, не важечки закон.</small></section>
+        <section class="ai-materials-section"><strong>Правни материјали и професионални алатки</strong><div class="ai-material-links">
+          <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">📎 Прикачи документи / Secure Case Workspace ↗</a>
+          <a href="/professional-tools.html#analyzer" target="_blank" rel="noopener noreferrer">⚖ Правен анализатор ↗</a>
+          <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">▣ CasePilot ↗</a>
+          <a href="/guides/" target="_blank" rel="noopener noreferrer">▧ Правни водичи ↗</a>
+          <a href="/professional-library/" target="_blank" rel="noopener noreferrer">◫ Професионална библиотека и коментари ↗</a>
+          <a href="/sluzben-vesnik/" target="_blank" rel="noopener noreferrer">▤ Службен весник и правен аларм ↗</a>
+          <a href="/scholar/" target="_blank" rel="noopener noreferrer">◇ Научни трудови ↗</a>
+          <a href="/authors/zoran-stojankic/" target="_blank" rel="noopener noreferrer">§ Авторски материјали на Зоран ↗</a>
+          <a href="/kolumni/" target="_blank" rel="noopener noreferrer">✦ Колумни ↗</a>
+          <a href="/document-router.html" target="_blank" rel="noopener noreferrer">▧ Прием и распределба на документи ↗</a>
+          <a href="/case-law-metadata.html" target="_blank" rel="noopener noreferrer">⚖ Судски пресуди и метаподатоци ↗</a>
+          <a href="/professional-tools.html" target="_blank" rel="noopener noreferrer">◇ Професионални алатки ↗</a>
+        </div></section>
+        <p class="ai-workflow-note">Доверливи оригинални документи и точни лични идентификатори одат во Secure Case Workspace. Јавниот chat останува session-private и не е case vault.</p>
+      </div>`;
+    document.body.append(d);
+    d.querySelector("[data-close]")?.addEventListener("click",()=>d.close());
+    d.querySelectorAll("[data-materials-mode]").forEach(b=>b.addEventListener("click",()=>{
+      mode=String(b.dataset.materialsMode||"auto");syncModeUi();
+      d.querySelectorAll("[data-materials-mode]").forEach(x=>x.classList.toggle("active",x===b));
+    }));
+    d.querySelectorAll("[data-materials-export]").forEach(b=>b.addEventListener("click",()=>{
+      const m=latestAssistantForMaterials();if(!m) return;
+      const fmt=String(b.dataset.materialsExport||"txt");
+      if(["txt","md"].includes(fmt)) exportPlainAssistantMessage(m,fmt,"AI-Advokat-working-draft."+fmt);
+      else exportAssistantMessage(m,current(),fmt,"AI-Advokat-working-draft."+fmt);
+    }));
+    d.querySelector("[data-materials-guides='import']")?.addEventListener("click",()=>guideVaultImport?.click());
+    d.querySelector("[data-materials-guides='clear']")?.addEventListener("click",()=>guideVaultClear?.click());
+    return d;
+  }
+
+  function openMaterialsDialog(section="library"){
+    const d=ensureMaterialsDialog();
+    d.querySelectorAll("[data-materials-mode]").forEach(x=>x.classList.toggle("active",String(x.dataset.materialsMode||"")===mode));
+    d.showModal();
+    if(section==="documents") setTimeout(()=>d.querySelector('a[href="/casepilot-workspace.html"]')?.focus(),0);
+    else setTimeout(()=>d.querySelector('a[href="/professional-library/"]')?.focus(),0);
   }
 
   function ensureWorkflowDialog(){
@@ -1391,9 +1499,9 @@
     }
     if(action==="casepilot"){window.open("/casepilot-workspace.html","_blank","noopener");return;}
     if(action==="cases"){window.open("/case-law-metadata.html","_blank","noopener");return;}
-    if(action==="documents"){window.open("/casepilot-workspace.html","_blank","noopener");return;}
+    if(action==="documents"){openMaterialsDialog("documents");return;}
     if(action==="workflows"){ensureWorkflowDialog().showModal();return;}
-    if(action==="library"){window.open("/professional-library/","_blank","noopener");return;}
+    if(action==="library"){openMaterialsDialog("library");return;}
     if(action==="sources"){renderWorkbenchSources();openWorkspaceEvidence("sources");return;}
     if(action==="human-gate"){renderWorkbenchHumanGate();openWorkspaceEvidence("human");return;}
   }
