@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import {
   isFormalLegalDraftRequest,
   hasProceduralInstrumentMismatch,
@@ -149,4 +150,11 @@ test("RQ13 procedural safety strips an unsafe forced lawsuit heading",()=>{
   const out=applyProceduralInstrumentSafety("ТУЖБА\n\nДо надлежен орган", {userText:q});
   assert.match(out,/^РАБОТЕН НАЦРТ/u);
   assert.doesNotMatch(out,/^ТУЖБА\b/mu);
+});
+
+
+test("RQ14 formal drafts are excluded from the stripped-down FREE fast prompt",()=>{
+  const worker=fs.readFileSync("src/index.js","utf8");
+  assert.match(worker,/const fastFreePrompt=\(missionProfile===\"GENERAL_BYPASS\" \|\| missionProfile===\"L0_INFORMATIONAL\"\)\s*&& !formalDraftRequest;/);
+  assert.match(worker,/allowProviderRepair:!fastFreePrompt && !result\.modelFallback/);
 });
