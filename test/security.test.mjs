@@ -788,19 +788,21 @@ describe("production AI binding guard", () => {
     const repairHelper = src.slice(src.indexOf("async function repairWorkersAIMacedonianIfNeeded("), src.indexOf("async function runFreeWorkersAIChat("));
     assert.equal((repairHelper.match(/runWorkersAIText\(/g) || []).length, 1, "Pravopis repair owns exactly one bounded provider call-site");
     assert.match(repairHelper,/if\(!shouldEnforceMacedonianOutput\(userText\)\)/, "repair must be skipped when Macedonian output is not required");
-    assert.match(repairHelper,/if\(releaseVerdict\.verdict==="RELEASE"\)/, "repair must be skipped when the canonical release gate already approves the first answer");
+    assert.match(repairHelper,/if\(releaseVerdict\.verdict==="RELEASE" && !forceEditorialPass\)/, "clean non-professional output may skip the editor, while professional legal output may force it");
     assert.match(repairHelper,/const deterministicFirst=normaliseMacedonianGeneratedText\(current\)/, "known contamination must be repaired deterministically before another inference");
-    assert.match(repairHelper,/if\(allowProviderRepair && env\?\.AI\)/, "bounded provider repair must be explicitly gated");
+    assert.match(repairHelper,/if\(editorRequired && allowProviderRepair && env\?\.AI\)/, "bounded language editor must be explicitly required and gated");
     assert.match(repairHelper,/messages:buildMacedonianRepairMessages/, "repair call must use the language-only repair contract");
     assert.match(repairHelper,/temperature:0/, "language repair must be deterministic");
     assert.match(repairHelper,/timeoutMs:12000/, "language repair must have a bounded timeout");
     assert.doesNotMatch(repairHelper,/for\(let attempt=0;attempt<2 && !assessment\.ok;attempt\+\+\)/, "language repair must not use the former two-retry loop");
-    assert.match(repairHelper,/language_quality_blocked_after_repair/, "residual language defects must fail closed after the bounded repair");
+    assert.match(repairHelper,/language_quality_blocked_after_editor/, "residual language defects must fail closed after the bounded editor pass");
+    assert.match(repairHelper,/mandatory_language_editor_failed/, "mandatory editor failure must fail closed");
 
     const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function handleGPTChat("));
     assert.equal((helper.match(/runWorkersAIText\(/g) || []).length, 1, "FREE public helper delegates one primary generation to the central provider contract");
     assert.equal((helper.match(/repairWorkersAIMacedonianIfNeeded\(/g) || []).length, 1, "FREE public helper may invoke the bounded language repair only after primary generation");
-    assert.match(helper,/allowProviderRepair:!fastFreePrompt/, "fast FREE path must disable the second provider call");
+    assert.match(helper,/allowProviderRepair:languageRequired/, "Macedonian output may invoke the bounded editor after the quota-reserved primary call");
+    assert.match(helper,/forceEditorialPass:languageRequired && \(formalDraftRequest \|\| missionProfile!==\"GENERAL_BYPASS\"\)/, "professional Macedonian legal output must force the editor pass");
 
     const privateHelpers = src.slice(src.indexOf("async function runPrivateWorkersAISynthesis("), src.indexOf("async function validateGuideDocuments"));
     assert.equal((privateHelpers.match(/runWorkersAIText\(/g) || []).length, 2, "private CasePilot synthesis and extraction each delegate one bounded call to the central provider");
