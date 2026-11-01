@@ -364,5 +364,5 @@ test("featured legal modules are visible directly below the hero",()=>{
   assert.match(index,/Пресуди и одлуки на ЕСЧП за Северна Македонија/);
   assert.match(index,/data-echr-static="search"/);
   assert.match(index,/data-foreign-static/);
-  assert.match(index,/20261101-root-complete-r12/);
+  assert.match(index,/20261101-root-gazette-acts-r13/);
 });
