@@ -2,7 +2,7 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V14_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V15_DETERMINISTIC_FORMAL_DRAFT_FALLBACK";
 
 export const MACEDONIAN_ORTHOGRAPHY_2017_SOURCE=Object.freeze({
   id:"MK-ORTHOGRAPHY-2017-2ED",
@@ -26,7 +26,7 @@ export const MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE=Object.freeze([
   {id:"R396",topic:"headings",policy:"Насловот стои во нов ред, почнува со голема буква и нема точка на крајот."},
   {id:"LEGAL-NUMBERING",topic:"legal_numbering",policy:"Општите именки со конкретен број се со мала буква: член 5, став 1, табела 1."}
 ]);
-export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V10_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
+export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V11_DETERMINISTIC_FORMAL_DRAFT_FALLBACK";
 export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="Одговорот не е прикажан затоа што задолжителната македонска јазична проверка не помина. Системот откри остаточна јазична контаминација, изобличена македонска форма, неуспешна задолжителна редакција или непобарано право од друга јурисдикција. Ве молиме повторете го барањето; правната содржина не се пушта додека јазичниот release gate не помине.";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
