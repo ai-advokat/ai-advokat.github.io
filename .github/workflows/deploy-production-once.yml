@@ -55,7 +55,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Verify exact live R12 external bot deployment
+      - name: Verify exact live R12 frontend deployment
         shell: bash
         run: |
           set -euo pipefail
@@ -99,10 +99,119 @@ jobs:
           grep -qi '^x-ai-advokat-release: core-r12' /tmp/deploy-legacy-headers.txt
           echo "LEGACY CORE-R10 SELF-HEAL: PASS"
 
+      - name: Provision ephemeral R13 Professional smoke membership
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          ACCOUNT="r13-article-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ENT="r13-article-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KID="r13-article-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KEY="r13smoke_$(openssl rand -hex 24)"
+          HASH="$(printf '%s' "$KEY" | sha256sum | awk '{print $1}')"
+          PREFIX="${KEY:0:12}"
+          echo "::add-mask::$KEY"
+          echo "R13_SMOKE_ACCOUNT=$ACCOUNT" >> "$GITHUB_ENV"
+          echo "R13_SMOKE_KEY=$KEY" >> "$GITHUB_ENV"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM membership_access_keys WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_entitlements WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_accounts WHERE id='$ACCOUNT';
+            INSERT INTO membership_accounts(id,display_name,status)
+              VALUES ('$ACCOUNT','R13 Exact Article Synthetic Smoke','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+              VALUES ('$ENT','$ACCOUNT','office','active','manual',3,1,0,datetime('now','+20 minutes'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+              VALUES ('$KID','$ACCOUNT','$HASH','$PREFIX','ephemeral r13 article smoke','active',datetime('now','+20 minutes'));
+          " >/tmp/r13-provision.txt
+          echo "R13 EPHEMERAL PROFESSIONAL MEMBERSHIP: PROVISIONED"
+
+      - name: Verify live Professional exact Article 12 resilience
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${R13_SMOKE_KEY:-}"
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          code="$(curl -sS --max-time 180 -o /tmp/r13-article12.json -w '%{http_code}' \
+            -H 'content-type: application/json' \
+            -H "X-Membership-Key: $R13_SMOKE_KEY" \
+            -H 'Origin: https://ai-advokat.github.io' \
+            -d '{"q":"Што уредува член 12 од ЗРО и кои услови ги предвидува? Не измислувај членови или содржина. Наведи го точниот извор и важечката верзија.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
+            "$BASE/api/bot")"
+          test "$code" = "200"
+          node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync("/tmp/r13-article12.json","utf8"));
+          if(!d.ok) throw new Error("Article 12 smoke returned ok=false");
+          const answer=String(d.answer||"").trim();
+          if(answer.length<40) throw new Error("Article 12 answer is empty/too short");
+          if(/AI runtime не успеа безбедно|LIOE-RT-[0-9]/u.test(answer)) throw new Error("Generic LIOE runtime failure resurfaced");
+          if(!Array.isArray(d.legalSources) || d.legalSources.length<1) throw new Error("Article 12 response has no governed legal source");
+          if(!["openai","canonical_corpus_no_model"].includes(String(d.provider||""))) throw new Error("Unexpected provider: "+d.provider);
+          if(d.provider==="canonical_corpus_no_model"){
+            if(d.providerFallback?.from!=="openai") throw new Error("Canonical fallback provenance missing");
+            if(d.legalGovernance?.verificationState!=="SOURCE_BACKED_PROVIDER_FALLBACK") throw new Error("Canonical fallback governance state missing");
+            if(!/не ја означувам како .важечки текст./u.test(answer)) throw new Error("Current-law truth-label warning missing");
+          } else {
+            if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error("LIOE governance missing on OpenAI path");
+            if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("Current-law Human Gate not required");
+          }
+          const summary={
+            ok:d.ok,
+            provider:d.provider,
+            providerFallback:d.providerFallback||null,
+            legalSourceCount:d.legalSources.length,
+            governanceRunId:d.governanceRunId||null,
+            verificationState:d.legalGovernance?.verificationState||null,
+            releaseState:d.legalGovernance?.releaseState||null,
+            humanReviewRequired:d.legalGovernance?.humanReviewRequired===true,
+            answerNonEmpty:true
+          };
+          fs.writeFileSync("/tmp/r13-article12-summary.json",JSON.stringify(summary,null,2));
+          console.log("LIVE PROFESSIONAL ZRO ARTICLE 12: PASS");
+          NODE
+
+      - name: Cleanup ephemeral R13 Professional smoke membership
+        if: always()
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -n "${R13_SMOKE_ACCOUNT:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$R13_SMOKE_ACCOUNT';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$R13_SMOKE_ACCOUNT';
+              DELETE FROM membership_access_keys WHERE account_id='$R13_SMOKE_ACCOUNT';
+              DELETE FROM membership_entitlements WHERE account_id='$R13_SMOKE_ACCOUNT';
+              DELETE FROM membership_accounts WHERE id='$R13_SMOKE_ACCOUNT';
+            " >/tmp/r13-cleanup.txt
+            echo "R13 EPHEMERAL PROFESSIONAL MEMBERSHIP: CLEANED"
+          fi
+
+      - name: Upload R13 exact-article release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-r13-exact-article-release-evidence
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/r13-article12-summary.json
+            /tmp/r13-cleanup.txt
+            /tmp/deploy-legacy-headers.txt
+
       - name: Record deployed commit
         run: |
           echo "AI Advokat production runtime update"
           echo "commit=${GITHUB_SHA}"
           echo "worker=ai-advokat-github-io"
 
-# trigger-core-composer-r12: 2026-11-01
+# trigger-exact-article-fallback-r13: 2026-11-01
