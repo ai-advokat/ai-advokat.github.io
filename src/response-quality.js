@@ -1,7 +1,7 @@
 // Final user-facing response quality helpers.
 // Deterministic postflight only: no source expansion, no new legal reasoning.
 
-const FORMAL_DRAFT_RE=/(?:тужб|жалб|приговор|поднесок|поднес|барање|договор|полномош|правно\s+мислење|tuzb|zalb|prigovor|podnes|baranje|dogovor|polnomos)/iu;
+const FORMAL_DRAFT_RE=/(?:опомена|opomena|тужб|жалб|приговор|поднесок|поднес|барање|договор|полномош|правно\s+мислење|tuzb|zalb|prigovor|podnes|baranje|dogovor|polnomos)/iu;
 
 export function isFormalLegalDraftRequest(userText){
   return FORMAL_DRAFT_RE.test(String(userText||"").normalize("NFKC"));
@@ -10,6 +10,7 @@ export function isFormalLegalDraftRequest(userText){
 export function requestedFormalDraftHeading(userText){
   const text=String(userText||"").normalize("NFKC").toLocaleLowerCase("mk");
   const candidates=[
+    [/(?:опомена|opomena)(?:\s+пред\s+(?:поведување\s+)?(?:тужб|tuzb))?/u,"ОПОМЕНА ПРЕД ПОВЕДУВАЊЕ СУДСКА ПОСТАПКА"],
     [/(?:тужб|tuzb)/u,"ТУЖБА"],
     [/(?:жалб|zalb)/u,"ЖАЛБА"],
     [/(?:приговор|prigovor)/u,"ПРИГОВОР"],
