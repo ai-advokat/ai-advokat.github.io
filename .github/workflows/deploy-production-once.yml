@@ -153,6 +153,11 @@ jobs:
           if(answer.length<40) throw new Error("Article 12 answer is empty/too short");
           if(/AI runtime не успеа безбедно|LIOE-RT-[0-9]/u.test(answer)) throw new Error("Generic LIOE runtime failure resurfaced");
           if(!Array.isArray(d.legalSources) || d.legalSources.length<1) throw new Error("Article 12 response has no governed legal source");
+          if(d.articleCorpus?.instrument?.canonicalKey!=="mk:zro") throw new Error("Wrong instrument routed: "+JSON.stringify(d.articleCorpus?.instrument||null));
+          if(d.articleCorpus?.version?.label!=="official-consolidated-snapshot-through-111/2023") throw new Error("Unexpected governed ZRO version: "+JSON.stringify(d.articleCorpus?.version||null));
+          const exactSource=d.legalSources.find(s=>String(s?.articleNumber||"").trim()==="12");
+          if(!exactSource) throw new Error("Exact governed Article 12 source missing");
+          if(String(exactSource?.version||"")!=="official-consolidated-snapshot-through-111/2023") throw new Error("Article 12 source version mismatch");
           if(!["openai","canonical_corpus_no_model"].includes(String(d.provider||""))) throw new Error("Unexpected provider: "+d.provider);
           if(d.provider==="canonical_corpus_no_model"){
             if(d.providerFallback?.from!=="openai") throw new Error("Canonical fallback provenance missing");
