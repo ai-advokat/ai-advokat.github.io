@@ -153,7 +153,8 @@ import {
 import {
   isFormalLegalDraftRequest,
   hasProceduralInstrumentMismatch,
-  deterministicProceduralInstrumentFallback,
+  formalDraftAuthoritySafety,
+  deterministicFormalDraftFallback,
   finaliseFormalLegalDraft
 } from "./response-quality.js";
 import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commentary.js";
@@ -161,7 +162,7 @@ import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, schol
 import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
 
 const VERSION = "1.9.0";
-const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V12_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V13_DETERMINISTIC_FORMAL_DRAFT_FALLBACK";
 const CANONICAL_FINAL_OUTPUT_GATE_VERSION="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
 
 const ALLOWED_ORIGINS = new Set([
@@ -5451,31 +5452,61 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     primaryModel:result.model
   });
   const formalDraft=formalDraftRequest;
+  const hasGovernedLegalContext=Boolean(String(governed||"").trim());
   const finalText=formalDraft
     ? finaliseFormalLegalDraft(languagePass.text,{
         userText:q,
-        hasGovernedLegalContext:Boolean(String(governed||"").trim())
+        hasGovernedLegalContext
       })
     : languagePass.text;
   let finalRelease=canonicalMacedonianFinalRelease(finalText,q);
+  let formalDraftSafety=formalDraft
+    ? formalDraftAuthoritySafety(finalText,{userText:q,hasGovernedLegalContext})
+    : {ok:true,problems:[]};
   let deterministicLanguageFallbackUsed=false;
   let deterministicLanguageFallbackReason=null;
 
-  // If a formal request itself uses the wrong procedural label for a likely
-  // criminal event, never return contaminated prose or a bare 503. The model
-  // generation remains blocked, but a controlled source-free Macedonian
-  // working scaffold can be released because it adds no statute, article,
-  // deadline, jurisdiction or legal effect.
-  if((languagePass.hardBlock || !finalRelease.ok) && formalDraft && proceduralInstrumentMismatch){
-    const fallbackText=deterministicProceduralInstrumentFallback({userText:q});
-    const fallbackRelease=canonicalMacedonianFinalRelease(fallbackText,q);
-    if(fallbackText && fallbackRelease.ok){
-      finalRelease=fallbackRelease;
-      deterministicLanguageFallbackUsed=true;
-      deterministicLanguageFallbackReason=languagePass.hardBlock
+  // Model prose is never the last resort for an unsourced formal document.
+  // When the language gate blocks it OR the formal-draft authority guard finds
+  // invented court/prosecutorial/foreign-form details, use only a bounded
+  // deterministic template for the supported document class. The template
+  // contains no statute, article, deadline or claimed jurisdiction.
+  const formalFallbackRequired=formalDraft
+    && !hasGovernedLegalContext
+    && (languagePass.hardBlock || !finalRelease.ok || !formalDraftSafety.ok);
+
+  if(formalFallbackRequired){
+    const fallbackTrigger=!formalDraftSafety.ok
+      ? "formal_draft_authority_guard"
+      : languagePass.hardBlock
         ? "blocked_model_or_editor_generation"
         : "final_postflight_language_gate";
+    const fallbackText=deterministicFormalDraftFallback({userText:q});
+    const fallbackRelease=fallbackText
+      ? canonicalMacedonianFinalRelease(fallbackText,q)
+      : null;
+    const fallbackSafety=fallbackText
+      ? formalDraftAuthoritySafety(fallbackText,{userText:q,hasGovernedLegalContext:false})
+      : {ok:false,problems:["no_supported_deterministic_formal_fallback"]};
+    if(fallbackText && fallbackRelease?.ok && fallbackSafety.ok){
+      finalRelease=fallbackRelease;
+      formalDraftSafety=fallbackSafety;
+      deterministicLanguageFallbackUsed=true;
+      deterministicLanguageFallbackReason=fallbackTrigger;
     }
+  }
+
+  if(!deterministicLanguageFallbackUsed && formalDraft && !formalDraftSafety.ok){
+    return {
+      ok:false,
+      error:"formal_draft_authority_blocked",
+      message:"Формалниот нацрт не е прикажан затоа што содржи непотврдена конкретна институција, процесна улога или странска правна форма. Потребна е проверка на надлежноста и правната основа.",
+      detail:"formal_draft_authority_gate_failed",
+      problems:formalDraftSafety.problems,
+      model:result.model,
+      providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
+      provider:"workers_ai_free"
+    };
   }
 
   if(!deterministicLanguageFallbackUsed && (languagePass.hardBlock || !finalRelease.ok)){
@@ -5519,6 +5550,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     languageEditorErrorCode:languagePass.editorErrorCode||null,
     deterministicLanguageFallbackUsed,
     deterministicLanguageFallbackReason,
+    formalDraftAuthoritySafe:formalDraftSafety.ok===true,
+    formalDraftAuthorityProblems:formalDraftSafety.problems||[],
     formalDraftPostflight:formalDraft,
     languageQualityState:finalRelease.deliveryState,
     languageReleaseGate:languagePass.releaseVerdict||null,
@@ -6409,6 +6442,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         languageEditorErrorCode:freeResult.languageEditorErrorCode||null,
         deterministicLanguageFallbackUsed:freeResult.deterministicLanguageFallbackUsed===true,
         deterministicLanguageFallbackReason:freeResult.deterministicLanguageFallbackReason||null,
+        formalDraftAuthoritySafe:freeResult.formalDraftAuthoritySafe!==false,
+        formalDraftAuthorityProblems:Array.isArray(freeResult.formalDraftAuthorityProblems)?freeResult.formalDraftAuthorityProblems:[],
         serverLatencyMs:freeResult.latencyMs||null,
         fastPromptUsed:freeResult.fastPromptUsed===true,
         compactDraftUsed:freeResult.compactDraftUsed===true,
