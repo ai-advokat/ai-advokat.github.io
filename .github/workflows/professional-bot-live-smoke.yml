@@ -48,7 +48,7 @@ jobs:
           if(!d || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
           if(c.vars?.OPENAI_MODEL!=="gpt-6.1-sol") throw new Error("Professional model policy changed");
           const bot=fs.readFileSync("bot/index.html","utf8");
-          if(!bot.includes("standalone-bot-vnext.js?v=20261101-vnext-r10")) throw new Error("root-r9 bot bundle missing");
+          if(!bot.includes("standalone-bot.js?v=20261101-core-r10")) throw new Error("core-r10 bot bundle missing");\n          if(!bot.includes("standalone-bot-vnext.js?v=20261101-vnext-r10")) throw new Error("vnext-r10 bot bundle missing");
           console.log("PRODUCTION CONTRACT: PASS");
           NODE
 
