@@ -8,8 +8,8 @@ const sync=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8");
 test("external bot canonicalizes GitHub Pages to the Worker-hosted production surface",()=>{
   assert.match(bot,/location\.hostname === 'ai-advokat\.github\.io'/);
   assert.match(bot,/https:\/\/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
-  assert.match(bot,/standalone-bot\.js\?v=20261101-core-r12/);
-  assert.match(bot,/standalone-bot-vnext\.js\?v=20261101-vnext-r10/);
+  assert.match(bot,/standalone-bot\.js\?v=20261101-core-r13/);
+  assert.match(bot,/standalone-bot-vnext\.js\?v=20261101-vnext-r11/);
   assert.match(bot,/frontend-runtime-guard\.js\?v=20261101-root-r1/);
 });
 
