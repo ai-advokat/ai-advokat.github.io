@@ -1,0 +1,104 @@
+name: Sync AI Advokat frontend runtime to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "index.html"
+      - "bot/index.html"
+      - "assets/ai-advokat-chat.js"
+      - "assets/ai-advokat-chat.css"
+      - "assets/frontend-runtime-guard.js"
+      - "assets/standalone-bot.js"
+      - "assets/standalone-bot.css"
+      - "assets/standalone-bot-vnext.js"
+      - "assets/standalone-bot-vnext.css"
+      - "assets/standalone-bot-reliability.js"
+      - "assets/guide-router.js"
+      - "assets/guide-vault.js"
+      - "service-worker.js"
+      - ".github/workflows/sync-pages-runtime.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ai-advokat-pages-runtime-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact main revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify source runtime contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          node --check assets/ai-advokat-chat.js
+          node --check assets/frontend-runtime-guard.js
+          node --check assets/standalone-bot.js
+          node --check assets/standalone-bot-vnext.js
+          node --check assets/standalone-bot-reliability.js
+          grep -q 'ai-advokat-chat.js?v=20261101-root-r9' index.html
+          grep -q 'standalone-bot-vnext.js?v=20261101-root-r9' bot/index.html
+          grep -q "location.hostname === 'ai-advokat.github.io'" bot/index.html
+          echo "PAGES SYNC SOURCE CONTRACT: PASS"
+
+      - name: Sync curated runtime files to gh-pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          rm -rf /tmp/ai-advokat-gh-pages
+          git worktree add --detach /tmp/ai-advokat-gh-pages origin/gh-pages
+          files=(
+            index.html
+            bot/index.html
+            assets/ai-advokat-chat.js
+            assets/ai-advokat-chat.css
+            assets/frontend-runtime-guard.js
+            assets/standalone-bot.js
+            assets/standalone-bot.css
+            assets/standalone-bot-vnext.js
+            assets/standalone-bot-vnext.css
+            assets/standalone-bot-reliability.js
+            assets/guide-router.js
+            assets/guide-vault.js
+            service-worker.js
+          )
+          for f in "${files[@]}"; do
+            mkdir -p "/tmp/ai-advokat-gh-pages/$(dirname "$f")"
+            cp "$f" "/tmp/ai-advokat-gh-pages/$f"
+          done
+          cd /tmp/ai-advokat-gh-pages
+          git config user.name "ai-advokat-pages-sync"
+          git config user.email "aiadvokat16@gmail.com"
+          git add -- "${files[@]}"
+          if git diff --cached --quiet; then
+            echo "gh-pages already matches main runtime."
+            exit 0
+          fi
+          git commit -m "release(pages): sync runtime from main $GITHUB_SHA"
+          git push origin HEAD:gh-pages
+          echo "GH-PAGES RUNTIME SYNC: PASS"
+
+      - name: Verify branch parity through Git object identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          for f in index.html bot/index.html assets/ai-advokat-chat.js assets/frontend-runtime-guard.js assets/standalone-bot-vnext.js; do
+            main_blob="$(git rev-parse "$GITHUB_SHA:$f")"
+            pages_blob="$(git rev-parse "origin/gh-pages:$f")"
+            test "$main_blob" = "$pages_blob"
+            echo "$f: $main_blob"
+          done
+          echo "MAIN/GH-PAGES RUNTIME PARITY: PASS"

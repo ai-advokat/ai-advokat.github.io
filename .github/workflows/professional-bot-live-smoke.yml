@@ -1,0 +1,165 @@
+name: AI Advokat Professional production smoke
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/professional-bot-live-smoke.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-professional-bot-live-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify exact production contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --check src/index.js
+          node --check src/agent-orchestrator.js
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker");
+          if(!d || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
+          if(c.vars?.OPENAI_MODEL!=="gpt-6.1-sol") throw new Error("Professional model policy changed");
+          const bot=fs.readFileSync("bot/index.html","utf8");
+          if(!bot.includes("standalone-bot-vnext.js?v=20261101-root-r9")) throw new Error("root-r9 bot bundle missing");
+          console.log("PRODUCTION CONTRACT: PASS");
+          NODE
+
+      - name: Verify live Worker, orchestrator and unauthenticated bot boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/health" -o /tmp/pro-health.json
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/orchestrator" -o /tmp/pro-orchestrator.json
+          node <<'NODE'
+          const h=require("/tmp/pro-health.json");
+          const o=require("/tmp/pro-orchestrator.json");
+          if(!h.ok || h.database?.reachable!==true || h.database?.schemaReady!==true) throw new Error("Production health failed");
+          if(!o.ok || o.runtime?.providerExecution!=="configured_for_api_chat_execution") throw new Error("Provider runtime not ready");
+          if(o.runtime?.lioeRuntimeGovernance!=="enabled" || o.runtime?.lioePostflight!=="enabled" || o.runtime?.lioeSpecialistExecution!=="enabled") throw new Error("LIOE runtime not ready");
+          console.log("LIVE GOVERNED RUNTIME: PASS");
+          NODE
+          code="$(curl -sS -o /tmp/pro-unauth.json -w '%{http_code}' -H 'content-type: application/json' -d '{"q":"Здраво"}' "$BASE/api/bot")"
+          test "$code" = "401"
+          grep -q 'bot_membership_required' /tmp/pro-unauth.json
+          echo "UNAUTHENTICATED /api/bot FAIL-CLOSED: PASS"
+
+      - name: Provision ephemeral synthetic Professional membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACCOUNT="root-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ENT="root-smoke-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KID="root-smoke-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KEY="rootsmoke_$(openssl rand -hex 24)"
+          HASH="$(printf '%s' "$KEY" | sha256sum | awk '{print $1}')"
+          PREFIX="${KEY:0:12}"
+          echo "::add-mask::$KEY"
+          echo "ROOT_SMOKE_ACCOUNT=$ACCOUNT" >> "$GITHUB_ENV"
+          echo "ROOT_SMOKE_KEY=$KEY" >> "$GITHUB_ENV"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM membership_access_keys WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_entitlements WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_accounts WHERE id='$ACCOUNT';
+            INSERT INTO membership_accounts(id,display_name,status)
+              VALUES ('$ACCOUNT','AI Advokat Root Reliability Synthetic Smoke','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+              VALUES ('$ENT','$ACCOUNT','office','active','manual',5,1,0,datetime('now','+30 minutes'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+              VALUES ('$KID','$ACCOUNT','$HASH','$PREFIX','ephemeral root reliability smoke','active',datetime('now','+30 minutes'));
+          " >/tmp/pro-provision.txt
+          echo "EPHEMERAL PROFESSIONAL MEMBERSHIP: PROVISIONED"
+
+      - name: Execute real Professional OpenAI legal smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ROOT_SMOKE_KEY:-}"
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          code="$(curl -sS --max-time 180 -o /tmp/pro-response.json -w '%{http_code}'             -H 'content-type: application/json'             -H "X-Membership-Key: $ROOT_SMOKE_KEY"             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Кратко наведи ги клучните правни ризици при оспорување на отказ на работен однос. Не измислувај рокови или членови ако не се потврдени.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/bot")"
+          test "$code" = "200"
+          node <<'NODE'
+          const fs=require("fs");
+          const d=require("/tmp/pro-response.json");
+          if(!d.ok) throw new Error("Professional smoke failed");
+          if(d.provider!=="openai") throw new Error("Unexpected provider: "+d.provider);
+          if(d.model!=="gpt-6.1-sol") throw new Error("Unexpected model: "+d.model);
+          if(!String(d.answer||"").trim()) throw new Error("Empty Professional answer");
+          if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error("LIOE engine missing");
+          if(d.legalGovernance?.postflightRequired!==true) throw new Error("Mandatory postflight missing");
+          if(d.runtimeTelemetry!=="recorded" || !d.governanceRunId) throw new Error("Runtime telemetry missing");
+          const summary={
+            ok:d.ok,
+            provider:d.provider,
+            model:d.model,
+            governanceEngine:d.legalGovernance?.engine,
+            postflightRequired:d.legalGovernance?.postflightRequired,
+            runtimeTelemetry:d.runtimeTelemetry,
+            governanceRunId:d.governanceRunId,
+            answerNonEmpty:Boolean(String(d.answer||"").trim())
+          };
+          fs.writeFileSync("/tmp/pro-summary.json",JSON.stringify(summary,null,2));
+          console.log("REAL PROFESSIONAL /api/bot SMOKE: PASS");
+          NODE
+
+      - name: Cleanup ephemeral synthetic Professional membership
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${ROOT_SMOKE_ACCOUNT:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$ROOT_SMOKE_ACCOUNT';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ROOT_SMOKE_ACCOUNT';
+              DELETE FROM membership_access_keys WHERE account_id='$ROOT_SMOKE_ACCOUNT';
+              DELETE FROM membership_entitlements WHERE account_id='$ROOT_SMOKE_ACCOUNT';
+              DELETE FROM membership_accounts WHERE id='$ROOT_SMOKE_ACCOUNT';
+            " >/tmp/pro-cleanup.txt
+            echo "EPHEMERAL PROFESSIONAL MEMBERSHIP: CLEANED"
+          fi
+
+      - name: Upload non-secret Professional smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-professional-live-smoke
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/pro-health.json
+            /tmp/pro-orchestrator.json
+            /tmp/pro-unauth.json
+            /tmp/pro-summary.json
+            /tmp/pro-cleanup.txt
