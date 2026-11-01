@@ -1,0 +1,83 @@
+name: Zoran professional access read-only verification
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/zoran-access-readonly-smoke.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-zoran-access-readonly
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify exact production target and authorized access record
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker");
+          if(!d || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1");
+          const a=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
+          if(a.activation_authorized!==true || a.purpose!=="owner_professional_access") throw new Error("Access authorization record invalid");
+          if(a.access_mode!=="permanent_until_revoked" || a.expires_at!==null) throw new Error("Unexpected access mode");
+          console.log("AUTHORIZED ACCESS RECORD: PASS");
+          NODE
+
+      - name: Read-only verify Zoran account, entitlement and key state
+        shell: bash
+        run: |
+          set -euo pipefail
+          SQL="$(node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync(".github/activation/zoran-professional-test-access.json","utf8"));
+          const q=v=>"'" + String(v).replaceAll("'","''") + "'";
+          process.stdout.write(
+            "SELECT CASE WHEN COUNT(*)=1 THEN 'ZORAN_ACCESS_OK' ELSE 'ZORAN_ACCESS_FAIL' END AS result " +
+            "FROM membership_accounts a " +
+            "JOIN membership_entitlements e ON e.account_id=a.id " +
+            "JOIN membership_access_keys k ON k.account_id=a.id " +
+            "WHERE a.id="+q(d.account_id)+
+            " AND a.status='active' AND e.plan_code='office' AND e.status='active' " +
+            "AND e.expires_at IS NULL AND k.status='active' AND k.expires_at IS NULL " +
+            "AND k.key_hash="+q(d.access_key_hash)+";"
+          );
+          NODE
+          )"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "$SQL" | tee /tmp/zoran-access-readonly.txt
+          grep -q 'ZORAN_ACCESS_OK' /tmp/zoran-access-readonly.txt
+          echo "ZORAN PROFESSIONAL ACCESS: ACTIVE · OFFICE · NO EXPIRY · KEY MATCHES AUTHORIZED HASH"
+
+      - name: Upload non-secret read-only evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zoran-access-readonly-evidence
+          retention-days: 14
+          if-no-files-found: warn
+          path: /tmp/zoran-access-readonly.txt
