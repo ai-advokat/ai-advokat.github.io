@@ -9,6 +9,8 @@ on:
       - "assets/standalone-bot.js"
       - "assets/chat-privacy-browser.js"
       - "src/chat-privacy.js"
+      - "src/index.js"
+      - "scripts/zro12-live-smoke.mjs"
       - ".assetsignore"
       - "_headers"
       - ".github/workflows/sync-pages-runtime.yml"
@@ -142,6 +144,9 @@ jobs:
           console.log("REAL PROFESSIONAL /api/bot SMOKE: PASS");
           NODE
 
+      - name: Execute exact ZRO Article 12 live regression
+        shell: bash
+        run: node scripts/zro12-live-smoke.mjs
       - name: Cleanup ephemeral synthetic Professional membership
         if: always()
         shell: bash
@@ -170,4 +175,5 @@ jobs:
             /tmp/pro-orchestrator.json
             /tmp/pro-unauth.json
             /tmp/pro-summary.json
+            /tmp/pro-zro12-summary.json
             /tmp/pro-cleanup.txt
