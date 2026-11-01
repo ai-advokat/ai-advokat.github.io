@@ -26,7 +26,7 @@ jobs:
       - name: Install PDF tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y poppler-utils
+          sudo apt-get install -y poppler-utils mupdf-tools
 
       - name: Harvest official chronological registers 1991-2025
         run: |
