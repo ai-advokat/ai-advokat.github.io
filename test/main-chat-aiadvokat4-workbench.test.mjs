@@ -16,7 +16,7 @@ test("main AI Advokat chat exposes AIAdvokat4 LexNova governed workbench",()=>{
   assert.match(home,/КОНСОЛИДАТОР/);
   assert.match(home,/АНАЛИЗАТОР/);
   assert.match(home,/ПРЕДИКТОР/);
-  assert.match(home,/20261101-root-r11-quality/);
+  assert.match(home,/20261101-root-r12-complete/);
 });
 
 test("Consolidator is exact Legal Formatter v10.4 CORE and not a prompt surrogate",()=>{
@@ -91,6 +91,27 @@ test("main workspace matches external bot interaction parity beyond labels",()=>
   assert.match(chat,/gazetteIssueMetadata/);
   assert.match(chat,/canonical_gazette_issue_metadata_no_model/);
   assert.match(chat,/Governed corpus · без модел/);
+});
+
+test("top menu matches external bot conversation and Professional-access controls",()=>{
+  for(const id of ["aiChatMenuNew","aiChatExportConversation","aiChatMaterialsTop","aiChatProfessionalAccess","aiChatLogout","aiChatAccessDialog","aiChatAccessForm","aiChatRememberAccess"]){
+    assert.match(home,new RegExp('id="'+id+'"'));
+  }
+  assert.match(home,/Преземи разговор \(\.txt\)/);
+  assert.match(home,/Материјали и алатки/);
+  assert.match(home,/Професионален пристап/);
+  assert.match(home,/Одјави се и заборави го пристапот/);
+  assert.match(home,/Не внесувајте OpenAI API клуч/);
+  assert.match(chat,/CHAT_API_BASE\+"\/api\/membership\/status"/);
+  assert.match(chat,/import\("\/assets\/bot-device-access\.mjs"\)/);
+  assert.match(chat,/saveDeviceAccess/);
+  assert.match(chat,/readDeviceAccess/);
+  assert.match(chat,/forgetDeviceAccess/);
+  assert.match(chat,/\^sk-/);
+  assert.match(chat,/function exportCurrentConversation\(\)/);
+  assert.match(chat,/AI-Advokat-razgovor\.txt/);
+  assert.match(chat,/FREE активен · јавен текстуален chat · Workers AI/);
+  assert.match(chat,/Професионален пристап · /);
 });
 
 test("Sources and Human Gate panels use existing governed response fields",()=>{

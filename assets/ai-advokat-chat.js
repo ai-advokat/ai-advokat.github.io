@@ -42,6 +42,19 @@
   const evidenceClose=$("#aiEvidenceClose");
   const evidenceToggle=$("#aiWorkspaceEvidenceToggle");
   const evidenceTabs=[...root.querySelectorAll("[data-ai-evidence-tab]")];
+  const menuNew=$("#aiChatMenuNew");
+  const exportConversationBtn=$("#aiChatExportConversation");
+  const materialsTopBtn=$("#aiChatMaterialsTop");
+  const professionalAccessBtn=$("#aiChatProfessionalAccess");
+  const logoutBtn=$("#aiChatLogout");
+  const accessDialog=$("#aiChatAccessDialog");
+  const accessForm=$("#aiChatAccessForm");
+  const accessKey=$("#aiChatAccessKey");
+  const rememberAccess=$("#aiChatRememberAccess");
+  const accessStatus=$("#aiChatAccessStatus");
+  const accessClose=$("#aiChatAccessClose");
+  const accessCancel=$("#aiChatAccessCancel");
+  const accessSubmit=$("#aiChatAccessSubmit");
   const requiredChatElements={
     messagesEl,input,sendBtn,stopBtn,attachBtn,fileInput,attachmentsEl,
     newChatBtn,historyEl,provider,emptyTemplate
@@ -73,6 +86,8 @@
   let guideRegistryPromise=null;
   let currentId=null;
   let evidenceTab="sources";
+  let activeMembership=null;
+  let accessModulePromise=null;
   const chats=new Map();
 
   const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
@@ -667,18 +682,119 @@
     return {kind:"file",name:file.name,mime,base64:comma>=0?dataUrl.slice(comma+1):""};
   }
 
-  function membershipHeaders(){
+  function currentMembershipKey(){
     const key=sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
+    if(/^AIADV-OWNER-/i.test(key)){
+      sessionStorage.removeItem("aiAdvokatMembershipKey");
+      sessionStorage.removeItem("ai_advokat_membership_key");
+      return "";
+    }
+    return key;
+  }
+  function membershipHeaders(){
+    const key=currentMembershipKey();
     return key?{"authorization":"Bearer "+key}:{};
   }
-  function syncChatMembershipState(){
-    const legacyOwner=sessionStorage.getItem("aiAdvokatMembershipKey")||sessionStorage.getItem("ai_advokat_membership_key")||"";
-    if(/^AIADV-OWNER-/i.test(legacyOwner)){
+  function storeMembershipKey(key){
+    const clean=String(key||"").trim();
+    if(clean){
+      sessionStorage.setItem("aiAdvokatMembershipKey",clean);
+      sessionStorage.removeItem("ai_advokat_membership_key");
+    }else{
       sessionStorage.removeItem("aiAdvokatMembershipKey");
       sessionStorage.removeItem("ai_advokat_membership_key");
     }
-    if(chatMembershipState) chatMembershipState.textContent="FREE активен · јавен текстуален chat · Workers AI";
-    if(ownerState) ownerState.textContent="FREE активен · јавен текстуален chat · Workers AI";
+  }
+  function syncChatMembershipState(){
+    const key=currentMembershipKey();
+    const plan=String(activeMembership?.planCode||activeMembership?.plan_code||"").trim();
+    const professional=Boolean(key&&plan);
+    const label=professional
+      ?"Професионален пристап · "+plan+" · governed OpenAI кога е активен"
+      :"FREE активен · јавен текстуален chat · Workers AI";
+    if(chatMembershipState) chatMembershipState.textContent=label;
+    if(ownerState) ownerState.textContent=label;
+    if(professionalAccessBtn) professionalAccessBtn.textContent=professional?"✓ Професионален пристап · "+plan:"✓ Професионален пристап";
+    if(logoutBtn) logoutBtn.hidden=!key;
+  }
+  function accessStorage(){
+    try{return window.localStorage;}catch{return null;}
+  }
+  async function accessModule(){
+    if(!accessModulePromise) accessModulePromise=import("/assets/bot-device-access.mjs");
+    return accessModulePromise;
+  }
+  async function verifyProfessionalKey(candidate,{signal}={}){
+    const response=await fetch(CHAT_API_BASE+"/api/membership/status",{
+      method:"GET",cache:"no-store",signal,
+      headers:{accept:"application/json",authorization:"Bearer "+candidate}
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data?.ok){
+      const error=new Error(data?.message||data?.error||"membership_not_active");
+      error.status=response.status;throw error;
+    }
+    return data;
+  }
+  function openProfessionalAccess(){
+    if(topMenu) topMenu.open=false;
+    if(!accessDialog) return;
+    if(accessStatus) accessStatus.textContent="";
+    if(accessKey) accessKey.value="";
+    if(rememberAccess) rememberAccess.checked=false;
+    accessDialog.showModal();
+    setTimeout(()=>accessKey?.focus(),0);
+  }
+  async function activateProfessionalAccess(candidate,{remember=false}={}){
+    const data=await verifyProfessionalKey(candidate,{signal:AbortSignal.timeout(20000)});
+    storeMembershipKey(candidate);
+    activeMembership=data.membership||{};
+    const storage=accessStorage();
+    const mod=await accessModule().catch(()=>null);
+    if(mod&&storage){
+      mod.forgetDeviceAccess?.(storage);
+      if(remember) mod.saveDeviceAccess?.(storage,candidate);
+    }
+    syncChatMembershipState();
+    return data;
+  }
+  async function restoreProfessionalAccess(){
+    let candidate=currentMembershipKey();
+    const storage=accessStorage();
+    const mod=await accessModule().catch(()=>null);
+    if(!candidate&&mod&&storage) candidate=String(mod.readDeviceAccess?.(storage)||"");
+    if(!candidate){activeMembership=null;syncChatMembershipState();return;}
+    try{
+      const data=await verifyProfessionalKey(candidate,{signal:AbortSignal.timeout(15000)});
+      storeMembershipKey(candidate);activeMembership=data.membership||{};syncChatMembershipState();
+    }catch{
+      storeMembershipKey("");activeMembership=null;
+      if(mod&&storage) mod.forgetDeviceAccess?.(storage);
+      syncChatMembershipState();
+    }
+  }
+  async function forgetProfessionalAccess(){
+    storeMembershipKey("");activeMembership=null;
+    const storage=accessStorage();
+    const mod=await accessModule().catch(()=>null);
+    if(mod&&storage) mod.forgetDeviceAccess?.(storage);
+    syncChatMembershipState();
+    if(topMenu) topMenu.open=false;
+  }
+  function exportCurrentConversation(){
+    const chat=current();
+    const rows=(chat?.messages||[]).filter(m=>m?.text&&m.text!=="Обработувам…");
+    if(!rows.length) return;
+    const text=[
+      "AI Advokat — работен разговор",
+      "Потребна е професионална човечка проверка пред последична правна употреба.",
+      "",
+      ...rows.map(m=>(m.role==="user"?"Вие":"AI Advokat")+":\n"+String(m.text||""))
+    ].join("\n\n");
+    const url=URL.createObjectURL(new Blob([text],{type:"text/plain;charset=utf-8"}));
+    const a=document.createElement("a");a.href=url;a.download="AI-Advokat-razgovor.txt";a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    if(topMenu) topMenu.open=false;
   }
 
 
@@ -1030,6 +1146,34 @@
 
   exportButtons.forEach(button=>{
     button.addEventListener("click",()=>exportLatestDraft(String(button.dataset.chatExport||"docx")));
+  });
+  if(menuNew) menuNew.addEventListener("click",()=>{if(topMenu) topMenu.open=false;newChatBtn.click();});
+  if(exportConversationBtn) exportConversationBtn.addEventListener("click",exportCurrentConversation);
+  if(materialsTopBtn) materialsTopBtn.addEventListener("click",()=>{if(topMenu) topMenu.open=false;openMaterialsDialog("library");});
+  if(professionalAccessBtn) professionalAccessBtn.addEventListener("click",openProfessionalAccess);
+  if(logoutBtn) logoutBtn.addEventListener("click",forgetProfessionalAccess);
+  if(accessClose) accessClose.addEventListener("click",()=>accessDialog?.close());
+  if(accessCancel) accessCancel.addEventListener("click",()=>accessDialog?.close());
+  accessDialog?.addEventListener("close",()=>{if(accessKey) accessKey.value="";if(accessStatus) accessStatus.textContent="";});
+  if(accessForm) accessForm.addEventListener("submit",async event=>{
+    event.preventDefault();
+    const candidate=String(accessKey?.value||"").trim();
+    if(!candidate||/^sk-/i.test(candidate)){
+      if(accessStatus) accessStatus.textContent="Потребен е AI Advokat членски клуч, не OpenAI API клуч.";
+      return;
+    }
+    if(accessSubmit) accessSubmit.disabled=true;
+    if(accessStatus) accessStatus.textContent="Го проверувам пристапот…";
+    try{
+      const data=await activateProfessionalAccess(candidate,{remember:Boolean(rememberAccess?.checked)});
+      const plan=String(data?.membership?.planCode||data?.membership?.plan_code||"professional");
+      if(accessStatus) accessStatus.textContent="Професионален пристап · "+plan+" · активен.";
+      accessDialog?.close();
+    }catch{
+      if(accessStatus) accessStatus.textContent="Клучот не е активен или услугата не е достапна. Обидете се повторно.";
+    }finally{
+      if(accessSubmit) accessSubmit.disabled=false;
+    }
   });
 
   if(micBtn){
@@ -1556,7 +1700,8 @@
     .catch(()=>{provider.textContent="AI runtime · недостапен";});
 
   try{
-    load();syncModeUi();render();renderAttachments();autoSize();refreshGuideVaultStatus();renderWorkspaceEvidence();
+    load();syncModeUi();render();renderAttachments();autoSize();refreshGuideVaultStatus();renderWorkspaceEvidence();syncChatMembershipState();
+    restoreProfessionalAccess().catch(()=>{});
     window.AIAdvokatFrontendGuard?.markReady?.("main");
   }catch(error){
     window.AIAdvokatFrontendGuard?.report?.("main","boot",error);
