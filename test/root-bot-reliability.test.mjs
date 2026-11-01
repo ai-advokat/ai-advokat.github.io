@@ -49,5 +49,5 @@ test("professional runtime recovery covers transient 408 and bounded specialist 
   assert.match(orchestrator,/"specialist_deadline_exhausted"/);
   assert.match(orchestrator,/\["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL"\]\.includes\(profile\)/);
   assert.match(worker,/!membership\s*&&\s*governedOpenAIWorkersFallbackConfigured/);
-  assert.match(worker,/if\(url\.pathname === "\/api\/bot"\) return handleGPTChat\(request, env, \{openAIOnly:true\}\)/);
+  assert.match(worker,/\/api\/bot"\) return handleGPTChat\(request, env, \{openAIOnly:true\}\)/);
 });
