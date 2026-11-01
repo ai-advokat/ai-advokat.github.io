@@ -107,7 +107,7 @@ import {
   draftRequest
 } from "./case-intelligence.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
-import { extractGazetteIssueNeedles, findGazetteIssueMetadata, gazetteIssueMetadataToContext } from "./gazette-issue-metadata.js";
+import { extractGazetteIssueNeedles, findGazetteIssueMetadata, formatGazetteIssueMetadataAnswer, gazetteIssueMetadataToContext } from "./gazette-issue-metadata.js";
 import {
   CANONICAL_PROVENANCE_GATE_VERSION,
   CANONICAL_METADATA_STANDARD_VERSION,
@@ -5625,13 +5625,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       },404);
     }
     const issueRows=directGazette.issues;
-    const answer=[
-      "Метаподатоци од официјалниот индекс на изданија на „Службен весник“:",
-      ...issueRows.map(i=>"• "+String(i.publication_type||"Службен весник")+" · број "+String(i.issue_number)+"/"+String(i.year)+" · датум "+String(i.issue_date)),
-      "",
-      "Извор: ЈП „Службен весник на РСМ“ · официјален open-data metadata индекс.",
-      "Ова е metadata-only запис: потврдува број, датум и тип на издание; не ја докажува содржината на конкретен акт, член или неговата тековна важност."
-    ].join("\n");
+    const answer=formatGazetteIssueMetadataAnswer(issueRows);
     return json(request,{
       ok:true,
       answer,
@@ -5642,14 +5636,23 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       sourceMode:"canonical_gazette_issue_metadata_no_model",
       webSearchUsed:false,
       gazetteIssueMetadata:issueRows.map(i=>({
-        publicationType:i.publication_type,
+        publicationType:String(i.publication_type||""),
         issueNumber:String(i.issue_number),
         year:Number(i.year),
         issueDate:String(i.issue_date),
+        sourceAuthority:String(i.source_authority||"ЈП „Службен весник на РСМ“"),
+        sourceClass:String(i.source_class||"primary_official_metadata"),
+        sourceOccurrences:Number(i.source_occurrences||1),
+        sourceRowFirst:Number(i.source_row_first||0),
+        datasetId:String(i.dataset_id||""),
+        resourceId:String(i.resource_id||""),
+        datasetUrl:String(i.dataset_url||""),
+        snapshotSha256:String(i.snapshot_sha256||""),
         humanReviewStatus:String(i.human_review_status||"reviewed"),
+        runtimeEligible:Number(i.runtime_eligible||0)===1,
         authorityRole:"PRIMARY_OFFICIAL_METADATA",
-        legalTextAuthority:false,
-        currentLawAuthority:false
+        legalTextAuthority:Number(i.legal_text_authority||0)===1,
+        currentLawAuthority:Number(i.current_law_authority||0)===1
       })),
       sources:[{
         title:"ЈП Службен весник на РСМ · Изданија на Службен весник до 2017",

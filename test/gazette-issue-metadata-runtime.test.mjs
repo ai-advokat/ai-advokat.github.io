@@ -4,6 +4,7 @@ import fs from "node:fs";
 import {
   extractGazetteIssueNeedles,
   scoreGazetteIssueMetadata,
+  formatGazetteIssueMetadataAnswer,
   gazetteIssueMetadataToContext,
   GAZETTE_OPEN_DATA_SHA256
 } from "../src/gazette-issue-metadata.js";
@@ -55,6 +56,38 @@ test("GIM3 metadata scoring prefers exact issue/date without creating legal auth
   assert.equal(ctx[0].provenance.legalAuthority,false);
   assert.equal(ctx[0].provenance.currentLawClaim,false);
   assert.match(ctx[0].text,/OFFICIAL_ISSUE_METADATA_ONLY=true/);
+});
+
+test("GIM3b complete deterministic answer exposes safe metadata and provenance fields",()=>{
+  const answer=formatGazetteIssueMetadataAnswer([{
+    publication_type:"СЛУЖБЕН ВЕСНИК НА РМ",
+    issue_number:"1",
+    issue_date:"2016-01-05",
+    year:2016,
+    source_row_first:7123,
+    source_occurrences:1,
+    source_authority:"ЈП Службен весник на РСМ",
+    dataset_id:"05342c32-f4a6-49c3-b8fa-5a555a6df6ff",
+    resource_id:"9a039791-1abb-411f-bc04-bf136776a83a",
+    dataset_url:"https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017",
+    snapshot_sha256:GAZETTE_OPEN_DATA_SHA256,
+    source_class:"primary_official_metadata",
+    human_review_status:"reviewed",
+    runtime_eligible:1,
+    legal_text_authority:0,
+    current_law_authority:0
+  }]);
+  assert.match(answer,/Вид на издание: СЛУЖБЕН ВЕСНИК НА РМ/);
+  assert.match(answer,/Број на издание: 1\/2016/);
+  assert.match(answer,/05\.01\.2016 \(2016-01-05\)/);
+  assert.match(answer,/Издавач \/ изворен орган:/);
+  assert.match(answer,/Статус на човечка проверка: ПРЕГЛЕДАНО/);
+  assert.match(answer,/Dataset ID:/);
+  assert.match(answer,/Resource ID:/);
+  assert.match(answer,/Snapshot SHA-256:/);
+  assert.match(answer,/Авторитет за текст на акт\/член: НЕ/);
+  assert.match(answer,/Авторитет за тековно важечко право: НЕ/);
+  assert.match(answer,/metadata индексот не смее да ја измислува/);
 });
 
 test("GIM4 production worker exposes read-only issue index and bot metadata lane",()=>{

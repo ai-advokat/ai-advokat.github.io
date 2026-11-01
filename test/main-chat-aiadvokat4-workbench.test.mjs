@@ -16,7 +16,7 @@ test("main AI Advokat chat exposes AIAdvokat4 LexNova governed workbench",()=>{
   assert.match(home,/КОНСОЛИДАТОР/);
   assert.match(home,/АНАЛИЗАТОР/);
   assert.match(home,/ПРЕДИКТОР/);
-  assert.match(home,/20261101-root-r10-parity/);
+  assert.match(home,/20261101-root-r11-quality/);
 });
 
 test("Consolidator is exact Legal Formatter v10.4 CORE and not a prompt surrogate",()=>{
@@ -60,7 +60,8 @@ test("main workspace has standalone-bot parity on left modules and right evidenc
   }
   assert.match(css,/grid-template-columns:248px minmax\(0,1fr\) 326px/);
   assert.match(chat,/window\.open\("\/case-law-metadata\.html"/);
-  assert.match(chat,/window\.open\("\/professional-library\//);
+  assert.match(chat,/openMaterialsDialog\("library"\)/);
+  assert.match(chat,/href="\/professional-library\/" target="_blank"/);
   assert.match(chat,/ensureWorkflowDialog/);
   assert.match(chat,/openWorkspaceSearch/);
   assert.match(chat,/aiChatHistorySearch/);
@@ -76,6 +77,20 @@ test("message actions match the external professional bot controls",()=>{
   assert.match(chat,/▧ PDF/);
   assert.match(chat,/exportAssistantMessage\(m,current\(\),"docx"/);
   assert.match(chat,/exportAssistantMessage\(m,current\(\),"pdf"/);
+});
+
+test("main workspace matches external bot interaction parity beyond labels",()=>{
+  assert.match(chat,/↺ Повтори/);
+  assert.match(chat,/renameChatThread/);
+  assert.match(chat,/ensureMaterialsDialog/);
+  assert.match(chat,/openMaterialsDialog\("documents"\)/);
+  assert.match(chat,/openMaterialsDialog\("library"\)/);
+  assert.match(chat,/data-materials-export="txt"/);
+  assert.match(chat,/data-materials-export="md"/);
+  assert.match(chat,/exportPlainAssistantMessage/);
+  assert.match(chat,/gazetteIssueMetadata/);
+  assert.match(chat,/canonical_gazette_issue_metadata_no_model/);
+  assert.match(chat,/Governed corpus · без модел/);
 });
 
 test("Sources and Human Gate panels use existing governed response fields",()=>{
