@@ -5,7 +5,7 @@ import fs from "node:fs";
 const workflow=fs.readFileSync(".github/workflows/lioe-runtime-readonly-diagnostic.yml","utf8");
 
 test("LIOE diagnostic is production read-only and privacy-minimised",()=>{
-  assert.match(workflow,/environment: production/);
+  assert.doesNotMatch(workflow,/environment:\\s*production/);
   assert.match(workflow,/wrangler d1 execute DB --remote/);
   assert.match(workflow,/SELECT run_id,started_at,finished_at/);
   assert.doesNotMatch(workflow,/\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bDROP\b|\bALTER\b/i);

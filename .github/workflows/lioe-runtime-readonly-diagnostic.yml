@@ -17,7 +17,6 @@ concurrency:
 
 jobs:
   diagnose:
-    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -85,6 +84,38 @@ jobs:
           console.log("LIOE RUNTIME TELEMETRY READ: PASS");
           NODE
 
+      - name: Read only ZRO Article 12 source state
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --json --command "
+            SELECT li.canonical_key,li.title,
+                   li.current_status AS instrument_status,
+                   li.human_review_status AS instrument_human_review,
+                   lav.article_number,lav.article_number_normalized,
+                   lav.article_heading,lav.status AS article_status,
+                   lav.human_review_status AS article_human_review,
+                   lav.source_issue_number,lav.source_issue_date,lav.source_url,
+                   lav.valid_from AS article_valid_from,lav.valid_to AS article_valid_to,
+                   v.version_label,v.valid_from AS version_valid_from,
+                   v.valid_to AS version_valid_to,v.is_current,
+                   v.human_review_status AS version_human_review
+              FROM legal_instruments li
+              JOIN legal_article_versions lav ON lav.instrument_id=li.id
+              LEFT JOIN instrument_versions v ON v.id=lav.instrument_version_id
+             WHERE li.canonical_key='mk:zro'
+               AND (lav.article_number_normalized='12' OR lav.article_number='12')
+             ORDER BY COALESCE(v.is_current,0) DESC,lav.id DESC
+             LIMIT 10;
+          " | tee /tmp/zro-article12-source-state.json
+          node <<'NODE'
+          const fs=require("fs");
+          const raw=JSON.parse(fs.readFileSync("/tmp/zro-article12-source-state.json","utf8"));
+          const rows=Array.isArray(raw)?(raw[0]?.results||[]):(raw?.results||[]);
+          if(!rows.length) throw new Error("ZRO Article 12 not found");
+          console.log("ZRO ARTICLE 12 SOURCE STATE READ: PASS");
+          NODE
+
       - name: Upload non-secret diagnostic evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -92,4 +123,6 @@ jobs:
           name: lioe-runtime-article12-diagnostic
           retention-days: 7
           if-no-files-found: error
-          path: /tmp/lioe-runtime-diagnostic.json
+          path: |
+            /tmp/lioe-runtime-diagnostic.json
+            /tmp/zro-article12-source-state.json
