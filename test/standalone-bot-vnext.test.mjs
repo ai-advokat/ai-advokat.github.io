@@ -111,3 +111,14 @@ test('vNext source tray keeps article identity, metadata and readable separators
   assert.match(source,/text:row\.meta/);
   assert.match(source,/↗ Отвори оригинал/);
 });
+
+
+test('vNext clears stale source and artifact state before every new governed query',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  const queryBlock=source.slice(source.indexOf('if(q){'),source.indexOf('const response=await nativeFetch'));
+  assert.match(queryBlock,/thread\.latestSources=\[\]/);
+  assert.match(queryBlock,/thread\.model=''/);
+  assert.match(queryBlock,/workspace\.lastArtifact=null/);
+  assert.match(source,/coreNewChat\?\.call\(\$\('newChat'\)\); workspace\.lastArtifact=null;/);
+  assert.match(source,/function switchThread\(id\)\{\n  workspace\.lastArtifact=null;/);
+});
