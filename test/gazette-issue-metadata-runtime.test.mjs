@@ -129,11 +129,12 @@ test("GIM7 public issue-index contract does not expose upstream raw URLs",()=>{
   assert.match(block,/auditProvenanceRetainedInternally:true/);
 });
 
-test("GIM8 exact Gazette issue requests use a deterministic no-model lane before scholarly fallback",()=>{
+test("GIM8 exact Gazette issue requests use deterministic official indexes before scholarly fallback",()=>{
   assert.match(worker,/canonical_gazette_issue_metadata_no_model/);
-  assert.match(worker,/gazette_metadata_index_temporarily_unavailable/);
-  assert.match(worker,/gazette_issue_not_found_in_canonical_metadata_index/);
-  const direct=worker.indexOf("Canonical Gazette metadata fast lane");
+  assert.match(worker,/canonical_gazette_issue_metadata_and_contents_no_model/);
+  assert.match(worker,/gazette_indexes_temporarily_unavailable/);
+  assert.match(worker,/gazette_issue_not_found_in_canonical_indexes/);
+  const direct=worker.indexOf("Canonical Gazette exact-issue fast lane");
   const scholarly=worker.indexOf("findGovernedScholarly",direct);
   assert.ok(direct>=0 && scholarly>direct);
 });

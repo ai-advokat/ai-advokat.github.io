@@ -1,0 +1,307 @@
+name: Gazette issue contents 1991-2025 production activation
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type ACTIVATE_GAZETTE_ISSUE_CONTENTS_1991_2025"
+        required: true
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/activation/gazette-issue-contents-1991-2025-production-request.json"
+      - ".github/workflows/gazette-issue-contents-1991-2025-production-activation.yml"
+      - "migrations/0051_gazette_issue_contents_index.sql"
+      - "scripts/gazette_backfill_wave1.py"
+      - "scripts/gazette_issue_contents_index.py"
+      - "src/gazette-issue-contents.js"
+      - "src/gazette-issue-metadata.js"
+      - "src/index.js"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gazette-issue-contents-1991-2025-production
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      AUTHORIZATION_ID: "AI_ADVOKAT_GAZETTE_ISSUE_CONTENTS_1991_2025_2026-11-01"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling and PDF parser
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Verify exact Human Gate authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            test "$CONFIRMATION" = "ACTIVATE_GAZETTE_ISSUE_CONTENTS_1991_2025"
+          fi
+          node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync(".github/activation/gazette-issue-contents-1991-2025-production-request.json","utf8"));
+          if(d.activation_authorized!==true) throw new Error("Activation not authorized");
+          if(d.decision_id!=="AI_ADVOKAT_GAZETTE_ISSUE_CONTENTS_1991_2025_2026-11-01") throw new Error("Unexpected decision");
+          if(JSON.stringify(d.migrations)!==JSON.stringify(["0051_gazette_issue_contents_index.sql"])) throw new Error("Unexpected migration set");
+          if(d.target?.worker!=="ai-advokat-github-io") throw new Error("Unexpected Worker target");
+          if(d.target?.database!=="ai-advokat-db" || d.target?.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected D1 target");
+          for(const key of ["official_chronological_register_harvest_1991_2025","issue_by_issue_contents_index","deterministic_reconciliation","runtime_issue_contents_lookup"]){
+            if(d.scope?.[key]!==true) throw new Error("Required scope not authorized: "+key);
+          }
+          for(const key of ["fulltext_import","article_text_promotion","current_law_promotion","autonomous_legal_interpretation"]){
+            if(d.scope?.[key]!==false) throw new Error("Forbidden scope authorized: "+key);
+          }
+          if(d.governance?.metadata_only!==true || d.governance?.legal_text_authority!==false || d.governance?.current_law_authority!==false) throw new Error("Authority boundary changed");
+          if(d.governance?.fail_closed!==true || d.human_gate_required!==true) throw new Error("Human Gate/fail-closed changed");
+          console.log("GAZETTE ISSUE CONTENTS HUMAN GATE: PASS");
+          NODE
+
+      - name: Verify repository contracts
+        run: |
+          python3 -m py_compile scripts/gazette_backfill_wave1.py scripts/gazette_issue_contents_index.py
+          node --check src/gazette-issue-contents.js
+          node --check src/gazette-issue-metadata.js
+          node --check src/index.js
+          node --test test/gazette-issue-contents-runtime.test.mjs
+          node --test test/gazette-issue-metadata-runtime.test.mjs
+          node --test test/gazette-backfill-wave1.test.mjs
+          node --test test/gazette-chunk-runtime.test.mjs
+          node --test test/canonical-provenance-gate.test.mjs
+
+      - name: Verify exact production target
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker name");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production D1 target");
+          if(c.previews?.d1_databases?.[0]?.database_id===d.database_id) throw new Error("Production/staging collision");
+          console.log("EXACT PRODUCTION TARGET: PASS");
+          NODE
+
+      - name: Build isolated 0051 migration scope and apply
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp-gazette-contents-migrations .tmp-wrangler-gazette-contents.jsonc
+          mkdir -p .tmp-gazette-contents-migrations
+          cp migrations/0051_gazette_issue_contents_index.sql .tmp-gazette-contents-migrations/
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(!d || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected D1 target");
+          d.migrations_dir=".tmp-gazette-contents-migrations";
+          delete d.migrations_pattern;
+          fs.writeFileSync(".tmp-wrangler-gazette-contents.jsonc",JSON.stringify(c,null,2)+"\n");
+          NODE
+          npx wrangler d1 migrations list DB --remote --config .tmp-wrangler-gazette-contents.jsonc | tee /tmp/gic-pending.txt
+          if grep -q '0051_gazette_issue_contents_index[.]sql' /tmp/gic-pending.txt; then
+            npx wrangler d1 migrations apply DB --remote --config .tmp-wrangler-gazette-contents.jsonc | tee /tmp/gic-apply.txt
+          else
+            echo "0051 already applied." | tee /tmp/gic-apply.txt
+          fi
+
+      - name: Harvest official chronological registers 1991-2025
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/gazette_backfill_wave1.py \
+            --from-year 1991 \
+            --to-year 2025 \
+            --out /tmp/gazette-wave1 \
+            --delay 0.55 | tee /tmp/gic-harvest.txt
+
+      - name: Build reconciled issue-by-issue contents index
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/gazette_issue_contents_index.py \
+            --input-root /tmp/gazette-wave1 \
+            --out-dir /tmp/gazette-issue-contents \
+            --authorization-id "$AUTHORIZATION_ID" \
+            --from-year 1991 \
+            --to-year 2025 \
+            --batch-size 200 | tee /tmp/gic-build.txt
+          python3 - <<'PY'
+          import json
+          d=json.load(open("/tmp/gazette-issue-contents/summary.json",encoding="utf-8"))
+          assert d["content_rows"]>0,d
+          assert d["issue_count"]>0,d
+          for year in (2005,2010,2015):
+              assert year in d["eligible_years"], (year,d["eligible_years"],d["skipped_years"])
+          assert d["metadata_only"] is True,d
+          assert d["legal_text_authority"] is False,d
+          assert d["current_law_authority"] is False,d
+          assert d["verification_status"]=="reconciled",d
+          print("ISSUE CONTENTS BUILD: PASS",d["content_rows"],d["issue_count"])
+          PY
+
+      - name: Load controlled staging tables
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM gazette_issue_contents_stage;
+            DELETE FROM gazette_issue_contents_manifest_stage;
+          " | tee /tmp/gic-stage-clear.txt
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/gazette-issue-contents/manifest.sql
+          for f in /tmp/gazette-issue-contents/batch_*.sql; do
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --file "$f"
+          done
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            SELECT COUNT(*) AS years,
+                   SUM(register_entry_count) AS manifest_entries,
+                   SUM(CASE WHEN reconciliation_status='reconciled' AND runtime_eligible=1 THEN 1 ELSE 0 END) AS eligible_years
+              FROM gazette_issue_contents_manifest_stage;
+            SELECT COUNT(*) AS rows,
+                   COUNT(DISTINCT CAST(year AS TEXT)||':'||issue_number) AS issues,
+                   SUM(runtime_eligible) AS runtime_eligible,
+                   SUM(legal_text_authority) AS legal_text_authority,
+                   SUM(current_law_authority) AS current_law_authority
+              FROM gazette_issue_contents_stage;
+            SELECT COUNT(*) AS issue_1_2005_rows
+              FROM gazette_issue_contents_stage
+             WHERE year=2005 AND issue_number='1' AND runtime_eligible=1;
+          " | tee /tmp/gic-stage-verify.txt
+          grep -Eq '"rows": [1-9][0-9]*' /tmp/gic-stage-verify.txt
+          grep -q '"legal_text_authority": 0' /tmp/gic-stage-verify.txt
+          grep -q '"current_law_authority": 0' /tmp/gic-stage-verify.txt
+          grep -Eq '"issue_1_2005_rows": [1-9][0-9]*' /tmp/gic-stage-verify.txt
+
+      - name: Promote reconciled issue contents index
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >/tmp/gic-promote.sql <<'SQL'
+          DELETE FROM gazette_issue_contents;
+          DELETE FROM gazette_issue_contents_manifest;
+          INSERT INTO gazette_issue_contents_manifest
+            (year,register_source_url,register_source_sha256,register_entry_count,issue_count,
+             unresolved_count,missing_issue_links_count,reconciliation_status,verification_status,
+             human_review_status,runtime_eligible,release_authorization_id,verified_at)
+          SELECT year,register_source_url,register_source_sha256,register_entry_count,issue_count,
+                 unresolved_count,missing_issue_links_count,reconciliation_status,verification_status,
+                 human_review_status,runtime_eligible,release_authorization_id,verified_at
+            FROM gazette_issue_contents_manifest_stage
+           ORDER BY year;
+          INSERT INTO gazette_issue_contents
+            (year,issue_number,ordinal_in_issue,register_ordinal,act_type,title,page_start,
+             register_source_url,register_source_sha256,source_class,verification_status,
+             human_review_status,runtime_eligible,legal_text_authority,current_law_authority,
+             release_authorization_id)
+          SELECT year,issue_number,ordinal_in_issue,register_ordinal,act_type,title,page_start,
+                 register_source_url,register_source_sha256,source_class,verification_status,
+                 human_review_status,runtime_eligible,legal_text_authority,current_law_authority,
+                 release_authorization_id
+            FROM gazette_issue_contents_stage
+           ORDER BY year,CAST(issue_number AS INTEGER),ordinal_in_issue;
+          DELETE FROM gazette_issue_contents_stage;
+          DELETE FROM gazette_issue_contents_manifest_stage;
+          SQL
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --file /tmp/gic-promote.sql | tee /tmp/gic-promote.txt
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            SELECT COUNT(*) AS years,SUM(register_entry_count) AS entries
+              FROM gazette_issue_contents_manifest
+             WHERE runtime_eligible=1 AND reconciliation_status='reconciled';
+            SELECT COUNT(*) AS rows,
+                   COUNT(DISTINCT CAST(year AS TEXT)||':'||issue_number) AS issues,
+                   SUM(legal_text_authority) AS legal_text_authority,
+                   SUM(current_law_authority) AS current_law_authority
+              FROM gazette_issue_contents
+             WHERE runtime_eligible=1;
+            SELECT ordinal_in_issue,act_type,title,page_start
+              FROM gazette_issue_contents
+             WHERE year=2005 AND issue_number='1' AND runtime_eligible=1
+             ORDER BY ordinal_in_issue;
+          " | tee /tmp/gic-production-verify.txt
+          grep -Eq '"rows": [1-9][0-9]*' /tmp/gic-production-verify.txt
+          grep -q '"legal_text_authority": 0' /tmp/gic-production-verify.txt
+          grep -q '"current_law_authority": 0' /tmp/gic-production-verify.txt
+          grep -q '"ordinal_in_issue": 1' /tmp/gic-production-verify.txt
+          echo "GAZETTE ISSUE CONTENTS PROMOTION: PASS"
+
+      - name: Deploy current Worker runtime
+        run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/gic-deploy.txt
+
+      - name: Live issue 1/2005 contents and chat smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl --fail --retry 8 --retry-delay 3 "$BASE/api/gazette-issue-contents?year=2005&issue=1" -o /tmp/gic-live-contents.json
+          curl --fail --retry 8 --retry-delay 3 -H 'content-type: application/json' \
+            -d '{"q":"Те мола да ми ги дадеш мета дата податоците од Службен весник број 1 од 2005 година.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"attachments":[]}' \
+            "$BASE/api/chat" -o /tmp/gic-live-chat.json
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("/tmp/gic-live-contents.json","utf8"));
+          if(!c.ok || c.state!=="matched" || c.complete!==true) throw new Error("1/2005 contents not complete: "+JSON.stringify(c).slice(0,1200));
+          if(!(Number(c.total)>0) || !Array.isArray(c.items) || c.items.length!==Number(c.total)) throw new Error("1/2005 contents missing/truncated");
+          for(let i=0;i<c.items.length;i++){
+            const x=c.items[i];
+            if(Number(x.ordinal_in_issue)!==i+1) throw new Error("Ordinal gap at "+i);
+            if(!String(x.title||"").trim()) throw new Error("Missing title at "+i);
+            if(Number(x.legal_text_authority||0)!==0 || Number(x.current_law_authority||0)!==0) throw new Error("Authority leak at "+i);
+          }
+          const d=JSON.parse(fs.readFileSync("/tmp/gic-live-chat.json","utf8"));
+          if(!d.ok) throw new Error("Chat failed: "+JSON.stringify(d).slice(0,1000));
+          if(d.sourceMode!=="canonical_gazette_issue_metadata_and_contents_no_model") throw new Error("Unexpected source mode: "+d.sourceMode);
+          if(d.provider!=="canonical_corpus_no_model" || Number(d?.performance?.providerCalls||0)!==0) throw new Error("AI provider used for exact Gazette issue");
+          if(d.gazetteIssueContentsStatus?.complete!==true || !(Number(d.gazetteIssueContentsStatus?.total)>0)) throw new Error("Structured contents status missing");
+          if(!Array.isArray(d.gazetteIssueContents) || d.gazetteIssueContents.length!==Number(d.gazetteIssueContentsStatus.total)) throw new Error("Structured contents incomplete");
+          const a=String(d.answer||"");
+          for(const needle of ["Содржина на предметниот број","Комплетност на регистарот: ДА","Детерминистички metadata lookup: ДА"]){
+            if(!a.includes(needle)) throw new Error("Missing answer field: "+needle);
+          }
+          if(a.includes("Дозволен за metadata runtime")) throw new Error("Old contradictory runtime label survived");
+          console.log("LIVE GAZETTE ISSUE 1/2005 CONTENTS: PASS · "+c.total+" items");
+          NODE
+
+      - name: Upload non-secret activation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gazette-issue-contents-1991-2025-production
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/gic-pending.txt
+            /tmp/gic-apply.txt
+            /tmp/gic-harvest.txt
+            /tmp/gic-build.txt
+            /tmp/gazette-wave1/summary.json
+            /tmp/gazette-wave1/registers
+            /tmp/gazette-wave1/acts
+            /tmp/gazette-issue-contents/summary.json
+            /tmp/gic-stage-clear.txt
+            /tmp/gic-stage-verify.txt
+            /tmp/gic-promote.txt
+            /tmp/gic-production-verify.txt
+            /tmp/gic-deploy.txt
+            /tmp/gic-live-contents.json
+            /tmp/gic-live-chat.json

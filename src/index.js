@@ -108,6 +108,7 @@ import {
 } from "./case-intelligence.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import { extractGazetteIssueNeedles, findGazetteIssueMetadata, formatGazetteIssueMetadataAnswer, gazetteIssueMetadataToContext } from "./gazette-issue-metadata.js";
+import { findGazetteIssueContents, formatGazetteIssueContents } from "./gazette-issue-contents.js";
 import {
   CANONICAL_PROVENANCE_GATE_VERSION,
   CANONICAL_METADATA_STANDARD_VERSION,
@@ -5592,48 +5593,94 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const effectiveGuideIds=contextualFollowUp ? [] : guideIds;
   const initialPlan=buildAgentPlan(q);
 
-  // Canonical Gazette metadata fast lane (1944-2017).
-  // A concrete issue-number/year request must never be answered from scholarly
-  // or authorial material when the official issue-metadata index is the intended source.
+  // Canonical Gazette exact-issue fast lane.
+  // Exact issue/year requests are resolved deterministically from official metadata
+  // and, where activated, the reconciled official chronological-register contents index.
+  // Scholarly/authorial fallback and model inference are forbidden in this lane.
   const gazetteNeedles=extractGazetteIssueNeedles(routingQuery);
   const gazetteYear=Number(gazetteNeedles.year||0);
-  const directGazetteMetadataRequest=
+  const directGazetteRequest=
     gazetteNeedles.explicitSignal===true
     && gazetteNeedles.usable===true
     && gazetteYear>=1944
-    && gazetteYear<=2017;
-  if(directGazetteMetadataRequest){
-    const directGazette=await findGazetteIssueMetadata(env,routingQuery,{limit:8});
-    if(directGazette.state==="unavailable"){
+    && gazetteYear<=2025;
+  if(directGazetteRequest){
+    const [directGazette,issueContents]=await Promise.all([
+      gazetteYear<=2017
+        ? findGazetteIssueMetadata(env,routingQuery,{limit:8})
+        : Promise.resolve({state:"out_of_coverage",issues:[]}),
+      gazetteYear>=1991
+        ? findGazetteIssueContents(env,{year:gazetteYear,issueNumber:gazetteNeedles.issueNumber})
+        : Promise.resolve({state:"not_loaded",complete:false,items:[],manifest:null})
+    ]);
+
+    if(directGazette.state==="unavailable" && issueContents.state==="unavailable"){
       return json(request,{
         ok:false,
-        error:"gazette_metadata_index_temporarily_unavailable",
-        message:"Официјалниот индекс на изданија на „Службен весник“ е привремено недостапен. Барањето не е пренасочено кон секундарни извори и AI не е повикан.",
+        error:"gazette_indexes_temporarily_unavailable",
+        message:"Официјалните Gazette индекси се привремено недостапни. Барањето не е пренасочено кон секундарни извори и AI не е повикан.",
         gazetteQuery:gazetteNeedles,
         providerCalled:false,
         quotaConsumed:false
       },503);
     }
-    if(directGazette.state!=="matched" || !Array.isArray(directGazette.issues) || directGazette.issues.length===0){
+
+    const issueRows=Array.isArray(directGazette.issues)?directGazette.issues:[];
+    const hasMetadata=directGazette.state==="matched" && issueRows.length>0;
+    const hasContents=issueContents.state==="matched" && Array.isArray(issueContents.items) && issueContents.items.length>0;
+
+    if(!hasMetadata && !hasContents){
       return json(request,{
         ok:false,
-        error:"gazette_issue_not_found_in_canonical_metadata_index",
-        message:"Во канонскиот metadata индекс 1944–2017 не е пронајдено совпаѓање за бараниот број и година. AI не користеше научни статии или друг секундарен материјал како замена.",
+        error:"gazette_issue_not_found_in_canonical_indexes",
+        message:"Во канонските Gazette индекси не е пронајдено потврдено совпаѓање за бараниот број и година. AI не користеше научни статии или друг секундарен материјал како замена.",
         gazetteQuery:gazetteNeedles,
+        metadataState:directGazette.state,
+        contentsState:issueContents.state,
         providerCalled:false,
         quotaConsumed:false
       },404);
     }
-    const issueRows=directGazette.issues;
-    const answer=formatGazetteIssueMetadataAnswer(issueRows);
+
+    const answerParts=[];
+    if(hasMetadata) answerParts.push(formatGazetteIssueMetadataAnswer(issueRows));
+    answerParts.push(formatGazetteIssueContents(issueContents));
+    const answer=answerParts.join("\n\n");
+
+    const sourceMode=hasContents
+      ? "canonical_gazette_issue_metadata_and_contents_no_model"
+      : "canonical_gazette_issue_metadata_no_model";
+
+    const sources=[];
+    if(hasMetadata){
+      sources.push({
+        title:"ЈП Службен весник на РСМ · Изданија на Службен весник до 2017",
+        url:String(issueRows[0]?.dataset_url||"https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017"),
+        category:"official_gazette",
+        jurisdiction:"MK",
+        registered:true,
+        authorityRole:"primary_official_metadata"
+      });
+    }
+    if(hasContents && issueContents.manifest?.register_source_url){
+      sources.push({
+        title:"ЈП Службен весник · официјален хронолошки регистар "+String(gazetteYear),
+        url:String(issueContents.manifest.register_source_url),
+        category:"official_gazette_register",
+        jurisdiction:"MK",
+        registered:true,
+        authorityRole:"primary_official_chronological_register_metadata"
+      });
+    }
+
     return json(request,{
       ok:true,
       answer,
       provider:"canonical_corpus_no_model",
       model:null,
       mode:"passive_corpus",
-      displayMode:"canonical_gazette_issue_metadata",
-      sourceMode:"canonical_gazette_issue_metadata_no_model",
+      displayMode:hasContents?"canonical_gazette_issue_metadata_and_contents":"canonical_gazette_issue_metadata",
+      sourceMode,
       webSearchUsed:false,
       gazetteIssueMetadata:issueRows.map(i=>({
         publicationType:String(i.publication_type||""),
@@ -5649,19 +5696,33 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         datasetUrl:String(i.dataset_url||""),
         snapshotSha256:String(i.snapshot_sha256||""),
         humanReviewStatus:String(i.human_review_status||"reviewed"),
-        runtimeEligible:Number(i.runtime_eligible||0)===1,
+        generalCorpusRuntimeEligible:Number(i.runtime_eligible||0)===1,
+        deterministicMetadataLookup:true,
         authorityRole:"PRIMARY_OFFICIAL_METADATA",
         legalTextAuthority:Number(i.legal_text_authority||0)===1,
         currentLawAuthority:Number(i.current_law_authority||0)===1
       })),
-      sources:[{
-        title:"ЈП Службен весник на РСМ · Изданија на Службен весник до 2017",
-        url:String(issueRows[0]?.dataset_url||"https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017"),
-        category:"official_gazette",
-        jurisdiction:"MK",
-        registered:true,
-        authorityRole:"primary_official_metadata"
-      }],
+      gazetteIssueContentsStatus:{
+        state:issueContents.state,
+        complete:issueContents.complete===true,
+        completenessBasis:issueContents.completenessBasis||null,
+        total:Number(issueContents.total||0),
+        year:gazetteYear,
+        issueNumber:String(gazetteNeedles.issueNumber||"")
+      },
+      gazetteIssueContents:(issueContents.items||[]).map(i=>({
+        ordinalInIssue:Number(i.ordinal_in_issue),
+        registerOrdinal:Number(i.register_ordinal),
+        actType:String(i.act_type||"other"),
+        title:String(i.title||""),
+        pageStart:Number(i.page_start||0)||null,
+        sourceClass:String(i.source_class||"primary_official_chronological_register_metadata"),
+        verificationStatus:String(i.verification_status||"reconciled"),
+        humanReviewStatus:String(i.human_review_status||"pending"),
+        legalTextAuthority:false,
+        currentLawAuthority:false
+      })),
+      sources,
       legalSources:[],
       caseLawSources:[],
       guideSources:[],
@@ -5672,7 +5733,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         serverLatencyMs:0,
         fastPromptUsed:true
       },
-      humanGate:"Metadata only. За содржината на конкретен акт и за важечко право проверете го официјалниот текст и применливата верзија."
+      humanGate:"Issue metadata and contents-register metadata only. За текстот, правното дејство и тековната важност на конкретен акт проверете го официјалниот full-text и применливата верзија."
     });
   }
 
@@ -7362,6 +7423,55 @@ async function handleGazetteIssueIndex(request,env,url){
   }
 }
 
+async function handleGazetteIssueContents(request,env,url){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+  const q=cleanQuery(url.searchParams.get("q"),400);
+  const parsed=q ? extractGazetteIssueNeedles(q) : {
+    issueNumber:cleanQuery(url.searchParams.get("issue"),12),
+    year:cleanQuery(url.searchParams.get("year"),4)
+  };
+  const year=Number(parsed.year||0);
+  const issueNumber=String(parsed.issueNumber||"").trim();
+  if(!Number.isInteger(year) || year<1991 || year>2025 || !/^[0-9]{1,4}$/.test(issueNumber)){
+    return json(request,{ok:false,error:"invalid_gazette_issue_identity"},400);
+  }
+  const bundle=await findGazetteIssueContents(env,{year,issueNumber});
+  if(bundle.state==="unavailable"){
+    return json(request,{ok:false,error:"gazette_issue_contents_unavailable",message:bundle.error||null},503);
+  }
+  return json(request,{
+    ok:true,
+    state:bundle.state,
+    complete:bundle.complete===true,
+    completenessBasis:bundle.completenessBasis||null,
+    total:Number(bundle.total||0),
+    year,
+    issueNumber,
+    items:bundle.items||[],
+    manifest:bundle.manifest?{
+      registerSourceUrl:String(bundle.manifest.register_source_url||""),
+      registerSourceSha256:String(bundle.manifest.register_source_sha256||""),
+      registerEntryCount:Number(bundle.manifest.register_entry_count||0),
+      issueCount:Number(bundle.manifest.issue_count||0),
+      reconciliationStatus:String(bundle.manifest.reconciliation_status||""),
+      verificationStatus:String(bundle.manifest.verification_status||""),
+      humanReviewStatus:String(bundle.manifest.human_review_status||"pending"),
+      releaseAuthorizationId:String(bundle.manifest.release_authorization_id||"")
+    }:null,
+    doctrine:{
+      metadataOnly:true,
+      primaryOfficialChronologicalRegister:true,
+      legalTextAuthority:false,
+      currentLawAuthority:false,
+      completenessMeans:"complete_against_reconciled_official_chronological_register"
+    }
+  });
+}
+
 async function handleGazetteChunks(request,env,url){
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
   const database=await dbStatus(env);
@@ -7909,6 +8019,7 @@ export default {
     if (url.pathname === "/api/legal-analyzer/verify") return handleLegalAnalyzerVerify(request, env);
     if (url.pathname === "/api/casepilot/case-law") return handleCasePilotCaseLawResearch(request, env);
     if (url.pathname === "/api/gazette-issue-index") return handleGazetteIssueIndex(request, env, url);
+    if (url.pathname === "/api/gazette-issue-contents") return handleGazetteIssueContents(request, env, url);
     if (url.pathname === "/api/gazette-register") return handleGazetteRegister(request, env, url);
     if (url.pathname === "/api/gazette-chunks") return handleGazetteChunks(request, env, url);
     if (url.pathname === "/api/gazette-hybrid-status") return handleGazetteHybridStatus(request, env);

@@ -1,14 +1,14 @@
 {
   "schema": "ai-advokat-hg2-c-migration-manifest/v1",
   "status": "FROZEN_REPOSITORY_ONLY_REMOTE_NO_GO",
-  "date": "2026-10-29",
-  "source_commit": "d6aeaf5c51d1e1672b7a0d7650bbeb3607490198",
+  "date": "2026-11-01",
+  "source_commit": "986cde1b5975c8718395b06cd16a0c0ad5db49f3",
   "staging_account_id": "0fee10e2bd9a2183d16eb0d73f13dfce",
   "staging_database_name": "ai-advokat-staging-db",
   "staging_database_id": "309f72b8-8711-47fc-bea7-fbd1d649561d",
-  "migration_count": 50,
+  "migration_count": 51,
   "first_migration": "migrations/0001_initial_schema.sql",
-  "last_migration": "migrations/0050_lioe_provider_diagnostics.sql",
+  "last_migration": "migrations/0051_gazette_issue_contents_index.sql",
   "critical_human_review": [
     "migrations/0033_casepilot_audit_event_schema.sql",
     "migrations/0034_casepilot_authority_classification_unique_issue.sql",
@@ -314,6 +314,12 @@
       "path": "migrations/0050_lioe_provider_diagnostics.sql",
       "git_blob_sha": "f10b6623401c9afec6680fb45afa6c8674d4c291",
       "size_bytes": 914
+    },
+    {
+      "ordinal": 51,
+      "path": "migrations/0051_gazette_issue_contents_index.sql",
+      "git_blob_sha": "34df296755b74a7260f1bf1bc33753e5c832e3c5",
+      "size_bytes": 3359
     }
   ]
 }
