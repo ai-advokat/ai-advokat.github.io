@@ -77,8 +77,6 @@ window.fetch = async function(input, init={}){
   return response;
 };
 
-await import('./standalone-bot.js?v=20261101-access-r7');
-
 const $=id=>document.getElementById(id);
 const qs=(s,r=document)=>r.querySelector(s);
 const qsa=(s,r=document)=>[...r.querySelectorAll(s)];
