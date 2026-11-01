@@ -964,3 +964,13 @@ test("production language firewall P2 uses a dedicated editor and a deterministi
   assert.match(src,/editor_unavailable_canonical_clean_fallback/);
   assert.match(src,/freeLanguageEditorModel:freeWorkersAIConfigured\(env\)/);
 });
+
+
+test("production formal-draft guard blocks invented authority and exposes V15 fallback policy",()=>{
+  const src=fs.readFileSync("src/index.js","utf8");
+  assert.match(src,/formalDraftAuthoritySafety/);
+  assert.match(src,/deterministicFormalDraftFallback/);
+  assert.match(src,/formal_draft_authority_blocked/);
+  assert.match(src,/formalDraftFallbackPolicy:"supported_unsourced_classes_deterministic_authority_safe_v15"/);
+  assert.match(src,/formalDraftAuthoritySafe/);
+});
