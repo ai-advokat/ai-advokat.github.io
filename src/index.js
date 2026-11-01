@@ -5005,6 +5005,20 @@ function decodeBase64Bytes(raw){
   }
 }
 
+function hasGovernedCurrentLawAuthority(items){
+  return (Array.isArray(items)?items:[]).some(item=>{
+    const p=item?.provenance||{};
+    return item?.provenanceGate?.ok===true
+      && p.legalAuthority===true
+      && p.currentLawClaim===true
+      && String(p.humanReviewStatus||"")==="approved"
+      && [
+        "legal_article","legal_instrument","legal_act","bylaw","rulebook",
+        "regulation","instruction","tariff"
+      ].includes(String(p.kind||""));
+  });
+}
+
 function freeChatCorpusText(items){
   let used=0;
   const blocks=[];
@@ -5452,7 +5466,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     primaryModel:result.model
   });
   const formalDraft=formalDraftRequest;
-  const hasGovernedLegalContext=Boolean(String(governed||"").trim());
+  const hasGovernedLegalContext=hasGovernedCurrentLawAuthority(runtimeCorpusContext);
   const finalText=formalDraft
     ? finaliseFormalLegalDraft(languagePass.text,{
         userText:q,
@@ -5552,6 +5566,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     deterministicLanguageFallbackReason,
     formalDraftAuthoritySafe:formalDraftSafety.ok===true,
     formalDraftAuthorityProblems:formalDraftSafety.problems||[],
+    formalDraftGovernedCurrentLawAuthority:hasGovernedLegalContext,
     formalDraftPostflight:formalDraft,
     languageQualityState:finalRelease.deliveryState,
     languageReleaseGate:languagePass.releaseVerdict||null,
@@ -6444,6 +6459,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         deterministicLanguageFallbackReason:freeResult.deterministicLanguageFallbackReason||null,
         formalDraftAuthoritySafe:freeResult.formalDraftAuthoritySafe!==false,
         formalDraftAuthorityProblems:Array.isArray(freeResult.formalDraftAuthorityProblems)?freeResult.formalDraftAuthorityProblems:[],
+        formalDraftGovernedCurrentLawAuthority:freeResult.formalDraftGovernedCurrentLawAuthority===true,
         serverLatencyMs:freeResult.latencyMs||null,
         fastPromptUsed:freeResult.fastPromptUsed===true,
         compactDraftUsed:freeResult.compactDraftUsed===true,
