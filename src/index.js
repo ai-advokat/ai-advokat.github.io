@@ -153,6 +153,7 @@ import {
 import {
   isFormalLegalDraftRequest,
   hasProceduralInstrumentMismatch,
+  deterministicProceduralInstrumentFallback,
   finaliseFormalLegalDraft
 } from "./response-quality.js";
 import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commentary.js";
@@ -5091,11 +5092,15 @@ async function convertFreeChatAttachments(env,attachments){
   return {ok:true,documents:bounded,totalChars:total};
 }
 
+const WORKERS_AI_MK_EDITOR_MODEL_DEFAULT="@cf/zai-org/glm-4.7-flash";
+
 function resolveMacedonianLanguageEditorModel(env,primaryModel=""){
   const configured=String(env?.WORKERS_AI_MK_EDITOR_MODEL||"").trim();
-  const preferred=configured||resolveWorkersAIEmptyFallbackModel(env);
+  const preferred=configured||WORKERS_AI_MK_EDITOR_MODEL_DEFAULT;
   const primary=String(primaryModel||"").trim();
   if(!primary || preferred!==primary) return preferred;
+  const fallback=resolveWorkersAIEmptyFallbackModel(env);
+  if(fallback && fallback!==primary) return fallback;
   const alternate=resolveWorkersAITextModel(env);
   return alternate!==primary ? alternate : preferred;
 }
@@ -5343,7 +5348,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     maxOutputTokens:tokenLimit,
     sessionAffinity,
     allowProviderRepair:languageRequired,
-    forceEditorialPass:languageRequired && (formalDraftRequest || missionProfile!=="GENERAL_BYPASS"),
+    forceEditorialPass:languageRequired,
     primaryModel:result.model
   });
   const formalDraft=formalDraftRequest;
@@ -5353,14 +5358,38 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
         hasGovernedLegalContext:Boolean(String(governed||"").trim())
       })
     : languagePass.text;
-  const finalRelease=canonicalMacedonianFinalRelease(finalText,q);
-  if(languagePass.hardBlock || !finalRelease.ok){
+  let finalRelease=canonicalMacedonianFinalRelease(finalText,q);
+  let deterministicLanguageFallbackUsed=false;
+  let deterministicLanguageFallbackReason=null;
+
+  // If a formal request itself uses the wrong procedural label for a likely
+  // criminal event, never return contaminated prose or a bare 503. The model
+  // generation remains blocked, but a controlled source-free Macedonian
+  // working scaffold can be released because it adds no statute, article,
+  // deadline, jurisdiction or legal effect.
+  if((languagePass.hardBlock || !finalRelease.ok) && formalDraft && proceduralInstrumentMismatch){
+    const fallbackText=deterministicProceduralInstrumentFallback({userText:q});
+    const fallbackRelease=canonicalMacedonianFinalRelease(fallbackText,q);
+    if(fallbackText && fallbackRelease.ok){
+      finalRelease=fallbackRelease;
+      deterministicLanguageFallbackUsed=true;
+      deterministicLanguageFallbackReason=languagePass.hardBlock
+        ? "blocked_model_or_editor_generation"
+        : "final_postflight_language_gate";
+    }
+  }
+
+  if(!deterministicLanguageFallbackUsed && (languagePass.hardBlock || !finalRelease.ok)){
     return {
       ok:false,
       error:"macedonian_language_release_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:"final_last_mile_language_gate_failed",
       releaseGate:finalRelease.releaseGate,
+      editorRequired:languagePass.editorRequired===true,
+      editorPassed:languagePass.editorPassed===true,
+      editorModel:languagePass.editorModel||null,
+      editorError:languagePass.repairError||null,
       model:result.model,
       providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
       provider:"workers_ai_free"
@@ -5386,6 +5415,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     languageEditorRequired:languagePass.editorRequired===true,
     languageEditorPassed:languagePass.editorPassed===true,
     languageEditorModel:languagePass.editorModel||null,
+    deterministicLanguageFallbackUsed,
+    deterministicLanguageFallbackReason,
     formalDraftPostflight:formalDraft,
     languageQualityState:finalRelease.deliveryState,
     languageReleaseGate:languagePass.releaseVerdict||null,
@@ -6264,6 +6295,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         languageEditorRequired:freeResult.languageEditorRequired===true,
         languageEditorPassed:freeResult.languageEditorPassed===true,
         languageEditorModel:freeResult.languageEditorModel||null,
+        deterministicLanguageFallbackUsed:freeResult.deterministicLanguageFallbackUsed===true,
+        deterministicLanguageFallbackReason:freeResult.deterministicLanguageFallbackReason||null,
         serverLatencyMs:freeResult.latencyMs||null,
         fastPromptUsed:freeResult.fastPromptUsed===true,
         compactDraftUsed:freeResult.compactDraftUsed===true,
