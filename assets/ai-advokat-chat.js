@@ -32,6 +32,16 @@
   const modeCaption=$("#aiChatModeCaption");
   const chatMembershipState=$("#aiChatMembershipState");
   const ownerState=$("#aiChatOwnerState");
+  const historySearch=$("#aiChatHistorySearch");
+  const workspaceNew=$("#aiWorkspaceNew");
+  const workspaceSearchLaunch=$("#aiWorkspaceSearchLaunch");
+  const evidencePanel=$("#aiChatEvidence");
+  const evidenceBody=$("#aiChatEvidenceBody");
+  const evidenceTitle=$("#aiEvidenceTitle");
+  const evidenceSubtitle=$("#aiEvidenceSubtitle");
+  const evidenceClose=$("#aiEvidenceClose");
+  const evidenceToggle=$("#aiWorkspaceEvidenceToggle");
+  const evidenceTabs=[...root.querySelectorAll("[data-ai-evidence-tab]")];
   const requiredChatElements={
     messagesEl,input,sendBtn,stopBtn,attachBtn,fileInput,attachmentsEl,
     newChatBtn,historyEl,provider,emptyTemplate
@@ -62,6 +72,7 @@
   let attachments=[];
   let guideRegistryPromise=null;
   let currentId=null;
+  let evidenceTab="sources";
   const chats=new Map();
 
   const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
@@ -103,13 +114,16 @@
   }
   function renderHistory(){
     historyEl.replaceChildren();
-    [...chats.values()].slice().reverse().forEach(c=>{
-      const b=document.createElement("button");
-      b.type="button"; b.textContent=c.title; b.title=c.title;
-      if(c.id===currentId) b.classList.add("active");
-      b.onclick=()=>{currentId=c.id;attachments=[];renderAttachments();render();save();};
-      historyEl.append(b);
-    });
+    const q=String(historySearch?.value||"").trim().toLocaleLowerCase("mk");
+    [...chats.values()].slice().reverse()
+      .filter(c=>!q || String(c.title||"").toLocaleLowerCase("mk").includes(q) || (c.messages||[]).some(m=>String(m?.text||"").toLocaleLowerCase("mk").includes(q)))
+      .forEach(c=>{
+        const b=document.createElement("button");
+        b.type="button"; b.textContent=c.title; b.title=c.title;
+        if(c.id===currentId) b.classList.add("active");
+        b.onclick=()=>{currentId=c.id;attachments=[];renderAttachments();render();save();};
+        historyEl.append(b);
+      });
   }
   function empty(){
     const chat=current();
@@ -152,10 +166,12 @@
         input.value=b.dataset.starter||b.textContent.trim(); autoSize(); input.focus();
       }));
       messagesEl.querySelectorAll("[data-foreign-employment]").forEach(b=>b.addEventListener("click",()=>loadForeignEmploymentPrompt(b)));
+      renderWorkspaceEvidence();
       return;
     }
     chat.messages.forEach((m,idx)=>messagesEl.append(renderMessage(m,idx)));
     messagesEl.scrollTop=messagesEl.scrollHeight;
+    renderWorkspaceEvidence();
   }
   function createLegalPulseLoader(){
     const loader=document.createElement("div");
@@ -386,13 +402,26 @@
       if(links.childElementCount){sourceBox.append(links);appendEvidence(sourceBox);}
     }
     const tools=document.createElement("div");tools.className="ai-msg-tools";
-    const copy=document.createElement("button");copy.type="button";copy.textContent="Копирај";
-    copy.onclick=async()=>{try{await navigator.clipboard.writeText(m.text||"");copy.textContent="Копирано ✓";setTimeout(()=>copy.textContent="Копирај",1200);}catch{}};
+    const copy=document.createElement("button");copy.type="button";copy.textContent="⧉ Копирај";
+    copy.onclick=async()=>{try{await navigator.clipboard.writeText(m.text||"");copy.textContent="Копирано ✓";setTimeout(()=>copy.textContent="⧉ Копирај",1200);}catch{}};
     tools.append(copy);
+    if(m.role==="user"){
+      const edit=document.createElement("button");edit.type="button";edit.textContent="✎ Уреди";
+      edit.onclick=()=>{input.value=String(m.text||"");autoSize();input.focus();};
+      tools.append(edit);
+    }
     if(m.role==="assistant"){
-      const retry=document.createElement("button");retry.type="button";retry.textContent="Повтори";
+      const retry=document.createElement("button");retry.type="button";retry.textContent="↺ Повтори";
       retry.onclick=()=>retryFrom(idx);
-      tools.append(retry);
+      const sources=document.createElement("button");sources.type="button";sources.className="ai-msg-prof-action";sources.textContent="▤ Извори";
+      sources.onclick=()=>openWorkspaceEvidence("sources");
+      const review=document.createElement("button");review.type="button";review.className="ai-msg-prof-action";review.textContent="✓ Проверка";
+      review.onclick=()=>openWorkspaceEvidence("human");
+      const docx=document.createElement("button");docx.type="button";docx.className="ai-msg-prof-action";docx.textContent="▧ DOCX";
+      docx.onclick=()=>exportAssistantMessage(m,current(),"docx","AI-Advokat-working-draft.docx");
+      const pdf=document.createElement("button");pdf.type="button";pdf.className="ai-msg-prof-action";pdf.textContent="▧ PDF";
+      pdf.onclick=()=>exportAssistantMessage(m,current(),"pdf","AI-Advokat-working-draft.pdf");
+      tools.append(retry,sources,review,docx,pdf);
     }
     body.append(tools);
     article.append(avatar,body);
@@ -1164,7 +1193,163 @@
     return d;
   }
 
+  function latestUserMessage(){
+    const chat=current();
+    return [...(chat?.messages||[])].reverse().find(m=>m?.role==="user" && String(m.text||"").trim())||null;
+  }
+
+  function evidenceCard(title,text,{className="",url=null,meta=null}={}){
+    const card=document.createElement("section");card.className="ai-evidence-card"+(className?" "+className:"");
+    const strong=document.createElement("strong");strong.textContent=title;card.append(strong);
+    if(url){
+      const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=text||url;card.append(a);
+    }else{
+      const p=document.createElement("div");p.textContent=text||"";card.append(p);
+    }
+    if(meta){const small=document.createElement("div");small.className="ai-evidence-meta";small.textContent=meta;card.append(small);}
+    return card;
+  }
+
+  function openWorkspaceEvidence(tab="sources"){
+    evidenceTab=tab;
+    if(evidencePanel) evidencePanel.classList.add("is-open");
+    renderWorkspaceEvidence();
+  }
+
+  function renderWorkspaceEvidence(){
+    if(!evidenceBody) return;
+    evidenceTabs.forEach(btn=>btn.classList.toggle("active",btn.dataset.aiEvidenceTab===evidenceTab));
+    evidenceBody.replaceChildren();
+    const chat=current();
+    const m=latestAssistantMessage();
+    const user=latestUserMessage();
+    const titles={
+      sources:["Извори","Проверлив контекст за активниот разговор"],
+      context:["Контекст","Сесија, режим и последен работен контекст"],
+      human:["Human Gate","Професионална човечка проверка пред последична употреба"],
+      artifact:["Артефакт","Извоз и продолжување на последниот работен одговор"]
+    };
+    const [title,sub]=titles[evidenceTab]||titles.sources;
+    if(evidenceTitle) evidenceTitle.textContent=title;
+    if(evidenceSubtitle) evidenceSubtitle.textContent=sub;
+
+    if(evidenceTab==="sources"){
+      const rows=flattenWorkbenchSources(m);
+      if(m?.sourceLabel) evidenceBody.append(evidenceCard("Статус на изворите",String(m.sourceLabel)));
+      if(!rows.length){
+        evidenceBody.append(evidenceCard("Нема прикажани извори","Последниот AI одговор нема source payload. Користете Правни извори, Library или поставете source-first прашање."));
+      }else{
+        rows.forEach((row,index)=>evidenceBody.append(evidenceCard(row.kind+" · "+(index+1),row.title,{url:row.url||null})));
+      }
+      return;
+    }
+
+    if(evidenceTab==="context"){
+      evidenceBody.append(evidenceCard("Активен разговор",String(chat?.title||"Нов разговор"),{meta:(chat?.messages?.length||0)+" пораки · режим "+String(mode||"auto")}));
+      if(user) evidenceBody.append(evidenceCard("Последно прашање",String(user.text||"").slice(0,1400)));
+      if(m) evidenceBody.append(evidenceCard("Последен AI runtime",String(m.meta||"provider/runtime не е наведен"),{meta:"Историјата е само во оваа browser сесија."}));
+      const actions=document.createElement("div");actions.className="ai-evidence-actions";
+      const cases=document.createElement("a");cases.href="/case-law-metadata.html";cases.target="_blank";cases.rel="noopener noreferrer";cases.textContent="⚖ Судска практика";
+      const library=document.createElement("a");library.href="/professional-library/";library.target="_blank";library.rel="noopener noreferrer";library.textContent="◫ Professional Library";
+      actions.append(cases,library);evidenceBody.append(actions);
+      return;
+    }
+
+    if(evidenceTab==="human"){
+      const g=m?.governance||null;
+      evidenceBody.append(evidenceCard("HUMAN GATE REQUIRED","Правен заклучок, поднесување, потпис или друга последична професионална употреба бара проверка од адвокат/овластен професионалец.",{className:"ai-evidence-gate"}));
+      const states=[];
+      if(g?.missionProfile) states.push("Mission: "+g.missionProfile);
+      if(g?.releaseState) states.push("Release: "+g.releaseState);
+      if(g?.verificationState) states.push("Verification: "+g.verificationState);
+      if(g?.executionAuthorization) states.push("Execution: "+g.executionAuthorization);
+      if(Array.isArray(g?.requiredGateTypes)&&g.requiredGateTypes.length) states.push("Gates: "+g.requiredGateTypes.join(", "));
+      if(!states.length) states.push("Нема дополнителен governance payload; основниот Human Gate останува задолжителен.");
+      states.forEach((s,i)=>evidenceBody.append(evidenceCard(i===0?"Governance status":"",s)));
+      return;
+    }
+
+    if(evidenceTab==="artifact"){
+      if(!m){
+        evidenceBody.append(evidenceCard("Нема артефакт","Сè уште нема AI одговор за извоз."));
+        return;
+      }
+      evidenceBody.append(evidenceCard("Последен работен одговор",String(m.text||"").slice(0,900),{meta:"Working draft · Human Gate required"}));
+      const actions=document.createElement("div");actions.className="ai-evidence-actions";
+      for(const [fmt,label] of [["docx","⇩ DOCX"],["pdf","⇩ PDF"],["md","⇩ MD"],["txt","⇩ TXT"]]){
+        const b=document.createElement("button");b.type="button";b.textContent=label;b.onclick=()=>exportAssistantMessage(m,chat,fmt,"AI-Advokat-working-draft."+fmt);actions.append(b);
+      }
+      const cp=document.createElement("a");cp.href="/casepilot-workspace.html";cp.target="_blank";cp.rel="noopener noreferrer";cp.textContent="▣ Отвори CasePilot";actions.append(cp);
+      evidenceBody.append(actions);
+    }
+  }
+
+  function ensureWorkflowDialog(){
+    let d=document.getElementById("aiWorkspaceWorkflowDialog");
+    if(d) return d;
+    d=document.createElement("dialog");d.id="aiWorkspaceWorkflowDialog";d.className="ai-workflow-dialog";
+    d.innerHTML=`<div class="ai-workspace-dialog-head"><div><strong>AI Advokat Workflows</strong><small>Структурирани почетоци врз governed backend</small></div><button type="button" data-close>×</button></div>
+      <div class="ai-workflow-grid">
+        <button data-workflow-prompt="Истражи го правното прашање source-first. Прво утврди применливи официјални извори и важечка верзија, потоа дај анализа, ризици и отворени прашања."><strong>⌕ Правно истражување</strong><span>Извори → правило → анализа → ризици</span></button>
+        <button data-workflow-prompt="Подготви професионален правен меморандум со: прашање, релевантни факти, правна рамка, анализа, спротивни аргументи, заклучок и Human Gate точки за проверка."><strong>▧ Правен меморандум</strong><span>Issue · Facts · Law · Analysis · Conclusion</span></button>
+        <button data-workflow-prompt="Прегледај го договорниот проблем. Издвои обврски, рокови, ризични клаузули, можни повреди, докази што недостигаат и точки за човечка проверка."><strong>≋ Contract Review</strong><span>Клаузули · ризици · недостиг на докази</span></button>
+        <button data-workflow-prompt="Изгради хронологија на предметот од дадените факти. Оддели потврдени факти, спорни факти, докази, правни прашања и следни чекори."><strong>⌁ Case Chronology</strong><span>Факти · докази · спорни точки · задачи</span></button>
+        <button data-workflow-prompt="Направи source verification audit на претходниот одговор. За секое материјално правно тврдење наведи дали има примарен извор, важечка верзија и што останува непотврдено."><strong>▤ Source Check</strong><span>Authority · version · provenance</span></button>
+        <button data-workflow-prompt="Спореди ги двете верзии на документот. Издвои суштински промени, правен ефект, ризици и прашања за Human Gate. Не измислувај разлики што не се во документите."><strong>⇄ Redline / Compare</strong><span>Промени · ефект · ризик · review</span></button>
+        <button data-workflow-tool="consolidator"><strong>≋ Консолидатор</strong><span>Legal Formatter v10.4 CORE</span></button>
+        <button data-workflow-prompt="${governedPredictorPrompt()}"><strong>◎ Предиктор</strong><span>Сценарија · ризици · без лажни проценти</span></button>
+      </div><p class="ai-workflow-note">Workflows подготвуваат работна задача. Не поднесуваат, не потпишуваат и не заменуваат Human Gate.</p>`;
+    document.body.append(d);
+    d.querySelector("[data-close]")?.addEventListener("click",()=>d.close());
+    d.querySelectorAll("[data-workflow-prompt]").forEach(b=>b.addEventListener("click",()=>{input.value=String(b.dataset.workflowPrompt||"");autoSize();d.close();input.focus();}));
+    d.querySelector("[data-workflow-tool='consolidator']")?.addEventListener("click",()=>{d.close();window.open("/consolidator/","_blank","noopener");});
+    return d;
+  }
+
+  function ensureWorkspaceSearchDialog(){
+    let d=document.getElementById("aiWorkspaceSearchDialog");
+    if(d) return d;
+    d=document.createElement("dialog");d.id="aiWorkspaceSearchDialog";d.className="ai-workspace-search-dialog";
+    d.innerHTML=`<div class="ai-workspace-dialog-head"><div><strong>Global Search</strong><small>Разговори и професионални алатки</small></div><button type="button" data-close>×</button></div><div class="ai-workspace-search-body"><input id="aiWorkspaceGlobalSearch" type="search" placeholder="Пребарај разговор, CasePilot, извор…" autocomplete="off"><div id="aiWorkspaceSearchResults" class="ai-workspace-search-results"></div></div>`;
+    document.body.append(d);
+    d.querySelector("[data-close]")?.addEventListener("click",()=>d.close());
+    const field=d.querySelector("#aiWorkspaceGlobalSearch");
+    field?.addEventListener("input",()=>renderWorkspaceSearchResults(d,field.value));
+    return d;
+  }
+
+  function renderWorkspaceSearchResults(dialog,query=""){
+    const host=dialog.querySelector("#aiWorkspaceSearchResults");if(!host) return;
+    host.replaceChildren();
+    const q=String(query||"").trim().toLocaleLowerCase("mk");
+    const matching=[...chats.values()].filter(t=>!q||String(t.title||"").toLocaleLowerCase("mk").includes(q)||(t.messages||[]).some(m=>String(m?.text||"").toLocaleLowerCase("mk").includes(q))).slice(0,8);
+    if(matching.length){
+      const label=document.createElement("div");label.className="ai-workspace-search-group";label.textContent="Разговори";host.append(label);
+      matching.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t.title;b.onclick=()=>{currentId=t.id;dialog.close();render();save();};host.append(b);});
+    }
+    const tools=[
+      ["Правен асистент","assistant"],["Анализатор","analyzer"],["Консолидатор","consolidator"],["Предиктор","predictor"],
+      ["Правни извори","sources"],["Судска практика","cases"],["CasePilot","casepilot"],["Документи","documents"],
+      ["Workflows","workflows"],["Human Gate","human-gate"],["Library","library"]
+    ].filter(([label])=>!q||label.toLocaleLowerCase("mk").includes(q));
+    if(tools.length){
+      const label=document.createElement("div");label.className="ai-workspace-search-group";label.textContent="Алатки";host.append(label);
+      tools.forEach(([label,action])=>{const b=document.createElement("button");b.type="button";b.textContent=label;b.onclick=()=>{dialog.close();runAIAdvokat4Action(action);};host.append(b);});
+    }
+  }
+
+  function openWorkspaceSearch(){
+    const d=ensureWorkspaceSearchDialog();
+    const field=d.querySelector("#aiWorkspaceGlobalSearch");
+    if(field) field.value="";
+    renderWorkspaceSearchResults(d,"");
+    d.showModal();
+    setTimeout(()=>field?.focus(),0);
+  }
+
   function runAIAdvokat4Action(action){
+    document.querySelectorAll("[data-ai-workbench]").forEach(b=>b.classList.toggle("active",String(b.dataset.aiWorkbench||"")===action));
+    if(action==="assistant"){document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>input.focus(),200);return;}
     if(action==="consolidator"){window.open("/consolidator/","_blank","noopener");return;}
     if(action==="analyzer"){
       const d=ensureAnalyzerDialog();
@@ -1181,9 +1366,25 @@
       return;
     }
     if(action==="casepilot"){window.open("/casepilot-workspace.html","_blank","noopener");return;}
-    if(action==="sources"){renderWorkbenchSources();return;}
-    if(action==="human-gate"){renderWorkbenchHumanGate();return;}
+    if(action==="cases"){window.open("/case-law-metadata.html","_blank","noopener");return;}
+    if(action==="documents"){window.open("/casepilot-workspace.html","_blank","noopener");return;}
+    if(action==="workflows"){ensureWorkflowDialog().showModal();return;}
+    if(action==="library"){window.open("/professional-library/","_blank","noopener");return;}
+    if(action==="sources"){renderWorkbenchSources();openWorkspaceEvidence("sources");return;}
+    if(action==="human-gate"){renderWorkbenchHumanGate();openWorkspaceEvidence("human");return;}
   }
+
+  if(historySearch) historySearch.addEventListener("input",renderHistory);
+  if(workspaceNew) workspaceNew.addEventListener("click",()=>newChatBtn.click());
+  if(workspaceSearchLaunch) workspaceSearchLaunch.addEventListener("click",openWorkspaceSearch);
+  if(evidenceToggle) evidenceToggle.addEventListener("click",()=>{evidencePanel?.classList.toggle("is-open");renderWorkspaceEvidence();});
+  if(evidenceClose) evidenceClose.addEventListener("click",()=>evidencePanel?.classList.remove("is-open"));
+  evidenceTabs.forEach(button=>button.addEventListener("click",()=>openWorkspaceEvidence(String(button.dataset.aiEvidenceTab||"sources"))));
+  document.addEventListener("keydown",event=>{
+    if((event.ctrlKey||event.metaKey)&&String(event.key||"").toLowerCase()==="k" && !event.altKey){
+      event.preventDefault();openWorkspaceSearch();
+    }
+  });
 
   document.querySelectorAll("[data-ai-workbench]").forEach(button=>{
     button.addEventListener("click",event=>{
@@ -1223,7 +1424,7 @@
     .catch(()=>{provider.textContent="AI runtime · недостапен";});
 
   try{
-    load();syncModeUi();render();renderAttachments();autoSize();refreshGuideVaultStatus();
+    load();syncModeUi();render();renderAttachments();autoSize();refreshGuideVaultStatus();renderWorkspaceEvidence();
     window.AIAdvokatFrontendGuard?.markReady?.("main");
   }catch(error){
     window.AIAdvokatFrontendGuard?.report?.("main","boot",error);
