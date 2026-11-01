@@ -100,9 +100,9 @@ jobs:
           deployed=0
           for attempt in $(seq 1 40); do
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/?release=root-r12-complete&deploy_verify=$nonce" -o /tmp/deploy-home.html || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-chat.js?v=20261101-root-r12-complete&deploy_verify=$nonce" -o /tmp/deploy-chat.js || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-chat.css?v=20261101-root-complete-r12&deploy_verify=$nonce" -o /tmp/deploy-chat.css || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/?release=root-r13-gazette-acts&deploy_verify=$nonce" -o /tmp/deploy-home.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-chat.js?v=20261101-root-r13-gazette-acts&deploy_verify=$nonce" -o /tmp/deploy-chat.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-chat.css?v=20261101-root-gazette-acts-r13&deploy_verify=$nonce" -o /tmp/deploy-chat.css || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r13&deploy_verify=$nonce" -o /tmp/deploy-bot.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261101-core-r13&deploy_verify=$nonce" -o /tmp/deploy-core.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/chat-privacy-browser.js?v=20261101-privacy-r12&deploy_verify=$nonce" -o /tmp/deploy-privacy-primary.js || true
@@ -124,10 +124,10 @@ jobs:
               && [ "$live_privacy_primary" = "$expected_privacy_primary" ] \
               && [ "$live_privacy_compat" = "$expected_privacy_compat" ]; then
               deployed=1
-              echo "MAIN ROOT-R12-COMPLETE + EXTERNAL BOT R13 LIVE BYTE PARITY: PASS on attempt $attempt"
+              echo "MAIN ROOT-R13-GAZETTE-ACTS + EXTERNAL BOT R13 LIVE BYTE PARITY: PASS on attempt $attempt"
               break
             fi
-            echo "Waiting for exact root-r12-complete + R13 production bytes (attempt $attempt/40)."
+            echo "Waiting for exact root-r13-gazette-acts + R13 production bytes (attempt $attempt/40)."
             sleep 3
           done
           test "$deployed" = "1"
