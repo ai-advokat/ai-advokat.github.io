@@ -7,6 +7,13 @@ node_modules/**
 
 src/**
 !src/chat-privacy.js
+!src/case-export.js
+!src/legal-analyzer.js
+!src/case-law-metadata-processor.js
+!src/echr-findings.js
+!src/document-ingest-router.js
+!src/international-legal-classifier.js
+!src/official-source-binder.js
 migrations/**
 ingest/**
 scripts/**
