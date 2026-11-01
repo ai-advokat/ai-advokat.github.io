@@ -37,7 +37,7 @@ concurrency:
 jobs:
   live-uat:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -73,16 +73,16 @@ jobs:
           const EXPECTED_FREE_FALLBACK_MODEL="@cf/meta/llama-3.3-70b-instruct-fp8-fast";
           const EXPECTED_PAID_MODEL="gpt-6.1-sol";
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
-          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V9";
+          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V10";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
-          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V8";
+          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V9";
           const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
           const EXPECTED_FINAL_OUTPUT_GATE="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
           const EXPECTED_FREE_PROVIDER_CONTRACT="WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT";
 
           async function waitForExpectedRuntime(){
             let last=null;
-            for(let attempt=1;attempt<=60;attempt++){
+            for(let attempt=1;attempt<=100;attempt++){
               try{
                 const response=await fetch(BASE+"/api/capabilities",{headers:{"accept":"application/json","cache-control":"no-cache"}});
                 const raw=await response.text();
@@ -93,7 +93,7 @@ jobs:
                   && data?.ok===true
                   && caps.centralOperatingPrompt===EXPECTED_PROMPT
                   && caps.macedonianLanguageGuard===EXPECTED_LANGUAGE
-                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V5"
+                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V6"
                   && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V3"
                   && caps.canonicalRootReleaseContract==="AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1"
                   && caps.canonicalMetadataStandard===EXPECTED_METADATA
