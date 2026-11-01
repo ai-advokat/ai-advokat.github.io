@@ -30,7 +30,7 @@ test("core-r13 production deploy proves exact live byte parity and legacy r10/r1
   assert.match(workflow,/release=core-r10/);
   assert.match(workflow,/release=core-r13/);
   assert.match(workflow,/release=core-r12/);
-  assert.match(workflow,/clear-site-data/: "cache"/);
+  assert.match(workflow,/clear-site-data: "cache"/);
   assert.match(workflow,/LEGACY CORE-R10 SELF-HEAL TO R13: PASS/);
   assert.match(workflow,/LEGACY CORE-R12 SELF-HEAL TO R13: PASS/);
 });
