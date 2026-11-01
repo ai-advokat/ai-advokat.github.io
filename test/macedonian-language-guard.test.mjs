@@ -19,7 +19,7 @@ test("runtime contract is explicitly anchored to the 2017 Macedonian orthography
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/2017/);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/standard literary Macedonian/i);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/PRIORITY 0/);
-  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/must not suppress an otherwise useful legal answer/);
+  assert.match(MACEDONIAN_2017_SYSTEM_RULES,/release-blocking after one bounded repair attempt/);
 });
 
 test("Macedonian questions activate the language gate",()=>{
@@ -215,7 +215,7 @@ test("unambiguous production calques get deterministic cleanup before any AI rep
   assert.equal(check.ok,true,JSON.stringify({clean,check}));
 });
 
-test("language runtime is V10 and source-profile anchored to Orthography 2017 second edition",()=>{
+test("language runtime is V11 strict and source-profile anchored to Orthography 2017 second edition",()=>{
   assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V11_STRICT");
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.year,2017);
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.edition,"второ издание");
@@ -270,11 +270,11 @@ test("single repairable contamination can be cleaned and then released",()=>{
   assert.equal(final.verdict,"RELEASE",JSON.stringify(final));
 });
 
-test("clean concise Macedonian is released by V9 canonical gate",()=>{
+test("clean concise Macedonian is released by V11 strict canonical gate",()=>{
   const clean="Договорот за вработување ги уредува правата и обврските на работникот и работодавачот. За тековните законски услови треба да се провери важечкиот Закон за работните односи.";
   const verdict=macedonianReleaseVerdict(clean,{userText:"Што е договор за вработување?"});
   assert.equal(verdict.verdict,"RELEASE",JSON.stringify(verdict));
-  assert.equal(MACEDONIAN_RELEASE_GATE_VERSION,"FREE_MK_CANONICAL_RELEASE_V6");
+  assert.equal(MACEDONIAN_RELEASE_GATE_VERSION,"FREE_MK_CANONICAL_RELEASE_V7_STRICT_ORTHOGRAPHY");
 });
 
 
@@ -318,13 +318,14 @@ test("valid Macedonian 'обврска/обврски' remains valid",()=>{
 });
 
 
-test("language-only contamination is a QA warning, not a functional block",()=>{
+test("repairable language contamination is deterministically cleaned before release",()=>{
   const bad="Ево на примерен нацрт на тужба со едно нецелосно наименование.";
   const delivery=macedonianDeliveryVerdict(bad,{userText:"Изработи тужба на македонски."});
   assert.equal(delivery.deliver,true,JSON.stringify(delivery));
-  assert.equal(delivery.legalSafetyBlock,false);
-  assert.ok(["verified_runtime","released_with_language_warning"].includes(delivery.state));
-  assert.ok(delivery.text.length>0);
+  assert.equal(delivery.clean,true);
+  assert.equal(delivery.state,"verified_runtime");
+  assert.match(delivery.text,/Еве примерен/u);
+  assert.match(delivery.text,/назив/u);
 });
 
 test("unrequested foreign-jurisdiction substitution remains a legal-safety block",()=>{
@@ -355,8 +356,8 @@ test("Orthography 2017 system contract separates language authority from legal a
 
 
 test("V11 strict Pravopis gate blocks residual neighbouring-language contamination after normalisation",()=>{
-  const bad=macedonianDeliveryVerdict("Ова е поступак и решење.",{userText:"Те молам одговори ми на македонски."});
-  assert.equal(bad.deliver,false);
+  const bad=macedonianDeliveryVerdict("Ова прашање е овде, но одговорот мора да биде на стандарден македонски.",{userText:"Те молам одговори ми на македонски."});
+  assert.equal(bad.deliver,false,JSON.stringify(bad));
   assert.equal(bad.clean,false);
   assert.equal(bad.state,"blocked_language_quality");
   assert.ok(bad.quality.reasons.includes("foreign_lexical_contamination"));
