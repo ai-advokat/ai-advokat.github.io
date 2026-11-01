@@ -161,7 +161,7 @@ import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, schol
 import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
 
 const VERSION = "1.9.0";
-const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V10_LANGUAGE_FIREWALL";
+const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V11_DEDICATED_EDITOR_FALLBACK";
 const CANONICAL_FINAL_OUTPUT_GATE_VERSION="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
 
 const ALLOWED_ORIGINS = new Set([
@@ -6254,9 +6254,14 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       return json(request,{
         ok:false,
         error:freeResult.error||"free_workers_ai_failed",
-        message:"FREE Workers AI не успеа да го обработи барањето или документите. Квотата не е потрошена; обидете се повторно или намалете/поделете ги прилозите.",
+        message:freeResult.message||"FREE Workers AI не успеа да го обработи барањето или документите. Квотата не е потрошена; обидете се повторно.",
         problems:freeResult.problems||null,
         failureDetail:freeResult.detail||null,
+        languageReleaseGate:freeResult.releaseGate||null,
+        languageEditorRequired:freeResult.editorRequired===true,
+        languageEditorPassed:freeResult.editorPassed===true,
+        languageEditorModel:freeResult.editorModel||null,
+        languageEditorError:freeResult.editorError||null,
         model:freeResult.model||resolveWorkersAITextModel(env),
         providerShape:freeResult.providerShape||null,
         modelFallback:freeResult.modelFallback||null,
@@ -8129,6 +8134,7 @@ async function handleCapabilities(request, env) {
       freeChatProvider:freeWorkersAIConfigured(env) ? "workers_ai" : "locked",
       freeChatModel:freeWorkersAIConfigured(env) ? resolveWorkersAITextModel(env) : null,
       freeChatFallbackModel:freeWorkersAIConfigured(env) ? resolveWorkersAIEmptyFallbackModel(env) : null,
+      freeLanguageEditorModel:freeWorkersAIConfigured(env) ? resolveMacedonianLanguageEditorModel(env,resolveWorkersAITextModel(env)) : null,
       freeProviderContract:WORKERS_AI_PROVIDER_CONTRACT_VERSION,
       freeRuntimePolicy:FREE_RUNTIME_POLICY_VERSION,
       paidChatProvider:orchestratorRuntimeReadiness(env).provider==="configured" ? "openai" : "locked",
@@ -8137,9 +8143,9 @@ async function handleCapabilities(request, env) {
       centralPromptBehavior:"general_intelligence_plus_governed_legal_enrichment_v1",
       macedonianLanguageGuard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
       macedonianReleaseGate:MACEDONIAN_RELEASE_GATE_VERSION,
-      macedonianRepairPostflight:"deterministic_cleanup_nonblocking_qa_foreign_jurisdiction_hard_block_v7",
-      macedonianRepairProviderBudget:"zero_extra_language_repair_calls",
-      freeLatencyPolicy:"simple_turn_650_tokens_8s_provider_timeout_no_second_model_repair",
+      macedonianRepairPostflight:"deterministic_cleanup_dedicated_editor_fail_closed_v13",
+      macedonianRepairProviderBudget:"one_bounded_dedicated_editor_call_for_macedonian_output",
+      freeLatencyPolicy:"quality_first_macedonian_editor_12s_bounded_primary_8s_or_20s",
       canonicalProvenanceGate:CANONICAL_PROVENANCE_GATE_VERSION,
       canonicalMetadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
       canonicalRootReleaseContract:"AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1",
