@@ -1658,7 +1658,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!analysisLanguageRelease.ok){
       return json(request,{
         ok:false,
-        error:"foreign_jurisdiction_substitution_blocked",
+        error:"macedonian_language_release_blocked",
         message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
         languageReleaseGate:analysisLanguageRelease.releaseGate,
         languageReasons:analysisLanguageRelease.quality?.reasons||[]
@@ -1844,7 +1844,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!draftLanguageRelease.ok){
       return json(request,{
         ok:false,
-        error:"foreign_jurisdiction_substitution_blocked",
+        error:"macedonian_language_release_blocked",
         message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
         languageReleaseGate:draftLanguageRelease.releaseGate,
         languageReasons:draftLanguageRelease.quality?.reasons||[]
@@ -3785,7 +3785,7 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
   if(!finalRelease.ok){
     return {
       ok:false,
-      error:"foreign_jurisdiction_substitution_blocked",
+      error:"macedonian_language_release_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:"private_case_final_last_mile_language_gate_failed",
       releaseGate:finalRelease.releaseGate,
@@ -5042,11 +5042,34 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     }
   }
 
-  // Product policy: language quality is a QA signal, not a reason to suppress
-  // an otherwise useful legal answer. Deterministic cleanup is the only runtime
-  // language repair step; no second provider call is spent on style-only repair.
-  // Substantive foreign-jurisdiction substitution is handled by the final
-  // delivery policy as a legal-safety blocker.
+  // Pravopis 2017 strict mode: one bounded language-only repair attempt is
+  // allowed after deterministic cleanup. It may not add law, facts or sources.
+  if(allowProviderRepair && env?.AI){
+    const repairResult=await runWorkersAIText(env,{
+      messages:buildMacedonianRepairMessages({text:current||original,userText}),
+      maxOutputTokens:Math.max(500,Math.min(3200,Number(maxOutputTokens)||1800)),
+      temperature:0,
+      sessionAffinity,
+      timeoutMs:12000
+    });
+    if(repairResult.ok && String(repairResult.text||"").trim()){
+      const repairedText=normaliseMacedonianGeneratedText(String(repairResult.text||"").trim());
+      const repairedAssessment=assessMacedonianOutput(repairedText,{userText});
+      const repairedVerdict=macedonianReleaseVerdict(repairedText,{userText});
+      return {
+        text:repairedText,
+        repaired:true,
+        deterministicCleanupApplied,
+        providerCalls:Number(repairResult.providerCalls||1),
+        languageAssessment:repairedAssessment,
+        releaseVerdict:repairedVerdict,
+        repairError:repairedVerdict.verdict==="RELEASE"?null:"language_quality_blocked_after_repair"
+      };
+    }
+  }
+
+  // Strict professional release: residual detected language contamination is
+  // not released. The last-mile delivery gate will fail closed.
   return {
     text:current||original,
     repaired:current!==original,
@@ -5054,7 +5077,7 @@ async function repairWorkersAIMacedonianIfNeeded(env,{text,userText,maxOutputTok
     providerCalls:0,
     languageAssessment:assessment,
     releaseVerdict,
-    repairError:releaseVerdict.verdict==="RELEASE"?null:"language_quality_warning"
+    repairError:releaseVerdict.verdict==="RELEASE"?null:"language_quality_blocked"
   };
 }
 
@@ -5191,7 +5214,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   if(!finalRelease.ok){
     return {
       ok:false,
-      error:"foreign_jurisdiction_substitution_blocked",
+      error:"macedonian_language_release_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       detail:"final_last_mile_language_gate_failed",
       releaseGate:finalRelease.releaseGate,
@@ -6475,10 +6498,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   let governedLanguageRelease=governedFinalRelease.releaseGate;
   let governedLanguageRepair={attempted:false,repaired:false,providerCalls:0,error:null};
 
-  // Product policy: language quality must not suppress useful legal functionality.
-  // Deterministic cleanup has already run inside canonicalMacedonianFinalRelease.
-  // Do not spend a second provider call for style-only repair. Only substantive
-  // foreign-jurisdiction substitution remains a legal-safety blocker.
+  // Pravopis 2017 strict release policy: the governed OpenAI path is also
+  // fail-closed at the final language gate. Residual detected neighbouring-
+  // language contamination or malformed Macedonian prose is not released.
+  // The central prompt should normally prevent this; if not, Human Gate/retry
+  // is preferred over publishing linguistically contaminated legal prose.
   const governedLanguageReasons=Array.isArray(governedLanguageQuality?.reasons)
     ? governedLanguageQuality.reasons.map(x=>String(x))
     : [];
@@ -6488,7 +6512,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     await releaseMonthlyQuota(env,{subject,period});
     return json(request,{
       ok:false,
-      error:"foreign_jurisdiction_substitution_blocked",
+      error:"macedonian_language_release_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
       languageReleaseGate:governedLanguageRelease,
@@ -6913,7 +6937,7 @@ async function handleAssistant(request, env, url) {
         const languageRequired=shouldEnforceMacedonianOutput(q);
         const candidateDelivery=canonicalMacedonianFinalRelease(languagePass.text||primaryCandidate,q);
         if(languageRequired && !candidateDelivery.ok){
-          aiError="foreign_jurisdiction_substitution_blocked";
+          aiError="macedonian_language_release_blocked";
           answerMode="retrieval_only_legal_safety_guard";
         }else{
           const candidate=String(candidateDelivery.text||languagePass.text||primaryCandidate).trim();
@@ -6994,7 +7018,7 @@ async function handleAssistant(request, env, url) {
     }
     return json(request,{
       ok:false,
-      error:"foreign_jurisdiction_substitution_blocked",
+      error:"macedonian_language_release_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       languageReleaseGate:assistantFinalRelease.releaseGate,
       languageReasons:assistantFinalRelease.quality?.reasons||[]

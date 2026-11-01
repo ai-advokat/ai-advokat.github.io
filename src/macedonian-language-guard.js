@@ -2,7 +2,7 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V10";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V11_STRICT";
 
 export const MACEDONIAN_ORTHOGRAPHY_2017_SOURCE=Object.freeze({
   id:"MK-ORTHOGRAPHY-2017-2ED",
@@ -26,8 +26,8 @@ export const MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE=Object.freeze([
   {id:"R396",topic:"headings",policy:"Насловот стои во нов ред, почнува со голема буква и нема точка на крајот."},
   {id:"LEGAL-NUMBERING",topic:"legal_numbering",policy:"Општите именки со конкретен број се со мала буква: член 5, став 1, табела 1."}
 ]);
-export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V6";
-export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="Одговорот е запрен затоа што јазичната проверка откри непобарано право од друга јурисдикција. Ова е правно-безбедносна, а не стилска блокада; потребна е проверка на важечките извори за Северна Македонија.";
+export const MACEDONIAN_RELEASE_GATE_VERSION="FREE_MK_CANONICAL_RELEASE_V7_STRICT_ORTHOGRAPHY";
+export const MACEDONIAN_RELEASE_BLOCK_MESSAGE="Одговорот не е пуштен затоа што задолжителната проверка според Правописот на македонскиот јазик од 2017 година не помина. Системот откри остаточна јазична контаминација, изобличена македонска форма или непобарано право од друга јурисдикција. Потребна е повторна јазична/правна проверка пред прикажување.";
 
 export const MACEDONIAN_2017_SYSTEM_RULES=[
   "PRIORITY 0 — ПРАВОПИС НА МАКЕДОНСКИОТ ЈАЗИК 2017.",
@@ -55,7 +55,7 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "A Macedonian-facing answer that is predominantly Bulgarian, Serbian or Russian is invalid even if it uses Cyrillic. Cyrillic alone is never evidence that the language requirement was satisfied.",
   "For a North Macedonian legal matter, never substitute Bulgarian, Serbian, Russian or another foreign law unless the user explicitly asks for that jurisdiction and the supplied governed sources support it.",
   "If the controlling North Macedonian law is not established by the supplied governed sources, say that verification is required instead of importing a neighbouring jurisdiction.",
-  "Before returning the answer, silently self-check spelling, grammar, syntax, morphology and legal terminology against standard literary Macedonian and rewrite only unambiguous Serbian, Bulgarian or Russian contamination into Macedonian. Never reject or rewrite valid Macedonian words merely because the same spelling exists in another Slavic language. Residual language-quality defects must be recorded for human review but must not suppress an otherwise useful legal answer; only substantive legal-safety defects such as unrequested foreign-jurisdiction substitution may block release. Do not mention this self-check to the user."
+  "Before returning the answer, silently self-check spelling, grammar, syntax, morphology and legal terminology against standard literary Macedonian and rewrite only unambiguous Serbian, Bulgarian or Russian contamination into Macedonian. Never reject or rewrite valid Macedonian words merely because the same spelling exists in another Slavic language. In AI Advokat professional output, residual detected neighbouring-language contamination or malformed Macedonian generation is release-blocking after one bounded repair attempt. Do not mention this self-check to the user."
 ].join("\n");
 
 const FOREIGN_CYRILLIC_RE=/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/gu;
@@ -92,7 +92,7 @@ const MALFORMED_GENERATION_LEXEMES=new Set([
   "почети","одбргува","празнправ","ријекот","саответен","правопризнателството","кадринот","олностон",
   // Additional malformed / foreign-production forms observed in live FREE output.
   "облага","описание","премири","задолжености","пластираши","задовољство","оборажувања",
-  "испорачивачки","договоренијатие","платеное","точнаја","власни"
+  "испорачивачки","договоренијатие","платеное","точнаја","власни","вторарни"
 ]);
 
 // Contextual phrases can be linguistically invalid even when each individual
@@ -236,7 +236,7 @@ export function macedonianDeliveryVerdict(text,{userText=""}={}){
     && quality.reasons.includes("foreign_jurisdiction_substitution");
   const clean=releaseGate.verdict==="RELEASE";
   return {
-    deliver:Boolean(normalized) && !legalSafetyBlock,
+    deliver:Boolean(normalized) && clean && !legalSafetyBlock,
     clean,
     text:normalized,
     languageRequired:true,
@@ -247,7 +247,7 @@ export function macedonianDeliveryVerdict(text,{userText=""}={}){
       ? "blocked_foreign_jurisdiction"
       : clean
         ? "verified_runtime"
-        : "released_with_language_warning"
+        : "blocked_language_quality"
   };
 }
 

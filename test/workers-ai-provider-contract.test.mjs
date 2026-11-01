@@ -17,7 +17,7 @@ test("WAP1 Qwen uses only documented synchronous chat parameters",()=>{
   assert.equal("reasoning_effort" in options,false);
 });
 
-test("WAP2 provider contract has bounded timeout and canonical FREE fast path uses 8s with no language-only second call",()=>{
+test("WAP2 provider contract keeps FREE fast path at 8s and gates the bounded 12s language repair off that path",()=>{
   const provider=fs.readFileSync("src/workers-ai-provider.js","utf8");
   const worker=fs.readFileSync("src/index.js","utf8");
   assert.match(provider,/timeoutMs=30000/);
@@ -25,7 +25,8 @@ test("WAP2 provider contract has bounded timeout and canonical FREE fast path us
   assert.match(provider,/workers_ai_timeout/);
   assert.match(worker,/timeoutMs:fastFreePrompt\?8000:20000/);
   assert.match(worker,/zero_extra_language_repair_calls/);
-  assert.doesNotMatch(worker,/timeoutMs:12000/);
+  assert.match(worker,/allowProviderRepair:!fastFreePrompt/);
+  assert.match(worker,/timeoutMs:12000/);
 });
 
 test("WAP3 Qwen contract does not reintroduce undocumented template kwargs",()=>{
