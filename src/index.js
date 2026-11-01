@@ -7679,7 +7679,7 @@ function withSecurityHeaders(response) {
   });
 }
 
-const EXTERNAL_BOT_RELEASE="core-r12";
+const EXTERNAL_BOT_RELEASE="core-r13";
 
 function externalBotReleaseRedirect(request,url){
   if(!["GET","HEAD"].includes(request.method)) return null;
