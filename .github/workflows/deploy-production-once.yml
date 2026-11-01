@@ -168,7 +168,7 @@ jobs:
           if(!sourceGap && d.provider==="canonical_corpus_no_model"){
             if(d.providerFallback?.from!=="openai") throw new Error("Canonical fallback provenance missing");
             if(d.legalGovernance?.verificationState!=="SOURCE_BACKED_PROVIDER_FALLBACK") throw new Error("Canonical fallback governance state missing");
-            if(!/не ја означувам како .важечки текст./u.test(answer)) throw new Error("Current-law truth-label warning missing");
+            if(!/не го означува како .важечки текст./u.test(answer)) throw new Error("Current-law truth-label warning missing");
           } else if(!sourceGap) {
             if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error("LIOE governance missing on OpenAI path");
             if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("Current-law Human Gate not required");
@@ -228,3 +228,5 @@ jobs:
 # trigger-zro12-source-gap-r14: 2026-11-01
 
 # trigger-exact-article-polish-r15: 2026-11-01
+
+# trigger-r15-live-smoke-copy-contract: 2026-11-01
