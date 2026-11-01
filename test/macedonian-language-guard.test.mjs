@@ -216,7 +216,7 @@ test("unambiguous production calques get deterministic cleanup before any AI rep
 });
 
 test("language runtime is V10 and source-profile anchored to Orthography 2017 second edition",()=>{
-  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V10");
+  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V11_STRICT");
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.year,2017);
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.edition,"второ издание");
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.legalAuthority,false);
@@ -351,4 +351,25 @@ test("Orthography 2017 system contract separates language authority from legal a
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/VERBATIM SOURCE PRESERVATION OVERRIDE/);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/член 5/u);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/став 1/u);
+});
+
+
+test("V11 strict Pravopis gate blocks residual neighbouring-language contamination after normalisation",()=>{
+  const bad=macedonianDeliveryVerdict("Ова е поступак и решење.",{userText:"Те молам одговори ми на македонски."});
+  assert.equal(bad.deliver,false);
+  assert.equal(bad.clean,false);
+  assert.equal(bad.state,"blocked_language_quality");
+  assert.ok(bad.quality.reasons.includes("foreign_lexical_contamination"));
+});
+
+test("V11 strict Pravopis gate blocks malformed Macedonian generation such as vtorarni",()=>{
+  const bad=macedonianDeliveryVerdict("Овие извори се вторарни и не се доволни.",{userText:"Те молам одговори ми на македонски."});
+  assert.equal(bad.deliver,false);
+  assert.ok(bad.quality.reasons.includes("malformed_macedonian_generation"));
+});
+
+test("V11 strict Pravopis gate still releases clean standard Macedonian",()=>{
+  const good=macedonianDeliveryVerdict("Овие извори се секундарни и не можат да го заменат официјалниот правен извор.",{userText:"Те молам одговори ми на македонски."});
+  assert.equal(good.deliver,true);
+  assert.equal(good.clean,true);
 });
