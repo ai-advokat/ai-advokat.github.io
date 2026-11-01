@@ -13,7 +13,8 @@ const welcome = $('welcome').cloneNode(true);
 
 function status(text) { $('status').textContent = text; }
 function busy(value) {
-  $('send').disabled = value;
+  const hasQuestion = String($('question')?.value || '').trim().length >= 2;
+  $('send').disabled = value || !hasQuestion;
   $('stop').hidden = !value;
   $('send').hidden = value;
   $('question').disabled = value;
@@ -158,7 +159,11 @@ $('loginForm').onsubmit = async event => {
 $('newChat').onclick = () => { reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Внесете професионален клуч преку ⋯.'); };
 $('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Сесијата и зачуваниот пристап се избришани.'); };
 $('stop').onclick = () => pending?.abort();
-$('question').oninput = () => { $('question').style.height = 'auto'; $('question').style.height = Math.min($('question').scrollHeight,180) + 'px'; };
+$('question').oninput = () => {
+  $('question').style.height = 'auto';
+  $('question').style.height = Math.min($('question').scrollHeight,180) + 'px';
+  if (!pending) $('send').disabled = $('question').value.trim().length < 2;
+};
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
 const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (!SpeechRecognitionCtor) $('mic').hidden = true;
@@ -243,6 +248,9 @@ async function restoreAccess() {
     status('Пристапот не може да се потврди. Отворете ⋯ → Професионален пристап.');
   }
 }
+// Ensure a fresh device can type and submit a question even before access is restored.
+// If no key exists, submit opens the governed professional-access dialog instead of appearing inert.
+busy(false);
 restoreAccess();
 async function exportLatestAssistant(format) {
   const latest=[...history].reverse().find(item=>item.role==='assistant' && String(item.text||'').trim());
