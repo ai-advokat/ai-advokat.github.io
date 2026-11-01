@@ -66,8 +66,8 @@ jobs:
           node --check src/case-export.js
           node --check assets/standalone-bot-vnext.js
           node --check assets/standalone-bot-reliability.js
-          grep -q 'ai-advokat-chat.js?v=20261101-root-r12-complete' index.html
-          grep -q 'ai-advokat-chat.css?v=20261101-root-complete-r12' index.html
+          grep -q 'ai-advokat-chat.js?v=20261101-root-r13-gazette-acts' index.html
+          grep -q 'ai-advokat-chat.css?v=20261101-root-gazette-acts-r13' index.html
           grep -q 'standalone-bot.js?v=20261101-core-r13' bot/index.html
           grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r11' bot/index.html
           grep -q "import('./chat-privacy-browser.js?v=20261101-privacy-r12')" assets/standalone-bot.js
