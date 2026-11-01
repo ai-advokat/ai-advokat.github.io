@@ -60,3 +60,5 @@ jobs:
           echo "AI Advokat production runtime update"
           echo "commit=${GITHUB_SHA}"
           echo "worker=ai-advokat-github-io"
+
+# trigger-mobile-bot-static-assets-r10: 2026-11-01
