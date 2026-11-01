@@ -7295,6 +7295,15 @@ export default {
       });
     }
 
+    if (url.pathname === "/src/chat-privacy.js") {
+      const assetUrl=new URL("/assets/chat-privacy-browser.js",request.url);
+      const response=await env.ASSETS.fetch(new Request(assetUrl,{method:"GET"}));
+      const headers=new Headers(response.headers);
+      headers.set("cache-control","no-store, max-age=0");
+      headers.set("x-ai-advokat-compat","privacy-browser-r11");
+      return withSecurityHeaders(new Response(response.body,{status:response.status,statusText:response.statusText,headers}));
+    }
+
     if (!url.pathname.startsWith("/api/")) {
       return withSecurityHeaders(await env.ASSETS.fetch(request));
     }
