@@ -63,11 +63,11 @@ test("COP5b default Macedonian language contract is not duplicated in runtime pr
   assert.match(prompt,/AI ADVOKAT CENTRAL OPERATING CONTRACT/);
 });
 
-test("COP6 runtime paths share governed prompt contracts while FREE L0 uses the compact contract",()=>{
+test("COP6 runtime paths share governed prompt contracts while FREE L0 compact mode excludes formal drafts",()=>{
   assert.match(worker,/const ASSISTANT_SYSTEM_RULES = buildAIAdvokatCentralPrompt\(/);
   assert.match(worker,/const system=buildAIAdvokatCentralPrompt\(\{[\s\S]*?workers_ai_private_case/);
   assert.match(worker,/buildAIAdvokatFreeFastPrompt/);
-  assert.match(worker,/fastFreePrompt=missionProfile==="GENERAL_BYPASS" \|\| missionProfile==="L0_INFORMATIONAL"/);
+  assert.match(worker,/const fastFreePrompt=\(missionProfile==="GENERAL_BYPASS" \|\| missionProfile==="L0_INFORMATIONAL"\)[\s\S]*?&& !formalDraftRequest/);
   assert.match(orchestrator,/const central=buildAIAdvokatCentralPrompt\(/);
   assert.match(worker,/centralOperatingPrompt:AI_ADVOKAT_CENTRAL_PROMPT_VERSION/);
   assert.match(worker,/centralPromptVersion:AI_ADVOKAT_CENTRAL_PROMPT_VERSION/);
