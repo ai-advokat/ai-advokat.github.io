@@ -61,4 +61,4 @@ jobs:
           echo "commit=${GITHUB_SHA}"
           echo "worker=ai-advokat-github-io"
 
-# trigger-root-reliability-r9: 2026-11-01
+# trigger-core-composer-r10: 2026-11-01
