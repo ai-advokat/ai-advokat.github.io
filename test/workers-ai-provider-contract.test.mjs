@@ -25,7 +25,8 @@ test("WAP2 provider contract keeps the FREE primary fast path bounded and allows
   assert.match(provider,/workers_ai_timeout/);
   assert.match(worker,/timeoutMs:fastFreePrompt\?8000:20000/);
   assert.match(worker,/allowProviderRepair:languageRequired/);
-  assert.match(worker,/forceEditorialPass:languageRequired && \(formalDraftRequest \|\| missionProfile!==\"GENERAL_BYPASS\"\)/);
+  assert.match(worker,/forceEditorialPass:languageRequired/);
+  assert.match(worker,/allowEmptyFallback:false/);
   assert.match(worker,/model:editorModel/);
   assert.match(worker,/timeoutMs:12000/);
   assert.match(worker,/hardBlock:true/);
@@ -86,4 +87,22 @@ test("WAP6 provider contract version is explicit and capability-bound",()=>{
   const workflow=fs.readFileSync(".github/workflows/free-runtime-live-uat.yml","utf8");
   assert.match(worker,/freeProviderContract:WORKERS_AI_PROVIDER_CONTRACT_VERSION/);
   assert.match(workflow,/caps\.freeProviderContract===EXPECTED_FREE_PROVIDER_CONTRACT/);
+});
+
+
+test("WAP7 language editor can explicitly disable the empty-response provider fallback",async()=>{
+  const models=[];
+  const env={AI:{run:async(model)=>{models.push(model); return {response:""};}}};
+  const result=await runWorkersAIText(env,{
+    model:"@cf/zai-org/glm-4.7-flash",
+    messages:[{role:"user",content:"Редактирај."}],
+    maxOutputTokens:400,
+    timeoutMs:3000,
+    allowEmptyFallback:false
+  });
+  assert.equal(result.ok,false);
+  assert.equal(result.error,"workers_ai_empty_response");
+  assert.equal(result.providerCalls,1);
+  assert.deepEqual(models,["@cf/zai-org/glm-4.7-flash"]);
+  assert.equal(result.modelFallback,null);
 });
