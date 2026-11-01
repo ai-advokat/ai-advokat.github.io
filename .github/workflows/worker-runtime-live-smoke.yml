@@ -30,7 +30,8 @@ jobs:
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-home.html
           grep -q 'ai-advokat-chat.js?v=20261101-root-r9' /tmp/worker-home.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-bot.html
-          grep -q 'standalone-bot.js?v=20261101-core-r10' /tmp/worker-bot.html\n          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/worker-bot.html
+          grep -q 'standalone-bot.js?v=20261101-core-r10' /tmp/worker-bot.html
+          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/worker-bot.html
           echo "WORKER FRONTEND ROOT-R9: PASS"
 
       - name: Verify production health and orchestrator
