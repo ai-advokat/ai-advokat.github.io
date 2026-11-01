@@ -22,7 +22,7 @@ export function extractGazetteIssueNeedles(q){
   }
   return {
     issueNumber:pair?.[1]||labeledIssue?.[1]||null,
-    year:pair?.[2]||mkDate?.[3]||(isoDate?.[1]?.slice(0,4)||null),
+    year:pair?.[2]||mkDate?.[3]||(isoDate?.[1]?.slice(0,4)||null)||labeledYear?.[1]||null,
     issueDate,
     explicitSignal,
     usable:Boolean(pair || isoDate || mkDate || (explicitSignal && labeledIssue))
