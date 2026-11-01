@@ -216,7 +216,7 @@ test("CHAT17c one strict Pravopis last-mile policy protects every public surface
 
 test("CHAT17d FREE consequential drafts have a bounded compact latency lane",()=>{
   const helper=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
-  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V12_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK"/);
+  assert.match(worker,/FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V13_DETERMINISTIC_FORMAL_DRAFT_FALLBACK"/);
   assert.match(helper,/const compactFreeDraft=formalDraftRequest/);
   assert.match(helper,/FREE FORMAL DRAFT LATENCY CONTRACT/);
   assert.match(helper,/Math\.min\(1000,requestedTokenLimit\)/);
@@ -603,4 +603,13 @@ test("CHAT17e every generated Macedonian FREE answer attempts the editor and may
   assert.match(helper,/languageEditorFallbackUsed/);
   assert.match(helper,/deterministicProceduralInstrumentFallback/);
   assert.match(helper,/deterministicLanguageFallbackUsed/);
+});
+
+
+test("CHAT17f V15 formal drafts are authority-checked and may use only supported deterministic fallbacks",()=>{
+  const helper=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
+  assert.match(helper,/formalDraftAuthoritySafety/);
+  assert.match(helper,/deterministicFormalDraftFallback/);
+  assert.match(helper,/formalDraftAuthoritySafe/);
+  assert.match(worker,/formalDraftFallbackPolicy:"supported_unsourced_classes_deterministic_authority_safe_v15"/);
 });
