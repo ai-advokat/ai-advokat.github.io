@@ -230,3 +230,12 @@ test("COP22 resolves MVR shorthand to official source titles without re-asking",
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Колективен договор на МВР/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/MINOR TYPO TOLERANCE/);
 });
+
+
+test("COP23 pre-litigation notices cannot be silently converted into lawsuits",()=>{
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/PRE-LITIGATION DOCUMENT DISCIPLINE/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/opomena pred tuzba \/ опомена пред тужба/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Do not relabel it as ТУЖБА/);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/do not invent a court or authority addressee/i);
+  assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/never invent a mandatory pre-suit notice, statutory article, response deadline, specialised court or legal effect/i);
+});
