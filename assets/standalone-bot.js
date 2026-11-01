@@ -161,31 +161,63 @@ function responsePulse() {
   article.scrollIntoView({block:'end'});
   return article;
 }
+function sourceDisplayLabel(row) {
+  const explicit = String(row?.title || row?.label || row?.name || row?.citation || '').trim();
+  if (explicit) return explicit;
+  const instrument = String(row?.instrumentTitle || row?.instrument || row?.sourceIdentity || '').trim();
+  const articleNumber = String(row?.articleNumber || '').trim();
+  if (instrument && articleNumber) return instrument + ' · член ' + articleNumber;
+  if (instrument) return instrument;
+  if (articleNumber) return 'Правен извор · член ' + articleNumber;
+  return 'Правен извор';
+}
+function sourceDisplayMeta(row) {
+  const parts = [];
+  if (row?.version) parts.push('верзија ' + String(row.version));
+  if (row?.humanReviewStatus) parts.push('член: ' + String(row.humanReviewStatus));
+  if (row?.versionHumanReviewStatus) parts.push('верзија: ' + String(row.versionHumanReviewStatus));
+  return parts.join(' · ');
+}
+function responseRuntimeLabel(data) {
+  if (String(data?.model || '').trim()) return String(data.model).trim();
+  if (data?.provider === 'canonical_corpus_no_model') return 'Governed corpus · без модел';
+  if (data?.displayMode === 'professional_exact_article_source_gap') return 'Source/Version Gate';
+  if (String(data?.provider || '').trim()) return String(data.provider).trim();
+  return 'AI Advokat';
+}
 function sources(article, data) {
   // Display only source rows returned by the governed backend. Browser-side guide
   // matches are routing hints, not proof that the final answer relied on a guide.
   const rows = ['sources','legalSources','caseLawSources','guideSources','publicationSources'].flatMap(k => Array.isArray(data[k]) ? data[k] : []);
   const details = document.createElement('details'); details.className = 'sources';
-  const summary = document.createElement('summary'); summary.textContent = 'Извори'; details.append(summary);
+  const summary = document.createElement('summary'); details.append(summary);
   const seen = new Set();
   for (const row of rows) {
-    const label = String(row.title || row.label || row.name || '').trim();
+    const label = sourceDisplayLabel(row);
+    const meta = sourceDisplayMeta(row);
     const raw = row.url || row.sourceUrl || row.source_url;
+    const articleNumber = String(row?.articleNumber || '').trim();
+    const version = String(row?.version || '').trim();
     let url = null; try { url = new URL(raw); } catch {}
+    const signature = [url?.href || '', articleNumber, label, version].join('|').toLowerCase();
+    if (seen.has(signature)) continue;
     if (url && url.protocol === 'https:') {
-      if (seen.has(url.href)) continue;
-      seen.add(url.href);
+      seen.add(signature);
       const a = document.createElement('a'); a.href = url.href; a.target = '_blank'; a.rel = 'noopener noreferrer';
-      a.textContent = label || url.hostname; details.append(a);
-    } else if (label && !seen.has('label:' + label)) {
-      // Sources without a public URL (e.g. the approved ZKP commentary) are shown as plain text, never dropped.
-      seen.add('label:' + label);
-      const span = document.createElement('span'); span.className = 'source-text'; span.textContent = label;
+      a.textContent = label || url.hostname;
+      if (meta) a.title = meta;
+      details.append(a);
+    } else if (label) {
+      seen.add(signature || ('label:' + label.toLowerCase()));
+      const span = document.createElement('span'); span.className = 'source-text'; span.textContent = label + (meta ? ' · ' + meta : '');
       span.style.cssText = 'display:block;padding:5px 0;color:var(--muted)';
       details.append(span);
     }
   }
-  if (seen.size) article.append(details);
+  if (seen.size) {
+    summary.textContent = (seen.size === 1 ? 'Извор' : 'Извори') + ' · ' + seen.size;
+    article.append(details);
+  }
 }
 async function request(path, {token=key, body, signal} = {}) {
   const response = await fetch(base + path, {
@@ -314,7 +346,7 @@ $('composer').onsubmit = async event => {
     const data = await request('/api/bot',{signal:controller.signal,body:{q:outboundQ,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     pulse.remove();
-    const article = message('assistant',data.answer || 'Нема одговор.',data.model || 'OpenAI'); sources(article,data);
+    const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
     history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
     status(privacyRedacted
       ? 'Одговорот е работен материјал. Личните идентификатори беа маскирани локално и не беа испратени.'
