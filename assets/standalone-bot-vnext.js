@@ -75,6 +75,11 @@ window.fetch = async function(input, init={}){
   body.history=thread.history.slice(-12).map(({role,text})=>({role,text}));
   body.sessionId=thread.sessionId;
   if(q){
+    // New user intent invalidates source/artifact state from the previous turn.
+    // This prevents stale legal-source cards from leaking into an unrelated query or error state.
+    thread.latestSources=[];
+    thread.model='';
+    workspace.lastArtifact=null;
     const last=thread.history.at(-1);
     if(!(last?.role==='user' && String(last.text||'').trim()===q)){
       thread.history.push({role:'user',text:q,time:now()});
@@ -279,9 +284,10 @@ function renameThread(id){
   const next=prompt('Име на разговорот:',t.title); if(next?.trim()){t.title=next.trim().slice(0,90);renderThreadList();}
 }
 function createNewThread(){
-  coreNewChat?.call($('newChat')); makeThread(); renderThreadList(); renderEvidence(); closeMobileSidebar(); $('question')?.focus();
+  coreNewChat?.call($('newChat')); workspace.lastArtifact=null; makeThread(); renderThreadList(); renderEvidence(); closeMobileSidebar(); $('question')?.focus();
 }
 function switchThread(id){
+  workspace.lastArtifact=null;
   const t=workspace.threads.find(x=>x.id===id); if(!t||id===workspace.activeId) return;
   coreNewChat?.call($('newChat')); workspace.activeId=id; renderTranscript(t); renderThreadList(); renderEvidence(); closeMobileSidebar();
 }
