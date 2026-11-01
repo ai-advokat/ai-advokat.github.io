@@ -4743,6 +4743,40 @@ function exactArticleNumberFromQuestion(q){
   return numbers.length===1 ? numbers[0] : null;
 }
 
+function canonicalArticleDisplayText(raw){
+  const source=String(raw||"").replace(/\r\n?/g,"\n").trim();
+  if(!source) return "";
+  // Some source PDFs append the heading of the following chapter/section to
+  // the final article chunk. Trim only a strong structural heading that occurs
+  // after at least one numbered paragraph; never rewrite statutory wording.
+  const heading=/\n\s*(?:[IVXLCDM]{1,8}\.?\s+)[А-ШЃЅЈЉЊЌЏA-Z][А-ШЃЅЈЉЊЌЏA-Z0-9 \-–—,:;()\/]{4,120}(?=\n|$)/u;
+  const match=heading.exec(source);
+  if(match && /(?:^|\n)\s*\(\d+\)/u.test(source.slice(0,match.index))){
+    return source.slice(0,match.index).trim();
+  }
+  return source;
+}
+
+function sourceFaithfulArticleOutline(text){
+  const source=String(text||"").trim();
+  if(!source) return [];
+  const matches=[...source.matchAll(/(?:^|\n)\s*\((\d+)\)\s*([\s\S]*?)(?=(?:\n\s*\(\d+\)\s*)|$)/gu)];
+  return matches.slice(0,12).map(match=>{
+    const body=String(match[2]||"").replace(/\s+/g," ").trim();
+    const safe=body.length>420 ? body.slice(0,417).trimEnd()+"…" : body;
+    return "• Став ("+match[1]+"): "+safe;
+  }).filter(line=>line.length>12);
+}
+
+function humanGateStatusLabel(raw){
+  const status=String(raw||"pending").trim().toLowerCase();
+  if(status==="approved") return "потврдено (approved)";
+  if(status==="reviewed") return "прегледано (reviewed)";
+  if(status==="rejected") return "одбиено (rejected)";
+  if(status==="pending") return "во очекување (pending)";
+  return String(raw||"pending");
+}
+
 export function professionalCanonicalArticleFallback({q,articleBundle,missionProfile,explicitWebRequested=false,attachmentCount=0,guideDocumentCount=0}={}){
   if(explicitWebRequested===true) return null;
   if(!["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(String(missionProfile||""))) return null;
@@ -4768,6 +4802,8 @@ export function professionalCanonicalArticleFallback({q,articleBundle,missionPro
   // presented as verbatim statutory text when the provider is unavailable.
   const rawText=String(article?.text||article?.article_text||"").trim();
   if(!rawText) return null;
+  const cleanedText=canonicalArticleDisplayText(rawText);
+  const outline=sourceFaithfulArticleOutline(cleanedText);
 
   const version=articleBundle?.version||{};
   const instrument=articleBundle?.instrument||{};
@@ -4776,9 +4812,9 @@ export function professionalCanonicalArticleFallback({q,articleBundle,missionPro
     && version?.humanReviewStatus==="approved"
     && article?.publicStatus==="current_verified"
     && article?.humanReviewStatus==="approved";
-  const displayText=rawText.length>16000
-    ? rawText.slice(0,16000).trim()+"\n\n[Приказот е скратен поради должина; отворете го наведениот официјален извор за целиот текст.]"
-    : rawText;
+  const displayText=cleanedText.length>16000
+    ? cleanedText.slice(0,16000).trim()+"\n\n[Приказот е скратен поради должина; отворете го наведениот официјален извор за целиот текст.]"
+    : cleanedText;
   const sourceIssue=article?.sourceIssueNumber||source?.sourceIssueNumber||null;
   const sourceDate=article?.sourceIssueDate||source?.sourceIssueDate||null;
   const sourceUrl=article?.sourceUrl||source?.url||null;
@@ -4799,22 +4835,23 @@ export function professionalCanonicalArticleFallback({q,articleBundle,missionPro
     "Член "+String(article.articleNumber||requested)+" од "+String(instrument.title||"релевантниот закон"),
     heading ? "Наслов: "+heading : null,
     "",
-    "Текст од governed article-level corpus:",
+    ...(outline.length ? ["Клучни точки од самиот текст (без дополнително AI толкување):",...outline,""] : []),
+    "Изворен текст:",
     displayText,
     "",
     "Извор и верзија:",
-    "• Production corpus snapshot: "+String(version?.label||"неутврдена верзија"),
-    sourceIssue ? "• Изворна линија/број: "+String(sourceIssue)+(sourceDate ? " · "+String(sourceDate) : "") : null,
-    sourceUrl ? "• Официјален/канонски извор во corpus: "+String(sourceUrl) : null,
-    "• Article Human Gate: "+String(article?.humanReviewStatus||"pending"),
-    "• Version Human Gate: "+String(version?.humanReviewStatus||"pending"),
-    ...(overlayLines.length ? ["","Посебни legal-status предупредувања:",...overlayLines] : []),
+    "• Верзија достапна во AI Advokat corpus: "+String(version?.label||"неутврдена верзија"),
+    sourceIssue ? "• Изворна ознака: "+String(sourceIssue)+(sourceDate ? " · "+String(sourceDate) : "") : null,
+    sourceUrl ? "• Официјален извор поврзан со оваа corpus-верзија: "+String(sourceUrl) : null,
+    "• Проверка на членот (Human Gate): "+humanGateStatusLabel(article?.humanReviewStatus),
+    "• Проверка на верзијата (Human Gate): "+humanGateStatusLabel(version?.humanReviewStatus),
+    ...(overlayLines.length ? ["","Посебни предупредувања за правниот статус:",...overlayLines] : []),
     "",
     currentVerified
-      ? "Статус: оваа article-level верзија е Human-Gate потврдена како тековна во AI Advokat. И понатаму е потребна професионална човечка проверка пред последично правно дејство."
-      : "Статус: изворниот текст е пронајден и може да се прикаже како source-backed истражувачки материјал, но AI Advokat нема Human-Gate потврда дека ова е тековно важечката верзија. Затоа не ја означувам како „важечки текст“. За професионално потпирање проверете го официјалниот извор, поновите измени и применливиот датум.",
+      ? "Статус: оваа верзија на членот е Human-Gate потврдена како тековна во AI Advokat. И понатаму е потребна професионална човечка проверка пред последично правно дејство."
+      : "Статус: текстот е пронајден во governed corpus и може да се користи како source-backed истражувачки материјал. AI Advokat сè уште нема Human-Gate потврда дека ова е тековно важечката верзија, па не го означува како „важечки текст“. За професионално потпирање проверете го официјалниот извор, поновите измени и применливиот датум.",
     "",
-    "Забелешка: AI provider-от не беше достапен за дополнителна синтеза, па наместо да измислувам толкување го прикажувам governed изворниот текст и неговиот точен статус."
+    "Забелешка: дополнителната AI синтеза моментално не беше достапна; затоа AI Advokat прикажува само проверлив изворен материјал, структурен преглед без ново толкување и неговиот точен статус."
   ].filter(v=>v!==null).join("\n");
 
   return Object.freeze({
