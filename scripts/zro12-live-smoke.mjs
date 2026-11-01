@@ -2,7 +2,7 @@ import fs from "node:fs";
 import assert from "node:assert/strict";
 
 const base=String(process.env.AI_ADVOCAT_BASE||"https://ai-advokat-github-io.aiadvokat16.workers.dev");
-const key=String(process.env.ROOT_SMOKE_KEY||"");
+const key=String(process.env.ROOT_SMOKE_KEY||process.env.R13_SMOKE_KEY||"");
 assert.ok(key,"ROOT_SMOKE_KEY missing");
 
 const q="Што уредува член 12 од ЗРО и кои услови ги предвидува? Не измислувај членови или содржина. Наведи го точниот извор и важечката верзија.";
