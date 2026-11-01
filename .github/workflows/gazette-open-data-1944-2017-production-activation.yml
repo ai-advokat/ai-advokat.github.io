@@ -121,7 +121,14 @@ jobs:
             touch /tmp/gazette-0048-was-pending
             echo "0048 is pending and explicitly quarantined from this activation."
           fi
-          if printf '%s\n' "$found" | grep -q '^0049_case_law_binding_extraction_audit[.]sql
+          if printf '%s\n' "$found" | grep -q '^0049_case_law_binding_extraction_audit[.]sql$'; then
+            touch /tmp/gazette-0049-was-pending
+            echo "0049 is pending and explicitly quarantined from this activation."
+          fi
+          if printf '%s\n' "$found" | grep -q '^0051_gazette_issue_contents_index[.]sql$'; then
+            touch /tmp/gazette-0051-was-pending
+            echo "0051 is pending and explicitly quarantined from metadata-only activation."
+          fi
           echo "GLOBAL PENDING MIGRATION GUARD: PASS"
 
       - name: Build Gazette-only Wrangler migration scope
