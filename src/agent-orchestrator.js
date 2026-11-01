@@ -758,6 +758,7 @@ export async function runOpenAIOrchestrator(env, {
     const transientSpecialistErrors=new Set([
       "specialist_network_error",
       "specialist_timeout_error",
+      "specialist_deadline_exhausted",
       "specialist_response_error",
       "specialist_incomplete",
       "specialist_incomplete_response",
