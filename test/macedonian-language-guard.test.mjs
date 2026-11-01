@@ -215,8 +215,8 @@ test("unambiguous production calques get deterministic cleanup before any AI rep
   assert.equal(check.ok,true,JSON.stringify({clean,check}));
 });
 
-test("language runtime is V14 editor-attempt canonical-clean fallback and source-profile anchored to Orthography 2017 second edition",()=>{
-  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V14_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK");
+test("language runtime is V15 deterministic formal-draft fallback and source-profile anchored to Orthography 2017 second edition",()=>{
+  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V15_DETERMINISTIC_FORMAL_DRAFT_FALLBACK");
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.year,2017);
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.edition,"второ издание");
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.legalAuthority,false);
@@ -270,11 +270,11 @@ test("single repairable contamination can be cleaned and then released",()=>{
   assert.equal(final.verdict,"RELEASE",JSON.stringify(final));
 });
 
-test("clean concise Macedonian is released by V14 editor-attempt canonical-clean fallback canonical gate",()=>{
+test("clean concise Macedonian is released by V15 deterministic formal-draft fallback canonical gate",()=>{
   const clean="Договорот за вработување ги уредува правата и обврските на работникот и работодавачот. За тековните законски услови треба да се провери важечкиот Закон за работните односи.";
   const verdict=macedonianReleaseVerdict(clean,{userText:"Што е договор за вработување?"});
   assert.equal(verdict.verdict,"RELEASE",JSON.stringify(verdict));
-  assert.equal(MACEDONIAN_RELEASE_GATE_VERSION,"FREE_MK_CANONICAL_RELEASE_V10_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK");
+  assert.equal(MACEDONIAN_RELEASE_GATE_VERSION,"FREE_MK_CANONICAL_RELEASE_V11_DETERMINISTIC_FORMAL_DRAFT_FALLBACK");
 });
 
 
@@ -355,7 +355,7 @@ test("Orthography 2017 system contract separates language authority from legal a
 });
 
 
-test("V14 editor-attempt canonical-clean fallback gate blocks residual neighbouring-language contamination after normalisation",()=>{
+test("V15 deterministic formal-draft fallback gate blocks residual neighbouring-language contamination after normalisation",()=>{
   const bad=macedonianDeliveryVerdict("Ова прашање е овде, но одговорот мора да биде на стандарден македонски.",{userText:"Те молам одговори ми на македонски."});
   assert.equal(bad.deliver,false,JSON.stringify(bad));
   assert.equal(bad.clean,false);
@@ -363,13 +363,13 @@ test("V14 editor-attempt canonical-clean fallback gate blocks residual neighbour
   assert.ok(bad.quality.reasons.includes("foreign_lexical_contamination"));
 });
 
-test("V14 editor-attempt canonical-clean fallback gate blocks malformed Macedonian generation such as vtorarni",()=>{
+test("V15 deterministic formal-draft fallback gate blocks malformed Macedonian generation such as vtorarni",()=>{
   const bad=macedonianDeliveryVerdict("Овие извори се вторарни и не се доволни.",{userText:"Те молам одговори ми на македонски."});
   assert.equal(bad.deliver,false);
   assert.ok(bad.quality.reasons.includes("malformed_macedonian_generation"));
 });
 
-test("V14 editor-attempt canonical-clean fallback gate still releases clean standard Macedonian",()=>{
+test("V15 deterministic formal-draft fallback gate still releases clean standard Macedonian",()=>{
   const good=macedonianDeliveryVerdict("Овие извори се секундарни и не можат да го заменат официјалниот правен извор.",{userText:"Те молам одговори ми на македонски."});
   assert.equal(good.deliver,true);
   assert.equal(good.clean,true);
@@ -391,14 +391,14 @@ test("live phrase директна примера is rejected and deterministica
 });
 
 
-test("V14 runtime contract explicitly separates language-editor authority from legal authority",()=>{
+test("V15 runtime contract explicitly separates language-editor authority from legal authority",()=>{
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/LANGUAGE FIREWALL/);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/LANGUAGE EDITOR BOUNDARY/);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/must not add, remove or change material facts/i);
 });
 
 
-test("V14 catches live Serbian phrase 'во склад со' and repairs it deterministically",()=>{
+test("V15 catches live Serbian phrase 'во склад со' and repairs it deterministically",()=>{
   const bad="Во склад со достапните извори, поднесокот треба да се провери.";
   const check=assessMacedonianOutput(bad,{userText:"Одговори на македонски."});
   assert.equal(check.ok,false,JSON.stringify(check));
@@ -408,7 +408,7 @@ test("V14 catches live Serbian phrase 'во склад со' and repairs it dete
   assert.doesNotMatch(clean,/во склад со/iu);
 });
 
-test("V14 blocks generated Bulgarian company forms but preserves an exact user-supplied foreign form",()=>{
+test("V15 blocks generated Bulgarian company forms but preserves an exact user-supplied foreign form",()=>{
   const generated='Подносител е „Торговска друштва ЕООД“.';
   const blocked=assessMacedonianOutput(generated,{userText:"Изработи пример со измислени податоци."});
   assert.equal(blocked.ok,false,JSON.stringify(blocked));
