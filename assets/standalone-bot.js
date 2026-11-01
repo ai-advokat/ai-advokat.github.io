@@ -1,6 +1,37 @@
-import { localGuideDocuments } from './bot-materials.mjs';
-import { detectConfidentialCasePrompt, redactConfidentialCasePrompt } from '../src/chat-privacy.js';
-import { readDeviceAccess, saveDeviceAccess, forgetDeviceAccess } from './bot-device-access.mjs';
+const dependencyResults = await Promise.allSettled([
+  import('./bot-materials.mjs'),
+  import('../src/chat-privacy.js'),
+  import('./bot-device-access.mjs'),
+]);
+const materialsModule = dependencyResults[0].status === 'fulfilled' ? dependencyResults[0].value : {};
+const privacyModule = dependencyResults[1].status === 'fulfilled' ? dependencyResults[1].value : {};
+const accessModule = dependencyResults[2].status === 'fulfilled' ? dependencyResults[2].value : {};
+const localGuideDocuments = typeof materialsModule.localGuideDocuments === 'function'
+  ? materialsModule.localGuideDocuments
+  : async () => [];
+const privacyRuntimeReady =
+  typeof privacyModule.detectConfidentialCasePrompt === 'function'
+  && typeof privacyModule.redactConfidentialCasePrompt === 'function';
+const detectConfidentialCasePrompt = privacyRuntimeReady
+  ? privacyModule.detectConfidentialCasePrompt
+  : () => ({confidential:true});
+const redactConfidentialCasePrompt = privacyRuntimeReady
+  ? privacyModule.redactConfidentialCasePrompt
+  : () => ({changed:false,safeToSend:false,text:''});
+const readDeviceAccess = typeof accessModule.readDeviceAccess === 'function'
+  ? accessModule.readDeviceAccess
+  : () => '';
+const saveDeviceAccess = typeof accessModule.saveDeviceAccess === 'function'
+  ? accessModule.saveDeviceAccess
+  : () => false;
+const forgetDeviceAccess = typeof accessModule.forgetDeviceAccess === 'function'
+  ? accessModule.forgetDeviceAccess
+  : () => {};
+window.AIAdvokatCoreDependencies = Object.freeze({
+  materials: dependencyResults[0].status,
+  privacy: dependencyResults[1].status,
+  access: dependencyResults[2].status,
+});
 // Accessing localStorage itself can throw when browser storage is disabled.
 let deviceStorage;
 try { deviceStorage = window.localStorage; } catch {}
@@ -194,6 +225,11 @@ $('composer').onsubmit = async event => {
     return;
   }
   if (q.length < 2) return;
+  if (!privacyRuntimeReady) {
+    status('Заштитниот privacy модул не се вчита. Ништо не е испратено. Освежете ја страницата и обидете се повторно.');
+    window.AIAdvokatFrontendGuard?.report?.('external','privacy-runtime',new Error('privacy_dependency_unavailable'));
+    return;
+  }
 
   let outboundQ=q, privacyRedacted=false;
   const privacy=detectConfidentialCasePrompt(q);
@@ -257,6 +293,9 @@ async function restoreAccess() {
 // Ensure a fresh device can type and submit a question even before access is restored.
 // If no key exists, submit opens the governed professional-access dialog instead of appearing inert.
 busy(false);
+window.AIAdvokatCoreReady = true;
+document.documentElement.dataset.botCoreRuntime = 'ready';
+window.dispatchEvent(new CustomEvent('aiadvokat:core-ready'));
 restoreAccess();
 async function exportLatestAssistant(format) {
   const latest=[...history].reverse().find(item=>item.role==='assistant' && String(item.text||'').trim());
