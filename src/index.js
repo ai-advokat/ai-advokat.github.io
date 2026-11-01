@@ -4382,17 +4382,96 @@ function bureauEchrDiscoveryScore(title,terms){
   return score;
 }
 
+export function bureauEchrBroadIndexRequest(q){
+  const n=normalizeText(q);
+  if(!bureauEchrQueryLikely(n)) return false;
+  const broad=/(?:^|\s)(?:сите|целосен|целосна|целосно|комплетен|комплетна|комплетно|список|листа|all|complete)(?:\s|$)/iu.test(n)
+    || /(?:дај|дајте|достави|доставете).*?(?:тие|сите).*?(?:податоц|пресуд|одлук|предмет|случа)/iu.test(n);
+  const object=/(?:пресуд|одлук|предмет|случа|податоц|список|лист)/iu.test(n);
+  return broad && object;
+}
+
+export function bureauEchrJudgmentsOnlyRequest(q){
+  const n=normalizeText(q);
+  return /(?:пресуд|judgment)/iu.test(n) && !/(?:одлук|decision)/iu.test(n);
+}
+
+export function bureauEchrOutcomeClaimRequested(q){
+  const n=normalizeText(q);
+  return /(?:добил|добиле|добила|побед|успеш|won|win|violation|повреда)/iu.test(n);
+}
+
+async function loadBureauEchrIndexRecords(){
+  const responses=await Promise.all(BUREAU_ECHR_INDEX_URLS.map(url=>fetch(url,{headers:{"accept":"application/x-ndjson,text/plain"}})));
+  if(responses.some(r=>!r.ok)) return {ok:false,records:[],state:"official_index_unavailable"};
+  const texts=await Promise.all(responses.map(r=>r.text()));
+  const records=texts.flatMap(text=>text.split(/\r?\n/).filter(Boolean).map(line=>{
+    try{return JSON.parse(line);}catch{return null;}
+  }).filter(Boolean));
+  return {ok:true,records,state:"loaded"};
+}
+
+function bureauEchrPeriodSortValue(value){
+  const match=String(value||"").match(/(19|20)\d{2}/);
+  return match ? Number(match[0]) : 0;
+}
+
+export function formatBureauEchrIndexAnswer(records,{judgmentsOnly=false,outcomeClaimRequested=false}={}){
+  const rows=Array.isArray(records)?records:[];
+  const judgmentEntries=rows.filter(r=>r.record_kind==="judgment_listing");
+  const decisionEntries=rows.filter(r=>r.record_kind==="decision_listing");
+  const selected=judgmentsOnly ? judgmentEntries : rows;
+  const capturedOn=selected.map(r=>String(r.captured_on||"")).filter(Boolean).sort().at(-1)||"непознат";
+  const grouped=new Map();
+  for(const row of selected){
+    const period=String(row.listing_period||"без година");
+    if(!grouped.has(period)) grouped.set(period,[]);
+    grouped.get(period).push(row);
+  }
+  const periods=[...grouped.keys()].sort((a,b)=>bureauEchrPeriodSortValue(b)-bureauEchrPeriodSortValue(a) || String(b).localeCompare(String(a)));
+  const lines=[
+    judgmentsOnly
+      ? "Официјален индекс на пресуди на ЕСЧП што се однесуваат на Северна Македонија"
+      : "Официјален индекс на пресуди и одлуки на ЕСЧП што се однесуваат на Северна Македонија",
+    "",
+    "Изворна основа: официјалниот домашен индекс на Бирото за застапување на Република Северна Македонија пред ЕСЧП, snapshot во AI Advokat до "+capturedOn+".",
+    "Во snapshot-от има "+rows.length+" индексни записи: "+judgmentEntries.length+" записи означени како пресуди и "+decisionEntries.length+" записи означени како одлуки.",
+    "Важно: индексниот запис е средство за пронаоѓање. Може да содржи повеќе јазични верзии на ист предмет и сам по себе не докажува државјанство на апликантот, конечност или дека апликантот „го добил“ предметот.",
+    outcomeClaimRequested
+      ? "Бидејќи побаравте предмети што апликантите ги „добиле“, AI Advokat не ги означува сите наведени пресуди како победи. За таква квалификација мора да се провери HUDOC operative part за конкретниот предмет (violation / no violation / friendly settlement / strike-out)."
+      : null,
+    "",
+    judgmentsOnly ? "Сите записи означени како ПРЕСУДИ во овој snapshot:" : "Сите записи во овој snapshot:",
+    ""
+  ].filter(Boolean);
+
+  for(const period of periods){
+    lines.push("### "+period);
+    for(const row of grouped.get(period)){
+      const kind=row.record_kind==="decision_listing" ? "ОДЛУКА" : "ПРЕСУДА";
+      lines.push("• "+String(row.title||"ЕСЧП предмет")+(judgmentsOnly ? "" : " ["+kind+"]"));
+    }
+    lines.push("");
+  }
+
+  lines.push(
+    "Извори за проверка:",
+    "• Биро за застапување пред ЕСЧП: https://biroescp.gov.mk/пресуди-и-одлуки-на-рм/",
+    "• HUDOC: https://hudoc.echr.coe.int/",
+    "",
+    "Human Gate: за application number, точен датум, конечност, државјанство и исходот „повреда/нема повреда“ отвори го конкретниот HUDOC документ. Индексот не се користи како замена за самата пресуда."
+  );
+  return lines.join("\n");
+}
+
 export async function bureauEchrDiscoveryContext(q,{limit=6}={}){
   const empty={context:[],sources:[],records:[],state:"not_applicable",recordCount:301};
   if(!bureauEchrQueryLikely(q)) return empty;
   const terms=caseLawQueryTerms(q);
   try{
-    const responses=await Promise.all(BUREAU_ECHR_INDEX_URLS.map(url=>fetch(url,{headers:{"accept":"application/x-ndjson,text/plain"}})));
-    if(responses.some(r=>!r.ok)) return {...empty,state:"official_index_unavailable"};
-    const texts=await Promise.all(responses.map(r=>r.text()));
-    const records=texts.flatMap(text=>text.split(/\r?\n/).filter(Boolean).map(line=>{
-      try{return JSON.parse(line);}catch{return null;}
-    }).filter(Boolean));
+    const loaded=await loadBureauEchrIndexRecords();
+    if(!loaded.ok) return {...empty,state:loaded.state};
+    const records=loaded.records;
     const ranked=records.map(record=>({...record,_score:bureauEchrDiscoveryScore(record.title,terms)}))
       .filter(record=>record._score>0)
       .sort((a,b)=>b._score-a._score || String(b.listing_period||"").localeCompare(String(a.listing_period||"")))
@@ -5735,6 +5814,114 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       },
       humanGate:"Issue metadata and contents-register metadata only. За текстот, правното дејство и тековната важност на конкретен акт проверете го официјалниот full-text и применливата верзија."
     });
+  }
+
+  // Canonical ECHR/Bureau broad-list fast lane.
+  // Broad requests such as "сите пресуди ... во Стразбур" and contextual
+  // follow-ups such as "токму на тие мислев, дајте ми ги тие податоци" are
+  // answered deterministically from the official domestic ECHR discovery index.
+  // No model is allowed to replace or summarise the index as if it were complete
+  // HUDOC merits data.
+  if(bureauEchrBroadIndexRequest(routingQuery)){
+    try{
+      const loaded=await loadBureauEchrIndexRecords();
+      if(!loaded.ok){
+        return json(request,{
+          ok:false,
+          error:"echr_bureau_index_temporarily_unavailable",
+          message:"Официјалниот македонски ECHR/Bureau индекс е привремено недостапен. AI не користеше секундарни трудови како замена.",
+          providerCalled:false,
+          quotaConsumed:false
+        },503);
+      }
+      const judgmentsOnly=bureauEchrJudgmentsOnlyRequest(routingQuery);
+      const outcomeClaimRequested=bureauEchrOutcomeClaimRequested(routingQuery);
+      const selected=loaded.records.filter(row=>!judgmentsOnly || row.record_kind==="judgment_listing");
+      const answer=formatBureauEchrIndexAnswer(loaded.records,{judgmentsOnly,outcomeClaimRequested});
+      const capturedOn=selected.map(r=>String(r.captured_on||"")).filter(Boolean).sort().at(-1)||null;
+      const bureauUrl="https://biroescp.gov.mk/пресуди-и-одлуки-на-рм/";
+      const hudocUrl="https://hudoc.echr.coe.int/";
+      return json(request,{
+        ok:true,
+        answer,
+        provider:"canonical_corpus_no_model",
+        model:null,
+        mode:"passive_corpus",
+        displayMode:judgmentsOnly?"canonical_echr_bureau_judgment_index":"canonical_echr_bureau_index",
+        sourceMode:"official_domestic_echr_index_no_model",
+        webSearchUsed:false,
+        echrBureauIndexStatus:{
+          state:"matched",
+          snapshotCapturedOn:capturedOn,
+          totalIndexRecords:loaded.records.length,
+          selectedRecords:selected.length,
+          judgmentsOnly,
+          outcomeQualification:"HUDOC_BINDING_REQUIRED"
+        },
+        echrBureauIndex:selected.map(row=>({
+          title:String(row.title||""),
+          listingPeriod:String(row.listing_period||""),
+          recordKind:String(row.record_kind||""),
+          sourceUrl:bureauUrl,
+          capturedOn:String(row.captured_on||""),
+          hudocBindingRequired:true,
+          discoveryOnly:true
+        })),
+        sources:[
+          {
+            title:"Биро за застапување на Република Северна Македонија пред ЕСЧП · Пресуди и одлуки",
+            url:bureauUrl,
+            category:"official_domestic_echr_reference",
+            jurisdiction:"ECHR",
+            authorityRole:"official_domestic_discovery_index"
+          },
+          {
+            title:"European Court of Human Rights · HUDOC",
+            url:hudocUrl,
+            category:"international_court",
+            jurisdiction:"ECHR",
+            authorityRole:"primary_official_case_document_database"
+          }
+        ],
+        legalSources:[],
+        caseLawSources:[
+          {
+            title:"Биро за застапување пред ЕСЧП · официјален индекс",
+            url:bureauUrl,
+            jurisdiction:"ECHR",
+            authorityClass:"official_domestic_echr_reference",
+            discoveryOnly:true,
+            hudocBindingRequired:true
+          },
+          {
+            title:"HUDOC · European Court of Human Rights",
+            url:hudocUrl,
+            jurisdiction:"ECHR",
+            authorityClass:"international_court_official",
+            discoveryOnly:false,
+            hudocBindingRequired:false
+          }
+        ],
+        guideSources:[],
+        publicationSources:[],
+        performance:{
+          providerCalls:0,
+          languageRepairProviderCalls:0,
+          serverLatencyMs:0,
+          fastPromptUsed:true
+        },
+        humanGate:"Индексот е discovery layer. За да се каже дека апликантот „добил“, дека имало повреда, или дека е македонски државјанин, мора да се провери конкретниот HUDOC документ."
+      });
+    }catch(error){
+      console.error("echr_bureau_direct_index_failed",String(error?.message||error).slice(0,180));
+      return json(request,{
+        ok:false,
+        error:"echr_bureau_index_temporarily_unavailable",
+        message:"Официјалниот ECHR/Bureau индекс не можеше безбедно да се прочита. AI не користеше секундарен материјал како замена.",
+        providerCalled:false,
+        quotaConsumed:false
+      },503);
+    }
   }
 
   const [guideContext,articleBundle,caseLawBundle,gazetteBundle,bureauEchrBundle,scholarlyBundle,authorialBundle]=await Promise.all([

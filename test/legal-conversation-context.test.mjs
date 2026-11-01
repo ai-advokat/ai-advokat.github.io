@@ -25,3 +25,17 @@ test("ordinary standalone query is not expanded with old history",()=>{
   const q="Кој е главен град на Франција?";
   assert.equal(buildLegalRoutingQuery(q,[{role:"user",text:"стар правен разговор"}]),q);
 });
+
+
+test("plural demonstrative follow-up preserves prior ECHR request context",()=>{
+  const history=[
+    {role:"user",text:"Сакам да ги добијам сите пресуди на ЕСЧП против Република Македонија."},
+    {role:"assistant",text:"Достапен е официјален индекс на Бирото за застапување пред ЕСЧП."}
+  ];
+  const q="Токму на тие мислев, ве молам дајте ми ги тие податоци.";
+  assert.equal(isContextDependentLegalFollowUp(q),true);
+  const routed=buildLegalRoutingQuery(q,history);
+  assert.match(routed,/ЕСЧП/);
+  assert.match(routed,/Република Македонија/);
+  assert.match(routed,/CURRENT FOLLOW-UP/);
+});

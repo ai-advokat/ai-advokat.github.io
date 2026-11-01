@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import {bureauEchrBroadIndexRequest,bureauEchrJudgmentsOnlyRequest,bureauEchrOutcomeClaimRequested,formatBureauEchrIndexAnswer} from "../src/index.js";
 
 const files=[
   "corpus/echr/north-macedonia-bureau-index-2026-2018.ndjson",
@@ -105,4 +106,36 @@ test("Bureau content-aware matcher keeps PDF text separate from the link seed",(
   assert.match(script,/first\.score<0\.55 \|\| margin<0\.05/);
   assert.match(script,/independent_link_filename_and_pdf_title_containment/);
   assert.doesNotMatch(script,/const seed=\[link\.anchorText,[\s\S]{0,160}firstPageText/);
+});
+
+
+test("broad Strasbourg request activates deterministic Bureau index lane",()=>{
+  const q="Сакам да ми ги дадеш сите судски пресуди на македонски граѓани кои ги добиле против Република Македонија во Стразбур.";
+  assert.equal(bureauEchrBroadIndexRequest(q),true);
+  assert.equal(bureauEchrJudgmentsOnlyRequest(q),true);
+  assert.equal(bureauEchrOutcomeClaimRequested(q),true);
+  assert.equal(bureauEchrBroadIndexRequest("Објасни што е ЕСЧП."),false);
+});
+
+test("deterministic ECHR index answer never equates a Bureau listing with a proven win",()=>{
+  const rows=[
+    {record_kind:"judgment_listing",title:"ТЕСТ против Северна Македонија",listing_period:"2026",captured_on:"2026-10-11"},
+    {record_kind:"decision_listing",title:"ТЕСТ 2 против Северна Македонија",listing_period:"2025",captured_on:"2026-10-11"}
+  ];
+  const answer=formatBureauEchrIndexAnswer(rows,{judgmentsOnly:true,outcomeClaimRequested:true});
+  assert.match(answer,/1 записи означени како пресуди/);
+  assert.match(answer,/не докажува државјанство/);
+  assert.match(answer,/не ги означува сите наведени пресуди како победи/);
+  assert.match(answer,/HUDOC operative part/);
+  assert.match(answer,/ТЕСТ против Северна Македонија/);
+  assert.doesNotMatch(answer,/ТЕСТ 2 против Северна Македонија/);
+});
+
+test("chat handler exposes a no-model ECHR broad-index response contract",()=>{
+  const worker=fs.readFileSync("src/index.js","utf8");
+  assert.match(worker,/canonical_echr_bureau_judgment_index/);
+  assert.match(worker,/official_domestic_echr_index_no_model/);
+  assert.match(worker,/provider:"canonical_corpus_no_model"/);
+  assert.match(worker,/quotaConsumed:false/);
+  assert.match(worker,/HUDOC_BINDING_REQUIRED/);
 });
