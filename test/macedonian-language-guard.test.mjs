@@ -391,7 +391,7 @@ test("live phrase директна примера is rejected and deterministica
 });
 
 
-test("V12 runtime contract explicitly separates language-editor authority from legal authority",()=>{
+test("V13 runtime contract explicitly separates language-editor authority from legal authority",()=>{
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/LANGUAGE FIREWALL/);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/LANGUAGE EDITOR BOUNDARY/);
   assert.match(MACEDONIAN_2017_SYSTEM_RULES,/must not add, remove or change material facts/i);
