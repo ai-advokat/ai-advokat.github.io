@@ -74,9 +74,9 @@ jobs:
           const EXPECTED_EDITOR_MODEL="@cf/zai-org/glm-4.7-flash";
           const EXPECTED_PAID_MODEL="gpt-6.1-sol";
           const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
-          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V14_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
+          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V15_DETERMINISTIC_FORMAL_DRAFT_FALLBACK";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
-          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V12_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
+          const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V13_DETERMINISTIC_FORMAL_DRAFT_FALLBACK";
           const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
           const EXPECTED_FINAL_OUTPUT_GATE="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GATE_V1";
           const EXPECTED_FREE_PROVIDER_CONTRACT="WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT";
@@ -94,7 +94,7 @@ jobs:
                   && data?.ok===true
                   && caps.centralOperatingPrompt===EXPECTED_PROMPT
                   && caps.macedonianLanguageGuard===EXPECTED_LANGUAGE
-                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V10_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK"
+                  && caps.macedonianReleaseGate==="FREE_MK_CANONICAL_RELEASE_V11_DETERMINISTIC_FORMAL_DRAFT_FALLBACK"
                   && caps.canonicalProvenanceGate==="AI_ADVOCAT_CANONICAL_PROVENANCE_GATE_V3"
                   && caps.canonicalRootReleaseContract==="AI_ADVOCAT_CANONICAL_ROOT_RELEASE_CONTRACT_V1"
                   && caps.canonicalMetadataStandard===EXPECTED_METADATA
@@ -300,6 +300,12 @@ jobs:
               }
               if(!/тужб/iu.test(answer)){
                 throw new Error("draft did not produce the requested lawsuit text: "+answer.slice(0,1200));
+              }
+              if(/суд\s+за\s+кривич|кривичен\s+суд|државн(?:иот|и)?\s+обвинител|јавн(?:иот|и)?\s+обвинител|\bЕООД\b/iu.test(answer)){
+                throw new Error("draft invented an unsafe court/prosecutorial/company-form detail: "+answer.slice(0,1200));
+              }
+              if(data.provider==="workers_ai_free" && data?.performance?.formalDraftAuthoritySafe!==true){
+                throw new Error("draft authority gate not satisfied: "+JSON.stringify(data.performance));
               }
             }
             console.log(name+": PASS · "+answer.replace(/\s+/g," ").slice(0,120));
