@@ -36,13 +36,14 @@ jobs:
           node --check assets/standalone-bot-vnext.js
           node --check assets/frontend-runtime-guard.js
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' index.html
-          grep -q 'ai-advokat-chat.js?v=20261101-root-r9' index.html
+          grep -q 'ai-advokat-chat.js?v=20261101-root-r10-parity' index.html
+          grep -q 'ai-advokat-chat.css?v=20261101-root-parity-r10' index.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' bot/index.html
-          grep -q 'standalone-bot.js?v=20261101-core-r12' bot/index.html
-          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' bot/index.html
+          grep -q 'standalone-bot.js?v=20261101-core-r13' bot/index.html
+          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r11' bot/index.html
           echo "RELEASE SOURCE CONTRACT: PASS"
 
-      - name: Verify GitHub Pages serves root-r9 bundles
+      - name: Verify GitHub Pages serves root-r10-parity bundles
         shell: bash
         run: |
           set -euo pipefail
@@ -51,17 +52,18 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-home.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/bot/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-bot.html || true
             if grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-home.html 2>/dev/null \
-              && grep -q 'ai-advokat-chat.js?v=20261101-root-r9' /tmp/pages-home.html 2>/dev/null \
+              && grep -q 'ai-advokat-chat.js?v=20261101-root-r10-parity' /tmp/pages-home.html 2>/dev/null \
+              && grep -q 'ai-advokat-chat.css?v=20261101-root-parity-r10' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-bot.html 2>/dev/null \
-              && grep -q 'standalone-bot.js?v=20261101-core-r12' /tmp/pages-bot.html 2>/dev/null \
-              && grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/pages-bot.html 2>/dev/null; then
+              && grep -q 'standalone-bot.js?v=20261101-core-r13' /tmp/pages-bot.html 2>/dev/null \
+              && grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r11' /tmp/pages-bot.html 2>/dev/null; then
               ok=1
               break
             fi
             sleep 3
           done
           test "$ok" = "1"
-          echo "GITHUB PAGES ROOT-R9 ASSETS: PASS"
+          echo "GITHUB PAGES ROOT-R10-PARITY ASSETS: PASS"
 
       - name: Verify Worker static assets and runtime health
         shell: bash
@@ -71,10 +73,11 @@ jobs:
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/" -o /tmp/worker-home.html
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/bot/" -o /tmp/worker-bot.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-home.html
-          grep -q 'ai-advokat-chat.js?v=20261101-root-r9' /tmp/worker-home.html
+          grep -q 'ai-advokat-chat.js?v=20261101-root-r10-parity' /tmp/worker-home.html
+          grep -q 'ai-advokat-chat.css?v=20261101-root-parity-r10' /tmp/worker-home.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-bot.html
-          grep -q 'standalone-bot.js?v=20261101-core-r12' /tmp/worker-bot.html
-          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/worker-bot.html
+          grep -q 'standalone-bot.js?v=20261101-core-r13' /tmp/worker-bot.html
+          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r11' /tmp/worker-bot.html
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/assets/chat-privacy-browser.js?v=20261101-privacy-r12" -o /tmp/privacy-primary.js
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/src/chat-privacy.js?v=20261101-privacy-compat-r1" -o /tmp/privacy-compat.js
           grep -q 'detectConfidentialCasePrompt' /tmp/privacy-primary.js
@@ -95,7 +98,7 @@ jobs:
           if(o.runtime?.lioeRuntimeGovernance!=="enabled") throw new Error("lioe_governance_not_enabled");
           if(o.runtime?.lioePostflight!=="enabled") throw new Error("lioe_postflight_not_enabled");
           if(o.runtime?.lioeSpecialistExecution!=="enabled") throw new Error("lioe_specialists_not_enabled");
-          console.log("WORKER ROOT-R9 + HEALTH + ORCHESTRATOR: PASS");
+          console.log("WORKER ROOT-R10-PARITY + HEALTH + ORCHESTRATOR: PASS");
           NODE
 
       - name: Verify browser CORS and main AI chat live response
@@ -145,8 +148,8 @@ jobs:
           cat > /tmp/root-live-smoke-summary.txt <<EOF
           AI ADVOKAT ROOT RELIABILITY LIVE SMOKE
           Commit: $GITHUB_SHA
-          GitHub Pages root-r9 assets: PASS
-          Worker root-r9 assets: PASS
+          GitHub Pages root-r10-parity assets: PASS
+          Worker root-r10-parity assets: PASS
           Production health/database: PASS
           Orchestrator/OpenAI/LIOE readiness: PASS
           Browser CORS: PASS
