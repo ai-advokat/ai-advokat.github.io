@@ -9,6 +9,8 @@ on:
       - "assets/standalone-bot.js"
       - "assets/chat-privacy-browser.js"
       - "src/chat-privacy.js"
+      - "src/index.js"
+      - "scripts/zro12-live-smoke.mjs"
       - ".assetsignore"
       - "_headers"
       - ".github/workflows/sync-pages-runtime.yml"
