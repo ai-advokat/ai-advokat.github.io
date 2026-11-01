@@ -230,7 +230,7 @@ test('core composer boot is independent and privacy dependency failure is fail-c
   const html=fs.readFileSync('bot/index.html','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
-  const corePos=html.indexOf('standalone-bot.js?v=20261101-core-r10');
+  const corePos=html.indexOf('standalone-bot.js?v=20261101-core-r12');
   const vnextPos=html.indexOf('standalone-bot-vnext.js?v=20261101-vnext-r10');
   assert.ok(corePos>=0 && vnextPos>corePos);
   assert.doesNotMatch(vnext,/await import.*standalone-bot/);
