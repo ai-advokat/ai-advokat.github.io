@@ -1,0 +1,16 @@
+# Critical AI Advokat runtime assets must never be served stale.
+# The bot is small enough that correctness is more important than long-lived browser caching.
+/bot/*
+  Cache-Control: no-store, max-age=0
+
+/assets/standalone-bot*.js
+  Cache-Control: no-store, max-age=0
+
+/assets/frontend-runtime-guard.js
+  Cache-Control: no-store, max-age=0
+
+/assets/chat-privacy-browser.js
+  Cache-Control: no-store, max-age=0
+
+/src/chat-privacy.js
+  Cache-Control: no-store, max-age=0
