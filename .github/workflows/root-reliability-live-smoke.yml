@@ -5,6 +5,13 @@ on:
     branches: ["main"]
     paths:
       - ".github/workflows/root-reliability-live-smoke.yml"
+      - "bot/index.html"
+      - "assets/standalone-bot.js"
+      - "assets/chat-privacy-browser.js"
+      - "src/chat-privacy.js"
+      - ".assetsignore"
+      - "_headers"
+      - ".github/workflows/sync-pages-runtime.yml"
 
 permissions:
   contents: read
@@ -31,7 +38,7 @@ jobs:
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' index.html
           grep -q 'ai-advokat-chat.js?v=20261101-root-r9' index.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' bot/index.html
-          grep -q 'standalone-bot.js?v=20261101-core-r10' bot/index.html
+          grep -q 'standalone-bot.js?v=20261101-core-r12' bot/index.html
           grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' bot/index.html
           echo "RELEASE SOURCE CONTRACT: PASS"
 
@@ -46,7 +53,7 @@ jobs:
             if grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'ai-advokat-chat.js?v=20261101-root-r9' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-bot.html 2>/dev/null \
-              && grep -q 'standalone-bot.js?v=20261101-core-r10' /tmp/pages-bot.html 2>/dev/null \
+              && grep -q 'standalone-bot.js?v=20261101-core-r12' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/pages-bot.html 2>/dev/null; then
               ok=1
               break
@@ -66,8 +73,15 @@ jobs:
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-home.html
           grep -q 'ai-advokat-chat.js?v=20261101-root-r9' /tmp/worker-home.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-bot.html
-          grep -q 'standalone-bot.js?v=20261101-core-r10' /tmp/worker-bot.html
+          grep -q 'standalone-bot.js?v=20261101-core-r12' /tmp/worker-bot.html
           grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/worker-bot.html
+          curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/assets/chat-privacy-browser.js?v=20261101-privacy-r12" -o /tmp/privacy-primary.js
+          curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/src/chat-privacy.js?v=20261101-privacy-compat-r1" -o /tmp/privacy-compat.js
+          grep -q 'detectConfidentialCasePrompt' /tmp/privacy-primary.js
+          grep -q 'redactConfidentialCasePrompt' /tmp/privacy-primary.js
+          grep -q 'detectConfidentialCasePrompt' /tmp/privacy-compat.js
+          grep -q 'redactConfidentialCasePrompt' /tmp/privacy-compat.js
+          echo "PRIVACY RUNTIME STATIC ASSETS: PASS"
 
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/api/health" -o /tmp/root-health.json
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/api/orchestrator" -o /tmp/root-orchestrator.json

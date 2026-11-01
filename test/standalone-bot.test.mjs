@@ -133,7 +133,7 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
   assert.match(html,/standalone-bot-vnext\.js\?v=20261101-vnext-r10/);
   assert.match(html,/standalone-bot-vnext\.css\?v=20261101-ui-r5/);
-  assert.match(html,/standalone-bot\.js\?v=20261101-core-r10/);
+  assert.match(html,/standalone-bot\.js\?v=20261101-core-r12/);
   assert.doesNotMatch(vnext,/standalone-bot\.js/);
   assert.match(core,/function ensureLegalPulseStyles\(\)/);
   assert.match(core,/id = 'legalPulseRuntimeStyle'/);
@@ -230,13 +230,15 @@ test('core composer boot is independent and privacy dependency failure is fail-c
   const html=fs.readFileSync('bot/index.html','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
-  const corePos=html.indexOf('standalone-bot.js?v=20261101-core-r10');
+  const corePos=html.indexOf('standalone-bot.js?v=20261101-core-r12');
   const vnextPos=html.indexOf('standalone-bot-vnext.js?v=20261101-vnext-r10');
   assert.ok(corePos>=0 && vnextPos>corePos);
   assert.doesNotMatch(vnext,/await import.*standalone-bot/);
   assert.match(core,/Promise\.allSettled/);
   assert.match(core,/privacyRuntimeReady/);
-  assert.ok(core.includes("import('./chat-privacy-browser.js?v=20261101-privacy-r11')"));
+  assert.match(core,/async function loadPrivacyRuntime/);
+  assert.ok(core.includes("import('./chat-privacy-browser.js?v=20261101-privacy-r12')"));
+  assert.ok(core.includes("import('/src/chat-privacy.js?v=20261101-privacy-compat-r1')"));
   assert.ok(!core.includes("../src/chat-privacy.js"));
   assert.match(core,/Ништо не е испратено/);
   assert.match(core,/window\.AIAdvokatCoreReady = true/);

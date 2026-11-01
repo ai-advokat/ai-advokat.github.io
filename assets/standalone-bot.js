@@ -7,9 +7,49 @@ let saveDeviceAccess = () => false;
 let forgetDeviceAccess = () => {};
 window.AIAdvokatCoreDependencies = Object.freeze({materials:'loading',privacy:'loading',access:'loading'});
 
+function privacyRuntimeSelfTest(mod){
+  if(
+    typeof mod?.detectConfidentialCasePrompt !== 'function'
+    || typeof mod?.redactConfidentialCasePrompt !== 'function'
+  ) return false;
+  try {
+    const publicProbe=mod.detectConfidentialCasePrompt('Општо правно прашање за работен однос.');
+    const privateProbe=mod.detectConfidentialCasePrompt('ЕМБГ 0101999450012');
+    const redactProbe=mod.redactConfidentialCasePrompt('ЕМБГ 0101999450012');
+    return publicProbe?.confidential===false
+      && privateProbe?.confidential===true
+      && redactProbe?.safeToSend===true
+      && !String(redactProbe?.text||'').includes('0101999450012');
+  } catch {
+    return false;
+  }
+}
+
+async function loadPrivacyRuntime(){
+  try {
+    const primary=await import('./chat-privacy-browser.js?v=20261101-privacy-r12');
+    if(!privacyRuntimeSelfTest(primary)) throw new Error('primary_privacy_runtime_self_test_failed');
+    window.AIAdvokatPrivacyRuntimeSource='primary';
+    return primary;
+  } catch (primaryError) {
+    try {
+      const legacy = await import('/src/chat-privacy.js?v=20261101-privacy-compat-r1');
+      if(!privacyRuntimeSelfTest(legacy)) throw new Error('legacy_privacy_runtime_self_test_failed');
+      window.AIAdvokatPrivacyRuntimeSource='legacy-compat';
+      try { console.warn('ai_advokat_privacy_runtime_fallback','legacy_bridge_used'); } catch {}
+      return legacy;
+    } catch (legacyError) {
+      window.AIAdvokatPrivacyRuntimeSource='unavailable';
+      const error = new Error('privacy_runtime_unavailable');
+      error.cause = { primaryError, legacyError };
+      throw error;
+    }
+  }
+}
+
 const dependenciesReady = Promise.allSettled([
   import('./bot-materials.mjs'),
-  import('./chat-privacy-browser.js?v=20261101-privacy-r11'),
+  loadPrivacyRuntime(),
   import('./bot-device-access.mjs'),
 ]).then(results => {
   const materialsModule = results[0].status === 'fulfilled' ? results[0].value : {};
