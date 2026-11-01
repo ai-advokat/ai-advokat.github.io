@@ -129,12 +129,38 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const html=fs.readFileSync('bot/index.html','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261031-runtime-r3/);
-  assert.match(html,/standalone-bot-vnext\.css\?v=20261031-runtime-r3/);
-  assert.match(vnext,/import\('\.\/standalone-bot\.js\?v=20261031-runtime-r3'\)/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-ui-r5/);
+  assert.match(html,/standalone-bot-vnext\.css\?v=20261101-ui-r5/);
+  assert.match(vnext,/import\('\.\/standalone-bot\.js\?v=20261101-ui-r5'\)/);
   assert.match(core,/function ensureLegalPulseStyles\(\)/);
   assert.match(core,/id = 'legalPulseRuntimeStyle'/);
   assert.match(core,/const pulse = responsePulse\(\)/);
+});
+
+
+test('external bot UI parity keeps compact dual-section loader and top message actions',()=>{
+  const html=fs.readFileSync('bot/index.html','utf8');
+  const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  const css=fs.readFileSync('assets/standalone-bot-vnext.css','utf8');
+  const core=fs.readFileSync('assets/standalone-bot.js','utf8');
+
+  assert.match(core,/legal-pulse-mark[^\n]*width:36px;height:28px/);
+  assert.match(core,/legal-pulse-sec[^\n]*font-size:20px/);
+  assert.match(vnext,/article\.classList\.add\('has-vnext-actions'\)/);
+  assert.match(vnext,/article\.insertBefore\(actions,body\)/);
+  assert.match(vnext,/⧉ Копирај/);
+  assert.match(vnext,/✎ Уреди/);
+  assert.match(vnext,/↺ Повтори/);
+  assert.match(vnext,/▤ Извори/);
+  assert.match(vnext,/✓ Проверка/);
+  assert.match(vnext,/▧ DOCX/);
+  assert.match(vnext,/▧ PDF/);
+  assert.match(css,/message action bar: visible above each message bubble/i);
+  assert.match(css,/message\.user\.has-vnext-actions>\.text/);
+  assert.match(html,/⇧ Вчитај водичи/);
+  assert.match(html,/→ Продолжи/);
+  assert.match(vnext,/vnext-nav-symbol/);
+  assert.match(vnext,/vnextSidebarClose'\)\.onclick=closeMobileSidebar/);
 });
 
 
