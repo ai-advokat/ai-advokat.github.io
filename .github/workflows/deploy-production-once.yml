@@ -83,12 +83,15 @@ jobs:
           done
           test "$ok" = "1"
 
-      - name: Verify exact live R13 frontend deployment
+      - name: Verify exact live main parity and R13 frontend deployment
         shell: bash
         run: |
           set -euo pipefail
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
 
+          expected_home="$(sha256sum index.html | awk '{print $1}')"
+          expected_chat="$(sha256sum assets/ai-advokat-chat.js | awk '{print $1}')"
+          expected_chat_css="$(sha256sum assets/ai-advokat-chat.css | awk '{print $1}')"
           expected_bot="$(sha256sum bot/index.html | awk '{print $1}')"
           expected_core="$(sha256sum assets/standalone-bot.js | awk '{print $1}')"
           expected_privacy_primary="$(sha256sum assets/chat-privacy-browser.js | awk '{print $1}')"
@@ -97,25 +100,34 @@ jobs:
           deployed=0
           for attempt in $(seq 1 40); do
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/?release=root-r10-parity&deploy_verify=$nonce" -o /tmp/deploy-home.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-chat.js?v=20261101-root-r10-parity&deploy_verify=$nonce" -o /tmp/deploy-chat.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-chat.css?v=20261101-root-parity-r10&deploy_verify=$nonce" -o /tmp/deploy-chat.css || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r13&deploy_verify=$nonce" -o /tmp/deploy-bot.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261101-core-r13&deploy_verify=$nonce" -o /tmp/deploy-core.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/chat-privacy-browser.js?v=20261101-privacy-r12&deploy_verify=$nonce" -o /tmp/deploy-privacy-primary.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/src/chat-privacy.js?v=20261101-privacy-compat-r1&deploy_verify=$nonce" -o /tmp/deploy-privacy-compat.js || true
 
+            live_home="$(sha256sum /tmp/deploy-home.html 2>/dev/null | awk '{print $1}' || true)"
+            live_chat="$(sha256sum /tmp/deploy-chat.js 2>/dev/null | awk '{print $1}' || true)"
+            live_chat_css="$(sha256sum /tmp/deploy-chat.css 2>/dev/null | awk '{print $1}' || true)"
             live_bot="$(sha256sum /tmp/deploy-bot.html 2>/dev/null | awk '{print $1}' || true)"
             live_core="$(sha256sum /tmp/deploy-core.js 2>/dev/null | awk '{print $1}' || true)"
             live_privacy_primary="$(sha256sum /tmp/deploy-privacy-primary.js 2>/dev/null | awk '{print $1}' || true)"
             live_privacy_compat="$(sha256sum /tmp/deploy-privacy-compat.js 2>/dev/null | awk '{print $1}' || true)"
 
-            if [ "$live_bot" = "$expected_bot" ] \
+            if [ "$live_home" = "$expected_home" ] \
+              && [ "$live_chat" = "$expected_chat" ] \
+              && [ "$live_chat_css" = "$expected_chat_css" ] \
+              && [ "$live_bot" = "$expected_bot" ] \
               && [ "$live_core" = "$expected_core" ] \
               && [ "$live_privacy_primary" = "$expected_privacy_primary" ] \
               && [ "$live_privacy_compat" = "$expected_privacy_compat" ]; then
               deployed=1
-              echo "EXTERNAL BOT R13 LIVE BYTE PARITY: PASS on attempt $attempt"
+              echo "MAIN ROOT-R10-PARITY + EXTERNAL BOT R13 LIVE BYTE PARITY: PASS on attempt $attempt"
               break
             fi
-            echo "Waiting for exact R13 production bytes (attempt $attempt/40)."
+            echo "Waiting for exact root-r10-parity + R13 production bytes (attempt $attempt/40)."
             sleep 3
           done
           test "$deployed" = "1"
