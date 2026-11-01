@@ -129,9 +129,9 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const html=fs.readFileSync('bot/index.html','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-ui-r5/);
+  assert.match(html,/standalone-bot-vnext\\.js\\?v=20261101-mobile-r6/);
   assert.match(html,/standalone-bot-vnext\.css\?v=20261101-ui-r5/);
-  assert.match(vnext,/import\('\.\/standalone-bot\.js\?v=20261101-ui-r5'\)/);
+  assert.match(vnext,/import\('\.\/standalone-bot\\.js\\?v=20261101-mobile-r6'\)/);
   assert.match(core,/function ensureLegalPulseStyles\(\)/);
   assert.match(core,/id = 'legalPulseRuntimeStyle'/);
   assert.match(core,/const pulse = responsePulse\(\)/);
@@ -161,6 +161,17 @@ test('external bot UI parity keeps compact dual-section loader and top message a
   assert.match(html,/→ Продолжи/);
   assert.match(vnext,/vnext-nav-symbol/);
   assert.match(vnext,/vnextSidebarClose'\)\.onclick=closeMobileSidebar/);
+});
+
+
+test('fresh mobile device can activate send and reach governed access flow',()=>{
+  const source=fs.readFileSync('assets/standalone-bot.js','utf8');
+  const html=fs.readFileSync('bot/index.html','utf8');
+  assert.match(source,/const hasQuestion = String\(\$\('question'\)\?\.value \|\| ''\)\.trim\(\)\.length >= 2/);
+  assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = \$\('question'\)\.value\.trim\(\)\.length < 2/);
+  assert.match(source,/busy\(false\);\s*restoreAccess\(\);/);
+  assert.match(source,/if \(!key\) \{ status\('Најпрво внесете го вашиот приватен код за влез\.'/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261101-mobile-r6/);
 });
 
 
