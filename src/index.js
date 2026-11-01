@@ -108,6 +108,7 @@ import {
 } from "./case-intelligence.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import { extractGazetteIssueNeedles, findGazetteIssueMetadata, formatGazetteIssueMetadataAnswer, gazetteIssueMetadataToContext } from "./gazette-issue-metadata.js";
+import { findGazetteIssueContents, formatGazetteIssueContents } from "./gazette-issue-contents.js";
 import {
   CANONICAL_PROVENANCE_GATE_VERSION,
   CANONICAL_METADATA_STANDARD_VERSION,
@@ -5597,35 +5598,50 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   // or authorial material when the official issue-metadata index is the intended source.
   const gazetteNeedles=extractGazetteIssueNeedles(routingQuery);
   const gazetteYear=Number(gazetteNeedles.year||0);
-  const directGazetteMetadataRequest=
+  const directGazetteIssueRequest=
     gazetteNeedles.explicitSignal===true
     && gazetteNeedles.usable===true
     && gazetteYear>=1944
-    && gazetteYear<=2017;
-  if(directGazetteMetadataRequest){
-    const directGazette=await findGazetteIssueMetadata(env,routingQuery,{limit:8});
-    if(directGazette.state==="unavailable"){
+    && gazetteYear<=2100;
+  const directGazetteMetadataRequest=directGazetteIssueRequest && gazetteYear<=2017;
+  if(directGazetteIssueRequest){
+    const directGazette=directGazetteMetadataRequest
+      ? await findGazetteIssueMetadata(env,routingQuery,{limit:8})
+      : {state:"outside_metadata_backbone",issues:[]};
+    const issueContents=await findGazetteIssueContents(env,{
+      issueNumber:gazetteNeedles.issueNumber,
+      year:gazetteYear
+    });
+    if(directGazette.state==="unavailable" || issueContents.state==="unavailable"){
       return json(request,{
         ok:false,
-        error:"gazette_metadata_index_temporarily_unavailable",
-        message:"Официјалниот индекс на изданија на „Службен весник“ е привремено недостапен. Барањето не е пренасочено кон секундарни извори и AI не е повикан.",
+        error:"gazette_index_temporarily_unavailable",
+        message:"Официјалниот индекс на изданија/акти од „Службен весник“ е привремено недостапен. Барањето не е пренасочено кон секундарни извори и AI не е повикан.",
         gazetteQuery:gazetteNeedles,
         providerCalled:false,
         quotaConsumed:false
       },503);
     }
-    if(directGazette.state!=="matched" || !Array.isArray(directGazette.issues) || directGazette.issues.length===0){
+    const issueRows=Array.isArray(directGazette.issues)?directGazette.issues:[];
+    if(issueRows.length===0 && !issueContents.issue){
       return json(request,{
         ok:false,
-        error:"gazette_issue_not_found_in_canonical_metadata_index",
-        message:"Во канонскиот metadata индекс 1944–2017 не е пронајдено совпаѓање за бараниот број и година. AI не користеше научни статии или друг секундарен материјал како замена.",
+        error:"gazette_issue_not_found_in_governed_index",
+        message:"Во governed индексот не е пронајдено совпаѓање за бараниот број и година. AI не користеше секундарни извори како замена.",
         gazetteQuery:gazetteNeedles,
         providerCalled:false,
         quotaConsumed:false
       },404);
     }
-    const issueRows=directGazette.issues;
-    const answer=formatGazetteIssueMetadataAnswer(issueRows);
+    const metadataAnswer=issueRows.length
+      ? formatGazetteIssueMetadataAnswer(issueRows)
+      : [
+          "Метаподатоци за изданието:",
+          "• Број: "+String(issueContents.issue?.issueNumber||gazetteNeedles.issueNumber)+"/"+String(issueContents.issue?.year||gazetteYear),
+          "• Датум: "+String(issueContents.issue?.issueDate||"не е потврден во 1944-2017 metadata backbone"),
+          "• Извор: "+String(issueContents.issue?.publicationName||"Службен весник")+" · "+String(issueContents.issue?.sourceAccessClass||"official register index")
+        ].join("\n");
+    const answer=[metadataAnswer,formatGazetteIssueContents(issueContents)].filter(Boolean).join("\n\n");
     return json(request,{
       ok:true,
       answer,
@@ -5654,14 +5670,31 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         legalTextAuthority:Number(i.legal_text_authority||0)===1,
         currentLawAuthority:Number(i.current_law_authority||0)===1
       })),
-      sources:[{
-        title:"ЈП Службен весник на РСМ · Изданија на Службен весник до 2017",
-        url:String(issueRows[0]?.dataset_url||"https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017"),
-        category:"official_gazette",
-        jurisdiction:"MK",
-        registered:true,
-        authorityRole:"primary_official_metadata"
-      }],
+      gazetteIssueContents:{
+        state:issueContents.state,
+        total:Number(issueContents.total||0),
+        allReviewed:issueContents.allReviewed===true,
+        issue:issueContents.issue||null,
+        acts:Array.isArray(issueContents.acts)?issueContents.acts:[]
+      },
+      sources:[
+        ...(issueRows.length?[{
+          title:"ЈП Службен весник на РСМ · Изданија на Службен весник до 2017",
+          url:String(issueRows[0]?.dataset_url||"https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017"),
+          category:"official_gazette",
+          jurisdiction:"MK",
+          registered:true,
+          authorityRole:"primary_official_metadata"
+        }]:[]),
+        ...(issueContents.issue?.chronologicalRegisterUrl?[{
+          title:"ЈП Службен весник · официјален хронолошки регистар",
+          url:String(issueContents.issue.chronologicalRegisterUrl),
+          category:"official_gazette_register",
+          jurisdiction:"MK",
+          registered:true,
+          authorityRole:"primary_official_act_index"
+        }]:[])
+      ],
       legalSources:[],
       caseLawSources:[],
       guideSources:[],
@@ -5672,7 +5705,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         serverLatencyMs:0,
         fastPromptUsed:true
       },
-      humanGate:"Metadata only. За содржината на конкретен акт и за важечко право проверете го официјалниот текст и применливата верзија."
+      humanGate:issueContents.allReviewed===true
+        ?"Issue/act index е Human-Gate проверен; за важност и тековна применливост на конкретен акт сепак е потребна version/current-law проверка."
+        :"Issue/act index metadata може да содржи machine-extracted записи што чекаат Human Gate. Не го користете списокот како доказ за тековна важност на конкретен акт."
     });
   }
 
@@ -7387,6 +7422,36 @@ async function handleGazetteChunks(request,env,url){
   });
 }
 
+async function handleGazetteIssueContents(request,env,url){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const database=await dbStatus(env);
+  if(!database.reachable || !database.schemaReady){
+    return json(request,{ok:false,error:"database_not_ready",database},503);
+  }
+  const issueNumber=cleanQuery(url.searchParams.get("issue"),40);
+  const yearRaw=String(url.searchParams.get("year")||"").trim();
+  if(!issueNumber || !/^\d{4}$/.test(yearRaw)){
+    return json(request,{ok:false,error:"issue_and_year_required"},400);
+  }
+  const bundle=await findGazetteIssueContents(env,{issueNumber,year:Number(yearRaw)});
+  if(bundle.state==="unavailable") return json(request,{ok:false,error:"gazette_issue_contents_unavailable"},503);
+  return json(request,{
+    ok:true,
+    state:bundle.state,
+    total:bundle.total,
+    allReviewed:bundle.allReviewed,
+    issue:bundle.issue,
+    acts:bundle.acts,
+    doctrine:{
+      source:"official_gazette_chronological_register",
+      actIndexOnly:true,
+      currentLawClaim:false,
+      fullTextClaim:false,
+      humanGateRequired:true
+    }
+  });
+}
+
 async function handleGazetteHybridStatus(request,env){
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
   const database=await dbStatus(env);
@@ -7909,6 +7974,7 @@ export default {
     if (url.pathname === "/api/legal-analyzer/verify") return handleLegalAnalyzerVerify(request, env);
     if (url.pathname === "/api/casepilot/case-law") return handleCasePilotCaseLawResearch(request, env);
     if (url.pathname === "/api/gazette-issue-index") return handleGazetteIssueIndex(request, env, url);
+    if (url.pathname === "/api/gazette-issue-contents") return handleGazetteIssueContents(request, env, url);
     if (url.pathname === "/api/gazette-register") return handleGazetteRegister(request, env, url);
     if (url.pathname === "/api/gazette-chunks") return handleGazetteChunks(request, env, url);
     if (url.pathname === "/api/gazette-hybrid-status") return handleGazetteHybridStatus(request, env);
