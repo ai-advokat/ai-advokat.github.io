@@ -98,3 +98,19 @@ test("RQ8 finaliser never returns a requested lawsuit without a lawsuit heading"
   assert.match(final,/^ТУЖБА\n\n/u);
   assert.match(final,/Тужител:/u);
 });
+
+
+test("RQ9 pre-litigation notice is classified before the embedded lawsuit word",()=>{
+  const userText="Да те замолам да ми направиш опомена пред тужба за развод, со измислени имиња.";
+  assert.equal(isFormalLegalDraftRequest(userText),true);
+  assert.equal(
+    requestedFormalDraftHeading(userText),
+    "ОПОМЕНА ПРЕД ПОВЕДУВАЊЕ СУДСКА ПОСТАПКА"
+  );
+  const final=finaliseFormalLegalDraft(
+    "Еве пример за опомена пред тужба за развод.\nИспраќач: Иван Ивановски\nДо: Марија Петровска",
+    {userText,hasGovernedLegalContext:false}
+  );
+  assert.match(final,/^ОПОМЕНА ПРЕД ПОВЕДУВАЊЕ СУДСКА ПОСТАПКА\n\n/u);
+  assert.doesNotMatch(final,/^ТУЖБА\n/mu);
+});
