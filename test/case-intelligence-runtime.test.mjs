@@ -101,18 +101,18 @@ test("CIR7 CasePilot has a private Workers AI fallback for extraction synthesis 
 });
 
 
-test("CIR8 private analysis/draft keep canonical Macedonian QA while only jurisdiction substitution is a hard block",()=>{
+test("CIR8 private analysis/draft use the same strict Pravopis 2017 final release gate",()=>{
   assert.match(worker,/function canonicalMacedonianFinalRelease/);
   const privateHelper=worker.slice(worker.indexOf("async function runPrivateWorkersAISynthesis"),worker.indexOf("function parseModelJsonObject"));
   assert.match(privateHelper,/const startedAt=Date\.now\(\)/);
   assert.match(privateHelper,/canonicalMacedonianFinalRelease\(finalText,task\)/);
-  assert.match(privateHelper,/foreign_jurisdiction_substitution_blocked/);
+  assert.match(privateHelper,/macedonian_language_release_blocked/);
 
   const analysis=worker.slice(worker.indexOf('if\(tail==="intelligence\/analyze"\)'),worker.indexOf('if\(tail==="intelligence\/draft"\)'));
   assert.match(analysis,/canonicalMacedonianFinalRelease\(analysisText,task\)/);
-  assert.match(analysis,/foreign_jurisdiction_substitution_blocked/);
+  assert.match(analysis,/macedonian_language_release_blocked/);
 
   const draft=worker.slice(worker.indexOf('if\(tail==="intelligence\/draft"\)'),worker.indexOf('if\(tail==="casepilot"\)'));
   assert.match(draft,/canonicalMacedonianFinalRelease\(draftText,task\)/);
-  assert.match(draft,/foreign_jurisdiction_substitution_blocked/);
+  assert.match(draft,/macedonian_language_release_blocked/);
 });
