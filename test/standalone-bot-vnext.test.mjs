@@ -8,7 +8,7 @@ test('standalone bot vNext exposes unified professional workspace without replac
   const css=fs.readFileSync('assets/standalone-bot-vnext.css','utf8');
   assert.match(html,/standalone-bot-vnext\.css/);
   assert.match(html,/standalone-bot-vnext\.js/);
-  assert.match(source,/await import\('\.\/standalone-bot\.js\?v=20261031-runtime-r3'\)/);
+  assert.match(source,/await import\('\.\/standalone-bot\.js\?v=20261101-ui-r5'\)/);
   assert.match(source,/\/api\\\/bot/);
   assert.match(source,/body\.history=thread\.history\.slice\(-12\)/);
   assert.match(source,/Правен асистент/);
@@ -70,6 +70,10 @@ test('vNext message actions provide copy, edit/reuse, repeat and source access',
   assert.match(source,/✎ Уреди/);
   assert.match(source,/↺ Повтори/);
   assert.match(source,/▤ Извори/);
+  assert.match(source,/✓ Проверка/);
+  assert.match(source,/▧ DOCX/);
+  assert.match(source,/▧ PDF/);
+  assert.match(source,/article\.insertBefore\(actions,body\)/);
   assert.match(source,/navigator\.clipboard\.writeText/);
   assert.match(source,/setComposerText/);
   assert.match(css,/\.vnext-message-actions/);
@@ -86,6 +90,7 @@ test('vNext gives visible symbols to right-side tabs, actions and global tools',
   assert.match(source,/⇩ Извези DOCX/);
   assert.match(source,/⌁ Анализатор/);
   assert.match(source,/◎ Предиктор/);
+  assert.match(source,/vnext-nav-symbol/);
 });
 
 test('vNext privacy copy keeps local redaction as default and workspace as necessity-based',()=>{
