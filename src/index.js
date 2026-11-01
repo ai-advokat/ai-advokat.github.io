@@ -4714,7 +4714,7 @@ function exactArticleNumberFromQuestion(q){
   return match ? normalizeText(match[1]).replace(/[–—]/g,"-").replace(/\s+/g,"") : null;
 }
 
-function professionalCanonicalArticleFallback({q,articleBundle,missionProfile,explicitWebRequested=false,attachmentCount=0,guideDocumentCount=0}={}){
+export function professionalCanonicalArticleFallback({q,articleBundle,missionProfile,explicitWebRequested=false,attachmentCount=0,guideDocumentCount=0}={}){
   if(explicitWebRequested===true) return null;
   if(!["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(String(missionProfile||""))) return null;
   if(Number(attachmentCount||0)>0 || Number(guideDocumentCount||0)>0) return null;
