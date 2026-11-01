@@ -16,6 +16,7 @@ export function extractGazetteIssueNeedles(q){
   const isoDate=raw.match(/\b((?:19|20)[0-9]{2}-[01][0-9]-[0-3][0-9])\b/u);
   const mkDate=raw.match(/\b([0-3]?[0-9])[.\/-]([01]?[0-9])[.\/-]((?:19|20)[0-9]{2})\b/u);
   const labeledIssue=raw.match(/(?:бр\.?|број)\s*([0-9]{1,4})\b/u);
+  const labeledYear=raw.match(/\b((?:19|20)[0-9]{2})\s*(?:г\.?|год(?:ина)?(?:та)?)\b/u);
   let issueDate=isoDate?.[1]||null;
   if(!issueDate && mkDate){
     issueDate=mkDate[3]+"-"+String(mkDate[2]).padStart(2,"0")+"-"+String(mkDate[1]).padStart(2,"0");
