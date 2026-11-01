@@ -4724,7 +4724,7 @@ function articleNumbersFromQuestion(q){
     // ordinary prose (e.g. "од ЗРО"/"of the Act") begins, so unrelated numbers
     // later in the sentence cannot accidentally become article references.
     for(let guard=0;guard<12;guard++){
-      let tail=rest.match(/^\s*(?:,|и\b|and\b|до\b|through\b)\s*([0-9]+(?:[-–—−‑][\p{L}]+)?)/iu);
+      let tail=rest.match(/^\s*(?:,|и(?![\p{L}\p{N}])|and\b|до(?![\p{L}\p{N}])|through\b)\s*([0-9]+(?:[-–—−‑][\p{L}]+)?)/iu);
       if(!tail){
         // Numeric range: 12-13. A true Macedonian article suffix such as 104-а
         // was already consumed by the marker because the suffix is a letter.
