@@ -250,12 +250,12 @@ test("professional legal-opinion fact review uses lightweight paid runtime setti
   assert.match(orchestratorSource,/professionalFactReview[\s\S]{0,240}\? 60000/);
 });
 
-test("paid Macedonian QA is deterministic, zero-extra-call, and blocks only substantive jurisdiction leakage",()=>{
+test("paid Macedonian QA is deterministic and strict at final Pravopis release",()=>{
   const indexSource=fs.readFileSync("src/index.js","utf8");
   assert.match(indexSource,/const governedLanguageRepairEligible=false/);
   assert.doesNotMatch(indexSource,/runOpenAIMacedonianRepair\(env/);
   assert.match(indexSource,/if\(!governedFinalRelease\.ok\)/);
-  assert.match(indexSource,/foreign_jurisdiction_substitution_blocked/);
+  assert.match(indexSource,/macedonian_language_release_blocked/);
   assert.match(indexSource,/governedFinalRelease\.deliveryState/);
   assert.match(indexSource,/zero_extra_language_repair_calls/);
 });
