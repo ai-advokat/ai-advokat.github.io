@@ -78,6 +78,20 @@ test("message actions match the external professional bot controls",()=>{
   assert.match(chat,/exportAssistantMessage\(m,current\(\),"pdf"/);
 });
 
+test("main workspace matches external bot interaction parity beyond labels",()=>{
+  assert.match(chat,/↺ Повтори/);
+  assert.match(chat,/renameChatThread/);
+  assert.match(chat,/ensureMaterialsDialog/);
+  assert.match(chat,/openMaterialsDialog\("documents"\)/);
+  assert.match(chat,/openMaterialsDialog\("library"\)/);
+  assert.match(chat,/data-materials-export="txt"/);
+  assert.match(chat,/data-materials-export="md"/);
+  assert.match(chat,/exportPlainAssistantMessage/);
+  assert.match(chat,/gazetteIssueMetadata/);
+  assert.match(chat,/canonical_gazette_issue_metadata_no_model/);
+  assert.match(chat,/Governed corpus · без модел/);
+});
+
 test("Sources and Human Gate panels use existing governed response fields",()=>{
   for(const key of ["legalSources","caseLawSources","guideSources","publicationSources","sources"]){
     assert.match(chat,new RegExp('"'+key+'"'));
