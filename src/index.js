@@ -6002,7 +6002,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           elapsedMs:Date.now()-lioeRunStartedMs,
           plan,
           assessment:fallbackAssessment,
-          result:{...result,ok:false},
+          result:{...result,ok:false,releasedFallback:true,primaryProviderFailed:true},
           articleBundle,
           guideContextCount:guideContext.length+guideDocumentCheck.context.length,
           attachmentCount:0,
