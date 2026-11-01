@@ -33,3 +33,21 @@ test("critical runtime cache policy is fail-fresh",()=>{
   assert.match(headers,/\/assets\/standalone-bot\*\.js[\s\S]*Cache-Control: no-store, max-age=0/);
   assert.match(headers,/\/src\/chat-privacy\.js[\s\S]*Cache-Control: no-store, max-age=0/);
 });
+
+
+test("Zoki baseline legal question is never classified as confidential",()=>{
+  const q="Објасни ми на едноставен и професионален начин која е разликата меѓу отказ на договор за вработување и спогодбено престанување на работниот однос во Северна Македонија. Не измислувај членови. Ако користиш законска одредба, наведи го точниот извор и важечката верзија.";
+  const verdict=detectCanonical(q);
+  assert.equal(verdict.confidential,false);
+  const redacted=redactCanonical(q);
+  assert.equal(redacted.safeToSend,true);
+  assert.equal(redacted.text,q);
+});
+
+test("browser privacy modules avoid parser features that break older embedded WebViews",()=>{
+  for(const path of ["assets/chat-privacy-browser.js","src/chat-privacy.js"]){
+    const source=fs.readFileSync(path,"utf8");
+    assert.doesNotMatch(source,/\(\?<([=!])/,"regex lookbehind must not be used");
+    assert.doesNotMatch(source,/\\p\{/,"Unicode property escapes must not be used");
+  }
+});
