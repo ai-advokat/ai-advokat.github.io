@@ -37,6 +37,8 @@ test("GIM2b parser tolerates natural Macedonian inflection and common veslnik ty
   assert.deepEqual(q,{issueNumber:"1",year:"2009",issueDate:null,explicitSignal:true,usable:true});
   const correct=extractGazetteIssueNeedles("Службениот весник број 1 од 2009 година");
   assert.deepEqual(correct,{issueNumber:"1",year:"2009",issueDate:null,explicitSignal:true,usable:true});
+  const observed=extractGazetteIssueNeedles("Те молам дај ми ги мета дата податоците од Службен весник број. 1 од 2010 година, со почит");
+  assert.deepEqual(observed,{issueNumber:"1",year:"2010",issueDate:null,explicitSignal:true,usable:true});
 });
 
 test("GIM3 metadata scoring prefers exact issue/date without creating legal authority",()=>{
@@ -94,7 +96,16 @@ test("GIM7 public issue-index contract does not expose upstream raw URLs",()=>{
   assert.match(block,/auditProvenanceRetainedInternally:true/);
 });
 
-test("GIM8 internal bot provenance still retains the official source URL",()=>{
+test("GIM8 exact Gazette issue requests use a deterministic no-model lane before scholarly fallback",()=>{
+  assert.match(worker,/canonical_gazette_issue_metadata_no_model/);
+  assert.match(worker,/gazette_metadata_index_temporarily_unavailable/);
+  assert.match(worker,/gazette_issue_not_found_in_canonical_metadata_index/);
+  const direct=worker.indexOf("Canonical Gazette metadata fast lane");
+  const scholarly=worker.indexOf("findGovernedScholarly",direct);
+  assert.ok(direct>=0 && scholarly>direct);
+});
+
+test("GIM9 internal bot provenance still retains the official source URL",()=>{
   const metadataModule=fs.readFileSync("src/gazette-issue-metadata.js","utf8");
   assert.match(metadataModule,/sourceUrl:String\(i\.resource_url\|\|GAZETTE_OPEN_DATA_RESOURCE_URL\)/);
   assert.match(metadataModule,/sourceSha256:String\(i\.snapshot_sha256\|\|GAZETTE_OPEN_DATA_SHA256\)/);
