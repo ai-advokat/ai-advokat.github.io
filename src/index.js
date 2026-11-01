@@ -7263,6 +7263,29 @@ function withSecurityHeaders(response) {
   });
 }
 
+const EXTERNAL_BOT_RELEASE="core-r12";
+
+function externalBotReleaseRedirect(request,url){
+  if(!["GET","HEAD"].includes(request.method)) return null;
+  if(url.pathname!=="/bot" && url.pathname!=="/bot/") return null;
+  const requested=String(url.searchParams.get("release")||"").trim();
+  if(requested===EXTERNAL_BOT_RELEASE) return null;
+
+  const target=new URL(url);
+  target.pathname="/bot/";
+  target.searchParams.set("release",EXTERNAL_BOT_RELEASE);
+  const headers=new Headers({
+    Location:target.toString(),
+    "Cache-Control":"no-store, max-age=0",
+    "X-AI-Advokat-Release":EXTERNAL_BOT_RELEASE
+  });
+  if(requested && requested!==EXTERNAL_BOT_RELEASE){
+    headers.set("Clear-Site-Data",'"cache"');
+    headers.set("X-AI-Advokat-Legacy-Release",requested.slice(0,64));
+  }
+  return new Response(null,{status:302,headers});
+}
+
 function privateUatIngressAllowed(request, env) {
   if (env?.OPENAI_PROVIDER_ACTIVATION_STATE !== "staging_private_uat_only") return true;
   const expected=String(env?.UAT_INGRESS_TOKEN||"");
@@ -7296,6 +7319,8 @@ export default {
     }
 
     if (!url.pathname.startsWith("/api/")) {
+      const releaseRedirect=externalBotReleaseRedirect(request,url);
+      if(releaseRedirect) return withSecurityHeaders(releaseRedirect);
       return withSecurityHeaders(await env.ASSETS.fetch(request));
     }
 
