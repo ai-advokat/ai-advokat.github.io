@@ -14,7 +14,8 @@ test("shared frontend runtime guard loads before both bot bundles",()=>{
   const mainGuard=home.indexOf("frontend-runtime-guard.js?v=20261101-root-r1");
   const mainBundle=home.indexOf("ai-advokat-chat.js?v=20261101-root-r9");
   const botGuard=bot.indexOf("frontend-runtime-guard.js?v=20261101-root-r1");
-  const botCore=bot.indexOf("standalone-bot.js?v=20261101-core-r10");\n  const botBundle=bot.indexOf("standalone-bot-vnext.js?v=20261101-vnext-r10");
+  const botCore=bot.indexOf("standalone-bot.js?v=20261101-core-r10");
+  const botBundle=bot.indexOf("standalone-bot-vnext.js?v=20261101-vnext-r10");
   assert.ok(mainGuard>=0 && mainBundle>mainGuard);
   assert.ok(botGuard>=0 && botCore>botGuard && botBundle>botCore);
   assert.match(guard,/const code="UI-"/);
