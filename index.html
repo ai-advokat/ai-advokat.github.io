@@ -15,7 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/app-icon.svg" />
-  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261101-root-quality-r11" />
+  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261101-root-complete-r12" />
   <meta name="application-name" content="AI Advokat" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -1830,9 +1830,17 @@
               <button class="ai-chat-topbtn ai-workspace-evidence-toggle" id="aiWorkspaceEvidenceToggle" type="button" aria-label="Отвори извори и проверка" title="Извори и проверка">▤</button>
               <button class="ai-chat-topbtn" id="aiChatNew" type="button" aria-label="Нов разговор" title="Нов разговор">＋</button>
               <details class="ai-chat-menu" id="aiChatMenu">
-                <summary class="ai-chat-topbtn" aria-label="Повеќе опции" title="Повеќе опции">⋯</summary>
+                <summary class="ai-chat-topbtn" aria-label="Разговор и поставки" title="Разговор и поставки">⋯</summary>
                 <div class="ai-chat-menu-panel">
                   <div class="ai-chat-menu-status"><span class="ai-chat-status-dot"></span><span data-i18n="chatHumanControl">човечка контрола</span></div>
+                  <button class="ai-chat-menu-action" id="aiChatMenuNew" type="button">＋ Нов разговор</button>
+                  <button class="ai-chat-menu-action" id="aiChatExportConversation" type="button">⇩ Преземи разговор (.txt)</button>
+                  <button class="ai-chat-menu-action" id="aiChatMaterialsTop" type="button">◫ Материјали и алатки</button>
+                  <button class="ai-chat-menu-action" id="aiChatProfessionalAccess" type="button">✓ Професионален пристап</button>
+                  <button class="ai-chat-menu-action" id="aiChatLogout" type="button">↪ Одјави се и заборави го пристапот</button>
+                  <a class="ai-chat-menu-action ai-chat-menu-link" href="/professional-library/" target="_blank" rel="noopener noreferrer">◫ Материјали и библиотека ↗</a>
+                  <a class="ai-chat-menu-action ai-chat-menu-link" href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">▣ Приватни предмети ↗</a>
+                  <div class="ai-chat-menu-divider"></div>
                   <div class="ai-chat-menu-status"><span data-i18n="chatExportDraft">Извези working draft</span></div>
                   <button class="ai-chat-menu-action" data-chat-export="docx" type="button">DOCX</button>
                   <button class="ai-chat-menu-action" data-chat-export="md" type="button">MD</button>
@@ -1842,6 +1850,7 @@
                   <button class="ai-chat-menu-action" data-chat-export="png" type="button">PNG</button>
                   <button class="ai-chat-menu-action" data-chat-export="jpg" type="button">JPG</button>
                   <button class="ai-chat-menu-action" data-chat-export="pdf" type="button">PDF</button>
+                  <p class="ai-chat-menu-note">FREE останува стандарден. Професионалниот пристап користи AI Advokat членски клуч; OpenAI API клуч не се внесува.</p>
                 </div>
               </details>
             </div>
@@ -1964,6 +1973,27 @@
           </div>
           <div class="ai-evidence-body" id="aiChatEvidenceBody" aria-live="polite"></div>
         </aside>
+
+        <dialog id="aiChatAccessDialog" class="ai-workspace-search-dialog ai-access-dialog" aria-labelledby="aiChatAccessTitle">
+          <form id="aiChatAccessForm" method="dialog">
+            <div class="ai-workspace-dialog-head">
+              <div><strong id="aiChatAccessTitle">✓ Вашиот професионален пристап</strong><small>Опционален upgrade врз FREE AI Advokat</small></div>
+              <button type="button" id="aiChatAccessClose" aria-label="Затвори">×</button>
+            </div>
+            <div class="ai-access-body">
+              <p>Потребен е само AI Advokat членски клуч. Не внесувајте OpenAI API клуч.</p>
+              <label for="aiChatAccessKey">⌨ Код за влез</label>
+              <input id="aiChatAccessKey" type="password" autocomplete="off" spellcheck="false" required>
+              <label class="ai-access-remember"><input id="aiChatRememberAccess" type="checkbox"> Запомни ме на овој личен уред до 7 дена</label>
+              <p class="ai-access-note">Изберете само на ваш уред. Одјавувањето го отстранува зачуваниот код. FREE режимот останува достапен без клуч.</p>
+              <p id="aiChatAccessStatus" class="ai-access-status" role="status"></p>
+              <div class="ai-evidence-actions">
+                <button type="button" id="aiChatAccessCancel">× Откажи</button>
+                <button type="submit" id="aiChatAccessSubmit">→ Продолжи</button>
+              </div>
+            </div>
+          </form>
+        </dialog>
 
         <template id="aiChatEmptyTemplate">
           <div class="ai-chat-empty">
@@ -4333,7 +4363,7 @@
 </script>
 <script src="/assets/guide-vault.js?v=20261005-private-vault-v2"></script>
 <script src="/assets/frontend-runtime-guard.js?v=20261101-root-r1"></script>
-<script src="/assets/ai-advokat-chat.js?v=20261101-root-r11-quality"></script>
+<script src="/assets/ai-advokat-chat.js?v=20261101-root-r12-complete"></script>
 
 </body>
 </html>
