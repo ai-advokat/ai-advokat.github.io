@@ -10,13 +10,13 @@ const css=fs.readFileSync("assets/ai-advokat-chat.css","utf8");
 
 test("main AI Advokat chat exposes AIAdvokat4 LexNova governed workbench",()=>{
   assert.match(home,/AIAdvokat4 · LexNova UX/);
-  for(const action of ["consolidator","analyzer","predictor","casepilot","sources","human-gate"]){
+  for(const action of ["assistant","analyzer","consolidator","predictor","sources","cases","casepilot","documents","workflows","human-gate","library"]){
     assert.match(home,new RegExp('data-ai-workbench="'+action+'"'));
   }
   assert.match(home,/КОНСОЛИДАТОР/);
   assert.match(home,/АНАЛИЗАТОР/);
   assert.match(home,/ПРЕДИКТОР/);
-  assert.match(home,/20261101-root-r9/);
+  assert.match(home,/20261101-root-r10-parity/);
 });
 
 test("Consolidator is exact Legal Formatter v10.4 CORE and not a prompt surrogate",()=>{
@@ -49,6 +49,33 @@ test("Predictor is governed scenario/risk workflow with CasePilot and no fake su
   assert.match(chat,/не гарантирај исход/);
   assert.match(chat,/Secure Case Workspace \/ CasePilot/);
   assert.match(chat,/HUMAN GATE REQUIRED/);
+});
+
+test("main workspace has standalone-bot parity on left modules and right evidence tabs",()=>{
+  for(const label of ["Правен асистент","Анализатор","Консолидатор","Предиктор","Правни извори","Судска практика","CasePilot","Документи","Workflows","Human Gate","Library"]){
+    assert.ok(home.includes(label), "missing main workspace label: "+label);
+  }
+  for(const tab of ["sources","context","human","artifact"]){
+    assert.ok(home.includes('data-ai-evidence-tab="'+tab+'"'), "missing evidence tab: "+tab);
+  }
+  assert.match(css,/grid-template-columns:248px minmax\(0,1fr\) 326px/);
+  assert.match(chat,/window\.open\("\/case-law-metadata\.html"/);
+  assert.match(chat,/window\.open\("\/professional-library\//);
+  assert.match(chat,/ensureWorkflowDialog/);
+  assert.match(chat,/openWorkspaceSearch/);
+  assert.match(chat,/aiChatHistorySearch/);
+});
+
+test("message actions match the external professional bot controls",()=>{
+  assert.match(chat,/⧉ Копирај/);
+  assert.match(chat,/✎ Уреди/);
+  assert.match(chat,/↺ Повтори/);
+  assert.match(chat,/▤ Извори/);
+  assert.match(chat,/✓ Проверка/);
+  assert.match(chat,/▧ DOCX/);
+  assert.match(chat,/▧ PDF/);
+  assert.match(chat,/exportAssistantMessage\(m,current\(\),"docx"/);
+  assert.match(chat,/exportAssistantMessage\(m,current\(\),"pdf"/);
 });
 
 test("Sources and Human Gate panels use existing governed response fields",()=>{
