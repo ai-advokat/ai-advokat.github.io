@@ -7,7 +7,7 @@ const workflow=fs.readFileSync(".github/workflows/deploy-production-once.yml","u
 test("R12 frontend / R13 backend production deploy is explicitly push-triggered by its bounded workflow file",()=>{
   assert.match(workflow,/branches:\s*\n\s*- main/);
   assert.match(workflow,/paths:\s*\n\s*- "\.github\/workflows\/deploy-production-once\.yml"/);
-  assert.match(workflow,/trigger-exact-article-fallback-r13: 2026-11-01/);
+  assert.match(workflow,/trigger-zro12-source-gap-r14: 2026-11-01/);
 });
 
 test("core-r12 production deploy runs pre-deploy verification and wrangler deploy",()=>{
