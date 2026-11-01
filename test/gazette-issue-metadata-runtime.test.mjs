@@ -144,3 +144,14 @@ test("GIM9 internal bot provenance still retains the official source URL",()=>{
   assert.match(metadataModule,/sourceUrl:String\(i\.resource_url\|\|GAZETTE_OPEN_DATA_RESOURCE_URL\)/);
   assert.match(metadataModule,/sourceSha256:String\(i\.snapshot_sha256\|\|GAZETTE_OPEN_DATA_SHA256\)/);
 });
+
+
+test("GIM10 exact Gazette lane exposes canonical metadata-only Human Gate",()=>{
+  const direct=worker.indexOf("Canonical Gazette exact-issue fast lane");
+  const next=worker.indexOf("Canonical ECHR/Bureau broad-list fast lane",direct);
+  const block=worker.slice(direct,next>direct?next:direct+18000);
+  assert.match(block,/humanGate:"Metadata only\./);
+  assert.match(block,/не се авторитет за текстот на актот/u);
+  assert.match(block,/официјалниот текст/u);
+  assert.doesNotMatch(block,/официјалниот full-text/u);
+});
