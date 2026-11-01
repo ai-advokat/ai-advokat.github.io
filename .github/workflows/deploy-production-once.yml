@@ -106,9 +106,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          ACCOUNT="r13-article-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          ENT="r13-article-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          KID="r13-article-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ACCOUNT="r13-article-smoke"
+          ENT="r13-article-ent"
+          KID="r13-article-key"
           KEY="r13smoke_$(openssl rand -hex 24)"
           HASH="$(printf '%s' "$KEY" | sha256sum | awk '{print $1}')"
           PREFIX="${KEY:0:12}"
