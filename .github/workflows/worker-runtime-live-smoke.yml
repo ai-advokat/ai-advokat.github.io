@@ -28,9 +28,9 @@ jobs:
           curl -fsSL --retry 5 --retry-delay 2 "$BASE/" -o /tmp/worker-home.html
           curl -fsSL --retry 5 --retry-delay 2 "$BASE/bot/" -o /tmp/worker-bot.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-home.html
-          grep -q 'ai-advokat-chat.js?v=20261101-root-r9' /tmp/worker-home.html
+          grep -q 'ai-advokat-chat.js?v=20261101-vnext-r10' /tmp/worker-home.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-bot.html
-          grep -q 'standalone-bot-vnext.js?v=20261101-root-r9' /tmp/worker-bot.html
+          grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/worker-bot.html
           echo "WORKER FRONTEND ROOT-R9: PASS"
 
       - name: Verify production health and orchestrator
