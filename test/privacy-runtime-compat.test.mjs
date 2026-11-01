@@ -30,8 +30,9 @@ test("legacy browser path is deliberately published while the rest of src stays 
 
 test("critical runtime cache policy is fail-fresh",()=>{
   const headers=fs.readFileSync("_headers","utf8");
-  assert.match(headers,/\/assets\/standalone-bot\*\.js[\s\S]*Cache-Control: no-store, max-age=0/);
-  assert.match(headers,/\/src\/chat-privacy\.js[\s\S]*Cache-Control: no-store, max-age=0/);
+  assert.match(headers,/\/assets\/\*\.js[\s\S]*Cache-Control: no-store, max-age=0/);
+  assert.match(headers,/\/assets\/\*\.mjs[\s\S]*Cache-Control: no-store, max-age=0/);
+  assert.match(headers,/\/src\/\*\.js[\s\S]*Cache-Control: no-store, max-age=0/);
 });
 
 
