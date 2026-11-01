@@ -32,6 +32,12 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          legacy_code="$(curl -sS --max-time 30 -o /dev/null -D /tmp/worker-legacy-release-headers.txt -w '%{http_code}' "$BASE/bot/?release=core-r10")"
+          test "$legacy_code" = "302"
+          grep -qi '^location: .*release=core-r12' /tmp/worker-legacy-release-headers.txt
+          grep -qi '^clear-site-data: "cache"' /tmp/worker-legacy-release-headers.txt
+          grep -qi '^x-ai-advokat-release: core-r12' /tmp/worker-legacy-release-headers.txt
+          echo "LEGACY CORE-R10 SELF-HEAL REDIRECT: PASS"
           curl -fsSL --retry 5 --retry-delay 2 "$BASE/" -o /tmp/worker-home.html
           curl -fsSL --retry 5 --retry-delay 2 "$BASE/bot/?release=core-r12" -o /tmp/worker-bot.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-home.html
@@ -102,6 +108,7 @@ jobs:
           path: |
             /tmp/worker-home.html
             /tmp/worker-bot.html
+            /tmp/worker-legacy-release-headers.txt
             /tmp/worker-core.js
             /tmp/worker-privacy-primary.js
             /tmp/worker-privacy-compat.js
