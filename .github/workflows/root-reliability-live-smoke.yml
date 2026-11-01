@@ -75,6 +75,13 @@ jobs:
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-bot.html
           grep -q 'standalone-bot.js?v=20261101-core-r12' /tmp/worker-bot.html
           grep -q 'standalone-bot-vnext.js?v=20261101-vnext-r10' /tmp/worker-bot.html
+          curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/assets/chat-privacy-browser.js?v=20261101-privacy-r12" -o /tmp/privacy-primary.js
+          curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/src/chat-privacy.js?v=20261101-privacy-compat-r1" -o /tmp/privacy-compat.js
+          grep -q 'detectConfidentialCasePrompt' /tmp/privacy-primary.js
+          grep -q 'redactConfidentialCasePrompt' /tmp/privacy-primary.js
+          grep -q 'detectConfidentialCasePrompt' /tmp/privacy-compat.js
+          grep -q 'redactConfidentialCasePrompt' /tmp/privacy-compat.js
+          echo "PRIVACY RUNTIME STATIC ASSETS: PASS"
 
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/api/health" -o /tmp/root-health.json
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/api/orchestrator" -o /tmp/root-orchestrator.json
