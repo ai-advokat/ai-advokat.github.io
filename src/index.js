@@ -107,7 +107,7 @@ import {
   draftRequest
 } from "./case-intelligence.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
-import { findGazetteIssueMetadata, gazetteIssueMetadataToContext } from "./gazette-issue-metadata.js";
+import { extractGazetteIssueNeedles, findGazetteIssueMetadata, gazetteIssueMetadataToContext } from "./gazette-issue-metadata.js";
 import {
   CANONICAL_PROVENANCE_GATE_VERSION,
   CANONICAL_METADATA_STANDARD_VERSION,
@@ -5568,6 +5568,88 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const effectiveGuideIds=contextualFollowUp ? [] : guideIds;
   const initialPlan=buildAgentPlan(q);
+
+  // Canonical Gazette metadata fast lane (1944-2017).
+  // A concrete issue-number/year request must never be answered from scholarly
+  // or authorial material when the official issue-metadata index is the intended source.
+  const gazetteNeedles=extractGazetteIssueNeedles(routingQuery);
+  const gazetteYear=Number(gazetteNeedles.year||0);
+  const directGazetteMetadataRequest=
+    gazetteNeedles.explicitSignal===true
+    && gazetteNeedles.usable===true
+    && gazetteYear>=1944
+    && gazetteYear<=2017;
+  if(directGazetteMetadataRequest){
+    const directGazette=await findGazetteIssueMetadata(env,routingQuery,{limit:8});
+    if(directGazette.state==="unavailable"){
+      return json(request,{
+        ok:false,
+        error:"gazette_metadata_index_temporarily_unavailable",
+        message:"Официјалниот индекс на изданија на „Службен весник“ е привремено недостапен. Барањето не е пренасочено кон секундарни извори и AI не е повикан.",
+        gazetteQuery:gazetteNeedles,
+        providerCalled:false,
+        quotaConsumed:false
+      },503);
+    }
+    if(directGazette.state!=="matched" || !Array.isArray(directGazette.issues) || directGazette.issues.length===0){
+      return json(request,{
+        ok:false,
+        error:"gazette_issue_not_found_in_canonical_metadata_index",
+        message:"Во канонскиот metadata индекс 1944–2017 не е пронајдено совпаѓање за бараниот број и година. AI не користеше научни статии или друг секундарен материјал како замена.",
+        gazetteQuery:gazetteNeedles,
+        providerCalled:false,
+        quotaConsumed:false
+      },404);
+    }
+    const issueRows=directGazette.issues;
+    const answer=[
+      "Метаподатоци од официјалниот индекс на изданија на „Службен весник“:",
+      ...issueRows.map(i=>"• "+String(i.publication_type||"Службен весник")+" · број "+String(i.issue_number)+"/"+String(i.year)+" · датум "+String(i.issue_date)),
+      "",
+      "Извор: ЈП „Службен весник на РСМ“ · официјален open-data metadata индекс.",
+      "Ова е metadata-only запис: потврдува број, датум и тип на издание; не ја докажува содржината на конкретен акт, член или неговата тековна важност."
+    ].join("\n");
+    return json(request,{
+      ok:true,
+      answer,
+      provider:"canonical_corpus_no_model",
+      model:null,
+      mode:"passive_corpus",
+      displayMode:"canonical_gazette_issue_metadata",
+      sourceMode:"canonical_gazette_issue_metadata_no_model",
+      webSearchUsed:false,
+      gazetteIssueMetadata:issueRows.map(i=>({
+        publicationType:i.publication_type,
+        issueNumber:String(i.issue_number),
+        year:Number(i.year),
+        issueDate:String(i.issue_date),
+        humanReviewStatus:String(i.human_review_status||"reviewed"),
+        authorityRole:"PRIMARY_OFFICIAL_METADATA",
+        legalTextAuthority:false,
+        currentLawAuthority:false
+      })),
+      sources:[{
+        title:"ЈП Службен весник на РСМ · Изданија на Службен весник до 2017",
+        url:String(issueRows[0]?.dataset_url||"https://data.gov.mk/dataset/n3dahnja-ha-cjiyx6eh-bechnk-do-2017"),
+        category:"official_gazette",
+        jurisdiction:"MK",
+        registered:true,
+        authorityRole:"primary_official_metadata"
+      }],
+      legalSources:[],
+      caseLawSources:[],
+      guideSources:[],
+      publicationSources:[],
+      performance:{
+        providerCalls:0,
+        languageRepairProviderCalls:0,
+        serverLatencyMs:0,
+        fastPromptUsed:true
+      },
+      humanGate:"Metadata only. За содржината на конкретен акт и за важечко право проверете го официјалниот текст и применливата верзија."
+    });
+  }
+
   const [guideContext,articleBundle,caseLawBundle,gazetteBundle,bureauEchrBundle,scholarlyBundle,authorialBundle]=await Promise.all([
     governedGuideContext(request,env,effectiveGuideIds),
     governedArticleContext(env,routingQuery,initialPlan),
