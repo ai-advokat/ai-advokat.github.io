@@ -1658,7 +1658,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!analysisLanguageRelease.ok){
       return json(request,{
         ok:false,
-        error:"foreign_jurisdiction_substitution_blocked",
+        error:"macedonian_language_release_blocked",
         message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
         languageReleaseGate:analysisLanguageRelease.releaseGate,
         languageReasons:analysisLanguageRelease.quality?.reasons||[]
@@ -1844,7 +1844,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!draftLanguageRelease.ok){
       return json(request,{
         ok:false,
-        error:"foreign_jurisdiction_substitution_blocked",
+        error:"macedonian_language_release_blocked",
         message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
         languageReleaseGate:draftLanguageRelease.releaseGate,
         languageReasons:draftLanguageRelease.quality?.reasons||[]
@@ -6512,7 +6512,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     await releaseMonthlyQuota(env,{subject,period});
     return json(request,{
       ok:false,
-      error:"foreign_jurisdiction_substitution_blocked",
+      error:"macedonian_language_release_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
       languageReleaseGate:governedLanguageRelease,
@@ -6937,7 +6937,7 @@ async function handleAssistant(request, env, url) {
         const languageRequired=shouldEnforceMacedonianOutput(q);
         const candidateDelivery=canonicalMacedonianFinalRelease(languagePass.text||primaryCandidate,q);
         if(languageRequired && !candidateDelivery.ok){
-          aiError="foreign_jurisdiction_substitution_blocked";
+          aiError="macedonian_language_release_blocked";
           answerMode="retrieval_only_legal_safety_guard";
         }else{
           const candidate=String(candidateDelivery.text||languagePass.text||primaryCandidate).trim();
@@ -7018,7 +7018,7 @@ async function handleAssistant(request, env, url) {
     }
     return json(request,{
       ok:false,
-      error:"foreign_jurisdiction_substitution_blocked",
+      error:"macedonian_language_release_blocked",
       message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
       languageReleaseGate:assistantFinalRelease.releaseGate,
       languageReasons:assistantFinalRelease.quality?.reasons||[]
