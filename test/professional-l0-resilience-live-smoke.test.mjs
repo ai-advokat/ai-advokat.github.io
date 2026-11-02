@@ -14,6 +14,8 @@ test("Professional L0 resilience smoke accepts only OpenAI success or governed P
   assert.match(smoke,/d\.provider==="openai"/);
   assert.match(smoke,/d\.provider==="workers_ai_free" \|\| d\.provider==="canonical_corpus_no_model"/);
   assert.match(smoke,/d\.providerFallback\?\.from!=="openai"/);
+  assert.match(smoke,/gate\.includes\("Примарниот професионален AI-провајдер"\)/u);
+  assert.match(smoke,/gate\.includes\("Workers AI"\)/);
   assert.match(smoke,/PROFESSIONAL_L0_WORKERS_AI/);
   assert.match(smoke,/professional_workers_ai_fallback/);
   assert.match(smoke,/missionProfile!=="L0_INFORMATIONAL"/);
