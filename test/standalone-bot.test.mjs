@@ -86,7 +86,10 @@ test('P0 professional recovery keeps two bounded OpenAI attempts plus controlled
   assert.match(source,/if\(postflightRequired!==true\) return false/);
   assert.match(source,/if\(explicitWebRequested===true\) return false/);
   assert.match(source,/Number\(attachmentCount\|\|0\)>0 \|\| Number\(guideDocumentCount\|\|0\)>0/);
-  assert.match(source,/Number\(corpusContextCount\|\|0\)<1/);
+  assert.doesNotMatch(source,/Number\(corpusContextCount\|\|0\)<1/);
+  assert.match(source,/NO_GOVERNED_CURRENT_LAW_CONTEXT/);
+  assert.match(source,/ZERO-GOVERNED-CONTEXT SAFETY/);
+  assert.match(source,/professional_degraded_structure_only_workers_ai_fallback/);
   assert.match(source,/PROFESSIONAL_L0_WORKERS_AI/);
   assert.match(source,/PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI/);
   assert.match(source,/NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE/);
