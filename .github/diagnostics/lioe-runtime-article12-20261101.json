@@ -1,9 +1,9 @@
 {
   "purpose": "read_only_lioe_runtime_failure_diagnostic",
-  "requested_at": "2026-11-01T15:44:00Z",
+  "requested_at": "2026-11-02T17:10:00Z",
   "run_ids": [
-    "LIOE-RT-20261101154325-99dab763",
-    "LIOE-RT-20261101154356-158487b4"
+    "LIOE-RT-20261102170112-fe0d0fa3",
+    "LIOE-RT-20261102170154-da6d0b8b"
   ],
   "privacy_boundary": "technical telemetry only; no user question, answer, attachment, membership identity or conversation history"
 }
