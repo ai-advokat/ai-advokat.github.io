@@ -5389,6 +5389,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   const formalDraftRequest=isFormalLegalDraftRequest(q);
   const proceduralInstrumentMismatch=formalDraftRequest && hasProceduralInstrumentMismatch(q);
   const compactFreeDraft=formalDraftRequest;
+  const zeroGovernedHighDepthContext=
+    ["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL"].includes(missionProfile)
+    && !String(governed||"").trim();
 
   // Formal legal drafting must never use the stripped-down fast prompt.
   // It needs the full language contract, legal terminology discipline and
@@ -5407,6 +5410,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     "When the user asks for an exact token, identifier, name, date or phrase present in extracted document text, copy it exactly before adding interpretation.",
     "Never invent document contents, missing pages, signatures, dates, parties, legal effects or source citations.",
     "If current law is not established by a governed primary source in supplied context, say that current-law verification is still required and continue with the useful non-authoritative portion.",
+    zeroGovernedHighDepthContext
+      ? "ZERO-GOVERNED-CONTEXT SAFETY: no governed current-law source matched this L2/L3 request. Produce only a structural working template. Do not state a specific statute name, numbered article, filing deadline, court/jurisdiction, mandatory attachment, court fee, remedy, burden, legal effect or current-law proposition as established law. Use neutral placeholders such as [ДА СЕ ПРОВЕРИ ВО ВАЖЕЧКИ ОФИЦИЈАЛЕН ИЗВОР] where legal verification is needed."
+      : null,
     "Do not say that you cannot create Word/DOCX files. The browser can export the latest working draft; provide the complete document text.",
     "Use placeholders or clearly fictional data when the user requests invented names/details; never present invented facts as real.",
     proceduralInstrumentMismatch
@@ -5445,7 +5451,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     compactFreeDraft
       ? (proceduralInstrumentMismatch
           ? "Return one complete compact neutral working draft. Do not title it ТУЖБА merely because the user used that word. State briefly that the exact procedural instrument requires verification, then provide the useful factual structure with placeholders. Keep it within about 700 words."
-          : "Return only the complete compact working draft. Use clear placeholders or explicitly fictional data. Keep it within about 700 words and omit commentary before or after the document.")
+          : zeroGovernedHighDepthContext
+            ? "Return only a complete compact structural working template. Preserve user-supplied facts, mark missing facts clearly, and use [ДА СЕ ПРОВЕРИ ВО ВАЖЕЧКИ ОФИЦИЈАЛЕН ИЗВОР] for every legal point that would require current-law authority. Do not invent or assert statute names, article numbers, deadlines, jurisdiction, mandatory attachments, fees, remedies or legal effects. Keep it within about 700 words."
+            : "Return only the complete compact working draft. Use clear placeholders or explicitly fictional data. Keep it within about 700 words and omit commentary before or after the document.")
       : missionProfile==="L0_INFORMATIONAL"
         ? "Answer directly and concisely. Use ordinary standard Macedonian; no table unless requested."
         : "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
