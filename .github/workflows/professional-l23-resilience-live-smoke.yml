@@ -107,7 +107,36 @@ jobs:
             -H 'Origin: https://ai-advokat.github.io' \
             --data-binary @/tmp/l3-payload.json \
             "$BASE/api/bot")"
-          test "$code" = "200"
+          echo "L3_HTTP_STATUS=$code"
+          if [ "$code" != "200" ]; then
+            node <<'NODE'
+          const fs=require("fs");
+          let d={};
+          try{ d=JSON.parse(fs.readFileSync("/tmp/l3-response.json","utf8")); }catch{}
+          const safe={
+            ok:d.ok===true,
+            error:d.error||null,
+            provider:d.provider||d.runtime?.provider||null,
+            model:d.model||null,
+            displayMode:d.displayMode||null,
+            sourceMode:d.sourceMode||null,
+            governanceRunId:d.governanceRunId||null,
+            runtimeTelemetry:d.runtimeTelemetry||null,
+            missionProfile:d.legalGovernance?.missionProfile||null,
+            releaseState:d.legalGovernance?.releaseState||null,
+            verificationState:d.legalGovernance?.verificationState||null,
+            providerFallbackMode:d.legalGovernance?.providerFallbackMode||null,
+            postflightState:d.legalGovernance?.postflightState||null,
+            languageReleaseGate:d.languageReleaseGate||null,
+            languageEditorRequired:d.languageEditorRequired===true,
+            languageEditorPassed:d.languageEditorPassed===true,
+            languageEditorError:d.languageEditorError||null,
+            failureDetail:d.failureDetail||null
+          };
+          console.log("L3_SAFE_FAILURE="+JSON.stringify(safe));
+          NODE
+            exit 1
+          fi
           node <<'NODE'
           const fs=require("fs");
           const d=require("/tmp/l3-response.json");
@@ -194,7 +223,36 @@ jobs:
             -H 'Origin: https://ai-advokat.github.io' \
             --data-binary @/tmp/l2-payload.json \
             "$BASE/api/bot")"
-          test "$code" = "200"
+          echo "L2_HTTP_STATUS=$code"
+          if [ "$code" != "200" ]; then
+            node <<'NODE'
+          const fs=require("fs");
+          let d={};
+          try{ d=JSON.parse(fs.readFileSync("/tmp/l2-response.json","utf8")); }catch{}
+          const safe={
+            ok:d.ok===true,
+            error:d.error||null,
+            provider:d.provider||d.runtime?.provider||null,
+            model:d.model||null,
+            displayMode:d.displayMode||null,
+            sourceMode:d.sourceMode||null,
+            governanceRunId:d.governanceRunId||null,
+            runtimeTelemetry:d.runtimeTelemetry||null,
+            missionProfile:d.legalGovernance?.missionProfile||null,
+            releaseState:d.legalGovernance?.releaseState||null,
+            verificationState:d.legalGovernance?.verificationState||null,
+            providerFallbackMode:d.legalGovernance?.providerFallbackMode||null,
+            postflightState:d.legalGovernance?.postflightState||null,
+            languageReleaseGate:d.languageReleaseGate||null,
+            languageEditorRequired:d.languageEditorRequired===true,
+            languageEditorPassed:d.languageEditorPassed===true,
+            languageEditorError:d.languageEditorError||null,
+            failureDetail:d.failureDetail||null
+          };
+          console.log("L2_SAFE_FAILURE="+JSON.stringify(safe));
+          NODE
+            exit 1
+          fi
           node <<'NODE'
           const fs=require("fs");
           const d=require("/tmp/l2-response.json");
