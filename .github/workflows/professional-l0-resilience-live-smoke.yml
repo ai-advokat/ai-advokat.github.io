@@ -47,7 +47,8 @@ jobs:
             "professionalL0WorkersFallbackEligible",
             'missionProfile||"")!=="L0_INFORMATIONAL"',
             "explicitWebRequested===true || webRequested===true",
-            'providerFallbackMode:professionalFallbackActive ? "PROFESSIONAL_L0_WORKERS_AI"',
+            "professionalL0FallbackActive",
+            "PROFESSIONAL_L0_WORKERS_AI",
             'initialMissionProfile!=="L0_INFORMATIONAL"'
           ]) if(!source.includes(needle)) throw new Error("Missing L0 resilience contract: "+needle);
           console.log("PROFESSIONAL L0 RESILIENCE CONTRACT: PASS");
