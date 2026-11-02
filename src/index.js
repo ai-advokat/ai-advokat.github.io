@@ -4826,7 +4826,6 @@ export function professionalDegradedDraftFallbackEligible({
   explicitWebRequested=false,
   attachmentCount=0,
   guideDocumentCount=0,
-  corpusContextCount=0,
   result=null
 }={}){
   if(!membership) return false;
@@ -4834,7 +4833,6 @@ export function professionalDegradedDraftFallbackEligible({
   if(postflightRequired!==true) return false;
   if(explicitWebRequested===true) return false;
   if(Number(attachmentCount||0)>0 || Number(guideDocumentCount||0)>0) return false;
-  if(Number(corpusContextCount||0)<1) return false;
   const error=String(result?.error||"");
   if(["openai_network_error","openai_timeout_error","openai_incomplete_response","openai_empty_response"].includes(error)) return true;
   if(error!=="openai_response_error") return false;
@@ -6338,6 +6336,10 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     const professionalL0FallbackActive=professionalFallbackActive && missionProfile==="L0_INFORMATIONAL";
     const professionalDegradedDraftActive=professionalFallbackActive
       && ["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL"].includes(missionProfile);
+    const degradedHasGovernedContext=professionalDegradedDraftActive && corpusContext.length>0;
+    const degradedContextState=professionalDegradedDraftActive
+      ? (degradedHasGovernedContext ? "GOVERNED_CONTEXT_PRESENT" : "NO_GOVERNED_CURRENT_LAW_CONTEXT")
+      : null;
     const fallbackPlanCode=professionalFallbackActive ? membership.planCode : "free";
     // FREE mode must remain usable for research, analysis and complete working drafts.
     // High-stakes/current-law missions are not blocked at generation time; they are
@@ -6440,10 +6442,15 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           hasGovernedLegalContext:false
         });
       }
+      const noContextNotice=!degradedHasGovernedContext
+        ? (missionProfile==="L3_CONSEQUENTIAL"
+          ? "РАБОТЕН ШАБЛОН — ПРАВНАТА ОСНОВА НЕ Е ВЕРИФИКУВАНА\nЗа ова барање не е пронајден governed current-law контекст. Затоа документот може да содржи само структура, факти дадени од корисникот, неутрални формулации и места за дополнување. Не смее да се третира како потврда на важечки закон, конкретен член, рок, надлежност, задолжителен прилог, судска такса, правен лек или правен ефект."
+          : "РАБОТЕН НАЦРТ — ВАЖЕЧКОТО ПРАВО НЕ Е ВЕРИФИКУВАНО\nЗа ова барање не е пронајден governed current-law контекст. Правната основа, конкретните членови, роковите, надлежноста, задолжителните прилози, таксите, правните лекови и правните ефекти мора да се проверат во важечки официјален извор пред професионална употреба.")
+        : null;
       const degradedNotice=missionProfile==="L3_CONSEQUENTIAL"
         ? "ЧОВЕЧКА ПРОВЕРКА ПРЕД ПОДНЕСУВАЊЕ\nОвој текст е работен нацрт подготвен преку резервен AI пат по привремена недостапност на примарниот провајдер. Целосната LIOE postflight проверка не е извршена. Пред потпишување, поднесување или испраќање, адвокат мора да ги провери надлежноста, правната основа, роковите, фактите, доказите и прилозите."
         : "ЧОВЕЧКА ПРОВЕРКА ПРЕД ПРОФЕСИОНАЛНА УПОТРЕБА\nОвој текст е работен правен нацрт подготвен преку резервен AI пат по привремена недостапност на примарниот провајдер. Целосната LIOE postflight проверка не е извршена. Пред професионално потпирање проверете ги важечкиот закон, точните членови, роковите, надлежноста, фактите и доказите.";
-      releasedFallbackText=(releasedFallbackText+"\n\n"+degradedNotice).trim();
+      releasedFallbackText=([noContextNotice,releasedFallbackText,degradedNotice].filter(Boolean).join("\n\n")).trim();
       const degradedLanguageRelease=canonicalMacedonianFinalRelease(releasedFallbackText,q);
       if(!degradedLanguageRelease.ok){
         await releaseMonthlyQuota(env,{subject,period});
@@ -6466,7 +6473,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           ? "workers_ai_free_authorial_publication_context"
           : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
     const effectiveFallbackSourceMode=professionalDegradedDraftActive
-      ? "professional_degraded_"+freeSourceMode
+      ? (degradedHasGovernedContext
+        ? "professional_degraded_"+freeSourceMode
+        : "professional_degraded_structure_only_workers_ai_fallback")
       : professionalL0FallbackActive
         ? "professional_l0_"+freeSourceMode
         : freeSourceMode;
@@ -6487,6 +6496,12 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         ? {
             ...assessedFallback,
             verificationState:"PROVISIONAL",
+            sourceVerificationState:degradedHasGovernedContext
+              ? (assessedFallback.sourceVerificationState||"PENDING")
+              : "NOT_ESTABLISHED_NO_GOVERNED_CONTEXT",
+            jurisdictionVerificationState:degradedHasGovernedContext
+              ? (assessedFallback.jurisdictionVerificationState||"PENDING")
+              : "NOT_ESTABLISHED_NO_GOVERNED_CONTEXT",
             humanReviewRequired:true,
             legalStressTestState:"NOT_EXECUTED_PROVIDER_UNAVAILABLE",
             adversarialReviewState:"NOT_EXECUTED_PROVIDER_UNAVAILABLE"
@@ -6512,7 +6527,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         guideContextCount:guideContext.length+guideDocumentCheck.context.length,
         attachmentCount:0,
         sourceMode:professionalDegradedDraftActive
-          ? "professional_degraded_workers_ai_provider_fallback"
+          ? (degradedHasGovernedContext
+            ? "professional_degraded_workers_ai_provider_fallback"
+            : "professional_degraded_structure_only_workers_ai_fallback")
           : "professional_l0_workers_ai_provider_fallback",
         postflightMeta:{
           attempts:0,
@@ -6649,6 +6666,14 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
             : true,
         postflightRequired:freeProfessionalGuard,
         postflightState:professionalDegradedDraftActive ? "NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE" : "NOT_REQUIRED",
+        degradedContextState,
+        currentLawContextAvailable:professionalDegradedDraftActive ? degradedHasGovernedContext : null,
+        sourceVerificationState:professionalDegradedDraftActive
+          ? (fallbackRuntimeAssessment?.sourceVerificationState||"PENDING")
+          : null,
+        jurisdictionVerificationState:professionalDegradedDraftActive
+          ? (fallbackRuntimeAssessment?.jurisdictionVerificationState||"PENDING")
+          : null,
         primaryProviderState:professionalFallbackActive ? "FAILED_FALLBACK_RELEASED" : null,
         providerFallbackMode:professionalDegradedDraftActive
           ? "PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI"
@@ -6656,7 +6681,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
             ? "PROFESSIONAL_L0_WORKERS_AI"
             : null,
         warning:professionalDegradedDraftActive
-          ? "Примарниот OpenAI provider не успеа. Работниот правен нацрт е ослободен само како provisional/degraded work product: непотврдените бројки на членови се заменуваат со ознака за проверка, целосниот LIOE postflight не е извршен, а Human Gate останува задолжителен."
+          ? (degradedHasGovernedContext
+            ? "Примарниот OpenAI provider не успеа. Работниот правен нацрт е ослободен само како provisional/degraded work product: непотврдените бројки на членови се заменуваат со ознака за проверка, целосниот LIOE postflight не е извршен, а Human Gate останува задолжителен."
+            : "Примарниот OpenAI provider не успеа и за барањето нема governed current-law контекст. Ослободен е само структурен provisional нацрт без верификувана правна основа; конкретни членови, рокови, надлежност, задолжителни прилози, такси, правни лекови и правни ефекти мора да се проверат во официјален извор. Human Gate е задолжителен.")
           : professionalL0FallbackActive
             ? "Примарниот OpenAI provider не успеа. Контролираниот Workers AI fallback се користи само за L0 информативно барање без web-пребарување, без прилози и без postflight/current-law услов."
             : (freeProfessionalGuard
@@ -7044,7 +7071,6 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         explicitWebRequested,
         attachmentCount:attachmentCheck.attachments.length,
         guideDocumentCount:guideDocumentCheck.attachments.length,
-        corpusContextCount:corpusContext.length,
         result
       });
     if(professionalDegradedDraftFallbackAllowed){
