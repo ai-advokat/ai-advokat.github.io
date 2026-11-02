@@ -127,6 +127,9 @@ jobs:
             verificationState:d.legalGovernance?.verificationState||null,
             providerFallbackMode:d.legalGovernance?.providerFallbackMode||null,
             postflightState:d.legalGovernance?.postflightState||null,
+            degradedContextState:d.legalGovernance?.degradedContextState||null,
+            currentLawContextAvailable:d.legalGovernance?.currentLawContextAvailable??null,
+            sourceVerificationState:d.legalGovernance?.sourceVerificationState||null,
             languageReleaseGate:d.languageReleaseGate||null,
             languageEditorRequired:d.languageEditorRequired===true,
             languageEditorPassed:d.languageEditorPassed===true,
@@ -153,6 +156,11 @@ jobs:
             if(d.legalGovernance?.executionAuthorization!=="NO_EXTERNAL_ACTION") throw new Error("L3 must remain NO_EXTERNAL_ACTION");
             if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("L3 Human Gate missing");
             if(d.webSearchUsed!==false) throw new Error("L3 degraded fallback must not claim web search");
+            if(d.legalGovernance?.degradedContextState!=="NO_GOVERNED_CURRENT_LAW_CONTEXT") throw new Error("L3 zero-context state missing");
+            if(d.legalGovernance?.currentLawContextAvailable!==false) throw new Error("L3 must not claim governed current-law context");
+            if(d.legalGovernance?.sourceVerificationState!=="NOT_ESTABLISHED_NO_GOVERNED_CONTEXT") throw new Error("L3 source verification must remain unestablished");
+            if(d.sourceMode!=="professional_degraded_structure_only_workers_ai_fallback") throw new Error("L3 zero-context source mode missing");
+            if(!String(d.answer).includes("РАБОТЕН ШАБЛОН — ПРАВНАТА ОСНОВА НЕ Е ВЕРИФИКУВАНА")) throw new Error("L3 zero-context warning missing");
             if(!String(d.answer).includes("ЧОВЕЧКА ПРОВЕРКА ПРЕД ПОДНЕСУВАЊЕ")) throw new Error("L3 in-document Human Gate missing");
             if(/(?:член|чл\.)\s*\d+/iu.test(String(d.answer))) throw new Error("L3 degraded draft leaked an unverified numbered article");
           }else{
@@ -166,6 +174,10 @@ jobs:
             executionAuthorization:d.legalGovernance?.executionAuthorization||null,
             providerFallbackMode:d.legalGovernance?.providerFallbackMode||null,
             postflightState:d.legalGovernance?.postflightState||null,
+            degradedContextState:d.legalGovernance?.degradedContextState||null,
+            currentLawContextAvailable:d.legalGovernance?.currentLawContextAvailable??null,
+            sourceVerificationState:d.legalGovernance?.sourceVerificationState||null,
+            sourceMode:d.sourceMode||null,
             runtimeTelemetry:d.runtimeTelemetry||null,
             governanceRunId:d.governanceRunId||null,
             answerNonEmpty:Boolean(String(d.answer||"").trim())
@@ -243,6 +255,9 @@ jobs:
             verificationState:d.legalGovernance?.verificationState||null,
             providerFallbackMode:d.legalGovernance?.providerFallbackMode||null,
             postflightState:d.legalGovernance?.postflightState||null,
+            degradedContextState:d.legalGovernance?.degradedContextState||null,
+            currentLawContextAvailable:d.legalGovernance?.currentLawContextAvailable??null,
+            sourceVerificationState:d.legalGovernance?.sourceVerificationState||null,
             languageReleaseGate:d.languageReleaseGate||null,
             languageEditorRequired:d.languageEditorRequired===true,
             languageEditorPassed:d.languageEditorPassed===true,
@@ -269,6 +284,12 @@ jobs:
             if(d.legalGovernance?.executionAuthorization!=="RESEARCH_OUTPUT_ONLY") throw new Error("L2 must remain RESEARCH_OUTPUT_ONLY");
             if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("L2 Human Gate missing");
             if(d.webSearchUsed!==false) throw new Error("L2 degraded fallback must not claim web search");
+            if(d.legalGovernance?.currentLawContextAvailable===false){
+              if(d.legalGovernance?.degradedContextState!=="NO_GOVERNED_CURRENT_LAW_CONTEXT") throw new Error("L2 zero-context state missing");
+              if(d.legalGovernance?.sourceVerificationState!=="NOT_ESTABLISHED_NO_GOVERNED_CONTEXT") throw new Error("L2 source verification must remain unestablished");
+              if(d.sourceMode!=="professional_degraded_structure_only_workers_ai_fallback") throw new Error("L2 zero-context source mode missing");
+              if(!String(d.answer).includes("РАБОТЕН НАЦРТ — ВАЖЕЧКОТО ПРАВО НЕ Е ВЕРИФИКУВАНО")) throw new Error("L2 zero-context warning missing");
+            }
             if(!String(d.answer).includes("ЧОВЕЧКА ПРОВЕРКА ПРЕД ПРОФЕСИОНАЛНА УПОТРЕБА")) throw new Error("L2 in-document Human Gate missing");
             if(/(?:член|чл\.)\s*\d+/iu.test(String(d.answer))) throw new Error("L2 degraded draft leaked an unverified numbered article");
           }else{
