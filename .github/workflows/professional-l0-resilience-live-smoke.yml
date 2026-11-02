@@ -115,7 +115,8 @@ jobs:
             if(d.legalGovernance?.providerFallbackMode!=="PROFESSIONAL_L0_WORKERS_AI") {
               throw new Error("Professional fallback governance marker missing");
             }
-            if(!String(d.humanGate||"").includes("резервниот Workers AI")) {
+            const gate=String(d.humanGate||"");
+            if(!gate.includes("Примарниот професионален AI-провајдер") || !gate.includes("Workers AI")) {
               throw new Error("Professional fallback Human Gate missing");
             }
           }else{
