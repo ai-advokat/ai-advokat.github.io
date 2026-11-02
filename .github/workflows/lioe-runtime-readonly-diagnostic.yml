@@ -48,7 +48,7 @@ jobs:
           const p=".github/diagnostics/lioe-runtime-article12-20261101.json";
           const d=JSON.parse(fs.readFileSync(p,"utf8"));
           if(d.purpose!=="read_only_lioe_runtime_failure_diagnostic") throw new Error("unexpected purpose");
-          if(!Array.isArray(d.run_ids)||d.run_ids.length!==2) throw new Error("expected two run ids");
+          if(!Array.isArray(d.run_ids)||d.run_ids.length<1||d.run_ids.length>10) throw new Error("expected one to ten run ids");
           for(const id of d.run_ids){
             if(!/^LIOE-RT-\d{14}-[0-9a-f]{8}$/.test(id)) throw new Error("invalid run id");
           }
@@ -81,7 +81,8 @@ jobs:
           const fs=require("fs");
           const raw=JSON.parse(fs.readFileSync("/tmp/lioe-runtime-diagnostic.json","utf8"));
           const rows=Array.isArray(raw)?(raw[0]?.results||[]):(raw?.results||[]);
-          if(rows.length!==2) throw new Error("expected two telemetry rows, got "+rows.length);
+          const manifest=JSON.parse(fs.readFileSync(".github/diagnostics/lioe-runtime-article12-20261101.json","utf8"));
+          if(rows.length!==manifest.run_ids.length) throw new Error("expected "+manifest.run_ids.length+" telemetry rows, got "+rows.length);
           for(const row of rows){
             if(!row.run_id || !String(row.run_id).startsWith("LIOE-RT-")) throw new Error("bad row");
           }
