@@ -45,10 +45,14 @@ test("external bot isolates vNext boot stages and remains fail-visible",()=>{
   assert.match(vnext,/vnextSidebarClose'\)\.onclick=closeMobileSidebar/);
 });
 
-test("professional runtime recovery covers transient 408 and bounded specialist deadline failures",()=>{
+test("professional runtime recovery covers transient 408 and keeps Workers fallback bounded to L0",()=>{
   assert.match(worker,/\[408,429,500,502,503,504\]\.includes\(transientStatus\)/);
   assert.match(orchestrator,/"specialist_deadline_exhausted"/);
   assert.match(orchestrator,/\["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL"\]\.includes\(profile\)/);
-  assert.match(worker,/!membership\s*&&\s*governedOpenAIWorkersFallbackConfigured/);
+  assert.match(worker,/professionalL0WorkersFallbackEligible/);
+  assert.match(worker,/missionProfile\|\|""\)!=="L0_INFORMATIONAL"/);
+  assert.match(worker,/explicitWebRequested===true \|\| webRequested===true/);
+  assert.match(worker,/Number\(attachmentCount\|\|0\)>0 \|\| Number\(guideDocumentCount\|\|0\)>0/);
+  assert.match(worker,/\[408,429,500,502,503,504\]\.includes\(Number\(result\?\.status\|\|0\)\)/);
   assert.match(worker,/\/api\/bot"\) return handleGPTChat\(request, env, \{openAIOnly:true\}\)/);
 });
