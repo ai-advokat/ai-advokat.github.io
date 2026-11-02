@@ -70,7 +70,7 @@ test('standalone bot preserves professional feature parity controls',()=>{
 });
 
 
-test('P0 professional recovery keeps two bounded OpenAI attempts and only a controlled L0 Workers fallback',()=>{
+test('P0 professional recovery keeps two bounded OpenAI attempts plus controlled L0 and degraded L2/L3 Workers fallbacks',()=>{
   const source=fs.readFileSync('src/index.js','utf8');
   const orchestrator=fs.readFileSync('src/agent-orchestrator.js','utf8');
   const governance=fs.readFileSync('src/legal-runtime-governance.js','utf8');
@@ -80,10 +80,17 @@ test('P0 professional recovery keeps two bounded OpenAI attempts and only a cont
   assert.match(source,/sanitiseProviderAttempt\(retry,2\)/);
   assert.match(source,/OPENAI_RETRY_BACKOFF_MS\|\|250/);
   assert.match(source,/professionalL0WorkersFallbackEligible/);
+  assert.match(source,/professionalDegradedDraftFallbackEligible/);
   assert.match(source,/missionProfile\|\|""\)!=="L0_INFORMATIONAL"/);
-  assert.match(source,/postflightRequired===true/);
-  assert.match(source,/explicitWebRequested===true \|\| webRequested===true/);
-  assert.match(source,/providerFallbackMode:professionalFallbackActive \? "PROFESSIONAL_L0_WORKERS_AI"/);
+  assert.match(source,/\["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL"\]\.includes\(String\(missionProfile\|\|""\)\)/);
+  assert.match(source,/if\(postflightRequired!==true\) return false/);
+  assert.match(source,/if\(explicitWebRequested===true\) return false/);
+  assert.match(source,/Number\(attachmentCount\|\|0\)>0 \|\| Number\(guideDocumentCount\|\|0\)>0/);
+  assert.match(source,/Number\(corpusContextCount\|\|0\)<1/);
+  assert.match(source,/PROFESSIONAL_L0_WORKERS_AI/);
+  assert.match(source,/PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI/);
+  assert.match(source,/NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE/);
+  assert.match(source,/replaceUngroundedArticleReferences\(releasedFallbackText/);
   assert.match(orchestrator,/chiefFallbackTimeoutMs=\["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"\]\.includes\(missionProfile\)/);
   assert.match(orchestrator,/professionalFactReview[\s\S]{0,220}\? 60000[\s\S]{0,120}: 45000/);
   assert.match(orchestrator,/\? 70000[\s\S]{0,220}: 45000/);
