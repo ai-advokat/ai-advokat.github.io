@@ -28,6 +28,11 @@ test("Professional degraded smoke locks Human Gate and provider provenance",()=>
   assert.match(smoke,/professional_degraded_draft_fallback/);
   assert.match(smoke,/PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI/);
   assert.match(smoke,/NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE/);
+  assert.match(smoke,/NO_GOVERNED_CURRENT_LAW_CONTEXT/);
+  assert.match(smoke,/NOT_ESTABLISHED_NO_GOVERNED_CONTEXT/);
+  assert.match(smoke,/professional_degraded_structure_only_workers_ai_fallback/);
+  assert.match(smoke,/РАБОТЕН ШАБЛОН — ПРАВНАТА ОСНОВА НЕ Е ВЕРИФИКУВАНА/u);
+  assert.match(smoke,/РАБОТЕН НАЦРТ — ВАЖЕЧКОТО ПРАВО НЕ Е ВЕРИФИКУВАНО/u);
   assert.match(smoke,/NO_EXTERNAL_ACTION/);
   assert.match(smoke,/RESEARCH_OUTPUT_ONLY/);
   assert.match(smoke,/ЧОВЕЧКА ПРОВЕРКА ПРЕД ПОДНЕСУВАЊЕ/u);
