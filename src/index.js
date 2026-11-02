@@ -154,7 +154,8 @@ import {
   isFormalLegalDraftRequest,
   hasProceduralInstrumentMismatch,
   deterministicProceduralInstrumentFallback,
-  finaliseFormalLegalDraft
+  finaliseFormalLegalDraft,
+  replaceUngroundedArticleReferences
 } from "./response-quality.js";
 import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commentary.js";
 import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, scholarlyContextItems } from "./scholarly-literature.js";
@@ -4812,6 +4813,28 @@ export function professionalL0WorkersFallbackEligible({
   if(postflightRequired===true) return false;
   if(explicitWebRequested===true || webRequested===true) return false;
   if(Number(attachmentCount||0)>0 || Number(guideDocumentCount||0)>0) return false;
+  const error=String(result?.error||"");
+  if(["openai_network_error","openai_timeout_error","openai_incomplete_response","openai_empty_response"].includes(error)) return true;
+  if(error!=="openai_response_error") return false;
+  return [408,429,500,502,503,504].includes(Number(result?.status||0));
+}
+
+export function professionalDegradedDraftFallbackEligible({
+  membership=null,
+  missionProfile="",
+  postflightRequired=false,
+  explicitWebRequested=false,
+  attachmentCount=0,
+  guideDocumentCount=0,
+  corpusContextCount=0,
+  result=null
+}={}){
+  if(!membership) return false;
+  if(!["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL"].includes(String(missionProfile||""))) return false;
+  if(postflightRequired!==true) return false;
+  if(explicitWebRequested===true) return false;
+  if(Number(attachmentCount||0)>0 || Number(guideDocumentCount||0)>0) return false;
+  if(Number(corpusContextCount||0)<1) return false;
   const error=String(result?.error||"");
   if(["openai_network_error","openai_timeout_error","openai_incomplete_response","openai_empty_response"].includes(error)) return true;
   if(error!=="openai_response_error") return false;
