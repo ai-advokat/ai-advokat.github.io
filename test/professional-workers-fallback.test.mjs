@@ -16,6 +16,7 @@ test("Professional L0 informational traffic may use governed Workers fallback af
     missionProfile:"L0_INFORMATIONAL",
     postflightRequired:false,
     explicitWebRequested:false,
+    webRequested:false,
     attachmentCount:0,
     guideDocumentCount:0,
     result:transient429
@@ -37,6 +38,7 @@ test("Professional fallback stays fail-closed outside the exact low-risk boundar
   assert.equal(professionalL0WorkersFallbackEligible({...base,missionProfile:"L2_STRATEGY_PROCEDURE"}),false);
   assert.equal(professionalL0WorkersFallbackEligible({...base,postflightRequired:true}),false);
   assert.equal(professionalL0WorkersFallbackEligible({...base,explicitWebRequested:true}),false);
+  assert.equal(professionalL0WorkersFallbackEligible({...base,webRequested:true}),false);
   assert.equal(professionalL0WorkersFallbackEligible({...base,attachmentCount:1}),false);
   assert.equal(professionalL0WorkersFallbackEligible({...base,guideDocumentCount:1}),false);
   assert.equal(professionalL0WorkersFallbackEligible({...base,result:{error:"openai_authentication_error",status:401}}),false);
@@ -67,4 +69,12 @@ test("Zoki 2026-11-02 diagnostic evidence stays bounded to the two supplied run 
     "LIOE-RT-20261102170154-da6d0b8b"
   ]);
   assert.match(diagnostic.privacy_boundary,/technical telemetry only/i);
+});
+
+
+test("L0 informational Auto mode does not force proactive external web research",()=>{
+  const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
+  assert.match(handle,/const initialMissionProfile=initialPlan\.legalIntelligenceEngine\?\.mission_profile\?\.id\|\|"GENERAL_BYPASS"/);
+  assert.match(handle,/initialMissionProfile!=="L0_INFORMATIONAL"/);
+  assert.match(handle,/professionalL0WorkersFallbackEligible\(\{[\s\S]*?webRequested,/);
 });
