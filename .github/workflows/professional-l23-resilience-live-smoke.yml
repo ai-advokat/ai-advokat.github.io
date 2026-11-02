@@ -1,0 +1,258 @@
+name: Professional L2-L3 resilience live smoke
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/index.js"
+      - ".github/workflows/professional-l23-resilience-live-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: professional-l23-resilience-live-smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify bounded Professional degraded drafting contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --check src/index.js
+          node <<'NODE'
+          const fs=require("fs");
+          const source=fs.readFileSync("src/index.js","utf8");
+          for(const needle of [
+            "professionalDegradedDraftFallbackEligible",
+            "PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI",
+            "NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE",
+            "professional_degraded_draft_fallback",
+            "replaceUngroundedArticleReferences(releasedFallbackText"
+          ]) if(!source.includes(needle)) throw new Error("Missing degraded drafting contract: "+needle);
+          console.log("PROFESSIONAL L2/L3 DEGRADED DRAFTING CONTRACT: PASS");
+          NODE
+
+      - name: Provision ephemeral synthetic Professional membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACCOUNT="l23-resilience-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ENT="l23-resilience-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KID="l23-resilience-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KEY="l23smoke_$(openssl rand -hex 24)"
+          HASH="$(printf '%s' "$KEY" | sha256sum | awk '{print $1}')"
+          PREFIX="${KEY:0:12}"
+          echo "::add-mask::$KEY"
+          echo "L23_SMOKE_ACCOUNT=$ACCOUNT" >> "$GITHUB_ENV"
+          echo "L23_SMOKE_KEY=$KEY" >> "$GITHUB_ENV"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM membership_access_keys WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_entitlements WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_accounts WHERE id='$ACCOUNT';
+            INSERT INTO membership_accounts(id,display_name,status)
+              VALUES ('$ACCOUNT','Professional L2-L3 Resilience Synthetic Smoke','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+              VALUES ('$ENT','$ACCOUNT','office','active','manual',5,1,0,datetime('now','+30 minutes'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+              VALUES ('$KID','$ACCOUNT','$HASH','$PREFIX','ephemeral L2-L3 resilience smoke','active',datetime('now','+30 minutes'));
+          " >/tmp/l23-provision.txt
+          echo "EPHEMERAL PROFESSIONAL L2-L3 MEMBERSHIP: PROVISIONED"
+
+      - name: Execute exact divorce L3 request against production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${L23_SMOKE_KEY:-}"
+          node <<'NODE'
+          const fs=require("fs");
+          fs.writeFileSync("/tmp/l3-payload.json",JSON.stringify({
+            q:"изработи ми тужба за развод на брак",
+            mode:"auto",
+            webSearch:false,
+            history:[],
+            guideIds:[],
+            guideDocuments:[],
+            attachments:[]
+          }));
+          NODE
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          code="$(curl -sS --retry 2 --retry-delay 2 --max-time 150 -o /tmp/l3-response.json -w '%{http_code}' \
+            -H 'content-type: application/json' \
+            -H "X-Membership-Key: $L23_SMOKE_KEY" \
+            -H 'Origin: https://ai-advokat.github.io' \
+            --data-binary @/tmp/l3-payload.json \
+            "$BASE/api/bot")"
+          test "$code" = "200"
+          node <<'NODE'
+          const fs=require("fs");
+          const d=require("/tmp/l3-response.json");
+          if(!d.ok || !String(d.answer||"").trim()) throw new Error("L3 divorce response missing");
+          if(d.membership?.planCode!=="office") throw new Error("L3 membership not retained");
+          if(d.legalGovernance?.missionProfile!=="L3_CONSEQUENTIAL") throw new Error("Divorce request not classified L3");
+          if(d.provider==="openai"){
+            if(d.providerFallback!==null) throw new Error("OpenAI success must not claim fallback");
+          }else if(d.provider==="workers_ai_free"){
+            if(d.displayMode!=="professional_degraded_draft_fallback") throw new Error("L3 degraded display mode missing");
+            if(d.providerFallback?.from!=="openai") throw new Error("L3 OpenAI fallback provenance missing");
+            if(d.legalGovernance?.providerFallbackMode!=="PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI") throw new Error("L3 degraded fallback marker missing");
+            if(d.legalGovernance?.postflightState!=="NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE") throw new Error("L3 degraded postflight state missing");
+            if(d.legalGovernance?.executionAuthorization!=="NO_EXTERNAL_ACTION") throw new Error("L3 must remain NO_EXTERNAL_ACTION");
+            if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("L3 Human Gate missing");
+            if(d.webSearchUsed!==false) throw new Error("L3 degraded fallback must not claim web search");
+            if(!String(d.answer).includes("ЧОВЕЧКА ПРОВЕРКА ПРЕД ПОДНЕСУВАЊЕ")) throw new Error("L3 in-document Human Gate missing");
+            if(/(?:член|чл\.)\s*\d+/iu.test(String(d.answer))) throw new Error("L3 degraded draft leaked an unverified numbered article");
+          }else{
+            throw new Error("Unexpected L3 provider: "+d.provider);
+          }
+          fs.writeFileSync("/tmp/l3-summary.json",JSON.stringify({
+            ok:d.ok,
+            provider:d.provider,
+            displayMode:d.displayMode||null,
+            missionProfile:d.legalGovernance?.missionProfile||null,
+            executionAuthorization:d.legalGovernance?.executionAuthorization||null,
+            providerFallbackMode:d.legalGovernance?.providerFallbackMode||null,
+            postflightState:d.legalGovernance?.postflightState||null,
+            runtimeTelemetry:d.runtimeTelemetry||null,
+            governanceRunId:d.governanceRunId||null,
+            answerNonEmpty:Boolean(String(d.answer||"").trim())
+          },null,2));
+          console.log("EXACT ZOKI DIVORCE L3 PRODUCTION SMOKE: PASS · provider="+d.provider);
+          NODE
+
+      - name: Execute exact pre-suit demand L2 request against production
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require("fs");
+          const q=`Факти:
+
+Доверител: Правно лице А.
+
+Должник: Правно лице Б.
+
+Основа: Договор за услуги.
+
+Главен долг: 150.000 денари.
+
+Рок за плаќање според договорот: 15.09.2026 година.
+
+Долгот не е платен.
+
+Не се доставени докази за претходна опомена.
+
+Барам:
+
+Формално и правно соодветна опомена пред тужба.
+
+Јасен опис на побарувањето.
+
+Релевантна правна основа со проверени законски одредби.
+
+Правилно формулирано барање за плаќање.
+
+Предлог за прилози и докази.
+
+Ознака за сите податоци што недостасуваат.
+
+Правна и јазична проверка на документот.`;
+          fs.writeFileSync("/tmp/l2-payload.json",JSON.stringify({
+            q,mode:"auto",webSearch:false,history:[],guideIds:[],guideDocuments:[],attachments:[]
+          }));
+          NODE
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          code="$(curl -sS --retry 2 --retry-delay 2 --max-time 150 -o /tmp/l2-response.json -w '%{http_code}' \
+            -H 'content-type: application/json' \
+            -H "X-Membership-Key: $L23_SMOKE_KEY" \
+            -H 'Origin: https://ai-advokat.github.io' \
+            --data-binary @/tmp/l2-payload.json \
+            "$BASE/api/bot")"
+          test "$code" = "200"
+          node <<'NODE'
+          const fs=require("fs");
+          const d=require("/tmp/l2-response.json");
+          if(!d.ok || !String(d.answer||"").trim()) throw new Error("L2 pre-suit demand response missing");
+          if(d.membership?.planCode!=="office") throw new Error("L2 membership not retained");
+          if(d.legalGovernance?.missionProfile!=="L2_STRATEGY_PROCEDURE") throw new Error("Pre-suit demand request not classified L2");
+          if(d.provider==="openai"){
+            if(d.providerFallback!==null) throw new Error("OpenAI success must not claim fallback");
+          }else if(d.provider==="workers_ai_free"){
+            if(d.displayMode!=="professional_degraded_draft_fallback") throw new Error("L2 degraded display mode missing");
+            if(d.providerFallback?.from!=="openai") throw new Error("L2 OpenAI fallback provenance missing");
+            if(d.legalGovernance?.providerFallbackMode!=="PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI") throw new Error("L2 degraded fallback marker missing");
+            if(d.legalGovernance?.postflightState!=="NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE") throw new Error("L2 degraded postflight state missing");
+            if(d.legalGovernance?.executionAuthorization!=="RESEARCH_OUTPUT_ONLY") throw new Error("L2 must remain RESEARCH_OUTPUT_ONLY");
+            if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("L2 Human Gate missing");
+            if(d.webSearchUsed!==false) throw new Error("L2 degraded fallback must not claim web search");
+            if(!String(d.answer).includes("ЧОВЕЧКА ПРОВЕРКА ПРЕД ПРОФЕСИОНАЛНА УПОТРЕБА")) throw new Error("L2 in-document Human Gate missing");
+            if(/(?:член|чл\.)\s*\d+/iu.test(String(d.answer))) throw new Error("L2 degraded draft leaked an unverified numbered article");
+          }else{
+            throw new Error("Unexpected L2 provider: "+d.provider);
+          }
+          fs.writeFileSync("/tmp/l2-summary.json",JSON.stringify({
+            ok:d.ok,
+            provider:d.provider,
+            displayMode:d.displayMode||null,
+            missionProfile:d.legalGovernance?.missionProfile||null,
+            executionAuthorization:d.legalGovernance?.executionAuthorization||null,
+            providerFallbackMode:d.legalGovernance?.providerFallbackMode||null,
+            postflightState:d.legalGovernance?.postflightState||null,
+            runtimeTelemetry:d.runtimeTelemetry||null,
+            governanceRunId:d.governanceRunId||null,
+            answerNonEmpty:Boolean(String(d.answer||"").trim())
+          },null,2));
+          console.log("EXACT ZOKI PRE-SUIT L2 PRODUCTION SMOKE: PASS · provider="+d.provider);
+          NODE
+
+      - name: Cleanup ephemeral synthetic Professional membership
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${L23_SMOKE_ACCOUNT:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$L23_SMOKE_ACCOUNT';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$L23_SMOKE_ACCOUNT';
+              DELETE FROM membership_access_keys WHERE account_id='$L23_SMOKE_ACCOUNT';
+              DELETE FROM membership_entitlements WHERE account_id='$L23_SMOKE_ACCOUNT';
+              DELETE FROM membership_accounts WHERE id='$L23_SMOKE_ACCOUNT';
+            " >/tmp/l23-cleanup.txt
+            echo "EPHEMERAL PROFESSIONAL L2-L3 MEMBERSHIP: CLEANED"
+          fi
+
+      - name: Upload non-secret L2-L3 resilience evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: professional-l23-resilience-live-smoke
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/l3-summary.json
+            /tmp/l2-summary.json
+            /tmp/l23-cleanup.txt
