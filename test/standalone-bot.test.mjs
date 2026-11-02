@@ -70,7 +70,7 @@ test('standalone bot preserves professional feature parity controls',()=>{
 });
 
 
-test('P0 professional recovery keeps two bounded attempts and no uncontrolled Workers AI fallback',()=>{
+test('P0 professional recovery keeps two bounded OpenAI attempts and only a controlled L0 Workers fallback',()=>{
   const source=fs.readFileSync('src/index.js','utf8');
   const orchestrator=fs.readFileSync('src/agent-orchestrator.js','utf8');
   const governance=fs.readFileSync('src/legal-runtime-governance.js','utf8');
@@ -79,7 +79,11 @@ test('P0 professional recovery keeps two bounded attempts and no uncontrolled Wo
   assert.match(source,/sanitiseProviderAttempt\(first,1\)/);
   assert.match(source,/sanitiseProviderAttempt\(retry,2\)/);
   assert.match(source,/OPENAI_RETRY_BACKOFF_MS\|\|250/);
-  assert.match(source,/!membership\s*&&\s*governedOpenAIWorkersFallbackConfigured/);
+  assert.match(source,/professionalL0WorkersFallbackEligible/);
+  assert.match(source,/missionProfile\|\|""\)!=="L0_INFORMATIONAL"/);
+  assert.match(source,/postflightRequired===true/);
+  assert.match(source,/explicitWebRequested===true \|\| webRequested===true/);
+  assert.match(source,/providerFallbackMode:professionalFallbackActive \? "PROFESSIONAL_L0_WORKERS_AI"/);
   assert.match(orchestrator,/chiefFallbackTimeoutMs=\["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"\]\.includes\(missionProfile\)/);
   assert.match(orchestrator,/professionalFactReview[\s\S]{0,220}\? 60000[\s\S]{0,120}: 45000/);
   assert.match(orchestrator,/\? 70000[\s\S]{0,220}: 45000/);
