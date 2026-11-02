@@ -6335,6 +6335,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
   const runWorkersFallbackResponse=async({fallbackReason=null,primaryProviderCalls=0,professionalFallback=false,primaryResult=null}={})=>{
     const professionalFallbackActive=professionalFallback===true && Boolean(membership);
+    const professionalL0FallbackActive=professionalFallbackActive && missionProfile==="L0_INFORMATIONAL";
+    const professionalDegradedDraftActive=professionalFallbackActive
+      && ["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL"].includes(missionProfile);
     const fallbackPlanCode=professionalFallbackActive ? membership.planCode : "free";
     // FREE mode must remain usable for research, analysis and complete working drafts.
     // High-stakes/current-law missions are not blocked at generation time; they are
@@ -6404,9 +6407,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       return json(request,{
         ok:false,
         error:freeResult.error||"free_workers_ai_failed",
-        message:freeResult.message||(professionalFallbackActive
-          ? "Резервниот governed Workers AI runtime не успеа безбедно да го обработи L0 барањето. Квотата не е потрошена; обидете се повторно."
-          : "FREE Workers AI не успеа да го обработи барањето или документите. Квотата не е потрошена; обидете се повторно."),
+        message:freeResult.message||(professionalDegradedDraftActive
+          ? "Резервниот governed Workers AI runtime не успеа безбедно да подготви работен правен нацрт. Квотата не е потрошена; обидете се повторно."
+          : professionalL0FallbackActive
+            ? "Резервниот governed Workers AI runtime не успеа безбедно да го обработи L0 барањето. Квотата не е потрошена; обидете се повторно."
+            : "FREE Workers AI не успеа да го обработи барањето или документите. Квотата не е потрошена; обидете се повторно."),
         problems:freeResult.problems||null,
         failureDetail:freeResult.detail||null,
         languageReleaseGate:freeResult.releaseGate||null,
@@ -6423,6 +6428,36 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       },503);
     }
 
+    let releasedFallbackText=String(freeResult.text||"").trim();
+    if(professionalDegradedDraftActive){
+      releasedFallbackText=replaceUngroundedArticleReferences(releasedFallbackText,{
+        userText:q,
+        hasGovernedLegalContext:false
+      });
+      if(isFormalLegalDraftRequest(q)){
+        releasedFallbackText=finaliseFormalLegalDraft(releasedFallbackText,{
+          userText:q,
+          hasGovernedLegalContext:false
+        });
+      }
+      const degradedNotice=missionProfile==="L3_CONSEQUENTIAL"
+        ? "ЧОВЕЧКА ПРОВЕРКА ПРЕД ПОДНЕСУВАЊЕ\nОвој текст е работен нацрт подготвен преку резервен AI пат по привремена недостапност на примарниот провајдер. Целосната LIOE postflight проверка не е извршена. Пред потпишување, поднесување или испраќање, адвокат мора да ги провери надлежноста, правната основа, роковите, фактите, доказите и прилозите."
+        : "ЧОВЕЧКА ПРОВЕРКА ПРЕД ПРОФЕСИОНАЛНА УПОТРЕБА\nОвој текст е работен правен нацрт подготвен преку резервен AI пат по привремена недостапност на примарниот провајдер. Целосната LIOE postflight проверка не е извршена. Пред професионално потпирање проверете ги важечкиот закон, точните членови, роковите, надлежноста, фактите и доказите.";
+      releasedFallbackText=(releasedFallbackText+"\n\n"+degradedNotice).trim();
+      const degradedLanguageRelease=canonicalMacedonianFinalRelease(releasedFallbackText,q);
+      if(!degradedLanguageRelease.ok){
+        await releaseMonthlyQuota(env,{subject,period});
+        return json(request,{
+          ok:false,
+          error:"macedonian_language_release_blocked",
+          message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
+          languageReleaseGate:degradedLanguageRelease.releaseGate,
+          governanceRunId:lioeRunId
+        },503);
+      }
+      releasedFallbackText=degradedLanguageRelease.text;
+    }
+
     const freeSourceMode=freeResult.provider==="canonical_corpus_no_model"
       ? "canonical_article_corpus_no_model"
       : (attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
@@ -6430,19 +6465,33 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         : authorialBundle.context.length
           ? "workers_ai_free_authorial_publication_context"
           : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
-    const effectiveFallbackSourceMode=professionalFallbackActive
-      ? "professional_l0_"+freeSourceMode
-      : freeSourceMode;
+    const effectiveFallbackSourceMode=professionalDegradedDraftActive
+      ? "professional_degraded_"+freeSourceMode
+      : professionalL0FallbackActive
+        ? "professional_l0_"+freeSourceMode
+        : freeSourceMode;
 
     let fallbackRuntimeTelemetry=professionalFallbackActive ? "not_applicable" : "free_provider_no_high_depth_release";
     let fallbackRuntimeAssessment=null;
     if(professionalFallbackActive && lioeEngaged){
-      fallbackRuntimeAssessment=assessLegalRuntimeRelease({
+      const fallbackPostflight=professionalDegradedDraftActive
+        ? {verdict:"NOT_EXECUTED_PROVIDER_UNAVAILABLE",temporal_integrity:"NOT_EXECUTED",stress_test:"NOT_EXECUTED",adversarial_review:"NOT_EXECUTED"}
+        : {verdict:"NOT_REQUIRED",temporal_integrity:"NOT_REQUIRED",stress_test:"NOT_REQUIRED",adversarial_review:"NOT_REQUIRED"};
+      const assessedFallback=assessLegalRuntimeRelease({
         plan,
         articleBundle,
         result:{ok:true,sources:[],webSearchUsed:false},
-        postflight:{verdict:"NOT_REQUIRED",temporal_integrity:"NOT_REQUIRED",stress_test:"NOT_REQUIRED",adversarial_review:"NOT_REQUIRED"}
+        postflight:fallbackPostflight
       });
+      fallbackRuntimeAssessment=professionalDegradedDraftActive
+        ? {
+            ...assessedFallback,
+            verificationState:"PROVISIONAL",
+            humanReviewRequired:true,
+            legalStressTestState:"NOT_EXECUTED_PROVIDER_UNAVAILABLE",
+            adversarialReviewState:"NOT_EXECUTED_PROVIDER_UNAVAILABLE"
+          }
+        : assessedFallback;
       const finishedAt=new Date().toISOString();
       const primary=primaryResult&&typeof primaryResult==="object" ? primaryResult : {};
       const record=buildSanitisedRuntimeRecord({
@@ -6462,10 +6511,13 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         articleBundle,
         guideContextCount:guideContext.length+guideDocumentCheck.context.length,
         attachmentCount:0,
-        sourceMode:"professional_l0_workers_ai_provider_fallback",
+        sourceMode:professionalDegradedDraftActive
+          ? "professional_degraded_workers_ai_provider_fallback"
+          : "professional_l0_workers_ai_provider_fallback",
         postflightMeta:{
           attempts:0,
           firstPass:false,
+          verdict:professionalDegradedDraftActive ? "NOT_EXECUTED_PROVIDER_UNAVAILABLE" : "NOT_REQUIRED",
           providerCalls:Number(freeResult.providerCalls||0),
           primaryProviderCalls:Number(primaryProviderCalls||primary.providerCalls||0)
         }
@@ -6478,7 +6530,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
     return json(request,{
       ok:true,
-      answer:freeResult.text,
+      answer:releasedFallbackText,
       model:freeResult.model,
       provider:freeResult.provider||"workers_ai_free",
       providerFallback:fallbackReason ? {
@@ -6541,9 +6593,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       contextualFollowUp,
       routingContextUsed:routingQuery!==q,
       mode:plan.mode,
-      displayMode:professionalFallbackActive
-        ? (freeResult.provider==="canonical_corpus_no_model" ? "professional_canonical_corpus_fallback" : "professional_workers_ai_fallback")
-        : (freeResult.provider==="canonical_corpus_no_model" ? "free_canonical_corpus" : "free_workers_ai"),
+      displayMode:professionalDegradedDraftActive
+        ? "professional_degraded_draft_fallback"
+        : professionalL0FallbackActive
+          ? (freeResult.provider==="canonical_corpus_no_model" ? "professional_canonical_corpus_fallback" : "professional_workers_ai_fallback")
+          : (freeResult.provider==="canonical_corpus_no_model" ? "free_canonical_corpus" : "free_workers_ai"),
       sourceMode:effectiveFallbackSourceMode,
       corpusContextCount:corpusContext.length,
       articleCorpusContextCount:articleBundle.context.length,
@@ -6555,15 +6609,25 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         version:articleBundle.version,
         versionBasis:articleBundle.versionBasis
       } : null,
-      webSearch:professionalFallbackActive ? "not_used_in_professional_l0_workers_fallback" : "not_available_in_free_workers_ai_mode",
+      webSearch:professionalDegradedDraftActive
+        ? "not_executed_in_degraded_professional_draft"
+        : professionalL0FallbackActive
+          ? "not_used_in_professional_l0_workers_fallback"
+          : "not_available_in_free_workers_ai_mode",
       attachmentsUsed:attachmentCheck.attachments.length,
       totalInputFilesUsed:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
       convertedDocuments:freeResult.convertedDocuments,
-      reasoningEffort:freeResult.provider==="canonical_corpus_no_model" ? "deterministic_source_first" : "workers_ai_standard",
+      reasoningEffort:professionalDegradedDraftActive
+        ? "workers_ai_degraded_professional_draft"
+        : freeResult.provider==="canonical_corpus_no_model" ? "deterministic_source_first" : "workers_ai_standard",
       maxOutputTokens,
-      humanGate:professionalFallbackActive
-        ? "Примарниот професионален AI-провајдер беше привремено недостапен. Овој информативен L0 одговор е генериран преку контролираниот резервен Workers AI пат. Пред правно потпирање проверете го важечкиот закон и примарните извори."
-        : "FREE Workers AI is research assistance only. Verify controlling law and primary sources and obtain human professional review before consequential reliance.",
+      humanGate:professionalDegradedDraftActive
+        ? (missionProfile==="L3_CONSEQUENTIAL"
+          ? "Примарниот професионален AI-провајдер беше привремено недостапен. Ова е работен L3 нацрт преку контролиран резервен Workers AI пат. Не смее да се потпише, поднесе или испрати без адвокатска Human Gate проверка на правната основа, роковите, надлежноста, фактите и доказите."
+          : "Примарниот професионален AI-провајдер беше привремено недостапен. Ова е работен L2 правен нацрт преку контролиран резервен Workers AI пат. Пред професионално потпирање мора да се проверат важечкиот закон, точните членови, роковите, надлежноста и доказите.")
+        : professionalL0FallbackActive
+          ? "Примарниот професионален AI-провајдер беше привремено недостапен. Овој информативен L0 одговор е генериран преку контролираниот резервен Workers AI пат. Пред правно потпирање проверете го важечкиот закон и примарните извори."
+          : "FREE Workers AI is research assistance only. Verify controlling law and primary sources and obtain human professional review before consequential reliance.",
       governanceRunId:lioeRunId,
       runtimeTelemetry:fallbackRuntimeTelemetry,
       legalGovernance:lioeEngaged ? {
@@ -6575,18 +6639,29 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         verificationState:professionalFallbackActive
           ? (fallbackRuntimeAssessment?.verificationState||"PROVISIONAL")
           : null,
-        executionAuthorization:"RESEARCH_OUTPUT_ONLY",
-        humanReviewRequired:professionalFallbackActive
-          ? fallbackRuntimeAssessment?.humanReviewRequired===true
-          : true,
+        executionAuthorization:professionalFallbackActive
+          ? (fallbackRuntimeAssessment?.executionAuthorization||"RESEARCH_OUTPUT_ONLY")
+          : "RESEARCH_OUTPUT_ONLY",
+        humanReviewRequired:professionalDegradedDraftActive
+          ? true
+          : professionalFallbackActive
+            ? fallbackRuntimeAssessment?.humanReviewRequired===true
+            : true,
         postflightRequired:freeProfessionalGuard,
+        postflightState:professionalDegradedDraftActive ? "NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE" : "NOT_REQUIRED",
         primaryProviderState:professionalFallbackActive ? "FAILED_FALLBACK_RELEASED" : null,
-        providerFallbackMode:professionalFallbackActive ? "PROFESSIONAL_L0_WORKERS_AI" : null,
-        warning:professionalFallbackActive
-          ? "Примарниот OpenAI provider не успеа. Контролираниот Workers AI fallback се користи само за L0 информативно барање без web-пребарување, без прилози и без postflight/current-law услов."
-          : (freeProfessionalGuard
-            ? "FREE provider output is a working research/draft result only. It does not establish current-law status and requires professional Human Gate review before consequential reliance."
-            : "FREE provider output is informational research assistance and does not establish current-law status.")
+        providerFallbackMode:professionalDegradedDraftActive
+          ? "PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI"
+          : professionalL0FallbackActive
+            ? "PROFESSIONAL_L0_WORKERS_AI"
+            : null,
+        warning:professionalDegradedDraftActive
+          ? "Примарниот OpenAI provider не успеа. Работниот правен нацрт е ослободен само како provisional/degraded work product: непотврдените бројки на членови се заменуваат со ознака за проверка, целосниот LIOE postflight не е извршен, а Human Gate останува задолжителен."
+          : professionalL0FallbackActive
+            ? "Примарниот OpenAI provider не успеа. Контролираниот Workers AI fallback се користи само за L0 информативно барање без web-пребарување, без прилози и без postflight/current-law услов."
+            : (freeProfessionalGuard
+              ? "FREE provider output is a working research/draft result only. It does not establish current-law status and requires professional Human Gate review before consequential reliance."
+              : "FREE provider output is informational research assistance and does not establish current-law status.")
       } : null,
       membership:{
         planCode:fallbackPlanCode,
