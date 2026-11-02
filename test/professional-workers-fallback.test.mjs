@@ -81,14 +81,13 @@ test("L0 informational Auto mode does not force proactive external web research"
 });
 
 
-test("Professional L2/L3 may use degraded drafting only after transient provider failure and with governed context",()=>{
+test("Professional L2/L3 may use degraded drafting after transient provider failure even when no governed current-law context matches",()=>{
   const base={
     membership,
     postflightRequired:true,
     explicitWebRequested:false,
     attachmentCount:0,
     guideDocumentCount:0,
-    corpusContextCount:2,
     result:transient429
   };
   assert.equal(professionalDegradedDraftFallbackEligible({...base,missionProfile:"L2_STRATEGY_PROCEDURE"}),true);
@@ -100,7 +99,7 @@ test("Professional L2/L3 may use degraded drafting only after transient provider
   assert.equal(professionalDegradedDraftFallbackEligible({...base,missionProfile:"L3_CONSEQUENTIAL",explicitWebRequested:true}),false);
   assert.equal(professionalDegradedDraftFallbackEligible({...base,missionProfile:"L3_CONSEQUENTIAL",attachmentCount:1}),false);
   assert.equal(professionalDegradedDraftFallbackEligible({...base,missionProfile:"L3_CONSEQUENTIAL",guideDocumentCount:1}),false);
-  assert.equal(professionalDegradedDraftFallbackEligible({...base,missionProfile:"L3_CONSEQUENTIAL",corpusContextCount:0}),false);
+  assert.equal(professionalDegradedDraftFallbackEligible({...base,missionProfile:"L3_CONSEQUENTIAL"}),true);
   assert.equal(professionalDegradedDraftFallbackEligible({...base,missionProfile:"L3_CONSEQUENTIAL",result:{error:"openai_authentication_error",status:401}}),false);
   assert.equal(professionalDegradedDraftFallbackEligible({...base,missionProfile:"L2_STRATEGY_PROCEDURE",result:{error:"openai_response_error",status:400}}),false);
   assert.equal(professionalDegradedDraftFallbackEligible({...base,missionProfile:"L2_STRATEGY_PROCEDURE",result:{error:"openai_timeout_error"}}),true);
@@ -119,4 +118,10 @@ test("Degraded Professional draft keeps Human Gate, no-action L3 boundary and st
   assert.match(handle,/ЧОВЕЧКА ПРОВЕРКА ПРЕД ПОДНЕСУВАЊЕ/u);
   assert.match(handle,/fallbackRuntimeAssessment\?\.executionAuthorization\|\|"RESEARCH_OUTPUT_ONLY"/);
   assert.match(handle,/PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI/);
+  assert.match(handle,/NO_GOVERNED_CURRENT_LAW_CONTEXT/);
+  assert.match(handle,/professional_degraded_structure_only_workers_ai_fallback/);
+  assert.match(handle,/NOT_ESTABLISHED_NO_GOVERNED_CONTEXT/);
+  assert.match(handle,/РАБОТЕН ШАБЛОН — ПРАВНАТА ОСНОВА НЕ Е ВЕРИФИКУВАНА/u);
+  assert.match(workerSource,/ZERO-GOVERNED-CONTEXT SAFETY/);
+  assert.match(workerSource,/\[ДА СЕ ПРОВЕРИ ВО ВАЖЕЧКИ ОФИЦИЈАЛЕН ИЗВОР\]/u);
 });
