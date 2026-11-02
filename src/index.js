@@ -7035,6 +7035,27 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       });
     }
 
+    const professionalDegradedDraftFallbackAllowed=
+      governedOpenAIWorkersFallbackConfigured(env)
+      && professionalDegradedDraftFallbackEligible({
+        membership,
+        missionProfile,
+        postflightRequired:postflightRequiredForMission,
+        explicitWebRequested,
+        attachmentCount:attachmentCheck.attachments.length,
+        guideDocumentCount:guideDocumentCheck.attachments.length,
+        corpusContextCount:corpusContext.length,
+        result
+      });
+    if(professionalDegradedDraftFallbackAllowed){
+      return runWorkersFallbackResponse({
+        fallbackReason:result.error||"openai_primary_unavailable",
+        primaryProviderCalls:Number(result.providerCalls||0),
+        professionalFallback:true,
+        primaryResult:result
+      });
+    }
+
     await releaseMonthlyQuota(env,{subject,period});
     if(!Array.isArray(result.providerAttempts)){
       result={...result,providerAttempts:[sanitiseProviderAttempt(result,1)]};
