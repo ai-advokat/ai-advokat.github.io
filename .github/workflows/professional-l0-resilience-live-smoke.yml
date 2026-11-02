@@ -1,0 +1,167 @@
+name: Professional L0 resilience live smoke
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/index.js"
+      - ".github/workflows/professional-l0-resilience-live-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: professional-l0-resilience-live-smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify bounded L0 resilience contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --check src/index.js
+          node <<'NODE'
+          const fs=require("fs");
+          const source=fs.readFileSync("src/index.js","utf8");
+          for(const needle of [
+            "professionalL0WorkersFallbackEligible",
+            'missionProfile||"")!=="L0_INFORMATIONAL"',
+            "explicitWebRequested===true || webRequested===true",
+            'providerFallbackMode:professionalFallbackActive ? "PROFESSIONAL_L0_WORKERS_AI"',
+            'initialMissionProfile!=="L0_INFORMATIONAL"'
+          ]) if(!source.includes(needle)) throw new Error("Missing L0 resilience contract: "+needle);
+          console.log("PROFESSIONAL L0 RESILIENCE CONTRACT: PASS");
+          NODE
+
+      - name: Provision ephemeral synthetic Professional membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACCOUNT="l0-resilience-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ENT="l0-resilience-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KID="l0-resilience-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KEY="l0smoke_$(openssl rand -hex 24)"
+          HASH="$(printf '%s' "$KEY" | sha256sum | awk '{print $1}')"
+          PREFIX="${KEY:0:12}"
+          echo "::add-mask::$KEY"
+          echo "L0_SMOKE_ACCOUNT=$ACCOUNT" >> "$GITHUB_ENV"
+          echo "L0_SMOKE_KEY=$KEY" >> "$GITHUB_ENV"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM membership_access_keys WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_entitlements WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_accounts WHERE id='$ACCOUNT';
+            INSERT INTO membership_accounts(id,display_name,status)
+              VALUES ('$ACCOUNT','Professional L0 Resilience Synthetic Smoke','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+              VALUES ('$ENT','$ACCOUNT','office','active','manual',5,1,0,datetime('now','+30 minutes'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+              VALUES ('$KID','$ACCOUNT','$HASH','$PREFIX','ephemeral L0 resilience smoke','active',datetime('now','+30 minutes'));
+          " >/tmp/l0-provision.txt
+          echo "EPHEMERAL PROFESSIONAL L0 MEMBERSHIP: PROVISIONED"
+
+      - name: Execute exact Zoki L0 question against production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${L0_SMOKE_KEY:-}"
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          code="$(curl -sS --retry 2 --retry-delay 2 --max-time 120 -o /tmp/l0-response.json -w '%{http_code}' \
+            -H 'content-type: application/json' \
+            -H "X-Membership-Key: $L0_SMOKE_KEY" \
+            -H 'Origin: https://ai-advokat.github.io' \
+            -d '{"q":"Што е закон и која е неговата улога во правниот систем на Република Северна Македонија?","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
+            "$BASE/api/bot")"
+          test "$code" = "200"
+          node <<'NODE'
+          const fs=require("fs");
+          const d=require("/tmp/l0-response.json");
+          if(!d.ok) throw new Error("Professional L0 smoke returned ok=false");
+          if(!String(d.answer||"").trim()) throw new Error("Professional L0 answer is empty");
+          if(d.membership?.planCode!=="office") throw new Error("Synthetic Professional membership not retained");
+          if(d.legalGovernance?.missionProfile!=="L0_INFORMATIONAL") throw new Error("Exact question did not remain L0_INFORMATIONAL");
+          if(d.webSearchUsed!==false) throw new Error("L0 informational request unexpectedly used web search");
+          if(d.provider==="openai"){
+            if(d.model!=="gpt-6.1-sol") throw new Error("Unexpected OpenAI model: "+d.model);
+            if(d.providerFallback!==null) throw new Error("OpenAI success must not claim fallback");
+          }else if(d.provider==="workers_ai_free" || d.provider==="canonical_corpus_no_model"){
+            if(d.providerFallback?.from!=="openai") throw new Error("Workers fallback missing OpenAI provenance");
+            if(!["professional_workers_ai_fallback","professional_canonical_corpus_fallback"].includes(d.displayMode)) {
+              throw new Error("Unexpected Professional fallback display mode: "+d.displayMode);
+            }
+            if(d.legalGovernance?.providerFallbackMode!=="PROFESSIONAL_L0_WORKERS_AI") {
+              throw new Error("Professional fallback governance marker missing");
+            }
+            if(!String(d.humanGate||"").includes("резервниот Workers AI")) {
+              throw new Error("Professional fallback Human Gate missing");
+            }
+          }else{
+            throw new Error("Unexpected Professional L0 provider: "+d.provider);
+          }
+          const summary={
+            ok:d.ok,
+            provider:d.provider,
+            model:d.model||null,
+            providerFallback:d.providerFallback||null,
+            displayMode:d.displayMode||null,
+            missionProfile:d.legalGovernance?.missionProfile||null,
+            fallbackMode:d.legalGovernance?.providerFallbackMode||null,
+            webSearchUsed:d.webSearchUsed,
+            membershipPlan:d.membership?.planCode||null,
+            governanceRunId:d.governanceRunId||null,
+            runtimeTelemetry:d.runtimeTelemetry||null,
+            answerNonEmpty:Boolean(String(d.answer||"").trim())
+          };
+          fs.writeFileSync("/tmp/l0-summary.json",JSON.stringify(summary,null,2));
+          console.log("EXACT PROFESSIONAL L0 PRODUCTION SMOKE: PASS · provider="+d.provider);
+          NODE
+
+      - name: Cleanup ephemeral synthetic Professional membership
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${L0_SMOKE_ACCOUNT:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$L0_SMOKE_ACCOUNT';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$L0_SMOKE_ACCOUNT';
+              DELETE FROM membership_access_keys WHERE account_id='$L0_SMOKE_ACCOUNT';
+              DELETE FROM membership_entitlements WHERE account_id='$L0_SMOKE_ACCOUNT';
+              DELETE FROM membership_accounts WHERE id='$L0_SMOKE_ACCOUNT';
+            " >/tmp/l0-cleanup.txt
+            echo "EPHEMERAL PROFESSIONAL L0 MEMBERSHIP: CLEANED"
+          fi
+
+      - name: Upload non-secret L0 resilience evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: professional-l0-resilience-live-smoke
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/l0-summary.json
+            /tmp/l0-cleanup.txt
