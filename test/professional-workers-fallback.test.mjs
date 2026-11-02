@@ -40,6 +40,11 @@ test("Professional fallback stays fail-closed outside the exact low-risk boundar
   assert.equal(professionalL0WorkersFallbackEligible({...base,attachmentCount:1}),false);
   assert.equal(professionalL0WorkersFallbackEligible({...base,guideDocumentCount:1}),false);
   assert.equal(professionalL0WorkersFallbackEligible({...base,result:{error:"openai_authentication_error",status:401}}),false);
+  assert.equal(professionalL0WorkersFallbackEligible({...base,result:{error:"specialist_execution_failed",status:503}}),false);
+  assert.equal(professionalL0WorkersFallbackEligible({...base,result:{error:"orchestrator_precondition_failed",status:503}}),false);
+  assert.equal(professionalL0WorkersFallbackEligible({...base,result:{error:"openai_response_error",status:400}}),false);
+  assert.equal(professionalL0WorkersFallbackEligible({...base,result:{error:"openai_timeout_error"}}),true);
+  assert.equal(professionalL0WorkersFallbackEligible({...base,result:{error:"openai_response_error",status:503}}),true);
 });
 
 test("Professional fallback contract remains transparent and membership-aware",()=>{
@@ -48,7 +53,8 @@ test("Professional fallback contract remains transparent and membership-aware",(
   assert.match(handle,/professionalFallback:true/);
   assert.match(handle,/primaryResult:result/);
   assert.match(handle,/professional_l0_workers_ai_provider_fallback/);
-  assert.match(handle,/PROFESSIONAL_L0_WORKERS_FALLBACK_RESEARCH_ONLY/);
+  assert.match(handle,/fallbackRuntimeAssessment\?\.releaseState\|\|"PROVISIONAL_RESEARCH"/);
+  assert.match(handle,/providerFallbackMode:professionalFallbackActive \? "PROFESSIONAL_L0_WORKERS_AI"/);
   assert.match(handle,/planCode:fallbackPlanCode/);
   assert.match(handle,/professional_workers_ai_fallback/);
   assert.match(handle,/primaryProviderState:professionalFallbackActive \? "FAILED_FALLBACK_RELEASED"/);
