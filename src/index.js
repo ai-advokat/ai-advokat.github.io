@@ -4811,7 +4811,10 @@ export function professionalL0WorkersFallbackEligible({
   if(postflightRequired===true) return false;
   if(explicitWebRequested===true) return false;
   if(Number(attachmentCount||0)>0 || Number(guideDocumentCount||0)>0) return false;
-  return openAIFailureEligibleForWorkersFallback(result,{explicitWebRequested:false});
+  const error=String(result?.error||"");
+  if(["openai_network_error","openai_timeout_error","openai_incomplete_response","openai_empty_response"].includes(error)) return true;
+  if(error!=="openai_response_error") return false;
+  return [408,429,500,502,503,504].includes(Number(result?.status||0));
 }
 
 function articleNumbersFromQuestion(q){
@@ -6533,7 +6536,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       reasoningEffort:freeResult.provider==="canonical_corpus_no_model" ? "deterministic_source_first" : "workers_ai_standard",
       maxOutputTokens,
       humanGate:professionalFallbackActive
-        ? "Professional primary provider was unavailable. This L0 informational answer was produced by the governed Workers AI fallback; verify controlling law and primary sources before consequential reliance."
+        ? "Примарниот професионален AI-провајдер беше привремено недостапен. Овој информативен L0 одговор е генериран преку контролираниот резервен Workers AI пат. Пред правно потпирање проверете го важечкиот закон и примарните извори."
         : "FREE Workers AI is research assistance only. Verify controlling law and primary sources and obtain human professional review before consequential reliance.",
       governanceRunId:lioeRunId,
       runtimeTelemetry:fallbackRuntimeTelemetry,
@@ -6541,14 +6544,20 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         engine:"AI_ADVOKAT_LIOE_v1",
         missionProfile,
         releaseState:professionalFallbackActive
-          ? "PROFESSIONAL_L0_WORKERS_FALLBACK_RESEARCH_ONLY"
+          ? (fallbackRuntimeAssessment?.releaseState||"PROVISIONAL_RESEARCH")
           : "FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED",
+        verificationState:professionalFallbackActive
+          ? (fallbackRuntimeAssessment?.verificationState||"PROVISIONAL")
+          : null,
         executionAuthorization:"RESEARCH_OUTPUT_ONLY",
-        humanReviewRequired:professionalFallbackActive ? false : true,
+        humanReviewRequired:professionalFallbackActive
+          ? fallbackRuntimeAssessment?.humanReviewRequired===true
+          : true,
         postflightRequired:freeProfessionalGuard,
         primaryProviderState:professionalFallbackActive ? "FAILED_FALLBACK_RELEASED" : null,
+        providerFallbackMode:professionalFallbackActive ? "PROFESSIONAL_L0_WORKERS_AI" : null,
         warning:professionalFallbackActive
-          ? "OpenAI primary execution failed. Governed Workers AI fallback was used only for an L0 informational request with no web search, no attachments and no postflight/current-law requirement."
+          ? "Примарниот OpenAI provider не успеа. Контролираниот Workers AI fallback се користи само за L0 информативно барање без web-пребарување, без прилози и без postflight/current-law услов."
           : (freeProfessionalGuard
             ? "FREE provider output is a working research/draft result only. It does not establish current-law status and requires professional Human Gate review before consequential reliance."
             : "FREE provider output is informational research assistance and does not establish current-law status.")
