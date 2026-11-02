@@ -4802,6 +4802,7 @@ export function professionalL0WorkersFallbackEligible({
   missionProfile="",
   postflightRequired=false,
   explicitWebRequested=false,
+  webRequested=false,
   attachmentCount=0,
   guideDocumentCount=0,
   result=null
@@ -4809,7 +4810,7 @@ export function professionalL0WorkersFallbackEligible({
   if(!membership) return false;
   if(String(missionProfile||"")!=="L0_INFORMATIONAL") return false;
   if(postflightRequired===true) return false;
-  if(explicitWebRequested===true) return false;
+  if(explicitWebRequested===true || webRequested===true) return false;
   if(Number(attachmentCount||0)>0 || Number(guideDocumentCount||0)>0) return false;
   const error=String(result?.error||"");
   if(["openai_network_error","openai_timeout_error","openai_incomplete_response","openai_empty_response"].includes(error)) return true;
@@ -6194,9 +6195,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     articleBundle.state==="matched"
     || gazetteBundle.state==="matched"
     || caseLawBundle.state==="matched";
+  const initialMissionProfile=initialPlan.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
   const autoExternalResearchCandidate=
     uiMode==="auto"
     && initialPlan.mode!==ORCHESTRATOR_MODES.GENERAL
+    && initialMissionProfile!=="L0_INFORMATIONAL"
     && !governedPrimarySupport
     && env.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"
     && readiness.provider==="configured";
@@ -6920,6 +6923,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         missionProfile,
         postflightRequired:postflightRequiredForMission,
         explicitWebRequested,
+        webRequested,
         attachmentCount:attachmentCheck.attachments.length,
         guideDocumentCount:guideDocumentCheck.attachments.length,
         result
