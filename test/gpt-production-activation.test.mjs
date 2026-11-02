@@ -308,30 +308,39 @@ test("GPTACT17 anonymous FREE is isolated from paid OpenAI and fails closed with
 });
 
 
-test("GPTACT19 governed OpenAI primary fails over to Workers AI without a second quota reservation",()=>{
+test("GPTACT19 governed OpenAI primary may use only the bounded Professional L0 Workers fallback without a second quota reservation",()=>{
   assert.match(worker,/OPENAI_PROVIDER_ACTIVATION_STATE==="governed_openai_primary_workers_ai_fallback"/);
-  assert.match(worker,/OPENAI_TO_WORKERS_FALLBACK_ERRORS/);
-  assert.match(worker,/orchestrator_precondition_failed/);
-  assert.match(worker,/openAIFailureEligibleForWorkersFallback\(result,\{explicitWebRequested\}\)/);
-  assert.match(worker,/if\(workersFallbackAllowed\)\{[\s\S]*?return runWorkersFallbackResponse\(/);
+  assert.match(worker,/professionalL0WorkersFallbackEligible/);
+  assert.match(worker,/missionProfile\|\|""\)!=="L0_INFORMATIONAL"/);
+  assert.match(worker,/\[408,429,500,502,503,504\]\.includes\(Number\(result\?\.status\|\|0\)\)/);
+  assert.match(worker,/if\(professionalWorkersFallbackAllowed\)\{[\s\S]*?professionalFallback:true,[\s\S]*?return runWorkersFallbackResponse|if\(professionalWorkersFallbackAllowed\)\{[\s\S]*?return runWorkersFallbackResponse/);
   assert.match(worker,/providerFallback:fallbackReason \?/);
   const chat=worker.slice(worker.indexOf("async function handleGPTChat("),worker.indexOf("async function handleAssistant("));
   const failure=chat.indexOf("if(!result.ok){");
-  const fallback=chat.indexOf("if(workersFallbackAllowed)",failure);
-  const release=chat.indexOf("await releaseMonthlyQuota(env,{subject,period});",fallback);
-  assert.ok(failure>0 && fallback>failure && release>fallback,"FREE Workers fallback must run before its failure-path quota release");
+  const fallback=chat.indexOf("if(professionalWorkersFallbackAllowed)",failure);
+  const genericRelease=chat.indexOf("await releaseMonthlyQuota(env,{subject,period});",fallback);
+  assert.ok(failure>0 && fallback>failure && genericRelease>fallback,"Professional L0 Workers fallback must run before the generic provider-failure quota release");
   assert.equal((chat.match(/reserveMonthlyQuota\(env,\{subject,period,quota\}\)/g)||[]).length,1,"chat turn must reserve monthly quota exactly once");
 });
 
-test("GPTACT19b Professional exact-article corpus fallback refunds the failed provider reservation before source-only release",()=>{
+test("GPTACT19b Professional exact-article corpus fallback still precedes Workers fallback and refunds provider reservation before source-only release",()=>{
   const chat=worker.slice(worker.indexOf("async function handleGPTChat("),worker.indexOf("async function handleAssistant("));
   const failure=chat.indexOf("if(!result.ok){");
   const canonical=chat.indexOf("if(canonicalArticleFallback)",failure);
   const refund=chat.indexOf("await releaseMonthlyQuota(env,{subject,period});",canonical);
-  const workers=chat.indexOf("const workersFallbackAllowed=",canonical);
-  assert.ok(failure>0 && canonical>failure && refund>canonical && workers>refund);
+  const professionalWorkers=chat.indexOf("const professionalWorkersFallbackAllowed=",canonical);
+  const genericFailure=chat.indexOf('message:"AI runtime не успеа безбедно',professionalWorkers);
+  assert.ok(
+    failure>0
+      && canonical>failure
+      && refund>canonical
+      && professionalWorkers>refund
+      && genericFailure>professionalWorkers,
+    "Exact-article source fallback must remain ahead of model fallback and generic 503"
+  );
   assert.match(chat,/provider:"canonical_corpus_no_model"/);
   assert.match(chat,/provider_failure_canonical_article_fallback/);
+  assert.match(chat,/postflightBypassReason:"deterministic_canonical_source_fallback_no_model"/);
 });
 
 test("GPTACT20 explicit Web requests fail closed instead of silently downgrading to no-Web fallback",()=>{
