@@ -6,6 +6,10 @@ on:
     paths:
       - ".github/diagnostics/lioe-runtime-article12-20261101.json"
       - ".github/workflows/lioe-runtime-readonly-diagnostic.yml"
+  pull_request:
+    paths:
+      - ".github/diagnostics/lioe-runtime-article12-20261101.json"
+      - ".github/workflows/lioe-runtime-readonly-diagnostic.yml"
   workflow_dispatch:
 
 permissions:
