@@ -187,3 +187,24 @@ test("whole-case analysis follow-up is L2 rather than general bypass",()=>{
   assert.equal(p.problem_class,"whole_case_analysis");
   assert.equal(p.legal_stress_test.required,true);
 });
+
+
+test("master UAT dismissal risk phrasing is L2 strategy",()=>{
+  const p=buildLegalIntelligencePlan("Кратко наведи ги клучните правни ризици при оспорување на отказ на работен однос. Не измислувај рокови или членови ако не се потврдени.",{selectedAgents:["macedonian_law"]});
+  assert.equal(p.mission_profile.id,"L2_STRATEGY_PROCEDURE");
+  assert.equal(p.authority_and_human_gate.human_review_required,true);
+});
+
+test("master UAT working divorce draft phrasing is L3 consequential",()=>{
+  const p=buildLegalIntelligencePlan("Изработи ми работен нацрт на тужба за развод на брак. Користи јасни placeholders и не измислувај важечки членови.",{selectedAgents:["macedonian_law"]});
+  assert.equal(p.mission_profile.id,"L3_CONSEQUENTIAL");
+  assert.equal(p.authority_and_human_gate.human_review_required,true);
+  assert.ok(p.authority_and_human_gate.required_gate_types.includes("author_approval"));
+});
+
+test("master UAT court collection draft phrasing is L3 consequential",()=>{
+  const p=buildLegalIntelligencePlan("Факти: доверител Правно лице А, должник Правно лице Б, договор за услуги, главен долг 150.000 денари, рокот е поминат. Подготви работен нацрт за судска наплата без да измислуваш надлежност, рокови или членови.",{selectedAgents:["macedonian_law"]});
+  assert.equal(p.mission_profile.id,"L3_CONSEQUENTIAL");
+  assert.equal(p.authority_and_human_gate.human_review_required,true);
+  assert.ok(p.authority_and_human_gate.required_gate_types.includes("author_approval"));
+});
