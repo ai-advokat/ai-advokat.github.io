@@ -6589,6 +6589,14 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           ? (professionalFactReview ? "low" : "medium")
           : "low";
 
+  const exactArticleAuthorityOnly=
+    articleBundle.state==="matched"
+    && ["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(missionProfile)
+    && Boolean(exactArticleNumberFromQuestion(q))
+    && explicitWebRequested!==true
+    && attachmentCheck.attachments.length===0
+    && guideDocumentCheck.attachments.length===0;
+
   const runWorkersFallbackResponse=async({fallbackReason=null,primaryProviderCalls=0,professionalFallback=false,primaryResult=null,allowOpenAIHandoff=false}={})=>{
     const professionalFallbackActive=professionalFallback===true && Boolean(membership);
     const professionalL0FallbackActive=professionalFallbackActive && missionProfile==="L0_INFORMATIONAL";
@@ -7065,16 +7073,19 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     deadlineAt:professionalRequestDeadlineAt
   });
 
-  let providerRecovery=freeCapacityHandoff ? {
-    recovered:result.ok===true,
-    direction:"workers_ai_to_openai",
-    firstError:"workers_ai_daily_capacity_exhausted",
-    workersAIModel:freeCapacityHandoff.workersAI?.model||null,
-    workersAIProviderCalls:Number(freeCapacityHandoff.workersAI?.providerCalls||0),
-    workersAICapacity:freeCapacityHandoff.workersAI?.capacity||null,
-    retryWebSearch:false,
-    boundedAnonymousFallback:true
-  } : null;
+  let providerRecovery=null;
+  if(freeCapacityHandoff){
+    providerRecovery={
+      recovered:result.ok===true,
+      direction:"workers_ai_to_openai",
+      firstError:"workers_ai_daily_capacity_exhausted",
+      workersAIModel:freeCapacityHandoff.workersAI?.model||null,
+      workersAIProviderCalls:Number(freeCapacityHandoff.workersAI?.providerCalls||0),
+      workersAICapacity:freeCapacityHandoff.workersAI?.capacity||null,
+      retryWebSearch:false,
+      boundedAnonymousFallback:true
+    };
+  }
   if(!result.ok && membership){
     const transientPrimaryErrors=new Set([
       "openai_network_error",
@@ -7598,17 +7609,15 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   governedFinalAnswer=governedFinalRelease.text;
 
   const articleMatched=articleBundle.state==="matched";
-  const exactArticleAuthorityOnly=
-    articleMatched
-    && missionProfile==="L0_INFORMATIONAL"
-    && Boolean(exactArticleNumberFromQuestion(q))
-    && explicitWebRequested!==true
-    && attachmentCheck.attachments.length===0
-    && guideDocumentCheck.attachments.length===0;
+  if(exactArticleAuthorityOnly && Array.isArray(result.sources) && result.sources.length){
+    result={...result,sources:[]};
+  }
   const caseLawMatched=caseLawBundle.state==="matched";
   const guideFullTextUsed=guideDocumentCheck.attachments.length>0;
   const guidePrimaryLawRequired=guideDocumentCheck.sources.some(s=>s.primarySourceRequired===true && s.lawDependencyGate!=="all_mapped_dependencies_current_verified");
-  const sourceMode=result.webSearchUsed===true && articleMatched && caseLawMatched && guideFullTextUsed
+  const sourceMode=exactArticleAuthorityOnly
+    ? "ai_advokat_exact_article_authority_only"
+    : result.webSearchUsed===true && articleMatched && caseLawMatched && guideFullTextUsed
     ? "ai_advokat_legal_corpus_guides_case_law_plus_external_web"
     : result.webSearchUsed===true && articleMatched && caseLawMatched
       ? "ai_advokat_article_corpus_case_law_plus_external_web"
@@ -7706,11 +7715,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     historyItemsUsed:result.historyItemsUsed,
     contextualFollowUp,
     routingContextUsed:routingQuery!==q,
-    sources:exactArticleAuthorityOnly ? [] : (result.sources || []),
+    sources:result.sources || [],
     sourcePolicy:{
       version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
-      registeredExternalSources:exactArticleAuthorityOnly ? 0 : (result.sources||[]).filter(s=>s.registered===true).length,
-      unregisteredExternalSources:exactArticleAuthorityOnly ? 0 : (result.sources||[]).filter(s=>s.registered!==true).length,
+      registeredExternalSources:(result.sources||[]).filter(s=>s.registered===true).length,
+      unregisteredExternalSources:(result.sources||[]).filter(s=>s.registered!==true).length,
       corpusPromotion:"human_gate_required",
       canonicalProvenanceGate:{
         version:CANONICAL_PROVENANCE_GATE_VERSION,
