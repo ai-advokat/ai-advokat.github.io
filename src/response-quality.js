@@ -80,9 +80,10 @@ export function cleanFormalDraftForExport(text){
     .replace(/Развој на бракот/gu,"Развод на бракот")
     .replace(/развије/giu,"разведе")
     .replace(/страстно сотварување/giu,"брачна заедница")
-    .replace(/зајавка/giu,"барање")
-    .replace(/далечински подносител/giu,"подносител")
-    .replace(/погоди долгот/giu,"намири го долгот");
+    .replace(/зајавка/giu,match=>/^[А-ШЃЅЈЉЊЌЏ]/u.test(match)?"Барање":"барање")
+    .replace(/далечински подносител/giu,match=>/^[А-ШЃЅЈЉЊЌЏ]/u.test(match)?"Подносител":"подносител")
+    .replace(/да погоди долгот/giu,"да го намири долгот")
+    .replace(/погоди долгот/giu,"го намири долгот");
 
   // Collapse immediately repeated boilerplate paragraphs without changing
   // substantive non-adjacent legal text.
