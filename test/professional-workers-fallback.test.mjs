@@ -214,7 +214,10 @@ test("Exact-article L0 answers suppress unrelated secondary source surfaces",()=
   const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
   assert.match(handle,/const exactArticleAuthorityOnly=/);
   assert.match(handle,/Boolean\(exactArticleNumberFromQuestion\(q\)\)/);
-  assert.match(handle,/sources:exactArticleAuthorityOnly \? \[\] : \(result\.sources \|\| \[\]\)/);
+  assert.match(handle,/\["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"\]\.includes\(missionProfile\)/);
+  assert.match(handle,/if\(exactArticleAuthorityOnly && Array\.isArray\(result\.sources\) && result\.sources\.length\)/);
+  assert.match(handle,/result=\{\.\.\.result,sources:\[\]\}/);
+  assert.match(handle,/sources:result\.sources \|\| \[\]/);
   assert.match(handle,/caseLawSources:exactArticleAuthorityOnly \? \[\]/);
   assert.match(handle,/publicationSources:exactArticleAuthorityOnly \? \[\]/);
 });
