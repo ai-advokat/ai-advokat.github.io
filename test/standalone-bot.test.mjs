@@ -94,7 +94,9 @@ test('P0 professional recovery keeps two bounded OpenAI attempts plus controlled
   assert.match(source,/PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI/);
   assert.match(source,/NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE/);
   assert.match(source,/replaceUngroundedArticleReferences\(releasedFallbackText/);
-  assert.match(orchestrator,/chiefFallbackTimeoutMs=\["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"\]\.includes\(missionProfile\)/);
+  assert.match(orchestrator,/chiefFallbackTimeoutMs=capacityFallbackMode/);
+  assert.match(orchestrator,/capacityFallbackMode[\s\S]{0,120}\? 40000/);
+  assert.match(orchestrator,/\["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"\]\.includes\(missionProfile\)/);
   assert.match(orchestrator,/professionalFactReview[\s\S]{0,220}\? 60000[\s\S]{0,120}: 45000/);
   assert.match(orchestrator,/\? 70000[\s\S]{0,220}: 45000/);
   assert.match(orchestrator,/OPENAI_PROVIDER_TIMEOUT_MS,chiefFallbackTimeoutMs,deadlineAt/);
