@@ -1,0 +1,99 @@
+name: AI Advokat special dual-bot audit
+
+on:
+  push:
+    branches: ["audit/special-dual-bot-review-2026-11-04"]
+    paths:
+      - "scripts/ai-advokat-special-dual-bot-audit.mjs"
+      - ".github/workflows/ai-advokat-special-dual-bot-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-special-dual-bot-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify audit harness
+        run: node --check scripts/ai-advokat-special-dual-bot-audit.mjs
+
+      - name: Provision ephemeral Professional membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          ACCOUNT="special-audit-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ENT="special-audit-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KID="special-audit-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KEY="special_audit_$(openssl rand -hex 24)"
+          HASH="$(printf '%s' "$KEY" | sha256sum | awk '{print $1}')"
+          PREFIX="${KEY:0:12}"
+          echo "::add-mask::$KEY"
+          echo "SPECIAL_AUDIT_ACCOUNT=$ACCOUNT" >> "$GITHUB_ENV"
+          echo "SPECIAL_AUDIT_KEY=$KEY" >> "$GITHUB_ENV"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM membership_access_keys WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_entitlements WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_accounts WHERE id='$ACCOUNT';
+            INSERT INTO membership_accounts(id,display_name,status)
+              VALUES ('$ACCOUNT','AI Advokat Special Dual-Bot Audit','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+              VALUES ('$ENT','$ACCOUNT','office','active','manual',40,1,0,datetime('now','+45 minutes'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+              VALUES ('$KID','$ACCOUNT','$HASH','$PREFIX','ephemeral special dual-bot audit','active',datetime('now','+45 minutes'));
+          " >/tmp/special-audit-provision.txt
+
+      - name: Run special dual-bot audit
+        env:
+          AI_ADVOCAT_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+          AI_ADVOCAT_MEMBERSHIP_KEY: ${{ env.SPECIAL_AUDIT_KEY }}
+        run: node scripts/ai-advokat-special-dual-bot-audit.mjs
+
+      - name: Cleanup ephemeral Professional membership
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${SPECIAL_AUDIT_ACCOUNT:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$SPECIAL_AUDIT_ACCOUNT';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$SPECIAL_AUDIT_ACCOUNT';
+              DELETE FROM membership_access_keys WHERE account_id='$SPECIAL_AUDIT_ACCOUNT';
+              DELETE FROM membership_entitlements WHERE account_id='$SPECIAL_AUDIT_ACCOUNT';
+              DELETE FROM membership_accounts WHERE id='$SPECIAL_AUDIT_ACCOUNT';
+            " >/tmp/special-audit-cleanup.txt
+          fi
+
+      - name: Upload special audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-special-dual-bot-audit
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/ai-advokat-special-dual-bot-audit.json
+            /tmp/ai-advokat-special-dual-bot-audit.md
+            /tmp/special-audit-provision.txt
+            /tmp/special-audit-cleanup.txt
