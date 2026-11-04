@@ -1,8 +1,16 @@
 import fs from "node:fs";
 
-// Production recheck after PR #516 merge 63cce0c6\nconst BASE=String(process.env.AI_ADVOCAT_BASE||"https://ai-advokat-github-io.aiadvokat16.workers.dev").replace(/\/$/,"");
+// Production recheck after PR #516 merge 63cce0c6
+const BASE=String(process.env.AI_ADVOCAT_BASE||"https://ai-advokat-github-io.aiadvokat16.workers.dev").replace(/\/$/,"");
 const KEY=String(process.env.AI_ADVOCAT_MEMBERSHIP_KEY||"").trim();
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const SELF_CHECK=process.argv.includes("--self-check");
+
+if(!/^https?:\/\//i.test(BASE)) throw new Error("AI_ADVOCAT_BASE must be an absolute http(s) URL");
+if(SELF_CHECK){
+  console.log(JSON.stringify({ok:true,mode:"self-check",productionBase:BASE,node:process.version}));
+  process.exit(0);
+}
 
 const scenarios=[
   {id:"V4-ECHR",label:"Strict ECHR won-case HUDOC gate",
@@ -73,7 +81,7 @@ if(!KEY) throw new Error("AI_ADVOCAT_MEMBERSHIP_KEY missing");
 
 const rows=[];
 for(const tc of scenarios){
-  // Internal first: exactly eight FREE requests, below the configured quota.
+  // Internal first: one FREE request per scenario, below the configured quota.
   const internal=await call("/api/chat",tc.q,{});
   const ia=assess(tc,internal,"INTERNAL_FREE");
   rows.push({
