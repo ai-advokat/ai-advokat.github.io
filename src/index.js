@@ -160,6 +160,7 @@ import {
 import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commentary.js";
 import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, scholarlyContextItems } from "./scholarly-literature.js";
 import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
+import { judicialTemporalSafetyFallback } from "./judicial-discovery-source-registry.js";
 
 const VERSION = "1.9.0";
 const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V12_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
@@ -5529,20 +5530,32 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   }
 
   if(!deterministicLanguageFallbackUsed && (languagePass.hardBlock || !finalRelease.ok)){
-    return {
-      ok:false,
-      error:"macedonian_language_release_blocked",
-      message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
-      detail:"final_last_mile_language_gate_failed",
-      releaseGate:finalRelease.releaseGate,
-      editorRequired:languagePass.editorRequired===true,
-      editorPassed:languagePass.editorPassed===true,
-      editorModel:languagePass.editorModel||null,
-      editorError:languagePass.repairError||null,
-      model:result.model,
-      providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
-      provider:"workers_ai_free"
-    };
+    const temporalSafetyText=missionProfile==="L0_INFORMATIONAL"
+      ? judicialTemporalSafetyFallback(q)
+      : null;
+    const temporalSafetyRelease=temporalSafetyText
+      ? canonicalMacedonianFinalRelease(temporalSafetyText,q)
+      : null;
+    if(temporalSafetyText && temporalSafetyRelease?.ok){
+      finalRelease=temporalSafetyRelease;
+      deterministicLanguageFallbackUsed=true;
+      deterministicLanguageFallbackReason="historical_case_law_temporal_safety_fallback";
+    }else{
+      return {
+        ok:false,
+        error:"macedonian_language_release_blocked",
+        message:MACEDONIAN_RELEASE_BLOCK_MESSAGE,
+        detail:"final_last_mile_language_gate_failed",
+        releaseGate:finalRelease.releaseGate,
+        editorRequired:languagePass.editorRequired===true,
+        editorPassed:languagePass.editorPassed===true,
+        editorModel:languagePass.editorModel||null,
+        editorError:languagePass.repairError||null,
+        model:result.model,
+        providerCalls:(result.providerCalls||1)+(languagePass.providerCalls||0),
+        provider:"workers_ai_free"
+      };
+    }
   }
 
   return {
