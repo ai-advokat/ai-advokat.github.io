@@ -1,0 +1,40 @@
+name: OpenAI quota status diagnostic
+
+on:
+  push:
+    branches: ["audit/cloudflare-capacity-diagnostic-2026-11-04"]
+    paths:
+      - ".github/workflows/openai-quota-status-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - name: Run one minimal sanitized Responses API probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$OPENAI_API_KEY"
+          code="$(curl -sS --max-time 30 -o /tmp/openai.json -D /tmp/openai.headers -w '%{http_code}'             -H "Authorization: Bearer $OPENAI_API_KEY"             -H 'content-type: application/json'             -d '{"model":"gpt-6.1-sol","input":"Reply only: OK","reasoning":{"effort":"low"},"max_output_tokens":16,"store":false}'             https://api.openai.com/v1/responses || true)"
+          echo "OPENAI_HTTP_STATUS=$code"
+          node <<'NODE'
+          const fs=require("fs");
+          let d={};
+          try{d=JSON.parse(fs.readFileSync("/tmp/openai.json","utf8"));}catch{}
+          const safe={
+            ok:Number(process.env.OPENAI_HTTP_STATUS||0)===200 || d.status==="completed",
+            responseStatus:d.status||null,
+            errorCode:d?.error?.code||null,
+            errorType:d?.error?.type||null,
+            responseId:typeof d.id==="string"?d.id.slice(0,40):null
+          };
+          console.log("SANITIZED_OPENAI_STATUS="+JSON.stringify(safe));
+          NODE
+          grep -iE '^(retry-after|x-ratelimit-|x-request-id):' /tmp/openai.headers | sed -E 's/(x-request-id:).*/\1 [redacted]/I' || true
