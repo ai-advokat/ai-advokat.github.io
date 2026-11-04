@@ -71,21 +71,59 @@ export function cleanFormalDraftForExport(text){
       .replace(/[ \t]+$/g,"");
     out.push(line);
   }
-  return out.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+  let clean=out.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+
+  // Deterministic cleanup for malformed drafting artefacts observed in live
+  // Macedonian legal generations. These are language/style repairs only and do
+  // not add legal authority, facts, deadlines or jurisdiction.
+  clean=clean
+    .replace(/Развој на бракот/gu,"Развод на бракот")
+    .replace(/развије/giu,"разведе")
+    .replace(/страстно сотварување/giu,"брачна заедница")
+    .replace(/зајавка/giu,match=>/^[А-ШЃЅЈЉЊЌЏ]/u.test(match)?"Барање":"барање")
+    .replace(/далечински подносител/giu,match=>/^[А-ШЃЅЈЉЊЌЏ]/u.test(match)?"Подносител":"подносител")
+    .replace(/да погоди долгот/giu,"да го намири долгот")
+    .replace(/погоди долгот/giu,"го намири долгот");
+
+  // Collapse immediately repeated boilerplate paragraphs without changing
+  // substantive non-adjacent legal text.
+  const paragraphs=clean.split(/\n{2,}/u);
+  const deduped=[];
+  for(const paragraph of paragraphs){
+    const current=String(paragraph||"").trim();
+    if(!current) continue;
+    const previous=deduped.at(-1)||"";
+    if(current===previous) continue;
+    deduped.push(current);
+  }
+  return deduped.join("\n\n").trim();
 }
 
 function normaliseArticleRef(value){
   return String(value||"").normalize("NFKC").toLocaleLowerCase("mk").replace(/\s+/g," ").trim();
 }
 
-export function replaceUngroundedArticleReferences(text,{userText="",hasGovernedLegalContext=false}={}){
-  if(hasGovernedLegalContext) return String(text||"");
+export function replaceUngroundedArticleReferences(text,{
+  userText="",
+  hasGovernedLegalContext=false,
+  governedArticleNumbers=[]
+}={}){
   const supplied=new Set(
     [...String(userText||"").matchAll(/(?:член|чл\.)\s*\d+[а-яА-Я-]*/giu)]
       .map(m=>normaliseArticleRef(m[0]))
   );
+  const governed=new Set(
+    (Array.isArray(governedArticleNumbers)?governedArticleNumbers:[])
+      .map(value=>String(value||"").normalize("NFKC").trim())
+      .filter(Boolean)
+      .map(value=>normaliseArticleRef("член "+value))
+  );
   return String(text||"").replace(/(?:член|чл\.)\s*\d+[а-яА-Я-]*/giu,match=>{
-    if(supplied.has(normaliseArticleRef(match))) return match;
+    const normalized=normaliseArticleRef(match);
+    if(supplied.has(normalized) || governed.has(normalized)) return match;
+    // Generic corpus presence is not sufficient authority for a concrete article
+    // number. A generated article survives only when the exact number is grounded
+    // in the user request or in the governed article allow-list.
     return "[правна основа — да се провери во важечки официјален извор]";
   });
 }
@@ -146,9 +184,17 @@ export function deterministicProceduralInstrumentFallback({userText=""}={}){
   ].join("\n");
 }
 
-export function finaliseFormalLegalDraft(text,{userText="",hasGovernedLegalContext=false}={}){
+export function finaliseFormalLegalDraft(text,{
+  userText="",
+  hasGovernedLegalContext=false,
+  governedArticleNumbers=[]
+}={}){
   const clean=cleanFormalDraftForExport(text);
-  const grounded=replaceUngroundedArticleReferences(clean,{userText,hasGovernedLegalContext});
+  const grounded=replaceUngroundedArticleReferences(clean,{
+    userText,
+    hasGovernedLegalContext,
+    governedArticleNumbers
+  });
   const instrumentSafe=applyProceduralInstrumentSafety(grounded,{userText});
   return ensureRequestedFormalDraftHeading(instrumentSafe,{userText});
 }

@@ -4,7 +4,7 @@ import fs from "node:fs";
 import {loadWorker} from "./load-worker.mjs";
 
 const {workerModule}=await loadWorker();
-const {professionalL0WorkersFallbackEligible,professionalDegradedDraftFallbackEligible}=workerModule;
+const {professionalL0WorkersFallbackEligible,professionalResearchWorkersFallbackEligible,professionalDegradedDraftFallbackEligible}=workerModule;
 const workerSource=fs.readFileSync("src/index.js","utf8");
 
 const membership={planCode:"office"};
@@ -47,6 +47,35 @@ test("Professional fallback stays fail-closed outside the exact low-risk boundar
   assert.equal(professionalL0WorkersFallbackEligible({...base,result:{error:"openai_response_error",status:400}}),false);
   assert.equal(professionalL0WorkersFallbackEligible({...base,result:{error:"openai_timeout_error"}}),true);
   assert.equal(professionalL0WorkersFallbackEligible({...base,result:{error:"openai_response_error",status:503}}),true);
+});
+
+test("Professional L1 research and GENERAL traffic may use bounded Workers fallback after transient OpenAI failure",()=>{
+  const base={
+    membership,
+    postflightRequired:false,
+    explicitWebRequested:false,
+    webRequested:false,
+    attachmentCount:0,
+    guideDocumentCount:0,
+    result:{error:"openai_response_error",status:503,providerCalls:2}
+  };
+  assert.equal(professionalResearchWorkersFallbackEligible({...base,missionProfile:"L1_VERIFIED_RESEARCH"}),true);
+  assert.equal(professionalResearchWorkersFallbackEligible({...base,missionProfile:"GENERAL_BYPASS"}),true);
+  assert.equal(professionalResearchWorkersFallbackEligible({...base,missionProfile:"L0_INFORMATIONAL"}),false);
+  assert.equal(professionalResearchWorkersFallbackEligible({...base,missionProfile:"L2_STRATEGY_PROCEDURE"}),false);
+  assert.equal(professionalResearchWorkersFallbackEligible({...base,postflightRequired:true,missionProfile:"L1_VERIFIED_RESEARCH"}),false);
+  assert.equal(professionalResearchWorkersFallbackEligible({...base,explicitWebRequested:true,missionProfile:"L1_VERIFIED_RESEARCH"}),false);
+  assert.equal(professionalResearchWorkersFallbackEligible({...base,webRequested:true,missionProfile:"L1_VERIFIED_RESEARCH"}),false);
+  assert.equal(professionalResearchWorkersFallbackEligible({...base,attachmentCount:1,missionProfile:"L1_VERIFIED_RESEARCH"}),false);
+  assert.equal(professionalResearchWorkersFallbackEligible({...base,result:{error:"openai_response_error",status:400},missionProfile:"L1_VERIFIED_RESEARCH"}),false);
+});
+
+test("Professional research fallback is surfaced transparently in runtime metadata",()=>{
+  const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
+  assert.match(handle,/professionalResearchWorkersFallbackEligible/);
+  assert.match(handle,/PROFESSIONAL_RESEARCH_WORKERS_AI/);
+  assert.match(handle,/professional_workers_ai_research_fallback/);
+  assert.match(handle,/professional_research_workers_ai_provider_fallback/);
 });
 
 test("Professional fallback contract remains transparent and membership-aware",()=>{

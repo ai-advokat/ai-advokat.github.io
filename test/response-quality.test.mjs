@@ -62,12 +62,26 @@ test("RQ4 article reference explicitly supplied by the user is preserved",()=>{
   assert.doesNotMatch(clean,/член 99/);
 });
 
-test("RQ5 governed legal context preserves sourced article references",()=>{
+test("RQ5 generic governed context does not authorise an unlisted concrete article number",()=>{
   const raw="Согласно член 34, следува проверка.";
-  assert.equal(
-    replaceUngroundedArticleReferences(raw,{userText:"Анализа",hasGovernedLegalContext:true}),
-    raw
-  );
+  const clean=replaceUngroundedArticleReferences(raw,{
+    userText:"Анализа",
+    hasGovernedLegalContext:true,
+    governedArticleNumbers:[]
+  });
+  assert.doesNotMatch(clean,/член 34/u);
+  assert.match(clean,/правна основа — да се провери/u);
+});
+
+test("RQ5b exact governed article allow-list preserves only verified article numbers",()=>{
+  const raw="Согласно член 34 и член 415, следува проверка.";
+  const clean=replaceUngroundedArticleReferences(raw,{
+    userText:"Анализа",
+    hasGovernedLegalContext:true,
+    governedArticleNumbers:["34"]
+  });
+  assert.match(clean,/член 34/u);
+  assert.doesNotMatch(clean,/член 415/u);
 });
 
 test("RQ6 final formal draft is export-ready and authority-safe",()=>{
@@ -181,4 +195,45 @@ test("RQ16 ambiguous criminal draft has a deterministic clean Macedonian fallbac
   assert.match(out,/Надлежен орган: \[ДА СЕ УТВРДИ ПО ПРОФЕСИОНАЛНА ПРОВЕРКА\]/u);
   assert.doesNotMatch(out,/^ТУЖБА\b/mu);
   assert.doesNotMatch(out,/\bчлен\s+\d+/iu);
+});
+
+
+test("RQ17 criminal-event draft strips invented article even when other governed context exists",()=>{
+  const q="Изработи ми тужба за кражба на автомобил. Не измислувај членови.";
+  const final=finaliseFormalLegalDraft(
+    "ТУЖБА\n\nСогласно член 415 од ЗКП, подносителот бара постапување.",
+    {
+      userText:q,
+      hasGovernedLegalContext:true,
+      governedArticleNumbers:["12"]
+    }
+  );
+  assert.match(final,/^РАБОТЕН НАЦРТ · ПРОЦЕСЕН ИНСТРУМЕНТ ЗА ПРОВЕРКА/u);
+  assert.doesNotMatch(final,/член 415/u);
+  assert.match(final,/правна основа — да се провери/u);
+});
+
+test("RQ18 observed malformed Macedonian drafting artefacts are deterministically polished",()=>{
+  const raw=[
+    "Развој на бракот",
+    "",
+    "Странката предлага бракот да се развије поради страстно сотварување.",
+    "",
+    "Зајавка: должникот да погоди долгот.",
+    "",
+    "Далечински подносител: [ИМЕ]"
+  ].join("\n");
+  const clean=cleanFormalDraftForExport(raw);
+  assert.match(clean,/Развод на бракот/u);
+  assert.match(clean,/да се разведе/u);
+  assert.match(clean,/брачна заедница/u);
+  assert.match(clean,/Барање:/u);
+  assert.match(clean,/да го намири долгот/u);
+  assert.match(clean,/Подносител:/u);
+  assert.doesNotMatch(clean,/развије|сотварување|зајавка|далечински подносител|погоди долгот/iu);
+});
+
+test("RQ19 immediately duplicated boilerplate paragraphs collapse to one copy",()=>{
+  const clean=cleanFormalDraftForExport("ЧОВЕЧКА ПРОВЕРКА\n\nЧОВЕЧКА ПРОВЕРКА\n\nТекст.");
+  assert.equal((clean.match(/ЧОВЕЧКА ПРОВЕРКА/gu)||[]).length,1);
 });
