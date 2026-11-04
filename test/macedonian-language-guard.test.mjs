@@ -356,7 +356,7 @@ test("Orthography 2017 system contract separates language authority from legal a
 
 
 test("V14 editor-attempt canonical-clean fallback gate blocks residual neighbouring-language contamination after normalisation",()=>{
-  const bad=macedonianDeliveryVerdict("Ова прашање е овде, но одговорот мора да биде на стандарден македонски.",{userText:"Те молам одговори ми на македонски."});
+  const bad=macedonianDeliveryVerdict("Ова прашање е јасно, а такође одговорот мора да биде на стандарден македонски.",{userText:"Те молам одговори ми на македонски."});
   assert.equal(bad.deliver,false,JSON.stringify(bad));
   assert.equal(bad.clean,false);
   assert.equal(bad.state,"blocked_language_quality");
