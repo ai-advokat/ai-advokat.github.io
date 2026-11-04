@@ -4405,6 +4405,55 @@ export function bureauEchrBroadIndexRequest(q){
   return object && (broad || outcomeQualified);
 }
 
+export function historicalCaseLawTemporalGateRequest(q){
+  const n=normalizeText(q);
+  const years=[...String(n).matchAll(/\b((?:19|20)\d{2})\b/gu)].map(m=>Number(m[1])).filter(Number.isFinite);
+  if(years.length<2) return false;
+  const oldest=Math.min(...years);
+  const newest=Math.max(...years);
+  if(oldest>=newest) return false;
+  const caseLaw=/(?:правен став|судск(?:а|и) практик|пресуд|одлук|апелацион|врховен суд|суд)/iu.test(n);
+  const temporal=/(?:автомат|важеч|примен|теков|денес|сега|current|applicab|valid)/iu.test(n);
+  return caseLaw && temporal;
+}
+
+export function formatHistoricalCaseLawTemporalGateAnswer(q){
+  const n=normalizeText(q);
+  const years=[...String(n).matchAll(/\b((?:19|20)\d{2})\b/gu)].map(m=>Number(m[1])).filter(Number.isFinite);
+  const historical=years.length ? Math.min(...years) : null;
+  const current=years.length ? Math.max(...years) : null;
+  return [
+    "Не. Историски судски извор не станува автоматски важечко право само затоа што постои во корпусот.",
+    historical && current
+      ? "Правен став или судска практика од "+historical+" година не е автоматски применлива како тековно важечко право во "+current+" година."
+      : "Постар правен став или судска практика мора да се оддели од прашањето за тековна применливост.",
+    "",
+    "Разлика што мора да се зачува:",
+    "• Историски извор: покажува што судот или институцијата утврдиле во конкретниот период и контекст.",
+    "• Тековна применливост: мора посебно да се провери според важечкото право, поновата судска практика, евентуалните законски измени, конечноста и релевантноста за конкретниот предмет.",
+    "",
+    "Human Gate: пред професионално потпирање, провери го официјалниот извор и дали ставот сè уште е релевантен, непроменет и применлив."
+  ].filter(Boolean).join("\n");
+}
+
+export function simpleClientAcknowledgementRequest(q){
+  const n=normalizeText(q);
+  const asksMessage=/(?:напиши|состави|подготви).*?(?:порак|мејл|email).*?(?:клиент|странк)/iu.test(n);
+  const acknowledgesDocument=/(?:примив|примивме|добив|добивме).*?документ/iu.test(n);
+  const legalResearch=/(?:член\s*\d+|службен весник|hudoc|пресуд|закон|правна анализа|правен совет)/iu.test(n);
+  return asksMessage && acknowledgesDocument && !legalResearch;
+}
+
+export function formatSimpleClientAcknowledgement(){
+  return [
+    "Почитувани,",
+    "",
+    "Го примивме вашиот документ и ќе го разгледаме. По извршениот преглед ќе ви се обратиме доколку бидат потребни дополнителни информации.",
+    "",
+    "Со почит,"
+  ].join("\n");
+}
+
 export function bureauEchrJudgmentsOnlyRequest(q){
   const n=normalizeText(q);
   return /(?:пресуд|judgment)/iu.test(n) && !/(?:одлук|decision)/iu.test(n);
@@ -5983,6 +6032,48 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const effectiveGuideIds=contextualFollowUp ? [] : guideIds;
   const initialPlan=buildAgentPlan(q);
+
+  // Deterministic temporal-validity gate for historical case-law questions.
+  // A historical court position must never be promoted into current law by model inference.
+  if(historicalCaseLawTemporalGateRequest(routingQuery)){
+    return json(request,{
+      ok:true,
+      answer:formatHistoricalCaseLawTemporalGateAnswer(routingQuery),
+      provider:"canonical_corpus_no_model",
+      model:null,
+      mode:"passive_corpus",
+      displayMode:"canonical_historical_case_law_temporal_gate",
+      sourceMode:"deterministic_temporal_validity_gate_no_model",
+      webSearchUsed:false,
+      legalSources:[],
+      caseLawSources:[],
+      sources:[],
+      humanGate:"Historical authority and current applicability are separate questions. Verify the official source and current legal context before professional reliance.",
+      temporalAuthorityStatus:{
+        state:"current_applicability_verification_required",
+        historicalSourceMayBeRelevant:true,
+        automaticallyCurrent:false
+      }
+    });
+  }
+
+  // Deterministic non-legal client acknowledgement lane.
+  // Simple administrative writing must not acquire invented legal citations or legal-source boilerplate.
+  if(simpleClientAcknowledgementRequest(q)){
+    return json(request,{
+      ok:true,
+      answer:formatSimpleClientAcknowledgement(),
+      provider:"canonical_corpus_no_model",
+      model:null,
+      mode:"general_non_legal",
+      displayMode:"canonical_simple_client_acknowledgement",
+      sourceMode:"deterministic_non_legal_no_model",
+      webSearchUsed:false,
+      legalSources:[],
+      caseLawSources:[],
+      sources:[]
+    });
+  }
 
   // Canonical Gazette exact-issue fast lane.
   // Exact issue/year requests are resolved deterministically from official metadata
