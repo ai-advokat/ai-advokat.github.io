@@ -44,3 +44,23 @@ test("GICA4 schema keeps issue contents as register metadata, not legal text aut
   assert.match(migration,/legal_text_authority INTEGER NOT NULL DEFAULT 0/);
   assert.match(migration,/current_law_authority INTEGER NOT NULL DEFAULT 0/);
 });
+
+
+test("GICA5 automatic main-push run is preflight-only and cannot mutate production",()=>{
+  assert.match(workflow,/name: Gazette issue contents 1991-2025 preflight \/ production activation/);
+  assert.match(workflow,/Build isolated 0051 migration scope and apply\n\s+if: github\.event_name == 'workflow_dispatch'/);
+  assert.match(workflow,/Load controlled staging tables\n\s+if: github\.event_name == 'workflow_dispatch'/);
+  assert.match(workflow,/Promote reconciled issue contents index\n\s+if: github\.event_name == 'workflow_dispatch'/);
+  assert.match(workflow,/Deploy current Worker runtime\n\s+if: github\.event_name == 'workflow_dispatch'/);
+  assert.match(workflow,/Live issue 1\/2005 contents and chat smoke\n\s+if: github\.event_name == 'workflow_dispatch'/);
+  assert.match(workflow,/GAZETTE ISSUE CONTENTS PREFLIGHT: BLOCKED_SAFE/);
+  assert.match(workflow,/production_mutation=NO/);
+});
+
+test("GICA6 manual activation remains strict and fail-closed on unreconciled source data",()=>{
+  assert.match(workflow,/if \[ "\$\{GITHUB_EVENT_NAME\}" = "workflow_dispatch" \]; then/);
+  assert.match(workflow,/assert d\["content_rows"\]>0/);
+  assert.match(workflow,/assert year in d\["eligible_years"\]/);
+  assert.match(workflow,/no reconciled register years available for issue contents index/);
+  assert.match(workflow,/Unexpected Gazette issue-contents preflight failure/);
+});
