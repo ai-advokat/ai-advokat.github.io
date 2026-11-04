@@ -1,3 +1,6 @@
+import { judicialDiscoveryContext } from "./judicial-discovery-source-registry.js";
+import { enforceCanonicalContextProvenance } from "./canonical-provenance-gate.js";
+
 // Unified Workers AI text-generation contract for AI Advokat.
 // One source of truth for model selection, request parameters and response extraction.
 // Reasoning fields are intentionally never surfaced as user-visible answer text.
@@ -167,6 +170,36 @@ export function workersAIShapeSummary(value){
   };
 }
 
+export function augmentWorkersAIJudicialDiscovery(messages){
+  const input=Array.isArray(messages)?messages:[];
+  const joined=input.map(row=>typeof row?.content==="string"?row.content:"").join("\n");
+  // Narrow activation: only AI Advokat FREE chat prompts carry this marker.
+  // Language-repair, extraction and other Workers AI calls remain untouched.
+  if(!joined.includes("USER QUESTION:") || !/AI Advokat|AI_ADVOKAT/i.test(joined)) return input;
+  const discovery=judicialDiscoveryContext(joined,{limit:6});
+  const gate=enforceCanonicalContextProvenance(discovery.context);
+  if(!gate.context.length) return input;
+  const block=gate.context.map(item=>[
+    "SOURCE: "+String(item.source||""),
+    "LOCATOR: "+String(item.locator||""),
+    String(item.text||"")
+  ].join("\n")).join("\n\n---\n\n");
+  const suffix=[
+    "",
+    "JUDICIAL DISCOVERY CONTEXT (NON-AUTHORITY, SOURCE-LEVEL ONLY):",
+    block,
+    "END JUDICIAL DISCOVERY CONTEXT"
+  ].join("\n");
+  const out=input.map(row=>({...row}));
+  for(let i=out.length-1;i>=0;i--){
+    if(out[i]?.role==="user" && typeof out[i]?.content==="string"){
+      out[i]={...out[i],content:out[i].content+suffix};
+      return out;
+    }
+  }
+  return [...out,{role:"user",content:suffix.trim()}];
+}
+
 export async function runWorkersAIText(env,{
   messages=[],
   maxOutputTokens=1800,
@@ -182,9 +215,10 @@ export async function runWorkersAIText(env,{
     return {ok:false,error:"workers_ai_not_configured"};
   }
   const primaryModel=String(model||resolveWorkersAITextModel(env));
+  const effectiveMessages=augmentWorkersAIJudicialDiscovery(messages);
   const primaryOptions=workersAIRequestOptions({
     model:primaryModel,
-    messages,
+    messages:effectiveMessages,
     maxOutputTokens,
     temperature,
     responseFormat,
@@ -239,7 +273,7 @@ export async function runWorkersAIText(env,{
     };
     const fallbackOptions=workersAIRequestOptions({
       model:fallbackModel,
-      messages,
+      messages:effectiveMessages,
       maxOutputTokens,
       temperature,
       responseFormat,
