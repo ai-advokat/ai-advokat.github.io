@@ -19,6 +19,23 @@ export function resolveWorkersAIEmptyFallbackModel(env){
   return model||WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT;
 }
 
+export function classifyWorkersAIProviderFailure(error){
+  const detail=String(error?.message||error||"").slice(0,500);
+  const lower=detail.toLowerCase();
+  if(/\b4006\b/.test(detail) && /daily free allocation|10,?000 neurons|upgrade to cloudflare.*paid/i.test(detail)){
+    return {
+      error:"workers_ai_daily_capacity_exhausted",
+      detail,
+      retryable:false,
+      capacity:"daily_free_allocation_exhausted"
+    };
+  }
+  if(detail.startsWith("workers_ai_timeout_")){
+    return {error:"workers_ai_timeout",detail,retryable:true,capacity:null};
+  }
+  return {error:"workers_ai_provider_error",detail,retryable:true,capacity:null};
+}
+
 export function workersAIRequestOptions({
   model,
   messages,
@@ -244,11 +261,10 @@ export async function runWorkersAIText(env,{
     providerCalls+=1;
     generated=await callOnce(primaryModel,primaryOptions);
   }catch(error){
-    const detail=String(error?.message||error).slice(0,240);
+    const failure=classifyWorkersAIProviderFailure(error);
     return {
       ok:false,
-      error:detail.startsWith("workers_ai_timeout_")?"workers_ai_timeout":"workers_ai_provider_error",
-      detail,
+      ...failure,
       model:primaryModel,
       primaryModel,
       providerCalls,
@@ -284,11 +300,10 @@ export async function runWorkersAIText(env,{
       generated=await callOnce(fallbackModel,fallbackOptions);
       text=extractWorkersAIText(generated);
     }catch(error){
-      const detail=String(error?.message||error).slice(0,240);
+      const failure=classifyWorkersAIProviderFailure(error);
       return {
         ok:false,
-        error:detail.startsWith("workers_ai_timeout_")?"workers_ai_timeout":"workers_ai_provider_error",
-        detail,
+        ...failure,
         model:activeModel,
         primaryModel,
         providerCalls,
