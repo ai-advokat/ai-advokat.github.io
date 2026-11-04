@@ -138,21 +138,33 @@ jobs:
             if(d.legalGovernance?.postflightRequired!==true) throw new Error("Mandatory OpenAI postflight missing");
             executionPath="OPENAI_PRIMARY";
           }else if(d.provider==="canonical_corpus_no_model"){
-            if(d.model!==null) throw new Error("Canonical fallback must not report a model");
-            if(d.providerFallback?.from!=="openai") throw new Error("Canonical fallback did not originate from OpenAI failure");
-            if(d.sourceMode!=="provider_failure_canonical_article_fallback") throw new Error("Unexpected canonical fallback source mode: "+d.sourceMode);
-            if(d.displayMode!=="professional_canonical_article_fallback") throw new Error("Unexpected canonical fallback display mode: "+d.displayMode);
-            if(d.legalGovernance?.verificationState!=="SOURCE_BACKED_PROVIDER_FALLBACK") throw new Error("Canonical fallback verification state missing");
-            if(d.legalGovernance?.executionAuthorization!=="RESEARCH_OUTPUT_ONLY") throw new Error("Canonical fallback execution authorization weakened");
-            if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("Canonical fallback Human Gate missing");
-            if(d.legalGovernance?.postflightRequired!==false) throw new Error("Canonical deterministic fallback postflight contract changed");
-            if(d.legalGovernance?.postflightBypassReason!=="deterministic_canonical_source_fallback_no_model") throw new Error("Canonical fallback bypass reason missing");
-            if(!Array.isArray(d.legalSources) || d.legalSources.length<1) throw new Error("Canonical fallback legal sources missing");
-            executionPath="CANONICAL_GOVERNED_FALLBACK";
-            console.warn("PROFESSIONAL PRIMARY PROVIDER DEGRADED: governed canonical fallback released",{
+            if(d.model!==null) throw new Error("Canonical no-model path must not report a model");
+            if(!Array.isArray(d.legalSources) || d.legalSources.length<1) throw new Error("Canonical no-model legal sources missing");
+            if(d.legalGovernance?.executionAuthorization!=="RESEARCH_OUTPUT_ONLY") throw new Error("Canonical no-model execution authorization weakened");
+            if(d.legalGovernance?.postflightRequired!==false) throw new Error("Canonical no-model postflight contract changed");
+
+            if(d.sourceMode==="provider_failure_canonical_article_fallback"){
+              if(d.providerFallback?.from!=="openai") throw new Error("Canonical fallback did not originate from OpenAI failure");
+              if(d.displayMode!=="professional_canonical_article_fallback") throw new Error("Unexpected provider-failure fallback display mode: "+d.displayMode);
+              if(d.legalGovernance?.verificationState!=="SOURCE_BACKED_PROVIDER_FALLBACK") throw new Error("Provider-failure canonical verification state missing");
+              if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("Provider-failure canonical Human Gate missing");
+              if(d.legalGovernance?.postflightBypassReason!=="deterministic_canonical_source_fallback_no_model") throw new Error("Provider-failure canonical bypass reason missing");
+              executionPath="CANONICAL_PROVIDER_FAILURE_FALLBACK";
+            }else if(d.sourceMode==="professional_l0_canonical_article_corpus_no_model"){
+              if(d.legalGovernance?.missionProfile!=="L0_INFORMATIONAL") throw new Error("L0 canonical path used outside L0");
+              if(d.displayMode!=="professional_canonical_corpus_fallback") throw new Error("Unexpected L0 canonical display mode: "+d.displayMode);
+              if(d.legalGovernance?.verificationState!=="PASSED") throw new Error("L0 canonical verification state missing");
+              if(d.legalGovernance?.releaseState!=="VERIFIED_SOURCE_BACKED_RESEARCH") throw new Error("L0 canonical release state missing");
+              executionPath="CANONICAL_L0_SOURCE_FIRST";
+            }else{
+              throw new Error("Unexpected canonical no-model source mode: "+d.sourceMode);
+            }
+
+            console.warn("PROFESSIONAL NO-MODEL PATH RELEASED",{
+              executionPath,
               reason:d.providerFallback?.reason||null,
               httpStatus:d.providerFallback?.httpStatus||null,
-              attempts:d.providerFallback?.attempts||null
+              attempts:d.providerFallback?.attempts||d.providerFallback?.primaryProviderCalls||null
             });
           }else{
             throw new Error("Unexpected Professional provider: "+d.provider);
