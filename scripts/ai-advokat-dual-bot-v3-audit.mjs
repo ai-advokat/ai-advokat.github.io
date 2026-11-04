@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-const BASE=String(process.env.AI_ADVOCAT_BASE||"https://ai-advokat-github-io.aiadvokat16.workers.dev").replace(/\/$/,"");
+// Production recheck after PR #516 merge 63cce0c6\nconst BASE=String(process.env.AI_ADVOCAT_BASE||"https://ai-advokat-github-io.aiadvokat16.workers.dev").replace(/\/$/,"");
 const KEY=String(process.env.AI_ADVOCAT_MEMBERSHIP_KEY||"").trim();
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
