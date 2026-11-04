@@ -77,12 +77,12 @@ export function cleanFormalDraftForExport(text){
   // Macedonian legal generations. These are language/style repairs only and do
   // not add legal authority, facts, deadlines or jurisdiction.
   clean=clean
-    .replace(/\bРазвој на бракот\b/gu,"Развод на бракот")
-    .replace(/\bразвије\b/giu,"разведе")
-    .replace(/\bстрастно сотварување\b/giu,"брачна заедница")
-    .replace(/\bзајавка\b/giu,"барање")
-    .replace(/\bдалечински подносител\b/giu,"подносител")
-    .replace(/\bпогоди долгот\b/giu,"намири го долгот");
+    .replace(/Развој на бракот/gu,"Развод на бракот")
+    .replace(/развије/giu,"разведе")
+    .replace(/страстно сотварување/giu,"брачна заедница")
+    .replace(/зајавка/giu,"барање")
+    .replace(/далечински подносител/giu,"подносител")
+    .replace(/погоди долгот/giu,"намири го долгот");
 
   // Collapse immediately repeated boilerplate paragraphs without changing
   // substantive non-adjacent legal text.
