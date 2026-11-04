@@ -6683,6 +6683,17 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           capacity:freeResult.capacity||"daily_free_allocation_exhausted",
           retryable:false
         } : null,
+        providerFallback:professionalFallback && fallbackReason ? {
+          from:"openai",
+          to:"workers_ai",
+          reason:String(fallbackReason).slice(0,120),
+          primaryProviderCalls:Number(primaryProviderCalls||primaryResult?.providerCalls||0),
+          primaryHttpStatus:Number(primaryResult?.status||0)||null,
+          primaryResponseStatus:typeof primaryResult?.responseStatus==="string"
+            ? primaryResult.responseStatus.slice(0,80)
+            : null,
+          fallbackState:capacityExhausted ? "capacity_exhausted" : "failed"
+        } : null,
         problems:freeResult.problems||null,
         failureDetail:freeResult.detail||null,
         languageReleaseGate:freeResult.releaseGate||null,

@@ -170,3 +170,14 @@ test("Professional L1 bounded fallback permits auto-elevated web intent but not 
   assert.equal(professionalResearchWorkersFallbackEligible(base),true);
   assert.equal(professionalResearchWorkersFallbackEligible({...base,explicitWebRequested:true}),false);
 });
+
+
+test("dual-provider failure preserves primary OpenAI provenance when Workers fallback also fails",()=>{
+  const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
+  assert.match(handle,/providerFallback:professionalFallback && fallbackReason/);
+  assert.match(handle,/from:"openai"/);
+  assert.match(handle,/to:"workers_ai"/);
+  assert.match(handle,/primaryProviderCalls:Number\(primaryProviderCalls\|\|primaryResult\?\.providerCalls\|\|0\)/);
+  assert.match(handle,/primaryHttpStatus:Number\(primaryResult\?\.status\|\|0\)\|\|null/);
+  assert.match(handle,/fallbackState:capacityExhausted \? "capacity_exhausted" : "failed"/);
+});
