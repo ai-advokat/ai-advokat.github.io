@@ -5608,10 +5608,17 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     timeoutMs:fastFreePrompt?8000:20000
   });
   if(!result.ok){
+    const mappedError=result.error==="workers_ai_empty_response"
+      ? "free_workers_ai_empty_response"
+      : result.error==="workers_ai_daily_capacity_exhausted"
+        ? "workers_ai_daily_capacity_exhausted"
+        : "free_workers_ai_provider_error";
     return {
       ok:false,
-      error:result.error==="workers_ai_empty_response"?"free_workers_ai_empty_response":"free_workers_ai_provider_error",
+      error:mappedError,
       detail:result.detail||null,
+      retryable:result.retryable!==false,
+      capacity:result.capacity||null,
       model:result.model||resolveWorkersAITextModel(env),
       providerCalls:result.providerCalls||1,
       providerShape:result.shape||null,
