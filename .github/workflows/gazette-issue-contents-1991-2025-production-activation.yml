@@ -1,4 +1,4 @@
-name: Gazette issue contents 1991-2025 production activation
+name: Gazette issue contents 1991-2025 preflight / production activation
 
 on:
   workflow_dispatch:
@@ -104,6 +104,7 @@ jobs:
           NODE
 
       - name: Build isolated 0051 migration scope and apply
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -euo pipefail
@@ -140,14 +141,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/gazette_issue_contents_index.py \
-            --input-root /tmp/gazette-wave1 \
-            --out-dir /tmp/gazette-issue-contents \
-            --authorization-id "$AUTHORIZATION_ID" \
-            --from-year 1991 \
-            --to-year 2025 \
-            --batch-size 200 | tee /tmp/gic-build.txt
-          python3 - <<'PY'
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            python3 scripts/gazette_issue_contents_index.py \
+              --input-root /tmp/gazette-wave1 \
+              --out-dir /tmp/gazette-issue-contents \
+              --authorization-id "$AUTHORIZATION_ID" \
+              --from-year 1991 \
+              --to-year 2025 \
+              --batch-size 200 | tee /tmp/gic-build.txt
+            python3 - <<'PY'
           import json
           d=json.load(open("/tmp/gazette-issue-contents/summary.json",encoding="utf-8"))
           assert d["content_rows"]>0,d
@@ -160,8 +162,46 @@ jobs:
           assert d["verification_status"]=="reconciled",d
           print("ISSUE CONTENTS BUILD: PASS",d["content_rows"],d["issue_count"])
           PY
+          else
+            set +e
+            python3 scripts/gazette_issue_contents_index.py \
+              --input-root /tmp/gazette-wave1 \
+              --out-dir /tmp/gazette-issue-contents \
+              --authorization-id "$AUTHORIZATION_ID" \
+              --from-year 1991 \
+              --to-year 2025 \
+              --batch-size 200 > /tmp/gic-build.txt 2>&1
+            rc=$?
+            set -e
+            cat /tmp/gic-build.txt
+            if [ "$rc" -eq 0 ]; then
+              echo "GAZETTE ISSUE CONTENTS PREFLIGHT: READY FOR MANUAL HUMAN-GATE ACTIVATION" | tee /tmp/gic-preflight-status.txt
+            elif grep -q "no reconciled register years available for issue contents index" /tmp/gic-build.txt; then
+              python3 - <<'PY' | tee /tmp/gic-preflight-status.txt
+          import json
+          d=json.load(open("/tmp/gazette-wave1/summary.json",encoding="utf-8"))
+          totals=d.get("totals",{})
+          years=d.get("years",[])
+          parsed=[x for x in years if str(x.get("status","")).startswith("parsed")]
+          unresolved=sum(int(x.get("unresolved_count") or 0) for x in parsed)
+          inventory=sum(int(x.get("issue_inventory_count") or 0) for x in parsed)
+          print("GAZETTE ISSUE CONTENTS PREFLIGHT: BLOCKED_SAFE")
+          print("reason=no_zero_unresolved_reconciled_years")
+          print("parsed_years="+str(totals.get("parsed_years",0)))
+          print("acts="+str(totals.get("acts",0)))
+          print("unresolved="+str(unresolved))
+          print("issue_inventory="+str(inventory))
+          print("production_mutation=NO")
+          print("next_gate=manual activation only after source reconciliation")
+          PY
+            else
+              echo "Unexpected Gazette issue-contents preflight failure." >&2
+              exit "$rc"
+            fi
+          fi
 
       - name: Load controlled staging tables
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -euo pipefail
@@ -194,6 +234,7 @@ jobs:
           grep -Eq '"issue_1_2005_rows": [1-9][0-9]*' /tmp/gic-stage-verify.txt
 
       - name: Promote reconciled issue contents index
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -euo pipefail
@@ -246,9 +287,11 @@ jobs:
           echo "GAZETTE ISSUE CONTENTS PROMOTION: PASS"
 
       - name: Deploy current Worker runtime
+        if: github.event_name == 'workflow_dispatch'
         run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/gic-deploy.txt
 
       - name: Live issue 1/2005 contents and chat smoke
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -euo pipefail
@@ -294,6 +337,7 @@ jobs:
             /tmp/gic-apply.txt
             /tmp/gic-harvest.txt
             /tmp/gic-build.txt
+            /tmp/gic-preflight-status.txt
             /tmp/gazette-wave1/summary.json
             /tmp/gazette-wave1/registers
             /tmp/gazette-wave1/acts
