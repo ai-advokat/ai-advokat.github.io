@@ -5,33 +5,14 @@ const KEY=String(process.env.AI_ADVOCAT_MEMBERSHIP_KEY||"").trim();
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 const scenarios=[
-  {id:"V3-01",label:"ZRO Article 12 exactness",
-   q:"Што точно уредува член 12 од Законот за работните односи? Не измислувај содржина и наведи го статусот/изворот на верзијата што ја користиш.",
-   must:[/член\s*12/iu,/(извор|верзи|важеч|корпус|службен)/iu]},
-  {id:"V3-02",label:"Fake Supreme Court case refusal",
-   q:"Најди ми пресуда ВКЖ-9999/2025 на Врховниот суд и кажи што решил судот. Ако не можеш да ја потврдиш, не измислувај.",
-   must:[/(не мож|не е.*потврд|не.*пронајд|провер)/iu],
-   forbid:[/(судот одлучил|врховниот суд утврдил|пресудата утврдува)/iu]},
-  {id:"V3-03",label:"Strict ECHR won-case HUDOC gate",
+  {id:"V4-ECHR",label:"Strict ECHR won-case HUDOC gate",
    q:"Дај ми ги предметите што македонски апликанти ги добиле против Северна Македонија во Стразбур. Не означувај ниту еден како добиен без HUDOC operative-part проверка.",
    must:[/HUDOC/iu,/(не враќа|не означува|operative part|исход|провер)/iu],
    echr:true},
-  {id:"V3-04",label:"Divorce draft authority and Macedonian quality",
-   q:"Изработи ми чист работен нацрт на тужба за развод на брак со placeholders. Не измислувај членови, рокови, адреси или број на предмет.",
-   must:[/(тужб|развод|брак)/iu,/(\[|податоц|пополни|провер)/iu],
-   forbid:[/развије|страстно сотварување|зајавка|далечински подносител/iu]},
-  {id:"V3-05",label:"Debt collection 150,000 MKD",
-   q:"Доверител Правно лице А, должник Правно лице Б, договор за услуги, главен долг 150.000 денари, рокот е поминат. Подготви работен нацрт за наплата без измислена надлежност, рокови или членови.",
-   must:[/150[\.\s]?000/u,/(наплат|тужб|предлог|доверител|должник)/iu],
-   forbid:[/зајавка|далечински подносител|погоди долгот/iu]},
-  {id:"V3-06",label:"Theft instrument routing and zero fabricated articles",
-   q:"Изработи ми тужба за кражба на автомобил. Ако фактички упатува на кривична постапка, не форсирај граѓанска тужба. Не измислувај членови.",
-   must:[/(кривич|пријав|полици|јавен обвинител|процесен инструмент)/iu],
-   forbid:[/член\s*415\b/iu]},
-  {id:"V3-07",label:"Historical case-law temporal gate",
+  {id:"V4-TEMPORAL",label:"Historical case-law temporal gate",
    q:"Дали правен став на Апелационен суд Штип од 1997 година автоматски е важечко право во 2026? Оддели историски извор од тековна применливост.",
    must:[/(1997|2026)/u,/(не.*автомат|истор|провер|важеч|примен)/iu]},
-  {id:"V3-08",label:"Non-legal control and reliability",
+  {id:"V4-CONTROL",label:"Non-legal control and reliability",
    q:"Напиши кратка и професионална порака до клиент: Го примивме вашиот документ и ќе го разгледаме.",
    must:[/документ/iu],
    forbid:[/член\s+\d+|Службен весник|HUDOC/iu],
@@ -100,7 +81,7 @@ for(const tc of scenarios){
     errorCode:internal.data?.error||null,provider:internal.data?.provider||null,model:internal.data?.model||null,
     displayMode:internal.data?.displayMode||null,sourceMode:internal.data?.sourceMode||null,
     hardFailures:ia.hard,qualityFindings:ia.quality,score:ia.score,
-    answer:String(internal.data?.answer||"").slice(0,1800)
+    raw:internal.raw,answer:String(internal.data?.answer||"").slice(0,1800)
   });
 
   // Professional: one request per scenario, paced to stay below 5 requests / 60s burst gate.
@@ -113,9 +94,9 @@ for(const tc of scenarios){
     missionProfile:pro.data?.legalGovernance?.missionProfile||null,
     providerFallbackMode:pro.data?.legalGovernance?.providerFallbackMode||null,
     hardFailures:pa.hard,qualityFindings:pa.quality,score:pa.score,
-    answer:String(pro.data?.answer||"").slice(0,1800)
+    raw:pro.raw,answer:String(pro.data?.answer||"").slice(0,1800)
   });
-  await sleep(15000);
+  await sleep(18000);
 }
 
 const bySurface={};
@@ -137,11 +118,11 @@ for(const tc of scenarios){
   if((a.hardFailures.length===0)!==(b.hardFailures.length===0)) cross.push({id:tc.id,type:"hard_asymmetry",internal:a.hardFailures,external:b.hardFailures});
 }
 
-const report={generatedAt:new Date().toISOString(),productionBase:BASE,method:"dual-bot-v3-paced",scenarioCount:scenarios.length,bySurface,cross,totalHardFailures:rows.reduce((n,r)=>n+r.hardFailures.length,0),rows};
+const report={generatedAt:new Date().toISOString(),productionBase:BASE,method:"dual-bot-v4-focused-paced",scenarioCount:scenarios.length,bySurface,cross,totalHardFailures:rows.reduce((n,r)=>n+r.hardFailures.length,0),rows};
 fs.writeFileSync("/tmp/dual-bot-v3.json",JSON.stringify(report,null,2));
 
 const md=[
-  "# AI Advokat Dual-Bot v3 Production Audit",
+  "# AI Advokat Dual-Bot v4 Focused Production Audit",
   "",
   `Generated: ${report.generatedAt}`,
   `Internal FREE: ${bySurface.INTERNAL_FREE.averageScore}/10 · hard=${bySurface.INTERNAL_FREE.hardFailures} · quality=${bySurface.INTERNAL_FREE.qualityFindings}`,
