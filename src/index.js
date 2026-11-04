@@ -7042,8 +7042,13 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       "openai_response_error"
     ]);
     const transientStatus=Number(result.status||0);
+    // Do not immediately replay the whole multi-call orchestrator on HTTP 429.
+    // A bounded specialist + Chief run may already consume several provider calls;
+    // replaying it after a rate-limit response amplifies provider pressure and can
+    // turn one transient 429 into a six-call burst. Preserve the failure provenance
+    // and move to the governed fallback/fail-closed path instead.
     const retryableResponseStatus=result.error==="openai_response_error"
-      && [408,429,500,502,503,504].includes(transientStatus);
+      && [408,500,502,503,504].includes(transientStatus);
     const retryable=transientPrimaryErrors.has(String(result.error||""))
       && (result.error!=="openai_response_error" || retryableResponseStatus)
       && (professionalRequestDeadlineAt-Date.now()>=10000);

@@ -181,3 +181,11 @@ test("dual-provider failure preserves primary OpenAI provenance when Workers fal
   assert.match(handle,/primaryHttpStatus:Number\(primaryResult\?\.status\|\|0\)\|\|null/);
   assert.match(handle,/fallbackState:capacityExhausted \? "capacity_exhausted" : "failed"/);
 });
+
+
+test("OpenAI 429 must not replay the full multi-call Professional orchestrator",()=>{
+  const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
+  assert.match(handle,/\[408,500,502,503,504\]\.includes\(transientStatus\)/);
+  assert.doesNotMatch(handle,/\[408,429,500,502,503,504\]\.includes\(transientStatus\)/);
+  assert.match(handle,/Do not immediately replay the whole multi-call orchestrator on HTTP 429/);
+});
