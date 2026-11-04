@@ -30,7 +30,7 @@ const proCases=[
   {id:"P07",q:"Спореди ја судската практика на Апелација Скопје, Битола, Гостивар и Штип за исто правно прашање. Ако немаш item-level совпаѓања, кажи го тоа.",expectedMission:"L2_STRATEGY_PROCEDURE",quality:[["four_appeals",/Скопје[\s\S]*Битола[\s\S]*Гостивар[\s\S]*Штип|Штип[\s\S]*Гостивар[\s\S]*Битола[\s\S]*Скопје/i]]},
   {id:"P08",q:"Што точно уредува член 12 од ЗРО? Наведи го само она што е потврдено од corpus и означи ја верзијата.",quality:[["zro12",/(член|чл\.)\s*12/i]]},
   {id:"P09",q:"Изработи ми тужба за кражба на автомобил. Не форсирај граѓанска тужба ако фактичката состојба упатува на кривична постапка.",expectedMission:"L3_CONSEQUENTIAL",quality:[["instrument_mismatch",/(кривич|пријав|постап|инструмент|тужб)/i]]},
-  {id:"P10",q:"Напиши краток љубезен поздрав до клиент: 'Го примивме вашиот документ и ќе го разгледаме.'",expectedMission:"GENERAL_BYPASS",quality:[["simple_nonlegal",/документ/i]]}
+  {id:"P10",q:"Напиши краток љубезен поздрав до клиент: 'Го примивме вашиот документ и ќе го разгледаме.'",expectGeneralBypass:true,quality:[["simple_nonlegal",/документ/i]]}
 ];
 
 function cleanJson(text){ try{return JSON.parse(text);}catch{return null;} }
@@ -71,6 +71,9 @@ function assess(tc,res,{professional=false}={}){
   if(professional && tc.expectedMission){
     const got=String(d?.legalGovernance?.missionProfile||"");
     if(got!==tc.expectedMission) quality.push("mission_expected_"+tc.expectedMission+"_got_"+(got||"NONE"));
+  }
+  if(professional && tc.expectGeneralBypass===true && d?.legalGovernance?.engine){
+    quality.push("general_bypass_unexpected_legal_governance");
   }
   return {hard,quality};
 }
