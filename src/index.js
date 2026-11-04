@@ -4405,13 +4405,13 @@ export function bureauEchrBroadIndexRequest(q){
   return object && (broad || outcomeQualified);
 }
 
-function exactCaseLawNumberFromQuestion(q){
+export function exactCaseLawNumberFromQuestion(q){
   const text=String(q||"").normalize("NFKC");
   const match=text.match(/\b([\p{L}]{1,10}[-\s]?[0-9]{2,8}\/[0-9]{4})\b/iu);
   return match ? String(match[1]).replace(/\s+/g,"").toUpperCase() : null;
 }
 
-function judicialDiscoveryListingRequest(q){
+export function judicialDiscoveryListingRequest(q){
   const n=normalizeText(q);
   const asksInventory=/(?:кои|што).*?(?:материјал|публикац|збирк|билтен|извор).*?(?:има|имаме|корпус|база)|(?:judicial discovery corpus)/iu.test(n);
   const courtNamed=/(?:апелац|врховен|уставен|суд)/iu.test(n);
