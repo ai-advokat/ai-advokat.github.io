@@ -45,8 +45,9 @@ test("external bot isolates vNext boot stages and remains fail-visible",()=>{
   assert.match(vnext,/vnextSidebarClose'\)\.onclick=closeMobileSidebar/);
 });
 
-test("professional runtime recovery covers transient 408 and keeps Workers fallback bounded to L0",()=>{
-  assert.match(worker,/\[408,429,500,502,503,504\]\.includes\(transientStatus\)/);
+test("professional runtime recovery avoids 429 replay while keeping governed Workers fallback bounded",()=>{
+  assert.match(worker,/\[408,500,502,503,504\]\.includes\(transientStatus\)/);
+  assert.doesNotMatch(worker,/\[408,429,500,502,503,504\]\.includes\(transientStatus\)/);
   assert.match(orchestrator,/"specialist_deadline_exhausted"/);
   assert.match(orchestrator,/\["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL"\]\.includes\(profile\)/);
   assert.match(worker,/professionalL0WorkersFallbackEligible/);
