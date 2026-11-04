@@ -189,3 +189,35 @@ test("OpenAI 429 must not replay the full multi-call Professional orchestrator",
   assert.doesNotMatch(handle,/\[408,429,500,502,503,504\]\.includes\(transientStatus\)/);
   assert.match(handle,/Do not immediately replay the whole multi-call orchestrator on HTTP 429/);
 });
+
+
+test("Anonymous FREE chat may hand off to OpenAI only after Workers AI daily capacity exhaustion",()=>{
+  const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
+  assert.match(handle,/allowOpenAIHandoff=false/);
+  assert.match(handle,/capacityExhausted[\s\S]*allowOpenAIHandoff===true[\s\S]*readiness\.provider==="configured"/);
+  assert.match(handle,/reason:"workers_ai_daily_capacity_exhausted"/);
+  assert.match(handle,/__openAIHandoff:true/);
+  assert.match(handle,/boundedAnonymousFallback:true/);
+  assert.match(handle,/webRequested=false/);
+  assert.match(handle,/if\(!result\.ok && membership\)/);
+  assert.match(handle,/direction:"workers_ai_to_openai"/);
+});
+
+test("Workers-to-OpenAI handoff remains fail-closed for non-capacity Workers errors",()=>{
+  const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
+  assert.match(handle,/const capacityExhausted=freeResult\.error==="workers_ai_daily_capacity_exhausted"/);
+  assert.match(handle,/capacityExhausted\s*&&\s*allowOpenAIHandoff===true/);
+  assert.match(handle,/await releaseMonthlyQuota\(env,\{subject,period\}\);[\s\S]*error:freeResult\.error\|\|"free_workers_ai_failed"/);
+});
+
+test("Exact-article L0 answers suppress unrelated secondary source surfaces",()=>{
+  const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
+  assert.match(handle,/const exactArticleAuthorityOnly=/);
+  assert.match(handle,/Boolean\(exactArticleNumberFromQuestion\(q\)\)/);
+  assert.match(handle,/\["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"\]\.includes\(missionProfile\)/);
+  assert.match(handle,/if\(exactArticleAuthorityOnly && Array\.isArray\(result\.sources\) && result\.sources\.length\)/);
+  assert.match(handle,/result=\{\.\.\.result,sources:\[\]\}/);
+  assert.match(handle,/sources:result\.sources \|\| \[\]/);
+  assert.match(handle,/caseLawSources:exactArticleAuthorityOnly \? \[\]/);
+  assert.match(handle,/publicationSources:exactArticleAuthorityOnly \? \[\]/);
+});
