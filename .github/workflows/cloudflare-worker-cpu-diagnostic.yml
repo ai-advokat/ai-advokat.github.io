@@ -1,0 +1,104 @@
+name: Cloudflare Worker CPU diagnostic
+
+on:
+  push:
+    branches: ["audit/cloudflare-capacity-diagnostic-2026-11-04"]
+    paths:
+      - ".github/workflows/cloudflare-worker-cpu-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Provision one ephemeral Professional diagnostic key
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACCOUNT="cpu-diag-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ENT="cpu-diag-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KID="cpu-diag-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KEY="cpudiag_$(openssl rand -hex 24)"
+          HASH="$(printf '%s' "$KEY" | sha256sum | awk '{print $1}')"
+          PREFIX="${KEY:0:12}"
+          echo "::add-mask::$KEY"
+          echo "CPU_DIAG_ACCOUNT=$ACCOUNT" >> "$GITHUB_ENV"
+          echo "CPU_DIAG_KEY=$KEY" >> "$GITHUB_ENV"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM membership_access_keys WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_entitlements WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_accounts WHERE id='$ACCOUNT';
+            INSERT INTO membership_accounts(id,display_name,status)
+              VALUES ('$ACCOUNT','CPU Diagnostic','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+              VALUES ('$ENT','$ACCOUNT','office','active','manual',2,1,0,datetime('now','+15 minutes'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+              VALUES ('$KID','$ACCOUNT','$HASH','$PREFIX','ephemeral cpu diagnostic','active',datetime('now','+15 minutes'));
+          " >/dev/null
+      - name: Capture sanitized Worker trace for one Professional request
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > /tmp/tail.jsonl
+          timeout 35s npx wrangler tail ai-advokat-github-io --format json > /tmp/tail.jsonl 2>/tmp/tail.err &
+          TAIL_PID=$!
+          sleep 5
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          code="$(curl -sS --max-time 30 -o /tmp/response.txt -D /tmp/headers.txt -w '%{http_code}'             -H 'content-type: application/json'             -H "X-Membership-Key: $CPU_DIAG_KEY"             -H 'Origin: https://ai-advokat.github.io'             --data-binary '{"q":"Кратко наведи ги клучните правни ризици при оспорување на отказ на работен однос. Не измислувај рокови или членови ако не се потврдени.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/bot" || true)"
+          echo "DIAGNOSTIC_HTTP_STATUS=$code"
+          grep -iE '^(cf-ray|cf-error-type|server|content-type):' /tmp/headers.txt || true
+          sleep 5
+          kill "$TAIL_PID" 2>/dev/null || true
+          wait "$TAIL_PID" 2>/dev/null || true
+          node <<'NODE'
+          const fs=require("fs");
+          const raw=fs.existsSync("/tmp/tail.jsonl")?fs.readFileSync("/tmp/tail.jsonl","utf8"):"";
+          const rows=[];
+          for(const line of raw.split(/\n+/)){
+            if(!line.trim()) continue;
+            try{
+              const x=JSON.parse(line);
+              const ev=x.event||x;
+              const logs=x.logs||[];
+              rows.push({
+                outcome:x.outcome||ev.outcome||null,
+                scriptName:x.scriptName||ev.scriptName||null,
+                cpuTime:x.cpuTime??ev.cpuTime??null,
+                wallTime:x.wallTime??ev.wallTime??null,
+                exceptions:Array.isArray(x.exceptions)?x.exceptions.map(e=>String(e?.name||e?.message||"exception").slice(0,120)):[],
+                logLevels:Array.isArray(logs)?logs.map(l=>l?.level).filter(Boolean).slice(0,12):[]
+              });
+            }catch{}
+          }
+          console.log("SANITIZED_WORKER_TRACE="+JSON.stringify(rows.slice(-8)));
+          NODE
+      - name: Cleanup ephemeral diagnostic key
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${CPU_DIAG_ACCOUNT:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$CPU_DIAG_ACCOUNT';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$CPU_DIAG_ACCOUNT';
+              DELETE FROM membership_access_keys WHERE account_id='$CPU_DIAG_ACCOUNT';
+              DELETE FROM membership_entitlements WHERE account_id='$CPU_DIAG_ACCOUNT';
+              DELETE FROM membership_accounts WHERE id='$CPU_DIAG_ACCOUNT';
+            " >/dev/null
+          fi
