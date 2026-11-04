@@ -6659,14 +6659,23 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
     if(!freeResult.ok){
       await releaseMonthlyQuota(env,{subject,period});
+      const capacityExhausted=freeResult.error==="workers_ai_daily_capacity_exhausted";
       return json(request,{
         ok:false,
         error:freeResult.error||"free_workers_ai_failed",
-        message:freeResult.message||(professionalDegradedDraftActive
-          ? "Резервниот governed Workers AI runtime не успеа безбедно да подготви работен правен нацрт. Квотата не е потрошена; обидете се повторно."
-          : professionalL0FallbackActive
-            ? "Резервниот governed Workers AI runtime не успеа безбедно да го обработи L0 барањето. Квотата не е потрошена; обидете се повторно."
-            : "FREE Workers AI не успеа да го обработи барањето или документите. Квотата не е потрошена; обидете се повторно."),
+        message:capacityExhausted
+          ? "Cloudflare Workers AI дневниот капацитет е исцрпен. Барањето не е објавено како AI правен одговор; потребна е обновена или платена provider capacity пред повторна AI обработка."
+          : (freeResult.message||(professionalDegradedDraftActive
+            ? "Резервниот governed Workers AI runtime не успеа безбедно да подготви работен правен нацрт. Квотата не е потрошена; обидете се повторно."
+            : professionalL0FallbackActive
+              ? "Резервниот governed Workers AI runtime не успеа безбедно да го обработи L0 барањето. Квотата не е потрошена; обидете се повторно."
+              : "FREE Workers AI не успеа да го обработи барањето или документите. Квотата не е потрошена; обидете се повторно.")),
+        providerCapacity:capacityExhausted ? {
+          state:"exhausted",
+          provider:"workers_ai",
+          capacity:freeResult.capacity||"daily_free_allocation_exhausted",
+          retryable:false
+        } : null,
         problems:freeResult.problems||null,
         failureDetail:freeResult.detail||null,
         languageReleaseGate:freeResult.releaseGate||null,
