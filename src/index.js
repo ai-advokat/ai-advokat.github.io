@@ -6589,7 +6589,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           ? (professionalFactReview ? "low" : "medium")
           : "low";
 
-  const runWorkersFallbackResponse=async({fallbackReason=null,primaryProviderCalls=0,professionalFallback=false,primaryResult=null}={})=>{
+  const runWorkersFallbackResponse=async({fallbackReason=null,primaryProviderCalls=0,professionalFallback=false,primaryResult=null,allowOpenAIHandoff=false}={})=>{
     const professionalFallbackActive=professionalFallback===true && Boolean(membership);
     const professionalL0FallbackActive=professionalFallbackActive && missionProfile==="L0_INFORMATIONAL";
     const professionalResearchFallbackActive=professionalFallbackActive
@@ -6665,8 +6665,33 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     }
 
     if(!freeResult.ok){
-      await releaseMonthlyQuota(env,{subject,period});
       const capacityExhausted=freeResult.error==="workers_ai_daily_capacity_exhausted";
+
+      // Bounded FREE -> OpenAI handoff. This path activates only when the
+      // configured Workers AI daily allocation is exhausted, never for an
+      // ordinary model error. It reuses the already-reserved FREE quota slot,
+      // disables external web research, performs no automatic OpenAI retry for
+      // anonymous callers, and remains bounded by the organization hard spend
+      // limit / prepaid-credit stop configured in the OpenAI project.
+      if(
+        capacityExhausted
+        && allowOpenAIHandoff===true
+        && !professionalFallbackActive
+        && readiness.provider==="configured"
+        && env?.OPENAI_PROVIDER_ACTIVATION_STATE==="governed_openai_primary_workers_ai_fallback"
+      ){
+        return {
+          __openAIHandoff:true,
+          reason:"workers_ai_daily_capacity_exhausted",
+          workersAI:{
+            model:freeResult.model||resolveWorkersAITextModel(env),
+            providerCalls:Number(freeResult.providerCalls||1),
+            capacity:freeResult.capacity||"daily_free_allocation_exhausted"
+          }
+        };
+      }
+
+      await releaseMonthlyQuota(env,{subject,period});
       return json(request,{
         ok:false,
         error:freeResult.error||"free_workers_ai_failed",
@@ -6879,7 +6904,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         }
       },
       legalSources:articleBundle.legalSources||[],
-      caseLawSources:[...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
+      caseLawSources:exactArticleAuthorityOnly ? [] : [...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
       echrBureauDiscovery:{
         state:bureauEchrBundle.state,
         indexedRecords:bureauEchrBundle.recordCount,
@@ -6994,7 +7019,15 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   };
 
 
-  if(useFreeWorkersAI) return runWorkersFallbackResponse();
+  let freeCapacityHandoff=null;
+  if(useFreeWorkersAI){
+    const freeAttempt=await runWorkersFallbackResponse({allowOpenAIHandoff:true});
+    if(!freeAttempt?.__openAIHandoff) return freeAttempt;
+    freeCapacityHandoff=freeAttempt;
+    // The fallback must stay bounded: no external web tools and no second
+    // provider retry for anonymous FREE traffic.
+    webRequested=false;
+  }
 
   const configuredProfessionalBudget=Number(env?.PROFESSIONAL_REQUEST_BUDGET_MS||160000);
   const professionalRequestBudgetMs=Number.isFinite(configuredProfessionalBudget)
@@ -7032,7 +7065,16 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     deadlineAt:professionalRequestDeadlineAt
   });
 
-  let providerRecovery=null;
+  let providerRecovery=freeCapacityHandoff ? {
+    recovered:result.ok===true,
+    direction:"workers_ai_to_openai",
+    firstError:"workers_ai_daily_capacity_exhausted",
+    workersAIModel:freeCapacityHandoff.workersAI?.model||null,
+    workersAIProviderCalls:Number(freeCapacityHandoff.workersAI?.providerCalls||0),
+    workersAICapacity:freeCapacityHandoff.workersAI?.capacity||null,
+    retryWebSearch:false,
+    boundedAnonymousFallback:true
+  } : null;
   if(!result.ok && membership){
     const transientPrimaryErrors=new Set([
       "openai_network_error",
@@ -7556,6 +7598,13 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   governedFinalAnswer=governedFinalRelease.text;
 
   const articleMatched=articleBundle.state==="matched";
+  const exactArticleAuthorityOnly=
+    articleMatched
+    && missionProfile==="L0_INFORMATIONAL"
+    && Boolean(exactArticleNumberFromQuestion(q))
+    && explicitWebRequested!==true
+    && attachmentCheck.attachments.length===0
+    && guideDocumentCheck.attachments.length===0;
   const caseLawMatched=caseLawBundle.state==="matched";
   const guideFullTextUsed=guideDocumentCheck.attachments.length>0;
   const guidePrimaryLawRequired=guideDocumentCheck.sources.some(s=>s.primarySourceRequired===true && s.lawDependencyGate!=="all_mapped_dependencies_current_verified");
@@ -7657,11 +7706,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     historyItemsUsed:result.historyItemsUsed,
     contextualFollowUp,
     routingContextUsed:routingQuery!==q,
-    sources:result.sources || [],
+    sources:exactArticleAuthorityOnly ? [] : (result.sources || []),
     sourcePolicy:{
       version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
-      registeredExternalSources:(result.sources||[]).filter(s=>s.registered===true).length,
-      unregisteredExternalSources:(result.sources||[]).filter(s=>s.registered!==true).length,
+      registeredExternalSources:exactArticleAuthorityOnly ? 0 : (result.sources||[]).filter(s=>s.registered===true).length,
+      unregisteredExternalSources:exactArticleAuthorityOnly ? 0 : (result.sources||[]).filter(s=>s.registered!==true).length,
       corpusPromotion:"human_gate_required",
       canonicalProvenanceGate:{
         version:CANONICAL_PROVENANCE_GATE_VERSION,
@@ -7679,8 +7728,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       matchedRecords:bureauEchrBundle.records?.length||0,
       hudocBindingRequired:true
     },
-    guideSources:guideDocumentCheck.sources || [],
-    publicationSources:authorialBundle.sources || [],
+    guideSources:exactArticleAuthorityOnly ? [] : (guideDocumentCheck.sources || []),
+    publicationSources:exactArticleAuthorityOnly ? [] : (authorialBundle.sources || []),
     guideLawDependencyGate:guideDocumentCheck.sources.length ? {
       primarySourceRequired:guidePrimaryLawRequired,
       states:[...new Set(guideDocumentCheck.sources.map(s=>s.lawDependencyGate).filter(Boolean))]
