@@ -2,7 +2,7 @@ name: AI Advokat 20-case live UAT
 
 on:
   push:
-    branches: ["main"]
+    branches: ["audit/20-case-master-uat-2026-11-04"]
     paths:
       - "scripts/ai-advokat-20-live-uat.mjs"
       - ".github/workflows/ai-advokat-20-live-uat.yml"
