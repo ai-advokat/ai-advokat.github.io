@@ -117,18 +117,23 @@ test("broad Strasbourg request activates deterministic Bureau index lane",()=>{
   assert.equal(bureauEchrBroadIndexRequest("Објасни што е ЕСЧП."),false);
 });
 
-test("deterministic ECHR index answer never equates a Bureau listing with a proven win",()=>{
+test("outcome-qualified ECHR request with no HUDOC-bound outcomes returns no case as a proven win",()=>{
   const rows=[
     {record_kind:"judgment_listing",title:"ТЕСТ против Северна Македонија",listing_period:"2026",captured_on:"2026-10-11"},
     {record_kind:"decision_listing",title:"ТЕСТ 2 против Северна Македонија",listing_period:"2025",captured_on:"2026-10-11"}
   ];
   const answer=formatBureauEchrIndexAnswer(rows,{judgmentsOnly:true,outcomeClaimRequested:true});
-  assert.match(answer,/1 записи означени како пресуди/);
-  assert.match(answer,/не докажува државјанство/);
-  assert.match(answer,/не ги означува сите наведени пресуди како победи/);
+  assert.match(answer,/Барањето е за предмети што апликантите ги „добиле“/);
+  assert.match(answer,/не враќа ниту една пресуда како „добиена“/);
+  assert.match(answer,/Кандидатски пресуди за HUDOC проверка: 1/);
   assert.match(answer,/HUDOC operative part/);
-  assert.match(answer,/ТЕСТ против Северна Македонија/);
-  assert.doesNotMatch(answer,/ТЕСТ 2 против Северна Македонија/);
+  assert.doesNotMatch(answer,/• ТЕСТ против Северна Македонија/);
+  assert.doesNotMatch(answer,/• ТЕСТ 2 против Северна Македонија/);
+});
+
+test("outcome language is explicit and may be negated",()=>{
+  assert.equal(bureauEchrOutcomeClaimRequested("Дај ги предметите што ги добиле во Стразбур."),true);
+  assert.equal(bureauEchrOutcomeClaimRequested("Дај ги сите пресуди без разлика на исход."),false);
 });
 
 test("chat handler exposes a no-model ECHR broad-index response contract",()=>{
