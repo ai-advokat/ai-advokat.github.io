@@ -31,7 +31,11 @@ jobs:
           node-version: "22"
 
       - name: Verify v3 audit harness
-        run: node --check scripts/ai-advokat-dual-bot-v3-audit.mjs
+        env:
+          AI_ADVOCAT_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+        run: |
+          node --check scripts/ai-advokat-dual-bot-v3-audit.mjs
+          node scripts/ai-advokat-dual-bot-v3-audit.mjs --self-check
 
       - name: Provision ephemeral Professional audit membership
         shell: bash
