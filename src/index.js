@@ -4412,7 +4412,7 @@ export function historicalCaseLawTemporalGateRequest(q){
   const oldest=Math.min(...years);
   const newest=Math.max(...years);
   if(oldest>=newest) return false;
-  const caseLaw=/(?:правен став|судск(?:а|и) практик|пресуд|одлук|апелацион|врховен суд|суд)/iu.test(n);
+  const caseLaw=/(?:правен став|судск(?:а|и) практик|пресуд|одлук|апелацион|апелациј|врховен суд|суд)/iu.test(n);
   const temporal=/(?:автомат|важеч|примен|теков|денес|сега|current|applicab|valid)/iu.test(n);
   return caseLaw && temporal;
 }
