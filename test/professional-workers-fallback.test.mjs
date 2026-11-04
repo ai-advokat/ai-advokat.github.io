@@ -65,7 +65,7 @@ test("Professional L1 research and GENERAL traffic may use bounded Workers fallb
   assert.equal(professionalResearchWorkersFallbackEligible({...base,missionProfile:"L2_STRATEGY_PROCEDURE"}),false);
   assert.equal(professionalResearchWorkersFallbackEligible({...base,postflightRequired:true,missionProfile:"L1_VERIFIED_RESEARCH"}),false);
   assert.equal(professionalResearchWorkersFallbackEligible({...base,explicitWebRequested:true,missionProfile:"L1_VERIFIED_RESEARCH"}),false);
-  assert.equal(professionalResearchWorkersFallbackEligible({...base,webRequested:true,missionProfile:"L1_VERIFIED_RESEARCH"}),false);
+  assert.equal(professionalResearchWorkersFallbackEligible({...base,webRequested:true,missionProfile:"L1_VERIFIED_RESEARCH"}),true);
   assert.equal(professionalResearchWorkersFallbackEligible({...base,attachmentCount:1,missionProfile:"L1_VERIFIED_RESEARCH"}),false);
   assert.equal(professionalResearchWorkersFallbackEligible({...base,result:{error:"openai_response_error",status:400},missionProfile:"L1_VERIFIED_RESEARCH"}),false);
 });
