@@ -437,3 +437,24 @@ test("V14 protected verbatim source span preserves EOOD",()=>{
   const clean=normaliseMacedonianGeneratedText(input);
   assert.ok(clean.includes('„Тест ЕООД“'));
 });
+
+
+test("Pravopis 2017 positive form овде is never rejected as neighbouring-language contamination",()=>{
+  const text="Овде е наведена изворната публикација што треба дополнително да се провери.";
+  const check=assessMacedonianOutput(text,{userText:"Одговори на македонски."});
+  assert.equal(check.ok,true,JSON.stringify(check));
+  assert.equal(macedonianReleaseVerdict(text,{userText:"Одговори на македонски."}).verdict,"RELEASE");
+});
+
+test("Pravopis 2017 positive forms достапни and билтен release cleanly",()=>{
+  const text="Достапни се податоци од билтенот на судот.";
+  const check=assessMacedonianOutput(text,{userText:"Одговори на македонски."});
+  assert.equal(check.ok,true,JSON.stringify(check));
+  assert.equal(macedonianReleaseVerdict(text,{userText:"Одговори на македонски."}).verdict,"RELEASE");
+});
+
+test("generated булетин is deterministically normalised to Правопис 2017 билтен",()=>{
+  const clean=normaliseMacedonianGeneratedText("Булетин бр. 2 е достапен.");
+  assert.equal(clean,"Билтен бр. 2 е достапен.");
+  assert.equal(assessMacedonianOutput(clean,{userText:"Одговори на македонски."}).ok,true);
+});
