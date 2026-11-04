@@ -1,5 +1,7 @@
 import fs from "node:fs";
 
+// Fresh dual-bot verification after canonical main merge 1ce0ec96
+
 // Production recheck after PR #516 merge 63cce0c6
 const BASE=String(process.env.AI_ADVOCAT_BASE||"https://ai-advokat-github-io.aiadvokat16.workers.dev").replace(/\/$/,"");
 const KEY=String(process.env.AI_ADVOCAT_MEMBERSHIP_KEY||"").trim();
