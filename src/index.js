@@ -6778,7 +6778,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
               ? "Примарниот OpenAI provider не успеа. Контролираниот Workers AI fallback се користи за GENERAL/L1 барање без експлицитно web-пребарување, без прилози и без задолжителен postflight; Human Gate останува видлив за правно истражување."
               : (freeProfessionalGuard
               ? "FREE provider output is a working research/draft result only. It does not establish current-law status and requires professional Human Gate review before consequential reliance."
-              : "FREE provider output is informational research assistance and does not establish current-law status."))
+              : "FREE provider output is informational research assistance and does not establish current-law status.")
       } : null,
       membership:{
         planCode:fallbackPlanCode,
