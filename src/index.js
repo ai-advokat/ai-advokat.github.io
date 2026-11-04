@@ -4408,7 +4408,8 @@ export function bureauEchrJudgmentsOnlyRequest(q){
 
 export function bureauEchrOutcomeClaimRequested(q){
   const n=normalizeText(q);
-  return /(?:добил|добиле|добила|побед|успеш|won|win|violation|повреда)/iu.test(n);
+  if(/(?:без разлика на исход|без оглед на исход|не мора да (?:се )?добиени|regardless of outcome|all judgments regardless)/iu.test(n)) return false;
+  return /(?:добил|добиле|добила|добиени|побед|успеш|won|win|violation|повреда)/iu.test(n);
 }
 
 async function loadBureauEchrIndexRecords(){
@@ -4431,7 +4432,27 @@ export function formatBureauEchrIndexAnswer(records,{judgmentsOnly=false,outcome
   const judgmentEntries=rows.filter(r=>r.record_kind==="judgment_listing");
   const decisionEntries=rows.filter(r=>r.record_kind==="decision_listing");
   const selected=judgmentsOnly ? judgmentEntries : rows;
-  const capturedOn=selected.map(r=>String(r.captured_on||"")).filter(Boolean).sort().at(-1)||"непознат";
+  const capturedOn=selected.map(r=>String(r.captured_on||"")).filter(Boolean).sort().at(-1)
+    || rows.map(r=>String(r.captured_on||"")).filter(Boolean).sort().at(-1)
+    || "непознат";
+
+  if(outcomeClaimRequested){
+    return [
+      "Барањето е за предмети што апликантите ги „добиле“ пред ЕСЧП.",
+      "",
+      "Тековниот официјален домашен индекс е discovery layer и не содржи верификуван HUDOC outcome за секој запис.",
+      "Затоа AI Advokat не враќа ниту една пресуда како „добиена“ само врз основа на индексот.",
+      "Кандидатски пресуди за HUDOC проверка: "+judgmentEntries.length+".",
+      "За точен список мора секој кандидат да се врзе со конкретен HUDOC документ и да се провери operative part (violation / no violation / friendly settlement / strike-out), application number, датум и конечност.",
+      "",
+      "Извори за проверка:",
+      "• Биро за застапување пред ЕСЧП: https://biroescp.gov.mk/пресуди-и-одлуки-на-рм/",
+      "• HUDOC: https://hudoc.echr.coe.int/",
+      "",
+      "Human Gate: ниту еден предмет не се означува како „добиен“ додека исходот не е врзан со конкретниот HUDOC документ."
+    ].join("\n");
+  }
+
   const grouped=new Map();
   for(const row of selected){
     const period=String(row.listing_period||"без година");
@@ -6098,26 +6119,35 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       }
       const judgmentsOnly=bureauEchrJudgmentsOnlyRequest(routingQuery);
       const outcomeClaimRequested=bureauEchrOutcomeClaimRequested(routingQuery);
-      const selected=loaded.records.filter(row=>!judgmentsOnly || row.record_kind==="judgment_listing");
+      const judgmentCandidates=loaded.records.filter(row=>row.record_kind==="judgment_listing");
+      const selected=outcomeClaimRequested
+        ? []
+        : loaded.records.filter(row=>!judgmentsOnly || row.record_kind==="judgment_listing");
       const answer=formatBureauEchrIndexAnswer(loaded.records,{judgmentsOnly,outcomeClaimRequested});
-      const capturedOn=selected.map(r=>String(r.captured_on||"")).filter(Boolean).sort().at(-1)||null;
+      const capturedOn=(outcomeClaimRequested?judgmentCandidates:selected)
+        .map(r=>String(r.captured_on||"")).filter(Boolean).sort().at(-1)||null;
       const bureauUrl="https://biroescp.gov.mk/пресуди-и-одлуки-на-рм/";
       const hudocUrl="https://hudoc.echr.coe.int/";
+      const displayMode=outcomeClaimRequested
+        ? "canonical_echr_bureau_outcome_verification_required"
+        : (judgmentsOnly?"canonical_echr_bureau_judgment_index":"canonical_echr_bureau_index");
       return json(request,{
         ok:true,
         answer,
         provider:"canonical_corpus_no_model",
         model:null,
         mode:"passive_corpus",
-        displayMode:judgmentsOnly?"canonical_echr_bureau_judgment_index":"canonical_echr_bureau_index",
+        displayMode,
         sourceMode:"official_domestic_echr_index_no_model",
         webSearchUsed:false,
         echrBureauIndexStatus:{
-          state:"matched",
+          state:outcomeClaimRequested?"hudoc_verification_required":"matched",
           snapshotCapturedOn:capturedOn,
           totalIndexRecords:loaded.records.length,
           selectedRecords:selected.length,
+          candidateJudgmentRecords:judgmentCandidates.length,
           judgmentsOnly,
+          outcomeClaimRequested,
           outcomeQualification:"HUDOC_BINDING_REQUIRED"
         },
         echrBureauIndex:selected.map(row=>({
@@ -6172,7 +6202,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           serverLatencyMs:0,
           fastPromptUsed:true
         },
-        humanGate:"Индексот е discovery layer. За да се каже дека апликантот „добил“, дека имало повреда, или дека е македонски државјанин, мора да се провери конкретниот HUDOC документ."
+        humanGate:outcomeClaimRequested
+          ? "HUDOC Human Gate: нема квалификувани „добиени“ предмети во овој одговор. За секој кандидат мора да се потврди конкретниот HUDOC operative part пред да се означи како победа/повреда."
+          : "Индексот е discovery layer. За да се каже дека апликантот „добил“, дека имало повреда, или дека е македонски државјанин, мора да се провери конкретниот HUDOC документ."
       });
     }catch(error){
       console.error("echr_bureau_direct_index_failed",String(error?.message||error).slice(0,180));
