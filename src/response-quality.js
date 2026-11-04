@@ -71,7 +71,31 @@ export function cleanFormalDraftForExport(text){
       .replace(/[ \t]+$/g,"");
     out.push(line);
   }
-  return out.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+  let clean=out.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+
+  // Deterministic cleanup for malformed drafting artefacts observed in live
+  // Macedonian legal generations. These are language/style repairs only and do
+  // not add legal authority, facts, deadlines or jurisdiction.
+  clean=clean
+    .replace(/\bРазвој на бракот\b/gu,"Развод на бракот")
+    .replace(/\bразвије\b/giu,"разведе")
+    .replace(/\bстрастно сотварување\b/giu,"брачна заедница")
+    .replace(/\bзајавка\b/giu,"барање")
+    .replace(/\bдалечински подносител\b/giu,"подносител")
+    .replace(/\bпогоди долгот\b/giu,"намири го долгот");
+
+  // Collapse immediately repeated boilerplate paragraphs without changing
+  // substantive non-adjacent legal text.
+  const paragraphs=clean.split(/\n{2,}/u);
+  const deduped=[];
+  for(const paragraph of paragraphs){
+    const current=String(paragraph||"").trim();
+    if(!current) continue;
+    const previous=deduped.at(-1)||"";
+    if(current===previous) continue;
+    deduped.push(current);
+  }
+  return deduped.join("\n\n").trim();
 }
 
 function normaliseArticleRef(value){
