@@ -1,0 +1,101 @@
+name: AI Advokat dual-bot v3 production audit
+
+on:
+  push:
+    branches: ["audit/dual-bot-v3-2026-11-04"]
+    paths:
+      - "scripts/ai-advokat-dual-bot-v3-audit.mjs"
+      - ".github/workflows/ai-advokat-dual-bot-v3-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-dual-bot-v3-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify v3 audit harness
+        env:
+          AI_ADVOCAT_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+        run: |
+          node --check scripts/ai-advokat-dual-bot-v3-audit.mjs
+          node scripts/ai-advokat-dual-bot-v3-audit.mjs --self-check
+
+      - name: Provision ephemeral Professional audit membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACCOUNT="dual-v3-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ENT="dual-v3-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KID="dual-v3-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KEY="dual_v3_$(openssl rand -hex 24)"
+          HASH="$(printf '%s' "$KEY" | sha256sum | awk '{print $1}')"
+          PREFIX="${KEY:0:12}"
+          echo "::add-mask::$KEY"
+          echo "DUAL_V3_ACCOUNT=$ACCOUNT" >> "$GITHUB_ENV"
+          echo "DUAL_V3_KEY=$KEY" >> "$GITHUB_ENV"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM membership_access_keys WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_entitlements WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_accounts WHERE id='$ACCOUNT';
+            INSERT INTO membership_accounts(id,display_name,status)
+              VALUES ('$ACCOUNT','AI Advokat Dual-Bot v3 Audit','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+              VALUES ('$ENT','$ACCOUNT','office','active','manual',30,1,0,datetime('now','+45 minutes'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+              VALUES ('$KID','$ACCOUNT','$HASH','$PREFIX','ephemeral dual-bot v3 audit','active',datetime('now','+45 minutes'));
+          " >/tmp/dual-v3-provision.txt
+
+      - name: Run paced dual-bot v3 production audit
+        env:
+          AI_ADVOCAT_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+          AI_ADVOCAT_MEMBERSHIP_KEY: ${{ env.DUAL_V3_KEY }}
+        run: node scripts/ai-advokat-dual-bot-v3-audit.mjs
+
+      - name: Cleanup ephemeral Professional audit membership
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${DUAL_V3_ACCOUNT:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$DUAL_V3_ACCOUNT';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$DUAL_V3_ACCOUNT';
+              DELETE FROM membership_access_keys WHERE account_id='$DUAL_V3_ACCOUNT';
+              DELETE FROM membership_entitlements WHERE account_id='$DUAL_V3_ACCOUNT';
+              DELETE FROM membership_accounts WHERE id='$DUAL_V3_ACCOUNT';
+            " >/tmp/dual-v3-cleanup.txt
+          fi
+
+      - name: Upload v3 audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-dual-bot-v3-audit
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/dual-bot-v3.json
+            /tmp/dual-bot-v3.md
+            /tmp/dual-v3-provision.txt
+            /tmp/dual-v3-cleanup.txt
