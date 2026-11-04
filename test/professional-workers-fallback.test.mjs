@@ -154,3 +154,19 @@ test("Degraded Professional draft keeps Human Gate, no-action L3 boundary and st
   assert.match(workerSource,/ZERO-GOVERNED-CONTEXT SAFETY/);
   assert.match(workerSource,/\[ДА СЕ ПРОВЕРИ ВО ВАЖЕЧКИ ОФИЦИЈАЛЕН ИЗВОР\]/u);
 });
+
+
+test("Professional L1 bounded fallback permits auto-elevated web intent but not explicit web request",()=>{
+  const base={
+    membership,
+    missionProfile:"L1_VERIFIED_RESEARCH",
+    postflightRequired:false,
+    explicitWebRequested:false,
+    webRequested:true,
+    attachmentCount:0,
+    guideDocumentCount:0,
+    result:{error:"openai_response_error",status:503,providerCalls:2}
+  };
+  assert.equal(professionalResearchWorkersFallbackEligible(base),true);
+  assert.equal(professionalResearchWorkersFallbackEligible({...base,explicitWebRequested:true}),false);
+});
