@@ -228,7 +228,7 @@ test("RQ18 observed malformed Macedonian drafting artefacts are deterministicall
   assert.match(clean,/да се разведе/u);
   assert.match(clean,/брачна заедница/u);
   assert.match(clean,/Барање:/u);
-  assert.match(clean,/намири го долгот/u);
+  assert.match(clean,/да го намири долгот/u);
   assert.match(clean,/Подносител:/u);
   assert.doesNotMatch(clean,/развије|сотварување|зајавка|далечински подносител|погоди долгот/iu);
 });
