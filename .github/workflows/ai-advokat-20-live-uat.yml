@@ -1,0 +1,99 @@
+name: AI Advokat 20-case live UAT
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "scripts/ai-advokat-20-live-uat.mjs"
+      - ".github/workflows/ai-advokat-20-live-uat.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-20-live-uat
+  cancel-in-progress: false
+
+jobs:
+  uat:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify test harness
+        run: node --check scripts/ai-advokat-20-live-uat.mjs
+
+      - name: Provision ephemeral Professional membership for 20-case UAT
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          ACCOUNT="uat20-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ENT="uat20-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KID="uat20-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KEY="uat20_$(openssl rand -hex 24)"
+          HASH="$(printf '%s' "$KEY" | sha256sum | awk '{print $1}')"
+          PREFIX="${KEY:0:12}"
+          echo "::add-mask::$KEY"
+          echo "UAT20_ACCOUNT=$ACCOUNT" >> "$GITHUB_ENV"
+          echo "UAT20_KEY=$KEY" >> "$GITHUB_ENV"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM membership_access_keys WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_entitlements WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_accounts WHERE id='$ACCOUNT';
+            INSERT INTO membership_accounts(id,display_name,status)
+              VALUES ('$ACCOUNT','AI Advokat 20-case UAT','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+              VALUES ('$ENT','$ACCOUNT','office','active','manual',30,1,0,datetime('now','+45 minutes'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+              VALUES ('$KID','$ACCOUNT','$HASH','$PREFIX','ephemeral 20-case UAT','active',datetime('now','+45 minutes'));
+          " >/tmp/uat20-provision.txt
+
+      - name: Run 20 live tests
+        env:
+          AI_ADVOCAT_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+          AI_ADVOCAT_MEMBERSHIP_KEY: ${{ env.UAT20_KEY }}
+        run: node scripts/ai-advokat-20-live-uat.mjs
+
+      - name: Cleanup ephemeral Professional membership
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${UAT20_ACCOUNT:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$UAT20_ACCOUNT';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$UAT20_ACCOUNT';
+              DELETE FROM membership_access_keys WHERE account_id='$UAT20_ACCOUNT';
+              DELETE FROM membership_entitlements WHERE account_id='$UAT20_ACCOUNT';
+              DELETE FROM membership_accounts WHERE id='$UAT20_ACCOUNT';
+            " >/tmp/uat20-cleanup.txt
+          fi
+
+      - name: Upload 20-case UAT evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-20-live-uat
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/ai-advokat-20-live-uat.json
+            /tmp/ai-advokat-20-live-uat.md
+            /tmp/uat20-provision.txt
+            /tmp/uat20-cleanup.txt
