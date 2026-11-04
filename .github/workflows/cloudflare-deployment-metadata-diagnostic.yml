@@ -1,0 +1,56 @@
+name: Cloudflare deployment metadata diagnostic
+
+on:
+  push:
+    branches: ["audit/cloudflare-capacity-diagnostic-2026-11-04"]
+    paths:
+      - ".github/workflows/cloudflare-deployment-metadata-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Read sanitized Worker deployment metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler versions list --name ai-advokat-github-io --json > /tmp/versions.json
+          npx wrangler deployments status --name ai-advokat-github-io --json > /tmp/deployment-status.json
+          node <<'NODE'
+          const fs=require("fs");
+          const parse=p=>{try{return JSON.parse(fs.readFileSync(p,"utf8"));}catch{return null;}};
+          const versions=parse("/tmp/versions.json");
+          const status=parse("/tmp/deployment-status.json");
+          const safeVersions=(Array.isArray(versions)?versions:[])
+            .slice(0,5)
+            .map(v=>({
+              id:v.id||v.version_id||null,
+              created_on:v.created_on||v.createdOn||null,
+              source:v.source||null,
+              message:v.annotations?.["workers/message"]||v.message||null,
+              triggered_by:v.annotations?.["workers/triggered_by"]||null
+            }));
+          const safeStatus=Array.isArray(status)
+            ? status.map(d=>({
+                id:d.id||null,
+                created_on:d.created_on||d.createdOn||null,
+                source:d.source||null,
+                versions:Array.isArray(d.versions)?d.versions.map(v=>({version_id:v.version_id||v.id||null,percentage:v.percentage||null})):[]
+              }))
+            : status;
+          console.log("SANITIZED_WORKER_VERSIONS="+JSON.stringify(safeVersions));
+          console.log("SANITIZED_DEPLOYMENT_STATUS="+JSON.stringify(safeStatus));
+          NODE
