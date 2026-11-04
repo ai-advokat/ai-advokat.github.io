@@ -72,7 +72,7 @@ const scenarios=[
 
 function parseJson(t){try{return JSON.parse(t);}catch{return null;}}
 
-async function post(path,body,headers={}){
+async function postOnce(path,body,headers={}){
   const started=Date.now();
   try{
     const res=await fetch(BASE+path,{
@@ -86,6 +86,26 @@ async function post(path,body,headers={}){
   }catch(error){
     return {status:0,data:null,raw:String(error?.message||error),ms:Date.now()-started};
   }
+}
+
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+
+async function post(path,body,headers={}){
+  const attempts=[];
+  for(let n=1;n<=3;n++){
+    const res=await postOnce(path,body,headers);
+    attempts.push({
+      attempt:n,status:res.status,
+      error:res.data?.error||null,
+      message:String(res.data?.message||"").slice(0,500),
+      ms:res.ms
+    });
+    if(res.status!==503) return {...res,attempts};
+    if(n<3) await sleep(2500*n);
+  }
+  const last=attempts.at(-1);
+  const res=await postOnce(path,body,headers);
+  return {...res,attempts:[...attempts,{attempt:4,status:res.status,error:res.data?.error||null,message:String(res.data?.message||"").slice(0,500),ms:res.ms}]};
 }
 
 function evaluate(tc,res,{professional=false}={}){
@@ -142,6 +162,8 @@ for(const tc of scenarios){
     const a=evaluate(tc,res,{professional:surface.name==="EXTERNAL_PRO"});
     rows.push({
       id:tc.id,label:tc.label,surface:surface.name,question:tc.q,status:res.status,latencyMs:res.ms,
+      errorCode:res.data?.error||null,errorMessage:String(res.data?.message||"").slice(0,700),
+      attempts:res.attempts||[],
       provider:res.data?.provider||null,model:res.data?.model||null,
       sourceMode:res.data?.sourceMode||null,displayMode:res.data?.displayMode||null,
       missionProfile:res.data?.legalGovernance?.missionProfile||null,
@@ -195,9 +217,9 @@ const md=[
   `External Professional: ${bySurface.EXTERNAL_PRO.averageScore}/10 · hard=${bySurface.EXTERNAL_PRO.hardFailures} · quality=${bySurface.EXTERNAL_PRO.qualityFindings}`,
   `Cross-surface divergences: ${pairFindings.length}`,
   "",
-  "| ID | Scenario | Surface | HTTP | Provider | Mission | Score | Hard | Quality |",
-  "|---|---|---|---:|---|---|---:|---|---|",
-  ...rows.map(r=>`| ${r.id} | ${r.label} | ${r.surface} | ${r.status??""} | ${r.provider||""} | ${r.missionProfile||""} | ${r.score}/10 | ${r.hardFailures.join(", ")||"PASS"} | ${r.qualityFindings.join(", ")||"PASS"} |`),
+  "| ID | Scenario | Surface | HTTP | Error | Attempts | Provider | Mission | Score | Hard | Quality |",
+  "|---|---|---|---:|---|---:|---|---|---:|---|---|",
+  ...rows.map(r=>`| ${r.id} | ${r.label} | ${r.surface} | ${r.status??""} | ${r.errorCode||""} | ${r.attempts?.length||1} | ${r.provider||""} | ${r.missionProfile||""} | ${r.score}/10 | ${r.hardFailures.join(", ")||"PASS"} | ${r.qualityFindings.join(", ")||"PASS"} |`),
   "",
   "## Cross-surface findings",
   pairFindings.length?pairFindings.map(x=>`- ${x.id}: ${x.type} · internal=${JSON.stringify(x.internal)} · external=${JSON.stringify(x.external)}`).join("\n"):"- None"
