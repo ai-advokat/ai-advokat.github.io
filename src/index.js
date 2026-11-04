@@ -4407,7 +4407,7 @@ export function bureauEchrBroadIndexRequest(q){
 
 export function exactCaseLawNumberFromQuestion(q){
   const text=String(q||"").normalize("NFKC");
-  const match=text.match(/\b([\p{L}]{1,10}[-\s]?[0-9]{2,8}\/[0-9]{4})\b/iu);
+  const match=text.match(/(?:^|[^\p{L}\p{N}])([\p{L}]{1,10}[-\s]?[0-9]{2,8}\/[0-9]{4})(?=$|[^\p{L}\p{N}])/iu);
   return match ? String(match[1]).replace(/\s+/g,"").toUpperCase() : null;
 }
 
