@@ -66,28 +66,17 @@ jobs:
           sleep 5
           kill "$TAIL_PID" 2>/dev/null || true
           wait "$TAIL_PID" 2>/dev/null || true
-          node <<'NODE'
-          const fs=require("fs");
-          const raw=fs.existsSync("/tmp/tail.jsonl")?fs.readFileSync("/tmp/tail.jsonl","utf8"):"";
-          const rows=[];
-          for(const line of raw.split(/\n+/)){
-            if(!line.trim()) continue;
-            try{
-              const x=JSON.parse(line);
-              const ev=x.event||x;
-              const logs=x.logs||[];
-              rows.push({
-                outcome:x.outcome||ev.outcome||null,
-                scriptName:x.scriptName||ev.scriptName||null,
-                cpuTime:x.cpuTime??ev.cpuTime??null,
-                wallTime:x.wallTime??ev.wallTime??null,
-                exceptions:Array.isArray(x.exceptions)?x.exceptions.map(e=>String(e?.name||e?.message||"exception").slice(0,120)):[],
-                logLevels:Array.isArray(logs)?logs.map(l=>l?.level).filter(Boolean).slice(0,12):[]
-              });
-            }catch{}
-          }
-          console.log("SANITIZED_WORKER_TRACE="+JSON.stringify(rows.slice(-8)));
-          NODE
+          echo "SANITIZED_WORKER_TRACE_BEGIN"
+          jq -c '{
+            outcome:(.outcome // null),
+            scriptName:(.scriptName // null),
+            cpuTime:(.cpuTime // null),
+            wallTime:(.wallTime // null),
+            eventStatus:(.event.response.status // null),
+            exceptionNames:((.exceptions // []) | map(.name // .message // "exception")),
+            logLevels:((.logs // []) | map(.level // null) | map(select(. != null)))
+          }' /tmp/tail.jsonl 2>/dev/null | tail -n 8 || true
+          echo "SANITIZED_WORKER_TRACE_END"
       - name: Cleanup ephemeral diagnostic key
         if: always()
         shell: bash
