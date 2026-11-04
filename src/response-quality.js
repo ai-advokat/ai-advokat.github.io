@@ -78,14 +78,27 @@ function normaliseArticleRef(value){
   return String(value||"").normalize("NFKC").toLocaleLowerCase("mk").replace(/\s+/g," ").trim();
 }
 
-export function replaceUngroundedArticleReferences(text,{userText="",hasGovernedLegalContext=false}={}){
-  if(hasGovernedLegalContext) return String(text||"");
+export function replaceUngroundedArticleReferences(text,{
+  userText="",
+  hasGovernedLegalContext=false,
+  governedArticleNumbers=[]
+}={}){
   const supplied=new Set(
     [...String(userText||"").matchAll(/(?:член|чл\.)\s*\d+[а-яА-Я-]*/giu)]
       .map(m=>normaliseArticleRef(m[0]))
   );
+  const governed=new Set(
+    (Array.isArray(governedArticleNumbers)?governedArticleNumbers:[])
+      .map(value=>String(value||"").normalize("NFKC").trim())
+      .filter(Boolean)
+      .map(value=>normaliseArticleRef("член "+value))
+  );
   return String(text||"").replace(/(?:член|чл\.)\s*\d+[а-яА-Я-]*/giu,match=>{
-    if(supplied.has(normaliseArticleRef(match))) return match;
+    const normalized=normaliseArticleRef(match);
+    if(supplied.has(normalized) || governed.has(normalized)) return match;
+    // Generic corpus presence is not sufficient authority for a concrete article
+    // number. A generated article survives only when the exact number is grounded
+    // in the user request or in the governed article allow-list.
     return "[правна основа — да се провери во важечки официјален извор]";
   });
 }
@@ -146,9 +159,17 @@ export function deterministicProceduralInstrumentFallback({userText=""}={}){
   ].join("\n");
 }
 
-export function finaliseFormalLegalDraft(text,{userText="",hasGovernedLegalContext=false}={}){
+export function finaliseFormalLegalDraft(text,{
+  userText="",
+  hasGovernedLegalContext=false,
+  governedArticleNumbers=[]
+}={}){
   const clean=cleanFormalDraftForExport(text);
-  const grounded=replaceUngroundedArticleReferences(clean,{userText,hasGovernedLegalContext});
+  const grounded=replaceUngroundedArticleReferences(clean,{
+    userText,
+    hasGovernedLegalContext,
+    governedArticleNumbers
+  });
   const instrumentSafe=applyProceduralInstrumentSafety(grounded,{userText});
   return ensureRequestedFormalDraftHeading(instrumentSafe,{userText});
 }
