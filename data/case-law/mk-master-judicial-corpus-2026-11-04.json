@@ -1,0 +1,110 @@
+{
+  "id": "mk-master-judicial-corpus-2026-11-04",
+  "version": "1.0.0",
+  "status": "DISCOVERY_INDEXED_ITEM_LEVEL_VERIFICATION_PENDING",
+  "purpose": "Governed source/provenance map for judicial materials supplied for AI Advokat internal and external bot retrieval.",
+  "release_boundary": "Source-level discovery is enabled. Unreviewed extracts do not become legal authority. Current-law applicability, exact holding, finality and original-decision binding remain item-level Human Gates.",
+  "source_groups": [
+    {
+      "id": "VSRM_MASTER_SOURCE_ARCHIVE_v1",
+      "kind": "master_provenance_archive",
+      "scope": "Supreme Court supplied source archive",
+      "status": "SOURCE_ARCHIVE_VERIFIED_LEGAL_ITEM_VERIFICATION_PENDING"
+    },
+    {
+      "id": "JP01D",
+      "kind": "derived_research_package",
+      "scope": "29 principled legal opinions",
+      "status": "SOURCE_PACKAGE_VERIFIED_PRODUCTION_HOLD"
+    },
+    {
+      "id": "JP01F",
+      "kind": "derived_research_package",
+      "scope": "97 unique PDFs; legal opinions/conclusions and working-meeting conclusions",
+      "status": "SOURCE_PACKAGE_VERIFIED_SEGMENTATION_AND_LEGAL_VERIFICATION_PENDING"
+    },
+    {
+      "id": "JP01G",
+      "kind": "derived_research_package",
+      "scope": "100 civil-law/civil-procedure legal units",
+      "status": "SOURCE_PACKAGE_VERIFIED_LEGAL_VERIFICATION_PENDING"
+    },
+    {
+      "id": "JP01I",
+      "kind": "derived_research_package",
+      "scope": "Supreme Court administrative-dispute sentences/source records",
+      "status": "SOURCE_PACKAGE_VERIFIED_CURRENT_LAW_VERIFICATION_PENDING"
+    },
+    {
+      "id": "JP04_MASTER_246",
+      "kind": "derived_research_package",
+      "scope": "246 structured judicial-practice records: administrative/civil/criminal",
+      "status": "SOURCE_PACKAGE_VERIFIED_LEGAL_VERIFICATION_PENDING"
+    },
+    {
+      "id": "VSRSNM_COLLECTION_XII_2018_2023",
+      "kind": "official_judicial_collection",
+      "scope": "Supreme Court Collection XII, 2018-2023",
+      "status": "SOURCE_VERIFIED_ITEM_LEVEL_VERIFICATION_PENDING"
+    },
+    {
+      "id": "APPEAL_SKOPJE_BULLETINS_1_10",
+      "kind": "official_appellate_publications",
+      "scope": "10 bulletins, 2011-2018",
+      "status": "SOURCE_VERIFIED_ITEM_LEVEL_SEGMENTATION_PENDING"
+    },
+    {
+      "id": "APPEAL_BITOLA_PUBLICATIONS",
+      "kind": "official_appellate_publications",
+      "scope": "bulletins, conclusions and joint meetings",
+      "status": "SOURCE_VERIFIED_ITEM_LEVEL_SEGMENTATION_PENDING"
+    },
+    {
+      "id": "APPEAL_GOSTIVAR_BULLETIN_2014_NO2",
+      "kind": "official_appellate_publication",
+      "scope": "Bulletin no.2, 2014",
+      "status": "SOURCE_VERIFIED_ITEM_LEVEL_SEGMENTATION_PENDING"
+    },
+    {
+      "id": "APPEAL_STIP_BULLETIN_1_2_1997",
+      "kind": "official_appellate_publication",
+      "scope": "Bulletin 1-2, 1997",
+      "status": "SOURCE_VERIFIED_HISTORICAL_CURRENT_LAW_GATE_REQUIRED"
+    },
+    {
+      "id": "USTAV_COURT_2003",
+      "kind": "official_constitutional_collection",
+      "scope": "Constitutional Court decisions and rulings, 2003",
+      "status": "SOURCE_VERIFIED_ITEM_LEVEL_SEGMENTATION_PENDING"
+    },
+    {
+      "id": "USTAV_COURT_2017",
+      "kind": "official_constitutional_collection",
+      "scope": "Constitutional Court selected decisions/rulings, 2017",
+      "status": "SOURCE_VERIFIED_ITEM_LEVEL_SEGMENTATION_PENDING"
+    },
+    {
+      "id": "HISTORICAL_COLLECTIONS_1975_2017",
+      "kind": "historical_judicial_publications",
+      "scope": "Collections I-XI and Supreme Court bulletin 2016-2017",
+      "status": "SOURCE_VERIFIED_HISTORICAL_CURRENT_LAW_GATE_REQUIRED"
+    }
+  ],
+  "authority_rules": [
+    "Statutory law is not replaced by case law.",
+    "Supreme Court principled positions, principled legal opinions, legal opinions/conclusions, judgments and sentences must preserve exact subtype.",
+    "Constitutional Court material is a separate constitutional-review authority class.",
+    "Appellate publications are not Supreme Court precedent.",
+    "Historical material never establishes 2026 current-law status by itself.",
+    "Derived GPT/research packages never inherit the authority of their source files.",
+    "Duplicate files are provenance aliases, not additional authority weight.",
+    "Adverse or distinguishing authority must not be hidden.",
+    "Authoritative citation requires item-level source binding and Human Gate."
+  ],
+  "runtime": {
+    "internal_bot": "enabled_as_discovery_context",
+    "external_bot": "enabled_as_discovery_context",
+    "reviewed_case_law_pipeline": "unchanged_and_higher_priority",
+    "unreviewed_source_level_records": "non_authority_discovery_only"
+  }
+}
