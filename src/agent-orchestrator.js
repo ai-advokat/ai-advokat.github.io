@@ -7,6 +7,8 @@ import {
 } from "./open-legal-sources-policy.js";
 import { buildAIAdvokatCentralPrompt } from "./ai-advokat-central-prompt.js";
 import { buildMacedonianRepairMessages } from "./macedonian-language-guard.js";
+import { judicialDiscoveryContext } from "./judicial-discovery-source-registry.js";
+import { enforceCanonicalContextProvenance } from "./canonical-provenance-gate.js";
 
 // AI Advokat — governed legal-agent orchestration architecture.
 // V2 implements the manager-style contract requested by the author:
@@ -746,10 +748,20 @@ export async function runOpenAIOrchestrator(env, {
 
   const model=env.OPENAI_MODEL.trim();
 
+  // Source-level judicial discovery augments research without satisfying
+  // authority/current-law preconditions. It is added only after preflight and
+  // passes the canonical provenance gate before the provider can see it.
+  const judicialDiscovery=judicialDiscoveryContext(String(researchInput||input||""),{limit:6});
+  const judicialDiscoveryGate=enforceCanonicalContextProvenance(judicialDiscovery.context);
+  const effectiveCorpusContext=[
+    ...(Array.isArray(corpusContext)?corpusContext:[]),
+    ...judicialDiscoveryGate.context
+  ];
+
   let specialistStage=await runBoundedSpecialists(env,{
     plan,
     input:String(researchInput||input||""),
-    corpusContext,
+    corpusContext:effectiveCorpusContext,
     webSearchEnabled:webSearchEnabled && externalResearchEnabled,
     deadlineAt
   });
@@ -795,7 +807,7 @@ export async function runOpenAIOrchestrator(env, {
 
   const envelope=buildExecutionEnvelope(plan,{
     question:input,
-    corpusContext,
+    corpusContext:effectiveCorpusContext,
     externalContext
   });
 
@@ -818,7 +830,7 @@ export async function runOpenAIOrchestrator(env, {
     "<<<END_ORCHESTRATION_GRAPH>>>",
     "",
     "<<<AI_ADVOCAT_NATIVE_CORPUS>>>",
-    compactSourceContext(corpusContext,"AI Advokat corpus"),
+    compactSourceContext(effectiveCorpusContext,"AI Advokat corpus"),
     "<<<END_AI_ADVOCAT_NATIVE_CORPUS>>>",
     "",
     "<<<EXTERNAL_LEGAL_RESEARCH>>>",
