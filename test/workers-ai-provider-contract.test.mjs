@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { WORKERS_AI_PROVIDER_CONTRACT_VERSION, workersAIRequestOptions, runWorkersAIText, WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT } from "../src/workers-ai-provider.js";
+import { WORKERS_AI_PROVIDER_CONTRACT_VERSION, workersAIRequestOptions, runWorkersAIText, WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT, classifyWorkersAIProviderFailure } from "../src/workers-ai-provider.js";
 
 test("WAP1 Qwen uses only documented synchronous chat parameters",()=>{
   const options=workersAIRequestOptions({
@@ -105,4 +105,12 @@ test("WAP7 language editor can explicitly disable the empty-response provider fa
   assert.equal(result.providerCalls,1);
   assert.deepEqual(models,["@cf/zai-org/glm-4.7-flash"]);
   assert.equal(result.modelFallback,null);
+});
+
+
+test("WAP8 Cloudflare daily neuron exhaustion is a distinct non-retryable capacity state",()=>{
+  const out=classifyWorkersAIProviderFailure(new Error("4006: you have used up your daily free allocation of 10,000 neurons, please upgrade to Cloudflare's Workers Paid plan if you would like to continue usage."));
+  assert.equal(out.error,"workers_ai_daily_capacity_exhausted");
+  assert.equal(out.retryable,false);
+  assert.equal(out.capacity,"daily_free_allocation_exhausted");
 });
