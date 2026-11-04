@@ -638,6 +638,41 @@ test("bounded specialist failure is visible and fail-closed",async()=>{
 });
 
 
+test("bounded specialist 429 short-circuits before Chief synthesis",async()=>{
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=async()=>{
+    calls+=1;
+    return new Response(JSON.stringify({error:{message:"rate limited"}}),{
+      status:429,
+      headers:{"content-type":"application/json","x-request-id":"req-specialist-429"}
+    });
+  };
+  try{
+    const plan=buildAgentPlan("Подготви нацрт тужба за развод со Human Gate.");
+    const result=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",
+      OPENAI_API_KEY:"x".repeat(40),
+      OPENAI_MODEL:"gpt-test",
+      LIOE_SPECIALIST_EXECUTION_ENABLED:"true"
+    },{
+      plan,
+      input:"Подготви нацрт тужба за развод со Human Gate.",
+      maxOutputTokens:1200
+    });
+    assert.equal(result.ok,false);
+    assert.equal(result.error,"openai_response_error");
+    assert.equal(result.status,429);
+    assert.equal(result.providerStage,"bounded_specialist");
+    assert.equal(result.responseStatus,"rate_limited_during_bounded_specialist");
+    assert.equal(result.providerCalls,1);
+    assert.equal(calls,1);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+
 test("L3 pleading draft uses one bounded MK specialist with hardened completion budget",()=>{
   const plan=buildAgentPlan("Подготви нацрт тужба за развод со измислени странки и Human Gate.");
   assert.equal(plan.legalIntelligenceEngine.mission_profile.id,"L3_CONSEQUENTIAL");

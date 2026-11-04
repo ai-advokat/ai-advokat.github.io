@@ -657,6 +657,7 @@ export async function runBoundedSpecialists(env,{
   if(failed){
     return {
       ok:false,required:true,error:failed.error||"specialist_execution_failed",
+      status:Number.isFinite(Number(failed.status))?Number(failed.status):null,
       failedAgent:failed.agentId||null,
       failureDetail:failed.detail||null,
       providerCalls:aggregate.providerCalls,
@@ -767,6 +768,22 @@ export async function runOpenAIOrchestrator(env, {
   });
   if(!specialistStage.ok){
     const profile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
+    if(
+      specialistStage.error==="specialist_response_error"
+      && Number(specialistStage.status||0)===429
+    ){
+      return {
+        ok:false,
+        error:"openai_response_error",
+        status:429,
+        responseStatus:"rate_limited_during_bounded_specialist",
+        failureDetail:"bounded_specialist_http_429",
+        providerStage:"bounded_specialist",
+        failedAgent:specialistStage.failedAgent||null,
+        providerCalls:Number(specialistStage.providerCalls||0),
+        usage:specialistStage.usage||{inputTokens:0,outputTokens:0,totalTokens:0}
+      };
+    }
     const transientSpecialistErrors=new Set([
       "specialist_network_error",
       "specialist_timeout_error",
