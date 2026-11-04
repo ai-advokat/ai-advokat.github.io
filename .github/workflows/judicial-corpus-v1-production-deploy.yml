@@ -1,0 +1,123 @@
+name: Judicial corpus v1 one-time production deploy
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/judicial-discovery-source-registry.js"
+      - "data/case-law/mk-master-judicial-corpus-2026-11-04.json"
+      - "src/agent-orchestrator.js"
+      - "src/workers-ai-provider.js"
+      - "test/judicial-discovery-source-registry.test.mjs"
+      - "test/judicial-discovery-runtime.test.mjs"
+      - ".github/workflows/judicial-corpus-v1-production-deploy.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-judicial-corpus-v1-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: contains(github.event.head_commit.message, '[DEPLOY_JUDICIAL_CORPUS_V1]')
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Dependency safety gate
+        run: npm audit --audit-level=high
+
+      - name: Verify judicial corpus runtime contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --check src/judicial-discovery-source-registry.js
+          node --check src/agent-orchestrator.js
+          node --check src/workers-ai-provider.js
+          node --test test/judicial-discovery-source-registry.test.mjs test/judicial-discovery-runtime.test.mjs
+          node <<'NODE'
+          const fs=require("fs");
+          const m=JSON.parse(fs.readFileSync("data/case-law/mk-master-judicial-corpus-2026-11-04.json","utf8"));
+          if(m.status!=="DISCOVERY_INDEXED_ITEM_LEVEL_VERIFICATION_PENDING") throw new Error("Unexpected corpus release state");
+          if(m.runtime?.internal_bot!=="enabled_as_discovery_context") throw new Error("Internal bot discovery contract missing");
+          if(m.runtime?.external_bot!=="enabled_as_discovery_context") throw new Error("External bot discovery contract missing");
+          if(m.runtime?.unreviewed_source_level_records!=="non_authority_discovery_only") throw new Error("Authority boundary weakened");
+          console.log("JUDICIAL CORPUS CONTRACT: PASS");
+          NODE
+
+      - name: Deploy exact merged Worker to Cloudflare
+        run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/judicial-corpus-deploy.txt
+
+      - name: Verify live Worker and deployed corpus asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/health" -o /tmp/judicial-health.json
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/data/case-law/mk-master-judicial-corpus-2026-11-04.json" -o /tmp/judicial-manifest.json
+          node <<'NODE'
+          const h=require("/tmp/judicial-health.json");
+          const m=require("/tmp/judicial-manifest.json");
+          if(!h.ok || h.database?.reachable!==true || h.database?.schemaReady!==true) throw new Error("Production health/database not ready");
+          if(m.id!=="mk-master-judicial-corpus-2026-11-04") throw new Error("Judicial manifest not deployed");
+          if(m.runtime?.internal_bot!=="enabled_as_discovery_context" || m.runtime?.external_bot!=="enabled_as_discovery_context") throw new Error("Dual-bot manifest contract missing");
+          console.log("LIVE WORKER + JUDICIAL MANIFEST: PASS");
+          NODE
+
+      - name: Verify FREE internal chat still answers through governed runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl -fsSL --max-time 120 \
+            -H 'content-type: application/json' \
+            -H 'Origin: https://ai-advokat.github.io' \
+            -d '{"q":"Кои изворни публикации на Апелационен суд Гостивар ги има AI Advokat? Одговори само на ниво на извор и не измислувај конкретен правен став.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
+            "$BASE/api/chat" -o /tmp/judicial-free-chat.json
+          node <<'NODE'
+          const d=require("/tmp/judicial-free-chat.json");
+          if(!d.ok || !String(d.answer||"").trim()) throw new Error("FREE judicial discovery smoke failed");
+          console.log("FREE INTERNAL CHAT: PASS");
+          NODE
+
+      - name: Verify external Professional bot boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          code="$(curl -sS -o /tmp/judicial-bot-unauth.json -w '%{http_code}' \
+            -H 'content-type: application/json' \
+            -d '{"q":"Судска практика"}' "$BASE/api/bot")"
+          test "$code" = "401"
+          grep -q 'bot_membership_required' /tmp/judicial-bot-unauth.json
+          echo "EXTERNAL PROFESSIONAL BOT ROUTE: LIVE + FAIL-CLOSED"
+
+      - name: Upload non-secret deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: judicial-corpus-v1-production-evidence
+          retention-days: 30
+          path: |
+            /tmp/judicial-corpus-deploy.txt
+            /tmp/judicial-health.json
+            /tmp/judicial-manifest.json
+            /tmp/judicial-free-chat.json
+            /tmp/judicial-bot-unauth.json
