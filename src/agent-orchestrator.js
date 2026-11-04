@@ -961,7 +961,15 @@ export async function runOpenAIOrchestrator(env, {
   };
 
   if(!response.ok){
-    return {ok:false,error:"openai_response_error",status:response.status,...failureBase};
+    const providerErrorCode=String(payload?.error?.code||payload?.error?.type||"").slice(0,80)||null;
+    return {
+      ok:false,
+      error:"openai_response_error",
+      status:response.status,
+      responseStatus:providerErrorCode,
+      failureDetail:providerErrorCode,
+      ...failureBase
+    };
   }
 
   // Legal answers must never be returned from a truncated/refused/incomplete
