@@ -1,5 +1,7 @@
 import fs from "node:fs";
 
+// Final 20-case master UAT trigger 2026-11-04
+
 const BASE=String(process.env.AI_ADVOCAT_BASE||"https://ai-advokat-github-io.aiadvokat16.workers.dev").replace(/\/$/,"");
 const KEY=String(process.env.AI_ADVOCAT_MEMBERSHIP_KEY||"").trim();
 
