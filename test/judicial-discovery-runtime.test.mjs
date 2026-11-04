@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { augmentWorkersAIJudicialDiscovery } from "../src/workers-ai-provider.js";
+import { judicialTemporalSafetyFallback } from "../src/judicial-discovery-source-registry.js";
 
 test("FREE AI Advokat chat receives non-authority judicial discovery context",()=>{
   const messages=[
@@ -34,4 +35,15 @@ test("OpenAI orchestrator adds discovery only after authority preflight",()=>{
   assert.ok(discovery>preflight);
   assert.ok(effective>discovery);
   assert.match(src,/enforceCanonicalContextProvenance\(judicialDiscovery\.context\)/);
+});
+
+
+test("historical appellate temporal question has a clean deterministic Macedonian safety fallback",()=>{
+  const q="Дали правен став од Апелационен суд Штип од 1997 година автоматски е важечко право денес?";
+  const answer=judicialTemporalSafetyFallback(q);
+  assert.ok(answer);
+  assert.match(answer,/Не\./u);
+  assert.match(answer,/историски/u);
+  assert.match(answer,/важечката верзија/u);
+  assert.doesNotMatch(answer,/доступ|текушт|съд|поступак/iu);
 });
