@@ -4,6 +4,7 @@ on:
   push:
     branches: ["main"]
     paths:
+      - "scripts/ai-advokat-20-live-uat.mjs"
       - ".github/workflows/ai-advokat-20-master-uat-oneoff-20261104.yml"
   workflow_dispatch:
 
@@ -12,7 +13,7 @@ permissions:
 
 concurrency:
   group: ai-advokat-20-master-uat-oneoff-20261104
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   uat:
@@ -67,6 +68,7 @@ jobs:
         env:
           AI_ADVOCAT_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
           AI_ADVOCAT_MEMBERSHIP_KEY: ${{ env.UAT20_KEY }}
+          AI_ADVOCAT_UAT_PACE_MS: "13000"
         run: node scripts/ai-advokat-20-live-uat.mjs
 
       - name: Cleanup ephemeral Professional membership

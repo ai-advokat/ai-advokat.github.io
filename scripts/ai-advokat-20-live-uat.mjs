@@ -4,6 +4,8 @@ import fs from "node:fs";
 
 const BASE=String(process.env.AI_ADVOCAT_BASE||"https://ai-advokat-github-io.aiadvokat16.workers.dev").replace(/\/$/,"");
 const KEY=String(process.env.AI_ADVOCAT_MEMBERSHIP_KEY||"").trim();
+const UAT_PACE_MS=Math.max(0,Number(process.env.AI_ADVOCAT_UAT_PACE_MS||13000));
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 const freeCases=[
   {id:"F01",q:"Кои изворни публикации на Апелационен суд Гостивар ги има AI Advokat? Не измислувај конкретен правен став.",quality:[["mentions_gostivar",/Гостивар/i],["mentions_2014",/2014/]]},
@@ -77,14 +79,16 @@ const rows=[];
 for(const tc of freeCases){
   const res=await post("/api/chat",{q:tc.q,mode:"auto",webSearch:false,history:[],guideIds:[],guideDocuments:[],attachments:[]});
   const a=assess(tc,res,{professional:false});
-  rows.push({id:tc.id,surface:"FREE_INTERNAL",question:tc.q,status:res.status,latencyMs:res.ms,provider:res.data?.provider||null,model:res.data?.model||null,missionProfile:res.data?.legalGovernance?.missionProfile||null,hardFailures:a.hard,qualityFindings:a.quality,answer:String(res.data?.answer||"").slice(0,700)});
+  rows.push({id:tc.id,surface:"FREE_INTERNAL",question:tc.q,status:res.status,latencyMs:res.ms,errorCode:res.data?.error||null,message:res.data?.message||null,failureDetail:res.data?.failureDetail||null,provider:res.data?.provider||null,model:res.data?.model||null,providerFallback:res.data?.providerFallback||null,missionProfile:res.data?.legalGovernance?.missionProfile||null,hardFailures:a.hard,qualityFindings:a.quality,answer:String(res.data?.answer||"").slice(0,700)});
+  if(UAT_PACE_MS>0) await sleep(UAT_PACE_MS);
 }
 
 if(KEY){
   for(const tc of proCases){
     const res=await post("/api/bot",{q:tc.q,mode:"auto",webSearch:false,history:[],guideIds:[],guideDocuments:[],attachments:[]},{"X-Membership-Key":KEY});
     const a=assess(tc,res,{professional:true});
-    rows.push({id:tc.id,surface:"PROFESSIONAL_EXTERNAL",question:tc.q,status:res.status,latencyMs:res.ms,provider:res.data?.provider||null,model:res.data?.model||null,sourceMode:res.data?.sourceMode||null,displayMode:res.data?.displayMode||null,missionProfile:res.data?.legalGovernance?.missionProfile||null,verificationState:res.data?.legalGovernance?.verificationState||null,executionAuthorization:res.data?.legalGovernance?.executionAuthorization||null,runtimeTelemetry:res.data?.runtimeTelemetry||null,governanceRunId:res.data?.governanceRunId||null,legalSourceCount:Array.isArray(res.data?.legalSources)?res.data.legalSources.length:0,caseLawSourceCount:Array.isArray(res.data?.caseLawSources)?res.data.caseLawSources.length:0,hardFailures:a.hard,qualityFindings:a.quality,answer:String(res.data?.answer||"").slice(0,700)});
+    rows.push({id:tc.id,surface:"PROFESSIONAL_EXTERNAL",question:tc.q,status:res.status,latencyMs:res.ms,errorCode:res.data?.error||null,message:res.data?.message||null,failureDetail:res.data?.failureDetail||null,provider:res.data?.provider||null,model:res.data?.model||null,providerFallback:res.data?.providerFallback||null,providerRecovery:res.data?.providerRecovery||null,sourceMode:res.data?.sourceMode||null,displayMode:res.data?.displayMode||null,missionProfile:res.data?.legalGovernance?.missionProfile||null,verificationState:res.data?.legalGovernance?.verificationState||null,executionAuthorization:res.data?.legalGovernance?.executionAuthorization||null,runtimeTelemetry:res.data?.runtimeTelemetry||null,governanceRunId:res.data?.governanceRunId||null,legalSourceCount:Array.isArray(res.data?.legalSources)?res.data.legalSources.length:0,caseLawSourceCount:Array.isArray(res.data?.caseLawSources)?res.data.caseLawSources.length:0,hardFailures:a.hard,qualityFindings:a.quality,answer:String(res.data?.answer||"").slice(0,700)});
+    if(UAT_PACE_MS>0) await sleep(UAT_PACE_MS);
   }
 }
 
@@ -98,7 +102,8 @@ const summary={
   professional:rows.filter(r=>r.surface==="PROFESSIONAL_EXTERNAL").length,
   hardFailures,
   qualityFindings,
-  hardPass:hardFailures===0
+  hardPass:hardFailures===0,
+  paceMs:UAT_PACE_MS
 };
 const report={summary,rows};
 fs.writeFileSync("/tmp/ai-advokat-20-live-uat.json",JSON.stringify(report,null,2));
@@ -107,7 +112,7 @@ const md=[
   "# AI Advokat · 20 Live UAT",
   "",
   `Generated: ${summary.generatedAt}`,
-  `Total: ${summary.total} · Hard failures: ${hardFailures} · Quality findings: ${qualityFindings}`,
+  `Total: ${summary.total} · Hard failures: ${hardFailures} · Quality findings: ${qualityFindings} · Pace: ${UAT_PACE_MS}ms`,
   "",
   "| ID | Surface | HTTP | Provider | Mission | Hard | Quality |",
   "|---|---|---:|---|---|---|---|",
