@@ -4395,10 +4395,14 @@ function bureauEchrDiscoveryScore(title,terms){
 export function bureauEchrBroadIndexRequest(q){
   const n=normalizeText(q);
   if(!bureauEchrQueryLikely(n)) return false;
+  const object=/(?:пресуд|одлук|предмет|случа|податоц|список|лист)/iu.test(n);
+  const outcomeQualified=bureauEchrOutcomeClaimRequested(n) && object;
   const broad=/(?:^|\s)(?:сите|целосен|целосна|целосно|комплетен|комплетна|комплетно|список|листа|all|complete)(?:\s|$)/iu.test(n)
     || /(?:дај|дајте|достави|доставете).*?(?:тие|сите).*?(?:податоц|пресуд|одлук|предмет|случа)/iu.test(n);
-  const object=/(?:пресуд|одлук|предмет|случа|податоц|список|лист)/iu.test(n);
-  return broad && object;
+  // Outcome-qualified ECHR requests are themselves broad discovery requests:
+  // they must hit the deterministic HUDOC gate even when the user says
+  // "дај ми ги предметите што ги добиле" without the literal word "сите".
+  return object && (broad || outcomeQualified);
 }
 
 export function bureauEchrJudgmentsOnlyRequest(q){
@@ -4854,7 +4858,11 @@ export function professionalResearchWorkersFallbackEligible({
   if(!membership) return false;
   if(!["GENERAL_BYPASS","L1_VERIFIED_RESEARCH"].includes(String(missionProfile||""))) return false;
   if(postflightRequired===true) return false;
-  if(explicitWebRequested===true || webRequested===true) return false;
+  // Explicit user-requested web research remains fail-closed. Automatically
+  // elevated web intent may fall back to bounded Workers AI when OpenAI is
+  // transiently unavailable, provided the response is clearly labelled as
+  // non-web-verified research and Human Gate remains visible.
+  if(explicitWebRequested===true) return false;
   if(Number(attachmentCount||0)>0 || Number(guideDocumentCount||0)>0) return false;
   const error=String(result?.error||"");
   if(["openai_network_error","openai_timeout_error","openai_incomplete_response","openai_empty_response"].includes(error)) return true;

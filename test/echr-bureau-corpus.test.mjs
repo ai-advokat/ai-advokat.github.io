@@ -144,3 +144,10 @@ test("chat handler exposes a no-model ECHR broad-index response contract",()=>{
   assert.match(worker,/quotaConsumed:false/);
   assert.match(worker,/HUDOC_BINDING_REQUIRED/);
 });
+
+
+test("outcome-qualified ECHR request routes to deterministic Bureau/HUDOC gate without literal 'all'",()=>{
+  const q="Дај ми ги предметите што македонски апликанти ги добиле против Северна Македонија во Стразбур.";
+  assert.equal(bureauEchrOutcomeClaimRequested(q),true);
+  assert.equal(bureauEchrBroadIndexRequest(q),true);
+});
