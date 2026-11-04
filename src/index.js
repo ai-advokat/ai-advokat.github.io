@@ -4443,7 +4443,7 @@ export function formatBureauEchrIndexAnswer(records,{judgmentsOnly=false,outcome
       "Тековниот официјален домашен индекс е discovery layer и не содржи верификуван HUDOC outcome за секој запис.",
       "Затоа AI Advokat не враќа ниту една пресуда како „добиена“ само врз основа на индексот.",
       "Кандидатски пресуди за HUDOC проверка: "+judgmentEntries.length+".",
-      "За точен список мора секој кандидат да се врзе со конкретен HUDOC документ и да се провери operative part (violation / no violation / friendly settlement / strike-out), application number, датум и конечност.",
+      "За точен список мора секој кандидат да се врзе со конкретен HUDOC документ и да се провери HUDOC operative part (violation / no violation / friendly settlement / strike-out), application number, датум и конечност.",
       "",
       "Извори за проверка:",
       "• Биро за застапување пред ЕСЧП: https://biroescp.gov.mk/пресуди-и-одлуки-на-рм/",
