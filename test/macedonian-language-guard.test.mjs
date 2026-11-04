@@ -355,12 +355,19 @@ test("Orthography 2017 system contract separates language authority from legal a
 });
 
 
-test("V14 editor-attempt canonical-clean fallback gate blocks residual neighbouring-language contamination after normalisation",()=>{
-  const bad=macedonianDeliveryVerdict("Ова прашање е овде, но одговорот мора да биде на стандарден македонски.",{userText:"Те молам одговори ми на македонски."});
+test("V14 editor-attempt canonical-clean fallback gate blocks residual unrepairable neighbouring-language contamination after normalisation",()=>{
+  const bad=macedonianDeliveryVerdict("Овој документ е доступан само во пробната папка.",{userText:"Те молам одговори ми на македонски."});
   assert.equal(bad.deliver,false,JSON.stringify(bad));
   assert.equal(bad.clean,false);
   assert.equal(bad.state,"blocked_language_quality");
   assert.ok(bad.quality.reasons.includes("foreign_lexical_contamination"));
+});
+
+test("repairable Serbian такође is deterministically normalised instead of falsely blocked",()=>{
+  const repaired=macedonianDeliveryVerdict("Ова прашање е јасно, а такође одговорот мора да биде на стандарден македонски.",{userText:"Те молам одговори ми на македонски."});
+  assert.equal(repaired.deliver,true,JSON.stringify(repaired));
+  assert.match(repaired.text,/исто така/u);
+  assert.doesNotMatch(repaired.text,/такође/u);
 });
 
 test("V14 editor-attempt canonical-clean fallback gate blocks malformed Macedonian generation such as vtorarni",()=>{
@@ -436,4 +443,25 @@ test("V14 protected verbatim source span preserves EOOD",()=>{
   const input='Изворниот запис гласи: „Тест ЕООД“.';
   const clean=normaliseMacedonianGeneratedText(input);
   assert.ok(clean.includes('„Тест ЕООД“'));
+});
+
+
+test("Pravopis 2017 positive form овде is never rejected as neighbouring-language contamination",()=>{
+  const text="Овде е наведена изворната публикација што треба дополнително да се провери.";
+  const check=assessMacedonianOutput(text,{userText:"Одговори на македонски."});
+  assert.equal(check.ok,true,JSON.stringify(check));
+  assert.equal(macedonianReleaseVerdict(text,{userText:"Одговори на македонски."}).verdict,"RELEASE");
+});
+
+test("Pravopis 2017 positive forms достапни and билтен release cleanly",()=>{
+  const text="Достапни се податоци од билтенот на судот.";
+  const check=assessMacedonianOutput(text,{userText:"Одговори на македонски."});
+  assert.equal(check.ok,true,JSON.stringify(check));
+  assert.equal(macedonianReleaseVerdict(text,{userText:"Одговори на македонски."}).verdict,"RELEASE");
+});
+
+test("generated булетин is deterministically normalised to Правопис 2017 билтен",()=>{
+  const clean=normaliseMacedonianGeneratedText("Булетин бр. 2 е достапен.");
+  assert.equal(clean,"Билтен бр. 2 е достапен.");
+  assert.equal(assessMacedonianOutput(clean,{userText:"Одговори на македонски."}).ok,true);
 });

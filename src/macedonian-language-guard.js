@@ -52,6 +52,7 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "If the user reports that a previous answer was in Bulgarian, Serbian, Russian or another wrong language, treat that report as a hard language correction: regenerate the affected answer in Macedonian from the underlying task and context instead of continuing the contaminated wording.",
   "Treat invented or semantically broken forms such as 'измера' in phrases like 'измера на Република Северна...' as malformed generation, not as a synonym, spelling variant or automatic correction to 'измена'. Rewrite the whole phrase according to its actual context.",
   "Prefer ordinary standard Macedonian words over neighbouring-language calques. For example, use назив rather than наименование, and права и обврски rather than malformed forms such as обврзки/обврЗка.",
+  "PRAVOPIS 2017 POSITIVE ALLOWLIST: valid standard Macedonian forms evidenced in the normative source include овде, достапен/достапни and билтен. Never reject these forms merely because similar forms occur in neighbouring languages.",
   "The standard Macedonian words обврска and обврски are valid and must not be rejected or rewritten merely because a surrounding model-generated sentence is defective.",
   "If you are uncertain whether a rare or constructed word is standard Macedonian, rewrite the sentence with simpler established Macedonian vocabulary instead of inventing a form.",
   "A Macedonian-facing answer that is predominantly Bulgarian, Serbian or Russian is invalid even if it uses Cyrillic. Cyrillic alone is never evidence that the language requirement was satisfied.",
@@ -73,7 +74,7 @@ const FOREIGN_LEXEMES=new Set([
   "становище","искане","следва","обжалвайте","трябва","моля","настоящият","същият","правосъдие","съд","съда","съдът","съдебен","съдебна","съдебно",
   "ищец","ищецът","ответник","ответникът","искова","исковата","обезщетение","обезщетението",
   "съгласно","обжалване","възражение","възражения","разноски","случайни","случаен","случайна",
-  "доказателства","молител","молителя","това","тази","тези","какво","защото","когато","всички","например","ще","някой","някои","който","която","които","према","уколико","такође","овде","није",
+  "доказателства","молител","молителя","това","тази","тези","какво","защото","когато","всички","например","ще","някой","някои","който","която","които","према","уколико","такође","није",
   // Serbian/hybrid forms repeatedly observed in Macedonian-facing generations
   "доступан","доступен","доступна","доступно","доступни","доступност","доступните",
   // Common neighbouring-language calques observed in production
@@ -326,6 +327,7 @@ const DETERMINISTIC_LEXICAL_REPLACEMENTS=[
   ["базиски белешки","Основни белешки"],
   ["заглавие / пресуд","Предмет / пресуда"],
   ["пресудни дела","пресуди и одлуки"],
+  ["булетин","билтен"],
   ["доступните","достапните"],
   ["доступност","достапност"],
   ["доступни","достапни"],

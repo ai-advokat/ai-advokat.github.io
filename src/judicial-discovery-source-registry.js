@@ -149,3 +149,20 @@ export function judicialDiscoveryContext(query,{limit=4}={}){
     version:JUDICIAL_DISCOVERY_CORPUS_VERSION
   };
 }
+
+
+export function judicialTemporalSafetyFallback(query){
+  const q=norm(query);
+  if(!q) return null;
+  const hasHistoricalYear=/\b(?:19|20)\d{2}\b/u.test(q);
+  const temporalIntent=/(денес|сега|важеч|теков|автомат|примен|истор|current|currently|in force|applicable)/u.test(q);
+  const judicialIntent=/(апелац|врхов|уставен|суд|пресуд|став|мислењ|заклучок|case law|judicial)/u.test(q);
+  if(!hasHistoricalYear || !temporalIntent || !judicialIntent) return null;
+
+  return [
+    "Не. Постар судски став или одлука не треба автоматски да се претставува како тековно важечко право само затоа што постои во судската практика.",
+    "Таквиот материјал може да биде релевантен историски извор, но за денешна правна примена мора да се проверат конкретниот акт, правната норма што важела во времето на одлуката, подоцнежните законски измени и важечката верзија на релевантниот пропис.",
+    "До таква проверка, AI Advokat треба да го означи материјалот како историски или како извор со непотврдена тековна применливост, а не како тековна правна норма.",
+    "Ако е потребен конкретен правен заклучок, следниот чекор е item-level проверка на одлуката и current-law verification."
+  ].join("\n\n");
+}
