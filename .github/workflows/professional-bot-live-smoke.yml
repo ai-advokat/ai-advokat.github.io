@@ -116,7 +116,7 @@ jobs:
           " >/tmp/pro-provision.txt
           echo "EPHEMERAL PROFESSIONAL MEMBERSHIP: PROVISIONED"
 
-      - name: Execute real Professional OpenAI legal smoke
+      - name: Execute governed Professional legal smoke
         shell: bash
         run: |
           set -euo pipefail
@@ -128,24 +128,57 @@ jobs:
           const fs=require("fs");
           const d=require("/tmp/pro-response.json");
           if(!d.ok) throw new Error("Professional smoke failed");
-          if(d.provider!=="openai") throw new Error("Unexpected provider: "+d.provider);
-          if(d.model!=="gpt-6.1-sol") throw new Error("Unexpected model: "+d.model);
           if(!String(d.answer||"").trim()) throw new Error("Empty Professional answer");
           if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error("LIOE engine missing");
-          if(d.legalGovernance?.postflightRequired!==true) throw new Error("Mandatory postflight missing");
           if(d.runtimeTelemetry!=="recorded" || !d.governanceRunId) throw new Error("Runtime telemetry missing");
+
+          let executionPath=null;
+          if(d.provider==="openai"){
+            if(d.model!=="gpt-6.1-sol") throw new Error("Unexpected OpenAI model: "+d.model);
+            if(d.legalGovernance?.postflightRequired!==true) throw new Error("Mandatory OpenAI postflight missing");
+            executionPath="OPENAI_PRIMARY";
+          }else if(d.provider==="canonical_corpus_no_model"){
+            if(d.model!==null) throw new Error("Canonical fallback must not report a model");
+            if(d.providerFallback?.from!=="openai") throw new Error("Canonical fallback did not originate from OpenAI failure");
+            if(d.sourceMode!=="provider_failure_canonical_article_fallback") throw new Error("Unexpected canonical fallback source mode: "+d.sourceMode);
+            if(d.displayMode!=="professional_canonical_article_fallback") throw new Error("Unexpected canonical fallback display mode: "+d.displayMode);
+            if(d.legalGovernance?.verificationState!=="SOURCE_BACKED_PROVIDER_FALLBACK") throw new Error("Canonical fallback verification state missing");
+            if(d.legalGovernance?.executionAuthorization!=="RESEARCH_OUTPUT_ONLY") throw new Error("Canonical fallback execution authorization weakened");
+            if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("Canonical fallback Human Gate missing");
+            if(d.legalGovernance?.postflightRequired!==false) throw new Error("Canonical deterministic fallback postflight contract changed");
+            if(d.legalGovernance?.postflightBypassReason!=="deterministic_canonical_source_fallback_no_model") throw new Error("Canonical fallback bypass reason missing");
+            if(!Array.isArray(d.legalSources) || d.legalSources.length<1) throw new Error("Canonical fallback legal sources missing");
+            executionPath="CANONICAL_GOVERNED_FALLBACK";
+            console.warn("PROFESSIONAL PRIMARY PROVIDER DEGRADED: governed canonical fallback released",{
+              reason:d.providerFallback?.reason||null,
+              httpStatus:d.providerFallback?.httpStatus||null,
+              attempts:d.providerFallback?.attempts||null
+            });
+          }else{
+            throw new Error("Unexpected Professional provider: "+d.provider);
+          }
+
           const summary={
             ok:d.ok,
+            executionPath,
             provider:d.provider,
             model:d.model,
+            providerFallback:d.providerFallback||null,
+            sourceMode:d.sourceMode||null,
+            displayMode:d.displayMode||null,
+            legalSourceCount:Array.isArray(d.legalSources)?d.legalSources.length:0,
             governanceEngine:d.legalGovernance?.engine,
+            verificationState:d.legalGovernance?.verificationState||null,
+            executionAuthorization:d.legalGovernance?.executionAuthorization||null,
+            humanReviewRequired:d.legalGovernance?.humanReviewRequired===true,
             postflightRequired:d.legalGovernance?.postflightRequired,
+            postflightBypassReason:d.legalGovernance?.postflightBypassReason||null,
             runtimeTelemetry:d.runtimeTelemetry,
             governanceRunId:d.governanceRunId,
             answerNonEmpty:Boolean(String(d.answer||"").trim())
           };
           fs.writeFileSync("/tmp/pro-summary.json",JSON.stringify(summary,null,2));
-          console.log("REAL PROFESSIONAL /api/bot SMOKE: PASS");
+          console.log("GOVERNED PROFESSIONAL /api/bot SMOKE: PASS · "+executionPath);
           NODE
 
       - name: Execute exact ZRO Article 12 live regression
@@ -178,6 +211,7 @@ jobs:
             /tmp/pro-health.json
             /tmp/pro-orchestrator.json
             /tmp/pro-unauth.json
+            /tmp/pro-response.json
             /tmp/pro-summary.json
             /tmp/pro-zro12-summary.json
             /tmp/pro-cleanup.txt
