@@ -29,7 +29,7 @@ const LEGAL_SIGNALS=[
 ];
 const CURRENT_LAW_SIGNALS=["важечко","важечки","важечката","денес","сега","current law","currently in force","applicable law","најнова верзија","latest law"];
 const TEMPORAL_SIGNALS=["влегува во сила","влегување во сила","почнува да се применува","почеток на примена","датум на примена","временска применливост","применливост","преодни одредби","application date","effective date","commencement","transitional provision","објавен но","published but"];
-const STRATEGY_SIGNALS=["стратег","опции","спореди","ризик","процесен","рок за","жалба","предикциј","прогноз","исход","шанси","веројатност","процент на успех","remedy","strategy","options","compare","procedural","deadline","limitation","case plan","case prediction","case outcome","predict","анализа на предмет","анализа за целиот предмет","анализирај го предмет","целиот предмет","whole case analysis","analyse the whole case","analyze the whole case"];
+const STRATEGY_SIGNALS=["стратег","опции","спореди","ризик","ризици","процесен","рок за","жалба","предикциј","прогноз","исход","шанси","веројатност","процент на успех","remedy","strategy","options","compare","procedural","deadline","limitation","case plan","case prediction","case outcome","predict","анализа на предмет","анализа за целиот предмет","анализирај го предмет","целиот предмет","whole case analysis","analyse the whole case","analyze the whole case"];
 const ACTION_SIGNALS=[
   "финален поднесок","поднесок за поднесување","испрати до суд","поднеси до суд","поднеси го",
   "подготви тужба","изготви тужба","состави тужба","нацрт тужба","подготви жалба","изготви жалба","состави жалба",
@@ -40,21 +40,22 @@ const ACTION_SIGNALS=[
 const L4_SIGNALS=["production corpus","production corpus write","rag eligibility","rag_eligibility","прогласи ја оваа верзија","прогласи за важечк","current law promotion","legal status promotion","legal truth","сменi human gate","смени human gate","provider activation","активирај provider","corpus promotion"];
 const GUIDE_SIGNALS=["водич","guide","каде е","каде во ai advokat","каталог","catalog"];
 const ACTION_DRAFT_PATTERN=/\b(?:draft|prepare|compose|write)\b.{0,48}\b(?:complaint|lawsuit|appeal|pleading|petition|motion)\b/u;
-const MK_ACTION_DRAFT_PATTERN=/(?:подготви|изготви|состави|направи(?:ш)?|напиши|изработи)(?: ми)?(?: нацрт)? (?:тужба|жалба|поднесок)/u;
+const MK_ACTION_DRAFT_PATTERN=/(?:подготви|изготви|состави|направи(?:ш)?|напиши|изработи)(?: ми)?(?: работен)?(?: нацрт)?(?: на| за)? (?:тужба|жалба|поднесок)/u;
+const MK_COURT_COLLECTION_DRAFT_PATTERN=/(?:подготви|изготви|состави|направи(?:ш)?|напиши|изработи)(?: ми)?(?: работен)?(?: нацрт)?(?: на| за)? судск(?:а|о|и)? наплат/u;
 const MK_PROCEDURE_PREP_PATTERN=/(?:подготв(?:и|иш|ам)|организира(?:ј|м)|собер(?:и|ам)|што ми треба|се што е потребно|сакам да започнам|како да започнам).{0,90}(?:оставинск|наследн).{0,40}(?:постапк|предмет|имот)?/u;
 const PROFESSIONAL_LEGAL_OPINION_PATTERN=/(?:правн(?:о|а) мислењ|legal opinion|адвокат.{0,100}(?:провер|мислењ|совет)|lawyer.{0,100}(?:check|review|opinion|advice))/u;
 const LEGAL_ACTION_HUMAN_GATE_PATTERN=/(?:тужб|жалб|поднесок|суд).{0,180}(?:човечко одобрување|human gate|потпис|поднесување|надворешно испраќање)|(?:човечко одобрување|human gate).{0,180}(?:тужб|жалб|поднесок|суд)/u;
 
 function inferGeneralBypass(q,mode){
   const governedLegalSignal=has(q,[...LEGAL_SIGNALS,...GUIDE_SIGNALS,...CURRENT_LAW_SIGNALS,...TEMPORAL_SIGNALS,...STRATEGY_SIGNALS,...ACTION_SIGNALS,...L4_SIGNALS])
-    || ACTION_DRAFT_PATTERN.test(q) || MK_ACTION_DRAFT_PATTERN.test(q) || MK_PROCEDURE_PREP_PATTERN.test(q)
+    || ACTION_DRAFT_PATTERN.test(q) || MK_ACTION_DRAFT_PATTERN.test(q) || MK_COURT_COLLECTION_DRAFT_PATTERN.test(q) || MK_PROCEDURE_PREP_PATTERN.test(q)
     || PROFESSIONAL_LEGAL_OPINION_PATTERN.test(q) || LEGAL_ACTION_HUMAN_GATE_PATTERN.test(q);
   return mode==="general_gpt" || !governedLegalSignal;
 }
 function selectProfile(q,{mode=null}={}){
   if(inferGeneralBypass(q,mode))return LEGAL_MISSION_PROFILES.GENERAL_BYPASS;
   if(has(q,L4_SIGNALS))return LEGAL_MISSION_PROFILES.L4_LEGAL_TRUTH_GOVERNANCE;
-  if(LEGAL_ACTION_HUMAN_GATE_PATTERN.test(q)||has(q,ACTION_SIGNALS)||ACTION_DRAFT_PATTERN.test(q)||MK_ACTION_DRAFT_PATTERN.test(q))return LEGAL_MISSION_PROFILES.L3_CONSEQUENTIAL;
+  if(LEGAL_ACTION_HUMAN_GATE_PATTERN.test(q)||has(q,ACTION_SIGNALS)||ACTION_DRAFT_PATTERN.test(q)||MK_ACTION_DRAFT_PATTERN.test(q)||MK_COURT_COLLECTION_DRAFT_PATTERN.test(q))return LEGAL_MISSION_PROFILES.L3_CONSEQUENTIAL;
   const comparative=has(q,["спореди","compare","comparative","компаратив","versus"]);
   if(MK_PROCEDURE_PREP_PATTERN.test(q)||comparative||has(q,STRATEGY_SIGNALS))return LEGAL_MISSION_PROFILES.L2_STRATEGY_PROCEDURE;
   if(PROFESSIONAL_LEGAL_OPINION_PATTERN.test(q)||has(q,CURRENT_LAW_SIGNALS)||has(q,TEMPORAL_SIGNALS)||has(q,["истраж","research","правна анализа","legal analysis"]))return LEGAL_MISSION_PROFILES.L1_VERIFIED_RESEARCH;

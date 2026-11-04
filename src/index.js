@@ -160,7 +160,7 @@ import {
 import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commentary.js";
 import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, scholarlyContextItems } from "./scholarly-literature.js";
 import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
-import { judicialTemporalSafetyFallback } from "./judicial-discovery-source-registry.js";
+import { judicialTemporalSafetyFallback, judicialDiscoveryContext } from "./judicial-discovery-source-registry.js";
 
 const VERSION = "1.9.0";
 const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V12_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
@@ -4405,6 +4405,34 @@ export function bureauEchrBroadIndexRequest(q){
   return object && (broad || outcomeQualified);
 }
 
+export function exactCaseLawNumberFromQuestion(q){
+  const text=String(q||"").normalize("NFKC");
+  const match=text.match(/(?:^|[^\p{L}\p{N}])([\p{L}]{1,10}[-\s]?[0-9]{2,8}\/[0-9]{4})(?=$|[^\p{L}\p{N}])/iu);
+  return match ? String(match[1]).replace(/\s+/g,"").toUpperCase() : null;
+}
+
+export function judicialDiscoveryListingRequest(q){
+  const n=normalizeText(q);
+  const asksInventory=/(?:кои|што).*?(?:материјал|публикац|збирк|билтен|извор).*?(?:има|имаме|корпус|база)|(?:judicial discovery corpus)/iu.test(n);
+  const courtNamed=/(?:апелац|врховен|уставен|суд)/iu.test(n);
+  return asksInventory && courtNamed;
+}
+
+function formatJudicialDiscoveryListing(q){
+  const discovery=judicialDiscoveryContext(q,{limit:6});
+  if(!Array.isArray(discovery.sources) || !discovery.sources.length) return null;
+  const lines=discovery.sources.map(row=>"• "+row.title+" · "+row.period);
+  return {
+    answer:[
+      "Во governed Judicial Discovery Corpus се пронајдени следните изворни публикации:",
+      ...lines,
+      "",
+      "Граница на доказот: ова се source-level записи за пронаоѓање на публикации. Од нив не смее да се извлече конкретен holding, исход, конечност или тековна правна применливост без item-level проверка и Human Gate."
+    ].join("\n"),
+    discovery
+  };
+}
+
 export function historicalCaseLawTemporalGateRequest(q){
   const n=normalizeText(q);
   const years=[...String(n).matchAll(/\b((?:19|20)\d{2})\b/gu)].map(m=>Number(m[1])).filter(Number.isFinite);
@@ -4412,7 +4440,7 @@ export function historicalCaseLawTemporalGateRequest(q){
   const oldest=Math.min(...years);
   const newest=Math.max(...years);
   if(oldest>=newest) return false;
-  const caseLaw=/(?:правен став|судск(?:а|и) практик|пресуд|одлук|апелацион|врховен суд|суд)/iu.test(n);
+  const caseLaw=/(?:правен став|судск(?:а|и) практик|пресуд|одлук|апелацион|апелациј|врховен суд|суд)/iu.test(n);
   const temporal=/(?:автомат|важеч|примен|теков|денес|сега|current|applicab|valid)/iu.test(n);
   return caseLaw && temporal;
 }
@@ -6347,6 +6375,56 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     findGovernedScholarly(request,env,routingQuery,{limit:5}),
     findGovernedAuthorialPublications(request,env,routingQuery,{limit:5})
   ]);
+
+  const discoveryListing=judicialDiscoveryListingRequest(routingQuery)
+    ? formatJudicialDiscoveryListing(routingQuery)
+    : null;
+  if(discoveryListing){
+    return json(request,{
+      ok:true,
+      answer:discoveryListing.answer,
+      provider:"canonical_corpus_no_model",
+      model:null,
+      mode:"passive_corpus",
+      displayMode:"canonical_judicial_discovery_listing",
+      sourceMode:"judicial_discovery_registry_no_model",
+      webSearchUsed:false,
+      legalSources:[],
+      caseLawSources:discoveryListing.discovery.sources.map(row=>({
+        title:row.title,
+        court:row.court,
+        period:row.period,
+        url:row.sourceUrl,
+        authorityClass:row.authorityClass,
+        discoveryOnly:true,
+        legalAuthority:false
+      })),
+      sources:[],
+      humanGate:"Source-level discovery only. Item-level holding, outcome, binding effect and current-law applicability require separate verification."
+    });
+  }
+
+  const requestedExactCase=exactCaseLawNumberFromQuestion(routingQuery);
+  if(requestedExactCase && caseLawBundle.state!=="matched"){
+    return json(request,{
+      ok:true,
+      answer:[
+        "Не можам да ја потврдам пресудата "+requestedExactCase+" во human-reviewed official case-law corpus.",
+        "Затоа нема да измислувам што решил судот, holding, исход, датум, конечност или правно дејство.",
+        "Следниот безбеден чекор е item-level проверка во официјален судски извор или внес на проверена копија во governed corpus."
+      ].join("\n"),
+      provider:"canonical_corpus_no_model",
+      model:null,
+      mode:"passive_corpus",
+      displayMode:"canonical_exact_case_not_verified",
+      sourceMode:"reviewed_case_law_no_exact_match",
+      webSearchUsed:false,
+      legalSources:[],
+      caseLawSources:[],
+      sources:[],
+      humanGate:"Exact case identity and holding are not verified; no legal conclusion is released."
+    });
+  }
 
   const rawCorpusContext=[...articleBundle.context,...gazetteBundle.context,...caseLawBundle.context,...bureauEchrBundle.context,...guideDocumentCheck.context,...guideContext,...scholarlyBundle.context,...authorialBundle.context];
   if(uiMode==="library" && rawCorpusContext.length===0){

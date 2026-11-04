@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createD1 } from "./d1-shim.mjs";
 import { buildAgentPlan } from "../src/agent-orchestrator.js";
-import { governedCaseLawContext } from "../src/index.js";
+import { governedCaseLawContext, exactCaseLawNumberFromQuestion, judicialDiscoveryListingRequest, historicalCaseLawTemporalGateRequest } from "../src/index.js";
 
 function seedCaseLaw(){
   const {d1,raw,stats}=createD1();
@@ -116,4 +116,17 @@ test("CLC4 non-legal chat bypasses case-law lookup",async()=>{
   assert.equal(out.state,"not_applicable");
   assert.deepEqual(out.context,[]);
   assert.equal(stats.statements,before);
+});
+
+
+test("CLC5 exact unverified case number is detected without inventing a holding",()=>{
+  assert.equal(exactCaseLawNumberFromQuestion("Најди ми пресуда ВКЖ-9999/2025 и кажи што решил судот."),"ВКЖ-9999/2025");
+});
+
+test("CLC6 judicial discovery inventory phrasing is recognized",()=>{
+  assert.equal(judicialDiscoveryListingRequest("Кои материјали од Апелационен суд Гостивар ги има нашиот judicial discovery corpus?"),true);
+});
+
+test("CLC7 natural Апелација Штип phrasing hits the deterministic temporal gate",()=>{
+  assert.equal(historicalCaseLawTemporalGateRequest("Може ли став од Апелација Штип од 1997 да се користи како важечко право во 2026?"),true);
 });
