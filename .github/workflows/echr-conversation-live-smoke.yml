@@ -48,16 +48,15 @@ jobs:
           const d=JSON.parse(fs.readFileSync("/tmp/echr-first.json","utf8"));
           if(!d.ok) throw new Error("first ECHR request returned ok=false");
           if(d.provider!=="canonical_corpus_no_model") throw new Error("unexpected provider: "+d.provider);
-          if(d.displayMode!=="canonical_echr_bureau_judgment_index") throw new Error("unexpected displayMode: "+d.displayMode);
+          if(d.displayMode!=="canonical_echr_bureau_outcome_verification_required") throw new Error("unexpected displayMode: "+d.displayMode);
           if(d.sourceMode!=="official_domestic_echr_index_no_model") throw new Error("unexpected sourceMode: "+d.sourceMode);
           if(d.performance?.providerCalls!==0) throw new Error("model provider was called");
           const s=d.echrBureauIndexStatus||{};
-          if(s.state!=="matched" || !(s.selectedRecords>0) || !(s.totalIndexRecords>=s.selectedRecords)) throw new Error("ECHR index status invalid");
+          if(s.state!=="hudoc_verification_required" || s.selectedRecords!==0 || !(s.candidateJudgmentRecords>0)) throw new Error("ECHR outcome gate status invalid");
           if(s.outcomeQualification!=="HUDOC_BINDING_REQUIRED") throw new Error("HUDOC outcome gate missing");
           const rows=Array.isArray(d.echrBureauIndex)?d.echrBureauIndex:[];
-          if(rows.length!==s.selectedRecords) throw new Error("structured ECHR rows mismatch");
-          if(rows.some(r=>r.recordKind!=="judgment_listing")) throw new Error("non-judgment leaked into judgment-only result");
-          if(!String(d.answer||"").includes("не ги означува сите наведени пресуди како победи")) throw new Error("win-classification safety warning missing");
+          if(rows.length!==0) throw new Error("unverified ECHR cases leaked into won-case result");
+          if(!String(d.answer||"").includes("не враќа ниту една пресуда како „добиена“")) throw new Error("win-classification safety warning missing");
           if(!String(d.humanGate||"").includes("HUDOC")) throw new Error("HUDOC Human Gate missing");
           if(Array.isArray(d.publicationSources) && d.publicationSources.length) throw new Error("authorial publication sources leaked into ECHR lane");
           const history=[
@@ -76,9 +75,10 @@ jobs:
           const d=JSON.parse(fs.readFileSync("/tmp/echr-follow.json","utf8"));
           if(!d.ok) throw new Error("ECHR follow-up returned ok=false");
           if(d.provider!=="canonical_corpus_no_model") throw new Error("follow-up escaped deterministic lane");
-          if(d.displayMode!=="canonical_echr_bureau_judgment_index") throw new Error("follow-up lost judgment-list context");
+          if(d.displayMode!=="canonical_echr_bureau_outcome_verification_required") throw new Error("follow-up lost outcome-verification context");
           if(d.performance?.providerCalls!==0) throw new Error("follow-up called a model");
-          if(!(d.echrBureauIndexStatus?.selectedRecords>0)) throw new Error("follow-up returned no ECHR records");
+          if(d.echrBureauIndexStatus?.selectedRecords!==0) throw new Error("follow-up leaked unverified won-case records");
+          if(!(d.echrBureauIndexStatus?.candidateJudgmentRecords>0)) throw new Error("follow-up lost candidate count");
           if(!String(d.humanGate||"").includes("HUDOC")) throw new Error("follow-up HUDOC gate missing");
           console.log("ECHR BROAD LIST + CONTEXTUAL FOLLOW-UP LIVE: PASS");
           NODE
