@@ -1868,25 +1868,79 @@
     })[String(value||"")]||String(value||"Институција");
   }
 
+  function justiceDailyBuildPlainBrief(data){
+    const items=Array.isArray(data?.items)?data.items:[];
+    const lines=[
+      "JUSTICE DAILY · Правосуден брифинг",
+      "Генерирано: "+String(data?.generatedAt||new Date().toISOString()),
+      "Период: "+(Number(data?.windowDays||1)===1?"последни 24 часа":"последни "+Number(data?.windowDays||1)+" дена"),
+      ""
+    ];
+    items.forEach((item,i)=>{
+      lines.push(
+        (i+1)+". "+String(item.title||"Официјална објава"),
+        "   Институција: "+justiceDailyInstitutionLabel(item.institution),
+        "   Тип: "+justiceDailyTypeLabel(item.type),
+        "   Датум: "+String(item.publishedDate||"непотврден"),
+        "   Приоритет: "+String(item.priority?.level||"normal")+" ("+String(item.priority?.score??"—")+")",
+        "   URL: "+String(item.url||""),
+        "   Граница: "+String(item.claimBoundary||"Вест ≠ правен заклучок."),
+        ""
+      );
+    });
+    lines.push("Human Gate: item-level verification е задолжителен пред правно потпирање.");
+    return lines.join("\n");
+  }
+
   function renderJusticeDaily(dialog,data){
     const host=dialog.querySelector("[data-justice-items]");
     const status=dialog.querySelector("[data-justice-status]");
     const health=dialog.querySelector("[data-justice-health]");
     const brief=dialog.querySelector("[data-justice-brief]");
+    const metrics=dialog.querySelector("[data-justice-metrics]");
     host?.replaceChildren();
     health?.replaceChildren();
+    metrics?.replaceChildren();
 
-    const items=Array.isArray(data?.items)?data.items:[];
+    let items=Array.isArray(data?.items)?data.items:[];
     const sourceHealth=Array.isArray(data?.sourceHealth)?data.sourceHealth:[];
     const okCount=sourceHealth.filter(x=>x.status==="ok").length;
     const referenceCount=sourceHealth.filter(x=>x.status==="reference_only").length;
     const failed=sourceHealth.filter(x=>x.status==="unavailable");
+    const query=String(dialog.querySelector("[data-justice-search]")?.value||"").trim().toLocaleLowerCase("mk");
+    if(query) items=items.filter(item=>
+      String(item.title||"").toLocaleLowerCase("mk").includes(query) ||
+      justiceDailyInstitutionLabel(item.institution).toLocaleLowerCase("mk").includes(query) ||
+      justiceDailyTypeLabel(item.type).toLocaleLowerCase("mk").includes(query)
+    );
+    const priorityFilter=String(dialog.querySelector("[data-justice-priority]")?.value||"");
+    if(priorityFilter) items=items.filter(item=>String(item.priority?.level||"normal")===priorityFilter);
 
     if(status){
-      status.textContent="Justice Daily · "+items.length+" записи · "+okCount+" автоматски извори"+
+      const auto=data?.autopull||{};
+      const autoText=auto.mode==="server_side_cron_snapshot"
+        ? " · AUTOPULL ✓ snapshot "+Math.max(0,Math.floor(Number(auto.snapshotAgeSeconds||0)/60))+" мин."
+        : auto.mode==="live_fetch_fallback" ? " · live fallback" : "";
+      status.textContent="Justice Daily · "+items.length+" прикажани записи · "+okCount+" автоматски извори"+
         (referenceCount?" · "+referenceCount+" референтни":"")+
         (failed.length?" · "+failed.length+" недостапни":"")+" · "+
-        (Number(data?.windowDays||1)===1?"последни 24 часа":"последни "+Number(data?.windowDays||1)+" дена");
+        (Number(data?.windowDays||1)===1?"последни 24 часа":"последни "+Number(data?.windowDays||1)+" дена")+autoText;
+    }
+
+    if(metrics){
+      const stats=data?.stats||{};
+      const cards=[
+        ["Висок приоритет",String(stats.highPriority??items.filter(x=>x.priority?.level==="high").length)],
+        ["Потврдени од 2+ извори",String(stats.corroborated??items.filter(x=>Array.isArray(x.corroboratingSources)&&x.corroboratingSources.length).length)],
+        ["Извори OK",String(okCount)],
+        ["Недостапни",String(failed.length)]
+      ];
+      cards.forEach(([label,value])=>{
+        const card=document.createElement("div");card.className="ai-toolkit-registry";
+        const b=document.createElement("strong");b.textContent=value;
+        const s=document.createElement("span");s.textContent=label;
+        card.append(b,s);metrics.append(card);
+      });
     }
 
     if(health){
@@ -1898,11 +1952,12 @@
       const list=document.createElement("div");list.className="ai-toolkit-flow";
       sourceHealth.forEach(s=>{
         const icon=s.status==="ok"?"✓ ":s.status==="reference_only"?"↗ ":"⚠ ";
-        const chip=s.fetchedUrl?document.createElement("a"):document.createElement("span");
+        const sourceUrl=s.fetchedUrl||s.primaryUrl||"";
+        const chip=sourceUrl?document.createElement("a"):document.createElement("span");
         chip.textContent=icon+String(s.title||s.sourceId)+" · "+String(s.itemCount||0);
         chip.title=(s.errors||[]).join(" | ");
-        if(s.fetchedUrl){
-          chip.href=String(s.fetchedUrl);
+        if(sourceUrl){
+          chip.href=String(sourceUrl);
           chip.target="_blank";
           chip.rel="noopener noreferrer";
         }
@@ -1922,7 +1977,10 @@
       const head=document.createElement("div");head.className="ai-toolkit-source-head";
       const title=document.createElement("strong");title.textContent=String(item.title||"Официјална објава");
       const badge=document.createElement("span");badge.textContent=justiceDailyTypeLabel(item.type);
-      head.append(title,badge);
+      const priority=document.createElement("span");
+      priority.textContent=(item.priority?.level==="high"?"● Висок":item.priority?.level==="medium"?"◐ Среден":"○ Нормален");
+      priority.title="Priority score: "+String(item.priority?.score??"—");
+      head.append(title,badge,priority);
       const meta=document.createElement("p");
       meta.textContent=[
         justiceDailyInstitutionLabel(item.institution),
@@ -1930,6 +1988,11 @@
         item.authorityClass||"official"
       ].join(" · ");
       const boundary=document.createElement("small");boundary.textContent=String(item.claimBoundary||"Вест ≠ правен заклучок.");
+      if(Array.isArray(item.corroboratingSources)&&item.corroboratingSources.length){
+        const corroboration=document.createElement("small");
+        corroboration.textContent="Потврдено и од: "+item.corroboratingSources.map(s=>justiceDailyInstitutionLabel(s.institution)).join(" · ");
+        card.append(corroboration);
+      }
       const actions=document.createElement("div");actions.className="ai-toolkit-card-actions";
       const open=document.createElement("a");open.href=item.url;open.target="_blank";open.rel="noopener noreferrer";open.textContent="Отвори официјален извор ↗";
       const ask=document.createElement("button");ask.type="button";ask.textContent="Во chat";
@@ -1946,6 +2009,27 @@
       actions.append(open,ask);
       card.append(head,meta,boundary,actions);host?.append(card);
     });
+
+    const copy=dialog.querySelector("[data-justice-copy]");
+    const download=dialog.querySelector("[data-justice-download]");
+    if(copy){
+      copy.disabled=!items.length;
+      copy.onclick=async()=>{
+        const plain=justiceDailyBuildPlainBrief({...data,items});
+        try{await navigator.clipboard.writeText(plain);copy.textContent="Копирано ✓";setTimeout(()=>copy.textContent="Копирај briefing",1200);}catch{copy.textContent="Неуспешно копирање";}
+      };
+    }
+    if(download){
+      download.disabled=!items.length;
+      download.onclick=()=>{
+        const plain=justiceDailyBuildPlainBrief({...data,items});
+        const blob=new Blob([plain],{type:"text/plain;charset=utf-8"});
+        const a=document.createElement("a");
+        a.href=URL.createObjectURL(blob);
+        a.download="justice-daily-"+new Date().toISOString().slice(0,10)+".txt";
+        document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),500);
+      };
+    }
 
     if(brief){
       brief.disabled=!items.length;
@@ -1967,6 +2051,7 @@
     if(status) status.textContent="Justice Daily ги проверува официјалните извори…";
     if(host) host.replaceChildren();
     const days=String(dialog.querySelector("[data-justice-days]")?.value||"1");
+    if(dialog._justiceTimer){clearInterval(dialog._justiceTimer);dialog._justiceTimer=null;}
     const institution=String(dialog.querySelector("[data-justice-institution]")?.value||"");
     const type=String(dialog.querySelector("[data-justice-type]")?.value||"");
     const params=new URLSearchParams({days,limit:"60"});
@@ -1978,6 +2063,10 @@
       if(!r.ok||!data?.ok) throw new Error(data?.detail||data?.error||"justice_daily_unavailable");
       dialog._justiceDailyData=data;
       renderJusticeDaily(dialog,data);
+      const auto=dialog.querySelector("[data-justice-auto]");
+      if(auto?.checked){
+        dialog._justiceTimer=setInterval(()=>loadJusticeDaily(dialog),5*60*1000);
+      }
     }catch(error){
       if(status) status.textContent="Justice Daily не е достапен: "+String(error?.message||error);
       const failed=document.createElement("div");failed.className="ai-toolkit-source";
@@ -1990,7 +2079,7 @@
     let d=document.getElementById("aiJusticeDailyDialog");
     if(d) return d;
     d=document.createElement("dialog");d.id="aiJusticeDailyDialog";d.className="ai-toolkit-dialog ai-pro-ecosystem-dialog";
-    d.innerHTML=`<div class="ai-workspace-dialog-head"><div><strong>◉ Justice Daily · Правосуден агрегатор</strong><small>официјални извори · дедупликација · source health · Human Gate</small></div><button type="button" data-close>×</button></div>
+    d.innerHTML=`<div class="ai-workspace-dialog-head"><div><strong>◉ Justice Daily · Правосуден агрегатор</strong><small>официјални извори · server autopull на 30 минути · дедупликација · source health · Human Gate</small></div><button type="button" data-close>×</button></div>
       <div class="ai-toolkit-body">
         <section class="ai-toolkit-section">
           <div class="ai-toolkit-form-grid">
@@ -2028,8 +2117,14 @@
               <option value="training">Обуки</option>
             </select></label>
           </div>
-          <div class="ai-toolkit-card-actions"><button type="button" data-justice-refresh>Освежи</button><button type="button" data-justice-brief disabled>Подготви дневен брифинг во chat</button></div>
+          <div class="ai-toolkit-form-grid">
+            <label>Пребарај<input type="search" data-justice-search placeholder="Наслов, институција, тип…"></label>
+            <label>Приоритет<select data-justice-priority><option value="">Сите</option><option value="high">Висок</option><option value="medium">Среден</option><option value="normal">Нормален</option></select></label>
+            <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" data-justice-auto> Авто-освежување на 5 минути</label>
+          </div>
+          <div class="ai-toolkit-card-actions"><button type="button" data-justice-refresh>Освежи</button><button type="button" data-justice-brief disabled>Подготви дневен брифинг во chat</button><button type="button" data-justice-copy disabled>Копирај briefing</button><button type="button" data-justice-download disabled>Преземи TXT</button></div>
           <div class="ai-toolkit-status" data-justice-status>Вчитување…</div>
+          <div class="ai-toolkit-grid" data-justice-metrics></div>
           <div data-justice-health></div>
         </section>
         <section class="ai-toolkit-section"><h3>Официјални правосудни новости</h3><div class="ai-toolkit-grid" data-justice-items></div></section>
@@ -2040,6 +2135,10 @@
     d.addEventListener("click",event=>{if(event.target===d)d.close();});
     d.querySelector("[data-justice-refresh]")?.addEventListener("click",()=>loadJusticeDaily(d));
     d.querySelectorAll("[data-justice-days],[data-justice-institution],[data-justice-type]").forEach(el=>el.addEventListener("change",()=>loadJusticeDaily(d)));
+    d.querySelector("[data-justice-search]")?.addEventListener("input",()=>renderJusticeDaily(d,d._justiceDailyData||{}));
+    d.querySelector("[data-justice-priority]")?.addEventListener("change",()=>renderJusticeDaily(d,d._justiceDailyData||{}));
+    d.querySelector("[data-justice-auto]")?.addEventListener("change",()=>loadJusticeDaily(d));
+    d.addEventListener("close",()=>{if(d._justiceTimer){clearInterval(d._justiceTimer);d._justiceTimer=null;}});
     loadJusticeDaily(d);
     return d;
   }
