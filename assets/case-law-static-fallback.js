@@ -39,7 +39,7 @@ export const CASE_LAW_STATIC_FALLBACK_RECORDS=Object.freeze([
 ]);
 
 function norm(v){return String(v||"").normalize("NFKC").toLocaleLowerCase("mk");}
-export function staticCaseLawFallback(query,{limit=6}={}){
+export function staticCaseLawFallback(query,{limit=6,reason="runtime_unavailable"}={}){
   const q=norm(query);
   const terms=q.split(/[^\p{L}\p{N}]+/u).filter(x=>x.length>2);
   const rows=CASE_LAW_STATIC_FALLBACK_RECORDS.map(r=>{
@@ -48,18 +48,17 @@ export function staticCaseLawFallback(query,{limit=6}={}){
     return {...r,score};
   }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score||b.d.localeCompare(a.d)).slice(0,Math.max(1,Math.min(8,Number(limit)||6)));
   if(!rows.length) return null;
-  return {
-    ok:true,
+  const intro=reason==="language_gate_blocked"\n    ? "AI-нацртот беше блокиран од задолжителната македонска јазична проверка. Наместо него, локалниот регистар за судска практика најде релевантни предмети:"\n    : "AI runtime моментално не е достапен, но локалниот регистар за судска практика најде релевантни предмети:";\n  return {\n    ok:true,
     version:CASE_LAW_STATIC_FALLBACK_VERSION,
     rows,
     text:[
-      "AI runtime моментално не е достапен, но локалниот Case-Law discovery registry најде релевантни предмети:",
+      intro,
       "",
       ...rows.map((r,i)=>(i+1)+". Апелационен суд Скопје · "+r.n+" · "+r.d+" · "+r.i),
       "",
-      "СТАТУС: DISCOVERY ONLY — NOT REVIEWED AUTHORITY.",
-      "Овие записи служат за пронаоѓање на потенцијално релевантни пресуди. Пред правно потпирање мора да се проверат оригиналниот официјален запис, точниот holding, finality/статусот и Human Gate.",
-      "Спротивна практика не е потврдена само од овој статички registry; за тоа е потребен live reviewed-authority retrieval."
+      "СТАТУС: САМО ЗА ПРОНАОЃАЊЕ (DISCOVERY ONLY) — НЕ Е РЕЦЕНЗИРАН/ВЕРИФИЦИРАН СУДСКИ АВТОРИТЕТ.",
+      "Овие записи служат за пронаоѓање на потенцијално релевантни пресуди. Пред правно потпирање мора да се проверат оригиналниот официјален запис, точниот правен став, конечноста/статусот и Човечката порта (Human Gate).",
+      "Спротивна практика не е потврдена само од овој статички регистар; за тоа е потребно активно пребарување низ рецензираниот корпус на судски авторитети."
     ].join("\n")
   };
 }
