@@ -12,6 +12,10 @@ import {
   corpusRadarPrompt
 } from "./case-law-corpus-radar.js";
 import {
+  CASE_LAW_CLAIM_GUARD_VERSION,
+  assessSpecificCaseLawClaims
+} from "./case-law-claim-guard.js";
+import {
   APPEAL_SKOPJE_36_VERSION,
   APPEAL_SKOPJE_36_RECORDS,
   searchAppealSkopje36
@@ -6993,6 +6997,24 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       releasedFallbackText=degradedLanguageRelease.text;
     }
 
+    const fallbackCaseLawClaimGate=assessSpecificCaseLawClaims(releasedFallbackText,{
+      reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
+      webSources:[]
+    });
+    if(!fallbackCaseLawClaimGate.ok){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:"case_law_claim_release_blocked",
+        message:"Одговорот не е пуштен затоа што содржи конкретна судска пресуда, број на предмет или именуван судски случај што не е потврден во reviewed official case-law context.",
+        caseLawClaimGuard:{
+          version:CASE_LAW_CLAIM_GUARD_VERSION,
+          unsupported:fallbackCaseLawClaimGate.unsupported
+        },
+        governanceRunId:lioeRunId
+      },503);
+    }
+
     const freeSourceMode=freeResult.provider==="canonical_corpus_no_model"
       ? "canonical_article_corpus_no_model"
       : (attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
@@ -7884,6 +7906,24 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         governedArticleNumbers
       })
     : String(finalAnswer||"").trim();
+
+  const governedCaseLawClaimGate=assessSpecificCaseLawClaims(governedFinalAnswer,{
+    reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
+    webSources:result.sources||[]
+  });
+  if(!governedCaseLawClaimGate.ok){
+    await releaseMonthlyQuota(env,{subject,period});
+    return json(request,{
+      ok:false,
+      error:"case_law_claim_release_blocked",
+      message:"Одговорот не е пуштен затоа што содржи конкретна судска пресуда, број на предмет или именуван судски случај што не е потврден во reviewed official case-law context или официјален court source.",
+      caseLawClaimGuard:{
+        version:CASE_LAW_CLAIM_GUARD_VERSION,
+        unsupported:governedCaseLawClaimGate.unsupported
+      },
+      governanceRunId:lioeRunId
+    },503);
+  }
 
   // Final language release gate for the governed OpenAI path. The central prompt
   // should already produce standard Macedonian, but no Macedonian-facing answer

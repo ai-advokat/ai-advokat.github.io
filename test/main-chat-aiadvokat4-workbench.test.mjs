@@ -16,7 +16,7 @@ test("main AI Advokat chat exposes AIAdvokat4 LexNova governed workbench",()=>{
   assert.match(home,/КОНСОЛИДАТОР/);
   assert.match(home,/АНАЛИЗАТОР/);
   assert.match(home,/ПРЕДИКТОР/);
-  assert.match(home,/20261105-root-r22-case-law-fallback-reason-v1/);
+  assert.match(home,/20261105-root-r23-case-law-authority-gate-v1/);
 });
 
 test("Consolidator is exact Legal Formatter v10.4 CORE and not a prompt surrogate",()=>{
