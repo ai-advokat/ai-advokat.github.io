@@ -1020,6 +1020,15 @@
           guides:[],
           action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"}
         });
+      }else if(d?.error==="procedural_act_terminology_blocked"){
+        attachments=[...selectedFiles];
+        renderAttachments();
+        updateAssistantPlaceholder(assistantIndex,{
+          text:d?.message||"Одговорот е блокиран поради погрешен назив на судскиот акт. Кај определување, продолжување или укинување на притвор, ЗКП користи решение.",
+          meta:"ZKP Procedural-Act Gate · BLOCK",
+          guides,
+          sourceLabel:"Терминолошка контрола според ЗКП · притвор: решение, не пресуда."
+        });
       }else if(d?.error==="case_law_claim_release_blocked"){
         attachments=[...selectedFiles];
         renderAttachments();
