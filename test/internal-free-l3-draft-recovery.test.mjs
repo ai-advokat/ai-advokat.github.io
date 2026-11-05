@@ -30,14 +30,14 @@ for(const tc of cases){
     },null,2));
 
     if(tc.id==="divorce"){
-      assert.match(verdict.text,/^ТУЖБА\b/u);
+      assert.match(verdict.text,/^ТУЖБА(?:\n|$)/u);
       assert.match(verdict.text,/развод на брак/iu);
       assert.match(verdict.text,/ЧОВЕЧКА ПРОВЕРКА/u);
     }
 
     if(tc.id==="debt"){
-      assert.match(verdict.text,/^РАБОТЕН НАЦРТ ЗА СУДСКА НАПЛАТА\b/u);
-      assert.doesNotMatch(verdict.text,/^ДОГОВОР\b/u);
+      assert.match(verdict.text,/^РАБОТЕН НАЦРТ ЗА СУДСКА НАПЛАТА(?:\n|$)/u);
+      assert.doesNotMatch(verdict.text,/^ДОГОВОР(?:\n|$)/u);
       assert.match(verdict.text,/Доверител:\s*Правно лице А/iu);
       assert.match(verdict.text,/Должник:\s*Правно лице Б/iu);
       assert.match(verdict.text,/Главен долг:\s*150\.000 денари/iu);
