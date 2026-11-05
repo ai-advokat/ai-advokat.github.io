@@ -128,7 +128,7 @@ jobs:
               && [ "$live_privacy_primary" = "$expected_privacy_primary" ] \
               && [ "$live_privacy_compat" = "$expected_privacy_compat" ]; then
               deployed=1
-              echo "MAIN ROOT-R13-PARITY + EXTERNAL BOT R13/VNEXT-R12 LIVE BYTE PARITY: PASS on attempt $attempt"
+              echo "EXTERNAL BOT R13 LIVE BYTE PARITY: PASS · MAIN ROOT-R13-PARITY + VNEXT-R12 on attempt $attempt"
               break
             fi
             echo "Waiting for exact root-r13-parity + R13/vNext-r12 production bytes (attempt $attempt/40)."
