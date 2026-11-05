@@ -295,9 +295,9 @@ export function parsePublishedDate(value){
   const s=cleanText(value).toLocaleLowerCase("mk");
   let m=s.match(/\b(20\d{2})[-/.](0?[1-9]|1[0-2])[-/.](0?[1-9]|[12]\d|3[01])\b/);
   if(m) return validIsoDate(m[1],m[2],m[3]);
-  m=s.match(/\b(0?[1-9]|[12]\d|3[01])[./-](0?[1-9]|1[0-2])[./-](20\d{2})\b/);
+  m=s.match(/\b(0?[1-9]|[12]\d|3[01])(?:\s*[./-]\s*|\s+)(0?[1-9]|1[0-2])(?:\s*[./-]\s*|\s+)(20\d{2})\b/);
   if(m) return validIsoDate(m[3],m[2],m[1]);
-  m=s.match(/\b(0?[1-9]|[12]\d|3[01])\s+([\p{L}]+)\s*,?\s*(20\d{2})\b/u);
+  m=s.match(/\b(0?[1-9]|[12]\d|3[01])\.?\s+([\p{L}]+)\s*,?\s*(20\d{2})\b/u);
   if(m){
     const month=MONTHS[m[2]];
     if(month) return validIsoDate(m[3],month,m[1]);
