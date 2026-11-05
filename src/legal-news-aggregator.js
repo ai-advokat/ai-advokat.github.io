@@ -2,7 +2,7 @@
 // Read-only aggregator for official public justice-sector sources.
 // News discovery is not a legal conclusion and never bypasses source verification or Human Gate.
 
-export const LEGAL_NEWS_AGGREGATOR_VERSION="AI_ADVOCAT_JUSTICE_DAILY_V1_1";
+export const LEGAL_NEWS_AGGREGATOR_VERSION="AI_ADVOCAT_JUSTICE_DAILY_V1_2";
 
 const JUSTICE_KEYWORDS=[
   "суд","судиј","судск","правосуд","правда","обвинител","обвинителств","јавно обвинителство",
@@ -465,6 +465,7 @@ async function fetchOneSource(source,fetchImpl,now){
       institution:source.institution,
       title:source.title,
       status:"reference_only",
+      primaryUrl:source.urls[0]||null,
       fetchedUrl:source.urls[0]||null,
       itemCount:0,
       items:[],
@@ -502,6 +503,7 @@ async function fetchOneSource(source,fetchImpl,now){
         institution:source.institution,
         title:source.title,
         status:"ok",
+        primaryUrl:source.urls[0]||null,
         fetchedUrl:url,
         itemCount:items.length,
         items,
@@ -519,11 +521,54 @@ async function fetchOneSource(source,fetchImpl,now){
     institution:source.institution,
     title:source.title,
     status:"unavailable",
+    primaryUrl:source.urls[0]||null,
     fetchedUrl:null,
     itemCount:0,
     items:[],
     checkedAt:new Date(now).toISOString(),
     errors:errors.slice(0,5)
+  };
+}
+
+function justicePriority(item){
+  const type=String(item?.type||"");
+  const authority=String(item?.authorityClass||"");
+  let score=Number(item?.relevanceScore||0);
+  if(type==="decision") score+=8;
+  else if(type==="legislation") score+=7;
+  else if(type==="prosecution"||type==="appointments") score+=5;
+  else if(type==="reform"||type==="session") score+=3;
+  if(/constitutional|supreme|official_gazette|legislature/.test(authority)) score+=3;
+  const corroboration=Array.isArray(item?.corroboratingSources)?item.corroboratingSources.length:0;
+  score+=Math.min(3,corroboration);
+  const level=score>=14?"high":score>=9?"medium":"normal";
+  const reasons=[];
+  if(type==="decision") reasons.push("decision_or_case");
+  if(type==="legislation") reasons.push("legislation");
+  if(type==="prosecution") reasons.push("prosecution_update");
+  if(type==="appointments") reasons.push("appointment_or_discipline");
+  if(corroboration) reasons.push("corroborated");
+  if(/constitutional|supreme|official_gazette|legislature/.test(authority)) reasons.push("high_authority_source");
+  return {score,level,reasons};
+}
+
+function buildJusticeDailyStats(items,sourceHealth){
+  const byType={};
+  const byInstitution={};
+  for(const item of items){
+    byType[item.type]=(byType[item.type]||0)+1;
+    byInstitution[item.institution]=(byInstitution[item.institution]||0)+1;
+  }
+  return {
+    items:items.length,
+    highPriority:items.filter(x=>x.priority?.level==="high").length,
+    mediumPriority:items.filter(x=>x.priority?.level==="medium").length,
+    corroborated:items.filter(x=>Array.isArray(x.corroboratingSources)&&x.corroboratingSources.length>0).length,
+    sourcesOk:sourceHealth.filter(x=>x.status==="ok").length,
+    sourcesReferenceOnly:sourceHealth.filter(x=>x.status==="reference_only").length,
+    sourcesUnavailable:sourceHealth.filter(x=>x.status==="unavailable").length,
+    byType,
+    byInstitution
   };
 }
 
@@ -586,11 +631,17 @@ export async function aggregateLegalNews({
     return db.localeCompare(da)||b.relevanceScore-a.relevanceScore||a.institutionTitle.localeCompare(b.institutionTitle,"mk");
   });
 
+  items=items.map(item=>{
+    const priority=justicePriority(item);
+    return {...item,priority};
+  });
+
   const sourceHealth=results.map(r=>({
     sourceId:r.sourceId,
     institution:r.institution,
     title:r.title,
     status:r.status,
+    primaryUrl:r.primaryUrl||null,
     fetchedUrl:r.fetchedUrl,
     itemCount:r.itemCount,
     checkedAt:r.checkedAt,
@@ -608,6 +659,7 @@ export async function aggregateLegalNews({
     total:Math.min(items.length,safeLimit),
     items:items.slice(0,safeLimit),
     sourceHealth,
+    stats:buildJusticeDailyStats(items,sourceHealth),
     warnings:[
       ...(unavailable.length?["SOURCE_GAPS: "+unavailable.join(", ")]:[]),
       ...(referenceOnly.length?["REFERENCE_ONLY_SOURCES: "+referenceOnly.join(", ")]:[]),
