@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: zoki-critical-legal-live-uat
+  group: zoki-critical-legal-live-uat-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
