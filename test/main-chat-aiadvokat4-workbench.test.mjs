@@ -10,13 +10,13 @@ const css=fs.readFileSync("assets/ai-advokat-chat.css","utf8");
 
 test("main AI Advokat chat exposes AIAdvokat4 LexNova governed workbench",()=>{
   assert.match(home,/AIAdvokat4 · LexNova UX/);
-  for(const action of ["assistant","analyzer","consolidator","predictor","sources","public-evidence","professional-ecosystem","cases","casepilot","documents","workflows","human-gate","library"]){
+  for(const action of ["assistant","analyzer","consolidator","predictor","sources","public-evidence","professional-ecosystem","justice-daily","cases","casepilot","documents","workflows","human-gate","library"]){
     assert.match(home,new RegExp('data-ai-workbench="'+action+'"'));
   }
   assert.match(home,/КОНСОЛИДАТОР/);
   assert.match(home,/АНАЛИЗАТОР/);
   assert.match(home,/ПРЕДИКТОР/);
-  assert.match(home,/20261105-root-r14-visible-internal-ecosystem-v2/);
+  assert.match(home,/20261105-root-r15-justice-daily-v1/);
 });
 
 test("Consolidator is exact Legal Formatter v10.4 CORE and not a prompt surrogate",()=>{
@@ -52,7 +52,7 @@ test("Predictor is governed scenario/risk workflow with CasePilot and no fake su
 });
 
 test("main workspace has standalone-bot parity on left modules and right evidence tabs",()=>{
-  for(const label of ["Правен асистент","Анализатор","Консолидатор","Предиктор","Правни извори","Јавни докази","Pro Ecosystem","Судска практика","CasePilot","Документи","Workflows","Human Gate","Library"]){
+  for(const label of ["Правен асистент","Анализатор","Консолидатор","Предиктор","Правни извори","Јавни докази","Pro Ecosystem","Justice Daily","Судска практика","CasePilot","Документи","Workflows","Human Gate","Library"]){
     assert.ok(home.includes(label), "missing main workspace label: "+label);
   }
   for(const tab of ["sources","context","human","artifact"]){
@@ -65,6 +65,16 @@ test("main workspace has standalone-bot parity on left modules and right evidenc
   assert.match(chat,/ensureWorkflowDialog/);
   assert.match(chat,/openWorkspaceSearch/);
   assert.match(chat,/aiChatHistorySearch/);
+});
+
+test("Justice Daily is directly visible and wired to the governed aggregator API",()=>{
+  const count=(home.match(/data-ai-workbench="justice-daily"/g)||[]).length;
+  assert.ok(count>=3,"Justice Daily must be exposed in sidebar, central workbench and More/tools");
+  assert.match(home,/<div class="ai-prof-actions">[\s\S]*data-ai-workbench="justice-daily"[\s\S]*<\/div>/);
+  assert.match(chat,/function ensureJusticeDailyDialog/);
+  assert.match(chat,/\/api\/legal-news\?/);
+  assert.match(chat,/action==="justice-daily"/);
+  assert.match(chat,/NEWS_IS_NOT_LEGAL_CONCLUSION|Вест ≠ правен заклучок/);
 });
 
 test("PR #534 internal toolkit remains directly visible when the left sidebar is hidden",()=>{

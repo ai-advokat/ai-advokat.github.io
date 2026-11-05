@@ -1,6 +1,6 @@
 name: One-time production runtime update
 
-# release-trigger: deploy PR #535 visibility closure for approved #534 internal toolkit
+# release-trigger: deploy PR #538 Justice Daily v1 approved 2026-11-05
 
 on:
   push:

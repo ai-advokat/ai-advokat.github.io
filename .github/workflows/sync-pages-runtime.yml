@@ -64,9 +64,10 @@ jobs:
           node --check src/case-law-metadata-processor.js
           node --check src/legal-analyzer.js
           node --check src/case-export.js
+          node --check src/legal-news-aggregator.js
           node --check assets/standalone-bot-vnext.js
           node --check assets/standalone-bot-reliability.js
-          grep -q 'ai-advokat-chat.js?v=20261105-root-r14-visible-internal-ecosystem-v2' index.html
+          grep -q 'ai-advokat-chat.js?v=20261105-root-r15-justice-daily-v1' index.html
           grep -q 'ai-advokat-chat.css?v=20261101-root-complete-r12' index.html
           grep -q 'standalone-bot.js?v=20261101-core-r13' bot/index.html
           grep -q 'standalone-bot-vnext.js?v=20261105-vnext-r12' bot/index.html
