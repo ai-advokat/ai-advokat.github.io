@@ -1,6 +1,6 @@
 name: One-time production runtime update
 
-# release-trigger: deploy internal FREE L3 recovery 18c2e8ffe1f73061e8d7ae562ed3d9da2380bb9e
+# release-trigger: deploy dual-bot source-first parity release 9a5f78f680d64a0dc69858211e4881e51a470936
 
 on:
   push:
@@ -219,8 +219,20 @@ jobs:
           if(!sourceGap && String(exactSource?.version||"")!=="official-consolidated-snapshot-through-111/2023") throw new Error("Article 12 source version mismatch");
           if(!sourceGap && !["openai","canonical_corpus_no_model"].includes(String(d.provider||""))) throw new Error("Unexpected provider: "+d.provider);
           if(!sourceGap && d.provider==="canonical_corpus_no_model"){
-            if(d.providerFallback?.from!=="openai") throw new Error("Canonical fallback provenance missing");
-            if(d.legalGovernance?.verificationState!=="SOURCE_BACKED_PROVIDER_FALLBACK") throw new Error("Canonical fallback governance state missing");
+            const sourceFirst=d.providerFallback==null
+              && d.sourceMode==="ai_advokat_exact_article_authority_only";
+            const providerFailureFallback=d.providerFallback?.from==="openai";
+            if(!sourceFirst && !providerFailureFallback) throw new Error("Canonical provider provenance is neither source-first nor governed provider fallback");
+            if(sourceFirst){
+              if(d.webSearchUsed===true) throw new Error("Source-first exact article unexpectedly used web search");
+              if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error("LIOE governance missing on source-first path");
+              if(d.legalGovernance?.sourceVerificationState!=="VERIFIED") throw new Error("Source-first canonical source is not VERIFIED");
+              if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("Current-law Human Gate not required on source-first path");
+              if(Number(d.membership?.used||0)!==0) throw new Error("Source-first no-model retrieval consumed AI quota");
+              if(!/source-first патека без модел/u.test(answer)) throw new Error("Source-first truth label missing");
+            }else{
+              if(d.legalGovernance?.verificationState!=="SOURCE_BACKED_PROVIDER_FALLBACK") throw new Error("Canonical fallback governance state missing");
+            }
             if(!/не го означува како .важечки текст./u.test(answer)) throw new Error("Current-law truth-label warning missing");
           } else if(!sourceGap) {
             if(d.legalGovernance?.engine!=="AI_ADVOKAT_LIOE_v1") throw new Error("LIOE governance missing on OpenAI path");
@@ -230,6 +242,8 @@ jobs:
             ok:d.ok,
             provider:d.provider,
             providerFallback:d.providerFallback||null,
+            sourceMode:d.sourceMode||null,
+            membershipUsed:Number(d.membership?.used||0),
             legalSourceCount:Array.isArray(d.legalSources)?d.legalSources.length:0,
             governanceRunId:d.governanceRunId||null,
             verificationState:d.legalGovernance?.verificationState||null,
