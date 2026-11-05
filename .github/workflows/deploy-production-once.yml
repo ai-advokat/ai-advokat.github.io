@@ -1,5 +1,7 @@
 name: One-time production runtime update
 
+# release-trigger: deploy internal FREE L3 recovery 18c2e8ffe1f73061e8d7ae562ed3d9da2380bb9e
+
 on:
   push:
     branches:
