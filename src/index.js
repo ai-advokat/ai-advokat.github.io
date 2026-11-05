@@ -8,6 +8,10 @@ import {
   selectBalancedAuthorities
 } from "./case-law-curation-engine.js";
 import {
+  summarizeCaseLawCorpus,
+  corpusRadarPrompt
+} from "./case-law-corpus-radar.js";
+import {
   APPEAL_SKOPJE_36_VERSION,
   APPEAL_SKOPJE_36_RECORDS,
   searchAppealSkopje36
@@ -4774,13 +4778,44 @@ export function appealSkopjeDiscoveryContext(q,{limit=4}={}){
   };
 }
 
-function handleCaseLawCurationPlan(request){
+async function handleCaseLawCurationPlan(request,env){
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
   const supplied=typeof APPEAL_SKOPJE_36_RECORDS!=="undefined" ? APPEAL_SKOPJE_36_RECORDS : [];
+  let reviewedRows=[];
+  let databaseState="not_bound";
+  if(env?.DB){
+    try{
+      const result=await env.DB.prepare(
+        `SELECT cl.id,cl.case_title,cl.court,cl.case_number,cl.jurisdiction,cl.legal_area,cl.decision_date,
+                cla.court_level,cla.outcome_side,cla.legal_issue_keys
+           FROM case_law cl
+           JOIN case_law_authority cla ON cla.case_law_id=cl.id
+          WHERE cl.human_review_status IN ('approved','reviewed')
+            AND cla.human_review_status IN ('approved','reviewed')
+            AND EXISTS (
+              SELECT 1 FROM case_law_provenance p
+               WHERE p.case_law_id=cl.id
+                 AND p.official_binding_verified=1
+                 AND p.discovery_only=0
+                 AND p.human_review_status IN ('approved','reviewed')
+            )
+          ORDER BY cl.decision_date DESC,cl.id DESC
+          LIMIT 5000`
+      ).all();
+      reviewedRows=result.results||[];
+      databaseState="ready";
+    }catch(error){
+      databaseState="unavailable";
+      console.error("case_law_curation_plan_failed",String(error?.message||error).slice(0,160));
+    }
+  }
+  const radar=summarizeCaseLawCorpus(reviewedRows,supplied);
   return json(request,{
     ok:true,
     version:CASE_LAW_CURATION_VERSION,
     target:CASE_LAW_1000_TARGET,
+    databaseState,
+    radar,
     currentDiscoveryAudit:auditCaseLawDiversity(supplied,1000),
     scoringExample:scoreCaseForCuration({
       court_level:"appellate",
@@ -4798,6 +4833,7 @@ function handleCaseLawCurationPlan(request){
       "strongest_or_higher_authority",
       "fill_remaining_by_relevance"
     ],
+    nextPackagePrompt:corpusRadarPrompt(radar),
     promptPolicy:caseLawCurationPromptPolicy(),
     authorityBoundary:"Curation score controls processing/retrieval priority only. It never promotes a case to reviewed or citable authority.",
     humanGate:"required"
@@ -9535,7 +9571,7 @@ export default {
     if (url.pathname === "/api/internal-toolkit") return handleInternalProfessionalToolkit(request,url);
     if (url.pathname === "/api/internal-toolkit/calculate") return handleInternalProfessionalCalculation(request);
     if (url.pathname === "/api/legal-news") return handleLegalNewsAggregator(request,url,env);
-    if (url.pathname === "/api/case-law/curation-plan") return handleCaseLawCurationPlan(request);
+    if (url.pathname === "/api/case-law/curation-plan") return handleCaseLawCurationPlan(request,env);
     if (url.pathname === "/api/public-evidence/card") return handlePublicEvidenceCard(request);
     if (url.pathname === "/api/professional-workflows") {
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
