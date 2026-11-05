@@ -36,7 +36,7 @@ export function extractSpecificJudicialClaims(text){
   const claims=[];
 
   // Prefixed domestic/regional court file numbers, e.g. KOKЖ-50/25.
-  const prefixed=/\b([A-ZА-ЯЃЅЈЉЊЌЏ]{2,12}[-.]?\d{1,6}\/\d{2,4})\b/gu;
+  const prefixed=/(?<![\p{L}\p{N}])([A-ZА-ЯЃЅЈЉЊЌЏ]{2,12}[-.]?\d{1,6}\/\d{2,4})(?![\p{L}\p{N}/])/gu;
   for(const match of value.matchAll(prefixed)){
     claims.push({type:"case_number",value:match[1],evidence:match[0]});
   }
@@ -49,7 +49,7 @@ export function extractSpecificJudicialClaims(text){
 
   // Named adversarial cases, e.g. Kovács v. Hungary. This is intentionally
   // conservative: a specific named case must be source-backed before release.
-  const named=/\b([A-ZÀ-ÖØ-ÞА-ЯЃЅЈЉЊЌЏ][\p{L}.’'\-]{1,80})\s+v\.?\s+([A-ZÀ-ÖØ-ÞА-ЯЃЅЈЉЊЌЏ][\p{L}.’'\-]{1,80})\b/gu;
+  const named=/(?<!\p{L})([A-ZÀ-ÖØ-ÞА-ЯЃЅЈЉЊЌЏ][\p{L}.’'\-]{1,80})\s+v\.?\s+([A-ZÀ-ÖØ-ÞА-ЯЃЅЈЉЊЌЏ][\p{L}.’'\-]{1,80})(?!\p{L})/gu;
   for(const match of value.matchAll(named)){
     claims.push({type:"named_case",value:match[1]+" v "+match[2],evidence:match[0]});
   }
