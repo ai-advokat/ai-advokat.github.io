@@ -166,6 +166,23 @@ jobs:
               httpStatus:d.providerFallback?.httpStatus||null,
               attempts:d.providerFallback?.attempts||d.providerFallback?.primaryProviderCalls||null
             });
+          }else if(d.provider==="workers_ai_free"){
+            if(d.providerFallback?.from!=="openai") throw new Error("Workers fallback must originate from OpenAI failure");
+            if(d.legalGovernance?.primaryProviderState!=="FAILED_FALLBACK_RELEASED") throw new Error("Workers fallback primary-provider state missing");
+            if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("Workers fallback Human Gate missing");
+            if(!["RESEARCH_OUTPUT_ONLY","NO_EXTERNAL_ACTION"].includes(d.legalGovernance?.executionAuthorization)) throw new Error("Workers fallback execution authorization too broad");
+            if(d.webSearchUsed!==false) throw new Error("Workers fallback must not claim web search");
+            const mode=d.legalGovernance?.providerFallbackMode;
+            if(!["PROFESSIONAL_RESEARCH_WORKERS_AI","PROFESSIONAL_L0_WORKERS_AI","PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI"].includes(mode)) throw new Error("Unexpected governed Workers fallback mode: "+mode);
+            if(mode==="PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI"){
+              if(d.displayMode!=="professional_degraded_draft_fallback") throw new Error("Degraded draft display mode missing");
+              if(d.legalGovernance?.postflightState!=="NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE") throw new Error("Degraded draft postflight state missing");
+            }else if(mode==="PROFESSIONAL_RESEARCH_WORKERS_AI"){
+              if(d.displayMode!=="professional_workers_ai_research_fallback") throw new Error("Research fallback display mode missing");
+            }else if(mode==="PROFESSIONAL_L0_WORKERS_AI"){
+              if(d.displayMode!=="professional_workers_ai_fallback") throw new Error("L0 fallback display mode missing");
+            }
+            executionPath="GOVERNED_WORKERS_AI_FALLBACK";
           }else{
             throw new Error("Unexpected Professional provider: "+d.provider);
           }
