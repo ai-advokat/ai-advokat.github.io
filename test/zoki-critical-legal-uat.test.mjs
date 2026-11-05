@@ -18,7 +18,7 @@ test("ZOKIUAT2 both internal and external bot surfaces are exercised",()=>{
 
 test("ZOKIUAT3 live suite is bounded and does not enable web research",()=>{
   assert.match(runner,/webSearch:false/);
-  assert.match(runner,/AbortSignal\.timeout\(120000\)/);
+  assert.match(runner,/AbortSignal\.timeout\(190000\)/);
   assert.match(runner,/AI_ADVOCAT_UAT_PACE_MS/);
   assert.doesNotMatch(runner,/webSearch:true/);
 });
