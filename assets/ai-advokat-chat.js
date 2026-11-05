@@ -1020,6 +1020,22 @@
           guides:[],
           action:d?.action||{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"}
         });
+      }else if(d?.error==="case_law_claim_release_blocked"){
+        attachments=[...selectedFiles];
+        renderAttachments();
+        const staticCaseFallback=await staticCaseLawRegistryFallback(q,"authority_claim_blocked");
+        updateAssistantPlaceholder(assistantIndex,{
+          text:staticCaseFallback?.ok
+            ? staticCaseFallback.text
+            : (d?.message||"AI-нацртот содржеше конкретна судска практика што не можеше да се потврди од верификуван официјален извор. Конкретната пресуда не е пуштена."),
+          meta:staticCaseFallback?.ok
+            ? "Case-Law Authority Gate · BLOCKED UNSUPPORTED CLAIM · discovery fallback"
+            : "Case-Law Authority Gate · BLOCK",
+          guides,
+          sourceLabel:staticCaseFallback?.ok
+            ? "Непотврдените конкретни пресуди се блокирани. Прикажани се само DISCOVERY ONLY записи."
+            : "Ниту една непотврдена конкретна пресуда, број на предмет или именуван случај не е објавен."
+        });
       }else if(d?.error==="macedonian_release_blocked"){
         attachments=[...selectedFiles];
         renderAttachments();
