@@ -1023,11 +1023,22 @@
       }else if(d?.error==="macedonian_release_blocked"){
         attachments=[...selectedFiles];
         renderAttachments();
+        const staticCaseFallback=await staticCaseLawRegistryFallback(q);
+        const safeFallback=staticCaseFallback?.ok
+          ? {
+              ok:true,
+              text:staticCaseFallback.text,
+              meta:"Macedonian Release Gate · AI draft blocked · Case-Law discovery fallback",
+              sourceLabel:"Загадениот AI-нацрт не е пуштен. Прикажан е само статичкиот Case-Law discovery registry · DISCOVERY ONLY."
+            }
+          : await fallbackSourceAssistant(q);
         updateAssistantPlaceholder(assistantIndex,{
-          text:d?.message||"AI-нацртот не ја помина задолжителната јазична проверка за стандарден македонски јазик и затоа не е објавен. Обидете се повторно или наведете го конкретниот закон.",
-          meta:"Macedonian Release Gate · BLOCK",
+          text:safeFallback.ok
+            ? safeFallback.text
+            : (d?.message||"AI-нацртот не ја помина задолжителната јазична проверка за стандарден македонски јазик и затоа не е објавен. Обидете се повторно или наведете го конкретниот закон."),
+          meta:safeFallback.ok?safeFallback.meta:"Macedonian Release Gate · BLOCK",
           guides,
-          sourceLabel:"Расипаниот AI-нацрт е блокиран пред објавување. Не се прикажува мешан или нестандарден македонски текст."
+          sourceLabel:safeFallback.ok?safeFallback.sourceLabel:"Расипаниот AI-нацрт е блокиран пред објавување. Не се прикажува мешан или нестандарден македонски текст."
         });
       }else if(["free_mode_professional_postflight_required","macedonian_language_repair_failed","macedonian_language_quality_failed","macedonian_language_quality_gate_failed","lioe_postflight_locked","lioe_runtime_governance_locked","lioe_observability_locked","web_search_locked","free_mode_web_search_unavailable"].includes(d?.error)){
         attachments=[...selectedFiles];

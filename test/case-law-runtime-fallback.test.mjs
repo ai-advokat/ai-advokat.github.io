@@ -33,5 +33,13 @@ test("main chat uses static discovery only after governed API fallbacks fail",()
 test("Pages runtime ships the static fallback and r20 chat cache contract",()=>{
   assert.match(sync,/assets\/case-law-static-fallback\.js/);
   assert.match(sync,/node --check assets\/case-law-static-fallback\.js/);
-  assert.match(index,/ai-advokat-chat\.js\?v=20261105-root-r20-case-law-runtime-fallback-v1/);
+  assert.match(index,/ai-advokat-chat\.js\?v=20261105-root-r21-case-law-language-safe-fallback-v1/);
+});
+
+
+test("language release gate block falls back to bounded case-law discovery instead of blanking the answer",()=>{
+  assert.match(chat,/d\?\.error==="macedonian_release_blocked"/);
+  assert.match(chat,/const staticCaseFallback=await staticCaseLawRegistryFallback\(q\)/);
+  assert.match(chat,/Macedonian Release Gate · AI draft blocked · Case-Law discovery fallback/);
+  assert.match(chat,/Загадениот AI-нацрт не е пуштен/);
 });

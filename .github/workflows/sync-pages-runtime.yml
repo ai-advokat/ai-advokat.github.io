@@ -69,7 +69,7 @@ jobs:
           node --check src/legal-news-aggregator.js
           node --check assets/standalone-bot-vnext.js
           node --check assets/standalone-bot-reliability.js
-          grep -q 'ai-advokat-chat.js?v=20261105-root-r20-case-law-runtime-fallback-v1' index.html
+          grep -q 'ai-advokat-chat.js?v=20261105-root-r21-case-law-language-safe-fallback-v1' index.html
           grep -q 'ai-advokat-chat.css?v=20261101-root-complete-r12' index.html
           grep -q 'standalone-bot.js?v=20261101-core-r13' bot/index.html
           grep -q 'standalone-bot-vnext.js?v=20261105-vnext-r13-case-law-radar' bot/index.html
