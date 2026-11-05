@@ -48,7 +48,11 @@ export function staticCaseLawFallback(query,{limit=6,reason="runtime_unavailable
     return {...r,score};
   }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score||b.d.localeCompare(a.d)).slice(0,Math.max(1,Math.min(8,Number(limit)||6)));
   if(!rows.length) return null;
-  const intro=reason==="language_gate_blocked"\n    ? "AI-нацртот беше блокиран од задолжителната македонска јазична проверка. Наместо него, локалниот регистар за судска практика најде релевантни предмети:"\n    : "AI runtime моментално не е достапен, но локалниот регистар за судска практика најде релевантни предмети:";\n  return {\n    ok:true,
+  const intro=reason==="language_gate_blocked"
+    ? "AI-нацртот беше блокиран од задолжителната македонска јазична проверка. Наместо него, локалниот регистар за судска практика најде релевантни предмети:"
+    : "AI runtime моментално не е достапен, но локалниот регистар за судска практика најде релевантни предмети:";
+  return {
+    ok:true,
     version:CASE_LAW_STATIC_FALLBACK_VERSION,
     rows,
     text:[

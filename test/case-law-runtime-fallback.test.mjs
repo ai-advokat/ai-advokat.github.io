@@ -12,7 +12,7 @@ test("static case-law fallback finds the supplied money-laundering decisions dur
   assert.ok(out?.ok);
   assert.ok(out.rows.length>=4);
   assert.ok(out.rows.every(r=>/перење пари/i.test(r.i)));
-  assert.match(out.text,/DISCOVERY ONLY — NOT REVIEWED AUTHORITY/);
+  assert.match(out.text,/САМО ЗА ПРОНАОЃАЊЕ \(DISCOVERY ONLY\) — НЕ Е РЕЦЕНЗИРАН\/ВЕРИФИЦИРАН СУДСКИ АВТОРИТЕТ/);
   assert.match(out.text,/Спротивна практика не е потврдена/);
 });
 
@@ -39,7 +39,7 @@ test("Pages runtime ships the static fallback and r20 chat cache contract",()=>{
 
 test("language release gate block falls back to bounded case-law discovery instead of blanking the answer",()=>{
   assert.match(chat,/d\?\.error==="macedonian_release_blocked"/);
-  assert.match(chat,/const staticCaseFallback=await staticCaseLawRegistryFallback\(q\)/);
+  assert.match(chat,/const staticCaseFallback=await staticCaseLawRegistryFallback\(q,"language_gate_blocked"\)/);
   assert.match(chat,/Macedonian Release Gate · AI draft blocked · Case-Law discovery fallback/);
   assert.match(chat,/Загадениот AI-нацрт не е пуштен/);
 });
