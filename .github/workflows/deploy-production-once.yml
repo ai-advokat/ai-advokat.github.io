@@ -1,6 +1,6 @@
 name: One-time production runtime update
 
-# release-trigger: deploy canonical source-preservation hotfix ed7fbe2e2ffd627a5e8022df58f07b594f5dbdf1
+# release-trigger: deploy PR #534 internal Public Evidence + Professional Ecosystem v2 a8195117c254e0cd12d6d5ccebf90fe8302fda48
 
 on:
   push:
