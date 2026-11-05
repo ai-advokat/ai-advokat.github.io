@@ -4,6 +4,7 @@ import fs from "node:fs";
 import {
   DETENTION_PROCEDURAL_TERMINOLOGY_VERSION,
   DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE,
+  ZKP_JUDGMENT_TYPE_TAXONOMY,
   isDetentionContext,
   normaliseDetentionProceduralTerminology,
   assessDetentionProceduralTerminology
@@ -12,11 +13,13 @@ import {
 const q="Жалба против притвор – дај ми поддржувачка и спротивна судска практика.";
 
 test("detention terminology policy is tied to verified ZKP official-source evidence",()=>{
-  assert.equal(DETENTION_PROCEDURAL_TERMINOLOGY_VERSION,"AI_ADVOCAT_DETENTION_PROCEDURAL_TERMINOLOGY_V1");
+  assert.equal(DETENTION_PROCEDURAL_TERMINOLOGY_VERSION,"AI_ADVOCAT_DETENTION_PROCEDURAL_TERMINOLOGY_V2");
   assert.equal(DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE.ldbisLawId,20679);
   assert.equal(DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE.officialGazette,"Службен весник на Република Македонија бр. 150/2010");
   assert.ok(DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE.provisions.some(x=>x.article==="169"&&/решение/u.test(x.rule)));
   assert.ok(DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE.provisions.some(x=>x.article==="173"&&/укинува/u.test(x.rule)));
+  assert.deepEqual(ZKP_JUDGMENT_TYPE_TAXONOMY.map(x=>x.label),["одбивателна пресуда","ослободителна пресуда","осудителна пресуда"]);
+  assert.equal(DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE.judgmentTypesArticle,"401");
 });
 
 test("detention context is detected without affecting unrelated criminal-law answers",()=>{
