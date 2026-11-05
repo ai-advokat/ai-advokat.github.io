@@ -195,7 +195,7 @@ export function deterministicFormalDraftCapacityFallback({userText=""}={}){
   const damages=/(?:надомест|штет)/iu.test(input);
   const divorce=/(?:развод|брак)/iu.test(input);
   const debt=/(?:судск(?:а|о)\s+наплат|долг|доверител|должник|побарувањ)/iu.test(input);
-  const principal=String(input.match(/\b\d{1,3}(?:[.\s]\d{3})+(?:,\d+)?\s*денар(?:и)?\b/iu)?.[0]||"").trim();
+  const principal=String(input.match(/(?:^|[^\p{L}\p{N}])(\d{1,3}(?:[.\s]\d{3})+(?:,\d+)?\s*денар(?:и)?)(?=$|[^\p{L}\p{N}])/iu)?.[1]||"").trim();
   const creditor=String(input.match(/Доверител\s*:\s*([^.\n]+)/iu)?.[1]||"").trim();
   const debtor=String(input.match(/Должник\s*:\s*([^.\n]+)/iu)?.[1]||"").trim();
   const basis=String(input.match(/Основа\s*:\s*([^.\n]+)/iu)?.[1]||"").trim();
