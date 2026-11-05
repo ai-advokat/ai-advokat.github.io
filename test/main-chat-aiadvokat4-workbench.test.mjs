@@ -16,7 +16,7 @@ test("main AI Advokat chat exposes AIAdvokat4 LexNova governed workbench",()=>{
   assert.match(home,/КОНСОЛИДАТОР/);
   assert.match(home,/АНАЛИЗАТОР/);
   assert.match(home,/ПРЕДИКТОР/);
-  assert.match(home,/20261101-root-r12-complete/);
+  assert.match(home,/20261105-root-r13-parity/);
 });
 
 test("Consolidator is exact Legal Formatter v10.4 CORE and not a prompt surrogate",()=>{
@@ -138,4 +138,14 @@ test("workbench is responsive and visually integrated in main chat",()=>{
   assert.match(css,/\.ai-prof-chain/);
   assert.match(css,/\.ai-prof-analyzer-dialog/);
   assert.match(css,/@media\(max-width:760px\)/);
+});
+
+
+test("main Human Gate evidence exposes source temporal and jurisdiction verification plus provider recovery",()=>{
+  assert.match(chat,/providerRecovery/);
+  assert.match(chat,/Provider recovery/);
+  assert.match(chat,/sourceVerificationState/);
+  assert.match(chat,/temporalVerificationState/);
+  assert.match(chat,/jurisdictionVerificationState/);
+  assert.match(chat,/Warning: /);
 });
