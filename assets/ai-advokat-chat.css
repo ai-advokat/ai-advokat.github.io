@@ -526,3 +526,69 @@
 .ai-access-remember input{margin-top:3px}
 .ai-access-note{font-size:.7rem!important}
 .ai-access-status{min-height:1.3em;color:var(--ink)!important;font-weight:700}
+
+
+/* Internal Public Evidence & Professional Ecosystem v2 */
+.ai-toolkit-dialog{
+  width:min(1080px,calc(100vw - 24px));max-height:92vh;border:0;border-radius:18px;
+  padding:0;background:var(--surface);color:var(--ink);box-shadow:0 30px 90px rgba(0,0,0,.35)
+}
+.ai-toolkit-dialog::backdrop{background:rgba(5,18,31,.76)}
+.ai-toolkit-body{padding:14px;display:grid;gap:12px;max-height:78vh;overflow:auto}
+.ai-toolkit-section{border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:13px}
+.ai-toolkit-section h3{margin:0 0 8px;font-size:.92rem}
+.ai-toolkit-section>p{margin:0 0 10px;color:var(--muted);font-size:.76rem;line-height:1.5}
+.ai-toolkit-section label{display:grid;gap:5px;color:var(--ink);font-size:.74rem;font-weight:750}
+.ai-toolkit-section input,.ai-toolkit-section select,.ai-toolkit-section textarea{
+  width:100%;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);
+  padding:8px 9px;font:inherit;font-size:.76rem
+}
+.ai-toolkit-section textarea{min-height:100px;resize:vertical}
+.ai-toolkit-section input:focus,.ai-toolkit-section select:focus,.ai-toolkit-section textarea:focus{
+  outline:2px solid var(--focus);outline-offset:1px
+}
+.ai-toolkit-status{border:1px solid color-mix(in srgb,var(--gold) 48%,var(--line));border-radius:10px;
+  background:color-mix(in srgb,var(--surface) 88%,var(--gold) 12%);padding:9px 10px;font-size:.74rem;font-weight:750}
+.ai-toolkit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+.ai-toolkit-flow{grid-column:1/-1;display:flex;gap:5px;flex-wrap:wrap}
+.ai-toolkit-flow span{border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:4px 7px;
+  font-size:.63rem;font-weight:800;letter-spacing:.02em}
+.ai-toolkit-source,.ai-toolkit-registry{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:10px;display:grid;gap:6px}
+.ai-toolkit-source-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.ai-toolkit-source-head strong,.ai-toolkit-registry strong{font-size:.78rem}
+.ai-toolkit-source-head span,.ai-toolkit-registry>span{border:1px solid var(--line);border-radius:999px;padding:3px 6px;
+  color:var(--muted);font-size:.58rem;white-space:nowrap}
+.ai-toolkit-source p,.ai-toolkit-registry p{margin:0;color:var(--muted);font-size:.69rem;line-height:1.4}
+.ai-toolkit-source small{color:var(--muted);font-size:.64rem;line-height:1.4}
+.ai-toolkit-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.ai-toolkit-card-actions button,.ai-toolkit-card-actions a,.ai-toolkit-calc button{
+  border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);
+  padding:7px 9px;font:inherit;font-size:.7rem;cursor:pointer;text-decoration:none;font-weight:750
+}
+.ai-toolkit-card-actions .primary,.ai-toolkit-calc button{background:var(--navy);border-color:var(--navy);color:#fff}
+.ai-toolkit-card-actions button:hover,.ai-toolkit-card-actions a:hover,.ai-toolkit-calc button:hover{border-color:var(--gold)}
+.ai-toolkit-card-actions button:disabled{opacity:.45;cursor:not-allowed}
+.ai-toolkit-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ai-toolkit-form-grid .wide{grid-column:1/-1}
+.ai-toolkit-output,.ai-toolkit-calc pre{margin:9px 0 0;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);
+  padding:9px;white-space:pre-wrap;word-break:break-word;font:11px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;max-height:260px;overflow:auto}
+.ai-toolkit-boundary{margin:0;border-left:4px solid var(--gold);border-radius:9px;background:var(--surface-2);
+  padding:10px;color:var(--muted);font-size:.7rem;line-height:1.5}
+.ai-toolkit-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ai-toolkit-action{border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--ink);
+  padding:10px;text-align:left;font:inherit;cursor:pointer}
+.ai-toolkit-action:hover{border-color:var(--gold);background:var(--surface-2)}
+.ai-toolkit-action strong{display:block;font-size:.77rem}
+.ai-toolkit-action span{display:block;margin-top:4px;color:var(--muted);font-size:.66rem;line-height:1.45}
+.ai-toolkit-calculators{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.ai-toolkit-calc{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:10px;display:grid;gap:7px}
+.ai-toolkit-calc>strong{font-size:.77rem}
+.ai-toolkit-check{display:flex!important;grid-template-columns:auto 1fr!important;align-items:flex-start;gap:7px!important;font-weight:600!important}
+.ai-toolkit-check input{width:auto!important;margin-top:2px}
+@media(max-width:820px){
+  .ai-toolkit-grid,.ai-toolkit-action-grid,.ai-toolkit-calculators{grid-template-columns:1fr}
+  .ai-toolkit-form-grid{grid-template-columns:1fr}
+  .ai-toolkit-form-grid .wide{grid-column:auto}
+  .ai-toolkit-dialog{width:calc(100vw - 14px);max-height:95vh}
+  .ai-toolkit-body{max-height:82vh;padding:10px}
+}
