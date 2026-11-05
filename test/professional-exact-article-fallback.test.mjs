@@ -132,3 +132,29 @@ test("professional provider failure path returns canonical corpus response befor
   assert.match(handle,/legalSources:exactLegalSources\.length\?exactLegalSources/);
   assert.match(handle,/await releaseMonthlyQuota\(env,\{subject,period\}\)/);
 });
+
+
+test("exact governed article takes deterministic source-first lane before any provider call",()=>{
+  const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
+  const sourceFirst=handle.indexOf("canonicalExactArticleSourceFirst");
+  const providerCall=handle.indexOf("let result=canonicalExactArticleSourceFirst");
+  assert.ok(sourceFirst>0 && providerCall>sourceFirst);
+  assert.match(handle,/releaseMode:"source_first"/);
+  assert.match(handle,/provider:"canonical_corpus_no_model"/);
+  assert.match(handle,/canonicalSourceFirst:true/);
+  assert.match(handle,/providerCalls:0/);
+  assert.match(handle,/NOT_REQUIRED_DETERMINISTIC_SOURCE_FIRST/);
+  assert.match(handle,/deterministicCanonicalSourceFirst:true/);
+});
+
+test("source-first canonical article response labels deterministic retrieval without provider-failure wording",()=>{
+  const out=professionalCanonicalArticleFallback({
+    q:EXACT_Q,
+    articleBundle:bundle(),
+    missionProfile:"L1_VERIFIED_RESEARCH",
+    releaseMode:"source_first"
+  });
+  assert.ok(out);
+  assert.match(out.answer,/source-first патека без модел/);
+  assert.doesNotMatch(out.answer,/дополнителната AI синтеза моментално не беше достапна/);
+});
