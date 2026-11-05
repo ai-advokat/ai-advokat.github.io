@@ -299,9 +299,12 @@ test("GPTACT16 GPT-OSS provider diagnostics expose only safe completion metadata
 });
 
 
-test("GPTACT17 anonymous FREE is isolated from paid OpenAI and fails closed without Workers AI",()=>{
+test("GPTACT17 anonymous FREE is isolated from paid OpenAI while canonical no-model retrieval remains available",()=>{
   assert.match(worker,/const useFreeWorkersAI=!membership && freeProviderReady/);
-  assert.match(worker,/if\(!membership && !useFreeWorkersAI\)/);
+  assert.match(worker,/const canonicalExactArticlePreProviderEligible=/);
+  assert.match(worker,/if\(!membership && !useFreeWorkersAI && !canonicalExactArticlePreProviderEligible\)/);
+  assert.match(worker,/provider:"canonical_corpus_no_model"/);
+  assert.match(worker,/providerCalls:0/);
   assert.match(worker,/Платениот OpenAI provider не се користи како автоматска замена за анонимни барања/);
   assert.match(worker,/freeChatProvider:freeWorkersAIConfigured\(env\) \? "workers_ai" : "locked"/);
   assert.doesNotMatch(worker,/const governedOpenAIAvailable=readiness\.provider==="configured"/);

@@ -238,7 +238,7 @@ test("FREE capacity fallback uses one bounded OpenAI pass instead of Professiona
 
 test("FREE capacity L2/L3 bypasses paid postflight only as explicit provisional Human Gate output",()=>{
   const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
-  assert.match(handle,/const postflight=freeCapacityHandoff/);
+  assert.match(handle,/const postflight=result\.canonicalSourceFirst===true[\s\S]*?: freeCapacityHandoff/);
   assert.match(handle,/verdict:postflightRequiredForMission \? "REVISE" : "PASS"/);
   assert.match(handle,/NOT_EXECUTED_CAPACITY_FALLBACK/);
   assert.match(handle,/human_gate:postflightRequiredForMission \? "REQUIRED" : "NOT_REQUIRED"/);

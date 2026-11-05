@@ -164,7 +164,10 @@ test("COP14 legal answers are answer-first, source-transparent and corpus-active
 test("COP15 anonymous FREE cannot quality-escalate into paid governed OpenAI",()=>{
   assert.doesNotMatch(worker,/const anonymousLegalDocumentEscalation=/);
   assert.match(worker,/const useFreeWorkersAI=!membership && freeProviderReady/);
-  assert.match(worker,/if\(!membership && !useFreeWorkersAI\)/);
+  assert.match(worker,/const canonicalExactArticlePreProviderEligible=/);
+  assert.match(worker,/if\(!membership && !useFreeWorkersAI && !canonicalExactArticlePreProviderEligible\)/);
+  assert.match(worker,/provider:"canonical_corpus_no_model"/);
+  assert.match(worker,/providerCalls:0/);
   assert.match(worker,/error:"free_provider_unavailable"/);
   assert.match(worker,/paidFallback:false/);
 });

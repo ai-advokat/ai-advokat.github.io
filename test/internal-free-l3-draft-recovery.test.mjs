@@ -33,6 +33,9 @@ for(const tc of cases){
       assert.match(verdict.text,/^ТУЖБА(?:\n|$)/u);
       assert.match(verdict.text,/развод на брак/iu);
       assert.match(verdict.text,/ЧОВЕЧКА ПРОВЕРКА/u);
+      assert.match(verdict.text,/Податоци за бракот/u);
+      assert.match(verdict.text,/Заеднички малолетни деца/u);
+      assert.match(verdict.text,/Предлог за судска одлука/u);
     }
 
     if(tc.id==="debt"){
@@ -43,6 +46,10 @@ for(const tc of cases){
       assert.match(verdict.text,/Главен долг:\s*150\.000 денари/iu);
       assert.match(verdict.text,/Рок за плаќање:\s*НЕ Е НАВЕДЕН/iu);
       assert.match(verdict.text,/не смее да се претпостави/iu);
+      assert.match(verdict.text,/Опис на побарувањето/u);
+      assert.match(verdict.text,/Фактички наводи/u);
+      assert.match(verdict.text,/Предлог за судска заштита/u);
+      assert.match(verdict.text,/КАМАТА \/ СПОРЕДНИ ПОБАРУВАЊА/u);
     }
   });
 }
