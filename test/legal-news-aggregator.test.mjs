@@ -44,7 +44,9 @@ test("Justice Daily registers the core North Macedonia justice institutions as o
 test("Justice Daily parses ISO, Macedonian numeric and Macedonian month-name dates",()=>{
   assert.equal(parsePublishedDate("2026-11-05"),"2026-11-05");
   assert.equal(parsePublishedDate("05.11.2026"),"2026-11-05");
+  assert.equal(parsePublishedDate("03 11 2026"),"2026-11-03");
   assert.equal(parsePublishedDate("5 ноември 2026"),"2026-11-05");
+  assert.equal(parsePublishedDate("Tuesday, der 3. November 2026"),"2026-11-03");
   assert.equal(parsePublishedDate("31.02.2026"),null);
 });
 
