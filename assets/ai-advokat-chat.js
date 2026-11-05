@@ -1603,6 +1603,256 @@
     return d;
   }
 
+
+  async function sha256Text(value){
+    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(String(value||"")));
+    return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+  }
+
+  function setInternalToolPrompt(text,dialog=null){
+    input.value=String(text||"").trim();
+    autoSize();
+    dialog?.close?.();
+    document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});
+    setTimeout(()=>input.focus(),220);
+  }
+
+  async function loadPublicEvidenceTask(dialog){
+    const task=String(dialog.querySelector("[data-public-evidence-task]")?.value||"entity");
+    const status=dialog.querySelector("[data-public-evidence-status]");
+    const host=dialog.querySelector("[data-public-evidence-sources]");
+    if(status) status.textContent="Го вчитувам governed source workflow…";
+    if(host) host.replaceChildren();
+    try{
+      const r=await fetch(CHAT_API_BASE+"/api/internal-toolkit?task="+encodeURIComponent(task),{headers:{accept:"application/json"}});
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok||!data?.ok) throw new Error(data?.error||"public_evidence_catalog_unavailable");
+      dialog._publicEvidenceData=data;
+      const wf=data?.publicEvidence?.workflow||{};
+      const steps=document.createElement("div");steps.className="ai-toolkit-flow";
+      (wf.steps||[]).forEach(step=>{const s=document.createElement("span");s.textContent=String(step);steps.append(s);});
+      host?.append(steps);
+      for(const source of wf.sources||[]){
+        const card=document.createElement("article");card.className="ai-toolkit-source";
+        const head=document.createElement("div");head.className="ai-toolkit-source-head";
+        const title=document.createElement("strong");title.textContent=String(source.title||source.id);
+        const badge=document.createElement("span");badge.textContent=String(source.authorityClass||"source");
+        head.append(title,badge);
+        const role=document.createElement("p");role.textContent=String(source.sourceRole||"");
+        const boundary=document.createElement("small");boundary.textContent=String(source.claimBoundary||"");
+        const actions=document.createElement("div");actions.className="ai-toolkit-card-actions";
+        const open=document.createElement("a");open.href=source.url;open.target="_blank";open.rel="noopener noreferrer";open.textContent="Отвори извор ↗";
+        const use=document.createElement("button");use.type="button";use.textContent="Постави задача";
+        use.onclick=()=>setInternalToolPrompt(
+          "AI Advokat, направи Public Evidence истражување за следната задача: [ОПИШИ ШТО ПРОВЕРУВАМЕ].\n\n"+
+          "Работен тип: "+task+".\nПочетен извор: "+source.title+" — "+source.url+"\n"+
+          "Следи ја низа: "+(wf.steps||[]).join(" → ")+".\n"+
+          "Правило: трага не е заклучок; entity/name match не е идентификација; јавен запис не е доказ за незаконитост. "+
+          "За секој материјален наод наведи URL, датум/верзија, source class, што точно потврдува и што НЕ потврдува. Human Gate задолжителен.",
+          dialog
+        );
+        actions.append(open,use);card.append(head,role,boundary,actions);host?.append(card);
+      }
+      if(status) status.textContent=String(wf.doctrine||"Трага не е заклучок.")+" · Human Gate";
+    }catch(error){
+      if(status) status.textContent="Public Evidence registry не е достапен: "+String(error?.message||error);
+    }
+  }
+
+  function ensurePublicEvidenceDialog(){
+    let d=document.getElementById("aiPublicEvidenceDialog");
+    if(d) return d;
+    d=document.createElement("dialog");d.id="aiPublicEvidenceDialog";d.className="ai-toolkit-dialog";
+    d.innerHTML=`<div class="ai-workspace-dialog-head"><div><strong>⌕ Public Evidence & Legal OSINT</strong><small>трага → извор → corroboration → legal relevance → Human Gate</small></div><button type="button" data-close>×</button></div>
+      <div class="ai-toolkit-body">
+        <section class="ai-toolkit-section">
+          <label>Истражувачка задача
+            <select data-public-evidence-task>
+              <option value="entity">Entity Verification</option>
+              <option value="procurement">Public Procurement</option>
+              <option value="public_money">Public Money</option>
+              <option value="regulatory_change">Regulatory Change</option>
+              <option value="property">Property / Parcel</option>
+              <option value="digital_entity">Domain / Digital Entity</option>
+              <option value="open_data">Open Data</option>
+              <option value="web_history">Web History</option>
+            </select>
+          </label>
+          <div class="ai-toolkit-status" data-public-evidence-status>Вчитување…</div>
+          <div class="ai-toolkit-grid" data-public-evidence-sources></div>
+        </section>
+        <section class="ai-toolkit-section">
+          <h3>Evidence Card · локален fingerprint</h3>
+          <p>Внесете јавен URL и, ако сакате, текстуален snapshot/белешка. SHA-256 се пресметува локално во browser; картата не е правен заклучок.</p>
+          <div class="ai-toolkit-form-grid">
+            <label>Наслов<input data-evidence-title maxlength="240" placeholder="Пр. Оглас / договор / јавен запис"></label>
+            <label>Јавен URL<input data-evidence-url type="url" placeholder="https://..."></label>
+            <label class="wide">Snapshot / белешка<textarea data-evidence-snapshot maxlength="50000" placeholder="Јавен текст или белешка што сакате да ја fingerprint-ирате"></textarea></label>
+          </div>
+          <div class="ai-toolkit-card-actions"><button type="button" class="primary" data-evidence-build>Создај Evidence Card</button><button type="button" data-evidence-to-chat disabled>Испрати во chat</button></div>
+          <pre class="ai-toolkit-output" data-evidence-output>Нема Evidence Card.</pre>
+        </section>
+        <p class="ai-toolkit-boundary"><b>Граница:</b> Public Evidence не врши surveillance, не пробива пристап, не претпоставува идентитет и не претвора јавен запис во доказ за вина. PUBLIC ≠ REUSABLE · LEAD ≠ CONCLUSION.</p>
+      </div>`;
+    document.body.append(d);
+    d.querySelector("[data-close]")?.addEventListener("click",()=>d.close());
+    d.addEventListener("click",event=>{if(event.target===d)d.close();});
+    d.querySelector("[data-public-evidence-task]")?.addEventListener("change",()=>loadPublicEvidenceTask(d));
+    d.querySelector("[data-evidence-build]")?.addEventListener("click",async()=>{
+      const out=d.querySelector("[data-evidence-output]");
+      const toChat=d.querySelector("[data-evidence-to-chat]");
+      const title=String(d.querySelector("[data-evidence-title]")?.value||"").trim();
+      const url=String(d.querySelector("[data-evidence-url]")?.value||"").trim();
+      const snapshot=String(d.querySelector("[data-evidence-snapshot]")?.value||"");
+      const task=String(d.querySelector("[data-public-evidence-task]")?.value||"general");
+      if(!url){out.textContent="Внесете јавен URL.";toChat.disabled=true;return;}
+      out.textContent="Градам provenance card…";toChat.disabled=true;
+      try{
+        const hash=snapshot?await sha256Text(snapshot):null;
+        const r=await fetch(CHAT_API_BASE+"/api/public-evidence/card",{
+          method:"POST",headers:{"content-type":"application/json","accept":"application/json"},
+          body:JSON.stringify({title:title||"Јавна доказна трага",url,task,observedAt:new Date().toISOString(),contentSha256:hash,note:snapshot.slice(0,2000),status:"SOURCE_BACKED"})
+        });
+        const data=await r.json().catch(()=>({}));
+        if(!r.ok||!data?.ok) throw new Error(data?.error||"evidence_card_failed");
+        d._lastEvidenceCard=data.card;
+        out.textContent=JSON.stringify(data.card,null,2);toChat.disabled=false;
+      }catch(error){
+        out.textContent="Evidence Card error: "+String(error?.message||error);
+      }
+    });
+    d.querySelector("[data-evidence-to-chat]")?.addEventListener("click",()=>{
+      const card=d._lastEvidenceCard;if(!card)return;
+      setInternalToolPrompt(
+        "AI Advokat, анализирај ја оваа Public Evidence Card само како доказна трага. Не претворај ја во правен заклучок без corroboration и Human Gate.\n\n"+
+        JSON.stringify(card,null,2)+"\n\n"+
+        "Издвои: FACT / SOURCE-BACKED OBSERVATION / WHAT THIS DOES NOT PROVE / CORROBORATION NEEDED / LEGAL RELEVANCE / HUMAN GATE.",
+        d
+      );
+    });
+    loadPublicEvidenceTask(d);
+    return d;
+  }
+
+  function calculatorPanelHtml(){
+    return `<div class="ai-toolkit-calculators">
+      <article class="ai-toolkit-calc" data-calc="simple_interest"><strong>Информативна проста камата</strong>
+        <label>Главнина<input data-field="principal" type="number" step="0.01"></label>
+        <label>Годишна стапка %<input data-field="annualRatePct" type="number" step="0.0001"></label>
+        <div class="ai-toolkit-form-grid"><label>Од<input data-field="fromDate" type="date"></label><label>До<input data-field="toDate" type="date"></label></div>
+        <label>Извор на стапката<input data-field="rateSource" placeholder="официјален извор / акт / период"></label>
+        <label class="ai-toolkit-check"><input data-field="rateVerified" type="checkbox"> Јас ја проверив стапката и периодот</label>
+        <button type="button" data-calc-run>Пресметај</button><pre data-calc-output>—</pre>
+      </article>
+      <article class="ai-toolkit-calc" data-calc="calendar_deadline"><strong>Календарски датум + N дена</strong>
+        <label>Почетен датум<input data-field="baseDate" type="date"></label>
+        <label>Дена<input data-field="days" type="number" step="1"></label>
+        <button type="button" data-calc-run>Пресметај</button><pre data-calc-output>—</pre>
+      </article>
+      <article class="ai-toolkit-calc" data-calc="percentage"><strong>Процент од износ</strong>
+        <label>Износ<input data-field="amount" type="number" step="0.01"></label>
+        <label>Процент %<input data-field="percent" type="number" step="0.0001"></label>
+        <label>Извор / основа<input data-field="source" placeholder="ако постои"></label>
+        <button type="button" data-calc-run>Пресметај</button><pre data-calc-output>—</pre>
+      </article>
+    </div>`;
+  }
+
+  function readCalcInput(card){
+    const out={};
+    card.querySelectorAll("[data-field]").forEach(el=>{
+      const key=el.dataset.field;
+      if(el.type==="checkbox") out[key]=el.checked;
+      else if(el.type==="number") out[key]=el.value===""?null:Number(el.value);
+      else out[key]=el.value;
+    });
+    return out;
+  }
+
+  async function runInternalCalculator(card){
+    const output=card.querySelector("[data-calc-output]");
+    output.textContent="Пресметувам…";
+    try{
+      const r=await fetch(CHAT_API_BASE+"/api/internal-toolkit/calculate",{
+        method:"POST",headers:{"content-type":"application/json","accept":"application/json"},
+        body:JSON.stringify({calculator:card.dataset.calc,input:readCalcInput(card)})
+      });
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok||!data?.ok) throw new Error(data?.error||"calculation_failed");
+      output.textContent=JSON.stringify(data.result,null,2);
+    }catch(error){output.textContent="Calculator error: "+String(error?.message||error);}
+  }
+
+  async function populateProfessionalEcosystem(dialog){
+    const status=dialog.querySelector("[data-pro-status]");
+    try{
+      const r=await fetch(CHAT_API_BASE+"/api/internal-toolkit",{headers:{accept:"application/json"}});
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok||!data?.ok) throw new Error(data?.error||"internal_toolkit_unavailable");
+      dialog._toolkit=data.ecosystem;
+      const living=dialog.querySelector("[data-pro-living]");
+      const docs=dialog.querySelector("[data-pro-documents]");
+      const watch=dialog.querySelector("[data-pro-watch]");
+      const registry=dialog.querySelector("[data-pro-registry]");
+      living.replaceChildren();docs.replaceChildren();watch.replaceChildren();registry.replaceChildren();
+      for(const item of data.ecosystem.livingLaw||[]){
+        const b=document.createElement("button");b.type="button";b.className="ai-toolkit-action";
+        b.innerHTML="<strong>"+esc(item.title)+"</strong><span>"+esc(item.prompt)+"</span>";
+        b.onclick=()=>setInternalToolPrompt(item.prompt+"\n\nКонкретен пропис/член/датум: [ВНЕСИ].",dialog);
+        living.append(b);
+      }
+      for(const item of data.ecosystem.operationsRegistry||[]){
+        const card=document.createElement("article");card.className="ai-toolkit-registry";
+        const h=document.createElement("strong");h.textContent=item.title;
+        const p=document.createElement("p");p.textContent=item.sourceRule;
+        const s=document.createElement("span");s.textContent=item.valueState;
+        card.append(h,p,s);registry.append(card);
+      }
+      for(const item of data.ecosystem.smartDocuments||[]){
+        const b=document.createElement("button");b.type="button";b.className="ai-toolkit-action";
+        const strong=document.createElement("strong");strong.textContent=item.title;
+        const span=document.createElement("span");span.textContent="Полиња: "+item.fields.join(" · ");
+        b.append(strong,span);
+        b.onclick=()=>setInternalToolPrompt(item.prompt+"\n\nДостапни факти:\n[ВНЕСИ ФАКТИ]\n\nПровери ги овие полиња: "+item.fields.join(", ")+".",dialog);
+        docs.append(b);
+      }
+      for(const item of data.ecosystem.legalWatch||[]){
+        const card=document.createElement("article");card.className="ai-toolkit-source";
+        const head=document.createElement("div");head.className="ai-toolkit-source-head";
+        const strong=document.createElement("strong");strong.textContent=item.title;
+        const badge=document.createElement("span");badge.textContent=item.watchRole;
+        head.append(strong,badge);
+        const actions=document.createElement("div");actions.className="ai-toolkit-card-actions";
+        const open=document.createElement("a");open.href=item.url;open.target="_blank";open.rel="noopener noreferrer";open.textContent="Отвори официјален извор ↗";
+        const ask=document.createElement("button");ask.type="button";ask.textContent="Провери во chat";ask.onclick=()=>setInternalToolPrompt(item.prompt,dialog);
+        actions.append(open,ask);card.append(head,actions);watch.append(card);
+      }
+      status.textContent="Living Law · Registry · Calculators · Smart Documents · Legal Watch · Human Gate";
+    }catch(error){status.textContent="Professional Ecosystem не е достапен: "+String(error?.message||error);}
+  }
+
+  function ensureProfessionalEcosystemDialog(){
+    let d=document.getElementById("aiProfessionalEcosystemDialog");
+    if(d) return d;
+    d=document.createElement("dialog");d.id="aiProfessionalEcosystemDialog";d.className="ai-toolkit-dialog ai-pro-ecosystem-dialog";
+    d.innerHTML=`<div class="ai-workspace-dialog-head"><div><strong>◆ AI Advokat Professional Ecosystem</strong><small>Living Law · Legal Operations · Smart Documents · Legal Watch</small></div><button type="button" data-close>×</button></div>
+      <div class="ai-toolkit-body">
+        <div class="ai-toolkit-status" data-pro-status>Вчитување…</div>
+        <section class="ai-toolkit-section"><h3>Living Law</h3><div class="ai-toolkit-action-grid" data-pro-living></div></section>
+        <section class="ai-toolkit-section"><h3>Legal Operations Registry</h3><div class="ai-toolkit-grid" data-pro-registry></div></section>
+        <section class="ai-toolkit-section"><h3>Deterministic Calculators</h3><p>Калкулаторите пресметуваат аритметика; не избираат правна стапка, такса или процесно правило.</p>${calculatorPanelHtml()}</section>
+        <section class="ai-toolkit-section"><h3>Smart Legal Document Factory</h3><div class="ai-toolkit-action-grid" data-pro-documents></div></section>
+        <section class="ai-toolkit-section"><h3>Legal Watch</h3><div class="ai-toolkit-grid" data-pro-watch></div></section>
+        <p class="ai-toolkit-boundary"><b>Human Gate:</b> системот не поднесува, не потпишува, не плаќа и не презема последична правна акција. Living Law и Legal Watch мора да ја докажат верзијата/датумот пред current-law тврдење.</p>
+      </div>`;
+    document.body.append(d);
+    d.querySelector("[data-close]")?.addEventListener("click",()=>d.close());
+    d.addEventListener("click",event=>{if(event.target===d)d.close();});
+    d.querySelectorAll("[data-calc-run]").forEach(button=>button.addEventListener("click",()=>runInternalCalculator(button.closest("[data-calc]"))));
+    populateProfessionalEcosystem(d);
+    return d;
+  }
+
   function ensureWorkspaceSearchDialog(){
     let d=document.getElementById("aiWorkspaceSearchDialog");
     if(d) return d;
@@ -1626,7 +1876,7 @@
     }
     const tools=[
       ["Правен асистент","assistant"],["Анализатор","analyzer"],["Консолидатор","consolidator"],["Предиктор","predictor"],
-      ["Правни извори","sources"],["Судска практика","cases"],["CasePilot","casepilot"],["Документи","documents"],
+      ["Правни извори","sources"],["Јавни докази","public-evidence"],["Pro Ecosystem","professional-ecosystem"],["Судска практика","cases"],["CasePilot","casepilot"],["Документи","documents"],
       ["Workflows","workflows"],["Human Gate","human-gate"],["Library","library"]
     ].filter(([label])=>!q||label.toLocaleLowerCase("mk").includes(q));
     if(tools.length){
@@ -1668,6 +1918,8 @@
     if(action==="workflows"){ensureWorkflowDialog().showModal();return;}
     if(action==="library"){openMaterialsDialog("library");return;}
     if(action==="sources"){renderWorkbenchSources();openWorkspaceEvidence("sources");return;}
+    if(action==="public-evidence"){ensurePublicEvidenceDialog().showModal();return;}
+    if(action==="professional-ecosystem"){ensureProfessionalEcosystemDialog().showModal();return;}
     if(action==="human-gate"){renderWorkbenchHumanGate();openWorkspaceEvidence("human");return;}
   }
 

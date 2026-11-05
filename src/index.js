@@ -162,6 +162,18 @@ import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commen
 import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, scholarlyContextItems } from "./scholarly-literature.js";
 import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
 import { judicialTemporalSafetyFallback, judicialDiscoveryContext } from "./judicial-discovery-source-registry.js";
+import {
+  PUBLIC_EVIDENCE_LAYER_VERSION,
+  publicEvidenceSourceDirectory,
+  publicEvidenceWorkflow,
+  buildPublicEvidenceCard,
+  publicEvidencePolicySummary
+} from "./public-evidence-registry.js";
+import {
+  INTERNAL_PROFESSIONAL_ECOSYSTEM_VERSION,
+  internalProfessionalEcosystemCatalog,
+  calculateLegalOperation
+} from "./internal-professional-ecosystem.js";
 
 const VERSION = "1.9.0";
 const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V12_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
@@ -8822,6 +8834,63 @@ function handleOpenLegalSourcesPolicy(request){
   });
 }
 
+function handleInternalProfessionalToolkit(request,url){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const task=String(url?.searchParams?.get("task")||"").trim();
+  return json(request,{
+    ok:true,
+    scope:"internal_ai_advokat_only",
+    externalBotChanged:false,
+    version:INTERNAL_PROFESSIONAL_ECOSYSTEM_VERSION,
+    ecosystem:internalProfessionalEcosystemCatalog(),
+    publicEvidence:{
+      policy:publicEvidencePolicySummary(),
+      sources:publicEvidenceSourceDirectory(),
+      workflow:task?publicEvidenceWorkflow(task):null
+    },
+    humanGate:"required"
+  });
+}
+
+async function handleInternalProfessionalCalculation(request){
+  if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+  const contentType=(request.headers.get("content-type")||"").toLowerCase();
+  if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+  const parsed=await readLimitedJson(request,16384);
+  if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
+  const body=parsed.value;
+  if(!body || typeof body!=="object" || Array.isArray(body)) return json(request,{ok:false,error:"invalid_payload"},400);
+  try{
+    const result=calculateLegalOperation(body.calculator,body.input||{});
+    return json(request,{
+      ok:true,
+      scope:"internal_ai_advokat_only",
+      version:INTERNAL_PROFESSIONAL_ECOSYSTEM_VERSION,
+      result
+    });
+  }catch(error){
+    return json(request,{ok:false,error:String(error?.message||error||"calculation_failed").slice(0,120)},400);
+  }
+}
+
+async function handlePublicEvidenceCard(request){
+  if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+  const contentType=(request.headers.get("content-type")||"").toLowerCase();
+  if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+  const parsed=await readLimitedJson(request,16384);
+  if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
+  const body=parsed.value;
+  if(!body || typeof body!=="object" || Array.isArray(body)) return json(request,{ok:false,error:"invalid_payload"},400);
+  const card=buildPublicEvidenceCard(body);
+  return json(request,{
+    ok:true,
+    scope:"internal_ai_advokat_only",
+    version:PUBLIC_EVIDENCE_LAYER_VERSION,
+    card,
+    releaseRule:"Evidence card is provenance metadata, not a legal conclusion. Human Gate remains required."
+  });
+}
+
 function handleCanonicalMetadataStandard(request){
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request);
   return json(request,{
@@ -8987,6 +9056,8 @@ async function handleCapabilities(request, env) {
             : "schema_missing",
       publicSearch: database.reachable && database.schemaReady ? "live_read_only" : "blocked",
       officialSourceDirectory: "live_read_only",
+      internalPublicEvidenceLayer: "internal_workbench_governed_public_source_registry",
+      internalProfessionalEcosystem: "internal_workbench_living_law_calculators_documents_watch",
       gazetteProvenanceRegister: database.reachable && database.schemaReady ? "live_read_only_metadata" : "blocked",
       openLegalSourcesPolicy: "runtime_wired_"+OPEN_LEGAL_SOURCE_POLICY_VERSION,
       sourceRouter: "runtime_enabled",
@@ -9166,6 +9237,9 @@ export default {
     if (url.pathname === "/api/knowledge-intake-policy") return handleKnowledgeIntakePolicy(request);
     if (url.pathname === "/api/open-legal-sources-policy") return handleOpenLegalSourcesPolicy(request);
     if (url.pathname === "/api/canonical-metadata-standard") return handleCanonicalMetadataStandard(request);
+    if (url.pathname === "/api/internal-toolkit") return handleInternalProfessionalToolkit(request,url);
+    if (url.pathname === "/api/internal-toolkit/calculate") return handleInternalProfessionalCalculation(request);
+    if (url.pathname === "/api/public-evidence/card") return handlePublicEvidenceCard(request);
     if (url.pathname === "/api/professional-workflows") {
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
       return json(request,{ok:true,version:"1.0.0",workflows:listLegalWorkflows(),humanGate:"required"});
