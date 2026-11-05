@@ -1476,7 +1476,7 @@
       }
       const actions=document.createElement("div");actions.className="ai-evidence-actions";
       const cases=document.createElement("a");cases.href="/case-law-curation.html";cases.target="_blank";cases.rel="noopener noreferrer";cases.textContent="⚖ Case-Law Radar";
-      const metadata=document.createElement("a");metadata.href="/case-law-curation.html" data-case-law-radar="true";metadata.target="_blank";metadata.rel="noopener noreferrer";metadata.textContent="▤ Case metadata";
+      const metadata=document.createElement("a");metadata.href="/case-law-metadata.html";metadata.target="_blank";metadata.rel="noopener noreferrer";metadata.textContent="▤ Case metadata";
       const library=document.createElement("a");library.href="/professional-library/";library.target="_blank";library.rel="noopener noreferrer";library.textContent="◫ Professional Library";
       actions.append(cases,metadata,library);evidenceBody.append(actions);
       return;
@@ -1552,7 +1552,7 @@
           <a href="/authors/zoran-stojankic/" target="_blank" rel="noopener noreferrer">§ Авторски материјали на Зоран ↗</a>
           <a href="/kolumni/" target="_blank" rel="noopener noreferrer">✦ Колумни ↗</a>
           <a href="/document-router.html" target="_blank" rel="noopener noreferrer">▧ Прием и распределба на документи ↗</a>
-          <a href="/case-law-curation.html" data-case-law-radar="true" target="_blank" rel="noopener noreferrer">⚖ Судски пресуди и метаподатоци ↗</a>
+          <a href="/case-law-curation.html" target="_blank" rel="noopener noreferrer">⚖ Судски пресуди и метаподатоци ↗</a>
           <a href="/professional-tools.html" target="_blank" rel="noopener noreferrer">◇ Професионални алатки ↗</a>
         </div></section>
         <p class="ai-workflow-note">Доверливи оригинални документи и точни лични идентификатори одат во Secure Case Workspace. Јавниот chat останува session-private и не е case vault.</p>
