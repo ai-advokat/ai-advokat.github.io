@@ -23,7 +23,7 @@ async function post(surface,q){
       method:"POST",
       headers:{"content-type":"application/json","accept":"application/json","Origin":"https://ai-advokat.github.io",...surface.headers},
       body:JSON.stringify(payload(q)),
-      signal:AbortSignal.timeout(120000)
+      signal:AbortSignal.timeout(190000)
     });
     const text=await res.text();
     let data=null; try{data=JSON.parse(text);}catch{}
