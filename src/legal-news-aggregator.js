@@ -268,11 +268,11 @@ export function classifyLegalNewsType(title,sourceId=""){
   const low=(normaliseTitle(title)+" "+sourceId).toLocaleLowerCase("mk");
   if(/у\.бр|одлук|решени|пресуд|предмет|укинува|поништува|не се поведува|се поведува/.test(low)) return "decision";
   if(/седниц|дневен ред|закажан|одржан.*седниц|записник/.test(low)) return "session";
+  if(/обука|академи|семинар|работилниц|тркалезна маса/.test(low)) return "training";
   if(/предлог.?закон|закон|амандман|правилник|деловник|уредба|службен весник|енер/.test(low)) return "legislation";
   if(/обвинител|истраг|осомнич|обвинени|кривич|претрес|предистраж/.test(low)) return "prosecution";
   if(/избор|именува|разреш|кандидат|оглас|интервју/.test(low)) return "appointments";
   if(/ревизи|реформа|стратеги|акциски план|извештај|владеење на правото/.test(low)) return "reform";
-  if(/обука|академи|семинар|работилниц|тркалезна маса/.test(low)) return "training";
   return "institutional_update";
 }
 
