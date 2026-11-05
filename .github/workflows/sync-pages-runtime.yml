@@ -7,6 +7,7 @@ on:
       - "index.html"
       - "bot/index.html"
       - "assets/ai-advokat-chat.js"
+      - "assets/case-law-static-fallback.js"
       - "assets/ai-advokat-chat.css"
       - "assets/frontend-runtime-guard.js"
       - "assets/standalone-bot.js"
@@ -53,6 +54,7 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REF" = "refs/heads/main"
           node --check assets/ai-advokat-chat.js
+          node --check assets/case-law-static-fallback.js
           node --check assets/frontend-runtime-guard.js
           node --check assets/standalone-bot.js
           node --check assets/chat-privacy-browser.js
@@ -67,7 +69,7 @@ jobs:
           node --check src/legal-news-aggregator.js
           node --check assets/standalone-bot-vnext.js
           node --check assets/standalone-bot-reliability.js
-          grep -q 'ai-advokat-chat.js?v=20261105-root-r19-case-law-radar-v1' index.html
+          grep -q 'ai-advokat-chat.js?v=20261105-root-r20-case-law-runtime-fallback-v1' index.html
           grep -q 'ai-advokat-chat.css?v=20261101-root-complete-r12' index.html
           grep -q 'standalone-bot.js?v=20261101-core-r13' bot/index.html
           grep -q 'standalone-bot-vnext.js?v=20261105-vnext-r13-case-law-radar' bot/index.html
@@ -88,6 +90,7 @@ jobs:
             index.html
             bot/index.html
             assets/ai-advokat-chat.js
+            assets/case-law-static-fallback.js
             assets/ai-advokat-chat.css
             assets/frontend-runtime-guard.js
             assets/standalone-bot.js
@@ -130,7 +133,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin gh-pages:refs/remotes/origin/gh-pages
-          for f in index.html bot/index.html assets/ai-advokat-chat.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js; do
+          for f in index.html bot/index.html assets/ai-advokat-chat.js assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js; do
             main_blob="$(git rev-parse "$GITHUB_SHA:$f")"
             pages_blob="$(git rev-parse "origin/gh-pages:$f")"
             test "$main_blob" = "$pages_blob"
