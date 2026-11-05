@@ -191,12 +191,22 @@ jobs:
           set -euo pipefail
           test -n "${R13_SMOKE_KEY:-}"
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
-          code="$(curl -sS --max-time 180 -o /tmp/r13-article12.json -w '%{http_code}' \
-            -H 'content-type: application/json' \
-            -H "X-Membership-Key: $R13_SMOKE_KEY" \
-            -H 'Origin: https://ai-advokat.github.io' \
-            -d '{"q":"Што уредува член 12 од ЗРО и кои услови ги предвидува? Не измислувај членови или содржина. Наведи го точниот извор и важечката верзија.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
-            "$BASE/api/bot")"
+          code=""
+          for attempt in 1 2 3; do
+            code="$(curl -sS --max-time 180 -o /tmp/r13-article12.json -w '%{http_code}' \
+              -H 'content-type: application/json' \
+              -H "X-Membership-Key: $R13_SMOKE_KEY" \
+              -H 'Origin: https://ai-advokat.github.io' \
+              -d '{"q":"Што уредува член 12 од ЗРО и кои услови ги предвидува? Не измислувај членови или содржина. Наведи го точниот извор и важечката верзија.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
+              "$BASE/api/bot" || true)"
+            printf '%s\n' "$code" > /tmp/r13-article12-http.txt
+            echo "ARTICLE 12 LIVE HTTP attempt $attempt: $code"
+            if [ "$code" = "200" ]; then
+              break
+            fi
+            node -e 'const fs=require("fs");let d={};try{d=JSON.parse(fs.readFileSync("/tmp/r13-article12.json","utf8"))}catch{}; console.log("ARTICLE 12 NON-200:",JSON.stringify({ok:d.ok??null,error:d.error??null,message:d.message??null,governanceRunId:d.governanceRunId??null,languageReasons:d.languageReasons??null}))'
+            sleep 3
+          done
           test "$code" = "200"
           node <<'NODE'
           const fs=require("fs");
@@ -283,6 +293,8 @@ jobs:
           if-no-files-found: warn
           path: |
             /tmp/r13-article12-summary.json
+            /tmp/r13-article12.json
+            /tmp/r13-article12-http.txt
             /tmp/r13-cleanup.txt
             /tmp/deploy-legacy-headers.txt
 
