@@ -43,3 +43,13 @@ test("language release gate block falls back to bounded case-law discovery inste
   assert.match(chat,/Macedonian Release Gate · AI draft blocked · Case-Law discovery fallback/);
   assert.match(chat,/Загадениот AI-нацрт не е пуштен/);
 });
+
+
+test("language-gate reason is reported accurately without falsely claiming runtime outage",()=>{
+  const out=staticCaseLawFallback("Најди ми судска практика за перење пари.",{reason:"language_gate_blocked"});
+  assert.ok(out?.ok);
+  assert.match(out.text,/AI-нацртот беше блокиран од задолжителната македонска јазична проверка/);
+  assert.doesNotMatch(out.text,/AI runtime моментално не е достапен/);
+  assert.match(out.text,/САМО ЗА ПРОНАОЃАЊЕ \(DISCOVERY ONLY\)/);
+  assert.match(out.text,/Човечката порта \(Human Gate\)/);
+});
