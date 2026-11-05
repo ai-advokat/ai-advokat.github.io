@@ -1,6 +1,15 @@
 import { handleLegalAlarm } from "./legal-alarm.js";
 import {
+  CASE_LAW_CURATION_VERSION,
+  CASE_LAW_1000_TARGET,
+  auditCaseLawDiversity,
+  caseLawCurationPromptPolicy,
+  scoreCaseForCuration,
+  selectBalancedAuthorities
+} from "./case-law-curation-engine.js";
+import {
   APPEAL_SKOPJE_36_VERSION,
+  APPEAL_SKOPJE_36_RECORDS,
   searchAppealSkopje36
 } from "./appeal-skopje-36-discovery.js";
 import {
@@ -4765,6 +4774,36 @@ export function appealSkopjeDiscoveryContext(q,{limit=4}={}){
   };
 }
 
+function handleCaseLawCurationPlan(request){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const supplied=typeof APPEAL_SKOPJE_36_RECORDS!=="undefined" ? APPEAL_SKOPJE_36_RECORDS : [];
+  return json(request,{
+    ok:true,
+    version:CASE_LAW_CURATION_VERSION,
+    target:CASE_LAW_1000_TARGET,
+    currentDiscoveryAudit:auditCaseLawDiversity(supplied,1000),
+    scoringExample:scoreCaseForCuration({
+      court_level:"appellate",
+      legal_usefulness:16,
+      recurrence:12,
+      reasoning_quality:12,
+      distinctiveness:8,
+      recency:5,
+      provenance_quality:7
+    }),
+    retrievalPolicy:[
+      "supporting_if_available",
+      "adverse_if_available",
+      "distinguishing_if_available",
+      "strongest_or_higher_authority",
+      "fill_remaining_by_relevance"
+    ],
+    promptPolicy:caseLawCurationPromptPolicy(),
+    authorityBoundary:"Curation score controls processing/retrieval priority only. It never promotes a case to reviewed or citable authority.",
+    humanGate:"required"
+  });
+}
+
 async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
   const empty=Object.freeze({context:[],sources:[],cases:[],state:"not_applicable"});
   if(!basePlan?.legalIntelligenceEngine?.engaged || !env?.DB) return empty;
@@ -4805,7 +4844,7 @@ async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
       "ORDER BY cl.decision_date DESC,cl.id DESC LIMIT ?";
     const result=await env.DB.prepare(sql).bind(...bindings,candidateLimit).all();
 
-    const rows=(result.results||[]).map(row=>{
+    const scoredRows=(result.results||[]).map(row=>{
       const normalized=normalizeText([
         row.case_title,row.case_number,row.legal_area,row.reasoning_summary,row.outcome_summary,
         row.legal_issue_keys,row.domestic_articles,row.convention_articles,row.reviewed_holdings
@@ -4817,9 +4856,8 @@ async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
         if(normalizeText(row.case_title||"").includes(term)) score+=1;
       }
       return {...row,_score:score};
-    }).filter(row=>row._score>0)
-      .sort((a,b)=>b._score-a._score || String(b.decision_date||"").localeCompare(String(a.decision_date||"")))
-      .slice(0,Math.max(1,Math.min(6,Number(limit)||4)));
+    }).filter(row=>row._score>0);
+    const rows=selectBalancedAuthorities(scoredRows,Math.max(1,Math.min(6,Number(limit)||4)));
 
     if(!rows.length){
       const discovery=appealSkopjeDiscoveryContext(q,{limit});
@@ -4880,6 +4918,7 @@ async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
           "OUTCOME_SUMMARY: "+String(row.outcome_summary||"").slice(0,700),
           "REASONING_SUMMARY: "+String(row.reasoning_summary||"").slice(0,1400),
           "SOURCE_URL: "+String(sourceUrl),
+          caseLawCurationPromptPolicy(),
           "Use this record as case-law authority only within its reviewed jurisdiction/weight. Identify contrary or distinguishing authority when material."
         ].join("\n")
       };
@@ -9496,6 +9535,7 @@ export default {
     if (url.pathname === "/api/internal-toolkit") return handleInternalProfessionalToolkit(request,url);
     if (url.pathname === "/api/internal-toolkit/calculate") return handleInternalProfessionalCalculation(request);
     if (url.pathname === "/api/legal-news") return handleLegalNewsAggregator(request,url,env);
+    if (url.pathname === "/api/case-law/curation-plan") return handleCaseLawCurationPlan(request);
     if (url.pathname === "/api/public-evidence/card") return handlePublicEvidenceCard(request);
     if (url.pathname === "/api/professional-workflows") {
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
