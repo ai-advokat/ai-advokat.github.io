@@ -78,6 +78,6 @@ test("runtime enforces terminology on both provider paths and UI exposes the gat
   assert.match(index,/governedDetentionTerminologyGate=assessDetentionProceduralTerminology/);
   assert.match(index,/procedural_act_terminology_blocked/);
   assert.match(chat,/ZKP Procedural-Act Gate · BLOCK/);
-  assert.match(central,/DETENTION PROCEDURAL-ACT TERMINOLOGY/);
-  assert.match(orchestrator,/ZKP PROCEDURAL-ACT TERMINOLOGY/);
+  assert.match(central,/ZKP PROCEDURAL-ACT TAXONOMY/);
+  assert.match(orchestrator,/ZKP PROCEDURAL-ACT TAXONOMY/);
 });
