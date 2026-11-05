@@ -48,8 +48,13 @@ function baseFailures(res,{allow404=false}={}){
   if(!(res.status===200 || (allow404 && res.status===404))) out.push("http_"+res.status);
   const d=res.data;
   if(res.status===200 && (!d || d.ok!==true)) out.push("response_not_ok");
-  const joined=[d?.error,d?.message,d?.failureDetail,res.raw].filter(Boolean).join(" ");
-  if(runtimeErrorRe.test(joined)) out.push("runtime_error_"+(d?.error||"detected"));
+  const fatalRuntimeText=[
+    d?.error,
+    d?.message,
+    d?.failureDetail,
+    res.status!==200 ? res.raw : ""
+  ].filter(Boolean).join(" ");
+  if(runtimeErrorRe.test(fatalRuntimeText)) out.push("runtime_error_"+(d?.error||"detected"));
   if(res.status===200 && !String(d?.answer||"").trim()) out.push("empty_answer");
   return out;
 }
