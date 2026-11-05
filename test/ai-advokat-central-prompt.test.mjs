@@ -191,17 +191,20 @@ test("COP18 v7 formal drafting is GPT-class but provider-truthful and Macedonian
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Bulgarian, Serbian or Russian legal terminology/i);
 });
 
-test("COP16 governed GPT applies the same strict Macedonian final release gate",()=>{
+test("COP16 governed generated prose stays strict while canonical source-first text is preserved verbatim",()=>{
   assert.match(worker,/function canonicalMacedonianFinalRelease/);
   assert.match(worker,/macedonianDeliveryVerdict/);
+  assert.match(worker,/export function canonicalSourcePreservingFinalRelease/);
+  assert.match(worker,/sourcePreserved:true/);
   assert.match(worker,/const formalDraftRequest=isFormalLegalDraftRequest\(q\)/);
   assert.match(worker,/finaliseFormalLegalDraft\(finalAnswer/);
   assert.match(worker,/governedLanguageRequired=shouldEnforceMacedonianOutput\(q\)/);
-  assert.match(worker,/governedFinalRelease=canonicalMacedonianFinalRelease\(governedFinalAnswer,q\)/);
+  assert.match(worker,/governedFinalRelease=result\.canonicalSourceFirst===true[\s\S]*canonicalSourcePreservingFinalRelease\(governedFinalAnswer,q\)[\s\S]*canonicalMacedonianFinalRelease\(governedFinalAnswer,q\)/);
   assert.match(worker,/const governedLanguageRepairEligible=false/);
   assert.match(worker,/if\(!governedFinalRelease\.ok\)/);
   assert.match(worker,/error:"macedonian_language_release_blocked"/);
   assert.match(worker,/languageQualityState:governedLanguageRequired\?governedFinalRelease\.deliveryState/);
+  assert.match(worker,/canonicalSourcePreserved:result\.canonicalSourceFirst===true/);
   assert.match(worker,/answer:governedFinalAnswer/);
 });
 
