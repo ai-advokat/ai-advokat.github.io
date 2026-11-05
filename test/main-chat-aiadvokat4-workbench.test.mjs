@@ -200,3 +200,29 @@ test("TEMP LIVE QA · Justice Daily production endpoint #538",async()=>{
   assert.ok(Array.isArray(data.warnings));
   assert.ok(data.warnings.includes("NEWS_IS_NOT_LEGAL_CONCLUSION"));
 });
+
+
+test("TEMP LIVE QA · Justice Daily backend API only #538",async()=>{
+  const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
+  const res=await fetch(BASE+"/api/legal-news?days=1&limit=8",{headers:{accept:"application/json","cache-control":"no-cache"}});
+  assert.equal(res.ok,true,"Justice Daily production API must return 2xx");
+  const data=await res.json();
+  assert.equal(data.ok,true);
+  assert.equal(data.version,"AI_ADVOCAT_JUSTICE_DAILY_V1");
+  assert.equal(data.scope,"internal_ai_advokat_only");
+  assert.equal(data.boundaries?.publicOfficialSourcesOnly,true);
+  assert.equal(data.boundaries?.mediaAggregation,false);
+  assert.equal(data.boundaries?.autonomousLegalConclusion,false);
+  assert.equal(data.boundaries?.humanGateRequired,true);
+  assert.ok(Array.isArray(data.directory)&&data.directory.length>=13);
+  assert.ok(Array.isArray(data.sourceHealth)&&data.sourceHealth.length>=13);
+  assert.ok(Array.isArray(data.warnings));
+  assert.ok(data.warnings.includes("NEWS_IS_NOT_LEGAL_CONCLUSION"));
+  console.log("JUSTICE_DAILY_LIVE_API_PASS",JSON.stringify({
+    version:data.version,
+    sourceCount:data.sourceHealth.length,
+    okSources:data.sourceHealth.filter(x=>x.status==="ok").length,
+    unavailable:data.sourceHealth.filter(x=>x.status!=="ok").map(x=>x.sourceId),
+    total:data.total
+  }));
+});
