@@ -36,7 +36,7 @@ jobs:
           node --check assets/standalone-bot-vnext.js
           node --check assets/frontend-runtime-guard.js
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' index.html
-          grep -q 'ai-advokat-chat.js?v=20261105-root-r14-visible-internal-ecosystem-v2' index.html
+          grep -q 'ai-advokat-chat.js?v=20261105-root-r15-justice-daily-v1' index.html
           grep -q 'ai-advokat-chat.css?v=20261101-root-complete-r12' index.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' bot/index.html
           grep -q 'standalone-bot.js?v=20261101-core-r13' bot/index.html
@@ -52,7 +52,7 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-home.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/bot/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-bot.html || true
             if grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-home.html 2>/dev/null \
-              && grep -q 'ai-advokat-chat.js?v=20261105-root-r14-visible-internal-ecosystem-v2' /tmp/pages-home.html 2>/dev/null \
+              && grep -q 'ai-advokat-chat.js?v=20261105-root-r15-justice-daily-v1' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'ai-advokat-chat.css?v=20261101-root-complete-r12' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot.js?v=20261101-core-r13' /tmp/pages-bot.html 2>/dev/null \
@@ -73,7 +73,7 @@ jobs:
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/" -o /tmp/worker-home.html
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/bot/" -o /tmp/worker-bot.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-home.html
-          grep -q 'ai-advokat-chat.js?v=20261105-root-r14-visible-internal-ecosystem-v2' /tmp/worker-home.html
+          grep -q 'ai-advokat-chat.js?v=20261105-root-r15-justice-daily-v1' /tmp/worker-home.html
           grep -q 'ai-advokat-chat.css?v=20261101-root-complete-r12' /tmp/worker-home.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/worker-bot.html
           grep -q 'standalone-bot.js?v=20261101-core-r13' /tmp/worker-bot.html
