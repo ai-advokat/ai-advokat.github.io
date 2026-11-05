@@ -1863,7 +1863,8 @@
       echr_hudoc:"HUDOC · ЕСЧП",
       eurlex_oj:"EUR-Lex · OJ",
       curia_cjeu:"CURIA · Суд на ЕУ",
-      serbia_pis:"Правно-информациони систем · Србија"
+      serbia_pis:"Правно-информациони систем · Србија",
+      slovenia_justice:"Министерство за правда · Словенија"
     })[String(value||"")]||String(value||"Институција");
   }
 
@@ -2014,6 +2015,7 @@
               <option value="eurlex_oj">EUR-Lex · Official Journal</option>
               <option value="curia_cjeu">CURIA · Суд на ЕУ</option>
               <option value="serbia_pis">Правно-информациони систем · Србија</option>
+              <option value="slovenia_justice">Министерство за правда · Словенија</option>
             </select></label>
             <label>Тип<select data-justice-type>
               <option value="">Сите типови</option>
