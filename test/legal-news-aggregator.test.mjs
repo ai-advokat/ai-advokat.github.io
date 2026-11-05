@@ -21,7 +21,7 @@ function htmlResponse(html,status=200){
 }
 
 test("Justice Daily registers the core North Macedonia justice institutions as official sources",()=>{
-  assert.equal(LEGAL_NEWS_AGGREGATOR_VERSION,"AI_ADVOCAT_JUSTICE_DAILY_V1_1");
+  assert.equal(LEGAL_NEWS_AGGREGATOR_VERSION,"AI_ADVOCAT_JUSTICE_DAILY_V1_2");
   const directory=legalNewsSourceDirectory();
   const core=[
     "assembly","constitutional-court","supreme-court","judicial-council",
@@ -117,7 +117,7 @@ test("aggregator is fail-closed on source gaps, filters daily window and preserv
     sourceIds:["assembly","constitutional-court","supreme-court"]
   });
 
-  assert.equal(out.version,"AI_ADVOCAT_JUSTICE_DAILY_V1_1");
+  assert.equal(out.version,"AI_ADVOCAT_JUSTICE_DAILY_V1_2");
   assert.equal(out.scope,"internal_ai_advokat_only");
   assert.equal(out.windowDays,1);
   assert.equal(out.cutoffDate,"2026-11-05");
@@ -187,4 +187,36 @@ test("Slovenia Ministry of Justice is an actively fetched regional official sour
   assert.equal(out.items[0].publishedDate,"2026-11-03");
   assert.equal(out.items[0].humanGateRequired,true);
   assert.match(out.items[0].claimBoundary,/Не е извор на важечко право во Северна Македонија/);
+});
+
+
+test("priority metadata and source primaryUrl are exposed for operational Justice Daily UI",async()=>{
+  const fetchImpl=async()=>htmlResponse(`
+    <article><time>05.11.2026</time><a href="/novosti/odluka-sud.nspx">Одлука за судски предмет У.бр. 12/2026</a></article>
+  `);
+  const out=await aggregateLegalNews({
+    fetchImpl,
+    now:new Date("2026-11-05T12:00:00Z"),
+    days:1,
+    sourceIds:["assembly"]
+  });
+  assert.equal(out.version,"AI_ADVOCAT_JUSTICE_DAILY_V1_2");
+  assert.equal(out.items.length,1);
+  assert.ok(out.items[0].priority);
+  assert.ok(["high","medium","normal"].includes(out.items[0].priority.level));
+  assert.equal(typeof out.items[0].priority.score,"number");
+  assert.equal(out.sourceHealth[0].primaryUrl,"https://www.sobranie.mk/");
+  assert.equal(out.stats.items,1);
+  assert.equal(out.stats.sourcesOk,1);
+});
+
+test("unavailable sources retain an official primaryUrl for manual fallback",async()=>{
+  const out=await aggregateLegalNews({
+    fetchImpl:async()=>htmlResponse("down",503),
+    now:new Date("2026-11-05T12:00:00Z"),
+    sourceIds:["supreme-court"]
+  });
+  assert.equal(out.sourceHealth[0].status,"unavailable");
+  assert.equal(out.sourceHealth[0].fetchedUrl,null);
+  assert.ok(String(out.sourceHealth[0].primaryUrl||"").startsWith("https://"));
 });
