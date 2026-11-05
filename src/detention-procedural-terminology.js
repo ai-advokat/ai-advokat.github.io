@@ -32,20 +32,21 @@ export function isDetentionContext(userText){
   return /(?:притвор|куќен притвор|лишување од слобода)/u.test(q);
 }
 
+const CYRILLIC_WORD_START="(?<![\\p{L}\\p{N}_])";
 const CYRILLIC_WORD_END="(?=$|[^\\p{L}\\p{N}_])";
 
 const DIRECT_REPLACEMENTS=Object.freeze([
   [new RegExp("(^|\\n)(\\s*(?:\\d+\\.?\\s*)?)поддржувачки пресуди"+CYRILLIC_WORD_END,"giu"),"$1$2Поддржувачка судска практика"],
   [new RegExp("(^|\\n)(\\s*(?:\\d+\\.?\\s*)?)(?:спротивни|неповолни|непретерани) пресуди"+CYRILLIC_WORD_END,"giu"),"$1$2Спротивна судска практика"],
-  [new RegExp("пресуда за определување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решение за определување притвор"],
-  [new RegExp("пресуда за продолжување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решение за продолжување на притворот"],
-  [new RegExp("пресуда за укинување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решение за укинување на притворот"],
-  [new RegExp("пресуди за определување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решенија за определување притвор"],
-  [new RegExp("пресуди за продолжување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решенија за продолжување на притворот"],
-  [new RegExp("пресуди за укинување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решенија за укинување на притворот"],
-  [new RegExp("жалба против пресудата за притвор"+CYRILLIC_WORD_END,"giu"),"жалба против решението за притвор"],
-  [new RegExp("пресудата со која се (определува|продолжува|укинува) притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),(_m,verb)=>"решението со кое се "+verb+" притворот"],
-  [new RegExp("пресуда со која се (определува|продолжува|укинува) притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),(_m,verb)=>"решение со кое се "+verb+" притворот"]
+  [new RegExp(CYRILLIC_WORD_START+"пресуда за определување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решение за определување притвор"],
+  [new RegExp(CYRILLIC_WORD_START+"пресуда за продолжување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решение за продолжување на притворот"],
+  [new RegExp(CYRILLIC_WORD_START+"пресуда за укинување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решение за укинување на притворот"],
+  [new RegExp(CYRILLIC_WORD_START+"пресуди за определување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решенија за определување притвор"],
+  [new RegExp(CYRILLIC_WORD_START+"пресуди за продолжување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решенија за продолжување на притворот"],
+  [new RegExp(CYRILLIC_WORD_START+"пресуди за укинување(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),"решенија за укинување на притворот"],
+  [new RegExp(CYRILLIC_WORD_START+"жалба против пресудата за притвор"+CYRILLIC_WORD_END,"giu"),"жалба против решението за притвор"],
+  [new RegExp(CYRILLIC_WORD_START+"пресудата со која се (определува|продолжува|укинува) притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),(_m,verb)=>"решението со кое се "+verb+" притворот"],
+  [new RegExp(CYRILLIC_WORD_START+"пресуда со која се (определува|продолжува|укинува) притвор(?:от)?"+CYRILLIC_WORD_END,"giu"),(_m,verb)=>"решение со кое се "+verb+" притворот"]
 ]);
 
 export function normaliseDetentionProceduralTerminology(text,{userText=""}={}){
@@ -58,10 +59,10 @@ export function normaliseDetentionProceduralTerminology(text,{userText=""}={}){
 }
 
 const FORBIDDEN_PATTERNS=Object.freeze([
-  new RegExp("пресуда за (?:определување|продолжување|укинување)(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"iu"),
-  new RegExp("пресуди за (?:определување|продолжување|укинување)(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"iu"),
-  new RegExp("пресуд(?:а|ата) со која се (?:определува|продолжува|укинува) притвор(?:от)?"+CYRILLIC_WORD_END,"iu"),
-  new RegExp("жалба против пресудата за притвор"+CYRILLIC_WORD_END,"iu"),
+  new RegExp(CYRILLIC_WORD_START+"пресуда за (?:определување|продолжување|укинување)(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"iu"),
+  new RegExp(CYRILLIC_WORD_START+"пресуди за (?:определување|продолжување|укинување)(?: на)? притвор(?:от)?"+CYRILLIC_WORD_END,"iu"),
+  new RegExp(CYRILLIC_WORD_START+"пресуд(?:а|ата) со која се (?:определува|продолжува|укинува) притвор(?:от)?"+CYRILLIC_WORD_END,"iu"),
+  new RegExp(CYRILLIC_WORD_START+"жалба против пресудата за притвор"+CYRILLIC_WORD_END,"iu"),
   new RegExp("(^|\\n)\\s*(?:\\d+\\.?\\s*)?(?:поддржувачки|спротивни|неповолни|непретерани) пресуди"+CYRILLIC_WORD_END,"imu")
 ]);
 
