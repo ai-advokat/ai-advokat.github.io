@@ -16,7 +16,7 @@ test("main AI Advokat chat exposes AIAdvokat4 LexNova governed workbench",()=>{
   assert.match(home,/КОНСОЛИДАТОР/);
   assert.match(home,/АНАЛИЗАТОР/);
   assert.match(home,/ПРЕДИКТОР/);
-  assert.match(home,/20261105-root-r15-justice-daily-v1/);
+  assert.match(home,/20261105-root-r16-justice-daily-sources-v1/);
 });
 
 test("Consolidator is exact Legal Formatter v10.4 CORE and not a prompt surrogate",()=>{
@@ -69,12 +69,15 @@ test("main workspace has standalone-bot parity on left modules and right evidenc
 
 test("Justice Daily is directly visible and wired to the governed aggregator API",()=>{
   const count=(home.match(/data-ai-workbench="justice-daily"/g)||[]).length;
-  assert.ok(count>=3,"Justice Daily must be exposed in sidebar, central workbench and More/tools");
+  assert.ok(count>=5,"Justice Daily must be exposed in desktop/mobile header, sidebar, central workbench and More/tools");
+  assert.match(home,/<nav class="links"[\s\S]*data-ai-workbench="justice-daily"[\s\S]*<\/nav>/);
+  assert.match(home,/<div id="mobileMenu"[\s\S]*data-ai-workbench="justice-daily"[\s\S]*Justice Daily/);
   assert.match(home,/<div class="ai-prof-actions">[\s\S]*data-ai-workbench="justice-daily"[\s\S]*<\/div>/);
   assert.match(chat,/function ensureJusticeDailyDialog/);
   assert.match(chat,/\/api\/legal-news\?/);
   assert.match(chat,/action==="justice-daily"/);
   assert.match(chat,/NEWS_IS_NOT_LEGAL_CONCLUSION|Вест ≠ правен заклучок/);
+  for(const label of ["ЛДБИС","HUDOC · ЕСЧП","EUR-Lex · OJ","CURIA · Суд на ЕУ","Правно-информациони систем · Србија"]) assert.ok(chat.includes(label),"missing Justice Daily source label: "+label);
 });
 
 test("PR #534 internal toolkit remains directly visible when the left sidebar is hidden",()=>{
