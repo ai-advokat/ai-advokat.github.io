@@ -170,3 +170,33 @@ test("main Human Gate evidence exposes source temporal and jurisdiction verifica
   assert.match(chat,/jurisdictionVerificationState/);
   assert.match(chat,/Warning: /);
 });
+
+
+test("TEMP LIVE QA · Justice Daily production endpoint #538",async()=>{
+  const SITE="https://ai-advokat.github.io";
+  const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
+
+  const pageRes=await fetch(SITE+"/?justice_daily_live_qa="+Date.now(),{headers:{"cache-control":"no-cache"}});
+  assert.equal(pageRes.ok,true,"GitHub Pages must be reachable");
+  const page=await pageRes.text();
+  assert.match(page,/20261105-root-r15-justice-daily-v1/);
+  assert.ok((page.match(/data-ai-workbench="justice-daily"/g)||[]).length>=3);
+
+  const newsRes=await fetch(BASE+"/api/legal-news?days=1&limit=8",{headers:{accept:"application/json","cache-control":"no-cache"}});
+  assert.equal(newsRes.ok,true,"Justice Daily production API must return 2xx");
+  const data=await newsRes.json();
+  assert.equal(data.ok,true);
+  assert.equal(data.version,"AI_ADVOCAT_JUSTICE_DAILY_V1");
+  assert.equal(data.scope,"internal_ai_advokat_only");
+  assert.equal(data.boundaries?.publicOfficialSourcesOnly,true);
+  assert.equal(data.boundaries?.mediaAggregation,false);
+  assert.equal(data.boundaries?.autonomousLegalConclusion,false);
+  assert.equal(data.boundaries?.humanGateRequired,true);
+  assert.ok(Array.isArray(data.directory)&&data.directory.length>=13);
+  assert.ok(Array.isArray(data.sourceHealth)&&data.sourceHealth.length>=13);
+  for(const s of data.sourceHealth){
+    assert.ok(["ok","unavailable"].includes(s.status),String(s.sourceId)+": invalid source health");
+  }
+  assert.ok(Array.isArray(data.warnings));
+  assert.ok(data.warnings.includes("NEWS_IS_NOT_LEGAL_CONCLUSION"));
+});
