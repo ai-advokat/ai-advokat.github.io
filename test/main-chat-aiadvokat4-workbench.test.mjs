@@ -10,13 +10,13 @@ const css=fs.readFileSync("assets/ai-advokat-chat.css","utf8");
 
 test("main AI Advokat chat exposes AIAdvokat4 LexNova governed workbench",()=>{
   assert.match(home,/AIAdvokat4 · LexNova UX/);
-  for(const action of ["assistant","analyzer","consolidator","predictor","sources","cases","casepilot","documents","workflows","human-gate","library"]){
+  for(const action of ["assistant","analyzer","consolidator","predictor","sources","public-evidence","professional-ecosystem","cases","casepilot","documents","workflows","human-gate","library"]){
     assert.match(home,new RegExp('data-ai-workbench="'+action+'"'));
   }
   assert.match(home,/КОНСОЛИДАТОР/);
   assert.match(home,/АНАЛИЗАТОР/);
   assert.match(home,/ПРЕДИКТОР/);
-  assert.match(home,/20261105-root-r13-parity/);
+  assert.match(home,/20261105-root-r14-visible-internal-ecosystem-v2/);
 });
 
 test("Consolidator is exact Legal Formatter v10.4 CORE and not a prompt surrogate",()=>{
@@ -52,7 +52,7 @@ test("Predictor is governed scenario/risk workflow with CasePilot and no fake su
 });
 
 test("main workspace has standalone-bot parity on left modules and right evidence tabs",()=>{
-  for(const label of ["Правен асистент","Анализатор","Консолидатор","Предиктор","Правни извори","Судска практика","CasePilot","Документи","Workflows","Human Gate","Library"]){
+  for(const label of ["Правен асистент","Анализатор","Консолидатор","Предиктор","Правни извори","Јавни докази","Pro Ecosystem","Судска практика","CasePilot","Документи","Workflows","Human Gate","Library"]){
     assert.ok(home.includes(label), "missing main workspace label: "+label);
   }
   for(const tab of ["sources","context","human","artifact"]){
@@ -65,6 +65,17 @@ test("main workspace has standalone-bot parity on left modules and right evidenc
   assert.match(chat,/ensureWorkflowDialog/);
   assert.match(chat,/openWorkspaceSearch/);
   assert.match(chat,/aiChatHistorySearch/);
+});
+
+test("PR #534 internal toolkit remains directly visible when the left sidebar is hidden",()=>{
+  const publicEvidenceCount=(home.match(/data-ai-workbench="public-evidence"/g)||[]).length;
+  const professionalEcosystemCount=(home.match(/data-ai-workbench="professional-ecosystem"/g)||[]).length;
+  assert.ok(publicEvidenceCount>=3, "Public Evidence must be exposed in sidebar, central workbench and More/tools");
+  assert.ok(professionalEcosystemCount>=3, "Professional Ecosystem must be exposed in sidebar, central workbench and More/tools");
+  assert.match(home,/<div class="ai-prof-actions">[\s\S]*data-ai-workbench="public-evidence"[\s\S]*data-ai-workbench="professional-ecosystem"[\s\S]*<\/div>/);
+  assert.match(chat,/action==="public-evidence"/);
+  assert.match(chat,/action==="professional-ecosystem"/);
+  assert.match(css,/@media\(max-width:820px\)[\s\S]*\.ai-chat-side\{display:none\}/);
 });
 
 test("message actions match the external professional bot controls",()=>{
