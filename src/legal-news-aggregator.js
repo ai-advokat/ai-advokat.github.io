@@ -2,7 +2,7 @@
 // Read-only aggregator for official public justice-sector sources.
 // News discovery is not a legal conclusion and never bypasses source verification or Human Gate.
 
-export const LEGAL_NEWS_AGGREGATOR_VERSION="AI_ADVOCAT_JUSTICE_DAILY_V1";
+export const LEGAL_NEWS_AGGREGATOR_VERSION="AI_ADVOCAT_JUSTICE_DAILY_V1_1";
 
 const JUSTICE_KEYWORDS=[
   "суд","судиј","судск","правосуд","правда","обвинител","обвинителств","јавно обвинителство",
@@ -181,6 +181,69 @@ export const LEGAL_NEWS_SOURCES=Object.freeze([
     articleHosts:["dksk.mk","www.dksk.mk"],
     sourceRole:"anti_corruption_and_integrity_watch",
     boundary:"Постапка, иницијатива или наод на ДКСК мора да се пренесе со точниот институционален статус и не се претвора автоматски во кривична одговорност."
+  },
+  {
+    id:"ldbis",
+    institution:"ldbis",
+    title:"ЛДБИС · Министерство за правда",
+    layer:"extended",
+    authorityClass:"official_national_legal_database",
+    relevance:"justice_filtered",
+    urls:["https://ldbis.pravda.gov.mk/"],
+    articleHosts:["ldbis.pravda.gov.mk"],
+    sourceRole:"national_legislation_case_law_and_legal_database_watch",
+    boundary:"ЛДБИС е официјална правно-информациска база. Наслов/листинг во базата е discovery; за правно потпирање се проверуваат точниот текст, верзијата, датумот и статусот на актот."
+  },
+  {
+    id:"echr-hudoc",
+    institution:"echr_hudoc",
+    title:"HUDOC · Европски суд за човекови права",
+    layer:"international",
+    authorityClass:"official_international_case_law_database",
+    relevance:"all",
+    collectionMode:"reference_only",
+    urls:["https://hudoc.echr.coe.int/#{%22documentcollectionid2%22:[%22GRANDCHAMBER%22,%22CHAMBER%22]}"],
+    articleHosts:["hudoc.echr.coe.int"],
+    sourceRole:"echr_grand_chamber_and_chamber_case_law",
+    boundary:"HUDOC е примарна официјална база на ЕСЧП. Автоматскиот дневен fetch може да биде ограничен поради client-side rendering; конкретна пресуда/одлука се проверува по application number, датум, состав и документ."
+  },
+  {
+    id:"eurlex-oj",
+    institution:"eurlex_oj",
+    title:"EUR-Lex · Official Journal · L series",
+    layer:"international",
+    authorityClass:"official_eu_legal_publication_portal",
+    relevance:"justice_filtered",
+    collectionMode:"reference_only",
+    urls:["https://eur-lex.europa.eu/oj/daily-view/L-series/default.html"],
+    articleHosts:["eur-lex.europa.eu"],
+    sourceRole:"eu_official_journal_daily_legislation_watch",
+    boundary:"EUR-Lex Official Journal е официјален извор на ЕУ, но дневната страница може да бара JavaScript/anti-bot verification. За правно дејство се проверуваат CELEX/Official Journal записот, датумот и важечката верзија."
+  },
+  {
+    id:"curia-cjeu",
+    institution:"curia_cjeu",
+    title:"CURIA · Суд на правдата на Европската унија",
+    layer:"international",
+    authorityClass:"official_eu_court",
+    relevance:"all",
+    urls:["https://curia.europa.eu/site/"],
+    articleHosts:["curia.europa.eu","infocuria.curia.europa.eu"],
+    sourceRole:"cjeu_judgments_opinions_and_press_watch",
+    boundary:"CURIA е официјален извор на Судот на правдата на ЕУ. Press release/вест е discovery; за правно потпирање се проверуваат бројот на предметот, точниот judgment/opinion и датумот."
+  },
+  {
+    id:"serbia-pis",
+    institution:"serbia_pis",
+    title:"Правно-информациони систем Републике Србије",
+    layer:"regional",
+    authorityClass:"official_foreign_legal_information_system",
+    relevance:"justice_filtered",
+    collectionMode:"reference_only",
+    urls:["https://pravno-informacioni-sistem.rs/news-cat/3/0"],
+    articleHosts:["pravno-informacioni-sistem.rs","www.pravno-informacioni-sistem.rs"],
+    sourceRole:"regional_comparative_legal_information_watch",
+    boundary:"Овој извор е официјален странски правно-информациски систем и служи за компаративно/регионално следење. Не е извор на важечко право во Северна Македонија."
   }
 ]);
 
@@ -367,6 +430,7 @@ export function legalNewsSourceDirectory(){
     layer:s.layer,
     authorityClass:s.authorityClass,
     sourceRole:s.sourceRole,
+    collectionMode:s.collectionMode||"fetch",
     urls:[...s.urls],
     boundary:s.boundary
   }));
@@ -380,6 +444,19 @@ function clampInt(value,min,max,fallback){
 
 async function fetchOneSource(source,fetchImpl,now){
   const errors=[];
+  if(source.collectionMode==="reference_only"){
+    return {
+      sourceId:source.id,
+      institution:source.institution,
+      title:source.title,
+      status:"reference_only",
+      fetchedUrl:source.urls[0]||null,
+      itemCount:0,
+      items:[],
+      checkedAt:new Date(now).toISOString(),
+      errors:["reference_only_client_rendered_or_anti_bot"]
+    };
+  }
   for(const url of source.urls){
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort("timeout"),4500);
@@ -504,7 +581,8 @@ export async function aggregateLegalNews({
     checkedAt:r.checkedAt,
     errors:r.errors
   }));
-  const unavailable=sourceHealth.filter(x=>x.status!=="ok").map(x=>x.sourceId);
+  const unavailable=sourceHealth.filter(x=>x.status==="unavailable").map(x=>x.sourceId);
+  const referenceOnly=sourceHealth.filter(x=>x.status==="reference_only").map(x=>x.sourceId);
 
   return Object.freeze({
     version:LEGAL_NEWS_AGGREGATOR_VERSION,
@@ -517,6 +595,7 @@ export async function aggregateLegalNews({
     sourceHealth,
     warnings:[
       ...(unavailable.length?["SOURCE_GAPS: "+unavailable.join(", ")]:[]),
+      ...(referenceOnly.length?["REFERENCE_ONLY_SOURCES: "+referenceOnly.join(", ")]:[]),
       "NEWS_IS_NOT_LEGAL_CONCLUSION",
       "OFFICIAL_POST_IS_NOT_ALWAYS_FINAL_ACT",
       "VERIFY_ITEM_LEVEL_AUTHORITY_AND_DATE_BEFORE_LEGAL_RELIANCE"
