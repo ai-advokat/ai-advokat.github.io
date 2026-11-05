@@ -1,6 +1,6 @@
 name: One-time production runtime update
 
-# release-trigger: deploy dual-bot source-first parity release 9a5f78f680d64a0dc69858211e4881e51a470936
+# release-trigger: deploy canonical source-preservation hotfix ed7fbe2e2ffd627a5e8022df58f07b594f5dbdf1
 
 on:
   push:
