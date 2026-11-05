@@ -1,6 +1,6 @@
 {
   "id": "mk-master-judicial-corpus-2026-11-04",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "status": "DISCOVERY_INDEXED_ITEM_LEVEL_VERIFICATION_PENDING",
   "purpose": "Governed source/provenance map for judicial materials supplied for AI Advokat internal and external bot retrieval.",
   "release_boundary": "Source-level discovery is enabled. Unreviewed extracts do not become legal authority. Current-law applicability, exact holding, finality and original-decision binding remain item-level Human Gates.",
@@ -88,6 +88,16 @@
       "kind": "historical_judicial_publications",
       "scope": "Collections I-XI and Supreme Court bulletin 2016-2017",
       "status": "SOURCE_VERIFIED_HISTORICAL_CURRENT_LAW_GATE_REQUIRED"
+    },
+    {
+      "id": "APPEAL_SKOPJE_CRIMINAL_DECISIONS_36_2026_11_05",
+      "kind": "user_supplied_official_appellate_decision_copies",
+      "scope": "36 machine-readable criminal decisions of Appellate Court Skopje (КОКЖ series, 2022-2025)",
+      "status": "SOURCE_COPIES_VERIFIED_DISCOVERY_ENABLED_REMOTE_ITEM_BINDING_PENDING",
+      "corpus_module": "src/appeal-skopje-36-discovery.js",
+      "record_count": 36,
+      "privacy_indexing": "party_names_not_indexed_in_lightweight_discovery_registry",
+      "human_gate_required": true
     }
   ],
   "authority_rules": [
