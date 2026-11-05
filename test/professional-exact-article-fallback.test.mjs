@@ -143,6 +143,9 @@ test("exact governed article takes deterministic source-first lane before any pr
   assert.match(handle,/provider:"canonical_corpus_no_model"/);
   assert.match(handle,/canonicalSourceFirst:true/);
   assert.match(handle,/providerCalls:0/);
+  assert.match(handle,/canonicalExactArticlePreProviderEligible/);
+  assert.match(handle,/!useFreeWorkersAI && !canonicalExactArticlePreProviderEligible/);
+  assert.match(handle,/if\(result\.canonicalSourceFirst===true\)[\s\S]*releaseMonthlyQuota/);
   assert.match(handle,/NOT_REQUIRED_DETERMINISTIC_SOURCE_FIRST/);
   assert.match(handle,/deterministicCanonicalSourceFirst:true/);
 });
