@@ -22,6 +22,7 @@ test("core-r13 production deploy proves exact live byte parity and legacy r10/r1
   for(const path of [
     "bot/index.html",
     "assets/standalone-bot.js",
+    "assets/standalone-bot-vnext.js",
     "assets/chat-privacy-browser.js",
     "src/chat-privacy.js"
   ]) assert.ok(workflow.includes("sha256sum "+path),path);
