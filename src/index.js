@@ -8857,7 +8857,92 @@ function handleInternalProfessionalToolkit(request,url){
   });
 }
 
-async function handleLegalNewsAggregator(request,url){
+const JUSTICE_DAILY_SNAPSHOT_KEY="latest";
+const JUSTICE_DAILY_SNAPSHOT_MAX_AGE_MS=90*60*1000;
+
+async function storeJusticeDailySnapshot(env,result){
+  if(!env?.DB || !result) return {stored:false,reason:"db_not_bound"};
+  const generatedAt=String(result.generatedAt||new Date().toISOString());
+  const sourceHealth=Array.isArray(result.sourceHealth)?result.sourceHealth:[];
+  const sourceOk=sourceHealth.filter(x=>x.status==="ok").length;
+  const sourceUnavailable=sourceHealth.filter(x=>x.status==="unavailable").length;
+  await env.DB.prepare(
+    `INSERT INTO justice_daily_snapshots
+      (snapshot_key,generated_at,payload_json,source_ok,source_unavailable,updated_at)
+     VALUES (?1,?2,?3,?4,?5,CURRENT_TIMESTAMP)
+     ON CONFLICT(snapshot_key) DO UPDATE SET
+       generated_at=excluded.generated_at,
+       payload_json=excluded.payload_json,
+       source_ok=excluded.source_ok,
+       source_unavailable=excluded.source_unavailable,
+       updated_at=CURRENT_TIMESTAMP`
+  ).bind(
+    JUSTICE_DAILY_SNAPSHOT_KEY,
+    generatedAt,
+    JSON.stringify(result),
+    sourceOk,
+    sourceUnavailable
+  ).run();
+  return {stored:true,generatedAt,sourceOk,sourceUnavailable};
+}
+
+async function loadJusticeDailySnapshot(env){
+  if(!env?.DB) return null;
+  try{
+    const row=await env.DB.prepare(
+      "SELECT generated_at,payload_json,source_ok,source_unavailable,updated_at FROM justice_daily_snapshots WHERE snapshot_key=?1 LIMIT 1"
+    ).bind(JUSTICE_DAILY_SNAPSHOT_KEY).first();
+    if(!row?.payload_json) return null;
+    const generatedAt=String(row.generated_at||"");
+    const ageMs=Date.now()-Date.parse(generatedAt);
+    if(!Number.isFinite(ageMs) || ageMs>JUSTICE_DAILY_SNAPSHOT_MAX_AGE_MS) return null;
+    const payload=JSON.parse(String(row.payload_json));
+    return {
+      payload,
+      generatedAt,
+      ageMs,
+      sourceOk:Number(row.source_ok||0),
+      sourceUnavailable:Number(row.source_unavailable||0),
+      updatedAt:String(row.updated_at||"")
+    };
+  }catch{
+    return null;
+  }
+}
+
+function filterJusticeDailySnapshot(payload,{days=1,limit=60}={}){
+  const safeDays=Math.max(1,Math.min(7,Number(days)||1));
+  const safeLimit=Math.max(1,Math.min(100,Number(limit)||60));
+  const now=new Date();
+  const cutoff=new Date(now);
+  cutoff.setUTCDate(cutoff.getUTCDate()-(safeDays-1));
+  const cutoffIso=cutoff.toISOString().slice(0,10);
+  const items=(Array.isArray(payload?.items)?payload.items:[])
+    .filter(x=>x?.publishedDate && String(x.publishedDate)>=cutoffIso)
+    .slice(0,safeLimit);
+  return {
+    ...payload,
+    windowDays:safeDays,
+    cutoffDate:cutoffIso,
+    total:items.length,
+    items,
+    snapshotServed:true
+  };
+}
+
+async function refreshJusticeDailySnapshot(env,{now=new Date()}={}){
+  const result=await aggregateLegalNews({
+    fetchImpl:fetch,
+    now,
+    days:7,
+    limit:100,
+    includeUndated:false
+  });
+  const storage=await storeJusticeDailySnapshot(env,result);
+  return {result,storage};
+}
+
+async function handleLegalNewsAggregator(request,url,env){
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
   const days=Math.max(1,Math.min(7,Number(url?.searchParams?.get("days")||1)||1));
   const limit=Math.max(1,Math.min(100,Number(url?.searchParams?.get("limit")||60)||60));
@@ -8867,6 +8952,29 @@ async function handleLegalNewsAggregator(request,url){
   const sourceIds=String(url?.searchParams?.get("sources")||"")
     .split(",").map(x=>x.trim()).filter(Boolean).slice(0,20);
   try{
+    const cacheEligible=!institution && !type && !includeUndated && sourceIds.length===0;
+    if(cacheEligible){
+      const snapshot=await loadJusticeDailySnapshot(env);
+      if(snapshot?.payload){
+        const result=filterJusticeDailySnapshot(snapshot.payload,{days,limit});
+        return json(request,{
+          ok:true,
+          version:LEGAL_NEWS_AGGREGATOR_VERSION,
+          scope:"internal_ai_advokat_only",
+          directory:legalNewsSourceDirectory(),
+          ...result,
+          autopull:{
+            mode:"server_side_cron_snapshot",
+            cadence:"every_30_minutes",
+            snapshotGeneratedAt:snapshot.generatedAt,
+            snapshotAgeSeconds:Math.max(0,Math.floor(snapshot.ageMs/1000)),
+            fallback:"live_fetch_if_snapshot_missing_or_stale"
+          },
+          doctrine:"Официјална вест е доказ за објава/настан во рамките на изворот, но не е автоматски доказ за правно дејство, вина или важечко право. Item-level verification + Human Gate остануваат задолжителни."
+        });
+      }
+    }
+
     const result=await aggregateLegalNews({
       fetchImpl:fetch,
       now:new Date(),
@@ -8877,12 +8985,20 @@ async function handleLegalNewsAggregator(request,url){
       includeUndated,
       sourceIds
     });
+    if(cacheEligible && days===7 && limit>=100){
+      try{await storeJusticeDailySnapshot(env,result);}catch{}
+    }
     return json(request,{
       ok:true,
       version:LEGAL_NEWS_AGGREGATOR_VERSION,
       scope:"internal_ai_advokat_only",
       directory:legalNewsSourceDirectory(),
       ...result,
+      autopull:{
+        mode:"live_fetch_fallback",
+        cadence:"every_30_minutes",
+        fallbackUsed:true
+      },
       doctrine:"Официјална вест е доказ за објава/настан во рамките на изворот, но не е автоматски доказ за правно дејство, вина или важечко право. Item-level verification + Human Gate остануваат задолжителни."
     });
   }catch(error){
@@ -9232,6 +9348,32 @@ function privateUatIngressAllowed(request, env) {
 }
 
 export default {
+  async scheduled(controller, env, ctx) {
+    const run=async()=>{
+      try{
+        const {result,storage}=await refreshJusticeDailySnapshot(env,{now:new Date(controller?.scheduledTime||Date.now())});
+        console.log(JSON.stringify({
+          event:"justice_daily_autopull",
+          ok:true,
+          generatedAt:result.generatedAt,
+          itemCount:Array.isArray(result.items)?result.items.length:0,
+          stored:storage?.stored===true,
+          sourceOk:storage?.sourceOk??null,
+          sourceUnavailable:storage?.sourceUnavailable??null
+        }));
+      }catch(error){
+        console.error(JSON.stringify({
+          event:"justice_daily_autopull",
+          ok:false,
+          error:String(error?.message||error).slice(0,180)
+        }));
+        throw error;
+      }
+    };
+    if(ctx?.waitUntil) ctx.waitUntil(run());
+    else await run();
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
@@ -9284,7 +9426,7 @@ export default {
     if (url.pathname === "/api/canonical-metadata-standard") return handleCanonicalMetadataStandard(request);
     if (url.pathname === "/api/internal-toolkit") return handleInternalProfessionalToolkit(request,url);
     if (url.pathname === "/api/internal-toolkit/calculate") return handleInternalProfessionalCalculation(request);
-    if (url.pathname === "/api/legal-news") return handleLegalNewsAggregator(request,url);
+    if (url.pathname === "/api/legal-news") return handleLegalNewsAggregator(request,url,env);
     if (url.pathname === "/api/public-evidence/card") return handlePublicEvidenceCard(request);
     if (url.pathname === "/api/professional-workflows") {
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
