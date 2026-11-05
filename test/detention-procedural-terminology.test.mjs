@@ -4,6 +4,7 @@ import fs from "node:fs";
 import {
   DETENTION_PROCEDURAL_TERMINOLOGY_VERSION,
   DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE,
+  ZKP_JUDGMENT_TYPE_TAXONOMY,
   isDetentionContext,
   normaliseDetentionProceduralTerminology,
   assessDetentionProceduralTerminology
@@ -12,11 +13,13 @@ import {
 const q="Жалба против притвор – дај ми поддржувачка и спротивна судска практика.";
 
 test("detention terminology policy is tied to verified ZKP official-source evidence",()=>{
-  assert.equal(DETENTION_PROCEDURAL_TERMINOLOGY_VERSION,"AI_ADVOCAT_DETENTION_PROCEDURAL_TERMINOLOGY_V1");
+  assert.equal(DETENTION_PROCEDURAL_TERMINOLOGY_VERSION,"AI_ADVOCAT_DETENTION_PROCEDURAL_TERMINOLOGY_V2");
   assert.equal(DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE.ldbisLawId,20679);
   assert.equal(DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE.officialGazette,"Службен весник на Република Македонија бр. 150/2010");
   assert.ok(DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE.provisions.some(x=>x.article==="169"&&/решение/u.test(x.rule)));
   assert.ok(DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE.provisions.some(x=>x.article==="173"&&/укинува/u.test(x.rule)));
+  assert.deepEqual(ZKP_JUDGMENT_TYPE_TAXONOMY.map(x=>x.label),["одбивателна пресуда","ослободителна пресуда","осудителна пресуда"]);
+  assert.equal(DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE.judgmentTypesArticle,"401");
 });
 
 test("detention context is detected without affecting unrelated criminal-law answers",()=>{
@@ -50,6 +53,15 @@ test("detention procedural acts are corrected from пресуда to решен�
   assert.equal(assessDetentionProceduralTerminology(clean,{userText:q}).ok,true);
 });
 
+test("embedded Cyrillic tokens and identifiers are not rewritten or flagged",()=>{
+  const embedded="_пресуда за определување притвор";
+  assert.equal(normaliseDetentionProceduralTerminology(embedded,{userText:q}),embedded);
+  assert.equal(assessDetentionProceduralTerminology(embedded,{userText:q}).ok,true);
+  const joined="идентификаторпресуда за укинување на притворот";
+  assert.equal(normaliseDetentionProceduralTerminology(joined,{userText:q}),joined);
+  assert.equal(assessDetentionProceduralTerminology(joined,{userText:q}).ok,true);
+});
+
 test("legitimate judgment references remain intact",()=>{
   const text=[
     "По објавување на пресудата, судот одделно одлучува за притворот.",
@@ -75,6 +87,6 @@ test("runtime enforces terminology on both provider paths and UI exposes the gat
   assert.match(index,/governedDetentionTerminologyGate=assessDetentionProceduralTerminology/);
   assert.match(index,/procedural_act_terminology_blocked/);
   assert.match(chat,/ZKP Procedural-Act Gate · BLOCK/);
-  assert.match(central,/DETENTION PROCEDURAL-ACT TERMINOLOGY/);
-  assert.match(orchestrator,/ZKP PROCEDURAL-ACT TERMINOLOGY/);
+  assert.match(central,/ZKP PROCEDURAL-ACT TAXONOMY/);
+  assert.match(orchestrator,/ZKP PROCEDURAL-ACT TAXONOMY/);
 });
