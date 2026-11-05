@@ -1831,6 +1831,198 @@
     }catch(error){status.textContent="Professional Ecosystem не е достапен: "+String(error?.message||error);}
   }
 
+  function justiceDailyTypeLabel(type){
+    return ({
+      decision:"Одлука / предмет",
+      session:"Седница",
+      legislation:"Законодавство",
+      prosecution:"Обвинителство",
+      appointments:"Избор / именување",
+      reform:"Реформа / извештај",
+      training:"Обука",
+      institutional_update:"Институционална вест"
+    })[String(type||"")]||String(type||"Вест");
+  }
+
+  function justiceDailyInstitutionLabel(value){
+    return ({
+      assembly:"Собрание",
+      constitutional_court:"Уставен суд",
+      supreme_court:"Врховен суд",
+      judicial_council:"Судски совет",
+      public_prosecution:"Јавно обвинителство",
+      prosecutors_council:"Совет на јавни обвинители",
+      ministry_justice:"Министерство за правда",
+      judicial_academy:"Академија",
+      court_portal:"Судски портал",
+      official_gazette:"Службен весник",
+      ener:"ЕНЕР",
+      state_audit:"ДЗР · Правосудство",
+      anti_corruption:"ДКСК"
+    })[String(value||"")]||String(value||"Институција");
+  }
+
+  function renderJusticeDaily(dialog,data){
+    const host=dialog.querySelector("[data-justice-items]");
+    const status=dialog.querySelector("[data-justice-status]");
+    const health=dialog.querySelector("[data-justice-health]");
+    const brief=dialog.querySelector("[data-justice-brief]");
+    host?.replaceChildren();
+    health?.replaceChildren();
+
+    const items=Array.isArray(data?.items)?data.items:[];
+    const sourceHealth=Array.isArray(data?.sourceHealth)?data.sourceHealth:[];
+    const okCount=sourceHealth.filter(x=>x.status==="ok").length;
+    const failed=sourceHealth.filter(x=>x.status!=="ok");
+
+    if(status){
+      status.textContent="Justice Daily · "+items.length+" записи · "+okCount+"/"+sourceHealth.length+" извори достапни · "+
+        (Number(data?.windowDays||1)===1?"последни 24 часа":"последни "+Number(data?.windowDays||1)+" дена");
+    }
+
+    if(health){
+      const summary=document.createElement("details");
+      summary.className="ai-toolkit-source";
+      const head=document.createElement("summary");
+      head.textContent="Source health · "+okCount+" OK"+(failed.length?" · "+failed.length+" недостапни":"");
+      summary.append(head);
+      const list=document.createElement("div");list.className="ai-toolkit-flow";
+      sourceHealth.forEach(s=>{
+        const chip=document.createElement("span");
+        chip.textContent=(s.status==="ok"?"✓ ":"⚠ ")+String(s.title||s.sourceId)+" · "+String(s.itemCount||0);
+        chip.title=(s.errors||[]).join(" | ");
+        list.append(chip);
+      });
+      summary.append(list);health.append(summary);
+    }
+
+    if(!items.length){
+      const empty=document.createElement("div");empty.className="ai-toolkit-source";
+      empty.innerHTML="<strong>Нема dated записи во избраниот прозорец.</strong><p>Променете на 3 или 7 дена. Недостапните институции се прикажани во Source health; системот не ги пополнува празнините со медиумски претпоставки.</p>";
+      host?.append(empty);
+    }
+
+    items.forEach(item=>{
+      const card=document.createElement("article");card.className="ai-toolkit-source";
+      const head=document.createElement("div");head.className="ai-toolkit-source-head";
+      const title=document.createElement("strong");title.textContent=String(item.title||"Официјална објава");
+      const badge=document.createElement("span");badge.textContent=justiceDailyTypeLabel(item.type);
+      head.append(title,badge);
+      const meta=document.createElement("p");
+      meta.textContent=[
+        justiceDailyInstitutionLabel(item.institution),
+        item.publishedDate||"датум непотврден",
+        item.authorityClass||"official"
+      ].join(" · ");
+      const boundary=document.createElement("small");boundary.textContent=String(item.claimBoundary||"Вест ≠ правен заклучок.");
+      const actions=document.createElement("div");actions.className="ai-toolkit-card-actions";
+      const open=document.createElement("a");open.href=item.url;open.target="_blank";open.rel="noopener noreferrer";open.textContent="Отвори официјален извор ↗";
+      const ask=document.createElement("button");ask.type="button";ask.textContent="Во chat";
+      ask.onclick=()=>setInternalToolPrompt(
+        "AI Advokat, подготви краток правосуден briefing за оваа официјална објава. Прво провери го оригиналниот URL и точниот датум/статус. Не претворај најава, седница, сомнение, предлог или соопштение во конечен правен заклучок.\n\n"+
+        "Институција: "+justiceDailyInstitutionLabel(item.institution)+"\n"+
+        "Тип: "+justiceDailyTypeLabel(item.type)+"\n"+
+        "Датум: "+String(item.publishedDate||"непотврден")+"\n"+
+        "Наслов: "+String(item.title||"")+"\n"+
+        "URL: "+String(item.url||"")+"\n\n"+
+        "Формат: FACT / INSTITUTIONAL STATUS / WHAT IT DOES NOT PROVE / LEGAL RELEVANCE / NEXT SOURCE TO VERIFY / HUMAN GATE.",
+        dialog
+      );
+      actions.append(open,ask);
+      card.append(head,meta,boundary,actions);host?.append(card);
+    });
+
+    if(brief){
+      brief.disabled=!items.length;
+      brief.onclick=()=>{
+        const top=items.slice(0,12).map((item,i)=>
+          (i+1)+". ["+justiceDailyInstitutionLabel(item.institution)+"] "+String(item.publishedDate||"датум?")+" — "+String(item.title||"")+" — "+String(item.url||"")
+        ).join("\n");
+        setInternalToolPrompt(
+          "AI Advokat, изработи ДНЕВЕН ПРАВОСУДЕН БРИФИНГ само од следните официјално агрегирани записи. За секој запис задржи го институционалниот статус и не претпоставувај правно дејство. Групирај: 1) Клучни одлуки/предмети, 2) Законодавство и реформи, 3) Судско и обвинителско управување, 4) Ризици/рокови за следење, 5) Human Gate.\n\n"+top,
+          dialog
+        );
+      };
+    }
+  }
+
+  async function loadJusticeDaily(dialog){
+    const status=dialog.querySelector("[data-justice-status]");
+    const host=dialog.querySelector("[data-justice-items]");
+    if(status) status.textContent="Justice Daily ги проверува официјалните извори…";
+    if(host) host.replaceChildren();
+    const days=String(dialog.querySelector("[data-justice-days]")?.value||"1");
+    const institution=String(dialog.querySelector("[data-justice-institution]")?.value||"");
+    const type=String(dialog.querySelector("[data-justice-type]")?.value||"");
+    const params=new URLSearchParams({days,limit:"60"});
+    if(institution) params.set("institution",institution);
+    if(type) params.set("type",type);
+    try{
+      const r=await fetch(CHAT_API_BASE+"/api/legal-news?"+params.toString(),{headers:{accept:"application/json"}});
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok||!data?.ok) throw new Error(data?.detail||data?.error||"justice_daily_unavailable");
+      dialog._justiceDailyData=data;
+      renderJusticeDaily(dialog,data);
+    }catch(error){
+      if(status) status.textContent="Justice Daily не е достапен: "+String(error?.message||error);
+      const failed=document.createElement("div");failed.className="ai-toolkit-source";
+      failed.textContent="Не е објавен правосуден брифинг. Изворните празнини не се пополнуваат автоматски.";
+      host?.append(failed);
+    }
+  }
+
+  function ensureJusticeDailyDialog(){
+    let d=document.getElementById("aiJusticeDailyDialog");
+    if(d) return d;
+    d=document.createElement("dialog");d.id="aiJusticeDailyDialog";d.className="ai-toolkit-dialog ai-pro-ecosystem-dialog";
+    d.innerHTML=`<div class="ai-workspace-dialog-head"><div><strong>◉ Justice Daily · Правосуден агрегатор</strong><small>официјални извори · дедупликација · source health · Human Gate</small></div><button type="button" data-close>×</button></div>
+      <div class="ai-toolkit-body">
+        <section class="ai-toolkit-section">
+          <div class="ai-toolkit-form-grid">
+            <label>Период<select data-justice-days><option value="1">Последни 24 часа</option><option value="3">Последни 3 дена</option><option value="7">Последни 7 дена</option></select></label>
+            <label>Институција<select data-justice-institution>
+              <option value="">Сите официјални извори</option>
+              <option value="assembly">Собрание</option>
+              <option value="constitutional_court">Уставен суд</option>
+              <option value="supreme_court">Врховен суд</option>
+              <option value="judicial_council">Судски совет</option>
+              <option value="public_prosecution">Јавно обвинителство</option>
+              <option value="prosecutors_council">Совет на јавни обвинители</option>
+              <option value="ministry_justice">Министерство за правда</option>
+              <option value="judicial_academy">Академија</option>
+              <option value="court_portal">Судски портал</option>
+              <option value="official_gazette">Службен весник</option>
+              <option value="ener">ЕНЕР</option>
+              <option value="state_audit">ДЗР · Правосудство</option>
+              <option value="anti_corruption">ДКСК</option>
+            </select></label>
+            <label>Тип<select data-justice-type>
+              <option value="">Сите типови</option>
+              <option value="decision">Одлуки / предмети</option>
+              <option value="session">Седници</option>
+              <option value="legislation">Законодавство</option>
+              <option value="prosecution">Обвинителство</option>
+              <option value="appointments">Избор / именување</option>
+              <option value="reform">Реформи / извештаи</option>
+              <option value="training">Обуки</option>
+            </select></label>
+          </div>
+          <div class="ai-toolkit-card-actions"><button type="button" data-justice-refresh>Освежи</button><button type="button" data-justice-brief disabled>Подготви дневен брифинг во chat</button></div>
+          <div class="ai-toolkit-status" data-justice-status>Вчитување…</div>
+          <div data-justice-health></div>
+        </section>
+        <section class="ai-toolkit-section"><h3>Официјални правосудни новости</h3><div class="ai-toolkit-grid" data-justice-items></div></section>
+        <p class="ai-toolkit-boundary"><b>Граница:</b> Justice Daily користи официјални јавни институционални извори. Вест, најава, дневен ред, сомнение, ревизорски наод или предлог-закон не се автоматски конечен акт, вина или важечко право. За правно потпирање се бара item-level verification и Human Gate.</p>
+      </div>`;
+    document.body.append(d);
+    d.querySelector("[data-close]")?.addEventListener("click",()=>d.close());
+    d.addEventListener("click",event=>{if(event.target===d)d.close();});
+    d.querySelector("[data-justice-refresh]")?.addEventListener("click",()=>loadJusticeDaily(d));
+    d.querySelectorAll("[data-justice-days],[data-justice-institution],[data-justice-type]").forEach(el=>el.addEventListener("change",()=>loadJusticeDaily(d)));
+    loadJusticeDaily(d);
+    return d;
+  }
+
   function ensureProfessionalEcosystemDialog(){
     let d=document.getElementById("aiProfessionalEcosystemDialog");
     if(d) return d;
@@ -1876,7 +2068,7 @@
     }
     const tools=[
       ["Правен асистент","assistant"],["Анализатор","analyzer"],["Консолидатор","consolidator"],["Предиктор","predictor"],
-      ["Правни извори","sources"],["Јавни докази","public-evidence"],["Pro Ecosystem","professional-ecosystem"],["Судска практика","cases"],["CasePilot","casepilot"],["Документи","documents"],
+      ["Правни извори","sources"],["Јавни докази","public-evidence"],["Pro Ecosystem","professional-ecosystem"],["Justice Daily","justice-daily"],["Судска практика","cases"],["CasePilot","casepilot"],["Документи","documents"],
       ["Workflows","workflows"],["Human Gate","human-gate"],["Library","library"]
     ].filter(([label])=>!q||label.toLocaleLowerCase("mk").includes(q));
     if(tools.length){
@@ -1920,6 +2112,7 @@
     if(action==="sources"){renderWorkbenchSources();openWorkspaceEvidence("sources");return;}
     if(action==="public-evidence"){ensurePublicEvidenceDialog().showModal();return;}
     if(action==="professional-ecosystem"){ensureProfessionalEcosystemDialog().showModal();return;}
+    if(action==="justice-daily"){ensureJusticeDailyDialog().showModal();return;}
     if(action==="human-gate"){renderWorkbenchHumanGate();openWorkspaceEvidence("human");return;}
   }
 
