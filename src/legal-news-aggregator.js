@@ -2,7 +2,7 @@
 // Read-only aggregator for official public justice-sector sources.
 // News discovery is not a legal conclusion and never bypasses source verification or Human Gate.
 
-export const LEGAL_NEWS_AGGREGATOR_VERSION="AI_ADVOCAT_JUSTICE_DAILY_V1_2";
+export const LEGAL_NEWS_AGGREGATOR_VERSION="AI_ADVOCAT_JUSTICE_DAILY_V1_3";
 
 const JUSTICE_KEYWORDS=[
   "суд","судиј","судск","правосуд","правда","обвинител","обвинителств","јавно обвинителство",
@@ -227,10 +227,143 @@ export const LEGAL_NEWS_SOURCES=Object.freeze([
     layer:"international",
     authorityClass:"official_eu_court",
     relevance:"all",
-    urls:["https://curia.europa.eu/site/"],
+    urls:[
+      "https://curia.europa.eu/site/rss.jsp?lang=en&secondLang=fr",
+      "https://curia.europa.eu/site/"
+    ],
     articleHosts:["curia.europa.eu","infocuria.curia.europa.eu"],
     sourceRole:"cjeu_judgments_opinions_and_press_watch",
     boundary:"CURIA е официјален извор на Судот на правдата на ЕУ. Press release/вест е discovery; за правно потпирање се проверуваат бројот на предметот, точниот judgment/opinion и датумот."
+  },
+
+  {
+    id:"echr-press-rss",
+    institution:"echr_press",
+    title:"ECHR · Press releases RSS",
+    layer:"international",
+    authorityClass:"official_international_court_press",
+    relevance:"all",
+    urls:[
+      "https://hudoc.echr.coe.int/app/transform/rss?length=20&library=echrengpress&query=contentsitename%3AECHR+AND+doctype%3DPR&rankingModelId=11111111-0000-0000-0000-000000000000&sort=kpdate+Descending&start=0",
+      "https://www.echr.coe.int/en/echr-rss-feeds"
+    ],
+    articleHosts:["hudoc.echr.coe.int","www.echr.coe.int","echr.coe.int"],
+    sourceRole:"echr_press_release_and_case_law_discovery",
+    boundary:"ECHR press/RSS е официјален discovery слој. За правно потпирање се проверува конкретниот HUDOC judgment/decision, application number, датум и статус."
+  },
+  {
+    id:"eu-commission-rss",
+    institution:"eu_commission",
+    title:"European Commission · Publications RSS",
+    layer:"international",
+    authorityClass:"official_eu_executive",
+    relevance:"all",
+    urls:[
+      "https://commission.europa.eu/node/3/rss_en",
+      "https://commission.europa.eu/"
+    ],
+    articleHosts:["commission.europa.eu"],
+    sourceRole:"eu_commission_publications_and_policy_watch",
+    boundary:"Објава на Европската комисија може да биде официјална институционална информација, но proposal/communication не е автоматски важечко право; за правен акт се проверуваат EUR-Lex/Official Journal и temporal status."
+  },
+  {
+    id:"un-ilc-rss",
+    institution:"un_ilc",
+    title:"UN International Law Commission · RSS",
+    layer:"international",
+    authorityClass:"official_un_codification_body",
+    relevance:"all",
+    urls:[
+      "https://legal.un.org/ilc/ilc_rss.xml",
+      "https://legal.un.org/ilc/"
+    ],
+    articleHosts:["legal.un.org"],
+    sourceRole:"international_law_codification_and_development_watch",
+    boundary:"Материјалите на ILC се официјални работни/кодификациски материјали на ОН, но draft articles, conclusions и reports не се автоматски обврзувачко право."
+  },
+  {
+    id:"european-law-blog",
+    institution:"european_law_blog",
+    title:"European Law Blog",
+    layer:"analysis",
+    authorityClass:"academic_secondary_analysis",
+    relevance:"all",
+    urls:[
+      "https://europeanlawblog.eu/feed/",
+      "https://europeanlawblog.eu/"
+    ],
+    articleHosts:["europeanlawblog.eu","www.europeanlawblog.eu"],
+    sourceRole:"peer_reviewed_eu_law_analysis_discovery",
+    boundary:"European Law Blog е академски secondary source за анализа на ЕУ право. Не е официјален извор и не смее да се третира како правен акт или судска одлука."
+  },
+  {
+    id:"european-western-balkans",
+    institution:"european_western_balkans",
+    title:"European Western Balkans",
+    layer:"regional_analysis",
+    authorityClass:"regional_news_analysis",
+    relevance:"all",
+    urls:[
+      "https://europeanwesternbalkans.com/feed/",
+      "https://europeanwesternbalkans.com/"
+    ],
+    articleHosts:["europeanwesternbalkans.com","www.europeanwesternbalkans.com"],
+    sourceRole:"western_balkans_eu_integration_rule_of_law_watch",
+    boundary:"European Western Balkans е регионален news/analysis discovery source. За правни тврдења се враќаме на официјалниот национален или ЕУ извор."
+  },
+  {
+    id:"global-legal-post",
+    institution:"global_legal_post",
+    title:"The Global Legal Post · News RSS",
+    layer:"global_analysis",
+    authorityClass:"commercial_legal_news",
+    relevance:"all",
+    urls:[
+      "https://www.globallegalpost.com/rss-news",
+      "https://www.globallegalpost.com/"
+    ],
+    articleHosts:["globallegalpost.com","www.globallegalpost.com"],
+    sourceRole:"global_commercial_and_professional_legal_news_watch",
+    boundary:"Global Legal Post е комерцијален legal-news secondary source. Наслов/анализа не е доказ за важечко право и се проверува со примарен извор."
+  },
+  {
+    id:"balkan-insight",
+    institution:"balkan_insight",
+    title:"Balkan Insight · Legal / rule-of-law watch",
+    layer:"regional_analysis",
+    authorityClass:"regional_investigative_news",
+    relevance:"all",
+    collectionMode:"reference_only",
+    urls:["https://balkaninsight.com/rss-feeds/"],
+    articleHosts:["balkaninsight.com","www.balkaninsight.com"],
+    sourceRole:"balkan_rule_of_law_transitional_justice_discovery",
+    boundary:"Balkan Insight е новинарски/аналитички discovery source. Неговите наоди не се заменски примарен правен извор и мора да се верификуваат со официјални документи."
+  },
+  {
+    id:"akademik-mk",
+    institution:"akademik_mk",
+    title:"Академик · Македонија",
+    layer:"national_analysis",
+    authorityClass:"commercial_legal_information_portal",
+    relevance:"all",
+    collectionMode:"reference_only",
+    urls:["https://akademik.mk/"],
+    articleHosts:["akademik.mk","www.akademik.mk"],
+    sourceRole:"macedonian_professional_legal_information_discovery",
+    boundary:"Академик е професионален/комерцијален secondary source. За authoritative current-law тврдење се проверуваат Службен весник, ЛДБИС и друг соодветен официјален извор."
+  },
+  {
+    id:"law360",
+    institution:"law360",
+    title:"Law360 · RSS / subscription reference",
+    layer:"global_analysis",
+    authorityClass:"commercial_subscription_legal_news",
+    relevance:"all",
+    collectionMode:"reference_only",
+    urls:["https://www.law360.com/Law360-RSS-Feeds.pdf","https://www.law360.com/"],
+    articleHosts:["law360.com","www.law360.com"],
+    sourceRole:"global_legal_news_subscription_reference",
+    boundary:"Law360 е LexisNexis/RELX commercial subscription legal-news source. Не се заобиколува paywall и содржината не се третира како примарен правен авторитет."
   },
   {
     id:"serbia-pis",
@@ -277,7 +410,13 @@ function decodeHtml(value){
 }
 
 function stripTags(value){
-  return decodeHtml(text(value).replace(/<script\b[\s\S]*?<\/script>/gi," ").replace(/<style\b[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," "));
+  return decodeHtml(
+    text(value)
+      .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/gi,"$1")
+      .replace(/<script\b[\s\S]*?<\/script>/gi," ")
+      .replace(/<style\b[\s\S]*?<\/style>/gi," ")
+      .replace(/<[^>]+>/g," ")
+  );
 }
 
 function cleanText(value){
@@ -370,7 +509,8 @@ function validIsoDate(y,m,d){
 }
 
 export function parsePublishedDate(value){
-  const s=cleanText(value).toLocaleLowerCase("mk");
+  const raw=cleanText(value);
+  const s=raw.toLocaleLowerCase("mk");
   let m=s.match(/\b(20\d{2})[-/.](0?[1-9]|1[0-2])[-/.](0?[1-9]|[12]\d|3[01])\b/);
   if(m) return validIsoDate(m[1],m[2],m[3]);
   m=s.match(/\b(0?[1-9]|[12]\d|3[01])(?:\s*[./-]\s*|\s+)(0?[1-9]|1[0-2])(?:\s*[./-]\s*|\s+)(20\d{2})\b/);
@@ -380,6 +520,8 @@ export function parsePublishedDate(value){
     const month=MONTHS[m[2]];
     if(month) return validIsoDate(m[3],month,m[1]);
   }
+  const parsed=Date.parse(raw);
+  if(Number.isFinite(parsed)) return new Date(parsed).toISOString().slice(0,10);
   return null;
 }
 
@@ -390,6 +532,63 @@ function relevanceScore(source,title){
   const low=normaliseTitle(title).toLocaleLowerCase("mk");
   if(/одлук|решени|пресуд|седниц|закон|обвинител|суд|правосуд|устав/.test(low)) score+=2;
   return score;
+}
+
+function firstTag(block,names){
+  for(const name of names){
+    const m=block.match(new RegExp("<"+name+"\\b[^>]*>([\\s\\S]*?)<\\/"+name+">","i"));
+    if(m) return cleanText(m[1]);
+  }
+  return "";
+}
+
+function syndicationLink(block,baseUrl){
+  const atom=block.match(/<link\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*\/?\s*>/i);
+  if(atom) return safeAbsoluteUrl(atom[1],baseUrl);
+  const rss=block.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i);
+  return rss?safeAbsoluteUrl(cleanText(rss[1]),baseUrl):null;
+}
+
+export function extractSyndicationItems(source,xml,{now=new Date(),baseUrl=source?.urls?.[0]}={}){
+  const raw=text(xml);
+  const blocks=[
+    ...(raw.match(/<item\b[\s\S]*?<\/item>/gi)||[]),
+    ...(raw.match(/<entry\b[\s\S]*?<\/entry>/gi)||[])
+  ];
+  const items=[];
+  for(const block of blocks){
+    const title=normaliseTitle(firstTag(block,["title"]));
+    if(isBoilerplateTitle(title)) continue;
+    const url=syndicationLink(block,baseUrl);
+    if(!url||!allowedArticleUrl(source,url)) continue;
+    const publishedDate=parsePublishedDate(firstTag(block,["pubDate","published","updated","dc:date","date"]));
+    const score=relevanceScore(source,title);
+    if(score<4) continue;
+    items.push({
+      id:source.id+":"+titleKey(title).slice(0,80),
+      sourceId:source.id,
+      institution:source.institution,
+      institutionTitle:source.title,
+      sourceRole:source.sourceRole,
+      authorityClass:source.authorityClass,
+      layer:source.layer,
+      title,
+      url,
+      publishedDate,
+      discoveredAt:new Date(now).toISOString(),
+      type:classifyLegalNewsType(title,source.id),
+      relevanceScore:score,
+      legalEffectVerified:false,
+      humanGateRequired:true,
+      claimBoundary:source.boundary
+    });
+  }
+  const byKey=new Map();
+  for(const item of items){
+    const key=item.url+"|"+titleKey(item.title);
+    if(!byKey.has(key)) byKey.set(key,item);
+  }
+  return [...byKey.values()];
 }
 
 export function extractLegalNewsItems(source,html,{now=new Date(),baseUrl=source?.urls?.[0]}={}){
@@ -497,7 +696,10 @@ async function fetchOneSource(source,fetchImpl,now){
         continue;
       }
       const html=(await response.text()).slice(0,1800000);
-      const items=extractLegalNewsItems(source,html,{now,baseUrl:url});
+      const isFeed=/rss|atom|xml/i.test(contentType)||/^\s*<\?xml|<rss\b|<feed\b/i.test(html);
+      const items=isFeed
+        ? extractSyndicationItems(source,html,{now,baseUrl:url})
+        : extractLegalNewsItems(source,html,{now,baseUrl:url});
       return {
         sourceId:source.id,
         institution:source.institution,
