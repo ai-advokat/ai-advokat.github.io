@@ -5036,7 +5036,7 @@ function humanGateStatusLabel(raw){
   return String(raw||"pending");
 }
 
-export function professionalCanonicalArticleFallback({q,articleBundle,missionProfile,explicitWebRequested=false,attachmentCount=0,guideDocumentCount=0}={}){
+export function professionalCanonicalArticleFallback({q,articleBundle,missionProfile,explicitWebRequested=false,attachmentCount=0,guideDocumentCount=0,releaseMode="provider_failure"}={}){
   if(explicitWebRequested===true) return null;
   if(!["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(String(missionProfile||""))) return null;
   if(Number(attachmentCount||0)>0 || Number(guideDocumentCount||0)>0) return null;
@@ -5090,6 +5090,7 @@ export function professionalCanonicalArticleFallback({q,articleBundle,missionPro
     return "• "+(warning||meta||"Постои посебно legal-status предупредување за овој член.")+(warning&&meta ? " ["+meta+"]" : "");
   });
 
+  const sourceFirst=releaseMode==="source_first";
   const answer=[
     "Член "+String(article.articleNumber||requested)+" од "+String(instrument.title||"релевантниот закон"),
     heading ? "Наслов: "+heading : null,
@@ -5110,7 +5111,9 @@ export function professionalCanonicalArticleFallback({q,articleBundle,missionPro
       ? "Статус: оваа верзија на членот е Human-Gate потврдена како тековна во AI Advokat. И понатаму е потребна професионална човечка проверка пред последично правно дејство."
       : "Статус: текстот е пронајден во governed corpus и може да се користи како source-backed истражувачки материјал. AI Advokat сè уште нема Human-Gate потврда дека ова е тековно важечката верзија, па не го означува како „важечки текст“. За професионално потпирање проверете го официјалниот извор, поновите измени и применливиот датум.",
     "",
-    "Забелешка: дополнителната AI синтеза моментално не беше достапна; затоа AI Advokat прикажува само проверлив изворен материјал, структурен преглед без ново толкување и неговиот точен статус."
+    sourceFirst
+      ? "Забелешка: за точно идентификуван член AI Advokat ја користи канонската source-first патека без модел. Одговорот доаѓа директно од governed corpus, без непотребно provider повикување и без ново толкување на законскиот текст."
+      : "Забелешка: дополнителната AI синтеза моментално не беше достапна; затоа AI Advokat прикажува само проверлив изворен материјал, структурен преглед без ново толкување и неговиот точен статус."
   ].filter(v=>v!==null).join("\n");
 
   return Object.freeze({
@@ -6598,6 +6601,23 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     && attachmentCheck.attachments.length===0
     && guideDocumentCheck.attachments.length===0;
 
+  // Exact governed article requests are source retrieval first, not provider tasks.
+  // The previous flow called Workers/OpenAI before using the canonical article
+  // fallback, which made a deterministic legal lookup vulnerable to transient
+  // provider 5xx/timeout failures. Resolve the source-faithful answer up front so
+  // INTERNAL FREE and EXTERNAL Professional share the same stable authority lane.
+  const canonicalExactArticleSourceFirst=exactArticleAuthorityOnly
+    ? professionalCanonicalArticleFallback({
+        q,
+        articleBundle,
+        missionProfile,
+        explicitWebRequested,
+        attachmentCount:attachmentCheck.attachments.length,
+        guideDocumentCount:guideDocumentCheck.attachments.length,
+        releaseMode:"source_first"
+      })
+    : null;
+
   const runWorkersFallbackResponse=async({fallbackReason=null,primaryProviderCalls=0,professionalFallback=false,primaryResult=null,allowOpenAIHandoff=false}={})=>{
     const professionalFallbackActive=professionalFallback===true && Boolean(membership);
     const professionalL0FallbackActive=professionalFallbackActive && missionProfile==="L0_INFORMATIONAL";
@@ -7029,7 +7049,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
 
   let freeCapacityHandoff=null;
-  if(useFreeWorkersAI){
+  if(useFreeWorkersAI && !canonicalExactArticleSourceFirst){
     const freeAttempt=await runWorkersFallbackResponse({allowOpenAIHandoff:true});
     if(!freeAttempt?.__openAIHandoff) return freeAttempt;
     freeCapacityHandoff=freeAttempt;
@@ -7059,23 +7079,40 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     totalTokens:Number(value?.usage?.totalTokens||0)
   });
 
-  let result=await runOpenAIOrchestrator(env,{
-    plan,
-    input:q,
-    researchInput:routingQuery,
-    corpusContext,
-    externalContext:[],
-    externalResearchEnabled:webRequested,
-    webSearchEnabled:webRequested,
-    attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
-    history:historyCheck.history,
-    maxOutputTokens:freeCapacityHandoff
-      ? Math.min(isFormalLegalDraftRequest(q)?1200:900,maxOutputTokens)
-      : maxOutputTokens,
-    reasoningEffort:freeCapacityHandoff ? "low" : reasoningEffort,
-    deadlineAt:professionalRequestDeadlineAt,
-    capacityFallbackMode:freeCapacityHandoff!==null
-  });
+  let result=canonicalExactArticleSourceFirst
+    ? {
+        ok:true,
+        text:canonicalExactArticleSourceFirst.answer,
+        provider:"canonical_corpus_no_model",
+        model:null,
+        providerCalls:0,
+        usage:{inputTokens:0,outputTokens:0,totalTokens:0},
+        sources:[],
+        webSearchUsed:false,
+        humanGate:"required",
+        conversationPersistence:"browser_session_only_app_no_server_conversation_store",
+        historyItemsUsed:historyCheck.history.length,
+        canonicalSourceFirst:true,
+        canonicalArticleNumber:String(canonicalExactArticleSourceFirst.article?.articleNumber||""),
+        canonicalCurrentVerified:canonicalExactArticleSourceFirst.currentVerified===true
+      }
+    : await runOpenAIOrchestrator(env,{
+        plan,
+        input:q,
+        researchInput:routingQuery,
+        corpusContext,
+        externalContext:[],
+        externalResearchEnabled:webRequested,
+        webSearchEnabled:webRequested,
+        attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
+        history:historyCheck.history,
+        maxOutputTokens:freeCapacityHandoff
+          ? Math.min(isFormalLegalDraftRequest(q)?1200:900,maxOutputTokens)
+          : maxOutputTokens,
+        reasoningEffort:freeCapacityHandoff ? "low" : reasoningEffort,
+        deadlineAt:professionalRequestDeadlineAt,
+        capacityFallbackMode:freeCapacityHandoff!==null
+      });
 
   let providerRecovery=null;
   if(freeCapacityHandoff){
@@ -7542,7 +7579,26 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     },503);
   }
 
-  const postflight=freeCapacityHandoff
+  const postflight=result.canonicalSourceFirst===true
+    ? {
+        ok:true,
+        required:false,
+        verdict:"PASS",
+        stress_test:"NOT_REQUIRED_DETERMINISTIC_SOURCE_FIRST",
+        adversarial_review:"NOT_REQUIRED_DETERMINISTIC_SOURCE_FIRST",
+        source_integrity:"VERIFIED_CANONICAL_SOURCE",
+        temporal_integrity:result.canonicalCurrentVerified===true ? "VERIFIED" : "PENDING_HUMAN_GATE",
+        jurisdiction_integrity:"VERIFIED_CANONICAL_SOURCE",
+        human_gate:result.canonicalCurrentVerified===true ? "RECOMMENDED" : "REQUIRED",
+        issues:result.canonicalCurrentVerified===true ? [] : ["Canonical article is source-backed but current-version Human Gate remains pending."],
+        corrected_answer:String(result.text||""),
+        attempts:0,
+        firstPass:true,
+        providerCalls:0,
+        usage:{inputTokens:0,outputTokens:0,totalTokens:0},
+        deterministicCanonicalSourceFirst:true
+      }
+    : freeCapacityHandoff
     ? {
         ok:true,
         required:postflightRequiredForMission,
