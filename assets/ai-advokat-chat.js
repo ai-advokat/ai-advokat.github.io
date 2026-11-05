@@ -1858,7 +1858,12 @@
       official_gazette:"Службен весник",
       ener:"ЕНЕР",
       state_audit:"ДЗР · Правосудство",
-      anti_corruption:"ДКСК"
+      anti_corruption:"ДКСК",
+      ldbis:"ЛДБИС",
+      echr_hudoc:"HUDOC · ЕСЧП",
+      eurlex_oj:"EUR-Lex · OJ",
+      curia_cjeu:"CURIA · Суд на ЕУ",
+      serbia_pis:"Правно-информациони систем · Србија"
     })[String(value||"")]||String(value||"Институција");
   }
 
@@ -1873,10 +1878,13 @@
     const items=Array.isArray(data?.items)?data.items:[];
     const sourceHealth=Array.isArray(data?.sourceHealth)?data.sourceHealth:[];
     const okCount=sourceHealth.filter(x=>x.status==="ok").length;
-    const failed=sourceHealth.filter(x=>x.status!=="ok");
+    const referenceCount=sourceHealth.filter(x=>x.status==="reference_only").length;
+    const failed=sourceHealth.filter(x=>x.status==="unavailable");
 
     if(status){
-      status.textContent="Justice Daily · "+items.length+" записи · "+okCount+"/"+sourceHealth.length+" извори достапни · "+
+      status.textContent="Justice Daily · "+items.length+" записи · "+okCount+" автоматски извори"+
+        (referenceCount?" · "+referenceCount+" референтни":"")+
+        (failed.length?" · "+failed.length+" недостапни":"")+" · "+
         (Number(data?.windowDays||1)===1?"последни 24 часа":"последни "+Number(data?.windowDays||1)+" дена");
     }
 
@@ -1884,13 +1892,19 @@
       const summary=document.createElement("details");
       summary.className="ai-toolkit-source";
       const head=document.createElement("summary");
-      head.textContent="Source health · "+okCount+" OK"+(failed.length?" · "+failed.length+" недостапни":"");
+      head.textContent="Source health · "+okCount+" OK"+(referenceCount?" · "+referenceCount+" reference-only":"")+(failed.length?" · "+failed.length+" недостапни":"");
       summary.append(head);
       const list=document.createElement("div");list.className="ai-toolkit-flow";
       sourceHealth.forEach(s=>{
-        const chip=document.createElement("span");
-        chip.textContent=(s.status==="ok"?"✓ ":"⚠ ")+String(s.title||s.sourceId)+" · "+String(s.itemCount||0);
+        const icon=s.status==="ok"?"✓ ":s.status==="reference_only"?"↗ ":"⚠ ";
+        const chip=s.fetchedUrl?document.createElement("a"):document.createElement("span");
+        chip.textContent=icon+String(s.title||s.sourceId)+" · "+String(s.itemCount||0);
         chip.title=(s.errors||[]).join(" | ");
+        if(s.fetchedUrl){
+          chip.href=String(s.fetchedUrl);
+          chip.target="_blank";
+          chip.rel="noopener noreferrer";
+        }
         list.append(chip);
       });
       summary.append(list);health.append(summary);
@@ -1995,6 +2009,11 @@
               <option value="ener">ЕНЕР</option>
               <option value="state_audit">ДЗР · Правосудство</option>
               <option value="anti_corruption">ДКСК</option>
+              <option value="ldbis">ЛДБИС · Министерство за правда</option>
+              <option value="echr_hudoc">HUDOC · ЕСЧП</option>
+              <option value="eurlex_oj">EUR-Lex · Official Journal</option>
+              <option value="curia_cjeu">CURIA · Суд на ЕУ</option>
+              <option value="serbia_pis">Правно-информациони систем · Србија</option>
             </select></label>
             <label>Тип<select data-justice-type>
               <option value="">Сите типови</option>
@@ -2012,7 +2031,7 @@
           <div data-justice-health></div>
         </section>
         <section class="ai-toolkit-section"><h3>Официјални правосудни новости</h3><div class="ai-toolkit-grid" data-justice-items></div></section>
-        <p class="ai-toolkit-boundary"><b>Граница:</b> Justice Daily користи официјални јавни институционални извори. Вест, најава, дневен ред, сомнение, ревизорски наод или предлог-закон не се автоматски конечен акт, вина или важечко право. За правно потпирање се бара item-level verification и Human Gate.</p>
+        <p class="ai-toolkit-boundary"><b>Граница:</b> Justice Daily користи официјални јавни институционални извори од Северна Македонија и означени меѓународни/регионални референтни портали. Вест, најава, дневен ред, сомнение, ревизорски наод или предлог-закон не се автоматски конечен акт, вина или важечко право. HUDOC, EUR-Lex и други client-rendered/anti-bot портали може да се прикажат како reference-only. За правно потпирање се бара item-level verification и Human Gate.</p>
       </div>`;
     document.body.append(d);
     d.querySelector("[data-close]")?.addEventListener("click",()=>d.close());
