@@ -465,3 +465,16 @@ test("generated булетин is deterministically normalised to Правопи
   assert.equal(clean,"Билтен бр. 2 е достапен.");
   assert.equal(assessMacedonianOutput(clean,{userText:"Одговори на македонски."}).ok,true);
 });
+
+
+test("detention-answer hybrid terminology is repaired deterministically",()=>{
+  const bad="Постои могуќност за замена. Непретерани пресуди се наведуваат одделно.";
+  const check=assessMacedonianOutput(bad,{userText:"Дај ми жалба против притвор на македонски."});
+  assert.equal(check.ok,false,JSON.stringify(check));
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.match(clean,/можност/u);
+  assert.match(clean,/Спротивна практика/u);
+  assert.doesNotMatch(clean,/могуќност/u);
+  assert.doesNotMatch(clean,/непретерани пресуди/iu);
+  assert.equal(assessMacedonianOutput(clean,{userText:"Дај ми жалба против притвор на македонски."}).ok,true,clean);
+});
