@@ -62,7 +62,7 @@ jobs:
           if(c.vars?.OPENAI_MODEL!=="gpt-6.1-sol") throw new Error("Professional model policy changed");
           const bot=fs.readFileSync("bot/index.html","utf8");
           if(!bot.includes("standalone-bot.js?v=20261101-core-r13")) throw new Error("core-r13 bot bundle missing");
-          if(!bot.includes("standalone-bot-vnext.js?v=20261101-vnext-r11")) throw new Error("vnext-r11 bot bundle missing");
+          if(!bot.includes("standalone-bot-vnext.js?v=20261105-vnext-r12")) throw new Error("vnext-r12 bot bundle missing");
           console.log("PRODUCTION CONTRACT: PASS");
           NODE
 
