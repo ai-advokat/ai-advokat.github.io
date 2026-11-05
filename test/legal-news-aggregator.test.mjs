@@ -21,7 +21,7 @@ function htmlResponse(html,status=200){
 }
 
 test("Justice Daily registers the core North Macedonia justice institutions as official sources",()=>{
-  assert.equal(LEGAL_NEWS_AGGREGATOR_VERSION,"AI_ADVOCAT_JUSTICE_DAILY_V1");
+  assert.equal(LEGAL_NEWS_AGGREGATOR_VERSION,"AI_ADVOCAT_JUSTICE_DAILY_V1_1");
   const directory=legalNewsSourceDirectory();
   const core=[
     "assembly","constitutional-court","supreme-court","judicial-council",
@@ -35,9 +35,20 @@ test("Justice Daily registers the core North Macedonia justice institutions as o
     assert.ok(source.urls.every(url=>url.startsWith("https://")),id+" must use https official-source URLs");
     assert.ok(source.boundary.length>40,id+" must carry an explicit claim boundary");
   }
-  for(const id of ["court-portal","official-gazette","ener","state-audit-justice","anti-corruption"]){
-    assert.ok(directory.some(x=>x.id===id),id+" extended source missing");
+  for(const id of ["court-portal","official-gazette","ener","state-audit-justice","anti-corruption","ldbis","echr-hudoc","eurlex-oj","curia-cjeu","serbia-pis","slovenia-justice"]){
+    assert.ok(directory.some(x=>x.id===id),id+" extended/international source missing");
   }
+  assert.equal(directory.length,19);
+  const exactUrls={
+    ldbis:"https://ldbis.pravda.gov.mk/",
+    "echr-hudoc":"https://hudoc.echr.coe.int/#{%22documentcollectionid2%22:[%22GRANDCHAMBER%22,%22CHAMBER%22]}",
+    "eurlex-oj":"https://eur-lex.europa.eu/oj/daily-view/L-series/default.html",
+    "curia-cjeu":"https://curia.europa.eu/site/",
+    "serbia-pis":"https://pravno-informacioni-sistem.rs/news-cat/3/0",
+    "slovenia-justice":"https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-pravosodje/novice/"
+  };
+  for(const [id,url] of Object.entries(exactUrls)) assert.equal(directory.find(x=>x.id===id)?.urls?.[0],url);
+  for(const id of ["echr-hudoc","eurlex-oj","serbia-pis"]) assert.equal(directory.find(x=>x.id===id)?.collectionMode,"reference_only");
   assert.equal(directory.some(x=>/time\.mk|sdk\.mk|telma|kanal5|alsat|slobodenpecat|plusinfo/i.test(x.urls.join(" "))),false);
 });
 
@@ -106,7 +117,7 @@ test("aggregator is fail-closed on source gaps, filters daily window and preserv
     sourceIds:["assembly","constitutional-court","supreme-court"]
   });
 
-  assert.equal(out.version,"AI_ADVOCAT_JUSTICE_DAILY_V1");
+  assert.equal(out.version,"AI_ADVOCAT_JUSTICE_DAILY_V1_1");
   assert.equal(out.scope,"internal_ai_advokat_only");
   assert.equal(out.windowDays,1);
   assert.equal(out.cutoffDate,"2026-11-05");
@@ -139,4 +150,41 @@ test("undated discovery links stay out of the default daily briefing",async()=>{
   assert.equal(out.items.length,0);
   assert.equal(out.sourceHealth[0].status,"ok");
   assert.ok(out.sourceHealth[0].itemCount>=1);
+});
+
+
+test("reference-only official portals are surfaced without pretending that client-rendered pages were scraped",async()=>{
+  let fetchCalls=0;
+  const out=await aggregateLegalNews({
+    fetchImpl:async()=>{fetchCalls++;throw new Error("must_not_fetch_reference_only");},
+    now:new Date("2026-11-05T12:00:00Z"),
+    days:1,
+    sourceIds:["echr-hudoc","eurlex-oj","serbia-pis"]
+  });
+  assert.equal(fetchCalls,0);
+  assert.equal(out.sourceHealth.length,3);
+  assert.ok(out.sourceHealth.every(x=>x.status==="reference_only"));
+  assert.ok(out.warnings.some(x=>x.includes("REFERENCE_ONLY_SOURCES:")));
+  assert.equal(out.items.length,0);
+});
+
+
+test("Slovenia Ministry of Justice is an actively fetched regional official source",async()=>{
+  let calls=0;
+  const html=`
+    <article><time>3. 11. 2026</time><a href="/novice/2026-11-03-pravosodje-clovek/">Minister Zupančič čestital nagrajencem: V središču pravosodja mora biti človek</a></article>
+  `;
+  const out=await aggregateLegalNews({
+    fetchImpl:async url=>{calls++;return htmlResponse(html,200);},
+    now:new Date("2026-11-05T12:00:00Z"),
+    days:7,
+    sourceIds:["slovenia-justice"]
+  });
+  assert.equal(calls,1);
+  assert.equal(out.sourceHealth[0].status,"ok");
+  assert.equal(out.items.length,1);
+  assert.equal(out.items[0].institution,"slovenia_justice");
+  assert.equal(out.items[0].publishedDate,"2026-11-03");
+  assert.equal(out.items[0].humanGateRequired,true);
+  assert.match(out.items[0].claimBoundary,/Не е извор на важечко право во Северна Македонија/);
 });
