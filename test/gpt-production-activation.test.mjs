@@ -349,6 +349,8 @@ test("GPTACT20 explicit Web requests fail closed instead of silently downgrading
 
 
 test("GPTACT21 successful governed and fallback responses expose truthful provider provenance",()=>{
-  assert.match(worker,/answer:governedFinalAnswer,[\s\S]*?provider:"openai",[\s\S]*?providerFallback:null,[\s\S]*?model:result\.model/);
+  assert.match(worker,/answer:governedFinalAnswer,[\s\S]*?provider:result\.provider\|\|"openai",[\s\S]*?providerFallback:null,[\s\S]*?model:result\.model\?\?null/);
   assert.match(worker,/provider:"workers_ai_free",[\s\S]*?providerFallback:fallbackReason \?/);
+  assert.match(worker,/provider:"deterministic_capacity_fallback"/);
+  assert.match(worker,/sourceMode=result\.provider==="deterministic_capacity_fallback"/);
 });

@@ -221,3 +221,35 @@ test("Exact-article L0 answers suppress unrelated secondary source surfaces",()=
   assert.match(handle,/caseLawSources:exactArticleAuthorityOnly \? \[\]/);
   assert.match(handle,/publicationSources:exactArticleAuthorityOnly \? \[\]/);
 });
+
+
+test("FREE capacity fallback uses one bounded OpenAI pass instead of Professional fan-out",()=>{
+  const worker=fs.readFileSync("src/index.js","utf8");
+  const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
+  const handle=worker.slice(worker.indexOf("async function handleGPTChat"),worker.indexOf("async function handleAssistant"));
+  assert.match(handle,/capacityFallbackMode:freeCapacityHandoff!==null/);
+  assert.match(handle,/reasoningEffort:freeCapacityHandoff \? "low" : reasoningEffort/);
+  assert.match(handle,/Math\.min\(isFormalLegalDraftRequest\(q\)\?1200:900,maxOutputTokens\)/);
+  assert.match(orchestrator,/capacityFallbackMode=false/);
+  assert.match(orchestrator,/capacityFallbackMode[\s\S]*required:false[\s\S]*executed:false/);
+  assert.match(orchestrator,/const chiefNeedsWeb=!capacityFallbackMode/);
+  assert.match(orchestrator,/capacityFallbackMode\s*\? 40000/);
+});
+
+test("FREE capacity L2/L3 bypasses paid postflight only as explicit provisional Human Gate output",()=>{
+  const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
+  assert.match(handle,/const postflight=freeCapacityHandoff/);
+  assert.match(handle,/verdict:postflightRequiredForMission \? "REVISE" : "PASS"/);
+  assert.match(handle,/NOT_EXECUTED_CAPACITY_FALLBACK/);
+  assert.match(handle,/human_gate:postflightRequiredForMission \? "REQUIRED" : "NOT_REQUIRED"/);
+  assert.match(handle,/capacityFallbackMode:true/);
+});
+
+test("FREE capacity OpenAI timeout has deterministic formal-draft last resort",()=>{
+  const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
+  assert.match(handle,/if\(!result\.ok && freeCapacityHandoff && isFormalLegalDraftRequest\(q\)\)/);
+  assert.match(handle,/deterministicFormalDraftCapacityFallback/);
+  assert.match(handle,/provider:"deterministic_capacity_fallback"/);
+  assert.match(handle,/deterministicFallback:true/);
+  assert.match(handle,/sourceMode=result\.provider==="deterministic_capacity_fallback"/);
+});

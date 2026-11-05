@@ -736,7 +736,8 @@ export async function runOpenAIOrchestrator(env, {
   history=[],
   maxOutputTokens=1600,
   reasoningEffort=null,
-  deadlineAt=null
+  deadlineAt=null,
+  capacityFallbackMode=false
 }={}) {
   if(!openAIOrchestratorConfigured(env)){
     return {ok:false,error:"openai_orchestrator_not_configured"};
@@ -759,13 +760,25 @@ export async function runOpenAIOrchestrator(env, {
     ...judicialDiscoveryGate.context
   ];
 
-  let specialistStage=await runBoundedSpecialists(env,{
-    plan,
-    input:String(researchInput||input||""),
-    corpusContext:effectiveCorpusContext,
-    webSearchEnabled:webSearchEnabled && externalResearchEnabled,
-    deadlineAt
-  });
+  let specialistStage=capacityFallbackMode
+    ? Object.freeze({
+        ok:true,
+        required:false,
+        executed:false,
+        findings:Object.freeze([]),
+        sources:Object.freeze([]),
+        webSearchUsed:false,
+        providerCalls:0,
+        usage:Object.freeze({inputTokens:0,outputTokens:0,totalTokens:0}),
+        capacityFallbackMode:true
+      })
+    : await runBoundedSpecialists(env,{
+        plan,
+        input:String(researchInput||input||""),
+        corpusContext:effectiveCorpusContext,
+        webSearchEnabled:webSearchEnabled && externalResearchEnabled,
+        deadlineAt
+      });
   if(!specialistStage.ok){
     const profile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
     if(
@@ -883,7 +896,8 @@ export async function runOpenAIOrchestrator(env, {
   }
 
   const tools=[];
-  const chiefNeedsWeb=webSearchEnabled
+  const chiefNeedsWeb=!capacityFallbackMode
+    && webSearchEnabled
     && env?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"
     && specialistStage.webSearchUsed!==true;
   if(chiefNeedsWeb){
@@ -893,9 +907,17 @@ export async function runOpenAIOrchestrator(env, {
   const body={
     model,
     instructions:orchestratorInstructions(plan),
-    reasoning:{effort:["low","medium","high"].includes(String(reasoningEffort || "")) ? String(reasoningEffort) : (["low","medium","high"].includes(String(env?.OPENAI_REASONING_EFFORT || "")) ? String(env.OPENAI_REASONING_EFFORT) : "medium")},
+    reasoning:{effort:capacityFallbackMode
+      ? "low"
+      : (["low","medium","high"].includes(String(reasoningEffort || ""))
+        ? String(reasoningEffort)
+        : (["low","medium","high"].includes(String(env?.OPENAI_REASONING_EFFORT || ""))
+          ? String(env.OPENAI_REASONING_EFFORT)
+          : "medium"))},
     input:[{role:"user",content:userParts}],
-    max_output_tokens:maxOutputTokens,
+    max_output_tokens:capacityFallbackMode
+      ? Math.min(1200,Math.max(700,Number(maxOutputTokens)||1000))
+      : maxOutputTokens,
     store:false,
     ...(tools.length ? {
       tools,
@@ -906,11 +928,13 @@ export async function runOpenAIOrchestrator(env, {
 
   const missionProfile=plan?.legalIntelligenceEngine?.mission_profile?.id||"GENERAL_BYPASS";
   const professionalFactReview=plan?.legalIntelligenceEngine?.problem_class==="professional_legal_opinion_fact_review";
-  const chiefFallbackTimeoutMs=["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)
-    ? 70000
-    : professionalFactReview
-      ? 60000
-      : 45000;
+  const chiefFallbackTimeoutMs=capacityFallbackMode
+    ? 40000
+    : ["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)
+      ? 70000
+      : professionalFactReview
+        ? 60000
+        : 45000;
   const chiefTimeout=boundedProviderTimeout(env?.OPENAI_PROVIDER_TIMEOUT_MS,chiefFallbackTimeoutMs,deadlineAt,{minStartMs:8000,maxMs:90000});
   if(!chiefTimeout.ok){
     return {

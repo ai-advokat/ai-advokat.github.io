@@ -176,6 +176,12 @@ jobs:
               if(data.model!==null && data.model!==undefined) throw new Error(label+" deterministic corpus lane must not expose an AI model");
               if(Number(data?.performance?.providerCalls||0)!==0) throw new Error(label+" deterministic corpus lane made provider calls");
               if(data.sourceMode!=="canonical_article_corpus_no_model") throw new Error(label+" deterministic corpus lane has wrong source mode");
+            }else if(data.provider==="deterministic_capacity_fallback"){
+              if(data.model!==null && data.model!==undefined) throw new Error(label+" capacity fallback must not expose an AI model");
+              if(data.sourceMode!=="deterministic_capacity_fallback_no_model") throw new Error(label+" capacity fallback has wrong source mode "+String(data.sourceMode));
+              if(data?.providerRecovery?.deterministicFallback!==true) throw new Error(label+" capacity fallback provenance missing "+JSON.stringify(data.providerRecovery));
+              if(data.webSearchUsed!==false) throw new Error(label+" capacity fallback must not claim web search");
+              if(data?.legalGovernance?.humanReviewRequired!==true) throw new Error(label+" capacity fallback must preserve Human Gate");
             }else{
               throw new Error(label+" unexpected provider "+String(data.provider));
             }

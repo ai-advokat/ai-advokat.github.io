@@ -122,3 +122,28 @@ test('vNext clears stale source and artifact state before every new governed que
   assert.match(source,/coreNewChat\?\.call\(\$\('newChat'\)\); workspace\.lastArtifact=null;/);
   assert.match(source,/function switchThread\(id\)\{\n  workspace\.lastArtifact=null;/);
 });
+
+
+test('vNext mirrors backend legalGovernance and provider recovery into the evidence workspace',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  assert.match(source,/governance:null/);
+  assert.match(source,/providerRecovery:null/);
+  assert.match(source,/thread\.governance=\(data\.legalGovernance/);
+  assert.match(source,/thread\.providerRecovery=\(data\.providerRecovery/);
+  assert.match(source,/Mission profile/);
+  assert.match(source,/Release state/);
+  assert.match(source,/Verification state/);
+  assert.match(source,/Execution/);
+  assert.match(source,/Source verification/);
+  assert.match(source,/Temporal verification/);
+  assert.match(source,/Jurisdiction verification/);
+  assert.match(source,/Required gates/);
+  assert.match(source,/Governance warning/);
+});
+
+test('vNext assistant repeat actually resubmits through the governed composer',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  assert.match(source,/const q=priorUserText\(article\)/);
+  assert.match(source,/setComposerText\(q\)/);
+  assert.match(source,/queueMicrotask\(\(\)=>\$\('composer'\)\?\.requestSubmit\(\)\)/);
+});

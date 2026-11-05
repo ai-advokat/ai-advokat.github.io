@@ -5,6 +5,7 @@ import {
   isFormalLegalDraftRequest,
   hasProceduralInstrumentMismatch,
   deterministicProceduralInstrumentFallback,
+  deterministicFormalDraftCapacityFallback,
   applyProceduralInstrumentSafety,
   cleanFormalDraftForExport,
   replaceUngroundedArticleReferences,
@@ -236,4 +237,24 @@ test("RQ18 observed malformed Macedonian drafting artefacts are deterministicall
 test("RQ19 immediately duplicated boilerplate paragraphs collapse to one copy",()=>{
   const clean=cleanFormalDraftForExport("ЧОВЕЧКА ПРОВЕРКА\n\nЧОВЕЧКА ПРОВЕРКА\n\nТекст.");
   assert.equal((clean.match(/ЧОВЕЧКА ПРОВЕРКА/gu)||[]).length,1);
+});
+
+
+test("RQ20 capacity-timeout fallback produces a useful authority-safe civil draft",()=>{
+  const q="Изработи тужба за надомест на штета, со измислени податоци.";
+  const out=deterministicFormalDraftCapacityFallback({userText:q});
+  assert.match(out,/^ТУЖБА/u);
+  assert.match(out,/РАБОТЕН ПРИМЕР — ПРАВНАТА ОСНОВА НЕ Е ВЕРИФИКУВАНА/u);
+  assert.match(out,/надомест на штета/u);
+  assert.match(out,/ЧОВЕЧКА ПРОВЕРКА/u);
+  assert.doesNotMatch(out,/\bчлен\s+\d+/iu);
+  assert.match(out,/ДА СЕ ПРОВЕРИ ВО ВАЖЕЧКИ ОФИЦИЈАЛЕН ИЗВОР/u);
+});
+
+test("RQ21 capacity-timeout fallback preserves procedural-instrument safety",()=>{
+  const q="Направи ми Туѓба за кражба на велосипед, со измислени податоци.";
+  const out=deterministicFormalDraftCapacityFallback({userText:q});
+  assert.match(out,/^РАБОТЕН НАЦРТ · ПРОЦЕСЕН ИНСТРУМЕНТ ЗА ПРОВЕРКА/u);
+  assert.doesNotMatch(out,/^ТУЖБА\b/mu);
+  assert.match(out,/ЧОВЕЧКА ПРОВЕРКА/u);
 });

@@ -154,6 +154,7 @@ import {
   isFormalLegalDraftRequest,
   hasProceduralInstrumentMismatch,
   deterministicProceduralInstrumentFallback,
+  deterministicFormalDraftCapacityFallback,
   finaliseFormalLegalDraft,
   replaceUngroundedArticleReferences
 } from "./response-quality.js";
@@ -7068,9 +7069,12 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     webSearchEnabled:webRequested,
     attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
     history:historyCheck.history,
-    maxOutputTokens,
-    reasoningEffort,
-    deadlineAt:professionalRequestDeadlineAt
+    maxOutputTokens:freeCapacityHandoff
+      ? Math.min(isFormalLegalDraftRequest(q)?1200:900,maxOutputTokens)
+      : maxOutputTokens,
+    reasoningEffort:freeCapacityHandoff ? "low" : reasoningEffort,
+    deadlineAt:professionalRequestDeadlineAt,
+    capacityFallbackMode:freeCapacityHandoff!==null
   });
 
   let providerRecovery=null;
@@ -7166,6 +7170,40 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           providerAttempts
         };
       }
+    }
+  }
+
+  if(!result.ok && freeCapacityHandoff && isFormalLegalDraftRequest(q)){
+    const failedOpenAIResult=result;
+    const fallbackText=deterministicFormalDraftCapacityFallback({userText:q});
+    const fallbackRelease=fallbackText
+      ? canonicalMacedonianFinalRelease(fallbackText,q)
+      : null;
+    if(fallbackText && fallbackRelease?.ok){
+      result={
+        ok:true,
+        text:fallbackRelease.text,
+        provider:"deterministic_capacity_fallback",
+        model:null,
+        providerCalls:Number(failedOpenAIResult.providerCalls||0),
+        usage:failedOpenAIResult.usage||{inputTokens:0,outputTokens:0,totalTokens:0},
+        providerAttempts:[sanitiseProviderAttempt(failedOpenAIResult,1)],
+        sources:[],
+        webSearchUsed:false,
+        humanGate:"required",
+        conversationPersistence:"browser_session_only_app_no_server_conversation_store",
+        historyItemsUsed:historyCheck.history.length,
+        capacityFallbackDeterministic:true,
+        primaryProviderFailed:true,
+        primaryProviderError:String(failedOpenAIResult.error||"openai_capacity_fallback_failed").slice(0,80)
+      };
+      providerRecovery={
+        ...(providerRecovery||{}),
+        recovered:true,
+        openAIRecovered:false,
+        deterministicFallback:true,
+        secondError:String(failedOpenAIResult.error||"openai_capacity_fallback_failed").slice(0,80)
+      };
     }
   }
 
@@ -7504,14 +7542,33 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     },503);
   }
 
-  const postflight=await runLegalPostflightVerifier(env,{
-    plan,
-    draft:result.text,
-    corpusContext,
-    webSources:result.sources||[],
-    maxAttempts:1,
-    deadlineAt:professionalRequestDeadlineAt
-  });
+  const postflight=freeCapacityHandoff
+    ? {
+        ok:true,
+        required:postflightRequiredForMission,
+        verdict:postflightRequiredForMission ? "REVISE" : "PASS",
+        stress_test:postflightRequiredForMission ? "NOT_EXECUTED_CAPACITY_FALLBACK" : "NOT_REQUIRED",
+        adversarial_review:postflightRequiredForMission ? "NOT_EXECUTED_CAPACITY_FALLBACK" : "NOT_REQUIRED",
+        source_integrity:postflightRequiredForMission ? "PROVISIONAL" : "NOT_REQUIRED",
+        temporal_integrity:postflightRequiredForMission ? "PROVISIONAL" : "NOT_REQUIRED",
+        jurisdiction_integrity:postflightRequiredForMission ? "PROVISIONAL" : "NOT_REQUIRED",
+        human_gate:postflightRequiredForMission ? "REQUIRED" : "NOT_REQUIRED",
+        issues:postflightRequiredForMission ? ["FREE capacity fallback uses a single bounded OpenAI pass; full professional postflight was not executed."] : [],
+        corrected_answer:String(result.text||""),
+        attempts:0,
+        firstPass:false,
+        providerCalls:0,
+        usage:{inputTokens:0,outputTokens:0,totalTokens:0},
+        capacityFallbackMode:true
+      }
+    : await runLegalPostflightVerifier(env,{
+        plan,
+        draft:result.text,
+        corpusContext,
+        webSources:result.sources||[],
+        maxAttempts:1,
+        deadlineAt:professionalRequestDeadlineAt
+      });
 
   if(!postflight.ok){
     await releaseMonthlyQuota(env,{subject,period});
@@ -7615,8 +7672,10 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const caseLawMatched=caseLawBundle.state==="matched";
   const guideFullTextUsed=guideDocumentCheck.attachments.length>0;
   const guidePrimaryLawRequired=guideDocumentCheck.sources.some(s=>s.primarySourceRequired===true && s.lawDependencyGate!=="all_mapped_dependencies_current_verified");
-  const sourceMode=exactArticleAuthorityOnly
-    ? "ai_advokat_exact_article_authority_only"
+  const sourceMode=result.provider==="deterministic_capacity_fallback"
+    ? "deterministic_capacity_fallback_no_model"
+    : exactArticleAuthorityOnly
+      ? "ai_advokat_exact_article_authority_only"
     : result.webSearchUsed===true && articleMatched && caseLawMatched && guideFullTextUsed
     ? "ai_advokat_legal_corpus_guides_case_law_plus_external_web"
     : result.webSearchUsed===true && articleMatched && caseLawMatched
@@ -7702,10 +7761,10 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   return json(request,{
     ok:true,
     answer:governedFinalAnswer,
-    provider:"openai",
+    provider:result.provider||"openai",
     providerFallback:null,
     providerRecovery,
-    model:result.model,
+    model:result.model??null,
     languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageReleaseGate:governedLanguageRelease,
     languageQualityState:governedLanguageRequired?governedFinalRelease.deliveryState:"not_required",
