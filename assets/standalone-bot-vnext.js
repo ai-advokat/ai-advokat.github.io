@@ -24,7 +24,7 @@ function titleFrom(text){
   return words.slice(0,8).join(' ')+(words.length>8?'…':'');
 }
 function makeThread(){
-  const thread={id:uid(),sessionId:uid(),title:'Нов разговор',history:[],latestSources:[],model:'',createdAt:now(),updatedAt:now()};
+  const thread={id:uid(),sessionId:uid(),title:'Нов разговор',history:[],latestSources:[],model:'',provider:'',sourceMode:'',governance:null,providerRecovery:null,createdAt:now(),updatedAt:now()};
   workspace.threads.unshift(thread); workspace.activeId=thread.id; return thread;
 }
 function activeThread(){ return workspace.threads.find(t=>t.id===workspace.activeId) || workspace.threads[0] || makeThread(); }
@@ -79,6 +79,10 @@ window.fetch = async function(input, init={}){
     // This prevents stale legal-source cards from leaking into an unrelated query or error state.
     thread.latestSources=[];
     thread.model='';
+    thread.provider='';
+    thread.sourceMode='';
+    thread.governance=null;
+    thread.providerRecovery=null;
     workspace.lastArtifact=null;
     const last=thread.history.at(-1);
     if(!(last?.role==='user' && String(last.text||'').trim()===q)){
@@ -95,7 +99,12 @@ window.fetch = async function(input, init={}){
       const answer=String(data.answer||'').trim();
       if(answer) thread.history.push({role:'assistant',text:answer,model:String(data.model||''),time:now()});
       thread.latestSources=flattenSources(data);
-      thread.model=String(data.model||''); thread.updatedAt=now();
+      thread.model=String(data.model||'');
+      thread.provider=String(data.provider||'');
+      thread.sourceMode=String(data.sourceMode||data.displayMode||'');
+      thread.governance=(data.legalGovernance&&typeof data.legalGovernance==='object')?data.legalGovernance:null;
+      thread.providerRecovery=(data.providerRecovery&&typeof data.providerRecovery==='object')?data.providerRecovery:null;
+      thread.updatedAt=now();
       window.dispatchEvent(new CustomEvent('aiadvokat:vnext-response',{detail:{threadId:thread.id,data}}));
     }).catch(()=>{});
   }
@@ -253,7 +262,12 @@ function ensureMessageActions(article){
     actions.append(edit,repeat);
   }else if(article.classList.contains('assistant')){
     const repeat=mk('button',{type:'button',class:'vnext-message-action',title:'Повтори го претходното прашање','aria-label':'Повтори го претходното прашање',text:'↺ Повтори'});
-    repeat.onclick=()=>setComposerText(priorUserText(article));
+    repeat.onclick=()=>{
+      const q=priorUserText(article);
+      if(!q) return;
+      setComposerText(q);
+      queueMicrotask(()=>$('composer')?.requestSubmit());
+    };
     const evidence=mk('button',{type:'button',class:'vnext-message-action',title:'Отвори ги изворите','aria-label':'Отвори ги изворите',text:'▤ Извори'});
     evidence.onclick=()=>openEvidence('sources');
     const review=mk('button',{type:'button',class:'vnext-message-action',title:'Отвори Human Gate','aria-label':'Отвори Human Gate',text:'✓ Проверка'});
@@ -351,10 +365,42 @@ function renderEvidence(){
   }
   if(workspace.panelTab==='context'){
     const mode=$('researchMode')?.selectedOptions?.[0]?.textContent||'Автоматски'; const guides=$('useLocalGuides')?.checked?'Вклучени':'Исклучени';
-    body.append(infoCard('Активен thread',t.title),infoCard('Research mode',mode),infoCard('Проверени локални водичи',guides),infoCard('Модел',t.model||'Се прикажува по AI одговор'),infoCard('Privacy boundary','Препознатливите лични идентификатори се маскираат локално пред испраќање. Secure Case Workspace е потребен кога за задачата е неопходен оригиналниот документ или точниот идентитет.')); return;
+    const recovery=t.providerRecovery?.direction
+      ? String(t.providerRecovery.direction)+(t.providerRecovery.recovered===true?' · recovered':'')
+      : 'Нема активен provider recovery';
+    body.append(
+      infoCard('Активен thread',t.title),
+      infoCard('Research mode',mode),
+      infoCard('Проверени локални водичи',guides),
+      infoCard('Provider',t.provider||'Се прикажува по AI одговор'),
+      infoCard('Модел',t.model||'Се прикажува по AI одговор'),
+      infoCard('Source mode',t.sourceMode||'Се прикажува по AI одговор'),
+      infoCard('Provider recovery',recovery),
+      infoCard('Privacy boundary','Препознатливите лични идентификатори се маскираат локално пред испраќање. Secure Case Workspace е потребен кога за задачата е неопходен оригиналниот документ или точниот идентитет.')
+    ); return;
   }
   if(workspace.panelTab==='human'){
-    const card=mk('section',{class:'vnext-human-card'}); card.innerHTML='<span class="vnext-status-pill">HUMAN GATE</span><h3>Потребна е професионална проверка</h3><p>AI одговорите и извозите се работен материјал. Нема автоматско потпишување, поднесување, испраќање или правно овластување.</p>';
+    const card=mk('section',{class:'vnext-human-card'});
+    const g=t.governance&&typeof t.governance==='object'?t.governance:null;
+    const humanRequired=g?.humanReviewRequired===true;
+    card.innerHTML='<span class="vnext-status-pill">HUMAN GATE</span><h3>'+(humanRequired?'Човечка проверка е задолжителна':'Професионална човечка проверка')+'</h3><p>AI одговорите и извозите се работен материјал. Нема автоматско потпишување, поднесување, испраќање или правно овластување.</p>';
+    if(g){
+      const rows=[
+        ['Mission profile',g.missionProfile],
+        ['Release state',g.releaseState],
+        ['Verification state',g.verificationState],
+        ['Execution',g.executionAuthorization],
+        ['Source verification',g.sourceVerificationState],
+        ['Temporal verification',g.temporalVerificationState],
+        ['Jurisdiction verification',g.jurisdictionVerificationState]
+      ].filter(([,value])=>String(value||'').trim());
+      for(const [label,value] of rows) card.append(infoCard(label,String(value)));
+      const gates=Array.isArray(g.requiredGateTypes)?g.requiredGateTypes.filter(Boolean):[];
+      if(gates.length) card.append(infoCard('Required gates',gates.join(', ')));
+      if(g.warning) card.append(infoCard('Governance warning',String(g.warning)));
+    }else{
+      card.append(infoCard('Governance status','Нема зачуван legalGovernance payload за активниот thread.'));
+    }
     const actions=mk('div',{class:'vnext-panel-actions'});
     const cp=mk('button',{type:'button',text:'▣ Отвори CasePilot'}); cp.onclick=()=>window.open('/casepilot-workspace.html','_blank','noopener');
     const docx=mk('button',{type:'button',text:'⇩ Извези DOCX'}); docx.onclick=()=>exportActive('docx');

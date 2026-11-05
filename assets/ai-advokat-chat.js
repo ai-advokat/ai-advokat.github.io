@@ -967,6 +967,9 @@
           gazetteIssueMetadata:Array.isArray(d.gazetteIssueMetadata)?d.gazetteIssueMetadata:[],
           governance:d.legalGovernance||null,
           humanGate:d.humanGate||null,
+          provider:String(d.provider||""),
+          sourceMode:String(d.sourceMode||d.displayMode||""),
+          providerRecovery:(d.providerRecovery&&typeof d.providerRecovery==="object")?d.providerRecovery:null,
           documentExports:requestedExportFormats(q).map(format=>({
             format,
             label:format==="docx"?"Преземи Word (.docx)":format==="pdf"?"Преземи PDF":format==="json"?"Преземи JSON":"Преземи CSV",
@@ -1456,7 +1459,21 @@
     if(evidenceTab==="context"){
       evidenceBody.append(evidenceCard("Активен разговор",String(chat?.title||"Нов разговор"),{meta:(chat?.messages?.length||0)+" пораки · режим "+String(mode||"auto")}));
       if(user) evidenceBody.append(evidenceCard("Последно прашање",String(user.text||"").slice(0,1400)));
-      if(m) evidenceBody.append(evidenceCard("Последен AI runtime",String(m.meta||"provider/runtime не е наведен"),{meta:"Историјата е само во оваа browser сесија."}));
+      if(m){
+        evidenceBody.append(evidenceCard("Последен AI runtime",String(m.meta||"provider/runtime не е наведен"),{meta:"Историјата е само во оваа browser сесија."}));
+        if(m.provider) evidenceBody.append(evidenceCard("Provider",String(m.provider)));
+        if(m.sourceMode) evidenceBody.append(evidenceCard("Source mode",String(m.sourceMode)));
+        const recovery=m.providerRecovery&&typeof m.providerRecovery==="object"?m.providerRecovery:null;
+        if(recovery){
+          const recoveryText=[
+            recovery.direction?String(recovery.direction):"",
+            recovery.firstError?"first: "+String(recovery.firstError):"",
+            recovery.secondError?"second: "+String(recovery.secondError):"",
+            recovery.recovered===true?"recovered":""
+          ].filter(Boolean).join(" · ");
+          evidenceBody.append(evidenceCard("Provider recovery",recoveryText||"active"));
+        }
+      }
       const actions=document.createElement("div");actions.className="ai-evidence-actions";
       const cases=document.createElement("a");cases.href="/case-law-metadata.html";cases.target="_blank";cases.rel="noopener noreferrer";cases.textContent="⚖ Судска практика";
       const library=document.createElement("a");library.href="/professional-library/";library.target="_blank";library.rel="noopener noreferrer";library.textContent="◫ Professional Library";
@@ -1473,7 +1490,11 @@
       if(g?.releaseState) states.push("Release: "+g.releaseState);
       if(g?.verificationState) states.push("Verification: "+g.verificationState);
       if(g?.executionAuthorization) states.push("Execution: "+g.executionAuthorization);
+      if(g?.sourceVerificationState) states.push("Source verification: "+g.sourceVerificationState);
+      if(g?.temporalVerificationState) states.push("Temporal verification: "+g.temporalVerificationState);
+      if(g?.jurisdictionVerificationState) states.push("Jurisdiction verification: "+g.jurisdictionVerificationState);
       if(Array.isArray(g?.requiredGateTypes)&&g.requiredGateTypes.length) states.push("Gates: "+g.requiredGateTypes.join(", "));
+      if(g?.warning) states.push("Warning: "+g.warning);
       if(!states.length) states.push("Нема дополнителен governance payload; основниот Human Gate останува задолжителен.");
       states.forEach((s,i)=>evidenceBody.append(evidenceCard(i===0?"Governance status":"",s)));
       return;
