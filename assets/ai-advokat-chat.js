@@ -1917,10 +1917,14 @@
     if(priorityFilter) items=items.filter(item=>String(item.priority?.level||"normal")===priorityFilter);
 
     if(status){
+      const auto=data?.autopull||{};
+      const autoText=auto.mode==="server_side_cron_snapshot"
+        ? " · AUTOPULL ✓ snapshot "+Math.max(0,Math.floor(Number(auto.snapshotAgeSeconds||0)/60))+" мин."
+        : auto.mode==="live_fetch_fallback" ? " · live fallback" : "";
       status.textContent="Justice Daily · "+items.length+" прикажани записи · "+okCount+" автоматски извори"+
         (referenceCount?" · "+referenceCount+" референтни":"")+
         (failed.length?" · "+failed.length+" недостапни":"")+" · "+
-        (Number(data?.windowDays||1)===1?"последни 24 часа":"последни "+Number(data?.windowDays||1)+" дена");
+        (Number(data?.windowDays||1)===1?"последни 24 часа":"последни "+Number(data?.windowDays||1)+" дена")+autoText;
     }
 
     if(metrics){
@@ -2075,7 +2079,7 @@
     let d=document.getElementById("aiJusticeDailyDialog");
     if(d) return d;
     d=document.createElement("dialog");d.id="aiJusticeDailyDialog";d.className="ai-toolkit-dialog ai-pro-ecosystem-dialog";
-    d.innerHTML=`<div class="ai-workspace-dialog-head"><div><strong>◉ Justice Daily · Правосуден агрегатор</strong><small>официјални извори · дедупликација · source health · Human Gate</small></div><button type="button" data-close>×</button></div>
+    d.innerHTML=`<div class="ai-workspace-dialog-head"><div><strong>◉ Justice Daily · Правосуден агрегатор</strong><small>официјални извори · server autopull на 30 минути · дедупликација · source health · Human Gate</small></div><button type="button" data-close>×</button></div>
       <div class="ai-toolkit-body">
         <section class="ai-toolkit-section">
           <div class="ai-toolkit-form-grid">
