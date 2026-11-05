@@ -1,0 +1,27 @@
+name: Internal FREE L3 draft recovery diagnostic
+
+on:
+  push:
+    branches:
+      - "fix/internal-free-l3-draft-recovery-*"
+    paths:
+      - "src/response-quality.js"
+      - "src/macedonian-language-guard.js"
+      - "src/index.js"
+      - "test/internal-free-l3-draft-recovery.test.mjs"
+      - ".github/workflows/internal-free-l3-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run targeted L3 fallback release tests
+        run: node --test test/internal-free-l3-draft-recovery.test.mjs
