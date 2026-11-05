@@ -28,7 +28,7 @@ test("public evidence layer registers independent upstream sources with explicit
   for(const id of ["mk-crrsm","mk-dksk","mk-esjn","mk-dzr","mk-open-finance","mk-ener","mk-katastar","mk-marnet-whois","mk-data-gov"]){
     const source=sources.find(x=>x.id===id);
     assert.ok(source,id+" missing");
-    assert.match(source.url,/^https:///);
+    assert.equal(source.url.startsWith("https://"),true);
     assert.ok(source.claimBoundary.length>20);
   }
   assert.equal(sources.some(x=>/osint.mk/i.test(x.url)),false,"OSINT catalog must not become an authority source");
