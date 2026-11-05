@@ -798,10 +798,10 @@
   }
 
 
-  async function staticCaseLawRegistryFallback(q){
+  async function staticCaseLawRegistryFallback(q,reason="runtime_unavailable"){
     try{
       const mod=await import("/assets/case-law-static-fallback.js?v=20261105-case-law-static-fallback-v1");
-      const out=mod.staticCaseLawFallback?.(q,{limit:6});
+      const out=mod.staticCaseLawFallback?.(q,{limit:6,reason});
       return out?.ok?out:null;
     }catch{return null;}
   }
@@ -1023,7 +1023,7 @@
       }else if(d?.error==="macedonian_release_blocked"){
         attachments=[...selectedFiles];
         renderAttachments();
-        const staticCaseFallback=await staticCaseLawRegistryFallback(q);
+        const staticCaseFallback=await staticCaseLawRegistryFallback(q,"language_gate_blocked");
         const safeFallback=staticCaseFallback?.ok
           ? {
               ok:true,
