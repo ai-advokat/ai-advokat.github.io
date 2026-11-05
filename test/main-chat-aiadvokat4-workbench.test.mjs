@@ -77,7 +77,7 @@ test("Justice Daily is directly visible and wired to the governed aggregator API
   assert.match(chat,/\/api\/legal-news\?/);
   assert.match(chat,/action==="justice-daily"/);
   assert.match(chat,/NEWS_IS_NOT_LEGAL_CONCLUSION|Вест ≠ правен заклучок/);
-  for(const label of ["ЛДБИС","HUDOC · ЕСЧП","EUR-Lex · OJ","CURIA · Суд на ЕУ","Правно-информациони систем · Србија"]) assert.ok(chat.includes(label),"missing Justice Daily source label: "+label);
+  for(const label of ["ЛДБИС","HUDOC · ЕСЧП","EUR-Lex · OJ","CURIA · Суд на ЕУ","Правно-информациони систем · Србија","Министерство за правда · Словенија"]) assert.ok(chat.includes(label),"missing Justice Daily source label: "+label);
 });
 
 test("PR #534 internal toolkit remains directly visible when the left sidebar is hidden",()=>{
