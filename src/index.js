@@ -8857,53 +8857,51 @@ function handleInternalProfessionalToolkit(request,url){
   });
 }
 
-const JUSTICE_DAILY_SNAPSHOT_KEY="latest";
+const JUSTICE_DAILY_SNAPSHOT_CACHE_URL="https://justice-daily.internal/snapshot/latest";
 const JUSTICE_DAILY_SNAPSHOT_MAX_AGE_MS=90*60*1000;
 
 async function storeJusticeDailySnapshot(env,result){
-  if(!env?.DB || !result) return {stored:false,reason:"db_not_bound"};
+  if(!result || !globalThis.caches?.default) return {stored:false,reason:"cache_api_unavailable"};
   const generatedAt=String(result.generatedAt||new Date().toISOString());
   const sourceHealth=Array.isArray(result.sourceHealth)?result.sourceHealth:[];
   const sourceOk=sourceHealth.filter(x=>x.status==="ok").length;
   const sourceUnavailable=sourceHealth.filter(x=>x.status==="unavailable").length;
-  await env.DB.prepare(
-    `INSERT INTO justice_daily_snapshots
-      (snapshot_key,generated_at,payload_json,source_ok,source_unavailable,updated_at)
-     VALUES (?1,?2,?3,?4,?5,CURRENT_TIMESTAMP)
-     ON CONFLICT(snapshot_key) DO UPDATE SET
-       generated_at=excluded.generated_at,
-       payload_json=excluded.payload_json,
-       source_ok=excluded.source_ok,
-       source_unavailable=excluded.source_unavailable,
-       updated_at=CURRENT_TIMESTAMP`
-  ).bind(
-    JUSTICE_DAILY_SNAPSHOT_KEY,
+  const body=JSON.stringify({
     generatedAt,
-    JSON.stringify(result),
     sourceOk,
-    sourceUnavailable
-  ).run();
+    sourceUnavailable,
+    payload:result
+  });
+  await caches.default.put(
+    new Request(JUSTICE_DAILY_SNAPSHOT_CACHE_URL,{method:"GET"}),
+    new Response(body,{
+      status:200,
+      headers:{
+        "content-type":"application/json; charset=utf-8",
+        "cache-control":"public, max-age=5400"
+      }
+    })
+  );
   return {stored:true,generatedAt,sourceOk,sourceUnavailable};
 }
 
 async function loadJusticeDailySnapshot(env){
-  if(!env?.DB) return null;
+  if(!globalThis.caches?.default) return null;
   try{
-    const row=await env.DB.prepare(
-      "SELECT generated_at,payload_json,source_ok,source_unavailable,updated_at FROM justice_daily_snapshots WHERE snapshot_key=?1 LIMIT 1"
-    ).bind(JUSTICE_DAILY_SNAPSHOT_KEY).first();
-    if(!row?.payload_json) return null;
-    const generatedAt=String(row.generated_at||"");
+    const response=await caches.default.match(new Request(JUSTICE_DAILY_SNAPSHOT_CACHE_URL,{method:"GET"}));
+    if(!response?.ok) return null;
+    const row=await response.json();
+    if(!row?.payload) return null;
+    const generatedAt=String(row.generatedAt||row.payload?.generatedAt||"");
     const ageMs=Date.now()-Date.parse(generatedAt);
     if(!Number.isFinite(ageMs) || ageMs>JUSTICE_DAILY_SNAPSHOT_MAX_AGE_MS) return null;
-    const payload=JSON.parse(String(row.payload_json));
     return {
-      payload,
+      payload:row.payload,
       generatedAt,
       ageMs,
-      sourceOk:Number(row.source_ok||0),
-      sourceUnavailable:Number(row.source_unavailable||0),
-      updatedAt:String(row.updated_at||"")
+      sourceOk:Number(row.sourceOk||0),
+      sourceUnavailable:Number(row.sourceUnavailable||0),
+      updatedAt:generatedAt
     };
   }catch{
     return null;
