@@ -1,5 +1,9 @@
 import { handleLegalAlarm } from "./legal-alarm.js";
 import {
+  APPEAL_SKOPJE_36_VERSION,
+  searchAppealSkopje36
+} from "./appeal-skopje-36-discovery.js";
+import {
   FREE_MONTHLY_ASSISTANT_QUOTA,
   MEMBERSHIP_REQUEST_DAILY_LIMIT,
   MEMBERSHIP_REQUEST_HOURLY_LIMIT,
@@ -4697,7 +4701,71 @@ function caseLawAuthorityScope(row){
   return "Case-law authority must be evaluated for the stated jurisdiction and court level.";
 }
 
-export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
+export function appealSkopjeDiscoveryContext(q,{limit=4}={}){
+  const rows=searchAppealSkopje36(q,{limit});
+  if(!rows.length) return {context:[],sources:[],cases:[],state:"no_discovery_match"};
+  const context=rows.map(row=>({
+    source:"AI Advokat discovery corpus · Апелационен суд Скопје",
+    locator:["Предмет "+row.n,row.d,"user-supplied public court copy"].filter(Boolean).join(" · "),
+    version:[
+      APPEAL_SKOPJE_36_VERSION,
+      "DISCOVERY_ONLY",
+      "remote item binding pending",
+      "Human Gate required"
+    ].join(" · "),
+    provenance:{
+      kind:"case_law_discovery",
+      sourceIdentity:"Апелационен суд Скопје · user-supplied decision copy",
+      authorityClass:"appellate_decision_copy_unbound",
+      locator:"Предмет "+row.n+" · "+row.d,
+      releaseRole:"discovery_only",
+      legalAuthority:false,
+      humanReviewStatus:"pending",
+      officialBindingVerified:false,
+      caseIdentity:row.n,
+      court:"Апелационен суд Скопје",
+      jurisdiction:"MK",
+      decisionDate:row.d,
+      sourceUrl:"https://sud.mk/",
+      currentLawClaim:false
+    },
+    text:[
+      "SOURCE_ROLE: CASE_LAW_DISCOVERY_ONLY_NOT_AUTHORITY",
+      "COURT: Апелационен суд Скопје",
+      "CASE_NUMBER: "+row.n,
+      "DECISION_DATE: "+row.d,
+      "LEGAL_AREA: кривично право",
+      "ISSUE_HINT: "+row.i,
+      "SOURCE_PAGES: "+row.p,
+      "OFFICIAL_REMOTE_BINDING: pending",
+      "HUMAN_GATE_REQUIRED: true",
+      "Do not cite this record as reviewed legal authority. Use it to discover a potentially relevant decision, then verify the original court item and holding."
+    ].join("\n")
+  }));
+  return {
+    context,
+    sources:rows.map(row=>({
+      title:"Апелационен суд Скопје · "+row.n,
+      caseTitle:"Апелационен суд Скопје · "+row.n,
+      court:"Апелационен суд Скопје",
+      caseNumber:row.n,
+      jurisdiction:"MK",
+      decisionDate:row.d,
+      decisionType:"decision_copy_unverified",
+      precedentialWeight:"appellate_discovery_only",
+      outcomeRole:"neutral",
+      url:"https://sud.mk/",
+      humanReviewStatus:"pending",
+      authorityReviewStatus:"pending",
+      officialBindingVerified:false
+    })),
+    cases:rows,
+    state:"discovery_only_match",
+    discoveryVersion:APPEAL_SKOPJE_36_VERSION
+  };
+}
+
+async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
   const empty=Object.freeze({context:[],sources:[],cases:[],state:"not_applicable"});
   if(!basePlan?.legalIntelligenceEngine?.engaged || !env?.DB) return empty;
 
@@ -4753,7 +4821,10 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
       .sort((a,b)=>b._score-a._score || String(b.decision_date||"").localeCompare(String(a.decision_date||"")))
       .slice(0,Math.max(1,Math.min(6,Number(limit)||4)));
 
-    if(!rows.length) return {...empty,state:"no_reviewed_match"};
+    if(!rows.length){
+      const discovery=appealSkopjeDiscoveryContext(q,{limit});
+      return discovery.state==="discovery_only_match" ? discovery : {...empty,state:"no_reviewed_match"};
+    }
 
     const context=rows.map(row=>{
       const sourceUrl=row.source_url||row.registry_source_url||"";
