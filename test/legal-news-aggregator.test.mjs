@@ -38,12 +38,12 @@ test("Justice Daily registers the core North Macedonia justice institutions as o
   for(const id of ["court-portal","official-gazette","ener","state-audit-justice","anti-corruption","ldbis","echr-hudoc","eurlex-oj","curia-cjeu","serbia-pis","slovenia-justice"]){
     assert.ok(directory.some(x=>x.id===id),id+" extended/international source missing");
   }
-  assert.equal(directory.length,19);
+  assert.equal(directory.length,28);
   const exactUrls={
     ldbis:"https://ldbis.pravda.gov.mk/",
     "echr-hudoc":"https://hudoc.echr.coe.int/#{%22documentcollectionid2%22:[%22GRANDCHAMBER%22,%22CHAMBER%22]}",
     "eurlex-oj":"https://eur-lex.europa.eu/oj/daily-view/L-series/default.html",
-    "curia-cjeu":"https://curia.europa.eu/site/",
+    "curia-cjeu":"https://curia.europa.eu/site/rss.jsp?lang=en&secondLang=fr",
     "serbia-pis":"https://pravno-informacioni-sistem.rs/news-cat/3/0",
     "slovenia-justice":"https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-pravosodje/novice/"
   };
