@@ -4804,7 +4804,7 @@ function handleCaseLawCurationPlan(request){
   });
 }
 
-async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
+export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
   const empty=Object.freeze({context:[],sources:[],cases:[],state:"not_applicable"});
   if(!basePlan?.legalIntelligenceEngine?.engaged || !env?.DB) return empty;
 
