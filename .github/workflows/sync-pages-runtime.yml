@@ -67,10 +67,10 @@ jobs:
           node --check src/legal-news-aggregator.js
           node --check assets/standalone-bot-vnext.js
           node --check assets/standalone-bot-reliability.js
-          grep -q 'ai-advokat-chat.js?v=20261105-root-r18-justice-daily-autopull-v1' index.html
+          grep -q 'ai-advokat-chat.js?v=20261105-root-r19-case-law-radar-v1' index.html
           grep -q 'ai-advokat-chat.css?v=20261101-root-complete-r12' index.html
           grep -q 'standalone-bot.js?v=20261101-core-r13' bot/index.html
-          grep -q 'standalone-bot-vnext.js?v=20261105-vnext-r12' bot/index.html
+          grep -q 'standalone-bot-vnext.js?v=20261105-vnext-r13-case-law-radar' bot/index.html
           grep -q "import('./chat-privacy-browser.js?v=20261101-privacy-r12')" assets/standalone-bot.js
           grep -q "import('/src/chat-privacy.js?v=20261101-privacy-compat-r1')" assets/standalone-bot.js
           grep -q '!src/chat-privacy.js' .assetsignore
