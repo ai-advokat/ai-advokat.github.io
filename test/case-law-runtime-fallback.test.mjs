@@ -33,7 +33,7 @@ test("main chat uses static discovery only after governed API fallbacks fail",()
 test("Pages runtime ships the static fallback and r20 chat cache contract",()=>{
   assert.match(sync,/assets\/case-law-static-fallback\.js/);
   assert.match(sync,/node --check assets\/case-law-static-fallback\.js/);
-  assert.match(index,/ai-advokat-chat\.js\?v=20261105-root-r23-case-law-authority-gate-v1/);
+  assert.match(index,/ai-advokat-chat\.js\?v=20261105-root-r24-detention-procedural-act-gate-v1/);
 });
 
 

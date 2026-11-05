@@ -16,6 +16,11 @@ import {
   assessSpecificCaseLawClaims
 } from "./case-law-claim-guard.js";
 import {
+  DETENTION_PROCEDURAL_TERMINOLOGY_VERSION,
+  normaliseDetentionProceduralTerminology,
+  assessDetentionProceduralTerminology
+} from "./detention-procedural-terminology.js";
+import {
   APPEAL_SKOPJE_36_VERSION,
   APPEAL_SKOPJE_36_RECORDS,
   searchAppealSkopje36
@@ -6997,6 +7002,22 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       releasedFallbackText=degradedLanguageRelease.text;
     }
 
+    releasedFallbackText=normaliseDetentionProceduralTerminology(releasedFallbackText,{userText:q});
+    const fallbackDetentionTerminologyGate=assessDetentionProceduralTerminology(releasedFallbackText,{userText:q});
+    if(!fallbackDetentionTerminologyGate.ok){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:"procedural_act_terminology_blocked",
+        message:"Одговорот не е пуштен затоа што за притвор користи погрешен вид судски акт. Според ЗКП, определувањето, продолжувањето и укинувањето на притвор се вршат со решение, а не со пресуда.",
+        proceduralActTerminology:{
+          version:DETENTION_PROCEDURAL_TERMINOLOGY_VERSION,
+          issues:fallbackDetentionTerminologyGate.issues
+        },
+        governanceRunId:lioeRunId
+      },503);
+    }
+
     const fallbackCaseLawClaimGate=assessSpecificCaseLawClaims(releasedFallbackText,{
       reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
       webSources:[]
@@ -7906,6 +7927,22 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         governedArticleNumbers
       })
     : String(finalAnswer||"").trim();
+
+  governedFinalAnswer=normaliseDetentionProceduralTerminology(governedFinalAnswer,{userText:q});
+  const governedDetentionTerminologyGate=assessDetentionProceduralTerminology(governedFinalAnswer,{userText:q});
+  if(!governedDetentionTerminologyGate.ok){
+    await releaseMonthlyQuota(env,{subject,period});
+    return json(request,{
+      ok:false,
+      error:"procedural_act_terminology_blocked",
+      message:"Одговорот не е пуштен затоа што за притвор користи погрешен вид судски акт. Според ЗКП, определувањето, продолжувањето и укинувањето на притвор се вршат со решение, а не со пресуда.",
+      proceduralActTerminology:{
+        version:DETENTION_PROCEDURAL_TERMINOLOGY_VERSION,
+        issues:governedDetentionTerminologyGate.issues
+      },
+      governanceRunId:lioeRunId
+    },503);
+  }
 
   const governedCaseLawClaimGate=assessSpecificCaseLawClaims(governedFinalAnswer,{
     reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
