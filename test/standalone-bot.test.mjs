@@ -147,7 +147,7 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const html=fs.readFileSync('bot/index.html','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261105-vnext-r12/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261105-vnext-r13-case-law-radar/);
   assert.match(html,/standalone-bot-vnext\.css\?v=20261101-ui-r5/);
   assert.match(html,/standalone-bot\.js\?v=20261101-core-r13/);
   assert.doesNotMatch(vnext,/standalone-bot\.js/);
@@ -192,7 +192,7 @@ test('fresh mobile device can activate send and reach governed access flow',()=>
   assert.match(source,/if \(results\[2\]\.status === 'fulfilled'\) restoreAccess\(\);/);
   assert.match(source,/if \(!key\) \{[\s\S]{0,180}\$\('access'\)\.click\(\)/);
   assert.match(source,/if \(q\.length < 2\) return;/);
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261105-vnext-r12/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261105-vnext-r13-case-law-radar/);
 });
 
 
@@ -239,7 +239,7 @@ test('bot menu and tool surfaces use leading symbols consistently',()=>{
   assert.match(html,/◫ Материјали и алатки/);
   assert.match(html,/✓ Професионален пристап/);
   assert.match(html,/▣ CasePilot/);
-  assert.match(html,/⚖ Судски пресуди и метаподатоци/);
+  assert.match(html,/⚖ Case-Law Corpus Radar/);
 });
 
 test('core composer boot is independent and privacy dependency failure is fail-closed',()=>{
@@ -247,7 +247,7 @@ test('core composer boot is independent and privacy dependency failure is fail-c
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
   const corePos=html.indexOf('standalone-bot.js?v=20261101-core-r13');
-  const vnextPos=html.indexOf('standalone-bot-vnext.js?v=20261105-vnext-r12');
+  const vnextPos=html.indexOf('standalone-bot-vnext.js?v=20261105-vnext-r13-case-law-radar');
   assert.ok(corePos>=0 && vnextPos>corePos);
   assert.doesNotMatch(vnext,/await import.*standalone-bot/);
   assert.match(core,/Promise\.allSettled/);
