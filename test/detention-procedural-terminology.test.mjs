@@ -53,6 +53,15 @@ test("detention procedural acts are corrected from пресуда to решен�
   assert.equal(assessDetentionProceduralTerminology(clean,{userText:q}).ok,true);
 });
 
+test("embedded Cyrillic tokens and identifiers are not rewritten or flagged",()=>{
+  const embedded="_пресуда за определување притвор";
+  assert.equal(normaliseDetentionProceduralTerminology(embedded,{userText:q}),embedded);
+  assert.equal(assessDetentionProceduralTerminology(embedded,{userText:q}).ok,true);
+  const joined="идентификаторпресуда за укинување на притворот";
+  assert.equal(normaliseDetentionProceduralTerminology(joined,{userText:q}),joined);
+  assert.equal(assessDetentionProceduralTerminology(joined,{userText:q}).ok,true);
+});
+
 test("legitimate judgment references remain intact",()=>{
   const text=[
     "По објавување на пресудата, судот одделно одлучува за притворот.",
