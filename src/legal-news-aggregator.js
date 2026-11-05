@@ -164,7 +164,7 @@ export const LEGAL_NEWS_SOURCES=Object.freeze([
     title:"Државен завод за ревизија · Правосудство",
     layer:"extended",
     authorityClass:"official_state_audit",
-    relevance:"all",
+    relevance:"justice_filtered",
     urls:["https://dzr.mk/mk/revizii/pravda-politicki-partii/oblast-pravosudstvo"],
     articleHosts:["dzr.mk","www.dzr.mk"],
     sourceRole:"justice_sector_audit_watch",
@@ -314,13 +314,13 @@ function relevanceScore(source,title){
   return score;
 }
 
-export function extractLegalNewsItems(source,html,{now=new Date()}={}){
+export function extractLegalNewsItems(source,html,{now=new Date(),baseUrl=source?.urls?.[0]}={}){
   const raw=text(html);
   const items=[];
   const anchorRe=/<a\b([^>]*?)href\s*=\s*["']([^"']+)["']([^>]*)>([\s\S]*?)<\/a>/gi;
   let match;
   while((match=anchorRe.exec(raw))){
-    const href=safeAbsoluteUrl(match[2],source.urls[0]);
+    const href=safeAbsoluteUrl(match[2],baseUrl||source.urls[0]);
     if(!href||!allowedArticleUrl(source,href)) continue;
     const title=normaliseTitle(match[4]);
     const score=relevanceScore(source,title);
@@ -404,7 +404,7 @@ async function fetchOneSource(source,fetchImpl,now){
         continue;
       }
       const html=(await response.text()).slice(0,1800000);
-      const items=extractLegalNewsItems(source,html,{now});
+      const items=extractLegalNewsItems(source,html,{now,baseUrl:url});
       return {
         sourceId:source.id,
         institution:source.institution,
@@ -438,17 +438,29 @@ async function fetchOneSource(source,fetchImpl,now){
 function dedupeItems(items){
   const out=new Map();
   for(const item of items){
-    const key=titleKey(item.title);
+    const key=(item.publishedDate||"undated")+"|"+titleKey(item.title);
     if(!key) continue;
     const prior=out.get(key);
     if(!prior){
-      out.set(key,item);
+      out.set(key,{...item,corroboratingSources:[]});
       continue;
     }
-    const priorDate=prior.publishedDate||"";
-    const itemDate=item.publishedDate||"";
-    const chooseItem=itemDate>priorDate || (itemDate===priorDate && item.relevanceScore>prior.relevanceScore);
-    if(chooseItem) out.set(key,item);
+    const sourceMeta={sourceId:item.sourceId,institution:item.institution,institutionTitle:item.institutionTitle,url:item.url};
+    const priorMeta={sourceId:prior.sourceId,institution:prior.institution,institutionTitle:prior.institutionTitle,url:prior.url};
+    const all=[priorMeta,...(prior.corroboratingSources||[]),sourceMeta];
+    const unique=[];
+    const seen=new Set();
+    for(const s of all){
+      const sk=String(s.sourceId)+"|"+String(s.url);
+      if(seen.has(sk)) continue;
+      seen.add(sk);unique.push(s);
+    }
+    const chooseItem=item.relevanceScore>prior.relevanceScore;
+    if(chooseItem){
+      out.set(key,{...item,corroboratingSources:unique.filter(s=>s.sourceId!==item.sourceId||s.url!==item.url)});
+    }else{
+      prior.corroboratingSources=unique.filter(s=>s.sourceId!==prior.sourceId||s.url!==prior.url);
+    }
   }
   return [...out.values()];
 }
