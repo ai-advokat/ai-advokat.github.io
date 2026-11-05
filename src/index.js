@@ -6505,8 +6505,15 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   // P0 cost guard: anonymous/FREE traffic must never spill into the paid OpenAI path.
   // FREE uses the separately configured Workers AI provider. If that provider is
   // unavailable, the request fails closed instead of creating unbounded paid spend.
+  const canonicalExactArticlePreProviderEligible=
+    articleBundle.state==="matched"
+    && ["L0_INFORMATIONAL","L1_VERIFIED_RESEARCH"].includes(initialMissionProfile)
+    && Boolean(exactArticleNumberFromQuestion(q))
+    && explicitWebRequested!==true
+    && attachmentCheck.attachments.length===0
+    && guideDocumentCheck.attachments.length===0;
   const useFreeWorkersAI=!membership && freeProviderReady;
-  if(!membership && !useFreeWorkersAI){
+  if(!membership && !useFreeWorkersAI && !canonicalExactArticlePreProviderEligible){
     return json(request,{
       ok:false,
       error:"free_provider_unavailable",
@@ -7113,6 +7120,12 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         deadlineAt:professionalRequestDeadlineAt,
         capacityFallbackMode:freeCapacityHandoff!==null
       });
+
+  // Deterministic canonical retrieval does not consume AI-generation quota.
+  if(result.canonicalSourceFirst===true){
+    await releaseMonthlyQuota(env,{subject,period});
+    reservation.used=Math.max(0,reservation.used-1);
+  }
 
   let providerRecovery=null;
   if(freeCapacityHandoff){
