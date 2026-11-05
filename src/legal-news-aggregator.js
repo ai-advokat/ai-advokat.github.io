@@ -244,6 +244,21 @@ export const LEGAL_NEWS_SOURCES=Object.freeze([
     articleHosts:["pravno-informacioni-sistem.rs","www.pravno-informacioni-sistem.rs"],
     sourceRole:"regional_comparative_legal_information_watch",
     boundary:"Овој извор е официјален странски правно-информациски систем и служи за компаративно/регионално следење. Не е извор на важечко право во Северна Македонија."
+  },
+  {
+    id:"slovenia-justice",
+    institution:"slovenia_justice",
+    title:"Министерство за правда на Република Словенија · Новости",
+    layer:"regional",
+    authorityClass:"official_foreign_ministry",
+    relevance:"all",
+    urls:[
+      "https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-pravosodje/novice/",
+      "https://www.gov.si/novice/?org%5B0%5D=32"
+    ],
+    articleHosts:["gov.si","www.gov.si"],
+    sourceRole:"regional_comparative_justice_ministry_news",
+    boundary:"Ова е официјален извор на словенечкото Министерство за правда и служи за компаративно/регионално следење на реформи, законодавство и правосудни политики. Не е извор на важечко право во Северна Македонија."
   }
 ]);
 
