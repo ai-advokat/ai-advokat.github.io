@@ -33,7 +33,7 @@ test("main chat uses static discovery only after governed API fallbacks fail",()
 test("Pages runtime ships the static fallback and r20 chat cache contract",()=>{
   assert.match(sync,/assets\/case-law-static-fallback\.js/);
   assert.match(sync,/node --check assets\/case-law-static-fallback\.js/);
-  assert.match(index,/ai-advokat-chat\.js\?v=20261105-root-r21-case-law-language-safe-fallback-v1/);
+  assert.match(index,/ai-advokat-chat\.js\?v=20261105-root-r22-case-law-fallback-reason-v1/);
 });
 
 
@@ -42,4 +42,14 @@ test("language release gate block falls back to bounded case-law discovery inste
   assert.match(chat,/const staticCaseFallback=await staticCaseLawRegistryFallback\(q\)/);
   assert.match(chat,/Macedonian Release Gate · AI draft blocked · Case-Law discovery fallback/);
   assert.match(chat,/Загадениот AI-нацрт не е пуштен/);
+});
+
+
+test("language-gate reason is reported accurately without falsely claiming runtime outage",()=>{
+  const out=staticCaseLawFallback("Најди ми судска практика за перење пари.",{reason:"language_gate_blocked"});
+  assert.ok(out?.ok);
+  assert.match(out.text,/AI-нацртот беше блокиран од задолжителната македонска јазична проверка/);
+  assert.doesNotMatch(out.text,/AI runtime моментално не е достапен/);
+  assert.match(out.text,/САМО ЗА ПРОНАОЃАЊЕ \(DISCOVERY ONLY\)/);
+  assert.match(out.text,/Човечката порта \(Human Gate\)/);
 });
