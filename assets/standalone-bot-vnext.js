@@ -448,7 +448,7 @@ function runAction(action){
   if(action==='sources'){openEvidence('sources');return;}
   if(action==='review'){openEvidence('human');return;}
   if(action==='casepilot'){window.open('/casepilot-workspace.html','_blank','noopener');return;}
-  if(action==='cases'){window.open('/case-law-metadata.html','_blank','noopener');return;}
+  if(action==='cases'){window.open('/case-law-curation.html','_blank','noopener');return;}
   if(action==='documents'){const d=$('materialsDialog');d?.showModal();setTimeout(()=>qs('.export-actions',d)?.scrollIntoView({block:'center'}),0);return;}
   if(action==='workflows'){$('vnextWorkflowDialog').showModal();return;}
   if(action==='library'){$('materialsDialog')?.showModal();return;}
