@@ -21,7 +21,7 @@ function htmlResponse(html,status=200){
 }
 
 test("Justice Daily registers the core North Macedonia justice institutions as official sources",()=>{
-  assert.equal(LEGAL_NEWS_AGGREGATOR_VERSION,"AI_ADVOCAT_JUSTICE_DAILY_V1_2");
+  assert.equal(LEGAL_NEWS_AGGREGATOR_VERSION,"AI_ADVOCAT_JUSTICE_DAILY_V1_3");
   const directory=legalNewsSourceDirectory();
   const core=[
     "assembly","constitutional-court","supreme-court","judicial-council",
@@ -117,7 +117,7 @@ test("aggregator is fail-closed on source gaps, filters daily window and preserv
     sourceIds:["assembly","constitutional-court","supreme-court"]
   });
 
-  assert.equal(out.version,"AI_ADVOCAT_JUSTICE_DAILY_V1_2");
+  assert.equal(out.version,"AI_ADVOCAT_JUSTICE_DAILY_V1_3");
   assert.equal(out.scope,"internal_ai_advokat_only");
   assert.equal(out.windowDays,1);
   assert.equal(out.cutoffDate,"2026-11-05");
@@ -200,7 +200,7 @@ test("priority metadata and source primaryUrl are exposed for operational Justic
     days:1,
     sourceIds:["assembly"]
   });
-  assert.equal(out.version,"AI_ADVOCAT_JUSTICE_DAILY_V1_2");
+  assert.equal(out.version,"AI_ADVOCAT_JUSTICE_DAILY_V1_3");
   assert.equal(out.items.length,1);
   assert.ok(out.items[0].priority);
   assert.ok(["high","medium","normal"].includes(out.items[0].priority.level));
@@ -219,4 +219,56 @@ test("unavailable sources retain an official primaryUrl for manual fallback",asy
   assert.equal(out.sourceHealth[0].status,"unavailable");
   assert.equal(out.sourceHealth[0].fetchedUrl,null);
   assert.ok(String(out.sourceHealth[0].primaryUrl||"").startsWith("https://"));
+});
+
+
+test("native RSS parser extracts official legal feed items with RFC dates",async()=>{
+  const mod=await import("../src/legal-news-aggregator.js?rss-test="+Date.now());
+  const source={
+    id:"curia-test",
+    institution:"curia_cjeu",
+    title:"CURIA test",
+    layer:"international",
+    authorityClass:"official_eu_court",
+    relevance:"all",
+    urls:["https://curia.europa.eu/site/rss.jsp?lang=en&secondLang=fr"],
+    articleHosts:["curia.europa.eu"],
+    sourceRole:"test",
+    boundary:"test boundary"
+  };
+  const xml=`<?xml version="1.0"?><rss><channel>
+    <item>
+      <title>Judgment of the Court in Case C-123/26</title>
+      <link>https://curia.europa.eu/site/jcms/p1_123</link>
+      <pubDate>Thu, 05 Nov 2026 10:00:00 +0100</pubDate>
+    </item>
+  </channel></rss>`;
+  const items=mod.extractSyndicationItems(source,xml,{now:new Date("2026-11-05T12:00:00Z")});
+  assert.equal(items.length,1);
+  assert.equal(items[0].publishedDate,"2026-11-05");
+  assert.equal(items[0].authorityClass,"official_eu_court");
+  assert.equal(items[0].humanGateRequired,true);
+});
+
+test("Justice Daily v1.3 classifies official and secondary discovery sources separately",async()=>{
+  const mod=await import("../src/legal-news-aggregator.js?directory-test="+Date.now());
+  const dir=mod.legalNewsSourceDirectory();
+  const byId=new Map(dir.map(x=>[x.id,x]));
+  assert.equal(byId.get("eu-commission-rss")?.authorityClass,"official_eu_executive");
+  assert.equal(byId.get("un-ilc-rss")?.authorityClass,"official_un_codification_body");
+  assert.equal(byId.get("european-law-blog")?.authorityClass,"academic_secondary_analysis");
+  assert.equal(byId.get("global-legal-post")?.authorityClass,"commercial_legal_news");
+  assert.equal(byId.get("law360")?.collectionMode,"reference_only");
+  assert.equal(byId.get("akademik-mk")?.collectionMode,"reference_only");
+});
+
+test("Law360 remains reference-only and is not fetched through subscription barriers",async()=>{
+  let calls=0;
+  const out=await aggregateLegalNews({
+    fetchImpl:async()=>{calls++;return htmlResponse("<html></html>");},
+    now:new Date("2026-11-05T12:00:00Z"),
+    sourceIds:["law360"]
+  });
+  assert.equal(calls,0);
+  assert.equal(out.sourceHealth[0].status,"reference_only");
 });
