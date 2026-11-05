@@ -123,14 +123,14 @@ test("calendar calculator does not claim procedural deadline validity",()=>{
 });
 
 test("internal workbench wires both new packages without changing external /api/bot route",()=>{
-  assert.match(html,/data-ai-workbench="public-evidence"/);
-  assert.match(html,/data-ai-workbench="professional-ecosystem"/);
-  assert.match(chat,/function ensurePublicEvidenceDialog/);
-  assert.match(chat,/function ensureProfessionalEcosystemDialog/);
-  assert.match(chat,//api/public-evidence/card/);
-  assert.match(chat,//api/internal-toolkit/calculate/);
-  assert.match(chat,/crypto.subtle.digest("SHA-256"/);
-  assert.match(worker,/url.pathname === "/api/internal-toolkit"/);
-  assert.match(worker,/url.pathname === "/api/public-evidence/card"/);
-  assert.match(worker,/url.pathname === "/api/bot") return handleGPTChat(request, env, {openAIOnly:true})/);
+  assert.equal(html.includes('data-ai-workbench="public-evidence"'),true);
+  assert.equal(html.includes('data-ai-workbench="professional-ecosystem"'),true);
+  assert.equal(chat.includes("function ensurePublicEvidenceDialog"),true);
+  assert.equal(chat.includes("function ensureProfessionalEcosystemDialog"),true);
+  assert.equal(chat.includes("/api/public-evidence/card"),true);
+  assert.equal(chat.includes("/api/internal-toolkit/calculate"),true);
+  assert.equal(chat.includes('crypto.subtle.digest("SHA-256"'),true);
+  assert.equal(worker.includes('url.pathname === "/api/internal-toolkit"'),true);
+  assert.equal(worker.includes('url.pathname === "/api/public-evidence/card"'),true);
+  assert.equal(worker.includes('url.pathname === "/api/bot") return handleGPTChat(request, env, {openAIOnly:true})'),true);
 });
