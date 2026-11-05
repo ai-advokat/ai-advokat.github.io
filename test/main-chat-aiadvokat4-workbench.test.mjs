@@ -160,3 +160,108 @@ test("main Human Gate evidence exposes source temporal and jurisdiction verifica
   assert.match(chat,/jurisdictionVerificationState/);
   assert.match(chat,/Warning: /);
 });
+
+
+test("TEMP LIVE QA · internal toolkit production endpoints",async()=>{
+  const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
+  const SITE="https://ai-advokat.github.io";
+
+  const liveHome=await fetch(SITE+"/?internal_toolkit_qa="+Date.now(),{headers:{"cache-control":"no-cache"}});
+  assert.equal(liveHome.ok,true,"GitHub Pages homepage must be reachable");
+  const liveHtml=await liveHome.text();
+  assert.match(liveHtml,/20261105-root-r14-visible-internal-ecosystem-v2/);
+  assert.ok((liveHtml.match(/data-ai-workbench="public-evidence"/g)||[]).length>=3);
+  assert.ok((liveHtml.match(/data-ai-workbench="professional-ecosystem"/g)||[]).length>=3);
+  assert.match(liveHtml,/>Јавни докази</);
+  assert.match(liveHtml,/>Pro Ecosystem</);
+
+  const toolkitRes=await fetch(BASE+"/api/internal-toolkit",{headers:{accept:"application/json"}});
+  assert.equal(toolkitRes.ok,true,"internal toolkit endpoint must return 2xx");
+  const toolkit=await toolkitRes.json();
+  assert.equal(toolkit.ok,true);
+  assert.equal(toolkit.scope,"internal_ai_advokat_only");
+  assert.equal(toolkit.externalBotChanged,false);
+  assert.equal(toolkit.humanGate,"required");
+  assert.ok(toolkit.ecosystem.livingLaw.length>=4);
+  assert.ok(toolkit.ecosystem.operationsRegistry.length>=4);
+  assert.ok(toolkit.ecosystem.calculators.length>=3);
+  assert.ok(toolkit.ecosystem.smartDocuments.length>=6);
+  assert.ok(toolkit.ecosystem.legalWatch.length>=5);
+  assert.equal(toolkit.ecosystem.boundaries.internalAiAdvokatOnly,true);
+  assert.equal(toolkit.ecosystem.boundaries.humanGateRequired,true);
+
+  const tasks=["entity","procurement","public_money","regulatory_change","property","digital_entity","open_data","web_history"];
+  for(const task of tasks){
+    const res=await fetch(BASE+"/api/internal-toolkit?task="+encodeURIComponent(task),{headers:{accept:"application/json"}});
+    assert.equal(res.ok,true,task+" endpoint must return 2xx");
+    const data=await res.json();
+    assert.equal(data.ok,true);
+    const wf=data.publicEvidence?.workflow;
+    assert.equal(wf?.task,task);
+    assert.ok(Array.isArray(wf?.steps)&&wf.steps.length>=5,task+" must have governed steps");
+    assert.ok(Array.isArray(wf?.sources)&&wf.sources.length>=1,task+" must have at least one source");
+    assert.equal(wf?.humanGateRequired,true);
+  }
+
+  const evidenceRes=await fetch(BASE+"/api/public-evidence/card",{
+    method:"POST",
+    headers:{"content-type":"application/json","accept":"application/json"},
+    body:JSON.stringify({
+      title:"QA public source",
+      url:"https://slvesnik.com.mk/",
+      task:"regulatory_change",
+      observedAt:"2026-11-05T13:00:00.000Z",
+      contentSha256:"a".repeat(64),
+      note:"Non-confidential automated QA record.",
+      status:"SOURCE_BACKED"
+    })
+  });
+  assert.equal(evidenceRes.ok,true,"Evidence Card endpoint must return 2xx");
+  const evidence=await evidenceRes.json();
+  assert.equal(evidence.ok,true);
+  assert.equal(evidence.scope,"internal_ai_advokat_only");
+  assert.equal(evidence.card.schema,"AI_ADVOCAT_PUBLIC_EVIDENCE_CARD_V1");
+  assert.equal(evidence.card.status,"SOURCE_BACKED");
+  assert.equal(evidence.card.legalConclusion,false);
+  assert.equal(evidence.card.humanGateRequired,true);
+  assert.equal(evidence.card.contentSha256,"a".repeat(64));
+
+  async function calc(calculator,input){
+    const res=await fetch(BASE+"/api/internal-toolkit/calculate",{
+      method:"POST",
+      headers:{"content-type":"application/json","accept":"application/json"},
+      body:JSON.stringify({calculator,input})
+    });
+    assert.equal(res.ok,true,calculator+" endpoint must return 2xx");
+    const data=await res.json();
+    assert.equal(data.ok,true);
+    assert.equal(data.scope,"internal_ai_advokat_only");
+    return data.result;
+  }
+
+  const pct=await calc("percentage",{amount:1000,percent:15,source:"QA arithmetic test"});
+  assert.equal(pct.value,150);
+  assert.equal(pct.legalBasisDetermined,false);
+  assert.equal(pct.humanGateRequired,true);
+
+  const cal=await calc("calendar_deadline",{baseDate:"2026-11-05",days:10});
+  assert.equal(cal.calendarDate,"2026-11-15");
+  assert.equal(cal.legalDeadlineDetermined,false);
+  assert.equal(cal.humanGateRequired,true);
+
+  const interest=await calc("simple_interest",{
+    principal:100000,
+    annualRatePct:5,
+    fromDate:"2026-01-01",
+    toDate:"2026-01-31",
+    dayBasis:365,
+    rateSource:"QA supplied rate only",
+    rateVerified:true
+  });
+  assert.equal(interest.days,30);
+  assert.equal(interest.interest,410.96);
+  assert.equal(interest.total,100410.96);
+  assert.equal(interest.legalRateDetermined,false);
+  assert.equal(interest.humanGateRequired,true);
+  assert.equal(interest.evidenceState,"CALCULATED_FROM_USER_MARKED_VERIFIED_RATE");
+});
