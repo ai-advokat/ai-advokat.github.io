@@ -1,0 +1,111 @@
+name: Zoki critical legal live UAT
+
+on:
+  push:
+    branches:
+      - main
+      - "uat/zoki-critical-legal-*"
+    paths:
+      - "scripts/zoki-critical-legal-uat.mjs"
+      - "test/zoki-critical-legal-uat.test.mjs"
+      - ".github/workflows/zoki-critical-legal-live-uat.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zoki-critical-legal-live-uat
+  cancel-in-progress: false
+
+jobs:
+  uat:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify focused UAT harness
+        run: |
+          node --check scripts/zoki-critical-legal-uat.mjs
+          node --test test/zoki-critical-legal-uat.test.mjs
+
+      - name: Install pinned deployment tooling
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Provision ephemeral Professional membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          ACCOUNT="zoki-critical-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ENT="zoki-critical-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KID="zoki-critical-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KEY="zokiuat_$(openssl rand -hex 24)"
+          HASH="$(printf '%s' "$KEY" | sha256sum | awk '{print $1}')"
+          PREFIX="${KEY:0:12}"
+          echo "::add-mask::$KEY"
+          echo "ZOKI_UAT_ACCOUNT=$ACCOUNT" >> "$GITHUB_ENV"
+          echo "ZOKI_UAT_KEY=$KEY" >> "$GITHUB_ENV"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM membership_access_keys WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_entitlements WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_accounts WHERE id='$ACCOUNT';
+            INSERT INTO membership_accounts(id,display_name,status)
+              VALUES ('$ACCOUNT','Zoki Critical Legal UAT','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+              VALUES ('$ENT','$ACCOUNT','office','active','manual',40,1,0,datetime('now','+30 minutes'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+              VALUES ('$KID','$ACCOUNT','$HASH','$PREFIX','ephemeral zoki critical legal UAT','active',datetime('now','+30 minutes'));
+          " >/tmp/zoki-critical-provision.txt
+          echo "ZOKI CRITICAL UAT MEMBERSHIP: PROVISIONED"
+
+      - name: Run internal and external critical legal UAT
+        env:
+          AI_ADVOCAT_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+          AI_ADVOCAT_MEMBERSHIP_KEY: ${{ env.ZOKI_UAT_KEY }}
+          AI_ADVOCAT_UAT_PACE_MS: "5000"
+        run: node scripts/zoki-critical-legal-uat.mjs
+
+      - name: Cleanup ephemeral Professional membership
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${ZOKI_UAT_ACCOUNT:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$ZOKI_UAT_ACCOUNT';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ZOKI_UAT_ACCOUNT';
+              DELETE FROM membership_access_keys WHERE account_id='$ZOKI_UAT_ACCOUNT';
+              DELETE FROM membership_entitlements WHERE account_id='$ZOKI_UAT_ACCOUNT';
+              DELETE FROM membership_accounts WHERE id='$ZOKI_UAT_ACCOUNT';
+            " >/tmp/zoki-critical-cleanup.txt
+            echo "ZOKI CRITICAL UAT MEMBERSHIP: CLEANED"
+          fi
+
+      - name: Upload non-secret UAT evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zoki-critical-legal-live-uat
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/zoki-critical-legal-uat.json
+            /tmp/zoki-critical-legal-uat.md
+            /tmp/zoki-critical-provision.txt
+            /tmp/zoki-critical-cleanup.txt
