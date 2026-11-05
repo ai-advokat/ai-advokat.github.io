@@ -174,6 +174,11 @@ import {
   internalProfessionalEcosystemCatalog,
   calculateLegalOperation
 } from "./internal-professional-ecosystem.js";
+import {
+  LEGAL_NEWS_AGGREGATOR_VERSION,
+  legalNewsSourceDirectory,
+  aggregateLegalNews
+} from "./legal-news-aggregator.js";
 
 const VERSION = "1.9.0";
 const FREE_RUNTIME_POLICY_VERSION="FREE_MK_CANONICAL_RELEASE_V12_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
@@ -8852,6 +8857,46 @@ function handleInternalProfessionalToolkit(request,url){
   });
 }
 
+async function handleLegalNewsAggregator(request,url){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const days=Math.max(1,Math.min(7,Number(url?.searchParams?.get("days")||1)||1));
+  const limit=Math.max(1,Math.min(100,Number(url?.searchParams?.get("limit")||60)||60));
+  const institution=String(url?.searchParams?.get("institution")||"").trim();
+  const type=String(url?.searchParams?.get("type")||"").trim();
+  const includeUndated=String(url?.searchParams?.get("includeUndated")||"")==="1";
+  const sourceIds=String(url?.searchParams?.get("sources")||"")
+    .split(",").map(x=>x.trim()).filter(Boolean).slice(0,20);
+  try{
+    const result=await aggregateLegalNews({
+      fetchImpl:fetch,
+      now:new Date(),
+      days,
+      institution,
+      type,
+      limit,
+      includeUndated,
+      sourceIds
+    });
+    return json(request,{
+      ok:true,
+      version:LEGAL_NEWS_AGGREGATOR_VERSION,
+      scope:"internal_ai_advokat_only",
+      directory:legalNewsSourceDirectory(),
+      ...result,
+      doctrine:"Официјална вест е доказ за објава/настан во рамките на изворот, но не е автоматски доказ за правно дејство, вина или важечко право. Item-level verification + Human Gate остануваат задолжителни."
+    });
+  }catch(error){
+    return json(request,{
+      ok:false,
+      version:LEGAL_NEWS_AGGREGATOR_VERSION,
+      scope:"internal_ai_advokat_only",
+      error:"legal_news_aggregator_unavailable",
+      detail:String(error?.message||error).slice(0,160),
+      humanGate:"required"
+    },503);
+  }
+}
+
 async function handleInternalProfessionalCalculation(request){
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
   const contentType=(request.headers.get("content-type")||"").toLowerCase();
@@ -9239,6 +9284,7 @@ export default {
     if (url.pathname === "/api/canonical-metadata-standard") return handleCanonicalMetadataStandard(request);
     if (url.pathname === "/api/internal-toolkit") return handleInternalProfessionalToolkit(request,url);
     if (url.pathname === "/api/internal-toolkit/calculate") return handleInternalProfessionalCalculation(request);
+    if (url.pathname === "/api/legal-news") return handleLegalNewsAggregator(request,url);
     if (url.pathname === "/api/public-evidence/card") return handlePublicEvidenceCard(request);
     if (url.pathname === "/api/professional-workflows") {
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
