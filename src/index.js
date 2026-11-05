@@ -3732,6 +3732,30 @@ function canonicalMacedonianFinalRelease(text,userText){
   };
 }
 
+export function canonicalSourcePreservingFinalRelease(text,userText=""){
+  const value=String(text||"").trim();
+  const languageRequired=shouldEnforceMacedonianOutput(userText);
+  return {
+    ok:Boolean(value),
+    clean:Boolean(value),
+    text:value,
+    languageRequired,
+    quality:{
+      ok:Boolean(value),
+      reasons:[],
+      sourcePreserved:true
+    },
+    releaseGate:{
+      verdict:Boolean(value)?"RELEASE":"BLOCK",
+      severity:Boolean(value)?"canonical_source_preserved":"empty_canonical_source",
+      gateVersion:MACEDONIAN_RELEASE_GATE_VERSION
+    },
+    deliveryState:Boolean(value)?"canonical_source_preserved":"blocked_empty_canonical_source",
+    legalSafetyBlock:false,
+    sourcePreserved:true
+  };
+}
+
 async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutputTokens=3600,mode="analysis"}={}){
   const startedAt=Date.now();
   if(!freeWorkersAIConfigured(env)) return {ok:false,error:"case_intelligence_provider_not_configured"};
@@ -7703,7 +7727,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   // is released unless the deterministic cleanup + runtime assessment confirms
   // the 2017 orthography contract. This is deliberately last-mile and fail-closed.
   const governedLanguageRequired=shouldEnforceMacedonianOutput(q);
-  let governedFinalRelease=canonicalMacedonianFinalRelease(governedFinalAnswer,q);
+  let governedFinalRelease=result.canonicalSourceFirst===true
+    ? canonicalSourcePreservingFinalRelease(governedFinalAnswer,q)
+    : canonicalMacedonianFinalRelease(governedFinalAnswer,q);
   let governedLanguageQuality=governedFinalRelease.quality;
   let governedLanguageRelease=governedFinalRelease.releaseGate;
   let governedLanguageRepair={attempted:false,repaired:false,providerCalls:0,error:null};
@@ -7837,7 +7863,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     languageStandard:governedLanguageRequired?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
     languageReleaseGate:governedLanguageRelease,
     languageQualityState:governedLanguageRequired?governedFinalRelease.deliveryState:"not_required",
-    languageRepaired:governedLanguageRepair.repaired===true,
+    canonicalSourcePreserved:result.canonicalSourceFirst===true,
+    languageRepaired:result.canonicalSourceFirst===true ? false : governedLanguageRepair.repaired===true,
     languageRepairProviderCalls:Number(governedLanguageRepair.providerCalls||0),
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,

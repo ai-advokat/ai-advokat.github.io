@@ -2,9 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {loadWorker} from "./load-worker.mjs";
+import {macedonianDeliveryVerdict} from "../src/macedonian-language-guard.js";
 
 const {workerModule}=await loadWorker();
-const {professionalCanonicalArticleFallback}=workerModule;
+const {professionalCanonicalArticleFallback,canonicalSourcePreservingFinalRelease}=workerModule;
 const workerSource=fs.readFileSync("src/index.js","utf8");
 
 const EXACT_Q="Што уредува член 12 од ЗРО и кои услови ги предвидува? Не измислувај членови или содржина. Наведи го точниот извор и важечката верзија.";
@@ -160,4 +161,25 @@ test("source-first canonical article response labels deterministic retrieval wit
   assert.ok(out);
   assert.match(out.answer,/source-first патека без модел/);
   assert.doesNotMatch(out.answer,/дополнителната AI синтеза моментално не беше достапна/);
+});
+
+
+test("canonical source-first release preserves verbatim source material outside generated-language normalization",()=>{
+  const sourceText="Член 12\n(1) Изворен правен текст со службена ознака РаботникAB што не смее тивко да се препишува.";
+  const generatedGate=macedonianDeliveryVerdict(sourceText,{userText:EXACT_Q});
+  assert.equal(generatedGate.deliver,false,"fixture must exercise the generated-language malformed-token gate");
+
+  const preserved=canonicalSourcePreservingFinalRelease(sourceText,EXACT_Q);
+  assert.equal(preserved.ok,true);
+  assert.equal(preserved.text,sourceText);
+  assert.equal(preserved.deliveryState,"canonical_source_preserved");
+  assert.equal(preserved.sourcePreserved,true);
+  assert.equal(preserved.releaseGate.verdict,"RELEASE");
+});
+
+test("governed exact-article runtime selects source-preservation lane before final language release",()=>{
+  const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
+  assert.match(handle,/result\.canonicalSourceFirst===true\s*\? canonicalSourcePreservingFinalRelease\(governedFinalAnswer,q\)/);
+  assert.match(handle,/canonicalSourcePreserved:result\.canonicalSourceFirst===true/);
+  assert.match(handle,/languageRepaired:result\.canonicalSourceFirst===true \? false/);
 });
