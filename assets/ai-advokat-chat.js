@@ -798,6 +798,14 @@
   }
 
 
+  async function staticCaseLawRegistryFallback(q){
+    try{
+      const mod=await import("/assets/case-law-static-fallback.js?v=20261105-case-law-static-fallback-v1");
+      const out=mod.staticCaseLawFallback?.(q,{limit:6});
+      return out?.ok?out:null;
+    }catch{return null;}
+  }
+
   async function fallbackSourceAssistant(q){
     let assistantError="source_fallback_unavailable";
     try{
@@ -831,6 +839,15 @@
         };
       }
     }catch{}
+    const caseFallback=await staticCaseLawRegistryFallback(q);
+    if(caseFallback){
+      return {
+        ok:true,
+        text:caseFallback.text,
+        meta:"Case-Law discovery · offline/static fallback",
+        sourceLabel:"Static discovery registry · DISCOVERY ONLY · reviewed authority retrieval unavailable."
+      };
+    }
     return {ok:false,error:assistantError};
   }
 
