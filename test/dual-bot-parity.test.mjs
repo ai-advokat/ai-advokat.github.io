@@ -69,3 +69,15 @@ test("dual-bot parity: voice, export and privacy boundaries exist on both surfac
   assert.match(mainJs,/localConfidentialCasePrompt/);
   assert.match(externalCore,/detectConfidentialCasePrompt/);
 });
+
+
+test("dual-bot parity: both Human Gate panels expose the same verification dimensions",()=>{
+  for(const field of ["sourceVerificationState","temporalVerificationState","jurisdictionVerificationState"]){
+    assert.ok(mainJs.includes(field),"main Human Gate missing "+field);
+    assert.ok(externalVNext.includes(field),"external Human Gate missing "+field);
+  }
+  assert.match(mainJs,/Provider recovery/);
+  assert.match(externalVNext,/Provider recovery/);
+  assert.match(mainJs,/Warning: /);
+  assert.match(externalVNext,/Governance warning/);
+});
