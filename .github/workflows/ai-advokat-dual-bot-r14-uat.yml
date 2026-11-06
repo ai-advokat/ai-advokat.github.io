@@ -6,6 +6,8 @@ on:
     paths:
       - "src/index.js"
       - "src/legal-retrieval-router.js"
+      - "src/response-quality.js"
+      - "src/detention-procedural-terminology.js"
       - "src/zkp-judgment-taxonomy.js"
       - "index.html"
       - "bot/index.html"
