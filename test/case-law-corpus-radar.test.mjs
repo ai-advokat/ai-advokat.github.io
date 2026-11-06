@@ -9,6 +9,7 @@ const internal=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
 const external=fs.readFileSync("assets/standalone-bot-vnext.js","utf8");
 const botHtml=fs.readFileSync("bot/index.html","utf8");
 const indexHtml=fs.readFileSync("index.html","utf8");
+const pagesSync=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8");
 
 test("corpus radar separates reviewed authority from discovery and reports hierarchy gaps",()=>{
   const rows=[
@@ -57,6 +58,14 @@ test("shared corpus radar product surface is visible from internal and external 
   assert.match(internal,/Case-Law Radar/);
   assert.match(external,/case-law-curation\.html/);
   assert.match(botHtml,/Case-Law Corpus Radar/);
+});
+
+test("GitHub Pages sync always deploys and verifies the Case-Law Radar page",()=>{
+  const refs=pagesSync.match(/case-law-curation\.html/g)||[];
+  assert.ok(refs.length>=4,"Pages sync must trigger, verify, copy, and parity-check case-law-curation.html");
+  assert.match(pagesSync,/grep -q 'Case-Law Corpus Radar' case-law-curation\.html/);
+  assert.match(pagesSync,/grep -q '\/api\/case-law\/curation-plan' case-law-curation\.html/);
+  assert.match(indexHtml,/href="\/case-law-curation\.html"/);
 });
 
 test("runtime cache contracts are bumped for the full integration release",()=>{
