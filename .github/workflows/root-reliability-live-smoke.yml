@@ -42,7 +42,7 @@ jobs:
           node --check assets/standalone-bot-toolkit.js
           node --check assets/frontend-runtime-guard.js
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' index.html
-          grep -q 'ai-advokat-chat.js?v=20261106-root-r15-voice-r2-runtime' index.html
+          grep -q 'ai-advokat-chat.js?v=20261106-root-r15-voice-r3-conversation' index.html
           grep -q 'ai-advokat-chat.css?v=20261106-root-r15-voice' index.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' bot/index.html
           grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' bot/index.html
@@ -64,7 +64,7 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/bot/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-bot.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-voice.mjs || true
             if grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-home.html 2>/dev/null \
-              && grep -q 'ai-advokat-chat.js?v=20261106-root-r15-voice-r2-runtime' /tmp/pages-home.html 2>/dev/null \
+              && grep -q 'ai-advokat-chat.js?v=20261106-root-r15-voice-r3-conversation' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'ai-advokat-chat.css?v=20261106-root-r15-voice' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' /tmp/pages-bot.html 2>/dev/null \
