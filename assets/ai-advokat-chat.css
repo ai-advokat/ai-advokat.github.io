@@ -602,3 +602,5 @@
 .ai-msg-speak.is-speaking{font-weight:800}
 #aiChatMic.is-listening{transform:scale(1.05);box-shadow:0 0 0 3px rgba(185,152,91,.18)}
 #aiChatMic[disabled],.ai-msg-speak[disabled]{opacity:.5;cursor:not-allowed}
+
+.ai-chat-voice-privacy{margin:.25rem .5rem .55rem;font-size:.72rem;line-height:1.4;color:var(--muted,#6b7280)}
