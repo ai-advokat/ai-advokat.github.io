@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Advokat · Case-Law Corpus Radar</title>
+<style>
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#172033;background:#f5f1e8}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#0d1b2a 0 220px,#f5f1e8 220px)}
+main{max-width:1180px;margin:auto;padding:38px 20px 70px}
+.hero{color:#fff;padding:18px 0 34px}.hero h1{margin:0 0 8px;font-size:clamp(28px,4vw,48px)}
+.hero p{max-width:820px;color:#d7dde6;line-height:1.5}.badge{display:inline-block;border:1px solid #b9985b;color:#f0d7a0;padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#fff;border:1px solid #e1d8c8;border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(13,27,42,.08)}
+.card strong{font-size:30px;display:block}.card small{color:#667085}.section{margin-top:18px}.section h2{margin:0 0 12px}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid #eee6d8}th{background:#f3eee4}
+.bar{height:8px;background:#e8e1d3;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#b9985b}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}button,a.btn{border:0;border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer;text-decoration:none}.primary{background:#0d1b2a;color:#fff}.secondary{background:#fff;color:#0d1b2a;border:1px solid #d9cfbc}
+.note{background:#fff8e8;border:1px solid #e7c879;border-radius:14px;padding:14px;margin-top:18px;line-height:1.45}
+pre{white-space:pre-wrap;background:#0d1b2a;color:#e8edf4;border-radius:14px;padding:16px;max-height:340px;overflow:auto}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<section class="hero">
+<span class="badge">SOURCE-FIRST · HUMAN GATE</span>
+<h1>Case-Law Corpus Radar</h1>
+<p>Контрола на квалитет, покриеност и приоритет за корпусот од 1000 пресуди. Reviewed authority и discovery-only записи остануваат строго одделени.</p>
+</section>
+
+<div class="grid" id="metrics">
+<div class="card"><strong>—</strong><small>Reviewed authority</small></div>
+<div class="card"><strong>—</strong><small>Discovery records</small></div>
+<div class="card"><strong>1000</strong><small>Target corpus</small></div>
+<div class="card"><strong>—</strong><small>Следен приоритет</small></div>
+</div>
+
+<section class="section card">
+<h2>Authority coverage</h2>
+<table><thead><tr><th>Слој</th><th>Тековно</th><th>Цел</th><th>Gap</th><th>Прогрес</th></tr></thead><tbody id="hierarchy"></tbody></table>
+</section>
+
+<section class="section card">
+<h2>Тематски празнини</h2>
+<table><thead><tr><th>Правна област</th><th>Тековно</th><th>Цел</th><th>Gap</th></tr></thead><tbody id="issues"></tbody></table>
+</section>
+
+<section class="section card">
+<h2>Balanced authority policy</h2>
+<div class="grid">
+<div class="card"><strong id="supporting">—</strong><small>Supporting</small></div>
+<div class="card"><strong id="adverse">—</strong><small>Adverse</small></div>
+<div class="card"><strong id="distinguishing">—</strong><small>Distinguishing</small></div>
+<div class="card"><strong id="neutral">—</strong><small>Neutral / background</small></div>
+</div>
+<div class="note"><b>Правило:</b> AI Advokat не смее да cherry-pick-ира поволни пресуди. Кога постојат, retrieval-от бара supporting + adverse + distinguishing + најсилна/повисока authority.</div>
+</section>
+
+<section class="section card">
+<h2>Следен пакет · auto-generated prompt</h2>
+<pre id="prompt">Се вчитува…</pre>
+<div class="actions">
+<button class="primary" id="copy">Копирај prompt</button>
+<a class="btn secondary" href="/#ai-advokat-chat">Отвори внатрешен AI Advokat</a>
+<a class="btn secondary" href="/bot/">Отвори надворешен AI Advokat</a>
+<a class="btn secondary" href="/case-law-metadata.html">Case-law metadata</a>
+</div>
+</section>
+
+<div class="note" id="status">Вчитување на governed corpus status…</div>
+</main>
+<script>
+const labels={supreme:"Врховен суд",appellate:"Апелациони судови",constitutional:"Уставен суд",echr:"ЕСЧП / HUDOC",first_instance_and_administrative:"Основни / управни / специјализирани",
+evidence_and_fair_trial:"Докази и правично судење",detention_and_liberty:"Притвор и слобода",property_and_civil:"Имотно / граѓанско",administrative:"Управно право",constitutional_and_human_rights:"Уставно / човекови права",money_laundering:"Перење пари",migrant_smuggling:"Криумчарење мигранти",narcotics:"Наркотици",abuse_of_office:"Службени злоупотреби",organized_crime:"Организиран криминал"};
+function esc(x){return String(x??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m]))}
+async function load(){
+  const status=document.getElementById("status");
+  try{
+    const r=await fetch("/api/case-law/curation-plan",{cache:"no-store",headers:{accept:"application/json"}});
+    const d=await r.json(); if(!r.ok||!d.ok) throw new Error(d.error||"unavailable");
+    const radar=d.radar||{};
+    const m=document.querySelectorAll("#metrics .card strong");
+    m[0].textContent=radar.reviewedAuthorityCount??0;m[1].textContent=radar.discoveryCount??0;
+    m[3].textContent=labels[radar.nextPriority?.id]||radar.nextPriority?.id||"—";
+    const h=document.getElementById("hierarchy");h.innerHTML="";
+    (radar.hierarchyGaps||[]).forEach(x=>{
+      const pct=Math.min(100,Math.round((Number(x.current||0)/Math.max(1,Number(x.target||1)))*100));
+      h.insertAdjacentHTML("beforeend",`<tr><td>${esc(labels[x.id]||x.id)}</td><td>${x.current}</td><td>${x.target}</td><td>${x.gap}</td><td><div class="bar"><i style="width:${pct}%"></i></div></td></tr>`);
+    });
+    const issues=document.getElementById("issues");issues.innerHTML="";
+    (radar.diversity?.nextCollectionPriorities||[]).slice(0,8).forEach(x=>{
+      issues.insertAdjacentHTML("beforeend",`<tr><td>${esc(labels[x.bucket]||x.bucket)}</td><td>${x.current}</td><td>${x.desired}</td><td>${x.gap}</td></tr>`);
+    });
+    const roles=radar.outcomeRoles||{};["supporting","adverse","distinguishing","neutral"].forEach(k=>document.getElementById(k).textContent=roles[k]??0);
+    document.getElementById("prompt").textContent=d.nextPackagePrompt||"Нема prompt.";
+    status.textContent="Corpus radar: "+String(d.databaseState||"unknown")+" · "+String(d.version||"")+" · Human Gate required. "+String(radar.authorityBoundary||"");
+  }catch(e){status.textContent="Corpus Radar не е достапен: "+String(e.message||e);}
+}
+document.getElementById("copy").onclick=async()=>{const t=document.getElementById("prompt").textContent;try{await navigator.clipboard.writeText(t);document.getElementById("copy").textContent="Копирано ✓";setTimeout(()=>document.getElementById("copy").textContent="Копирај prompt",1200)}catch{}};
+load();
+</script>
+</body></html>
