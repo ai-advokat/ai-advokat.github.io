@@ -7821,6 +7821,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         provider:"openai",
         error:String(result.error||"provider_failure").slice(0,80),
         httpStatus:Number(result.status||0)||null,
+        responseStatus:String(result.responseStatus||result.failureDetail||"").slice(0,80)||null,
+        providerStage:String(result.providerStage||"").slice(0,40)||null,
         providerCalls:Number(result.providerCalls||0)
       } : null,
       governanceRunId:lioeRunId,

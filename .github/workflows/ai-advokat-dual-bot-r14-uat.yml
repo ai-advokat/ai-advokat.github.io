@@ -20,7 +20,7 @@ permissions:
 
 concurrency:
   group: ai-advokat-dual-bot-r14-production-uat
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   dual-bot-r14:

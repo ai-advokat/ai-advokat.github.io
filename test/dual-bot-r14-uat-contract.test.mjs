@@ -36,3 +36,9 @@ test("R14 production workflow verifies both live frontend parity and both govern
 test("R14 production UAT retriggers when the shared core runtime changes",()=>{
   assert.match(workflow,/paths:\n\s+- "src\/index\.js"/);
 });
+
+
+test("newest production commit replaces stale pending UAT",()=>{
+  assert.match(workflow,/group: ai-advokat-dual-bot-r14-production-uat/);
+  assert.match(workflow,/cancel-in-progress: true/);
+});
