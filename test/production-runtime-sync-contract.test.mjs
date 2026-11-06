@@ -6,16 +6,29 @@ const workflow=fs.readFileSync(".github/workflows/production-runtime-sync.yml","
 
 test("production runtime sync is push-triggered for runtime surfaces and Human-Gated",()=>{
   for(const path of [
-    '"src/**"',
+    '"*"',
+    '".well-known/**"',
+    '"academy/**"',
     '"assets/**"',
+    '"authors/**"',
+    '"books/**"',
     '"bot/**"',
-    '"index.html"',
-    '"**/*.html"',
-    '"manifest.webmanifest"',
-    '".assetsignore"',
-    '"_headers"',
-    '"service-worker.js"',
-    '"wrangler.jsonc"',
+    '"casepilot/**"',
+    '"consolidator/**"',
+    '"data/**"',
+    '"guides/**"',
+    '"kolumni/**"',
+    '"membership/**"',
+    '"mvp-v2/**"',
+    '"partners/**"',
+    '"professional-library/**"',
+    '"release/**"',
+    '"scholar/**"',
+    '"sluzben-vesnik/**"',
+    '"src/**"',
+    '"staging/**"',
+    '"summit/**"',
+    '"uat/**"',
     '".github/workflows/production-runtime-sync.yml"'
   ]) assert.ok(workflow.includes(path),"missing trigger "+path);
   assert.match(workflow,/environment: production/);
