@@ -93,6 +93,18 @@ let sessionId = crypto.randomUUID();
 const welcome = $('welcome').cloneNode(true);
 
 function status(text) { $('status').textContent = text; }
+let voiceRuntime=null;
+const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261106-voice-r1")
+  .then(mod=>{
+    voiceRuntime=mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"});
+    return voiceRuntime;
+  })
+  .catch(error=>{
+    console.error("ai_advokat_external_voice_runtime_failed",error);
+    if($('mic')){$('mic').disabled=true;$('mic').title='Гласовниот модул не е достапен.';}
+    status('Гласовниот модул не се вчита. Пишувањето останува достапно.');
+    return null;
+  });
 function busy(value) {
   const hasQuestion = String($('question')?.value || '').trim().length >= 2;
   $('send').disabled = value || (!!key && !hasQuestion);
@@ -115,6 +127,16 @@ function message(role, text, model = '') {
   const body = document.createElement('div'); body.className = 'text'; body.textContent = normalizedText;
   article.append(body);
   if (model) { const meta = document.createElement('small'); meta.textContent = model; article.append(meta); }
+  if(role==='assistant' && normalizedText){
+    const voiceTools=document.createElement('div');
+    voiceTools.className='message-voice-tools';
+    const speak=document.createElement('button');
+    speak.type='button';
+    speak.className='message-speak';
+    voiceTools.append(speak);
+    article.append(voiceTools);
+    voiceRuntimeReady.then(voice=>voice?.bindSpeakButton({button:speak,text:()=>normalizedText,status}));
+  }
   $('messages').append(article);
   article.scrollIntoView({block:'end'});
   return article;
@@ -270,7 +292,7 @@ $('loginForm').onsubmit = async event => {
   } catch { $('loginStatus').textContent = 'Клучот не е активен или услугата не е достапна. Обидете се повторно.'; }
   finally { $('loginSubmit').disabled = false; }
 };
-$('newChat').onclick = () => { reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Внесете професионален клуч преку ⋯.'); };
+$('newChat').onclick = () => { voiceRuntime?.stopSpeaking(); voiceRuntime?.stopRecognition(); reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Внесете професионален клуч преку ⋯.'); };
 $('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Сесијата и зачуваниот пристап се избришани.'); };
 $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => {
@@ -279,22 +301,12 @@ $('question').oninput = () => {
   if (!pending) $('send').disabled = !!key && $('question').value.trim().length < 2;
 };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
-const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (!SpeechRecognitionCtor) $('mic').hidden = true;
-else $('mic').onclick = () => {
-  const rec = new SpeechRecognitionCtor();
-  rec.lang = 'mk-MK'; rec.interimResults = false; rec.maxAlternatives = 1;
-  status('Слушам… зборувајте на македонски.');
-  rec.onresult = event => {
-    const spoken = String(event.results?.[0]?.[0]?.transcript || '').trim();
-    if (!spoken) return;
-    $('question').value = ($('question').value + ' ' + spoken).trim();
-    $('question').dispatchEvent(new Event('input'));
-    status('Диктирањето е внесено. Проверете го текстот и испратете.');
-  };
-  rec.onerror = () => status('Диктирањето не успеа. Можете да продолжите со пишување.');
-  rec.start();
-};
+voiceRuntimeReady.then(voice=>voice?.bindMicrophone({
+  button:$('mic'),
+  input:$('question'),
+  status,
+  onTranscript:()=>{$('question').focus();}
+}));
 $('question').addEventListener('paste', event => { if (event.clipboardData?.files?.length) { event.preventDefault(); $('plus').open = true; status('Прикачете ги документите во приватниот простор преку „+“.'); } });
 $('composer').addEventListener('dragover', event => event.preventDefault());
 $('composer').addEventListener('drop', event => { event.preventDefault(); $('plus').open = true; status('Документите се прикачуваат во приватниот простор преку „+“.'); });
