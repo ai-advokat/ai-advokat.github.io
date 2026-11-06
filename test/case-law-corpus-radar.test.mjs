@@ -61,5 +61,5 @@ test("shared corpus radar product surface is visible from internal and external 
 
 test("runtime cache contracts are bumped for the full integration release",()=>{
   assert.match(indexHtml,/20261105-root-r24-detention-procedural-act-gate-v1/);
-  assert.match(botHtml,/20261105-vnext-r13-case-law-radar/);
+  assert.match(botHtml,/20261106-vnext-r14-toolkit-parity/);
 });
