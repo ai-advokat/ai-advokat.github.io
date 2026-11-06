@@ -8,6 +8,10 @@ test("Worker live smoke is triggered by every external-bot runtime surface",()=>
   for(const path of [
     "bot/index.html",
     "assets/standalone-bot.js",
+    "assets/standalone-bot-vnext.js",
+    "assets/standalone-bot-vnext.css",
+    "assets/standalone-bot-toolkit.js",
+    "assets/standalone-bot-toolkit.css",
     "assets/chat-privacy-browser.js",
     "src/chat-privacy.js",
     ".assetsignore",
@@ -17,12 +21,15 @@ test("Worker live smoke is triggered by every external-bot runtime surface",()=>
 });
 
 test("Worker live smoke waits for exact deployed byte parity",()=>{
-  assert.match(workflow,/for attempt in \$\(seq 1 40\)/);
+  assert.match(workflow,/for attempt in \$\(seq 1 80\)/);
   assert.match(workflow,/sha256sum bot\/index\.html/);
   assert.match(workflow,/sha256sum assets\/standalone-bot\.js/);
+  assert.match(workflow,/sha256sum assets\/standalone-bot-vnext\.js/);
+  assert.match(workflow,/sha256sum assets\/standalone-bot-toolkit\.js/);
+  assert.match(workflow,/sha256sum assets\/standalone-bot-toolkit\.css/);
   assert.match(workflow,/sha256sum assets\/chat-privacy-browser\.js/);
   assert.match(workflow,/sha256sum src\/chat-privacy\.js/);
-  assert.match(workflow,/WORKER R13 BYTE PARITY: PASS/);
+  assert.match(workflow,/WORKER R14 BYTE PARITY: PASS/);
   assert.match(workflow,/test "\$deployed" = "1"/);
 });
 
