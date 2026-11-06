@@ -8,6 +8,7 @@ const externalHtml=fs.readFileSync("bot/index.html","utf8");
 const externalCore=fs.readFileSync("assets/standalone-bot.js","utf8");
 const externalVNext=fs.readFileSync("assets/standalone-bot-vnext.js","utf8");
 const externalToolkit=fs.readFileSync("assets/standalone-bot-toolkit.js","utf8");
+const voiceRuntime=fs.readFileSync("assets/ai-advokat-voice.mjs","utf8");
 
 const MODULE_LABELS=[
   "Правен асистент","Анализатор","Консолидатор","Предиктор","Правни извори",
@@ -60,9 +61,18 @@ test("dual-bot parity: provider provenance and recovery are visible without pret
   assert.match(mainHtml,/FREE активен|јавен текстуален chat/);
 });
 
-test("dual-bot parity: voice, export and privacy boundaries exist on both surfaces",()=>{
-  assert.match(mainJs,/SpeechRecognition|webkitSpeechRecognition/);
-  assert.match(externalCore,/SpeechRecognition \|\| window\.webkitSpeechRecognition/);
+test("dual-bot parity: shared dictation, speech output, export and privacy boundaries exist on both surfaces",()=>{
+  assert.match(mainJs,/ai-advokat-voice\.mjs/);
+  assert.match(externalCore,/ai-advokat-voice\.mjs/);
+  assert.match(mainJs,/bindMicrophone/);
+  assert.match(externalCore,/bindMicrophone/);
+  assert.match(mainJs,/bindSpeakButton/);
+  assert.match(externalCore,/bindSpeakButton/);
+  assert.match(voiceRuntime,/SpeechRecognition\|\|win\?\.webkitSpeechRecognition/);
+  assert.match(voiceRuntime,/speechSynthesis/);
+  assert.match(voiceRuntime,/AI_ADVOCAT_VOICE_R1/);
+  assert.match(mainHtml,/id="aiChatMic"/);
+  assert.match(externalHtml,/id="mic"/);
   assert.match(mainJs,/exportAssistantMessage/);
   assert.match(externalCore,/exportLatestAssistant/);
   assert.match(mainHtml,/Secure Case Workspace/);
