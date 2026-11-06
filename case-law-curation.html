@@ -30,8 +30,12 @@ th,td{text-align:left;padding:12px 14px;border-bottom:1px solid #eee6d8}th{backg
 .state{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;background:#ece7dc;color:#4c5563}
 .state.ok{background:#e8f5ec;color:#1f6b3a}.state.warn{background:#fff0da;color:#8b5a11}
 .mini{font-size:13px;color:#667085;line-height:1.45}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 14px}.toolbar input{flex:1 1 280px;min-width:220px;border:1px solid #d9cfbc;border-radius:10px;padding:10px 12px;background:#fff}
+.table-scroll{overflow:auto;border:1px solid #eee6d8;border-radius:14px}.table-scroll table{min-width:780px}.pick{width:46px;text-align:center}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900;background:#fff0da;color:#8b5a11}
+.package-meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}.package-meta b{font-size:14px}.package-meta span{font-size:13px;color:#667085}
+.gate-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.gate-item{display:flex;gap:9px;align-items:flex-start;border:1px solid #e5dccb;border-radius:12px;padding:11px;background:#fbfaf7}.gate-item input{margin-top:3px}.gate-item span{font-size:14px;line-height:1.35}.gate-state{margin-top:12px;font-weight:800}
 pre{white-space:pre-wrap;background:#0d1b2a;color:#e8edf4;border-radius:14px;padding:16px;max-height:340px;overflow:auto}
-@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.guide-grid{grid-template-columns:1fr 1fr}}@media(max-width:520px){.grid,.guide-grid,.legend{grid-template-columns:1fr}}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.guide-grid{grid-template-columns:1fr 1fr}.gate-grid{grid-template-columns:1fr 1fr}}@media(max-width:520px){.grid,.guide-grid,.legend,.gate-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -75,6 +79,41 @@ pre{white-space:pre-wrap;background:#0d1b2a;color:#e8edf4;border-radius:14px;pad
 <div class="card"><strong>—</strong><small>Следен приоритет · најголем gap</small></div>
 </div>
 
+<section class="section card" id="discoveryWorkbench" data-workflow-version="CASE_LAW_RADAR_WORKFLOW_R1">
+<h2>Discovery workbench · избери пакет</h2>
+<p class="mini">Ова се discovery-only записи. Изборот не ги претвора во правен авторитет. Еден работен пакет е ограничен на најмногу 10 записи.</p>
+<div class="toolbar">
+  <input id="discoverySearch" type="search" placeholder="Пребарај број на предмет, тема или датум…" aria-label="Пребарај discovery записи">
+  <button class="secondary" id="select10" type="button">Избери први 10</button>
+  <button class="secondary" id="clearSelection" type="button">Исчисти избор</button>
+</div>
+<div class="table-scroll">
+<table>
+<thead><tr><th class="pick">✓</th><th>Предмет</th><th>Датум</th><th>Тема</th><th>Стр.</th><th>Статус</th></tr></thead>
+<tbody id="discoveryRows"><tr><td colspan="6">Се вчитуваат discovery записи…</td></tr></tbody>
+</table>
+</div>
+<div class="package-meta"><b id="selectedCount">0 избрани</b><span>Максимум 10 по пакет · discovery-only · Human Gate required</span></div>
+<div class="actions">
+  <button class="primary" id="startPackage" type="button" disabled>Почни избран пакет во AI Advokat</button>
+  <button class="secondary" id="copyPackage" type="button" disabled>Копирај избран пакет</button>
+</div>
+</section>
+
+<section class="section card" id="humanGateChecklist">
+<h2>Human Gate · работен чек-лист</h2>
+<p class="mini">Овој чек-лист е локална работна контрола. Ниту едно штиклирање не менува database status и не промовира запис во reviewed authority.</p>
+<div class="gate-grid">
+  <label class="gate-item"><input type="checkbox" data-gate="official"><span><b>Официјален item binding</b><br>Потврден е официјалниот извор за конкретниот предмет.</span></label>
+  <label class="gate-item"><input type="checkbox" data-gate="identity"><span><b>Идентитет на предметот</b><br>Број, суд, датум и вид на одлука се усогласени.</span></label>
+  <label class="gate-item"><input type="checkbox" data-gate="holding"><span><b>Holding / правен став</b><br>Извлечен е од самиот извор, не од наслов или претпоставка.</span></label>
+  <label class="gate-item"><input type="checkbox" data-gate="finality"><span><b>Конечност</b><br>Проверено е дали и кога одлуката станала конечна.</span></label>
+  <label class="gate-item"><input type="checkbox" data-gate="applicability"><span><b>Тековна применливост</b><br>Проверени се понови прописи и практика.</span></label>
+  <label class="gate-item"><input type="checkbox" data-gate="outcome"><span><b>Outcome role</b><br>Supporting / adverse / distinguishing / neutral е човечки проверено.</span></label>
+</div>
+<div class="gate-state" id="gateState">0 / 6 проверки · НЕ Е READY за reviewed authority</div>
+</section>
+
 <section class="section card">
 <h2>Authority coverage</h2>
 <table><thead><tr><th>Слој</th><th>Тековно</th><th>Цел</th><th>Gap</th><th>Прогрес</th></tr></thead><tbody id="hierarchy"></tbody></table>
@@ -101,6 +140,7 @@ pre{white-space:pre-wrap;background:#0d1b2a;color:#e8edf4;border-radius:14px;pad
 <pre id="prompt">Се вчитува…</pre>
 <div class="actions">
 <button class="primary" id="copy">Копирај prompt</button>
+<button class="secondary" id="startGenerated" type="button">Почни auto-generated пакет во AI Advokat</button>
 <a class="btn secondary" href="/#ai-advokat-chat">Отвори внатрешен AI Advokat</a>
 <a class="btn secondary" href="/bot/">Отвори надворешен AI Advokat</a>
 <a class="btn secondary" href="/case-law-metadata.html">Case-law metadata</a>
@@ -119,8 +159,74 @@ const labels={supreme:"Врховен суд",appellate:"Апелациони с
 evidence_and_fair_trial:"Докази и правично судење",detention_and_liberty:"Притвор и слобода",property_and_civil:"Имотно / граѓанско",administrative:"Управно право",constitutional_and_human_rights:"Уставно / човекови права",money_laundering:"Перење пари",migrant_smuggling:"Криумчарење мигранти",narcotics:"Наркотици",abuse_of_office:"Службени злоупотреби",organized_crime:"Организиран криминал"};
 const API_ORIGIN=location.hostname==="ai-advokat.github.io"?"https://ai-advokat-github-io.aiadvokat16.workers.dev":"";
 const API_URL=API_ORIGIN+"/api/case-law/curation-plan";
+const RADAR_HANDOFF_VERSION="AI_ADVOCAT_RADAR_HANDOFF_V1";
+let discoveryRecords=[];
+let basePrompt="";
+const selected=new Set();
 function esc(x){return String(x??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m]))}
 function setLiveState(kind,label){const el=document.getElementById("liveState");el.className="state "+kind;el.textContent=label}
+function selectedRecords(){return discoveryRecords.filter(row=>selected.has(String(row.id)))}
+function buildPackagePrompt(){
+  const rows=selectedRecords();
+  if(!rows.length) return basePrompt||"";
+  const lines=rows.map((row,i)=>(i+1)+". "+String(row.caseNumber||"")+" · "+String(row.decisionDate||"")+" · "+String(row.issue||"")+" · discovery-only");
+  return [
+    basePrompt,
+    "",
+    "ИЗБРАН DISCOVERY-ONLY ПАКЕТ ("+rows.length+" записи):",
+    ...lines,
+    "",
+    "ЗАДОЛЖИТЕЛНО: за секој избран запис прво провери official item binding, идентитет на предметот, вид на одлука, holding, конечност и тековна применливост. Не третирај ниту еден запис како reviewed/citable authority само затоа што е во овој пакет. Класифицирај outcome role како supporting / adverse / distinguishing / neutral само по проверка и остави Human Gate видлив."
+  ].filter(Boolean).join("\n");
+}
+function updatePackageState(){
+  const count=selected.size;
+  document.getElementById("selectedCount").textContent=count+" избрани";
+  document.getElementById("startPackage").disabled=count<1;
+  document.getElementById("copyPackage").disabled=count<1;
+  document.getElementById("prompt").textContent=buildPackagePrompt()||basePrompt||"Нема prompt.";
+}
+function renderDiscovery(){
+  const host=document.getElementById("discoveryRows");
+  const q=String(document.getElementById("discoverySearch").value||"").trim().toLocaleLowerCase("mk");
+  const rows=discoveryRecords.filter(row=>!q||[row.caseNumber,row.decisionDate,row.issue,row.court].join(" ").toLocaleLowerCase("mk").includes(q));
+  host.innerHTML="";
+  if(!rows.length){host.innerHTML='<tr><td colspan="6">Нема записи за овој филтер.</td></tr>';return;}
+  rows.forEach(row=>{
+    const id=String(row.id||"");
+    const tr=document.createElement("tr");
+    tr.innerHTML='<td class="pick"><input type="checkbox" aria-label="Избери '+esc(row.caseNumber)+'" '+(selected.has(id)?"checked":"")+'></td>'+
+      '<td><b>'+esc(row.caseNumber)+'</b></td><td>'+esc(row.decisionDate)+'</td><td>'+esc(row.issue)+'</td><td>'+esc(row.pages)+'</td>'+
+      '<td><span class="status-pill">DISCOVERY ONLY</span></td>';
+    const box=tr.querySelector("input");
+    box.addEventListener("change",()=>{
+      if(box.checked){
+        if(selected.size>=10){box.checked=false;alert("Еден работен пакет е ограничен на 10 записи.");return;}
+        selected.add(id);
+      }else selected.delete(id);
+      updatePackageState();
+    });
+    host.append(tr);
+  });
+}
+function handoffToInternalAI(prompt){
+  const text=String(prompt||"").trim();
+  if(!text) return;
+  sessionStorage.setItem("aiAdvokatRadarHandoffV1",JSON.stringify({
+    version:RADAR_HANDOFF_VERSION,
+    prompt:text,
+    autoSend:true,
+    createdAt:Date.now(),
+    selectedIds:selectedRecords().map(row=>String(row.id||""))
+  }));
+  location.href="/#ai-advokat-chat";
+}
+function updateGateState(){
+  const boxes=[...document.querySelectorAll("[data-gate]")];
+  const done=boxes.filter(box=>box.checked).length;
+  const el=document.getElementById("gateState");
+  el.textContent=done+" / "+boxes.length+" проверки · "+(done===boxes.length?"РАБОТНО READY за човечка ревизија; database promotion сè уште НЕ е извршен":"НЕ Е READY за reviewed authority");
+}
 async function load(){
   const status=document.getElementById("status");
   setLiveState("warn","Се вчитува");
@@ -128,6 +234,12 @@ async function load(){
     const r=await fetch(API_URL,{cache:"no-store",headers:{accept:"application/json"}});
     const d=await r.json(); if(!r.ok||!d.ok) throw new Error(d.error||"unavailable");
     const radar=d.radar||{};
+    discoveryRecords=Array.isArray(d.discoveryRecords)?d.discoveryRecords:[];
+    basePrompt=String(d.nextPackagePrompt||"");
+    selected.clear();
+    discoveryRecords.slice(0,Math.min(10,discoveryRecords.length)).forEach(row=>selected.add(String(row.id||"")));
+    renderDiscovery();
+    updatePackageState();
     const m=document.querySelectorAll("#metrics .card strong");
     m[0].textContent=radar.reviewedAuthorityCount??0;m[1].textContent=radar.discoveryCount??0;
     m[3].textContent=labels[radar.nextPriority?.id]||radar.nextPriority?.id||"—";
@@ -141,7 +253,7 @@ async function load(){
       issues.insertAdjacentHTML("beforeend",`<tr><td>${esc(labels[x.bucket]||x.bucket)}</td><td>${x.current}</td><td>${x.desired}</td><td>${x.gap}</td></tr>`);
     });
     const roles=radar.outcomeRoles||{};["supporting","adverse","distinguishing","neutral"].forEach(k=>document.getElementById(k).textContent=roles[k]??0);
-    document.getElementById("prompt").textContent=d.nextPackagePrompt||"Нема prompt.";
+    document.getElementById("prompt").textContent=buildPackagePrompt()||basePrompt||"Нема prompt.";
     setLiveState("ok","Живи податоци");
     status.textContent="Corpus radar: "+String(d.databaseState||"unknown")+" · "+String(d.version||"")+" · Human Gate required. "+String(radar.authorityBoundary||"");
   }catch(e){
@@ -151,7 +263,15 @@ async function load(){
   }
 }
 document.getElementById("copy").onclick=async()=>{const t=document.getElementById("prompt").textContent;try{await navigator.clipboard.writeText(t);document.getElementById("copy").textContent="Копирано ✓";setTimeout(()=>document.getElementById("copy").textContent="Копирај prompt",1200)}catch{}};
+document.getElementById("copyPackage").onclick=async()=>{const t=buildPackagePrompt();try{await navigator.clipboard.writeText(t);document.getElementById("copyPackage").textContent="Копирано ✓";setTimeout(()=>document.getElementById("copyPackage").textContent="Копирај избран пакет",1200)}catch{}};
+document.getElementById("startPackage").onclick=()=>handoffToInternalAI(buildPackagePrompt());
+document.getElementById("startGenerated").onclick=()=>handoffToInternalAI(basePrompt);
+document.getElementById("select10").onclick=()=>{selected.clear();discoveryRecords.slice(0,Math.min(10,discoveryRecords.length)).forEach(row=>selected.add(String(row.id||"")));renderDiscovery();updatePackageState();};
+document.getElementById("clearSelection").onclick=()=>{selected.clear();renderDiscovery();updatePackageState();};
+document.getElementById("discoverySearch").addEventListener("input",renderDiscovery);
+document.querySelectorAll("[data-gate]").forEach(box=>box.addEventListener("change",updateGateState));
 document.getElementById("retry").onclick=load;
+updateGateState();
 load();
 </script>
 </body></html>
