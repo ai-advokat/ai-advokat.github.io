@@ -91,6 +91,7 @@ jobs:
           expected_bot="$(sha256sum bot/index.html | awk '{print $1}')"
           expected_core="$(sha256sum assets/standalone-bot.js | awk '{print $1}')"
           expected_vnext="$(sha256sum assets/standalone-bot-vnext.js | awk '{print $1}')"
+          expected_vnext_css="$(sha256sum assets/standalone-bot-vnext.css | awk '{print $1}')"
           expected_toolkit="$(sha256sum assets/standalone-bot-toolkit.js | awk '{print $1}')"
           expected_toolkit_css="$(sha256sum assets/standalone-bot-toolkit.css | awk '{print $1}')"
 
@@ -100,12 +101,14 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r13&runtime_sync=$nonce" -o /tmp/runtime-sync-bot.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261101-core-r13&runtime_sync=$nonce" -o /tmp/runtime-sync-core.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity&runtime_sync=$nonce" -o /tmp/runtime-sync-vnext.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity&runtime_sync=$nonce" -o /tmp/runtime-sync-vnext.css || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.js?v=20261106-toolkit-r14&runtime_sync=$nonce" -o /tmp/runtime-sync-toolkit.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.css?v=20261106-toolkit-r14&runtime_sync=$nonce" -o /tmp/runtime-sync-toolkit.css || true
 
             live_bot="$(sha256sum /tmp/runtime-sync-bot.html 2>/dev/null | awk '{print $1}' || true)"
             live_core="$(sha256sum /tmp/runtime-sync-core.js 2>/dev/null | awk '{print $1}' || true)"
             live_vnext="$(sha256sum /tmp/runtime-sync-vnext.js 2>/dev/null | awk '{print $1}' || true)"
+            live_vnext_css="$(sha256sum /tmp/runtime-sync-vnext.css 2>/dev/null | awk '{print $1}' || true)"
             live_toolkit="$(sha256sum /tmp/runtime-sync-toolkit.js 2>/dev/null | awk '{print $1}' || true)"
             live_toolkit_css="$(sha256sum /tmp/runtime-sync-toolkit.css 2>/dev/null | awk '{print $1}' || true)"
 
@@ -120,6 +123,7 @@ jobs:
           test "$deployed" = "1"
 
           grep -q 'standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity' /tmp/runtime-sync-bot.html
+          grep -q 'standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity' /tmp/runtime-sync-bot.html
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/runtime-sync-bot.html
           grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' /tmp/runtime-sync-bot.html
           grep -q 'AI_ADVOCAT_STANDALONE_TOOLKIT_PARITY_R14' /tmp/runtime-sync-toolkit.js
@@ -158,6 +162,7 @@ jobs:
             /tmp/runtime-sync-bot.html
             /tmp/runtime-sync-core.js
             /tmp/runtime-sync-vnext.js
+            /tmp/runtime-sync-vnext.css
             /tmp/runtime-sync-toolkit.js
             /tmp/runtime-sync-toolkit.css
             /tmp/runtime-sync-health.json
