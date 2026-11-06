@@ -8,7 +8,7 @@ const sync=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8");
 test("external bot canonicalizes GitHub Pages to the Worker-hosted production surface",()=>{
   assert.match(bot,/location\.hostname === 'ai-advokat\.github\.io'/);
   assert.match(bot,/https:\/\/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
-  assert.match(bot,/standalone-bot\.js\?v=20261106-core-r15-voice/);
+  assert.match(bot,/standalone-bot\.js\?v=20261106-core-r15-voice-r2/);
   assert.match(bot,/standalone-bot-vnext\.js\?v=20261106-vnext-r14-toolkit-parity/);
   assert.match(bot,/standalone-bot-toolkit\.js\?v=20261106-toolkit-r14/);
   assert.match(bot,/standalone-bot-toolkit\.css\?v=20261106-toolkit-r14/);
@@ -35,7 +35,7 @@ test("GitHub Pages runtime sync is curated and cannot mutate legal production st
   assert.match(sync,/permissions:\n  contents: write/);
   assert.match(sync,/git push origin HEAD:gh-pages/);
   assert.match(sync,/MAIN\/GH-PAGES RUNTIME PARITY: PASS/);
-  assert.match(sync,/AI_ADVOCAT_VOICE_R1/);
+  assert.match(sync,/AI_ADVOCAT_VOICE_R2/);
   assert.match(sync,/node --check assets\/ai-advokat-voice\.mjs/);
 
   assert.doesNotMatch(sync,/wrangler\s+deploy/i);
