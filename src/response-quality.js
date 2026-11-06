@@ -1,3 +1,5 @@
+import { DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE, isDetentionContext } from "./detention-procedural-terminology.js";
+
 // Final user-facing response quality helpers.
 // Deterministic postflight only: no source expansion, no new legal reasoning.
 
@@ -195,6 +197,7 @@ export function deterministicFormalDraftCapacityFallback({userText=""}={}){
   const damages=/(?:надомест|штет)/iu.test(input);
   const divorce=/(?:развод|брак)/iu.test(input);
   const debt=/(?:судск(?:а|о)\s+наплат|долг|доверител|должник|побарувањ)/iu.test(input);
+  const detention=isDetentionContext(input);
   const principal=String(input.match(/(?:^|[^\p{L}\p{N}])(\d{1,3}(?:[.\s]\d{3})+(?:,\d+)?\s*денар(?:и)?)(?=$|[^\p{L}\p{N}])/iu)?.[1]||"").trim();
   const creditor=String(input.match(/Доверител\s*:\s*([^.\n]+)/iu)?.[1]||"").trim();
   const debtor=String(input.match(/Должник\s*:\s*([^.\n]+)/iu)?.[1]||"").trim();
@@ -202,13 +205,26 @@ export function deterministicFormalDraftCapacityFallback({userText=""}={}){
   const dueDateMissing=/(?:рок(?:от)?\s+за\s+плаќање[^.\n]*(?:не\s+е\s+наведен|не\s+е\s+даден|недостасува))/iu.test(input);
   const subject=divorce
     ? "Предмет: Работен нацрт за постапка во врска со развод на брак"
-    : damages
-      ? "Предмет: Работен нацрт за барање за надомест на штета"
-      : debt
-        ? "Предмет: Работен нацрт за судска наплата на договорен долг"
-        : "Предмет: Работен правен поднесок";
+    : detention
+      ? "Предмет: Работен нацрт за правен лек во врска со притвор"
+      : damages
+        ? "Предмет: Работен нацрт за барање за надомест на штета"
+        : debt
+          ? "Предмет: Работен нацрт за судска наплата на договорен долг"
+          : "Предмет: Работен правен поднесок";
 
-  const specialisedSections=divorce
+  const specialisedSections=detention
+    ? [
+        "Процесна терминологија за притвор",
+        "Одлуката со која се определува, продолжува или укинува притвор е решение, а не пресуда.",
+        "За жалба во притворски контекст користете „жалба против решението за притвор“, освен ако конкретниот правен лек и процесната фаза бараат поинакво формулирање според важечкиот ЗКП.",
+        "Законска терминолошка основа: "+DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE.boundary,
+        "",
+        "ЧОВЕЧКА ПРОВЕРКА НА ПРАВНИОТ ЛЕК",
+        "Пред поднесување мора да се проверат точниот член, рокот, надлежниот суд/совет и процесната фаза според важечката верзија на ЗКП.",
+        ""
+      ]
+    : divorce
     ? [
         "Податоци за бракот",
         "Бракот е склучен на [ДАТУМ] во [МЕСТО] и е запишан во матичната книга на венчаните под [БРОЈ / ГОДИНА — ДА СЕ ПОПОЛНИ].",

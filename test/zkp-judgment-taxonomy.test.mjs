@@ -44,3 +44,27 @@ test("shared runtime explicitly retrieves 401-404 before deterministic fallback"
   assert.match(worker,/instrumentKey==="mk:zkp" && isZkpJudgmentTaxonomyRequest\(q\)/);
   assert.match(worker,/formatZkpJudgmentTaxonomyAnswer\(instrument,articles\)/);
 });
+
+
+test("source-first formatter accepts statutory body evidence when heading metadata is absent",()=>{
+  const articles=[
+    {articleNumber:"401",heading:null,text:"Со пресудата обвинението се одбива или обвинетиот се ослободува од обвинението или се огласува за виновен."},
+    {articleNumber:"402",heading:null,text:"Пресуда со која се одбива обвинението судот ќе изрече, ако:"},
+    {articleNumber:"403",heading:null,text:"Пресуда со која обвинетиот се ослободува од обвинението судот ќе изрече, ако:"},
+    {articleNumber:"404",heading:null,text:"Во пресудата во која обвинетиот се огласува за виновен судот ќе изрече:"}
+  ];
+  const out=formatZkpJudgmentTaxonomyAnswer({title:"Закон за кривичната постапка"},articles);
+  assert.match(out,/Одбивателна пресуда — член 402/);
+  assert.match(out,/Ослободителна пресуда — член 403/);
+  assert.match(out,/Осудителна пресуда — член 404/);
+});
+
+test("source-first formatter still fails closed when neither heading nor body proves the statutory category",()=>{
+  const articles=[
+    {articleNumber:"401",text:"Со пресудата обвинението се одбива или обвинетиот се ослободува од обвинението или се огласува за виновен."},
+    {articleNumber:"402",text:"Неповрзан текст."},
+    {articleNumber:"403",text:"Пресуда со која обвинетиот се ослободува од обвинението судот ќе изрече, ако:"},
+    {articleNumber:"404",text:"Во пресудата во која обвинетиот се огласува за виновен судот ќе изрече:"}
+  ];
+  assert.equal(formatZkpJudgmentTaxonomyAnswer({title:"ЗКП"},articles),null);
+});

@@ -9821,7 +9821,7 @@ function withSecurityHeaders(response) {
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   headers.set("X-Frame-Options", "DENY");
-  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()");
+  headers.set("Permissions-Policy", "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()");
   headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   headers.set("Cross-Origin-Resource-Policy", "same-origin");
@@ -9839,7 +9839,7 @@ function withSecurityHeaders(response) {
   });
 }
 
-const EXTERNAL_BOT_RELEASE="core-r13";
+const EXTERNAL_BOT_RELEASE="core-r15";
 
 function externalBotReleaseRedirect(request,url){
   if(!["GET","HEAD"].includes(request.method)) return null;
