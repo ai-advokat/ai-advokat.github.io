@@ -6,6 +6,7 @@ import {
   hasProceduralInstrumentMismatch,
   deterministicProceduralInstrumentFallback,
   deterministicFormalDraftCapacityFallback,
+  shouldUseDeterministicFormalDraftRecovery,
   applyProceduralInstrumentSafety,
   cleanFormalDraftForExport,
   replaceUngroundedArticleReferences,
@@ -282,3 +283,35 @@ test("RQ23 deterministic debt fallback preserves the user-supplied principal",()
   assert.match(out,/ЧОВЕЧКА ПРОВЕРКА/iu);
   assert.doesNotMatch(out,/\bчлен\s+\d+/iu);
 });
+
+test("RQ24 incomplete formal draft triggers deterministic recovery",()=>{
+  const q="Факти: доверител Правно лице А, должник Правно лице Б, главен долг 150.000 денари. Подготви работен нацрт за судска наплата.";
+  const truncated="РАБОТЕН НАЦРТ ЗА СУДСКА НАПЛАТА\n\n1. СУД/ОРГАН\n[ДА СЕ ПРОВЕРИ]\n\n2. СТРАНИ\nДоверител: Правно лице А\nДолжник: Правно лице Б\n\n3. ПО";
+  assert.equal(shouldUseDeterministicFormalDraftRecovery(truncated,{userText:q}),true);
+});
+
+test("RQ25 complete formal draft that preserves supplied amount does not trigger recovery",()=>{
+  const q="Подготви работен нацрт за судска наплата на главен долг 150.000 денари.";
+  const complete=[
+    "РАБОТЕН НАЦРТ ЗА СУДСКА НАПЛАТА",
+    "Доверител: Правно лице А",
+    "Должник: Правно лице Б",
+    "Главен долг: 150.000 денари.",
+    "Фактичка основа: Обврската и доспеаноста треба да се потврдат со приложените докази.",
+    "Докази: договор, фактура и комуникација ако постојат.",
+    "Правна основа: [ДА СЕ ПРОВЕРИ ВО ВАЖЕЧКИ ОФИЦИЈАЛЕН ИЗВОР].",
+    "Предлог: точниот petitum да се формулира по проверка на надлежноста и процесните услови.",
+    "ЧОВЕЧКА ПРОВЕРКА: пред поднесување да се проверат фактите, доказите, роковите и важечкото право."
+  ].join("\n\n");
+  assert.equal(shouldUseDeterministicFormalDraftRecovery(complete,{userText:q}),false);
+});
+
+test("RQ26 short explanatory contract answer is not misclassified as a recovery draft",()=>{
+  assert.equal(
+    shouldUseDeterministicFormalDraftRecovery("Договор е согласност меѓу страни што создава права и обврски.",{
+      userText:"Објасни ми што е договор."
+    }),
+    false
+  );
+});
+
