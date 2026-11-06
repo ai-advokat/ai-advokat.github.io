@@ -34,16 +34,16 @@ test("Worker live smoke waits for exact deployed byte parity",()=>{
   assert.match(workflow,/test "\$deployed" = "1"/);
 });
 
-test("Worker live smoke proves legacy core-r10 self-heals to core-r13",()=>{
+test("Worker live smoke proves legacy core-r10 self-heals to core-r15",()=>{
   assert.match(workflow,/release=core-r10/);
-  assert.match(workflow,/release=core-r13/);
+  assert.match(workflow,/release=core-r15/);
   assert.match(workflow,/clear-site-data: "cache"/);
-  assert.match(workflow,/x-ai-advokat-release: core-r13/);
+  assert.match(workflow,/x-ai-advokat-release: core-r15/);
   assert.match(workflow,/LEGACY CORE-R10 SELF-HEAL REDIRECT: PASS/);
 });
 
 
-test("Worker live smoke proves legacy core-r12 also self-heals to core-r13",()=>{
+test("Worker live smoke proves legacy core-r12 also self-heals to core-r15",()=>{
   assert.match(workflow,/\$BASE\/bot\/\?release=core-r12/);
   assert.match(workflow,/LEGACY CORE-R12 SELF-HEAL REDIRECT: PASS/);
   assert.match(workflow,/worker-legacy-r12-release-headers\.txt/);
