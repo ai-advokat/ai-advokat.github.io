@@ -25,6 +25,7 @@ test("Worker live smoke waits for exact deployed byte parity",()=>{
   assert.match(workflow,/sha256sum bot\/index\.html/);
   assert.match(workflow,/sha256sum assets\/standalone-bot\.js/);
   assert.match(workflow,/sha256sum assets\/standalone-bot-vnext\.js/);
+  assert.match(workflow,/sha256sum assets\/standalone-bot-vnext\.css/);
   assert.match(workflow,/sha256sum assets\/standalone-bot-toolkit\.js/);
   assert.match(workflow,/sha256sum assets\/standalone-bot-toolkit\.css/);
   assert.match(workflow,/sha256sum assets\/chat-privacy-browser\.js/);
