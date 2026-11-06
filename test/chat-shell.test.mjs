@@ -133,6 +133,16 @@ test("CHAT11b homepage cache-busts the current FREE chat runtime and PWA shell",
   assert.match(serviceWorker,/ai-advokat-shell-v7/);
 });
 
+test("CHAT11c internal microphone is a half-duplex voice conversation turn",()=>{
+  assert.match(chatJs,/AI_ADVOCAT_INTERNAL_VOICE_CONVERSATION_R1/);
+  assert.match(chatJs,/half_duplex_auto_send_auto_speak/);
+  assert.match(chatJs,/onTranscript:async finalText/);
+  assert.match(chatJs,/await send\(spoken\)/);
+  assert.match(chatJs,/voice\.speak\(String\(latest\.text/);
+  assert.match(chatJs,/voice\?\.stopSpeaking\?\.\(\)/);
+  assert.match(html,/Гласовен разговор: зборувај → испрати → слушни одговор/);
+});
+
 test("CHAT12 GitHub Pages chat calls the Cloudflare Worker API, not the static origin",()=>{
   assert.match(chatJs,/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
   assert.match(chatJs,/CHAT_API_BASE\+"\/api\/chat"/);
