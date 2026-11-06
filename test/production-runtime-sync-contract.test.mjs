@@ -50,6 +50,7 @@ test("production runtime sync verifies exact R14 standalone release bytes",()=>{
     "assets/standalone-bot-toolkit.css"
   ]) assert.ok(workflow.includes("sha256sum "+asset),"missing byte parity for "+asset);
   assert.match(workflow,/for attempt in \$\(seq 1 80\); do/);
+  assert.match(workflow,/\[ "\$live_vnext_css" = "\$expected_vnext_css" \]/);
   assert.match(workflow,/PRODUCTION WORKER R14 BYTE PARITY: PASS/);
   assert.match(workflow,/AI_ADVOCAT_STANDALONE_TOOLKIT_PARITY_R14/);
 });
