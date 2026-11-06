@@ -51,7 +51,7 @@ jobs:
         run: |
           set -euo pipefail
           ok=0
-          for i in $(seq 1 20); do
+          for i in $(seq 1 60); do
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-home.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/bot/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-bot.html || true
             if grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-home.html 2>/dev/null \
@@ -117,14 +117,30 @@ jobs:
             "$BASE/api/chat"
           grep -qi '^access-control-allow-origin: https://ai-advokat.github.io' /tmp/root-cors.txt
 
-          curl -fsSL --max-time 90 \
+          chat_code="$(curl -sS --max-time 90 \
+            -o /tmp/root-chat.json -w '%{http_code}' \
             -H 'content-type: application/json' \
             -H 'Origin: https://ai-advokat.github.io' \
             -d '{"q":"Одговори кратко и вклучи ја ознаката ROOT_SMOKE_OK.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}' \
-            "$BASE/api/chat" -o /tmp/root-chat.json
+            "$BASE/api/chat")"
+          echo "MAIN CHAT HTTP: $chat_code"
 
-          node <<'NODE'
-          const d=require("/tmp/root-chat.json");
+          node - "$chat_code" <<'NODE'
+          const fs=require("fs");
+          const status=Number(process.argv[2]||0);
+          const raw=fs.readFileSync("/tmp/root-chat.json","utf8");
+          let d={};try{d=JSON.parse(raw);}catch{throw new Error("main_chat_invalid_json_http_"+status+": "+raw.slice(0,500));}
+          if(status!==200){
+            const capacity=d?.providerCapacity?.state==="exhausted"
+              || d?.error==="workers_ai_daily_capacity_exhausted"
+              || d?.providerRecovery?.direction==="workers_ai_to_openai";
+            console.error("MAIN CHAT NON-200",JSON.stringify({
+              status,error:d?.error||null,providerCapacity:d?.providerCapacity||null,
+              providerRecovery:d?.providerRecovery||null,fallbackProviderFailure:d?.fallbackProviderFailure||null
+            }));
+            if(capacity) throw new Error("main_chat_provider_capacity_blocked");
+            throw new Error("main_chat_http_"+status+":"+(d?.error||"unknown"));
+          }
           if(!d.ok) throw new Error("main_chat_not_ok: "+JSON.stringify(d));
           if(!String(d.answer||"").trim()) throw new Error("main_chat_empty_answer");
           if(!String(d.answer||"").includes("ROOT_SMOKE_OK")) throw new Error("main_chat_marker_missing");
