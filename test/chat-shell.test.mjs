@@ -128,7 +128,7 @@ test("CHAT11 session privacy uses store:false and never creates a durable OpenAI
 });
 
 test("CHAT11b homepage cache-busts the current FREE chat runtime and PWA shell",()=>{
-  assert.match(html,/ai-advokat-chat\.js\?v=20261105-root-r24-detention-procedural-act-gate-v1/);
+  assert.match(html,/ai-advokat-chat\.js\?v=20261106-root-r15-voice-runtime/);
   const serviceWorker=fs.readFileSync("service-worker.js","utf8");
   assert.match(serviceWorker,/ai-advokat-shell-v7/);
 });
@@ -159,9 +159,10 @@ test("CHAT14 file inputs use OpenAI Responses data URI format and server MIME al
 });
 
 
-test("CHAT15 GPT workspace bridges governed article-level corpus before synthesis",()=>{
+test("CHAT15 GPT workspace bridges bounded governed article-level corpus before synthesis",()=>{
   assert.match(worker,/governedArticleContext/);
-  assert.match(worker,/findRelevantArticles\(env,routing\.key,q,5/);
+  assert.match(worker,/findRelevantArticlesForChat\(env,routing\.key,q,5/);
+  assert.match(worker,/loadInstrumentArticleCandidatesForChat/);
   assert.match(worker,/ai_advokat_article_corpus_first/);
   assert.match(worker,/legalSources:articleBundle\.legalSources/);
   assert.match(worker,/Human Gate/);
@@ -595,10 +596,12 @@ test("CHAT canonical FREE formal drafts always use and expose the compact latenc
 });
 
 
-test("CHAT17e every generated Macedonian FREE answer attempts the editor and may fall back only to canonical-clean text",()=>{
+test("CHAT17e Macedonian FREE answers use the editor only when the independent deterministic gate requires repair",()=>{
   const helper=worker.slice(worker.indexOf("async function runFreeWorkersAIChat"),worker.indexOf("async function handleCasePilotCaseLawResearch"));
-  assert.match(helper,/forceEditorialPass:languageRequired/);
+  assert.match(helper,/forceEditorialPass:false/);
+  assert.match(worker,/const editorRequired=forceEditorialPass \|\| releaseVerdict\.verdict!=="RELEASE"/);
   assert.match(worker,/WORKERS_AI_MK_EDITOR_MODEL_DEFAULT="@cf\/zai-org\/glm-4\.7-flash"/);
+  assert.match(worker,/mandatory_language_editor_failed/);
   assert.match(worker,/editor_unavailable_canonical_clean_fallback/);
   assert.match(helper,/languageEditorFallbackUsed/);
   assert.match(helper,/deterministicProceduralInstrumentFallback/);
