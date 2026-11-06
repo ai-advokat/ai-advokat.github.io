@@ -64,7 +64,9 @@ test('standalone bot preserves professional feature parity controls',()=>{
   assert.match(html,/Прикачи документи \/ Secure Case Workspace/);
   assert.match(html,/data-export="docx"/);
   assert.match(html,/data-export="pdf"/);
-  assert.match(source,/SpeechRecognition \|\| window\.webkitSpeechRecognition/);
+  assert.match(source,/ai-advokat-voice\.mjs/);
+  assert.match(source,/bindMicrophone/);
+  assert.match(source,/bindSpeakButton/);
   assert.match(source,/refreshRuntimeStatus/);
   assert.match(source,/exportLatestAssistant/);
 });
@@ -149,7 +151,7 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
   assert.match(html,/standalone-bot-vnext\.js\?v=20261106-vnext-r14-toolkit-parity/);
   assert.match(html,/standalone-bot-vnext\.css\?v=20261106-ui-r6-toolkit-parity/);
-  assert.match(html,/standalone-bot\.js\?v=20261101-core-r13/);
+  assert.match(html,/standalone-bot\.js\?v=20261106-core-r15-voice/);
   assert.doesNotMatch(vnext,/standalone-bot\.js/);
   assert.match(core,/function ensureLegalPulseStyles\(\)/);
   assert.match(core,/id = 'legalPulseRuntimeStyle'/);
@@ -202,7 +204,7 @@ test('fresh-device access submit stays tappable before question entry and stray 
   assert.match(source,/\$\('send'\)\.disabled = value \|\| \(!!key && !hasQuestion\)/);
   assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = !!key && \$\('question'\)\.value\.trim\(\)\.length < 2/);
   assert.doesNotMatch(html,/\\n\s*<link rel="stylesheet"/);
-  assert.match(html,/standalone-bot\.css\?v=20261101-access-r7/);
+  assert.match(html,/standalone-bot\.css\?v=20261106-access-r15-voice/);
 });
 
 
@@ -246,7 +248,7 @@ test('core composer boot is independent and privacy dependency failure is fail-c
   const html=fs.readFileSync('bot/index.html','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
-  const corePos=html.indexOf('standalone-bot.js?v=20261101-core-r13');
+  const corePos=html.indexOf('standalone-bot.js?v=20261106-core-r15-voice');
   const vnextPos=html.indexOf('standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity');
   assert.ok(corePos>=0 && vnextPos>corePos);
   assert.doesNotMatch(vnext,/await import.*standalone-bot/);
