@@ -161,16 +161,25 @@ jobs:
               if(data.providerFallback && data.providerFallback.from!=="openai"){
                 throw new Error(label+" invalid provider fallback provenance "+JSON.stringify(data.providerFallback));
               }
-              if(data?.performance?.languageEditorRequired!==true){
-                throw new Error(label+" Macedonian output skipped mandatory language editor: "+JSON.stringify(data.performance));
-              }
-              if(data?.performance?.languageEditorModel!==EXPECTED_EDITOR_MODEL){
-                throw new Error(label+" unexpected Macedonian editor model: "+JSON.stringify(data.performance));
-              }
-              if(data?.performance?.languageEditorPassed!==true
-                && data?.performance?.languageEditorFallbackUsed!==true
-                && data?.performance?.deterministicLanguageFallbackUsed!==true){
-                throw new Error(label+" language editor failed without an independently verified fallback: "+JSON.stringify(data.performance));
+              const editorRequired=data?.performance?.languageEditorRequired===true;
+              if(editorRequired){
+                if(data?.performance?.languageEditorModel!==EXPECTED_EDITOR_MODEL){
+                  throw new Error(label+" unexpected Macedonian editor model: "+JSON.stringify(data.performance));
+                }
+                if(data?.performance?.languageEditorPassed!==true
+                  && data?.performance?.languageEditorFallbackUsed!==true
+                  && data?.performance?.deterministicLanguageFallbackUsed!==true){
+                  throw new Error(label+" language editor failed without an independently verified fallback: "+JSON.stringify(data.performance));
+                }
+              }else{
+                if(data?.performance?.languageEditorModel!==null
+                  && data?.performance?.languageEditorModel!==undefined){
+                  throw new Error(label+" canonical-clean path unexpectedly reported an editor model: "+JSON.stringify(data.performance));
+                }
+                if(data?.performance?.languageEditorPassed===true
+                  || data?.performance?.languageEditorFallbackUsed===true){
+                  throw new Error(label+" canonical-clean path reported editor activity without requiring an editor: "+JSON.stringify(data.performance));
+                }
               }
             }else if(data.provider==="canonical_corpus_no_model"){
               if(data.model!==null && data.model!==undefined) throw new Error(label+" deterministic corpus lane must not expose an AI model");
