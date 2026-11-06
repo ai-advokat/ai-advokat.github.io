@@ -478,3 +478,17 @@ test("detention-answer hybrid terminology is repaired deterministically",()=>{
   assert.doesNotMatch(clean,/непретерани пресуди/iu);
   assert.equal(assessMacedonianOutput(clean,{userText:"Дај ми жалба против притвор на македонски."}).ok,true,clean);
 });
+
+test("R15.4 generated ID-ови is deterministically normalized before the language release gate",()=>{
+  const bad="Во записот се наведени ID-ови за предметите.";
+  const before=assessMacedonianOutput(bad,{userText:"Одговори на македонски."});
+  assert.equal(before.ok,false,JSON.stringify(before));
+  assert.ok(before.reasons.includes("malformed_token_shape"),JSON.stringify(before));
+
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.equal(clean,"Во записот се наведени Идентификатори за предметите.");
+  const after=assessMacedonianOutput(clean,{userText:"Одговори на македонски."});
+  assert.equal(after.ok,true,JSON.stringify({clean,after}));
+  assert.equal(macedonianReleaseVerdict(clean,{userText:"Одговори на македонски."}).verdict,"RELEASE");
+});
+
