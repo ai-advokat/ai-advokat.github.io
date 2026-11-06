@@ -110,7 +110,7 @@ function assess(tc,surface,res){
   if(res.status!==200) hard.push("http_"+res.status);
   if(d.ok!==true) hard.push("response_not_ok");
   if(!answer) hard.push("empty_answer");
-  for(const re of tc.must||[]) if(!re.test(answer)) quality.push("missing:"+re.source);
+  for(const re of tc.must||[]) if(!re.test(answer)) hard.push("missing_required:"+re.source);
   for(const re of tc.forbid||[]) if(re.test(answer)) hard.push("forbidden:"+re.source);
 
   if(tc.id==="R14-DETENTION" && d.ok===true){
@@ -179,6 +179,7 @@ const summary={
   crossFindings:cross.length,
   internalHardPass:rows.filter(r=>r.surface==="INTERNAL_AI_ADVOCAT").every(r=>!r.hardFailures.length),
   externalHardPass:rows.filter(r=>r.surface==="EXTERNAL_PROFESSIONAL").every(r=>!r.hardFailures.length),
+  mandatoryAnswerChecks:"HARD_GATE",
   releaseState:null
 };
 summary.releaseState=summary.hardFailures>0||cross.some(x=>x.type==="forbidden_detention_terminology")
