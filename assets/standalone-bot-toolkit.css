@@ -1,0 +1,21 @@
+/* AI Advokat standalone toolkit parity R14 */
+.aa-toolkit-dialog{width:min(980px,calc(100vw - 28px));max-height:88dvh;overflow:auto;border:1px solid var(--vline,#d9d6ce);border-radius:16px;padding:0;background:var(--vpanel,#fff);color:var(--vink,#172331);box-shadow:0 24px 70px rgba(10,25,40,.22)}
+.aa-toolkit-dialog::backdrop{background:rgba(12,24,38,.42)}
+.aa-toolkit-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:16px 18px;border-bottom:1px solid var(--vline,#d9d6ce);background:var(--vpanel,#fff)}
+.aa-toolkit-head strong{display:block;font-size:18px}.aa-toolkit-head small{display:block;margin-top:4px;color:var(--vmuted,#657080);font-size:11px}
+.aa-toolkit-close{border:0!important;background:transparent!important;color:var(--vmuted,#657080)!important;font-size:26px!important;padding:0 4px!important}
+.aa-toolkit-body{display:grid;gap:14px;padding:16px}.aa-toolkit-section{display:grid;gap:10px}.aa-toolkit-section h3{margin:0;font-size:14px}.aa-toolkit-section p{margin:0;color:var(--vmuted,#657080);font-size:11px;line-height:1.55}
+.aa-toolkit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.aa-toolkit-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.aa-toolkit-card,.aa-toolkit-action{display:grid;gap:6px;border:1px solid var(--vline,#d9d6ce)!important;border-radius:12px!important;background:var(--vcream,#f8f6f0)!important;color:var(--vink,#172331)!important;padding:12px!important;text-align:left!important}
+.aa-toolkit-card strong,.aa-toolkit-action strong{font-size:12px}.aa-toolkit-card small,.aa-toolkit-action span,.aa-toolkit-card p{font-size:10px;color:var(--vmuted,#657080);line-height:1.5}
+.aa-toolkit-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.aa-toolkit-actions button,.aa-toolkit-actions a,.aa-toolkit-card>button{border:1px solid var(--vline,#d9d6ce)!important;border-radius:8px!important;background:var(--vpanel,#fff)!important;color:var(--vink,#172331)!important;padding:7px 9px!important;font-size:10px!important;text-decoration:none}
+.aa-toolkit-actions .primary{background:var(--vnavy2,#203a55)!important;color:#fff!important;border-color:var(--vnavy2,#203a55)!important}
+.aa-toolkit-status{border-left:3px solid var(--vgold,#b9985b);padding:8px 10px;background:var(--vsoft,#f1eee6);font-size:11px;font-weight:700}
+.aa-toolkit-flow{display:flex;flex-wrap:wrap;gap:6px}.aa-toolkit-flow span,.aa-toolkit-flow a,.aa-toolkit-badges span{display:inline-flex;padding:4px 7px;border:1px solid var(--vline,#d9d6ce);border-radius:999px;background:var(--vpanel,#fff);font-size:9px;color:var(--vmuted,#657080);text-decoration:none}
+.aa-toolkit-badges{display:flex;gap:6px;flex-wrap:wrap}.aa-toolkit-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.aa-toolkit-field{display:grid;gap:5px;font-size:10px;font-weight:700}
+.aa-toolkit-field input,.aa-toolkit-field select,.aa-toolkit-field textarea,.aa-toolkit-calc input{width:100%;box-sizing:border-box;border:1px solid var(--vline,#d9d6ce);border-radius:9px;padding:9px;background:var(--vpanel,#fff);color:var(--vink,#172331);font:inherit}
+.aa-toolkit-field textarea{min-height:100px;resize:vertical}.aa-toolkit-calc{align-content:start}.aa-toolkit-check{display:flex;gap:7px;align-items:flex-start;font-size:10px}.aa-toolkit-check input{width:auto}
+.aa-toolkit-output{max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word;border:1px solid var(--vline,#d9d6ce);border-radius:9px;background:var(--vpanel,#fff);padding:9px;font-size:10px}
+.aa-toolkit-boundary{border-left:3px solid var(--vgold,#b9985b);padding:9px 10px!important;background:var(--vsoft,#f1eee6);color:var(--vink,#172331)!important;font-size:10px!important}
+.aa-toolkit-value-state{font-size:9px;font-weight:900;letter-spacing:.06em;color:var(--vnavy2,#203a55)}
+@media(max-width:760px){.aa-toolkit-grid,.aa-toolkit-action-grid,.aa-toolkit-form-grid{grid-template-columns:1fr}.aa-toolkit-dialog{width:calc(100vw - 16px);max-height:92dvh}.aa-toolkit-body{padding:12px}}
