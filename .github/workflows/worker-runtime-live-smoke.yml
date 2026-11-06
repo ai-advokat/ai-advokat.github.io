@@ -7,6 +7,10 @@ on:
       - ".github/workflows/worker-runtime-live-smoke.yml"
       - "bot/index.html"
       - "assets/standalone-bot.js"
+      - "assets/standalone-bot-vnext.js"
+      - "assets/standalone-bot-vnext.css"
+      - "assets/standalone-bot-toolkit.js"
+      - "assets/standalone-bot-toolkit.css"
       - "assets/chat-privacy-browser.js"
       - "src/chat-privacy.js"
       - ".assetsignore"
@@ -27,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify Worker serves exact R13 frontend bytes
+      - name: Verify Worker serves exact R14 standalone frontend bytes
         shell: bash
         run: |
           set -euo pipefail
@@ -35,37 +39,58 @@ jobs:
 
           expected_bot="$(sha256sum bot/index.html | awk '{print $1}')"
           expected_core="$(sha256sum assets/standalone-bot.js | awk '{print $1}')"
+          expected_vnext="$(sha256sum assets/standalone-bot-vnext.js | awk '{print $1}')"
+          expected_vnext_css="$(sha256sum assets/standalone-bot-vnext.css | awk '{print $1}')"
+          expected_toolkit="$(sha256sum assets/standalone-bot-toolkit.js | awk '{print $1}')"
+          expected_toolkit_css="$(sha256sum assets/standalone-bot-toolkit.css | awk '{print $1}')"
           expected_privacy_primary="$(sha256sum assets/chat-privacy-browser.js | awk '{print $1}')"
           expected_privacy_compat="$(sha256sum src/chat-privacy.js | awk '{print $1}')"
 
           deployed=0
-          for attempt in $(seq 1 40); do
+          for attempt in $(seq 1 80); do
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r13&smoke=$nonce" -o /tmp/worker-bot.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261101-core-r13&smoke=$nonce" -o /tmp/worker-core.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity&smoke=$nonce" -o /tmp/worker-vnext.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity&smoke=$nonce" -o /tmp/worker-vnext.css || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.js?v=20261106-toolkit-r14&smoke=$nonce" -o /tmp/worker-toolkit.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.css?v=20261106-toolkit-r14&smoke=$nonce" -o /tmp/worker-toolkit.css || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/chat-privacy-browser.js?v=20261101-privacy-r12&smoke=$nonce" -o /tmp/worker-privacy-primary.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/src/chat-privacy.js?v=20261101-privacy-compat-r1&smoke=$nonce" -o /tmp/worker-privacy-compat.js || true
 
             live_bot="$(sha256sum /tmp/worker-bot.html 2>/dev/null | awk '{print $1}' || true)"
             live_core="$(sha256sum /tmp/worker-core.js 2>/dev/null | awk '{print $1}' || true)"
+            live_vnext="$(sha256sum /tmp/worker-vnext.js 2>/dev/null | awk '{print $1}' || true)"
+            live_vnext_css="$(sha256sum /tmp/worker-vnext.css 2>/dev/null | awk '{print $1}' || true)"
+            live_toolkit="$(sha256sum /tmp/worker-toolkit.js 2>/dev/null | awk '{print $1}' || true)"
+            live_toolkit_css="$(sha256sum /tmp/worker-toolkit.css 2>/dev/null | awk '{print $1}' || true)"
             live_privacy_primary="$(sha256sum /tmp/worker-privacy-primary.js 2>/dev/null | awk '{print $1}' || true)"
             live_privacy_compat="$(sha256sum /tmp/worker-privacy-compat.js 2>/dev/null | awk '{print $1}' || true)"
 
             if [ "$live_bot" = "$expected_bot" ] \
               && [ "$live_core" = "$expected_core" ] \
+              && [ "$live_vnext" = "$expected_vnext" ] \
+              && [ "$live_vnext_css" = "$expected_vnext_css" ] \
+              && [ "$live_toolkit" = "$expected_toolkit" ] \
+              && [ "$live_toolkit_css" = "$expected_toolkit_css" ] \
               && [ "$live_privacy_primary" = "$expected_privacy_primary" ] \
               && [ "$live_privacy_compat" = "$expected_privacy_compat" ]; then
               deployed=1
-              echo "WORKER R13 BYTE PARITY: PASS on attempt $attempt"
+              echo "WORKER R14 BYTE PARITY: PASS on attempt $attempt"
               break
             fi
-            echo "Worker deployment not yet at expected commit (attempt $attempt/40)."
+            echo "Worker deployment not yet at expected commit (attempt $attempt/80)."
             sleep 3
           done
           test "$deployed" = "1"
 
           grep -q 'name="ai-advokat-release" content="core-r13"' /tmp/worker-bot.html
           grep -q 'standalone-bot.js?v=20261101-core-r13' /tmp/worker-bot.html
+          grep -q 'standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity' /tmp/worker-bot.html
+          grep -q 'standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity' /tmp/worker-bot.html
+          grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/worker-bot.html
+          grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' /tmp/worker-bot.html
+          grep -q 'AI_ADVOCAT_STANDALONE_TOOLKIT_PARITY_R14' /tmp/worker-toolkit.js
           grep -q "import('./chat-privacy-browser.js?v=20261101-privacy-r12')" /tmp/worker-core.js
           grep -q "import('/src/chat-privacy.js?v=20261101-privacy-compat-r1')" /tmp/worker-core.js
           grep -q 'detectConfidentialCasePrompt' /tmp/worker-privacy-primary.js
@@ -110,9 +135,24 @@ jobs:
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
           curl -sS --fail -D /tmp/worker-cors.txt -o /dev/null             -X OPTIONS             -H 'Origin: https://ai-advokat.github.io'             -H 'Access-Control-Request-Method: POST'             -H 'Access-Control-Request-Headers: content-type'             "$BASE/api/chat"
           grep -qi '^access-control-allow-origin: https://ai-advokat.github.io' /tmp/worker-cors.txt
-          curl -fsSL --max-time 120             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Одговори кратко и вклучи ја ознаката WORKER_SMOKE_OK.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/chat" -o /tmp/worker-chat.json
-          node <<'NODE'
-          const d=require("/tmp/worker-chat.json");
+          chat_code="$(curl -sS --max-time 120 -o /tmp/worker-chat.json -w '%{http_code}'             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Одговори кратко и вклучи ја ознаката WORKER_SMOKE_OK.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/chat")"
+          echo "MAIN CHAT HTTP: $chat_code"
+          node - "$chat_code" <<'NODE'
+          const fs=require("fs");
+          const status=Number(process.argv[2]||0);
+          const raw=fs.readFileSync("/tmp/worker-chat.json","utf8");
+          let d={};try{d=JSON.parse(raw);}catch{throw new Error("chat invalid json http "+status+": "+raw.slice(0,500));}
+          if(status!==200){
+            const capacity=d?.providerCapacity?.state==="exhausted"
+              || d?.error==="workers_ai_daily_capacity_exhausted"
+              || d?.providerRecovery?.direction==="workers_ai_to_openai";
+            console.error("MAIN CHAT NON-200",JSON.stringify({
+              status,error:d?.error||null,providerCapacity:d?.providerCapacity||null,
+              providerRecovery:d?.providerRecovery||null,fallbackProviderFailure:d?.fallbackProviderFailure||null
+            }));
+            if(capacity) throw new Error("chat provider capacity blocked");
+            throw new Error("chat http "+status+":"+(d?.error||"unknown"));
+          }
           if(!d.ok) throw new Error("chat not ok");
           if(!String(d.answer||"").trim()) throw new Error("empty chat answer");
           if(!String(d.answer||"").includes("WORKER_SMOKE_OK")) throw new Error("marker missing");
@@ -141,6 +181,10 @@ jobs:
             /tmp/worker-bot.html
             /tmp/worker-legacy-release-headers.txt
             /tmp/worker-core.js
+            /tmp/worker-vnext.js
+            /tmp/worker-vnext.css
+            /tmp/worker-toolkit.js
+            /tmp/worker-toolkit.css
             /tmp/worker-privacy-primary.js
             /tmp/worker-privacy-compat.js
             /tmp/worker-health.json

@@ -4,6 +4,7 @@ on:
   push:
     branches: ["main"]
     paths:
+      - "src/index.js"
       - "bot/index.html"
       - "assets/standalone-bot-vnext.js"
       - "assets/standalone-bot-toolkit.js"

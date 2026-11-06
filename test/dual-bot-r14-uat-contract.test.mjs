@@ -31,3 +31,8 @@ test("R14 production workflow verifies both live frontend parity and both govern
   assert.match(source,/path:"\/api\/bot"/);
   assert.match(workflow,/environment: production/);
 });
+
+
+test("R14 production UAT retriggers when the shared core runtime changes",()=>{
+  assert.match(workflow,/paths:\n\s+- "src\/index\.js"/);
+});

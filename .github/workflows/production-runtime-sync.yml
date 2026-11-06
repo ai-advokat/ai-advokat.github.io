@@ -1,0 +1,182 @@
+name: AI Advokat production runtime sync
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "*"
+      - ".well-known/**"
+      - "academy/**"
+      - "assets/**"
+      - "authors/**"
+      - "books/**"
+      - "bot/**"
+      - "casepilot/**"
+      - "consolidator/**"
+      - "data/**"
+      - "guides/**"
+      - "kolumni/**"
+      - "membership/**"
+      - "mvp-v2/**"
+      - "partners/**"
+      - "professional-library/**"
+      - "release/**"
+      - "scholar/**"
+      - "sluzben-vesnik/**"
+      - "src/**"
+      - "staging/**"
+      - "summit/**"
+      - "uat/**"
+      - ".github/workflows/production-runtime-sync.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-production-runtime-sync
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+
+    steps:
+      - name: Checkout exact main revision
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install pinned repository dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify exact production target and runtime contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --check src/index.js
+          node --check assets/ai-advokat-chat.js
+          node --check assets/standalone-bot.js
+          node --check assets/standalone-bot-vnext.js
+          node --check assets/standalone-bot-toolkit.js
+          npm run verify
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker name");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") {
+            throw new Error("Unexpected production D1 target");
+          }
+          if(c.vars?.OPENAI_PROVIDER_ACTIVATION_STATE!=="governed_openai_primary_workers_ai_fallback") {
+            throw new Error("Unexpected provider activation policy");
+          }
+          console.log("PRODUCTION RUNTIME TARGET: VERIFIED");
+          NODE
+
+      - name: Run bounded release regression gates
+        run: |
+          npm run test:security
+          node --test             test/dual-bot-parity.test.mjs             test/standalone-bot-toolkit-parity.test.mjs             test/dual-bot-r14-uat-contract.test.mjs             test/r14-live-smoke-observability.test.mjs             test/worker-runtime-live-smoke-contract.test.mjs
+
+      - name: Deploy exact main Worker runtime and static assets
+        run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/production-runtime-sync-deploy.txt
+
+      - name: Verify live health and exact R14 standalone byte parity
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          expected_bot="$(sha256sum bot/index.html | awk '{print $1}')"
+          expected_core="$(sha256sum assets/standalone-bot.js | awk '{print $1}')"
+          expected_vnext="$(sha256sum assets/standalone-bot-vnext.js | awk '{print $1}')"
+          expected_vnext_css="$(sha256sum assets/standalone-bot-vnext.css | awk '{print $1}')"
+          expected_toolkit="$(sha256sum assets/standalone-bot-toolkit.js | awk '{print $1}')"
+          expected_toolkit_css="$(sha256sum assets/standalone-bot-toolkit.css | awk '{print $1}')"
+
+          deployed=0
+          for attempt in $(seq 1 80); do
+            nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r13&runtime_sync=$nonce" -o /tmp/runtime-sync-bot.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261101-core-r13&runtime_sync=$nonce" -o /tmp/runtime-sync-core.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity&runtime_sync=$nonce" -o /tmp/runtime-sync-vnext.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity&runtime_sync=$nonce" -o /tmp/runtime-sync-vnext.css || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.js?v=20261106-toolkit-r14&runtime_sync=$nonce" -o /tmp/runtime-sync-toolkit.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.css?v=20261106-toolkit-r14&runtime_sync=$nonce" -o /tmp/runtime-sync-toolkit.css || true
+
+            live_bot="$(sha256sum /tmp/runtime-sync-bot.html 2>/dev/null | awk '{print $1}' || true)"
+            live_core="$(sha256sum /tmp/runtime-sync-core.js 2>/dev/null | awk '{print $1}' || true)"
+            live_vnext="$(sha256sum /tmp/runtime-sync-vnext.js 2>/dev/null | awk '{print $1}' || true)"
+            live_vnext_css="$(sha256sum /tmp/runtime-sync-vnext.css 2>/dev/null | awk '{print $1}' || true)"
+            live_toolkit="$(sha256sum /tmp/runtime-sync-toolkit.js 2>/dev/null | awk '{print $1}' || true)"
+            live_toolkit_css="$(sha256sum /tmp/runtime-sync-toolkit.css 2>/dev/null | awk '{print $1}' || true)"
+
+            if [ "$live_bot" = "$expected_bot" ]               && [ "$live_core" = "$expected_core" ]               && [ "$live_vnext" = "$expected_vnext" ]               && [ "$live_vnext_css" = "$expected_vnext_css" ]               && [ "$live_toolkit" = "$expected_toolkit" ]               && [ "$live_toolkit_css" = "$expected_toolkit_css" ]; then
+              deployed=1
+              echo "PRODUCTION WORKER R14 BYTE PARITY: PASS on attempt $attempt"
+              break
+            fi
+            echo "Waiting for exact R14 production Worker bytes (attempt $attempt/80)."
+            sleep 3
+          done
+          test "$deployed" = "1"
+
+          grep -q 'standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity' /tmp/runtime-sync-bot.html
+          grep -q 'standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity' /tmp/runtime-sync-bot.html
+          grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/runtime-sync-bot.html
+          grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' /tmp/runtime-sync-bot.html
+          grep -q 'AI_ADVOCAT_STANDALONE_TOOLKIT_PARITY_R14' /tmp/runtime-sync-toolkit.js
+
+          curl -fsSL --retry 8 --retry-delay 3 --max-time 30 "$BASE/api/health?runtime_sync=$GITHUB_RUN_ID" -o /tmp/runtime-sync-health.json
+          curl -fsSL --retry 8 --retry-delay 3 --max-time 30 "$BASE/api/orchestrator?runtime_sync=$GITHUB_RUN_ID" -o /tmp/runtime-sync-orchestrator.json
+          node <<'NODE'
+          const h=require("/tmp/runtime-sync-health.json");
+          const o=require("/tmp/runtime-sync-orchestrator.json");
+          if(!h.ok || h.database?.reachable!==true || h.database?.schemaReady!==true) throw new Error("Production health/database not ready");
+          if(!o.ok || o.runtime?.providerExecution!=="configured_for_api_chat_execution") throw new Error("Paid provider runtime not ready");
+          if(o.runtime?.lioeRuntimeGovernance!=="enabled") throw new Error("LIOE governance not enabled");
+          if(o.runtime?.lioePostflight!=="enabled") throw new Error("LIOE postflight not enabled");
+          if(o.runtime?.lioeSpecialistExecution!=="enabled") throw new Error("LIOE specialist execution not enabled");
+          console.log("PRODUCTION WORKER HEALTH + ORCHESTRATOR: PASS");
+          NODE
+
+      - name: Verify Professional route remains membership fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl -sS --max-time 30 -o /tmp/runtime-sync-bot-unauth.json -w '%{http_code}'             -H 'content-type: application/json'             -d '{"q":"Здраво"}'             "$BASE/api/bot")"
+          test "$code" = "401"
+          grep -q 'bot_membership_required' /tmp/runtime-sync-bot-unauth.json
+          echo "PROFESSIONAL /api/bot MEMBERSHIP BOUNDARY: PASS"
+
+      - name: Upload non-secret production runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-production-runtime-sync
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/production-runtime-sync-deploy.txt
+            /tmp/runtime-sync-bot.html
+            /tmp/runtime-sync-core.js
+            /tmp/runtime-sync-vnext.js
+            /tmp/runtime-sync-vnext.css
+            /tmp/runtime-sync-toolkit.js
+            /tmp/runtime-sync-toolkit.css
+            /tmp/runtime-sync-health.json
+            /tmp/runtime-sync-orchestrator.json
+            /tmp/runtime-sync-bot-unauth.json
