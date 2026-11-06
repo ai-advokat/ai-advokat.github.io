@@ -13,6 +13,8 @@ test("FREE capacity handoff failure exposes bounded provider recovery provenance
   assert.match(worker,/handoffRecovered:providerRecovery\?\.recovered===true/);
   assert.match(worker,/fallbackProviderFailure:freeCapacityHandoff \? \{/);
   assert.match(worker,/provider:"openai"/);
+  assert.match(worker,/responseStatus:String\(result\.responseStatus\|\|result\.failureDetail\|\|""\)\.slice\(0,80\)\|\|null/);
+  assert.match(worker,/providerStage:String\(result\.providerStage\|\|""\)\.slice\(0,40\)\|\|null/);
 });
 
 test("root smoke preserves non-200 chat JSON instead of curl-f discarding evidence",()=>{
