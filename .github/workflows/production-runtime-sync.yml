@@ -112,7 +112,7 @@ jobs:
             live_toolkit="$(sha256sum /tmp/runtime-sync-toolkit.js 2>/dev/null | awk '{print $1}' || true)"
             live_toolkit_css="$(sha256sum /tmp/runtime-sync-toolkit.css 2>/dev/null | awk '{print $1}' || true)"
 
-            if [ "$live_bot" = "$expected_bot" ]               && [ "$live_core" = "$expected_core" ]               && [ "$live_vnext" = "$expected_vnext" ]               && [ "$live_toolkit" = "$expected_toolkit" ]               && [ "$live_toolkit_css" = "$expected_toolkit_css" ]; then
+            if [ "$live_bot" = "$expected_bot" ]               && [ "$live_core" = "$expected_core" ]               && [ "$live_vnext" = "$expected_vnext" ]               && [ "$live_vnext_css" = "$expected_vnext_css" ]               && [ "$live_toolkit" = "$expected_toolkit" ]               && [ "$live_toolkit_css" = "$expected_toolkit_css" ]; then
               deployed=1
               echo "PRODUCTION WORKER R14 BYTE PARITY: PASS on attempt $attempt"
               break
