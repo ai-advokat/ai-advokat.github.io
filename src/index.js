@@ -7127,8 +7127,60 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     // the smaller FREE model to paraphrase it. This removes avoidable latency
     // and eliminates a major source of hybrid-language drift.
     let freeResult=null;
+
+    // R15.2 rescue: once the Professional OpenAI primary path has failed for an
+    // L2/L3 formal draft, do not invoke a second generative provider. The
+    // deterministic fallback is bounded, preserves user-supplied facts, applies
+    // the statutory detention terminology guard, introduces no unverified
+    // authority, and avoids Cloudflare CPU/memory spikes from a second AI pass.
+    if(professionalDegradedDraftActive && isFormalLegalDraftRequest(q)){
+      const deterministicText=deterministicFormalDraftCapacityFallback({userText:q});
+      const deterministicRelease=deterministicText
+        ? canonicalMacedonianFinalRelease(deterministicText,q)
+        : null;
+      if(deterministicText && deterministicRelease?.ok){
+        freeResult={
+          ok:true,
+          text:deterministicRelease.text,
+          model:null,
+          provider:"deterministic_capacity_fallback",
+          providerCalls:0,
+          languageRepairProviderCalls:0,
+          latencyMs:0,
+          fastPromptUsed:false,
+          compactDraftUsed:true,
+          outputTokenLimit:0,
+          languageStandard:shouldEnforceMacedonianOutput(q)?MACEDONIAN_LANGUAGE_STANDARD_VERSION:null,
+          languageRepaired:false,
+          deterministicLanguageCleanup:true,
+          languageEditorRequired:false,
+          languageEditorPassed:false,
+          languageEditorModel:null,
+          languageEditorFallbackUsed:false,
+          languageEditorFallbackReason:null,
+          languageEditorErrorCode:null,
+          deterministicLanguageFallbackUsed:true,
+          deterministicLanguageFallbackReason:"professional_primary_unavailable_bounded_draft",
+          formalDraftPostflight:true,
+          languageQualityState:"verified_runtime",
+          languageReleaseGate:deterministicRelease.releaseGate,
+          canonicalProvenanceGate:{
+            version:CANONICAL_PROVENANCE_GATE_VERSION,
+            state:canonicalContextGate.state,
+            released:canonicalContextGate.context.length,
+            blocked:canonicalContextGate.blocked.length
+          },
+          convertedDocuments:0,
+          conversationPersistence:"browser_session_only_app_no_server_conversation_store",
+          historyItemsUsed:historyCheck.history.length,
+          contaminatedAssistantHistoryDropped:0
+        };
+      }
+    }
+
     const deterministicFreeEligible=
-      missionProfile==="L0_INFORMATIONAL"
+      !freeResult
+      && missionProfile==="L0_INFORMATIONAL"
       && articleBundle.state==="matched"
       && Array.isArray(articleBundle.articles)
       && articleBundle.articles.length>0
@@ -7322,7 +7374,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
     const freeSourceMode=freeResult.provider==="canonical_corpus_no_model"
       ? "canonical_article_corpus_no_model"
-      : (attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
+      : freeResult.provider==="deterministic_capacity_fallback"
+        ? "deterministic_capacity_fallback_no_model"
+        : (attachmentCheck.attachments.length||guideDocumentCheck.attachments.length)
         ? (corpusContext.length ? "workers_ai_free_documents_plus_governed_corpus" : "workers_ai_free_document_analysis")
         : authorialBundle.context.length
           ? "workers_ai_free_authorial_publication_context"
@@ -7496,7 +7550,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       totalInputFilesUsed:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
       convertedDocuments:freeResult.convertedDocuments,
       reasoningEffort:professionalDegradedDraftActive
-        ? "workers_ai_degraded_professional_draft"
+        ? (freeResult.provider==="deterministic_capacity_fallback"
+          ? "deterministic_degraded_professional_draft"
+          : "workers_ai_degraded_professional_draft")
         : freeResult.provider==="canonical_corpus_no_model" ? "deterministic_source_first" : "workers_ai_standard",
       maxOutputTokens,
       humanGate:professionalDegradedDraftActive
@@ -7541,7 +7597,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           : null,
         primaryProviderState:professionalFallbackActive ? "FAILED_FALLBACK_RELEASED" : null,
         providerFallbackMode:professionalDegradedDraftActive
-          ? "PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI"
+          ? (freeResult.provider==="deterministic_capacity_fallback"
+            ? "PROFESSIONAL_DEGRADED_DRAFT_DETERMINISTIC"
+            : "PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI")
           : professionalL0FallbackActive
             ? "PROFESSIONAL_L0_WORKERS_AI"
             : professionalResearchFallbackActive
