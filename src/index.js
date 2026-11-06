@@ -21,6 +21,11 @@ import {
   assessDetentionProceduralTerminology
 } from "./detention-procedural-terminology.js";
 import {
+  ZKP_JUDGMENT_TAXONOMY_ARTICLES,
+  isZkpJudgmentTaxonomyRequest,
+  formatZkpJudgmentTaxonomyAnswer
+} from "./zkp-judgment-taxonomy.js";
+import {
   APPEAL_SKOPJE_36_VERSION,
   APPEAL_SKOPJE_36_RECORDS,
   searchAppealSkopje36
@@ -3175,8 +3180,34 @@ async function findRelevantArticles(env, instrumentKey, q, limit=6, {date=null,e
     if(!instrument) return {instrument:null,articles:[],reason:"instrument_not_found"};
     const corpus=await loadResolvedCorpus(env,instrument,{date});
     if(!corpus.ok) return {instrument,articles:[],reason:corpus.error,versions:corpus.versions};
-    const primaryArticles=rankInstrumentArticles(corpus.rows,q,limit,{instrumentKey,referenceDate:date})
+    let primaryArticles=rankInstrumentArticles(corpus.rows,q,limit,{instrumentKey,referenceDate:date})
       .map(article=>attachArticleGovernance(instrumentKey,article,{referenceDate:date}));
+
+    // ZKP judgment taxonomy is a bounded statutory lookup, not a fuzzy semantic query.
+    // When the user asks for the legal types of judgments, include the exact
+    // Articles 401-404 so the source-first fallback can preserve the statutory
+    // headings: Одбивателна, Ослободителна and Осудителна пресуда.
+    if(instrumentKey==="mk:zkp" && isZkpJudgmentTaxonomyRequest(q)){
+      const wanted=new Set(ZKP_JUDGMENT_TAXONOMY_ARTICLES);
+      const taxonomyArticles=corpus.rows
+        .filter(row=>wanted.has(
+          normalizeText(row.article_number_normalized||row.article_number||"")
+            .replace(/^член\s*/u,"")
+            .replace(/\s+/g,"")
+        ))
+        .sort((a,b)=>Number(a.article_number_normalized||a.article_number)-Number(b.article_number_normalized||b.article_number))
+        .map(row=>attachArticleGovernance(
+          instrumentKey,
+          attachReviewedArticleRepresentation(instrumentKey,normalizeArticle(row),{referenceDate:date}),
+          {referenceDate:date}
+        ));
+      const seen=new Set(taxonomyArticles.map(a=>String(a.articleNumberNormalized||a.articleNumber||"")));
+      primaryArticles=[
+        ...taxonomyArticles,
+        ...primaryArticles.filter(a=>!seen.has(String(a.articleNumberNormalized||a.articleNumber||"")))
+      ];
+    }
+
     const crossReferenceArticles=(expandReferences
       ? expandArticleCrossReferences(corpus.rows,primaryArticles,{maxReferences})
       : [])
@@ -3287,6 +3318,10 @@ const modelShapeSummary=workersAIShapeSummary;
 function fallbackAssistantAnswer(q, instrument, articles) {
   if(!articles.length){
     return "Во достапниот корпус не најдов доволно релевантен член за ова прашање. Потребна е дополнителна проверка на официјалните извори.";
+  }
+  if(instrument?.canonical_key==="mk:zkp" && isZkpJudgmentTaxonomyRequest(q)){
+    const taxonomy=formatZkpJudgmentTaxonomyAnswer(instrument,articles);
+    if(taxonomy) return taxonomy;
   }
   const intro=`За прашањето „${q}“, најрелевантни во достапниот корпус се ${articles.map(a=>`член ${a.articleNumber}`).join(", ")} од ${instrument.title}.`;
   const body=articles.slice(0,3).map(a=>{

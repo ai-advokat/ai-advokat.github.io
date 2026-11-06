@@ -10,6 +10,7 @@ on:
       - "assets/standalone-bot-toolkit.js"
       - "assets/standalone-bot-toolkit.css"
       - "src/detention-procedural-terminology.js"
+      - "src/zkp-judgment-taxonomy.js"
       - "scripts/ai-advokat-dual-bot-r14-uat.mjs"
       - "scripts/professional-smoke-capacity-gate.mjs"
       - ".github/workflows/ai-advokat-dual-bot-r14-uat.yml"
@@ -43,6 +44,7 @@ jobs:
         run: |
           node --check scripts/ai-advokat-dual-bot-r14-uat.mjs
           node --check scripts/professional-smoke-capacity-gate.mjs
+          node --check src/zkp-judgment-taxonomy.js
           node --check assets/standalone-bot-vnext.js
           node --check assets/standalone-bot-toolkit.js
 

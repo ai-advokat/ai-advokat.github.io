@@ -21,6 +21,7 @@ test("R14 UAT contains the approved shared-scenario legal gates",()=>{
   assert.match(source,/ослободителна\\s\+пресуда/);
   assert.match(source,/осудителна\\s\+пресуда/);
   assert.match(source,/forbidden_detention_terminology/);
+  assert.match(source,/правен акт\|идентификува/);
 });
 
 test("R14 production workflow verifies both live frontend parity and both governed bot surfaces",()=>{
@@ -35,6 +36,7 @@ test("R14 production workflow verifies both live frontend parity and both govern
 
 test("R14 production UAT retriggers when the shared core runtime changes",()=>{
   assert.match(workflow,/paths:\n\s+- "src\/index\.js"/);
+  assert.match(workflow,/src\/zkp-judgment-taxonomy\.js/);
 });
 
 
@@ -50,4 +52,12 @@ test("R14 UAT classifies verified internal Workers-AI plus OpenAI spend-limit ex
 
 test("R14 UAT still requires a fail-closed empty answer before capacity classification",()=>{
   assert.match(source,/!String\(d\?\.answer\|\|""\)\.trim\(\)/);
+});
+
+
+test("R14 UAT retries only fast transport failures without masking provider HTTP failures",()=>{
+  assert.match(source,/function retryableFastTransportFailure/);
+  assert.match(source,/Number\(elapsedMs\)<5000/);
+  assert.match(source,/attempt<2 && retryableFastTransportFailure\(message,ms\)/);
+  assert.match(source,/transportAttempts:res\.attempts\|\|1/);
 });
