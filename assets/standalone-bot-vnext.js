@@ -153,6 +153,9 @@ function buildShell(){
       <button data-vnext-action="consolidator"><span class="vnext-nav-symbol" aria-hidden="true">≋</span><span>Консолидатор</span></button>
       <button data-vnext-action="predictor"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Предиктор</span></button>
       <button data-vnext-action="sources"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>Правни извори</span></button>
+      <button data-vnext-action="public-evidence"><span class="vnext-nav-symbol" aria-hidden="true">⌕</span><span>Јавни докази</span></button>
+      <button data-vnext-action="professional-ecosystem"><span class="vnext-nav-symbol" aria-hidden="true">◆</span><span>Pro Ecosystem</span></button>
+      <button data-vnext-action="justice-daily"><span class="vnext-nav-symbol" aria-hidden="true">◉</span><span>Justice Daily</span></button>
       <button data-vnext-action="cases"><span class="vnext-nav-symbol" aria-hidden="true">⚖</span><span>Судска практика</span></button>
       <button data-vnext-action="casepilot"><span class="vnext-nav-symbol" aria-hidden="true">▣</span><span>CasePilot</span></button>
       <button data-vnext-action="documents"><span class="vnext-nav-symbol" aria-hidden="true">▧</span><span>Документи</span></button>
@@ -429,7 +432,7 @@ function openGlobalSearch(){ const d=$('vnextSearchDialog'); d.showModal(); $('v
 function renderGlobalSearch(){
   const host=$('vnextSearchResults'); if(!host) return; const q=String($('vnextGlobalSearch')?.value||'').trim().toLowerCase(); host.replaceChildren();
   const tools=[
-    ['⌁ Анализатор','analyzer'],['≋ Консолидатор','consolidator'],['◎ Предиктор','predictor'],['▤ Правни извори','sources'],['⚖ Судска практика','cases'],['▣ CasePilot','casepilot'],['▧ Документи','documents'],['◇ Workflows','workflows'],['✓ Human Gate','review'],['◫ Library','library']
+    ['⌁ Анализатор','analyzer'],['≋ Консолидатор','consolidator'],['◎ Предиктор','predictor'],['▤ Правни извори','sources'],['⌕ Јавни докази','public-evidence'],['◆ Pro Ecosystem','professional-ecosystem'],['◉ Justice Daily','justice-daily'],['⚖ Судска практика','cases'],['▣ CasePilot','casepilot'],['▧ Документи','documents'],['◇ Workflows','workflows'],['✓ Human Gate','review'],['◫ Library','library']
   ];
   const matches=workspace.threads.filter(t=>!q||t.title.toLowerCase().includes(q)||t.history.some(m=>String(m.text||'').toLowerCase().includes(q))).slice(0,8);
   if(matches.length){host.append(mk('small',{class:'vnext-search-group',text:'Разговори'}));matches.forEach(t=>{const b=mk('button',{type:'button',text:t.title});b.onclick=()=>{$('vnextSearchDialog').close();switchThread(t.id)};host.append(b);});}
@@ -446,6 +449,9 @@ function runAction(action){
     $('question').dispatchEvent(new Event('input')); closeMobileSidebar(); $('question').focus(); return;
   }
   if(action==='sources'){openEvidence('sources');return;}
+  if(action==='public-evidence'){window.AIAdvokatStandaloneToolkits?.openPublicEvidence?.();return;}
+  if(action==='professional-ecosystem'){window.AIAdvokatStandaloneToolkits?.openProfessionalEcosystem?.();return;}
+  if(action==='justice-daily'){window.AIAdvokatStandaloneToolkits?.openJusticeDaily?.();return;}
   if(action==='review'){openEvidence('human');return;}
   if(action==='casepilot'){window.open('/casepilot-workspace.html','_blank','noopener');return;}
   if(action==='cases'){window.open('/case-law-curation.html','_blank','noopener');return;}
