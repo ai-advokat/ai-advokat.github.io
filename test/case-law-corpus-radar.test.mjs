@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { summarizeCaseLawCorpus, corpusRadarPrompt } from "../src/case-law-corpus-radar.js";
+import { APPEAL_SKOPJE_36_RECORDS } from "../src/appeal-skopje-36-discovery.js";
 
 const worker=fs.readFileSync("src/index.js","utf8");
 const page=fs.readFileSync("case-law-curation.html","utf8");
@@ -118,6 +119,21 @@ test("Case-Law Radar Human Gate checklist is interactive but cannot promote data
   }
   assert.match(page,/database promotion сè уште НЕ е извршен/);
   assert.match(page,/Ниту едно штиклирање не менува database status/);
+});
+
+test("Radar static fallback exactly mirrors the governed 36-record discovery source",()=>{
+  assert.match(page,/STATIC_DISCOVERY_VERSION="AI_ADVOCAT_APPEAL_SKOPJE_36_V1"/);
+  const match=page.match(/STATIC_DISCOVERY_RECORDS=Object\.freeze\((\[[^\n]+\])\);/);
+  assert.ok(match?.[1],"static discovery fallback missing");
+  const fallback=JSON.parse(match[1]);
+  assert.equal(fallback.length,36);
+  assert.deepEqual(
+    fallback.map(row=>row.caseNumber),
+    APPEAL_SKOPJE_36_RECORDS.map(row=>row.n)
+  );
+  assert.ok(fallback.every(row=>row.status==="discovery_only" && row.officialBindingVerified===false));
+  assert.match(page,/apiRecords\.length\?apiRecords:STATIC_DISCOVERY_RECORDS/);
+  assert.match(page,/Живи метрики \+ static records/);
 });
 
 test("runtime cache contracts are bumped for the full integration release",()=>{
