@@ -196,6 +196,7 @@ import {
   hasProceduralInstrumentMismatch,
   deterministicProceduralInstrumentFallback,
   deterministicFormalDraftCapacityFallback,
+  shouldUseDeterministicFormalDraftRecovery,
   finaliseFormalLegalDraft,
   replaceUngroundedArticleReferences
 } from "./response-quality.js";
@@ -6081,22 +6082,35 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     primaryModel:result.model
   });
   const formalDraft=formalDraftRequest;
-  const finalText=formalDraft
+  let finalText=formalDraft
     ? finaliseFormalLegalDraft(languagePass.text,{
         userText:q,
         hasGovernedLegalContext:Boolean(String(governed||"").trim())
       })
     : languagePass.text;
-  let finalRelease=canonicalMacedonianFinalRelease(finalText,q);
   let deterministicLanguageFallbackUsed=false;
   let deterministicLanguageFallbackReason=null;
+
+  if(formalDraft && shouldUseDeterministicFormalDraftRecovery(finalText,{userText:q})){
+    const fallbackText=deterministicFormalDraftCapacityFallback({userText:q});
+    const fallbackRelease=fallbackText
+      ? canonicalMacedonianFinalRelease(fallbackText,q)
+      : null;
+    if(fallbackText && fallbackRelease?.ok){
+      finalText=fallbackRelease.text;
+      deterministicLanguageFallbackUsed=true;
+      deterministicLanguageFallbackReason="incomplete_or_fact_losing_formal_draft_recovery";
+    }
+  }
+
+  let finalRelease=canonicalMacedonianFinalRelease(finalText,q);
 
   // If a formal request itself uses the wrong procedural label for a likely
   // criminal event, never return contaminated prose or a bare 503. The model
   // generation remains blocked, but a controlled source-free Macedonian
   // working scaffold can be released because it adds no statute, article,
   // deadline, jurisdiction or legal effect.
-  if((languagePass.hardBlock || !finalRelease.ok) && formalDraft && proceduralInstrumentMismatch){
+  if(!deterministicLanguageFallbackUsed && (languagePass.hardBlock || !finalRelease.ok) && formalDraft && proceduralInstrumentMismatch){
     const fallbackText=deterministicProceduralInstrumentFallback({userText:q});
     const fallbackRelease=canonicalMacedonianFinalRelease(fallbackText,q);
     if(fallbackText && fallbackRelease.ok){
