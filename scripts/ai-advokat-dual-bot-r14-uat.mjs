@@ -26,7 +26,7 @@ const scenarios=[
     id:"R14-AMBIGUOUS-12",
     label:"Ambiguous Article 12 safety",
     q:"Што уредува член 12? Ако не е јасно од кој закон, не избирај закон самостојно.",
-    must:[/(кој закон|не е јасно|појасн|назив|пропис|не мож)/iu]
+    must:[/(кој закон|не е јасно|појасн|назив|пропис|не мож|правен акт|идентификува)/iu]
   },
   {
     id:"R14-DIVORCE",
@@ -66,21 +66,37 @@ const surfaces=[
   {name:"EXTERNAL_PROFESSIONAL",path:"/api/bot",headers:{"X-Membership-Key":KEY}}
 ];
 
+function retryableFastTransportFailure(message,elapsedMs){
+  return Number(elapsedMs)<5000
+    && /(?:fetch failed|ECONNRESET|EAI_AGAIN|UND_ERR_CONNECT_TIMEOUT|socket hang up)/iu.test(String(message||""));
+}
+
 async function call(surface,tc){
-  const started=Date.now();
-  try{
-    const response=await fetch(BASE+surface.path,{
-      method:"POST",
-      headers:{"content-type":"application/json","accept":"application/json",...surface.headers},
-      body:JSON.stringify({q:tc.q,mode:"auto",webSearch:false,history:[],guideIds:[],guideDocuments:[],attachments:[]}),
-      signal:AbortSignal.timeout(150000)
-    });
-    const raw=await response.text();
-    let data=null;try{data=JSON.parse(raw);}catch{}
-    return {status:response.status,data,raw:raw.slice(0,4000),ms:Date.now()-started};
-  }catch(error){
-    return {status:0,data:null,raw:String(error?.message||error),ms:Date.now()-started};
+  let last=null;
+  for(let attempt=1;attempt<=2;attempt++){
+    const started=Date.now();
+    try{
+      const response=await fetch(BASE+surface.path,{
+        method:"POST",
+        headers:{"content-type":"application/json","accept":"application/json",...surface.headers},
+        body:JSON.stringify({q:tc.q,mode:"auto",webSearch:false,history:[],guideIds:[],guideDocuments:[],attachments:[]}),
+        signal:AbortSignal.timeout(150000)
+      });
+      const raw=await response.text();
+      let data=null;try{data=JSON.parse(raw);}catch{}
+      return {status:response.status,data,raw:raw.slice(0,4000),ms:Date.now()-started,attempts:attempt};
+    }catch(error){
+      const ms=Date.now()-started;
+      const message=String(error?.message||error);
+      last={status:0,data:null,raw:message,ms,attempts:attempt};
+      if(attempt<2 && retryableFastTransportFailure(message,ms)){
+        await sleep(750);
+        continue;
+      }
+      return last;
+    }
   }
+  return last||{status:0,data:null,raw:"transport_failed_without_attempt",ms:0,attempts:0};
 }
 
 function providerCapacityBlock(surface,res){
@@ -175,7 +191,7 @@ for(const tc of scenarios){
     const a=assess(tc,surface,res);
     rows.push({
       id:tc.id,label:tc.label,surface:surface.name,
-      status:res.status,latencyMs:res.ms,
+      status:res.status,latencyMs:res.ms,transportAttempts:res.attempts||1,
       errorCode:res.data?.error||null,
       provider:res.data?.provider||null,
       model:res.data?.model??null,
