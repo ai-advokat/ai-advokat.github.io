@@ -83,6 +83,37 @@ test("Case-Law Radar has an always-visible Macedonian guide and routes Pages to 
   assert.match(page,/id="retry"/);
 });
 
+test("curation API exposes bounded discovery records for the operational Radar",()=>{
+  assert.match(worker,/discoveryRecords:supplied\.map\(row=>\(\{/);
+  assert.match(worker,/status:"discovery_only"/);
+  assert.match(worker,/officialBindingVerified:false/);
+  assert.match(worker,/humanReviewStatus:"pending"/);
+});
+
+test("Case-Law Radar operational workflow selects records and hands a bounded package to internal AI Advokat",()=>{
+  assert.match(page,/CASE_LAW_RADAR_WORKFLOW_R1/);
+  assert.match(page,/id="discoveryRows"/);
+  assert.match(page,/id="discoverySearch"/);
+  assert.match(page,/id="startPackage"/);
+  assert.match(page,/id="copyPackage"/);
+  assert.match(page,/Максимум 10 по пакет/);
+  assert.match(page,/DISCOVERY ONLY/);
+  assert.match(page,/aiAdvokatRadarHandoffV1/);
+  assert.match(page,/AI_ADVOCAT_RADAR_HANDOFF_V1/);
+  assert.match(page,/autoSend:true/);
+  assert.match(page,/location\.href="\/#ai-advokat-chat"/);
+  assert.match(page,/ИЗБРАН DISCOVERY-ONLY ПАКЕТ/);
+  assert.match(page,/official item binding/);
+});
+
+test("Case-Law Radar Human Gate checklist is interactive but cannot promote database authority",()=>{
+  for(const gate of ["official","identity","holding","finality","applicability","outcome"]){
+    assert.match(page,new RegExp('data-gate="'+gate+'"'));
+  }
+  assert.match(page,/database promotion сè уште НЕ е извршен/);
+  assert.match(page,/Ниту едно штиклирање не менува database status/);
+});
+
 test("runtime cache contracts are bumped for the full integration release",()=>{
   assert.match(indexHtml,/20261106-root-r15-voice-r2-runtime/);
   assert.match(botHtml,/20261106-vnext-r14-toolkit-parity/);
