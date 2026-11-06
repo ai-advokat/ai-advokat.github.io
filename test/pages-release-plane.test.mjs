@@ -9,7 +9,9 @@ test("external bot canonicalizes GitHub Pages to the Worker-hosted production su
   assert.match(bot,/location\.hostname === 'ai-advokat\.github\.io'/);
   assert.match(bot,/https:\/\/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
   assert.match(bot,/standalone-bot\.js\?v=20261101-core-r13/);
-  assert.match(bot,/standalone-bot-vnext\.js\?v=20261105-vnext-r13-case-law-radar/);
+  assert.match(bot,/standalone-bot-vnext\.js\?v=20261106-vnext-r14-toolkit-parity/);
+  assert.match(bot,/standalone-bot-toolkit\.js\?v=20261106-toolkit-r14/);
+  assert.match(bot,/standalone-bot-toolkit\.css\?v=20261106-toolkit-r14/);
   assert.match(bot,/frontend-runtime-guard\.js\?v=20261101-root-r1/);
 });
 
@@ -21,6 +23,9 @@ test("GitHub Pages runtime sync is curated and cannot mutate legal production st
     "assets/frontend-runtime-guard.js",
     "assets/standalone-bot.js",
     "assets/standalone-bot-vnext.js",
+    "assets/standalone-bot-vnext.css",
+    "assets/standalone-bot-toolkit.js",
+    "assets/standalone-bot-toolkit.css",
     "assets/standalone-bot-reliability.js"
   ]) assert.ok(sync.includes(path),path);
 
