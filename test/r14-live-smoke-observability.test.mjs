@@ -28,6 +28,7 @@ test("Worker smoke verifies R14 standalone bytes with deployment propagation bud
   assert.match(workerSmoke,/Verify Worker serves exact R14 standalone frontend bytes/);
   assert.match(workerSmoke,/for attempt in \$\(seq 1 80\); do/);
   assert.match(workerSmoke,/expected_vnext=.*standalone-bot-vnext\.js/);
+  assert.match(workerSmoke,/expected_vnext_css=.*standalone-bot-vnext\.css/);
   assert.match(workerSmoke,/expected_toolkit=.*standalone-bot-toolkit\.js/);
   assert.match(workerSmoke,/expected_toolkit_css=.*standalone-bot-toolkit\.css/);
   assert.match(workerSmoke,/AI_ADVOCAT_STANDALONE_TOOLKIT_PARITY_R14/);
