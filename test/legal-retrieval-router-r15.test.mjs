@@ -41,5 +41,5 @@ test("chat runtime applies bounded FREE context and conditional language editor"
   assert.match(worker,/async function loadInstrumentArticleCandidatesForChat/);
   assert.match(worker,/async function findRelevantArticlesForChat/);
   assert.match(worker,/const retrieval=await findRelevantArticlesForChat\(env,routing\.key,q,5/);
-  assert.match(worker,/LIMIT \?\`/);
+  assert.match(worker,/const bounded=Math\.max\(12,Math\.min\(64,Number\(limit\)\|\|48\)\)/);
 });
