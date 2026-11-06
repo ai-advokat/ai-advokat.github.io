@@ -38,4 +38,8 @@ test("chat runtime applies bounded FREE context and conditional language editor"
   assert.match(worker,/Math\.max\(12,Math\.min\(24,Number\(limit\|\|4\)\*6\)\)/);
   assert.match(worker,/canonical_zkp_articles_401_404_no_model/);
   assert.match(worker,/legalRetrievalPlan\(routingQuery/);
+  assert.match(worker,/async function loadInstrumentArticleCandidatesForChat/);
+  assert.match(worker,/async function findRelevantArticlesForChat/);
+  assert.match(worker,/const retrieval=await findRelevantArticlesForChat\(env,routing\.key,q,5/);
+  assert.match(worker,/LIMIT \?\`/);
 });
