@@ -1,4 +1,3 @@
-import { createAIAdvokatVoiceRuntime } from "./ai-advokat-voice.mjs?v=20261106-voice-r1";
 let localGuideDocuments = async () => [];
 let privacyRuntimeReady = false;
 let detectConfidentialCasePrompt = () => ({confidential:true});
@@ -94,7 +93,18 @@ let sessionId = crypto.randomUUID();
 const welcome = $('welcome').cloneNode(true);
 
 function status(text) { $('status').textContent = text; }
-const voiceRuntime=createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"});
+let voiceRuntime=null;
+const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261106-voice-r1")
+  .then(mod=>{
+    voiceRuntime=mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"});
+    return voiceRuntime;
+  })
+  .catch(error=>{
+    console.error("ai_advokat_external_voice_runtime_failed",error);
+    if($('mic')){$('mic').disabled=true;$('mic').title='Гласовниот модул не е достапен.';}
+    status('Гласовниот модул не се вчита. Пишувањето останува достапно.');
+    return null;
+  });
 function busy(value) {
   const hasQuestion = String($('question')?.value || '').trim().length >= 2;
   $('send').disabled = value || (!!key && !hasQuestion);
@@ -125,7 +135,7 @@ function message(role, text, model = '') {
     speak.className='message-speak';
     voiceTools.append(speak);
     article.append(voiceTools);
-    voiceRuntime.bindSpeakButton({button:speak,text:()=>normalizedText,status});
+    voiceRuntimeReady.then(voice=>voice?.bindSpeakButton({button:speak,text:()=>normalizedText,status}));
   }
   $('messages').append(article);
   article.scrollIntoView({block:'end'});
@@ -282,7 +292,7 @@ $('loginForm').onsubmit = async event => {
   } catch { $('loginStatus').textContent = 'Клучот не е активен или услугата не е достапна. Обидете се повторно.'; }
   finally { $('loginSubmit').disabled = false; }
 };
-$('newChat').onclick = () => { voiceRuntime.stopSpeaking(); voiceRuntime.stopRecognition(); reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Внесете професионален клуч преку ⋯.'); };
+$('newChat').onclick = () => { voiceRuntime?.stopSpeaking(); voiceRuntime?.stopRecognition(); reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Внесете професионален клуч преку ⋯.'); };
 $('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Сесијата и зачуваниот пристап се избришани.'); };
 $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => {
@@ -291,12 +301,12 @@ $('question').oninput = () => {
   if (!pending) $('send').disabled = !!key && $('question').value.trim().length < 2;
 };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
-voiceRuntime.bindMicrophone({
+voiceRuntimeReady.then(voice=>voice?.bindMicrophone({
   button:$('mic'),
   input:$('question'),
   status,
   onTranscript:()=>{$('question').focus();}
-});
+}));
 $('question').addEventListener('paste', event => { if (event.clipboardData?.files?.length) { event.preventDefault(); $('plus').open = true; status('Прикачете ги документите во приватниот простор преку „+“.'); } });
 $('composer').addEventListener('dragover', event => event.preventDefault());
 $('composer').addEventListener('drop', event => { event.preventDefault(); $('plus').open = true; status('Документите се прикачуваат во приватниот простор преку „+“.'); });
