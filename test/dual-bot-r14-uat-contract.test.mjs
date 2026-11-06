@@ -36,3 +36,18 @@ test("R14 production workflow verifies both live frontend parity and both govern
 test("R14 production UAT retriggers when the shared core runtime changes",()=>{
   assert.match(workflow,/paths:\n\s+- "src\/index\.js"/);
 });
+
+
+test("R14 UAT classifies verified internal Workers-AI plus OpenAI spend-limit exhaustion as operational capacity",()=>{
+  assert.match(source,/isOpenAIProviderCapacityStatus/);
+  assert.match(source,/fallbackProviderFailure/);
+  assert.match(source,/recovery\.direction==="workers_ai_to_openai"/);
+  assert.match(source,/fallback\.provider==="openai"/);
+  assert.match(source,/Number\(fallback\.httpStatus\)===429/);
+  assert.match(source,/PROVIDER_CAPACITY_BLOCKED/);
+  assert.match(source,/fallbackCapacityReason:String\(fallback\.responseStatus\|\|""\)/);
+});
+
+test("R14 UAT still requires a fail-closed empty answer before capacity classification",()=>{
+  assert.match(source,/!String\(d\?\.answer\|\|""\)\.trim\(\)/);
+});

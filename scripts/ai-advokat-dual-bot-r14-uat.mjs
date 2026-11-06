@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import {classifyProfessionalProviderCapacity} from "./professional-smoke-capacity-gate.mjs";
+import {classifyProfessionalProviderCapacity,isOpenAIProviderCapacityStatus} from "./professional-smoke-capacity-gate.mjs";
 
 const BASE=String(process.env.AI_ADVOCAT_BASE||"https://ai-advokat-github-io.aiadvokat16.workers.dev").replace(/\/$/,"");
 const KEY=String(process.env.AI_ADVOCAT_MEMBERSHIP_KEY||"").trim();
@@ -89,13 +89,57 @@ function providerCapacityBlock(surface,res){
     const classified=classifyProfessionalProviderCapacity(res.status,d);
     if(classified.recognized) return {blocked:true,type:"PROVIDER_CAPACITY_BLOCKED",detail:classified};
   }
-  const generic=res.status===503
+  const workersCapacityExhausted=res.status===503
     && d?.ok===false
-    && d?.error==="workers_ai_daily_capacity_exhausted"
-    && d?.providerCapacity?.state==="exhausted";
-  return generic
-    ? {blocked:true,type:"PROVIDER_CAPACITY_BLOCKED",detail:{provider:d?.providerCapacity?.provider||"workers_ai",capacity:d?.providerCapacity?.capacity||"daily_free_allocation_exhausted"}}
-    : {blocked:false,type:null,detail:null};
+    && d?.providerCapacity?.state==="exhausted"
+    && d?.providerCapacity?.provider==="workers_ai"
+    && d?.providerCapacity?.capacity==="daily_free_allocation_exhausted"
+    && !String(d?.answer||"").trim();
+
+  const legacyWorkersOnly=workersCapacityExhausted
+    && d?.error==="workers_ai_daily_capacity_exhausted";
+
+  const fallback=d?.fallbackProviderFailure&&typeof d.fallbackProviderFailure==="object"
+    ? d.fallbackProviderFailure
+    : {};
+  const recovery=d?.providerRecovery&&typeof d.providerRecovery==="object"
+    ? d.providerRecovery
+    : {};
+  const openAIFallbackCapacity=workersCapacityExhausted
+    && d?.error==="openai_response_error"
+    && fallback.provider==="openai"
+    && Number(fallback.httpStatus)===429
+    && isOpenAIProviderCapacityStatus(fallback.responseStatus)
+    && recovery.direction==="workers_ai_to_openai"
+    && recovery.recovered===false;
+
+  if(legacyWorkersOnly){
+    return {
+      blocked:true,
+      type:"PROVIDER_CAPACITY_BLOCKED",
+      detail:{
+        primaryProvider:"workers_ai",
+        primaryCapacity:"daily_free_allocation_exhausted",
+        fallbackProvider:null,
+        fallbackCapacityReason:null
+      }
+    };
+  }
+  if(openAIFallbackCapacity){
+    return {
+      blocked:true,
+      type:"PROVIDER_CAPACITY_BLOCKED",
+      detail:{
+        primaryProvider:"workers_ai",
+        primaryCapacity:"daily_free_allocation_exhausted",
+        fallbackProvider:"openai",
+        fallbackHttpStatus:429,
+        fallbackCapacityReason:String(fallback.responseStatus||""),
+        retryAfterSeconds:fallback.retryAfterSeconds??null
+      }
+    };
+  }
+  return {blocked:false,type:null,detail:null};
 }
 
 function assess(tc,surface,res){
