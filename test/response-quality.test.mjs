@@ -263,11 +263,22 @@ test("RQ21 capacity-timeout fallback preserves procedural-instrument safety",()=
 
 
 test("RQ22 detention capacity fallback preserves the statutory decision form",()=>{
-  const q="Изработи жалба против притвор и наведи го точниот вид на судска одлука.";
+  const q="Изработи жалба против притвор и наведи поддржувачка и спротивна судска практика и точниот вид на судска одлука.";
   const out=deterministicFormalDraftCapacityFallback({userText:q});
   assert.match(out,/решение, а не пресуда/iu);
   assert.match(out,/жалба против решението за притвор/iu);
   assert.match(out,/определува, продолжува или укинува притвор/iu);
+  assert.match(out,/поддржувачка и спротивна судска практика/iu);
+  assert.match(out,/не се именува автоматски без проверени официјални судски извори/iu);
   assert.doesNotMatch(out,/пресуда за (?:определување|продолжување|укинување)(?: на)? притвор/iu);
   assert.match(out,/ЧОВЕЧКА ПРОВЕРКА/iu);
+});
+
+test("RQ23 deterministic debt fallback preserves the user-supplied principal",()=>{
+  const q="Факти: доверител Правно лице А, должник Правно лице Б, договор за услуги, главен долг 150.000 денари, рокот е поминат. Подготви работен нацрт за судска наплата без да измислуваш надлежност, рокови или членови.";
+  const out=deterministicFormalDraftCapacityFallback({userText:q});
+  assert.match(out,/150\.000 денари/iu);
+  assert.match(out,/судска наплата/iu);
+  assert.match(out,/ЧОВЕЧКА ПРОВЕРКА/iu);
+  assert.doesNotMatch(out,/\bчлен\s+\d+/iu);
 });
