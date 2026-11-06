@@ -60,6 +60,6 @@ test("shared corpus radar product surface is visible from internal and external 
 });
 
 test("runtime cache contracts are bumped for the full integration release",()=>{
-  assert.match(indexHtml,/20261106-root-r15-voice-r2-runtime/);
+  assert.match(indexHtml,/20261106-root-r15-voice-r3-conversation/);
   assert.match(botHtml,/20261106-vnext-r14-toolkit-parity/);
 });
