@@ -418,6 +418,15 @@ test("OpenAI chief failure metadata distinguishes incomplete, HTTP and timeout w
     assert.equal(httpFail.retryAfterSeconds,17);
     assert.equal(httpFail.requestId,"req_429");
 
+    globalThis.fetch=async()=>new Response(JSON.stringify({error:{code:"rate_limit_exceeded",type:"rate_limit_error"}}),{status:429,headers:{"content-type":"application/json","x-request-id":"req_429_no_retry"}});
+    const httpFailWithoutRetryAfter=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-test"
+    },{plan,input:"Кои се условите?",maxOutputTokens:900});
+    assert.equal(httpFailWithoutRetryAfter.status,429);
+    assert.equal(httpFailWithoutRetryAfter.responseStatus,"rate_limit_exceeded");
+    assert.equal(httpFailWithoutRetryAfter.retryAfterSeconds,null);
+    assert.equal(httpFailWithoutRetryAfter.requestId,"req_429_no_retry");
+
     globalThis.fetch=async()=>{ throw new DOMException("timed out","TimeoutError"); };
     const timeout=await runOpenAIOrchestrator({
       OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-test",OPENAI_PROVIDER_TIMEOUT_MS:"11000"
