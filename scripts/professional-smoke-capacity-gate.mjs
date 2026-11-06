@@ -12,7 +12,7 @@ export function isOpenAIProviderCapacityStatus(value){
     "credit_balance_exhausted",
     "insufficient_quota"
   ]);
-  return recognized.has(status) || /^rate_limited(?:_|$)/u.test(status);
+  return recognized.has(status);
 }
 
 export function classifyProfessionalProviderCapacity(httpStatus,data){
