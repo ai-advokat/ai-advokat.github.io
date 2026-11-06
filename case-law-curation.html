@@ -17,8 +17,21 @@ th,td{text-align:left;padding:12px 14px;border-bottom:1px solid #eee6d8}th{backg
 .bar{height:8px;background:#e8e1d3;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#b9985b}
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}button,a.btn{border:0;border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer;text-decoration:none}.primary{background:#0d1b2a;color:#fff}.secondary{background:#fff;color:#0d1b2a;border:1px solid #d9cfbc}
 .note{background:#fff8e8;border:1px solid #e7c879;border-radius:14px;padding:14px;margin-top:18px;line-height:1.45}
+.guide{background:#fff;border:1px solid #d9cfbc;border-radius:18px;padding:20px;margin-top:18px;box-shadow:0 8px 24px rgba(13,27,42,.06)}
+.guide h2{margin:0 0 8px}.guide>p{margin:0 0 16px;color:#596273;line-height:1.55}
+.guide-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.step{border:1px solid #e5dccb;border-radius:14px;padding:14px;background:#fbfaf7;line-height:1.45}
+.step b{display:block;margin-bottom:6px;color:#0d1b2a}.step span{color:#5d6674;font-size:14px}
+.kicker{display:inline-block;font-size:11px;font-weight:900;letter-spacing:.08em;color:#7b5f2c;text-transform:uppercase;margin-bottom:7px}
+.legend{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+.term{border-left:4px solid #b9985b;background:#f8f4eb;border-radius:10px;padding:10px 12px;line-height:1.45}
+.term b{display:block}.term small{color:#667085}
+.livebar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.state{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;background:#ece7dc;color:#4c5563}
+.state.ok{background:#e8f5ec;color:#1f6b3a}.state.warn{background:#fff0da;color:#8b5a11}
+.mini{font-size:13px;color:#667085;line-height:1.45}
 pre{white-space:pre-wrap;background:#0d1b2a;color:#e8edf4;border-radius:14px;padding:16px;max-height:340px;overflow:auto}
-@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.grid{grid-template-columns:1fr}}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.guide-grid{grid-template-columns:1fr 1fr}}@media(max-width:520px){.grid,.guide-grid,.legend{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -29,11 +42,37 @@ pre{white-space:pre-wrap;background:#0d1b2a;color:#e8edf4;border-radius:14px;pad
 <p>Контрола на квалитет, покриеност и приоритет за корпусот од 1000 пресуди. Reviewed authority и discovery-only записи остануваат строго одделени.</p>
 </section>
 
+<section class="guide" id="how-it-works" data-guide-version="CASE_LAW_RADAR_GUIDE_R1">
+<span class="kicker">Водилка · Како функционира</span>
+<h2>Case-Law Radar во 6 чекори</h2>
+<p>Radar-от не е „список на пресуди“ и не одлучува што е право. Тој е контролна табла за тоа <b>што имаме, што недостига и што треба следно да се обработи</b> во корпусот. Само проверени записи можат да преминат во reviewed authority, а конечната професионална употреба останува зад Human Gate.</p>
+
+<div class="guide-grid">
+  <div class="step"><b>1 · Провери го статусот</b><span>„Reviewed authority“ се записи што поминале човечка и provenance проверка. „Discovery“ се записи само за пронаоѓање и не смеат автоматски да се цитираат како правен авторитет.</span></div>
+  <div class="step"><b>2 · Погледни ја судската хиерархија</b><span>Authority coverage покажува колку материјал имаме од Врховен, апелациони, Уставен суд, ЕСЧП и други релевантни нивоа. „Gap“ значи колку недостига до целната покриеност.</span></div>
+  <div class="step"><b>3 · Провери ги тематските празнини</b><span>Табелата покажува каде корпусот е тенок: докази, притвор, имотни односи, управно право, организиран криминал и други области.</span></div>
+  <div class="step"><b>4 · Провери ја рамнотежата</b><span>Supporting, adverse и distinguishing мора да се гледаат заедно. Radar-от спречува cherry-picking само на „поволни“ пресуди.</span></div>
+  <div class="step"><b>5 · Следи го „Следен приоритет“</b><span>Системот го предлага најголемиот празен сегмент. Тоа е препорака за следниот пакет за собирање/обработка, а не правна оцена на конкретен предмет.</span></div>
+  <div class="step"><b>6 · Копирај го prompt-от</b><span>„Следен пакет“ создава работна скрипта што можеш да ја внесеш во AI Advokat. Новите наоди прво се discovery; Human Gate одлучува што може да стане reviewed authority.</span></div>
+</div>
+
+<div class="legend">
+  <div class="term"><b>Reviewed authority</b><small>Проверен запис со доволен provenance и човечка ревизија. Сепак мора да се провери применливоста за конкретниот предмет.</small></div>
+  <div class="term"><b>Discovery record</b><small>Запис за пронаоѓање. Не докажува holding, конечност, исход или тековна применливост.</small></div>
+  <div class="term"><b>Supporting / Adverse</b><small>Практика што ја поддржува или ѝ се спротивставува на работната правна теза.</small></div>
+  <div class="term"><b>Distinguishing</b><small>Практика што е релевантна, но фактички или правно се разликува и затоа не се применува механички.</small></div>
+</div>
+
+<div class="note">
+  <b>Практична скрипта:</b> отвори Radar → прочитај „Следен приоритет“ → провери го Gap → копирај го auto-generated prompt → отвори AI Advokat → собери/обработи релевантни одлуки → означи ги само како discovery додека не се потврдат официјалниот извор, идентитетот на предметот, holding-от, конечноста и тековната применливост → Human Gate.
+</div>
+</section>
+
 <div class="grid" id="metrics">
-<div class="card"><strong>—</strong><small>Reviewed authority</small></div>
-<div class="card"><strong>—</strong><small>Discovery records</small></div>
-<div class="card"><strong>1000</strong><small>Target corpus</small></div>
-<div class="card"><strong>—</strong><small>Следен приоритет</small></div>
+<div class="card"><strong>—</strong><small>Reviewed authority · проверени записи</small></div>
+<div class="card"><strong>—</strong><small>Discovery records · само за пронаоѓање</small></div>
+<div class="card"><strong>1000</strong><small>Target corpus · цел за обработка</small></div>
+<div class="card"><strong>—</strong><small>Следен приоритет · најголем gap</small></div>
 </div>
 
 <section class="section card">
@@ -68,16 +107,25 @@ pre{white-space:pre-wrap;background:#0d1b2a;color:#e8edf4;border-radius:14px;pad
 </div>
 </section>
 
-<div class="note" id="status">Вчитување на governed corpus status…</div>
+<div class="note livebar">
+  <span class="state warn" id="liveState">Се вчитува</span>
+  <span id="status">Вчитување на governed corpus status…</span>
+  <button class="secondary" id="retry" type="button">Повтори</button>
+</div>
+<p class="mini">Ако живите бројки привремено не се достапни, водилката погоре останува валидна. Не толкувај „—“ или празна табела како нула пресуди; тоа значи дека live API не е вчитан.</p>
 </main>
 <script>
 const labels={supreme:"Врховен суд",appellate:"Апелациони судови",constitutional:"Уставен суд",echr:"ЕСЧП / HUDOC",first_instance_and_administrative:"Основни / управни / специјализирани",
 evidence_and_fair_trial:"Докази и правично судење",detention_and_liberty:"Притвор и слобода",property_and_civil:"Имотно / граѓанско",administrative:"Управно право",constitutional_and_human_rights:"Уставно / човекови права",money_laundering:"Перење пари",migrant_smuggling:"Криумчарење мигранти",narcotics:"Наркотици",abuse_of_office:"Службени злоупотреби",organized_crime:"Организиран криминал"};
+const API_ORIGIN=location.hostname==="ai-advokat.github.io"?"https://ai-advokat-github-io.aiadvokat16.workers.dev":"";
+const API_URL=API_ORIGIN+"/api/case-law/curation-plan";
 function esc(x){return String(x??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m]))}
+function setLiveState(kind,label){const el=document.getElementById("liveState");el.className="state "+kind;el.textContent=label}
 async function load(){
   const status=document.getElementById("status");
+  setLiveState("warn","Се вчитува");
   try{
-    const r=await fetch("/api/case-law/curation-plan",{cache:"no-store",headers:{accept:"application/json"}});
+    const r=await fetch(API_URL,{cache:"no-store",headers:{accept:"application/json"}});
     const d=await r.json(); if(!r.ok||!d.ok) throw new Error(d.error||"unavailable");
     const radar=d.radar||{};
     const m=document.querySelectorAll("#metrics .card strong");
@@ -94,10 +142,16 @@ async function load(){
     });
     const roles=radar.outcomeRoles||{};["supporting","adverse","distinguishing","neutral"].forEach(k=>document.getElementById(k).textContent=roles[k]??0);
     document.getElementById("prompt").textContent=d.nextPackagePrompt||"Нема prompt.";
+    setLiveState("ok","Живи податоци");
     status.textContent="Corpus radar: "+String(d.databaseState||"unknown")+" · "+String(d.version||"")+" · Human Gate required. "+String(radar.authorityBoundary||"");
-  }catch(e){status.textContent="Corpus Radar не е достапен: "+String(e.message||e);}
+  }catch(e){
+    setLiveState("warn","Live API недостапен");
+    status.textContent="Живите бројки моментално не се вчитани: "+String(e.message||e)+". Водилката и методологијата на страницата остануваат достапни.";
+    document.getElementById("prompt").textContent="Live prompt не е достапен. Притиснете „Повтори“ кога Worker API ќе биде достапен.";
+  }
 }
 document.getElementById("copy").onclick=async()=>{const t=document.getElementById("prompt").textContent;try{await navigator.clipboard.writeText(t);document.getElementById("copy").textContent="Копирано ✓";setTimeout(()=>document.getElementById("copy").textContent="Копирај prompt",1200)}catch{}};
+document.getElementById("retry").onclick=load;
 load();
 </script>
 </body></html>
