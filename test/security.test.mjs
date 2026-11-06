@@ -805,7 +805,7 @@ describe("production AI binding guard", () => {
     assert.equal((helper.match(/runWorkersAIText\(/g) || []).length, 1, "FREE public helper delegates one primary generation to the central provider contract");
     assert.equal((helper.match(/repairWorkersAIMacedonianIfNeeded\(/g) || []).length, 1, "FREE public helper may invoke the bounded language repair only after primary generation");
     assert.match(helper,/allowProviderRepair:languageRequired/, "Macedonian output may invoke the bounded editor after the quota-reserved primary call");
-    assert.match(helper,/forceEditorialPass:languageRequired/, "every generated Macedonian FREE output must force the dedicated editor pass");
+    assert.match(helper,/forceEditorialPass:false/, "clean Macedonian FREE output must not spend a second AI call when the deterministic release gate already passes");
 
     const privateHelpers = src.slice(src.indexOf("async function runPrivateWorkersAISynthesis("), src.indexOf("async function validateGuideDocuments"));
     assert.equal((privateHelpers.match(/runWorkersAIText\(/g) || []).length, 2, "private CasePilot synthesis and extraction each delegate one bounded call to the central provider");
@@ -957,7 +957,9 @@ describe("final audit follow-up", () => {
 test("production language firewall P2 uses a dedicated editor and a deterministic process-safe fallback",()=>{
   const src=fs.readFileSync("src/index.js","utf8");
   assert.match(src,/WORKERS_AI_MK_EDITOR_MODEL_DEFAULT="@cf\/zai-org\/glm-4\.7-flash"/);
-  assert.match(src,/forceEditorialPass:languageRequired/);
+  assert.match(src,/forceEditorialPass:false/);
+  assert.match(src,/const editorRequired=forceEditorialPass \|\| releaseVerdict\.verdict!=="RELEASE"/);
+  assert.match(src,/mandatory_language_editor_failed/);
   assert.match(src,/deterministicProceduralInstrumentFallback/);
   assert.match(src,/deterministicLanguageFallbackUsed/);
   assert.match(src,/languageEditorFallbackUsed/);
