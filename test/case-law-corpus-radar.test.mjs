@@ -68,6 +68,21 @@ test("GitHub Pages sync always deploys and verifies the Case-Law Radar page",()=
   assert.match(indexHtml,/href="\/case-law-curation\.html"/);
 });
 
+test("Case-Law Radar has an always-visible Macedonian guide and routes Pages to the Worker API",()=>{
+  assert.match(page,/CASE_LAW_RADAR_GUIDE_R1/);
+  assert.match(page,/Case-Law Radar во 6 чекори/);
+  assert.match(page,/Практична скрипта:/);
+  assert.match(page,/Reviewed authority/);
+  assert.match(page,/Discovery record/);
+  assert.match(page,/Supporting \/ Adverse/);
+  assert.match(page,/Distinguishing/);
+  assert.match(page,/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
+  assert.match(page,/location\.hostname==="ai-advokat\.github\.io"/);
+  assert.match(page,/API_URL=API_ORIGIN\+"\/api\/case-law\/curation-plan"/);
+  assert.match(page,/Live API недостапен/);
+  assert.match(page,/id="retry"/);
+});
+
 test("runtime cache contracts are bumped for the full integration release",()=>{
   assert.match(indexHtml,/20261106-root-r15-voice-r2-runtime/);
   assert.match(botHtml,/20261106-vnext-r14-toolkit-parity/);
