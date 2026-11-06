@@ -169,11 +169,13 @@ test("RQ13 procedural safety strips an unsafe forced lawsuit heading",()=>{
 });
 
 
-test("RQ14 formal drafts are excluded from the stripped-down FREE fast prompt",()=>{
+test("RQ14 formal drafts keep the full prompt and use the editor only after the deterministic language gate fails",()=>{
   const worker=fs.readFileSync("src/index.js","utf8");
-  assert.match(worker,/const fastFreePrompt=\(missionProfile===\"GENERAL_BYPASS\" \|\| missionProfile===\"L0_INFORMATIONAL\"\)\s*&& !formalDraftRequest;/);
+  assert.match(worker,/const fastFreePrompt=\(missionProfile==="GENERAL_BYPASS" \|\| missionProfile==="L0_INFORMATIONAL"\)\s*&& !formalDraftRequest;/);
   assert.match(worker,/allowProviderRepair:languageRequired/);
-  assert.match(worker,/forceEditorialPass:languageRequired/);
+  assert.match(worker,/forceEditorialPass:false/);
+  assert.match(worker,/const editorRequired=forceEditorialPass \|\| releaseVerdict\.verdict!=="RELEASE"/);
+  assert.match(worker,/mandatory_language_editor_failed/);
   assert.match(worker,/deterministicProceduralInstrumentFallback/);
   assert.match(worker,/deterministicLanguageFallbackUsed/);
 });
