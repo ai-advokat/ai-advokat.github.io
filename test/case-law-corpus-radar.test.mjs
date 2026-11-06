@@ -83,6 +83,12 @@ test("Case-Law Radar has an always-visible Macedonian guide and routes Pages to 
   assert.match(page,/id="retry"/);
 });
 
+test("Case-Law Radar inline operational JavaScript parses cleanly",()=>{
+  const match=page.match(/<script>([\s\S]*?)<\/script>/i);
+  assert.ok(match?.[1],"Radar inline script missing");
+  assert.doesNotThrow(()=>new Function(match[1]));
+});
+
 test("curation API exposes bounded discovery records for the operational Radar",()=>{
   assert.match(worker,/discoveryRecords:supplied\.map\(row=>\(\{/);
   assert.match(worker,/status:"discovery_only"/);
