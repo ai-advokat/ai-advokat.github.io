@@ -20,8 +20,11 @@ test("GitHub Pages runtime sync is curated and cannot mutate legal production st
     "index.html",
     "bot/index.html",
     "assets/ai-advokat-chat.js",
+    "assets/ai-advokat-chat.css",
+    "assets/ai-advokat-voice.mjs",
     "assets/frontend-runtime-guard.js",
     "assets/standalone-bot.js",
+    "assets/standalone-bot.css",
     "assets/standalone-bot-vnext.js",
     "assets/standalone-bot-vnext.css",
     "assets/standalone-bot-toolkit.js",
@@ -32,6 +35,8 @@ test("GitHub Pages runtime sync is curated and cannot mutate legal production st
   assert.match(sync,/permissions:\n  contents: write/);
   assert.match(sync,/git push origin HEAD:gh-pages/);
   assert.match(sync,/MAIN\/GH-PAGES RUNTIME PARITY: PASS/);
+  assert.match(sync,/AI_ADVOCAT_VOICE_R1/);
+  assert.match(sync,/node --check assets\/ai-advokat-voice\.mjs/);
 
   assert.doesNotMatch(sync,/wrangler\s+deploy/i);
   assert.doesNotMatch(sync,/wrangler\s+d1/i);
