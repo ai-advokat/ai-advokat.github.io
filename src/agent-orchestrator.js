@@ -461,6 +461,27 @@ export function extractOpenAIUsage(payload) {
   });
 }
 
+function openAIProviderErrorCode(payload){
+  const value=String(payload?.error?.code||payload?.error?.type||"").trim();
+  return value ? value.slice(0,80) : null;
+}
+
+function openAIRetryAfterSeconds(headers){
+  const raw=String(headers?.get?.("retry-after")||"").trim();
+  if(!raw) return null;
+  if(/^\d+(?:\.\d+)?$/.test(raw)){
+    const seconds=Number(raw);
+    return Number.isFinite(seconds)
+      ? Math.min(3600,Math.max(0,Math.ceil(seconds)))
+      : null;
+  }
+  const httpDate=/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \\d{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \\d{4} \\d{2}:\\d{2}:\\d{2} GMT$/;
+  if(!httpDate.test(raw)) return null;
+  const at=Date.parse(raw);
+  if(!Number.isFinite(at) || new Date(at).toUTCString()!==raw) return null;
+  return Math.min(3600,Math.max(0,Math.ceil((at-Date.now())/1000)));
+}
+
 export function extractOpenAIWebCitations(payload) {
   if(!Array.isArray(payload?.output)) return [];
   const seen=new Set();
@@ -599,7 +620,20 @@ async function runOneBoundedSpecialist(env,{
   let payload=null;
   try{payload=await response.json();}catch{}
   const usage=extractOpenAIUsage(payload);
-  if(!response.ok) return {ok:false,error:"specialist_response_error",status:response.status,agentId,providerCalls:1,usage};
+  const requestId=response.headers.get("x-request-id")||null;
+  const responseStatus=openAIProviderErrorCode(payload);
+  const retryAfterSeconds=openAIRetryAfterSeconds(response.headers);
+  if(!response.ok) return {
+    ok:false,
+    error:"specialist_response_error",
+    status:response.status,
+    responseStatus,
+    retryAfterSeconds,
+    requestId,
+    agentId,
+    providerCalls:1,
+    usage
+  };
   if(payload?.status!=="completed") return {
     ok:false,
     error:"specialist_incomplete",
@@ -658,6 +692,11 @@ export async function runBoundedSpecialists(env,{
     return {
       ok:false,required:true,error:failed.error||"specialist_execution_failed",
       status:Number.isFinite(Number(failed.status))?Number(failed.status):null,
+      responseStatus:typeof failed.responseStatus==="string" ? failed.responseStatus.slice(0,80) : null,
+      retryAfterSeconds:failed.retryAfterSeconds!==null && failed.retryAfterSeconds!==undefined && Number.isFinite(Number(failed.retryAfterSeconds))
+        ? Number(failed.retryAfterSeconds)
+        : null,
+      requestId:typeof failed.requestId==="string" ? failed.requestId.slice(0,180) : null,
       failedAgent:failed.agentId||null,
       failureDetail:failed.detail||null,
       providerCalls:aggregate.providerCalls,
@@ -789,8 +828,12 @@ export async function runOpenAIOrchestrator(env, {
         ok:false,
         error:"openai_response_error",
         status:429,
-        responseStatus:"rate_limited_during_bounded_specialist",
-        failureDetail:"bounded_specialist_http_429",
+        responseStatus:specialistStage.responseStatus||"openai_http_429",
+        failureDetail:specialistStage.responseStatus||"bounded_specialist_http_429",
+        retryAfterSeconds:specialistStage.retryAfterSeconds!==null && specialistStage.retryAfterSeconds!==undefined && Number.isFinite(Number(specialistStage.retryAfterSeconds))
+          ? Number(specialistStage.retryAfterSeconds)
+          : null,
+        requestId:typeof specialistStage.requestId==="string" ? specialistStage.requestId.slice(0,180) : null,
         providerStage:"bounded_specialist",
         failedAgent:specialistStage.failedAgent||null,
         providerCalls:Number(specialistStage.providerCalls||0),
@@ -971,6 +1014,7 @@ export async function runOpenAIOrchestrator(env, {
   try{ payload=await response.json(); }catch{}
   const requestId=response.headers.get("x-request-id")||null;
   const responseId=typeof payload?.id==="string" ? payload.id : null;
+  const retryAfterSeconds=openAIRetryAfterSeconds(response.headers);
   const chiefUsage=extractOpenAIUsage(payload);
   const failureUsage=Object.freeze({
     inputTokens:Number(specialistStage.usage?.inputTokens||0)+chiefUsage.inputTokens,
@@ -981,11 +1025,12 @@ export async function runOpenAIOrchestrator(env, {
     providerCalls:Number(specialistStage.providerCalls||0)+1,
     usage:failureUsage,
     requestId,
-    responseId
+    responseId,
+    retryAfterSeconds
   };
 
   if(!response.ok){
-    const providerErrorCode=String(payload?.error?.code||payload?.error?.type||"").slice(0,80)||null;
+    const providerErrorCode=openAIProviderErrorCode(payload);
     return {
       ok:false,
       error:"openai_response_error",

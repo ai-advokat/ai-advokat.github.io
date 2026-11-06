@@ -407,15 +407,34 @@ test("OpenAI chief failure metadata distinguishes incomplete, HTTP and timeout w
     assert.equal(incomplete.providerCalls,1);
     assert.equal(incomplete.usage.totalTokens,60);
 
-    globalThis.fetch=async()=>new Response(JSON.stringify({error:{message:"busy",code:"rate_limit_exceeded",type:"rate_limit_error"}}),{status:503,headers:{"content-type":"application/json","x-request-id":"req_503"}});
+    globalThis.fetch=async()=>new Response(JSON.stringify({error:{message:"billing state is not user-facing",code:"credit_balance_exhausted",type:"insufficient_quota"}}),{status:429,headers:{"content-type":"application/json","x-request-id":"req_429","retry-after":"17"}});
     const httpFail=await runOpenAIOrchestrator({
       OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-test"
     },{plan,input:"Кои се условите?",maxOutputTokens:900});
     assert.equal(httpFail.error,"openai_response_error");
-    assert.equal(httpFail.status,503);
-    assert.equal(httpFail.responseStatus,"rate_limit_exceeded");
-    assert.equal(httpFail.failureDetail,"rate_limit_exceeded");
-    assert.equal(httpFail.requestId,"req_503");
+    assert.equal(httpFail.status,429);
+    assert.equal(httpFail.responseStatus,"credit_balance_exhausted");
+    assert.equal(httpFail.failureDetail,"credit_balance_exhausted");
+    assert.equal(httpFail.retryAfterSeconds,17);
+    assert.equal(httpFail.requestId,"req_429");
+
+    globalThis.fetch=async()=>new Response(JSON.stringify({error:{code:"rate_limit_exceeded",type:"rate_limit_error"}}),{status:429,headers:{"content-type":"application/json","x-request-id":"req_429_no_retry"}});
+    const httpFailWithoutRetryAfter=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-test"
+    },{plan,input:"Кои се условите?",maxOutputTokens:900});
+    assert.equal(httpFailWithoutRetryAfter.status,429);
+    assert.equal(httpFailWithoutRetryAfter.responseStatus,"rate_limit_exceeded");
+    assert.equal(httpFailWithoutRetryAfter.retryAfterSeconds,null);
+    assert.equal(httpFailWithoutRetryAfter.requestId,"req_429_no_retry");
+
+    globalThis.fetch=async()=>new Response(JSON.stringify({error:{code:"rate_limit_exceeded",type:"rate_limit_error"}}),{status:429,headers:{"content-type":"application/json","x-request-id":"req_429_bad_retry","retry-after":"-1"}});
+    const httpFailWithMalformedRetryAfter=await runOpenAIOrchestrator({
+      OPENAI_ORCHESTRATOR_ENABLED:"true",OPENAI_API_KEY:"x".repeat(40),OPENAI_MODEL:"gpt-test"
+    },{plan,input:"Кои се условите?",maxOutputTokens:900});
+    assert.equal(httpFailWithMalformedRetryAfter.status,429);
+    assert.equal(httpFailWithMalformedRetryAfter.responseStatus,"rate_limit_exceeded");
+    assert.equal(httpFailWithMalformedRetryAfter.retryAfterSeconds,null);
+    assert.equal(httpFailWithMalformedRetryAfter.requestId,"req_429_bad_retry");
 
     globalThis.fetch=async()=>{ throw new DOMException("timed out","TimeoutError"); };
     const timeout=await runOpenAIOrchestrator({
@@ -640,14 +659,14 @@ test("bounded specialist failure is visible and fail-closed",async()=>{
 });
 
 
-test("bounded specialist 429 short-circuits before Chief synthesis",async()=>{
+test("bounded specialist 429 preserves exact safe provider quota provenance before Chief synthesis",async()=>{
   const originalFetch=globalThis.fetch;
   let calls=0;
   globalThis.fetch=async()=>{
     calls+=1;
-    return new Response(JSON.stringify({error:{message:"rate limited"}}),{
+    return new Response(JSON.stringify({error:{message:"provider detail must not be surfaced",code:"project_spend_limit_exceeded",type:"insufficient_quota"}}),{
       status:429,
-      headers:{"content-type":"application/json","x-request-id":"req-specialist-429"}
+      headers:{"content-type":"application/json","x-request-id":"req-specialist-429","retry-after":"60"}
     });
   };
   try{
@@ -666,9 +685,13 @@ test("bounded specialist 429 short-circuits before Chief synthesis",async()=>{
     assert.equal(result.error,"openai_response_error");
     assert.equal(result.status,429);
     assert.equal(result.providerStage,"bounded_specialist");
-    assert.equal(result.responseStatus,"rate_limited_during_bounded_specialist");
+    assert.equal(result.responseStatus,"project_spend_limit_exceeded");
+    assert.equal(result.failureDetail,"project_spend_limit_exceeded");
+    assert.equal(result.retryAfterSeconds,60);
+    assert.equal(result.requestId,"req-specialist-429");
     assert.equal(result.providerCalls,1);
     assert.equal(calls,1);
+    assert.doesNotMatch(JSON.stringify(result),/provider detail must not be surfaced/);
   }finally{
     globalThis.fetch=originalFetch;
   }

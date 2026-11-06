@@ -7821,6 +7821,12 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         provider:"openai",
         error:String(result.error||"provider_failure").slice(0,80),
         httpStatus:Number(result.status||0)||null,
+        responseStatus:typeof result.responseStatus==="string" ? result.responseStatus.slice(0,80) : null,
+        retryAfterSeconds:result.retryAfterSeconds!==null && result.retryAfterSeconds!==undefined && Number.isFinite(Number(result.retryAfterSeconds))
+          ? Number(result.retryAfterSeconds)
+          : null,
+        requestId:typeof result.requestId==="string" ? result.requestId.slice(0,180) : null,
+        providerStage:typeof result.providerStage==="string" ? result.providerStage.slice(0,80) : null,
         providerCalls:Number(result.providerCalls||0)
       } : null,
       governanceRunId:lioeRunId,
