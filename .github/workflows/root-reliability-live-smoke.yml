@@ -37,17 +37,21 @@ jobs:
           set -euo pipefail
           node --check src/index.js
           node --check assets/ai-advokat-chat.js
+          node --check assets/ai-advokat-voice.mjs
           node --check assets/standalone-bot-vnext.js
           node --check assets/standalone-bot-toolkit.js
           node --check assets/frontend-runtime-guard.js
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' index.html
-          grep -q 'ai-advokat-chat.js?v=20261105-root-r24-detention-procedural-act-gate-v1' index.html
-          grep -q 'ai-advokat-chat.css?v=20261101-root-complete-r12' index.html
+          grep -q 'ai-advokat-chat.js?v=20261106-root-r15-voice-r2-runtime' index.html
+          grep -q 'ai-advokat-chat.css?v=20261106-root-r15-voice' index.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' bot/index.html
-          grep -q 'standalone-bot.js?v=20261101-core-r13' bot/index.html
+          grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' bot/index.html
           grep -q 'standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity' bot/index.html
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' bot/index.html
           grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' bot/index.html
+          grep -q 'AI_ADVOCAT_VOICE_R2' assets/ai-advokat-voice.mjs
+          grep -q 'getUserMedia' assets/ai-advokat-voice.mjs
+          grep -q 'microphonePermissionErrorMessage' assets/ai-advokat-voice.mjs
           echo "RELEASE SOURCE CONTRACT: PASS"
 
       - name: Verify GitHub Pages serves R14 dual-bot toolkit parity bundles
@@ -58,21 +62,25 @@ jobs:
           for i in $(seq 1 60); do
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-home.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/bot/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-bot.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-voice.mjs || true
             if grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-home.html 2>/dev/null \
-              && grep -q 'ai-advokat-chat.js?v=20261105-root-r24-detention-procedural-act-gate-v1' /tmp/pages-home.html 2>/dev/null \
-              && grep -q 'ai-advokat-chat.css?v=20261101-root-complete-r12' /tmp/pages-home.html 2>/dev/null \
+              && grep -q 'ai-advokat-chat.js?v=20261106-root-r15-voice-r2-runtime' /tmp/pages-home.html 2>/dev/null \
+              && grep -q 'ai-advokat-chat.css?v=20261106-root-r15-voice' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-bot.html 2>/dev/null \
-              && grep -q 'standalone-bot.js?v=20261101-core-r13' /tmp/pages-bot.html 2>/dev/null \
+              && grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/pages-bot.html 2>/dev/null \
-              && grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' /tmp/pages-bot.html 2>/dev/null; then
+              && grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' /tmp/pages-bot.html 2>/dev/null \
+              && grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/pages-voice.mjs 2>/dev/null \
+              && grep -q 'getUserMedia' /tmp/pages-voice.mjs 2>/dev/null \
+              && grep -q 'microphonePermissionErrorMessage' /tmp/pages-voice.mjs 2>/dev/null; then
               ok=1
               break
             fi
             sleep 3
           done
           test "$ok" = "1"
-          echo "GITHUB PAGES R14 DUAL-BOT TOOLKIT PARITY ASSETS: PASS"
+          echo "GITHUB PAGES VOICE R2 + R14 TOOLKIT PARITY ASSETS: PASS"
 
       - name: Verify Worker static assets and runtime health
         shell: bash
@@ -81,6 +89,11 @@ jobs:
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/" -o /tmp/worker-home.html
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/bot/" -o /tmp/worker-bot.html
+          curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/assets/ai-advokat-voice.mjs?v=20261106-voice-r2" -o /tmp/worker-voice.mjs
+          grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/worker-voice.mjs
+          grep -q 'getUserMedia' /tmp/worker-voice.mjs
+          grep -q 'microphonePermissionErrorMessage' /tmp/worker-voice.mjs
+          echo "WORKER VOICE R2 STATIC ASSET: PASS"
           # Exact frontend release identity is asserted on GitHub Pages above.
           # Worker HTML may lag the Pages bundle because Worker is the API/runtime plane.
           test -s /tmp/worker-home.html
@@ -171,7 +184,7 @@ jobs:
           cat > /tmp/root-live-smoke-summary.txt <<EOF
           AI ADVOKAT ROOT RELIABILITY LIVE SMOKE
           Commit: $GITHUB_SHA
-          GitHub Pages root-r21-case-law-language-safe-fallback-v1 assets: PASS
+          GitHub Pages Voice R2 + R14 toolkit parity assets: PASS
           Worker runtime/API plane reachable: PASS
           Production health/database: PASS
           Orchestrator/OpenAI/LIOE readiness: PASS
@@ -194,8 +207,10 @@ jobs:
           path: |
             /tmp/pages-home.html
             /tmp/pages-bot.html
+            /tmp/pages-voice.mjs
             /tmp/worker-home.html
             /tmp/worker-bot.html
+            /tmp/worker-voice.mjs
             /tmp/root-health.json
             /tmp/root-orchestrator.json
             /tmp/root-cors.txt
