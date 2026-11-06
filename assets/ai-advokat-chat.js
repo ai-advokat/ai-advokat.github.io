@@ -97,6 +97,12 @@
     voiceStatus.hidden=!value;
   }
 
+  const INTERNAL_VOICE_CONVERSATION_VERSION="AI_ADVOCAT_INTERNAL_VOICE_CONVERSATION_R1";
+  window.AIAdvokatInternalVoiceConversation=Object.freeze({
+    version:INTERNAL_VOICE_CONVERSATION_VERSION,
+    mode:"half_duplex_auto_send_auto_speak",
+    language:"mk-MK"
+  });
   const voiceRuntimePromise=import("/assets/ai-advokat-voice.mjs?v=20261106-voice-r2")
     .then(mod=>mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"}))
     .catch(error=>{
@@ -1264,15 +1270,43 @@
   });
 
   if(micBtn){
-    voiceRuntimePromise.then(voice=>voice?.bindMicrophone({
-      button:micBtn,
-      input,
-      status:setVoiceStatus,
-      onTranscript:()=>{
-        autoSize();
-        input.focus();
+    // Voice conversation turn: stop any current TTS, listen once, auto-send the
+    // recognised Macedonian utterance, then automatically speak the completed
+    // AI response. A fresh click starts the next turn, preventing feedback loops.
+    micBtn.addEventListener("click",()=>{
+      voiceRuntimePromise.then(voice=>voice?.stopSpeaking?.());
+    },{capture:true});
+
+    voiceRuntimePromise.then(voice=>{
+      if(!voice) return;
+      const binding=voice.bindMicrophone({
+        button:micBtn,
+        input,
+        status:setVoiceStatus,
+        onTranscript:async finalText=>{
+          autoSize();
+          const spoken=String(input.value||finalText||"").trim();
+          if(!spoken){
+            setVoiceStatus("Не е препознаен говор. Притиснете 🎙 и обидете се повторно.");
+            input.focus();
+            return;
+          }
+          setVoiceStatus("✓ Говорот е препознаен. Го испраќам прашањето…");
+          await send(spoken);
+          const latest=latestAssistantMessage();
+          if(latest && String(latest.text||"").trim() && latest.text!=="Обработувам…"){
+            setVoiceStatus("🔊 AI Advokat одговара гласно.");
+            const spokenOk=voice.speak(String(latest.text||""),{status:setVoiceStatus});
+            if(!spokenOk) setVoiceStatus("Одговорот е подготвен, но гласното читање не е достапно во овој прелистувач.");
+          }
+        }
+      });
+      if(binding?.supported){
+        micBtn.title="Гласовен разговор: зборувај → испрати → слушни одговор";
+        micBtn.setAttribute("aria-label","Гласовен разговор со AI Advokat");
+        micBtn.dataset.voiceConversation=INTERNAL_VOICE_CONVERSATION_VERSION;
       }
-    }));
+    });
   }
 
 
