@@ -5,11 +5,14 @@ on:
     branches: ["main"]
     paths:
       - "src/judicial-discovery-source-registry.js"
+      - "src/appeal-skopje-gold100-discovery.js"
+      - "data/case-law/appeal-skopje-gold100-ft22-2026-11-06/**"
       - "data/case-law/mk-master-judicial-corpus-2026-11-04.json"
       - "src/agent-orchestrator.js"
       - "src/workers-ai-provider.js"
       - "test/judicial-discovery-source-registry.test.mjs"
       - "test/judicial-discovery-runtime.test.mjs"
+      - "test/appeal-skopje-gold100-discovery.test.mjs"
       - ".github/workflows/judicial-corpus-v1-production-deploy.yml"
 
 permissions:
@@ -49,9 +52,10 @@ jobs:
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
           node --check src/judicial-discovery-source-registry.js
+          node --check src/appeal-skopje-gold100-discovery.js
           node --check src/agent-orchestrator.js
           node --check src/workers-ai-provider.js
-          node --test test/judicial-discovery-source-registry.test.mjs test/judicial-discovery-runtime.test.mjs
+          node --test test/judicial-discovery-source-registry.test.mjs test/judicial-discovery-runtime.test.mjs test/appeal-skopje-gold100-discovery.test.mjs
           node <<'NODE'
           const fs=require("fs");
           const m=JSON.parse(fs.readFileSync("data/case-law/mk-master-judicial-corpus-2026-11-04.json","utf8"));
@@ -72,12 +76,16 @@ jobs:
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
           curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/health" -o /tmp/judicial-health.json
           curl -fsSL --retry 5 --retry-delay 2 "$BASE/data/case-law/mk-master-judicial-corpus-2026-11-04.json" -o /tmp/judicial-manifest.json
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/data/case-law/appeal-skopje-gold100-ft22-2026-11-06/runtime-register.json" -o /tmp/gold100-runtime.json
           node <<'NODE'
           const h=require("/tmp/judicial-health.json");
           const m=require("/tmp/judicial-manifest.json");
+          const g=require("/tmp/gold100-runtime.json");
           if(!h.ok || h.database?.reachable!==true || h.database?.schemaReady!==true) throw new Error("Production health/database not ready");
           if(m.id!=="mk-master-judicial-corpus-2026-11-04") throw new Error("Judicial manifest not deployed");
           if(m.runtime?.internal_bot!=="enabled_as_discovery_context" || m.runtime?.external_bot!=="enabled_as_discovery_context") throw new Error("Dual-bot manifest contract missing");
+          if(g.record_count!==100 || g.ft22_package_copy_count!==20 || g.legal_verified_count!==0) throw new Error("Gold-100 runtime counts invalid");
+          if(g.human_gate!=="OPEN" || g.production_authority!=="NO-GO" || g.raw_pdf_publication!=="not_published") throw new Error("Gold-100 Human Gate/privacy boundary weakened");
           console.log("LIVE WORKER + JUDICIAL MANIFEST: PASS");
           NODE
 
@@ -119,5 +127,6 @@ jobs:
             /tmp/judicial-corpus-deploy.txt
             /tmp/judicial-health.json
             /tmp/judicial-manifest.json
+            /tmp/gold100-runtime.json
             /tmp/judicial-free-chat.json
             /tmp/judicial-bot-unauth.json
