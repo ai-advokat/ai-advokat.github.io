@@ -5069,6 +5069,17 @@ async function handleCaseLawCurationPlan(request,env){
     target:CASE_LAW_1000_TARGET,
     databaseState,
     radar,
+    discoveryRecords:supplied.map(row=>({
+      id:String(row.id||""),
+      caseNumber:String(row.n||""),
+      decisionDate:String(row.d||""),
+      issue:String(row.i||""),
+      pages:Number(row.p||0),
+      court:"Апелационен суд Скопје",
+      status:"discovery_only",
+      officialBindingVerified:false,
+      humanReviewStatus:"pending"
+    })),
     currentDiscoveryAudit:auditCaseLawDiversity(supplied,1000),
     scoringExample:scoreCaseForCuration({
       court_level:"appellate",

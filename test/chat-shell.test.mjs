@@ -133,6 +133,15 @@ test("CHAT11b homepage cache-busts the current FREE chat runtime and PWA shell",
   assert.match(serviceWorker,/ai-advokat-shell-v7/);
 });
 
+test("CHAT11c internal chat consumes a one-shot Case-Law Radar package handoff",()=>{
+  assert.match(chatJs,/AI_ADVOCAT_RADAR_HANDOFF_V1/);
+  assert.match(chatJs,/aiAdvokatRadarHandoffV1/);
+  assert.match(chatJs,/sessionStorage\.removeItem\("aiAdvokatRadarHandoffV1"\)/);
+  assert.match(chatJs,/Date\.now\(\)-createdAt>15\*60\*1000/);
+  assert.match(chatJs,/payload\.autoSend===true\) send\(prompt\)/);
+  assert.match(chatJs,/consumeCaseLawRadarHandoff\(\)/);
+});
+
 test("CHAT12 GitHub Pages chat calls the Cloudflare Worker API, not the static origin",()=>{
   assert.match(chatJs,/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
   assert.match(chatJs,/CHAT_API_BASE\+"\/api\/chat"/);
