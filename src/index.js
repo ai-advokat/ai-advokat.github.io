@@ -26,6 +26,12 @@ import {
   searchAppealSkopje36
 } from "./appeal-skopje-36-discovery.js";
 import {
+  APPEAL_SKOPJE_GOLD100_VERSION,
+  APPEAL_SKOPJE_GOLD100_RECORDS,
+  gold100RecordForCase,
+  searchAppealSkopjeGold100
+} from "./appeal-skopje-gold100-discovery.js";
+import {
   FREE_MONTHLY_ASSISTANT_QUOTA,
   MEMBERSHIP_REQUEST_DAILY_LIMIT,
   MEMBERSHIP_REQUEST_HOURLY_LIMIT,
@@ -4724,46 +4730,95 @@ function caseLawAuthorityScope(row){
 }
 
 export function appealSkopjeDiscoveryContext(q,{limit=4}={}){
-  const rows=searchAppealSkopje36(q,{limit});
+  const legacyRows=searchAppealSkopje36(q,{limit:Math.max(8,Number(limit)||4)});
+  const goldRows=searchAppealSkopjeGold100(q,{limit:Math.max(8,Number(limit)||4)});
+  const byCase=new Map();
+
+  for(const row of legacyRows){
+    const gold=gold100RecordForCase(row.n);
+    byCase.set(row.n,{
+      n:row.n,d:row.d,i:row.i,p:row.p,
+      gold100:gold||null,
+      discoverySource:"appeal_skopje_36"
+    });
+  }
+  for(const gold of goldRows){
+    if(byCase.has(gold.caseNumber)) continue;
+    byCase.set(gold.caseNumber,{
+      n:gold.caseNumber,
+      d:null,
+      i:gold.topicDraft||"Gold-100 source record - legal issue not independently verified",
+      p:gold.pages,
+      gold100:gold,
+      discoverySource:"gold100_register"
+    });
+  }
+
+  const rows=[...byCase.values()].slice(0,Math.max(1,Math.min(12,Number(limit)||4)));
   if(!rows.length) return {context:[],sources:[],cases:[],state:"no_discovery_match"};
-  const context=rows.map(row=>({
-    source:"AI Advokat discovery corpus · Апелационен суд Скопје",
-    locator:["Предмет "+row.n,row.d,"user-supplied public court copy"].filter(Boolean).join(" · "),
-    version:[
-      APPEAL_SKOPJE_36_VERSION,
-      "DISCOVERY_ONLY",
-      "remote item binding pending",
-      "Human Gate required"
-    ].join(" · "),
-    provenance:{
-      kind:"case_law_discovery",
-      sourceIdentity:"Апелационен суд Скопје · user-supplied decision copy",
-      authorityClass:"appellate_decision_copy_unbound",
-      locator:"Предмет "+row.n+" · "+row.d,
-      releaseRole:"discovery_only",
-      legalAuthority:false,
-      humanReviewStatus:"pending",
-      officialBindingVerified:false,
-      caseIdentity:row.n,
-      court:"Апелационен суд Скопје",
-      jurisdiction:"MK",
-      decisionDate:row.d,
-      sourceUrl:"https://sud.mk/",
-      currentLawClaim:false
-    },
-    text:[
-      "SOURCE_ROLE: CASE_LAW_DISCOVERY_ONLY_NOT_AUTHORITY",
-      "COURT: Апелационен суд Скопје",
-      "CASE_NUMBER: "+row.n,
-      "DECISION_DATE: "+row.d,
-      "LEGAL_AREA: кривично право",
-      "ISSUE_HINT: "+row.i,
-      "SOURCE_PAGES: "+row.p,
-      "OFFICIAL_REMOTE_BINDING: pending",
-      "HUMAN_GATE_REQUIRED: true",
-      "Do not cite this record as reviewed legal authority. Use it to discover a potentially relevant decision, then verify the original court item and holding."
-    ].join("\n")
-  }));
+  const context=rows.map(row=>{
+    const gold=row.gold100;
+    return {
+      source:"AI Advokat governed discovery corpus · Апелационен суд Скопје",
+      locator:[
+        "Предмет "+row.n,
+        row.d||null,
+        gold?.series ? "Gold-100 "+gold.series : "user-supplied public court copy"
+      ].filter(Boolean).join(" · "),
+      version:[
+        row.discoverySource==="appeal_skopje_36" ? APPEAL_SKOPJE_36_VERSION : APPEAL_SKOPJE_GOLD100_VERSION,
+        gold ? APPEAL_SKOPJE_GOLD100_VERSION : null,
+        "DISCOVERY_ONLY",
+        "item-level legal verification pending",
+        "Human Gate required"
+      ].filter(Boolean).join(" · "),
+      provenance:{
+        kind:"case_law_discovery",
+        sourceIdentity:"Апелационен суд Скопје · user-supplied source register/copy",
+        authorityClass:"appellate_decision_copy_unbound",
+        locator:["Предмет "+row.n,row.d||null].filter(Boolean).join(" · "),
+        releaseRole:"discovery_only",
+        legalAuthority:false,
+        humanReviewStatus:"pending",
+        officialBindingVerified:false,
+        caseIdentity:row.n,
+        court:"Апелационен суд Скопје",
+        jurisdiction:"MK",
+        decisionDate:row.d||null,
+        sourceUrl:"https://sud.mk/",
+        currentLawClaim:false,
+        gold100Registered:Boolean(gold),
+        sourceSha256:gold?.sha256||null,
+        sourceSeries:gold?.series||null,
+        sourceAvailability:gold?.sourceAvailability||null,
+        documentIntegrity:gold?.documentIntegrity||null,
+        independentReviewer:gold?.independentReviewer||null,
+        historicalLaw:gold?.historicalLaw||null,
+        productionAuthority:gold?.productionAuthority||null
+      },
+      text:[
+        "SOURCE_ROLE: CASE_LAW_DISCOVERY_ONLY_NOT_AUTHORITY",
+        "COURT: Апелационен суд Скопје",
+        "CASE_NUMBER: "+row.n,
+        "DECISION_DATE: "+String(row.d||"not registered in discovery metadata"),
+        "LEGAL_AREA: кривично право / source-level classification pending where unspecified",
+        "ISSUE_HINT: "+String(row.i||"not independently verified"),
+        "SOURCE_PAGES: "+String(row.p||"unknown"),
+        gold ? "GOLD100_REGISTERED: true" : "GOLD100_REGISTERED: false",
+        gold ? "SOURCE_SHA256: "+gold.sha256 : null,
+        gold ? "SOURCE_SERIES: "+gold.series : null,
+        gold ? "DOCUMENT_INTEGRITY: "+gold.documentIntegrity : null,
+        gold ? "SOURCE_AVAILABILITY: "+gold.sourceAvailability : null,
+        "LEGAL_VERIFIED: false",
+        "INDEPENDENT_REVIEWER: "+String(gold?.independentReviewer||"PENDING"),
+        "HISTORICAL_LAW_MAPPING: "+String(gold?.historicalLaw||"PENDING"),
+        "OFFICIAL_REMOTE_BINDING: pending",
+        "HUMAN_GATE_REQUIRED: true",
+        "PRODUCTION_AUTHORITY: NO-GO",
+        "Do not cite this record as reviewed legal authority. SHA-256 proves file identity/integrity only. Verify the original court item, exact holding, decision subtype/finality and current-law applicability before legal reliance."
+      ].filter(Boolean).join("\n")
+    };
+  });
   return {
     context,
     sources:rows.map(row=>({
@@ -4772,18 +4827,22 @@ export function appealSkopjeDiscoveryContext(q,{limit=4}={}){
       court:"Апелационен суд Скопје",
       caseNumber:row.n,
       jurisdiction:"MK",
-      decisionDate:row.d,
-      decisionType:"decision_copy_unverified",
+      decisionDate:row.d||null,
+      decisionType:row.gold100?.kindInitial||"decision_copy_unverified",
       precedentialWeight:"appellate_discovery_only",
       outcomeRole:"neutral",
       url:"https://sud.mk/",
       humanReviewStatus:"pending",
       authorityReviewStatus:"pending",
-      officialBindingVerified:false
+      officialBindingVerified:false,
+      gold100Registered:Boolean(row.gold100),
+      sourceSha256:row.gold100?.sha256||null,
+      sourceSeries:row.gold100?.series||null
     })),
     cases:rows,
     state:"discovery_only_match",
-    discoveryVersion:APPEAL_SKOPJE_36_VERSION
+    discoveryVersion:APPEAL_SKOPJE_GOLD100_VERSION,
+    gold100RecordCount:APPEAL_SKOPJE_GOLD100_RECORDS.length
   };
 }
 
