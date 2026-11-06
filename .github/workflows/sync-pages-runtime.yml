@@ -24,6 +24,8 @@ on:
       - "assets/standalone-bot.css"
       - "assets/standalone-bot-vnext.js"
       - "assets/standalone-bot-vnext.css"
+      - "assets/standalone-bot-toolkit.js"
+      - "assets/standalone-bot-toolkit.css"
       - "assets/standalone-bot-reliability.js"
       - "assets/guide-router.js"
       - "assets/guide-vault.js"
@@ -68,11 +70,14 @@ jobs:
           node --check src/case-export.js
           node --check src/legal-news-aggregator.js
           node --check assets/standalone-bot-vnext.js
+          node --check assets/standalone-bot-toolkit.js
           node --check assets/standalone-bot-reliability.js
           grep -q 'ai-advokat-chat.js?v=20261105-root-r24-detention-procedural-act-gate-v1' index.html
           grep -q 'ai-advokat-chat.css?v=20261101-root-complete-r12' index.html
           grep -q 'standalone-bot.js?v=20261101-core-r13' bot/index.html
-          grep -q 'standalone-bot-vnext.js?v=20261105-vnext-r13-case-law-radar' bot/index.html
+          grep -q 'standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity' bot/index.html
+          grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' bot/index.html
+          grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' bot/index.html
           grep -q "import('./chat-privacy-browser.js?v=20261101-privacy-r12')" assets/standalone-bot.js
           grep -q "import('/src/chat-privacy.js?v=20261101-privacy-compat-r1')" assets/standalone-bot.js
           grep -q '!src/chat-privacy.js' .assetsignore
@@ -107,6 +112,8 @@ jobs:
             assets/standalone-bot.css
             assets/standalone-bot-vnext.js
             assets/standalone-bot-vnext.css
+            assets/standalone-bot-toolkit.js
+            assets/standalone-bot-toolkit.css
             assets/standalone-bot-reliability.js
             assets/guide-router.js
             assets/guide-vault.js
@@ -133,7 +140,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin gh-pages:refs/remotes/origin/gh-pages
-          for f in index.html bot/index.html assets/ai-advokat-chat.js assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js; do
+          for f in index.html bot/index.html assets/ai-advokat-chat.js assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js assets/standalone-bot-vnext.css assets/standalone-bot-toolkit.js assets/standalone-bot-toolkit.css; do
             main_blob="$(git rev-parse "$GITHUB_SHA:$f")"
             pages_blob="$(git rev-parse "origin/gh-pages:$f")"
             test "$main_blob" = "$pages_blob"
