@@ -1,13 +1,23 @@
 import fs from "node:fs";
 
-export const PROFESSIONAL_SMOKE_CAPACITY_GATE_VERSION="AI_ADVOCAT_PRO_SMOKE_CAPACITY_GATE_V1";
+export const PROFESSIONAL_SMOKE_CAPACITY_GATE_VERSION="AI_ADVOCAT_PRO_SMOKE_CAPACITY_GATE_V2";
 
 export function classifyProfessionalProviderCapacity(httpStatus,data){
   const d=data&&typeof data==="object"?data:{};
   const fallback=d.providerFallback&&typeof d.providerFallback==="object"?d.providerFallback:{};
   const capacity=d.providerCapacity&&typeof d.providerCapacity==="object"?d.providerCapacity:{};
   const runtime=d.runtime&&typeof d.runtime==="object"?d.runtime:{};
-  const primaryStatus=String(fallback.primaryResponseStatus||"");
+  const primaryStatus=String(fallback.primaryResponseStatus||"").trim();
+  const recognizedOpenAICapacityCodes=new Set([
+    "rate_limit_exceeded",
+    "rate_limited_during_bounded_specialist",
+    "organization_spend_limit_exceeded",
+    "project_spend_limit_exceeded",
+    "credit_balance_exhausted",
+    "insufficient_quota"
+  ]);
+  const primaryCapacityBlocked=recognizedOpenAICapacityCodes.has(primaryStatus)
+    || /^rate_limited(?:_|$)/u.test(primaryStatus);
 
   const recognized=Number(httpStatus)===503
     && d.ok===false
@@ -21,7 +31,7 @@ export function classifyProfessionalProviderCapacity(httpStatus,data){
     && fallback.reason==="openai_response_error"
     && Number(fallback.primaryProviderCalls)>=1
     && Number(fallback.primaryHttpStatus)===429
-    && /^rate_limited/u.test(primaryStatus)
+    && primaryCapacityBlocked
     && fallback.fallbackState==="capacity_exhausted"
     && runtime.provider==="workers_ai_free"
     && !String(d.answer||"").trim();
@@ -33,6 +43,7 @@ export function classifyProfessionalProviderCapacity(httpStatus,data){
     providerAvailability:recognized?"BLOCKED":"UNKNOWN",
     primaryProvider:recognized?"openai":null,
     primaryHttpStatus:recognized?429:null,
+    primaryCapacityReason:recognized?primaryStatus:null,
     fallbackProvider:recognized?"workers_ai":null,
     fallbackCapacity:recognized?"daily_free_allocation_exhausted":null,
     retryable:recognized?false:null,
@@ -77,10 +88,11 @@ function runCli(){
     providerFallback:data.providerFallback,
     runtime:data.runtime,
     model:data.model||null,
+    primaryCapacityReason:result.primaryCapacityReason,
     answerReleased:false
   };
   fs.writeFileSync(summaryPath,JSON.stringify(summary,null,2));
-  console.log("::warning title=Professional provider capacity blocked::Runtime integrity passed fail-closed checks, but OpenAI returned 429 and the Workers AI daily free allocation is exhausted. This is an operational capacity blocker, not a code regression.");
+  console.log("::warning title=Professional provider capacity blocked::Runtime integrity passed fail-closed checks. OpenAI capacity/quota reason: "+result.primaryCapacityReason+"; Workers AI daily free allocation is exhausted. This is an operational capacity blocker, not a code regression.");
   console.log("PROFESSIONAL PROVIDER CAPACITY: BLOCKED · SYSTEM FAIL-CLOSED CONTRACT: PASS");
 }
 
