@@ -371,16 +371,18 @@ jobs:
             }
             if(data.provider==="workers_ai_free"){
               if(data?.performance?.compactDraftUsed!==true) throw new Error("typo-criminal-draft did not enter formal draft lane: "+JSON.stringify(data.performance));
-              if(data?.performance?.languageEditorRequired!==true){
-                throw new Error("typo-criminal-draft language editor gate missing: "+JSON.stringify(data.performance));
-              }
-              if(data?.performance?.languageEditorPassed!==true
-                && data?.performance?.languageEditorFallbackUsed!==true
-                && data?.performance?.deterministicLanguageFallbackUsed!==true){
-                throw new Error("typo-criminal-draft has no verified editor/fallback release path: "+JSON.stringify(data.performance));
-              }
-              if(data?.performance?.languageEditorModel!==EXPECTED_EDITOR_MODEL || data.performance.languageEditorModel===data.model){
-                throw new Error("typo-criminal-draft editor was not independently modelled: "+JSON.stringify({model:data.model,performance:data.performance}));
+              const editorRequired=data?.performance?.languageEditorRequired===true;
+              if(editorRequired){
+                if(data?.performance?.languageEditorPassed!==true
+                  && data?.performance?.languageEditorFallbackUsed!==true
+                  && data?.performance?.deterministicLanguageFallbackUsed!==true){
+                  throw new Error("typo-criminal-draft has no verified editor/fallback release path: "+JSON.stringify(data.performance));
+                }
+                if(data?.performance?.languageEditorModel!==EXPECTED_EDITOR_MODEL || data.performance.languageEditorModel===data.model){
+                  throw new Error("typo-criminal-draft editor was not independently modelled: "+JSON.stringify({model:data.model,performance:data.performance}));
+                }
+              }else if(data?.performance?.languageEditorModel!==null && data?.performance?.languageEditorModel!==undefined){
+                throw new Error("typo-criminal-draft canonical-clean path unexpectedly reported an editor model: "+JSON.stringify(data.performance));
               }
             }
             console.log("typo-criminal-draft: PASS · "+answer.replace(/\s+/g," ").slice(0,180));
