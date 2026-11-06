@@ -7809,6 +7809,20 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       problems:result.problems || null,
       failureDetail:null,
       model:env.OPENAI_MODEL || null,
+      providerRecovery,
+      providerCapacity:freeCapacityHandoff ? {
+        state:"exhausted",
+        provider:"workers_ai",
+        capacity:freeCapacityHandoff.workersAI?.capacity||"daily_free_allocation_exhausted",
+        handoffAttempted:true,
+        handoffRecovered:providerRecovery?.recovered===true
+      } : null,
+      fallbackProviderFailure:freeCapacityHandoff ? {
+        provider:"openai",
+        error:String(result.error||"provider_failure").slice(0,80),
+        httpStatus:Number(result.status||0)||null,
+        providerCalls:Number(result.providerCalls||0)
+      } : null,
       governanceRunId:lioeRunId,
       runtimeTelemetry:telemetryState,
       legalGovernance:lioeEngaged ? {
