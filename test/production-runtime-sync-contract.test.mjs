@@ -45,6 +45,7 @@ test("production runtime sync verifies exact R14 standalone release bytes",()=>{
     "bot/index.html",
     "assets/standalone-bot.js",
     "assets/standalone-bot-vnext.js",
+    "assets/standalone-bot-vnext.css",
     "assets/standalone-bot-toolkit.js",
     "assets/standalone-bot-toolkit.css"
   ]) assert.ok(workflow.includes("sha256sum "+asset),"missing byte parity for "+asset);
