@@ -94,7 +94,7 @@ const welcome = $('welcome').cloneNode(true);
 
 function status(text) { $('status').textContent = text; }
 let voiceRuntime=null;
-const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261106-voice-r1")
+const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261106-voice-r2")
   .then(mod=>{
     voiceRuntime=mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"});
     return voiceRuntime;

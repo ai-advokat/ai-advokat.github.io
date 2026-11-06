@@ -97,7 +97,7 @@
     voiceStatus.hidden=!value;
   }
 
-  const voiceRuntimePromise=import("/assets/ai-advokat-voice.mjs?v=20261106-voice-r1")
+  const voiceRuntimePromise=import("/assets/ai-advokat-voice.mjs?v=20261106-voice-r2")
     .then(mod=>mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"}))
     .catch(error=>{
       console.error("ai_advokat_voice_runtime_failed",error);

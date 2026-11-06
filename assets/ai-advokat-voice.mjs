@@ -1,4 +1,4 @@
-export const AI_ADVOCAT_VOICE_VERSION="AI_ADVOCAT_VOICE_R1";
+export const AI_ADVOCAT_VOICE_VERSION="AI_ADVOCAT_VOICE_R2";
 
 export function splitSpeechText(value,{maxChars=260,maxChunks=48}={}){
   const text=String(value||"")
@@ -44,18 +44,35 @@ export function speechRecognitionErrorMessage(code){
   return messages[key]||"Диктирањето не успеа. Проверете го микрофонот и browser permissions или продолжете со пишување.";
 }
 
+export function microphonePermissionErrorMessage(error){
+  const name=String(error?.name||error||"unknown").toLowerCase();
+  if(name==="notallowederror" || name==="permissiondeniederror" || name==="securityerror"){
+    return "Микрофонот е блокиран. Кликнете на иконата за дозволи до адресата на страницата, изберете Allow/Дозволи за Microphone и обидете се повторно.";
+  }
+  if(name==="notfounderror" || name==="devicesnotfounderror"){
+    return "Не е пронајден микрофон. Проверете дали микрофонот е поврзан и овозможен во Windows/уредот.";
+  }
+  if(name==="notreadableerror" || name==="trackstarterror"){
+    return "Микрофонот постои, но не може да се отвори. Затворете друга апликација што можеби го користи и обидете се повторно.";
+  }
+  return "Микрофонот не можеше да се активира. Проверете ги browser и системските microphone permissions и обидете се повторно.";
+}
+
 function setButtonState(button,state){
   if(!button) return;
   button.dataset.voiceState=state;
   button.setAttribute("aria-pressed",state==="listening"||state==="speaking"?"true":"false");
-  if(state==="listening"){
+  button.classList.remove("is-listening","is-speaking","is-requesting");
+  if(state==="requesting"){
+    button.classList.add("is-requesting");
+    button.title="Се бара дозвола за микрофон…";
+    button.setAttribute("aria-label","Се бара дозвола за микрофон");
+  }else if(state==="listening"){
     button.classList.add("is-listening");
     button.title="Запри диктирање";
     button.setAttribute("aria-label","Запри диктирање");
   }else if(state==="speaking"){
     button.classList.add("is-speaking");
-  }else{
-    button.classList.remove("is-listening","is-speaking");
   }
 }
 
@@ -63,9 +80,12 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
   const SpeechRecognitionCtor=win?.SpeechRecognition||win?.webkitSpeechRecognition||null;
   const synth=win?.speechSynthesis||null;
   const Utterance=win?.SpeechSynthesisUtterance||null;
+  const mediaDevices=win?.navigator?.mediaDevices||null;
   let activeRecognition=null;
   let speechGeneration=0;
   let activeSpeakButton=null;
+  let microphonePermissionGranted=false;
+  let microphonePermissionPending=null;
 
   const setStatus=(status,value)=>{
     if(typeof status==="function") status(String(value||""));
@@ -77,6 +97,34 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
       try{activeRecognition.stop();}catch{}
       activeRecognition=null;
     }
+  }
+
+  async function ensureMicrophonePermission(status){
+    if(win?.isSecureContext===false){
+      setStatus(status,"Микрофонот бара безбедна HTTPS страница. Отворете ја официјалната HTTPS верзија на AI Advokat.");
+      return false;
+    }
+    if(microphonePermissionGranted) return true;
+    if(!mediaDevices?.getUserMedia) return true;
+    if(microphonePermissionPending) return microphonePermissionPending;
+
+    microphonePermissionPending=(async()=>{
+      setStatus(status,"🎙 Се бара дозвола за микрофон. Во browser прозорецот изберете Allow / Дозволи.");
+      let stream=null;
+      try{
+        stream=await mediaDevices.getUserMedia({audio:true});
+        microphonePermissionGranted=true;
+        setStatus(status,"✓ Микрофонот е дозволен. Го вклучувам диктирањето…");
+        return true;
+      }catch(error){
+        setStatus(status,microphonePermissionErrorMessage(error));
+        return false;
+      }finally{
+        try{stream?.getTracks?.().forEach(track=>track?.stop?.());}catch{}
+        microphonePermissionPending=null;
+      }
+    })();
+    return microphonePermissionPending;
   }
 
   function bindMicrophone({button,input,status,onTranscript}={}){
@@ -96,11 +144,21 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     button.setAttribute("aria-label","Диктирај на македонски");
     button.setAttribute("aria-pressed","false");
 
-    const start=()=>{
+    const start=async()=>{
       if(activeRecognition){
         stopRecognition();
         return;
       }
+      if(button.dataset.voiceState==="requesting") return;
+      setButtonState(button,"requesting");
+      const permissionGranted=await ensureMicrophonePermission(status);
+      if(!permissionGranted){
+        setButtonState(button,"idle");
+        button.title="Диктирај на македонски";
+        button.setAttribute("aria-label","Диктирај на македонски");
+        return;
+      }
+
       const rec=new SpeechRecognitionCtor();
       activeRecognition=rec;
       let committed=false;
