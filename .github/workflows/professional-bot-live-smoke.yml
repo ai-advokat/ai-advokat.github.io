@@ -116,14 +116,17 @@ jobs:
           " >/tmp/pro-provision.txt
           echo "EPHEMERAL PROFESSIONAL MEMBERSHIP: PROVISIONED"
 
-      - name: Execute governed Professional legal smoke
+      - name: Execute governed Professional legal smoke with capacity classification
         shell: bash
         run: |
           set -euo pipefail
           test -n "${ROOT_SMOKE_KEY:-}"
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
           code="$(curl -sS --max-time 180 -o /tmp/pro-response.json -w '%{http_code}'             -H 'content-type: application/json'             -H "X-Membership-Key: $ROOT_SMOKE_KEY"             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Кратко наведи ги клучните правни ризици при оспорување на отказ на работен однос. Не измислувај рокови или членови ако не се потврдени.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/bot")"
-          test "$code" = "200"
+          if [ "$code" != "200" ]; then
+            node scripts/professional-smoke-capacity-gate.mjs "$code" /tmp/pro-response.json /tmp/pro-summary.json
+            exit 0
+          fi
           node <<'NODE'
           const fs=require("fs");
           const d=require("/tmp/pro-response.json");
