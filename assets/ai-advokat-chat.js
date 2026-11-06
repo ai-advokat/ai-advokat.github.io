@@ -2347,6 +2347,32 @@
     });
   });
 
+  const AI_ADVOCAT_RADAR_HANDOFF_VERSION="AI_ADVOCAT_RADAR_HANDOFF_V1";
+  function consumeCaseLawRadarHandoff(){
+    let payload=null;
+    try{
+      const raw=sessionStorage.getItem("aiAdvokatRadarHandoffV1");
+      if(!raw) return;
+      sessionStorage.removeItem("aiAdvokatRadarHandoffV1");
+      payload=JSON.parse(raw);
+    }catch{
+      try{sessionStorage.removeItem("aiAdvokatRadarHandoffV1");}catch{}
+      return;
+    }
+    if(!payload || payload.version!==AI_ADVOCAT_RADAR_HANDOFF_VERSION) return;
+    const createdAt=Number(payload.createdAt||0);
+    if(!createdAt || Date.now()-createdAt>15*60*1000) return;
+    const prompt=String(payload.prompt||"").trim().slice(0,12000);
+    if(!prompt) return;
+    input.value=prompt;
+    autoSize();
+    document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});
+    setTimeout(()=>{
+      if(payload.autoSend===true) send(prompt);
+      else input.focus();
+    },320);
+  }
+
   fetch(CHAT_API_BASE+"/api/orchestrator",{headers:{"accept":"application/json"}})
     .then(async r=>{
       if(!r.ok) throw new Error("runtime_"+r.status);
@@ -2375,6 +2401,7 @@
   try{
     load();syncModeUi();render();renderAttachments();autoSize();refreshGuideVaultStatus();renderWorkspaceEvidence();syncChatMembershipState();
     restoreProfessionalAccess().catch(()=>{});
+    consumeCaseLawRadarHandoff();
     window.AIAdvokatFrontendGuard?.markReady?.("main");
   }catch(error){
     window.AIAdvokatFrontendGuard?.report?.("main","boot",error);
