@@ -691,7 +691,9 @@ export async function runBoundedSpecialists(env,{
       ok:false,required:true,error:failed.error||"specialist_execution_failed",
       status:Number.isFinite(Number(failed.status))?Number(failed.status):null,
       responseStatus:typeof failed.responseStatus==="string" ? failed.responseStatus.slice(0,80) : null,
-      retryAfterSeconds:Number.isFinite(Number(failed.retryAfterSeconds)) ? Number(failed.retryAfterSeconds) : null,
+      retryAfterSeconds:failed.retryAfterSeconds!==null && failed.retryAfterSeconds!==undefined && Number.isFinite(Number(failed.retryAfterSeconds))
+        ? Number(failed.retryAfterSeconds)
+        : null,
       requestId:typeof failed.requestId==="string" ? failed.requestId.slice(0,180) : null,
       failedAgent:failed.agentId||null,
       failureDetail:failed.detail||null,
@@ -826,7 +828,9 @@ export async function runOpenAIOrchestrator(env, {
         status:429,
         responseStatus:specialistStage.responseStatus||"openai_http_429",
         failureDetail:specialistStage.responseStatus||"bounded_specialist_http_429",
-        retryAfterSeconds:Number.isFinite(Number(specialistStage.retryAfterSeconds)) ? Number(specialistStage.retryAfterSeconds) : null,
+        retryAfterSeconds:specialistStage.retryAfterSeconds!==null && specialistStage.retryAfterSeconds!==undefined && Number.isFinite(Number(specialistStage.retryAfterSeconds))
+          ? Number(specialistStage.retryAfterSeconds)
+          : null,
         requestId:typeof specialistStage.requestId==="string" ? specialistStage.requestId.slice(0,180) : null,
         providerStage:"bounded_specialist",
         failedAgent:specialistStage.failedAgent||null,
