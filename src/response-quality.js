@@ -20,6 +20,34 @@ export function isFormalLegalDraftRequest(userText){
   return FORMAL_DRAFT_RE.test(String(userText||"").normalize("NFKC"));
 }
 
+const FORMAL_DRAFT_RECOVERY_REQUEST_RE=/(?:изработи|подготви|направи|напиши|состави|работен\s+нацрт|судск(?:а|о)\s+наплат|ту[жѓ]б|жалб|приговор|опомена|поднесок|полномош|правно\s+мислење)/iu;
+
+function normalisedMonetaryAmounts(text){
+  return [...String(text||"").normalize("NFKC").matchAll(/\d{1,3}(?:[.\s]\d{3})+(?:,\d+)?|\d{4,}/gu)]
+    .map(match=>String(match[0]||"").replace(/\D/gu,""))
+    .filter(Boolean);
+}
+
+export function shouldUseDeterministicFormalDraftRecovery(text,{userText=""}={}){
+  const input=String(userText||"").normalize("NFKC");
+  if(!isFormalLegalDraftRequest(input) || !FORMAL_DRAFT_RECOVERY_REQUEST_RE.test(input)) return false;
+
+  const clean=cleanFormalDraftForExport(text);
+  // A requested legal instrument that ends before a minimally usable structure
+  // is complete is treated as an incomplete provider generation, not a valid draft.
+  if(clean.length<500) return true;
+
+  // User-supplied monetary facts are evidence, not optional prose. If a formal
+  // draft silently loses such a fact, recover with the bounded deterministic
+  // scaffold rather than release a materially incomplete work product.
+  const suppliedAmounts=normalisedMonetaryAmounts(input);
+  if(suppliedAmounts.length){
+    const releasedAmounts=new Set(normalisedMonetaryAmounts(clean));
+    if(suppliedAmounts.some(amount=>!releasedAmounts.has(amount))) return true;
+  }
+  return false;
+}
+
 export function requestedFormalDraftHeading(userText){
   const text=String(userText||"").normalize("NFKC").toLocaleLowerCase("mk");
   const candidates=[
