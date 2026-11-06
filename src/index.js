@@ -26,6 +26,10 @@ import {
   formatZkpJudgmentTaxonomyAnswer
 } from "./zkp-judgment-taxonomy.js";
 import {
+  LEGAL_RETRIEVAL_ROUTER_VERSION,
+  legalRetrievalPlan
+} from "./legal-retrieval-router.js";
+import {
   APPEAL_SKOPJE_36_VERSION,
   APPEAL_SKOPJE_36_RECORDS,
   searchAppealSkopje36
@@ -3029,6 +3033,51 @@ async function loadInstrumentArticles(env, instrumentId, versionId) {
   return result.results ?? [];
 }
 
+async function loadInstrumentArticlesByNumbers(env,instrumentId,versionId,numbers=[]){
+  const wanted=[...new Set((Array.isArray(numbers)?numbers:[]).map(x=>String(x).trim()).filter(Boolean))].slice(0,12);
+  if(!wanted.length) return [];
+  const placeholders=wanted.map(()=>"?").join(",");
+  const result=await env.DB.prepare(
+    `SELECT id,canonical_id,article_number,article_number_normalized,article_heading,
+            article_text,status,human_review_status,source_issue_number,source_issue_date,
+            source_url,source_sha256,valid_from,valid_to,instrument_version_id
+       FROM legal_article_versions
+      WHERE instrument_id=? AND instrument_version_id IS ?
+        AND article_number_normalized IN (${placeholders})
+      ORDER BY CAST(article_number_normalized AS INTEGER),id ASC
+      LIMIT 24`
+  ).bind(instrumentId,versionId??null,...wanted).all();
+  return result.results??[];
+}
+
+async function zkpJudgmentTaxonomyFastLane(env,q){
+  if(!isZkpJudgmentTaxonomyRequest(q)) return null;
+  const instrument=await getInstrument(env,"mk:zkp");
+  if(!instrument) return {ok:false,error:"zkp_taxonomy_instrument_not_found"};
+  const decision=await resolveInstrumentVersion(env,instrument.id,{date:null});
+  if(!decision.ok) return {ok:false,error:decision.error||"zkp_taxonomy_version_unresolved",decision,instrument};
+  const rows=await loadInstrumentArticlesByNumbers(env,instrument.id,decision.versionId,ZKP_JUDGMENT_TAXONOMY_ARTICLES);
+  const articles=rows.map(row=>attachArticleGovernance(
+    "mk:zkp",
+    attachReviewedArticleRepresentation("mk:zkp",normalizeArticle(row),{referenceDate:null}),
+    {referenceDate:null}
+  ));
+  const answer=formatZkpJudgmentTaxonomyAnswer(instrument,articles);
+  if(!answer) return {ok:false,error:"zkp_taxonomy_source_gap",instrument,decision,articleCount:articles.length};
+  const versionInfo=summarizeVersion(decision.version,articles.length);
+  const legalSources=articles.map(article=>({
+    title:String(instrument.title||"Закон за кривичната постапка")+" · член "+String(article.articleNumber||""),
+    articleNumber:String(article.articleNumber||""),
+    url:String(article.sourceUrl||instrument.canonical_source_url||""),
+    status:String(article.status||"unknown"),
+    humanReviewStatus:String(article.humanReviewStatus||"pending"),
+    version:String(versionInfo.label||"unknown"),
+    versionHumanReviewStatus:String(versionInfo.humanReviewStatus||"pending"),
+    relation:"statutory_taxonomy_exact"
+  }));
+  return {ok:true,answer,instrument,versionInfo,legalSources};
+}
+
 /** Resolves exactly one version and loads only its articles, or returns a controlled error. */
 async function loadResolvedCorpus(env, instrument, {date=null}={}) {
   const decision=await resolveInstrumentVersion(env,instrument.id,{date});
@@ -3172,6 +3221,104 @@ function rankInstrumentArticles(rows,q,limit=6,{instrumentKey=null,referenceDate
   }
 
   return ranked.slice(0,limit).map(x=>({...x.article,relevanceScore:x.score}));
+}
+
+const CHAT_ARTICLE_SEARCH_STOPWORDS=new Set([
+  "дали","како","што","може","треба","имам","има","нема","ова","овој","оваа","кој","која","кои",
+  "право","правна","правен","закон","законот","член","суд","судот","постапка","предмет","случај",
+  "подготви","изработи","работен","нацрт","кажи","наведи","според","без","рокови","надлежност",
+  "what","how","can","should","law","legal","court","case","article","with","without","from"
+]);
+
+function chatArticleSearchTerms(q){
+  const exact=String(q||"").match(/(?:член|article)\s*([0-9]+(?:[-–—][\p{L}]+)?)/iu);
+  if(exact) return {exactArticle:String(exact[1]).replace(/[–—]/g,"-"),terms:[]};
+  const out=[];
+  for(const token of normalizeText(q).replace(/[^\p{L}\p{N}]+/gu," ").split(/\s+/).filter(Boolean)){
+    if(token.length<5 || CHAT_ARTICLE_SEARCH_STOPWORDS.has(token)) continue;
+    const stem=token.length>=8 ? token.slice(0,6) : token.length>=6 ? token.slice(0,5) : token;
+    if(stem.length>=5 && !out.includes(stem)) out.push(stem);
+    if(out.length>=4) break;
+  }
+  return {exactArticle:null,terms:out};
+}
+
+async function loadInstrumentArticleCandidatesForChat(env,instrumentId,versionId,q,{limit=48}={}){
+  const search=chatArticleSearchTerms(q);
+  if(search.exactArticle){
+    return loadInstrumentArticlesByNumbers(env,instrumentId,versionId,[search.exactArticle]);
+  }
+  if(!search.terms.length) return [];
+  const clauses=[];
+  const binds=[instrumentId,versionId??null];
+  for(const term of search.terms){
+    clauses.push("(article_heading LIKE ? ESCAPE '\\' OR article_text LIKE ? ESCAPE '\\')");
+    const like="%"+escapeLike(term)+"%";
+    binds.push(like,like);
+  }
+  const bounded=Math.max(12,Math.min(64,Number(limit)||48));
+  const result=await env.DB.prepare(
+    `SELECT id,canonical_id,article_number,article_number_normalized,article_heading,
+            article_text,status,human_review_status,source_issue_number,source_issue_date,
+            source_url,source_sha256,valid_from,valid_to,instrument_version_id
+       FROM legal_article_versions
+      WHERE instrument_id=? AND instrument_version_id IS ?
+        AND (${clauses.join(" OR ")})
+      ORDER BY id ASC
+      LIMIT ?`
+  ).bind(...binds,bounded).all();
+  return result.results??[];
+}
+
+async function findRelevantArticlesForChat(env,instrumentKey,q,limit=5,{date=null,expandReferences=true,maxReferences=12}={}){
+  if(!instrumentKey || instrumentKey==="auto") return {instrument:null,articles:[],reason:"instrument_required"};
+  const instrument=await getInstrument(env,instrumentKey);
+  if(!instrument) return {instrument:null,articles:[],reason:"instrument_not_found"};
+  const decision=await resolveInstrumentVersion(env,instrument.id,{date});
+  if(!decision.ok) return {instrument,articles:[],reason:decision.error,versions:decision.versions};
+  const candidateRows=await loadInstrumentArticleCandidatesForChat(env,instrument.id,decision.versionId,q,{limit:48});
+  const primaryArticles=rankInstrumentArticles(candidateRows,q,limit,{instrumentKey,referenceDate:date})
+    .map(article=>attachArticleGovernance(instrumentKey,article,{referenceDate:date}));
+
+  const refOrigins=new Map();
+  if(expandReferences){
+    const primaryNumbers=new Set(primaryArticles.map(a=>normalizeText(a.articleNumberNormalized||a.articleNumber||"").replace(/[–—]/g,"-").replace(/\s+/g,"")));
+    for(const primary of primaryArticles.slice(0,3)){
+      const origin=String(primary.articleNumber||primary.articleNumberNormalized||"");
+      for(const ref of extractArticleCrossReferences(articleTextForLegalSynthesis(primary),{max:maxReferences})){
+        if(primaryNumbers.has(ref)) continue;
+        if(!refOrigins.has(ref)) refOrigins.set(ref,new Set());
+        refOrigins.get(ref).add(origin);
+        if(refOrigins.size>=maxReferences) break;
+      }
+      if(refOrigins.size>=maxReferences) break;
+    }
+  }
+
+  const refRows=refOrigins.size
+    ? await loadInstrumentArticlesByNumbers(env,instrument.id,decision.versionId,[...refOrigins.keys()])
+    : [];
+  const crossReferenceArticles=refRows.map(row=>{
+    const article=attachArticleGovernance(
+      instrumentKey,
+      attachReviewedArticleRepresentation(instrumentKey,normalizeArticle(row),{referenceDate:date}),
+      {referenceDate:date}
+    );
+    const key=normalizeText(article.articleNumberNormalized||article.articleNumber||"").replace(/[–—]/g,"-").replace(/\s+/g,"");
+    article.referenceRole="explicit_cross_reference";
+    article.referenceOriginArticleNumbers=[...(refOrigins.get(key)||[])];
+    return article;
+  });
+
+  return {
+    instrument,
+    articles:[...primaryArticles,...crossReferenceArticles],
+    primaryArticles,
+    crossReferenceArticles,
+    corpusArticleCount:candidateRows.length+refRows.length,
+    version:decision.version,
+    versionBasis:decision.basis
+  };
 }
 
 async function findRelevantArticles(env, instrumentKey, q, limit=6, {date=null,expandReferences=false,maxReferences=12}={}) {
@@ -3787,7 +3934,7 @@ function openAIOutputText(payload){
 function privateCaseContextText(items,maxChars=120000){
   let used=0;
   const blocks=[];
-  for(const item of Array.isArray(items)?items:[]){
+  for(const item of (Array.isArray(items)?items:[]).slice(0,12)){
     if(used>=maxChars) break;
     const source=String(item?.source||"PRIVATE_CASE_CONTEXT");
     const locator=String(item?.locator||"");
@@ -4276,7 +4423,7 @@ async function governedArticleContext(env,q,basePlan){
     if(!routing.key || routing.key==="auto") return {...empty,state:"instrument_not_resolved"};
 
     const queryDate=chatQueryDate(q);
-    const retrieval=await findRelevantArticles(env,routing.key,q,5,{date:queryDate,expandReferences:true,maxReferences:12});
+    const retrieval=await findRelevantArticlesForChat(env,routing.key,q,5,{date:queryDate,expandReferences:true,maxReferences:12});
     const instrument=retrieval.instrument || null;
     const instrumentTitle=instrument?.title || routing.key;
 
@@ -4452,6 +4599,8 @@ const CASE_LAW_QUERY_STOPWORDS=new Set([
   "дали","како","што","може","треба","имам","има","нема","еден","една","едно","ова","овој","оваа",
   "мој","моја","моето","ми","ме","се","со","без","пред","после","за","од","до","во","на","и","или","а",
   "право","правна","правен","закон","законот","член","суд","судот","постапка","предмет","случај",
+  "жалба","против","наведи","кажи","вика","актот","поддржувачка","спротивна","судска","практика",
+  "пресуда","пресуди","решение","решенија","одлука","одлуки","според","кој","која","кои","определува","продолжува","укинува",
   "what","how","can","should","with","without","law","legal","court","case","article","the","and","for","from"
 ]);
 
@@ -4465,7 +4614,7 @@ function caseLawQueryTerms(q){
   for(const token of tokens){
     const stem=token.length>=8 ? token.slice(0,6) : token.length>=6 ? token.slice(0,5) : token;
     if(stem.length>=4 && !stems.includes(stem)) stems.push(stem);
-    if(stems.length>=8) break;
+    if(stems.length>=4) break;
   }
   return stems;
 }
@@ -4963,7 +5112,7 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
   }
 
   try{
-    const candidateLimit=Math.max(24,Math.min(60,Number(limit||4)*12));
+    const candidateLimit=Math.max(12,Math.min(24,Number(limit||4)*6));
     const sql=
       "SELECT cl.id,cl.case_title,cl.court,cl.case_number,cl.jurisdiction,cl.legal_area, "+
       "cl.decision_date,cl.outcome_summary,cl.reasoning_summary,cl.source_url, "+
@@ -5157,7 +5306,7 @@ function validateChatAttachments(payload){
 const FREE_WORKERS_AI_MODEL_FALLBACK=WORKERS_AI_TEXT_MODEL_DEFAULT;
 const FREE_CHAT_MAX_DOC_CHARS_PER_FILE=32000;
 const FREE_CHAT_MAX_DOC_CHARS_TOTAL=140000;
-const FREE_CHAT_MAX_CORPUS_CHARS=45000;
+const FREE_CHAT_MAX_CORPUS_CHARS=22000;
 
 function freeWorkersAIConfigured(env){
   return env?.FREE_CHAT_PROVIDER==="workers_ai"
@@ -5926,7 +6075,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     maxOutputTokens:tokenLimit,
     sessionAffinity,
     allowProviderRepair:languageRequired,
-    forceEditorialPass:languageRequired,
+    // R15 resource discipline: the deterministic Macedonian release gate is primary.
+    // Run the editor only when that independent gate actually detects a problem.
+    forceEditorialPass:false,
     primaryModel:result.model
   });
   const formalDraft=formalDraftRequest;
@@ -6667,14 +6818,53 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     }
   }
 
+  const taxonomyFastLane=await zkpJudgmentTaxonomyFastLane(env,routingQuery);
+  if(taxonomyFastLane){
+    if(!taxonomyFastLane.ok){
+      return json(request,{
+        ok:false,
+        error:taxonomyFastLane.error,
+        message:"Точната ZKP taxonomy не може безбедно да се пушти затоа што недостига bounded source evidence за членовите 401–404.",
+        providerCalled:false,
+        quotaConsumed:false,
+        retrievalRouterVersion:LEGAL_RETRIEVAL_ROUTER_VERSION
+      },503);
+    }
+    return json(request,{
+      ok:true,
+      answer:taxonomyFastLane.answer,
+      provider:"canonical_corpus_no_model",
+      model:null,
+      mode:"passive_corpus",
+      displayMode:"canonical_zkp_judgment_taxonomy",
+      sourceMode:"canonical_zkp_articles_401_404_no_model",
+      webSearchUsed:false,
+      legalSources:taxonomyFastLane.legalSources,
+      caseLawSources:[],
+      guideSources:[],
+      publicationSources:[],
+      sources:[],
+      retrievalRouterVersion:LEGAL_RETRIEVAL_ROUTER_VERSION,
+      performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+      humanGate:"Source-first statutory taxonomy. Before consequential professional reliance, verify the applicable ZKP version and official source."
+    });
+  }
+
+  const retrievalPlan=legalRetrievalPlan(routingQuery,{guideIds:effectiveGuideIds});
+  const emptyCaseLaw={context:[],sources:[],cases:[],state:"not_applicable"};
+  const emptyGazette={state:"not_applicable",chunks:[],issueMetadata:[],issueMetadataState:"not_applicable",context:[]};
+  const emptyEchr={state:"not_applicable",records:[],context:[],sources:[],recordCount:0};
+  const emptyScholarly={records:[],context:[],provenanceGate:null};
+  const emptyAuthorial={records:[],context:[],sources:[],provenanceGate:null};
+
   const [guideContext,articleBundle,caseLawBundle,gazetteBundle,bureauEchrBundle,scholarlyBundle,authorialBundle]=await Promise.all([
-    governedGuideContext(request,env,effectiveGuideIds),
+    retrievalPlan.guides ? governedGuideContext(request,env,effectiveGuideIds) : Promise.resolve([]),
     governedArticleContext(env,routingQuery,initialPlan),
-    governedCaseLawContext(env,routingQuery,initialPlan,{limit:4}),
-    governedGazetteChunkContext(env,routingQuery),
-    bureauEchrDiscoveryContext(routingQuery,{limit:6}),
-    findGovernedScholarly(request,env,routingQuery,{limit:5}),
-    findGovernedAuthorialPublications(request,env,routingQuery,{limit:5})
+    retrievalPlan.caseLaw ? governedCaseLawContext(env,routingQuery,initialPlan,{limit:4}) : Promise.resolve(emptyCaseLaw),
+    retrievalPlan.gazette ? governedGazetteChunkContext(env,routingQuery) : Promise.resolve(emptyGazette),
+    retrievalPlan.echr ? bureauEchrDiscoveryContext(routingQuery,{limit:6}) : Promise.resolve(emptyEchr),
+    retrievalPlan.scholarly ? findGovernedScholarly(request,env,routingQuery,{limit:4}) : Promise.resolve(emptyScholarly),
+    retrievalPlan.authorial ? findGovernedAuthorialPublications(request,env,routingQuery,{limit:4}) : Promise.resolve(emptyAuthorial)
   ]);
 
   const discoveryListing=judicialDiscoveryListingRequest(routingQuery)

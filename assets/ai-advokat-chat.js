@@ -22,6 +22,7 @@
   const modeBtns=[...root.querySelectorAll("[data-chat-mode]")];
   const exportButtons=[...root.querySelectorAll("[data-chat-export]")];
   const micBtn=$("#aiChatMic");
+  const voiceStatus=$("#aiChatVoiceStatus");
   const emptyTemplate=$("#aiChatEmptyTemplate");
   const guideVaultImport=$("#aiGuideVaultImport");
   const guideVaultClear=$("#aiGuideVaultClear");
@@ -88,6 +89,22 @@
   let evidenceTab="sources";
   let activeMembership=null;
   let accessModulePromise=null;
+
+  function setVoiceStatus(text){
+    if(!voiceStatus) return;
+    const value=String(text||"").trim();
+    voiceStatus.textContent=value;
+    voiceStatus.hidden=!value;
+  }
+
+  const voiceRuntimePromise=import("/assets/ai-advokat-voice.mjs?v=20261106-voice-r1")
+    .then(mod=>mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"}))
+    .catch(error=>{
+      console.error("ai_advokat_voice_runtime_failed",error);
+      if(micBtn){micBtn.disabled=true;micBtn.title="Гласовниот модул не е достапен.";}
+      setVoiceStatus("Гласовниот модул не се вчита. Пишувањето останува достапно.");
+      return null;
+    });
   const chats=new Map();
 
   const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
@@ -264,6 +281,20 @@
       content.textContent=m.text||"";
     }
     body.append(head,content);
+    if(m.role==="assistant" && !isPreparing && String(m.text||"").trim()){
+      const voiceTools=document.createElement("div");
+      voiceTools.className="ai-msg-voice-tools";
+      const speak=document.createElement("button");
+      speak.type="button";
+      speak.className="ai-msg-speak";
+      voiceTools.append(speak);
+      body.append(voiceTools);
+      voiceRuntimePromise.then(voice=>voice?.bindSpeakButton({
+        button:speak,
+        text:()=>String(m.text||""),
+        status:setVoiceStatus
+      }));
+    }
     let evidenceDetails=null;
     let evidenceBody=null;
     const appendEvidence=node=>{
@@ -1233,13 +1264,15 @@
   });
 
   if(micBtn){
-    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!SR){micBtn.hidden=true;}
-    else micBtn.addEventListener("click",()=>{
-      const rec=new SR();rec.lang="mk-MK";rec.interimResults=false;rec.maxAlternatives=1;
-      rec.onresult=e=>{input.value=(input.value+" "+e.results[0][0].transcript).trim();autoSize();};
-      rec.start();
-    });
+    voiceRuntimePromise.then(voice=>voice?.bindMicrophone({
+      button:micBtn,
+      input,
+      status:setVoiceStatus,
+      onTranscript:()=>{
+        autoSize();
+        input.focus();
+      }
+    }));
   }
 
 
