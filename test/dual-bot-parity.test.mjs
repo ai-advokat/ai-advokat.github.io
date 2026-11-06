@@ -68,7 +68,7 @@ test("dual-bot parity: shared dictation, speech output, export and privacy bound
   assert.match(externalCore,/bindMicrophone/);
   assert.match(mainJs,/bindSpeakButton/);
   assert.match(externalCore,/bindSpeakButton/);
-  assert.match(voiceRuntime,/SpeechRecognition\|\|win\?\.webkitSpeechRecognition/);
+  assert.match(voiceRuntime,/win\?\.SpeechRecognition\|\|win\?\.webkitSpeechRecognition/);
   assert.match(voiceRuntime,/speechSynthesis/);
   assert.match(voiceRuntime,/AI_ADVOCAT_VOICE_R1/);
   assert.match(mainHtml,/id="aiChatMic"/);
