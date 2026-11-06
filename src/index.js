@@ -3223,6 +3223,104 @@ function rankInstrumentArticles(rows,q,limit=6,{instrumentKey=null,referenceDate
   return ranked.slice(0,limit).map(x=>({...x.article,relevanceScore:x.score}));
 }
 
+const CHAT_ARTICLE_SEARCH_STOPWORDS=new Set([
+  "дали","како","што","може","треба","имам","има","нема","ова","овој","оваа","кој","која","кои",
+  "право","правна","правен","закон","законот","член","суд","судот","постапка","предмет","случај",
+  "подготви","изработи","работен","нацрт","кажи","наведи","според","без","рокови","надлежност",
+  "what","how","can","should","law","legal","court","case","article","with","without","from"
+]);
+
+function chatArticleSearchTerms(q){
+  const exact=String(q||"").match(/(?:член|article)\s*([0-9]+(?:[-–—][\p{L}]+)?)/iu);
+  if(exact) return {exactArticle:String(exact[1]).replace(/[–—]/g,"-"),terms:[]};
+  const out=[];
+  for(const token of normalizeText(q).replace(/[^\p{L}\p{N}]+/gu," ").split(/\s+/).filter(Boolean)){
+    if(token.length<5 || CHAT_ARTICLE_SEARCH_STOPWORDS.has(token)) continue;
+    const stem=token.length>=8 ? token.slice(0,6) : token.length>=6 ? token.slice(0,5) : token;
+    if(stem.length>=5 && !out.includes(stem)) out.push(stem);
+    if(out.length>=4) break;
+  }
+  return {exactArticle:null,terms:out};
+}
+
+async function loadInstrumentArticleCandidatesForChat(env,instrumentId,versionId,q,{limit=48}={}){
+  const search=chatArticleSearchTerms(q);
+  if(search.exactArticle){
+    return loadInstrumentArticlesByNumbers(env,instrumentId,versionId,[search.exactArticle]);
+  }
+  if(!search.terms.length) return [];
+  const clauses=[];
+  const binds=[instrumentId,versionId??null];
+  for(const term of search.terms){
+    clauses.push("(article_heading LIKE ? ESCAPE '\\' OR article_text LIKE ? ESCAPE '\\')");
+    const like="%"+escapeLike(term)+"%";
+    binds.push(like,like);
+  }
+  const bounded=Math.max(12,Math.min(64,Number(limit)||48));
+  const result=await env.DB.prepare(
+    `SELECT id,canonical_id,article_number,article_number_normalized,article_heading,
+            article_text,status,human_review_status,source_issue_number,source_issue_date,
+            source_url,source_sha256,valid_from,valid_to,instrument_version_id
+       FROM legal_article_versions
+      WHERE instrument_id=? AND instrument_version_id IS ?
+        AND (${clauses.join(" OR ")})
+      ORDER BY id ASC
+      LIMIT ?`
+  ).bind(...binds,bounded).all();
+  return result.results??[];
+}
+
+async function findRelevantArticlesForChat(env,instrumentKey,q,limit=5,{date=null,expandReferences=true,maxReferences=12}={}){
+  if(!instrumentKey || instrumentKey==="auto") return {instrument:null,articles:[],reason:"instrument_required"};
+  const instrument=await getInstrument(env,instrumentKey);
+  if(!instrument) return {instrument:null,articles:[],reason:"instrument_not_found"};
+  const decision=await resolveInstrumentVersion(env,instrument.id,{date});
+  if(!decision.ok) return {instrument,articles:[],reason:decision.error,versions:decision.versions};
+  const candidateRows=await loadInstrumentArticleCandidatesForChat(env,instrument.id,decision.versionId,q,{limit:48});
+  const primaryArticles=rankInstrumentArticles(candidateRows,q,limit,{instrumentKey,referenceDate:date})
+    .map(article=>attachArticleGovernance(instrumentKey,article,{referenceDate:date}));
+
+  const refOrigins=new Map();
+  if(expandReferences){
+    const primaryNumbers=new Set(primaryArticles.map(a=>normalizeText(a.articleNumberNormalized||a.articleNumber||"").replace(/[–—]/g,"-").replace(/\s+/g,"")));
+    for(const primary of primaryArticles.slice(0,3)){
+      const origin=String(primary.articleNumber||primary.articleNumberNormalized||"");
+      for(const ref of extractArticleCrossReferences(articleTextForLegalSynthesis(primary),{max:maxReferences})){
+        if(primaryNumbers.has(ref)) continue;
+        if(!refOrigins.has(ref)) refOrigins.set(ref,new Set());
+        refOrigins.get(ref).add(origin);
+        if(refOrigins.size>=maxReferences) break;
+      }
+      if(refOrigins.size>=maxReferences) break;
+    }
+  }
+
+  const refRows=refOrigins.size
+    ? await loadInstrumentArticlesByNumbers(env,instrument.id,decision.versionId,[...refOrigins.keys()])
+    : [];
+  const crossReferenceArticles=refRows.map(row=>{
+    const article=attachArticleGovernance(
+      instrumentKey,
+      attachReviewedArticleRepresentation(instrumentKey,normalizeArticle(row),{referenceDate:date}),
+      {referenceDate:date}
+    );
+    const key=normalizeText(article.articleNumberNormalized||article.articleNumber||"").replace(/[–—]/g,"-").replace(/\s+/g,"");
+    article.referenceRole="explicit_cross_reference";
+    article.referenceOriginArticleNumbers=[...(refOrigins.get(key)||[])];
+    return article;
+  });
+
+  return {
+    instrument,
+    articles:[...primaryArticles,...crossReferenceArticles],
+    primaryArticles,
+    crossReferenceArticles,
+    corpusArticleCount:candidateRows.length+refRows.length,
+    version:decision.version,
+    versionBasis:decision.basis
+  };
+}
+
 async function findRelevantArticles(env, instrumentKey, q, limit=6, {date=null,expandReferences=false,maxReferences=12}={}) {
   if(instrumentKey && instrumentKey!=="auto"){
     const instrument=await getInstrument(env,instrumentKey);
@@ -4325,7 +4423,7 @@ async function governedArticleContext(env,q,basePlan){
     if(!routing.key || routing.key==="auto") return {...empty,state:"instrument_not_resolved"};
 
     const queryDate=chatQueryDate(q);
-    const retrieval=await findRelevantArticles(env,routing.key,q,5,{date:queryDate,expandReferences:true,maxReferences:12});
+    const retrieval=await findRelevantArticlesForChat(env,routing.key,q,5,{date:queryDate,expandReferences:true,maxReferences:12});
     const instrument=retrieval.instrument || null;
     const instrumentTitle=instrument?.title || routing.key;
 
