@@ -34,3 +34,12 @@ header{padding-left:12px}.brand{display:flex;align-items:center}.brand img{displ
 .mark.mark-logo{width:180px;height:auto;border-radius:0;background:transparent;color:inherit;display:block;transform:none}
 .mark.mark-logo img{display:block;width:100%;height:auto;border-radius:10px}
 @media(max-width:600px){.mark.mark-logo{width:150px}}
+
+
+/* AI Advokat Voice R1 */
+.message-voice-tools{display:flex;gap:.4rem;margin-top:.45rem}
+.message-speak{border:1px solid rgba(185,152,91,.38);border-radius:999px;background:transparent;padding:.32rem .62rem;font:inherit;font-size:.78rem;cursor:pointer}
+.message-speak:hover,.message-speak:focus-visible{border-color:currentColor}
+.message-speak.is-speaking{font-weight:800}
+#mic.is-listening{transform:scale(1.05);box-shadow:0 0 0 3px rgba(185,152,91,.18)}
+#mic[disabled],.message-speak[disabled]{opacity:.5;cursor:not-allowed}
