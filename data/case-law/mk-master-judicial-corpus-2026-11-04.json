@@ -1,6 +1,6 @@
 {
   "id": "mk-master-judicial-corpus-2026-11-04",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "status": "DISCOVERY_INDEXED_ITEM_LEVEL_VERIFICATION_PENDING",
   "purpose": "Governed source/provenance map for judicial materials supplied for AI Advokat internal and external bot retrieval.",
   "release_boundary": "Source-level discovery is enabled. Unreviewed extracts do not become legal authority. Current-law applicability, exact holding, finality and original-decision binding remain item-level Human Gates.",
@@ -98,6 +98,21 @@
       "record_count": 36,
       "privacy_indexing": "party_names_not_indexed_in_lightweight_discovery_registry",
       "human_gate_required": true
+    },
+    {
+      "id": "APPEAL_SKOPJE_GOLD100_FT22_2026_11_06",
+      "kind": "user_supplied_appellate_source_register",
+      "scope": "Gold-100 source register for 100 judicial records; FT-22 includes 20 supplied source copies with SHA-256 integrity metadata",
+      "status": "DISCOVERY_ENABLED_LEGAL_VERIFICATION_PENDING_HUMAN_GATE_OPEN",
+      "corpus_module": "src/appeal-skopje-gold100-discovery.js",
+      "runtime_register": "data/case-law/appeal-skopje-gold100-ft22-2026-11-06/runtime-register.json",
+      "record_count": 100,
+      "ft22_package_copy_count": 20,
+      "sha256_distinct_count": 100,
+      "legal_verified_count": 0,
+      "privacy_indexing": "party names and decision excerpts excluded from runtime metadata; raw PDFs not published on public GitHub/static asset surface",
+      "human_gate_required": true,
+      "production_authority": "NO-GO"
     }
   ],
   "authority_rules": [
