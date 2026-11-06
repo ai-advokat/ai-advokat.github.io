@@ -12,9 +12,9 @@ const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
 
 test("shared frontend runtime guard loads before both bot bundles",()=>{
   const mainGuard=home.indexOf("frontend-runtime-guard.js?v=20261101-root-r1");
-  const mainBundle=home.indexOf("ai-advokat-chat.js?v=20261106-root-r15-voice-runtime");
+  const mainBundle=home.indexOf("ai-advokat-chat.js?v=20261106-root-r15-voice-r2-runtime");
   const botGuard=bot.indexOf("frontend-runtime-guard.js?v=20261101-root-r1");
-  const botCore=bot.indexOf("standalone-bot.js?v=20261106-core-r15-voice");
+  const botCore=bot.indexOf("standalone-bot.js?v=20261106-core-r15-voice-r2");
   const botBundle=bot.indexOf("standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity");
   assert.ok(mainGuard>=0 && mainBundle>mainGuard);
   assert.ok(botGuard>=0 && botCore>botGuard && botBundle>botCore);
