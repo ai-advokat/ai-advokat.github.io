@@ -5,7 +5,15 @@ on:
     branches: ["main"]
     paths:
       - "src/index.js"
+      - "src/legal-retrieval-router.js"
+      - "src/zkp-judgment-taxonomy.js"
+      - "index.html"
       - "bot/index.html"
+      - "assets/ai-advokat-chat.js"
+      - "assets/ai-advokat-chat.css"
+      - "assets/ai-advokat-voice.mjs"
+      - "assets/standalone-bot.js"
+      - "assets/standalone-bot.css"
       - "assets/standalone-bot-vnext.js"
       - "assets/standalone-bot-toolkit.js"
       - "assets/standalone-bot-toolkit.css"
@@ -45,6 +53,10 @@ jobs:
           node --check scripts/ai-advokat-dual-bot-r14-uat.mjs
           node --check scripts/professional-smoke-capacity-gate.mjs
           node --check src/zkp-judgment-taxonomy.js
+          node --check src/legal-retrieval-router.js
+          node --check assets/ai-advokat-voice.mjs
+          node --check assets/ai-advokat-chat.js
+          node --check assets/standalone-bot.js
           node --check assets/standalone-bot-vnext.js
           node --check assets/standalone-bot-toolkit.js
 
@@ -54,21 +66,34 @@ jobs:
           set -euo pipefail
 
           expected_bot="$(sha256sum bot/index.html | awk '{print $1}')"
+          expected_internal="$(sha256sum assets/ai-advokat-chat.js | awk '{print $1}')"
+          expected_core="$(sha256sum assets/standalone-bot.js | awk '{print $1}')"
+          expected_voice="$(sha256sum assets/ai-advokat-voice.mjs | awk '{print $1}')"
           expected_vnext="$(sha256sum assets/standalone-bot-vnext.js | awk '{print $1}')"
           expected_toolkit="$(sha256sum assets/standalone-bot-toolkit.js | awk '{print $1}')"
 
           parity=0
           for attempt in $(seq 1 20); do
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/?r14_uat=$nonce" -o /tmp/r14-main.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/bot/?r14_uat=$nonce" -o /tmp/r14-bot.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/ai-advokat-chat.js?v=20261106-root-r15-voice-runtime&r14_uat=$nonce" -o /tmp/r14-internal.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/standalone-bot.js?v=20261106-core-r15-voice&r14_uat=$nonce" -o /tmp/r14-core.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/ai-advokat-voice.mjs?v=20261106-voice-r1&r14_uat=$nonce" -o /tmp/r14-voice.mjs || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity&r14_uat=$nonce" -o /tmp/r14-vnext.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/standalone-bot-toolkit.js?v=20261106-toolkit-r14&r14_uat=$nonce" -o /tmp/r14-toolkit.js || true
 
             live_bot="$(sha256sum /tmp/r14-bot.html 2>/dev/null | awk '{print $1}' || true)"
+            live_internal="$(sha256sum /tmp/r14-internal.js 2>/dev/null | awk '{print $1}' || true)"
+            live_core="$(sha256sum /tmp/r14-core.js 2>/dev/null | awk '{print $1}' || true)"
+            live_voice="$(sha256sum /tmp/r14-voice.mjs 2>/dev/null | awk '{print $1}' || true)"
             live_vnext="$(sha256sum /tmp/r14-vnext.js 2>/dev/null | awk '{print $1}' || true)"
             live_toolkit="$(sha256sum /tmp/r14-toolkit.js 2>/dev/null | awk '{print $1}' || true)"
 
             if [ "$live_bot" = "$expected_bot" ] \
+              && [ "$live_internal" = "$expected_internal" ] \
+              && [ "$live_core" = "$expected_core" ] \
+              && [ "$live_voice" = "$expected_voice" ] \
               && [ "$live_vnext" = "$expected_vnext" ] \
               && [ "$live_toolkit" = "$expected_toolkit" ]; then
               parity=1
@@ -80,6 +105,14 @@ jobs:
           done
           test "$parity" = "1"
 
+          grep -q 'ai-advokat-chat.js?v=20261106-root-r15-voice-runtime' /tmp/r14-main.html
+          grep -q 'id="aiChatMic"' /tmp/r14-main.html
+          grep -q 'id="aiChatVoiceStatus"' /tmp/r14-main.html
+          grep -q 'standalone-bot.js?v=20261106-core-r15-voice' /tmp/r14-bot.html
+          grep -q 'id="mic"' /tmp/r14-bot.html
+          grep -q 'AI_ADVOCAT_VOICE_R1' /tmp/r14-voice.mjs
+          grep -q 'bindMicrophone' /tmp/r14-voice.mjs
+          grep -q 'bindSpeakButton' /tmp/r14-voice.mjs
           grep -q 'standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity' /tmp/r14-bot.html
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/r14-bot.html
           grep -q 'data-vnext-action="public-evidence"' /tmp/r14-vnext.js
@@ -173,6 +206,10 @@ jobs:
             /tmp/ai-advokat-dual-bot-r14-uat.md
             /tmp/dual-r14-provision.txt
             /tmp/dual-r14-cleanup.txt
+            /tmp/r14-main.html
             /tmp/r14-bot.html
+            /tmp/r14-internal.js
+            /tmp/r14-core.js
+            /tmp/r14-voice.mjs
             /tmp/r14-vnext.js
             /tmp/r14-toolkit.js
