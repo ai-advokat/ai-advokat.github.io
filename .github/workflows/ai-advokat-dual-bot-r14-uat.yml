@@ -1,0 +1,150 @@
+name: AI Advokat dual-bot R14 production UAT
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "bot/index.html"
+      - "assets/standalone-bot-vnext.js"
+      - "assets/standalone-bot-toolkit.js"
+      - "assets/standalone-bot-toolkit.css"
+      - "src/detention-procedural-terminology.js"
+      - "scripts/ai-advokat-dual-bot-r14-uat.mjs"
+      - "scripts/professional-smoke-capacity-gate.mjs"
+      - ".github/workflows/ai-advokat-dual-bot-r14-uat.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-dual-bot-r14-production-uat
+  cancel-in-progress: false
+
+jobs:
+  dual-bot-r14:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      AI_ADVOCAT_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify R14 UAT and toolkit syntax
+        run: |
+          node --check scripts/ai-advokat-dual-bot-r14-uat.mjs
+          node --check scripts/professional-smoke-capacity-gate.mjs
+          node --check assets/standalone-bot-vnext.js
+          node --check assets/standalone-bot-toolkit.js
+
+      - name: Verify live standalone bundle parity surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS "$AI_ADVOCAT_BASE/bot/" -o /tmp/r14-bot.html
+          grep -q 'standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity' /tmp/r14-bot.html
+          grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/r14-bot.html
+          curl -fsS "$AI_ADVOCAT_BASE/assets/standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity" -o /tmp/r14-vnext.js
+          curl -fsS "$AI_ADVOCAT_BASE/assets/standalone-bot-toolkit.js?v=20261106-toolkit-r14" -o /tmp/r14-toolkit.js
+          grep -q 'data-vnext-action="public-evidence"' /tmp/r14-vnext.js
+          grep -q 'data-vnext-action="professional-ecosystem"' /tmp/r14-vnext.js
+          grep -q 'data-vnext-action="justice-daily"' /tmp/r14-vnext.js
+          grep -q 'AI_ADVOCAT_STANDALONE_TOOLKIT_PARITY_R14' /tmp/r14-toolkit.js
+          echo "LIVE STANDALONE TOOLKIT PARITY SURFACE: PASS"
+
+      - name: Verify governed toolkit APIs
+        run: |
+          node <<'NODE'
+          const base=process.env.AI_ADVOCAT_BASE;
+          const checks=[
+            ["/api/internal-toolkit?task=entity","internal_toolkit"],
+            ["/api/legal-news?days=1&limit=2","justice_daily"]
+          ];
+          for(const [path,label] of checks){
+            const r=await fetch(base+path,{headers:{accept:"application/json"}});
+            const d=await r.json().catch(()=>({}));
+            if(!r.ok||d?.ok!==true) throw new Error(label+" failed: HTTP "+r.status+" "+JSON.stringify(d).slice(0,500));
+          }
+          const card=await fetch(base+"/api/public-evidence/card",{
+            method:"POST",
+            headers:{"content-type":"application/json","accept":"application/json"},
+            body:JSON.stringify({title:"R14 UAT public evidence card",url:"https://example.com/",task:"entity",observedAt:new Date().toISOString(),contentSha256:null,note:"synthetic non-case UAT",status:"SOURCE_BACKED"})
+          });
+          const cd=await card.json().catch(()=>({}));
+          if(!card.ok||cd?.ok!==true||!cd?.card) throw new Error("public_evidence_card failed: HTTP "+card.status+" "+JSON.stringify(cd).slice(0,500));
+          console.log("GOVERNED TOOLKIT APIS: PASS");
+          NODE
+
+      - name: Provision ephemeral Professional dual-bot membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACCOUNT="dual-r14-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ENT="dual-r14-ent-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KID="dual-r14-key-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          KEY="dual_r14_$(openssl rand -hex 24)"
+          HASH="$(printf '%s' "$KEY" | sha256sum | awk '{print $1}')"
+          PREFIX="${KEY:0:12}"
+          echo "::add-mask::$KEY"
+          echo "DUAL_R14_ACCOUNT=$ACCOUNT" >> "$GITHUB_ENV"
+          echo "DUAL_R14_KEY=$KEY" >> "$GITHUB_ENV"
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+            DELETE FROM membership_usage_monthly WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM security_rate_limit_windows WHERE subject_key='account:$ACCOUNT';
+            DELETE FROM membership_access_keys WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_entitlements WHERE account_id='$ACCOUNT';
+            DELETE FROM membership_accounts WHERE id='$ACCOUNT';
+            INSERT INTO membership_accounts(id,display_name,status)
+              VALUES ('$ACCOUNT','AI Advokat Dual-Bot R14 UAT','active');
+            INSERT INTO membership_entitlements
+              (id,account_id,plan_code,status,billing_cycle,monthly_quota,seat_limit,price_mkd,expires_at)
+              VALUES ('$ENT','$ACCOUNT','office','active','manual',40,1,0,datetime('now','+45 minutes'));
+            INSERT INTO membership_access_keys
+              (id,account_id,key_hash,key_prefix,label,status,expires_at)
+              VALUES ('$KID','$ACCOUNT','$HASH','$PREFIX','ephemeral dual-bot r14 uat','active',datetime('now','+45 minutes'));
+          " >/tmp/dual-r14-provision.txt
+
+      - name: Run shared-scenario live UAT against both bots
+        env:
+          AI_ADVOCAT_MEMBERSHIP_KEY: ${{ env.DUAL_R14_KEY }}
+          AI_ADVOCAT_DUAL_BOT_PACE_MS: "13000"
+        run: node scripts/ai-advokat-dual-bot-r14-uat.mjs
+
+      - name: Cleanup ephemeral Professional dual-bot membership
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${DUAL_R14_ACCOUNT:-}" ]; then
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc --command "
+              DELETE FROM membership_usage_monthly WHERE subject_key='account:$DUAL_R14_ACCOUNT';
+              DELETE FROM security_rate_limit_windows WHERE subject_key='account:$DUAL_R14_ACCOUNT';
+              DELETE FROM membership_access_keys WHERE account_id='$DUAL_R14_ACCOUNT';
+              DELETE FROM membership_entitlements WHERE account_id='$DUAL_R14_ACCOUNT';
+              DELETE FROM membership_accounts WHERE id='$DUAL_R14_ACCOUNT';
+            " >/tmp/dual-r14-cleanup.txt
+          fi
+
+      - name: Upload dual-bot R14 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-dual-bot-r14-uat
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/ai-advokat-dual-bot-r14-uat.json
+            /tmp/ai-advokat-dual-bot-r14-uat.md
+            /tmp/dual-r14-provision.txt
+            /tmp/dual-r14-cleanup.txt
+            /tmp/r14-bot.html
+            /tmp/r14-vnext.js
+            /tmp/r14-toolkit.js
