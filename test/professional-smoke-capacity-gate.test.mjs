@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   PROFESSIONAL_SMOKE_CAPACITY_GATE_VERSION,
-  classifyProfessionalProviderCapacity
+  classifyProfessionalProviderCapacity,
+  isOpenAIProviderCapacityStatus
 } from "../scripts/professional-smoke-capacity-gate.mjs";
 
 const capacityResponse={
@@ -91,4 +92,19 @@ test("never classifies OpenAI spend-limit unless Workers AI exhaustion is indepe
   bad.providerFallback.primaryResponseStatus="organization_spend_limit_exceeded";
   bad.providerCapacity.capacity="unknown";
   assert.equal(classifyProfessionalProviderCapacity(503,bad).recognized,false);
+});
+
+
+test("OpenAI capacity-code helper is bounded and rejects unrelated 429 labels",()=>{
+  for(const code of [
+    "organization_spend_limit_exceeded",
+    "project_spend_limit_exceeded",
+    "credit_balance_exhausted",
+    "insufficient_quota",
+    "rate_limit_exceeded",
+    "rate_limited_during_bounded_specialist"
+  ]) assert.equal(isOpenAIProviderCapacityStatus(code),true,code);
+  for(const code of ["", "authentication_error", "server_error", "mystery_429", "invalid_request_error"]){
+    assert.equal(isOpenAIProviderCapacityStatus(code),false,code);
+  }
 });
