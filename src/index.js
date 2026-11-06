@@ -7382,9 +7382,13 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           ? "workers_ai_free_authorial_publication_context"
           : (corpusContext.length ? "workers_ai_free_governed_corpus" : "workers_ai_free_general");
     const effectiveFallbackSourceMode=professionalDegradedDraftActive
-      ? (degradedHasGovernedContext
-        ? "professional_degraded_"+freeSourceMode
-        : "professional_degraded_structure_only_workers_ai_fallback")
+      ? (freeResult.provider==="deterministic_capacity_fallback"
+        ? (degradedHasGovernedContext
+          ? "professional_degraded_deterministic_capacity_fallback"
+          : "professional_degraded_structure_only_deterministic_fallback")
+        : degradedHasGovernedContext
+          ? "professional_degraded_"+freeSourceMode
+          : "professional_degraded_structure_only_workers_ai_fallback")
       : professionalL0FallbackActive
         ? "professional_l0_"+freeSourceMode
         : professionalResearchFallbackActive
@@ -7438,9 +7442,13 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         guideContextCount:guideContext.length+guideDocumentCheck.context.length,
         attachmentCount:0,
         sourceMode:professionalDegradedDraftActive
-          ? (degradedHasGovernedContext
-            ? "professional_degraded_workers_ai_provider_fallback"
-            : "professional_degraded_structure_only_workers_ai_fallback")
+          ? (freeResult.provider==="deterministic_capacity_fallback"
+            ? (degradedHasGovernedContext
+              ? "professional_degraded_deterministic_capacity_fallback"
+              : "professional_degraded_structure_only_deterministic_fallback")
+            : degradedHasGovernedContext
+              ? "professional_degraded_workers_ai_provider_fallback"
+              : "professional_degraded_structure_only_workers_ai_fallback")
           : professionalL0FallbackActive
             ? "professional_l0_workers_ai_provider_fallback"
             : "professional_research_workers_ai_provider_fallback",
@@ -7556,9 +7564,13 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         : freeResult.provider==="canonical_corpus_no_model" ? "deterministic_source_first" : "workers_ai_standard",
       maxOutputTokens,
       humanGate:professionalDegradedDraftActive
-        ? (missionProfile==="L3_CONSEQUENTIAL"
-          ? "Примарниот професионален AI-провајдер беше привремено недостапен. Ова е работен L3 нацрт преку контролиран резервен Workers AI пат. Не смее да се потпише, поднесе или испрати без адвокатска Human Gate проверка на правната основа, роковите, надлежноста, фактите и доказите."
-          : "Примарниот професионален AI-провајдер беше привремено недостапен. Ова е работен L2 правен нацрт преку контролиран резервен Workers AI пат. Пред професионално потпирање мора да се проверат важечкиот закон, точните членови, роковите, надлежноста и доказите.")
+        ? (freeResult.provider==="deterministic_capacity_fallback"
+          ? (missionProfile==="L3_CONSEQUENTIAL"
+            ? "Примарниот професионален AI-провајдер беше недостапен. Ова е bounded deterministic L3 работен нацрт без втор AI provider. Не смее да се потпише, поднесе или испрати без адвокатска Human Gate проверка на правната основа, роковите, надлежноста, фактите и доказите."
+            : "Примарниот професионален AI-провајдер беше недостапен. Ова е bounded deterministic L2 работен нацрт без втор AI provider. Пред професионално потпирање мора да се проверат важечкиот закон, точните членови, роковите, надлежноста и доказите.")
+          : missionProfile==="L3_CONSEQUENTIAL"
+            ? "Примарниот професионален AI-провајдер беше привремено недостапен. Ова е работен L3 нацрт преку контролиран резервен Workers AI пат. Не смее да се потпише, поднесе или испрати без адвокатска Human Gate проверка на правната основа, роковите, надлежноста, фактите и доказите."
+            : "Примарниот професионален AI-провајдер беше привремено недостапен. Ова е работен L2 правен нацрт преку контролиран резервен Workers AI пат. Пред професионално потпирање мора да се проверат важечкиот закон, точните членови, роковите, надлежноста и доказите.")
         : professionalL0FallbackActive
           ? "Примарниот професионален AI-провајдер беше привремено недостапен. Овој информативен L0 одговор е генериран преку контролираниот резервен Workers AI пат. Пред правно потпирање проверете го важечкиот закон и примарните извори."
           : professionalResearchFallbackActive
