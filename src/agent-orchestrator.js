@@ -475,8 +475,10 @@ function openAIRetryAfterSeconds(headers){
       ? Math.min(3600,Math.max(0,Math.ceil(seconds)))
       : null;
   }
+  const httpDate=/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \\d{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \\d{4} \\d{2}:\\d{2}:\\d{2} GMT$/;
+  if(!httpDate.test(raw)) return null;
   const at=Date.parse(raw);
-  if(!Number.isFinite(at)) return null;
+  if(!Number.isFinite(at) || new Date(at).toUTCString()!==raw) return null;
   return Math.min(3600,Math.max(0,Math.ceil((at-Date.now())/1000)));
 }
 
