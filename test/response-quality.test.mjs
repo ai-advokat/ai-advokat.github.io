@@ -260,3 +260,14 @@ test("RQ21 capacity-timeout fallback preserves procedural-instrument safety",()=
   assert.doesNotMatch(out,/^ТУЖБА\b/mu);
   assert.match(out,/ЧОВЕЧКА ПРОВЕРКА/u);
 });
+
+
+test("RQ22 detention capacity fallback preserves the statutory decision form",()=>{
+  const q="Изработи жалба против притвор и наведи го точниот вид на судска одлука.";
+  const out=deterministicFormalDraftCapacityFallback({userText:q});
+  assert.match(out,/решение, а не пресуда/iu);
+  assert.match(out,/жалба против решението за притвор/iu);
+  assert.match(out,/определува, продолжува или укинува притвор/iu);
+  assert.doesNotMatch(out,/пресуда за (?:определување|продолжување|укинување)(?: на)? притвор/iu);
+  assert.match(out,/ЧОВЕЧКА ПРОВЕРКА/iu);
+});
