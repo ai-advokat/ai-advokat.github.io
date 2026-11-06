@@ -104,7 +104,7 @@ test("OpenAI capacity-code helper is bounded and rejects unrelated 429 labels",(
     "rate_limit_exceeded",
     "rate_limited_during_bounded_specialist"
   ]) assert.equal(isOpenAIProviderCapacityStatus(code),true,code);
-  for(const code of ["", "authentication_error", "server_error", "mystery_429", "invalid_request_error"]){
+  for(const code of ["", "authentication_error", "server_error", "mystery_429", "invalid_request_error", "rate_limited_unknown_regression"]){
     assert.equal(isOpenAIProviderCapacityStatus(code),false,code);
   }
 });
