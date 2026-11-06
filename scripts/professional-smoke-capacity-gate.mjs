@@ -2,13 +2,9 @@ import fs from "node:fs";
 
 export const PROFESSIONAL_SMOKE_CAPACITY_GATE_VERSION="AI_ADVOCAT_PRO_SMOKE_CAPACITY_GATE_V2";
 
-export function classifyProfessionalProviderCapacity(httpStatus,data){
-  const d=data&&typeof data==="object"?data:{};
-  const fallback=d.providerFallback&&typeof d.providerFallback==="object"?d.providerFallback:{};
-  const capacity=d.providerCapacity&&typeof d.providerCapacity==="object"?d.providerCapacity:{};
-  const runtime=d.runtime&&typeof d.runtime==="object"?d.runtime:{};
-  const primaryStatus=String(fallback.primaryResponseStatus||"").trim();
-  const recognizedOpenAICapacityCodes=new Set([
+export function isOpenAIProviderCapacityStatus(value){
+  const status=String(value||"").trim();
+  const recognized=new Set([
     "rate_limit_exceeded",
     "rate_limited_during_bounded_specialist",
     "organization_spend_limit_exceeded",
@@ -16,8 +12,16 @@ export function classifyProfessionalProviderCapacity(httpStatus,data){
     "credit_balance_exhausted",
     "insufficient_quota"
   ]);
-  const primaryCapacityBlocked=recognizedOpenAICapacityCodes.has(primaryStatus)
-    || /^rate_limited(?:_|$)/u.test(primaryStatus);
+  return recognized.has(status) || /^rate_limited(?:_|$)/u.test(status);
+}
+
+export function classifyProfessionalProviderCapacity(httpStatus,data){
+  const d=data&&typeof data==="object"?data:{};
+  const fallback=d.providerFallback&&typeof d.providerFallback==="object"?d.providerFallback:{};
+  const capacity=d.providerCapacity&&typeof d.providerCapacity==="object"?d.providerCapacity:{};
+  const runtime=d.runtime&&typeof d.runtime==="object"?d.runtime:{};
+  const primaryStatus=String(fallback.primaryResponseStatus||"").trim();
+  const primaryCapacityBlocked=isOpenAIProviderCapacityStatus(primaryStatus);
 
   const recognized=Number(httpStatus)===503
     && d.ok===false
