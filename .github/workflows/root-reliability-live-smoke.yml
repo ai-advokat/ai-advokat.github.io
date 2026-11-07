@@ -43,6 +43,8 @@ jobs:
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' bot/index.html
           grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' bot/index.html
           grep -q 'AI_ADVOCAT_VOICE_R2' assets/ai-advokat-voice.mjs
+          grep -q 'Hybrid Legal Intelligence R2' hybrid-legal-intelligence.html
+          grep -q '/api/hybrid/instruments' hybrid-legal-intelligence.html
           grep -q 'getUserMedia' assets/ai-advokat-voice.mjs
           grep -q 'microphonePermissionErrorMessage' assets/ai-advokat-voice.mjs
           echo "RELEASE SOURCE CONTRACT: PASS"
@@ -55,6 +57,7 @@ jobs:
           for i in $(seq 1 120); do
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-home.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/bot/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-bot.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/hybrid-legal-intelligence.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-hybrid.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-voice.mjs || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/pages-release.txt?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-release.txt || true
             if grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-home.html 2>/dev/null \
@@ -65,6 +68,8 @@ jobs:
               && grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r1-visible' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' /tmp/pages-bot.html 2>/dev/null \
+              && grep -q 'Hybrid Legal Intelligence R2' /tmp/pages-hybrid.html 2>/dev/null \
+              && grep -q 'Lawyer View' /tmp/pages-hybrid.html 2>/dev/null \
               && grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/pages-voice.mjs 2>/dev/null \
               && grep -q 'getUserMedia' /tmp/pages-voice.mjs 2>/dev/null \
               && grep -q 'microphonePermissionErrorMessage' /tmp/pages-voice.mjs 2>/dev/null \
@@ -202,6 +207,7 @@ jobs:
           path: |
             /tmp/pages-home.html
             /tmp/pages-bot.html
+            /tmp/pages-hybrid.html
             /tmp/pages-voice.mjs
             /tmp/worker-home.html
             /tmp/worker-bot.html
