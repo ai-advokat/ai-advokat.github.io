@@ -89,7 +89,7 @@ jobs:
           grep -q 'bindSpeakButton' assets/ai-advokat-voice.mjs
           grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' bot/index.html
           grep -q 'standalone-bot.css?v=20261106-access-r15-voice' bot/index.html
-          grep -q 'standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity' bot/index.html
+          grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r1-visible' bot/index.html
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' bot/index.html
           grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' bot/index.html
           grep -q "import('./chat-privacy-browser.js?v=20261101-privacy-r12')" assets/standalone-bot.js
