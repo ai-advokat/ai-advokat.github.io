@@ -25,8 +25,8 @@ test("Hybrid R2 Lawyer View exposes all five governed modules",()=>{
 
 test("Hybrid R2 removes developer-first IDs from the primary Lawyer View flow",()=>{
   assert.match(page,/id="instrumentSelect"/);
-  assert.match(page,//api/hybrid/instruments/);
-  assert.match(page,//api/hybrid/consolidations/);
+  assert.equal(page.includes("/api/hybrid/instruments"),true);
+  assert.equal(page.includes("/api/hybrid/consolidations"),true);
   assert.match(page,/id="beforeVersion"/);
   assert.match(page,/id="afterVersion"/);
   assert.match(page,/Напредно · canonical key/);
