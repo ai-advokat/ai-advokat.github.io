@@ -173,3 +173,20 @@ test("HLI10 Consolidator R2 remains authority-first while Hybrid R1 is layered a
   assert.equal(cfg.governance.secondary_signal_requires_official_binding,true);
   assert.equal(cfg.governance.automatic_current_law_promotion,false);
 });
+
+
+test("HLI11 Professional workspace exposes the Hybrid Intelligence workbench",()=>{
+  const vnext=fs.readFileSync("assets/standalone-bot-vnext.js","utf8");
+  const page=fs.readFileSync("hybrid-legal-intelligence.html","utf8");
+  assert.match(vnext,/data-vnext-action="hybrid-intelligence"/);
+  assert.match(vnext,/\/hybrid-legal-intelligence\.html/);
+  for(const label of [
+    "Article Time Machine",
+    "Law ↔ Bylaw Graph",
+    "Article ↔ Case-Law",
+    "Legal Effective-Date Calendar",
+    "Visual Consolidation Diff"
+  ]) assert.equal(page.includes(label),true,label);
+  assert.match(page,/Human Gate/);
+  assert.match(page,/secondary signals/i);
+});
