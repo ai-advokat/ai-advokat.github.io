@@ -8901,7 +8901,8 @@ async function handleHybridLegalIntelligence(request,env,url){
           "visual_consolidation_diff",
           "open_data_legal_evidence",
           "official_e_service_navigator",
-          "eid_human_handoff"
+          "eid_human_handoff",
+          "gold_set_review_gate"
         ],
         authorityBoundary:{
           officialSourceFirst:true,
