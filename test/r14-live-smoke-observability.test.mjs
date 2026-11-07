@@ -26,7 +26,7 @@ test("root smoke preserves non-200 chat JSON instead of curl-f discarding eviden
   assert.match(rootSmoke,/providerRecovery:d\?\.providerRecovery/);
   assert.match(rootSmoke,/fallbackProviderFailure:d\?\.fallbackProviderFailure/);
   assert.match(rootSmoke,/main_chat_provider_capacity_blocked/);
-  assert.match(rootSmoke,/for i in \$\(seq 1 60\); do/);
+  assert.match(rootSmoke,/for i in \$\(seq 1 120\); do/);
 });
 
 test("Worker smoke verifies R14 standalone bytes with deployment propagation budget",()=>{

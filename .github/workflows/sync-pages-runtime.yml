@@ -140,10 +140,11 @@ jobs:
             mkdir -p "/tmp/ai-advokat-gh-pages/$(dirname "$f")"
             cp "$f" "/tmp/ai-advokat-gh-pages/$f"
           done
+          printf 'source_main_sha=%s\n' "$GITHUB_SHA" > /tmp/ai-advokat-gh-pages/pages-release.txt
           cd /tmp/ai-advokat-gh-pages
           git config user.name "ai-advokat-pages-sync"
           git config user.email "aiadvokat16@gmail.com"
-          git add -- "${files[@]}"
+          git add -- "${files[@]}" pages-release.txt
           if git diff --cached --quiet; then
             echo "gh-pages already matches main runtime."
             exit 0
@@ -163,4 +164,7 @@ jobs:
             test "$main_blob" = "$pages_blob"
             echo "$f: $main_blob"
           done
+          pages_release="$(git show origin/gh-pages:pages-release.txt | sed -n 's/^source_main_sha=//p' | head -n1)"
+          test "$pages_release" = "$GITHUB_SHA"
+          echo "PAGES RELEASE SHA: $pages_release"
           echo "MAIN/GH-PAGES RUNTIME PARITY: PASS"

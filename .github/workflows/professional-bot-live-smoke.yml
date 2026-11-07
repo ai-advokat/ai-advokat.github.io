@@ -19,6 +19,8 @@ on:
       - "src/judicial-discovery-source-registry.js"
       - "data/case-law/mk-master-judicial-corpus-2026-11-04.json"
       - "scripts/zro12-live-smoke.mjs"
+      - "scripts/professional-smoke-capacity-gate.mjs"
+      - "test/professional-smoke-capacity-gate.test.mjs"
       - ".assetsignore"
       - "_headers"
       - ".github/workflows/sync-pages-runtime.yml"
