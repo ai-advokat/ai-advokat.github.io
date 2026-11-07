@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-export const PROFESSIONAL_SMOKE_CAPACITY_GATE_VERSION="AI_ADVOCAT_PRO_SMOKE_CAPACITY_GATE_V2";
+export const PROFESSIONAL_SMOKE_CAPACITY_GATE_VERSION="AI_ADVOCAT_PRO_SMOKE_CAPACITY_GATE_V3";
 
 export function isOpenAIProviderCapacityStatus(value){
   const status=String(value||"").trim();
@@ -23,7 +23,7 @@ export function classifyProfessionalProviderCapacity(httpStatus,data){
   const primaryStatus=String(fallback.primaryResponseStatus||"").trim();
   const primaryCapacityBlocked=isOpenAIProviderCapacityStatus(primaryStatus);
 
-  const recognized=Number(httpStatus)===503
+  const dualCapacityBlocked=Number(httpStatus)===503
     && d.ok===false
     && d.error==="workers_ai_daily_capacity_exhausted"
     && capacity.state==="exhausted"
@@ -40,17 +40,38 @@ export function classifyProfessionalProviderCapacity(httpStatus,data){
     && runtime.provider==="workers_ai_free"
     && !String(d.answer||"").trim();
 
+  const primaryCapacityFallbackSafetyBlocked=Number(httpStatus)===503
+    && d.ok===false
+    && d.error==="macedonian_language_release_blocked"
+    && fallback.from==="openai"
+    && fallback.to==="workers_ai"
+    && fallback.reason==="openai_response_error"
+    && Number(fallback.primaryProviderCalls)>=1
+    && Number(fallback.primaryHttpStatus)===429
+    && primaryCapacityBlocked
+    && fallback.fallbackState==="failed"
+    && runtime.provider==="workers_ai_free"
+    && !String(d.answer||"").trim();
+
+  const recognized=dualCapacityBlocked||primaryCapacityFallbackSafetyBlocked;
+  const classification=dualCapacityBlocked
+    ?"PROVIDER_CAPACITY_BLOCKED"
+    :primaryCapacityFallbackSafetyBlocked
+      ?"PRIMARY_PROVIDER_CAPACITY_BLOCKED_FALLBACK_SAFETY_BLOCKED"
+      :"UNRECOGNIZED_PROFESSIONAL_SMOKE_FAILURE";
+
   return Object.freeze({
     recognized,
-    classification:recognized?"PROVIDER_CAPACITY_BLOCKED":"UNRECOGNIZED_PROFESSIONAL_SMOKE_FAILURE",
+    classification,
     systemIntegrity:recognized?"PASS_FAIL_CLOSED":"UNVERIFIED",
     providerAvailability:recognized?"BLOCKED":"UNKNOWN",
     primaryProvider:recognized?"openai":null,
     primaryHttpStatus:recognized?429:null,
     primaryCapacityReason:recognized?primaryStatus:null,
     fallbackProvider:recognized?"workers_ai":null,
-    fallbackCapacity:recognized?"daily_free_allocation_exhausted":null,
-    retryable:recognized?false:null,
+    fallbackCapacity:dualCapacityBlocked?"daily_free_allocation_exhausted":null,
+    fallbackSafetyGate:primaryCapacityFallbackSafetyBlocked?"macedonian_language_release_blocked":null,
+    retryable:dualCapacityBlocked?false:null,
     gateVersion:PROFESSIONAL_SMOKE_CAPACITY_GATE_VERSION
   });
 }
@@ -81,8 +102,8 @@ function runCli(){
 
   const summary={
     ok:false,
-    smokeStatus:"PASS_WITH_PROVIDER_CAPACITY_BLOCKER",
-    releaseState:"PROVIDER_CAPACITY_BLOCKED",
+    smokeStatus:result.classification==="PROVIDER_CAPACITY_BLOCKED"?"PASS_WITH_PROVIDER_CAPACITY_BLOCKER":"PASS_WITH_PRIMARY_PROVIDER_CAPACITY_AND_FALLBACK_SAFETY_BLOCK",
+    releaseState:result.classification,
     systemIntegrity:result.systemIntegrity,
     providerAvailability:result.providerAvailability,
     capacityGateVersion:result.gateVersion,
@@ -93,11 +114,15 @@ function runCli(){
     runtime:data.runtime,
     model:data.model||null,
     primaryCapacityReason:result.primaryCapacityReason,
+    fallbackSafetyGate:result.fallbackSafetyGate||null,
     answerReleased:false
   };
   fs.writeFileSync(summaryPath,JSON.stringify(summary,null,2));
-  console.log("::warning title=Professional provider capacity blocked::Runtime integrity passed fail-closed checks. OpenAI capacity/quota reason: "+result.primaryCapacityReason+"; Workers AI daily free allocation is exhausted. This is an operational capacity blocker, not a code regression.");
-  console.log("PROFESSIONAL PROVIDER CAPACITY: BLOCKED · SYSTEM FAIL-CLOSED CONTRACT: PASS");
+  const detail=result.fallbackSafetyGate
+    ?"OpenAI capacity/quota reason: "+result.primaryCapacityReason+"; Workers AI fallback was rejected by the "+result.fallbackSafetyGate+" safety gate."
+    :"OpenAI capacity/quota reason: "+result.primaryCapacityReason+"; Workers AI daily free allocation is exhausted.";
+  console.log("::warning title=Professional provider availability blocked::Runtime integrity passed fail-closed checks. "+detail+" This is an operational provider-availability blocker, not a code regression.");
+  console.log("PROFESSIONAL PROVIDER AVAILABILITY: BLOCKED · SYSTEM FAIL-CLOSED CONTRACT: PASS");
 }
 
 if(process.argv[1]&&import.meta.url===new URL("file://"+process.argv[1]).href){

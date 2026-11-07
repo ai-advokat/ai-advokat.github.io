@@ -60,6 +60,32 @@ test("recognizes bounded OpenAI quota/spend capacity codes only",()=>{
   }
 });
 
+
+
+test("recognizes verified OpenAI spend-limit plus Workers Macedonian safety-gate fail-closed state",()=>{
+  const blocked=structuredClone(capacityResponse);
+  blocked.error="macedonian_language_release_blocked";
+  blocked.providerCapacity=null;
+  blocked.providerFallback.primaryResponseStatus="organization_spend_limit_exceeded";
+  blocked.providerFallback.fallbackState="failed";
+  const result=classifyProfessionalProviderCapacity(503,blocked);
+  assert.equal(result.recognized,true);
+  assert.equal(result.classification,"PRIMARY_PROVIDER_CAPACITY_BLOCKED_FALLBACK_SAFETY_BLOCKED");
+  assert.equal(result.systemIntegrity,"PASS_FAIL_CLOSED");
+  assert.equal(result.primaryCapacityReason,"organization_spend_limit_exceeded");
+  assert.equal(result.fallbackSafetyGate,"macedonian_language_release_blocked");
+});
+
+test("does not excuse Macedonian release blocks without a verified primary 429 capacity reason",()=>{
+  const blocked=structuredClone(capacityResponse);
+  blocked.error="macedonian_language_release_blocked";
+  blocked.providerCapacity=null;
+  blocked.providerFallback.fallbackState="failed";
+  blocked.providerFallback.primaryHttpStatus=500;
+  blocked.providerFallback.primaryResponseStatus="server_error";
+  assert.equal(classifyProfessionalProviderCapacity(503,blocked).recognized,false);
+});
+
 test("does not downgrade unknown 503 failures",()=>{
   const result=classifyProfessionalProviderCapacity(503,{ok:false,error:"internal_error"});
   assert.equal(result.recognized,false);
