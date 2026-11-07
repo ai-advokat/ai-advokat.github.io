@@ -56,7 +56,7 @@ function asksDraft(query){
 }
 
 function asksCaseLaw(query){
-  return /(?:судск(?:а|и)\s+практик|пресуд|одлук|case\s*law)/u.test(norm(query));
+  return /(?:судск(?:а|и)\s+(?:практик|пракс)|пресуд|одлук|case\s*law)/u.test(norm(query));
 }
 
 function conceptAnswer({caseLawRequested=false}={}){
