@@ -39,7 +39,8 @@ test("all nine Hybrid modules are directly visible from both public AI Advokat s
     "module=diff",
     "module=opendata",
     "module=services",
-    "module=handoff"
+    "module=handoff",
+    "module=gold"
   ];
   for(const link of links){
     assert.equal(root.includes(link),true,"root missing "+link);
