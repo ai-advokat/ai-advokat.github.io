@@ -8801,16 +8801,36 @@ async function handlePublicLegalDataServices(request,env,url){
     const endpoint=new URL("https://data.gov.mk/api/3/action/package_search");
     endpoint.searchParams.set("q",base);
     endpoint.searchParams.set("rows",String(rows));
-    const response=await fetch(endpoint.toString(),{
-      method:"GET",
-      headers:{"accept":"application/json","user-agent":"AI-Advokat-Public-Legal-Data/1.0"},
-      cf:{cacheTtl:300,cacheEverything:true}
-    });
-    const raw=await response.text();
+    let response=null;
+    let raw="";
+    try{
+      response=await fetch(endpoint.toString(),{
+        method:"GET",
+        headers:{"accept":"application/json","user-agent":"AI-Advokat-Public-Legal-Data/1.0"},
+        cf:{cacheTtl:300,cacheEverything:true}
+      });
+      raw=await response.text();
+    }catch{
+      return json(request,{
+        ok:false,
+        error:"official_open_data_unavailable",
+        source:"data.gov.mk",
+        failureClass:"upstream_network",
+        legalAuthorityPromotion:false,
+        humanGateRequired:true
+      },502);
+    }
     let payload=null;
     try{payload=JSON.parse(raw)}catch{}
     if(!response.ok || !payload?.success){
-      return json(request,{ok:false,error:"official_open_data_unavailable",source:"data.gov.mk",humanGateRequired:true},502);
+      return json(request,{
+        ok:false,
+        error:"official_open_data_unavailable",
+        source:"data.gov.mk",
+        failureClass:"upstream_response",
+        legalAuthorityPromotion:false,
+        humanGateRequired:true
+      },502);
     }
     const results=Array.isArray(payload?.result?.results)?payload.result.results:[];
     const terms=lensTerms[lens]||lensTerms.legal;
