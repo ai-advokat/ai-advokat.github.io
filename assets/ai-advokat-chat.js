@@ -1023,7 +1023,9 @@
             label:format==="docx"?"Преземи Word (.docx)":format==="pdf"?"Преземи PDF":format==="json"?"Преземи JSON":"Преземи CSV",
             filename:"AI-Advokat-analysis."+format
           })),
-          sourceLabel:d.sourceMode==="workers_ai_free_authorial_publication_context" || d.sourceMode==="ai_advokat_authorial_publication_context"
+          sourceLabel:d.sourceMode==="canonical_property_law_odrzuvacka_no_model"
+            ?"Закон за сопственост и други стварни права · одржувачка/usucapio · source-first deterministic · Human Gate."
+            :d.sourceMode==="workers_ai_free_authorial_publication_context" || d.sourceMode==="ai_advokat_authorial_publication_context"
             ?"AI Advokat авторски трудови · секундарен извор · DOI/Zenodo + Human Gate; не е извор на важечко право."
             :d.sourceMode==="ai_advokat_article_corpus_first"
               ?"AI Advokat article-level corpus first · верзија и Human Gate се прикажани во изворите."
