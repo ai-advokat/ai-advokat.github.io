@@ -246,6 +246,9 @@ a{color:inherit}
     <button class="module-tab" data-module="cases" type="button"><span class="module-no">03</span><span class="module-name">Article ↔ Case-Law</span><span class="module-desc">Пракса по точен член</span></button>
     <button class="module-tab" data-module="calendar" type="button"><span class="module-no">04</span><span class="module-name">Legal Calendar</span><span class="module-desc">Влегување и примена</span></button>
     <button class="module-tab" data-module="diff" type="button"><span class="module-no">05</span><span class="module-name">Consolidation Diff</span><span class="module-desc">Верзија ↔ верзија</span></button>
+    <button class="module-tab" data-module="opendata" type="button"><span class="module-no">06</span><span class="module-name">Open Data Evidence</span><span class="module-desc">Јавни податоци → доказ</span></button>
+    <button class="module-tab" data-module="services" type="button"><span class="module-no">07</span><span class="module-name">Official e‑Services</span><span class="module-desc">Правен следен чекор</span></button>
+    <button class="module-tab" data-module="handoff" type="button"><span class="module-no">08</span><span class="module-name">Human Handoff</span><span class="module-desc">eID → човек → поднесување</span></button>
   </nav>
 
   <section class="panel active" data-panel="time">
@@ -294,6 +297,44 @@ a{color:inherit}
         <button class="btn primary" id="runDiff" type="button">Спореди верзии</button>
       </div>
       <div class="result-host" id="diffResult" aria-live="polite"></div>
+    </div>
+  </section>
+
+
+  <section class="panel" data-panel="opendata">
+    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">06</div><div><h3>Open Data Legal Evidence</h3><p>Пребарува правно релевантни јавни сетови од data.gov.mk и ги прикажува како доказни/discovery записи со институција, лиценца, ресурси и metadata.</p></div></div><span class="chip info">Official catalogue · evidence layer</span></div>
+    <div class="panel-body">
+      <div class="panel-controls">
+        <div class="field" style="min-width:260px"><label for="openDataQuery">Правен поим</label><input id="openDataQuery" placeholder="пример: прописи, МВР, јавни набавки, регистар"></div>
+        <div class="field" style="min-width:220px"><label for="openDataLens">Правен lens</label><select id="openDataLens"><option value="legal">Општо правно</option><option value="regulation">Прописи</option><option value="police">МВР / полиција</option><option value="procurement">Јавни набавки</option><option value="registers">Регистри / евиденции</option></select></div>
+        <button class="btn primary" id="runOpenData" type="button">Најди правно релевантни сетови</button>
+      </div>
+      <div class="result-host" id="openDataResult" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="services">
+    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">07</div><div><h3>Official e‑Service Navigator</h3><p>Ги прикажува само услугите што создаваат правно релевантен документ или официјален административен чекор.</p></div></div><span class="chip ok">Official action channel</span></div>
+    <div class="panel-body">
+      <div class="panel-controls">
+        <div class="field"><label for="serviceAudience">Корисник</label><select id="serviceAudience"><option value="all">Сите</option><option value="citizen">Граѓанин</option><option value="company">Правно лице</option></select></div>
+        <div class="field"><label for="serviceArea">Област</label><select id="serviceArea"><option value="all">Сите</option><option value="criminal_records">Казнена/кривична евиденција</option><option value="property">Имот / катастар</option><option value="tax">Даноци</option><option value="company_licensing">Компании / лиценци</option></select></div>
+        <button class="btn primary" id="runServices" type="button">Прикажи правни услуги</button>
+      </div>
+      <div class="result-host" id="servicesResult" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="handoff">
+    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">08</div><div><h3>eID + Human Handoff</h3><p>Го претвора истражувањето во безбеден следен чекор: проверка на eID, официјален портал и човечко поднесување.</p></div></div><span class="chip warn">No autonomous submission</span></div>
+    <div class="panel-body">
+      <div class="metrics">
+        <div class="metric"><small>Чекор 1</small><strong>Провери документ/услуга</strong></div>
+        <div class="metric"><small>Чекор 2</small><strong>Провери eID ниво</strong></div>
+        <div class="metric"><small>Чекор 3</small><strong>Human Gate</strong></div>
+        <div class="metric"><small>Чекор 4</small><strong>Поднеси на официјален портал</strong></div>
+      </div>
+      <div class="result-host" id="handoffResult" aria-live="polite"></div>
     </div>
   </section>
 
@@ -653,6 +694,80 @@ async function runDiff(){
   host.append(tools,rawDetails(data));renderDiffRows(host);
 }
 
+
+async function runOpenData(){
+  const host=$("openDataResult"),q=$("openDataQuery").value.trim(),lens=$("openDataLens").value;
+  loading(host,"Се пребаруваат правно релевантни јавни податоци…");
+  const path="/api/public-legal/open-data?q="+encodeURIComponent(q)+"&lens="+encodeURIComponent(lens)+"&limit=20";
+  const {status,data}=await api(path);
+  state.raw.opendata=data;
+  if(status>=400||!data.ok){renderError(host,data,status);return}
+  clear(host);
+  host.append(notice("Open Data е доказен/discovery слој. Пред правен заклучок провери го underlying official record.","warn"));
+  const box=el("div",{class:"case-list"});
+  (data.results||[]).forEach(x=>{
+    const card=el("article",{class:"case-card"},[
+      el("div",{class:"case-top"},[
+        el("div",{},[
+          el("div",{class:"eyebrow",text:x.organization||"data.gov.mk"}),
+          el("div",{class:"case-title",text:x.title||x.name||"Податочен сет"})
+        ]),
+        chip(x.legalRelevance||"unclassified",x.legalRelevance==="candidate"?"ok":"warn")
+      ]),
+      el("p",{text:(x.description||"").slice(0,700)}),
+      el("div",{class:"case-meta"},[
+        metaItem("Лиценца",x.license||"—"),
+        metaItem("Metadata",x.metadataModified||"—"),
+        metaItem("Формати",(x.resources||[]).map(r=>r.format||"DATA").filter(Boolean).slice(0,8).join(", ")||"—"),
+        metaItem("Legal signals",(x.legalSignals||[]).join(", ")||"—")
+      ]),
+      sourceLink(x.catalogueUrl,"Отвори на data.gov.mk")
+    ]);
+    box.append(card);
+  });
+  if(!(data.results||[]).length) box.append(notice("Нема резултати за избраниот правен lens.","warn"));
+  host.append(box,rawDetails(data));
+}
+async function runServices(){
+  const host=$("servicesResult"),audience=$("serviceAudience").value,area=$("serviceArea").value;
+  loading(host,"Се вчитуваат официјални правни е‑услуги…");
+  const {status,data}=await api("/api/public-legal/services?audience="+encodeURIComponent(audience)+"&area="+encodeURIComponent(area));
+  state.raw.services=data;
+  if(status>=400||!data.ok){renderError(host,data,status);return}
+  clear(host);
+  const box=el("div",{class:"graph-list"});
+  (data.services||[]).forEach(x=>box.append(el("div",{class:"graph-card"},[
+    el("div",{class:"graph-parent"},[
+      el("strong",{text:x.title}),
+      el("small",{text:(x.provider||"Официјална институција")+" · eID: "+(x.eidLevel||"service_specific")})
+    ]),
+    el("div",{class:"graph-arrow"}),
+    el("div",{class:"graph-child"},[
+      el("strong",{text:x.legalEffect||"Официјален административен чекор"}),
+      sourceLink(x.officialUrl,"Отвори официјална е‑услуга")
+    ])
+  ])));
+  host.append(box,notice("AI Advokat може да подготви чек-листа и анализа, но не поднесува барање автономно.","warn"),rawDetails(data));
+}
+async function renderHandoff(){
+  const host=$("handoffResult");
+  loading(host,"Се вчитува Human Handoff протоколот…");
+  const {status,data}=await api("/api/public-legal/services");
+  if(status>=400||!data.ok){renderError(host,data,status);return}
+  clear(host);
+  host.append(
+    notice("Правило: Access is not mandate. Отворањето на официјална услуга не е овластување AI Advokat да дејствува наместо корисникот.","warn"),
+    el("div",{class:"timeline"},[
+      el("div",{class:"timeline-item"},[el("strong",{text:"1 · Идентификувај правно релевантен документ"}),el("span",{text:"Избери уверение, потврда, имотен лист, лиценца, дозвола или друга официјална услуга."})]),
+      el("div",{class:"timeline-item"},[el("strong",{text:"2 · Провери правна основа и рок"}),el("span",{text:"Пред поднесување провери закон, подзаконски акт, надлежност, рок и потребни прилози."})]),
+      el("div",{class:"timeline-item"},[el("strong",{text:"3 · Провери eID"}),el("span",{text:data.eid?.principle||"Провери го бараното eID ниво за конкретната услуга."}),sourceLink(data.eid?.infoUrl,"Официјални eID информации")]),
+      el("div",{class:"timeline-item"},[el("strong",{text:"4 · Human Gate"}),el("span",{text:"Човекот ги проверува фактите, прилозите, трошоците и последиците пред поднесување."})]),
+      el("div",{class:"timeline-item"},[el("strong",{text:"5 · Официјално поднесување"}),el("span",{text:"Корисникот/овластеното лице ја завршува постапката на официјалниот портал или пред надлежната институција."})])
+    ]),
+    rawDetails(data)
+  );
+}
+
 function bind(){
   qa(".module-tab").forEach(b=>b.addEventListener("click",()=>switchModule(b.dataset.module)));
   $("instrumentSelect").addEventListener("change",()=>selectInstrument($("instrumentSelect").value));
@@ -663,6 +778,8 @@ function bind(){
   $("runCases").onclick=()=>runCases().catch(e=>renderError($("casesResult"),{message:e.message},500));
   $("runCalendar").onclick=()=>runCalendar().catch(e=>renderError($("calendarResult"),{message:e.message},500));
   $("runDiff").onclick=()=>runDiff().catch(e=>renderError($("diffResult"),{message:e.message},500));
+  $("runOpenData").onclick=()=>runOpenData().catch(e=>renderError($("openDataResult"),{message:e.message},500));
+  $("runServices").onclick=()=>runServices().catch(e=>renderError($("servicesResult"),{message:e.message},500));
 }
 function initDates(){
   const now=new Date(),iso=d=>d.toISOString().slice(0,10);
@@ -676,6 +793,9 @@ function initEmpty(){
   empty($("casesResult"),"Article ↔ Case-Law","Изберете член за reviewed official судска практика.");
   empty($("calendarResult"),"Legal Calendar","Изберете период за стапување во сила, примена и правно дејство.");
   empty($("diffResult"),"Consolidation Diff","Изберете две консолидирани верзии за споредба.");
+  empty($("openDataResult"),"Open Data Legal Evidence","Пребарај правно релевантни јавни податоци од data.gov.mk.");
+  empty($("servicesResult"),"Official e‑Services","Филтрирај само услуги со правна/доказна или административно-правна вредност.");
+  empty($("handoffResult"),"eID + Human Handoff","Отвори го модулот за безбеден премин од анализа кон официјален човечки чекор.");
 }
 async function initCapabilities(){
   try{
@@ -688,7 +808,7 @@ async function init(){
   bind();initDates();initEmpty();initCapabilities();
   const p=new URLSearchParams(location.search);if(p.get("article"))$("article").value=p.get("article");
   await loadInstruments();
-  const module=p.get("module");if(["time","bylaws","cases","calendar","diff"].includes(module))switchModule(module);
+  const module=p.get("module");if(["time","bylaws","cases","calendar","diff","opendata","services","handoff"].includes(module)){switchModule(module);if(module==="handoff")renderHandoff().catch(e=>renderError($("handoffResult"),{message:e.message},500));}
 }
 init();
 })();
