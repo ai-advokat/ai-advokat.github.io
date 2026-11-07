@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>AI Advokat · Hybrid Legal Intelligence R1</title>
+<style>
+:root{--navy:#0b2239;--navy2:#153a5d;--gold:#c8a45d;--cream:#f7f5ef;--ink:#1d2732;--muted:#687787;--line:#d9e1e7;--panel:#fff;--ok:#24664c;--warn:#8a5a00}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:linear-gradient(115deg,var(--navy),var(--navy2));color:white;border-bottom:3px solid var(--gold)}header .in{max-width:1300px;margin:auto;padding:18px 22px;display:flex;justify-content:space-between;gap:18px;align-items:center}
+h1{font-size:20px;margin:0}.sub{font-size:12px;color:#d6e0e9}.badge{border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:6px 10px;font-size:11px}
+.wrap{max-width:1300px;margin:auto;padding:20px}.gate{padding:12px 14px;border:1px solid #e4ca8d;border-left:5px solid var(--gold);background:#fff9e9;border-radius:10px;margin-bottom:16px}
+.toolbar,.grid{display:grid;gap:14px}.toolbar{grid-template-columns:2fr 1fr 1fr 1fr}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 8px 25px rgba(11,34,57,.05)}.head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}.head h2{font-size:15px;margin:0}.body{padding:14px}
+label{display:block;font-size:11px;font-weight:750;color:var(--muted);margin-bottom:5px}input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font:inherit}button,a.btn{border:0;border-radius:8px;padding:9px 11px;font-weight:750;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}.primary{background:var(--navy);color:white}.secondary{background:#eef2f5;color:var(--ink);border:1px solid var(--line)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}pre{white-space:pre-wrap;word-break:break-word;background:#0d1822;color:#dbe6ef;border-radius:9px;padding:11px;min-height:120px;max-height:420px;overflow:auto;font:11px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace}.wide{grid-column:1/-1}.status{font-size:11px;color:var(--muted)}@media(max-width:900px){.toolbar,.grid{grid-template-columns:1fr}.wide{grid-column:auto}}
+</style>
+</head>
+<body>
+<header><div class="in"><div><h1>AI Advokat · Hybrid Legal Intelligence</h1><div class="sub">Article Time Machine · Law↔Bylaw · Article↔Case Law · Legal Calendar · Visual Diff</div></div><div class="badge">R1 · SOURCE-FIRST · HUMAN GATE</div></div></header>
+<main class="wrap">
+<div class="gate"><b>Human Gate.</b> Ова е read-only правно-интелигентен слој. Не прогласува важечко право, не менува corpus и не врши автономно правно дејствие. Secondary signals не можат да станат authority без official binding.</div>
+<section class="card" style="margin-bottom:14px"><div class="body toolbar">
+<div><label>Canonical instrument key</label><input id="instrument" value="mk:zi" placeholder="mk:zi"></div>
+<div><label>Член</label><input id="article" value="18" placeholder="18"></div>
+<div><label>Референтен датум</label><input id="date" type="date"></div>
+<div class="actions" style="align-items:end"><a class="btn secondary" href="/consolidator/">Консолидатор</a><a class="btn secondary" href="/bot/">AI Advokat</a></div>
+</div></section>
+
+<div class="grid">
+<section class="card"><div class="head"><h2>1 · Article Time Machine</h2><span class="status">точен член на точен датум</span></div><div class="body"><button class="primary" id="runTime">Провери историска верзија</button><pre id="outTime">Нема резултат.</pre></div></section>
+
+<section class="card"><div class="head"><h2>2 · Law ↔ Bylaw Graph</h2><span class="status">делегирано законодавство</span></div><div class="body"><button class="primary" id="runBylaws">Најди подзаконски акти</button><pre id="outBylaws">Нема резултат.</pre></div></section>
+
+<section class="card"><div class="head"><h2>3 · Article ↔ Case-Law</h2><span class="status">official + dual-reviewed only</span></div><div class="body"><button class="primary" id="runCases">Најди практика по член</button><pre id="outCases">Нема резултат.</pre></div></section>
+
+<section class="card"><div class="head"><h2>4 · Legal Effective-Date Calendar</h2><span class="status">entry / application / legal effect</span></div><div class="body"><div class="two"><div><label>Од</label><input id="from" type="date"></div><div><label>До</label><input id="to" type="date"></div></div><button class="primary" id="runCalendar">Прикажи правен календар</button><pre id="outCalendar">Нема резултат.</pre></div></section>
+
+<section class="card wide"><div class="head"><h2>5 · Visual Consolidation Diff</h2><span class="status">ADDED · REMOVED · MODIFIED · UNCHANGED</span></div><div class="body"><div class="two"><div><label>Before consolidated-text ID</label><input id="beforeId" inputmode="numeric" placeholder="ID"></div><div><label>After consolidated-text ID</label><input id="afterId" inputmode="numeric" placeholder="ID"></div></div><button class="primary" id="runDiff">Спореди верзии</button><pre id="outDiff">Нема резултат.</pre></div></section>
+</div>
+</main>
+<script>
+(()=>{"use strict";
+const $=id=>document.getElementById(id);
+const today=new Date(),iso=d=>d.toISOString().slice(0,10);
+$("date").value=iso(today);
+const from=new Date(today);from.setDate(from.getDate()-30);$("from").value=iso(from);
+const to=new Date(today);to.setDate(to.getDate()+90);$("to").value=iso(to);
+
+async function run(out,url){
+  const el=$(out);el.textContent="Се вчитува…";
+  try{
+    const r=await fetch(url,{headers:{accept:"application/json"},cache:"no-store"});
+    const d=await r.json().catch(()=>({ok:false,error:"invalid_json_response"}));
+    el.textContent=JSON.stringify({httpStatus:r.status,...d},null,2);
+  }catch(e){el.textContent=JSON.stringify({ok:false,error:String(e?.message||e)},null,2)}
+}
+const enc=v=>encodeURIComponent(String(v||"").trim());
+$("runTime").onclick=()=>run("outTime","/api/hybrid/article-at-date?instrument="+enc($("instrument").value)+"&article="+enc($("article").value)+"&date="+enc($("date").value));
+$("runBylaws").onclick=()=>run("outBylaws","/api/hybrid/bylaws?instrument="+enc($("instrument").value)+"&article="+enc($("article").value));
+$("runCases").onclick=()=>run("outCases","/api/hybrid/case-law?instrument="+enc($("instrument").value)+"&article="+enc($("article").value));
+$("runCalendar").onclick=()=>run("outCalendar","/api/hybrid/calendar?from="+enc($("from").value)+"&to="+enc($("to").value));
+$("runDiff").onclick=()=>run("outDiff","/api/hybrid/diff?instrument="+enc($("instrument").value)+"&beforeId="+enc($("beforeId").value)+"&afterId="+enc($("afterId").value));
+})();
+</script>
+</body></html>
