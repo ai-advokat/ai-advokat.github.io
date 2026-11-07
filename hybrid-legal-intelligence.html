@@ -155,7 +155,7 @@ a{color:inherit}
 .guide-intro h3{margin:0 0 7px;font-size:20px}.guide-intro p{margin:0;color:var(--ink-700);font-size:13px}
 .guide-flow{border:1px solid #e5d6b5;background:var(--cream-50);border-radius:13px;padding:13px 14px;font-size:12px}
 .guide-flow strong{display:block;margin-bottom:4px;color:var(--navy-900)}
-.guide-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.guide-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .guide-step{border:1px solid var(--line);border-radius:13px;background:#fff;padding:13px;min-width:0}
 .guide-step-no{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:8px;background:var(--navy-900);color:var(--gold-300);font-size:11px;font-weight:900;margin-bottom:8px}
 .guide-step h4{margin:0 0 5px;font-size:13px}.guide-step p{margin:0;color:var(--ink-700);font-size:11px;line-height:1.55}
@@ -211,7 +211,7 @@ a{color:inherit}
   <section class="hero">
     <div class="hero-main">
       <div class="eyebrow">Lawyer View · governed research surface</div>
-      <h2>Осум правни функции. Еден source-first адвокатски workflow.</h2>
+      <h2>Девет правни функции. Еден source-first адвокатски workflow.</h2>
       <p>Од важечка редакција и подзаконски акти, преку судска практика и јавни докази, до официјален административен следен чекор. Секој резултат останува врзан за provenance и Human Gate.</p>
       <div class="hero-badges">
         <span class="chip ok">Read-only</span>
@@ -233,16 +233,16 @@ a{color:inherit}
   </section>
 
   <details class="guide-card" id="guide" open>
-    <summary><span>Водилка · Како функционира Hybrid Legal Intelligence</span><span class="chip info">8 функции · Source-first · Human Gate</span></summary>
+    <summary><span>Водилка · Како функционира Hybrid Legal Intelligence</span><span class="chip info">9 функции · Source-first · Human Gate</span></summary>
     <div class="guide-body">
       <div class="guide-intro">
         <div>
           <h3>Од правно прашање до проверен човечки следен чекор</h3>
-          <p>Не мора секогаш да ги користите сите осум модули. Почнете од правното прашање, изберете закон/член/датум кога е релевантно, а потоа движете се само низ чекорите што му се потребни на конкретниот предмет.</p>
+          <p>Не мора секогаш да ги користите сите девет модули. Почнете од правното прашање, изберете закон/член/датум кога е релевантно, а потоа движете се само низ чекорите што му се потребни на конкретниот предмет.</p>
         </div>
         <div class="guide-flow">
           <strong>Препорачан workflow</strong>
-          Time Machine → Bylaw → Case-Law → Calendar → Diff → Open Data Evidence → Official e‑Services → Human Handoff
+          Time Machine → Bylaw → Case-Law → Calendar → Diff → Open Data Evidence → Official e‑Services → Human Handoff → Gold Set Review Gate
         </div>
       </div>
 
@@ -255,6 +255,7 @@ a{color:inherit}
         <article class="guide-step"><span class="guide-step-no">06</span><h4>Open Data Evidence</h4><p>Пребарајте правно релевантни јавни сетови од data.gov.mk. Користете ги за discovery, фактичка проверка и доказна трага, а underlying official record проверете го пред правен заклучок.</p></article>
         <article class="guide-step"><span class="guide-step-no">07</span><h4>Official e‑Services</h4><p>Најдете официјална услуга што создава правно релевантен документ или административен чекор — уверение, имотен лист, даночна потврда, лиценца, дозвола и слично.</p></article>
         <article class="guide-step"><span class="guide-step-no">08</span><h4>eID + Human Handoff</h4><p>Проверете eID услови, прилози, надлежност и рокови. AI Advokat подготвува и насочува; <b>човекот го прави финалното поднесување</b> на официјалниот портал.</p></article>
+        <article class="guide-step"><span class="guide-step-no">09</span><h4>Gold Set Review Gate</h4><p>За candidate судски записи: двојна boundary/source проверка, посебен правен ревизор, warning/anomaly disposition, provenance manifest и Human Gate evidence pack. Модулот <b>не може сам да објави или да промовира reviewed authority</b>.</p></article>
       </div>
 
       <div class="guide-rule" aria-label="Правила за правна тежина">
@@ -308,6 +309,7 @@ a{color:inherit}
     <button class="module-tab" data-module="opendata" type="button"><span class="module-no">06</span><span class="module-name">Open Data Evidence</span><span class="module-desc">Јавни податоци → доказ</span></button>
     <button class="module-tab" data-module="services" type="button"><span class="module-no">07</span><span class="module-name">Official e‑Services</span><span class="module-desc">Правен следен чекор</span></button>
     <button class="module-tab" data-module="handoff" type="button"><span class="module-no">08</span><span class="module-name">Human Handoff</span><span class="module-desc">eID → човек → поднесување</span></button>
+    <button class="module-tab" data-module="gold" type="button"><span class="module-no">09</span><span class="module-name">Gold Set Review Gate</span><span class="module-desc">candidate → Human Gate</span></button>
   </nav>
 
   <section class="panel active" data-panel="time">
@@ -394,6 +396,26 @@ a{color:inherit}
         <div class="metric"><small>Чекор 4</small><strong>Поднеси на официјален портал</strong></div>
       </div>
       <div class="result-host" id="handoffResult" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="gold">
+    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">09</div><div><h3>Gold Set Review Gate</h3><p>Контролиран премин од candidate/discovery запис кон Human Gate-ready evidence pack со три независни човечки улоги.</p></div></div><span class="chip warn">Publication NO-GO · Human-only promotion</span></div>
+    <div class="panel-body">
+      <div class="metrics">
+        <div class="metric"><small>Layer 1</small><strong>Boundary Reviewer 1</strong></div>
+        <div class="metric"><small>Layer 2</small><strong>Boundary Reviewer 2</strong></div>
+        <div class="metric"><small>Layer 3</small><strong>Separate Legal Reviewer</strong></div>
+        <div class="metric"><small>Final</small><strong>External Human Gate</strong></div>
+      </div>
+      <div class="result-host">
+        <div class="notice warn"><b>Hard boundary:</b> дури и HUMAN_GATE_READY запис останува <code>publication_approved:false</code> и <code>reviewed_authority_promoted:false</code>. Финалното одобрување е надвор од offline review модулот.</div>
+        <div class="case-card">
+          <div class="case-top"><div><div class="eyebrow">PARAGRAF · F0-2Y · v2.0</div><div class="case-title">Gold Set Review Gate</div></div><span class="chip ok">browser-local · no server upload</span></div>
+          <p>Вклучува двојна изворна проверка, трет независен правен ревизор, reviewer references, conflict declarations, warning/source-anomaly queue, SHA-256 manifest, hardened JSON/CSV import-export и Human Gate pack.</p>
+          <p><a class="btn primary" href="/gold-set-review-gate.html">Отвори Gold Set Review Gate →</a></p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -867,7 +889,7 @@ async function init(){
   bind();initDates();initEmpty();initCapabilities();
   const p=new URLSearchParams(location.search);if(p.get("article"))$("article").value=p.get("article");
   await loadInstruments();
-  const module=p.get("module");if(["time","bylaws","cases","calendar","diff","opendata","services","handoff"].includes(module)){switchModule(module);if(module==="handoff")renderHandoff().catch(e=>renderError($("handoffResult"),{message:e.message},500));}
+  const module=p.get("module");if(["time","bylaws","cases","calendar","diff","opendata","services","handoff","gold"].includes(module)){switchModule(module);if(module==="handoff")renderHandoff().catch(e=>renderError($("handoffResult"),{message:e.message},500));}
 }
 init();
 })();
