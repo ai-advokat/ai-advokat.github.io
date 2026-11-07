@@ -101,6 +101,15 @@ import {
   versionStatusWarning
 } from "./corpus-versions.js";
 import {
+  HYBRID_LEGAL_INTELLIGENCE_VERSION,
+  articleTimeMachine,
+  buildDelegatedLegislationGraph,
+  buildArticleCaseLawGraph,
+  buildLegalEffectiveDateCalendar,
+  visualConsolidationDiff
+} from "./hybrid-legal-intelligence.js";
+
+import {
   attachLegalStatusOverlays,
   legalStatusOverlaysForArticles
 } from "./legal-status-overlays.js";
@@ -8666,6 +8675,192 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   });
 }
 
+
+async function handleHybridLegalIntelligence(request,env,url){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  if(!env?.DB) return json(request,{ok:false,error:"database_not_ready"},503);
+
+  const path=url.pathname;
+  const instrument=cleanQuery(url.searchParams.get("instrument")||"",160);
+  const article=cleanQuery(url.searchParams.get("article")||"",40);
+
+  try{
+    if(path==="/api/hybrid/capabilities"){
+      return json(request,{
+        ok:true,
+        version:HYBRID_LEGAL_INTELLIGENCE_VERSION,
+        capabilities:[
+          "article_time_machine",
+          "law_bylaw_graph",
+          "article_case_law_graph",
+          "legal_effective_date_calendar",
+          "visual_consolidation_diff"
+        ],
+        authorityBoundary:{
+          officialSourceFirst:true,
+          secondarySignalsDiscoveryOnly:true,
+          autonomousCurrentLawPromotion:false,
+          humanGateRequired:true
+        }
+      });
+    }
+
+    if(path==="/api/hybrid/article-at-date"){
+      const date=String(url.searchParams.get("date")||"").trim();
+      if(!instrument||!article||!date) return json(request,{ok:false,error:"instrument_article_date_required"},400);
+      const rows=await env.DB.prepare(
+        `SELECT li.canonical_key AS instrument_key,
+                lav.article_number,lav.article_number_normalized,lav.article_heading,lav.article_text,
+                lav.valid_from,lav.valid_to,lav.source_issue_number,lav.source_issue_date,
+                lav.source_url,lav.source_sha256,lav.human_review_status,
+                lav.instrument_version_id,
+                v.version_label,
+                v.valid_from AS version_valid_from,
+                v.application_from AS version_application_from,
+                v.valid_to AS version_valid_to,
+                v.human_review_status AS version_human_review_status
+           FROM legal_article_versions lav
+           JOIN legal_instruments li ON li.id=lav.instrument_id
+           LEFT JOIN instrument_versions v ON v.id=lav.instrument_version_id
+          WHERE li.canonical_key=?
+            AND lav.article_number_normalized=?
+          ORDER BY COALESCE(v.application_from,v.valid_from,lav.valid_from,'') ASC`
+      ).bind(instrument,article.normalize("NFKC").toLocaleLowerCase("mk").replace(/[–—−]/g,"-").replace(/^член(?:от|ови|овите)?\s*/u,"").replace(/\s+/g,"")).all();
+      const result=articleTimeMachine(rows.results||[],{
+        instrumentKey:instrument,
+        articleNumber:article,
+        referenceDate:date
+      });
+      return json(request,{...result,version:HYBRID_LEGAL_INTELLIGENCE_VERSION},result.ok?200:409);
+    }
+
+    if(path==="/api/hybrid/bylaws"){
+      if(!instrument) return json(request,{ok:false,error:"instrument_required"},400);
+      const params=[instrument];
+      let sql=`SELECT id,parent_instrument_key,basis_article,child_instrument_key,
+                      child_title AS bylaw_title,act_type,source_url,source_issue_number,
+                      publication_date,effective_from,application_from,authority_status,
+                      official_source,status,human_review_status
+                 FROM legal_delegated_legislation_links
+                WHERE parent_instrument_key=?`;
+      if(article){
+        sql+=" AND basis_article=?";
+        params.push(article.normalize("NFKC").toLocaleLowerCase("mk").replace(/[–—−]/g,"-").replace(/^член(?:от|ови|овите)?\s*/u,"").replace(/\s+/g,""));
+      }
+      sql+=" ORDER BY basis_article,publication_date DESC,id DESC LIMIT 300";
+      const rows=await env.DB.prepare(sql).bind(...params).all();
+      const graph=buildDelegatedLegislationGraph(rows.results||[],{instrumentKey:instrument});
+      return json(request,{ok:true,...graph});
+    }
+
+    if(path==="/api/hybrid/case-law"){
+      if(!instrument||!article) return json(request,{ok:false,error:"instrument_and_article_required"},400);
+      const normalized=article.normalize("NFKC").toLocaleLowerCase("mk").replace(/[–—−]/g,"-").replace(/^член(?:от|ови|овите)?\s*/u,"").replace(/\s+/g,"");
+      const rows=await env.DB.prepare(
+        `SELECT cl.id,cl.case_title,cl.court,cl.case_number,cl.jurisdiction,
+                cl.decision_date,cl.outcome_summary,cl.reasoning_summary,
+                cl.source_url,s.url AS registry_source_url,s.source_status,
+                cl.finality_status,cl.human_review_status,
+                cla.decision_type,cla.precedential_weight,cla.domestic_articles,
+                cla.human_review_status AS authority_review_status,
+                l.instrument_key,l.article_number,
+                1 AS official_binding_verified,
+                (SELECT GROUP_CONCAT(h.proposition,' || ')
+                   FROM case_law_holdings h
+                  WHERE h.case_law_id=cl.id
+                    AND h.human_review_status IN ('approved','reviewed')) AS reviewed_holdings
+           FROM legal_article_case_law_links l
+           JOIN case_law cl ON cl.id=l.case_law_id
+           JOIN case_law_authority cla ON cla.case_law_id=cl.id
+           LEFT JOIN sources s ON s.id=cl.source_id
+          WHERE l.instrument_key=?
+            AND l.article_number=?
+            AND l.source_binding_status IN ('reviewed','approved')
+            AND l.human_review_status IN ('reviewed','approved')
+          ORDER BY cl.decision_date DESC,cl.id DESC
+          LIMIT 200`
+      ).bind(instrument,normalized).all();
+      const records=(rows.results||[]).map(r=>({
+        ...r,
+        domestic_articles:r.domestic_articles||r.article_number,
+        source_status:r.source_status||"official"
+      }));
+      const graph=buildArticleCaseLawGraph(records,{instrumentKey:instrument,articleNumber:normalized});
+      return json(request,{ok:true,...graph});
+    }
+
+    if(path==="/api/hybrid/calendar"){
+      const from=String(url.searchParams.get("from")||"").trim();
+      const to=String(url.searchParams.get("to")||"").trim();
+      if(!from||!to) return json(request,{ok:false,error:"calendar_from_to_required"},400);
+      const rows=await env.DB.prepare(
+        `SELECT id,instrument_key,instrument_title,act_type,event_type,event_date,
+                source_url,source_issue_number,source_sha256,provenance_state,human_review_status
+           FROM legal_effective_date_events
+          WHERE event_date>=? AND event_date<=?
+          ORDER BY event_date,instrument_title,id
+          LIMIT 1000`
+      ).bind(from,to).all();
+      const records=(rows.results||[]).map(r=>{
+        const x={...r};
+        if(r.event_type==="PUBLICATION")x.publication_date=r.event_date;
+        if(r.event_type==="ENTRY_INTO_FORCE")x.entry_into_force_date=r.event_date;
+        if(r.event_type==="APPLICATION_START")x.application_from=r.event_date;
+        if(r.event_type==="APPLICATION_END")x.application_to=r.event_date;
+        if(r.event_type==="LEGAL_EFFECT")x.legal_effect_from=r.event_date;
+        return x;
+      });
+      const calendar=buildLegalEffectiveDateCalendar(records,{from,to,includePublication:true});
+      return json(request,calendar,calendar.ok?200:400);
+    }
+
+    if(path==="/api/hybrid/diff"){
+      const beforeId=Number(url.searchParams.get("beforeId")||0);
+      const afterId=Number(url.searchParams.get("afterId")||0);
+      if(!instrument||!Number.isInteger(beforeId)||beforeId<1||!Number.isInteger(afterId)||afterId<1){
+        return json(request,{ok:false,error:"instrument_beforeId_afterId_required"},400);
+      }
+      const meta=await env.DB.prepare(
+        `SELECT id,canonical_instrument_key,title,reference_date,consolidation_kind,human_review_status
+           FROM gazette_consolidated_texts
+          WHERE canonical_instrument_key=? AND id IN (?,?)
+          ORDER BY id`
+      ).bind(instrument,beforeId,afterId).all();
+      const byId=new Map((meta.results||[]).map(x=>[Number(x.id),x]));
+      if(!byId.has(beforeId)||!byId.has(afterId)) return json(request,{ok:false,error:"consolidated_version_not_found"},404);
+      const rows=await env.DB.prepare(
+        `SELECT consolidated_text_id,article_number,article_number_normalized,article_heading,
+                article_text,derivation_trace,last_source_issue_number,last_source_issue_date,
+                human_review_status
+           FROM gazette_consolidated_articles
+          WHERE consolidated_text_id IN (?,?)
+          ORDER BY consolidated_text_id,article_number_normalized`
+      ).bind(beforeId,afterId).all();
+      const decorate=(id)=>(rows.results||[]).filter(r=>Number(r.consolidated_text_id)===id).map(r=>({
+        ...r,
+        instrument_key:instrument,
+        source_url:null
+      }));
+      const diff=visualConsolidationDiff(decorate(beforeId),decorate(afterId),{
+        instrumentKey:instrument,
+        beforeLabel:byId.get(beforeId).reference_date+" · "+byId.get(beforeId).consolidation_kind,
+        afterLabel:byId.get(afterId).reference_date+" · "+byId.get(afterId).consolidation_kind
+      });
+      return json(request,{ok:true,...diff});
+    }
+
+    return json(request,{ok:false,error:"hybrid_endpoint_not_found"},404);
+  }catch(error){
+    console.error("hybrid_legal_intelligence_error",String(error?.message||error).slice(0,240));
+    return json(request,{
+      ok:false,
+      error:"hybrid_legal_intelligence_unavailable",
+      message:"Hybrid Legal Intelligence data layer is not available or has not passed its schema/source gates.",
+      humanGateRequired:true
+    },503);
+  }
+}
+
 async function handleAssistant(request, env, url) {
   // POST only: GET/HEAD can be triggered by prefetchers, link scanners and crawlers,
   // and must never reach quota reservation or the AI provider.
@@ -10105,6 +10300,7 @@ export default {
       }, ready ? 200 : 503);
     }
 
+    if (url.pathname.startsWith("/api/hybrid/")) return handleHybridLegalIntelligence(request,env,url);
     if (url.pathname === "/api/capabilities") return handleCapabilities(request, env);
     if (url.pathname === "/api/orchestrator") return handleOrchestratorArchitecture(request, env);
     if (url.pathname === "/api/orchestrator/plan") return handleOrchestratorPlan(request, env);
