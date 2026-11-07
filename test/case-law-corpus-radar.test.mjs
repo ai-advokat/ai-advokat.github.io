@@ -80,7 +80,7 @@ test("Case-Law Radar has an always-visible Macedonian guide and routes Pages to 
   assert.match(page,/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
   assert.match(page,/location\.hostname==="ai-advokat\.github\.io"/);
   assert.match(page,/API_URL=API_ORIGIN\+"\/api\/case-law\/curation-plan"/);
-  assert.match(page,/Live API недостапен/);
+  assert.match(page,/Live API моментално не се вчитува/);
   assert.match(page,/id="retry"/);
 });
 
@@ -118,11 +118,11 @@ test("Case-Law Radar R2 keeps the workbench functional offline and uses a narrow
   assert.match(page,/Offline mode · static records/);
   assert.match(page,/source:"case-law-radar"/);
   assert.match(page,/authorityBoundary:"discovery_only"/);
-  assert.match(chat,/localConfidentialCasePrompt\(q\) && !governedRadarHandoff/);
-  assert.match(chat,/payload\.source!=="case-law-radar"/);
-  assert.match(chat,/payload\.authorityBoundary!=="discovery_only"/);
-  assert.match(chat,/selectedIds\.length>10/);
-  assert.match(chat,/send\(prompt,\{governedRadarHandoff:true\}\)/);
+  assert.match(internal,/localConfidentialCasePrompt\(q\) && !governedRadarHandoff/);
+  assert.match(internal,/payload\.source!=="case-law-radar"/);
+  assert.match(internal,/payload\.authorityBoundary!=="discovery_only"/);
+  assert.match(internal,/selectedIds\.length>10/);
+  assert.match(internal,/send\(prompt,\{governedRadarHandoff:true\}\)/);
 });
 
 test("Case-Law Radar Human Gate checklist is interactive but cannot promote database authority",()=>{
