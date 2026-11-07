@@ -27,3 +27,22 @@ test("production live-parity workflows expect the Hybrid R2 cache key",()=>{
     assert.doesNotMatch(y,/20261106-vnext-r14-toolkit-parity/);
   }
 });
+
+test("all five Hybrid modules are directly visible from both public AI Advokat shells",()=>{
+  const bot=fs.readFileSync("bot/index.html","utf8");
+  const root=fs.readFileSync("index.html","utf8");
+  const links=[
+    "module=time",
+    "module=bylaws",
+    "module=cases",
+    "module=calendar",
+    "module=diff"
+  ];
+  for(const link of links){
+    assert.equal(root.includes(link),true,"root missing "+link);
+    assert.equal(bot.includes(link),true,"bot missing "+link);
+  }
+  assert.match(root,/НОВО · Hybrid Legal Intelligence · 5 функции/);
+  assert.match(bot,/НОВО · Hybrid Legal Intelligence · 5 функции/);
+});
+
