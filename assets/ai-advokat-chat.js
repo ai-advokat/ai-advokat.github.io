@@ -1041,7 +1041,11 @@
                       ?"AI Advokat catalogue first; GPT synthesis. Проверете го конкретниот водич и официјалните правни извори."
                       :d.sourceMode==="canonical_gazette_issue_metadata_no_model"
                         ?"ЈП „Службен весник на РСМ“ · PRIMARY OFFICIAL METADATA · deterministic/no-model · не е доказ за текст на акт или тековно право."
-                        :(d.webSearchUsed===true?"External legal research · Web извори":"GPT general/proactive assistance")
+                        :d.sourceMode==="canonical_zkp_detention_articles_no_model"
+                          ?"ZKP source-first · членови 164, 165, 167, 169–174 · deterministic/no-model · Human Gate."
+                          :d.sourceMode==="deterministic_capacity_fallback_no_model"
+                            ?"Deterministic legal fallback · без model call · Human Gate required."
+                            :(d.webSearchUsed===true?"External legal research · Web извори":"AI Advokat governed response · проверете ги прикажаните извори и Human Gate.")
         });
       }else if(["confidential_case_workspace_required","public_attachment_secure_workspace_required","public_history_secure_workspace_required"].includes(d?.error)){
         scrubConfidentialPublicTurn({userIndex,assistantIndex});
