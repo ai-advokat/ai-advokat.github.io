@@ -8,7 +8,7 @@ const pagesSync=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8
 const workerSmoke=fs.readFileSync(".github/workflows/worker-runtime-live-smoke.yml","utf8");
 const rootSmoke=fs.readFileSync(".github/workflows/root-reliability-live-smoke.yml","utf8");
 
-test("Hybrid Lawyer View exposes eight governed legal workflow modules",()=>{
+test("Hybrid Lawyer View exposes nine governed legal workflow modules",()=>{
   assert.match(page,/Hybrid Legal Intelligence R2/);
   assert.match(page,/Lawyer View/);
   for(const label of [
@@ -92,14 +92,14 @@ test("Hybrid integrates official public legal evidence and e-service APIs",()=>{
   assert.match(page,/\/api\/public-legal\/services/);
   assert.match(page,/data-module="opendata"/);
   assert.match(page,/data-module="services"/);
-  assert.match(page,/data-module="handoff"/);
+  assert.match(page,/data-module="handoff"/);\n  assert.match(page,/data-module="gold"/);\n  assert.match(page,/gold-set-review-gate\\.html/);\n  assert.match(worker,/gold_set_review_gate/);
   assert.match(worker,/open_data_legal_evidence/);
   assert.match(worker,/official_e_service_navigator/);
   assert.match(worker,/eid_human_handoff/);
   assert.match(page,/No autonomous submission/);
 });
 
-test("Hybrid Lawyer View embeds an eight-step operating guide",()=>{
+test("Hybrid Lawyer View embeds a nine-step operating guide",()=>{
   assert.match(page,/id="guide"/);
   assert.match(page,/Водилка · Како функционира Hybrid Legal Intelligence/);
   assert.match(page,/Препорачан workflow/);
@@ -107,7 +107,7 @@ test("Hybrid Lawyer View embeds an eight-step operating guide",()=>{
   assert.match(page,/Reviewed authority/);
   assert.match(page,/Discovery/);
   assert.match(page,/Human Gate/);
-  assert.equal((page.match(/class="guide-step"/g)||[]).length,8);
+  assert.equal((page.match(/class="guide-step"/g)||[]).length,9);
   assert.match(page,/Брз пример:/);
   assert.match(page,/href="#guide"/);
 });
