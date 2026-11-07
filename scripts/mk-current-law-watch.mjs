@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
 
-export const CURRENT_LAW_WATCH_VERSION="AI_ADVOCAT_MK_CURRENT_LAW_WATCH_R1";
+export const CURRENT_LAW_WATCH_VERSION="AI_ADVOCAT_MK_CURRENT_LAW_WATCH_R2";
 
 const sha256=value=>crypto.createHash("sha256").update(value).digest("hex");
 const compact=value=>String(value||"")
@@ -95,8 +95,11 @@ export function classifyCandidate({source,anchor,instruments,keywords}){
     url:anchor.url,
     legal_stage:sourceRole==="prepublication_early_warning" ? "LEGISLATIVE_EARLY_WARNING" :
       sourceRole==="publication_provenance_primary" ? "PUBLISHED_SOURCE_CANDIDATE" :
+      sourceRole==="secondary_corroboration_signal" ? "SECONDARY_CHANGE_SIGNAL" :
       "OFFICIAL_VERSION_STATUS_SIGNAL",
-    current_law_authority:source.authority_for_current_law===true,
+    current_law_authority:source.authority_for_current_law===true && sourceRole!=="secondary_corroboration_signal",
+    official_binding_required:sourceRole==="secondary_corroboration_signal",
+    retrieval_allowed:sourceRole!=="secondary_corroboration_signal",
     automatic_promotion_allowed:false,
     human_gate_required:true
   };
@@ -205,7 +208,8 @@ export async function collectSnapshot(config){
       candidates:dedup.length,
       early_warning:dedup.filter(x=>x.legal_stage==="LEGISLATIVE_EARLY_WARNING").length,
       published_candidates:dedup.filter(x=>x.legal_stage==="PUBLISHED_SOURCE_CANDIDATE").length,
-      version_signals:dedup.filter(x=>x.legal_stage==="OFFICIAL_VERSION_STATUS_SIGNAL").length
+      version_signals:dedup.filter(x=>x.legal_stage==="OFFICIAL_VERSION_STATUS_SIGNAL").length,
+      secondary_signals:dedup.filter(x=>x.legal_stage==="SECONDARY_CHANGE_SIGNAL").length
     }
   };
 }
@@ -272,6 +276,7 @@ export function buildHumanGatePacket(snapshot,diff){
     workflow:[
       "Verify the originating official source and exact item identity.",
       "If this is a Sobranie signal, treat it only as legislative early warning until official publication is identified.",
+      "If this is an Akademik/DeJure secondary signal, do not ingest or consolidate its text; bind the change to Sobranie, Official Gazette or LDBIS first.",
       "Bind the exact Official Gazette issue/document and SHA-256 before parsing amendment effects.",
       "Parse amendment events deterministically; unresolved operations STOP the pipeline.",
       "Generate only a WORKING/EDITORIAL consolidation candidate.",
