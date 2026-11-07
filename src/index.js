@@ -26,6 +26,12 @@ import {
   formatZkpJudgmentTaxonomyAnswer
 } from "./zkp-judgment-taxonomy.js";
 import {
+  ZKP_DETENTION_APPEAL_VERSION,
+  ZKP_DETENTION_APPEAL_ARTICLES,
+  isZkpDetentionAppealRequest,
+  formatZkpDetentionAppealAnswer
+} from "./zkp-detention-appeal.js";
+import {
   LEGAL_RETRIEVAL_ROUTER_VERSION,
   legalRetrievalPlan
 } from "./legal-retrieval-router.js";
@@ -3049,6 +3055,34 @@ async function loadInstrumentArticlesByNumbers(env,instrumentId,versionId,number
       LIMIT 24`
   ).bind(instrumentId,versionId??null,...wanted).all();
   return result.results??[];
+}
+
+async function zkpDetentionAppealFastLane(env,q){
+  if(!isZkpDetentionAppealRequest(q)) return null;
+  const instrument=await getInstrument(env,"mk:zkp");
+  if(!instrument) return {ok:false,error:"zkp_detention_instrument_not_found"};
+  const decision=await resolveInstrumentVersion(env,instrument.id,{date:null});
+  if(!decision.ok) return {ok:false,error:decision.error||"zkp_detention_version_unresolved",decision,instrument};
+  const rows=await loadInstrumentArticlesByNumbers(env,instrument.id,decision.versionId,ZKP_DETENTION_APPEAL_ARTICLES);
+  const articles=rows.map(row=>attachArticleGovernance(
+    "mk:zkp",
+    attachReviewedArticleRepresentation("mk:zkp",normalizeArticle(row),{referenceDate:null}),
+    {referenceDate:null}
+  ));
+  const answer=formatZkpDetentionAppealAnswer(instrument,articles);
+  if(!answer) return {ok:false,error:"zkp_detention_source_gap",instrument,decision,articleCount:articles.length};
+  const versionInfo=summarizeVersion(decision.version,articles.length);
+  const legalSources=articles.map(article=>({
+    title:String(instrument.title||"Закон за кривичната постапка")+" · член "+String(article.articleNumber||""),
+    articleNumber:String(article.articleNumber||""),
+    url:String(article.sourceUrl||instrument.canonical_source_url||""),
+    status:String(article.status||"unknown"),
+    humanReviewStatus:String(article.humanReviewStatus||"pending"),
+    version:String(versionInfo.label||"unknown"),
+    versionHumanReviewStatus:String(versionInfo.humanReviewStatus||"pending"),
+    relation:"statutory_detention_appeal_exact"
+  }));
+  return {ok:true,answer,instrument,versionInfo,legalSources};
 }
 
 async function zkpJudgmentTaxonomyFastLane(env,q){
@@ -6841,6 +6875,39 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         quotaConsumed:false
       },503);
     }
+  }
+
+  const detentionAppealFastLane=await zkpDetentionAppealFastLane(env,routingQuery);
+  if(detentionAppealFastLane){
+    if(!detentionAppealFastLane.ok){
+      return json(request,{
+        ok:false,
+        error:detentionAppealFastLane.error,
+        message:"Жалбата за притвор не е пуштена како generic AI draft затоа што недостига bounded source evidence за точните ZKP одредби. Проверете го governed corpus и обидете се повторно.",
+        providerCalled:false,
+        quotaConsumed:false,
+        retrievalRouterVersion:LEGAL_RETRIEVAL_ROUTER_VERSION
+      },503);
+    }
+    return json(request,{
+      ok:true,
+      answer:detentionAppealFastLane.answer,
+      provider:"canonical_corpus_no_model",
+      model:null,
+      mode:"source_first_work_product",
+      displayMode:"canonical_zkp_detention_appeal",
+      sourceMode:"canonical_zkp_detention_articles_no_model",
+      webSearchUsed:false,
+      legalSources:detentionAppealFastLane.legalSources,
+      caseLawSources:[],
+      guideSources:[],
+      publicationSources:[],
+      sources:[],
+      retrievalRouterVersion:LEGAL_RETRIEVAL_ROUTER_VERSION,
+      performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+      humanGate:"ZKP source-first detention appeal work product. Verify the concrete decision, procedural phase, service time, remedy instruction, facts and any cited case law before filing.",
+      canonicalDetentionAppealVersion:ZKP_DETENTION_APPEAL_VERSION
+    });
   }
 
   const taxonomyFastLane=await zkpJudgmentTaxonomyFastLane(env,routingQuery);
