@@ -1,0 +1,184 @@
+name: Hybrid Legal Intelligence R1 production activation
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/hybrid-r1-production-activation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hybrid-r1-production-activation
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+
+    steps:
+      - name: Checkout exact main revision
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install pinned repository dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify Human Gate release contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --check src/index.js
+          node --check src/hybrid-legal-intelligence.js
+          node --test test/hybrid-legal-intelligence-r1.test.mjs
+          npm run test:hg2-c-migration-manifest
+          node <<'NODE'
+          const fs=require("fs");
+          const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=c.d1_databases?.[0];
+          if(c.name!=="ai-advokat-github-io") throw new Error("Unexpected production Worker");
+          if(!d || d.binding!=="DB" || d.database_name!=="ai-advokat-db" || d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") {
+            throw new Error("Unexpected production D1 target");
+          }
+          const m=JSON.parse(fs.readFileSync("evidence/hg2-c/migration-manifest.json","utf8"));
+          if(m.migration_count!==52 || m.last_migration!=="migrations/0052_hybrid_legal_intelligence_r1.sql") {
+            throw new Error("HG2-C manifest does not authorize migration 0052");
+          }
+          console.log("HYBRID R1 HUMAN GATE / TARGET: PASS");
+          NODE
+
+      - name: Capture and guard production migration prestate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/hybrid-pending.txt
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER)>=51 ORDER BY CAST(version AS INTEGER); SELECT name FROM sqlite_master WHERE type='table' AND name IN ('legal_delegated_legislation_links','legal_article_case_law_links','legal_effective_date_events','legal_consolidation_diff_runs','legal_consolidation_diff_articles') ORDER BY name;"             | tee /tmp/hybrid-prestate.txt
+
+          if grep -q "0052_hybrid_legal_intelligence_r1.sql" /tmp/hybrid-pending.txt; then
+            unexpected="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/hybrid-pending.txt | grep -v '^0052_hybrid_legal_intelligence_r1\.sql$' || true)"
+            if [ -n "$unexpected" ]; then
+              echo "Unexpected pending migrations:"
+              echo "$unexpected"
+              exit 1
+            fi
+            echo "HYBRID R1 PRESTATE: 0052 PENDING AND ISOLATED"
+          else
+            if ! grep -q '"version": "52"' /tmp/hybrid-prestate.txt; then
+              echo "0052 is neither pending nor recorded as applied"
+              exit 1
+            fi
+            echo "HYBRID R1 PRESTATE: 0052 ALREADY APPLIED"
+          fi
+
+      - name: Apply migration 0052 when pending
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -q "0052_hybrid_legal_intelligence_r1.sql" /tmp/hybrid-pending.txt; then
+            npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc | tee /tmp/hybrid-apply.txt
+          else
+            echo "0052 already applied; idempotent activation continues." | tee /tmp/hybrid-apply.txt
+          fi
+
+      - name: Verify Hybrid R1 production schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/hybrid-pending-after.txt
+          if grep -q "0052_hybrid_legal_intelligence_r1.sql" /tmp/hybrid-pending-after.txt; then
+            echo "0052 remains pending after activation"
+            exit 1
+          fi
+
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT version,description FROM schema_migrations WHERE version='52'; SELECT name FROM sqlite_master WHERE type='table' AND name IN ('legal_delegated_legislation_links','legal_article_case_law_links','legal_effective_date_events','legal_consolidation_diff_runs','legal_consolidation_diff_articles') ORDER BY name;"             | tee /tmp/hybrid-schema.txt
+
+          grep -q '"version": "52"' /tmp/hybrid-schema.txt
+          for t in legal_delegated_legislation_links legal_article_case_law_links legal_effective_date_events legal_consolidation_diff_runs legal_consolidation_diff_articles; do
+            grep -q "\"name\": \"$t\"" /tmp/hybrid-schema.txt
+          done
+          echo "HYBRID R1 PRODUCTION SCHEMA: PASS"
+
+      - name: Deploy exact main Worker runtime and static assets
+        run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/hybrid-deploy.txt
+
+      - name: Verify live Hybrid R1 APIs and workbench
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=0
+          for attempt in $(seq 1 30); do
+            nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
+            if curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/api/hybrid/capabilities?activation=$nonce" -o /tmp/hybrid-capabilities.json               && curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/hybrid-legal-intelligence.html?activation=$nonce" -o /tmp/hybrid-workbench.html; then
+              if grep -q 'AI_ADVOCAT_HYBRID_LEGAL_INTELLIGENCE_R1' /tmp/hybrid-capabilities.json                 && grep -q 'Hybrid Legal Intelligence' /tmp/hybrid-workbench.html; then
+                ready=1
+                break
+              fi
+            fi
+            sleep 3
+          done
+          test "$ready" = "1"
+
+          curl -fsSL --max-time 30 "$BASE/api/hybrid/bylaws?instrument=mk:zi" -o /tmp/hybrid-bylaws.json
+          curl -fsSL --max-time 30 "$BASE/api/hybrid/calendar?from=2026-01-01&to=2026-12-31" -o /tmp/hybrid-calendar.json
+          curl -fsSL --max-time 30 "$BASE/api/hybrid/case-law?instrument=mk:zkp&article=167" -o /tmp/hybrid-case-law.json
+
+          node <<'NODE'
+          const fs=require("fs");
+          for(const p of ["/tmp/hybrid-capabilities.json","/tmp/hybrid-bylaws.json","/tmp/hybrid-calendar.json","/tmp/hybrid-case-law.json"]){
+            const d=JSON.parse(fs.readFileSync(p,"utf8"));
+            if(d.ok!==true) throw new Error("Hybrid live smoke failed: "+p+" "+JSON.stringify(d));
+          }
+          const c=JSON.parse(fs.readFileSync("/tmp/hybrid-capabilities.json","utf8"));
+          const expected=[
+            "article_time_machine",
+            "law_bylaw_graph",
+            "article_case_law_graph",
+            "legal_effective_date_calendar",
+            "visual_consolidation_diff"
+          ];
+          for(const x of expected) if(!c.capabilities?.includes(x)) throw new Error("Missing capability: "+x);
+          if(c.authorityBoundary?.autonomousCurrentLawPromotion!==false) throw new Error("Autonomous promotion boundary weakened");
+          console.log("HYBRID R1 LIVE APIs / WORKBENCH: PASS");
+          NODE
+
+      - name: Upload non-secret activation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hybrid-r1-production-activation
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/hybrid-pending.txt
+            /tmp/hybrid-prestate.txt
+            /tmp/hybrid-apply.txt
+            /tmp/hybrid-pending-after.txt
+            /tmp/hybrid-schema.txt
+            /tmp/hybrid-deploy.txt
+            /tmp/hybrid-capabilities.json
+            /tmp/hybrid-workbench.html
+            /tmp/hybrid-bylaws.json
+            /tmp/hybrid-calendar.json
+            /tmp/hybrid-case-law.json
+
+      - name: Result
+        run: |
+          echo "HYBRID LEGAL INTELLIGENCE R1: PRODUCTION ACTIVATION VERIFIED"
+          echo "FIVE CAPABILITIES: LIVE"
+          echo "CURRENT-LAW AUTHORITY PROMOTION: HUMAN GATE REQUIRED"
