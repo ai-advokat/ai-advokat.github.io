@@ -12,7 +12,7 @@ on:
       - ".github/workflows/mk-current-law-watch.yml"
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 concurrency:
@@ -107,6 +107,27 @@ jobs:
           path: |
             /tmp/current-law-watch/current-law-watch-snapshot.json
             /tmp/current-law-watch/current-law-human-gate-packet.json
+
+      - name: Publish read-only watcher status to GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          rm -rf /tmp/current-law-gh-pages
+          git worktree add --detach /tmp/current-law-gh-pages origin/gh-pages
+          mkdir -p /tmp/current-law-gh-pages/data
+          cp /tmp/current-law-watch/current-law-watch-snapshot.json /tmp/current-law-gh-pages/data/mk-current-law-watch-latest.json
+          cd /tmp/current-law-gh-pages
+          git config user.name "ai-advokat-current-law-watch"
+          git config user.email "aiadvokat16@gmail.com"
+          git add data/mk-current-law-watch-latest.json
+          if git diff --cached --quiet; then
+            echo "Published watcher snapshot already matches latest state."
+            exit 0
+          fi
+          git commit -m "data(current-law): publish read-only watch snapshot"
+          git push origin HEAD:gh-pages
+          echo "CURRENT-LAW READ-ONLY STATUS PUBLISH: PASS"
 
       - name: Write run summary
         shell: bash
