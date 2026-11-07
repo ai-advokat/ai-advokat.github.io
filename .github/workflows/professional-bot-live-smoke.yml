@@ -70,7 +70,7 @@ jobs:
           if(c.vars?.OPENAI_MODEL!=="gpt-6.1-sol") throw new Error("Professional model policy changed");
           const bot=fs.readFileSync("bot/index.html","utf8");
           if(!bot.includes("standalone-bot.js?v=20261106-core-r15-voice")) throw new Error("core-r15 bot bundle missing");
-          if(!bot.includes("standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity")) throw new Error("vnext-r14 bot bundle missing");
+          if(!bot.includes("standalone-bot-vnext.js?v=20261107-hybrid-r1-visible")) throw new Error("vnext-r14 bot bundle missing");
           if(!bot.includes("standalone-bot.css?v=20261106-access-r15-voice")) throw new Error("core-r15 voice stylesheet missing");
           if(!bot.includes("standalone-bot-toolkit.js?v=20261106-toolkit-r14")) throw new Error("toolkit-r14 bot bundle missing");
           if(!bot.includes("standalone-bot-toolkit.css?v=20261106-toolkit-r14")) throw new Error("toolkit-r14 bot stylesheet missing");
