@@ -1,0 +1,166 @@
+{
+  "schema_version": "1.0",
+  "watch_id": "AI_ADVOCAT_MK_CURRENT_LAW_WATCH_R1",
+  "jurisdiction": "MK",
+  "poll_interval_minutes": 30,
+  "governance": {
+    "source_first": true,
+    "parliament_is_early_warning_only": true,
+    "official_gazette_is_publication_provenance_primary": true,
+    "ldbis_is_version_status_corroboration": true,
+    "automatic_working_candidate": "allowed_when_authorized_individual_source_text_is_available",
+    "automatic_current_law_promotion": false,
+    "bulk_mirroring": false,
+    "database_republication": false,
+    "human_gate_required": true,
+    "current_law_promotion_requires_all": [
+      "official_source_bound",
+      "article_level_text_present",
+      "article_set_version_bound",
+      "amendment_chain_resolved",
+      "constitutional_court_effects_resolved",
+      "application_dates_verified",
+      "current_version_verified",
+      "human_gate_approved"
+    ]
+  },
+  "legal_title_keywords": [
+    "закон",
+    "правилник",
+    "уредба",
+    "одлука",
+    "упатство",
+    "наредба",
+    "тарифник",
+    "статут"
+  ],
+  "sources": [
+    {
+      "id": "mk-sobranie",
+      "name": "Собрание на Република Северна Македонија",
+      "role": "prepublication_early_warning",
+      "authority_for_current_law": false,
+      "endpoints": [
+        {
+          "url": "https://www.sobranie.mk/",
+          "kind": "html_anchor_discovery"
+        }
+      ]
+    },
+    {
+      "id": "mk-official-gazette",
+      "name": "Службен весник на Република Северна Македонија",
+      "role": "publication_provenance_primary",
+      "authority_for_current_law": true,
+      "endpoints": [
+        {
+          "url": "https://slvesnik.com.mk/",
+          "kind": "html_anchor_discovery"
+        },
+        {
+          "url": "https://slvesnik.com.mk/hronoloshki-registri.nspx",
+          "kind": "html_anchor_discovery"
+        },
+        {
+          "url": "https://www.slvesnik.com.mk/besplaten-pristap-do-izdanija.nspx",
+          "kind": "html_anchor_discovery"
+        }
+      ]
+    },
+    {
+      "id": "mk-ldbis",
+      "name": "ЛДБИС — Министерство за правда",
+      "role": "official_version_status_corroboration",
+      "authority_for_current_law": true,
+      "endpoints": [
+        {
+          "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=41212",
+          "kind": "tracked_instrument_page",
+          "instrument_key": "mk:zi"
+        },
+        {
+          "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=10431",
+          "kind": "tracked_instrument_page",
+          "instrument_key": "mk:zro"
+        },
+        {
+          "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=20679",
+          "kind": "tracked_instrument_page",
+          "instrument_key": "mk:zkp"
+        },
+        {
+          "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=4312",
+          "kind": "tracked_instrument_page",
+          "instrument_key": "mk:kz"
+        },
+        {
+          "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=6538",
+          "kind": "tracked_instrument_page",
+          "instrument_key": "mk:zoo"
+        },
+        {
+          "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=37954",
+          "kind": "tracked_instrument_page",
+          "instrument_key": "mk:zoup"
+        },
+        {
+          "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=34057",
+          "kind": "tracked_instrument_page",
+          "instrument_key": "mk:zs"
+        }
+      ]
+    }
+  ],
+  "tracked_instruments": [
+    {
+      "canonical_key": "mk:zi",
+      "title": "Закон за извршување",
+      "aliases": ["закон за извршување"]
+    },
+    {
+      "canonical_key": "mk:zro",
+      "title": "Закон за работните односи",
+      "aliases": ["закон за работните односи", "работните односи"]
+    },
+    {
+      "canonical_key": "mk:zkp",
+      "title": "Закон за кривичната постапка",
+      "aliases": ["закон за кривичната постапка", "кривичната постапка"]
+    },
+    {
+      "canonical_key": "mk:zpp",
+      "title": "Закон за парничната постапка",
+      "aliases": ["закон за парничната постапка", "парничната постапка"]
+    },
+    {
+      "canonical_key": "mk:kz",
+      "title": "Кривичен законик",
+      "aliases": ["кривичен законик"]
+    },
+    {
+      "canonical_key": "mk:zoo",
+      "title": "Закон за облигационите односи",
+      "aliases": ["закон за облигационите односи", "облигационите односи"]
+    },
+    {
+      "canonical_key": "mk:zoup",
+      "title": "Закон за општата управна постапка",
+      "aliases": ["закон за општата управна постапка", "општата управна постапка"]
+    },
+    {
+      "canonical_key": "mk:zs",
+      "title": "Закон за семејството",
+      "aliases": ["закон за семејството"]
+    },
+    {
+      "canonical_key": "mk:zsidp",
+      "title": "Закон за сопственост и други стварни права",
+      "aliases": ["закон за сопственост и други стварни права", "сопственост и други стварни права"]
+    },
+    {
+      "canonical_key": "mk:ztd",
+      "title": "Закон за трговските друштва",
+      "aliases": ["закон за трговските друштва", "трговските друштва"]
+    }
+  ]
+}
