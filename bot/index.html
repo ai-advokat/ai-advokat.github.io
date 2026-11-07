@@ -15,6 +15,12 @@
   <link rel="stylesheet" href="/assets/standalone-bot.css?v=20261106-access-r15-voice">
   <link rel="stylesheet" href="/assets/standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity">
   <link rel="stylesheet" href="/assets/standalone-bot-toolkit.css?v=20261106-toolkit-r14">
+  <style>
+    .header-legal-links{display:flex;align-items:center;gap:7px;margin-left:auto;margin-right:7px}
+    .header-legal-link{display:inline-flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid #d8c08a;border-radius:999px;background:#fffaf0;color:#17212b;text-decoration:none;font-size:12px;font-weight:800;white-space:nowrap}
+    .header-legal-link:hover,.header-legal-link:focus-visible{background:#f4ead2}
+    @media(max-width:760px){.header-legal-link .header-link-label{display:none}.header-legal-link{padding:7px 9px}.header-legal-links{gap:4px;margin-right:4px}}
+  </style>
   <script defer src="/assets/guide-router.js"></script>
   <script defer src="/assets/guide-vault.js"></script>
   <script src="/assets/frontend-runtime-guard.js?v=20261101-root-r1"></script>
@@ -25,6 +31,10 @@
 </head>
 <body>
   <header><a href="/bot/" class="brand" aria-label="AI Advokat — почеток"><img src="/assets/ai-advokat-hero-brand.webp" width="400" height="225" alt="AI Advokat"></a>
+    <div class="header-legal-links" aria-label="Главни правни алатки">
+      <a class="header-legal-link" data-header-legal="hybrid" href="/hybrid-legal-intelligence.html" title="Hybrid Legal Intelligence · 8 функции">⌘ <span class="header-link-label">Hybrid 8</span></a>
+      <a class="header-legal-link" data-header-legal="public-legal" href="/public-legal-data-services.html" title="Public Legal Data & e‑Services">⚖ <span class="header-link-label">Open Data & e‑Services</span></a>
+    </div>
     <details id="menu"><summary aria-label="Разговор и поставки">⋯</summary><nav aria-label="Поставки">
       <button id="newChat" type="button">＋ Нов разговор</button>
       <button id="exportChat" type="button">⇩ Преземи разговор (.txt)</button>
@@ -37,7 +47,7 @@
       <p>Разговорот се брише со освежување. Пристапот се памети до 7 дена само ако го изберете тоа при најавување. Приватните предмети имаат сопствено чување.</p>
     </nav></details>
   </header>
-  <section aria-label="Hybrid Legal Intelligence — пет нови функции" style="margin:12px auto 0;max-width:980px;padding:12px 14px;border:1px solid #c8a45d;border-radius:14px;background:#fffaf0;color:#17212b">
+  <section aria-label="Hybrid Legal Intelligence — осум правни функции" style="margin:12px auto 0;max-width:980px;padding:12px 14px;border:1px solid #c8a45d;border-radius:14px;background:#fffaf0;color:#17212b">
     <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:8px">
       <strong>НОВО · Hybrid Legal Intelligence · 8 функции</strong>
       <a href="/hybrid-legal-intelligence.html" style="font-weight:800;text-decoration:none">Отвори Lawyer View →</a>
