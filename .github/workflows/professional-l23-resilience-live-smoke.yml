@@ -146,7 +146,17 @@ jobs:
           if(!d.ok || !String(d.answer||"").trim()) throw new Error("L3 divorce response missing");
           if(d.membership?.planCode!=="office") throw new Error("L3 membership not retained");
           if(d.legalGovernance?.missionProfile!=="L3_CONSEQUENTIAL") throw new Error("Divorce request not classified L3");
-          if(d.provider==="openai"){
+          if(d.provider==="canonical_corpus_no_model"){
+            if(d.sourceMode!=="canonical_family_law_divorce_no_model") throw new Error("Unexpected deterministic divorce source mode: "+d.sourceMode);
+            if(d.displayMode!=="canonical_family_divorce_draft") throw new Error("Deterministic divorce display mode missing");
+            if(d.legalGovernance?.missionProfile!=="L3_CONSEQUENTIAL") throw new Error("Deterministic divorce mission profile missing");
+            if(d.legalGovernance?.verificationState!=="PASSED") throw new Error("Deterministic divorce verification state missing");
+            if(d.legalGovernance?.executionAuthorization!=="NO_EXTERNAL_ACTION") throw new Error("Deterministic divorce must remain NO_EXTERNAL_ACTION");
+            if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("Deterministic divorce Human Gate missing");
+            if(d.legalGovernance?.postflightRequired!==false) throw new Error("Deterministic no-model divorce must not require provider postflight");
+            if(d.webSearchUsed!==false) throw new Error("Deterministic divorce must not claim web search");
+            if(!Array.isArray(d.legalSources) || d.legalSources.length<1) throw new Error("Deterministic divorce legal sources missing");
+          }else if(d.provider==="openai"){
             if(d.providerFallback!==null) throw new Error("OpenAI success must not claim fallback");
           }else if(d.provider==="workers_ai_free"){
             if(d.displayMode!=="professional_degraded_draft_fallback") throw new Error("L3 degraded display mode missing");
