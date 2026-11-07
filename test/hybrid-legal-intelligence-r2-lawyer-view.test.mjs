@@ -35,11 +35,11 @@ test("Hybrid R2 removes developer-first IDs from the primary Lawyer View flow",(
 });
 
 test("Hybrid R2 renders structured legal results while preserving raw provenance payload",()=>{
-  assert.match(page,/class="article-card"/);
-  assert.match(page,/class="graph-list"/);
-  assert.match(page,/class="case-list"/);
-  assert.match(page,/class="timeline"/);
-  assert.match(page,/class="diff-list"/);
+  assert.match(page,/class:"article-card"/);
+  assert.match(page,/class:"graph-list"/);
+  assert.match(page,/class:"case-list"/);
+  assert.match(page,/class:"timeline"/);
+  assert.match(page,/class:"diff-list"/);
   assert.match(page,/Технички JSON · provenance payload/);
   assert.match(page,/SHA-256:/);
   assert.match(page,/Derivation trace:/);
