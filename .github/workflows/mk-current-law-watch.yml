@@ -1,0 +1,127 @@
+name: MK Current-Law Watch R1
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "7,37 * * * *"
+  pull_request:
+    paths:
+      - "data/mk-current-law-watch-config.json"
+      - "scripts/mk-current-law-watch.mjs"
+      - "test/mk-current-law-watch.test.mjs"
+      - ".github/workflows/mk-current-law-watch.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mk-current-law-watch-r1
+  cancel-in-progress: false
+
+jobs:
+  offline-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate watcher and governed contracts
+        run: |
+          node --check scripts/mk-current-law-watch.mjs
+          node --no-warnings --test test/mk-current-law-watch.test.mjs
+
+  watch-official-sources:
+    if: github.event_name != 'pull_request'
+    needs: offline-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Recover previous successful watcher snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/current-law-watch
+          previous_run="$(
+            gh api --paginate "repos/$REPO/actions/workflows/mk-current-law-watch.yml/runs?status=success&per_page=20"               --jq ".workflow_runs[] | select(.id != $RUN_ID) | .id" | head -n 1 || true
+          )"
+          if [ -z "$previous_run" ]; then
+            echo "No previous successful watcher run; a baseline will be created."
+            exit 0
+          fi
+          artifact_id="$(
+            gh api "repos/$REPO/actions/runs/$previous_run/artifacts"               --jq '.artifacts[] | select(.name=="mk-current-law-watch-state") | .id' | head -n 1 || true
+          )"
+          if [ -z "$artifact_id" ]; then
+            echo "Previous run has no state artifact; a baseline will be created."
+            exit 0
+          fi
+          gh api "repos/$REPO/actions/artifacts/$artifact_id/zip" > /tmp/current-law-watch/previous.zip
+          unzip -q /tmp/current-law-watch/previous.zip -d /tmp/current-law-watch/previous
+          if [ -f /tmp/current-law-watch/previous/current-law-watch-snapshot.json ]; then
+            cp /tmp/current-law-watch/previous/current-law-watch-snapshot.json /tmp/current-law-watch/previous.json
+          fi
+
+      - name: Poll official MK legal sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/mk-current-law-watch.mjs             data/mk-current-law-watch-config.json             /tmp/current-law-watch/current-law-watch-snapshot.json             /tmp/current-law-watch/previous.json             /tmp/current-law-watch/current-law-human-gate-packet.json
+
+      - name: Enforce source-first / no autonomous promotion boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require("fs");
+          const s=JSON.parse(fs.readFileSync("/tmp/current-law-watch/current-law-watch-snapshot.json","utf8"));
+          const p=JSON.parse(fs.readFileSync("/tmp/current-law-watch/current-law-human-gate-packet.json","utf8"));
+          if(s.version!=="AI_ADVOCAT_MK_CURRENT_LAW_WATCH_R1") throw new Error("watch version mismatch");
+          if(p.automatic_database_write!==false) throw new Error("autonomous DB write must remain disabled");
+          if(p.automatic_current_law_promotion!==false) throw new Error("autonomous current-law promotion must remain disabled");
+          if(p.required_promotion_gates.length!==8) throw new Error("eight current-law gates required");
+          if(!s.governance.parliament_is_early_warning_only) throw new Error("Parliament boundary missing");
+          if(!s.governance.official_gazette_is_publication_provenance_primary) throw new Error("Gazette authority boundary missing");
+          console.log("CURRENT-LAW WATCH GOVERNANCE: PASS");
+          NODE
+
+      - name: Publish current state and Human-Gate candidate packet
+        uses: actions/upload-artifact@v4
+        with:
+          name: mk-current-law-watch-state
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            /tmp/current-law-watch/current-law-watch-snapshot.json
+            /tmp/current-law-watch/current-law-human-gate-packet.json
+
+      - name: Write run summary
+        shell: bash
+        run: |
+          node <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+          const fs=require("fs");
+          const s=JSON.parse(fs.readFileSync("/tmp/current-law-watch/current-law-watch-snapshot.json","utf8"));
+          const d=s.diff||{};
+          console.log("## MK Current-Law Watch R1");
+          console.log("");
+          console.log("- State: **"+String(d.state||"UNKNOWN")+"**");
+          console.log("- Pages checked: **"+Number(s.counts?.pages||0)+"**");
+          console.log("- Reachable pages: **"+Number(s.counts?.pages_ok||0)+"**");
+          console.log("- New legal candidates: **"+Number(d.new_candidates?.length||0)+"**");
+          console.log("- Changed official pages: **"+Number(d.changed_pages?.length||0)+"**");
+          console.log("- Automatic current-law promotion: **DISABLED**");
+          console.log("- Human Gate: **"+(d.requires_human_review?"REQUIRED":"no new change candidate")+"**");
+          NODE
