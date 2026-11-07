@@ -113,6 +113,18 @@ test("Case-Law Radar operational workflow selects records and hands a bounded pa
   assert.match(page,/official item binding/);
 });
 
+test("Case-Law Radar R2 keeps the workbench functional offline and uses a narrowly governed privacy bypass",()=>{
+  assert.match(page,/function activateStaticDiscoveryFallback\(\)/);
+  assert.match(page,/Offline mode · static records/);
+  assert.match(page,/source:"case-law-radar"/);
+  assert.match(page,/authorityBoundary:"discovery_only"/);
+  assert.match(chat,/localConfidentialCasePrompt\(q\) && !governedRadarHandoff/);
+  assert.match(chat,/payload\.source!=="case-law-radar"/);
+  assert.match(chat,/payload\.authorityBoundary!=="discovery_only"/);
+  assert.match(chat,/selectedIds\.length>10/);
+  assert.match(chat,/send\(prompt,\{governedRadarHandoff:true\}\)/);
+});
+
 test("Case-Law Radar Human Gate checklist is interactive but cannot promote database authority",()=>{
   for(const gate of ["official","identity","holding","finality","applicability","outcome"]){
     assert.match(page,new RegExp('data-gate="'+gate+'"'));
