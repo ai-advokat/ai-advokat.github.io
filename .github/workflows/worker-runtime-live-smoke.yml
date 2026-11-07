@@ -8,6 +8,7 @@ on:
       - "bot/index.html"
       - "hybrid-legal-intelligence.html"
       - "public-legal-data-services.html"
+      - "gold-set-review-gate.html"
       - "src/index.js"
       - "assets/standalone-bot.js"
       - "assets/standalone-bot-vnext.js"
@@ -43,6 +44,7 @@ jobs:
           expected_bot="$(sha256sum bot/index.html | awk '{print $1}')"
           expected_hybrid="$(sha256sum hybrid-legal-intelligence.html | awk '{print $1}')"
           expected_public_legal="$(sha256sum public-legal-data-services.html | awk '{print $1}')"
+          expected_gold="$(sha256sum gold-set-review-gate.html | awk '{print $1}')"
           expected_core="$(sha256sum assets/standalone-bot.js | awk '{print $1}')"
           expected_voice="$(sha256sum assets/ai-advokat-voice.mjs | awk '{print $1}')"
           expected_vnext="$(sha256sum assets/standalone-bot-vnext.js | awk '{print $1}')"
@@ -58,6 +60,7 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r15&smoke=$nonce" -o /tmp/worker-bot.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/hybrid-legal-intelligence.html?smoke=$nonce" -o /tmp/worker-hybrid.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/public-legal-data-services.html?smoke=$nonce" -o /tmp/worker-public-legal.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/gold-set-review-gate.html?smoke=$nonce" -o /tmp/worker-gold-gate.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261106-core-r15-voice-r2&smoke=$nonce" -o /tmp/worker-core.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&smoke=$nonce" -o /tmp/worker-voice.mjs || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view&smoke=$nonce" -o /tmp/worker-vnext.js || true
@@ -70,6 +73,7 @@ jobs:
             live_bot="$(sha256sum /tmp/worker-bot.html 2>/dev/null | awk '{print $1}' || true)"
             live_hybrid="$(sha256sum /tmp/worker-hybrid.html 2>/dev/null | awk '{print $1}' || true)"
             live_public_legal="$(sha256sum /tmp/worker-public-legal.html 2>/dev/null | awk '{print $1}' || true)"
+            live_gold="$(sha256sum /tmp/worker-gold-gate.html 2>/dev/null | awk '{print $1}' || true)"
             live_core="$(sha256sum /tmp/worker-core.js 2>/dev/null | awk '{print $1}' || true)"
             live_voice="$(sha256sum /tmp/worker-voice.mjs 2>/dev/null | awk '{print $1}' || true)"
             live_vnext="$(sha256sum /tmp/worker-vnext.js 2>/dev/null | awk '{print $1}' || true)"
@@ -82,6 +86,7 @@ jobs:
             if [ "$live_bot" = "$expected_bot" ] \
               && [ "$live_hybrid" = "$expected_hybrid" ] \
               && [ "$live_public_legal" = "$expected_public_legal" ] \
+              && [ "$live_gold" = "$expected_gold" ] \
               && [ "$live_core" = "$expected_core" ] \
               && [ "$live_voice" = "$expected_voice" ] \
               && [ "$live_vnext" = "$expected_vnext" ] \
@@ -107,6 +112,9 @@ jobs:
           grep -q 'eID + Human Handoff' /tmp/worker-hybrid.html
           grep -q 'Водилка · Како функционира Hybrid Legal Intelligence' /tmp/worker-hybrid.html
           grep -q 'Public Legal Data & e‑Services' /tmp/worker-public-legal.html
+          grep -q 'Gold Set Review Gate v2.0' /tmp/worker-gold-gate.html
+          grep -q 'Separate Legal Review' /tmp/worker-gold-gate.html
+          grep -q 'reviewed_authority_promoted:false' /tmp/worker-gold-gate.html
           grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' /tmp/worker-bot.html
           grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/worker-voice.mjs
           grep -q 'getUserMedia' /tmp/worker-voice.mjs
@@ -163,7 +171,7 @@ jobs:
           node <<'NODE'
           const c=require("/tmp/worker-hybrid-capabilities.json");
           const i=require("/tmp/worker-hybrid-instruments.json");
-          const expected=["article_time_machine","law_bylaw_graph","article_case_law_graph","legal_effective_date_calendar","visual_consolidation_diff","open_data_legal_evidence","official_e_service_navigator","eid_human_handoff"];
+          const expected=["article_time_machine","law_bylaw_graph","article_case_law_graph","legal_effective_date_calendar","visual_consolidation_diff","open_data_legal_evidence","official_e_service_navigator","eid_human_handoff","gold_set_review_gate"];
           if(!c.ok) throw new Error("hybrid capabilities not ok");
           for(const x of expected) if(!c.capabilities?.includes(x)) throw new Error("missing hybrid capability "+x);
           if(c.authorityBoundary?.autonomousCurrentLawPromotion!==false) throw new Error("hybrid authority boundary weakened");
@@ -272,6 +280,7 @@ jobs:
             /tmp/worker-public-legal-capabilities.json
             /tmp/worker-public-legal-services.json
             /tmp/worker-public-legal-open-data.json
+            /tmp/worker-gold-gate.html
             /tmp/worker-cors.txt
             /tmp/worker-chat.json
             /tmp/worker-bot-unauth.json
