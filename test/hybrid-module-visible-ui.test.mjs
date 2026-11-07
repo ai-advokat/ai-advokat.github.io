@@ -28,7 +28,7 @@ test("production live-parity workflows expect the Hybrid R2 cache key",()=>{
   }
 });
 
-test("all eight Hybrid modules are directly visible from both public AI Advokat shells",()=>{
+test("all nine Hybrid modules are directly visible from both public AI Advokat shells",()=>{
   const bot=fs.readFileSync("bot/index.html","utf8");
   const root=fs.readFileSync("index.html","utf8");
   const links=[
@@ -45,8 +45,8 @@ test("all eight Hybrid modules are directly visible from both public AI Advokat 
     assert.equal(root.includes(link),true,"root missing "+link);
     assert.equal(bot.includes(link),true,"bot missing "+link);
   }
-  assert.match(root,/НОВО · Hybrid Legal Intelligence · 8 функции/);
-  assert.match(bot,/НОВО · Hybrid Legal Intelligence · 8 функции/);
+  assert.match(root,/НОВО · Hybrid Legal Intelligence · 9 функции/);
+  assert.match(bot,/НОВО · Hybrid Legal Intelligence · 9 функции/);
 });
 
 test("Hybrid and Public Legal tools are visible in both top headers",()=>{
@@ -58,7 +58,7 @@ test("Hybrid and Public Legal tools are visible in both top headers",()=>{
     assert.match(html,/href="\/hybrid-legal-intelligence\.html"/);
     assert.match(html,/href="\/public-legal-data-services\.html"/);
   }
-  assert.match(root,/⌘ Hybrid 8/);
+  assert.match(root,/⌘ Hybrid 9/);
   assert.match(root,/⚖ Open Data & e‑Services/);
   assert.match(bot,/header-legal-links/);
 });
