@@ -57,11 +57,20 @@ function relevantLabel(label,keywords){
   return keywords.some(k=>s.includes(String(k).toLocaleLowerCase("mk")));
 }
 
+function legalAliasVariants(value){
+  const alias=String(value||"").toLocaleLowerCase("mk").replace(/\s+/g," ").trim();
+  if(!alias)return [];
+  const variants=new Set([alias]);
+  if(alias.startsWith("закон за ")) variants.add("законот за "+alias.slice("закон за ".length));
+  if(alias==="кривичен законик") variants.add("кривичниот законик");
+  return [...variants];
+}
+
 function matchInstrument(text,instruments){
-  const s=String(text||"").toLocaleLowerCase("mk");
+  const s=String(text||"").toLocaleLowerCase("mk").replace(/\s+/g," ").trim();
   let best=null;
   for(const item of instruments){
-    const aliases=[item.title,...(item.aliases||[])].map(x=>String(x).toLocaleLowerCase("mk"));
+    const aliases=[item.title,...(item.aliases||[])].flatMap(legalAliasVariants);
     for(const alias of aliases){
       if(alias && s.includes(alias) && (!best || alias.length>best.alias.length)){
         best={canonical_key:item.canonical_key,title:item.title,alias};
