@@ -65,7 +65,7 @@ a{color:inherit}
 .btn.secondary{background:#edf1f3;color:var(--ink-900);border:1px solid var(--line)}
 .context-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .context-meta .chip{background:var(--cream-50)}
-.module-nav{padding:9px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}
+.module-nav{padding:9px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
 .module-tab{border:1px solid transparent;background:transparent;border-radius:13px;padding:12px;text-align:left;color:var(--ink-700);min-width:0}
 .module-tab:hover{background:#f5f7f8}
 .module-tab.active{background:var(--navy-900);color:#fff;box-shadow:0 10px 24px rgba(11,34,57,.16)}
@@ -144,6 +144,27 @@ a{color:inherit}
 .raw{margin-top:15px;border:1px solid var(--line);border-radius:12px;background:#f8fafb}
 .raw summary{padding:10px 12px;cursor:pointer;font-size:11px;font-weight:760;color:var(--muted)}
 .raw pre{margin:0;border-top:1px solid var(--line);padding:13px;max-height:340px;overflow:auto;background:#0d1822;color:#dbe6ef;font:11px/1.48 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+
+.guide-card{margin-bottom:18px;background:linear-gradient(180deg,#fffdf7,#fff);border:1px solid #dfcfaa;box-shadow:var(--shadow-sm);border-radius:var(--radius);overflow:hidden}
+.guide-card>summary{list-style:none;cursor:pointer;padding:17px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:840;color:var(--navy-900)}
+.guide-card>summary::-webkit-details-marker{display:none}
+.guide-card>summary:after{content:"＋";font-size:19px;color:var(--gold-500)}
+.guide-card[open]>summary:after{content:"−"}
+.guide-body{border-top:1px solid #eadfc7;padding:20px}
+.guide-intro{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.7fr);gap:14px;margin-bottom:16px}
+.guide-intro h3{margin:0 0 7px;font-size:20px}.guide-intro p{margin:0;color:var(--ink-700);font-size:13px}
+.guide-flow{border:1px solid #e5d6b5;background:var(--cream-50);border-radius:13px;padding:13px 14px;font-size:12px}
+.guide-flow strong{display:block;margin-bottom:4px;color:var(--navy-900)}
+.guide-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.guide-step{border:1px solid var(--line);border-radius:13px;background:#fff;padding:13px;min-width:0}
+.guide-step-no{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:8px;background:var(--navy-900);color:var(--gold-300);font-size:11px;font-weight:900;margin-bottom:8px}
+.guide-step h4{margin:0 0 5px;font-size:13px}.guide-step p{margin:0;color:var(--ink-700);font-size:11px;line-height:1.55}
+.guide-rule{margin-top:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.guide-rule div{border-radius:10px;padding:10px 11px;font-size:11px;border:1px solid var(--line);background:#f8fafb}
+.guide-example{margin-top:14px;padding:13px 14px;border-left:4px solid var(--gold-500);background:#fbf8ef;border-radius:0 11px 11px 0;font-size:12px;color:var(--ink-700)}
+@media(max-width:1050px){.guide-grid{grid-template-columns:repeat(2,1fr)}.guide-rule{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.guide-intro{grid-template-columns:1fr}.guide-grid,.guide-rule{grid-template-columns:1fr}}
+
 .advanced{margin-top:10px}
 .advanced summary{font-size:11px;color:var(--muted);cursor:pointer}
 .advanced-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}
@@ -181,6 +202,7 @@ a{color:inherit}
       <a class="top-link" href="/bot/">AI Advokat</a>
       <a class="top-link" href="/consolidator/">Консолидатор</a>
       <a class="top-link" href="/case-law-curation.html">Case-Law Radar</a>
+      <a class="top-link" href="#guide">Водилка</a>
     </nav>
   </div>
 </header>
@@ -189,8 +211,8 @@ a{color:inherit}
   <section class="hero">
     <div class="hero-main">
       <div class="eyebrow">Lawyer View · governed research surface</div>
-      <h2>Пет правни функции. Една временски и изворно контролирана слика.</h2>
-      <p>Изберете закон и работете по член, датум, подзаконски акти, судска практика, правни рокови и консолидирани верзии. Секој резултат останува врзан за provenance и човечка проверка.</p>
+      <h2>Осум правни функции. Еден source-first адвокатски workflow.</h2>
+      <p>Од важечка редакција и подзаконски акти, преку судска практика и јавни докази, до официјален административен следен чекор. Секој резултат останува врзан за provenance и Human Gate.</p>
       <div class="hero-badges">
         <span class="chip ok">Read-only</span>
         <span class="chip info">Official-source first</span>
@@ -207,7 +229,44 @@ a{color:inherit}
         <div class="boundary-row">✓ <span><b>Current-law promotion:</b> човечко одобрување</span></div>
       </div>
     </aside>
+
   </section>
+
+  <details class="guide-card" id="guide" open>
+    <summary><span>Водилка · Како функционира Hybrid Legal Intelligence</span><span class="chip info">8 функции · Source-first · Human Gate</span></summary>
+    <div class="guide-body">
+      <div class="guide-intro">
+        <div>
+          <h3>Од правно прашање до проверен човечки следен чекор</h3>
+          <p>Не мора секогаш да ги користите сите осум модули. Почнете од правното прашање, изберете закон/член/датум кога е релевантно, а потоа движете се само низ чекорите што му се потребни на конкретниот предмет.</p>
+        </div>
+        <div class="guide-flow">
+          <strong>Препорачан workflow</strong>
+          Time Machine → Bylaw → Case-Law → Calendar → Diff → Open Data Evidence → Official e‑Services → Human Handoff
+        </div>
+      </div>
+
+      <div class="guide-grid">
+        <article class="guide-step"><span class="guide-step-no">01</span><h4>Article Time Machine</h4><p>Користете го кога треба да знаете <b>кој текст на членот важел на конкретен датум</b>. Изберете закон, член и референтен датум. Проверете version window, официјален извор и provenance.</p></article>
+        <article class="guide-step"><span class="guide-step-no">02</span><h4>Law ↔ Bylaw</h4><p>Проверете дали законскиот член упатува на правилник, уредба, одлука или друг подзаконски акт. Reviewed врските имаат поголема тежина од discovery записите.</p></article>
+        <article class="guide-step"><span class="guide-step-no">03</span><h4>Article ↔ Case-Law</h4><p>Најдете судска практика поврзана со точниот член. Проверете суд, број на предмет, датум, holding/reasoning и дали записот е reviewed authority.</p></article>
+        <article class="guide-step"><span class="guide-step-no">04</span><h4>Legal Calendar</h4><p>Раздвојте <b>објавување, стапување во сила, почеток на примена и посебно правно дејство</b>. Овие датуми не се секогаш исти.</p></article>
+        <article class="guide-step"><span class="guide-step-no">05</span><h4>Consolidation Diff</h4><p>Споредете две редакции и филтрирајте ADDED / REMOVED / MODIFIED / UNCHANGED. Diff-от е работна споредба, не самостоен доказ за важечко право.</p></article>
+        <article class="guide-step"><span class="guide-step-no">06</span><h4>Open Data Evidence</h4><p>Пребарајте правно релевантни јавни сетови од data.gov.mk. Користете ги за discovery, фактичка проверка и доказна трага, а underlying official record проверете го пред правен заклучок.</p></article>
+        <article class="guide-step"><span class="guide-step-no">07</span><h4>Official e‑Services</h4><p>Најдете официјална услуга што создава правно релевантен документ или административен чекор — уверение, имотен лист, даночна потврда, лиценца, дозвола и слично.</p></article>
+        <article class="guide-step"><span class="guide-step-no">08</span><h4>eID + Human Handoff</h4><p>Проверете eID услови, прилози, надлежност и рокови. AI Advokat подготвува и насочува; <b>човекот го прави финалното поднесување</b> на официјалниот портал.</p></article>
+      </div>
+
+      <div class="guide-rule" aria-label="Правила за правна тежина">
+        <div><b>Official source</b><br>Примарна точка за закон/пропис и официјален документ.</div>
+        <div><b>Reviewed authority</b><br>Проверен запис што може професионално да се разгледува како правен авторитет.</div>
+        <div><b>Discovery</b><br>Сигнал за пронаоѓање/потврда; не се цитира автоматски како конечен авторитет.</div>
+        <div><b>Human Gate</b><br>Конечната правна проценка, избор и дејствие остануваат човечки.</div>
+      </div>
+
+      <div class="guide-example"><b>Брз пример:</b> ако прашањето е „која редакција на член 165 ЗКП важела на 15.03.2024 и како судовите ја применувале?“ → изберете ЗКП + член 165 + датум → <b>01 Time Machine</b> → <b>03 Case-Law</b> → по потреба <b>02 Bylaw</b> и <b>04 Calendar</b> → завршете со Human Gate пред професионален заклучок.</div>
+    </div>
+  </details>
 
   <section class="context-card" aria-labelledby="contextTitle">
     <h2 id="contextTitle" class="sr-only">Правен контекст</h2>
