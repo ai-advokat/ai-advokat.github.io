@@ -1,14 +1,14 @@
 {
   "schema": "ai-advokat-hg2-c-migration-manifest/v1",
   "status": "FROZEN_REPOSITORY_ONLY_REMOTE_NO_GO",
-  "date": "2026-11-01",
-  "source_commit": "986cde1b5975c8718395b06cd16a0c0ad5db49f3",
+  "date": "2026-11-07",
+  "source_commit": "9937a6dc46c73ad55fb78d8077c7ce0abfe19814",
   "staging_account_id": "0fee10e2bd9a2183d16eb0d73f13dfce",
   "staging_database_name": "ai-advokat-staging-db",
   "staging_database_id": "309f72b8-8711-47fc-bea7-fbd1d649561d",
-  "migration_count": 51,
+  "migration_count": 52,
   "first_migration": "migrations/0001_initial_schema.sql",
-  "last_migration": "migrations/0051_gazette_issue_contents_index.sql",
+  "last_migration": "migrations/0052_hybrid_legal_intelligence_r1.sql",
   "critical_human_review": [
     "migrations/0033_casepilot_audit_event_schema.sql",
     "migrations/0034_casepilot_authority_classification_unique_issue.sql",
@@ -320,6 +320,12 @@
       "path": "migrations/0051_gazette_issue_contents_index.sql",
       "git_blob_sha": "34df296755b74a7260f1bf1bc33753e5c832e3c5",
       "size_bytes": 3359
+    },
+    {
+      "ordinal": 52,
+      "path": "migrations/0052_hybrid_legal_intelligence_r1.sql",
+      "git_blob_sha": "d4c1666dbc53843d404fd68d17201c3194540c27",
+      "size_bytes": 4612
     }
   ]
 }
