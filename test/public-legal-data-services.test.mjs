@@ -46,3 +46,16 @@ test("Open-data proxy cannot be turned into arbitrary SSRF",()=>{
   assert.doesNotMatch(block,/new URL\(url\.searchParams/);
   assert.doesNotMatch(block,/fetch\(url\.searchParams/);
 });
+
+test("Open Data upstream network failures remain structured and fail closed",()=>{
+  const start=worker.indexOf('if(path==="/api/public-legal/open-data")');
+  const end=worker.indexOf('async function handleHybridLegalIntelligence',start);
+  const block=worker.slice(start,end);
+  assert.match(block,/try\{\s*response=await fetch\(endpoint\.toString\(\)/);
+  assert.match(block,/failureClass:"upstream_network"/);
+  assert.match(block,/failureClass:"upstream_response"/);
+  assert.match(block,/error:"official_open_data_unavailable"/);
+  assert.match(block,/legalAuthorityPromotion:false/);
+  assert.match(block,/humanGateRequired:true/);
+});
+
