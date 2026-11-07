@@ -31,6 +31,7 @@ jobs:
       - name: Validate watcher and governed contracts
         run: |
           node --check scripts/mk-current-law-watch.mjs
+          node --check scripts/mk-current-law-stage-candidates.mjs
           node --no-warnings --test test/mk-current-law-watch.test.mjs
 
   watch-official-sources:
@@ -80,6 +81,22 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/mk-current-law-watch.mjs             data/mk-current-law-watch-config.json             /tmp/current-law-watch/current-law-watch-snapshot.json             /tmp/current-law-watch/previous.json             /tmp/current-law-watch/current-law-human-gate-packet.json
+
+      - name: Stage new official change candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/current-law-stage
+          node scripts/mk-current-law-stage-candidates.mjs             /tmp/current-law-watch/current-law-watch-snapshot.json             /tmp/current-law-stage
+          test -s /tmp/current-law-stage/stage-manifest.json
+
+      - name: Upload private candidate staging evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mk-current-law-candidate-stage
+          retention-days: 90
+          if-no-files-found: error
+          path: /tmp/current-law-stage/**
 
       - name: Enforce source-first / no autonomous promotion boundary
         shell: bash
