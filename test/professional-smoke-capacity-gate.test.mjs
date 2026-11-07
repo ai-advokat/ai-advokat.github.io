@@ -108,3 +108,64 @@ test("OpenAI capacity-code helper is bounded and rejects unrelated 429 labels",(
     assert.equal(isOpenAIProviderCapacityStatus(code),false,code);
   }
 });
+
+
+test("recognizes exact OpenAI spend-limit plus Workers provider-error fail-closed state",()=>{
+  const blocked={
+    ok:false,
+    error:"free_workers_ai_provider_error",
+    answer:"",
+    providerCapacity:null,
+    providerFallback:{
+      from:"openai",
+      to:"workers_ai",
+      reason:"openai_response_error",
+      primaryProviderCalls:2,
+      primaryHttpStatus:429,
+      primaryResponseStatus:"organization_spend_limit_exceeded",
+      fallbackState:"failed"
+    },
+    runtime:{provider:"workers_ai_free",documentConversion:"configured"}
+  };
+  const result=classifyProfessionalProviderCapacity(503,blocked);
+  assert.equal(result.recognized,true);
+  assert.equal(result.classification,"PRIMARY_PROVIDER_CAPACITY_BLOCKED_FALLBACK_PROVIDER_ERROR");
+  assert.equal(result.systemIntegrity,"PASS_FAIL_CLOSED");
+  assert.equal(result.providerAvailability,"BLOCKED");
+  assert.equal(result.primaryCapacityReason,"organization_spend_limit_exceeded");
+  assert.equal(result.fallbackFailure,"provider_error");
+});
+
+test("rejects Workers provider-error state unless primary 429 capacity provenance is exact",()=>{
+  const base={
+    ok:false,
+    error:"free_workers_ai_provider_error",
+    answer:"",
+    providerFallback:{
+      from:"openai",
+      to:"workers_ai",
+      reason:"openai_response_error",
+      primaryProviderCalls:2,
+      primaryHttpStatus:429,
+      primaryResponseStatus:"organization_spend_limit_exceeded",
+      fallbackState:"failed"
+    },
+    runtime:{provider:"workers_ai_free"}
+  };
+
+  const badHttp=structuredClone(base);
+  badHttp.providerFallback.primaryHttpStatus=500;
+  assert.equal(classifyProfessionalProviderCapacity(503,badHttp).recognized,false);
+
+  const badStatus=structuredClone(base);
+  badStatus.providerFallback.primaryResponseStatus="server_error";
+  assert.equal(classifyProfessionalProviderCapacity(503,badStatus).recognized,false);
+
+  const badFallback=structuredClone(base);
+  badFallback.providerFallback.fallbackState="capacity_exhausted";
+  assert.equal(classifyProfessionalProviderCapacity(503,badFallback).recognized,false);
+
+  const released=structuredClone(base);
+  released.answer="Не смее да биде класифицирано како fail-closed.";
+  assert.equal(classifyProfessionalProviderCapacity(503,released).recognized,false);
+});
