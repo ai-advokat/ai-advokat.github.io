@@ -105,6 +105,7 @@ jobs:
           grep -q 'Open Data Legal Evidence' /tmp/worker-hybrid.html
           grep -q 'Official e‑Service Navigator' /tmp/worker-hybrid.html
           grep -q 'eID + Human Handoff' /tmp/worker-hybrid.html
+          grep -q 'Водилка · Како функционира Hybrid Legal Intelligence' /tmp/worker-hybrid.html
           grep -q 'Public Legal Data & e‑Services' /tmp/worker-public-legal.html
           grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' /tmp/worker-bot.html
           grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/worker-voice.mjs
