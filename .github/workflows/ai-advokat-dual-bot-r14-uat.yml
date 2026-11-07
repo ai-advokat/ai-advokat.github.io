@@ -82,7 +82,7 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/ai-advokat-chat.js?v=20261106-root-r15-voice-r2-runtime&r14_uat=$nonce" -o /tmp/r14-internal.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/standalone-bot.js?v=20261106-core-r15-voice-r2&r14_uat=$nonce" -o /tmp/r14-core.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&r14_uat=$nonce" -o /tmp/r14-voice.mjs || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity&r14_uat=$nonce" -o /tmp/r14-vnext.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view&r14_uat=$nonce" -o /tmp/r14-vnext.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/standalone-bot-toolkit.js?v=20261106-toolkit-r14&r14_uat=$nonce" -o /tmp/r14-toolkit.js || true
 
             live_bot="$(sha256sum /tmp/r14-bot.html 2>/dev/null | awk '{print $1}' || true)"
@@ -115,7 +115,7 @@ jobs:
           grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/r14-voice.mjs
           grep -q 'bindMicrophone' /tmp/r14-voice.mjs
           grep -q 'bindSpeakButton' /tmp/r14-voice.mjs
-          grep -q 'standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity' /tmp/r14-bot.html
+          grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view' /tmp/r14-bot.html
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/r14-bot.html
           grep -q 'data-vnext-action="public-evidence"' /tmp/r14-vnext.js
           grep -q 'data-vnext-action="professional-ecosystem"' /tmp/r14-vnext.js
