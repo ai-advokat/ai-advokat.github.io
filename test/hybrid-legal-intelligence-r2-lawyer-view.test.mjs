@@ -8,7 +8,7 @@ const pagesSync=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8
 const workerSmoke=fs.readFileSync(".github/workflows/worker-runtime-live-smoke.yml","utf8");
 const rootSmoke=fs.readFileSync(".github/workflows/root-reliability-live-smoke.yml","utf8");
 
-test("Hybrid R2 Lawyer View exposes all five governed modules",()=>{
+test("Hybrid Lawyer View exposes eight governed legal workflow modules",()=>{
   assert.match(page,/Hybrid Legal Intelligence R2/);
   assert.match(page,/Lawyer View/);
   for(const label of [
@@ -16,7 +16,10 @@ test("Hybrid R2 Lawyer View exposes all five governed modules",()=>{
     "Law ↔ Bylaw Graph",
     "Article ↔ Case-Law",
     "Legal Effective-Date Calendar",
-    "Visual Consolidation Diff"
+    "Visual Consolidation Diff",
+    "Open Data Legal Evidence",
+    "Official e‑Service Navigator",
+    "eID + Human Handoff"
   ]) assert.equal(page.includes(label),true,label);
   assert.match(page,/Human Gate · Authority Boundary/);
   assert.match(page,/Secondary signals:/);
@@ -83,3 +86,16 @@ test("Worker and root release smokes verify Hybrid R2 live",()=>{
   assert.match(rootSmoke,/grep -q 'Hybrid Legal Intelligence R2' \/tmp\/pages-hybrid\.html/);
   assert.match(rootSmoke,/grep -q 'Lawyer View' \/tmp\/pages-hybrid\.html/);
 });
+
+test("Hybrid integrates official public legal evidence and e-service APIs",()=>{
+  assert.match(page,/\/api\/public-legal\/open-data/);
+  assert.match(page,/\/api\/public-legal\/services/);
+  assert.match(page,/data-module="opendata"/);
+  assert.match(page,/data-module="services"/);
+  assert.match(page,/data-module="handoff"/);
+  assert.match(worker,/open_data_legal_evidence/);
+  assert.match(worker,/official_e_service_navigator/);
+  assert.match(worker,/eid_human_handoff/);
+  assert.match(page,/No autonomous submission/);
+});
+
