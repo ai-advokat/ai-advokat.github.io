@@ -49,3 +49,17 @@ test("all eight Hybrid modules are directly visible from both public AI Advokat 
   assert.match(bot,/НОВО · Hybrid Legal Intelligence · 8 функции/);
 });
 
+test("Hybrid and Public Legal tools are visible in both top headers",()=>{
+  const bot=fs.readFileSync("bot/index.html","utf8");
+  const root=fs.readFileSync("index.html","utf8");
+  for(const html of [root,bot]){
+    assert.match(html,/data-header-legal="hybrid"/);
+    assert.match(html,/data-header-legal="public-legal"/);
+    assert.match(html,/href="\/hybrid-legal-intelligence\.html"/);
+    assert.match(html,/href="\/public-legal-data-services\.html"/);
+  }
+  assert.match(root,/⌘ Hybrid 8/);
+  assert.match(root,/⚖ Open Data & e‑Services/);
+  assert.match(bot,/header-legal-links/);
+});
+
