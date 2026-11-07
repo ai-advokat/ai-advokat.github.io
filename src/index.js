@@ -163,6 +163,12 @@ import {
   publicOpenLegalSourceDirectory,
   openLegalSourcePolicySummary
 } from "./open-legal-sources-policy.js";
+import {
+  PROPERTY_LAW_PRESCRIPTION_VERSION,
+  isPropertyPrescriptionQuery,
+  formatPropertyPrescriptionAnswer,
+  propertyPrescriptionLegalSources
+} from "./property-law-prescription.js";
 import { detectConfidentialCasePrompt } from "./chat-privacy.js";
 import { buildLegalRoutingQuery, isContextDependentLegalFollowUp } from "./legal-conversation-context.js";
 import {
@@ -6840,6 +6846,30 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         providerCalled:false,
         quotaConsumed:false
       },503);
+    }
+  }
+
+  if(isPropertyPrescriptionQuery(routingQuery)){
+    const answer=formatPropertyPrescriptionAnswer(routingQuery);
+    if(answer){
+      return json(request,{
+        ok:true,
+        answer,
+        provider:"canonical_corpus_no_model",
+        model:null,
+        mode:"passive_corpus",
+        displayMode:"canonical_property_law_prescription",
+        sourceMode:"canonical_property_law_odrzuvacka_no_model",
+        webSearchUsed:false,
+        legalSources:propertyPrescriptionLegalSources(),
+        caseLawSources:[],
+        guideSources:[],
+        publicationSources:[],
+        sources:[],
+        propertyPrescriptionVersion:PROPERTY_LAW_PRESCRIPTION_VERSION,
+        performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+        humanGate:"Source-first property-law analysis. Before consequential use, verify the exact object, possession history, good faith, lawful basis where required, interruptions, predecessors, public-register status and current statutory text."
+      });
     }
   }
 
