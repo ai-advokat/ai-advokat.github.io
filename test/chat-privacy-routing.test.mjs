@@ -66,7 +66,7 @@ test("CPR6 UI renders a direct private-workspace action",()=>{
 test("CPR7 browser preflight stops obvious confidential case text before public chat persistence or network",()=>{
   assert.match(ui,/function localConfidentialCasePrompt\(value\)/);
   assert.match(ui,/function confidentialCaseHandoffMessage\(\)/);
-  const sendStart=ui.indexOf("async function send(forcedText=null)");
+  const sendStart=ui.indexOf("async function send(forcedText=null,sendContext=null)");
   const localGate=ui.indexOf("if(localConfidentialCasePrompt(q) && !governedRadarHandoff)",sendStart);
   const title=ui.indexOf("setTitle(chat,q)",sendStart);
   const publicFetch=ui.indexOf('fetch(CHAT_API_BASE+"\/api\/chat"',sendStart);
