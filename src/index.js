@@ -8878,7 +8878,10 @@ async function handleHybridLegalIntelligence(request,env,url){
           "law_bylaw_graph",
           "article_case_law_graph",
           "legal_effective_date_calendar",
-          "visual_consolidation_diff"
+          "visual_consolidation_diff",
+          "open_data_legal_evidence",
+          "official_e_service_navigator",
+          "eid_human_handoff"
         ],
         authorityBoundary:{
           officialSourceFirst:true,
