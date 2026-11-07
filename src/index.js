@@ -8674,6 +8674,192 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   });
 }
 
+
+const PUBLIC_LEGAL_DATA_VERSION="AI_ADVOCAT_PUBLIC_LEGAL_DATA_SERVICES_V1";
+const PUBLIC_LEGAL_SERVICE_REGISTRY=[
+  {
+    id:"criminal-record-legal-entity",
+    title:"Потврда од казнена евиденција за правни лица",
+    provider:"Основни судови",
+    audience:"company",
+    legalArea:"criminal_records",
+    eidLevel:"low",
+    officialUrl:"https://uslugi.gov.mk/service-details.nspx?serviceId=5235",
+    legalEffect:"Официјална потврда релевантна за правниот статус на правното лице.",
+    sourceStatus:"official_service"
+  },
+  {
+    id:"criminal-proceedings-natural-person",
+    title:"Уверение од кривична евиденција за физички лица",
+    provider:"Основни судови",
+    audience:"citizen",
+    legalArea:"criminal_records",
+    eidLevel:"low",
+    officialUrl:"https://uslugi.gov.mk/service-details.nspx?serviceId=5236",
+    legalEffect:"Официјално уверение за податоци од кривична евиденција/постапка според описот на порталот.",
+    sourceStatus:"official_service"
+  },
+  {
+    id:"property-sheet",
+    title:"Имотен лист",
+    provider:"Агенција за катастар на недвижности",
+    audience:"citizen_company",
+    legalArea:"property",
+    eidLevel:"service_specific",
+    officialUrl:"https://uslugi.gov.mk/service-details.nspx?serviceId=5813",
+    legalEffect:"Јавна исправа за запишано право на сопственост и други стварни права.",
+    sourceStatus:"official_service"
+  },
+  {
+    id:"tax-status",
+    title:"Даночни уверенија и потврди",
+    provider:"Управа за јавни приходи / Министерство за финансии",
+    audience:"citizen_company",
+    legalArea:"tax",
+    eidLevel:"service_specific",
+    officialUrl:"https://uslugi.gov.mk/services-by-life-event.nspx?lifeEventId=odanochuvanje-127",
+    legalEffect:"Документи за утврдување фактичка состојба за даноци, придонеси и други јавни давачки.",
+    sourceStatus:"official_service_category"
+  },
+  {
+    id:"company-services",
+    title:"Услуги за правни лица",
+    provider:"Национален портал за е-услуги",
+    audience:"company",
+    legalArea:"company_licensing",
+    eidLevel:"service_specific",
+    officialUrl:"https://uslugi.gov.mk/services-for-companies.nspx",
+    legalEffect:"Официјален каталог за лиценци, дозволи, регистрација, даночни и други административно-правни постапки.",
+    sourceStatus:"official_service_catalogue"
+  }
+];
+
+function publicLegalServiceMatches(service,q,area,audience){
+  if(area && area!=="all" && service.legalArea!==area) return false;
+  if(audience && audience!=="all" && service.audience!==audience && service.audience!=="citizen_company") return false;
+  if(!q) return true;
+  const hay=[service.title,service.provider,service.legalArea,service.legalEffect].join(" ").toLocaleLowerCase("mk");
+  return hay.includes(q.toLocaleLowerCase("mk"));
+}
+
+async function handlePublicLegalDataServices(request,env,url){
+  if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
+  const path=url.pathname;
+  if(path==="/api/public-legal/capabilities"){
+    return json(request,{
+      ok:true,
+      version:PUBLIC_LEGAL_DATA_VERSION,
+      capabilities:[
+        "open_data_legal_finder",
+        "dataset_evidence_card",
+        "legal_dataset_lens",
+        "e_service_legal_navigator",
+        "eid_readiness_human_handoff"
+      ],
+      sources:[
+        {name:"data.gov.mk",role:"official_open_data_catalogue",authority:"discovery_and_evidence_source"},
+        {name:"uslugi.gov.mk",role:"official_e_service_catalogue",authority:"administrative_action_channel"}
+      ],
+      authorityBoundary:{
+        openDataIsNotAutomaticLegalAuthority:true,
+        serviceCatalogueIsNotLegalAdvice:true,
+        currentLawVerificationRequired:true,
+        humanGateRequired:true,
+        autonomousApplicationSubmission:false
+      }
+    });
+  }
+  if(path==="/api/public-legal/services"){
+    const q=cleanQuery(url.searchParams.get("q")||"",120);
+    const area=cleanQuery(url.searchParams.get("area")||"all",80);
+    const audience=cleanQuery(url.searchParams.get("audience")||"all",40);
+    return json(request,{
+      ok:true,
+      version:PUBLIC_LEGAL_DATA_VERSION,
+      services:PUBLIC_LEGAL_SERVICE_REGISTRY.filter(x=>publicLegalServiceMatches(x,q,area,audience)),
+      eid:{
+        infoUrl:"https://uslugi.gov.mk/lifeevent/e-id.nspx",
+        principle:"Корисникот мора да има eID најмалку на нивото означено за конкретната услуга.",
+        levels:["basic","low","high"]
+      },
+      humanGateRequired:true,
+      autonomousApplicationSubmission:false
+    });
+  }
+  if(path==="/api/public-legal/open-data"){
+    const q=cleanQuery(url.searchParams.get("q")||"",180);
+    const rows=Math.max(1,Math.min(40,Number(url.searchParams.get("limit")||20)||20));
+    const lens=cleanQuery(url.searchParams.get("lens")||"legal",60);
+    const lensTerms={
+      legal:["закон","пропис","право","регистар","мвр","суд","јавни набавки","дозвола","лиценца","катастар","данок","инспекц"],
+      procurement:["јавни набавки","набавки","договор"],
+      police:["мвр","полиција","безбедност","оружје"],
+      regulation:["закон","пропис","правилник","одлука","уредба"],
+      registers:["регистар","евиденција","листа"]
+    };
+    const base=q || (lensTerms[lens]||lensTerms.legal).slice(0,4).join(" OR ");
+    const endpoint=new URL("https://data.gov.mk/api/3/action/package_search");
+    endpoint.searchParams.set("q",base);
+    endpoint.searchParams.set("rows",String(rows));
+    const response=await fetch(endpoint.toString(),{
+      method:"GET",
+      headers:{"accept":"application/json","user-agent":"AI-Advokat-Public-Legal-Data/1.0"},
+      cf:{cacheTtl:300,cacheEverything:true}
+    });
+    const raw=await response.text();
+    let payload=null;
+    try{payload=JSON.parse(raw)}catch{}
+    if(!response.ok || !payload?.success){
+      return json(request,{ok:false,error:"official_open_data_unavailable",source:"data.gov.mk",humanGateRequired:true},502);
+    }
+    const results=Array.isArray(payload?.result?.results)?payload.result.results:[];
+    const terms=lensTerms[lens]||lensTerms.legal;
+    const mapped=results.map(pkg=>{
+      const tags=Array.isArray(pkg.tags)?pkg.tags.map(t=>String(t.display_name||t.name||"")):[];
+      const resources=Array.isArray(pkg.resources)?pkg.resources.slice(0,20).map(x=>({
+        id:String(x.id||""),
+        name:String(x.name||x.description||"Ресурс"),
+        format:String(x.format||"").toUpperCase(),
+        url:String(x.url||""),
+        datastoreActive:x.datastore_active===true
+      })):[];
+      const evidence=[pkg.title,pkg.notes,pkg.organization?.title,...tags].join(" ").toLocaleLowerCase("mk");
+      const legalSignals=terms.filter(t=>evidence.includes(t));
+      return {
+        id:String(pkg.id||""),
+        name:String(pkg.name||""),
+        title:String(pkg.title||pkg.name||""),
+        description:String(pkg.notes||"").slice(0,1600),
+        organization:String(pkg.organization?.title||""),
+        license:String(pkg.license_title||pkg.license_id||""),
+        metadataModified:String(pkg.metadata_modified||""),
+        tags,
+        legalSignals,
+        legalRelevance:legalSignals.length?"candidate":"unclassified",
+        catalogueUrl:"https://data.gov.mk/dataset/"+encodeURIComponent(String(pkg.name||"")),
+        resources
+      };
+    });
+    return json(request,{
+      ok:true,
+      version:PUBLIC_LEGAL_DATA_VERSION,
+      source:"data.gov.mk",
+      officialCatalogue:true,
+      query:base,
+      lens,
+      count:mapped.length,
+      results:mapped,
+      authorityBoundary:{
+        datasetMetadataIsDiscoveryEvidence:true,
+        legalAuthorityPromotion:false,
+        verifyUnderlyingOfficialRecord:true,
+        humanGateRequired:true
+      }
+    });
+  }
+  return json(request,{ok:false,error:"public_legal_endpoint_not_found"},404);
+}
+
 async function handleHybridLegalIntelligence(request,env,url){
   if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
   if(!env?.DB) return json(request,{ok:false,error:"database_not_ready"},503);
