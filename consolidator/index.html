@@ -25,12 +25,12 @@
 </section>
 <aside>
   <div class="card"><div class="head"><h2>Статус</h2><span class="small" id="classification">WORKING CONSOLIDATION</span></div><div class="body"><div class="stats"><div class="stat"><b id="articles">—</b><span>членови</span></div><div class="stat"><b id="applied">—</b><span>applied</span></div><div class="stat"><b id="review">—</b><span>review</span></div><div class="stat"><b id="failed">—</b><span>failed</span></div></div><div id="fidelity" class="status">Fidelity: —</div><div id="gateStatus" class="status warn">Human Gate: потребен</div></div></div>
-  <div class="card" style="margin-top:15px" id="currentLawWatchCard"><div class="head"><h2>Current-Law Watch</h2><span class="small">Sobranie · Sluzben vesnik · LDBIS</span></div><div class="body">
+  <div class="card" style="margin-top:15px" id="currentLawWatchCard"><div class="head"><h2>Current-Law Watch R2</h2><span class="small">Sobranie · Sluzben vesnik · LDBIS · Akademik/DeJure signal</span></div><div class="body">
     <div id="watchState" class="status">Се вчитува последниот read-only snapshot…</div>
     <div class="stats" style="margin-top:10px"><div class="stat"><b id="watchPages">—</b><span>страници</span></div><div class="stat"><b id="watchChanges">—</b><span>промени</span></div><div class="stat"><b id="watchCandidates">—</b><span>кандидати</span></div><div class="stat"><b id="watchGate">—</b><span>Human Gate</span></div></div>
     <div id="watchCandidatesList" class="watch-list"><div class="small">Нема вчитан snapshot.</div></div>
     <div class="actions"><button class="secondary" id="reloadWatch" type="button">Освежи мониторинг</button></div>
-    <p class="small"><b>Граница:</b> Собранието е early-warning. Службен весник е publication provenance. Автоматски може да се создаде working candidate; current-law промоција останува блокирана до 8 проверки + Human Gate.</p>
+    <p class="small"><b>Граница:</b> Собранието е early-warning. Службен весник е publication provenance, а LDBIS е official version corroboration. Akademik и DeJure се само secondary change signals: нивниот текст не се презема во corpus и не се консолидира; секој сигнал мора прво да се врзе со официјален извор. Автоматски може да се создаде working candidate само од дозволен official-source material; current-law промоција останува блокирана до 8 проверки + Human Gate.</p>
   </div></div>
   <div class="card" style="margin-top:15px"><div class="head"><h2>Принципи</h2></div><div class="body small"><p><b>Original preserved.</b> `number` останува оригиналниот број.</p><p><b>Editorial overlay.</b> Промената оди во `editorialNumber`, `editorialNote` и `editorialFootnotes`.</p><p><b>Audit.</b> Секоја одлука носи `silentChange:false`.</p><p><b>Fail closed.</b> Нецелосни одлуки остануваат pending.</p><p><a class="btn secondary" href="/bot/">← Назад во AI Advokat Bot</a></p></div></div>
 </aside>

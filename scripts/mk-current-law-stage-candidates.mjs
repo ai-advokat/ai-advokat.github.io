@@ -4,7 +4,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import {parseAmendmentText} from "./parse-mk-amendment-text.mjs";
 
-export const CURRENT_LAW_STAGE_VERSION="AI_ADVOCAT_CURRENT_LAW_STAGE_R1";
+export const CURRENT_LAW_STAGE_VERSION="AI_ADVOCAT_CURRENT_LAW_STAGE_R2";
 const ALLOWED_HOSTS=new Set([
   "sobranie.mk","www.sobranie.mk",
   "slvesnik.com.mk","www.slvesnik.com.mk",
@@ -83,6 +83,14 @@ export async function stageCandidates(snapshot,outDir){
       automatic_current_law_promotion:false,
       human_gate_required:true
     };
+    if(c.legal_stage==="SECONDARY_CHANGE_SIGNAL" || c.source_role==="secondary_corroboration_signal"){
+      record.status="SECONDARY_SIGNAL_ONLY_OFFICIAL_BINDING_REQUIRED";
+      record.retrieval_attempted=false;
+      record.official_binding_required=true;
+      record.allowed_official_binding_sources=["mk-sobranie","mk-official-gazette","mk-ldbis"];
+      staged.push(record);
+      continue;
+    }
     if(!hostAllowed(c.url)){
       record.status="BLOCKED_UNREGISTERED_HOST";
       staged.push(record);
@@ -174,7 +182,8 @@ export async function stageCandidates(snapshot,outDir){
       staged:staged.length,
       amendment_events_ready:staged.filter(x=>/^AMENDMENT_EVENTS_STAGED/.test(x.status)).length,
       pdf_text_extraction_required:staged.filter(x=>x.status==="PDF_CAPTURED_TEXT_EXTRACTION_REQUIRED").length,
-      review_required:staged.filter(x=>/REQUIRED|FAILED|ERROR|BLOCKED/.test(x.status)).length
+      review_required:staged.filter(x=>/REQUIRED|FAILED|ERROR|BLOCKED/.test(x.status)).length,
+      secondary_signals:staged.filter(x=>x.status==="SECONDARY_SIGNAL_ONLY_OFFICIAL_BINDING_REQUIRED").length
     },
     records:staged
   };

@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0",
-  "watch_id": "AI_ADVOCAT_MK_CURRENT_LAW_WATCH_R1",
+  "schema_version": "2.0",
+  "watch_id": "AI_ADVOCAT_MK_CURRENT_LAW_WATCH_R2",
   "jurisdiction": "MK",
   "poll_interval_minutes": 30,
   "governance": {
@@ -22,7 +22,11 @@
       "application_dates_verified",
       "current_version_verified",
       "human_gate_approved"
-    ]
+    ],
+    "secondary_sources_are_corroboration_only": true,
+    "secondary_signal_requires_official_binding": true,
+    "secondary_fulltext_ingest": false,
+    "secondary_current_law_authority": false
   },
   "legal_title_keywords": [
     "закон",
@@ -44,6 +48,11 @@
         {
           "url": "https://www.sobranie.mk/",
           "kind": "html_anchor_discovery"
+        },
+        {
+          "url": "https://www.sobranie.mk/zakon-za-sobranieto-na-rm.nspx",
+          "kind": "html_anchor_discovery",
+          "watch_scope": "law_and_amendment_reference_page"
         }
       ]
     },
@@ -109,58 +118,120 @@
           "instrument_key": "mk:zs"
         }
       ]
+    },
+    {
+      "id": "mk-akademik",
+      "name": "Академик",
+      "role": "secondary_corroboration_signal",
+      "authority_for_current_law": false,
+      "retrieval_policy": "fingerprint_and_link_discovery_only",
+      "endpoints": [
+        {
+          "url": "https://akademik.mk/",
+          "kind": "html_anchor_discovery"
+        }
+      ]
+    },
+    {
+      "id": "mk-dejure",
+      "name": "DeJure MK",
+      "role": "secondary_corroboration_signal",
+      "authority_for_current_law": false,
+      "retrieval_policy": "fingerprint_and_link_discovery_only",
+      "endpoints": [
+        {
+          "url": "https://dejure.mk/",
+          "kind": "html_anchor_discovery"
+        }
+      ]
     }
   ],
   "tracked_instruments": [
     {
       "canonical_key": "mk:zi",
       "title": "Закон за извршување",
-      "aliases": ["закон за извршување"]
+      "aliases": [
+        "закон за извршување"
+      ]
     },
     {
       "canonical_key": "mk:zro",
       "title": "Закон за работните односи",
-      "aliases": ["закон за работните односи", "работните односи"]
+      "aliases": [
+        "закон за работните односи",
+        "работните односи"
+      ]
     },
     {
       "canonical_key": "mk:zkp",
       "title": "Закон за кривичната постапка",
-      "aliases": ["закон за кривичната постапка", "кривичната постапка"]
+      "aliases": [
+        "закон за кривичната постапка",
+        "кривичната постапка"
+      ]
     },
     {
       "canonical_key": "mk:zpp",
       "title": "Закон за парничната постапка",
-      "aliases": ["закон за парничната постапка", "парничната постапка"]
+      "aliases": [
+        "закон за парничната постапка",
+        "парничната постапка"
+      ]
     },
     {
       "canonical_key": "mk:kz",
       "title": "Кривичен законик",
-      "aliases": ["кривичен законик"]
+      "aliases": [
+        "кривичен законик"
+      ]
     },
     {
       "canonical_key": "mk:zoo",
       "title": "Закон за облигационите односи",
-      "aliases": ["закон за облигационите односи", "облигационите односи"]
+      "aliases": [
+        "закон за облигационите односи",
+        "облигационите односи"
+      ]
     },
     {
       "canonical_key": "mk:zoup",
       "title": "Закон за општата управна постапка",
-      "aliases": ["закон за општата управна постапка", "општата управна постапка"]
+      "aliases": [
+        "закон за општата управна постапка",
+        "општата управна постапка"
+      ]
     },
     {
       "canonical_key": "mk:zs",
       "title": "Закон за семејството",
-      "aliases": ["закон за семејството"]
+      "aliases": [
+        "закон за семејството"
+      ]
     },
     {
       "canonical_key": "mk:zsidp",
       "title": "Закон за сопственост и други стварни права",
-      "aliases": ["закон за сопственост и други стварни права", "сопственост и други стварни права"]
+      "aliases": [
+        "закон за сопственост и други стварни права",
+        "сопственост и други стварни права"
+      ]
     },
     {
       "canonical_key": "mk:ztd",
       "title": "Закон за трговските друштва",
-      "aliases": ["закон за трговските друштва", "трговските друштва"]
+      "aliases": [
+        "закон за трговските друштва",
+        "трговските друштва"
+      ]
+    },
+    {
+      "canonical_key": "mk:zsob",
+      "title": "Закон за Собранието на Република Македонија",
+      "aliases": [
+        "закон за собранието на рм",
+        "закон за собранието",
+        "законот за собранието"
+      ]
     }
   ]
 }

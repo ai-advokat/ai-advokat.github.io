@@ -1,4 +1,4 @@
-name: MK Current-Law Watch R1
+name: MK Current-Law Watch R2
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: mk-current-law-watch-r1
+  group: mk-current-law-watch-r2
   cancel-in-progress: false
 
 jobs:
@@ -107,12 +107,15 @@ jobs:
           const fs=require("fs");
           const s=JSON.parse(fs.readFileSync("/tmp/current-law-watch/current-law-watch-snapshot.json","utf8"));
           const p=JSON.parse(fs.readFileSync("/tmp/current-law-watch/current-law-human-gate-packet.json","utf8"));
-          if(s.version!=="AI_ADVOCAT_MK_CURRENT_LAW_WATCH_R1") throw new Error("watch version mismatch");
+          if(s.version!=="AI_ADVOCAT_MK_CURRENT_LAW_WATCH_R2") throw new Error("watch version mismatch");
           if(p.automatic_database_write!==false) throw new Error("autonomous DB write must remain disabled");
           if(p.automatic_current_law_promotion!==false) throw new Error("autonomous current-law promotion must remain disabled");
           if(p.required_promotion_gates.length!==8) throw new Error("eight current-law gates required");
           if(!s.governance.parliament_is_early_warning_only) throw new Error("Parliament boundary missing");
           if(!s.governance.official_gazette_is_publication_provenance_primary) throw new Error("Gazette authority boundary missing");
+          if(!s.governance.secondary_sources_are_corroboration_only) throw new Error("Secondary-source boundary missing");
+          if(!s.governance.secondary_signal_requires_official_binding) throw new Error("Secondary official-binding gate missing");
+          if(s.governance.secondary_fulltext_ingest!==false) throw new Error("Secondary fulltext ingest must remain disabled");
           console.log("CURRENT-LAW WATCH GOVERNANCE: PASS");
           NODE
 
@@ -154,12 +157,13 @@ jobs:
           const fs=require("fs");
           const s=JSON.parse(fs.readFileSync("/tmp/current-law-watch/current-law-watch-snapshot.json","utf8"));
           const d=s.diff||{};
-          console.log("## MK Current-Law Watch R1");
+          console.log("## MK Current-Law Watch R2");
           console.log("");
           console.log("- State: **"+String(d.state||"UNKNOWN")+"**");
           console.log("- Pages checked: **"+Number(s.counts?.pages||0)+"**");
           console.log("- Reachable pages: **"+Number(s.counts?.pages_ok||0)+"**");
           console.log("- New legal candidates: **"+Number(d.new_candidates?.length||0)+"**");
+          console.log("- Secondary corroboration signals: **"+Number(s.counts?.secondary_signals||0)+"**");
           console.log("- Changed official pages: **"+Number(d.changed_pages?.length||0)+"**");
           console.log("- Automatic current-law promotion: **DISABLED**");
           console.log("- Human Gate: **"+(d.requires_human_review?"REQUIRED":"no new change candidate")+"**");
