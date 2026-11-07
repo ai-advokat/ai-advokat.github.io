@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>AI Advokat · Public Legal Data & e-Services</title>
+<style>
+:root{--navy:#0b2239;--gold:#c8a45d;--cream:#fbfaf6;--ink:#17212b;--muted:#64717d;--line:#d9e0e5;--panel:#fff;--ok:#1d6a4d;--warn:#8a5a00}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,var(--cream),#f3f6f7);color:var(--ink);font:15px/1.55 Inter,system-ui,sans-serif}
+header{background:linear-gradient(120deg,#071826,var(--navy));color:#fff;border-bottom:3px solid var(--gold)}
+.head{max-width:1280px;margin:auto;padding:24px}.head h1{margin:4px 0 6px;font-size:clamp(1.5rem,3vw,2.35rem)}.head p{margin:0;color:#dbe7ef}
+main{max-width:1280px;margin:auto;padding:22px}.notice{border:1px solid #e0c98d;background:#fff8e6;border-radius:14px;padding:14px 16px;margin-bottom:18px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-weight:800}.tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.panel{display:none}.panel.active{display:block}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 8px 25px rgba(7,24,38,.05)}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.field{display:grid;gap:5px;min-width:210px;flex:1}.field label{font-weight:750}.field input,.field select{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+button,.btn{padding:10px 13px;border-radius:10px;border:1px solid var(--navy);background:var(--navy);color:#fff;font-weight:800;text-decoration:none;display:inline-block}.secondary{background:#fff;color:var(--navy)}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:14px}.item{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff}.item h3{margin:0 0 7px}.meta{font-size:.86rem;color:var(--muted);margin:4px 0}.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.chip{font-size:.76rem;font-weight:800;border:1px solid var(--line);border-radius:999px;padding:4px 7px;background:#f8fafb}
+.good{color:var(--ok)}.warn{color:var(--warn)}.footer{margin:20px 0;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<header><div class="head"><div>AI ADVOKAT · SOURCE-FIRST</div><h1>Public Legal Data & e‑Services</h1><p>Правно-релевантни јавни податоци, официјални е-услуги, eID readiness и Human Gate.</p></div></header>
+<main>
+<div class="notice"><strong>Authority Boundary:</strong> Open Data се користи за discovery, фактичка проверка и доказна трага; не станува важечко право автоматски. Uslugi.gov.mk е официјален административен канал; AI Advokat не поднесува барање во име на корисникот.</div>
+<div class="tabs" role="navigation" aria-label="Public Legal Data функции">
+<button class="tab active" data-panel="finder">01 · Open Data Finder</button>
+<button class="tab" data-panel="evidence">02 · Evidence Dataset Card</button>
+<button class="tab" data-panel="lens">03 · Legal Dataset Lens</button>
+<button class="tab" data-panel="services">04 · e‑Service Navigator</button>
+<button class="tab" data-panel="eid">05 · eID + Human Handoff</button>
+</div>
+
+<section class="panel active" data-view="finder">
+<div class="card"><h2>01 · Open Data Legal Finder</h2><p>Пребарувај правно релевантни сетови од официјалниот CKAN каталог на data.gov.mk.</p>
+<div class="controls"><div class="field"><label>Поим</label><input id="q" placeholder="пример: прописи, МВР, јавни набавки, регистар"></div><div class="field"><label>Правен lens</label><select id="lens"><option value="legal">Општо правно</option><option value="regulation">Прописи</option><option value="police">МВР / полиција</option><option value="procurement">Јавни набавки</option><option value="registers">Регистри / евиденции</option></select></div><button id="search">Пребарај</button></div>
+<div id="results" class="grid"></div></div></section>
+
+<section class="panel" data-view="evidence">
+<div class="card"><h2>02 · Evidence Dataset Card</h2><p>За секој резултат проверувај: институција, лиценца, формати, metadata date, resource URL и дали има DataStore. Тоа е доказна трага, не автоматски правен авторитет.</p><div id="evidenceHint" class="item">Избери резултат од Open Data Finder.</div></div></section>
+
+<section class="panel" data-view="lens">
+<div class="card"><h2>03 · Legal Dataset Lens</h2><div class="grid">
+<div class="item"><h3>Прописи</h3><p>Закони, правилници, одлуки, уредби и институционални регистри.</p></div>
+<div class="item"><h3>МВР / кривично</h3><p>Регистри, дозволи, безбедносни и административни податоци со правна релевантност.</p></div>
+<div class="item"><h3>Јавни набавки</h3><p>Податоци за набавки и договори — за discovery, контрола и подоцнежна проверка во примарен извор.</p></div>
+<div class="item"><h3>Регистри / евиденции</h3><p>Списоци и регистри што можат да потврдат фактичка состојба.</p></div>
+</div></div></section>
+
+<section class="panel" data-view="services">
+<div class="card"><h2>04 · e‑Service Legal Navigator</h2><p>Само услуги што создаваат или обезбедуваат правно релевантен документ или официјален административен чекор.</p>
+<div class="controls"><div class="field"><label>Корисник</label><select id="audience"><option value="all">Сите</option><option value="citizen">Граѓанин</option><option value="company">Правно лице</option></select></div><div class="field"><label>Област</label><select id="area"><option value="all">Сите</option><option value="criminal_records">Казнена/кривична евиденција</option><option value="property">Имот / катастар</option><option value="tax">Даноци</option><option value="company_licensing">Компании / лиценци</option></select></div><button id="loadServices">Прикажи</button></div>
+<div id="servicesResults" class="grid"></div></div></section>
+
+<section class="panel" data-view="eid">
+<div class="card"><h2>05 · eID Readiness + Human Handoff</h2><p><strong>Правило:</strong> корисникот мора да има eID најмалку на нивото што го бара конкретната услуга. AI Advokat може да подготви чек-листа, но финалното аплицирање останува кај човекот на официјалниот портал.</p>
+<div class="grid"><div class="item"><h3>Основен профил</h3><p>За услуги што не бараат потврден физички идентитет.</p></div><div class="item"><h3>Ниско eID</h3><p>За многу официјални е-услуги каде идентитетот е потврден.</p></div><div class="item"><h3>Високо eID</h3><p>Најава со сертификат за дигитално потпишување кога е потребно повисоко ниво на веродостојност.</p></div></div>
+<p style="margin-top:14px"><a class="btn" href="https://uslugi.gov.mk/lifeevent/e-id.nspx" target="_blank" rel="noopener noreferrer">Официјални eID информации ↗</a></p></div></section>
+
+<div class="footer"><a class="btn secondary" href="/bot/">← AI Advokat</a> <a class="btn secondary" href="/hybrid-legal-intelligence.html">Hybrid Legal Intelligence →</a></div>
+</main>
+<script>
+(()=>{"use strict";
+const qs=s=>document.querySelector(s),qsa=s=>[...document.querySelectorAll(s)];
+qsa(".tab").forEach(b=>b.onclick=()=>{qsa(".tab").forEach(x=>x.classList.toggle("active",x===b));qsa(".panel").forEach(p=>p.classList.toggle("active",p.dataset.view===b.dataset.panel))});
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let last=[];
+function resourceSummary(resources){return (resources||[]).slice(0,6).map(r=>'<span class="chip">'+esc(r.format||"DATA")+'</span>').join("")}
+function renderData(data){
+ last=data.results||[]; const host=qs("#results"); host.innerHTML="";
+ if(!last.length){host.innerHTML='<div class="item">Нема резултати.</div>';return}
+ last.forEach((x,i)=>{const d=document.createElement("article");d.className="item";d.innerHTML='<h3>'+esc(x.title)+'</h3><div class="meta">'+esc(x.organization||"—")+' · '+esc(x.license||"лиценца не е наведена")+'</div><p>'+esc(x.description||"").slice(0,350)+'</p><div class="chips">'+resourceSummary(x.resources)+(x.legalSignals||[]).map(t=>'<span class="chip good">'+esc(t)+'</span>').join("")+'</div><p><button data-evidence="'+i+'">Evidence card</button> <a class="btn secondary" target="_blank" rel="noopener noreferrer" href="'+esc(x.catalogueUrl)+'">data.gov.mk ↗</a></p>';host.append(d)});
+ host.querySelectorAll("[data-evidence]").forEach(b=>b.onclick=()=>showEvidence(last[Number(b.dataset.evidence)]));
+}
+function showEvidence(x){const h=qs("#evidenceHint");h.innerHTML='<h3>'+esc(x.title)+'</h3><div class="meta">Институција: '+esc(x.organization||"—")+'</div><div class="meta">Лиценца: '+esc(x.license||"—")+'</div><div class="meta">Metadata modified: '+esc(x.metadataModified||"—")+'</div><div class="meta">Legal relevance: '+esc(x.legalRelevance||"unclassified")+'</div><div class="chips">'+resourceSummary(x.resources)+'</div><p class="warn"><strong>Human Gate:</strong> провери го underlying official record пред да го користиш како правен авторитет.</p>';qsa(".tab").find(b=>b.dataset.panel==="evidence").click()}
+async function search(){const u=new URL("/api/public-legal/open-data",location.origin);u.searchParams.set("q",qs("#q").value);u.searchParams.set("lens",qs("#lens").value);const r=await fetch(u);renderData(await r.json())}
+async function services(){const u=new URL("/api/public-legal/services",location.origin);u.searchParams.set("audience",qs("#audience").value);u.searchParams.set("area",qs("#area").value);const r=await fetch(u);const d=await r.json();const h=qs("#servicesResults");h.innerHTML="";(d.services||[]).forEach(x=>{const a=document.createElement("article");a.className="item";a.innerHTML='<h3>'+esc(x.title)+'</h3><div class="meta">'+esc(x.provider)+' · eID: '+esc(x.eidLevel)+'</div><p>'+esc(x.legalEffect)+'</p><p><a class="btn" target="_blank" rel="noopener noreferrer" href="'+esc(x.officialUrl)+'">Официјална услуга ↗</a></p>';h.append(a)})}
+qs("#search").onclick=search;qs("#loadServices").onclick=services;services();
+})();
+</script>
+</body></html>
