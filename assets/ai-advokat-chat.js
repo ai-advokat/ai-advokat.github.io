@@ -1023,7 +1023,7 @@
             label:format==="docx"?"Преземи Word (.docx)":format==="pdf"?"Преземи PDF":format==="json"?"Преземи JSON":"Преземи CSV",
             filename:"AI-Advokat-analysis."+format
           })),
-          sourceLabel:d.sourceMode==="workers_ai_free_authorial_publication_context" || d.sourceMode==="ai_advokat_authorial_publication_context"
+          sourceLabel:d.sourceMode==="canonical_zkp_detention_articles_164_169_no_model"\n            ?"Governed ZKP corpus · членови 164–169 · deterministic/no-model · Human Gate пред потпишување/поднесување."\n            :d.sourceMode==="workers_ai_free_authorial_publication_context" || d.sourceMode==="ai_advokat_authorial_publication_context"
             ?"AI Advokat авторски трудови · секундарен извор · DOI/Zenodo + Human Gate; не е извор на важечко право."
             :d.sourceMode==="ai_advokat_article_corpus_first"
               ?"AI Advokat article-level corpus first · верзија и Human Gate се прикажани во изворите."
