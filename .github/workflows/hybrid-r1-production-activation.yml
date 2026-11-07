@@ -71,13 +71,18 @@ jobs:
           npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER)>=51 ORDER BY CAST(version AS INTEGER); SELECT name FROM sqlite_master WHERE type='table' AND name IN ('legal_delegated_legislation_links','legal_article_case_law_links','legal_effective_date_events','legal_consolidation_diff_runs','legal_consolidation_diff_articles') ORDER BY name;"             | tee /tmp/hybrid-prestate.txt
 
           if grep -q "0052_hybrid_legal_intelligence_r1.sql" /tmp/hybrid-pending.txt; then
-            unexpected="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/hybrid-pending.txt | grep -v '^0052_hybrid_legal_intelligence_r1\.sql$' || true)"
-            if [ -n "$unexpected" ]; then
-              echo "Unexpected pending migrations:"
-              echo "$unexpected"
+            found="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/hybrid-pending.txt | sort -u)"
+            expected="$(printf '%s\n' \
+              0045_case_private_d1_object_store.sql \
+              0048_zkp_commentary_v6_secondary_layer.sql \
+              0049_case_law_binding_extraction_audit.sql \
+              0052_hybrid_legal_intelligence_r1.sql | sort -u)"
+            if [ "$found" != "$expected" ]; then
+              echo "Unexpected pending migration set:"
+              echo "$found"
               exit 1
             fi
-            echo "HYBRID R1 PRESTATE: 0052 PENDING AND ISOLATED"
+            echo "HYBRID R1 PRESTATE: 0052 PENDING; 0045/0048/0049 ARE KNOWN UNRELATED PENDING MIGRATIONS"
           else
             if ! grep -q '"version": "52"' /tmp/hybrid-prestate.txt; then
               echo "0052 is neither pending nor recorded as applied"
@@ -91,7 +96,23 @@ jobs:
         run: |
           set -euo pipefail
           if grep -q "0052_hybrid_legal_intelligence_r1.sql" /tmp/hybrid-pending.txt; then
+            mkdir -p /tmp/hybrid-held-migrations
+            for m in \
+              0045_case_private_d1_object_store.sql \
+              0048_zkp_commentary_v6_secondary_layer.sql \
+              0049_case_law_binding_extraction_audit.sql; do
+              test -f "migrations/$m"
+              mv "migrations/$m" "/tmp/hybrid-held-migrations/$m"
+            done
+            trap 'for p in /tmp/hybrid-held-migrations/*.sql; do [ -e "$p" ] && mv "$p" migrations/; done' EXIT
+            npx wrangler d1 migrations list DB --remote --config wrangler.jsonc | tee /tmp/hybrid-isolated-pending.txt
+            isolated="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/hybrid-isolated-pending.txt | sort -u)"
+            test "$isolated" = "0052_hybrid_legal_intelligence_r1.sql"
             npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc | tee /tmp/hybrid-apply.txt
+            for p in /tmp/hybrid-held-migrations/*.sql; do
+              [ -e "$p" ] && mv "$p" migrations/
+            done
+            trap - EXIT
           else
             echo "0052 already applied; idempotent activation continues." | tee /tmp/hybrid-apply.txt
           fi
@@ -105,6 +126,13 @@ jobs:
             echo "0052 remains pending after activation"
             exit 1
           fi
+          remaining="$(grep -Eo '00[0-9]{2}_[A-Za-z0-9_.-]+\.sql' /tmp/hybrid-pending-after.txt | sort -u)"
+          expected_remaining="$(printf '%s\n' \
+            0045_case_private_d1_object_store.sql \
+            0048_zkp_commentary_v6_secondary_layer.sql \
+            0049_case_law_binding_extraction_audit.sql | sort -u)"
+          test "$remaining" = "$expected_remaining"
+          echo "UNRELATED PENDING MIGRATIONS PRESERVED: 0045 / 0048 / 0049"
 
           npx wrangler d1 execute DB --remote --config wrangler.jsonc             --command "SELECT version,description FROM schema_migrations WHERE version='52'; SELECT name FROM sqlite_master WHERE type='table' AND name IN ('legal_delegated_legislation_links','legal_article_case_law_links','legal_effective_date_events','legal_consolidation_diff_runs','legal_consolidation_diff_articles') ORDER BY name;"             | tee /tmp/hybrid-schema.txt
 
