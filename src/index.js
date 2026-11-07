@@ -101,6 +101,15 @@ import {
   versionStatusWarning
 } from "./corpus-versions.js";
 import {
+  HYBRID_LEGAL_INTELLIGENCE_VERSION,
+  articleTimeMachine,
+  buildDelegatedLegislationGraph,
+  buildArticleCaseLawGraph,
+  buildLegalEffectiveDateCalendar,
+  visualConsolidationDiff
+} from "./hybrid-legal-intelligence.js";
+
+import {
   attachLegalStatusOverlays,
   legalStatusOverlaysForArticles
 } from "./legal-status-overlays.js";
