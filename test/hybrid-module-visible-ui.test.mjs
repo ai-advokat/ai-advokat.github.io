@@ -13,7 +13,7 @@ test("Hybrid Intelligence is explicitly visible in both AI Advokat shells",()=>{
 
 test("bot shell uses a fresh vNext cache key for Hybrid R1 visibility",()=>{
   const bot=fs.readFileSync("bot/index.html","utf8");
-  assert.match(bot,/standalone-bot-vnext\.js\?v=20261107-hybrid-r1-visible/);
+  assert.match(bot,/standalone-bot-vnext\.js\?v=20261107-hybrid-r2-lawyer-view/);
   assert.doesNotMatch(bot,/standalone-bot-vnext\.js\?v=20261106-vnext-r14-toolkit-parity/);
 });
 
@@ -23,7 +23,7 @@ test("production live-parity workflows expect the Hybrid R1 cache key",()=>{
     ".github/workflows/worker-runtime-live-smoke.yml"
   ]){
     const y=fs.readFileSync(p,"utf8");
-    assert.match(y,/20261107-hybrid-r1-visible/);
+    assert.match(y,/20261107-hybrid-r2-lawyer-view/);
     assert.doesNotMatch(y,/20261106-vnext-r14-toolkit-parity/);
   }
 });
