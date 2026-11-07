@@ -75,4 +75,8 @@ test("AI Advokat vNext routes Consolidator to deterministic v10.4 workspace",()=
   assert.match(page,/silentChange:false/);
   assert.match(vnext,/window\.open\('\/consolidator\/'/);
   assert.doesNotMatch(vnext,/CONSOLIDATOR MODE/);
+  assert.match(page,/Current-Law Watch/);
+  assert.match(page,/mk-current-law-watch-latest\.json/);
+  assert.match(page,/Собранието е early-warning/);
+  assert.match(page,/8 проверки \+ Human Gate/);
 });
