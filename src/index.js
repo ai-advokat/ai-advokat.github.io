@@ -10300,6 +10300,7 @@ export default {
       }, ready ? 200 : 503);
     }
 
+    if (url.pathname.startsWith("/api/hybrid/")) return handleHybridLegalIntelligence(request,env,url);
     if (url.pathname === "/api/capabilities") return handleCapabilities(request, env);
     if (url.pathname === "/api/orchestrator") return handleOrchestratorArchitecture(request, env);
     if (url.pathname === "/api/orchestrator/plan") return handleOrchestratorPlan(request, env);
