@@ -39,7 +39,7 @@ jobs:
           grep -q 'ai-advokat-chat.css?v=20261106-root-r15-voice' index.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' bot/index.html
           grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' bot/index.html
-          grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r1-visible' bot/index.html
+          grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view' bot/index.html
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' bot/index.html
           grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' bot/index.html
           grep -q 'AI_ADVOCAT_VOICE_R2' assets/ai-advokat-voice.mjs
@@ -65,7 +65,7 @@ jobs:
               && grep -q 'ai-advokat-chat.css?v=20261106-root-r15-voice' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' /tmp/pages-bot.html 2>/dev/null \
-              && grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r1-visible' /tmp/pages-bot.html 2>/dev/null \
+              && grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'Hybrid Legal Intelligence R2' /tmp/pages-hybrid.html 2>/dev/null \
