@@ -19,7 +19,8 @@ test("Hybrid Lawyer View exposes nine governed legal workflow modules",()=>{
     "Visual Consolidation Diff",
     "Open Data Legal Evidence",
     "Official e‑Service Navigator",
-    "eID + Human Handoff"
+    "eID + Human Handoff",
+    "Gold Set Review Gate"
   ]) assert.equal(page.includes(label),true,label);
   assert.match(page,/Human Gate · Authority Boundary/);
   assert.match(page,/Secondary signals:/);
@@ -75,7 +76,7 @@ test("Pages sync publishes and verifies the Hybrid R2 workbench",()=>{
   assert.match(pagesSync,/- "hybrid-legal-intelligence\.html"/);
   assert.match(pagesSync,/test -f hybrid-legal-intelligence\.html/);
   assert.match(pagesSync,/grep -q 'Hybrid Legal Intelligence R2' hybrid-legal-intelligence\.html/);
-  assert.match(pagesSync,/for f in index\.html case-law-curation\.html consolidator\/index\.html hybrid-legal-intelligence\.html public-legal-data-services\.html bot\/index\.html/);
+  assert.match(pagesSync,/for f in index\.html case-law-curation\.html consolidator\/index\.html hybrid-legal-intelligence\.html public-legal-data-services\.html gold-set-review-gate\.html bot\/index\.html/);
 });
 
 test("Worker and root release smokes verify Hybrid R2 live",()=>{
@@ -92,7 +93,10 @@ test("Hybrid integrates official public legal evidence and e-service APIs",()=>{
   assert.match(page,/\/api\/public-legal\/services/);
   assert.match(page,/data-module="opendata"/);
   assert.match(page,/data-module="services"/);
-  assert.match(page,/data-module="handoff"/);\n  assert.match(page,/data-module="gold"/);\n  assert.match(page,/gold-set-review-gate\\.html/);\n  assert.match(worker,/gold_set_review_gate/);
+  assert.match(page,/data-module="handoff"/);
+  assert.match(page,/data-module="gold"/);
+  assert.match(page,/gold-set-review-gate\.html/);
+  assert.match(worker,/gold_set_review_gate/);
   assert.match(worker,/open_data_legal_evidence/);
   assert.match(worker,/official_e_service_navigator/);
   assert.match(worker,/eid_human_handoff/);
