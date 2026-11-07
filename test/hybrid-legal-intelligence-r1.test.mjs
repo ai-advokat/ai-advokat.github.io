@@ -154,8 +154,8 @@ test("HLI8 Worker exposes five read-only hybrid API routes",()=>{
   assert.match(worker,/autonomousCurrentLawPromotion:false/);
 });
 
-test("HLI9 staged schema candidate provides persistent graph without touching frozen production migrations",()=>{
-  const sql=fs.readFileSync("staging/schema-candidates/0052_hybrid_legal_intelligence_r1.sql","utf8");
+test("HLI9 Human-Gated production schema 0052 is frozen into the migration manifest",()=>{
+  const sql=fs.readFileSync("migrations/0052_hybrid_legal_intelligence_r1.sql","utf8");
   assert.match(sql,/legal_delegated_legislation_links/);
   assert.match(sql,/legal_article_case_law_links/);
   assert.match(sql,/legal_effective_date_events/);
@@ -163,7 +163,10 @@ test("HLI9 staged schema candidate provides persistent graph without touching fr
   assert.match(sql,/legal_consolidation_diff_articles/);
   assert.doesNotMatch(sql,/UPDATE\s+instrument_versions\s+SET\s+is_current\s*=\s*1/i);
   assert.match(sql,/human_review_status/);
-  assert.equal(fs.existsSync("migrations/0052_hybrid_legal_intelligence_r1.sql"),false);
+  assert.equal(fs.existsSync("migrations/0052_hybrid_legal_intelligence_r1.sql"),true);
+  const manifest=JSON.parse(fs.readFileSync("evidence/hg2-c/migration-manifest.json","utf8"));
+  assert.equal(manifest.migration_count,52);
+  assert.equal(manifest.last_migration,"migrations/0052_hybrid_legal_intelligence_r1.sql");
 });
 
 test("HLI10 Consolidator R2 remains authority-first while Hybrid R1 is layered above it",()=>{
