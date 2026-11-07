@@ -8,6 +8,7 @@ on:
     paths:
       - "data/mk-current-law-watch-config.json"
       - "scripts/mk-current-law-watch.mjs"
+      - "scripts/mk-current-law-stage-candidates.mjs"
       - "test/mk-current-law-watch.test.mjs"
       - ".github/workflows/mk-current-law-watch.yml"
 
