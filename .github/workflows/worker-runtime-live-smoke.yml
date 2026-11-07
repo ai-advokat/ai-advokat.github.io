@@ -7,6 +7,8 @@ on:
       - ".github/workflows/worker-runtime-live-smoke.yml"
       - "bot/index.html"
       - "hybrid-legal-intelligence.html"
+      - "public-legal-data-services.html"
+      - "src/index.js"
       - "assets/standalone-bot.js"
       - "assets/standalone-bot-vnext.js"
       - "assets/standalone-bot-vnext.css"
@@ -40,6 +42,7 @@ jobs:
 
           expected_bot="$(sha256sum bot/index.html | awk '{print $1}')"
           expected_hybrid="$(sha256sum hybrid-legal-intelligence.html | awk '{print $1}')"
+          expected_public_legal="$(sha256sum public-legal-data-services.html | awk '{print $1}')"
           expected_core="$(sha256sum assets/standalone-bot.js | awk '{print $1}')"
           expected_voice="$(sha256sum assets/ai-advokat-voice.mjs | awk '{print $1}')"
           expected_vnext="$(sha256sum assets/standalone-bot-vnext.js | awk '{print $1}')"
@@ -54,6 +57,7 @@ jobs:
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r15&smoke=$nonce" -o /tmp/worker-bot.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/hybrid-legal-intelligence.html?smoke=$nonce" -o /tmp/worker-hybrid.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/public-legal-data-services.html?smoke=$nonce" -o /tmp/worker-public-legal.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261106-core-r15-voice-r2&smoke=$nonce" -o /tmp/worker-core.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&smoke=$nonce" -o /tmp/worker-voice.mjs || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view&smoke=$nonce" -o /tmp/worker-vnext.js || true
@@ -65,6 +69,7 @@ jobs:
 
             live_bot="$(sha256sum /tmp/worker-bot.html 2>/dev/null | awk '{print $1}' || true)"
             live_hybrid="$(sha256sum /tmp/worker-hybrid.html 2>/dev/null | awk '{print $1}' || true)"
+            live_public_legal="$(sha256sum /tmp/worker-public-legal.html 2>/dev/null | awk '{print $1}' || true)"
             live_core="$(sha256sum /tmp/worker-core.js 2>/dev/null | awk '{print $1}' || true)"
             live_voice="$(sha256sum /tmp/worker-voice.mjs 2>/dev/null | awk '{print $1}' || true)"
             live_vnext="$(sha256sum /tmp/worker-vnext.js 2>/dev/null | awk '{print $1}' || true)"
@@ -76,6 +81,7 @@ jobs:
 
             if [ "$live_bot" = "$expected_bot" ] \
               && [ "$live_hybrid" = "$expected_hybrid" ] \
+              && [ "$live_public_legal" = "$expected_public_legal" ] \
               && [ "$live_core" = "$expected_core" ] \
               && [ "$live_voice" = "$expected_voice" ] \
               && [ "$live_vnext" = "$expected_vnext" ] \
@@ -96,6 +102,10 @@ jobs:
           grep -q 'name="ai-advokat-release" content="core-r15"' /tmp/worker-bot.html
           grep -q 'Hybrid Legal Intelligence R2' /tmp/worker-hybrid.html
           grep -q 'Lawyer View' /tmp/worker-hybrid.html
+          grep -q 'Open Data Legal Evidence' /tmp/worker-hybrid.html
+          grep -q 'Official e‑Service Navigator' /tmp/worker-hybrid.html
+          grep -q 'eID + Human Handoff' /tmp/worker-hybrid.html
+          grep -q 'Public Legal Data & e‑Services' /tmp/worker-public-legal.html
           grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' /tmp/worker-bot.html
           grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/worker-voice.mjs
           grep -q 'getUserMedia' /tmp/worker-voice.mjs
@@ -152,12 +162,44 @@ jobs:
           node <<'NODE'
           const c=require("/tmp/worker-hybrid-capabilities.json");
           const i=require("/tmp/worker-hybrid-instruments.json");
-          const expected=["article_time_machine","law_bylaw_graph","article_case_law_graph","legal_effective_date_calendar","visual_consolidation_diff"];
+          const expected=["article_time_machine","law_bylaw_graph","article_case_law_graph","legal_effective_date_calendar","visual_consolidation_diff","open_data_legal_evidence","official_e_service_navigator","eid_human_handoff"];
           if(!c.ok) throw new Error("hybrid capabilities not ok");
           for(const x of expected) if(!c.capabilities?.includes(x)) throw new Error("missing hybrid capability "+x);
           if(c.authorityBoundary?.autonomousCurrentLawPromotion!==false) throw new Error("hybrid authority boundary weakened");
           if(!i.ok || !Array.isArray(i.instruments)) throw new Error("hybrid instrument catalogue unavailable");
           console.log("HYBRID R2 WORKBENCH + DISCOVERY APIS: PASS");
+          NODE
+
+      - name: Verify Public Legal Data and e-Services live APIs
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/public-legal/capabilities" -o /tmp/worker-public-legal-capabilities.json
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/public-legal/services" -o /tmp/worker-public-legal-services.json
+          open_code="$(curl -sS --retry 3 --retry-delay 2 --max-time 30 -o /tmp/worker-public-legal-open-data.json -w '%{http_code}' "$BASE/api/public-legal/open-data?q=регистар&limit=1")"
+          node - "$open_code" <<'NODE'
+          const fs=require("fs");
+          const status=Number(process.argv[2]||0);
+          const c=require("/tmp/worker-public-legal-capabilities.json");
+          const s=require("/tmp/worker-public-legal-services.json");
+          if(!c.ok) throw new Error("public legal capabilities not ok");
+          for(const x of ["open_data_legal_finder","dataset_evidence_card","legal_dataset_lens","e_service_legal_navigator","eid_readiness_human_handoff"]){
+            if(!c.capabilities?.includes(x)) throw new Error("missing public legal capability "+x);
+          }
+          if(c.authorityBoundary?.openDataIsNotAutomaticLegalAuthority!==true) throw new Error("open-data authority boundary weakened");
+          if(c.authorityBoundary?.autonomousApplicationSubmission!==false) throw new Error("autonomous submission boundary weakened");
+          if(!s.ok || !Array.isArray(s.services)) throw new Error("official e-service registry unavailable");
+          const raw=fs.readFileSync("/tmp/worker-public-legal-open-data.json","utf8");
+          let o={}; try{o=JSON.parse(raw);}catch{throw new Error("open-data endpoint returned invalid json");}
+          if(status===200){
+            if(!o.ok || o.source!=="data.gov.mk" || !Array.isArray(o.results)) throw new Error("open-data endpoint malformed success");
+          }else if(status===502){
+            if(o.error!=="official_open_data_unavailable") throw new Error("open-data endpoint did not fail closed");
+          }else{
+            throw new Error("unexpected open-data endpoint http "+status);
+          }
+          console.log("PUBLIC LEGAL DATA + E-SERVICES: PASS");
           NODE
 
       - name: Verify browser CORS and main AI Advokat live chat
