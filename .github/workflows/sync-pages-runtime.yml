@@ -7,6 +7,7 @@ on:
       - "index.html"
       - "case-law-curation.html"
       - "consolidator/index.html"
+      - "hybrid-legal-intelligence.html"
       - "bot/index.html"
       - "assets/ai-advokat-chat.js"
       - "assets/case-law-static-fallback.js"
@@ -78,7 +79,11 @@ jobs:
           node --check assets/standalone-bot-reliability.js
           test -f case-law-curation.html
           test -f consolidator/index.html
+          test -f hybrid-legal-intelligence.html
           grep -q 'Current-Law Watch' consolidator/index.html
+          grep -q 'Hybrid Legal Intelligence R2' hybrid-legal-intelligence.html
+          grep -q '/api/hybrid/instruments' hybrid-legal-intelligence.html
+          grep -q '/api/hybrid/consolidations' hybrid-legal-intelligence.html
           grep -q '/data/mk-current-law-watch-latest.json' consolidator/index.html
           grep -q 'Case-Law Corpus Radar' case-law-curation.html
           grep -q '/api/case-law/curation-plan' case-law-curation.html
@@ -109,6 +114,7 @@ jobs:
             index.html
             case-law-curation.html
             consolidator/index.html
+            hybrid-legal-intelligence.html
             bot/index.html
             assets/ai-advokat-chat.js
             assets/case-law-static-fallback.js
@@ -158,7 +164,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin gh-pages:refs/remotes/origin/gh-pages
-          for f in index.html case-law-curation.html consolidator/index.html bot/index.html assets/ai-advokat-chat.js assets/ai-advokat-chat.css assets/ai-advokat-voice.mjs assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/standalone-bot.css assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js assets/standalone-bot-vnext.css assets/standalone-bot-toolkit.js assets/standalone-bot-toolkit.css; do
+          for f in index.html case-law-curation.html consolidator/index.html hybrid-legal-intelligence.html bot/index.html assets/ai-advokat-chat.js assets/ai-advokat-chat.css assets/ai-advokat-voice.mjs assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/standalone-bot.css assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js assets/standalone-bot-vnext.css assets/standalone-bot-toolkit.js assets/standalone-bot-toolkit.css; do
             main_blob="$(git rev-parse "$GITHUB_SHA:$f")"
             pages_blob="$(git rev-parse "origin/gh-pages:$f")"
             test "$main_blob" = "$pages_blob"
