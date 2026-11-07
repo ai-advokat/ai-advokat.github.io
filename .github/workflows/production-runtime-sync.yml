@@ -124,7 +124,7 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&runtime_sync=$nonce" -o /tmp/runtime-sync-voice.mjs || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-chat.css?v=20261106-root-r15-voice&runtime_sync=$nonce" -o /tmp/runtime-sync-internal.css || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.css?v=20261106-access-r15-voice&runtime_sync=$nonce" -o /tmp/runtime-sync-external.css || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity&runtime_sync=$nonce" -o /tmp/runtime-sync-vnext.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.js?v=20261107-hybrid-r1-visible&runtime_sync=$nonce" -o /tmp/runtime-sync-vnext.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity&runtime_sync=$nonce" -o /tmp/runtime-sync-vnext.css || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.js?v=20261106-toolkit-r14&runtime_sync=$nonce" -o /tmp/runtime-sync-toolkit.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.css?v=20261106-toolkit-r14&runtime_sync=$nonce" -o /tmp/runtime-sync-toolkit.css || true
@@ -158,7 +158,7 @@ jobs:
           grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/runtime-sync-voice.mjs
           grep -q 'bindMicrophone' /tmp/runtime-sync-voice.mjs
           grep -q 'bindSpeakButton' /tmp/runtime-sync-voice.mjs
-          grep -q 'standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity' /tmp/runtime-sync-bot.html
+          grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r1-visible' /tmp/runtime-sync-bot.html
           grep -q 'standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity' /tmp/runtime-sync-bot.html
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/runtime-sync-bot.html
           grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' /tmp/runtime-sync-bot.html
