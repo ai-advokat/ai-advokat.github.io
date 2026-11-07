@@ -13,7 +13,7 @@ test("standalone toolkit assets parse and are cache-busted",()=>{
     const out=spawnSync(process.execPath,["--check",file],{encoding:"utf8"});
     assert.equal(out.status,0,file+" syntax error: "+out.stderr);
   }
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261106-vnext-r14-toolkit-parity/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261107-hybrid-r1-visible/);
   assert.match(html,/standalone-bot-toolkit\.js\?v=20261106-toolkit-r14/);
   assert.match(html,/standalone-bot-toolkit\.css\?v=20261106-toolkit-r14/);
   assert.match(css,/\.aa-toolkit-dialog/);

@@ -149,7 +149,7 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const html=fs.readFileSync('bot/index.html','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261106-vnext-r14-toolkit-parity/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261107-hybrid-r1-visible/);
   assert.match(html,/standalone-bot-vnext\.css\?v=20261106-ui-r6-toolkit-parity/);
   assert.match(html,/standalone-bot\.js\?v=20261106-core-r15-voice/);
   assert.doesNotMatch(vnext,/standalone-bot\.js/);
@@ -194,7 +194,7 @@ test('fresh mobile device can activate send and reach governed access flow',()=>
   assert.match(source,/if \(results\[2\]\.status === 'fulfilled'\) restoreAccess\(\);/);
   assert.match(source,/if \(!key\) \{[\s\S]{0,180}\$\('access'\)\.click\(\)/);
   assert.match(source,/if \(q\.length < 2\) return;/);
-  assert.match(html,/standalone-bot-vnext\.js\?v=20261106-vnext-r14-toolkit-parity/);
+  assert.match(html,/standalone-bot-vnext\.js\?v=20261107-hybrid-r1-visible/);
 });
 
 
@@ -249,7 +249,7 @@ test('core composer boot is independent and privacy dependency failure is fail-c
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
   const corePos=html.indexOf('standalone-bot.js?v=20261106-core-r15-voice');
-  const vnextPos=html.indexOf('standalone-bot-vnext.js?v=20261106-vnext-r14-toolkit-parity');
+  const vnextPos=html.indexOf('standalone-bot-vnext.js?v=20261107-hybrid-r1-visible');
   assert.ok(corePos>=0 && vnextPos>corePos);
   assert.doesNotMatch(vnext,/await import.*standalone-bot/);
   assert.match(core,/Promise\.allSettled/);
