@@ -99,3 +99,16 @@ test("Hybrid integrates official public legal evidence and e-service APIs",()=>{
   assert.match(page,/No autonomous submission/);
 });
 
+test("Hybrid Lawyer View embeds an eight-step operating guide",()=>{
+  assert.match(page,/id="guide"/);
+  assert.match(page,/Водилка · Како функционира Hybrid Legal Intelligence/);
+  assert.match(page,/Препорачан workflow/);
+  assert.match(page,/Official source/);
+  assert.match(page,/Reviewed authority/);
+  assert.match(page,/Discovery/);
+  assert.match(page,/Human Gate/);
+  assert.equal((page.match(/class="guide-step"/g)||[]).length,8);
+  assert.match(page,/Брз пример:/);
+  assert.match(page,/href="#guide"/);
+});
+
