@@ -112,3 +112,33 @@ test("no-change snapshot does not fabricate a Human Gate event",()=>{
   assert.equal(d.state,"NO_CHANGE");
   assert.equal(d.requires_human_review,false);
 });
+
+
+test("homepage churn alone does not create a legal Human Gate alert",()=>{
+  const previous={
+    pages:[{source_id:"mk-sobranie",url:"https://www.sobranie.mk/",instrument_key:null,normalized_sha256:"old"}],
+    candidates:[]
+  };
+  const current={
+    pages:[{source_id:"mk-sobranie",url:"https://www.sobranie.mk/",instrument_key:null,normalized_sha256:"new"}],
+    candidates:[]
+  };
+  const d=diffSnapshots(previous,current);
+  assert.equal(d.state,"SOURCE_CHURN_NO_LEGAL_CANDIDATE");
+  assert.equal(d.changed_pages.length,1);
+  assert.equal(d.requires_human_review,false);
+});
+
+test("direct tracked-instrument fingerprint change requires review even without a new link",()=>{
+  const previous={
+    pages:[{source_id:"mk-ldbis",url:"https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=10431",instrument_key:"mk:zro",normalized_sha256:"old"}],
+    candidates:[]
+  };
+  const current={
+    pages:[{source_id:"mk-ldbis",url:"https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=10431",instrument_key:"mk:zro",normalized_sha256:"new"}],
+    candidates:[]
+  };
+  const d=diffSnapshots(previous,current);
+  assert.equal(d.state,"CHANGE_DETECTED");
+  assert.equal(d.requires_human_review,true);
+});
