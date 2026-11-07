@@ -9,7 +9,7 @@ test("external bot canonicalizes GitHub Pages to the Worker-hosted production su
   assert.match(bot,/location\.hostname === 'ai-advokat\.github\.io'/);
   assert.match(bot,/https:\/\/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
   assert.match(bot,/standalone-bot\.js\?v=20261106-core-r15-voice-r2/);
-  assert.match(bot,/standalone-bot-vnext\.js\?v=20261107-hybrid-r1-visible/);
+  assert.match(bot,/standalone-bot-vnext\.js\?v=20261107-hybrid-r2-lawyer-view/);
   assert.match(bot,/standalone-bot-toolkit\.js\?v=20261106-toolkit-r14/);
   assert.match(bot,/standalone-bot-toolkit\.css\?v=20261106-toolkit-r14/);
   assert.match(bot,/frontend-runtime-guard\.js\?v=20261101-root-r1/);

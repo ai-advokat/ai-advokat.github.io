@@ -138,5 +138,5 @@ test("Radar static fallback exactly mirrors the governed 36-record discovery sou
 
 test("runtime cache contracts are bumped for the full integration release",()=>{
   assert.match(indexHtml,/20261106-root-r15-voice-r2-runtime/);
-  assert.match(botHtml,/20261107-hybrid-r1-visible/);
+  assert.match(botHtml,/20261107-hybrid-r2-lawyer-view/);
 });

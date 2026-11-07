@@ -8703,6 +8703,76 @@ async function handleHybridLegalIntelligence(request,env,url){
       });
     }
 
+    if(path==="/api/hybrid/instruments"){
+      const rows=await env.DB.prepare(
+        `SELECT li.canonical_key,li.title,li.short_title,li.instrument_type,
+                li.gazette_reference,li.effective_date,li.current_status,li.human_review_status,
+                (SELECT COUNT(*) FROM legal_article_versions lav WHERE lav.instrument_id=li.id) AS article_count,
+                (SELECT COUNT(*) FROM gazette_consolidated_texts gct WHERE gct.canonical_instrument_key=li.canonical_key) AS consolidation_count
+           FROM legal_instruments li
+          WHERE li.canonical_key IS NOT NULL
+          ORDER BY CASE WHEN li.short_title IS NULL OR TRIM(li.short_title)='' THEN 1 ELSE 0 END,
+                   COALESCE(li.short_title,li.title),li.title
+          LIMIT 500`
+      ).all();
+      return json(request,{
+        ok:true,
+        version:"AI_ADVOCAT_HYBRID_LAWYER_VIEW_R2",
+        instruments:(rows.results||[]).map(r=>({
+          canonicalKey:r.canonical_key,
+          title:r.title,
+          shortTitle:r.short_title||null,
+          instrumentType:r.instrument_type||null,
+          gazetteReference:r.gazette_reference||null,
+          effectiveDate:r.effective_date||null,
+          currentStatus:r.current_status||"unknown",
+          humanReviewStatus:r.human_review_status||"pending",
+          articleCount:Number(r.article_count||0),
+          consolidationCount:Number(r.consolidation_count||0)
+        })),
+        humanGateRequired:true
+      });
+    }
+
+    if(path==="/api/hybrid/consolidations"){
+      if(!instrument) return json(request,{ok:false,error:"instrument_required"},400);
+      const rows=await env.DB.prepare(
+        `SELECT id,canonical_instrument_key,title,consolidation_kind,reference_date,
+                valid_from,valid_to,official_source_url,source_sha256,
+                amendment_chain_complete,constitutional_court_effects_checked,
+                effective_application_dates_checked,article_count,
+                human_review_status,current_law_eligible,publication_status
+           FROM gazette_consolidated_texts
+          WHERE canonical_instrument_key=?
+          ORDER BY reference_date DESC,id DESC
+          LIMIT 100`
+      ).bind(instrument).all();
+      return json(request,{
+        ok:true,
+        version:"AI_ADVOCAT_HYBRID_LAWYER_VIEW_R2",
+        instrumentKey:instrument,
+        consolidations:(rows.results||[]).map(r=>({
+          id:Number(r.id),
+          title:r.title,
+          kind:r.consolidation_kind,
+          referenceDate:r.reference_date,
+          validFrom:r.valid_from||null,
+          validTo:r.valid_to||null,
+          officialSourceUrl:r.official_source_url||null,
+          sourceSha256:r.source_sha256||null,
+          amendmentChainComplete:Number(r.amendment_chain_complete)===1,
+          constitutionalCourtEffectsChecked:Number(r.constitutional_court_effects_checked)===1,
+          effectiveApplicationDatesChecked:Number(r.effective_application_dates_checked)===1,
+          articleCount:Number(r.article_count||0),
+          humanReviewStatus:r.human_review_status||"pending",
+          currentLawEligible:Number(r.current_law_eligible)===1,
+          publicationStatus:r.publication_status||"private_working"
+        })),
+        autonomousCurrentLawPromotion:false,
+        humanGateRequired:true
+      });
+    }
+
     if(path==="/api/hybrid/article-at-date"){
       const date=String(url.searchParams.get("date")||"").trim();
       if(!instrument||!article||!date) return json(request,{ok:false,error:"instrument_article_date_required"},400);
@@ -8791,14 +8861,17 @@ async function handleHybridLegalIntelligence(request,env,url){
       const from=String(url.searchParams.get("from")||"").trim();
       const to=String(url.searchParams.get("to")||"").trim();
       if(!from||!to) return json(request,{ok:false,error:"calendar_from_to_required"},400);
-      const rows=await env.DB.prepare(
-        `SELECT id,instrument_key,instrument_title,act_type,event_type,event_date,
+      const calendarParams=[from,to];
+      let calendarSql=`SELECT id,instrument_key,instrument_title,act_type,event_type,event_date,
                 source_url,source_issue_number,source_sha256,provenance_state,human_review_status
            FROM legal_effective_date_events
-          WHERE event_date>=? AND event_date<=?
-          ORDER BY event_date,instrument_title,id
-          LIMIT 1000`
-      ).bind(from,to).all();
+          WHERE event_date>=? AND event_date<=?`;
+      if(instrument){
+        calendarSql+=" AND instrument_key=?";
+        calendarParams.push(instrument);
+      }
+      calendarSql+=" ORDER BY event_date,instrument_title,id LIMIT 1000";
+      const rows=await env.DB.prepare(calendarSql).bind(...calendarParams).all();
       const records=(rows.results||[]).map(r=>{
         const x={...r};
         if(r.event_type==="PUBLICATION")x.publication_date=r.event_date;

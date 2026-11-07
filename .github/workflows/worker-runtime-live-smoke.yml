@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/worker-runtime-live-smoke.yml"
       - "bot/index.html"
+      - "hybrid-legal-intelligence.html"
       - "assets/standalone-bot.js"
       - "assets/standalone-bot-vnext.js"
       - "assets/standalone-bot-vnext.css"
@@ -38,6 +39,7 @@ jobs:
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
 
           expected_bot="$(sha256sum bot/index.html | awk '{print $1}')"
+          expected_hybrid="$(sha256sum hybrid-legal-intelligence.html | awk '{print $1}')"
           expected_core="$(sha256sum assets/standalone-bot.js | awk '{print $1}')"
           expected_voice="$(sha256sum assets/ai-advokat-voice.mjs | awk '{print $1}')"
           expected_vnext="$(sha256sum assets/standalone-bot-vnext.js | awk '{print $1}')"
@@ -51,9 +53,10 @@ jobs:
           for attempt in $(seq 1 80); do
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r15&smoke=$nonce" -o /tmp/worker-bot.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/hybrid-legal-intelligence.html?smoke=$nonce" -o /tmp/worker-hybrid.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261106-core-r15-voice-r2&smoke=$nonce" -o /tmp/worker-core.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&smoke=$nonce" -o /tmp/worker-voice.mjs || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.js?v=20261107-hybrid-r1-visible&smoke=$nonce" -o /tmp/worker-vnext.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view&smoke=$nonce" -o /tmp/worker-vnext.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity&smoke=$nonce" -o /tmp/worker-vnext.css || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.js?v=20261106-toolkit-r14&smoke=$nonce" -o /tmp/worker-toolkit.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.css?v=20261106-toolkit-r14&smoke=$nonce" -o /tmp/worker-toolkit.css || true
@@ -61,6 +64,7 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/src/chat-privacy.js?v=20261101-privacy-compat-r1&smoke=$nonce" -o /tmp/worker-privacy-compat.js || true
 
             live_bot="$(sha256sum /tmp/worker-bot.html 2>/dev/null | awk '{print $1}' || true)"
+            live_hybrid="$(sha256sum /tmp/worker-hybrid.html 2>/dev/null | awk '{print $1}' || true)"
             live_core="$(sha256sum /tmp/worker-core.js 2>/dev/null | awk '{print $1}' || true)"
             live_voice="$(sha256sum /tmp/worker-voice.mjs 2>/dev/null | awk '{print $1}' || true)"
             live_vnext="$(sha256sum /tmp/worker-vnext.js 2>/dev/null | awk '{print $1}' || true)"
@@ -71,6 +75,7 @@ jobs:
             live_privacy_compat="$(sha256sum /tmp/worker-privacy-compat.js 2>/dev/null | awk '{print $1}' || true)"
 
             if [ "$live_bot" = "$expected_bot" ] \
+              && [ "$live_hybrid" = "$expected_hybrid" ] \
               && [ "$live_core" = "$expected_core" ] \
               && [ "$live_voice" = "$expected_voice" ] \
               && [ "$live_vnext" = "$expected_vnext" ] \
@@ -89,11 +94,13 @@ jobs:
           test "$deployed" = "1"
 
           grep -q 'name="ai-advokat-release" content="core-r15"' /tmp/worker-bot.html
+          grep -q 'Hybrid Legal Intelligence R2' /tmp/worker-hybrid.html
+          grep -q 'Lawyer View' /tmp/worker-hybrid.html
           grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' /tmp/worker-bot.html
           grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/worker-voice.mjs
           grep -q 'getUserMedia' /tmp/worker-voice.mjs
           grep -q 'microphonePermissionErrorMessage' /tmp/worker-voice.mjs
-          grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r1-visible' /tmp/worker-bot.html
+          grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view' /tmp/worker-bot.html
           grep -q 'standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity' /tmp/worker-bot.html
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/worker-bot.html
           grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' /tmp/worker-bot.html
@@ -133,6 +140,24 @@ jobs:
           if(!o.ok || o.runtime?.providerExecution!=="configured_for_api_chat_execution") throw new Error("provider not ready");
           if(o.runtime?.lioeRuntimeGovernance!=="enabled" || o.runtime?.lioePostflight!=="enabled" || o.runtime?.lioeSpecialistExecution!=="enabled") throw new Error("LIOE not ready");
           console.log("WORKER HEALTH + ORCHESTRATOR: PASS");
+          NODE
+
+      - name: Verify Hybrid Legal Intelligence R2 live APIs
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/hybrid/capabilities" -o /tmp/worker-hybrid-capabilities.json
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/hybrid/instruments" -o /tmp/worker-hybrid-instruments.json
+          node <<'NODE'
+          const c=require("/tmp/worker-hybrid-capabilities.json");
+          const i=require("/tmp/worker-hybrid-instruments.json");
+          const expected=["article_time_machine","law_bylaw_graph","article_case_law_graph","legal_effective_date_calendar","visual_consolidation_diff"];
+          if(!c.ok) throw new Error("hybrid capabilities not ok");
+          for(const x of expected) if(!c.capabilities?.includes(x)) throw new Error("missing hybrid capability "+x);
+          if(c.authorityBoundary?.autonomousCurrentLawPromotion!==false) throw new Error("hybrid authority boundary weakened");
+          if(!i.ok || !Array.isArray(i.instruments)) throw new Error("hybrid instrument catalogue unavailable");
+          console.log("HYBRID R2 WORKBENCH + DISCOVERY APIS: PASS");
           NODE
 
       - name: Verify browser CORS and main AI Advokat live chat
@@ -186,6 +211,7 @@ jobs:
           path: |
             /tmp/worker-home.html
             /tmp/worker-bot.html
+            /tmp/worker-hybrid.html
             /tmp/worker-legacy-release-headers.txt
             /tmp/worker-core.js
             /tmp/worker-voice.mjs
@@ -197,6 +223,8 @@ jobs:
             /tmp/worker-privacy-compat.js
             /tmp/worker-health.json
             /tmp/worker-orchestrator.json
+            /tmp/worker-hybrid-capabilities.json
+            /tmp/worker-hybrid-instruments.json
             /tmp/worker-cors.txt
             /tmp/worker-chat.json
             /tmp/worker-bot-unauth.json

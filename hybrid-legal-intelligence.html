@@ -4,64 +4,694 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>AI Advokat · Hybrid Legal Intelligence R1</title>
+<meta name="color-scheme" content="light">
+<title>AI Advokat · Hybrid Legal Intelligence R2 · Lawyer View</title>
 <style>
-:root{--navy:#0b2239;--navy2:#153a5d;--gold:#c8a45d;--cream:#f7f5ef;--ink:#1d2732;--muted:#687787;--line:#d9e1e7;--panel:#fff;--ok:#24664c;--warn:#8a5a00}
-*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{background:linear-gradient(115deg,var(--navy),var(--navy2));color:white;border-bottom:3px solid var(--gold)}header .in{max-width:1300px;margin:auto;padding:18px 22px;display:flex;justify-content:space-between;gap:18px;align-items:center}
-h1{font-size:20px;margin:0}.sub{font-size:12px;color:#d6e0e9}.badge{border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:6px 10px;font-size:11px}
-.wrap{max-width:1300px;margin:auto;padding:20px}.gate{padding:12px 14px;border:1px solid #e4ca8d;border-left:5px solid var(--gold);background:#fff9e9;border-radius:10px;margin-bottom:16px}
-.toolbar,.grid{display:grid;gap:14px}.toolbar{grid-template-columns:2fr 1fr 1fr 1fr}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 8px 25px rgba(11,34,57,.05)}.head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}.head h2{font-size:15px;margin:0}.body{padding:14px}
-label{display:block;font-size:11px;font-weight:750;color:var(--muted);margin-bottom:5px}input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font:inherit}button,a.btn{border:0;border-radius:8px;padding:9px 11px;font-weight:750;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}.primary{background:var(--navy);color:white}.secondary{background:#eef2f5;color:var(--ink);border:1px solid var(--line)}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}pre{white-space:pre-wrap;word-break:break-word;background:#0d1822;color:#dbe6ef;border-radius:9px;padding:11px;min-height:120px;max-height:420px;overflow:auto;font:11px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace}.wide{grid-column:1/-1}.status{font-size:11px;color:var(--muted)}@media(max-width:900px){.toolbar,.grid{grid-template-columns:1fr}.wide{grid-column:auto}}
+:root{
+  --navy-950:#071826;--navy-900:#0b2239;--navy-800:#123653;--navy-700:#1a496d;
+  --gold-500:#c8a45d;--gold-300:#e5cf9b;--cream-50:#fbfaf6;--cream-100:#f5f1e7;
+  --ink-900:#17212b;--ink-700:#364552;--muted:#6b7884;--line:#dbe2e7;--line-strong:#c6d0d8;
+  --panel:#ffffff;--ok:#1d6a4d;--ok-bg:#eaf5ef;--warn:#8a5a00;--warn-bg:#fff7e3;
+  --danger:#a13b34;--danger-bg:#fff0ee;--info:#245a85;--info-bg:#edf5fb;
+  --shadow:0 18px 48px rgba(7,24,38,.08);--shadow-sm:0 8px 24px rgba(7,24,38,.06);
+  --radius:18px;--radius-sm:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:
+  radial-gradient(circle at 12% 0%,rgba(200,164,93,.11),transparent 26rem),
+  linear-gradient(180deg,var(--cream-50),#f7f8f7 54%,#f2f5f6);
+  color:var(--ink-900);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+a{color:inherit}
+.topbar{background:linear-gradient(120deg,var(--navy-950),var(--navy-900) 52%,var(--navy-800));color:#fff;border-bottom:3px solid var(--gold-500)}
+.topbar-inner{max-width:1440px;margin:auto;padding:22px 28px;display:flex;align-items:center;justify-content:space-between;gap:22px}
+.brand{display:flex;align-items:center;gap:15px;min-width:0}
+.brand-mark{width:44px;height:44px;border:1px solid rgba(255,255,255,.22);border-radius:13px;display:grid;place-items:center;font-weight:850;color:var(--gold-300);background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(200,164,93,.08)}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-300);font-weight:800}
+.brand h1{font-size:21px;line-height:1.15;margin:2px 0 0;font-weight:780}
+.brand p{margin:4px 0 0;color:#c9d7e1;font-size:12px}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.top-link{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;text-decoration:none;padding:8px 11px;border-radius:10px;font-size:12px;font-weight:720}
+.top-link:hover{background:rgba(255,255,255,.11)}
+.shell{max-width:1440px;margin:auto;padding:24px 28px 54px}
+.hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(330px,.7fr);gap:18px;margin-bottom:18px}
+.hero-main,.hero-side,.context-card,.module-nav,.panel{background:rgba(255,255,255,.94);border:1px solid var(--line);box-shadow:var(--shadow-sm);border-radius:var(--radius)}
+.hero-main{padding:25px 26px;position:relative;overflow:hidden}
+.hero-main:after{content:"";position:absolute;right:-80px;top:-90px;width:260px;height:260px;border:1px solid rgba(200,164,93,.25);border-radius:50%;box-shadow:0 0 0 36px rgba(200,164,93,.04),0 0 0 72px rgba(200,164,93,.025)}
+.hero-main h2{font-size:30px;line-height:1.12;letter-spacing:-.025em;margin:6px 0 10px;max-width:800px}
+.hero-main p{max-width:800px;color:var(--ink-700);font-size:14px;margin:0;position:relative;z-index:1}
+.hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;position:relative;z-index:1}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:5px 9px;background:#fff;font-size:11px;font-weight:740;color:var(--ink-700)}
+.chip.ok{background:var(--ok-bg);border-color:#cce6d8;color:var(--ok)}
+.chip.warn{background:var(--warn-bg);border-color:#ead59b;color:var(--warn)}
+.chip.info{background:var(--info-bg);border-color:#c8deee;color:var(--info)}
+.hero-side{padding:20px 21px;display:grid;align-content:start;gap:12px}
+.gate-title{display:flex;align-items:center;gap:9px;font-weight:800}
+.gate-dot{width:9px;height:9px;background:var(--gold-500);border-radius:50%;box-shadow:0 0 0 5px rgba(200,164,93,.15)}
+.hero-side p{margin:0;color:var(--ink-700);font-size:12px}
+.boundary-list{display:grid;gap:7px;margin-top:2px}
+.boundary-row{display:flex;align-items:flex-start;gap:8px;color:var(--ink-700);font-size:12px}
+.boundary-row b{color:var(--ink-900)}
+.context-card{padding:18px 19px;margin-bottom:18px}
+.context-grid{display:grid;grid-template-columns:minmax(280px,2fr) minmax(110px,.65fr) minmax(165px,.9fr) auto;gap:12px;align-items:end}
+.field label{display:block;font-size:11px;color:var(--muted);font-weight:760;margin:0 0 6px}
+.field input,.field select{width:100%;border:1px solid var(--line-strong);background:#fff;color:var(--ink-900);border-radius:10px;padding:10px 11px;outline:none}
+.field input:focus,.field select:focus{border-color:var(--navy-700);box-shadow:0 0 0 3px rgba(26,73,109,.10)}
+.context-actions{display:flex;gap:8px}
+.btn{border:0;border-radius:10px;padding:10px 13px;font-weight:760;display:inline-flex;align-items:center;justify-content:center;gap:7px;text-decoration:none}
+.btn.primary{background:var(--navy-900);color:#fff}.btn.primary:hover{background:var(--navy-800)}
+.btn.secondary{background:#edf1f3;color:var(--ink-900);border:1px solid var(--line)}
+.context-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.context-meta .chip{background:var(--cream-50)}
+.module-nav{padding:9px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}
+.module-tab{border:1px solid transparent;background:transparent;border-radius:13px;padding:12px;text-align:left;color:var(--ink-700);min-width:0}
+.module-tab:hover{background:#f5f7f8}
+.module-tab.active{background:var(--navy-900);color:#fff;box-shadow:0 10px 24px rgba(11,34,57,.16)}
+.module-no{display:block;font-size:10px;letter-spacing:.13em;font-weight:850;color:var(--gold-500);margin-bottom:5px}
+.module-tab.active .module-no{color:var(--gold-300)}
+.module-name{display:block;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.module-desc{display:block;font-size:10px;margin-top:3px;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel{display:none;overflow:hidden;box-shadow:var(--shadow)}
+.panel.active{display:block}
+.panel-head{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:18px;align-items:flex-start;background:linear-gradient(180deg,#fff,#fbfcfc)}
+.panel-title-wrap{display:flex;gap:13px}
+.panel-index{width:34px;height:34px;border-radius:10px;background:var(--cream-100);display:grid;place-items:center;color:var(--navy-900);font-weight:850;border:1px solid #e8dec9;flex:0 0 auto}
+.panel-head h3{margin:0;font-size:18px}
+.panel-head p{margin:3px 0 0;font-size:12px;color:var(--muted);max-width:760px}
+.panel-body{padding:22px}
+.panel-controls{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.result-host{min-height:260px}
+.empty{min-height:240px;border:1px dashed var(--line-strong);border-radius:15px;background:linear-gradient(180deg,#fbfcfc,#f8faf9);display:grid;place-items:center;text-align:center;padding:30px;color:var(--muted)}
+.empty strong{display:block;color:var(--ink-700);font-size:14px;margin-bottom:4px}
+.loader{display:grid;place-items:center;min-height:220px;color:var(--muted)}
+.spinner{width:30px;height:30px;border:3px solid #dce4e9;border-top-color:var(--navy-700);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.notice{border:1px solid var(--line);border-left:4px solid var(--info);background:var(--info-bg);border-radius:12px;padding:12px 14px;color:var(--ink-700);font-size:12px;margin-bottom:14px}
+.notice.warn{border-left-color:var(--warn);background:var(--warn-bg)}
+.notice.danger{border-left-color:var(--danger);background:var(--danger-bg)}
+.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{border:1px solid var(--line);border-radius:13px;padding:13px;background:#fff}
+.metric small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:800}
+.metric strong{display:block;font-size:21px;margin-top:3px;color:var(--navy-900)}
+.article-card{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff}
+.article-top{padding:17px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.article-title{font-family:Georgia,"Times New Roman",serif;font-size:19px;font-weight:700}
+.article-body{padding:22px 24px;font:16px/1.75 Georgia,"Times New Roman",serif;white-space:pre-wrap;color:#1f2a32;background:linear-gradient(180deg,#fff,#fffdf9)}
+.meta-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:14px 18px;border-top:1px solid var(--line);background:#fafbfb}
+.meta-item small{display:block;color:var(--muted);font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.05em}
+.meta-item strong{display:block;font-size:12px;margin-top:3px;word-break:break-word}
+.source-box{margin-top:14px;border:1px solid var(--line);border-radius:13px;padding:13px 15px;background:#fbfcfc}
+.source-box-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
+.source-box code{font-size:10px;color:var(--muted);word-break:break-all}
+.source-link{display:inline-flex;align-items:center;gap:5px;color:var(--info);font-size:12px;font-weight:760;text-decoration:none}
+.source-link:hover{text-decoration:underline}
+.graph-list,.case-list,.timeline{display:grid;gap:10px}
+.graph-card{border:1px solid var(--line);border-radius:14px;background:#fff;padding:15px;display:grid;grid-template-columns:110px 28px 1fr;gap:10px;align-items:center}
+.graph-parent{font-weight:800;color:var(--navy-900);font-size:12px}
+.graph-arrow{height:1px;background:var(--gold-500);position:relative}
+.graph-arrow:after{content:"";position:absolute;right:-1px;top:-3px;width:6px;height:6px;border-top:1px solid var(--gold-500);border-right:1px solid var(--gold-500);transform:rotate(45deg)}
+.graph-child strong{display:block;font-size:13px}.graph-child small{color:var(--muted)}
+.case-card{border:1px solid var(--line);border-radius:15px;background:#fff;overflow:hidden}
+.case-main{padding:14px 16px;display:grid;grid-template-columns:minmax(180px,1fr) 130px 130px 110px auto;gap:12px;align-items:center}
+.case-main strong{font-size:13px}.case-main small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.case-detail{border-top:1px solid var(--line);padding:13px 16px;background:#fafbfb}
+.case-detail p{margin:5px 0 0;color:var(--ink-700);font-size:12px;white-space:pre-wrap}
+.case-detail summary{font-size:11px;font-weight:800;color:var(--navy-700);cursor:pointer}
+.timeline-group{display:grid;grid-template-columns:125px 1fr;gap:16px}
+.timeline-date{font-weight:850;color:var(--navy-900);font-size:12px;padding-top:13px}
+.timeline-events{border-left:2px solid #dce3e7;padding-left:16px;display:grid;gap:9px}
+.timeline-event{position:relative;border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px 13px}
+.timeline-event:before{content:"";position:absolute;left:-22px;top:16px;width:9px;height:9px;border-radius:50%;background:var(--gold-500);box-shadow:0 0 0 4px #f7f8f7}
+.timeline-event strong{font-size:12px}.timeline-event small{display:block;color:var(--muted);margin-top:2px}
+.diff-toolbar{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 14px}
+.filter-btn{border:1px solid var(--line);background:#fff;color:var(--ink-700);border-radius:999px;padding:6px 10px;font-size:11px;font-weight:760}
+.filter-btn.active{background:var(--navy-900);color:#fff;border-color:var(--navy-900)}
+.diff-list{display:grid;gap:12px}
+.diff-card{border:1px solid var(--line);border-radius:15px;overflow:hidden;background:#fff}
+.diff-head{padding:11px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}
+.diff-grid{display:grid;grid-template-columns:1fr 1fr}
+.diff-pane{padding:15px 17px;min-height:110px;font:14px/1.65 Georgia,"Times New Roman",serif;white-space:pre-wrap}
+.diff-pane+ .diff-pane{border-left:1px solid var(--line)}
+.diff-pane.before{background:#fff8f7}.diff-pane.after{background:#f6fbf8}
+.diff-label{font:700 10px/1.2 Inter,ui-sans-serif,system-ui;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.change-badge{border-radius:999px;padding:4px 8px;font-size:10px;font-weight:850}
+.change-badge.ADDED{background:var(--ok-bg);color:var(--ok)}
+.change-badge.REMOVED{background:var(--danger-bg);color:var(--danger)}
+.change-badge.MODIFIED{background:var(--warn-bg);color:var(--warn)}
+.change-badge.UNCHANGED{background:#eef1f3;color:var(--muted)}
+.raw{margin-top:15px;border:1px solid var(--line);border-radius:12px;background:#f8fafb}
+.raw summary{padding:10px 12px;cursor:pointer;font-size:11px;font-weight:760;color:var(--muted)}
+.raw pre{margin:0;border-top:1px solid var(--line);padding:13px;max-height:340px;overflow:auto;background:#0d1822;color:#dbe6ef;font:11px/1.48 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.advanced{margin-top:10px}
+.advanced summary{font-size:11px;color:var(--muted);cursor:pointer}
+.advanced-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}
+.footer-note{margin-top:16px;color:var(--muted);font-size:11px;text-align:center}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:1050px){
+  .hero{grid-template-columns:1fr}.context-grid{grid-template-columns:1.5fr .7fr .8fr}
+  .context-actions{grid-column:1/-1}.module-nav{grid-template-columns:repeat(3,1fr)}
+  .case-main{grid-template-columns:1fr 120px 110px}.case-main>*:nth-child(4),.case-main>*:nth-child(5){grid-column:auto}
+}
+@media(max-width:760px){
+  .topbar-inner,.shell{padding-left:16px;padding-right:16px}.top-actions{display:none}
+  .hero-main h2{font-size:25px}.context-grid{grid-template-columns:1fr 1fr}.field.instrument{grid-column:1/-1}
+  .module-nav{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:1fr 1fr}
+  .meta-grid{grid-template-columns:1fr 1fr}.graph-card{grid-template-columns:92px 18px 1fr}
+  .case-main{grid-template-columns:1fr}.timeline-group{grid-template-columns:1fr;gap:6px}.timeline-date{padding-top:0}
+  .diff-grid{grid-template-columns:1fr}.diff-pane+ .diff-pane{border-left:0;border-top:1px solid var(--line)}
+}
+@media(max-width:480px){.module-nav{grid-template-columns:1fr}.context-grid{grid-template-columns:1fr}.summary-grid,.meta-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.spinner{animation:none}}
 </style>
 </head>
 <body>
-<header><div class="in"><div><h1>AI Advokat · Hybrid Legal Intelligence</h1><div class="sub">Article Time Machine · Law↔Bylaw · Article↔Case Law · Legal Calendar · Visual Diff</div></div><div class="badge">R1 · SOURCE-FIRST · HUMAN GATE</div></div></header>
-<main class="wrap">
-<div class="gate"><b>Human Gate.</b> Ова е read-only правно-интелигентен слој. Не прогласува важечко право, не менува corpus и не врши автономно правно дејствие. Secondary signals не можат да станат authority без official binding.</div>
-<section class="card" style="margin-bottom:14px"><div class="body toolbar">
-<div><label>Canonical instrument key</label><input id="instrument" value="mk:zi" placeholder="mk:zi"></div>
-<div><label>Член</label><input id="article" value="18" placeholder="18"></div>
-<div><label>Референтен датум</label><input id="date" type="date"></div>
-<div class="actions" style="align-items:end"><a class="btn secondary" href="/consolidator/">Консолидатор</a><a class="btn secondary" href="/bot/">AI Advokat</a></div>
-</div></section>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">AI</div>
+      <div>
+        <div class="eyebrow">AI Advokat · Source-first legal intelligence</div>
+        <h1>Hybrid Legal Intelligence R2</h1>
+        <p>Lawyer View · временска, нормативна и судска правна анализа со Human Gate</p>
+      </div>
+    </div>
+    <nav class="top-actions" aria-label="Работни алатки">
+      <a class="top-link" href="/bot/">AI Advokat</a>
+      <a class="top-link" href="/consolidator/">Консолидатор</a>
+      <a class="top-link" href="/case-law-curation.html">Case-Law Radar</a>
+    </nav>
+  </div>
+</header>
 
-<div class="grid">
-<section class="card"><div class="head"><h2>1 · Article Time Machine</h2><span class="status">точен член на точен датум</span></div><div class="body"><button class="primary" id="runTime">Провери историска верзија</button><pre id="outTime">Нема резултат.</pre></div></section>
+<main class="shell">
+  <section class="hero">
+    <div class="hero-main">
+      <div class="eyebrow">Lawyer View · governed research surface</div>
+      <h2>Пет правни функции. Една временски и изворно контролирана слика.</h2>
+      <p>Изберете закон и работете по член, датум, подзаконски акти, судска практика, правни рокови и консолидирани верзии. Секој резултат останува врзан за provenance и човечка проверка.</p>
+      <div class="hero-badges">
+        <span class="chip ok">Read-only</span>
+        <span class="chip info">Official-source first</span>
+        <span class="chip warn">Human Gate required</span>
+        <span class="chip" id="engineChip">Engine: проверка…</span>
+      </div>
+    </div>
+    <aside class="hero-side" aria-label="Граница на овластување">
+      <div class="gate-title"><span class="gate-dot" aria-hidden="true"></span>Human Gate · Authority Boundary</div>
+      <p>Овој слој организира и споредува правни податоци. Не прогласува важечко право и не врши автономно правно дејствие.</p>
+      <div class="boundary-list">
+        <div class="boundary-row">✓ <span><b>Primary law:</b> официјален извор и верзија</span></div>
+        <div class="boundary-row">✓ <span><b>Secondary signals:</b> discovery/corroboration only</span></div>
+        <div class="boundary-row">✓ <span><b>Current-law promotion:</b> човечко одобрување</span></div>
+      </div>
+    </aside>
+  </section>
 
-<section class="card"><div class="head"><h2>2 · Law ↔ Bylaw Graph</h2><span class="status">делегирано законодавство</span></div><div class="body"><button class="primary" id="runBylaws">Најди подзаконски акти</button><pre id="outBylaws">Нема резултат.</pre></div></section>
+  <section class="context-card" aria-labelledby="contextTitle">
+    <h2 id="contextTitle" class="sr-only">Правен контекст</h2>
+    <div class="context-grid">
+      <div class="field instrument">
+        <label for="instrumentSelect">Закон / правен инструмент</label>
+        <select id="instrumentSelect" aria-describedby="instrumentMeta">
+          <option value="">Се вчитуваат достапните закони…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="article">Член</label>
+        <input id="article" value="18" inputmode="numeric" autocomplete="off" placeholder="на пр. 167">
+      </div>
+      <div class="field">
+        <label for="referenceDate">Референтен датум</label>
+        <input id="referenceDate" type="date">
+      </div>
+      <div class="context-actions">
+        <a class="btn secondary" href="/bot/">← AI Advokat</a>
+      </div>
+    </div>
+    <div class="context-meta" id="instrumentMeta" aria-live="polite"></div>
+    <details class="advanced">
+      <summary>Напредно · canonical key</summary>
+      <div class="advanced-row">
+        <input id="manualInstrument" placeholder="mk:zkp" aria-label="Canonical instrument key">
+        <button class="btn secondary" id="applyManualInstrument" type="button">Примени</button>
+      </div>
+    </details>
+  </section>
 
-<section class="card"><div class="head"><h2>3 · Article ↔ Case-Law</h2><span class="status">official + dual-reviewed only</span></div><div class="body"><button class="primary" id="runCases">Најди практика по член</button><pre id="outCases">Нема резултат.</pre></div></section>
+  <nav class="module-nav" aria-label="Hybrid Legal Intelligence модули">
+    <button class="module-tab active" data-module="time" type="button"><span class="module-no">01</span><span class="module-name">Article Time Machine</span><span class="module-desc">Член на точен датум</span></button>
+    <button class="module-tab" data-module="bylaws" type="button"><span class="module-no">02</span><span class="module-name">Law ↔ Bylaw</span><span class="module-desc">Овластување → подзаконски акт</span></button>
+    <button class="module-tab" data-module="cases" type="button"><span class="module-no">03</span><span class="module-name">Article ↔ Case-Law</span><span class="module-desc">Пракса по точен член</span></button>
+    <button class="module-tab" data-module="calendar" type="button"><span class="module-no">04</span><span class="module-name">Legal Calendar</span><span class="module-desc">Влегување и примена</span></button>
+    <button class="module-tab" data-module="diff" type="button"><span class="module-no">05</span><span class="module-name">Consolidation Diff</span><span class="module-desc">Верзија ↔ верзија</span></button>
+  </nav>
 
-<section class="card"><div class="head"><h2>4 · Legal Effective-Date Calendar</h2><span class="status">entry / application / legal effect</span></div><div class="body"><div class="two"><div><label>Од</label><input id="from" type="date"></div><div><label>До</label><input id="to" type="date"></div></div><button class="primary" id="runCalendar">Прикажи правен календар</button><pre id="outCalendar">Нема резултат.</pre></div></section>
+  <section class="panel active" data-panel="time">
+    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">01</div><div><h3>Article Time Machine</h3><p>Ја враќа редакцијата на избраниот член што била применлива на конкретниот референтен датум, со version window и provenance.</p></div></div><span class="chip warn">Fail-closed on ambiguity</span></div>
+    <div class="panel-body">
+      <div class="panel-controls"><button class="btn primary" id="runTime" type="button">Провери историска верзија</button><span class="chip" id="timeContext">—</span></div>
+      <div class="result-host" id="timeResult" aria-live="polite"></div>
+    </div>
+  </section>
 
-<section class="card wide"><div class="head"><h2>5 · Visual Consolidation Diff</h2><span class="status">ADDED · REMOVED · MODIFIED · UNCHANGED</span></div><div class="body"><div class="two"><div><label>Before consolidated-text ID</label><input id="beforeId" inputmode="numeric" placeholder="ID"></div><div><label>After consolidated-text ID</label><input id="afterId" inputmode="numeric" placeholder="ID"></div></div><button class="primary" id="runDiff">Спореди верзии</button><pre id="outDiff">Нема резултат.</pre></div></section>
-</div>
+  <section class="panel" data-panel="bylaws">
+    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">02</div><div><h3>Law ↔ Bylaw Graph</h3><p>Го следи овластувањето од законски член до правилник, уредба, одлука, упатство или друг подзаконски акт.</p></div></div><span class="chip ok">Official + reviewed links</span></div>
+    <div class="panel-body">
+      <div class="panel-controls"><button class="btn primary" id="runBylaws" type="button">Прикажи поврзани подзаконски акти</button><span class="chip">Членот е опционален филтер</span></div>
+      <div class="result-host" id="bylawsResult" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="cases">
+    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">03</div><div><h3>Article ↔ Case-Law</h3><p>Прикажува само судски записи со official binding и двојна човечка review проверка за избраниот член.</p></div></div><span class="chip ok">Dual-reviewed authority</span></div>
+    <div class="panel-body">
+      <div class="panel-controls"><button class="btn primary" id="runCases" type="button">Најди судска практика</button><span class="chip">Потребен е член</span></div>
+      <div class="result-host" id="casesResult" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="calendar">
+    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">04</div><div><h3>Legal Effective-Date Calendar</h3><p>Ги раздвојува објавувањето, стапувањето во сила, почетокот/крајот на примена и посебното правно дејство.</p></div></div><span class="chip info">Time-aware</span></div>
+    <div class="panel-body">
+      <div class="panel-controls">
+        <div class="field"><label for="calendarFrom">Од</label><input id="calendarFrom" type="date"></div>
+        <div class="field"><label for="calendarTo">До</label><input id="calendarTo" type="date"></div>
+        <label class="chip"><input id="calendarInstrumentOnly" type="checkbox" checked> Само избраниот закон</label>
+        <button class="btn primary" id="runCalendar" type="button">Прикажи календар</button>
+      </div>
+      <div class="result-host" id="calendarResult" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="diff">
+    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">05</div><div><h3>Visual Consolidation Diff</h3><p>Споредува две консолидирани верзии член по член и јасно ги одвојува додадените, избришаните, изменетите и непроменетите членови.</p></div></div><span class="chip warn">Working diff · not authority</span></div>
+    <div class="panel-body">
+      <div class="panel-controls" style="align-items:end">
+        <div class="field" style="min-width:260px"><label for="beforeVersion">Претходна верзија</label><select id="beforeVersion"><option value="">Изберете закон</option></select></div>
+        <div class="field" style="min-width:260px"><label for="afterVersion">Понова верзија</label><select id="afterVersion"><option value="">Изберете закон</option></select></div>
+        <button class="btn primary" id="runDiff" type="button">Спореди верзии</button>
+      </div>
+      <div class="result-host" id="diffResult" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <div class="footer-note">AI Advokat · Hybrid Legal Intelligence R2 · Lawyer View · Source-first · Human Gate</div>
 </main>
+
 <script>
 (()=>{"use strict";
 const $=id=>document.getElementById(id);
-const today=new Date(),iso=d=>d.toISOString().slice(0,10);
-$("date").value=iso(today);
-const from=new Date(today);from.setDate(from.getDate()-30);$("from").value=iso(from);
-const to=new Date(today);to.setDate(to.getDate()+90);$("to").value=iso(to);
+const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const FALLBACK_INSTRUMENTS=[
+  {canonicalKey:"mk:zkp",shortTitle:"ЗКП",title:"Закон за кривичната постапка"},
+  {canonicalKey:"mk:kz",shortTitle:"КЗ",title:"Кривичен законик"},
+  {canonicalKey:"mk:zro",shortTitle:"ЗРО",title:"Закон за работните односи"},
+  {canonicalKey:"mk:zoo",shortTitle:"ЗОО",title:"Закон за облигационите односи"},
+  {canonicalKey:"mk:zoup",shortTitle:"ЗОУП",title:"Закон за општата управна постапка"},
+  {canonicalKey:"mk:zs",shortTitle:"ЗС",title:"Закон за судовите"},
+  {canonicalKey:"mk:zi",shortTitle:"ЗИ",title:"Закон за извршување"},
+  {canonicalKey:"mk:zsob",shortTitle:"ЗСоб",title:"Закон за Собранието на Република Македонија"}
+];
+const state={instruments:[],instrument:null,module:"time",raw:{},diffRows:[],diffFilter:"ALL",consolidations:[]};
 
-async function run(out,url){
-  const el=$(out);el.textContent="Се вчитува…";
-  try{
-    const r=await fetch(url,{headers:{accept:"application/json"},cache:"no-store"});
-    const d=await r.json().catch(()=>({ok:false,error:"invalid_json_response"}));
-    el.textContent=JSON.stringify({httpStatus:r.status,...d},null,2);
-  }catch(e){el.textContent=JSON.stringify({ok:false,error:String(e?.message||e)},null,2)}
+function el(tag,attrs={},children=[]){
+  const n=document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs)){
+    if(v===null||v===undefined) continue;
+    if(k==="class") n.className=v;
+    else if(k==="text") n.textContent=String(v);
+    else if(k==="html") n.innerHTML=String(v);
+    else if(k.startsWith("data-")) n.setAttribute(k,String(v));
+    else if(k==="disabled") n.disabled=Boolean(v);
+    else n.setAttribute(k,String(v));
+  }
+  for(const child of Array.isArray(children)?children:[children]){
+    if(child===null||child===undefined) continue;
+    n.append(child.nodeType?child:document.createTextNode(String(child)));
+  }
+  return n;
 }
-const enc=v=>encodeURIComponent(String(v||"").trim());
-$("runTime").onclick=()=>run("outTime","/api/hybrid/article-at-date?instrument="+enc($("instrument").value)+"&article="+enc($("article").value)+"&date="+enc($("date").value));
-$("runBylaws").onclick=()=>run("outBylaws","/api/hybrid/bylaws?instrument="+enc($("instrument").value)+"&article="+enc($("article").value));
-$("runCases").onclick=()=>run("outCases","/api/hybrid/case-law?instrument="+enc($("instrument").value)+"&article="+enc($("article").value));
-$("runCalendar").onclick=()=>run("outCalendar","/api/hybrid/calendar?from="+enc($("from").value)+"&to="+enc($("to").value));
-$("runDiff").onclick=()=>run("outDiff","/api/hybrid/diff?instrument="+enc($("instrument").value)+"&beforeId="+enc($("beforeId").value)+"&afterId="+enc($("afterId").value));
+function chip(text,kind=""){return el("span",{class:"chip"+(kind?" "+kind:""),text});}
+function clear(node){node.replaceChildren()}
+function empty(host,title,text){clear(host);host.append(el("div",{class:"empty"},el("div",{},[el("strong",{text:title}),el("span",{text})])))}
+function loading(host,label="Се вчитуваат проверени податоци…"){clear(host);host.append(el("div",{class:"loader"},[el("div",{class:"spinner","aria-hidden":"true"}),el("div",{text:label})]))}
+function notice(text,kind=""){return el("div",{class:"notice"+(kind?" "+kind:""),text})}
+function rawDetails(data){
+  const d=el("details",{class:"raw"});
+  d.append(el("summary",{text:"Технички JSON · provenance payload"}),el("pre",{text:JSON.stringify(data,null,2)}));
+  return d;
+}
+function safeUrl(value){
+  try{const u=new URL(String(value||""),location.origin);if(["http:","https:"].includes(u.protocol)) return u.href}catch{}
+  return null;
+}
+function sourceLink(url,label="Отвори официјален извор"){
+  const href=safeUrl(url);
+  if(!href) return el("span",{class:"chip",text:"Нема јавен URL"});
+  return el("a",{class:"source-link",href,target:"_blank",rel:"noopener noreferrer",text:"↗ "+label});
+}
+function fmtDate(v){
+  if(!v) return "—";
+  const d=new Date(String(v)+"T00:00:00");
+  if(Number.isNaN(d.getTime())) return String(v);
+  return new Intl.DateTimeFormat("mk-MK",{day:"2-digit",month:"short",year:"numeric"}).format(d);
+}
+function compactHash(v){const s=String(v||"");return s?s.slice(0,12)+"…"+s.slice(-8):"—"}
+function instrumentLabel(i){return [i?.shortTitle,i?.title].filter(Boolean).join(" · ")||i?.canonicalKey||"Непознат инструмент"}
+function currentInstrumentKey(){return state.instrument?.canonicalKey||$("manualInstrument").value.trim()||""}
+function currentInstrumentTitle(){return state.instrument?.title||currentInstrumentKey()||"Избран инструмент"}
+function articleValue(){return $("article").value.trim()}
+function setUrlState(){
+  const u=new URL(location.href);const k=currentInstrumentKey();
+  if(k)u.searchParams.set("instrument",k);else u.searchParams.delete("instrument");
+  if(articleValue())u.searchParams.set("article",articleValue());else u.searchParams.delete("article");
+  u.searchParams.set("module",state.module);history.replaceState(null,"",u);
+}
+async function api(path){
+  const r=await fetch(path,{headers:{accept:"application/json"},cache:"no-store"});
+  const data=await r.json().catch(()=>({ok:false,error:"invalid_json_response"}));
+  return {status:r.status,data};
+}
+function errorText(data,status){
+  const map={
+    instrument_required:"Изберете конкретен закон.",
+    instrument_article_date_required:"Изберете закон, член и референтен датум.",
+    instrument_and_article_required:"Изберете закон и член.",
+    article_version_not_found_on_date:"Во достапниот corpus нема еднозначна верзија на овој член за избраниот датум.",
+    article_version_ambiguous:"Постојат повеќе можни верзии. Системот намерно запре наместо да погоди.",
+    consolidated_version_not_found:"Избраната консолидирана верзија не е пронајдена.",
+    hybrid_legal_intelligence_unavailable:"Hybrid data layer моментално не е достапен."
+  };
+  return map[data?.error]||data?.message||("Барањето не можеше да се изврши (HTTP "+status+").");
+}
+function renderError(host,data,status){
+  clear(host);host.append(notice(errorText(data,status),status>=500?"danger":"warn"));
+  if(Array.isArray(data?.candidates)&&data.candidates.length){
+    const box=el("div",{class:"graph-list"});
+    data.candidates.forEach(c=>box.append(el("div",{class:"graph-card"},[
+      el("div",{class:"graph-parent",text:c.versionLabel||"Верзија"}),
+      el("div",{class:"graph-arrow"}),
+      el("div",{class:"graph-child"},[
+        el("strong",{text:[fmtDate(c.validFrom),fmtDate(c.validTo)].join(" → ")}),
+        el("small",{text:c.sourceUrl||"Без јавен URL"})
+      ])
+    ])));
+    host.append(box);
+  }
+  host.append(rawDetails(data));
+}
+function metric(label,value){return el("div",{class:"metric"},[el("small",{text:label}),el("strong",{text:value})])}
+
+function renderInstrumentMeta(){
+  const host=$("instrumentMeta");clear(host);
+  const i=state.instrument;
+  if(!i){host.append(chip("Canonical key: "+(currentInstrumentKey()||"—")));return}
+  host.append(
+    chip(i.canonicalKey),
+    chip((i.articleCount||0)+" article записи","info"),
+    chip((i.consolidationCount||0)+" консолидации"),
+    chip("Review: "+(i.humanReviewStatus||"pending"),i.humanReviewStatus==="approved"?"ok":"warn")
+  );
+  if(i.gazetteReference)host.append(chip("Сл. весник: "+i.gazetteReference));
+  $("manualInstrument").value=i.canonicalKey;
+  $("timeContext").textContent=(i.shortTitle||i.title)+" · член "+(articleValue()||"—");
+}
+function selectInstrument(key){
+  state.instrument=state.instruments.find(x=>x.canonicalKey===key)||{canonicalKey:key,title:key,shortTitle:null,articleCount:0,consolidationCount:0,humanReviewStatus:"unknown"};
+  $("instrumentSelect").value=key;
+  renderInstrumentMeta();loadConsolidations();setUrlState();
+}
+async function loadInstruments(){
+  let list=[];
+  try{
+    const {data}=await api("/api/hybrid/instruments");
+    if(data?.ok&&Array.isArray(data.instruments)&&data.instruments.length) list=data.instruments;
+  }catch{}
+  if(!list.length) list=FALLBACK_INSTRUMENTS;
+  state.instruments=list;
+  const select=$("instrumentSelect");clear(select);
+  for(const i of list){
+    const o=el("option",{value:i.canonicalKey,text:instrumentLabel(i)});
+    select.append(o);
+  }
+  const params=new URLSearchParams(location.search);
+  const wanted=params.get("instrument")||(["mk:zi","mk:zkp"].find(k=>list.some(x=>x.canonicalKey===k)))||list[0]?.canonicalKey||"";
+  selectInstrument(wanted);
+}
+async function loadConsolidations(){
+  const key=currentInstrumentKey(),before=$("beforeVersion"),after=$("afterVersion");
+  clear(before);clear(after);
+  before.append(el("option",{value:"",text:"Се вчитуваат верзии…"}));after.append(el("option",{value:"",text:"Се вчитуваат верзии…"}));
+  if(!key)return;
+  try{
+    const {status,data}=await api("/api/hybrid/consolidations?instrument="+encodeURIComponent(key));
+    if(status>=400||!data.ok)throw new Error(errorText(data,status));
+    state.consolidations=data.consolidations||[];
+    clear(before);clear(after);
+    if(!state.consolidations.length){
+      before.append(el("option",{value:"",text:"Нема консолидирани верзии"}));
+      after.append(el("option",{value:"",text:"Нема консолидирани верзии"}));
+      return;
+    }
+    for(const c of state.consolidations){
+      const label=fmtDate(c.referenceDate)+" · "+String(c.kind||"").replaceAll("_"," ")+" · "+c.humanReviewStatus;
+      before.append(el("option",{value:c.id,text:label}));
+      after.append(el("option",{value:c.id,text:label}));
+    }
+    if(state.consolidations.length>1){before.value=String(state.consolidations[1].id);after.value=String(state.consolidations[0].id)}
+  }catch(error){
+    clear(before);clear(after);
+    before.append(el("option",{value:"",text:"Верзиите не се достапни"}));after.append(el("option",{value:"",text:"Верзиите не се достапни"}));
+  }
+}
+function switchModule(name){
+  state.module=name;
+  qa(".module-tab").forEach(b=>b.classList.toggle("active",b.dataset.module===name));
+  qa(".panel").forEach(p=>p.classList.toggle("active",p.dataset.panel===name));
+  setUrlState();
+}
+
+async function runTime(){
+  const host=$("timeResult"),key=currentInstrumentKey(),article=articleValue(),date=$("referenceDate").value;
+  if(!key||!article||!date){renderError(host,{error:"instrument_article_date_required"},400);return}
+  loading(host);
+  const {status,data}=await api("/api/hybrid/article-at-date?instrument="+encodeURIComponent(key)+"&article="+encodeURIComponent(article)+"&date="+encodeURIComponent(date));
+  state.raw.time=data;
+  if(status>=400||!data.ok){renderError(host,data,status);return}
+  clear(host);
+  const card=el("article",{class:"article-card"});
+  const top=el("div",{class:"article-top"},[
+    el("div",{},[
+      el("div",{class:"eyebrow",text:currentInstrumentTitle()}),
+      el("div",{class:"article-title",text:"Член "+data.articleNumber+(data.articleHeading?" · "+data.articleHeading:"")})
+    ]),
+    chip("На "+fmtDate(data.referenceDate),"info")
+  ]);
+  const body=el("div",{class:"article-body",text:data.articleText||"Нема текст."});
+  const v=data.version||{},p=data.provenance||{};
+  const meta=el("div",{class:"meta-grid"},[
+    metaItem("Верзија",v.label||"—"),metaItem("Важи од",fmtDate(v.validFrom)),
+    metaItem("Примена од",fmtDate(v.applicationFrom)),metaItem("Важи до",fmtDate(v.validTo)),
+    metaItem("Human review",v.humanReviewStatus||"—"),metaItem("Сл. весник",p.sourceIssueNumber||"—"),
+    metaItem("Датум на извор",fmtDate(p.sourceIssueDate)),metaItem("Canonical key",data.instrumentKey||key)
+  ]);
+  card.append(top,body,meta);host.append(card);
+  const src=el("div",{class:"source-box"});
+  src.append(el("div",{class:"source-box-head"},[el("strong",{text:"Provenance"}),sourceLink(p.sourceUrl)]));
+  src.append(el("div",{text:"SHA-256: "+compactHash(p.sourceSha256),style:"font-size:11px;color:var(--muted)"}));
+  if(p.derivationTrace)src.append(el("div",{text:"Derivation trace: "+String(p.derivationTrace),style:"font-size:11px;color:var(--muted);margin-top:5px"}));
+  host.append(src,notice("Човечка проверка останува задолжителна пред последична професионална употреба.","warn"),rawDetails(data));
+}
+function metaItem(label,value){return el("div",{class:"meta-item"},[el("small",{text:label}),el("strong",{text:value??"—"})])}
+
+async function runBylaws(){
+  const host=$("bylawsResult"),key=currentInstrumentKey(),article=articleValue();
+  if(!key){renderError(host,{error:"instrument_required"},400);return}
+  loading(host);
+  const qs=new URLSearchParams({instrument:key});if(article)qs.set("article",article);
+  const {status,data}=await api("/api/hybrid/bylaws?"+qs.toString());state.raw.bylaws=data;
+  if(status>=400||!data.ok){renderError(host,data,status);return}
+  clear(host);
+  const edges=data.edges||[],rej=data.rejected||[];
+  host.append(el("div",{class:"summary-grid"},[
+    metric("Проверени врски",edges.length),metric("Одбиени записи",rej.length),
+    metric("Избран член",article||"сите"),metric("Authority","official + reviewed")
+  ]));
+  if(!edges.length)host.append(notice("Нема reviewed official Law ↔ Bylaw врски за избраниот опсег. Ова не значи дека подзаконски акти не постојат; значи дека не се пуштени како проверен authority link.","warn"));
+  else{
+    const list=el("div",{class:"graph-list"});
+    for(const x of edges){
+      const child=el("div",{class:"graph-child"},[
+        el("strong",{text:x.childTitle||x.childInstrumentKey}),
+        el("small",{text:[x.actType, x.sourceIssueNumber?"Сл. весник "+x.sourceIssueNumber:null, x.applicationFrom?"примена "+fmtDate(x.applicationFrom):null].filter(Boolean).join(" · ")}),
+        el("div",{style:"margin-top:7px"},[sourceLink(x.sourceUrl)])
+      ]);
+      list.append(el("div",{class:"graph-card"},[
+        el("div",{class:"graph-parent",text:"Член "+x.basisArticle}),el("div",{class:"graph-arrow"}),child
+      ]));
+    }
+    host.append(list);
+  }
+  host.append(rawDetails(data));
+}
+
+async function runCases(){
+  const host=$("casesResult"),key=currentInstrumentKey(),article=articleValue();
+  if(!key||!article){renderError(host,{error:"instrument_and_article_required"},400);return}
+  loading(host);
+  const {status,data}=await api("/api/hybrid/case-law?instrument="+encodeURIComponent(key)+"&article="+encodeURIComponent(article));state.raw.cases=data;
+  if(status>=400||!data.ok){renderError(host,data,status);return}
+  clear(host);
+  const rows=data.links||[],rej=data.rejected||[];
+  host.append(el("div",{class:"summary-grid"},[
+    metric("Reviewed decisions",rows.length),metric("Excluded",rej.length),metric("Article","Член "+article),metric("Binding","official")
+  ]));
+  if(!rows.length)host.append(notice("Во reviewed authority слојот нема судски одлуки врзани за овој член. Discovery записите намерно не се прикажуваат како authority.","warn"));
+  else{
+    const list=el("div",{class:"case-list"});
+    for(const x of rows){
+      const main=el("div",{class:"case-main"},[
+        el("div",{},[el("strong",{text:x.caseTitle||x.caseNumber||"Судска одлука"}),el("small",{text:x.court||"—"})]),
+        el("div",{},[el("strong",{text:x.caseNumber||"—"}),el("small",{text:"Број"})]),
+        el("div",{},[el("strong",{text:fmtDate(x.decisionDate)}),el("small",{text:"Датум"})]),
+        chip(x.precedentialWeight||x.decisionType||"reviewed","info"),
+        sourceLink(x.sourceUrl,"Извор")
+      ]);
+      const details=el("details",{class:"case-detail"});
+      details.append(el("summary",{text:"Holding / reasoning / review"}));
+      if(x.holding)details.append(el("p",{text:"Holding: "+x.holding}));
+      if(x.reasoningSummary)details.append(el("p",{text:"Reasoning: "+x.reasoningSummary}));
+      details.append(el("div",{class:"context-meta"},[chip("Human: "+x.humanReviewStatus,"ok"),chip("Authority: "+x.authorityReviewStatus,"ok")]));
+      list.append(el("article",{class:"case-card"},[main,details]));
+    }
+    host.append(list);
+  }
+  host.append(notice("Системот не смее да крие спротивна authority. Проверете дали corpus coverage е доволен за конкретниот спор.","warn"),rawDetails(data));
+}
+
+const EVENT_META={
+  PUBLICATION:["Објавување","info"],ENTRY_INTO_FORCE:["Стапување во сила","ok"],
+  APPLICATION_START:["Почеток на примена","ok"],APPLICATION_END:["Крај на примена","warn"],LEGAL_EFFECT:["Правно дејство","warn"]
+};
+async function runCalendar(){
+  const host=$("calendarResult"),from=$("calendarFrom").value,to=$("calendarTo").value,key=currentInstrumentKey();
+  if(!from||!to){renderError(host,{error:"calendar_from_to_required"},400);return}
+  loading(host);
+  const qs=new URLSearchParams({from,to});if($("calendarInstrumentOnly").checked&&key)qs.set("instrument",key);
+  const {status,data}=await api("/api/hybrid/calendar?"+qs.toString());state.raw.calendar=data;
+  if(status>=400||!data.ok){renderError(host,data,status);return}
+  clear(host);
+  const counts=data.counts||{},events=data.events||[];
+  host.append(el("div",{class:"summary-grid"},[
+    metric("Вкупно",counts.total??events.length),metric("Стапување",counts.entryIntoForce??0),
+    metric("Почеток на примена",counts.applicationStart??0),metric("Правно дејство",counts.legalEffect??0)
+  ]));
+  if(!events.length)host.append(notice("Нема проверени календарски настани во избраниот период.","warn"));
+  else{
+    const grouped=new Map();
+    for(const e of events){if(!grouped.has(e.date))grouped.set(e.date,[]);grouped.get(e.date).push(e)}
+    const timeline=el("div",{class:"timeline"});
+    for(const [date,items] of grouped){
+      const evs=el("div",{class:"timeline-events"});
+      items.forEach(e=>{
+        const meta=EVENT_META[e.eventType]||[e.label||e.eventType,""];
+        evs.append(el("div",{class:"timeline-event"},[
+          el("div",{class:"context-meta"},[chip(meta[0],meta[1]),e.actType?chip(e.actType):null].filter(Boolean)),
+          el("strong",{text:e.title||e.instrumentKey||"Правен настан"}),
+          el("small",{text:[e.sourceIssueNumber?"Сл. весник "+e.sourceIssueNumber:null,e.humanReviewStatus?"review "+e.humanReviewStatus:null].filter(Boolean).join(" · ")}),
+          el("div",{style:"margin-top:6px"},[sourceLink(e.sourceUrl,"Извор")])
+        ]));
+      });
+      timeline.append(el("div",{class:"timeline-group"},[el("div",{class:"timeline-date",text:fmtDate(date)}),evs]));
+    }
+    host.append(timeline);
+  }
+  host.append(rawDetails(data));
+}
+
+function renderDiffRows(host){
+  const rows=state.diffRows.filter(r=>state.diffFilter==="ALL"||r.changeType===state.diffFilter);
+  let list=host.querySelector(".diff-list");
+  if(list)list.remove();
+  list=el("div",{class:"diff-list"});
+  if(!rows.length)list.append(notice("Нема членови во избраниот филтер."));
+  for(const r of rows){
+    list.append(el("article",{class:"diff-card"},[
+      el("div",{class:"diff-head"},[
+        el("strong",{text:"Член "+r.articleNumber+(r.afterHeading||r.beforeHeading?" · "+(r.afterHeading||r.beforeHeading):"")}),
+        el("span",{class:"change-badge "+r.changeType,text:r.changeType})
+      ]),
+      el("div",{class:"diff-grid"},[
+        el("div",{class:"diff-pane before"},[el("div",{class:"diff-label",text:"Претходно"}),el("div",{text:r.beforeText||"—"})]),
+        el("div",{class:"diff-pane after"},[el("div",{class:"diff-label",text:"Потоа"}),el("div",{text:r.afterText||"—"})])
+      ])
+    ]));
+  }
+  const raw=host.querySelector(".raw");if(raw)host.insertBefore(list,raw);else host.append(list);
+}
+async function runDiff(){
+  const host=$("diffResult"),key=currentInstrumentKey(),before=$("beforeVersion").value,after=$("afterVersion").value;
+  if(!key||!before||!after){renderError(host,{error:"instrument_beforeId_afterId_required",message:"Изберете две консолидирани верзии."},400);return}
+  if(before===after){renderError(host,{message:"Изберете две различни верзии."},400);return}
+  loading(host);
+  const {status,data}=await api("/api/hybrid/diff?instrument="+encodeURIComponent(key)+"&beforeId="+encodeURIComponent(before)+"&afterId="+encodeURIComponent(after));state.raw.diff=data;
+  if(status>=400||!data.ok){renderError(host,data,status);return}
+  clear(host);state.diffRows=data.rows||[];state.diffFilter="ALL";
+  const counts=data.counts||{};
+  host.append(el("div",{class:"summary-grid"},[
+    metric("Изменети",counts.modified??0),metric("Додадени",counts.added??0),metric("Избришани",counts.removed??0),metric("Непроменети",counts.unchanged??0)
+  ]));
+  host.append(notice((data.beforeLabel||"Верзија A")+"  ↔  "+(data.afterLabel||"Верзија B")+". Ова е working diff; не е самостојно current-law authority.","warn"));
+  const tools=el("div",{class:"diff-toolbar"});
+  [["ALL","Сите"],["MODIFIED","Изменети"],["ADDED","Додадени"],["REMOVED","Избришани"],["UNCHANGED","Непроменети"]].forEach(([v,label])=>{
+    const b=el("button",{class:"filter-btn"+(v==="ALL"?" active":""),type:"button",text:label});
+    b.onclick=()=>{state.diffFilter=v;qa(".filter-btn",tools).forEach(x=>x.classList.toggle("active",x===b));renderDiffRows(host)};
+    tools.append(b);
+  });
+  host.append(tools,rawDetails(data));renderDiffRows(host);
+}
+
+function bind(){
+  qa(".module-tab").forEach(b=>b.addEventListener("click",()=>switchModule(b.dataset.module)));
+  $("instrumentSelect").addEventListener("change",()=>selectInstrument($("instrumentSelect").value));
+  $("article").addEventListener("input",()=>{renderInstrumentMeta();setUrlState()});
+  $("applyManualInstrument").onclick=()=>{const k=$("manualInstrument").value.trim();if(k)selectInstrument(k)};
+  $("runTime").onclick=()=>runTime().catch(e=>renderError($("timeResult"),{message:e.message},500));
+  $("runBylaws").onclick=()=>runBylaws().catch(e=>renderError($("bylawsResult"),{message:e.message},500));
+  $("runCases").onclick=()=>runCases().catch(e=>renderError($("casesResult"),{message:e.message},500));
+  $("runCalendar").onclick=()=>runCalendar().catch(e=>renderError($("calendarResult"),{message:e.message},500));
+  $("runDiff").onclick=()=>runDiff().catch(e=>renderError($("diffResult"),{message:e.message},500));
+}
+function initDates(){
+  const now=new Date(),iso=d=>d.toISOString().slice(0,10);
+  $("referenceDate").value=iso(now);
+  const from=new Date(now);from.setDate(from.getDate()-30);$("calendarFrom").value=iso(from);
+  const to=new Date(now);to.setDate(to.getDate()+90);$("calendarTo").value=iso(to);
+}
+function initEmpty(){
+  empty($("timeResult"),"Article Time Machine","Изберете закон, член и датум, па проверете историска верзија.");
+  empty($("bylawsResult"),"Law ↔ Bylaw","Прикажете проверени врски од законски член до подзаконски акт.");
+  empty($("casesResult"),"Article ↔ Case-Law","Изберете член за reviewed official судска практика.");
+  empty($("calendarResult"),"Legal Calendar","Изберете период за стапување во сила, примена и правно дејство.");
+  empty($("diffResult"),"Consolidation Diff","Изберете две консолидирани верзии за споредба.");
+}
+async function initCapabilities(){
+  try{
+    const {data}=await api("/api/hybrid/capabilities");
+    if(data?.ok)$("engineChip").textContent="Engine: "+String(data.version||"R1")+" · Lawyer View R2";
+    else $("engineChip").textContent="Engine: unavailable";
+  }catch{$("engineChip").textContent="Engine: unavailable"}
+}
+async function init(){
+  bind();initDates();initEmpty();initCapabilities();
+  const p=new URLSearchParams(location.search);if(p.get("article"))$("article").value=p.get("article");
+  await loadInstruments();
+  const module=p.get("module");if(["time","bylaws","cases","calendar","diff"].includes(module))switchModule(module);
+}
+init();
 })();
 </script>
-</body></html>
+</body>
+</html>
