@@ -941,12 +941,13 @@
     render();
   }
 
-  async function send(forcedText=null){
+  async function send(forcedText=null,sendContext=null){
     if(abortController) return;
     const q=String(forcedText??input.value).trim();
     if(!q) return;
+    const governedRadarHandoff=sendContext?.governedRadarHandoff===true;
 
-    if(localConfidentialCasePrompt(q)){
+    if(localConfidentialCasePrompt(q) && !governedRadarHandoff){
       input.value="";
       attachments=[];
       renderAttachments();
@@ -2360,6 +2361,9 @@
       return;
     }
     if(!payload || payload.version!==AI_ADVOCAT_RADAR_HANDOFF_VERSION) return;
+    if(payload.source!=="case-law-radar" || payload.authorityBoundary!=="discovery_only") return;
+    const selectedIds=Array.isArray(payload.selectedIds)?payload.selectedIds.map(id=>String(id||"")).filter(Boolean):[];
+    if(selectedIds.length>10) return;
     const createdAt=Number(payload.createdAt||0);
     if(!createdAt || Date.now()-createdAt>15*60*1000) return;
     const prompt=String(payload.prompt||"").trim().slice(0,12000);
@@ -2368,7 +2372,7 @@
     autoSize();
     document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});
     setTimeout(()=>{
-      if(payload.autoSend===true) send(prompt);
+      if(payload.autoSend===true) send(prompt,{governedRadarHandoff:true});
       else input.focus();
     },320);
   }
