@@ -151,7 +151,7 @@ function buildShell(){
       <button data-vnext-action="assistant" class="active"><span class="vnext-nav-symbol" aria-hidden="true">◈</span><span>Правен асистент</span></button>
       <button data-vnext-action="analyzer"><span class="vnext-nav-symbol" aria-hidden="true">⌁</span><span>Анализатор</span></button>
       <button data-vnext-action="consolidator"><span class="vnext-nav-symbol" aria-hidden="true">≋</span><span>Консолидатор</span></button>
-      <button data-vnext-action="hybrid-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">⌘</span><span>Hybrid Intelligence</span></button>
+      <button data-vnext-action="hybrid-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">⌘</span><span>Hybrid Legal Intelligence</span></button>
       <button data-vnext-action="predictor"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Предиктор</span></button>
       <button data-vnext-action="sources"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>Правни извори</span></button>
       <button data-vnext-action="public-evidence"><span class="vnext-nav-symbol" aria-hidden="true">⌕</span><span>Јавни докази</span></button>
@@ -433,7 +433,7 @@ function openGlobalSearch(){ const d=$('vnextSearchDialog'); d.showModal(); $('v
 function renderGlobalSearch(){
   const host=$('vnextSearchResults'); if(!host) return; const q=String($('vnextGlobalSearch')?.value||'').trim().toLowerCase(); host.replaceChildren();
   const tools=[
-    ['⌁ Анализатор','analyzer'],['≋ Консолидатор','consolidator'],['⌘ Hybrid Intelligence','hybrid-intelligence'],['◎ Предиктор','predictor'],['▤ Правни извори','sources'],['⌕ Јавни докази','public-evidence'],['◆ Pro Ecosystem','professional-ecosystem'],['◉ Justice Daily','justice-daily'],['⚖ Судска практика','cases'],['▣ CasePilot','casepilot'],['▧ Документи','documents'],['◇ Workflows','workflows'],['✓ Human Gate','review'],['◫ Library','library']
+    ['⌁ Анализатор','analyzer'],['≋ Консолидатор','consolidator'],['⌘ Hybrid Legal Intelligence','hybrid-intelligence'],['◎ Предиктор','predictor'],['▤ Правни извори','sources'],['⌕ Јавни докази','public-evidence'],['◆ Pro Ecosystem','professional-ecosystem'],['◉ Justice Daily','justice-daily'],['⚖ Судска практика','cases'],['▣ CasePilot','casepilot'],['▧ Документи','documents'],['◇ Workflows','workflows'],['✓ Human Gate','review'],['◫ Library','library']
   ];
   const matches=workspace.threads.filter(t=>!q||t.title.toLowerCase().includes(q)||t.history.some(m=>String(m.text||'').toLowerCase().includes(q))).slice(0,8);
   if(matches.length){host.append(mk('small',{class:'vnext-search-group',text:'Разговори'}));matches.forEach(t=>{const b=mk('button',{type:'button',text:t.title});b.onclick=()=>{$('vnextSearchDialog').close();switchThread(t.id)};host.append(b);});}
