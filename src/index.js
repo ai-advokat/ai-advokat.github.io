@@ -163,6 +163,12 @@ import {
   publicOpenLegalSourceDirectory,
   openLegalSourcePolicySummary
 } from "./open-legal-sources-policy.js";
+import {
+  FAMILY_DIVORCE_DRAFT_VERSION,
+  isFamilyDivorceDraftRequest,
+  formatFamilyDivorceDraft,
+  familyDivorceLegalSources
+} from "./family-divorce-draft.js";
 import { detectConfidentialCasePrompt } from "./chat-privacy.js";
 import { buildLegalRoutingQuery, isContextDependentLegalFollowUp } from "./legal-conversation-context.js";
 import {
@@ -6840,6 +6846,30 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         providerCalled:false,
         quotaConsumed:false
       },503);
+    }
+  }
+
+  if(isFamilyDivorceDraftRequest(routingQuery)){
+    const answer=formatFamilyDivorceDraft(routingQuery);
+    if(answer){
+      return json(request,{
+        ok:true,
+        answer,
+        provider:"canonical_corpus_no_model",
+        model:null,
+        mode:"passive_corpus",
+        displayMode:"canonical_family_divorce_draft",
+        sourceMode:"canonical_family_law_divorce_no_model",
+        webSearchUsed:false,
+        legalSources:familyDivorceLegalSources(),
+        caseLawSources:[],
+        guideSources:[],
+        publicationSources:[],
+        sources:[],
+        familyDivorceVersion:FAMILY_DIVORCE_DRAFT_VERSION,
+        performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+        humanGate:"Source-first family-law draft. Before filing, verify jurisdiction, facts, children, exact statutory basis, current consolidated text, court fees, power of attorney and attachments."
+      });
     }
   }
 
