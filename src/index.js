@@ -8861,14 +8861,17 @@ async function handleHybridLegalIntelligence(request,env,url){
       const from=String(url.searchParams.get("from")||"").trim();
       const to=String(url.searchParams.get("to")||"").trim();
       if(!from||!to) return json(request,{ok:false,error:"calendar_from_to_required"},400);
-      const rows=await env.DB.prepare(
-        `SELECT id,instrument_key,instrument_title,act_type,event_type,event_date,
+      const calendarParams=[from,to];
+      let calendarSql=`SELECT id,instrument_key,instrument_title,act_type,event_type,event_date,
                 source_url,source_issue_number,source_sha256,provenance_state,human_review_status
            FROM legal_effective_date_events
-          WHERE event_date>=? AND event_date<=?
-          ORDER BY event_date,instrument_title,id
-          LIMIT 1000`
-      ).bind(from,to).all();
+          WHERE event_date>=? AND event_date<=?`;
+      if(instrument){
+        calendarSql+=" AND instrument_key=?";
+        calendarParams.push(instrument);
+      }
+      calendarSql+=" ORDER BY event_date,instrument_title,id LIMIT 1000";
+      const rows=await env.DB.prepare(calendarSql).bind(...calendarParams).all();
       const records=(rows.results||[]).map(r=>{
         const x={...r};
         if(r.event_type==="PUBLICATION")x.publication_date=r.event_date;
