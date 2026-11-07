@@ -238,12 +238,14 @@ export function diffSnapshots(previous,current){
   const after=new Map((current.candidates||[]).map(c=>[candidateKey(c),c]));
   const new_candidates=[...after.entries()].filter(([k])=>!before.has(k)).map(([,v])=>v);
   const removed_candidates=[...before.entries()].filter(([k])=>!after.has(k)).map(([,v])=>v);
+  const trackedInstrumentChange=changed_pages.some(x=>Boolean(x.instrument_key));
+  const legalChange=Boolean(new_candidates.length||removed_candidates.length||trackedInstrumentChange);
   return {
-    state:(changed_pages.length||new_candidates.length||removed_candidates.length)?"CHANGE_DETECTED":"NO_CHANGE",
+    state:legalChange?"CHANGE_DETECTED":changed_pages.length?"SOURCE_CHURN_NO_LEGAL_CANDIDATE":"NO_CHANGE",
     changed_pages,
     new_candidates,
     removed_candidates,
-    requires_human_review:Boolean(changed_pages.length||new_candidates.length||removed_candidates.length)
+    requires_human_review:legalChange
   };
 }
 
