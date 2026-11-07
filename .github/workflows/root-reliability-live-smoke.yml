@@ -1,22 +1,10 @@
 name: AI Advokat root reliability live smoke
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/root-reliability-live-smoke.yml"
-      - "bot/index.html"
-      - "assets/standalone-bot.js"
-      - "assets/standalone-bot-vnext.js"
-      - "assets/standalone-bot-vnext.css"
-      - "assets/standalone-bot-toolkit.js"
-      - "assets/standalone-bot-toolkit.css"
-      - "assets/chat-privacy-browser.js"
-      - "src/chat-privacy.js"
-      - ".assetsignore"
-      - "_headers"
-      - ".github/workflows/sync-pages-runtime.yml"
-
+  workflow_run:
+    workflows: ["Sync AI Advokat frontend runtime to GitHub Pages"]
+    types: [completed]
+  workflow_dispatch:
 permissions:
   contents: read
 
@@ -26,10 +14,13 @@ concurrency:
 
 jobs:
   smoke:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: Verify release source contracts
         shell: bash
