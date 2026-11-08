@@ -52,22 +52,25 @@ test("professional tools exposes the authenticated secure workspace",()=>{
   assert.match(toolsPage,/Отвори Secure Case Workspace/);
 });
 
-test("private document vault supports drag drop and multi-file PDF Word image selection",()=>{
+test("private document vault supports drag drop and multi-file PDF Word Excel image selection",()=>{
   for(const id of ["caseFileDrop","chooseCaseFiles","caseFileInput","caseFileSelection","uploadCaseFile"]){
     assert.match(html,new RegExp('id="'+id+'"'));
   }
-  assert.match(html,/\.pdf,\.doc,\.docx,\.png,\.jpg,\.jpeg,\.webp/);
+  assert.match(html,/\.pdf,\.doc,\.docx,\.xls,\.xlsx,\.png,\.jpg,\.jpeg,\.webp/);
   assert.match(html,/caseFileInput" type="file" multiple hidden/);
   assert.match(js,/setPendingCaseFiles/);
   assert.match(js,/dataTransfer\?\.files/);
   assert.match(js,/pendingCaseFiles/);
   assert.match(js,/application\/msword/);
+  assert.match(js,/application\/vnd\.ms-excel/);
+  assert.match(js,/application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/);
   assert.match(js,/image\/png/);
   assert.match(js,/image\/jpeg/);
   assert.match(js,/image\/webp/);
 });
 
 test("private document batch is capped at 20 files and 500 MB each",()=>{
+  assert.match(html,/XLS · XLSX/);
   assert.match(html,/до 500 MB по документ · до 20 документи/);
   assert.match(js,/all\.length>20/);
   assert.match(js,/500\*1024\*1024/);
