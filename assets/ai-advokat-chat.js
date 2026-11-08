@@ -97,6 +97,12 @@
     voiceStatus.hidden=!value;
   }
 
+  const INTERNAL_VOICE_CONVERSATION_VERSION="AI_ADVOCAT_INTERNAL_VOICE_CONVERSATION_R1";
+  window.AIAdvokatInternalVoiceConversation=Object.freeze({
+    version:INTERNAL_VOICE_CONVERSATION_VERSION,
+    mode:"half_duplex_auto_send_auto_speak",
+    language:"mk-MK"
+  });
   const voiceRuntimePromise=import("/assets/ai-advokat-voice.mjs?v=20261106-voice-r2")
     .then(mod=>mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"}))
     .catch(error=>{
@@ -1023,8 +1029,12 @@
             label:format==="docx"?"Преземи Word (.docx)":format==="pdf"?"Преземи PDF":format==="json"?"Преземи JSON":"Преземи CSV",
             filename:"AI-Advokat-analysis."+format
           })),
-          sourceLabel:d.sourceMode==="workers_ai_free_authorial_publication_context" || d.sourceMode==="ai_advokat_authorial_publication_context"
-            ?"AI Advokat авторски трудови · секундарен извор · DOI/Zenodo + Human Gate; не е извор на важечко право."
+          sourceLabel:d.sourceMode==="canonical_family_law_divorce_no_model"
+            ?"Закон за семејството · source-first deterministic draft · проверени одредби + Human Gate."
+            :d.sourceMode==="canonical_property_law_odrzuvacka_no_model"
+              ?"Закон за сопственост и други стварни права · одржувачка/usucapio · source-first deterministic · Human Gate."
+              :d.sourceMode==="workers_ai_free_authorial_publication_context" || d.sourceMode==="ai_advokat_authorial_publication_context"
+                ?"AI Advokat авторски трудови · секундарен извор · DOI/Zenodo + Human Gate; не е извор на важечко право."
             :d.sourceMode==="ai_advokat_article_corpus_first"
               ?"AI Advokat article-level corpus first · верзија и Human Gate се прикажани во изворите."
             :d.sourceMode==="ai_advokat_article_corpus_plus_external_web"
@@ -1268,15 +1278,51 @@
   });
 
   if(micBtn){
-    voiceRuntimePromise.then(voice=>voice?.bindMicrophone({
-      button:micBtn,
-      input,
-      status:setVoiceStatus,
-      onTranscript:()=>{
-        autoSize();
-        input.focus();
+    // Half-duplex voice conversation: a new microphone turn always stops any
+    // current TTS, preventing the assistant from transcribing itself.
+    micBtn.addEventListener("click",()=>{
+      voiceRuntimePromise.then(voice=>voice?.stopSpeaking?.());
+    },{capture:true});
+
+    voiceRuntimePromise.then(voice=>{
+      if(!voice) return;
+      const binding=voice.bindMicrophone({
+        button:micBtn,
+        input,
+        status:setVoiceStatus,
+        onTranscript:async finalText=>{
+          autoSize();
+          if(abortController){
+            setVoiceStatus("Тековниот одговор сè уште се обработува. Запрете го или почекајте, па зборувајте повторно.");
+            return;
+          }
+          const spoken=String(input.value||finalText||"").trim();
+          if(!spoken){
+            setVoiceStatus("Не е препознаен говор. Притиснете 🎙 и обидете се повторно.");
+            input.focus();
+            return;
+          }
+          const chatBefore=current();
+          const beforeCount=chatBefore?.messages?.length||0;
+          setVoiceStatus("✓ Говорот е препознаен. Го испраќам прашањето…");
+          await send(spoken);
+          const chatAfter=current();
+          const fresh=chatAfter===chatBefore
+            ? [...(chatAfter?.messages||[]).slice(beforeCount)].reverse().find(m=>m?.role==="assistant" && String(m.text||"").trim())
+            : null;
+          if(fresh){
+            setVoiceStatus("🔊 AI Advokat одговара гласно.");
+            const spokenOk=voice.speak(String(fresh.text||""),{status:setVoiceStatus});
+            if(!spokenOk) setVoiceStatus("Одговорот е подготвен, но гласното читање не е достапно во овој прелистувач.");
+          }
+        }
+      });
+      if(binding?.supported){
+        micBtn.title="Гласовен разговор: зборувај → испрати → слушни одговор";
+        micBtn.setAttribute("aria-label","Гласовен разговор со AI Advokat");
+        micBtn.dataset.voiceConversation=INTERNAL_VOICE_CONVERSATION_VERSION;
       }
-    }));
+    });
   }
 
 

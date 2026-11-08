@@ -94,6 +94,13 @@ const welcome = $('welcome').cloneNode(true);
 
 function status(text) { $('status').textContent = text; }
 let voiceRuntime=null;
+const EXTERNAL_VOICE_CONVERSATION_VERSION="AI_ADVOCAT_EXTERNAL_VOICE_CONVERSATION_R1";
+let voiceConversationPending=false;
+window.AIAdvokatExternalVoiceConversation=Object.freeze({
+  version:EXTERNAL_VOICE_CONVERSATION_VERSION,
+  mode:"half_duplex_auto_send_auto_speak",
+  language:"mk-MK"
+});
 const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261106-voice-r2")
   .then(mod=>{
     voiceRuntime=mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"});
@@ -301,12 +308,35 @@ $('question').oninput = () => {
   if (!pending) $('send').disabled = !!key && $('question').value.trim().length < 2;
 };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
-voiceRuntimeReady.then(voice=>voice?.bindMicrophone({
-  button:$('mic'),
-  input:$('question'),
-  status,
-  onTranscript:()=>{$('question').focus();}
-}));
+$('mic').addEventListener('click',()=>voiceRuntimeReady.then(voice=>voice?.stopSpeaking?.()),{capture:true});
+voiceRuntimeReady.then(voice=>{
+  if(!voice) return;
+  const binding=voice.bindMicrophone({
+    button:$('mic'),
+    input:$('question'),
+    status,
+    onTranscript:()=>{
+      if(pending){
+        status('Тековниот одговор сè уште се обработува. Запрете го или почекајте, па зборувајте повторно.');
+        return;
+      }
+      if(!key){
+        voiceConversationPending=false;
+        status('Говорот е внесен. За автоматско испраќање внесете активен професионален код преку ⋯.');
+        $('access').click();
+        return;
+      }
+      voiceConversationPending=true;
+      status('✓ Говорот е препознаен. Го испраќам прашањето…');
+      queueMicrotask(()=>$('composer')?.requestSubmit());
+    }
+  });
+  if(binding?.supported){
+    $('mic').title='Гласовен разговор: зборувај → испрати → слушни одговор';
+    $('mic').setAttribute('aria-label','Гласовен разговор со AI Advokat');
+    $('mic').dataset.voiceConversation=EXTERNAL_VOICE_CONVERSATION_VERSION;
+  }
+});
 $('question').addEventListener('paste', event => { if (event.clipboardData?.files?.length) { event.preventDefault(); $('plus').open = true; status('Прикачете ги документите во приватниот простор преку „+“.'); } });
 $('composer').addEventListener('dragover', event => event.preventDefault());
 $('composer').addEventListener('drop', event => { event.preventDefault(); $('plus').open = true; status('Документите се прикачуваат во приватниот простор преку „+“.'); });
@@ -326,6 +356,7 @@ $('composer').onsubmit = async event => {
       new Promise(resolve => setTimeout(resolve,3000)),
     ]);
     if (!privacyRuntimeReady) {
+      voiceConversationPending=false;
       status('Заштитниот privacy модул не се вчита. Ништо не е испратено. Освежете ја страницата и обидете се повторно.');
       window.AIAdvokatFrontendGuard?.report?.('external','privacy-runtime',new Error('privacy_dependency_unavailable'));
       return;
@@ -340,6 +371,7 @@ $('composer').onsubmit = async event => {
       outboundQ=redacted.text;
       privacyRedacted=true;
     } else {
+      voiceConversationPending=false;
       status('Овој текст содржи доверливи детали што не можам сигурно да ги маскирам автоматски. Ништо не е испратено. Можете да ги отстраните идентификаторите и повторно да испратите, или да го користите „+“ само ако точните податоци се неопходни за документот.');
       return;
     }
@@ -360,10 +392,21 @@ $('composer').onsubmit = async event => {
     pulse.remove();
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
     history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
+    if(voiceConversationPending){
+      voiceConversationPending=false;
+      const spokenAnswer=String(data.answer||'').trim();
+      if(spokenAnswer){
+        queueMicrotask(()=>voiceRuntimeReady.then(voice=>{
+          const ok=voice?.speak?.(spokenAnswer,{status});
+          if(ok===false) status('Одговорот е подготвен, но гласното читање не е достапно во овој прелистувач.');
+        }));
+      }
+    }
     status(privacyRedacted
       ? 'Одговорот е работен материјал. Личните идентификатори беа маскирани локално и не беа испратени.'
       : 'Одговорот е работен материјал. Проверете ги наведените извори.');
   } catch (error) {
+    voiceConversationPending=false;
     pulse.remove();
     if (epoch !== generation) return;
     if (error.status === 401) { key = ''; forgetDeviceAccess(deviceStorage); status('Пристапот истекол. Внесете активен код преку ⋯.'); }
