@@ -83,7 +83,7 @@ test("Pages sync publishes and verifies the Hybrid R2 workbench",()=>{
 test("Worker and root release smokes verify Hybrid R2 live",()=>{
   assert.match(workerSmoke,/expected_hybrid=.*hybrid-legal-intelligence\.html/);
   assert.match(workerSmoke,/worker-hybrid\.html/);
-  assert.match(workerSmoke,/HYBRID R2 WORKBENCH \+ DISCOVERY APIS: PASS/);
+  assert.match(workerSmoke,/HYBRID R2 WORKBENCH \+ ECHR CROSSWALK \+ DISCOVERY APIS: PASS/);
   assert.match(rootSmoke,/pages-hybrid\.html/);
   assert.match(rootSmoke,/grep -q 'Hybrid Legal Intelligence R2' \/tmp\/pages-hybrid\.html/);
   assert.match(rootSmoke,/grep -q 'Lawyer View' \/tmp\/pages-hybrid\.html/);
