@@ -203,6 +203,7 @@ jobs:
           files=(
             index.html
             case-law-curation.html
+            judicial-practice.html
             consolidator/index.html
             hybrid-legal-intelligence.html
             professional-tools.html
