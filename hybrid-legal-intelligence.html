@@ -204,6 +204,7 @@ a{color:inherit}
       <a class="top-link" href="/case-law-curation.html">Case-Law Radar</a>
       <a class="top-link" href="/public-legal-data-services.html" title="Официјални јавни податоци и e‑услуги">Open Data & e‑Services</a>
       <a class="top-link" href="/gold-set-review-gate.html" title="Gold Set Review Gate · независна corpus review контрола">◆ Gold Review Gate</a>
+      <a class="top-link" href="/echr-crosswalk.html" title="F0-FAST-27 · ЕСЧП ↔ домашна судска практика · research HOLD">§ ECHR Crosswalk</a>
       <a class="top-link" href="#guide">Водилка</a>
     </nav>
   </div>
@@ -213,7 +214,7 @@ a{color:inherit}
   <section class="hero">
     <div class="hero-main">
       <div class="eyebrow">Lawyer View · governed research surface</div>
-      <h2>Девет правни функции. Еден source-first адвокатски workflow.</h2>
+      <h2>Десет правни функции. Еден source-first адвокатски workflow.</h2>
       <p>Од важечка редакција и подзаконски акти, преку судска практика и јавни докази, до официјален административен следен чекор. Секој резултат останува врзан за provenance и Human Gate.</p>
       <div class="hero-badges">
         <span class="chip ok">Read-only</span>
@@ -235,16 +236,16 @@ a{color:inherit}
   </section>
 
   <details class="guide-card" id="guide" open>
-    <summary><span>Водилка · Како функционира Hybrid Legal Intelligence</span><span class="chip info">9 функции · Source-first · Human Gate</span></summary>
+    <summary><span>Водилка · Како функционира Hybrid Legal Intelligence</span><span class="chip info">10 функции · Source-first · Human Gate</span></summary>
     <div class="guide-body">
       <div class="guide-intro">
         <div>
           <h3>Од правно прашање до проверен човечки следен чекор</h3>
-          <p>Не мора секогаш да ги користите сите девет модули. Почнете од правното прашање, изберете закон/член/датум кога е релевантно, а потоа движете се само низ чекорите што му се потребни на конкретниот предмет.</p>
+          <p>Не мора секогаш да ги користите сите десет модули. Почнете од правното прашање, изберете закон/член/датум кога е релевантно, а потоа движете се само низ чекорите што му се потребни на конкретниот предмет.</p>
         </div>
         <div class="guide-flow">
           <strong>Препорачан workflow</strong>
-          Time Machine → Bylaw → Case-Law → Calendar → Diff → Open Data Evidence → Official e‑Services → Human Handoff → Gold Set Review Gate
+          Time Machine → Bylaw → Case-Law → Calendar → Diff → Open Data Evidence → Official e‑Services → Human Handoff → Gold Set Review Gate → ECHR Crosswalk
         </div>
       </div>
 
@@ -258,6 +259,7 @@ a{color:inherit}
         <article class="guide-step"><span class="guide-step-no">07</span><h4>Official e‑Services</h4><p>Најдете официјална услуга што создава правно релевантен документ или административен чекор — уверение, имотен лист, даночна потврда, лиценца, дозвола и слично.</p></article>
         <article class="guide-step"><span class="guide-step-no">08</span><h4>eID + Human Handoff</h4><p>Проверете eID услови, прилози, надлежност и рокови. AI Advokat подготвува и насочува; <b>човекот го прави финалното поднесување</b> на официјалниот портал.</p></article>
         <article class="guide-step"><span class="guide-step-no">09</span><h4>Gold Set Review Gate</h4><p>За candidate судски записи: двојна boundary/source проверка, посебен правен ревизор, fail-closed warning/anomaly disposition, provenance manifest и независен Human Gate preflight. Модулот <b>не може сам да објави или да промовира reviewed authority</b>.</p></article>
+        <article class="guide-step"><span class="guide-step-no">10</span><h4>ECHR ↔ Domestic Crosswalk</h4><p>Ги споредува избраните домашни записи со релевантни HUDOC предмети како <b>истражувачки AI-преднацрт</b>. Секој crosswalk останува HOLD додека не се проверат HUDOC metadata, историската домашна норма и независната правна оцена.</p></article>
       </div>
 
       <div class="guide-rule" aria-label="Правила за правна тежина">
@@ -312,6 +314,7 @@ a{color:inherit}
     <button class="module-tab" data-module="services" type="button"><span class="module-no">07</span><span class="module-name">Official e‑Services</span><span class="module-desc">Правен следен чекор</span></button>
     <button class="module-tab" data-module="handoff" type="button"><span class="module-no">08</span><span class="module-name">Human Handoff</span><span class="module-desc">eID → човек → поднесување</span></button>
     <button class="module-tab" data-module="gold" type="button"><span class="module-no">09</span><span class="module-name">Gold Set Review Gate</span><span class="module-desc">candidate → Human Gate</span></button>
+    <button class="module-tab" data-module="echr" type="button"><span class="module-no">10</span><span class="module-name">ECHR Crosswalk</span><span class="module-desc">ЕСЧП ↔ домашна практика</span></button>
   </nav>
 
   <section class="panel active" data-panel="time">
@@ -416,6 +419,26 @@ a{color:inherit}
           <div class="case-top"><div><div class="eyebrow">PARAGRAF · F0-2Y · v2.1</div><div class="case-title">Gold Set Review Gate</div></div><span class="chip ok">browser-local · no server upload</span></div>
           <p>Вклучува двојна изворна проверка, трет независен правен ревизор, четврти Human Gate preflight проверувач, reviewer references, conflict declarations, warning/source-anomaly queue, full-record SHA-256 manifest, hardened JSON/CSV import-export и Human Gate pack.</p>
           <p><a class="btn primary" href="/gold-set-review-gate.html">Отвори Gold Set Review Gate →</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="echr">
+    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">10</div><div><h3>ECHR ↔ Domestic Case-Law Crosswalk</h3><p>F0-FAST-27 · контролирана споредба на домашна судска практика со HUDOC материјали, без автоматска правна квалификација.</p></div></div><span class="chip warn">Research draft · HG-F0 OPEN · NO-GO</span></div>
+    <div class="panel-body">
+      <div class="metrics">
+        <div class="metric"><small>Crosswalk</small><strong>3 записи</strong></div>
+        <div class="metric"><small>Records</small><strong>B16 · B20 · B25</strong></div>
+        <div class="metric"><small>Status</small><strong>3/3 HOLD</strong></div>
+        <div class="metric"><small>Legal verified</small><strong>0/30</strong></div>
+      </div>
+      <div class="result-host">
+        <div class="notice warn"><b>Hard boundary:</b> ECHR Crosswalk е истражувачки слој. AI comparative draft ≠ reviewed authority. Провери HUDOC metadata, историски домашни редакции и процесните акти, па продолжи во Gold Review / Human Gate.</div>
+        <div class="case-card">
+          <div class="case-top"><div><div class="eyebrow">PARAGRAF · F0-FAST-27</div><div class="case-title">ЕСЧП ↔ домашна судска практика</div></div><span class="chip">Canonical source SHA preserved</span></div>
+          <p>B16 ↔ Taleski and Others · B20 ↔ Andonoski · B25 ↔ Naumoski. Сите три записи имаат експлицитен HOLD и директен премин во Gold Gate.</p>
+          <p><a class="btn primary" href="/echr-crosswalk.html">Отвори ECHR Crosswalk →</a></p>
         </div>
       </div>
     </div>
@@ -891,7 +914,7 @@ async function init(){
   bind();initDates();initEmpty();initCapabilities();
   const p=new URLSearchParams(location.search);if(p.get("article"))$("article").value=p.get("article");
   await loadInstruments();
-  const module=p.get("module");if(["time","bylaws","cases","calendar","diff","opendata","services","handoff","gold"].includes(module)){switchModule(module);if(module==="handoff")renderHandoff().catch(e=>renderError($("handoffResult"),{message:e.message},500));}
+  const module=p.get("module");if(["time","bylaws","cases","calendar","diff","opendata","services","handoff","gold","echr"].includes(module)){switchModule(module);if(module==="handoff")renderHandoff().catch(e=>renderError($("handoffResult"),{message:e.message},500));}
 }
 init();
 })();
