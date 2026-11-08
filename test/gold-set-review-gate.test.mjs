@@ -87,3 +87,13 @@ test("Gold Gate header navigation exposes the core legal ecosystem",()=>{
   assert.match(page,/aria-current="page"/);
   assert.match(page,/◆ Gold Review Gate/);
 });
+
+test("Gold Gate contains an embedded operating guide for all review stages",()=>{
+  assert.match(page,/Водилка · Како се користи Gold Set Review Gate v2\.1/);
+  for(const label of ["Boundary Reviewer 1","Boundary Reviewer 2","Warning / anomaly disposition","Separate Legal Review","Human Gate Preflight","Export","Финална граница"]){
+    assert.equal(page.includes(label),true,"missing guide label: "+label);
+  }
+  assert.match(page,/ESCALATE_HOLD.*секогаш останува HOLD/);
+  assert.match(page,/publication_approved:false/);
+  assert.match(page,/reviewed_authority_promoted:false/);
+});
