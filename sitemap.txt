@@ -77,3 +77,8 @@ https://ai-advokat.github.io/scholar/digital-earnings/
 https://ai-advokat.github.io/scholar/digital-earnings/paper.pdf
 https://ai-advokat.github.io/proactive-legal-agents.html
 https://ai-advokat.github.io/legal-command-center.html
+https://ai-advokat.github.io/legal-ai-suite.html
+https://ai-advokat.github.io/contract-intelligence.html
+https://ai-advokat.github.io/fact-evidence-graph.html
+https://ai-advokat.github.io/connector-library.html
+https://ai-advokat.github.io/zoki-legal-ai-guide.html
