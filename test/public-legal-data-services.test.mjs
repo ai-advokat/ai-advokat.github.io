@@ -59,3 +59,13 @@ test("Open Data upstream network failures remain structured and fail closed",()=
   assert.match(block,/humanGateRequired:true/);
 });
 
+test("Public Legal Data workbench contains an embedded five-step usage guide",()=>{
+  assert.match(page,/Водилка · Како се користи Public Legal Data & e‑Services/);
+  assert.equal(page.includes("01 · Open Data Finder"),true);
+  assert.equal(page.includes("02 · Evidence Dataset Card"),true);
+  assert.equal(page.includes("03 · Legal Dataset Lens"),true);
+  assert.equal(page.includes("04 · e‑Service Navigator"),true);
+  assert.equal(page.includes("05 · eID + Human Handoff"),true);
+  assert.match(page,/AI Advokat не поднесува автономно/);
+  assert.match(page,/underlying official record/);
+});
