@@ -7,6 +7,8 @@ const workflow=fs.readFileSync(".github/workflows/worker-runtime-live-smoke.yml"
 test("Worker live smoke is triggered by every external-bot runtime surface",()=>{
   for(const path of [
     "bot/index.html",
+    "echr-crosswalk.html",
+    "src/echr-crosswalk-f0-fast-27.js",
     "assets/standalone-bot.js",
     "assets/standalone-bot-vnext.js",
     "assets/standalone-bot-vnext.css",
@@ -23,6 +25,8 @@ test("Worker live smoke is triggered by every external-bot runtime surface",()=>
 test("Worker live smoke waits for exact deployed byte parity",()=>{
   assert.match(workflow,/for attempt in \$\(seq 1 80\)/);
   assert.match(workflow,/sha256sum bot\/index\.html/);
+  assert.match(workflow,/sha256sum echr-crosswalk\.html/);
+  assert.match(workflow,/\/api\/hybrid\/echr-crosswalk\?q=B20/);
   assert.match(workflow,/sha256sum assets\/standalone-bot\.js/);
   assert.match(workflow,/sha256sum assets\/standalone-bot-vnext\.js/);
   assert.match(workflow,/sha256sum assets\/standalone-bot-vnext\.css/);
