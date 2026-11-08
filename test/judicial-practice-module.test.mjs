@@ -4,9 +4,10 @@ import fs from "node:fs";
 
 const read=p=>fs.readFileSync(new URL("../"+p,import.meta.url),"utf8");
 
-test("Judicial Practice hub is visible in desktop and mobile header",()=>{
+test("Judicial Practice hub is visible as one canonical header entry",()=>{
   const index=read("index.html");
-  assert.ok((index.match(/href="\/judicial-practice\.html"/g)||[]).length>=2);
+  assert.equal((index.match(/href="\/judicial-practice\.html"/g)||[]).length,1);
+  assert.match(index,/data-header-legal="judicial-practice"/);
 });
 
 test("Judicial Practice hub preserves authority-state separation",()=>{
