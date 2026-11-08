@@ -165,6 +165,14 @@ a{color:inherit}
 @media(max-width:1050px){.guide-grid{grid-template-columns:repeat(2,1fr)}.guide-rule{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.guide-intro{grid-template-columns:1fr}.guide-grid,.guide-rule{grid-template-columns:1fr}}
 
+.control-layer{margin:0 0 18px;background:linear-gradient(180deg,#f8fbfd,#fff);border:1px solid #cddae3;border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:17px}
+.control-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:13px}.control-head h3{margin:0 0 4px;font-size:16px}.control-head p{margin:0;color:var(--muted);font-size:11px}
+.control-grid{display:grid;grid-template-columns:minmax(170px,.7fr) minmax(200px,.85fr) minmax(0,1.45fr);gap:12px}.control-box{border:1px solid var(--line);border-radius:13px;padding:12px;background:#fff;min-width:0}.control-box>strong{display:block;margin-bottom:7px;font-size:12px;color:var(--navy-900)}
+.control-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.control-actions .btn{padding:8px 10px;font-size:11px}.pin-list,.trace-list{display:grid;gap:6px;max-height:180px;overflow:auto}.pin-item,.trace-item{border:1px solid #e2e8ec;border-radius:9px;padding:7px 8px;background:#f9fbfc;font-size:10px;line-height:1.45}.pin-item b,.trace-item b{display:block;color:var(--ink)}
+.control-select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff}.control-note{margin-top:8px;color:var(--muted);font-size:10px}.control-count{font-weight:800;color:var(--navy-900)}
+@media(max-width:900px){.control-grid{grid-template-columns:1fr 1fr}.control-box.trace-box{grid-column:1/-1}}
+@media(max-width:620px){.control-grid{grid-template-columns:1fr}.control-box.trace-box{grid-column:auto}}
+
 .advanced{margin-top:10px}
 .advanced summary{font-size:11px;color:var(--muted);cursor:pointer}
 .advanced-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}
@@ -220,7 +228,7 @@ a{color:inherit}
         <span class="chip ok">Read-only</span>
         <span class="chip info">Official-source first</span>
         <span class="chip warn">Human Gate required</span>
-        <span class="chip" id="engineChip">Engine: проверка…</span>
+        <span class="chip" id="engineChip">Engine: проверка…</span><span class="chip info">Control R3</span>
       </div>
     </div>
     <aside class="hero-side" aria-label="Граница на овластување">
@@ -302,6 +310,50 @@ a{color:inherit}
         <button class="btn secondary" id="applyManualInstrument" type="button">Примени</button>
       </div>
     </details>
+  </section>
+
+  <section class="control-layer" id="hybridControlR3" data-control-version="AI_ADVOCAT_HYBRID_CONTROL_R3" aria-labelledby="controlTitle">
+    <div class="control-head">
+      <div><div class="eyebrow">Control Layer R3 · над Hybrid 10</div><h3 id="controlTitle">Изворите и алатките ги контролира корисникот</h3><p>Не додава нова правна „11-та функција“. Ги оркестрира постојните 10 модули со pinned sources, видлива execution trace и Human Gate.</p></div>
+      <span class="chip info">browser-local · no authority promotion</span>
+    </div>
+    <div class="control-grid">
+      <div class="control-box">
+        <strong>1 · Research control</strong>
+        <label for="controlMode" class="sr-only">Research control mode</label>
+        <select id="controlMode" class="control-select">
+          <option value="manual">Manual · јас го бирам секој чекор</option>
+          <option value="hybrid" selected>Hybrid · pinned sources + AI synthesis</option>
+          <option value="auto">Auto research · AI предлага алатки, Human Gate останува</option>
+        </select>
+        <label for="sourceFocus" style="display:block;margin:9px 0 4px;font-size:10px;font-weight:800">Web source focus</label>
+        <select id="sourceFocus" class="control-select">
+          <option value="all">Сите дозволени web извори</option>
+          <option value="mk_official">Само официјални MK извори</option>
+          <option value="eu_echr_official">Само EU / ECHR официјални извори</option>
+        </select>
+        <p class="control-note">Domain filter се применува само кога AI chat навистина користи Web research. FREE/source-only патеките остануваат непроменети.</p>
+      </div>
+      <div class="control-box">
+        <strong>2 · Pinned sources · <span class="control-count" id="pinCount">0 / 8</span></strong>
+        <div class="pin-list" id="pinList"><div class="pin-item">Нема pinned резултати. Извршете модул и заклучете го резултатот како задолжителен работен контекст.</div></div>
+        <div class="control-actions">
+          <button class="btn secondary" id="pinCurrent" type="button">📌 Pin current result</button>
+          <button class="btn secondary" id="clearPins" type="button">Исчисти pins</button>
+        </div>
+        <p class="control-note">Pin ≠ authority. Се зачувува review/provenance статусот на резултатот и не се промовира discovery/HOLD запис.</p>
+      </div>
+      <div class="control-box trace-box">
+        <strong>3 · Visible execution trace</strong>
+        <div class="trace-list" id="executionTrace"><div class="trace-item">Секој Hybrid API чекор ќе се појави овде со модул, HTTP статус и исход.</div></div>
+        <div class="control-actions">
+          <button class="btn secondary" id="clearTrace" type="button">Исчисти trace</button>
+          <button class="btn primary" id="handoffInternal" type="button">Продолжи во AI Advokat</button>
+          <button class="btn secondary" id="handoffProfessional" type="button">Продолжи во Professional</button>
+        </div>
+        <p class="control-note">Handoff-от е работен prompt со Human Gate. Не поднесува, не потпишува и не врши автономно правно дејствие.</p>
+      </div>
+    </div>
   </section>
 
   <nav class="module-nav" aria-label="Hybrid Legal Intelligence модули">
@@ -461,7 +513,9 @@ const FALLBACK_INSTRUMENTS=[
   {canonicalKey:"mk:zi",shortTitle:"ЗИ",title:"Закон за извршување"},
   {canonicalKey:"mk:zsob",shortTitle:"ЗСоб",title:"Закон за Собранието на Република Македонија"}
 ];
-const state={instruments:[],instrument:null,module:"time",raw:{},diffRows:[],diffFilter:"ALL",consolidations:[]};
+const HYBRID_CONTROL_R3_VERSION="AI_ADVOCAT_HYBRID_CONTROL_R3";
+const HYBRID_CONTROL_R3_HANDOFF_KEY="aiAdvokatHybridControlR3Handoff";
+const state={instruments:[],instrument:null,module:"time",raw:{},diffRows:[],diffFilter:"ALL",consolidations:[],controlMode:"hybrid",sourceFocus:"all",pins:[],trace:[]};
 
 function el(tag,attrs={},children=[]){
   const n=document.createElement(tag);
@@ -516,10 +570,84 @@ function setUrlState(){
   if(articleValue())u.searchParams.set("article",articleValue());else u.searchParams.delete("article");
   u.searchParams.set("module",state.module);history.replaceState(null,"",u);
 }
+function renderPins(){
+  const host=$("pinList");if(!host)return;clear(host);
+  $("pinCount").textContent=state.pins.length+" / 8";
+  if(!state.pins.length){host.append(el("div",{class:"pin-item",text:"Нема pinned резултати. Извршете модул и заклучете го резултатот како задолжителен работен контекст."}));return}
+  state.pins.forEach((pin,i)=>{
+    const row=el("div",{class:"pin-item"});
+    row.append(el("b",{text:(i+1)+". "+pin.label}),el("span",{text:pin.meta}));
+    host.append(row);
+  });
+}
+function renderTrace(){
+  const host=$("executionTrace");if(!host)return;clear(host);
+  if(!state.trace.length){host.append(el("div",{class:"trace-item",text:"Секој Hybrid API чекор ќе се појави овде со модул, HTTP статус и исход."}));return}
+  [...state.trace].reverse().slice(0,30).forEach(t=>{
+    host.append(el("div",{class:"trace-item"},[
+      el("b",{text:t.module+" · "+t.status+" · "+(t.ok?"PASS":"CHECK")}),
+      el("span",{text:t.endpoint+" · "+t.durationMs+" ms · "+t.at})
+    ]));
+  });
+}
+function traceApi(path,status,data,started){
+  const endpoint=String(path||"").split("?")[0].slice(0,120);
+  state.trace.push({module:state.module,endpoint,status,ok:status<400&&data?.ok!==false,durationMs:Math.max(0,Date.now()-started),at:new Date().toLocaleTimeString("mk-MK")});
+  state.trace=state.trace.slice(-30);renderTrace();
+}
+function boundedSnapshot(value){
+  let text="";try{text=JSON.stringify(value)}catch{text=String(value||"")}
+  return text.slice(0,6000);
+}
+function pinCurrentResult(){
+  const raw=state.raw[state.module];
+  if(!raw||typeof raw!=="object"){alert("Прво извршете го активниот Hybrid модул.");return}
+  const key=[state.module,currentInstrumentKey(),articleValue()].join("|");
+  const label=state.module.toUpperCase()+" · "+currentInstrumentTitle()+(articleValue()?" · член "+articleValue():"");
+  const pin={id:key,label,meta:"captured "+new Date().toLocaleString("mk-MK")+" · Human Gate preserved",snapshot:boundedSnapshot(raw)};
+  state.pins=state.pins.filter(x=>x.id!==key);
+  state.pins.push(pin);state.pins=state.pins.slice(-8);renderPins();
+}
+function buildHybridHandoffPrompt(){
+  const pins=state.pins.map((p,i)=>(i+1)+". "+p.label+"\nSNAPSHOT: "+p.snapshot).join("\n\n");
+  const trace=state.trace.slice(-12).map(t=>t.module+" "+t.status+" "+t.endpoint).join(" → ");
+  const modeLabels={manual:"MANUAL",hybrid:"HYBRID",auto:"AUTO_RESEARCH"};
+  const focusLabels={all:"ALL_ALLOWED_WEB",mk_official:"OFFICIAL_MK_ONLY",eu_echr_official:"OFFICIAL_EU_ECHR_ONLY"};
+  return [
+    "HYBRID CONTROL R3 HANDOFF · "+HYBRID_CONTROL_R3_VERSION,
+    "Research control: "+(modeLabels[state.controlMode]||"HYBRID"),
+    "Web source focus: "+(focusLabels[state.sourceFocus]||"ALL_ALLOWED_WEB"),
+    "Selected legal context: "+currentInstrumentTitle()+(articleValue()?" · член "+articleValue():""),
+    "",
+    "PINNED SOURCES — must be read before synthesis, but pinning does NOT promote authority status:",
+    pins||"(none)",
+    "",
+    "VISIBLE EXECUTION TRACE:",
+    trace||"(no Hybrid API steps recorded)",
+    "",
+    "BOUNDARY: preserve each source's existing provenance/review/HOLD state. Discovery, ECHR HOLD, working diff and open-data signals must not be promoted to reviewed/current authority. Re-verify current law before consequential use. HUMAN GATE REQUIRED.",
+    "",
+    "Прашање/задача: "
+  ].join("\n");
+}
+function handoffHybrid(target){
+  state.controlMode=$("controlMode")?.value||"hybrid";
+  state.sourceFocus=$("sourceFocus")?.value||"all";
+  const payload={version:HYBRID_CONTROL_R3_VERSION,createdAt:Date.now(),autoSend:false,webDomainPreset:state.sourceFocus,prompt:buildHybridHandoffPrompt()};
+  try{sessionStorage.setItem(HYBRID_CONTROL_R3_HANDOFF_KEY,JSON.stringify(payload))}catch{}
+  location.href=target==="professional"?"/bot/":"/#ai-advokat-chat";
+}
 async function api(path){
-  const r=await fetch(path,{headers:{accept:"application/json"},cache:"no-store"});
-  const data=await r.json().catch(()=>({ok:false,error:"invalid_json_response"}));
-  return {status:r.status,data};
+  const started=Date.now();
+  try{
+    const r=await fetch(path,{headers:{accept:"application/json"},cache:"no-store"});
+    const data=await r.json().catch(()=>({ok:false,error:"invalid_json_response"}));
+    traceApi(path,r.status,data,started);
+    return {status:r.status,data};
+  }catch(error){
+    traceApi(path,0,{ok:false,error:String(error?.message||error)},started);
+    throw error;
+  }
 }
 function errorText(data,status){
   const map={
@@ -875,6 +1003,13 @@ async function renderHandoff(){
 }
 
 function bind(){
+  $("controlMode")?.addEventListener("change",e=>{state.controlMode=String(e.target.value||"hybrid")});
+  $("sourceFocus")?.addEventListener("change",e=>{state.sourceFocus=String(e.target.value||"all")});
+  $("pinCurrent")?.addEventListener("click",pinCurrentResult);
+  $("clearPins")?.addEventListener("click",()=>{state.pins=[];renderPins()});
+  $("clearTrace")?.addEventListener("click",()=>{state.trace=[];renderTrace()});
+  $("handoffInternal")?.addEventListener("click",()=>handoffHybrid("internal"));
+  $("handoffProfessional")?.addEventListener("click",()=>handoffHybrid("professional"));
   qa(".module-tab").forEach(b=>b.addEventListener("click",()=>switchModule(b.dataset.module)));
   $("instrumentSelect").addEventListener("change",()=>selectInstrument($("instrumentSelect").value));
   $("article").addEventListener("input",()=>{renderInstrumentMeta();setUrlState()});
@@ -911,7 +1046,7 @@ async function initCapabilities(){
   }catch{$("engineChip").textContent="Engine: unavailable"}
 }
 async function init(){
-  bind();initDates();initEmpty();initCapabilities();
+  bind();renderPins();renderTrace();initDates();initEmpty();initCapabilities();
   const p=new URLSearchParams(location.search);if(p.get("article"))$("article").value=p.get("article");
   await loadInstruments();
   const module=p.get("module");if(["time","bylaws","cases","calendar","diff","opendata","services","handoff","gold","echr"].includes(module)){switchModule(module);if(module==="handoff")renderHandoff().catch(e=>renderError($("handoffResult"),{message:e.message},500));}
