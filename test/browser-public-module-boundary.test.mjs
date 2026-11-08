@@ -10,7 +10,10 @@ const PUBLIC_SHARED=new Set([
   "src/echr-findings.js",
   "src/document-ingest-router.js",
   "src/international-legal-classifier.js",
-  "src/official-source-binder.js"
+  "src/official-source-binder.js",
+  "src/proactive-legal-agents.js",
+  "src/matter-memory.js",
+  "src/matter-agent-runtime.js"
 ]);
 
 function walkJs(dir){
