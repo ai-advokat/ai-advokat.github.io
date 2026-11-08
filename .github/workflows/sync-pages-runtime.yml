@@ -19,6 +19,9 @@ on:
       - "fact-evidence-graph.html"
       - "connector-library.html"
       - "zoki-legal-ai-guide.html"
+      - "proactive-agent-runtime.html"
+      - "assets/proactive-agent-runtime-ui.js"
+      - "src/matter-agent-runtime.js"
       - "bot/index.html"
       - "assets/ai-advokat-chat.js"
       - "assets/professional-tools.js"
@@ -114,6 +117,11 @@ jobs:
           test -f fact-evidence-graph.html
           test -f connector-library.html
           test -f zoki-legal-ai-guide.html
+          test -f proactive-agent-runtime.html
+          node --check assets/proactive-agent-runtime-ui.js
+          node --check src/matter-agent-runtime.js
+          grep -q 'MATTER-NATIVE · PROACTIVE AGENT RUNTIME · V1' proactive-agent-runtime.html
+          grep -q '/proactive-agent-runtime.html' index.html
           node --check src/contract-intelligence.js
           node --check src/legal-fact-graph.js
           node --check src/connector-registry.js
@@ -199,6 +207,9 @@ jobs:
             fact-evidence-graph.html
             connector-library.html
             zoki-legal-ai-guide.html
+            proactive-agent-runtime.html
+            assets/proactive-agent-runtime-ui.js
+            src/matter-agent-runtime.js
             bot/index.html
             assets/ai-advokat-chat.js
             assets/professional-tools.js
@@ -258,7 +269,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin gh-pages:refs/remotes/origin/gh-pages
-          for f in index.html case-law-curation.html consolidator/index.html hybrid-legal-intelligence.html professional-tools.html casepilot-workspace.html public-legal-data-services.html gold-set-review-gate.html echr-crosswalk.html proactive-legal-agents.html legal-command-center.html legal-ai-suite.html contract-intelligence.html fact-evidence-graph.html connector-library.html zoki-legal-ai-guide.html bot/index.html assets/ai-advokat-chat.js assets/professional-tools.js assets/casepilot-workspace-ui.js assets/ai-advokat-chat.css assets/ai-advokat-voice.mjs assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/standalone-bot.css assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/proactive-legal-agents.js src/matter-memory.js src/agent-builder.js src/horizon-scanning-engine.js src/legal-command-center.js src/contract-intelligence.js src/legal-fact-graph.js src/connector-registry.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js assets/standalone-bot-vnext.css assets/standalone-bot-toolkit.js assets/standalone-bot-toolkit.css; do
+          for f in index.html case-law-curation.html consolidator/index.html hybrid-legal-intelligence.html professional-tools.html casepilot-workspace.html public-legal-data-services.html gold-set-review-gate.html echr-crosswalk.html proactive-legal-agents.html legal-command-center.html legal-ai-suite.html contract-intelligence.html fact-evidence-graph.html connector-library.html zoki-legal-ai-guide.html proactive-agent-runtime.html assets/proactive-agent-runtime-ui.js src/matter-agent-runtime.js bot/index.html assets/ai-advokat-chat.js assets/professional-tools.js assets/casepilot-workspace-ui.js assets/ai-advokat-chat.css assets/ai-advokat-voice.mjs assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/standalone-bot.css assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/proactive-legal-agents.js src/matter-memory.js src/agent-builder.js src/horizon-scanning-engine.js src/legal-command-center.js src/contract-intelligence.js src/legal-fact-graph.js src/connector-registry.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js assets/standalone-bot-vnext.css assets/standalone-bot-toolkit.js assets/standalone-bot-toolkit.css; do
             main_blob="$(git rev-parse "$GITHUB_SHA:$f")"
             pages_blob="$(git rev-parse "origin/gh-pages:$f")"
             test "$main_blob" = "$pages_blob"
