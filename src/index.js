@@ -36,6 +36,13 @@ import {
   legalRetrievalPlan
 } from "./legal-retrieval-router.js";
 import {
+  ECHR_CROSSWALK_VERSION,
+  ECHR_CROSSWALK_SOURCE_SHA256,
+  ECHR_CROSSWALK_RECORDS,
+  ECHR_CROSSWALK_AUTHORITY_BOUNDARY,
+  searchEchrCrosswalk
+} from "./echr-crosswalk-f0-fast-27.js";
+import {
   APPEAL_SKOPJE_36_VERSION,
   APPEAL_SKOPJE_36_RECORDS,
   searchAppealSkopje36
@@ -8911,6 +8918,27 @@ async function handleHybridLegalIntelligence(request,env,url){
           autonomousCurrentLawPromotion:false,
           humanGateRequired:true
         }
+      });
+    }
+
+    if(path==="/api/hybrid/echr-crosswalk"){
+      const q=cleanQuery(url.searchParams.get("q")||"",240);
+      const records=searchEchrCrosswalk(q).map(r=>({
+        ...r,
+        status:"HOLD",
+        sourceSha256:ECHR_CROSSWALK_SOURCE_SHA256,
+        goldReviewUrl:"/gold-set-review-gate.html?record="+encodeURIComponent(r.id)+"&from=echr-crosswalk"
+      }));
+      return json(request,{
+        ok:true,
+        version:ECHR_CROSSWALK_VERSION,
+        source:"PARAGRAF F0-FAST-27",
+        sourceSha256:ECHR_CROSSWALK_SOURCE_SHA256,
+        query:q,
+        total:ECHR_CROSSWALK_RECORDS.length,
+        count:records.length,
+        records,
+        authorityBoundary:ECHR_CROSSWALK_AUTHORITY_BOUNDARY
       });
     }
 
