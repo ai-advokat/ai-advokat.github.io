@@ -1,0 +1,40 @@
+<!doctype html><html lang="mk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Proactive Agent Runtime · AI Advokat</title><meta name="description" content="Matter-native proactive legal agent runtime with Space context, plan approval, parallel execution, Human Nudges, audit trail and Human Gate.">
+<style>
+:root{--bg:#07131d;--panel:#0d1f2d;--line:#274254;--text:#eef6fb;--muted:#a9bdca;--accent:#7fd4ff;--gold:#d7b673;--ok:#9ce0b0;--warn:#ffd88a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}.wrap{width:min(1200px,92vw);margin:auto}.top{border-bottom:1px solid var(--line);background:#091925}.topin{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:14px 0}.brand{font-weight:900;color:#fff;text-decoration:none}.nav{display:flex;gap:12px;flex-wrap:wrap}.nav a,a{color:var(--accent)}main{padding:40px 0 70px}.eyebrow{color:var(--accent);font-size:.78rem;font-weight:900;letter-spacing:.08em}h1{font-size:clamp(2.1rem,5vw,4.4rem);line-height:1.02;margin:.3em 0}.lead,.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:18px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}.card h2{margin-top:0}label{display:block;margin:10px 0 5px;font-weight:750}input,textarea,select{width:100%;background:#081824;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:10px}textarea{min-height:110px}button{border:1px solid #3a6f8d;background:#102b3d;color:var(--text);border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer;margin:8px 6px 0 0}.out{margin-top:12px;background:#081824;border:1px solid var(--line);border-radius:10px;padding:12px;white-space:pre-wrap;overflow:auto;max-height:360px}.task{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:#091925}.task>div:first-child{display:flex;justify-content:space-between;gap:12px}.state{color:var(--gold);font-size:.82rem}.task small{color:var(--muted)}.actions{display:flex;flex-wrap:wrap}.chips{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.chip{border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:800}.ok{color:var(--ok)}.warn{color:var(--warn)}.gate{margin-top:24px;border-left:4px solid var(--gold);padding:16px 18px;background:#0a1b28;border-radius:10px;color:var(--muted)}.gate strong{color:var(--text)}footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted)}
+</style></head><body>
+<header class="top"><div class="wrap topin"><a class="brand" href="/">AI Advokat</a><nav class="nav"><a href="/legal-ai-suite.html">Legal AI Suite</a><a href="/legal-command-center.html">Command Center</a><a href="/zoki-legal-ai-guide.html">Водилка за Зоки</a></nav></div></header>
+<main class="wrap"><div class="eyebrow">MATTER-NATIVE · PROACTIVE AGENT RUNTIME · V1</div>
+<h1>Agent-от работи во предметот, не покрај предметот.</h1>
+<p class="lead">Matter/Space context → permissions & ethical walls → plan preview → Human approval → parallel specialist tasks → Human Nudges → cited completion → audit trail. Bounded metadata може локално да се задржи меѓу сесии; raw client document text не се меморира во овој runtime.</p>
+<div class="chips"><span class="chip ok">Space context inheritance</span><span class="chip ok">Parallel dispatch</span><span class="chip ok">Plan approval</span><span class="chip ok">Human Nudges</span><span class="chip ok">Audit trail</span><span class="chip ok">Ethical walls</span><span class="chip warn">Schedules need separate authorization</span></div>
+<div class="grid">
+<section class="card"><h2>1 · Matter Space</h2>
+<label>Space ID</label><input id="spaceId" value="matter-zoki-001">
+<label>Matter reference</label><input id="matterRef" value="ZOKI-001">
+<label>Label</label><input id="spaceLabel" value="Работен предмет">
+<label>Authorized principals</label><input id="authorized" value="zoki">
+<label>Ethical wall tags</label><input id="walls" value="matter-zoki">
+<label>Source universe</label><input id="sources" value="AI Advokat corpus, official MK sources, supplied matter documents">
+<label>Playbooks</label><input id="playbooks" value="Source-First, Human Gate, adverse-authority check">
+<button id="createSpace">Креирај Space</button><div class="out" id="spaceOut">Нема Space.</div></section>
+
+<section class="card"><h2>2 · Plan Preview</h2>
+<label>Actor</label><input id="actorId" value="zoki">
+<label>Actor ethical-wall tags</label><input id="actorWalls" value="matter-zoki">
+<label>Workflow</label><select id="templateId"></select>
+<label>Objective</label><textarea id="objective">Анализирај го предметот, распредели ја работата на најмал доволен сет агенти и врати review-ready резултат со извори.</textarea>
+<button id="previewPlan">Preview plan</button><button id="approvePlan">Human approve</button><button id="dispatch">Dispatch parallel</button>
+<div class="out" id="planOut">Нема plan.</div></section>
+</div>
+
+<div class="grid">
+<section class="card"><h2>3 · Parallel Tasks</h2><div id="tasks"></div></section>
+<section class="card"><h2>4 · Human Nudges</h2><div class="out" id="nudgesOut"></div></section>
+<section class="card"><h2>5 · Audit Log</h2><div class="out" id="auditOut"></div></section>
+<section class="card"><h2>6 · Runtime Snapshot</h2><div class="out" id="snapshotOut"></div><button id="clearRuntime">Исчисти локална runtime состојба</button></section>
+</div>
+<div class="gate"><strong>Human Gate.</strong> Plan approval не значи дозвола за filing, signing, external transmission, contract acceptance или canonical promotion. Тие остануваат заклучени. Cross-Space data access е забранет; agent-от добива само контекст за Space за кој actor-от е овластен.</div>
+</main><footer><div class="wrap">AI Advokat · Matter-Native Proactive Agent Runtime · Source-First · Human authority retained.</div></footer>
+<script type="module" src="/assets/proactive-agent-runtime-ui.js"></script></body></html>
