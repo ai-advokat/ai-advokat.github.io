@@ -4,6 +4,8 @@ import fs from "node:fs";
 
 const page=fs.readFileSync("echr-crosswalk.html","utf8");
 const gold=fs.readFileSync("gold-set-review-gate.html","utf8");
+const dataset=fs.readFileSync("src/echr-crosswalk-f0-fast-27.js","utf8");
+const worker=fs.readFileSync("src/index.js","utf8");
 
 test("F0-FAST-27 preserves the three source crosswalk records and canonical provenance",()=>{
   assert.match(page,/F0-FAST-27/);
@@ -43,4 +45,18 @@ test("Crosswalk search JavaScript is syntactically valid",()=>{
   const match=page.match(/<script>([\s\S]*?)<\/script>/);
   assert.ok(match,"inline script missing");
   assert.doesNotThrow(()=>new Function(match[1]));
+});
+
+test("Crosswalk is exposed to Hybrid as a read-only research-candidate API",()=>{
+  assert.match(dataset,/ECHR_CROSSWALK_VERSION="PARAGRAF_F0_FAST_27_V1"/);
+  assert.match(dataset,/ECHR_CROSSWALK_SOURCE_SHA256="3169baf559f9f372b1f7de543c19ee63fddfd83d900138a18c5198f4d3ad5aba"/);
+  assert.equal((dataset.match(/id:"B(?:16|20|25)"/g)||[]).length,3);
+  assert.match(dataset,/status:"research_candidate"/);
+  assert.match(dataset,/publicationApproved:false/);
+  assert.match(dataset,/reviewedAuthorityPromoted:false/);
+  assert.match(dataset,/productionGo:false/);
+  assert.match(dataset,/humanGateRequired:true/);
+  assert.match(worker,/path==="\/api\/hybrid\/echr-crosswalk"/);
+  assert.match(worker,/searchEchrCrosswalk\(q\)/);
+  assert.match(worker,/goldReviewUrl:"\/gold-set-review-gate\.html\?record="/);
 });
