@@ -69,11 +69,11 @@ test("Hybrid and Public Legal tools are visible in both top headers",()=>{
   assert.match(bot,/header-legal-links/);
 });
 
-test("Core legal tools are explained for users and Gold is present in mobile navigation",()=>{
+test("Core legal tools are explained for users and all governed tools are present in mobile navigation",()=>{
   const bot=fs.readFileSync("bot/index.html","utf8");
   const root=fs.readFileSync("index.html","utf8");
-  assert.match(root,/Што прават трите носечки правни алатки\?/);
-  assert.match(bot,/Како се разликуваат главните алатки\?/);
+  assert.match(root,/Што прават четирите носечки правни алатки\?/);
+  assert.match(bot,/Како се разликуваат четирите главни алатки\?/);
   for(const label of ["Hybrid 10","Open Data & e‑Services","Gold Review Gate","ECHR Crosswalk"]){
     assert.equal(root.includes(label),true,"root explanation missing "+label);
     assert.equal(bot.includes(label),true,"bot explanation missing "+label);
