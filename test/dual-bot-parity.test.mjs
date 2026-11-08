@@ -120,3 +120,14 @@ test("dual-bot parity: official external authority shortcuts are visible in Prof
     assert.ok(externalHtml.includes(source),"external Professional materials missing "+source);
   }
 });
+
+test("dual-bot parity: both voice surfaces support half-duplex auto-send auto-speak",()=>{
+  assert.match(mainJs,/AI_ADVOCAT_INTERNAL_VOICE_CONVERSATION_R1/);
+  assert.match(mainJs,/half_duplex_auto_send_auto_speak/);
+  assert.match(mainJs,/await send\(spoken\)/);
+  assert.match(mainJs,/voice\.speak\(String\(fresh\.text/);
+  assert.match(externalCore,/AI_ADVOCAT_EXTERNAL_VOICE_CONVERSATION_R1/);
+  assert.match(externalCore,/voiceConversationPending=true/);
+  assert.match(externalCore,/requestSubmit\(\)/);
+  assert.match(externalCore,/voice\?\.speak\?\.\(spokenAnswer/);
+});
