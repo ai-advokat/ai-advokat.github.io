@@ -1,4 +1,6 @@
-export const CASE_LAW_CURATION_VERSION="AI_ADVOCAT_CASE_LAW_CURATION_V1";
+import { assessCanonicalCaseLawState } from "./case-law-evidence-gates.js";
+
+export const CASE_LAW_CURATION_VERSION="AI_ADVOCAT_CASE_LAW_CURATION_V1_1";
 
 export const CASE_LAW_1000_TARGET=Object.freeze({
   supreme:250,
@@ -157,4 +159,21 @@ export function caseLawCurationPromptPolicy(){
     "Discovery-only material is not citable authority until source binding, holding verification and Human Gate.",
     "Do not infer finality, binding force or precedential status when the record does not prove it."
   ].join("\n");
+}
+
+
+export function assessCaseLawCurationReadiness(record={}){
+  const score=scoreCaseForCuration(record);
+  const gate=assessCanonicalCaseLawState(record);
+  return Object.freeze({
+    version:CASE_LAW_CURATION_VERSION,
+    score,
+    gate,
+    retrievalEligible:true,
+    reviewedAuthorityCandidate:gate.reviewedAuthorityCandidate,
+    productionCitable:gate.productionCitable,
+    authorityPromotion:false,
+    rule:"A curation score controls retrieval priority only. Evidence gates control authority eligibility.",
+    humanGateRequired:true
+  });
 }

@@ -98,6 +98,9 @@ test("Worker case-law research endpoint is query-only and privacy bounded",()=>{
   assert.match(worker,/discovery_only=0/);
   assert.match(block,/reviewed_official_case_law_only/);
   assert.match(block,/dualHumanReviewRequired:true/);
+  assert.match(block,/canonicalEvidenceGateRequiredForNewRecords:true/);
+  assert.match(worker,/case_law_evidence_gates/);
+  assert.match(worker,/PRODUCTION_CITABLE_AUTHORITY/);
   assert.match(block,/adverseAuthorityMustNotBeHidden:true/);
   assert.match(block,/neutral_until_professional_issue-specific_classification/);
   assert.match(worker,/\/api\/casepilot\/case-law/);

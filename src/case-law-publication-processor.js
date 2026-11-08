@@ -1,8 +1,10 @@
+import { assessPublicationBoundary, assessCanonicalCaseLawState } from "./case-law-evidence-gates.js";
+
 // Governed processors for case-law discovery registers and official court bulletins.
 // These helpers preserve source identifiers verbatim and never promote a bulletin
 // excerpt/headnote into a complete originating judgment.
 
-export const CASE_LAW_PUBLICATION_PROCESSOR_VERSION="1.0.0";
+export const CASE_LAW_PUBLICATION_PROCESSOR_VERSION="1.1.0";
 
 function clean(value=""){
   return String(value||"").normalize("NFKC").replace(/\r\n?/g,"\n");
@@ -95,6 +97,8 @@ export function extractCaseLawDiscoveryRegister(textInput,{sourceId="supplied-ca
         discovery_only:true,
         originating_decision_verified:false,
         human_review_required:true,
+        migration_state:"STAGED_NEEDS_SOURCE_MATCH",
+        evidence_gate:assessCanonicalCaseLawState({}),
         production_eligible:false
       }));
     }
@@ -145,6 +149,8 @@ export function extractSupremeCourtBulletinReferences(textInput,{sourceId="mk-su
       originating_decision_binding_verified:false,
       discovery_only:true,
       human_review_required:true,
+      migration_state:"STAGED_NEEDS_SOURCE_MATCH",
+      evidence_gate:assessCanonicalCaseLawState({}),
       production_eligible:false
     });
   }
@@ -158,5 +164,20 @@ export function extractSupremeCourtBulletinReferences(textInput,{sourceId="mk-su
     records:Object.freeze(records),
     rule:"A bulletin headnote, sentence, opinion, conclusion or excerpt is not represented as the complete originating decision.",
     human_gate_required:true
+  });
+}
+
+
+export function assessPublicationUnitForAuthority(record={}){
+  const boundary=assessPublicationBoundary(record);
+  const gate=assessCanonicalCaseLawState(record);
+  return Object.freeze({
+    version:CASE_LAW_PUBLICATION_PROCESSOR_VERSION,
+    boundary,
+    gate,
+    sourceTextMayBeIndexed:Boolean(boundary.locatorPresent),
+    authorityUseAllowed:gate.productionCitable,
+    rule:"A publication unit may be indexed before it is authority-eligible; indexing never promotes authority.",
+    humanGateRequired:true
   });
 }

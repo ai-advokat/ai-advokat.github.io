@@ -1,9 +1,11 @@
+import { assessCanonicalCaseLawState } from "./case-law-evidence-gates.js";
+
 // AI Advokat CasePilot governed case-law bridge v1.
 // Converts already-reviewed official case-law records into CasePilot research cards.
 // It does not alter case-law authority, invent citations, or infer a client-favourable
 // role from outcome alone.
 
-export const CASEPILOT_CASE_LAW_BRIDGE_VERSION="1.0.0";
+export const CASEPILOT_CASE_LAW_BRIDGE_VERSION="1.1.0";
 export const CASEPILOT_CASE_LAW_ROLES=Object.freeze([
   "supporting",
   "adverse",
@@ -28,6 +30,19 @@ function normalizeRole(value){
 
 export function caseLawRecordEligible(record){
   if(!record||typeof record!=="object") return false;
+  // New ZIP-derived multi-gate records must pass the full canonical gate.
+  // Legacy reviewed records without the new fields keep the pre-existing fail-closed rule.
+  const hasEvidenceGateFields=[
+    "remote_content_hash_verified","publication_approved","human_gate_approved",
+    "start_boundary_independent_signoff","end_boundary_independent_signoff",
+    "current_applicability","holding_verified"
+  ].some(k=>Object.prototype.hasOwnProperty.call(record,k)) || record.evidence_gate;
+  if(hasEvidenceGateFields){
+    const state=record.evidence_gate?.productionCitable===true
+      ? record.evidence_gate
+      : assessCanonicalCaseLawState(record);
+    return state.productionCitable===true;
+  }
   if(String(record.source_status||"")!=="official") return false;
   if(!(record.official_binding_verified===true || Number(record.official_binding_verified)===1)) return false;
   if(!reviewed(record.human_review_status)) return false;
@@ -65,6 +80,8 @@ export function toCasePilotAuthorityCard(record,{role=null,roleReason=null}={}){
     authorityReviewStatus:String(record.authority_review_status),
     officialBindingVerified:true,
     sourceClass:"official_reviewed_case_law",
+    evidenceGate:record.evidence_gate||null,
+    productionCitable:true,
     humanGateRequired:true
   });
 }

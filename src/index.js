@@ -5195,12 +5195,15 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
       "cla.court_level,cla.chamber_or_section,cla.decision_type,cla.precedential_weight, "+
       "cla.outcome_side,cla.convention_articles,cla.domestic_articles,cla.legal_issue_keys, "+
       "cla.finality_date,cla.importance_level,cla.human_review_status AS authority_review_status, "+
+      "ceg.migration_state AS evidence_gate_state,ceg.publication_approved AS evidence_publication_approved,ceg.human_gate_approved AS evidence_human_gate_approved, "+
       "(SELECT GROUP_CONCAT(h.proposition,' || ') FROM case_law_holdings h "+
       "WHERE h.case_law_id=cl.id AND h.human_review_status IN ('approved','reviewed')) AS reviewed_holdings "+
       "FROM case_law cl "+
       "JOIN sources s ON s.id=cl.source_id AND s.source_status='official' "+
       "JOIN case_law_authority cla ON cla.case_law_id=cl.id AND cla.human_review_status IN ('approved','reviewed') "+
+      "LEFT JOIN case_law_evidence_gates ceg ON ceg.case_law_id=cl.id "+
       "WHERE cl.human_review_status IN ('approved','reviewed') "+
+      "AND (ceg.case_law_id IS NULL OR (ceg.migration_state='PRODUCTION_CITABLE_AUTHORITY' AND ceg.publication_approved=1 AND ceg.human_gate_approved=1)) "+
       "AND EXISTS (SELECT 1 FROM case_law_provenance clp WHERE clp.case_law_id=cl.id AND clp.official_binding_verified=1 AND clp.discovery_only=0 AND clp.human_review_status IN ('approved','reviewed')) "+
       "AND ("+conditions.join(" OR ")+") "+
       "ORDER BY cl.decision_date DESC,cl.id DESC LIMIT ?";
@@ -5254,6 +5257,8 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
           humanReviewStatus:String(row.human_review_status||"pending"),
           authorityReviewStatus:String(row.authority_review_status||"pending"),
           officialBindingVerified:Number(row.official_binding_verified)===1,
+          evidenceGateState:String(row.evidence_gate_state||"legacy_reviewed_record"),
+          productionCitable:row.evidence_gate_state ? row.evidence_gate_state==="PRODUCTION_CITABLE_AUTHORITY" : true,
           caseIdentity:String(row.case_number||row.case_title||""),
           court:String(row.court||""),
           jurisdiction:String(row.jurisdiction||""),
@@ -5280,6 +5285,8 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
           "OUTCOME_SUMMARY: "+String(row.outcome_summary||"").slice(0,700),
           "REASONING_SUMMARY: "+String(row.reasoning_summary||"").slice(0,1400),
           "SOURCE_URL: "+String(sourceUrl),
+          "EVIDENCE_GATE_STATE: "+String(row.evidence_gate_state||"legacy_reviewed_record"),
+          "PRODUCTION_CITABLE: "+String(row.evidence_gate_state ? row.evidence_gate_state==="PRODUCTION_CITABLE_AUTHORITY" : true),
           caseLawCurationPromptPolicy(),
           "Use this record as case-law authority only within its reviewed jurisdiction/weight. Identify contrary or distinguishing authority when material."
         ].join("\n")
@@ -5307,7 +5314,9 @@ export async function governedCaseLawContext(env,q,basePlan,{limit=4}={}){
       url:row.source_url||row.registry_source_url||null,
       humanReviewStatus:row.human_review_status||null,
       authorityReviewStatus:row.authority_review_status||null,
-      officialBindingVerified:Number(row.official_binding_verified)===1
+      officialBindingVerified:Number(row.official_binding_verified)===1,
+      evidenceGateState:row.evidence_gate_state||"legacy_reviewed_record",
+      productionCitable:row.evidence_gate_state ? row.evidence_gate_state==="PRODUCTION_CITABLE_AUTHORITY" : true
     }));
 
     return {
@@ -6316,6 +6325,7 @@ async function handleCasePilotCaseLawResearch(request,env){
       privateMatterContentAccepted:false,
       officialSourcesOnly:true,
       dualHumanReviewRequired:true,
+      canonicalEvidenceGateRequiredForNewRecords:true,
       adverseAuthorityMustNotBeHidden:true,
       roleClassification:"neutral_until_professional_issue-specific_classification"
     },
@@ -6426,13 +6436,17 @@ async function handleLegalAnalyzerVerify(request,env){
                 cl.decision_date,cl.finality_status,cl.legal_area,cl.outcome_summary,
                 cl.reasoning_summary,cl.source_url,cl.human_review_status,
                 s.source_status,s.url AS registry_source_url,
-                cla.precedential_weight,cla.human_review_status AS authority_review_status
+                cla.precedential_weight,cla.human_review_status AS authority_review_status,
+                ceg.migration_state AS evidence_gate_state
            FROM case_law cl
            JOIN sources s ON s.id=cl.source_id AND s.source_status='official'
            JOIN case_law_authority cla ON cla.case_law_id=cl.id
+           LEFT JOIN case_law_evidence_gates ceg ON ceg.case_law_id=cl.id
           WHERE cl.case_number IN (${placeholders})
             AND cl.human_review_status IN ('approved','reviewed')
             AND cla.human_review_status IN ('approved','reviewed')
+            AND EXISTS (SELECT 1 FROM case_law_provenance clp WHERE clp.case_law_id=cl.id AND clp.official_binding_verified=1 AND clp.discovery_only=0 AND clp.human_review_status IN ('approved','reviewed'))
+            AND (ceg.case_law_id IS NULL OR (ceg.migration_state='PRODUCTION_CITABLE_AUTHORITY' AND ceg.publication_approved=1 AND ceg.human_gate_approved=1))
           ORDER BY cl.decision_date DESC,cl.id DESC
           LIMIT 24`
       ).bind(...caseNumbers).all();
@@ -6451,7 +6465,9 @@ async function handleLegalAnalyzerVerify(request,env){
         sourceUrl:row.source_url||row.registry_source_url||null,
         humanReviewStatus:row.human_review_status,
         authorityReviewStatus:row.authority_review_status,
-        precedentialWeight:row.precedential_weight
+        precedentialWeight:row.precedential_weight,
+        evidenceGateState:row.evidence_gate_state||"legacy_reviewed_record",
+        productionCitable:row.evidence_gate_state ? row.evidence_gate_state==="PRODUCTION_CITABLE_AUTHORITY" : true
       }));
       exactCaseState=exactCases.length ? "matched" : "no_exact_match";
     }catch(error){

@@ -7,6 +7,7 @@
 // approved through Human Gate.
 
 import fs from "node:fs";
+import { assessCanonicalCaseLawState } from "../src/case-law-evidence-gates.js";
 
 const ALLOWED_EXTERNAL_IDS=new Set([
   "ecli","celex","echr_application_number","hudoc_item_id",
@@ -115,6 +116,27 @@ export function bridgeParagrafCaseLaw(normalizedText){
     }).filter(Boolean):[];
 
     const externalIds=cleanExternalIds(first(meta.external_ids,original.external_ids),legacyId,caseNumber);
+    const gateInputs={
+      source_class:"licensed_secondary",
+      source_status:"secondary",
+      source_url:sourceUrl(doc.source_url),
+      source_sha256:String(doc.source_sha256??"").toLowerCase(),
+      official_binding_verified:false,
+      remote_content_hash_verified:false,
+      human_review_status:"pending",
+      authority_review_status:"pending",
+      publication_approved:false,
+      human_gate_approved:false,
+      holding_verified:false,
+      start_boundary_independent_signoff:false,
+      end_boundary_independent_signoff:false,
+      attribution_independent_signoff:false,
+      complete_unit_accepted:false,
+      current_applicability:false,
+      contrary_case_law:false,
+      legal_verified:false
+    };
+    const evidenceGate=assessCanonicalCaseLawState(gateInputs);
     return {
       type:"case_law_case",
       case_key:"paragraf:"+String(legacyId??doc.source_sha256??index),
@@ -130,6 +152,8 @@ export function bridgeParagrafCaseLaw(normalizedText){
       source_sha256:String(doc.source_sha256??"").toLowerCase(),
       source_product:doc.source_product??manifest.source_product??"unknown",
       source_record_id:asText(first(doc.source_record_id,legacyId),220),
+      migration_state:evidenceGate.state,
+      evidence_gate:evidenceGate,
       external_ids:externalIds,
       finality_status:asText(first(meta.finality_status,original.finality_status),80)||"unknown",
       authority:{

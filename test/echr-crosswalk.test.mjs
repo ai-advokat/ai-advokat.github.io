@@ -56,6 +56,9 @@ test("Crosswalk is exposed to Hybrid as a read-only research-candidate API",()=>
   assert.match(dataset,/reviewedAuthorityPromoted:false/);
   assert.match(dataset,/productionGo:false/);
   assert.match(dataset,/humanGateRequired:true/);
+  assert.match(dataset,/RESEARCHED_SOURCE_MATCH_NOT_LEGAL_APPROVAL/);
+  assert.match(dataset,/humanVerified:false/);
+  assert.match(dataset,/assessEchrCrosswalkRecord/);
   assert.match(worker,/path==="\/api\/hybrid\/echr-crosswalk"/);
   assert.match(worker,/searchEchrCrosswalk\(q\)/);
   assert.match(worker,/goldReviewUrl:"\/gold-set-review-gate\.html\?record="/);

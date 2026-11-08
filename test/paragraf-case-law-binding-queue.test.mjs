@@ -34,6 +34,9 @@ test("PBQ1 produces pending Human Gate official binding candidates",()=>{
   assert.equal(out.entries.length,1);
   assert.equal(out.entries[0].lookup_readiness,"identifier_ready");
   assert.equal(out.entries[0].binding_status,"pending");
+  assert.equal(out.entries[0].migration_state,"STAGED_NEEDS_SOURCE_MATCH");
+  assert.equal(out.entries[0].next_required_gate,"official_source_match");
+  assert.equal(out.entries[0].production_citable,false);
   assert.equal(out.entries[0].human_review_status,"pending");
   assert.equal(out.manifest.official_source_required,true);
 });

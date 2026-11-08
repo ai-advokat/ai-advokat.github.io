@@ -55,18 +55,20 @@ function approval(overrides={}){
   };
 }
 
-test("source binding review promotes only exact URL and SHA pair",()=>{
+test("source binding review closes provenance gate but keeps authority promotion locked",()=>{
   const out=applyCaseLawSourceBindingReview(staged(),approval());
   assert.equal(out.approvedCount,1);
   assert.equal(out.allCasesApproved,true);
   const rows=out.ndjson.trim().split("\n").map(JSON.parse);
-  assert.equal(rows[0].discovery_only,false);
+  assert.equal(rows[0].discovery_only,true);
   assert.equal(rows[0].binding_required,false);
   assert.equal(rows[1].official_binding_verified,true);
-  assert.equal(rows[1].discovery_only,false);
+  assert.equal(rows[1].discovery_only,true);
   assert.equal(rows[1].source_binding.human_gate_status,"approved");
   assert.equal(rows[1].source_binding.reviewed_by,"Human Gate reviewer");
   assert.equal(rows[1].production_eligible,false);
+  assert.equal(rows[1].migration_state,"SOURCE_BOUND_REVIEW_REQUIRED");
+  assert.equal(rows[1].evidence_gate.productionCitable,false);
 });
 
 test("source binding review fails closed on wrong gate or non-approved decision",()=>{
