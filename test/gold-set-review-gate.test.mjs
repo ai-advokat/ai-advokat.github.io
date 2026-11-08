@@ -67,7 +67,14 @@ test("Human Gate readiness is a separate fourth-person preflight",()=>{
 test("Review dates and V2 imports fail closed",()=>{
   assert.match(page,/function validReviewDate/);
   assert.match(page,/s<=new Date\(\)\.toISOString\(\)\.slice\(0,10\)/);
+  assert.match(page,/dt\.getUTCFullYear\(\)===y/);
+  assert.match(page,/dt\.getUTCMonth\(\)===m-1/);
+  assert.match(page,/dt\.getUTCDate\(\)===d/);
   assert.match(page,/V2 import бара точен Records manifest SHA/);
   assert.match(page,/JSON\.stringify\(RECORDS\)/);
 });
 
+test("Gold Gate exposes usable keyboard focus and labelled search",()=>{
+  assert.match(page,/aria-label="Пребарај записи по ID, наслов или ознака"/);
+  assert.match(page,/:focus-visible/);
+});
