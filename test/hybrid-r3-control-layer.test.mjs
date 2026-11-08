@@ -55,3 +55,16 @@ test("Hybrid R3 inline JavaScript remains syntactically valid",()=>{
   assert.ok(match);
   assert.doesNotThrow(()=>new Function(match[1]));
 });
+
+test("R16.1 release manifest ships Hybrid Control R3 and Batch Review to Pages",()=>{
+  const pagesSync=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8");
+  const rootSmoke=fs.readFileSync(".github/workflows/root-reliability-live-smoke.yml","utf8");
+  assert.match(pagesSync,/professional-tools\.html/);
+  assert.match(pagesSync,/assets\/professional-tools\.js/);
+  assert.match(pagesSync,/AI_ADVOCAT_HYBRID_CONTROL_R3/);
+  assert.match(pagesSync,/Batch Review · до 100 документи/);
+  assert.match(rootSmoke,/pages-professional-tools\.html/);
+  assert.match(rootSmoke,/pages-professional-tools\.js/);
+  assert.match(rootSmoke,/AI_ADVOCAT_HYBRID_CONTROL_R3/);
+  assert.match(rootSmoke,/Batch Review · до 100 документи/);
+});
