@@ -4,6 +4,7 @@
 // It never accepts credentials/session material and never imports directly as reviewed authority.
 
 import fs from "node:fs";
+import { assessCanonicalCaseLawState } from "../src/case-law-evidence-gates.js";
 
 const OFFICIAL_HOST_SUFFIXES=[
   "sud.mk",
@@ -82,11 +83,11 @@ function sourceStatusFor(manifest,url){
 function governedBindingState(manifest,item,sourceUrl){
   if(manifest.source_class!=="official_public"){
     if(item.official_binding_verified===true) throw new Error("Secondary source cannot claim official binding");
-    return {sourceClass:"licensed_secondary",officialBinding:0,discoveryOnly:1};
+    return {sourceClass:"licensed_secondary",officialBinding:0};
   }
 
   if(item.official_binding_verified!==true){
-    return {sourceClass:"official_primary",officialBinding:0,discoveryOnly:1};
+    return {sourceClass:"official_primary",officialBinding:0};
   }
 
   const evidence=item.source_binding;
@@ -113,7 +114,7 @@ function governedBindingState(manifest,item,sourceUrl){
   }
   requireText(evidence.reviewed_by,"source_binding.reviewed_by",240);
   requireText(evidence.reviewed_at,"source_binding.reviewed_at",80);
-  return {sourceClass:"official_primary",officialBinding:1,discoveryOnly:0};
+  return {sourceClass:"official_primary",officialBinding:1};
 }
 
 
@@ -259,8 +260,17 @@ export function generateCaseLawImportSql(ndjsonText){
     const binding=governedBindingState(manifest,item,sourceUrl);
     const sourceClass=binding.sourceClass;
     const officialBinding=binding.officialBinding;
-    const discoveryOnly=binding.discoveryOnly;
     const audit=provenanceAuditFields(item,sourceUrl);
+    const gate=assessCanonicalCaseLawState({
+      ...item,
+      source_class:sourceClass,
+      source_status:sourceStatus,
+      source_url:sourceUrl.href,
+      source_sha256:String(item.source_sha256).toLowerCase(),
+      official_binding_verified:officialBinding===1,
+      remote_content_hash_verified:audit.remoteContentHashVerified===1
+    });
+    const discoveryOnly=gate.productionCitable ? 0 : 1;
     const provenanceReviewStatus=officialBinding===1 ? "approved" : "pending";
     sql.push(
       "INSERT INTO case_law_provenance(case_law_id,source_class,source_provider,source_product,source_url,source_sha256,source_record_id,discovery_only,official_binding_verified,license_or_access_basis,imported_batch_key,human_review_status,remote_content_hash_verified,binding_verification_method,binding_reviewed_by,binding_reviewed_at,extraction_method,extracted_text_sha256) SELECT "+
@@ -272,6 +282,43 @@ export function generateCaseLawImportSql(ndjsonText){
         sqlString(audit.bindingReviewedAt),sqlString(audit.extractionMethod),sqlString(audit.extractedTextSha256)
       ].join(",")+
       " WHERE NOT EXISTS (SELECT 1 FROM case_law_provenance WHERE case_law_id="+caseIdExpr+" AND source_url="+sqlString(sourceUrl.href)+" AND COALESCE(source_sha256,'')="+sqlString(String(item.source_sha256).toLowerCase())+");"
+    );
+
+    sql.push(
+      "INSERT INTO case_law_evidence_gates(case_law_id,migration_state,source_locator_present,source_sha256,start_page,start_y_pt,end_page,end_y_pt,boundary_reviewer_1_approved,boundary_reviewer_2_approved,attribution_verified,complete_unit_verified,warning_flags,warning_disposition,article_text_verified,historical_law_required,historical_authentic_gazette_verified,transitional_rules_verified,current_applicability_verified,contrary_authority_checked,holding_verified,authority_review_status,legal_review_status,publication_approved,human_gate_approved,algorithm_scoring_allowed,reviewer_evidence_reference,reviewer_notes,reviewed_by,reviewed_at) SELECT "+
+      [
+        caseIdExpr,
+        sqlString(gate.state),
+        String(gate.boundary.locatorPresent?1:0),
+        sqlString(String(item.source_sha256).toLowerCase()),
+        item.start_page===undefined||item.start_page===null?"NULL":String(Number(item.start_page)),
+        item.start_y===undefined||item.start_y===null?"NULL":String(Number(item.start_y)),
+        item.end_page===undefined||item.end_page===null?"NULL":String(Number(item.end_page)),
+        item.end_y===undefined||item.end_y===null?"NULL":String(Number(item.end_y)),
+        String(gate.boundary.dualBoundaryVerified?1:0),
+        String(gate.boundary.dualBoundaryVerified?1:0),
+        String(gate.boundary.attributionVerified?1:0),
+        String(gate.boundary.completeUnitVerified?1:0),
+        sqlString((gate.boundary.warnings||[]).join("|")),
+        sqlString(gate.boundary.warningDisposition),
+        String(gate.temporal.articleTextVerified?1:0),
+        String(gate.temporal.historicalRequired?1:0),
+        String(gate.temporal.authenticHistoricalLaw?1:0),
+        String(gate.temporal.transitionalRulesVerified?1:0),
+        String(gate.temporal.currentApplicabilityVerified?1:0),
+        String(gate.temporal.contraryAuthorityChecked?1:0),
+        String(gate.holdingVerified?1:0),
+        sqlString(item.authority_review_status||"pending"),
+        sqlString(item.legal_review_status||"pending"),
+        String(gate.publicationApproved?1:0),
+        String(gate.humanGateApproved?1:0),
+        String(gate.algorithmScoringAllowed?1:0),
+        sqlString(item.evidence_review?.reviewer_evidence_reference||null),
+        sqlString(item.evidence_review?.reviewer_notes||null),
+        sqlString(item.evidence_review?.reviewed_by||null),
+        sqlString(item.evidence_review?.reviewed_at||null)
+      ].join(",")+
+      " WHERE NOT EXISTS (SELECT 1 FROM case_law_evidence_gates WHERE case_law_id="+caseIdExpr+");"
     );
 
     for(const [scheme,value] of idPairs){
@@ -297,7 +344,7 @@ export function generateCaseLawImportSql(ndjsonText){
   }
 
   sql.push("COMMIT;");
-  return {sql:sql.join("\n")+"\n",caseCount:cases.length,holdingCount,sourceClass:manifest.source_class};
+  return {sql:sql.join("\n")+"\n",caseCount:cases.length,holdingCount,sourceClass:manifest.source_class,evidenceGatePersisted:true};
 }
 
 if(import.meta.url===`file://${process.argv[1]}`){
