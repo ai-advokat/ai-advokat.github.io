@@ -134,7 +134,8 @@
     "verify:hg2-c-remote-evidence": "node scripts/verify-hg2-c-remote-evidence.mjs",
     "test:hg2-c-credential-separation": "node --no-warnings --test test/hg2-c-credential-separation.test.mjs",
     "test:hg2-c-post-write-evidence": "node --no-warnings --test test/hg2-c-post-write-evidence.test.mjs",
-    "verify:hg2-c-post-write-evidence": "node scripts/verify-hg2-c-post-write-evidence.mjs evidence/hg2-c/post-write-evidence.json"
+    "verify:hg2-c-post-write-evidence": "node scripts/verify-hg2-c-post-write-evidence.mjs evidence/hg2-c/post-write-evidence.json",
+    "test:proactive-agents": "node --no-warnings --test test/proactive-legal-agents.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.156.0"
