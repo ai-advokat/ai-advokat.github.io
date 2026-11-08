@@ -480,28 +480,84 @@ function runAction(action){
   if(action==='library'){$('materialsDialog')?.showModal();return;}
 }
 
+function downloadTextBlob(body,filename,type){
+  const url=URL.createObjectURL(new Blob([body],{type}));
+  const a=mk('a',{href:url,download:filename,rel:'noopener'});
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function latestAssistantText(){
+  const t=activeThread();
+  const fromThread=[...(t?.history||[])].reverse().find(m=>m.role==='assistant'&&String(m.text||'').trim());
+  if(fromThread) return String(fromThread.text||'').trim();
+  const nodes=[...document.querySelectorAll('#messages .message.assistant .text')];
+  return String(nodes.at(-1)?.textContent||'').trim();
+}
+
+function workingExportReport(text){
+  const thread=activeThread();
+  return {
+    caseId:'external-'+String(thread?.id||'working-draft').replace(/[^A-Za-z0-9._-]+/g,'-').slice(0,80),
+    title:'AI Advokat — работен одговор',
+    caseVersion:'working-1',
+    generatedAt:new Date().toISOString(),
+    mode:'working',
+    humanGate:{status:'pending',reviewer:'',decidedAt:'',decisionRef:''},
+    summary:text,
+    sections:[{
+      id:'assistant-response',
+      title:'AI Advokat',
+      items:[{heading:'Работен одговор',text,status:'WORKING COPY',sources:[]}]
+    }],
+    sourceManifest:[],
+    provenance:[]
+  };
+}
+
 async function exportMessageText(value,format){
   const text=String(value||'').trim();
   if(!text){$('status').textContent='Нема содржина за извоз.';return;}
-  if(['txt','md'].includes(format)){
-    const body=format==='md'?'# AI Advokat — работен одговор\n\n'+text:'AI Advokat — работен одговор\n\n'+text;
-    const url=URL.createObjectURL(new Blob([body],{type:'text/plain;charset=utf-8'})); const a=mk('a',{href:url,download:'AI-Advokat-working-draft.'+format});a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;
+  const fmt=String(format||'txt').toLowerCase();
+  const report=workingExportReport(text);
+  if(fmt==='txt'){
+    downloadTextBlob('AI Advokat — работен одговор\n\n'+text,'AI-Advokat-working-draft.txt','text/plain;charset=utf-8');
+    $('status').textContent='✓ TXT е подготвен за преземање.';
+    return;
+  }
+  if(fmt==='md'){
+    downloadTextBlob('# AI Advokat — работен одговор\n\n> WORKING COPY — HUMAN GATE PENDING\n\n'+text+'\n','AI-Advokat-working-draft.md','text/markdown;charset=utf-8');
+    $('status').textContent='✓ MD е подготвен за преземање.';
+    return;
+  }
+  if(fmt==='json'){
+    downloadTextBlob(JSON.stringify(report,null,2)+'\n','AI-Advokat-working-draft.json','application/json;charset=utf-8');
+    $('status').textContent='✓ JSON е подготвен за преземање.';
+    return;
   }
   try{
-    const mod=await import('./casepilot-export.js'); const core=await import('../src/case-export.js');
-    const report=core.normalizeCaseExportReport({title:'AI Advokat — работен одговор',summary:text,sections:[{title:'AI Advokat',content:text}],humanGate:'Потребна е професионална човечка проверка пред последична употреба.'});
-    await mod.downloadCasePilotExport(report,format,{filename:'AI-Advokat-working-draft.'+format});
-  }catch{$('status').textContent='Извозот во '+format.toUpperCase()+' не успеа. Обидете се со TXT или MD.';}
+    const mod=await import('./casepilot-export.js');
+    await mod.downloadCasePilotExport(report,fmt,{filename:'AI-Advokat-working-draft.'+fmt});
+    $('status').textContent='✓ '+fmt.toUpperCase()+' е подготвен за преземање.';
+  }catch(error){
+    console.error('external_export_failed',fmt,error);
+    $('status').textContent='Извозот во '+fmt.toUpperCase()+' не успеа. Обидете се повторно или користете TXT/MD/JSON.';
+  }
 }
 async function exportActive(format){
-  const t=activeThread(); const latest=[...t.history].reverse().find(m=>m.role==='assistant'&&String(m.text||'').trim());
+  const latest=latestAssistantText();
   if(!latest){$('status').textContent='Сè уште нема AI одговор за извоз.';return;}
-  return exportMessageText(latest.text,format);
+  return exportMessageText(latest,format);
 }
 function exportThread(){
-  const t=activeThread(); if(!t.history.length){$('status').textContent='Сè уште нема завршен разговор за преземање.';return;}
-  const text='AI Advokat — работен разговор\nПотребна е професионална проверка.\n\n'+t.history.map(m=>(m.role==='user'?'Вие':'AI Advokat')+':\n'+m.text).join('\n\n');
-  const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=mk('a',{href:url,download:'AI-Advokat-razgovor.txt'});a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  const t=activeThread();
+  const items=Array.isArray(t?.history)?t.history:[];
+  if(!items.length){$('status').textContent='Сè уште нема завршен разговор за преземање.';return;}
+  const text='AI Advokat — работен разговор\nПотребна е професионална проверка.\n\n'+items.map(m=>(m.role==='user'?'Вие':'AI Advokat')+':\n'+m.text).join('\n\n');
+  downloadTextBlob(text,'AI-Advokat-razgovor.txt','text/plain;charset=utf-8');
 }
 function takeOverExports(){
   if($('exportChat')) $('exportChat').onclick=exportThread;
