@@ -401,3 +401,24 @@ html.professional-r7 .aa-toolkit-dialog{color:var(--r7-text)!important}
 @media(prefers-reduced-motion:reduce){
   .r7-orbit.r7-running{animation:none}
 }
+
+/* R7 keeps the full tool catalogue available from nav/dialogs, not as oversized pre-chat banners. */
+html.professional-r7 body>.legal-guide,
+html.professional-r7 body>section[aria-label^="Hybrid Legal Intelligence"]{display:none!important}
+
+/* Give the central transcript a premium workbench frame similar to concept 1. */
+html.professional-r7 .vnext-center>main{
+  position:relative;
+}
+html.professional-r7 #messages{
+  border-left:1px solid rgba(28,72,106,.26);
+  border-right:1px solid rgba(28,72,106,.26);
+  padding-left:14px;
+  padding-right:14px;
+}
+html.professional-r7 .bottom{
+  padding-left:14px;
+  padding-right:14px;
+  border-left:1px solid rgba(28,72,106,.26);
+  border-right:1px solid rgba(28,72,106,.26);
+}
