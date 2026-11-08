@@ -152,6 +152,7 @@ function buildShell(){
       <button data-vnext-action="analyzer"><span class="vnext-nav-symbol" aria-hidden="true">⌁</span><span>Анализатор</span></button>
       <button data-vnext-action="consolidator"><span class="vnext-nav-symbol" aria-hidden="true">≋</span><span>Консолидатор</span></button>
       <button data-vnext-action="hybrid-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">⌘</span><span>Hybrid Legal Intelligence</span></button>
+      <button data-vnext-action="echr-crosswalk" title="F0-FAST-27 · research HOLD · HG-F0 OPEN"><span class="vnext-nav-symbol" aria-hidden="true">§</span><span>ECHR Crosswalk</span></button>
       <button data-vnext-action="predictor"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Предиктор</span></button>
       <button data-vnext-action="sources"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>Правни извори</span></button>
       <button data-vnext-action="public-evidence"><span class="vnext-nav-symbol" aria-hidden="true">⌕</span><span>Јавни докази</span></button>
@@ -433,7 +434,7 @@ function openGlobalSearch(){ const d=$('vnextSearchDialog'); d.showModal(); $('v
 function renderGlobalSearch(){
   const host=$('vnextSearchResults'); if(!host) return; const q=String($('vnextGlobalSearch')?.value||'').trim().toLowerCase(); host.replaceChildren();
   const tools=[
-    ['⌁ Анализатор','analyzer'],['≋ Консолидатор','consolidator'],['⌘ Hybrid Legal Intelligence','hybrid-intelligence'],['◎ Предиктор','predictor'],['▤ Правни извори','sources'],['⌕ Јавни докази','public-evidence'],['◆ Pro Ecosystem','professional-ecosystem'],['◉ Justice Daily','justice-daily'],['⚖ Судска практика','cases'],['▣ CasePilot','casepilot'],['▧ Документи','documents'],['◇ Workflows','workflows'],['✓ Human Gate','review'],['◫ Library','library']
+    ['⌁ Анализатор','analyzer'],['≋ Консолидатор','consolidator'],['⌘ Hybrid Legal Intelligence','hybrid-intelligence'],['§ ECHR Crosswalk · HOLD','echr-crosswalk'],['◎ Предиктор','predictor'],['▤ Правни извори','sources'],['⌕ Јавни докази','public-evidence'],['◆ Pro Ecosystem','professional-ecosystem'],['◉ Justice Daily','justice-daily'],['⚖ Судска практика','cases'],['▣ CasePilot','casepilot'],['▧ Документи','documents'],['◇ Workflows','workflows'],['✓ Human Gate','review'],['◫ Library','library']
   ];
   const matches=workspace.threads.filter(t=>!q||t.title.toLowerCase().includes(q)||t.history.some(m=>String(m.text||'').toLowerCase().includes(q))).slice(0,8);
   if(matches.length){host.append(mk('small',{class:'vnext-search-group',text:'Разговори'}));matches.forEach(t=>{const b=mk('button',{type:'button',text:t.title});b.onclick=()=>{$('vnextSearchDialog').close();switchThread(t.id)};host.append(b);});}
@@ -446,6 +447,7 @@ function runAction(action){
   if(action==='analyzer'){window.open('/professional-tools.html#analyzer','_blank','noopener');return;}
   if(action==='consolidator'){window.open('/consolidator/','_blank','noopener');return;}
   if(action==='hybrid-intelligence'){window.open('/hybrid-legal-intelligence.html','_blank','noopener');return;}
+  if(action==='echr-crosswalk'){window.open('/echr-crosswalk.html','_blank','noopener');return;}
   if(action==='predictor'){
     $('question').value='PREDICTOR MODE — GOVERNED SCENARIO ANALYSIS. Анализирај го прашањето преку поволно, мешано и неповолно сценарио. Не давај процент на успех и не гарантирај исход. За секое сценарио наведи одлучувачки факти, доказна поддршка, применлива правна основа и source status, спротивни аргументи/authority, процесни ризици, празнини во доказите и што би го сменило сценариото. Ако точниот идентитет или оригиналниот документ се неопходни, користи Secure Case Workspace / CasePilot; инаку продолжи со локално маскирани идентификатори. HUMAN GATE REQUIRED.\n\nПрашање/предмет: ';
     $('question').dispatchEvent(new Event('input')); closeMobileSidebar(); $('question').focus(); return;
