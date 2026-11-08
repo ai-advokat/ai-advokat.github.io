@@ -95,6 +95,18 @@ jobs:
           npm run test:security
           node --test             test/dual-bot-parity.test.mjs             test/standalone-bot-toolkit-parity.test.mjs             test/dual-bot-r14-uat-contract.test.mjs             test/r14-live-smoke-observability.test.mjs             test/worker-runtime-live-smoke-contract.test.mjs             test/voice-runtime.test.mjs             test/legal-retrieval-router-r15.test.mjs
 
+      - name: Require case-law evidence gate schema before runtime deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER)=53; SELECT name FROM sqlite_master WHERE type='table' AND name IN ('case_law_evidence_gates','case_law_echr_comparison_gates') ORDER BY name;" \
+            | tee /tmp/runtime-sync-case-law-schema.txt
+          grep -q '"version": "53"' /tmp/runtime-sync-case-law-schema.txt
+          grep -q '"name": "case_law_evidence_gates"' /tmp/runtime-sync-case-law-schema.txt
+          grep -q '"name": "case_law_echr_comparison_gates"' /tmp/runtime-sync-case-law-schema.txt
+          echo "CASE-LAW 0053 PRE-DEPLOY SCHEMA GATE: PASS"
+
       - name: Deploy exact main Worker runtime and static assets
         run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/production-runtime-sync-deploy.txt
 
@@ -195,6 +207,7 @@ jobs:
           if-no-files-found: warn
           path: |
             /tmp/production-runtime-sync-deploy.txt
+            /tmp/runtime-sync-case-law-schema.txt
             /tmp/runtime-sync-main.html
             /tmp/runtime-sync-bot.html
             /tmp/runtime-sync-core.js
