@@ -276,7 +276,8 @@ export async function runWorkersAIText(env,{
         model:primaryModel,
         primaryModel,
         providerCalls,
-        timeoutMs:boundedTimeout
+        timeoutMs:boundedTimeout,
+        modelFallback:null
       };
     }
 
