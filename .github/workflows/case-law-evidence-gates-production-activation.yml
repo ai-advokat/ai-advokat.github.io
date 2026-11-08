@@ -1,0 +1,142 @@
+name: Case-law evidence gates 0053 production activation
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/case-law-evidence-gates-production-activation.yml"
+      - "migrations/0053_case_law_evidence_gates.sql"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-case-law-0053-production-activation
+  cancel-in-progress: false
+
+jobs:
+  activate-0053:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - name: Checkout exact main revision
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned tooling
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify exact production target
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node <<'NODE'
+          const fs=require("fs");
+          const cfg=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+          const d=cfg.d1_databases?.[0];
+          if(cfg.name!=="ai-advokat-github-io") throw new Error("Unexpected Worker name");
+          if(!d || d.binding!=="DB") throw new Error("Unexpected production D1 binding");
+          if(d.database_name!=="ai-advokat-db") throw new Error("Unexpected production DB name");
+          if(d.database_id!=="12ece285-74bb-4f27-a025-2dbd1be6c59a") throw new Error("Unexpected production DB ID");
+          console.log("EXACT PRODUCTION D1 TARGET: PASS");
+          NODE
+
+      - name: Verify migration 0053 canonical bytes are frozen
+        run: |
+          node scripts/verify-hg2-c-migration-manifest.mjs
+          node --check src/case-law-evidence-gates.js
+          test -f migrations/0053_case_law_evidence_gates.sql
+
+      - name: Snapshot exact production prestate
+        id: preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER)=53; SELECT name FROM sqlite_master WHERE type='table' AND name IN ('case_law','case_law_provenance','case_law_evidence_gates','case_law_echr_comparison_gates') ORDER BY name;" \
+            | tee /tmp/case-law-0053-prestate.txt
+
+          grep -q '"name": "case_law"' /tmp/case-law-0053-prestate.txt
+          grep -q '"name": "case_law_provenance"' /tmp/case-law-0053-prestate.txt
+
+          if grep -q '"version": "53"' /tmp/case-law-0053-prestate.txt; then
+            grep -q '"name": "case_law_evidence_gates"' /tmp/case-law-0053-prestate.txt
+            grep -q '"name": "case_law_echr_comparison_gates"' /tmp/case-law-0053-prestate.txt
+            echo "already=1" >> "$GITHUB_OUTPUT"
+            echo "Migration 0053 is already converged."
+          else
+            if grep -q '"name": "case_law_evidence_gates"' /tmp/case-law-0053-prestate.txt || grep -q '"name": "case_law_echr_comparison_gates"' /tmp/case-law-0053-prestate.txt; then
+              echo "0053 tables exist without migration-ledger convergence."
+              exit 1
+            fi
+            echo "already=0" >> "$GITHUB_OUTPUT"
+            echo "Migration 0053 is pending and exact-file activation may proceed."
+          fi
+
+      - name: Apply exact migration 0053 only
+        if: steps.preflight.outputs.already != '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --file migrations/0053_case_law_evidence_gates.sql \
+            | tee /tmp/case-law-0053-apply.txt
+
+      - name: Verify production 0053 schema convergence
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER)=53; SELECT name,sql FROM sqlite_master WHERE type='table' AND name IN ('case_law_evidence_gates','case_law_echr_comparison_gates') ORDER BY name; SELECT name FROM sqlite_master WHERE type='index' AND name IN ('idx_case_law_evidence_gate_state','idx_case_law_evidence_gate_temporal','idx_case_law_echr_gate_case') ORDER BY name;" \
+            | tee /tmp/case-law-0053-schema.txt
+
+          grep -q '"version": "53"' /tmp/case-law-0053-schema.txt
+          grep -q '"name": "case_law_evidence_gates"' /tmp/case-law-0053-schema.txt
+          grep -q '"name": "case_law_echr_comparison_gates"' /tmp/case-law-0053-schema.txt
+          grep -q '"name": "idx_case_law_evidence_gate_state"' /tmp/case-law-0053-schema.txt
+          grep -q '"name": "idx_case_law_evidence_gate_temporal"' /tmp/case-law-0053-schema.txt
+          grep -q '"name": "idx_case_law_echr_gate_case"' /tmp/case-law-0053-schema.txt
+          echo "CASE-LAW EVIDENCE GATES 0053 PRODUCTION SCHEMA: PASS"
+
+      - name: Read-only production case-law compatibility smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT COUNT(*) AS gate_rows FROM case_law_evidence_gates; SELECT COUNT(*) AS echr_gate_rows FROM case_law_echr_comparison_gates; SELECT COUNT(*) AS reviewed_case_rows FROM case_law WHERE human_review_status IN ('approved','reviewed');" \
+            | tee /tmp/case-law-0053-readonly-smoke.txt
+          grep -q '"gate_rows"' /tmp/case-law-0053-readonly-smoke.txt
+          grep -q '"echr_gate_rows"' /tmp/case-law-0053-readonly-smoke.txt
+          grep -q '"reviewed_case_rows"' /tmp/case-law-0053-readonly-smoke.txt
+
+      - name: Upload non-secret activation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: case-law-evidence-gates-0053-production-activation
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/case-law-0053-prestate.txt
+            /tmp/case-law-0053-apply.txt
+            /tmp/case-law-0053-schema.txt
+            /tmp/case-law-0053-readonly-smoke.txt
+
+      - name: Activation result
+        run: |
+          echo "CASE-LAW EVIDENCE GATES MIGRATION 0053: VERIFIED IN PRODUCTION D1"
+          echo "Worker deployment remains a separate production Human Gate."
