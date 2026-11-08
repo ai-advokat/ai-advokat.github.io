@@ -112,7 +112,9 @@ jobs:
           grep -q 'eID + Human Handoff' /tmp/worker-hybrid.html
           grep -q 'Водилка · Како функционира Hybrid Legal Intelligence' /tmp/worker-hybrid.html
           grep -q 'Public Legal Data & e‑Services' /tmp/worker-public-legal.html
+          grep -q 'Водилка · Како се користи Public Legal Data & e‑Services' /tmp/worker-public-legal.html
           grep -q 'Gold Set Review Gate v2.1' /tmp/worker-gold-gate.html
+          grep -q 'Водилка · Како се користи Gold Set Review Gate v2.1' /tmp/worker-gold-gate.html
           grep -q 'Separate Legal Review' /tmp/worker-gold-gate.html
           grep -q 'reviewed_authority_promoted:false' /tmp/worker-gold-gate.html
           grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' /tmp/worker-bot.html
