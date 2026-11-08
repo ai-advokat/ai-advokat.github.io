@@ -11,7 +11,7 @@ const externalToolkit=fs.readFileSync("assets/standalone-bot-toolkit.js","utf8")
 const voiceRuntime=fs.readFileSync("assets/ai-advokat-voice.mjs","utf8");
 
 const MODULE_LABELS=[
-  "Правен асистент","Анализатор","Консолидатор","Предиктор","Правни извори",
+  "Правен асистент","Анализатор","Консолидатор","Hybrid Legal Intelligence","ECHR Crosswalk","Предиктор","Правни извори",
   "Јавни докази","Pro Ecosystem","Justice Daily","Судска практика","CasePilot","Документи","Workflows","Human Gate","Library"
 ];
 const MESSAGE_ACTIONS=["⧉ Копирај","✎ Уреди","↺ Повтори","▤ Извори","✓ Проверка","▧ DOCX","▧ PDF"];
@@ -21,6 +21,12 @@ test("dual-bot parity: both workspaces expose the same professional module set",
     assert.ok(mainHtml.includes(label),"main workspace missing "+label);
     assert.ok(externalVNext.includes(label),"external workspace missing "+label);
   }
+});
+
+test("dual-bot parity: ECHR Crosswalk is directly reachable from both bot interfaces without bypassing HOLD",()=>{
+  assert.match(mainHtml,/href="\/echr-crosswalk\.html"[\s\S]{0,180}ECHR Crosswalk · HOLD/);
+  assert.match(externalVNext,/data-vnext-action="echr-crosswalk"/);
+  assert.ok(externalVNext.includes("if(action==='echr-crosswalk'){window.open('/echr-crosswalk.html'"),"external ECHR action route missing");
 });
 
 test("dual-bot parity: both message surfaces expose the same governed action set",()=>{
