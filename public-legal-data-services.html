@@ -16,13 +16,26 @@ main{max-width:1280px;margin:auto;padding:22px}.notice{border:1px solid #e0c98d;
 .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.field{display:grid;gap:5px;min-width:210px;flex:1}.field label{font-weight:750}.field input,.field select{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
 button,.btn{padding:10px 13px;border-radius:10px;border:1px solid var(--navy);background:var(--navy);color:#fff;font-weight:800;text-decoration:none;display:inline-block}.secondary{background:#fff;color:var(--navy)}
 .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:14px}.item{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff}.item h3{margin:0 0 7px}.meta{font-size:.86rem;color:var(--muted);margin:4px 0}.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.chip{font-size:.76rem;font-weight:800;border:1px solid var(--line);border-radius:999px;padding:4px 7px;background:#f8fafb}
-.good{color:var(--ok)}.warn{color:var(--warn)}.footer{margin:20px 0;color:var(--muted);font-size:.85rem}
+.good{color:var(--ok)}.warn{color:var(--warn)}.guide{border:1px solid #d9c79a;border-radius:14px;background:#fffaf0;margin:14px 0;overflow:hidden}.guide summary{cursor:pointer;font-weight:850;padding:13px 15px}.guide-body{border-top:1px solid #eadfc7;padding:13px 15px}.guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px}.guide-step{background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px;font-size:.87rem;line-height:1.45}.guide-step b{display:block;margin-bottom:4px}.footer{margin:20px 0;color:var(--muted);font-size:.85rem}
 </style>
 </head>
 <body>
 <header><div class="head"><div>AI ADVOKAT · SOURCE-FIRST</div><h1>Public Legal Data & e‑Services</h1><p>Правно-релевантни јавни податоци, официјални е-услуги, eID readiness и Human Gate.</p></div></header>
 <main>
 <div class="notice"><strong>Authority Boundary:</strong> Open Data се користи за discovery, фактичка проверка и доказна трага; не станува важечко право автоматски. Uslugi.gov.mk е официјален административен канал; AI Advokat не поднесува барање во име на корисникот.</div>
+<details class="guide" id="guide" open>
+  <summary>Водилка · Како се користи Public Legal Data & e‑Services</summary>
+  <div class="guide-body">
+    <p><b>Најкратко:</b> пребарај официјален јавен податок → провери evidence card → примени правен lens → најди релевантна e‑услуга → провери eID/документи → човекот го прави официјалниот чекор.</p>
+    <div class="guide-grid">
+      <div class="guide-step"><b>01 · Open Data Finder</b>Внеси поим и избери lens. Добиваш кандидати од официјалниот каталог на data.gov.mk. Резултатот е discovery/evidence, не автоматски правен авторитет.</div>
+      <div class="guide-step"><b>02 · Evidence Dataset Card</b>Провери институција, лиценца, metadata date, формат и resource URL. Отвори го underlying official record пред правен заклучок.</div>
+      <div class="guide-step"><b>03 · Legal Dataset Lens</b>Користи го за да го стесниш контекстот: прописи, МВР/кривично, јавни набавки или регистри/евиденции.</div>
+      <div class="guide-step"><b>04 · e‑Service Navigator</b>Избери публика/правно лице и област. Алатката покажува официјална услуга што може да создаде правно релевантен документ или административен следен чекор.</div>
+      <div class="guide-step"><b>05 · eID + Human Handoff</b>Провери eID ниво, потребни прилози, надлежност и рок. AI Advokat не поднесува автономно; конечната акција ја прави човек.</div>
+    </div>
+  </div>
+</details>
 <div class="tabs" role="navigation" aria-label="Public Legal Data функции">
 <button class="tab active" data-panel="finder">01 · Open Data Finder</button>
 <button class="tab" data-panel="evidence">02 · Evidence Dataset Card</button>
