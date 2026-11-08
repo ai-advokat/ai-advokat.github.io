@@ -69,7 +69,7 @@ function resetWorkspace(){
   pendingCaseFiles=[];
   currentDocuments=[];
   if($("caseFileInput")) $("caseFileInput").value="";
-  if($("caseFileSelection")) $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
+  if($("caseFileSelection")) $("caseFileSelection").textContent="PDF · DOC · DOCX · XLS · XLSX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
   setWorkspaceVisible(false);
   $("caseTitle").textContent="—";
   $("caseLegalArea").textContent="—";
@@ -321,6 +321,10 @@ function documentMimeForFile(file){
   if(file?.type==="application/vnd.openxmlformats-officedocument.wordprocessingml.document" || name.endsWith(".docx")){
     return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   }
+  if(file?.type==="application/vnd.ms-excel" || name.endsWith(".xls")) return "application/vnd.ms-excel";
+  if(file?.type==="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || name.endsWith(".xlsx")){
+    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  }
   if(file?.type==="image/png" || name.endsWith(".png")) return "image/png";
   if(file?.type==="image/jpeg" || name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
   if(file?.type==="image/webp" || name.endsWith(".webp")) return "image/webp";
@@ -344,7 +348,7 @@ function setPendingCaseFiles(files){
   if(selection){
     selection.textContent=pendingCaseFiles.length
       ? pendingCaseFiles.map(file=>file.name+" ("+Math.max(1,Math.round(file.size/1024))+" KB)").join(" · ")
-      : "PDF · DOC · DOCX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
+      : "PDF · DOC · DOCX · XLS · XLSX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
   }
   return true;
 }
@@ -748,7 +752,7 @@ $("uploadCaseFile").addEventListener("click",async()=>{
     pendingCaseFiles=[];
     $("caseFileInput").value="";
     $("caseFilePages").value="";
-    $("caseFileSelection").textContent="PDF · DOC · DOCX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
+    $("caseFileSelection").textContent="PDF · DOC · DOCX · XLS · XLSX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
     $("documentStatus").textContent=uploaded+" датотек(и) се зачувани приватно. Започнува AI intake…";
     await loadDocuments();
     const intake=await extractPendingCaseDocuments();
