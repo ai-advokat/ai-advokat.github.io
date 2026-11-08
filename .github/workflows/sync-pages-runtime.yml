@@ -12,6 +12,8 @@ on:
       - "public-legal-data-services.html"
       - "gold-set-review-gate.html"
       - "echr-crosswalk.html"
+      - "proactive-legal-agents.html"
+      - "legal-command-center.html"
       - "bot/index.html"
       - "assets/ai-advokat-chat.js"
       - "assets/professional-tools.js"
@@ -29,6 +31,11 @@ on:
       - "src/echr-findings.js"
       - "src/case-law-metadata-processor.js"
       - "src/legal-analyzer.js"
+      - "src/proactive-legal-agents.js"
+      - "src/matter-memory.js"
+      - "src/agent-builder.js"
+      - "src/horizon-scanning-engine.js"
+      - "src/legal-command-center.js"
       - "src/case-export.js"
       - "assets/standalone-bot.css"
       - "assets/standalone-bot-vnext.js"
@@ -92,6 +99,19 @@ jobs:
           test -f public-legal-data-services.html
           test -f gold-set-review-gate.html
           test -f echr-crosswalk.html
+          test -f proactive-legal-agents.html
+          test -f legal-command-center.html
+          node --check src/proactive-legal-agents.js
+          node --check src/matter-memory.js
+          node --check src/agent-builder.js
+          node --check src/horizon-scanning-engine.js
+          node --check src/legal-command-center.js
+          grep -q 'SOURCE-FIRST · PROACTIVE LEGAL AGENTS · V1' proactive-legal-agents.html
+          grep -q 'LEGAL OPERATIONS · COMMAND CENTER V1' legal-command-center.html
+          grep -q './src/matter-memory.js' legal-command-center.html
+          grep -q './src/agent-builder.js' legal-command-center.html
+          grep -q './src/horizon-scanning-engine.js' legal-command-center.html
+          grep -q './src/legal-command-center.js' legal-command-center.html
           grep -q 'Current-Law Watch' consolidator/index.html
           grep -q 'Hybrid Legal Intelligence R2' hybrid-legal-intelligence.html
           grep -q 'AI_ADVOCAT_HYBRID_CONTROL_R3' hybrid-legal-intelligence.html
@@ -149,6 +169,8 @@ jobs:
             public-legal-data-services.html
             gold-set-review-gate.html
             echr-crosswalk.html
+            proactive-legal-agents.html
+            legal-command-center.html
             bot/index.html
             assets/ai-advokat-chat.js
             assets/professional-tools.js
@@ -166,6 +188,11 @@ jobs:
             src/echr-findings.js
             src/case-law-metadata-processor.js
             src/legal-analyzer.js
+            src/proactive-legal-agents.js
+            src/matter-memory.js
+            src/agent-builder.js
+            src/horizon-scanning-engine.js
+            src/legal-command-center.js
             src/case-export.js
             _headers
             assets/standalone-bot.css
@@ -200,7 +227,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin gh-pages:refs/remotes/origin/gh-pages
-          for f in index.html case-law-curation.html consolidator/index.html hybrid-legal-intelligence.html professional-tools.html casepilot-workspace.html public-legal-data-services.html gold-set-review-gate.html echr-crosswalk.html bot/index.html assets/ai-advokat-chat.js assets/professional-tools.js assets/casepilot-workspace-ui.js assets/ai-advokat-chat.css assets/ai-advokat-voice.mjs assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/standalone-bot.css assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js assets/standalone-bot-vnext.css assets/standalone-bot-toolkit.js assets/standalone-bot-toolkit.css; do
+          for f in index.html case-law-curation.html consolidator/index.html hybrid-legal-intelligence.html professional-tools.html casepilot-workspace.html public-legal-data-services.html gold-set-review-gate.html echr-crosswalk.html proactive-legal-agents.html legal-command-center.html bot/index.html assets/ai-advokat-chat.js assets/professional-tools.js assets/casepilot-workspace-ui.js assets/ai-advokat-chat.css assets/ai-advokat-voice.mjs assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/standalone-bot.css assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/proactive-legal-agents.js src/matter-memory.js src/agent-builder.js src/horizon-scanning-engine.js src/legal-command-center.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js assets/standalone-bot-vnext.css assets/standalone-bot-toolkit.js assets/standalone-bot-toolkit.css; do
             main_blob="$(git rev-parse "$GITHUB_SHA:$f")"
             pages_blob="$(git rev-parse "origin/gh-pages:$f")"
             test "$main_blob" = "$pages_blob"
