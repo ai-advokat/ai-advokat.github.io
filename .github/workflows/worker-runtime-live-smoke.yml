@@ -105,6 +105,10 @@ jobs:
           test "$deployed" = "1"
 
           grep -q 'name="ai-advokat-release" content="core-r15"' /tmp/worker-bot.html
+          grep -q 'Водилка · Како да ги користиш новите функции во надворешниот AI Advokat' /tmp/worker-bot.html
+          grep -q '09 · Gold Review Gate' /tmp/worker-bot.html
+          grep -q 'Hybrid 9 · целосен source-first workflow' /tmp/worker-bot.html
+          grep -q 'Gold Review Gate v2.1 · corpus-control + Human Gate' /tmp/worker-bot.html
           grep -q 'Hybrid Legal Intelligence R2' /tmp/worker-hybrid.html
           grep -q 'Lawyer View' /tmp/worker-hybrid.html
           grep -q 'Open Data Legal Evidence' /tmp/worker-hybrid.html
