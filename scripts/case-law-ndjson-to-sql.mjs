@@ -190,6 +190,21 @@ export function generateCaseLawImportSql(ndjsonText){
     const sourceStatus=sourceStatusFor(manifest,sourceUrl);
     if(!validSha(item.source_sha256)) throw new Error("Invalid source_sha256 for "+caseKey);
 
+    const preAudit=provenanceAuditFields(item,sourceUrl);
+    const preBinding=governedBindingState(manifest,item,sourceUrl);
+    const preGate=assessCanonicalCaseLawState({
+      ...item,
+      source_class:preBinding.sourceClass,
+      source_status:sourceStatus,
+      source_url:sourceUrl.href,
+      source_sha256:String(item.source_sha256).toLowerCase(),
+      official_binding_verified:preBinding.officialBinding===1,
+      remote_content_hash_verified:preAudit.remoteContentHashVerified===1
+    });
+    const caseHumanReviewStatus=preGate.reviewedAuthorityCandidate ? "reviewed" : "pending";
+    const authorityHumanReviewStatus=preGate.authorityReviewApproved ? "reviewed" : "pending";
+    const holdingHumanReviewStatus=preGate.holdingVerified ? "reviewed" : "pending";
+
     const caseNumber=optionalText(item.case_number,200);
     const decisionDate=optionalText(item.decision_date,40);
     const legalArea=optionalText(item.legal_area,300);
@@ -244,7 +259,7 @@ export function generateCaseLawImportSql(ndjsonText){
         sqlString(title),sqlString(court),sqlString(caseNumber),sqlString(jurisdiction),sqlString(legalArea),
         sqlString(decisionDate),sqlString(outcome),sqlString(reasoning),
         "(SELECT id FROM sources WHERE url="+sqlString(sourceUrl.href)+")",
-        sqlString(sourceUrl.href),sqlString(finality),"'pending'"
+        sqlString(sourceUrl.href),sqlString(finality),sqlString(caseHumanReviewStatus)
       ].join(",")+" WHERE NOT EXISTS (SELECT 1 FROM case_law WHERE "+identityWhere+");"
     );
 
@@ -253,23 +268,15 @@ export function generateCaseLawImportSql(ndjsonText){
       "INSERT OR IGNORE INTO case_law_authority(case_law_id,court_level,chamber_or_section,decision_type,precedential_weight,outcome_side,convention_articles,domestic_articles,legal_issue_keys,importance_level,human_review_status) VALUES ("+
       [
         caseIdExpr,sqlString(courtLevel),sqlString(chamber),sqlString(decisionType),sqlString(weight),sqlString(outcomeSide),
-        sqlString(conventionArticles),sqlString(domesticArticles),sqlString(issueKeys),sqlString(importance),"'pending'"
+        sqlString(conventionArticles),sqlString(domesticArticles),sqlString(issueKeys),sqlString(importance),sqlString(authorityHumanReviewStatus)
       ].join(",")+");"
     );
 
-    const binding=governedBindingState(manifest,item,sourceUrl);
+    const binding=preBinding;
     const sourceClass=binding.sourceClass;
     const officialBinding=binding.officialBinding;
-    const audit=provenanceAuditFields(item,sourceUrl);
-    const gate=assessCanonicalCaseLawState({
-      ...item,
-      source_class:sourceClass,
-      source_status:sourceStatus,
-      source_url:sourceUrl.href,
-      source_sha256:String(item.source_sha256).toLowerCase(),
-      official_binding_verified:officialBinding===1,
-      remote_content_hash_verified:audit.remoteContentHashVerified===1
-    });
+    const audit=preAudit;
+    const gate=preGate;
     const discoveryOnly=gate.productionCitable ? 0 : 1;
     const provenanceReviewStatus=officialBinding===1 ? "approved" : "pending";
     sql.push(
@@ -336,7 +343,7 @@ export function generateCaseLawImportSql(ndjsonText){
       const language=optionalText(holding.source_language,40);
       sql.push(
         "INSERT INTO case_law_holdings(case_law_id,holding_type,proposition,source_locator,source_quote,source_language,human_review_status) "+
-        "SELECT "+[caseIdExpr,sqlString(holdingType),sqlString(proposition),sqlString(locator),sqlString(quote),sqlString(language),"'pending'"].join(",")+
+        "SELECT "+[caseIdExpr,sqlString(holdingType),sqlString(proposition),sqlString(locator),sqlString(quote),sqlString(language),sqlString(holdingHumanReviewStatus)].join(",")+
         " WHERE NOT EXISTS (SELECT 1 FROM case_law_holdings WHERE case_law_id="+caseIdExpr+" AND proposition="+sqlString(proposition)+");"
       );
       holdingCount++;
