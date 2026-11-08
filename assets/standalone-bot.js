@@ -387,7 +387,7 @@ $('composer').onsubmit = async event => {
   try {
     const guides = await guideMatches(outboundQ,controller.signal), ids = guides.map(g => g.id);
     const guideDocuments = await localGuideDocuments(window.AIAdvokatGuideVault,ids,$('useLocalGuides').checked);
-    const data = await request('/api/bot',{signal:controller.signal,body:{q:outboundQ,sessionId,mode:$('researchMode').value,guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
+    const data = await request('/api/bot',{signal:controller.signal,body:{q:outboundQ,sessionId,mode:$('researchMode').value,webDomainPreset:$('webDomainPreset')?.value||'all',guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     pulse.remove();
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
@@ -500,6 +500,32 @@ $('materials').onclick = openMaterials;
 $('plusMaterials').onclick = openMaterials;
 $('closeMaterials').onclick = () => $('materialsDialog').close();
 $('importGuides').onclick = () => $('guideFiles').click();
+const HYBRID_CONTROL_R3_VERSION='AI_ADVOCAT_HYBRID_CONTROL_R3';
+function consumeHybridControlR3Handoff(){
+  let payload=null;
+  try{
+    const raw=sessionStorage.getItem('aiAdvokatHybridControlR3Handoff');
+    if(!raw) return;
+    sessionStorage.removeItem('aiAdvokatHybridControlR3Handoff');
+    payload=JSON.parse(raw);
+  }catch{
+    try{sessionStorage.removeItem('aiAdvokatHybridControlR3Handoff')}catch{}
+    return;
+  }
+  if(!payload || payload.version!==HYBRID_CONTROL_R3_VERSION) return;
+  const createdAt=Number(payload.createdAt||0);
+  if(!createdAt || Date.now()-createdAt>15*60*1000) return;
+  const preset=String(payload.webDomainPreset||'all');
+  if($('webDomainPreset')) $('webDomainPreset').value=['all','mk_official','eu_echr_official'].includes(preset)?preset:'all';
+  const prompt=String(payload.prompt||'').trim().slice(0,20000);
+  if(!prompt) return;
+  $('question').value=prompt;
+  $('question').dispatchEvent(new Event('input',{bubbles:true}));
+  status('Hybrid Control R3 handoff е вчитан. Проверете го prompt-от и испратете кога сте подготвени.');
+  $('question').focus();
+}
+consumeHybridControlR3Handoff();
+
 $('guideFiles').onchange = async () => {
   const files = [...$('guideFiles').files]; $('guideFiles').value = '';
   if (!files.length) return;
