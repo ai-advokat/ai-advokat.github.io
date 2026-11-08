@@ -5,7 +5,7 @@ import fs from "node:fs";
 const page=fs.readFileSync("gold-set-review-gate.html","utf8");
 
 test("Gold Set Review Gate v2.1 preserves Human Gate hard boundaries",()=>{
-  assert.match(page,/Gold Set Review Gate v2\\.1/);
+  assert.match(page,/Gold Set Review Gate v2\.1/);
   assert.match(page,/publication_approved:false/);
   assert.match(page,/reviewed_authority_promoted:false/);
   assert.match(page,/external_human_gate_required:true/);
