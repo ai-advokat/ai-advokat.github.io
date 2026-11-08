@@ -6445,6 +6445,7 @@ async function handleLegalAnalyzerVerify(request,env){
           WHERE cl.case_number IN (${placeholders})
             AND cl.human_review_status IN ('approved','reviewed')
             AND cla.human_review_status IN ('approved','reviewed')
+            AND EXISTS (SELECT 1 FROM case_law_provenance clp WHERE clp.case_law_id=cl.id AND clp.official_binding_verified=1 AND clp.discovery_only=0 AND clp.human_review_status IN ('approved','reviewed'))
             AND (ceg.case_law_id IS NULL OR (ceg.migration_state='PRODUCTION_CITABLE_AUTHORITY' AND ceg.publication_approved=1 AND ceg.human_gate_approved=1))
           ORDER BY cl.decision_date DESC,cl.id DESC
           LIMIT 24`
