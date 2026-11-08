@@ -28,7 +28,7 @@ test("production live-parity workflows expect the Hybrid R2 cache key",()=>{
   }
 });
 
-test("all nine Hybrid modules are directly visible from both public AI Advokat shells",()=>{
+test("all ten Hybrid modules are directly visible from both public AI Advokat shells",()=>{
   const bot=fs.readFileSync("bot/index.html","utf8");
   const root=fs.readFileSync("index.html","utf8");
   const links=[
@@ -40,14 +40,15 @@ test("all nine Hybrid modules are directly visible from both public AI Advokat s
     "module=opendata",
     "module=services",
     "module=handoff",
-    "module=gold"
+    "module=gold",
+    "module=echr"
   ];
   for(const link of links){
     assert.equal(root.includes(link),true,"root missing "+link);
     assert.equal(bot.includes(link),true,"bot missing "+link);
   }
-  assert.match(root,/НОВО · Hybrid Legal Intelligence · 9 функции/);
-  assert.match(bot,/НОВО · Hybrid Legal Intelligence · 9 функции/);
+  assert.match(root,/НОВО · Hybrid Legal Intelligence · 10 функции/);
+  assert.match(bot,/НОВО · Hybrid Legal Intelligence · 10 функции/);
 });
 
 test("Hybrid and Public Legal tools are visible in both top headers",()=>{
@@ -57,11 +58,13 @@ test("Hybrid and Public Legal tools are visible in both top headers",()=>{
     assert.match(html,/data-header-legal="hybrid"/);
     assert.match(html,/data-header-legal="public-legal"/);
     assert.match(html,/data-header-legal="gold"/);
+    assert.match(html,/data-header-legal="echr"/);
     assert.match(html,/href="\/hybrid-legal-intelligence\.html"/);
     assert.match(html,/href="\/public-legal-data-services\.html"/);
     assert.match(html,/href="\/gold-set-review-gate\.html"/);
+    assert.match(html,/href="\/echr-crosswalk\.html"/);
   }
-  assert.match(root,/⌘ Hybrid 9/);
+  assert.match(root,/⌘ Hybrid 10/);
   assert.match(root,/⚖ Open Data & e‑Services/);
   assert.match(bot,/header-legal-links/);
 });
@@ -71,13 +74,14 @@ test("Core legal tools are explained for users and Gold is present in mobile nav
   const root=fs.readFileSync("index.html","utf8");
   assert.match(root,/Што прават трите носечки правни алатки\?/);
   assert.match(bot,/Како се разликуваат главните алатки\?/);
-  for(const label of ["Hybrid 9","Open Data & e‑Services","Gold Review Gate"]){
+  for(const label of ["Hybrid 10","Open Data & e‑Services","Gold Review Gate","ECHR Crosswalk"]){
     assert.equal(root.includes(label),true,"root explanation missing "+label);
     assert.equal(bot.includes(label),true,"bot explanation missing "+label);
   }
   assert.match(root,/data-header-mobile="hybrid"/);
   assert.match(root,/data-header-mobile="public-legal"/);
   assert.match(root,/data-header-mobile="gold"/);
+  assert.match(root,/data-header-mobile="echr"/);
 });
 
 test("Standalone bot exposes the complete new legal-intelligence workflow",()=>{
@@ -86,10 +90,11 @@ test("Standalone bot exposes the complete new legal-intelligence workflow",()=>{
   for(const label of [
     "01 · Time Machine","02 · Law ↔ Bylaw","03 · Case-Law","04 · Legal Calendar",
     "05 · Consolidation Diff","06 · Open Data Evidence","07 · Official e‑Services",
-    "08 · Human Handoff","09 · Gold Review Gate"
+    "08 · Human Handoff","09 · Gold Review Gate","10 · ECHR Crosswalk"
   ]) assert.equal(bot.includes(label),true,"external bot guide missing "+label);
-  assert.match(bot,/Hybrid 9 · целосен source-first workflow/);
+  assert.match(bot,/Hybrid 10 · целосен source-first workflow/);
   assert.match(bot,/Open Data & e‑Services · evidence \+ eID handoff/);
   assert.match(bot,/Gold Review Gate v2\.1 · corpus-control \+ Human Gate/);
+  assert.match(bot,/ECHR Crosswalk · F0-FAST-27 · research HOLD/);
   assert.match(bot,/Финалната професионална употреба, поднесување и promotion во reviewed authority остануваат човечка одлука/);
 });
