@@ -105,6 +105,29 @@
         </div>
       </div>
 
+      <div class="card" id="batch-review">
+        <h3>Batch Review · до 100 документи</h3>
+        <p class="muted">Ја активира постојната deterministic Review Table функција за повеќе локални TXT/MD/CSV/JSON документи. Датотеките се читаат во browser; Human Gate останува задолжителен. За PDF/DOCX/слики користете Secure Case Workspace.</p>
+        <div class="drop">
+          <strong>Локален multi-document пакет</strong>
+          <p class="muted">Максимум 100 датотеки · до 2 MB по датотека · без upload на сервер.</p>
+          <label class="btn secondary" for="batchFiles">Избери документи</label>
+          <input id="batchFiles" type="file" multiple accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json">
+        </div>
+        <div class="actions">
+          <button id="analyzeBatch" class="primary" type="button">Анализирај пакет</button>
+          <button id="exportBatchCsv" class="secondary" type="button" disabled>CSV Table</button>
+          <button id="exportBatchJson" class="secondary" type="button" disabled>JSON</button>
+        </div>
+        <p id="batchStatus" class="statusline muted" aria-live="polite">Нема избран пакет.</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Документ</th><th>Тип</th><th>Суд/орган</th><th>Број</th><th>Датум</th><th>Закони / членови</th><th>Рокови</th><th>Извори</th><th>Human Gate</th></tr></thead>
+            <tbody id="batchReviewBody"><tr><td colspan="9" class="muted">Нема batch анализа.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="card">
         <h3>Проверени правни извори</h3>
         <p class="muted">До серверот се испраќаат само извлечени правни hints (закон/член/број на предмет), не целиот документ.</p>
