@@ -26,5 +26,5 @@ test("command center wires all four governed platform modules",()=>{
 
 test("proactive agents preserve consequential Human Gate boundary",()=>{
   assert.match(agents,/Human Gate е архитектонска граница/);
-  assert.match(agents,/не смее самостојно да создава правна обврска/);
+  assert.match(agents,/Ниту еден агент не смее самостојно да поднесе, потпише, испрати, прогласи важечко право/);
 });
