@@ -184,6 +184,18 @@ import {
   publicOpenLegalSourceDirectory,
   openLegalSourcePolicySummary
 } from "./open-legal-sources-policy.js";
+import {
+  FAMILY_DIVORCE_DRAFT_VERSION,
+  isFamilyDivorceDraftRequest,
+  formatFamilyDivorceDraft,
+  familyDivorceLegalSources
+} from "./family-divorce-draft.js";
+import {
+  PROPERTY_LAW_PRESCRIPTION_VERSION,
+  isPropertyPrescriptionQuery,
+  formatPropertyPrescriptionAnswer,
+  propertyPrescriptionLegalSources
+} from "./property-law-prescription.js";
 import { detectConfidentialCasePrompt } from "./chat-privacy.js";
 import { buildLegalRoutingQuery, isContextDependentLegalFollowUp } from "./legal-conversation-context.js";
 import {
@@ -6889,6 +6901,96 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         providerCalled:false,
         quotaConsumed:false
       },503);
+    }
+  }
+
+  if(isPropertyPrescriptionQuery(routingQuery)){
+    const answer=formatPropertyPrescriptionAnswer(routingQuery);
+    if(answer){
+      const propertyDraft=isFormalLegalDraftRequest(routingQuery);
+      return json(request,{
+        ok:true,
+        answer,
+        provider:"canonical_corpus_no_model",
+        model:null,
+        mode:propertyDraft?"source_first_work_product":"passive_corpus",
+        displayMode:"canonical_property_law_prescription",
+        sourceMode:"canonical_property_law_odrzuvacka_no_model",
+        webSearchUsed:false,
+        legalSources:propertyPrescriptionLegalSources(),
+        caseLawSources:[],
+        guideSources:[],
+        publicationSources:[],
+        sources:[],
+        propertyPrescriptionVersion:PROPERTY_LAW_PRESCRIPTION_VERSION,
+        performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+        legalGovernance:{
+          engine:"AI_ADVOKAT_LIOE_v1",
+          missionProfile:propertyDraft?"L2_STRATEGY_PROCEDURE":"L1_VERIFIED_RESEARCH",
+          sourceVerificationState:"VERIFIED_PRIMARY_STATUTE_AND_OFFICIAL_CASE",
+          temporalVerificationState:"VERIFIED_TO_2026_11_08",
+          jurisdictionVerificationState:"VERIFIED_MK",
+          verificationState:"PASSED",
+          releaseState:"VERIFIED_SOURCE_BACKED_RESEARCH",
+          executionAuthorization:"RESEARCH_OUTPUT_ONLY",
+          humanReviewRequired:true,
+          postflightRequired:false,
+          postflightState:"NOT_REQUIRED_DETERMINISTIC_NO_MODEL",
+          currentLawContextAvailable:true
+        },
+        membership:botMembership ? {
+          planCode:botMembership.planCode,
+          status:botMembership.status,
+          monthlyQuota:botMembership.monthlyQuota,
+          seats:botMembership.seats
+        } : {planCode:"free"},
+        humanGate:"Source-first property-law analysis. Before consequential use or filing, verify the exact object, possession history, good faith, lawful basis where required, interruptions, predecessors, public-register status, parties, jurisdiction and current statutory text."
+      });
+    }
+  }
+
+  if(isFamilyDivorceDraftRequest(routingQuery)){
+    const answer=formatFamilyDivorceDraft(routingQuery);
+    if(answer){
+      return json(request,{
+        ok:true,
+        answer,
+        provider:"canonical_corpus_no_model",
+        model:null,
+        mode:"source_first_work_product",
+        displayMode:"canonical_family_divorce_draft",
+        sourceMode:"canonical_family_law_divorce_no_model",
+        webSearchUsed:false,
+        legalSources:familyDivorceLegalSources(),
+        caseLawSources:[],
+        guideSources:[],
+        publicationSources:[],
+        sources:[],
+        familyDivorceVersion:FAMILY_DIVORCE_DRAFT_VERSION,
+        performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+        legalGovernance:{
+          engine:"AI_ADVOKAT_LIOE_v1",
+          missionProfile:"L3_CONSEQUENTIAL",
+          sourceVerificationState:"VERIFIED_PRIMARY_STATUTE",
+          temporalVerificationState:"VERIFIED_TO_2026_11_08",
+          jurisdictionVerificationState:"VERIFIED_MK",
+          verificationState:"PASSED",
+          releaseState:"VERIFIED_SOURCE_BACKED_RESEARCH",
+          executionAuthorization:"NO_EXTERNAL_ACTION",
+          humanReviewRequired:true,
+          postflightRequired:false,
+          postflightState:"NOT_REQUIRED_DETERMINISTIC_NO_MODEL",
+          postflightBypassReason:"deterministic_canonical_source_first_no_model",
+          currentLawContextAvailable:true
+        },
+        membership:botMembership ? {
+          planCode:botMembership.planCode,
+          status:botMembership.status,
+          monthlyQuota:botMembership.monthlyQuota,
+          seats:botMembership.seats
+        } : {planCode:"free"},
+        humanGate:"Source-first family-law draft. Before filing, verify jurisdiction, parties, facts, children, exact statutory basis, current consolidated text, court fees, power of attorney and attachments."
+      });
     }
   }
 
