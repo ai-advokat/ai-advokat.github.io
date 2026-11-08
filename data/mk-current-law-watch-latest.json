@@ -1,6 +1,6 @@
 {
   "version": "AI_ADVOCAT_MK_CURRENT_LAW_WATCH_R2",
-  "captured_at": "2026-11-07T22:14:18.280Z",
+  "captured_at": "2026-11-08T01:45:28.019Z",
   "poll_interval_minutes": 30,
   "governance": {
     "source_first": true,
@@ -38,7 +38,7 @@
       "ok": false,
       "status": 403,
       "content_type": "text/html; charset=UTF-8",
-      "page_sha256": "81aa2f672cb418ce7cd458134402dca0bb903b1f53a4c109e48e34990532ab58",
+      "page_sha256": "0798524925b3dfa0798ae3703e715b381e3829524a24f72864bcf977640fa94e",
       "normalized_sha256": "e048dde4a4dee1590f8d69a62da8c2452454f387014baf997dc49f6a725a713c",
       "anchor_count": 0
     },
@@ -52,8 +52,8 @@
       "ok": false,
       "status": 403,
       "content_type": "text/html; charset=UTF-8",
-      "page_sha256": "b1720e5ca2be547280a009aea143a24afd6cb47dde2fec20951725ecd23f1cd7",
-      "normalized_sha256": "50b758b18b427b538bb2b76fa734001185039b4913875fad6d187ecfe796bcb9",
+      "page_sha256": "5bbda5bbb6ae5aed81bac494f09f3e2ada57c4917f31387089d55c3a842ff1b8",
+      "normalized_sha256": "e5b6e3536d4f523465f5a464df15242c76c8dbe7ca3de71b5ef3b8d1eb5fa781",
       "anchor_count": 1
     },
     {
@@ -96,8 +96,8 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "cc6c576286bf90c0287ca4e870c6d748bf6cfdace12d874fcacbb502aacc32f0",
-      "normalized_sha256": "6ed2b9b3011c4f591d2232f30d7ae80fd58a0cd2e053bea0556e33ad677ecb6f",
+      "page_sha256": "0add03c54080a7f0ae055917653583a0e4c264e3ee4cf75f3d979f93f2e92699",
+      "normalized_sha256": "4328cbdfa903940cd6b372e72a9246713eedc96ccc3d1f494f5e42bd9e23f69a",
       "anchor_count": 0
     },
     {
@@ -110,8 +110,8 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "d094e514ed2367c236b90f8e55e86dd9cd4d93954cf92e9a2c48da07e8176f3c",
-      "normalized_sha256": "1dd7f482851a054840d905561931ffdc21dffca24a479db75f0bb616ad366959",
+      "page_sha256": "87f7a3a66a61029d277a32793d61bde63dcdb26c27d49e188e4cb299aeb59bbf",
+      "normalized_sha256": "d9015d45874736b4e28e4b1a854276574db9a20c1ac1ee99d3c6c925b402304f",
       "anchor_count": 0
     },
     {
@@ -124,8 +124,8 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "02d41388e2ae5769ab79e3feb3adbb84ee721c1081f746217e4a95221512040b",
-      "normalized_sha256": "1456c634773d583072a98cc74ab2feacf0d180629126886837ddc72a47ca2390",
+      "page_sha256": "ec66feda4d95036c3fb4c73f90c252157c0081e7dfdf03d4b89b95e544bc6f5f",
+      "normalized_sha256": "0bcf2b4bf11a3a28aad2f36214613757a502d5e43615982934f95213de776153",
       "anchor_count": 0
     },
     {
@@ -138,8 +138,8 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "b2e4d01060e4c521aa40fbf89e48eeb713508d4e8273a113900bb166e35026f6",
-      "normalized_sha256": "dffbb14bb3a9fa12380d44d9f8cc871ee028c1313fd0ea75782891f72b821097",
+      "page_sha256": "342770d6c14e2266b8a9c94f05cf0f2f506be07b1938f1dc6d686c85297e688b",
+      "normalized_sha256": "eb0df97d83efdae92b4c38b57d6c8382409320d85b77b171dbb6c1792de2307d",
       "anchor_count": 0
     },
     {
@@ -152,8 +152,8 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "544f72fdd79f48f5d490a0d8bc9ab3d193ed2258ca1c6cc727f9c8e34cf2c088",
-      "normalized_sha256": "2e2e4212f250cf5aa3f97c552172427304a7731b1e92ba486a510441ec95fb1d",
+      "page_sha256": "b10d97c46b2a25729b56331d47d162fb60805293117de93ab9d231459447b643",
+      "normalized_sha256": "fb90a89d8d22a9ecc24e6b2bde2e651dab9da79fc8deb0d24c1e6160e1a32987",
       "anchor_count": 0
     },
     {
@@ -166,8 +166,8 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "04cf74b27596acc59bae2bf6ed1ba84403515451af825e5777b999db48fe9b9f",
-      "normalized_sha256": "f05bf1e1f675a241c0cd35b4f2ddb2a4be5ae9afff264748d1106bbf454ca171",
+      "page_sha256": "366b7f84de0653313e7d7fb067ad035e90bd8fa4aa63c3b9735fb193609983ad",
+      "normalized_sha256": "7fa042b767d7e35c98a4ed58b6768c89caaa6266f70c6ab9cc999245bb61a69e",
       "anchor_count": 0
     },
     {
@@ -180,8 +180,8 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "4e39866a90b46294986450e7c4c99d8f7a19da2e916d3cd4086c1c5d832b099c",
-      "normalized_sha256": "3d8b7a0220a2e1266212dc9a06dca2aa878193835e9faf23d79a243422a2c89b",
+      "page_sha256": "2f00e33d35e9050649ffad57d65a3ccb9d2457d55730cfe3e6469d7004fbd626",
+      "normalized_sha256": "64cbf44927c556c1e10c24436a9cb3ba6e408e089b7fc7393142e96c66ec4819",
       "anchor_count": 0
     },
     {
@@ -194,7 +194,7 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=UTF-8",
-      "page_sha256": "c147b83c0fd97382b5bd047e1a1dec5943b6f0a115b27ce94514d6ff2d39e137",
+      "page_sha256": "6ce034dcc3035a015a39637d0996d93dfaf0e3d256cddbb4b2a51f966057e451",
       "normalized_sha256": "e12e4f9b60bbec706fdf7354bc1108a4260a4b155d78b20f1ed8b29b3d0a2d0d",
       "anchor_count": 40
     },
@@ -323,8 +323,8 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "d094e514ed2367c236b90f8e55e86dd9cd4d93954cf92e9a2c48da07e8176f3c",
-      "normalized_sha256": "1dd7f482851a054840d905561931ffdc21dffca24a479db75f0bb616ad366959"
+      "page_sha256": "87f7a3a66a61029d277a32793d61bde63dcdb26c27d49e188e4cb299aeb59bbf",
+      "normalized_sha256": "d9015d45874736b4e28e4b1a854276574db9a20c1ac1ee99d3c6c925b402304f"
     },
     {
       "source_id": "mk-ldbis",
@@ -337,8 +337,8 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "02d41388e2ae5769ab79e3feb3adbb84ee721c1081f746217e4a95221512040b",
-      "normalized_sha256": "1456c634773d583072a98cc74ab2feacf0d180629126886837ddc72a47ca2390"
+      "page_sha256": "ec66feda4d95036c3fb4c73f90c252157c0081e7dfdf03d4b89b95e544bc6f5f",
+      "normalized_sha256": "0bcf2b4bf11a3a28aad2f36214613757a502d5e43615982934f95213de776153"
     },
     {
       "source_id": "mk-ldbis",
@@ -351,8 +351,8 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "4e39866a90b46294986450e7c4c99d8f7a19da2e916d3cd4086c1c5d832b099c",
-      "normalized_sha256": "3d8b7a0220a2e1266212dc9a06dca2aa878193835e9faf23d79a243422a2c89b"
+      "page_sha256": "2f00e33d35e9050649ffad57d65a3ccb9d2457d55730cfe3e6469d7004fbd626",
+      "normalized_sha256": "64cbf44927c556c1e10c24436a9cb3ba6e408e089b7fc7393142e96c66ec4819"
     },
     {
       "source_id": "mk-ldbis",
@@ -365,8 +365,8 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "04cf74b27596acc59bae2bf6ed1ba84403515451af825e5777b999db48fe9b9f",
-      "normalized_sha256": "f05bf1e1f675a241c0cd35b4f2ddb2a4be5ae9afff264748d1106bbf454ca171"
+      "page_sha256": "366b7f84de0653313e7d7fb067ad035e90bd8fa4aa63c3b9735fb193609983ad",
+      "normalized_sha256": "7fa042b767d7e35c98a4ed58b6768c89caaa6266f70c6ab9cc999245bb61a69e"
     },
     {
       "source_id": "mk-ldbis",
@@ -379,8 +379,8 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "cc6c576286bf90c0287ca4e870c6d748bf6cfdace12d874fcacbb502aacc32f0",
-      "normalized_sha256": "6ed2b9b3011c4f591d2232f30d7ae80fd58a0cd2e053bea0556e33ad677ecb6f"
+      "page_sha256": "0add03c54080a7f0ae055917653583a0e4c264e3ee4cf75f3d979f93f2e92699",
+      "normalized_sha256": "4328cbdfa903940cd6b372e72a9246713eedc96ccc3d1f494f5e42bd9e23f69a"
     },
     {
       "source_id": "mk-ldbis",
@@ -393,8 +393,8 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "b2e4d01060e4c521aa40fbf89e48eeb713508d4e8273a113900bb166e35026f6",
-      "normalized_sha256": "dffbb14bb3a9fa12380d44d9f8cc871ee028c1313fd0ea75782891f72b821097"
+      "page_sha256": "342770d6c14e2266b8a9c94f05cf0f2f506be07b1938f1dc6d686c85297e688b",
+      "normalized_sha256": "eb0df97d83efdae92b4c38b57d6c8382409320d85b77b171dbb6c1792de2307d"
     },
     {
       "source_id": "mk-ldbis",
@@ -407,8 +407,8 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "544f72fdd79f48f5d490a0d8bc9ab3d193ed2258ca1c6cc727f9c8e34cf2c088",
-      "normalized_sha256": "2e2e4212f250cf5aa3f97c552172427304a7731b1e92ba486a510441ec95fb1d"
+      "page_sha256": "b10d97c46b2a25729b56331d47d162fb60805293117de93ab9d231459447b643",
+      "normalized_sha256": "fb90a89d8d22a9ecc24e6b2bde2e651dab9da79fc8deb0d24c1e6160e1a32987"
     }
   ],
   "counts": {
@@ -422,19 +422,75 @@
     "secondary_signals": 7
   },
   "diff": {
-    "state": "SOURCE_CHURN_NO_LEGAL_CANDIDATE",
+    "state": "CHANGE_DETECTED",
     "changed_pages": [
       {
         "source_id": "mk-sobranie",
         "url": "https://www.sobranie.mk/zakon-za-sobranieto-na-rm.nspx",
         "instrument_key": null,
         "change": "CONTENT_FINGERPRINT_CHANGED",
-        "previous_normalized_sha256": "6242f62497833853ec88b733ba028e2f3e4defd9b33489e05909cf67fbe8517d",
-        "current_normalized_sha256": "50b758b18b427b538bb2b76fa734001185039b4913875fad6d187ecfe796bcb9"
+        "previous_normalized_sha256": "50b758b18b427b538bb2b76fa734001185039b4913875fad6d187ecfe796bcb9",
+        "current_normalized_sha256": "e5b6e3536d4f523465f5a464df15242c76c8dbe7ca3de71b5ef3b8d1eb5fa781"
+      },
+      {
+        "source_id": "mk-ldbis",
+        "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=41212",
+        "instrument_key": "mk:zi",
+        "change": "CONTENT_FINGERPRINT_CHANGED",
+        "previous_normalized_sha256": "6ed2b9b3011c4f591d2232f30d7ae80fd58a0cd2e053bea0556e33ad677ecb6f",
+        "current_normalized_sha256": "4328cbdfa903940cd6b372e72a9246713eedc96ccc3d1f494f5e42bd9e23f69a"
+      },
+      {
+        "source_id": "mk-ldbis",
+        "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=10431",
+        "instrument_key": "mk:zro",
+        "change": "CONTENT_FINGERPRINT_CHANGED",
+        "previous_normalized_sha256": "1dd7f482851a054840d905561931ffdc21dffca24a479db75f0bb616ad366959",
+        "current_normalized_sha256": "d9015d45874736b4e28e4b1a854276574db9a20c1ac1ee99d3c6c925b402304f"
+      },
+      {
+        "source_id": "mk-ldbis",
+        "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=20679",
+        "instrument_key": "mk:zkp",
+        "change": "CONTENT_FINGERPRINT_CHANGED",
+        "previous_normalized_sha256": "1456c634773d583072a98cc74ab2feacf0d180629126886837ddc72a47ca2390",
+        "current_normalized_sha256": "0bcf2b4bf11a3a28aad2f36214613757a502d5e43615982934f95213de776153"
+      },
+      {
+        "source_id": "mk-ldbis",
+        "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=4312",
+        "instrument_key": "mk:kz",
+        "change": "CONTENT_FINGERPRINT_CHANGED",
+        "previous_normalized_sha256": "dffbb14bb3a9fa12380d44d9f8cc871ee028c1313fd0ea75782891f72b821097",
+        "current_normalized_sha256": "eb0df97d83efdae92b4c38b57d6c8382409320d85b77b171dbb6c1792de2307d"
+      },
+      {
+        "source_id": "mk-ldbis",
+        "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=6538",
+        "instrument_key": "mk:zoo",
+        "change": "CONTENT_FINGERPRINT_CHANGED",
+        "previous_normalized_sha256": "2e2e4212f250cf5aa3f97c552172427304a7731b1e92ba486a510441ec95fb1d",
+        "current_normalized_sha256": "fb90a89d8d22a9ecc24e6b2bde2e651dab9da79fc8deb0d24c1e6160e1a32987"
+      },
+      {
+        "source_id": "mk-ldbis",
+        "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=37954",
+        "instrument_key": "mk:zoup",
+        "change": "CONTENT_FINGERPRINT_CHANGED",
+        "previous_normalized_sha256": "f05bf1e1f675a241c0cd35b4f2ddb2a4be5ae9afff264748d1106bbf454ca171",
+        "current_normalized_sha256": "7fa042b767d7e35c98a4ed58b6768c89caaa6266f70c6ab9cc999245bb61a69e"
+      },
+      {
+        "source_id": "mk-ldbis",
+        "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=34057",
+        "instrument_key": "mk:zs",
+        "change": "CONTENT_FINGERPRINT_CHANGED",
+        "previous_normalized_sha256": "3d8b7a0220a2e1266212dc9a06dca2aa878193835e9faf23d79a243422a2c89b",
+        "current_normalized_sha256": "64cbf44927c556c1e10c24436a9cb3ba6e408e089b7fc7393142e96c66ec4819"
       }
     ],
     "new_candidates": [],
     "removed_candidates": [],
-    "requires_human_review": false
+    "requires_human_review": true
   }
 }
