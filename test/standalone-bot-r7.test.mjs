@@ -69,3 +69,12 @@ test("Pages curated sync publishes and parity-checks both R7 assets",()=>{
   assert.match(pages,/node --check assets\/standalone-bot-r7\.js/);
   assert.match(pages,/Professional Workbench R7/);
 });
+
+
+test("R7 hover and focus states preserve readable contrast",()=>{
+  assert.match(css,/html\.professional-r7 #menu nav button:hover/);
+  assert.match(css,/color:#fff3c7!important/);
+  assert.match(css,/background:#123652!important/);
+  assert.match(css,/html\.professional-r7 \.vnext-workflow-grid button:hover/);
+  assert.doesNotMatch(css,/html\.professional-r7 #menu nav (?:button|a):hover[^}]*background:\s*#fff/i);
+});
