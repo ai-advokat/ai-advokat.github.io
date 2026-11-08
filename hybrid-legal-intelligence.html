@@ -597,7 +597,7 @@ function traceApi(path,status,data,started){
 }
 function boundedSnapshot(value){
   let text="";try{text=JSON.stringify(value)}catch{text=String(value||"")}
-  return text.slice(0,6000);
+  return text.slice(0,280);
 }
 function pinCurrentResult(){
   const raw=state.raw[state.module];
@@ -613,22 +613,21 @@ function buildHybridHandoffPrompt(){
   const trace=state.trace.slice(-12).map(t=>t.module+" "+t.status+" "+t.endpoint).join(" → ");
   const modeLabels={manual:"MANUAL",hybrid:"HYBRID",auto:"AUTO_RESEARCH"};
   const focusLabels={all:"ALL_ALLOWED_WEB",mk_official:"OFFICIAL_MK_ONLY",eu_echr_official:"OFFICIAL_EU_ECHR_ONLY"};
-  return [
+  const prompt=[
     "HYBRID CONTROL R3 HANDOFF · "+HYBRID_CONTROL_R3_VERSION,
     "Research control: "+(modeLabels[state.controlMode]||"HYBRID"),
     "Web source focus: "+(focusLabels[state.sourceFocus]||"ALL_ALLOWED_WEB"),
     "Selected legal context: "+currentInstrumentTitle()+(articleValue()?" · член "+articleValue():""),
     "",
-    "PINNED SOURCES — must be read before synthesis, but pinning does NOT promote authority status:",
+    "PINNED SOURCE SNAPSHOTS — read these first, but pinning does NOT promote authority status:",
     pins||"(none)",
     "",
     "VISIBLE EXECUTION TRACE:",
     trace||"(no Hybrid API steps recorded)",
     "",
-    "BOUNDARY: preserve each source's existing provenance/review/HOLD state. Discovery, ECHR HOLD, working diff and open-data signals must not be promoted to reviewed/current authority. Re-verify current law before consequential use. HUMAN GATE REQUIRED.",
-    "",
-    "Прашање/задача: "
+    "BOUNDARY: preserve each source's existing provenance/review/HOLD state. Discovery, ECHR HOLD, working diff and open-data signals must not be promoted to reviewed/current authority. Re-verify current law before consequential use. HUMAN GATE REQUIRED."
   ].join("\n");
+  return (prompt.length>3600?prompt.slice(0,3600)+"\n[bounded handoff snapshot]":prompt)+"\n\nПрашање/задача: ";
 }
 function handoffHybrid(target){
   state.controlMode=$("controlMode")?.value||"hybrid";
