@@ -97,15 +97,30 @@ jobs:
 
       - name: Require case-law evidence gate schema before runtime deploy
         shell: bash
+        env:
+          PRODUCTION_D1_ID: 12ece285-74bb-4f27-a025-2dbd1be6c59a
         run: |
           set -euo pipefail
-          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
-            --command "SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER)=53; SELECT name FROM sqlite_master WHERE type='table' AND name IN ('case_law_evidence_gates','case_law_echr_comparison_gates') ORDER BY name;" \
+          query='SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER)=53; SELECT name FROM sqlite_master WHERE type="table" AND name IN ("case_law_evidence_gates","case_law_echr_comparison_gates") ORDER BY name;'
+          node -e 'const fs=require("fs");fs.writeFileSync("/tmp/runtime-sync-d1-query.json",JSON.stringify({sql:process.argv[1]}))' "$query"
+          curl --fail --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/runtime-sync-d1-query.json \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$PRODUCTION_D1_ID/query" \
             | tee /tmp/runtime-sync-case-law-schema.txt
-          grep -q '"version": "53"' /tmp/runtime-sync-case-law-schema.txt
-          grep -q '"name": "case_law_evidence_gates"' /tmp/runtime-sync-case-law-schema.txt
-          grep -q '"name": "case_law_echr_comparison_gates"' /tmp/runtime-sync-case-law-schema.txt
-          echo "CASE-LAW 0053 PRE-DEPLOY SCHEMA GATE: PASS"
+          node <<'NODE'
+          const fs=require("fs");
+          const body=JSON.parse(fs.readFileSync("/tmp/runtime-sync-case-law-schema.txt","utf8"));
+          if(body.success!==true) throw new Error("Read-only D1 schema query failed");
+          const rows=(body.result||[]).flatMap(r=>r.results||[]);
+          if(!rows.some(r=>String(r.version)==="53")) throw new Error("Production D1 migration 0053 is not active");
+          const names=new Set(rows.map(r=>r.name).filter(Boolean));
+          if(!names.has("case_law_evidence_gates")) throw new Error("case_law_evidence_gates table missing");
+          if(!names.has("case_law_echr_comparison_gates")) throw new Error("case_law_echr_comparison_gates table missing");
+          console.log("CASE-LAW 0053 PRE-DEPLOY SCHEMA GATE: PASS");
+          NODE
 
       - name: Deploy exact main Worker runtime and static assets
         run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/production-runtime-sync-deploy.txt
@@ -208,6 +223,7 @@ jobs:
           path: |
             /tmp/production-runtime-sync-deploy.txt
             /tmp/runtime-sync-case-law-schema.txt
+            /tmp/runtime-sync-d1-query.json
             /tmp/runtime-sync-main.html
             /tmp/runtime-sync-bot.html
             /tmp/runtime-sync-core.js
