@@ -1,4 +1,6 @@
-export const CASE_LAW_CLAIM_GUARD_VERSION="AI_ADVOCAT_CASE_LAW_CLAIM_GUARD_V1";
+import { assessCanonicalCaseLawState } from "./case-law-evidence-gates.js";
+
+export const CASE_LAW_CLAIM_GUARD_VERSION="AI_ADVOCAT_CASE_LAW_CLAIM_GUARD_V1_1";
 
 const REVIEWED_STATUSES=new Set(["approved","reviewed"]);
 const OFFICIAL_COURT_AUTHORITY=new Set([
@@ -58,9 +60,31 @@ export function extractSpecificJudicialClaims(text){
 }
 
 function reviewedSourceText(source){
-  if(!source || source.officialBindingVerified!==true) return "";
-  if(!REVIEWED_STATUSES.has(String(source.humanReviewStatus||"").toLowerCase())) return "";
-  if(!REVIEWED_STATUSES.has(String(source.authorityReviewStatus||"").toLowerCase())) return "";
+  if(!source) return "";
+  const hasEvidenceGateFields=[
+    "remoteContentHashVerified","remote_content_hash_verified","publicationApproved","publication_approved",
+    "humanGateApproved","human_gate_approved","holdingVerified","holding_verified"
+  ].some(k=>Object.prototype.hasOwnProperty.call(source,k)) || source.evidenceGate || source.evidence_gate;
+  if(hasEvidenceGateFields){
+    const gate=source.evidenceGate||source.evidence_gate||assessCanonicalCaseLawState({
+      ...source,
+      source_url:source.url||source.sourceUrl||source.source_url,
+      source_sha256:source.sourceSha256||source.source_sha256,
+      source_status:source.sourceStatus||source.source_status,
+      official_binding_verified:source.officialBindingVerified??source.official_binding_verified,
+      remote_content_hash_verified:source.remoteContentHashVerified??source.remote_content_hash_verified,
+      human_review_status:source.humanReviewStatus||source.human_review_status,
+      authority_review_status:source.authorityReviewStatus||source.authority_review_status,
+      publication_approved:source.publicationApproved??source.publication_approved,
+      human_gate_approved:source.humanGateApproved??source.human_gate_approved,
+      holding_verified:source.holdingVerified??source.holding_verified
+    });
+    if(gate.productionCitable!==true) return "";
+  }else{
+    if(source.officialBindingVerified!==true) return "";
+    if(!REVIEWED_STATUSES.has(String(source.humanReviewStatus||"").toLowerCase())) return "";
+    if(!REVIEWED_STATUSES.has(String(source.authorityReviewStatus||"").toLowerCase())) return "";
+  }
   return [
     source.title,
     source.caseTitle,
