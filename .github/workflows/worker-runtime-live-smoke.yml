@@ -11,6 +11,7 @@ on:
       - "gold-set-review-gate.html"
       - "echr-crosswalk.html"
       - "src/index.js"
+      - "src/echr-crosswalk-f0-fast-27.js"
       - "assets/standalone-bot.js"
       - "assets/standalone-bot-vnext.js"
       - "assets/standalone-bot-vnext.css"
@@ -186,15 +187,20 @@ jobs:
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
           curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/hybrid/capabilities" -o /tmp/worker-hybrid-capabilities.json
           curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/hybrid/instruments" -o /tmp/worker-hybrid-instruments.json
+          curl -fsSL --retry 5 --retry-delay 2 "$BASE/api/hybrid/echr-crosswalk?q=B20" -o /tmp/worker-hybrid-echr.json
           node <<'NODE'
           const c=require("/tmp/worker-hybrid-capabilities.json");
           const i=require("/tmp/worker-hybrid-instruments.json");
+          const e=require("/tmp/worker-hybrid-echr.json");
           const expected=["article_time_machine","law_bylaw_graph","article_case_law_graph","legal_effective_date_calendar","visual_consolidation_diff","open_data_legal_evidence","official_e_service_navigator","eid_human_handoff","gold_set_review_gate","echr_domestic_case_law_crosswalk"];
           if(!c.ok) throw new Error("hybrid capabilities not ok");
           for(const x of expected) if(!c.capabilities?.includes(x)) throw new Error("missing hybrid capability "+x);
           if(c.authorityBoundary?.autonomousCurrentLawPromotion!==false) throw new Error("hybrid authority boundary weakened");
           if(!i.ok || !Array.isArray(i.instruments)) throw new Error("hybrid instrument catalogue unavailable");
-          console.log("HYBRID R2 WORKBENCH + DISCOVERY APIS: PASS");
+          if(!e.ok || e.count!==1 || e.records?.[0]?.id!=="B20") throw new Error("ECHR crosswalk B20 lookup failed");
+          if(e.records?.[0]?.status!=="HOLD") throw new Error("ECHR crosswalk HOLD weakened");
+          if(e.authorityBoundary?.productionGo!==false || e.authorityBoundary?.reviewedAuthorityPromoted!==false || e.authorityBoundary?.humanGateRequired!==true) throw new Error("ECHR crosswalk authority boundary weakened");
+          console.log("HYBRID R2 WORKBENCH + ECHR CROSSWALK + DISCOVERY APIS: PASS");
           NODE
 
       - name: Verify Public Legal Data and e-Services live APIs
@@ -295,6 +301,7 @@ jobs:
             /tmp/worker-orchestrator.json
             /tmp/worker-hybrid-capabilities.json
             /tmp/worker-hybrid-instruments.json
+            /tmp/worker-hybrid-echr.json
             /tmp/worker-public-legal-capabilities.json
             /tmp/worker-public-legal-services.json
             /tmp/worker-public-legal-open-data.json
