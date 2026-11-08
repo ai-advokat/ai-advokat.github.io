@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "gate_type": "case_law_evidence_review",
+  "decision_state": "pending",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "decision_basis": null,
+  "records": [
+    {
+      "case_key": "REPLACE-WITH-EXACT-CASE-KEY",
+      "boundary": {
+        "start_page": null,
+        "start_y_pt": null,
+        "end_page": null,
+        "end_y_pt": null,
+        "reviewer_1_approved": false,
+        "reviewer_2_approved": false,
+        "attribution_verified": false,
+        "complete_unit_verified": false,
+        "warning_flags": [],
+        "warning_disposition": null
+      },
+      "temporal": {
+        "article_text_verified": false,
+        "historical_law_required": false,
+        "historical_authentic_gazette_verified": false,
+        "transitional_rules_verified": false,
+        "current_applicability_verified": false,
+        "contrary_authority_checked": false
+      },
+      "legal_review": {"status": "pending"},
+      "authority_review": {"status": "pending"},
+      "holding_review": {"status": "pending"},
+      "release": {
+        "publication_approved": false,
+        "human_gate_approved": false
+      },
+      "reviewer_evidence_reference": "REPLACE-WITH-EVIDENCE-REFERENCE",
+      "reviewer_notes": null
+    }
+  ],
+  "notes": "Source binding is necessary but not sufficient. Set release approvals true only after boundary, article/temporal, contrary-authority, legal, holding and authority reviews are independently complete."
+}
