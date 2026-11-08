@@ -262,7 +262,7 @@ test("CLI13 claimed verified official binding fails without exact evidence and H
   );
 });
 
-test("CLI14 exact verified binding evidence leaves discovery only after Human Gate",()=>{
+test("CLI14 exact verified binding evidence remains discovery-only until canonical evidence gates pass",()=>{
   const row=caseRow({
     official_binding_verified:true,
     source_binding:{
@@ -279,8 +279,10 @@ test("CLI14 exact verified binding evidence leaves discovery only after Human Ga
   assert.match(out.sql,/official_primary/);
   const provenanceLine=out.sql.split("\n").find(line=>line.includes("INSERT INTO case_law_provenance"));
   assert.ok(provenanceLine);
-  assert.match(provenanceLine,/,0,1,/);
+  assert.match(provenanceLine,/,1,1,/);
   assert.match(provenanceLine,/'approved'/);
+  assert.match(out.sql,/INSERT INTO case_law_evidence_gates/);
+  assert.match(out.sql,/SOURCE_BOUND_REVIEW_REQUIRED/);
 });
 
 test("CLI15 verified binding rejects URL or hash mismatch",()=>{
@@ -346,4 +348,50 @@ test("CLI17 malformed extraction audit hash fails closed",()=>{
     })])),
     /Invalid extracted_text_sha256/
   );
+});
+
+
+test("CLI18 production-citable evidence gate persists reviewed statuses and discovery_only=0",()=>{
+  const row=caseRow({
+    official_binding_verified:true,
+    human_review_status:"reviewed",
+    authority_review_status:"reviewed",
+    legal_review_status:"reviewed",
+    holding_review_status:"reviewed",
+    holding_verified:true,
+    start_page:1,start_y:100,end_page:2,end_y:600,
+    start_boundary_independent_signoff:true,
+    end_boundary_independent_signoff:true,
+    attribution_independent_signoff:true,
+    complete_unit_accepted:true,
+    warning_flags:[],
+    warning_disposition:"NO_PRIOR_AUTOMATED_WARNING",
+    current_applicability:true,
+    contrary_case_law:true,
+    publication_approved:true,
+    human_gate_approved:true,
+    source_binding:{
+      verification_method:"direct_https_retrieval_sha256",
+      remote_content_hash_verified:true,
+      source_url:"https://www.vrhoven.sud.mk/test",
+      source_sha256:"a".repeat(64),
+      human_gate_status:"approved",
+      reviewed_by:"Source reviewer",
+      reviewed_at:"2026-11-08T18:00:00+01:00"
+    },
+    evidence_review:{
+      reviewer_evidence_reference:"pack-1",
+      reviewer_notes:"complete",
+      reviewed_by:"Legal reviewer",
+      reviewed_at:"2026-11-08T18:30:00+01:00"
+    }
+  });
+  const out=generateCaseLawImportSql(ndjson([manifest(),row]));
+  assert.equal(out.evidenceGatePersisted,true);
+  assert.match(out.sql,/PRODUCTION_CITABLE_AUTHORITY/);
+  const provenanceLine=out.sql.split("\n").find(line=>line.includes("INSERT INTO case_law_provenance"));
+  assert.ok(provenanceLine);
+  assert.match(provenanceLine,/,0,1,/);
+  assert.match(out.sql,/case_law_evidence_gates/);
+  assert.match(out.sql,/'reviewed'/);
 });
