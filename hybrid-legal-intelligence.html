@@ -255,7 +255,7 @@ a{color:inherit}
         <article class="guide-step"><span class="guide-step-no">06</span><h4>Open Data Evidence</h4><p>Пребарајте правно релевантни јавни сетови од data.gov.mk. Користете ги за discovery, фактичка проверка и доказна трага, а underlying official record проверете го пред правен заклучок.</p></article>
         <article class="guide-step"><span class="guide-step-no">07</span><h4>Official e‑Services</h4><p>Најдете официјална услуга што создава правно релевантен документ или административен чекор — уверение, имотен лист, даночна потврда, лиценца, дозвола и слично.</p></article>
         <article class="guide-step"><span class="guide-step-no">08</span><h4>eID + Human Handoff</h4><p>Проверете eID услови, прилози, надлежност и рокови. AI Advokat подготвува и насочува; <b>човекот го прави финалното поднесување</b> на официјалниот портал.</p></article>
-        <article class="guide-step"><span class="guide-step-no">09</span><h4>Gold Set Review Gate</h4><p>За candidate судски записи: двојна boundary/source проверка, посебен правен ревизор, warning/anomaly disposition, provenance manifest и Human Gate evidence pack. Модулот <b>не може сам да објави или да промовира reviewed authority</b>.</p></article>
+        <article class="guide-step"><span class="guide-step-no">09</span><h4>Gold Set Review Gate</h4><p>За candidate судски записи: двојна boundary/source проверка, посебен правен ревизор, fail-closed warning/anomaly disposition, provenance manifest и независен Human Gate preflight. Модулот <b>не може сам да објави или да промовира reviewed authority</b>.</p></article>
       </div>
 
       <div class="guide-rule" aria-label="Правила за правна тежина">
@@ -400,7 +400,7 @@ a{color:inherit}
   </section>
 
   <section class="panel" data-panel="gold">
-    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">09</div><div><h3>Gold Set Review Gate</h3><p>Контролиран премин од candidate/discovery запис кон Human Gate-ready evidence pack со три независни човечки улоги.</p></div></div><span class="chip warn">Publication NO-GO · Human-only promotion</span></div>
+    <div class="panel-head"><div class="panel-title-wrap"><div class="panel-index">09</div><div><h3>Gold Set Review Gate</h3><p>Контролиран премин од candidate/discovery запис кон Human Gate-ready evidence pack со две boundary проверки, посебна правна ревизија и независен Human Gate preflight.</p></div></div><span class="chip warn">Publication NO-GO · Human-only promotion</span></div>
     <div class="panel-body">
       <div class="metrics">
         <div class="metric"><small>Layer 1</small><strong>Boundary Reviewer 1</strong></div>
@@ -411,8 +411,8 @@ a{color:inherit}
       <div class="result-host">
         <div class="notice warn"><b>Hard boundary:</b> дури и HUMAN_GATE_READY запис останува <code>publication_approved:false</code> и <code>reviewed_authority_promoted:false</code>. Финалното одобрување е надвор од offline review модулот.</div>
         <div class="case-card">
-          <div class="case-top"><div><div class="eyebrow">PARAGRAF · F0-2Y · v2.0</div><div class="case-title">Gold Set Review Gate</div></div><span class="chip ok">browser-local · no server upload</span></div>
-          <p>Вклучува двојна изворна проверка, трет независен правен ревизор, reviewer references, conflict declarations, warning/source-anomaly queue, SHA-256 manifest, hardened JSON/CSV import-export и Human Gate pack.</p>
+          <div class="case-top"><div><div class="eyebrow">PARAGRAF · F0-2Y · v2.1</div><div class="case-title">Gold Set Review Gate</div></div><span class="chip ok">browser-local · no server upload</span></div>
+          <p>Вклучува двојна изворна проверка, трет независен правен ревизор, четврти Human Gate preflight проверувач, reviewer references, conflict declarations, warning/source-anomaly queue, full-record SHA-256 manifest, hardened JSON/CSV import-export и Human Gate pack.</p>
           <p><a class="btn primary" href="/gold-set-review-gate.html">Отвори Gold Set Review Gate →</a></p>
         </div>
       </div>
