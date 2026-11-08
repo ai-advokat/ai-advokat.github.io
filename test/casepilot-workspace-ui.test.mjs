@@ -5,6 +5,8 @@ import fs from "node:fs";
 const html=fs.readFileSync(new URL("../casepilot-workspace.html",import.meta.url),"utf8");
 const js=fs.readFileSync(new URL("../assets/casepilot-workspace-ui.js",import.meta.url),"utf8");
 const toolsPage=fs.readFileSync(new URL("../professional-tools.html",import.meta.url),"utf8");
+const pagesSync=fs.readFileSync(new URL("../.github/workflows/sync-pages-runtime.yml",import.meta.url),"utf8");
+const rootSmoke=fs.readFileSync(new URL("../.github/workflows/root-reliability-live-smoke.yml",import.meta.url),"utf8");
 
 test("workspace UI never persists membership key in browser storage",()=>{
   assert.doesNotMatch(js,/localStorage|sessionStorage|document\.cookie|indexedDB/);
@@ -145,4 +147,13 @@ test("successful private upload starts governed AI intake",()=>{
   assert.match(block,/Започнува AI intake/);
   assert.match(block,/extractPendingCaseDocuments/);
   assert.match(block,/зачувани и прочитани/);
+});
+
+test("CasePilot Excel intake is part of the curated public release manifest",()=>{
+  assert.match(pagesSync,/casepilot-workspace\.html/);
+  assert.match(pagesSync,/assets\/casepilot-workspace-ui\.js/);
+  assert.match(pagesSync,/XLS · XLSX/);
+  assert.match(rootSmoke,/pages-casepilot\.html/);
+  assert.match(rootSmoke,/pages-casepilot-ui\.js/);
+  assert.match(rootSmoke,/spreadsheetml\.sheet/);
 });
