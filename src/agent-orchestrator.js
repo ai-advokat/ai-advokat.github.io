@@ -563,8 +563,26 @@ function boundedProviderTimeout(envValue,fallbackMs,deadlineAt,{minStartMs=8000,
   return {ok:true,timeoutMs:Math.min(stageMs,remainingMs),remainingMs};
 }
 
+function normalizeWebAllowedDomains(values=[]){
+  if(!Array.isArray(values)) return Object.freeze([]);
+  const out=[];
+  for(const value of values){
+    const domain=String(value||"").trim().toLowerCase().replace(/^https?:\/\//,"").replace(/\/.*$/,"");
+    if(!domain || !/^[a-z0-9.-]+$/.test(domain) || domain.length>253 || out.includes(domain)) continue;
+    out.push(domain);
+    if(out.length>=100) break;
+  }
+  return Object.freeze(out);
+}
+function governedWebSearchTool(allowedDomains=[]){
+  const domains=normalizeWebAllowedDomains(allowedDomains);
+  return domains.length
+    ? {type:"web_search",filters:{allowed_domains:[...domains]}}
+    : {type:"web_search"};
+}
+
 async function runOneBoundedSpecialist(env,{
-  agentId,input,missionProfile,corpusContext=[],webSearchEnabled=false,deadlineAt=null
+  agentId,input,missionProfile,corpusContext=[],webSearchEnabled=false,webAllowedDomains=[],deadlineAt=null
 }={}){
   const role=ROLE_BY_ID[agentId];
   if(!role) return {ok:false,error:"unknown_specialist",agentId,providerCalls:0};
@@ -590,7 +608,7 @@ async function runOneBoundedSpecialist(env,{
     max_output_tokens:highDepthGovernance ? 700 : 500,
     store:false,
     ...(useWeb ? {
-      tools:[{type:"web_search"}],
+      tools:[governedWebSearchTool(webAllowedDomains)],
       tool_choice:"required",
       include:["web_search_call.action.sources"]
     } : {})
@@ -653,7 +671,7 @@ async function runOneBoundedSpecialist(env,{
 }
 
 export async function runBoundedSpecialists(env,{
-  plan,input,corpusContext=[],webSearchEnabled=false,deadlineAt=null
+  plan,input,corpusContext=[],webSearchEnabled=false,webAllowedDomains=[],deadlineAt=null
 }={}){
   if(!specialistExecutionRequired(plan)){
     return Object.freeze({
@@ -677,6 +695,7 @@ export async function runBoundedSpecialists(env,{
     missionProfile:plan?.legalIntelligenceEngine?.mission_profile?.id,
     corpusContext,
     webSearchEnabled,
+    webAllowedDomains,
     deadlineAt
   })));
 
@@ -771,6 +790,7 @@ export async function runOpenAIOrchestrator(env, {
   externalContext=[],
   externalResearchEnabled=false,
   webSearchEnabled=false,
+  webAllowedDomains=[],
   attachments=[],
   history=[],
   maxOutputTokens=1600,
@@ -816,6 +836,7 @@ export async function runOpenAIOrchestrator(env, {
         input:String(researchInput||input||""),
         corpusContext:effectiveCorpusContext,
         webSearchEnabled:webSearchEnabled && externalResearchEnabled,
+        webAllowedDomains,
         deadlineAt
       });
   if(!specialistStage.ok){
@@ -944,7 +965,7 @@ export async function runOpenAIOrchestrator(env, {
     && env?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"
     && specialistStage.webSearchUsed!==true;
   if(chiefNeedsWeb){
-    tools.push({type:"web_search"});
+    tools.push(governedWebSearchTool(webAllowedDomains));
   }
 
   const body={
@@ -1081,6 +1102,7 @@ export async function runOpenAIOrchestrator(env, {
     conversationPersistence:"browser_session_only_store_false",
     historyItemsUsed:sessionHistory.length,
     toolMode:webSearchUsed ? "web_search_enabled" : "no_external_tools",
+    webAllowedDomains:webSearchUsed ? [...normalizeWebAllowedDomains(webAllowedDomains)] : [],
     humanGate:"output_not_authorized_for_autonomous_legal_reliance",
     specialistExecution:{
       required:specialistStage.required===true,
