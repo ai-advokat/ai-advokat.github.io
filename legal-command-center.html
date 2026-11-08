@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Legal Command Center · AI Advokat</title>
+<meta name="description" content="AI Advokat Legal Command Center — bounded matter memory, agent builder, horizon scanning and Human Gate observability.">
+<style>
+:root{--bg:#07131d;--panel:#0d1f2d;--line:#274254;--text:#eef6fb;--muted:#a9bdca;--accent:#7fd4ff;--gold:#d7b673;--ok:#9ce0b0;--warn:#ffd88a;--bad:#ff9f9f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}.wrap{width:min(1180px,92vw);margin:auto}.top{border-bottom:1px solid var(--line);background:#091925}.topin{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:14px 0}.brand{font-weight:900;color:var(--text);text-decoration:none}.nav{display:flex;gap:13px;flex-wrap:wrap}.nav a{color:var(--muted);text-decoration:none}main{padding:42px 0 70px}.eyebrow{font-size:.78rem;font-weight:900;letter-spacing:.08em;color:var(--accent)}h1{font-size:clamp(2.1rem,5vw,4.2rem);line-height:1.02;margin:.3em 0}.lead,.muted{color:var(--muted)}.chips{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.chip{border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:800}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:18px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}.card h2,.card h3{margin-top:0}label{display:block;margin:10px 0 5px;font-weight:750}input,textarea,select{width:100%;background:#081824;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:10px}textarea{min-height:90px}button{margin-top:12px;border:1px solid #3a6f8d;background:#102b3d;color:var(--text);border-radius:10px;padding:10px 13px;font-weight:850;cursor:pointer}.out{margin-top:13px;background:#081824;border:1px solid var(--line);border-radius:10px;padding:12px;white-space:pre-wrap;overflow:auto;min-height:74px}.gate{margin-top:24px;border-left:4px solid var(--gold);padding:16px 18px;background:#0a1b28;border-radius:10px;color:var(--muted)}.gate strong{color:var(--text)}footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap topin"><a class="brand" href="/">AI Advokat</a><nav class="nav"><a href="/agent-architecture.html">Architecture</a><a href="/proactive-legal-agents.html">Proactive Agents</a><a href="/casepilot-workspace.html">CasePilot</a></nav></div></header>
+<main class="wrap">
+<div class="eyebrow">LEGAL OPERATIONS · COMMAND CENTER V1</div>
+<h1>Една контролна точка за агентите, предметите и промените.</h1>
+<p class="lead">Оваа страница не прикажува измислени LIVE метрики. Состојбата се пресметува само од внесени/добиени records. Scheduled fetch, external transmission и canonical promotion остануваат заклучени додека production runtime не ги активира.</p>
+<div class="chips"><span class="chip ok">Local deterministic tools</span><span class="chip ok">Human Gate visible</span><span class="chip warn">Scheduled fetch · LOCKED</span><span class="chip warn">External actions · LOCKED</span></div>
+
+<div class="grid">
+<section class="card">
+<h2>Matter Memory</h2><p class="muted">Чува само bounded workflow preferences; не смее raw client facts или privileged text.</p>
+<label>Output language</label><input id="memLang" value="mk">
+<label>Citation style</label><input id="memCite" value="source-first">
+<label>Preferred structure</label><input id="memStruct" value="Issue, Rule, Analysis, Human Gate">
+<button id="memBtn">Провери memory</button><div class="out" id="memOut">Нема проверка.</div>
+</section>
+
+<section class="card">
+<h2>Agent Builder</h2><p class="muted">Креира bounded agent spec само од дозволени capabilities.</p>
+<label>Agent ID</label><input id="agentId" value="regulatory_reviewer">
+<label>Label</label><input id="agentLabel" value="Regulatory Reviewer">
+<label>Purpose</label><textarea id="agentPurpose">Проверува candidate регулаторни промени и ги подготвува за човечка верификација.</textarea>
+<label>Capabilities</label><select id="agentCaps" multiple size="6"></select>
+<label>Source boundary</label><input id="agentSources" value="Official Gazette, Sobranie, Ministry source">
+<button id="agentBtn">Креирај bounded spec</button><div class="out" id="agentOut">Нема spec.</div>
+</section>
+
+<section class="card">
+<h2>Horizon Scanner</h2><p class="muted">Споредува две реални observations. Разлика = candidate change, никогаш автоматски „важечко право“.</p>
+<label>Source ID</label><input id="hzId" value="official-gazette">
+<label>Previous fingerprint</label><input id="hzPrev" value="aaaaaaaaaaaaaaaa">
+<label>Current fingerprint</label><input id="hzNow" value="bbbbbbbbbbbbbbbb">
+<label>Previous version</label><input id="hzPrevV" value="v1">
+<label>Current version</label><input id="hzNowV" value="v2">
+<button id="hzBtn">Спореди observations</button><div class="out" id="hzOut">Нема споредба.</div>
+</section>
+
+<section class="card">
+<h2>Command Center State</h2><p class="muted">Агрегира само вистински внесени state records од алатките на оваа страница.</p>
+<button id="cmdBtn">Освежи snapshot</button><div class="out" id="cmdOut">Нема snapshot.</div>
+</section>
+</div>
+
+<div class="gate"><strong>Human Gate.</strong> Овие функции можат да анализираат и да создадат review queue. Не можат да потпишат, поднесат, испратат надворешна комуникација, да прифатат договор, да промовираат canonical authority или да гарантираат правен исход.</div>
+</main>
+<footer><div class="wrap">AI Advokat · Source-First Legal Intelligence · Human authority retained.</div></footer>
+
+<script type="module">
+import { sanitizeMatterMemory,matterMemoryAudit } from "./src/matter-memory.js";
+import { BUILDER_CAPABILITY_POOL,buildCustomAgent,validateCustomAgent } from "./src/agent-builder.js";
+import { sourceObservation,compareObservations } from "./src/horizon-scanning-engine.js";
+import { commandCenterSnapshot } from "./src/legal-command-center.js";
+
+const state={memory:null,horizonEvents:[],agents:[],runs:[]};
+const out=(id,v)=>document.getElementById(id).textContent=JSON.stringify(v,null,2);
+const caps=document.getElementById("agentCaps");
+for(const c of BUILDER_CAPABILITY_POOL){const o=document.createElement("option");o.value=c;o.textContent=c;caps.appendChild(o)}
+["verify_source","verify_version"].forEach(v=>{const o=[...caps.options].find(x=>x.value===v);if(o)o.selected=true});
+
+document.getElementById("memBtn").onclick=()=>{
+ try{
+  const raw={outputLanguage:memLang.value,citationStyle:memCite.value,preferredStructure:memStruct.value.split(",").map(x=>x.trim()).filter(Boolean)};
+  state.memory=sanitizeMatterMemory(raw);
+  out("memOut",{audit:matterMemoryAudit(raw),memory:state.memory});
+ }catch(e){out("memOut",{error:e.message})}
+};
+document.getElementById("agentBtn").onclick=()=>{
+ try{
+  const a=buildCustomAgent({id:agentId.value,label:agentLabel.value,purpose:agentPurpose.value,
+   capabilities:[...agentCaps.selectedOptions].map(x=>x.value),
+   sourceBoundary:agentSources.value.split(",").map(x=>x.trim()).filter(Boolean)});
+  state.agents.push(a); out("agentOut",{validation:validateCustomAgent(a),agent:a});
+ }catch(e){out("agentOut",{error:e.message})}
+};
+document.getElementById("hzBtn").onclick=()=>{
+ try{
+  const common={sourceId:hzId.value,title:"Observed legal source",url:"https://source.invalid/review-required",jurisdiction:"MK"};
+  const p=sourceObservation({...common,observedAt:"2026-11-07T10:00:00Z",fingerprint:hzPrev.value,versionLabel:hzPrevV.value});
+  const c=sourceObservation({...common,observedAt:"2026-11-08T10:00:00Z",fingerprint:hzNow.value,versionLabel:hzNowV.value});
+  const d=compareObservations(p,c); state.horizonEvents=[d]; out("hzOut",d);
+ }catch(e){out("hzOut",{error:e.message})}
+};
+document.getElementById("cmdBtn").onclick=()=>{
+ try{out("cmdOut",commandCenterSnapshot({runs:state.runs,horizonEvents:state.horizonEvents,memories:state.memory?[state.memory]:[]}))}
+ catch(e){out("cmdOut",{error:e.message})}
+};
+</script>
+</body></html>
