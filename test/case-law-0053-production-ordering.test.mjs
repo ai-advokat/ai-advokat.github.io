@@ -31,7 +31,8 @@ test("production runtime deploy is fail-closed until 0053 schema exists",()=>{
   assert.ok(gate>0,"0053 pre-deploy gate missing");
   assert.ok(deploy>gate,"Worker deploy must occur after 0053 pre-deploy gate");
   const block=runtime.slice(gate,deploy);
-  assert.match(block,/"version": "53"/);
+  assert.match(block,/CAST\(version AS INTEGER\)=53/);
+  assert.match(block,/String\(r\.version\)===\"53\"/);
   assert.match(block,/"name": "case_law_evidence_gates"/);
   assert.match(block,/"name": "case_law_echr_comparison_gates"/);
   assert.match(block,/set -euo pipefail/);
