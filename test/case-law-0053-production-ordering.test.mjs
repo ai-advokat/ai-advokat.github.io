@@ -33,8 +33,10 @@ test("production runtime deploy is fail-closed until 0053 schema exists",()=>{
   const block=runtime.slice(gate,deploy);
   assert.match(block,/CAST\(version AS INTEGER\)=53/);
   assert.match(block,/String\(r\.version\)===\"53\"/);
-  assert.match(block,/"name": "case_law_evidence_gates"/);
-  assert.match(block,/"name": "case_law_echr_comparison_gates"/);
+  assert.match(block,/case_law_evidence_gates/);
+  assert.match(block,/case_law_echr_comparison_gates/);
+  assert.match(block,/names\.has\("case_law_evidence_gates"\)/);
+  assert.match(block,/names\.has\("case_law_echr_comparison_gates"\)/);
   assert.match(block,/set -euo pipefail/);
 });
 
