@@ -135,7 +135,8 @@
     "test:hg2-c-credential-separation": "node --no-warnings --test test/hg2-c-credential-separation.test.mjs",
     "test:hg2-c-post-write-evidence": "node --no-warnings --test test/hg2-c-post-write-evidence.test.mjs",
     "verify:hg2-c-post-write-evidence": "node scripts/verify-hg2-c-post-write-evidence.mjs evidence/hg2-c/post-write-evidence.json",
-    "test:proactive-agents": "node --no-warnings --test test/proactive-legal-agents.test.mjs"
+    "test:proactive-agents": "node --no-warnings --test test/proactive-legal-agents.test.mjs",
+    "test:agent-platform": "node --no-warnings --test test/proactive-legal-agents.test.mjs test/legal-agent-platform.test.mjs"
   },
   "devDependencies": {
     "wrangler": "4.156.0"
