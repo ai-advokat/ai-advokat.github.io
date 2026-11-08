@@ -131,3 +131,12 @@ test("dual-bot parity: both voice surfaces support half-duplex auto-send auto-sp
   assert.match(externalCore,/requestSubmit\(\)/);
   assert.match(externalCore,/voice\?\.speak\?\.\(spokenAnswer/);
 });
+
+test("dual-bot parity: Hybrid R3 handoff and official web focus exist on both bot surfaces",()=>{
+  assert.match(mainJs,/AI_ADVOCAT_HYBRID_CONTROL_R3/);
+  assert.match(mainJs,/aiAdvokatHybridControlR3Handoff/);
+  assert.match(externalCore,/HYBRID_CONTROL_R3_VERSION/);
+  assert.match(externalCore,/aiAdvokatHybridControlR3Handoff/);
+  assert.match(mainJs,/webDomainPreset/);
+  assert.match(externalHtml,/id="webDomainPreset"/);
+});

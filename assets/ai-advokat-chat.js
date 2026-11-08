@@ -83,6 +83,7 @@
 
   let abortController=null;
   let mode="auto";
+  let webDomainPreset="all";
   let attachments=[];
   let guideRegistryPromise=null;
   let currentId=null;
@@ -1000,6 +1001,7 @@
           sessionId:currentId,
           mode:activeMode(),
           webSearch:activeMode()==="web",
+          webDomainPreset,
           guideIds:guides.map(g=>g.id),
           guideDocuments,
           history:historyForApi,
@@ -1594,6 +1596,7 @@
 
     if(evidenceTab==="context"){
       evidenceBody.append(evidenceCard("Активен разговор",String(chat?.title||"Нов разговор"),{meta:(chat?.messages?.length||0)+" пораки · режим "+String(mode||"auto")}));
+      evidenceBody.append(evidenceCard("Web source focus",webDomainPreset==="mk_official"?"Само официјални MK извори":webDomainPreset==="eu_echr_official"?"Само EU / ECHR официјални извори":"Сите дозволени web извори"));
       if(user) evidenceBody.append(evidenceCard("Последно прашање",String(user.text||"").slice(0,1400)));
       if(m){
         evidenceBody.append(evidenceCard("Последен AI runtime",String(m.meta||"provider/runtime не е наведен"),{meta:"Историјата е само во оваа browser сесија."}));
@@ -1666,7 +1669,14 @@
           <button type="button" data-materials-mode="auto">Автоматски</button>
           <button type="button" data-materials-mode="library">Само библиотека</button>
           <button type="button" data-materials-mode="web">Веб истражување</button>
-        </div><small>Режимот го користи истиот AI Advokat governed backend; Web режимот зависи од активниот runtime.</small></section>
+        </div><small>Режимот го користи истиот AI Advokat governed backend; Web режимот зависи од активниот runtime.</small>
+        <label style="display:block;margin-top:10px;font-weight:800">Web source focus
+          <select data-web-domain-preset style="display:block;width:100%;margin-top:5px">
+            <option value="all">Сите дозволени web извори</option>
+            <option value="mk_official">Само официјални MK извори</option>
+            <option value="eu_echr_official">Само EU / ECHR официјални извори</option>
+          </select>
+        </label><small>Official focus се спроведува серверски преку web-search domain filter и не важи за FREE/source-only патеките.</small></section>
         <section class="ai-materials-section"><strong>⇩ Извоз на последниот AI одговор</strong><div class="ai-evidence-actions">
           <button type="button" data-materials-export="docx">▧ DOCX</button>
           <button type="button" data-materials-export="pdf">▧ PDF</button>
@@ -1699,6 +1709,11 @@
       mode=String(b.dataset.materialsMode||"auto");syncModeUi();
       d.querySelectorAll("[data-materials-mode]").forEach(x=>x.classList.toggle("active",x===b));
     }));
+    const domainPreset=d.querySelector("[data-web-domain-preset]");
+    if(domainPreset){
+      domainPreset.value=webDomainPreset;
+      domainPreset.addEventListener("change",()=>{webDomainPreset=String(domainPreset.value||"all")});
+    }
     d.querySelectorAll("[data-materials-export]").forEach(b=>b.addEventListener("click",()=>{
       const m=latestAssistantForMaterials();if(!m) return;
       const fmt=String(b.dataset.materialsExport||"txt");
@@ -2397,6 +2412,30 @@
     });
   });
 
+  const AI_ADVOCAT_HYBRID_CONTROL_R3_VERSION="AI_ADVOCAT_HYBRID_CONTROL_R3";
+  function consumeHybridControlR3Handoff(){
+    let payload=null;
+    try{
+      const raw=sessionStorage.getItem("aiAdvokatHybridControlR3Handoff");
+      if(!raw) return;
+      sessionStorage.removeItem("aiAdvokatHybridControlR3Handoff");
+      payload=JSON.parse(raw);
+    }catch{
+      try{sessionStorage.removeItem("aiAdvokatHybridControlR3Handoff")}catch{}
+      return;
+    }
+    if(!payload || payload.version!==AI_ADVOCAT_HYBRID_CONTROL_R3_VERSION) return;
+    const createdAt=Number(payload.createdAt||0);
+    if(!createdAt || Date.now()-createdAt>15*60*1000) return;
+    const preset=String(payload.webDomainPreset||"all");
+    webDomainPreset=["all","mk_official","eu_echr_official"].includes(preset)?preset:"all";
+    const prompt=String(payload.prompt||"").trim().slice(0,20000);
+    if(!prompt) return;
+    input.value=prompt;autoSize();
+    document.getElementById("ai-advokat-chat")?.scrollIntoView({behavior:"smooth",block:"start"});
+    setTimeout(()=>{if(payload.autoSend===true) send(prompt);else input.focus()},320);
+  }
+
   const AI_ADVOCAT_RADAR_HANDOFF_VERSION="AI_ADVOCAT_RADAR_HANDOFF_V1";
   function consumeCaseLawRadarHandoff(){
     let payload=null;
@@ -2451,6 +2490,7 @@
   try{
     load();syncModeUi();render();renderAttachments();autoSize();refreshGuideVaultStatus();renderWorkspaceEvidence();syncChatMembershipState();
     restoreProfessionalAccess().catch(()=>{});
+    consumeHybridControlR3Handoff();
     consumeCaseLawRadarHandoff();
     window.AIAdvokatFrontendGuard?.markReady?.("main");
   }catch(error){

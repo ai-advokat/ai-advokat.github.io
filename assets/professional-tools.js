@@ -1,7 +1,8 @@
-import { analyzeLegalDocument } from "/src/legal-analyzer.js";
+import { analyzeLegalDocument, buildReviewTable } from "/src/legal-analyzer.js";
 
 const $=id=>document.getElementById(id);
 let current=null;
+let currentBatch=null;
 
 for(const button of document.querySelectorAll(".tab")){
   button.addEventListener("click",()=>{
@@ -204,6 +205,67 @@ function render(a){
   }
   $("reviewBody").appendChild(tr);
 }
+
+function reviewRowCells(r){
+  return [
+    r.filename,
+    labelType(r.documentType),
+    Array.isArray(r.authority)?(r.authority.join("; ")||"—"):(r.authority||"—"),
+    r.referenceNumber||"—",
+    r.decisionDate||"—",
+    [...(r.laws||[]),...(r.articles||[]).map(x=>"чл. "+x)].join("; ")||"—",
+    (r.deadlines||[]).join("; ")||"—",
+    r.sourceVerification||"not_verified",
+    r.humanGate||"required"
+  ];
+}
+function renderBatchRows(rows=[]){
+  const body=$("batchReviewBody");body.innerHTML="";
+  if(!rows.length){body.innerHTML='<tr><td colspan="9" class="muted">Нема batch анализа.</td></tr>';return}
+  for(const r of rows){
+    const tr=document.createElement("tr");
+    for(const value of reviewRowCells(r)){const td=document.createElement("td");td.textContent=value;tr.appendChild(td)}
+    body.appendChild(tr);
+  }
+}
+function batchCsv(table){
+  const columns=["filename","documentType","authority","referenceNumber","decisionDate","laws","articles","deadlines","amounts","sourceVerification","humanGate"];
+  const lines=[columns.join(",")];
+  for(const r of table.rows||[]){
+    lines.push(columns.map(k=>{
+      const v=Array.isArray(r[k])?r[k].join(" | "):(r[k]??"");
+      return '"'+String(v).replaceAll('"','""')+'"';
+    }).join(","));
+  }
+  return "\uFEFF"+lines.join("\n");
+}
+$("batchFiles")?.addEventListener("change",()=>{
+  const files=[...($("batchFiles").files||[])];
+  $("batchStatus").textContent=files.length?files.length+" документ(и) избрани · локално.":"Нема избран пакет.";
+});
+$("analyzeBatch")?.addEventListener("click",async()=>{
+  const files=[...($("batchFiles").files||[])];
+  if(!files.length){$("batchStatus").textContent="Изберете најмалку еден документ.";return}
+  if(files.length>100){$("batchStatus").textContent="Максимум 100 документи по пакет.";return}
+  $("analyzeBatch").disabled=true;$("batchStatus").textContent="Се чита и анализира локалниот пакет…";
+  try{
+    const docs=[];
+    for(const file of files){
+      if(Number(file.size||0)>2_000_000) throw new Error(file.name+" е поголем од 2 MB");
+      docs.push({filename:file.name,text:await file.text(),sourceVerification:"not_verified"});
+    }
+    currentBatch=buildReviewTable(docs);
+    renderBatchRows(currentBatch.rows||[]);
+    $("exportBatchCsv").disabled=false;$("exportBatchJson").disabled=false;
+    $("batchStatus").textContent=(currentBatch.rows||[]).length+" документи анализирани локално · Human Gate required.";
+  }catch(error){
+    currentBatch=null;renderBatchRows([]);
+    $("exportBatchCsv").disabled=true;$("exportBatchJson").disabled=true;
+    $("batchStatus").textContent="Batch анализата не успеа: "+String(error?.message||error);
+  }finally{$("analyzeBatch").disabled=false}
+});
+$("exportBatchCsv")?.addEventListener("click",()=>{if(currentBatch)download(batchCsv(currentBatch),"legal-analyzer-batch-review.csv","text/csv;charset=utf-8")});
+$("exportBatchJson")?.addEventListener("click",()=>{if(currentBatch)download(JSON.stringify(currentBatch,null,2),"legal-analyzer-batch-review.json","application/json")});
 
 function labelType(type){
   const labels={
