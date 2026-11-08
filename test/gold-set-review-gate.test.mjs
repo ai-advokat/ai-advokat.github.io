@@ -84,6 +84,8 @@ test("Gold Gate header navigation exposes the core legal ecosystem",()=>{
   assert.match(page,/href="\/bot\/"/);
   assert.match(page,/href="\/hybrid-legal-intelligence\.html"/);
   assert.match(page,/href="\/public-legal-data-services\.html"/);
+  assert.match(page,/href="\/echr-crosswalk\.html"/);
+  assert.match(page,/⌘ Hybrid 10/);
   assert.match(page,/aria-current="page"/);
   assert.match(page,/◆ Gold Review Gate/);
 });
