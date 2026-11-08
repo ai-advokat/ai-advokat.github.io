@@ -8,11 +8,13 @@ on:
       - "case-law-curation.html"
       - "consolidator/index.html"
       - "hybrid-legal-intelligence.html"
+      - "professional-tools.html"
       - "public-legal-data-services.html"
       - "gold-set-review-gate.html"
       - "echr-crosswalk.html"
       - "bot/index.html"
       - "assets/ai-advokat-chat.js"
+      - "assets/professional-tools.js"
       - "assets/case-law-static-fallback.js"
       - "assets/ai-advokat-chat.css"
       - "assets/ai-advokat-voice.mjs"
@@ -63,6 +65,7 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REF" = "refs/heads/main"
           node --check assets/ai-advokat-chat.js
+          node --check assets/professional-tools.js
           node --check assets/ai-advokat-voice.mjs
           node --check assets/case-law-static-fallback.js
           node --check assets/frontend-runtime-guard.js
@@ -83,17 +86,21 @@ jobs:
           test -f case-law-curation.html
           test -f consolidator/index.html
           test -f hybrid-legal-intelligence.html
+          test -f professional-tools.html
           test -f public-legal-data-services.html
           test -f gold-set-review-gate.html
           test -f echr-crosswalk.html
           grep -q 'Current-Law Watch' consolidator/index.html
           grep -q 'Hybrid Legal Intelligence R2' hybrid-legal-intelligence.html
+          grep -q 'AI_ADVOCAT_HYBRID_CONTROL_R3' hybrid-legal-intelligence.html
           grep -q '/api/hybrid/instruments' hybrid-legal-intelligence.html
           grep -q '/api/hybrid/consolidations' hybrid-legal-intelligence.html
           grep -q 'Open Data Legal Evidence' hybrid-legal-intelligence.html
           grep -q 'Official e‑Service Navigator' hybrid-legal-intelligence.html
           grep -q 'eID + Human Handoff' hybrid-legal-intelligence.html
           grep -q 'Водилка · Како функционира Hybrid Legal Intelligence' hybrid-legal-intelligence.html
+          grep -q 'Batch Review · до 100 документи' professional-tools.html
+          grep -q 'buildReviewTable' assets/professional-tools.js
           grep -q 'Public Legal Data & e‑Services' public-legal-data-services.html
           grep -q 'Водилка · Како се користи Public Legal Data & e‑Services' public-legal-data-services.html
           grep -q 'Gold Set Review Gate v2.1' gold-set-review-gate.html
@@ -133,11 +140,13 @@ jobs:
             case-law-curation.html
             consolidator/index.html
             hybrid-legal-intelligence.html
+            professional-tools.html
             public-legal-data-services.html
             gold-set-review-gate.html
             echr-crosswalk.html
             bot/index.html
             assets/ai-advokat-chat.js
+            assets/professional-tools.js
             assets/case-law-static-fallback.js
             assets/ai-advokat-chat.css
             assets/ai-advokat-voice.mjs
@@ -185,7 +194,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin gh-pages:refs/remotes/origin/gh-pages
-          for f in index.html case-law-curation.html consolidator/index.html hybrid-legal-intelligence.html public-legal-data-services.html gold-set-review-gate.html echr-crosswalk.html bot/index.html assets/ai-advokat-chat.js assets/ai-advokat-chat.css assets/ai-advokat-voice.mjs assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/standalone-bot.css assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js assets/standalone-bot-vnext.css assets/standalone-bot-toolkit.js assets/standalone-bot-toolkit.css; do
+          for f in index.html case-law-curation.html consolidator/index.html hybrid-legal-intelligence.html professional-tools.html public-legal-data-services.html gold-set-review-gate.html echr-crosswalk.html bot/index.html assets/ai-advokat-chat.js assets/professional-tools.js assets/ai-advokat-chat.css assets/ai-advokat-voice.mjs assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/standalone-bot.css assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js assets/standalone-bot-vnext.css assets/standalone-bot-toolkit.js assets/standalone-bot-toolkit.css; do
             main_blob="$(git rev-parse "$GITHUB_SHA:$f")"
             pages_blob="$(git rev-parse "origin/gh-pages:$f")"
             test "$main_blob" = "$pages_blob"

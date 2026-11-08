@@ -77,7 +77,10 @@ test("Pages sync publishes and verifies the Hybrid R2 workbench",()=>{
   assert.match(pagesSync,/- "hybrid-legal-intelligence\.html"/);
   assert.match(pagesSync,/test -f hybrid-legal-intelligence\.html/);
   assert.match(pagesSync,/grep -q 'Hybrid Legal Intelligence R2' hybrid-legal-intelligence\.html/);
-  assert.match(pagesSync,/for f in index\.html case-law-curation\.html consolidator\/index\.html hybrid-legal-intelligence\.html public-legal-data-services\.html gold-set-review-gate\.html echr-crosswalk\.html bot\/index\.html/);
+  for(const artifact of [
+    "index.html","case-law-curation.html","consolidator/index.html","hybrid-legal-intelligence.html",
+    "professional-tools.html","public-legal-data-services.html","gold-set-review-gate.html","echr-crosswalk.html","bot/index.html"
+  ]) assert.ok(pagesSync.includes(artifact),"Pages parity manifest missing "+artifact);
 });
 
 test("Worker and root release smokes verify Hybrid R2 live",()=>{
