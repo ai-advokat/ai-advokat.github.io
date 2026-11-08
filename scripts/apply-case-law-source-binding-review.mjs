@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import fs from "node:fs";
+import { assessCanonicalCaseLawState } from "../src/case-law-evidence-gates.js";
 
-export const CASE_LAW_BINDING_REVIEW_VERSION="1.0.0";
+export const CASE_LAW_BINDING_REVIEW_VERSION="1.1.0";
 
 function requiredText(value,label,max=1000){
   const text=String(value??"").normalize("NFKC").trim();
@@ -72,8 +73,18 @@ export function applyCaseLawSourceBindingReview(ndjsonText,approval){
     }
 
     approvedCount++;
+    const gateInputs={
+      ...row,
+      source_status:"official",
+      official_binding_verified:true,
+      remote_content_hash_verified:true,
+      human_review_status:"reviewed",
+      binding_review_status:"approved"
+    };
+    const evidenceGate=assessCanonicalCaseLawState(gateInputs);
     return {
       ...row,
+      source_status:"official",
       source_binding:{
         ...evidence,
         human_gate_status:"approved",
@@ -82,9 +93,17 @@ export function applyCaseLawSourceBindingReview(ndjsonText,approval){
         decision_basis:decisionBasis,
         official_binding_verified:true
       },
-      discovery_only:false,
+      // Source binding closes only the provenance gate. The record remains
+      // discovery/non-citable until boundary, legal/temporal, authority and
+      // final Human Gate reviews are complete.
+      discovery_only:true,
       official_binding_verified:true,
-      binding_review_status:"approved"
+      remote_content_hash_verified:true,
+      human_review_status:"reviewed",
+      binding_review_status:"approved",
+      migration_state:evidenceGate.state,
+      evidence_gate:evidenceGate,
+      production_eligible:false
     };
   });
 
@@ -96,7 +115,7 @@ export function applyCaseLawSourceBindingReview(ndjsonText,approval){
   const allCasesApproved=approvedCount===cases.length;
   const finalRows=out.map(row=>row.type==="case_law_manifest"?{
     ...row,
-    discovery_only:!allCasesApproved,
+    discovery_only:true,
     binding_required:!allCasesApproved,
     binding_review:{
       version:CASE_LAW_BINDING_REVIEW_VERSION,
