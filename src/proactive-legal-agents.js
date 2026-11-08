@@ -3,7 +3,7 @@
 // adapted to AI Advokat Source-First + Human Gate doctrine.
 // No filing, signing, external transmission, corpus promotion, or legal-status declaration.
 
-export const PROACTIVE_LEGAL_AGENTS_VERSION="1.0.0";
+export const PROACTIVE_LEGAL_AGENTS_VERSION="1.1.0";
 
 export const AGENT_CAPABILITIES=Object.freeze({
   horizon_scanner:Object.freeze({
@@ -71,6 +71,62 @@ export const WORKFLOW_TEMPLATES=Object.freeze({
     agents:["contract_reviewer","authority_verifier","deliverable_builder"],
     phases:["intake","term_extraction","playbook_compare","deviation_review","verification","human_review"],
     scheduleEligible:true
+  }),
+  due_diligence_review:Object.freeze({
+    id:"due_diligence_review",
+    label:"Due Diligence Review",
+    agents:["contract_reviewer","matter_analyst","authority_verifier","deliverable_builder"],
+    phases:["intake","document_map","term_extraction","risk_map","verification","human_review"],
+    scheduleEligible:false
+  }),
+  evidence_review:Object.freeze({
+    id:"evidence_review",
+    label:"Evidence & Contradiction Review",
+    agents:["matter_analyst","litigation_strategist","authority_verifier","deliverable_builder"],
+    phases:["intake","fact_map","evidence_linking","contradiction_review","gap_review","human_review"],
+    scheduleEligible:false
+  }),
+  legal_research_memo:Object.freeze({
+    id:"legal_research_memo",
+    label:"Legal Research Memo",
+    agents:["matter_analyst","authority_verifier","deliverable_builder"],
+    phases:["question","source_research","authority_ranking","claim_check","memo_draft","human_review"],
+    scheduleEligible:false
+  }),
+  compliance_review:Object.freeze({
+    id:"compliance_review",
+    label:"Compliance Review",
+    agents:["horizon_scanner","matter_analyst","authority_verifier","deliverable_builder"],
+    phases:["scope","source_check","control_map","gap_review","verification","human_review"],
+    scheduleEligible:true
+  }),
+  employment_review:Object.freeze({
+    id:"employment_review",
+    label:"Employment Matter Review",
+    agents:["matter_analyst","authority_verifier","deliverable_builder"],
+    phases:["intake","fact_timeline","source_research","risk_map","verification","human_review"],
+    scheduleEligible:false
+  }),
+  obligation_monitoring:Object.freeze({
+    id:"obligation_monitoring",
+    label:"Contract Obligation Monitoring",
+    agents:["contract_reviewer","horizon_scanner","deliverable_builder"],
+    phases:["portfolio_scope","obligation_extract","deadline_queue","change_check","nudge","human_review"],
+    scheduleEligible:true
+  }),
+  authority_update:Object.freeze({
+    id:"authority_update",
+    label:"Authority Update Review",
+    agents:["horizon_scanner","authority_verifier","litigation_strategist","deliverable_builder"],
+    phases:["matter_scope","change_scan","authority_compare","impact_note","verification","human_review"],
+    scheduleEligible:true
+  }),
+  fact_graph_review:Object.freeze({
+    id:"fact_graph_review",
+    label:"Fact & Evidence Graph Review",
+    agents:["matter_analyst","litigation_strategist","deliverable_builder"],
+    phases:["matter_map","claim_graph","evidence_graph","contradictions","gaps","human_review"],
+    scheduleEligible:false
   })
 });
 
