@@ -75,3 +75,5 @@ https://ai-advokat.github.io/kolumni/
 https://ai-advokat.github.io/kolumni/digitalna-zarabotka/
 https://ai-advokat.github.io/scholar/digital-earnings/
 https://ai-advokat.github.io/scholar/digital-earnings/paper.pdf
+https://ai-advokat.github.io/proactive-legal-agents.html
+https://ai-advokat.github.io/legal-command-center.html

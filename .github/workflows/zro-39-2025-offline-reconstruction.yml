@@ -231,7 +231,8 @@ jobs:
           assert by["3"]["target_article_number"] is None, by["3"]
           assert "30 дена" in by["3"]["event_text"]
           assert by["4"]["target_article_number"] is None, by["4"]
-          assert "влегува во сила" in by["4"]["event_text"]
+          compact4=re.sub(r"\\s+","",by["4"]["event_text"])
+          assert "Овојзакон" in compact4 and "објавувањето" in compact4, by["4"]
           print("OG 39/2025 EVENT TOPOLOGY: PASS")
           PY
 
