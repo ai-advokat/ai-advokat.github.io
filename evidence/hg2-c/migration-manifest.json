@@ -6,9 +6,9 @@
   "staging_account_id": "0fee10e2bd9a2183d16eb0d73f13dfce",
   "staging_database_name": "ai-advokat-staging-db",
   "staging_database_id": "309f72b8-8711-47fc-bea7-fbd1d649561d",
-  "migration_count": 52,
+  "migration_count": 53,
   "first_migration": "migrations/0001_initial_schema.sql",
-  "last_migration": "migrations/0052_hybrid_legal_intelligence_r1.sql",
+  "last_migration": "migrations/0053_case_law_evidence_gates.sql",
   "critical_human_review": [
     "migrations/0033_casepilot_audit_event_schema.sql",
     "migrations/0034_casepilot_authority_classification_unique_issue.sql",
@@ -326,6 +326,12 @@
       "path": "migrations/0052_hybrid_legal_intelligence_r1.sql",
       "git_blob_sha": "d4c1666dbc53843d404fd68d17201c3194540c27",
       "size_bytes": 4612
+    },
+    {
+      "ordinal": 53,
+      "path": "migrations/0053_case_law_evidence_gates.sql",
+      "git_blob_sha": "483962caca49648c8f56f00aa05a6acb84929c64",
+      "size_bytes": 4510
     }
   ]
 }
