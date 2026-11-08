@@ -600,7 +600,13 @@ function boundedSnapshot(value){
   return text.slice(0,280);
 }
 function pinCurrentResult(){
-  const raw=state.raw[state.module];
+  let raw=state.raw[state.module];
+  if((!raw||typeof raw!=="object")&&state.module==="gold"){
+    raw={ok:true,module:"gold",title:"Gold Set Review Gate v2.1",state:"HUMAN_GATE_CONTROL",publicationApproved:false,reviewedAuthorityPromoted:false,url:"/gold-set-review-gate.html"};
+  }
+  if((!raw||typeof raw!=="object")&&state.module==="echr"){
+    raw={ok:true,module:"echr",title:"F0-FAST-27 ECHR Crosswalk",records:["B16","B20","B25"],state:"HOLD",productionGo:false,legalVerified:"0/30",url:"/echr-crosswalk.html"};
+  }
   if(!raw||typeof raw!=="object"){alert("Прво извршете го активниот Hybrid модул.");return}
   const key=[state.module,currentInstrumentKey(),articleValue()].join("|");
   const label=state.module.toUpperCase()+" · "+currentInstrumentTitle()+(articleValue()?" · член "+articleValue():"");
