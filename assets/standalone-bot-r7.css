@@ -78,6 +78,39 @@ html.professional-r7 #menu nav{
 }
 html.professional-r7 #menu nav p{color:var(--r7-muted)!important}
 
+
+/* R7 contrast guard: legacy global nav/dialog hover rules must never create
+ * light surfaces with white text inside the dark Professional Workbench. */
+html.professional-r7 #menu nav button,
+html.professional-r7 #menu nav a{
+  color:#d9e8f4!important;
+  background:transparent!important;
+}
+html.professional-r7 #menu nav button:hover,
+html.professional-r7 #menu nav a:hover,
+html.professional-r7 #menu nav button:focus-visible,
+html.professional-r7 #menu nav a:focus-visible{
+  color:#fff3c7!important;
+  background:#123652!important;
+  border-color:#35698e!important;
+}
+html.professional-r7 nav button:hover,
+html.professional-r7 nav a:hover{
+  color:#eef7ff!important;
+  background-color:#123652!important;
+}
+html.professional-r7 .vnext-workflow-grid button{
+  color:#dceaf5!important;
+  background:#0a2841!important;
+  border-color:#1f4f70!important;
+}
+html.professional-r7 .vnext-workflow-grid button:hover,
+html.professional-r7 .vnext-workflow-grid button:focus-visible{
+  color:#fff3c7!important;
+  background:#123652!important;
+  border-color:#d7b673!important;
+}
+
 /* Product / left rail */
 html.professional-r7 .vnext-side-head{padding:2px 2px 7px}
 html.professional-r7 .vnext-product{gap:11px}
