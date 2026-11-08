@@ -1,6 +1,6 @@
 import { assessEchrComparisonGate } from "./case-law-evidence-gates.js";
 
-export const ECHR_CROSSWALK_VERSION="PARAGRAF_F0_FAST_27_V1_1";
+export const ECHR_CROSSWALK_VERSION="PARAGRAF_F0_FAST_27_V1";
 export const ECHR_CROSSWALK_SOURCE_SHA256="3169baf559f9f372b1f7de543c19ee63fddfd83d900138a18c5198f4d3ad5aba";
 
 export const ECHR_CROSSWALK_RECORDS=Object.freeze([
