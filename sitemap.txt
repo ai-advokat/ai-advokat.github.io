@@ -82,3 +82,4 @@ https://ai-advokat.github.io/contract-intelligence.html
 https://ai-advokat.github.io/fact-evidence-graph.html
 https://ai-advokat.github.io/connector-library.html
 https://ai-advokat.github.io/zoki-legal-ai-guide.html
+https://ai-advokat.github.io/proactive-agent-runtime.html
