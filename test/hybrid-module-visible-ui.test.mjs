@@ -79,3 +79,17 @@ test("Core legal tools are explained for users and Gold is present in mobile nav
   assert.match(root,/data-header-mobile="public-legal"/);
   assert.match(root,/data-header-mobile="gold"/);
 });
+
+test("Standalone bot exposes the complete new legal-intelligence workflow",()=>{
+  const bot=fs.readFileSync("bot/index.html","utf8");
+  assert.match(bot,/Водилка · Како да ги користиш новите функции во надворешниот AI Advokat/);
+  for(const label of [
+    "01 · Time Machine","02 · Law ↔ Bylaw","03 · Case-Law","04 · Legal Calendar",
+    "05 · Consolidation Diff","06 · Open Data Evidence","07 · Official e‑Services",
+    "08 · Human Handoff","09 · Gold Review Gate"
+  ]) assert.equal(bot.includes(label),true,"external bot guide missing "+label);
+  assert.match(bot,/Hybrid 9 · целосен source-first workflow/);
+  assert.match(bot,/Open Data & e‑Services · evidence \+ eID handoff/);
+  assert.match(bot,/Gold Review Gate v2\.1 · corpus-control \+ Human Gate/);
+  assert.match(bot,/Финалната професионална употреба, поднесување и promotion во reviewed authority остануваат човечка одлука/);
+});
