@@ -6539,6 +6539,20 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   }
 
   const uiMode=["auto","library","web"].includes(payload.mode) ? payload.mode : "auto";
+  const requestedWebDomainPreset=["all","mk_official","eu_echr_official"].includes(String(payload.webDomainPreset||""))
+    ? String(payload.webDomainPreset)
+    : "all";
+  const WEB_DOMAIN_PRESETS=Object.freeze({
+    all:Object.freeze([]),
+    mk_official:Object.freeze([
+      "slvesnik.com.mk","ldbis.pravda.gov.mk","pravda.gov.mk","sobranie.mk",
+      "ustavensud.mk","sud.mk","data.gov.mk","uslugi.gov.mk"
+    ]),
+    eu_echr_official:Object.freeze([
+      "eur-lex.europa.eu","curia.europa.eu","hudoc.echr.coe.int","echr.coe.int","coe.int"
+    ])
+  });
+  const webAllowedDomains=[...(WEB_DOMAIN_PRESETS[requestedWebDomainPreset]||[])];
   let webRequested=uiMode==="web" || payload.webSearch===true;
   const explicitWebRequested=webRequested;
   if(webRequested && env.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED!=="true"){
@@ -7904,6 +7918,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         externalContext:[],
         externalResearchEnabled:webRequested,
         webSearchEnabled:webRequested,
+        webAllowedDomains,
         attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
         history:historyCheck.history,
         maxOutputTokens:freeCapacityHandoff
@@ -7975,6 +7990,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         externalContext:[],
         externalResearchEnabled:retryUsesWeb,
         webSearchEnabled:retryUsesWeb,
+        webAllowedDomains,
         attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
         history:historyCheck.history,
         maxOutputTokens:Math.min(6000,Math.max(maxOutputTokens,incompleteRecoveryBudget,missionProfile==="L3_CONSEQUENTIAL"?5200:maxOutputTokens)),
@@ -8739,6 +8755,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       versionBasis:articleBundle.versionBasis
     } : null,
     webSearch:webRequested ? "enabled" : "not_requested",
+    webDomainPreset:requestedWebDomainPreset,
+    webAllowedDomains:webRequested ? webAllowedDomains : [],
     attachmentsUsed:attachmentCheck.attachments.length,
     totalInputFilesUsed:attachmentCheck.attachments.length+guideDocumentCheck.attachments.length,
     reasoningEffort,
