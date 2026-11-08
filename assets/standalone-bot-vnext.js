@@ -158,10 +158,18 @@ function buildShell(){
       <button data-vnext-action="public-evidence"><span class="vnext-nav-symbol" aria-hidden="true">⌕</span><span>Јавни докази</span></button>
       <button data-vnext-action="professional-ecosystem"><span class="vnext-nav-symbol" aria-hidden="true">◆</span><span>Pro Ecosystem</span></button>
       <button data-vnext-action="justice-daily"><span class="vnext-nav-symbol" aria-hidden="true">◉</span><span>Justice Daily</span></button>
-      <button data-vnext-action="cases"><span class="vnext-nav-symbol" aria-hidden="true">⚖</span><span>Судска практика</span></button>
+      <button data-vnext-action="cases"><span class="vnext-nav-symbol" aria-hidden="true">⚖</span><span>Судска пракса</span></button>
+      <button data-vnext-action="proactive-runtime"><span class="vnext-nav-symbol" aria-hidden="true">⚡</span><span>Proactive Runtime</span></button>
+      <button data-vnext-action="proactive-agents"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Proactive Agents</span></button>
+      <button data-vnext-action="legal-command-center"><span class="vnext-nav-symbol" aria-hidden="true">⌘</span><span>Legal Command Center</span></button>
+      <button data-vnext-action="contract-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>Contract Intelligence</span></button>
+      <button data-vnext-action="fact-evidence-graph"><span class="vnext-nav-symbol" aria-hidden="true">◫</span><span>Fact & Evidence Graph</span></button>
+      <button data-vnext-action="connector-library"><span class="vnext-nav-symbol" aria-hidden="true">⛓</span><span>Connector Library</span></button>
+      <button data-vnext-action="review-vault"><span class="vnext-nav-symbol" aria-hidden="true">▦</span><span>Review Tables / Vault</span></button>
       <button data-vnext-action="casepilot"><span class="vnext-nav-symbol" aria-hidden="true">▣</span><span>CasePilot</span></button>
       <button data-vnext-action="documents"><span class="vnext-nav-symbol" aria-hidden="true">▧</span><span>Документи</span></button>
       <button data-vnext-action="workflows"><span class="vnext-nav-symbol" aria-hidden="true">◇</span><span>Workflows</span></button>
+      <button data-vnext-action="zoki-guide"><span class="vnext-nav-symbol" aria-hidden="true">?</span><span>Водилка</span></button>
       <button data-vnext-action="review"><span class="vnext-nav-symbol" aria-hidden="true">✓</span><span>Human Gate</span></button>
       <button data-vnext-action="library"><span class="vnext-nav-symbol" aria-hidden="true">◫</span><span>Library</span></button>
     </nav>
@@ -457,10 +465,18 @@ function runAction(action){
   if(action==='professional-ecosystem'){window.AIAdvokatStandaloneToolkits?.openProfessionalEcosystem?.();return;}
   if(action==='justice-daily'){window.AIAdvokatStandaloneToolkits?.openJusticeDaily?.();return;}
   if(action==='review'){openEvidence('human');return;}
+  if(action==='cases'){window.open('/judicial-practice.html','_blank','noopener');return;}
+  if(action==='proactive-runtime'){window.open('/proactive-agent-runtime.html','_blank','noopener');return;}
+  if(action==='proactive-agents'){window.open('/proactive-legal-agents.html','_blank','noopener');return;}
+  if(action==='legal-command-center'){window.open('/legal-command-center.html','_blank','noopener');return;}
+  if(action==='contract-intelligence'){window.open('/contract-intelligence.html','_blank','noopener');return;}
+  if(action==='fact-evidence-graph'){window.open('/fact-evidence-graph.html','_blank','noopener');return;}
+  if(action==='connector-library'){window.open('/connector-library.html','_blank','noopener');return;}
+  if(action==='review-vault'){window.open('/professional-tools.html#batch-review','_blank','noopener');return;}
   if(action==='casepilot'){window.open('/casepilot-workspace.html','_blank','noopener');return;}
-  if(action==='cases'){window.open('/case-law-curation.html','_blank','noopener');return;}
   if(action==='documents'){const d=$('materialsDialog');d?.showModal();setTimeout(()=>qs('.export-actions',d)?.scrollIntoView({block:'center'}),0);return;}
   if(action==='workflows'){$('vnextWorkflowDialog').showModal();return;}
+  if(action==='zoki-guide'){window.open('/zoki-legal-ai-guide.html','_blank','noopener');return;}
   if(action==='library'){$('materialsDialog')?.showModal();return;}
 }
 
