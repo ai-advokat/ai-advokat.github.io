@@ -199,7 +199,10 @@ export function generateCaseLawImportSql(ndjsonText){
       source_url:sourceUrl.href,
       source_sha256:String(item.source_sha256).toLowerCase(),
       official_binding_verified:preBinding.officialBinding===1,
-      remote_content_hash_verified:preAudit.remoteContentHashVerified===1
+      remote_content_hash_verified:preAudit.remoteContentHashVerified===1,
+      // An approved source_binding Human Gate proves only the provenance/source gate.
+      // It does not approve holding, legal applicability, authority or publication.
+      human_review_status:preBinding.officialBinding===1 ? "reviewed" : (item.human_review_status||"pending")
     });
     const caseHumanReviewStatus=preGate.reviewedAuthorityCandidate ? "reviewed" : "pending";
     const authorityHumanReviewStatus=preGate.authorityReviewApproved ? "reviewed" : "pending";
