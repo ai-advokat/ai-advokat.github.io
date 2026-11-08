@@ -248,9 +248,9 @@ export async function runWorkersAIText(env,{
     : undefined;
 
   const boundedTimeout=Math.max(3000,Math.min(45000,Number(timeoutMs)||30000));
-  const callOnce=(callModel,callOptions)=>Promise.race([
+  const callOnce=(callModel,callOptions,callTimeoutMs=boundedTimeout)=>Promise.race([
     env.AI.run(callModel,callOptions,bindingOptions),
-    new Promise((_,reject)=>setTimeout(()=>reject(new Error("workers_ai_timeout_"+boundedTimeout)),boundedTimeout))
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error("workers_ai_timeout_"+callTimeoutMs)),callTimeoutMs))
   ]);
 
   let generated;
@@ -262,14 +262,58 @@ export async function runWorkersAIText(env,{
     generated=await callOnce(primaryModel,primaryOptions);
   }catch(error){
     const failure=classifyWorkersAIProviderFailure(error);
-    return {
-      ok:false,
-      ...failure,
-      model:primaryModel,
-      primaryModel,
-      providerCalls,
-      timeoutMs:boundedTimeout
+    const fallbackModel=resolveWorkersAIEmptyFallbackModel(env);
+    const timeoutFallbackEligible=
+      allowEmptyFallback
+      && failure.error==="workers_ai_timeout"
+      && fallbackModel
+      && fallbackModel!==primaryModel;
+
+    if(!timeoutFallbackEligible){
+      return {
+        ok:false,
+        ...failure,
+        model:primaryModel,
+        primaryModel,
+        providerCalls,
+        timeoutMs:boundedTimeout
+      };
+    }
+
+    // R16 resilience: a Qwen timeout gets exactly one bounded retry on the
+    // stable non-reasoning Workers AI model. This stays inside Workers AI,
+    // adds no web access and does not silently invoke a paid provider.
+    activeModel=fallbackModel;
+    modelFallback={
+      from:primaryModel,
+      to:fallbackModel,
+      reason:"primary_timeout"
     };
+    const fallbackOptions=workersAIRequestOptions({
+      model:fallbackModel,
+      messages:effectiveMessages,
+      maxOutputTokens,
+      temperature,
+      responseFormat,
+      reasoningEffort:"low"
+    });
+    const fallbackTimeoutMs=Math.min(15000,Math.max(12000,boundedTimeout));
+    try{
+      providerCalls+=1;
+      generated=await callOnce(fallbackModel,fallbackOptions,fallbackTimeoutMs);
+    }catch(fallbackError){
+      const fallbackFailure=classifyWorkersAIProviderFailure(fallbackError);
+      return {
+        ok:false,
+        ...fallbackFailure,
+        model:activeModel,
+        primaryModel,
+        providerCalls,
+        timeoutMs:boundedTimeout,
+        fallbackTimeoutMs,
+        modelFallback
+      };
+    }
   }
 
   let text=extractWorkersAIText(generated);
@@ -279,7 +323,7 @@ export async function runWorkersAIText(env,{
   // exposes no disable-thinking switch. For this exact empty-final condition,
   // perform one and only one fallback call with a stable non-reasoning
   // instruction model. Normal responses remain single-call.
-  if(!text && allowEmptyFallback){
+  if(!text && allowEmptyFallback && !modelFallback){
     const fallbackModel=resolveWorkersAIEmptyFallbackModel(env);
     activeModel=fallbackModel;
     modelFallback={
