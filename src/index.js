@@ -424,12 +424,13 @@ function caseDocumentBytesMatchMime(bytes,mimeType){
     return bytes.length>=5
       && bytes[0]===0x25 && bytes[1]===0x50 && bytes[2]===0x44 && bytes[3]===0x46 && bytes[4]===0x2d;
   }
-  if(mimeType==="application/vnd.openxmlformats-officedocument.wordprocessingml.document"){
+  if(mimeType==="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    || mimeType==="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"){
     return bytes.length>=4
       && bytes[0]===0x50 && bytes[1]===0x4b
       && ((bytes[2]===0x03 && bytes[3]===0x04)||(bytes[2]===0x05 && bytes[3]===0x06)||(bytes[2]===0x07 && bytes[3]===0x08));
   }
-  if(mimeType==="application/msword"){
+  if(mimeType==="application/msword" || mimeType==="application/vnd.ms-excel"){
     return bytes.length>=8
       && bytes[0]===0xd0 && bytes[1]===0xcf && bytes[2]===0x11 && bytes[3]===0xe0
       && bytes[4]===0xa1 && bytes[5]===0xb1 && bytes[6]===0x1a && bytes[7]===0xe1;

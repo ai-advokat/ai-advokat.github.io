@@ -31,6 +31,7 @@ jobs:
           node --check src/index.js
           node --check assets/ai-advokat-chat.js
           node --check assets/professional-tools.js
+          node --check assets/casepilot-workspace-ui.js
           node --check assets/ai-advokat-voice.mjs
           node --check assets/standalone-bot-vnext.js
           node --check assets/standalone-bot-toolkit.js
@@ -49,6 +50,8 @@ jobs:
           grep -q '/api/hybrid/instruments' hybrid-legal-intelligence.html
           test -f professional-tools.html
           grep -q 'Batch Review · до 100 документи' professional-tools.html
+          test -f casepilot-workspace.html
+          grep -q 'XLS · XLSX' casepilot-workspace.html
           grep -q 'buildReviewTable' assets/professional-tools.js
           test -f gold-set-review-gate.html
           grep -q 'Gold Set Review Gate v2.1' gold-set-review-gate.html
@@ -71,6 +74,8 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/hybrid-legal-intelligence.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-hybrid.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/professional-tools.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-professional-tools.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/professional-tools.js?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-professional-tools.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/casepilot-workspace.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-casepilot.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/casepilot-workspace-ui.js?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-casepilot-ui.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/gold-set-review-gate.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-gold.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/echr-crosswalk.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-echr.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-voice.mjs || true
@@ -91,6 +96,8 @@ jobs:
               && grep -q 'AI_ADVOCAT_HYBRID_CONTROL_R3' /tmp/pages-hybrid.html 2>/dev/null \
               && grep -q 'Batch Review · до 100 документи' /tmp/pages-professional-tools.html 2>/dev/null \
               && grep -q 'buildReviewTable' /tmp/pages-professional-tools.js 2>/dev/null \
+              && grep -q 'XLS · XLSX' /tmp/pages-casepilot.html 2>/dev/null \
+              && grep -q 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' /tmp/pages-casepilot-ui.js 2>/dev/null \
               && grep -q 'Gold Set Review Gate v2.1' /tmp/pages-gold.html 2>/dev/null \
               && grep -q 'reviewed_authority_promoted:false' /tmp/pages-gold.html 2>/dev/null \
               && grep -q 'F0-FAST-27 · ECHR ↔ Domestic Case-Law Crosswalk' /tmp/pages-echr.html 2>/dev/null \
@@ -235,6 +242,8 @@ jobs:
             /tmp/pages-hybrid.html
             /tmp/pages-professional-tools.html
             /tmp/pages-professional-tools.js
+            /tmp/pages-casepilot.html
+            /tmp/pages-casepilot-ui.js
             /tmp/pages-gold.html
             /tmp/pages-echr.html
             /tmp/pages-voice.mjs

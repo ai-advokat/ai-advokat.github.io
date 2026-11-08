@@ -5,8 +5,10 @@ import {
   CASE_WORKSPACE_VERSION,
   CASE_WORKSPACE_DOCUMENT_LIMIT,
   CASE_WORKSPACE_ALLOWED_PLANS,
+  CASE_WORKSPACE_ALLOWED_MIME_TYPES,
   caseWorkspacePlanAllowed,
   validateCaseWorkspaceCreate,
+  validateCaseDocumentUploadMetadata,
   caseWorkspaceId,
   caseWorkspaceStorageReady,
   caseWorkspaceRuntimeState,
@@ -137,4 +139,23 @@ test("D1 fallback migration is private chunk storage only",()=>{
   assert.match(fallbackMigration,/CREATE TABLE IF NOT EXISTS case_private_object_chunks/);
   assert.match(fallbackMigration,/PRIMARY KEY \(object_key, chunk_index\)/);
   assert.doesNotMatch(fallbackMigration,/legal_articles|article_chunks|legal_instruments/i);
+});
+
+test("secure case workspace accepts governed Excel formats with extension/MIME integrity",()=>{
+  for(const mime of [
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  ]) assert.ok(CASE_WORKSPACE_ALLOWED_MIME_TYPES.includes(mime));
+
+  const xls=validateCaseDocumentUploadMetadata({name:"evidence.xls",mimeType:"application/vnd.ms-excel"});
+  const xlsx=validateCaseDocumentUploadMetadata({name:"damages.xlsx",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  assert.equal(xls.ok,true);
+  assert.equal(xlsx.ok,true);
+
+  const mismatch=validateCaseDocumentUploadMetadata({name:"fake.pdf",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  assert.equal(mismatch.ok,false);
+  assert.ok(mismatch.errors.includes("file_extension_mismatch"));
+
+  assert.match(worker,/mimeType==="application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet"/);
+  assert.match(worker,/mimeType==="application\/vnd\.ms-excel"/);
 });

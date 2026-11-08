@@ -5,6 +5,8 @@ import fs from "node:fs";
 const html=fs.readFileSync(new URL("../casepilot-workspace.html",import.meta.url),"utf8");
 const js=fs.readFileSync(new URL("../assets/casepilot-workspace-ui.js",import.meta.url),"utf8");
 const toolsPage=fs.readFileSync(new URL("../professional-tools.html",import.meta.url),"utf8");
+const pagesSync=fs.readFileSync(new URL("../.github/workflows/sync-pages-runtime.yml",import.meta.url),"utf8");
+const rootSmoke=fs.readFileSync(new URL("../.github/workflows/root-reliability-live-smoke.yml",import.meta.url),"utf8");
 
 test("workspace UI never persists membership key in browser storage",()=>{
   assert.doesNotMatch(js,/localStorage|sessionStorage|document\.cookie|indexedDB/);
@@ -52,22 +54,25 @@ test("professional tools exposes the authenticated secure workspace",()=>{
   assert.match(toolsPage,/Отвори Secure Case Workspace/);
 });
 
-test("private document vault supports drag drop and multi-file PDF Word image selection",()=>{
+test("private document vault supports drag drop and multi-file PDF Word Excel image selection",()=>{
   for(const id of ["caseFileDrop","chooseCaseFiles","caseFileInput","caseFileSelection","uploadCaseFile"]){
     assert.match(html,new RegExp('id="'+id+'"'));
   }
-  assert.match(html,/\.pdf,\.doc,\.docx,\.png,\.jpg,\.jpeg,\.webp/);
+  assert.match(html,/\.pdf,\.doc,\.docx,\.xls,\.xlsx,\.png,\.jpg,\.jpeg,\.webp/);
   assert.match(html,/caseFileInput" type="file" multiple hidden/);
   assert.match(js,/setPendingCaseFiles/);
   assert.match(js,/dataTransfer\?\.files/);
   assert.match(js,/pendingCaseFiles/);
   assert.match(js,/application\/msword/);
+  assert.match(js,/application\/vnd\.ms-excel/);
+  assert.match(js,/application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/);
   assert.match(js,/image\/png/);
   assert.match(js,/image\/jpeg/);
   assert.match(js,/image\/webp/);
 });
 
 test("private document batch is capped at 20 files and 500 MB each",()=>{
+  assert.match(html,/XLS · XLSX/);
   assert.match(html,/до 500 MB по документ · до 20 документи/);
   assert.match(js,/all\.length>20/);
   assert.match(js,/500\*1024\*1024/);
@@ -142,4 +147,13 @@ test("successful private upload starts governed AI intake",()=>{
   assert.match(block,/Започнува AI intake/);
   assert.match(block,/extractPendingCaseDocuments/);
   assert.match(block,/зачувани и прочитани/);
+});
+
+test("CasePilot Excel intake is part of the curated public release manifest",()=>{
+  assert.match(pagesSync,/casepilot-workspace\.html/);
+  assert.match(pagesSync,/assets\/casepilot-workspace-ui\.js/);
+  assert.match(pagesSync,/XLS · XLSX/);
+  assert.match(rootSmoke,/pages-casepilot\.html/);
+  assert.match(rootSmoke,/pages-casepilot-ui\.js/);
+  assert.match(rootSmoke,/spreadsheetml\.sheet/);
 });

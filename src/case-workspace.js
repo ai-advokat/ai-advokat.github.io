@@ -11,6 +11,8 @@ export const CASE_WORKSPACE_ALLOWED_MIME_TYPES=Object.freeze([
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "image/png",
   "image/jpeg",
   "image/webp"
@@ -79,6 +81,8 @@ export function validateCaseDocumentUploadMetadata({name,mimeType,pageCount=null
     "application/pdf":/\.pdf$/i,
     "application/msword":/\.doc$/i,
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document":/\.docx$/i,
+    "application/vnd.ms-excel":/\.xls$/i,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":/\.xlsx$/i,
     "image/png":/\.png$/i,
     "image/jpeg":/\.(?:jpg|jpeg)$/i,
     "image/webp":/\.webp$/i

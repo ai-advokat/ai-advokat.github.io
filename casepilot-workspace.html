@@ -95,7 +95,7 @@
 
   <section id="createCaseCard" class="card hidden" aria-labelledby="createCaseTitle">
     <h2 id="createCaseTitle">Нов предмет</h2>
-    <p class="muted">Внесете краток назив. Потоа веднаш можете да додадете PDF, Word или слики и да побарате анализа.</p>
+    <p class="muted">Внесете краток назив. Потоа веднаш можете да додадете PDF, Word, Excel или слики и да побарате анализа.</p>
     <div class="grid2">
       <div>
         <label for="newCaseTitle">Назив на предмет</label>
@@ -140,7 +140,7 @@
 
     <section class="card">
       <h2>3. Private Document Vault</h2>
-      <p class="muted">PDF, Word и слики се чуваат case-scoped во приватен object storage. D1 содржи само metadata, hash и provenance state. Upload или delete повторно го заклучува Professional Human Gate.</p>
+      <p class="muted">PDF, Word, Excel и слики се чуваат case-scoped во приватен object storage. D1 содржи само metadata, hash и provenance state. Upload или delete повторно го заклучува Professional Human Gate.</p>
       <div class="grid2">
         <div>
           <label for="caseFileInput">Документи</label>
@@ -148,9 +148,9 @@
             <strong>Повлечете и пуштете тука</strong>
             <span class="muted">или изберете од уред / системски датотечен провајдер</span>
             <div class="actions"><button id="chooseCaseFiles" class="secondary" type="button">Избери датотеки</button></div>
-            <div id="caseFileSelection" class="selection">PDF · DOC · DOCX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи во една операција</div>
+            <div id="caseFileSelection" class="selection">PDF · DOC · DOCX · XLS · XLSX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи во една операција</div>
           </div>
-          <input id="caseFileInput" type="file" multiple hidden accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp">
+          <input id="caseFileInput" type="file" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/png,image/jpeg,image/webp">
         </div>
         <div>
           <label for="caseFilePages">Број на страници (опционално)</label>
