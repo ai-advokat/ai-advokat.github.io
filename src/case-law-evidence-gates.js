@@ -40,7 +40,7 @@ export function assessPublicationBoundary(record={}){
   const ready=locatorPresent&&coordinatesPresent&&dualBoundaryVerified&&attribution&&completeUnit&&!unresolvedWarning;
   return Object.freeze({
     version:CASE_LAW_EVIDENCE_GATES_VERSION,
-    locatorPresent,coordinatesPresent,dualBoundaryVerified,attributionVerified:attribution,
+    locatorPresent,coordinatesPresent,reviewer1Approved:first,reviewer2Approved:second,dualBoundaryVerified,attributionVerified:attribution,
     completeUnitVerified:completeUnit,warnings,warningDisposition:disposition||null,
     unresolvedWarning,ready,
     status:ready?"BOUNDARY_VERIFIED":"BOUNDARY_REVIEW_REQUIRED",
