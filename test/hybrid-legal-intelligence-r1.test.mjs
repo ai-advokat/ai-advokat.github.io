@@ -165,8 +165,11 @@ test("HLI9 Human-Gated production schema 0052 is frozen into the migration manif
   assert.match(sql,/human_review_status/);
   assert.equal(fs.existsSync("migrations/0052_hybrid_legal_intelligence_r1.sql"),true);
   const manifest=JSON.parse(fs.readFileSync("evidence/hg2-c/migration-manifest.json","utf8"));
-  assert.equal(manifest.migration_count,52);
-  assert.equal(manifest.last_migration,"migrations/0052_hybrid_legal_intelligence_r1.sql");
+  assert.equal(manifest.migration_count,53);
+  assert.equal(manifest.last_migration,"migrations/0053_case_law_evidence_gates.sql");
+  const frozen0052=manifest.files.find(x=>x.path==="migrations/0052_hybrid_legal_intelligence_r1.sql");
+  assert.ok(frozen0052,"0052 must remain frozen in the migration manifest");
+  assert.equal(frozen0052.git_blob_sha,"d4c1666dbc53843d404fd68d17201c3194540c27");
 });
 
 test("HLI10 Consolidator R2 remains authority-first while Hybrid R1 is layered above it",()=>{
