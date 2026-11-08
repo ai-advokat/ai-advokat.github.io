@@ -4,8 +4,8 @@ import fs from "node:fs";
 
 const page=fs.readFileSync("gold-set-review-gate.html","utf8");
 
-test("Gold Set Review Gate v2 preserves Human Gate hard boundaries",()=>{
-  assert.match(page,/Gold Set Review Gate v2\.0/);
+test("Gold Set Review Gate v2.1 preserves Human Gate hard boundaries",()=>{
+  assert.match(page,/Gold Set Review Gate v2\\.1/);
   assert.match(page,/publication_approved:false/);
   assert.match(page,/reviewed_authority_promoted:false/);
   assert.match(page,/external_human_gate_required:true/);
@@ -46,3 +46,28 @@ test("Gold Gate inline JavaScript is syntactically valid",()=>{
   assert.ok(match,"inline script missing");
   assert.doesNotThrow(()=>new Function(match[1]));
 });
+
+test("ESCALATE_HOLD can never resolve risk or advance a record",()=>{
+  assert.match(page,/warningAccept=\['CONFIRMED_SOURCE_LAYOUT','CORRECTED_BOUNDARY','COMPLETENESS_CONFIRMED'\]/);
+  assert.match(page,/anomalyAccept=\['SOURCE_TYPO_CONFIRMED','TRANSCRIPTION_ERROR_CORRECTED','NO_SOURCE_ANOMALY'\]/);
+  assert.doesNotMatch(page,/warningAccept[^\n]*ESCALATE_HOLD/);
+  assert.doesNotMatch(page,/anomalyAccept[^\n]*ESCALATE_HOLD/);
+});
+
+test("Human Gate readiness is a separate fourth-person preflight",()=>{
+  assert.match(page,/Human Gate Preflight/);
+  assert.match(page,/humanGatePrepared/);
+  assert.match(page,/humanGatePreparerName/);
+  assert.match(page,/humanGatePreparerRef/);
+  assert.match(page,/humanGateEvidence/);
+  assert.match(page,/humanGateNoConflict/);
+  assert.match(page,/if\(st==='LEGAL_READY'\)/);
+});
+
+test("Review dates and V2 imports fail closed",()=>{
+  assert.match(page,/function validReviewDate/);
+  assert.match(page,/s<=new Date\(\)\.toISOString\(\)\.slice\(0,10\)/);
+  assert.match(page,/V2 import бара точен Records manifest SHA/);
+  assert.match(page,/JSON\.stringify\(RECORDS\)/);
+});
+
