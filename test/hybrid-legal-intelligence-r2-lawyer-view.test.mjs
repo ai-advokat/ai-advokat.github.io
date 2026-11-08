@@ -8,7 +8,7 @@ const pagesSync=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8
 const workerSmoke=fs.readFileSync(".github/workflows/worker-runtime-live-smoke.yml","utf8");
 const rootSmoke=fs.readFileSync(".github/workflows/root-reliability-live-smoke.yml","utf8");
 
-test("Hybrid Lawyer View exposes nine governed legal workflow modules",()=>{
+test("Hybrid Lawyer View exposes ten governed legal workflow modules",()=>{
   assert.match(page,/Hybrid Legal Intelligence R2/);
   assert.match(page,/Lawyer View/);
   for(const label of [
@@ -20,7 +20,8 @@ test("Hybrid Lawyer View exposes nine governed legal workflow modules",()=>{
     "Open Data Legal Evidence",
     "Official e‑Service Navigator",
     "eID + Human Handoff",
-    "Gold Set Review Gate"
+    "Gold Set Review Gate",
+    "ECHR ↔ Domestic Case-Law Crosswalk"
   ]) assert.equal(page.includes(label),true,label);
   assert.match(page,/Human Gate · Authority Boundary/);
   assert.match(page,/Secondary signals:/);
@@ -76,7 +77,7 @@ test("Pages sync publishes and verifies the Hybrid R2 workbench",()=>{
   assert.match(pagesSync,/- "hybrid-legal-intelligence\.html"/);
   assert.match(pagesSync,/test -f hybrid-legal-intelligence\.html/);
   assert.match(pagesSync,/grep -q 'Hybrid Legal Intelligence R2' hybrid-legal-intelligence\.html/);
-  assert.match(pagesSync,/for f in index\.html case-law-curation\.html consolidator\/index\.html hybrid-legal-intelligence\.html public-legal-data-services\.html gold-set-review-gate\.html bot\/index\.html/);
+  assert.match(pagesSync,/for f in index\.html case-law-curation\.html consolidator\/index\.html hybrid-legal-intelligence\.html public-legal-data-services\.html gold-set-review-gate\.html echr-crosswalk\.html bot\/index\.html/);
 });
 
 test("Worker and root release smokes verify Hybrid R2 live",()=>{
@@ -95,15 +96,18 @@ test("Hybrid integrates official public legal evidence and e-service APIs",()=>{
   assert.match(page,/data-module="services"/);
   assert.match(page,/data-module="handoff"/);
   assert.match(page,/data-module="gold"/);
+  assert.match(page,/data-module="echr"/);
+  assert.match(page,/echr-crosswalk\.html/);
   assert.match(page,/gold-set-review-gate\.html/);
   assert.match(worker,/gold_set_review_gate/);
+  assert.match(worker,/echr_domestic_case_law_crosswalk/);
   assert.match(worker,/open_data_legal_evidence/);
   assert.match(worker,/official_e_service_navigator/);
   assert.match(worker,/eid_human_handoff/);
   assert.match(page,/No autonomous submission/);
 });
 
-test("Hybrid Lawyer View embeds a nine-step operating guide",()=>{
+test("Hybrid Lawyer View embeds a ten-step operating guide",()=>{
   assert.match(page,/id="guide"/);
   assert.match(page,/Водилка · Како функционира Hybrid Legal Intelligence/);
   assert.match(page,/Препорачан workflow/);
@@ -111,7 +115,7 @@ test("Hybrid Lawyer View embeds a nine-step operating guide",()=>{
   assert.match(page,/Reviewed authority/);
   assert.match(page,/Discovery/);
   assert.match(page,/Human Gate/);
-  assert.equal((page.match(/class="guide-step"/g)||[]).length,9);
+  assert.equal((page.match(/class="guide-step"/g)||[]).length,10);
   assert.match(page,/Брз пример:/);
   assert.match(page,/href="#guide"/);
 });
