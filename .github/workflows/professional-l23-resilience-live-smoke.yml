@@ -46,6 +46,8 @@ jobs:
           for(const needle of [
             "professionalDegradedDraftFallbackEligible",
             "PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI",
+            "PROFESSIONAL_DEGRADED_DRAFT_DETERMINISTIC",
+            "deterministic_capacity_fallback",
             "NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE",
             "professional_degraded_draft_fallback",
             "replaceUngroundedArticleReferences(releasedFallbackText"
@@ -146,8 +148,32 @@ jobs:
           if(!d.ok || !String(d.answer||"").trim()) throw new Error("L3 divorce response missing");
           if(d.membership?.planCode!=="office") throw new Error("L3 membership not retained");
           if(d.legalGovernance?.missionProfile!=="L3_CONSEQUENTIAL") throw new Error("Divorce request not classified L3");
-          if(d.provider==="openai"){
+          if(d.provider==="canonical_corpus_no_model"){
+            if(d.sourceMode!=="canonical_family_law_divorce_no_model") throw new Error("Unexpected deterministic divorce source mode: "+d.sourceMode);
+            if(d.displayMode!=="canonical_family_divorce_draft") throw new Error("Deterministic divorce display mode missing");
+            if(d.legalGovernance?.verificationState!=="PASSED") throw new Error("Deterministic divorce verification state missing");
+            if(d.legalGovernance?.executionAuthorization!=="NO_EXTERNAL_ACTION") throw new Error("Deterministic divorce must remain NO_EXTERNAL_ACTION");
+            if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("Deterministic divorce Human Gate missing");
+            if(d.legalGovernance?.postflightRequired!==false) throw new Error("Deterministic no-model divorce must not require provider postflight");
+            if(d.webSearchUsed!==false) throw new Error("Deterministic divorce must not claim web search");
+            if(!Array.isArray(d.legalSources) || d.legalSources.length<1) throw new Error("Deterministic divorce legal sources missing");
+          }else if(d.provider==="openai"){
             if(d.providerFallback!==null) throw new Error("OpenAI success must not claim fallback");
+          }else if(d.provider==="deterministic_capacity_fallback"){
+            if(d.displayMode!=="professional_degraded_draft_fallback") throw new Error("L3 deterministic degraded display mode missing");
+            if(d.providerFallback?.from!=="openai") throw new Error("L3 deterministic OpenAI fallback provenance missing");
+            if(d.legalGovernance?.providerFallbackMode!=="PROFESSIONAL_DEGRADED_DRAFT_DETERMINISTIC") throw new Error("L3 deterministic fallback marker missing");
+            if(d.legalGovernance?.postflightState!=="NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE") throw new Error("L3 deterministic postflight state missing");
+            if(d.legalGovernance?.executionAuthorization!=="NO_EXTERNAL_ACTION") throw new Error("L3 deterministic path must remain NO_EXTERNAL_ACTION");
+            if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("L3 deterministic Human Gate missing");
+            if(d.webSearchUsed!==false) throw new Error("L3 deterministic fallback must not claim web search");
+            if(d.legalGovernance?.currentLawContextAvailable===false){
+              if(d.legalGovernance?.degradedContextState!=="NO_GOVERNED_CURRENT_LAW_CONTEXT") throw new Error("L3 deterministic zero-context state missing");
+              if(d.legalGovernance?.sourceVerificationState!=="NOT_ESTABLISHED_NO_GOVERNED_CONTEXT") throw new Error("L3 deterministic source verification must remain unestablished");
+              if(d.sourceMode!=="professional_degraded_structure_only_deterministic_fallback") throw new Error("L3 deterministic zero-context source mode missing");
+            }
+            if(!String(d.answer).includes("ЧОВЕЧКА ПРОВЕРКА ПРЕД ПОДНЕСУВАЊЕ")) throw new Error("L3 deterministic in-document Human Gate missing");
+            if(/(?:член|чл\.)\s*\d+/iu.test(String(d.answer))) throw new Error("L3 deterministic draft leaked an unverified numbered article");
           }else if(d.provider==="workers_ai_free"){
             if(d.displayMode!=="professional_degraded_draft_fallback") throw new Error("L3 degraded display mode missing");
             if(d.providerFallback?.from!=="openai") throw new Error("L3 OpenAI fallback provenance missing");
@@ -276,6 +302,21 @@ jobs:
           if(d.legalGovernance?.missionProfile!=="L2_STRATEGY_PROCEDURE") throw new Error("Pre-suit demand request not classified L2");
           if(d.provider==="openai"){
             if(d.providerFallback!==null) throw new Error("OpenAI success must not claim fallback");
+          }else if(d.provider==="deterministic_capacity_fallback"){
+            if(d.displayMode!=="professional_degraded_draft_fallback") throw new Error("L2 deterministic degraded display mode missing");
+            if(d.providerFallback?.from!=="openai") throw new Error("L2 deterministic OpenAI fallback provenance missing");
+            if(d.legalGovernance?.providerFallbackMode!=="PROFESSIONAL_DEGRADED_DRAFT_DETERMINISTIC") throw new Error("L2 deterministic fallback marker missing");
+            if(d.legalGovernance?.postflightState!=="NOT_EXECUTED_PRIMARY_PROVIDER_UNAVAILABLE") throw new Error("L2 deterministic postflight state missing");
+            if(d.legalGovernance?.executionAuthorization!=="RESEARCH_OUTPUT_ONLY") throw new Error("L2 deterministic path must remain RESEARCH_OUTPUT_ONLY");
+            if(d.legalGovernance?.humanReviewRequired!==true) throw new Error("L2 deterministic Human Gate missing");
+            if(d.webSearchUsed!==false) throw new Error("L2 deterministic fallback must not claim web search");
+            if(d.legalGovernance?.currentLawContextAvailable===false){
+              if(d.legalGovernance?.degradedContextState!=="NO_GOVERNED_CURRENT_LAW_CONTEXT") throw new Error("L2 deterministic zero-context state missing");
+              if(d.legalGovernance?.sourceVerificationState!=="NOT_ESTABLISHED_NO_GOVERNED_CONTEXT") throw new Error("L2 deterministic source verification must remain unestablished");
+              if(d.sourceMode!=="professional_degraded_structure_only_deterministic_fallback") throw new Error("L2 deterministic zero-context source mode missing");
+            }
+            if(!String(d.answer).includes("ЧОВЕЧКА ПРОВЕРКА ПРЕД ПРОФЕСИОНАЛНА УПОТРЕБА")) throw new Error("L2 deterministic in-document Human Gate missing");
+            if(/(?:член|чл\.)\s*\d+/iu.test(String(d.answer))) throw new Error("L2 deterministic draft leaked an unverified numbered article");
           }else if(d.provider==="workers_ai_free"){
             if(d.displayMode!=="professional_degraded_draft_fallback") throw new Error("L2 degraded display mode missing");
             if(d.providerFallback?.from!=="openai") throw new Error("L2 OpenAI fallback provenance missing");

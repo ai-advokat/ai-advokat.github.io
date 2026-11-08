@@ -116,3 +116,41 @@ test("WAP8 Cloudflare daily neuron exhaustion is a distinct non-retryable capaci
   assert.equal(out.retryable,false);
   assert.equal(out.capacity,"daily_free_allocation_exhausted");
 });
+
+test("WAP9 primary timeout retries exactly once on bounded non-reasoning Workers AI fallback",async()=>{
+  const models=[];
+  const env={AI:{run:async(model)=>{
+    models.push(model);
+    if(models.length===1) throw new Error("workers_ai_timeout_8000");
+    return {response:"Резервниот Workers AI одговор е подготвен."};
+  }}};
+  const result=await runWorkersAIText(env,{
+    messages:[{role:"user",content:"Одговори кратко на македонски."}],
+    maxOutputTokens:400,
+    timeoutMs:8000
+  });
+  assert.equal(result.ok,true);
+  assert.equal(result.providerCalls,2);
+  assert.equal(result.primaryModel,"@cf/qwen/qwen3-30b-a3b-fp8");
+  assert.equal(result.model,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT);
+  assert.equal(result.modelFallback?.reason,"primary_timeout");
+  assert.deepEqual(models,["@cf/qwen/qwen3-30b-a3b-fp8",WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT]);
+});
+
+test("WAP10 non-retryable daily capacity exhaustion never triggers the timeout fallback",async()=>{
+  const models=[];
+  const env={AI:{run:async(model)=>{
+    models.push(model);
+    throw new Error("4006: you have used up your daily free allocation of 10,000 neurons, please upgrade to Cloudflare's Workers Paid plan if you would like to continue usage.");
+  }}};
+  const result=await runWorkersAIText(env,{
+    messages:[{role:"user",content:"Тест"}],
+    maxOutputTokens:400,
+    timeoutMs:8000
+  });
+  assert.equal(result.ok,false);
+  assert.equal(result.error,"workers_ai_daily_capacity_exhausted");
+  assert.equal(result.providerCalls,1);
+  assert.equal(result.modelFallback,null);
+  assert.deepEqual(models,["@cf/qwen/qwen3-30b-a3b-fp8"]);
+});
