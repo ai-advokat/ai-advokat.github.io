@@ -43,6 +43,9 @@ export function buildParagrafBindingQueue(caseLawNdjson){
       official_identifiers:officialIds,
       lookup_readiness:hasStrongId?"identifier_ready":"metadata_search_required",
       binding_status:"pending",
+      migration_state:c.evidence_gate?.state||c.migration_state||"STAGED_NEEDS_SOURCE_MATCH",
+      next_required_gate:"official_source_match",
+      production_citable:false,
       human_review_status:"pending",
       paragraf_source_url:text(c.source_url,2000),
       paragraf_source_sha256:text(c.source_sha256,64)
