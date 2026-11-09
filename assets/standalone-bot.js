@@ -101,7 +101,7 @@ window.AIAdvokatExternalVoiceConversation=Object.freeze({
   mode:"half_duplex_auto_send_auto_speak",
   language:"mk-MK"
 });
-const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261106-voice-r2")
+const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261109-voice-r3")
   .then(mod=>{
     voiceRuntime=mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"});
     return voiceRuntime;
@@ -137,12 +137,41 @@ function message(role, text, model = '') {
   if(role==='assistant' && normalizedText){
     const voiceTools=document.createElement('div');
     voiceTools.className='message-voice-tools';
+
+    const language=document.createElement('select');
+    language.className='message-voice-lang';
+    language.setAttribute('aria-label','Јазик за гласно читање и аудио');
+    language.title='Јазик за гласно читање и зачувување';
+    const mk=document.createElement('option'); mk.value='mk-MK'; mk.textContent='MK';
+    const en=document.createElement('option'); en.value='en-US'; en.textContent='EN';
+    language.append(mk,en);
+
     const speak=document.createElement('button');
     speak.type='button';
     speak.className='message-speak';
-    voiceTools.append(speak);
+
+    const saveAudio=document.createElement('button');
+    saveAudio.type='button';
+    saveAudio.className='message-save-audio';
+    saveAudio.textContent='💾 Аудио';
+
+    voiceTools.append(language,speak,saveAudio);
     article.append(voiceTools);
-    voiceRuntimeReady.then(voice=>voice?.bindSpeakButton({button:speak,text:()=>normalizedText,status}));
+    voiceRuntimeReady.then(voice=>{
+      voice?.bindSpeakButton({
+        button:speak,
+        text:()=>normalizedText,
+        status,
+        language:()=>language.value
+      });
+      voice?.bindSaveAudioButton?.({
+        button:saveAudio,
+        text:()=>normalizedText,
+        status,
+        language:()=>language.value,
+        filename:()=>language.value.startsWith('en')?'AI-Advokat-answer-EN.webm':'AI-Advokat-odgovor-MK.webm'
+      });
+    });
   }
   $('messages').append(article);
   article.scrollIntoView({block:'end'});
