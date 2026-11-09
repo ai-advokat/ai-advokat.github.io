@@ -7,8 +7,9 @@ test('standalone bot uses local redaction before sending protected identifiers',
   assert.match(source,/redactConfidentialCasePrompt/);
   assert.match(source,/let outboundQ=q, privacyRedacted=false/);
   assert.match(source,/redacted\.changed && redacted\.safeToSend/);
-  assert.match(source,/q:outboundQ/);
+  assert.match(source,/q:withOutputLanguageDirective\(outboundQ\)/);
   assert.match(source,/message\('user',outboundQ\)/);
+  assert.ok(source.indexOf("outboundQ=redacted.text") < source.indexOf("q:withOutputLanguageDirective(outboundQ)"));
   assert.match(source,/маскирани локално/);
 });
 
