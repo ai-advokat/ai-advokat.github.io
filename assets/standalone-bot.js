@@ -134,7 +134,7 @@ function selectedSpeechLocale(){return selectedLanguageMeta().locale;}
 function withOutputLanguageDirective(text){
   const lang=selectedLanguageMeta();
   if(lang.code==="mk") return String(text||"");
-  return "[AI_ADVOCAT_OUTPUT_LANGUAGE="+lang.code+"]\n"+String(text||"");
+  return "Please answer in "+lang.name+". Preserve official legal source quotations, citations, case numbers and statutory identifiers verbatim.\n\n"+String(text||"");
 }
 function bindLanguageSelector(){
   const select=$("botLanguage");
