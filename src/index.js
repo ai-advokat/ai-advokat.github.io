@@ -10768,7 +10768,7 @@ async function handleUiTranslation(request,env){
   const language=UI_TRANSLATION_LANGUAGES[target];
   if(!language) return json(request,{ok:false,error:"unsupported_language"},400);
 
-  if(target==="mk"||target==="en"){
+  if(target==="mk"){
     const source=Array.isArray(body?.items)?body.items:[];
     return json(request,{ok:true,targetLanguage:target,translations:source.map(x=>String(x?.text||"").slice(0,1200))});
   }
