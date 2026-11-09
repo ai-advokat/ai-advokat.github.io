@@ -155,7 +155,7 @@ window.AIAdvokatExternalVoiceConversation=Object.freeze({
   mode:"half_duplex_auto_send_auto_speak",
   language:"mk-MK"
 });
-const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261109-voice-r3")
+const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261109-voice-r4")
   .then(mod=>{
     voiceRuntime=mod.createAIAdvokatVoiceRuntime(window,{lang:selectedSpeechLocale()});
     return voiceRuntime;

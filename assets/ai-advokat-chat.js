@@ -104,7 +104,7 @@
     mode:"half_duplex_auto_send_auto_speak",
     language:"mk-MK"
   });
-  const voiceRuntimePromise=import("/assets/ai-advokat-voice.mjs?v=20261109-voice-r3")
+  const voiceRuntimePromise=import("/assets/ai-advokat-voice.mjs?v=20261109-voice-r4")
     .then(mod=>mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"}))
     .catch(error=>{
       console.error("ai_advokat_voice_runtime_failed",error);

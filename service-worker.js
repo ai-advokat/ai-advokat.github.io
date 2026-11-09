@@ -1,4 +1,4 @@
-const CACHE_NAME = "ai-advokat-shell-v7";
+const CACHE_NAME = "ai-advokat-shell-v8";
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   OFFLINE_URL,

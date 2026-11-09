@@ -2365,6 +2365,78 @@ async function handleCaseWorkspaceApi(request,env,url){
 }
 
 
+const VOICE_TRANSCRIBE_MAX_BYTES=2*1024*1024;
+const VOICE_TRANSCRIBE_LIMIT=8;
+const VOICE_TRANSCRIBE_WINDOW_SECONDS=60;
+const VOICE_TRANSCRIBE_ALLOWED_MIME=new Set([
+  "audio/webm",
+  "audio/webm;codecs=opus",
+  "audio/ogg",
+  "audio/ogg;codecs=opus",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/mp4",
+  "audio/mpeg"
+]);
+
+async function handleVoiceTranscription(request,env){
+  if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+  if(!env?.AI || typeof env.AI.run!=="function") return json(request,{ok:false,error:"voice_transcription_unavailable"},503);
+
+  const contentType=String(request.headers.get("content-type")||"").toLowerCase().split("; charset=")[0].trim();
+  if(!VOICE_TRANSCRIBE_ALLOWED_MIME.has(contentType)){
+    return json(request,{ok:false,error:"unsupported_audio_type"},415);
+  }
+
+  let subject;
+  try{
+    subject=await anonymousSubject(request,env);
+    const burst=await consumeWindow(env,{
+      scope:"voice_transcription",
+      subject,
+      limit:VOICE_TRANSCRIBE_LIMIT,
+      windowSeconds:VOICE_TRANSCRIBE_WINDOW_SECONDS
+    });
+    if(!burst.allowed) return json(request,{ok:false,error:"rate_limited"},429,{"Retry-After":String(burst.retryAfter)});
+  }catch(error){
+    if(error instanceof SecurityConfigError){
+      console.error("voice_transcription_rate_limit_unavailable",String(error?.message||error).slice(0,120));
+      return json(request,{ok:false,error:"voice_transcription_security_unavailable"},503);
+    }
+    throw error;
+  }
+
+  const audio=await readLimitedBytes(request,VOICE_TRANSCRIBE_MAX_BYTES);
+  if(!audio.ok) return json(request,{ok:false,error:audio.error},audio.status);
+
+  const locale=String(request.headers.get("x-voice-language")||"").trim().toLowerCase();
+  const language=/^[a-z]{2}(?:-[a-z]{2})?$/.test(locale)?locale.split("-")[0]:undefined;
+
+  try{
+    const input={
+      audio:bytesToBase64(audio.bytes),
+      task:"transcribe",
+      vad_filter:true,
+      condition_on_previous_text:false
+    };
+    if(language) input.language=language;
+    const result=await env.AI.run("@cf/openai/whisper-large-v3-turbo",input);
+    const text=String(result?.text||"").trim();
+    if(!text) return json(request,{ok:false,error:"empty_transcript"},422);
+    return json(request,{
+      ok:true,
+      text:text.slice(0,4000),
+      provider:"workers_ai",
+      model:"@cf/openai/whisper-large-v3-turbo",
+      retention:"no_application_storage",
+      humanGate:"review_transcript_before_legal_use"
+    });
+  }catch(error){
+    console.error("voice_transcription_failed",String(error?.message||error).slice(0,160));
+    return json(request,{ok:false,error:"voice_transcription_failed"},503);
+  }
+}
+
 function corsHeaders(request) {
   const origin = request.headers.get("Origin");
   const headers = {
@@ -10792,6 +10864,7 @@ export default {
     if (url.pathname === "/api/instruments") return handleInstruments(request, env);
     if (url.pathname === "/api/articles") return handleArticles(request, env, url);
     if (url.pathname === "/api/assistant") return handleAssistant(request, env, url);
+    if (url.pathname === "/api/voice/transcribe") return handleVoiceTranscription(request, env);
     if (url.pathname === "/api/chat") return handleGPTChat(request, env);
     if (url.pathname === "/api/bot") return handleGPTChat(request, env, {openAIOnly:true});
     if (url.pathname === "/api/legal-analyzer/verify") return handleLegalAnalyzerVerify(request, env);

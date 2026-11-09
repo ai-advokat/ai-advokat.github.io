@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import {
   AI_ADVOCAT_VOICE_VERSION,
   splitSpeechText,
@@ -10,8 +11,8 @@ import {
   createAIAdvokatVoiceRuntime
 } from "../assets/ai-advokat-voice.mjs";
 
-test("voice runtime exposes the governed R3 bilingual audio-save contract",()=>{
-  assert.equal(AI_ADVOCAT_VOICE_VERSION,"AI_ADVOCAT_VOICE_R3");
+test("voice runtime exposes the governed R4 browser-plus-Workers-AI contract",()=>{
+  assert.equal(AI_ADVOCAT_VOICE_VERSION,"AI_ADVOCAT_VOICE_R4");
 });
 
 test("speech chunking keeps long legal answers bounded without losing order",()=>{
@@ -41,7 +42,7 @@ test("microphone permission and device errors have actionable Macedonian message
   assert.match(microphonePermissionErrorMessage({name:"NotFoundError"}),/пронајден микрофон/iu);
 });
 
-test("Voice R3 starts browser-native recognition without pre-acquiring and closing the microphone stream",async()=>{
+test("Voice R4 starts browser-native recognition without pre-acquiring and closing the microphone stream",async()=>{
   let getUserMediaCalls=0;
   class FakeRecognition{
     constructor(){FakeRecognition.last=this;}
@@ -67,7 +68,7 @@ test("Voice R3 starts browser-native recognition without pre-acquiring and closi
   assert.match(status,/активен|вклучувам/iu);
 });
 
-test("Voice R3 keeps the microphone retryable when browser permission is already denied",async()=>{
+test("Voice R4 keeps the microphone retryable when browser permission is already denied",async()=>{
   class FakeRecognition{constructor(){FakeRecognition.created=true;} start(){}}
   FakeRecognition.created=false;
   const win={
@@ -87,7 +88,7 @@ test("Voice R3 keeps the microphone retryable when browser permission is already
   assert.match(status,/Allow|Дозволи/iu);
 });
 
-test("Voice R3 uses abort for immediate microphone stop when available",async()=>{
+test("Voice R4 uses abort for immediate microphone stop when available",async()=>{
   let aborted=0;
   class FakeRecognition{
     constructor(){FakeRecognition.last=this;}
@@ -117,6 +118,49 @@ function fakeButton(){
     click(){return listeners.get("click")?.({type:"click"});}
   };
 }
+
+test("Voice R4 falls back to MediaRecorder plus Workers AI transcription when SpeechRecognition is unavailable",async()=>{
+  const track={stop(){}};
+  const stream={getTracks:()=>[track]};
+  class FakeMediaRecorder{
+    static isTypeSupported(type){return type.includes("webm");}
+    constructor(input,opts={}){this.stream=input;this.mimeType=opts.mimeType||"audio/webm";this.state="inactive";FakeMediaRecorder.last=this;}
+    start(){this.state="recording";this.ondataavailable?.({data:new Blob(["voice"],{type:"audio/webm"})});}
+    stop(){if(this.state==="inactive") return;this.state="inactive";queueMicrotask(()=>this.onstop?.());}
+  }
+  class FakeEvent{constructor(type){this.type=type;}}
+  let fetchCalls=0;
+  const win={
+    MediaRecorder:FakeMediaRecorder,
+    Event:FakeEvent,
+    Blob,
+    navigator:{mediaDevices:{async getUserMedia(){return stream;}}},
+    fetch:async(url,opts)=>{
+      fetchCalls++;
+      assert.equal(url,"/api/voice/transcribe");
+      assert.equal(opts.method,"POST");
+      assert.equal(opts.headers["X-Voice-Language"],"mk-MK");
+      return {ok:true,json:async()=>({ok:true,text:"договор за услуги"})};
+    },
+    setTimeout:()=>1,
+    clearTimeout(){}
+  };
+  const runtime=createAIAdvokatVoiceRuntime(win,{lang:"mk-MK"});
+  assert.equal(runtime.capabilities.browserSpeechRecognition,false);
+  assert.equal(runtime.capabilities.workersAITranscriptionFallback,true);
+  assert.equal(runtime.capabilities.dictation,true);
+  const button=fakeButton();
+  const input={value:"",dispatchEvent(){}};
+  let transcript="";
+  runtime.bindMicrophone({button,input,status:()=>{},onTranscript:text=>{transcript=text;}});
+  await button.click();
+  assert.equal(button.dataset.voiceState,"listening");
+  await button.click();
+  await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal(fetchCalls,1);
+  assert.equal(input.value,"договор за услуги");
+  assert.equal(transcript,"договор за услуги");
+});
 
 test("shared microphone binding commits final Macedonian transcript into the composer",async()=>{
   class FakeRecognition{
@@ -224,4 +268,15 @@ test("audio-save capability records shared tab audio locally and downloads WEBM"
   assert.equal(downloads[0],"answer-MK.webm");
   assert.equal(runtime.capabilities.audioSave,true);
   assert.deepEqual(runtime.capabilities.languages,["mk-MK","en-US"]);
+});
+
+
+test("Voice R4 worker endpoint is bounded, rate-limited and uses Workers AI Whisper without app storage",()=>{
+  const worker=fs.readFileSync("src/index.js","utf8");
+  assert.match(worker,/\/api\/voice\/transcribe/);
+  assert.match(worker,/VOICE_TRANSCRIBE_MAX_BYTES=2\*1024\*1024/);
+  assert.match(worker,/scope:"voice_transcription"/);
+  assert.match(worker,/@cf\/openai\/whisper-large-v3-turbo/);
+  assert.match(worker,/retention:"no_application_storage"/);
+  assert.match(worker,/humanGate:"review_transcript_before_legal_use"/);
 });

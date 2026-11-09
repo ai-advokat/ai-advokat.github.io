@@ -79,9 +79,9 @@ jobs:
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/?r14_uat=$nonce" -o /tmp/r14-main.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/bot/?r14_uat=$nonce" -o /tmp/r14-bot.html || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/ai-advokat-chat.js?v=20261109-root-r15-voice-r3-runtime&r14_uat=$nonce" -o /tmp/r14-internal.js || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/standalone-bot.js?v=20261109-core-r15-voice-r3&r14_uat=$nonce" -o /tmp/r14-core.js || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/ai-advokat-voice.mjs?v=20261109-voice-r3&r14_uat=$nonce" -o /tmp/r14-voice.mjs || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/ai-advokat-chat.js?v=20261109-root-r15-voice-r4-runtime&r14_uat=$nonce" -o /tmp/r14-internal.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/standalone-bot.js?v=20261109-core-r15-voice-r4&r14_uat=$nonce" -o /tmp/r14-core.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/ai-advokat-voice.mjs?v=20261109-voice-r4&r14_uat=$nonce" -o /tmp/r14-voice.mjs || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view&r14_uat=$nonce" -o /tmp/r14-vnext.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/assets/standalone-bot-toolkit.js?v=20261106-toolkit-r14&r14_uat=$nonce" -o /tmp/r14-toolkit.js || true
 
@@ -107,12 +107,12 @@ jobs:
           done
           test "$parity" = "1"
 
-          grep -q 'ai-advokat-chat.js?v=20261109-root-r15-voice-r3-runtime' /tmp/r14-main.html
+          grep -q 'ai-advokat-chat.js?v=20261109-root-r15-voice-r4-runtime' /tmp/r14-main.html
           grep -q 'id="aiChatMic"' /tmp/r14-main.html
           grep -q 'id="aiChatVoiceStatus"' /tmp/r14-main.html
-          grep -q 'standalone-bot.js?v=20261109-core-r15-voice-r3' /tmp/r14-bot.html
+          grep -q 'standalone-bot.js?v=20261109-core-r15-voice-r4' /tmp/r14-bot.html
           grep -q 'id="mic"' /tmp/r14-bot.html
-          grep -q 'AI_ADVOCAT_VOICE_R3' /tmp/r14-voice.mjs
+          grep -q 'AI_ADVOCAT_VOICE_R4' /tmp/r14-voice.mjs
           grep -q 'bindMicrophone' /tmp/r14-voice.mjs
           grep -q 'bindSpeakButton' /tmp/r14-voice.mjs
           grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view' /tmp/r14-bot.html
