@@ -273,10 +273,12 @@ test("audio-save capability records shared tab audio locally and downloads WEBM"
 
 test("Voice R4 worker endpoint is bounded, rate-limited and uses Workers AI Whisper without app storage",()=>{
   const worker=fs.readFileSync("src/index.js","utf8");
+  const provider=fs.readFileSync("src/voice-transcription-provider.js","utf8");
   assert.match(worker,/\/api\/voice\/transcribe/);
   assert.match(worker,/VOICE_TRANSCRIBE_MAX_BYTES=2\*1024\*1024/);
   assert.match(worker,/scope:"voice_transcription"/);
-  assert.match(worker,/@cf\/openai\/whisper-large-v3-turbo/);
+  assert.match(provider,/@cf\/openai\/whisper-large-v3-turbo/);
+  assert.match(provider,/env\.AI\.run/);
   assert.match(worker,/retention:"no_application_storage"/);
   assert.match(worker,/humanGate:"review_transcript_before_legal_use"/);
 });

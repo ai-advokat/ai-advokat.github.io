@@ -1,3 +1,4 @@
+import { runVoiceTranscriptionAI } from "./voice-transcription-provider.js";
 import { handleLegalAlarm } from "./legal-alarm.js";
 import {
   CASE_LAW_CURATION_VERSION,
@@ -2412,29 +2413,23 @@ async function handleVoiceTranscription(request,env){
   const locale=String(request.headers.get("x-voice-language")||"").trim().toLowerCase();
   const language=/^[a-z]{2}(?:-[a-z]{2})?$/.test(locale)?locale.split("-")[0]:undefined;
 
-  try{
-    const input={
-      audio:bytesToBase64(audio.bytes),
-      task:"transcribe",
-      vad_filter:true,
-      condition_on_previous_text:false
-    };
-    if(language) input.language=language;
-    const result=await env.AI.run("@cf/openai/whisper-large-v3-turbo",input);
-    const text=String(result?.text||"").trim();
-    if(!text) return json(request,{ok:false,error:"empty_transcript"},422);
-    return json(request,{
-      ok:true,
-      text:text.slice(0,4000),
-      provider:"workers_ai",
-      model:"@cf/openai/whisper-large-v3-turbo",
-      retention:"no_application_storage",
-      humanGate:"review_transcript_before_legal_use"
-    });
-  }catch(error){
-    console.error("voice_transcription_failed",String(error?.message||error).slice(0,160));
-    return json(request,{ok:false,error:"voice_transcription_failed"},503);
+  const result=await runVoiceTranscriptionAI(env,{
+    audioBase64:bytesToBase64(audio.bytes),
+    language
+  });
+  if(!result.ok){
+    if(result.detail) console.error("voice_transcription_failed",result.detail);
+    const status=result.error==="empty_transcript" ? 422 : 503;
+    return json(request,{ok:false,error:result.error||"voice_transcription_failed"},status);
   }
+  return json(request,{
+    ok:true,
+    text:result.text.slice(0,4000),
+    provider:result.provider,
+    model:result.model,
+    retention:"no_application_storage",
+    humanGate:"review_transcript_before_legal_use"
+  });
 }
 
 function corsHeaders(request) {
