@@ -157,17 +157,24 @@
       align-items:center
     }
 
-    .utility button{
+    .utility button,
+    .utility select{
       border:1px solid rgba(255,255,255,.18);
-      background:transparent;
+      background:#071524;
       color:inherit;
       border-radius:999px;
-      padding:5px 10px
+      padding:5px 10px;
+      font:inherit
     }
 
+    .utility select{max-width:190px;cursor:pointer}
     .utility button:hover,
-    .utility button:focus-visible{
-      background:rgba(255,255,255,.08)
+    .utility button:focus-visible,
+    .utility select:hover,
+    .utility select:focus-visible{
+      background:#10253a;
+      outline:2px solid rgba(185,152,91,.45);
+      outline-offset:1px
     }
 
     .header{
@@ -1388,7 +1395,42 @@
     </div>
 
     <div class="utility">
-      <button type="button" id="langBtn" aria-label="Промени јазик" data-i18n-aria="changeLanguage">MK / EN</button>
+      <label class="sr" for="langBtn">Јазик / Language</label>
+      <select id="langBtn" aria-label="Глобален јазик на порталот · 33 јазици" data-no-translate>
+        <option value="mk">MK · Македонски</option>
+        <option value="en">EN · English</option>
+        <option value="sq">SQ · Shqip</option>
+        <option value="ar">AR · العربية</option>
+        <option value="bn">BN · বাংলা</option>
+        <option value="bs">BS · Bosanski</option>
+        <option value="bg">BG · Български</option>
+        <option value="zh">ZH · 中文</option>
+        <option value="hr">HR · Hrvatski</option>
+        <option value="eo">EO · Esperanto</option>
+        <option value="fr">FR · Français</option>
+        <option value="de">DE · Deutsch</option>
+        <option value="el">EL · Ελληνικά</option>
+        <option value="ha">HA · Hausa</option>
+        <option value="he">HE · עברית</option>
+        <option value="hi">HI · हिन्दी</option>
+        <option value="hu">HU · Magyar</option>
+        <option value="id">ID · Bahasa Indonesia</option>
+        <option value="it">IT · Italiano</option>
+        <option value="ja">JA · 日本語</option>
+        <option value="ko">KO · 한국어</option>
+        <option value="la">LA · Latina</option>
+        <option value="fa">FA · فارسی</option>
+        <option value="pt">PT · Português</option>
+        <option value="pa">PA · ਪੰਜਾਬੀ</option>
+        <option value="ru">RU · Русский</option>
+        <option value="sr">SR · Српски</option>
+        <option value="sl">SL · Slovenščina</option>
+        <option value="es">ES · Español</option>
+        <option value="sw">SW · Kiswahili</option>
+        <option value="tr">TR · Türkçe</option>
+        <option value="ur">UR · اردو</option>
+        <option value="vi">VI · Tiếng Việt</option>
+      </select>
       <button type="button" id="themeBtn" aria-label="Промени тема" aria-pressed="false" data-i18n-aria="changeTheme">
         ◐ <span data-i18n="theme">Тема</span>
       </button>
@@ -2870,7 +2912,15 @@
     }
   };
 
-  let lang = "mk";
+  const SITE_LANGUAGE_CODES=Object.freeze(["sq","ar","bn","bs","bg","zh","hr","en","eo","fr","de","el","ha","he","hi","hu","id","it","ja","ko","la","mk","fa","pt","pa","ru","sr","sl","es","sw","tr","ur","vi"]);
+  const SITE_LANGUAGE_KEY="aiadvokat-language";
+  let siteLanguage=(()=>{
+    try{
+      const saved=String(localStorage.getItem(SITE_LANGUAGE_KEY)||"mk").toLowerCase();
+      return SITE_LANGUAGE_CODES.includes(saved)?saved:"mk";
+    }catch{return "mk";}
+  })();
+  let lang = siteLanguage==="mk" ? "mk" : "en";
 
   const API_BASE = location.hostname.endsWith("workers.dev")
     ? location.origin
@@ -2949,8 +2999,119 @@
     }
   };
 
+
+  const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v1:";
+  const uiTranslationNodeState=new WeakMap();
+  const uiTranslationAttrState=new WeakMap();
+  let uiTranslationRunning=false;
+  let uiTranslationQueued=false;
+
+  function uiTranslationCache(){
+    try{return JSON.parse(localStorage.getItem(UI_TRANSLATION_CACHE_PREFIX+siteLanguage)||"{}")||{};}catch{return {};}
+  }
+  function saveUiTranslationCache(cache){
+    try{localStorage.setItem(UI_TRANSLATION_CACHE_PREFIX+siteLanguage,JSON.stringify(cache));}catch{}
+  }
+  function translatableText(value){
+    const text=String(value||"").replace(/\s+/g," ").trim();
+    if(!text||text.length<2) return false;
+    if(/^(?:https?:\/\/|mailto:|tel:|10\.\d{4,9}\/|[\d\s.,:/+%()-]+)$/i.test(text)) return false;
+    return /[\p{L}]/u.test(text);
+  }
+  function excludedTranslationElement(el){
+    return !el || !!el.closest("script,style,noscript,code,pre,svg,[data-no-translate]");
+  }
+  function collectUiTranslationUnits(){
+    const units=[];
+    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    let node,index=0;
+    while((node=walker.nextNode())){
+      const parent=node.parentElement;
+      if(excludedTranslationElement(parent)) continue;
+      const current=String(node.nodeValue||"");
+      if(!translatableText(current)) continue;
+      let state=uiTranslationNodeState.get(node);
+      if(!state || current!==state.last){
+        state={source:current,last:current};
+        uiTranslationNodeState.set(node,state);
+      }
+      units.push({id:"t"+(index++),kind:"text",node,source:state.source});
+    }
+    for(const el of document.querySelectorAll("[placeholder],[title],[aria-label]")){
+      if(excludedTranslationElement(el)) continue;
+      let attrState=uiTranslationAttrState.get(el);
+      if(!attrState){attrState={};uiTranslationAttrState.set(el,attrState);}
+      for(const attr of ["placeholder","title","aria-label"]){
+        if(!el.hasAttribute(attr)) continue;
+        const current=el.getAttribute(attr)||"";
+        if(!translatableText(current)) continue;
+        const prev=attrState[attr];
+        if(!prev || current!==prev.last) attrState[attr]={source:current,last:current};
+        units.push({id:"a"+(index++),kind:"attr",el,attr,source:attrState[attr].source});
+      }
+    }
+    return units;
+  }
+  async function translateGlobalInterface(){
+    if(siteLanguage==="mk"||siteLanguage==="en"||uiTranslationRunning) return;
+    uiTranslationRunning=true;
+    try{
+      const units=collectUiTranslationUnits();
+      const cache=uiTranslationCache();
+      const pending=[...new Set(units.map(x=>x.source).filter(text=>!cache[text]))];
+      for(let i=0;i<pending.length;i+=36){
+        const texts=pending.slice(i,i+36);
+        const items=texts.map((text,j)=>({id:String(j),text}));
+        try{
+          const r=await fetch(API_BASE+"/api/ui-translate",{
+            method:"POST",
+            headers:{"content-type":"application/json"},
+            body:JSON.stringify({targetLanguage:siteLanguage,items})
+          });
+          const d=await r.json();
+          if(!r.ok||d?.ok!==true||!Array.isArray(d.translations)) continue;
+          d.translations.forEach((row,j)=>{
+            const source=texts[j];
+            const translated=String(row?.text||"").trim();
+            if(source&&translated) cache[source]=translated;
+          });
+          saveUiTranslationCache(cache);
+        }catch{}
+      }
+      for(const unit of units){
+        const translated=cache[unit.source];
+        if(!translated) continue;
+        if(unit.kind==="text"){
+          unit.node.nodeValue=translated;
+          const state=uiTranslationNodeState.get(unit.node);
+          if(state) state.last=translated;
+        }else{
+          unit.el.setAttribute(unit.attr,translated);
+          const state=uiTranslationAttrState.get(unit.el);
+          if(state?.[unit.attr]) state[unit.attr].last=translated;
+        }
+      }
+      document.documentElement.lang=siteLanguage;
+      const dir=["ar","he","fa","ur"].includes(siteLanguage)?"rtl":"ltr";
+      document.documentElement.dir=dir;
+    }finally{
+      uiTranslationRunning=false;
+      if(uiTranslationQueued){
+        uiTranslationQueued=false;
+        setTimeout(()=>translateGlobalInterface(),120);
+      }
+    }
+  }
+  function scheduleGlobalTranslation(){
+    if(siteLanguage==="mk"||siteLanguage==="en") return;
+    if(uiTranslationRunning){uiTranslationQueued=true;return;}
+    clearTimeout(scheduleGlobalTranslation.timer);
+    scheduleGlobalTranslation.timer=setTimeout(()=>translateGlobalInterface(),180);
+  }
+
   function applyLanguage(){
-    document.documentElement.lang = lang === "mk" ? "mk" : "en";
+    document.documentElement.lang = siteLanguage;
+    document.documentElement.dir = ["ar","he","fa","ur"].includes(siteLanguage) ? "rtl" : "ltr";
 
     $$("[data-i18n]").forEach(el=>{
       const k=el.dataset.i18n;
@@ -3148,10 +3309,16 @@
     renderSearchResults(state);
   }
 
-  $("#langBtn").addEventListener("click",()=>{
-    lang=lang==="mk" ? "en" : "mk";
-    applyLanguage();
-  });
+  const globalLanguageSelect=$("#langBtn");
+  if(globalLanguageSelect){
+    globalLanguageSelect.value=siteLanguage;
+    globalLanguageSelect.addEventListener("change",()=>{
+      const next=String(globalLanguageSelect.value||"mk").toLowerCase();
+      if(!SITE_LANGUAGE_CODES.includes(next)||next===siteLanguage) return;
+      try{localStorage.setItem(SITE_LANGUAGE_KEY,next);}catch{}
+      location.reload();
+    });
+  }
 
   $("#themeBtn").addEventListener("click",()=>{
     const dark=document.documentElement.dataset.theme!=="dark";
@@ -4386,6 +4553,14 @@
 
   $("#year").textContent=new Date().getFullYear();
   applyLanguage();
+  scheduleGlobalTranslation();
+  if(siteLanguage!=="mk"&&siteLanguage!=="en"){
+    const translationObserver=new MutationObserver(mutations=>{
+      if(uiTranslationRunning) return;
+      if(mutations.some(m=>m.type==="childList"||m.type==="characterData"||m.type==="attributes")) scheduleGlobalTranslation();
+    });
+    translationObserver.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder","title","aria-label"]});
+  }
 
 
   // ---------------------------------------------------------------------------
@@ -4447,9 +4622,9 @@
     renderCapabilityLabels();
   }
 
-  document.getElementById("langBtn")?.addEventListener("click",()=>setTimeout(renderCapabilityLabels,0));
+  document.getElementById("langBtn")?.addEventListener("change",()=>setTimeout(renderCapabilityLabels,0));
   renderCapabilityLabels();
-  loadCapabilities();
+  loadCapabilities().finally(()=>scheduleGlobalTranslation());
 </script>
 <script src="/assets/guide-vault.js?v=20261005-private-vault-v2"></script>
 <script src="/assets/frontend-runtime-guard.js?v=20261101-root-r1"></script>
