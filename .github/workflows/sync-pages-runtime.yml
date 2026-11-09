@@ -136,7 +136,7 @@ jobs:
           node --check src/legal-fact-graph.js
           node --check src/connector-registry.js
           grep -q 'LEGAL AI SUITE' legal-ai-suite.html
-          grep -q 'CONTRACT INTELLIGENCE' contract-intelligence.html
+          grep -q 'AI CONTRACT' contract-intelligence.html
           grep -q 'FACT GRAPH' fact-evidence-graph.html
           grep -q 'GOVERNED CONNECTOR LIBRARY' connector-library.html
           grep -q 'ВОДИЛКА ЗА ЗОКИ' zoki-legal-ai-guide.html
@@ -177,7 +177,7 @@ jobs:
           grep -q '/data/mk-current-law-watch-latest.json' consolidator/index.html
           grep -q 'Case-Law Corpus Radar' case-law-curation.html
           grep -q '/api/case-law/curation-plan' case-law-curation.html
-          grep -q 'ai-advokat-chat.js?v=20261106-root-r15-voice-r2-runtime' index.html
+          grep -q 'ai-advokat-chat.js?v=20261109-root-r15-voice-r4-runtime' index.html
           grep -q 'ai-advokat-chat.css?v=20261106-root-r15-voice' index.html
           grep -q 'AI_ADVOCAT_VOICE_R4' assets/ai-advokat-voice.mjs
           grep -q 'bindMicrophone' assets/ai-advokat-voice.mjs
