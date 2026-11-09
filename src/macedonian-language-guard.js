@@ -2,7 +2,7 @@
 // Normative basis: "Правопис на македонскиот јазик", second edition, Skopje, 2017.
 // This module encodes a concise operational guard; it does not reproduce the publication.
 
-export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V14_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
+export const MACEDONIAN_LANGUAGE_STANDARD_VERSION="MK_ORTHOGRAPHY_2017_RUNTIME_V15_PROFESSIONAL_LEGAL_STYLE";
 
 export const MACEDONIAN_ORTHOGRAPHY_2017_SOURCE=Object.freeze({
   id:"MK-ORTHOGRAPHY-2017-2ED",
@@ -21,8 +21,12 @@ export const MACEDONIAN_ORTHOGRAPHY_2017_SOURCE=Object.freeze({
 export const MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE=Object.freeze([
   {id:"R47",topic:"sentence_capitalisation",policy:"Почетокот на реченицата се пишува со голема почетна буква."},
   {id:"R53",topic:"correspondence_salutation",policy:"По обраќање со запирка, текстот во нов ред почнува со голема буква; во истиот ред продолжува со мала, освен ако друго правило бара голема."},
+  {id:"R56",topic:"titles_and_ranks",policy:"Титулите и звањата во македонски текст се пишуваат со мала почетна буква, освен кога друго правило бара голема буква."},
   {id:"R57",topic:"respect_forms",policy:"Вие/Ваш се пишуваат со голема почетна буква при обраќање на едно лице; со мала при обраќање на повеќе лица."},
   {id:"R212",topic:"punctuation",policy:"Интерпункциските знаци се применуваат според функцијата и структурата на реченицата; точката завршува расказна целина."},
+  {id:"R330",topic:"spacing",policy:"По интерпункциски знак се остава белина кога правилото тоа го бара; правното форматирање не смее да лепи зборови и интерпункција."},
+  {id:"SECTION-VII",topic:"abbreviations",policy:"Скратениците по правило се пишуваат со големи букви и без точки; изворно утврдените официјални ознаки се зачувуваат верно."},
+  {id:"R418",topic:"bibliographic_citation",policy:"Библиографското цитирање мора јасно да го поврзе основниот текст со библиографскиот опис; дозволени се упатувања во текстот или фусноти."},
   {id:"R396",topic:"headings",policy:"Насловот стои во нов ред, почнува со голема буква и нема точка на крајот."},
   {id:"LEGAL-NUMBERING",topic:"legal_numbering",policy:"Општите именки со конкретен број се со мала буква: член 5, став 1, табела 1."}
 ]);
@@ -35,7 +39,11 @@ export const MACEDONIAN_2017_SYSTEM_RULES=[
   "LANGUAGE CONTRACT — MACEDONIAN 2017.",
   "SOURCE PROFILE — MK-ORTHOGRAPHY-2017-2ED. This runtime language contract is anchored to the second edition of Правопис на македонскиот јазик, Skopje 2017, published by the Institute for Macedonian Language „Krste Misirkov“ and Kultura AD.",
   "Apply the orthography as a language and document-form standard only. It never establishes current law, legal effect, jurisdiction, statutory validity or case-law authority.",
-  "For generated Macedonian legal prose, apply sentence capitalisation, punctuation, correspondence salutation, respectful forms, headings, and legal-numbering style consistently. Prefer lower-case common nouns before concrete numbers such as член 5 and став 1 unless a separate proper-name rule applies.",
+  "For generated Macedonian legal prose, apply sentence capitalisation, punctuation, correspondence salutation, respectful forms, headings, abbreviations, bibliographic citation and legal-numbering style consistently. Prefer lower-case common nouns before concrete numbers such as член 5 and став 1 unless a separate proper-name rule applies.",
+  "Write professional titles and ranks with lower-case initials in ordinary Macedonian prose unless a separate proper-name or sentence-initial rule applies.",
+  "For ordinary Macedonian abbreviations, prefer the Правопис 2017 convention of capital letters without full stops; preserve official source abbreviations verbatim when source fidelity requires it.",
+  "Use clean Macedonian punctuation and spacing. Do not glue words to punctuation where standard spacing is required, and do not introduce foreign typographic habits into legal drafts.",
+  "When citing literature or secondary doctrine, keep the citation method internally consistent and ensure that every in-text or footnote reference maps to a bibliographic description. This language-format rule never upgrades secondary literature into legal authority.",
   "For formal drafts, headings should be on their own line and should not end in a full stop.",
   "In correspondence, preserve the 2017 salutation rule: after a comma, a new-line continuation begins with a capital letter; same-line continuation begins with a lower-case letter unless independently capitalised.",
   "When addressing one person respectfully, use Вие/Ваш with an initial capital; when addressing multiple persons, use вие/ваш in lower-case, unless a separate title rule applies.",
