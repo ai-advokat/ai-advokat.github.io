@@ -146,9 +146,9 @@ jobs:
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/?runtime_sync=$nonce" -o /tmp/runtime-sync-main.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r15&runtime_sync=$nonce" -o /tmp/runtime-sync-bot.html || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261109-core-r15-voice-r3&runtime_sync=$nonce" -o /tmp/runtime-sync-core.js || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-chat.js?v=20261109-root-r15-voice-r3-runtime&runtime_sync=$nonce" -o /tmp/runtime-sync-internal-chat.js || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-voice.mjs?v=20261109-voice-r3&runtime_sync=$nonce" -o /tmp/runtime-sync-voice.mjs || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261109-core-r15-voice-r4&runtime_sync=$nonce" -o /tmp/runtime-sync-core.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-chat.js?v=20261109-root-r15-voice-r4-runtime&runtime_sync=$nonce" -o /tmp/runtime-sync-internal-chat.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-voice.mjs?v=20261109-voice-r4&runtime_sync=$nonce" -o /tmp/runtime-sync-voice.mjs || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-chat.css?v=20261106-root-r15-voice&runtime_sync=$nonce" -o /tmp/runtime-sync-internal.css || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.css?v=20261106-access-r15-voice&runtime_sync=$nonce" -o /tmp/runtime-sync-external.css || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view&runtime_sync=$nonce" -o /tmp/runtime-sync-vnext.js || true
@@ -177,12 +177,12 @@ jobs:
           done
           test "$deployed" = "1"
 
-          grep -q 'ai-advokat-chat.js?v=20261109-root-r15-voice-r3-runtime' /tmp/runtime-sync-main.html
+          grep -q 'ai-advokat-chat.js?v=20261109-root-r15-voice-r4-runtime' /tmp/runtime-sync-main.html
           grep -q 'id="aiChatMic"' /tmp/runtime-sync-main.html
           grep -q 'id="aiChatVoiceStatus"' /tmp/runtime-sync-main.html
-          grep -q 'standalone-bot.js?v=20261109-core-r15-voice-r3' /tmp/runtime-sync-bot.html
+          grep -q 'standalone-bot.js?v=20261109-core-r15-voice-r4' /tmp/runtime-sync-bot.html
           grep -q 'id="mic"' /tmp/runtime-sync-bot.html
-          grep -q 'AI_ADVOCAT_VOICE_R3' /tmp/runtime-sync-voice.mjs
+          grep -q 'AI_ADVOCAT_VOICE_R4' /tmp/runtime-sync-voice.mjs
           grep -q 'bindMicrophone' /tmp/runtime-sync-voice.mjs
           grep -q 'bindSpeakButton' /tmp/runtime-sync-voice.mjs
           grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view' /tmp/runtime-sync-bot.html
