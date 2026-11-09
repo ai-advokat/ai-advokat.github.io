@@ -16,7 +16,7 @@ test("Legal AI Suite is visible in desktop and mobile header with Zoki guide",()
 
 test("suite exposes full governed platform map without claiming native mobile",()=>{
   const html=read("legal-ai-suite.html");
-  for(const phrase of ["Agents","Vault & Review Tables","Matter Spaces","Knowledge & Research","Contract Intelligence","Horizon Scanning","Matter Memory","Fact & Evidence Graph","Governed Connectors","Command Center","Mobile-ready access","Governance & Audit"]){
+  for(const phrase of ["Agents","Vault & Review Tables","Matter Spaces","Knowledge & Research","AI CONTRACT","Horizon Scanning","Matter Memory","Fact & Evidence Graph","Governed Connectors","Command Center","Mobile-ready access","Governance & Audit"]){
     assert.ok(html.includes(phrase),phrase);
   }
   assert.ok(html.includes("Не се претставува како native iOS/Android app"));
