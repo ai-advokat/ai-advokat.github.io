@@ -37,10 +37,10 @@ jobs:
           node --check assets/standalone-bot-toolkit.js
           node --check assets/frontend-runtime-guard.js
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' index.html
-          grep -q 'ai-advokat-chat.js?v=20261106-root-r15-voice-r2-runtime' index.html
+          grep -q 'ai-advokat-chat.js?v=20261109-root-r15-voice-r4-runtime' index.html
           grep -q 'ai-advokat-chat.css?v=20261106-root-r15-voice' index.html
           grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' bot/index.html
-          grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' bot/index.html
+          grep -q 'standalone-bot.js?v=20261109-core-r15-voice-r4' bot/index.html
           grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view' bot/index.html
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' bot/index.html
           grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' bot/index.html
@@ -81,10 +81,10 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-voice.mjs || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/pages-release.txt?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-release.txt || true
             if grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-home.html 2>/dev/null \
-              && grep -q 'ai-advokat-chat.js?v=20261106-root-r15-voice-r2-runtime' /tmp/pages-home.html 2>/dev/null \
+              && grep -q 'ai-advokat-chat.js?v=20261109-root-r15-voice-r4-runtime' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'ai-advokat-chat.css?v=20261106-root-r15-voice' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-bot.html 2>/dev/null \
-              && grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' /tmp/pages-bot.html 2>/dev/null \
+              && grep -q 'standalone-bot.js?v=20261109-core-r15-voice-r4' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' /tmp/pages-bot.html 2>/dev/null \
               && grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' /tmp/pages-bot.html 2>/dev/null \
