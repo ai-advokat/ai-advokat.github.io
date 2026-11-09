@@ -807,6 +807,14 @@ describe("production AI binding guard", () => {
     assert.match(repairHelper,/if\(releaseVerdict\.verdict===\"RELEASE\"\)/, "canonical-clean fallback must be explicitly gated on RELEASE");
     assert.match(repairHelper,/mandatory_language_editor_failed/, "editor failure must still fail closed when the pre-editor text is not canonical-clean");
 
+    const uiTranslate = src.slice(src.indexOf("async function handleUiTranslation("), src.indexOf("export default {"));
+    const uiTranslateLimiter=uiTranslate.indexOf("consumeWindow(env,");
+    const uiTranslateProvider=uiTranslate.indexOf("runWorkersAIText(env,");
+    assert.ok(uiTranslateLimiter>0 && uiTranslateProvider>0,"public UI translation must use an atomic D1 limiter and the central Workers AI provider");
+    assert.ok(uiTranslateLimiter<uiTranslateProvider,"UI translation limiter must run before provider execution");
+    assert.match(uiTranslate,/UI_TRANSLATE_HOURLY_LIMIT/,"UI translation hourly limit must be explicit");
+    assert.match(uiTranslate,/UI_TRANSLATE_DAILY_LIMIT/,"UI translation daily limit must be explicit");
+
     const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function handleGPTChat("));
     assert.equal((helper.match(/runWorkersAIText\(/g) || []).length, 1, "FREE public helper delegates one primary generation to the central provider contract");
     assert.equal((helper.match(/repairWorkersAIMacedonianIfNeeded\(/g) || []).length, 1, "FREE public helper may invoke the bounded language repair only after primary generation");
@@ -829,7 +837,7 @@ describe("production AI binding guard", () => {
     assert.match(draftRoute,/runPrivateWorkersAISynthesis/, "draft free fallback must stay inside the case-scoped route");
 
     assert.equal((src.match(/env\.AI\.run\(/g) || []).length, 0, "raw Workers AI calls must not bypass the central provider contract");
-    assert.equal((src.match(/runWorkersAIText\(/g) || []).length, 5, "Workers AI call-sites remain limited to article assistant, public FREE chat, one bounded Pravopis repair and two private CasePilot helpers");
+    assert.equal((src.match(/runWorkersAIText\(/g) || []).length, 6, "Workers AI call-sites remain limited to article assistant, public FREE chat, bounded UI translation, one Pravopis repair and two private CasePilot helpers");
   });
 
   test("P2 a production AI binding requires the quota protections to be present", () => {
