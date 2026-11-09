@@ -4,13 +4,14 @@ import {
   AI_ADVOCAT_VOICE_VERSION,
   splitSpeechText,
   pickMacedonianVoice,
+  pickVoiceForLanguage,
   speechRecognitionErrorMessage,
   microphonePermissionErrorMessage,
   createAIAdvokatVoiceRuntime
 } from "../assets/ai-advokat-voice.mjs";
 
-test("voice runtime exposes the governed R2 contract",()=>{
-  assert.equal(AI_ADVOCAT_VOICE_VERSION,"AI_ADVOCAT_VOICE_R2");
+test("voice runtime exposes the governed R3 bilingual audio-save contract",()=>{
+  assert.equal(AI_ADVOCAT_VOICE_VERSION,"AI_ADVOCAT_VOICE_R3");
 });
 
 test("speech chunking keeps long legal answers bounded without losing order",()=>{
@@ -40,7 +41,7 @@ test("microphone permission and device errors have actionable Macedonian message
   assert.match(microphonePermissionErrorMessage({name:"NotFoundError"}),/пронајден микрофон/iu);
 });
 
-test("Voice R2 requests real microphone permission before starting recognition",async()=>{
+test("Voice R3 requests real microphone permission before starting recognition",async()=>{
   const stopped=[];
   class FakeRecognition{
     constructor(){FakeRecognition.last=this;}
@@ -72,7 +73,7 @@ test("Voice R2 requests real microphone permission before starting recognition",
   assert.match(status,/активен|вклучувам/iu);
 });
 
-test("Voice R2 keeps the microphone retryable when browser permission is denied",async()=>{
+test("Voice R3 keeps the microphone retryable when browser permission is denied",async()=>{
   class FakeRecognition{constructor(){FakeRecognition.created=true;} start(){}}
   FakeRecognition.created=false;
   const win={
@@ -148,4 +149,69 @@ test("shared speech output reads a long answer in bounded chunks and returns the
   assert.ok(spoken.length>1);
   assert.equal(button.textContent,"🔊 Прочитај");
   assert.equal(button.dataset.voiceState,"idle");
+});
+
+
+test("bilingual voice selection prefers the requested language without cross-language substitution",()=>{
+  const voices=[
+    {lang:"mk-MK",name:"Macedonian"},
+    {lang:"en-US",name:"English US"},
+    {lang:"en-GB",name:"English UK"}
+  ];
+  assert.equal(pickVoiceForLanguage(voices,"mk-MK")?.name,"Macedonian");
+  assert.equal(pickVoiceForLanguage(voices,"en-US")?.name,"English US");
+  assert.equal(pickVoiceForLanguage([{lang:"mk-MK",name:"MK"}],"en-US"),null);
+});
+
+test("speech output can switch from Macedonian to English per message",()=>{
+  const spoken=[];
+  class FakeUtterance{constructor(text){this.text=text;}}
+  const synth={
+    getVoices:()=>[{lang:"mk-MK",name:"MK"},{lang:"en-US",name:"EN"}],
+    cancel(){},
+    speak(utter){spoken.push({text:utter.text,lang:utter.lang,voice:utter.voice?.name});utter.onend?.();}
+  };
+  const win={speechSynthesis:synth,SpeechSynthesisUtterance:FakeUtterance};
+  const runtime=createAIAdvokatVoiceRuntime(win,{lang:"mk-MK"});
+  runtime.speak("This is an English legal answer.",{langOverride:"en-US",status:()=>{}});
+  assert.equal(spoken[0].lang,"en-US");
+  assert.equal(spoken[0].voice,"EN");
+});
+
+test("audio-save capability records shared tab audio locally and downloads WEBM",async()=>{
+  const downloads=[];
+  class FakeUtterance{constructor(text){this.text=text;}}
+  const synth={
+    getVoices:()=>[{lang:"mk-MK",name:"MK"}],
+    cancel(){},
+    speak(utter){queueMicrotask(()=>utter.onend?.());}
+  };
+  class FakeMediaRecorder{
+    static isTypeSupported(type){return type.includes("webm");}
+    constructor(stream,opts){this.stream=stream;this.opts=opts;this.state="inactive";}
+    start(){this.state="recording";queueMicrotask(()=>this.ondataavailable?.({data:new Blob(["audio"],{type:"audio/webm"})}));}
+    stop(){if(this.state==="inactive")return;this.state="inactive";queueMicrotask(()=>this.onstop?.());}
+  }
+  class FakeMediaStream{constructor(tracks){this.tracks=tracks;}}
+  const captureTrack={stop(){}};
+  const capture={getAudioTracks:()=>[captureTrack],getTracks:()=>[captureTrack]};
+  const body={appendChild(){}};
+  const win={
+    speechSynthesis:synth,
+    SpeechSynthesisUtterance:FakeUtterance,
+    MediaRecorder:FakeMediaRecorder,
+    MediaStream:FakeMediaStream,
+    Blob,
+    URL:{createObjectURL:()=> "blob:test",revokeObjectURL(){}},
+    document:{body,createElement:()=>({style:{},click(){downloads.push(this.download);},remove(){}})},
+    navigator:{mediaDevices:{getDisplayMedia:async()=>capture}},
+    setTimeout:(fn)=>{queueMicrotask(fn);return 1;},
+    clearTimeout(){}
+  };
+  const runtime=createAIAdvokatVoiceRuntime(win,{lang:"mk-MK"});
+  const out=await runtime.saveSpokenAudio("Правен одговор",{status:()=>{},filename:"answer-MK.webm"});
+  assert.equal(out.ok,true);
+  assert.equal(downloads[0],"answer-MK.webm");
+  assert.equal(runtime.capabilities.audioSave,true);
+  assert.deepEqual(runtime.capabilities.languages,["mk-MK","en-US"]);
 });

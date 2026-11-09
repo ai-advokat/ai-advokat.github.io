@@ -159,8 +159,13 @@ function normalizeWords(value){
 export function shouldEnforceMacedonianOutput(userText){
   const raw=String(userText||"").normalize("NFKC");
   const lower=raw.toLocaleLowerCase("mk");
-  if(/(?:^|\s)(?:на|во)\s+(?:англиски|албански|српски|бугарски|руски|германски|француски)(?:\s|$)/u.test(lower)
-     && !/(?:^|\s)(?:на|во)\s+македонски(?:\s|$)/u.test(lower)){
+  if(
+    (
+      /(?:^|\s)(?:на|во)\s+(?:англиски|албански|арапски|бенгалски|босански|бугарски|кинески|хрватски|есперанто|француски|германски|грчки|хауса|хебрејски|хинди|унгарски|индонезиски|италијански|јапонски|корејски|латински|персиски|португалски|панџапски|руски|српски|словенечки|шпански|свахили|турски|урду|виетнамски)(?:\s|$)/u.test(lower)
+      || /please\s+answer\s+in\s+(?:albanian|arabic|bengali|bosnian|bulgarian|chinese|croatian|english|esperanto|french|german|greek|hausa|hebrew|hindi|hungarian|indonesian|italian|japanese|korean|latin|persian|portuguese|punjabi|russian|serbian|slovenian|spanish|swahili|turkish|urdu|vietnamese)\b/iu.test(raw)
+    )
+    && !/(?:^|\s)(?:на|во)\s+македонски(?:\s|$)/u.test(lower)
+  ){
     return false;
   }
   if(/(?:^|\s)(?:на|во)\s+македонски(?:\s|$)/u.test(lower)) return true;

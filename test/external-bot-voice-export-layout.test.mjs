@@ -16,7 +16,7 @@ test("external voice conversation remains mk-MK dictation -> auto send -> auto s
   assert.match(core,/requestSubmit\(\)/);
   assert.match(core,/voice\?\.speak\?\.\(spokenAnswer,\{status\}\)/);
   assert.match(voice,/SpeechRecognitionCtor=win\?\.SpeechRecognition\|\|win\?\.webkitSpeechRecognition/);
-  assert.match(voice,/utter\.lang=lang/);
+  assert.match(voice,/utter\.lang=effectiveLang/);
   assert.match(voice,/pickMacedonianVoice/);
 });
 
@@ -53,4 +53,18 @@ test("Consolidator stays inside its R7 engine box",()=>{
   assert.match(css,/\.r7-engine\{[\s\S]*overflow:hidden/);
   assert.match(css,/\.r7-engine strong\{[\s\S]*white-space:nowrap;overflow:hidden/);
   assert.match(css,/@media\(max-width:1380px\)[\s\S]*consolidator"\]\{min-width:112px\}/);
+});
+
+
+test("external assistant exposes MK EN voice selector and local audio save",()=>{
+  assert.match(core,/message-voice-lang/);
+  assert.match(core,/mk\.value='mk-MK'/);
+  assert.match(core,/en\.value='en-US'/);
+  assert.match(core,/message-save-audio/);
+  assert.match(core,/bindSaveAudioButton/);
+  assert.match(core,/AI-Advokat-answer-EN\.webm/);
+  assert.match(core,/AI-Advokat-odgovor-MK\.webm/);
+  assert.match(voice,/getDisplayMedia/);
+  assert.match(voice,/Share tab audio/);
+  assert.match(voice,/audioSave:Boolean/);
 });

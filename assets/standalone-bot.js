@@ -92,6 +92,60 @@ let key = '', history = [], pending = null, generation = 0;
 let sessionId = crypto.randomUUID();
 const welcome = $('welcome').cloneNode(true);
 
+const AI_ADVOCAT_LANGUAGES=Object.freeze([
+  {code:"sq",name:"Albanian",locale:"sq-AL"},{code:"ar",name:"Arabic",locale:"ar-SA"},
+  {code:"bn",name:"Bengali",locale:"bn-BD"},{code:"bs",name:"Bosnian",locale:"bs-BA"},
+  {code:"bg",name:"Bulgarian",locale:"bg-BG"},{code:"zh",name:"Chinese",locale:"zh-CN"},
+  {code:"hr",name:"Croatian",locale:"hr-HR"},{code:"en",name:"English",locale:"en-US"},
+  {code:"eo",name:"Esperanto",locale:"eo"},{code:"fr",name:"French",locale:"fr-FR"},
+  {code:"de",name:"German",locale:"de-DE"},{code:"el",name:"Greek",locale:"el-GR"},
+  {code:"ha",name:"Hausa",locale:"ha-NG"},{code:"he",name:"Hebrew",locale:"he-IL"},
+  {code:"hi",name:"Hindi",locale:"hi-IN"},{code:"hu",name:"Hungarian",locale:"hu-HU"},
+  {code:"id",name:"Indonesian",locale:"id-ID"},{code:"it",name:"Italian",locale:"it-IT"},
+  {code:"ja",name:"Japanese",locale:"ja-JP"},{code:"ko",name:"Korean",locale:"ko-KR"},
+  {code:"la",name:"Latin",locale:"la"},{code:"mk",name:"Macedonian",locale:"mk-MK"},
+  {code:"fa",name:"Persian",locale:"fa-IR"},{code:"pt",name:"Portuguese",locale:"pt-PT"},
+  {code:"pa",name:"Punjabi",locale:"pa-IN"},{code:"ru",name:"Russian",locale:"ru-RU"},
+  {code:"sr",name:"Serbian",locale:"sr-RS"},{code:"sl",name:"Slovenian",locale:"sl-SI"},
+  {code:"es",name:"Spanish",locale:"es-ES"},{code:"sw",name:"Swahili",locale:"sw-KE"},
+  {code:"tr",name:"Turkish",locale:"tr-TR"},{code:"ur",name:"Urdu",locale:"ur-PK"},
+  {code:"vi",name:"Vietnamese",locale:"vi-VN"}
+]);
+const LANGUAGE_KEY="aiadvokat-language";
+function languageMeta(code){
+  return AI_ADVOCAT_LANGUAGES.find(x=>x.code===String(code||"").toLowerCase())||AI_ADVOCAT_LANGUAGES.find(x=>x.code==="mk");
+}
+function readPreferredLanguage(){
+  try{
+    const saved=localStorage.getItem(LANGUAGE_KEY);
+    return languageMeta(saved).code;
+  }catch{return "mk";}
+}
+function writePreferredLanguage(code){
+  const lang=languageMeta(code);
+  try{localStorage.setItem(LANGUAGE_KEY,lang.code);}catch{}
+  document.documentElement.lang=lang.code;
+  const select=$("botLanguage");
+  if(select&&select.value!==lang.code) select.value=lang.code;
+  return lang;
+}
+function selectedLanguageMeta(){return languageMeta($("botLanguage")?.value||readPreferredLanguage());}
+function selectedSpeechLocale(){return selectedLanguageMeta().locale;}
+function withOutputLanguageDirective(text){
+  const lang=selectedLanguageMeta();
+  if(lang.code==="mk") return String(text||"");
+  return "Please answer in "+lang.name+". Preserve official legal source quotations, citations, case numbers and statutory identifiers verbatim.\n\n"+String(text||"");
+}
+function bindLanguageSelector(){
+  const select=$("botLanguage");
+  if(!select)return;
+  writePreferredLanguage(readPreferredLanguage());
+  select.addEventListener("change",()=>{
+    const lang=writePreferredLanguage(select.value);
+    status("Јазик за AI објаснување и глас: "+lang.name+". Официјалните извори и цитати остануваат source-faithful.");
+  });
+}
+
 function status(text) { $('status').textContent = text; }
 let voiceRuntime=null;
 const EXTERNAL_VOICE_CONVERSATION_VERSION="AI_ADVOCAT_EXTERNAL_VOICE_CONVERSATION_R1";
@@ -101,9 +155,9 @@ window.AIAdvokatExternalVoiceConversation=Object.freeze({
   mode:"half_duplex_auto_send_auto_speak",
   language:"mk-MK"
 });
-const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261106-voice-r2")
+const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261109-voice-r3")
   .then(mod=>{
-    voiceRuntime=mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"});
+    voiceRuntime=mod.createAIAdvokatVoiceRuntime(window,{lang:selectedSpeechLocale()});
     return voiceRuntime;
   })
   .catch(error=>{
@@ -137,12 +191,45 @@ function message(role, text, model = '') {
   if(role==='assistant' && normalizedText){
     const voiceTools=document.createElement('div');
     voiceTools.className='message-voice-tools';
+
+    const language=document.createElement('select');
+    language.className='message-voice-lang';
+    language.setAttribute('aria-label','Јазик за гласно читање и аудио');
+    language.title='Јазик за гласно читање и зачувување';
+    for(const item of AI_ADVOCAT_LANGUAGES){
+      const option=document.createElement('option');
+      option.value=item.locale;
+      option.textContent=item.code.toUpperCase();
+      if(item.code===selectedLanguageMeta().code) option.selected=true;
+      language.append(option);
+    }
+
     const speak=document.createElement('button');
     speak.type='button';
     speak.className='message-speak';
-    voiceTools.append(speak);
+
+    const saveAudio=document.createElement('button');
+    saveAudio.type='button';
+    saveAudio.className='message-save-audio';
+    saveAudio.textContent='💾 Аудио';
+
+    voiceTools.append(language,speak,saveAudio);
     article.append(voiceTools);
-    voiceRuntimeReady.then(voice=>voice?.bindSpeakButton({button:speak,text:()=>normalizedText,status}));
+    voiceRuntimeReady.then(voice=>{
+      voice?.bindSpeakButton({
+        button:speak,
+        text:()=>normalizedText,
+        status,
+        language:()=>language.value
+      });
+      voice?.bindSaveAudioButton?.({
+        button:saveAudio,
+        text:()=>normalizedText,
+        status,
+        language:()=>language.value,
+        filename:()=> 'AI-Advokat-voice-'+languageMeta(String(language.value).split("-")[0]).code.toUpperCase()+'.webm'
+      });
+    });
   }
   $('messages').append(article);
   article.scrollIntoView({block:'end'});
@@ -315,6 +402,7 @@ voiceRuntimeReady.then(voice=>{
     button:$('mic'),
     input:$('question'),
     status,
+    language:()=>selectedSpeechLocale(),
     onTranscript:()=>{
       if(pending){
         status('Тековниот одговор сè уште се обработува. Запрете го или почекајте, па зборувајте повторно.');
@@ -387,7 +475,7 @@ $('composer').onsubmit = async event => {
   try {
     const guides = await guideMatches(outboundQ,controller.signal), ids = guides.map(g => g.id);
     const guideDocuments = await localGuideDocuments(window.AIAdvokatGuideVault,ids,$('useLocalGuides').checked);
-    const data = await request('/api/bot',{signal:controller.signal,body:{q:outboundQ,sessionId,mode:$('researchMode').value,webDomainPreset:$('webDomainPreset')?.value||'all',guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
+    const data = await request('/api/bot',{signal:controller.signal,body:{q:withOutputLanguageDirective(outboundQ),sessionId,mode:$('researchMode').value,webDomainPreset:$('webDomainPreset')?.value||'all',guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     pulse.remove();
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
@@ -397,7 +485,7 @@ $('composer').onsubmit = async event => {
       const spokenAnswer=String(data.answer||'').trim();
       if(spokenAnswer){
         queueMicrotask(()=>voiceRuntimeReady.then(voice=>{
-          const ok=voice?.speak?.(spokenAnswer,{status});
+          const ok=voice?.speak?.(spokenAnswer,{status,langOverride:selectedSpeechLocale()});
           if(ok===false) status('Одговорот е подготвен, но гласното читање не е достапно во овој прелистувач.');
         }));
       }
@@ -436,6 +524,7 @@ async function restoreAccess() {
 }
 // Ensure a fresh device can type and submit a question even before access is restored.
 // If no key exists, submit opens the governed professional-access dialog instead of appearing inert.
+bindLanguageSelector();
 busy(false);
 window.AIAdvokatCoreReady = true;
 document.documentElement.dataset.botCoreRuntime = 'ready';
