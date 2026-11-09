@@ -14,7 +14,7 @@ test('standalone bot vNext exposes unified professional workspace without replac
   assert.match(source,/body\.history=thread\.history\.slice\(-12\)/);
   assert.match(source,/Правен асистент/);
   assert.match(source,/Правни извори/);
-  assert.match(source,/Судска практика/);
+  assert.match(source,/Судска пракса/);
   assert.match(source,/CasePilot/);
   assert.match(source,/Документи/);
   assert.match(source,/Workflows/);

@@ -159,6 +159,7 @@ function buildShell(){
       <button data-vnext-action="professional-ecosystem"><span class="vnext-nav-symbol" aria-hidden="true">◆</span><span>Pro Ecosystem</span></button>
       <button data-vnext-action="justice-daily"><span class="vnext-nav-symbol" aria-hidden="true">◉</span><span>Justice Daily</span></button>
       <button data-vnext-action="cases"><span class="vnext-nav-symbol" aria-hidden="true">⚖</span><span>Судска пракса</span></button>
+      <button data-vnext-action="case-law-radar"><span class="vnext-nav-symbol" aria-hidden="true">⌖</span><span>Case-Law Radar</span></button>
       <button data-vnext-action="proactive-runtime"><span class="vnext-nav-symbol" aria-hidden="true">⚡</span><span>Proactive Runtime</span></button>
       <button data-vnext-action="proactive-agents"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Proactive Agents</span></button>
       <button data-vnext-action="legal-command-center"><span class="vnext-nav-symbol" aria-hidden="true">⌘</span><span>Legal Command Center</span></button>
@@ -466,6 +467,7 @@ function runAction(action){
   if(action==='justice-daily'){window.AIAdvokatStandaloneToolkits?.openJusticeDaily?.();return;}
   if(action==='review'){openEvidence('human');return;}
   if(action==='cases'){window.open('/judicial-practice.html','_blank','noopener');return;}
+  if(action==='case-law-radar'){window.open('/case-law-curation.html','_blank','noopener');return;}
   if(action==='proactive-runtime'){window.open('/proactive-agent-runtime.html','_blank','noopener');return;}
   if(action==='proactive-agents'){window.open('/proactive-legal-agents.html','_blank','noopener');return;}
   if(action==='legal-command-center'){window.open('/legal-command-center.html','_blank','noopener');return;}
@@ -556,7 +558,7 @@ function exportThread(){
   const t=activeThread();
   const items=Array.isArray(t?.history)?t.history:[];
   if(!items.length){$('status').textContent='Сè уште нема завршен разговор за преземање.';return;}
-  const text='AI Advokat — работен разговор\nПотребна е професионална проверка.\n\n'+items.map(m=>(m.role==='user'?'Вие':'AI Advokat')+':\n'+m.text).join('\n\n');
+  const text='AI Advokat — работен разговор\nПотребна е професионална човечка проверка пред професионална употреба.\n\n'+items.map(m=>(m.role==='user'?'Вие':'AI Advokat')+':\n'+m.text).join('\n\n');
   downloadTextBlob(text,'AI-Advokat-razgovor.txt','text/plain;charset=utf-8');
 }
 function takeOverExports(){
