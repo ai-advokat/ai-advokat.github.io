@@ -1,16 +1,123 @@
-<!doctype html><html lang="mk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Contract Intelligence · AI Advokat</title><style>:root{--bg:#07131d;--panel:#0d1f2d;--line:#274254;--text:#eef6fb;--muted:#a9bdca;--accent:#7fd4ff;--gold:#d7b673;--ok:#9ce0b0;--warn:#ffd88a}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}.wrap{width:min(1180px,92vw);margin:auto}.top{border-bottom:1px solid var(--line);background:#091925}.topin{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:14px 0}.brand{font-weight:900;color:var(--text);text-decoration:none}.nav{display:flex;gap:12px;flex-wrap:wrap}.nav a,a{color:var(--accent)}main{padding:42px 0 70px}.eyebrow{font-size:.78rem;font-weight:900;letter-spacing:.08em;color:var(--accent)}h1{font-size:clamp(2.1rem,5vw,4.2rem);line-height:1.02;margin:.3em 0}.lead,.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px;margin-top:18px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}.card h2,.card h3{margin-top:0}.btn{display:inline-block;border:1px solid #3a6f8d;background:#102b3d;color:var(--text);border-radius:10px;padding:10px 13px;font-weight:850;text-decoration:none;margin:5px 5px 0 0}.gold{border-color:var(--gold);color:var(--gold)}.gate{margin-top:24px;border-left:4px solid var(--gold);padding:16px 18px;background:#0a1b28;border-radius:10px;color:var(--muted)}.gate strong{color:var(--text)}input,textarea,select{width:100%;background:#081824;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:10px}textarea{min-height:180px}button{margin-top:12px;border:1px solid #3a6f8d;background:#102b3d;color:var(--text);border-radius:10px;padding:10px 13px;font-weight:850;cursor:pointer}.out{margin-top:13px;background:#081824;border:1px solid var(--line);border-radius:10px;padding:12px;white-space:pre-wrap;overflow:auto}.chips{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.chip{border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:800}.ok{color:var(--ok)}.warn{color:var(--warn)}table{width:100%;border-collapse:collapse}.scroll{overflow:auto}th,td{text-align:left;padding:9px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--accent)}ol li{margin:.65em 0}footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted)}</style></head>
-<body><header class="top"><div class="wrap topin"><a class="brand" href="/">AI Advokat</a><nav class="nav"><a href="/legal-ai-suite.html">Legal AI Suite</a><a href="/zoki-legal-ai-guide.html">Водилка</a></nav></div></header>
-<main class="wrap"><div class="eyebrow">CONTRACT INTELLIGENCE · LOCAL DETERMINISTIC REVIEW</div><h1>Прво извлечи што има. Потоа адвокатот одлучува што значи.</h1>
-<p class="lead">Алатката локално означува договорни клаузули и ги споредува со избран checklist/playbook. „Not detected“ не значи дека клаузулата правно не постои.</p>
-<div class="grid"><section class="card"><h2>1 · Договор</h2><label>Назив</label><input id="name" value="договор"><label>Текст</label><textarea id="text" placeholder="Залепи текст од договор..."></textarea><button id="run">Анализирај договор</button></section>
-<section class="card"><h2>2 · Playbook checklist</h2><div id="checks"></div><button id="compare">Спореди со checklist</button><div class="out" id="playbookOut">Нема споредба.</div></section></div>
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="AI CONTRACT · governed contract review by AI Advokat. Local deterministic clause spotting, DPRO-14R provenance, playbook comparison and Human Gate.">
+<title>AI CONTRACT · AI Advokat</title>
+<style>
+:root{--bg:#06131e;--panel:#0c2030;--panel2:#10283a;--line:#2a465b;--text:#f1f6fa;--muted:#a9bdca;--accent:#80d3ff;--gold:#d7b673;--ok:#9ce0b0;--warn:#ffd88a;--bad:#ff9a9a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}.wrap{width:min(1220px,94vw);margin:auto}
+.top{border-bottom:1px solid var(--line);background:#081925;position:sticky;top:0;z-index:5}.topin{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:13px 0}.brand{font-weight:950;color:var(--text);text-decoration:none}.nav{display:flex;gap:12px;flex-wrap:wrap}.nav a,a{color:var(--accent)}
+main{padding:38px 0 72px}.eyebrow{font-size:.78rem;font-weight:950;letter-spacing:.09em;color:var(--accent)}h1{font-size:clamp(2.2rem,5vw,4.8rem);line-height:1;margin:.25em 0}.lead,.muted{color:var(--muted)}
+.statusbar,.chips,.actions{display:flex;gap:8px;flex-wrap:wrap}.statusbar{margin:18px 0}.chip{border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:850}.chip.ok{color:var(--ok)}.chip.warn{color:var(--warn)}.chip.bad{color:var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:18px}.card h2,.card h3{margin-top:0}.step{color:var(--gold);font-weight:950;font-size:.78rem;letter-spacing:.08em}
+label{display:block;font-weight:800;margin-top:10px}input,textarea,select{width:100%;background:#071925;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:10px;font:inherit}textarea{min-height:220px;resize:vertical}
+button,.btn{display:inline-block;border:1px solid #3d708d;background:#102b3d;color:var(--text);border-radius:10px;padding:10px 13px;font-weight:850;cursor:pointer;text-decoration:none;margin-top:10px}.btn.gold,button.gold{border-color:var(--gold);color:var(--gold)}button:disabled{opacity:.45;cursor:not-allowed}
+.out{margin-top:13px;background:#071925;border:1px solid var(--line);border-radius:10px;padding:12px;white-space:pre-wrap;overflow:auto}.risk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.risk div{border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}.risk b{display:block;font-size:1.5rem}.high b{color:var(--bad)}.medium b{color:var(--warn)}.low b{color:var(--ok)}
+.scroll{overflow:auto}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--accent)}
+.gate{margin-top:20px;border-left:4px solid var(--gold);padding:16px 18px;background:#0a1c29;border-radius:10px;color:var(--muted)}.gate strong{color:var(--text)}details{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px;background:#081a27}summary{cursor:pointer;font-weight:850}.modelnote{font-size:.88rem;color:var(--muted)}.hidden{display:none!important}
+footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted)}
+@media(max-width:700px){.topin{align-items:flex-start;flex-direction:column}.risk{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap topin"><a class="brand" href="/">AI Advokat · AI CONTRACT</a><nav class="nav"><a href="/legal-ai-suite.html">Legal AI Suite</a><a href="/casepilot-workspace.html">Secure Case Workspace</a><a href="/zoki-legal-ai-guide.html">Водилка</a></nav></div></header>
+<main class="wrap">
+<div class="eyebrow">AI CONTRACT · DPRO-14R IMPORTED BASELINE · LOCAL-FIRST REVIEW</div>
+<h1>Договорот прво се чита. Потоа се оценува. На крај одлучува човек.</h1>
+<p class="lead">AI CONTRACT го спојува локалниот deterministic Contract Intelligence на AI Advokat со проверливата DPRO-14R развојна историја. Анализата на оваа страница останува во прелистувачот. За доверливи документи и AI-assisted review користете Secure Case Workspace.</p>
+<div class="statusbar">
+<span class="chip ok">6 договорни модели</span><span class="chip ok">Local deterministic review</span><span class="chip ok">JSON export</span>
+<span class="chip warn">50 архивски QA наоди</span><span class="chip bad">28 HIGH · LEGAL HOLD</span><span class="chip bad">0/28 адвокатски одобрени</span>
+</div>
+
+<div class="grid">
+<section class="card"><div class="step">01 · TYPE</div><h2>Избери договорен профил</h2>
+<label for="model">Тип на договор</label><select id="model"></select>
+<div id="riskBox" class="risk"></div>
+<p class="modelnote" id="modelNote"></p>
+</section>
+
+<section class="card"><div class="step">02 · INPUT</div><h2>Внеси договор за локална анализа</h2>
+<label for="name">Назив</label><input id="name" value="договор">
+<label for="text">Текст</label><textarea id="text" placeholder="Залепете текст од договор. За доверливи/идентификувачки податоци користете Secure Case Workspace."></textarea>
+<div class="actions"><button id="run" class="gold">Анализирај локално</button><button id="clear">Исчисти</button></div>
+</section>
+
+<section class="card"><div class="step">03 · PLAYBOOK</div><h2>Playbook checklist</h2>
+<p class="muted">Штиклирајте клаузули што очекувате да постојат. „Not detected“ не е доказ дека правно не постојат.</p>
+<div id="checks"></div><button id="compare">Спореди со checklist</button><div class="out" id="playbookOut">Нема споредба.</div>
+</section>
+
+<section class="card"><div class="step">04 · PACKAGE</div><h2>Review package</h2>
+<p class="muted">Извезува локален JSON со детекцијата, checklist споредбата и Human Gate состојбата. Не е правно мислење.</p>
+<button id="export" disabled>💾 Преземи review JSON</button>
+<a class="btn gold" href="/casepilot-workspace.html">🔒 Secure Case Workspace</a>
+<div class="out" id="packageOut">Прво анализирај договор.</div>
+</section>
+</div>
+
 <section class="card"><h2>Review Table</h2><div class="scroll"><table><thead><tr><th>Клаузула</th><th>Статус</th><th>Прв match</th><th>Контекст</th></tr></thead><tbody id="rows"><tr><td colspan="4" class="muted">Нема анализа.</td></tr></tbody></table></div></section>
-<section class="card"><h2>Како се користи · 5 чекори</h2><ol><li>Внеси назив и залепи го текстот на договорот.</li><li>Кликни <strong>Анализирај договор</strong>.</li><li>Прегледај detected / not detected клаузули во Review Table.</li><li>Штиклирај што бара твојот playbook и кликни <strong>Спореди со checklist</strong>.</li><li>Адвокатот одлучува за ризик, редлајн и преговарачка позиција.</li></ol><p><a class="btn" href="/zoki-legal-ai-guide.html">Централна водилка за Зоки</a></p></section>
-<div class="gate"><strong>Human Gate.</strong> Ова не одредува валидност, правен ефект, преговарачка позиција или дали договорот треба да се прифати. Нема автоматско потпишување или испраќање.</div></main><footer><div class="wrap">AI Advokat · Contract Intelligence v1</div></footer>
-<script type="module">import {CONTRACT_CLAUSE_CATALOG,analyzeContractText,compareToPlaybook} from "./src/contract-intelligence.js";
-let last=null;
-const checks=document.getElementById("checks"),runBtn=document.getElementById("run"),compareBtn=document.getElementById("compare"),textEl=document.getElementById("text"),nameEl=document.getElementById("name"),rowsEl=document.getElementById("rows"),playbookOutEl=document.getElementById("playbookOut");
-for(const item of CONTRACT_CLAUSE_CATALOG){const l=document.createElement("label");l.style.display="block";const cb=document.createElement("input");cb.style.width="auto";cb.type="checkbox";cb.value=item.id;l.append(cb,document.createTextNode(" "+item.label));checks.appendChild(l)}
-runBtn.onclick=()=>{try{last=analyzeContractText({text:textEl.value,documentName:nameEl.value});rowsEl.innerHTML=last.clauses.map(x=>'<tr><td>'+x.label+'</td><td>'+x.status+'</td><td>'+(x.firstMatch||"—")+'</td><td>'+(x.snippet||"—")+'</td></tr>').join("")}catch(e){rowsEl.innerHTML='<tr><td colspan="4">'+e.message+'</td></tr>'}};
-compareBtn.onclick=()=>{try{if(!last)throw new Error("Прво анализирај договор.");const req=[...checks.querySelectorAll("input:checked")].map(x=>x.value);playbookOutEl.textContent=JSON.stringify(compareToPlaybook(last,{requiredClauses:req}),null,2)}catch(e){playbookOutEl.textContent=e.message}}</script></body></html>
+
+<section class="card"><h2>DPRO-14R provenance</h2>
+<p class="muted">Увезениот baseline потекнува од архивата „AI ДОГОВОРИ PRO“ од 09.11.2026. OFFLINE engine и ONLINE generator во архивата имаат идентичен SHA-256. ONLINE изворната конфигурација била localhost demo, не production service.</p>
+<div class="out" id="provenance">Го вчитувам provenance manifest...</div>
+<details><summary>Нормативен source register</summary><div id="sources"></div></details>
+</section>
+
+<section class="card"><h2>Безбедносна граница</h2>
+<ol>
+<li>Оваа јавна страница прави deterministic текстуална детекција; не праќа договор во AI provider.</li>
+<li>Архивските 50 наоди се QA baseline, не автоматска оценка на конкретниот договор.</li>
+<li>28 HIGH наоди остануваат <strong>LEGAL HOLD</strong>; нема автоматско „одобрување“.</li>
+<li>Не се потпишува, не се испраќа и не се прифаќа договор автоматски.</li>
+<li>За реален предмет со доверливи податоци користете <a href="/casepilot-workspace.html">Secure Case Workspace</a>.</li>
+</ol>
+</section>
+
+<div class="gate"><strong>Human Gate.</strong> AI CONTRACT не утврдува самостојно валидност, важечко право, извршност, даночен третман, надлежност или преговарачка позиција. Конечната правна проценка, redline и одлуката за потпис остануваат кај овластен професионалец.</div>
+</main>
+<footer><div class="wrap">AI Advokat · AI CONTRACT v2 · Source-First · Provenance · Human Gate</div></footer>
+
+<script type="module">
+import {CONTRACT_CLAUSE_CATALOG,DPRO_MODEL_PROFILES,analyzeContractText,compareToPlaybook,buildContractReviewPackage} from "./src/contract-intelligence.js";
+let last=null,lastRequired=[];
+const $=id=>document.getElementById(id);
+const model=$("model"),riskBox=$("riskBox"),modelNote=$("modelNote"),checks=$("checks"),rows=$("rows"),playbookOut=$("playbookOut"),packageOut=$("packageOut"),exportBtn=$("export");
+for(const p of DPRO_MODEL_PROFILES){const o=document.createElement("option");o.value=p.id;o.textContent=p.label;model.append(o)}
+for(const item of CONTRACT_CLAUSE_CATALOG){const l=document.createElement("label");l.style.fontWeight="500";const cb=document.createElement("input");cb.style.width="auto";cb.type="checkbox";cb.value=item.id;l.append(cb,document.createTextNode(" "+item.label));checks.append(l)}
+function renderRisk(){
+ const p=DPRO_MODEL_PROFILES.find(x=>x.id===model.value);if(!p)return;
+ riskBox.innerHTML='<div class="high"><span>HIGH</span><b>'+p.severity.HIGH+'</b></div><div class="medium"><span>MEDIUM</span><b>'+p.severity.MEDIUM+'</b></div><div class="low"><span>LOW</span><b>'+p.severity.LOW+'</b></div>';
+ modelNote.textContent='Архивски DPRO baseline: '+p.findings+' наоди. Ова не е live правен заклучок за внесениот договор.';
+}
+model.onchange=renderRisk;renderRisk();
+$("run").onclick=()=>{
+ try{
+  last=analyzeContractText({text:$("text").value,documentName:$("name").value,model:model.value});
+  rows.innerHTML=last.clauses.map(x=>'<tr><td>'+x.label+'</td><td>'+x.status+'</td><td>'+(x.firstMatch||"—")+'</td><td>'+(x.snippet||"—")+'</td></tr>').join("");
+  packageOut.textContent='Детектирани '+last.foundCount+' од '+last.clauses.length+' review категории. DPRO baseline: '+last.archivedDproRiskBaseline.findings+' архивски наоди. Human Gate: REQUIRED.';
+  exportBtn.disabled=false;
+ }catch(e){rows.innerHTML='<tr><td colspan="4">'+e.message+'</td></tr>';exportBtn.disabled=true}
+};
+$("compare").onclick=()=>{
+ try{
+  if(!last)throw new Error("Прво анализирај договор.");
+  lastRequired=[...checks.querySelectorAll("input:checked")].map(x=>x.value);
+  playbookOut.textContent=JSON.stringify(compareToPlaybook(last,{requiredClauses:lastRequired}),null,2);
+ }catch(e){playbookOut.textContent=e.message}
+};
+$("clear").onclick=()=>{$("text").value="";last=null;rows.innerHTML='<tr><td colspan="4" class="muted">Нема анализа.</td></tr>';playbookOut.textContent="Нема споредба.";packageOut.textContent="Прво анализирај договор.";exportBtn.disabled=true};
+exportBtn.onclick=()=>{
+ if(!last)return;
+ const pkg=buildContractReviewPackage(last,{requiredClauses:lastRequired});
+ const blob=new Blob([JSON.stringify(pkg,null,2)],{type:"application/json;charset=utf-8"});
+ const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="AI-CONTRACT-review-"+new Date().toISOString().slice(0,10)+".json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
+};
+fetch("/data/ai-contract-dpro14r-manifest.json",{cache:"no-store"}).then(r=>r.json()).then(m=>{
+ $("provenance").textContent=JSON.stringify({phase:m.importedBaseline.phase,sourceDate:m.importedBaseline.sourceDate,canonicalOfflineSha256:m.importedBaseline.canonicalOfflineSha256,offlineOnlineGeneratorByteEquivalent:m.importedBaseline.offlineOnlineGeneratorByteEquivalent,legalValidation:m.governance.legalValidation,production:m.governance.production,qaEvidence:m.qaEvidence},null,2);
+ $("sources").innerHTML=m.sourceRegister.map(s=>'<p><b>'+s.id+' · '+s.name+'</b><br><span class="muted">'+s.status+' · verified '+s.verified+'</span><br><a href="'+s.url+'" target="_blank" rel="noopener noreferrer">Отвори source record ↗</a></p>').join("");
+}).catch(()=>{$("provenance").textContent="Provenance manifest не се вчита. Не користете архивскиот baseline без проверка."});
+</script>
+</body></html>

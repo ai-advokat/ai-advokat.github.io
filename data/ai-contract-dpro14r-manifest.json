@@ -1,0 +1,179 @@
+{
+  "schema": "ai-advokat.ai-contract.dpro14r.manifest.v1",
+  "product": "AI CONTRACT · powered by AI Advokat",
+  "importedBaseline": {
+    "name": "AI ДОГОВОРИ PRO",
+    "phase": "DPRO-14R Dual Prototype",
+    "sourceDate": "2026-11-09",
+    "canonicalOfflineSha256": "f2a5e6eff26a922e2bffef9c2ab1a58b54f2466f5421326b67a3d6210d9604d8",
+    "offlineOnlineGeneratorByteEquivalent": true,
+    "offlineMode": "single-file deterministic HTML, no network dependency",
+    "onlineSourceMode": "localhost demo wrapper, not production hosted",
+    "aiModel": "NOT_IMPLEMENTED_IN_SOURCE_ARCHIVE"
+  },
+  "governance": {
+    "legalValidation": "HOLD",
+    "production": "NO_GO",
+    "professionalSignoff": false,
+    "highRiskApprovals": "0/28",
+    "rule": "Archived risk findings and source metadata are review aids, not proof of current consolidated law or professional approval."
+  },
+  "models": [
+    {
+      "id": "nda",
+      "label": "Доверливост (NDA)",
+      "findings": 10,
+      "severity": {
+        "HIGH": 2,
+        "MEDIUM": 7,
+        "LOW": 1
+      }
+    },
+    {
+      "id": "cooperation",
+      "label": "Деловна соработка",
+      "findings": 14,
+      "severity": {
+        "HIGH": 7,
+        "MEDIUM": 6,
+        "LOW": 1
+      }
+    },
+    {
+      "id": "services",
+      "label": "Вршење услуги",
+      "findings": 8,
+      "severity": {
+        "HIGH": 6,
+        "MEDIUM": 2,
+        "LOW": 0
+      }
+    },
+    {
+      "id": "lease",
+      "label": "Закуп (стан / деловен)",
+      "findings": 10,
+      "severity": {
+        "HIGH": 6,
+        "MEDIUM": 4,
+        "LOW": 0
+      }
+    },
+    {
+      "id": "loan",
+      "label": "Заем",
+      "findings": 4,
+      "severity": {
+        "HIGH": 3,
+        "MEDIUM": 1,
+        "LOW": 0
+      }
+    },
+    {
+      "id": "debt",
+      "label": "Регулирање долг",
+      "findings": 4,
+      "severity": {
+        "HIGH": 4,
+        "MEDIUM": 0,
+        "LOW": 0
+      }
+    }
+  ],
+  "findingsSummary": {
+    "total": 50,
+    "HIGH": 28,
+    "MEDIUM": 20,
+    "LOW": 2
+  },
+  "qaEvidence": {
+    "sixModelsSmoke": true,
+    "fourStepsAndAdvanced": true,
+    "ndaWordExport": true,
+    "ndaJsonExport": true,
+    "offlineJsErrors": 0,
+    "localServerHealthAndApi": true,
+    "apiRejectsMissingDemoKey": true,
+    "onlinePortalStaticUi": true,
+    "completeSixModelExportRegression": false,
+    "externalDeployment": false
+  },
+  "sourceRegister": [
+    {
+      "id": "N01",
+      "name": "Закон за облигационите односи",
+      "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=63683",
+      "status": "METADATA_CHECKED",
+      "verified": "2026-11-09"
+    },
+    {
+      "id": "N02",
+      "name": "Одлука У.бр.98/2024 и 139/2024 — Уставен суд",
+      "url": "https://ustavensud.mk/2024/09/%D1%83-%D0%B1%D1%80-98-2024-%D0%B8-%D1%83-%D0%B1%D1%80-139-2024/",
+      "status": "DISPOSITIVE_CHECKED",
+      "verified": "2026-11-09"
+    },
+    {
+      "id": "N03",
+      "name": "Закон за домување",
+      "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=71292",
+      "status": "METADATA_CHECKED",
+      "verified": "2026-11-09"
+    },
+    {
+      "id": "N04",
+      "name": "Закон за заштита на личните податоци",
+      "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=70397",
+      "status": "METADATA_CHECKED",
+      "verified": "2026-11-09"
+    },
+    {
+      "id": "N05",
+      "name": "Закон за финансиска дисциплина",
+      "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=68908",
+      "status": "METADATA_CHECKED",
+      "verified": "2026-11-09"
+    },
+    {
+      "id": "N06",
+      "name": "Закон за авторското право и сродните права",
+      "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=20139",
+      "status": "METADATA_CHECKED",
+      "verified": "2026-11-09"
+    },
+    {
+      "id": "N07",
+      "name": "Закон за нотаријатот",
+      "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=41219",
+      "status": "METADATA_CHECKED",
+      "verified": "2026-11-09"
+    },
+    {
+      "id": "N08",
+      "name": "Закон за работните односи",
+      "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=70756",
+      "status": "METADATA_CHECKED",
+      "verified": "2026-11-09"
+    },
+    {
+      "id": "N09",
+      "name": "Закон за работно ангажирање на лица",
+      "url": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=70423",
+      "status": "METADATA_CHECKED",
+      "verified": "2026-11-09"
+    },
+    {
+      "id": "N10",
+      "name": "Закон за домување — регулатива на РКД",
+      "url": "https://rkd.gov.mk/regulativa/",
+      "status": "CATALOG_CHECKED",
+      "verified": "2026-11-09"
+    }
+  ],
+  "privacy": {
+    "publicChatRealCaseDocuments": "FORBIDDEN",
+    "confidentialDocuments": "SECURE_CASE_WORKSPACE_ONLY",
+    "localDeterministicReview": "ALLOWED",
+    "automaticSigningOrSubmission": "FORBIDDEN"
+  }
+}
