@@ -28,8 +28,8 @@ test("non-MK EN interface localization uses bounded Workers AI endpoint",()=>{
   assert.match(worker,/async function handleUiTranslation/);
   assert.match(worker,/raw\.length>48/);
   assert.match(worker,/totalChars>12000/);
-  assert.match(worker,/UI_TRANSLATE_HOURLY_LIMIT=24/);
-  assert.match(worker,/UI_TRANSLATE_DAILY_LIMIT=80/);
+  assert.match(worker,/UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT=24/);\n  assert.match(worker,/UI_TRANSLATE_GLOBAL_HOURLY_LIMIT=240/);
+  assert.match(worker,/UI_TRANSLATE_GLOBAL_DAILY_LIMIT=800/);\n  assert.match(worker,/scope:"ui_translate_lang_"\\+target/);
   assert.ok(worker.indexOf("consumeWindow(env,") < worker.indexOf("runWorkersAIText(env,") || worker.includes("uiTranslateLimiter"),"translation limiter must precede provider execution");
   assert.match(worker,/url\.pathname === "\/api\/ui-translate"/);
 });
