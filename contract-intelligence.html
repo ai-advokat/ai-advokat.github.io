@@ -32,6 +32,27 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted)}
 <span class="chip warn">50 архивски QA наоди</span><span class="chip bad">28 HIGH · LEGAL HOLD</span><span class="chip bad">0/28 адвокатски одобрени</span>
 </div>
 
+<section class="card" id="zokiMasterPackage">
+<div class="step">ZOKI MASTER PACKAGE · 09.11.2026</div>
+<h2>Последниот OFFLINE / ONLINE пакет на Зоки</h2>
+<p class="muted">Овој запис се однесува на оригиналниот master „ЦЕЛОСНО-ДОГОВОРИ-ОФФЛАИН-ОНЛАИН“. Канонските release архиви се зачувани одделно од web runtime за да не се мешаат историските DPRO резерви со production код.</p>
+<div class="grid">
+  <div>
+    <h3>OFFLINE · AI ДОГОВОРИ PRO</h3>
+    <p><strong>AI_DOGOVORI_PRO_OFFLINE_CELOSEN_2026-11-09.zip</strong></p>
+    <p class="modelnote">SHA-256: <code>a470a9a8f4ccfa017e7b5034701cb8f05cab1cfa49bd9d838173ddf233f8fc0b</code></p>
+    <p class="modelnote">Содржи OFFLINE_START.html, правна библиотека, 50-наоди регистар, QA, извештаи и Human Gate статус.</p>
+  </div>
+  <div>
+    <h3>ONLINE · AI ДОГОВОРИ PRO</h3>
+    <p><strong>AI_DOGOVORI_PRO_ONLINE_CELOSEN_2026-11-09.zip</strong></p>
+    <p class="modelnote">SHA-256: <code>9ab0f91116d55d77374cac8f3521e2df3af0cdacb4625cc2bd4960f9ad6c876e</code></p>
+    <p class="modelnote">Содржи ONLINE/generator.html, index.html, server.py, README_SECURITY и истиот DPRO legal corpus.</p>
+  </div>
+</div>
+<p class="chip bad">LEGAL HOLD · 0/28 HIGH lawyer approvals · не е автоматски production-approved drafting engine</p>
+</section>
+
 <div class="grid">
 <section class="card"><div class="step">01 · TYPE</div><h2>Избери договорен профил</h2>
 <label for="model">Тип на договор</label><select id="model"></select>
@@ -66,7 +87,8 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted)}
 <details><summary>Нормативен source register</summary><div id="sources"></div></details>
 </section>
 
-<section class="card"><h2>Како се користи · 4 чекори</h2><ol><li>Изберете еден од 6-те DPRO договорни профили.</li><li>Внесете или залепете договор за локална deterministic анализа.</li><li>Прегледајте ги detected / not detected клаузулите и споредете ги со playbook.</li><li>Преземете review JSON или продолжете во Secure Case Workspace за доверлив предмет и професионален Human Gate review.</li></ol></section>\n<section class="card"><h2>Безбедносна граница</h2>
+<section class="card"><h2>Како се користи · 4 чекори</h2><ol><li>Изберете еден од 6-те DPRO договорни профили.</li><li>Внесете или залепете договор за локална deterministic анализа.</li><li>Прегледајте ги detected / not detected клаузулите и споредете ги со playbook.</li><li>Преземете review JSON или продолжете во Secure Case Workspace за доверлив предмет и професионален Human Gate review.</li></ol></section>
+<section class="card"><h2>Безбедносна граница</h2>
 <ol>
 <li>Оваа јавна страница прави deterministic текстуална детекција; не праќа договор во AI provider.</li>
 <li>Архивските 50 наоди се QA baseline, не автоматска оценка на конкретниот договор.</li>
