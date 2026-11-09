@@ -75,7 +75,7 @@ jobs:
           expected_toolkit="$(sha256sum assets/standalone-bot-toolkit.js | awk '{print $1}')"
 
           parity=0
-          for attempt in $(seq 1 20); do
+          for attempt in $(seq 1 80); do
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/?r14_uat=$nonce" -o /tmp/r14-main.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$AI_ADVOCAT_BASE/bot/?r14_uat=$nonce" -o /tmp/r14-bot.html || true
@@ -102,7 +102,7 @@ jobs:
               echo "LIVE STANDALONE R14 BYTE PARITY: PASS on attempt $attempt"
               break
             fi
-            echo "Waiting for exact R14 standalone bytes (attempt $attempt/20)."
+            echo "Waiting for exact R14 standalone bytes (attempt $attempt/80)."
             sleep 3
           done
           test "$parity" = "1"
