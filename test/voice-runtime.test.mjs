@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import {
   AI_ADVOCAT_VOICE_VERSION,
   splitSpeechText,
@@ -267,4 +268,15 @@ test("audio-save capability records shared tab audio locally and downloads WEBM"
   assert.equal(downloads[0],"answer-MK.webm");
   assert.equal(runtime.capabilities.audioSave,true);
   assert.deepEqual(runtime.capabilities.languages,["mk-MK","en-US"]);
+});
+
+
+test("Voice R4 worker endpoint is bounded, rate-limited and uses Workers AI Whisper without app storage",()=>{
+  const worker=fs.readFileSync("src/index.js","utf8");
+  assert.match(worker,/\/api\/voice\/transcribe/);
+  assert.match(worker,/VOICE_TRANSCRIBE_MAX_BYTES=2\*1024\*1024/);
+  assert.match(worker,/scope:"voice_transcription"/);
+  assert.match(worker,/@cf\/openai\/whisper-large-v3-turbo/);
+  assert.match(worker,/retention:"no_application_storage"/);
+  assert.match(worker,/humanGate:"review_transcript_before_legal_use"/);
 });
