@@ -136,7 +136,7 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     return microphonePermissionPending;
   }
 
-  function bindMicrophone({button,input,status,onTranscript}={}){
+  function bindMicrophone({button,input,status,onTranscript,language}={}){
     if(!button||!input) return {supported:false,stop:()=>{}};
     button.hidden=false;
     button.type="button";
@@ -171,7 +171,8 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
       const rec=new SpeechRecognitionCtor();
       activeRecognition=rec;
       let committed=false;
-      rec.lang=lang;
+      const recognitionLang=typeof language==="function"?language():language||lang;
+      rec.lang=String(recognitionLang||lang);
       rec.continuous=false;
       rec.interimResults=true;
       rec.maxAlternatives=1;
