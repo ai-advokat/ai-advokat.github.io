@@ -179,10 +179,10 @@ jobs:
           grep -q '/api/case-law/curation-plan' case-law-curation.html
           grep -q 'ai-advokat-chat.js?v=20261106-root-r15-voice-r2-runtime' index.html
           grep -q 'ai-advokat-chat.css?v=20261106-root-r15-voice' index.html
-          grep -q 'AI_ADVOCAT_VOICE_R2' assets/ai-advokat-voice.mjs
+          grep -q 'AI_ADVOCAT_VOICE_R3' assets/ai-advokat-voice.mjs
           grep -q 'bindMicrophone' assets/ai-advokat-voice.mjs
           grep -q 'bindSpeakButton' assets/ai-advokat-voice.mjs
-          grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' bot/index.html
+          grep -q 'standalone-bot.js?v=20261109-core-r15-voice-r3' bot/index.html
           grep -q 'standalone-bot.css?v=20261106-access-r15-voice' bot/index.html
           grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view' bot/index.html
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' bot/index.html
