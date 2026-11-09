@@ -1,4 +1,4 @@
-export const AI_ADVOCAT_VOICE_VERSION="AI_ADVOCAT_VOICE_R2";
+export const AI_ADVOCAT_VOICE_VERSION="AI_ADVOCAT_VOICE_R3";
 
 export function splitSpeechText(value,{maxChars=260,maxChunks=48}={}){
   const text=String(value||"")
@@ -27,6 +27,15 @@ export function pickMacedonianVoice(voices=[]){
   const list=Array.isArray(voices)?voices:[];
   return list.find(v=>String(v?.lang||"").toLowerCase()==="mk-mk")
     || list.find(v=>String(v?.lang||"").toLowerCase().startsWith("mk"))
+    || null;
+}
+
+export function pickVoiceForLanguage(voices=[],language="mk-MK"){
+  const list=Array.isArray(voices)?voices:[];
+  const target=String(language||"mk-MK").toLowerCase();
+  if(target.startsWith("mk")) return pickMacedonianVoice(list);
+  return list.find(v=>String(v?.lang||"").toLowerCase()===target)
+    || list.find(v=>String(v?.lang||"").toLowerCase().startsWith(target.split("-")[0]))
     || null;
 }
 
@@ -225,9 +234,10 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     }
   }
 
-  function speak(text,{button,status}={}){
+  function speak(text,{button,status,langOverride=lang,onComplete=null,onError=null}={}){
     if(!synth||!Utterance){
       setStatus(status,"Гласното читање не е поддржано од овој прелистувач.");
+      if(typeof onError==="function") onError(new Error("speech_output_unsupported"));
       return false;
     }
     if(button && activeSpeakButton===button && button.dataset.voiceState==="speaking"){
@@ -240,6 +250,7 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     const chunks=splitSpeechText(text);
     if(!chunks.length) return false;
     const generation=++speechGeneration;
+    const effectiveLang=String(langOverride||lang||"mk-MK");
     activeSpeakButton=button||null;
     if(button){
       button.textContent="■ Стоп";
@@ -247,10 +258,12 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
       button.setAttribute("aria-label","Запри гласно читање");
       setButtonState(button,"speaking");
     }
-    setStatus(status,"🔊 AI Advokat го чита одговорот.");
+    setStatus(status,effectiveLang.toLowerCase().startsWith("en")
+      ?"🔊 AI Advokat is reading the answer in English."
+      :"🔊 AI Advokat го чита одговорот на македонски.");
 
     const voices=typeof synth.getVoices==="function"?synth.getVoices():[];
-    const mkVoice=pickMacedonianVoice(voices);
+    const selectedVoice=pickVoiceForLanguage(voices,effectiveLang);
     let index=0;
     const next=()=>{
       if(generation!==speechGeneration) return;
@@ -262,23 +275,29 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
           setButtonState(button,"idle");
         }
         if(activeSpeakButton===button) activeSpeakButton=null;
-        setStatus(status,"✓ Гласното читање заврши.");
+        setStatus(status,effectiveLang.toLowerCase().startsWith("en")
+          ?"✓ English voice playback finished."
+          :"✓ Гласното читање заврши.");
+        if(typeof onComplete==="function") onComplete();
         return;
       }
       const utter=new Utterance(chunks[index++]);
-      utter.lang=lang;
-      if(mkVoice) utter.voice=mkVoice;
+      utter.lang=effectiveLang;
+      if(selectedVoice) utter.voice=selectedVoice;
       utter.rate=1;
       utter.pitch=1;
       utter.volume=1;
       utter.onend=next;
       utter.onerror=event=>{
         if(generation!==speechGeneration) return;
+        const error=new Error(String(event?.error||"speech_output_error"));
+        if(typeof onError==="function") onError(error);
         stopSpeaking();
         setStatus(status,"Гласното читање беше прекинато"+(event?.error?" ("+event.error+")":"")+".");
       };
       try{synth.speak(utter);}
-      catch{
+      catch(error){
+        if(typeof onError==="function") onError(error);
         stopSpeaking();
         setStatus(status,"Гласното читање не можеше да се стартува.");
       }
@@ -287,7 +306,7 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     return true;
   }
 
-  function bindSpeakButton({button,text,status}={}){
+  function bindSpeakButton({button,text,status,language}={}){
     if(!button) return {supported:false};
     if(!synth||!Utterance){
       button.disabled=true;
@@ -298,8 +317,104 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     button.textContent="🔊 Прочитај";
     button.title="Прочитај го AI одговорот";
     button.setAttribute("aria-label","Прочитај го AI одговорот");
-    button.addEventListener("click",()=>speak(typeof text==="function"?text():text,{button,status}));
+    button.addEventListener("click",()=>speak(
+      typeof text==="function"?text():text,
+      {button,status,langOverride:typeof language==="function"?language():language||lang}
+    ));
     return {supported:true};
+  }
+
+  async function saveSpokenAudio(text,{status,language=lang,filename="AI-Advokat-voice.webm"}={}){
+    const MediaRecorderCtor=win?.MediaRecorder||null;
+    const MediaStreamCtor=win?.MediaStream||null;
+    if(!mediaDevices?.getDisplayMedia||!MediaRecorderCtor||!MediaStreamCtor){
+      setStatus(status,"Зачувување аудио не е поддржано од овој прелистувач. Користете Chrome/Edge на компјутер.");
+      return {ok:false,reason:"capture_unsupported"};
+    }
+    let capture=null;
+    let recorder=null;
+    let timeoutId=null;
+    try{
+      setStatus(status,'💾 Изберете го тековниот browser tab и вклучете “Share tab audio”.');
+      capture=await mediaDevices.getDisplayMedia({
+        video:{displaySurface:"browser"},
+        audio:true,
+        preferCurrentTab:true,
+        selfBrowserSurface:"include"
+      });
+      const audioTracks=capture.getAudioTracks?.()||[];
+      if(!audioTracks.length){
+        setStatus(status,'Нема споделен tab audio. Повторете и вклучете “Share tab audio”.');
+        capture.getTracks?.().forEach(track=>track.stop?.());
+        return {ok:false,reason:"no_audio_track"};
+      }
+      const audioStream=new MediaStreamCtor(audioTracks);
+      const candidates=["audio/webm;codecs=opus","audio/webm"];
+      const mimeType=candidates.find(type=>typeof MediaRecorderCtor.isTypeSupported==="function"&&MediaRecorderCtor.isTypeSupported(type))||"";
+      const chunks=[];
+      recorder=new MediaRecorderCtor(audioStream,mimeType?{mimeType}:{});
+      const recorded=new Promise((resolve,reject)=>{
+        recorder.ondataavailable=event=>{if(event.data?.size) chunks.push(event.data);};
+        recorder.onerror=event=>reject(event?.error||new Error("audio_recording_failed"));
+        recorder.onstop=()=>resolve(new win.Blob(chunks,{type:mimeType||"audio/webm"}));
+      });
+      recorder.start();
+      timeoutId=win.setTimeout?.(()=>{try{if(recorder?.state!=="inactive") recorder.stop();}catch{}},180000);
+      const started=speak(text,{
+        status,
+        langOverride:language,
+        onComplete:()=>win.setTimeout?.(()=>{try{if(recorder?.state!=="inactive") recorder.stop();}catch{}},250),
+        onError:()=>{try{if(recorder?.state!=="inactive") recorder.stop();}catch{}}
+      });
+      if(!started){
+        try{recorder.stop();}catch{}
+        throw new Error("speech_output_unavailable");
+      }
+      const blob=await recorded;
+      if(!blob?.size) throw new Error("audio_recording_empty");
+      const url=win.URL.createObjectURL(blob);
+      const a=win.document.createElement("a");
+      a.href=url;
+      a.download=filename;
+      a.rel="noopener";
+      a.style.display="none";
+      win.document.body.appendChild(a);
+      a.click();
+      a.remove();
+      win.setTimeout?.(()=>win.URL.revokeObjectURL(url),1000);
+      setStatus(status,"✓ Аудио-одговорот е зачуван локално.");
+      return {ok:true,filename,size:blob.size,type:blob.type};
+    }catch(error){
+      const name=String(error?.name||"").toLowerCase();
+      if(name==="notallowederror"||name==="aborterror"){
+        setStatus(status,"Снимањето е откажано. За Save audio изберете го тековниот tab и Share tab audio.");
+      }else{
+        setStatus(status,"Аудио-снимањето не успеа. Проверете дали е избран тековниот tab со Share tab audio.");
+      }
+      return {ok:false,reason:String(error?.message||error||"recording_failed")};
+    }finally{
+      if(timeoutId) win.clearTimeout?.(timeoutId);
+      try{capture?.getTracks?.().forEach(track=>track.stop?.());}catch{}
+    }
+  }
+
+  function bindSaveAudioButton({button,text,status,language,filename}={}){
+    if(!button) return {supported:false};
+    const supported=Boolean(mediaDevices?.getDisplayMedia&&win?.MediaRecorder&&win?.MediaStream);
+    button.disabled=!supported;
+    button.title=supported
+      ?"Зачувај го прочитаниот AI одговор како локално аудио"
+      :"Save audio бара Chrome/Edge со tab-audio capture.";
+    button.setAttribute("aria-label","Зачувај го AI одговорот како аудио");
+    if(supported) button.addEventListener("click",()=>saveSpokenAudio(
+      typeof text==="function"?text():text,
+      {
+        status,
+        language:typeof language==="function"?language():language||lang,
+        filename:typeof filename==="function"?filename():filename||"AI-Advokat-voice.webm"
+      }
+    ));
+    return {supported};
   }
 
   return Object.freeze({
@@ -307,10 +422,14 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     capabilities:Object.freeze({
       dictation:Boolean(SpeechRecognitionCtor),
       speechOutput:Boolean(synth&&Utterance),
+      audioSave:Boolean(mediaDevices?.getDisplayMedia&&win?.MediaRecorder&&win?.MediaStream),
+      languages:Object.freeze(["mk-MK","en-US"]),
       language:lang
     }),
     bindMicrophone,
     bindSpeakButton,
+    bindSaveAudioButton,
+    saveSpokenAudio,
     speak,
     stopSpeaking,
     stopRecognition
