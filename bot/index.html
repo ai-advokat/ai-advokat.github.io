@@ -161,11 +161,16 @@
           <p>Овој разговор може да продолжи со правна анализа откако чувствителните идентификатори ќе се маскираат локално. Приватниот простор користете го кога е неопходен оригиналниот документ или точниот идентитет.</p>
         </div></details>
         <textarea id="question" rows="1" maxlength="4000" aria-label="Порака" placeholder="Прашајте го AI Advokat…"></textarea>
-        <button id="mic" type="button" aria-label="Гласовен разговор со AI Advokat" title="Гласовен разговор: зборувај → испрати → слушни одговор">🎙</button>
+        <button id="mic" type="button" aria-label="Диктирај" title="Диктирај на избраниот јазик">🎙</button>
         <button id="send" type="submit" aria-label="Испрати" disabled>↑</button>
         <button id="stop" type="button" aria-label="Запри" hidden>■</button>
       </form>
-      <p class="footnote">AI може да погреши. Проверете ги изворите пред професионална употреба. 🎙 Гласовниот разговор прво користи Web Speech од прелистувачот; ако не е достапен, краткото аудио се транскрибира преку Cloudflare Workers AI Whisper без трајно складирање во AI Advokat; зборувањето автоматски го испраќа прашањето, а завршениот одговор се чита гласно; не диктирајте непотребни лични идентификатори или доверливи факти. Оригинални документи или точни идентификатори внесувајте преку „+“ само кога се неопходни.</p>
+      <div class="voice-record-row" aria-label="Локално аудио снимање">
+        <button id="recordStart" type="button">⏺ Сними</button>
+        <button id="recordStop" type="button" disabled>■ Стоп</button>
+        <button id="recordDownload" type="button" disabled>💾 Преземи снимка</button>
+      </div>
+      <p class="footnote">AI може да погреши. Проверете ги изворите пред професионална употреба. 🎙 Диктирањето го следи избраниот AI јазик. Ако Web Speech не е достапен, краткото аудио се транскрибира преку Cloudflare Workers AI Whisper без трајно складирање во AI Advokat. ⏺ „Сними“ создава локална микрофонска снимка што можете да ја стопирате и преземете како WEBM; не се испраќа автоматски. Не диктирајте непотребни лични идентификатори или доверливи факти.</p>
       <div class="footer-brand"><img src="/assets/ai-advokat-hero-brand.webp" width="400" height="225" alt="AI Advokat"></div>
     </div>
   </main>
