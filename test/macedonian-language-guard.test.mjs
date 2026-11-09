@@ -215,14 +215,17 @@ test("unambiguous production calques get deterministic cleanup before any AI rep
   assert.equal(check.ok,true,JSON.stringify({clean,check}));
 });
 
-test("language runtime is V14 editor-attempt canonical-clean fallback and source-profile anchored to Orthography 2017 second edition",()=>{
-  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V14_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK");
+test("language runtime is V15 professional legal style and source-profile anchored to Orthography 2017 second edition",()=>{
+  assert.equal(MACEDONIAN_LANGUAGE_STANDARD_VERSION,"MK_ORTHOGRAPHY_2017_RUNTIME_V15_PROFESSIONAL_LEGAL_STYLE");
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.year,2017);
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.edition,"второ издание");
   assert.equal(MACEDONIAN_ORTHOGRAPHY_2017_SOURCE.legalAuthority,false);
   assert.ok(MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE.some(r=>r.id==="R53"));
   assert.ok(MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE.some(r=>r.id==="R57"));
   assert.ok(MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE.some(r=>r.id==="R396"));
+  assert.ok(MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE.some(r=>r.id==="R56"));
+  assert.ok(MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE.some(r=>r.id==="R330"));
+  assert.ok(MACEDONIAN_ORTHOGRAPHY_2017_RULE_PROFILE.some(r=>r.id==="R418"));
 });
 
 
