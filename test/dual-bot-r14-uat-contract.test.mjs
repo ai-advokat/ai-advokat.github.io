@@ -34,9 +34,13 @@ test("R14 production workflow verifies both live frontend parity and both govern
 });
 
 
-test("R14 production UAT retriggers when the shared core runtime changes",()=>{
-  assert.match(workflow,/paths:\n\s+- "src\/index\.js"/);
-  assert.match(workflow,/src\/zkp-judgment-taxonomy\.js/);
+test("R14 production UAT runs only after successful production runtime sync and checks the deployed SHA",()=>{
+  assert.match(workflow,/workflow_run:/);
+  assert.match(workflow,/workflows: \["AI Advokat production runtime sync"\]/);
+  assert.match(workflow,/types: \[completed\]/);
+  assert.match(workflow,/github\.event\.workflow_run\.conclusion == 'success'/);
+  assert.match(workflow,/github\.event\.workflow_run\.head_sha/);
+  assert.match(workflow,/workflow_dispatch:/);
 });
 
 
