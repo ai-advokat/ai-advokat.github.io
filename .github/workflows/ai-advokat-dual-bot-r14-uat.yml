@@ -1,29 +1,10 @@
 name: AI Advokat dual-bot R14 production UAT
 
 on:
-  push:
+  workflow_run:
+    workflows: ["AI Advokat production runtime sync"]
+    types: [completed]
     branches: ["main"]
-    paths:
-      - "src/index.js"
-      - "src/legal-retrieval-router.js"
-      - "src/response-quality.js"
-      - "src/detention-procedural-terminology.js"
-      - "src/zkp-judgment-taxonomy.js"
-      - "index.html"
-      - "bot/index.html"
-      - "assets/ai-advokat-chat.js"
-      - "assets/ai-advokat-chat.css"
-      - "assets/ai-advokat-voice.mjs"
-      - "assets/standalone-bot.js"
-      - "assets/standalone-bot.css"
-      - "assets/standalone-bot-vnext.js"
-      - "assets/standalone-bot-toolkit.js"
-      - "assets/standalone-bot-toolkit.css"
-      - "src/detention-procedural-terminology.js"
-      - "src/zkp-judgment-taxonomy.js"
-      - "scripts/ai-advokat-dual-bot-r14-uat.mjs"
-      - "scripts/professional-smoke-capacity-gate.mjs"
-      - ".github/workflows/ai-advokat-dual-bot-r14-uat.yml"
   workflow_dispatch:
 
 permissions:
@@ -35,6 +16,7 @@ concurrency:
 
 jobs:
   dual-bot-r14:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -45,6 +27,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v4
         with:
