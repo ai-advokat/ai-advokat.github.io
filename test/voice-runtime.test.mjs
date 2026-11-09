@@ -11,7 +11,7 @@ import {
 } from "../assets/ai-advokat-voice.mjs";
 
 test("voice runtime exposes the governed R3 bilingual audio-save contract",()=>{
-  assert.equal(AI_ADVOCAT_VOICE_VERSION,"AI_ADVOCAT_VOICE_R3");
+  assert.equal(AI_ADVOCAT_VOICE_VERSION,"AI_ADVOCAT_VOICE_R4");
 });
 
 test("speech chunking keeps long legal answers bounded without losing order",()=>{
