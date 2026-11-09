@@ -65,8 +65,8 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/public-legal-data-services.html?smoke=$nonce" -o /tmp/worker-public-legal.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/gold-set-review-gate.html?smoke=$nonce" -o /tmp/worker-gold-gate.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/echr-crosswalk.html?smoke=$nonce" -o /tmp/worker-echr-crosswalk.html || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261106-core-r15-voice-r2&smoke=$nonce" -o /tmp/worker-core.js || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&smoke=$nonce" -o /tmp/worker-voice.mjs || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261109-core-r15-voice-r4&smoke=$nonce" -o /tmp/worker-core.js || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-voice.mjs?v=20261109-voice-r4&smoke=$nonce" -o /tmp/worker-voice.mjs || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view&smoke=$nonce" -o /tmp/worker-vnext.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-vnext.css?v=20261106-ui-r6-toolkit-parity&smoke=$nonce" -o /tmp/worker-vnext.css || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.js?v=20261106-toolkit-r14&smoke=$nonce" -o /tmp/worker-toolkit.js || true
@@ -134,8 +134,8 @@ jobs:
           grep -q 'B16 — Недоставен писмен предлог' /tmp/worker-echr-crosswalk.html
           grep -q 'B20 — Процесни права и сопственост' /tmp/worker-echr-crosswalk.html
           grep -q 'B25 — Недоставени одговори на жалба' /tmp/worker-echr-crosswalk.html
-          grep -q 'standalone-bot.js?v=20261106-core-r15-voice-r2' /tmp/worker-bot.html
-          grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/worker-voice.mjs
+          grep -q 'standalone-bot.js?v=20261109-core-r15-voice-r4' /tmp/worker-bot.html
+          grep -q 'AI_ADVOCAT_VOICE_R4' /tmp/worker-voice.mjs
           grep -q 'getUserMedia' /tmp/worker-voice.mjs
           grep -q 'microphonePermissionErrorMessage' /tmp/worker-voice.mjs
           grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view' /tmp/worker-bot.html
