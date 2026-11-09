@@ -1949,7 +1949,7 @@
                 <button class="ai-chat-stop" id="aiChatStop" type="button" aria-label="Стоп" title="Стоп">■</button>
               </div>
               <div class="ai-chat-voice-status" id="aiChatVoiceStatus" role="status" aria-live="polite" hidden></div>
-              <p class="ai-chat-voice-privacy">🎙 Гласовен разговор: притиснете го микрофонот, зборувајте на македонски, прашањето автоматски се испраќа, а завршениот AI одговор се чита гласно. speech service го обезбедува вашиот прелистувач/уред. Не диктирајте непотребни лични идентификатори или доверливи факти; за конкретен предмет користете Secure Case Workspace.</p>
+              <p class="ai-chat-voice-privacy">🎙 Гласовен разговор: притиснете го микрофонот, зборувајте на македонски, прашањето автоматски се испраќа, а завршениот AI одговор се чита гласно. прво се користи Web Speech од прелистувачот; ако не е достапен, краткото аудио се транскрибира преку Cloudflare Workers AI Whisper без трајно складирање во AI Advokat. Не диктирајте непотребни лични идентификатори или доверливи факти; за конкретен предмет користете Secure Case Workspace.</p>
 
               <section class="ai-prof-workbench" id="aiProfessionalWorkbench" aria-label="AI Advokat professional workbench">
                 <div class="ai-prof-head">
