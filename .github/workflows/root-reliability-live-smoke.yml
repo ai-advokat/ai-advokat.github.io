@@ -44,7 +44,7 @@ jobs:
           grep -q 'standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view' bot/index.html
           grep -q 'standalone-bot-toolkit.js?v=20261106-toolkit-r14' bot/index.html
           grep -q 'standalone-bot-toolkit.css?v=20261106-toolkit-r14' bot/index.html
-          grep -q 'AI_ADVOCAT_VOICE_R2' assets/ai-advokat-voice.mjs
+          grep -q 'AI_ADVOCAT_VOICE_R4' assets/ai-advokat-voice.mjs
           grep -q 'Hybrid Legal Intelligence R2' hybrid-legal-intelligence.html
           grep -q 'AI_ADVOCAT_HYBRID_CONTROL_R3' hybrid-legal-intelligence.html
           grep -q '/api/hybrid/instruments' hybrid-legal-intelligence.html
@@ -78,7 +78,7 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/casepilot-workspace-ui.js?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-casepilot-ui.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/gold-set-review-gate.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-gold.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/echr-crosswalk.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-echr.html || true
-            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/ai-advokat-voice.mjs?v=20261106-voice-r2&root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-voice.mjs || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/ai-advokat-voice.mjs?v=20261109-voice-r4&root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-voice.mjs || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/pages-release.txt?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-release.txt || true
             if grep -q 'frontend-runtime-guard.js?v=20261101-root-r1' /tmp/pages-home.html 2>/dev/null \
               && grep -q 'ai-advokat-chat.js?v=20261109-root-r15-voice-r4-runtime' /tmp/pages-home.html 2>/dev/null \
@@ -102,7 +102,7 @@ jobs:
               && grep -q 'reviewed_authority_promoted:false' /tmp/pages-gold.html 2>/dev/null \
               && grep -q 'F0-FAST-27 · ECHR ↔ Domestic Case-Law Crosswalk' /tmp/pages-echr.html 2>/dev/null \
               && grep -q 'PRODUCTION NO-GO' /tmp/pages-echr.html 2>/dev/null \
-              && grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/pages-voice.mjs 2>/dev/null \
+              && grep -q 'AI_ADVOCAT_VOICE_R4' /tmp/pages-voice.mjs 2>/dev/null \
               && grep -q 'getUserMedia' /tmp/pages-voice.mjs 2>/dev/null \
               && grep -q 'microphonePermissionErrorMessage' /tmp/pages-voice.mjs 2>/dev/null \
               && grep -qx "source_main_sha=$EXPECTED_RELEASE_SHA" /tmp/pages-release.txt 2>/dev/null; then
@@ -121,8 +121,8 @@ jobs:
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/" -o /tmp/worker-home.html
           curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/bot/" -o /tmp/worker-bot.html
-          curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/assets/ai-advokat-voice.mjs?v=20261106-voice-r2" -o /tmp/worker-voice.mjs
-          grep -q 'AI_ADVOCAT_VOICE_R2' /tmp/worker-voice.mjs
+          curl -fsSL --retry 5 --retry-delay 2 --max-time 30 "$BASE/assets/ai-advokat-voice.mjs?v=20261109-voice-r4" -o /tmp/worker-voice.mjs
+          grep -q 'AI_ADVOCAT_VOICE_R4' /tmp/worker-voice.mjs
           grep -q 'getUserMedia' /tmp/worker-voice.mjs
           grep -q 'microphonePermissionErrorMessage' /tmp/worker-voice.mjs
           echo "WORKER VOICE R2 STATIC ASSET: PASS"
