@@ -1,6 +1,7 @@
-// AI Advokat Contract Intelligence v1
-// Deterministic, browser-safe clause spotting. It does not determine legal validity or negotiate autonomously.
-export const CONTRACT_INTELLIGENCE_VERSION="1.0.0";
+// AI Advokat · AI CONTRACT v2
+// Deterministic browser-safe contract review. No automatic legal validity finding, acceptance, signing or submission.
+export const CONTRACT_INTELLIGENCE_VERSION="2.0.0";
+export const DPRO_BASELINE_VERSION="DPRO-14R";
 
 const CLAUSES=Object.freeze([
   ["termination","Раскинување / отказ",/(раскин|отказ|termination|terminate|cancellation|cancel)/iu],
@@ -19,6 +20,15 @@ const CLAUSES=Object.freeze([
   ["ip","Интелектуална сопственост",/(интелектуална сопственост|авторски права|industrial property|intellectual property|copyright)/iu]
 ]);
 
+export const DPRO_MODEL_PROFILES=Object.freeze([
+  Object.freeze({id:"nda",label:"Доверливост (NDA)",findings:10,severity:Object.freeze({HIGH:2,MEDIUM:7,LOW:1})}),
+  Object.freeze({id:"cooperation",label:"Деловна соработка",findings:14,severity:Object.freeze({HIGH:7,MEDIUM:6,LOW:1})}),
+  Object.freeze({id:"services",label:"Вршење услуги",findings:8,severity:Object.freeze({HIGH:6,MEDIUM:2,LOW:0})}),
+  Object.freeze({id:"lease",label:"Закуп (стан / деловен)",findings:10,severity:Object.freeze({HIGH:6,MEDIUM:4,LOW:0})}),
+  Object.freeze({id:"loan",label:"Заем",findings:4,severity:Object.freeze({HIGH:3,MEDIUM:1,LOW:0})}),
+  Object.freeze({id:"debt",label:"Регулирање долг",findings:4,severity:Object.freeze({HIGH:4,MEDIUM:0,LOW:0})})
+]);
+
 function clean(v,max=200000){
   if(typeof v!=="string") throw new TypeError("contract_text_required");
   const s=v.normalize("NFKC").trim();
@@ -29,7 +39,10 @@ function clean(v,max=200000){
 function snippet(text,index,radius=150){
   return text.slice(Math.max(0,index-radius),Math.min(text.length,index+radius)).replace(/\s+/g," ").trim();
 }
-export function analyzeContractText({text,documentName="contract"}={}){
+function profile(model){
+  return DPRO_MODEL_PROFILES.find(x=>x.id===String(model||""))||null;
+}
+export function analyzeContractText({text,documentName="contract",model=""}={}){
   const body=clean(text);
   const hits=[];
   for(const [id,label,re] of CLAUSES){
@@ -43,15 +56,27 @@ export function analyzeContractText({text,documentName="contract"}={}){
       status:m?"detected_for_review":"not_detected_not_proof_of_absence"
     }));
   }
+  const dpro=profile(model);
   return Object.freeze({
     version:CONTRACT_INTELLIGENCE_VERSION,
+    baseline:DPRO_BASELINE_VERSION,
     documentName:String(documentName||"contract").slice(0,180),
+    model:dpro?.id||null,
     reviewedCharacters:body.length,
     clauses:Object.freeze(hits),
     foundCount:hits.filter(x=>x.found).length,
+    archivedDproRiskBaseline:dpro?Object.freeze({
+      findings:dpro.findings,
+      severity:dpro.severity,
+      legalValidation:"HOLD",
+      professionalSignoff:false,
+      inference:"archive_baseline_not_live_legal_conclusion"
+    }):null,
     humanGateRequired:true,
     legalEffectDetermined:false,
-    negotiationAction:"forbidden"
+    negotiationAction:"forbidden",
+    automaticSigning:false,
+    automaticSubmission:false
   });
 }
 export function compareToPlaybook(analysis,{requiredClauses=[]}={}){
@@ -63,7 +88,24 @@ export function compareToPlaybook(analysis,{requiredClauses=[]}={}){
     missingOrNotDetected:Object.freeze(missing),
     readyForLawyerReview:true,
     automaticAcceptance:false,
-    humanGateRequired:true
+    humanGateRequired:true,
+    note:"Not detected is not proof of legal absence."
+  });
+}
+export function buildContractReviewPackage(analysis,{requiredClauses=[]}={}){
+  const playbook=compareToPlaybook(analysis,{requiredClauses});
+  return Object.freeze({
+    schema:"ai-advokat.ai-contract.review.v1",
+    generatedAt:new Date().toISOString(),
+    analysis,
+    playbook,
+    governance:Object.freeze({
+      sourceFirst:true,
+      humanGate:true,
+      legalValidation:"HOLD",
+      professionalSignoff:false,
+      publicChatDocumentsForbidden:true
+    })
   });
 }
 export const CONTRACT_CLAUSE_CATALOG=Object.freeze(CLAUSES.map(([id,label])=>Object.freeze({id,label})));
