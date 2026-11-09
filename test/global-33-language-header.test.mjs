@@ -6,7 +6,7 @@ const home=fs.readFileSync("index.html","utf8");
 const worker=fs.readFileSync("src/index.js","utf8");
 const chat=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
 
-const expected=["sq","ar","bn","bs","bg","zh","hr","en","eo","fr","de","el","ha","he","hi","hu","id","it","ja","ko","la","mk","fa","pt","pa","ru","sr","sl","es","sw","tr","ur","vi"];
+const expected=["mk","en","sq","ar","bn","bs","bg","zh","hr","eo","fr","de","el","ha","he","hi","hu","id","it","ja","ko","la","fa","pt","pa","ru","sr","sl","es","sw","tr","ur","vi"];
 
 test("global header exposes exactly the governed 33 languages",()=>{
   const select=home.match(/<select id="langBtn"[\s\S]*?<\/select>/)?.[0]||"";
@@ -28,6 +28,9 @@ test("non-MK EN interface localization uses bounded Workers AI endpoint",()=>{
   assert.match(worker,/async function handleUiTranslation/);
   assert.match(worker,/raw\.length>48/);
   assert.match(worker,/totalChars>12000/);
+  assert.match(worker,/UI_TRANSLATE_HOURLY_LIMIT=24/);
+  assert.match(worker,/UI_TRANSLATE_DAILY_LIMIT=80/);
+  assert.ok(worker.indexOf("consumeWindow(env,") < worker.indexOf("runWorkersAIText(env,") || worker.includes("uiTranslateLimiter"),"translation limiter must precede provider execution");
   assert.match(worker,/url\.pathname === "\/api\/ui-translate"/);
 });
 

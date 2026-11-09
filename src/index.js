@@ -10752,8 +10752,33 @@ const UI_TRANSLATION_LANGUAGES=Object.freeze({
   sw:"Swahili",tr:"Turkish",ur:"Urdu",vi:"Vietnamese"
 });
 
+const UI_TRANSLATE_HOURLY_LIMIT=24;
+const UI_TRANSLATE_DAILY_LIMIT=80;
+
 async function handleUiTranslation(request,env){
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+  const contentType=String(request.headers.get("content-type")||"").toLowerCase();
+  if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+  if(!env?.AI || typeof env.AI.run!=="function") return json(request,{ok:false,error:"ui_translation_unavailable"},503);
+
+  let subject;
+  try{
+    subject=await anonymousSubject(request,env);
+    for(const rule of [
+      {scope:"ui_translate_hour",limit:UI_TRANSLATE_HOURLY_LIMIT,windowSeconds:3600},
+      {scope:"ui_translate_day",limit:UI_TRANSLATE_DAILY_LIMIT,windowSeconds:86400}
+    ]){
+      const verdict=await consumeWindow(env,{...rule,subject});
+      if(!verdict.allowed) return json(request,{ok:false,error:"ui_translation_rate_limited"},429,{"Retry-After":String(verdict.retryAfter)});
+    }
+  }catch(error){
+    if(error instanceof SecurityConfigError){
+      console.error("ui_translation_security_unavailable",String(error?.message||error).slice(0,120));
+      return json(request,{ok:false,error:"ui_translation_security_unavailable"},503);
+    }
+    throw error;
+  }
+
   let body;
   try{ body=await request.json(); }catch{ return json(request,{ok:false,error:"invalid_json"},400); }
   const target=String(body?.targetLanguage||"").trim().toLowerCase();
