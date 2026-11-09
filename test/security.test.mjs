@@ -770,6 +770,12 @@ describe("production AI binding guard", () => {
 
     const provider = fs.readFileSync("src/workers-ai-provider.js", "utf8");
     assert.equal((provider.match(/env\.AI\.run\(/g) || []).length, 1, "central Workers AI provider contract owns the single raw AI.run call");
+    const voiceProvider = fs.readFileSync("src/voice-transcription-provider.js", "utf8");
+    assert.equal((voiceProvider.match(/env\.AI\.run\(/g) || []).length, 1, "voice transcription owns one isolated raw AI.run call");
+    const voiceRoute = src.slice(src.indexOf("async function handleVoiceTranscription("), src.indexOf("function corsHeaders("));
+    assert.match(voiceRoute,/consumeWindow\(env,/,"voice transcription must use an atomic D1 limiter before provider execution");
+    assert.ok(voiceRoute.indexOf("consumeWindow(env,") < voiceRoute.indexOf("runVoiceTranscriptionAI(env,"),"voice limiter must run before the isolated provider");
+    assert.match(voiceRoute,/VOICE_TRANSCRIBE_MAX_BYTES/,"voice request size must remain bounded");
 
     const assistant = src.slice(src.indexOf("async function handleAssistant("), src.indexOf("function handleWebSources("));
     const assistantReserve = assistant.indexOf("reserveMonthlyQuota(");
