@@ -41,26 +41,19 @@ test("microphone permission and device errors have actionable Macedonian message
   assert.match(microphonePermissionErrorMessage({name:"NotFoundError"}),/пронајден микрофон/iu);
 });
 
-test("Voice R3 requests real microphone permission before starting recognition",async()=>{
-  const stopped=[];
+test("Voice R3 starts browser-native recognition without pre-acquiring and closing the microphone stream",async()=>{
+  let getUserMediaCalls=0;
   class FakeRecognition{
     constructor(){FakeRecognition.last=this;}
     start(){this.onstart?.();}
-    stop(){this.onend?.();}
+    abort(){this.onend?.();}
   }
   class FakeEvent{constructor(type){this.type=type;}}
   const win={
     isSecureContext:true,
     SpeechRecognition:FakeRecognition,
     Event:FakeEvent,
-    navigator:{
-      mediaDevices:{
-        async getUserMedia(constraints){
-          assert.deepEqual(constraints,{audio:true});
-          return {getTracks:()=>[{stop(){stopped.push(true);}}]};
-        }
-      }
-    }
+    navigator:{mediaDevices:{async getUserMedia(){getUserMediaCalls++;}}}
   };
   const runtime=createAIAdvokatVoiceRuntime(win,{lang:"mk-MK"});
   const button=fakeButton();
@@ -69,19 +62,18 @@ test("Voice R3 requests real microphone permission before starting recognition",
   runtime.bindMicrophone({button,input,status:value=>{status=value;}});
   await button.click();
   assert.ok(FakeRecognition.last);
-  assert.equal(stopped.length,1);
+  assert.equal(getUserMediaCalls,0);
+  assert.equal(FakeRecognition.last.lang,"mk-MK");
   assert.match(status,/активен|вклучувам/iu);
 });
 
-test("Voice R3 keeps the microphone retryable when browser permission is denied",async()=>{
+test("Voice R3 keeps the microphone retryable when browser permission is already denied",async()=>{
   class FakeRecognition{constructor(){FakeRecognition.created=true;} start(){}}
   FakeRecognition.created=false;
   const win={
     isSecureContext:true,
     SpeechRecognition:FakeRecognition,
-    navigator:{mediaDevices:{async getUserMedia(){
-      const error=new Error("denied"); error.name="NotAllowedError"; throw error;
-    }}}
+    navigator:{permissions:{async query(){return {state:"denied"};}}}
   };
   const runtime=createAIAdvokatVoiceRuntime(win,{lang:"mk-MK"});
   const button=fakeButton();
@@ -93,6 +85,24 @@ test("Voice R3 keeps the microphone retryable when browser permission is denied"
   assert.equal(button.disabled,false);
   assert.equal(button.dataset.voiceState,"idle");
   assert.match(status,/Allow|Дозволи/iu);
+});
+
+test("Voice R3 uses abort for immediate microphone stop when available",async()=>{
+  let aborted=0;
+  class FakeRecognition{
+    constructor(){FakeRecognition.last=this;}
+    start(){this.onstart?.();}
+    abort(){aborted++;this.onend?.();}
+  }
+  const win={isSecureContext:true,SpeechRecognition:FakeRecognition};
+  const runtime=createAIAdvokatVoiceRuntime(win,{lang:"en-US"});
+  const button=fakeButton();
+  const input={value:"",dispatchEvent(){}};
+  runtime.bindMicrophone({button,input,status:()=>{},language:()=>"en-US"});
+  await button.click();
+  await button.click();
+  assert.equal(aborted,1);
+  assert.equal(button.dataset.voiceState,"idle");
 });
 
 
