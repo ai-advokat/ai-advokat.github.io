@@ -496,6 +496,106 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     }
   }
 
+  function bindMicrophoneRecorder({startButton,stopButton,downloadButton,status,filename="AI-Advokat-microphone.webm",maxDurationMs=120000}={}){
+    if(!startButton||!stopButton||!downloadButton) return {supported:false,stop:()=>{}};
+    const supported=Boolean(mediaDevices?.getUserMedia&&MediaRecorderCtor);
+    let recorder=null;
+    let stream=null;
+    let chunks=[];
+    let lastBlob=null;
+    let timer=null;
+
+    const cleanupStream=()=>{
+      try{stream?.getTracks?.().forEach(track=>track.stop?.());}catch{}
+      stream=null;
+    };
+    const setIdle=()=>{
+      startButton.disabled=!supported;
+      stopButton.disabled=true;
+    };
+    const stop=()=>{
+      if(timer){try{win.clearTimeout?.(timer);}catch{} timer=null;}
+      if(recorder && recorder.state!=="inactive"){
+        try{recorder.stop();}catch{}
+      }else{
+        cleanupStream();
+        setIdle();
+      }
+    };
+
+    startButton.type="button";
+    stopButton.type="button";
+    downloadButton.type="button";
+    startButton.disabled=!supported;
+    stopButton.disabled=true;
+    downloadButton.disabled=true;
+
+    if(!supported){
+      setStatus(status,"Локалното снимање бара browser со MediaRecorder и дозвола за микрофон.");
+      return {supported:false,stop};
+    }
+
+    startButton.addEventListener("click",async()=>{
+      if(recorder && recorder.state!=="inactive") return;
+      chunks=[];
+      lastBlob=null;
+      downloadButton.disabled=true;
+      try{
+        stream=await mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}});
+        const preferred=MediaRecorderCtor.isTypeSupported?.("audio/webm;codecs=opus")
+          ?"audio/webm;codecs=opus"
+          :(MediaRecorderCtor.isTypeSupported?.("audio/webm")?"audio/webm":"");
+        recorder=preferred?new MediaRecorderCtor(stream,{mimeType:preferred}):new MediaRecorderCtor(stream);
+        recorder.ondataavailable=event=>{if(event?.data?.size) chunks.push(event.data);};
+        recorder.onerror=()=>{
+          setStatus(status,"Снимањето не успеа. Проверете ја дозволата за микрофон.");
+          cleanupStream();
+          setIdle();
+        };
+        recorder.onstop=()=>{
+          if(timer){try{win.clearTimeout?.(timer);}catch{} timer=null;}
+          cleanupStream();
+          lastBlob=new Blob(chunks,{type:recorder?.mimeType||"audio/webm"});
+          setIdle();
+          downloadButton.disabled=!lastBlob.size;
+          setStatus(status,lastBlob.size
+            ?"✓ Снимката е подготвена. Притиснете „💾 Преземи снимка“."
+            :"Снимката е празна. Обидете се повторно.");
+        };
+        recorder.start(250);
+        startButton.disabled=true;
+        stopButton.disabled=false;
+        setStatus(status,"⏺ Се снима локално. Притиснете „■ Стоп“ кога ќе завршите.");
+        timer=win.setTimeout?.(()=>stop(),Math.max(5000,Number(maxDurationMs)||120000))||null;
+      }catch(error){
+        cleanupStream();
+        setIdle();
+        setStatus(status,microphonePermissionErrorMessage(error));
+      }
+    });
+
+    stopButton.addEventListener("click",stop);
+
+    downloadButton.addEventListener("click",()=>{
+      if(!lastBlob?.size) return;
+      const url=win.URL?.createObjectURL?.(lastBlob);
+      if(!url) return;
+      const a=win.document?.createElement?.("a");
+      if(!a) return;
+      a.href=url;
+      a.download=typeof filename==="function"?filename():String(filename||"AI-Advokat-microphone.webm");
+      a.style.display="none";
+      win.document?.body?.appendChild?.(a);
+      try{a.click();}finally{
+        a.remove?.();
+        win.setTimeout?.(()=>win.URL?.revokeObjectURL?.(url),1000);
+      }
+      setStatus(status,"💾 Снимката е преземена локално.");
+    });
+
+    return {supported:true,stop,getLastBlob:()=>lastBlob};
+  }
+
   function bindSaveAudioButton({button,text,status,language,filename}={}){
     if(!button) return {supported:false};
     const supported=Boolean(mediaDevices?.getDisplayMedia&&win?.MediaRecorder&&win?.MediaStream);
@@ -529,6 +629,7 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     bindMicrophone,
     bindSpeakButton,
     bindSaveAudioButton,
+    bindMicrophoneRecorder,
     saveSpokenAudio,
     speak,
     stopSpeaking,

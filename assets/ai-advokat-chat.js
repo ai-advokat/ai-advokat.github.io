@@ -22,6 +22,10 @@
   const modeBtns=[...root.querySelectorAll("[data-chat-mode]")];
   const exportButtons=[...root.querySelectorAll("[data-chat-export]")];
   const micBtn=$("#aiChatMic");
+  const languageSelect=$("#aiChatLanguage");
+  const recordStartBtn=$("#aiChatRecordStart");
+  const recordStopBtn=$("#aiChatRecordStop");
+  const recordDownloadBtn=$("#aiChatRecordDownload");
   const voiceStatus=$("#aiChatVoiceStatus");
   const emptyTemplate=$("#aiChatEmptyTemplate");
   const guideVaultImport=$("#aiGuideVaultImport");
@@ -98,14 +102,76 @@
     voiceStatus.hidden=!value;
   }
 
+  const AI_ADVOCAT_LANGUAGES=Object.freeze([
+    {code:"sq",name:"Albanian",locale:"sq-AL"},{code:"ar",name:"Arabic",locale:"ar-SA"},
+    {code:"bn",name:"Bengali",locale:"bn-BD"},{code:"bs",name:"Bosnian",locale:"bs-BA"},
+    {code:"bg",name:"Bulgarian",locale:"bg-BG"},{code:"zh",name:"Chinese",locale:"zh-CN"},
+    {code:"hr",name:"Croatian",locale:"hr-HR"},{code:"en",name:"English",locale:"en-US"},
+    {code:"eo",name:"Esperanto",locale:"eo"},{code:"fr",name:"French",locale:"fr-FR"},
+    {code:"de",name:"German",locale:"de-DE"},{code:"el",name:"Greek",locale:"el-GR"},
+    {code:"ha",name:"Hausa",locale:"ha-NG"},{code:"he",name:"Hebrew",locale:"he-IL"},
+    {code:"hi",name:"Hindi",locale:"hi-IN"},{code:"hu",name:"Hungarian",locale:"hu-HU"},
+    {code:"id",name:"Indonesian",locale:"id-ID"},{code:"it",name:"Italian",locale:"it-IT"},
+    {code:"ja",name:"Japanese",locale:"ja-JP"},{code:"ko",name:"Korean",locale:"ko-KR"},
+    {code:"la",name:"Latin",locale:"la"},{code:"mk",name:"Macedonian",locale:"mk-MK"},
+    {code:"fa",name:"Persian",locale:"fa-IR"},{code:"pt",name:"Portuguese",locale:"pt-PT"},
+    {code:"pa",name:"Punjabi",locale:"pa-IN"},{code:"ru",name:"Russian",locale:"ru-RU"},
+    {code:"sr",name:"Serbian",locale:"sr-RS"},{code:"sl",name:"Slovenian",locale:"sl-SI"},
+    {code:"es",name:"Spanish",locale:"es-ES"},{code:"sw",name:"Swahili",locale:"sw-KE"},
+    {code:"tr",name:"Turkish",locale:"tr-TR"},{code:"ur",name:"Urdu",locale:"ur-PK"},
+    {code:"vi",name:"Vietnamese",locale:"vi-VN"}
+  ]);
+  const LANGUAGE_KEY="aiadvokat-language";
+  function languageMeta(code){
+    return AI_ADVOCAT_LANGUAGES.find(x=>x.code===String(code||"").toLowerCase())
+      || AI_ADVOCAT_LANGUAGES.find(x=>x.code==="mk");
+  }
+  function readPreferredLanguage(){
+    try{return languageMeta(localStorage.getItem(LANGUAGE_KEY)).code;}catch{return "mk";}
+  }
+  function selectedLanguageMeta(){
+    return languageMeta(languageSelect?.value||readPreferredLanguage());
+  }
+  function selectedSpeechLocale(){return selectedLanguageMeta().locale;}
+  function writePreferredLanguage(code){
+    const lang=languageMeta(code);
+    try{localStorage.setItem(LANGUAGE_KEY,lang.code);}catch{}
+    if(languageSelect&&languageSelect.value!==lang.code) languageSelect.value=lang.code;
+    return lang;
+  }
+  function withOutputLanguageDirective(text){
+    const lang=selectedLanguageMeta();
+    const q=String(text||"").trim();
+    if(lang.code==="mk") return q;
+    const strict=lang.code==="en"
+      ?"Answer only in English explanatory prose. Do not mix Macedonian, Serbian, Bulgarian or other languages except verbatim official source titles, quotations, names, case numbers and statutory identifiers."
+      :"Answer only in "+lang.name+" explanatory prose. Do not mix other languages except verbatim official source titles, quotations, names, case numbers and statutory identifiers.";
+    return "OUTPUT LANGUAGE CONTRACT — "+lang.name+": "+strict+" Translation changes explanatory language only; jurisdiction, legal authority, source status, article identity, case number, citation and Human Gate responsibility must remain unchanged.\n\n"+q;
+  }
+  function bindLanguageSelector(){
+    if(!languageSelect) return;
+    languageSelect.replaceChildren(...AI_ADVOCAT_LANGUAGES.map(item=>{
+      const option=document.createElement("option");
+      option.value=item.code;
+      option.textContent=item.code.toUpperCase()+" · "+item.name;
+      return option;
+    }));
+    writePreferredLanguage(readPreferredLanguage());
+    languageSelect.addEventListener("change",()=>{
+      const lang=writePreferredLanguage(languageSelect.value);
+      setVoiceStatus("AI јазик: "+lang.name+". Објаснувањето, диктирањето и гласот го следат овој избор; правните извори и цитатите не се менуваат.");
+    });
+  }
+
   const INTERNAL_VOICE_CONVERSATION_VERSION="AI_ADVOCAT_INTERNAL_VOICE_CONVERSATION_R1";
   window.AIAdvokatInternalVoiceConversation=Object.freeze({
     version:INTERNAL_VOICE_CONVERSATION_VERSION,
     mode:"half_duplex_auto_send_auto_speak",
-    language:"mk-MK"
+    languages:AI_ADVOCAT_LANGUAGES.map(x=>x.code)
   });
+  bindLanguageSelector();
   const voiceRuntimePromise=import("/assets/ai-advokat-voice.mjs?v=20261109-voice-r4")
-    .then(mod=>mod.createAIAdvokatVoiceRuntime(window,{lang:"mk-MK"}))
+    .then(mod=>mod.createAIAdvokatVoiceRuntime(window,{lang:selectedSpeechLocale()}))
     .catch(error=>{
       console.error("ai_advokat_voice_runtime_failed",error);
       if(micBtn){micBtn.disabled=true;micBtn.title="Гласовниот модул не е достапен.";}
@@ -997,7 +1063,8 @@
         headers:{"content-type":"application/json","accept":"application/json",...membershipHeaders()},
         signal:abortController.signal,
         body:JSON.stringify({
-          q,
+          q:withOutputLanguageDirective(q),
+          outputLanguage:selectedLanguageMeta().code,
           sessionId:currentId,
           mode:activeMode(),
           webSearch:activeMode()==="web",
@@ -1292,6 +1359,7 @@
         button:micBtn,
         input,
         status:setVoiceStatus,
+        language:()=>selectedSpeechLocale(),
         onTranscript:async finalText=>{
           autoSize();
           if(abortController){
@@ -1314,16 +1382,28 @@
             : null;
           if(fresh){
             setVoiceStatus("🔊 AI Advokat одговара гласно.");
-            const spokenOk=voice.speak(String(fresh.text||""),{status:setVoiceStatus});
+            const spokenOk=voice.speak(String(fresh.text||""),{status:setVoiceStatus,langOverride:selectedSpeechLocale()});
             if(!spokenOk) setVoiceStatus("Одговорот е подготвен, но гласното читање не е достапно во овој прелистувач.");
           }
         }
       });
       if(binding?.supported){
-        micBtn.title="Гласовен разговор: зборувај → испрати → слушни одговор";
+        micBtn.title="Диктирај на избраниот AI јазик";
         micBtn.setAttribute("aria-label","Гласовен разговор со AI Advokat");
         micBtn.dataset.voiceConversation=INTERNAL_VOICE_CONVERSATION_VERSION;
       }
+    });
+  }
+
+  if(recordStartBtn&&recordStopBtn&&recordDownloadBtn){
+    voiceRuntimePromise.then(voice=>{
+      voice?.bindMicrophoneRecorder?.({
+        startButton:recordStartBtn,
+        stopButton:recordStopBtn,
+        downloadButton:recordDownloadBtn,
+        status:setVoiceStatus,
+        filename:()=> "AI-Advokat-recording-"+selectedLanguageMeta().code.toUpperCase()+"-"+new Date().toISOString().replace(/[:.]/g,"-")+".webm"
+      });
     });
   }
 

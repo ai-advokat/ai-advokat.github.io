@@ -525,6 +525,15 @@ async function restoreAccess() {
 // Ensure a fresh device can type and submit a question even before access is restored.
 // If no key exists, submit opens the governed professional-access dialog instead of appearing inert.
 bindLanguageSelector();
+voiceRuntimeReady.then(voice=>{
+  voice?.bindMicrophoneRecorder?.({
+    startButton:$("recordStart"),
+    stopButton:$("recordStop"),
+    downloadButton:$("recordDownload"),
+    status,
+    filename:()=> "AI-Advokat-recording-"+selectedLanguageMeta().code.toUpperCase()+"-"+new Date().toISOString().replace(/[:.]/g,"-")+".webm"
+  });
+});
 busy(false);
 window.AIAdvokatCoreReady = true;
 document.documentElement.dataset.botCoreRuntime = 'ready';
