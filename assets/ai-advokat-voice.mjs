@@ -91,6 +91,7 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
   const Utterance=win?.SpeechSynthesisUtterance||null;
   const mediaDevices=win?.navigator?.mediaDevices||null;
   const MediaRecorderCtor=win?.MediaRecorder||null;
+  const recorderFallbackSupported=Boolean(mediaDevices?.getUserMedia&&MediaRecorderCtor&&win?.fetch);
   let activeRecognition=null;
   let activeRecorder=null;
   let activeRecorderStream=null;
@@ -148,8 +149,7 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     if(!button||!input) return {supported:false,stop:()=>{}};
     button.hidden=false;
     button.type="button";
-    const fallbackSupported=Boolean(mediaDevices?.getUserMedia&&MediaRecorderCtor&&win?.fetch);
-    if(!SpeechRecognitionCtor && !fallbackSupported){
+    if(!SpeechRecognitionCtor && !recorderFallbackSupported){
       button.disabled=true;
       button.title="Гласовното внесување не е поддржано од овој прелистувач.";
       button.setAttribute("aria-label","Гласовното внесување не е поддржано");
@@ -518,11 +518,11 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
   return Object.freeze({
     version:AI_ADVOCAT_VOICE_VERSION,
     capabilities:Object.freeze({
-      dictation:Boolean(SpeechRecognitionCtor||fallbackSupported),
+      dictation:Boolean(SpeechRecognitionCtor||recorderFallbackSupported),
       speechOutput:Boolean(synth&&Utterance),
       audioSave:Boolean(mediaDevices?.getDisplayMedia&&win?.MediaRecorder&&win?.MediaStream),
       browserSpeechRecognition:Boolean(SpeechRecognitionCtor),
-      workersAITranscriptionFallback:Boolean(fallbackSupported),
+      workersAITranscriptionFallback:Boolean(recorderFallbackSupported),
       languages:Object.freeze(["mk-MK","en-US"]),
       language:lang
     }),
