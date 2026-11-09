@@ -37,9 +37,11 @@ header{padding-left:12px}.brand{display:flex;align-items:center}.brand img{displ
 
 
 /* AI Advokat Voice R1 */
-.message-voice-tools{display:flex;gap:.4rem;margin-top:.45rem}
-.message-speak{border:1px solid rgba(185,152,91,.38);border-radius:999px;background:transparent;padding:.32rem .62rem;font:inherit;font-size:.78rem;cursor:pointer}
-.message-speak:hover,.message-speak:focus-visible{border-color:currentColor}
+.message-voice-tools{display:flex;align-items:center;gap:.4rem;margin-top:.45rem;flex-wrap:wrap}
+.message-voice-lang,.message-speak,.message-save-audio{border:1px solid rgba(185,152,91,.38);border-radius:999px;background:transparent;color:inherit;padding:.32rem .62rem;font:inherit;font-size:.78rem}
+.message-voice-lang{padding-right:1.45rem;cursor:pointer}
+.message-speak,.message-save-audio{cursor:pointer}
+.message-speak:hover,.message-speak:focus-visible,.message-save-audio:hover,.message-save-audio:focus-visible,.message-voice-lang:hover,.message-voice-lang:focus-visible{border-color:currentColor}
 .message-speak.is-speaking{font-weight:800}
 #mic.is-listening{transform:scale(1.05);box-shadow:0 0 0 3px rgba(185,152,91,.18)}
-#mic[disabled],.message-speak[disabled]{opacity:.5;cursor:not-allowed}
+#mic[disabled],.message-speak[disabled],.message-save-audio[disabled]{opacity:.5;cursor:not-allowed}
