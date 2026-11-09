@@ -167,7 +167,12 @@
       font:inherit
     }
 
-    .utility select{max-width:190px;cursor:pointer}
+    .utility select{
+      max-width:190px;
+      cursor:pointer;
+      background:#ffffff!important;
+      color:#071524!important;
+    }
     .utility select option{
       background:#ffffff;
       color:#071524;
@@ -177,10 +182,15 @@
       color:#071524;
     }
     .utility button:hover,
-    .utility button:focus-visible,
+    .utility button:focus-visible{
+      background:#10253a;
+      outline:2px solid rgba(185,152,91,.45);
+      outline-offset:1px
+    }
     .utility select:hover,
     .utility select:focus-visible{
-      background:#10253a;
+      background:#eef3f7!important;
+      color:#071524!important;
       outline:2px solid rgba(185,152,91,.45);
       outline-offset:1px
     }
