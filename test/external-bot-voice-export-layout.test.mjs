@@ -8,13 +8,13 @@ const voice=fs.readFileSync("assets/ai-advokat-voice.mjs","utf8");
 const vnext=fs.readFileSync("assets/standalone-bot-vnext.js","utf8");
 const css=fs.readFileSync("assets/standalone-bot-r7.css","utf8");
 
-test("external voice conversation remains mk-MK dictation -> auto send -> auto speak",()=>{
+test("external voice conversation remains selected-language dictation -> auto send -> auto speak",()=>{
   assert.match(core,/mode:"half_duplex_auto_send_auto_speak"/);
   assert.match(core,/language:"mk-MK"/);
-  assert.match(core,/createAIAdvokatVoiceRuntime\(window,\{lang:"mk-MK"\}\)/);
+  assert.match(core,/createAIAdvokatVoiceRuntime\(window,\{lang:selectedSpeechLocale\(\)\}\)/);
   assert.match(core,/voiceConversationPending=true/);
   assert.match(core,/requestSubmit\(\)/);
-  assert.match(core,/voice\?\.speak\?\.\(spokenAnswer,\{status\}\)/);
+  assert.match(core,/voice\?\.speak\?\.\(spokenAnswer,\{status,langOverride:selectedSpeechLocale\(\)\}\)/);
   assert.match(voice,/SpeechRecognitionCtor=win\?\.SpeechRecognition\|\|win\?\.webkitSpeechRecognition/);
   assert.match(voice,/utter\.lang=effectiveLang/);
   assert.match(voice,/pickMacedonianVoice/);
@@ -56,14 +56,15 @@ test("Consolidator stays inside its R7 engine box",()=>{
 });
 
 
-test("external assistant exposes MK EN voice selector and local audio save",()=>{
+test("external assistant exposes the governed 33-language voice selector and local audio save",()=>{
   assert.match(core,/message-voice-lang/);
-  assert.match(core,/mk\.value='mk-MK'/);
-  assert.match(core,/en\.value='en-US'/);
+  assert.match(core,/const AI_ADVOCAT_LANGUAGES=Object\.freeze\(\[/);
+  assert.match(core,/\{code:"mk",name:"Macedonian",locale:"mk-MK"\}/);
+  assert.match(core,/\{code:"en",name:"English",locale:"en-US"\}/);
+  assert.match(core,/for\(const item of AI_ADVOCAT_LANGUAGES\)/);
   assert.match(core,/message-save-audio/);
   assert.match(core,/bindSaveAudioButton/);
-  assert.match(core,/AI-Advokat-answer-EN\.webm/);
-  assert.match(core,/AI-Advokat-odgovor-MK\.webm/);
+  assert.match(core,/AI-Advokat-voice-/);
   assert.match(voice,/getDisplayMedia/);
   assert.match(voice,/Share tab audio/);
   assert.match(voice,/audioSave:Boolean/);
