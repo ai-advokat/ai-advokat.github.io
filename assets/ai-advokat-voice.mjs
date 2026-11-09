@@ -1,4 +1,4 @@
-export const AI_ADVOCAT_VOICE_VERSION="AI_ADVOCAT_VOICE_R3";
+export const AI_ADVOCAT_VOICE_VERSION="AI_ADVOCAT_VOICE_R4";
 
 export function splitSpeechText(value,{maxChars=260,maxChunks=48}={}){
   const text=String(value||"")
@@ -90,7 +90,12 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
   const synth=win?.speechSynthesis||null;
   const Utterance=win?.SpeechSynthesisUtterance||null;
   const mediaDevices=win?.navigator?.mediaDevices||null;
+  const MediaRecorderCtor=win?.MediaRecorder||null;
+  const recorderFallbackSupported=Boolean(mediaDevices?.getUserMedia&&MediaRecorderCtor&&win?.fetch);
   let activeRecognition=null;
+  let activeRecorder=null;
+  let activeRecorderStream=null;
+  let activeRecorderTimer=null;
   let speechGeneration=0;
   let activeSpeakButton=null;
   let microphonePermissionState="unknown";
@@ -108,6 +113,15 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
         if(typeof rec.abort==="function") rec.abort();
         else rec.stop?.();
       }catch{}
+    }
+    if(activeRecorder){
+      const recorder=activeRecorder;
+      activeRecorder=null;
+      try{if(recorder.state!=="inactive") recorder.stop();}catch{}
+    }
+    if(activeRecorderTimer){
+      try{win.clearTimeout?.(activeRecorderTimer);}catch{}
+      activeRecorderTimer=null;
     }
   }
 
@@ -135,11 +149,11 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     if(!button||!input) return {supported:false,stop:()=>{}};
     button.hidden=false;
     button.type="button";
-    if(!SpeechRecognitionCtor){
+    if(!SpeechRecognitionCtor && !recorderFallbackSupported){
       button.disabled=true;
-      button.title="Диктирањето не е поддржано од овој прелистувач.";
-      button.setAttribute("aria-label","Диктирањето не е поддржано");
-      setStatus(status,"Овој прелистувач нема Speech Recognition. Пишувањето и гласното читање остануваат достапни.");
+      button.title="Гласовното внесување не е поддржано од овој прелистувач.";
+      button.setAttribute("aria-label","Гласовното внесување не е поддржано");
+      setStatus(status,"Овој прелистувач нема Speech Recognition ниту безбеден audio-recording fallback. Пишувањето и гласното читање остануваат достапни.");
       return {supported:false,stop:()=>{}};
     }
 
@@ -152,11 +166,87 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     button.setAttribute("aria-label",dictationLabel());
     button.setAttribute("aria-pressed","false");
 
+    const commitTranscript=(finalText)=>{
+      const text=String(finalText||"").trim();
+      if(!text) return false;
+      input.value=(String(input.value||"")+" "+text).trim();
+      try{input.dispatchEvent(new win.Event("input",{bubbles:true}));}catch{}
+      if(typeof onTranscript==="function") onTranscript(text);
+      return true;
+    };
+
+    const startRecorderFallback=async()=>{
+      if(activeRecorder){
+        stopRecognition();
+        setStatus(status,"Микрофонот е запрен. Транскрипцијата се обработува…");
+        return;
+      }
+      setButtonState(button,"requesting");
+      let stream=null;
+      try{
+        stream=await mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}});
+        activeRecorderStream=stream;
+        const preferred=MediaRecorderCtor.isTypeSupported?.("audio/webm;codecs=opus")
+          ?"audio/webm;codecs=opus"
+          :(MediaRecorderCtor.isTypeSupported?.("audio/webm")?"audio/webm":"");
+        const recorder=preferred?new MediaRecorderCtor(stream,{mimeType:preferred}):new MediaRecorderCtor(stream);
+        const chunks=[];
+        activeRecorder=recorder;
+        recorder.ondataavailable=event=>{if(event?.data?.size) chunks.push(event.data);};
+        recorder.onerror=()=>{
+          setStatus(status,"Снимањето не успеа. Проверете ги дозволите за микрофон и обидете се повторно.");
+        };
+        recorder.onstop=async()=>{
+          activeRecorder=null;
+          if(activeRecorderTimer){try{win.clearTimeout?.(activeRecorderTimer);}catch{} activeRecorderTimer=null;}
+          try{activeRecorderStream?.getTracks?.().forEach(track=>track.stop?.());}catch{}
+          activeRecorderStream=null;
+          setButtonState(button,"requesting");
+          try{
+            const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
+            if(!blob.size) throw new Error("empty_audio");
+            setStatus(status,"🎙 Говорот е снимен. Се транскрибира без трајно складирање…");
+            const locale=String(typeof language==="function"?language():language||lang||"mk-MK");
+            const response=await win.fetch("/api/voice/transcribe",{
+              method:"POST",
+              headers:{"Content-Type":blob.type||"audio/webm","X-Voice-Language":locale},
+              body:blob
+            });
+            const payload=await response.json().catch(()=>({}));
+            if(!response.ok||payload?.ok!==true) throw new Error(payload?.error||"transcription_failed");
+            const text=String(payload?.text||"").trim();
+            if(!commitTranscript(text)) throw new Error("empty_transcript");
+            setStatus(status,"✓ Говорот е транскрибиран. Проверете го текстот и испратете.");
+          }catch(error){
+            const reason=String(error?.message||error||"");
+            setStatus(status,reason==="rate_limited"
+              ?"Премногу гласовни барања за кратко време. Обидете се повторно по кратка пауза."
+              :"Гласовната транскрипција не успеа. Можете веднаш да продолжите со пишување.");
+          }finally{
+            setButtonState(button,"idle");
+            button.title=dictationLabel();
+            button.setAttribute("aria-label",dictationLabel());
+          }
+        };
+        recorder.start(250);
+        setButtonState(button,"listening");
+        setStatus(status,"🎙 Микрофонот е активен — зборувајте. Притиснете повторно за стоп. Ако Web Speech не е достапен, аудиото се транскрибира преку Workers AI без трајно складирање.");
+        activeRecorderTimer=win.setTimeout?.(()=>{if(activeRecorder===recorder) stopRecognition();},45000)||null;
+      }catch(error){
+        try{stream?.getTracks?.().forEach(track=>track.stop?.());}catch{}
+        activeRecorder=null;
+        activeRecorderStream=null;
+        setButtonState(button,"idle");
+        setStatus(status,microphonePermissionErrorMessage(error));
+      }
+    };
+
     const start=async()=>{
-      if(activeRecognition){
+      if(activeRecognition||activeRecorder){
         stopRecognition();
         return;
       }
+      if(!SpeechRecognitionCtor) return startRecorderFallback();
       if(button.dataset.voiceState==="requesting") return;
       setButtonState(button,"requesting");
       const permissionGranted=await ensureMicrophonePermission(status);
@@ -193,9 +283,7 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
         if(interim) setStatus(status,"🎙 Слушам: "+interim.slice(0,120));
         if(finalText && !committed){
           committed=true;
-          input.value=(String(input.value||"")+" "+finalText).trim();
-          try{input.dispatchEvent(new win.Event("input",{bubbles:true}));}catch{}
-          if(typeof onTranscript==="function") onTranscript(finalText);
+          commitTranscript(finalText);
           setStatus(status,"✓ Диктирањето е внесено. Проверете го текстот и испратете.");
         }
       };
@@ -408,6 +496,106 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
     }
   }
 
+  function bindMicrophoneRecorder({startButton,stopButton,downloadButton,status,filename="AI-Advokat-microphone.webm",maxDurationMs=120000}={}){
+    if(!startButton||!stopButton||!downloadButton) return {supported:false,stop:()=>{}};
+    const supported=Boolean(mediaDevices?.getUserMedia&&MediaRecorderCtor);
+    let recorder=null;
+    let stream=null;
+    let chunks=[];
+    let lastBlob=null;
+    let timer=null;
+
+    const cleanupStream=()=>{
+      try{stream?.getTracks?.().forEach(track=>track.stop?.());}catch{}
+      stream=null;
+    };
+    const setIdle=()=>{
+      startButton.disabled=!supported;
+      stopButton.disabled=true;
+    };
+    const stop=()=>{
+      if(timer){try{win.clearTimeout?.(timer);}catch{} timer=null;}
+      if(recorder && recorder.state!=="inactive"){
+        try{recorder.stop();}catch{}
+      }else{
+        cleanupStream();
+        setIdle();
+      }
+    };
+
+    startButton.type="button";
+    stopButton.type="button";
+    downloadButton.type="button";
+    startButton.disabled=!supported;
+    stopButton.disabled=true;
+    downloadButton.disabled=true;
+
+    if(!supported){
+      setStatus(status,"Локалното снимање бара browser со MediaRecorder и дозвола за микрофон.");
+      return {supported:false,stop};
+    }
+
+    startButton.addEventListener("click",async()=>{
+      if(recorder && recorder.state!=="inactive") return;
+      chunks=[];
+      lastBlob=null;
+      downloadButton.disabled=true;
+      try{
+        stream=await mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}});
+        const preferred=MediaRecorderCtor.isTypeSupported?.("audio/webm;codecs=opus")
+          ?"audio/webm;codecs=opus"
+          :(MediaRecorderCtor.isTypeSupported?.("audio/webm")?"audio/webm":"");
+        recorder=preferred?new MediaRecorderCtor(stream,{mimeType:preferred}):new MediaRecorderCtor(stream);
+        recorder.ondataavailable=event=>{if(event?.data?.size) chunks.push(event.data);};
+        recorder.onerror=()=>{
+          setStatus(status,"Снимањето не успеа. Проверете ја дозволата за микрофон.");
+          cleanupStream();
+          setIdle();
+        };
+        recorder.onstop=()=>{
+          if(timer){try{win.clearTimeout?.(timer);}catch{} timer=null;}
+          cleanupStream();
+          lastBlob=new Blob(chunks,{type:recorder?.mimeType||"audio/webm"});
+          setIdle();
+          downloadButton.disabled=!lastBlob.size;
+          setStatus(status,lastBlob.size
+            ?"✓ Снимката е подготвена. Притиснете „💾 Преземи снимка“."
+            :"Снимката е празна. Обидете се повторно.");
+        };
+        recorder.start(250);
+        startButton.disabled=true;
+        stopButton.disabled=false;
+        setStatus(status,"⏺ Се снима локално. Притиснете „■ Стоп“ кога ќе завршите.");
+        timer=win.setTimeout?.(()=>stop(),Math.max(5000,Number(maxDurationMs)||120000))||null;
+      }catch(error){
+        cleanupStream();
+        setIdle();
+        setStatus(status,microphonePermissionErrorMessage(error));
+      }
+    });
+
+    stopButton.addEventListener("click",stop);
+
+    downloadButton.addEventListener("click",()=>{
+      if(!lastBlob?.size) return;
+      const url=win.URL?.createObjectURL?.(lastBlob);
+      if(!url) return;
+      const a=win.document?.createElement?.("a");
+      if(!a) return;
+      a.href=url;
+      a.download=typeof filename==="function"?filename():String(filename||"AI-Advokat-microphone.webm");
+      a.style.display="none";
+      win.document?.body?.appendChild?.(a);
+      try{a.click();}finally{
+        a.remove?.();
+        win.setTimeout?.(()=>win.URL?.revokeObjectURL?.(url),1000);
+      }
+      setStatus(status,"💾 Снимката е преземена локално.");
+    });
+
+    return {supported:true,stop,getLastBlob:()=>lastBlob};
+  }
+
   function bindSaveAudioButton({button,text,status,language,filename}={}){
     if(!button) return {supported:false};
     const supported=Boolean(mediaDevices?.getDisplayMedia&&win?.MediaRecorder&&win?.MediaStream);
@@ -430,15 +618,18 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
   return Object.freeze({
     version:AI_ADVOCAT_VOICE_VERSION,
     capabilities:Object.freeze({
-      dictation:Boolean(SpeechRecognitionCtor),
+      dictation:Boolean(SpeechRecognitionCtor||recorderFallbackSupported),
       speechOutput:Boolean(synth&&Utterance),
       audioSave:Boolean(mediaDevices?.getDisplayMedia&&win?.MediaRecorder&&win?.MediaStream),
+      browserSpeechRecognition:Boolean(SpeechRecognitionCtor),
+      workersAITranscriptionFallback:Boolean(recorderFallbackSupported),
       languages:Object.freeze(["mk-MK","en-US"]),
       language:lang
     }),
     bindMicrophone,
     bindSpeakButton,
     bindSaveAudioButton,
+    bindMicrophoneRecorder,
     saveSpokenAudio,
     speak,
     stopSpeaking,

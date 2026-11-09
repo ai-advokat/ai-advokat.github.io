@@ -32,7 +32,7 @@
   <script defer src="/assets/guide-router.js"></script>
   <script defer src="/assets/guide-vault.js"></script>
   <script src="/assets/frontend-runtime-guard.js?v=20261101-root-r1"></script>
-  <script type="module" src="/assets/standalone-bot.js?v=20261109-core-r15-voice-r3-r2&r16=voice-r3-conversation"></script>
+  <script type="module" src="/assets/standalone-bot.js?v=20261109-core-r15-voice-r4&r18=voice-r4-fallback"></script>
   <script type="module" src="/assets/standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view"></script>
   <script type="module" src="/assets/standalone-bot-toolkit.js?v=20261106-toolkit-r14"></script>
   <script type="module" src="/assets/standalone-bot-reliability.js?v=20261101-reliability-r4"></script>
@@ -161,11 +161,16 @@
           <p>Овој разговор може да продолжи со правна анализа откако чувствителните идентификатори ќе се маскираат локално. Приватниот простор користете го кога е неопходен оригиналниот документ или точниот идентитет.</p>
         </div></details>
         <textarea id="question" rows="1" maxlength="4000" aria-label="Порака" placeholder="Прашајте го AI Advokat…"></textarea>
-        <button id="mic" type="button" aria-label="Гласовен разговор со AI Advokat" title="Гласовен разговор: зборувај → испрати → слушни одговор">🎙</button>
+        <button id="mic" type="button" aria-label="Диктирај" title="Диктирај на избраниот јазик">🎙</button>
         <button id="send" type="submit" aria-label="Испрати" disabled>↑</button>
         <button id="stop" type="button" aria-label="Запри" hidden>■</button>
       </form>
-      <p class="footnote">AI може да погреши. Проверете ги изворите пред професионална употреба. 🎙 Гласовниот разговор го користи speech service на вашиот прелистувач/уред; зборувањето автоматски го испраќа прашањето, а завршениот одговор се чита гласно; не диктирајте непотребни лични идентификатори или доверливи факти. Оригинални документи или точни идентификатори внесувајте преку „+“ само кога се неопходни.</p>
+      <div class="voice-record-row" aria-label="Локално аудио снимање">
+        <button id="recordStart" type="button">⏺ Сними</button>
+        <button id="recordStop" type="button" disabled>■ Стоп</button>
+        <button id="recordDownload" type="button" disabled>💾 Преземи снимка</button>
+      </div>
+      <p class="footnote">AI може да погреши. Проверете ги изворите пред професионална употреба. 🎙 Диктирањето го следи избраниот AI јазик. Ако Web Speech не е достапен, краткото аудио се транскрибира преку Cloudflare Workers AI Whisper без трајно складирање во AI Advokat. ⏺ „Сними“ создава локална микрофонска снимка што можете да ја стопирате и преземете како WEBM; не се испраќа автоматски. Не диктирајте непотребни лични идентификатори или доверливи факти. Оригинални документи или точни идентификатори внесувајте преку Secure Case Workspace само кога се неопходни.</p>
       <div class="footer-brand"><img src="/assets/ai-advokat-hero-brand.webp" width="400" height="225" alt="AI Advokat"></div>
     </div>
   </main>
