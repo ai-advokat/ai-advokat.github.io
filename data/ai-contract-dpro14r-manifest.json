@@ -175,5 +175,21 @@
     "confidentialDocuments": "SECURE_CASE_WORKSPACE_ONLY",
     "localDeterministicReview": "ALLOWED",
     "automaticSigningOrSubmission": "FORBIDDEN"
+  },
+  "releaseArtifacts": {
+    "sourceMaster": "ЦЕЛОСНО-ДОГОВОРИ-ОФФЛАИН-ОНЛАИН.zip",
+    "sourceMasterSha256": "53cc704406c25cfb18592b44f06a406f97368ba82eb5dd916bc650558d0a277e",
+    "offline": {
+      "filename": "AI_DOGOVORI_PRO_OFFLINE_CELOSEN_2026-11-09.zip",
+      "sha256": "a470a9a8f4ccfa017e7b5034701cb8f05cab1cfa49bd9d838173ddf233f8fc0b",
+      "sizeBytes": 6955904,
+      "entry": "OFFLINE_START.html"
+    },
+    "online": {
+      "filename": "AI_DOGOVORI_PRO_ONLINE_CELOSEN_2026-11-09.zip",
+      "sha256": "9ab0f91116d55d77374cac8f3521e2df3af0cdacb4625cc2bd4960f9ad6c876e",
+      "sizeBytes": 6965690,
+      "entry": "ONLINE/generator.html"
+    }
   }
 }
