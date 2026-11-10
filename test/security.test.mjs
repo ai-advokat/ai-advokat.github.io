@@ -812,8 +812,10 @@ describe("production AI binding guard", () => {
     const uiTranslateProvider=uiTranslate.indexOf("runWorkersAIText(env,");
     assert.ok(uiTranslateLimiter>0 && uiTranslateProvider>0,"public UI translation must use an atomic D1 limiter and the central Workers AI provider");
     assert.ok(uiTranslateLimiter<uiTranslateProvider,"UI translation limiter must run before provider execution");
-    assert.match(uiTranslate,/UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT/,"UI translation per-language hourly limit must be explicit");\n    assert.match(uiTranslate,/UI_TRANSLATE_GLOBAL_HOURLY_LIMIT/,"UI translation global hourly abuse cap must be explicit");
-    assert.match(uiTranslate,/UI_TRANSLATE_GLOBAL_DAILY_LIMIT/,"UI translation global daily abuse cap must be explicit");\n    assert.match(uiTranslate,/scope:"ui_translate_lang_"\\+target/,"UI translation must isolate the hourly limiter by target language");
+    assert.match(uiTranslate,/UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT/,"UI translation per-language hourly limit must be explicit");
+    assert.match(uiTranslate,/UI_TRANSLATE_GLOBAL_HOURLY_LIMIT/,"UI translation global hourly abuse cap must be explicit");
+    assert.match(uiTranslate,/UI_TRANSLATE_GLOBAL_DAILY_LIMIT/,"UI translation global daily abuse cap must be explicit");
+    assert.match(uiTranslate,/scope:"ui_translate_lang_"\\+target/,"UI translation must isolate the hourly limiter by target language");
 
     const helper = src.slice(src.indexOf("async function runFreeWorkersAIChat("), src.indexOf("async function handleGPTChat("));
     assert.equal((helper.match(/runWorkersAIText\(/g) || []).length, 1, "FREE public helper delegates one primary generation to the central provider contract");
