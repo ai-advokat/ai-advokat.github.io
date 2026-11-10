@@ -69,7 +69,7 @@ test("Esperanto uses bounded Qwen3.8 fallback instead of pretending M2M100 suppo
       run:async(model,input)=>{
         assert.equal(model,"@cf/qwen/qwen3.8-27b");
         assert.ok(input);
-        return {response:JSON.stringify({translations:[{id:"0",text:"Jura esplorado"}]})};
+        return {response:"Jura esplorado"};
       }
     }
   };
