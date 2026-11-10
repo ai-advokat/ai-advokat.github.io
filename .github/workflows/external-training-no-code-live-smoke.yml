@@ -1,0 +1,74 @@
+name: AI Advokat external TRAINING no-code live smoke
+
+on:
+  workflow_run:
+    workflows: ["AI Advokat production runtime sync"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-training-no-code:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify no-code TRAINING greeting
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://ai-advokat-github-io.aiadvokat16.workers.dev/api/bot"
+          body='{"q":"Здраво","sessionId":"TRAINING-LIVE-SMOKE-R14","mode":"auto","history":[],"attachments":[]}'
+          http="000"
+          for attempt in 1 2 3 4 5 6; do
+            http="$(curl -sS -o training.json -w '%{http_code}' \
+              -X POST "$endpoint" \
+              -H 'content-type: application/json' \
+              -H 'accept: application/json' \
+              -H 'origin: https://ai-advokat.github.io' \
+              --data "$body" || true)"
+            if [ "$http" = "200" ]; then
+              break
+            fi
+            echo "TRAINING attempt $attempt returned HTTP $http"
+            cat training.json 2>/dev/null || true
+            sleep 10
+          done
+          echo "TRAINING HTTP: $http"
+          cat training.json
+          test "$http" = "200"
+          jq -e '
+            .ok == true
+            and .provider == "canonical_corpus_no_model"
+            and .mode == "training"
+            and .membership.planCode == "training"
+            and .membership.trainingOpen == true
+            and .privacy.providerCalled == false
+            and .privacy.quotaConsumed == false
+          ' training.json >/dev/null
+
+      - name: Verify confidential work remains Secure Case gated
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://ai-advokat-github-io.aiadvokat16.workers.dev/api/bot"
+          body='{"q":"Ова е доверлив предмет со оригинален документ.","sessionId":"TRAINING-SECURE-GATE-R14","mode":"auto","history":[],"attachments":[]}'
+          http="$(curl -sS -o secure.json -w '%{http_code}' \
+            -X POST "$endpoint" \
+            -H 'content-type: application/json' \
+            -H 'accept: application/json' \
+            -H 'origin: https://ai-advokat.github.io' \
+            --data "$body")"
+          echo "SECURE CASE HTTP: $http"
+          cat secure.json
+          test "$http" = "422"
+          jq -e '
+            .ok == false
+            and .error == "confidential_case_workspace_required"
+            and .privacy.providerCalled == false
+            and .privacy.quotaConsumed == false
+          ' secure.json >/dev/null
+
+      - name: TRAINING access verdict
+        run: echo "PASS - external AI Advokat accepts bounded TRAINING chat without a code while Secure Case remains gated."
