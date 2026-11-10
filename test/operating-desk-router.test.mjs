@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { buildOperatingPlan, listOperatingTasks } from "../src/operating-desk-router.js";
 import { WORKFLOW_TEMPLATES } from "../src/proactive-legal-agents.js";
 
@@ -44,6 +45,17 @@ test("every referenced agent workflow exists",()=>{
   for(const task of listOperatingTasks()){
     if(task.workflow) assert.ok(WORKFLOW_TEMPLATES[task.workflow],task.id+" has an invalid workflow");
   }
+});
+
+test("Operating Desk is wired into production assets and primary navigation",()=>{
+  const assetsIgnore=readFileSync(new URL("../.assetsignore",import.meta.url),"utf8");
+  const page=readFileSync(new URL("../operating-desk.html",import.meta.url),"utf8");
+  const bot=readFileSync(new URL("../bot/index.html",import.meta.url),"utf8");
+  const home=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+  assert.match(assetsIgnore,/!src\/operating-desk-router\.js/);
+  assert.match(page,/\/assets\/operating-desk\.js/);
+  assert.match(bot,/\/operating-desk\.html/);
+  assert.match(home,/\/operating-desk\.html/);
 });
 
 test("unknown tasks and sensitivity fail closed",()=>{
