@@ -29,7 +29,7 @@ test("Zoki master package and full DPRO-14R engine are both visible and governed
   assert.match(contract,/href="\/ai-contract-dpro14r\.html"/);
   assert.equal((fullContract.match(/function [A-Za-z0-9_]+/g)||[]).length,166);
   assert.equal((fullContract.match(/<button\b/g)||[]).length,81);
-  assert.equal((fullContract.match(/class="tab/g)||[]).length,18);
+  assert.equal((fullContract.match(/<button type="button" class="tab(?: active)?" data-tab="/g)||[]).length,18);
   assert.match(fullContract,/data-tab="normative14g"/);
   assert.match(fullContract,/PRODUCTION NO-GO/);
 });
