@@ -131,6 +131,8 @@ jobs:
           set -euo pipefail
 
           expected_bot="$(sha256sum bot/index.html | awk '{print $1}')"
+          expected_contract_workspace="$(sha256sum ai-contract.html | awk '{print $1}')"
+          expected_contract_canonical="$(sha256sum ai-contract-dpro14r.html | awk '{print $1}')"
           expected_core="$(sha256sum assets/standalone-bot.js | awk '{print $1}')"
           expected_internal_chat="$(sha256sum assets/ai-advokat-chat.js | awk '{print $1}')"
           expected_voice="$(sha256sum assets/ai-advokat-voice.mjs | awk '{print $1}')"
@@ -146,6 +148,8 @@ jobs:
             nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/?runtime_sync=$nonce" -o /tmp/runtime-sync-main.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/bot/?release=core-r15&runtime_sync=$nonce" -o /tmp/runtime-sync-bot.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/ai-contract.html?runtime_sync=$nonce" -o /tmp/runtime-sync-contract.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/ai-contract-dpro14r.html?runtime_sync=$nonce" -o /tmp/runtime-sync-contract-canonical.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot.js?v=20261109-core-r15-voice-r4&runtime_sync=$nonce" -o /tmp/runtime-sync-core.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-chat.js?v=20261109-root-r15-voice-r4-runtime&runtime_sync=$nonce" -o /tmp/runtime-sync-internal-chat.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/ai-advokat-voice.mjs?v=20261109-voice-r4&runtime_sync=$nonce" -o /tmp/runtime-sync-voice.mjs || true
@@ -157,6 +161,8 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "$BASE/assets/standalone-bot-toolkit.css?v=20261106-toolkit-r14&runtime_sync=$nonce" -o /tmp/runtime-sync-toolkit.css || true
 
             live_bot="$(sha256sum /tmp/runtime-sync-bot.html 2>/dev/null | awk '{print $1}' || true)"
+            live_contract_workspace="$(sha256sum /tmp/runtime-sync-contract.html 2>/dev/null | awk '{print $1}' || true)"
+            live_contract_canonical="$(sha256sum /tmp/runtime-sync-contract-canonical.html 2>/dev/null | awk '{print $1}' || true)"
             live_core="$(sha256sum /tmp/runtime-sync-core.js 2>/dev/null | awk '{print $1}' || true)"
             live_internal_chat="$(sha256sum /tmp/runtime-sync-internal-chat.js 2>/dev/null | awk '{print $1}' || true)"
             live_voice="$(sha256sum /tmp/runtime-sync-voice.mjs 2>/dev/null | awk '{print $1}' || true)"
@@ -167,7 +173,7 @@ jobs:
             live_toolkit="$(sha256sum /tmp/runtime-sync-toolkit.js 2>/dev/null | awk '{print $1}' || true)"
             live_toolkit_css="$(sha256sum /tmp/runtime-sync-toolkit.css 2>/dev/null | awk '{print $1}' || true)"
 
-            if [ "$live_bot" = "$expected_bot" ]               && [ "$live_core" = "$expected_core" ]               && [ "$live_internal_chat" = "$expected_internal_chat" ]               && [ "$live_voice" = "$expected_voice" ]               && [ "$live_internal_css" = "$expected_internal_css" ]               && [ "$live_external_css" = "$expected_external_css" ]               && [ "$live_vnext" = "$expected_vnext" ]               && [ "$live_vnext_css" = "$expected_vnext_css" ]               && [ "$live_toolkit" = "$expected_toolkit" ]               && [ "$live_toolkit_css" = "$expected_toolkit_css" ]; then
+            if [ "$live_bot" = "$expected_bot" ]               && [ "$live_contract_workspace" = "$expected_contract_workspace" ]               && [ "$live_contract_canonical" = "$expected_contract_canonical" ]               && [ "$live_core" = "$expected_core" ]               && [ "$live_internal_chat" = "$expected_internal_chat" ]               && [ "$live_voice" = "$expected_voice" ]               && [ "$live_internal_css" = "$expected_internal_css" ]               && [ "$live_external_css" = "$expected_external_css" ]               && [ "$live_vnext" = "$expected_vnext" ]               && [ "$live_vnext_css" = "$expected_vnext_css" ]               && [ "$live_toolkit" = "$expected_toolkit" ]               && [ "$live_toolkit_css" = "$expected_toolkit_css" ]; then
               deployed=1
               echo "PRODUCTION WORKER R14 BYTE PARITY: PASS on attempt $attempt"
               break
@@ -181,6 +187,9 @@ jobs:
           grep -q 'id="aiChatMic"' /tmp/runtime-sync-main.html
           grep -q 'id="aiChatVoiceStatus"' /tmp/runtime-sync-main.html
           grep -q 'standalone-bot.js?v=20261109-core-r15-voice-r4' /tmp/runtime-sync-bot.html
+          grep -q 'AI CONTRACT PRO' /tmp/runtime-sync-contract.html
+          grep -q '/api/ui-translate' /tmp/runtime-sync-contract.html
+          grep -q 'data-tab="normative14g"' /tmp/runtime-sync-contract-canonical.html
           grep -q 'id="mic"' /tmp/runtime-sync-bot.html
           grep -q 'AI_ADVOCAT_VOICE_R4' /tmp/runtime-sync-voice.mjs
           grep -q 'bindMicrophone' /tmp/runtime-sync-voice.mjs
@@ -226,6 +235,8 @@ jobs:
             /tmp/runtime-sync-d1-query.json
             /tmp/runtime-sync-main.html
             /tmp/runtime-sync-bot.html
+            /tmp/runtime-sync-contract.html
+            /tmp/runtime-sync-contract-canonical.html
             /tmp/runtime-sync-core.js
             /tmp/runtime-sync-internal-chat.js
             /tmp/runtime-sync-voice.mjs

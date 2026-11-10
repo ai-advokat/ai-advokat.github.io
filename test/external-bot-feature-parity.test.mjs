@@ -8,7 +8,7 @@ const routes=[
   ["Proactive Runtime","proactive-runtime","/proactive-agent-runtime.html"],
   ["Proactive Agents","proactive-agents","/proactive-legal-agents.html"],
   ["Legal Command Center","legal-command-center","/legal-command-center.html"],
-  ["Contract Intelligence","contract-intelligence","/contract-intelligence.html"],
+  ["AI Contract PRO","contract-intelligence","/ai-contract.html"],
   ["Fact & Evidence Graph","fact-evidence-graph","/fact-evidence-graph.html"],
   ["Connector Library","connector-library","/connector-library.html"],
   ["Review Tables / Vault","review-vault","/professional-tools.html#batch-review"],

@@ -1,0 +1,126 @@
+name: AI Advokat translator and Contract PRO live smoke
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/index.js"
+      - "index.html"
+      - "bot/index.html"
+      - "assets/standalone-bot.js"
+      - "assets/standalone-bot-vnext.js"
+      - "assets/ai-advokat-chat.js"
+      - "ai-contract.html"
+      - "ai-contract-dpro14r.html"
+      - "contract-intelligence.html"
+      - ".github/workflows/ui-translation-contract-live-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-translator-contract-live-smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify source contracts before live probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/index.js
+          node --check assets/standalone-bot.js
+          node --check assets/standalone-bot-vnext.js
+          node --check assets/ai-advokat-chat.js
+          test -f ai-contract.html
+          test -f ai-contract-dpro14r.html
+          grep -q '@cf/meta/m2m100-1.2b' src/index.js
+          grep -q '@cf/qwen/qwen3.8-27b' src/index.js
+          grep -q 'AI CONTRACT PRO' ai-contract.html
+          grep -q '/api/ui-translate' ai-contract.html
+          grep -q 'data-tab="normative14g"' ai-contract-dpro14r.html
+
+      - name: Wait for exact Worker static assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          expected_workspace="$(sha256sum ai-contract.html | awk '{print $1}')"
+          expected_canonical="$(sha256sum ai-contract-dpro14r.html | awk '{print $1}')"
+          ready=0
+          for attempt in $(seq 1 90); do
+            nonce="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt"
+            curl -fsSL --max-time 25 -H 'Cache-Control: no-cache' "$BASE/ai-contract.html?live_smoke=$nonce" -o /tmp/live-contract.html || true
+            curl -fsSL --max-time 25 -H 'Cache-Control: no-cache' "$BASE/ai-contract-dpro14r.html?live_smoke=$nonce" -o /tmp/live-contract-canonical.html || true
+            live_workspace="$(sha256sum /tmp/live-contract.html 2>/dev/null | awk '{print $1}' || true)"
+            live_canonical="$(sha256sum /tmp/live-contract-canonical.html 2>/dev/null | awk '{print $1}' || true)"
+            if [ "$live_workspace" = "$expected_workspace" ] && [ "$live_canonical" = "$expected_canonical" ]; then
+              ready=1
+              echo "AI CONTRACT LIVE BYTE PARITY: PASS on attempt $attempt"
+              break
+            fi
+            sleep 4
+          done
+          test "$ready" = "1"
+          grep -q 'AI CONTRACT PRO' /tmp/live-contract.html
+          grep -q '/api/ui-translate' /tmp/live-contract.html
+          grep -q 'data-tab="normative14g"' /tmp/live-contract-canonical.html
+
+      - name: Verify live English translation through dedicated model
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          payload='{"targetLanguage":"en","items":[{"id":"0","text":"Судска пракса и човечка контрола"},{"id":"1","text":"AI Advokat · Human Gate · DOI 10.5281/zenodo.23467865"}]}'
+          code="$(curl -sS --max-time 90 -o /tmp/ui-translate-en.json -w '%{http_code}'             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             --data "$payload"             "$BASE/api/ui-translate")"
+          echo "EN TRANSLATION HTTP: $code"
+          test "$code" = "200"
+          node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync("/tmp/ui-translate-en.json","utf8"));
+          if(d.ok!==true) throw new Error("translation not ok: "+JSON.stringify(d));
+          if(d.provider!=="m2m100") throw new Error("unexpected provider: "+d.provider);
+          if(d.translationModel!=="@cf/meta/m2m100-1.2b") throw new Error("unexpected model: "+d.translationModel);
+          if(!Array.isArray(d.translations)||d.translations.length!==2) throw new Error("translation count mismatch");
+          if(String(d.translations[0]?.text||"").trim()==="Судска пракса и човечка контрола") throw new Error("English translation did not change source text");
+          const protectedText=String(d.translations[1]?.text||"");
+          for(const token of ["AI Advokat","Human Gate","10.5281/zenodo.23467865"]){
+            if(!protectedText.includes(token)) throw new Error("protected legal token changed: "+token);
+          }
+          console.log("LIVE EN UI TRANSLATION: PASS");
+          NODE
+
+      - name: Verify a second non-English translation
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
+          payload='{"targetLanguage":"sq","items":[{"id":"0","text":"Правни извори и судска пракса"}]}'
+          code="$(curl -sS --max-time 90 -o /tmp/ui-translate-sq.json -w '%{http_code}'             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             --data "$payload"             "$BASE/api/ui-translate")"
+          test "$code" = "200"
+          node <<'NODE'
+          const fs=require("fs");
+          const d=JSON.parse(fs.readFileSync("/tmp/ui-translate-sq.json","utf8"));
+          if(d.ok!==true||d.provider!=="m2m100") throw new Error("SQ translation failed: "+JSON.stringify(d));
+          if(String(d.translations?.[0]?.text||"").trim()==="Правни извори и судска пракса") throw new Error("Albanian translation did not change source text");
+          console.log("LIVE SQ UI TRANSLATION: PASS");
+          NODE
+
+      - name: Upload live smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: translator-contract-live-smoke
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/live-contract.html
+            /tmp/live-contract-canonical.html
+            /tmp/ui-translate-en.json
+            /tmp/ui-translate-sq.json

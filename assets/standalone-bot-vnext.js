@@ -154,7 +154,7 @@ function buildShell(){
         <button data-vnext-action="consolidator"><span class="vnext-nav-symbol" aria-hidden="true">≋</span><span>Консолидатор</span></button>
         <button data-vnext-action="predictor"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Предиктор</span></button>
         <button data-vnext-action="hybrid-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">⌘</span><span>Hybrid Legal Intelligence</span></button>
-        <button data-vnext-action="contract-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>Contract Intelligence</span></button>
+        <button data-vnext-action="contract-intelligence" title="Contract Intelligence · AI Contract PRO"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>AI Contract PRO</span></button>
         <button data-vnext-action="fact-evidence-graph"><span class="vnext-nav-symbol" aria-hidden="true">◫</span><span>Fact & Evidence Graph</span></button>
       </div></details>
       <details class="vnext-nav-folder"><summary>⚖ Судови и предмети</summary><div>
@@ -479,7 +479,7 @@ function runAction(action){
   if(action==='proactive-runtime'){window.open('/proactive-agent-runtime.html','_blank','noopener');return;}
   if(action==='proactive-agents'){window.open('/proactive-legal-agents.html','_blank','noopener');return;}
   if(action==='legal-command-center'){window.open('/legal-command-center.html','_blank','noopener');return;}
-  if(action==='contract-intelligence'){window.open('/contract-intelligence.html','_blank','noopener');return;}
+  if(action==='contract-intelligence'){window.open('/ai-contract.html','_blank','noopener');return;}
   if(action==='fact-evidence-graph'){window.open('/fact-evidence-graph.html','_blank','noopener');return;}
   if(action==='connector-library'){window.open('/connector-library.html','_blank','noopener');return;}
   if(action==='review-vault'){window.open('/professional-tools.html#batch-review','_blank','noopener');return;}

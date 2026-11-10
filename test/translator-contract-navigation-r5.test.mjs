@@ -13,7 +13,7 @@ test("root header groups related functions instead of one flat catalogue",()=>{
   assert.match(root,/data-nav-folder="courts"/);
   assert.match(root,/data-nav-folder="official"/);
   assert.match(root,/data-nav-folder="ai"/);
-  assert.match(root,/href="\/contract-intelligence\.html">AI Contract/);
+  assert.match(root,/href="\/ai-contract\.html">AI Contract/);
 });
 
 test("internal AI workbench groups modules by legal job",()=>{
@@ -29,7 +29,7 @@ test("external AI bot exposes the same courts official AI and materials taxonomy
   for(const label of ["Судови","Службени","AI алатки","Материјали","Судови и судска пракса","Службени извори и e‑услуги","AI алатки и приватна работа","Библиотека, водичи и автор"]){
     assert.ok(bot.includes(label),label);
   }
-  assert.match(bot,/href="\/contract-intelligence\.html"/);
+  assert.match(bot,/href="\/ai-contract\.html"/);
   assert.match(bot,/href="\/judicial-practice\.html"/);
   assert.match(bot,/href="\/sluzben-vesnik\/"/);
 });

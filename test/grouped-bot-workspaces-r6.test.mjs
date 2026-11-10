@@ -15,7 +15,7 @@ test("internal Materials toolbox is grouped into legal folders without losing go
   }
   for(const href of [
     "/casepilot-workspace.html","/judicial-practice.html","/case-law-curation.html","/echr-crosswalk.html",
-    "/sluzben-vesnik/","/public-legal-data-services.html","/contract-intelligence.html",
+    "/sluzben-vesnik/","/public-legal-data-services.html","/ai-contract.html",
     "/hybrid-legal-intelligence.html","/legal-command-center.html","/professional-library/","/zoki-legal-ai-guide.html"
   ]) assert.ok(chat.includes('href="'+href+'"'),href);
   assert.match(chat,/📎 Прикачи документи \/ Secure Case Workspace ↗/);

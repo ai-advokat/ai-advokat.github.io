@@ -17,6 +17,7 @@ on:
       - "legal-command-center.html"
       - "legal-ai-suite.html"
       - "contract-intelligence.html"
+      - "ai-contract.html"
       - "ai-contract-dpro14r.html"
       - "fact-evidence-graph.html"
       - "connector-library.html"
@@ -125,6 +126,7 @@ jobs:
           test -f legal-command-center.html
           test -f legal-ai-suite.html
           test -f contract-intelligence.html
+          test -f ai-contract.html
           test -f ai-contract-dpro14r.html
           test -f data/ai-contract-dpro14r-manifest.json
           test -f fact-evidence-graph.html
@@ -140,6 +142,9 @@ jobs:
           node --check src/connector-registry.js
           grep -q 'LEGAL AI SUITE' legal-ai-suite.html
           grep -q 'AI CONTRACT' contract-intelligence.html
+          grep -q 'AI CONTRACT PRO' ai-contract.html
+          grep -q '/api/ui-translate' ai-contract.html
+          grep -q '/ai-contract-dpro14r.html?v=20261110-r7' ai-contract.html
           grep -q 'ZOKI MASTER PACKAGE · 09.11.2026' contract-intelligence.html
           grep -q 'DPRO-14R' ai-contract-dpro14r.html
           grep -q 'data-tab="normative14g"' ai-contract-dpro14r.html
@@ -224,6 +229,7 @@ jobs:
             legal-command-center.html
             legal-ai-suite.html
             contract-intelligence.html
+            ai-contract.html
             ai-contract-dpro14r.html
             data/ai-contract-dpro14r-manifest.json
             fact-evidence-graph.html
@@ -293,7 +299,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin gh-pages:refs/remotes/origin/gh-pages
-          for f in index.html case-law-curation.html judicial-practice.html consolidator/index.html hybrid-legal-intelligence.html professional-tools.html casepilot-workspace.html public-legal-data-services.html gold-set-review-gate.html echr-crosswalk.html proactive-legal-agents.html legal-command-center.html legal-ai-suite.html contract-intelligence.html ai-contract-dpro14r.html data/ai-contract-dpro14r-manifest.json fact-evidence-graph.html connector-library.html zoki-legal-ai-guide.html proactive-agent-runtime.html assets/proactive-agent-runtime-ui.js src/matter-agent-runtime.js bot/index.html assets/ai-advokat-chat.js assets/professional-tools.js assets/casepilot-workspace-ui.js assets/ai-advokat-chat.css assets/ai-advokat-voice.mjs assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/standalone-bot.css assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/proactive-legal-agents.js src/matter-memory.js src/agent-builder.js src/horizon-scanning-engine.js src/legal-command-center.js src/contract-intelligence.js src/legal-fact-graph.js src/connector-registry.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js assets/standalone-bot-vnext.css assets/standalone-bot-toolkit.js assets/standalone-bot-toolkit.css assets/standalone-bot-r7.js assets/standalone-bot-r7.css; do
+          for f in index.html case-law-curation.html judicial-practice.html consolidator/index.html hybrid-legal-intelligence.html professional-tools.html casepilot-workspace.html public-legal-data-services.html gold-set-review-gate.html echr-crosswalk.html proactive-legal-agents.html legal-command-center.html legal-ai-suite.html contract-intelligence.html ai-contract.html ai-contract-dpro14r.html data/ai-contract-dpro14r-manifest.json fact-evidence-graph.html connector-library.html zoki-legal-ai-guide.html proactive-agent-runtime.html assets/proactive-agent-runtime-ui.js src/matter-agent-runtime.js bot/index.html assets/ai-advokat-chat.js assets/professional-tools.js assets/casepilot-workspace-ui.js assets/ai-advokat-chat.css assets/ai-advokat-voice.mjs assets/case-law-static-fallback.js assets/frontend-runtime-guard.js assets/standalone-bot.js assets/standalone-bot.css assets/chat-privacy-browser.js src/chat-privacy.js src/case-export.js src/legal-analyzer.js src/proactive-legal-agents.js src/matter-memory.js src/agent-builder.js src/horizon-scanning-engine.js src/legal-command-center.js src/contract-intelligence.js src/legal-fact-graph.js src/connector-registry.js src/case-law-metadata-processor.js src/echr-findings.js src/document-ingest-router.js src/international-legal-classifier.js src/official-source-binder.js assets/standalone-bot-vnext.js assets/standalone-bot-vnext.css assets/standalone-bot-toolkit.js assets/standalone-bot-toolkit.css assets/standalone-bot-r7.js assets/standalone-bot-r7.css; do
             main_blob="$(git rev-parse "$GITHUB_SHA:$f")"
             pages_blob="$(git rev-parse "origin/gh-pages:$f")"
             test "$main_blob" = "$pages_blob"
