@@ -164,9 +164,11 @@ function buildShell(){
         <button data-vnext-action="echr-crosswalk" title="F0-FAST-27 · research HOLD · HG-F0 OPEN"><span class="vnext-nav-symbol" aria-hidden="true">§</span><span>ECHR Crosswalk</span></button>
         <button data-vnext-action="casepilot"><span class="vnext-nav-symbol" aria-hidden="true">▣</span><span>CasePilot</span></button>
       </div></details>
-      <details class="vnext-nav-folder"><summary>§ Извори, докази и документи</summary><div>
+      <details class="vnext-nav-folder"><summary>§ Службени извори</summary><div>
         <button data-vnext-action="sources"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>Правни извори</span></button>
         <button data-vnext-action="public-evidence"><span class="vnext-nav-symbol" aria-hidden="true">⌕</span><span>Јавни докази</span></button>
+      </div></details>
+      <details class="vnext-nav-folder"><summary>◫ Материјали и документи</summary><div>
         <button data-vnext-action="documents"><span class="vnext-nav-symbol" aria-hidden="true">▧</span><span>Документи</span></button>
         <button data-vnext-action="connector-library"><span class="vnext-nav-symbol" aria-hidden="true">⛓</span><span>Connector Library</span></button>
         <button data-vnext-action="library"><span class="vnext-nav-symbol" aria-hidden="true">◫</span><span>Library</span></button>

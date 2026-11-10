@@ -10869,6 +10869,61 @@ async function translateUiWithLlmFallback(runProvider,items,target,language){
   }),4);
 }
 
+async function handleConsolidatorImport(request,env){
+  if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
+  if(!freeWorkersAIMarkdownConfigured(env)) return json(request,{ok:false,error:"consolidator_document_conversion_unavailable"},503);
+
+  const contentType=String(request.headers.get("content-type")||"").split(";")[0].trim().toLowerCase();
+  const allowed=new Set([
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ]);
+  if(!allowed.has(contentType)) return json(request,{ok:false,error:"unsupported_consolidator_import_type"},415);
+
+  const declared=Number(request.headers.get("content-length")||0);
+  const maxBytes=8*1024*1024;
+  if(declared>maxBytes) return json(request,{ok:false,error:"consolidator_import_too_large",maxBytes},413);
+
+  const bytes=new Uint8Array(await request.arrayBuffer());
+  if(!bytes.byteLength) return json(request,{ok:false,error:"consolidator_import_empty"},400);
+  if(bytes.byteLength>maxBytes) return json(request,{ok:false,error:"consolidator_import_too_large",maxBytes},413);
+  if(!caseDocumentBytesMatchMime(bytes,contentType)) return json(request,{ok:false,error:"file_signature_mismatch"},400);
+
+  let subject;
+  try{
+    subject=await anonymousSubject(request,env);
+    const verdict=await consumeWindow(env,{scope:"consolidator_import_hour",limit:30,windowSeconds:3600,subject});
+    if(!verdict.allowed) return json(request,{ok:false,error:"consolidator_import_rate_limited"},429,{"Retry-After":String(verdict.retryAfter)});
+  }catch(error){
+    if(error instanceof SecurityConfigError) return json(request,{ok:false,error:"consolidator_import_security_unavailable"},503);
+    throw error;
+  }
+
+  const fileName=String(request.headers.get("x-file-name")||"document").slice(0,180);
+  try{
+    const converted=await env.AI.toMarkdown([{
+      name:fileName,
+      blob:new Blob([bytes],{type:contentType})
+    }],{
+      conversionOptions:{output:{format:"text"},pdf:{metadata:false}}
+    });
+    const item=Array.isArray(converted)?converted[0]:converted;
+    if(!item || item.format==="error" || typeof item.data!=="string" || !item.data.trim()){
+      return json(request,{ok:false,error:"consolidator_document_conversion_failed",detail:String(item?.error||"empty conversion").slice(0,180)},502);
+    }
+    return json(request,{
+      ok:true,
+      text:String(item.data).slice(0,180000),
+      provider:"workers_ai_markdown_conversion",
+      transient:true,
+      stored:false,
+      humanGateRequired:true
+    });
+  }catch(error){
+    return json(request,{ok:false,error:"consolidator_document_conversion_failed",detail:String(error?.message||error).slice(0,180)},502);
+  }
+}
+
 async function handleUiTranslation(request,env){
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
   const contentType=String(request.headers.get("content-type")||"").toLowerCase();
@@ -10930,11 +10985,17 @@ async function handleUiTranslation(request,env){
       translations=await translateUiWithLlmFallback(runUiProvider,items,target,language);
       provider="qwen3.8_ui_fallback";
     }else{
-      translations=await mapUiTranslationConcurrent(items,async item=>({
-        id:item.id,
-        text:await translateUiM2mText(runUiProvider,item.text,target)
-      }));
-      provider="m2m100";
+      try{
+        translations=await mapUiTranslationConcurrent(items,async item=>({
+          id:item.id,
+          text:await translateUiM2mText(runUiProvider,item.text,target)
+        }));
+        provider="m2m100";
+      }catch(primaryError){
+        console.warn("ui_translation_m2m100_fallback",target,String(primaryError?.message||primaryError).slice(0,120));
+        translations=await translateUiWithLlmFallback(runUiProvider,items,target,language);
+        provider="m2m100_qwen_fallback";
+      }
     }
     return json(request,{
       ok:true,
@@ -11075,6 +11136,7 @@ export default {
     if (url.pathname === "/api/assistant") return handleAssistant(request, env, url);
     if (url.pathname === "/api/voice/transcribe") return handleVoiceTranscription(request, env);
     if (url.pathname === "/api/ui-translate") return handleUiTranslation(request, env);
+    if (url.pathname === "/api/consolidator/import") return handleConsolidatorImport(request, env);
     if (url.pathname === "/api/chat") return handleGPTChat(request, env);
     if (url.pathname === "/api/bot") return handleGPTChat(request, env, {openAIOnly:true});
     if (url.pathname === "/api/legal-analyzer/verify") return handleLegalAnalyzerVerify(request, env);
