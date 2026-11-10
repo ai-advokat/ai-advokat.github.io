@@ -51,6 +51,6 @@ test("language selector remains usable and readable in responsive R7 UI",()=>{
   assert.match(css,/\.bot-language-control/);
   assert.match(css,/max-width:190px/);
   assert.match(r7,/html\.professional-r7 \.bot-language-control select/);
-  assert.match(r7,/background:#071b2e!important/);
-  assert.match(r7,/color:#e7f0f7!important/);
+  assert.match(r7,/background:#ffffff!important/);
+  assert.match(r7,/color:#071524!important/);
 });
