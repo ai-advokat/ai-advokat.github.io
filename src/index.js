@@ -6602,32 +6602,32 @@ const EXTERNAL_BOT_CAPABILITY_ROUTES=new Set([
 function detectExternalBotCapabilityRoute(text){
   const q=String(text||"").trim().toLowerCase();
   if(!q) return "";
-  // Privacy-sensitive intent always outranks every functional route.
+  // Specific governed workflows outrank generic drafting/analysis routes.
   if(/(?:приватен\s+предмет|доверлив|casepilot|secure\s+case|оригинален\s+документ)/iu.test(q)) return "SECURE_CASE";
-  if(/(?:ai\s*contract|договор|анекс|спогодб|закуп|contract|agreement|clause)/iu.test(q)) return "AI_CONTRACT_PRO";
-  if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)) return "CONSOLIDATOR";
-  if(/(?:анализ|analy[sz]|правн[ао]\s+оцен|review\s+this)/iu.test(q)) return "LEGAL_ANALYZER";
-  if(/(?:предиктор|predict|сценари|ризик.*исход|исход.*ризик)/iu.test(q)) return "GOVERNED_PREDICTOR";
   if(/(?:echr|есчп|hudoc|crosswalk)/iu.test(q)) return "ECHR_CROSSWALK";
   if(/(?:судск[аи].*(?:пракс|одлук|пресуд)|case\s*law|judgment|преседан)/iu.test(q)) return "CASE_LAW_RESEARCH";
+  if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)) return "CONSOLIDATOR";
+  if(/(?:smart\s+(?:legal\s+)?document|тужба\s+за\s+развод|одговор\s+на\s+тужба|опомена\s+пред\s+тужба|полномошно)/iu.test(q)) return "SMART_DOCUMENTS";
+  if(/(?:ai\s*contract|договор|анекс|спогодб|закуп|contract|agreement|clause)/iu.test(q)) return "AI_CONTRACT_PRO";
+  if(/(?:предиктор|predict|сценари|ризик.*исход|исход.*ризик)/iu.test(q)) return "GOVERNED_PREDICTOR";
   if(/(?:јавн[иo]\s+доказ|public\s+evidence|open\s+data\s+evidence)/iu.test(q)) return "PUBLIC_EVIDENCE";
   if(/(?:justice\s+daily|правосуден\s+бриф|дневен\s+правосуд)/iu.test(q)) return "JUSTICE_DAILY";
   if(/(?:living\s+law|важечк[ао]\s+право|временск[аи]\s+верзи|historical\s+law|регулаторна\s+лини)/iu.test(q)) return "LIVING_LAW";
-  if(/(?:smart\s+(?:legal\s+)?document|тужба\s+за\s+развод|одговор\s+на\s+тужба|опомена\s+пред\s+тужба|полномошно)/iu.test(q)) return "SMART_DOCUMENTS";
   if(/(?:legal\s+watch|следи\s+(?:службен|енер|собрание|уставен|врховен)|што\s+е\s+ново.*(?:прав|закон))/iu.test(q)) return "LEGAL_WATCH";
   if(/(?:professional\s+ecosystem|pro\s+ecosystem|калкулатор|пресметај.*(?:камата|процент|рок))/iu.test(q)) return "PROFESSIONAL_ECOSYSTEM";
   if(/(?:hybrid\s+legal|hybrid\s*10|time\s+machine|law\s*[↔-]\s*bylaw)/iu.test(q)) return "HYBRID_LEGAL_INTELLIGENCE";
-  if(/(?:правн[иo]\s+извор|legal\s+source|службен\s+извор)/iu.test(q)) return "LEGAL_SOURCES";
-  if(/(?:документи|documents|извоз|export)/iu.test(q)) return "DOCUMENTS";
-  if(/(?:connector\s+library|конектор)/iu.test(q)) return "CONNECTOR_LIBRARY";
-  if(/(?:библиотек|library)/iu.test(q)) return "LIBRARY";
-  if(/(?:workflow|работен\s+тек|процесен\s+тек)/iu.test(q)) return "WORKFLOWS";
-  if(/(?:human\s+gate|човечк[аи]\s+(?:контрола|порта)|проверка\s+од\s+адвокат)/iu.test(q)) return "HUMAN_GATE";
   if(/(?:legal\s+command\s+center|command\s+center)/iu.test(q)) return "LEGAL_COMMAND_CENTER";
   if(/(?:proactive\s+runtime)/iu.test(q)) return "PROACTIVE_RUNTIME";
   if(/(?:proactive\s+agents?|проактивн[иo]\s+агент)/iu.test(q)) return "PROACTIVE_AGENTS";
   if(/(?:fact\s*(?:&|and)\s*evidence\s+graph|граф.*(?:факт|доказ))/iu.test(q)) return "FACT_EVIDENCE_GRAPH";
+  if(/(?:connector\s+library|конектор)/iu.test(q)) return "CONNECTOR_LIBRARY";
   if(/(?:review\s+(?:tables|vault)|batch\s+review|review\s+vault)/iu.test(q)) return "REVIEW_VAULT";
+  if(/(?:правн[иo]\s+извор|legal\s+source|службен\s+извор)/iu.test(q)) return "LEGAL_SOURCES";
+  if(/(?:документи|documents|извоз|export)/iu.test(q)) return "DOCUMENTS";
+  if(/(?:библиотек|library)/iu.test(q)) return "LIBRARY";
+  if(/(?:workflow|работен\s+тек|процесен\s+тек)/iu.test(q)) return "WORKFLOWS";
+  if(/(?:human\s+gate|човечк[аи]\s+(?:контрола|порта)|проверка\s+од\s+адвокат)/iu.test(q)) return "HUMAN_GATE";
+  if(/(?:анализ|analy[sz]|правн[ао]\s+оцен|review\s+this)/iu.test(q)) return "LEGAL_ANALYZER";
   return "";
 }
 
