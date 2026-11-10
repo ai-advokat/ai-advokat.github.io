@@ -1783,7 +1783,7 @@
               <a href="/" target="_blank" rel="noopener noreferrer">⌕ Правни извори ↗</a>
             </div></details>
             <details class="ai-material-folder"><summary>⚡ AI алатки</summary><div class="ai-material-links">
-              <a href="/contract-intelligence.html" target="_blank" rel="noopener noreferrer">⌘ AI Contract ↗</a>
+              <a href="/ai-contract.html" target="_blank" rel="noopener noreferrer">⌘ AI Contract ↗</a>
               <a href="/professional-tools.html#analyzer" target="_blank" rel="noopener noreferrer">⚖ Правен анализатор ↗</a>
               <a href="/hybrid-legal-intelligence.html" target="_blank" rel="noopener noreferrer">⌘ Hybrid 10 ↗</a>
               <a href="/professional-tools.html" target="_blank" rel="noopener noreferrer">◇ Професионални алатки ↗</a>
