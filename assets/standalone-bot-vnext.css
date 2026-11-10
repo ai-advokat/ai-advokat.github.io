@@ -18,7 +18,13 @@ body{overflow:hidden;background:var(--vcream)!important;color:var(--vink)!import
 .vnext-icon:hover{background:var(--vsoft)!important;color:var(--vink)!important}
 .vnext-new{width:100%;padding:10px 12px;border-radius:10px;background:var(--vnavy)!important;color:#fff!important;text-align:left;font-weight:750}.vnext-new:hover{background:var(--vnavy2)!important}
 .vnext-search-launch{width:100%;display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:7px;border:1px solid var(--vline)!important;background:var(--vcream)!important;border-radius:10px!important;padding:9px 10px!important;text-align:left;color:var(--vmuted)!important}.vnext-search-launch kbd{font-size:10px;border:1px solid var(--vline);border-radius:5px;padding:2px 5px;background:var(--vpanel)}
-.vnext-nav{position:static!important;width:auto!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;display:grid;gap:2px}
+.vnext-nav{position:static!important;width:auto!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;display:grid;gap:5px;max-height:46vh;overflow:auto;padding-right:2px!important}
+.vnext-nav-folder{border:1px solid var(--vline);border-radius:9px;background:var(--vpanel);padding:4px}
+.vnext-nav-folder>summary{list-style:none;cursor:pointer;padding:7px 8px;font-size:11px;font-weight:850;color:var(--vmuted);letter-spacing:.01em}
+.vnext-nav-folder>summary::-webkit-details-marker{display:none}
+.vnext-nav-folder[open]>summary{color:var(--vnavy2)}
+.vnext-nav-folder>div{display:grid;gap:2px;margin-top:3px}
+
 .vnext-nav button{display:flex!important;align-items:center;gap:9px;width:100%;padding:9px 10px!important;border-radius:9px!important;color:var(--vmuted)!important;font-size:13px!important;text-align:left}
 .vnext-nav button:hover,.vnext-nav button.active{background:var(--vsoft)!important;color:var(--vink)!important}.vnext-nav button.active{font-weight:750;box-shadow:inset 3px 0 var(--vgold)}
 .vnext-nav-symbol{width:1.25em;min-width:1.25em;display:inline-grid;place-items:center;font-weight:800;color:var(--vnavy2);font-size:1.05em}.vnext-nav button.active .vnext-nav-symbol{color:var(--vgold)}
