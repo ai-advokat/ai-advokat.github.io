@@ -136,3 +136,123 @@ html[data-vnext-theme="light"]{--bg:var(--vcream);--panel:var(--vpanel);--ink:va
   .vnext-message-action{min-height:25px;padding:4px 7px;font-size:9.5px}
   .message.user.has-vnext-actions>.text{padding:12px 16px}
 }
+
+
+/* External Conversational Shell R12
+ * Keep the governed professional capability layer available, but remove the
+ * permanent control-room chrome from the user-facing bot.
+ */
+html[data-external-experience="conversation"] .vnext-shell{
+  grid-template-columns:minmax(0,1fr)!important;
+}
+html[data-external-experience="conversation"] .vnext-sidebar{
+  display:none!important;
+}
+html[data-external-experience="conversation"] .vnext-evidence{
+  display:none!important;
+}
+html[data-external-experience="conversation"].vnext-evidence-open .vnext-evidence{
+  display:flex!important;
+  position:fixed!important;
+  z-index:60!important;
+  right:0!important;
+  top:0!important;
+  bottom:0!important;
+  width:min(380px,94vw)!important;
+  box-shadow:var(--vshadow)!important;
+  background:var(--vpanel)!important;
+}
+html[data-external-experience="conversation"] .vnext-header-tools,
+html[data-external-experience="conversation"] #vnextMobileMenu{
+  display:none!important;
+}
+html[data-external-experience="conversation"] .vnext-center{
+  min-width:0;
+}
+html[data-external-experience="conversation"] .vnext-center>main{
+  width:min(900px,100%)!important;
+  margin:0 auto!important;
+  padding-left:16px!important;
+  padding-right:16px!important;
+}
+html[data-external-experience="conversation"] .header-legal-links{
+  display:none!important;
+}
+html[data-external-experience="conversation"] .footer-brand{
+  display:none!important;
+}
+html[data-external-experience="conversation"] .bot-language-menu-control{
+  width:100%;
+  display:flex!important;
+  align-items:center;
+  gap:8px;
+  padding:7px 8px;
+}
+html[data-external-experience="conversation"] .bot-language-menu-control select{
+  flex:1;
+  min-width:0;
+}
+html[data-external-experience="conversation"] .voice-record-menu-row{
+  display:flex!important;
+  flex-wrap:wrap;
+  gap:6px;
+  padding:8px 0 0;
+}
+html[data-external-experience="conversation"] .vnext-message-actions.vnext-message-menu{
+  position:absolute;
+  top:4px;
+  right:4px;
+  z-index:8;
+  margin:0!important;
+}
+html[data-external-experience="conversation"] .message{
+  position:relative;
+}
+html[data-external-experience="conversation"] .vnext-message-menu-summary{
+  list-style:none;
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  cursor:pointer;
+  color:var(--vmuted);
+  background:transparent;
+  user-select:none;
+}
+html[data-external-experience="conversation"] .vnext-message-menu-summary::-webkit-details-marker{
+  display:none;
+}
+html[data-external-experience="conversation"] .vnext-message-menu-summary:hover{
+  background:var(--vsoft);
+  color:var(--vink);
+}
+html[data-external-experience="conversation"] .vnext-message-menu-panel{
+  position:absolute;
+  right:0;
+  top:34px;
+  min-width:180px;
+  display:grid;
+  gap:3px;
+  padding:7px;
+  border:1px solid var(--vline);
+  border-radius:12px;
+  background:var(--vpanel);
+  box-shadow:var(--vshadow);
+}
+html[data-external-experience="conversation"] .vnext-message-menu:not([open]) .vnext-message-menu-panel{
+  display:none;
+}
+html[data-external-experience="conversation"] .vnext-message-menu-panel .vnext-message-action{
+  width:100%;
+  justify-content:flex-start;
+  text-align:left;
+  padding:8px 9px!important;
+  border-radius:8px!important;
+}
+@media(max-width:600px){
+  html[data-external-experience="conversation"] .vnext-center>main{
+    padding-left:10px!important;
+    padding-right:10px!important;
+  }
+}

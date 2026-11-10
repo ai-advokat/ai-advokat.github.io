@@ -96,8 +96,9 @@
     </label>
     <details id="menu"><summary aria-label="Разговор и поставки">⋯</summary><nav aria-label="Поставки">
       <button id="newChat" type="button">＋ Нов разговор</button>
+      <button id="downloadResponse" type="button">⇩ Преземи одговор</button>
       <button id="exportChat" type="button">⇩ Преземи разговор (.txt)</button>
-      <button id="materials" type="button">◫ Материјали и алатки</button>
+      <button id="materials" type="button">◫ Материјали и извори</button>
       <button id="access" type="button">✓ Професионален пристап</button>
       <button id="logout" type="button">↪ Одјави се и заборави го пристапот</button>
       <a href="/professional-library/" target="_blank" rel="noopener noreferrer">◫ Материјали и библиотека ↗</a>
@@ -184,6 +185,18 @@
       <div class="footer-brand"><img src="/assets/ai-advokat-hero-brand.webp" width="400" height="225" alt="AI Advokat"></div>
     </div>
   </main>
+  <dialog id="downloadDialog" aria-labelledby="downloadTitle">
+    <h2 id="downloadTitle">⇩ Преземи го последниот AI одговор</h2>
+    <p>Изберете формат. Извозот е работна копија и останува под Human Gate пред професионална употреба.</p>
+    <div class="dialog-actions export-actions">
+      <button type="button" data-export="docx">▧ DOCX</button>
+      <button type="button" data-export="pdf">▧ PDF</button>
+      <button type="button" data-export="md">◇ MD</button>
+      <button type="button" data-export="json">{ } JSON</button>
+      <button type="button" data-export="csv">▦ CSV</button>
+    </div>
+    <div class="dialog-actions"><button id="closeDownload" type="button">✓ Затвори</button></div>
+  </dialog>
   <dialog id="materialsDialog" aria-labelledby="materialsTitle">
     <h2 id="materialsTitle">◫ Материјали и алатки</h2>
     <p>Ботот пребарува поврзани правни извори според прашањето. Каталошки запис не значи достапен целосен текст или потврдено важечко право.</p>
@@ -197,9 +210,10 @@
     <div class="dialog-actions export-actions">
       <button type="button" data-export="docx">▧ DOCX</button>
       <button type="button" data-export="pdf">▧ PDF</button>
-      <button type="button" data-export="json">{ } JSON</button>
-      <button type="button" data-export="txt">▤ TXT</button>
       <button type="button" data-export="md">◇ MD</button>
+      <button type="button" data-export="json">{ } JSON</button>
+      <button type="button" data-export="csv">▦ CSV</button>
+      <button type="button" data-export="txt">▤ TXT</button>
     </div>
     <div class="material-links material-folder-grid">
       <details class="material-folder" open><summary>⚖ Судови и судска пракса</summary><div>
