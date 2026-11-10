@@ -6772,11 +6772,18 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
 
   const readiness=orchestratorRuntimeReadiness(env);
-  // The standalone professional bot never degrades into anonymous/FREE chat.
+  const trainingOpen=openAIOnly && env.EXTERNAL_BOT_TRAINING_OPEN==="true";
   const botMembership=openAIOnly ? await resolveMembership(request,env) : null;
-  if(openAIOnly && !botMembership) return json(request,{ok:false,error:"bot_membership_required",message:"Внесете активен професионален клуч."},401);
-  if(openAIOnly && readiness.provider!=="configured") return json(request,{ok:false,error:"gpt_provider_locked",message:"OpenAI моментално не е достапен. Обидете се повторно подоцна."},503);
+  if(openAIOnly && !botMembership && !trainingOpen){
+    return json(request,{ok:false,error:"bot_membership_required",message:"Внесете активен професионален клуч."},401);
+  }
   const freeProviderReady=freeWorkersAIConfigured(env);
+  // In governed training-open mode an anonymous external-bot caller uses the
+  // same bounded FREE provider/quota path as the internal public assistant.
+  // Membership remains mandatory for Secure Case/private workspace operations.
+  if(openAIOnly && botMembership && readiness.provider!=="configured" && !freeProviderReady){
+    return json(request,{ok:false,error:"gpt_provider_locked",message:"AI provider моментално не е достапен. Обидете се повторно подоцна."},503);
+  }
   if(readiness.provider!=="configured" && !freeProviderReady){
     return json(request,{
       ok:false,
@@ -7261,7 +7268,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           status:botMembership.status,
           monthlyQuota:botMembership.monthlyQuota,
           seats:botMembership.seats
-        } : {planCode:"free"},
+        } : {planCode:trainingOpen?"training":"free",trainingOpen},
         humanGate:"Source-first property-law analysis. Before consequential use or filing, verify the exact object, possession history, good faith, lawful basis where required, interruptions, predecessors, public-register status, parties, jurisdiction and current statutory text."
       });
     }
@@ -7306,7 +7313,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           status:botMembership.status,
           monthlyQuota:botMembership.monthlyQuota,
           seats:botMembership.seats
-        } : {planCode:"free"},
+        } : {planCode:trainingOpen?"training":"free",trainingOpen},
         humanGate:"Source-first family-law draft. Before filing, verify jurisdiction, parties, facts, children, exact statutory basis, current consolidated text, court fees, power of attorney and attachments."
       });
     }
@@ -7506,7 +7513,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       if(error instanceof SecurityConfigError) return json(request,{ok:false,error:"assistant_temporarily_unavailable"},503);
       throw error;
     }
-    quota=MEMBERSHIP_PLANS.free.monthlyQuota;
+    const configuredTrainingQuota=Number(env.EXTERNAL_BOT_TRAINING_MONTHLY_QUOTA||100);
+    const boundedTrainingQuota=Number.isFinite(configuredTrainingQuota)
+      ? Math.min(100,Math.max(MEMBERSHIP_PLANS.free.monthlyQuota,Math.trunc(configuredTrainingQuota)))
+      : 100;
+    quota=trainingOpen ? boundedTrainingQuota : MEMBERSHIP_PLANS.free.monthlyQuota;
   }
 
   // P0 cost guard: anonymous/FREE traffic must never spill into the paid OpenAI path.
