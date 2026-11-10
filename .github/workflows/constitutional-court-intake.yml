@@ -1,0 +1,56 @@
+name: Constitutional Court case-law intake
+
+on:
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: "Official Decisions and Resolutions index pages to scan"
+        required: true
+        default: "5"
+        type: choice
+        options: ["5","10","20","50"]
+      limit:
+        description: "Maximum official records in this run"
+        required: true
+        default: "100"
+        type: choice
+        options: ["50","100","250","500"]
+      mode:
+        description: "Discovery only or bounded official full-text staging"
+        required: true
+        default: "discovery"
+        type: choice
+        options: ["discovery","execute"]
+
+permissions:
+  contents: read
+
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Discovery
+        if: inputs.mode == 'discovery'
+        run: node scripts/collect-and-stage-mk-constitutional-decisions.mjs --pages "${{ inputs.pages }}" --limit "${{ inputs.limit }}"
+      - name: Official bounded retrieval + staging
+        if: inputs.mode == 'execute'
+        run: node scripts/collect-and-stage-mk-constitutional-decisions.mjs --pages "${{ inputs.pages }}" --limit "${{ inputs.limit }}" --execute
+      - name: Verify fail-closed authority state
+        if: inputs.mode == 'execute'
+        shell: bash
+        run: |
+          test -f work/mk-constitutional-court/constitutional-court-review.ndjson
+          node -e 'const fs=require("fs");for(const line of fs.readFileSync("work/mk-constitutional-court/constitutional-court-review.ndjson","utf8").trim().split(/\n/)){const r=JSON.parse(line);if(r.type==="case_law_case"&&(r.production_eligible!==false||r.human_gate_required!==true||r.current_law_applicability_verified!==false||r.holding_verified!==false||r.official_binding_verified!==true))process.exit(2)}'
+      - name: Upload intake evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mk-constitutional-court-intake-${{ github.run_id }}
+          path: work/mk-constitutional-court/
+          if-no-files-found: warn
+          retention-days: 14
