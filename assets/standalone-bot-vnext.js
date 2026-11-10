@@ -72,7 +72,8 @@ window.fetch = async function(input, init={}){
   let body;
   try{ body=JSON.parse(init.body); }catch{ return nativeFetch(input,init); }
   const thread=activeThread();
-  const q=String(body.q||'').trim();
+  const q=String(body.visibleQ||body.q||'').trim();
+  delete body.visibleQ;
   body.history=thread.history.slice(-12).map(({role,text})=>({role,text}));
   body.sessionId=thread.sessionId;
   if(q){
