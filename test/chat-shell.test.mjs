@@ -138,7 +138,7 @@ test("CHAT11c internal chat consumes a one-shot Case-Law Radar package handoff",
   assert.match(chatJs,/aiAdvokatRadarHandoffV1/);
   assert.match(chatJs,/sessionStorage\.removeItem\("aiAdvokatRadarHandoffV1"\)/);
   assert.match(chatJs,/Date\.now\(\)-createdAt>15\*60\*1000/);
-  assert.match(chatJs,/payload\.autoSend===true\) send\(prompt\)/);
+  assert.match(chatJs,/payload\.autoSend===true\) send\(prompt,\{governedRadarHandoff:true\}\)/);
   assert.match(chatJs,/consumeCaseLawRadarHandoff\(\)/);
 });
 
