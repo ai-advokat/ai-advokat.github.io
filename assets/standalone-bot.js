@@ -287,7 +287,9 @@ const BOT_LANGUAGE_ALIASES=Object.freeze({
 
 function conversationalLanguageSwitch(text){
   const q=String(text||"").trim().toLowerCase();
-  if(!/(?:преведи|смени|јазик|интерфејс|translate|language|switch)/iu.test(q)) return "";
+  // Switch only when the user is explicitly talking about the interface/language,
+  // never when asking to translate legal content or a contract.
+  if(!/(?:интерфејс|јазик|interface|language|switch\s+language|смени\s+јазик)/iu.test(q)) return "";
   for(const lang of AI_ADVOCAT_LANGUAGES){
     const aliases=[lang.code,lang.name.toLowerCase(),...(BOT_LANGUAGE_ALIASES[lang.code]||[])];
     if(aliases.some(alias=>q.includes(String(alias).toLowerCase()))) return lang.code;
@@ -298,8 +300,8 @@ function conversationalLanguageSwitch(text){
 function conversationalLocalAction(text){
   const q=String(text||"").trim().toLowerCase();
   const explicit=/(?:^|\s)(?:отвори|покажи|прикажи|оди\s+во|open|show|launch)(?:\s|$)/iu.test(q);
-  const short=q.length<=70;
-  if(!explicit&&!short) return "";
+  const exactToolName=/^(?:ai\s*contract(?:\s*pro)?|contract\s*pro|professional\s+ecosystem|pro\s+ecosystem|калкулатори?|justice\s+daily|public\s+evidence|јавни\s+докази?|echr(?:\s+crosswalk)?|есчп|hybrid(?:\s+legal)?(?:\s*10)?|судска\s+пракса|case\s*law|casepilot|secure\s+case|legal\s+command\s+center|proactive\s+runtime|proactive\s+agents?|fact\s*(?:&|and)\s*evidence\s+graph|connector\s+library|review\s+(?:tables|vault)|правни\s+извори|legal\s+sources?|документи|documents|библиотека|library|workflows?|human\s+gate|анализатор|analyzer|консолидатор|consolidator|предиктор|predictor)$/iu.test(q);
+  if(!explicit&&!exactToolName) return "";
   const table=[
     ["contract-intelligence",/(?:ai\s*contract|contract\s+pro|договори?)/iu],
     ["professional-ecosystem",/(?:professional\s+ecosystem|pro\s+ecosystem|калкулатор|living\s+law|smart\s+documents?|legal\s+watch)/iu],
