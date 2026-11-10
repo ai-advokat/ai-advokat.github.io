@@ -10752,8 +10752,9 @@ const UI_TRANSLATION_LANGUAGES=Object.freeze({
   sw:"Swahili",tr:"Turkish",ur:"Urdu",vi:"Vietnamese"
 });
 
-const UI_TRANSLATE_HOURLY_LIMIT=24;
-const UI_TRANSLATE_DAILY_LIMIT=80;
+const UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT=24;
+const UI_TRANSLATE_GLOBAL_HOURLY_LIMIT=240;
+const UI_TRANSLATE_GLOBAL_DAILY_LIMIT=800;
 
 async function handleUiTranslation(request,env){
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
@@ -10761,15 +10762,28 @@ async function handleUiTranslation(request,env){
   if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
   if(!env?.AI || typeof env.AI.run!=="function") return json(request,{ok:false,error:"ui_translation_unavailable"},503);
 
+  let body;
+  try{ body=await request.json(); }catch{ return json(request,{ok:false,error:"invalid_json"},400); }
+  const target=String(body?.targetLanguage||"").trim().toLowerCase();
+  const language=UI_TRANSLATION_LANGUAGES[target];
+  if(!language) return json(request,{ok:false,error:"unsupported_language"},400);
+
+  if(target==="mk"){
+    const source=Array.isArray(body?.items)?body.items:[];
+    return json(request,{ok:true,targetLanguage:target,translations:source.map(x=>String(x?.text||"").slice(0,1200))});
+  }
+
   let subject;
   try{
     subject=await anonymousSubject(request,env);
-    for(const rule of [
-      {scope:"ui_translate_hour",limit:UI_TRANSLATE_HOURLY_LIMIT,windowSeconds:3600},
-      {scope:"ui_translate_day",limit:UI_TRANSLATE_DAILY_LIMIT,windowSeconds:86400}
-    ]){
-      const verdict=await consumeWindow(env,{...rule,subject});
-      if(!verdict.allowed) return json(request,{ok:false,error:"ui_translation_rate_limited"},429,{"Retry-After":String(verdict.retryAfter)});
+    const rules=[
+      {scope:"ui_translate_global_hour",limit:UI_TRANSLATE_GLOBAL_HOURLY_LIMIT,windowSeconds:3600,subject},
+      {scope:"ui_translate_global_day",limit:UI_TRANSLATE_GLOBAL_DAILY_LIMIT,windowSeconds:86400,subject},
+      {scope:"ui_translate_lang_"+target,limit:UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT,windowSeconds:3600,subject}
+    ];
+    for(const rule of rules){
+      const verdict=await consumeWindow(env,rule);
+      if(!verdict.allowed) return json(request,{ok:false,error:"ui_translation_rate_limited",scope:rule.scope},429,{"Retry-After":String(verdict.retryAfter)});
     }
   }catch(error){
     if(error instanceof SecurityConfigError){
@@ -10779,21 +10793,12 @@ async function handleUiTranslation(request,env){
     throw error;
   }
 
-  let body;
-  try{ body=await request.json(); }catch{ return json(request,{ok:false,error:"invalid_json"},400); }
-  const target=String(body?.targetLanguage||"").trim().toLowerCase();
-  const language=UI_TRANSLATION_LANGUAGES[target];
-  if(!language) return json(request,{ok:false,error:"unsupported_language"},400);
-  if(target==="mk"||target==="en"){
-    const source=Array.isArray(body?.items)?body.items:[];
-    return json(request,{ok:true,targetLanguage:target,translations:source.map(x=>String(x?.text||"").slice(0,1200))});
-  }
   const raw=Array.isArray(body?.items)?body.items:[];
-  if(!raw.length||raw.length>48) return json(request,{ok:false,error:"invalid_items_count"},400);
+  if(!raw.length||raw.length>96) return json(request,{ok:false,error:"invalid_items_count"},400);
   const items=raw.map((item,index)=>({
     id:String(item?.id??index).slice(0,80),
-    text:String(item?.text||"").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"").trim().slice(0,1200)
-  })).filter(x=>x.text);
+    text:String(item?.text||"").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"").trim()
+  })).filter(x=>x.text && x.text.length<=1200);
   const totalChars=items.reduce((n,x)=>n+x.text.length,0);
   if(!items.length||totalChars>12000) return json(request,{ok:false,error:"translation_payload_too_large"},413);
 

@@ -125,12 +125,122 @@ function writePreferredLanguage(code){
   const lang=languageMeta(code);
   try{localStorage.setItem(LANGUAGE_KEY,lang.code);}catch{}
   document.documentElement.lang=lang.code;
+  document.documentElement.dir=["ar","he","fa","ur"].includes(lang.code)?"rtl":"ltr";
   const select=$("botLanguage");
   if(select&&select.value!==lang.code) select.value=lang.code;
   return lang;
 }
 function selectedLanguageMeta(){return languageMeta($("botLanguage")?.value||readPreferredLanguage());}
 function selectedSpeechLocale(){return selectedLanguageMeta().locale;}
+
+const BOT_UI_TRANSLATION_CACHE_PREFIX="aiadvokat-bot-ui-translations-v1:";
+const botUiNodeState=new WeakMap();
+const botUiAttrState=new WeakMap();
+let botUiTranslationRunning=false;
+let botUiTranslationTimer=0;
+
+function botUiCache(code){
+  try{return JSON.parse(localStorage.getItem(BOT_UI_TRANSLATION_CACHE_PREFIX+code)||"{}")||{};}catch{return {};}
+}
+function saveBotUiCache(code,cache){
+  try{localStorage.setItem(BOT_UI_TRANSLATION_CACHE_PREFIX+code,JSON.stringify(cache));}catch{}
+}
+function botUiTranslatable(value){
+  const text=String(value||"").replace(/\s+/g," ").trim();
+  if(!text||text.length<2||text.length>1200) return false;
+  if(/^(?:https?:\/\/|mailto:|tel:|10\.\d{4,9}\/|[\d\s.,:/+%()#-]+)$/i.test(text)) return false;
+  return /[\p{L}]/u.test(text);
+}
+function botUiExcluded(el){
+  return !el || !!el.closest("script,style,noscript,code,pre,svg,[data-no-translate],#botLanguage,.message .text,.sources,.vnext-source-card,.vnext-context-card,.vnext-artifact-card");
+}
+function collectBotUiUnits(){
+  const units=[];
+  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+  let node,index=0;
+  while((node=walker.nextNode())){
+    const parent=node.parentElement;
+    if(botUiExcluded(parent)) continue;
+    const current=String(node.nodeValue||"");
+    if(!botUiTranslatable(current)) continue;
+    let state=botUiNodeState.get(node);
+    if(!state||current!==state.last){
+      state={source:current,last:current};
+      botUiNodeState.set(node,state);
+    }
+    units.push({id:"t"+(index++),kind:"text",node,source:state.source});
+  }
+  for(const el of document.querySelectorAll("[placeholder],[title],[aria-label]")){
+    if(botUiExcluded(el)) continue;
+    let attrs=botUiAttrState.get(el);
+    if(!attrs){attrs={};botUiAttrState.set(el,attrs);}
+    for(const attr of ["placeholder","title","aria-label"]){
+      if(!el.hasAttribute(attr)) continue;
+      const current=el.getAttribute(attr)||"";
+      if(!botUiTranslatable(current)) continue;
+      if(!attrs[attr]||current!==attrs[attr].last) attrs[attr]={source:current,last:current};
+      units.push({id:"a"+(index++),kind:"attr",el,attr,source:attrs[attr].source});
+    }
+  }
+  return units;
+}
+async function translateProfessionalUi(){
+  const code=readPreferredLanguage();
+  if(code==="mk"||botUiTranslationRunning) return;
+  botUiTranslationRunning=true;
+  try{
+    const units=collectBotUiUnits();
+    const cache=botUiCache(code);
+    const pending=[...new Set(units.map(x=>x.source).filter(x=>!cache[x]))];
+    const batches=[];
+    let batch=[],chars=0;
+    for(const text of pending){
+      if(batch.length&&(batch.length>=72||chars+text.length>9000)){
+        batches.push(batch);batch=[];chars=0;
+      }
+      batch.push(text);chars+=text.length;
+    }
+    if(batch.length)batches.push(batch);
+    for(const texts of batches){
+      try{
+        const response=await fetch(base+"/api/ui-translate",{
+          method:"POST",
+          headers:{"content-type":"application/json"},
+          body:JSON.stringify({targetLanguage:code,items:texts.map((text,i)=>({id:String(i),text}))})
+        });
+        const data=await response.json();
+        if(!response.ok||data?.ok!==true||!Array.isArray(data.translations)){
+          console.warn("bot_ui_translation_failed",response.status,data?.error||"unknown");
+          continue;
+        }
+        data.translations.forEach((row,i)=>{
+          const translated=String(row?.text||"").trim();
+          if(translated) cache[texts[i]]=translated;
+        });
+        saveBotUiCache(code,cache);
+      }catch(error){
+        console.warn("bot_ui_translation_network_error",String(error?.message||error).slice(0,120));
+      }
+    }
+    for(const unit of units){
+      const translated=cache[unit.source];
+      if(!translated) continue;
+      if(unit.kind==="text"){
+        unit.node.nodeValue=translated;
+        const state=botUiNodeState.get(unit.node); if(state) state.last=translated;
+      }else{
+        unit.el.setAttribute(unit.attr,translated);
+        const attrs=botUiAttrState.get(unit.el); if(attrs?.[unit.attr]) attrs[unit.attr].last=translated;
+      }
+    }
+  }finally{botUiTranslationRunning=false;}
+}
+function scheduleProfessionalUiTranslation(){
+  if(readPreferredLanguage()==="mk") return;
+  clearTimeout(botUiTranslationTimer);
+  botUiTranslationTimer=setTimeout(()=>translateProfessionalUi(),180);
+}
+
 function withOutputLanguageDirective(text){
   const lang=selectedLanguageMeta();
   if(lang.code==="mk") return String(text||"");
@@ -140,9 +250,18 @@ function bindLanguageSelector(){
   const select=$("botLanguage");
   if(!select)return;
   writePreferredLanguage(readPreferredLanguage());
+  scheduleProfessionalUiTranslation();
+  if(readPreferredLanguage()!=="mk"){
+    const observer=new MutationObserver(mutations=>{
+      if(botUiTranslationRunning) return;
+      if(mutations.some(m=>m.type==="childList"||m.type==="characterData"||m.type==="attributes")) scheduleProfessionalUiTranslation();
+    });
+    observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder","title","aria-label"]});
+  }
   select.addEventListener("change",()=>{
     const lang=writePreferredLanguage(select.value);
-    status("Јазик за AI објаснување и глас: "+lang.name+". Официјалните извори и цитати остануваат source-faithful.");
+    status("Јазик за AI објаснување, интерфејс и глас: "+lang.name+". Официјалните извори и цитати остануваат source-faithful.");
+    location.reload();
   });
 }
 
