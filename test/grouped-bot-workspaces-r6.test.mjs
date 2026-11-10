@@ -24,8 +24,8 @@ test("internal Materials toolbox is grouped into legal folders without losing go
   assert.match(chatCss,/\.ai-material-folder>summary/);
 });
 
-test("external Professional sidebar is grouped but preserves every existing action id",()=>{
-  for(const label of ["AI анализа и подготовка","Судови и предмети","Извори, докази и документи","Работа и контрола"]){
+test("external capability catalogue remains in code while conversational shell hides permanent sidebar",()=>{
+  for(const label of ["AI анализа и подготовка","Судови и предмети","Службени извори","Материјали и документи","Работа и контрола"]){
     assert.ok(vnext.includes(label),label);
   }
   const actions=[
@@ -39,6 +39,8 @@ test("external Professional sidebar is grouped but preserves every existing acti
   }
   assert.match(vnextCss,/\.vnext-nav-folder/);
   assert.match(vnextCss,/\.vnext-nav-folder>summary/);
+  assert.match(vnextCss,/data-external-experience="conversation"/);
+  assert.match(vnextCss,/\.vnext-sidebar\{[\s\S]*display:none!important/);
 });
 
 test("grouped workspace assets use additive cache keys while preserving canonical release prefixes",()=>{

@@ -35,7 +35,7 @@ test("CPR3 concrete case narrative plus contact details routes to Secure Case Wo
 });
 
 test("CPR4 backend privacy gate runs before quota reservation and orchestrator",()=>{
-  const gate=worker.indexOf("const confidentiality=detectConfidentialCasePrompt(q)");
+  const gate=worker.indexOf("const confidentiality=detectConfidentialCasePrompt(userQ)");
   const quota=worker.indexOf("reserveMonthlyQuota",gate);
   const provider=worker.indexOf("runOpenAIOrchestrator(env",gate);
   assert.ok(gate>0 && quota>gate && provider>quota);

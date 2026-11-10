@@ -241,70 +241,23 @@ function scheduleProfessionalUiTranslation(){
   botUiTranslationTimer=setTimeout(()=>translateProfessionalUi(),180);
 }
 
-function conversationalCapabilityDirective(text){
-  const raw=String(text||"").trim();
-  if(!raw) return raw;
-  const q=raw.toLowerCase();
-  let route="";
-  let rules=[];
-  if(/(?:договор|анекс|спогодб|закуп|contract|agreement|clause)/iu.test(q)){
-    route="AI_CONTRACT_PRO";
-    rules=[
-      "Treat this as contract intelligence or contract drafting/review.",
-      "Identify parties/roles, object, obligations, deadlines, payment, termination, liability, dispute clauses, missing facts and legal-risk points.",
-      "If facts are sufficient, produce a structured WORKING DRAFT; otherwise ask only for facts that are materially necessary.",
-      "Do not claim signature, execution, filing or legal finality. HUMAN GATE REQUIRED."
-    ];
-  }else if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)){
-    route="CONSOLIDATOR";
-    rules=[
-      "Treat this as a governed consolidation task.",
-      "Separate source text, amendments, effective dates and resulting working text.",
-      "Never invent missing amendment language or silently declare a consolidated text official."
-    ];
-  }else if(/(?:анализ|analy[sz]|правн[ао]\s+оцен|review\s+this)/iu.test(q)){
-    route="LEGAL_ANALYZER";
-    rules=[
-      "Treat this as structured legal analysis.",
-      "Separate facts, issues, sources, legal propositions, risks, adverse points, unknowns and next human checks.",
-      "Use source-first reasoning and preserve Human Gate."
-    ];
-  }else if(/(?:предиктор|predict|сценари|ризик.*исход|исход.*ризик)/iu.test(q)){
-    route="GOVERNED_PREDICTOR";
-    rules=[
-      "Treat this as governed scenario analysis, not outcome prediction.",
-      "Provide favourable, mixed and adverse scenarios without percentages or guarantees.",
-      "State decisive facts, evidence gaps, legal support and what could change each scenario."
-    ];
-  }else if(/(?:судск[аи].*(?:пракс|одлук|пресуд)|case\s*law|judgment|преседан)/iu.test(q)){
-    route="CASE_LAW_RESEARCH";
-    rules=[
-      "Treat this as case-law research.",
-      "Prioritise governed court/HUDOC sources, identify jurisdiction and authority level, and distinguish discovery from verified authority."
-    ];
-  }else if(/(?:приватен\s+предмет|доверлив|casepilot|secure\s+case|оригинален\s+документ)/iu.test(q)){
-    route="SECURE_CASE";
-    rules=[
-      "Treat this as a confidential-case workflow.",
-      "Do not request or process unnecessary personal identifiers in public chat; route sensitive material to Secure Case Workspace."
-    ];
-  }
-  if(!route) return raw;
-  return [
-    "HIDDEN CAPABILITY ROUTE: "+route+".",
-    "This routing instruction is system-side workflow context, not user-visible content.",
-    ...rules,
-    "",
-    "USER REQUEST:",
-    raw
-  ].join("\n");
+function conversationalCapabilityRoute(text){
+  const q=String(text||"").trim().toLowerCase();
+  if(!q) return "";
+  if(/(?:приватен\s+предмет|доверлив|casepilot|secure\s+case|оригинален\s+документ)/iu.test(q)) return "SECURE_CASE";
+  if(/(?:договор|анекс|спогодб|закуп|contract|agreement|clause)/iu.test(q)) return "AI_CONTRACT_PRO";
+  if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)) return "CONSOLIDATOR";
+  if(/(?:анализ|analy[sz]|правн[ао]\s+оцен|review\s+this)/iu.test(q)) return "LEGAL_ANALYZER";
+  if(/(?:предиктор|predict|сценари|ризик.*исход|исход.*ризик)/iu.test(q)) return "GOVERNED_PREDICTOR";
+  if(/(?:судск[аи].*(?:пракс|одлук|пресуд)|case\s*law|judgment|преседан)/iu.test(q)) return "CASE_LAW_RESEARCH";
+  return "";
 }
 
 function withOutputLanguageDirective(text){
-  const routed=conversationalCapabilityDirective(text);
-  const lang=selectedLanguageMeta();
-  if(lang.code==="mk") return routed;
-  return "Please answer in "+lang.name+". Preserve official legal source quotations, citations, case numbers and statutory identifiers verbatim.\n\n"+routed;
+  // Keep the actual user request byte-for-byte within the 4,000-character
+  // composer boundary. Output-language and hidden capability routing travel as
+  // separate bounded metadata and are applied by the governed Worker.
+  return String(text||"");
 }
 
 function installCompactExternalChrome(){
@@ -321,6 +274,7 @@ function installCompactExternalChrome(){
     nav.append(recordRow);
   }
 }
+
 function bindLanguageSelector(){
   const select=$("botLanguage");
   if(!select)return;
@@ -669,7 +623,7 @@ $('composer').onsubmit = async event => {
   try {
     const guides = await guideMatches(outboundQ,controller.signal), ids = guides.map(g => g.id);
     const guideDocuments = await localGuideDocuments(window.AIAdvokatGuideVault,ids,$('useLocalGuides').checked);
-    const data = await request('/api/bot',{signal:controller.signal,body:{q:withOutputLanguageDirective(outboundQ),visibleQ:outboundQ,sessionId,mode:$('researchMode').value,webDomainPreset:$('webDomainPreset')?.value||'all',guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
+    const data = await request('/api/bot',{signal:controller.signal,body:{q:withOutputLanguageDirective(outboundQ),visibleQ:outboundQ,capabilityRoute:conversationalCapabilityRoute(outboundQ),outputLanguage:selectedLanguageMeta().code,sessionId,mode:$('researchMode').value,webDomainPreset:$('webDomainPreset')?.value||'all',guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     pulse.remove();
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);

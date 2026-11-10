@@ -138,7 +138,7 @@ test('standalone bot does not display browser-only guide matches as authorities'
 test('worker uses bounded conversation routing context for legal follow-ups',()=>{
   const source=fs.readFileSync('src/index.js','utf8');
   assert.match(source,/buildLegalRoutingQuery/);
-  assert.match(source,/const routingQuery=buildLegalRoutingQuery\(q,historyCheck\.history\)/);
+  assert.match(source,/const routingQuery=buildLegalRoutingQuery\(userQ,historyCheck\.history\)/);
   assert.match(source,/governedArticleContext\(env,routingQuery,initialPlan\)/);
   assert.match(source,/contextualFollowUp/);
   assert.match(source,/researchInput:routingQuery/);
@@ -270,4 +270,37 @@ test('fallback runtime labels are provenance-truthful and source counts are read
   assert.doesNotMatch(client,/data\.model \|\| 'OpenAI'/);
   assert.match(client,/summary\.textContent = \(seen\.size === 1 \? 'Извор' : 'Извори'\) \+ ' · ' \+ seen\.size/);
   assert.match(client,/\[url\?\.href \|\| '', articleNumber, label, version\]\.join\('\|'\)/);
+});
+
+
+test('external bot prioritizes Secure Case over contract routing for confidential intent',async()=>{
+  const request=new Request(base+'/api/bot',{
+    method:'POST',
+    headers:{'content-type':'application/json',authorization:'Bearer active-fixture-key'},
+    body:JSON.stringify({q:'Ова е доверлив договор за закуп со оригинален документ.'})
+  });
+  const response=await worker.fetch(request,{
+    DB:db({account_id:'test',plan_code:'pro',monthly_quota:10}),
+    OPENAI_API_KEY:'x'.repeat(40),
+    OPENAI_MODEL:'gpt-6.1-sol',
+    OPENAI_ORCHESTRATOR_ENABLED:'true'
+  },{});
+  assert.equal(response.status,422);
+  const result=await response.json();
+  assert.equal(result.error,'confidential_case_workspace_required');
+  assert.equal(result.privacy.providerCalled,false);
+  assert.ok(result.privacy.reasons.includes('conversational_secure_case_route'));
+});
+
+test('external bot preserves full 4000-char user request before adding hidden routing and language context',()=>{
+  const source=fs.readFileSync('src/index.js','utf8');
+  const client=fs.readFileSync('assets/standalone-bot.js','utf8');
+  assert.match(source,/const userQ=cleanQuery\(payload\.q,4000\)/);
+  assert.match(source,/const q=languageDirective \? languageDirective\+"\\n\\n"\+userQ : userQ/);
+  assert.match(source,/const providerInput=capabilityDirective/);
+  assert.match(source,/input:providerInput/);
+  assert.match(source,/q:providerInput/);
+  assert.match(client,/function withOutputLanguageDirective\(text\)\{[\s\S]*return String\(text\|\|""\)/);
+  assert.match(client,/outputLanguage:selectedLanguageMeta\(\)\.code/);
+  assert.match(client,/capabilityRoute:conversationalCapabilityRoute\(outboundQ\)/);
 });
