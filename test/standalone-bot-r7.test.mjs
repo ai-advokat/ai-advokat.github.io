@@ -10,7 +10,7 @@ const pages=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8");
 test("external bot activates Professional Workbench R7 without changing core R15 semantics",()=>{
   assert.match(html,/name="ai-advokat-release" content="core-r15"/);
   assert.match(html,/name="ai-advokat-ui-release" content="professional-r7"/);
-  assert.match(html,/standalone-bot-r7\.css\?v=20261108-professional-r7/);
+  assert.match(html,/standalone-bot-r7\.css\?v=20261110-language-r3/);
   assert.match(html,/standalone-bot-r7\.js\?v=20261108-professional-r7/);
   assert.ok(html.indexOf("standalone-bot-vnext.js") < html.indexOf("standalone-bot-r7.js"));
 });
