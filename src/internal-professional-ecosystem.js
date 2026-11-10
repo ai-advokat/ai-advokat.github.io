@@ -255,8 +255,10 @@ export function internalProfessionalEcosystemCatalog(){
     smartDocuments:SMART_DOCUMENTS.map(x=>({...x,fields:[...x.fields]})),
     legalWatch:LEGAL_WATCH_CHANNELS.map(x=>({...x})),
     boundaries:{
-      internalAiAdvokatOnly:true,
-      externalProfessionalBotChanged:false,
+      internalAiAdvokatOnly:false,
+      sharedWithExternalProfessionalBot:true,
+      externalProfessionalBotChanged:true,
+      externalInterfaceMode:"conversation_first_hidden_capabilities",
       legalAdviceAutonomy:false,
       autonomousFiling:false,
       autonomousSignature:false,
