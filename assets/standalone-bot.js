@@ -245,12 +245,87 @@ function conversationalCapabilityRoute(text){
   const q=String(text||"").trim().toLowerCase();
   if(!q) return "";
   if(/(?:приватен\s+предмет|доверлив|casepilot|secure\s+case|оригинален\s+документ)/iu.test(q)) return "SECURE_CASE";
-  if(/(?:договор|анекс|спогодб|закуп|contract|agreement|clause)/iu.test(q)) return "AI_CONTRACT_PRO";
+  if(/(?:ai\s*contract|договор|анекс|спогодб|закуп|contract|agreement|clause)/iu.test(q)) return "AI_CONTRACT_PRO";
   if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)) return "CONSOLIDATOR";
   if(/(?:анализ|analy[sz]|правн[ао]\s+оцен|review\s+this)/iu.test(q)) return "LEGAL_ANALYZER";
   if(/(?:предиктор|predict|сценари|ризик.*исход|исход.*ризик)/iu.test(q)) return "GOVERNED_PREDICTOR";
+  if(/(?:echr|есчп|hudoc|crosswalk)/iu.test(q)) return "ECHR_CROSSWALK";
   if(/(?:судск[аи].*(?:пракс|одлук|пресуд)|case\s*law|judgment|преседан)/iu.test(q)) return "CASE_LAW_RESEARCH";
+  if(/(?:јавн[иo]\s+доказ|public\s+evidence|open\s+data\s+evidence)/iu.test(q)) return "PUBLIC_EVIDENCE";
+  if(/(?:justice\s+daily|правосуден\s+бриф|дневен\s+правосуд)/iu.test(q)) return "JUSTICE_DAILY";
+  if(/(?:living\s+law|важечк[ао]\s+право|временск[аи]\s+верзи|historical\s+law|регулаторна\s+лини)/iu.test(q)) return "LIVING_LAW";
+  if(/(?:smart\s+(?:legal\s+)?document|тужба\s+за\s+развод|одговор\s+на\s+тужба|опомена\s+пред\s+тужба|полномошно)/iu.test(q)) return "SMART_DOCUMENTS";
+  if(/(?:legal\s+watch|следи\s+(?:службен|енер|собрание|уставен|врховен)|што\s+е\s+ново.*(?:прав|закон))/iu.test(q)) return "LEGAL_WATCH";
+  if(/(?:professional\s+ecosystem|pro\s+ecosystem|калкулатор|пресметај.*(?:камата|процент|рок))/iu.test(q)) return "PROFESSIONAL_ECOSYSTEM";
+  if(/(?:hybrid\s+legal|hybrid\s*10|time\s+machine|law\s*[↔-]\s*bylaw)/iu.test(q)) return "HYBRID_LEGAL_INTELLIGENCE";
+  if(/(?:правн[иo]\s+извор|legal\s+source|службен\s+извор)/iu.test(q)) return "LEGAL_SOURCES";
+  if(/(?:документи|documents|извоз|export)/iu.test(q)) return "DOCUMENTS";
+  if(/(?:библиотек|library)/iu.test(q)) return "LIBRARY";
+  if(/(?:workflow|работен\s+тек|процесен\s+тек)/iu.test(q)) return "WORKFLOWS";
+  if(/(?:human\s+gate|човечк[аи]\s+(?:контрола|порта)|проверка\s+од\s+адвокат)/iu.test(q)) return "HUMAN_GATE";
+  if(/(?:legal\s+command\s+center|command\s+center)/iu.test(q)) return "LEGAL_COMMAND_CENTER";
+  if(/(?:proactive\s+runtime)/iu.test(q)) return "PROACTIVE_RUNTIME";
+  if(/(?:proactive\s+agents?|проактивн[иo]\s+агент)/iu.test(q)) return "PROACTIVE_AGENTS";
+  if(/(?:fact\s*(?:&|and)\s*evidence\s+graph|граф.*(?:факт|доказ))/iu.test(q)) return "FACT_EVIDENCE_GRAPH";
+  if(/(?:connector\s+library|конектор)/iu.test(q)) return "CONNECTOR_LIBRARY";
+  if(/(?:review\s+(?:tables|vault)|batch\s+review|review\s+vault)/iu.test(q)) return "REVIEW_VAULT";
   return "";
+}
+
+const BOT_LANGUAGE_ALIASES=Object.freeze({
+  sq:["albanian","албански","shqip"],ar:["arabic","арапски","العربية"],bn:["bengali","бенгалски","বাংলা"],
+  bs:["bosnian","босански","bosanski"],bg:["bulgarian","бугарски","български"],zh:["chinese","кинески","中文"],
+  hr:["croatian","хрватски","hrvatski"],en:["english","англиски"],eo:["esperanto","есперанто"],fr:["french","француски","français"],
+  de:["german","германски","deutsch"],el:["greek","грчки","ελληνικά"],ha:["hausa","хауса"],he:["hebrew","хебрејски","עברית"],
+  hi:["hindi","хинди","हिन्दी"],hu:["hungarian","унгарски","magyar"],id:["indonesian","индонезиски","bahasa indonesia"],
+  it:["italian","италијански","italiano"],ja:["japanese","јапонски","日本語"],ko:["korean","корејски","한국어"],la:["latin","латински","latina"],
+  mk:["macedonian","македонски"],fa:["persian","персиски","فارسی"],pt:["portuguese","португалски","português"],
+  pa:["punjabi","пенџапски","ਪੰਜਾਬੀ"],ru:["russian","руски","русский"],sr:["serbian","српски","српски"],
+  sl:["slovenian","словенечки","slovenščina"],es:["spanish","шпански","español"],sw:["swahili","свахили","kiswahili"],
+  tr:["turkish","турски","türkçe"],ur:["urdu","урду","اردو"],vi:["vietnamese","виетнамски","tiếng việt"]
+});
+
+function conversationalLanguageSwitch(text){
+  const q=String(text||"").trim().toLowerCase();
+  if(!/(?:преведи|смени|јазик|интерфејс|translate|language|switch)/iu.test(q)) return "";
+  for(const lang of AI_ADVOCAT_LANGUAGES){
+    const aliases=[lang.code,lang.name.toLowerCase(),...(BOT_LANGUAGE_ALIASES[lang.code]||[])];
+    if(aliases.some(alias=>q.includes(String(alias).toLowerCase()))) return lang.code;
+  }
+  return "";
+}
+
+function conversationalLocalAction(text){
+  const q=String(text||"").trim().toLowerCase();
+  const explicit=/(?:^|\s)(?:отвори|покажи|прикажи|оди\s+во|open|show|launch)(?:\s|$)/iu.test(q);
+  const short=q.length<=70;
+  if(!explicit&&!short) return "";
+  const table=[
+    ["contract-intelligence",/(?:ai\s*contract|contract\s+pro|договори?)/iu],
+    ["professional-ecosystem",/(?:professional\s+ecosystem|pro\s+ecosystem|калкулатор|living\s+law|smart\s+documents?|legal\s+watch)/iu],
+    ["justice-daily",/(?:justice\s+daily|правосуден\s+бриф)/iu],
+    ["public-evidence",/(?:public\s+evidence|јавни\s+докази?)/iu],
+    ["echr-crosswalk",/(?:echr|есчп|hudoc|crosswalk)/iu],
+    ["hybrid-intelligence",/(?:hybrid\s+legal|hybrid\s*10)/iu],
+    ["cases",/(?:судска\s+пракса|case\s*law)/iu],
+    ["case-law-radar",/(?:case[- ]law\s+radar|corpus\s+radar)/iu],
+    ["casepilot",/(?:casepilot|secure\s+case|приватен\s+предмет)/iu],
+    ["legal-command-center",/(?:legal\s+command\s+center|command\s+center)/iu],
+    ["proactive-runtime",/(?:proactive\s+runtime)/iu],
+    ["proactive-agents",/(?:proactive\s+agents?|проактивни\s+агенти)/iu],
+    ["fact-evidence-graph",/(?:fact\s*(?:&|and)\s*evidence\s+graph|граф.*(?:факт|доказ))/iu],
+    ["connector-library",/(?:connector\s+library|конектор)/iu],
+    ["review-vault",/(?:review\s+(?:tables|vault)|batch\s+review)/iu],
+    ["sources",/(?:правни\s+извори|legal\s+sources?)/iu],
+    ["documents",/(?:документи|documents|извоз|export)/iu],
+    ["library",/(?:библиотек|library)/iu],
+    ["workflows",/(?:workflows?|работни\s+текови?)/iu],
+    ["review",/(?:human\s+gate|човечка\s+(?:контрола|порта))/iu],
+    ["analyzer",/(?:анализатор|analyzer)/iu],
+    ["consolidator",/(?:консолидатор|consolidator)/iu],
+    ["predictor",/(?:предиктор|predictor)/iu]
+  ];
+  return table.find(([,re])=>re.test(q))?.[0]||"";
 }
 
 function withOutputLanguageDirective(text){
@@ -585,6 +660,25 @@ $('composer').onsubmit = async event => {
     return;
   }
   if (q.length < 2) return;
+
+  const languageSwitch=conversationalLanguageSwitch(q);
+  if(languageSwitch){
+    writePreferredLanguage(languageSwitch);
+    status("Го менувам интерфејсот, AI одговорот и гласот на "+languageMeta(languageSwitch).name+"…");
+    location.reload();
+    return;
+  }
+
+  const localAction=conversationalLocalAction(q);
+  if(localAction && typeof window.AIAdvokatVNext?.runAction==="function"){
+    message("user",q);
+    $('question').value="";
+    $('question').style.height="";
+    window.AIAdvokatVNext.runAction(localAction);
+    status("✓ Отворена е бараната скриена функција: "+localAction+".");
+    return;
+  }
+
   if (!privacyRuntimeReady) {
     status('Го вчитувам заштитниот privacy модул…');
     await Promise.race([
