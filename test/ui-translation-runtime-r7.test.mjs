@@ -82,7 +82,7 @@ test("Esperanto uses bounded live Qwen fallback instead of pretending M2M100 sup
   assert.equal(res.status,200);
   const data=await res.json();
   assert.equal(data.ok,true);
-  assert.equal(data.provider,"qwen3.8_ui_fallback");
+  assert.equal(data.provider,"qwen3_ui_fallback");
   assert.equal(data.translationModel,"@cf/qwen/qwen3-30b-a3b-fp8");
   assert.equal(data.translations[0].text,"Jura esplorado");
 });
