@@ -152,10 +152,14 @@ export function buildOperatingPlan(taskId,{sensitivity="public"}={}){
   if(!["public","confidential"].includes(sensitivity)) throw new TypeError("operating_desk_invalid_sensitivity");
   if(task.workflow && !WORKFLOW_TEMPLATES[task.workflow]) throw new TypeError("operating_desk_unknown_workflow_template");
 
-  const secureFirst=sensitivity==="confidential" && task.primary.id!=="casepilot";
+  const secureRequired=sensitivity==="confidential";
+  const secureFirst=secureRequired && task.primary.id!=="casepilot";
   const firstAction=secureFirst?SECURE_CASE:task.primary;
   const nextActions=[];
-  if(secureFirst) nextActions.push(task.primary);
+  if(secureFirst) nextActions.push(Object.freeze({
+    ...task.primary,
+    label:"По Secure Case · "+task.primary.label+" · само со редигиран/одобрен извод"
+  }));
   if(task.workflow){
     nextActions.push(Object.freeze({
       id:"agent_runtime",
@@ -169,7 +173,7 @@ export function buildOperatingPlan(taskId,{sensitivity="public"}={}){
     taskId:task.id,
     taskLabel:task.label,
     sensitivity,
-    privacyRoute:secureFirst?"secure_case_first":"standard_bounded_route",
+    privacyRoute:secureRequired?"secure_case_first":"standard_bounded_route",
     firstAction,
     nextActions:Object.freeze(nextActions),
     workflowTemplate:task.workflow,
