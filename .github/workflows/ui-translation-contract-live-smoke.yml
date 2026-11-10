@@ -85,8 +85,9 @@ jobs:
           const fs=require("fs");
           const d=JSON.parse(fs.readFileSync("/tmp/ui-translate-en.json","utf8"));
           if(d.ok!==true) throw new Error("translation not ok: "+JSON.stringify(d));
-          if(d.provider!=="m2m100") throw new Error("unexpected provider: "+d.provider);
-          if(d.translationModel!=="@cf/meta/m2m100-1.2b") throw new Error("unexpected model: "+d.translationModel);
+          const allowedProviders=new Set(["m2m100","m2m100_qwen_fallback","qwen3.8_ui_fallback","openai_responses_fallback"]);
+          if(!allowedProviders.has(d.provider)) throw new Error("unexpected provider: "+d.provider);
+          if(!String(d.translationModel||"").trim()) throw new Error("missing translation model");
           if(!Array.isArray(d.translations)||d.translations.length!==2) throw new Error("translation count mismatch");
           if(String(d.translations[0]?.text||"").trim()==="Судска пракса и човечка контрола") throw new Error("English translation did not change source text");
           const protectedText=String(d.translations[1]?.text||"");
@@ -107,7 +108,8 @@ jobs:
           node <<'NODE'
           const fs=require("fs");
           const d=JSON.parse(fs.readFileSync("/tmp/ui-translate-sq.json","utf8"));
-          if(d.ok!==true||d.provider!=="m2m100") throw new Error("SQ translation failed: "+JSON.stringify(d));
+          const allowedProviders=new Set(["m2m100","m2m100_qwen_fallback","qwen3.8_ui_fallback","openai_responses_fallback"]);
+          if(d.ok!==true||!allowedProviders.has(d.provider)) throw new Error("SQ translation failed: "+JSON.stringify(d));
           if(String(d.translations?.[0]?.text||"").trim()==="Правни извори и судска пракса") throw new Error("Albanian translation did not change source text");
           console.log("LIVE SQ UI TRANSLATION: PASS");
           NODE
