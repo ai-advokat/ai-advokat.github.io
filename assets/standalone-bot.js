@@ -287,12 +287,20 @@ const BOT_LANGUAGE_ALIASES=Object.freeze({
 
 function conversationalLanguageSwitch(text){
   const q=String(text||"").trim().toLowerCase();
-  // Switch only when the user is explicitly talking about the interface/language,
-  // never when asking to translate legal content or a contract.
-  if(!/(?:интерфејс|јазик|interface|language|switch\s+language|смени\s+јазик)/iu.test(q)) return "";
+  // A language mention is not a command. Reload only for an explicit imperative
+  // such as "switch language to German" or "смени го интерфејсот на германски".
+  const explicitSwitch=/(?:\b(?:switch|change|set)\s+(?:(?:the\s+)?(?:interface\s+)?language|interface)(?:\s+to)?\b|(?:смени|постави|префрли)(?:\s+го)?\s+(?:јазикот|јазик|интерфејсот|интерфејс)(?:\s+на)?)/iu.test(q);
+  if(!explicitSwitch) return "";
+  // Match full language names/aliases first. Two-letter codes are accepted only
+  // as complete ASCII tokens so "la" can never match the word "language".
   for(const lang of AI_ADVOCAT_LANGUAGES){
-    const aliases=[lang.code,lang.name.toLowerCase(),...(BOT_LANGUAGE_ALIASES[lang.code]||[])];
+    const aliases=[lang.name.toLowerCase(),...(BOT_LANGUAGE_ALIASES[lang.code]||[])].filter(alias=>String(alias).toLowerCase()!==lang.code);
     if(aliases.some(alias=>q.includes(String(alias).toLowerCase()))) return lang.code;
+  }
+  for(const lang of AI_ADVOCAT_LANGUAGES){
+    const code=String(lang.code).toLowerCase();
+    const bounded=new RegExp("(?:^|[^a-z])"+code+"(?:$|[^a-z])","i");
+    if(bounded.test(q)) return lang.code;
   }
   return "";
 }
