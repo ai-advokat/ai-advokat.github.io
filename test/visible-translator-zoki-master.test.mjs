@@ -5,12 +5,12 @@ import assert from "node:assert/strict";
 const home=fs.readFileSync("index.html","utf8");
 const chat=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
 const contract=fs.readFileSync("contract-intelligence.html","utf8");
-const manifest=JSON.parse(fs.readFileSync("data/ai-contract-dpro14r-manifest.json","utf8"));
+const manifest=JSON.parse(fs.readFileSync("data/ai-contract-dpro14r-manifest.json","utf8"));\nconst fullContract=fs.readFileSync("ai-contract-dpro14r.html","utf8");
 
 test("root chat visibly exposes the 33-language Translator",()=>{
   assert.match(home,/Translator · 33 јазици/);
   assert.match(home,/id="aiChatLanguage"/);
-  assert.match(home,/🌍 Translator · AI јазик/);
+  assert.match(home,/🌍 Translator · Цел интерфејс \+ AI \+ глас/);\n  assert.match(home,/изборот го преведува целиот интерфејс/);
   const block=chat.slice(chat.indexOf("const AI_ADVOCAT_LANGUAGES"),chat.indexOf("const LANGUAGE_KEY"));
   assert.equal((block.match(/code:"[a-z]{2}"/g)||[]).length,33);
 });
