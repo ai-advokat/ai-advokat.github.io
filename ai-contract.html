@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="mk" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Advokat · AI Contract PRO · DPRO-14R</title>
+<meta name="description" content="AI Contract PRO workspace — canonical DPRO-14R contract engine with 33-language presentation layer and Human Gate.">
+<style>
+:root{--navy:#071925;--panel:#0d2637;--line:#28465b;--gold:#d6b66f;--text:#f2f6f8;--muted:#a8bac7;--ok:#80d0a7;--bad:#ff9d9d}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--navy);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+body{display:grid;grid-template-rows:auto 1fr;overflow:hidden}
+.top{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:9px 14px;background:var(--panel);border-bottom:1px solid var(--line);min-height:58px}
+.brand{font-weight:900;color:var(--gold);text-decoration:none;white-space:nowrap}.sub{color:var(--muted);font-size:.78rem}
+.spacer{flex:1}.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,a.btn{border:1px solid var(--line);border-radius:9px;background:#102d40;color:var(--text);padding:8px 10px;font:inherit;font-size:.82rem;text-decoration:none}
+select{min-width:205px}.status{font-size:.73rem;color:var(--muted);min-width:190px}.status.ok{color:var(--ok)}.status.bad{color:var(--bad)}
+.framewrap{min-height:0;position:relative}.framewrap iframe{display:block;width:100%;height:100%;border:0;background:#fff}
+.badge{position:absolute;right:12px;bottom:10px;z-index:3;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:rgba(7,25,37,.92);font-size:.68rem;color:var(--muted);pointer-events:none}
+@media(max-width:760px){.sub{display:none}.status{width:100%;min-width:0}.tools{width:100%}.spacer{display:none}select{flex:1;min-width:160px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">AI Advokat · AI CONTRACT PRO</a>
+  <span class="sub">Canonical DPRO-14R engine · source preserved · Human Gate</span>
+  <span class="spacer"></span>
+  <div class="tools">
+    <label for="contractLanguage" class="sub">🌍 Јазик</label>
+    <select id="contractLanguage" aria-label="AI Contract PRO language · 33 languages">
+      <option value="mk">MK · Македонски</option>
+      <option value="en">EN · English</option>
+      <option value="sq">SQ · Shqip</option>
+      <option value="ar">AR · العربية</option>
+      <option value="bn">BN · বাংলা</option>
+      <option value="bs">BS · Bosanski</option>
+      <option value="bg">BG · Български</option>
+      <option value="zh">ZH · 中文</option>
+      <option value="hr">HR · Hrvatski</option>
+      <option value="eo">EO · Esperanto</option>
+      <option value="fr">FR · Français</option>
+      <option value="de">DE · Deutsch</option>
+      <option value="el">EL · Ελληνικά</option>
+      <option value="ha">HA · Hausa</option>
+      <option value="he">HE · עברית</option>
+      <option value="hi">HI · हिन्दी</option>
+      <option value="hu">HU · Magyar</option>
+      <option value="id">ID · Bahasa Indonesia</option>
+      <option value="it">IT · Italiano</option>
+      <option value="ja">JA · 日本語</option>
+      <option value="ko">KO · 한국어</option>
+      <option value="la">LA · Latina</option>
+      <option value="fa">FA · فارسی</option>
+      <option value="pt">PT · Português</option>
+      <option value="pa">PA · ਪੰਜਾਬੀ</option>
+      <option value="ru">RU · Русский</option>
+      <option value="sr">SR · Српски</option>
+      <option value="sl">SL · Slovenščina</option>
+      <option value="es">ES · Español</option>
+      <option value="sw">SW · Kiswahili</option>
+      <option value="tr">TR · Türkçe</option>
+      <option value="ur">UR · اردو</option>
+      <option value="vi">VI · Tiếng Việt</option>
+    </select>
+    <a class="btn" href="/contract-intelligence.html">⚡ Quick Review</a>
+    <a class="btn" href="/casepilot-workspace.html">🔒 Secure Case</a>
+  </div>
+  <div id="contractLanguageStatus" class="status" aria-live="polite">MK · canonical source</div>
+</header>
+<div class="framewrap">
+  <iframe id="contractFrame" src="/ai-contract-dpro14r.html?v=20261110-r7" title="AI Contract PRO · DPRO-14R canonical engine"></iframe>
+  <div class="badge">Translation changes presentation only · legal source/provenance remains unchanged</div>
+</div>
+<script>
+(()=>{
+"use strict";
+const KEY="aiadvokat-language";
+const CODES=["mk","en","sq","ar","bn","bs","bg","zh","hr","eo","fr","de","el","ha","he","hi","hu","id","it","ja","ko","la","fa","pt","pa","ru","sr","sl","es","sw","tr","ur","vi"];
+const NAMES={mk:"Macedonian",en:"English",sq:"Albanian",ar:"Arabic",bn:"Bengali",bs:"Bosnian",bg:"Bulgarian",zh:"Chinese",hr:"Croatian",eo:"Esperanto",fr:"French",de:"German",el:"Greek",ha:"Hausa",he:"Hebrew",hi:"Hindi",hu:"Hungarian",id:"Indonesian",it:"Italian",ja:"Japanese",ko:"Korean",la:"Latin",fa:"Persian",pt:"Portuguese",pa:"Punjabi",ru:"Russian",sr:"Serbian",sl:"Slovenian",es:"Spanish",sw:"Swahili",tr:"Turkish",ur:"Urdu",vi:"Vietnamese"};
+const API_BASE=location.hostname.endsWith("workers.dev")?location.origin:"https://ai-advokat-github-io.aiadvokat16.workers.dev";
+const select=document.getElementById("contractLanguage");
+const frame=document.getElementById("contractFrame");
+const status=document.getElementById("contractLanguageStatus");
+let activeRun=0,observer=null,nodeState=new WeakMap(),attrState=new WeakMap(),timer=0;
+
+function readLanguage(){try{const x=String(localStorage.getItem(KEY)||"mk").toLowerCase();return CODES.includes(x)?x:"mk";}catch{return "mk";}}
+function writeLanguage(code){const x=CODES.includes(code)?code:"mk";try{localStorage.setItem(KEY,x)}catch{};return x}
+function setStatus(text,tone=""){status.textContent=text;status.className="status "+tone}
+function translatable(value){
+  const text=String(value||"").replace(/\s+/g," ").trim();
+  if(!text||text.length<2||text.length>1200) return false;
+  if(/^(?:https?:\/\/|mailto:|tel:|10\.\d{4,9}\/|[\d\s.,:/+%()#-]+)$/i.test(text)) return false;
+  return /[\p{L}]/u.test(text);
+}
+function excluded(el){return !el||!!el.closest("script,style,noscript,code,pre,svg,[data-no-translate]")}
+function collect(doc){
+  const units=[];let index=0;
+  const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT);
+  let node;
+  while((node=walker.nextNode())){
+    if(excluded(node.parentElement))continue;
+    const current=String(node.nodeValue||"");if(!translatable(current))continue;
+    let state=nodeState.get(node);
+    if(!state||current!==state.last){state={source:current,last:current};nodeState.set(node,state)}
+    units.push({kind:"text",node,source:state.source,id:"t"+index++});
+  }
+  for(const el of doc.querySelectorAll("[placeholder],[title],[aria-label]")){
+    if(excluded(el))continue;
+    let attrs=attrState.get(el);if(!attrs){attrs={};attrState.set(el,attrs)}
+    for(const attr of ["placeholder","title","aria-label"]){
+      if(!el.hasAttribute(attr))continue;
+      const current=el.getAttribute(attr)||"";if(!translatable(current))continue;
+      if(!attrs[attr]||current!==attrs[attr].last)attrs[attr]={source:current,last:current};
+      units.push({kind:"attr",el,attr,source:attrs[attr].source,id:"a"+index++});
+    }
+  }
+  return units;
+}
+async function translateCurrentDocument(){
+  const run=++activeRun;
+  const lang=readLanguage();
+  let doc;try{doc=frame.contentDocument}catch{return}
+  if(!doc||!doc.body)return;
+  doc.documentElement.lang=lang;
+  doc.documentElement.dir=["ar","he","fa","ur"].includes(lang)?"rtl":"ltr";
+  if(lang==="mk"){setStatus("MK · canonical source","ok");return}
+  const units=collect(doc);
+  const cacheKey="aiadvokat-contract-ui-r7:"+lang;
+  let cache={};try{cache=JSON.parse(localStorage.getItem(cacheKey)||"{}")||{}}catch{}
+  const pending=[...new Set(units.map(x=>x.source).filter(x=>!cache[x]))];
+  const batches=[];let batch=[],chars=0;
+  for(const text of pending){
+    if(batch.length&&(batch.length>=72||chars+text.length>9000)){batches.push(batch);batch=[];chars=0}
+    batch.push(text);chars+=text.length;
+  }
+  if(batch.length)batches.push(batch);
+  let provider="",failed=false;
+  setStatus("Преведување · "+NAMES[lang]+" · 0/"+Math.max(1,batches.length));
+  for(let i=0;i<batches.length;i++){
+    if(run!==activeRun)return;
+    const texts=batches[i];
+    try{
+      const response=await fetch(API_BASE+"/api/ui-translate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({targetLanguage:lang,items:texts.map((text,j)=>({id:String(j),text}))})});
+      const data=await response.json();
+      if(!response.ok||data?.ok!==true||!Array.isArray(data.translations))throw new Error(data?.error||"translation_failed");
+      provider=String(data.provider||"translation");
+      data.translations.forEach((row,j)=>{const t=String(row?.text||"").trim();if(t)cache[texts[j]]=t});
+      try{localStorage.setItem(cacheKey,JSON.stringify(cache))}catch{}
+      setStatus("Преведување · "+NAMES[lang]+" · "+(i+1)+"/"+batches.length);
+    }catch(error){failed=true;console.warn("contract_ui_translation_failed",error);break}
+  }
+  if(run!==activeRun)return;
+  for(const unit of units){
+    const t=cache[unit.source];if(!t)continue;
+    if(unit.kind==="text"){unit.node.nodeValue=t;const s=nodeState.get(unit.node);if(s)s.last=t}
+    else{unit.el.setAttribute(unit.attr,t);const s=attrState.get(unit.el);if(s?.[unit.attr])s[unit.attr].last=t}
+  }
+  if(failed)setStatus("Преводот не успеа · "+NAMES[lang],"bad");
+  else setStatus("✓ "+NAMES[lang]+" · "+provider,"ok");
+}
+function schedule(){clearTimeout(timer);timer=setTimeout(translateCurrentDocument,180)}
+function reloadFrame(){
+  activeRun++;nodeState=new WeakMap();attrState=new WeakMap();
+  if(observer){observer.disconnect();observer=null}
+  const lang=readLanguage();
+  frame.src="/ai-contract-dpro14r.html?v=20261110-r7&lang="+encodeURIComponent(lang)+"&t="+Date.now();
+}
+frame.addEventListener("load",()=>{
+  const lang=readLanguage();select.value=lang;
+  schedule();
+  try{
+    const doc=frame.contentDocument;
+    observer=new MutationObserver(m=>{if(m.some(x=>x.type==="childList"||x.type==="characterData"||x.type==="attributes"))schedule()});
+    observer.observe(doc.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder","title","aria-label"]});
+  }catch{}
+});
+select.value=readLanguage();
+select.addEventListener("change",()=>{writeLanguage(select.value);reloadFrame()});
+})();
+</script>
+</body>
+</html>
