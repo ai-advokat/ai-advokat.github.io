@@ -148,3 +148,83 @@ test("OpenAI UI fallback reconstructs protected legal tokens deterministically",
     globalThis.fetch=originalFetch;
   }
 });
+
+
+test("OpenAI fallback preserves article/case identifiers and boundary whitespace",async()=>{
+  const originalFetch=globalThis.fetch;
+  try{
+    globalThis.fetch=async(url,options)=>{
+      const body=JSON.parse(options.body);
+      const payload=JSON.parse(body.input[0].content[0].text);
+      assert.ok(payload.items.every(x=>!String(x.text).includes("Article 5")));
+      assert.ok(payload.items.every(x=>!String(x.text).includes("case C-123/45")));
+      return new Response(JSON.stringify({
+        status:"completed",
+        id:"resp_ui_whitespace",
+        output_text:JSON.stringify({
+          translations:payload.items.map(x=>({id:x.id,text:"EN:"+x.text}))
+        })
+      }),{status:200,headers:{"content-type":"application/json"}});
+    };
+    const env={
+      DB,RATE_LIMIT_SALT,
+      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
+      AI:{run:async()=>{throw new Error("force_workers_failure");}}
+    };
+    const req=new Request(base+"/api/ui-translate",{
+      method:"POST",headers:commonHeaders,
+      body:JSON.stringify({targetLanguage:"en",items:[{id:"x",text:"Судска пракса AI Advokat · Article 5 · case C-123/45"}]})
+    });
+    const res=await worker.fetch(req,env,{});
+    assert.equal(res.status,200);
+    const data=await res.json();
+    const out=data.translations[0].text;
+    assert.match(out,/EN:Судска пракса AI Advokat/);
+    assert.match(out,/Article 5/);
+    assert.match(out,/case C-123\/45/);
+    assert.doesNotMatch(out,/праксаAI Advokat/);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test("OpenAI fallback retries without structured format on 400 schema rejection",async()=>{
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  try{
+    globalThis.fetch=async(url,options)=>{
+      calls++;
+      const body=JSON.parse(options.body);
+      if(calls===1){
+        assert.ok(body.text?.format);
+        return new Response(JSON.stringify({error:{type:"invalid_request_error",code:"unsupported_response_format"}}),{
+          status:400,headers:{"content-type":"application/json"}
+        });
+      }
+      assert.equal(body.text,undefined);
+      const payload=JSON.parse(body.input[0].content[0].text);
+      return new Response(JSON.stringify({
+        status:"completed",
+        id:"resp_ui_retry",
+        output_text:JSON.stringify({translations:payload.items.map(x=>({id:x.id,text:"English UI"}))})
+      }),{status:200,headers:{"content-type":"application/json"}});
+    };
+    const env={
+      DB,RATE_LIMIT_SALT,
+      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
+      AI:{run:async()=>{throw new Error("force_workers_failure");}}
+    };
+    const req=new Request(base+"/api/ui-translate",{
+      method:"POST",headers:commonHeaders,
+      body:JSON.stringify({targetLanguage:"en",items:[{id:"x",text:"Правен портал"}]})
+    });
+    const res=await worker.fetch(req,env,{});
+    assert.equal(res.status,200);
+    const data=await res.json();
+    assert.equal(data.provider,"openai_responses_fallback");
+    assert.equal(calls,2);
+    assert.equal(data.translations[0].text,"English UI");
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
