@@ -154,7 +154,7 @@ function buildShell(){
         <button data-vnext-action="consolidator"><span class="vnext-nav-symbol" aria-hidden="true">≋</span><span>Консолидатор</span></button>
         <button data-vnext-action="predictor"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Предиктор</span></button>
         <button data-vnext-action="hybrid-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">⌘</span><span>Hybrid Legal Intelligence</span></button>
-        <button data-vnext-action="contract-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>AI Contract PRO</span></button>
+        <button data-vnext-action="contract-intelligence" title="Contract Intelligence · AI Contract PRO"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>AI Contract PRO</span></button>
         <button data-vnext-action="fact-evidence-graph"><span class="vnext-nav-symbol" aria-hidden="true">◫</span><span>Fact & Evidence Graph</span></button>
       </div></details>
       <details class="vnext-nav-folder"><summary>⚖ Судови и предмети</summary><div>
