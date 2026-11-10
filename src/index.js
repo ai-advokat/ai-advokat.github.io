@@ -4852,6 +4852,11 @@ export function formatHistoricalCaseLawTemporalGateAnswer(q){
   ].filter(Boolean).join("\n");
 }
 
+export function trainingGreetingRequest(q){
+  const n=normalizeText(q).trim();
+  return /^(?:здраво|добар ден|добро утро|добра вечер|hello|hi|hey)[!?.\s]*$/iu.test(n);
+}
+
 export function simpleClientAcknowledgementRequest(q){
   const n=normalizeText(q);
   const asksMessage=/(?:напиши|состави|подготви).*?(?:порак|мејл|email).*?(?:клиент|странк)/iu.test(n);
@@ -6800,6 +6805,27 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
   const userQ=cleanQuery(payload.q,4000);
   if(userQ.length<2) return json(request,{ok:false,error:"query_too_short"},400);
+  if(trainingOpen && !botMembership && trainingGreetingRequest(userQ)){
+    return json(request,{
+      ok:true,
+      answer:/^(?:hello|hi|hey)/iu.test(normalizeText(userQ))
+        ? "Hello. AI Advokat TRAINING mode is ready. No access code is required for training chat. Confidential matters and original documents remain in Secure Case."
+        : "Здраво. AI Advokat TRAINING режимот е подготвен. За разговор и вежбање не е потребна шифра. Доверливите предмети и оригиналните документи остануваат во Secure Case.",
+      provider:"canonical_corpus_no_model",
+      model:null,
+      mode:"training",
+      displayMode:"training_open_greeting",
+      sourceMode:"deterministic_training_greeting_no_model",
+      webSearchUsed:false,
+      legalSources:[],
+      caseLawSources:[],
+      sources:[],
+      performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+      membership:{planCode:"training",trainingOpen:true},
+      privacy:{providerCalled:false,quotaConsumed:false,confidentialWorkspaceStillGated:true},
+      humanGate:"TRAINING mode does not authorize filing, signature, confidential-case processing or final professional reliance."
+    });
+  }
   const detectedCapabilityRoute=openAIOnly ? detectExternalBotCapabilityRoute(userQ) : "";
   const requestedCapabilityRoute=openAIOnly && EXTERNAL_BOT_CAPABILITY_ROUTES.has(String(payload.capabilityRoute||""))
     ? String(payload.capabilityRoute)
