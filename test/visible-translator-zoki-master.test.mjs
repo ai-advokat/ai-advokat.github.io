@@ -5,12 +5,14 @@ import assert from "node:assert/strict";
 const home=fs.readFileSync("index.html","utf8");
 const chat=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
 const contract=fs.readFileSync("contract-intelligence.html","utf8");
-const manifest=JSON.parse(fs.readFileSync("data/ai-contract-dpro14r-manifest.json","utf8"));\nconst fullContract=fs.readFileSync("ai-contract-dpro14r.html","utf8");
+const manifest=JSON.parse(fs.readFileSync("data/ai-contract-dpro14r-manifest.json","utf8"));
+const fullContract=fs.readFileSync("ai-contract-dpro14r.html","utf8");
 
 test("root chat visibly exposes the 33-language Translator",()=>{
   assert.match(home,/Translator · 33 јазици/);
   assert.match(home,/id="aiChatLanguage"/);
-  assert.match(home,/🌍 Translator · Цел интерфејс \+ AI \+ глас/);\n  assert.match(home,/изборот го преведува целиот интерфејс/);
+  assert.match(home,/🌍 Translator · Цел интерфејс \+ AI \+ глас/);
+  assert.match(home,/изборот го преведува целиот интерфејс/);
   const block=chat.slice(chat.indexOf("const AI_ADVOCAT_LANGUAGES"),chat.indexOf("const LANGUAGE_KEY"));
   assert.equal((block.match(/code:"[a-z]{2}"/g)||[]).length,33);
 });
@@ -24,4 +26,10 @@ test("Zoki master package is visible with canonical OFFLINE and ONLINE identitie
   assert.equal(manifest.releaseArtifacts.online.sha256,"9ab0f91116d55d77374cac8f3521e2df3af0cdacb4625cc2bd4960f9ad6c876e");
   assert.equal(manifest.governance.legalValidation,"HOLD");
   assert.equal(manifest.governance.highRiskApprovals,"0/28");
+  assert.match(contract,/href="\\/ai-contract-dpro14r\\.html"/);
+  assert.equal((fullContract.match(/function [A-Za-z0-9_]+/g)||[]).length,166);
+  assert.equal((fullContract.match(/<button\\b/g)||[]).length,81);
+  assert.equal((fullContract.match(/class="tab/g)||[]).length,18);
+  assert.match(fullContract,/data-tab="normative14g"/);
+  assert.match(fullContract,/PRODUCTION NO-GO/);
 });
