@@ -10930,11 +10930,17 @@ async function handleUiTranslation(request,env){
       translations=await translateUiWithLlmFallback(runUiProvider,items,target,language);
       provider="qwen3.8_ui_fallback";
     }else{
-      translations=await mapUiTranslationConcurrent(items,async item=>({
-        id:item.id,
-        text:await translateUiM2mText(runUiProvider,item.text,target)
-      }));
-      provider="m2m100";
+      try{
+        translations=await mapUiTranslationConcurrent(items,async item=>({
+          id:item.id,
+          text:await translateUiM2mText(runUiProvider,item.text,target)
+        }));
+        provider="m2m100";
+      }catch(primaryError){
+        console.warn("ui_translation_m2m100_fallback",target,String(primaryError?.message||primaryError).slice(0,120));
+        translations=await translateUiWithLlmFallback(runUiProvider,items,target,language);
+        provider="m2m100_qwen_fallback";
+      }
     }
     return json(request,{
       ok:true,
