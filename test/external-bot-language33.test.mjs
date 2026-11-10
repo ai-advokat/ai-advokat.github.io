@@ -71,3 +71,11 @@ test("external 33-language selector translates the full interface through the sa
   assert.match(core,/BOT_LANGUAGE_ALIASES/);
   assert.match(core,/writePreferredLanguage\(languageSwitch\)/);
 });
+
+
+test("conversational language switching requires an explicit command and bounded two-letter codes",()=>{
+  assert.match(core,/const explicitSwitch=\/\(\?:\\b\(\?:switch\|change\|set\)/);
+  assert.match(core,/new RegExp\("\(\?:\^\|\[\^a-z\]\)"\+code\+"\(\?:\$\|\[\^a-z\]\)"/);
+  assert.match(core,/if\(!explicitSwitch\) return ""/);
+  assert.doesNotMatch(core,/if\(!\/\(\?:интерфејс\|јазик\|interface\|language/);
+});
