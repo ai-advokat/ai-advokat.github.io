@@ -6619,6 +6619,7 @@ function detectExternalBotCapabilityRoute(text){
   if(/(?:hybrid\s+legal|hybrid\s*10|time\s+machine|law\s*[↔-]\s*bylaw)/iu.test(q)) return "HYBRID_LEGAL_INTELLIGENCE";
   if(/(?:правн[иo]\s+извор|legal\s+source|службен\s+извор)/iu.test(q)) return "LEGAL_SOURCES";
   if(/(?:документи|documents|извоз|export)/iu.test(q)) return "DOCUMENTS";
+  if(/(?:connector\s+library|конектор)/iu.test(q)) return "CONNECTOR_LIBRARY";
   if(/(?:библиотек|library)/iu.test(q)) return "LIBRARY";
   if(/(?:workflow|работен\s+тек|процесен\s+тек)/iu.test(q)) return "WORKFLOWS";
   if(/(?:human\s+gate|човечк[аи]\s+(?:контрола|порта)|проверка\s+од\s+адвокат)/iu.test(q)) return "HUMAN_GATE";
@@ -6626,7 +6627,6 @@ function detectExternalBotCapabilityRoute(text){
   if(/(?:proactive\s+runtime)/iu.test(q)) return "PROACTIVE_RUNTIME";
   if(/(?:proactive\s+agents?|проактивн[иo]\s+агент)/iu.test(q)) return "PROACTIVE_AGENTS";
   if(/(?:fact\s*(?:&|and)\s*evidence\s+graph|граф.*(?:факт|доказ))/iu.test(q)) return "FACT_EVIDENCE_GRAPH";
-  if(/(?:connector\s+library|конектор)/iu.test(q)) return "CONNECTOR_LIBRARY";
   if(/(?:review\s+(?:tables|vault)|batch\s+review|review\s+vault)/iu.test(q)) return "REVIEW_VAULT";
   return "";
 }
