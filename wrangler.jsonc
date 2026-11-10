@@ -20,6 +20,8 @@
     "CASE_WORKSPACE_ENABLED": "true",
     "CASE_D1_FALLBACK_ENABLED": "true",
     "FREE_CHAT_PROVIDER": "workers_ai",
+    "EXTERNAL_BOT_TRAINING_OPEN": "true",
+    "EXTERNAL_BOT_TRAINING_MONTHLY_QUOTA": "100",
     "WORKERS_AI_CHAT_MODEL": "@cf/qwen/qwen3-30b-a3b-fp8",
     "WORKERS_AI_MARKDOWN_ENABLED": "true"
   },
