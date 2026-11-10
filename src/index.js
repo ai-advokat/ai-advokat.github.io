@@ -11108,7 +11108,7 @@ async function handleUiTranslation(request,env){
     let translations,provider;
     if(UI_TRANSLATION_M2M100_UNSUPPORTED.has(target)){
       translations=await translateUiWithLlmFallback(runUiProvider,items,target,language);
-      provider="qwen3.8_ui_fallback";
+      provider="qwen3_ui_fallback";
     }else{
       try{
         translations=await mapUiTranslationConcurrent(items,async item=>({
