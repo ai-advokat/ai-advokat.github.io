@@ -138,7 +138,7 @@ test('standalone bot does not display browser-only guide matches as authorities'
 test('worker uses bounded conversation routing context for legal follow-ups',()=>{
   const source=fs.readFileSync('src/index.js','utf8');
   assert.match(source,/buildLegalRoutingQuery/);
-  assert.match(source,/const routingQuery=buildLegalRoutingQuery\(q,historyCheck\.history\)/);
+  assert.match(source,/const routingQuery=buildLegalRoutingQuery\(userQ,historyCheck\.history\)/);
   assert.match(source,/governedArticleContext\(env,routingQuery,initialPlan\)/);
   assert.match(source,/contextualFollowUp/);
   assert.match(source,/researchInput:routingQuery/);
