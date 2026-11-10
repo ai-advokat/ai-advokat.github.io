@@ -4,6 +4,7 @@
  * unified threads, search, evidence/context, workflows, documents and Human Gate.
  */
 
+document.documentElement.dataset.externalExperience='conversation';
 const nativeFetch = window.fetch.bind(window);
 const SOURCE_KEYS = ['sources','legalSources','caseLawSources','guideSources','publicationSources'];
 const workspace = {
@@ -269,7 +270,11 @@ function ensureMessageActions(article){
   const body=article.querySelector('.text'); if(!body) return;
   if(!body.dataset.vnextOriginalText) body.dataset.vnextOriginalText=String(body.textContent||'').trim();
   const original=body.dataset.vnextOriginalText;
-  const actions=mk('div',{class:'vnext-message-actions','aria-label':'Акции за порака'});
+  const actions=mk('details',{class:'vnext-message-actions vnext-message-menu','aria-label':'Акции за порака'});
+  const summary=mk('summary',{class:'vnext-message-menu-summary','aria-label':'Отвори акции за порака',title:'Акции',text:'⋯'});
+  const panel=mk('div',{class:'vnext-message-menu-panel'});
+  actions.append(summary,panel);
+
   const copy=mk('button',{type:'button',class:'vnext-message-action',title:'Копирај','aria-label':'Копирај порака',text:'⧉ Копирај'});
   copy.onclick=async()=>{
     const ok=await copyText(original);
@@ -277,13 +282,14 @@ function ensureMessageActions(article){
     copy.textContent=ok?'✓ Копирано':'! Не успеа';
     setTimeout(()=>{copy.textContent=previous;},1200);
   };
-  actions.append(copy);
+  panel.append(copy);
+
   if(article.classList.contains('user')){
     const edit=mk('button',{type:'button',class:'vnext-message-action',title:'Уреди го прашањето','aria-label':'Уреди прашање',text:'✎ Уреди'});
     edit.onclick=()=>setComposerText(original);
     const repeat=mk('button',{type:'button',class:'vnext-message-action',title:'Повтори го прашањето','aria-label':'Повтори го прашањето',text:'↺ Повтори'});
     repeat.onclick=()=>setComposerText(original);
-    actions.append(edit,repeat);
+    panel.append(edit,repeat);
   }else if(article.classList.contains('assistant')){
     const repeat=mk('button',{type:'button',class:'vnext-message-action',title:'Повтори го претходното прашање','aria-label':'Повтори го претходното прашање',text:'↺ Повтори'});
     repeat.onclick=()=>{
@@ -300,7 +306,13 @@ function ensureMessageActions(article){
     docx.onclick=()=>exportMessageText(original,'docx');
     const pdf=mk('button',{type:'button',class:'vnext-message-action',title:'Извези ја оваа порака во PDF','aria-label':'Извези во PDF',text:'▧ PDF'});
     pdf.onclick=()=>exportMessageText(original,'pdf');
-    actions.append(repeat,evidence,review,docx,pdf);
+    const md=mk('button',{type:'button',class:'vnext-message-action',title:'Извези ја оваа порака во MD','aria-label':'Извези во MD',text:'◇ MD'});
+    md.onclick=()=>exportMessageText(original,'md');
+    const json=mk('button',{type:'button',class:'vnext-message-action',title:'Извези ја оваа порака во JSON','aria-label':'Извези во JSON',text:'{ } JSON'});
+    json.onclick=()=>exportMessageText(original,'json');
+    const csv=mk('button',{type:'button',class:'vnext-message-action',title:'Извези ја оваа порака во CSV','aria-label':'Извези во CSV',text:'▦ CSV'});
+    csv.onclick=()=>exportMessageText(original,'csv');
+    panel.append(repeat,evidence,review,docx,pdf,md,json,csv);
   }
   article.classList.add('has-vnext-actions');
   article.insertBefore(actions,body);
@@ -595,6 +607,8 @@ function updateThemeButton(mode=readTheme()){$('vnextTheme')?.setAttribute('titl
 function cycleTheme(){ const m=readTheme(); setTheme(m==='auto'?'light':m==='light'?'dark':'auto'); }
 
 function wire(){
+  if($('downloadResponse')) $('downloadResponse').onclick=()=>{$('downloadDialog')?.showModal();};
+  if($('closeDownload')) $('closeDownload').onclick=()=>{$('downloadDialog')?.close();};
   $('vnextNewThread').onclick=createNewThread;
   $('vnextThreadSearch').addEventListener('input',renderThreadList);
   $('vnextSearchLaunch').onclick=openGlobalSearch; $('vnextHeaderSearch').onclick=openGlobalSearch;
