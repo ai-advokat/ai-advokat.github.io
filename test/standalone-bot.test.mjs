@@ -151,7 +151,7 @@ test('legal pulse assets are cache-busted and runtime-styled',()=>{
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
   assert.match(html,/standalone-bot-vnext\.js\?v=20261107-hybrid-r2-lawyer-view/);
   assert.match(html,/standalone-bot-vnext\.css\?v=20261106-ui-r6-toolkit-parity/);
-  assert.match(html,/standalone-bot\.js\?v=20261110-language-r3/);
+  assert.match(html,/standalone-bot\.js\?v=20261109-core-r15-voice-r4/);
   assert.doesNotMatch(vnext,/standalone-bot\.js/);
   assert.match(core,/function ensureLegalPulseStyles\(\)/);
   assert.match(core,/id = 'legalPulseRuntimeStyle'/);
@@ -248,7 +248,7 @@ test('core composer boot is independent and privacy dependency failure is fail-c
   const html=fs.readFileSync('bot/index.html','utf8');
   const core=fs.readFileSync('assets/standalone-bot.js','utf8');
   const vnext=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
-  const corePos=html.indexOf('standalone-bot.js?v=20261110-language-r3');
+  const corePos=html.indexOf('standalone-bot.js?v=20261109-core-r15-voice-r4');
   const vnextPos=html.indexOf('standalone-bot-vnext.js?v=20261107-hybrid-r2-lawyer-view');
   assert.ok(corePos>=0 && vnextPos>corePos);
   assert.doesNotMatch(vnext,/await import.*standalone-bot/);
