@@ -159,7 +159,8 @@
     writePreferredLanguage(readPreferredLanguage());
     languageSelect.addEventListener("change",()=>{
       const lang=writePreferredLanguage(languageSelect.value);
-      setVoiceStatus("Јазик: "+lang.name+". Целиот интерфејс, AI објаснувањето, диктирањето и гласот го следат изборот; правните извори и цитатите не се менуваат.");\n      location.reload();
+      setVoiceStatus("Јазик: "+lang.name+". Целиот интерфејс, AI објаснувањето, диктирањето и гласот го следат изборот; правните извори и цитатите не се менуваат.");
+      location.reload();
     });
   }
 
