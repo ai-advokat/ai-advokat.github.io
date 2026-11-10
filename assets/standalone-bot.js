@@ -393,7 +393,7 @@ const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261109-voice-r4")
   });
 function busy(value) {
   const hasQuestion = String($('question')?.value || '').trim().length >= 2;
-  $('send').disabled = value || (!!key && !hasQuestion);
+  $('send').disabled = value || !hasQuestion;
   $('stop').hidden = !value;
   $('send').hidden = value;
   $('question').disabled = value;
