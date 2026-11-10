@@ -147,32 +147,40 @@ function buildShell(){
     </div>
     <button class="vnext-new" id="vnextNewThread" type="button">＋ Нов разговор</button>
     <button class="vnext-search-launch" id="vnextSearchLaunch" type="button"><span>⌕</span><span>Пребарај</span><kbd>Ctrl K</kbd></button>
-    <nav class="vnext-nav" aria-label="Работни модули">
-      <button data-vnext-action="assistant" class="active"><span class="vnext-nav-symbol" aria-hidden="true">◈</span><span>Правен асистент</span></button>
-      <button data-vnext-action="analyzer"><span class="vnext-nav-symbol" aria-hidden="true">⌁</span><span>Анализатор</span></button>
-      <button data-vnext-action="consolidator"><span class="vnext-nav-symbol" aria-hidden="true">≋</span><span>Консолидатор</span></button>
-      <button data-vnext-action="hybrid-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">⌘</span><span>Hybrid Legal Intelligence</span></button>
-      <button data-vnext-action="echr-crosswalk" title="F0-FAST-27 · research HOLD · HG-F0 OPEN"><span class="vnext-nav-symbol" aria-hidden="true">§</span><span>ECHR Crosswalk</span></button>
-      <button data-vnext-action="predictor"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Предиктор</span></button>
-      <button data-vnext-action="sources"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>Правни извори</span></button>
-      <button data-vnext-action="public-evidence"><span class="vnext-nav-symbol" aria-hidden="true">⌕</span><span>Јавни докази</span></button>
-      <button data-vnext-action="professional-ecosystem"><span class="vnext-nav-symbol" aria-hidden="true">◆</span><span>Pro Ecosystem</span></button>
-      <button data-vnext-action="justice-daily"><span class="vnext-nav-symbol" aria-hidden="true">◉</span><span>Justice Daily</span></button>
-      <button data-vnext-action="cases"><span class="vnext-nav-symbol" aria-hidden="true">⚖</span><span>Судска пракса</span></button>
-      <button data-vnext-action="case-law-radar"><span class="vnext-nav-symbol" aria-hidden="true">⌖</span><span>Case-Law Radar</span></button>
-      <button data-vnext-action="proactive-runtime"><span class="vnext-nav-symbol" aria-hidden="true">⚡</span><span>Proactive Runtime</span></button>
-      <button data-vnext-action="proactive-agents"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Proactive Agents</span></button>
-      <button data-vnext-action="legal-command-center"><span class="vnext-nav-symbol" aria-hidden="true">⌘</span><span>Legal Command Center</span></button>
-      <button data-vnext-action="contract-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>Contract Intelligence</span></button>
-      <button data-vnext-action="fact-evidence-graph"><span class="vnext-nav-symbol" aria-hidden="true">◫</span><span>Fact & Evidence Graph</span></button>
-      <button data-vnext-action="connector-library"><span class="vnext-nav-symbol" aria-hidden="true">⛓</span><span>Connector Library</span></button>
-      <button data-vnext-action="review-vault"><span class="vnext-nav-symbol" aria-hidden="true">▦</span><span>Review Tables / Vault</span></button>
-      <button data-vnext-action="casepilot"><span class="vnext-nav-symbol" aria-hidden="true">▣</span><span>CasePilot</span></button>
-      <button data-vnext-action="documents"><span class="vnext-nav-symbol" aria-hidden="true">▧</span><span>Документи</span></button>
-      <button data-vnext-action="workflows"><span class="vnext-nav-symbol" aria-hidden="true">◇</span><span>Workflows</span></button>
-      <button data-vnext-action="zoki-guide"><span class="vnext-nav-symbol" aria-hidden="true">?</span><span>Водилка</span></button>
-      <button data-vnext-action="review"><span class="vnext-nav-symbol" aria-hidden="true">✓</span><span>Human Gate</span></button>
-      <button data-vnext-action="library"><span class="vnext-nav-symbol" aria-hidden="true">◫</span><span>Library</span></button>
+    <nav class="vnext-nav" aria-label="Работни модули по папки">
+      <details class="vnext-nav-folder" open><summary>⚡ AI анализа и подготовка</summary><div>
+        <button data-vnext-action="assistant" class="active"><span class="vnext-nav-symbol" aria-hidden="true">◈</span><span>Правен асистент</span></button>
+        <button data-vnext-action="analyzer"><span class="vnext-nav-symbol" aria-hidden="true">⌁</span><span>Анализатор</span></button>
+        <button data-vnext-action="consolidator"><span class="vnext-nav-symbol" aria-hidden="true">≋</span><span>Консолидатор</span></button>
+        <button data-vnext-action="predictor"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Предиктор</span></button>
+        <button data-vnext-action="hybrid-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">⌘</span><span>Hybrid Legal Intelligence</span></button>
+        <button data-vnext-action="contract-intelligence"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>Contract Intelligence</span></button>
+        <button data-vnext-action="fact-evidence-graph"><span class="vnext-nav-symbol" aria-hidden="true">◫</span><span>Fact & Evidence Graph</span></button>
+      </div></details>
+      <details class="vnext-nav-folder"><summary>⚖ Судови и предмети</summary><div>
+        <button data-vnext-action="justice-daily"><span class="vnext-nav-symbol" aria-hidden="true">◉</span><span>Justice Daily</span></button>
+        <button data-vnext-action="cases"><span class="vnext-nav-symbol" aria-hidden="true">⚖</span><span>Судска пракса</span></button>
+        <button data-vnext-action="case-law-radar"><span class="vnext-nav-symbol" aria-hidden="true">⌖</span><span>Case-Law Radar</span></button>
+        <button data-vnext-action="echr-crosswalk" title="F0-FAST-27 · research HOLD · HG-F0 OPEN"><span class="vnext-nav-symbol" aria-hidden="true">§</span><span>ECHR Crosswalk</span></button>
+        <button data-vnext-action="casepilot"><span class="vnext-nav-symbol" aria-hidden="true">▣</span><span>CasePilot</span></button>
+      </div></details>
+      <details class="vnext-nav-folder"><summary>§ Извори, докази и документи</summary><div>
+        <button data-vnext-action="sources"><span class="vnext-nav-symbol" aria-hidden="true">▤</span><span>Правни извори</span></button>
+        <button data-vnext-action="public-evidence"><span class="vnext-nav-symbol" aria-hidden="true">⌕</span><span>Јавни докази</span></button>
+        <button data-vnext-action="documents"><span class="vnext-nav-symbol" aria-hidden="true">▧</span><span>Документи</span></button>
+        <button data-vnext-action="connector-library"><span class="vnext-nav-symbol" aria-hidden="true">⛓</span><span>Connector Library</span></button>
+        <button data-vnext-action="library"><span class="vnext-nav-symbol" aria-hidden="true">◫</span><span>Library</span></button>
+      </div></details>
+      <details class="vnext-nav-folder"><summary>◇ Работа и контрола</summary><div>
+        <button data-vnext-action="proactive-runtime"><span class="vnext-nav-symbol" aria-hidden="true">⚡</span><span>Proactive Runtime</span></button>
+        <button data-vnext-action="proactive-agents"><span class="vnext-nav-symbol" aria-hidden="true">◎</span><span>Proactive Agents</span></button>
+        <button data-vnext-action="legal-command-center"><span class="vnext-nav-symbol" aria-hidden="true">⌘</span><span>Legal Command Center</span></button>
+        <button data-vnext-action="professional-ecosystem"><span class="vnext-nav-symbol" aria-hidden="true">◆</span><span>Pro Ecosystem</span></button>
+        <button data-vnext-action="review-vault"><span class="vnext-nav-symbol" aria-hidden="true">▦</span><span>Review Tables / Vault</span></button>
+        <button data-vnext-action="workflows"><span class="vnext-nav-symbol" aria-hidden="true">◇</span><span>Workflows</span></button>
+        <button data-vnext-action="zoki-guide"><span class="vnext-nav-symbol" aria-hidden="true">?</span><span>Водилка</span></button>
+        <button data-vnext-action="review"><span class="vnext-nav-symbol" aria-hidden="true">✓</span><span>Human Gate</span></button>
+      </div></details>
     </nav>
     <div class="vnext-history-head"><span>◷ Историја · оваа сесија</span><button id="vnextTheme" type="button" class="vnext-icon" aria-label="Промени тема" title="Промени тема">◐</button></div>
     <input id="vnextThreadSearch" class="vnext-thread-search" type="search" placeholder="Пребарај разговори…" aria-label="Пребарај разговори">

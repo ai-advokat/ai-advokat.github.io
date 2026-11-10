@@ -1768,20 +1768,37 @@
           <button type="button" data-materials-guides="import">⇧ Вчитај водичи</button>
           <button type="button" data-materials-guides="clear">× Избриши локални</button>
         </div><small>PDF/DOCX/ZIP се користат само кога fingerprint се совпаѓа со регистарот. Тие се секундарен материјал, не важечки закон.</small></section>
-        <section class="ai-materials-section"><strong>Правни материјали и професионални алатки</strong><div class="ai-material-links">
-          <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">📎 Прикачи документи / Secure Case Workspace ↗</a>
-          <a href="/professional-tools.html#analyzer" target="_blank" rel="noopener noreferrer">⚖ Правен анализатор ↗</a>
-          <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">▣ CasePilot ↗</a>
-          <a href="/guides/" target="_blank" rel="noopener noreferrer">▧ Правни водичи ↗</a>
-          <a href="/professional-library/" target="_blank" rel="noopener noreferrer">◫ Професионална библиотека и коментари ↗</a>
-          <a href="/sluzben-vesnik/" target="_blank" rel="noopener noreferrer">▤ Службен весник и правен аларм ↗</a>
-          <a href="/scholar/" target="_blank" rel="noopener noreferrer">◇ Научни трудови ↗</a>
-          <a href="/authors/zoran-stojankic/" target="_blank" rel="noopener noreferrer">§ Авторски материјали на Зоран ↗</a>
-          <a href="/kolumni/" target="_blank" rel="noopener noreferrer">✦ Колумни ↗</a>
-          <a href="/document-router.html" target="_blank" rel="noopener noreferrer">▧ Прием и распределба на документи ↗</a>
-          <a href="/case-law-curation.html" target="_blank" rel="noopener noreferrer">⚖ Судски пресуди и метаподатоци ↗</a>
-          <a href="/professional-tools.html" target="_blank" rel="noopener noreferrer">◇ Професионални алатки ↗</a>
-        </div></section>
+        <section class="ai-materials-section"><strong>Правни материјали и професионални алатки · по папки</strong>
+          <div class="ai-material-folder-grid">
+            <details class="ai-material-folder" open><summary>⚖ Судови и предмети</summary><div class="ai-material-links">
+              <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">📎 Прикачи документи / Secure Case Workspace ↗</a>
+              <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">▣ CasePilot ↗</a>
+              <a href="/judicial-practice.html" target="_blank" rel="noopener noreferrer">⚖ Судска пракса ↗</a>
+              <a href="/case-law-curation.html" target="_blank" rel="noopener noreferrer">⚖ Case-Law Radar ↗</a>
+              <a href="/echr-crosswalk.html" target="_blank" rel="noopener noreferrer">§ ECHR Crosswalk ↗</a>
+            </div></details>
+            <details class="ai-material-folder"><summary>§ Службени извори</summary><div class="ai-material-links">
+              <a href="/sluzben-vesnik/" target="_blank" rel="noopener noreferrer">▤ Службен весник и правен аларм ↗</a>
+              <a href="/public-legal-data-services.html" target="_blank" rel="noopener noreferrer">⚖ Open Data & e‑Services ↗</a>
+              <a href="/" target="_blank" rel="noopener noreferrer">⌕ Правни извори ↗</a>
+            </div></details>
+            <details class="ai-material-folder"><summary>⚡ AI алатки</summary><div class="ai-material-links">
+              <a href="/contract-intelligence.html" target="_blank" rel="noopener noreferrer">⌘ AI Contract ↗</a>
+              <a href="/professional-tools.html#analyzer" target="_blank" rel="noopener noreferrer">⚖ Правен анализатор ↗</a>
+              <a href="/hybrid-legal-intelligence.html" target="_blank" rel="noopener noreferrer">⌘ Hybrid 10 ↗</a>
+              <a href="/professional-tools.html" target="_blank" rel="noopener noreferrer">◇ Професионални алатки ↗</a>
+              <a href="/document-router.html" target="_blank" rel="noopener noreferrer">▧ Прием и распределба на документи ↗</a>
+              <a href="/legal-command-center.html" target="_blank" rel="noopener noreferrer">⚙ Legal Command Center ↗</a>
+            </div></details>
+            <details class="ai-material-folder"><summary>◫ Библиотека, водичи и автор</summary><div class="ai-material-links">
+              <a href="/guides/" target="_blank" rel="noopener noreferrer">▧ Правни водичи ↗</a>
+              <a href="/professional-library/" target="_blank" rel="noopener noreferrer">◫ Професионална библиотека и коментари ↗</a>
+              <a href="/zoki-legal-ai-guide.html" target="_blank" rel="noopener noreferrer">? Водилка за Зоки ↗</a>
+              <a href="/scholar/" target="_blank" rel="noopener noreferrer">◇ Научни трудови ↗</a>
+              <a href="/authors/zoran-stojankic/" target="_blank" rel="noopener noreferrer">§ Авторски материјали на Зоран ↗</a>
+              <a href="/kolumni/" target="_blank" rel="noopener noreferrer">✦ Колумни ↗</a>
+            </div></details>
+          </div></section>
         <p class="ai-workflow-note">Доверливи оригинални документи и точни лични идентификатори одат во Secure Case Workspace. Јавниот chat останува session-private и не е case vault.</p>
       </div>`;
     document.body.append(d);
