@@ -8,6 +8,7 @@ const core=fs.readFileSync("assets/standalone-bot.js","utf8");
 const css=fs.readFileSync("assets/standalone-bot.css","utf8");
 const r7=fs.readFileSync("assets/standalone-bot-r7.css","utf8");
 const prompt=fs.readFileSync("src/ai-advokat-central-prompt.js","utf8");
+const worker=fs.readFileSync("src/index.js","utf8");
 
 const expected=["sq","ar","bn","bs","bg","zh","hr","en","eo","fr","de","el","ha","he","hi","hu","id","it","ja","ko","la","mk","fa","pt","pa","ru","sr","sl","es","sw","tr","ur","vi"];
 
@@ -27,9 +28,11 @@ test("language preference is local, bounded and drives response language",()=>{
   assert.match(core,/const LANGUAGE_KEY="aiadvokat-language"/);
   assert.match(core,/localStorage\.setItem\(LANGUAGE_KEY,lang\.code\)/);
   assert.match(core,/document\.documentElement\.lang=lang\.code/);
-  assert.match(core,/Please answer in "\+lang\.name/);
-  assert.match(core,/Preserve official legal source quotations, citations, case numbers and statutory identifiers verbatim/);
+  assert.match(core,/outputLanguage:selectedLanguageMeta\(\)\.code/);
   assert.match(core,/q:withOutputLanguageDirective\(outboundQ\)/);
+  assert.match(worker,/function externalBotLanguageDirective\(code\)/);
+  assert.match(worker,/Please answer in "\+language/);
+  assert.match(worker,/Preserve official legal source quotations, citations, case numbers and statutory identifiers verbatim/);
 });
 
 test("selected language also drives dictation and answer speech when browser support exists",()=>{
