@@ -146,7 +146,7 @@
     const strict=lang.code==="en"
       ?"Answer only in English explanatory prose. Do not mix Macedonian, Serbian, Bulgarian or other languages except verbatim official source titles, quotations, names, case numbers and statutory identifiers."
       :"Answer only in "+lang.name+" explanatory prose. Do not mix other languages except verbatim official source titles, quotations, names, case numbers and statutory identifiers.";
-    return "OUTPUT LANGUAGE CONTRACT — "+lang.name+": "+strict+" Translation changes explanatory language only; jurisdiction, legal authority, source status, article identity, case number, citation and Human Gate responsibility must remain unchanged.\n\n"+q;
+    return "OUTPUT LANGUAGE CONTRACT — "+lang.name+": "+strict+" The selected language changes the interface and explanatory language; jurisdiction, legal authority, source status, article identity, case number, citation and Human Gate responsibility must remain unchanged.\n\n"+q;
   }
   function bindLanguageSelector(){
     if(!languageSelect) return;
@@ -159,7 +159,7 @@
     writePreferredLanguage(readPreferredLanguage());
     languageSelect.addEventListener("change",()=>{
       const lang=writePreferredLanguage(languageSelect.value);
-      setVoiceStatus("AI јазик: "+lang.name+". Објаснувањето, диктирањето и гласот го следат овој избор; правните извори и цитатите не се менуваат.");
+      setVoiceStatus("Јазик: "+lang.name+". Целиот интерфејс, AI објаснувањето, диктирањето и гласот го следат изборот; правните извори и цитатите не се менуваат.");\n      location.reload();
     });
   }
 
