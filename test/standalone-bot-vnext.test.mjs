@@ -147,3 +147,16 @@ test('vNext assistant repeat actually resubmits through the governed composer',(
   assert.match(source,/setComposerText\(q\)/);
   assert.match(source,/queueMicrotask\(\(\)=>\$\('composer'\)\?\.requestSubmit\(\)\)/);
 });
+
+
+test('vNext external shell hides permanent cockpit chrome but preserves governed capabilities',()=>{
+  const source=fs.readFileSync('assets/standalone-bot-vnext.js','utf8');
+  const css=fs.readFileSync('assets/standalone-bot-vnext.css','utf8');
+  assert.match(source,/dataset\.externalExperience='conversation'/);
+  assert.match(css,/data-external-experience="conversation"/);
+  assert.match(css,/\.vnext-sidebar\{[\s\S]*display:none!important/);
+  assert.match(css,/\.header-legal-links\{[\s\S]*display:none!important/);
+  assert.match(css,/\.vnext-message-menu-summary/);
+  assert.match(source,/text:'⋯'/);
+  assert.match(source,/▦ CSV/);
+});
