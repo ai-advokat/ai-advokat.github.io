@@ -245,12 +245,97 @@ function conversationalCapabilityRoute(text){
   const q=String(text||"").trim().toLowerCase();
   if(!q) return "";
   if(/(?:приватен\s+предмет|доверлив|casepilot|secure\s+case|оригинален\s+документ)/iu.test(q)) return "SECURE_CASE";
-  if(/(?:договор|анекс|спогодб|закуп|contract|agreement|clause)/iu.test(q)) return "AI_CONTRACT_PRO";
-  if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)) return "CONSOLIDATOR";
-  if(/(?:анализ|analy[sz]|правн[ао]\s+оцен|review\s+this)/iu.test(q)) return "LEGAL_ANALYZER";
-  if(/(?:предиктор|predict|сценари|ризик.*исход|исход.*ризик)/iu.test(q)) return "GOVERNED_PREDICTOR";
+  if(/(?:echr|есчп|hudoc|crosswalk)/iu.test(q)) return "ECHR_CROSSWALK";
   if(/(?:судск[аи].*(?:пракс|одлук|пресуд)|case\s*law|judgment|преседан)/iu.test(q)) return "CASE_LAW_RESEARCH";
+  if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)) return "CONSOLIDATOR";
+  if(/(?:smart\s+(?:legal\s+)?document|тужба\s+за\s+развод|одговор\s+на\s+тужба|опомена\s+пред\s+тужба|полномошно)/iu.test(q)) return "SMART_DOCUMENTS";
+  if(/(?:ai\s*contract|договор|анекс|спогодб|закуп|contract|agreement|clause)/iu.test(q)) return "AI_CONTRACT_PRO";
+  if(/(?:предиктор|predict|сценари|ризик.*исход|исход.*ризик)/iu.test(q)) return "GOVERNED_PREDICTOR";
+  if(/(?:јавн[ио]\s+доказ|public\s+evidence|open\s+data\s+evidence)/iu.test(q)) return "PUBLIC_EVIDENCE";
+  if(/(?:justice\s+daily|правосуден\s+бриф|дневен\s+правосуд)/iu.test(q)) return "JUSTICE_DAILY";
+  if(/(?:living\s+law|важечк[ао]\s+право|временск[аи]\s+верзи|historical\s+law|регулаторна\s+лини)/iu.test(q)) return "LIVING_LAW";
+  if(/(?:legal\s+watch|следи\s+(?:службен|енер|собрание|уставен|врховен)|што\s+е\s+ново.*(?:прав|закон))/iu.test(q)) return "LEGAL_WATCH";
+  if(/(?:professional\s+ecosystem|pro\s+ecosystem|калкулатор|пресметај.*(?:камата|процент|рок))/iu.test(q)) return "PROFESSIONAL_ECOSYSTEM";
+  if(/(?:hybrid\s+legal|hybrid\s*10|time\s+machine|law\s*[↔-]\s*bylaw)/iu.test(q)) return "HYBRID_LEGAL_INTELLIGENCE";
+  if(/(?:legal\s+command\s+center|command\s+center)/iu.test(q)) return "LEGAL_COMMAND_CENTER";
+  if(/(?:proactive\s+runtime)/iu.test(q)) return "PROACTIVE_RUNTIME";
+  if(/(?:proactive\s+agents?|проактивн[ио]\s+агент)/iu.test(q)) return "PROACTIVE_AGENTS";
+  if(/(?:fact\s*(?:&|and)\s*evidence\s+graph|граф.*(?:факт|доказ))/iu.test(q)) return "FACT_EVIDENCE_GRAPH";
+  if(/(?:connector\s+library|конектор)/iu.test(q)) return "CONNECTOR_LIBRARY";
+  if(/(?:review\s+(?:tables|vault)|batch\s+review|review\s+vault)/iu.test(q)) return "REVIEW_VAULT";
+  if(/(?:правн[ио]\s+извор|legal\s+source|службен\s+извор)/iu.test(q)) return "LEGAL_SOURCES";
+  if(/(?:документи|documents|извоз|export)/iu.test(q)) return "DOCUMENTS";
+  if(/(?:библиотек|library)/iu.test(q)) return "LIBRARY";
+  if(/(?:workflow|работен\s+тек|процесен\s+тек)/iu.test(q)) return "WORKFLOWS";
+  if(/(?:human\s+gate|човечк[аи]\s+(?:контрола|порта)|проверка\s+од\s+адвокат)/iu.test(q)) return "HUMAN_GATE";
+  if(/(?:анализ|analy[sz]|правн[ао]\s+оцен|review\s+this)/iu.test(q)) return "LEGAL_ANALYZER";
   return "";
+}
+
+const BOT_LANGUAGE_ALIASES=Object.freeze({
+  sq:["albanian","албански","shqip"],ar:["arabic","арапски","العربية"],bn:["bengali","бенгалски","বাংলা"],
+  bs:["bosnian","босански","bosanski"],bg:["bulgarian","бугарски","български"],zh:["chinese","кинески","中文"],
+  hr:["croatian","хрватски","hrvatski"],en:["english","англиски"],eo:["esperanto","есперанто"],fr:["french","француски","français"],
+  de:["german","германски","deutsch"],el:["greek","грчки","ελληνικά"],ha:["hausa","хауса"],he:["hebrew","хебрејски","עברית"],
+  hi:["hindi","хинди","हिन्दी"],hu:["hungarian","унгарски","magyar"],id:["indonesian","индонезиски","bahasa indonesia"],
+  it:["italian","италијански","italiano"],ja:["japanese","јапонски","日本語"],ko:["korean","корејски","한국어"],la:["latin","латински","latina"],
+  mk:["macedonian","македонски"],fa:["persian","персиски","فارسی"],pt:["portuguese","португалски","português"],
+  pa:["punjabi","пенџапски","ਪੰਜਾਬੀ"],ru:["russian","руски","русский"],sr:["serbian","српски","српски"],
+  sl:["slovenian","словенечки","slovenščina"],es:["spanish","шпански","español"],sw:["swahili","свахили","kiswahili"],
+  tr:["turkish","турски","türkçe"],ur:["urdu","урду","اردو"],vi:["vietnamese","виетнамски","tiếng việt"]
+});
+
+function conversationalLanguageSwitch(text){
+  const q=String(text||"").trim().toLowerCase();
+  // A language mention is not a command. Reload only for an explicit imperative
+  // such as "switch language to German" or "смени го интерфејсот на германски".
+  const explicitSwitch=/(?:\b(?:switch|change|set)\s+(?:(?:the\s+)?(?:interface\s+)?language|interface)(?:\s+to)?\b|(?:смени|постави|префрли)(?:\s+го)?\s+(?:јазикот|јазик|интерфејсот|интерфејс)(?:\s+на)?)/iu.test(q);
+  if(!explicitSwitch) return "";
+  // Match full language names/aliases first. Two-letter codes are accepted only
+  // as complete ASCII tokens so "la" can never match the word "language".
+  for(const lang of AI_ADVOCAT_LANGUAGES){
+    const aliases=[lang.name.toLowerCase(),...(BOT_LANGUAGE_ALIASES[lang.code]||[])].filter(alias=>String(alias).toLowerCase()!==lang.code);
+    if(aliases.some(alias=>q.includes(String(alias).toLowerCase()))) return lang.code;
+  }
+  for(const lang of AI_ADVOCAT_LANGUAGES){
+    const code=String(lang.code).toLowerCase();
+    const bounded=new RegExp("(?:^|[^a-z])"+code+"(?:$|[^a-z])","i");
+    if(bounded.test(q)) return lang.code;
+  }
+  return "";
+}
+
+function conversationalLocalAction(text){
+  const q=String(text||"").trim().toLowerCase();
+  const explicit=/(?:^|\s)(?:отвори|покажи|прикажи|оди\s+во|open|show|launch)(?:\s|$)/iu.test(q);
+  const exactToolName=/^(?:ai\s*contract(?:\s*pro)?|contract\s*pro|professional\s+ecosystem|pro\s+ecosystem|калкулатори?|justice\s+daily|public\s+evidence|јавни\s+докази?|echr(?:\s+crosswalk)?|есчп|hybrid(?:\s+legal)?(?:\s*10)?|судска\s+пракса|case\s*law|casepilot|secure\s+case|legal\s+command\s+center|proactive\s+runtime|proactive\s+agents?|fact\s*(?:&|and)\s*evidence\s+graph|connector\s+library|review\s+(?:tables|vault)|правни\s+извори|legal\s+sources?|документи|documents|библиотека|library|workflows?|human\s+gate|анализатор|analyzer|консолидатор|consolidator|предиктор|predictor)$/iu.test(q);
+  if(!explicit&&!exactToolName) return "";
+  const table=[
+    ["contract-intelligence",/(?:ai\s*contract|contract\s+pro|договори?)/iu],
+    ["professional-ecosystem",/(?:professional\s+ecosystem|pro\s+ecosystem|калкулатор|living\s+law|smart\s+documents?|legal\s+watch)/iu],
+    ["justice-daily",/(?:justice\s+daily|правосуден\s+бриф)/iu],
+    ["public-evidence",/(?:public\s+evidence|јавни\s+докази?)/iu],
+    ["echr-crosswalk",/(?:echr|есчп|hudoc|crosswalk)/iu],
+    ["hybrid-intelligence",/(?:hybrid\s+legal|hybrid\s*10)/iu],
+    ["cases",/(?:судска\s+пракса|case\s*law)/iu],
+    ["case-law-radar",/(?:case[- ]law\s+radar|corpus\s+radar)/iu],
+    ["casepilot",/(?:casepilot|secure\s+case|приватен\s+предмет)/iu],
+    ["legal-command-center",/(?:legal\s+command\s+center|command\s+center)/iu],
+    ["proactive-runtime",/(?:proactive\s+runtime)/iu],
+    ["proactive-agents",/(?:proactive\s+agents?|проактивни\s+агенти)/iu],
+    ["fact-evidence-graph",/(?:fact\s*(?:&|and)\s*evidence\s+graph|граф.*(?:факт|доказ))/iu],
+    ["connector-library",/(?:connector\s+library|конектор)/iu],
+    ["review-vault",/(?:review\s+(?:tables|vault)|batch\s+review)/iu],
+    ["sources",/(?:правни\s+извори|legal\s+sources?)/iu],
+    ["documents",/(?:документи|documents|извоз|export)/iu],
+    ["library",/(?:библиотек|library)/iu],
+    ["workflows",/(?:workflows?|работни\s+текови?)/iu],
+    ["review",/(?:human\s+gate|човечка\s+(?:контрола|порта))/iu],
+    ["analyzer",/(?:анализатор|analyzer)/iu],
+    ["consolidator",/(?:консолидатор|consolidator)/iu],
+    ["predictor",/(?:предиктор|predictor)/iu]
+  ];
+  return table.find(([,re])=>re.test(q))?.[0]||"";
 }
 
 function withOutputLanguageDirective(text){
@@ -316,7 +401,7 @@ const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261109-voice-r4")
   });
 function busy(value) {
   const hasQuestion = String($('question')?.value || '').trim().length >= 2;
-  $('send').disabled = value || (!!key && !hasQuestion);
+  $('send').disabled = value || !hasQuestion;
   $('stop').hidden = !value;
   $('send').hidden = value;
   $('question').disabled = value;
@@ -484,9 +569,11 @@ function sources(article, data) {
   }
 }
 async function request(path, {token=key, body, signal} = {}) {
+  const headers={accept:'application/json',...(body ? {'content-type':'application/json'} : {})};
+  if(String(token||'').trim()) headers.authorization='Bearer '+String(token).trim();
   const response = await fetch(base + path, {
     method:body ? 'POST' : 'GET', signal, cache:'no-store',
-    headers:{accept:'application/json', authorization:'Bearer ' + token, ...(body ? {'content-type':'application/json'} : {})},
+    headers,
     ...(body ? {body:JSON.stringify(body)} : {})
   });
   const data = await response.json().catch(() => ({}));
@@ -534,13 +621,13 @@ $('loginForm').onsubmit = async event => {
   } catch { $('loginStatus').textContent = 'Клучот не е активен или услугата не е достапна. Обидете се повторно.'; }
   finally { $('loginSubmit').disabled = false; }
 };
-$('newChat').onclick = () => { voiceRuntime?.stopSpeaking(); voiceRuntime?.stopRecognition(); reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Внесете професионален клуч преку ⋯.'); };
-$('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Сесијата и зачуваниот пристап се избришани.'); };
+$('newChat').onclick = () => { voiceRuntime?.stopSpeaking(); voiceRuntime?.stopRecognition(); reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Нов разговор · TRAINING режим без шифра.'); };
+$('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Професионалниот клуч е отстранет. TRAINING режимот без шифра останува достапен.'); };
 $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => {
   $('question').style.height = 'auto';
   $('question').style.height = Math.min($('question').scrollHeight,180) + 'px';
-  if (!pending) $('send').disabled = !!key && $('question').value.trim().length < 2;
+  if (!pending) $('send').disabled = $('question').value.trim().length < 2;
 };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
 $('mic').addEventListener('click',()=>voiceRuntimeReady.then(voice=>voice?.stopSpeaking?.()),{capture:true});
@@ -554,12 +641,6 @@ voiceRuntimeReady.then(voice=>{
     onTranscript:()=>{
       if(pending){
         status('Тековниот одговор сè уште се обработува. Запрете го или почекајте, па зборувајте повторно.');
-        return;
-      }
-      if(!key){
-        voiceConversationPending=false;
-        status('Говорот е внесен. За автоматско испраќање внесете активен професионален код преку ⋯.');
-        $('access').click();
         return;
       }
       voiceConversationPending=true;
@@ -579,12 +660,26 @@ $('composer').addEventListener('drop', event => { event.preventDefault(); $('plu
 $('composer').onsubmit = async event => {
   event.preventDefault(); const q = $('question').value.trim();
   if (pending) return;
-  if (!key) {
-    status('Најпрво внесете го вашиот приватен код за влез.');
-    $('access').click();
+  if (q.length < 2) return;
+
+  const languageSwitch=conversationalLanguageSwitch(q);
+  if(languageSwitch){
+    writePreferredLanguage(languageSwitch);
+    status("Го менувам интерфејсот, AI одговорот и гласот на "+languageMeta(languageSwitch).name+"…");
+    location.reload();
     return;
   }
-  if (q.length < 2) return;
+
+  const localAction=conversationalLocalAction(q);
+  if(localAction && typeof window.AIAdvokatVNext?.runAction==="function"){
+    message("user",q);
+    $('question').value="";
+    $('question').style.height="";
+    window.AIAdvokatVNext.runAction(localAction);
+    status("✓ Отворена е бараната скриена функција: "+localAction+".");
+    return;
+  }
+
   if (!privacyRuntimeReady) {
     status('Го вчитувам заштитниот privacy модул…');
     await Promise.race([
@@ -645,7 +740,11 @@ $('composer').onsubmit = async event => {
     voiceConversationPending=false;
     pulse.remove();
     if (epoch !== generation) return;
-    if (error.status === 401) { key = ''; forgetDeviceAccess(deviceStorage); status('Пристапот истекол. Внесете активен код преку ⋯.'); }
+    if (error.status === 401) {
+      key = '';
+      forgetDeviceAccess(deviceStorage);
+      status('Професионалниот клуч не е активен. Продолжувам во TRAINING режим без шифра — обидете се повторно.');
+    }
     else if (error.name === 'AbortError') status('Барањето е запрено или истече времето за одговор. Можете да се обидете повторно.');
     else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
     $('question').value = q;
@@ -657,21 +756,26 @@ $('composer').onsubmit = async event => {
 };
 async function restoreAccess() {
   const saved = readDeviceAccess(deviceStorage);
-  if (!saved) return;
+  if (!saved) {
+    status('TRAINING режим · без шифра · приватни предмети остануваат во Secure Case.');
+    return;
+  }
   const epoch = generation;
-  status('Го проверувам зачуваниот пристап…');
+  status('Го проверувам зачуваниот професионален пристап…');
   try {
     await request('/api/membership/status',{token:saved,signal:AbortSignal.timeout(20000)});
     if (epoch !== generation) return;
-    key = saved; busy(false); status('Добредојдовте. Подготвено за разговор.');
+    key = saved; busy(false); status('Професионален пристап е активен. Подготвено за разговор.');
   } catch(error) {
     if (epoch !== generation) return;
     if (error.status === 401) forgetDeviceAccess(deviceStorage);
-    status('Пристапот не може да се потврди. Отворете ⋯ → Професионален пристап.');
+    key='';
+    busy(false);
+    status('Зачуваниот клуч не е активен. TRAINING режимот без шифра е достапен.');
   }
 }
-// Ensure a fresh device can type and submit a question even before access is restored.
-// If no key exists, submit opens the governed professional-access dialog instead of appearing inert.
+// Fresh devices may chat immediately in bounded TRAINING mode; a membership key
+// remains optional for professional entitlements and mandatory for Secure Case.
 installCompactExternalChrome();
 bindLanguageSelector();
 voiceRuntimeReady.then(voice=>{
