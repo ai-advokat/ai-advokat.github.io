@@ -8,7 +8,7 @@ const sync=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8");
 test("external bot canonicalizes GitHub Pages to the Worker-hosted production surface",()=>{
   assert.match(bot,/location\.hostname === 'ai-advokat\.github\.io'/);
   assert.match(bot,/https:\/\/ai-advokat-github-io\.aiadvokat16\.workers\.dev/);
-  assert.match(bot,/standalone-bot\.js\?v=20261109-core-r15-voice-r4/);
+  assert.match(bot,/standalone-bot\.js\?v=20261110-language-r3/);
   assert.match(bot,/standalone-bot-vnext\.js\?v=20261107-hybrid-r2-lawyer-view/);
   assert.match(bot,/standalone-bot-toolkit\.js\?v=20261106-toolkit-r14/);
   assert.match(bot,/standalone-bot-toolkit\.css\?v=20261106-toolkit-r14/);
