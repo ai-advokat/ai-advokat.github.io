@@ -216,6 +216,8 @@ function handoffToInternalAI(prompt){
   if(!text) return;
   sessionStorage.setItem("aiAdvokatRadarHandoffV1",JSON.stringify({
     version:RADAR_HANDOFF_VERSION,
+    source:"case-law-radar",
+    authorityBoundary:"discovery_only",
     prompt:text,
     autoSend:true,
     createdAt:Date.now(),
@@ -228,6 +230,16 @@ function updateGateState(){
   const done=boxes.filter(box=>box.checked).length;
   const el=document.getElementById("gateState");
   el.textContent=done+" / "+boxes.length+" проверки · "+(done===boxes.length?"РАБОТНО READY за човечка ревизија; database promotion сè уште НЕ е извршен":"НЕ Е READY за reviewed authority");
+}
+function activateStaticDiscoveryFallback(){
+  discoveryRecords=STATIC_DISCOVERY_RECORDS.map(row=>({...row}));
+  if(!basePrompt){
+    basePrompt="AI Advokat, обработи го избраниот discovery-only пакет од Case-Law Radar. За секој запис прво провери official item binding, идентитет на предметот, вид на одлука, holding, конечност и тековна применливост. Класифицирај supporting / adverse / distinguishing / neutral само по проверка. Не цитирај ниту промовирај discovery-only запис како authority без Human Gate.";
+  }
+  selected.clear();
+  discoveryRecords.slice(0,Math.min(10,discoveryRecords.length)).forEach(row=>selected.add(String(row.id||"")));
+  renderDiscovery();
+  updatePackageState();
 }
 async function load(){
   const status=document.getElementById("status");
@@ -261,9 +273,10 @@ async function load(){
     setLiveState("ok",apiRecords.length?"Живи податоци":"Живи метрики + static records");
     status.textContent="Corpus radar: "+String(d.databaseState||"unknown")+" · "+String(d.version||"")+" · discovery source: "+recordSource+" · Human Gate required. "+String(radar.authorityBoundary||"");
   }catch(e){
-    setLiveState("warn","Live API недостапен");
-    status.textContent="Живите бројки моментално не се вчитани: "+String(e.message||e)+". Водилката и методологијата на страницата остануваат достапни.";
-    document.getElementById("prompt").textContent="Live prompt не е достапен. Притиснете „Повтори“ кога Worker API ќе биде достапен.";
+    activateStaticDiscoveryFallback();
+    setLiveState("warn","Offline mode · static records");
+    status.textContent="Live API моментално не се вчитува: "+String(e.message||e)+". Discovery workbench продолжува со governed static fallback "+STATIC_DISCOVERY_VERSION+"; живите метрики остануваат непотврдени додека Worker API не се врати.";
+    document.getElementById("prompt").textContent=buildPackagePrompt()||basePrompt;
   }
 }
 document.getElementById("copy").onclick=async()=>{const t=document.getElementById("prompt").textContent;try{await navigator.clipboard.writeText(t);document.getElementById("copy").textContent="Копирано ✓";setTimeout(()=>document.getElementById("copy").textContent="Копирај prompt",1200)}catch{}};
