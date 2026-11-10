@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Operating Desk · AI Advokat</title>
+<meta name="description" content="AI Advokat Operating Desk — task-first routing from legal job to the smallest safe workflow, tool, agent template, expected output and Human Gate.">
+<style>
+:root{--bg:#07131d;--panel:#0d1f2d;--line:#274254;--text:#eef6fb;--muted:#a9bdca;--accent:#7fd4ff;--gold:#d7b673;--ok:#9ce0b0;--warn:#ffd88a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}.wrap{width:min(1180px,92vw);margin:auto}.top{border-bottom:1px solid var(--line);background:#091925}.topin{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:14px 0}.brand{font-weight:900;color:var(--text);text-decoration:none}.nav{display:flex;gap:13px;flex-wrap:wrap}.nav a,a{color:var(--accent)}main{padding:42px 0 70px}.eyebrow{font-size:.78rem;font-weight:900;letter-spacing:.08em;color:var(--accent)}h1{font-size:clamp(2.2rem,5vw,4.6rem);line-height:1.02;margin:.3em 0}.lead,.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:18px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}.card h2,.card h3{margin-top:0}label{display:block;margin:10px 0 5px;font-weight:800}select{width:100%;background:#081824;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px}.radios{display:grid;gap:8px;margin:12px 0}.radio{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px;background:#081824}.radio input{margin-top:4px}.btn,button{display:inline-block;border:1px solid #3a6f8d;background:#102b3d;color:var(--text);border-radius:10px;padding:10px 13px;font-weight:850;text-decoration:none;cursor:pointer;margin:5px 5px 0 0}.btn.primary,button.primary{border-color:var(--gold);color:var(--gold)}.btn.secondary{color:var(--accent)}.out{background:#081824;border:1px solid var(--line);border-radius:12px;padding:14px}.path{display:grid;gap:9px;padding:0;list-style:none}.path li{border-left:3px solid var(--gold);padding:9px 12px;background:#091925;border-radius:8px}.chips{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.chip{border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:800}.ok{color:var(--ok)}.warn{color:var(--warn)}.gate{margin-top:24px;border-left:4px solid var(--gold);padding:16px 18px;background:#0a1b28;border-radius:10px;color:var(--muted)}.gate strong{color:var(--text)}footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap topin"><a class="brand" href="/">AI Advokat</a><nav class="nav"><a href="/bot/">AI Advokat</a><a href="/legal-ai-suite.html">Legal AI Suite</a><a href="/zoki-legal-ai-guide.html">Водилка</a><a href="/legal-command-center.html">Command Center</a></nav></div></header>
+<main class="wrap">
+<div class="eyebrow">OPERATING DESK · TASK-FIRST · V1</div>
+<h1>Кажи што работиш. Системот ја избира патеката.</h1>
+<p class="lead">Operating Desk го претвора пакетот алатки во една операбилна функција: задача → приватносна граница → прва алатка → agent workflow кога е потребен → очекуван излез → Human Gate.</p>
+<div class="chips"><span class="chip ok">Task-first routing</span><span class="chip ok">Secure Case first for confidential material</span><span class="chip ok">Existing agent templates</span><span class="chip warn">No auto filing / signing / sending</span></div>
+
+<div class="grid">
+<section class="card">
+<h2>1 · Што сакаш да направиш?</h2>
+<label for="taskId">Работна задача</label><select id="taskId"></select>
+<label>2 · Каков материјал користиш?</label>
+<div class="radios">
+<label class="radio"><input type="radio" name="sensitivity" value="public" checked><span><b>Јавно / синтетичко / TRAINING</b><br><span class="muted">Без оригинални доверливи документи или непотребни лични идентификатори.</span></span></label>
+<label class="radio"><input type="radio" name="sensitivity" value="confidential"><span><b>Доверливо / оригинален документ / реален предмет</b><br><span class="muted">Operating Desk автоматски го става Secure Case како прв чекор.</span></span></label>
+</div>
+<button id="buildPlan" class="primary" type="button">Изгради работна патека</button>
+</section>
+
+<section class="card">
+<h2>Резултат</h2>
+<div id="planEmpty" class="out">Избери задача.</div>
+<div id="plan" hidden>
+<div class="out"><b id="taskTitle"></b><br><span id="privacyState" class="muted"></span></div>
+<h3>Прв чекор</h3><a id="firstAction" class="btn primary" href="#"></a>
+<h3>Цел на workflow</h3><p id="objective" class="muted"></p>
+<h3>Потребни влезови</h3><ul id="inputs"></ul>
+<h3>Очекувани излези</h3><ul id="outputs"></ul>
+</div>
+</section>
+</div>
+
+<section class="card" id="planFlow" hidden></section>
+
+<div id="planDetails">
+<section class="card" id="planCard">
+<h2>Оперативна патека</h2>
+<ol id="steps" class="path"></ol>
+<h3>Следни алатки</h3><div id="nextActions"></div>
+<p id="workflowState" class="muted"></p>
+<button id="copyPlan" type="button">Копирај работен налог JSON</button><span id="copyStatus" class="muted"></span>
+</section>
+</div>
+
+<section class="grid">
+<article class="card"><h3>Нов корисник?</h3><p class="muted">Почни со синтетички случај. Не внесувај вистински клиентски податоци додека ја учиш патеката.</p><a class="btn" href="/zoki-legal-ai-guide.html">Отвори обука</a></article>
+<article class="card"><h3>Не знаеш која правна алатка?</h3><p class="muted">Operating Desk е примарната влезна точка. Каталогот останува референца, не почетна точка.</p><a class="btn" href="/legal-ai-suite.html">Види каталог</a></article>
+<article class="card"><h3>Приватен предмет?</h3><p class="muted">Оригиналните PDF/DOCX, имиња и доверливи факти не одат во јавен TRAINING flow.</p><a class="btn" href="/casepilot-workspace.html">Secure Case Workspace</a></article>
+</section>
+
+<div class="gate"><strong>Human Gate.</strong> Operating Desk избира и подготвува workflow. Не потпишува, не поднесува, не испраќа надворешна комуникација, не прифаќа договор и не прогласува непроверена верзија како важечко право.</div>
+</main>
+<footer><div class="wrap">AI Advokat · Operating Desk · Source-First · Human authority retained.</div></footer>
+<script type="module" src="/assets/operating-desk.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded",()=>{const plan=document.getElementById("plan");const details=document.getElementById("planDetails");const empty=document.getElementById("planEmpty");const sync=()=>{details.hidden=plan.hidden;};new MutationObserver(sync).observe(plan,{attributes:true,attributeFilter:["hidden"]});sync();});
+</script>
+</body></html>
