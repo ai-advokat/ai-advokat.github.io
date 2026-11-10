@@ -49,5 +49,6 @@ header{padding-left:12px}.brand{display:flex;align-items:center}.brand img{displ
 /* AI Advokat multilingual selector */
 .bot-language-control{display:flex;align-items:center;gap:.38rem;margin-left:.35rem;font-size:.75rem;font-weight:700;white-space:nowrap}
 .bot-language-control select{max-width:190px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);padding:.42rem 1.9rem .42rem .65rem;font:inherit;cursor:pointer}
+.bot-language-control select option{background:#fff;color:#071524}.bot-language-control select option:checked{background:#dfe8f1;color:#071524}
 @media(max-width:900px){.bot-language-control span{display:none}.bot-language-control select{max-width:130px}}
 @media(max-width:600px){.bot-language-control select{max-width:92px;padding-left:.5rem}}

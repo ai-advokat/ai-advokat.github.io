@@ -17,7 +17,8 @@
 <div class="grid">
 <section>
   <div class="card"><div class="head"><h2>1. Изворни текстови</h2><span class="small">локална обработка во browser</span></div><div class="body">
-    <div class="two"><div><label for="baseText">Основен закон / пречистен текст</label><textarea id="baseText" placeholder="Залепи го основниот текст…"></textarea></div><div><label for="amdText">Измени / дополнувања</label><textarea id="amdText" placeholder="Залепи ги измените…"></textarea></div></div>
+    <div class="two"><div><label for="baseText">Основен закон / пречистен текст</label><textarea id="baseText" placeholder="Залепи го основниот текст…"></textarea><div class="actions"><button class="secondary" id="importBase" type="button">Вчитај TXT / MD / JSON / PDF / DOCX</button><input id="baseFile" type="file" hidden accept=".txt,.md,.json,.pdf,.docx,text/plain,text/markdown,application/json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div></div><div><label for="amdText">Измени / дополнувања</label><textarea id="amdText" placeholder="Залепи ги измените…"></textarea><div class="actions"><button class="secondary" id="importAmd" type="button">Вчитај TXT / MD / JSON / PDF / DOCX</button><input id="amdFile" type="file" hidden accept=".txt,.md,.json,.pdf,.docx,text/plain,text/markdown,application/json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div></div></div>
+    <div class="status">TXT/MD/JSON се читаат локално во browser. PDF/DOCX се праќаат само за transient текстуална конверзија; не се чуваат од овој import endpoint.</div>
     <div class="actions"><button class="primary" id="run">Консолидирај</button><button class="secondary" id="loadExample">Вчитај мал пример</button><button class="secondary" id="reset">Исчисти</button></div><div id="runStatus" class="status">Подготвено.</div>
   </div></div>
   <div class="card" style="margin-top:15px"><div class="head"><h2>2. Editorial Resolution Workflow</h2><span class="small">5 задолжителни полиња</span></div><div class="body"><div id="issues" class="issues"><div class="small">Прво изврши консолидација.</div></div><div class="actions"><button class="gold" id="resolve" disabled>Примени редакциски одлуки</button></div></div></div>
@@ -72,6 +73,44 @@ async function loadCurrentLawWatch(){
   }
 }
 function setStatus(msg,kind=''){$('runStatus').className='status '+kind;$('runStatus').textContent=msg}
+function jsonToLegalText(raw){
+  const data=JSON.parse(raw);
+  if(typeof data==='string')return data;
+  for(const key of ['text','content','body','lawText','baseText','amendments']){
+    if(typeof data?.[key]==='string'&&data[key].trim())return data[key];
+  }
+  if(Array.isArray(data)){
+    const joined=data.map(x=>typeof x==='string'?x:(typeof x?.text==='string'?x.text:'')).filter(Boolean).join('\n\n');
+    if(joined.trim())return joined;
+  }
+  return JSON.stringify(data,null,2);
+}
+async function readImportFile(file){
+  const name=String(file?.name||'').toLowerCase();
+  const type=String(file?.type||'').toLowerCase();
+  if(name.endsWith('.txt')||name.endsWith('.md')||name.endsWith('.json')||type.startsWith('text/')||type==='application/json'){
+    const raw=await file.text();
+    return name.endsWith('.json')||type==='application/json'?jsonToLegalText(raw):raw;
+  }
+  if(name.endsWith('.pdf')||name.endsWith('.docx')||type==='application/pdf'||type==='application/vnd.openxmlformats-officedocument.wordprocessingml.document'){
+    const r=await fetch('/api/consolidator/import',{method:'POST',headers:{'content-type':type|| (name.endsWith('.pdf')?'application/pdf':'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),'x-file-name':file.name},body:file});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||d?.ok!==true||!d.text)throw new Error(d?.error||('HTTP '+r.status));
+    return d.text;
+  }
+  throw new Error('Неподдржан формат. Користи TXT, MD, JSON, PDF или DOCX.');
+}
+async function importInto(inputId,targetId){
+  const input=$(inputId),file=input.files?.[0]; if(!file)return;
+  setStatus('Се вчитува '+file.name+'…');
+  try{
+    const text=await readImportFile(file);
+    if(!String(text||'').trim())throw new Error('Документот нема читлив текст.');
+    $(targetId).value=String(text).slice(0,180000);
+    setStatus('Вчитано: '+file.name+' · '+$(targetId).value.length+' знаци. Провери го текстот пред консолидација.','ok');
+  }catch(e){setStatus('Import error: '+(e?.message||e),'warn')}
+  finally{input.value=''}
+}
 function touched(){return (state.con?.operations||[]).filter(o=>o.status==='applied').map(o=>o.targetArticle).filter(Boolean)}
 function workflowMeta(){const dup={},ref={};document.querySelectorAll('[data-kind="duplicate"]').forEach(card=>{const a=card.dataset.article;const choice=card.querySelector('[name="choice"]').value;const target=card.querySelector('[name="editorialNumber"]').value.trim();dup[a]={choice:choice==='mark_second_as_probable'&&target?'mark_second_as_probable_'+target:choice,resolutionBy:card.querySelector('[name="by"]').value.trim(),resolutionDate:card.querySelector('[name="date"]').value,resolutionReason:card.querySelector('[name="reason"]').value.trim(),sourceReference:card.querySelector('[name="source"]').value.trim()}});document.querySelectorAll('[data-kind="reference"]').forEach(card=>{const key=card.dataset.key;ref[key]={classification:card.querySelector('[name="classification"]').value,editorialTarget:card.querySelector('[name="editorialTarget"]').value.trim()||null,resolutionBy:card.querySelector('[name="by"]').value.trim(),resolutionDate:card.querySelector('[name="date"]').value,resolutionReason:card.querySelector('[name="reason"]').value.trim(),sourceReference:card.querySelector('[name="source"]').value.trim()}});return{duplicateResolutions:dup,referenceResolutions:ref}}
 function commonFields(){const d=new Date().toISOString().slice(0,10);return `<div><label>Решил</label><input name="by" placeholder="Име и својство"></div><div><label>Датум</label><input name="date" type="date" value="${d}"></div><div class="wide"><label>Образложение</label><input name="reason" placeholder="Зошто е донесена одлуката"></div><div class="wide"><label>Изворна референца</label><input name="source" placeholder="Сл. весник бр./година, URL или друг проверлив извор"></div>`}
@@ -80,6 +119,7 @@ function renderStatus(){if(!state.con)return;const st=state.con.stats||{};$('art
 function renderOutput(){const data=state.active==='workflow'?state.workflow:state.active==='audit'?state.workflow?.audit:state.active==='footnotes'?state.workflow?.footnotes:state.annotated||state.con?.law;$('output').textContent=json(data);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.active))}
 $('run').onclick=()=>{try{const base=$('baseText').value.trim();const amd=$('amdText').value.trim();if(!base)throw new Error('Внеси основен правен текст.');state.base=C.parseBaseLaw(base);state.ops=amd?C.parseAmendments(amd):[];state.con=C.consolidate(state.base,state.ops);state.validation=C.validate(state.con.law,state.con.operations||[]);try{state.fidelity=C.verifyConsolidationFidelity(state.base,state.con.law,touched())}catch{state.fidelity=null}state.workflow=C.buildResolutionWorkflow(state.con.law,{},{});state.annotated=C.applyResolutionsToLaw(state.con.law,state.workflow);renderIssues();renderStatus();state.active='annotated';renderOutput();setStatus('Консолидацијата е извршена со LFCore v'+C.version+'. Провери ги editorial resolution полињата и Human Gate.','ok')}catch(e){setStatus('Грешка: '+(e?.message||e),'warn')}};
 $('resolve').onclick=()=>{if(!state.con)return;try{state.workflow=C.buildResolutionWorkflow(state.con.law,state.validation||{},workflowMeta());state.annotated=C.applyResolutionsToLaw(state.con.law,state.workflow);renderStatus();state.active='workflow';renderOutput();setStatus(state.workflow.allResolved?'Editorial workflow е комплетен. Нема тивка измена; Human Gate останува задолжителен.':'Workflow е нецелосен. Недостигаат задолжителни полиња; останува BLOCKED.',state.workflow.allResolved?'ok':'warn')}catch(e){setStatus('Resolution error: '+(e?.message||e),'warn')}};
+$('importBase').onclick=()=>$('baseFile').click();$('importAmd').onclick=()=>$('amdFile').click();$('baseFile').onchange=()=>importInto('baseFile','baseText');$('amdFile').onchange=()=>importInto('amdFile','amdText');
 $('reloadWatch').onclick=loadCurrentLawWatch;loadCurrentLawWatch();
 $('loadExample').onclick=()=>{$('baseText').value='З А К О Н\nЧлен 1\n(1) Пример одредба.\nЧлен 2\n(1) Стар текст.';$('amdText').value='Член 1\nВо член 2 ставот (1) се менува и гласи:\n„(1) Нов текст.“';setStatus('Примерот е вчитан. Кликни „Консолидирај“.')};$('reset').onclick=()=>{location.reload()};
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{state.active=b.dataset.tab;renderOutput()});
