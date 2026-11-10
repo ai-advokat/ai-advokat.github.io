@@ -68,13 +68,19 @@ test("production runtime sync verifies exact R14 standalone release bytes",()=>{
   assert.match(workflow,/AI_ADVOCAT_STANDALONE_TOOLKIT_PARITY_R14/);
 });
 
-test("production runtime sync verifies health orchestration and Professional fail-closed boundary",()=>{
+test("production runtime sync verifies health orchestration, bounded TRAINING and Secure Case boundary",()=>{
   assert.match(workflow,/\/api\/health\?runtime_sync=/);
   assert.match(workflow,/\/api\/orchestrator\?runtime_sync=/);
   assert.match(workflow,/lioeRuntimeGovernance/);
   assert.match(workflow,/lioePostflight/);
   assert.match(workflow,/lioeSpecialistExecution/);
   assert.match(workflow,/\$BASE\/api\/bot/);
-  assert.match(workflow,/test "\$code" = "401"/);
-  assert.match(workflow,/bot_membership_required/);
+  assert.match(workflow,/test "\$code" = "200"/);
+  assert.match(workflow,/\.mode == "training"/);
+  assert.match(workflow,/\.membership\.planCode == "training"/);
+  assert.match(workflow,/\.membership\.trainingOpen == true/);
+  assert.match(workflow,/\.privacy\.providerCalled == false/);
+  assert.match(workflow,/\.privacy\.quotaConsumed == false/);
+  assert.match(workflow,/test "\$secure_code" = "422"/);
+  assert.match(workflow,/confidential_case_workspace_required/);
 });
