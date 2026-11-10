@@ -6571,6 +6571,70 @@ async function handleLegalAnalyzerVerify(request,env){
   });
 }
 
+const EXTERNAL_BOT_CAPABILITY_ROUTES=new Set([
+  "SECURE_CASE","AI_CONTRACT_PRO","CONSOLIDATOR","LEGAL_ANALYZER","GOVERNED_PREDICTOR","CASE_LAW_RESEARCH"
+]);
+
+function detectExternalBotCapabilityRoute(text){
+  const q=String(text||"").trim().toLowerCase();
+  if(!q) return "";
+  // Privacy-sensitive intent always outranks functional routing.
+  if(/(?:приватен\s+предмет|доверлив|casepilot|secure\s+case|оригинален\s+документ)/iu.test(q)) return "SECURE_CASE";
+  if(/(?:договор|анекс|спогодб|закуп|contract|agreement|clause)/iu.test(q)) return "AI_CONTRACT_PRO";
+  if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)) return "CONSOLIDATOR";
+  if(/(?:анализ|analy[sz]|правн[ао]\s+оцен|review\s+this)/iu.test(q)) return "LEGAL_ANALYZER";
+  if(/(?:предиктор|predict|сценари|ризик.*исход|исход.*ризик)/iu.test(q)) return "GOVERNED_PREDICTOR";
+  if(/(?:судск[аи].*(?:пракс|одлук|пресуд)|case\s*law|judgment|преседан)/iu.test(q)) return "CASE_LAW_RESEARCH";
+  return "";
+}
+
+function externalBotCapabilityDirective(route){
+  switch(String(route||"")){
+    case "AI_CONTRACT_PRO":
+      return [
+        "HIDDEN CAPABILITY: AI_CONTRACT_PRO.",
+        "Treat the user request as contract intelligence, drafting or review.",
+        "Identify parties/roles, object, obligations, deadlines, payment, termination, liability, dispute clauses, missing facts and legal-risk points.",
+        "If facts are sufficient, produce a structured WORKING DRAFT; otherwise ask only for materially necessary facts.",
+        "Never claim signature, execution, filing or legal finality. HUMAN GATE REQUIRED."
+      ].join("\n");
+    case "CONSOLIDATOR":
+      return [
+        "HIDDEN CAPABILITY: CONSOLIDATOR.",
+        "Treat the request as a governed consolidation task.",
+        "Separate source text, amendments, effective dates and resulting working text.",
+        "Never invent missing amendment language or silently declare a consolidated text official."
+      ].join("\n");
+    case "LEGAL_ANALYZER":
+      return [
+        "HIDDEN CAPABILITY: LEGAL_ANALYZER.",
+        "Use structured legal analysis: facts, issues, sources, legal propositions, risks, adverse points, unknowns and next human checks.",
+        "Preserve source-first reasoning and Human Gate."
+      ].join("\n");
+    case "GOVERNED_PREDICTOR":
+      return [
+        "HIDDEN CAPABILITY: GOVERNED_PREDICTOR.",
+        "Provide favourable, mixed and adverse scenarios without percentages or guarantees.",
+        "State decisive facts, evidence gaps, legal support and what could change each scenario."
+      ].join("\n");
+    case "CASE_LAW_RESEARCH":
+      return [
+        "HIDDEN CAPABILITY: CASE_LAW_RESEARCH.",
+        "Prioritise governed court/HUDOC sources, identify jurisdiction and authority level, and distinguish discovery from verified authority."
+      ].join("\n");
+    default:
+      return "";
+  }
+}
+
+function externalBotLanguageDirective(code){
+  const normalized=String(code||"").trim().toLowerCase();
+  if(!normalized || normalized==="mk") return "";
+  const language=UI_TRANSLATION_LANGUAGES[normalized];
+  if(!language) return "";
+  return "Please answer in "+language+". Preserve official legal source quotations, citations, case numbers and statutory identifiers verbatim.";
+}
+
 async function handleGPTChat(request,env,{openAIOnly=false}={}){
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
   const contentType=(request.headers.get("content-type") || "").toLowerCase();
@@ -6596,14 +6660,39 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const payload=parsed.value;
   if(!payload || typeof payload!=="object" || Array.isArray(payload)) return json(request,{ok:false,error:"invalid_payload"},400);
 
-  const q=cleanQuery(payload.q,4000);
-  if(q.length<2) return json(request,{ok:false,error:"query_too_short"},400);
+  const userQ=cleanQuery(payload.q,4000);
+  if(userQ.length<2) return json(request,{ok:false,error:"query_too_short"},400);
+  const detectedCapabilityRoute=openAIOnly ? detectExternalBotCapabilityRoute(userQ) : "";
+  const requestedCapabilityRoute=openAIOnly && EXTERNAL_BOT_CAPABILITY_ROUTES.has(String(payload.capabilityRoute||""))
+    ? String(payload.capabilityRoute)
+    : "";
+  const capabilityRoute=detectedCapabilityRoute || requestedCapabilityRoute;
+  if(capabilityRoute==="SECURE_CASE"){
+    return json(request,{
+      ok:false,
+      error:"confidential_case_workspace_required",
+      message:"Ова барање е означено како доверливо или бара оригинален документ. Продолжете во Secure Case Workspace.",
+      action:{label:"Отвори Secure Case Workspace",href:"/casepilot-workspace.html"},
+      privacy:{
+        providerCalled:false,
+        quotaConsumed:false,
+        publicChatProcessingStopped:true,
+        reasons:["conversational_secure_case_route"]
+      }
+    },422);
+  }
+  const languageDirective=openAIOnly ? externalBotLanguageDirective(payload.outputLanguage) : "";
+  const q=languageDirective ? languageDirective+"\n\n"+userQ : userQ;
+  const capabilityDirective=openAIOnly ? externalBotCapabilityDirective(capabilityRoute) : "";
+  const providerInput=capabilityDirective
+    ? capabilityDirective+"\n\nUSER REQUEST:\n"+q
+    : q;
   const requestedSessionId=String(payload.sessionId||"").trim();
   const sessionAffinity=/^[A-Za-z0-9._:-]{8,120}$/.test(requestedSessionId)
     ? "chat:"+requestedSessionId
     : null;
 
-  const confidentiality=detectConfidentialCasePrompt(q);
+  const confidentiality=detectConfidentialCasePrompt(userQ);
   if(confidentiality.confidential){
     return json(request,{
       ok:false,
@@ -6652,8 +6741,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const confidentialHistory=historyCheck.history.some(item=>
     item.role==="user" && detectConfidentialCasePrompt(item.text).confidential
   );
-  const contextualFollowUp=isContextDependentLegalFollowUp(q);
-  const routingQuery=buildLegalRoutingQuery(q,historyCheck.history);
+  const contextualFollowUp=isContextDependentLegalFollowUp(userQ);
+  const routingQuery=buildLegalRoutingQuery(userQ,historyCheck.history);
   if(confidentialHistory){
     return json(request,{
       ok:false,
@@ -6695,7 +6784,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const effectiveGuideIds=contextualFollowUp ? [] : guideIds;
-  const initialPlan=buildAgentPlan(q);
+  const initialPlan=buildAgentPlan(userQ);
 
   // Deterministic temporal-validity gate for historical case-law questions.
   // A historical court position must never be promoted into current law by model inference.
@@ -7529,7 +7618,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     }
     if(!freeResult){
       freeResult=await runFreeWorkersAIChat(env,{
-        q,
+        q:providerInput,
         attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
         history:historyCheck.history,
         corpusContext,
@@ -7996,7 +8085,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       }
     : await runOpenAIOrchestrator(env,{
         plan,
-        input:q,
+        input:providerInput,
         researchInput:routingQuery,
         corpusContext,
         externalContext:[],
@@ -8068,7 +8157,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         : maxOutputTokens;
       const retry=await runOpenAIOrchestrator(env,{
         plan,
-        input:q,
+        input:providerInput,
         researchInput:routingQuery,
         corpusContext,
         externalContext:[],
