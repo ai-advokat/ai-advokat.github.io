@@ -7,6 +7,7 @@ const core=fs.readFileSync("assets/standalone-bot.js","utf8");
 const voice=fs.readFileSync("assets/ai-advokat-voice.mjs","utf8");
 const vnext=fs.readFileSync("assets/standalone-bot-vnext.js","utf8");
 const css=fs.readFileSync("assets/standalone-bot-r7.css","utf8");
+const worker=fs.readFileSync("src/index.js","utf8");
 
 test("external voice conversation remains selected-language dictation -> auto send -> auto speak",()=>{
   assert.match(core,/mode:"half_duplex_auto_send_auto_speak"/);
@@ -79,14 +80,17 @@ test("external conversational shell keeps microphone visible while secondary rec
 });
 
 test("external conversational router keeps capability directives hidden from visible thread history",()=>{
-  assert.match(core,/function conversationalCapabilityDirective\(text\)/);
-  assert.match(core,/HIDDEN CAPABILITY ROUTE/);
+  assert.match(core,/function conversationalCapabilityRoute\(text\)/);
+  assert.match(core,/SECURE_CASE/);
   assert.match(core,/AI_CONTRACT_PRO/);
   assert.match(core,/CONSOLIDATOR/);
   assert.match(core,/LEGAL_ANALYZER/);
   assert.match(core,/GOVERNED_PREDICTOR/);
   assert.match(core,/CASE_LAW_RESEARCH/);
   assert.match(core,/visibleQ:outboundQ/);
+  assert.match(core,/capabilityRoute:conversationalCapabilityRoute\(outboundQ\)/);
+  assert.match(worker,/function externalBotCapabilityDirective\(route\)/);
+  assert.match(worker,/HIDDEN CAPABILITY: AI_CONTRACT_PRO/);
   assert.match(vnext,/const q=String\(body\.visibleQ\|\|body\.q\|\|''\)\.trim\(\)/);
   assert.match(vnext,/delete body\.visibleQ/);
 });
