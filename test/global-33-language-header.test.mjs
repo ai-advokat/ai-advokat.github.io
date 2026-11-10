@@ -21,15 +21,15 @@ test("global and chat language selectors share one preference key",()=>{
   assert.match(home,/localStorage\.setItem\(SITE_LANGUAGE_KEY,next\)/);
 });
 
-test("non-MK EN interface localization uses bounded Workers AI endpoint",()=>{
+test("all non-MK languages including English use the bounded full-interface translation endpoint",()=>{
   assert.match(home,/\/api\/ui-translate/);
   assert.match(home,/translateGlobalInterface/);
   assert.match(home,/batch\.length>=72/);
   assert.match(home,/nextChars>9000/);
   const translator=home.slice(home.indexOf("async function translateGlobalInterface"),home.indexOf("function applyLanguage"));
-  assert.doesNotMatch(translator,/siteLanguage==="mk"\\|\\|siteLanguage==="en"/);
-  assert.match(translator,/if\\(siteLanguage==="mk"\\|\\|uiTranslationRunning\\) return/);
-  assert.match(home,/if\\(siteLanguage!=="mk"\\)\\{[\\s\\S]*?new MutationObserver/);
+  assert.doesNotMatch(translator,/siteLanguage==="mk"\|\|siteLanguage==="en"/);
+  assert.match(translator,/if\(siteLanguage==="mk"\|\|uiTranslationRunning\) return/);
+  assert.match(home,/if\(siteLanguage!=="mk"\)\{[\s\S]*?new MutationObserver/);
   assert.match(worker,/async function handleUiTranslation/);
   assert.match(worker,/raw\.length>96/);
   assert.match(worker,/totalChars>12000/);
