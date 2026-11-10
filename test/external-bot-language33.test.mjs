@@ -57,3 +57,17 @@ test("language selector remains usable and readable in responsive R7 UI",()=>{
   assert.match(r7,/background:#ffffff!important/);
   assert.match(r7,/color:#071524!important/);
 });
+
+
+test("external 33-language selector translates the full interface through the same governed UI endpoint",()=>{
+  assert.match(core,/const BOT_UI_TRANSLATION_CACHE_PREFIX=/);
+  assert.match(core,/function collectBotUiUnits\(\)/);
+  assert.match(core,/fetch\(base\+"\/api\/ui-translate"/);
+  assert.match(core,/targetLanguage:code/);
+  assert.match(core,/\["placeholder","title","aria-label"\]/);
+  assert.match(core,/new MutationObserver/);
+  assert.match(core,/scheduleProfessionalUiTranslation\(\)/);
+  assert.match(core,/function conversationalLanguageSwitch\(text\)/);
+  assert.match(core,/BOT_LANGUAGE_ALIASES/);
+  assert.match(core,/writePreferredLanguage\(languageSwitch\)/);
+});
