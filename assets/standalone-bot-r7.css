@@ -465,4 +465,7 @@ html.professional-r7 .bottom{
 html.professional-r7 .bot-language-control{color:#9db3c5!important}
 html.professional-r7 .bot-language-control select{background:#ffffff!important;color:#071524!important;border-color:#24577c!important}
 html.professional-r7 .bot-language-control select:hover,html.professional-r7 .bot-language-control select:focus-visible{background:#eef3f7!important;color:#071524!important;border-color:#d7b673!important}
-html.professional-r7 .bot-language-control select option,\nhtml.professional-r7 .message-voice-lang option{background:#ffffff!important;color:#071524!important}\nhtml.professional-r7 .bot-language-control select option:checked,\nhtml.professional-r7 .message-voice-lang option:checked{background:#dfe8f1!important;color:#071524!important}\n
+html.professional-r7 .bot-language-control select option,
+html.professional-r7 .message-voice-lang option{background:#ffffff!important;color:#071524!important}
+html.professional-r7 .bot-language-control select option:checked,
+html.professional-r7 .message-voice-lang option:checked{background:#dfe8f1!important;color:#071524!important}
