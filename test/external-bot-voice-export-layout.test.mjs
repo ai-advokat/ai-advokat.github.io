@@ -20,8 +20,8 @@ test("external voice conversation remains selected-language dictation -> auto se
   assert.match(voice,/pickMacedonianVoice/);
 });
 
-test("external export UI exposes JSON DOCX PDF TXT and MD",()=>{
-  for(const format of ["docx","pdf","json","txt","md"]){
+test("external export UI exposes JSON CSV DOCX PDF TXT and MD",()=>{
+  for(const format of ["docx","pdf","json","csv","txt","md"]){
     assert.match(html,new RegExp('data-export="'+format+'"'));
   }
 });
@@ -68,4 +68,25 @@ test("external assistant exposes the governed 33-language voice selector and loc
   assert.match(voice,/getDisplayMedia/);
   assert.match(voice,/Share tab audio/);
   assert.match(voice,/audioSave:Boolean/);
+});
+
+
+test("external conversational shell keeps microphone visible while secondary recording controls move behind menu",()=>{
+  assert.match(html,/id="mic"/);
+  assert.match(core,/installCompactExternalChrome/);
+  assert.match(core,/voice-record-menu-row/);
+  assert.match(core,/document\.documentElement\.dataset\.externalExperience="conversation"/);
+});
+
+test("external conversational router keeps capability directives hidden from visible thread history",()=>{
+  assert.match(core,/function conversationalCapabilityDirective\(text\)/);
+  assert.match(core,/HIDDEN CAPABILITY ROUTE/);
+  assert.match(core,/AI_CONTRACT_PRO/);
+  assert.match(core,/CONSOLIDATOR/);
+  assert.match(core,/LEGAL_ANALYZER/);
+  assert.match(core,/GOVERNED_PREDICTOR/);
+  assert.match(core,/CASE_LAW_RESEARCH/);
+  assert.match(core,/visibleQ:outboundQ/);
+  assert.match(vnext,/const q=String\(body\.visibleQ\|\|body\.q\|\|''\)\.trim\(\)/);
+  assert.match(vnext,/delete body\.visibleQ/);
 });
