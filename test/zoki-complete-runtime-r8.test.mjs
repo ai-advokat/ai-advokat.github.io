@@ -31,7 +31,7 @@ test("33-language translation falls back to bounded Qwen when M2M100 fails",asyn
       run:async(model,input)=>{
         calls.push(model);
         if(model==="@cf/meta/m2m100-1.2b") throw new Error("simulated m2m failure");
-        assert.equal(model,"@cf/qwen/qwen3.8-27b");
+        assert.equal(model,"@cf/qwen/qwen3-30b-a3b-fp8");
         return {response:"Legal sources"};
       }
     }
@@ -47,12 +47,13 @@ test("33-language translation falls back to bounded Qwen when M2M100 fails",asyn
   assert.equal(data.provider,"m2m100_qwen_fallback");
   assert.equal(data.translations[0].text,"Legal sources");
   assert.ok(calls.includes("@cf/meta/m2m100-1.2b"));
-  assert.ok(calls.includes("@cf/qwen/qwen3.8-27b"));
+  assert.ok(calls.includes("@cf/qwen/qwen3-30b-a3b-fp8"));
 });
 
 test("consolidator converts PDF transiently without storage",async()=>{
   const env={
     DB,RATE_LIMIT_SALT,
+    FREE_CHAT_PROVIDER:"workers_ai",
     WORKERS_AI_MARKDOWN_ENABLED:"true",
     AI:{
       run:async()=>({response:"unused"}),
