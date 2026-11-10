@@ -1399,7 +1399,9 @@
       .card,.assistantPanel{box-shadow:none}
       body{background:white;color:black}
     }
-  </style>
+  
+    .grouped-nav{align-items:center;gap:6px}.nav-folder{position:relative}.nav-folder>summary{list-style:none;cursor:pointer;padding:7px 9px;border-radius:9px;font-weight:800;white-space:nowrap}.nav-folder>summary::-webkit-details-marker{display:none}.nav-folder[open]>summary,.nav-folder>summary:hover{background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--gold)}.nav-folder-menu{position:absolute;z-index:60;top:calc(100% + 8px);left:0;min-width:240px;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);display:grid;gap:3px}.nav-folder-menu a{padding:8px 10px;border-radius:8px;text-decoration:none}.nav-folder-menu a:hover{background:color-mix(in srgb,var(--gold) 10%,transparent)}.mobile-folder-grid{display:grid;gap:8px}.mobile-folder{border:1px solid var(--line);border-radius:10px;padding:7px 9px}.mobile-folder>summary{cursor:pointer;font-weight:850}.mobile-folder>div{display:grid;gap:6px;padding:8px 0 2px 12px}.ai-workspace-folder{border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-top:5px}.ai-workspace-folder>summary{cursor:pointer;font-size:.74rem;font-weight:900;letter-spacing:.03em;color:var(--muted);padding:7px 8px}.ai-workspace-folder-body{display:grid;gap:3px}.ai-workspace-module-link{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;text-decoration:none;color:inherit;font-weight:750}.ai-workspace-module-link:hover{background:color-mix(in srgb,var(--gold) 10%,transparent)}.hybrid-function-folders{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}.hybrid-function-folders details{border:1px solid var(--line);border-radius:12px;padding:8px}.hybrid-function-folders summary{cursor:pointer;font-weight:850}.hybrid-function-folders .chips{margin-top:8px}
+</style>
 </head>
 
 <body>
@@ -1459,89 +1461,42 @@
 
 <header class="header">
   <div class="container nav">
-
     <a class="brand" href="#top" aria-label="AI Advokat почетна" data-i18n-aria="brandHome">
       <span class="brandmark" aria-hidden="true"><img src="/assets/ai-advokat-hero-brand.webp?v=2" alt="" width="46" height="46"></span>
-      <span class="brandtext">
-        <strong>AI Advokat</strong>
-        <span data-i18n="brandSub">Правен информациски и AI портал</span>
-      </span>
+      <span class="brandtext"><strong>AI Advokat</strong><span data-i18n="brandSub">Правен информациски и AI портал</span></span>
     </a>
-
-    <nav class="links" aria-label="Главна навигација" data-i18n-aria="mainNav">
-      <a href="#sources" data-i18n="navSources">Правни извори</a>
+    <nav class="links grouped-nav" aria-label="Главна навигација" data-i18n-aria="mainNav">
       <a href="#ai-advokat-chat" data-i18n="navAi">AI Advokat</a>
-      <a href="/hybrid-legal-intelligence.html" data-header-legal="hybrid" style="font-weight:900;color:var(--gold,#b9985b)" title="Hybrid Legal Intelligence · 10 governed legal functions">⌘ Hybrid 10</a>
-      <a href="/public-legal-data-services.html" data-header-legal="public-legal" style="font-weight:900;color:var(--gold,#b9985b)" title="Public Legal Data & e‑Services · data.gov.mk + Uslugi.gov.mk">⚖ Open Data & e‑Services</a>
-      <a href="/gold-set-review-gate.html" data-header-legal="gold" style="font-weight:900;color:var(--gold,#b9985b)" title="Gold Set Review Gate · 2 boundary reviewers → separate legal review → Human Gate preflight · без автоматска публикација">◆ Gold Review Gate</a>
-      <a href="/echr-crosswalk.html" data-header-legal="echr" style="font-weight:900;color:var(--gold,#b9985b)" title="F0-FAST-27 · ECHR ↔ domestic case-law research crosswalk · HG-F0 OPEN · HOLD">§ ECHR Crosswalk</a>
-      <a href="#ai-advokat-chat" data-ai-workbench="justice-daily" style="font-weight:900;color:var(--gold,#b9985b)" title="Justice Daily · Правосудни вести">Justice Daily</a>
-      <a href="/judicial-practice.html" data-header-legal="judicial-practice" style="font-weight:950;color:var(--gold,#b9985b)" title="Судска пракса · Research → Discovery → Source Binding → Gold Review → Reviewed Authority → CasePilot">⚖ Судска пракса</a>
-      <a href="/case-law-curation.html" style="font-weight:900;color:var(--gold,#b9985b)" title="Case-Law Corpus Radar · селекција и покриеност">Case-Law Radar</a>
-      <a href="/legal-ai-suite.html" style="font-weight:950;color:var(--gold,#b9985b)" title="Legal AI Suite · Agents · Vault · Spaces · Research · Contract Intelligence · Horizon · Memory · Fact Graph · Connectors">⚡ Legal AI Suite</a>
-      <a href="/proactive-agent-runtime.html" style="font-weight:950;color:var(--gold,#b9985b)" title="Matter-native proactive agent runtime · Space context · plan approval · parallel tasks · Human Nudges · audit trail">⚡ Proactive Runtime</a>
-      <a href="/zoki-legal-ai-guide.html" style="font-weight:900;color:var(--gold,#b9985b)" title="Водилка за Зоки · како се користи целиот Legal AI Suite">Водилка за Зоки</a>
-      <a href="/legal-command-center.html" style="font-weight:900;color:var(--gold,#b9985b)" title="Proactive Legal Agents · Matter Memory · Agent Builder · Horizon Scanning · Human Gate">⚙ Legal Command Center</a>
-      <a href="/proactive-legal-agents.html" style="font-weight:900;color:var(--gold,#b9985b)" title="Source-First proactive legal agents">Agents</a>
-      <a href="/agent-architecture.html" data-i18n="navArchitecture">AI Архитектура</a>
-      <a href="/guides/" data-i18n="navGuides">Водичи</a>
-      <a href="/sluzben-vesnik/" data-i18n="navGazette">Службен весник</a>
-      <a href="/professional-library/" data-i18n="navLibrary">Стручна библиотека</a>
-      <a href="/governance.html" data-i18n="navGovernance">Проверливост</a>
-      <a href="#publications" data-i18n="navPublications">Трудови</a>
-      <a href="/authors/zoran-stojankic/" style="font-weight:850;color:var(--gold,#b9985b)">Трудови на Зоки</a>
-      <a href="/scholar/" style="font-weight:850">Scholar</a>
-      <a href="/kolumni/">Колумни</a>
-      <a href="#author" data-i18n="navAuthor">Автор</a>
-      <a href="/academy/" data-i18n="navAcademy">Nenad Lex Nova Academy</a>
-      <a href="/summit/" data-i18n="navSummit">Summit</a>
-      <a href="/partners/" data-i18n="navPartners">Партнерства</a>
-      <a href="/membership.html" data-i18n="navMembership">Членство</a>
-      <a href="#about" data-i18n="navAbout">За порталот</a>
+      <details class="nav-folder" data-nav-folder="courts"><summary>⚖ Судови и пракса</summary><div class="nav-folder-menu">
+        <a href="/judicial-practice.html">Судска пракса</a><a href="/case-law-curation.html">Case-Law Radar</a><a href="/gold-set-review-gate.html">Gold Review Gate</a><a href="/echr-crosswalk.html">ECHR Crosswalk</a><a href="#ai-advokat-chat" data-ai-workbench="justice-daily">Justice Daily</a>
+      </div></details>
+      <details class="nav-folder" data-nav-folder="official"><summary>§ Службени извори</summary><div class="nav-folder-menu">
+        <a href="#sources" data-i18n="navSources">Правни извори</a><a href="/sluzben-vesnik/" data-i18n="navGazette">Службен весник</a><a href="/public-legal-data-services.html">Open Data & e‑Services</a><a href="/governance.html" data-i18n="navGovernance">Проверливост</a>
+      </div></details>
+      <details class="nav-folder" data-nav-folder="ai"><summary>⚡ AI алатки</summary><div class="nav-folder-menu">
+        <a href="/hybrid-legal-intelligence.html">Hybrid 10</a><a href="/legal-ai-suite.html">Legal AI Suite</a><a href="/contract-intelligence.html">AI Contract</a><a href="/casepilot-workspace.html">Secure Case Workspace</a><a href="/proactive-agent-runtime.html">Proactive Runtime</a><a href="/legal-command-center.html">Legal Command Center</a><a href="/proactive-legal-agents.html">Agents</a><a href="/agent-architecture.html" data-i18n="navArchitecture">AI Архитектура</a>
+      </div></details>
+      <details class="nav-folder" data-nav-folder="materials"><summary>◫ Материјали</summary><div class="nav-folder-menu">
+        <a href="/guides/" data-i18n="navGuides">Водичи</a><a href="/professional-library/" data-i18n="navLibrary">Стручна библиотека</a><a href="/zoki-legal-ai-guide.html">Водилка за Зоки</a>
+      </div></details>
+      <details class="nav-folder" data-nav-folder="publications"><summary>✦ Публикации</summary><div class="nav-folder-menu">
+        <a href="#publications" data-i18n="navPublications">Трудови</a><a href="/authors/zoran-stojankic/">Трудови на Зоки</a><a href="/scholar/">Scholar</a><a href="/kolumni/">Колумни</a><a href="#author" data-i18n="navAuthor">Автор</a>
+      </div></details>
+      <details class="nav-folder" data-nav-folder="ecosystem"><summary>◎ Академија и портал</summary><div class="nav-folder-menu">
+        <a href="/academy/" data-i18n="navAcademy">Nenad Lex Nova Academy</a><a href="/summit/" data-i18n="navSummit">Summit</a><a href="/partners/" data-i18n="navPartners">Партнерства</a><a href="/membership.html" data-i18n="navMembership">Членство</a><a href="#about" data-i18n="navAbout">За порталот</a>
+      </div></details>
     </nav>
-
-    <button
-      class="menuBtn"
-      id="menuBtn"
-      aria-expanded="false"
-      aria-controls="mobileMenu"
-      aria-label="Отвори мени"
-      data-i18n-aria="openMenu">
-      ☰
-    </button>
-
+    <button class="menuBtn" id="menuBtn" aria-expanded="false" aria-controls="mobileMenu" aria-label="Отвори мени" data-i18n-aria="openMenu">☰</button>
   </div>
-
   <div id="mobileMenu" class="container" hidden style="padding-bottom:14px">
-    <div style="display:grid;gap:8px">
-      <a href="#sources" data-i18n="navSources">Правни извори</a>
+    <div class="mobile-folder-grid">
       <a href="#ai-advokat-chat" data-i18n="navAi">AI Advokat</a>
-      <a href="/hybrid-legal-intelligence.html" data-header-mobile="hybrid" style="font-weight:900;color:var(--gold,#b9985b)" title="9 source-first правни функции со Human Gate">⌘ Hybrid 10</a>
-      <a href="/public-legal-data-services.html" data-header-mobile="public-legal" style="font-weight:900;color:var(--gold,#b9985b)" title="Официјални јавни податоци и e‑услуги; без автономно поднесување">⚖ Open Data & e‑Services</a>
-      <a href="/gold-set-review-gate.html" data-header-mobile="gold" style="font-weight:900;color:var(--gold,#b9985b)" title="Двојна source/boundary проверка, посебна правна ревизија и Human Gate preflight">◆ Gold Review Gate</a>
-      <a href="/echr-crosswalk.html" data-header-mobile="echr" style="font-weight:900;color:var(--gold,#b9985b)" title="ЕСЧП ↔ домашна практика · истражувачки HOLD crosswalk">§ ECHR Crosswalk</a>
-      <a href="#ai-advokat-chat" data-ai-workbench="justice-daily" style="font-weight:900;color:var(--gold,#b9985b)" title="Justice Daily · Правосудни вести">Justice Daily</a>
-      <a href="/case-law-curation.html" style="font-weight:900;color:var(--gold,#b9985b)" title="Case-Law Corpus Radar · селекција и покриеност">Case-Law Radar</a>
-      <a href="/legal-ai-suite.html" style="font-weight:950;color:var(--gold,#b9985b)">⚡ Legal AI Suite</a>
-      <a href="/proactive-agent-runtime.html" style="font-weight:950;color:var(--gold,#b9985b)">⚡ Proactive Runtime</a>
-      <a href="/zoki-legal-ai-guide.html" style="font-weight:900;color:var(--gold,#b9985b)">Водилка за Зоки</a>
-      <a href="/legal-command-center.html" style="font-weight:900;color:var(--gold,#b9985b)">⚙ Legal Command Center</a>
-      <a href="/proactive-legal-agents.html" style="font-weight:900;color:var(--gold,#b9985b)">Agents</a>
-      <a href="/agent-architecture.html" data-i18n="navArchitecture">AI Архитектура</a>
-      <a href="/guides/" data-i18n="navGuides">Водичи</a>
-      <a href="/sluzben-vesnik/" data-i18n="navGazette">Службен весник</a>
-      <a href="/professional-library/" data-i18n="navLibrary">Стручна библиотека</a>
-      <a href="/governance.html" data-i18n="navGovernance">Проверливост</a>
-      <a href="#publications" data-i18n="navPublications">Трудови</a>
-      <a href="/authors/zoran-stojankic/" style="font-weight:850;color:var(--gold,#b9985b)">Трудови на Зоки</a>
-      <a href="/scholar/" style="font-weight:850">Scholar</a>
-      <a href="/kolumni/">Колумни</a>
-      <a href="#author" data-i18n="navAuthor">Автор</a>
-      <a href="/academy/" data-i18n="navAcademy">Nenad Lex Nova Academy</a>
-      <a href="/summit/" data-i18n="navSummit">Summit</a>
-      <a href="/partners/" data-i18n="navPartners">Партнерства</a>
-      <a href="/membership.html" data-i18n="navMembership">Членство</a>
-      <a href="#about" data-i18n="navAbout">За порталот</a>
+      <details class="mobile-folder"><summary>⚖ Судови и пракса</summary><div><a href="/judicial-practice.html">Судска пракса</a><a href="/case-law-curation.html">Case-Law Radar</a><a href="/gold-set-review-gate.html">Gold Review Gate</a><a href="/echr-crosswalk.html">ECHR Crosswalk</a><a href="#ai-advokat-chat" data-ai-workbench="justice-daily">Justice Daily</a></div></details>
+      <details class="mobile-folder"><summary>§ Службени извори</summary><div><a href="#sources">Правни извори</a><a href="/sluzben-vesnik/">Службен весник</a><a href="/public-legal-data-services.html">Open Data & e‑Services</a><a href="/governance.html">Проверливост</a></div></details>
+      <details class="mobile-folder"><summary>⚡ AI алатки</summary><div><a href="/hybrid-legal-intelligence.html">Hybrid 10</a><a href="/legal-ai-suite.html">Legal AI Suite</a><a href="/contract-intelligence.html">AI Contract</a><a href="/casepilot-workspace.html">Secure Case Workspace</a><a href="/proactive-agent-runtime.html">Proactive Runtime</a><a href="/legal-command-center.html">Legal Command Center</a><a href="/proactive-legal-agents.html">Agents</a><a href="/agent-architecture.html">AI Архитектура</a></div></details>
+      <details class="mobile-folder"><summary>◫ Материјали</summary><div><a href="/guides/">Водичи</a><a href="/professional-library/">Стручна библиотека</a><a href="/zoki-legal-ai-guide.html">Водилка за Зоки</a></div></details>
+      <details class="mobile-folder"><summary>✦ Публикации</summary><div><a href="#publications">Трудови</a><a href="/authors/zoran-stojankic/">Трудови на Зоки</a><a href="/scholar/">Scholar</a><a href="/kolumni/">Колумни</a><a href="#author">Автор</a></div></details>
+      <details class="mobile-folder"><summary>◎ Академија и портал</summary><div><a href="/academy/">Nenad Lex Nova Academy</a><a href="/summit/">Summit</a><a href="/partners/">Партнерства</a><a href="/membership.html">Членство</a><a href="#about">За порталот</a></div></details>
     </div>
   </div>
 </header>
@@ -1892,17 +1847,11 @@
             <strong style="font-size:1rem">НОВО · Hybrid Legal Intelligence · 10 функции</strong>
             <a href="/hybrid-legal-intelligence.html" style="font-weight:800;text-decoration:none">Отвори Lawyer View →</a>
           </div>
-          <div class="chips" role="navigation" aria-label="Hybrid Legal Intelligence директни функции" style="margin-top:0">
-            <a class="chip" href="/hybrid-legal-intelligence.html?module=time">01 · Article Time Machine</a>
-            <a class="chip" href="/hybrid-legal-intelligence.html?module=bylaws">02 · Law ↔ Bylaw</a>
-            <a class="chip" href="/hybrid-legal-intelligence.html?module=cases">03 · Article ↔ Case-Law</a>
-            <a class="chip" href="/hybrid-legal-intelligence.html?module=calendar">04 · Legal Calendar</a>
-            <a class="chip" href="/hybrid-legal-intelligence.html?module=diff">05 · Consolidation Diff</a>
-            <a class="chip" href="/hybrid-legal-intelligence.html?module=opendata">06 · Open Data Evidence</a>
-            <a class="chip" href="/hybrid-legal-intelligence.html?module=services">07 · Official e‑Services</a>
-            <a class="chip" href="/hybrid-legal-intelligence.html?module=handoff">08 · Human Handoff</a>
-            <a class="chip" href="/hybrid-legal-intelligence.html?module=gold">09 · Gold Set Review Gate</a>
-            <a class="chip" href="/hybrid-legal-intelligence.html?module=echr">10 · ECHR Crosswalk</a>
+          <div class="hybrid-function-folders" role="navigation" aria-label="Hybrid Legal Intelligence функции по папки">
+            <details open><summary>§ Прописи и верзии</summary><div class="chips"><a class="chip" href="/hybrid-legal-intelligence.html?module=time">01 · Article Time Machine</a><a class="chip" href="/hybrid-legal-intelligence.html?module=bylaws">02 · Law ↔ Bylaw</a><a class="chip" href="/hybrid-legal-intelligence.html?module=calendar">04 · Legal Calendar</a><a class="chip" href="/hybrid-legal-intelligence.html?module=diff">05 · Consolidation Diff</a></div></details>
+            <details><summary>⚖ Судови и проверка</summary><div class="chips"><a class="chip" href="/hybrid-legal-intelligence.html?module=cases">03 · Article ↔ Case-Law</a><a class="chip" href="/hybrid-legal-intelligence.html?module=gold">09 · Gold Set Review Gate</a><a class="chip" href="/hybrid-legal-intelligence.html?module=echr">10 · ECHR Crosswalk</a></div></details>
+            <details><summary>▤ Службени податоци и e‑услуги</summary><div class="chips"><a class="chip" href="/hybrid-legal-intelligence.html?module=opendata">06 · Open Data Evidence</a><a class="chip" href="/hybrid-legal-intelligence.html?module=services">07 · Official e‑Services</a></div></details>
+            <details><summary>✓ Human workflow</summary><div class="chips"><a class="chip" href="/hybrid-legal-intelligence.html?module=handoff">08 · Human Handoff</a></div></details>
           </div>
           <p style="margin:10px 0 0;color:var(--muted);font-size:.86rem">Source-first · Human Gate · без автоматско прогласување на важечко право.</p>
           <p style="margin:10px 0 0"><a class="chip" href="/public-legal-data-services.html" style="font-weight:850;text-decoration:none">⚖ Public Legal Data & e‑Services · Open Data + Uslugi.gov.mk →</a></p>
@@ -1925,20 +1874,30 @@
           <button class="ai-workspace-new" id="aiWorkspaceNew" type="button">＋ Нов разговор</button>
           <button class="ai-workspace-search-launch" id="aiWorkspaceSearchLaunch" type="button"><span>⌕</span><span>Пребарај</span><kbd>Ctrl K</kbd></button>
           <nav class="ai-workspace-nav" aria-label="Работни модули">
-            <button class="active" type="button" data-ai-workbench="assistant"><span aria-hidden="true">◈</span><span>Правен асистент</span></button>
-            <button type="button" data-ai-workbench="analyzer"><span aria-hidden="true">⌁</span><span>Анализатор</span></button>
-            <button type="button" data-ai-workbench="consolidator"><span aria-hidden="true">≋</span><span>Консолидатор</span></button>
-            <button type="button" data-ai-workbench="predictor"><span aria-hidden="true">◎</span><span>Предиктор</span></button>
-            <button type="button" data-ai-workbench="sources"><span aria-hidden="true">▤</span><span>Правни извори</span></button>
-            <button type="button" data-ai-workbench="public-evidence"><span aria-hidden="true">⌕</span><span>Јавни докази</span></button>
-            <button type="button" data-ai-workbench="professional-ecosystem"><span aria-hidden="true">◆</span><span>Pro Ecosystem</span></button>
-            <button type="button" data-ai-workbench="justice-daily"><span aria-hidden="true">◉</span><span>Justice Daily</span></button>
-            <button type="button" data-ai-workbench="cases"><span aria-hidden="true">⚖</span><span>Судска практика</span></button>
-            <button type="button" data-ai-workbench="casepilot"><span aria-hidden="true">▣</span><span>CasePilot</span></button>
-            <button type="button" data-ai-workbench="documents"><span aria-hidden="true">▧</span><span>Документи</span></button>
-            <button type="button" data-ai-workbench="workflows"><span aria-hidden="true">◇</span><span>Workflows</span></button>
-            <button type="button" data-ai-workbench="human-gate"><span aria-hidden="true">✓</span><span>Human Gate</span></button>
-            <button type="button" data-ai-workbench="library"><span aria-hidden="true">◫</span><span>Library</span></button>
+            <details class="ai-workspace-folder" open><summary>⚡ AI анализа и подготовка</summary><div class="ai-workspace-folder-body">
+              <button class="active" type="button" data-ai-workbench="assistant"><span aria-hidden="true">◈</span><span>Правен асистент</span></button>
+              <button type="button" data-ai-workbench="analyzer"><span aria-hidden="true">⌁</span><span>Анализатор</span></button>
+              <button type="button" data-ai-workbench="consolidator"><span aria-hidden="true">≋</span><span>Консолидатор</span></button>
+              <button type="button" data-ai-workbench="predictor"><span aria-hidden="true">◎</span><span>Предиктор</span></button>
+              <a class="ai-workspace-module-link" href="/contract-intelligence.html"><span aria-hidden="true">⌘</span><span>AI Contract</span></a>
+            </div></details>
+            <details class="ai-workspace-folder"><summary>⚖ Судови и предмети</summary><div class="ai-workspace-folder-body">
+              <button type="button" data-ai-workbench="justice-daily"><span aria-hidden="true">◉</span><span>Justice Daily</span></button>
+              <button type="button" data-ai-workbench="cases"><span aria-hidden="true">⚖</span><span>Судска практика</span></button>
+              <button type="button" data-ai-workbench="casepilot"><span aria-hidden="true">▣</span><span>CasePilot</span></button>
+              <a class="ai-workspace-module-link" href="/judicial-practice.html"><span aria-hidden="true">⚖</span><span>Судски центар</span></a>
+            </div></details>
+            <details class="ai-workspace-folder"><summary>§ Извори и документи</summary><div class="ai-workspace-folder-body">
+              <button type="button" data-ai-workbench="sources"><span aria-hidden="true">▤</span><span>Правни извори</span></button>
+              <button type="button" data-ai-workbench="public-evidence"><span aria-hidden="true">⌕</span><span>Јавни докази</span></button>
+              <button type="button" data-ai-workbench="documents"><span aria-hidden="true">▧</span><span>Документи</span></button>
+              <button type="button" data-ai-workbench="library"><span aria-hidden="true">◫</span><span>Library</span></button>
+            </div></details>
+            <details class="ai-workspace-folder"><summary>◇ Работа и контрола</summary><div class="ai-workspace-folder-body">
+              <button type="button" data-ai-workbench="workflows"><span aria-hidden="true">◇</span><span>Workflows</span></button>
+              <button type="button" data-ai-workbench="professional-ecosystem"><span aria-hidden="true">◆</span><span>Pro Ecosystem</span></button>
+              <button type="button" data-ai-workbench="human-gate"><span aria-hidden="true">✓</span><span>Human Gate</span></button>
+            </div></details>
           </nav>
           <div class="ai-chat-side-label" data-i18n="chatConversations">Разговори</div>
           <input class="ai-workspace-thread-search" id="aiChatHistorySearch" type="search" placeholder="Пребарај разговори…" aria-label="Пребарај разговори">
@@ -3071,7 +3030,7 @@
     return units;
   }
   async function translateGlobalInterface(){
-    if(siteLanguage==="mk"||siteLanguage==="en"||uiTranslationRunning) return;
+    if(siteLanguage==="mk"||uiTranslationRunning) return;
     uiTranslationRunning=true;
     try{
       const units=collectUiTranslationUnits();
@@ -3137,7 +3096,7 @@
     }
   }
   function scheduleGlobalTranslation(){
-    if(siteLanguage==="mk"||siteLanguage==="en") return;
+    if(siteLanguage==="mk") return;
     if(uiTranslationRunning){uiTranslationQueued=true;return;}
     clearTimeout(scheduleGlobalTranslation.timer);
     scheduleGlobalTranslation.timer=setTimeout(()=>translateGlobalInterface(),180);
@@ -4588,7 +4547,7 @@
   $("#year").textContent=new Date().getFullYear();
   applyLanguage();
   scheduleGlobalTranslation();
-  if(siteLanguage!=="mk"&&siteLanguage!=="en"){
+  if(siteLanguage!=="mk"){
     const translationObserver=new MutationObserver(mutations=>{
       if(uiTranslationRunning) return;
       if(mutations.some(m=>m.type==="childList"||m.type==="characterData"||m.type==="attributes")) scheduleGlobalTranslation();
