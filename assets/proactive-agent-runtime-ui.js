@@ -4,6 +4,7 @@ import {
   appendAuditEvent, matterRuntimeSnapshot
 } from "../src/matter-agent-runtime.js";
 import { WORKFLOW_TEMPLATES } from "../src/proactive-legal-agents.js";
+import { getOperatingTask } from "../src/operating-desk-router.js";
 
 const STORAGE_KEY="ai_advokat_proactive_runtime_v1";
 const state={space:null,plan:null,tasks:[],nudges:[],auditLog:[]};
@@ -53,6 +54,17 @@ function render(){
 function tags(v){return String(v||"").split(",").map(x=>x.trim()).filter(Boolean)}
 function initTemplates(){
   $("templateId").innerHTML=Object.values(WORKFLOW_TEMPLATES).map(t=>`<option value="${t.id}">${t.label}</option>`).join("");
+  const params=new URLSearchParams(location.search);
+  const requestedTemplate=params.get("template");
+  const task=getOperatingTask(params.get("task"));
+  if(requestedTemplate && WORKFLOW_TEMPLATES[requestedTemplate]){
+    $("templateId").value=requestedTemplate;
+  }
+  if(task){
+    if(task.workflow && WORKFLOW_TEMPLATES[task.workflow]) $("templateId").value=task.workflow;
+    $("objective").value=task.objective;
+    $("spaceLabel").value=task.label+" · работен предмет";
+  }
 }
 $("createSpace").onclick=()=>{
   try{
