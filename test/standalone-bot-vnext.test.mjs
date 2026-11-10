@@ -8,7 +8,7 @@ test('standalone bot vNext exposes unified professional workspace without replac
   const css=fs.readFileSync('assets/standalone-bot-vnext.css','utf8');
   assert.match(html,/standalone-bot-vnext\.css/);
   assert.match(html,/standalone-bot-vnext\.js/);
-  assert.ok(html.includes('standalone-bot.js?v=20261109-core-r15-voice-r4'));
+  assert.ok(html.includes('standalone-bot.js?v=20261110-language-r3'));
   assert.doesNotMatch(source,/standalone-bot\\.js/);
   assert.match(source,/\/api\\\/bot/);
   assert.match(source,/body\.history=thread\.history\.slice\(-12\)/);
