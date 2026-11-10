@@ -10759,7 +10759,7 @@ const UI_TRANSLATION_MODEL="@cf/meta/m2m100-1.2b";
 const UI_TRANSLATION_FALLBACK_MODEL="@cf/qwen/qwen3.8-27b";
 const UI_TRANSLATION_M2M100_UNSUPPORTED=new Set(["eo","la"]);
 const UI_TRANSLATION_CONCURRENCY=8;
-const UI_TRANSLATION_PROTECTED_SOURCE=String.raw\`https?:\\/\\/[^\\s<>"']+|[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}|10\\.\\d{4,9}\\/[A-Z0-9._;()\\/:+-]+|@cf\\/[A-Z0-9._\\/-]+|\\b(?:Human Gate|LEGAL HOLD|PRODUCTION NO-GO|AI Advokat|HUDOC|EUR-Lex|Zenodo|ORCID)\\b|[A-Z0-9_.-]+\\.(?:pdf|docx|zip|json|html|txt|md)\\b\`;
+const UI_TRANSLATION_PROTECTED_SOURCE="https?:\\/\\/[^\\s<>\\\"\']+|[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}|10\\.\\d{4,9}\\/[A-Z0-9._;()\\/:+-]+|@cf\\/[A-Z0-9._\\/-]+|\\b(?:Human Gate|LEGAL HOLD|PRODUCTION NO-GO|AI Advokat|HUDOC|EUR-Lex|Zenodo|ORCID)\\b|[A-Z0-9_.-]+\\.(?:pdf|docx|zip|json|html|txt|md)\\b";
 
 function uiTranslationSourceLanguage(text){
   const value=String(text||"");
