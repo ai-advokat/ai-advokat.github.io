@@ -28,7 +28,9 @@
     .legal-guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:8px}
     .legal-guide-step{border:1px solid #e3dfd3;border-radius:10px;padding:9px;font-size:12px;line-height:1.45;background:#fff}
     .legal-guide-step b{display:block;margin-bottom:3px}
-  </style>
+  
+    .header-tool-folder{position:relative}.header-tool-folder>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid #d8c08a;border-radius:999px;background:#fffaf0;color:#17212b;font-size:12px;font-weight:850;white-space:nowrap}.header-tool-folder>summary::-webkit-details-marker{display:none}.header-tool-folder[open]>summary,.header-tool-folder>summary:hover{background:#f4ead2}.header-tool-menu{position:absolute;z-index:50;right:0;top:calc(100% + 7px);min-width:235px;padding:8px;border:1px solid #d7c18f;border-radius:12px;background:#fff;color:#17212b;box-shadow:0 14px 34px rgba(10,25,40,.18);display:grid;gap:3px}.header-tool-menu a{display:block;padding:8px 9px;border-radius:8px;color:#17212b;text-decoration:none;font-size:12px;font-weight:750}.header-tool-menu a:hover{background:#fff4df}.material-folder-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px!important}.material-folder{border:1px solid #d7c18f;border-radius:12px;padding:9px;background:#fffaf0}.material-folder>summary{cursor:pointer;font-weight:900;color:#17212b}.material-folder>div{display:grid;gap:4px;margin-top:8px}.material-folder a{display:block!important;margin:0!important}.material-folder[open]{background:#fff}
+</style>
   <script defer src="/assets/guide-router.js"></script>
   <script defer src="/assets/guide-vault.js"></script>
   <script src="/assets/frontend-runtime-guard.js?v=20261101-root-r1"></script>
@@ -40,11 +42,19 @@
 </head>
 <body>
   <header><a href="/bot/" class="brand" aria-label="AI Advokat — почеток"><img src="/assets/ai-advokat-hero-brand.webp" width="400" height="225" alt="AI Advokat"></a>
-    <div class="header-legal-links" aria-label="Главни правни алатки">
-      <a class="header-legal-link" data-header-legal="hybrid" href="/hybrid-legal-intelligence.html" title="Hybrid Legal Intelligence · 10 функции">⌘ <span class="header-link-label">Hybrid 10</span></a>
-      <a class="header-legal-link" data-header-legal="public-legal" href="/public-legal-data-services.html" title="Public Legal Data & e‑Services">⚖ <span class="header-link-label">Open Data & e‑Services</span></a>
-      <a class="header-legal-link" data-header-legal="gold" href="/gold-set-review-gate.html" title="Gold Set Review Gate · 2 boundary reviewers → legal review → Human Gate preflight">◆ <span class="header-link-label">Gold Review Gate</span></a>
-      <a class="header-legal-link" data-header-legal="echr" href="/echr-crosswalk.html" title="F0-FAST-27 · ECHR ↔ domestic case-law research crosswalk · HOLD">§ <span class="header-link-label">ECHR Crosswalk</span></a>
+    <div class="header-legal-links" aria-label="Главни правни алатки по папки">
+      <details class="header-tool-folder"><summary>⚖ <span class="header-link-label">Судови</span></summary><div class="header-tool-menu">
+        <a href="/judicial-practice.html">Судска пракса</a><a href="/case-law-curation.html">Case-Law Radar</a><a data-header-legal="gold" href="/gold-set-review-gate.html">Gold Review Gate</a><a data-header-legal="echr" href="/echr-crosswalk.html">ECHR Crosswalk</a>
+      </div></details>
+      <details class="header-tool-folder"><summary>§ <span class="header-link-label">Службени</span></summary><div class="header-tool-menu">
+        <a href="/sluzben-vesnik/">Службен весник</a><a data-header-legal="public-legal" href="/public-legal-data-services.html">⚖ Open Data & e‑Services</a><a href="/">Правни извори</a>
+      </div></details>
+      <details class="header-tool-folder"><summary>⚡ <span class="header-link-label">AI алатки</span></summary><div class="header-tool-menu">
+        <a data-header-legal="hybrid" href="/hybrid-legal-intelligence.html">⌘ Hybrid 10</a><a href="/legal-ai-suite.html">Legal AI Suite</a><a href="/contract-intelligence.html">AI Contract</a><a href="/casepilot-workspace.html">Secure Case Workspace</a><a href="/legal-command-center.html">Legal Command Center</a>
+      </div></details>
+      <details class="header-tool-folder"><summary>◫ <span class="header-link-label">Материјали</span></summary><div class="header-tool-menu">
+        <a href="/professional-library/">Професионална библиотека</a><a href="/guides/">Водичи</a><a href="/zoki-legal-ai-guide.html">Водилка за Зоки</a>
+      </div></details>
     </div>
     <label class="bot-language-control" for="botLanguage" title="Јазик за AI објаснување, диктирање и глас">
       <span>Јазици</span>
@@ -93,7 +103,7 @@
       <a href="/professional-library/" target="_blank" rel="noopener noreferrer">◫ Материјали и библиотека ↗</a>
       <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">▣ Приватни предмети ↗</a>
       <a href="/hybrid-legal-intelligence.html" target="_blank" rel="noopener noreferrer">⌘ Hybrid Legal Intelligence ↗</a>
-      <a href="/public-legal-data-services.html" target="_blank" rel="noopener noreferrer">⚖ Open Data & e‑Services ↗</a>
+      <a href="/public-legal-data-services.html" target="_blank" rel="noopener noreferrer">⚖ Open Data & e‑Services · evidence + eID handoff ↗</a>
       <a href="/gold-set-review-gate.html" target="_blank" rel="noopener noreferrer">◆ Gold Set Review Gate ↗</a>
       <a href="/echr-crosswalk.html" target="_blank" rel="noopener noreferrer">§ ECHR Crosswalk · F0-FAST-27 ↗</a>
       <p>Разговорот се брише со освежување. Пристапот се памети до 7 дена само ако го изберете тоа при најавување. Приватните предмети имаат сопствено чување.</p>
@@ -191,7 +201,43 @@
       <button type="button" data-export="txt">▤ TXT</button>
       <button type="button" data-export="md">◇ MD</button>
     </div>
-    <div class="material-links"><a href="/hybrid-legal-intelligence.html" target="_blank" rel="noopener noreferrer">⌘ Hybrid 10 · целосен source-first workflow ↗</a><a href="/public-legal-data-services.html" target="_blank" rel="noopener noreferrer">⚖ Open Data & e‑Services · evidence + eID handoff ↗</a><a href="/gold-set-review-gate.html" target="_blank" rel="noopener noreferrer">◆ Gold Review Gate v2.1 · corpus-control + Human Gate ↗</a><a href="/echr-crosswalk.html" target="_blank" rel="noopener noreferrer">§ ECHR Crosswalk · F0-FAST-27 · research HOLD ↗</a><a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">📎 Прикачи документи / Secure Case Workspace ↗</a><a href="/professional-tools.html#analyzer" target="_blank" rel="noopener noreferrer">⚖ Правен анализатор ↗</a><a href="/professional-tools.html#casepilot" target="_blank" rel="noopener noreferrer">▣ CasePilot ↗</a><a href="/" target="_blank" rel="noopener noreferrer">⌕ Целосен портал: закони и пребарување ↗</a><a href="/guides/" target="_blank" rel="noopener noreferrer">▧ Правни водичи ↗</a><a href="/professional-library/" target="_blank" rel="noopener noreferrer">◫ Професионална библиотека и коментари ↗</a><a href="/sluzben-vesnik/" target="_blank" rel="noopener noreferrer">▤ Службен весник и правен аларм ↗</a><a href="/scholar/" target="_blank" rel="noopener noreferrer">◇ Научни трудови ↗</a><a href="/authors/zoran-stojankic/" target="_blank" rel="noopener noreferrer">§ Авторски материјали на Зоран ↗</a><a href="/kolumni/" target="_blank" rel="noopener noreferrer">✦ Колумни ↗</a><a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">▣ Приватни предмети и анализа на документи ↗</a><a href="/document-router.html" target="_blank" rel="noopener noreferrer">▧ Прием и распределба на документи ↗</a><a href="/case-law-curation.html" target="_blank" rel="noopener noreferrer">⚖ Case-Law Corpus Radar ↗</a><a href="/case-law-metadata.html" target="_blank" rel="noopener noreferrer">▤ Судски пресуди и метаподатоци ↗</a><a href="/professional-tools.html" target="_blank" rel="noopener noreferrer">◇ Професионални алатки ↗</a><a href="https://ldbis.pravda.gov.mk/" target="_blank" rel="noopener noreferrer">§ ЛДБИС · Министерство за правда ↗</a><a href="https://hudoc.echr.coe.int/" target="_blank" rel="noopener noreferrer">§ HUDOC · ЕСЧП ↗</a><a href="https://eur-lex.europa.eu/oj/daily-view/L-series/default.html" target="_blank" rel="noopener noreferrer">§ EUR-Lex · Official Journal ↗</a><a href="https://curia.europa.eu/site/" target="_blank" rel="noopener noreferrer">§ CURIA · Суд на ЕУ ↗</a><a href="https://pravno-informacioni-sistem.rs/news-cat/3/0" target="_blank" rel="noopener noreferrer">§ Правно-информациони систем · Србија ↗</a><a href="https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-pravosodje/" target="_blank" rel="noopener noreferrer">§ Министерство за правда · Словенија ↗</a></div>
+    <div class="material-links material-folder-grid">
+      <details class="material-folder" open><summary>⚖ Судови и судска пракса</summary><div>
+        <a href="/judicial-practice.html" target="_blank" rel="noopener noreferrer">⚖ Судска пракса · централен модул ↗</a>
+        <a href="/case-law-curation.html" target="_blank" rel="noopener noreferrer">⚖ Case-Law Corpus Radar ↗</a>
+        <a href="/case-law-metadata.html" target="_blank" rel="noopener noreferrer">▤ Судски пресуди и метаподатоци ↗</a>
+        <a href="/gold-set-review-gate.html" target="_blank" rel="noopener noreferrer">◆ Gold Review Gate v2.1 · corpus-control + Human Gate ↗</a>
+        <a href="/echr-crosswalk.html" target="_blank" rel="noopener noreferrer">§ ECHR Crosswalk · F0-FAST-27 · research HOLD ↗</a>
+        <a href="https://hudoc.echr.coe.int/" target="_blank" rel="noopener noreferrer">§ HUDOC · ЕСЧП ↗</a>
+        <a href="https://curia.europa.eu/site/" target="_blank" rel="noopener noreferrer">§ CURIA · Суд на ЕУ ↗</a>
+      </div></details>
+      <details class="material-folder"><summary>§ Службени извори и e‑услуги</summary><div>
+        <a href="/sluzben-vesnik/" target="_blank" rel="noopener noreferrer">▤ Службен весник и правен аларм ↗</a>
+        <a href="/public-legal-data-services.html" target="_blank" rel="noopener noreferrer">⚖ Open Data & e‑Services ↗</a>
+        <a href="/" target="_blank" rel="noopener noreferrer">⌕ Закони и официјални извори ↗</a>
+        <a href="https://ldbis.pravda.gov.mk/" target="_blank" rel="noopener noreferrer">§ ЛДБИС · Министерство за правда ↗</a>
+        <a href="https://eur-lex.europa.eu/oj/daily-view/L-series/default.html" target="_blank" rel="noopener noreferrer">§ EUR-Lex · Official Journal ↗</a>
+        <a href="https://pravno-informacioni-sistem.rs/news-cat/3/0" target="_blank" rel="noopener noreferrer">§ Правно-информациони систем · Србија ↗</a>
+        <a href="https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-pravosodje/" target="_blank" rel="noopener noreferrer">§ Министерство за правда · Словенија ↗</a>
+      </div></details>
+      <details class="material-folder"><summary>⚡ AI алатки и приватна работа</summary><div>
+        <a href="/contract-intelligence.html" target="_blank" rel="noopener noreferrer">⌘ AI Contract · брз преглед + целосен DPRO-14R ↗</a>
+        <a href="/hybrid-legal-intelligence.html" target="_blank" rel="noopener noreferrer">⌘ Hybrid 10 · целосен source-first workflow ↗</a>
+        <a href="/casepilot-workspace.html" target="_blank" rel="noopener noreferrer">📎 Прикачи документи / Secure Case Workspace ↗</a><a href="/professional-tools.html#casepilot" target="_blank" rel="noopener noreferrer">▣ CasePilot ↗</a>
+        <a href="/professional-tools.html#analyzer" target="_blank" rel="noopener noreferrer">⚖ Правен анализатор ↗</a>
+        <a href="/professional-tools.html" target="_blank" rel="noopener noreferrer">◇ Професионални алатки ↗</a>
+        <a href="/document-router.html" target="_blank" rel="noopener noreferrer">▧ Прием и распределба на документи ↗</a>
+        <a href="/legal-command-center.html" target="_blank" rel="noopener noreferrer">⚙ Legal Command Center ↗</a>
+      </div></details>
+      <details class="material-folder"><summary>◫ Библиотека, водичи и автор</summary><div>
+        <a href="/guides/" target="_blank" rel="noopener noreferrer">▧ Правни водичи ↗</a>
+        <a href="/professional-library/" target="_blank" rel="noopener noreferrer">◫ Професионална библиотека и коментари ↗</a>
+        <a href="/zoki-legal-ai-guide.html" target="_blank" rel="noopener noreferrer">◫ Водилка за Зоки ↗</a>
+        <a href="/scholar/" target="_blank" rel="noopener noreferrer">◇ Научни трудови ↗</a>
+        <a href="/authors/zoran-stojankic/" target="_blank" rel="noopener noreferrer">§ Авторски материјали на Зоран ↗</a>
+        <a href="/kolumni/" target="_blank" rel="noopener noreferrer">✦ Колумни ↗</a>
+      </div></details>
+    </div>
     <h3>◫ Мои проверени водичи</h3>
     <p>Вчитајте ги оригиналните PDF/DOCX водичи или нивниот ZIP-пакет. Се прифаќаат само датотеки што се совпаѓаат со регистарот. За оригинални документи со лични податоци користете го заштитениот простор; за општа правна анализа ботот локално ги маскира препознатливите идентификатори.</p>
     <button id="importGuides" type="button">⇧ Вчитај водичи</button>
