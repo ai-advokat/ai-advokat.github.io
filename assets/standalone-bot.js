@@ -561,9 +561,11 @@ function sources(article, data) {
   }
 }
 async function request(path, {token=key, body, signal} = {}) {
+  const headers={accept:'application/json',...(body ? {'content-type':'application/json'} : {})};
+  if(String(token||'').trim()) headers.authorization='Bearer '+String(token).trim();
   const response = await fetch(base + path, {
     method:body ? 'POST' : 'GET', signal, cache:'no-store',
-    headers:{accept:'application/json', authorization:'Bearer ' + token, ...(body ? {'content-type':'application/json'} : {})},
+    headers,
     ...(body ? {body:JSON.stringify(body)} : {})
   });
   const data = await response.json().catch(() => ({}));
@@ -611,13 +613,13 @@ $('loginForm').onsubmit = async event => {
   } catch { $('loginStatus').textContent = 'Клучот не е активен или услугата не е достапна. Обидете се повторно.'; }
   finally { $('loginSubmit').disabled = false; }
 };
-$('newChat').onclick = () => { voiceRuntime?.stopSpeaking(); voiceRuntime?.stopRecognition(); reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Внесете професионален клуч преку ⋯.'); };
-$('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Сесијата и зачуваниот пристап се избришани.'); };
+$('newChat').onclick = () => { voiceRuntime?.stopSpeaking(); voiceRuntime?.stopRecognition(); reset(); status(key ? 'Нов разговор · професионален пристап.' : 'Нов разговор · TRAINING режим без шифра.'); };
+$('logout').onclick = () => { $('useLocalGuides').checked = false; key = ''; forgetDeviceAccess(deviceStorage); reset(); $('login').close(); status('Професионалниот клуч е отстранет. TRAINING режимот без шифра останува достапен.'); };
 $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => {
   $('question').style.height = 'auto';
   $('question').style.height = Math.min($('question').scrollHeight,180) + 'px';
-  if (!pending) $('send').disabled = !!key && $('question').value.trim().length < 2;
+  if (!pending) $('send').disabled = $('question').value.trim().length < 2;
 };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
 $('mic').addEventListener('click',()=>voiceRuntimeReady.then(voice=>voice?.stopSpeaking?.()),{capture:true});
@@ -631,12 +633,6 @@ voiceRuntimeReady.then(voice=>{
     onTranscript:()=>{
       if(pending){
         status('Тековниот одговор сè уште се обработува. Запрете го или почекајте, па зборувајте повторно.');
-        return;
-      }
-      if(!key){
-        voiceConversationPending=false;
-        status('Говорот е внесен. За автоматско испраќање внесете активен професионален код преку ⋯.');
-        $('access').click();
         return;
       }
       voiceConversationPending=true;
@@ -663,12 +659,6 @@ $('composer').onsubmit = async event => {
     writePreferredLanguage(languageSwitch);
     status("Го менувам интерфејсот, AI одговорот и гласот на "+languageMeta(languageSwitch).name+"…");
     location.reload();
-    return;
-  }
-
-  if (!key) {
-    status('Најпрво внесете го вашиот приватен код за влез.');
-    $('access').click();
     return;
   }
 
@@ -742,7 +732,11 @@ $('composer').onsubmit = async event => {
     voiceConversationPending=false;
     pulse.remove();
     if (epoch !== generation) return;
-    if (error.status === 401) { key = ''; forgetDeviceAccess(deviceStorage); status('Пристапот истекол. Внесете активен код преку ⋯.'); }
+    if (error.status === 401) {
+      key = '';
+      forgetDeviceAccess(deviceStorage);
+      status('Професионалниот клуч не е активен. Продолжувам во TRAINING режим без шифра — обидете се повторно.');
+    }
     else if (error.name === 'AbortError') status('Барањето е запрено или истече времето за одговор. Можете да се обидете повторно.');
     else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
     $('question').value = q;
@@ -754,21 +748,26 @@ $('composer').onsubmit = async event => {
 };
 async function restoreAccess() {
   const saved = readDeviceAccess(deviceStorage);
-  if (!saved) return;
+  if (!saved) {
+    status('TRAINING режим · без шифра · приватни предмети остануваат во Secure Case.');
+    return;
+  }
   const epoch = generation;
-  status('Го проверувам зачуваниот пристап…');
+  status('Го проверувам зачуваниот професионален пристап…');
   try {
     await request('/api/membership/status',{token:saved,signal:AbortSignal.timeout(20000)});
     if (epoch !== generation) return;
-    key = saved; busy(false); status('Добредојдовте. Подготвено за разговор.');
+    key = saved; busy(false); status('Професионален пристап е активен. Подготвено за разговор.');
   } catch(error) {
     if (epoch !== generation) return;
     if (error.status === 401) forgetDeviceAccess(deviceStorage);
-    status('Пристапот не може да се потврди. Отворете ⋯ → Професионален пристап.');
+    key='';
+    busy(false);
+    status('Зачуваниот клуч не е активен. TRAINING режимот без шифра е достапен.');
   }
 }
-// Ensure a fresh device can type and submit a question even before access is restored.
-// If no key exists, submit opens the governed professional-access dialog instead of appearing inert.
+// Fresh devices may chat immediately in bounded TRAINING mode; a membership key
+// remains optional for professional entitlements and mandatory for Secure Case.
 installCompactExternalChrome();
 bindLanguageSelector();
 voiceRuntimeReady.then(voice=>{
