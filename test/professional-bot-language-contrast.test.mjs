@@ -3,7 +3,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const css=fs.readFileSync("assets/standalone-bot-r7.css","utf8");
-const bot=fs.readFileSync("bot/index.html","utf8");\nconst runtime=fs.readFileSync("assets/standalone-bot.js","utf8");
+const bot=fs.readFileSync("bot/index.html","utf8");
+const runtime=fs.readFileSync("assets/standalone-bot.js","utf8");
 
 test("professional bot keeps all 33 language options and readable option contrast",()=>{
   const select=bot.match(/<select id="botLanguage"[\s\S]*?<\/select>/)?.[0]||"";
