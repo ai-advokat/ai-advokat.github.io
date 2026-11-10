@@ -79,7 +79,7 @@ jobs:
           console.log("PRODUCTION CONTRACT: PASS");
           NODE
 
-      - name: Verify live Worker, orchestrator and unauthenticated bot boundary
+      - name: Verify live Worker, orchestrator and bounded TRAINING boundary
         shell: bash
         run: |
           set -euo pipefail
@@ -94,10 +94,17 @@ jobs:
           if(o.runtime?.lioeRuntimeGovernance!=="enabled" || o.runtime?.lioePostflight!=="enabled" || o.runtime?.lioeSpecialistExecution!=="enabled") throw new Error("LIOE runtime not ready");
           console.log("LIVE GOVERNED RUNTIME: PASS");
           NODE
-          code="$(curl -sS -o /tmp/pro-unauth.json -w '%{http_code}' -H 'content-type: application/json' -d '{"q":"Здраво"}' "$BASE/api/bot")"
-          test "$code" = "401"
-          grep -q 'bot_membership_required' /tmp/pro-unauth.json
-          echo "UNAUTHENTICATED /api/bot FAIL-CLOSED: PASS"
+          code="$(curl -sS -o /tmp/pro-unauth.json -w '%{http_code}'             -H 'content-type: application/json'             -H 'accept: application/json'             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Здраво","sessionId":"PRO-SMOKE-TRAINING-R14","mode":"auto","history":[],"attachments":[]}'             "$BASE/api/bot")"
+          test "$code" = "200"
+          jq -e '
+            .ok == true
+            and .mode == "training"
+            and .membership.planCode == "training"
+            and .membership.trainingOpen == true
+            and .privacy.providerCalled == false
+            and .privacy.quotaConsumed == false
+          ' /tmp/pro-unauth.json >/dev/null
+          echo "UNAUTHENTICATED /api/bot BOUNDED TRAINING: PASS"
 
       - name: Provision ephemeral synthetic Professional membership
         shell: bash
