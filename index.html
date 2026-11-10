@@ -167,7 +167,12 @@
       font:inherit
     }
 
-    .utility select{max-width:190px;cursor:pointer}
+    .utility select{
+      max-width:190px;
+      cursor:pointer;
+      background:#ffffff!important;
+      color:#071524!important;
+    }
     .utility select option{
       background:#ffffff;
       color:#071524;
@@ -177,10 +182,15 @@
       color:#071524;
     }
     .utility button:hover,
-    .utility button:focus-visible,
+    .utility button:focus-visible{
+      background:#10253a;
+      outline:2px solid rgba(185,152,91,.45);
+      outline-offset:1px
+    }
     .utility select:hover,
     .utility select:focus-visible{
-      background:#10253a;
+      background:#eef3f7!important;
+      color:#071524!important;
       outline:2px solid rgba(185,152,91,.45);
       outline-offset:1px
     }
@@ -3067,8 +3077,21 @@
       const units=collectUiTranslationUnits();
       const cache=uiTranslationCache();
       const pending=[...new Set(units.map(x=>x.source).filter(text=>!cache[text]))];
-      for(let i=0;i<pending.length;i+=36){
-        const texts=pending.slice(i,i+36);
+      const batches=[];
+      let batch=[],batchChars=0;
+      for(const text of pending){
+        const clean=String(text||"");
+        const nextChars=batchChars+clean.length;
+        if(batch.length && (batch.length>=72 || nextChars>9000)){
+          batches.push(batch);
+          batch=[];
+          batchChars=0;
+        }
+        batch.push(clean);
+        batchChars+=clean.length;
+      }
+      if(batch.length) batches.push(batch);
+      for(const texts of batches){
         const items=texts.map((text,j)=>({id:String(j),text}));
         try{
           const r=await fetch(API_BASE+"/api/ui-translate",{
@@ -3077,7 +3100,10 @@
             body:JSON.stringify({targetLanguage:siteLanguage,items})
           });
           const d=await r.json();
-          if(!r.ok||d?.ok!==true||!Array.isArray(d.translations)) continue;
+          if(!r.ok||d?.ok!==true||!Array.isArray(d.translations)){
+            console.warn("ui_translation_batch_failed",r.status,d?.error||"unknown");
+            continue;
+          }
           d.translations.forEach((row,j)=>{
             const source=texts[j];
             const translated=String(row?.text||"").trim();
