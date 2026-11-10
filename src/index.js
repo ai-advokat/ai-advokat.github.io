@@ -6572,19 +6572,62 @@ async function handleLegalAnalyzerVerify(request,env){
 }
 
 const EXTERNAL_BOT_CAPABILITY_ROUTES=new Set([
-  "SECURE_CASE","AI_CONTRACT_PRO","CONSOLIDATOR","LEGAL_ANALYZER","GOVERNED_PREDICTOR","CASE_LAW_RESEARCH"
+  "SECURE_CASE",
+  "AI_CONTRACT_PRO",
+  "CONSOLIDATOR",
+  "LEGAL_ANALYZER",
+  "GOVERNED_PREDICTOR",
+  "CASE_LAW_RESEARCH",
+  "ECHR_CROSSWALK",
+  "PUBLIC_EVIDENCE",
+  "JUSTICE_DAILY",
+  "PROFESSIONAL_ECOSYSTEM",
+  "LIVING_LAW",
+  "SMART_DOCUMENTS",
+  "LEGAL_WATCH",
+  "HYBRID_LEGAL_INTELLIGENCE",
+  "LEGAL_SOURCES",
+  "DOCUMENTS",
+  "LIBRARY",
+  "WORKFLOWS",
+  "HUMAN_GATE",
+  "LEGAL_COMMAND_CENTER",
+  "PROACTIVE_RUNTIME",
+  "PROACTIVE_AGENTS",
+  "FACT_EVIDENCE_GRAPH",
+  "CONNECTOR_LIBRARY",
+  "REVIEW_VAULT"
 ]);
 
 function detectExternalBotCapabilityRoute(text){
   const q=String(text||"").trim().toLowerCase();
   if(!q) return "";
-  // Privacy-sensitive intent always outranks functional routing.
+  // Specific governed workflows outrank generic drafting/analysis routes.
   if(/(?:приватен\s+предмет|доверлив|casepilot|secure\s+case|оригинален\s+документ)/iu.test(q)) return "SECURE_CASE";
-  if(/(?:договор|анекс|спогодб|закуп|contract|agreement|clause)/iu.test(q)) return "AI_CONTRACT_PRO";
-  if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)) return "CONSOLIDATOR";
-  if(/(?:анализ|analy[sz]|правн[ао]\s+оцен|review\s+this)/iu.test(q)) return "LEGAL_ANALYZER";
-  if(/(?:предиктор|predict|сценари|ризик.*исход|исход.*ризик)/iu.test(q)) return "GOVERNED_PREDICTOR";
+  if(/(?:echr|есчп|hudoc|crosswalk)/iu.test(q)) return "ECHR_CROSSWALK";
   if(/(?:судск[аи].*(?:пракс|одлук|пресуд)|case\s*law|judgment|преседан)/iu.test(q)) return "CASE_LAW_RESEARCH";
+  if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)) return "CONSOLIDATOR";
+  if(/(?:smart\s+(?:legal\s+)?document|тужба\s+за\s+развод|одговор\s+на\s+тужба|опомена\s+пред\s+тужба|полномошно)/iu.test(q)) return "SMART_DOCUMENTS";
+  if(/(?:ai\s*contract|договор|анекс|спогодб|закуп|contract|agreement|clause)/iu.test(q)) return "AI_CONTRACT_PRO";
+  if(/(?:предиктор|predict|сценари|ризик.*исход|исход.*ризик)/iu.test(q)) return "GOVERNED_PREDICTOR";
+  if(/(?:јавн[ио]\s+доказ|public\s+evidence|open\s+data\s+evidence)/iu.test(q)) return "PUBLIC_EVIDENCE";
+  if(/(?:justice\s+daily|правосуден\s+бриф|дневен\s+правосуд)/iu.test(q)) return "JUSTICE_DAILY";
+  if(/(?:living\s+law|важечк[ао]\s+право|временск[аи]\s+верзи|historical\s+law|регулаторна\s+лини)/iu.test(q)) return "LIVING_LAW";
+  if(/(?:legal\s+watch|следи\s+(?:службен|енер|собрание|уставен|врховен)|што\s+е\s+ново.*(?:прав|закон))/iu.test(q)) return "LEGAL_WATCH";
+  if(/(?:professional\s+ecosystem|pro\s+ecosystem|калкулатор|пресметај.*(?:камата|процент|рок))/iu.test(q)) return "PROFESSIONAL_ECOSYSTEM";
+  if(/(?:hybrid\s+legal|hybrid\s*10|time\s+machine|law\s*[↔-]\s*bylaw)/iu.test(q)) return "HYBRID_LEGAL_INTELLIGENCE";
+  if(/(?:legal\s+command\s+center|command\s+center)/iu.test(q)) return "LEGAL_COMMAND_CENTER";
+  if(/(?:proactive\s+runtime)/iu.test(q)) return "PROACTIVE_RUNTIME";
+  if(/(?:proactive\s+agents?|проактивн[ио]\s+агент)/iu.test(q)) return "PROACTIVE_AGENTS";
+  if(/(?:fact\s*(?:&|and)\s*evidence\s+graph|граф.*(?:факт|доказ))/iu.test(q)) return "FACT_EVIDENCE_GRAPH";
+  if(/(?:connector\s+library|конектор)/iu.test(q)) return "CONNECTOR_LIBRARY";
+  if(/(?:review\s+(?:tables|vault)|batch\s+review|review\s+vault)/iu.test(q)) return "REVIEW_VAULT";
+  if(/(?:правн[ио]\s+извор|legal\s+source|службен\s+извор)/iu.test(q)) return "LEGAL_SOURCES";
+  if(/(?:документи|documents|извоз|export)/iu.test(q)) return "DOCUMENTS";
+  if(/(?:библиотек|library)/iu.test(q)) return "LIBRARY";
+  if(/(?:workflow|работен\s+тек|процесен\s+тек)/iu.test(q)) return "WORKFLOWS";
+  if(/(?:human\s+gate|човечк[аи]\s+(?:контрола|порта)|проверка\s+од\s+адвокат)/iu.test(q)) return "HUMAN_GATE";
+  if(/(?:анализ|analy[sz]|правн[ао]\s+оцен|review\s+this)/iu.test(q)) return "LEGAL_ANALYZER";
   return "";
 }
 
@@ -6593,10 +6636,10 @@ function externalBotCapabilityDirective(route){
     case "AI_CONTRACT_PRO":
       return [
         "HIDDEN CAPABILITY: AI_CONTRACT_PRO.",
-        "Treat the user request as contract intelligence, drafting or review.",
+        "Treat the request as governed contract intelligence, drafting or review.",
         "Identify parties/roles, object, obligations, deadlines, payment, termination, liability, dispute clauses, missing facts and legal-risk points.",
         "If facts are sufficient, produce a structured WORKING DRAFT; otherwise ask only for materially necessary facts.",
-        "Never claim signature, execution, filing or legal finality. HUMAN GATE REQUIRED."
+        "Do not invent clauses, dates, parties, signatures or legal finality. HUMAN GATE REQUIRED."
       ].join("\n");
     case "CONSOLIDATOR":
       return [
@@ -6620,8 +6663,96 @@ function externalBotCapabilityDirective(route){
     case "CASE_LAW_RESEARCH":
       return [
         "HIDDEN CAPABILITY: CASE_LAW_RESEARCH.",
-        "Prioritise governed court/HUDOC sources, identify jurisdiction and authority level, and distinguish discovery from verified authority."
+        "Prioritise governed court sources, identify jurisdiction and authority level, and distinguish discovery from verified authority."
       ].join("\n");
+    case "ECHR_CROSSWALK":
+      return [
+        "HIDDEN CAPABILITY: ECHR_CROSSWALK.",
+        "Use the governed ECHR/HUDOC crosswalk discipline.",
+        "Separate domestic authority, Convention provision, HUDOC authority, historical-law applicability and unresolved verification.",
+        "Research HOLD remains until sources and applicability are independently verified."
+      ].join("\n");
+    case "PUBLIC_EVIDENCE":
+      return [
+        "HIDDEN CAPABILITY: PUBLIC_EVIDENCE.",
+        "Treat public-data material as evidence/discovery, never as an automatic legal conclusion.",
+        "Separate FACT / SOURCE-BACKED OBSERVATION / WHAT THIS DOES NOT PROVE / CORROBORATION NEEDED / LEGAL RELEVANCE / HUMAN GATE."
+      ].join("\n");
+    case "JUSTICE_DAILY":
+      return [
+        "HIDDEN CAPABILITY: JUSTICE_DAILY.",
+        "Prioritise official justice-sector sources and dated institutional updates.",
+        "A news/update item is not itself a legal conclusion. Preserve source-health and Human Gate."
+      ].join("\n");
+    case "PROFESSIONAL_ECOSYSTEM":
+      return [
+        "HIDDEN CAPABILITY: PROFESSIONAL_ECOSYSTEM.",
+        "Use the shared Professional Ecosystem boundaries: Living Law, Operations Registry, deterministic calculators, Smart Documents and Legal Watch.",
+        "Never infer a legal rate, procedural deadline, official status or current-law proposition without the required source/version verification."
+      ].join("\n");
+    case "LIVING_LAW":
+      return [
+        "HIDDEN CAPABILITY: LIVING_LAW.",
+        "Resolve law by version, effective date and application date. Distinguish current law from historical law and proposals.",
+        "If the authoritative version chain is incomplete, mark SOURCE/VERSION GAP."
+      ].join("\n");
+    case "SMART_DOCUMENTS":
+      return [
+        "HIDDEN CAPABILITY: SMART_DOCUMENTS.",
+        "Produce only a WORKING DRAFT from supplied facts and verified sources.",
+        "Expose missing fields explicitly; never invent court, parties, dates, deadlines, remedies, fees or legal effects."
+      ].join("\n");
+    case "LEGAL_WATCH":
+      return [
+        "HIDDEN CAPABILITY: LEGAL_WATCH.",
+        "Monitor official channels as discovery/watch sources and distinguish proposal, publication, entry into force and application.",
+        "Do not convert an update into current-law authority without version/effective-date verification."
+      ].join("\n");
+    case "HYBRID_LEGAL_INTELLIGENCE":
+      return [
+        "HIDDEN CAPABILITY: HYBRID_LEGAL_INTELLIGENCE.",
+        "Use the Hybrid workflow: temporal law, law-bylaw relation, case-law, legal calendar, consolidation diff, public evidence, official services and Human Handoff.",
+        "No autonomous filing, signing or official submission."
+      ].join("\n");
+    case "LEGAL_SOURCES":
+      return [
+        "HIDDEN CAPABILITY: LEGAL_SOURCES.",
+        "Prioritise primary/official legal sources, version identity, article identity and source provenance before synthesis."
+      ].join("\n");
+    case "DOCUMENTS":
+      return [
+        "HIDDEN CAPABILITY: DOCUMENTS.",
+        "For non-confidential material, structure document work as a working artifact. Original confidential documents and exact identifiers belong in Secure Case Workspace.",
+        "Preserve provenance and Human Gate."
+      ].join("\n");
+    case "LIBRARY":
+      return [
+        "HIDDEN CAPABILITY: LIBRARY.",
+        "Use governed library/research material as supporting context and clearly distinguish it from binding authority."
+      ].join("\n");
+    case "WORKFLOWS":
+      return [
+        "HIDDEN CAPABILITY: WORKFLOWS.",
+        "Turn the request into a bounded legal workflow with inputs, source checks, decision points, outputs and Human Gate."
+      ].join("\n");
+    case "HUMAN_GATE":
+      return [
+        "HIDDEN CAPABILITY: HUMAN_GATE.",
+        "Return a verification checklist covering source, temporal validity, jurisdiction, adverse authority, evidence gaps, confidentiality and execution authorization.",
+        "Do not represent AI output as final professional approval."
+      ].join("\n");
+    case "LEGAL_COMMAND_CENTER":
+      return "HIDDEN CAPABILITY: LEGAL_COMMAND_CENTER. Organise the matter into tasks, evidence, deadlines, source checks, risks and Human Gate without taking external legal action.";
+    case "PROACTIVE_RUNTIME":
+      return "HIDDEN CAPABILITY: PROACTIVE_RUNTIME. Build a bounded monitoring/follow-up plan only; do not claim continuous background execution unless an actual scheduled system is configured.";
+    case "PROACTIVE_AGENTS":
+      return "HIDDEN CAPABILITY: PROACTIVE_AGENTS. Decompose the matter into specialist legal-agent roles while keeping final authority and mandate with the human lawyer.";
+    case "FACT_EVIDENCE_GRAPH":
+      return "HIDDEN CAPABILITY: FACT_EVIDENCE_GRAPH. Map facts, claims, evidence, contradictions, provenance and unresolved links without promoting inference into fact.";
+    case "CONNECTOR_LIBRARY":
+      return "HIDDEN CAPABILITY: CONNECTOR_LIBRARY. Identify the appropriate connected/source system and its authority boundary; access is not mandate.";
+    case "REVIEW_VAULT":
+      return "HIDDEN CAPABILITY: REVIEW_VAULT. Structure batch review, issue flags, provenance and Human Gate; do not silently approve or publish.";
     default:
       return "";
   }
@@ -6641,11 +6772,18 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
 
   const readiness=orchestratorRuntimeReadiness(env);
-  // The standalone professional bot never degrades into anonymous/FREE chat.
+  const trainingOpen=openAIOnly && env.EXTERNAL_BOT_TRAINING_OPEN==="true";
   const botMembership=openAIOnly ? await resolveMembership(request,env) : null;
-  if(openAIOnly && !botMembership) return json(request,{ok:false,error:"bot_membership_required",message:"Внесете активен професионален клуч."},401);
-  if(openAIOnly && readiness.provider!=="configured") return json(request,{ok:false,error:"gpt_provider_locked",message:"OpenAI моментално не е достапен. Обидете се повторно подоцна."},503);
+  if(openAIOnly && !botMembership && !trainingOpen){
+    return json(request,{ok:false,error:"bot_membership_required",message:"Внесете активен професионален клуч."},401);
+  }
   const freeProviderReady=freeWorkersAIConfigured(env);
+  // In governed training-open mode an anonymous external-bot caller uses the
+  // same bounded FREE provider/quota path as the internal public assistant.
+  // Membership remains mandatory for Secure Case/private workspace operations.
+  if(openAIOnly && botMembership && readiness.provider!=="configured" && !freeProviderReady){
+    return json(request,{ok:false,error:"gpt_provider_locked",message:"AI provider моментално не е достапен. Обидете се повторно подоцна."},503);
+  }
   if(readiness.provider!=="configured" && !freeProviderReady){
     return json(request,{
       ok:false,
@@ -7130,7 +7268,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           status:botMembership.status,
           monthlyQuota:botMembership.monthlyQuota,
           seats:botMembership.seats
-        } : {planCode:"free"},
+        } : {planCode:trainingOpen?"training":"free",trainingOpen},
         humanGate:"Source-first property-law analysis. Before consequential use or filing, verify the exact object, possession history, good faith, lawful basis where required, interruptions, predecessors, public-register status, parties, jurisdiction and current statutory text."
       });
     }
@@ -7175,7 +7313,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           status:botMembership.status,
           monthlyQuota:botMembership.monthlyQuota,
           seats:botMembership.seats
-        } : {planCode:"free"},
+        } : {planCode:trainingOpen?"training":"free",trainingOpen},
         humanGate:"Source-first family-law draft. Before filing, verify jurisdiction, parties, facts, children, exact statutory basis, current consolidated text, court fees, power of attorney and attachments."
       });
     }
@@ -7375,7 +7513,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       if(error instanceof SecurityConfigError) return json(request,{ok:false,error:"assistant_temporarily_unavailable"},503);
       throw error;
     }
-    quota=MEMBERSHIP_PLANS.free.monthlyQuota;
+    const configuredTrainingQuota=Number(env.EXTERNAL_BOT_TRAINING_MONTHLY_QUOTA||100);
+    const boundedTrainingQuota=Number.isFinite(configuredTrainingQuota)
+      ? Math.min(100,Math.max(MEMBERSHIP_PLANS.free.monthlyQuota,Math.trunc(configuredTrainingQuota)))
+      : 100;
+    quota=trainingOpen ? boundedTrainingQuota : MEMBERSHIP_PLANS.free.monthlyQuota;
   }
 
   // P0 cost guard: anonymous/FREE traffic must never spill into the paid OpenAI path.

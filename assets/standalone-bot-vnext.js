@@ -505,6 +505,9 @@ function runAction(action){
   if(action==='library'){$('materialsDialog')?.showModal();return;}
 }
 
+window.AIAdvokatVNext.runAction=runAction;
+window.AIAdvokatVNext.capabilityMode="conversation-first-full-parity";
+
 function downloadTextBlob(body,filename,type){
   const url=URL.createObjectURL(new Blob([body],{type}));
   const a=mk('a',{href:url,download:filename,rel:'noopener'});

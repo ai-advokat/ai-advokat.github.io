@@ -8,16 +8,34 @@ const base = 'https://ai-advokat-github-io.aiadvokat16.workers.dev';
 const post = (key='') => new Request(base+'/api/bot',{method:'POST',headers:{'content-type':'application/json',...(key?{authorization:'Bearer '+key}:{})},body:JSON.stringify({q:'Здраво'})});
 const db = row => ({prepare(){return {bind(){return {first:async()=>row}}}}});
 
-test('standalone bot rejects anonymous requests even when FREE AI is configured', async()=>{
+test('standalone bot stays membership-gated when training-open flag is disabled', async()=>{
   let calls=0;
   const response=await worker.fetch(post(),{FREE_CHAT_PROVIDER:'workers_ai',AI:{run(){calls++;throw Error('Must not run')}}},{});
   assert.equal(response.status,401);
   assert.equal((await response.json()).error,'bot_membership_required');
   assert.equal(calls,0);
 });
-test('revoked membership cannot silently become a FREE conversation',async()=>{
+test('standalone bot permits bounded anonymous training only when explicitly enabled',async()=>{
+  const response=await worker.fetch(post(),{
+    EXTERNAL_BOT_TRAINING_OPEN:'true',
+    EXTERNAL_BOT_TRAINING_MONTHLY_QUOTA:'100',
+    FREE_CHAT_PROVIDER:'workers_ai',
+    AI:{run(){throw Error('Greeting fast lane must not call provider')}}
+  },{});
+  assert.equal(response.status,200);
+  const result=await response.json();
+  assert.equal(result.ok,true);
+});
+test('revoked membership may fall back only to explicitly enabled public training mode',async()=>{
   const response=await worker.fetch(post('revoked-fixture-key'),{DB:db(null)},{});
   assert.equal(response.status,401);
+  const training=await worker.fetch(post('revoked-fixture-key'),{
+    DB:db(null),
+    EXTERNAL_BOT_TRAINING_OPEN:'true',
+    FREE_CHAT_PROVIDER:'workers_ai',
+    AI:{run(){throw Error('Greeting fast lane must not call provider')}}
+  },{});
+  assert.equal(training.status,200);
 });
 test('active membership without OpenAI fails closed',async()=>{
   const response=await worker.fetch(post('active-fixture-key'),{DB:db({account_id:'test',plan_code:'pro',monthly_quota:10})},{});
@@ -34,13 +52,15 @@ test('standalone bot retains confidential-case rejection before provider executi
 });
 
 
-test('first-time users can trigger access from the send action',()=>{
+test('first-time users can chat in training mode without a membership code',()=>{
   const source=fs.readFileSync('assets/standalone-bot.js','utf8');
   assert.ok(source.includes("const hasQuestion = String($('question')?.value || '').trim().length >= 2;"));
-  assert.ok(source.includes("$('send').disabled = value || (!!key && !hasQuestion);"));
+  assert.ok(source.includes("$('send').disabled = value || !hasQuestion;"));
   assert.ok(!source.includes("$('send').disabled = value || !key;"));
+  assert.ok(!source.includes("Најпрво внесете го вашиот приватен код за влез."));
+  assert.ok(source.includes("TRAINING режим · без шифра"));
+  assert.ok(source.includes("if(String(token||'').trim()) headers.authorization"));
   assert.ok(source.includes("busy(false);"));
-  assert.ok(source.includes("Најпрво внесете го вашиот приватен код за влез."));
 });
 
 
@@ -185,24 +205,26 @@ test('external bot UI parity keeps compact dual-section loader and top message a
 });
 
 
-test('fresh mobile device can activate send and reach governed access flow',()=>{
+test('fresh mobile device can chat immediately while retaining optional professional access',()=>{
   const source=fs.readFileSync('assets/standalone-bot.js','utf8');
   const html=fs.readFileSync('bot/index.html','utf8');
   assert.match(source,/const hasQuestion = String\(\$\('question'\)\?\.value \|\| ''\)\.trim\(\)\.length >= 2/);
-  assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = !!key && \$\('question'\)\.value\.trim\(\)\.length < 2/);
+  assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = \$\('question'\)\.value\.trim\(\)\.length < 2/);
   assert.match(source,/busy\(false\);\s*window\.AIAdvokatCoreReady = true/);
   assert.match(source,/if \(results\[2\]\.status === 'fulfilled'\) restoreAccess\(\);/);
-  assert.match(source,/if \(!key\) \{[\s\S]{0,180}\$\('access'\)\.click\(\)/);
+  assert.doesNotMatch(source,/Најпрво внесете го вашиот приватен код за влез/);
+  assert.match(source,/TRAINING режим/);
   assert.match(source,/if \(q\.length < 2\) return;/);
+  assert.match(html,/Професионален пристап · опционално/);
   assert.match(html,/standalone-bot-vnext\.js\?v=20261107-hybrid-r2-lawyer-view/);
 });
 
 
-test('fresh-device access submit stays tappable before question entry and stray newline markup is absent',()=>{
+test('fresh-device training submit is bounded by actual question content',()=>{
   const source=fs.readFileSync('assets/standalone-bot.js','utf8');
   const html=fs.readFileSync('bot/index.html','utf8');
-  assert.match(source,/\$\('send'\)\.disabled = value \|\| \(!!key && !hasQuestion\)/);
-  assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = !!key && \$\('question'\)\.value\.trim\(\)\.length < 2/);
+  assert.match(source,/\$\('send'\)\.disabled = value \|\| !hasQuestion/);
+  assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = \$\('question'\)\.value\.trim\(\)\.length < 2/);
   assert.doesNotMatch(html,/\\n\s*<link rel="stylesheet"/);
   assert.match(html,/standalone-bot\.css\?v=20261106-access-r15-voice/);
 });
@@ -303,4 +325,33 @@ test('external bot preserves full 4000-char user request before adding hidden ro
   assert.match(client,/function withOutputLanguageDirective\(text\)\{[\s\S]*return String\(text\|\|""\)/);
   assert.match(client,/outputLanguage:selectedLanguageMeta\(\)\.code/);
   assert.match(client,/capabilityRoute:conversationalCapabilityRoute\(outboundQ\)/);
+});
+
+
+test('training-open access never opens Secure Case without membership',async()=>{
+  const request=new Request(base+'/api/bot',{
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body:JSON.stringify({q:'Ова е доверлив предмет со оригинален документ и ЕМБГ 0101000450001.'})
+  });
+  const response=await worker.fetch(request,{
+    EXTERNAL_BOT_TRAINING_OPEN:'true',
+    EXTERNAL_BOT_TRAINING_MONTHLY_QUOTA:'100',
+    FREE_CHAT_PROVIDER:'workers_ai',
+    AI:{run(){throw Error('Confidential training request must stop before provider')}}
+  },{});
+  assert.equal(response.status,422);
+  const result=await response.json();
+  assert.equal(result.error,'confidential_case_workspace_required');
+  assert.equal(result.privacy.providerCalled,false);
+});
+
+test('production config explicitly enables bounded external training without weakening Secure Case membership',()=>{
+  const wrangler=fs.readFileSync('wrangler.jsonc','utf8');
+  const source=fs.readFileSync('src/index.js','utf8');
+  assert.match(wrangler,/"EXTERNAL_BOT_TRAINING_OPEN": "true"/);
+  assert.match(wrangler,/"EXTERNAL_BOT_TRAINING_MONTHLY_QUOTA": "100"/);
+  assert.match(source,/const trainingOpen=openAIOnly && env\.EXTERNAL_BOT_TRAINING_OPEN==="true"/);
+  assert.match(source,/Math\.min\(100,Math\.max\(MEMBERSHIP_PLANS\.free\.monthlyQuota/);
+  assert.match(source,/async function caseWorkspaceMembership[\s\S]*resolveMembership\(request,env\)/);
 });
