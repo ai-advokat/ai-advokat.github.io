@@ -42,11 +42,22 @@ export function workersAIRequestOptions({
   maxOutputTokens=1800,
   temperature=0.1,
   responseFormat=null,
-  reasoningEffort="low"
+  reasoningEffort="low",
+  translationText=null,
+  sourceLanguage=null,
+  targetLanguage=null
 }={}){
   const resolved=String(model||WORKERS_AI_TEXT_MODEL_DEFAULT);
   const maxTokens=Math.max(256,Math.min(6000,Number(maxOutputTokens)||1800));
   const safeMessages=Array.isArray(messages)?messages:[];
+
+  if(resolved.includes("/m2m100-")){
+    return {
+      text:String(translationText||""),
+      source_lang:String(sourceLanguage||"en"),
+      target_lang:String(targetLanguage||"en")
+    };
+  }
 
   // GPT-OSS on Workers AI supports the Responses API shape directly through
   // The Workers AI binding accepts this Responses shape directly. Use it deliberately so reasoning effort is explicit and
@@ -118,7 +129,7 @@ export function extractWorkersAIText(value,depth=0){
   }
 
   // Explicit top-level final-answer fields are safe to prefer.
-  for(const key of ["response","output_text","answer"]){
+  for(const key of ["response","output_text","answer","translated_text"]){
     const found=extractWorkersAIText(value[key],depth+1);
     if(found) return found;
   }
@@ -226,7 +237,10 @@ export async function runWorkersAIText(env,{
   reasoningEffort="low",
   sessionAffinity=null,
   timeoutMs=30000,
-  allowEmptyFallback=true
+  allowEmptyFallback=true,
+  translationText=null,
+  sourceLanguage=null,
+  targetLanguage=null
 }={}){
   if(!env?.AI || typeof env.AI.run!=="function"){
     return {ok:false,error:"workers_ai_not_configured"};
@@ -239,7 +253,10 @@ export async function runWorkersAIText(env,{
     maxOutputTokens,
     temperature,
     responseFormat,
-    reasoningEffort
+    reasoningEffort,
+    translationText,
+    sourceLanguage,
+    targetLanguage
   });
 
   const affinity=String(sessionAffinity||"").trim();
