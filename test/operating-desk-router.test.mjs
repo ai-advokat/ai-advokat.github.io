@@ -16,6 +16,14 @@ test("confidential contract work routes through Secure Case first",()=>{
   assert.equal(plan.workflowTemplate,"contract_review");
   assert.equal(plan.humanGate.externalTransmission,"locked");
   assert.equal(plan.humanGate.contractAcceptance,"locked");
+  assert.equal(plan.privacyRoute,"secure_case_first");
+  assert.match(plan.nextActions[0].label,/редигиран\/одобрен/);
+});
+
+test("confidential new matter remains explicitly Secure Case routed",()=>{
+  const plan=buildOperatingPlan("new_matter",{sensitivity:"confidential"});
+  assert.equal(plan.firstAction.href,"/casepilot-workspace.html");
+  assert.equal(plan.privacyRoute,"secure_case_first");
 });
 
 test("public legal research routes to Hybrid and a valid research workflow",()=>{
@@ -30,6 +38,12 @@ test("direct training mode does not invent an agent workflow",()=>{
   assert.equal(plan.workflowTemplate,null);
   assert.equal(plan.firstAction.href,"/zoki-legal-ai-guide.html");
   assert.equal(plan.humanGate.required,true);
+});
+
+test("every referenced agent workflow exists",()=>{
+  for(const task of listOperatingTasks()){
+    if(task.workflow) assert.ok(WORKFLOW_TEMPLATES[task.workflow],task.id+" has an invalid workflow");
+  }
 });
 
 test("unknown tasks and sensitivity fail closed",()=>{
