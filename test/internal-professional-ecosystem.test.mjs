@@ -72,11 +72,13 @@ test("public evidence statuses include explicit non-conclusion states",()=>{
   }
 });
 
-test("professional ecosystem is internal-only and exposes all five functional pillars",()=>{
+test("professional ecosystem is shared across both bot surfaces and exposes all five functional pillars",()=>{
   const catalog=internalProfessionalEcosystemCatalog();
   assert.equal(catalog.version,INTERNAL_PROFESSIONAL_ECOSYSTEM_VERSION);
-  assert.equal(catalog.boundaries.internalAiAdvokatOnly,true);
-  assert.equal(catalog.boundaries.externalProfessionalBotChanged,false);
+  assert.equal(catalog.boundaries.internalAiAdvokatOnly,false);
+  assert.equal(catalog.boundaries.sharedWithExternalProfessionalBot,true);
+  assert.equal(catalog.boundaries.externalProfessionalBotChanged,true);
+  assert.equal(catalog.boundaries.externalInterfaceMode,"conversation_first_hidden_capabilities");
   assert.equal(catalog.boundaries.humanGateRequired,true);
   assert.ok(catalog.livingLaw.length>=4);
   assert.ok(catalog.operationsRegistry.length>=4);
