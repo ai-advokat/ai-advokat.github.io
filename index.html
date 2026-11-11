@@ -2978,6 +2978,9 @@
 
 
   const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v1:";
+  const UI_TRANSLATION_BATCH_ITEMS=12;
+  const UI_TRANSLATION_BATCH_CHARS=2400;
+  const UI_TRANSLATION_CLIENT_CONCURRENCY=2;
   const uiTranslationNodeState=new WeakMap();
   const uiTranslationAttrState=new WeakMap();
   let uiTranslationRunning=false;
@@ -3041,7 +3044,7 @@
       for(const text of pending){
         const clean=String(text||"");
         const nextChars=batchChars+clean.length;
-        if(batch.length && (batch.length>=72 || nextChars>9000)){
+        if(batch.length && (batch.length>=UI_TRANSLATION_BATCH_ITEMS || nextChars>UI_TRANSLATION_BATCH_CHARS)){
           batches.push(batch);
           batch=[];
           batchChars=0;
@@ -3050,27 +3053,37 @@
         batchChars+=clean.length;
       }
       if(batch.length) batches.push(batch);
-      for(const texts of batches){
-        const items=texts.map((text,j)=>({id:String(j),text}));
-        try{
-          const r=await fetch(API_BASE+"/api/ui-translate",{
-            method:"POST",
-            headers:{"content-type":"application/json"},
-            body:JSON.stringify({targetLanguage:siteLanguage,items})
-          });
-          const d=await r.json();
-          if(!r.ok||d?.ok!==true||!Array.isArray(d.translations)){
-            console.warn("ui_translation_batch_failed",r.status,d?.error||"unknown");
-            continue;
+      let nextBatchIndex=0;
+      async function runUiTranslationBatchWorker(){
+        for(;;){
+          const batchIndex=nextBatchIndex++;
+          if(batchIndex>=batches.length) return;
+          const texts=batches[batchIndex];
+          const items=texts.map((text,j)=>({id:String(j),text}));
+          try{
+            const r=await fetch(API_BASE+"/api/ui-translate",{
+              method:"POST",
+              headers:{"content-type":"application/json"},
+              body:JSON.stringify({targetLanguage:siteLanguage,items})
+            });
+            const d=await r.json();
+            if(!r.ok||d?.ok!==true||!Array.isArray(d.translations)){
+              console.warn("ui_translation_batch_failed",r.status,d?.error||"unknown",batchIndex);
+              continue;
+            }
+            d.translations.forEach((row,j)=>{
+              const source=texts[j];
+              const translated=String(row?.text||"").trim();
+              if(source&&translated) cache[source]=translated;
+            });
+            saveUiTranslationCache(cache);
+          }catch(error){
+            console.warn("ui_translation_batch_network_failed",batchIndex,String(error?.message||error||"unknown"));
           }
-          d.translations.forEach((row,j)=>{
-            const source=texts[j];
-            const translated=String(row?.text||"").trim();
-            if(source&&translated) cache[source]=translated;
-          });
-          saveUiTranslationCache(cache);
-        }catch{}
+        }
       }
+      const uiWorkers=Math.min(UI_TRANSLATION_CLIENT_CONCURRENCY,batches.length);
+      await Promise.all(Array.from({length:uiWorkers},()=>runUiTranslationBatchWorker()));
       for(const unit of units){
         const translated=cache[unit.source];
         if(!translated) continue;

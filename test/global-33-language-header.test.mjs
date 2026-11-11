@@ -24,8 +24,11 @@ test("global and chat language selectors share one preference key",()=>{
 test("all non-MK languages including English use the bounded full-interface translation endpoint",()=>{
   assert.match(home,/\/api\/ui-translate/);
   assert.match(home,/translateGlobalInterface/);
-  assert.match(home,/batch\.length>=72/);
-  assert.match(home,/nextChars>9000/);
+  assert.match(home,/UI_TRANSLATION_BATCH_ITEMS=12/);
+  assert.match(home,/UI_TRANSLATION_BATCH_CHARS=2400/);
+  assert.match(home,/UI_TRANSLATION_CLIENT_CONCURRENCY=2/);
+  assert.match(home,/batch\.length>=UI_TRANSLATION_BATCH_ITEMS/);
+  assert.match(home,/nextChars>UI_TRANSLATION_BATCH_CHARS/);
   const translator=home.slice(home.indexOf("async function translateGlobalInterface"),home.indexOf("function applyLanguage"));
   assert.doesNotMatch(translator,/siteLanguage==="mk"\|\|siteLanguage==="en"/);
   assert.match(translator,/if\(siteLanguage==="mk"\|\|uiTranslationRunning\) return/);
@@ -33,7 +36,7 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(worker,/async function handleUiTranslation/);
   assert.match(worker,/raw\.length>96/);
   assert.match(worker,/totalChars>12000/);
-  assert.match(worker,/UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT=24/);
+  assert.match(worker,/UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT=48/);
   assert.match(worker,/UI_TRANSLATE_GLOBAL_HOURLY_LIMIT=240/);
   assert.match(worker,/UI_TRANSLATE_GLOBAL_DAILY_LIMIT=800/);
   assert.match(worker,/scope:"ui_translate_lang_"\+target/);
