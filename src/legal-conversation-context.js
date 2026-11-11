@@ -3,7 +3,7 @@
 // may carry an explicitly fictional working scenario, but is labelled as AI-generated
 // hypothetical context and is never promoted to verified fact or legal authority.
 
-const FOLLOW_UP_RE=/(?:\bовој\b|\bова\b|\bоваа\b|\bовие\b|\bтој\b|\bтаа\b|\bтоа\b|\bтие\b|\bнив\b|\bнивните\b|токму\s+на\s+тие|тие\s+(?:податоци|предмети|пресуди|одлуки|извори)|претходн|горенаведен|предмет|случај|спорн(?:ата|ото|иот)?\s+(?:изјава|тврдење|објава)|предикциј|прогноз|исход|шанси|веројатност|процент\s+на\s+успех|case\s+(?:prediction|outcome)|predict)/iu;
+const FOLLOW_UP_RE=/(?:токму\s+на\s+тие|тие\s+(?:податоци|предмети|пресуди|одлуки|извори)|нивните\s+(?:аргументи|докази|извори)|претходн(?:иот|ата|ото|ите)?|горенаведен(?:иот|ата|ото|ите)?|(?:овој|тој|целиот|истиот)\s+(?:предмет|случај|спор|документ|извор|став|исход)|(?:оваа|таа)\s+(?:пресуда|одлука|тужба|жалба|изјава|пракса|анализа)|(?:овие|тие)\s+(?:аргументи|докази)|(?:каков|кој)\s+е\s+(?:исходот|резултатот)|(?:шанси(?:те)?|процент(?:от)?)\s+за\s+успех|case\s+(?:prediction|outcome)\s+(?:for|of)\s+(?:this|that)|predict\s+(?:this|that))/iu;
 
 function clean(value,max=4000){
   return String(value||"").normalize("NFKC").replace(/\s+/gu," ").trim().slice(0,max);
