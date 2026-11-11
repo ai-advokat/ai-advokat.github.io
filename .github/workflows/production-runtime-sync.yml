@@ -38,7 +38,7 @@ permissions:
 
 concurrency:
   group: ai-advokat-production-runtime-sync
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
