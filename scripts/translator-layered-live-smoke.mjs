@@ -81,7 +81,7 @@ async function browserLayer(){
   const network=[];
   let browser=null,page=null,error=null;
   try{
-    const {chromium}=await import("playwright");
+    const {chromium}=await import("playwright-core");
     const executablePath=String(process.env.BROWSER_EXECUTABLE||"").trim()||undefined;
     browser=await chromium.launch({headless:true,...(executablePath?{executablePath}:{})});
     const context=await browser.newContext();
