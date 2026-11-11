@@ -67,6 +67,7 @@ on:
       - ".github/workflows/worker-runtime-live-smoke.yml"
       - ".github/workflows/free-runtime-live-uat.yml"
       - ".github/workflows/root-reliability-live-smoke.yml"
+      - ".github/workflows/professional-bot-live-smoke.yml"
 
 permissions:
   contents: write
