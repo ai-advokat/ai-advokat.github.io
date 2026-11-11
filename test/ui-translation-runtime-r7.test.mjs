@@ -61,7 +61,7 @@ test("UI translation uses dedicated M2M100 and preserves protected legal identif
   assert.ok(calls.every(x=>x.model==="@cf/meta/m2m100-1.2b"));
 });
 
-test("Esperanto uses bounded live Qwen fallback instead of pretending M2M100 supports it",async()=>{
+test("Esperanto uses bounded live Workers AI fallback instead of pretending M2M100 supports it",async()=>{
   const env={
     DB,
     RATE_LIMIT_SALT,
@@ -82,7 +82,7 @@ test("Esperanto uses bounded live Qwen fallback instead of pretending M2M100 sup
   assert.equal(res.status,200);
   const data=await res.json();
   assert.equal(data.ok,true);
-  assert.equal(data.provider,"qwen3_ui_fallback");
+  assert.equal(data.provider,"workers_ai_ui_fallback");
   assert.equal(data.translationModel,"@cf/openai/gpt-oss-120b");
   assert.equal(data.translations[0].text,"Jura esplorado");
 });
