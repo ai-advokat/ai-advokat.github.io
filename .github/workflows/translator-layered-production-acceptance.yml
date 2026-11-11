@@ -9,6 +9,14 @@ on:
       - "assets/ai-advokat-chat.js"
       - "scripts/translator-layered-live-smoke.mjs"
       - ".github/workflows/translator-layered-production-acceptance.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "src/index.js"
+      - "index.html"
+      - "assets/ai-advokat-chat.js"
+      - "scripts/translator-layered-live-smoke.mjs"
+      - ".github/workflows/translator-layered-production-acceptance.yml"
   workflow_run:
     workflows: ["AI Advokat production runtime sync"]
     types: [completed]
