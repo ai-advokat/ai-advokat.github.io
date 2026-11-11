@@ -50,10 +50,15 @@ jobs:
           node --check scripts/translator-layered-live-smoke.mjs
           node --check src/index.js
 
-      - name: Install browser probe only
+      - name: Prepare browser probe
+        shell: bash
         run: |
-          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.1
-          npx playwright install chromium
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          browser="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$browser"
+          echo "BROWSER_EXECUTABLE=$browser" >> "$GITHUB_ENV"
+          "$browser" --version
 
       - name: Run M2M100 -> GPT-OSS -> browser DOM acceptance
         env:
