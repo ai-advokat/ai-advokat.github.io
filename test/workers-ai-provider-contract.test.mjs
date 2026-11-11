@@ -23,7 +23,7 @@ test("WAP2 provider contract keeps the FREE primary fast path bounded and invoke
   assert.match(provider,/timeoutMs=30000/);
   assert.match(provider,/Promise\.race\(/);
   assert.match(provider,/workers_ai_timeout/);
-  assert.match(worker,/timeoutMs:fastFreePrompt\?8000:20000/);
+  assert.match(worker,/timeoutMs:fastFreePrompt\?12000:20000/);
   assert.match(worker,/allowProviderRepair:languageRequired/);
   assert.match(worker,/forceEditorialPass:false/);
   assert.match(worker,/const editorRequired=forceEditorialPass \|\| releaseVerdict\.verdict!=="RELEASE"/);
