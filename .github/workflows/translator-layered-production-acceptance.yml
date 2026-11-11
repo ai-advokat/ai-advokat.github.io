@@ -61,14 +61,14 @@ jobs:
           "$browser" --version
 
       - name: Collect live layered evidence on PR
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
         env:
           LIVE_TRANSLATOR_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
           LIVE_ROOT_URL: https://ai-advokat.github.io/
         run: node scripts/translator-layered-live-smoke.mjs || true
 
       - name: Enforce M2M100 -> GPT-OSS -> browser DOM acceptance after deploy
-        if: ${{ github.event_name != 'pull_request' }}
+        if: ${{ github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch' }}
         env:
           LIVE_TRANSLATOR_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
           LIVE_ROOT_URL: https://ai-advokat.github.io/
