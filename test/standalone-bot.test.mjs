@@ -70,7 +70,8 @@ test('professional bot keeps high-depth paid drafting and one transient recovery
   assert.match(source,/\["L4_LEGAL_TRUTH_GOVERNANCE","L3_CONSEQUENTIAL"\]\.includes\(missionProfile\)[\s\S]*\? "high"/);
   assert.match(source,/let providerRecovery=null;/);
   assert.match(source,/transientPrimaryErrors/);
-  assert.match(source,/retryUsesWeb=explicitWebRequested \? webRequested : false/);
+  assert.match(source,/retryUsesWeb=boundedChiefRecovery \? false : \(explicitWebRequested \? webRequested : false\)/);
+  assert.match(source,/capacityFallbackMode:boundedChiefRecovery/);
   assert.match(source,/finaliseFormalLegalDraft\(finalAnswer/);
 });
 
@@ -110,7 +111,8 @@ test('P0 professional recovery keeps two bounded OpenAI attempts plus controlled
   assert.match(source,/Number\(attachmentCount\|\|0\)>0 \|\| Number\(guideDocumentCount\|\|0\)>0/);
   assert.doesNotMatch(source,/Number\(corpusContextCount\|\|0\)<1/);
   assert.match(source,/NO_GOVERNED_CURRENT_LAW_CONTEXT/);
-  assert.match(source,/ZERO-GOVERNED-CONTEXT SAFETY/);
+  assert.match(source,/ZERO-GOVERNED-CONTEXT FORMAL DRAFT SAFETY/);
+  assert.match(source,/ZERO-GOVERNED-CONTEXT ANALYSIS SAFETY/);
   assert.match(source,/professional_degraded_structure_only_workers_ai_fallback/);
   assert.match(source,/PROFESSIONAL_L0_WORKERS_AI/);
   assert.match(source,/PROFESSIONAL_DEGRADED_DRAFT_WORKERS_AI/);
