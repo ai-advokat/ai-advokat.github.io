@@ -33,6 +33,9 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(home,/UI_TRANSLATION_RATE_LIMIT_BACKOFF_MS=60000/);
   assert.match(home,/UI_TRANSLATION_OBSERVER_SUPPRESS_MS=900/);
   assert.match(home,/Date\.now\(\)<uiTranslationObserverSuppressUntil/);
+  assert.match(home,/function applyUiTranslationBackoff/);
+  assert.match(home,/uiTranslationFailureStreak/);
+  assert.match(home,/Math\.min\(60000,UI_TRANSLATION_PROVIDER_BACKOFF_MS\*Math\.pow/);
   const translator=home.slice(home.indexOf("async function translateGlobalInterface"),home.indexOf("function applyLanguage"));
   assert.doesNotMatch(translator,/siteLanguage==="mk"\|\|siteLanguage==="en"/);
   assert.match(translator,/if\(siteLanguage==="mk"\|\|uiTranslationRunning\) return/);
