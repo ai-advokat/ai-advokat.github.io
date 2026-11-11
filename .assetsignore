@@ -17,6 +17,7 @@ src/**
 !src/proactive-legal-agents.js
 !src/matter-memory.js
 !src/matter-agent-runtime.js
+!src/operating-desk-router.js
 migrations/**
 ingest/**
 scripts/**

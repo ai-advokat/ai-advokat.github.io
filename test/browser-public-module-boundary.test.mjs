@@ -13,7 +13,8 @@ const PUBLIC_SHARED=new Set([
   "src/official-source-binder.js",
   "src/proactive-legal-agents.js",
   "src/matter-memory.js",
-  "src/matter-agent-runtime.js"
+  "src/matter-agent-runtime.js",
+  "src/operating-desk-router.js"
 ]);
 
 function walkJs(dir){
