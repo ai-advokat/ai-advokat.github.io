@@ -1,0 +1,63 @@
+{
+  "version": "AI_ADV4_R3_WORKER_RUNTIME_ARTIFACT_DIAGNOSTIC_V1",
+  "captured_from": {
+    "github_actions_artifact_id": 13864206636,
+    "archive_name": "github-actions-artifact-13864206636.zip",
+    "archive_sha256": "01ac2eaaa6229cccb0d99b20e4909e92635ca6a889eecf5ee3a855bd8db57a72",
+    "archive_size_bytes": 120090,
+    "workflow_identity": "AI Advokat Worker runtime live smoke",
+    "workflow_file": ".github/workflows/worker-runtime-live-smoke.yml",
+    "provenance_note": "User supplied the GitHub Actions ZIP. File names match the workflow's /tmp/worker-* live evidence outputs."
+  },
+  "runtime_snapshot": {
+    "service": "AI Advokat",
+    "version": "1.9.0",
+    "database": {
+      "reachable": true,
+      "schemaReady": true,
+      "schemaVersion": "53"
+    },
+    "free_provider": "workers_ai_free",
+    "free_primary_model": "@cf/openai/gpt-oss-120b",
+    "paid_provider_model": "gpt-6.1-sol",
+    "central_prompt_version": "AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v8",
+    "lioe_runtime_governance": "enabled",
+    "lioe_postflight": "enabled",
+    "lioe_runtime_telemetry": "ready",
+    "shell_markers": [
+      "core-r15",
+      "20261110-r6",
+      "20261111-r13",
+      "voice-r4"
+    ]
+  },
+  "observed_failure": {
+    "response_error": "free_workers_ai_provider_error",
+    "failure_detail": "workers_ai_timeout_12000",
+    "active_model": "@cf/qwen/qwen3.8-27b",
+    "model_fallback": {
+      "from": "@cf/openai/gpt-oss-120b",
+      "to": "@cf/qwen/qwen3.8-27b",
+      "reason": "primary_timeout"
+    },
+    "interpretation": "The primary Workers AI call timed out and the bounded fallback also timed out at 12 seconds.",
+    "failure_trace_present": false,
+    "response_request_id_present": false
+  },
+  "cors_snapshot": {
+    "allowed_origin": "https://ai-advokat.github.io",
+    "request_id_exposed": false,
+    "exposed_headers": [
+      "Content-Disposition",
+      "X-AI-Advokat-Export-Mode"
+    ],
+    "cf_ray_present_in_preflight_headers": true
+  },
+  "r3_implications": [
+    "R3 FIX-05 observability is evidence-based: the captured failure body lacks request correlation and retry metadata.",
+    "The fast FREE path gives the timeout fallback the same 12-second window; the captured fallback timed out at exactly that boundary.",
+    "Future Worker smoke evidence should retain chat response headers in addition to the JSON body.",
+    "The artifact proves a provider/runtime failure path; it does not prove any legal-content defect by itself."
+  ],
+  "human_gate": "Diagnostic evidence only. No deployment or provider change is authorised by this record."
+}
