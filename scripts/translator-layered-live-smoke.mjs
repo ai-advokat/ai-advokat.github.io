@@ -72,7 +72,7 @@ await probeTranslation({
   name:"layer_2_workers_ai_gpt_oss_fallback",
   targetLanguage:"eo",
   text:"Правно истражување",
-  expectedProvider:["qwen3_ui_fallback","workers_ai_ui_fallback"],
+  expectedProvider:["workers_ai_ui_fallback"],
   expectedModel:"@cf/openai/gpt-oss-120b"
 });
 
