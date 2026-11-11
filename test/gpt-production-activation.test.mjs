@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { openAIOrchestratorConfigured, orchestratorRuntimeReadiness } from "../src/agent-orchestrator.js";
 import {
   WORKERS_AI_TEXT_MODEL_DEFAULT,
+  WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT,
   workersAIRequestOptions,
   extractWorkersAIText,
   runWorkersAIText
@@ -30,7 +31,8 @@ test("GPTACT1 production runtime is armed for the approved model but contains no
   assert.equal(config.ai?.binding,"AI");
   assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
   assert.equal(config.vars.WORKERS_AI_MARKDOWN_ENABLED,"true");
-  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/qwen/qwen3-30b-a3b-fp8");
+  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/openai/gpt-oss-120b");
+  assert.equal(config.vars.WORKERS_AI_EMPTY_FALLBACK_MODEL,"@cf/qwen/qwen3.8-27b");
   assert.doesNotMatch(wrangler,/OPENAI_API_KEY/);
   assert.doesNotMatch(wrangler,/sk-[A-Za-z0-9_-]{20,}/);
 });
@@ -177,7 +179,8 @@ test("GPTACT11 Workers AI remains explicit, bounded and available only as fallba
   assert.match(worker,/cloudflare_workers_ai_to_markdown/);
   assert.match(worker,/FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED/);
   assert.match(worker,/workers-ai-provider\.js/);
-  assert.match(wrangler,/"WORKERS_AI_CHAT_MODEL": "@cf\/qwen\/qwen3-30b-a3b-fp8"/);
+  assert.match(wrangler,/"WORKERS_AI_CHAT_MODEL": "@cf\/openai\/gpt-oss-120b"/);
+  assert.match(wrangler,/"WORKERS_AI_EMPTY_FALLBACK_MODEL": "@cf\/qwen\/qwen3\.8-27b"/);
   assert.doesNotMatch(workflow,/Live FREE Workers AI multi-scenario runtime UAT/);
   assert.doesNotMatch(worker,/error:"free_mode_professional_postflight_required"/);
   assert.match(worker,/FREE provider output is a working research\/draft result only/);
@@ -192,22 +195,22 @@ test("GPTACT12 fallback document prompt still treats extracted body as content a
 });
 
 
-test("GPTACT13 unified Workers AI provider contract uses the canonical multilingual production model",()=>{
-  assert.equal(WORKERS_AI_TEXT_MODEL_DEFAULT,"@cf/qwen/qwen3-30b-a3b-fp8");
+test("GPTACT13 unified Workers AI provider contract uses gpt-oss Responses shape",()=>{
+  assert.equal(WORKERS_AI_TEXT_MODEL_DEFAULT,"@cf/openai/gpt-oss-120b");
   const options=workersAIRequestOptions({
     model:WORKERS_AI_TEXT_MODEL_DEFAULT,
     messages:[{role:"user",content:"test"}],
     maxOutputTokens:900,
-    temperature:0.1
+    temperature:0.1,
+    reasoningEffort:"low"
   });
-  assert.deepEqual(options.messages,[{role:"user",content:"test"}]);
-  assert.equal(options.max_tokens,900);
+  assert.deepEqual(options.input,[{role:"user",content:"test"}]);
+  assert.equal(options.max_output_tokens,900);
+  assert.deepEqual(options.reasoning,{effort:"low"});
+  assert.equal(options.max_tokens,undefined);
   assert.equal(options.max_completion_tokens,undefined);
-  assert.equal(options.temperature,0.1);
+  assert.equal(options.temperature,undefined);
   assert.equal(options.chat_template_kwargs,undefined);
-  assert.equal(options.reasoning_effort,undefined);
-  assert.equal(options.max_output_tokens,undefined);
-  assert.equal(options.reasoning,undefined);
 });
 
 
@@ -243,9 +246,10 @@ test("GPTACT14 Workers AI response extraction accepts only final answer shapes a
   assert.equal(extractWorkersAIText({response:"   ",reasoning:"hidden"}),null);
 });
 
-test("GPTACT15 Workers AI provider contract fails explicitly on empty final output",async()=>{
+test("GPTACT15 Workers AI provider contract fails explicitly after empty primary and bounded fallback",async()=>{
   const env={
-    WORKERS_AI_CHAT_MODEL:"@cf/qwen/qwen3-30b-a3b-fp8",
+    WORKERS_AI_CHAT_MODEL:WORKERS_AI_TEXT_MODEL_DEFAULT,
+    WORKERS_AI_EMPTY_FALLBACK_MODEL:WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT,
     AI:{run:async()=>({response:"",usage:{prompt_tokens:10,completion_tokens:0}})}
   };
   const result=await runWorkersAIText(env,{
@@ -254,19 +258,19 @@ test("GPTACT15 Workers AI provider contract fails explicitly on empty final outp
   });
   assert.equal(result.ok,false);
   assert.equal(result.error,"workers_ai_empty_response");
-  assert.equal(result.primaryModel,"@cf/qwen/qwen3-30b-a3b-fp8");
-  assert.equal(result.model,"@cf/meta/llama-3.3-70b-instruct-fp8-fast");
+  assert.equal(result.primaryModel,WORKERS_AI_TEXT_MODEL_DEFAULT);
+  assert.equal(result.model,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT);
   assert.equal(result.providerCalls,2);
   assert.equal(result.modelFallback.reason,"empty_final_text");
-  assert.equal(result.modelFallback.from,"@cf/qwen/qwen3-30b-a3b-fp8");
-  assert.equal(result.modelFallback.to,"@cf/meta/llama-3.3-70b-instruct-fp8-fast");
+  assert.equal(result.modelFallback.from,WORKERS_AI_TEXT_MODEL_DEFAULT);
+  assert.equal(result.modelFallback.to,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT);
   assert.equal(result.shape.type,"object");
 });
 
 test("GPTACT15b Workers AI session affinity is forwarded only as a safe binding header",async()=>{
   let seen=null;
   const env={
-    WORKERS_AI_CHAT_MODEL:"@cf/qwen/qwen3-30b-a3b-fp8",
+    WORKERS_AI_CHAT_MODEL:WORKERS_AI_TEXT_MODEL_DEFAULT,
     AI:{run:async(...args)=>{seen=args;return {response:"Здраво"};}}
   };
   const result=await runWorkersAIText(env,{
