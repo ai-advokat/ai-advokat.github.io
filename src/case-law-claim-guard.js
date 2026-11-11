@@ -137,7 +137,7 @@ export function assessSpecificCaseLawClaims(text,{
 }
 
 
-const CASE_LAW_REDACTION_NOTICE="Судска практика · ПРОВЕРКА: конкретната пресуда, бројот на предметот или именуваниот судски случај е изоставен затоа што точниот идентитет и правниот став не се потврдени во reviewed official case-law извор. Остатокот од анализата останува работен материјал под Human Gate.";
+const CASE_LAW_REDACTION_NOTICE="Судска практика · ПРОВЕРКА: конкретната пресуда, бројот на предметот или именуваниот судски случај е изоставен затоа што точниот идентитет и правниот став не се потврдени во проверен официјален извор на судска практика. Остатокот од анализата останува работен материјал под Human Gate.";
 
 export function redactUnsupportedSpecificCaseLawClaims(text,gate){
   const source=String(text||"").replace(/\r\n?/g,"\n");
