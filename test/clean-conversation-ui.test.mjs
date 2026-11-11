@@ -7,7 +7,8 @@ const css=fs.readFileSync("assets/standalone-bot-vnext.css","utf8");
 const js=fs.readFileSync("assets/standalone-bot-vnext.js","utf8");
 
 test("external AI Advokat defaults to a clean conversation surface",()=>{
-  assert.match(html,/ai-advokat-ui-release" content="conversation-r13"/);
+  assert.match(html,/ai-advokat-ui-release" content="professional-r7"/);
+  assert.match(html,/ai-advokat-conversation-ui-release" content="conversation-r13"/);
   assert.match(html,/class="conversation-secondary-panel" aria-label="Hybrid Legal Intelligence/);
   assert.match(html,/class="legal-guide conversation-secondary-panel"/);
   assert.doesNotMatch(html,/class="legal-guide conversation-secondary-panel" id="legalGuide" open/);
