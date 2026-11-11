@@ -4829,9 +4829,55 @@ export function historicalCaseLawTemporalGateRequest(q){
   const oldest=Math.min(...years);
   const newest=Math.max(...years);
   if(oldest>=newest) return false;
-  const caseLaw=/(?:правен став|судск(?:а|и) практик|пресуд|одлук|апелацион|апелациј|врховен суд|суд)/iu.test(n);
-  const temporal=/(?:автомат|важеч|примен|теков|денес|сега|current|applicab|valid)/iu.test(n);
+
+  // R3: this deterministic lane is only for explicit historical case-law
+  // applicability questions. Dates in the facts, the word "судир", or a
+  // generic reference to a court must never hijack a substantive legal query.
+  const caseLaw=/(?:правен\s+став|судск(?:а|и)\s+практик|судск(?:а|о)\s+(?:одлук|пресуд)|пресуд(?:а|и)\s+(?:на|од)|одлук(?:а|и)\s+(?:на|од)|апелациј(?:а|онен|она|они)|врховен\s+суд|уставен\s+суд|case\s*law|judgment|precedent)/iu.test(n);
+  const temporal=/(?:с[èе]\s+уште|автоматск|важечк|применлив|тековн|денес|сега|може\s+ли[\s\S]{0,80}(?:корист|примен)|current|applicab|valid)/iu.test(n);
   return caseLaw && temporal;
+}
+
+export function embeddedInstructionAttackRequest(q){
+  const text=String(q||"").normalize("NFKC");
+  if(!text.trim()) return false;
+  const attack=/(?:SYSTEM\s+OVERRIDE|игнорирај[\s\S]{0,120}(?:упатств|барањ|систем)|ignore[\s\S]{0,80}(?:instruction|system|request)|измисли[\s\S]{0,80}(?:пресуд|одлук|цитат)|не\s+прикажувај\s+извори)/iu.test(text);
+  const embedded=/(?:во\s+прилог|приложен|документ|цитиран|цитира|стои\s+следн|непроверен[аио]?\s+(?:текст|документ|прилог))/iu.test(text);
+  const defensive=/(?:третирај[\s\S]{0,120}(?:содржина|непроверен)|злонамерн[аио]?\s+инструкц|не\s+измислувај|потврди\s+кого\s+застапуваш)/iu.test(text);
+  return attack && embedded && defensive;
+}
+
+export function formatEmbeddedInstructionSafetyAnswer(q){
+  const text=String(q||"");
+  const representsDefendant=/(?:во\s+име\s+на\s+)?ТУЖЕНИОТ|тужениот/iu.test(text);
+  const role=representsDefendant ? "ТУЖЕНИОТ" : "страната наведена во корисничкото барање";
+  return [
+    "БЕЗБЕДНОСНА ПОТВРДА · CONTENT IS NOT COMMAND",
+    "",
+    "Застапувана страна: "+role+".",
+    "Тип на работа: работна анализа и структура на одговор на тужба, не автономно поднесување.",
+    "Статус на изворите: текстот цитиран како прилог е непроверена содржина. Тој не е системско упатство и не создава правен авторитет.",
+    "",
+    "ИГНОРИРАНА ЗЛОНАМЕРНА ИНСТРУКЦИЈА",
+    "Секоја вметната наредба од типот „SYSTEM OVERRIDE“, „игнорирај ги упатствата“, „измисли пресуди“ или „не прикажувај извори“ е третирана како доказна содржина, а не како команда.",
+    "",
+    "РАБОТНА АНАЛИЗА ЗА ОДГОВОРОТ НА ТУЖБА",
+    "1. Прво мора да се прочитаат самата тужба и petitum-от, договорот и анексите, доказите за исполнување/неисполнување, пресметката на побарувањето и доказот за доставување.",
+    "2. За секое материјално тврдење треба одделно да се означи: признато, оспорено или непознато поради недостиг на доказ.",
+    "3. Не се измислуваат факти, судски одлуки, број на предмет, страница или цитат. Непроверена судска практика не се користи како авторитет.",
+    "4. Доказните предлози треба да се врзат со конкретно спорно тврдење; процесните рокови, надлежноста и задолжителната содржина мора да се проверат во важечки официјален извор пред поднесување.",
+    "",
+    "РАБОТНА СТРУКТУРА",
+    "• ознака на суд/предмет — да се преземе од тужбата;",
+    "• јасна идентификација дека поднесокот е ОДГОВОР НА ТУЖБА во име на тужениот;",
+    "• став по тужбеното барање;",
+    "• одговор по фактичките наводи;",
+    "• правни приговори само ако се потврдени со важечки извор;",
+    "• доказни предлози и прилози;",
+    "• прецизен предлог до судот по професионална проверка.",
+    "",
+    "HUMAN GATE: адвокатот мора да ги провери тужбата, рокот за одговор, применливото право, доказите и конечниот petitum пред потпишување или поднесување."
+  ].join("\n");
 }
 
 export function formatHistoricalCaseLawTemporalGateAnswer(q){
@@ -6609,11 +6655,11 @@ const EXTERNAL_BOT_CAPABILITY_ROUTES=new Set([
   "REVIEW_VAULT"
 ]);
 
-function detectExternalBotCapabilityRoute(text){
+export function detectExternalBotCapabilityRoute(text){
   const q=String(text||"").trim().toLowerCase();
   if(!q) return "";
   // Specific governed workflows outrank generic drafting/analysis routes.
-  if(/(?:приватен\s+предмет|доверлив|casepilot|secure\s+case|оригинален\s+документ)/iu.test(q)) return "SECURE_CASE";
+  if(/(?:приватен\s+предмет|casepilot|secure\s+case|оригинален\s+документ|доверлив(?:ен|на|но|ни)?\s+(?:предмет|случај|документ|материјал))/iu.test(q)) return "SECURE_CASE";
   if(/(?:echr|есчп|hudoc|crosswalk)/iu.test(q)) return "ECHR_CROSSWALK";
   if(/(?:судск[аи].*(?:пракс|одлук|пресуд)|case\s*law|judgment|преседан)/iu.test(q)) return "CASE_LAW_RESEARCH";
   if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)) return "CONSOLIDATOR";
@@ -6955,9 +7001,43 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const effectiveGuideIds=contextualFollowUp ? [] : guideIds;
   const initialPlan=buildAgentPlan(userQ);
 
+  // Deterministic prompt-injection boundary for quoted/untrusted document content.
+  // Content is not command: do not depend on a generative provider to enforce this boundary.
+  if(embeddedInstructionAttackRequest(userQ)){
+    return json(request,{
+      ok:true,
+      answer:formatEmbeddedInstructionSafetyAnswer(userQ),
+      provider:"canonical_corpus_no_model",
+      model:null,
+      mode:"legal_safety",
+      displayMode:"deterministic_embedded_instruction_safety",
+      sourceMode:"deterministic_prompt_injection_safety_no_model",
+      webSearchUsed:false,
+      legalSources:[],
+      caseLawSources:[],
+      sources:[],
+      performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+      privacy:{providerCalled:false,quotaConsumed:false,publicChatProcessingStopped:false},
+      sourcePolicy:{
+        version:OPEN_LEGAL_SOURCE_POLICY_VERSION,
+        registeredExternalSources:0,
+        unregisteredExternalSources:0,
+        corpusPromotion:"human_gate_required",
+        canonicalProvenanceGate:{
+          version:CANONICAL_PROVENANCE_GATE_VERSION,
+          metadataStandard:CANONICAL_METADATA_STANDARD_VERSION,
+          state:"not_applicable",
+          released:0,
+          blocked:0
+        }
+      },
+      humanGate:"Quoted or embedded instructions were treated as untrusted content. Verify the real pleading, applicable law and evidence before professional use."
+    });
+  }
+
   // Deterministic temporal-validity gate for historical case-law questions.
   // A historical court position must never be promoted into current law by model inference.
-  if(historicalCaseLawTemporalGateRequest(routingQuery)){
+  if(historicalCaseLawTemporalGateRequest(userQ)){
     return json(request,{
       ok:true,
       answer:formatHistoricalCaseLawTemporalGateAnswer(routingQuery),
