@@ -8314,19 +8314,21 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       "openai_response_error"
     ]);
     const transientStatus=Number(result.status||0);
-    // Do not immediately replay the whole multi-call orchestrator on HTTP 429.
-    // A bounded specialist + Chief run may already consume several provider calls;
-    // replaying it after a rate-limit response amplifies provider pressure and can
-    // turn one transient 429 into a six-call burst. Preserve the failure provenance
-    // and move to the governed fallback/fail-closed path instead.
+    // Transient provider pressure must never replay the full specialist fan-out.
+    // For 408/429/5xx response failures, make exactly one bounded Chief-only
+    // recovery pass. This preserves GPT-quality reasoning while avoiding a burst
+    // of specialist calls that can amplify the original provider error.
     const retryableResponseStatus=result.error==="openai_response_error"
-      && [408,500,502,503,504].includes(transientStatus);
+      && [408,429,500,502,503,504].includes(transientStatus);
+    const boundedChiefRecovery=result.error==="openai_response_error"
+      && [408,429,500,502,503,504].includes(transientStatus);
     const retryable=transientPrimaryErrors.has(String(result.error||""))
       && (result.error!=="openai_response_error" || retryableResponseStatus)
+      && (!boundedChiefRecovery || explicitWebRequested!==true)
       && (professionalRequestDeadlineAt-Date.now()>=10000);
     if(retryable){
       const first=result;
-      const retryUsesWeb=explicitWebRequested ? webRequested : false;
+      const retryUsesWeb=boundedChiefRecovery ? false : (explicitWebRequested ? webRequested : false);
       const configuredBackoff=Number(env?.OPENAI_RETRY_BACKOFF_MS||250);
       const retryBackoffMs=Number.isFinite(configuredBackoff)
         ? Math.min(1000,Math.max(0,Math.trunc(configuredBackoff)))
@@ -8351,8 +8353,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
         history:historyCheck.history,
         maxOutputTokens:Math.min(6000,Math.max(maxOutputTokens,incompleteRecoveryBudget,missionProfile==="L3_CONSEQUENTIAL"?5200:maxOutputTokens)),
-        reasoningEffort:["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort,
-        deadlineAt:professionalRequestDeadlineAt
+        reasoningEffort:boundedChiefRecovery ? "medium" : (["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort),
+        deadlineAt:professionalRequestDeadlineAt,
+        capacityFallbackMode:boundedChiefRecovery
       });
       const a=first.usage||{};
       const b=retry.usage||{};
@@ -8375,8 +8378,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         providerRecovery={
           recovered:true,
           firstError:String(first.error||"provider_failure"),
+          firstHttpStatus:Number(first.status||0)||null,
+          firstResponseStatus:typeof first.responseStatus==="string" ? first.responseStatus.slice(0,80) : null,
           retryWebSearch:retryUsesWeb,
-          retryBackoffMs
+          retryBackoffMs,
+          recoveryMode:boundedChiefRecovery ? "bounded_openai_chief_only" : "openai_retry"
         };
       }else{
         result={
