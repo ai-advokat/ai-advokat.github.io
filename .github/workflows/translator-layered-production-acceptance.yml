@@ -1,0 +1,86 @@
+name: AI Advokat Translator layered production acceptance
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/index.js"
+      - "index.html"
+      - "assets/ai-advokat-chat.js"
+      - "scripts/translator-layered-live-smoke.mjs"
+      - ".github/workflows/translator-layered-production-acceptance.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "src/index.js"
+      - "index.html"
+      - "assets/ai-advokat-chat.js"
+      - "scripts/translator-layered-live-smoke.mjs"
+      - ".github/workflows/translator-layered-production-acceptance.yml"
+  workflow_run:
+    workflows: ["AI Advokat production runtime sync"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-translator-layered-production
+  cancel-in-progress: true
+
+jobs:
+  layered-acceptance:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify layered acceptance source
+        run: |
+          node --check scripts/translator-layered-live-smoke.mjs
+          node --check src/index.js
+
+      - name: Prepare browser probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          browser="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$browser"
+          echo "BROWSER_EXECUTABLE=$browser" >> "$GITHUB_ENV"
+          "$browser" --version
+
+      - name: Collect live layered evidence on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          LIVE_TRANSLATOR_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+          LIVE_ROOT_URL: https://ai-advokat.github.io/
+        run: node scripts/translator-layered-live-smoke.mjs || true
+
+      - name: Enforce M2M100 -> GPT-OSS -> browser DOM acceptance after deploy
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          LIVE_TRANSLATOR_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+          LIVE_ROOT_URL: https://ai-advokat.github.io/
+        run: node scripts/translator-layered-live-smoke.mjs
+
+      - name: Upload Translator layered evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: translator-layered-production-acceptance
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/translator-layered-report.json
+            /tmp/translator-layered-browser.png

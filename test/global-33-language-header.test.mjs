@@ -26,9 +26,16 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(home,/translateGlobalInterface/);
   assert.match(home,/UI_TRANSLATION_BATCH_ITEMS=12/);
   assert.match(home,/UI_TRANSLATION_BATCH_CHARS=2400/);
-  assert.match(home,/UI_TRANSLATION_CLIENT_CONCURRENCY=2/);
+  assert.match(home,/UI_TRANSLATION_CLIENT_CONCURRENCY=1/);
   assert.match(home,/batch\.length>=UI_TRANSLATION_BATCH_ITEMS/);
   assert.match(home,/nextChars>UI_TRANSLATION_BATCH_CHARS/);
+  assert.match(home,/UI_TRANSLATION_PROVIDER_BACKOFF_MS=5000/);
+  assert.match(home,/UI_TRANSLATION_RATE_LIMIT_BACKOFF_MS=60000/);
+  assert.match(home,/UI_TRANSLATION_OBSERVER_SUPPRESS_MS=900/);
+  assert.match(home,/Date\.now\(\)<uiTranslationObserverSuppressUntil/);
+  assert.match(home,/function applyUiTranslationBackoff/);
+  assert.match(home,/uiTranslationFailureStreak/);
+  assert.match(home,/Math\.min\(60000,UI_TRANSLATION_PROVIDER_BACKOFF_MS\*Math\.pow/);
   const translator=home.slice(home.indexOf("async function translateGlobalInterface"),home.indexOf("function applyLanguage"));
   assert.doesNotMatch(translator,/siteLanguage==="mk"\|\|siteLanguage==="en"/);
   assert.match(translator,/if\(siteLanguage==="mk"\|\|uiTranslationRunning\) return/);
@@ -39,6 +46,9 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(worker,/UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT=48/);
   assert.match(worker,/UI_TRANSLATE_GLOBAL_HOURLY_LIMIT=240/);
   assert.match(worker,/UI_TRANSLATE_GLOBAL_DAILY_LIMIT=800/);
+  assert.match(worker,/UI_TRANSLATION_CONCURRENCY=2/);
+  assert.match(worker,/workers_ai_ui_fallback/);
+  assert.match(worker,/m2m100_workers_ai_fallback/);
   assert.match(worker,/scope:"ui_translate_lang_"\+target/);
   assert.ok(worker.indexOf("consumeWindow(env,") < worker.indexOf("runWorkersAIText(env,") || worker.includes("uiTranslateLimiter"),"translation limiter must precede provider execution");
   assert.match(worker,/url\.pathname === "\/api\/ui-translate"/);
