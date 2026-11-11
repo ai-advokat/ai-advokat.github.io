@@ -1015,7 +1015,7 @@ async function handleCaseWorkspaceApi(request,env,url){
       ok:false,
       error:"case_workspace_schema_not_ready",
       runtime:caseWorkspaceRuntimeState(env,{schemaReady:false})
-    },503,{"Retry-After":"5"});
+    },503);
   }
 
   const auth=await caseWorkspaceMembership(request,env);
@@ -11657,7 +11657,7 @@ async function handleUiTranslation(request,env){
       fallbackError:String(openAIFallback.error||"openai_fallback_failed").slice(0,120),
       fallbackStatus:Number(openAIFallback.status||0)||null,
       fallbackDetail:String(openAIFallback.detail||"").slice(0,160)||null
-    },503);
+    },503,{"Retry-After":"5"});
   }
 }
 
