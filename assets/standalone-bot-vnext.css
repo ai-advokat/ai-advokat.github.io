@@ -461,3 +461,9 @@ html[data-external-experience="conversation"] #menu>summary:hover{
     padding-top:18px!important;
   }
 }
+
+
+/* Clean conversation hides inline provider/model labels; provenance remains in the evidence panel. */
+html[data-external-experience="conversation"] .message>small{
+  display:none!important;
+}
