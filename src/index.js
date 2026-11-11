@@ -2439,7 +2439,7 @@ function corsHeaders(request) {
     "Access-Control-Allow-Methods": "GET,HEAD,POST,DELETE,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Membership-Key, X-File-Name, X-Page-Count",
     "Access-Control-Max-Age": "86400",
-    "Access-Control-Expose-Headers": "Content-Disposition, X-AI-Advokat-Export-Mode",
+    "Access-Control-Expose-Headers": "Content-Disposition, X-AI-Advokat-Export-Mode, X-AI-Advokat-Request-Id",
     "Vary": "Origin"
   };
 
@@ -6827,6 +6827,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const contentType=(request.headers.get("content-type") || "").toLowerCase();
   if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
 
+  // R3 observability: opaque technical correlation only. Never include prompt
+  // bodies, documents, names or factual case content in failure telemetry.
+  const runtimeRequestId="R3-"+crypto.randomUUID();
+  const cfRay=String(request.headers.get("CF-Ray")||"").trim().slice(0,120)||null;
+
   const readiness=orchestratorRuntimeReadiness(env);
   const trainingOpen=openAIOnly && env.EXTERNAL_BOT_TRAINING_OPEN==="true";
   const botMembership=openAIOnly ? await resolveMembership(request,env) : null;
@@ -6882,6 +6887,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     ? String(payload.capabilityRoute)
     : "";
   const capabilityRoute=detectedCapabilityRoute || requestedCapabilityRoute;
+  const runtimeRoute=openAIOnly
+    ? (capabilityRoute || (botMembership ? "EXTERNAL_PROFESSIONAL_CHAT" : "EXTERNAL_TRAINING_CHAT"))
+    : "PUBLIC_CHAT";
   if(capabilityRoute==="SECURE_CASE"){
     return json(request,{
       ok:false,
@@ -7948,8 +7956,23 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         model:freeResult.model||resolveWorkersAITextModel(env),
         providerShape:freeResult.providerShape||null,
         modelFallback:freeResult.modelFallback||null,
-        runtime:{provider:"workers_ai_free",documentConversion:freeWorkersAIMarkdownConfigured(env)?"configured":"locked"}
-      },503);
+        runtime:{provider:"workers_ai_free",documentConversion:freeWorkersAIMarkdownConfigured(env)?"configured":"locked"},
+        failureTrace:{
+          requestId:runtimeRequestId,
+          cfRay,
+          route:runtimeRoute,
+          stage:"workers_ai_generation",
+          provider:"workers_ai_free",
+          model:freeResult.model||resolveWorkersAITextModel(env),
+          errorType:freeResult.error||"free_workers_ai_failed",
+          retryable:freeResult.retryable!==false,
+          providerCalls:Number(freeResult.providerCalls||0),
+          retryCount:Math.max(0,Number(freeResult.providerCalls||0)-1),
+          modelFallback:freeResult.modelFallback||null,
+          missionProfile,
+          languageGate:freeResult.releaseGate||null
+        }
+      },503,{"X-AI-Advokat-Request-Id":runtimeRequestId});
     }
 
     let releasedFallbackText=String(freeResult.text||"").trim();
@@ -8860,8 +8883,23 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           ? "NO_EXTERNAL_ACTION"
           : "RESEARCH_OUTPUT_ONLY",
         humanReviewRequired:plan.legalIntelligenceEngine?.authority_and_human_gate?.human_review_required===true
-      } : null
-    },503);
+      } : null,
+      failureTrace:{
+        requestId:runtimeRequestId,
+        cfRay,
+        route:runtimeRoute,
+        stage:"openai_orchestrator",
+        provider:"openai",
+        model:env.OPENAI_MODEL||null,
+        errorType:String(result.error||"provider_failure").slice(0,80),
+        httpStatus:Number(result.status||0)||null,
+        responseStatus:typeof result.responseStatus==="string" ? result.responseStatus.slice(0,80) : null,
+        providerCalls:Number(result.providerCalls||0),
+        retryCount:Math.max(0,(Array.isArray(result.providerAttempts)?result.providerAttempts.length:1)-1),
+        attempts:Array.isArray(result.providerAttempts)?result.providerAttempts:null,
+        missionProfile
+      }
+    },503,{"X-AI-Advokat-Request-Id":runtimeRequestId});
   }
 
   const postflight=result.canonicalSourceFirst===true
