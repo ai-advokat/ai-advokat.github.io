@@ -19,6 +19,14 @@ export function resolveWorkersAIEmptyFallbackModel(env){
   return model||WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT;
 }
 
+export function workersAITimeoutFallbackMs(primaryTimeoutMs){
+  const primary=Math.max(3000,Math.min(45000,Number(primaryTimeoutMs)||30000));
+  // R3 runtime evidence (artifact 13864206636) captured the fast path timing
+  // out on both primary and fallback at the same 12s boundary. Give the one
+  // permitted fallback a modestly wider but still bounded recovery window.
+  return Math.min(22000,Math.max(18000,primary+6000));
+}
+
 export function classifyWorkersAIProviderFailure(error){
   const detail=String(error?.message||error||"").slice(0,500);
   const lower=detail.toLowerCase();
@@ -315,7 +323,7 @@ export async function runWorkersAIText(env,{
       responseFormat,
       reasoningEffort:"low"
     });
-    const fallbackTimeoutMs=Math.min(15000,Math.max(12000,boundedTimeout));
+    const fallbackTimeoutMs=workersAITimeoutFallbackMs(boundedTimeout);
     try{
       providerCalls+=1;
       generated=await callOnce(fallbackModel,fallbackOptions,fallbackTimeoutMs);
