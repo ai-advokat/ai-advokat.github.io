@@ -44,3 +44,13 @@ test("Worker live smoke proves legacy core-r12 also self-heals to core-r15",()=>
   assert.match(workflow,/LEGACY CORE-R12 SELF-HEAL REDIRECT: PASS/);
   assert.match(workflow,/worker-legacy-r12-release-headers\.txt/);
 });
+
+test("Worker smoke retains R3 failure correlation headers and body trace",()=>{
+  const workflow=fs.readFileSync(".github/workflows/worker-runtime-live-smoke.yml","utf8");
+  assert.match(workflow,/-D \/tmp\/worker-chat-headers\.txt/);
+  assert.match(workflow,/x-ai-advokat-request-id/);
+  assert.match(workflow,/failureTrace\.requestId/);
+  assert.match(workflow,/request id header\/body mismatch/);
+  assert.match(workflow,/\/tmp\/worker-chat-headers\.txt/);
+});
+
