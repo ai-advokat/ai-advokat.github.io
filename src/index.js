@@ -6822,6 +6822,64 @@ function externalBotLanguageDirective(code){
   return "Please answer in "+language+". Preserve official legal source quotations, citations, case numbers and statutory identifiers verbatim.";
 }
 
+export function buildProviderFailureTrace({
+  requestId="",
+  cfRay=null,
+  route="",
+  stage="",
+  provider="",
+  model=null,
+  errorType="provider_failure",
+  retryable=true,
+  providerCalls=0,
+  modelFallback=null,
+  missionProfile=null,
+  languageGate=null,
+  httpStatus=null,
+  responseStatus=null,
+  attempts=null
+}={}){
+  const calls=Math.max(0,Number(providerCalls)||0);
+  const safeAttempts=Array.isArray(attempts)
+    ? attempts.slice(0,4).map((attempt,index)=>Object.freeze({
+        attempt:Number(attempt?.attempt||index+1),
+        error:String(attempt?.error||"").slice(0,80)||null,
+        httpStatus:Number.isFinite(Number(attempt?.httpStatus))?Number(attempt.httpStatus):null,
+        responseStatus:typeof attempt?.responseStatus==="string"?attempt.responseStatus.slice(0,80):null,
+        incompleteReason:typeof attempt?.incompleteReason==="string"?attempt.incompleteReason.slice(0,120):null,
+        timeoutMs:Number.isFinite(Number(attempt?.timeoutMs))?Number(attempt.timeoutMs):null,
+        requestId:typeof attempt?.requestId==="string"?attempt.requestId.slice(0,180):null,
+        responseId:typeof attempt?.responseId==="string"?attempt.responseId.slice(0,180):null,
+        providerCalls:Number(attempt?.providerCalls||0)
+      }))
+    : null;
+  return Object.freeze({
+    requestId:String(requestId||"").slice(0,180)||null,
+    cfRay:typeof cfRay==="string"?cfRay.slice(0,120):null,
+    route:String(route||"").slice(0,80)||null,
+    stage:String(stage||"").slice(0,80)||null,
+    provider:String(provider||"").slice(0,80)||null,
+    model:typeof model==="string"?model.slice(0,160):null,
+    errorType:String(errorType||"provider_failure").slice(0,80),
+    retryable:retryable!==false,
+    providerCalls:calls,
+    retryCount:Math.max(0,calls-1),
+    modelFallback:modelFallback&&typeof modelFallback==="object" ? {
+      from:String(modelFallback.from||"").slice(0,160)||null,
+      to:String(modelFallback.to||"").slice(0,160)||null,
+      reason:String(modelFallback.reason||"").slice(0,80)||null
+    } : null,
+    missionProfile:typeof missionProfile==="string"?missionProfile.slice(0,80):null,
+    languageGate:languageGate&&typeof languageGate==="object" ? {
+      verdict:String(languageGate.verdict||"").slice(0,40)||null,
+      version:String(languageGate.version||"").slice(0,120)||null
+    } : null,
+    httpStatus:Number.isFinite(Number(httpStatus))&&Number(httpStatus)>0?Number(httpStatus):null,
+    responseStatus:typeof responseStatus==="string"?responseStatus.slice(0,80):null,
+    attempts:safeAttempts
+  });
+}
+
 async function handleGPTChat(request,env,{openAIOnly=false}={}){
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
   const contentType=(request.headers.get("content-type") || "").toLowerCase();
@@ -7957,7 +8015,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         providerShape:freeResult.providerShape||null,
         modelFallback:freeResult.modelFallback||null,
         runtime:{provider:"workers_ai_free",documentConversion:freeWorkersAIMarkdownConfigured(env)?"configured":"locked"},
-        failureTrace:{
+        failureTrace:buildProviderFailureTrace({
           requestId:runtimeRequestId,
           cfRay,
           route:runtimeRoute,
@@ -7967,11 +8025,10 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           errorType:freeResult.error||"free_workers_ai_failed",
           retryable:freeResult.retryable!==false,
           providerCalls:Number(freeResult.providerCalls||0),
-          retryCount:Math.max(0,Number(freeResult.providerCalls||0)-1),
           modelFallback:freeResult.modelFallback||null,
           missionProfile,
           languageGate:freeResult.releaseGate||null
-        }
+        })
       },503,{"X-AI-Advokat-Request-Id":runtimeRequestId});
     }
 
@@ -8884,21 +8941,20 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           : "RESEARCH_OUTPUT_ONLY",
         humanReviewRequired:plan.legalIntelligenceEngine?.authority_and_human_gate?.human_review_required===true
       } : null,
-      failureTrace:{
+      failureTrace:buildProviderFailureTrace({
         requestId:runtimeRequestId,
         cfRay,
         route:runtimeRoute,
         stage:"openai_orchestrator",
         provider:"openai",
         model:env.OPENAI_MODEL||null,
-        errorType:String(result.error||"provider_failure").slice(0,80),
+        errorType:result.error||"provider_failure",
         httpStatus:Number(result.status||0)||null,
-        responseStatus:typeof result.responseStatus==="string" ? result.responseStatus.slice(0,80) : null,
+        responseStatus:typeof result.responseStatus==="string" ? result.responseStatus : null,
         providerCalls:Number(result.providerCalls||0),
-        retryCount:Math.max(0,(Array.isArray(result.providerAttempts)?result.providerAttempts.length:1)-1),
         attempts:Array.isArray(result.providerAttempts)?result.providerAttempts:null,
         missionProfile
-      }
+      })
     },503,{"X-AI-Advokat-Request-Id":runtimeRequestId});
   }
 
