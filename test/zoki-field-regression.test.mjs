@@ -13,6 +13,7 @@ import {
   assessSpecificCaseLawClaims,
   redactUnsupportedSpecificCaseLawClaims
 } from "../src/case-law-claim-guard.js";
+import { isFormalLegalDraftRequest } from "../src/response-quality.js";
 
 const worker=fs.readFileSync("src/index.js","utf8");
 const ui=fs.readFileSync("assets/standalone-bot-vnext.css","utf8");
@@ -78,4 +79,11 @@ test("ZOKI6 clean conversation has explicit readable dark and light question bub
   assert.match(ui,/data-vnext-theme="light"\]\[data-external-experience="conversation"\] \.message\.user/);
   assert.match(ui,/background:#e8eef3!important/);
   assert.match(ui,/color:#102233!important/);
+});
+
+
+test("ZOKI7 stress-test analytical prompts never collapse into a generic formal-document fallback",()=>{
+  const q="Во 2023 година тужбата на А против Б за 600.000 денари била отфрлена како недозволена. Во 2026 година А повторно поднесува тужба. Б приговара правосилно пресудена работа. Разграничи отфрлање од одбивање, формална и материјална правосилност, идентитет на спор и литиспенденција. Изработи краток нацрт на аргументација за приговорот и за спротивната страна.";
+  assert.equal(isFormalLegalDraftRequest(q),false);
+  assert.match(worker,/ZERO-GOVERNED-CONTEXT ANALYSIS SAFETY/);
 });
