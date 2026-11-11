@@ -150,3 +150,11 @@ test("CPR14 local redaction does not silently downgrade an unresolved confidenti
   assert.equal(masked.safeToSend,false);
   assert.equal(masked.changed,false);
 });
+
+
+test("CPR15 R3 hypothetical privacy/evidence and public case-citation tests remain public-chat eligible",()=>{
+  const evidence="Во граѓанска парница странка доставува извезена WhatsApp-преписка, аудио-снимка и список со лични податоци на трети лица. Испитај релевантност, автентичност, интегритет, заштита на лични податоци и адвокатска доверливост.";
+  const citation='Корисникот тврди дека Врховниот суд донел пресуда Рев2 бр. 777/2026 и бара да се провери дали конкретната одлука постои во автентичен официјален извор. Ако не, одбиј да измислиш цитат.';
+  assert.equal(detectConfidentialCasePrompt(evidence).confidential,false);
+  assert.equal(detectConfidentialCasePrompt(citation).confidential,false);
+});
