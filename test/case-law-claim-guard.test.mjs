@@ -4,7 +4,8 @@ import fs from "node:fs";
 import {
   CASE_LAW_CLAIM_GUARD_VERSION,
   extractSpecificJudicialClaims,
-  assessSpecificCaseLawClaims
+  assessSpecificCaseLawClaims,
+  redactUnsupportedSpecificCaseLawClaims
 } from "../src/case-law-claim-guard.js";
 
 test("specific judicial claim extractor catches fabricated-looking domestic and ECHR authorities",()=>{
@@ -69,12 +70,31 @@ test("generic legal discussion without a specific case identity remains releasab
   assert.equal(gate.claims.length,0);
 });
 
+test("unsupported specific authority can be removed without discarding the useful answer",()=>{
+  const text=[
+    "Правната анализа на фактите останува релевантна.",
+    "Пресуда на Врховниот суд бр. 123/2020 наводно го потврдува ставот.",
+    "Практичен следен чекор е да се обезбедат документите."
+  ].join("\n");
+  const gate=assessSpecificCaseLawClaims(text);
+  assert.equal(gate.ok,false);
+  const safe=redactUnsupportedSpecificCaseLawClaims(text,gate);
+  assert.equal(safe.changed,true);
+  assert.match(safe.text,/Правната анализа на фактите останува релевантна/u);
+  assert.match(safe.text,/Судска практика · ПРОВЕРКА/u);
+  assert.match(safe.text,/Практичен следен чекор/u);
+  assert.doesNotMatch(safe.text,/123\/2020/u);
+  assert.equal(assessSpecificCaseLawClaims(safe.text).ok,true);
+});
+
 test("runtime applies the deterministic case-law claim gate to both Workers fallback and governed OpenAI release paths",()=>{
   const index=fs.readFileSync("src/index.js","utf8");
   const central=fs.readFileSync("src/ai-advokat-central-prompt.js","utf8");
   const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
   assert.match(index,/fallbackCaseLawClaimGate=assessSpecificCaseLawClaims/);
   assert.match(index,/governedCaseLawClaimGate=assessSpecificCaseLawClaims/);
+  assert.match(index,/redactUnsupportedSpecificCaseLawClaims/);
+  assert.match(index,/UNVERIFIED_SPECIFIC_CITATIONS_REDACTED/);
   assert.match(index,/case_law_claim_release_blocked/);
   assert.match(central,/EXACT CASE-LAW AUTHORITY GATE/);
   assert.match(orchestrator,/SPECIFIC CASE-LAW CLAIM GATE/);

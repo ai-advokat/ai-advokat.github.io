@@ -495,3 +495,17 @@ test("R15.4 generated ID-ови is deterministically normalized before the langu
   assert.equal(macedonianReleaseVerdict(clean,{userText:"Одговори на македонски."}).verdict,"RELEASE");
 });
 
+
+
+test("Zoki 2026-11-11 reported Bulgarian/hybrid legal prose is detected and deterministically repaired",()=>{
+  const bad="Законот за облигационите односи (далее — ЗОО) не е во предоставлените извори. Овие правила определјаат како страните постапуваат, а дефакто состојбата се анализира одделно.";
+  const before=assessMacedonianOutput(bad,{userText:"Одговори на македонски."});
+  assert.equal(before.ok,false,JSON.stringify(before));
+  const clean=normaliseMacedonianGeneratedText(bad);
+  assert.match(clean,/во понатамошниот текст/u);
+  assert.match(clean,/достапните извори/u);
+  assert.match(clean,/определуваат/u);
+  assert.match(clean,/де факто/u);
+  assert.doesNotMatch(clean,/далее|предоставлените|определјаат|дефакто/iu);
+  assert.equal(assessMacedonianOutput(clean,{userText:"Одговори на македонски."}).ok,true,clean);
+});

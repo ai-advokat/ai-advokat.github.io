@@ -22,7 +22,8 @@
     "FREE_CHAT_PROVIDER": "workers_ai",
     "EXTERNAL_BOT_TRAINING_OPEN": "true",
     "EXTERNAL_BOT_TRAINING_MONTHLY_QUOTA": "100",
-    "WORKERS_AI_CHAT_MODEL": "@cf/qwen/qwen3-30b-a3b-fp8",
+    "WORKERS_AI_CHAT_MODEL": "@cf/openai/gpt-oss-120b",
+    "WORKERS_AI_EMPTY_FALLBACK_MODEL": "@cf/qwen/qwen3.8-27b",
     "WORKERS_AI_MARKDOWN_ENABLED": "true"
   },
   "triggers": {

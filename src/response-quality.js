@@ -3,7 +3,13 @@ import { DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE, isDetentionContext } from ".
 // Final user-facing response quality helpers.
 // Deterministic postflight only: no source expansion, no new legal reasoning.
 
-const FORMAL_DRAFT_RE=/(?:работен\s+нацрт|судск(?:а|о)\s+наплат|опомена|opomena|ту[жѓ]б|жалб|приговор|поднесок|поднес|барање|договор|полномош|правно\s+мислење|tuzb|zalb|prigovor|podnes|baranje|dogovor|polnomos)/iu;
+const FORMAL_DOCUMENT_TERM_RE=/(?:судск(?:а|о)\s+наплат|опомена|opomena|ту[жѓ]б|жалб|приговор|поднесок|поднес|барање|договор|полномош|правно\s+мислење|tuzb|zalb|prigovor|podnes|baranje|dogovor|polnomos)/iu;
+const FORMAL_DRAFT_ACTION_RE=/(?:изработи|изработете|подготви|подгответе|направи|направете|напиши|напишете|состави|составете|изготви|изгответе|izraboti|podgotvi|napravi|napishi|sostavi|izgotvi|сакам\s+да\s+ми\s+(?:изработиш|подготвиш|направиш|напишеш|составиш|изготвиш)|би\s+сакал(?:а)?\s+да\s+ми\s+(?:изработиш|подготвиш|направиш|напишеш|составиш|изготвиш))/iu;
+const PRIMARY_FORMAL_DRAFT_RE=/(?:^|[.!?]\s+)(?:те\s+молам\s+)?(?:изработи|изработете|подготви|подгответе|направи|направете|напиши|напишете|состави|составете|изготви|изгответе|izraboti|podgotvi|napravi|napishi|sostavi|izgotvi)\s+(?:ми\s+|mi\s+)?(?:(?:целос(?:ен|на)|работ(?:ен|на)|пример(?:ен|на)|формал(?:ен|на)|celosen|celosna|raboten|rabotna|primeren|primerna|formalen|formalna)\s+){0,2}(?:судск(?:а|о)\s+наплат|опомена|ту[жѓ]б|жалб|приговор|поднесок|барање|договор|полномош|правно\s+мислење|sudska\s+naplat|opomena|tuzb|zalb|prigovor|podnes|baranje|dogovor|polnomos)/iu;
+const FACT_PREAMBLE_FORMAL_DRAFT_RE=/^\s*факти\s*:[\s\S]{0,1200}(?:подготви|изработи|направи|напиши|состави|изготви)\s+(?:ми\s+)?(?:работен\s+нацрт\s+за\s+судск(?:а|о)\s+наплат|(?:целос(?:ен|на)|работ(?:ен|на)|пример(?:ен|на)|формал(?:ен|на)\s+){0,2}(?:опомена|ту[жѓ]б|жалб|приговор|поднесок|барање|договор|полномош|правно\s+мислење))/iu;
+const POLITE_FORMAL_DRAFT_RE=/(?:можеш|може|би\s+можел|би\s+сакал(?:а)?|сакам)[\s\S]{0,120}(?:ту[жѓ]б|жалб|приговор|поднесок|барање|договор|полномош|правно\s+мислење)[\s\S]{0,120}(?:изработ|подготв|направ|напиш|состав|изготв)|(?:ту[жѓ]б|жалб|приговор|поднесок|барање|договор|полномош|правно\s+мислење)[\s\S]{0,120}(?:можеш|може)[\s\S]{0,120}(?:изработ|подготв|направ|напиш|состав|изготв)/iu;
+const ANALYTICAL_TASK_RE=/(?:анализирај|разграничи|испитај|објасни|процени|утврди|провери|аргументи\s+за\s+двете|двостран(?:а|о)\s+анализ|матрица\s+на\s+доказ|условни\s+исход|процесна\s+стратег|правно\s+образложение)/iu;
+const ANALYTICAL_SUBDRAFT_RE=/(?:краток\s+)?нацрт\s+(?:на|за)\s+(?:аргументациј|аргумент|образложени|клучн(?:ите)?\s+барањ|издвојување|оспорување|професионален\s+одговор)|структура\s+на\s+жалб/iu;
 
 const CRIMINAL_EVENT_DRAFT_RE=/(?:кражб|разбојништ|измам|фалсифик|напад|закан|насил|убиств|поткуп|проневер|кривичн(?:о|а)\s+дел)/iu;
 const CIVIL_REMEDY_DRAFT_RE=/(?:надомест|штет|исплат|враќањ|сопственост|долг|побарувањ|неосновано\s+збогатување)/iu;
@@ -17,7 +23,30 @@ export function hasProceduralInstrumentMismatch(userText){
 }
 
 export function isFormalLegalDraftRequest(userText){
-  return FORMAL_DRAFT_RE.test(String(userText||"").normalize("NFKC"));
+  const text=String(userText||"").normalize("NFKC").trim();
+  if(!text) return false;
+
+  // A bare instrument name is still a legitimate direct drafting request.
+  if(/^\s*(?:опомена|ту[жѓ]ба|жалба|приговор|поднесок|барање|договор|полномошно|правно\s+мислење|opomena|tuzba|zalba|prigovor|podnesok|baranje|dogovor|polnomosno)\s*[.!?]?\s*$/iu.test(text)) return true;
+
+  // Analysis prompts often mention lawsuits, objections and contracts as facts,
+  // or request a small drafting fragment inside a broader analytical answer.
+  // Those must remain ANALYSIS, not collapse into a full-document scaffold.
+  const analyticalTask=ANALYTICAL_TASK_RE.test(text);
+  const analyticalSubdraft=ANALYTICAL_SUBDRAFT_RE.test(text);
+  if(analyticalTask && analyticalSubdraft) return false;
+
+  if(PRIMARY_FORMAL_DRAFT_RE.test(text)) return true;
+  if(FACT_PREAMBLE_FORMAL_DRAFT_RE.test(text) && !analyticalTask) return true;
+  if(POLITE_FORMAL_DRAFT_RE.test(text) && !analyticalTask) return true;
+
+  // Never classify a legal concept merely because the noun is also a document
+  // type (e.g. "Објасни ми што е договор").
+  if(ANALYTICAL_TASK_RE.test(text)) return false;
+
+  // Conservative final fallback: creation verb + formal instrument, but only
+  // when the request is not framed as an analytical task.
+  return FORMAL_DRAFT_ACTION_RE.test(text) && FORMAL_DOCUMENT_TERM_RE.test(text);
 }
 
 const FORMAL_DRAFT_RECOVERY_REQUEST_RE=/(?:изработи|подготви|направи|напиши|состави|работен\s+нацрт|судск(?:а|о)\s+наплат|ту[жѓ]б|жалб|приговор|опомена|поднесок|полномош|правно\s+мислење)/iu;

@@ -14,7 +14,8 @@ import {
 } from "./case-law-corpus-radar.js";
 import {
   CASE_LAW_CLAIM_GUARD_VERSION,
-  assessSpecificCaseLawClaims
+  assessSpecificCaseLawClaims,
+  redactUnsupportedSpecificCaseLawClaims
 } from "./case-law-claim-guard.js";
 import {
   DETENTION_PROCEDURAL_TERMINOLOGY_VERSION,
@@ -6128,7 +6129,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     "You are running in AI Advokat FREE Workers AI mode.",
     "If the user writes in Macedonian or recognisable Macedonian Latin transliteration, answer in standard literary Macedonian Cyrillic. The Macedonian 2017 language contract above is mandatory unless the user explicitly requests another language.",
     "Use simple, natural Macedonian vocabulary and short clear sentences. Prefer established forms such as еве, назив, работник, работодавач, работно место, плата, права и обврски. Never invent words or use neighbouring-language calques such as ево or наименование.",
-    "For a simple definition or everyday legal-information question, answer directly in 4-8 concise sentences. Do not produce a table, multi-column pseudo-table or long checklist unless the user asks for one.",
+    "For a simple legal definition, give a direct definition, key characteristics or scope, one practical example when useful, and a short conclusion. Be concise but substantive; do not collapse a useful legal explanation into only 2-3 generic sentences.",
     missionProfile==="GENERAL_BYPASS"
       ? "For ordinary non-legal tasks, use normal general model reasoning and knowledge. Do not force legal-source boilerplate."
       : "For legal/current-law claims, governed AI Advokat context controls. General model knowledge may explain generic concepts but may not establish current law, deadlines, jurisdiction, mandatory documents, remedies or legal effect.",
@@ -6136,9 +6137,11 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     "When the user asks for an exact token, identifier, name, date or phrase present in extracted document text, copy it exactly before adding interpretation.",
     "Never invent document contents, missing pages, signatures, dates, parties, legal effects or source citations.",
     "If current law is not established by a governed primary source in supplied context, say that current-law verification is still required and continue with the useful non-authoritative portion.",
-    zeroGovernedHighDepthContext
-      ? "ZERO-GOVERNED-CONTEXT SAFETY: no governed current-law source matched this L2/L3 request. Produce only a structural working template. Do not state a specific statute name, numbered article, filing deadline, court/jurisdiction, mandatory attachment, court fee, remedy, burden, legal effect or current-law proposition as established law. Use neutral placeholders such as [ДА СЕ ПРОВЕРИ ВО ВАЖЕЧКИ ОФИЦИЈАЛЕН ИЗВОР] where legal verification is needed."
-      : null,
+    zeroGovernedHighDepthContext && formalDraftRequest
+      ? "ZERO-GOVERNED-CONTEXT FORMAL DRAFT SAFETY: no governed current-law source matched this L2/L3 draft. Preserve a complete useful document architecture and the user-supplied facts, but do not state a specific statute name, numbered article, filing deadline, court/jurisdiction, mandatory attachment, court fee, remedy or legal effect as established law. Mark only those legal points for official-source verification."
+      : zeroGovernedHighDepthContext
+        ? "ZERO-GOVERNED-CONTEXT ANALYSIS SAFETY: no governed current-law source matched this L2/L3 analysis. Still provide a substantive working analysis of the facts, competing arguments, evidence, burden/causation issues, risks and process strategy using general legal reasoning. Clearly label which current-law propositions require official-source verification. Do not invent statute names, article numbers, deadlines, court competence or legal effects."
+        : null,
     "Do not say that you cannot create Word/DOCX files. The browser can export the latest working draft; provide the complete document text.",
     "Use placeholders or clearly fictional data when the user requests invented names/details; never present invented facts as real.",
     proceduralInstrumentMismatch
@@ -6181,8 +6184,10 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
             ? "Return only a complete compact structural working template. Preserve user-supplied facts, mark missing facts clearly, and use [ДА СЕ ПРОВЕРИ ВО ВАЖЕЧКИ ОФИЦИЈАЛЕН ИЗВОР] for every legal point that would require current-law authority. Do not invent or assert statute names, article numbers, deadlines, jurisdiction, mandatory attachments, fees, remedies or legal effects. Keep it within about 700 words."
             : "Return only the complete compact working draft. Use clear placeholders or explicitly fictional data. Keep it within about 700 words and omit commentary before or after the document.")
       : missionProfile==="L0_INFORMATIONAL"
-        ? "Answer directly and concisely. Use ordinary standard Macedonian; no table unless requested."
-        : "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
+        ? "Answer directly in natural standard Macedonian. Give enough depth to teach the concept: definition, key characteristics/scope, example where useful, and a brief conclusion. No table unless requested."
+        : zeroGovernedHighDepthContext
+          ? "Return a substantive working legal analysis, not a blank template. Separate supplied facts, issues, arguments for each side, evidence/proof problems, risks and practical process strategy. Mark only unverified current-law propositions for official-source verification."
+          : "Return a useful, structured answer. When analysing documents, identify what the document states, uncertainties or missing material, and what should be verified next."
   ].filter(Boolean).join("\n\n");
 
   const messages=[
@@ -6194,7 +6199,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   // overlong pseudo-tables and hybrid morphology.
   const requestedTokenLimit=Math.max(400,Math.min(3200,Number(maxOutputTokens)||1400));
   const tokenLimit=fastFreePrompt
-    ? Math.min(650,requestedTokenLimit)
+    ? Math.min(900,requestedTokenLimit)
     : compactFreeDraft
       ? Math.min(1000,requestedTokenLimit)
       : requestedTokenLimit;
@@ -6203,7 +6208,7 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     maxOutputTokens:tokenLimit,
     temperature:0,
     sessionAffinity,
-    timeoutMs:fastFreePrompt?8000:20000
+    timeoutMs:fastFreePrompt?12000:20000
   });
   if(!result.ok){
     const mappedError=result.error==="workers_ai_empty_response"
@@ -7918,22 +7923,33 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       },503);
     }
 
-    const fallbackCaseLawClaimGate=assessSpecificCaseLawClaims(releasedFallbackText,{
+    let fallbackCaseLawClaimGate=assessSpecificCaseLawClaims(releasedFallbackText,{
       reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
       webSources:[]
     });
+    let fallbackCaseLawRedaction=null;
     if(!fallbackCaseLawClaimGate.ok){
-      await releaseMonthlyQuota(env,{subject,period});
-      return json(request,{
-        ok:false,
-        error:"case_law_claim_release_blocked",
-        message:"Одговорот не е пуштен затоа што содржи конкретна судска пресуда, број на предмет или именуван судски случај што не е потврден во reviewed official case-law context.",
-        caseLawClaimGuard:{
-          version:CASE_LAW_CLAIM_GUARD_VERSION,
-          unsupported:fallbackCaseLawClaimGate.unsupported
-        },
-        governanceRunId:lioeRunId
-      },503);
+      fallbackCaseLawRedaction=redactUnsupportedSpecificCaseLawClaims(releasedFallbackText,fallbackCaseLawClaimGate);
+      if(fallbackCaseLawRedaction.changed){
+        releasedFallbackText=fallbackCaseLawRedaction.text;
+        fallbackCaseLawClaimGate=assessSpecificCaseLawClaims(releasedFallbackText,{
+          reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
+          webSources:[]
+        });
+      }
+      if(!fallbackCaseLawClaimGate.ok){
+        await releaseMonthlyQuota(env,{subject,period});
+        return json(request,{
+          ok:false,
+          error:"case_law_claim_release_blocked",
+          message:"Одговорот не може безбедно да се пушти затоа што и по отстранувањето сè уште содржи непотврдена конкретна судска практика.",
+          caseLawClaimGuard:{
+            version:CASE_LAW_CLAIM_GUARD_VERSION,
+            unsupported:fallbackCaseLawClaimGate.unsupported
+          },
+          governanceRunId:lioeRunId
+        },503);
+      }
     }
 
     const freeSourceMode=freeResult.provider==="canonical_corpus_no_model"
@@ -8298,19 +8314,21 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       "openai_response_error"
     ]);
     const transientStatus=Number(result.status||0);
-    // Do not immediately replay the whole multi-call orchestrator on HTTP 429.
-    // A bounded specialist + Chief run may already consume several provider calls;
-    // replaying it after a rate-limit response amplifies provider pressure and can
-    // turn one transient 429 into a six-call burst. Preserve the failure provenance
-    // and move to the governed fallback/fail-closed path instead.
+    // Transient provider pressure must never replay the full specialist fan-out.
+    // For 408/429/5xx response failures, make exactly one bounded Chief-only
+    // recovery pass. This preserves GPT-quality reasoning while avoiding a burst
+    // of specialist calls that can amplify the original provider error.
     const retryableResponseStatus=result.error==="openai_response_error"
-      && [408,500,502,503,504].includes(transientStatus);
+      && [408,429,500,502,503,504].includes(transientStatus);
+    const boundedChiefRecovery=result.error==="openai_response_error"
+      && [408,429,500,502,503,504].includes(transientStatus);
     const retryable=transientPrimaryErrors.has(String(result.error||""))
       && (result.error!=="openai_response_error" || retryableResponseStatus)
+      && (!boundedChiefRecovery || explicitWebRequested!==true)
       && (professionalRequestDeadlineAt-Date.now()>=10000);
     if(retryable){
       const first=result;
-      const retryUsesWeb=explicitWebRequested ? webRequested : false;
+      const retryUsesWeb=boundedChiefRecovery ? false : (explicitWebRequested ? webRequested : false);
       const configuredBackoff=Number(env?.OPENAI_RETRY_BACKOFF_MS||250);
       const retryBackoffMs=Number.isFinite(configuredBackoff)
         ? Math.min(1000,Math.max(0,Math.trunc(configuredBackoff)))
@@ -8335,8 +8353,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
         history:historyCheck.history,
         maxOutputTokens:Math.min(6000,Math.max(maxOutputTokens,incompleteRecoveryBudget,missionProfile==="L3_CONSEQUENTIAL"?5200:maxOutputTokens)),
-        reasoningEffort:["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort,
-        deadlineAt:professionalRequestDeadlineAt
+        reasoningEffort:boundedChiefRecovery ? "medium" : (["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort),
+        deadlineAt:professionalRequestDeadlineAt,
+        capacityFallbackMode:boundedChiefRecovery
       });
       const a=first.usage||{};
       const b=retry.usage||{};
@@ -8359,8 +8378,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         providerRecovery={
           recovered:true,
           firstError:String(first.error||"provider_failure"),
+          firstHttpStatus:Number(first.status||0)||null,
+          firstResponseStatus:typeof first.responseStatus==="string" ? first.responseStatus.slice(0,80) : null,
           retryWebSearch:retryUsesWeb,
-          retryBackoffMs
+          retryBackoffMs,
+          recoveryMode:boundedChiefRecovery ? "bounded_openai_chief_only" : "openai_retry"
         };
       }else{
         result={
@@ -8884,22 +8906,33 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     },503);
   }
 
-  const governedCaseLawClaimGate=assessSpecificCaseLawClaims(governedFinalAnswer,{
+  let governedCaseLawClaimGate=assessSpecificCaseLawClaims(governedFinalAnswer,{
     reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
     webSources:result.sources||[]
   });
+  let governedCaseLawRedaction=null;
   if(!governedCaseLawClaimGate.ok){
-    await releaseMonthlyQuota(env,{subject,period});
-    return json(request,{
-      ok:false,
-      error:"case_law_claim_release_blocked",
-      message:"Одговорот не е пуштен затоа што содржи конкретна судска пресуда, број на предмет или именуван судски случај што не е потврден во reviewed official case-law context или официјален court source.",
-      caseLawClaimGuard:{
-        version:CASE_LAW_CLAIM_GUARD_VERSION,
-        unsupported:governedCaseLawClaimGate.unsupported
-      },
-      governanceRunId:lioeRunId
-    },503);
+    governedCaseLawRedaction=redactUnsupportedSpecificCaseLawClaims(governedFinalAnswer,governedCaseLawClaimGate);
+    if(governedCaseLawRedaction.changed){
+      governedFinalAnswer=governedCaseLawRedaction.text;
+      governedCaseLawClaimGate=assessSpecificCaseLawClaims(governedFinalAnswer,{
+        reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
+        webSources:result.sources||[]
+      });
+    }
+    if(!governedCaseLawClaimGate.ok){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:"case_law_claim_release_blocked",
+        message:"Одговорот не може безбедно да се пушти затоа што и по отстранувањето сè уште содржи непотврдена конкретна судска практика.",
+        caseLawClaimGuard:{
+          version:CASE_LAW_CLAIM_GUARD_VERSION,
+          unsupported:governedCaseLawClaimGate.unsupported
+        },
+        governanceRunId:lioeRunId
+      },503);
+    }
   }
 
   // Final language release gate for the governed OpenAI path. The central prompt
@@ -9066,6 +9099,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     },
     legalSources:articleBundle.legalSources || [],
     caseLawSources:[...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
+    caseLawClaimGuard:{
+      version:CASE_LAW_CLAIM_GUARD_VERSION,
+      state:governedCaseLawRedaction?.changed ? "UNVERIFIED_SPECIFIC_CITATIONS_REDACTED" : "PASS",
+      redacted:governedCaseLawRedaction?.redacted||[]
+    },
     echrBureauDiscovery:{
       state:bureauEchrBundle.state,
       indexedRecords:bureauEchrBundle.recordCount,

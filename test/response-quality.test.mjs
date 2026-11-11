@@ -18,8 +18,36 @@ import {
 test("RQ1 formal legal draft requests are detected in Cyrillic and Latin transliteration",()=>{
   assert.equal(isFormalLegalDraftRequest("Изработи тужба за надомест на штета."),true);
   assert.equal(isFormalLegalDraftRequest("izraboti mi tuzba za nadomest na steta"),true);
-  assert.equal(isFormalLegalDraftRequest("Објасни ми што е договор."),true);
+  assert.equal(isFormalLegalDraftRequest("Објасни ми што е договор."),false);
   assert.equal(isFormalLegalDraftRequest("Какво е времето?"),false);
+});
+
+
+
+test("RQ1b analytical prompts that mention legal instruments are not misclassified as full-document drafting",()=>{
+  const stress15="Во 2023 година тужбата на А против Б за 600.000 денари била отфрлена како недозволена, без расправа по основаноста. Во 2026 година А повторно поднесува тужба за истиот износ, но со дополнителни факти и исправи. Б приговара правосилно пресудена работа; истовремено се води друга парница меѓу странките за дел од истиот правен однос. Разграничи отфрлање на тужба од одбивање на тужбено барање, формална и материјална правосилност, идентитет на спор и литиспенденција. Објасни кои акти и диспозитиви мора да се прочитаат пред да се даде заклучок. Изработи краток нацрт на аргументација за приговорот и за спротивната страна. Не тврди дека постои res judicata само поради ист износ.";
+  assert.equal(isFormalLegalDraftRequest(stress15),false);
+
+  const mixed=[
+    "Анализирај отказ, доставување и рокови. Понуди редослед на дејствија и нацрт на соодветен приговор/тужба.",
+    "Анализирај ги недозволените докази и подготви краток нацрт за издвојување/оспорување на доказ.",
+    "Направи двострана анализа на притворот. Состави нацрт на аргументирано барање за укинување или замена на притворот.",
+    "Анализирај ги жалбените основи. Изработи структура на жалба и конкретни доказни предлози.",
+    "Разграничи CMR-одговорност и понуди двострана анализа и англиски нацрт на професионален одговор.",
+    "Анализирај што мора да содржи одговорот на тужба. Пред да составиш нацрт, потврди кого застапуваш."
+  ];
+  for(const q of mixed) assert.equal(isFormalLegalDraftRequest(q),false,q);
+});
+
+test("RQ1c direct document requests remain eligible for formal drafting",()=>{
+  for(const q of [
+    "Изработи тужба за надомест на штета.",
+    "Подготви жалба против решението.",
+    "Направи ми приговор.",
+    "Факти: Доверител: А. Должник: Б. Главен долг 150.000 денари. Подготви работен нацрт за судска наплата.",
+    "Дали тужба за развод можеш да ми ја изработиш со измислени податоци?",
+    "тужба"
+  ]) assert.equal(isFormalLegalDraftRequest(q),true,q);
 });
 
 test("RQ2 formal draft cleanup removes raw Markdown but preserves legal text",()=>{

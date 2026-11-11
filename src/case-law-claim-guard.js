@@ -1,6 +1,6 @@
 import { assessCanonicalCaseLawState } from "./case-law-evidence-gates.js";
 
-export const CASE_LAW_CLAIM_GUARD_VERSION="AI_ADVOCAT_CASE_LAW_CLAIM_GUARD_V1_1";
+export const CASE_LAW_CLAIM_GUARD_VERSION="AI_ADVOCAT_CASE_LAW_CLAIM_GUARD_V1_2_FAIL_SOFT";
 
 const REVIEWED_STATUSES=new Set(["approved","reviewed"]);
 const OFFICIAL_COURT_AUTHORITY=new Set([
@@ -133,5 +133,62 @@ export function assessSpecificCaseLawClaims(text,{
     unsupported:Object.freeze(unsupported.slice(0,12)),
     reviewedAuthorityCount:reviewedTexts.length,
     officialWebAuthorityCount:officialWebTexts.length
+  });
+}
+
+
+const CASE_LAW_REDACTION_NOTICE="Судска практика · ПРОВЕРКА: конкретната пресуда, бројот на предметот или именуваниот судски случај е изоставен затоа што точниот идентитет и правниот став не се потврдени во проверен официјален извор на судска практика. Остатокот од анализата останува работен материјал под Human Gate.";
+
+export function redactUnsupportedSpecificCaseLawClaims(text,gate){
+  const source=String(text||"").replace(/\r\n?/g,"\n");
+  const unsupported=Array.isArray(gate?.unsupported)?gate.unsupported:[];
+  if(!source || !unsupported.length){
+    return Object.freeze({text:source,changed:false,redacted:Object.freeze([])});
+  }
+
+  const needles=unsupported.flatMap(item=>[
+    String(item?.evidence||"").trim(),
+    String(item?.value||"").trim()
+  ]).filter(Boolean);
+
+  if(!needles.length){
+    return Object.freeze({text:source,changed:false,redacted:Object.freeze([])});
+  }
+
+  const lowerNeedles=needles.map(value=>value.toLocaleLowerCase("mk"));
+  const redacted=[];
+  let previousWasNotice=false;
+  const output=[];
+
+  for(const line of source.split("\n")){
+    const lower=line.toLocaleLowerCase("mk");
+    const hit=lowerNeedles.some(needle=>needle && lower.includes(needle));
+    if(!hit){
+      output.push(line);
+      previousWasNotice=false;
+      continue;
+    }
+
+    for(const item of unsupported){
+      const evidence=String(item?.evidence||"").toLocaleLowerCase("mk");
+      const value=String(item?.value||"").toLocaleLowerCase("mk");
+      if((evidence && lower.includes(evidence)) || (value && lower.includes(value))){
+        redacted.push(Object.freeze({
+          type:String(item?.type||"unknown").slice(0,80),
+          value:String(item?.value||"").slice(0,180)
+        }));
+      }
+    }
+
+    if(previousWasNotice) continue;
+    const prefix=line.match(/^\s*(?:[-*•]\s*)?/)?.[0]||"";
+    output.push(prefix+CASE_LAW_REDACTION_NOTICE);
+    previousWasNotice=true;
+  }
+
+  return Object.freeze({
+    text:output.join("\n").trim(),
+    changed:redacted.length>0,
+    redacted:Object.freeze(redacted.slice(0,12))
   });
 }
