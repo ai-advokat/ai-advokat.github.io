@@ -203,6 +203,9 @@ function buildShell(){
   const tools=mk('div',{class:'vnext-header-tools'});
   tools.innerHTML='<button id="vnextMobileMenu" type="button" aria-label="Отвори workspace мени">☰</button><button id="vnextHeaderSearch" type="button" aria-label="Пребарај">⌕</button><button id="vnextHeaderEvidence" type="button">▤ Извори</button>';
   header.insertBefore(tools,header.lastElementChild);
+  const conversationTools=mk('div',{class:'vnext-conversation-tools','aria-label':'Разговорни поставки'});
+  conversationTools.innerHTML='<button id="vnextConversationTheme" type="button" aria-label="Промени тема" title="Промени тема">◐</button>';
+  header.insertBefore(conversationTools,header.lastElementChild);
   buildWorkflowDialog(); buildSearchDialog();
 }
 
@@ -607,7 +610,11 @@ function applyTheme(mode=readTheme()){
   const actual=mode==='auto'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):mode;
   document.documentElement.dataset.vnextTheme=actual; document.documentElement.dataset.vnextThemeMode=mode;
 }
-function updateThemeButton(mode=readTheme()){$('vnextTheme')?.setAttribute('title','Тема: '+mode);}
+function updateThemeButton(mode=readTheme()){
+  $('vnextTheme')?.setAttribute('title','Тема: '+mode);
+  $('vnextConversationTheme')?.setAttribute('title','Тема: '+mode);
+  $('vnextConversationTheme')?.setAttribute('aria-label','Тема: '+mode+' · промени');
+}
 function cycleTheme(){ const m=readTheme(); setTheme(m==='auto'?'light':m==='light'?'dark':'auto'); }
 
 function wire(){
@@ -618,7 +625,8 @@ function wire(){
   $('vnextSearchLaunch').onclick=openGlobalSearch; $('vnextHeaderSearch').onclick=openGlobalSearch;
   $('vnextHeaderEvidence').onclick=()=>openEvidence('sources'); $('vnextEvidenceClose').onclick=closeEvidence;
   $('vnextMobileMenu').onclick=openMobileSidebar; $('vnextSidebarClose').onclick=closeMobileSidebar;
-  $('vnextTheme').onclick=cycleTheme;
+  if($('vnextTheme')) $('vnextTheme').onclick=cycleTheme;
+  if($('vnextConversationTheme')) $('vnextConversationTheme').onclick=cycleTheme;
   qsa('.vnext-nav button').forEach(b=>b.onclick=()=>runAction(b.dataset.vnextAction));
   qsa('.vnext-evidence-tabs button').forEach(b=>b.onclick=()=>{workspace.panelTab=b.dataset.panel;renderEvidence();});
   $('researchMode')?.addEventListener('change',renderEvidence); $('useLocalGuides')?.addEventListener('change',renderEvidence);
