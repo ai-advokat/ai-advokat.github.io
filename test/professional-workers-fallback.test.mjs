@@ -183,11 +183,13 @@ test("dual-provider failure preserves primary OpenAI provenance when Workers fal
 });
 
 
-test("OpenAI 429 must not replay the full multi-call Professional orchestrator",()=>{
+test("OpenAI 429 uses one bounded Chief-only recovery and never replays specialist fan-out",()=>{
   const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
-  assert.match(handle,/\[408,500,502,503,504\]\.includes\(transientStatus\)/);
-  assert.doesNotMatch(handle,/\[408,429,500,502,503,504\]\.includes\(transientStatus\)/);
-  assert.match(handle,/Do not immediately replay the whole multi-call orchestrator on HTTP 429/);
+  assert.match(handle,/\[408,429,500,502,503,504\]\.includes\(transientStatus\)/);
+  assert.match(handle,/const boundedChiefRecovery=/);
+  assert.match(handle,/capacityFallbackMode:boundedChiefRecovery/);
+  assert.match(handle,/recoveryMode:boundedChiefRecovery \? "bounded_openai_chief_only"/);
+  assert.match(handle,/!boundedChiefRecovery \|\| explicitWebRequested!==true/);
 });
 
 
