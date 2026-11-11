@@ -67,7 +67,7 @@ test("Esperanto uses bounded live Qwen fallback instead of pretending M2M100 sup
     RATE_LIMIT_SALT,
     AI:{
       run:async(model,input)=>{
-        assert.equal(model,"@cf/qwen/qwen3-30b-a3b-fp8");
+        assert.equal(model,"@cf/openai/gpt-oss-120b");
         assert.ok(input);
         return {response:"Jura esplorado"};
       }
@@ -83,7 +83,7 @@ test("Esperanto uses bounded live Qwen fallback instead of pretending M2M100 sup
   const data=await res.json();
   assert.equal(data.ok,true);
   assert.equal(data.provider,"qwen3_ui_fallback");
-  assert.equal(data.translationModel,"@cf/qwen/qwen3-30b-a3b-fp8");
+  assert.equal(data.translationModel,"@cf/openai/gpt-oss-120b");
   assert.equal(data.translations[0].text,"Jura esplorado");
 });
 
