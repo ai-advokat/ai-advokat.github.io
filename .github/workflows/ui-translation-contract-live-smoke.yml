@@ -41,7 +41,7 @@ jobs:
           test -f ai-contract.html
           test -f ai-contract-dpro14r.html
           grep -q '@cf/meta/m2m100-1.2b' src/index.js
-          grep -q '@cf/qwen/qwen3-30b-a3b-fp8' src/index.js
+          grep -q 'UI_TRANSLATION_FALLBACK_MODEL=WORKERS_AI_TEXT_MODEL_DEFAULT' src/index.js
           grep -q 'AI CONTRACT PRO' ai-contract.html
           grep -q '/api/ui-translate' ai-contract.html
           grep -q 'data-tab="normative14g"' ai-contract-dpro14r.html
