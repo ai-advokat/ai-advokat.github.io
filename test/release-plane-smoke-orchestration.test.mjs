@@ -8,6 +8,19 @@ test("Professional smoke retriggers when provider-capacity classifier changes",(
   assert.match(y,/test\/professional-smoke-capacity-gate\.test\.mjs/);
 });
 
+
+test("Professional smoke is a latest-wins post-deploy production check",()=>{
+  const y=fs.readFileSync(".github/workflows/professional-bot-live-smoke.yml","utf8");
+  assert.match(y,/workflow_run:/);
+  assert.match(y,/AI Advokat production runtime sync/);
+  assert.match(y,/types: \[completed\]/);
+  assert.match(y,/workflow_run\.conclusion == 'success'/);
+  assert.match(y,/workflow_run\.head_sha/);
+  assert.match(y,/cancel-in-progress: true/);
+  assert.match(y,/environment: production/);
+  assert.doesNotMatch(y,/push:\s*\n\s*branches: \["main"\]/);
+});
+
 test("Root reliability waits for successful production sync and then verifies Pages parity",()=>{
   const y=fs.readFileSync(".github/workflows/root-reliability-live-smoke.yml","utf8");
   assert.match(y,/workflow_run:/);
@@ -54,6 +67,7 @@ test("Critical release-plane workflow changes publish the same SHA to Pages and 
     ".github/workflows/worker-runtime-live-smoke.yml",
     ".github/workflows/free-runtime-live-uat.yml",
     ".github/workflows/root-reliability-live-smoke.yml",
+    ".github/workflows/professional-bot-live-smoke.yml",
     ".github/workflows/production-runtime-sync.yml",
     ".github/workflows/sync-pages-runtime.yml"
   ]){
