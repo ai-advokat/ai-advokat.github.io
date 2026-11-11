@@ -1,27 +1,10 @@
 name: AI Advokat Worker runtime live smoke
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/worker-runtime-live-smoke.yml"
-      - "bot/index.html"
-      - "hybrid-legal-intelligence.html"
-      - "public-legal-data-services.html"
-      - "gold-set-review-gate.html"
-      - "echr-crosswalk.html"
-      - "src/index.js"
-      - "src/echr-crosswalk-f0-fast-27.js"
-      - "assets/standalone-bot.js"
-      - "assets/standalone-bot-vnext.js"
-      - "assets/standalone-bot-vnext.css"
-      - "assets/standalone-bot-toolkit.js"
-      - "assets/standalone-bot-toolkit.css"
-      - "assets/chat-privacy-browser.js"
-      - "src/chat-privacy.js"
-      - ".assetsignore"
-      - "_headers"
-      - ".github/workflows/sync-pages-runtime.yml"
+  workflow_run:
+    workflows: ["AI Advokat production runtime sync"]
+    types: [completed]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -32,10 +15,15 @@ concurrency:
 
 jobs:
   smoke:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      EXPECTED_RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: Verify Worker serves exact R14 standalone frontend bytes
         shell: bash

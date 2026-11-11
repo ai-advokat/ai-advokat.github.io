@@ -13,19 +13,10 @@ on:
       - "src/response-quality.js"
       - "src/workers-ai-provider.js"
       - "wrangler.jsonc"
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/free-runtime-live-uat.yml"
-      - "src/index.js"
-      - "src/ai-advokat-central-prompt.js"
-      - "src/macedonian-language-guard.js"
-      - "data/canonical-legal-metadata-standard-v3.json"
-      - "data/canonical-root-release-contract-2026.json"
-      - "src/canonical-provenance-gate.js"
-      - "src/response-quality.js"
-      - "src/workers-ai-provider.js"
-      - "wrangler.jsonc"
+  workflow_run:
+    workflows: ["AI Advokat production runtime sync"]
+    types: [completed]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -36,10 +27,15 @@ concurrency:
 
 jobs:
   live-uat:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      EXPECTED_RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v4
         with:
@@ -62,7 +58,7 @@ jobs:
         run: node --no-warnings --test test/ai-advokat-central-prompt.test.mjs test/macedonian-language-guard.test.mjs test/response-quality.test.mjs
 
       - name: Live Macedonian FREE chat and DOCX UAT
-        if: github.event_name == 'push'
+        if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           node <<'NODE'
