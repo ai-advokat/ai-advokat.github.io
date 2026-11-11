@@ -47,6 +47,19 @@ test("Root reliability enforces Training Open and confidential Secure Case bound
   assert.match(y,/confidential_case_workspace_required/);
 });
 
+test("Critical release-plane workflow changes publish the same SHA to Pages and production runtime",()=>{
+  const pages=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8");
+  const production=fs.readFileSync(".github/workflows/production-runtime-sync.yml","utf8");
+  for(const path of [
+    ".github/workflows/worker-runtime-live-smoke.yml",
+    ".github/workflows/free-runtime-live-uat.yml",
+    ".github/workflows/root-reliability-live-smoke.yml"
+  ]){
+    assert.ok(pages.includes('"'+path+'"'),"Pages sync missing "+path);
+    assert.ok(production.includes('"'+path+'"'),"Production sync missing "+path);
+  }
+});
+
 test("Pages sync publishes exact source-main SHA marker",()=>{
   const y=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8");
   assert.match(y,/pages-release\.txt/);
