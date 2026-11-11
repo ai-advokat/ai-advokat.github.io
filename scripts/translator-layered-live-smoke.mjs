@@ -82,7 +82,8 @@ async function browserLayer(){
   let browser=null,page=null,error=null;
   try{
     const {chromium}=await import("playwright");
-    browser=await chromium.launch({headless:true});
+    const executablePath=String(process.env.BROWSER_EXECUTABLE||"").trim()||undefined;
+    browser=await chromium.launch({headless:true,...(executablePath?{executablePath}:{})});
     const context=await browser.newContext();
     await context.addInitScript(()=>{
       localStorage.setItem("aiadvokat-language","en");
