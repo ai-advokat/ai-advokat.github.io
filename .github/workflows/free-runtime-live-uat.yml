@@ -66,11 +66,11 @@ jobs:
           const fs=require("fs");
           const BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev";
           const EXPECTED_FREE_MODEL="@cf/openai/gpt-oss-120b";
-          const EXPECTED_FREE_FALLBACK_MODEL="@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+          const EXPECTED_FREE_FALLBACK_MODEL="@cf/qwen/qwen3.8-27b";
           const EXPECTED_EDITOR_MODEL="@cf/zai-org/glm-4.7-flash";
           const EXPECTED_PAID_MODEL="gpt-6.1-sol";
-          const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7";
-          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V14_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
+          const EXPECTED_PROMPT="AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v8";
+          const EXPECTED_LANGUAGE="MK_ORTHOGRAPHY_2017_RUNTIME_V15_PROFESSIONAL_LEGAL_STYLE";
           const EXPECTED_QUALITY="formal_draft_export_cleanup_and_ungrounded_article_filter_v1";
           const EXPECTED_FREE_POLICY="FREE_MK_CANONICAL_RELEASE_V12_EDITOR_ATTEMPT_CANONICAL_CLEAN_FALLBACK";
           const EXPECTED_METADATA="AI_ADVOCAT_CANONICAL_LEGAL_METADATA_V3";
@@ -148,7 +148,7 @@ jobs:
                 if(!data.modelFallback
                   || data.modelFallback.from!==EXPECTED_FREE_MODEL
                   || data.modelFallback.to!==EXPECTED_FREE_FALLBACK_MODEL
-                  || data.modelFallback.reason!=="empty_final_text"){
+                  || !["empty_final_text","primary_timeout"].includes(data.modelFallback.reason)){
                   throw new Error(label+" fallback model provenance missing/invalid "+JSON.stringify(data.modelFallback));
                 }
               }else if(data.modelFallback){
@@ -350,6 +350,46 @@ jobs:
           // The UAT must test the limiter, not accidentally trip it and report a false runtime regression.
           console.log("waiting for production burst window reset before language-firewall regressions");
           await new Promise(resolve=>setTimeout(resolve,61000));
+
+          // Zoki field regression 15: verify the applicable ZPP corpus directly
+          // and then verify the exact analytical prompt never collapses into a generic lawsuit scaffold.
+          {
+            for(const article of ["184","274","322"]){
+              const response=await fetch(BASE+"/api/articles?instrument=mk:zpp&article="+encodeURIComponent(article)+"&date=2026-11-11",{
+                headers:{"accept":"application/json","cache-control":"no-cache"}
+              });
+              const raw=await response.text();
+              let data=null;
+              try{data=JSON.parse(raw);}catch{}
+              if(!response.ok || !data?.ok || data?.instrument?.canonicalKey!=="mk:zpp" || !Array.isArray(data.articles) || data.articles.length!==1){
+                throw new Error("zoki-test15 governed ZPP article "+article+" unavailable HTTP "+response.status+" "+raw.slice(0,1500));
+              }
+              const row=data.articles[0];
+              if(String(row?.articleNumberNormalized||row?.articleNumber||"").replace(/\s+/g,"")!==article
+                || String(row?.text||"").trim().length<20
+                || !String(row?.sourceUrl||"").trim()){
+                throw new Error("zoki-test15 governed ZPP article "+article+" missing text/provenance: "+JSON.stringify(row).slice(0,1500));
+              }
+              console.log("zoki-test15 governed ZPP article "+article+": PASS");
+            }
+
+            const {answer,data}=await chat({
+              q:"Во 2023 година тужбата на А против Б за 600.000 денари била отфрлена како недозволена, без расправа по основаноста. Во 2026 година А повторно поднесува тужба за истиот износ, но со дополнителни факти и исправи. Б приговара правосилно пресудена работа; истовремено се води друга парница меѓу странките за дел од истиот правен однос. Разграничи отфрлање на тужба од одбивање на тужбено барање, формална и материјална правосилност, идентитет на спор и литиспенденција. Објасни кои акти и диспозитиви мора да се прочитаат пред да се даде заклучок. Изработи краток нацрт на аргументација за приговорот и за спротивната страна. Не тврди дека постои res judicata само поради ист износ."
+            },"zoki-test15-res-judicata");
+
+            if(/^\s*ТУЖБА\b/mu.test(answer)
+              || /РАБОТЕН ПРИМЕР\s*[—-]\s*ПРАВНАТА ОСНОВА НЕ Е ВЕРИФИКУВАНА/iu.test(answer)
+              || /ДО:\s*\[НАДЛЕЖЕН СУД/iu.test(answer)){
+              throw new Error("zoki-test15 collapsed into generic formal-document fallback: "+answer.slice(0,1800));
+            }
+            if(data.provider==="workers_ai_free" && data?.performance?.compactDraftUsed===true){
+              throw new Error("zoki-test15 incorrectly entered compact formal-draft lane: "+JSON.stringify(data.performance));
+            }
+            for(const required of [/отфрла/iu,/одбива/iu,/правосил/iu,/литиспенден/iu,/диспозитив/iu]){
+              if(!required.test(answer)) throw new Error("zoki-test15 missing required analytical concept "+required+": "+answer.slice(0,1800));
+            }
+            console.log("zoki-test15-res-judicata: PASS · "+answer.replace(/\s+/g," ").slice(0,220));
+          }
 
           {
             const {answer,data}=await chat({
