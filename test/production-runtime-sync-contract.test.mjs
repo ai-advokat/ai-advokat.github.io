@@ -32,7 +32,8 @@ test("production runtime sync is push-triggered for runtime surfaces and Human-G
     '".github/workflows/production-runtime-sync.yml"',
     '".github/workflows/worker-runtime-live-smoke.yml"',
     '".github/workflows/free-runtime-live-uat.yml"',
-    '".github/workflows/root-reliability-live-smoke.yml"'
+    '".github/workflows/root-reliability-live-smoke.yml"',
+    '".github/workflows/professional-bot-live-smoke.yml"'
   ]) assert.ok(workflow.includes(path),"missing trigger "+path);
   assert.match(workflow,/environment: production/);
   assert.match(workflow,/concurrency:\n  group: ai-advokat-production-runtime-sync\n  cancel-in-progress: true/);

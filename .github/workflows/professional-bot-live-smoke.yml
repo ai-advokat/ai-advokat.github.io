@@ -1,48 +1,33 @@
 name: AI Advokat Professional production smoke
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/professional-bot-live-smoke.yml"
-      - "bot/index.html"
-      - "assets/standalone-bot.js"
-      - "assets/chat-privacy-browser.js"
-      - "src/chat-privacy.js"
-      - "src/index.js"
-      - "src/response-quality.js"
-      - "src/detention-procedural-terminology.js"
-      - "src/zkp-judgment-taxonomy.js"
-      - "assets/ai-advokat-voice.mjs"
-      - "src/agent-orchestrator.js"
-      - "src/workers-ai-provider.js"
-      - "src/judicial-discovery-source-registry.js"
-      - "data/case-law/mk-master-judicial-corpus-2026-11-04.json"
-      - "scripts/zro12-live-smoke.mjs"
-      - "scripts/professional-smoke-capacity-gate.mjs"
-      - "test/professional-smoke-capacity-gate.test.mjs"
-      - ".assetsignore"
-      - "_headers"
-      - ".github/workflows/sync-pages-runtime.yml"
+  workflow_run:
+    workflows: ["AI Advokat production runtime sync"]
+    types: [completed]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
   group: ai-advokat-professional-bot-live-smoke
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   smoke:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      EXPECTED_RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v4
         with:
