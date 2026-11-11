@@ -37,23 +37,38 @@ function validFailureTrace(data){
 }
 
 async function runCase(tc){
-  const response=await fetch(BASE+"/api/chat",{
-    method:"POST",
-    headers:{"content-type":"application/json","accept":"application/json","cache-control":"no-cache"},
-    body:JSON.stringify({
-      q:tc.prompt,
-      mode:"auto",
-      webSearch:false,
-      history:[],
-      attachments:[],
-      guideIds:[],
-      guideDocuments:[],
-      sessionId:"R3-LIVE-"+runSeed+"-"+tc.id
-    })
-  });
-  const raw=await response.text();
+  let response=null;
+  let raw="";
   let data=null;
-  try{data=JSON.parse(raw);}catch{}
+  for(let attempt=1;attempt<=3;attempt++){
+    response=await fetch(BASE+"/api/bot",{
+      method:"POST",
+      headers:{
+        "content-type":"application/json",
+        "accept":"application/json",
+        "cache-control":"no-cache",
+        "Origin":"https://ai-advokat.github.io"
+      },
+      body:JSON.stringify({
+        q:tc.prompt,
+        mode:"auto",
+        webSearch:false,
+        history:[],
+        attachments:[],
+        guideIds:[],
+        guideDocuments:[],
+        sessionId:"R3-LIVE-"+runSeed+"-"+tc.id
+      })
+    });
+    raw=await response.text();
+    data=null;
+    try{data=JSON.parse(raw);}catch{}
+    if(response.status!==429 || data?.error!=="rate_limited") break;
+    if(attempt>=3) break;
+    const retryAfter=Math.min(70,Math.max(1,Number(response.headers.get("retry-after")||data?.retryAfter||60)));
+    console.log("R3-"+tc.id+" rate-limited by governed burst gate; retrying after "+retryAfter+"s");
+    await new Promise(resolve=>setTimeout(resolve,(retryAfter+1)*1000));
+  }
 
   const base={
     id:tc.id,
