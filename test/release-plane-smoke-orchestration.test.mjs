@@ -53,7 +53,9 @@ test("Critical release-plane workflow changes publish the same SHA to Pages and 
   for(const path of [
     ".github/workflows/worker-runtime-live-smoke.yml",
     ".github/workflows/free-runtime-live-uat.yml",
-    ".github/workflows/root-reliability-live-smoke.yml"
+    ".github/workflows/root-reliability-live-smoke.yml",
+    ".github/workflows/production-runtime-sync.yml",
+    ".github/workflows/sync-pages-runtime.yml"
   ]){
     assert.ok(pages.includes('"'+path+'"'),"Pages sync missing "+path);
     assert.ok(production.includes('"'+path+'"'),"Production sync missing "+path);
