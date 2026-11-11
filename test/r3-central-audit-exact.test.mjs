@@ -75,11 +75,21 @@ test("R3X7 test 23 intra-message 'оваа одлука' must not pull prior con
   assert.doesNotMatch(routed,/1984|2004|2027/u);
 });
 
+test("R3X7b factual 'претходно' inside a standalone case never means prior chat",()=>{
+  const tc=byId(19);
+  assert.match(tc.prompt,/Управителот претходно платил/u);
+  assert.equal(isContextDependentLegalFollowUp(tc.prompt),false);
+  assert.equal(buildLegalRoutingQuery(tc.prompt,[
+    {role:"user",text:"Стар неповрзан тест со 2004 година."},
+    {role:"assistant",text:"Стар одговор со 2027 година."}
+  ]),tc.prompt);
+});
+
 test("R3X8 failure telemetry contract is privacy-safe and correlation-ready",()=>{
   const source=fs.readFileSync("src/index.js","utf8");
   const freeBlock=source.slice(source.indexOf("failureTrace:{\n          requestId:runtimeRequestId"),source.indexOf("failureTrace:{\n          requestId:runtimeRequestId")+1800);
   assert.match(source,/X-AI-Advokat-Request-Id/);
-  assert.match(source,/const runtimeRequestId="R3-"+crypto\.randomUUID\(\)/);
+  assert.match(source,/const runtimeRequestId="R3-"\+crypto\.randomUUID\(\)/);
   assert.match(source,/const cfRay=String\(request\.headers\.get\("CF-Ray"\)/);
   for(const field of ["requestId","cfRay","route","stage","provider","model","errorType","retryable","providerCalls","retryCount","missionProfile"]){
     assert.match(freeBlock,new RegExp(field+":"));
