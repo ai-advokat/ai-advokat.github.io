@@ -256,3 +256,208 @@ html[data-external-experience="conversation"] .vnext-message-menu-panel .vnext-m
     padding-right:10px!important;
   }
 }
+
+
+/* External Conversational Shell R13 — clean conversation as the default surface. */
+html[data-external-experience="conversation"] body{
+  min-height:100dvh;
+  background:var(--vcream)!important;
+  color:var(--vink)!important;
+}
+html[data-external-experience="conversation"] body>.conversation-secondary-panel{
+  display:none!important;
+}
+html[data-external-experience="conversation"] .vnext-shell{
+  min-height:100dvh!important;
+  height:100dvh!important;
+}
+html[data-external-experience="conversation"] .vnext-center>header{
+  height:60px!important;
+  flex:0 0 60px!important;
+  padding:0 16px!important;
+  border-bottom:1px solid var(--vline)!important;
+  background:color-mix(in srgb,var(--vpanel) 96%,transparent)!important;
+}
+html[data-external-experience="conversation"] .vnext-center>header .brand img{
+  width:92px!important;
+  border-radius:5px!important;
+}
+html[data-external-experience="conversation"] .vnext-center>header .bot-language-control{
+  margin-left:auto!important;
+}
+html[data-external-experience="conversation"] .vnext-center>header .bot-language-control>span{
+  display:none!important;
+}
+html[data-external-experience="conversation"] .vnext-center>header .bot-language-control select{
+  max-width:130px!important;
+  min-height:34px!important;
+  padding:.35rem 1.7rem .35rem .65rem!important;
+  background:var(--vsoft)!important;
+  color:var(--vink)!important;
+  border-color:var(--vline)!important;
+}
+html[data-external-experience="conversation"] .vnext-conversation-tools{
+  display:flex;
+  align-items:center;
+  margin-left:6px;
+}
+html[data-external-experience="conversation"] .vnext-conversation-tools button{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--vline)!important;
+  border-radius:50%!important;
+  background:var(--vpanel)!important;
+  color:var(--vmuted)!important;
+  cursor:pointer;
+}
+html[data-external-experience="conversation"] .vnext-conversation-tools button:hover{
+  color:var(--vink)!important;
+  background:var(--vsoft)!important;
+}
+html:not([data-external-experience="conversation"]) .vnext-conversation-tools{
+  display:none!important;
+}
+html[data-external-experience="conversation"] .vnext-center>main{
+  width:min(820px,100%)!important;
+  height:calc(100dvh - 60px)!important;
+  margin:0 auto!important;
+  padding:0 18px!important;
+}
+html[data-external-experience="conversation"] #messages{
+  padding:28px 4px 20px!important;
+}
+html[data-external-experience="conversation"] #welcome{
+  min-height:72%!important;
+  padding-bottom:18px!important;
+}
+html[data-external-experience="conversation"] #welcome .mark-logo{
+  width:150px!important;
+}
+html[data-external-experience="conversation"] #welcome h1{
+  margin:18px 0 8px!important;
+  font-size:clamp(25px,4vw,34px)!important;
+  font-weight:650!important;
+}
+html[data-external-experience="conversation"] #welcome p{
+  max-width:540px!important;
+  margin:0!important;
+  color:var(--vmuted)!important;
+  font-size:14px!important;
+  line-height:1.65!important;
+}
+html[data-external-experience="conversation"] .message{
+  max-width:100%;
+  margin-bottom:22px!important;
+  color:var(--vink)!important;
+  font-size:15.5px!important;
+  line-height:1.72!important;
+}
+html[data-external-experience="conversation"] .message.assistant{
+  padding-right:34px;
+}
+html[data-external-experience="conversation"] .message.assistant>.text{
+  color:var(--vink)!important;
+}
+html[data-vnext-theme="light"][data-external-experience="conversation"] .message.user{
+  background:#e8eef3!important;
+  color:#102233!important;
+}
+html[data-vnext-theme="light"][data-external-experience="conversation"] .message.user.has-vnext-actions{
+  background:transparent!important;
+  color:#102233!important;
+}
+html[data-vnext-theme="light"][data-external-experience="conversation"] .message.user.has-vnext-actions>.text{
+  background:#e8eef3!important;
+  color:#102233!important;
+  border:1px solid #d1dce5!important;
+}
+html[data-vnext-theme="dark"][data-external-experience="conversation"] .message.user{
+  background:#26394c!important;
+  color:#f7fbff!important;
+}
+html[data-vnext-theme="dark"][data-external-experience="conversation"] .message.user.has-vnext-actions{
+  background:transparent!important;
+  color:#f7fbff!important;
+}
+html[data-vnext-theme="dark"][data-external-experience="conversation"] .message.user.has-vnext-actions>.text{
+  background:#26394c!important;
+  color:#f7fbff!important;
+  border:1px solid #3d5368!important;
+}
+html[data-external-experience="conversation"] .bottom{
+  position:sticky;
+  bottom:0;
+  z-index:20;
+  padding:8px 0 max(10px,env(safe-area-inset-bottom))!important;
+  background:linear-gradient(to bottom,color-mix(in srgb,var(--vcream) 0%,transparent),var(--vcream) 28%,var(--vcream) 100%);
+}
+html[data-external-experience="conversation"] #status{
+  min-height:18px;
+  padding:0 10px 6px!important;
+  color:var(--vmuted)!important;
+  font-size:11px!important;
+}
+html[data-external-experience="conversation"] #composer{
+  border:1px solid var(--vline)!important;
+  border-radius:22px!important;
+  background:var(--vpanel)!important;
+  box-shadow:0 10px 30px rgba(8,24,39,.08)!important;
+}
+html[data-vnext-theme="dark"][data-external-experience="conversation"] #composer{
+  box-shadow:0 10px 30px rgba(0,0,0,.18)!important;
+}
+html[data-external-experience="conversation"] #question{
+  color:var(--vink)!important;
+  background:transparent!important;
+}
+html[data-external-experience="conversation"] #question::placeholder{
+  color:var(--vmuted)!important;
+  opacity:.9;
+}
+html[data-external-experience="conversation"] .voice-record-row{
+  display:none!important;
+}
+html[data-external-experience="conversation"] .footnote{
+  max-width:680px;
+  margin:7px auto 0!important;
+  color:var(--vmuted)!important;
+  font-size:10px!important;
+  line-height:1.45!important;
+}
+html[data-external-experience="conversation"] #menu>summary{
+  width:34px!important;
+  height:34px!important;
+  font-size:20px!important;
+  color:var(--vmuted)!important;
+  background:var(--vpanel)!important;
+  border:1px solid var(--vline)!important;
+}
+html[data-external-experience="conversation"] #menu>summary:hover{
+  color:var(--vink)!important;
+  background:var(--vsoft)!important;
+}
+@media(max-width:600px){
+  html[data-external-experience="conversation"] .vnext-center>header{
+    height:56px!important;
+    flex-basis:56px!important;
+    padding:0 9px!important;
+  }
+  html[data-external-experience="conversation"] .vnext-center>main{
+    height:calc(100dvh - 56px)!important;
+    padding:0 10px!important;
+  }
+  html[data-external-experience="conversation"] .vnext-center>header .brand img{
+    width:78px!important;
+  }
+  html[data-external-experience="conversation"] .vnext-center>header .bot-language-control select{
+    max-width:100px!important;
+  }
+  html[data-external-experience="conversation"] .message{
+    font-size:15px!important;
+  }
+  html[data-external-experience="conversation"] #messages{
+    padding-top:18px!important;
+  }
+}
