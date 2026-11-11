@@ -244,7 +244,7 @@ function scheduleProfessionalUiTranslation(){
 function conversationalCapabilityRoute(text){
   const q=String(text||"").trim().toLowerCase();
   if(!q) return "";
-  if(/(?:приватен\s+предмет|доверлив|casepilot|secure\s+case|оригинален\s+документ)/iu.test(q)) return "SECURE_CASE";
+  if(/(?:приватен\s+предмет|casepilot|secure\s+case|оригинален\s+документ|доверлив(?:ен|на|но|ни)?\s+(?:предмет|случај|документ|материјал))/iu.test(q)) return "SECURE_CASE";
   if(/(?:echr|есчп|hudoc|crosswalk)/iu.test(q)) return "ECHR_CROSSWALK";
   if(/(?:судск[аи].*(?:пракс|одлук|пресуд)|case\s*law|judgment|преседан)/iu.test(q)) return "CASE_LAW_RESEARCH";
   if(/(?:консолид|пречистен\s+текст|измен[аи].*допол|amendment|consolidat)/iu.test(q)) return "CONSOLIDATOR";
