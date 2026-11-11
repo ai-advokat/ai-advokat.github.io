@@ -1,0 +1,43 @@
+name: AI Advokat R3 exact 11-29 live acceptance
+
+on:
+  workflow_run:
+    workflows: ["AI Advokat production runtime sync"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-r3-exact-live-acceptance
+  cancel-in-progress: true
+
+jobs:
+  r3-live-acceptance:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify exact R3 fixture and runner syntax
+        run: |
+          node --check scripts/run-r3-central-audit-live.mjs
+          node -e 'const f=require("./test/fixtures/r3-central-audit-11-29.json"); if(f.tests.length!==19||f.tests[0].id!==11||f.tests[18].id!==29) process.exit(1)'
+      - name: Run exact R3 11-29 against production in fresh sessions
+        run: node scripts/run-r3-central-audit-live.mjs
+      - name: Upload R3 acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-r3-central-audit-live-results
+          retention-days: 30
+          if-no-files-found: warn
+          path: /tmp/r3-central-audit-live-results.json
