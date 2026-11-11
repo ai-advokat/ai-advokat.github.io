@@ -2990,6 +2990,16 @@
   let uiTranslationQueued=false;
   let uiTranslationCooldownUntil=0;
   let uiTranslationObserverSuppressUntil=0;
+  let uiTranslationFailureStreak=0;
+
+  function applyUiTranslationBackoff(status,retryAfterMs=0){
+    uiTranslationFailureStreak=Math.min(uiTranslationFailureStreak+1,6);
+    const providerDelay=status===429
+      ? UI_TRANSLATION_RATE_LIMIT_BACKOFF_MS
+      : Math.min(60000,UI_TRANSLATION_PROVIDER_BACKOFF_MS*Math.pow(2,Math.max(0,uiTranslationFailureStreak-1)));
+    uiTranslationCooldownUntil=Math.max(uiTranslationCooldownUntil,Date.now()+Math.max(providerDelay,retryAfterMs));
+    uiTranslationQueued=true;
+  }
 
   function uiTranslationCache(){
     try{return JSON.parse(localStorage.getItem(UI_TRANSLATION_CACHE_PREFIX+siteLanguage)||"{}")||{};}catch{return {};}
@@ -3080,12 +3090,13 @@
                   ? UI_TRANSLATION_PROVIDER_BACKOFF_MS
                   : 0;
               if(fallbackBackoff||retryAfterMs){
-                uiTranslationCooldownUntil=Math.max(uiTranslationCooldownUntil,Date.now()+Math.max(fallbackBackoff,retryAfterMs));
+                applyUiTranslationBackoff(r.status,retryAfterMs);
               }
               console.warn("ui_translation_batch_failed",r.status,d?.error||"unknown",batchIndex);
               if(r.status===429||r.status===503) return;
               continue;
             }
+            uiTranslationFailureStreak=0;
             d.translations.forEach((row,j)=>{
               const source=texts[j];
               const translated=String(row?.text||"").trim();
@@ -3093,7 +3104,9 @@
             });
             saveUiTranslationCache(cache);
           }catch(error){
+            applyUiTranslationBackoff(503,0);
             console.warn("ui_translation_batch_network_failed",batchIndex,String(error?.message||error||"unknown"));
+            return;
           }
         }
       }
