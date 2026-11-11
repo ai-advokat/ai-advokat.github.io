@@ -7,7 +7,8 @@ import {detectConfidentialCasePrompt} from "../src/chat-privacy.js";
 import {
   historicalCaseLawTemporalGateRequest,
   detectExternalBotCapabilityRoute,
-  embeddedInstructionAttackRequest
+  embeddedInstructionAttackRequest,
+  buildProviderFailureTrace
 } from "../src/index.js";
 
 const fixture=JSON.parse(fs.readFileSync("test/fixtures/r3-central-audit-11-29.json","utf8"));
@@ -86,17 +87,52 @@ test("R3X7b factual 'претходно' inside a standalone case never means pr
 });
 
 test("R3X8 failure telemetry contract is privacy-safe and correlation-ready",()=>{
+  const secretPrompt="ДОВЕРЛИВ ФАКТ ШТО НЕ СМЕЕ ДА ВЛЕЗЕ ВО TRACE";
+  const trace=buildProviderFailureTrace({
+    requestId:"R3-test-123",
+    cfRay:"ray-abc",
+    route:"PUBLIC_CHAT",
+    stage:"workers_ai_generation",
+    provider:"workers_ai_free",
+    model:"@cf/qwen/qwen3.8-27b",
+    errorType:"workers_ai_timeout",
+    retryable:true,
+    providerCalls:2,
+    missionProfile:"L2_STRATEGY_PROCEDURE",
+    languageGate:{verdict:"BLOCK",version:"TEST"},
+    attempts:[{
+      attempt:1,
+      error:"workers_ai_timeout",
+      httpStatus:503,
+      responseStatus:"timeout",
+      incompleteReason:"bounded timeout",
+      timeoutMs:15000,
+      requestId:"provider-request-1",
+      responseId:"provider-response-1",
+      providerCalls:1,
+      prompt:secretPrompt
+    }],
+    prompt:secretPrompt,
+    userQ:secretPrompt,
+    routingQuery:secretPrompt
+  });
+  assert.equal(trace.requestId,"R3-test-123");
+  assert.equal(trace.route,"PUBLIC_CHAT");
+  assert.equal(trace.provider,"workers_ai_free");
+  assert.equal(trace.providerCalls,2);
+  assert.equal(trace.retryCount,1);
+  assert.equal(trace.retryable,true);
+  assert.equal(trace.attempts.length,1);
+  assert.equal(trace.attempts[0].requestId,"provider-request-1");
+  assert.equal("prompt" in trace,false);
+  assert.equal("userQ" in trace,false);
+  assert.equal("routingQuery" in trace,false);
+  assert.equal("prompt" in trace.attempts[0],false);
+  assert.doesNotMatch(JSON.stringify(trace),new RegExp(secretPrompt));
   const source=fs.readFileSync("src/index.js","utf8");
-  const freeBlock=source.slice(source.indexOf("failureTrace:{\n          requestId:runtimeRequestId"),source.indexOf("failureTrace:{\n          requestId:runtimeRequestId")+1800);
   assert.match(source,/X-AI-Advokat-Request-Id/);
   assert.match(source,/const runtimeRequestId="R3-"\+crypto\.randomUUID\(\)/);
-  assert.match(source,/const cfRay=String\(request\.headers\.get\("CF-Ray"\)/);
-  for(const field of ["requestId","cfRay","route","stage","provider","model","errorType","retryable","providerCalls","retryCount","missionProfile"]){
-    assert.match(freeBlock,new RegExp(field+":"));
-  }
-  assert.doesNotMatch(freeBlock,/prompt\s*:/i);
-  assert.doesNotMatch(freeBlock,/userQ\s*:/);
-  assert.doesNotMatch(freeBlock,/routingQuery\s*:/);
+  assert.match(source,/buildProviderFailureTrace\(\{/);
 });
 
 test("R3X9 known historical failure signatures are represented as forbidden live outcomes",()=>{
