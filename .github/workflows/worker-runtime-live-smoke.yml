@@ -231,7 +231,7 @@ jobs:
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
           curl -sS --fail -D /tmp/worker-cors.txt -o /dev/null             -X OPTIONS             -H 'Origin: https://ai-advokat.github.io'             -H 'Access-Control-Request-Method: POST'             -H 'Access-Control-Request-Headers: content-type'             "$BASE/api/chat"
           grep -qi '^access-control-allow-origin: https://ai-advokat.github.io' /tmp/worker-cors.txt
-          chat_code="$(curl -sS --max-time 120 -o /tmp/worker-chat.json -w '%{http_code}'             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Одговори кратко и вклучи ја ознаката WORKER_SMOKE_OK.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/chat")"
+          chat_code="$(curl -sS --max-time 120 -D /tmp/worker-chat-headers.txt -o /tmp/worker-chat.json -w '%{http_code}'             -H 'content-type: application/json'             -H 'Origin: https://ai-advokat.github.io'             -d '{"q":"Одговори кратко и вклучи ја ознаката WORKER_SMOKE_OK.","mode":"auto","webSearch":false,"history":[],"guideIds":[],"guideDocuments":[],"attachments":[]}'             "$BASE/api/chat")"
           echo "MAIN CHAT HTTP: $chat_code"
           node - "$chat_code" <<'NODE'
           const fs=require("fs");
@@ -242,10 +242,19 @@ jobs:
             const capacity=d?.providerCapacity?.state==="exhausted"
               || d?.error==="workers_ai_daily_capacity_exhausted"
               || d?.providerRecovery?.direction==="workers_ai_to_openai";
+            const headers=fs.readFileSync("/tmp/worker-chat-headers.txt","utf8");
+            const requestIdHeader=(headers.match(/^x-ai-advokat-request-id:\s*(.+)$/mi)||[])[1]?.trim()||null;
             console.error("MAIN CHAT NON-200",JSON.stringify({
               status,error:d?.error||null,providerCapacity:d?.providerCapacity||null,
-              providerRecovery:d?.providerRecovery||null,fallbackProviderFailure:d?.fallbackProviderFailure||null
+              providerRecovery:d?.providerRecovery||null,fallbackProviderFailure:d?.fallbackProviderFailure||null,
+              failureTrace:d?.failureTrace||null,requestIdHeader
             }));
+            if(!d?.failureTrace?.requestId || !String(d.failureTrace.requestId).startsWith("R3-")){
+              throw new Error("chat failure missing R3 failureTrace request id");
+            }
+            if(requestIdHeader!==d.failureTrace.requestId){
+              throw new Error("chat failure request id header/body mismatch");
+            }
             if(capacity) throw new Error("chat provider capacity blocked");
             throw new Error("chat http "+status+":"+(d?.error||"unknown"));
           }
@@ -312,6 +321,7 @@ jobs:
             /tmp/worker-gold-gate.html
             /tmp/worker-echr-crosswalk.html
             /tmp/worker-cors.txt
+            /tmp/worker-chat-headers.txt
             /tmp/worker-chat.json
             /tmp/worker-bot-unauth.json
             /tmp/worker-bot-secure-gate.json
