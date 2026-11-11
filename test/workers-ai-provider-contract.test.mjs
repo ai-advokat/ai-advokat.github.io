@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { WORKERS_AI_PROVIDER_CONTRACT_VERSION, WORKERS_AI_TEXT_MODEL_DEFAULT, workersAIRequestOptions, runWorkersAIText, WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT, classifyWorkersAIProviderFailure } from "../src/workers-ai-provider.js";
+import { WORKERS_AI_PROVIDER_CONTRACT_VERSION, WORKERS_AI_TEXT_MODEL_DEFAULT, workersAIRequestOptions, runWorkersAIText, WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT, classifyWorkersAIProviderFailure, workersAITimeoutFallbackMs } from "../src/workers-ai-provider.js";
 
 test("WAP1 Qwen uses only documented synchronous chat parameters",()=>{
   const options=workersAIRequestOptions({
@@ -154,3 +154,14 @@ test("WAP10 non-retryable daily capacity exhaustion never triggers the timeout f
   assert.equal(result.modelFallback,null);
   assert.deepEqual(models,[WORKERS_AI_TEXT_MODEL_DEFAULT]);
 });
+
+test("WAP11 R3 evidence widens only the single timeout fallback window",()=>{
+  assert.equal(workersAITimeoutFallbackMs(12000),18000);
+  assert.equal(workersAITimeoutFallbackMs(20000),22000);
+  assert.equal(workersAITimeoutFallbackMs(30000),22000);
+  assert.equal(workersAITimeoutFallbackMs(45000),22000);
+  const evidence=JSON.parse(fs.readFileSync(".github/diagnostics/r3-worker-runtime-artifact-13864206636.json","utf8"));
+  assert.equal(evidence.observed_failure.failure_detail,"workers_ai_timeout_12000");
+  assert.equal(evidence.observed_failure.model_fallback.reason,"primary_timeout");
+});
+
