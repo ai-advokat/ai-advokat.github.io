@@ -2,7 +2,7 @@ name: AI Advokat root reliability live smoke
 
 on:
   workflow_run:
-    workflows: ["Sync AI Advokat frontend runtime to GitHub Pages"]
+    workflows: ["AI Advokat production runtime sync"]
     types: [completed]
   workflow_dispatch:
 permissions:
@@ -196,19 +196,42 @@ jobs:
           console.log("MAIN AI ADVOKAT LIVE CHAT: PASS");
           NODE
 
-      - name: Verify professional bot route is live and membership fail-closed
+      - name: Verify bounded TRAINING access and Secure Case fail-closed boundary
         shell: bash
         run: |
           set -euo pipefail
           BASE="https://ai-advokat-github-io.aiadvokat16.workers.dev"
-          code="$(curl -sS --max-time 30 -o /tmp/root-bot-unauth.json -w '%{http_code}' \
+
+          code="$(curl -sS --max-time 30 -o /tmp/root-bot-training.json -w '%{http_code}' \
             -H 'content-type: application/json' \
+            -H 'accept: application/json' \
             -H 'Origin: https://ai-advokat.github.io' \
-            -d '{"q":"Здраво"}' \
+            -d '{"q":"Здраво","sessionId":"ROOT-SMOKE-TRAINING-R14","mode":"auto","history":[],"attachments":[]}' \
             "$BASE/api/bot")"
-          test "$code" = "401"
-          grep -q 'bot_membership_required' /tmp/root-bot-unauth.json
-          echo "PROFESSIONAL /api/bot LIVE + FAIL-CLOSED: PASS"
+          test "$code" = "200"
+          jq -e '
+            .ok == true
+            and .mode == "training"
+            and .membership.planCode == "training"
+            and .membership.trainingOpen == true
+            and .privacy.providerCalled == false
+            and .privacy.quotaConsumed == false
+          ' /tmp/root-bot-training.json >/dev/null
+
+          secure_code="$(curl -sS --max-time 30 -o /tmp/root-secure-gate.json -w '%{http_code}' \
+            -H 'content-type: application/json' \
+            -H 'accept: application/json' \
+            -H 'Origin: https://ai-advokat.github.io' \
+            -d '{"q":"Ова е доверлив предмет со оригинален документ.","sessionId":"ROOT-SMOKE-SECURE-R14","mode":"auto","history":[],"attachments":[]}' \
+            "$BASE/api/bot")"
+          test "$secure_code" = "422"
+          jq -e '
+            .ok == false
+            and .error == "confidential_case_workspace_required"
+            and .privacy.providerCalled == false
+            and .privacy.quotaConsumed == false
+          ' /tmp/root-secure-gate.json >/dev/null
+          echo "PROFESSIONAL /api/bot TRAINING OPEN + SECURE CASE FAIL-CLOSED: PASS"
 
       - name: Write release evidence summary
         shell: bash
@@ -222,7 +245,7 @@ jobs:
           Orchestrator/OpenAI/LIOE readiness: PASS
           Browser CORS: PASS
           Main AI Advokat live chat: PASS
-          Professional /api/bot route: PASS (unauthenticated fail-closed)
+          Professional /api/bot route: PASS (bounded TRAINING open; confidential Secure Case fail-closed)
           Membership mutation performed: NO
           D1 write performed by this smoke: NO
           Secret mutation performed: NO
@@ -254,5 +277,6 @@ jobs:
             /tmp/root-orchestrator.json
             /tmp/root-cors.txt
             /tmp/root-chat.json
-            /tmp/root-bot-unauth.json
+            /tmp/root-bot-training.json
+            /tmp/root-secure-gate.json
             /tmp/root-live-smoke-summary.txt
