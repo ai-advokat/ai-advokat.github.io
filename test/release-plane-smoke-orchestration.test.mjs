@@ -8,10 +8,10 @@ test("Professional smoke retriggers when provider-capacity classifier changes",(
   assert.match(y,/test\/professional-smoke-capacity-gate\.test\.mjs/);
 });
 
-test("Root reliability waits for successful Pages sync instead of racing main push",()=>{
+test("Root reliability waits for successful production sync and then verifies Pages parity",()=>{
   const y=fs.readFileSync(".github/workflows/root-reliability-live-smoke.yml","utf8");
   assert.match(y,/workflow_run:/);
-  assert.match(y,/Sync AI Advokat frontend runtime to GitHub Pages/);
+  assert.match(y,/AI Advokat production runtime sync/);
   assert.match(y,/types: \[completed\]/);
   assert.match(y,/workflow_run\.conclusion == 'success'/);
   assert.match(y,/workflow_run\.head_sha/);
@@ -21,6 +21,31 @@ test("Root reliability waits for successful Pages sync instead of racing main pu
   assert.doesNotMatch(y,/push:\s*\n\s*branches: \["main"\]/);
 });
 
+
+
+test("Worker and FREE live validation cannot race the Human-Gated production deploy",()=>{
+  const worker=fs.readFileSync(".github/workflows/worker-runtime-live-smoke.yml","utf8");
+  const free=fs.readFileSync(".github/workflows/free-runtime-live-uat.yml","utf8");
+  for(const y of [worker,free]){
+    assert.match(y,/workflow_run:/);
+    assert.match(y,/AI Advokat production runtime sync/);
+    assert.match(y,/types: \[completed\]/);
+    assert.match(y,/workflow_run\.conclusion == 'success'/);
+    assert.match(y,/workflow_run\.head_sha/);
+  }
+  assert.doesNotMatch(worker,/push:\s*\n\s*branches: \["main"\]/);
+  assert.doesNotMatch(free,/push:\s*\n\s*branches: \["main"\]/);
+});
+
+test("Root reliability enforces Training Open and confidential Secure Case boundary",()=>{
+  const y=fs.readFileSync(".github/workflows/root-reliability-live-smoke.yml","utf8");
+  assert.match(y,/test "\$code" = "200"/);
+  assert.match(y,/\.mode == "training"/);
+  assert.match(y,/\.membership\.planCode == "training"/);
+  assert.match(y,/\.membership\.trainingOpen == true/);
+  assert.match(y,/test "\$secure_code" = "422"/);
+  assert.match(y,/confidential_case_workspace_required/);
+});
 
 test("Pages sync publishes exact source-main SHA marker",()=>{
   const y=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8");
