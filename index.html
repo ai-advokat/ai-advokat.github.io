@@ -2980,11 +2980,16 @@
   const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v1:";
   const UI_TRANSLATION_BATCH_ITEMS=12;
   const UI_TRANSLATION_BATCH_CHARS=2400;
-  const UI_TRANSLATION_CLIENT_CONCURRENCY=2;
+  const UI_TRANSLATION_CLIENT_CONCURRENCY=1;
+  const UI_TRANSLATION_PROVIDER_BACKOFF_MS=5000;
+  const UI_TRANSLATION_RATE_LIMIT_BACKOFF_MS=60000;
+  const UI_TRANSLATION_OBSERVER_SUPPRESS_MS=900;
   const uiTranslationNodeState=new WeakMap();
   const uiTranslationAttrState=new WeakMap();
   let uiTranslationRunning=false;
   let uiTranslationQueued=false;
+  let uiTranslationCooldownUntil=0;
+  let uiTranslationObserverSuppressUntil=0;
 
   function uiTranslationCache(){
     try{return JSON.parse(localStorage.getItem(UI_TRANSLATION_CACHE_PREFIX+siteLanguage)||"{}")||{};}catch{return {};}
@@ -3068,7 +3073,17 @@
             });
             const d=await r.json();
             if(!r.ok||d?.ok!==true||!Array.isArray(d.translations)){
+              const retryAfterMs=Math.max(0,Number(r.headers.get("Retry-After")||0)*1000);
+              const fallbackBackoff=r.status===429
+                ? UI_TRANSLATION_RATE_LIMIT_BACKOFF_MS
+                : r.status===503
+                  ? UI_TRANSLATION_PROVIDER_BACKOFF_MS
+                  : 0;
+              if(fallbackBackoff||retryAfterMs){
+                uiTranslationCooldownUntil=Math.max(uiTranslationCooldownUntil,Date.now()+Math.max(fallbackBackoff,retryAfterMs));
+              }
               console.warn("ui_translation_batch_failed",r.status,d?.error||"unknown",batchIndex);
+              if(r.status===429||r.status===503) return;
               continue;
             }
             d.translations.forEach((row,j)=>{
@@ -3084,6 +3099,7 @@
       }
       const uiWorkers=Math.min(UI_TRANSLATION_CLIENT_CONCURRENCY,batches.length);
       await Promise.all(Array.from({length:uiWorkers},()=>runUiTranslationBatchWorker()));
+      uiTranslationObserverSuppressUntil=Date.now()+UI_TRANSLATION_OBSERVER_SUPPRESS_MS;
       for(const unit of units){
         const translated=cache[unit.source];
         if(!translated) continue;
@@ -3104,7 +3120,7 @@
       uiTranslationRunning=false;
       if(uiTranslationQueued){
         uiTranslationQueued=false;
-        setTimeout(()=>translateGlobalInterface(),120);
+        scheduleGlobalTranslation();
       }
     }
   }
@@ -3112,7 +3128,9 @@
     if(siteLanguage==="mk") return;
     if(uiTranslationRunning){uiTranslationQueued=true;return;}
     clearTimeout(scheduleGlobalTranslation.timer);
-    scheduleGlobalTranslation.timer=setTimeout(()=>translateGlobalInterface(),180);
+    const cooldownDelay=Math.max(0,uiTranslationCooldownUntil-Date.now());
+    const delay=Math.max(180,cooldownDelay);
+    scheduleGlobalTranslation.timer=setTimeout(()=>translateGlobalInterface(),delay);
   }
 
   function applyLanguage(){
@@ -4562,7 +4580,7 @@
   scheduleGlobalTranslation();
   if(siteLanguage!=="mk"){
     const translationObserver=new MutationObserver(mutations=>{
-      if(uiTranslationRunning) return;
+      if(uiTranslationRunning||Date.now()<uiTranslationObserverSuppressUntil) return;
       if(mutations.some(m=>m.type==="childList"||m.type==="characterData"||m.type==="attributes")) scheduleGlobalTranslation();
     });
     translationObserver.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder","title","aria-label"]});
