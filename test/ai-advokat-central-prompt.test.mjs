@@ -14,7 +14,7 @@ const worker=fs.readFileSync("src/index.js","utf8");
 const orchestrator=fs.readFileSync("src/agent-orchestrator.js","utf8");
 
 test("COP1 central prompt has a stable version and one coherent AI Advokat identity",()=>{
-  assert.equal(AI_ADVOKAT_CENTRAL_PROMPT_VERSION,"AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v7");
+  assert.equal(AI_ADVOKAT_CENTRAL_PROMPT_VERSION,"AI_ADVOCAT_CENTRAL_OPERATING_PROMPT_v8");
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/You are AI Advokat/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/Do not claim to be ChatGPT, OpenAI/);
   assert.match(AI_ADVOKAT_CENTRAL_SYSTEM_PROMPT,/answer the useful part first/i);
