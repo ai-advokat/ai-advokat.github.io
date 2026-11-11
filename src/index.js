@@ -14,7 +14,8 @@ import {
 } from "./case-law-corpus-radar.js";
 import {
   CASE_LAW_CLAIM_GUARD_VERSION,
-  assessSpecificCaseLawClaims
+  assessSpecificCaseLawClaims,
+  redactUnsupportedSpecificCaseLawClaims
 } from "./case-law-claim-guard.js";
 import {
   DETENTION_PROCEDURAL_TERMINOLOGY_VERSION,
@@ -7922,22 +7923,33 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       },503);
     }
 
-    const fallbackCaseLawClaimGate=assessSpecificCaseLawClaims(releasedFallbackText,{
+    let fallbackCaseLawClaimGate=assessSpecificCaseLawClaims(releasedFallbackText,{
       reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
       webSources:[]
     });
+    let fallbackCaseLawRedaction=null;
     if(!fallbackCaseLawClaimGate.ok){
-      await releaseMonthlyQuota(env,{subject,period});
-      return json(request,{
-        ok:false,
-        error:"case_law_claim_release_blocked",
-        message:"Одговорот не е пуштен затоа што содржи конкретна судска пресуда, број на предмет или именуван судски случај што не е потврден во reviewed official case-law context.",
-        caseLawClaimGuard:{
-          version:CASE_LAW_CLAIM_GUARD_VERSION,
-          unsupported:fallbackCaseLawClaimGate.unsupported
-        },
-        governanceRunId:lioeRunId
-      },503);
+      fallbackCaseLawRedaction=redactUnsupportedSpecificCaseLawClaims(releasedFallbackText,fallbackCaseLawClaimGate);
+      if(fallbackCaseLawRedaction.changed){
+        releasedFallbackText=fallbackCaseLawRedaction.text;
+        fallbackCaseLawClaimGate=assessSpecificCaseLawClaims(releasedFallbackText,{
+          reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
+          webSources:[]
+        });
+      }
+      if(!fallbackCaseLawClaimGate.ok){
+        await releaseMonthlyQuota(env,{subject,period});
+        return json(request,{
+          ok:false,
+          error:"case_law_claim_release_blocked",
+          message:"Одговорот не може безбедно да се пушти затоа што и по отстранувањето сè уште содржи непотврдена конкретна судска практика.",
+          caseLawClaimGuard:{
+            version:CASE_LAW_CLAIM_GUARD_VERSION,
+            unsupported:fallbackCaseLawClaimGate.unsupported
+          },
+          governanceRunId:lioeRunId
+        },503);
+      }
     }
 
     const freeSourceMode=freeResult.provider==="canonical_corpus_no_model"
@@ -8888,22 +8900,33 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     },503);
   }
 
-  const governedCaseLawClaimGate=assessSpecificCaseLawClaims(governedFinalAnswer,{
+  let governedCaseLawClaimGate=assessSpecificCaseLawClaims(governedFinalAnswer,{
     reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
     webSources:result.sources||[]
   });
+  let governedCaseLawRedaction=null;
   if(!governedCaseLawClaimGate.ok){
-    await releaseMonthlyQuota(env,{subject,period});
-    return json(request,{
-      ok:false,
-      error:"case_law_claim_release_blocked",
-      message:"Одговорот не е пуштен затоа што содржи конкретна судска пресуда, број на предмет или именуван судски случај што не е потврден во reviewed official case-law context или официјален court source.",
-      caseLawClaimGuard:{
-        version:CASE_LAW_CLAIM_GUARD_VERSION,
-        unsupported:governedCaseLawClaimGate.unsupported
-      },
-      governanceRunId:lioeRunId
-    },503);
+    governedCaseLawRedaction=redactUnsupportedSpecificCaseLawClaims(governedFinalAnswer,governedCaseLawClaimGate);
+    if(governedCaseLawRedaction.changed){
+      governedFinalAnswer=governedCaseLawRedaction.text;
+      governedCaseLawClaimGate=assessSpecificCaseLawClaims(governedFinalAnswer,{
+        reviewedCaseLawSources:caseLawBundle.state==="matched" ? (caseLawBundle.sources||[]) : [],
+        webSources:result.sources||[]
+      });
+    }
+    if(!governedCaseLawClaimGate.ok){
+      await releaseMonthlyQuota(env,{subject,period});
+      return json(request,{
+        ok:false,
+        error:"case_law_claim_release_blocked",
+        message:"Одговорот не може безбедно да се пушти затоа што и по отстранувањето сè уште содржи непотврдена конкретна судска практика.",
+        caseLawClaimGuard:{
+          version:CASE_LAW_CLAIM_GUARD_VERSION,
+          unsupported:governedCaseLawClaimGate.unsupported
+        },
+        governanceRunId:lioeRunId
+      },503);
+    }
   }
 
   // Final language release gate for the governed OpenAI path. The central prompt
@@ -9070,6 +9093,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     },
     legalSources:articleBundle.legalSources || [],
     caseLawSources:[...(caseLawBundle.sources||[]),...(bureauEchrBundle.sources||[])],
+    caseLawClaimGuard:{
+      version:CASE_LAW_CLAIM_GUARD_VERSION,
+      state:governedCaseLawRedaction?.changed ? "UNVERIFIED_SPECIFIC_CITATIONS_REDACTED" : "PASS",
+      redacted:governedCaseLawRedaction?.redacted||[]
+    },
     echrBureauDiscovery:{
       state:bureauEchrBundle.state,
       indexedRecords:bureauEchrBundle.recordCount,
