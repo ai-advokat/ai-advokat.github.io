@@ -2,10 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-test("Professional smoke retriggers when provider-capacity classifier changes",()=>{
+test("Professional smoke executes the provider-capacity classifier and repository suite retains its regression tests",()=>{
   const y=fs.readFileSync(".github/workflows/professional-bot-live-smoke.yml","utf8");
+  const classifierTest=fs.readFileSync("test/professional-smoke-capacity-gate.test.mjs","utf8");
   assert.match(y,/scripts\/professional-smoke-capacity-gate\.mjs/);
-  assert.match(y,/test\/professional-smoke-capacity-gate\.test\.mjs/);
+  assert.match(classifierTest,/classifyProfessionalProviderCapacity/);
+  assert.match(classifierTest,/does not downgrade unknown 503 failures/);
 });
 
 
