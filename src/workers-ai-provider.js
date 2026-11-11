@@ -5,9 +5,9 @@ import { enforceCanonicalContextProvenance } from "./canonical-provenance-gate.j
 // One source of truth for model selection, request parameters and response extraction.
 // Reasoning fields are intentionally never surfaced as user-visible answer text.
 
-export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/qwen/qwen3-30b-a3b-fp8";
-export const WORKERS_AI_PROVIDER_CONTRACT_VERSION="WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT";
-export const WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT="@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/openai/gpt-oss-120b";
+export const WORKERS_AI_PROVIDER_CONTRACT_VERSION="WORKERS_AI_SYNC_CHAT_V3_GPT_OSS_120B_PRIMARY";
+export const WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT="@cf/qwen/qwen3.8-27b";
 
 export function resolveWorkersAITextModel(env){
   const model=String(env?.WORKERS_AI_CHAT_MODEL||WORKERS_AI_TEXT_MODEL_DEFAULT).trim();
