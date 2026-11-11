@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { WORKERS_AI_PROVIDER_CONTRACT_VERSION, workersAIRequestOptions, runWorkersAIText, WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT, classifyWorkersAIProviderFailure } from "../src/workers-ai-provider.js";
+import { WORKERS_AI_PROVIDER_CONTRACT_VERSION, WORKERS_AI_TEXT_MODEL_DEFAULT, workersAIRequestOptions, runWorkersAIText, WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT, classifyWorkersAIProviderFailure } from "../src/workers-ai-provider.js";
 
 test("WAP1 Qwen uses only documented synchronous chat parameters",()=>{
   const options=workersAIRequestOptions({
@@ -41,7 +41,7 @@ test("WAP3 Qwen contract does not reintroduce undocumented template kwargs",()=>
 });
 
 
-test("WAP4 empty Qwen final falls back exactly once to non-reasoning Llama",async()=>{
+test("WAP4 empty primary final falls back exactly once to bounded secondary model",async()=>{
   const models=[];
   const env={AI:{run:async(model)=>{
     models.push(model);
@@ -55,14 +55,14 @@ test("WAP4 empty Qwen final falls back exactly once to non-reasoning Llama",asyn
   assert.equal(result.ok,true);
   assert.equal(result.text,"Готов одговор.");
   assert.equal(result.providerCalls,2);
-  assert.equal(result.primaryModel,"@cf/qwen/qwen3-30b-a3b-fp8");
+  assert.equal(result.primaryModel,WORKERS_AI_TEXT_MODEL_DEFAULT);
   assert.equal(result.model,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT);
   assert.deepEqual(result.modelFallback,{
-    from:"@cf/qwen/qwen3-30b-a3b-fp8",
+    from:WORKERS_AI_TEXT_MODEL_DEFAULT,
     to:WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT,
     reason:"empty_final_text"
   });
-  assert.deepEqual(models,["@cf/qwen/qwen3-30b-a3b-fp8",WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT]);
+  assert.deepEqual(models,[WORKERS_AI_TEXT_MODEL_DEFAULT,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT]);
 });
 
 test("WAP5 empty primary and empty non-reasoning fallback fail closed after two calls",async()=>{
@@ -76,15 +76,15 @@ test("WAP5 empty primary and empty non-reasoning fallback fail closed after two 
   assert.equal(result.ok,false);
   assert.equal(result.error,"workers_ai_empty_response");
   assert.equal(result.providerCalls,2);
-  assert.equal(result.primaryModel,"@cf/qwen/qwen3-30b-a3b-fp8");
+  assert.equal(result.primaryModel,WORKERS_AI_TEXT_MODEL_DEFAULT);
   assert.equal(result.model,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT);
   assert.equal(result.modelFallback.reason,"empty_final_text");
-  assert.deepEqual(models,["@cf/qwen/qwen3-30b-a3b-fp8",WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT]);
+  assert.deepEqual(models,[WORKERS_AI_TEXT_MODEL_DEFAULT,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT]);
 });
 
 
 test("WAP6 provider contract version is explicit and capability-bound",()=>{
-  assert.equal(WORKERS_AI_PROVIDER_CONTRACT_VERSION,"WORKERS_AI_SYNC_CHAT_V2_DOCUMENTED_PARAMS_BOUNDED_TIMEOUT");
+  assert.equal(WORKERS_AI_PROVIDER_CONTRACT_VERSION,"WORKERS_AI_SYNC_CHAT_V3_GPT_OSS_120B_PRIMARY");
   const worker=fs.readFileSync("src/index.js","utf8");
   const workflow=fs.readFileSync(".github/workflows/free-runtime-live-uat.yml","utf8");
   assert.match(worker,/freeProviderContract:WORKERS_AI_PROVIDER_CONTRACT_VERSION/);
@@ -131,10 +131,10 @@ test("WAP9 primary timeout retries exactly once on bounded non-reasoning Workers
   });
   assert.equal(result.ok,true);
   assert.equal(result.providerCalls,2);
-  assert.equal(result.primaryModel,"@cf/qwen/qwen3-30b-a3b-fp8");
+  assert.equal(result.primaryModel,WORKERS_AI_TEXT_MODEL_DEFAULT);
   assert.equal(result.model,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT);
   assert.equal(result.modelFallback?.reason,"primary_timeout");
-  assert.deepEqual(models,["@cf/qwen/qwen3-30b-a3b-fp8",WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT]);
+  assert.deepEqual(models,[WORKERS_AI_TEXT_MODEL_DEFAULT,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT]);
 });
 
 test("WAP10 non-retryable daily capacity exhaustion never triggers the timeout fallback",async()=>{
@@ -152,5 +152,5 @@ test("WAP10 non-retryable daily capacity exhaustion never triggers the timeout f
   assert.equal(result.error,"workers_ai_daily_capacity_exhausted");
   assert.equal(result.providerCalls,1);
   assert.equal(result.modelFallback,null);
-  assert.deepEqual(models,["@cf/qwen/qwen3-30b-a3b-fp8"]);
+  assert.deepEqual(models,[WORKERS_AI_TEXT_MODEL_DEFAULT]);
 });
