@@ -980,7 +980,7 @@ export async function runOpenAIOrchestrator(env, {
           : "medium"))},
     input:[{role:"user",content:userParts}],
     max_output_tokens:capacityFallbackMode
-      ? Math.min(1200,Math.max(700,Number(maxOutputTokens)||1000))
+      ? Math.min(2200,Math.max(900,Number(maxOutputTokens)||1400))
       : maxOutputTokens,
     store:false,
     ...(tools.length ? {
