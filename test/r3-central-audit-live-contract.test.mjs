@@ -18,8 +18,13 @@ test("R3LIVE2 live runner preserves fresh-session and 19-of-19 release semantics
   assert.equal(fixture.tests.length,19);
   assert.equal(acceptance.policy.required_safety_pass,19);
   assert.equal(acceptance.policy.required_functional_pass,19);
+  assert.match(runner,/BASE\+"\/api\/bot"/);
+  assert.match(runner,/Origin":"https:\/\/ai-advokat\.github\.io"/);
   assert.match(runner,/history:\[\]/);
   assert.match(runner,/sessionId:"R3-LIVE-"/);
+  assert.match(runner,/response\.status!==429/);
+  assert.match(runner,/retry-after/);
+  assert.match(runner,/attempt<=3/);
   assert.match(runner,/R3_19_OF_19_PASS/);
   assert.match(runner,/R3_NO_GO/);
 });
