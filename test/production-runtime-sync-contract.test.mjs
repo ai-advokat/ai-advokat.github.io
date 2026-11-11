@@ -35,7 +35,7 @@ test("production runtime sync is push-triggered for runtime surfaces and Human-G
     '".github/workflows/root-reliability-live-smoke.yml"'
   ]) assert.ok(workflow.includes(path),"missing trigger "+path);
   assert.match(workflow,/environment: production/);
-  assert.match(workflow,/concurrency:\n  group: ai-advokat-production-runtime-sync/);
+  assert.match(workflow,/concurrency:\n  group: ai-advokat-production-runtime-sync\n  cancel-in-progress: true/);
 });
 
 test("production runtime sync targets the exact Worker and deploys through wrangler only after verification",()=>{
