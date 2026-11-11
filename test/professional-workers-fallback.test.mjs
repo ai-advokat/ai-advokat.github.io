@@ -151,7 +151,8 @@ test("Degraded Professional draft keeps Human Gate, no-action L3 boundary and st
   assert.match(handle,/professional_degraded_structure_only_workers_ai_fallback/);
   assert.match(handle,/NOT_ESTABLISHED_NO_GOVERNED_CONTEXT/);
   assert.match(handle,/РАБОТЕН ШАБЛОН — ПРАВНАТА ОСНОВА НЕ Е ВЕРИФИКУВАНА/u);
-  assert.match(workerSource,/ZERO-GOVERNED-CONTEXT SAFETY/);
+  assert.match(workerSource,/ZERO-GOVERNED-CONTEXT FORMAL DRAFT SAFETY/);
+  assert.match(workerSource,/ZERO-GOVERNED-CONTEXT ANALYSIS SAFETY/);
   assert.match(workerSource,/\[ДА СЕ ПРОВЕРИ ВО ВАЖЕЧКИ ОФИЦИЈАЛЕН ИЗВОР\]/u);
 });
 
