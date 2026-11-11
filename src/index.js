@@ -2439,7 +2439,7 @@ function corsHeaders(request) {
     "Access-Control-Allow-Methods": "GET,HEAD,POST,DELETE,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Membership-Key, X-File-Name, X-Page-Count",
     "Access-Control-Max-Age": "86400",
-    "Access-Control-Expose-Headers": "Content-Disposition, X-AI-Advokat-Export-Mode",
+    "Access-Control-Expose-Headers": "Content-Disposition, X-AI-Advokat-Export-Mode, X-AI-Advokat-Request-Id",
     "Vary": "Origin"
   };
 
@@ -6822,10 +6822,73 @@ function externalBotLanguageDirective(code){
   return "Please answer in "+language+". Preserve official legal source quotations, citations, case numbers and statutory identifiers verbatim.";
 }
 
+export function buildProviderFailureTrace({
+  requestId="",
+  cfRay=null,
+  route="",
+  stage="",
+  provider="",
+  model=null,
+  errorType="provider_failure",
+  retryable=true,
+  providerCalls=0,
+  modelFallback=null,
+  missionProfile=null,
+  languageGate=null,
+  httpStatus=null,
+  responseStatus=null,
+  attempts=null
+}={}){
+  const calls=Math.max(0,Number(providerCalls)||0);
+  const safeAttempts=Array.isArray(attempts)
+    ? attempts.slice(0,4).map((attempt,index)=>Object.freeze({
+        attempt:Number(attempt?.attempt||index+1),
+        error:String(attempt?.error||"").slice(0,80)||null,
+        httpStatus:Number.isFinite(Number(attempt?.httpStatus))?Number(attempt.httpStatus):null,
+        responseStatus:typeof attempt?.responseStatus==="string"?attempt.responseStatus.slice(0,80):null,
+        incompleteReason:typeof attempt?.incompleteReason==="string"?attempt.incompleteReason.slice(0,120):null,
+        timeoutMs:Number.isFinite(Number(attempt?.timeoutMs))?Number(attempt.timeoutMs):null,
+        requestId:typeof attempt?.requestId==="string"?attempt.requestId.slice(0,180):null,
+        responseId:typeof attempt?.responseId==="string"?attempt.responseId.slice(0,180):null,
+        providerCalls:Number(attempt?.providerCalls||0)
+      }))
+    : null;
+  return Object.freeze({
+    requestId:String(requestId||"").slice(0,180)||null,
+    cfRay:typeof cfRay==="string"?cfRay.slice(0,120):null,
+    route:String(route||"").slice(0,80)||null,
+    stage:String(stage||"").slice(0,80)||null,
+    provider:String(provider||"").slice(0,80)||null,
+    model:typeof model==="string"?model.slice(0,160):null,
+    errorType:String(errorType||"provider_failure").slice(0,80),
+    retryable:retryable!==false,
+    providerCalls:calls,
+    retryCount:Math.max(0,calls-1),
+    modelFallback:modelFallback&&typeof modelFallback==="object" ? {
+      from:String(modelFallback.from||"").slice(0,160)||null,
+      to:String(modelFallback.to||"").slice(0,160)||null,
+      reason:String(modelFallback.reason||"").slice(0,80)||null
+    } : null,
+    missionProfile:typeof missionProfile==="string"?missionProfile.slice(0,80):null,
+    languageGate:languageGate&&typeof languageGate==="object" ? {
+      verdict:String(languageGate.verdict||"").slice(0,40)||null,
+      version:String(languageGate.version||"").slice(0,120)||null
+    } : null,
+    httpStatus:Number.isFinite(Number(httpStatus))&&Number(httpStatus)>0?Number(httpStatus):null,
+    responseStatus:typeof responseStatus==="string"?responseStatus.slice(0,80):null,
+    attempts:safeAttempts
+  });
+}
+
 async function handleGPTChat(request,env,{openAIOnly=false}={}){
   if(request.method!=="POST") return methodNotAllowed(request,"POST, OPTIONS");
   const contentType=(request.headers.get("content-type") || "").toLowerCase();
   if(!contentType.startsWith("application/json")) return json(request,{ok:false,error:"unsupported_media_type"},415);
+
+  // R3 observability: opaque technical correlation only. Never include prompt
+  // bodies, documents, names or factual case content in failure telemetry.
+  const runtimeRequestId="R3-"+crypto.randomUUID();
+  const cfRay=String(request.headers.get("CF-Ray")||"").trim().slice(0,120)||null;
 
   const readiness=orchestratorRuntimeReadiness(env);
   const trainingOpen=openAIOnly && env.EXTERNAL_BOT_TRAINING_OPEN==="true";
@@ -6882,6 +6945,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     ? String(payload.capabilityRoute)
     : "";
   const capabilityRoute=detectedCapabilityRoute || requestedCapabilityRoute;
+  const runtimeRoute=openAIOnly
+    ? (capabilityRoute || (botMembership ? "EXTERNAL_PROFESSIONAL_CHAT" : "EXTERNAL_TRAINING_CHAT"))
+    : "PUBLIC_CHAT";
   if(capabilityRoute==="SECURE_CASE"){
     return json(request,{
       ok:false,
@@ -7948,8 +8014,22 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         model:freeResult.model||resolveWorkersAITextModel(env),
         providerShape:freeResult.providerShape||null,
         modelFallback:freeResult.modelFallback||null,
-        runtime:{provider:"workers_ai_free",documentConversion:freeWorkersAIMarkdownConfigured(env)?"configured":"locked"}
-      },503);
+        runtime:{provider:"workers_ai_free",documentConversion:freeWorkersAIMarkdownConfigured(env)?"configured":"locked"},
+        failureTrace:buildProviderFailureTrace({
+          requestId:runtimeRequestId,
+          cfRay,
+          route:runtimeRoute,
+          stage:"workers_ai_generation",
+          provider:"workers_ai_free",
+          model:freeResult.model||resolveWorkersAITextModel(env),
+          errorType:freeResult.error||"free_workers_ai_failed",
+          retryable:freeResult.retryable!==false,
+          providerCalls:Number(freeResult.providerCalls||0),
+          modelFallback:freeResult.modelFallback||null,
+          missionProfile,
+          languageGate:freeResult.releaseGate||null
+        })
+      },503,{"X-AI-Advokat-Request-Id":runtimeRequestId});
     }
 
     let releasedFallbackText=String(freeResult.text||"").trim();
@@ -8860,8 +8940,22 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           ? "NO_EXTERNAL_ACTION"
           : "RESEARCH_OUTPUT_ONLY",
         humanReviewRequired:plan.legalIntelligenceEngine?.authority_and_human_gate?.human_review_required===true
-      } : null
-    },503);
+      } : null,
+      failureTrace:buildProviderFailureTrace({
+        requestId:runtimeRequestId,
+        cfRay,
+        route:runtimeRoute,
+        stage:"openai_orchestrator",
+        provider:"openai",
+        model:env.OPENAI_MODEL||null,
+        errorType:result.error||"provider_failure",
+        httpStatus:Number(result.status||0)||null,
+        responseStatus:typeof result.responseStatus==="string" ? result.responseStatus : null,
+        providerCalls:Number(result.providerCalls||0),
+        attempts:Array.isArray(result.providerAttempts)?result.providerAttempts:null,
+        missionProfile
+      })
+    },503,{"X-AI-Advokat-Request-Id":runtimeRequestId});
   }
 
   const postflight=result.canonicalSourceFirst===true
