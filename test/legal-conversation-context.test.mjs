@@ -39,3 +39,24 @@ test("plural demonstrative follow-up preserves prior ECHR request context",()=>{
   assert.match(routed,/Република Македонија/);
   assert.match(routed,/CURRENT FOLLOW-UP/);
 });
+
+
+test("R3 standalone analytical references to outcomes do not inherit unrelated history",()=>{
+  const history=[
+    {role:"user",text:"Во 1984 година започнала друга сосема различна правна состојба."},
+    {role:"assistant",text:"Претходен работен одговор за друг предмет."}
+  ];
+  const q="Понуди два можни исхода, план за обезбедување докази и нацрт на клучните барања.";
+  assert.equal(isContextDependentLegalFollowUp(q),false);
+  assert.equal(buildLegalRoutingQuery(q,history),q);
+});
+
+test("R3 generic use of the noun предмет is not enough to import old conversation context",()=>{
+  const q="Определи што зависи од видот и предметот на тужбеното барање.";
+  assert.equal(isContextDependentLegalFollowUp(q),false);
+});
+
+test("R3 explicit anaphoric legal follow-ups still inherit bounded context",()=>{
+  assert.equal(isContextDependentLegalFollowUp("Продолжи со анализа на овој предмет."),true);
+  assert.equal(isContextDependentLegalFollowUp("Кој е исходот?"),true);
+});
