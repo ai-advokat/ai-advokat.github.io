@@ -4,22 +4,14 @@ import fs from "node:fs";
 
 const workflow=fs.readFileSync(".github/workflows/worker-runtime-live-smoke.yml","utf8");
 
-test("Worker live smoke is triggered by every external-bot runtime surface",()=>{
-  for(const path of [
-    "bot/index.html",
-    "echr-crosswalk.html",
-    "src/echr-crosswalk-f0-fast-27.js",
-    "assets/standalone-bot.js",
-    "assets/standalone-bot-vnext.js",
-    "assets/standalone-bot-vnext.css",
-    "assets/standalone-bot-toolkit.js",
-    "assets/standalone-bot-toolkit.css",
-    "assets/chat-privacy-browser.js",
-    "src/chat-privacy.js",
-    ".assetsignore",
-    "_headers",
-    ".github/workflows/sync-pages-runtime.yml"
-  ]) assert.ok(workflow.includes(path),path);
+test("Worker live smoke runs only after successful production runtime sync",()=>{
+  assert.match(workflow,/workflow_run:/);
+  assert.match(workflow,/AI Advokat production runtime sync/);
+  assert.match(workflow,/types: \[completed\]/);
+  assert.match(workflow,/workflow_run\.conclusion == 'success'/);
+  assert.match(workflow,/workflow_run\.head_sha/);
+  assert.match(workflow,/EXPECTED_RELEASE_SHA/);
+  assert.doesNotMatch(workflow,/push:\s*\n\s*branches: \["main"\]/);
 });
 
 test("Worker live smoke waits for exact deployed byte parity",()=>{
