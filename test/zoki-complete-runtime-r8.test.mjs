@@ -44,7 +44,7 @@ test("33-language translation falls back to bounded GPT-OSS when M2M100 fails",a
   assert.equal(res.status,200);
   const data=await res.json();
   assert.equal(data.ok,true);
-  assert.equal(data.provider,"m2m100_workers_ai_fallback");
+  assert.equal(data.provider,"m2m100_workers_ai_item_fallback");
   assert.equal(data.translations[0].text,"Legal sources");
   assert.ok(calls.includes("@cf/meta/m2m100-1.2b"));
   assert.ok(calls.includes("@cf/openai/gpt-oss-120b"));
