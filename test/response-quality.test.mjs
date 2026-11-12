@@ -5,6 +5,7 @@ import {
   isFormalLegalDraftRequest,
   hasProceduralInstrumentMismatch,
   deterministicProceduralInstrumentFallback,
+  deterministicFictionalPublicFalseInformationDraftFallback,
   deterministicFormalDraftCapacityFallback,
   shouldUseDeterministicFormalDraftRecovery,
   applyProceduralInstrumentSafety,
@@ -14,6 +15,7 @@ import {
   ensureRequestedFormalDraftHeading,
   finaliseFormalLegalDraft
 } from "../src/response-quality.js";
+import {macedonianDeliveryVerdict} from "../src/macedonian-language-guard.js";
 
 test("RQ1 formal legal draft requests are detected in Cyrillic and Latin transliteration",()=>{
   assert.equal(isFormalLegalDraftRequest("Изработи тужба за надомест на штета."),true);
@@ -354,3 +356,31 @@ test("RQ27 R3 complex legal analysis prompts from the central audit never enter 
   ];
   for(const q of prompts) assert.equal(isFormalLegalDraftRequest(q),false,q);
 });
+
+test("RQ28 exact Sasho fictional public-false-information lawsuit request never needs a bare language-block response",()=>{
+  const q="Да те замолам да ми направиш Тужба за лиферување на лажни информации во јавност, со измислени имиња, однапред многу ти благодарам ,Сашо";
+  assert.equal(isFormalLegalDraftRequest(q),true);
+  const draft=deterministicFictionalPublicFalseInformationDraftFallback({userText:q});
+  assert.ok(draft);
+  assert.match(draft,/^ТУЖБА(?:\n|$)/u);
+  assert.match(draft,/РАБОТЕН ПРИМЕР СО ЦЕЛОСНО ИЗМИСЛЕНИ ПОДАТОЦИ/u);
+  assert.match(draft,/Александар Јованов/u);
+  assert.match(draft,/Марко Петров/u);
+  assert.match(draft,/јавно објавени невистинити фактички тврдења/iu);
+  assert.match(draft,/ЧОВЕЧКА ПРОВЕРКА/u);
+  assert.doesNotMatch(draft,/\bчлен\s+\d+/iu);
+  assert.doesNotMatch(draft,/РАБОТЕН ПРИМЕР — ПРАВНАТА ОСНОВА НЕ Е ВЕРИФИКУВАНА/u);
+  assert.doesNotMatch(draft,/ДО: \[НАДЛЕЖЕН СУД \/ ОРГАН — ДА СЕ ПРОВЕРИ\]/u);
+  const verdict=macedonianDeliveryVerdict(draft,{userText:q});
+  assert.equal(verdict.deliver,true,JSON.stringify(verdict,null,2));
+});
+
+test("RQ29 fictional public-false-information recovery stays narrowly scoped",()=>{
+  assert.equal(deterministicFictionalPublicFalseInformationDraftFallback({
+    userText:"Анализирај дали јавно објавена информација е точна."
+  }),null);
+  assert.equal(deterministicFictionalPublicFalseInformationDraftFallback({
+    userText:"Направи тужба за долг со измислени имиња."
+  }),null);
+});
+
