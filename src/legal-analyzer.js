@@ -26,7 +26,7 @@ export const REVIEW_TABLE_DEFAULT_COLUMNS = Object.freeze([
   "amounts","remedy","issues","sourceVerification","humanGate"
 ]);
 
-const CONTROL=/[\u0000-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u;
+const CONTROL=/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u;
 const MAX_TEXT=250000;
 
 function cleanText(value,max=MAX_TEXT){
