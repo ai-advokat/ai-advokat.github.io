@@ -3,7 +3,7 @@ import fs from "node:fs";
 const API_BASE=process.env.LIVE_TRANSLATOR_BASE||"https://ai-advokat-github-io.aiadvokat16.workers.dev";
 const ROOT_URL=process.env.LIVE_ROOT_URL||"https://ai-advokat.github.io/";
 const report={
-  version:"AI_ADVOCAT_TRANSLATOR_LAYERED_ACCEPTANCE_V1",
+  version:"AI_ADVOCAT_TRANSLATOR_LAYERED_ACCEPTANCE_V2",
   testedAt:new Date().toISOString(),
   apiBase:API_BASE,
   rootUrl:ROOT_URL,
@@ -86,8 +86,8 @@ async function browserLayer(){
     browser=await chromium.launch({headless:true,...(executablePath?{executablePath}:{})});
     const context=await browser.newContext();
     await context.addInitScript(()=>{
-      localStorage.setItem("aiadvokat-language","en");
-      localStorage.removeItem("aiadvokat-ui-translations-v1:en");
+      localStorage.setItem("aiadvokat-language","mk");
+      localStorage.removeItem("aiadvokat-ui-translations-v1:sq");
     });
     page=await context.newPage();
     page.on("response",async response=>{
@@ -100,6 +100,8 @@ async function browserLayer(){
         ok:body?.ok??null,
         provider:body?.provider||null,
         translationModel:body?.translationModel||null,
+        fallbackTranslationModel:body?.fallbackTranslationModel||null,
+        fallbackItemCount:body?.fallbackItemCount??null,
         error:body?.error||null,
         detail:body?.detail||null,
         fallbackError:body?.fallbackError||null,
@@ -110,42 +112,76 @@ async function browserLayer(){
     const url=new URL(ROOT_URL);
     url.searchParams.set("translator_acceptance",Date.now().toString());
     await page.goto(url.toString(),{waitUntil:"domcontentloaded",timeout:60000});
+    await page.waitForSelector("#langBtn",{state:"attached",timeout:30000});
+    const navigation=page.waitForNavigation({waitUntil:"domcontentloaded",timeout:30000});
+    await page.selectOption("#langBtn","sq");
+    await navigation;
     await page.waitForFunction(()=>{
-      const label=document.querySelector("#aiChatLanguagePanel label strong")?.textContent||"";
-      const note=document.querySelector("#aiChatLanguagePanel small")?.textContent||"";
       const global=document.querySelector("#langBtn")?.value||"";
       const chat=document.querySelector("#aiChatLanguage")?.value||"";
-      return global==="en"
-        && chat==="en"
-        && !label.includes("Цел интерфејс")
-        && !note.includes("изборот го преведува целиот интерфејс");
-    },null,{timeout:90000});
+      return global==="sq"
+        && chat==="sq"
+        && document.documentElement.lang==="sq"
+        && document.documentElement.dataset.translationTarget==="sq"
+        && document.documentElement.dataset.translationState==="ready";
+    },null,{timeout:120000});
     const state=await page.evaluate(()=>({
       globalLanguage:document.querySelector("#langBtn")?.value||null,
       chatLanguage:document.querySelector("#aiChatLanguage")?.value||null,
       translatorLabel:document.querySelector("#aiChatLanguagePanel label strong")?.textContent?.trim()||null,
       translatorNote:document.querySelector("#aiChatLanguagePanel small")?.textContent?.trim()||null,
+      topLine:document.querySelector("[data-i18n='topLine']")?.textContent?.trim()||null,
+      brandSub:document.querySelector("[data-i18n='brandSub']")?.textContent?.trim()||null,
+      navSources:document.querySelector("[data-i18n='navSources']")?.textContent?.trim()||null,
       documentLanguage:document.documentElement.lang,
-      documentDirection:document.documentElement.dir
+      documentDirection:document.documentElement.dir,
+      translationTarget:document.documentElement.dataset.translationTarget||null,
+      translationState:document.documentElement.dataset.translationState||null
     }));
+    const sourceFingerprints=[
+      "Правен информациски портал",
+      "Legal information portal",
+      "Правен информациски и AI портал",
+      "Legal information & AI portal",
+      "Правни извори",
+      "Legal sources",
+      "изборот го преведува целиот интерфејс",
+      "the selection translates the whole interface"
+    ];
+    const inspected=[
+      state.topLine,
+      state.brandSub,
+      state.navSources,
+      state.translatorLabel,
+      state.translatorNote
+    ].filter(Boolean).join("\n");
+    const remaining=sourceFingerprints.filter(fragment=>inspected.toLocaleLowerCase("sq").includes(fragment.toLocaleLowerCase("sq")));
     await page.screenshot({path:"/tmp/translator-layered-browser.png",fullPage:false});
-    const pass=state.globalLanguage==="en"
-      && state.chatLanguage==="en"
-      && !String(state.translatorLabel||"").includes("Цел интерфејс")
-      && !String(state.translatorNote||"").includes("изборот го преведува целиот интерфејс")
-      && network.some(x=>x.status===200&&x.ok===true);
+    const successfulResponses=network.filter(x=>x.status===200&&x.ok===true);
+    const failedResponses=network.filter(x=>x.status!==200||x.ok!==true);
+    const pass=state.globalLanguage==="sq"
+      && state.chatLanguage==="sq"
+      && state.documentLanguage==="sq"
+      && state.translationTarget==="sq"
+      && state.translationState==="ready"
+      && remaining.length===0
+      && successfulResponses.length>0
+      && failedResponses.length===0;
     report.layers.push({
-      name:"layer_3_live_browser_dom_application",
+      name:"layer_3_live_mk_to_sq_atomic_browser_switch",
       pass,
       latencyMs:Date.now()-startedAt,
       state,
+      remainingSourceFingerprints:remaining,
+      successfulTranslationResponses:successfulResponses.length,
+      failedTranslationResponses:failedResponses.length,
       translationResponses:network
     });
   }catch(browserError){
     error=String(browserError?.message||browserError);
     try{if(page) await page.screenshot({path:"/tmp/translator-layered-browser.png",fullPage:false});}catch{}
     report.layers.push({
-      name:"layer_3_live_browser_dom_application",
+      name:"layer_3_live_mk_to_sq_atomic_browser_switch",
       pass:false,
       latencyMs:Date.now()-startedAt,
       error,
@@ -155,7 +191,6 @@ async function browserLayer(){
     try{await browser?.close();}catch{}
   }
 }
-
 await browserLayer();
 
 report.pass=report.layers.length===3 && report.layers.every(x=>x.pass===true);

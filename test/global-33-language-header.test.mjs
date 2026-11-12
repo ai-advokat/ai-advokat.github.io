@@ -36,6 +36,12 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(home,/function applyUiTranslationBackoff/);
   assert.match(home,/uiTranslationFailureStreak/);
   assert.match(home,/Math\.min\(60000,UI_TRANSLATION_PROVIDER_BACKOFF_MS\*Math\.pow/);
+  assert.match(home,/uiTranslationInitialCommitDone=siteLanguage==="mk"/);
+  assert.match(home,/translationState="loading"/);
+  assert.match(home,/translationState="retrying"/);
+  assert.match(home,/translationState="ready"/);
+  assert.match(home,/ui_translation_atomic_commit_deferred/);
+  assert.match(home,/const missingSources=\[\.\.\.new Set/);
   const translator=home.slice(home.indexOf("async function translateGlobalInterface"),home.indexOf("function applyLanguage"));
   assert.doesNotMatch(translator,/siteLanguage==="mk"\|\|siteLanguage==="en"/);
   assert.match(translator,/if\(siteLanguage==="mk"\|\|uiTranslationRunning\) return/);
@@ -48,7 +54,10 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(worker,/UI_TRANSLATE_GLOBAL_DAILY_LIMIT=800/);
   assert.match(worker,/UI_TRANSLATION_CONCURRENCY=2/);
   assert.match(worker,/workers_ai_ui_fallback/);
-  assert.match(worker,/m2m100_workers_ai_fallback/);
+  assert.match(worker,/m2m100_workers_ai_item_fallback/);
+  assert.match(worker,/ui_translation_m2m100_item_fallback/);
+  assert.match(worker,/fallbackItemCount/);
+  assert.match(worker,/fallbackTranslationModel/);
   assert.match(worker,/scope:"ui_translate_lang_"\+target/);
   assert.ok(worker.indexOf("consumeWindow(env,") < worker.indexOf("runWorkersAIText(env,") || worker.includes("uiTranslateLimiter"),"translation limiter must precede provider execution");
   assert.match(worker,/url\.pathname === "\/api\/ui-translate"/);
