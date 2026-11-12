@@ -27,7 +27,7 @@ jobs:
       - name: Checkout acceptance source
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || github.sha }}
 
       - name: Use Node 22
         uses: actions/setup-node@v4
