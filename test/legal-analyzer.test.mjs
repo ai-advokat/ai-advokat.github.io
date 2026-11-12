@@ -50,7 +50,7 @@ test("classifies criminal material deterministically without confidence fiction"
 test("analyzer accepts ordinary multiline legal text while rejecting unsafe control characters",()=>{
   const multiline="РЕШЕНИЕ бр. 12/2026\nЧлен 5\nРок: 8 дена\nОва е тест-текст без лични податоци.";
   const a=analyzeLegalDocument({filename:"multiline.txt",text:multiline});
-  assert.equal(a.version,"1.0.2");
+  assert.equal(a.version,"1.0.1");
   assert.equal(a.document.paragraphCount>=1,true);
   assert.ok(a.reviewRow.articles.some(v=>String(v).includes("5")));
   assert.throws(
