@@ -7,7 +7,7 @@ on:
       - "scripts/critical-ui-functions-live.mjs"
       - ".github/workflows/critical-ui-functions-live-acceptance.yml"
   workflow_run:
-    workflows: ["Sync AI Advokat frontend runtime to GitHub Pages"]
+    workflows: ["pages build and deployment"]
     types: [completed]
   workflow_dispatch:
 
