@@ -3,7 +3,7 @@
 // This module never fabricates official identifiers and never presents heuristic
 // completeness as statistical confidence.
 
-export const LEGAL_ANALYZER_VERSION = "1.0.2";
+export const LEGAL_ANALYZER_VERSION = "1.0.1";
 
 export const LEGAL_ANALYZER_DIMENSIONS = Object.freeze([
   "structural_integrity",
