@@ -174,7 +174,7 @@ try{
 
   await page.screenshot({path:"/tmp/ai-advokat-critical-ui-functions.png",fullPage:false});
 
-  report.pass=report.checks.length===7
+  report.pass=report.checks.length===8
     && report.checks.every(x=>x.pass===true)
     && report.pageErrors.length===0;
   report.summary={
