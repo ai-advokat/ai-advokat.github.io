@@ -616,3 +616,9 @@ test("CHAT17e Macedonian FREE answers use the editor only when the independent d
   assert.match(helper,/deterministicProceduralInstrumentFallback/);
   assert.match(helper,/deterministicLanguageFallbackUsed/);
 });
+
+test("CHAT voice fallback uses the governed Worker API rather than a GitHub Pages relative API path",()=>{
+  assert.match(chatJs,/transcriptionEndpoint:CHAT_API_BASE\+"\/api\/voice\/transcribe"/);
+  assert.match(worker,/X-Voice-Language/);
+});
+

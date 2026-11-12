@@ -137,7 +137,7 @@ test("Voice R4 falls back to MediaRecorder plus Workers AI transcription when Sp
     navigator:{mediaDevices:{async getUserMedia(){return stream;}}},
     fetch:async(url,opts)=>{
       fetchCalls++;
-      assert.equal(url,"/api/voice/transcribe");
+      assert.equal(url,"https://ai-advokat-github-io.aiadvokat16.workers.dev/api/voice/transcribe");
       assert.equal(opts.method,"POST");
       assert.equal(opts.headers["X-Voice-Language"],"mk-MK");
       return {ok:true,json:async()=>({ok:true,text:"договор за услуги"})};
@@ -145,10 +145,14 @@ test("Voice R4 falls back to MediaRecorder plus Workers AI transcription when Sp
     setTimeout:()=>1,
     clearTimeout(){}
   };
-  const runtime=createAIAdvokatVoiceRuntime(win,{lang:"mk-MK"});
+  const runtime=createAIAdvokatVoiceRuntime(win,{
+    lang:"mk-MK",
+    transcriptionEndpoint:"https://ai-advokat-github-io.aiadvokat16.workers.dev/api/voice/transcribe"
+  });
   assert.equal(runtime.capabilities.browserSpeechRecognition,false);
   assert.equal(runtime.capabilities.workersAITranscriptionFallback,true);
   assert.equal(runtime.capabilities.dictation,true);
+  assert.equal(runtime.capabilities.transcriptionEndpoint,"https://ai-advokat-github-io.aiadvokat16.workers.dev/api/voice/transcribe");
   const button=fakeButton();
   const input={value:"",dispatchEvent(){}};
   let transcript="";
@@ -281,4 +285,5 @@ test("Voice R4 worker endpoint is bounded, rate-limited and uses Workers AI Whis
   assert.match(provider,/env\.AI\.run/);
   assert.match(worker,/retention:"no_application_storage"/);
   assert.match(worker,/humanGate:"review_transcript_before_legal_use"/);
+  assert.match(worker,/X-Voice-Language/);
 });
