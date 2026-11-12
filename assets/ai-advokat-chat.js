@@ -1418,7 +1418,7 @@
   const AIADV4_WORKBENCH=Object.freeze({
     label:"AIAdvokat4",
     ux:"LexNova UX",
-    analyzerVersion:"1.0.1",
+    analyzerVersion:"1.0.2",
     consolidatorVersion:"10.4",
     predictorMode:"governed_scenario_risk_casepilot",
     backend:"AI Advokat governed backend"
@@ -1554,7 +1554,7 @@
     d.id="aiProfAnalyzerDialog";
     d.className="ai-prof-analyzer-dialog";
     d.innerHTML=
-      '<div class="ai-prof-analyzer-head"><div><strong>Legal Analyzer v1.0.1</strong><small>deterministic · local browser analysis · Human Gate</small></div><button type="button" data-analyzer-close aria-label="Затвори">×</button></div>'+
+      '<div class="ai-prof-analyzer-head"><div><strong>Legal Analyzer v1.0.2</strong><small>deterministic · local browser analysis · Human Gate</small></div><button type="button" data-analyzer-close aria-label="Затвори">×</button></div>'+
       '<div class="ai-prof-analyzer-body">'+
       '<p>Текстот се анализира локално во browser преку постојниот <code>src/legal-analyzer.js</code>. Официјални идентификатори не се измислуваат.</p>'+
       '<textarea id="aiProfAnalyzerText" maxlength="250000" placeholder="Залепете правен текст..."></textarea>'+
