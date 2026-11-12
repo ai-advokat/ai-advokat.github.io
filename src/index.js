@@ -230,6 +230,7 @@ import {
   isFormalLegalDraftRequest,
   hasProceduralInstrumentMismatch,
   deterministicProceduralInstrumentFallback,
+  deterministicFictionalPublicFalseInformationDraftFallback,
   deterministicFormalDraftCapacityFallback,
   shouldUseDeterministicFormalDraftRecovery,
   finaliseFormalLegalDraft,
@@ -6310,6 +6311,23 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
 
   let finalRelease=canonicalMacedonianFinalRelease(finalText,q);
 
+  // If a fictional public-false-information lawsuit request reaches the final
+  // Macedonian gate with a contaminated provider/editor generation, recover with
+  // a bounded deterministic working draft rather than returning a bare 503.
+  // This recovery is intentionally narrow: it never supplies statute numbers,
+  // deadlines, jurisdiction or legal effect and preserves the Human Gate.
+  if(!deterministicLanguageFallbackUsed && (languagePass.hardBlock || !finalRelease.ok) && formalDraft){
+    const fallbackText=deterministicFictionalPublicFalseInformationDraftFallback({userText:q});
+    const fallbackRelease=fallbackText
+      ? canonicalMacedonianFinalRelease(fallbackText,q)
+      : null;
+    if(fallbackText && fallbackRelease?.ok){
+      finalRelease=fallbackRelease;
+      deterministicLanguageFallbackUsed=true;
+      deterministicLanguageFallbackReason="fictional_public_false_information_language_recovery";
+    }
+  }
+
   // If a formal request itself uses the wrong procedural label for a likely
   // criminal event, never return contaminated prose or a bare 503. The model
   // generation remains blocked, but a controlled source-free Macedonian
@@ -9131,6 +9149,23 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     : [];
   const governedLanguageRepairEligible=false;
 
+  let governedDeterministicLanguageFallbackUsed=false;
+  let governedDeterministicLanguageFallbackReason=null;
+  if(!governedFinalRelease.ok && formalDraftRequest){
+    const fallbackText=deterministicFictionalPublicFalseInformationDraftFallback({userText:q});
+    const fallbackRelease=fallbackText
+      ? canonicalMacedonianFinalRelease(fallbackText,q)
+      : null;
+    if(fallbackText && fallbackRelease?.ok){
+      governedFinalRelease=fallbackRelease;
+      governedFinalAnswer=fallbackRelease.text;
+      governedLanguageQuality=fallbackRelease.quality;
+      governedLanguageRelease=fallbackRelease.releaseGate;
+      governedDeterministicLanguageFallbackUsed=true;
+      governedDeterministicLanguageFallbackReason="fictional_public_false_information_language_recovery";
+    }
+  }
+
   if(!governedFinalRelease.ok){
     await releaseMonthlyQuota(env,{subject,period});
     return json(request,{
@@ -9253,6 +9288,8 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     canonicalSourcePreserved:result.canonicalSourceFirst===true,
     languageRepaired:result.canonicalSourceFirst===true ? false : governedLanguageRepair.repaired===true,
     languageRepairProviderCalls:Number(governedLanguageRepair.providerCalls||0),
+    deterministicLanguageFallbackUsed:governedDeterministicLanguageFallbackUsed,
+    deterministicLanguageFallbackReason:governedDeterministicLanguageFallbackReason,
     conversationPersistence:result.conversationPersistence,
     historyItemsUsed:result.historyItemsUsed,
     contextualFollowUp,
