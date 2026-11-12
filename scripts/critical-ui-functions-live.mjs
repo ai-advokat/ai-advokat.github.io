@@ -6,7 +6,7 @@ const executablePath=String(process.env.BROWSER_EXECUTABLE||"").trim();
 if(!executablePath) throw new Error("BROWSER_EXECUTABLE is required");
 
 const report={
-  version:"AI_ADVOCAT_CRITICAL_UI_FUNCTIONS_LIVE_V1",
+  version:"AI_ADVOCAT_CRITICAL_UI_FUNCTIONS_LIVE_V2",
   testedAt:new Date().toISOString(),
   rootUrl:ROOT_URL,
   checks:[],
