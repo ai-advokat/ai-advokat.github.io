@@ -3,7 +3,7 @@
 // This module never fabricates official identifiers and never presents heuristic
 // completeness as statistical confidence.
 
-export const LEGAL_ANALYZER_VERSION = "1.0.1";
+export const LEGAL_ANALYZER_VERSION = "1.0.2";
 
 export const LEGAL_ANALYZER_DIMENSIONS = Object.freeze([
   "structural_integrity",
@@ -26,7 +26,7 @@ export const REVIEW_TABLE_DEFAULT_COLUMNS = Object.freeze([
   "amounts","remedy","issues","sourceVerification","humanGate"
 ]);
 
-const CONTROL=/[\u0000-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u;
+const CONTROL=/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u;
 const MAX_TEXT=250000;
 
 function cleanText(value,max=MAX_TEXT){
