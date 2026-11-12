@@ -1,0 +1,69 @@
+name: AI Advokat critical UI functions live acceptance
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "scripts/critical-ui-functions-live.mjs"
+      - ".github/workflows/critical-ui-functions-live-acceptance.yml"
+  workflow_run:
+    workflows: ["pages build and deployment"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-critical-ui-functions-live
+  cancel-in-progress: true
+
+jobs:
+  critical-ui:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout acceptance source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare system Chrome browser probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          browser="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$browser"
+          echo "BROWSER_EXECUTABLE=$browser" >> "$GITHUB_ENV"
+          "$browser" --version
+          node --check scripts/critical-ui-functions-live.mjs
+
+      - name: Collect live critical-function evidence on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          LIVE_ROOT_URL: https://ai-advokat.github.io/
+        run: node scripts/critical-ui-functions-live.mjs || true
+
+      - name: Enforce critical functions after actual Pages deployment
+        if: ${{ github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch' }}
+        env:
+          LIVE_ROOT_URL: https://ai-advokat.github.io/
+        run: node scripts/critical-ui-functions-live.mjs
+
+      - name: Upload critical UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-critical-ui-functions-live
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/ai-advokat-critical-ui-functions.json
+            /tmp/ai-advokat-critical-ui-functions.png
