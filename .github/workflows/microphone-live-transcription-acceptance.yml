@@ -1,0 +1,73 @@
+name: AI Advokat microphone live transcription acceptance
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "scripts/microphone-live-transcription.mjs"
+      - ".github/workflows/microphone-live-transcription-acceptance.yml"
+  workflow_run:
+    workflows: ["AI Advokat production runtime sync"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-microphone-live-transcription
+  cancel-in-progress: true
+
+jobs:
+  microphone-live:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout acceptance source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Generate a bounded synthetic microphone fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v espeak-ng >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y espeak-ng
+          fi
+          espeak-ng -v en-us -s 135 -w /tmp/ai-advokat-mic-test.wav "AI Advokat microphone test"
+          test -s /tmp/ai-advokat-mic-test.wav
+          test "$(stat -c %s /tmp/ai-advokat-mic-test.wav)" -lt 2097152
+          node --check scripts/microphone-live-transcription.mjs
+
+      - name: Collect pre-deploy microphone evidence on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          LIVE_ROOT_URL: https://ai-advokat.github.io/
+          LIVE_WORKER_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+          MIC_AUDIO_FILE: /tmp/ai-advokat-mic-test.wav
+        run: node scripts/microphone-live-transcription.mjs || true
+
+      - name: Enforce microphone transcription after production deploy
+        if: ${{ github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch' }}
+        env:
+          LIVE_ROOT_URL: https://ai-advokat.github.io/
+          LIVE_WORKER_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+          MIC_AUDIO_FILE: /tmp/ai-advokat-mic-test.wav
+        run: node scripts/microphone-live-transcription.mjs
+
+      - name: Upload microphone evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-microphone-live-transcription
+          retention-days: 30
+          if-no-files-found: warn
+          path: /tmp/ai-advokat-microphone-live.json
