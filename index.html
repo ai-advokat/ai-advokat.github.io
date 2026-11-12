@@ -2991,6 +2991,7 @@
   let uiTranslationCooldownUntil=0;
   let uiTranslationObserverSuppressUntil=0;
   let uiTranslationFailureStreak=0;
+  let uiTranslationInitialCommitDone=siteLanguage==="mk";
 
   function applyUiTranslationBackoff(status,retryAfterMs=0){
     uiTranslationFailureStreak=Math.min(uiTranslationFailureStreak+1,6);
@@ -3050,6 +3051,9 @@
   async function translateGlobalInterface(){
     if(siteLanguage==="mk"||uiTranslationRunning) return;
     uiTranslationRunning=true;
+    let translationFailed=false;
+    document.documentElement.dataset.translationTarget=siteLanguage;
+    if(!uiTranslationInitialCommitDone) document.documentElement.dataset.translationState="loading";
     try{
       const units=collectUiTranslationUnits();
       const cache=uiTranslationCache();
@@ -3092,6 +3096,7 @@
               if(fallbackBackoff||retryAfterMs){
                 applyUiTranslationBackoff(r.status,retryAfterMs);
               }
+              translationFailed=true;
               console.warn("ui_translation_batch_failed",r.status,d?.error||"unknown",batchIndex);
               if(r.status===429||r.status===503) return;
               continue;
@@ -3104,6 +3109,7 @@
             });
             saveUiTranslationCache(cache);
           }catch(error){
+            translationFailed=true;
             applyUiTranslationBackoff(503,0);
             console.warn("ui_translation_batch_network_failed",batchIndex,String(error?.message||error||"unknown"));
             return;
@@ -3112,6 +3118,13 @@
       }
       const uiWorkers=Math.min(UI_TRANSLATION_CLIENT_CONCURRENCY,batches.length);
       await Promise.all(Array.from({length:uiWorkers},()=>runUiTranslationBatchWorker()));
+      const missingSources=[...new Set(units.map(unit=>unit.source).filter(source=>!cache[source]))];
+      if(translationFailed||missingSources.length){
+        if(!translationFailed) applyUiTranslationBackoff(503,0);
+        document.documentElement.dataset.translationState="retrying";
+        console.warn("ui_translation_atomic_commit_deferred",siteLanguage,missingSources.length);
+        return;
+      }
       uiTranslationObserverSuppressUntil=Date.now()+UI_TRANSLATION_OBSERVER_SUPPRESS_MS;
       for(const unit of units){
         const translated=cache[unit.source];
@@ -3126,6 +3139,8 @@
           if(state?.[unit.attr]) state[unit.attr].last=translated;
         }
       }
+      uiTranslationInitialCommitDone=true;
+      document.documentElement.dataset.translationState="ready";
       document.documentElement.lang=siteLanguage;
       const dir=["ar","he","fa","ur"].includes(siteLanguage)?"rtl":"ltr";
       document.documentElement.dir=dir;
@@ -3147,8 +3162,11 @@
   }
 
   function applyLanguage(){
-    document.documentElement.lang = siteLanguage;
-    document.documentElement.dir = ["ar","he","fa","ur"].includes(siteLanguage) ? "rtl" : "ltr";
+    const renderedLanguage=siteLanguage==="mk"||uiTranslationInitialCommitDone ? siteLanguage : "en";
+    document.documentElement.dataset.translationTarget=siteLanguage;
+    document.documentElement.dataset.translationState=siteLanguage==="mk"||uiTranslationInitialCommitDone ? "ready" : "loading";
+    document.documentElement.lang = renderedLanguage;
+    document.documentElement.dir = ["ar","he","fa","ur"].includes(renderedLanguage) ? "rtl" : "ltr";
 
     $$("[data-i18n]").forEach(el=>{
       const k=el.dataset.i18n;
