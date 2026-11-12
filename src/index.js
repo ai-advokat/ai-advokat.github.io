@@ -2437,7 +2437,7 @@ function corsHeaders(request) {
   const origin = request.headers.get("Origin");
   const headers = {
     "Access-Control-Allow-Methods": "GET,HEAD,POST,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Membership-Key, X-File-Name, X-Page-Count",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Membership-Key, X-File-Name, X-Page-Count, X-Voice-Language",
     "Access-Control-Max-Age": "86400",
     "Access-Control-Expose-Headers": "Content-Disposition, X-AI-Advokat-Export-Mode, X-AI-Advokat-Request-Id",
     "Vary": "Origin"
