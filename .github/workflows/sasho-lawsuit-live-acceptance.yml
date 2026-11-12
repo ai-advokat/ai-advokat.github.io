@@ -1,0 +1,59 @@
+name: AI Advokat exact Sasho lawsuit live acceptance
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "scripts/sasho-lawsuit-live.mjs"
+      - ".github/workflows/sasho-lawsuit-live-acceptance.yml"
+  workflow_run:
+    workflows: ["AI Advokat production runtime sync"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-sasho-lawsuit-live
+  cancel-in-progress: true
+
+jobs:
+  exact-sasho:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout acceptance source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || github.sha }}
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify acceptance source
+        run: node --check scripts/sasho-lawsuit-live.mjs
+
+      - name: Collect pre-deploy exact-prompt evidence on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          LIVE_WORKER_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+        run: node scripts/sasho-lawsuit-live.mjs || true
+
+      - name: Enforce exact Sasho prompt after production deploy
+        if: ${{ github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch' }}
+        env:
+          LIVE_WORKER_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
+        run: node scripts/sasho-lawsuit-live.mjs
+
+      - name: Upload exact-prompt evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-sasho-lawsuit-live
+          retention-days: 30
+          if-no-files-found: warn
+          path: /tmp/ai-advokat-sasho-lawsuit-live.json
