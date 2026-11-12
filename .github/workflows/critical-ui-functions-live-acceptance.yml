@@ -45,7 +45,14 @@ jobs:
           "$browser" --version
           node --check scripts/critical-ui-functions-live.mjs
 
-      - name: Exercise Sources, Human Gate and critical workbench functions
+      - name: Collect live critical-function evidence on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          LIVE_ROOT_URL: https://ai-advokat.github.io/
+        run: node scripts/critical-ui-functions-live.mjs || true
+
+      - name: Enforce critical functions after actual Pages deployment
+        if: ${{ github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch' }}
         env:
           LIVE_ROOT_URL: https://ai-advokat.github.io/
         run: node scripts/critical-ui-functions-live.mjs
