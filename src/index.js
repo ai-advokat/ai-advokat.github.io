@@ -11642,21 +11642,31 @@ async function handleUiTranslation(request,env){
 
   try{
     let translations,provider;
+    let fallbackItemCount=0;
     if(UI_TRANSLATION_M2M100_UNSUPPORTED.has(target)){
       translations=await translateUiWithLlmFallback(runUiProvider,items,target,language);
       provider="workers_ai_ui_fallback";
+      fallbackItemCount=items.length;
     }else{
-      try{
-        translations=await mapUiTranslationConcurrent(items,async item=>({
-          id:item.id,
-          text:await translateUiM2mText(runUiProvider,item.text,target)
-        }));
-        provider="m2m100";
-      }catch(primaryError){
-        console.warn("ui_translation_m2m100_fallback",target,String(primaryError?.message||primaryError).slice(0,120));
-        translations=await translateUiWithLlmFallback(runUiProvider,items,target,language);
-        provider="m2m100_workers_ai_fallback";
-      }
+      const rows=await mapUiTranslationConcurrent(items,async item=>{
+        try{
+          return {
+            id:item.id,
+            text:await translateUiM2mText(runUiProvider,item.text,target),
+            usedFallback:false
+          };
+        }catch(primaryError){
+          console.warn("ui_translation_m2m100_item_fallback",target,item.id,String(primaryError?.message||primaryError).slice(0,120));
+          return {
+            id:item.id,
+            text:await translateUiLlmText(runUiProvider,item.text,target,language),
+            usedFallback:true
+          };
+        }
+      });
+      fallbackItemCount=rows.filter(row=>row.usedFallback===true).length;
+      translations=rows.map(row=>({id:row.id,text:row.text}));
+      provider=fallbackItemCount>0?"m2m100_workers_ai_item_fallback":"m2m100";
     }
     return json(request,{
       ok:true,
@@ -11664,7 +11674,9 @@ async function handleUiTranslation(request,env){
       language,
       translations,
       provider,
-      translationModel:provider==="m2m100"?UI_TRANSLATION_MODEL:UI_TRANSLATION_FALLBACK_MODEL,
+      translationModel:provider==="workers_ai_ui_fallback"?UI_TRANSLATION_FALLBACK_MODEL:UI_TRANSLATION_MODEL,
+      fallbackTranslationModel:fallbackItemCount>0?UI_TRANSLATION_FALLBACK_MODEL:null,
+      fallbackItemCount,
       legalIdentifiersPreserved:true,
       humanGatePreserved:true
     });
