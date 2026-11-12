@@ -172,7 +172,10 @@
   });
   bindLanguageSelector();
   const voiceRuntimePromise=import("/assets/ai-advokat-voice.mjs?v=20261109-voice-r4")
-    .then(mod=>mod.createAIAdvokatVoiceRuntime(window,{lang:selectedSpeechLocale()}))
+    .then(mod=>mod.createAIAdvokatVoiceRuntime(window,{
+      lang:selectedSpeechLocale(),
+      transcriptionEndpoint:CHAT_API_BASE+"/api/voice/transcribe"
+    }))
     .catch(error=>{
       console.error("ai_advokat_voice_runtime_failed",error);
       if(micBtn){micBtn.disabled=true;micBtn.title="Гласовниот модул не е достапен.";}

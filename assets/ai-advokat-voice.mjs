@@ -85,7 +85,7 @@ function setButtonState(button,state){
   }
 }
 
-export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
+export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK",transcriptionEndpoint="/api/voice/transcribe"}={}){
   const SpeechRecognitionCtor=win?.SpeechRecognition||win?.webkitSpeechRecognition||null;
   const synth=win?.speechSynthesis||null;
   const Utterance=win?.SpeechSynthesisUtterance||null;
@@ -207,7 +207,7 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
             if(!blob.size) throw new Error("empty_audio");
             setStatus(status,"🎙 Говорот е снимен. Се транскрибира без трајно складирање…");
             const locale=String(typeof language==="function"?language():language||lang||"mk-MK");
-            const response=await win.fetch("/api/voice/transcribe",{
+            const response=await win.fetch(String(transcriptionEndpoint||"/api/voice/transcribe"),{
               method:"POST",
               headers:{"Content-Type":blob.type||"audio/webm","X-Voice-Language":locale},
               body:blob
@@ -624,7 +624,8 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK"}={}){
       browserSpeechRecognition:Boolean(SpeechRecognitionCtor),
       workersAITranscriptionFallback:Boolean(recorderFallbackSupported),
       languages:Object.freeze(["mk-MK","en-US"]),
-      language:lang
+      language:lang,
+      transcriptionEndpoint:String(transcriptionEndpoint||"/api/voice/transcribe")
     }),
     bindMicrophone,
     bindSpeakButton,
