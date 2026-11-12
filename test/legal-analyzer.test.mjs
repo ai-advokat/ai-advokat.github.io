@@ -47,6 +47,22 @@ test("classifies criminal material deterministically without confidence fiction"
   assert.equal(c.statisticalConfidence,null);
 });
 
+test("analyzer accepts ordinary multiline legal text while rejecting unsafe control characters",()=>{
+  const multiline="РЕШЕНИЕ бр. 12/2026\nЧлен 5\nРок: 8 дена\nОва е тест-текст без лични податоци.";
+  const a=analyzeLegalDocument({filename:"multiline.txt",text:multiline});
+  assert.equal(a.version,"1.0.2");
+  assert.equal(a.document.paragraphCount>=1,true);
+  assert.ok(a.reviewRow.articles.some(v=>String(v).includes("5")));
+  assert.throws(
+    ()=>analyzeLegalDocument({filename:"unsafe.txt",text:"Ред 1\u0000Ред 2"}),
+    /control_character/
+  );
+  assert.throws(
+    ()=>analyzeLegalDocument({filename:"bidi.txt",text:"Текст\u202Eскриено"}),
+    /control_character/
+  );
+});
+
 test("analyzer keeps Human Gate locked",()=>{
   const a=analyzeLegalDocument({
     filename:"presuda.txt",
