@@ -49,7 +49,12 @@ try{
   await page.waitForSelector("#aiAdvokatChat",{state:"attached",timeout:30000});
   await page.waitForFunction(()=>Boolean(window.AIAdvokat4Workbench),null,{timeout:30000});
 
+  async function closeOpenDialogs(){
+    await page.locator("dialog[open]").evaluateAll(dialogs=>dialogs.forEach(dialog=>dialog.close()));
+  }
+
   async function clickWorkbench(action){
+    await closeOpenDialogs();
     const locator=page.locator('[data-ai-workbench="'+action+'"]').first();
     await locator.waitFor({state:"attached",timeout:10000});
     await locator.evaluate(el=>{const d=el.closest("details");if(d)d.open=true;});
@@ -59,11 +64,16 @@ try{
 
   await check("sources_and_verification_panel",async()=>{
     const toggle=page.locator("#aiWorkspaceEvidenceToggle");
-    await toggle.click();
+    const topToggleVisible=await toggle.isVisible().catch(()=>false);
+    if(topToggleVisible){
+      await toggle.click();
+    }else{
+      await clickWorkbench("sources");
+    }
     await page.waitForFunction(()=>document.querySelector("#aiChatEvidence")?.classList.contains("is-open"),null,{timeout:5000});
     const title=(await page.locator("#aiEvidenceTitle").textContent())?.trim();
     if(title!=="Извори") throw new Error("unexpected evidence title: "+title);
-    return {title};
+    return {title,entryPoint:topToggleVisible?"top_toggle":"sources_workbench"};
   });
 
   await check("human_gate_evidence_tab",async()=>{
@@ -98,18 +108,21 @@ try{
     await page.locator("#aiChatInput").fill("");
     await clickWorkbench("analyzer");
     const dialog=page.locator("#aiProfAnalyzerDialog");
-    await dialog.waitFor({state:"visible",timeout:5000});
-    await dialog.locator("#aiProfAnalyzerText").fill("РЕШЕНИЕ бр. 12/2026\nЧлен 5\nРок: 8 дена\nОва е тест-текст без лични податоци.");
-    await dialog.locator("[data-analyzer-run]").click();
-    await page.waitForFunction(()=>{
-      const t=document.querySelector("#aiProfAnalyzerResult")?.textContent||"";
-      return t && t!=="Анализирам локално…";
-    },null,{timeout:15000});
-    const text=(await dialog.locator("#aiProfAnalyzerResult").innerText()).trim();
-    if(/Analyzer error:/u.test(text)) throw new Error(text.slice(0,300));
-    if(!/version|documentType|referenceNumber/iu.test(text)) throw new Error("Analyzer result missing structured fields");
-    await dialog.locator("[data-analyzer-close]").click();
-    return {resultSample:text.slice(0,260)};
+    try{
+      await dialog.waitFor({state:"visible",timeout:5000});
+      await dialog.locator("#aiProfAnalyzerText").fill("РЕШЕНИЕ бр. 12/2026\nЧлен 5\nРок: 8 дена\nОва е тест-текст без лични податоци.");
+      await dialog.locator("[data-analyzer-run]").click();
+      await page.waitForFunction(()=>{
+        const t=document.querySelector("#aiProfAnalyzerResult")?.textContent||"";
+        return t && t!=="Анализирам локално…";
+      },null,{timeout:15000});
+      const text=(await dialog.locator("#aiProfAnalyzerResult").innerText()).trim();
+      if(/Analyzer error:/u.test(text)) throw new Error(text.slice(0,300));
+      if(!/version|documentType|referenceNumber/iu.test(text)) throw new Error("Analyzer result missing structured fields");
+      return {resultSample:text.slice(0,260)};
+    }finally{
+      await dialog.evaluate(el=>{if(el.open)el.close();}).catch(()=>{});
+    }
   });
 
   await check("public_evidence_registry",async()=>{
