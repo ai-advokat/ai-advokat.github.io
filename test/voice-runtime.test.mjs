@@ -56,10 +56,7 @@ test("Voice R4 starts browser-native recognition without pre-acquiring and closi
     Event:FakeEvent,
     navigator:{mediaDevices:{async getUserMedia(){getUserMediaCalls++;}}}
   };
-  const runtime=createAIAdvokatVoiceRuntime(win,{
-    lang:"mk-MK",
-    transcriptionEndpoint:"https://ai-advokat-github-io.aiadvokat16.workers.dev/api/voice/transcribe"
-  });
+  const runtime=createAIAdvokatVoiceRuntime(win,{lang:"mk-MK"});
   const button=fakeButton();
   const input={value:"",dispatchEvent(){}};
   let status="";
@@ -148,7 +145,10 @@ test("Voice R4 falls back to MediaRecorder plus Workers AI transcription when Sp
     setTimeout:()=>1,
     clearTimeout(){}
   };
-  const runtime=createAIAdvokatVoiceRuntime(win,{lang:"mk-MK"});
+  const runtime=createAIAdvokatVoiceRuntime(win,{
+    lang:"mk-MK",
+    transcriptionEndpoint:"https://ai-advokat-github-io.aiadvokat16.workers.dev/api/voice/transcribe"
+  });
   assert.equal(runtime.capabilities.browserSpeechRecognition,false);
   assert.equal(runtime.capabilities.workersAITranscriptionFallback,true);
   assert.equal(runtime.capabilities.dictation,true);
