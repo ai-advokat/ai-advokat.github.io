@@ -1164,7 +1164,7 @@
             ? "Непотврдените конкретни пресуди се блокирани. Прикажани се само DISCOVERY ONLY записи."
             : "Ниту една непотврдена конкретна пресуда, број на предмет или именуван случај не е објавен."
         });
-      }else if(d?.error==="macedonian_release_blocked"){
+      }else if(["macedonian_release_blocked","macedonian_language_release_blocked"].includes(d?.error)){
         attachments=[...selectedFiles];
         renderAttachments();
         const staticCaseFallback=await staticCaseLawRegistryFallback(q,"language_gate_blocked");
