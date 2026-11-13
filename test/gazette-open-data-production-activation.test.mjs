@@ -69,13 +69,15 @@ test("GOA7 Gazette activation isolates 0046/0047 and never applies unrelated pen
   for(const migration of [
     "0045_case_private_d1_object_store",
     "0048_zkp_commentary_v6_secondary_layer",
-    "0049_case_law_binding_extraction_audit"
+    "0049_case_law_binding_extraction_audit",
+    "0053_case_law_evidence_gates"
   ]){
     assert.match(workflow,new RegExp(migration));
   }
   assert.match(workflow,/0045 is pending and explicitly quarantined/);
   assert.match(workflow,/0048 is pending and explicitly quarantined/);
   assert.match(workflow,/0049 is pending and explicitly quarantined/);
+  assert.match(workflow,/0053 is pending and explicitly quarantined from Gazette metadata activation/);
   assert.match(workflow,/Apply only Gazette metadata migrations/);
   assert.match(workflow,/SCOPED MIGRATION ISOLATION: PASS/);
   assert.doesNotMatch(workflow,/d1 migrations apply DB --remote --config wrangler\.jsonc \| tee \/tmp\/gazette-open-data-apply\.txt/);
