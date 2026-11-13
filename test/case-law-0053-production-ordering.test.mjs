@@ -25,22 +25,28 @@ test("0053 activation verifies prerequisites and exact poststate",()=>{
   assert.match(activation,/idx_case_law_echr_gate_case/);
 });
 
-test("production runtime deploy is fail-closed until 0053 schema exists",()=>{
-  const gate=runtime.indexOf("Require case-law evidence gate schema before runtime deploy");
+test("production runtime converges exact additive 0053 before Worker deploy",()=>{
+  const gate=runtime.indexOf("Converge exact case-law evidence gate schema 0053 before runtime deploy");
   const deploy=runtime.indexOf("Deploy exact main Worker runtime and static assets");
-  assert.ok(gate>0,"0053 pre-deploy gate missing");
-  assert.ok(deploy>gate,"Worker deploy must occur after 0053 pre-deploy gate");
+  assert.ok(gate>0,"0053 pre-deploy convergence gate missing");
+  assert.ok(deploy>gate,"Worker deploy must occur after 0053 convergence");
   const block=runtime.slice(gate,deploy);
   assert.match(block,/CAST\(version AS INTEGER\)=53/);
-  assert.match(block,/String\(r\.version\)===\"53\"/);
+  assert.match(block,/--file migrations\/0053_case_law_evidence_gates\.sql/);
   assert.match(block,/case_law_evidence_gates/);
   assert.match(block,/case_law_echr_comparison_gates/);
-  assert.match(block,/names\.has\("case_law_evidence_gates"\)/);
-  assert.match(block,/names\.has\("case_law_echr_comparison_gates"\)/);
+  assert.match(block,/idx_case_law_evidence_gate_state/);
+  assert.match(block,/idx_case_law_evidence_gate_temporal/);
+  assert.match(block,/idx_case_law_echr_gate_case/);
+  assert.match(block,/partial schema detected without migration-ledger convergence/);
   assert.match(block,/set -euo pipefail/);
+  assert.doesNotMatch(block,/d1 migrations apply DB --remote/);
 });
 
-test("activation and runtime sync preserve separate Human Gates",()=>{
+test("0053 standalone activation remains available while runtime convergence stays behind production Human Gate",()=>{
+  assert.match(activation,/environment:\s*production/);
   assert.match(activation,/Worker deployment remains a separate production Human Gate/);
   assert.match(runtime,/environment:\s*production/);
+  assert.match(runtime,/migrations\/0053_case_law_evidence_gates\.sql/);
+  assert.match(runtime,/case-law-evidence-gates-production-activation\.yml/);
 });
