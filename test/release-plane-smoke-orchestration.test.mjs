@@ -77,6 +77,7 @@ test("Critical release-plane workflow changes publish the same SHA to Pages and 
     ".github/workflows/free-runtime-live-uat.yml",
     ".github/workflows/root-reliability-live-smoke.yml",
     ".github/workflows/professional-bot-live-smoke.yml",
+    ".github/workflows/professional-l23-resilience-live-smoke.yml",
     ".github/workflows/production-runtime-sync.yml",
     ".github/workflows/sync-pages-runtime.yml",
     ".github/workflows/case-law-evidence-gates-production-activation.yml"
