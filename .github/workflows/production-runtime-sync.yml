@@ -33,6 +33,8 @@ on:
       - ".github/workflows/free-runtime-live-uat.yml"
       - ".github/workflows/root-reliability-live-smoke.yml"
       - ".github/workflows/professional-bot-live-smoke.yml"
+      - ".github/workflows/case-law-evidence-gates-production-activation.yml"
+      - "migrations/0053_case_law_evidence_gates.sql"
   workflow_dispatch:
 
 permissions:
@@ -100,32 +102,50 @@ jobs:
           npm run test:security
           node --test             test/dual-bot-parity.test.mjs             test/standalone-bot-toolkit-parity.test.mjs             test/dual-bot-r14-uat-contract.test.mjs             test/r14-live-smoke-observability.test.mjs             test/worker-runtime-live-smoke-contract.test.mjs             test/voice-runtime.test.mjs             test/legal-retrieval-router-r15.test.mjs
 
-      - name: Require case-law evidence gate schema before runtime deploy
+      - name: Converge exact case-law evidence gate schema 0053 before runtime deploy
         shell: bash
-        env:
-          PRODUCTION_D1_ID: 12ece285-74bb-4f27-a025-2dbd1be6c59a
         run: |
           set -euo pipefail
-          query='SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER)=53; SELECT name FROM sqlite_master WHERE type="table" AND name IN ("case_law_evidence_gates","case_law_echr_comparison_gates") ORDER BY name;'
-          node -e 'const fs=require("fs");fs.writeFileSync("/tmp/runtime-sync-d1-query.json",JSON.stringify({sql:process.argv[1]}))' "$query"
-          curl --fail --silent --show-error \
-            -X POST \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data-binary @/tmp/runtime-sync-d1-query.json \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$PRODUCTION_D1_ID/query" \
-            | tee /tmp/runtime-sync-case-law-schema.txt
-          node <<'NODE'
-          const fs=require("fs");
-          const body=JSON.parse(fs.readFileSync("/tmp/runtime-sync-case-law-schema.txt","utf8"));
-          if(body.success!==true) throw new Error("Read-only D1 schema query failed");
-          const rows=(body.result||[]).flatMap(r=>r.results||[]);
-          if(!rows.some(r=>String(r.version)==="53")) throw new Error("Production D1 migration 0053 is not active");
-          const names=new Set(rows.map(r=>r.name).filter(Boolean));
-          if(!names.has("case_law_evidence_gates")) throw new Error("case_law_evidence_gates table missing");
-          if(!names.has("case_law_echr_comparison_gates")) throw new Error("case_law_echr_comparison_gates table missing");
-          console.log("CASE-LAW 0053 PRE-DEPLOY SCHEMA GATE: PASS");
-          NODE
+
+          # This is an exact, additive migration under the same production Human Gate.
+          # Never call "d1 migrations apply" here: that could apply unrelated pending migrations.
+          node scripts/verify-hg2-c-migration-manifest.mjs
+          test -f migrations/0053_case_law_evidence_gates.sql
+
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER)=53; SELECT name FROM sqlite_master WHERE type='table' AND name IN ('case_law','case_law_provenance','case_law_evidence_gates','case_law_echr_comparison_gates') ORDER BY name;" \
+            | tee /tmp/runtime-sync-case-law-0053-prestate.txt
+
+          grep -q '"name": "case_law"' /tmp/runtime-sync-case-law-0053-prestate.txt
+          grep -q '"name": "case_law_provenance"' /tmp/runtime-sync-case-law-0053-prestate.txt
+
+          if grep -q '"version": "53"' /tmp/runtime-sync-case-law-0053-prestate.txt; then
+            grep -q '"name": "case_law_evidence_gates"' /tmp/runtime-sync-case-law-0053-prestate.txt
+            grep -q '"name": "case_law_echr_comparison_gates"' /tmp/runtime-sync-case-law-0053-prestate.txt
+            echo "CASE-LAW 0053: already converged."
+          else
+            if grep -q '"name": "case_law_evidence_gates"' /tmp/runtime-sync-case-law-0053-prestate.txt \
+               || grep -q '"name": "case_law_echr_comparison_gates"' /tmp/runtime-sync-case-law-0053-prestate.txt; then
+              echo "CASE-LAW 0053 partial schema detected without migration-ledger convergence."
+              exit 1
+            fi
+
+            npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+              --file migrations/0053_case_law_evidence_gates.sql \
+              | tee /tmp/runtime-sync-case-law-0053-apply.txt
+          fi
+
+          npx wrangler d1 execute DB --remote --config wrangler.jsonc \
+            --command "SELECT version,description FROM schema_migrations WHERE CAST(version AS INTEGER)=53; SELECT name FROM sqlite_master WHERE type='table' AND name IN ('case_law_evidence_gates','case_law_echr_comparison_gates') ORDER BY name; SELECT name FROM sqlite_master WHERE type='index' AND name IN ('idx_case_law_evidence_gate_state','idx_case_law_evidence_gate_temporal','idx_case_law_echr_gate_case') ORDER BY name;" \
+            | tee /tmp/runtime-sync-case-law-0053-poststate.txt
+
+          grep -q '"version": "53"' /tmp/runtime-sync-case-law-0053-poststate.txt
+          grep -q '"name": "case_law_evidence_gates"' /tmp/runtime-sync-case-law-0053-poststate.txt
+          grep -q '"name": "case_law_echr_comparison_gates"' /tmp/runtime-sync-case-law-0053-poststate.txt
+          grep -q '"name": "idx_case_law_evidence_gate_state"' /tmp/runtime-sync-case-law-0053-poststate.txt
+          grep -q '"name": "idx_case_law_evidence_gate_temporal"' /tmp/runtime-sync-case-law-0053-poststate.txt
+          grep -q '"name": "idx_case_law_echr_gate_case"' /tmp/runtime-sync-case-law-0053-poststate.txt
+          echo "CASE-LAW 0053 PRE-DEPLOY SCHEMA CONVERGENCE: PASS"
 
       - name: Deploy exact main Worker runtime and static assets
         run: npx wrangler deploy --config wrangler.jsonc | tee /tmp/production-runtime-sync-deploy.txt
