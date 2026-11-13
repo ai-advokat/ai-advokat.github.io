@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="mk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self';">
+  <title>Hybrid Matter Command · AI Advokat</title>
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/hybrid-matter-command.css?v=20261112-r1">
+</head>
+<body>
+  <a class="skip" href="#main">Прескокни до главната содржина</a>
+  <header class="top">
+    <div class="wrap brand">
+      <img src="/assets/app-icon.svg" alt="">
+      <div>
+        <p class="eyebrow">AI Advokat · Hybrid Legal Intelligence</p>
+        <h1>Hybrid Matter Command</h1>
+        <p>право + стратегија + докази + експерти + cross-border + Human Gate</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" id="main">
+    <section class="card">
+      <div class="status-row">
+        <div>
+          <h2>R1 · локален професионален планер</h2>
+          <p class="muted">Овој модул не испраќа внесени податоци на сервер. Создава работна карта за предметот и не дава конечна правна одлука.</p>
+        </div>
+        <span class="badge locked">Human Gate · LOCKED</span>
+      </div>
+      <div class="notice"><b>Граница на автоматизацијата</b>AI Advokat може да организира прашања, ризици, докази и потребни специјалности. Адвокатот ја проверува применливата јурисдикција, официјалните извори, доказите и ја одобрува секоја consequential legal употреба.</div>
+    </section>
+
+    <section class="grid2">
+      <div class="card">
+        <h2>1. Пасош на предмет</h2>
+        <label for="matterTitle">Назив на предмет</label>
+        <input id="matterTitle" maxlength="180" placeholder="Пр. Спор со странски дистрибутер">
+
+        <div class="grid2 compact">
+          <div>
+            <label for="legalArea">Правна област</label>
+            <select id="legalArea">
+              <option value="commercial">Трговско / договорно</option>
+              <option value="civil">Граѓанско</option>
+              <option value="criminal">Кривично</option>
+              <option value="labour">Работно</option>
+              <option value="administrative">Управно / јавно</option>
+              <option value="family">Семејно / наследно</option>
+              <option value="technology">TMT / IP / AI</option>
+              <option value="insolvency">Стечај / реструктурирање</option>
+            </select>
+          </div>
+          <div>
+            <label for="stage">Фаза</label>
+            <select id="stage">
+              <option value="pre_dispute">Пред спор</option>
+              <option value="pre_action">Подготовка на постапка</option>
+              <option value="litigation">Судска постапка</option>
+              <option value="appeal">Жалба / правен лек</option>
+              <option value="negotiation">Преговори / спогодба</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="facts">Краток фактички контекст</label>
+        <textarea id="facts" maxlength="5000" placeholder="Само факти што сакате да ги организирате. Не внесувајте непотребни чувствителни лични податоци."></textarea>
+
+        <div class="grid2 compact">
+          <div>
+            <label for="homeJurisdiction">Основна јурисдикција</label>
+            <select id="homeJurisdiction">
+              <option value="MK">Северна Македонија</option>
+              <option value="AT">Австрија</option>
+              <option value="RS">Србија</option>
+              <option value="DE">Германија</option>
+              <option value="AL">Албанија</option>
+              <option value="XK">Косово</option>
+              <option value="TR">Турција</option>
+              <option value="EU">ЕУ / супранационално</option>
+            </select>
+          </div>
+          <div>
+            <label for="foreignJurisdiction">Втора јурисдикција</label>
+            <select id="foreignJurisdiction">
+              <option value="">Нема / непознато</option>
+              <option value="AT">Австрија</option>
+              <option value="MK">Северна Македонија</option>
+              <option value="RS">Србија</option>
+              <option value="DE">Германија</option>
+              <option value="AL">Албанија</option>
+              <option value="XK">Косово</option>
+              <option value="TR">Турција</option>
+              <option value="EU">ЕУ / супранационално</option>
+            </select>
+          </div>
+        </div>
+
+        <fieldset>
+          <legend>Сигнали во предметот</legend>
+          <label class="check"><input type="checkbox" id="hasContract"> договор / клаузули</label>
+          <label class="check"><input type="checkbox" id="hasDeadline"> рок / застареност / процесен рок</label>
+          <label class="check"><input type="checkbox" id="hasDigitalEvidence"> дигитални докази / е-пошта / логови</label>
+          <label class="check"><input type="checkbox" id="hasFinance"> финансиска или даночна компонента</label>
+          <label class="check"><input type="checkbox" id="hasMedical"> медицинско или психолошко прашање</label>
+          <label class="check"><input type="checkbox" id="hasTechnical"> техничко / градежно / ИТ вештачење</label>
+        </fieldset>
+
+        <div class="actions">
+          <button id="buildPlan" class="primary" type="button">Состави Hybrid план</button>
+          <button id="clearPlan" class="secondary" type="button">Исчисти</button>
+        </div>
+        <p id="status" class="statusline muted" aria-live="polite"></p>
+      </div>
+
+      <div class="card">
+        <h2>2. Readiness / Protocolometric Case Score</h2>
+        <p class="muted">Ова не е веројатност за успех. Се мери само структурна подготвеност на работниот предмет.</p>
+        <div class="metrics">
+          <div class="metric"><b id="authorityScore">0</b><span>Authority readiness</span></div>
+          <div class="metric"><b id="evidenceScore">0</b><span>Evidence readiness</span></div>
+          <div class="metric"><b id="procedureScore">0</b><span>Procedural readiness</span></div>
+          <div class="metric"><b id="jurisdictionScore">0</b><span>Jurisdiction clarity</span></div>
+        </div>
+        <div class="riskbox">
+          <span>Contradiction / uncertainty risk</span>
+          <strong id="riskLevel">НЕПРОЦЕНЕТО</strong>
+        </div>
+        <div class="notice small"><b>Не е outcome prediction</b>Ниту еден број не смее да се толкува како веројатност за победа, вина, казна, надомест или правен исход.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>3. Состав на тим и стручно насочување</h2>
+      <div id="teamGrid" class="cards"><p class="muted">Составете Hybrid план.</p></div>
+    </section>
+
+    <section class="grid2">
+      <div class="card">
+        <h2>4. Cross-Border Matrix</h2>
+        <div id="crossBorder" class="output muted">Составете Hybrid план.</div>
+      </div>
+      <div class="card">
+        <h2>5. Missing Evidence & Preventive Radar</h2>
+        <div id="missingEvidence" class="output muted">Составете Hybrid план.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>6. Strategy A / B / C</h2>
+      <div id="strategies" class="cards"><p class="muted">Составете Hybrid план.</p></div>
+      <div class="human-gate">
+        <div>
+          <strong>Human Gate</strong>
+          <p>Планот останува работен материјал додека адвокат не ги провери официјалните извори, надлежноста, доказите и процесните рокови.</p>
+        </div>
+        <button id="exportPlan" class="gold" type="button" disabled>Извези работен JSON</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>7. Поврзани професионални алатки</h2>
+      <div class="actions">
+        <a class="btn secondary" href="/professional-tools.html">Professional Tools</a>
+        <a class="btn secondary" href="/casepilot-workspace.html">Secure Case Workspace</a>
+        <a class="btn secondary" href="/hybrid-legal-intelligence.html">Hybrid Legal Intelligence</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">AI Advokat · Hybrid Matter Command R1 · локален planner · Human Gate задолжителен</footer>
+  <script type="module" src="/assets/hybrid-matter-command.js?v=20261112-r1"></script>
+</body>
+</html>
