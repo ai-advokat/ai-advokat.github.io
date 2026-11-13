@@ -819,7 +819,7 @@
     const professional=Boolean(key&&plan);
     const label=professional
       ?"Професионален пристап · "+plan+" · governed OpenAI кога е активен"
-      :"FREE активен · јавен текстуален chat · Workers AI";
+      :"FREE · јавен текстуален chat · AI availability се проверува по секое барање";
     if(chatMembershipState) chatMembershipState.textContent=label;
     if(ownerState) ownerState.textContent=label;
     if(professionalAccessBtn) professionalAccessBtn.textContent=professional?"✓ Професионален пристап · "+plan:"✓ Професионален пристап";
@@ -1164,7 +1164,7 @@
             ? "Непотврдените конкретни пресуди се блокирани. Прикажани се само DISCOVERY ONLY записи."
             : "Ниту една непотврдена конкретна пресуда, број на предмет или именуван случај не е објавен."
         });
-      }else if(["macedonian_release_blocked","macedonian_language_release_blocked"].includes(d?.error)){
+      }else if(d?.error==="macedonian_release_blocked" || d?.error==="macedonian_language_release_blocked"){
         attachments=[...selectedFiles];
         renderAttachments();
         const staticCaseFallback=await staticCaseLawRegistryFallback(q,"language_gate_blocked");
