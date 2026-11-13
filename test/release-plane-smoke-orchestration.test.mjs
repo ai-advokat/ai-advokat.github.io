@@ -65,6 +65,13 @@ test("Root reliability enforces Training Open and confidential Secure Case bound
 test("Critical release-plane workflow changes publish the same SHA to Pages and production runtime",()=>{
   const pages=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8");
   const production=fs.readFileSync(".github/workflows/production-runtime-sync.yml","utf8");
+
+  // Pages is deliberately stronger than an allowlist: every main commit is synced.
+  assert.match(pages,/push:\n\s+branches: \["main"\]/);
+  assert.doesNotMatch(pages,/branches: \["main"\]\n\s+paths:/);
+
+  // Production deploy remains path-bounded, so every release-plane workflow that
+  // can change post-deploy acceptance must still trigger the runtime sync.
   for(const path of [
     ".github/workflows/worker-runtime-live-smoke.yml",
     ".github/workflows/free-runtime-live-uat.yml",
@@ -73,7 +80,6 @@ test("Critical release-plane workflow changes publish the same SHA to Pages and 
     ".github/workflows/production-runtime-sync.yml",
     ".github/workflows/sync-pages-runtime.yml"
   ]){
-    assert.ok(pages.includes('"'+path+'"'),"Pages sync missing "+path);
     assert.ok(production.includes('"'+path+'"'),"Production sync missing "+path);
   }
 });
