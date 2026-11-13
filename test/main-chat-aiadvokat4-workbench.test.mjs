@@ -134,7 +134,7 @@ test("top menu matches external bot conversation and Professional-access control
   assert.match(chat,/\^sk-/);
   assert.match(chat,/function exportCurrentConversation\(\)/);
   assert.match(chat,/AI-Advokat-razgovor\.txt/);
-  assert.match(chat,/FREE активен · јавен текстуален chat · Workers AI/);
+  assert.match(chat,/FREE · јавен текстуален chat · AI достапноста се проверува по секое барање/);
   assert.match(chat,/Професионален пристап · /);
 });
 
