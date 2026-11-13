@@ -40,7 +40,9 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(home,/translationState="loading"/);
   assert.match(home,/translationState="unavailable"/);
   assert.match(home,/translationState="ready"/);
-  assert.match(home,/ui_translation_atomic_commit_unavailable/);\n  assert.match(home,/uiTranslationQueued=false/);\n  assert.match(home,/document\\.documentElement\\.lang=siteLanguage==="en"\\?"en":"mk"/);
+  assert.match(home,/ui_translation_atomic_commit_unavailable/);
+  assert.match(home,/uiTranslationQueued=false/);
+  assert.match(home,/document\.documentElement\.lang=siteLanguage==="en"\?"en":"mk"/);
   assert.match(home,/const missingSources=\[\.\.\.new Set/);
   const translator=home.slice(home.indexOf("async function translateGlobalInterface"),home.indexOf("function applyLanguage"));
   assert.doesNotMatch(translator,/siteLanguage==="mk"\|\|siteLanguage==="en"/);
