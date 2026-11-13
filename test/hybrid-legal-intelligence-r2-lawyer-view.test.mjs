@@ -74,7 +74,7 @@ test("Hybrid calendar supports optional selected-instrument filtering",()=>{
 });
 
 test("Pages sync publishes and verifies the Hybrid R2 workbench",()=>{
-  assert.match(pagesSync,/- "hybrid-legal-intelligence\.html"/);
+  assert.match(pagesSync,/\n\s+hybrid-legal-intelligence\.html\n/);
   assert.match(pagesSync,/test -f hybrid-legal-intelligence\.html/);
   assert.match(pagesSync,/grep -q 'Hybrid Legal Intelligence R2' hybrid-legal-intelligence\.html/);
   for(const artifact of [

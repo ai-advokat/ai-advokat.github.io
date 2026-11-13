@@ -48,6 +48,9 @@ jobs:
           grep -q 'Hybrid Legal Intelligence R2' hybrid-legal-intelligence.html
           grep -q 'AI_ADVOCAT_HYBRID_CONTROL_R3' hybrid-legal-intelligence.html
           grep -q '/api/hybrid/instruments' hybrid-legal-intelligence.html
+          test -f hybrid-matter-command.html
+          test -f assets/hybrid-matter-command.js
+          grep -q 'Hybrid Matter Command' hybrid-matter-command.html
           test -f professional-tools.html
           grep -q 'Batch Review · до 100 документи' professional-tools.html
           test -f casepilot-workspace.html
@@ -72,6 +75,8 @@ jobs:
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-home.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/bot/?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-bot.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/hybrid-legal-intelligence.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-hybrid.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/hybrid-matter-command.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-hybrid-matter.html || true
+            curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/hybrid-matter-command.js?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-hybrid-matter.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/professional-tools.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-professional-tools.html || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/assets/professional-tools.js?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-professional-tools.js || true
             curl -fsSL --max-time 30 -H 'Cache-Control: no-cache' "https://ai-advokat.github.io/casepilot-workspace.html?root_smoke=$GITHUB_RUN_ID-$i" -o /tmp/pages-casepilot.html || true
@@ -94,6 +99,8 @@ jobs:
               && grep -q 'Hybrid Legal Intelligence R2' /tmp/pages-hybrid.html 2>/dev/null \
               && grep -q 'Lawyer View' /tmp/pages-hybrid.html 2>/dev/null \
               && grep -q 'AI_ADVOCAT_HYBRID_CONTROL_R3' /tmp/pages-hybrid.html 2>/dev/null \
+              && grep -q 'Hybrid Matter Command' /tmp/pages-hybrid-matter.html 2>/dev/null \
+              && grep -q 'WORKING_MATERIAL_HUMAN_GATE_LOCKED' /tmp/pages-hybrid-matter.js 2>/dev/null \
               && grep -q 'Batch Review · до 100 документи' /tmp/pages-professional-tools.html 2>/dev/null \
               && grep -q 'buildReviewTable' /tmp/pages-professional-tools.js 2>/dev/null \
               && grep -q 'XLS · XLSX' /tmp/pages-casepilot.html 2>/dev/null \
@@ -263,6 +270,8 @@ jobs:
             /tmp/pages-home.html
             /tmp/pages-bot.html
             /tmp/pages-hybrid.html
+            /tmp/pages-hybrid-matter.html
+            /tmp/pages-hybrid-matter.js
             /tmp/pages-professional-tools.html
             /tmp/pages-professional-tools.js
             /tmp/pages-casepilot.html

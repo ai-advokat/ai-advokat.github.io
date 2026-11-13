@@ -819,7 +819,7 @@
     const professional=Boolean(key&&plan);
     const label=professional
       ?"Професионален пристап · "+plan+" · governed OpenAI кога е активен"
-      :"FREE активен · јавен текстуален chat · Workers AI";
+      :"FREE · јавен текстуален chat · AI достапноста се проверува по секое барање";
     if(chatMembershipState) chatMembershipState.textContent=label;
     if(ownerState) ownerState.textContent=label;
     if(professionalAccessBtn) professionalAccessBtn.textContent=professional?"✓ Професионален пристап · "+plan:"✓ Професионален пристап";
@@ -1164,7 +1164,7 @@
             ? "Непотврдените конкретни пресуди се блокирани. Прикажани се само DISCOVERY ONLY записи."
             : "Ниту една непотврдена конкретна пресуда, број на предмет или именуван случај не е објавен."
         });
-      }else if(d?.error==="macedonian_release_blocked"){
+      }else if(d?.error==="macedonian_release_blocked" || d?.error==="macedonian_language_release_blocked"){
         attachments=[...selectedFiles];
         renderAttachments();
         const staticCaseFallback=await staticCaseLawRegistryFallback(q,"language_gate_blocked");
@@ -1195,6 +1195,19 @@
           meta:fallback.ok?fallback.meta:(d?.error||"runtime_guard"),
           guides,
           sourceLabel:fallback.ok?fallback.sourceLabel:"Барањето не е изгубено; прилозите се задржани локално за повторен обид."
+        });
+      }else if(d?.providerCapacity?.state==="exhausted" || d?.providerRecovery?.direction==="workers_ai_to_openai"){
+        attachments=[...selectedFiles];
+        renderAttachments();
+        const fallback=selectedFiles.length?{ok:false}:await fallbackSourceAssistant(q);
+        updateAssistantPlaceholder(assistantIndex,{
+          text:fallback.ok
+            ? fallback.text+"\n\nAI генерирањето е привремено недостапно поради provider capacity. Овој резервен одговор е source-backed/local и не е AI правно мислење."
+            : "AI генерирањето е привремено недостапно поради исцрпен provider capacity. Порталот, правните извори, локалните анализатори, Contract, CasePilot и другите deterministic модули остануваат достапни. Обидете се повторно подоцна или користете Secure Case Workspace/Правни извори.",
+          meta:"Provider capacity · DEGRADED MODE",
+          guides,
+          sourceLabel:fallback.ok?fallback.sourceLabel:"Не е издаден AI правен одговор; системот остана fail-safe.",
+          action:{label:"Отвори Правни извори",href:"/#legal-base"}
         });
       }else if(d?.error==="gpt_provider_locked"){
         const fallback=selectedFiles.length?{ok:false,error:"attachments_need_gpt"}:await fallbackSourceAssistant(q);

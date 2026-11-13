@@ -471,8 +471,8 @@ test("CHAT34 FREE mode is open for public text research without owner or member 
   assert.doesNotMatch(html,/id="aiChatMembershipKey"/);
   assert.doesNotMatch(html,/id="aiChatMembershipUse"/);
   assert.doesNotMatch(html,/id="aiChatOwnerOpen"/);
-  assert.match(html,/FREE активен · јавен текстуален chat · Workers AI/);
-  assert.match(chatJs,/FREE активен · јавен текстуален chat · Workers AI/);
+  assert.match(html,/FREE · јавен текстуален chat · AI достапноста се проверува по секое барање/);
+  assert.match(chatJs,/FREE · јавен текстуален chat · AI достапноста се проверува по секое барање/);
   assert.match(chatJs,/free_quota_exhausted/);
   assert.match(chatJs,/public_attachment_secure_workspace_required/);
 });
@@ -518,13 +518,13 @@ test("CHAT38 visible document control points to the secure workspace instead of 
 
 test("CHAT39 FREE status is visible and truthful beside the secure-document handoff",()=>{
   assert.match(html,/id="aiChatOwnerState"/);
-  assert.match(html,/FREE активен · јавен текстуален chat · Workers AI/);
+  assert.match(html,/FREE · јавен текстуален chat · AI достапноста се проверува по секое барање/);
   assert.doesNotMatch(html,/id="aiChatOwnerOpen"/);
 });
 
 
 test("CHAT40 FREE Workers AI is visible while public attachments fail closed",()=>{
-  assert.match(html,/FREE активен · јавен текстуален chat · Workers AI/);
+  assert.match(html,/FREE · јавен текстуален chat · AI достапноста се проверува по секое барање/);
   assert.match(chatJs,/configured_for_free_workers_ai_chat_execution/);
   assert.match(chatJs,/FREE Workers AI · /);
   assert.match(chatJs,/runtime\.freeProviderModel/);
@@ -547,7 +547,7 @@ test("CHAT41 legacy DOC is rejected in FREE document mode while DOCX remains acc
 test("CHAT42 deprecated owner key cannot silently force the paid provider",()=>{
   assert.match(chatJs,/\^AIADV-OWNER-/);
   assert.match(chatJs,/sessionStorage\.removeItem\("aiAdvokatMembershipKey"\)/);
-  assert.match(chatJs,/FREE активен · јавен текстуален chat · Workers AI/);
+  assert.match(chatJs,/FREE · јавен текстуален chat · AI достапноста се проверува по секое барање/);
 });
 
 
