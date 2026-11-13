@@ -42,3 +42,16 @@ test("home page does not claim unconditional LIVE provider availability",()=>{
   assert.doesNotMatch(home,/FREE Workers AI · @cf\/openai\/gpt-oss-120b · LIVE/);
   assert.match(home,/configured · availability checked per request/);
 });
+
+
+test("frontend handles the canonical Macedonian release error code",()=>{
+  assert.match(chat,/\["macedonian_release_blocked","macedonian_language_release_blocked"\]\.includes\(d\?\.error\)/);
+});
+
+test("foreign-language translation fails closed to canonical MK without endless retry",()=>{
+  assert.match(home,/let lang = siteLanguage==="en" \? "en" : "mk"/);
+  assert.match(home,/translationState="unavailable"/);
+  assert.match(home,/uiTranslationQueued=false/);
+  assert.match(home,/ui_translation_atomic_commit_unavailable/);
+  assert.doesNotMatch(home,/translationState="retrying";\s*console\.warn\("ui_translation_atomic_commit_deferred"/);
+});
