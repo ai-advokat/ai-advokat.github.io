@@ -819,7 +819,7 @@
     const professional=Boolean(key&&plan);
     const label=professional
       ?"Професионален пристап · "+plan+" · governed OpenAI кога е активен"
-      :"FREE · јавен текстуален chat · AI availability се проверува по секое барање";
+      :"FREE · јавен текстуален chat · AI достапноста се проверува по секое барање";
     if(chatMembershipState) chatMembershipState.textContent=label;
     if(ownerState) ownerState.textContent=label;
     if(professionalAccessBtn) professionalAccessBtn.textContent=professional?"✓ Професионален пристап · "+plan:"✓ Професионален пристап";
