@@ -78,7 +78,8 @@ test("Critical release-plane workflow changes publish the same SHA to Pages and 
     ".github/workflows/root-reliability-live-smoke.yml",
     ".github/workflows/professional-bot-live-smoke.yml",
     ".github/workflows/production-runtime-sync.yml",
-    ".github/workflows/sync-pages-runtime.yml"
+    ".github/workflows/sync-pages-runtime.yml",
+    ".github/workflows/case-law-evidence-gates-production-activation.yml"
   ]){
     assert.ok(production.includes('"'+path+'"'),"Production sync missing "+path);
   }
@@ -89,4 +90,11 @@ test("Pages sync publishes exact source-main SHA marker",()=>{
   assert.match(y,/pages-release\.txt/);
   assert.match(y,/source_main_sha=%s/);
   assert.match(y,/test "\$pages_release" = "\$GITHUB_SHA"/);
+});
+
+
+test("Production sync is retriggered by the exact 0053 schema dependency",()=>{
+  const production=fs.readFileSync(".github/workflows/production-runtime-sync.yml","utf8");
+  assert.match(production,/migrations\/0053_case_law_evidence_gates\.sql/);
+  assert.match(production,/case-law-evidence-gates-production-activation\.yml/);
 });
