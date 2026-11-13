@@ -127,7 +127,7 @@ jobs:
           test -f assets/hybrid-matter-command.css
           node --check assets/hybrid-matter-command.js
           grep -q 'Hybrid Matter Command' hybrid-matter-command.html
-          grep -q 'connect-src \'none\'' hybrid-matter-command.html
+          grep -q "connect-src 'none'" hybrid-matter-command.html
           test -f professional-tools.html
           test -f casepilot-workspace.html
           test -f public-legal-data-services.html
