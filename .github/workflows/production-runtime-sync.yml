@@ -33,6 +33,7 @@ on:
       - ".github/workflows/free-runtime-live-uat.yml"
       - ".github/workflows/root-reliability-live-smoke.yml"
       - ".github/workflows/professional-bot-live-smoke.yml"
+      - ".github/workflows/professional-l23-resilience-live-smoke.yml"
       - ".github/workflows/case-law-evidence-gates-production-activation.yml"
       - "migrations/0053_case_law_evidence_gates.sql"
   workflow_dispatch:
