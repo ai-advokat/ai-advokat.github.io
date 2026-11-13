@@ -40,7 +40,7 @@ test("public chat exposes a bounded degraded mode instead of a vague controlled-
 
 test("home page does not claim unconditional LIVE provider availability",()=>{
   assert.doesNotMatch(home,/FREE Workers AI · @cf\/openai\/gpt-oss-120b · LIVE/);
-  assert.match(home,/configured · availability checked per request/);
+  assert.match(home,/AI (?:availability|достапноста).*проверува|AI availability is checked per request/);
 });
 
 
