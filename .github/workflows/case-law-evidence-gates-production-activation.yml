@@ -1,5 +1,7 @@
 name: Case-law evidence gates 0053 production activation
 
+# R17 release ordering: when 0053 is pending, approve this schema Human Gate before the Worker runtime deployment Human Gate.
+
 on:
   push:
     branches: ["main"]
