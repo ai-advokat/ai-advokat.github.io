@@ -39,3 +39,15 @@ test("Professional degraded smoke locks Human Gate and provider provenance",()=>
   assert.match(smoke,/ЧОВЕЧКА ПРОВЕРКА ПРЕД ПРОФЕСИОНАЛНА УПОТРЕБА/u);
   assert.match(smoke,/leaked an unverified numbered article/);
 });
+
+
+test("Professional L2-L3 smoke is post-deploy and pinned to the deployed SHA",()=>{
+  assert.match(smoke,/workflow_run:/);
+  assert.match(smoke,/AI Advokat production runtime sync/);
+  assert.match(smoke,/types: \[completed\]/);
+  assert.match(smoke,/workflow_run\.conclusion == 'success'/);
+  assert.match(smoke,/workflow_run\.head_sha/);
+  assert.match(smoke,/Checkout exact deployed revision/);
+  assert.match(smoke,/git rev-parse HEAD/);
+  assert.doesNotMatch(smoke,/push:\s*\n\s*branches: \["main"\]/);
+});
