@@ -45,7 +45,7 @@ test("home page does not claim unconditional LIVE provider availability",()=>{
 
 
 test("frontend handles the canonical Macedonian release error code",()=>{
-  assert.match(chat,/\["macedonian_release_blocked","macedonian_language_release_blocked"\]\.includes\(d\?\.error\)/);
+  assert.match(chat,/d\?\.error==="macedonian_release_blocked" \|\| d\?\.error==="macedonian_language_release_blocked"/);
 });
 
 test("foreign-language translation fails closed to canonical MK without endless retry",()=>{
