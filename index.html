@@ -2897,7 +2897,7 @@
       return SITE_LANGUAGE_CODES.includes(saved)?saved:"mk";
     }catch{return "mk";}
   })();
-  let lang = siteLanguage==="mk" ? "mk" : "en";
+  let lang = siteLanguage==="en" ? "en" : "mk";
 
   const API_BASE = location.hostname.endsWith("workers.dev")
     ? location.origin
@@ -3121,8 +3121,23 @@
       const missingSources=[...new Set(units.map(unit=>unit.source).filter(source=>!cache[source]))];
       if(translationFailed||missingSources.length){
         if(!translationFailed) applyUiTranslationBackoff(503,0);
-        document.documentElement.dataset.translationState="retrying";
-        console.warn("ui_translation_atomic_commit_deferred",siteLanguage,missingSources.length);
+        // Fail closed without language contamination or an endless retry loop.
+        // Until a complete atomic translation exists, preserve the canonical
+        // Macedonian UI (English keeps its built-in i18n surface).
+        uiTranslationQueued=false;
+        document.documentElement.dataset.translationState="unavailable";
+        document.documentElement.lang=siteLanguage==="en"?"en":"mk";
+        document.documentElement.dir="ltr";
+        const languageControl=document.getElementById("langBtn");
+        if(languageControl){
+          languageControl.setAttribute(
+            "title",
+            siteLanguage==="en"
+              ? "English interface is partially available; live translation is temporarily unavailable."
+              : "Избраниот превод е привремено недостапен. Прикажан е канонскиот македонски интерфејс без мешање на јазици."
+          );
+        }
+        console.warn("ui_translation_atomic_commit_unavailable",siteLanguage,missingSources.length);
         return;
       }
       uiTranslationObserverSuppressUntil=Date.now()+UI_TRANSLATION_OBSERVER_SUPPRESS_MS;
