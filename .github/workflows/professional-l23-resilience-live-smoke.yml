@@ -1,11 +1,9 @@
 name: Professional L2-L3 resilience live smoke
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "src/index.js"
-      - ".github/workflows/professional-l23-resilience-live-smoke.yml"
+  workflow_run:
+    workflows: ["AI Advokat production runtime sync"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -17,6 +15,7 @@ concurrency:
 
 jobs:
   smoke:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -24,7 +23,18 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout exact deployed revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Verify deployed release identity
+        if: ${{ github.event_name == 'workflow_run' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.workflow_run.head_sha }}"
+          echo "L2/L3 POST-DEPLOY RELEASE SHA: $(git rev-parse HEAD)"
 
       - uses: actions/setup-node@v4
         with:
