@@ -1196,6 +1196,19 @@
           guides,
           sourceLabel:fallback.ok?fallback.sourceLabel:"Барањето не е изгубено; прилозите се задржани локално за повторен обид."
         });
+      }else if(d?.providerCapacity?.state==="exhausted" || d?.providerRecovery?.direction==="workers_ai_to_openai"){
+        attachments=[...selectedFiles];
+        renderAttachments();
+        const fallback=selectedFiles.length?{ok:false}:await fallbackSourceAssistant(q);
+        updateAssistantPlaceholder(assistantIndex,{
+          text:fallback.ok
+            ? fallback.text+"\n\nAI генерирањето е привремено недостапно поради provider capacity. Овој резервен одговор е source-backed/local и не е AI правно мислење."
+            : "AI генерирањето е привремено недостапно поради исцрпен provider capacity. Порталот, правните извори, локалните анализатори, Contract, CasePilot и другите deterministic модули остануваат достапни. Обидете се повторно подоцна или користете Secure Case Workspace/Правни извори.",
+          meta:"Provider capacity · DEGRADED MODE",
+          guides,
+          sourceLabel:fallback.ok?fallback.sourceLabel:"Не е издаден AI правен одговор; системот остана fail-safe.",
+          action:{label:"Отвори Правни извори",href:"/#legal-base"}
+        });
       }else if(d?.error==="gpt_provider_locked"){
         const fallback=selectedFiles.length?{ok:false,error:"attachments_need_gpt"}:await fallbackSourceAssistant(q);
         updateAssistantPlaceholder(assistantIndex,{
