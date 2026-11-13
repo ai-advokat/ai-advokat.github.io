@@ -6298,7 +6298,9 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   let deterministicLanguageFallbackReason=null;
 
   if(formalDraft && shouldUseDeterministicFormalDraftRecovery(finalText,{userText:q})){
-    const fallbackText=deterministicFormalDraftCapacityFallback({userText:q});
+    const fallbackText=
+      deterministicFictionalPublicFalseInformationDraftFallback({userText:q})
+      || deterministicFormalDraftCapacityFallback({userText:q});
     const fallbackRelease=fallbackText
       ? canonicalMacedonianFinalRelease(fallbackText,q)
       : null;
