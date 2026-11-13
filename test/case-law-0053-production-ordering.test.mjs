@@ -40,7 +40,11 @@ test("production runtime deploy is fail-closed until 0053 schema exists",()=>{
   assert.match(block,/set -euo pipefail/);
 });
 
-test("activation and runtime sync preserve separate Human Gates",()=>{
+test("activation and runtime sync preserve separate Human Gates and exact dependency triggers",()=>{
   assert.match(activation,/Worker deployment remains a separate production Human Gate/);
+  assert.match(activation,/R17 release ordering/);
   assert.match(runtime,/environment:\s*production/);
+  assert.match(runtime,/migrations\/0053_case_law_evidence_gates\.sql/);
+  assert.match(runtime,/case-law-evidence-gates-production-activation\.yml/);
+  assert.doesNotMatch(runtime,/wrangler\s+d1\s+(execute|migrations|export)/i);
 });
