@@ -67,6 +67,9 @@ test("WAP4 empty primary final falls back exactly once to bounded secondary mode
 
 test("WAP4a bounded fallback defaults to GLM with thinking disabled",()=>{
   assert.equal(WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT,"@cf/zai-org/glm-4.7-flash");
+  const config=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));
+  assert.equal(config.vars.WORKERS_AI_EMPTY_FALLBACK_MODEL,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT);
+  assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,WORKERS_AI_TEXT_MODEL_DEFAULT);
   const options=workersAIRequestOptions({
     model:WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT,
     messages:[{role:"user",content:"Тест"}],
