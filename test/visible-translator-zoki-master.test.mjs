@@ -33,3 +33,13 @@ test("Zoki master package and full DPRO-14R engine are both visible and governed
   assert.match(fullContract,/data-tab="normative14g"/);
   assert.match(fullContract,/PRODUCTION NO-GO/);
 });
+
+
+test("R18 Translator browser probe seeds language only once across navigation",()=>{
+  const probe=fs.readFileSync("scripts/translator-layered-live-smoke.mjs","utf8");
+  assert.match(probe,/sessionStorage\.getItem\(key\)!=="1"/);
+  assert.match(probe,/sessionStorage\.setItem\(key,"1"\)/);
+  assert.match(probe,/await page\.selectOption\("#langBtn","sq"\)/);
+  assert.match(home,/target\.searchParams\.set\("lang",next\)/);
+  assert.match(home,/new URL\(location\.href\)\.searchParams\.get\("lang"\)/);
+});
