@@ -209,6 +209,7 @@ import {
   workersAIShapeSummary,
   runWorkersAIText
 } from "./workers-ai-provider.js";
+import { shouldRetryIncompleteOpenAI, isTerminalOpenAIBillingFailure } from "./provider-recovery-policy.js";
 import {
   MACEDONIAN_LANGUAGE_STANDARD_VERSION,
   MACEDONIAN_RELEASE_GATE_VERSION,
@@ -8565,15 +8566,15 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     // of specialist calls that can amplify the original provider error.
     const retryableResponseStatus=result.error==="openai_response_error"
       && [408,429,500,502,503,504].includes(transientStatus);
-    const boundedChiefRecovery=result.error==="openai_response_error"
-      && [408,429,500,502,503,504].includes(transientStatus);
+    const truncatedAtTokenBudget=shouldRetryIncompleteOpenAI(result);
+    const boundedChiefRecovery=retryableResponseStatus || truncatedAtTokenBudget;
     // A project spend/billing hard stop is not transient rate pressure.
     // Retrying it burns latency and immediately repeats the same 429.
     // Keep the security/budget boundary: never auto-increase spend or switch
     // anonymous visitors to an unbounded paid model.
-    const terminalSpendLimit=["project_spend_limit_exceeded","billing_hard_limit_reached","insufficient_quota"]
-      .includes(String(result.responseStatus||"").toLowerCase());
+    const terminalSpendLimit=isTerminalOpenAIBillingFailure(result);
     const retryable=transientPrimaryErrors.has(String(result.error||""))
+      && (result.error!=="openai_incomplete_response" || truncatedAtTokenBudget)
       && !terminalSpendLimit
       && (result.error!=="openai_response_error" || retryableResponseStatus)
       && (!boundedChiefRecovery || explicitWebRequested!==true)
@@ -8605,9 +8606,12 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         attachments:[...guideDocumentCheck.attachments,...attachmentCheck.attachments],
         history:historyCheck.history,
         maxOutputTokens:Math.min(6000,Math.max(maxOutputTokens,incompleteRecoveryBudget,missionProfile==="L3_CONSEQUENTIAL"?5200:maxOutputTokens)),
-        reasoningEffort:boundedChiefRecovery ? "medium" : (["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort),
+        // A max-output-tokens response needs room for visible prose rather than
+        // a second expensive specialist fan-out or another medium/high reasoning burst.
+        reasoningEffort:truncatedAtTokenBudget ? "low" : (boundedChiefRecovery ? "medium" : (["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort)),
         deadlineAt:professionalRequestDeadlineAt,
-        capacityFallbackMode:boundedChiefRecovery
+        capacityFallbackMode:retryableResponseStatus,
+        chiefOnlyRecoveryMode:truncatedAtTokenBudget
       });
       const a=first.usage||{};
       const b=retry.usage||{};
