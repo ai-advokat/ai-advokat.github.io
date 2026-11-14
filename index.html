@@ -2985,7 +2985,9 @@
   const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v1:";
   const UI_TRANSLATION_BATCH_ITEMS=12;
   const UI_TRANSLATION_BATCH_CHARS=2400;
-  const UI_TRANSLATION_CLIENT_CONCURRENCY=1;
+  // Three bounded requests concurrently avoid minutes of serial UI translation.
+  // Server-side item concurrency and hourly caps remain independently enforced.
+  const UI_TRANSLATION_CLIENT_CONCURRENCY=3;
   const UI_TRANSLATION_PROVIDER_BACKOFF_MS=5000;
   const UI_TRANSLATION_RATE_LIMIT_BACKOFF_MS=60000;
   const UI_TRANSLATION_OBSERVER_SUPPRESS_MS=900;
@@ -3077,6 +3079,10 @@
         batchChars+=clean.length;
       }
       if(batch.length) batches.push(batch);
+      document.documentElement.dataset.translationBatches=String(batches.length);
+      document.documentElement.dataset.translationBatchesCompleted="0";
+      document.documentElement.dataset.translationPendingUnits=String(pending.length);
+      let completedBatches=0;
       let nextBatchIndex=0;
       async function runUiTranslationBatchWorker(){
         for(;;){
@@ -3113,6 +3119,8 @@
               if(source&&translated) cache[source]=translated;
             });
             saveUiTranslationCache(cache);
+            completedBatches+=1;
+            document.documentElement.dataset.translationBatchesCompleted=String(completedBatches);
           }catch(error){
             translationFailed=true;
             applyUiTranslationBackoff(503,0);
@@ -3124,6 +3132,7 @@
       const uiWorkers=Math.min(UI_TRANSLATION_CLIENT_CONCURRENCY,batches.length);
       await Promise.all(Array.from({length:uiWorkers},()=>runUiTranslationBatchWorker()));
       const missingSources=[...new Set(units.map(unit=>unit.source).filter(source=>!cache[source]))];
+      document.documentElement.dataset.translationPendingUnits=String(missingSources.length);
       if(translationFailed||missingSources.length){
         if(!translationFailed) applyUiTranslationBackoff(503,0);
         // Fail closed without language contamination or an endless retry loop.
