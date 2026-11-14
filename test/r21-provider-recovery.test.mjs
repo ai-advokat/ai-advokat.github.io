@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {shouldRetryIncompleteOpenAI,isTerminalOpenAIBillingFailure} from "../src/provider-recovery-policy.js";
 import {classifyVoiceTranscriptionFailure,runVoiceTranscriptionAI} from "../src/voice-transcription-provider.js";
+import {classifyWorkersAIProviderFailure} from "../src/workers-ai-provider.js";
 
 test("R21 retries only a provider-certified max_output_tokens truncation",()=>{
   assert.equal(shouldRetryIncompleteOpenAI({error:"openai_incomplete_response",failureDetail:"max_output_tokens"}),true);
@@ -32,6 +33,8 @@ test("R21 high-cost recovery skips repeat specialist fanout, preserves bounded a
 
 test("R21 Whisper model errors are categorised without leaking raw error strings",async()=>{
   assert.equal(classifyVoiceTranscriptionFailure(new Error("4006 daily free allocation 10000 neurons reached")),"voice_transcription_capacity_exhausted");
+  assert.equal(classifyVoiceTranscriptionFailure(new Error("3036 daily free allocation of 10,000 neurons reached")),"voice_transcription_capacity_exhausted");
+  assert.equal(classifyWorkersAIProviderFailure(new Error("3036 You have used up your daily free allocation of 10,000 neurons")).error,"workers_ai_daily_capacity_exhausted");
   assert.equal(classifyVoiceTranscriptionFailure(new Error("HTTP 429 Too Many Requests")),"voice_transcription_provider_rate_limited");
   assert.equal(classifyVoiceTranscriptionFailure(new Error("deadline timeout 22000ms")),"voice_transcription_upstream_timeout");
   assert.equal(classifyVoiceTranscriptionFailure(new Error("arbitrary private diagnostic")),"voice_transcription_failed");
