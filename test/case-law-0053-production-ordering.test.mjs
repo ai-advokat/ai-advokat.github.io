@@ -45,7 +45,7 @@ test("activation and runtime sync preserve separate Human Gates and exact depend
   assert.match(activation,/R17 release ordering/);
   assert.match(runtime,/environment:\s*production/);
   assert.match(runtime,/workflow_dispatch:/);
-  assert.doesNotMatch(runtime,/push:\\s*\\n\\s*branches:/);
+  assert.doesNotMatch(runtime,/push:\s*\n\s*branches:/);
   assert.match(runtime,/Require case-law evidence gate schema before runtime deploy/);
   assert.match(runtime,/case_law_echr_comparison_gates/);
   assert.doesNotMatch(runtime,/wrangler\s+d1\s+(execute|migrations|export)/i);
