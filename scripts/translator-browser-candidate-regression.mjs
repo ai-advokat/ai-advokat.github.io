@@ -83,6 +83,12 @@ try{
     assert.equal(state.selected,targetLanguage,"visible language selector was reverted");
     assert.equal(state.target,targetLanguage,"site-language request did not propagate");
     assert.ok(requests>0,"the browser never called /api/ui-translate");
+    // 48 requests/language/hour is enforced by the Worker. Never ship a
+    // full-page pass that requires more requests than its own hourly cap.
+    const plannedBatches=Number(state.batches||0);
+    assert.ok(plannedBatches>0&&plannedBatches<=48,
+      "page translation requires "+plannedBatches+" batches, exceeding the 48/hour language cap");
+    assert.ok(requests<=48,"browser exceeded the 48/hour language cap");
     if(scenario==="complete"){
       assert.equal(state.state,"ready",JSON.stringify({state,network}));
       assert.equal(state.lang,"sq","completed translation must identify its language");

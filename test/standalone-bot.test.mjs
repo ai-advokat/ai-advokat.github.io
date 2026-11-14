@@ -71,7 +71,8 @@ test('professional bot keeps high-depth paid drafting and one transient recovery
   assert.match(source,/let providerRecovery=null;/);
   assert.match(source,/transientPrimaryErrors/);
   assert.match(source,/retryUsesWeb=boundedChiefRecovery \? false : \(explicitWebRequested \? webRequested : false\)/);
-  assert.match(source,/capacityFallbackMode:boundedChiefRecovery/);
+  assert.match(source,/capacityFallbackMode:retryableResponseStatus/);
+  assert.match(source,/chiefOnlyRecoveryMode:truncatedAtTokenBudget/);
   assert.match(source,/finaliseFormalLegalDraft\(finalAnswer/);
 });
 

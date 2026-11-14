@@ -188,7 +188,8 @@ test("OpenAI 429 uses one bounded Chief-only recovery and never replays speciali
   const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
   assert.match(handle,/\[408,429,500,502,503,504\]\.includes\(transientStatus\)/);
   assert.match(handle,/const boundedChiefRecovery=/);
-  assert.match(handle,/capacityFallbackMode:boundedChiefRecovery/);
+  assert.match(handle,/capacityFallbackMode:retryableResponseStatus/);
+  assert.match(handle,/chiefOnlyRecoveryMode:truncatedAtTokenBudget/);
   assert.match(handle,/recoveryMode:boundedChiefRecovery \? "bounded_openai_chief_only"/);
   assert.match(handle,/!boundedChiefRecovery \|\| explicitWebRequested!==true/);
 });
@@ -261,7 +262,8 @@ test("FREE capacity OpenAI timeout has deterministic formal-draft last resort",(
 test("R19.4 OpenAI project spend-limit 429 is terminal, not retried as transient",()=>{
   const worker=fs.readFileSync("src/index.js","utf8");
   assert.match(worker,/terminalSpendLimit=/);
-  assert.match(worker,/project_spend_limit_exceeded/);
+  assert.match(worker,/isTerminalOpenAIBillingFailure\(result\)/);
+  assert.match(fs.readFileSync("src/provider-recovery-policy.js","utf8"),/project_spend_limit_exceeded/);
   assert.match(worker,/&& !terminalSpendLimit/);
   assert.match(worker,/recoverSourceFreeDraft\(result\.error,result\.providerCalls\|\|1\)/);
   assert.match(worker,/recoverSourceFreeDraft\("macedonian_language_release_blocked"/);

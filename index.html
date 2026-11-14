@@ -15,7 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/app-icon.svg" />
-  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261106-root-r15-voice&nav=20261110-r6" />
+  <link rel="stylesheet" href="/assets/ai-advokat-chat.css?v=20261106-root-r15-voice&nav=20261110-r6&proactive=r22" />
   <meta name="application-name" content="AI Advokat" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -2983,8 +2983,8 @@
 
 
   const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v1:";
-  const UI_TRANSLATION_BATCH_ITEMS=12;
-  const UI_TRANSLATION_BATCH_CHARS=2400;
+  const UI_TRANSLATION_BATCH_ITEMS=24;
+  const UI_TRANSLATION_BATCH_CHARS=4800;
   // Three bounded requests concurrently avoid minutes of serial UI translation.
   // Server-side item concurrency and hourly caps remain independently enforced.
   const UI_TRANSLATION_CLIENT_CONCURRENCY=3;
@@ -4797,7 +4797,7 @@
 </script>
 <script src="/assets/guide-vault.js?v=20261005-private-vault-v2"></script>
 <script src="/assets/frontend-runtime-guard.js?v=20261101-root-r1"></script>
-<script src="/assets/ai-advokat-chat.js?v=20261109-root-r15-voice-r4-runtime&nav=20261110-r6&r18=root-voice-r4-fallback"></script>
+<script src="/assets/ai-advokat-chat.js?v=20261109-root-r15-voice-r4-runtime&nav=20261110-r6&r18=root-voice-r4-fallback&proactive=r22"></script>
 
 </body>
 </html>

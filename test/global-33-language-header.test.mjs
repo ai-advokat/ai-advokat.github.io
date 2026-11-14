@@ -24,8 +24,9 @@ test("global and chat language selectors share one preference key",()=>{
 test("all non-MK languages including English use the bounded full-interface translation endpoint",()=>{
   assert.match(home,/\/api\/ui-translate/);
   assert.match(home,/translateGlobalInterface/);
-  assert.match(home,/UI_TRANSLATION_BATCH_ITEMS=12/);
-  assert.match(home,/UI_TRANSLATION_BATCH_CHARS=2400/);
+  // Keep contract assertions aligned with the bounded R20 batch budget.
+  assert.match(home,/UI_TRANSLATION_BATCH_ITEMS=24/);
+  assert.match(home,/UI_TRANSLATION_BATCH_CHARS=4800/);
   assert.match(home,/UI_TRANSLATION_CLIENT_CONCURRENCY=3/);
   assert.match(home,/batch\.length>=UI_TRANSLATION_BATCH_ITEMS/);
   assert.match(home,/nextChars>UI_TRANSLATION_BATCH_CHARS/);

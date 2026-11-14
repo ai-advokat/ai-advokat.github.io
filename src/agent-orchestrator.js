@@ -796,7 +796,8 @@ export async function runOpenAIOrchestrator(env, {
   maxOutputTokens=1600,
   reasoningEffort=null,
   deadlineAt=null,
-  capacityFallbackMode=false
+  capacityFallbackMode=false,
+  chiefOnlyRecoveryMode=false
 }={}) {
   if(!openAIOrchestratorConfigured(env)){
     return {ok:false,error:"openai_orchestrator_not_configured"};
@@ -819,7 +820,9 @@ export async function runOpenAIOrchestrator(env, {
     ...judicialDiscoveryGate.context
   ];
 
-  let specialistStage=capacityFallbackMode
+  // On an explicit output-token exhaustion, do not repeat the already-run
+  // specialist fan-out. Preserve the full chief's bounded token allowance.
+  let specialistStage=(capacityFallbackMode||chiefOnlyRecoveryMode)
     ? Object.freeze({
         ok:true,
         required:false,
@@ -829,7 +832,8 @@ export async function runOpenAIOrchestrator(env, {
         webSearchUsed:false,
         providerCalls:0,
         usage:Object.freeze({inputTokens:0,outputTokens:0,totalTokens:0}),
-        capacityFallbackMode:true
+        capacityFallbackMode:capacityFallbackMode===true,
+        chiefOnlyRecoveryMode:chiefOnlyRecoveryMode===true
       })
     : await runBoundedSpecialists(env,{
         plan,
