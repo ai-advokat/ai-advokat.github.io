@@ -58,7 +58,13 @@ try{
     await page.waitForSelector("#langBtn",{timeout:20000});
     await page.selectOption("#langBtn","sq");
     await page.waitForURL(/(?:[?&])lang=sq(?:&|$)/,{timeout:18000});
-    await page.waitForFunction(()=>["ready","partial","unavailable"].includes(document.documentElement.dataset.translationState||""),null,{timeout:90000});
+    // Do not mistake a correct in-progress PARTIAL shell for final READY.
+    // In the failure scenario, wait for the actual surfaced capacity error.
+    await page.waitForFunction(kind=>{
+      const state=document.documentElement.dataset.translationState;
+      const status=document.getElementById("uiTranslationStatus")?.textContent||"";
+      return kind==="complete" ? state==="ready" : (state==="partial"&&status.includes("Делумен"));
+    },scenario,{timeout:90000});
     const state=await page.evaluate(()=>({
       lang:document.documentElement.lang,
       selected:document.querySelector("#langBtn")?.value,
