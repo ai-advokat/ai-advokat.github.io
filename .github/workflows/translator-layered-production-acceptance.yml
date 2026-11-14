@@ -7,6 +7,7 @@ on:
       - "src/index.js"
       - "index.html"
       - "assets/ai-advokat-chat.js"
+      - "assets/standalone-bot.js"
       - "scripts/translator-layered-live-smoke.mjs"
       - "scripts/translator-browser-candidate-regression.mjs"
       - "scripts/dual-chat-browser-candidate-regression.mjs"
