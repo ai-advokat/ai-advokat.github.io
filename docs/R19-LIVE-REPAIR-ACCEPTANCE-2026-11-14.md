@@ -10,7 +10,7 @@ Owner of final release: human repository/production owner
 - FREE UAT 43602773031: live test expected a stale Qwen backup model, not the R18 GLM release pin. This produced a false configuration failure in addition to actual user-facing issues.
 - Professional L2-L3 43602772849: L2 request returned 503 `free_workers_ai_provider_error`, `workers_ai_timeout_22000`; L3 divorce passed on a canonical source-first lane.
 - Dual-bot UAT 43602772932: EXTERNAL_PROFESSIONAL ambiguous Article 12 returned 503 `macedonian_language_release_blocked`; recorded primary OpenAI response HTTP 429 `project_spend_limit_exceeded`. Secondary Workers AI output included malformed mixed-script `контролa`, and the language editor failed. This is a **real external billing + language** incident, not a green-CI regression.
-- 0053 activation 43388415285 remains waiting for separate authorized Human Gate.
+- **0053 schema is ALREADY ACTIVE in production**. R17 deploy run 43388415319, job 131762262533, queried D1 read-only on 2026-11-13 and verified `schema_migrations.version=53` plus both `case_law_evidence_gates` and `case_law_echr_comparison_gates` tables (`CASE-LAW 0053 PRE-DEPLOY SCHEMA GATE: PASS`, `rows_written:0`, `changed_db:false`). Separate activation workflow 43388415285 is still WAITING but is NOT evidence that schema is missing; do not approve a redundant mutation to clear a stale waiting UI.
 
 ## Changed in draft PR #682
 
@@ -24,12 +24,15 @@ Owner of final release: human repository/production owner
 8. Internal chat optional guide catalogue requests are bounded to 3.5s and retry cleanly; browser Guide Vault enrichment cannot hang before `/api/chat`. User-selected real attachments remain distinct and guarded.
 9. External bot optional catalogue lookup is bounded; explicitly requested local guides must either load or report a visible error rather than silently disappearing. Any provider failure is visible in the conversation as **NO AI RESPONSE**.
 10. New `test/dual-chat-preflight-resilience-r19.test.mjs` locks these two UI paths in the full repository suite.
+11. Mandatory real-Chromium PR candidate tests exercise the actual checked-out `index.html` and both chat surfaces. `scripts/translator-browser-candidate-regression.mjs` validates MK→SQ full and provider-failure partial translation with a mocked transport. `scripts/dual-chat-browser-candidate-regression.mjs` validates the exact internal/external chat flows with intentionally stalled optional guides and a mocked bot response. Both PASSED in run 43608736446.
+12. Live production PR probe with `|| true` has been removed. PRs no longer repeatedly consume live translator capacity. Strict real M2M100 → GPT-OSS → DOM browser validation runs only after successful `AI Advokat production runtime sync` or an explicit manual acceptance run; failure is not suppressed.
 
 ## Acceptance criteria for production
 
 - [ ] PR CI: Full suite, Security, language, source safety, translation compile checks all PASS on one exact SHA.
-- [ ] Human Gate: approve merge and production deployment before any automatic release. Separate 0053 schema approval only if evidence warrants it.
-- [ ] Verify OpenAI project's spend limit/credits with its authorized owner. Never send API keys in chat.
+- [ ] Human Gate: after exact candidate tests pass, authorized human approves the R19 merge and **separately** the production deployment. Runtime sync re-verifies production D1 0053 read-only; DO NOT repeat 0053 migration when already active.
+- [ ] User increased the project hard spend limit from $5 to $10. Verify available organization balance and that a single bounded live Professional response succeeds; the limit change alone does not prove the primary paid provider is operational. Never request API keys in chat.
+- [x] Predeploy real-Chromium candidate: MK → SQ full and provider-outage partial state, on the exact PR source (mocked translation transport); two chat UIs deliver mocked API responses despite stalled optional guides. Run 43608736446 — PASS. **Not live provider proof**.
 - [ ] Post-deploy full browser page: MK -> SQ selectors; above-fold navigation and translator label translated (PARTIAL is a real intermediate state). `ready` only after complete full-page translation; no false pass for 120s timeout.
 - [ ] Post-deploy internal browser: submitted question reaches /api/chat even if optional guides endpoint is unresponsive; optional vault delay cannot leave perpetual processing. Then real free Macedonian explanation; real source-backed statute lookup; source-free fictional lawsuit draft; no user-visible blank response or endless spinner.
 - [ ] Post-deploy external browser: submitted question reaches /api/bot despite optional guides endpoint delay; provider errors show a visible assistant service-status message instead of silent status-only failure. With test Professional membership: same source-backed tests and controlled L2/L3 fallbacks, with provenance and Human Gate. Verify primary paid generation only after provider billing is restored.
