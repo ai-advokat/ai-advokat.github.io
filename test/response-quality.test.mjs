@@ -52,6 +52,25 @@ test("RQ1c direct document requests remain eligible for formal drafting",()=>{
   ]) assert.equal(isFormalLegalDraftRequest(q),true,q);
 });
 
+test("RQ1d structured facts plus Bарам pre-suit notice is a formal draft mandate",()=>{
+  const q=[
+    "Факти:",
+    "Доверител: Правно лице А.",
+    "Должник: Правно лице Б.",
+    "Основа: Договор за услуги.",
+    "Главен долг: 150.000 денари.",
+    "Рок за плаќање според договорот: 15.09.2026 година.",
+    "Долгот не е платен.",
+    "Барам:",
+    "Формално и правно соодветна опомена пред тужба.",
+    "Јасен опис на побарувањето.",
+    "Релевантна правна основа со проверени законски одредби.",
+    "Правна и јазична проверка на документот."
+  ].join("\n");
+  assert.equal(isFormalLegalDraftRequest(q),true);
+  assert.equal(requestedFormalDraftHeading(q),"ОПОМЕНА ПРЕД ПОВЕДУВАЊЕ СУДСКА ПОСТАПКА");
+});
+
 test("RQ2 formal draft cleanup removes raw Markdown but preserves legal text",()=>{
   const raw=[
     "**ТУЖБА ЗА НАДОМЕСТ НА ШТЕТА**",
