@@ -10,6 +10,7 @@ const FACT_PREAMBLE_FORMAL_DRAFT_RE=/^\s*факти\s*:[\s\S]{0,1200}(?:подг
 const POLITE_FORMAL_DRAFT_RE=/(?:можеш|може|би\s+можел|би\s+сакал(?:а)?|сакам)[\s\S]{0,120}(?:ту[жѓ]б|жалб|приговор|поднесок|барање|договор|полномош|правно\s+мислење)[\s\S]{0,120}(?:изработ|подготв|направ|напиш|состав|изготв)|(?:ту[жѓ]б|жалб|приговор|поднесок|барање|договор|полномош|правно\s+мислење)[\s\S]{0,120}(?:можеш|може)[\s\S]{0,120}(?:изработ|подготв|направ|напиш|состав|изготв)/iu;
 const ANALYTICAL_TASK_RE=/(?:анализирај|разграничи|испитај|објасни|процени|утврди|провери|аргументи\s+за\s+двете|двостран(?:а|о)\s+анализ|матрица\s+на\s+доказ|условни\s+исход|процесна\s+стратег|правно\s+образложение)/iu;
 const ANALYTICAL_SUBDRAFT_RE=/(?:краток\s+)?нацрт\s+(?:на|за)\s+(?:аргументациј|аргумент|образложени|клучн(?:ите)?\s+барањ|издвојување|оспорување|професионален\s+одговор)|структура\s+на\s+жалб/iu;
+const STRUCTURED_FACTS_FORMAL_REQUEST_RE=/^\s*факти\s*:[\s\S]{0,2400}(?:^|\n)\s*барам\s*:[\s\S]{0,900}(?:формал(?:но|ен|на)?\s+(?:и\s+правно\s+)?соодветн(?:а|о|и)?\s+)?(?:опомена(?:\s+пред\s+(?:поведување\s+)?тужб[аеи]?)?|ту[жѓ]ба|жалба|приговор|поднесок|барање|договор|полномошно|правно\s+мислење)/iu;
 
 const CRIMINAL_EVENT_DRAFT_RE=/(?:кражб|разбојништ|измам|фалсифик|напад|закан|насил|убиств|поткуп|проневер|кривичн(?:о|а)\s+дел)/iu;
 const CIVIL_REMEDY_DRAFT_RE=/(?:надомест|штет|исплат|враќањ|сопственост|долг|побарувањ|неосновано\s+збогатување)/iu;
@@ -35,6 +36,12 @@ export function isFormalLegalDraftRequest(userText){
   const analyticalTask=ANALYTICAL_TASK_RE.test(text);
   const analyticalSubdraft=ANALYTICAL_SUBDRAFT_RE.test(text);
   if(analyticalTask && analyticalSubdraft) return false;
+
+  // Structured professional intake may express the drafting mandate under
+  // a dedicated "Барам:" section instead of using an imperative verb.
+  // Keep this narrow so analytical prompts that merely mention instruments
+  // are not promoted into full-document drafting.
+  if(STRUCTURED_FACTS_FORMAL_REQUEST_RE.test(text) && !analyticalSubdraft) return true;
 
   if(PRIMARY_FORMAL_DRAFT_RE.test(text)) return true;
   if(FACT_PREAMBLE_FORMAL_DRAFT_RE.test(text) && !analyticalTask) return true;

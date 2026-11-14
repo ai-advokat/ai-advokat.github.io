@@ -2893,6 +2893,11 @@
   const SITE_LANGUAGE_KEY="aiadvokat-language";
   let siteLanguage=(()=>{
     try{
+      const requested=String(new URL(location.href).searchParams.get("lang")||"").toLowerCase();
+      if(SITE_LANGUAGE_CODES.includes(requested)){
+        localStorage.setItem(SITE_LANGUAGE_KEY,requested);
+        return requested;
+      }
       const saved=String(localStorage.getItem(SITE_LANGUAGE_KEY)||"mk").toLowerCase();
       return SITE_LANGUAGE_CODES.includes(saved)?saved:"mk";
     }catch{return "mk";}
@@ -3386,7 +3391,10 @@
       const next=String(globalLanguageSelect.value||"mk").toLowerCase();
       if(!SITE_LANGUAGE_CODES.includes(next)||next===siteLanguage) return;
       try{localStorage.setItem(SITE_LANGUAGE_KEY,next);}catch{}
-      location.reload();
+      const target=new URL(location.href);
+      target.searchParams.set("lang",next);
+      target.searchParams.set("translator_reload",Date.now().toString());
+      location.assign(target.toString());
     });
   }
 

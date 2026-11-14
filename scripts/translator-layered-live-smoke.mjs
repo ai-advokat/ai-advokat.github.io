@@ -86,8 +86,16 @@ async function browserLayer(){
     browser=await chromium.launch({headless:true,...(executablePath?{executablePath}:{})});
     const context=await browser.newContext();
     await context.addInitScript(()=>{
-      localStorage.setItem("aiadvokat-language","mk");
-      localStorage.removeItem("aiadvokat-ui-translations-v1:sq");
+      // Seed MK exactly once per tab. This hook runs again after navigation;
+      // resetting MK on every reload would silently undo a valid SQ choice
+      // before the app reads localStorage, producing a false negative with
+      // zero /api/ui-translate requests.
+      const key="aiadvokat-translator-smoke-seeded";
+      if(sessionStorage.getItem(key)!=="1"){
+        localStorage.setItem("aiadvokat-language","mk");
+        localStorage.removeItem("aiadvokat-ui-translations-v1:sq");
+        sessionStorage.setItem(key,"1");
+      }
     });
     page=await context.newPage();
     page.on("response",async response=>{

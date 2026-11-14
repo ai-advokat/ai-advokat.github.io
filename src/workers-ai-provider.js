@@ -7,7 +7,7 @@ import { enforceCanonicalContextProvenance } from "./canonical-provenance-gate.j
 
 export const WORKERS_AI_TEXT_MODEL_DEFAULT="@cf/openai/gpt-oss-120b";
 export const WORKERS_AI_PROVIDER_CONTRACT_VERSION="WORKERS_AI_SYNC_CHAT_V3_GPT_OSS_120B_PRIMARY";
-export const WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT="@cf/qwen/qwen3.8-27b";
+export const WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT="@cf/zai-org/glm-4.7-flash";
 
 export function resolveWorkersAITextModel(env){
   const model=String(env?.WORKERS_AI_CHAT_MODEL||WORKERS_AI_TEXT_MODEL_DEFAULT).trim();
@@ -306,9 +306,9 @@ export async function runWorkersAIText(env,{
       };
     }
 
-    // R16 resilience: a Qwen timeout gets exactly one bounded retry on the
-    // stable non-reasoning Workers AI model. This stays inside Workers AI,
-    // adds no web access and does not silently invoke a paid provider.
+    // R18 resilience: a primary timeout gets exactly one bounded retry on the
+    // low-latency GLM Workers AI fallback with thinking disabled. This stays
+    // inside Workers AI, adds no web access and does not invoke a paid provider.
     activeModel=fallbackModel;
     modelFallback={
       from:primaryModel,
@@ -344,11 +344,10 @@ export async function runWorkersAIText(env,{
 
   let text=extractWorkersAIText(generated);
 
-  // Qwen3 is a reasoning model and can occasionally exhaust max_tokens before
-  // producing a final assistant message. Cloudflare's documented Qwen3 schema
-  // exposes no disable-thinking switch. For this exact empty-final condition,
-  // perform one and only one fallback call with a stable non-reasoning
-  // instruction model. Normal responses remain single-call.
+  // A reasoning-capable primary can occasionally return no usable final text.
+  // For this exact empty-final condition, perform one and only one fallback
+  // call with the low-latency GLM model with thinking disabled. Normal
+  // successful responses remain single-call.
   if(!text && allowEmptyFallback && !modelFallback){
     const fallbackModel=resolveWorkersAIEmptyFallbackModel(env);
     activeModel=fallbackModel;

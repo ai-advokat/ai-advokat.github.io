@@ -223,7 +223,7 @@ if (wrangler.ai) {
   if (wrangler.vars?.FREE_CHAT_PROVIDER!=="workers_ai"
       || wrangler.vars?.WORKERS_AI_MARKDOWN_ENABLED!=="true"
       || wrangler.vars?.WORKERS_AI_CHAT_MODEL!=="@cf/openai/gpt-oss-120b"
-      || wrangler.vars?.WORKERS_AI_EMPTY_FALLBACK_MODEL!=="@cf/qwen/qwen3.8-27b") {
+      || wrangler.vars?.WORKERS_AI_EMPTY_FALLBACK_MODEL!=="@cf/zai-org/glm-4.7-flash") {
     throw new Error("Workers AI binding requires the explicit FREE provider and Markdown-conversion contract.");
   }
   if (providerActivation.activation_authorized!==true
