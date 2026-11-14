@@ -3121,7 +3121,7 @@
       const commitPriorityShell=()=>{
         if(uiTranslationInitialCommitDone || !prioritySources.length) return;
         if(prioritySources.some(source=>!cache[source])) return;
-        applyUnits(priorityUnits);
+        applyUnits(units.filter(unit=>Boolean(cache[unit.source])));
         uiTranslationInitialCommitDone=true;
         document.documentElement.dataset.translationState="partial";
         document.documentElement.dataset.translationScope="visible_shell_partial";
@@ -3187,6 +3187,13 @@
             });
             saveUiTranslationCache(cache);
             commitPriorityShell();
+            // Once the priority shell is verified, progressively apply each
+            // completed batch instead of hiding already validated translations
+            // behind an all-or-nothing full-page wait.
+            if(uiTranslationInitialCommitDone){
+              const translatedSet=new Set(texts);
+              applyUnits(units.filter(unit=>translatedSet.has(unit.source)));
+            }
             completedBatches+=1;
             document.documentElement.dataset.translationBatchesCompleted=String(completedBatches);
             if(uiTranslationInitialCommitDone) showUiTranslationStatus("Превод во тек · "+completedBatches+"/"+batches.length+" групи");
