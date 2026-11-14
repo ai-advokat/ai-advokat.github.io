@@ -43,3 +43,16 @@ test("R18 Translator browser probe seeds language only once across navigation",(
   assert.match(home,/target\.searchParams\.set\("lang",next\)/);
   assert.match(home,/new URL\(location\.href\)\.searchParams\.get\("lang"\)/);
 });
+
+
+test("R19 Translator must perform bounded parallel full DOM translation, never claim ready early",()=>{
+  const probe=fs.readFileSync("scripts/translator-layered-live-smoke.mjs","utf8");
+  const freeWorkflow=fs.readFileSync(".github/workflows/free-runtime-live-uat.yml","utf8");
+  assert.match(home,/UI_TRANSLATION_CLIENT_CONCURRENCY=3/);
+  assert.match(home,/dataset\\.translationBatchesCompleted/);
+  assert.match(home,/dataset\\.translationPendingUnits/);
+  assert.match(home,/if\\(translationFailed\\|\\|missingSources\\.length\\)/);
+  assert.match(probe,/stateAtFailure/);
+  assert.match(probe,/completedBatches/);
+  assert.match(freeWorkflow,/EXPECTED_FREE_FALLBACK_MODEL="@cf\\/zai-org\\/glm-4\\.7-flash"/);
+});
