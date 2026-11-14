@@ -509,3 +509,23 @@ test("Zoki 2026-11-11 reported Bulgarian/hybrid legal prose is detected and dete
   assert.doesNotMatch(clean,/далее|предоставлените|определјаат|дефакто/iu);
   assert.equal(assessMacedonianOutput(clean,{userText:"Одговори на македонски."}).ok,true,clean);
 });
+
+
+test("R19.1 production 503 language defect: Cyrillic/ASCII homoglyph typo recovers without provider editor",()=>{
+  const q="Што уредува член 12? Ако не е јасно од кој закон, не избирај закон самостојно.";
+  const raw="Не е јасно од кој закон е член 12. Потребна е човечка контролa пред правна употреба.";
+  assert.equal(assessMacedonianOutput(raw,{userText:q}).ok,false);
+  const repaired=normaliseMacedonianGeneratedText(raw);
+  assert.match(repaired,/контрола пред правна употреба/u);
+  assert.equal(macedonianDeliveryVerdict(raw,{userText:q}).deliver,true);
+  assert.equal(macedonianReleaseVerdict(repaired,{userText:q}).verdict,"RELEASE");
+});
+
+test("R19.1 full Latin identifiers and protected URLs must not be transliterated",()=>{
+  const input="Проверете го AI Advokat, https://example.org/Case12 и DOI 10.5281/zenodo.12345; потом контролa.";
+  const clean=normaliseMacedonianGeneratedText(input);
+  assert.match(clean,/AI Advokat/u);
+  assert.match(clean,/https:\/\/example\.org\/Case12/u);
+  assert.match(clean,/10\.5281\/zenodo\.12345/u);
+  assert.match(clean,/контрола/u);
+});
