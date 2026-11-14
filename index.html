@@ -3221,7 +3221,9 @@
         document.documentElement.dataset.translationState=uiTranslationInitialCommitDone?"partial":"unavailable";
         document.documentElement.dataset.translationScope=uiTranslationInitialCommitDone?"visible_shell_partial":"canonical_untranslated";
         document.documentElement.lang=uiTranslationInitialCommitDone?siteLanguage:(siteLanguage==="en"?"en":"mk");
-        document.documentElement.dir="ltr";
+        // A verified partial RTL shell must retain right-to-left layout.
+        // An unavailable shell falls back to the canonical LTR baseline.
+        document.documentElement.dir=uiTranslationInitialCommitDone&&["ar","he","fa","ur"].includes(siteLanguage)?"rtl":"ltr";
         const languageControl=document.getElementById("langBtn");
         if(languageControl){
           languageControl.setAttribute(
