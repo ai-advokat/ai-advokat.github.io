@@ -610,3 +610,12 @@
 #aiChatMic[disabled],.ai-msg-speak[disabled]{opacity:.5;cursor:not-allowed}
 
 .ai-chat-voice-privacy{margin:.25rem .5rem .55rem;font-size:.72rem;line-height:1.4;color:var(--muted,#6b7280)}
+
+
+/* R22 context-aware next-turn proposals: display only, never auto-submit. */
+.ai-proactive-next-turns{margin-top:14px;padding:12px 14px;border:1px solid var(--line,#d8c8a6);border-radius:14px;background:var(--surface,#fffaf0);max-width:850px}
+.ai-proactive-question{font-size:.91rem;font-weight:650;line-height:1.5;margin:0 0 10px;color:var(--ink,#24323a)}
+.ai-proactive-options{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 8px}
+.ai-proactive-choice{appearance:none;border:1px solid #b39459;border-radius:999px;padding:7px 11px;background:transparent;color:inherit;font:inherit;font-size:.83rem;font-weight:650;line-height:1.35;cursor:pointer;max-width:100%;white-space:normal;text-align:left}
+.ai-proactive-choice:hover,.ai-proactive-choice:focus-visible{outline:2px solid #d7b46e;outline-offset:2px;background:rgba(196,158,90,.12)}
+.ai-proactive-next-turns>small{display:block;font-size:.72rem;opacity:.75;line-height:1.4}
