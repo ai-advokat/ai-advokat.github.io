@@ -28,11 +28,16 @@ try{
   await listen();
   const origin="http://127.0.0.1:"+server.address().port;
   browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_EXECUTABLE||undefined,args:["--no-sandbox","--disable-dev-shm-usage"]});
-  for(const scenario of ["complete","partial","rtl-partial"]){
+  for(const scenario of ["complete","partial","rtl-partial","row-mismatch"]){
     const targetLanguage=scenario==="rtl-partial"?"ar":"sq";
     const translatedMarker=scenario==="rtl-partial"?"اختبار_":"SQ_TEST_";
     const context=await browser.newContext({locale:"mk-MK",serviceWorkers:"block"});
     const page=await context.newPage();
+    // Capture the exact user-visible source before asynchronous provider rows
+    // arrive: a reordered provider response may NEVER corrupt that text.
+    await page.addInitScript(()=>document.addEventListener("DOMContentLoaded",()=>{
+      window.__r24OriginalTopLine=document.querySelector("[data-i18n='topLine']")?.textContent||"";
+    }));
     const pageErrors=[],network=[];
     page.on("pageerror",e=>pageErrors.push(String(e?.message||e).slice(0,300)));
     page.on("console",m=>{if(m.type()==="error")pageErrors.push(m.text().slice(0,220));});
@@ -46,12 +51,16 @@ try{
       const n=++requests;
       let items=[];
       try{items=JSON.parse(req.postData()||"{}").items||[];}catch{}
-      const forcedFailure=scenario!=="complete"&&n>12;
-      network.push({batch:n,count:items.length,status:forcedFailure?503:200});
+      const forcedFailure=["partial","rtl-partial"].includes(scenario)&&n>12;
+      const malformedRows=scenario==="row-mismatch"&&n>12;
+      network.push({batch:n,count:items.length,status:forcedFailure?503:200,malformedRows});
       if(forcedFailure){
         await route.fulfill({status:503,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:'{"ok":false,"error":"fixture_provider_limit"}'});
       }else{
-        const translations=items.map(row=>({id:String(row.id),text:translatedMarker+String(row.text||"").slice(0,24)}));
+        // Valid rows are deliberately REVERSED to detect positional coupling;
+        // malformed rows omit an ID to ensure the entire batch is rejected.
+        const translations=items.map(row=>({id:String(row.id),text:translatedMarker+String(row.text||"").slice(0,24)})).reverse();
+        if(malformedRows && translations.length) translations.pop();
         await route.fulfill({status:200,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:JSON.stringify({ok:true,translations,provider:"fixture"})});
       }
     });
@@ -67,6 +76,7 @@ try{
       const status=document.getElementById("uiTranslationStatus")?.textContent||"";
       return kind==="complete" ? state==="ready" : (state==="partial"&&status.includes("Делумен"));
     },scenario,{timeout:90000});
+    const originalTopLine=await page.evaluate(()=>String(window.__r24OriginalTopLine||""));
     const state=await page.evaluate(()=>({
       lang:document.documentElement.lang,
       dir:document.documentElement.dir,
@@ -94,6 +104,8 @@ try{
       assert.equal(state.lang,"sq","completed translation must identify its language");
       assert.equal(state.dir,"ltr","completed Albanian translation must be LTR");
       assert.ok(state.shell.includes(translatedMarker)||state.nav.includes(translatedMarker),"visible shell remained untranslated");
+      assert.equal(String(state.shell).trim(),(translatedMarker+originalTopLine.slice(0,24)).trim(),
+        "reordered row IDs corrupted the translated top-line source");
     }else{
       assert.equal(state.state,"partial",JSON.stringify({state,network}));
       assert.equal(state.scope,"visible_shell_partial");
@@ -101,6 +113,8 @@ try{
       assert.equal(state.dir,targetLanguage==="ar"?"rtl":"ltr","partial shell must preserve target direction");
       assert.ok(state.status.includes("Делумен")||state.status.includes("превод"),"partial translation must be disclosed");
       assert.ok(state.shell.includes(translatedMarker)||state.nav.includes(translatedMarker),"verified first visible shell is not translated");
+      if(scenario==="row-mismatch") assert.ok(network.some(row=>row.malformedRows),
+        "missing-ID fixture never exercised response integrity guard");
     }
     report.push({scenario,...state,translationRequests:requests,failedResponses:network.filter(r=>r.status!==200).length,nonFatalPageErrors:pageErrors.slice(0,5)});
     await context.close();
