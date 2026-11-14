@@ -99,6 +99,7 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK",transcr
   let speechGeneration=0;
   let activeSpeakButton=null;
   let microphonePermissionState="unknown";
+  let browserRecognitionUnavailable=false;
 
   const setStatus=(status,value)=>{
     if(typeof status==="function") status(String(value||""));
@@ -219,9 +220,13 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK",transcr
             setStatus(status,"✓ Говорот е транскрибиран. Проверете го текстот и испратете.");
           }catch(error){
             const reason=String(error?.message||error||"");
-            setStatus(status,reason==="rate_limited"
-              ?"Премногу гласовни барања за кратко време. Обидете се повторно по кратка пауза."
-              :"Гласовната транскрипција не успеа. Можете веднаш да продолжите со пишување.");
+            setStatus(status,reason==="rate_limited"||reason==="voice_transcription_provider_rate_limited"
+              ?"Гласовниот сервис има ограничување на барања. Обидете се повторно подоцна или пишувајте."
+              :reason==="voice_transcription_capacity_exhausted"
+                ?"Дневната квота за гласовно препознавање на сервисот е исцрпена. Пробајте ја browser диктацијата или продолжете со пишување."
+                :reason==="voice_transcription_upstream_timeout"
+                  ?"Гласовниот сервис не одговори навреме. Не е добиен транскрипт; можете да продолжите со пишување."
+                  :"Гласовната транскрипција не успеа. Не е добиен транскрипт; можете да продолжите со пишување.");
           }finally{
             setButtonState(button,"idle");
             button.title=dictationLabel();
@@ -246,7 +251,9 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK",transcr
         stopRecognition();
         return;
       }
-      if(!SpeechRecognitionCtor) return startRecorderFallback();
+      // A browser speech-service network failure must not trap future user clicks
+      // on the same broken service. Start recording only on the NEXT user click.
+      if(!SpeechRecognitionCtor || (browserRecognitionUnavailable && recorderFallbackSupported)) return startRecorderFallback();
       if(button.dataset.voiceState==="requesting") return;
       setButtonState(button,"requesting");
       const permissionGranted=await ensureMicrophonePermission(status);
@@ -291,7 +298,12 @@ export function createAIAdvokatVoiceRuntime(win=globalThis,{lang="mk-MK",transcr
       rec.onerror=event=>{
         recognitionError=String(event?.error||"unknown");
         if(recognitionError==="not-allowed"||recognitionError==="service-not-allowed") microphonePermissionState="denied";
-        setStatus(status,speechRecognitionErrorMessage(recognitionError));
+        if(["network","language-not-supported"].includes(recognitionError) && recorderFallbackSupported){
+          browserRecognitionUnavailable=true;
+          setStatus(status,"Гласовниот сервис на прелистувачот е недостапен. Притиснете повторно на микрофонот за снимање со дозвола и серверска транскрипција; ако и тој сервис е недостапен, користете пишување.");
+        }else{
+          setStatus(status,speechRecognitionErrorMessage(recognitionError));
+        }
       };
       rec.onend=()=>{
         if(activeRecognition===rec) activeRecognition=null;
