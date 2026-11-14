@@ -1,16 +1,6 @@
 name: AI Advokat Translator layered production acceptance
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "src/index.js"
-      - "index.html"
-      - "assets/ai-advokat-chat.js"
-      - "scripts/translator-layered-live-smoke.mjs"
-      - "scripts/translator-browser-candidate-regression.mjs"
-      - "scripts/dual-chat-browser-candidate-regression.mjs"
-      - ".github/workflows/translator-layered-production-acceptance.yml"
   pull_request:
     branches: ["main"]
     paths:
@@ -74,13 +64,6 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         run: node scripts/dual-chat-browser-candidate-regression.mjs
 
-      - name: Collect live layered evidence on PR
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
-        env:
-          LIVE_TRANSLATOR_BASE: https://ai-advokat-github-io.aiadvokat16.workers.dev
-          LIVE_ROOT_URL: https://ai-advokat.github.io/
-        run: node scripts/translator-layered-live-smoke.mjs || true
-
       - name: Enforce M2M100 -> GPT-OSS -> browser DOM acceptance after deploy
         if: ${{ github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch' }}
         env:
@@ -89,7 +72,7 @@ jobs:
         run: node scripts/translator-layered-live-smoke.mjs
 
       - name: Upload Translator layered evidence
-        if: always()
+        if: ${{ always() && (github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch') }}
         uses: actions/upload-artifact@v4
         with:
           name: translator-layered-production-acceptance
