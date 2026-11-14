@@ -6251,6 +6251,38 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     : compactFreeDraft
       ? Math.min(1000,requestedTokenLimit)
       : requestedTokenLimit;
+  // A provider failure must not erase a user's formal draft request. Produce
+  // only a source-free, explicitly provisional scaffold from supplied facts.
+  // Do NOT use this lane for uploaded documents, corpus-dependent advice or
+  // conversation history: those require actual source/model examination.
+  const recoverSourceFreeDraft=(reason,attemptedCalls=0)=>{
+    if(!formalDraftRequest || converted.documents.length || safeHistory.length || governed) return null;
+    const scaffold=deterministicFictionalPublicFalseInformationDraftFallback({userText:q})
+      || deterministicFormalDraftCapacityFallback({userText:q});
+    const verdict=scaffold ? canonicalMacedonianFinalRelease(scaffold,q) : null;
+    if(!verdict?.ok) return null;
+    return {
+      ok:true,text:verdict.text,model:null,provider:"deterministic_capacity_fallback",
+      primaryModel:resolveWorkersAITextModel(env),modelFallback:null,
+      providerCalls:Number(attemptedCalls||0),languageRepairProviderCalls:0,
+      latencyMs:Date.now()-startedAt,fastPromptUsed:false,compactDraftUsed:true,
+      outputTokenLimit:0,languageStandard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
+      languageRepaired:false,deterministicLanguageCleanup:true,
+      languageEditorRequired:false,languageEditorPassed:false,languageEditorModel:null,
+      languageEditorFallbackUsed:false,languageEditorFallbackReason:null,
+      languageEditorErrorCode:null,deterministicLanguageFallbackUsed:true,
+      deterministicLanguageFallbackReason:"source_free_capacity_rescue:"+String(reason||"provider_unavailable").slice(0,60),
+      formalDraftPostflight:true,languageQualityState:verdict.deliveryState,
+      languageReleaseGate:verdict.releaseGate,
+      canonicalProvenanceGate:{version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:runtimeProvenanceGate.state,released:0,blocked:runtimeProvenanceGate.blocked.length},
+      convertedDocuments:0,webSearchUsed:false,sources:[],
+      conversationPersistence:"browser_session_only_app_no_server_conversation_store",
+      historyItemsUsed:0,contaminatedAssistantHistoryDropped:0,
+      humanGate:"required",providerRecoveryState:"NO_AI_RESPONSE_SOURCE_FREE_DRAFT_ONLY"
+    };
+  };
+
   const result=await runWorkersAIText(env,{
     messages,
     maxOutputTokens:tokenLimit,
@@ -6259,6 +6291,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     timeoutMs:fastFreePrompt?12000:20000
   });
   if(!result.ok){
+    const recovered=recoverSourceFreeDraft(result.error,result.providerCalls||1);
+    if(recovered) return recovered;
     const mappedError=result.error==="workers_ai_empty_response"
       ? "free_workers_ai_empty_response"
       : result.error==="workers_ai_daily_capacity_exhausted"
@@ -6349,6 +6383,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   }
 
   if(!deterministicLanguageFallbackUsed && (languagePass.hardBlock || !finalRelease.ok)){
+    const recovered=recoverSourceFreeDraft("macedonian_language_release_blocked",(result.providerCalls||1)+(languagePass.providerCalls||0));
+    if(recovered) return recovered;
     const temporalSafetyText=missionProfile==="L0_INFORMATIONAL"
       ? judicialTemporalSafetyFallback(q)
       : null;
