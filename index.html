@@ -3196,16 +3196,17 @@
             // all match. Never assign row j to source j: the server or an
             // intermediate provider may drop/reorder rows.
             const byId=new Map();
-            for(const row of d.translations){
+            let validRows=d.translations.length===items.length;
+            if(validRows) for(const row of d.translations){
               const id=String(row?.id??"");
               const translated=String(row?.text||"").trim();
               if(!items.some(item=>item.id===id)||byId.has(id)||!translated){
-                translationFailed=true;
+                validRows=false;
                 break;
               }
               byId.set(id,translated);
             }
-            if(byId.size!==items.length){
+            if(!validRows||byId.size!==items.length){
               translationFailed=true;
               console.warn("ui_translation_batch_integrity_rejected",batchIndex);
               continue;
