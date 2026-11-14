@@ -11696,12 +11696,18 @@ async function handleUiTranslation(request,env){
 
   const raw=Array.isArray(body?.items)?body.items:[];
   if(!raw.length||raw.length>96) return json(request,{ok:false,error:"invalid_items_count"},400);
+  // Never silently drop an oversized or empty item. The browser maps each
+  // translation to a specific legal UI source; filtering items shifts positions
+  // and can misattribute translated legal wording.
   const items=raw.map((item,index)=>({
     id:String(item?.id??index).slice(0,80),
     text:String(item?.text||"").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"").trim()
-  })).filter(x=>x.text && x.text.length<=1200);
+  }));
+  if(items.some(x=>!x.id||!x.text||x.text.length>1200)||new Set(items.map(x=>x.id)).size!==items.length){
+    return json(request,{ok:false,error:"ui_translation_invalid_item_or_duplicate_id"},422);
+  }
   const totalChars=items.reduce((n,x)=>n+x.text.length,0);
-  if(!items.length||totalChars>12000) return json(request,{ok:false,error:"translation_payload_too_large"},413);
+  if(totalChars>12000) return json(request,{ok:false,error:"translation_payload_too_large"},413);
 
   if(target==="mk"){
     return json(request,{
