@@ -28,16 +28,27 @@ try{
   await listen();
   const origin="http://127.0.0.1:"+server.address().port;
   browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_EXECUTABLE||undefined,args:["--no-sandbox","--disable-dev-shm-usage"]});
-  for(const scenario of ["complete","partial","rtl-partial","row-mismatch"]){
+  for(const scenario of ["complete","partial","rtl-partial","row-mismatch","oversize-priority"]){
     const targetLanguage=scenario==="rtl-partial"?"ar":"sq";
     const translatedMarker=scenario==="rtl-partial"?"اختبار_":"SQ_TEST_";
     const context=await browser.newContext({locale:"mk-MK",serviceWorkers:"block"});
     const page=await context.newPage();
     // Capture the exact user-visible source before asynchronous provider rows
     // arrive: a reordered provider response may NEVER corrupt that text.
-    await page.addInitScript(()=>document.addEventListener("DOMContentLoaded",()=>{
+    await page.addInitScript((injectOversize)=>document.addEventListener("DOMContentLoaded",()=>{
       window.__r24OriginalTopLine=document.querySelector("[data-i18n='topLine']")?.textContent||"";
-    }));
+      if(injectOversize){
+        // A >1200-character priority source is intentionally not sent to the
+        // Worker. It must not indefinitely block other verified translations.
+        const header=document.querySelector("header");
+        if(header){
+          const fixture=document.createElement("span");
+          fixture.textContent="Долг тест текст за приоритетен приказ. ".repeat(48);
+          fixture.setAttribute("data-fixture-oversize-priority","true");
+          header.prepend(fixture);
+        }
+      }
+    }),scenario==="oversize-priority");
     const pageErrors=[],network=[];
     page.on("pageerror",e=>pageErrors.push(String(e?.message||e).slice(0,300)));
     page.on("console",m=>{if(m.type()==="error")pageErrors.push(m.text().slice(0,220));});
