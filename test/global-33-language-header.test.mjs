@@ -26,7 +26,7 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(home,/translateGlobalInterface/);
   assert.match(home,/UI_TRANSLATION_BATCH_ITEMS=12/);
   assert.match(home,/UI_TRANSLATION_BATCH_CHARS=2400/);
-  assert.match(home,/UI_TRANSLATION_CLIENT_CONCURRENCY=1/);
+  assert.match(home,/UI_TRANSLATION_CLIENT_CONCURRENCY=3/);
   assert.match(home,/batch\.length>=UI_TRANSLATION_BATCH_ITEMS/);
   assert.match(home,/nextChars>UI_TRANSLATION_BATCH_CHARS/);
   assert.match(home,/UI_TRANSLATION_PROVIDER_BACKOFF_MS=5000/);
