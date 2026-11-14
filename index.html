@@ -2985,7 +2985,9 @@
   const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v1:";
   const UI_TRANSLATION_BATCH_ITEMS=12;
   const UI_TRANSLATION_BATCH_CHARS=2400;
-  const UI_TRANSLATION_CLIENT_CONCURRENCY=1;
+  // Three bounded requests concurrently avoid minutes of serial UI translation.
+  // Server-side item concurrency and hourly caps remain independently enforced.
+  const UI_TRANSLATION_CLIENT_CONCURRENCY=3;
   const UI_TRANSLATION_PROVIDER_BACKOFF_MS=5000;
   const UI_TRANSLATION_RATE_LIMIT_BACKOFF_MS=60000;
   const UI_TRANSLATION_OBSERVER_SUPPRESS_MS=900;
@@ -3053,6 +3055,22 @@
     }
     return units;
   }
+  function showUiTranslationStatus(message){
+    const control=document.getElementById("langBtn");
+    if(!control) return;
+    let status=document.getElementById("uiTranslationStatus");
+    if(!status){
+      status=document.createElement("span");
+      status.id="uiTranslationStatus";
+      status.setAttribute("role","status");
+      status.setAttribute("aria-live","polite");
+      status.setAttribute("data-no-translate","");
+      status.style.cssText="font-size:12px;padding:0 7px;max-width:220px;white-space:normal;line-height:1.2";
+      control.insertAdjacentElement("afterend",status);
+    }
+    status.textContent=String(message||"");
+  }
+
   async function translateGlobalInterface(){
     if(siteLanguage==="mk"||uiTranslationRunning) return;
     uiTranslationRunning=true;
@@ -3060,9 +3078,60 @@
     document.documentElement.dataset.translationTarget=siteLanguage;
     if(!uiTranslationInitialCommitDone) document.documentElement.dataset.translationState="loading";
     try{
+      showUiTranslationStatus("Се подготвува преводот…");
       const units=collectUiTranslationUnits();
       const cache=uiTranslationCache();
-      const pending=[...new Set(units.map(x=>x.source).filter(text=>!cache[text]))];
+      // The old all-or-nothing page transaction stayed blank for minutes while
+      // hundreds of lower-page paragraphs consumed the UI translation budget.
+      // Prioritise the visible shell and the explicitly selected language panel.
+      // Mark it PARTIAL until every remaining UI unit is verified and applied.
+      const elementOfUnit=unit=>unit.kind==="text"?unit.node?.parentElement:unit.el;
+      const shellUnits=units.filter(unit=>{
+        const el=elementOfUnit(unit);
+        if(!el||!el.isConnected) return false;
+        return Boolean(el.closest(
+          "#aiChatLanguagePanel,[data-i18n='topLine'],[data-i18n='brandSub'],[data-i18n='navSources'],header,nav,[role='navigation']"
+        ));
+      });
+      const viewportUnits=units.filter(unit=>{
+        const el=elementOfUnit(unit);
+        if(!el||!el.isConnected) return false;
+        const rect=el.getBoundingClientRect();
+        return rect.bottom>0 && rect.top<Math.min(window.innerHeight+50,950);
+      });
+      const prioritySources=[...new Set([...shellUnits,...viewportUnits].map(u=>u.source))].slice(0,48);
+      const priorityUnits=units.filter(unit=>prioritySources.includes(unit.source));
+      const pending=[...new Set([...prioritySources,...units.map(x=>x.source)].filter(text=>!cache[text]))];
+      const applyUnits=selected=>{
+        uiTranslationObserverSuppressUntil=Date.now()+UI_TRANSLATION_OBSERVER_SUPPRESS_MS;
+        for(const unit of selected){
+          const translated=cache[unit.source];
+          if(!translated) continue;
+          if(unit.kind==="text"){
+            unit.node.nodeValue=translated;
+            const state=uiTranslationNodeState.get(unit.node);
+            if(state) state.last=translated;
+          }else{
+            unit.el.setAttribute(unit.attr,translated);
+            const state=uiTranslationAttrState.get(unit.el);
+            if(state?.[unit.attr]) state[unit.attr].last=translated;
+          }
+        }
+      };
+      const commitPriorityShell=()=>{
+        if(uiTranslationInitialCommitDone || !prioritySources.length) return;
+        if(prioritySources.some(source=>!cache[source])) return;
+        applyUnits(units.filter(unit=>Boolean(cache[unit.source])));
+        uiTranslationInitialCommitDone=true;
+        document.documentElement.dataset.translationState="partial";
+        document.documentElement.dataset.translationScope="visible_shell_partial";
+        showUiTranslationStatus("Основниот интерфејс е преведен · остатокот се обработува");
+        document.documentElement.lang=siteLanguage;
+        document.documentElement.dir=["ar","he","fa","ur"].includes(siteLanguage)?"rtl":"ltr";
+        const control=document.getElementById("langBtn");
+        if(control) control.title="Основниот интерфејс е преведен. Преводот на останатата страница продолжува; не е означен како целосен.";
+      };
+      commitPriorityShell();
       const batches=[];
       let batch=[],batchChars=0;
       for(const text of pending){
@@ -3077,6 +3146,10 @@
         batchChars+=clean.length;
       }
       if(batch.length) batches.push(batch);
+      document.documentElement.dataset.translationBatches=String(batches.length);
+      document.documentElement.dataset.translationBatchesCompleted="0";
+      document.documentElement.dataset.translationPendingUnits=String(pending.length);
+      let completedBatches=0;
       let nextBatchIndex=0;
       async function runUiTranslationBatchWorker(){
         for(;;){
@@ -3113,6 +3186,17 @@
               if(source&&translated) cache[source]=translated;
             });
             saveUiTranslationCache(cache);
+            commitPriorityShell();
+            // Once the priority shell is verified, progressively apply each
+            // completed batch instead of hiding already validated translations
+            // behind an all-or-nothing full-page wait.
+            if(uiTranslationInitialCommitDone){
+              const translatedSet=new Set(texts);
+              applyUnits(units.filter(unit=>translatedSet.has(unit.source)));
+            }
+            completedBatches+=1;
+            document.documentElement.dataset.translationBatchesCompleted=String(completedBatches);
+            if(uiTranslationInitialCommitDone) showUiTranslationStatus("Превод во тек · "+completedBatches+"/"+batches.length+" групи");
           }catch(error){
             translationFailed=true;
             applyUiTranslationBackoff(503,0);
@@ -3124,14 +3208,19 @@
       const uiWorkers=Math.min(UI_TRANSLATION_CLIENT_CONCURRENCY,batches.length);
       await Promise.all(Array.from({length:uiWorkers},()=>runUiTranslationBatchWorker()));
       const missingSources=[...new Set(units.map(unit=>unit.source).filter(source=>!cache[source]))];
+      document.documentElement.dataset.translationPendingUnits=String(missingSources.length);
       if(translationFailed||missingSources.length){
         if(!translationFailed) applyUiTranslationBackoff(503,0);
-        // Fail closed without language contamination or an endless retry loop.
-        // Until a complete atomic translation exists, preserve the canonical
-        // Macedonian UI (English keeps its built-in i18n surface).
+        // Keep verified visible text, but do not loop indefinitely through
+        // quota-limited translation requests after a provider/rate-limit fault.
+        // A later user interaction or reload can explicitly retry.
         uiTranslationQueued=false;
-        document.documentElement.dataset.translationState="unavailable";
-        document.documentElement.lang=siteLanguage==="en"?"en":"mk";
+        // If the shell was verified, preserve its translated controls and
+        // show an explicit partial status instead of rolling the page back.
+        // Otherwise retain the canonical Macedonian/English baseline.
+        document.documentElement.dataset.translationState=uiTranslationInitialCommitDone?"partial":"unavailable";
+        document.documentElement.dataset.translationScope=uiTranslationInitialCommitDone?"visible_shell_partial":"canonical_untranslated";
+        document.documentElement.lang=uiTranslationInitialCommitDone?siteLanguage:(siteLanguage==="en"?"en":"mk");
         document.documentElement.dir="ltr";
         const languageControl=document.getElementById("langBtn");
         if(languageControl){
@@ -3139,28 +3228,22 @@
             "title",
             siteLanguage==="en"
               ? "English interface is partially available; live translation is temporarily unavailable."
-              : "Избраниот превод е привремено недостапен. Прикажан е канонскиот македонски интерфејс без мешање на јазици."
+              : (uiTranslationInitialCommitDone
+                  ? "Основниот интерфејс е преведен; остатокот е привремено недостапен. Преводот не е целосен."
+                  : "Избраниот превод е привремено недостапен. Прикажан е канонскиот македонски интерфејс.")
           );
         }
+        showUiTranslationStatus(uiTranslationInitialCommitDone
+          ? "Делумен превод · "+missingSources.length+" сегменти сè уште недостасуваат"
+          : "Преводот е привремено недостапен");
         console.warn("ui_translation_atomic_commit_unavailable",siteLanguage,missingSources.length);
         return;
       }
-      uiTranslationObserverSuppressUntil=Date.now()+UI_TRANSLATION_OBSERVER_SUPPRESS_MS;
-      for(const unit of units){
-        const translated=cache[unit.source];
-        if(!translated) continue;
-        if(unit.kind==="text"){
-          unit.node.nodeValue=translated;
-          const state=uiTranslationNodeState.get(unit.node);
-          if(state) state.last=translated;
-        }else{
-          unit.el.setAttribute(unit.attr,translated);
-          const state=uiTranslationAttrState.get(unit.el);
-          if(state?.[unit.attr]) state[unit.attr].last=translated;
-        }
-      }
+      applyUnits(units);
       uiTranslationInitialCommitDone=true;
       document.documentElement.dataset.translationState="ready";
+      document.documentElement.dataset.translationScope="all_collected_ui_units";
+      showUiTranslationStatus("Преводот на страницата е завршен");
       document.documentElement.lang=siteLanguage;
       const dir=["ar","he","fa","ur"].includes(siteLanguage)?"rtl":"ltr";
       document.documentElement.dir=dir;
@@ -3184,7 +3267,13 @@
   function applyLanguage(){
     const renderedLanguage=siteLanguage==="mk"||uiTranslationInitialCommitDone ? siteLanguage : "en";
     document.documentElement.dataset.translationTarget=siteLanguage;
-    document.documentElement.dataset.translationState=siteLanguage==="mk"||uiTranslationInitialCommitDone ? "ready" : "loading";
+    // A verified partial shell must not be silently promoted to full READY
+    // by an unrelated UI re-render while background translation is pending.
+    const priorTranslationState=document.documentElement.dataset.translationState;
+    document.documentElement.dataset.translationState=siteLanguage==="mk"?"ready"
+      : uiTranslationInitialCommitDone
+        ? (priorTranslationState==="ready"?"ready":"partial")
+        : "loading";
     document.documentElement.lang = renderedLanguage;
     document.documentElement.dir = ["ar","he","fa","ur"].includes(renderedLanguage) ? "rtl" : "ltr";
 
