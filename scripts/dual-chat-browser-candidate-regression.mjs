@@ -76,7 +76,29 @@ try{
     assert.equal(calls,1,testcase.label+" did not issue precisely one API request");
     assert.ok(elapsed<11000,testcase.label+" guide preflight exceeded bounded deadline: "+elapsed);
     assert.ok(String(lastRequest?.q||"").includes("полномошно"),testcase.label+" lost submitted question");
-    evidence.push({bot:testcase.label,providerResponse:"mocked",apiRequests:calls,elapsedMs:elapsed,slowGuideBudgetMs:3500});
+    // R22: proactively offer a contextual next turn but never send it without
+    // an explicit user click followed by a separate Send action.
+    const proposals=page.locator(testcase.messages+" .ai-proactive-choice");
+    await proposals.first().waitFor({state:"visible",timeout:7000});
+    assert.equal(await proposals.count(),3,testcase.label+" missing all three contextual follow-up choices");
+    await proposals.first().click();
+    const drafted=await page.locator(testcase.input).inputValue();
+    assert.ok(drafted.length>=20,testcase.label+" did not prepare the opted-in next turn");
+    assert.equal(calls,1,testcase.label+" silently sent a paid AI request merely by clicking a suggestion");
+    assert.ok(await page.locator(testcase.send).isEnabled(),testcase.label+" next turn is not sendable");
+    await page.locator(testcase.send).click({timeout:15000});
+    const responseSelector=testcase.label==="internal"
+      ? testcase.messages+" .ai-msg.assistant .ai-msg-content"
+      : testcase.messages+" .message.assistant .text";
+    await page.waitForFunction(({selector,value})=>Array.from(document.querySelectorAll(selector))
+      .filter(el=>String(el.textContent||"").includes(value)).length>=2,
+      {selector:responseSelector,value:expected},{timeout:14000});
+    assert.equal(calls,2,testcase.label+" did not send exactly one explicitly approved follow-up");
+    assert.ok(Array.isArray(lastRequest?.history)&&lastRequest.history.some(x=>x.role==="user"&&String(x.text).includes("полномошно")),
+      testcase.label+" lost previous user question across conversational turns");
+    assert.ok(lastRequest.history.some(x=>x.role==="assistant"&&String(x.text).includes(expected)),
+      testcase.label+" lost previous assistant response across conversational turns");
+    evidence.push({bot:testcase.label,providerResponse:"mocked",apiRequests:calls,explicitFollowUpSends:1,autonomousRequests:0,elapsedMs:elapsed,slowGuideBudgetMs:3500});
     await ctx.close();
   }
   console.log("R19 CANDIDATE DUAL-CHAT BROWSER PREFLIGHT: PASS");
