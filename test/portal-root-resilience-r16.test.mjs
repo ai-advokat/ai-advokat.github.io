@@ -9,7 +9,10 @@ const chat=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
 const home=fs.readFileSync("index.html","utf8");
 
 test("Pages runtime sync requires manual production approval and preserves full-file parity",()=>{
-  assert.match(pages,/push:\n\s+branches: \["main"\]\n\s+workflow_dispatch:/);
+  assert.match(pages,/on:\n  workflow_dispatch:/);
+  assert.doesNotMatch(pages,/push:\s*\n\s*branches:/);
+  assert.match(pages,/environment: production/);
+  assert.match(pages,/test "\$GITHUB_REF" = "refs\/heads\/main"/);
   assert.doesNotMatch(pages,/branches: \["main"\]\n\s+paths:/);
 });
 
