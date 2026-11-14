@@ -1,8 +1,7 @@
 name: Sync AI Advokat frontend runtime to GitHub Pages
 
+# RC84 Human Gate: avoid automatic gh-pages publication on main merge.
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
 
 permissions:
