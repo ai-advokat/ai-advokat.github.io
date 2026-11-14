@@ -106,7 +106,7 @@ async function readImportFile(file){
 // document is NOT itself a single-law input; Zoki's 2019+2024 and new ZPP
 // sources must remain in distinct instrument families.
 function detectedLawFamily(text){
-  const heading=String(text||'').slice(0,12000).replace(/\\s+/g,' ').toUpperCase();
+  const heading=String(text||'').slice(0,12000).replace(/\s+/g,' ').toUpperCase();
   if(/ЗА БЕСПЛАТНА ПРАВНА ПОМОШ/.test(heading))return 'bpp';
   if(/ЗА ПАРНИЧНАТА ПОСТАПКА/.test(heading))return 'zpp';
   return null;
