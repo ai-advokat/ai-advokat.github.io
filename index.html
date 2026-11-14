@@ -3055,6 +3055,22 @@
     }
     return units;
   }
+  function showUiTranslationStatus(message){
+    const control=document.getElementById("langBtn");
+    if(!control) return;
+    let status=document.getElementById("uiTranslationStatus");
+    if(!status){
+      status=document.createElement("span");
+      status.id="uiTranslationStatus";
+      status.setAttribute("role","status");
+      status.setAttribute("aria-live","polite");
+      status.setAttribute("data-no-translate","");
+      status.style.cssText="font-size:12px;padding:0 7px;max-width:220px;white-space:normal;line-height:1.2";
+      control.insertAdjacentElement("afterend",status);
+    }
+    status.textContent=String(message||"");
+  }
+
   async function translateGlobalInterface(){
     if(siteLanguage==="mk"||uiTranslationRunning) return;
     uiTranslationRunning=true;
@@ -3062,6 +3078,7 @@
     document.documentElement.dataset.translationTarget=siteLanguage;
     if(!uiTranslationInitialCommitDone) document.documentElement.dataset.translationState="loading";
     try{
+      showUiTranslationStatus("Се подготвува преводот…");
       const units=collectUiTranslationUnits();
       const cache=uiTranslationCache();
       // The old all-or-nothing page transaction stayed blank for minutes while
@@ -3108,6 +3125,7 @@
         uiTranslationInitialCommitDone=true;
         document.documentElement.dataset.translationState="partial";
         document.documentElement.dataset.translationScope="visible_shell_partial";
+        showUiTranslationStatus("Основниот интерфејс е преведен · остатокот се обработува");
         document.documentElement.lang=siteLanguage;
         document.documentElement.dir=["ar","he","fa","ur"].includes(siteLanguage)?"rtl":"ltr";
         const control=document.getElementById("langBtn");
@@ -3171,6 +3189,7 @@
             commitPriorityShell();
             completedBatches+=1;
             document.documentElement.dataset.translationBatchesCompleted=String(completedBatches);
+            if(uiTranslationInitialCommitDone) showUiTranslationStatus("Превод во тек · "+completedBatches+"/"+batches.length+" групи");
           }catch(error){
             translationFailed=true;
             applyUiTranslationBackoff(503,0);
@@ -3203,6 +3222,9 @@
                   : "Избраниот превод е привремено недостапен. Прикажан е канонскиот македонски интерфејс.")
           );
         }
+        showUiTranslationStatus(uiTranslationInitialCommitDone
+          ? "Делумен превод · "+missingSources.length+" сегменти сè уште недостасуваат"
+          : "Преводот е привремено недостапен");
         console.warn("ui_translation_atomic_commit_unavailable",siteLanguage,missingSources.length);
         return;
       }
@@ -3210,6 +3232,7 @@
       uiTranslationInitialCommitDone=true;
       document.documentElement.dataset.translationState="ready";
       document.documentElement.dataset.translationScope="all_collected_ui_units";
+      showUiTranslationStatus("Преводот на страницата е завршен");
       document.documentElement.lang=siteLanguage;
       const dir=["ar","he","fa","ur"].includes(siteLanguage)?"rtl":"ltr";
       document.documentElement.dir=dir;
