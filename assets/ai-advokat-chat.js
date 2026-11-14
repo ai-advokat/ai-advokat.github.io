@@ -579,15 +579,21 @@
 
   async function fetchGuideRegistry(){
     if(!guideRegistryPromise){
-      guideRegistryPromise=fetch("/data/guides.json?v=20261010-current-law-review-v1",{cache:"no-store"})
-        .then(r=>r.ok?r.json():Promise.reject(new Error("guides")));
+      // Guide enrichment is OPTIONAL for sending a chat question. Prevent a
+      // stalled static catalogue from pinning the user at "Обработувам…".
+      guideRegistryPromise=fetch("/data/guides.json?v=20261010-current-law-review-v1",{
+        cache:"no-store",signal:AbortSignal.timeout(3500)
+      }).then(r=>r.ok?r.json():Promise.reject(new Error("guides")))
+        .catch(error=>{guideRegistryPromise=null;throw error;});
     }
     return guideRegistryPromise;
   }
   async function fetchGuides(){
     const [d,practical]=await Promise.all([
       fetchGuideRegistry(),
-      fetch("/data/public-practical-guides-38-73.json?v=20261013",{cache:"no-store"})
+      fetch("/data/public-practical-guides-38-73.json?v=20261013",{
+        cache:"no-store",signal:AbortSignal.timeout(3500)
+      })
         .then(r=>r.ok?r.json():({guides:[]})).catch(()=>({guides:[]}))
     ]);
     const records=Array.isArray(d?.records)?d.records:[];
@@ -618,9 +624,15 @@
 
   async function guideDocumentsForMatches(guides){
     const vault=window.AIAdvokatGuideVault;
-    if(!vault) return [];
-    try{return await vault.documentsForGuides(guides,{max:2});}
-    catch{return [];}
+    if(!vault || !Array.isArray(guides) || !guides.length) return [];
+    try{
+      // This is optional browser-vault enrichment, NOT the user's selected
+      // attachments. A blocked IndexedDB read must not prevent the API call.
+      return await Promise.race([
+        vault.documentsForGuides(guides,{max:2}),
+        new Promise(resolve=>setTimeout(()=>resolve([]),3500))
+      ]);
+    }catch{return [];}
   }
 
   if(guideVaultImport && guideVaultFiles){
