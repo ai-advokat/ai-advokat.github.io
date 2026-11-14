@@ -493,13 +493,13 @@ function splitProtectedMacedonianSegments(text){
 // enter this function. Avoid rewriting Latin names or English prose.
 function repairCyrillicWordHomoglyphs(text){
   const asciiToCyrillic={a:"а",A:"А",e:"е",E:"Е",o:"о",O:"О",p:"р",P:"Р",c:"с",C:"С",x:"х",X:"Х",y:"у",Y:"У",k:"к",K:"К",m:"м",M:"М",t:"т",T:"Т",h:"н",H:"Н"};
-  return String(text||"").replace(/[\\p{L}\\p{N}_-]+/gu,token=>{
-    const cyrillic=[...token].filter(ch=>/[\\p{Script=Cyrillic}]/u.test(ch)).length;
+  return String(text||"").replace(/[\p{L}\p{N}_-]+/gu,token=>{
+    const cyrillic=[...token].filter(ch=>/[\p{Script=Cyrillic}]/u.test(ch)).length;
     const ascii=[...token].filter(ch=>/[A-Za-z]/u.test(ch));
     if(cyrillic<3 || !ascii.length || ascii.length>2 || ascii.some(ch=>!asciiToCyrillic[ch])) return token;
     // Only mixed-script words with an overwhelmingly Cyrillic body qualify.
     // An alphanumeric identifier or hyphenated model/code name stays intact.
-    if(/[\\d_-]/u.test(token)) return token;
+    if(/[\d_-]/u.test(token)) return token;
     return token.replace(/[A-Za-z]/g,ch=>asciiToCyrillic[ch]);
   });
 }
