@@ -8,7 +8,7 @@ const worker=fs.readFileSync("src/index.js","utf8");
 const chat=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
 const home=fs.readFileSync("index.html","utf8");
 
-test("Pages runtime sync follows every main release, not a fragile path subset",()=>{
+test("Pages runtime sync requires manual production approval and preserves full-file parity",()=>{
   assert.match(pages,/push:\n\s+branches: \["main"\]\n\s+workflow_dispatch:/);
   assert.doesNotMatch(pages,/branches: \["main"\]\n\s+paths:/);
 });
