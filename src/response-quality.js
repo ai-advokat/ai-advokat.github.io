@@ -23,6 +23,14 @@ export function hasProceduralInstrumentMismatch(userText){
     && !CIVIL_REMEDY_DRAFT_RE.test(text);
 }
 
+// An explicitly unbound article number is a clarification task, not a model
+// generation task. Source identity is mandatory before stating legal content.
+export function isExplicitAmbiguousArticleRequest(userText){
+  const text=String(userText||"").normalize("NFKC");
+  return /(?:член|чл\\.)\\s*\\d+/iu.test(text)
+    && /(?:ако\\s+не\\s+е\\s+јасно\\s+од\\s+кој\\s+закон|не\\s+избирај\\s+закон\\s+самостојно)/iu.test(text);
+}
+
 export function isFormalLegalDraftRequest(userText){
   const text=String(userText||"").normalize("NFKC").trim();
   if(!text) return false;
