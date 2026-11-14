@@ -27,8 +27,8 @@ export function hasProceduralInstrumentMismatch(userText){
 // generation task. Source identity is mandatory before stating legal content.
 export function isExplicitAmbiguousArticleRequest(userText){
   const text=String(userText||"").normalize("NFKC");
-  return /(?:член|чл\\.)\\s*\\d+/iu.test(text)
-    && /(?:ако\\s+не\\s+е\\s+јасно\\s+од\\s+кој\\s+закон|не\\s+избирај\\s+закон\\s+самостојно)/iu.test(text);
+  return /(?:член|чл\.)\s*\d+/iu.test(text)
+    && /(?:ако\s+не\s+е\s+јасно\s+од\s+кој\s+закон|не\s+избирај\s+закон\s+самостојно)/iu.test(text);
 }
 
 export function isFormalLegalDraftRequest(userText){
