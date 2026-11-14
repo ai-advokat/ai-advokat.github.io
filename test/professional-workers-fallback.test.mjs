@@ -256,3 +256,13 @@ test("FREE capacity OpenAI timeout has deterministic formal-draft last resort",(
   assert.match(handle,/deterministicFallback:true/);
   assert.match(handle,/sourceMode=result\.provider==="deterministic_capacity_fallback"/);
 });
+
+
+test("R19.4 OpenAI project spend-limit 429 is terminal, not retried as transient",()=>{
+  const worker=fs.readFileSync("src/index.js","utf8");
+  assert.match(worker,/terminalSpendLimit=/);
+  assert.match(worker,/project_spend_limit_exceeded/);
+  assert.match(worker,/&& !terminalSpendLimit/);
+  assert.match(worker,/recoverSourceFreeDraft\(result\.error,result\.providerCalls\|\|1\)/);
+  assert.match(worker,/recoverSourceFreeDraft\("macedonian_language_release_blocked"/);
+});
