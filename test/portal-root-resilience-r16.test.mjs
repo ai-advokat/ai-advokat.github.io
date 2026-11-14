@@ -48,10 +48,12 @@ test("frontend handles the canonical Macedonian release error code",()=>{
   assert.match(chat,/d\?\.error==="macedonian_release_blocked" \|\| d\?\.error==="macedonian_language_release_blocked"/);
 });
 
-test("foreign-language translation fails closed to canonical MK without endless retry",()=>{
+test("foreign-language translation preserves canonical baseline or verified partial shell under bounded retries",()=>{
   assert.match(home,/let lang = siteLanguage==="en" \? "en" : "mk"/);
-  assert.match(home,/translationState="unavailable"/);
+  assert.match(home,/translationState=uiTranslationInitialCommitDone/);
   assert.match(home,/uiTranslationQueued=false/);
   assert.match(home,/ui_translation_atomic_commit_unavailable/);
+  assert.match(home,/translationScope=uiTranslationInitialCommitDone/);
+  assert.match(home,/applyUiTranslationBackoff/);
   assert.doesNotMatch(home,/translationState="retrying";\s*console\.warn\("ui_translation_atomic_commit_deferred"/);
 });
