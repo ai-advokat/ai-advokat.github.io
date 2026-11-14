@@ -964,7 +964,9 @@ export async function runOpenAIOrchestrator(env, {
   }
 
   const tools=[];
-  const chiefNeedsWeb=!capacityFallbackMode
+  // A token-exhausted chief recovery must not launch another paid web search.
+  // It may use only already retrieved bounded context; Human Gate is unchanged.
+  const chiefNeedsWeb=!capacityFallbackMode && !chiefOnlyRecoveryMode
     && webSearchEnabled
     && env?.OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED==="true"
     && specialistStage.webSearchUsed!==true;
@@ -1069,6 +1071,15 @@ export async function runOpenAIOrchestrator(env, {
   // Legal answers must never be returned from a truncated/refused/incomplete
   // Responses API payload, even if HTTP status is 2xx.
   if(payload?.status!=="completed"){
+    // Record technical budget signals only. Never log the legal question,
+    // evidence, prompt, attachments, response text, or identifying details.
+    console.warn("openai_chief_incomplete_bounded",{
+      status:String(payload?.status||"unknown").slice(0,64),
+      reason:String(payload?.incomplete_details?.reason||"unknown").slice(0,64),
+      outputTokens:chiefUsage.outputTokens,
+      maxOutputTokens:body.max_output_tokens,
+      chiefOnlyRecovery:Boolean(chiefOnlyRecoveryMode)
+    });
     return {
       ok:false,
       error:"openai_incomplete_response",
