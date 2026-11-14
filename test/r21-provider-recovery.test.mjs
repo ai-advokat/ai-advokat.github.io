@@ -25,7 +25,9 @@ test("R21 high-cost recovery skips repeat specialist fanout, preserves bounded a
   assert.match(worker,/chiefOnlyRecoveryMode:truncatedAtTokenBudget/);
   assert.match(worker,/capacityFallbackMode:retryableResponseStatus/);
   assert.match(worker,/Math\.min\(6000,Math\.max\(maxOutputTokens,incompleteRecoveryBudget/);
-  assert.match(orch,/let specialistStage=\(capacityFallbackMode\|\|chiefOnlyRecoveryMode\)/);
+  assert.match(orch,/const recoveredEvidence=chiefOnlyRecoveryMode/);
+  assert.match(orch,/let specialistStage=recoveredEvidence/);
+  assert.match(worker,/priorChiefRecovery:truncatedAtTokenBudget \? first\.priorChiefRecovery : null/);
   assert.match(orch,/capacityFallbackMode\n\s*\? Math\.min\(2200/);
   assert.match(orch,/max_output_tokens:capacityFallbackMode/);
   assert.match(orch,/if\(payload\?\.status!=="completed"\)/);

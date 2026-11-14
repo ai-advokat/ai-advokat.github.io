@@ -2988,6 +2988,9 @@
   // Three bounded requests concurrently avoid minutes of serial UI translation.
   // Server-side item concurrency and hourly caps remain independently enforced.
   const UI_TRANSLATION_CLIENT_CONCURRENCY=3;
+  const UI_TRANSLATION_MAX_ITEM_CHARS=1200; // matches Worker request validator
+  const UI_TRANSLATION_PASS_BUDGET_MS=90000;
+  const UI_TRANSLATION_REQUEST_TIMEOUT_MS=25000;
   const UI_TRANSLATION_PROVIDER_BACKOFF_MS=5000;
   const UI_TRANSLATION_RATE_LIMIT_BACKOFF_MS=60000;
   const UI_TRANSLATION_OBSERVER_SUPPRESS_MS=900;
@@ -3102,6 +3105,12 @@
       const prioritySources=[...new Set([...shellUnits,...viewportUnits].map(u=>u.source))].slice(0,48);
       const priorityUnits=units.filter(unit=>prioritySources.includes(unit.source));
       const pending=[...new Set([...prioritySources,...units.map(x=>x.source)].filter(text=>!cache[text]))];
+      // An oversized DOM paragraph cannot be sent: the Worker historically
+      // filtered >1200-character items, shifting response positions. Keep it
+      // untranslated and disclose PARTIAL, never misattribute a legal sentence.
+      const translatablePending=pending.filter(text=>String(text).trim().length<=UI_TRANSLATION_MAX_ITEM_CHARS);
+      const oversizedPending=pending.length-translatablePending.length;
+      if(oversizedPending) translationFailed=true;
       const applyUnits=selected=>{
         uiTranslationObserverSuppressUntil=Date.now()+UI_TRANSLATION_OBSERVER_SUPPRESS_MS;
         for(const unit of selected){
@@ -3134,7 +3143,7 @@
       commitPriorityShell();
       const batches=[];
       let batch=[],batchChars=0;
-      for(const text of pending){
+      for(const text of translatablePending){
         const clean=String(text||"");
         const nextChars=batchChars+clean.length;
         if(batch.length && (batch.length>=UI_TRANSLATION_BATCH_ITEMS || nextChars>UI_TRANSLATION_BATCH_CHARS)){
@@ -3151,17 +3160,21 @@
       document.documentElement.dataset.translationPendingUnits=String(pending.length);
       let completedBatches=0;
       let nextBatchIndex=0;
+      const translationDeadlineAt=Date.now()+UI_TRANSLATION_PASS_BUDGET_MS;
       async function runUiTranslationBatchWorker(){
         for(;;){
           const batchIndex=nextBatchIndex++;
           if(batchIndex>=batches.length) return;
           const texts=batches[batchIndex];
           const items=texts.map((text,j)=>({id:String(j),text}));
+          const remainingMs=translationDeadlineAt-Date.now();
+          if(remainingMs<=0){ translationFailed=true; return; }
           try{
             const r=await fetch(API_BASE+"/api/ui-translate",{
               method:"POST",
               headers:{"content-type":"application/json"},
-              body:JSON.stringify({targetLanguage:siteLanguage,items})
+              body:JSON.stringify({targetLanguage:siteLanguage,items}),
+              signal:AbortSignal.timeout(Math.min(UI_TRANSLATION_REQUEST_TIMEOUT_MS,remainingMs))
             });
             const d=await r.json();
             if(!r.ok||d?.ok!==true||!Array.isArray(d.translations)){
@@ -3179,12 +3192,27 @@
               if(r.status===429||r.status===503) return;
               continue;
             }
-            uiTranslationFailureStreak=0;
-            d.translations.forEach((row,j)=>{
-              const source=texts[j];
+            // Protocol invariant: id, count, and nonempty translation must
+            // all match. Never assign row j to source j: the server or an
+            // intermediate provider may drop/reorder rows.
+            const byId=new Map();
+            let validRows=d.translations.length===items.length;
+            if(validRows) for(const row of d.translations){
+              const id=String(row?.id??"");
               const translated=String(row?.text||"").trim();
-              if(source&&translated) cache[source]=translated;
-            });
+              if(!items.some(item=>item.id===id)||byId.has(id)||!translated){
+                validRows=false;
+                break;
+              }
+              byId.set(id,translated);
+            }
+            if(!validRows||byId.size!==items.length){
+              translationFailed=true;
+              console.warn("ui_translation_batch_integrity_rejected",batchIndex);
+              continue;
+            }
+            uiTranslationFailureStreak=0;
+            items.forEach(item=>{cache[item.text]=byId.get(item.id);});
             saveUiTranslationCache(cache);
             commitPriorityShell();
             // Once the priority shell is verified, progressively apply each
