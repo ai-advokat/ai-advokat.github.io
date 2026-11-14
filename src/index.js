@@ -7610,7 +7610,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     && attachmentCheck.attachments.length===0
     && guideDocumentCheck.attachments.length===0;
   if(explicitArticleIdentityGap){
-    const requested=String(userQ.match(/(?:член|чл\\.)\\s*(\\d+)/iu)?.[1]||"").trim();
+    const requested=String(userQ.match(/(?:член|чл\.)\s*(\d+)/iu)?.[1]||"").trim();
     return json(request,{
       ok:true,
       answer:"Не е јасно од кој закон е член "+requested+". Наведете го точниот назив на законот или прописот и, ако е потребно, датумот на применливата верзија. Без тоа AI Advokat не може безбедно да го идентификува членот и нема самостојно да избере закон или да измисли законска содржина.",
