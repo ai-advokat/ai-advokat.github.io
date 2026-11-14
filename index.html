@@ -3103,6 +3103,9 @@
         return rect.bottom>0 && rect.top<Math.min(window.innerHeight+50,950);
       });
       const prioritySources=[...new Set([...shellUnits,...viewportUnits].map(u=>u.source))].slice(0,48);
+      // Do not block an otherwise verified visible shell on a >1200-char
+      // priority unit that the translation API correctly refuses to accept.
+      const priorityCommittableSources=prioritySources.filter(source=>String(source).trim().length<=UI_TRANSLATION_MAX_ITEM_CHARS);
       const priorityUnits=units.filter(unit=>prioritySources.includes(unit.source));
       const pending=[...new Set([...prioritySources,...units.map(x=>x.source)].filter(text=>!cache[text]))];
       // An oversized DOM paragraph cannot be sent: the Worker historically
@@ -3128,8 +3131,8 @@
         }
       };
       const commitPriorityShell=()=>{
-        if(uiTranslationInitialCommitDone || !prioritySources.length) return;
-        if(prioritySources.some(source=>!cache[source])) return;
+        if(uiTranslationInitialCommitDone || !priorityCommittableSources.length) return;
+        if(priorityCommittableSources.some(source=>!cache[source])) return;
         applyUnits(units.filter(unit=>Boolean(cache[unit.source])));
         uiTranslationInitialCommitDone=true;
         document.documentElement.dataset.translationState="partial";
