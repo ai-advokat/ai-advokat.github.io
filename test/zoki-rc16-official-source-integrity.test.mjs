@@ -74,6 +74,8 @@ test("Consolidator identifies BPP and ZPP headings to prevent accidental cross-l
   assert.equal(context.detectedLawFamily("ЗАКОН ЗА БЕСПЛАТНА ПРАВНА ПОМОШ\nЧлен 1"),"bpp");
   assert.equal(context.detectedLawFamily("ЗАКОН ЗА ИЗМЕНУВАЊЕ И ДОПОЛНУВАЊЕ НА ЗАКОНОТ ЗА БЕСПЛАТНА ПРАВНА ПОМОШ"),"bpp");
   assert.equal(context.detectedLawFamily("ЗАКОН ЗА ПАРНИЧНАТА ПОСТАПКА\nЧлен 1"),"zpp");
+  assert.equal(context.detectedLawFamily("З А К О Н\nЗА БЕСПЛАТНА\nПРАВНА ПОМОШ"),"bpp");
+  assert.equal(context.detectedLawFamily("З А К О Н\nЗА ПАРНИЧНАТА\nПОСТАПКА"),"zpp");
   assert.equal(context.detectedLawFamily("Непознат правен текст"),null);
 });
 
