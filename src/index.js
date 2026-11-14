@@ -8296,6 +8296,15 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       answer:releasedFallbackText,
       model:freeResult.model,
       provider:freeResult.provider||"workers_ai_free",
+      // A successful source-free deterministic draft is NOT AI generation.
+      // Expose its recovery provenance explicitly for the client and live UAT.
+      providerRecovery:freeResult.provider==="deterministic_capacity_fallback" ? {
+        recovered:true,
+        deterministicFallback:true,
+        mode:"bounded_formal_draft_no_model",
+        providerCalls:Number(freeResult.providerCalls||0),
+        humanReviewRequired:true
+      } : null,
       providerFallback:fallbackReason ? {
         from:"openai",
         reason:String(fallbackReason),
