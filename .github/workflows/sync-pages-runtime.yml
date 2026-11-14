@@ -14,6 +14,9 @@ concurrency:
 
 jobs:
   sync:
+    # The gh-pages branch is publicly served. Apply the same GitHub
+    # production environment protection as the Worker deployment.
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
