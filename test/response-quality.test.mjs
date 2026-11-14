@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
   isFormalLegalDraftRequest,
+  isExplicitAmbiguousArticleRequest,
   hasProceduralInstrumentMismatch,
   deterministicProceduralInstrumentFallback,
   deterministicFictionalPublicFalseInformationDraftFallback,
@@ -428,3 +429,14 @@ test("RQ29 fictional public-false-information recovery stays narrowly scoped",()
   }),null);
 });
 
+
+
+test("RQ30 explicit Article 12 source gap never needs a model",()=>{
+  const q="Што уредува член 12? Ако не е јасно од кој закон, не избирај закон самостојно.";
+  assert.equal(isExplicitAmbiguousArticleRequest(q),true);
+  assert.equal(isExplicitAmbiguousArticleRequest("Што точно уредува член 12 од ЗРО?"),false);
+  const worker=fs.readFileSync("src/index.js","utf8");
+  assert.match(worker,/const explicitArticleIdentityGap=isExplicitAmbiguousArticleRequest\\(userQ\\)/);
+  assert.match(worker,/sourceMode:"legal_instrument_not_identified_no_model"/);
+  assert.match(worker,/provider:"canonical_corpus_no_model"/);
+});
