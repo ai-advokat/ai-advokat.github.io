@@ -62,28 +62,19 @@ test("Root reliability enforces Training Open and confidential Secure Case bound
   assert.match(y,/confidential_case_workspace_required/);
 });
 
-test("Critical release-plane workflow changes publish the same SHA to Pages and production runtime",()=>{
+test("Manual release-plane processes preserve source SHA and production Human Gate",()=>{
   const pages=fs.readFileSync(".github/workflows/sync-pages-runtime.yml","utf8");
   const production=fs.readFileSync(".github/workflows/production-runtime-sync.yml","utf8");
 
-  // Pages is deliberately stronger than an allowlist: every main commit is synced.
-  assert.match(pages,/push:\n\s+branches: \["main"\]/);
-  assert.doesNotMatch(pages,/branches: \["main"\]\n\s+paths:/);
-
-  // Production deploy remains path-bounded, so every release-plane workflow that
-  // can change post-deploy acceptance must still trigger the runtime sync.
-  for(const path of [
-    ".github/workflows/worker-runtime-live-smoke.yml",
-    ".github/workflows/free-runtime-live-uat.yml",
-    ".github/workflows/root-reliability-live-smoke.yml",
-    ".github/workflows/professional-bot-live-smoke.yml",
-    ".github/workflows/professional-l23-resilience-live-smoke.yml",
-    ".github/workflows/production-runtime-sync.yml",
-    ".github/workflows/sync-pages-runtime.yml",
-    ".github/workflows/case-law-evidence-gates-production-activation.yml"
-  ]){
-    assert.ok(production.includes('"'+path+'"'),"Production sync missing "+path);
+  for (const y of [pages,production]) {
+    assert.match(y,/on:\\n  workflow_dispatch:/);
+    assert.doesNotMatch(y,/push:\\s*\\n\\s*branches:/);
+    assert.match(y,/environment: production/);
+    assert.match(y,/test "\\$GITHUB_REF" = "refs\\/heads\\/main"/);
   }
+  assert.match(pages,/source_main_sha=%s/);
+  assert.match(production,/Require case-law evidence gate schema before runtime deploy/);
+
 });
 
 test("Pages sync publishes exact source-main SHA marker",()=>{
@@ -94,8 +85,9 @@ test("Pages sync publishes exact source-main SHA marker",()=>{
 });
 
 
-test("Production sync is retriggered by the exact 0053 schema dependency",()=>{
+test("Manual production sync verifies exact 0053 schema before deploying",()=>{
   const production=fs.readFileSync(".github/workflows/production-runtime-sync.yml","utf8");
-  assert.match(production,/migrations\/0053_case_law_evidence_gates\.sql/);
-  assert.match(production,/case-law-evidence-gates-production-activation\.yml/);
+  assert.match(production,/CAST\\(version AS INTEGER\\)=53/);
+  assert.match(production,/case_law_evidence_gates/);
+  assert.match(production,/case_law_echr_comparison_gates/);
 });
