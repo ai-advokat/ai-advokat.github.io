@@ -8,6 +8,8 @@ on:
       - "index.html"
       - "assets/ai-advokat-chat.js"
       - "assets/standalone-bot.js"
+      - "assets/ai-advokat-proactive.mjs"
+      - "test/proactive-dual-conversation.test.mjs"
       - "scripts/translator-layered-live-smoke.mjs"
       - "scripts/translator-browser-candidate-regression.mjs"
       - "scripts/dual-chat-browser-candidate-regression.mjs"
@@ -45,6 +47,7 @@ jobs:
           node --check scripts/translator-layered-live-smoke.mjs
           node --check scripts/translator-browser-candidate-regression.mjs
           node --check scripts/dual-chat-browser-candidate-regression.mjs
+          node --check assets/ai-advokat-proactive.mjs
           node --check src/index.js
 
       - name: Prepare browser probe
