@@ -21,6 +21,9 @@ Owner of final release: human repository/production owner
 5. OpenAI hard project spend-limit responses are terminal (no duplicate provider retry). Code does not bypass billing, alter API credentials, or raise spend.
 6. Translation commits an **explicitly PARTIAL** priority UI shell first, processes the rest, shows batch progress, and marks `ready` only after all collected units complete. Public API limits and protections are unchanged.
 7. Browser acceptance records the rendered shell state/scope on timeout, preserving the real full-page gate.
+8. Internal chat optional guide catalogue requests are bounded to 3.5s and retry cleanly; browser Guide Vault enrichment cannot hang before `/api/chat`. User-selected real attachments remain distinct and guarded.
+9. External bot optional catalogue lookup is bounded; explicitly requested local guides must either load or report a visible error rather than silently disappearing. Any provider failure is visible in the conversation as **NO AI RESPONSE**.
+10. New `test/dual-chat-preflight-resilience-r19.test.mjs` locks these two UI paths in the full repository suite.
 
 ## Acceptance criteria for production
 
@@ -28,8 +31,8 @@ Owner of final release: human repository/production owner
 - [ ] Human Gate: approve merge and production deployment before any automatic release. Separate 0053 schema approval only if evidence warrants it.
 - [ ] Verify OpenAI project's spend limit/credits with its authorized owner. Never send API keys in chat.
 - [ ] Post-deploy full browser page: MK -> SQ selectors; above-fold navigation and translator label translated (PARTIAL is a real intermediate state). `ready` only after complete full-page translation; no false pass for 120s timeout.
-- [ ] Post-deploy internal /api/chat: real free Macedonian explanation; real source-backed statute lookup; source-free fictional lawsuit draft; no user-visible blank response or endless spinner.
-- [ ] Post-deploy external /api/bot with test Professional membership: same source-backed tests and controlled L2/L3 fallbacks, with provenance and Human Gate. Verify primary paid generation only after provider billing is restored.
+- [ ] Post-deploy internal browser: submitted question reaches /api/chat even if optional guides endpoint is unresponsive; optional vault delay cannot leave perpetual processing. Then real free Macedonian explanation; real source-backed statute lookup; source-free fictional lawsuit draft; no user-visible blank response or endless spinner.
+- [ ] Post-deploy external browser: submitted question reaches /api/bot despite optional guides endpoint delay; provider errors show a visible assistant service-status message instead of silent status-only failure. With test Professional membership: same source-backed tests and controlled L2/L3 fallbacks, with provenance and Human Gate. Verify primary paid generation only after provider billing is restored.
 - [ ] Rate limit and unknown-law safeguards remain fail-closed; no fabricated statute, case law, court or deadline.
 - [ ] Gate status report: PASS / FAIL / BLOCKED / NOT TESTED with exact run IDs.
 
