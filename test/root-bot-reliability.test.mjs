@@ -48,7 +48,8 @@ test("external bot isolates vNext boot stages and remains fail-visible",()=>{
 test("professional runtime recovery uses bounded Chief-only recovery for 429 while keeping governed fallback bounded",()=>{
   assert.match(worker,/\[408,429,500,502,503,504\]\.includes\(transientStatus\)/);
   assert.match(worker,/const boundedChiefRecovery=/);
-  assert.match(worker,/capacityFallbackMode:boundedChiefRecovery/);
+  assert.match(worker,/capacityFallbackMode:retryableResponseStatus/);
+  assert.match(worker,/chiefOnlyRecoveryMode:truncatedAtTokenBudget/);
   assert.match(orchestrator,/"specialist_deadline_exhausted"/);
   assert.match(orchestrator,/\["L2_STRATEGY_PROCEDURE","L3_CONSEQUENTIAL"\]\.includes\(profile\)/);
   assert.match(worker,/professionalL0WorkersFallbackEligible/);
