@@ -3233,7 +3233,13 @@
   function applyLanguage(){
     const renderedLanguage=siteLanguage==="mk"||uiTranslationInitialCommitDone ? siteLanguage : "en";
     document.documentElement.dataset.translationTarget=siteLanguage;
-    document.documentElement.dataset.translationState=siteLanguage==="mk"||uiTranslationInitialCommitDone ? "ready" : "loading";
+    // A verified partial shell must not be silently promoted to full READY
+    // by an unrelated UI re-render while background translation is pending.
+    const priorTranslationState=document.documentElement.dataset.translationState;
+    document.documentElement.dataset.translationState=siteLanguage==="mk"?"ready"
+      : uiTranslationInitialCommitDone
+        ? (priorTranslationState==="ready"?"ready":"partial")
+        : "loading";
     document.documentElement.lang = renderedLanguage;
     document.documentElement.dir = ["ar","he","fa","ur"].includes(renderedLanguage) ? "rtl" : "ltr";
 
