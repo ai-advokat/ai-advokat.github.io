@@ -487,6 +487,23 @@ function splitProtectedMacedonianSegments(text){
   return out;
 }
 
+// Correct isolated ASCII homoglyphs inside an otherwise Macedonian Cyrillic
+// word. This is typography repair, not legal translation. Identifiers, URLs,
+// citations and other protected segments are processed separately and never
+// enter this function. Avoid rewriting Latin names or English prose.
+function repairCyrillicWordHomoglyphs(text){
+  const asciiToCyrillic={a:"а",A:"А",e:"е",E:"Е",o:"о",O:"О",p:"р",P:"Р",c:"с",C:"С",x:"х",X:"Х",y:"у",Y:"У",k:"к",K:"К",m:"м",M:"М",t:"т",T:"Т",h:"н",H:"Н"};
+  return String(text||"").replace(/[\\p{L}\\p{N}_-]+/gu,token=>{
+    const cyrillic=[...token].filter(ch=>/[\\p{Script=Cyrillic}]/u.test(ch)).length;
+    const ascii=[...token].filter(ch=>/[A-Za-z]/u.test(ch));
+    if(cyrillic<3 || !ascii.length || ascii.length>2 || ascii.some(ch=>!asciiToCyrillic[ch])) return token;
+    // Only mixed-script words with an overwhelmingly Cyrillic body qualify.
+    // An alphanumeric identifier or hyphenated model/code name stays intact.
+    if(/[\\d_-]/u.test(token)) return token;
+    return token.replace(/[A-Za-z]/g,ch=>asciiToCyrillic[ch]);
+  });
+}
+
 function normaliseMacedonianUnprotectedText(text){
   let value=String(text||"").normalize("NFKC");
   for(const [from,to] of DETERMINISTIC_LEXICAL_REPLACEMENTS){
@@ -500,6 +517,7 @@ function normaliseMacedonianUnprotectedText(text){
     ["Щ","Шт"],["щ","шт"],["Ь",""],["ь",""],["Ъ","А"],["ъ","а"]
   ]);
   value=[...value].map(ch=>charMap.has(ch)?charMap.get(ch):ch).join("");
+  value=repairCyrillicWordHomoglyphs(value);
   return value;
 }
 
