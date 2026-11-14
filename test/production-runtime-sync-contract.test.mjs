@@ -5,12 +5,12 @@ import assert from "node:assert/strict";
 const workflow=fs.readFileSync(".github/workflows/production-runtime-sync.yml","utf8");
 
 test("production runtime sync requires explicit Human-Gated manual dispatch",()=>{
-  assert.match(workflow,/on:\\n  workflow_dispatch:/);
-  assert.doesNotMatch(workflow,/push:\\s*\\n\\s*branches:/);
+  assert.match(workflow,/on:\n  workflow_dispatch:/);
+  assert.doesNotMatch(workflow,/push:\s*\n\s*branches:/);
   assert.match(workflow,/environment: production/);
-  assert.match(workflow,/test "\\$GITHUB_REF" = "refs\\/heads\\/main"/);
+  assert.match(workflow,/test "\$GITHUB_REF" = "refs\/heads\/main"/);
   assert.match(workflow,/Require case-law evidence gate schema before runtime deploy/);
-  assert.match(workflow,/concurrency:\\n  group: ai-advokat-production-runtime-sync\\n  cancel-in-progress: true/);
+  assert.match(workflow,/concurrency:\n  group: ai-advokat-production-runtime-sync\n  cancel-in-progress: true/);
 });
 
 test("production runtime sync targets the exact Worker and deploys through wrangler only after verification",()=>{
