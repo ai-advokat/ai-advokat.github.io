@@ -90,6 +90,7 @@ const $ = id => document.getElementById(id);
 const base = location.hostname.endsWith('workers.dev') ? location.origin : 'https://ai-advokat-github-io.aiadvokat16.workers.dev';
 let key = '', history = [], pending = null, generation = 0;
 let sessionId = crypto.randomUUID();
+const proactiveConversation=import("./ai-advokat-proactive.mjs?v=r22-20261114").catch(()=>null);
 const welcome = $('welcome').cloneNode(true);
 
 const AI_ADVOCAT_LANGUAGES=Object.freeze([
@@ -468,6 +469,36 @@ function message(role, text, model = '') {
   article.scrollIntoView({block:'end'});
   return article;
 }
+function renderProactiveNextTurns(article,nextTurns){
+  if(!article||!Array.isArray(nextTurns?.options)||!nextTurns.options.length) return;
+  const panel=document.createElement("section");
+  panel.className="ai-proactive-next-turns";
+  panel.setAttribute("aria-label","Разговорни продолженија");
+  const question=document.createElement("p");
+  question.className="ai-proactive-question";
+  question.textContent=String(nextTurns.question||"");
+  const options=document.createElement("div");
+  options.className="ai-proactive-options";
+  for(const suggestion of nextTurns.options.slice(0,3)){
+    if(!suggestion?.label||!suggestion?.prompt) continue;
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="ai-proactive-choice";
+    button.textContent=String(suggestion.label);
+    button.setAttribute("aria-label","Подготви прашање: "+String(suggestion.label));
+    button.addEventListener("click",()=>{
+      if(pending) return;
+      $('question').value=String(suggestion.prompt).slice(0,3500);
+      $('question').dispatchEvent(new Event("input",{bubbles:true}));
+      $('question').focus();
+    });
+    options.append(button);
+  }
+  const note=document.createElement("small");
+  note.textContent="Предлози за продолжување · без автоматско испраќање · Human Gate.";
+  if(options.childElementCount){panel.append(question,options,note);article.append(panel);}
+}
+
 function ensureLegalPulseStyles() {
   if (document.getElementById('legalPulseRuntimeStyle')) return;
   const style = document.createElement('style');
@@ -715,6 +746,7 @@ $('composer').onsubmit = async event => {
 
   const epoch = generation, controller = new AbortController(); pending = controller; busy(true);
   const timeout = setTimeout(() => controller.abort(),180000);
+  $('messages').querySelectorAll('.ai-proactive-next-turns').forEach(panel=>panel.remove());
   message('user',outboundQ); $('question').value = ''; $('question').style.height = '';
   const pulse = responsePulse();
   status(privacyRedacted
@@ -736,6 +768,10 @@ $('composer').onsubmit = async event => {
     pulse.remove();
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
     history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
+    const nextTurns=await proactiveConversation
+      .then(mod=>mod?.suggestLegalNextTurns?.({question:outboundQ,answer:data.answer,language:selectedLanguageMeta().code})||null)
+      .catch(()=>null);
+    if(epoch===generation) renderProactiveNextTurns(article,nextTurns);
     if(voiceConversationPending){
       voiceConversationPending=false;
       const spokenAnswer=String(data.answer||'').trim();
