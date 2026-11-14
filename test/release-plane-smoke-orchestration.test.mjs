@@ -67,10 +67,10 @@ test("Manual release-plane processes preserve source SHA and production Human Ga
   const production=fs.readFileSync(".github/workflows/production-runtime-sync.yml","utf8");
 
   for (const y of [pages,production]) {
-    assert.match(y,/on:\\n  workflow_dispatch:/);
-    assert.doesNotMatch(y,/push:\\s*\\n\\s*branches:/);
+    assert.match(y,/on:\n  workflow_dispatch:/);
+    assert.doesNotMatch(y,/push:\s*\n\s*branches:/);
     assert.match(y,/environment: production/);
-    assert.match(y,/test "\\$GITHUB_REF" = "refs\\/heads\\/main"/);
+    assert.match(y,/test "\$GITHUB_REF" = "refs\/heads\/main"/);
   }
   assert.match(pages,/source_main_sha=%s/);
   assert.match(production,/Require case-law evidence gate schema before runtime deploy/);
@@ -87,7 +87,7 @@ test("Pages sync publishes exact source-main SHA marker",()=>{
 
 test("Manual production sync verifies exact 0053 schema before deploying",()=>{
   const production=fs.readFileSync(".github/workflows/production-runtime-sync.yml","utf8");
-  assert.match(production,/CAST\\(version AS INTEGER\\)=53/);
+  assert.match(production,/CAST\(version AS INTEGER\)=53/);
   assert.match(production,/case_law_evidence_gates/);
   assert.match(production,/case_law_echr_comparison_gates/);
 });
