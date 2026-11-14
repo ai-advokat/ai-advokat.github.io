@@ -32,7 +32,7 @@ test("GPTACT1 production runtime is armed for the approved model but contains no
   assert.equal(config.vars.FREE_CHAT_PROVIDER,"workers_ai");
   assert.equal(config.vars.WORKERS_AI_MARKDOWN_ENABLED,"true");
   assert.equal(config.vars.WORKERS_AI_CHAT_MODEL,"@cf/openai/gpt-oss-120b");
-  assert.equal(config.vars.WORKERS_AI_EMPTY_FALLBACK_MODEL,"@cf/qwen/qwen3.8-27b");
+  assert.equal(config.vars.WORKERS_AI_EMPTY_FALLBACK_MODEL,"@cf/zai-org/glm-4.7-flash");
   assert.doesNotMatch(wrangler,/OPENAI_API_KEY/);
   assert.doesNotMatch(wrangler,/sk-[A-Za-z0-9_-]{20,}/);
 });
@@ -180,7 +180,7 @@ test("GPTACT11 Workers AI remains explicit, bounded and available only as fallba
   assert.match(worker,/FREE_RESEARCH_ONLY_HUMAN_GATE_REQUIRED/);
   assert.match(worker,/workers-ai-provider\.js/);
   assert.match(wrangler,/"WORKERS_AI_CHAT_MODEL": "@cf\/openai\/gpt-oss-120b"/);
-  assert.match(wrangler,/"WORKERS_AI_EMPTY_FALLBACK_MODEL": "@cf\/qwen\/qwen3\.8-27b"/);
+  assert.match(wrangler,/"WORKERS_AI_EMPTY_FALLBACK_MODEL": "@cf\/zai-org\/glm-4\.7-flash"/);
   assert.doesNotMatch(workflow,/Live FREE Workers AI multi-scenario runtime UAT/);
   assert.doesNotMatch(worker,/error:"free_mode_professional_postflight_required"/);
   assert.match(worker,/FREE provider output is a working research\/draft result only/);
