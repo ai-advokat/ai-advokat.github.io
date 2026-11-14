@@ -2983,8 +2983,11 @@
 
 
   const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v1:";
-  const UI_TRANSLATION_BATCH_ITEMS=12;
-  const UI_TRANSLATION_BATCH_CHARS=2400;
+  // Keep one full-page language pass within the server's 48-request hourly
+  // language cap; the old 12/2400 batches required 58+ calls on this page.
+  // Requests remain below the server-side 96-item / 12000-char ceilings.
+  const UI_TRANSLATION_BATCH_ITEMS=24;
+  const UI_TRANSLATION_BATCH_CHARS=4800;
   // Three bounded requests concurrently avoid minutes of serial UI translation.
   // Server-side item concurrency and hourly caps remain independently enforced.
   const UI_TRANSLATION_CLIENT_CONCURRENCY=3;
