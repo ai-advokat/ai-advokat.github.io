@@ -11672,9 +11672,23 @@ async function handleConsolidatorImport(request,env){
     if(!item || item.format==="error" || typeof item.data!=="string" || !item.data.trim()){
       return json(request,{ok:false,error:"consolidator_document_conversion_failed",detail:String(item?.error||"empty conversion").slice(0,180)},502);
     }
+    // Never silently truncate a statute or amendment. The former 180k
+    // character slice could discard Articles 250-519 of a large 2026 ZPP.
+    // Keep the source complete up to the bounded UI import limit, or fail closed.
+    const convertedText=String(item.data);
+    const maxImportChars=750000;
+    if(convertedText.length>maxImportChars){
+      return json(request,{
+        ok:false,
+        error:"consolidator_import_text_too_large",
+        maxChars:maxImportChars,
+        actualChars:convertedText.length,
+        guidance:"Use verified TXT excerpts with a separate original-PDF page map; no automatic truncation."
+      },413);
+    }
     return json(request,{
       ok:true,
-      text:String(item.data).slice(0,180000),
+      text:convertedText,
       provider:"workers_ai_markdown_conversion",
       transient:true,
       stored:false,
