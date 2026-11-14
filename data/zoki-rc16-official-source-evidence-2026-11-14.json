@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0",
+  "intake_id": "zoki-rc16-official-source-evidence-2026-11-14",
+  "review_status": "REVIEW_ONLY_LEGAL_HOLD",
+  "scope": "Source identity, fingerprints, law-family separation and temporal validity metadata only. NO legal text import or activation.",
+  "captured_at": "2026-11-14",
+  "source_count": 3,
+  "public_repo_contains_raw_law_text": false,
+  "sources": [
+    {
+      "id": "bpp_base_101_2019",
+      "title": "Закон за бесплатна правна помош",
+      "gazette": "101/2019",
+      "publication_date": "2019-05-22",
+      "role": "base_law",
+      "instrument_family": "free_legal_aid",
+      "official_ldbis": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=49111",
+      "pdf_original_sha256": "028f63f0a07393c464941a0069cb9e0d51e02ade8caf856ed7bc280d47f21568",
+      "issue_pdf_pages": 120,
+      "macedonian_law_pdf_pages": [
+        92,
+        105
+      ],
+      "verified_original_article_headings": 50,
+      "import_lane": "base_only_with_bpp_2024_amendment",
+      "document_format": "whole Gazette issue: contains other laws and Albanian text",
+      "human_legal_review": "pending"
+    },
+    {
+      "id": "bpp_amendment_194_2024",
+      "title": "Закон за изменување и дополнување на Законот за бесплатна правна помош",
+      "gazette": "194/2024",
+      "publication_date": "2024-09-19",
+      "role": "amendment",
+      "instrument_family": "free_legal_aid",
+      "official_ldbis": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=67781",
+      "pdf_original_sha256": "38d7391de8ab33d6f3a1936b52cdf2eea13d8080063463282df0b87f3e4951aa",
+      "issue_pdf_pages": 144,
+      "macedonian_law_pdf_pages": [
+        3,
+        3
+      ],
+      "operation_targets": [
+        "13(6)",
+        "insert 34-а",
+        "insert 34-б",
+        "insert 34-в"
+      ],
+      "expected_structural_bpp_article_count_after_review": 53,
+      "import_lane": "amendment_only_with_bpp_2019_base",
+      "document_format": "whole Gazette issue: only one amendment relevant to BPP",
+      "human_legal_review": "pending"
+    },
+    {
+      "id": "new_zpp_151_2026",
+      "title": "Закон за парничната постапка",
+      "gazette": "151/2026",
+      "publication_date": "2026-07-08",
+      "entry_into_force": "2026-07-16",
+      "role": "new_law_future_application",
+      "instrument_family": "civil_procedure",
+      "instrument_key": "mk:zpp",
+      "official_ldbis": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=74234",
+      "official_previous_ldbis": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=10692",
+      "pdf_original_sha256": "8312c7b3a1c7d9f59d73d48ffddd820b1aa0774a7f5e4afb7515819d6be49553",
+      "law_pdf_pages": 123,
+      "verified_article_headings": 519,
+      "article_184_original_pdf_page": 47,
+      "transitional_articles": [
+        517,
+        518,
+        519
+      ],
+      "ldbis_application_date": "2027-01-18",
+      "alternative_secondary_application_date": "2027-01-16",
+      "application_date_disagreement_requires_human_review": true,
+      "article_103_exception_has_18_month_rule": true,
+      "applicable_in_2026_11": false,
+      "do_not_use_as_current_zpp_article_184": true,
+      "import_lane": "separate_new_zpp_base_only",
+      "human_legal_review": "pending"
+    }
+  ],
+  "official_snapshot_note": "LDBIS official metadata reviewed 2026-11-14. Gazette files received from Zoki; cryptographic SHA-256 verified locally. Official/source rights and all later legal effects require lawyer review.",
+  "known_blockers": [
+    "Original 2019/2024 Gazette issues include unrelated acts; cannot import entire issues as one law.",
+    "Machine text extractions require line, column and legal clause review against original PDF.",
+    "2005 through 2015 applicable ZPP source chain is NOT part of this delivery: zoki-test15 current article 184 remains HOLD.",
+    "Application date conflict (official LDBIS 18 Jan 2027, secondary commentaries 16 Jan 2027); no automatic date switch.",
+    "RC16 HG11/HG35 open; unpublished legal corpus and production remain NO-GO.",
+    "Public republishing rights and legal text accuracy not authorised.",
+    "Live Consolidator PDF toMarkdown capacity and full import/browser QA not independently verified."
+  ],
+  "non_activation": {
+    "human_gate": "PENDING",
+    "article_promotion": false,
+    "db_migrations": false,
+    "cloudflare_deploy": false,
+    "merge_authorization": false,
+    "release_status": "NO_GO"
+  },
+  "review_steps": [
+    "Zoki verifies original PDF identity and 2019 Article 13(6) replacement from 2024.",
+    "Zoki verifies insertion and exact structure of 34-а / 34-б / 34-в, including numbering and references.",
+    "Zoki confirms old/current vs new/future ZPP version selection, 517-519, and resolves 2027 exact date.",
+    "After source rights and full-text QA, handle per-instrument/corpus Human Gate separately."
+  ]
+}
