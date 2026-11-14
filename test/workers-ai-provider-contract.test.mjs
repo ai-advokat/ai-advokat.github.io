@@ -65,6 +65,19 @@ test("WAP4 empty primary final falls back exactly once to bounded secondary mode
   assert.deepEqual(models,[WORKERS_AI_TEXT_MODEL_DEFAULT,WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT]);
 });
 
+test("WAP4a bounded fallback defaults to GLM with thinking disabled",()=>{
+  assert.equal(WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT,"@cf/zai-org/glm-4.7-flash");
+  const options=workersAIRequestOptions({
+    model:WORKERS_AI_EMPTY_FALLBACK_MODEL_DEFAULT,
+    messages:[{role:"user",content:"Тест"}],
+    maxOutputTokens:400,
+    temperature:0
+  });
+  assert.deepEqual(options.chat_template_kwargs,{enable_thinking:false});
+  assert.equal(options.max_completion_tokens,400);
+  assert.equal("max_tokens" in options,false);
+});
+
 test("WAP5 empty primary and empty non-reasoning fallback fail closed after two calls",async()=>{
   const models=[];
   const env={AI:{run:async(model)=>{models.push(model); return {response:""};}}};
