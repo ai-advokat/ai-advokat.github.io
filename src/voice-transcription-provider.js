@@ -4,7 +4,7 @@ export const VOICE_TRANSCRIPTION_MODEL="@cf/openai/whisper-large-v3-turbo";
 // transcribed audio, credentials or service internals to a public client.
 export function classifyVoiceTranscriptionFailure(error){
   const detail=String(error?.message||error||"").slice(0,320);
-  if(/\b4006\b/i.test(detail) && /daily free allocation|neurons|quota|capacity/i.test(detail)){
+  if(/\b(?:3036|4006)\b/i.test(detail) && /daily free allocation|neurons|quota|capacity/i.test(detail)){
     return "voice_transcription_capacity_exhausted";
   }
   if(/\b429\b|rate.limit|too many requests/i.test(detail)){
