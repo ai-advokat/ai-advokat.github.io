@@ -130,6 +130,41 @@ test("P1: a partial Chief web citation is restored as historical context but no 
   }finally{globalThis.fetch=previousFetch;}
 });
 
+test("P1: previously searched-but-uncited action.sources are carried as UNVERIFIED candidates, never as public citations",async()=>{
+  const previousFetch=globalThis.fetch;
+  const plan=buildAgentPlan("Направи краток преглед на јавни извори.");
+  try{
+    globalThis.fetch=async()=>response({status:"incomplete",incomplete_details:{reason:"max_output_tokens"},
+      output:[{type:"web_search_call",id:"web_lookup",action:{sources:[{url:official,title:"Uncited Ministry search result"}]}}],
+      usage:{input_tokens:20,output_tokens:900,total_tokens:920}
+    });
+    const first=await runOpenAIOrchestrator(env,{plan,input:"Преглед со јавни извори.",
+      externalResearchEnabled:true,webSearchEnabled:true,maxOutputTokens:900});
+    assert.equal(first.ok,false);
+    assert.equal(first.priorChiefRecovery.priorWebSearchUsed,true);
+    assert.equal(first.priorChiefRecovery.chiefCitations.length,0);
+    assert.equal(first.priorChiefRecovery.chiefSearchCandidates[0].url,official);
+    let body=null,callCount=0;
+    globalThis.fetch=async(_url,options)=>{
+      callCount++;
+      body=JSON.parse(options.body);
+      return response({status:"completed",output_text:"Нацрт за проверка, без потврдени цитати.",output:[],
+        usage:{input_tokens:22,output_tokens:14,total_tokens:36}
+      });
+    };
+    const second=await runOpenAIOrchestrator(env,{plan,input:"Преглед со јавни извори.",
+      externalResearchEnabled:false,webSearchEnabled:false,chiefOnlyRecoveryMode:true,
+      priorChiefRecovery:first.priorChiefRecovery,maxOutputTokens:3000});
+    assert.equal(second.ok,true);
+    assert.equal(callCount,1);
+    assert.equal(body.tools,undefined);
+    assert.match(body.input[0].content[0].text,/UNVERIFIED_SEARCH_CANDIDATE/);
+    assert.ok(body.input[0].content[0].text.includes(official));
+    assert.deepEqual(second.sources,[],"a raw search hit is NOT a citation");
+    assert.equal(second.webSearchUsed,true,"the initial search must not disappear from provenance");
+  }finally{globalThis.fetch=previousFetch;}
+});
+
 test("P1: filtered/unknown incompletes cannot be promoted into retry snapshots, and no authorisation cannot create web citations",async()=>{
   const previousFetch=globalThis.fetch;
   const plan=buildAgentPlan("Напиши краток правен информативен преглед.");
