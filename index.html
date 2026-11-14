@@ -3064,7 +3064,56 @@
     try{
       const units=collectUiTranslationUnits();
       const cache=uiTranslationCache();
-      const pending=[...new Set(units.map(x=>x.source).filter(text=>!cache[text]))];
+      // The old all-or-nothing page transaction stayed blank for minutes while
+      // hundreds of lower-page paragraphs consumed the UI translation budget.
+      // Prioritise the visible shell and the explicitly selected language panel.
+      // Mark it PARTIAL until every remaining UI unit is verified and applied.
+      const elementOfUnit=unit=>unit.kind==="text"?unit.node?.parentElement:unit.el;
+      const shellUnits=units.filter(unit=>{
+        const el=elementOfUnit(unit);
+        if(!el||!el.isConnected) return false;
+        return Boolean(el.closest(
+          "#aiChatLanguagePanel,[data-i18n='topLine'],[data-i18n='brandSub'],[data-i18n='navSources'],header,nav,[role='navigation']"
+        ));
+      });
+      const viewportUnits=units.filter(unit=>{
+        const el=elementOfUnit(unit);
+        if(!el||!el.isConnected) return false;
+        const rect=el.getBoundingClientRect();
+        return rect.bottom>0 && rect.top<Math.min(window.innerHeight+50,950);
+      });
+      const prioritySources=[...new Set([...shellUnits,...viewportUnits].map(u=>u.source))].slice(0,48);
+      const priorityUnits=units.filter(unit=>prioritySources.includes(unit.source));
+      const pending=[...new Set([...prioritySources,...units.map(x=>x.source)].filter(text=>!cache[text]))];
+      const applyUnits=selected=>{
+        uiTranslationObserverSuppressUntil=Date.now()+UI_TRANSLATION_OBSERVER_SUPPRESS_MS;
+        for(const unit of selected){
+          const translated=cache[unit.source];
+          if(!translated) continue;
+          if(unit.kind==="text"){
+            unit.node.nodeValue=translated;
+            const state=uiTranslationNodeState.get(unit.node);
+            if(state) state.last=translated;
+          }else{
+            unit.el.setAttribute(unit.attr,translated);
+            const state=uiTranslationAttrState.get(unit.el);
+            if(state?.[unit.attr]) state[unit.attr].last=translated;
+          }
+        }
+      };
+      const commitPriorityShell=()=>{
+        if(uiTranslationInitialCommitDone || !prioritySources.length) return;
+        if(prioritySources.some(source=>!cache[source])) return;
+        applyUnits(priorityUnits);
+        uiTranslationInitialCommitDone=true;
+        document.documentElement.dataset.translationState="partial";
+        document.documentElement.dataset.translationScope="visible_shell_partial";
+        document.documentElement.lang=siteLanguage;
+        document.documentElement.dir=["ar","he","fa","ur"].includes(siteLanguage)?"rtl":"ltr";
+        const control=document.getElementById("langBtn");
+        if(control) control.title="Основниот интерфејс е преведен. Преводот на останатата страница продолжува; не е означен како целосен.";
+      };
+      commitPriorityShell();
       const batches=[];
       let batch=[],batchChars=0;
       for(const text of pending){
@@ -3119,6 +3168,7 @@
               if(source&&translated) cache[source]=translated;
             });
             saveUiTranslationCache(cache);
+            commitPriorityShell();
             completedBatches+=1;
             document.documentElement.dataset.translationBatchesCompleted=String(completedBatches);
           }catch(error){
@@ -3135,12 +3185,12 @@
       document.documentElement.dataset.translationPendingUnits=String(missingSources.length);
       if(translationFailed||missingSources.length){
         if(!translationFailed) applyUiTranslationBackoff(503,0);
-        // Fail closed without language contamination or an endless retry loop.
-        // Until a complete atomic translation exists, preserve the canonical
-        // Macedonian UI (English keeps its built-in i18n surface).
-        uiTranslationQueued=false;
-        document.documentElement.dataset.translationState="unavailable";
-        document.documentElement.lang=siteLanguage==="en"?"en":"mk";
+        // If the shell was verified, preserve its translated controls and
+        // show an explicit partial status instead of rolling the page back.
+        // Otherwise retain the canonical Macedonian/English baseline.
+        document.documentElement.dataset.translationState=uiTranslationInitialCommitDone?"partial":"unavailable";
+        document.documentElement.dataset.translationScope=uiTranslationInitialCommitDone?"visible_shell_partial":"canonical_untranslated";
+        document.documentElement.lang=uiTranslationInitialCommitDone?siteLanguage:(siteLanguage==="en"?"en":"mk");
         document.documentElement.dir="ltr";
         const languageControl=document.getElementById("langBtn");
         if(languageControl){
@@ -3148,28 +3198,18 @@
             "title",
             siteLanguage==="en"
               ? "English interface is partially available; live translation is temporarily unavailable."
-              : "Избраниот превод е привремено недостапен. Прикажан е канонскиот македонски интерфејс без мешање на јазици."
+              : (uiTranslationInitialCommitDone
+                  ? "Основниот интерфејс е преведен; остатокот е привремено недостапен. Преводот не е целосен."
+                  : "Избраниот превод е привремено недостапен. Прикажан е канонскиот македонски интерфејс.")
           );
         }
         console.warn("ui_translation_atomic_commit_unavailable",siteLanguage,missingSources.length);
         return;
       }
-      uiTranslationObserverSuppressUntil=Date.now()+UI_TRANSLATION_OBSERVER_SUPPRESS_MS;
-      for(const unit of units){
-        const translated=cache[unit.source];
-        if(!translated) continue;
-        if(unit.kind==="text"){
-          unit.node.nodeValue=translated;
-          const state=uiTranslationNodeState.get(unit.node);
-          if(state) state.last=translated;
-        }else{
-          unit.el.setAttribute(unit.attr,translated);
-          const state=uiTranslationAttrState.get(unit.el);
-          if(state?.[unit.attr]) state[unit.attr].last=translated;
-        }
-      }
+      applyUnits(units);
       uiTranslationInitialCommitDone=true;
       document.documentElement.dataset.translationState="ready";
+      document.documentElement.dataset.translationScope="all_collected_ui_units";
       document.documentElement.lang=siteLanguage;
       const dir=["ar","he","fa","ur"].includes(siteLanguage)?"rtl":"ltr";
       document.documentElement.dir=dir;
