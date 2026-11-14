@@ -3204,6 +3204,10 @@
       document.documentElement.dataset.translationPendingUnits=String(missingSources.length);
       if(translationFailed||missingSources.length){
         if(!translationFailed) applyUiTranslationBackoff(503,0);
+        // Keep verified visible text, but do not loop indefinitely through
+        // quota-limited translation requests after a provider/rate-limit fault.
+        // A later user interaction or reload can explicitly retry.
+        uiTranslationQueued=false;
         // If the shell was verified, preserve its translated controls and
         // show an explicit partial status instead of rolling the page back.
         // Otherwise retain the canonical Macedonian/English baseline.
