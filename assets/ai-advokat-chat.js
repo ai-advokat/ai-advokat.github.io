@@ -3,6 +3,8 @@
   const root=document.getElementById("aiAdvokatChat");
   if(!root) return;
   const CHAT_API_BASE=location.hostname.endsWith("workers.dev") ? location.origin : "https://ai-advokat-github-io.aiadvokat16.workers.dev";
+  // Optional suggestions never gate sending, legal sources, privacy or provider results.
+  const proactiveConversation=import("./ai-advokat-proactive.mjs?v=r22-20261114").catch(()=>null);
 
   const $=(s,p=root)=>p.querySelector(s);
   const messagesEl=$("#aiChatMessages");
@@ -371,6 +373,36 @@
         text:()=>String(m.text||""),
         status:setVoiceStatus
       }));
+    }
+    // Suggestions appear only beneath the latest verified successful turn.
+    // Buttons prepare a draft; they never auto-send or cause an AI request.
+    if(m.role==="assistant" && !isPreparing && idx===current()?.messages?.length-1 && Array.isArray(m.proactiveNextTurns?.options) && m.proactiveNextTurns.options.length){
+      const panel=document.createElement("section");
+      panel.className="ai-proactive-next-turns";
+      panel.setAttribute("aria-label","Разговорни продолженија");
+      const question=document.createElement("p");
+      question.className="ai-proactive-question";
+      question.textContent=String(m.proactiveNextTurns.question||"");
+      const options=document.createElement("div");
+      options.className="ai-proactive-options";
+      for(const suggestion of m.proactiveNextTurns.options.slice(0,3)){
+        if(!suggestion?.label||!suggestion?.prompt) continue;
+        const button=document.createElement("button");
+        button.type="button";
+        button.className="ai-proactive-choice";
+        button.textContent=String(suggestion.label);
+        button.setAttribute("aria-label","Подготви прашање: "+String(suggestion.label));
+        button.addEventListener("click",()=>{
+          if(abortController) return;
+          input.value=String(suggestion.prompt).slice(0,3500);
+          autoSize();
+          input.focus();
+        });
+        options.append(button);
+      }
+      const note=document.createElement("small");
+      note.textContent="Предлози за продолжување · се испраќаат само со Ваше одобрение · Human Gate.";
+      if(options.childElementCount){panel.append(question,options,note);body.append(panel);}
     }
     let evidenceDetails=null;
     let evidenceBody=null;
@@ -1095,7 +1127,11 @@
       const d=await r.json().catch(()=>null);
       await keepPreparingPulseVisible(preparingStartedAt);
       if(r.ok&&d?.ok){
+        const proactiveNextTurns=await proactiveConversation
+          .then(mod=>mod?.suggestLegalNextTurns?.({question:q,answer:d.answer,language:selectedLanguageMeta().code})||null)
+          .catch(()=>null);
         updateAssistantPlaceholder(assistantIndex,{
+          proactiveNextTurns,
           text:d.answer,
           meta:responseRuntimeLabel(d)+" · "+(d.displayMode||d.mode||"auto")+" · session-private",
           guides,
