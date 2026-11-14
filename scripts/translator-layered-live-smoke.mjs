@@ -144,7 +144,9 @@ async function browserLayer(){
       documentLanguage:document.documentElement.lang,
       documentDirection:document.documentElement.dir,
       translationTarget:document.documentElement.dataset.translationTarget||null,
-      translationState:document.documentElement.dataset.translationState||null
+      translationState:document.documentElement.dataset.translationState||null,
+      translationScope:document.documentElement.dataset.translationScope||null,
+      visibleStatus:document.getElementById("uiTranslationStatus")?.textContent?.trim()||null
     }));
     const sourceFingerprints=[
       "Правен информациски портал",
@@ -187,12 +189,37 @@ async function browserLayer(){
     });
   }catch(browserError){
     error=String(browserError?.message||browserError);
-    try{if(page) await page.screenshot({path:"/tmp/translator-layered-browser.png",fullPage:false});}catch{}
+    let stateAtFailure=null;
+    try{
+      if(page){
+        stateAtFailure=await page.evaluate(()=>({
+          globalLanguage:document.querySelector("#langBtn")?.value||null,
+          chatLanguage:document.querySelector("#aiChatLanguage")?.value||null,
+          documentLanguage:document.documentElement.lang||null,
+          translationTarget:document.documentElement.dataset.translationTarget||null,
+          translationState:document.documentElement.dataset.translationState||null,
+          translationScope:document.documentElement.dataset.translationScope||null,
+          visibleStatus:document.getElementById("uiTranslationStatus")?.textContent?.trim()||null,
+          topLine:document.querySelector("[data-i18n='topLine']")?.textContent?.trim()||null,
+          brandSub:document.querySelector("[data-i18n='brandSub']")?.textContent?.trim()||null,
+          navSources:document.querySelector("[data-i18n='navSources']")?.textContent?.trim()||null,
+          translatorLabel:document.querySelector("#aiChatLanguagePanel label strong")?.textContent?.trim()||null,
+          translatorNote:document.querySelector("#aiChatLanguagePanel small")?.textContent?.trim()||null,
+          batches:Number(document.documentElement.dataset.translationBatches||0),
+          completedBatches:Number(document.documentElement.dataset.translationBatchesCompleted||0),
+          pendingUnits:Number(document.documentElement.dataset.translationPendingUnits||0)
+        }));
+        await page.screenshot({path:"/tmp/translator-layered-browser.png",fullPage:false});
+      }
+    }catch{}
     report.layers.push({
       name:"layer_3_live_mk_to_sq_atomic_browser_switch",
       pass:false,
       latencyMs:Date.now()-startedAt,
       error,
+      stateAtFailure,
+      successfulTranslationResponses:network.filter(row=>row.status===200&&row.ok===true).length,
+      failedTranslationResponses:network.filter(row=>row.status!==200||row.ok!==true).length,
       translationResponses:network
     });
   }finally{

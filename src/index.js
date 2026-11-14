@@ -228,6 +228,7 @@ import {
 } from "./ai-advokat-central-prompt.js";
 import {
   isFormalLegalDraftRequest,
+  isExplicitAmbiguousArticleRequest,
   hasProceduralInstrumentMismatch,
   deterministicProceduralInstrumentFallback,
   deterministicFictionalPublicFalseInformationDraftFallback,
@@ -6250,6 +6251,38 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     : compactFreeDraft
       ? Math.min(1000,requestedTokenLimit)
       : requestedTokenLimit;
+  // A provider failure must not erase a user's formal draft request. Produce
+  // only a source-free, explicitly provisional scaffold from supplied facts.
+  // Do NOT use this lane for uploaded documents, corpus-dependent advice or
+  // conversation history: those require actual source/model examination.
+  const recoverSourceFreeDraft=(reason,attemptedCalls=0)=>{
+    if(!formalDraftRequest || converted.documents.length || safeHistory.length || governed) return null;
+    const scaffold=deterministicFictionalPublicFalseInformationDraftFallback({userText:q})
+      || deterministicFormalDraftCapacityFallback({userText:q});
+    const verdict=scaffold ? canonicalMacedonianFinalRelease(scaffold,q) : null;
+    if(!verdict?.ok) return null;
+    return {
+      ok:true,text:verdict.text,model:null,provider:"deterministic_capacity_fallback",
+      primaryModel:resolveWorkersAITextModel(env),modelFallback:null,
+      providerCalls:Number(attemptedCalls||0),languageRepairProviderCalls:0,
+      latencyMs:Date.now()-startedAt,fastPromptUsed:false,compactDraftUsed:true,
+      outputTokenLimit:0,languageStandard:MACEDONIAN_LANGUAGE_STANDARD_VERSION,
+      languageRepaired:false,deterministicLanguageCleanup:true,
+      languageEditorRequired:false,languageEditorPassed:false,languageEditorModel:null,
+      languageEditorFallbackUsed:false,languageEditorFallbackReason:null,
+      languageEditorErrorCode:null,deterministicLanguageFallbackUsed:true,
+      deterministicLanguageFallbackReason:"source_free_capacity_rescue:"+String(reason||"provider_unavailable").slice(0,60),
+      formalDraftPostflight:true,languageQualityState:verdict.deliveryState,
+      languageReleaseGate:verdict.releaseGate,
+      canonicalProvenanceGate:{version:CANONICAL_PROVENANCE_GATE_VERSION,
+        state:runtimeProvenanceGate.state,released:0,blocked:runtimeProvenanceGate.blocked.length},
+      convertedDocuments:0,webSearchUsed:false,sources:[],
+      conversationPersistence:"browser_session_only_app_no_server_conversation_store",
+      historyItemsUsed:0,contaminatedAssistantHistoryDropped:0,
+      humanGate:"required",providerRecoveryState:"NO_AI_RESPONSE_SOURCE_FREE_DRAFT_ONLY"
+    };
+  };
+
   const result=await runWorkersAIText(env,{
     messages,
     maxOutputTokens:tokenLimit,
@@ -6258,6 +6291,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     timeoutMs:fastFreePrompt?12000:20000
   });
   if(!result.ok){
+    const recovered=recoverSourceFreeDraft(result.error,result.providerCalls||1);
+    if(recovered) return recovered;
     const mappedError=result.error==="workers_ai_empty_response"
       ? "free_workers_ai_empty_response"
       : result.error==="workers_ai_daily_capacity_exhausted"
@@ -6348,6 +6383,8 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
   }
 
   if(!deterministicLanguageFallbackUsed && (languagePass.hardBlock || !finalRelease.ok)){
+    const recovered=recoverSourceFreeDraft("macedonian_language_release_blocked",(result.providerCalls||1)+(languagePass.providerCalls||0));
+    if(recovered) return recovered;
     const temporalSafetyText=missionProfile==="L0_INFORMATIONAL"
       ? judicialTemporalSafetyFallback(q)
       : null;
@@ -7598,6 +7635,34 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     retrievalPlan.authorial ? findGovernedAuthorialPublications(request,env,routingQuery,{limit:4}) : Promise.resolve(emptyAuthorial)
   ]);
 
+  // No model is needed to identify an intentionally unbound article number.
+  // This source-gap clarification remains identical across FREE and Professional
+  // and never invents a statute when the user explicitly forbids guessing.
+  const explicitArticleIdentityGap=isExplicitAmbiguousArticleRequest(userQ)
+    && articleBundle.state!=="matched"
+    && !contextualFollowUp
+    && historyCheck.history.length===0
+    && !languageDirective
+    && attachmentCheck.attachments.length===0
+    && guideDocumentCheck.attachments.length===0;
+  if(explicitArticleIdentityGap){
+    const requested=String(userQ.match(/(?:член|чл\.)\s*(\d+)/iu)?.[1]||"").trim();
+    return json(request,{
+      ok:true,
+      answer:"Не е јасно од кој закон е член "+requested+". Наведете го точниот назив на законот или прописот и, ако е потребно, датумот на применливата верзија. Без тоа AI Advokat не може безбедно да го идентификува членот и нема самостојно да избере закон или да измисли законска содржина.",
+      provider:"canonical_corpus_no_model",
+      model:null,
+      mode:"passive_corpus",
+      displayMode:"canonical_explicit_article_identity_gap",
+      sourceMode:"legal_instrument_not_identified_no_model",
+      webSearchUsed:false,
+      sources:[],legalSources:[],caseLawSources:[],
+      performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+      membership:botMembership ? {planCode:botMembership.planCode,status:botMembership.status} : {planCode:trainingOpen?"training":"free",trainingOpen},
+      humanGate:"Точниот закон, членот и применливата верзија мора да бидат идентификувани во проверлив официјален извор пред правна употреба."
+    });
+  }
+
   const discoveryListing=judicialDiscoveryListingRequest(routingQuery)
     ? formatJudicialDiscoveryListing(routingQuery)
     : null;
@@ -8502,7 +8567,14 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       && [408,429,500,502,503,504].includes(transientStatus);
     const boundedChiefRecovery=result.error==="openai_response_error"
       && [408,429,500,502,503,504].includes(transientStatus);
+    // A project spend/billing hard stop is not transient rate pressure.
+    // Retrying it burns latency and immediately repeats the same 429.
+    // Keep the security/budget boundary: never auto-increase spend or switch
+    // anonymous visitors to an unbounded paid model.
+    const terminalSpendLimit=["project_spend_limit_exceeded","billing_hard_limit_reached","insufficient_quota"]
+      .includes(String(result.responseStatus||"").toLowerCase());
     const retryable=transientPrimaryErrors.has(String(result.error||""))
+      && !terminalSpendLimit
       && (result.error!=="openai_response_error" || retryableResponseStatus)
       && (!boundedChiefRecovery || explicitWebRequested!==true)
       && (professionalRequestDeadlineAt-Date.now()>=10000);

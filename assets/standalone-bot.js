@@ -585,7 +585,12 @@ async function request(path, {token=key, body, signal} = {}) {
 }
 async function guideMatches(q, signal) {
   try {
-    const responses = await Promise.all(['/data/guides.json','/data/public-practical-guides-38-73.json'].map(url => fetch(url,{signal})));
+    // Optional guide lookup must never consume the full 180s AI budget.
+    // Keep cancellation from the active user request and add a strict bound.
+    const boundedSignal=typeof AbortSignal.any==='function'
+      ? AbortSignal.any([signal,AbortSignal.timeout(3500)])
+      : AbortSignal.timeout(3500);
+    const responses = await Promise.all(['/data/guides.json','/data/public-practical-guides-38-73.json'].map(url => fetch(url,{signal:boundedSignal})));
     const data = await Promise.all(responses.map(r => r.ok ? r.json() : {}));
     const records = new Map((data[0].records || []).map(r => [String(r.id),r]));
     for (const row of data[1].guides || []) records.set(String(row.id),{...records.get(String(row.id)),...row});
@@ -717,7 +722,15 @@ $('composer').onsubmit = async event => {
     : 'Ги проверувам материјалите и го подготвувам одговорот…');
   try {
     const guides = await guideMatches(outboundQ,controller.signal), ids = guides.map(g => g.id);
-    const guideDocuments = await localGuideDocuments(window.AIAdvokatGuideVault,ids,$('useLocalGuides').checked);
+    let guideDocuments=[];
+    if($('useLocalGuides').checked){
+      // User explicitly requested local guide documents: fail clearly rather
+      // than silently submitting an incomplete legal-context request.
+      guideDocuments=await Promise.race([
+        localGuideDocuments(window.AIAdvokatGuideVault,ids,true),
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error('Избраните локални водичи не се вчитани навреме. AI барањето не е испратено; исклучете „Користи ги моите водичи“ или обидете се повторно.')),3500))
+      ]);
+    }
     const data = await request('/api/bot',{signal:controller.signal,body:{q:withOutputLanguageDirective(outboundQ),visibleQ:outboundQ,capabilityRoute:conversationalCapabilityRoute(outboundQ),outputLanguage:selectedLanguageMeta().code,sessionId,mode:$('researchMode').value,webDomainPreset:$('webDomainPreset')?.value||'all',guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     pulse.remove();
@@ -747,6 +760,14 @@ $('composer').onsubmit = async event => {
     }
     else if (error.name === 'AbortError') status('Барањето е запрено или истече времето за одговор. Можете да се обидете повторно.');
     else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
+    // A failed provider must be visible in the conversation, not just in a
+    // small status line that leaves the user believing no response occurred.
+    if(error.name!=='AbortError' && epoch===generation){
+      message('assistant',
+        'AI одговор не е издаден. '+String(error?.message||'Сервисот моментално е недостапен.').slice(0,360)
+          +'\\n\\nОва е сервисна грешка, не правно мислење. Вашето прашање е зачувано во полето за повторен обид.',
+        'Сервисен статус · НЕМА AI ОДГОВОР');
+    }
     $('question').value = q;
   } finally {
     pulse.remove();

@@ -23,6 +23,14 @@ export function hasProceduralInstrumentMismatch(userText){
     && !CIVIL_REMEDY_DRAFT_RE.test(text);
 }
 
+// An explicitly unbound article number is a clarification task, not a model
+// generation task. Source identity is mandatory before stating legal content.
+export function isExplicitAmbiguousArticleRequest(userText){
+  const text=String(userText||"").normalize("NFKC");
+  return /(?:член|чл\.)\s*\d+/iu.test(text)
+    && /(?:ако\s+не\s+е\s+јасно\s+од\s+кој\s+закон|не\s+избирај\s+закон\s+самостојно)/iu.test(text);
+}
+
 export function isFormalLegalDraftRequest(userText){
   const text=String(userText||"").normalize("NFKC").trim();
   if(!text) return false;
@@ -333,6 +341,47 @@ export function deterministicFormalDraftCapacityFallback({userText=""}={}){
   const debtor=String(input.match(/Должник\s*:\s*([^.\n]+)/iu)?.[1]||"").trim();
   const basis=String(input.match(/Основа\s*:\s*([^.\n]+)/iu)?.[1]||"").trim();
   const dueDateMissing=/(?:рок(?:от)?\s+за\s+плаќање[^.\n]*(?:не\s+е\s+наведен|не\s+е\s+даден|недостасува))/iu.test(input);
+
+  // A pre-suit demand is an out-of-court communication, never a court filing.
+  // On provider failure retain the user's factual allegations without
+  // fabricating legal authority, a payment deadline, a remedy or a court.
+  if(/^ОПОМЕНА ПРЕД ПОВЕДУВАЊЕ СУДСКА ПОСТАПКА/u.test(heading)){
+    const due=String(input.match(/Рок\s+за\s+плаќање[^:\n]*:\s*(\d{1,2}[.]\d{1,2}[.]\d{4})/iu)?.[1]||"").trim();
+    return [
+      heading,
+      "",
+      "РАБОТЕН ПРИМЕР — ПРАВНАТА ОСНОВА НЕ Е ВЕРИФИКУВАНА",
+      "Ова е работен нацрт на вонсудска опомена, а не испратен правен акт. Сите факти и правни основи мора да се проверат пред употреба.",
+      "",
+      "До должникот: "+(debtor||"[НАЗИВ НА ДОЛЖНИКОТ]"),
+      "Од доверителот: "+(creditor||"[НАЗИВ НА ДОВЕРИТЕЛОТ]"),
+      "Адреса за доставување: [ДА СЕ ПОПОЛНИ]",
+      "",
+      "Предмет: Опомена за неплатено побарување",
+      "",
+      "Според податоците наведени од доверителот, побарувањето произлегува од "+(basis||"[ДОГОВОРНА ИЛИ ДРУГА ОСНОВА — ДА СЕ УТВРДИ]")+".",
+      "Наведена главнина: "+(principal||"[ИЗНОС — ДА СЕ ПОПОЛНИ]")+".",
+      due ? "Наведен рок за плаќање: "+due+" година." : "Рок за плаќање: [ДА СЕ УТВРДИ ОД ДОГОВОРОТ И ДОКАЗИТЕ].",
+      "Според тврдењето на доверителот, побарувањето не е платено. Ова тврдење треба да се спореди со книговодствената евиденција и извршените уплати.",
+      "",
+      "Барање за плаќање",
+      "Ве повикуваме да ја проверите и, доколку е основана, да ја намирите наведената обврска. Рокот за постапување по оваа опомена и податоците за плаќање треба да се утврдат пред испраќањето.",
+      "Рок по опомената: [ДА СЕ УТВРДИ ПО ПРАВНА ПРОВЕРКА].",
+      "Сметка за уплата: [ДА СЕ ПОПОЛНИ ПО ПРОВЕРКА].",
+      "",
+      "Докази за проверка",
+      "Договор за услуги, фактури, записници за извршените услуги, изводи за уплати и претходна кореспонденција, само доколку постојат.",
+      "",
+      "Правна основа",
+      "[ДА СЕ ПРОВЕРИ ВО ВАЖЕЧКИ ОФИЦИЈАЛЕН ИЗВОР. Не се наведува непотврден закон или член.]",
+      "",
+      "Место и датум: [ДА СЕ ПОПОЛНИ]",
+      "Потпис: [ОВЛАСТЕНО ЛИЦЕ — ДА СЕ ПОТВРДИ]",
+      "",
+      "ЧОВЕЧКА ПРОВЕРКА ПРЕД ПРОФЕСИОНАЛНА УПОТРЕБА",
+      "Пред испраќање адвокат треба да ги провери договорот, странките, износот, доспеаноста, доказите, рокот по опомената, применливото право, начинот на доставување и целосниот текст. Ништо не е испратено автоматски."
+    ].join("\n");
+  }
   const subject=divorce
     ? "Предмет: Работен нацрт за постапка во врска со развод на брак"
     : detention

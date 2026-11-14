@@ -26,7 +26,7 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(home,/translateGlobalInterface/);
   assert.match(home,/UI_TRANSLATION_BATCH_ITEMS=12/);
   assert.match(home,/UI_TRANSLATION_BATCH_CHARS=2400/);
-  assert.match(home,/UI_TRANSLATION_CLIENT_CONCURRENCY=1/);
+  assert.match(home,/UI_TRANSLATION_CLIENT_CONCURRENCY=3/);
   assert.match(home,/batch\.length>=UI_TRANSLATION_BATCH_ITEMS/);
   assert.match(home,/nextChars>UI_TRANSLATION_BATCH_CHARS/);
   assert.match(home,/UI_TRANSLATION_PROVIDER_BACKOFF_MS=5000/);
@@ -38,11 +38,11 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(home,/Math\.min\(60000,UI_TRANSLATION_PROVIDER_BACKOFF_MS\*Math\.pow/);
   assert.match(home,/uiTranslationInitialCommitDone=siteLanguage==="mk"/);
   assert.match(home,/translationState="loading"/);
-  assert.match(home,/translationState="unavailable"/);
+  assert.match(home,/translationState=uiTranslationInitialCommitDone/);
   assert.match(home,/translationState="ready"/);
   assert.match(home,/ui_translation_atomic_commit_unavailable/);
   assert.match(home,/uiTranslationQueued=false/);
-  assert.match(home,/document\.documentElement\.lang=siteLanguage==="en"\?"en":"mk"/);
+  assert.match(home,/document\.documentElement\.lang=uiTranslationInitialCommitDone/);
   assert.match(home,/const missingSources=\[\.\.\.new Set/);
   const translator=home.slice(home.indexOf("async function translateGlobalInterface"),home.indexOf("function applyLanguage"));
   assert.doesNotMatch(translator,/siteLanguage==="mk"\|\|siteLanguage==="en"/);
@@ -78,4 +78,17 @@ test("UI translation preserves legal truth identifiers and Human Gate",()=>{
 
 test("RTL languages are rendered with RTL direction",()=>{
   assert.match(home,/\["ar","he","fa","ur"\]\.includes\(siteLanguage\)/);
+});
+
+
+test("R19.3 translation shell is visibly usable before full page completion without false READY",()=>{
+  assert.match(home,/const prioritySources=/);
+  assert.match(home,/const commitPriorityShell=/);
+  assert.match(home,/dataset\.translationState="partial"/);
+  assert.match(home,/dataset\.translationScope="visible_shell_partial"/);
+  assert.match(home,/dataset\.translationScope="all_collected_ui_units"/);
+  assert.match(home,/const priorTranslationState=document\.documentElement\.dataset\.translationState/);
+  assert.match(home,/priorTranslationState==="ready"\?"ready":"partial"/);
+  assert.match(home,/if\(translationFailed\|\|missingSources\.length\)/);
+  assert.match(home,/uiTranslationInitialCommitDone\?"partial":"unavailable"/);
 });

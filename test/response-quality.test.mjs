@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
   isFormalLegalDraftRequest,
+  isExplicitAmbiguousArticleRequest,
   hasProceduralInstrumentMismatch,
   deterministicProceduralInstrumentFallback,
   deterministicFictionalPublicFalseInformationDraftFallback,
@@ -303,6 +304,31 @@ test("RQ20 capacity-timeout fallback produces a useful authority-safe civil draf
   assert.match(out,/ДА СЕ ПРОВЕРИ ВО ВАЖЕЧКИ ОФИЦИЈАЛЕН ИЗВОР/u);
 });
 
+test("RQ20b exact production L2 pre-suit request produces a canonical, non-court working notice",()=>{
+  const q=[
+    "Факти:","","Доверител: Правно лице А.","","Должник: Правно лице Б.",
+    "","Основа: Договор за услуги.","","Главен долг: 150.000 денари.",
+    "","Рок за плаќање според договорот: 15.09.2026 година.",
+    "","Долгот не е платен.","","Не се доставени докази за претходна опомена.",
+    "","Барам:","","Формално и правно соодветна опомена пред тужба.",
+    "","Јасен опис на побарувањето.","","Релевантна правна основа со проверени законски одредби.",
+    "","Правилно формулирано барање за плаќање.","","Предлог за прилози и докази.",
+    "","Ознака за сите податоци што недостасуваат.","","Правна и јазична проверка на документот."
+  ].join("\n");
+  assert.equal(isFormalLegalDraftRequest(q),true);
+  const out=deterministicFormalDraftCapacityFallback({userText:q});
+  assert.match(out,/^ОПОМЕНА ПРЕД ПОВЕДУВАЊЕ СУДСКА ПОСТАПКА/u);
+  assert.match(out,/До должникот: Правно лице Б/u);
+  assert.match(out,/Од доверителот: Правно лице А/u);
+  assert.match(out,/150\.000 денари/u);
+  assert.match(out,/15\.09\.2026/u);
+  assert.match(out,/ЧОВЕЧКА ПРОВЕРКА ПРЕД ПРОФЕСИОНАЛНА УПОТРЕБА/u);
+  assert.doesNotMatch(out,/^ДО:\s*\[НАДЛЕЖЕН СУД|^ТУЖБА/imu);
+  assert.doesNotMatch(out,/(?:член|чл\.)\s*\d+/iu);
+  const release=macedonianDeliveryVerdict(out,{userText:q});
+  assert.equal(release.deliver,true,JSON.stringify(release));
+});
+
 test("RQ21 capacity-timeout fallback preserves procedural-instrument safety",()=>{
   const q="Направи ми Туѓба за кражба на велосипед, со измислени податоци.";
   const out=deterministicFormalDraftCapacityFallback({userText:q});
@@ -403,3 +429,14 @@ test("RQ29 fictional public-false-information recovery stays narrowly scoped",()
   }),null);
 });
 
+
+
+test("RQ30 explicit Article 12 source gap never needs a model",()=>{
+  const q="Што уредува член 12? Ако не е јасно од кој закон, не избирај закон самостојно.";
+  assert.equal(isExplicitAmbiguousArticleRequest(q),true);
+  assert.equal(isExplicitAmbiguousArticleRequest("Што точно уредува член 12 од ЗРО?"),false);
+  const worker=fs.readFileSync("src/index.js","utf8");
+  assert.match(worker,/const explicitArticleIdentityGap=isExplicitAmbiguousArticleRequest\(userQ\)/);
+  assert.match(worker,/sourceMode:"legal_instrument_not_identified_no_model"/);
+  assert.match(worker,/provider:"canonical_corpus_no_model"/);
+});
