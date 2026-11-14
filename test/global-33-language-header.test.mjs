@@ -79,3 +79,16 @@ test("UI translation preserves legal truth identifiers and Human Gate",()=>{
 test("RTL languages are rendered with RTL direction",()=>{
   assert.match(home,/\["ar","he","fa","ur"\]\.includes\(siteLanguage\)/);
 });
+
+
+test("R19.3 translation shell is visibly usable before full page completion without false READY",()=>{
+  assert.match(home,/const prioritySources=/);
+  assert.match(home,/const commitPriorityShell=/);
+  assert.match(home,/dataset\.translationState="partial"/);
+  assert.match(home,/dataset\.translationScope="visible_shell_partial"/);
+  assert.match(home,/dataset\.translationScope="all_collected_ui_units"/);
+  assert.match(home,/const priorTranslationState=document\.documentElement\.dataset\.translationState/);
+  assert.match(home,/priorTranslationState==="ready"\?"ready":"partial"/);
+  assert.match(home,/if\(translationFailed\|\|missingSources\.length\)/);
+  assert.match(home,/uiTranslationInitialCommitDone\?"partial":"unavailable"/);
+});
