@@ -88,7 +88,7 @@ test("source UI clearly distinguishes official PDFs from machine extraction and 
  assert.match(html,/ПРАВНО РАЗГРАНИЧУВАЊЕ/);
  assert.match(html,/не е потврден пречистен текст/i);
  const js=read("assets/official-law-library.mjs");
- assert.match(js,/ORIGINAL PDF/);
+ assert.match(js,/оригинален PDF/);
  assert.match(js,/machine transcription/i);
  assert.match(manifest.sources[2].status,/future_application/);
 });
