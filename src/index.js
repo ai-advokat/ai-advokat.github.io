@@ -8620,7 +8620,10 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         reasoningEffort:truncatedAtTokenBudget ? "low" : (boundedChiefRecovery ? "medium" : (["L3_CONSEQUENTIAL","L4_LEGAL_TRUTH_GOVERNANCE"].includes(missionProfile)?"high":reasoningEffort)),
         deadlineAt:professionalRequestDeadlineAt,
         capacityFallbackMode:retryableResponseStatus,
-        chiefOnlyRecoveryMode:truncatedAtTokenBudget
+        chiefOnlyRecoveryMode:truncatedAtTokenBudget,
+        // Same-request, bounded source/findings snapshot from the first Chief.
+        // Not passed to the browser; no second specialist/web research call.
+        priorChiefRecovery:truncatedAtTokenBudget ? first.priorChiefRecovery : null
       });
       const a=first.usage||{};
       const b=retry.usage||{};
