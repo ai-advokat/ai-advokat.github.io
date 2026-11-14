@@ -228,6 +228,7 @@ import {
 } from "./ai-advokat-central-prompt.js";
 import {
   isFormalLegalDraftRequest,
+  isExplicitAmbiguousArticleRequest,
   hasProceduralInstrumentMismatch,
   deterministicProceduralInstrumentFallback,
   deterministicFictionalPublicFalseInformationDraftFallback,
@@ -7597,6 +7598,34 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     retrievalPlan.scholarly ? findGovernedScholarly(request,env,routingQuery,{limit:4}) : Promise.resolve(emptyScholarly),
     retrievalPlan.authorial ? findGovernedAuthorialPublications(request,env,routingQuery,{limit:4}) : Promise.resolve(emptyAuthorial)
   ]);
+
+  // No model is needed to identify an intentionally unbound article number.
+  // This source-gap clarification remains identical across FREE and Professional
+  // and never invents a statute when the user explicitly forbids guessing.
+  const explicitArticleIdentityGap=isExplicitAmbiguousArticleRequest(userQ)
+    && articleBundle.state!=="matched"
+    && !contextualFollowUp
+    && historyCheck.history.length===0
+    && !languageDirective
+    && attachmentCheck.attachments.length===0
+    && guideDocumentCheck.attachments.length===0;
+  if(explicitArticleIdentityGap){
+    const requested=String(userQ.match(/(?:член|чл\\.)\\s*(\\d+)/iu)?.[1]||"").trim();
+    return json(request,{
+      ok:true,
+      answer:"Не е јасно од кој закон е член "+requested+". Наведете го точниот назив на законот или прописот и, ако е потребно, датумот на применливата верзија. Без тоа AI Advokat не може безбедно да го идентификува членот и нема самостојно да избере закон или да измисли законска содржина.",
+      provider:"canonical_corpus_no_model",
+      model:null,
+      mode:"passive_corpus",
+      displayMode:"canonical_explicit_article_identity_gap",
+      sourceMode:"legal_instrument_not_identified_no_model",
+      webSearchUsed:false,
+      sources:[],legalSources:[],caseLawSources:[],
+      performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+      membership:botMembership ? {planCode:botMembership.planCode,status:botMembership.status} : {planCode:trainingOpen?"training":"free",trainingOpen},
+      humanGate:"Точниот закон, членот и применливата верзија мора да бидат идентификувани во проверлив официјален извор пред правна употреба."
+    });
+  }
 
   const discoveryListing=judicialDiscoveryListingRequest(routingQuery)
     ? formatJudicialDiscoveryListing(routingQuery)
