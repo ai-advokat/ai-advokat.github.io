@@ -8567,7 +8567,14 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       && [408,429,500,502,503,504].includes(transientStatus);
     const boundedChiefRecovery=result.error==="openai_response_error"
       && [408,429,500,502,503,504].includes(transientStatus);
+    // A project spend/billing hard stop is not transient rate pressure.
+    // Retrying it burns latency and immediately repeats the same 429.
+    // Keep the security/budget boundary: never auto-increase spend or switch
+    // anonymous visitors to an unbounded paid model.
+    const terminalSpendLimit=["project_spend_limit_exceeded","billing_hard_limit_reached","insufficient_quota"]
+      .includes(String(result.responseStatus||"").toLowerCase());
     const retryable=transientPrimaryErrors.has(String(result.error||""))
+      && !terminalSpendLimit
       && (result.error!=="openai_response_error" || retryableResponseStatus)
       && (!boundedChiefRecovery || explicitWebRequested!==true)
       && (professionalRequestDeadlineAt-Date.now()>=10000);
