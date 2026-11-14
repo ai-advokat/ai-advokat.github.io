@@ -287,3 +287,46 @@ test("Voice R4 worker endpoint is bounded, rate-limited and uses Workers AI Whis
   assert.match(worker,/humanGate:"review_transcript_before_legal_use"/);
   assert.match(worker,/X-Voice-Language/);
 });
+
+
+test("R21 browser SpeechRecognition network failure offers recorder only after another user click",async()=>{
+  let mediaRequests=0;
+  class FailedRecognition{
+    constructor(){FailedRecognition.last=this;}
+    start(){this.onstart?.();}
+    abort(){this.onend?.();}
+  }
+  const stream={getTracks:()=>[{stop(){}}]};
+  class FakeRecorder{
+    static isTypeSupported(type){return type.includes("webm");}
+    constructor(input,options={}){this.stream=input;this.mimeType=options.mimeType||"audio/webm";this.state="inactive";FakeRecorder.last=this;}
+    start(){this.state="recording";this.ondataavailable?.({data:new Blob(["hello"],{type:"audio/webm"})});}
+    stop(){this.state="inactive";queueMicrotask(()=>this.onstop?.());}
+  }
+  class FakeEvent{constructor(type){this.type=type;}}
+  let networkCalls=0;
+  const win={
+    SpeechRecognition:FailedRecognition,
+    MediaRecorder:FakeRecorder,
+    Blob,Event:FakeEvent,
+    navigator:{mediaDevices:{async getUserMedia(){mediaRequests++;return stream;}}},
+    fetch:async()=>{networkCalls++;return {ok:true,json:async()=>({ok:true,text:"Гласот е препознаен"})};},
+    setTimeout:()=>1,clearTimeout(){}
+  };
+  const runtime=createAIAdvokatVoiceRuntime(win,{lang:"mk-MK"});
+  const button=fakeButton(),input={value:"",dispatchEvent(){}};
+  let status="";
+  runtime.bindMicrophone({button,input,status:value=>{status=value;}});
+  await button.click();
+  FailedRecognition.last.onerror?.({error:"network"});
+  FailedRecognition.last.onend?.();
+  assert.equal(mediaRequests,0,"do not auto-record after browser service error");
+  assert.match(status,/Притиснете повторно/);
+  await button.click();
+  assert.equal(mediaRequests,1,"new click explicitly authorises a recorder attempt");
+  assert.equal(button.dataset.voiceState,"listening");
+  await button.click();
+  await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal(networkCalls,1);
+  assert.equal(input.value,"Гласот е препознаен");
+});
