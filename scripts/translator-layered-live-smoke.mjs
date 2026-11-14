@@ -144,7 +144,9 @@ async function browserLayer(){
       documentLanguage:document.documentElement.lang,
       documentDirection:document.documentElement.dir,
       translationTarget:document.documentElement.dataset.translationTarget||null,
-      translationState:document.documentElement.dataset.translationState||null
+      translationState:document.documentElement.dataset.translationState||null,
+      translationScope:document.documentElement.dataset.translationScope||null,
+      visibleStatus:document.getElementById("uiTranslationStatus")?.textContent?.trim()||null
     }));
     const sourceFingerprints=[
       "Правен информациски портал",
@@ -196,6 +198,13 @@ async function browserLayer(){
           documentLanguage:document.documentElement.lang||null,
           translationTarget:document.documentElement.dataset.translationTarget||null,
           translationState:document.documentElement.dataset.translationState||null,
+          translationScope:document.documentElement.dataset.translationScope||null,
+          visibleStatus:document.getElementById("uiTranslationStatus")?.textContent?.trim()||null,
+          topLine:document.querySelector("[data-i18n='topLine']")?.textContent?.trim()||null,
+          brandSub:document.querySelector("[data-i18n='brandSub']")?.textContent?.trim()||null,
+          navSources:document.querySelector("[data-i18n='navSources']")?.textContent?.trim()||null,
+          translatorLabel:document.querySelector("#aiChatLanguagePanel label strong")?.textContent?.trim()||null,
+          translatorNote:document.querySelector("#aiChatLanguagePanel small")?.textContent?.trim()||null,
           batches:Number(document.documentElement.dataset.translationBatches||0),
           completedBatches:Number(document.documentElement.dataset.translationBatchesCompleted||0),
           pendingUnits:Number(document.documentElement.dataset.translationPendingUnits||0)
