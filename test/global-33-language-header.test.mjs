@@ -38,7 +38,7 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(home,/Math\.min\(60000,UI_TRANSLATION_PROVIDER_BACKOFF_MS\*Math\.pow/);
   assert.match(home,/uiTranslationInitialCommitDone=siteLanguage==="mk"/);
   assert.match(home,/translationState="loading"/);
-  assert.match(home,/translationState="unavailable"/);
+  assert.match(home,/translationState=uiTranslationInitialCommitDone/);
   assert.match(home,/translationState="ready"/);
   assert.match(home,/ui_translation_atomic_commit_unavailable/);
   assert.match(home,/uiTranslationQueued=false/);
