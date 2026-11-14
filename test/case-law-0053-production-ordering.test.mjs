@@ -44,7 +44,9 @@ test("activation and runtime sync preserve separate Human Gates and exact depend
   assert.match(activation,/Worker deployment remains a separate production Human Gate/);
   assert.match(activation,/R17 release ordering/);
   assert.match(runtime,/environment:\s*production/);
-  assert.match(runtime,/migrations\/0053_case_law_evidence_gates\.sql/);
-  assert.match(runtime,/case-law-evidence-gates-production-activation\.yml/);
+  assert.match(runtime,/workflow_dispatch:/);
+  assert.doesNotMatch(runtime,/push:\\s*\\n\\s*branches:/);
+  assert.match(runtime,/Require case-law evidence gate schema before runtime deploy/);
+  assert.match(runtime,/case_law_echr_comparison_gates/);
   assert.doesNotMatch(runtime,/wrangler\s+d1\s+(execute|migrations|export)/i);
 });
