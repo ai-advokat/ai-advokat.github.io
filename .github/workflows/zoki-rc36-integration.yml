@@ -3,12 +3,6 @@ on:
   pull_request:
     branches:
       - feat/zoki-six-contract-conversation-entry-20261115
-    paths:
-      - consolidator/index.html
-      - consolidator/zoki-rc36/**
-      - assets/zoki-consolidator-conversation-r25.js
-      - scripts/zoki-rc36-integrated-browser.mjs
-      - .github/workflows/zoki-rc36-integration.yml
 permissions:
   contents: read
 jobs:
