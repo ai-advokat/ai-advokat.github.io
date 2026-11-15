@@ -171,5 +171,6 @@ if(process.env.GITHUB_STEP_SUMMARY){
     report.checks.map(x=>"| "+x.name+" | "+x.status+" |").join("\n")+
     "\n\n**Budget:** one translation, one synthetic voice, one internal free chat; no paid model or client data. All failed live functions remain **BLOCKER**.\n");
 }
-// Diagnostic report must be uploaded even when provider is unavailable.
-// CI success here means evidence collection, not passing real service tests.
+// Report always uploads in the workflow. A live provider failure must be RED,
+// never a green release check hiding an exhausted or inaccessible AI provider.
+if(report.summary.failed>0||report.summary.notTested>0)process.exitCode=1;
