@@ -24,7 +24,7 @@ const history=[
 ];
 
 test("short conversational ellipses inherit supplied context; standalone questions do not",()=>{
-  for(const q of ["А зошто?","А што со рокот?","Не, мислев на договорот.","What if the decision arrived yesterday?","Why is that?"]){
+  for(const q of ["А зошто?","А што со рокот?","Не, мислев на договорот.","What if the decision arrived yesterday?","Why is that?","A zosto?","Sto so rokot?","Ne, mislev na dogovorot."]){
     assert.equal(isContextDependentLegalFollowUp(q),true,q);
   }
   for(const q of ["Како да се подготви жалба?","Кој е главен град на Франција?","Explain contract clauses for a new agreement."]){
@@ -90,6 +90,8 @@ test("context-derived proactive prompts do not echo facts or assistant content",
   assert.equal(next.humanReviewRequired,true);
   const text=JSON.stringify(next);
   assert.doesNotMatch(text,/0101999450012|измислен член 9999|Ми дадоа отказ/);
+  const latin=suggestLegalNextTurns({question:"A zosto?",answer:"Ova e rabotna analiza so covecka proverka.",history:[{role:"user",text:"Prasanje za otkaz od raboten odnos."}]});
+  assert.equal(latin.category,"employment");
   const changed=suggestLegalNextTurns({question:"Не, мислев на договорот.",answer:"Ова е работна анализа.",history:previous});
   assert.equal(changed.category,"contract");
   const standalone=suggestLegalNextTurns({question:"Објасни договорна клаузула.",answer:"Ова е работна анализа.",history:previous});
