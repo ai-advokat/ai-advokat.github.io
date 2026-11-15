@@ -3111,11 +3111,11 @@
     // infrastructure details in the public interface.
     const detail=String(payload?.detail||"").slice(0,160);
     const error=String(payload?.error||"").slice(0,100);
-    if(/3036|daily.free|daily.allocation|10[,.]?000\s*neuron|daily.*exhaust/i.test(detail+" "+error)){
+    if(/3036|ui_translation_workers_ai_capacity_exhausted|daily.free|daily.allocation|10[,.]?000\s*neuron|daily.*exhaust/i.test(detail+" "+error)){
       return {code:"daily_quota",message:"Cloudflare дневната бесплатна AI квота е исцрпена. Локалните преводи остануваат достапни; обидете се по обновувањето."};
     }
     if(status===429) return {code:"rate_limit",message:"Преведувачот е привремено ограничен поради многу барања. Обидете се подоцна."};
-    if(/3040|capacity|unavailable|timeout|overload/i.test(detail+" "+error)){
+    if(/3040|model_busy|capacity|unavailable|timeout|overload/i.test(detail+" "+error)){
       return {code:"provider_capacity",message:"AI моделот привремено нема капацитет. Прикажани се само проверените делумни преводи."};
     }
     return {code:"provider_error",message:"AI преведувачот моментално е недостапен. Не е извршен целосен превод."};
