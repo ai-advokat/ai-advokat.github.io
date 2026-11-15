@@ -9,6 +9,10 @@ const EXPLICIT_PRIOR_TURN_RE=/(?:во\s+претходн(?:иот|ата|ото|
 // not repeat the subject keyword. The provider must still reason over actual
 // supplied history: these patterns only select contextual retrieval/planning.
 const SHORT_DIALOGUE_FOLLOW_UP_RE=/^(?:(?:а|па|но|и|and|but)\s+)?(?:зошто(?:\s+тоа)?|како\s+(?:тоа|тогаш|понатаму)|што\s+(?:со\s+(?:ова|тоа|рокот|жалбата|доказите|изворите|пресудата)|ако|понатаму|следно)|а?ко\s+тоа|и\s+што\s+сега|тогаш\s+што|објасни\s+(?:го\s+тоа|подетално)|појасни\s+(?:го\s+тоа|подетално)|продолжи(?:\s+понатаму)?|не[,.]?\s*мислев\s+на|мислам\s+на|why\s+(?:is\s+that|so)|why[?!.]*$|how\s+so|what\s+(?:about|if|next)|and\s+(?:if|what)|could\s+you\s+elaborate|please\s+elaborate|i\s+meant|no[,.]?\s*i\s+meant)/iu;
+// Macedonian Latin transcription is common on phones and must not silently
+// discard the user's conversation topic.
+const SHORT_MK_LATIN_FOLLOW_UP_RE=/^(?:(?:a|pa|no|i)\s+)?(?:zosto|shto\s+(?:so|ako|sledno)|sto\s+(?:so|ako|sledno)|kako\s+(?:toa|togas|togash)|a\s+ako|ako\s+toa|ne[,.]?\s*mislev\s+na|mislam\s+na|prodolzi|pojasni)/iu;
+
 const STANDALONE_DETAIL_THRESHOLD=320;
 
 function clean(value,max=4000){
@@ -23,7 +27,7 @@ export function isContextDependentLegalFollowUp(question=""){
   // ("оваа одлука", "овој спор"). Do not import prior turns unless the
   // user explicitly points back to earlier conversation context.
   if(q.length>=STANDALONE_DETAIL_THRESHOLD) return false;
-  return FOLLOW_UP_RE.test(q) || (q.length<=160 && SHORT_DIALOGUE_FOLLOW_UP_RE.test(q));
+  return FOLLOW_UP_RE.test(q) || (q.length<=160 && (SHORT_DIALOGUE_FOLLOW_UP_RE.test(q) || SHORT_MK_LATIN_FOLLOW_UP_RE.test(q)));
 }
 
 // Routing may use previous AI text with an explicit unverified label. Legal
