@@ -757,7 +757,9 @@ $('composer').onsubmit = async event => {
   }
 
   const epoch = generation, controller = new AbortController(); pending = controller; busy(true);
-  const timeout = setTimeout(() => controller.abort(),180000);
+  let timedOut=false;
+  let successfulAnswer=false;
+  const timeout = setTimeout(() => {timedOut=true;controller.abort();},90000);
   $('messages').querySelectorAll('.ai-proactive-next-turns').forEach(panel=>panel.remove());
   message('user',outboundQ); $('question').value = ''; $('question').style.height = '';
   const pulse = responsePulse();
@@ -778,6 +780,7 @@ $('composer').onsubmit = async event => {
     const data = await request('/api/bot',{signal:controller.signal,body:{q:withOutputLanguageDirective(outboundQ),visibleQ:outboundQ,capabilityRoute:conversationalCapabilityRoute(outboundQ),outputLanguage:selectedLanguageMeta().code,sessionId,mode:$('researchMode').value,webDomainPreset:$('webDomainPreset')?.value||'all',guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     pulse.remove();
+    successfulAnswer=Boolean(String(data.answer||'').trim());
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
     history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
     renderRequestedExportActions(article,outboundQ);
@@ -807,11 +810,13 @@ $('composer').onsubmit = async event => {
       forgetDeviceAccess(deviceStorage);
       status('Професионалниот клуч не е активен. Продолжувам во TRAINING режим без шифра — обидете се повторно.');
     }
-    else if (error.name === 'AbortError') status('Барањето е запрено или истече времето за одговор. Можете да се обидете повторно.');
+    else if (error.name === 'AbortError') status(timedOut
+      ? 'AI обработката предолго траеше. Разговорот не е избришан; обидете се повторно.'
+      : 'Барањето е запрено. Разговорот е зачуван.');
     else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
     // A failed provider must be visible in the conversation, not just in a
     // small status line that leaves the user believing no response occurred.
-    if(error.name!=='AbortError' && epoch===generation){
+    if(epoch===generation){
       message('assistant',
         'AI одговор не е издаден. '+String(error?.message||'Сервисот моментално е недостапен.').slice(0,360)
           +'\\n\\nОва е сервисна грешка, не правно мислење. Вашето прашање е зачувано во полето за повторен обид.',
@@ -826,13 +831,18 @@ $('composer').onsubmit = async event => {
       const next = queuedNextTurn;
       queuedNextTurn = null;
       if (next) {
-        // The next user turn stays in the same history/session and goes through
-        // the ordinary privacy and membership gates when actually submitted.
+        // Never spend another AI call automatically after failure or Stop.
+        // Keep the queued text visible so Zoki can choose to retry.
         $('question').value = next;
         busy(false);
-        queueMicrotask(() => {
-          if (epoch === generation && !pending) $('composer').requestSubmit();
-        });
+        if(successfulAnswer){
+          queueMicrotask(() => {
+            if (epoch === generation && !pending) $('composer').requestSubmit();
+          });
+        }else{
+          status('Тековниот одговор не успеа. Следното прашање е зачувано; испратете го кога ќе сакате.');
+          $('question').focus();
+        }
       } else {
         busy(false);
         $('question').focus();
