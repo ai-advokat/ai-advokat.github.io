@@ -33,9 +33,27 @@ export function isContextDependentLegalFollowUp(question=""){
 // Routing may use previous AI text with an explicit unverified label. Legal
 // agent selection is stricter: take only user-authored prior context so a
 // hallucinated assistant scenario never silently activates a legal specialist.
+// An explicit "no, I meant X, not Y" correction changes the active subject.
+// Only the positively named subject may drive legal source/agent routing;
+// the rejected subject remains visible to the LLM in the current user turn.
+export function correctedConversationTopic(question=""){
+  const text=clean(question,1600);
+  const match=text.match(/^(?:не[,.:!]?\s*|но[,.:!]?\s*)?(?:јас\s+)?(?:мислев|мислам)\s+на\s+(.+)/iu)
+    || text.match(/^(?:ne[,.:!]?\s*|no[,.:!]?\s*)?(?:jas\s+)?(?:mislev|mislam)\s+na\s+(.+)/iu)
+    || text.match(/^(?:(?:no|actually|rather)[,.:!]?\s*)?(?:i\s+(?:meant|mean|was\s+asking\s+about))\s+(.+)/iu);
+  if(!match) return "";
+  const positive=match[1]
+    .split(/(?:,\s*|\s+)(?:а\s+не\s+на|не\s+на|a\s+ne\s+na|ne\s+na|not\s+(?:about|the)|rather\s+than)\s+/iu)[0]
+    .replace(/[.!?,;:\s]+$/gu,"")
+    .trim();
+  return positive.length>=3 ? positive.slice(0,300) : "";
+}
+
 export function buildLegalPlanningQuestion(question="",history=[]){
   const current=clean(question);
   if(!current || !isContextDependentLegalFollowUp(current)) return current;
+  const corrected=correctedConversationTopic(current);
+  if(corrected) return "CORRECTED USER TOPIC (unverified; the rejected earlier topic is NOT the active request):\n"+corrected;
   const userTurns=(Array.isArray(history)?history:[])
     .filter(row=>row?.role==="user")
     .map(row=>clean(row.text,1400))
@@ -55,6 +73,8 @@ export function buildLegalPlanningQuestion(question="",history=[]){
 export function buildLegalRoutingQuery(question="",history=[]){
   const current=clean(question);
   if(!current || !isContextDependentLegalFollowUp(current)) return current;
+  const corrected=correctedConversationTopic(current);
+  if(corrected) return "CURRENT CORRECTED TOPIC (unverified; do not retrieve sources for the rejected subject):\n"+corrected;
 
   const recent=(Array.isArray(history)?history:[])
     .map(item=>({
@@ -82,4 +102,4 @@ export function buildLegalRoutingQuery(question="",history=[]){
   ].join("\n").slice(0,12000);
 }
 
-export const __test=Object.freeze({FOLLOW_UP_RE,EXPLICIT_PRIOR_TURN_RE,STANDALONE_DETAIL_THRESHOLD,SHORT_DIALOGUE_FOLLOW_UP_RE,clean});
+export const __test=Object.freeze({FOLLOW_UP_RE,EXPLICIT_PRIOR_TURN_RE,STANDALONE_DETAIL_THRESHOLD,SHORT_DIALOGUE_FOLLOW_UP_RE,correctedConversationTopic,clean});
