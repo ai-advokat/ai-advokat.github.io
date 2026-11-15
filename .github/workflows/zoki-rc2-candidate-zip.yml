@@ -1,0 +1,73 @@
+name: Zoki RC2 candidate source ZIP
+
+on:
+  pull_request:
+    branches:
+      - release/ai-advokat-unified-rc1-20261114
+    paths:
+      - '.github/workflows/zoki-rc2-candidate-zip.yml'
+      - 'docs/ZOKI_UNIFIED_RC2_RELEASE_PACK_2026-11-15.md'
+      - 'src/legal-conversation-context.js'
+      - 'assets/ai-advokat-proactive.mjs'
+      - 'test/semantic-conversation-all-agents.test.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safe-zip:
+    name: RC2 source ZIP / not final
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact candidate commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source and privacy preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/ZOKI_UNIFIED_RC2_RELEASE_PACK_2026-11-15.md
+          test -f .github/workflows/zoki-five-functions-gate.yml
+          node --no-warnings --test test/semantic-conversation-all-agents.test.mjs test/rc1-quota-and-privacy-regression.test.mjs
+          forbidden="$(git ls-files | grep -Ei '(^|/)(\.env(\.production|\.local)?|id_rsa|service-account\.json|[^/]+\.(p12|pfx|key)|111\.zip)$' || true)"
+          if test -n "$forbidden"; then
+            echo '::error::Refusing to package forbidden private files'
+            exit 1
+          fi
+          git diff --check
+      - name: Package read-only candidate for testing
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          short="$(git rev-parse --short=12 HEAD)"
+          pack="out/ZOKI_AI_ADVOKAT_RC2_TEST_CANDIDATE_$short.zip"
+          git archive --format=zip --output="$pack" HEAD
+          cat > out/README_NOT_FINAL.txt <<'NOTICE'
+          AI ADVOKAT / ZOKI RC2 - SOURCE TEST CANDIDATE, NOT FINAL.
+          Do not use confidential client facts in public Preview or test chat.
+          No current-law certification, formal legal advice, filing, or signing.
+          RC16 HG11/HG35 and RC84 0/28 lawyer review remain HOLD.
+          Real provider, microphone, translator, file-open and lawyer UAT remain required.
+          NOTICE
+          zip -q -j "$pack" out/README_NOT_FINAL.txt
+          unzip -tq "$pack" >/dev/null
+          (cd out && sha256sum "$(basename "$pack")" > SHA256SUMS.txt)
+          printf 'CANDIDATE_SHA=%s\n' "$(git rev-parse HEAD)" > out/COMMIT_SHA.txt
+      - name: Upload temporary source ZIP and integrity manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZOKI-RC2-TEST-CANDIDATE-NOT-FINAL
+          path: |
+            out/ZOKI_AI_ADVOKAT_RC2_TEST_CANDIDATE_*.zip
+            out/SHA256SUMS.txt
+            out/COMMIT_SHA.txt
+          if-no-files-found: error
+          retention-days: 7
