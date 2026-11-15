@@ -23,16 +23,15 @@ const headers={
   "Origin":"https://ai-advokat.github.io"
 };
 
-test("33-language translation falls back to bounded GPT-OSS when M2M100 fails",async()=>{
+test("33-language translation fails closed on M2M100 outage with no expensive second model",async()=>{
   const calls=[];
   const env={
     DB,RATE_LIMIT_SALT,
     AI:{
       run:async(model,input)=>{
         calls.push(model);
-        if(model==="@cf/meta/m2m100-1.2b") throw new Error("simulated m2m failure");
-        assert.equal(model,"@cf/openai/gpt-oss-120b");
-        return {response:"Legal sources"};
+        if(model==="@cf/meta/m2m100-1.2b") throw new Error("3040 Capacity temporarily exceeded");
+        assert.fail("temporary M2M100 outage must not invoke any second Workers AI model");
       }
     }
   };
@@ -41,13 +40,12 @@ test("33-language translation falls back to bounded GPT-OSS when M2M100 fails",a
     headers:{...headers,"content-type":"application/json"},
     body:JSON.stringify({targetLanguage:"en",items:[{id:"0",text:"Правни извори"}]})
   }),env,{});
-  assert.equal(res.status,200);
+  assert.equal(res.status,503);
   const data=await res.json();
-  assert.equal(data.ok,true);
-  assert.equal(data.provider,"m2m100_workers_ai_item_fallback");
-  assert.equal(data.translations[0].text,"Legal sources");
-  assert.ok(calls.includes("@cf/meta/m2m100-1.2b"));
-  assert.ok(calls.includes("@cf/openai/gpt-oss-120b"));
+  assert.equal(data.ok,false);
+  assert.equal(data.error,"ui_translation_provider_unavailable");
+  assert.equal(data.detail,"ui_translation_workers_ai_model_busy");
+  assert.deepEqual(calls,["@cf/meta/m2m100-1.2b"]);
 });
 
 test("consolidator converts PDF transiently without storage",async()=>{
