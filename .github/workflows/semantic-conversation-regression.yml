@@ -1,0 +1,52 @@
+name: AI Advokat semantic conversation regression
+
+on:
+  pull_request:
+    paths:
+      - "src/legal-conversation-context.js"
+      - "src/ai-advokat-central-prompt.js"
+      - "src/index.js"
+      - "src/agent-orchestrator.js"
+      - "src/proactive-legal-agents.js"
+      - "assets/ai-advokat-proactive.mjs"
+      - "assets/ai-advokat-chat.js"
+      - "assets/standalone-bot.js"
+      - "test/semantic-conversation-all-agents.test.mjs"
+      - ".github/workflows/semantic-conversation-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  semantic-source-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax
+        run: |
+          node --check src/legal-conversation-context.js
+          node --check src/ai-advokat-central-prompt.js
+          node --check src/agent-orchestrator.js
+          node --check src/proactive-legal-agents.js
+          node --check assets/ai-advokat-proactive.mjs
+          node --check assets/ai-advokat-chat.js
+          node --check assets/standalone-bot.js
+          node --check src/index.js
+      - name: Semantic dialogue, privacy, context and existing agent regressions
+        run: |
+          node --no-warnings --test \
+            test/semantic-conversation-all-agents.test.mjs \
+            test/legal-conversation-context.test.mjs \
+            test/proactive-dual-conversation.test.mjs \
+            test/proactive-legal-agents.test.mjs \
+            test/agent-orchestrator.test.mjs \
+            test/ai-advokat-central-prompt.test.mjs \
+            test/chat-privacy-routing.test.mjs
+
+# Passing source tests do NOT certify actual live model semantics,
+# Cloudflare quota, attorney approval, or any final legal action.
