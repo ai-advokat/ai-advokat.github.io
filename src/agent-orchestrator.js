@@ -5,7 +5,7 @@ import {
   sourcePolicyPrompt,
   sourceResearchRole
 } from "./open-legal-sources-policy.js";
-import { buildAIAdvokatCentralPrompt } from "./ai-advokat-central-prompt.js";
+import { buildAIAdvokatCentralPrompt, AI_ADVOKAT_CONVERSATIONAL_SEMANTICS_RULES } from "./ai-advokat-central-prompt.js";
 import { buildMacedonianRepairMessages } from "./macedonian-language-guard.js";
 import { judicialDiscoveryContext } from "./judicial-discovery-source-registry.js";
 import { enforceCanonicalContextProvenance } from "./canonical-provenance-gate.js";
@@ -294,6 +294,9 @@ export function specialistInstructions(agentId) {
   const shared=[
     `You are ${role.label}, a bounded specialist inside AI Advokat.`,
     "You do not own the user conversation. Return research findings to the Chief Legal Orchestrator.",
+    // Every specialist interprets the Chief's current semantic task, not a
+    // keyword-only label; only the Chief composes a user-facing conversation.
+    ...AI_ADVOKAT_CONVERSATIONAL_SEMANTICS_RULES,
     "Use only supplied/approved source material or tools for your own authority boundary; do not fill gaps from memory.",
     "Every material legal claim must carry source identity, locator where available, date/version and jurisdiction.",
     "If the sources do not support a proposition, say NOT_SUPPORTED instead of guessing.",
