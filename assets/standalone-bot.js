@@ -769,7 +769,7 @@ $('composer').onsubmit = async event => {
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
     history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
     const nextTurns=await proactiveConversation
-      .then(mod=>mod?.suggestLegalNextTurns?.({question:outboundQ,answer:data.answer,language:selectedLanguageMeta().code})||null)
+      .then(mod=>mod?.suggestLegalNextTurns?.({question:outboundQ,answer:data.answer,language:selectedLanguageMeta().code,history:history.slice(-8)})||null)
       .catch(()=>null);
     if(epoch===generation) renderProactiveNextTurns(article,nextTurns);
     if(voiceConversationPending){

@@ -89,17 +89,55 @@ const EN=Object.freeze({
 });
 
 const TOPICS=Object.freeze([
-  ["procedural",/(?:притвор|пресуд|жалб|доставувањ|рок|судск[ио]\s+акт|решение|appeal|detention|deadline|service\s+of\s+process|court\s+order)/iu],
-  ["employment",/(?:работен\s+однос|работодавач|вработувањ|отказ|плата|employment|dismissal|labou?r\s+law|salary)/iu],
-  ["formal",/(?:тужб|поднесок|приговор|пријав[аи]|петици|lawsuit|legal\s+claim|complaint|filing|petition)/iu],
-  ["contract",/(?:договор|анекс|клаузул|обврск|contract|agreement|clause)/iu]
+  ["procedural",/(?:притвор|пресуд|жалб|доставувањ|рок|судск[ио]\s+акт|решение|appeal|detention|deadline|service\s+of\s+process|court\s+order|\b(?:zalba|presuda|pritvor|rok)\b)/iu],
+  ["employment",/(?:работен\s+однос|работодавач|вработувањ|отказ|плата|employment|dismissal|labou?r\s+law|salary|\b(?:otkaz|plata|raboten\s+odnos|rabotodavac)\b)/iu],
+  ["formal",/(?:тужб|поднесок|приговор|пријав[аи]|петици|lawsuit|legal\s+claim|complaint|filing|petition|\b(?:tuzba|podnesok|prigovor)\b)/iu],
+  ["contract",/(?:договор|анекс|клаузул|обврск|contract|agreement|clause|\b(?:dogovor(?:ot|i|en|na)?|aneks(?:ot)?|klauzul(?:a|ata|i)?)\b)/iu]
 ]);
 
-export function suggestLegalNextTurns({question="",answer="",language="mk"}={}){
+// Follow-up buttons are privacy-safe deterministic proposals, not model
+// answers. They inherit the last user topic only for explicitly elliptical
+// turns; previous AI content must never become an assumed source or fact.
+const ELLIPTICAL_USER_TURN_RE=/^(?:(?:а|па|но|и|and|but)\s+)?(?:зошто|како\s+тоа|што\s+со|што\s+ако|што\s+следно|а\s+ако|а\s+сега|објасни\s+подетално|појасни|продолжи|не[,.]?\s*мислев|мислам\s+на|why|how\s+so|what\s+(?:about|if|next)|i\s+meant|please\s+elaborate)/iu;
+const MK_LATIN_ELLIPTICAL_RE=/^(?:(?:a|pa|no|i)\s+)?(?:zosto|shto\s+(?:so|ako|sledno)|sto\s+(?:so|ako|sledno)|kako\s+toa|a\s+ako|ne[,.]?\s*mislev|mislam\s+na|prodolzi|pojasni)/iu;
+
+// Match only the accepted subject in corrections: "not the dismissal,
+// I meant the contract" must not turn the next-turn menu back to employment.
+function correctedProactiveTopic(question){
+  const text=String(question||"").trim().slice(0,1600);
+  const match=text.match(/^(?:не[,.:!]?\s*|но[,.:!]?\s*)?(?:јас\s+)?(?:мислев|мислам)\s+на\s+(.+)/iu)
+    || text.match(/^(?:ne[,.:!]?\s*|no[,.:!]?\s*)?(?:jas\s+)?(?:mislev|mislam)\s+na\s+(.+)/iu)
+    || text.match(/^(?:(?:no|actually|rather)[,.:!]?\s*)?(?:i\s+(?:meant|mean|was\s+asking\s+about))\s+(.+)/iu);
+  if(!match) return "";
+  return match[1].split(/(?:,\s*|\s+)(?:а\s+не\s+на|не\s+на|a\s+ne\s+na|ne\s+na|not\s+(?:about|the)|rather\s+than)\s+/iu)[0].trim();
+}
+
+function topicFromConversation(question,history=[]){
+  const current=String(question||"").slice(0,3000);
+  const correction=correctedProactiveTopic(current);
+  // If a correction is present, rejected/negated terms must not win through
+  // the old keyword ranking or previous-session context.
+  if(correction) return TOPICS.find(([,pattern])=>pattern.test(correction))?.[0]||"general";
+  const explicit=TOPICS.find(([,pattern])=>pattern.test(current))?.[0]||null;
+  if(explicit) return explicit;
+  if(current.length>160 || (!ELLIPTICAL_USER_TURN_RE.test(current) && !MK_LATIN_ELLIPTICAL_RE.test(current))) return "general";
+  const userTurns=(Array.isArray(history)?history:[])
+    .filter(turn=>turn?.role==="user")
+    .map(turn=>String(turn?.text||"").slice(0,2000))
+    .filter(text=>text && text!==current)
+    .slice(-8);
+  for(const text of userTurns.reverse()){
+    const topic=TOPICS.find(([,pattern])=>pattern.test(text))?.[0];
+    if(topic) return topic;
+  }
+  return "general";
+}
+
+export function suggestLegalNextTurns({question="",answer="",language="mk",history=[]}={}){
   const result=String(answer||"").trim();
   if(result.length<16 || /^(?:AI одговор не е издаден|Нема одговор|Сервисен статус|No AI answer|Service unavailable)/iu.test(result)) return null;
   const q=String(question||"").slice(0,3000);
-  const subject=TOPICS.find(([,pattern])=>pattern.test(q))?.[0]||"general";
+  const subject=topicFromConversation(q,history);
   const locale=String(language||"mk").toLowerCase()==="mk"?"mk":"en";
   const chosen=(locale==="mk"?MK:EN)[subject];
   return {
