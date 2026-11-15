@@ -124,7 +124,7 @@ test("OpenAI UI fallback reconstructs protected legal tokens deterministically",
     const env={
       DB,
       RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",
+      UI_TRANSLATION_ENABLE_PAID_FALLBACK:"true",OPENAI_API_KEY:"test-key",
       OPENAI_MODEL:"gpt-6.1-sol",
       AI:{run:async()=>{throw new Error("force_workers_failure");}}
     };
@@ -168,7 +168,7 @@ test("OpenAI fallback preserves article/case identifiers and boundary whitespace
     };
     const env={
       DB,RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
+      UI_TRANSLATION_ENABLE_PAID_FALLBACK:"true",OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
       AI:{run:async()=>{throw new Error("force_workers_failure");}}
     };
     const req=new Request(base+"/api/ui-translate",{
@@ -211,7 +211,7 @@ test("OpenAI fallback retries without structured format on 400 schema rejection"
     };
     const env={
       DB,RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
+      UI_TRANSLATION_ENABLE_PAID_FALLBACK:"true",OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
       AI:{run:async()=>{throw new Error("force_workers_failure");}}
     };
     const req=new Request(base+"/api/ui-translate",{
@@ -271,3 +271,35 @@ test("M2M100 failure falls back only the failed item instead of the whole batch"
   assert.equal(calls.filter(x=>x.model==="@cf/openai/gpt-oss-120b").length,1);
 });
 
+
+
+test("quota exhaustion stops translation fanout and forbids unapproved paid fallback",async()=>{
+  const originalFetch=globalThis.fetch;
+  let upstreamCalls=0;
+  let paidCalls=0;
+  try{
+    globalThis.fetch=async()=>{paidCalls++;throw new Error("unapproved paid fallback");};
+    const env={
+      DB,RATE_LIMIT_SALT,
+      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
+      // UI_TRANSLATION_ENABLE_PAID_FALLBACK deliberately absent.
+      AI:{run:async()=>{
+        upstreamCalls++;
+        throw new Error("3036 daily free allocation of 10,000 Neurons has been used");
+      }}
+    };
+    const items=Array.from({length:24},(_,i)=>({id:String(i),text:"Тестен наслов за превод "+i}));
+    const response=await worker.fetch(new Request(base+"/api/ui-translate",{
+      method:"POST",headers:commonHeaders,
+      body:JSON.stringify({targetLanguage:"sq",items})
+    }),env,{});
+    assert.equal(response.status,503);
+    const data=await response.json();
+    assert.equal(data.error,"ui_translation_provider_unavailable");
+    assert.equal(data.fallbackError,"ui_translation_paid_fallback_not_authorised");
+    assert.ok(upstreamCalls>=1&&upstreamCalls<=2,"quota fault must not fan out across 24 items");
+    assert.equal(paidCalls,0,"OPENAI_API_KEY presence alone is not spending consent");
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
