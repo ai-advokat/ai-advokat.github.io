@@ -325,7 +325,11 @@ export function renderCaseExportCsv(reportInput){
   const rows=[["kind","section","heading","text","status","source_ids"]];
   const esc=value=>{
     const s=String(value??"");
-    return '"'+s.replace(/"/g,'""')+'"';
+    // RFC 4180 quoting does not stop Excel/LibreOffice evaluating cells
+    // that begin with formula characters. Neutralise only the spreadsheet
+    // representation; the JSON, MD and DOCX exports retain original text.
+    const safe=/^[\s\uFEFF]*[=+@-]/u.test(s) ? "'"+s : s;
+    return '"'+safe.replace(/"/g,'""')+'"';
   };
   rows.push(["meta","","title",report.title,"",""]);
   rows.push(["meta","","case_id",report.caseId,"",""]);
