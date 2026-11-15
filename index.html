@@ -2982,7 +2982,15 @@
   };
 
 
-  const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v1:";
+  const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v2:";
+  // Older full-DOM caches could contain snippets from search or case UI.
+  // Discard only those legacy translation entries; never clear auth/session
+  // storage or any other user data as a side effect of this upgrade.
+  try{
+    for(const code of SITE_LANGUAGE_CODES){
+      localStorage.removeItem("aiadvokat-ui-translations-v1:"+code);
+    }
+  }catch{}
   // Reviewed navigation-only language strings work even when Workers AI has
   // no capacity. This is not a translation of legal texts or chat content.
   const UI_TRANSLATION_STATIC_SQ=Object.freeze({
