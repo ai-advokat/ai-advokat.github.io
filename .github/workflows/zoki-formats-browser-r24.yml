@@ -5,6 +5,9 @@ on:
     paths:
       - "src/case-export.js"
       - "src/case-workspace.js"
+      - "src/private-case-text-document.js"
+      - "test/private-case-text-document-r24.test.mjs"
+      - "test/casepilot-workspace-ui.test.mjs"
       - "assets/casepilot-export.js"
       - "assets/ai-advokat-chat.js"
       - "assets/standalone-bot.js"
@@ -38,10 +41,11 @@ jobs:
           node --check assets/casepilot-export.js
           node --check assets/casepilot-workspace-ui.js
           node --check src/case-workspace.js
+          node --check src/private-case-text-document.js
           node --check src/case-export.js
           node --check src/index.js
           node --check scripts/zoki-bot-formats-browser-r24.mjs
-          node --no-warnings --test test/zoki-bot-file-format-r24.test.mjs test/case-export.test.mjs test/case-workspace.test.mjs
+          node --no-warnings --test test/zoki-bot-file-format-r24.test.mjs test/private-case-text-document-r24.test.mjs test/case-export.test.mjs test/case-workspace.test.mjs test/casepilot-workspace-ui.test.mjs
       - name: Prepare Chromium (no model calls)
         shell: bash
         run: |
