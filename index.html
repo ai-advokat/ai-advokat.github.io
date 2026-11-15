@@ -2983,6 +2983,23 @@
 
 
   const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v1:";
+  // Reviewed navigation-only language strings work even when Workers AI has
+  // no capacity. This is not a translation of legal texts or chat content.
+  const UI_TRANSLATION_STATIC_SQ=Object.freeze({
+    [i18n.mk.topLine]:"Portal informativ juridik · AI me burime të verifikueshme · kontroll njerëzor",
+    [i18n.mk.brandSub]:"Portal informativ juridik dhe AI",
+    [i18n.mk.navSources]:"Burime juridike",
+    [i18n.mk.navGuides]:"Udhëzues",
+    [i18n.mk.navGazette]:"Gazeta Zyrtare",
+    [i18n.mk.navLibrary]:"Biblioteka profesionale",
+    [i18n.mk.navGovernance]:"Verifikueshmëria",
+    [i18n.mk.navResearch]:"Hulumtuesi AI",
+    [i18n.mk.navPublications]:"Punime",
+    [i18n.mk.navAuthor]:"Autori",
+    [i18n.mk.navAbout]:"Rreth portalit",
+    [i18n.mk.startResearch]:"Fillo kërkimin juridik",
+    [i18n.mk.heroTitle]:"E drejta, e organizuar. AI nën kontrollin njerëzor."
+  });
   const UI_TRANSLATION_BATCH_ITEMS=24;
   const UI_TRANSLATION_BATCH_CHARS=4800;
   // Three bounded requests concurrently avoid minutes of serial UI translation.
@@ -3023,6 +3040,21 @@
   }
   function saveUiTranslationCache(cache){
     try{localStorage.setItem(UI_TRANSLATION_CACHE_PREFIX+siteLanguage,JSON.stringify(cache));}catch{}
+  }
+  function seedUiStaticShellCache(cache){
+    const seeded=new Set();
+    const sourceMap=siteLanguage==="sq" ? UI_TRANSLATION_STATIC_SQ : null;
+    if(sourceMap) for(const [source,target] of Object.entries(sourceMap)){
+      if(!cache[source]) cache[source]=target;
+      seeded.add(source);
+    }
+    if(siteLanguage==="en") for(const [key,source] of Object.entries(i18n.mk)){
+      const target=i18n.en?.[key];
+      if(typeof source!=="string"||typeof target!=="string") continue;
+      if(!cache[source]) cache[source]=target;
+      seeded.add(source);
+    }
+    return seeded;
   }
   function translatableText(value){
     const text=String(value||"").replace(/\s+/g," ").trim();
@@ -3122,6 +3154,7 @@
       showUiTranslationStatus("Се подготвува преводот…");
       const units=collectUiTranslationUnits();
       const cache=uiTranslationCache();
+      const curatedSources=seedUiStaticShellCache(cache);
       // The old all-or-nothing page transaction stayed blank for minutes while
       // hundreds of lower-page paragraphs consumed the UI translation budget.
       // Prioritise the visible shell and the explicitly selected language panel.
@@ -3181,6 +3214,20 @@
         const control=document.getElementById("langBtn");
         if(control) control.title="Основниот интерфејс е преведен. Преводот на останатата страница продолжува; не е означен како целосен.";
       };
+      // Curated public navigation strings have zero model cost. Apply only
+      // verified exact matches and mark the page PARTIAL, never fully READY.
+      if(siteLanguage==="sq"&&!uiTranslationInitialCommitDone){
+        const curatedUnits=units.filter(unit=>curatedSources.has(unit.source)&&Boolean(cache[unit.source]));
+        if(curatedUnits.length){
+          applyUnits(curatedUnits);
+          uiTranslationInitialCommitDone=true;
+          document.documentElement.dataset.translationState="partial";
+          document.documentElement.dataset.translationScope="visible_shell_partial";
+          document.documentElement.lang=siteLanguage;
+          document.documentElement.dir="ltr";
+          showUiTranslationStatus("Основните контроли имаат локален превод · останатото бара AI");
+        }
+      }
       commitPriorityShell();
       const batches=[];
       let batch=[],batchChars=0;
