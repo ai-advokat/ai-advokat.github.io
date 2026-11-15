@@ -1,11 +1,8 @@
 name: AI Advokat RC1 Preview live E2E - source parity, translator, microphone
 
+# Manual independent recheck only. The existing translator-layered PR workflow
+# runs this same bounded probe automatically; do not double-use AI quota.
 on:
-  pull_request:
-    branches: ["main"]
-    paths:
-      - "scripts/rc1-preview-live-e2e.mjs"
-      - ".github/workflows/rc1-preview-live-e2e.yml"
   workflow_dispatch:
 
 permissions:
