@@ -95,11 +95,32 @@ const TOPICS=Object.freeze([
   ["contract",/(?:договор|анекс|клаузул|обврск|contract|agreement|clause)/iu]
 ]);
 
-export function suggestLegalNextTurns({question="",answer="",language="mk"}={}){
+// Follow-up buttons are privacy-safe deterministic proposals, not model
+// answers. They inherit the last user topic only for explicitly elliptical
+// turns; previous AI content must never become an assumed source or fact.
+const ELLIPTICAL_USER_TURN_RE=/^(?:(?:а|па|но|и|and|but)\s+)?(?:зошто|како\s+тоа|што\s+со|што\s+ако|што\s+следно|а\s+ако|а\s+сега|објасни\s+подетално|појасни|продолжи|не[,.]?\s*мислев|мислам\s+на|why|how\s+so|what\s+(?:about|if|next)|i\s+meant|please\s+elaborate)/iu;
+function topicFromConversation(question,history=[]){
+  const current=String(question||"").slice(0,3000);
+  const explicit=TOPICS.find(([,pattern])=>pattern.test(current))?.[0]||null;
+  if(explicit) return explicit;
+  if(current.length>160 || !ELLIPTICAL_USER_TURN_RE.test(current)) return "general";
+  const userTurns=(Array.isArray(history)?history:[])
+    .filter(turn=>turn?.role==="user")
+    .map(turn=>String(turn?.text||"").slice(0,2000))
+    .filter(text=>text && text!==current)
+    .slice(-8);
+  for(const text of userTurns.reverse()){
+    const topic=TOPICS.find(([,pattern])=>pattern.test(text))?.[0];
+    if(topic) return topic;
+  }
+  return "general";
+}
+
+export function suggestLegalNextTurns({question="",answer="",language="mk",history=[]}={}){
   const result=String(answer||"").trim();
   if(result.length<16 || /^(?:AI одговор не е издаден|Нема одговор|Сервисен статус|No AI answer|Service unavailable)/iu.test(result)) return null;
   const q=String(question||"").slice(0,3000);
-  const subject=TOPICS.find(([,pattern])=>pattern.test(q))?.[0]||"general";
+  const subject=topicFromConversation(q,history);
   const locale=String(language||"mk").toLowerCase()==="mk"?"mk":"en";
   const chosen=(locale==="mk"?MK:EN)[subject];
   return {
