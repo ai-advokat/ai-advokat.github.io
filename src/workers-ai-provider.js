@@ -38,6 +38,14 @@ export function classifyWorkersAIProviderFailure(error){
       capacity:"daily_free_allocation_exhausted"
     };
   }
+  if(/\b3040\b|capacity temporarily exceeded|out of capacity/i.test(detail)){
+    return {
+      error:"workers_ai_provider_error",
+      detail:"Cloudflare AI model temporarily at capacity (3040)",
+      retryable:true,
+      capacity:"model_temporarily_unavailable"
+    };
+  }
   if(detail.startsWith("workers_ai_timeout_")){
     return {error:"workers_ai_timeout",detail,retryable:true,capacity:null};
   }

@@ -58,7 +58,12 @@ test("private document vault supports drag drop and multi-file PDF Word Excel im
   for(const id of ["caseFileDrop","chooseCaseFiles","caseFileInput","caseFileSelection","uploadCaseFile"]){
     assert.match(html,new RegExp('id="'+id+'"'));
   }
-  assert.match(html,/\.pdf,\.doc,\.docx,\.xls,\.xlsx,\.png,\.jpg,\.jpeg,\.webp/);
+  assert.match(html,/\.pdf,\.doc,\.docx,\.json,\.md,\.csv,\.txt,\.xls,\.xlsx,\.png,\.jpg,\.jpeg,\.webp/);
+  for(const marker of ["application/json","text/markdown","text/csv","text/plain"]){
+    assert.ok(js.includes(marker),marker);
+  }
+  assert.match(js,/textFilesNeedExplicitAIConsent/);
+  assert.match(js,/не се испратени на AI/);
   assert.match(html,/caseFileInput" type="file" multiple hidden/);
   assert.match(js,/setPendingCaseFiles/);
   assert.match(js,/dataTransfer\?\.files/);

@@ -768,6 +768,7 @@ $('composer').onsubmit = async event => {
     pulse.remove();
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
     history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
+    renderRequestedExportActions(article,outboundQ);
     const nextTurns=await proactiveConversation
       .then(mod=>mod?.suggestLegalNextTurns?.({question:outboundQ,answer:data.answer,language:selectedLanguageMeta().code,history:history.slice(-8)})||null)
       .catch(()=>null);
@@ -848,6 +849,39 @@ busy(false);
 window.AIAdvokatCoreReady = true;
 document.documentElement.dataset.botCoreRuntime = 'ready';
 window.dispatchEvent(new CustomEvent('aiadvokat:core-ready'));
+function requestedExternalExportFormats(question){
+  const q=String(question||"").normalize("NFKC").toLowerCase();
+  const formats=[];
+  if(/(?:\bdocx?\b|\bword\b|ворд)/iu.test(q)) formats.push("docx");
+  if(/(?:\bpdf\b|пдф)/iu.test(q)) formats.push("pdf");
+  if(/(?:\bjson\b|џејсон)/iu.test(q)) formats.push("json");
+  if(/(?:\bmarkdown\b|\bmd\b|маркдаун)/iu.test(q)) formats.push("md");
+  if(/(?:\bcsv\b|цсв)/iu.test(q)) formats.push("csv");
+  if(/(?:\bjpe?g\b|\.jpe?g\b)/iu.test(q)) formats.push("jpg");
+  return formats;
+}
+function renderRequestedExportActions(article,question){
+  const formats=requestedExternalExportFormats(question);
+  if(!article||!formats.length) return;
+  const tools=document.createElement("div");
+  tools.className="bot-file-export-actions";
+  const note=document.createElement("small");
+  note.textContent="Работен документ · изборот се презема само по Ваш клик · Human Gate";
+  tools.append(note);
+  for(const fmt of formats){
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="bot-file-export-action";
+    b.textContent=fmt==="docx"?"⇩ Word (.docx)":"⇩ "+fmt.toUpperCase();
+    b.addEventListener("click",async()=>{
+      b.disabled=true;
+      try{await exportLatestAssistant(fmt);}
+      finally{b.disabled=false;}
+    });
+    tools.append(b);
+  }
+  article.append(tools);
+}
 async function exportLatestAssistant(format) {
   const latest=[...history].reverse().find(item=>item.role==='assistant' && String(item.text||'').trim());
   if(!latest){ status('Сè уште нема AI одговор за извоз.'); return; }
@@ -869,7 +903,7 @@ async function exportLatestAssistant(format) {
     });
     await mod.downloadCasePilotExport(report,format,{filename:'AI-Advokat-working-draft.'+format});
   }catch{
-    status('Извозот во '+format.toUpperCase()+' не успеа. Обидете се со TXT или MD.');
+    status('Извозот во '+format.toUpperCase()+' не успеа. За предолга JPG слика изберете PDF или DOCX; за текст користете MD.');
   }
 }
 for(const button of document.querySelectorAll('[data-export]')){

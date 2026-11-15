@@ -1,4 +1,5 @@
 import { runVoiceTranscriptionAI } from "./voice-transcription-provider.js";
+import { decodePrivateCaseTextDocument } from "./private-case-text-document.js";
 import { handleLegalAlarm } from "./legal-alarm.js";
 import {
   CASE_LAW_CURATION_VERSION,
@@ -4222,23 +4223,30 @@ function parseModelJsonObject(raw){
 }
 
 async function runPrivateWorkersAIDocumentExtraction(env,{documentId,fileName,mimeType,bytes}={}){
-  if(!freeWorkersAIMarkdownConfigured(env)) return {ok:false,error:"case_intelligence_provider_not_configured"};
-  let converted;
-  try{
-    converted=await env.AI.toMarkdown([{
-      name:String(fileName||"document").slice(0,180),
-      blob:new Blob([bytes],{type:String(mimeType||"application/octet-stream")})
-    }],{
-      conversionOptions:{output:{format:"text"},pdf:{metadata:false}}
-    });
-  }catch(error){
-    return {ok:false,error:"case_document_conversion_failed",detail:String(error?.message||error).slice(0,180)};
+  const directText=decodePrivateCaseTextDocument({mimeType,bytes,filename:fileName});
+  if(directText.handled&&!directText.ok) return {ok:false,error:directText.error};
+  if(!directText.handled&&!freeWorkersAIMarkdownConfigured(env)){
+    return {ok:false,error:"case_intelligence_provider_not_configured"};
   }
-  const item=Array.isArray(converted)?converted[0]:converted;
-  if(!item || item.format==="error" || typeof item.data!=="string" || !item.data.trim()){
-    return {ok:false,error:"case_document_conversion_failed",detail:String(item?.error||"empty conversion").slice(0,180)};
+  let documentText=directText.handled ? directText.text : "";
+  if(!directText.handled){
+    let converted;
+    try{
+      converted=await env.AI.toMarkdown([{
+        name:String(fileName||"document").slice(0,180),
+        blob:new Blob([bytes],{type:String(mimeType||"application/octet-stream")})
+      }],{
+        conversionOptions:{output:{format:"text"},pdf:{metadata:false}}
+      });
+    }catch(error){
+      return {ok:false,error:"case_document_conversion_failed",detail:String(error?.message||error).slice(0,180)};
+    }
+    const item=Array.isArray(converted)?converted[0]:converted;
+    if(!item || item.format==="error" || typeof item.data!=="string" || !item.data.trim()){
+      return {ok:false,error:"case_document_conversion_failed",detail:String(item?.error||"empty conversion").slice(0,180)};
+    }
+    documentText=String(item.data).slice(0,120000);
   }
-  const documentText=String(item.data).slice(0,120000);
   const prompt=[
     caseDocumentExtractionPrompt({documentId,fileName,mimeType}),
     "",
@@ -4298,11 +4306,18 @@ async function runPrivateCaseDocumentExtraction(env,{documentId,fileName,mimeTyp
 
   const prompt=caseDocumentExtractionPrompt({documentId,fileName,mimeType});
   const parts=[{type:"input_text",text:prompt}];
-  const base64=bytesToBase64(bytes);
-  if(String(mimeType||"").startsWith("image/")){
-    parts.push({type:"input_image",image_url:`data:${mimeType};base64,${base64}`,detail:"high"});
+  const directText=decodePrivateCaseTextDocument({mimeType,bytes,filename:fileName});
+  if(directText.handled&&!directText.ok) return {ok:false,error:directText.error};
+  if(directText.handled){
+    // Structured text files are evidence DATA, never an OpenAI instruction.
+    parts.push({type:"input_text",text:directText.text});
   }else{
-    parts.push({type:"input_file",file_data:`data:${mimeType};base64,${base64}`,filename:String(fileName||"document").slice(0,180)});
+    const base64=bytesToBase64(bytes);
+    if(String(mimeType||"").startsWith("image/")){
+      parts.push({type:"input_image",image_url:`data:${mimeType};base64,${base64}`,detail:"high"});
+    }else{
+      parts.push({type:"input_file",file_data:`data:${mimeType};base64,${base64}`,filename:String(fileName||"document").slice(0,180)});
+    }
   }
 
   const body={
@@ -11356,7 +11371,9 @@ const UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT=48;
 const UI_TRANSLATE_GLOBAL_HOURLY_LIMIT=240;
 const UI_TRANSLATE_GLOBAL_DAILY_LIMIT=800;
 const UI_TRANSLATION_MODEL="@cf/meta/m2m100-1.2b";
-const UI_TRANSLATION_FALLBACK_MODEL=WORKERS_AI_TEXT_MODEL_DEFAULT;
+// GLM-4.7 Flash is the low-cost bounded UI translation rescue model. Never
+// fan out expensive GPT-OSS 120B on M2M100 capacity or timeout failures.
+const UI_TRANSLATION_FALLBACK_MODEL="@cf/zai-org/glm-4.7-flash";
 const UI_TRANSLATION_M2M100_UNSUPPORTED=new Set(["eo","la"]);
 const UI_TRANSLATION_CONCURRENCY=2;
 const UI_TRANSLATION_PROTECTED_RE=/https?:\/\/[^\s<>"']+|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|10\.\d{4,9}\/[A-Z0-9._;()\/:+-]+|@cf\/[A-Z0-9._\/-]+|\b(?:Human Gate|LEGAL HOLD|PRODUCTION NO-GO|AI Advokat|HUDOC|EUR-Lex|Zenodo|ORCID)\b|\b(?:Article|Art\.?|Член|чл\.?)\s*\d+[A-ZА-Я]?\b|\b(?:Case|case|предмет|Предмет|No\.?|бр\.?)\s*[A-ZА-Я0-9][A-ZА-Я0-9./-]*\b|\b\d{1,4}\/\d{2,4}\b|\b\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}\b|[A-Z0-9_.-]+\.(?:pdf|docx|zip|json|html|txt|md)\b/giu;
@@ -11366,7 +11383,9 @@ const UI_TRANSLATION_GOVERNANCE_RULE="Never alter legal truth or identifiers. Pr
 // category so quota exhaustion can skip wasteful model-to-model retries.
 function uiTranslationWorkerErrorCode(result){
   if(result?.error==="workers_ai_daily_capacity_exhausted") return "ui_translation_workers_ai_capacity_exhausted";
+  if(result?.capacity==="model_temporarily_unavailable") return "ui_translation_workers_ai_model_busy";
   if(result?.error==="workers_ai_timeout") return "ui_translation_workers_ai_timeout";
+  if(result?.error==="workers_ai_empty_response") return "ui_translation_workers_ai_empty_response";
   return "ui_translation_workers_ai_failed";
 }
 
@@ -11796,10 +11815,14 @@ async function handleUiTranslation(request,env){
             usedFallback:false
           };
         }catch(primaryError){
-          // Account/day allocation is shared by M2M100 and GPT-OSS; do not
-          // flood another Workers AI model after its allocation is exhausted.
-          if(String(primaryError?.message||primaryError)==="ui_translation_workers_ai_capacity_exhausted") throw primaryError;
-          console.warn("ui_translation_m2m100_item_fallback",target,item.id,String(primaryError?.message||primaryError).slice(0,120));
+          // Hard stop on daily quota, temporary 3040, network, timeout and
+          // unknown provider errors. Only an empty M2M100 *translation*
+          // warrants one low-cost GLM rescue; no automatic high-cost GPT-OSS.
+          const reason=String(primaryError?.message||primaryError);
+          if(!["ui_translation_empty_m2m100","ui_translation_workers_ai_empty_response"].includes(reason)){
+            throw primaryError;
+          }
+          console.warn("ui_translation_m2m100_empty_content_fallback",target,item.id,reason);
           return {
             id:item.id,
             text:await translateUiLlmText(runUiProvider,item.text,target,language),
@@ -11825,7 +11848,7 @@ async function handleUiTranslation(request,env){
     });
   }catch(error){
     const workersDetail=String(error?.message||error).slice(0,160);
-    const failoverReason=["ui_translation_workers_ai_capacity_exhausted","ui_translation_workers_ai_timeout","ui_translation_workers_ai_failed"].includes(workersDetail)
+    const failoverReason=["ui_translation_workers_ai_capacity_exhausted","ui_translation_workers_ai_model_busy","ui_translation_workers_ai_timeout","ui_translation_workers_ai_empty_response","ui_translation_workers_ai_failed"].includes(workersDetail)
       ? workersDetail : "ui_translation_provider_unavailable";
     console.warn("ui_translation_workers_ai_failed",target,failoverReason);
     const openAIFallback=await translateUiWithOpenAIFallback(env,items,target,language);

@@ -1,0 +1,73 @@
+name: Zoki R24 read-only test ZIP
+
+on:
+  pull_request:
+    branches:
+      - release/zoki-unified-rc2-candidate-20261115
+    paths:
+      - ".github/workflows/zoki-r24-candidate-zip.yml"
+      - "src/private-case-text-document.js"
+      - "assets/ai-advokat-chat.js"
+      - "assets/standalone-bot.js"
+      - "test/zoki-bot-file-format-r24.test.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-archive:
+    name: R24 ZIP source-only not production
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify test-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --no-warnings --test test/zoki-bot-file-format-r24.test.mjs test/private-case-text-document-r24.test.mjs
+          test -f docs/ZOKI_UNIFIED_RC2_RELEASE_PACK_2026-11-15.md
+          forbidden="$(git ls-files | grep -Ei '(^|/)(\.env(\.production|\.local)?|id_rsa|service-account\.json|[^/]+\.(p12|pfx|key)|111\.zip)$' || true)"
+          if test -n "$forbidden"; then
+            echo "::error::Private file detected, refusing archive"
+            exit 1
+          fi
+      - name: Package exact Git SHA and manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          short="$(git rev-parse --short=12 HEAD)"
+          archive="out/ZOKI_AI_ADVOKAT_R24_FORMATS_TRANSLATOR_TEST_$short.zip"
+          git archive --format=zip --output="$archive" HEAD
+          cat > out/README_R24_TEST_ONLY.txt <<'NOTICE'
+          AI ADVOKAT R24 - TEST CANDIDATE, NOT FINAL OR PRODUCTION.
+          PDF / JSON / MD / DOCX / CSV / JPG exports, translator status
+          and private document intake require independent real-life testing.
+          Never upload confidential cases to either public bot.
+          Private JSON/MD/CSV/TXT are stored first; explicit lawyer analysis
+          is required before sending text to a provider.
+          Cloudflare live AI and real microphone remain unverified.
+          Legal RC16 HG11/HG35 and RC84 0/28 are still HOLD.
+          NOTICE
+          zip -q -j "$archive" out/README_R24_TEST_ONLY.txt
+          unzip -tq "$archive" >/dev/null
+          (cd out && sha256sum "$(basename "$archive")" > SHA256SUMS.txt)
+          git rev-parse HEAD > out/CANDIDATE_COMMIT_SHA.txt
+      - name: Upload temporary source ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZOKI-R24-FORMATS-TRANSLATOR-NOT-FINAL
+          path: |
+            out/ZOKI_AI_ADVOKAT_R24_FORMATS_TRANSLATOR_TEST_*.zip
+            out/SHA256SUMS.txt
+            out/CANDIDATE_COMMIT_SHA.txt
+          retention-days: 7
+          if-no-files-found: error

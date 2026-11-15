@@ -69,7 +69,7 @@ function resetWorkspace(){
   pendingCaseFiles=[];
   currentDocuments=[];
   if($("caseFileInput")) $("caseFileInput").value="";
-  if($("caseFileSelection")) $("caseFileSelection").textContent="PDF · DOC · DOCX · XLS · XLSX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
+  if($("caseFileSelection")) $("caseFileSelection").textContent="PDF · DOC · DOCX · JSON · MD · CSV · TXT · XLS · XLSX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
   setWorkspaceVisible(false);
   $("caseTitle").textContent="—";
   $("caseLegalArea").textContent="—";
@@ -325,6 +325,10 @@ function documentMimeForFile(file){
   if(file?.type==="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || name.endsWith(".xlsx")){
     return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
   }
+  if(file?.type==="application/json" || name.endsWith(".json")) return "application/json";
+  if(file?.type==="text/markdown" || name.endsWith(".md")) return "text/markdown";
+  if(file?.type==="text/csv" || name.endsWith(".csv")) return "text/csv";
+  if(file?.type==="text/plain" || name.endsWith(".txt")) return "text/plain";
   if(file?.type==="image/png" || name.endsWith(".png")) return "image/png";
   if(file?.type==="image/jpeg" || name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
   if(file?.type==="image/webp" || name.endsWith(".webp")) return "image/webp";
@@ -348,7 +352,7 @@ function setPendingCaseFiles(files){
   if(selection){
     selection.textContent=pendingCaseFiles.length
       ? pendingCaseFiles.map(file=>file.name+" ("+Math.max(1,Math.round(file.size/1024))+" KB)").join(" · ")
-      : "PDF · DOC · DOCX · XLS · XLSX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
+      : "PDF · DOC · DOCX · JSON · MD · CSV · TXT · XLS · XLSX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
   }
   return true;
 }
@@ -741,6 +745,10 @@ $("uploadCaseFile").addEventListener("click",async()=>{
     return;
   }
   const pages=pendingCaseFiles.length===1 ? $("caseFilePages").value.trim() : "";
+  // New structured text inputs are stored first; they must not initiate
+  // model extraction merely because the lawyer clicked Upload.
+  const textFilesNeedExplicitAIConsent=pendingCaseFiles.some(file=>
+    ["application/json","text/markdown","text/csv","text/plain"].includes(documentMimeForFile(file)));
   $("uploadCaseFile").disabled=true;
   $("documentStatus").textContent="Се поставуваат "+pendingCaseFiles.length+" приватни датотеки…";
   let uploaded=0;
@@ -752,14 +760,18 @@ $("uploadCaseFile").addEventListener("click",async()=>{
     pendingCaseFiles=[];
     $("caseFileInput").value="";
     $("caseFilePages").value="";
-    $("caseFileSelection").textContent="PDF · DOC · DOCX · XLS · XLSX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
-    $("documentStatus").textContent=uploaded+" датотек(и) се зачувани приватно. Започнува AI intake…";
+    $("caseFileSelection").textContent="PDF · DOC · DOCX · JSON · MD · CSV · TXT · XLS · XLSX · PNG · JPG · WebP · до 500 MB по документ · до 20 документи";
     await loadDocuments();
-    const intake=await extractPendingCaseDocuments();
-    if(intake.failed.length){
-      $("documentStatus").textContent="Документите се зачувани. AI intake: "+intake.extracted+" успешно, "+intake.failed.length+" бараат дополнителна обработка. "+intake.failed.map(x=>String(x.name||x.id)+": "+x.error).join(" | ");
+    if(textFilesNeedExplicitAIConsent){
+      $("documentStatus").textContent=uploaded+" датотек(и) се зачувани приватно. JSON/MD/CSV/TXT не се испратени на AI. За извлекување притиснете „Анализирај го целиот предмет“ со Ваше одобрение.";
     }else{
-      $("documentStatus").textContent=uploaded+" документ(и) се зачувани и прочитани. Подготвени се за анализа и синтеза.";
+      $("documentStatus").textContent=uploaded+" датотек(и) се зачувани приватно. Започнува AI intake…";
+      const intake=await extractPendingCaseDocuments();
+      if(intake.failed.length){
+        $("documentStatus").textContent="Документите се зачувани. AI intake: "+intake.extracted+" успешно, "+intake.failed.length+" бараат дополнителна обработка. "+intake.failed.map(x=>String(x.name||x.id)+": "+x.error).join(" | ");
+      }else{
+        $("documentStatus").textContent=uploaded+" документ(и) се зачувани и прочитани. Подготвени се за анализа и синтеза.";
+      }
     }
     await openCaseById(activeCaseId);
   }catch(error){

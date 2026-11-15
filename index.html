@@ -3106,6 +3106,20 @@
     }
     return units;
   }
+  function classifiedUiTranslationFailure(status,payload={}){
+    // Never show raw provider exceptions, keys, prompts, client data or
+    // infrastructure details in the public interface.
+    const detail=String(payload?.detail||"").slice(0,160);
+    const error=String(payload?.error||"").slice(0,100);
+    if(/3036|ui_translation_workers_ai_capacity_exhausted|daily.free|daily.allocation|10[,.]?000\s*neuron|daily.*exhaust/i.test(detail+" "+error)){
+      return {code:"daily_quota",message:"Cloudflare дневната бесплатна AI квота е исцрпена. Локалните преводи остануваат достапни; обидете се по обновувањето."};
+    }
+    if(status===429) return {code:"rate_limit",message:"Преведувачот е привремено ограничен поради многу барања. Обидете се подоцна."};
+    if(/3040|model_busy|capacity|unavailable|timeout|overload/i.test(detail+" "+error)){
+      return {code:"provider_capacity",message:"AI моделот привремено нема капацитет. Прикажани се само проверените делумни преводи."};
+    }
+    return {code:"provider_error",message:"AI преведувачот моментално е недостапен. Не е извршен целосен превод."};
+  }
   function showUiTranslationStatus(message){
     const control=document.getElementById("langBtn");
     if(!control) return;
@@ -3156,6 +3170,8 @@
     if(siteLanguage==="mk"||uiTranslationRunning) return;
     uiTranslationRunning=true;
     let translationFailed=false;
+    let translationFailureMessage="";
+    delete document.documentElement.dataset.translationFailureCode;
     document.documentElement.dataset.translationTarget=siteLanguage;
     if(!uiTranslationInitialCommitDone) document.documentElement.dataset.translationState="loading";
     try{
@@ -3291,6 +3307,9 @@
                 applyUiTranslationBackoff(r.status,retryAfterMs);
               }
               translationFailed=true;
+              const failure=classifiedUiTranslationFailure(r.status,d);
+              translationFailureMessage=failure.message;
+              document.documentElement.dataset.translationFailureCode=failure.code;
               console.warn("ui_translation_batch_failed",r.status,d?.error||"unknown",batchIndex);
               if(r.status===429||r.status===503){stopProviderAttempts=true;return;}
               continue;
@@ -3331,8 +3350,10 @@
           }catch(error){
             translationFailed=true;
             stopProviderAttempts=true;
+            translationFailureMessage="Прекината е врската со AI преведувачот; делумниот проверен превод останува достапен.";
+            document.documentElement.dataset.translationFailureCode="network";
             applyUiTranslationBackoff(503,0);
-            console.warn("ui_translation_batch_network_failed",batchIndex,String(error?.message||error||"unknown"));
+            console.warn("ui_translation_batch_network_failed",batchIndex,String(error?.name||"network_error"));
             return;
           }
         }
@@ -3368,9 +3389,9 @@
                   : "Избраниот превод е привремено недостапен. Прикажан е канонскиот македонски интерфејс.")
           );
         }
-        showUiTranslationStatus(uiTranslationInitialCommitDone
+        showUiTranslationStatus((uiTranslationInitialCommitDone
           ? "Делумен превод · "+missingSources.length+" сегменти сè уште недостасуваат"
-          : "Преводот е привремено недостапен");
+          : "Преводот е привремено недостапен")+(translationFailureMessage?" · "+translationFailureMessage:" · Остатокот бара изричен AI превод."));
         updateUiTranslationFullPageControl(true);
         console.warn("ui_translation_atomic_commit_unavailable",siteLanguage,missingSources.length);
         return;

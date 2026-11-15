@@ -4,8 +4,13 @@ export const VOICE_TRANSCRIPTION_MODEL="@cf/openai/whisper-large-v3-turbo";
 // transcribed audio, credentials or service internals to a public client.
 export function classifyVoiceTranscriptionFailure(error){
   const detail=String(error?.message||error||"").slice(0,320);
-  if(/\b(?:3036|4006)\b/i.test(detail) && /daily free allocation|neurons|quota|capacity/i.test(detail)){
+  // 3036 is daily allocation exhaustion; 3040 is temporary *model*
+  // capacity. Never report 3040 as spent Neurons, even if HTTP is 429.
+  if(/\b3036\b|daily free allocation|10[,.]?000\s*neurons/i.test(detail)){
     return "voice_transcription_capacity_exhausted";
+  }
+  if(/\b3040\b|capacity temporarily exceeded|out of capacity/i.test(detail)){
+    return "voice_transcription_model_busy";
   }
   if(/\b429\b|rate.limit|too many requests/i.test(detail)){
     return "voice_transcription_provider_rate_limited";
