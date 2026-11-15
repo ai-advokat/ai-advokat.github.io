@@ -80,6 +80,22 @@ try{
     await page.waitForSelector("#langBtn",{timeout:20000});
     await page.selectOption("#langBtn",targetLanguage);
     await page.waitForURL(new RegExp("(?:[?&])lang="+targetLanguage+"(?:&|$)"),{timeout:18000});
+    // Default translation is quota-safe priority shell only (<=6 batches).
+    // A full DOM pass requires a real user click; exercise that explicit path
+    // for complete and provider-integrity failure acceptance.
+    await page.waitForFunction(()=>
+      document.documentElement.dataset.translationState==="partial" &&
+      document.getElementById("uiTranslationFullPage")?.hidden===false,
+      {timeout:90000}
+    );
+    const firstPass=await page.evaluate(()=>({
+      requests:Number(document.documentElement.dataset.translationBatches||"0"),
+      state:document.documentElement.dataset.translationState
+    }));
+    assert.ok(firstPass.requests<=6,"initial full-page translation exhausted the bounded free budget");
+    if(["complete","partial","rtl-partial","row-mismatch"].includes(scenario)){
+      await page.locator("#uiTranslationFullPage").click();
+    }
     // Do not mistake a correct in-progress PARTIAL shell for final READY.
     // In the failure scenario, wait for the actual surfaced capacity error.
     await page.waitForFunction(kind=>{
@@ -110,6 +126,7 @@ try{
     assert.ok(plannedBatches>0&&plannedBatches<=48,
       "page translation requires "+plannedBatches+" batches, exceeding the 48/hour language cap");
     assert.ok(requests<=48,"browser exceeded the 48/hour language cap");
+    assert.ok(firstPass.requests<=6,"automatic translation must remain within the quota-safe initial budget");
     if(scenario==="complete"){
       assert.equal(state.state,"ready",JSON.stringify({state,network}));
       assert.equal(state.lang,"sq","completed translation must identify its language");
