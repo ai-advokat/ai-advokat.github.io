@@ -13,6 +13,12 @@ export const CASE_WORKSPACE_ALLOWED_MIME_TYPES=Object.freeze([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  // Text-based interchange files may be stored in Secure Case only.
+  // Upload does not grant semantic parsing, AI model access or legal authority.
+  "application/json",
+  "text/markdown",
+  "text/csv",
+  "text/plain",
   "image/png",
   "image/jpeg",
   "image/webp"
@@ -83,6 +89,10 @@ export function validateCaseDocumentUploadMetadata({name,mimeType,pageCount=null
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document":/\.docx$/i,
     "application/vnd.ms-excel":/\.xls$/i,
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":/\.xlsx$/i,
+    "application/json":/\.json$/i,
+    "text/markdown":/\.md$/i,
+    "text/csv":/\.csv$/i,
+    "text/plain":/\.txt$/i,
     "image/png":/\.png$/i,
     "image/jpeg":/\.(?:jpg|jpeg)$/i,
     "image/webp":/\.webp$/i
