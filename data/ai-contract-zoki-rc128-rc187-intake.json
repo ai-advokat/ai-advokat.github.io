@@ -1,0 +1,88 @@
+{
+  "schema": "ai-advokat.contract-review.intake.v1",
+  "date": "2026-11-15",
+  "owner": "Owner-provided Zoki source packages; source content held outside public web root",
+  "releaseState": "REVIEW_ONLY_HOLD",
+  "production": "NO_GO",
+  "humanGate": "HOLD",
+  "sources": [
+    {
+      "id": "RC128",
+      "label": "AI ДОГОВОРИ · RC128",
+      "originZipSha256": "181a08ac0d871e4b586e4122bfc9521882c2c353f9ae32f55e5f36487485a778",
+      "archive": "RC128_OK.zip",
+      "archiveSha256": "6504f9f8bcb6dc57af6d45e4ba128dc41e8c68873ded0aed15ff3434ffb1b553",
+      "offlineHtmlSha256": "03402f2acfa708471c4b6f91f2dcc5fe5da9d86645f0c7d7bc474ef99fe29f34",
+      "testEvidence": "archived isolated Chromium 60/60; NOT independently reproduced end-to-end in this repo",
+      "status": "HOLD"
+    },
+    {
+      "id": "RC187",
+      "label": "AI ДОГОВОР · DPRO RC187",
+      "originZipSha256": "dc5ee799e7cf93627124172e8a8efecd07f9579e242509bd455d9b3b61a2dc03",
+      "archive": "DPRO_RC187_OFFLINE_TECHNICAL_ACCEPTANCE.zip",
+      "archiveSha256": "c1b8bd044aad23abe44a150ecffac991dcfbd00466dcb2f4938634351695f054",
+      "offlineHtmlSha256": "2552c4762659ba279ee39e68dec8aca02d22e55df440f081f4fb91e41f9a7402",
+      "testEvidence": "archived technical acceptance: 27 PASS, 0 FAIL, 5 HOLD; not production acceptance",
+      "status": "HOLD"
+    }
+  ],
+  "legalReview": {
+    "findingCount": 28,
+    "critical": 8,
+    "high": 20,
+    "approved": 0,
+    "legalApproval": "NOT_VERIFIED"
+  },
+  "models": [
+    {
+      "id": "nda",
+      "label": "Доверливост (NDA)",
+      "findings": 2
+    },
+    {
+      "id": "cooperation",
+      "label": "Деловна соработка",
+      "findings": 7
+    },
+    {
+      "id": "services",
+      "label": "Вршење услуги",
+      "findings": 6
+    },
+    {
+      "id": "lease",
+      "label": "Закуп",
+      "findings": 6
+    },
+    {
+      "id": "loan",
+      "label": "Заем",
+      "findings": 3
+    },
+    {
+      "id": "debt",
+      "label": "Регулирање долг",
+      "findings": 4
+    }
+  ],
+  "safeguards": {
+    "rawContractsPublished": false,
+    "legalClausesPromoted": false,
+    "liveAIEnabled": false,
+    "apiCalls": false,
+    "documentsUploaded": false,
+    "signingEnabled": false,
+    "privateClientDataAccepted": false
+  },
+  "blockers": [
+    "28/28 legal clauses lack lawyer approval",
+    "Rights to republish Paragraf-branded original drafting HTML not independently established",
+    "Windows file:// acceptance NOT_TESTED",
+    "RC187 full source app browser E2E NOT_TESTED on production",
+    "Real AI provider integration NOT_TESTED",
+    "Cloudflare deployment requires explicit release approval"
+  ],
+  "previousCanonical": "/ai-contract-dpro14r.html",
+  "reviewOnlyRoute": "/ai-contract-zoki-20261115-review.html"
+}
