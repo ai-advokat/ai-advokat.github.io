@@ -65,6 +65,10 @@ test("review does not replace the old contract generator or confuse two separate
 test("new review gateway is discoverable in both bots and contract workspace",()=>{
   for(const content of urls){
     assert.match(content,/\/ai-contract-zoki-20261115-review\.html/);
+  }
+  for(const content of [urls[0],urls[1],urls[3]]){
     assert.match(content,/\/ai-contract\.html/);
   }
+  // The AI Contract page points to its actual DPRO-14R engine, not to itself.
+  assert.match(urls[2],/\/ai-contract-dpro14r\.html/);
 });
