@@ -1,0 +1,105 @@
+name: Zoki full AI Advokat platform owner-source snapshot
+on:
+  pull_request:
+    branches:
+      - feat/zoki-six-contract-conversation-entry-20261115
+    paths:
+      - .github/workflows/zoki-full-platform-owner-snapshot.yml
+permissions:
+  contents: read
+jobs:
+  package-owner-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Build owner-safe exact-head full tracked source ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import subprocess,zipfile,hashlib,json,pathlib,datetime,re
+          root=pathlib.Path.cwd()
+          commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          zpath=root/'AI_ADVOKAT_PLATFORM_HEAD_OWNER_SOURCE.zip'
+          raw=subprocess.check_output(['git','ls-files','-z']).split(b'\0')
+          files=[]; excluded=[]; hashes={}
+          blocked_suffix={'.pem','.p12','.pfx','.key','.sqlite','.db','.kdbx'}
+          blocked_names={'id_rsa','id_ed25519','credentials.json','service-account.json','config.private.json'}
+          for name in raw:
+            if not name: continue
+            path=name.decode('utf-8','surrogateescape')
+            p=pathlib.PurePosixPath(path)
+            if (any(v in {'.git','node_modules','.venv','__pycache__'} for v in p.parts)
+                or any(v.startswith('.env') for v in p.parts)
+                or (len(p.parts)>1 and p.parts[0]=='.github' and p.parts[1] in {'activation','diagnostics'})
+                or p.suffix.lower() in blocked_suffix
+                or p.name.lower() in blocked_names
+                or any('secret' in v.lower() and (v.lower().endswith('.json') or v.lower().endswith('.txt')) for v in p.parts)):
+              excluded.append(path);continue
+            f=root/path
+            if not f.is_file() or f.is_symlink():
+              excluded.append(path);continue
+            data=f.read_bytes()
+            if re.search(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----',data):
+              excluded.append(path);continue
+            hashes[path]=hashlib.sha256(data).hexdigest()
+            files.append((path,data))
+          metadata={
+            'schema':'ai-advokat-owner-full-source-v1',
+            'source_repository':'ai-advokat/ai-advokat.github.io',
+            'exact_branch':'feat/zoki-consolidator-rc36-integrated-20261115',
+            'source_commit':commit,
+            'date_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'release_status':'OWNER REVIEW ONLY, NOT MERGED OR DEPLOYED',
+            'included_tracked_files':len(files),'excluded_paths':excluded,
+            'sha256_by_relative_path':hashes,
+            'expected_modules':['bot/index.html','index.html','consolidator/index.html',
+              'consolidator/zoki-rc36/RC8_CORE.js','consolidator/zoki-rc36/bridge.js',
+              'assets/zoki-six-contract-conversation-r25.js','assets/zoki-consolidator-conversation-r25.js',
+              'ai-contract.html','contract-intelligence.html']
+          }
+          for expected in metadata['expected_modules']:
+            if expected not in hashes:raise SystemExit('MISSING_REQUIRED_MODULE '+expected)
+          readme='''AI ADVOKAT - WHOLE TRACKED SOURCE - OWNER REVIEW ONLY
+          GitHub exact commit: '''+commit+'''
+          Not production deployed; PR #704 is Draft over PR #703 over PR #702 over PR #701.
+          This ZIP contains the tracked platform candidate at the exact commit, excluding possible
+          credentials, secrets and operational activation records listed in SNAPSHOT_MANIFEST.json.
+          It is developer source, not a single-click offline ChatGPT/Cloudflare AI server.
+          Some workflows require Cloudflare environment bindings and legal source access.
+          Zoki: open README.md; source portal index.html, external bot bot/index.html,
+          integrated Consolidator consolidator/index.html.
+          Offline runnable owner modules and user guide are in the separate ZOKI_MODULES ZIP
+          supplied together with this source snapshot.
+          HUMAN GATE: no publication or legal certification; no real client data in demos.
+          '''
+          with zipfile.ZipFile(zpath,'w',zipfile.ZIP_DEFLATED,compresslevel=6,allowZip64=True) as z:
+            z.writestr('README_OWNER_FIRST.txt',readme)
+            z.writestr('SNAPSHOT_MANIFEST.json',json.dumps(metadata,ensure_ascii=False,indent=2)+'\n')
+            for path,data in files:
+              z.writestr('AI_ADVOKAT_SOURCE/'+path,data)
+          with zipfile.ZipFile(zpath) as z:
+            assert z.testzip() is None
+            assert len(z.namelist())==len(files)+2
+            for expected in metadata['expected_modules']:
+              assert hashlib.sha256(z.read('AI_ADVOKAT_SOURCE/'+expected)).hexdigest()==hashes[expected]
+          print(json.dumps({'result':'PASS','commit':commit,'tracked':len(files),
+                            'excluded':len(excluded),'size_bytes':zpath.stat().st_size}))
+          (root/'ZOKI_PLATFORM_OWNER_EXPORT_METADATA.json').write_text(
+            json.dumps({k:metadata[k] for k in
+             ('schema','source_repository','exact_branch','source_commit','release_status','included_tracked_files','excluded_paths')},
+             ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+      - name: Upload unmerged owner-only full platform source
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZOKI_FULL_AI_ADVOKAT_PLATFORM_SOURCE_OWNER_REVIEW
+          path: |
+            AI_ADVOKAT_PLATFORM_HEAD_OWNER_SOURCE.zip
+            ZOKI_PLATFORM_OWNER_EXPORT_METADATA.json
+          retention-days: 14
+          if-no-files-found: error
