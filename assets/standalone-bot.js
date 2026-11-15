@@ -89,6 +89,8 @@ try { deviceStorage = window.localStorage; } catch {}
 const $ = id => document.getElementById(id);
 const base = location.hostname.endsWith('workers.dev') ? location.origin : 'https://ai-advokat-github-io.aiadvokat16.workers.dev';
 let key = '', history = [], pending = null, generation = 0;
+// In-memory only: a second user turn may be entered while the first AI call runs.
+let queuedNextTurn = null;
 let sessionId = crypto.randomUUID();
 const proactiveConversation=import("./ai-advokat-proactive.mjs?v=r22-20261114").catch(()=>null);
 const welcome = $('welcome').cloneNode(true);
@@ -402,10 +404,11 @@ const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261109-voice-r4")
   });
 function busy(value) {
   const hasQuestion = String($('question')?.value || '').trim().length >= 2;
-  $('send').disabled = value || !hasQuestion;
+  // Keep the composer usable during slow provider calls. One next turn can be queued.
+  $('send').disabled = !hasQuestion;
   $('stop').hidden = !value;
-  $('send').hidden = value;
-  $('question').disabled = value;
+  $('send').hidden = false;
+  $('question').disabled = false;
   $('newChat').disabled = value;
   $('access').disabled = value;
 }
@@ -629,7 +632,7 @@ async function guideMatches(q, signal) {
   } catch { return []; }
 }
 function reset() {
-  generation++; pending?.abort(); pending = null; history = []; sessionId = crypto.randomUUID();
+  generation++; pending?.abort(); pending = null; queuedNextTurn = null; history = []; sessionId = crypto.randomUUID();
   $('useLocalGuides').checked = false;
   $('messages').replaceChildren(welcome.cloneNode(true)); $('question').value = ''; $('question').style.height = '';
   $('menu').open = false; busy(false);
@@ -695,8 +698,17 @@ $('composer').addEventListener('dragover', event => event.preventDefault());
 $('composer').addEventListener('drop', event => { event.preventDefault(); $('plus').open = true; status('Документите се прикачуваат во приватниот простор преку „+“.'); });
 $('composer').onsubmit = async event => {
   event.preventDefault(); const q = $('question').value.trim();
-  if (pending) return;
   if (q.length < 2) return;
+  if (pending) {
+    // Never drop the second question or reset the conversational session.
+    // Deliberately bounded to one queued turn to avoid unattended model spending.
+    queuedNextTurn = q;
+    $('question').value = '';
+    $('question').style.height = '';
+    busy(true);
+    status('Следното прашање е примено. Ќе се испрати по тековниот одговор; можете да го запрете тековниот одговор.');
+    return;
+  }
 
   const languageSwitch=conversationalLanguageSwitch(q);
   if(languageSwitch){
@@ -809,7 +821,23 @@ $('composer').onsubmit = async event => {
   } finally {
     pulse.remove();
     clearTimeout(timeout);
-    if (epoch === generation) { pending = null; busy(false); $('question').focus(); }
+    if (epoch === generation) {
+      pending = null;
+      const next = queuedNextTurn;
+      queuedNextTurn = null;
+      if (next) {
+        // The next user turn stays in the same history/session and goes through
+        // the ordinary privacy and membership gates when actually submitted.
+        $('question').value = next;
+        busy(false);
+        queueMicrotask(() => {
+          if (epoch === generation && !pending) $('composer').requestSubmit();
+        });
+      } else {
+        busy(false);
+        $('question').focus();
+      }
+    }
   }
 };
 async function restoreAccess() {
