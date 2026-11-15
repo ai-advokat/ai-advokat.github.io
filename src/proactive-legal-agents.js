@@ -5,6 +5,17 @@
 
 export const PROACTIVE_LEGAL_AGENTS_VERSION="1.1.0";
 
+export const PROACTIVE_SEMANTIC_RESPONSE_POLICY=Object.freeze({
+  version:"proactive_semantic_dialogue_v1",
+  userGoalFirst:true,
+  directAnswerBeforeClarification:true,
+  suppliedContextOnly:true,
+  priorAiClaimsNeverAuthority:true,
+  sourceAndTemporalVerificationRequired:true,
+  autonomousExternalActions:false,
+  humanReviewRequired:true
+});
+
 export const AGENT_CAPABILITIES=Object.freeze({
   horizon_scanner:Object.freeze({
     id:"horizon_scanner",
@@ -222,6 +233,9 @@ export function planParallelTasks(run){
       status:"planned",
       objective:run.objective,
       sourceUniverse:run.sourceUniverse,
+      // Each specialist receives the same explicit answer-quality boundary.
+      // This is planning metadata, not a claim that an AI response ran.
+      semanticResponsePolicy:PROACTIVE_SEMANTIC_RESPONSE_POLICY,
       allowed:agent.allowed,
       forbidden:agent.forbidden,
       reviewRequired:true
