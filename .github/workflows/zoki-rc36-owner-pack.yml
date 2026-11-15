@@ -16,6 +16,19 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Prepare real Chromium browser test
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          browser="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$browser"
+          echo "BROWSER_EXECUTABLE=$browser" >> "$GITHUB_ENV"
+      - name: Exercise existing v10.4 plus owner RC36 in real Chromium before packaging
+        run: node scripts/zoki-rc36-integrated-browser.mjs
       - name: Prepare safe offline subset of functional AI Advokat consolidator
         shell: bash
         run: |
