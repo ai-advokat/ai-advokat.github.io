@@ -12,6 +12,8 @@ on:
       - "test/proactive-dual-conversation.test.mjs"
       - "scripts/translator-layered-live-smoke.mjs"
       - "scripts/rc1-preview-live-e2e.mjs"
+      - "test/preview-ai-binding.test.mjs"
+      - "wrangler.jsonc"
       - "scripts/translator-browser-candidate-regression.mjs"
       - "scripts/dual-chat-browser-candidate-regression.mjs"
       - ".github/workflows/translator-layered-production-acceptance.yml"
