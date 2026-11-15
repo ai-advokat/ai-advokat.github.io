@@ -1092,7 +1092,7 @@
       // Never silently discard Zoki's second question while a response is pending.
       // Do not queue attachments or governed tool actions for automatic processing.
       if(!attachments.length && !sendContext?.governedRadarHandoff){
-        queuedConversationTurn={question:q,conversationId:currentId};
+        queuedConversationTurn={question:q,chatThreadId:currentId};
         input.value="";
         autoSize();
         sendBtn.title="Следното прашање е зачувано и ќе се испрати по тековниот одговор.";
@@ -1360,7 +1360,7 @@
       save();
       const next=queuedConversationTurn;
       queuedConversationTurn=null;
-      if(next && next.conversationId===currentId){
+      if(next && next.chatThreadId===currentId){
         input.value=next.question;
         autoSize();
         sendBtn.title=modelReplyReceived
@@ -1368,7 +1368,7 @@
           : "Претходниот одговор не успеа; следното прашање е зачувано за рачно испраќање.";
         if(modelReplyReceived){
           queueMicrotask(()=>{
-            if(!abortController && currentId===next.conversationId) send(next.question);
+            if(!abortController && currentId===next.chatThreadId) send(next.question);
           });
         }else{
           input.focus();
