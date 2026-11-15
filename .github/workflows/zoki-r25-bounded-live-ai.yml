@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   exact-preview-real-ai:
-    if: github.head_ref == 'feat/zoki-bot-formats-translator-r24-20261115'
+    if: github.head_ref == 'feat/zoki-bot-formats-translator-r24-20261115' || github.head_ref == 'fix/r25-honest-live-ai-evidence-20261115'
     name: One translation + one Whisper + one FREE chat
     runs-on: ubuntu-latest
     timeout-minutes: 12
