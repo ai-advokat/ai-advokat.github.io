@@ -19,13 +19,13 @@ const server=createServer(async(req,res)=>{
 });
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 let browser;
-async function freshPage(origin,respond){
+async function freshPage(origin,respond,{routePath='/api/bot',pagePath='/bot/index.html'}={}){
   const context=await browser.newContext({locale:"mk-MK",serviceWorkers:"block"});
   const page=await context.newPage();
   const requests=[];
   await page.route("https://ai-advokat-github-io.aiadvokat16.workers.dev/**",async route=>{
     const req=route.request();
-    if(new URL(req.url()).pathname==="/api/bot" && req.method()==="POST"){
+    if(new URL(req.url()).pathname===routePath && req.method()==="POST"){
       let body={};try{body=JSON.parse(req.postData()||"{}");}catch{}
       requests.push(body);
       const response=await respond(body,requests.length);
@@ -38,8 +38,11 @@ async function freshPage(origin,respond){
         body:'{"ok":true,"capabilities":{}}'});
     }
   });
-  await page.goto(origin+"/bot/index.html",{waitUntil:"domcontentloaded",timeout:25000});
-  await page.waitForFunction(()=>window.AIAdvokatCoreReady===true,null,{timeout:18000});
+  await page.goto(origin+pagePath,{waitUntil:"domcontentloaded",timeout:25000});
+  if(pagePath.startsWith("/bot/"))
+    await page.waitForFunction(()=>window.AIAdvokatCoreReady===true,null,{timeout:18000});
+  else
+    await page.waitForTimeout(1000);
   return {page,context,requests};
 }
 async function submit(page,q){
@@ -82,6 +85,34 @@ try{
   assert.equal(b.requests.length,1,"provider failure must not auto-spend a second model call");
   assert.equal(await b.page.locator("#question").inputValue(),q2,"queued follow-up must remain visible for manual retry");
   await b.context.close();
-  console.log("ZOKI R25 CHROMIUM SECOND-TURN: PASS {twoTurn:true,historyPreserved:true,providerFailureQueuePreserved:true,unplannedCalls:0}");
+  // Main /index.html uses the same model runtime but a separate chat composer.
+  const internal=await freshPage(origin,async(_body,n)=>{
+    if(n===1)await pause(450);
+    return {status:200,body:{ok:true,answer:n===1
+      ?"Измислен договор е взаемна согласност и може да создава обврски."
+      :"За истиот договор, обврските зависат од неговите услови.",
+      provider:"workers_ai_free",model:"synthetic-browser-mock",sources:[],mode:"auto",displayMode:"synthetic_browser_qa"}};
+  },{routePath:"/api/chat",pagePath:"/index.html"});
+  async function submitInternal(page,question){
+    await page.evaluate(text=>{
+      const input=document.querySelector("#aiChatInput");
+      if(!input)throw new Error("internal_chat_input_missing");
+      input.value=text;
+      input.dispatchEvent(new Event("input",{bubbles:true}));
+      document.querySelector("#aiChatSend").click();
+    },question);
+  }
+  await submitInternal(internal.page,q1);
+  const internalFirstDeadline=Date.now()+12000;
+  while(internal.requests.length<1 && Date.now()<internalFirstDeadline) await pause(60);
+  assert.equal(internal.requests.length,1,"internal first request must reach mock");
+  await submitInternal(internal.page,q2);
+  const internalSecondDeadline=Date.now()+18000;
+  while(internal.requests.length<2 && Date.now()<internalSecondDeadline) await pause(70);
+  assert.equal(internal.requests.length,2,"internal second question must be sent after first");
+  assert.equal(internal.requests[0].sessionId,internal.requests[1].sessionId);
+  assert.equal(internal.requests[1].history.length,2);
+  await internal.context.close();
+  console.log("ZOKI R25 CHROMIUM SECOND-TURN: PASS {external:true,internal:true,historyPreserved:true,providerFailureQueuePreserved:true,unplannedCalls:0}");
 }catch(e){console.error("ZOKI R25 CHROMIUM SECOND-TURN: FAIL",String(e?.stack||e));process.exitCode=1;}
 finally{await browser?.close().catch(()=>{});await new Promise(resolve=>server.close(resolve));}
