@@ -1,0 +1,31 @@
+name: Zoki R25 real Chromium conversational continuity
+on:
+  pull_request:
+    branches:
+      - fix/zoki-conversation-second-turn-r25-20261115
+    paths:
+      - "assets/standalone-bot.js"
+      - "assets/ai-advokat-chat.js"
+      - "scripts/zoki-second-turn-browser-r25.mjs"
+      - ".github/workflows/zoki-r25-browser-conversation.yml"
+permissions:
+  contents: read
+jobs:
+  browser-conversation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install browser harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          browser="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$browser"
+          echo "BROWSER_EXECUTABLE=$browser" >> "$GITHUB_ENV"
+      - name: Simulate two conversational turns and a failed upstream in real Chromium
+        run: node scripts/zoki-second-turn-browser-r25.mjs

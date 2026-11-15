@@ -88,6 +88,8 @@
 
 
   let abortController=null;
+  // A single pending follow-up is kept in memory while the provider is busy.
+  let queuedConversationTurn=null;
   let mode="auto";
   let webDomainPreset="all";
   let attachments=[];
@@ -1084,9 +1086,21 @@
   }
 
   async function send(forcedText=null,sendContext=null){
-    if(abortController) return;
     const q=String(forcedText??input.value).trim();
     if(!q) return;
+    if(abortController){
+      // Never silently discard Zoki's second question while a response is pending.
+      // Do not queue attachments or governed tool actions for automatic processing.
+      if(!attachments.length && !sendContext?.governedRadarHandoff){
+        queuedConversationTurn={question:q,chatThreadId:currentId};
+        input.value="";
+        autoSize();
+        sendBtn.title="Следното прашање е зачувано и ќе се испрати по тековниот одговор.";
+      }else{
+        sendBtn.title="Почекајте со документите да заврши тековниот одговор.";
+      }
+      return;
+    }
     const governedRadarHandoff=sendContext?.governedRadarHandoff===true;
 
     if(localConfidentialCasePrompt(q) && !governedRadarHandoff){
@@ -1108,7 +1122,10 @@
 
     const chat=current();setTitle(chat,q);
     const historyForApi=chat.messages
-      .filter(m=>(m.role==="user"||m.role==="assistant") && m.text && m.text!=="Обработувам…")
+      // Service-status text and privacy handoffs are not model answers and must
+      // never contaminate the next legal turn's conversational context.
+      .filter(m=>(m.role==="user"||m.role==="assistant") && m.text && m.text!=="Обработувам…"
+        && (m.role==="user" || !/(?:runtime\/api unavailable|ai runtime timeout|^stop$|quota|provider_locked|controlled state|source-backed fallback|privacy-protected|privacy-redacted)/i.test(String(m.meta||""))))
       .slice(-8)
       .map(m=>({role:m.role,text:String(m.text).slice(0,4000)}));
     const selectedFiles=[...attachments];
@@ -1122,7 +1139,16 @@
     const preparingStartedAt=Date.now();
     addMessage({role:"assistant",text:"Обработувам…",meta:"AI Advokat",guides:[]});
     root.classList.add("ai-chat-running");
-    abortController=new AbortController();
+    const controller=new AbortController();
+    abortController=controller;
+    // Provider fallback and Macedonian editorial checks can exceed 30 seconds.
+    // Never leave the conversation locked indefinitely.
+    let requestTimedOut=false;
+    const timeoutId=setTimeout(()=>{
+      requestTimedOut=true;
+      controller.abort();
+    },90000);
+    let modelReplyReceived=false;
 
     try{
       const [guides,encoded]=await Promise.all([guidePromise,encodePromise]);
@@ -1131,7 +1157,7 @@
       const r=await fetch(CHAT_API_BASE+"/api/chat",{
         method:"POST",
         headers:{"content-type":"application/json","accept":"application/json",...membershipHeaders()},
-        signal:abortController.signal,
+        signal:controller.signal,
         body:JSON.stringify({
           q:withOutputLanguageDirective(q),
           outputLanguage:selectedLanguageMeta().code,
@@ -1151,6 +1177,7 @@
         const proactiveNextTurns=await proactiveConversation
           .then(mod=>mod?.suggestLegalNextTurns?.({question:q,answer:d.answer,language:selectedLanguageMeta().code,history:historyForApi})||null)
           .catch(()=>null);
+        modelReplyReceived=Boolean(String(d.answer||"").trim());
         updateAssistantPlaceholder(assistantIndex,{
           proactiveNextTurns,
           text:d.answer,
@@ -1312,7 +1339,12 @@
       }
     }catch(err){
       await keepPreparingPulseVisible(preparingStartedAt);
-      if(err?.name==="AbortError") updateAssistantPlaceholder(assistantIndex,{text:"Генерирањето е прекинато.",meta:"Stop"});
+      if(err?.name==="AbortError") updateAssistantPlaceholder(assistantIndex,{
+        text:requestTimedOut
+          ? "AI обработката го надмина временското ограничување. Разговорот е зачуван; обидете се повторно. Ова не е правен одговор."
+          : "Генерирањето е прекинато.",
+        meta:requestTimedOut?"AI runtime timeout":"Stop"
+      });
       else{
         const fallback=await fallbackSourceAssistant(q);
         updateAssistantPlaceholder(assistantIndex,{
@@ -1322,7 +1354,28 @@
         });
       }
     }finally{
-      abortController=null;root.classList.remove("ai-chat-running");save();
+      clearTimeout(timeoutId);
+      if(abortController===controller) abortController=null;
+      root.classList.remove("ai-chat-running");
+      save();
+      const next=queuedConversationTurn;
+      queuedConversationTurn=null;
+      if(next && next.chatThreadId===currentId){
+        input.value=next.question;
+        autoSize();
+        sendBtn.title=modelReplyReceived
+          ? "Продолжувам со зачуваното следно прашање."
+          : "Претходниот одговор не успеа; следното прашање е зачувано за рачно испраќање.";
+        if(modelReplyReceived){
+          queueMicrotask(()=>{
+            if(!abortController && currentId===next.chatThreadId) send(next.question);
+          });
+        }else{
+          input.focus();
+        }
+      }else{
+        sendBtn.title="";
+      }
     }
   }
 
@@ -1336,6 +1389,7 @@
   sendBtn.addEventListener("click",()=>send());
   stopBtn.addEventListener("click",()=>abortController?.abort());
   newChatBtn.addEventListener("click",()=>{
+    queuedConversationTurn=null;
     const c=newState();chats.set(c.id,c);currentId=c.id;attachments=[];renderAttachments();render();save();input.focus();
   });
   function requestedExportFormats(value){

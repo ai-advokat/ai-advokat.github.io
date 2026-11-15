@@ -148,7 +148,8 @@ test('professional request deadline is shared across specialist chief retry and 
   assert.match(orchestrator,/specialist_deadline_exhausted/);
   assert.match(orchestrator,/openai_request_deadline_exhausted/);
   assert.match(orchestrator,/legal_postflight_deadline_exhausted/);
-  assert.match(client,/setTimeout\(\(\) => controller\.abort\(\),180000\)/);
+  assert.match(client,/const requestTimeoutMs=key \? 180000 : 90000/);
+  assert.match(client,/setTimeout\(\(\) => \{timedOut=true;controller\.abort\(\);\},requestTimeoutMs\)/);
 });
 
 
@@ -214,7 +215,8 @@ test('fresh mobile device can chat immediately while retaining optional professi
   const source=fs.readFileSync('assets/standalone-bot.js','utf8');
   const html=fs.readFileSync('bot/index.html','utf8');
   assert.match(source,/const hasQuestion = String\(\$\('question'\)\?\.value \|\| ''\)\.trim\(\)\.length >= 2/);
-  assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = \$\('question'\)\.value\.trim\(\)\.length < 2/);
+  assert.match(source,/\$\('send'\)\.disabled = \$\('question'\)\.value\.trim\(\)\.length < 2/);
+  assert.doesNotMatch(source,/if \(!pending\) \$\('send'\)\.disabled/);
   assert.match(source,/busy\(false\);\s*window\.AIAdvokatCoreReady = true/);
   assert.match(source,/if \(results\[2\]\.status === 'fulfilled'\) restoreAccess\(\);/);
   assert.doesNotMatch(source,/Најпрво внесете го вашиот приватен код за влез/);
@@ -231,7 +233,8 @@ test('fresh-device training submit is bounded by actual question content',()=>{
   assert.match(source,/\$\('send'\)\.disabled = !hasQuestion/);
   assert.match(source,/queuedNextTurn = q/);
   assert.match(source,/if \(epoch === generation && !pending\) \$\('composer'\)\.requestSubmit\(\)/);
-  assert.match(source,/if \(!pending\) \$\('send'\)\.disabled = \$\('question'\)\.value\.trim\(\)\.length < 2/);
+  assert.match(source,/\$\('send'\)\.disabled = \$\('question'\)\.value\.trim\(\)\.length < 2/);
+  assert.doesNotMatch(source,/if \(!pending\) \$\('send'\)\.disabled/);
   assert.doesNotMatch(html,/\\n\s*<link rel="stylesheet"/);
   assert.match(html,/standalone-bot\.css\?v=20261106-access-r15-voice/);
 });
