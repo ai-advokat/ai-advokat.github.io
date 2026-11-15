@@ -4,7 +4,8 @@ import {readFileSync} from "node:fs";
 import {
   isContextDependentLegalFollowUp,
   buildLegalRoutingQuery,
-  buildLegalPlanningQuestion
+  buildLegalPlanningQuestion,
+  correctedConversationTopic
 } from "../src/legal-conversation-context.js";
 import {
   AI_ADVOKAT_CONVERSATIONAL_SEMANTICS_VERSION,
@@ -44,11 +45,34 @@ test("semantic planning selects last user-authored topic, not invented AI law",(
   assert.match(research,/Закон број 9999/);
 });
 
-test("user correction of the topic is preserved in current conversational focus",()=>{
-  const q="Не, мислев на договорот, не на отказот.";
-  const plan=buildLegalPlanningQuestion(q,history);
-  assert.match(plan,/CURRENT FOLLOW-UP:\nНе, мислев на договорот/);
-  assert.match(plan,/PRIOR USER TOPIC/);
+test("explicit user correction overrides rejected old topic in planner, retrieval and buttons",()=>{
+  for(const q of [
+    "Не, мислев на договорот, не на отказот.",
+    "Ne, mislev na dogovorot, ne na otkazot.",
+    "No, I meant the contract, not the dismissal."
+  ]){
+    const focus=correctedConversationTopic(q);
+    assert.match(focus,/договорот|dogovorot|contract/iu);
+    assert.doesNotMatch(focus,/отказ|otkaz|dismissal/iu);
+    const plan=buildLegalPlanningQuestion(q,history);
+    const retrieval=buildLegalRoutingQuery(q,history);
+    assert.match(plan,/CORRECTED USER TOPIC/);
+    assert.match(retrieval,/CURRENT CORRECTED TOPIC/);
+    for(const output of [plan,retrieval]){
+      assert.doesNotMatch(output,/отказ|otkaz|dismissal|Закон број 9999/iu);
+      assert.match(output,/договорот|dogovorot|contract/iu);
+    }
+    const next=suggestLegalNextTurns({question:q,answer:"Ова е работна правна анализа со човечка проверка.",history});
+    assert.equal(next.category,"contract",q);
+  }
+  assert.equal(correctedConversationTopic("Провери дали има договор и отказ."),"");
+});
+
+test("multiple unrelated turns do not cause an implicit-topic takeover",()=>{
+  const newQuestion="Што е адвокатска тарифа во Македонија?";
+  const oldHistory=[{role:"user",text:"Разговаравме за договор, платата и работен однос."}];
+  assert.equal(buildLegalPlanningQuestion(newQuestion,oldHistory),newQuestion);
+  assert.equal(buildLegalRoutingQuery(newQuestion,oldHistory),newQuestion);
 });
 
 test("professional, free and every specialist share one semantic dialogue contract",()=>{
