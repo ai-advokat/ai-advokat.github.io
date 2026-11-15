@@ -8,7 +8,7 @@ const EXPLICIT_PRIOR_TURN_RE=/(?:во\s+претходн(?:иот|ата|ото|
 // Short ellipses usually depend on the preceding exchange even when they do
 // not repeat the subject keyword. The provider must still reason over actual
 // supplied history: these patterns only select contextual retrieval/planning.
-const SHORT_DIALOGUE_FOLLOW_UP_RE=/^(?:(?:а|па|но|и|and|but)\\s+)?(?:зошто(?:\\s+тоа)?|како\\s+(?:тоа|тогаш|понатаму)|што\\s+(?:со\\s+(?:ова|тоа|рокот|жалбата|доказите|изворите|пресудата)|ако|понатаму|следно)|а?ко\\s+тоа|и\\s+што\\s+сега|тогаш\\s+што|објасни\\s+(?:го\\s+тоа|подетално)|појасни\\s+(?:го\\s+тоа|подетално)|продолжи(?:\\s+понатаму)?|не[,.]?\\s*мислев\\s+на|мислам\\s+на|why\\s+(?:is\\s+that|so)|why[?!.]*$|how\\s+so|what\\s+(?:about|if|next)|and\\s+(?:if|what)|could\\s+you\\s+elaborate|please\\s+elaborate|i\\s+meant|no[,.]?\\s*i\\s+meant)/iu;
+const SHORT_DIALOGUE_FOLLOW_UP_RE=/^(?:(?:а|па|но|и|and|but)\s+)?(?:зошто(?:\s+тоа)?|како\s+(?:тоа|тогаш|понатаму)|што\s+(?:со\s+(?:ова|тоа|рокот|жалбата|доказите|изворите|пресудата)|ако|понатаму|следно)|а?ко\s+тоа|и\s+што\s+сега|тогаш\s+што|објасни\s+(?:го\s+тоа|подетално)|појасни\s+(?:го\s+тоа|подетално)|продолжи(?:\s+понатаму)?|не[,.]?\s*мислев\s+на|мислам\s+на|why\s+(?:is\s+that|so)|why[?!.]*$|how\s+so|what\s+(?:about|if|next)|and\s+(?:if|what)|could\s+you\s+elaborate|please\s+elaborate|i\s+meant|no[,.]?\s*i\s+meant)/iu;
 const STANDALONE_DETAIL_THRESHOLD=320;
 
 function clean(value,max=4000){
@@ -45,7 +45,7 @@ export function buildLegalPlanningQuestion(question="",history=[]){
     anchor,
     "CURRENT FOLLOW-UP:",
     current
-  ].join("\\n").slice(0,2400);
+  ].join("\n").slice(0,2400);
 }
 
 export function buildLegalRoutingQuery(question="",history=[]){
