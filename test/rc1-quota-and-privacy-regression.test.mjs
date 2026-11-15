@@ -9,6 +9,8 @@ const live=readFileSync("scripts/translator-layered-live-smoke.mjs","utf8");
 
 test("public page load is limited to six translation batches, not all 30+",()=>{
   assert.match(home,/UI_TRANSLATION_INITIAL_MAX_BATCHES=6/);
+  assert.match(home,/UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v2:"/);
+  assert.match(home,/localStorage\.removeItem\("aiadvokat-ui-translations-v1:"\+code\)/);
   assert.match(home,/UI_TRANSLATION_FULL_PASS_MAX_BATCHES=48/);
   assert.match(home,/uiTranslationFullPassRequested\?units\.map\(x=>x\.source\):\[\]/);
   assert.match(home,/batches\.length>passLimit/);
