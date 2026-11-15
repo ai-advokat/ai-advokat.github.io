@@ -29,6 +29,10 @@ test("Worker Previews explicitly enable free bot models without inheriting produ
   assert.equal(v.OPENAI_FILE_INPUT_ENABLED,"false");
   assert.equal(v.CASE_WORKSPACE_ENABLED,"false","Preview must not open confidential client tools");
   assert.equal(v.WORKERS_AI_MARKDOWN_ENABLED,"false");
+  assert.equal(v.LIOE_RUNTIME_GOVERNANCE_ENABLED,"true");
+  assert.equal(v.LIOE_POSTFLIGHT_ENABLED,"true");
+  assert.equal(v.LIOE_RUNTIME_TELEMETRY_ENABLED,"true");
+  assert.equal(v.LIOE_SPECIALIST_EXECUTION_ENABLED,"false","Preview must never execute autonomous paid specialists");
   for(const forbidden of ["OPENAI_API_KEY","RATE_LIMIT_SALT","TURNSTILE_SECRET","CLOUDFLARE_API_TOKEN"]){
     assert.equal(Object.hasOwn(v,forbidden),false,"never commit secrets: "+forbidden);
   }
