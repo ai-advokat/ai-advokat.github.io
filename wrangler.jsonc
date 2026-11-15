@@ -54,7 +54,11 @@
       "OPENAI_EXTERNAL_RESEARCH_TOOLS_ENABLED": "false",
       "OPENAI_FILE_INPUT_ENABLED": "false",
       "OPENAI_PROVIDER_ACTIVATION_STATE": "preview_free_only",
-      "CASE_WORKSPACE_ENABLED": "false"
+      "CASE_WORKSPACE_ENABLED": "false",
+      "LIOE_RUNTIME_GOVERNANCE_ENABLED": "true",
+      "LIOE_POSTFLIGHT_ENABLED": "true",
+      "LIOE_RUNTIME_TELEMETRY_ENABLED": "true",
+      "LIOE_SPECIALIST_EXECUTION_ENABLED": "false"
     },
     "ai": {
       "binding": "AI"
