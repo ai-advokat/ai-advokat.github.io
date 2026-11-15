@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - release/zoki-unified-rc2-candidate-20261115
+      - feat/zoki-bot-formats-translator-r24-20261115
     paths:
       - "scripts/zoki-r25-bounded-live-ai.mjs"
       - ".github/workflows/zoki-r25-bounded-live-ai.yml"
