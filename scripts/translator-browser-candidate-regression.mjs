@@ -140,7 +140,7 @@ try{
         "reviewed zero-Neuron SQ shell did not survive full translation");
       assert.equal(state.nav,"Burime juridike","reviewed zero-Neuron SQ navigation changed unexpectedly");
       assert.ok(state.navArchitecture.includes(translatedMarker),
-        "uncurated navigation failed model translation / reordered row-ID acceptance");
+        "reordered row IDs corrupted uncurated navigation or provider translation failed");
       assert.match(originalTopLine,/Правен информациски портал/,
         "original Macedonian source fingerprint unexpectedly changed");
     }else{
