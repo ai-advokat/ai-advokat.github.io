@@ -6,9 +6,9 @@ const external=fs.readFileSync("assets/standalone-bot.js","utf8");
 
 test("internal bot receives and preserves a second question while the first is in flight",()=>{
   assert.match(internal,/let queuedConversationTurn=null/);
-  assert.match(internal,/if\(abortController\)\{[\s\S]{0,550}queuedConversationTurn=\{question:q,conversationId:currentId\}/);
-  assert.match(internal,/next\.conversationId===currentId/);
-  assert.match(internal,/if\(!abortController && currentId===next\.conversationId\) send\(next\.question\)/);
+  assert.match(internal,/if\(abortController\)\{[\s\S]{0,550}queuedConversationTurn=\{question:q,chatThreadId:currentId\}/);
+  assert.match(internal,/next\.chatThreadId===currentId/);
+  assert.match(internal,/if\(!abortController && currentId===next\.chatThreadId\) send\(next\.question\)/);
 });
 
 test("internal chat has a bounded timeout and never auto-retries after a failed answer",()=>{
