@@ -101,8 +101,23 @@ const TOPICS=Object.freeze([
 const ELLIPTICAL_USER_TURN_RE=/^(?:(?:а|па|но|и|and|but)\s+)?(?:зошто|како\s+тоа|што\s+со|што\s+ако|што\s+следно|а\s+ако|а\s+сега|објасни\s+подетално|појасни|продолжи|не[,.]?\s*мислев|мислам\s+на|why|how\s+so|what\s+(?:about|if|next)|i\s+meant|please\s+elaborate)/iu;
 const MK_LATIN_ELLIPTICAL_RE=/^(?:(?:a|pa|no|i)\s+)?(?:zosto|shto\s+(?:so|ako|sledno)|sto\s+(?:so|ako|sledno)|kako\s+toa|a\s+ako|ne[,.]?\s*mislev|mislam\s+na|prodolzi|pojasni)/iu;
 
+// Match only the accepted subject in corrections: "not the dismissal,
+// I meant the contract" must not turn the next-turn menu back to employment.
+function correctedProactiveTopic(question){
+  const text=String(question||"").trim().slice(0,1600);
+  const match=text.match(/^(?:не[,.:!]?\s*|но[,.:!]?\s*)?(?:јас\s+)?(?:мислев|мислам)\s+на\s+(.+)/iu)
+    || text.match(/^(?:ne[,.:!]?\s*|no[,.:!]?\s*)?(?:jas\s+)?(?:mislev|mislam)\s+na\s+(.+)/iu)
+    || text.match(/^(?:(?:no|actually|rather)[,.:!]?\s*)?(?:i\s+(?:meant|mean|was\s+asking\s+about))\s+(.+)/iu);
+  if(!match) return "";
+  return match[1].split(/(?:,\s*|\s+)(?:а\s+не\s+на|не\s+на|a\s+ne\s+na|ne\s+na|not\s+(?:about|the)|rather\s+than)\s+/iu)[0].trim();
+}
+
 function topicFromConversation(question,history=[]){
   const current=String(question||"").slice(0,3000);
+  const correction=correctedProactiveTopic(current);
+  // If a correction is present, rejected/negated terms must not win through
+  // the old keyword ranking or previous-session context.
+  if(correction) return TOPICS.find(([,pattern])=>pattern.test(correction))?.[0]||"general";
   const explicit=TOPICS.find(([,pattern])=>pattern.test(current))?.[0]||null;
   if(explicit) return explicit;
   if(current.length>160 || (!ELLIPTICAL_USER_TURN_RE.test(current) && !MK_LATIN_ELLIPTICAL_RE.test(current))) return "general";
