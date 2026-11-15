@@ -59,7 +59,7 @@ jobs:
           Овој пакет нема клиентски податоци, изворни PDF-а или AI-моделски тајни.
           """,encoding="utf-8")
           PY
-          (cd pack && find . -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
+          (cd pack && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
           (cd pack && zip -q -r ../ZOKI_RC36_IN_AI_ADVOKAT_OWNER_REVIEW.zip .)
           unzip -t ZOKI_RC36_IN_AI_ADVOKAT_OWNER_REVIEW.zip | tail -n 1
       - name: Upload owner-safe review artifact
