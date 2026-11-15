@@ -1,0 +1,45 @@
+name: RC1 quota safe translator browser candidate
+
+on:
+  pull_request:
+    branches: ["release/ai-advokat-unified-rc1-20261114"]
+    paths:
+      - "index.html"
+      - "src/index.js"
+      - "test/ui-translation-runtime-r7.test.mjs"
+      - "test/rc1-quota-and-privacy-regression.test.mjs"
+      - "scripts/translator-browser-candidate-regression.mjs"
+      - ".github/workflows/rc1-quota-safe-translator-candidate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-and-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Source syntax and bounded provider tests
+        run: |
+          node --check src/index.js
+          node --check scripts/translator-browser-candidate-regression.mjs
+          node --no-warnings --test test/rc1-quota-and-privacy-regression.test.mjs test/ui-translation-runtime-r7.test.mjs
+      - name: Prepare exact-source browser probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          browser="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          test -n "$browser"
+          echo "BROWSER_EXECUTABLE=$browser" >> "$GITHUB_ENV"
+          "$browser" --version
+      - name: Simulated provider browser acceptance (no paid AI calls)
+        run: node scripts/translator-browser-candidate-regression.mjs
+
+# Real Workers AI translation/transcription and current-law validity remain
+# separately blocked until live UAT and lawyer Human Gate. No production deploy.
