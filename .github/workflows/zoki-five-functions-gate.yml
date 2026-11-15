@@ -39,7 +39,7 @@ jobs:
               node --no-warnings --test test/voice-runtime.test.mjs test/root-language-recording.test.mjs
               ;;
             ai-chat)
-              node --no-warnings --test test/chat-shell.test.mjs test/root-bot-reliability.test.mjs test/provider-recovery-policy.test.mjs
+              node --no-warnings --test test/chat-shell.test.mjs test/root-bot-reliability.test.mjs test/r21-provider-recovery.test.mjs
               ;;
             legal-sources)
               node --no-warnings --test test/official-source-binder.test.mjs test/legal-claim-validator.test.mjs test/canonical-provenance-gate.test.mjs
