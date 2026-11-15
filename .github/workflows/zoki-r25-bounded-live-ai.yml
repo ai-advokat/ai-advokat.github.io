@@ -1,0 +1,66 @@
+name: R25 bounded LIVE Cloudflare Preview AI diagnostics
+
+on:
+  pull_request:
+    branches:
+      - release/zoki-unified-rc2-candidate-20261115
+    paths:
+      - "scripts/zoki-r25-bounded-live-ai.mjs"
+      - ".github/workflows/zoki-r25-bounded-live-ai.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zoki-r25-bounded-live-ai
+  cancel-in-progress: false
+
+jobs:
+  exact-preview-real-ai:
+    if: github.head_ref == 'feat/zoki-bot-formats-translator-r24-20261115'
+    name: One translation + one Whisper + one FREE chat
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PREVIEW_URL: https://feat-zoki-bot-formats-translator-r24-20261-ai-advokat-github-io.aiadvokat16.workers.dev
+      EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      MIC_AUDIO_FILE: /tmp/zoki-r25-synthetic-voice.wav
+    steps:
+      - name: Checkout the exact PR source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare a synthetic one-second voice, never a client recording
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/zoki-r25-bounded-live-ai.mjs
+          if ! command -v espeak-ng >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq espeak-ng
+          fi
+          espeak-ng -v en-us -s 180 -w "$MIC_AUDIO_FILE" "AI Advokat test only"
+          test -s "$MIC_AUDIO_FILE"
+          test "$(stat -c %s "$MIC_AUDIO_FILE")" -lt 1048576
+
+      - name: Exact SHA preview parity then bounded REAL providers
+        run: node scripts/zoki-r25-bounded-live-ai.mjs
+
+      - name: Retain redacted PASS/FAIL/NOT_TESTED evidence even when providers fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZOKI-R25-LIVE-PROVIDER-DIAGNOSTIC-NOT-RELEASE
+          path: /tmp/zoki-r25-bounded-live-ai.json
+          if-no-files-found: warn
+          retention-days: 7
+
+# WARNING: 3 bounded REAL model calls in total, no retries: M2M100, Whisper
+# and anonymous Workers AI text chat. The external greeting is deterministic
+# or membership-gated. No OpenAI paid model, D1, production, or legal promotion.
