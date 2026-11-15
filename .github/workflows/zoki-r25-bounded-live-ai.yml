@@ -32,11 +32,26 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
+      - name: Hard gate — no live Neurons spent on ordinary CI updates
+        id: spend_gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          message="$(git log -1 --pretty=%s)"
+          if test "$message" = "R25-LIVE-PROBE-ONCE"; then
+            echo "allow=true" >> "$GITHUB_OUTPUT"
+            echo "Live provider probe explicitly selected for this commit"
+          else
+            echo "allow=false" >> "$GITHUB_OUTPUT"
+            echo "No AI calls: ordinary source change, only static CI applies"
+          fi
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
 
       - name: Prepare a synthetic one-second voice, never a client recording
+        if: steps.spend_gate.outputs.allow == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -50,6 +65,7 @@ jobs:
           test "$(stat -c %s "$MIC_AUDIO_FILE")" -lt 1048576
 
       - name: Exact SHA preview parity then bounded REAL providers
+        if: steps.spend_gate.outputs.allow == 'true'
         run: node scripts/zoki-r25-bounded-live-ai.mjs
 
       - name: Retain redacted PASS/FAIL/NOT_TESTED evidence even when providers fail
