@@ -666,7 +666,8 @@ $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => {
   $('question').style.height = 'auto';
   $('question').style.height = Math.min($('question').scrollHeight,180) + 'px';
-  if (!pending) $('send').disabled = $('question').value.trim().length < 2;
+  // Queued second turns must be submittable while the first AI call is pending.
+  $('send').disabled = $('question').value.trim().length < 2;
 };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
 $('mic').addEventListener('click',()=>voiceRuntimeReady.then(voice=>voice?.stopSpeaking?.()),{capture:true});
