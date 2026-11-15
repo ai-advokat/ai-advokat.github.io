@@ -39,5 +39,6 @@ test("external bot preserves pending second turn but does not auto-send after pr
 test("both UIs preserve human-controlled stop and bounded provider calls",()=>{
   assert.match(internal,/stopBtn\.addEventListener\("click",\(\)=>abortController\?\.abort\(\)\)/);
   assert.match(external,/\$\('stop'\)\.onclick = \(\) => pending\?\.abort\(\)/);
-  assert.match(external,/setTimeout\(\(\) => \{timedOut=true;controller\.abort\(\);\},90000\)/);
+  assert.match(external,/const requestTimeoutMs=key \? 180000 : 90000/);
+  assert.match(external,/setTimeout\(\(\) => \{timedOut=true;controller\.abort\(\);\},requestTimeoutMs\)/);
 });
