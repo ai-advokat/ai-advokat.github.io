@@ -199,7 +199,8 @@ import {
   propertyPrescriptionLegalSources
 } from "./property-law-prescription.js";
 import { detectConfidentialCasePrompt } from "./chat-privacy.js";
-import { buildLegalRoutingQuery, isContextDependentLegalFollowUp } from "./legal-conversation-context.js";
+import { buildLegalRoutingQuery,
+  buildLegalPlanningQuestion, isContextDependentLegalFollowUp } from "./legal-conversation-context.js";
 import {
   WORKERS_AI_TEXT_MODEL_DEFAULT,
   WORKERS_AI_PROVIDER_CONTRACT_VERSION,
@@ -7082,6 +7083,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   );
   const contextualFollowUp=isContextDependentLegalFollowUp(userQ);
   const routingQuery=buildLegalRoutingQuery(userQ,historyCheck.history);
+  const semanticPlanningQuery=contextualFollowUp
+    ? buildLegalPlanningQuestion(userQ,historyCheck.history)
+    : userQ;
   if(confidentialHistory){
     return json(request,{
       ok:false,
@@ -7123,7 +7127,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const effectiveGuideIds=contextualFollowUp ? [] : guideIds;
-  const initialPlan=buildAgentPlan(userQ);
+  const initialPlan=buildAgentPlan(semanticPlanningQuery);
 
   // Deterministic prompt-injection boundary for quoted/untrusted document content.
   // Content is not command: do not depend on a generative provider to enforce this boundary.
@@ -7826,7 +7830,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     },429,{"Retry-After":String(secondsUntilNextMonth())});
   }
 
-  const plan=buildAgentPlan(q,{preferCorpus});
+  const plan=buildAgentPlan(contextualFollowUp ? semanticPlanningQuery : q,{preferCorpus});
   const lioeEngaged=plan.legalIntelligenceEngine?.engaged===true;
   const lioeRunStartedMs=Date.now();
   const lioeRunStartedAt=new Date(lioeRunStartedMs).toISOString();
