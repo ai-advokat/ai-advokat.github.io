@@ -1,4 +1,5 @@
 import { runVoiceTranscriptionAI } from "./voice-transcription-provider.js";
+import { decodePrivateCaseTextDocument } from "./private-case-text-document.js";
 import { handleLegalAlarm } from "./legal-alarm.js";
 import {
   CASE_LAW_CURATION_VERSION,
@@ -4222,23 +4223,30 @@ function parseModelJsonObject(raw){
 }
 
 async function runPrivateWorkersAIDocumentExtraction(env,{documentId,fileName,mimeType,bytes}={}){
-  if(!freeWorkersAIMarkdownConfigured(env)) return {ok:false,error:"case_intelligence_provider_not_configured"};
-  let converted;
-  try{
-    converted=await env.AI.toMarkdown([{
-      name:String(fileName||"document").slice(0,180),
-      blob:new Blob([bytes],{type:String(mimeType||"application/octet-stream")})
-    }],{
-      conversionOptions:{output:{format:"text"},pdf:{metadata:false}}
-    });
-  }catch(error){
-    return {ok:false,error:"case_document_conversion_failed",detail:String(error?.message||error).slice(0,180)};
+  const directText=decodePrivateCaseTextDocument({mimeType,bytes,filename:fileName});
+  if(directText.handled&&!directText.ok) return {ok:false,error:directText.error};
+  if(!directText.handled&&!freeWorkersAIMarkdownConfigured(env)){
+    return {ok:false,error:"case_intelligence_provider_not_configured"};
   }
-  const item=Array.isArray(converted)?converted[0]:converted;
-  if(!item || item.format==="error" || typeof item.data!=="string" || !item.data.trim()){
-    return {ok:false,error:"case_document_conversion_failed",detail:String(item?.error||"empty conversion").slice(0,180)};
+  let documentText=directText.handled ? directText.text : "";
+  if(!directText.handled){
+    let converted;
+    try{
+      converted=await env.AI.toMarkdown([{
+        name:String(fileName||"document").slice(0,180),
+        blob:new Blob([bytes],{type:String(mimeType||"application/octet-stream")})
+      }],{
+        conversionOptions:{output:{format:"text"},pdf:{metadata:false}}
+      });
+    }catch(error){
+      return {ok:false,error:"case_document_conversion_failed",detail:String(error?.message||error).slice(0,180)};
+    }
+    const item=Array.isArray(converted)?converted[0]:converted;
+    if(!item || item.format==="error" || typeof item.data!=="string" || !item.data.trim()){
+      return {ok:false,error:"case_document_conversion_failed",detail:String(item?.error||"empty conversion").slice(0,180)};
+    }
+    documentText=String(item.data).slice(0,120000);
   }
-  const documentText=String(item.data).slice(0,120000);
   const prompt=[
     caseDocumentExtractionPrompt({documentId,fileName,mimeType}),
     "",
@@ -4298,11 +4306,18 @@ async function runPrivateCaseDocumentExtraction(env,{documentId,fileName,mimeTyp
 
   const prompt=caseDocumentExtractionPrompt({documentId,fileName,mimeType});
   const parts=[{type:"input_text",text:prompt}];
-  const base64=bytesToBase64(bytes);
-  if(String(mimeType||"").startsWith("image/")){
-    parts.push({type:"input_image",image_url:`data:${mimeType};base64,${base64}`,detail:"high"});
+  const directText=decodePrivateCaseTextDocument({mimeType,bytes,filename:fileName});
+  if(directText.handled&&!directText.ok) return {ok:false,error:directText.error};
+  if(directText.handled){
+    // Structured text files are evidence DATA, never an OpenAI instruction.
+    parts.push({type:"input_text",text:directText.text});
   }else{
-    parts.push({type:"input_file",file_data:`data:${mimeType};base64,${base64}`,filename:String(fileName||"document").slice(0,180)});
+    const base64=bytesToBase64(bytes);
+    if(String(mimeType||"").startsWith("image/")){
+      parts.push({type:"input_image",image_url:`data:${mimeType};base64,${base64}`,detail:"high"});
+    }else{
+      parts.push({type:"input_file",file_data:`data:${mimeType};base64,${base64}`,filename:String(fileName||"document").slice(0,180)});
+    }
   }
 
   const body={
