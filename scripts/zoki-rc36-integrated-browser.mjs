@@ -55,6 +55,8 @@ try{
   await page.locator("#zrImport").setInputFiles({name:"forged_approval.json",mimeType:"application/json",buffer:Buffer.from(JSON.stringify(bad))});
   await page.waitForFunction(()=>document.querySelector("#zrStatus")?.textContent?.includes("HOLD / ГРЕШКА"),null,{timeout:10000});
   assert.match(await page.locator("#zrStatus").innerText(),/недозволен статус/);
+  // Match real user behaviour: expand the chronology and local evidence section.
+  await page.locator("#zrBridge details summary").click();
   await page.locator("#zrPublished").fill("2026-04-04");
   await page.locator("#zrForce").fill("2026-04-02");
   await page.locator("#zrPreview").click();
