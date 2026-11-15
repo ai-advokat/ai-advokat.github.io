@@ -1,0 +1,54 @@
+name: Zoki five-function integration gate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "index.html"
+      - "src/**"
+      - "assets/**"
+      - "test/**"
+      - ".github/workflows/zoki-five-functions-gate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  five-functions:
+    name: "Source gate - ${{ matrix.module }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [translation, voice, ai-chat, legal-sources, document-export]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify source contract without external AI calls
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ matrix.module }}" in
+            translation)
+              node --no-warnings --test test/ui-translation-runtime-r7.test.mjs test/external-bot-language33.test.mjs test/r20-translation-budget-free-provenance.test.mjs
+              ;;
+            voice)
+              node --no-warnings --test test/voice-runtime.test.mjs test/root-language-recording.test.mjs
+              ;;
+            ai-chat)
+              node --no-warnings --test test/chat-shell.test.mjs test/root-bot-reliability.test.mjs test/provider-recovery-policy.test.mjs
+              ;;
+            legal-sources)
+              node --no-warnings --test test/official-source-binder.test.mjs test/legal-claim-validator.test.mjs test/canonical-provenance-gate.test.mjs
+              ;;
+            document-export)
+              node --no-warnings --test test/legal-document-export.test.mjs test/professional-docx-engine.test.mjs test/case-export.test.mjs
+              ;;
+          esac
+
+# PASS here establishes only source-level regression, never browser microphone permission,
+# live Cloudflare Workers AI availability, current-law status, or production release.
+# Those require separate live UAT and Zoran's human acceptance.
