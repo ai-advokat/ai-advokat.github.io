@@ -1128,7 +1128,7 @@
       await keepPreparingPulseVisible(preparingStartedAt);
       if(r.ok&&d?.ok){
         const proactiveNextTurns=await proactiveConversation
-          .then(mod=>mod?.suggestLegalNextTurns?.({question:q,answer:d.answer,language:selectedLanguageMeta().code})||null)
+          .then(mod=>mod?.suggestLegalNextTurns?.({question:q,answer:d.answer,language:selectedLanguageMeta().code,history:historyForApi})||null)
           .catch(()=>null);
         updateAssistantPlaceholder(assistantIndex,{
           proactiveNextTurns,

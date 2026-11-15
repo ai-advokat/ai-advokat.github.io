@@ -199,7 +199,8 @@ import {
   propertyPrescriptionLegalSources
 } from "./property-law-prescription.js";
 import { detectConfidentialCasePrompt } from "./chat-privacy.js";
-import { buildLegalRoutingQuery, isContextDependentLegalFollowUp } from "./legal-conversation-context.js";
+import { buildLegalRoutingQuery,
+  buildLegalPlanningQuestion, isContextDependentLegalFollowUp } from "./legal-conversation-context.js";
 import {
   WORKERS_AI_TEXT_MODEL_DEFAULT,
   WORKERS_AI_PROVIDER_CONTRACT_VERSION,
@@ -7082,6 +7083,9 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   );
   const contextualFollowUp=isContextDependentLegalFollowUp(userQ);
   const routingQuery=buildLegalRoutingQuery(userQ,historyCheck.history);
+  const semanticPlanningQuery=contextualFollowUp
+    ? buildLegalPlanningQuestion(userQ,historyCheck.history)
+    : userQ;
   if(confidentialHistory){
     return json(request,{
       ok:false,
@@ -7123,7 +7127,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
   const guideIds=Array.isArray(payload.guideIds)?payload.guideIds.slice(0,5).map(x=>cleanQuery(x,120)).filter(Boolean):[];
   const effectiveGuideIds=contextualFollowUp ? [] : guideIds;
-  const initialPlan=buildAgentPlan(userQ);
+  const initialPlan=buildAgentPlan(semanticPlanningQuery);
 
   // Deterministic prompt-injection boundary for quoted/untrusted document content.
   // Content is not command: do not depend on a generative provider to enforce this boundary.
@@ -7826,7 +7830,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     },429,{"Retry-After":String(secondsUntilNextMonth())});
   }
 
-  const plan=buildAgentPlan(q,{preferCorpus});
+  const plan=buildAgentPlan(contextualFollowUp ? semanticPlanningQuery : q,{preferCorpus});
   const lioeEngaged=plan.legalIntelligenceEngine?.engaged===true;
   const lioeRunStartedMs=Date.now();
   const lioeRunStartedAt=new Date(lioeRunStartedMs).toISOString();
@@ -11423,15 +11427,25 @@ async function translateUiM2mText(runProvider,text,target){
 async function mapUiTranslationConcurrent(items,mapper,limit=UI_TRANSLATION_CONCURRENCY){
   const out=new Array(items.length);
   let next=0;
+  let firstFailure=null;
   async function worker(){
-    for(;;){
+    // A failed upstream model (particularly a daily quota failure) must stop
+    // dispatching additional UI items. Allow already in-flight calls to finish,
+    // but do not turn one 503 into a burst of Neuron-consuming retries.
+    while(firstFailure===null){
       const index=next++;
       if(index>=items.length) return;
-      out[index]=await mapper(items[index],index);
+      try{
+        out[index]=await mapper(items[index],index);
+      }catch(error){
+        firstFailure=firstFailure||error;
+        return;
+      }
     }
   }
   const workers=Array.from({length:Math.max(1,Math.min(limit,items.length))},()=>worker());
   await Promise.all(workers);
+  if(firstFailure!==null) throw firstFailure;
   return out;
 }
 
@@ -11476,6 +11490,12 @@ async function translateUiWithLlmFallback(runProvider,items,target,language){
 }
 
 async function translateUiWithOpenAIFallback(env,items,target,language){
+  // OPENAI_API_KEY is also used by legal chat. Its mere presence does NOT
+  // authorise paid translation of an entire public web page after free quota.
+  // This separate opt-in defaults to off and needs a human spending decision.
+  if(String(env?.UI_TRANSLATION_ENABLE_PAID_FALLBACK||"").toLowerCase()!=="true"){
+    return {ok:false,error:"ui_translation_paid_fallback_not_authorised"};
+  }
   if(!env?.OPENAI_API_KEY || !env?.OPENAI_MODEL){
     return {ok:false,error:"ui_translation_openai_not_configured"};
   }

@@ -80,12 +80,32 @@ try{
     await page.waitForSelector("#langBtn",{timeout:20000});
     await page.selectOption("#langBtn",targetLanguage);
     await page.waitForURL(new RegExp("(?:[?&])lang="+targetLanguage+"(?:&|$)"),{timeout:18000});
-    // Do not mistake a correct in-progress PARTIAL shell for final READY.
-    // In the failure scenario, wait for the actual surfaced capacity error.
+    // Default translation is quota-safe priority shell only (<=6 batches).
+    // A full DOM pass requires a real user click; exercise that explicit path
+    // for complete and provider-integrity failure acceptance.
+    await page.waitForFunction(()=>
+      document.documentElement.dataset.translationState==="partial" &&
+      document.getElementById("uiTranslationFullPage")?.hidden===false,
+      null,{timeout:90000}
+    );
+    const firstPass=await page.evaluate(()=>({
+      requests:Number(document.documentElement.dataset.translationBatches||"0"),
+      state:document.documentElement.dataset.translationState
+    }));
+    assert.ok(firstPass.requests<=6,"initial full-page translation exhausted the bounded free budget");
+    if(["complete","partial","rtl-partial","row-mismatch"].includes(scenario)){
+      await page.locator("#uiTranslationFullPage").click();
+    }
+    // A PARTIAL status from the *initial* priority pass must not satisfy the
+    // second-pass test. Wait for the explicit full-page action to finish.
     await page.waitForFunction(kind=>{
       const state=document.documentElement.dataset.translationState;
       const status=document.getElementById("uiTranslationStatus")?.textContent||"";
-      return kind==="complete" ? state==="ready" : (state==="partial"&&status.includes("Делумен"));
+      const button=document.getElementById("uiTranslationFullPage");
+      if(kind==="complete") return state==="ready";
+      if(kind==="oversize-priority") return state==="partial"&&status.includes("Делумен");
+      return state==="partial"&&status.includes("Делумен")
+        && button?.hidden===false && button?.disabled===false;
     },scenario,{timeout:90000});
     const originalTopLine=await page.evaluate(()=>String(window.__r24OriginalTopLine||""));
     const state=await page.evaluate(()=>({
@@ -98,6 +118,7 @@ try{
       status:document.getElementById("uiTranslationStatus")?.textContent||"",
       shell:document.querySelector("[data-i18n='topLine']")?.textContent||"",
       nav:document.querySelector("[data-i18n='navSources']")?.textContent||"",
+      navArchitecture:document.querySelector("[data-i18n='navArchitecture']")?.textContent||"",
       progress:document.documentElement.dataset.translationBatchesCompleted||"",
       batches:document.documentElement.dataset.translationBatches||""
     }));
@@ -110,20 +131,29 @@ try{
     assert.ok(plannedBatches>0&&plannedBatches<=48,
       "page translation requires "+plannedBatches+" batches, exceeding the 48/hour language cap");
     assert.ok(requests<=48,"browser exceeded the 48/hour language cap");
+    assert.ok(firstPass.requests<=6,"automatic translation must remain within the quota-safe initial budget");
     if(scenario==="complete"){
       assert.equal(state.state,"ready",JSON.stringify({state,network}));
       assert.equal(state.lang,"sq","completed translation must identify its language");
       assert.equal(state.dir,"ltr","completed Albanian translation must be LTR");
-      assert.ok(state.shell.includes(translatedMarker)||state.nav.includes(translatedMarker),"visible shell remained untranslated");
-      assert.equal(String(state.shell).trim(),(translatedMarker+originalTopLine.slice(0,24)).trim(),
-        "reordered row IDs corrupted the translated top-line source");
+      assert.equal(state.shell,"Portal informativ juridik · AI me burime të verifikueshme · kontroll njerëzor",
+        "reviewed zero-Neuron SQ shell did not survive full translation");
+      assert.equal(state.nav,"Burime juridike","reviewed zero-Neuron SQ navigation changed unexpectedly");
+      assert.ok(state.navArchitecture.includes(translatedMarker),
+        "reordered row IDs corrupted uncurated navigation or provider translation failed");
+      assert.match(originalTopLine,/Правен информациски портал/,
+        "original Macedonian source fingerprint unexpectedly changed");
     }else{
       assert.equal(state.state,"partial",JSON.stringify({state,network}));
       assert.equal(state.scope,"visible_shell_partial");
       assert.equal(state.lang,targetLanguage,"partial shell must keep the selected language");
       assert.equal(state.dir,targetLanguage==="ar"?"rtl":"ltr","partial shell must preserve target direction");
       assert.ok(state.status.includes("Делумен")||state.status.includes("превод"),"partial translation must be disclosed");
-      assert.ok(state.shell.includes(translatedMarker)||state.nav.includes(translatedMarker),"verified first visible shell is not translated");
+      const curatedSQ=targetLanguage==="sq"
+        && state.shell==="Portal informativ juridik · AI me burime të verifikueshme · kontroll njerëzor"
+        && state.nav==="Burime juridike";
+      assert.ok(curatedSQ||state.shell.includes(translatedMarker)||state.nav.includes(translatedMarker),
+        "verified visible shell has neither reviewed static nor provider translation");
       if(scenario==="row-mismatch") assert.ok(network.some(row=>row.malformedRows),
         "missing-ID fixture never exercised response integrity guard");
     }
