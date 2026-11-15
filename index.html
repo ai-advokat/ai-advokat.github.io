@@ -3380,6 +3380,11 @@
       document.documentElement.dir=dir;
     }finally{
       uiTranslationRunning=false;
+      // The "translate remainder" control is created while the current pass
+      // is running. Re-enable it after that pass settles, or it remains
+      // permanently disabled despite appearing in a PARTIAL state.
+      const fullPageButton=document.getElementById("uiTranslationFullPage");
+      if(fullPageButton && !fullPageButton.hidden) fullPageButton.disabled=false;
       if(uiTranslationQueued){
         uiTranslationQueued=false;
         scheduleGlobalTranslation();
