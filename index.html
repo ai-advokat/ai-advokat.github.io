@@ -3065,7 +3065,7 @@
   function excludedTranslationElement(el){
     // Never send conversation history, generated legal answers, private matter text,
     // user-editable fields or case data to a secondary UI translation provider.
-    return !el || !!el.closest("script,style,noscript,code,pre,svg,[data-no-translate],#aiChatMessages,#aiChatHistory,#aiChatAttachments,#aiChatInput,#legalQuestion,[data-private],[data-sensitive],[data-client-data],[contenteditable],[role='textbox']");
+    return !el || !!el.closest("script,style,noscript,code,pre,svg,[data-no-translate],#aiChatMessages,#aiChatHistory,#aiChatAttachments,#aiChatEvidenceBody,#aiChatInput,#legalQuestion,#answerBox,#answerText,#searchResults,#searchStatus,#sourceWorkspace,#workspaceText,[data-private],[data-sensitive],[data-client-data],[data-case-id],[data-matter-id],[contenteditable],[role='textbox']");
   }
   function collectUiTranslationUnits(){
     const units=[];
