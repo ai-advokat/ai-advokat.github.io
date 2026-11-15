@@ -99,11 +99,13 @@ const TOPICS=Object.freeze([
 // answers. They inherit the last user topic only for explicitly elliptical
 // turns; previous AI content must never become an assumed source or fact.
 const ELLIPTICAL_USER_TURN_RE=/^(?:(?:а|па|но|и|and|but)\s+)?(?:зошто|како\s+тоа|што\s+со|што\s+ако|што\s+следно|а\s+ако|а\s+сега|објасни\s+подетално|појасни|продолжи|не[,.]?\s*мислев|мислам\s+на|why|how\s+so|what\s+(?:about|if|next)|i\s+meant|please\s+elaborate)/iu;
+const MK_LATIN_ELLIPTICAL_RE=/^(?:(?:a|pa|no|i)\s+)?(?:zosto|shto\s+(?:so|ako|sledno)|sto\s+(?:so|ako|sledno)|kako\s+toa|a\s+ako|ne[,.]?\s*mislev|mislam\s+na|prodolzi|pojasni)/iu;
+
 function topicFromConversation(question,history=[]){
   const current=String(question||"").slice(0,3000);
   const explicit=TOPICS.find(([,pattern])=>pattern.test(current))?.[0]||null;
   if(explicit) return explicit;
-  if(current.length>160 || !ELLIPTICAL_USER_TURN_RE.test(current)) return "general";
+  if(current.length>160 || (!ELLIPTICAL_USER_TURN_RE.test(current) && !MK_LATIN_ELLIPTICAL_RE.test(current))) return "general";
   const userTurns=(Array.isArray(history)?history:[])
     .filter(turn=>turn?.role==="user")
     .map(turn=>String(turn?.text||"").slice(0,2000))
