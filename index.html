@@ -2988,6 +2988,10 @@
   // Three bounded requests concurrently avoid minutes of serial UI translation.
   // Server-side item concurrency and hourly caps remain independently enforced.
   const UI_TRANSLATION_CLIENT_CONCURRENCY=3;
+  // On page load, translate only the priority shell: a full DOM pass may use
+  // ~30 requests and starve microphone/chat of the shared free AI allocation.
+  const UI_TRANSLATION_INITIAL_MAX_BATCHES=6;
+  const UI_TRANSLATION_FULL_PASS_MAX_BATCHES=48;
   const UI_TRANSLATION_MAX_ITEM_CHARS=1200; // matches Worker request validator
   const UI_TRANSLATION_PASS_BUDGET_MS=90000;
   const UI_TRANSLATION_REQUEST_TIMEOUT_MS=25000;
@@ -3002,6 +3006,8 @@
   let uiTranslationObserverSuppressUntil=0;
   let uiTranslationFailureStreak=0;
   let uiTranslationInitialCommitDone=siteLanguage==="mk";
+  let uiTranslationFullPassRequested=false;
+  let uiTranslationBudgetPaused=false;
 
   function applyUiTranslationBackoff(status,retryAfterMs=0){
     uiTranslationFailureStreak=Math.min(uiTranslationFailureStreak+1,6);
@@ -3025,7 +3031,9 @@
     return /[\p{L}]/u.test(text);
   }
   function excludedTranslationElement(el){
-    return !el || !!el.closest("script,style,noscript,code,pre,svg,[data-no-translate]");
+    // Never send conversation history, generated legal answers, private matter text,
+    // user-editable fields or case data to a secondary UI translation provider.
+    return !el || !!el.closest("script,style,noscript,code,pre,svg,[data-no-translate],#aiChatMessages,#aiChatHistory,#aiChatAttachments,#aiChatInput,#legalQuestion,[data-private],[data-sensitive],[data-client-data],[contenteditable],[role='textbox']");
   }
   function collectUiTranslationUnits(){
     const units=[];
@@ -3074,6 +3082,36 @@
     status.textContent=String(message||"");
   }
 
+  function updateUiTranslationFullPageControl(visible){
+    if(siteLanguage==="mk") return;
+    const select=document.getElementById("langBtn");
+    if(!select) return;
+    let button=document.getElementById("uiTranslationFullPage");
+    if(!button){
+      button=document.createElement("button");
+      button.id="uiTranslationFullPage";
+      button.type="button";
+      button.setAttribute("data-no-translate","");
+      button.setAttribute("aria-label","Побарај целосен превод со AI; користи дел од бесплатната квота");
+      button.style.cssText="font:inherit;font-size:12px;padding:5px 8px;border:1px solid currentColor;border-radius:8px;background:transparent;cursor:pointer";
+      button.textContent="🌍 Преведи го остатокот (користи AI квота)";
+      button.addEventListener("click",()=>{
+        if(uiTranslationRunning) return;
+        if(Date.now()<uiTranslationCooldownUntil){
+          showUiTranslationStatus("AI преведувачот е на пауза по грешка или ограничување. Обидете се подоцна.");
+          return;
+        }
+        uiTranslationFullPassRequested=true;
+        uiTranslationBudgetPaused=false;
+        button.hidden=true;
+        scheduleGlobalTranslation();
+      });
+      select.insertAdjacentElement("afterend",button);
+    }
+    button.hidden=!visible;
+    button.disabled=uiTranslationRunning;
+  }
+
   async function translateGlobalInterface(){
     if(siteLanguage==="mk"||uiTranslationRunning) return;
     uiTranslationRunning=true;
@@ -3102,12 +3140,12 @@
         const rect=el.getBoundingClientRect();
         return rect.bottom>0 && rect.top<Math.min(window.innerHeight+50,950);
       });
-      const prioritySources=[...new Set([...shellUnits,...viewportUnits].map(u=>u.source))].slice(0,48);
+      const prioritySources=[...new Set([...shellUnits,...viewportUnits].map(u=>u.source))].slice(0,24);
       // Do not block an otherwise verified visible shell on a >1200-char
       // priority unit that the translation API correctly refuses to accept.
       const priorityCommittableSources=prioritySources.filter(source=>String(source).trim().length<=UI_TRANSLATION_MAX_ITEM_CHARS);
       const priorityUnits=units.filter(unit=>prioritySources.includes(unit.source));
-      const pending=[...new Set([...prioritySources,...units.map(x=>x.source)].filter(text=>!cache[text]))];
+      const pending=[...new Set([...prioritySources,...(uiTranslationFullPassRequested?units.map(x=>x.source):[])].filter(text=>!cache[text]))];
       // An oversized DOM paragraph cannot be sent: the Worker historically
       // filtered >1200-character items, shifting response positions. Keep it
       // untranslated and disclose PARTIAL, never misattribute a legal sentence.
@@ -3158,14 +3196,21 @@
         batchChars+=clean.length;
       }
       if(batch.length) batches.push(batch);
+      const passLimit=uiTranslationFullPassRequested ? UI_TRANSLATION_FULL_PASS_MAX_BATCHES : UI_TRANSLATION_INITIAL_MAX_BATCHES;
+      if(batches.length>passLimit){
+        batches.length=passLimit;
+        if(uiTranslationFullPassRequested) translationFailed=true;
+      }
       document.documentElement.dataset.translationBatches=String(batches.length);
       document.documentElement.dataset.translationBatchesCompleted="0";
       document.documentElement.dataset.translationPendingUnits=String(pending.length);
       let completedBatches=0;
       let nextBatchIndex=0;
+      let stopProviderAttempts=false;
       const translationDeadlineAt=Date.now()+UI_TRANSLATION_PASS_BUDGET_MS;
       async function runUiTranslationBatchWorker(){
         for(;;){
+          if(stopProviderAttempts) return;
           const batchIndex=nextBatchIndex++;
           if(batchIndex>=batches.length) return;
           const texts=batches[batchIndex];
@@ -3192,7 +3237,7 @@
               }
               translationFailed=true;
               console.warn("ui_translation_batch_failed",r.status,d?.error||"unknown",batchIndex);
-              if(r.status===429||r.status===503) return;
+              if(r.status===429||r.status===503){stopProviderAttempts=true;return;}
               continue;
             }
             // Protocol invariant: id, count, and nonempty translation must
@@ -3230,6 +3275,7 @@
             if(uiTranslationInitialCommitDone) showUiTranslationStatus("Превод во тек · "+completedBatches+"/"+batches.length+" групи");
           }catch(error){
             translationFailed=true;
+            stopProviderAttempts=true;
             applyUiTranslationBackoff(503,0);
             console.warn("ui_translation_batch_network_failed",batchIndex,String(error?.message||error||"unknown"));
             return;
@@ -3241,7 +3287,8 @@
       const missingSources=[...new Set(units.map(unit=>unit.source).filter(source=>!cache[source]))];
       document.documentElement.dataset.translationPendingUnits=String(missingSources.length);
       if(translationFailed||missingSources.length){
-        if(!translationFailed) applyUiTranslationBackoff(503,0);
+        if(!translationFailed && uiTranslationFullPassRequested) applyUiTranslationBackoff(503,0);
+        uiTranslationBudgetPaused=true;
         // Keep verified visible text, but do not loop indefinitely through
         // quota-limited translation requests after a provider/rate-limit fault.
         // A later user interaction or reload can explicitly retry.
@@ -3269,11 +3316,15 @@
         showUiTranslationStatus(uiTranslationInitialCommitDone
           ? "Делумен превод · "+missingSources.length+" сегменти сè уште недостасуваат"
           : "Преводот е привремено недостапен");
+        updateUiTranslationFullPageControl(true);
         console.warn("ui_translation_atomic_commit_unavailable",siteLanguage,missingSources.length);
         return;
       }
       applyUnits(units);
       uiTranslationInitialCommitDone=true;
+      uiTranslationFullPassRequested=false;
+      uiTranslationBudgetPaused=false;
+      updateUiTranslationFullPageControl(false);
       document.documentElement.dataset.translationState="ready";
       document.documentElement.dataset.translationScope="all_collected_ui_units";
       showUiTranslationStatus("Преводот на страницата е завршен");
@@ -3289,7 +3340,7 @@
     }
   }
   function scheduleGlobalTranslation(){
-    if(siteLanguage==="mk") return;
+    if(siteLanguage==="mk"||uiTranslationBudgetPaused) return;
     if(uiTranslationRunning){uiTranslationQueued=true;return;}
     clearTimeout(scheduleGlobalTranslation.timer);
     const cooldownDelay=Math.max(0,uiTranslationCooldownUntil-Date.now());
