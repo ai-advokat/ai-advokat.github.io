@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - release/zoki-unified-rc2-candidate-20261115
+      - feat/zoki-bot-formats-translator-r24-20261115
     paths:
       - "scripts/zoki-r25-bounded-live-ai.mjs"
       - ".github/workflows/zoki-r25-bounded-live-ai.yml"
@@ -17,7 +18,7 @@ concurrency:
 
 jobs:
   exact-preview-real-ai:
-    if: github.head_ref == 'feat/zoki-bot-formats-translator-r24-20261115'
+    if: github.head_ref == 'feat/zoki-bot-formats-translator-r24-20261115' || github.head_ref == 'fix/r25-honest-live-ai-evidence-20261115'
     name: One translation + one Whisper + one FREE chat
     runs-on: ubuntu-latest
     timeout-minutes: 12
@@ -50,12 +51,41 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Verify live probe script syntax (no AI cost)
+        run: node --check scripts/zoki-r25-bounded-live-ai.mjs
+
+      - name: Record honest NOT_TESTED status when real calls are intentionally gated
+        if: steps.spend_gate.outputs.allow != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const names=['exact_source_byte_parity','capabilities_read_only',
+            'one_real_short_translation_MK_to_SQ','one_real_synthetic_WAV_Whisper',
+            'one_real_anonymous_internal_FREE_legal_chat','external_bot_training_gate_without_paid_model'];
+          const report={
+            protocol:'ZOKI_R25_LIVE_DIAGNOSTIC_V1',
+            checkedAt:new Date().toISOString(),
+            exactCommit:process.env.EXPECTED_HEAD_SHA,
+            preview:process.env.PREVIEW_URL,
+            execution:'SKIPPED_BY_NO_COST_GATE',
+            checks:names.map(name=>({name,status:'NOT_TESTED',details:{reason:'live_model_calls_not_authorised_for_this_commit'}})),
+            summary:{passed:0,failed:0,notTested:names.length,realModelsVerified:[],releaseReady:false,legalHumanGate:'HOLD'},
+            productionTouched:false,paidFallbackAuthorised:false
+          };
+          fs.writeFileSync('/tmp/zoki-r25-bounded-live-ai.json',JSON.stringify(report,null,2));
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+            '### R25 real AI verification: NOT TESTED\\n\\nNo live model calls were authorised for this commit. '+
+            'Workflow success means only the source syntax and evidence-recording steps passed. '+
+            '**This is not evidence of working chat, translation, or voice.**\\n');
+          NODE
+
       - name: Prepare a synthetic one-second voice, never a client recording
         if: steps.spend_gate.outputs.allow == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          node --check scripts/zoki-r25-bounded-live-ai.mjs
           if ! command -v espeak-ng >/dev/null 2>&1; then
             sudo apt-get update -qq
             sudo apt-get install -y -qq espeak-ng
@@ -74,7 +104,7 @@ jobs:
         with:
           name: ZOKI-R25-LIVE-PROVIDER-DIAGNOSTIC-NOT-RELEASE
           path: /tmp/zoki-r25-bounded-live-ai.json
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 7
 
 # WARNING: 3 bounded REAL model calls in total, no retries: M2M100, Whisper
