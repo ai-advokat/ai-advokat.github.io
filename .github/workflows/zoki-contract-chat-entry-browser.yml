@@ -1,0 +1,30 @@
+name: Zoki six contract conversation entry - Chromium
+on:
+  pull_request:
+    branches:
+      - feat/zoki-ai-contract-rc128-rc187-review-gate-20261115
+    paths:
+      - assets/zoki-six-contract-conversation-r25.js
+      - scripts/zoki-contract-six-models-browser.mjs
+      - .github/workflows/zoki-contract-chat-entry-browser.yml
+permissions:
+  contents: read
+jobs:
+  browser-chat-entry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright core
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          executable="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$executable"
+          echo "BROWSER_EXECUTABLE=$executable" >> "$GITHUB_ENV"
+      - name: Check actual six-model entry in Chromium for both chat shells
+        run: node scripts/zoki-contract-six-models-browser.mjs
