@@ -1,0 +1,38 @@
+name: Zoki 20 real conversational questions - gated R25 audit
+on:
+  pull_request:
+    branches:
+      - feat/zoki-bot-formats-translator-r24-20261115
+    paths:
+      - scripts/zoki-20-question-live-audit.mjs
+      - .github/workflows/zoki-20-question-audit.yml
+permissions:
+  contents: read
+concurrency:
+  group: zoki-20-questions-r25-audit
+  cancel-in-progress: false
+jobs:
+  synthetic-real-ai:
+    if: github.head_ref == 'fix/zoki-conversation-second-turn-r25-20261115'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source and twenty unique prompts
+        run: node --check scripts/zoki-20-question-live-audit.mjs
+      - name: Ask real Preview AI endpoints, up to twenty FREE calls; fail on no replies
+        run: node scripts/zoki-20-question-live-audit.mjs
+      - name: Always preserve redacted evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZOKI-20-QUESTIONS-REAL-AI-NOT-RELEASE
+          path: /tmp/zoki-20-question-results.json
+          if-no-files-found: error
+          retention-days: 7
