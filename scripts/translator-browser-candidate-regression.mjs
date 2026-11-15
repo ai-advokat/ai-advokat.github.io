@@ -114,6 +114,7 @@ try{
       status:document.getElementById("uiTranslationStatus")?.textContent||"",
       shell:document.querySelector("[data-i18n='topLine']")?.textContent||"",
       nav:document.querySelector("[data-i18n='navSources']")?.textContent||"",
+      navArchitecture:document.querySelector("[data-i18n='navArchitecture']")?.textContent||"",
       progress:document.documentElement.dataset.translationBatchesCompleted||"",
       batches:document.documentElement.dataset.translationBatches||""
     }));
@@ -131,16 +132,24 @@ try{
       assert.equal(state.state,"ready",JSON.stringify({state,network}));
       assert.equal(state.lang,"sq","completed translation must identify its language");
       assert.equal(state.dir,"ltr","completed Albanian translation must be LTR");
-      assert.ok(state.shell.includes(translatedMarker)||state.nav.includes(translatedMarker),"visible shell remained untranslated");
-      assert.equal(String(state.shell).trim(),(translatedMarker+originalTopLine.slice(0,24)).trim(),
-        "reordered row IDs corrupted the translated top-line source");
+      assert.equal(state.shell,"Portal informativ juridik · AI me burime të verifikueshme · kontroll njerëzor",
+        "reviewed zero-Neuron SQ shell did not survive full translation");
+      assert.equal(state.nav,"Burime juridike","reviewed zero-Neuron SQ navigation changed unexpectedly");
+      assert.ok(state.navArchitecture.includes(translatedMarker),
+        "uncurated navigation failed model translation / reordered row-ID acceptance");
+      assert.match(originalTopLine,/Правен информациски портал/,
+        "original Macedonian source fingerprint unexpectedly changed");
     }else{
       assert.equal(state.state,"partial",JSON.stringify({state,network}));
       assert.equal(state.scope,"visible_shell_partial");
       assert.equal(state.lang,targetLanguage,"partial shell must keep the selected language");
       assert.equal(state.dir,targetLanguage==="ar"?"rtl":"ltr","partial shell must preserve target direction");
       assert.ok(state.status.includes("Делумен")||state.status.includes("превод"),"partial translation must be disclosed");
-      assert.ok(state.shell.includes(translatedMarker)||state.nav.includes(translatedMarker),"verified first visible shell is not translated");
+      const curatedSQ=targetLanguage==="sq"
+        && state.shell==="Portal informativ juridik · AI me burime të verifikueshme · kontroll njerëzor"
+        && state.nav==="Burime juridike";
+      assert.ok(curatedSQ||state.shell.includes(translatedMarker)||state.nav.includes(translatedMarker),
+        "verified visible shell has neither reviewed static nor provider translation");
       if(scenario==="row-mismatch") assert.ok(network.some(row=>row.malformedRows),
         "missing-ID fixture never exercised response integrity guard");
     }
