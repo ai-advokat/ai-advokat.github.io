@@ -1,0 +1,32 @@
+name: Zoki AI Contract RC128 RC187 local-only browser gate
+on:
+  pull_request:
+    branches:
+      - fix/r25-three-bot-conversation-resilience-20261115
+    paths:
+      - ai-contract-zoki-20261115-review.html
+      - assets/ai-contract-zoki-review.mjs
+      - data/ai-contract-zoki-rc128-rc187-intake.json
+      - scripts/zoki-ai-contract-review-browser.mjs
+      - .github/workflows/zoki-ai-contract-review-browser.yml
+permissions:
+  contents: read
+jobs:
+  owner-review-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Add Chromium controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          exe="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$exe"
+          echo "BROWSER_EXECUTABLE=$exe" >> "$GITHUB_ENV"
+      - name: Verify archive hashes locally, with simulated ZIP only
+        run: node scripts/zoki-ai-contract-review-browser.mjs
