@@ -760,7 +760,10 @@ $('composer').onsubmit = async event => {
   const epoch = generation, controller = new AbortController(); pending = controller; busy(true);
   let timedOut=false;
   let successfulAnswer=false;
-  const timeout = setTimeout(() => {timedOut=true;controller.abort();},90000);
+  // A governed professional legal draft can consume the server's 160s budget;
+  // ordinary FREE training questions must not lock the UI for three minutes.
+  const requestTimeoutMs=key ? 180000 : 90000;
+  const timeout = setTimeout(() => {timedOut=true;controller.abort();},requestTimeoutMs);
   $('messages').querySelectorAll('.ai-proactive-next-turns').forEach(panel=>panel.remove());
   message('user',outboundQ); $('question').value = ''; $('question').style.height = '';
   const pulse = responsePulse();
