@@ -1122,7 +1122,10 @@
 
     const chat=current();setTitle(chat,q);
     const historyForApi=chat.messages
-      .filter(m=>(m.role==="user"||m.role==="assistant") && m.text && m.text!=="Обработувам…")
+      // Service-status text and privacy handoffs are not model answers and must
+      // never contaminate the next legal turn's conversational context.
+      .filter(m=>(m.role==="user"||m.role==="assistant") && m.text && m.text!=="Обработувам…"
+        && (m.role==="user" || !/(?:runtime\/api unavailable|ai runtime timeout|^stop$|quota|provider_locked|controlled state|source-backed fallback|privacy-protected|privacy-redacted)/i.test(String(m.meta||""))))
       .slice(-8)
       .map(m=>({role:m.role,text:String(m.text).slice(0,4000)}));
     const selectedFiles=[...attachments];
