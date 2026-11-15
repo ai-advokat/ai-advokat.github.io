@@ -94,6 +94,7 @@ async function browserLayer(){
       if(sessionStorage.getItem(key)!=="1"){
         localStorage.setItem("aiadvokat-language","mk");
         localStorage.removeItem("aiadvokat-ui-translations-v1:sq");
+        localStorage.removeItem("aiadvokat-ui-translations-v2:sq");
         sessionStorage.setItem(key,"1");
       }
     });
@@ -124,6 +125,15 @@ async function browserLayer(){
     const navigation=page.waitForNavigation({waitUntil:"domcontentloaded",timeout:30000});
     await page.selectOption("#langBtn","sq");
     await navigation;
+    // The UI now conserves Cloudflare Neurons: translate a bounded priority
+    // shell first, then require an explicit human click for the remaining DOM.
+    await page.waitForFunction(()=>
+      document.documentElement.dataset.translationState==="partial" &&
+      document.getElementById("uiTranslationFullPage")?.hidden===false,
+      null,{timeout:120000});
+    const initialBatches=await page.evaluate(()=>Number(document.documentElement.dataset.translationBatches||0));
+    if(initialBatches>6) throw new Error("unbounded automatic translation: "+initialBatches);
+    await page.locator("#uiTranslationFullPage").click();
     await page.waitForFunction(()=>{
       const global=document.querySelector("#langBtn")?.value||"";
       const chat=document.querySelector("#aiChatLanguage")?.value||"";
