@@ -1,8 +1,8 @@
 # AI Advokat · ZOKI UNIFIED RC2 · Candidate release pack
 
-**Date:** 15 November 2026 (Europe/Skopje)  
-**Product:** AI Advokat — internal professional bot, external public bot, bounded proactive agents, translator, voice, legal sources and exports  
-**Version:** ZOKI-UNIFIED-RC2-CANDIDATE-20261115  
+**Date:** 15 November 2026 (Europe/Skopje)
+**Product:** AI Advokat — internal professional bot, external public bot, bounded proactive agents, translator, voice, legal sources and exports
+**Version:** ZOKI-UNIFIED-RC2-CANDIDATE-20261115
 **STATUS:** RELEASE CANDIDATE WITH BLOCKERS · **NOT MERGED / NOT PRODUCTION-APPROVED / LEGAL HOLD**
 
 ## 1. Mandate and source of truth
