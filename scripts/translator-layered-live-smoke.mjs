@@ -94,6 +94,7 @@ async function browserLayer(){
       if(sessionStorage.getItem(key)!=="1"){
         localStorage.setItem("aiadvokat-language","mk");
         localStorage.removeItem("aiadvokat-ui-translations-v1:sq");
+        localStorage.removeItem("aiadvokat-ui-translations-v2:sq");
         sessionStorage.setItem(key,"1");
       }
     });
