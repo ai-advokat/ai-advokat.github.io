@@ -89,10 +89,10 @@ const EN=Object.freeze({
 });
 
 const TOPICS=Object.freeze([
-  ["procedural",/(?:притвор|пресуд|жалб|доставувањ|рок|судск[ио]\s+акт|решение|appeal|detention|deadline|service\s+of\s+process|court\s+order)/iu],
-  ["employment",/(?:работен\s+однос|работодавач|вработувањ|отказ|плата|employment|dismissal|labou?r\s+law|salary)/iu],
-  ["formal",/(?:тужб|поднесок|приговор|пријав[аи]|петици|lawsuit|legal\s+claim|complaint|filing|petition)/iu],
-  ["contract",/(?:договор|анекс|клаузул|обврск|contract|agreement|clause)/iu]
+  ["procedural",/(?:притвор|пресуд|жалб|доставувањ|рок|судск[ио]\s+акт|решение|appeal|detention|deadline|service\s+of\s+process|court\s+order|\b(?:zalba|presuda|pritvor|rok)\b)/iu],
+  ["employment",/(?:работен\s+однос|работодавач|вработувањ|отказ|плата|employment|dismissal|labou?r\s+law|salary|\b(?:otkaz|plata|raboten\s+odnos|rabotodavac)\b)/iu],
+  ["formal",/(?:тужб|поднесок|приговор|пријав[аи]|петици|lawsuit|legal\s+claim|complaint|filing|petition|\b(?:tuzba|podnesok|prigovor)\b)/iu],
+  ["contract",/(?:договор|анекс|клаузул|обврск|contract|agreement|clause|\b(?:dogovor|aneks|klauzula)\b)/iu]
 ]);
 
 // Follow-up buttons are privacy-safe deterministic proposals, not model
