@@ -96,12 +96,16 @@ try{
     if(["complete","partial","rtl-partial","row-mismatch"].includes(scenario)){
       await page.locator("#uiTranslationFullPage").click();
     }
-    // Do not mistake a correct in-progress PARTIAL shell for final READY.
-    // In the failure scenario, wait for the actual surfaced capacity error.
+    // A PARTIAL status from the *initial* priority pass must not satisfy the
+    // second-pass test. Wait for the explicit full-page action to finish.
     await page.waitForFunction(kind=>{
       const state=document.documentElement.dataset.translationState;
       const status=document.getElementById("uiTranslationStatus")?.textContent||"";
-      return kind==="complete" ? state==="ready" : (state==="partial"&&status.includes("Делумен"));
+      const button=document.getElementById("uiTranslationFullPage");
+      if(kind==="complete") return state==="ready";
+      if(kind==="oversize-priority") return state==="partial"&&status.includes("Делумен");
+      return state==="partial"&&status.includes("Делумен")
+        && button?.hidden===false && button?.disabled===false;
     },scenario,{timeout:90000});
     const originalTopLine=await page.evaluate(()=>String(window.__r24OriginalTopLine||""));
     const state=await page.evaluate(()=>({
