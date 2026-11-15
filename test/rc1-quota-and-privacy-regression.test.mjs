@@ -39,7 +39,7 @@ test("zero-neuron Albanian shell uses only reviewed static navigation strings",(
 
 test("secondary UI translation never traverses live chat or private case content",()=>{
   const guard=home.match(/function excludedTranslationElement\(el\)\{([\s\S]*?)\n  \}/)?.[1]||"";
-  for(const marker of ["#aiChatMessages","#aiChatHistory","#aiChatAttachments","[data-private]","[data-sensitive]","[contenteditable]"]){
+  for(const marker of ["#aiChatMessages","#aiChatHistory","#aiChatAttachments","#aiChatEvidenceBody","#answerBox","#searchResults","#searchStatus","[data-private]","[data-sensitive]","[contenteditable]"]){
     assert.ok(guard.includes(marker),marker);
   }
 });
