@@ -86,7 +86,7 @@ try{
     await page.waitForFunction(()=>
       document.documentElement.dataset.translationState==="partial" &&
       document.getElementById("uiTranslationFullPage")?.hidden===false,
-      {timeout:90000}
+      null,{timeout:90000}
     );
     const firstPass=await page.evaluate(()=>({
       requests:Number(document.documentElement.dataset.translationBatches||"0"),
