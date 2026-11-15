@@ -60,7 +60,9 @@ test("R21 translation failover identifies Workers AI allocation without broadeni
   assert.match(worker,/result\?\.error==="workers_ai_daily_capacity_exhausted"/);
   assert.match(worker,/throw new Error\(uiTranslationWorkerErrorCode\(result\)\)/);
   assert.match(worker,/failoverReason,/);
-  assert.match(worker,/if\(String\(primaryError\?\.message\|\|primaryError\)==="ui_translation_workers_ai_capacity_exhausted"\) throw primaryError/);
+  assert.match(worker,/ui_translation_workers_ai_model_busy/);
+  assert.match(worker,/!\["ui_translation_empty_m2m100","ui_translation_workers_ai_empty_response"\]\.includes\(reason\)/);
+  assert.match(worker,/throw primaryError;/);
   assert.match(worker,/UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT=48/);
   assert.match(worker,/UI_TRANSLATE_GLOBAL_DAILY_LIMIT=800/);
   assert.match(voice,/browserRecognitionUnavailable && recorderFallbackSupported/);
