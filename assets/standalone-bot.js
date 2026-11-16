@@ -136,7 +136,15 @@ function writePreferredLanguage(code){
 function selectedLanguageMeta(){return languageMeta($("botLanguage")?.value||readPreferredLanguage());}
 function selectedSpeechLocale(){return selectedLanguageMeta().locale;}
 
-const BOT_UI_TRANSLATION_CACHE_PREFIX="aiadvokat-bot-ui-translations-v1:";
+const BOT_UI_TRANSLATION_CACHE_PREFIX="aiadvokat-bot-ui-translations-v2:";
+// Use small, explicitly bounded public-interface translation batches.
+const BOT_UI_TRANSLATION_BATCH_ITEMS=12;
+const BOT_UI_TRANSLATION_BATCH_CHARS=2000;
+const BOT_UI_TRANSLATION_INITIAL_BATCHES=1;
+const BOT_UI_TRANSLATION_EXPLICIT_BATCHES=6;
+let botUiTranslationFullPageRequested=false;
+let botUiTranslationCooldownUntil=0;
+try{for(const language of AI_ADVOCAT_LANGUAGES) localStorage.removeItem("aiadvokat-bot-ui-translations-v1:"+language.code);}catch{}
 const botUiNodeState=new WeakMap();
 const botUiAttrState=new WeakMap();
 let botUiTranslationRunning=false;
@@ -155,7 +163,7 @@ function botUiTranslatable(value){
   return /[\p{L}]/u.test(text);
 }
 function botUiExcluded(el){
-  return !el || !!el.closest("script,style,noscript,code,pre,svg,[data-no-translate],#botLanguage,.message .text,.sources,.vnext-source-card,.vnext-context-card,.vnext-artifact-card");
+  return !el || !!el.closest("script,style,noscript,code,pre,svg,[data-no-translate],#botLanguage,.message .text,.sources,.vnext-source-card,.vnext-context-card,.vnext-artifact-card,[data-private],[data-sensitive],[data-client-data],[data-case-id],[data-matter-id],[contenteditable],[role='textbox'],.source-preview,.legal-source-text,.legal-answer,.case-evidence");
 }
 function collectBotUiUnits(){
   const units=[];
@@ -187,59 +195,136 @@ function collectBotUiUnits(){
   }
   return units;
 }
+function botTranslationStatus(message){
+  const control=$("botLanguage");
+  if(!control) return;
+  let display=$("botUiTranslationStatus");
+  if(!display){
+    display=document.createElement("span");
+    display.id="botUiTranslationStatus";
+    display.setAttribute("role","status");
+    display.setAttribute("aria-live","polite");
+    display.setAttribute("data-no-translate","");
+    display.style.cssText="display:inline-block;max-width:320px;margin:6px;padding:5px;border-radius:6px;font-size:12px;line-height:1.4";
+    (control.closest(".bot-language-control")||control).insertAdjacentElement("afterend",display);
+  }
+  display.textContent=String(message||"");
+}
+function botUiMoreButton(show){
+  if(readPreferredLanguage()==="mk") return;
+  const control=$("botLanguage");if(!control)return;
+  let button=$("botUiTranslationMore");
+  if(!button){
+    button=document.createElement("button");button.id="botUiTranslationMore";
+    button.type="button";button.setAttribute("data-no-translate","");
+    button.style.cssText="font-size:12px;padding:6px 9px;margin:5px;border:1px solid currentColor;border-radius:7px;background:transparent;cursor:pointer";
+    button.textContent="Преведи повеќе од интерфејсот (AI квота)";
+    button.onclick=()=>{
+      if(botUiTranslationRunning) return;
+      if(Date.now()<botUiTranslationCooldownUntil){
+        botTranslationStatus("Cloudflare AI е на пауза по ограничување; обидете се подоцна.");return;
+      }
+      botUiTranslationFullPageRequested=true;scheduleProfessionalUiTranslation();
+    };
+    (control.closest(".bot-language-control")||control).insertAdjacentElement("afterend",button);
+  }
+  button.hidden=!show;button.disabled=botUiTranslationRunning;
+}
+function botUiPriorityUnit(unit){
+  const el=unit.kind==="text"?unit.node?.parentElement:unit.el;
+  if(!el||!el.isConnected)return false;
+  if(el.closest("header,nav,.header-legal-links,.bot-language-control,#composer,.composer"))return true;
+  const rect=el.getBoundingClientRect();
+  return rect.bottom>0&&rect.top<Math.min(window.innerHeight+40,950);
+}
 async function translateProfessionalUi(){
   const code=readPreferredLanguage();
-  if(code==="mk"||botUiTranslationRunning) return;
+  if(code==="mk"||botUiTranslationRunning)return;
+  if(Date.now()<botUiTranslationCooldownUntil){
+    botTranslationStatus("Cloudflare преведувачот е привремено ограничен. Нема автоматски повторени повици.");
+    botUiMoreButton(true);return;
+  }
   botUiTranslationRunning=true;
   try{
-    const units=collectBotUiUnits();
-    const cache=botUiCache(code);
-    const pending=[...new Set(units.map(x=>x.source).filter(x=>!cache[x]))];
-    const batches=[];
-    let batch=[],chars=0;
+    const units=collectBotUiUnits(),cache=botUiCache(code);
+    const prioritySources=[...new Set(units.filter(botUiPriorityUnit).map(u=>u.source))];
+    const allSources=[...new Set(units.map(u=>u.source))];
+    const requested=botUiTranslationFullPageRequested?allSources:prioritySources.slice(0,24);
+    const pending=requested.filter(text=>!cache[text]);
+    const batches=[];let batch=[],chars=0;
     for(const text of pending){
-      if(batch.length&&(batch.length>=72||chars+text.length>9000)){
+      if(text.length>1200)continue;
+      if(batch.length&&(batch.length>=BOT_UI_TRANSLATION_BATCH_ITEMS||chars+text.length>BOT_UI_TRANSLATION_BATCH_CHARS)){
         batches.push(batch);batch=[];chars=0;
       }
       batch.push(text);chars+=text.length;
     }
     if(batch.length)batches.push(batch);
-    for(const texts of batches){
+    const max=botUiTranslationFullPageRequested?BOT_UI_TRANSLATION_EXPLICIT_BATCHES:BOT_UI_TRANSLATION_INITIAL_BATCHES;
+    botTranslationStatus("Се преведува основниот интерфејс; не се обработуваат правни одговори и документи…");
+    let failed=false;
+    for(const texts of batches.slice(0,max)){
+      if(code!==readPreferredLanguage())return;
+      const items=texts.map((text,i)=>({id:String(i),text}));
       try{
         const response=await fetch(base+"/api/ui-translate",{
-          method:"POST",
-          headers:{"content-type":"application/json"},
-          body:JSON.stringify({targetLanguage:code,items:texts.map((text,i)=>({id:String(i),text}))})
+          method:"POST",headers:{"content-type":"application/json"},
+          body:JSON.stringify({targetLanguage:code,items}),
+          signal:AbortSignal.timeout(25000)
         });
-        const data=await response.json();
+        let data=null;try{data=await response.json();}catch{}
         if(!response.ok||data?.ok!==true||!Array.isArray(data.translations)){
-          console.warn("bot_ui_translation_failed",response.status,data?.error||"unknown");
-          continue;
+          failed=true;
+          botUiTranslationCooldownUntil=Date.now()+(response.status===429?60000:15000);
+          botTranslationStatus(response.status===429
+            ?"AI преведувачот го достигна ограничувањето. Проверените локални преводи остануваат достапни."
+            :"Cloudflare AI преводот моментално е недостапен (HTTP "+response.status+"). Не е направен целосен превод.");
+          break;
         }
-        data.translations.forEach((row,i)=>{
-          const translated=String(row?.text||"").trim();
-          if(translated) cache[texts[i]]=translated;
-        });
+        // Rows must be matched by id, never array index. Reject partial or
+        // reordered/duplicated bad rows rather than mislabel a legal control.
+        const byId=new Map();let valid=data.translations.length===items.length;
+        if(valid)for(const row of data.translations){
+          const id=String(row?.id??""),translated=String(row?.text||"").trim();
+          if(!items.some(x=>x.id===id)||byId.has(id)||!translated){valid=false;break;}
+          byId.set(id,translated);
+        }
+        if(!valid||byId.size!==items.length){
+          failed=true;
+          botTranslationStatus("Проверката на ID на преводот не успеа. Погрешен превод не е прикажан.");
+          break;
+        }
+        if(code!==readPreferredLanguage())return;
+        items.forEach(item=>{cache[item.text]=byId.get(item.id);});
         saveBotUiCache(code,cache);
       }catch(error){
-        console.warn("bot_ui_translation_network_error",String(error?.message||error).slice(0,120));
+        failed=true;botUiTranslationCooldownUntil=Date.now()+15000;
+        botTranslationStatus("AI преведувачот не одговори на време; нема автоматско повторување.");
+        break;
       }
     }
     for(const unit of units){
-      const translated=cache[unit.source];
-      if(!translated) continue;
+      const translated=cache[unit.source];if(!translated)continue;
       if(unit.kind==="text"){
         unit.node.nodeValue=translated;
-        const state=botUiNodeState.get(unit.node); if(state) state.last=translated;
+        const state=botUiNodeState.get(unit.node);if(state)state.last=translated;
       }else{
         unit.el.setAttribute(unit.attr,translated);
-        const attrs=botUiAttrState.get(unit.el); if(attrs?.[unit.attr]) attrs[unit.attr].last=translated;
+        const state=botUiAttrState.get(unit.el);if(state?.[unit.attr])state[unit.attr].last=translated;
       }
     }
-  }finally{botUiTranslationRunning=false;}
+    const remaining=allSources.filter(source=>!cache[source]).length;
+    if(!failed)botTranslationStatus(remaining
+      ?"Делумен превод · "+remaining+" ставки не се преведени. За повеќе користете го копчето."
+      :"Интерфејсот е преведен. Правните документи остануваат во изворниот јазик.");
+    botUiMoreButton(remaining>0||failed);
+  }finally{
+    botUiTranslationRunning=false;
+    const button=$("botUiTranslationMore");if(button)button.disabled=false;
+  }
 }
 function scheduleProfessionalUiTranslation(){
-  if(readPreferredLanguage()==="mk") return;
+  if(readPreferredLanguage()==="mk")return;
   clearTimeout(botUiTranslationTimer);
   botUiTranslationTimer=setTimeout(()=>translateProfessionalUi(),180);
 }
@@ -368,13 +453,8 @@ function bindLanguageSelector(){
   if(!select)return;
   writePreferredLanguage(readPreferredLanguage());
   scheduleProfessionalUiTranslation();
-  if(readPreferredLanguage()!=="mk"){
-    const observer=new MutationObserver(mutations=>{
-      if(botUiTranslationRunning) return;
-      if(mutations.some(m=>m.type==="childList"||m.type==="characterData"||m.type==="attributes")) scheduleProfessionalUiTranslation();
-    });
-    observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder","title","aria-label"]});
-  }
+  // Avoid repeated DOM-observer calls that starve shared free Cloudflare capacity.
+  // Extra UI text is translated only after a visible human click.
   select.addEventListener("change",()=>{
     const lang=writePreferredLanguage(select.value);
     status("Јазик за AI објаснување, интерфејс и глас: "+lang.name+". Официјалните извори и цитати остануваат source-faithful.");

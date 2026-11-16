@@ -37,7 +37,50 @@
   </div></div>
   <div class="card" style="margin-top:15px"><div class="head"><h2>Принципи</h2></div><div class="body small"><p><b>Original preserved.</b> `number` останува оригиналниот број.</p><p><b>Editorial overlay.</b> Промената оди во `editorialNumber`, `editorialNote` и `editorialFootnotes`.</p><p><b>Audit.</b> Секоја одлука носи `silentChange:false`.</p><p><b>Fail closed.</b> Нецелосни одлуки остануваат pending.</p><p><a class="btn secondary" href="/bot/">← Назад во AI Advokat Bot</a></p></div></div>
 </aside>
-</div><div class="footer">AI Advokat · Legal Formatter v10.4 integration · deterministic engine + Human Gate</div>
+</div>
+<section class="card" id="zrBridge" style="margin-top:17px">
+ <div class="head"><h2>4 · Зоки RC36 · Контролирана консолидација</h2><span class="small">RC8 exact-match · временски доказ · HG11/HG35 OPEN</span></div>
+ <div class="body">
+  <p class="status warn"><strong>Работна копија, не официјален закон.</strong> Го зачувуваме постојниот v10.4 мотор. Новата патека прави точни редакциски операции, проверка на датуми и локален SHA-256, но не издава правна согласност, не испраќа документи до AI и не го ажурира службениот правен корпус. Член 48 и HG11/HG35 остануваат <strong>LEGAL HOLD</strong>.</p>
+  <div class="actions"><button type="button" class="secondary" id="zrDemo">Пробај фиктивен пример</button><button type="button" class="primary" id="zrFromV104">Пренеси извор од v10.4</button><a class="btn secondary" href="/consolidator/zoki-rc16-review.html">Контрола на извори</a></div>
+  <div class="two">
+   <div><label for="zrCase">Ознака на предмет</label><input id="zrCase" value="DEMO_ZOKI_RC36" maxlength="80"></div>
+   <div><label for="zrLaw">Назив на закон / акт</label><input id="zrLaw" value="СИНТЕТИЧКИ ПРИМЕР · НЕ Е ВАЖЕЧКИ ЗАКОН" maxlength="200"></div>
+   <div><label for="zrArticle">Одредба / член ID</label><input id="zrArticle" value="1.1" maxlength="80"></div>
+   <div><label for="zrSourceName">Извор / ознака на измена</label><input id="zrSourceName" value="SYNTHETIC_DEMO" maxlength="500"></div>
+  </div>
+  <div><label for="zrOriginal">Точен изворен текст на една одредба (до 25.000 знаци)</label><textarea id="zrOriginal" maxlength="25000" rows="5" placeholder="Тука е оригиналниот извадок."></textarea></div>
+  <div class="actions"><button type="button" class="secondary" id="zrNew">Создај работна копија</button></div>
+  <div class="two">
+   <div><label for="zrType">Контролирана операција</label><select id="zrType"><option value="replace_exact">Замени точно совпаѓање</option><option value="insert_after_exact">Вметни по точно совпаѓање</option><option value="delete_exact">Избриши точно совпаѓање</option></select></div>
+   <div><label for="zrReason">Причина за интервенција</label><input id="zrReason" value="Синтетичка редакциска промена · проверка задолжителна" maxlength="1000"></div>
+  </div>
+  <div class="two">
+   <div><label for="zrFind">Текст што мора да се појавува точно еднаш</label><textarea id="zrFind" rows="3" placeholder="Точен извадок за измена"></textarea></div>
+   <div><label for="zrInsert">Предложен текст (празно при бришење)</label><textarea id="zrInsert" rows="3" placeholder="Нов редакциски предлог"></textarea></div>
+  </div>
+  <div class="actions"><button type="button" class="secondary" id="zrAdd">Додај операција (провери exact match)</button><button type="button" class="gold" id="zrPreview">Технички преглед со време</button></div>
+  <details style="margin-top:12px"><summary><strong>Временска проверка и доказ од изворот</strong> · датумите се внесуваат рачно и не се автентицирани</summary>
+   <div class="two">
+    <div><label for="zrPublished">Датум на објавување</label><input type="date" id="zrPublished" value="2026-01-01"></div>
+    <div><label for="zrForce">Влегување во сила</label><input type="date" id="zrForce" value="2026-01-02"></div>
+    <div><label for="zrApplies">Почеток на примена</label><input type="date" id="zrApplies" value="2026-01-03"></div>
+    <div><label for="zrAsOf">Датум за преглед</label><input type="date" id="zrAsOf" value="2026-11-15"></div>
+   </div>
+   <label for="zrEvidenceFile">Локално пресметај SHA-256 на доказен PDF/DOCX/TXT/JSON (не се испраќа)</label>
+   <input type="file" id="zrEvidenceFile" accept=".pdf,.docx,.txt,.md,.json">
+   <pre id="zrEvidence">Нема избрани локални доказни датотеки.</pre>
+  </details>
+  <div id="zrStatus" class="status" role="status" aria-live="polite">Се вчитува сопственичкиот RC36 мост…</div>
+  <div class="two">
+   <div><label for="zrOperations">Операции · оригиналот не се менува</label><pre id="zrOperations">[]</pre></div>
+   <div><label for="zrResult">Технички преглед и временска класификација</label><pre id="zrResult">Нема преглед.</pre></div>
+  </div>
+  <div class="actions"><button type="button" id="zrExport" class="primary">Преземи доказен JSON · NO-GO</button><label for="zrImport" class="btn secondary">Повторно отвори проект JSON</label><input type="file" id="zrImport" accept=".json,application/json" style="max-width:220px"></div>
+  <p class="small">Верзија: RC36 bridge over RC8, интегрирана во постојниот v10.4; не е извршен целосен законски прием. За целосен RC36 оригинален изворен пакет користете ја приватната архива на Зоки. Не внесувајте матични броеви или оригинални клиентски документи во јавен прелистувачки разговор.</p>
+ </div>
+</section>
+<div class="footer">AI Advokat · Legal Formatter v10.4 integration · deterministic engine + Human Gate</div>
 </main>
 <script src="/assets/legal-formatter-v10.4/lfcore.js"></script>
 <script>
@@ -143,4 +186,6 @@ function download(name,obj,type='application/json'){const blob=new Blob([typeof 
 document.querySelectorAll('[data-export]').forEach(b=>b.onclick=()=>{const k=b.dataset.export;const obj=k==='workflow'?state.workflow:k==='audit'?state.workflow?.audit:k==='footnotes'?state.workflow?.footnotes:state.annotated;if(!obj)return setStatus('Нема резултат за извоз.','warn');download('AI-Advokat-Consolidator-'+k+'.json',obj)});$('exportMd').onclick=()=>{if(!state.annotated)return setStatus('Нема annotated law за извоз.','warn');try{download('AI-Advokat-Consolidator.md',C.exportMarkdown(state.annotated),'text/markdown')}catch(e){setStatus('Markdown export error: '+e.message,'warn')}};
 })();
 </script>
+<script defer src="/consolidator/zoki-rc36/RC8_CORE.js?v=20261115-rc36"></script>
+<script defer src="/consolidator/zoki-rc36/bridge.js?v=20261115-r1"></script>
 </body></html>

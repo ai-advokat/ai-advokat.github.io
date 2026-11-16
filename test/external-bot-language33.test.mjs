@@ -59,13 +59,17 @@ test("language selector remains usable and readable in responsive R7 UI",()=>{
 });
 
 
-test("external 33-language selector translates the full interface through the same governed UI endpoint",()=>{
+test("external 33-language selector uses bounded verified translation and explicit full pass",()=>{
   assert.match(core,/const BOT_UI_TRANSLATION_CACHE_PREFIX=/);
   assert.match(core,/function collectBotUiUnits\(\)/);
   assert.match(core,/fetch\(base\+"\/api\/ui-translate"/);
   assert.match(core,/targetLanguage:code/);
   assert.match(core,/\["placeholder","title","aria-label"\]/);
-  assert.match(core,/new MutationObserver/);
+  assert.doesNotMatch(core,/new MutationObserver/);
+  assert.match(core,/BOT_UI_TRANSLATION_INITIAL_BATCHES=1/);
+  assert.match(core,/BOT_UI_TRANSLATION_EXPLICIT_BATCHES=6/);
+  assert.match(core,/const byId=new Map\(\)/);
+  assert.match(core,/botUiMoreButton/);
   assert.match(core,/scheduleProfessionalUiTranslation\(\)/);
   assert.match(core,/function conversationalLanguageSwitch\(text\)/);
   assert.match(core,/BOT_LANGUAGE_ALIASES/);

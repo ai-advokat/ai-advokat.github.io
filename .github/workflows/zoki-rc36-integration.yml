@@ -1,0 +1,26 @@
+name: Zoki RC36 Consolidator integrated browser QA
+on:
+  pull_request:
+    branches:
+      - feat/zoki-six-contract-conversation-entry-20261115
+permissions:
+  contents: read
+jobs:
+  owner-rc36-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Prepare Chromium controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          browser="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$browser"
+          echo "BROWSER_EXECUTABLE=$browser" >> "$GITHUB_ENV"
+      - name: Browser QA: existing Consolidator plus RC36 and both bots, synthetic only
+        run: node scripts/zoki-rc36-integrated-browser.mjs

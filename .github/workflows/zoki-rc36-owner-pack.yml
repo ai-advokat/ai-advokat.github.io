@@ -1,0 +1,71 @@
+name: Zoki RC36 Owner Offline Review Pack
+on:
+  pull_request:
+    branches:
+      - feat/zoki-six-contract-conversation-entry-20261115
+    paths:
+      - consolidator/index.html
+      - consolidator/zoki-rc36/**
+      - docs/ZOKI_CONSOLIDATOR_RC36_INTEGRATION_2026-11-15.md
+      - .github/workflows/zoki-rc36-owner-pack.yml
+permissions:
+  contents: read
+jobs:
+  package-owner-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Prepare real Chromium browser test
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          browser="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$browser"
+          echo "BROWSER_EXECUTABLE=$browser" >> "$GITHUB_ENV"
+      - name: Exercise existing v10.4 plus owner RC36 in real Chromium before packaging
+        run: node scripts/zoki-rc36-integrated-browser.mjs
+      - name: Prepare safe offline subset of functional AI Advokat consolidator
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p pack/consolidator/zoki-rc36 pack/assets/legal-formatter-v10.4 pack/docs
+          cp consolidator/index.html pack/consolidator/index.html
+          cp consolidator/zoki-rc36/RC8_CORE.js consolidator/zoki-rc36/bridge.js pack/consolidator/zoki-rc36/
+          cp assets/legal-formatter-v10.4/lfcore.js pack/assets/legal-formatter-v10.4/lfcore.js
+          cp docs/ZOKI_CONSOLIDATOR_RC36_INTEGRATION_2026-11-15.md pack/docs/
+          python3 - <<'PY'
+          from pathlib import Path
+          file=Path('pack/consolidator/index.html')
+          source=file.read_text(encoding='utf-8')
+          source=source.replace('src="/assets/legal-formatter-v10.4/lfcore.js"', 'src="../assets/legal-formatter-v10.4/lfcore.js"')
+          source=source.replace('src="/consolidator/zoki-rc36/RC8_CORE.js', 'src="./zoki-rc36/RC8_CORE.js')
+          source=source.replace('src="/consolidator/zoki-rc36/bridge.js', 'src="./zoki-rc36/bridge.js')
+          source=source.replace("fetch('/data/mk-current-law-watch-latest.json'", "fetch('../data/mk-current-law-watch-latest.json'")
+          file.write_text(source,encoding='utf-8')
+          Path('pack/START_ZOKI_RC36.html').write_text("""<!doctype html><html lang='mk'><meta charset='utf-8'><title>Зоки RC36 · Offline Review</title><style>body{font:17px/1.6 system-ui;background:#f5f6fa;color:#14314b;max-width:740px;margin:60px auto;padding:20px}a{display:inline-block;background:#183d63;color:white;padding:13px;border-radius:8px;text-decoration:none}p{line-height:1.6}</style><h1>AI Advokat · Консолидатор v10.4 + RC36</h1><p>Функционален приватен тест со синтетички податоци. Оригиналите и овластувањата остануваат под контрола на Зоки. HG11/HG35 OPEN · NO-GO.</p><a href='consolidator/index.html'>Отвори Консолидатор RC36</a><p>Offline HTML работи за TXT / рачни измени. PDF/DOCX серверски увоз и статус на мониторинг бараат активен веб-сервер; тие не се проверени овде. За локална SHA-256 проверка користете HTTPS/localhost ако прелистувачот не го дозволува file:// режимот.</p></html>""",encoding="utf-8")
+          Path('pack/README_ZOKI_RC36.txt').write_text("""ЗОКИ RC36 · OWNER REVIEW ONLY · 15.11.2026
+          1) Отпакувај го ZIP. Отвори START_ZOKI_RC36.html.
+          2) Кликни 'Отвори Консолидатор RC36', па 'Пробај фиктивен пример'.
+          3) Пробај exact замена, технички преглед и преземи JSON.
+          4) Повторно вчитај го JSON преку локален import.
+          5) За прелистувачки SHA/постапка со PDF, употреби localhost/HTTPS (Python: py -3 -m http.server 8765).
+          6) Никогаш не сметај техничка консолидација за службен пречистен закон.
+          Правен Human Gate: HG11/HG35 OPEN, ARTICLE 48 HOLD, PRODUCTION NO-GO.
+          Овој пакет нема клиентски податоци, изворни PDF-а или AI-моделски тајни.
+          """,encoding="utf-8")
+          PY
+          (cd pack && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
+          (cd pack && zip -q -r ../ZOKI_RC36_IN_AI_ADVOKAT_OWNER_REVIEW.zip .)
+          unzip -t ZOKI_RC36_IN_AI_ADVOKAT_OWNER_REVIEW.zip | tail -n 1
+      - name: Upload owner-safe review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZOKI_RC36_IN_AI_ADVOKAT_OWNER_REVIEW
+          path: ZOKI_RC36_IN_AI_ADVOKAT_OWNER_REVIEW.zip
+          retention-days: 14
+          if-no-files-found: error
