@@ -23,14 +23,14 @@ const headers={
   "Origin":"https://ai-advokat.github.io"
 };
 
-test("33-language translation uses bounded Workers GLM rather than costly GPT-OSS when M2M100 fails",async()=>{
+test("33-language translation only rescues empty M2M100 text with bounded Workers GLM",async()=>{
   const calls=[];
   const env={
     DB,RATE_LIMIT_SALT,
     AI:{
       run:async(model,input)=>{
         calls.push(model);
-        if(model==="@cf/meta/m2m100-1.2b") throw new Error("simulated m2m failure");
+        if(model==="@cf/meta/m2m100-1.2b") return {translated_text:""}; // only empty content is fallback-eligible
         assert.equal(model,"@cf/zai-org/glm-4.7-flash");
         return {response:"Legal sources"};
       }
