@@ -52,3 +52,12 @@ header{padding-left:12px}.brand{display:flex;align-items:center}.brand img{displ
 .bot-language-control select option{background:#fff;color:#071524}.bot-language-control select option:checked{background:#dfe8f1;color:#071524}
 @media(max-width:900px){.bot-language-control span{display:none}.bot-language-control select{max-width:130px}}
 @media(max-width:600px){.bot-language-control select{max-width:92px;padding-left:.5rem}}
+
+
+/* R22 opt-in proactive follow-ups for the external AI Advokat conversation. */
+.ai-proactive-next-turns{margin-top:14px;padding:12px;border:1px solid #d7c18f;border-radius:13px;background:#fffaf0;color:#17212b;max-width:100%}
+.ai-proactive-question{font-size:.92rem;font-weight:700;line-height:1.5;margin:0 0 10px}
+.ai-proactive-options{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 8px}
+.ai-proactive-choice{appearance:none;border:1px solid #a58a55;border-radius:999px;padding:7px 11px;background:#fff;color:#17212b;font:inherit;font-size:.83rem;font-weight:650;line-height:1.4;cursor:pointer;white-space:normal;max-width:100%;text-align:left}
+.ai-proactive-choice:hover,.ai-proactive-choice:focus-visible{outline:2px solid #a58a55;outline-offset:2px;background:#f8e9c8}
+.ai-proactive-next-turns>small{display:block;font-size:.72rem;line-height:1.4;color:#566270}

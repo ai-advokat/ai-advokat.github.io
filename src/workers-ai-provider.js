@@ -30,7 +30,7 @@ export function workersAITimeoutFallbackMs(primaryTimeoutMs){
 export function classifyWorkersAIProviderFailure(error){
   const detail=String(error?.message||error||"").slice(0,500);
   const lower=detail.toLowerCase();
-  if(/\b4006\b/.test(detail) && /daily free allocation|10,?000 neurons|upgrade to cloudflare.*paid/i.test(detail)){
+  if(/\b(?:3036|4006)\b/.test(detail) && /daily free allocation|10,?000 neurons|upgrade to cloudflare.*paid/i.test(detail)){
     return {
       error:"workers_ai_daily_capacity_exhausted",
       detail,
