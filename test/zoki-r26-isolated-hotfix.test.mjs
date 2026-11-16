@@ -52,3 +52,31 @@ test("OpenAI UI fallback requires explicit environment-level spending consent",(
  assert.match(src,/ui_translation_paid_fallback_not_authorised/);
  assert.match(src,/@cf\/zai-org\/glm-4\.7-flash/);
 });
+
+test("backend rejects missing, oversized and duplicate translation IDs rather than shifting legal text",async()=>{
+  const inputs=[
+    [{id:"1",text:"Ставка"},{"id":"1","text":"Друга ставка"}],
+    [{id:"1",text:""}],
+    [{id:"1",text:"А".repeat(1201)}]
+  ];
+  for(const items of inputs){
+    let modelCalls=0;
+    const env={AI:{run:async()=>{modelCalls++;return {translated_text:"INVALID"};}}};
+    const response=await worker.fetch(new Request(base+"/api/ui-translate",{
+      method:"POST",headers,body:JSON.stringify({targetLanguage:"en",items})
+    }),env,{});
+    const data=await response.json();
+    assert.equal(response.status,422);
+    assert.equal(data.error,"ui_translation_invalid_item_or_duplicate_id");
+    assert.equal(modelCalls,0);
+  }
+});
+test("external UI translation is capped and validates row IDs with visible errors",()=>{
+  const external=readFileSync("assets/standalone-bot.js","utf8");
+  assert.match(external,/BOT_UI_TRANSLATION_INITIAL_BATCHES=1/);
+  assert.match(external,/BOT_UI_TRANSLATION_EXPLICIT_BATCHES=6/);
+  assert.match(external,/BOT_UI_TRANSLATION_BATCH_ITEMS=12/);
+  assert.match(external,/const byId=new Map\(\)/);
+  assert.match(external,/botTranslationStatus/);
+  assert.doesNotMatch(external,/new MutationObserver/);
+});
