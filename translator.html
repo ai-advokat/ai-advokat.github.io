@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>AI Advokat · Преведувач · R26 Review</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#172b43;background:#f6f7f9}*{box-sizing:border-box}body{margin:0}
+header{background:#102b48;color:white;padding:17px 0;border-bottom:4px solid #cba95d}
+header nav,main{max-width:880px;padding:0 22px;margin:auto}header a{color:#e7d29e;margin-right:16px}
+main{padding-top:24px;padding-bottom:48px}h1{font-size:clamp(25px,4vw,38px);margin:8px 0}
+p{line-height:1.6}.sub,.meta{color:#58697b}.meta{font-size:12px}
+.card{background:#fff;border:1px solid #dce3ea;border-radius:13px;padding:19px;margin:15px 0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+label{display:block;font-weight:750;font-size:14px;margin-bottom:5px}
+textarea,select{font:inherit;width:100%;border:1px solid #9cb1c4;border-radius:9px;padding:10px;background:#fff;color:#172b43}
+textarea{min-height:150px;resize:vertical;line-height:1.55}#translated{background:#f4f8fb}
+button{border:1px solid #244e74;background:#173b5c;color:white;padding:11px 17px;border-radius:9px;font-weight:750;cursor:pointer}
+button.secondary{background:#fff;color:#173b5c}button:disabled{opacity:.6;cursor:not-allowed}
+#status{padding:12px;background:#eef2f7;border-radius:9px;min-height:52px;line-height:1.45}
+#status[data-type="error"]{background:#fff5ed;color:#8c3e18}#status[data-type="success"]{background:#eaf5ee;color:#246247}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.warn{border-left:4px solid #be873a;background:#fff8ed;padding:10px 14px;border-radius:6px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:14px}textarea{min-height:125px}}
+</style>
+</head>
+<body>
+<header><nav><a href="/">AI Advokat</a><a href="/bot/">AI-бот</a><a href="/consolidator/">Консолидатор</a><a href="/ai-contract.html">AI Contract</a></nav></header>
+<main>
+<p class="meta">R26 · КОНТРОЛИРАН ПРЕВОД · БЕЗ ПЛАТЕН PROVIDER</p>
+<h1>Преведувач · 33 јазици</h1>
+<p class="sub">За краток јавен текст. Внесете текст, изберете јазик и притиснете „Преведи“. Преводот користи Workers AI само по ваш избор; достапноста зависи од Cloudflare капацитетот.</p>
+<p class="warn"><strong>Приватност:</strong> не внесувајте матични броеви, доверливи договори, адвокатска тајна, адреси на клиенти или документи од активни предмети. Текстот се испраќа до AI-провајдер само со клик на „Преведи“. Преводот не е судски или овластен превод; за правна употреба потребна е човечка проверка.</p>
+<section class="card"><form id="translatorForm">
+<div class="grid">
+<div><label for="sourceLanguage">Изворен јазик</label><select id="sourceLanguage"><option value="mk">Македонски (МК)</option><option value="en">English (EN)</option></select></div>
+<div><label for="targetLanguage">Јазик за превод</label><select id="targetLanguage"></select></div>
+</div>
+<p><label for="sourceText">Текст за преведување <span id="counter" class="meta">0/800</span></label><textarea id="sourceText" maxlength="800" spellcheck="true" placeholder="Напишете краток јавен текст…" required></textarea></p>
+<div class="actions"><button id="translateButton" type="submit">Преведи</button><button class="secondary" type="button" id="clearButton">Исчисти</button><span class="meta">Нема автоматско испраќање или платена резервна патека.</span></div>
+</form></section>
+<section class="card"><h2>Резултат</h2><p id="status" role="status" aria-live="polite">Подготвено. AI обработката не е започната.</p>
+<label for="translated">Преведен текст</label><textarea id="translated" readonly aria-label="Преведен текст"></textarea>
+<div class="actions"><button id="copyResult" type="button" class="secondary" disabled>Копирај</button><button id="saveResult" type="button" class="secondary" disabled>TXT извоз</button></div>
+<p id="providerMeta" class="meta">Провајдер: не е повикан.</p></section>
+<p class="meta">Извор: македонски или англиски; 33 целни јазици. Достапноста зависи од соодветниот Cloudflare модел. Не преведува скенирани PDF-документи; Human Gate останува задолжителен.</p>
+</main>
+<script defer src="/assets/zoki-translator-direct-r26.js?v=20261116-r1"></script>
+</body></html>
