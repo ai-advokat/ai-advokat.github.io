@@ -1,0 +1,39 @@
+name: Zoki R26 isolated main hotfix independent Chromium gate
+on:
+  pull_request:
+    branches:
+      - feat/zoki-six-contract-conversation-entry-20261115
+    paths:
+      - .github/workflows/zoki-r26-isolated-main-branch-crosscheck.yml
+permissions:
+  contents: read
+jobs:
+  isolated-main-hotfix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 6e4b57e1ddf1d5307cda63fb8dc5e1547ffd6288
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify exact R26 hotfix SHA on PR 684 and its bounded runtime tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "6e4b57e1ddf1d5307cda63fb8dc5e1547ffd6288"
+          node --no-warnings --test test/ui-translation-runtime-r7.test.mjs test/zoki-r26-isolated-hotfix.test.mjs
+      - name: Full repository test contract on hotfix source
+        run: npm test
+      - name: Install Chromium controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          chrome="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$chrome"
+          echo "BROWSER_EXECUTABLE=$chrome" >> "$GITHUB_ENV"
+      - name: Real Chromium on HOTFIX branch (mock provider and no billing)
+        run: node scripts/zoki-r26-translator-browser.mjs
