@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 9e7433543bdc194739f001900859421e05a3782d
+          ref: ec780d39eba0311467a5af9578e70dd21b12ded7
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -23,7 +23,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "9e7433543bdc194739f001900859421e05a3782d"
+          test "$(git rev-parse HEAD)" = "ec780d39eba0311467a5af9578e70dd21b12ded7"
           node --no-warnings --test test/ui-translation-runtime-r7.test.mjs test/zoki-r26-isolated-hotfix.test.mjs
       - name: Full repository test contract on hotfix source
         run: npm test
