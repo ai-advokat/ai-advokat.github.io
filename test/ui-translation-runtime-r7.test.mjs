@@ -239,7 +239,7 @@ test("M2M100 failure falls back only the failed item instead of the whole batch"
         calls.push({model,input});
         if(model==="@cf/meta/m2m100-1.2b"){
           const text=String(input.text||"");
-          if(text.includes("Втора")) throw new Error("simulated_single_item_m2m_failure");
+          if(text.includes("Втора")) return {translated_text:""}; // only empty text allows fallback
           return {translated_text:"SQ:"+text};
         }
         assert.equal(model,"@cf/zai-org/glm-4.7-flash");
@@ -271,3 +271,61 @@ test("M2M100 failure falls back only the failed item instead of the whole batch"
   assert.equal(calls.filter(x=>x.model==="@cf/zai-org/glm-4.7-flash").length,1);
 });
 
+test("quota exhaustion stops translation fanout and forbids unapproved paid fallback",async()=>{
+  const originalFetch=globalThis.fetch;
+  let upstreamCalls=0;
+  let paidCalls=0;
+  try{
+    globalThis.fetch=async()=>{paidCalls++;throw new Error("unapproved paid fallback");};
+    const env={
+      DB,RATE_LIMIT_SALT,
+      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
+      // UI_TRANSLATION_ENABLE_PAID_FALLBACK deliberately absent.
+      AI:{run:async()=>{
+        upstreamCalls++;
+        throw new Error("3036 daily free allocation of 10,000 Neurons has been used");
+      }}
+    };
+    const items=Array.from({length:24},(_,i)=>({id:String(i),text:"Тестен наслов за превод "+i}));
+    const response=await worker.fetch(new Request(base+"/api/ui-translate",{
+      method:"POST",headers:commonHeaders,
+      body:JSON.stringify({targetLanguage:"sq",items})
+    }),env,{});
+    assert.equal(response.status,503);
+    const data=await response.json();
+    assert.equal(data.error,"ui_translation_provider_unavailable");
+    assert.equal(data.fallbackError,"ui_translation_paid_fallback_not_authorised");
+    assert.ok(upstreamCalls>=1&&upstreamCalls<=2,"quota fault must not fan out across 24 items");
+    assert.equal(paidCalls,0,"OPENAI_API_KEY presence alone is not spending consent");
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+
+test("temporary 3040 capacity does not retry translator through expensive GPT-OSS or GLM",async()=>{
+  let primaryCalls=0;
+  let secondaryCalls=0;
+  const env={
+    DB,RATE_LIMIT_SALT,
+    AI:{run:async model=>{
+      if(model==="@cf/meta/m2m100-1.2b"){
+        primaryCalls++;
+        throw new Error("3040 Capacity temporarily exceeded, please try again");
+      }
+      secondaryCalls++;
+      throw new Error("UNEXPECTED FALLBACK");
+    }}
+  };
+  const response=await worker.fetch(new Request(base+"/api/ui-translate",{
+    method:"POST",headers:commonHeaders,
+    body:JSON.stringify({targetLanguage:"sq",items:[{id:"r25",text:"Добар ден"}]})
+  }),env,{});
+  const data=await response.json();
+  assert.equal(response.status,503);
+  assert.equal(data.error,"ui_translation_provider_unavailable");
+  assert.equal(data.detail,"ui_translation_workers_ai_model_busy");
+  assert.equal(primaryCalls,1);
+  assert.equal(secondaryCalls,0,"3040 temporary capacity must not trigger expensive second model");
+  assert.equal(data.fallbackError,"ui_translation_paid_fallback_not_authorised");
+});
