@@ -11765,7 +11765,9 @@ async function handleUiTranslation(request,env){
   const totalChars=items.reduce((n,x)=>n+x.text.length,0);
   if(totalChars>12000) return json(request,{ok:false,error:"translation_payload_too_large"},413);
 
-  if(target==="mk"){
+  // R26: English input with target MK needs a genuine M2M100 translation.
+  // Earlier code returned English unchanged for every targetLanguage=mk.
+  if(target==="mk" && items.every(item=>uiTranslationSourceLanguage(item.text)==="mk")){
     return json(request,{
       ok:true,
       targetLanguage:target,
