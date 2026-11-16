@@ -124,7 +124,7 @@ test("OpenAI UI fallback reconstructs protected legal tokens deterministically",
     const env={
       DB,
       RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",
+      UI_TRANSLATION_ENABLE_PAID_FALLBACK:"true",OPENAI_API_KEY:"test-key",
       OPENAI_MODEL:"gpt-6.1-sol",
       AI:{run:async()=>{throw new Error("force_workers_failure");}}
     };
@@ -168,7 +168,7 @@ test("OpenAI fallback preserves article/case identifiers and boundary whitespace
     };
     const env={
       DB,RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
+      UI_TRANSLATION_ENABLE_PAID_FALLBACK:"true",OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
       AI:{run:async()=>{throw new Error("force_workers_failure");}}
     };
     const req=new Request(base+"/api/ui-translate",{
@@ -211,7 +211,7 @@ test("OpenAI fallback retries without structured format on 400 schema rejection"
     };
     const env={
       DB,RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
+      UI_TRANSLATION_ENABLE_PAID_FALLBACK:"true",OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
       AI:{run:async()=>{throw new Error("force_workers_failure");}}
     };
     const req=new Request(base+"/api/ui-translate",{
