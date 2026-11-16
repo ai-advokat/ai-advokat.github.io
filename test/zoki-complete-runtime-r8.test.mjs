@@ -23,7 +23,7 @@ const headers={
   "Origin":"https://ai-advokat.github.io"
 };
 
-test("33-language translation falls back to bounded GPT-OSS when M2M100 fails",async()=>{
+test("33-language translation uses bounded Workers GLM rather than costly GPT-OSS when M2M100 fails",async()=>{
   const calls=[];
   const env={
     DB,RATE_LIMIT_SALT,
@@ -31,7 +31,7 @@ test("33-language translation falls back to bounded GPT-OSS when M2M100 fails",a
       run:async(model,input)=>{
         calls.push(model);
         if(model==="@cf/meta/m2m100-1.2b") throw new Error("simulated m2m failure");
-        assert.equal(model,"@cf/openai/gpt-oss-120b");
+        assert.equal(model,"@cf/zai-org/glm-4.7-flash");
         return {response:"Legal sources"};
       }
     }
@@ -47,7 +47,7 @@ test("33-language translation falls back to bounded GPT-OSS when M2M100 fails",a
   assert.equal(data.provider,"m2m100_workers_ai_item_fallback");
   assert.equal(data.translations[0].text,"Legal sources");
   assert.ok(calls.includes("@cf/meta/m2m100-1.2b"));
-  assert.ok(calls.includes("@cf/openai/gpt-oss-120b"));
+  assert.ok(calls.includes("@cf/zai-org/glm-4.7-flash"));
 });
 
 test("consolidator converts PDF transiently without storage",async()=>{
