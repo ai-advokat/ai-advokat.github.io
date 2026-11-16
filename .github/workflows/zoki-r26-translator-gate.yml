@@ -1,0 +1,59 @@
+name: Zoki R26 translator real browser and live provider gate
+on:
+  pull_request:
+    branches:
+      - feat/zoki-six-contract-conversation-entry-20261115
+    paths:
+      - translator.html
+      - assets/zoki-translator-direct-r26.js
+      - assets/standalone-bot.js
+      - index.html
+      - bot/index.html
+      - src/index.js
+      - scripts/zoki-r26-translator-browser.mjs
+      - scripts/zoki-r26-one-call-live-probe.mjs
+      - test/zoki-translator-r26-regression.test.mjs
+      - .github/workflows/zoki-r26-translator-gate.yml
+permissions:
+  contents: read
+jobs:
+  source-and-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Translation backend and regression tests
+        run: node --no-warnings --test test/ui-translation-runtime-r7.test.mjs test/zoki-translator-r26-regression.test.mjs
+      - name: Install Chromium controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          browser="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$browser"
+          echo "BROWSER_EXECUTABLE=$browser" >> "$GITHUB_ENV"
+      - name: Real Chromium UX with controlled mock provider
+        run: node scripts/zoki-r26-translator-browser.mjs
+  live-cloudflare-signal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Exactly one MK to EN request to currently deployed Cloudflare Worker
+        id: live
+        continue-on-error: true
+        run: node scripts/zoki-r26-one-call-live-probe.mjs
+      - name: Preserve truthful live result even on 503 or timeout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZOKI_R26_LIVE_CLOUDFLARE_EVIDENCE_NOT_PRODUCTION_CERTIFICATE
+          path: zoki-r26-live-provider-evidence.json
+          retention-days: 7
+          if-no-files-found: warn
