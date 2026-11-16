@@ -1,23 +1,36 @@
 import fs from "node:fs";
-const url=process.env.ZOKI_TRANSLATOR_LIVE_URL||"https://ai-advokat-github-io.aiadvokat16.workers.dev/api/ui-translate";
-const report={type:"ZOKI_R26_ONE_CALL_LIVE_TRANSLATION",target:"en",source:"mk",live:false,
-  mode:"LIVE_DEPLOYED_CLOUDFLARE_NOT_PR_PREVIEW",provider:null,httpStatus:null,success:false,error:null,elapsedMs:null};
-const started=Date.now();
-try{
- const res=await fetch(url,{method:"POST",headers:{"content-type":"application/json","Origin":"https://ai-advokat.github.io"},
-   body:JSON.stringify({targetLanguage:"en",items:[{id:"live-0",text:"Добро утро"}]}),
-   signal:AbortSignal.timeout(35000)});
- report.httpStatus=res.status;
- let body=null;try{body=await res.json();}catch{}
- report.provider=String(body?.provider||"");
- report.model=String(body?.translationModel||"");
- report.error=String(body?.error||body?.detail||"").slice(0,140)||null;
- const output=Array.isArray(body?.translations)?body.translations[0]:null;
- report.success=res.ok&&body?.ok===true&&body.translations?.length===1&&output?.id==="live-0"&&
-   typeof output?.text==="string"&&output.text.trim()!==""&&output.text.trim()!=="Добро утро";
- report.live=true;
-}catch(error){report.error=String(error?.name||"network_error");}
-report.elapsedMs=Date.now()-started;
+const endpoint=process.env.ZOKI_TRANSLATOR_LIVE_URL||"https://ai-advokat-github-io.aiadvokat16.workers.dev/api/ui-translate";
+const report={
+  type:"ZOKI_R26_BIDIRECTIONAL_LIVE_TRANSLATION",
+  mode:"LIVE_DEPLOYED_CLOUDFLARE_NOT_PR_PREVIEW",
+  checks:[],success:false,dateUtc:new Date().toISOString()
+};
+async function one(targetLanguage,input,sourceLanguage){
+  const started=Date.now();
+  const row={targetLanguage,sourceLanguage,httpStatus:null,provider:null,model:null,success:false,error:null,elapsedMs:null};
+  try{
+    const res=await fetch(endpoint,{method:"POST",
+      headers:{"content-type":"application/json","Origin":"https://ai-advokat.github.io"},
+      body:JSON.stringify({targetLanguage,items:[{id:"live-0",text:input}]}),
+      signal:AbortSignal.timeout(35000)
+    });
+    row.httpStatus=res.status;
+    let body=null;try{body=await res.json();}catch{}
+    row.provider=String(body?.provider||"");
+    row.model=String(body?.translationModel||"");
+    row.error=String(body?.error||body?.detail||"").slice(0,130)||null;
+    const result=Array.isArray(body?.translations)?body.translations[0]:null;
+    row.success=res.ok&&body?.ok===true&&body.translations?.length===1
+      &&result?.id==="live-0"&&typeof result?.text==="string"
+      &&result.text.trim()!==""&&result.text.trim()!==input;
+    if(!row.success&&!row.error)row.error="untranslated_or_invalid_response";
+  }catch(error){row.error=String(error?.name||"network_error");}
+  row.elapsedMs=Date.now()-started;
+  report.checks.push(row);
+}
+await one("en","Добро утро","mk");
+await one("mk","Good morning","en");
+report.success=report.checks.length===2&&report.checks.every(check=>check.success);
 fs.writeFileSync("zoki-r26-live-provider-evidence.json",JSON.stringify(report,null,2)+"\n");
 console.log("ZOKI_R26_TRANSLATOR_LIVE_EVIDENCE",JSON.stringify(report));
-if(!report.success)process.exitCode=1; // CI must not misrepresent a production provider failure as PASS
+if(!report.success)process.exitCode=1;
