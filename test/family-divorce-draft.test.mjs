@@ -36,6 +36,16 @@ test("family divorce draft is complete, Macedonian and source-first",()=>{
   assert.equal(FAMILY_DIVORCE_DRAFT_VERSION,"AI_ADVOCAT_FAMILY_DIVORCE_DRAFT_V1");
 });
 
+test("family divorce document headings remain consecutively numbered",()=>{
+  const simple=formatFamilyDivorceDraft("Направи тужба за развод со измислени имиња.");
+  assert.match(simple,/V\. ПРОЦЕСНА ЗАБЕЛЕШКА/);
+  assert.match(simple,/VI\. HUMAN GATE ПРЕД ПОДНЕСУВАЊЕ/);
+  assert.doesNotMatch(simple,/VII\. HUMAN GATE/);
+  const cited=formatFamilyDivorceDraft("Направи тужба за развод со измислени имиња и судска пракса.");
+  assert.match(cited,/VI\. СУДСКА ПРАКСА/);
+  assert.match(cited,/VII\. HUMAN GATE/);
+});
+
 test("family divorce source metadata is explicit and bounded",()=>{
   const sources=familyDivorceLegalSources();
   assert.equal(sources.length,3);

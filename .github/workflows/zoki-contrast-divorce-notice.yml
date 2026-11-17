@@ -1,0 +1,67 @@
+name: Zoki external contrast and family-notice exact acceptance
+on:
+  pull_request:
+    paths:
+      - 'src/family-prelitigation-notice.js'
+      - 'src/family-divorce-draft.js'
+      - 'src/index.js'
+      - 'assets/zoki-conversation-contrast-r1.css'
+      - 'assets/ai-advokat-chat.js'
+      - 'bot/index.html'
+      - 'test/zoki-divorce-notice-contrast.test.mjs'
+      - 'scripts/zoki-contrast-divorce-notice-browser.mjs'
+      - '.github/workflows/zoki-contrast-divorce-notice.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-request-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax and fixture source compliance
+        run: |
+          node --check src/family-prelitigation-notice.js
+          node --check src/family-divorce-draft.js
+          node --check src/index.js
+          node --check assets/ai-advokat-chat.js
+      - name: Exact Zoran prompt, no-provider Worker and legal document distinction
+        run: node --no-warnings --test test/zoki-divorce-notice-contrast.test.mjs test/family-divorce-draft.test.mjs
+      - name: Source-only evidence boundary
+        if: always()
+        run: |
+          {
+            echo '### Notice vs. divorce suit'
+            echo 'Actual Worker request tested without OpenAI/Cloudflare provider calls.'
+            echo 'Current-law correctness still requires official source recheck and Human Gate.'
+          } >> "$GITHUB_STEP_SUMMARY"
+  contrast-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated Chromium controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          chrome="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$chrome"
+          echo "BROWSER_EXECUTABLE=$chrome" >> "$GITHUB_ENV"
+      - name: Browser light/dark contrast and exact letter, synthetic provider
+        run: node scripts/zoki-contrast-divorce-notice-browser.mjs
+      - name: UI verification boundary
+        if: always()
+        run: |
+          {
+            echo '### R28 Chromium visual verification'
+            echo 'Browser UI tested with mocked provider data; no production deployment and no real case data.'
+            echo 'User-specific real-browser acceptance and legal Human Gate remain required.'
+          } >> "$GITHUB_STEP_SUMMARY"
