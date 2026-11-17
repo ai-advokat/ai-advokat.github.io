@@ -17,6 +17,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: '[HG2-C LOCKED] staging parity requires explicit gated release'
+        shell: bash
+        run: |
+          echo 'HG2-C HOLD: staging parity is disabled until the staging release safety gate is formally lifted.'
+          echo 'No deployment, remote read or model request was performed.'
+          exit 2
       - name: Verify exact staging deployment static artifacts (GET only)
         env:
           STAGING_BASE_URL: ${{ inputs.staging_base_url }}
