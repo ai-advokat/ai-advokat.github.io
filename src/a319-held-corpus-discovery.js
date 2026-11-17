@@ -1,7 +1,7 @@
 // A3.19 governed source-discovery candidate adapted from Zoki's 2026-11-16
 // package. No article text, source PDF or original corpus is bundled here.
 // OFFLINE/STAGING ONLY until Human Gate; never issue new legal authority.
-export const A319_DISCOVERY_GATE_VERSION = 'A319_DISCOVERY_PRESERVE_REVIEWED_SOURCES_RC1';
+export const A319_DISCOVERY_GATE_VERSION = 'A319_DISCOVERY_EXACT_ARTICLE_REFS_RC2';
 const HOLD = 'LEGAL_HOLD';
 const SHA = /^[a-f0-9]{64}$/i;
 const ARTICLE_IDS = [...Array.from({length: 50}, (_, i) => String(i + 1)), '34-а', '34-б', '34-в'];
@@ -41,19 +41,40 @@ export async function validateA319Corpus(data) {
   return {ok:errors.length === 0, count:data.articles.length, errors:[...new Set(errors)]};
 }
 
+// Extract the complete legal article token: no prefix matching (101 != 10,
+// 34-г != 34), no unreviewed letter variants and no partial ranges.
+// Any unsupported numeric article mentioned in a query fails closed for the
+// entire discovery lookup, including if a different valid article is present.
+function requestedA319Ids(query) {
+  const marker = /(?:^|[^\p{L}\p{N}])(?:член(?:от|ови)?|чл\.?)\s*[0-9]/giu;
+  const full = /(?:^|[^\p{L}\p{N}])(?:член(?:от|ови)?|чл\.?)\s*([0-9]+(?:\s*[-‐‑‒–—−]\s*[\p{L}\p{N}]+|[\p{L}]+)?)(?![\p{L}\p{N}‐‑‒–—−\-/]|[.]\d)/giu;
+  const markers = [...query.matchAll(marker)];
+  if (!markers.length) return {explicit:false, ids:null};
+  const refs = [...query.matchAll(full)];
+  if (refs.length !== markers.length) return {explicit:true, ids:null};
+  const ids = new Set();
+  for (const match of refs) {
+    const token = match[1].normalize('NFC').replace(/[‐‑‒–—−]/gu, '-').replace(/\s+/gu, '').toLocaleLowerCase('mk');
+    const parts = token.match(/^([1-9]\d*)(?:-?([\p{L}]))?$/u);
+    if (!parts) return {explicit:true, ids:null};
+    const id = parts[1] + (parts[2] ? '-' + parts[2] : '');
+    if (!ARTICLE_IDS.includes(id)) return {explicit:true, ids:null};
+    ids.add(id);
+  }
+  return {explicit:true, ids};
+}
+
 export function retrieveA319(data, query, {limit=5}={}) {
   if (!Array.isArray(data?.articles)) return [];
   const q = clean(query).slice(0, 300);
   if (!q) return [];
-  const numbered = q.match(/(?:член(?:от|ови)?\s*)(34[-‐‑–—]?\s*[абв]|[1-9]\d?)/iu);
-  const requested = numbered?.[1].replace(/[‐‑–—]/gu,'-').replace(/\s+/gu,'').toLocaleLowerCase('mk') ?? null;
-  // Never turn an explicit unavailable article number into an unrelated text match.
-  if (requested && !ARTICLE_IDS.includes(requested)) return [];
+  const requested = requestedA319Ids(q);
+  if (requested.explicit && !requested.ids) return [];
   const terms = norm(q).split(/[^\p{L}\p{N}]+/u).filter(t => t.length >= 4).slice(0, 12);
   return data.articles.map(article => {
-    if (requested && article.article_id !== requested) return null;
+    if (requested.explicit && !requested.ids.has(article.article_id)) return null;
     const text = norm(article.text);
-    const score = (requested ? 100 : 0) + terms.filter(t => text.includes(t)).length;
+    const score = (requested.explicit ? 100 : 0) + terms.filter(t => text.includes(t)).length;
     return score ? {article,score} : null;
   }).filter(Boolean)
     .sort((a,b) => b.score - a.score || a.article.article_id.localeCompare(b.article.article_id, 'mk'))
