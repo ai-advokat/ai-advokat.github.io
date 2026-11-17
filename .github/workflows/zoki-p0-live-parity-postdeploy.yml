@@ -1,0 +1,25 @@
+name: Zoki P0 public deployment parity (manual after approved release)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-static-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public Worker HTML and CSS marker, no AI calls
+        run: node scripts/zoki-p0-public-deployment-readonly.mjs
+      - name: Report proof boundary
+        if: always()
+        run: |
+          {
+            echo '### P0 Live public parity'
+            echo 'This job checks only the public bot HTML and CSS file, without any AI/provider calls.'
+            echo 'A successful result does NOT prove legal runtime correctness, permissions or real end-user browser accessibility.'
+            echo 'Keep legal and production Human Gate separate.'
+          } >> "$GITHUB_STEP_SUMMARY"
