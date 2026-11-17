@@ -7,6 +7,7 @@ on:
       - 'src/historical-judicial-research-recovery.js'
       - 'src/judicial-discovery-source-registry.js'
       - 'test/historical-judicial-research-recovery.test.mjs'
+      - 'scripts/three-bot-judicial-research-browser.mjs'
       - '.github/workflows/historical-judicial-research-recovery.yml'
   workflow_dispatch:
 permissions:
@@ -25,6 +26,7 @@ jobs:
           set -euo pipefail
           node --check src/index.js
           node --check src/historical-judicial-research-recovery.js
+          node --check scripts/three-bot-judicial-research-browser.mjs
           node --no-warnings --test test/historical-judicial-research-recovery.test.mjs
       - name: Scope of evidence
         if: always()
@@ -32,3 +34,26 @@ jobs:
           echo 'This verifies a bounded, non-generative source-registry research outline after provider outage.' >> "$GITHUB_STEP_SUMMARY"
           echo 'It does not verify full manuscript writing, complete 1991-2026 court coverage or any unreviewed judicial holding.' >> "$GITHUB_STEP_SUMMARY"
           echo 'No live AI calls, secrets, payment or deployment.' >> "$GITHUB_STEP_SUMMARY"
+
+  three-entrypoints-chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          chrome="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$chrome"
+          echo "BROWSER_EXECUTABLE=$chrome" >> "$GITHUB_ENV"
+      - name: Main, external and Academy share the research-only provider outage path
+        run: node scripts/three-bot-judicial-research-browser.mjs
+      - name: Evidence boundary
+        if: always()
+        run: |
+          echo 'Chromium receives a synthetic API response produced by the real deterministic recovery function. It tests UI compatibility and route selection, not real model availability or production quota.' >> "$GITHUB_STEP_SUMMARY"
