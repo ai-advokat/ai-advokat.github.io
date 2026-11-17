@@ -1,0 +1,34 @@
+name: Historical judicial research fail-closed recovery QA
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/index.js'
+      - 'src/historical-judicial-research-recovery.js'
+      - 'src/judicial-discovery-source-registry.js'
+      - 'test/historical-judicial-research-recovery.test.mjs'
+      - '.github/workflows/historical-judicial-research-recovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-indexed-outage-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify syntax and offline deterministic governance
+        run: |
+          set -euo pipefail
+          node --check src/index.js
+          node --check src/historical-judicial-research-recovery.js
+          node --no-warnings --test test/historical-judicial-research-recovery.test.mjs
+      - name: Scope of evidence
+        if: always()
+        run: |
+          echo 'This verifies a bounded, non-generative source-registry research outline after provider outage.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'It does not verify full manuscript writing, complete 1991-2026 court coverage or any unreviewed judicial holding.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No live AI calls, secrets, payment or deployment.' >> "$GITHUB_STEP_SUMMARY"
