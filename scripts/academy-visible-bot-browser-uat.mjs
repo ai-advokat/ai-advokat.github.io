@@ -39,8 +39,8 @@ async function testSize(origin,width,height){
  await page.locator("#academyChatDialog[open]").waitFor({timeout:10000});
  await page.locator("#academyChatDialog iframe").waitFor({state:"attached",timeout:10000});
  assert.equal(await page.locator("#academyChatDialog iframe").getAttribute("src"),"https://ai-advokat-github-io.aiadvokat16.workers.dev/bot/");
- await page.waitForFunction(()=>document.querySelector("#academyChatDialog iframe")?.contentWindow?.document?.body?.textContent?.includes("СИНТЕТИЧКИ"),null,{timeout:10000}).catch(()=>{});
- // Cross-origin mock can be isolated; the frame attachment and safe fallback are authoritative.
+ assert.match(await page.frameLocator("#academyChatDialog iframe").locator("body").innerText(),/СИНТЕТИЧКИ ТЕСТЕН BOT IFRAME/);
+ // Browser executes the embedded external-origin frame with a synthetic response.
  assert.equal(requests,1);
  assert.equal(await btn.getAttribute("aria-expanded"),"true");
  await page.locator("#academyChatClose").click();
