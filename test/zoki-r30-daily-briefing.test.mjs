@@ -126,13 +126,15 @@ test("R30 exact external Worker request returns official-source response without
   }};
   try{
     const req=new Request("https://ai-advokat-github-io.aiadvokat16.workers.dev/api/bot",{
-      method:"POST",headers:{"content-type":"application/json"},
+      method:"POST",headers:{"content-type":"application/json","CF-Connecting-IP":"203.0.113.25"},
       body:JSON.stringify({q:exactPrompt,outputLanguage:"mk",history:[],mode:"auto"})
     });
     const res=await worker.fetch(req,{
       EXTERNAL_BOT_TRAINING_OPEN:"true",
       EXTERNAL_BOT_TRAINING_MONTHLY_QUOTA:"100",
       FREE_CHAT_PROVIDER:"workers_ai",
+      RATE_LIMIT_SALT:"r30-fixture-only-32-plus-digits-and-letter-2026",
+      DB:{prepare(){return {bind(){return {run:async()=>({results:[{request_count:1}]})}}}}},
       AI:{run(){providerCalls++;throw Error("model must NOT be invoked")}}
     },{});
     const data=await res.json();
