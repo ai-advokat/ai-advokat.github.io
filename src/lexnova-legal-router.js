@@ -35,8 +35,8 @@ function decideIntent(q){
   if(/(?:брифинг|правн[иае]* (?:вес[ти]|новост|вест[иа]))/u.test(q)&&/(?:дневен|дневн|утринск|денес)/u.test(q))return "daily_briefing";
   if(/(?:судск[аи].*(?:пракс|одлук|пресуд)|пресуд[аи].*суд|case law|hudoc|есчп)/u.test(q))return "case_law";
   if(/(?:консолид|пречистен текст|интегрирај измен[аи]|измени и дополнувања)/u.test(q))return "consolidator";
-  if(/(?:договор|анекс|спогодб|закуп|клаузул|contract)/u.test(q))return "contract";
   if(/(?:спореди|редактирај|коригирај|провери документ|следење на измен|redline|tracked changes)/u.test(q))return "document_review";
+  if(/(?:договор|анекс|спогодб|закуп|клаузул|contract)/u.test(q))return "contract";
   if(/(?:важечк[иао]|последн[иао] редакциј|кога стапува во сила|временска важност|пречистен закон)/u.test(q))return "law_version";
   if(/(?:закон|член|правилник|службен весник|правен извор|ldbis)/u.test(q))return "legal_sources";
   if(/(?:предвид|веројатност за успех|ризик од спор|сценари|исход на спор)/u.test(q))return "risk_analysis";
