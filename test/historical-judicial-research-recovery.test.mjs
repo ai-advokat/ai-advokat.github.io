@@ -5,7 +5,8 @@ import {
   historicalJudicialResearchRecovery,
   isHistoricalJudicialPaperRequest,
   isTransientHistoricalResearchProviderFailure,
-  HISTORICAL_JUDICIAL_RESEARCH_RECOVERY_VERSION
+  HISTORICAL_JUDICIAL_RESEARCH_RECOVERY_VERSION,
+  historicalJudicialResearchRecoveryPayload
 } from "../src/historical-judicial-research-recovery.js";
 
 const TRPE = "сакам да те замолам да ми направиш еден труд на тема: Судски пресуди во макеоднското судство во периодот оод 1991 до 2026 година, однапред мног ути благодарам ,со почит, Трпе";
@@ -82,14 +83,55 @@ test("fallback logic runs before generic 503 but after actual model attempt, and
   assert.match(section,/guideDocumentCheck.attachments.length===0/);
   assert.match(section,/historyCheck.history.length===0/);
   assert.match(section,/await releaseMonthlyQuota\(env,\{subject,period\}\)/);
-  assert.match(section,/provider:"canonical_corpus_no_model"/);
-  assert.match(section,/sourceMode:"historical_judicial_research_outline_registry_no_model"/);
-  assert.match(section,/researchOutputStatus:"OUTLINE_ONLY_NOT_COMPLETED_PAPER"/);
-  assert.match(section,/executionAuthorization:"NO_EXTERNAL_ACTION"/);
-  assert.match(section,/humanReviewRequired:true/);
+  assert.match(section,/historicalJudicialResearchRecoveryPayload\(historicalResearchRecovery/);
+  assert.match(section,/from:"openai"/);
+  assert.match(worker,/return json\(request,historicalJudicialResearchRecoveryPayload\(freeResearchRecovery/);
+  assert.match(worker,/from:"workers_ai"/);
+  assert.match(worker,/if \(url.pathname === "\/api\/chat"\) return handleGPTChat\(request, env\)/);
+  assert.match(worker,/if \(url.pathname === "\/api\/bot"\) return handleGPTChat\(request, env, \{openAIOnly:true\}\)/);
+  assert.match(section,/sourceCount:historicalResearchRecovery.sources.length/);
+  assert.match(worker,/researchOutputStatus:"OUTLINE_ONLY_NOT_COMPLETED_PAPER"/);
+  assert.match(worker,/executionAuthorization:"NO_EXTERNAL_ACTION"/);
+  assert.match(worker,/humanReviewRequired:true/);
 });
 
 test("no AI, HTTP, browser storage or confidential data is accessed by the fallback module", () => {
   const source=fs.readFileSync("src/historical-judicial-research-recovery.js","utf8");
   assert.doesNotMatch(source,/\bfetch\s*\(|\bAI\.run\s*\(|\blocalStorage\b|\bsessionStorage\b|\bD1\b|\bprocess\.env\b/);
+});
+
+
+test("single recovery payload is invariant for FREE, external and Academy routes", () => {
+  const recovery=historicalJudicialResearchRecovery(TRPE,transient);
+  const free=historicalJudicialResearchRecoveryPayload(recovery,{
+    from:"workers_ai", failure:{ok:false,error:"workers_ai_daily_capacity_exhausted"},
+    providerCalls:1, missionProfile:"L1_VERIFIED_RESEARCH", trainingOpen:true, used:4, quota:20
+  });
+  const pro=historicalJudicialResearchRecoveryPayload(recovery,{
+    from:"openai", failure:transient,
+    providerCalls:2, missionProfile:"L1_VERIFIED_RESEARCH", membership:{planCode:"PRO"}, used:4, quota:20
+  });
+  for(const payload of [free,pro]){
+    assert.equal(payload.ok,true);
+    assert.equal(payload.model,null);
+    assert.equal(payload.provider,"canonical_corpus_no_model");
+    assert.equal(payload.sourceMode,"historical_judicial_research_outline_registry_no_model");
+    assert.equal(payload.researchOutputStatus,"OUTLINE_ONLY_NOT_COMPLETED_PAPER");
+    assert.equal(payload.legalGovernance.releaseState,"RESEARCH_OUTLINE_ONLY");
+    assert.equal(payload.legalGovernance.humanReviewRequired,true);
+    assert.equal(payload.legalGovernance.executionAuthorization,"NO_EXTERNAL_ACTION");
+    assert.equal(payload.membership.used,3);
+    assert.equal(payload.caseLawSources.length,6);
+    assert.deepEqual(payload.sources,[]);
+  }
+  assert.equal(free.answer,pro.answer);
+  assert.equal(free.providerFallback.from,"workers_ai");
+  assert.equal(pro.providerFallback.from,"openai");
+  assert.equal(free.performance.deterministicRecoveryProviderCalls,0);
+});
+test("Academy only embeds the single existing external bot",()=>{
+  const academy=fs.readFileSync("assets/academy-ai-advokat-chat.js","utf8");
+  assert.match(academy,/workers\.dev\/bot\//);
+  assert.match(academy,/createElement\('iframe'\)/);
+  assert.doesNotMatch(academy,/api\/chat|api\/bot|fetch\(/);
 });
