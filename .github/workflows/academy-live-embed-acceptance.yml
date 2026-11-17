@@ -1,0 +1,37 @@
+name: Academy live embedded AI ADVOKAT acceptance
+on:
+  workflow_run:
+    workflows:
+      - AI Advokat production runtime sync
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-academy-embed:
+    # Only assert production functionality after the protected runtime sync succeeded.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          chrome="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$chrome"
+          echo "BROWSER_EXECUTABLE=$chrome" >> "$GITHUB_ENV"
+      - name: Confirm real Academy iframe and Worker composer on mobile and desktop
+        run: node scripts/academy-live-embed-smoke.mjs
+      - name: Evidence boundary
+        if: always()
+        run: |
+          echo 'Live smoke requires the public Academy launcher to embed the actual Worker bot with its visible composer.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This smoke never sends an AI question and does not independently prove model answer reliability.' >> "$GITHUB_STEP_SUMMARY"
