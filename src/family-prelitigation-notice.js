@@ -16,7 +16,7 @@ export function isFamilyPrelitigationNoticeRequest(query){
   const isNotice=/(?:опомен|покан|предтужбен|предсудск|пред\s+тужба|pre[- ]?litigation\s+notice)/u.test(q);
   const requested=/(?:направ|изработ|подготв|напиш|состав|образец|пример|документ|опомен|покан|draft|write)/u.test(q);
   // No false notice when the user expressly asks not to draft one.
-  const explicitlyExcluded=/(?:не\s+(?:сакам|пишувај|прави|изработувај|подготвувај)\s+(?:ми\s+)?(?:никаква\s+)?(?:опомен|покан)|наместо\s+опомен[а-я]*\s+(?:сакам\s+)?тужб)/u.test(q);
+  const explicitlyExcluded=/(?:не\s+(?:сакам|пишувај|прави|изработувај|подготвувај)\s+(?:ми\s+)?(?:никаква\s+)?(?:опомен|покан)|наместо\s+опомен[а-я]*\s+(?:сакам\s+)?тужб|(?:а|но)\s+не\s+(?:опомен|покан)|без\s+(?:опомен|покан))/u.test(q);
   return Boolean(isDivorce && isNotice && requested && !explicitlyExcluded);
 }
 
