@@ -1,0 +1,31 @@
+/* AI ADVOKAT Legal Pulse: highly legible local timing, never a network channel. */
+.ai-response-elapsed,.ai-response-duration{
+  display:inline-flex;align-items:center;gap:7px;width:max-content;max-width:100%;
+  margin:8px 0 3px;padding:6px 11px;border:1px solid #95713a;border-radius:999px;
+  background:#fff1cb;color:#213449;-webkit-text-fill-color:currentColor;
+  opacity:1!important;font:800 13px/1.35 system-ui,sans-serif;
+  letter-spacing:.01em;font-variant-numeric:tabular-nums;white-space:normal;
+}
+.ai-response-elapsed::before,.ai-response-duration::before{content:"⏱";font-size:1.05em}
+.ai-response-duration[data-outcome="timeout"],
+.ai-response-duration[data-outcome="unanswered"],
+.ai-response-duration[data-outcome="stopped"]{background:#fff0e9;border-color:#b66f57;color:#6f2919}
+.ai-msg-body>.ai-response-duration{display:flex}
+html.professional-r7[data-external-experience="conversation"] .ai-response-elapsed,
+html.professional-r7[data-external-experience="conversation"] .ai-response-duration{
+  background:var(--zoki-panel,#ffffff)!important;
+  border-color:var(--zoki-line,#c8d5df)!important;
+  color:var(--zoki-ink,#192b3b)!important;
+  -webkit-text-fill-color:var(--zoki-ink,#192b3b)!important;
+}
+html.professional-r7[data-external-experience="conversation"] .ai-response-duration[data-outcome="timeout"],
+html.professional-r7[data-external-experience="conversation"] .ai-response-duration[data-outcome="unanswered"],
+html.professional-r7[data-external-experience="conversation"] .ai-response-duration[data-outcome="stopped"]{
+  border-color:#b47852!important;
+}
+html[data-theme="dark"] #ai-advokat-chat .ai-response-elapsed,
+html[data-theme="dark"] #ai-advokat-chat .ai-response-duration{
+  background:#18384c;color:#f8e7bc;border-color:#b99153;
+  -webkit-text-fill-color:#f8e7bc;
+}
+@media(prefers-reduced-motion:reduce){.ai-response-elapsed,.ai-response-duration{animation:none!important;transition:none!important}}
