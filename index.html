@@ -1402,6 +1402,23 @@
     }
   
     .grouped-nav{align-items:center;gap:6px}.nav-folder{position:relative}.nav-folder>summary{list-style:none;cursor:pointer;padding:7px 9px;border-radius:9px;font-weight:800;white-space:nowrap}.nav-folder>summary::-webkit-details-marker{display:none}.nav-folder[open]>summary,.nav-folder>summary:hover{background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--gold)}.nav-folder-menu{position:absolute;z-index:60;top:calc(100% + 8px);left:0;min-width:240px;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);display:grid;gap:3px}.nav-folder-menu a{padding:8px 10px;border-radius:8px;text-decoration:none}.nav-folder-menu a:hover{background:color-mix(in srgb,var(--gold) 10%,transparent)}.mobile-folder-grid{display:grid;gap:8px}.mobile-folder{border:1px solid var(--line);border-radius:10px;padding:7px 9px}.mobile-folder>summary{cursor:pointer;font-weight:850}.mobile-folder>div{display:grid;gap:6px;padding:8px 0 2px 12px}.ai-workspace-folder{border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-top:5px}.ai-workspace-folder>summary{cursor:pointer;font-size:.74rem;font-weight:900;letter-spacing:.03em;color:var(--muted);padding:7px 8px}.ai-workspace-folder-body{display:grid;gap:3px}.ai-workspace-module-link{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;text-decoration:none;color:inherit;font-weight:750}.ai-workspace-module-link:hover{background:color-mix(in srgb,var(--gold) 10%,transparent)}.hybrid-function-folders{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}.hybrid-function-folders details{border:1px solid var(--line);border-radius:12px;padding:8px}.hybrid-function-folders summary{cursor:pointer;font-weight:850}.hybrid-function-folders .chips{margin-top:8px}
+
+    /* Official social channels: aligned with the brand; expandable without altering main navigation. */
+    .socialHub{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;flex:0 0 auto;min-width:0;position:relative;top:-3px}
+    .socialHubLabel{font-size:.66rem;letter-spacing:.045em;text-transform:uppercase;font-weight:750;color:var(--muted)}
+    .socialHubLinks{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+    .socialHubLinks a{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:40px;padding:7px 9px;border:1px solid var(--line);border-radius:10px;color:var(--ink);background:var(--surface);font-size:.8rem;font-weight:700;text-decoration:none}
+    .socialHubLinks a:hover{border-color:var(--gold);background:var(--gold-soft)}
+    .socialHubLinks a:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+    .socialHubLinks svg{flex-shrink:0}
+    .footerSocial{margin-top:14px}
+    .footerSocial strong{color:#fff;font-size:.88rem}
+    .footerSocial .socialHubLinks{margin-top:7px}
+    .footerSocial .socialHubLinks a{margin:0;background:rgba(255,255,255,.05);color:#e4edf5;border-color:rgba(255,255,255,.2)}
+    .footerSocial .socialHubLinks a:hover{background:rgba(255,255,255,.15)}
+    @media(max-width:1020px){.header .container.nav{gap:10px}.socialHub{margin-left:auto}}
+    @media(max-width:650px){.header .container.nav{flex-wrap:wrap;gap:8px;padding:8px 0}.socialHub{order:3;width:100%;flex-direction:row;align-items:center;justify-content:flex-start;top:0;margin:0}.socialHubLabel{margin-right:6px}.socialHubLinks a{min-height:38px}.menuBtn{margin-left:auto}}
+    @media(max-width:390px){.socialHubLabel{font-size:.58rem}.socialHubLinks a{font-size:.75rem;padding:6px}}
 </style>
 </head>
 
@@ -1466,15 +1483,13 @@
       <span class="brandmark" aria-hidden="true"><img src="/assets/ai-advokat-hero-brand.webp?v=2" alt="" width="46" height="46"></span>
       <span class="brandtext"><strong>AI Advokat</strong><span data-i18n="brandSub">Правен информациски и AI портал</span></span>
     </a>
-    <a href="https://www.facebook.com/profile.php?id=61596773546516"
-       class="facebookHeaderLink"
-       target="_blank" rel="noopener noreferrer"
-       aria-label="Facebook — официјална страница AI Advokat"
-       title="Facebook · AI Advokat"
-       style="display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;color:var(--ink);background:var(--surface);font-weight:700;flex-shrink:0">
-      <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-      <span>Facebook</span>
-    </a>
+    <nav class="socialHub" aria-label="AI Advokat — социјални мрежи">
+      <span class="socialHubLabel">Социјални мрежи</span>
+      <div class="socialHubLinks">
+        <a href="https://www.youtube.com/channel/UCDApar7Z-6MVpNatd1zqbVg" target="_blank" rel="noopener noreferrer" aria-label="YouTube — Zoran Stojankich | AI Advokat" title="YouTube · AI Advokat"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z"/></svg><span>YouTube</span></a>
+        <a href="https://www.facebook.com/profile.php?id=61596773546516" target="_blank" rel="noopener noreferrer" aria-label="Facebook — AI Advokat" title="Facebook · AI Advokat"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg><span>Facebook</span></a>
+      </div>
+    </nav>
     <nav class="links" aria-label="Главна навигација" data-i18n-aria="mainNav">
       <a href="#ai-advokat-chat" data-i18n="navAi">AI Advokat</a>
       <details class="nav-folder" data-nav-folder="courts"><summary>⚖ Судови и пракса</summary><div class="nav-folder-menu">
@@ -2659,6 +2674,13 @@
         <p style="max-width:500px;color:#94a8ba;margin-top:16px" data-i18n="footerText">
           Правни извори, авторски анализи и AI-поддржано истражување со проверливи извори и човечка финална контрола.
         </p>
+        <nav class="footerSocial" aria-label="Социјални мрежи на AI Advokat">
+          <strong>Следете нè</strong>
+          <div class="socialHubLinks">
+            <a href="https://www.youtube.com/channel/UCDApar7Z-6MVpNatd1zqbVg" target="_blank" rel="noopener noreferrer" aria-label="YouTube — Zoran Stojankich | AI Advokat"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z"/></svg><span>YouTube</span></a>
+            <a href="https://www.facebook.com/profile.php?id=61596773546516" target="_blank" rel="noopener noreferrer" aria-label="Facebook — AI Advokat"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg><span>Facebook</span></a>
+          </div>
+        </nav>
       </div>
 
       <nav aria-label="Навигација во подножје" data-i18n-aria="footerNavAria">
@@ -2689,17 +2711,6 @@
         <a href="/ai-use-policy.html" data-i18n="aiPolicy">AI, точност и човечка контрола</a>
         <a href="mailto:aiadvokat16@gmail.com">Gmail</a>
         <a href="mailto:aiadvokat@outlook.com">Outlook</a>
-        <a href="https://www.facebook.com/profile.php?id=61596773546516"
-           target="_blank"
-           rel="noopener noreferrer"
-           aria-label="AI Advokat — официјална Facebook-страница"
-           style="display:flex;align-items:center;gap:9px">
-          <svg aria-hidden="true" focusable="false" width="23" height="23" viewBox="0 0 24 24"
-               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-          </svg>
-          <span>Facebook · AI Advokat</span>
-        </a>
         <a
           href="https://orcid.org/0009-0001-0702-2371"
           target="_blank"
