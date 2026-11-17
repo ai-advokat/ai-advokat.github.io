@@ -6303,6 +6303,10 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     return {
       ok:false,
       error:mappedError,
+      // Public-safe provider failure category needed for honest no-model recovery.
+      // Do not surface raw provider error details or secrets to the browser.
+      upstreamErrorCategory:["workers_ai_provider_error","workers_ai_timeout","workers_ai_empty_response"].includes(String(result.error||""))
+        ? result.error : null,
       detail:result.detail||null,
       retryable:result.retryable!==false,
       capacity:result.capacity||null,
