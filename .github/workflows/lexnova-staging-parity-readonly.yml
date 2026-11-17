@@ -1,0 +1,33 @@
+name: LexNova v1 staging static parity (manual read-only)
+on:
+  workflow_dispatch:
+    inputs:
+      staging_base_url:
+        description: 'Exact HTTPS root of ai-advokat-staging.<account>.workers.dev; NO production URL'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  read-only-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact staging deployment static artifacts (GET only)
+        env:
+          STAGING_BASE_URL: ${{ inputs.staging_base_url }}
+        run: node scripts/lexnova-staging-parity-readonly.mjs
+      - name: Truthful source-vs-runtime verification boundary
+        if: always()
+        run: |
+          {
+            echo '### LexNova v1 staging status'
+            echo 'This workflow sends HTTPS GET only to the explicitly provided staging Worker hostname.'
+            echo 'It neither performs a deployment nor calls any model/provider or confidential API.'
+            echo 'Even a success means STATIC SOURCE PARITY only; live runtime, membership, law and language gates are NOT verified.'
+            echo 'Do not promote a release without a separate authorised staging functional and legal acceptance.'
+          } >> "$GITHUB_STEP_SUMMARY"
