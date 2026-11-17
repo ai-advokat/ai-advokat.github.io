@@ -26,7 +26,7 @@ export const LEXNOVA_ROUTED_TOOLS=Object.freeze(
 function decideIntent(q){
   // Secure-case determination is additionally enforced by the existing, stronger
   // server-side privacy and entitlement gates. Never rely on a keyword alone.
-  if(/(?:casepilot|secure case|приватен предмет|оригинален документ|доверлив предмет)/u.test(q))return "secure_case";
+  if(/(?:casepilot|secure case|приватен предмет|оригиналн[а-я]* документ|доверлив предмет|заштитен[а-я]* простор)/u.test(q))return "secure_case";
   const divorce=/(?:развод|бракоразвод|разведувањ)/u.test(q);
   const notice=/(?:опомен|покан|предтужбен|пред тужба)/u.test(q);
   const excludesNotice=/(?:наместо опомен[а-я]*|без опомен[а-я]*|а не опомен[а-я]*)/u.test(q);
@@ -36,10 +36,11 @@ function decideIntent(q){
   if(/(?:судск[аи].*(?:пракс|одлук|пресуд)|пресуд[аи].*суд|case law|hudoc|есчп)/u.test(q))return "case_law";
   if(/(?:консолид|пречистен текст|интегрирај измен[аи]|измени и дополнувања)/u.test(q))return "consolidator";
   if(/(?:спореди|редактирај|коригирај|провери документ|следење на измен|redline|tracked changes)/u.test(q))return "document_review";
+  if(/(?:предвид|веројатност за успех|ризик од спор|ризици од спор|сценари|исход на спор)/u.test(q))return "risk_analysis";
   if(/(?:договор|анекс|спогодб|закуп|клаузул|contract)/u.test(q))return "contract";
   if(/(?:важечк[иао]|последн[иао] редакциј|кога стапува во сила|временска важност|пречистен закон)/u.test(q))return "law_version";
   if(/(?:закон|член|правилник|службен весник|правен извор|ldbis)/u.test(q))return "legal_sources";
-  if(/(?:предвид|веројатност за успех|ризик од спор|сценари|исход на спор)/u.test(q))return "risk_analysis";
+
   if(/(?:анализирај|правно мислење|правна анализа|правен основ)/u.test(q))return "legal_analysis";
   return "general";
 }
