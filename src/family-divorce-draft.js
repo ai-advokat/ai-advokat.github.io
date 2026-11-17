@@ -33,7 +33,8 @@ export function isFamilyDivorceDraftRequest(query){
   if(!q) return false;
   // Explicit request for a pre-litigation notice is NOT a divorce lawsuit,
   // even if the phrase contains the word "тужба".
-  if(/(?:опомен|покан|предтужбен|предсудск)/u.test(q) && /(?:развод|бракоразвод|divorce)/u.test(q)) return false;
+  if(/(?:опомен|покан|предтужбен|предсудск)/u.test(q) && /(?:развод|бракоразвод|divorce)/u.test(q)
+    && !/(?:а|но)\s+не\s+(?:опомен|покан)|без\s+(?:опомен|покан)|наместо\s+опомен[а-я]*\s+(?:сакам\s+)?тужб/u.test(q)) return false;
   const divorce=/(?:развод|бракоразвод|divorce)/u.test(q);
   const draft=/(?:направи|изработи|подготви|напиши|состави|тужб|поднесок|draft)/u.test(q);
   return divorce&&draft;
