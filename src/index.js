@@ -7011,6 +7011,26 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       humanGate:"TRAINING mode does not authorize filing, signature, confidential-case processing or final professional reliance."
     });
   }
+  const confidentiality=detectConfidentialCasePrompt(userQ);
+  if(confidentiality.confidential){
+    return json(request,{
+      ok:false,
+      error:"confidential_case_workspace_required",
+      message:"Ова барање содржи податоци што личат на конкретен доверлив правен предмет. За да не се испраќаат преку јавниот AI chat, користете Secure Case Workspace.",
+      action:{
+        label:"Отвори Secure Case Workspace",
+        href:"/casepilot-workspace.html"
+      },
+      privacy:{
+        providerCalled:false,
+        quotaConsumed:false,
+        publicChatProcessingStopped:true,
+        reasons:confidentiality.reasons
+      }
+    },422);
+  }
+
+
   // This is a deterministic, read-only intent hint. The existing SECURE_CASE,
   // entitlement, history, attachment, model and Human Gate guards remain authoritative.
   const lexnovaRoute=routeLexNovaLegalIntent(userQ);
@@ -7048,25 +7068,6 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const sessionAffinity=/^[A-Za-z0-9._:-]{8,120}$/.test(requestedSessionId)
     ? "chat:"+requestedSessionId
     : null;
-
-  const confidentiality=detectConfidentialCasePrompt(userQ);
-  if(confidentiality.confidential){
-    return json(request,{
-      ok:false,
-      error:"confidential_case_workspace_required",
-      message:"Ова барање содржи податоци што личат на конкретен доверлив правен предмет. За да не се испраќаат преку јавниот AI chat, користете Secure Case Workspace.",
-      action:{
-        label:"Отвори Secure Case Workspace",
-        href:"/casepilot-workspace.html"
-      },
-      privacy:{
-        providerCalled:false,
-        quotaConsumed:false,
-        publicChatProcessingStopped:true,
-        reasons:confidentiality.reasons
-      }
-    },422);
-  }
 
   const uiMode=["auto","library","web"].includes(payload.mode) ? payload.mode : "auto";
   const requestedWebDomainPreset=["all","mk_official","eu_echr_official"].includes(String(payload.webDomainPreset||""))
