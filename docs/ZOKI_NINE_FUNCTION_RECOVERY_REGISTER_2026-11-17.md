@@ -5,14 +5,14 @@ Basis: isolated R26 #705 commit c7d0737742f921bb42eb702733a8fd74f81f67f1
 Owner release authority: Human Gate (no automatic merge/deploy)
 
 ## Scope, evidence and status
-This branch integrates **verified source changes** for bounded external bot UI translation and timestamp-only GitHub Pages watcher churn. CI does source-level checks for nine user-important features. Source success does not prove real browser microphone permission, genuine paid or free AI translations, legal correctness, browser export output, or production deployment.
+This branch integrates **source-level changes** for bounded external bot UI translation, R25 client-side follow-up recovery for both bots, targeted R24 voice/export safety, and timestamp-only GitHub Pages watcher churn. These source changes have not been verified in live production. CI does source-level checks for nine user-important features. Source success does not prove real browser microphone permission, genuine paid or free AI translations, legal correctness, browser export output, or production deployment.
 
 | Gate | User acceptance criterion | Source candidate | Evidence required beyond CI | Current release status |
 | --- | --- | --- | --- | --- |
 | 1 | EN→MK and MK→EN produce meaningful translated text; 33 UI targets handle quota and errors | #705 Worker + direct translator; #684 external bot ID-mapped bounded batches ported | Real staged Cloudflare 2-way call, then live after approval | HOLD / live not tested |
 | 2 | Both bots accept two consecutive questions; composer never traps or silently drops second message | #700/#701 client-side R25 recovery selectively applied to both bots; #694/#695 semantic enhancements remain Draft | Real two-turn Chromium + live provider, error recovery | SOURCE PATCHED / LIVE NOT TESTED |
-| 3 | Microphone records permission, produces transcript, and refuses gracefully on denial | Existing mic path; source checks only | Real Chrome permission allow/deny + live transcription | NOT TESTED |
-| 4 | PDF, DOCX, JSON, MD, CSV and JPG are downloadable and readable, no truncated legal text or CSV formula injection | #696 remains Draft | Real browser files, content/print and formula checks | NOT INTEGRATED |
+| 3 | Microphone records permission, produces transcript, and refuses gracefully on denial | R24 3036 vs 3040 failure classification and clear user status selectively patched | Real Chrome permission allow/deny + live transcription | SOURCE PATCHED / LIVE NOT TESTED |
+| 4 | PDF, DOCX, JSON, MD, CSV and JPG are downloadable and readable, no truncated legal text or CSV formula injection | R24 CSV formula protection and PDF/JPG long-text clipping guards patched; full six-format bot UI in #696 remains Draft | Real browser files, content/print and formula checks | PARTIALLY INTEGRATED |
 | 5 | Official sources identify document, provision, dates, effective/applicable status and provenance | #691 remains Draft (LEGAL HOLD); current source tests | Independent legal source verification by lawyer | LEGAL HOLD |
 | 6 | All existing navigation and modules remain accessible desktop/mobile, with full functionality | Existing shell; source parity tests | Real viewport, links and accessible keyboard tests | NOT TESTED LIVE |
 | 7 | No sensitive case, history, or private data is sent to UI translator; controlled case access | #684 bot privacy exclusions ported; existing security tests | Browser network inspection with synthetic data | HOLD |
