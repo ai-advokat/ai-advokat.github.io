@@ -50,11 +50,19 @@ function wrapParagraph(ctx,text,maxWidth){
     let line="";
     for(const word of words){
       const candidate=line?line+" "+word:word;
-      if(ctx.measureText(candidate).width<=maxWidth || !line){
+      if(ctx.measureText(candidate).width<=maxWidth){
         line=candidate;
-      }else{
-        lines.push(line);
-        line=word;
+        continue;
+      }
+      if(line){lines.push(line);line="";}
+      // Long URLs, identifiers or base64-like runs must wrap as well. Never
+      // let one unbroken token be clipped outside the printed PDF/JPG page.
+      for(const ch of word){
+        if(line && ctx.measureText(line+ch).width>maxWidth){
+          lines.push(line);
+          line="";
+        }
+        line+=ch;
       }
     }
     if(line) lines.push(line);
@@ -123,7 +131,11 @@ function renderCaseExportImageBlob(reportInput,format="png"){
     const lines=wrapParagraph(mctx,block.text,maxWidth);
     for(const line of lines){ rows.push({line,kind:block.kind,y}); y+=spec.line; }
   }
-  const height=Math.max(480,Math.min(30000,y+120));
+  // A single JPG/PNG is a one-page image. A tall draft must not silently
+  // lose its final paragraphs at the old 30,000px cap: tell the user to use
+  // the multi-page PDF/DOCX export instead.
+  if(y+120>30000) throw new Error("case_export_image_too_long_use_pdf");
+  const height=Math.max(480,y+120);
   const canvas=document.createElement("canvas");
   canvas.width=width; canvas.height=height;
   const ctx=canvas.getContext("2d");
