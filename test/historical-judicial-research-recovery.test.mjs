@@ -121,12 +121,15 @@ test("single recovery payload is invariant for FREE, external and Academy routes
     assert.equal(payload.legalGovernance.releaseState,"RESEARCH_OUTLINE_ONLY");
     assert.equal(payload.legalGovernance.humanReviewRequired,true);
     assert.equal(payload.legalGovernance.executionAuthorization,"NO_EXTERNAL_ACTION");
-    assert.equal(payload.membership.used,3);
+    if(payload.membership.monthlyQuota!==undefined) assert.equal(payload.membership.used,3);
+    else assert.equal(payload.membership.planCode,"training");
     assert.equal(payload.caseLawSources.length,6);
     assert.deepEqual(payload.sources,[]);
   }
   assert.equal(free.answer,pro.answer);
   assert.equal(free.providerFallback.from,"workers_ai");
+  assert.equal(free.membership.trainingOpen,true);
+  assert.equal(pro.membership.used,3);
   assert.equal(pro.providerFallback.from,"openai");
   assert.equal(free.performance.deterministicRecoveryProviderCalls,0);
 });
