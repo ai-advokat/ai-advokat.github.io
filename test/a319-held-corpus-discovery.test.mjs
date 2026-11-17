@@ -28,6 +28,39 @@ test('A319 exact Cyrillic article is found',()=>{
 test('A319 nonexistent article never falls back to unrelated results',()=>{
   assert.deepEqual(retrieveA319(corpus(),'член 88, правна помош'),[]);
 });
+test('A319 rejects out-of-corpus article 101 instead of returning article 10',()=>{
+  assert.deepEqual(retrieveA319(corpus(),'член 101').map(x=>x.article_id),[]);
+});
+test('A319 rejects unreviewed letter variant 34-г instead of returning 34',()=>{
+  assert.deepEqual(retrieveA319(corpus(),'член 34-г').map(x=>x.article_id),[]);
+});
+test('A319 rejects invalid contiguous variant 34г',()=>{
+  assert.deepEqual(retrieveA319(corpus(),'член 34г').map(x=>x.article_id),[]);
+});
+test('A319 rejects partial or malformed article notation',()=>{
+  for (const q of ['член 34-аб','член 34--а','член 10-а','член 10/11','член 34-4','член 10.1']) {
+    assert.deepEqual(retrieveA319(corpus(),q).map(x=>x.article_id),[],q);
+  }
+});
+test('A319 rejects a query mixing valid and invalid explicit articles',()=>{
+  assert.deepEqual(retrieveA319(corpus(),'член 10 и член 101').map(x=>x.article_id),[]);
+  assert.deepEqual(retrieveA319(corpus(),'член 34-а и член 34-г').map(x=>x.article_id),[]);
+});
+test('A319 supports exact article 10 and exact Cyrillic letter variants',()=>{
+  assert.deepEqual(retrieveA319(corpus(),'член 10').map(x=>x.article_id),['10']);
+  assert.deepEqual(retrieveA319(corpus(),'член 34-а').map(x=>x.article_id),['34-а']);
+  assert.deepEqual(retrieveA319(corpus(),'чл.34-в').map(x=>x.article_id),['34-в']);
+  assert.deepEqual(retrieveA319(corpus(),'член 34а').map(x=>x.article_id),['34-а']);
+});
+test('A319 accepts multiple exact valid article references without extras',()=>{
+  assert.deepEqual(retrieveA319(corpus(),'член 34-а и член 34-в').map(x=>x.article_id).sort(),['34-а','34-в']);
+});
+test('A319 never creates held source citations after invalid lookup',async()=>{
+  const r=await a319AttachCorpusToChat({corpus:corpus(),question:'член 101',chatResponse:{answer:'Не е утврден член'}});
+  assert.equal(r.ok,true);
+  assert.equal(r.matched,0);
+  assert.deepEqual(r.chatResponse.a319DiscoveryOnly.sources,[]);
+});
 test('A319 tampered source bytes are rejected',async()=>{
   const c=corpus();c.articles[0].text+=' tampered';
   assert.equal((await validateA319Corpus(c)).ok,false);
