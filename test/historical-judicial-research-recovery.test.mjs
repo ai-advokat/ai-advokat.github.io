@@ -90,9 +90,10 @@ test("fallback logic runs before generic 503 but after actual model attempt, and
   assert.match(worker,/if \(url.pathname === "\/api\/chat"\) return handleGPTChat\(request, env\)/);
   assert.match(worker,/if \(url.pathname === "\/api\/bot"\) return handleGPTChat\(request, env, \{openAIOnly:true\}\)/);
   assert.match(section,/sourceCount:historicalResearchRecovery.sources.length/);
-  assert.match(worker,/researchOutputStatus:"OUTLINE_ONLY_NOT_COMPLETED_PAPER"/);
-  assert.match(worker,/executionAuthorization:"NO_EXTERNAL_ACTION"/);
-  assert.match(worker,/humanReviewRequired:true/);
+  const contract=fs.readFileSync("src/historical-judicial-research-recovery.js","utf8");
+  assert.match(contract,/researchOutputStatus:"OUTLINE_ONLY_NOT_COMPLETED_PAPER"/);
+  assert.match(contract,/executionAuthorization:"NO_EXTERNAL_ACTION"/);
+  assert.match(contract,/humanReviewRequired:true/);
 });
 
 test("no AI, HTTP, browser storage or confidential data is accessed by the fallback module", () => {
