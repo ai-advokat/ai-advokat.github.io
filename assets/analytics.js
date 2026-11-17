@@ -253,11 +253,30 @@
     if (firstParagraph && firstParagraph.nextSibling) article.insertBefore(box, firstParagraph.nextSibling); else article.appendChild(box);
   }
 
+  // LexNova Quick Chat uses the existing governed external bot only.
+  // Lazy frame loads after a user clicks. This bridge is independent of analytics consent.
+  function installLexNovaQuickChatBridge() {
+    if(/^\\/bot(?:\\/|$)/.test(location.pathname)) return;
+    if(location.pathname==="/" || location.pathname==="/index.html") return; // root includes it directly
+    if(document.getElementById("lexnova-quick-chat-script")) return;
+    const stylesheet=document.createElement("link");
+    stylesheet.id="lexnova-quick-chat-style";
+    stylesheet.rel="stylesheet";
+    stylesheet.href="/assets/lexnova-hybrid-v1.css?v=20261117-v1";
+    document.head.append(stylesheet);
+    const script=document.createElement("script");
+    script.id="lexnova-quick-chat-script";
+    script.src="/assets/lexnova-quick-chat.js?v=20261117-v1";
+    script.defer=true;
+    document.head.append(script);
+  }
+
   function installAuthorHubSurfaces() {
     installOfficialLinks();
     injectHomeAuthorHub();
     injectAcademyBridge();
     injectScholarBridge();
+    installLexNovaQuickChatBridge();
   }
 
   if (initialConsent === "granted") loadGoogleTag();
