@@ -47,7 +47,7 @@ test("voluntary notice preserves primary sources and never invents a required wa
   assert.equal(sources.length,4);
   assert.deepEqual(sources[0].articles,["39","229","237"]);
   assert.ok(sources.some(row=>row.relation==="family_law_lineage_outside_divorce_procedure" && row.affectedDivorceNoticeProvisions===false));
-  assert.match(formatFamilyPrelitigationNotice(exactZoranPrompt),/У\\.бр\\.57\\/2025/);
+  assert.ok(formatFamilyPrelitigationNotice(exactZoranPrompt).includes("У.бр.57/2025"));
   assert.ok(sources.some(s=>s.url.includes("ldbis.pravda.gov.mk")));
   const t=formatFamilyPrelitigationNotice(exactZoranPrompt);
   assert.doesNotMatch(t,/задолжителна опомена пред тужба|автоматски развод|се смета дека сте согласни/iu);
