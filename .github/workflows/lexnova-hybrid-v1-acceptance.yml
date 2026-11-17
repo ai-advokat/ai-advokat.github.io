@@ -16,6 +16,8 @@ on:
       - 'test/lexnova-hybrid-v1.test.mjs'
       - 'test/fixtures/lexnova-mk-legal-acceptance-v1.json'
       - 'scripts/lexnova-hybrid-browser-uat.mjs'
+      - 'scripts/lexnova-staging-parity-readonly.mjs'
+      - '.github/workflows/lexnova-staging-parity-readonly.yml'
       - '.github/workflows/lexnova-hybrid-v1-acceptance.yml'
   workflow_dispatch:
 permissions:
@@ -41,6 +43,19 @@ jobs:
           node --check assets/lexnova-human-handoff.js
           node --check assets/lexnova-quick-chat.js
           node --check assets/lexnova-local-analytics.js
+          node --check scripts/lexnova-staging-parity-readonly.mjs
+      - name: Stage verifier refuses missing or production URL (zero network)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node scripts/lexnova-staging-parity-readonly.mjs; then
+            echo 'Should reject absent staging target' >&2
+            exit 1
+          fi
+          if STAGING_BASE_URL=https://ai-advokat-github-io.aiadvokat16.workers.dev node scripts/lexnova-staging-parity-readonly.mjs; then
+            echo 'Should reject production target' >&2
+            exit 1
+          fi
       - name: 96 synthetic Macedonian legal scenarios and offline feature contracts
         run: node --no-warnings --test test/lexnova-hybrid-v1.test.mjs
       - name: Honest legal certification boundary
