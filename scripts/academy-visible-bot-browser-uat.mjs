@@ -23,7 +23,7 @@ async function testSize(origin,width,height){
  let requests=0;
  await page.route("https://ai-advokat-github-io.aiadvokat16.workers.dev/**",async route=>{
    requests++;
-   await route.fulfill({status:200,contentType:"text/html",body:"<!doctype html><html lang='mk'><body>СИНТЕТИЧКИ ТЕСТЕН BOT IFRAME</body></html>"});
+   await route.fulfill({status:200,contentType:"text/html; charset=utf-8",body:"<!doctype html><html lang='mk'><head><meta charset='utf-8'></head><body>СИНТЕТИЧКИ ТЕСТЕН BOT IFRAME</body></html>"});
  });
  await page.goto(origin+"/academy/",{waitUntil:"domcontentloaded",timeout:20000});
  const btn=page.locator("#academyChatLaunch");
