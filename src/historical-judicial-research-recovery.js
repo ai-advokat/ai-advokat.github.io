@@ -67,6 +67,8 @@ export function historicalJudicialResearchRecovery(query, failure) {
     humanReviewRequired: true,
     sourceRegistryVersion: JUDICIAL_DISCOVERY_CORPUS_VERSION
   }));
+  const researchPeriodGroups = [[years.from, Math.min(2000, years.to)], [Math.max(2001, years.from), Math.min(2010, years.to)], [Math.max(2011, years.from), Math.min(2020, years.to)], [Math.max(2021, years.from), years.to]]
+    .filter(([from, to]) => from <= to).map(([from, to]) => from + "–" + to).join("; ");
   const title = "Судските пресуди во македонското судство (" + years.from + "–" + years.to + ")";
   const answer = [
     "РАБОТНА ИСТРАЖУВАЧКА РАМКА · ИЗВОРЕН КОРПУС · БЕЗ ГЕНЕРАТИВЕН МОДЕЛ",
@@ -87,7 +89,7 @@ export function historicalJudicialResearchRecovery(query, failure) {
     "I. Вовед, цел и ограничувања.",
     "II. Судски систем и видови судски акти — разграничување по институција и постапка.",
     "III. Истражувачки корпус и метод: извори, селекција, дупликати и временско покривање.",
-    "IV. Периодизација за анализата: " + years.from + "–2000; 2001–2010; 2011–2020; 2021–" + years.to + " (работни истражувачки групи, не тврдење за правни пресвртници).",
+    "IV. Периодизација за анализата: " + researchPeriodGroups + " (работни истражувачки групи, не тврдење за правни пресвртници).",
     "V. Тематска анализа по граѓанска, кривична, управна и уставна материја — само по item-level проверка.",
     "VI. Дискусија за конзистентност, промени и граници на генерализацијата.",
     "VII. Заклучок, ограничувања, извори и прилог со проверени пресуди.",
