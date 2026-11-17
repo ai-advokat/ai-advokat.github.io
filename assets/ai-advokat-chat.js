@@ -437,11 +437,11 @@
       : (m.documentExport?.format ? [m.documentExport] : []);
     if(requestedExports.length){
       const exportBox=document.createElement("div");exportBox.className="ai-msg-tools";
-      requestedExports.slice(0,4).forEach(spec=>{
+      requestedExports.slice(0,8).forEach(spec=>{
         const format=String(spec?.format||"").toLowerCase();
-        if(!["docx","pdf","json","csv"].includes(format)) return;
+        if(!["docx","pdf","json","csv","md","txt","jpg","png"].includes(format)) return;
         const download=document.createElement("button");download.type="button";download.className="btn light";
-        const labels={docx:"Преземи Word (.docx)",pdf:"Преземи PDF",json:"Преземи JSON",csv:"Преземи CSV"};
+        const labels={docx:"Преземи Word (.docx)",pdf:"Преземи PDF",json:"Преземи JSON",csv:"Преземи CSV",md:"Преземи Markdown (.md)",txt:"Преземи TXT",jpg:"Преземи JPG",png:"Преземи PNG"};
         download.textContent=String(spec?.label||labels[format]||("Преземи "+format.toUpperCase()));
         download.addEventListener("click",async()=>{
           download.disabled=true;
@@ -604,7 +604,28 @@
       docx.onclick=()=>exportAssistantMessage(m,current(),"docx","AI-Advokat-working-draft.docx");
       const pdf=document.createElement("button");pdf.type="button";pdf.className="ai-msg-prof-action";pdf.textContent="▧ PDF";
       pdf.onclick=()=>exportAssistantMessage(m,current(),"pdf","AI-Advokat-working-draft.pdf");
-      tools.append(retry,sources,review,docx,pdf);
+      const fileFormats=document.createElement("details");
+      fileFormats.className="ai-msg-export-formats";
+      const expand=document.createElement("summary");
+      expand.textContent="⇩ JSON · MD · CSV · JPG";
+      fileFormats.append(expand);
+      for(const [fmt,label] of [["json","JSON"],["md","MD"],["csv","CSV"],["jpg","JPG"]]){
+        const b=document.createElement("button");
+        b.type="button";b.textContent=label;
+        b.className="ai-msg-prof-action";
+        b.addEventListener("click",async()=>{
+          b.disabled=true;
+          try{await exportAssistantMessage(m,current(),fmt,"AI-Advokat-working-draft."+fmt);}
+          catch(error){
+            console.error("chat_message_export_failed",fmt,String(error?.message||error));
+            alert(error?.message==="case_export_image_too_long_use_pdf"
+              ? "Одговорот е предолг за JPG. Изберете PDF или DOCX за целосен документ."
+              : "Извозот не успеа. Обидете се со PDF или DOCX.");
+          }finally{b.disabled=false;}
+        });
+        fileFormats.append(b);
+      }
+      tools.append(retry,sources,review,docx,pdf,fileFormats);
     }
     body.append(tools);
     article.append(avatar,body);
@@ -1175,7 +1196,7 @@
           providerRecovery:(d.providerRecovery&&typeof d.providerRecovery==="object")?d.providerRecovery:null,
           documentExports:requestedExportFormats(q).map(format=>({
             format,
-            label:format==="docx"?"Преземи Word (.docx)":format==="pdf"?"Преземи PDF":format==="json"?"Преземи JSON":"Преземи CSV",
+            label:({docx:"Преземи Word (.docx)",pdf:"Преземи PDF",json:"Преземи JSON",csv:"Преземи CSV",md:"Преземи Markdown",jpg:"Преземи JPG",png:"Преземи PNG",txt:"Преземи TXT"})[format],
             filename:"AI-Advokat-analysis."+format
           })),
           sourceLabel:d.sourceMode==="canonical_family_divorce_pre_litigation_notice_no_model"
@@ -1376,10 +1397,14 @@
   function requestedExportFormats(value){
     const text=String(value||"").normalize("NFKC").toLocaleLowerCase("mk");
     const formats=[];
-    if(/(?:\bdocx\b|\bword\b|\bworld\b|ворд|word\s+format|world\s+format|во\s+word|во\s+world|word\s+документ|ворд\s+документ)/iu.test(text)) formats.push("docx");
+    if(/(?:\bdocx\b|\bdoc\b|\bword\b|\bworld\b|ворд|word\s+format|world\s+format|во\s+word|во\s+world|word\s+документ|ворд\s+документ)/iu.test(text)) formats.push("docx");
     if(/(?:\bpdf\b|пдф|во\s+pdf|pdf\s+формат)/iu.test(text)) formats.push("pdf");
     if(/(?:\bjson\b|џејсон|во\s+json)/iu.test(text)) formats.push("json");
     if(/(?:\bcsv\b|во\s+csv|цсв)/iu.test(text)) formats.push("csv");
+    if(/(?:\bmd\b|markdown|маркдаун|\.md\b)/iu.test(text)) formats.push("md");
+    if(/(?:\bjpe?g\b|\.jpe?g\b|слика\s+во\s+jpg)/iu.test(text)) formats.push("jpg");
+    if(/(?:\bpng\b|\.png\b)/iu.test(text)) formats.push("png");
+    if(/(?:\btxt\b|\.txt\b|обичен\s+текст)/iu.test(text)) formats.push("txt");
     return [...new Set(formats)];
   }
 
@@ -1431,6 +1456,9 @@
       await exportAssistantMessage(latestAssistant,chat,format,"AI-Advokat-working-draft."+format);
     }catch(error){
       console.error("chat_export_failed",format,error);
+      alert(error?.message==="case_export_image_too_long_use_pdf"
+        ? "Документот е предолг за една JPG/PNG слика. Изберете PDF или DOCX."
+        : "Извозот не успеа. Пробајте повторно или користете Markdown.");
     }finally{
       if(button) button.disabled=false;
     }
