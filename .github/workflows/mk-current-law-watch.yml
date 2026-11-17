@@ -137,6 +137,39 @@ jobs:
           rm -rf /tmp/current-law-gh-pages
           git worktree add --detach /tmp/current-law-gh-pages origin/gh-pages
           mkdir -p /tmp/current-law-gh-pages/data
+          # Limit Pages redeployments from timestamp-only watcher snapshots.
+          # The full snapshot and Human-Gate packet remain available as Actions artifacts
+          # for every run; material source/status changes still publish immediately.
+          if [ -f /tmp/current-law-gh-pages/data/mk-current-law-watch-latest.json ]; then
+            if node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const oldFile='/tmp/current-law-gh-pages/data/mk-current-law-watch-latest.json';
+          const newFile='/tmp/current-law-watch/current-law-watch-snapshot.json';
+          try {
+            const oldSnapshot=JSON.parse(fs.readFileSync(oldFile,'utf8'));
+            const newSnapshot=JSON.parse(fs.readFileSync(newFile,'utf8'));
+            const material=s=>JSON.stringify({
+              version:s.version,governance:s.governance,pages:s.pages,
+              candidates:s.candidates,counts:s.counts,
+              diff_state:s.diff?.state,
+              requires_human_review:s.diff?.requires_human_review
+            });
+            const elapsed=Date.parse(newSnapshot.captured_at)-Date.parse(oldSnapshot.captured_at);
+            const same=material(oldSnapshot)===material(newSnapshot);
+            if(same && Number.isFinite(elapsed) && elapsed>=0 && elapsed<6*60*60*1000) {
+              console.log('No material watcher change; keep existing Pages snapshot (under six hours old).');
+              process.exit(0);
+            }
+          } catch(error) {
+            console.error('Publish guard could not compare snapshots; publishing fail-open:',error.message);
+          }
+          process.exit(1);
+          NODE
+            then
+              echo "PAGES SNAPSHOT THROTTLED: no substantive change; Actions artifacts remain current."
+              exit 0
+            fi
+          fi
           cp /tmp/current-law-watch/current-law-watch-snapshot.json /tmp/current-law-gh-pages/data/mk-current-law-watch-latest.json
           cd /tmp/current-law-gh-pages
           git config user.name "ai-advokat-current-law-watch"
