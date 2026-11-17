@@ -7062,81 +7062,6 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     },422);
   }
 
-  // Source-first daily legal briefing is available equally in INTERNAL and EXTERNAL
-  // conversations. Headlines come only from whitelisted official sources,
-  // not from generative models. Do not bypass the privacy/membership gates above.
-  if(isDailyLegalBriefingRequest(userQ)
-    && shouldEnforceMacedonianOutput(userQ)
-    && (!openAIOnly || /^mk(?:-|$)/iu.test(String(payload.outputLanguage||"mk")))){
-    const checkedAt=new Date();
-    let news=null;
-    let sourceMode="snapshot";
-    let sourceFetchError=false;
-    try{
-      const cache=await loadJusticeDailySnapshot(env);
-      if(cache?.payload){
-        news=filterJusticeDailySnapshot(cache.payload,{days:2,limit:32});
-      }else{
-        sourceMode="bounded_official_fetch";
-        news=await aggregateLegalNews({
-          fetchImpl:fetch,
-          now:checkedAt,
-          days:2,
-          limit:32,
-          sourceIds:LEGAL_DAILY_OFFICIAL_IDS,
-          includeUndated:false
-        });
-      }
-    }catch{
-      sourceFetchError=true;
-      news={items:[]};
-      sourceMode="source_unavailable";
-    }
-    const briefing=buildDailyLegalBriefing(news,{userText:userQ,now:checkedAt});
-    if(!briefing.answer){
-      return json(request,{
-        ok:false,error:"legal_daily_briefing_language_gate_blocked",
-        message:"Изворниот преглед не помина задолжителна јазична проверка. Правни вести не се објавени.",
-        sourceMode:"official_headlines_blocked",
-        providerCalls:0,
-        languageReleaseGate:briefing.languageGate
-      },503);
-    }
-    return json(request,{
-      ok:true,
-      answer:briefing.answer,
-      provider:"official_source_monitor_no_model",
-      model:null,
-      mode:"source_first_legal_news",
-      displayMode:"official_daily_legal_briefing",
-      sourceMode:"official_headline_discovery_no_model",
-      legalNewsVersion:LEGAL_DAILY_BRIEFING_VERSION,
-      briefingState:briefing.state,
-      verifiedLinkCount:briefing.sourceCount,
-      checkedAt:briefing.checkedAt,
-      sourceRefreshState:sourceMode,
-      sourceFetchError,
-      webSearchUsed:false,
-      legalSources:briefing.legalSources,
-      caseLawSources:[],
-      publicationSources:[],
-      guideSources:[],
-      sources:[],
-      performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
-      legalGovernance:{
-        sourceVerificationState:"OFFICIAL_HEADLINE_DISCOVERY_ONLY",
-        temporalVerificationState:"ARTICLE_DATE_AND_LEGAL_EFFECT_MUST_BE_VERIFIED",
-        verificationState:"HUMAN_REVIEW_PENDING",
-        executionAuthorization:"NO_EXTERNAL_ACTION",
-        humanReviewRequired:true
-      },
-      membership:botMembership
-        ?{planCode:botMembership.planCode,status:botMembership.status}
-        :{planCode:trainingOpen?"training":"free",trainingOpen},
-      humanGate:"Headline discovery is not legal validity. Verify the original act, publication, effective date, jurisdiction and exact document before legal use."
-    });
-  }
-
   const uiMode=["auto","library","web"].includes(payload.mode) ? payload.mode : "auto";
   const requestedWebDomainPreset=["all","mk_official","eu_echr_official"].includes(String(payload.webDomainPreset||""))
     ? String(payload.webDomainPreset)
@@ -7949,6 +7874,82 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
 
   const burst=await checkAssistantBurst(env,subject);
   if(!burst.allowed) return json(request,{ok:false,error:"rate_limited"},429,{"Retry-After":String(burst.retryAfter)});
+
+  // Source-first daily legal briefing is available equally in INTERNAL and EXTERNAL
+  // conversations. Headlines come only from whitelisted official sources,
+  // not from generative models. Do not bypass the privacy/membership gates above.
+  if(isDailyLegalBriefingRequest(userQ)
+    && shouldEnforceMacedonianOutput(userQ)
+    && (!openAIOnly || /^mk(?:-|$)/iu.test(String(payload.outputLanguage||"mk")))){
+    const checkedAt=new Date();
+    let news=null;
+    let sourceMode="snapshot";
+    let sourceFetchError=false;
+    try{
+      const cache=await loadJusticeDailySnapshot(env);
+      if(cache?.payload){
+        news=filterJusticeDailySnapshot(cache.payload,{days:2,limit:32});
+      }else{
+        sourceMode="bounded_official_fetch";
+        news=await aggregateLegalNews({
+          fetchImpl:fetch,
+          now:checkedAt,
+          days:2,
+          limit:32,
+          sourceIds:LEGAL_DAILY_OFFICIAL_IDS,
+          includeUndated:false
+        });
+      }
+    }catch{
+      sourceFetchError=true;
+      news={items:[]};
+      sourceMode="source_unavailable";
+    }
+    const briefing=buildDailyLegalBriefing(news,{userText:userQ,now:checkedAt});
+    if(!briefing.answer){
+      return json(request,{
+        ok:false,error:"legal_daily_briefing_language_gate_blocked",
+        message:"Изворниот преглед не помина задолжителна јазична проверка. Правни вести не се објавени.",
+        sourceMode:"official_headlines_blocked",
+        providerCalls:0,
+        languageReleaseGate:briefing.languageGate
+      },503);
+    }
+    return json(request,{
+      ok:true,
+      answer:briefing.answer,
+      provider:"official_source_monitor_no_model",
+      model:null,
+      mode:"source_first_legal_news",
+      displayMode:"official_daily_legal_briefing",
+      sourceMode:"official_headline_discovery_no_model",
+      legalNewsVersion:LEGAL_DAILY_BRIEFING_VERSION,
+      briefingState:briefing.state,
+      verifiedLinkCount:briefing.sourceCount,
+      checkedAt:briefing.checkedAt,
+      sourceRefreshState:sourceMode,
+      sourceFetchError,
+      webSearchUsed:false,
+      legalSources:briefing.legalSources,
+      caseLawSources:[],
+      publicationSources:[],
+      guideSources:[],
+      sources:[],
+      performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+      legalGovernance:{
+        sourceVerificationState:"OFFICIAL_HEADLINE_DISCOVERY_ONLY",
+        temporalVerificationState:"ARTICLE_DATE_AND_LEGAL_EFFECT_MUST_BE_VERIFIED",
+        verificationState:"HUMAN_REVIEW_PENDING",
+        executionAuthorization:"NO_EXTERNAL_ACTION",
+        humanReviewRequired:true
+      },
+      membership:botMembership
+        ?{planCode:botMembership.planCode,status:botMembership.status}
+        :{planCode:trainingOpen?"training":"free",trainingOpen},
+      humanGate:"Headline discovery is not legal validity. Verify the original act, publication, effective date, jurisdiction and exact document before legal use."
+    });
+  }
+
 
   const period=currentPeriod();
   const reservation=await reserveMonthlyQuota(env,{subject,period,quota});
