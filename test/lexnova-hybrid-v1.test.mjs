@@ -16,13 +16,13 @@ test("96 independently specified synthetic scenarios match bounded current-turn 
   assert.equal(item.synthetic,true);
   assert.equal(item.humanExpertVerdict,"PENDING_INDEPENDENT_LEGAL_REVIEW");
   const result=routeLexNovaLegalIntent(item.prompt);
-  if(result.intent!==item.expectedIntent||result.capabilityRoute!==item.expectedCapabilityRoute) mismatches.push({
-   id:item.id,expected:item.expectedIntent,got:result.intent,route:result.capabilityRoute,prompt:item.prompt
+  if(result.intent!==item.expectedIntent || result.capabilityRoute!==item.expectedCapabilityRoute || result.requiresHumanReview!==true) mismatches.push({
+   id:item.id,expected:item.expectedIntent,got:result.intent,route:result.capabilityRoute,
+   needsReview:result.requiresHumanReview,prompt:item.prompt
   });
   assert.equal(result.version,LEXNOVA_ROUTER_VERSION);
   assert.equal(result.executionAuthorization,"NO_EXTERNAL_ACTION");
   assert.equal(result.verifiedAuthority,false);
-  assert.equal(result.requiresHumanReview,true);
  }
  assert.deepEqual(mismatches,[],"Golden-set intent regressions: "+JSON.stringify(mismatches));
 });
@@ -68,7 +68,7 @@ test("Document Copilot fail-closes on oversized or missing content and cannot fa
 
 test("Provenance card models missing edition, legal effect and official URL as unknown",()=>{
  const script=fs.readFileSync("assets/lexnova-source-card.js","utf8");
- const ctx={};ctx.globalThis=ctx;
+ const ctx={URL};ctx.globalThis=ctx;
  vm.runInNewContext(script,ctx);
  const card=ctx.LexNovaSourceCard.sourceModel({title:"Закон (пример)",url:"https://ldbis.pravda.gov.mk/example",articles:["10","11"]});
  assert.equal(card.article,"10, 11");
