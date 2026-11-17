@@ -242,6 +242,7 @@ import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commen
 import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, scholarlyContextItems } from "./scholarly-literature.js";
 import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
 import { judicialTemporalSafetyFallback, judicialDiscoveryContext } from "./judicial-discovery-source-registry.js";
+import { historicalJudicialResearchRecovery, HISTORICAL_JUDICIAL_RESEARCH_RECOVERY_VERSION } from "./historical-judicial-research-recovery.js";
 import {
   PUBLIC_EVIDENCE_LAYER_VERSION,
   publicEvidenceSourceDirectory,
@@ -8698,6 +8699,77 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   }
 
   if(!result.ok){
+    // P0: Do not turn an ordinary source-backed history-of-judgments paper request
+    // into a blank service error when the generative provider is unavailable.
+    // Only a narrow transient provider failure and a broad, non-confidential
+    // historical research request qualify. This releases a source-indexed
+    // methodological OUTLINE, not an AI-written manuscript or legal holding.
+    const historicalResearchRecovery=
+      explicitWebRequested!==true
+      && attachmentCheck.attachments.length===0
+      && guideDocumentCheck.attachments.length===0
+      && historyCheck.history.length===0
+      ? historicalJudicialResearchRecovery(q,result)
+      : null;
+    if(historicalResearchRecovery){
+      await releaseMonthlyQuota(env,{subject,period});
+      console.warn("historical_judicial_research_provider_recovery",JSON.stringify({
+        governanceRunId:lioeRunId,
+        originalError:String(result.error||"provider_failure").slice(0,80),
+        httpStatus:Number(result.status||0)||null,
+        sourceRegistryVersion:historicalResearchRecovery.sourceRegistryVersion,
+        recoveryVersion:HISTORICAL_JUDICIAL_RESEARCH_RECOVERY_VERSION,
+        sourceCount:historicalResearchRecovery.sources.length,
+        releaseState:"RESEARCH_OUTLINE_ONLY"
+      }));
+      return json(request,{
+        ok:true,
+        answer:historicalResearchRecovery.answer,
+        provider:"canonical_corpus_no_model",
+        providerFallback:{
+          from:"openai",
+          reason:String(result.error||"provider_failure").slice(0,80),
+          httpStatus:Number(result.status||0)||null,
+          attempts:Array.isArray(result.providerAttempts)?result.providerAttempts.length:1
+        },
+        model:null,
+        mode:"passive_corpus",
+        displayMode:"historical_judicial_research_outline",
+        sourceMode:"historical_judicial_research_outline_registry_no_model",
+        researchOutputStatus:"OUTLINE_ONLY_NOT_COMPLETED_PAPER",
+        sourceRegistryVersion:historicalResearchRecovery.sourceRegistryVersion,
+        recoveryVersion:HISTORICAL_JUDICIAL_RESEARCH_RECOVERY_VERSION,
+        legalSources:[],
+        caseLawSources:historicalResearchRecovery.sources,
+        publicationSources:[],
+        guideSources:[],
+        sources:[],
+        webSearchUsed:false,
+        performance:{
+          providerCalls:Number(result.providerCalls||0),
+          languageRepairProviderCalls:0,
+          deterministicRecoveryProviderCalls:0,
+          fastPromptUsed:false
+        },
+        membership:membership
+          ? {planCode:membership.planCode,monthlyQuota:quota,used:Math.max(0,reservation.used-1),remaining:Math.max(0,quota-(reservation.used-1))}
+          : {planCode:trainingOpen?"training":"free",trainingOpen},
+        legalGovernance:{
+          engine:"AI_ADVOKAT_LIOE_v1",
+          missionProfile,
+          sourceVerificationState:"DISCOVERY_SOURCE_REGISTRY_ONLY",
+          temporalVerificationState:"ITEM_LEVEL_PENDING",
+          jurisdictionVerificationState:"MK_SCOPE",
+          verificationState:"RESEARCH_ONLY_NO_HOLDINGS",
+          releaseState:"RESEARCH_OUTLINE_ONLY",
+          executionAuthorization:"NO_EXTERNAL_ACTION",
+          humanReviewRequired:true,
+          postflightRequired:false,
+          postflightBypassReason:"NO_LEGAL_FINDINGS_RELEASED"
+        },
+        humanGate:"Source registry discovery is not item-level authority. Verify every original court decision, legal holding, historical statute and bibliography before publication or professional use."
+      });
+    }
     const canonicalArticleFallback=membership
       ? professionalCanonicalArticleFallback({
           q,
