@@ -356,10 +356,27 @@
     if(isPreparing){
       article.classList.add("ai-msg-preparing");
       content.append(createLegalPulseLoader());
+      const chip=document.createElement("small");
+      chip.className="ai-response-elapsed";
+      chip.dataset.responseElapsed=String(idx);
+      chip.setAttribute("aria-live","off");
+      chip.textContent="Време: 00:00";
+      content.append(chip);
     }else{
       content.textContent=m.text||"";
     }
     body.append(head,content);
+    if(m.role==="assistant" && !isPreparing && Number.isFinite(m.responseElapsedMs)){
+      const chip=document.createElement("small");
+      chip.className="ai-response-duration";
+      chip.dataset.outcome=String(m.responseTimingKind||"unanswered");
+      const duration=window.AIAdvokatResponseTime?.formatDuration?.(m.responseElapsedMs)||"0,0 сек";
+      chip.textContent=m.responseTimingKind==="answered"?"Одговор за "+duration
+        :m.responseTimingKind==="stopped"?"Прекинато по "+duration
+        :m.responseTimingKind==="timeout"?"Времето истече по "+duration
+        :"Обработката траеше "+duration;
+      body.append(chip);
+    }
     if(m.role==="assistant" && !isPreparing && String(m.text||"").trim()){
       const voiceTools=document.createElement("div");
       voiceTools.className="ai-msg-voice-tools";
@@ -1099,7 +1116,16 @@
     const encodePromise=Promise.all(selectedFiles.map(f=>encodeFile(f)));
     const assistantIndex=current().messages.length;
     const preparingStartedAt=Date.now();
+    const timedChatId=currentId;
+    let responseTimingKind="unanswered";
     addMessage({role:"assistant",text:"Обработувам…",meta:"AI Advokat",guides:[]});
+    const responseClock=window.AIAdvokatResponseTime?.createClock?.({
+      onTick(ms){
+        if(currentId!==timedChatId)return;
+        const target=messagesEl.querySelector('[data-response-elapsed="'+assistantIndex+'"]');
+        if(target)target.textContent="Време: "+window.AIAdvokatResponseTime.formatClock(ms);
+      }
+    });
     root.classList.add("ai-chat-running");
     abortController=new AbortController();
 
@@ -1127,6 +1153,7 @@
       const d=await r.json().catch(()=>null);
       await keepPreparingPulseVisible(preparingStartedAt);
       if(r.ok&&d?.ok){
+        responseTimingKind="answered";
         const proactiveNextTurns=await proactiveConversation
           .then(mod=>mod?.suggestLegalNextTurns?.({question:q,answer:d.answer,language:selectedLanguageMeta().code})||null)
           .catch(()=>null);
@@ -1291,7 +1318,10 @@
       }
     }catch(err){
       await keepPreparingPulseVisible(preparingStartedAt);
-      if(err?.name==="AbortError") updateAssistantPlaceholder(assistantIndex,{text:"Генерирањето е прекинато.",meta:"Stop"});
+      if(err?.name==="AbortError"){
+        responseTimingKind="stopped";
+        updateAssistantPlaceholder(assistantIndex,{text:"Генерирањето е прекинато.",meta:"Stop"});
+      }
       else{
         const fallback=await fallbackSourceAssistant(q);
         updateAssistantPlaceholder(assistantIndex,{
@@ -1301,6 +1331,14 @@
         });
       }
     }finally{
+      const elapsed=responseClock?.stop()??Math.max(0,Date.now()-preparingStartedAt);
+      const finished=chats.get(timedChatId);
+      const reply=finished?.messages?.[assistantIndex];
+      if(reply?.role==="assistant" && reply.text!=="Обработувам…"){
+        reply.responseElapsedMs=Math.round(elapsed);
+        reply.responseTimingKind=responseTimingKind;
+        if(currentId===timedChatId)render();
+      }
       abortController=null;root.classList.remove("ai-chat-running");save();
     }
   }
