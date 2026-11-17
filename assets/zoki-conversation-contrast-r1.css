@@ -1,0 +1,134 @@
+/*
+ * Zoki external bot: scoped contrast repair for Professional R7 + conversational
+ * vNext R13 co-existence. Fixes light/dark CSS variables leaking across themes.
+ * Loaded LAST; does not change other AI Advokat pages or governed capabilities.
+ */
+html.professional-r7[data-external-experience="conversation"]{
+  --zoki-canvas:#f7f8fa;
+  --zoki-panel:#ffffff;
+  --zoki-ink:#192b3b;
+  --zoki-muted:#4e5d6c;
+  --zoki-line:#c8d5df;
+  --zoki-user:#e7edf4;
+  --zoki-link:#11568d;
+  color-scheme:light;
+}
+html.professional-r7[data-external-experience="conversation"][data-vnext-theme="dark"]{
+  --zoki-canvas:#101a26;
+  --zoki-panel:#172637;
+  --zoki-ink:#eef3f9;
+  --zoki-muted:#b5c4d1;
+  --zoki-line:#40556b;
+  --zoki-user:#263a4c;
+  --zoki-link:#9bd7ff;
+  color-scheme:dark;
+}
+/* Override both legacy dark gradient and light panel variables together. */
+html.professional-r7[data-external-experience="conversation"] body,
+html.professional-r7[data-external-experience="conversation"] .vnext-shell,
+html.professional-r7[data-external-experience="conversation"] .vnext-center,
+html.professional-r7[data-external-experience="conversation"] .vnext-center>main,
+html.professional-r7[data-external-experience="conversation"] #messages{
+  background:var(--zoki-canvas)!important;
+  color:var(--zoki-ink)!important;
+}
+html.professional-r7[data-external-experience="conversation"] .vnext-center>header,
+html.professional-r7[data-external-experience="conversation"] #composer,
+html.professional-r7[data-external-experience="conversation"] #menu nav,
+html.professional-r7[data-external-experience="conversation"] .vnext-message-menu-panel{
+  background:var(--zoki-panel)!important;
+  color:var(--zoki-ink)!important;
+  border-color:var(--zoki-line)!important;
+}
+html.professional-r7[data-external-experience="conversation"] .bottom{
+  background:var(--zoki-canvas)!important;
+  color:var(--zoki-ink)!important;
+}
+html.professional-r7[data-external-experience="conversation"] #welcome{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+  color:var(--zoki-ink)!important;
+}
+html.professional-r7[data-external-experience="conversation"] #welcome h1,
+html.professional-r7[data-external-experience="conversation"] #welcome p,
+html.professional-r7[data-external-experience="conversation"] .message,
+html.professional-r7[data-external-experience="conversation"] .message.assistant,
+html.professional-r7[data-external-experience="conversation"] .message .text{
+  color:var(--zoki-ink)!important;
+}
+html.professional-r7[data-external-experience="conversation"] #welcome p,
+html.professional-r7[data-external-experience="conversation"] #status,
+html.professional-r7[data-external-experience="conversation"] .footnote,
+html.professional-r7[data-external-experience="conversation"] .message small{
+  color:var(--zoki-muted)!important;
+}
+html.professional-r7[data-external-experience="conversation"] .message.assistant{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+html.professional-r7[data-external-experience="conversation"] .message.user.has-vnext-actions{
+  background:transparent!important;
+  border-color:transparent!important;
+}
+html.professional-r7[data-external-experience="conversation"] .message.user:not(.has-vnext-actions),
+html.professional-r7[data-external-experience="conversation"] .message.user.has-vnext-actions>.text{
+  background:var(--zoki-user)!important;
+  border-color:var(--zoki-line)!important;
+  color:var(--zoki-ink)!important;
+}
+html.professional-r7[data-external-experience="conversation"] .message .text,
+html.professional-r7[data-external-experience="conversation"] #question{
+  -webkit-text-fill-color:var(--zoki-ink)!important;
+}
+html.professional-r7[data-external-experience="conversation"] #question{
+  background:transparent!important;
+  color:var(--zoki-ink)!important;
+  caret-color:var(--zoki-ink)!important;
+}
+html.professional-r7[data-external-experience="conversation"] #question::placeholder{
+  color:var(--zoki-muted)!important;
+  -webkit-text-fill-color:var(--zoki-muted)!important;
+}
+html.professional-r7[data-external-experience="conversation"] .message-voice-lang,
+html.professional-r7[data-external-experience="conversation"] .message-speak,
+html.professional-r7[data-external-experience="conversation"] .message-save-audio,
+html.professional-r7[data-external-experience="conversation"] .vnext-message-action,
+html.professional-r7[data-external-experience="conversation"] #menu nav button,
+html.professional-r7[data-external-experience="conversation"] #menu nav a{
+  background:var(--zoki-panel)!important;
+  color:var(--zoki-ink)!important;
+  border-color:var(--zoki-line)!important;
+}
+html.professional-r7[data-external-experience="conversation"] .bot-language-control select,
+html.professional-r7[data-external-experience="conversation"] .bot-language-control select option,
+html.professional-r7[data-external-experience="conversation"] .message-voice-lang option{
+  background:var(--zoki-panel)!important;
+  color:var(--zoki-ink)!important;
+  -webkit-text-fill-color:var(--zoki-ink)!important;
+}
+html.professional-r7[data-external-experience="conversation"] .bot-language-control select option:checked,
+html.professional-r7[data-external-experience="conversation"] .message-voice-lang option:checked{
+  background:var(--zoki-user)!important;
+  color:var(--zoki-ink)!important;
+}
+html.professional-r7[data-external-experience="conversation"] .sources a,
+html.professional-r7[data-external-experience="conversation"] .message a{
+  color:var(--zoki-link)!important;
+  text-decoration-thickness:1px;
+  text-underline-offset:2px;
+}
+html.professional-r7[data-external-experience="conversation"] #menu nav button:hover,
+html.professional-r7[data-external-experience="conversation"] #menu nav a:hover,
+html.professional-r7[data-external-experience="conversation"] .vnext-message-action:hover{
+  background:var(--zoki-user)!important;
+  color:var(--zoki-ink)!important;
+}
+html.professional-r7[data-external-experience="conversation"] :is(button,select,textarea,a,summary):focus-visible{
+  outline:2px solid var(--zoki-link)!important;
+  outline-offset:2px!important;
+}
+
+/* Timer chips always readable inside the externally hosted conversation. */
+html.professional-r7[data-external-experience="conversation"] .ai-response-elapsed,html.professional-r7[data-external-experience="conversation"] .ai-response-duration{color:var(--zoki-ink)!important;background:var(--zoki-panel)!important;border:1px solid var(--zoki-line)!important;opacity:1!important;font-weight:800!important}
