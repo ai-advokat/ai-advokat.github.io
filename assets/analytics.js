@@ -256,7 +256,7 @@
   // LexNova Quick Chat uses the existing governed external bot only.
   // Lazy frame loads after a user clicks. This bridge is independent of analytics consent.
   function installLexNovaQuickChatBridge() {
-    if(/^\\/bot(?:\\/|$)/.test(location.pathname)) return;
+    if(/^\/bot(?:\/|$)/.test(location.pathname)) return;
     if(location.pathname==="/" || location.pathname==="/index.html") return; // root includes it directly
     if(document.getElementById("lexnova-quick-chat-script")) return;
     const stylesheet=document.createElement("link");
