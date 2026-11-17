@@ -199,9 +199,20 @@
     targets.forEach(({ root, location }) => {
       if (!root) return;
       const hasAuthorHub = root.querySelector('[href="/authors/zoran-stojankic/"], [href="/authors/zoran-stojankic/#publications"]');
-      const hasYoutube = root.querySelector('a[href="https://www.youtube.com/@ZoranStojankich"]');
+      // The homepage has a dedicated social navigation with the official YouTube channel.
+      // Do not add a second, legacy text link to the main header or footer.
+      const socialYoutube = location === "header"
+        ? document.querySelector('header .socialHub a[href*="youtube.com/"]')
+        : location === "footer"
+          ? document.querySelector('footer .footerSocial a[href*="youtube.com/"]')
+          : null;
+      const hasYoutube = socialYoutube || root.querySelector('a[href="https://www.youtube.com/@ZoranStojankich"]');
       if (!hasAuthorHub && !root.querySelector(`[data-ai-advokat-author-hub="${location}"]`)) root.appendChild(makeAuthorHubLink(location));
-      if (!hasYoutube && !root.querySelector(`[data-ai-advokat-youtube="${location}"]`)) root.appendChild(makeOfficialChannelLink(location));
+      if (socialYoutube) {
+        root.querySelectorAll('[data-ai-advokat-youtube]').forEach(link => link.remove());
+      } else if (!hasYoutube && !root.querySelector(`[data-ai-advokat-youtube="${location}"]`)) {
+        root.appendChild(makeOfficialChannelLink(location));
+      }
     });
   }
 
