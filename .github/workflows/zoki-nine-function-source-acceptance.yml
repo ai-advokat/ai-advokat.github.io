@@ -1,0 +1,58 @@
+name: Zoki nine-function source acceptance (no live provider claims)
+on:
+  pull_request:
+    branches: [main, fix/zoki-translator-r26-prod-main-20261116]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-matrix:
+    name: "${{ matrix.gate }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - gate: "01 translator EN-MK / 33 targets"
+            run: "node --no-warnings --test test/ui-translation-runtime-r7.test.mjs test/zoki-r26-isolated-hotfix.test.mjs test/external-bot-language33.test.mjs"
+          - gate: "02 internal and external conversation"
+            run: "node --no-warnings --test test/standalone-bot.test.mjs test/dual-chat-preflight-resilience-r19.test.mjs"
+          - gate: "03 microphone source checks"
+            run: "node --check assets/standalone-bot.js && node --check assets/ai-advokat-chat.js"
+          - gate: "04 six export formats and audit"
+            run: "node --no-warnings --test test/case-export.test.mjs test/casepilot-export-adapter.test.mjs"
+          - gate: "05 legal source provenance"
+            run: "node --no-warnings --test test/open-legal-sources-registry.test.mjs test/legal-claim-validator.test.mjs"
+          - gate: "06 desktop/mobile browser shell parity"
+            run: "node --no-warnings --test test/external-full-parity-r14.test.mjs test/global-33-language-header.test.mjs"
+          - gate: "07 privacy and legal access security"
+            run: "node --no-warnings --test test/security.test.mjs test/chat-privacy-routing.test.mjs"
+          - gate: "08 quotas and provider error behavior"
+            run: "node --no-warnings --test test/ui-translation-runtime-r7.test.mjs test/zoki-r26-isolated-hotfix.test.mjs"
+          - gate: "09 Pages watcher syntax and publishing safety"
+            run: "node --check scripts/zoki-r26-translator-browser.mjs && test -s .github/workflows/mk-current-law-watch.yml"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source-only validation; never report live provider PASS
+        shell: bash
+        env:
+          GATE_COMMAND: "${{ matrix.run }}"
+        run: |
+          set -euo pipefail
+          bash -e -c "$GATE_COMMAND"
+      - name: Record verification boundary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Nine-function source matrix: ${{ matrix.gate }}"
+            echo "Real microphone permission: NOT_TESTED"
+            echo "Cloudflare live model and translation quality: NOT_TESTED"
+            echo "Real document rendering and human legal review: NOT_TESTED"
+            echo "Production Pages/Worker parity: NOT_TESTED"
+            echo "Human Gate: HOLD"
+          } >> "$GITHUB_STEP_SUMMARY"
