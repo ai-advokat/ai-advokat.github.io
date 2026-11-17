@@ -139,3 +139,26 @@ test("Academy only embeds the single existing external bot",()=>{
   assert.match(academy,/createElement\('iframe'\)/);
   assert.doesNotMatch(academy,/api\/chat|api\/bot|fetch\(/);
 });
+
+
+test("main FREE route preserves actual provider classification, never generic safety failures",()=>{
+  const okCases=[
+    {ok:false,error:"free_workers_ai_provider_error",upstreamErrorCategory:"workers_ai_timeout",retryable:true,providerCalls:1},
+    {ok:false,error:"free_workers_ai_provider_error",upstreamErrorCategory:"workers_ai_provider_error",retryable:true,providerCalls:1},
+    {ok:false,error:"free_workers_ai_empty_response",upstreamErrorCategory:"workers_ai_empty_response",retryable:true,providerCalls:1}
+  ];
+  for(const failure of okCases){
+    assert.equal(isTransientHistoricalResearchProviderFailure(failure),true);
+    assert.ok(historicalJudicialResearchRecovery(TRPE,failure));
+  }
+  const blocked=[
+    {ok:false,error:"free_workers_ai_provider_error",retryable:true,providerCalls:1},
+    {ok:false,error:"free_workers_ai_provider_error",upstreamErrorCategory:"security_gate_failed",retryable:true,providerCalls:1},
+    {ok:false,error:"free_workers_ai_provider_error",upstreamErrorCategory:"workers_ai_timeout",retryable:false,providerCalls:1},
+    {ok:false,error:"free_workers_ai_provider_error",upstreamErrorCategory:"workers_ai_timeout",retryable:true,providerCalls:0},
+    {ok:false,error:"free_workers_ai_empty_response",upstreamErrorCategory:"workers_ai_provider_error",retryable:true,providerCalls:1}
+  ];
+  for(const failure of blocked)assert.equal(isTransientHistoricalResearchProviderFailure(failure),false);
+  const worker=fs.readFileSync("src/index.js","utf8");
+  assert.match(worker,/upstreamErrorCategory:\["workers_ai_provider_error","workers_ai_timeout","workers_ai_empty_response"\]/);
+});
