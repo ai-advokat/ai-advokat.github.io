@@ -1,0 +1,32 @@
+/* Zoki external bot — conversation first, full functions retained.
+ * Compact by default; no removal of tools, legal provenance or Human Gate.
+ * The full professional toolkit remains in the existing Materials dialog.
+ */
+.bot-advanced-tools {
+  max-width: 980px;
+  margin: 8px auto 0;
+  padding: 0 12px;
+  color: var(--vink, #17212b);
+  font: inherit;
+}
+.bot-advanced-tools > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--vmuted, #5c6878);
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  list-style: none;
+}
+.bot-advanced-tools > summary::-webkit-details-marker { display: none; }
+.bot-advanced-tools > summary:hover,
+.bot-advanced-tools > summary:focus-visible { background: var(--vsoft, #eef3f7); outline-offset: 3px; }
+.bot-advanced-tools[open] > summary { color: var(--vink, #17212b); }
+.bot-advanced-tools > .conversation-secondary-panel { margin-top: 8px !important; }
+@media (max-width: 760px) {
+  .bot-advanced-tools { margin: 5px 8px 0; padding: 0 6px; }
+  .bot-advanced-tools > summary { font-size: 11px; }
+}

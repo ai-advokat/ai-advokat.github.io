@@ -79,7 +79,12 @@ test("R14 full parity: external translator mirrors the 33-language governed inte
   assert.match(core,/fetch\(base\+"\/api\/ui-translate"/);
   assert.match(core,/targetLanguage:code/);
   assert.match(core,/collectBotUiUnits/);
-  assert.match(core,/new MutationObserver/);
+  // R26: bounded UI translation and explicit user-initiated remainder, no unbounded observer.
+  assert.doesNotMatch(core,/new MutationObserver/);
+  assert.match(core,/BOT_UI_TRANSLATION_INITIAL_BATCHES=1/);
+  assert.match(core,/BOT_UI_TRANSLATION_EXPLICIT_BATCHES=6/);
+  assert.match(core,/const byId=new Map\(\)/);
+  assert.match(core,/botUiMoreButton/);
   assert.match(core,/conversationalLanguageSwitch/);
   assert.match(core,/writePreferredLanguage\(languageSwitch\)/);
 });

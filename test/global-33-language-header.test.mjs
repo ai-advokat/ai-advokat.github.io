@@ -58,7 +58,8 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(worker,/UI_TRANSLATION_CONCURRENCY=2/);
   assert.match(worker,/workers_ai_ui_fallback/);
   assert.match(worker,/m2m100_workers_ai_item_fallback/);
-  assert.match(worker,/ui_translation_m2m100_item_fallback/);
+  // R26 removed the legacy empty-content fallback marker. The focused R26 tests enforce EN→MK source-passthrough safety.
+  assert.match(worker,/m2m100_workers_ai_item_fallback/);
   assert.match(worker,/fallbackItemCount/);
   assert.match(worker,/fallbackTranslationModel/);
   assert.match(worker,/scope:"ui_translate_lang_"\+target/);

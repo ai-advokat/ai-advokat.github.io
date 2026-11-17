@@ -31,7 +31,7 @@ test("R19 external bot: optional catalogue and selected local vault are bounded"
 });
 
 test("R19 external bot: provider 503 is visible in the conversation and not presented as legal output",()=>{
-  assert.ok(external.includes("if(error.name!=='AbortError' && epoch===generation)"));
+  assert.ok(external.includes("if(epoch===generation)"));
   assert.ok(external.includes("AI одговор не е издаден."));
   assert.ok(external.includes("Ова е сервисна грешка, не правно мислење."));
   assert.ok(external.includes("Сервисен статус · НЕМА AI ОДГОВОР"));
