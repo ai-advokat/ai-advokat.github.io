@@ -35,3 +35,10 @@ This branch integrates **source-level changes** for bounded external bot UI tran
 5. Record an actual production deployment ID and rollback SHA only after the owner approves release.
 
 Status: RELEASE CANDIDATE WITH BLOCKERS, NOT DEPLOYED.
+
+## External bot as the primary Zoran workspace — 2026-11-17
+- Owner reports Zoran asks his questions in the external standalone bot; that surface is a first-class supported client, NOT a cut-down demonstration.
+- **Conversation-first visual treatment**: the ten-function Hybrid panel and long instruction guide are intact but collapsed inside the accessible `advancedTools` disclosure. Existing Materials dialog, 33 languages, microphone, chat composition, source details, export controls, optional professional access and Secure Case links remain available.
+- The internal and external clients must preserve capability parity in the backend, while **not** weakening their distinct access/privacy entitlements. An external TRAINING user does not automatically gain professional or private-case access.
+- Old tests expecting a locked composer or 180-second fixed timeout were updated to the R25 one-turn queue and TRAINING 90-second bounded timeout. This does NOT amount to provider-live success.
+- Verify on real desktop/mobile browsers with 2+ successive questions, 503/429 and Stop, keyboard navigation of the advanced disclosure, microphone permission, and synthetic privacy-safe source/export checks.
