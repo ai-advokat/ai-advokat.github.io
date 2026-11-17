@@ -194,13 +194,14 @@
   </main>
   <dialog id="downloadDialog" aria-labelledby="downloadTitle">
     <h2 id="downloadTitle">⇩ Преземи го последниот AI одговор</h2>
-    <p>Изберете формат. Извозот е работна копија и останува под Human Gate пред професионална употреба.</p>
+    <p>Изберете PDF, JSON, Markdown (.md), Word (.docx), CSV или JPG. Word се создава како современ DOCX, а не како стар DOC. Извозот е работна копија под Human Gate.</p>
     <div class="dialog-actions export-actions">
       <button type="button" data-export="docx">▧ DOCX</button>
       <button type="button" data-export="pdf">▧ PDF</button>
       <button type="button" data-export="md">◇ MD</button>
       <button type="button" data-export="json">{ } JSON</button>
       <button type="button" data-export="csv">▦ CSV</button>
+      <button type="button" data-export="jpg">▣ JPG</button>
     </div>
     <div class="dialog-actions"><button id="closeDownload" type="button">✓ Затвори</button></div>
   </dialog>
@@ -220,6 +221,7 @@
       <button type="button" data-export="md">◇ MD</button>
       <button type="button" data-export="json">{ } JSON</button>
       <button type="button" data-export="csv">▦ CSV</button>
+      <button type="button" data-export="jpg">▣ JPG</button>
       <button type="button" data-export="txt">▤ TXT</button>
     </div>
     <div class="material-links material-folder-grid">

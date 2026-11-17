@@ -89,6 +89,8 @@ try { deviceStorage = window.localStorage; } catch {}
 const $ = id => document.getElementById(id);
 const base = location.hostname.endsWith('workers.dev') ? location.origin : 'https://ai-advokat-github-io.aiadvokat16.workers.dev';
 let key = '', history = [], pending = null, generation = 0;
+// In-memory only: a second user turn may be entered while the first AI call runs.
+let queuedNextTurn = null;
 let sessionId = crypto.randomUUID();
 const proactiveConversation=import("./ai-advokat-proactive.mjs?v=r22-20261114").catch(()=>null);
 const welcome = $('welcome').cloneNode(true);
@@ -402,10 +404,11 @@ const voiceRuntimeReady=import("./ai-advokat-voice.mjs?v=20261109-voice-r4")
   });
 function busy(value) {
   const hasQuestion = String($('question')?.value || '').trim().length >= 2;
-  $('send').disabled = value || !hasQuestion;
+  // Keep the composer usable during slow provider calls. One next turn can be queued.
+  $('send').disabled = !hasQuestion;
   $('stop').hidden = !value;
-  $('send').hidden = value;
-  $('question').disabled = value;
+  $('send').hidden = false;
+  $('question').disabled = false;
   $('newChat').disabled = value;
   $('access').disabled = value;
 }
@@ -629,7 +632,7 @@ async function guideMatches(q, signal) {
   } catch { return []; }
 }
 function reset() {
-  generation++; pending?.abort(); pending = null; history = []; sessionId = crypto.randomUUID();
+  generation++; pending?.abort(); pending = null; queuedNextTurn = null; history = []; sessionId = crypto.randomUUID();
   $('useLocalGuides').checked = false;
   $('messages').replaceChildren(welcome.cloneNode(true)); $('question').value = ''; $('question').style.height = '';
   $('menu').open = false; busy(false);
@@ -663,7 +666,8 @@ $('stop').onclick = () => pending?.abort();
 $('question').oninput = () => {
   $('question').style.height = 'auto';
   $('question').style.height = Math.min($('question').scrollHeight,180) + 'px';
-  if (!pending) $('send').disabled = $('question').value.trim().length < 2;
+  // Queued second turns must be submittable while the first AI call is pending.
+  $('send').disabled = $('question').value.trim().length < 2;
 };
 $('question').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } };
 $('mic').addEventListener('click',()=>voiceRuntimeReady.then(voice=>voice?.stopSpeaking?.()),{capture:true});
@@ -695,8 +699,17 @@ $('composer').addEventListener('dragover', event => event.preventDefault());
 $('composer').addEventListener('drop', event => { event.preventDefault(); $('plus').open = true; status('Документите се прикачуваат во приватниот простор преку „+“.'); });
 $('composer').onsubmit = async event => {
   event.preventDefault(); const q = $('question').value.trim();
-  if (pending) return;
   if (q.length < 2) return;
+  if (pending) {
+    // Never drop the second question or reset the conversational session.
+    // Deliberately bounded to one queued turn to avoid unattended model spending.
+    queuedNextTurn = q;
+    $('question').value = '';
+    $('question').style.height = '';
+    busy(true);
+    status('Следното прашање е примено. Ќе се испрати по тековниот одговор; можете да го запрете тековниот одговор.');
+    return;
+  }
 
   const languageSwitch=conversationalLanguageSwitch(q);
   if(languageSwitch){
@@ -745,7 +758,12 @@ $('composer').onsubmit = async event => {
   }
 
   const epoch = generation, controller = new AbortController(); pending = controller; busy(true);
-  const timeout = setTimeout(() => controller.abort(),180000);
+  let timedOut=false;
+  let successfulAnswer=false;
+  // A governed professional legal draft can consume the server's 160s budget;
+  // ordinary FREE training questions must not lock the UI for three minutes.
+  const requestTimeoutMs=key ? 180000 : 90000;
+  const timeout = setTimeout(() => {timedOut=true;controller.abort();},requestTimeoutMs);
   $('messages').querySelectorAll('.ai-proactive-next-turns').forEach(panel=>panel.remove());
   message('user',outboundQ); $('question').value = ''; $('question').style.height = '';
   const pulse = responsePulse();
@@ -766,8 +784,10 @@ $('composer').onsubmit = async event => {
     const data = await request('/api/bot',{signal:controller.signal,body:{q:withOutputLanguageDirective(outboundQ),visibleQ:outboundQ,capabilityRoute:conversationalCapabilityRoute(outboundQ),outputLanguage:selectedLanguageMeta().code,sessionId,mode:$('researchMode').value,webDomainPreset:$('webDomainPreset')?.value||'all',guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     pulse.remove();
+    successfulAnswer=Boolean(String(data.answer||'').trim());
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
     history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
+    renderRequestedExportActions(article,outboundQ);
     const nextTurns=await proactiveConversation
       .then(mod=>mod?.suggestLegalNextTurns?.({question:outboundQ,answer:data.answer,language:selectedLanguageMeta().code})||null)
       .catch(()=>null);
@@ -794,21 +814,48 @@ $('composer').onsubmit = async event => {
       forgetDeviceAccess(deviceStorage);
       status('Професионалниот клуч не е активен. Продолжувам во TRAINING режим без шифра — обидете се повторно.');
     }
-    else if (error.name === 'AbortError') status('Барањето е запрено или истече времето за одговор. Можете да се обидете повторно.');
-    else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
-    // A failed provider must be visible in the conversation, not just in a
-    // small status line that leaves the user believing no response occurred.
-    if(error.name!=='AbortError' && epoch===generation){
-      message('assistant',
-        'AI одговор не е издаден. '+String(error?.message||'Сервисот моментално е недостапен.').slice(0,360)
-          +'\\n\\nОва е сервисна грешка, не правно мислење. Вашето прашање е зачувано во полето за повторен обид.',
+    else if (error.name === 'AbortError') status(timedOut
+      ? 'AI обработката предолго траеше. Разговорот не е избришан; обидете се повторно.'
+      : 'Барањето е запрено. Разговорот е зачуван.');
+    else if(['macedonian_language_release_blocked','legal_daily_briefing_language_gate_blocked'].includes(String(error.code||''))){
+      status('Јазичната проверка ја задржа содржината. Брифингот не е објавен.');
+    }else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
+    // A service hold must never repeat the full 503 message twice or look
+    // like a substantive legal answer. Keep the exact user question for retry.
+    if(epoch===generation){
+      const languageHold=['macedonian_language_release_blocked','legal_daily_briefing_language_gate_blocked'].includes(String(error.code||''));
+      message('assistant',languageHold
+        ?'Јазичната проверка не ја одобри содржината. Не е издаден правен брифинг. Прашањето е зачувано за повторен обид.'
+        :'AI одговор не е издаден. '+String(error?.message||'Сервисот моментално е недостапен.').slice(0,360)
+          +'\n\nОва е сервисна грешка, не правно мислење. Вашето прашање е зачувано во полето за повторен обид.',
         'Сервисен статус · НЕМА AI ОДГОВОР');
     }
     $('question').value = q;
   } finally {
     pulse.remove();
     clearTimeout(timeout);
-    if (epoch === generation) { pending = null; busy(false); $('question').focus(); }
+    if (epoch === generation) {
+      pending = null;
+      const next = queuedNextTurn;
+      queuedNextTurn = null;
+      if (next) {
+        // Never spend another AI call automatically after failure or Stop.
+        // Keep the queued text visible so Zoki can choose to retry.
+        $('question').value = next;
+        busy(false);
+        if(successfulAnswer){
+          queueMicrotask(() => {
+            if (epoch === generation && !pending) $('composer').requestSubmit();
+          });
+        }else{
+          status('Тековниот одговор не успеа. Следното прашање е зачувано; испратете го кога ќе сакате.');
+          $('question').focus();
+        }
+      } else {
+        busy(false);
+        $('question').focus();
+      }
+    }
   }
 };
 async function restoreAccess() {
@@ -848,6 +895,39 @@ busy(false);
 window.AIAdvokatCoreReady = true;
 document.documentElement.dataset.botCoreRuntime = 'ready';
 window.dispatchEvent(new CustomEvent('aiadvokat:core-ready'));
+function requestedExternalExportFormats(question){
+  const q=String(question||"").normalize("NFKC").toLowerCase();
+  const formats=[];
+  if(/(?:\bdocx?\b|\bword\b|ворд)/iu.test(q)) formats.push("docx");
+  if(/(?:\bpdf\b|пдф)/iu.test(q)) formats.push("pdf");
+  if(/(?:\bjson\b|џејсон)/iu.test(q)) formats.push("json");
+  if(/(?:\bmarkdown\b|\bmd\b|маркдаун)/iu.test(q)) formats.push("md");
+  if(/(?:\bcsv\b|цсв)/iu.test(q)) formats.push("csv");
+  if(/(?:\bjpe?g\b|\.jpe?g\b)/iu.test(q)) formats.push("jpg");
+  return formats;
+}
+function renderRequestedExportActions(article,question){
+  const formats=requestedExternalExportFormats(question);
+  if(!article||!formats.length) return;
+  const tools=document.createElement("div");
+  tools.className="bot-file-export-actions";
+  const note=document.createElement("small");
+  note.textContent="Работен документ · изборот се презема само по Ваш клик · Human Gate";
+  tools.append(note);
+  for(const fmt of formats){
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="bot-file-export-action";
+    b.textContent=fmt==="docx"?"⇩ Word (.docx)":"⇩ "+fmt.toUpperCase();
+    b.addEventListener("click",async()=>{
+      b.disabled=true;
+      try{await exportLatestAssistant(fmt);}
+      finally{b.disabled=false;}
+    });
+    tools.append(b);
+  }
+  article.append(tools);
+}
 async function exportLatestAssistant(format) {
   const latest=[...history].reverse().find(item=>item.role==='assistant' && String(item.text||'').trim());
   if(!latest){ status('Сè уште нема AI одговор за извоз.'); return; }
@@ -869,7 +949,7 @@ async function exportLatestAssistant(format) {
     });
     await mod.downloadCasePilotExport(report,format,{filename:'AI-Advokat-working-draft.'+format});
   }catch{
-    status('Извозот во '+format.toUpperCase()+' не успеа. Обидете се со TXT или MD.');
+    status('Извозот во '+format.toUpperCase()+' не успеа. За предолга JPG слика изберете PDF или DOCX; за текст користете MD.');
   }
 }
 for(const button of document.querySelectorAll('[data-export]')){

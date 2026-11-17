@@ -1,0 +1,88 @@
+name: Zoki R30 — daily legal briefing + two-bot continuity + voice and exports
+on:
+  pull_request:
+    paths:
+      - 'src/index.js'
+      - 'src/legal-daily-briefing.js'
+      - 'src/legal-news-aggregator.js'
+      - 'assets/standalone-bot.js'
+      - 'assets/ai-advokat-chat.js'
+      - 'assets/ai-advokat-voice.mjs'
+      - 'src/voice-transcription-provider.js'
+      - 'src/case-export.js'
+      - 'assets/casepilot-export.js'
+      - 'bot/index.html'
+      - 'test/zoki-r30-daily-briefing.test.mjs'
+      - 'test/zoki-r25-conversation-resilience.test.mjs'
+      - 'test/standalone-bot.test.mjs'
+      - 'test/dual-chat-preflight-resilience-r19.test.mjs'
+      - 'scripts/zoki-r30-six-formats-browser.mjs'
+      - 'scripts/zoki-second-turn-browser-r25.mjs'
+      - '.github/workflows/zoki-r30-functional-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-and-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax for bounded R30 changed code
+        run: |
+          node --check src/index.js
+          node --check src/legal-daily-briefing.js
+          node --check assets/standalone-bot.js
+          node --check assets/ai-advokat-chat.js
+          node --check assets/ai-advokat-voice.mjs
+          node --check src/voice-transcription-provider.js
+          node --check src/case-export.js
+          node --check assets/casepilot-export.js
+      - name: Exact briefing, no provider call, two-turn conversation, file-safety and access regressions
+        run: |
+          node --no-warnings --test \
+            test/zoki-r30-daily-briefing.test.mjs \
+            test/zoki-r25-conversation-resilience.test.mjs \
+            test/case-export.test.mjs \
+            test/standalone-bot.test.mjs \
+            test/dual-chat-preflight-resilience-r19.test.mjs
+      - name: Evidence boundary
+        if: always()
+        run: |
+          {
+            echo '### R30 source tests'
+            echo 'The exact Macedonian briefing question runs against a synthetic, source-attributed snapshot.'
+            echo 'No OpenAI or Workers AI calls, client matter data or actual live news are used.'
+            echo 'The Macedonian language-release guard remains mandatory.'
+          } >> "$GITHUB_STEP_SUMMARY"
+  chromium-experience:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser controller without altering package lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          chrome="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$chrome"
+          echo "BROWSER_EXECUTABLE=$chrome" >> "$GITHUB_ENV"
+      - name: Real Chromium UI with synthetic two-turn AI responses
+        run: node scripts/zoki-second-turn-browser-r25.mjs
+      - name: Real Chromium and real downloadable PDF DOCX JSON MD CSV JPG files
+        run: node scripts/zoki-r30-six-formats-browser.mjs
+      - name: Truthful provider and staging boundary
+        if: always()
+        run: |
+          {
+            echo '### R30 Chromium DOM and downloadable-file acceptance'
+            echo 'Actual browser DOM and file bytes are checked; provider answers are mocked.'
+            echo 'Live Cloudflare GPT/Workers inference and production or staging deploy remain NOT_TESTED.'
+          } >> "$GITHUB_STEP_SUMMARY"
