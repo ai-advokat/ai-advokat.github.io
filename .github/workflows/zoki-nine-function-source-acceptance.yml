@@ -25,7 +25,7 @@ jobs:
           - gate: "05 legal source provenance"
             run: "node --no-warnings --test test/open-legal-sources-registry.test.mjs test/legal-claim-validator.test.mjs"
           - gate: "06 desktop/mobile browser shell parity"
-            run: "node --no-warnings --test test/external-full-parity-r14.test.mjs test/global-33-language-header.test.mjs"
+            run: "node --no-warnings --test test/external-full-parity-r14.test.mjs test/global-33-language-header.test.mjs test/zoki-external-conversation-first.test.mjs"
           - gate: "07 privacy and legal access security"
             run: "node --no-warnings --test test/security.test.mjs test/chat-privacy-routing.test.mjs"
           - gate: "08 quotas and provider error behavior"
