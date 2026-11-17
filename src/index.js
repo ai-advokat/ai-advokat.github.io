@@ -1,4 +1,5 @@
 import { runVoiceTranscriptionAI } from "./voice-transcription-provider.js";
+import {LEXNOVA_ROUTER_VERSION,routeLexNovaLegalIntent} from "./lexnova-legal-router.js";
 import { handleLegalAlarm } from "./legal-alarm.js";
 import {
   CASE_LAW_CURATION_VERSION,
@@ -7010,7 +7011,32 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       humanGate:"TRAINING mode does not authorize filing, signature, confidential-case processing or final professional reliance."
     });
   }
-  const detectedCapabilityRoute=openAIOnly ? detectExternalBotCapabilityRoute(userQ) : "";
+  const confidentiality=detectConfidentialCasePrompt(userQ);
+  if(confidentiality.confidential){
+    return json(request,{
+      ok:false,
+      error:"confidential_case_workspace_required",
+      message:"Ова барање содржи податоци што личат на конкретен доверлив правен предмет. За да не се испраќаат преку јавниот AI chat, користете Secure Case Workspace.",
+      action:{
+        label:"Отвори Secure Case Workspace",
+        href:"/casepilot-workspace.html"
+      },
+      privacy:{
+        providerCalled:false,
+        quotaConsumed:false,
+        publicChatProcessingStopped:true,
+        reasons:confidentiality.reasons
+      }
+    },422);
+  }
+
+
+  // This is a deterministic, read-only intent hint. The existing SECURE_CASE,
+  // entitlement, history, attachment, model and Human Gate guards remain authoritative.
+  const lexnovaRoute=routeLexNovaLegalIntent(userQ);
+  const detectedCapabilityRoute=openAIOnly
+    ? (detectExternalBotCapabilityRoute(userQ) || lexnovaRoute.capabilityRoute || "")
+    : "";
   const requestedCapabilityRoute=openAIOnly && EXTERNAL_BOT_CAPABILITY_ROUTES.has(String(payload.capabilityRoute||""))
     ? String(payload.capabilityRoute)
     : "";
@@ -7042,25 +7068,6 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   const sessionAffinity=/^[A-Za-z0-9._:-]{8,120}$/.test(requestedSessionId)
     ? "chat:"+requestedSessionId
     : null;
-
-  const confidentiality=detectConfidentialCasePrompt(userQ);
-  if(confidentiality.confidential){
-    return json(request,{
-      ok:false,
-      error:"confidential_case_workspace_required",
-      message:"Ова барање содржи податоци што личат на конкретен доверлив правен предмет. За да не се испраќаат преку јавниот AI chat, користете Secure Case Workspace.",
-      action:{
-        label:"Отвори Secure Case Workspace",
-        href:"/casepilot-workspace.html"
-      },
-      privacy:{
-        providerCalled:false,
-        quotaConsumed:false,
-        publicChatProcessingStopped:true,
-        reasons:confidentiality.reasons
-      }
-    },422);
-  }
 
   const uiMode=["auto","library","web"].includes(payload.mode) ? payload.mode : "auto";
   const requestedWebDomainPreset=["all","mk_official","eu_echr_official"].includes(String(payload.webDomainPreset||""))
@@ -7535,6 +7542,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         mode:"source_first_work_product",
         displayMode:"canonical_family_pre_litigation_notice",
         sourceMode:"canonical_family_divorce_pre_litigation_notice_no_model",
+        lexnovaRoute:{version:LEXNOVA_ROUTER_VERSION,intent:lexnovaRoute.intent,capabilityRoute:lexnovaRoute.capabilityRoute,executionAuthorization:"NO_EXTERNAL_ACTION",verifiedAuthority:false},
         webSearchUsed:false,
         legalSources:familyPrelitigationNoticeLegalSources(),
         caseLawSources:[],
@@ -7579,6 +7587,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         mode:"source_first_work_product",
         displayMode:"canonical_family_divorce_draft",
         sourceMode:"canonical_family_law_divorce_no_model",
+        lexnovaRoute:{version:LEXNOVA_ROUTER_VERSION,intent:lexnovaRoute.intent,capabilityRoute:lexnovaRoute.capabilityRoute,executionAuthorization:"NO_EXTERNAL_ACTION",verifiedAuthority:false},
         webSearchUsed:false,
         legalSources:familyDivorceLegalSources(),
         caseLawSources:[],
@@ -7923,6 +7932,7 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
       mode:"source_first_legal_news",
       displayMode:"official_daily_legal_briefing",
       sourceMode:"official_headline_discovery_no_model",
+        lexnovaRoute:{version:LEXNOVA_ROUTER_VERSION,intent:lexnovaRoute.intent,capabilityRoute:lexnovaRoute.capabilityRoute,executionAuthorization:"NO_EXTERNAL_ACTION",verifiedAuthority:false},
       legalNewsVersion:LEGAL_DAILY_BRIEFING_VERSION,
       briefingState:briefing.state,
       verifiedLinkCount:briefing.sourceCount,

@@ -1,0 +1,98 @@
+name: LexNova Hybrid v1 · 96-case acceptance and Chromium
+on:
+  pull_request:
+    paths:
+      - 'src/lexnova-legal-router.js'
+      - 'src/index.js'
+      - 'assets/lexnova-*.js'
+      - 'assets/lexnova-*.mjs'
+      - 'assets/lexnova-*.css'
+      - 'assets/standalone-bot.js'
+      - 'assets/ai-advokat-chat.js'
+      - 'assets/analytics.js'
+      - 'lexnova-*.html'
+      - 'index.html'
+      - 'bot/index.html'
+      - 'test/lexnova-hybrid-v1.test.mjs'
+      - 'test/fixtures/lexnova-mk-legal-acceptance-v1.json'
+      - 'scripts/lexnova-hybrid-browser-uat.mjs'
+      - 'scripts/lexnova-staging-parity-readonly.mjs'
+      - '.github/workflows/lexnova-staging-parity-readonly.yml'
+      - '.github/workflows/lexnova-hybrid-v1-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and strict no-provider boundaries
+        run: |
+          node --check src/lexnova-legal-router.js
+          node --check src/index.js
+          node --check assets/standalone-bot.js
+          node --check assets/ai-advokat-chat.js
+          node --check assets/analytics.js
+          node --check assets/lexnova-document-copilot.mjs
+          node --check assets/lexnova-source-card.js
+          node --check assets/lexnova-human-handoff.js
+          node --check assets/lexnova-quick-chat.js
+          node --check assets/lexnova-local-analytics.js
+          node --check scripts/lexnova-staging-parity-readonly.mjs
+      - name: Stage verifier refuses missing or production URL (zero network)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node scripts/lexnova-staging-parity-readonly.mjs; then
+            echo 'Should reject absent staging target' >&2
+            exit 1
+          fi
+          if STAGING_BASE_URL=https://ai-advokat-github-io.aiadvokat16.workers.dev node scripts/lexnova-staging-parity-readonly.mjs; then
+            echo 'Should reject production target' >&2
+            exit 1
+          fi
+      - name: 96 synthetic Macedonian legal scenarios and offline feature contracts
+        run: node --no-warnings --test test/lexnova-hybrid-v1.test.mjs
+      - name: Honest legal certification boundary
+        if: always()
+        run: |
+          {
+            echo '### LexNova Hybrid v1 source tests'
+            echo '96 independent expected-router fixtures: AUTOMATED CONTRACT ONLY.'
+            echo 'Independent Macedonian attorney substantive-review rubric: PENDING.'
+            echo 'All inputs are fictional. No provider keys, paid requests or documents sent.'
+            echo 'Staging and production deployment: NOT PERFORMED.'
+          } >> "$GITHUB_STEP_SUMMARY"
+  browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium controller without lockfile changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          chrome="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$chrome"
+          echo "BROWSER_EXECUTABLE=$chrome" >> "$GITHUB_ENV"
+      - name: Real Chromium document comparison, quick chat and human handoff (synthetic)
+        run: node scripts/lexnova-hybrid-browser-uat.mjs
+      - name: Browser truth boundary
+        if: always()
+        run: |
+          {
+            echo '### LexNova Hybrid v1 Chromium QA'
+            echo 'Browser rendering and document downloads are actual Chromium tests.'
+            echo 'All answers and legal examples are synthetic. Live Cloudflare providers not contacted.'
+            echo 'Quick Chat iframe is simulated to avoid live traffic.'
+            echo 'Human Gate + staging parity + independent legal evaluation remain pending.'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,96 @@
+/* LexNova Hybrid v1 — readable light/dark, no changes to old bot layout. */
+.lexnova-source-card,.lexnova-handoff-dialog,.lexnova-quick-chat,.lexnova-document-ui{
+ --lx-bg:#ffffff;--lx-ink:#182a3b;--lx-muted:#415669;--lx-line:#bbcbd7;--lx-focus:#155d9b;
+ color:var(--lx-ink);background:var(--lx-bg);color-scheme:light;
+ font:inherit;
+}
+@media(prefers-color-scheme:dark){
+ html[data-vnext-theme="dark"] .lexnova-source-card,
+ html[data-vnext-theme="dark"] .lexnova-handoff-dialog,
+ html[data-vnext-theme="dark"] .lexnova-quick-chat{
+  --lx-bg:#172637;--lx-ink:#f2f7fb;--lx-muted:#bac8d5;--lx-line:#597187;--lx-focus:#9dd6fb;
+  color-scheme:dark;
+ }
+}
+.lexnova-source-card{
+ padding:12px;margin:8px 0;max-width:100%;
+ border:1px solid var(--lx-line);border-radius:12px;
+ display:grid;gap:6px;font-size:13px;
+}
+.lexnova-source-card strong{color:var(--lx-ink);font-size:14px}
+.lexnova-source-card dl{display:grid;grid-template-columns:minmax(82px,100px) 1fr;gap:5px 12px;margin:0}
+.lexnova-source-card dt{font-weight:700;color:var(--lx-muted)}
+.lexnova-source-card dd{margin:0;overflow-wrap:anywhere;color:var(--lx-ink)}
+.lexnova-source-card small{color:var(--lx-muted)}
+.lexnova-source-card a{color:var(--lx-focus)!important;overflow-wrap:anywhere}
+.lexnova-handoff-dialog{
+ width:min(630px,calc(100vw - 24px));max-height:85vh;
+ overflow:auto;padding:20px;border:2px solid var(--lx-line);border-radius:16px;
+ box-shadow:0 18px 70px #0005;
+}
+.lexnova-handoff-dialog::backdrop{background:rgba(7,16,28,.6)}
+.lexnova-handoff-dialog h2{font-size:20px;margin:0 0 10px;color:var(--lx-ink)}
+.lexnova-handoff-dialog p,.lexnova-handoff-dialog label{color:var(--lx-ink)}
+.lexnova-handoff-dialog textarea{display:block;width:100%;min-height:170px;margin:8px 0 14px;padding:12px;
+ background:var(--lx-bg);color:var(--lx-ink);border:1px solid var(--lx-line);border-radius:10px;
+ font:inherit;box-sizing:border-box;}
+.lexnova-handoff-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lexnova-handoff-controls button,.lexnova-handoff-trigger{
+ font:inherit;font-weight:600;font-size:13px;cursor:pointer;padding:9px 12px;
+ border:1px solid var(--lx-line);border-radius:9px;
+ background:var(--lx-bg);color:var(--lx-ink);
+}
+.lexnova-handoff-controls button:disabled{opacity:.5;cursor:not-allowed}
+.lexnova-handoff-controls .lexnova-consent{flex-basis:100%;display:flex;gap:8px;align-items:flex-start}
+.lexnova-handoff-trigger{margin:7px 0;max-width:100%;white-space:normal}
+:is(.lexnova-handoff-dialog,.lexnova-quick-chat,.lexnova-document-ui) :is(button,textarea,input,select,a,summary):focus-visible,
+.lexnova-handoff-trigger:focus-visible,.lexnova-source-card a:focus-visible{
+ outline:3px solid var(--lx-focus)!important;outline-offset:2px;
+}
+#lexnovaQuickChatToggle{
+ position:fixed;bottom:max(18px,env(safe-area-inset-bottom));right:18px;
+ z-index:900;cursor:pointer;padding:11px 14px;max-width:calc(100vw - 36px);
+ color:#fff;background:#132f48;border:2px solid #d4ae63;border-radius:999px;
+ font-weight:700;font-size:13px;box-shadow:0 9px 26px #0004;
+}
+.lexnova-quick-chat{
+ position:fixed;inset:auto 16px 82px auto;
+ margin:0;padding:0;box-sizing:border-box;width:min(430px,calc(100vw - 32px));
+ height:min(680px,calc(100dvh - 110px));border:2px solid var(--lx-line);
+ border-radius:15px;box-shadow:0 15px 40px #0006;z-index:950;overflow:hidden;
+}
+.lexnova-quick-chat header{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;
+ padding:10px 12px;border-bottom:1px solid var(--lx-line);
+ background:var(--lx-bg);color:var(--lx-ink);
+}
+.lexnova-quick-chat header button{border:1px solid var(--lx-line);border-radius:8px;
+ background:var(--lx-bg);color:var(--lx-ink);padding:6px 9px;cursor:pointer}
+.lexnova-quick-content{height:calc(100% - 132px);min-height:200px}
+.lexnova-quick-content iframe{display:block;border:0;width:100%;height:100%;background:#fff}
+.lexnova-quick-chat p{margin:7px 12px;font-size:12px;color:var(--lx-muted)}
+.lexnova-quick-chat>a{display:block;margin:0 12px 8px;font-size:12px;color:var(--lx-focus)}
+.lexnova-document-ui{
+ max-width:980px;margin:36px auto;padding:22px;border:1px solid var(--lx-line);
+ border-radius:18px;line-height:1.55;
+}
+.lexnova-document-ui h1{font-size:clamp(22px,3vw,30px)}
+.lexnova-document-ui label{font-weight:700;display:block;margin:15px 0 6px}
+.lexnova-document-ui textarea{width:100%;min-height:220px;box-sizing:border-box;background:#fff;
+ color:#182a3b;border:1px solid var(--lx-line);border-radius:10px;padding:12px;font:inherit}
+.lexnova-document-ui button,.lexnova-document-ui a.lexnova-link{
+ border:1px solid var(--lx-line);border-radius:9px;padding:9px 13px;
+ background:#f0f4f7;color:#182a3b;cursor:pointer;font:inherit;font-weight:600}
+.lexnova-document-ui button:disabled{opacity:.55;cursor:not-allowed}
+.lexnova-document-ui table{width:100%;border-collapse:collapse;font-size:13px}
+.lexnova-document-ui th,.lexnova-document-ui td{border-bottom:1px solid var(--lx-line);padding:7px;text-align:left;vertical-align:top}
+.lexnova-document-ui th{background:#f0f4f7}
+.lexnova-document-ui code,.lexnova-document-ui pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.lexnova-review-change{padding:12px;margin:12px 0;border:1px solid var(--lx-line);border-radius:10px}
+.lexnova-review-change pre{max-height:160px;overflow:auto;background:#f3f6f8;padding:9px;color:#172535}
+.lexnova-review-change select{padding:8px;border:1px solid #8c9cab;border-radius:8px;background:#fff;color:#172535}
+@media(max-width:600px){
+ .lexnova-quick-chat{inset:auto 8px 74px 8px;width:calc(100vw - 16px)}
+ .lexnova-document-ui{margin:12px;padding:12px}
+ .lexnova-source-card dl{grid-template-columns:75px 1fr}
+}

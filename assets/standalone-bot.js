@@ -758,6 +758,7 @@ $('composer').onsubmit = async event => {
   }
 
   const epoch = generation, controller = new AbortController(); pending = controller; busy(true);
+  const requestStartTime=Date.now();
   let timedOut=false;
   let successfulAnswer=false;
   // A governed professional legal draft can consume the server's 160s budget;
@@ -786,6 +787,26 @@ $('composer').onsubmit = async event => {
     pulse.remove();
     successfulAnswer=Boolean(String(data.answer||'').trim());
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
+    // Display provenance only; these cards do not certify a law or execute a tool.
+    const provenance=article.querySelector('details.sources')||article;
+    const legalRows=[...(Array.isArray(data.legalSources)?data.legalSources:[]),
+      ...(Array.isArray(data.caseLawSources)?data.caseLawSources:[])];
+    legalRows.slice(0,3).forEach(row=>{
+      const card=window.LexNovaSourceCard?.makeElement?.(row);
+      if(card)provenance.append(card);
+    });
+    window.LexNovaHandoff?.attach?.(article,{
+      answer:data.answer,humanGate:data.humanGate,
+      governance:data.legalGovernance,required:Boolean(data.legalGovernance?.humanReviewRequired)
+    });
+    window.LexNovaAnalytics?.record?.({
+      category:/договор|анекс|клаузул/iu.test(outboundQ)?'contract':
+        /судска пракса|пресуда/iu.test(outboundQ)?'case_law':
+        /брифинг|правни вести/iu.test(outboundQ)?'news':
+        /тужба|опомена|документ/iu.test(outboundQ)?'documents':
+        /закон|член/iu.test(outboundQ)?'law':'general',
+      outcome:'success',durationMs:Date.now()-requestStartTime
+    });
     history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
     renderRequestedExportActions(article,outboundQ);
     const nextTurns=await proactiveConversation

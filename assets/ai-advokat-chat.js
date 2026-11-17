@@ -509,6 +509,10 @@
       legalBox.append(legalLabel);
       const legalLinks=document.createElement("div");legalLinks.className="ai-msg-tools";
       m.legalSources.slice(0,8).forEach((src,i)=>{
+        if(i<3){
+          const provenance=window.LexNovaSourceCard?.makeElement?.(src);
+          if(provenance)legalLinks.append(provenance);
+        }
         const href=safeHttpUrl(src?.url);
         const labelText=(src?.title||("Правен извор "+(i+1))).slice(0,100);
         if(href){
@@ -628,6 +632,12 @@
       tools.append(retry,sources,review,docx,pdf,fileFormats);
     }
     body.append(tools);
+    if(m.role==="assistant" && !isPreparing && m.humanGate && String(m.text||"").trim()){
+      window.LexNovaHandoff?.attach?.(body,{
+        answer:m.text,humanGate:m.humanGate,
+        governance:m.governance,required:Boolean(m.governance?.humanReviewRequired)
+      });
+    }
     article.append(avatar,body);
     return article;
   }
@@ -1357,6 +1367,15 @@
       }
     }finally{
       clearTimeout(timeoutId);
+      window.LexNovaAnalytics?.record?.({
+        category:/договор|анекс|клаузул/iu.test(q)?"contract":
+          /судска пракса|пресуда/iu.test(q)?"case_law":
+          /брифинг|правни вести/iu.test(q)?"news":
+          /тужба|опомена|документ/iu.test(q)?"documents":
+          /закон|член/iu.test(q)?"law":"general",
+        outcome:modelReplyReceived?"success":requestTimedOut?"timeout":controller.signal.aborted?"stopped":"provider_error",
+        durationMs:Date.now()-preparingStartedAt
+      });
       if(abortController===controller) abortController=null;
       root.classList.remove("ai-chat-running");
       save();

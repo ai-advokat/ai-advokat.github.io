@@ -1,0 +1,50 @@
+<!doctype html><html lang="mk"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>LexNova Conversation Intelligence · Локална статистика</title>
+<link rel="stylesheet" href="/assets/lexnova-hybrid-v1.css?v=20261117-v1">
+</head>
+<body style="margin:0;background:#eef2f5;color:#182a3b;font:16px/1.6 system-ui,'Segoe UI',sans-serif">
+<main class="lexnova-document-ui">
+<a href="/bot/" class="lexnova-link">← Врати се во AI ADVOKAT</a>
+<h1>LexNova Conversation Intelligence · v1</h1>
+<p><strong>Само овој прелистувач.</strong> Приказот е доброволна локална статистика. Не е администраторски поглед на сите корисници и не е официјална платформа за евиденција на правни предмети.</p>
+<label><input id="lexnovaAnalyticsOptin" type="checkbox"> Се согласувам да се чуваат само агрегирани броеви, тип на задача и временски опсег во овој прелистувач.</label>
+<button id="lexnovaAnalyticsClear" type="button">Избриши ја локалната статистика</button>
+<p id="lexnovaAnalyticsStatus" role="status" aria-live="polite"></p>
+<section aria-label="Агрегирана статистика">
+<h2>Обработки: <span id="lexnovaAnalyticsTotal">0</span></h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:24px">
+<section><h3>Исходи</h3><table><tbody id="lexnovaOutcomes"></tbody></table></section>
+<section><h3>Категории</h3><table><tbody id="lexnovaRoutes"></tbody></table></section>
+<section><h3>Времетраење</h3><table><tbody id="lexnovaLatency"></tbody></table></section>
+</div>
+<p>Последно локално ажурирање: <span id="lexnovaAnalyticsUpdated">—</span></p>
+</section>
+<p>Не се снимаат прашања, AI-одговори, документи, имиња, адреси, изворни URL-врски, лозинки, клучеви или идентификатори на предмети. Нема серверско испраќање. Бројките не можат да докажат правна точност на одговорите.</p>
+</main>
+<script src="/assets/lexnova-local-analytics.js?v=20261117-v1"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const a=window.LexNovaAnalytics;
+const labels={
+ success:"Успешен одговор",provider_error:"Сервисна грешка",timeout:"Истечено време",stopped:"Прекинато",blocked:"Блокирано",
+ law:"Закони",case_law:"Судска пракса",documents:"Документи",contract:"Договори",news:"Брифинзи",general:"Разговор",other:"Други"
+};
+function table(id,values){const body=$(id);body.replaceChildren();
+ const entries=Object.entries(values||{});
+ if(!entries.length){const row=document.createElement("tr");const cell=document.createElement("td");cell.textContent="Нема записи";row.append(cell);body.append(row);return;}
+ for(const [k,v] of entries){const row=document.createElement("tr");const key=document.createElement("th");key.scope="row";key.textContent=labels[k]|| (k==="overflow"?"над 180 секунди":(Number(k)/1000)+" сек. до");const val=document.createElement("td");val.textContent=String(v);row.append(key,val);body.append(row);}
+}
+function render(){
+ const s=a.snapshot();$("lexnovaAnalyticsOptin").checked=a.enabled();$("lexnovaAnalyticsTotal").textContent=String(s.total);
+ $("lexnovaAnalyticsUpdated").textContent=s.lastUpdated||"—";table("lexnovaOutcomes",s.outcomes);table("lexnovaRoutes",s.routes);table("lexnovaLatency",s.latencyBuckets);
+ $("lexnovaAnalyticsStatus").textContent=a.enabled()?"Локалната агрегирана статистика е вклучена.":"Статистиката е исклучена; нови записи не се собираат.";
+}
+$("lexnovaAnalyticsOptin").addEventListener("change",e=>{a.setEnabled(e.target.checked);render();});
+$("lexnovaAnalyticsClear").addEventListener("click",()=>{a.reset();render();});
+render();
+})();
+</script>
+</body></html>
