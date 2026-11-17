@@ -39,3 +39,9 @@
     height:calc(100dvh - 16px);max-height:calc(100dvh - 16px);max-width:calc(100vw - 16px)}
   .academy-chat-frame{height:calc(100% - 160px)}
 }
+
+/* Preserve the full Academy name without causing horizontal overflow on phones. */
+@media(max-width:620px){
+  .hero h1.heroTitleLockup{flex-wrap:wrap}
+  .hero h1.heroTitleLockup span{white-space:normal;overflow-wrap:anywhere}
+}
