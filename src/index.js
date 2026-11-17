@@ -242,6 +242,7 @@ import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commen
 import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, scholarlyContextItems } from "./scholarly-literature.js";
 import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
 import { judicialTemporalSafetyFallback, judicialDiscoveryContext } from "./judicial-discovery-source-registry.js";
+import { historicalJudicialResearchRecovery, historicalJudicialResearchRecoveryPayload, HISTORICAL_JUDICIAL_RESEARCH_RECOVERY_VERSION } from "./historical-judicial-research-recovery.js";
 import {
   PUBLIC_EVIDENCE_LAYER_VERSION,
   publicEvidenceSourceDirectory,
@@ -6302,6 +6303,10 @@ async function runFreeWorkersAIChat(env,{q,attachments=[],history=[],corpusConte
     return {
       ok:false,
       error:mappedError,
+      // Public-safe provider failure category needed for honest no-model recovery.
+      // Do not surface raw provider error details or secrets to the browser.
+      upstreamErrorCategory:["workers_ai_provider_error","workers_ai_timeout","workers_ai_empty_response"].includes(String(result.error||""))
+        ? result.error : null,
       detail:result.detail||null,
       retryable:result.retryable!==false,
       capacity:result.capacity||null,
@@ -8034,6 +8039,31 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     }
 
     if(!freeResult.ok){
+      // Same governed no-model research recovery on /api/chat (FREE Workers AI).
+      // /api/bot (including Academy iframe) reaches the identical recovery
+      // contract through the shared professional provider-failure path.
+      const freeResearchRecovery=
+        explicitWebRequested!==true
+        && attachmentCheck.attachments.length===0
+        && guideDocumentCheck.attachments.length===0
+        && historyCheck.history.length===0
+        ? historicalJudicialResearchRecovery(q,freeResult)
+        : null;
+      if(freeResearchRecovery){
+        await releaseMonthlyQuota(env,{subject,period});
+        console.warn("historical_judicial_research_workers_recovery",JSON.stringify({
+          governanceRunId:lioeRunId,
+          originalError:String(freeResult.error||"provider_failure").slice(0,80),
+          sourceRegistryVersion:freeResearchRecovery.sourceRegistryVersion,
+          sourceCount:freeResearchRecovery.sources.length,
+          releaseState:"RESEARCH_OUTLINE_ONLY"
+        }));
+        return json(request,historicalJudicialResearchRecoveryPayload(freeResearchRecovery,{
+          failure:freeResult,from:"workers_ai",providerCalls:Number(freeResult.providerCalls||0),
+          missionProfile,governanceRunId:lioeRunId,membership,quota,
+          used:reservation.used,trainingOpen
+        }));
+      }
       const capacityExhausted=freeResult.error==="workers_ai_daily_capacity_exhausted";
 
       // Bounded FREE -> OpenAI handoff. This path activates only when the
@@ -8698,6 +8728,35 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
   }
 
   if(!result.ok){
+    // P0: Do not turn an ordinary source-backed history-of-judgments paper request
+    // into a blank service error when the generative provider is unavailable.
+    // Only a narrow transient provider failure and a broad, non-confidential
+    // historical research request qualify. This releases a source-indexed
+    // methodological OUTLINE, not an AI-written manuscript or legal holding.
+    const historicalResearchRecovery=
+      explicitWebRequested!==true
+      && attachmentCheck.attachments.length===0
+      && guideDocumentCheck.attachments.length===0
+      && historyCheck.history.length===0
+      ? historicalJudicialResearchRecovery(q,result)
+      : null;
+    if(historicalResearchRecovery){
+      await releaseMonthlyQuota(env,{subject,period});
+      console.warn("historical_judicial_research_provider_recovery",JSON.stringify({
+        governanceRunId:lioeRunId,
+        originalError:String(result.error||"provider_failure").slice(0,80),
+        httpStatus:Number(result.status||0)||null,
+        sourceRegistryVersion:historicalResearchRecovery.sourceRegistryVersion,
+        recoveryVersion:HISTORICAL_JUDICIAL_RESEARCH_RECOVERY_VERSION,
+        sourceCount:historicalResearchRecovery.sources.length,
+        releaseState:"RESEARCH_OUTLINE_ONLY"
+      }));
+      return json(request,historicalJudicialResearchRecoveryPayload(historicalResearchRecovery,{
+        failure:result,from:"openai",providerCalls:Number(result.providerCalls||0),
+        missionProfile,governanceRunId:lioeRunId,membership,quota,
+        used:reservation.used,trainingOpen
+      }));
+    }
     const canonicalArticleFallback=membership
       ? professionalCanonicalArticleFallback({
           q,
