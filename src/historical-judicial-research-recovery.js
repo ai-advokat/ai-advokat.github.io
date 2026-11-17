@@ -40,6 +40,18 @@ export function isHistoricalJudicialPaperRequest(query) {
 export function isTransientHistoricalResearchProviderFailure(failure) {
   if (!failure || failure.ok === true) return false;
   const error = String(failure.error || "");
+  // The public FREE chat translates Workers AI error codes to a stable
+  // frontend error. Only an attempted, retryable and categorised upstream
+  // provider failure qualifies; never generic security/validation failures.
+  if(["free_workers_ai_provider_error","free_workers_ai_empty_response"].includes(error)){
+    const source=String(failure.upstreamErrorCategory||"");
+    const categories=error==="free_workers_ai_empty_response"
+      ? ["workers_ai_empty_response"]
+      : ["workers_ai_timeout","workers_ai_provider_error"];
+    return failure.retryable!==false
+      && Number(failure.providerCalls||0)>0
+      && categories.includes(source);
+  }
   const allowed = new Set([
     "openai_network_error", "openai_timeout_error", "openai_incomplete_response",
     "openai_empty_response", "workers_ai_daily_capacity_exhausted",
