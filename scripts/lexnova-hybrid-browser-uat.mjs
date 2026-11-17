@@ -83,6 +83,7 @@ async function handoffAndSource(origin){
  await page.locator("#send").click();
  await page.locator(".message.assistant .lexnova-handoff-trigger").last().waitFor({timeout:20000});
  assert.equal(botCalls,1);
+ await page.locator(".message.assistant details.sources").last().evaluate(el=>{el.open=true;});
  await page.locator(".message.assistant .lexnova-source-card").last().waitFor({timeout:10000});
  assert.match(await page.locator(".lexnova-source-card").last().innerText(),/не е потврдена/);
  await page.locator(".message.assistant .lexnova-handoff-trigger").last().click();
