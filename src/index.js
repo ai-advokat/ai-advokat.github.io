@@ -242,7 +242,7 @@ import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commen
 import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, scholarlyContextItems } from "./scholarly-literature.js";
 import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
 import { judicialTemporalSafetyFallback, judicialDiscoveryContext } from "./judicial-discovery-source-registry.js";
-import { historicalJudicialResearchRecovery, HISTORICAL_JUDICIAL_RESEARCH_RECOVERY_VERSION } from "./historical-judicial-research-recovery.js";
+import { historicalJudicialResearchRecovery, historicalJudicialResearchRecoveryPayload, HISTORICAL_JUDICIAL_RESEARCH_RECOVERY_VERSION } from "./historical-judicial-research-recovery.js";
 import {
   PUBLIC_EVIDENCE_LAYER_VERSION,
   publicEvidenceSourceDirectory,
@@ -8035,6 +8035,31 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
     }
 
     if(!freeResult.ok){
+      // Same governed no-model research recovery on /api/chat (FREE Workers AI).
+      // /api/bot (including Academy iframe) reaches the identical recovery
+      // contract through the shared professional provider-failure path.
+      const freeResearchRecovery=
+        explicitWebRequested!==true
+        && attachmentCheck.attachments.length===0
+        && guideDocumentCheck.attachments.length===0
+        && historyCheck.history.length===0
+        ? historicalJudicialResearchRecovery(q,freeResult)
+        : null;
+      if(freeResearchRecovery){
+        await releaseMonthlyQuota(env,{subject,period});
+        console.warn("historical_judicial_research_workers_recovery",JSON.stringify({
+          governanceRunId:lioeRunId,
+          originalError:String(freeResult.error||"provider_failure").slice(0,80),
+          sourceRegistryVersion:freeResearchRecovery.sourceRegistryVersion,
+          sourceCount:freeResearchRecovery.sources.length,
+          releaseState:"RESEARCH_OUTLINE_ONLY"
+        }));
+        return json(request,historicalJudicialResearchRecoveryPayload(freeResearchRecovery,{
+          failure:freeResult,from:"workers_ai",providerCalls:Number(freeResult.providerCalls||0),
+          missionProfile,governanceRunId:lioeRunId,membership,quota,
+          used:reservation.used,trainingOpen
+        }));
+      }
       const capacityExhausted=freeResult.error==="workers_ai_daily_capacity_exhausted";
 
       // Bounded FREE -> OpenAI handoff. This path activates only when the
@@ -8722,53 +8747,11 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
         sourceCount:historicalResearchRecovery.sources.length,
         releaseState:"RESEARCH_OUTLINE_ONLY"
       }));
-      return json(request,{
-        ok:true,
-        answer:historicalResearchRecovery.answer,
-        provider:"canonical_corpus_no_model",
-        providerFallback:{
-          from:"openai",
-          reason:String(result.error||"provider_failure").slice(0,80),
-          httpStatus:Number(result.status||0)||null,
-          attempts:Array.isArray(result.providerAttempts)?result.providerAttempts.length:1
-        },
-        model:null,
-        mode:"passive_corpus",
-        displayMode:"historical_judicial_research_outline",
-        sourceMode:"historical_judicial_research_outline_registry_no_model",
-        researchOutputStatus:"OUTLINE_ONLY_NOT_COMPLETED_PAPER",
-        sourceRegistryVersion:historicalResearchRecovery.sourceRegistryVersion,
-        recoveryVersion:HISTORICAL_JUDICIAL_RESEARCH_RECOVERY_VERSION,
-        legalSources:[],
-        caseLawSources:historicalResearchRecovery.sources,
-        publicationSources:[],
-        guideSources:[],
-        sources:[],
-        webSearchUsed:false,
-        performance:{
-          providerCalls:Number(result.providerCalls||0),
-          languageRepairProviderCalls:0,
-          deterministicRecoveryProviderCalls:0,
-          fastPromptUsed:false
-        },
-        membership:membership
-          ? {planCode:membership.planCode,monthlyQuota:quota,used:Math.max(0,reservation.used-1),remaining:Math.max(0,quota-(reservation.used-1))}
-          : {planCode:trainingOpen?"training":"free",trainingOpen},
-        legalGovernance:{
-          engine:"AI_ADVOKAT_LIOE_v1",
-          missionProfile,
-          sourceVerificationState:"DISCOVERY_SOURCE_REGISTRY_ONLY",
-          temporalVerificationState:"ITEM_LEVEL_PENDING",
-          jurisdictionVerificationState:"MK_SCOPE",
-          verificationState:"RESEARCH_ONLY_NO_HOLDINGS",
-          releaseState:"RESEARCH_OUTLINE_ONLY",
-          executionAuthorization:"NO_EXTERNAL_ACTION",
-          humanReviewRequired:true,
-          postflightRequired:false,
-          postflightBypassReason:"NO_LEGAL_FINDINGS_RELEASED"
-        },
-        humanGate:"Source registry discovery is not item-level authority. Verify every original court decision, legal holding, historical statute and bibliography before publication or professional use."
-      });
+      return json(request,historicalJudicialResearchRecoveryPayload(historicalResearchRecovery,{
+        failure:result,from:"openai",providerCalls:Number(result.providerCalls||0),
+        missionProfile,governanceRunId:lioeRunId,membership,quota,
+        used:reservation.used,trainingOpen
+      }));
     }
     const canonicalArticleFallback=membership
       ? professionalCanonicalArticleFallback({
