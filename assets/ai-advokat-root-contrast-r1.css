@@ -1,0 +1,34 @@
+/* AI ADVOKAT accessible conversational ink: root chat ONLY.
+   Existing legal-source UI, global site theme and Academy memorial remain untouched. */
+#ai-advokat-chat{--aa-ink:#152c40;--aa-muted:#43576a;--aa-panel:#ffffff;--aa-soft:#f0f4f8;--aa-border:#9baec1;--aa-link:#14578b}
+html[data-theme="dark"] #ai-advokat-chat{--aa-ink:#eef4fa;--aa-muted:#c5d3df;--aa-panel:#0f2436;--aa-soft:#1d354b;--aa-border:#658097;--aa-link:#a9d9ff}
+#ai-advokat-chat .ai-chat-main,
+#ai-advokat-chat .ai-chat-top,
+#ai-advokat-chat .ai-chat-composer-zone,
+#ai-advokat-chat .ai-chat-menu-panel,
+#ai-advokat-chat .ai-chat-tools-panel{background:var(--aa-panel)!important;color:var(--aa-ink)!important;border-color:var(--aa-border)!important}
+#ai-advokat-chat .ai-chat-composer,
+#ai-advokat-chat .ai-msg-avatar,
+#ai-advokat-chat .ai-msg-source,
+#ai-advokat-chat .ai-chat-guide{background:var(--aa-soft)!important;border-color:var(--aa-border)!important}
+#ai-advokat-chat .ai-msg-content,
+#ai-advokat-chat .ai-msg-head strong,
+#ai-advokat-chat .ai-chat-title strong,
+#ai-advokat-chat .ai-chat-input textarea,
+#ai-advokat-chat .ai-chat-menu-action,
+#ai-advokat-chat .ai-chat-tool-action,
+#ai-advokat-chat .ai-msg-source,
+#ai-advokat-chat .ai-chat-empty h2{color:var(--aa-ink)!important;-webkit-text-fill-color:var(--aa-ink)!important;opacity:1!important}
+#ai-advokat-chat .ai-chat-input textarea{caret-color:var(--aa-ink)!important}
+#ai-advokat-chat .ai-chat-input textarea::placeholder{color:var(--aa-muted)!important;-webkit-text-fill-color:var(--aa-muted)!important;opacity:1}
+#ai-advokat-chat .ai-msg-head small,
+#ai-advokat-chat .ai-chat-title small,
+#ai-advokat-chat .ai-chat-empty p,
+#ai-advokat-chat .ai-chat-hint,
+#ai-advokat-chat .ai-chat-guide small,
+#ai-advokat-chat .ai-chat-menu-status{color:var(--aa-muted)!important;opacity:1!important}
+#ai-advokat-chat .ai-msg-content a,
+#ai-advokat-chat .ai-msg-source a{color:var(--aa-link)!important;text-underline-offset:3px}
+#ai-advokat-chat .ai-chat-side-label,
+#ai-advokat-chat .ai-chat-side-note{color:#eff6ff!important;opacity:1!important}
+#ai-advokat-chat :is(button,select,textarea,a,summary):focus-visible{outline:2px solid var(--aa-link)!important;outline-offset:2px!important}
