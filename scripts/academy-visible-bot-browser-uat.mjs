@@ -53,6 +53,10 @@ async function testSize(origin,width,height){
  await page.keyboard.press("Escape");
  assert.equal(await page.locator("#academyChatDialog[open]").count(),0);
  const horizontalOverflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2);
+ if(horizontalOverflow){
+   const diagnostic=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,overshooting:[...document.querySelectorAll("body *")].filter(el=>el.getBoundingClientRect().right>innerWidth+3).slice(0,8).map(el=>({tag:el.tagName,cls:el.className?.baseVal||el.className,id:el.id,right:Math.round(el.getBoundingClientRect().right)}))}));
+   console.error("ACADEMY OVERFLOW",JSON.stringify(diagnostic));
+ }
  assert.equal(horizontalOverflow,false,"Academy has no new horizontal overflow");
  await ctx.close();
  return {width,launcher:"visible",hero:"visible",lazyFrame:true,frameRequests:requests,close:true,escape:true};
