@@ -110,3 +110,69 @@ export function historicalJudicialResearchRecovery(query, failure) {
   ].join("\n");
   return {answer, sources, years, sourceRegistryVersion: JUDICIAL_DISCOVERY_CORPUS_VERSION};
 }
+
+
+// One response contract for /api/chat and /api/bot; Academy embeds /bot/.
+// The caller must have released the reserved app quota before emitting this.
+export function historicalJudicialResearchRecoveryPayload(recovery,{
+  failure=null,
+  from="openai",
+  providerCalls=0,
+  missionProfile="",
+  governanceRunId=null,
+  membership=null,
+  quota=0,
+  used=0,
+  trainingOpen=false
+}={}){
+  if(!recovery || !Array.isArray(recovery.sources) || !recovery.sources.length) return null;
+  const usedAfterRefund=Math.max(0,Number(used||0)-1);
+  const userMembership=membership
+    ? {planCode:membership.planCode,monthlyQuota:quota,used:usedAfterRefund,remaining:Math.max(0,quota-usedAfterRefund)}
+    : {planCode:trainingOpen?"training":"free",trainingOpen};
+  return {
+    ok:true,
+    answer:recovery.answer,
+    provider:"canonical_corpus_no_model",
+    providerFallback:{
+      from,
+      reason:String(failure?.error||"provider_failure").slice(0,80),
+      httpStatus:Number(failure?.status||0)||null,
+      attempts:Array.isArray(failure?.providerAttempts)?failure.providerAttempts.length:1
+    },
+    model:null,
+    mode:"passive_corpus",
+    displayMode:"historical_judicial_research_outline",
+    sourceMode:"historical_judicial_research_outline_registry_no_model",
+    researchOutputStatus:"OUTLINE_ONLY_NOT_COMPLETED_PAPER",
+    sourceRegistryVersion:recovery.sourceRegistryVersion,
+    recoveryVersion:HISTORICAL_JUDICIAL_RESEARCH_RECOVERY_VERSION,
+    legalSources:[],
+    caseLawSources:recovery.sources,
+    publicationSources:[],
+    guideSources:[],
+    sources:[],
+    webSearchUsed:false,
+    performance:{
+      providerCalls:Number(providerCalls||0),
+      languageRepairProviderCalls:0,
+      deterministicRecoveryProviderCalls:0,
+      fastPromptUsed:false
+    },
+    membership:userMembership,
+    legalGovernance:{
+      engine:"AI_ADVOKAT_LIOE_v1",
+      missionProfile,
+      sourceVerificationState:"DISCOVERY_SOURCE_REGISTRY_ONLY",
+      temporalVerificationState:"ITEM_LEVEL_PENDING",
+      jurisdictionVerificationState:"MK_SCOPE",
+      verificationState:"RESEARCH_ONLY_NO_HOLDINGS",
+      releaseState:"RESEARCH_OUTLINE_ONLY",
+      executionAuthorization:"NO_EXTERNAL_ACTION",
+      humanReviewRequired:true,
+      postflightRequired:false,
+      postflightBypassReason:"NO_LEGAL_FINDINGS_RELEASED"
+    },
+    humanGate:"Source registry discovery is not item-level authority. Verify every original court decision, legal holding, historical statute and bibliography before publication or professional use."
+  };
+}
