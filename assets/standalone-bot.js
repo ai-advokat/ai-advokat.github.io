@@ -525,6 +525,20 @@ function ensureLegalPulseStyles() {
   document.head.append(style);
 }
 
+function appendResponseTime(article,elapsedMs,outcome="answered"){
+  if(!article || !Number.isFinite(elapsedMs))return;
+  const timing=document.createElement("small");
+  timing.className="ai-response-duration";
+  timing.dataset.outcome=outcome;
+  const duration=window.AIAdvokatResponseTime?.formatDuration?.(elapsedMs)
+    || (elapsedMs/1000).toFixed(1)+" сек";
+  timing.textContent=outcome==="answered"?"Одговор за "+duration
+    :outcome==="timeout"?"Времето истече по "+duration
+    :outcome==="stopped"?"Прекинато по "+duration
+    :"Обработката траеше "+duration;
+  article.append(timing);
+}
+
 function responsePulse() {
   ensureLegalPulseStyles();
   $('welcome')?.remove();
@@ -537,6 +551,11 @@ function responsePulse() {
   pulse.className = 'legal-pulse';
   pulse.innerHTML = '<span class="legal-pulse-mark" aria-hidden="true"><span class="legal-pulse-ring"></span><span class="legal-pulse-pair"><span class="legal-pulse-sec legal-pulse-left">§</span><span class="legal-pulse-sec legal-pulse-right">§</span></span></span><span class="legal-pulse-copy">AI Advokat подготвува одговор…</span><span class="legal-pulse-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
   article.append(pulse);
+  const elapsed=document.createElement("small");
+  elapsed.className="ai-response-elapsed";
+  elapsed.setAttribute("aria-live","off");
+  elapsed.textContent="Време: 00:00";
+  article.append(elapsed);
   $('messages').append(article);
   article.scrollIntoView({block:'end'});
   return article;
@@ -745,10 +764,20 @@ $('composer').onsubmit = async event => {
   }
 
   const epoch = generation, controller = new AbortController(); pending = controller; busy(true);
-  const timeout = setTimeout(() => controller.abort(),180000);
+  let timedOut=false;
+  const timeout = setTimeout(() => {timedOut=true;controller.abort();},180000);
   $('messages').querySelectorAll('.ai-proactive-next-turns').forEach(panel=>panel.remove());
   message('user',outboundQ); $('question').value = ''; $('question').style.height = '';
   const pulse = responsePulse();
+  const responseClockStartedAt=Date.now();
+  // Client-side only: visible elapsed time never triggers extra AI calls.
+  const responseClock=window.AIAdvokatResponseTime?.createClock?.({
+    onTick(elapsedMs){
+      if(epoch!==generation)return;
+      const target=pulse.querySelector(".ai-response-elapsed");
+      if(target)target.textContent="Време: "+window.AIAdvokatResponseTime.formatClock(elapsedMs);
+    }
+  });
   status(privacyRedacted
     ? 'Чувствителните идентификатори се маскирани локално и оригиналните вредности не се испратени. Го подготвувам одговорот…'
     : 'Ги проверувам материјалите и го подготвувам одговорот…');
@@ -766,7 +795,10 @@ $('composer').onsubmit = async event => {
     const data = await request('/api/bot',{signal:controller.signal,body:{q:withOutputLanguageDirective(outboundQ),visibleQ:outboundQ,capabilityRoute:conversationalCapabilityRoute(outboundQ),outputLanguage:selectedLanguageMeta().code,sessionId,mode:$('researchMode').value,webDomainPreset:$('webDomainPreset')?.value||'all',guideIds:ids,guideDocuments,history:history.slice(-8),attachments:[]}});
     if (epoch !== generation) return;
     pulse.remove();
+    const responseElapsedMs=responseClock?.stop()??Math.max(0,Date.now()-responseClockStartedAt);
+    const successfulAnswer=Boolean(String(data.answer||"").trim());
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
+    appendResponseTime(article,responseElapsedMs,successfulAnswer?"answered":"unanswered");
     history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
     const nextTurns=await proactiveConversation
       .then(mod=>mod?.suggestLegalNextTurns?.({question:outboundQ,answer:data.answer,language:selectedLanguageMeta().code})||null)
@@ -796,17 +828,21 @@ $('composer').onsubmit = async event => {
     }
     else if (error.name === 'AbortError') status('Барањето е запрено или истече времето за одговор. Можете да се обидете повторно.');
     else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
-    // A failed provider must be visible in the conversation, not just in a
-    // small status line that leaves the user believing no response occurred.
-    if(error.name!=='AbortError' && epoch===generation){
-      message('assistant',
-        'AI одговор не е издаден. '+String(error?.message||'Сервисот моментално е недостапен.').slice(0,360)
-          +'\\n\\nОва е сервисна грешка, не правно мислење. Вашето прашање е зачувано во полето за повторен обид.',
-        'Сервисен статус · НЕМА AI ОДГОВОР');
+    // Make a failed/stopped request and its duration visible; never claim an AI answer.
+    if(epoch===generation){
+      const responseElapsedMs=responseClock?.stop()??Math.max(0,Date.now()-responseClockStartedAt);
+      const interrupted=error?.name==='AbortError';
+      const errorText=interrupted
+        ? (timedOut?'Времето за одговор истече. Не е издаден AI правен одговор.':'Разговорот е прекинат. Не е издаден AI правен одговор.')
+        : 'AI одговор не е издаден. '+String(error?.message||'Сервисот моментално е недостапен.').slice(0,360)
+          +'\\n\\nОва е сервисна грешка, не правно мислење. Вашето прашање е зачувано во полето за повторен обид.';
+      const errorArticle=message('assistant',errorText,'Сервисен статус · НЕМА AI ОДГОВОР');
+      appendResponseTime(errorArticle,responseElapsedMs,timedOut?"timeout":interrupted?"stopped":"unanswered");
     }
     $('question').value = q;
   } finally {
     pulse.remove();
+    responseClock?.stop();
     clearTimeout(timeout);
     if (epoch === generation) { pending = null; busy(false); $('question').focus(); }
   }
