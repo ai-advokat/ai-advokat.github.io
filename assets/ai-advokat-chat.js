@@ -1206,7 +1206,9 @@
             label:format==="docx"?"Преземи Word (.docx)":format==="pdf"?"Преземи PDF":format==="json"?"Преземи JSON":"Преземи CSV",
             filename:"AI-Advokat-analysis."+format
           })),
-          sourceLabel:d.sourceMode==="canonical_family_law_divorce_no_model"
+          sourceLabel:d.sourceMode==="canonical_family_divorce_pre_litigation_notice_no_model"
+            ?"Закон за семејството · доброволна писмена покана, НЕ е задолжителна претходна опомена · Human Gate."
+            :d.sourceMode==="canonical_family_law_divorce_no_model"
             ?"Закон за семејството · source-first deterministic draft · проверени одредби + Human Gate."
             :d.sourceMode==="canonical_property_law_odrzuvacka_no_model"
               ?"Закон за сопственост и други стварни права · одржувачка/usucapio · source-first deterministic · Human Gate."
