@@ -1415,6 +1415,9 @@
     .header .links > details[data-nav-folder="publications"]{order:50}
     .header .links > details[data-nav-folder="ecosystem"]{order:60}
     .header .links > details[data-nav-folder="social"]{order:70;margin-left:auto}
+    @media (min-width:1021px){
+      .header .links > details[data-nav-folder="social"]{transform:translateY(-18px)}
+    }
     #mobileMenu .mobile-social-folder{order:9999}
     /* A previous analytics version appended a legacy standalone YouTube link.
        Never show it in addition to the canonical Social Networks menu. */
