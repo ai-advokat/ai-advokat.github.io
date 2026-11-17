@@ -10,7 +10,7 @@ This branch integrates **verified source changes** for bounded external bot UI t
 | Gate | User acceptance criterion | Source candidate | Evidence required beyond CI | Current release status |
 | --- | --- | --- | --- | --- |
 | 1 | EN→MK and MK→EN produce meaningful translated text; 33 UI targets handle quota and errors | #705 Worker + direct translator; #684 external bot ID-mapped bounded batches ported | Real staged Cloudflare 2-way call, then live after approval | HOLD / live not tested |
-| 2 | Both bots accept two consecutive questions; composer never traps or silently drops second message | #700 #701 #694 #695 remain separate Draft PRs | Real two-turn Chromium + live provider, error recovery | NOT INTEGRATED |
+| 2 | Both bots accept two consecutive questions; composer never traps or silently drops second message | #700/#701 client-side R25 recovery selectively applied to both bots; #694/#695 semantic enhancements remain Draft | Real two-turn Chromium + live provider, error recovery | SOURCE PATCHED / LIVE NOT TESTED |
 | 3 | Microphone records permission, produces transcript, and refuses gracefully on denial | Existing mic path; source checks only | Real Chrome permission allow/deny + live transcription | NOT TESTED |
 | 4 | PDF, DOCX, JSON, MD, CSV and JPG are downloadable and readable, no truncated legal text or CSV formula injection | #696 remains Draft | Real browser files, content/print and formula checks | NOT INTEGRATED |
 | 5 | Official sources identify document, provision, dates, effective/applicable status and provenance | #691 remains Draft (LEGAL HOLD); current source tests | Independent legal source verification by lawyer | LEGAL HOLD |
@@ -23,7 +23,7 @@ This branch integrates **verified source changes** for bounded external bot UI t
 - Do not merge #684 wholesale. It conflicts with isolated R26 candidate; ported only its external bot file and three matching regression tests.
 - Keep RC36, RC84, AI Contract, unapproved consolidated law and legal-source publication out of P0 rollout.
 - No secrets, client case uploads, D1 migration, paid provider fallback or new payments.
-- #700/#701 and #696 require selective, conflict-checked follow-up integration (especially the shared external bot file).
+- #700/#701 client-side recovery was patch-applied selectively; the shared external bot keeps the R26 UI translation safeguards. #696 still requires conflict-checked export integration.
 - The new CI workflow `.github/workflows/zoki-nine-function-source-acceptance.yml` must not be used as a declaration of production readiness.
 - Human Gate review + exact head SHA + rollback SHA required before production release.
 
