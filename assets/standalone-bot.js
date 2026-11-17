@@ -607,6 +607,20 @@ function ensureLegalPulseStyles() {
   document.head.append(style);
 }
 
+function appendResponseTime(article,elapsedMs,outcome="answered"){
+  if(!article || !Number.isFinite(elapsedMs))return;
+  const timing=document.createElement("small");
+  timing.className="ai-response-duration";
+  timing.dataset.outcome=outcome;
+  const duration=window.AIAdvokatResponseTime?.formatDuration?.(elapsedMs)
+    || (elapsedMs/1000).toFixed(1)+" сек";
+  timing.textContent=outcome==="answered"?"Одговор за "+duration
+    :outcome==="timeout"?"Времето истече по "+duration
+    :outcome==="stopped"?"Прекинато по "+duration
+    :"Обработката траеше "+duration;
+  article.append(timing);
+}
+
 function responsePulse() {
   ensureLegalPulseStyles();
   $('welcome')?.remove();
@@ -619,6 +633,11 @@ function responsePulse() {
   pulse.className = 'legal-pulse';
   pulse.innerHTML = '<span class="legal-pulse-mark" aria-hidden="true"><span class="legal-pulse-ring"></span><span class="legal-pulse-pair"><span class="legal-pulse-sec legal-pulse-left">§</span><span class="legal-pulse-sec legal-pulse-right">§</span></span></span><span class="legal-pulse-copy">AI Advokat подготвува одговор…</span><span class="legal-pulse-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
   article.append(pulse);
+  const elapsed=document.createElement("small");
+  elapsed.className="ai-response-elapsed";
+  elapsed.setAttribute("aria-live","off");
+  elapsed.textContent="Време: 00:00";
+  article.append(elapsed);
   $('messages').append(article);
   article.scrollIntoView({block:'end'});
   return article;
@@ -846,6 +865,14 @@ $('composer').onsubmit = async event => {
   $('messages').querySelectorAll('.ai-proactive-next-turns').forEach(panel=>panel.remove());
   message('user',outboundQ); $('question').value = ''; $('question').style.height = '';
   const pulse = responsePulse();
+  const responseClockStartedAt=Date.now();
+  const responseClock=window.AIAdvokatResponseTime?.createClock?.({
+    onTick(elapsedMs){
+      if(epoch!==generation)return;
+      const target=pulse.querySelector(".ai-response-elapsed");
+      if(target)target.textContent="Време: "+window.AIAdvokatResponseTime.formatClock(elapsedMs);
+    }
+  });
   status(privacyRedacted
     ? 'Чувствителните идентификатори се маскирани локално и оригиналните вредности не се испратени. Го подготвувам одговорот…'
     : 'Ги проверувам материјалите и го подготвувам одговорот…');
@@ -864,7 +891,9 @@ $('composer').onsubmit = async event => {
     if (epoch !== generation) return;
     pulse.remove();
     successfulAnswer=Boolean(String(data.answer||'').trim());
+    const responseElapsedMs=responseClock?.stop()??Math.max(0,Date.now()-responseClockStartedAt);
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
+    appendResponseTime(article,responseElapsedMs,successfulAnswer?"answered":"unanswered");
     history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
     const nextTurns=await proactiveConversation
       .then(mod=>mod?.suggestLegalNextTurns?.({question:outboundQ,answer:data.answer,language:selectedLanguageMeta().code})||null)
@@ -899,14 +928,17 @@ $('composer').onsubmit = async event => {
     // A failed provider must be visible in the conversation, not just in a
     // small status line that leaves the user believing no response occurred.
     if(epoch===generation){
-      message('assistant',
+      const responseElapsedMs=responseClock?.stop()??Math.max(0,Date.now()-responseClockStartedAt);
+      const errorArticle=message('assistant',
         'AI одговор не е издаден. '+String(error?.message||'Сервисот моментално е недостапен.').slice(0,360)
           +'\\n\\nОва е сервисна грешка, не правно мислење. Вашето прашање е зачувано во полето за повторен обид.',
         'Сервисен статус · НЕМА AI ОДГОВОР');
+      appendResponseTime(errorArticle,responseElapsedMs,timedOut?"timeout":error.name==="AbortError"?"stopped":"unanswered");
     }
     $('question').value = q;
   } finally {
     pulse.remove();
+    responseClock?.stop();
     clearTimeout(timeout);
     if (epoch === generation) {
       pending = null;
