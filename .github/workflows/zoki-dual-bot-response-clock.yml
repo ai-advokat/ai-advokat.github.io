@@ -1,0 +1,68 @@
+name: Zoki dual bot response clock acceptance (source-only)
+on:
+  pull_request:
+    paths:
+      - 'assets/ai-advokat-response-time.js'
+      - 'assets/ai-advokat-response-time.css'
+      - 'assets/ai-advokat-chat.js'
+      - 'assets/standalone-bot.js'
+      - 'index.html'
+      - 'bot/index.html'
+      - 'test/zoki-dual-response-clock.test.mjs'
+      - 'scripts/zoki-dual-response-clock-browser.mjs'
+      - '.github/workflows/zoki-dual-bot-response-clock.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  timer-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax of both chat clients and shared timer
+        run: |
+          node --check assets/ai-advokat-response-time.js
+          node --check assets/ai-advokat-chat.js
+          node --check assets/standalone-bot.js
+      - name: Response time behavior and two-bot integration
+        run: node --no-warnings --test test/zoki-dual-response-clock.test.mjs
+      - name: Explicit release boundary
+        if: always()
+        run: |
+          {
+            echo '### Dual-bot response timing'
+            echo 'Source and synthetic-clock contract only.'
+            echo 'Real browser rendering, live provider performance and production deployment: NOT_TESTED.'
+            echo 'Human Gate: HOLD.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  browser-dom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated Chromium browser controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          chrome="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$chrome"
+          echo "BROWSER_EXECUTABLE=$chrome" >> "$GITHUB_ENV"
+      - name: Actual Chromium dual-bot timer UI (model responses mocked)
+        run: node scripts/zoki-dual-response-clock-browser.mjs
+      - name: Truthful provider verification boundary
+        if: always()
+        run: |
+          {
+            echo '### R27 Chromium DOM acceptance'
+            echo 'Actual DOM timer visibility and response labels are checked with SYNTHETIC AI replies.'
+            echo 'Live Cloudflare model latency and production release remain NOT_TESTED.'
+          } >> "$GITHUB_STEP_SUMMARY"
