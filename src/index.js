@@ -11283,20 +11283,22 @@ async function handleCapabilities(request, env) {
   });
 }
 
-function withSecurityHeaders(response) {
+function withSecurityHeaders(response, { allowAcademyBotFrame = false } = {}) {
   const headers = new Headers(response.headers);
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  headers.set("X-Frame-Options", "DENY");
+  if (allowAcademyBotFrame) headers.delete("X-Frame-Options");
+  else headers.set("X-Frame-Options", "DENY");
   headers.set("Permissions-Policy", "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()");
   headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  headers.set("Cross-Origin-Resource-Policy", allowAcademyBotFrame ? "cross-origin" : "same-origin");
   headers.set("X-Permitted-Cross-Domain-Policies", "none");
   headers.set("Origin-Agent-Cluster", "?1");
+  const frameAncestors = allowAcademyBotFrame ? "https://ai-advokat.github.io" : "'none'";
   headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; img-src 'self' data: https://www.google-analytics.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev https://www.google-analytics.com https://*.google-analytics.com; font-src 'self' data:; object-src 'none'; media-src 'none'; frame-src https://challenges.cloudflare.com; base-uri 'none'; frame-ancestors 'none'; form-action 'self' mailto:; upgrade-insecure-requests"
+    `default-src 'self'; img-src 'self' data: https://www.google-analytics.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev https://www.google-analytics.com https://*.google-analytics.com; font-src 'self' data:; object-src 'none'; media-src 'none'; frame-src https://challenges.cloudflare.com; base-uri 'none'; frame-ancestors ${frameAncestors}; form-action 'self' mailto:; upgrade-insecure-requests`
   );
 
   return new Response(response.body, {
@@ -11304,6 +11306,16 @@ function withSecurityHeaders(response) {
     statusText: response.statusText,
     headers
   });
+}
+
+// Only the publicly accessible bot document may be framed by the Academy on GitHub Pages.
+// All other HTML, private workspaces and endpoints remain clickjacking-protected.
+// Checking both path and HTML content type prevents accidental widening to /bot/* assets.
+function eligibleAcademyBotFrame(request, response) {
+  const pathname = new URL(request.url).pathname;
+  if (!["GET", "HEAD"].includes(request.method) || !["/bot", "/bot/"].includes(pathname)) return false;
+  if ([301, 302, 303, 307, 308].includes(response.status)) return response.headers.has("Location");
+  return response.status === 200 && /^text\/html(?:;|$)/i.test(String(response.headers.get("Content-Type") || "").trim());
 }
 
 const EXTERNAL_BOT_RELEASE="core-r15";
@@ -11872,8 +11884,9 @@ export default {
 
     if (!url.pathname.startsWith("/api/")) {
       const releaseRedirect=externalBotReleaseRedirect(request,url);
-      if(releaseRedirect) return withSecurityHeaders(releaseRedirect);
-      return withSecurityHeaders(await env.ASSETS.fetch(request));
+      if(releaseRedirect) return withSecurityHeaders(releaseRedirect, { allowAcademyBotFrame: eligibleAcademyBotFrame(request, releaseRedirect) });
+      const assetResponse = await env.ASSETS.fetch(request);
+      return withSecurityHeaders(assetResponse, { allowAcademyBotFrame: eligibleAcademyBotFrame(request, assetResponse) });
     }
 
     if (url.pathname === "/api/health") {
