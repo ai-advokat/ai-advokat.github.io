@@ -1,0 +1,26 @@
+/* Compact, readable timing below both AI Advokat conversation responses. */
+.ai-response-elapsed,
+.ai-response-duration {
+  display:inline-flex;
+  align-items:center;
+  margin:6px 0 2px;
+  padding:3px 8px;
+  border:1px solid rgba(100,116,139,.22);
+  border-radius:999px;
+  background:rgba(100,116,139,.075);
+  color:inherit;
+  opacity:.84;
+  font-size:12px;
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+  line-height:1.5;
+}
+.ai-response-duration[data-outcome="unanswered"],
+.ai-response-duration[data-outcome="timeout"],
+.ai-response-duration[data-outcome="stopped"] {
+  opacity:.72;
+}
+.ai-msg-body > .ai-response-duration { width:max-content; max-width:100%; }
+@media(prefers-reduced-motion:reduce){
+  .ai-response-elapsed,.ai-response-duration { transition:none;animation:none; }
+}
