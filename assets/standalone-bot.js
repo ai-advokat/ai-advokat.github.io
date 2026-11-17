@@ -817,13 +817,17 @@ $('composer').onsubmit = async event => {
     else if (error.name === 'AbortError') status(timedOut
       ? 'AI обработката предолго траеше. Разговорот не е избришан; обидете се повторно.'
       : 'Барањето е запрено. Разговорот е зачуван.');
-    else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
-    // A failed provider must be visible in the conversation, not just in a
-    // small status line that leaves the user believing no response occurred.
+    else if(['macedonian_language_release_blocked','legal_daily_briefing_language_gate_blocked'].includes(String(error.code||''))){
+      status('Јазичната проверка ја задржа содржината. Брифингот не е објавен.');
+    }else status(error.status === 404 ? 'Новата верзија на серверот сè уште не е објавена.' : error.message);
+    // A service hold must never repeat the full 503 message twice or look
+    // like a substantive legal answer. Keep the exact user question for retry.
     if(epoch===generation){
-      message('assistant',
-        'AI одговор не е издаден. '+String(error?.message||'Сервисот моментално е недостапен.').slice(0,360)
-          +'\\n\\nОва е сервисна грешка, не правно мислење. Вашето прашање е зачувано во полето за повторен обид.',
+      const languageHold=['macedonian_language_release_blocked','legal_daily_briefing_language_gate_blocked'].includes(String(error.code||''));
+      message('assistant',languageHold
+        ?'Јазичната проверка не ја одобри содржината. Не е издаден правен брифинг. Прашањето е зачувано за повторен обид.'
+        :'AI одговор не е издаден. '+String(error?.message||'Сервисот моментално е недостапен.').slice(0,360)
+          +'\n\nОва е сервисна грешка, не правно мислење. Вашето прашање е зачувано во полето за повторен обид.',
         'Сервисен статус · НЕМА AI ОДГОВОР');
     }
     $('question').value = q;
