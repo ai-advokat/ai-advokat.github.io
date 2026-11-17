@@ -525,6 +525,18 @@ function ensureLegalPulseStyles() {
   document.head.append(style);
 }
 
+function appendAnswerTime(article, duration, outcome = "answered") {
+  if(!article || !Number.isFinite(duration))return;
+  const chip=document.createElement("small");
+  chip.className="ai-response-duration";
+  chip.dataset.outcome=outcome;
+  const formatted=window.AIAdvokatResponseTime?.formatDuration?.(duration) || (duration/1000).toFixed(1)+" сек";
+  chip.textContent=outcome==="answered"?"Одговор за "+formatted
+    :outcome==="stopped"?"Прекинато по "+formatted
+    :outcome==="timeout"?"Времето истече по "+formatted
+    :"Обработката траеше "+formatted;
+  article.append(chip);
+}
 function responsePulse() {
   ensureLegalPulseStyles();
   $('welcome')?.remove();
@@ -537,6 +549,11 @@ function responsePulse() {
   pulse.className = 'legal-pulse';
   pulse.innerHTML = '<span class="legal-pulse-mark" aria-hidden="true"><span class="legal-pulse-ring"></span><span class="legal-pulse-pair"><span class="legal-pulse-sec legal-pulse-left">§</span><span class="legal-pulse-sec legal-pulse-right">§</span></span></span><span class="legal-pulse-copy">AI Advokat подготвува одговор…</span><span class="legal-pulse-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
   article.append(pulse);
+  const elapsed=document.createElement("small");
+  elapsed.className="ai-response-elapsed";
+  elapsed.textContent="Време: 00:00";
+  elapsed.setAttribute("aria-live","off");
+  article.append(elapsed);
   $('messages').append(article);
   article.scrollIntoView({block:'end'});
   return article;
@@ -749,6 +766,15 @@ $('composer').onsubmit = async event => {
   $('messages').querySelectorAll('.ai-proactive-next-turns').forEach(panel=>panel.remove());
   message('user',outboundQ); $('question').value = ''; $('question').style.height = '';
   const pulse = responsePulse();
+  const started=Date.now();
+  const responseClock=window.AIAdvokatResponseTime?.createClock?.({
+    onTick(ms){
+      if(epoch!==generation)return;
+      const target=pulse.querySelector(".ai-response-elapsed");
+      if(target)target.textContent="Време: "+window.AIAdvokatResponseTime.formatClock(ms);
+    }
+  });
+  const readDuration=()=>responseClock?.stop()??Math.max(0,Date.now()-started);
   status(privacyRedacted
     ? 'Чувствителните идентификатори се маскирани локално и оригиналните вредности не се испратени. Го подготвувам одговорот…'
     : 'Ги проверувам материјалите и го подготвувам одговорот…');
@@ -767,6 +793,7 @@ $('composer').onsubmit = async event => {
     if (epoch !== generation) return;
     pulse.remove();
     const article = message('assistant',data.answer || 'Нема одговор.',responseRuntimeLabel(data)); sources(article,data);
+    appendAnswerTime(article,readDuration(),String(data.answer||"").trim()?"answered":"unanswered");
     history.push({role:'user',text:outboundQ},{role:'assistant',text:String(data.answer || '').slice(0,6000)}); history = history.slice(-24);
     const nextTurns=await proactiveConversation
       .then(mod=>mod?.suggestLegalNextTurns?.({question:outboundQ,answer:data.answer,language:selectedLanguageMeta().code})||null)
@@ -787,6 +814,7 @@ $('composer').onsubmit = async event => {
       : 'Одговорот е работен материјал. Проверете ги наведените извори.');
   } catch (error) {
     voiceConversationPending=false;
+    const elapsedMs=readDuration();
     pulse.remove();
     if (epoch !== generation) return;
     if (error.status === 401) {
@@ -799,13 +827,15 @@ $('composer').onsubmit = async event => {
     // A failed provider must be visible in the conversation, not just in a
     // small status line that leaves the user believing no response occurred.
     if(error.name!=='AbortError' && epoch===generation){
-      message('assistant',
+      const failureArticle=message('assistant',
         'AI одговор не е издаден. '+String(error?.message||'Сервисот моментално е недостапен.').slice(0,360)
           +'\\n\\nОва е сервисна грешка, не правно мислење. Вашето прашање е зачувано во полето за повторен обид.',
         'Сервисен статус · НЕМА AI ОДГОВОР');
+      appendAnswerTime(failureArticle,elapsedMs,error.status===503||error.name==='AbortError'?'timeout':'unanswered');
     }
     $('question').value = q;
   } finally {
+    readDuration();
     pulse.remove();
     clearTimeout(timeout);
     if (epoch === generation) { pending = null; busy(false); $('question').focus(); }
