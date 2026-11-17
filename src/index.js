@@ -193,6 +193,12 @@ import {
   familyDivorceLegalSources
 } from "./family-divorce-draft.js";
 import {
+  FAMILY_PRELITIGATION_NOTICE_VERSION,
+  isFamilyPrelitigationNoticeRequest,
+  formatFamilyPrelitigationNotice,
+  familyPrelitigationNoticeLegalSources
+} from "./family-prelitigation-notice.js";
+import {
   PROPERTY_LAW_PRESCRIPTION_VERSION,
   isPropertyPrescriptionQuery,
   formatPropertyPrescriptionAnswer,
@@ -7505,6 +7511,53 @@ async function handleGPTChat(request,env,{openAIOnly=false}={}){
           seats:botMembership.seats
         } : {planCode:trainingOpen?"training":"free",trainingOpen},
         humanGate:"Source-first property-law analysis. Before consequential use or filing, verify the exact object, possession history, good faith, lawful basis where required, interruptions, predecessors, public-register status, parties, jurisdiction and current statutory text."
+      });
+    }
+  }
+
+  // Document-type fidelity: "опомена пред тужба за развод" is a VOLUNTARY
+  // notice, never a court divorce petition. Classify the current user turn,
+  // not stale conversation history or a broader source-retrieval query.
+  if(isFamilyPrelitigationNoticeRequest(userQ)){
+    const answer=formatFamilyPrelitigationNotice(userQ);
+    if(answer){
+      return json(request,{
+        ok:true,
+        answer,
+        provider:"canonical_corpus_no_model",
+        model:null,
+        mode:"source_first_work_product",
+        displayMode:"canonical_family_pre_litigation_notice",
+        sourceMode:"canonical_family_divorce_pre_litigation_notice_no_model",
+        webSearchUsed:false,
+        legalSources:familyPrelitigationNoticeLegalSources(),
+        caseLawSources:[],
+        guideSources:[],
+        publicationSources:[],
+        sources:[],
+        familyPrelitigationNoticeVersion:FAMILY_PRELITIGATION_NOTICE_VERSION,
+        performance:{providerCalls:0,languageRepairProviderCalls:0,serverLatencyMs:0,fastPromptUsed:true},
+        legalGovernance:{
+          engine:"AI_ADVOKAT_LIOE_v1",
+          missionProfile:"L3_CONSEQUENTIAL",
+          sourceVerificationState:"VERIFIED_PRIMARY_STATUTE",
+          temporalVerificationState:"SOURCE_SNAPSHOT_RECHECK_REQUIRED",
+          jurisdictionVerificationState:"VERIFIED_MK",
+          verificationState:"HUMAN_REVIEW_PENDING",
+          releaseState:"LEGAL_DRAFT_HUMAN_GATE",
+          executionAuthorization:"NO_EXTERNAL_ACTION",
+          humanReviewRequired:true,
+          postflightRequired:false,
+          postflightState:"NOT_REQUIRED_DETERMINISTIC_NO_MODEL",
+          postflightBypassReason:"bounded_canonical_notice_not_legal_filing"
+        },
+        membership:botMembership ? {
+          planCode:botMembership.planCode,
+          status:botMembership.status,
+          monthlyQuota:botMembership.monthlyQuota,
+          seats:botMembership.seats
+        } : {planCode:trainingOpen?"training":"free",trainingOpen},
+        humanGate:"Voluntary invitation, NOT a legally required pre-divorce warning. Confirm personal circumstances, appropriateness of contact, child safety, official family law version, correct party details, and lawyer approval before any sending."
       });
     }
   }
