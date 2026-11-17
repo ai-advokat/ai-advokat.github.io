@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>LexNova Document Copilot · Локален преглед на измени</title>
+<meta name="description" content="Локална споредба и адвокатска проверка на предложени измени во текстови. Без испраќање документи.">
+<link rel="icon" href="/assets/app-icon.svg">
+<link rel="stylesheet" href="/assets/lexnova-hybrid-v1.css?v=20261117-v1">
+</head>
+<body style="margin:0;background:#eef2f5;color:#182a3b;font:16px/1.6 system-ui,-apple-system,'Segoe UI',sans-serif">
+<main class="lexnova-document-ui">
+<a href="/bot/" class="lexnova-link">← Назад во AI ADVOKAT</a>
+<h1>LexNova Document Copilot · v1</h1>
+<p>Прегледајте текст и предложена измена, споредете ги редовите и одлучете за секоја разлика. Работи <strong>локално во прелистувачот</strong>: не испраќа, не чита автоматски приватни предмети и не пишува правни клаузули без ваше учество.</p>
+<p><strong>Важно:</strong> споредбата е структурна, не е правно мислење. Секоја измена мора да ја прегледа и одобри адвокат пред користење. За оригинални документи со лични податоци користете ја овластената Secure Case околина.</p>
+<button id="lexnovaLoadExample" type="button">Вчитај синтетички пример (без лични податоци)</button>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px">
+<section><label for="lexnovaOriginal">Оригинален текст</label><textarea id="lexnovaOriginal" spellcheck="false" maxlength="40000" placeholder="Вметнете го оригиналниот текст..."></textarea></section>
+<section><label for="lexnovaProposed">Предложена верзија</label><textarea id="lexnovaProposed" spellcheck="false" maxlength="40000" placeholder="Вметнете го предложениот текст..."></textarea></section>
+</div>
+<button id="lexnovaCompare" type="button">Спореди ги верзиите</button>
+<button id="lexnovaReset" type="button">Исчисти ги двата текста</button>
+<p id="lexnovaDocStatus" role="status" aria-live="polite">Подготвено. Ништо не е испратено на сервер.</p>
+<section id="lexnovaDocResults" aria-label="Резултати од споредба" hidden>
+<h2>Предложени измени · Human Gate</h2>
+<p id="lexnovaDocSummary"></p>
+<div id="lexnovaChanges"></div>
+<h2>Структурни контроли — не се потврда за правна исправност</h2>
+<div id="lexnovaChecklist"></div>
+<button id="lexnovaPrepare" type="button" disabled>Подготви го проверениот текст</button>
+<button id="lexnovaDownload" type="button" disabled>Преземи Markdown (.md)</button>
+<label for="lexnovaApproved">Проверен работен текст (не е потпишан или поднесен)</label>
+<textarea id="lexnovaApproved" readonly rows="8"></textarea>
+</section>
+<footer><p>LexNova · Human Gate · Source-first · Независна проверка на актуелните прописи е задолжителна.</p></footer>
+</main>
+<script type="module">
+import {reviewLexNovaDocument,applyLexNovaDecisions,lexnovaReviewExport} from "/assets/lexnova-document-copilot.mjs?v=20261117-v1";
+const $=id=>document.getElementById(id);
+let current=null,prepared=null;
+const choices=new Map();
+function status(text){$("lexnovaDocStatus").textContent=text;}
+function el(tag,text){const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;}
+function update(){
+ const every=current?.ok && current.changes.every(x=>choices.has(x.id));
+ $("lexnovaPrepare").disabled=!every;
+ $("lexnovaDownload").disabled=!prepared;
+}
+$("lexnovaLoadExample").onclick=()=>{
+ $("lexnovaOriginal").value="ИЗМИСЛЕН ПРИМЕР — НЕ Е ВИСТИНСКИ ДОГОВОР\nПредмет: Услуга за одржување.\nРок: 10 дена.\nЗа дополнителни измени следува писмена согласност.";
+ $("lexnovaProposed").value="ИЗМИСЛЕН ПРИМЕР — НЕ Е ВИСТИНСКИ ДОГОВОР\nПредмет: Услуга за одржување.\nРок: 15 дена.\nЗа дополнителни измени следува писмена согласност.";
+ status("Вчитан е синтетички пример. Притиснете „Спореди ги верзиите“.");
+};
+$("lexnovaReset").onclick=()=>{
+ for(const id of ["lexnovaOriginal","lexnovaProposed","lexnovaApproved"])$(id).value="";
+ $("lexnovaDocResults").hidden=true;choices.clear();current=null;prepared=null;
+ status("Локалните текстови се исчистени. Не е извршено испраќање.");
+};
+$("lexnovaCompare").onclick=()=>{
+ current=reviewLexNovaDocument($("lexnovaOriginal").value,$("lexnovaProposed").value);
+ choices.clear();prepared=null;$("lexnovaApproved").value="";
+ const results=$("lexnovaDocResults"),changes=$("lexnovaChanges"),check=$("lexnovaChecklist");
+ changes.replaceChildren();check.replaceChildren();
+ if(!current.ok){results.hidden=true;status(current.error);return;}
+ results.hidden=false;
+ $("lexnovaDocSummary").textContent=current.totalChanges+" разлики. Ниту една измена не е автоматски одобрена.";
+ current.changes.forEach(c=>{
+   const section=el("section");section.className="lexnova-review-change";
+   const h=el("h3",c.id+" · "+c.type+" · ред "+c.startOriginalLine);section.append(h);
+   const old=el("pre","Оригинал:\n"+(c.oldText||"(нема)"));
+   const newer=el("pre","Предлог:\n"+(c.newText||"(нема)"));
+   section.append(old,newer);
+   const label=el("label","Адвокатска одлука за "+c.id);
+   const select=el("select");select.setAttribute("aria-label","Одлука "+c.id);
+   for(const [key,text] of [["","— Изберете —"],["accept","Прифати"],["reject","Одбиј"]]){
+     const opt=el("option",text);opt.value=key;select.append(opt);
+   }
+   select.addEventListener("change",()=>{
+     if(select.value)choices.set(c.id,select.value);else choices.delete(c.id);
+     prepared=null;$("lexnovaApproved").value="";update();
+   });
+   label.append(select);section.append(label);changes.append(section);
+ });
+ const table=el("table");table.append(el("caption","Проверки на текстуална структура, не на валидност"));
+ const head=el("tr");["Поле","Статус"].forEach(t=>head.append(el("th",t)));table.append(head);
+ current.checklist.forEach(c=>{const row=el("tr");row.append(el("td",c.label),el("td",c.state));table.append(row)});
+ check.append(table);
+ status("Споредбата е направена локално. Одлучете поединечно за секоја измена.");
+ update();
+};
+$("lexnovaPrepare").onclick=()=>{
+ if(!current)return;
+ const map=Object.fromEntries(choices);
+ const result=applyLexNovaDecisions(current,map);
+ if(!result.ok){status(result.error);return;}
+ prepared=result;$("lexnovaApproved").value=result.text;
+ status("Подготвен е работен текст. Потребни се правна проверка, изворна проверка и Human Gate пред вистинска употреба.");
+ update();
+};
+$("lexnovaDownload").onclick=()=>{
+ if(!prepared)return;
+ const result=lexnovaReviewExport(current,Object.fromEntries(choices));
+ if(!result.ok){status(result.error);return;}
+ const url=URL.createObjectURL(new Blob([result.content],{type:"text/markdown;charset=utf-8"}));
+ const a=el("a");a.href=url;a.download=result.filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+ status("Markdown е преземен локално. Ништо не е испратено.");
+};
+</script>
+</body>
+</html>
