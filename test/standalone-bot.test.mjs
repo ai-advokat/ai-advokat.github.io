@@ -55,7 +55,7 @@ test('standalone bot retains confidential-case rejection before provider executi
 test('first-time users can chat in training mode without a membership code',()=>{
   const source=fs.readFileSync('assets/standalone-bot.js','utf8');
   assert.ok(source.includes("const hasQuestion = String($('question')?.value || '').trim().length >= 2;"));
-  assert.ok(source.includes("$('send').disabled = value || !hasQuestion;"));
+  assert.ok(source.includes("$('send').disabled = !hasQuestion;"));
   assert.ok(!source.includes("$('send').disabled = value || !key;"));
   assert.ok(!source.includes("Најпрво внесете го вашиот приватен код за влез."));
   assert.ok(source.includes("TRAINING режим · без шифра"));
