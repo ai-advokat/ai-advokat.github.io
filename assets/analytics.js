@@ -190,6 +190,22 @@
   }
 
   function installOfficialLinks() {
+    // Remove duplicates inserted by earlier versions before checking whether
+    // the canonical Social Networks menu already provides the YouTube channel.
+    document.querySelectorAll(
+      'header .links > [data-ai-advokat-youtube], ' +
+      '#mobileMenu [data-ai-advokat-youtube], ' +
+      'footer nav[aria-label="Навигација во подножје"] > [data-ai-advokat-youtube]'
+    ).forEach(link => link.remove());
+
+    // Preserve the requested order, even if another enhancement appended links.
+    const desktopMenu = document.querySelector('header .links');
+    const lastSocial = desktopMenu?.querySelector(':scope > [data-nav-folder="social"]');
+    if (lastSocial && lastSocial !== desktopMenu.lastElementChild) desktopMenu.appendChild(lastSocial);
+    const mobileMenu = document.querySelector('#mobileMenu .mobile-folder-grid');
+    const mobileSocial = mobileMenu?.querySelector(':scope > .mobile-social-folder');
+    if (mobileSocial && mobileSocial !== mobileMenu.lastElementChild) mobileMenu.appendChild(mobileSocial);
+
     const targets = [
       { root: document.querySelector("header .links"), location: "header" },
       { root: document.querySelector("#mobileMenu > div"), location: "mobile" },
