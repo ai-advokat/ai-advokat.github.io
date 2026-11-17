@@ -83,6 +83,7 @@ test("external conversation contrast repair loads LAST and is theme-safe",()=>{
   const html=fs.readFileSync("bot/index.html","utf8");
   const css=fs.readFileSync("assets/zoki-conversation-contrast-r1.css","utf8");
   assert.ok(html.indexOf("/assets/zoki-conversation-contrast-r1.css")>html.indexOf("/assets/standalone-bot-r7.js"));
+  assert.match(html,/name="ai-advokat-external-hotfix" content="P0-R29-readable-notice-20261117"/);
   assert.match(css,/data-external-experience="conversation"/);
   assert.match(css,/data-vnext-theme="dark"/);
   assert.match(css,/--zoki-ink:#192b3b/);
