@@ -1,0 +1,57 @@
+name: Dual bot timer and readable contrast acceptance
+on:
+  pull_request:
+    paths:
+      - 'assets/ai-advokat-response-time.js'
+      - 'assets/ai-advokat-response-time.css'
+      - 'assets/zoki-conversation-contrast-r1.css'
+      - 'assets/ai-advokat-chat.js'
+      - 'assets/standalone-bot.js'
+      - 'index.html'
+      - 'bot/index.html'
+      - 'test/dual-chat-timer-contrast-main.test.mjs'
+      - 'scripts/dual-chat-timer-browser-main.mjs'
+      - '.github/workflows/sync-pages-runtime.yml'
+      - '.github/workflows/dual-chat-timer-contrast-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax
+        run: |
+          node --check assets/ai-advokat-response-time.js
+          node --check assets/ai-advokat-chat.js
+          node --check assets/standalone-bot.js
+          node --check scripts/dual-chat-timer-browser-main.mjs
+      - name: Timer, contrast and Pages gate
+        run: node --no-warnings --test test/dual-chat-timer-contrast-main.test.mjs
+  real-browser-mock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          chrome="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$chrome"
+          echo "BROWSER_EXECUTABLE=$chrome" >> "$GITHUB_ENV"
+      - name: Timer display during mock response and truthful error
+        run: node scripts/dual-chat-timer-browser-main.mjs
+      - name: Evidence boundary
+        if: always()
+        run: |
+          echo 'Chromium uses synthetic AI responses and errors. Live deployment, model speed and private document handling are not tested here.' >> "$GITHUB_STEP_SUMMARY"
