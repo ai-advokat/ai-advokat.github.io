@@ -15,7 +15,7 @@ const DIRECTORY=new Map(LEGAL_NEWS_SOURCES.map(source=>[source.id,source]));
 
 export function isDailyLegalBriefingRequest(value){
   const q=String(value||"").normalize("NFKC").toLocaleLowerCase("mk");
-  return /(?:дневн|утринск|daily)/iu.test(q)
+  return /(?:дневен|дневн[а-я]*|утринск[а-я]*|daily)/iu.test(q)
     && /(?:брифинг|преглед|вест[и]?\b|веси\b|новости|brief)/iu.test(q)
     && /(?:правн|судск|закон|правосуд|legal)/iu.test(q)
     && !/(?:што е|дефинирај|објасни поим)/iu.test(q);
