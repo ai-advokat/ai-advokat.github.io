@@ -1,0 +1,61 @@
+name: Academy visible AI Advokat existing-bot acceptance
+on:
+  pull_request:
+    paths:
+      - 'academy/index.html'
+      - 'assets/academy-ai-advokat-chat.js'
+      - 'assets/academy-ai-advokat-chat.css'
+      - 'test/academy-visible-ai-advokat-chat.test.mjs'
+      - 'scripts/academy-visible-bot-browser-uat.mjs'
+      - '.github/workflows/academy-visible-bot-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Academy widget syntax
+        run: |
+          node --check assets/academy-ai-advokat-chat.js
+          node --check scripts/academy-visible-bot-browser-uat.mjs
+      - name: Check visibility, safety and fallback
+        run: node --no-warnings --test test/academy-visible-ai-advokat-chat.test.mjs
+      - name: Evidence boundary
+        if: always()
+        run: |
+          {
+            echo 'Academy widget is an existing Worker bot launcher, not a third bot.'
+            echo 'PR tests do not prove it is merged or visible on the public Academy page.'
+          } >> "$GITHUB_STEP_SUMMARY"
+  chromium-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated Chromium controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          chrome="$(command -v google-chrome || command -v chromium || command -v google-chrome-stable || true)"
+          test -n "$chrome"
+          echo "BROWSER_EXECUTABLE=$chrome" >> "$GITHUB_ENV"
+      - name: Real Chromium mobile and desktop Academy dialog (external bot mocked)
+        run: node scripts/academy-visible-bot-browser-uat.mjs
+      - name: No live-provider evidence
+        if: always()
+        run: |
+          {
+            echo 'Chromium validates Academy dialog, accessibility basics, responsive layout and frame creation.'
+            echo 'Cloudflare iframe content is MOCKED; real production embedding and deployment are NOT TESTED.'
+            echo 'Existing live bot can always be opened through a direct full-tab link.'
+          } >> "$GITHUB_STEP_SUMMARY"
