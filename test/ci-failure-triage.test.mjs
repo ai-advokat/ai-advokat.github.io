@@ -5,6 +5,8 @@ import { classifyFailure, failedStepNames, auditFailures } from '../scripts/ci-f
 test('classifies provider, rate limit, page parity and microphone errors without raw excerpts', () => {
   const r = classifyFailure('sensitive.email@example.com HTTP 429 rate_limited');
   assert.deepEqual(r.categories, ['RATE_LIMIT_OR_QUOTA']);
+  assert.ok(classifyFailure('workers_ai_daily_capacity_exhausted').categories.includes('CLOUDFLARE_DAILY_CAPACITY_EXHAUSTED'));
+  assert.ok(classifyFailure('project_spend_limit_exceeded').categories.includes('OPENAI_PROJECT_SPEND_LIMIT'));
   assert.ok(!JSON.stringify(r).includes('sensitive.email'));
   assert.deepEqual(classifyFailure('', 'Verify GitHub Pages serves R14 dual-bot toolkit parity bundles').categories, ['PAGES_DEPLOYMENT_OR_PARITY']);
   assert.ok(classifyFailure('transcribe_http_502:bad').categories.includes('MICROPHONE_TRANSCRIPTION'));
