@@ -1,0 +1,25 @@
+{
+  "baselineMainSha": "c5e07e37e38cba246a6ac1ed7c3dc6b651837160",
+  "files": {
+    ".github/workflows/a319-held-corpus-isolated.yml": "aad623d05d3149e98daa094916353602d2870586ff2c948cb60c0ac83d27718f",
+    ".github/workflows/rc7-integration-review-only.yml": "04805b5af10647aff96c3b7f08d20e299821874aab1f4e5411730fc0405b4427",
+    "docs/A319_HELD_CORPUS_DISCOVERY.md": "0d8c9d00ed93173c4da3d60b55efd4c0ce9d72b2af968380d38e0b138a412289",
+    "docs/rc7/RC7_ACCEPTANCE.md": "97f92eb27394677003f150736ab96f4f79af054af6e17f0fb325f38c2094a7d5",
+    "scripts/rc7-integrity-check.mjs": "9f71f81d48d6d7609c41c216e5a2d14b9349a03c941d252b9cb166f420d5daa7",
+    "src/a319-held-corpus-discovery.js": "838b459a660eac400586e2b2692228359eabe7e3755d5c4adddc20ccae0a135e",
+    "src/experimental/rc4/a319-held-corpus-discovery.mjs": "7df3c93c4b567a960b6db9d38ea8f37c28bacba5cd4f47c4362a4f3a2c40b7e4",
+    "src/experimental/rc4/a319-r3-integrity-bridge.mjs": "6d30cc01d191bfbc2313a123faac170b4dc3c0cb7906204f319b306a1ae9b417",
+    "src/experimental/rc4/legal-response-integrity.mjs": "2ca37347dd8b2b6ba32decd8fa1ca46f7c9d4e34de3b97a874731f3b921d02ba",
+    "test/a319-held-corpus-discovery.test.mjs": "fd73cffd66bf698fb7c05cbc60bfc300bd6f101f1c2eee40ad9487645bc30753",
+    "test/rc4-a319-bridge.test.mjs": "13a00e904318b08afe20faaf7bd574ae0c662c402f9c115415cdb6f381c8ef91",
+    "test/rc4-a319-discovery.test.mjs": "231fc75f9738361b336d8a8437122bf1c8d4c2f23007fbe72fb0246351b9e5ea",
+    "test/rc4-legal-hold.test.mjs": "14cba413a986364338a0568dc6c86bf247a440ff7601353a4b2d85b98b9a04c1",
+    "test/rc7-reconciliation.test.mjs": "87fc44080835a568da3fb4b112ff207ab9d502c580aac3d495c7dedebc88f0ba"
+  },
+  "legalHold": true,
+  "legalHoldUnits": 53,
+  "referencePR716HeadSha": "a718dee62e470641baef1943f6a2693e5b9ad9fa",
+  "schema": "ai-advokat.rc7.github-review-manifest/v1",
+  "scope": "GITHUB_JS_ONLY_PRIVATE_UAT_LOCAL_ZIP",
+  "status": "NO_GO"
+}
