@@ -15,6 +15,8 @@ export const TARGET_NAMES = new Set([
 ]);
 
 const RULES = [
+  ['CLOUDFLARE_DAILY_CAPACITY_EXHAUSTED', /workers_ai_daily_capacity_exhausted|daily_free_allocation_exhausted|ui_translation_workers_ai_capacity_exhausted|voice_transcription_capacity_exhausted|4006:.*daily free allocation/i],
+  ['OPENAI_PROJECT_SPEND_LIMIT', /project_spend_limit_exceeded/i],
   ['RATE_LIMIT_OR_QUOTA', /\bHTTP\s*429\b|\brate_limited\b|\btoo_many_requests\b|\bfree_quota_exhausted\b|\bui_translation_rate_limited\b|\bquota_consumed\b/i],
   ['PROVIDER_UNAVAILABLE', /\bHTTP\s*50[0234]\b|voice_transcription_unavailable|ui_translation_unavailable|provider_not_ready|upstream_unavailable/i],
   ['RELEASE_SHA_OR_BYTE_MISMATCH', /source_main_sha=|expected runtime contract was not deployed|byte.parity|Worker deployment not yet at expected commit|PAGES RELEASE SHA/i],
