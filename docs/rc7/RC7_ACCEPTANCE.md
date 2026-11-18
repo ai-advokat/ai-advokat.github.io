@@ -35,3 +35,7 @@ The bridge and response-integrity tests from RC6 stay isolated. Direct `retrieve
 **Decision at integration preparation: NO-GO for merge, staging and production.** All **53 statutory entries are LEGAL_HOLD** pending Zoran's independent legal validity, textual amendment and rights/republication review. Provider usage incidents are separate (Cloudflare daily free capacity and OpenAI project spend cap); successful source CI does not prove live chatbot acceptance. An isolated code review candidate is not a published AI law service.
 
 Owner review must include exact commit SHA, complete code diff, SHA-256 manifest, automated/safety CI results, residual risks, and a new explicit written approval before any consequential merge or activation. Rollback: delete/revert only RC7 additive review branch; no data migration or production rollback required because none is authorized.
+
+## GitHub candidate scope limitation
+
+The GitHub review branch carries the A3.19 and RC4 JS reconciliation modules, Node regressions, and pinned-baseline SHA-256 gate only. The offline Python private-UAT harness and its 20-scenario manifest are available in the separately supplied local RC7 ZIP but **are not in this GitHub branch**. The external intake of that archival manifest was not accepted; it is not represented as committed or tested on GitHub. Python 7/7 PASS is local-package evidence only, not exact-head GitHub evidence. This is an explicit release blocker, not a reason to weaken the code gate.
