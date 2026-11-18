@@ -29,7 +29,7 @@ const RULES = [
 export function classifyFailure(logText = '', failedStepName = '') {
   const log = String(logText).slice(-2_000_000);
   const matches = RULES.filter(([, rx]) => rx.test(log)).map(([code]) => code);
-  if (matches.length) return { categories: matches, evidence: 'LOG_SIGNATURE' };
+  if (matches.length) return { categories: matches, evidence: 'LOG_SIGNATURE_CANDIDATE' };
   const step = String(failedStepName);
   if (/GitHub Pages serves/i.test(step)) return { categories: ['PAGES_DEPLOYMENT_OR_PARITY'], evidence: 'FAILED_STEP_ONLY' };
   if (/Worker serves exact/i.test(step)) return { categories: ['WORKER_DEPLOYMENT_OR_PARITY'], evidence: 'FAILED_STEP_ONLY' };
@@ -82,6 +82,7 @@ export async function auditFailures({ repo, token, maxPages = 4, maxAgeHours = 9
     repository: repo,
     evidence_scope: 'GitHub Actions run/job metadata and signature-only log analysis',
     raw_logs_stored: false,
+    interpretation_notice: 'Categories are non-authoritative hints; read failed job details before assigning root cause',
     token_stored: false,
     pages_scanned: pagesScanned,
     found_failed_workflows: chosen.size,
