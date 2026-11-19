@@ -1,0 +1,49 @@
+name: AI Advokat CI failure triage (READ ONLY)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - scripts/ci-failure-triage.mjs
+      - test/ci-failure-triage.test.mjs
+      - .github/workflows/ci-failure-triage.yml
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate triage source
+        run: node --check scripts/ci-failure-triage.mjs
+      - name: Verify redaction and classification without network calls
+        run: node --test test/ci-failure-triage.test.mjs
+  read-only-triage:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Analyze recent failed production acceptance jobs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPORT_PATH: /tmp/ai-advokat-ci-failure-triage.json
+        run: node scripts/ci-failure-triage.mjs
+      - name: Upload signature-only report (no raw logs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-ci-failure-triage
+          path: /tmp/ai-advokat-ci-failure-triage.json
+          if-no-files-found: warn
+          retention-days: 14
