@@ -1,0 +1,44 @@
+name: RC7 integrated offline acceptance (NO DEPLOY)
+on:
+  pull_request:
+    paths:
+      - 'src/a319-held-corpus-discovery.js'
+      - 'src/experimental/rc4/**'
+      - 'test/a319-held-corpus-discovery.test.mjs'
+      - 'test/rc4-*.test.mjs'
+      - 'test/rc7-reconciliation.test.mjs'
+      - 'scripts/rc7-integrity-check.mjs'
+      - 'docs/rc7/**'
+      - '.github/workflows/rc7-integration-review-only.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-reconciliation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Baseline plus source SHA-256 gate
+        env:
+          RC7_CHECK_GIT_BASELINE: '1'
+        run: node scripts/rc7-integrity-check.mjs
+      - name: Node source checks
+        run: |
+          node --check src/a319-held-corpus-discovery.js
+          node --check src/experimental/rc4/a319-r3-integrity-bridge.mjs
+          node --check src/experimental/rc4/a319-held-corpus-discovery.mjs
+          node --check src/experimental/rc4/legal-response-integrity.mjs
+          node --test test/a319-held-corpus-discovery.test.mjs test/rc4-*.test.mjs test/rc7-reconciliation.test.mjs
+      - name: Explicit no-release summary
+        if: always()
+        run: |
+          echo 'RC7 is source-only; NO merge, staging, production, provider calls, statutory citation or legal authority.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'All 53 statutory entries remain LEGAL_HOLD; attorney Human Gate required.' >> "$GITHUB_STEP_SUMMARY"
