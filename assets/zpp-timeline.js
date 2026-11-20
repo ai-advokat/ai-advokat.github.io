@@ -18,11 +18,17 @@
 
   const LDBIS = "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=";
 
+  // Date of the last DOCUMENTED human verification, not today and not an
+  // automatically inferred current-law status. Only update with new evidence.
+  const LAST_HUMAN_METADATA_REVIEW = Object.freeze({ date: "2026-10-02", source: "LDBIS" });
+
   const ZPP_TIMELINE = Object.freeze({
     instrumentKey: "mk:zpp",
     title: { mk: "Закон за парничната постапка", en: "Law on Civil Procedure" },
     short: { mk: "ЗПП", en: "ZPP" },
-    statusAsOf: "2026-10-02",
+    statusAsOf: LAST_HUMAN_METADATA_REVIEW.date,
+    lastHumanVerifiedAt: LAST_HUMAN_METADATA_REVIEW.date,
+    reviewSource: LAST_HUMAN_METADATA_REVIEW.source,
     // Last day on which the phase labels below are still correct without review:
     // the day before the new law begins to apply.
     statusReviewBy: "2027-01-17",

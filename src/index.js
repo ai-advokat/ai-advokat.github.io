@@ -267,7 +267,9 @@ const CANONICAL_FINAL_OUTPUT_GATE_VERSION="AI_ADVOCAT_CANONICAL_FINAL_OUTPUT_GAT
 
 const ALLOWED_ORIGINS = new Set([
   "https://ai-advokat.github.io",
-  "https://ai-advokat-github-io.aiadvokat16.workers.dev",
+  "https://ai-advokat-github-io.aiadvokat16.workers.dev"
+]);
+const DEVELOPMENT_ORIGINS = new Set([
   "http://localhost:8787",
   "http://127.0.0.1:8787"
 ]);
@@ -2447,7 +2449,11 @@ function corsHeaders(request) {
     "Vary": "Origin"
   };
 
-  if (origin && ALLOWED_ORIGINS.has(origin)) {
+  // Development CORS is valid only on the local Wrangler request host.
+  // A public Worker deployment must never advertise localhost origins.
+  const requestHost=new URL(request.url).hostname.toLowerCase();
+  const isLocalDevRequest=requestHost==="localhost" || requestHost==="127.0.0.1";
+  if(origin && (ALLOWED_ORIGINS.has(origin) || (isLocalDevRequest && DEVELOPMENT_ORIGINS.has(origin)))){
     headers["Access-Control-Allow-Origin"] = origin;
   }
 
@@ -11357,7 +11363,7 @@ function withSecurityHeaders(response, { allowAcademyBotFrame = false } = {}) {
   const frameAncestors = allowAcademyBotFrame ? "https://ai-advokat.github.io" : "'none'";
   headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; img-src 'self' data: https://www.google-analytics.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev https://www.google-analytics.com https://*.google-analytics.com; font-src 'self' data:; object-src 'none'; media-src 'none'; frame-src https://challenges.cloudflare.com; base-uri 'none'; frame-ancestors ${frameAncestors}; form-action 'self' mailto:; upgrade-insecure-requests`
+    `default-src 'self'; img-src 'self' data: https://www.google-analytics.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com; connect-src 'self' https://ai-advokat-github-io.aiadvokat16.workers.dev https://www.google-analytics.com https://*.google-analytics.com; font-src 'self' data:; object-src 'none'; media-src 'self'; frame-src https://challenges.cloudflare.com; base-uri 'none'; frame-ancestors ${frameAncestors}; form-action 'self' mailto:; upgrade-insecure-requests`
   );
 
   return new Response(response.body, {

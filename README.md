@@ -29,7 +29,7 @@ The Worker exposes:
 - `/api/web-sources`, `/api/zenodo`, `/api/orcid` — directories and publication metadata
 - `/api/citation-audit`, `/api/versions`, `/api/documents`, `/api/cases` — governed preview / locked
 
-D1 is active. R2 and Vectorize remain disabled. Workers AI is bound in staging only; production AI activation is a separate Human Gate / cost decision (`scripts/verify.mjs` blocks a production `ai` binding).
+D1 is active. R2 and Vectorize remain disabled. Workers AI has a production `ai` binding in `wrangler.jsonc` and is also used in staging; `scripts/verify.mjs` does not ban the production binding. Provider and payment paths remain separately gated by runtime controls and Human Gate. A successful structural verification is not proof of a production deployment or live model availability.
 
 No legal AI output or DOI is fabricated.
 
@@ -42,6 +42,7 @@ Implemented in `src/security.js`; covered by `npm run test:security` (CI: `secur
 | Anonymous identity | `anon:v1:` + HMAC-SHA256(`RATE_LIMIT_SALT`, client network). IPv4 = full address, IPv6 = /64. **No plaintext IP is stored.** Missing/short salt → anonymous assistant and membership requests fail closed (503). |
 | Assistant burst limit | 5 requests / 60 s per subject, exact fixed window in D1 (`security_rate_limit_windows`). An optional Cloudflare Rate Limiting binding `ASSISTANT_BURST` is used as an extra first filter if bound (Cloudflare documents it as eventually consistent, so D1 stays authoritative). |
 | Monthly quota | FREE = 10 assistant requests / calendar month (UTC). Members use their entitlement quota. An invalid or expired key is treated as anonymous FREE. |
+| External training | `/api/bot` has a separate activation flag `EXTERNAL_BOT_TRAINING_OPEN`. Its anonymous quota and cost boundary require the separate P0 safety review; do not infer them from the `/api/assistant` FREE row without verifying the deployed Worker configuration. |
 | Atomic reservation | One `INSERT … ON CONFLICT DO UPDATE … WHERE assistant_requests < quota RETURNING` statement. Order: burst → validation → routing/retrieval → reservation → AI. Rejected routing and empty retrieval consume nothing. Reservation is returned only if the AI provider itself throws. |
 | Prompt boundaries | All rules live in the system message. Sources and the user question are placed in `<<<LEGAL_SOURCES>>>` / `<<<USER_QUESTION>>>` blocks; delimiter sequences and control/bidi characters are stripped from untrusted text. |
 | Citation guard | An AI answer is accepted only if it cites at least one article and every article it mentions (`[Член N]`, `член N`, `членот N`, `чл. N`) was retrieved. Otherwise the response falls back to retrieval-only (`mode: retrieval_only_citation_guard`). |

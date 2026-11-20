@@ -761,7 +761,9 @@
 
   function renderAttachments(){
     attachmentsEl.replaceChildren();
-    if(attachmentCount) attachmentCount.textContent=attachments.length+" / "+CHAT_ATTACHMENT_LIMIT;
+    // The FREE public conversation does not accept case attachments; do not
+    // render a misleading "0 / 20" professional file allowance there.
+    if(attachmentCount && !attachmentCount.hidden) attachmentCount.textContent=attachments.length+" / "+CHAT_ATTACHMENT_LIMIT;
     attachments.forEach((a,i)=>{
       const chip=document.createElement("div");chip.className="ai-chat-attachment";
       const icon=document.createElement("span");icon.textContent=(a.type||"").startsWith("image/")?"🖼️":"📎";
@@ -885,6 +887,11 @@
     if(ownerState) ownerState.textContent=label;
     if(professionalAccessBtn) professionalAccessBtn.textContent=professional?"✓ Професионален пристап · "+plan:"✓ Професионален пристап";
     if(logoutBtn) logoutBtn.hidden=!key;
+    if(attachmentCount){
+      attachmentCount.hidden=!professional;
+      attachmentCount.style.display=professional?"":"none";
+      attachmentCount.textContent=professional?attachments.length+" / "+CHAT_ATTACHMENT_LIMIT:"";
+    }
   }
   function accessStorage(){
     try{return window.localStorage;}catch{return null;}
