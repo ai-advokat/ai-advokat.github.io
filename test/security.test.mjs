@@ -982,3 +982,39 @@ test("production language firewall P2 uses a dedicated editor and a deterministi
   assert.match(src,/editor_unavailable_canonical_clean_fallback/);
   assert.match(src,/freeLanguageEditorModel:freeWorkersAIConfigured\(env\)/);
 });
+
+
+// 20 November 2026 audit — source-first and anonymous training cost guards.
+test("P0 /api/bot rejects the eleventh anonymous monthly request, even with stale 100 quota config", async () => {
+  const { env, raw } = freshEnv({ai:mockAI("Правна информација: човечка проверка на правните извори.")});
+  env.FREE_CHAT_PROVIDER="workers_ai";
+  env.EXTERNAL_BOT_TRAINING_OPEN="true";
+  env.EXTERNAL_BOT_TRAINING_MONTHLY_QUOTA="100"; // previous unsafe setting must be ignored
+  const ip=nextIp();
+  const botReq=()=>new Request(BASE+"/api/bot",{
+    method:"POST",
+    headers:{"content-type":"application/json","CF-Connecting-IP":ip},
+    body:JSON.stringify({q:"ЗРО член 12"})
+  });
+  const anon=await security.anonymousSubject(botReq(),env);
+  const period=security.currentPeriod();
+  // Simulate ten *successful* training reservations without tripping the
+  // separate five-per-minute burst gate. Route 11 must enforce quota 429.
+  for(let n=0;n<10;n++){
+    const verdict=await security.reserveMonthlyQuota(env,{
+      subject:"training:"+anon,period,quota:10
+    });
+    assert.equal(verdict.reserved,true);
+  }
+  const r=await call(env,botReq());
+  assert.equal(r.status,429);
+  assert.equal(r.body.error,"free_quota_exhausted");
+  assert.equal(r.body.membership.monthlyQuota,10);
+  assert.equal(usageRows(raw).filter(row=>row.subject_key==="training:"+anon)[0].assistant_requests,10);
+});
+
+test("P0 law-first live acceptance cannot forbid the honest unverified-court placeholder",()=>{
+  const s=fs.readFileSync("scripts/sasho-lawsuit-live.mjs","utf8");
+  assert.doesNotMatch(s,/forbidden_generic_court_placeholder/);
+  assert.match(s,/Source-first: an unverified competent court MUST remain a marked placeholder/);
+});
