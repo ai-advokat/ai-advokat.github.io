@@ -1,4 +1,5 @@
 import { runVoiceTranscriptionAI } from "./voice-transcription-provider.js";
+import { uiTranslationCacheKey, readCachedUiTranslation, cacheUiTranslation } from "./ui-translation-cache.js";
 import { handleLegalAlarm } from "./legal-alarm.js";
 import {
   CASE_LAW_CURATION_VERSION,
@@ -11665,6 +11666,23 @@ async function handleUiTranslation(request,env){
     throw error;
   }
 
+  // Memoize only short, non-sensitive public UI strings; hash keys contain no
+  // source text and the translations are held only in the current isolate.
+  const uiCacheKey=await uiTranslationCacheKey(target,items);
+  const cachedUi=readCachedUiTranslation(uiCacheKey);
+  if(cachedUi){
+    return json(request,{
+      ok:true,targetLanguage:target,language,
+      translations:cachedUi.translations,
+      provider:"workers_ai_ui_cached",
+      cached:true,
+      sourceProvider:cachedUi.provider,
+      translationModel:cachedUi.translationModel,
+      fallbackTranslationModel:cachedUi.fallbackTranslationModel,
+      fallbackItemCount:cachedUi.fallbackItemCount,
+      legalIdentifiersPreserved:true,humanGatePreserved:true
+    });
+  }
   const runUiProvider=options=>runWorkersAIText(env,options);
 
   try{
@@ -11698,13 +11716,19 @@ async function handleUiTranslation(request,env){
       translations=rows.map(row=>({id:row.id,text:row.text}));
       provider=fallbackItemCount>0?"m2m100_workers_ai_item_fallback":"m2m100";
     }
+    const translationModel=provider==="workers_ai_ui_fallback"?UI_TRANSLATION_FALLBACK_MODEL:UI_TRANSLATION_MODEL;
+    cacheUiTranslation(uiCacheKey,{
+      translations,provider,translationModel,
+      fallbackTranslationModel:fallbackItemCount>0?UI_TRANSLATION_FALLBACK_MODEL:null,
+      fallbackItemCount
+    });
     return json(request,{
       ok:true,
       targetLanguage:target,
       language,
       translations,
       provider,
-      translationModel:provider==="workers_ai_ui_fallback"?UI_TRANSLATION_FALLBACK_MODEL:UI_TRANSLATION_MODEL,
+      translationModel,
       fallbackTranslationModel:fallbackItemCount>0?UI_TRANSLATION_FALLBACK_MODEL:null,
       fallbackItemCount,
       legalIdentifiersPreserved:true,
