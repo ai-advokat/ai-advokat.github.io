@@ -1,13 +1,16 @@
-# Critical AI Advokat runtime assets must never be served stale.
-# Legal correctness and runtime consistency take priority over long-lived JS caching.
+# AI Advokat asset response policy.
+# _headers matches URL paths, NOT ?v= query strings. Never mark ALL scripts
+# immutable: unversioned legal/AI runtime scripts must still refresh.
+# HTML/critical bot documents remain strictly uncacheable.
 /bot/*
   Cache-Control: no-store, max-age=0
 
 /assets/*.js
-  Cache-Control: no-store, max-age=0
+  Cache-Control: public, max-age=3600, must-revalidate
 
 /assets/*.mjs
-  Cache-Control: no-store, max-age=0
+  Cache-Control: public, max-age=3600, must-revalidate
 
+# Source files must not be published as static assets; defence in depth.
 /src/*.js
   Cache-Control: no-store, max-age=0
