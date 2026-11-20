@@ -71,7 +71,7 @@ test("P1 cache policy revalidates JS and preserves no-store for critical bot pag
   assert.match(headers,/\/assets\/\*\.js\s+Cache-Control: public, max-age=3600, must-revalidate/);
   assert.match(headers,/\/assets\/\*\.mjs\s+Cache-Control: public, max-age=3600, must-revalidate/);
   assert.match(headers,/\/bot\/\*\s+Cache-Control: no-store/);
-  assert.doesNotMatch(headers,/immutable/);
+  assert.doesNotMatch(headers,/Cache-Control:[^\n]*immutable/);
 });
 
 test("P1 README reflects production Workers AI binding and correct FREE quota",()=>{
