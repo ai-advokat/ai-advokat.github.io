@@ -104,129 +104,87 @@ test("Macedonian source mode is a structured passthrough and does not call AI",a
 });
 
 
-test("OpenAI UI fallback reconstructs protected legal tokens deterministically",async()=>{
+
+async function checkNoPaidUiFallback({targetLanguage="en", reason="force_workers_failure"}={}) {
   const originalFetch=globalThis.fetch;
-  try{
-    globalThis.fetch=async(url,options)=>{
-      assert.equal(String(url),"https://api.openai.com/v1/responses");
-      const body=JSON.parse(options.body);
-      const payload=JSON.parse(body.input[0].content[0].text);
-      assert.ok(payload.items.every(x=>!String(x.text).includes("10.5281/zenodo.23467865")));
-      assert.ok(payload.items.every(x=>!String(x.text).includes("Human Gate")));
-      return new Response(JSON.stringify({
-        status:"completed",
-        id:"resp_ui_test",
-        output_text:JSON.stringify({
-          translations:payload.items.map(x=>({id:x.id,text:"EN:"+x.text}))
-        })
-      }),{status:200,headers:{"content-type":"application/json"}});
-    };
+  let paidCalls=0;
+  try {
+    globalThis.fetch=async()=>{paidCalls++;throw new Error("paid_translation_must_not_run");};
     const env={
-      DB,
-      RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",
+      DB,RATE_LIMIT_SALT,
+      OPENAI_API_KEY:"configured-but-forbidden",
       OPENAI_MODEL:"gpt-6.1-sol",
-      AI:{run:async()=>{throw new Error("force_workers_failure");}}
-    };
-    const req=new Request(base+"/api/ui-translate",{
-      method:"POST",
-      headers:commonHeaders,
-      body:JSON.stringify({
-        targetLanguage:"en",
-        items:[{id:"x",text:"AI Advokat · Human Gate · DOI 10.5281/zenodo.23467865 · Судска пракса"}]
-      })
-    });
-    const res=await worker.fetch(req,env,{});
-    assert.equal(res.status,200);
-    const data=await res.json();
-    assert.equal(data.provider,"openai_responses_fallback");
-    assert.match(data.translations[0].text,/AI Advokat/);
-    assert.match(data.translations[0].text,/Human Gate/);
-    assert.match(data.translations[0].text,/10\.5281\/zenodo\.23467865/);
-    assert.match(data.translations[0].text,/EN:/);
-  }finally{
-    globalThis.fetch=originalFetch;
-  }
-});
-
-
-test("OpenAI fallback preserves article/case identifiers and boundary whitespace",async()=>{
-  const originalFetch=globalThis.fetch;
-  try{
-    globalThis.fetch=async(url,options)=>{
-      const body=JSON.parse(options.body);
-      const payload=JSON.parse(body.input[0].content[0].text);
-      assert.ok(payload.items.every(x=>!String(x.text).includes("Article 5")));
-      assert.ok(payload.items.every(x=>!String(x.text).includes("case C-123/45")));
-      return new Response(JSON.stringify({
-        status:"completed",
-        id:"resp_ui_whitespace",
-        output_text:JSON.stringify({
-          translations:payload.items.map(x=>({id:x.id,text:"EN:"+x.text}))
-        })
-      }),{status:200,headers:{"content-type":"application/json"}});
-    };
-    const env={
-      DB,RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
-      AI:{run:async()=>{throw new Error("force_workers_failure");}}
+      AI:{run:async()=>{throw new Error(reason);}}
     };
     const req=new Request(base+"/api/ui-translate",{
       method:"POST",headers:commonHeaders,
-      body:JSON.stringify({targetLanguage:"en",items:[{id:"x",text:"Судска пракса AI Advokat · Article 5 · case C-123/45"}]})
+      body:JSON.stringify({targetLanguage,items:[{id:"audit-no-paid",text:"Правен портал и правна едукација"}]})
     });
     const res=await worker.fetch(req,env,{});
-    assert.equal(res.status,200);
     const data=await res.json();
-    const out=data.translations[0].text;
-    assert.match(out,/EN:Судска пракса AI Advokat/);
-    assert.match(out,/Article 5/);
-    assert.match(out,/case C-123\/45/);
-    assert.doesNotMatch(out,/праксаAI Advokat/);
-  }finally{
+    assert.equal(res.status,503);
+    assert.equal(data.error,"ui_translation_provider_unavailable");
+    assert.equal(data.paidFallback,false);
+    assert.equal(paidCalls,0);
+  } finally {
     globalThis.fetch=originalFetch;
   }
+}
+
+test("Anonymous UI translation fails closed when Workers AI fails, even with OpenAI credentials",async()=>{
+  await checkNoPaidUiFallback();
 });
 
-test("OpenAI fallback retries without structured format on 400 schema rejection",async()=>{
-  const originalFetch=globalThis.fetch;
-  let calls=0;
-  try{
-    globalThis.fetch=async(url,options)=>{
-      calls++;
-      const body=JSON.parse(options.body);
-      if(calls===1){
-        assert.ok(body.text?.format);
-        return new Response(JSON.stringify({error:{type:"invalid_request_error",code:"unsupported_response_format"}}),{
-          status:400,headers:{"content-type":"application/json"}
-        });
-      }
-      assert.equal(body.text,undefined);
-      const payload=JSON.parse(body.input[0].content[0].text);
-      return new Response(JSON.stringify({
-        status:"completed",
-        id:"resp_ui_retry",
-        output_text:JSON.stringify({translations:payload.items.map(x=>({id:x.id,text:"English UI"}))})
-      }),{status:200,headers:{"content-type":"application/json"}});
-    };
-    const env={
-      DB,RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
-      AI:{run:async()=>{throw new Error("force_workers_failure");}}
-    };
+test("Workers AI capacity exhaustion never invokes paid OpenAI for UI translations",async()=>{
+  await checkNoPaidUiFallback({reason:"ui_translation_workers_ai_capacity_exhausted"});
+});
+
+test("Unsupported M2M100 languages fail closed if Workers AI LLM also fails",async()=>{
+  await checkNoPaidUiFallback({targetLanguage:"eo",reason:"ui_translation_workers_ai_failed"});
+});
+
+test("Translation daily budget is truly global across different anonymous IP subjects",async()=>{
+  const calls=[];
+  const observedDB={prepare(sql){
+    return {bind(...args){
+      calls.push({sql:String(sql),args});
+      return {run:async()=>({results:[{request_count:1}]})};
+    }};
+  }};
+  const env={DB:observedDB,RATE_LIMIT_SALT,AI:{run:async(model,input)=>({translated_text:"EN:"+String(input.text||"")})}};
+  for(const ip of ["203.0.113.40","203.0.113.41"]){
     const req=new Request(base+"/api/ui-translate",{
-      method:"POST",headers:commonHeaders,
-      body:JSON.stringify({targetLanguage:"en",items:[{id:"x",text:"Правен портал"}]})
+      method:"POST",headers:{...commonHeaders,"CF-Connecting-IP":ip},
+      body:JSON.stringify({targetLanguage:"en",items:[{id:"daily-test",text:"Правна едукација за сите"}]})
     });
-    const res=await worker.fetch(req,env,{});
-    assert.equal(res.status,200);
-    const data=await res.json();
-    assert.equal(data.provider,"openai_responses_fallback");
-    assert.equal(calls,2);
-    assert.equal(data.translations[0].text,"English UI");
-  }finally{
-    globalThis.fetch=originalFetch;
+    assert.equal((await worker.fetch(req,env,{})).status,200);
   }
+  const globalCalls=calls.filter(x=>x.args[0]==="ui_translate_global_day");
+  assert.equal(globalCalls.length,2);
+  assert.ok(globalCalls.every(x=>x.args[1]==="__all_clients__"));
+  assert.ok(globalCalls.every(x=>x.args[3]===800));
+});
+
+test("Repeated short non-sensitive UI strings are cached by hash without repeat Workers AI cost",async()=>{
+  let aiCalls=0;
+  const env={DB,RATE_LIMIT_SALT,AI:{run:async(model,input)=>{
+    aiCalls++;
+    return {translated_text:"EN:"+String(input.text||"")};
+  }}};
+  const makeReq=()=>new Request(base+"/api/ui-translate",{
+    method:"POST",headers:commonHeaders,
+    body:JSON.stringify({targetLanguage:"en",items:[{id:"cache-r8-test",text:"Правна помош и информации"}]})
+  });
+  const first=await (await worker.fetch(makeReq(),env,{})).json();
+  const firstCalls=aiCalls;
+  const second=await (await worker.fetch(makeReq(),env,{})).json();
+  assert.equal(first.ok,true);
+  assert.equal(second.ok,true);
+  assert.equal(second.cached,true);
+  assert.equal(second.provider,"workers_ai_ui_cached");
+  assert.ok(firstCalls>=1);
+  assert.equal(aiCalls,firstCalls);
+  assert.deepEqual(second.translations,first.translations);
 });
 
 test("M2M100 failure falls back only the failed item instead of the whole batch",async()=>{

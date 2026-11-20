@@ -53,7 +53,8 @@ test("all non-MK languages including English use the bounded full-interface tran
   assert.match(worker,/raw\.length>96/);
   assert.match(worker,/totalChars>12000/);
   assert.match(worker,/UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT=48/);
-  assert.match(worker,/UI_TRANSLATE_GLOBAL_HOURLY_LIMIT=240/);
+  assert.match(worker,/UI_TRANSLATE_PER_CLIENT_HOURLY_LIMIT=240/);
+  assert.match(worker,/subject:"__all_clients__"/);
   assert.match(worker,/UI_TRANSLATE_GLOBAL_DAILY_LIMIT=800/);
   assert.match(worker,/UI_TRANSLATION_CONCURRENCY=2/);
   assert.match(worker,/workers_ai_ui_fallback/);

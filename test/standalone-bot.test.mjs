@@ -353,9 +353,10 @@ test('production config explicitly enables bounded external training without wea
   const wrangler=fs.readFileSync('wrangler.jsonc','utf8');
   const source=fs.readFileSync('src/index.js','utf8');
   assert.match(wrangler,/"EXTERNAL_BOT_TRAINING_OPEN": "true"/);
-  assert.match(wrangler,/"EXTERNAL_BOT_TRAINING_MONTHLY_QUOTA": "100"/);
+  assert.match(wrangler,/"EXTERNAL_BOT_TRAINING_MONTHLY_QUOTA": "10"/);
   assert.match(source,/const trainingOpen=openAIOnly && env\.EXTERNAL_BOT_TRAINING_OPEN==="true"/);
-  assert.match(source,/Math\.min\(100,Math\.max\(MEMBERSHIP_PLANS\.free\.monthlyQuota/);
+  assert.match(source,/quota=MEMBERSHIP_PLANS\.free\.monthlyQuota/);
+  assert.match(source,/subject="training:"\+subject/);
   assert.match(source,/async function caseWorkspaceMembership[\s\S]*resolveMembership\(request,env\)/);
 });
 
