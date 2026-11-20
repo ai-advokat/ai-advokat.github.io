@@ -4288,9 +4288,10 @@
     const tl=ZT.ZPP_TIMELINE, today=jurisdictionIsoDate(), stale=ZT.isStale(today);
     const L=lang==="en" ? "en" : "mk";
     const gate=ZT.humanGateLabel(zppInstrument,lang);
+    const lastReviewed=tl.lastHumanVerifiedAt||tl.statusAsOf;
     $("#zppAsOf").textContent=stale
-      ? T(`Ознаките за состојба беа точни на ${ZT.formatDate(tl.statusAsOf,"mk")} и сега се повлечени до нова проверка.`,`The status labels were accurate on ${ZT.formatDate(tl.statusAsOf,"en")} and are now withdrawn until re-checked.`)
-      : T(`Ознаките за состојба важат на ${ZT.formatDate(tl.statusAsOf,"mk")}. човечка контрола (закон): ${gate}.`,`Status labels as of ${ZT.formatDate(tl.statusAsOf,"en")}. човечка контрола (law): ${gate}.`);
+      ? T(`Последна документирана проверка: ${ZT.formatDate(lastReviewed,"mk")}. Ознаките се повлечени до нова човечка проверка.`,`Last documented review: ${ZT.formatDate(lastReviewed,"en")}. Labels are withdrawn pending human re-verification.`)
+      : T(`Последна документирана проверка: ${ZT.formatDate(lastReviewed,"mk")}. Не претставува денешна потврда; проверете го официјалниот извор. Човечка контрола (закон): ${gate}.`,`Last documented review: ${ZT.formatDate(lastReviewed,"en")}. Not a current-law certification; consult the official source. Human review (law): ${gate}.`);
     root.replaceChildren(...tl.items.map(it=>{
       const phase=ZT.phaseFor(it,today);
       const dl=el("dl",{});
