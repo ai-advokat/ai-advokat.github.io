@@ -1573,7 +1573,9 @@
     const rows=flattenWorkbenchSources(m);
     if(!rows.length){
       const p=document.createElement("p");
-      p.textContent="Во последниот AI одговор нема прикажани извори. Поставете прашање со source-backed режим или користете Библиотека / Веб.";
+      p.textContent=m
+        ?"За последниот одговор не се прикажани проверливи извори. Проверете го примарниот извор или поставете прашање преку библиотеката."
+        :"Изворите ќе се појават тука по првиот одговор.";
       workbenchPanel.append(p);
     }else{
       const ul=document.createElement("ul");
@@ -1657,7 +1659,7 @@
       '<div class="ai-prof-analyzer-body">'+
       '<p>Текстот се анализира локално во browser преку постојниот <code>src/legal-analyzer.js</code>. Официјални идентификатори не се измислуваат.</p>'+
       '<textarea id="aiProfAnalyzerText" maxlength="250000" placeholder="Залепете правен текст..."></textarea>'+
-      '<div class="ai-prof-analyzer-controls"><button class="primary" type="button" data-analyzer-run>Анализирај</button><button class="secondary" type="button" data-analyzer-predictor disabled>Продолжи → Предиктор</button></div>'+
+      '<div class="ai-prof-analyzer-controls"><button class="primary" type="button" data-analyzer-run>Анализирај</button><button class="secondary" type="button" data-analyzer-predictor disabled>Продолжи → Анализа на ризик</button></div>'+
       '<div class="ai-prof-analyzer-result" id="aiProfAnalyzerResult">Нема анализа.</div>'+
       '</div>';
     document.body.append(d);
@@ -1771,7 +1773,9 @@
         evidenceBody.append(evidenceCard("Службен весник · metadata "+(index+1),authority,{className:"ai-evidence-gate"}));
       });
       if(!rows.length && !gazetteRows.length){
-        evidenceBody.append(evidenceCard("Нема прикажани извори","Последниот AI одговор нема source payload. Користете Правни извори, Library или поставете source-first прашање."));
+        evidenceBody.append(m
+          ? evidenceCard("Нема прикажани извори","За последниот одговор нема потврдени извори. Проверете го официјалниот извор или пребарајте во библиотеката.")
+          : evidenceCard("Извори","Изворите ќе се појават тука по првиот одговор."));
       }else{
         rows.forEach((row,index)=>evidenceBody.append(evidenceCard(row.kind+" · "+(index+1),row.title,{url:row.url||null})));
       }
@@ -1947,7 +1951,7 @@
         <button data-workflow-prompt="Направи source verification audit на претходниот одговор. За секое материјално правно тврдење наведи дали има примарен извор, важечка верзија и што останува непотврдено."><strong>▤ Source Check</strong><span>Authority · version · provenance</span></button>
         <button data-workflow-prompt="Спореди ги двете верзии на документот. Издвои суштински промени, правен ефект, ризици и прашања за Human Gate. Не измислувај разлики што не се во документите."><strong>⇄ Redline / Compare</strong><span>Промени · ефект · ризик · review</span></button>
         <button data-workflow-tool="consolidator"><strong>≋ Консолидатор</strong><span>Legal Formatter v10.4 CORE</span></button>
-        <button data-workflow-prompt="${governedPredictorPrompt()}"><strong>◎ Предиктор</strong><span>Сценарија · ризици · без лажни проценти</span></button>
+        <button data-workflow-prompt="${governedPredictorPrompt()}"><strong>◎ Анализа на ризик</strong><span>Сценарија · ризици · без лажни проценти</span></button>
       </div><p class="ai-workflow-note">Workflows подготвуваат работна задача. Не поднесуваат, не потпишуваат и не заменуваат Human Gate.</p>`;
     document.body.append(d);
     d.querySelector("[data-close]")?.addEventListener("click",()=>d.close());
@@ -2540,7 +2544,7 @@
       matching.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t.title;b.onclick=()=>{currentId=t.id;dialog.close();render();save();};host.append(b);});
     }
     const tools=[
-      ["Правен асистент","assistant"],["Анализатор","analyzer"],["Консолидатор","consolidator"],["Предиктор","predictor"],
+      ["Правен асистент","assistant"],["Анализатор","analyzer"],["Консолидатор","consolidator"],["Анализа на ризик","predictor"],
       ["Правни извори","sources"],["Јавни докази","public-evidence"],["Pro Ecosystem","professional-ecosystem"],["Justice Daily","justice-daily"],["Судска практика","cases"],["CasePilot","casepilot"],["Документи","documents"],
       ["Workflows","workflows"],["Human Gate","human-gate"],["Library","library"]
     ].filter(([label])=>!q||label.toLocaleLowerCase("mk").includes(q));
