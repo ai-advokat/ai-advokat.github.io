@@ -59,9 +59,7 @@ try{
   if(/РАБОТЕН ПРИМЕР — ПРАВНАТА ОСНОВА НЕ Е ВЕРИФИКУВАНА/u.test(answer)){
     failures.push("forbidden_generic_degraded_draft");
   }
-  if(/ДО: \[НАДЛЕЖЕН СУД \/ ОРГАН — ДА СЕ ПРОВЕРИ\]/u.test(answer)){
-    failures.push("forbidden_generic_court_placeholder");
-  }
+  // Source-first: an unverified competent court MUST remain a marked placeholder.
   if(/[ЂђЋћЪъЫыЭэЁёЮюЯяЙйЬьЩщ]/u.test(answer)){
     failures.push("foreign_cyrillic_contamination");
   }
