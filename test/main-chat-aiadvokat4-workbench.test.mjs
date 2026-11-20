@@ -8,14 +8,15 @@ const home=fs.readFileSync("index.html","utf8");
 const chat=fs.readFileSync("assets/ai-advokat-chat.js","utf8");
 const css=fs.readFileSync("assets/ai-advokat-chat.css","utf8");
 
-test("main AI Advokat chat exposes AIAdvokat4 LexNova governed workbench",()=>{
-  assert.match(home,/AIAdvokat4 · LexNova UX/);
+test("main AI Advokat chat exposes a localised governed professional workbench",()=>{
+  assert.match(home,/AI Advokat · Правен работен простор/);
+  assert.doesNotMatch(home,/AIAdvokat4 · LexNova UX/);
   for(const action of ["assistant","analyzer","consolidator","predictor","sources","public-evidence","professional-ecosystem","justice-daily","cases","casepilot","documents","workflows","human-gate","library"]){
     assert.match(home,new RegExp('data-ai-workbench="'+action+'"'));
   }
   assert.match(home,/КОНСОЛИДАТОР/);
   assert.match(home,/АНАЛИЗАТОР/);
-  assert.match(home,/ПРЕДИКТОР/);
+  assert.match(home,/АНАЛИЗА НА РИЗИК/);
   assert.match(home,/20261109-root-r15-voice-r4-runtime/);
 });
 
@@ -52,7 +53,7 @@ test("Predictor is governed scenario/risk workflow with CasePilot and no fake su
 });
 
 test("main workspace has standalone-bot parity on left modules and right evidence tabs",()=>{
-  for(const label of ["Правен асистент","Анализатор","Консолидатор","Предиктор","Правни извори","Јавни докази","Pro Ecosystem","Justice Daily","Судска практика","CasePilot","Документи","Workflows","Human Gate","Library"]){
+  for(const label of ["Правен асистент","Анализатор","Консолидатор","Анализа на ризик","Правни извори","Јавни докази","Pro Ecosystem","Justice Daily","Судска практика","CasePilot","Документи","Workflows","Human Gate","Library"]){
     assert.ok(home.includes(label), "missing main workspace label: "+label);
   }
   for(const tab of ["sources","context","human","artifact"]){
