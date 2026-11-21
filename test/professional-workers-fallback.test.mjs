@@ -195,16 +195,12 @@ test("OpenAI 429 uses one bounded Chief-only recovery and never replays speciali
 });
 
 
-test("Anonymous FREE chat may hand off to OpenAI only after Workers AI daily capacity exhaustion",()=>{
+test("RC8-A anonymous FREE capacity exhaustion never dispatches a paid handoff",()=>{
   const handle=workerSource.slice(workerSource.indexOf("async function handleGPTChat"),workerSource.indexOf("async function handleAssistant"));
-  assert.match(handle,/allowOpenAIHandoff=false/);
-  assert.match(handle,/capacityExhausted[\s\S]*allowOpenAIHandoff===true[\s\S]*readiness\.provider==="configured"/);
-  assert.match(handle,/reason:"workers_ai_daily_capacity_exhausted"/);
-  assert.match(handle,/__openAIHandoff:true/);
-  assert.match(handle,/boundedAnonymousFallback:true/);
-  assert.match(handle,/webRequested=false/);
-  assert.match(handle,/if\(!result\.ok && membership\)/);
-  assert.match(handle,/direction:"workers_ai_to_openai"/);
+  assert.match(handle,/runWorkersFallbackResponse\(\{allowOpenAIHandoff:false\}\)/);
+  assert.doesNotMatch(handle,/runWorkersFallbackResponse\(\{allowOpenAIHandoff:true\}\)/);
+  assert.match(handle,/const capacityExhausted=freeResult\.error==="workers_ai_daily_capacity_exhausted"/);
+  assert.match(handle,/await releaseMonthlyQuota\(env,\{subject,period\}\);[\s\S]*error:freeResult\.error\|\|"free_workers_ai_failed"/);
 });
 
 test("Workers-to-OpenAI handoff remains fail-closed for non-capacity Workers errors",()=>{
