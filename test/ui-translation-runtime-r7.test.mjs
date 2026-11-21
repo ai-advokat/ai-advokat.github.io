@@ -67,7 +67,7 @@ test("Esperanto uses bounded live Workers AI fallback instead of pretending M2M1
     RATE_LIMIT_SALT,
     AI:{
       run:async(model,input)=>{
-        assert.equal(model,"@cf/openai/gpt-oss-120b");
+        assert.equal(model,"@cf/zai-org/glm-4.7-flash");
         assert.ok(input);
         return {response:"Jura esplorado"};
       }
@@ -83,7 +83,7 @@ test("Esperanto uses bounded live Workers AI fallback instead of pretending M2M1
   const data=await res.json();
   assert.equal(data.ok,true);
   assert.equal(data.provider,"workers_ai_ui_fallback");
-  assert.equal(data.translationModel,"@cf/openai/gpt-oss-120b");
+  assert.equal(data.translationModel,"@cf/zai-org/glm-4.7-flash");
   assert.equal(data.translations[0].text,"Jura esplorado");
 });
 
@@ -124,7 +124,7 @@ test("OpenAI UI fallback reconstructs protected legal tokens deterministically",
     const env={
       DB,
       RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",
+      UI_TRANSLATION_ENABLE_PAID_FALLBACK:"true",OPENAI_API_KEY:"test-key",
       OPENAI_MODEL:"gpt-6.1-sol",
       AI:{run:async()=>{throw new Error("force_workers_failure");}}
     };
@@ -168,7 +168,7 @@ test("OpenAI fallback preserves article/case identifiers and boundary whitespace
     };
     const env={
       DB,RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
+      UI_TRANSLATION_ENABLE_PAID_FALLBACK:"true",OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
       AI:{run:async()=>{throw new Error("force_workers_failure");}}
     };
     const req=new Request(base+"/api/ui-translate",{
@@ -211,7 +211,7 @@ test("OpenAI fallback retries without structured format on 400 schema rejection"
     };
     const env={
       DB,RATE_LIMIT_SALT,
-      OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
+      UI_TRANSLATION_ENABLE_PAID_FALLBACK:"true",OPENAI_API_KEY:"test-key",OPENAI_MODEL:"gpt-6.1-sol",
       AI:{run:async()=>{throw new Error("force_workers_failure");}}
     };
     const req=new Request(base+"/api/ui-translate",{
@@ -242,7 +242,7 @@ test("M2M100 failure falls back only the failed item instead of the whole batch"
           if(text.includes("Втора")) throw new Error("simulated_single_item_m2m_failure");
           return {translated_text:"SQ:"+text};
         }
-        assert.equal(model,"@cf/openai/gpt-oss-120b");
+        assert.equal(model,"@cf/zai-org/glm-4.7-flash");
         return {response:"SQ:FALLBACK"};
       }
     }
@@ -264,10 +264,10 @@ test("M2M100 failure falls back only the failed item instead of the whole batch"
   assert.equal(data.ok,true);
   assert.equal(data.provider,"m2m100_workers_ai_item_fallback");
   assert.equal(data.translationModel,"@cf/meta/m2m100-1.2b");
-  assert.equal(data.fallbackTranslationModel,"@cf/openai/gpt-oss-120b");
+  assert.equal(data.fallbackTranslationModel,"@cf/zai-org/glm-4.7-flash");
   assert.equal(data.fallbackItemCount,1);
   assert.equal(data.translations[0].text,"SQ:Прва ставка");
   assert.equal(data.translations[1].text,"SQ:FALLBACK");
-  assert.equal(calls.filter(x=>x.model==="@cf/openai/gpt-oss-120b").length,1);
+  assert.equal(calls.filter(x=>x.model==="@cf/zai-org/glm-4.7-flash").length,1);
 });
 

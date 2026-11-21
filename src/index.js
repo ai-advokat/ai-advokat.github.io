@@ -11423,7 +11423,7 @@ const UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT=48;
 const UI_TRANSLATE_GLOBAL_HOURLY_LIMIT=240;
 const UI_TRANSLATE_GLOBAL_DAILY_LIMIT=800;
 const UI_TRANSLATION_MODEL="@cf/meta/m2m100-1.2b";
-const UI_TRANSLATION_FALLBACK_MODEL=WORKERS_AI_TEXT_MODEL_DEFAULT;
+const UI_TRANSLATION_FALLBACK_MODEL="@cf/zai-org/glm-4.7-flash";
 const UI_TRANSLATION_M2M100_UNSUPPORTED=new Set(["eo","la"]);
 const UI_TRANSLATION_CONCURRENCY=2;
 const UI_TRANSLATION_PROTECTED_RE=/https?:\/\/[^\s<>"']+|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|10\.\d{4,9}\/[A-Z0-9._;()\/:+-]+|@cf\/[A-Z0-9._\/-]+|\b(?:Human Gate|LEGAL HOLD|PRODUCTION NO-GO|AI Advokat|HUDOC|EUR-Lex|Zenodo|ORCID)\b|\b(?:Article|Art\.?|Член|чл\.?)\s*\d+[A-ZА-Я]?\b|\b(?:Case|case|предмет|Предмет|No\.?|бр\.?)\s*[A-ZА-Я0-9][A-ZА-Я0-9./-]*\b|\b\d{1,4}\/\d{2,4}\b|\b\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}\b|[A-Z0-9_.-]+\.(?:pdf|docx|zip|json|html|txt|md)\b/giu;
@@ -11547,6 +11547,10 @@ async function translateUiWithLlmFallback(runProvider,items,target,language){
 }
 
 async function translateUiWithOpenAIFallback(env,items,target,language){
+  // Chat key presence never authorises paid UI translation.
+  if(String(env?.UI_TRANSLATION_ENABLE_PAID_FALLBACK||"").toLowerCase()!=="true"){
+    return {ok:false,error:"ui_translation_paid_fallback_not_authorised"};
+  }
   if(!env?.OPENAI_API_KEY || !env?.OPENAI_MODEL){
     return {ok:false,error:"ui_translation_openai_not_configured"};
   }
@@ -11783,7 +11787,8 @@ async function handleUiTranslation(request,env){
   const totalChars=items.reduce((n,x)=>n+x.text.length,0);
   if(totalChars>12000) return json(request,{ok:false,error:"translation_payload_too_large"},413);
 
-  if(target==="mk"){
+  // EN to MK requires translation; passthrough only for source Macedonian.
+  if(target==="mk" && items.every(item=>uiTranslationSourceLanguage(item.text)==="mk")){
     return json(request,{
       ok:true,
       targetLanguage:target,
