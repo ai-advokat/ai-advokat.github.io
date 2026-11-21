@@ -192,6 +192,9 @@ export async function checkAssistantBurst(env, subject, now = new Date()) {
  * counter is below `quota`. Returns {reserved, used}.
  */
 export async function reserveMonthlyQuota(env, { subject, period, quota }) {
+  // An UPSERT's initial INSERT is not covered by its ON CONFLICT WHERE;
+  // reject zero, negative and invalid entitlements before the first SQL call.
+  if(!Number.isSafeInteger(Number(quota)) || Number(quota)<=0) return {reserved:false,used:0};
   const result = await env.DB.prepare(
     `INSERT INTO membership_usage_monthly(subject_key,period_ym,assistant_requests,last_request_at,updated_at)
      VALUES (?,?,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
