@@ -1,0 +1,28 @@
+name: A3.19 held-corpus offline integrity
+on:
+  pull_request:
+    paths:
+      - 'src/a319-held-corpus-discovery.js'
+      - 'test/a319-held-corpus-discovery.test.mjs'
+      - 'docs/A319_HELD_CORPUS_DISCOVERY.md'
+      - '.github/workflows/a319-held-corpus-isolated.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-provenance-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source and run synthetic legal-gate tests
+        run: |
+          node --check src/a319-held-corpus-discovery.js
+          node --test test/a319-held-corpus-discovery.test.mjs
+      - name: Evidence boundary
+        if: always()
+        run: |
+          echo 'Local/synthetic tests only; no law text distributed, provider called, case law approved or production deployment attempted.' >> "$GITHUB_STEP_SUMMARY"
