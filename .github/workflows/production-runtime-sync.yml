@@ -1,41 +1,8 @@
 name: AI Advokat production runtime sync
 
+# RC84 Human Gate: production release must be manually triggered.
+# Merging review-only code must never auto-deploy the production Worker.
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "*"
-      - ".well-known/**"
-      - "academy/**"
-      - "assets/**"
-      - "authors/**"
-      - "books/**"
-      - "bot/**"
-      - "casepilot/**"
-      - "consolidator/**"
-      - "data/**"
-      - "guides/**"
-      - "kolumni/**"
-      - "membership/**"
-      - "mvp-v2/**"
-      - "partners/**"
-      - "professional-library/**"
-      - "release/**"
-      - "scholar/**"
-      - "sluzben-vesnik/**"
-      - "src/**"
-      - "staging/**"
-      - "summit/**"
-      - "uat/**"
-      - ".github/workflows/production-runtime-sync.yml"
-      - ".github/workflows/sync-pages-runtime.yml"
-      - ".github/workflows/worker-runtime-live-smoke.yml"
-      - ".github/workflows/free-runtime-live-uat.yml"
-      - ".github/workflows/root-reliability-live-smoke.yml"
-      - ".github/workflows/professional-bot-live-smoke.yml"
-      - ".github/workflows/professional-l23-resilience-live-smoke.yml"
-      - ".github/workflows/case-law-evidence-gates-production-activation.yml"
-      - "migrations/0053_case_law_evidence_gates.sql"
   workflow_dispatch:
 
 permissions:

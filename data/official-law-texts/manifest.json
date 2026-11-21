@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.0",
+  "status": "SOURCE_TEXT_LIBRARY_ONLY_NOT_LEGAL_CONSOLIDATION",
+  "generated_at": "2026-11-14",
+  "original_pdf_authority": "The original user-supplied Gazette PDF is authoritative; parsed text is a machine transcription and must be checked against its numbered PDF page. Not legal advice.",
+  "default_search_language": "mk",
+  "original_pdf_shipping": "Original PDFs stored in user's private source pack, not republished here.",
+  "zpp_current_warning": "2026 ZPP 151/2026 must NOT be substituted for the old/applicable 2005-2015 ZPP articles; exact transitional case depends on prior law and Articles 517-519.",
+  "original_text_authority_sources": [
+    "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=49111",
+    "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=67781",
+    "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=74234"
+  ],
+  "sources": [
+    {
+      "id": "mk-bpp-101-2019",
+      "label": "Бесплатна правна помош · основен закон 101/2019",
+      "title": "Закон за бесплатна правна помош",
+      "issue": "101/2019",
+      "kind": "base-law",
+      "published": "2019-05-22",
+      "original_sha256": "028f63f0a07393c464941a0069cb9e0d51e02ade8caf856ed7bc280d47f21568",
+      "source_pdf_page_range": [
+        92,
+        105
+      ],
+      "expected_article_count": 50,
+      "ldbis": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=49111",
+      "status": "original_text_with_2024_amendment_separate",
+      "notice": "Основниот текст не е пречистен со измената од 2024. Двоколонска екстракција: спореди со оригиналниот PDF.",
+      "chunks": [
+        "mk-bpp-101-2019-pages-092-098.json",
+        "mk-bpp-101-2019-pages-099-105.json"
+      ]
+    },
+    {
+      "id": "mk-bpp-amend-194-2024",
+      "label": "Бесплатна правна помош · измена 194/2024",
+      "title": "Закон за изменување и дополнување на Законот за бесплатна правна помош",
+      "issue": "194/2024",
+      "kind": "amendment",
+      "published": "2024-09-19",
+      "original_sha256": "38d7391de8ab33d6f3a1936b52cdf2eea13d8080063463282df0b87f3e4951aa",
+      "source_pdf_page_range": [
+        3,
+        3
+      ],
+      "ldbis": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=67781",
+      "status": "amendment_original_not_consolidated",
+      "notice": "Изменува член 13 став 6 и додава 34-а, 34-б и 34-в. Види го оригиналниот PDF за точниот двоколонски распоред; не е пречистен текст.",
+      "chunks": [
+        "mk-bpp-amend-194-2024-pages-003-003.json"
+      ]
+    },
+    {
+      "id": "mk-zpp-151-2026",
+      "label": "Парнична постапка · нов ЗПП 151/2026",
+      "title": "Закон за парничната постапка (нов)",
+      "issue": "151/2026",
+      "kind": "new-law",
+      "published": "2026-07-08",
+      "entered_force": "2026-07-16",
+      "ldbis_application_date": "2027-01-18",
+      "original_sha256": "8312c7b3a1c7d9f59d73d48ffddd820b1aa0774a7f5e4afb7515819d6be49553",
+      "source_pdf_page_range": [
+        1,
+        123
+      ],
+      "expected_article_count": 519,
+      "ldbis": "https://ldbis.pravda.gov.mk/PregledNaZakon.aspx?id=74234",
+      "status": "new_law_future_application_2026_pending_transitional_review",
+      "article_index": "zpp-151-2026-article-index.json",
+      "notice": "Во ноември 2026 не е веќе применлив нов ЗПП. ЛДБИС прикажува примена 18.01.2027, секундарни толкувања 16.01.2027; спорниот датум не активира автоматски избор. Член 103 има посебен одложен режим.",
+      "chunks": [
+        "zpp-151-2026-pages-001-010.json",
+        "zpp-151-2026-pages-011-020.json",
+        "zpp-151-2026-pages-021-030.json",
+        "zpp-151-2026-pages-031-040.json",
+        "zpp-151-2026-pages-041-050.json",
+        "zpp-151-2026-pages-051-060.json",
+        "zpp-151-2026-pages-061-070.json",
+        "zpp-151-2026-pages-071-080.json",
+        "zpp-151-2026-pages-081-090.json",
+        "zpp-151-2026-pages-091-100.json",
+        "zpp-151-2026-pages-101-110.json",
+        "zpp-151-2026-pages-111-120.json",
+        "zpp-151-2026-pages-121-123.json"
+      ]
+    }
+  ]
+}

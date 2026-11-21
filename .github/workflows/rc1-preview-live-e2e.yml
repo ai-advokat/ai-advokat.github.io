@@ -1,0 +1,76 @@
+name: AI Advokat RC1 Preview live E2E - source parity, translator, microphone
+
+# Manual independent recheck only. The existing translator-layered PR workflow
+# runs this same bounded probe automatically; do not double-use AI quota.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-advokat-rc1-preview-live-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview-uat:
+    # Only this exact draft release branch is allowed to call the synthetic
+    # preview acceptance endpoints. Never run against production or forks.
+    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'release/ai-advokat-unified-rc1-20261114' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - name: Check out exact PR revision
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Syntax-verify source-only preview probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/rc1-preview-live-e2e.mjs
+          grep -q "SOURCE_TEXT_LIBRARY_ONLY_NOT_LEGAL_CONSOLIDATION" data/official-law-texts/manifest.json
+
+      - name: Install headless browser runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          browser="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$browser"
+          echo "BROWSER_EXECUTABLE=$browser" >> "$GITHUB_ENV"
+          "$browser" --version
+
+      - name: Generate short synthetic spoken audio (never a client recording)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v espeak-ng >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq espeak-ng
+          fi
+          espeak-ng -v en-us -s 170 -w /tmp/ai-advokat-mic-test.wav "AI Advokat test only"
+          test "$(stat -c %s /tmp/ai-advokat-mic-test.wav)" -lt 2097152
+
+      - name: Test the exact Cloudflare Preview - one real small translation + one synthetic voice
+        shell: bash
+        env:
+          PREVIEW_URL: https://release-ai-advokat-unified-rc1-20261114-ai-advokat-github-io.aiadvokat16.workers.dev
+          MIC_AUDIO_FILE: /tmp/ai-advokat-mic-test.wav
+        run: node scripts/rc1-preview-live-e2e.mjs
+
+      - name: Preserve evidence when live services fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-advokat-rc1-preview-real-live-e2e
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/ai-advokat-rc1-preview-e2e.json
+            /tmp/ai-advokat-preview-SQ-UI.png
+            /tmp/ai-advokat-preview-voice-503.png

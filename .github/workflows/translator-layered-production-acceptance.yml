@@ -11,6 +11,9 @@ on:
       - "assets/ai-advokat-proactive.mjs"
       - "test/proactive-dual-conversation.test.mjs"
       - "scripts/translator-layered-live-smoke.mjs"
+      - "scripts/rc1-preview-live-e2e.mjs"
+      - "test/preview-ai-binding.test.mjs"
+      - "wrangler.jsonc"
       - "scripts/translator-browser-candidate-regression.mjs"
       - "scripts/dual-chat-browser-candidate-regression.mjs"
       - ".github/workflows/translator-layered-production-acceptance.yml"
@@ -67,6 +70,38 @@ jobs:
       - name: Verify R19 internal and external chat browsers survive blocked optional guides
         if: ${{ github.event_name == 'pull_request' }}
         run: node scripts/dual-chat-browser-candidate-regression.mjs
+
+      - name: Generate one bounded synthetic voice sample for the RC1 Preview
+        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'release/ai-advokat-unified-rc1-20261114' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/rc1-preview-live-e2e.mjs
+          if ! command -v espeak-ng >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq espeak-ng
+          fi
+          espeak-ng -v en-us -s 170 -w /tmp/ai-advokat-mic-test.wav "AI Advokat test only"
+          test "$(stat -c %s /tmp/ai-advokat-mic-test.wav)" -lt 2097152
+
+      - name: Verify real Cloudflare RC1 Preview static assets, translator, microphone and browser
+        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'release/ai-advokat-unified-rc1-20261114' }}
+        env:
+          PREVIEW_URL: https://release-ai-advokat-unified-rc1-20261114-ai-advokat-github-io.aiadvokat16.workers.dev
+          MIC_AUDIO_FILE: /tmp/ai-advokat-mic-test.wav
+        run: node scripts/rc1-preview-live-e2e.mjs
+
+      - name: Upload bounded RC1 Preview live evidence
+        if: ${{ always() && github.event_name == 'pull_request' && github.head_ref == 'release/ai-advokat-unified-rc1-20261114' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc1-preview-live-smoke-evidence
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            /tmp/ai-advokat-rc1-preview-e2e.json
+            /tmp/ai-advokat-preview-SQ-UI.png
+            /tmp/ai-advokat-preview-voice-503.png
 
       - name: Enforce M2M100 -> GPT-OSS -> browser DOM acceptance after deploy
         if: ${{ github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch' }}

@@ -4,38 +4,12 @@ import assert from "node:assert/strict";
 
 const workflow=fs.readFileSync(".github/workflows/production-runtime-sync.yml","utf8");
 
-test("production runtime sync is push-triggered for runtime surfaces and Human-Gated",()=>{
-  for(const path of [
-    '"*"',
-    '".well-known/**"',
-    '"academy/**"',
-    '"assets/**"',
-    '"authors/**"',
-    '"books/**"',
-    '"bot/**"',
-    '"casepilot/**"',
-    '"consolidator/**"',
-    '"data/**"',
-    '"guides/**"',
-    '"kolumni/**"',
-    '"membership/**"',
-    '"mvp-v2/**"',
-    '"partners/**"',
-    '"professional-library/**"',
-    '"release/**"',
-    '"scholar/**"',
-    '"sluzben-vesnik/**"',
-    '"src/**"',
-    '"staging/**"',
-    '"summit/**"',
-    '"uat/**"',
-    '".github/workflows/production-runtime-sync.yml"',
-    '".github/workflows/worker-runtime-live-smoke.yml"',
-    '".github/workflows/free-runtime-live-uat.yml"',
-    '".github/workflows/root-reliability-live-smoke.yml"',
-    '".github/workflows/professional-bot-live-smoke.yml"'
-  ]) assert.ok(workflow.includes(path),"missing trigger "+path);
+test("production runtime sync requires explicit Human-Gated manual dispatch",()=>{
+  assert.match(workflow,/on:\n  workflow_dispatch:/);
+  assert.doesNotMatch(workflow,/push:\s*\n\s*branches:/);
   assert.match(workflow,/environment: production/);
+  assert.match(workflow,/test "\$GITHUB_REF" = "refs\/heads\/main"/);
+  assert.match(workflow,/Require case-law evidence gate schema before runtime deploy/);
   assert.match(workflow,/concurrency:\n  group: ai-advokat-production-runtime-sync\n  cancel-in-progress: true/);
 });
 
