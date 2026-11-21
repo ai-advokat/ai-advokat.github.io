@@ -10,16 +10,22 @@ function fakeBudgetDB({throwSql=false}={}){
     if(throwSql)throw new Error("synthetic DB failure");
     return {bind(...args){return {run:async()=>{
       events.push({sql,args});
-      if(sql.startsWith("UPDATE security_rate_limit_windows") && sql.includes("active:v1")){
-        const key=args[0]+":"+args[1];active.set(key,Math.max(0,(active.get(key)||0)-1));
+      // Lease ownership is per token, not a mutable shared counter.
+      if(sql.startsWith("DELETE FROM security_rate_limit_windows")){
+        const key=args[0]+":"+args[1];
+        active.get(key)?.delete(args[2]);
         return {results:[]};
       }
-      if(sql.includes("VALUES (?,?,'active:v1'")){
-        const key=args[0]+":"+args[1],limit=Number(args[2]),n=active.get(key)||0;
-        if(n>=limit)return {results:[]};
-        active.set(key,n+1);return {results:[{request_count:n+1}]};
+      if(sql.includes("window_start LIKE 'lease:%'")){
+        const key=args[0]+":"+args[1],token=args[2],limit=Number(args[5]);
+        const leases=active.get(key)||new Set();
+        active.set(key,leases);
+        if(leases.size>=limit)return {results:[]};
+        leases.add(token);
+        return {results:[{window_start:token}]};
       }
-      if(sql.includes("INSERT INTO membership_usage_monthly"))return {results:[{assistant_requests:1}]};
+      if(sql.includes("INSERT INTO membership_usage_monthly"))
+        return {results:[{assistant_requests:1}]};
       return {results:[{request_count:1}]};
     }};}};
   }};
@@ -57,6 +63,39 @@ test("RC8-A two active operations per account; third rejected; release restores 
   assert.equal(four.ok,true);
   await releasePrivateCaseBudget(env,two);
   await releasePrivateCaseBudget(env,four);
+});
+
+test("RC8-A stale lease release does not release successor token",async()=>{
+  const {DB,active}=fakeBudgetDB(),env={DB};
+  const opt={subject:"account:replacement",quota:99};
+  const a=await reservePrivateCaseBudget(env,opt);
+  const b=await reservePrivateCaseBudget(env,opt);
+  assert.equal(a.ok,true);assert.equal(b.ok,true);
+  // Emulate expiry of A's account lease while B continues operating.
+  active.get("private_case_ai_account_active:account:replacement").delete(a.lease.account);
+  const c=await reservePrivateCaseBudget(env,opt);
+  assert.equal(c.ok,true);
+  await releasePrivateCaseBudget(env,a);
+  const d=await reservePrivateCaseBudget(env,opt);
+  assert.equal(d.status,429);assert.equal(d.error,"case_ai_account_busy");
+  assert.equal(active.get("private_case_ai_account_active:account:replacement").has(c.lease.account),true);
+  await releasePrivateCaseBudget(env,b);
+  await releasePrivateCaseBudget(env,c);
+});
+
+test("RC8-A lease IDs are unique and releases are ownership-fenced",async()=>{
+  const {DB,active}=fakeBudgetDB(),env={DB};
+  const opts={subject:"account:unique",quota:99};
+  const a=await reservePrivateCaseBudget(env,opts);
+  const b=await reservePrivateCaseBudget(env,opts);
+  assert.equal(a.ok,true);assert.equal(b.ok,true);
+  assert.notEqual(a.lease.account,b.lease.account);
+  assert.match(a.lease.account,/^lease:[0-9a-f-]+$/);
+  await releasePrivateCaseBudget(env,a);
+  const live=active.get("private_case_ai_account_active:account:unique");
+  assert.equal(live.size,1);assert.equal(live.has(b.lease.account),true);
+  await releasePrivateCaseBudget(env,b);
+  assert.equal(live.size,0);
 });
 
 test("RC8-A missing or failing quota D1 fails closed",async()=>{
