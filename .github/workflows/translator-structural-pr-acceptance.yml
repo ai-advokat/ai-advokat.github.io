@@ -1,0 +1,34 @@
+name: AI Advokat structural translator PR acceptance
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'scripts/translator-browser-candidate-regression.mjs'
+      - 'test/ui-translation-structural-r23.test.mjs'
+      - '.github/workflows/translator-structural-pr-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  translator-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout candidate (no deployment)
+        uses: actions/checkout@v4
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify structural translation and script syntax
+        run: |
+          node --check scripts/translator-browser-candidate-regression.mjs
+          node --test test/ui-translation-structural-r23.test.mjs
+      - name: Install browser-only test dependency
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          browser="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$browser"
+          echo "BROWSER_EXECUTABLE=$browser" >> "$GITHUB_ENV"
+      - name: Browser test with mocked provider (NOT live E2E)
+        run: node scripts/translator-browser-candidate-regression.mjs

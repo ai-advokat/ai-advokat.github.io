@@ -28,17 +28,30 @@ try{
   await listen();
   const origin="http://127.0.0.1:"+server.address().port;
   browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_EXECUTABLE||undefined,args:["--no-sandbox","--disable-dev-shm-usage"]});
-  for(const scenario of ["complete","partial","rtl-partial","row-mismatch"]){
+  for(const scenario of ["complete","partial","rtl-partial","row-mismatch","oversize-priority","capacity-unavailable"]){
     const targetLanguage=scenario==="rtl-partial"?"ar":"sq";
     const translatedMarker=scenario==="rtl-partial"?"اختبار_":"SQ_TEST_";
     const context=await browser.newContext({locale:"mk-MK",serviceWorkers:"block"});
     const page=await context.newPage();
     // Capture the exact user-visible source before asynchronous provider rows
     // arrive: a reordered provider response may NEVER corrupt that text.
-    await page.addInitScript(()=>document.addEventListener("DOMContentLoaded",()=>{
+    await page.addInitScript((injectOversize)=>document.addEventListener("DOMContentLoaded",()=>{
       window.__r24OriginalTopLine=document.querySelector("[data-i18n='topLine']")?.textContent||"";
-    }));
-    const pageErrors=[],network=[];
+      const privateNode=document.createElement("div");privateNode.id="caseIntelligenceResult";
+      privateNode.textContent="PRIVATE_CASE_SENTINEL_R23";document.body.appendChild(privateNode);
+      if(injectOversize){
+        // A >1200-character priority source is intentionally not sent to the
+        // Worker. It must not indefinitely block other verified translations.
+        const header=document.querySelector("header");
+        if(header){
+          const fixture=document.createElement("span");
+          fixture.textContent="Долг тест текст за приоритетен приказ. ".repeat(48);
+          fixture.setAttribute("data-fixture-oversize-priority","true");
+          header.prepend(fixture);
+        }
+      }
+    }),scenario==="oversize-priority");
+    const pageErrors=[],network=[],privateLeaks=[];
     page.on("pageerror",e=>pageErrors.push(String(e?.message||e).slice(0,300)));
     page.on("console",m=>{if(m.type()==="error")pageErrors.push(m.text().slice(0,220));});
     let requests=0;
@@ -51,7 +64,8 @@ try{
       const n=++requests;
       let items=[];
       try{items=JSON.parse(req.postData()||"{}").items||[];}catch{}
-      const forcedFailure=["partial","rtl-partial"].includes(scenario)&&n>12;
+      if(items.some(item=>String(item?.text||"").includes("PRIVATE_CASE_SENTINEL_R23"))) privateLeaks.push("sensitive_payload_seen");
+      const forcedFailure=scenario==="capacity-unavailable" || (["partial","rtl-partial"].includes(scenario)&&n>12);
       const malformedRows=scenario==="row-mismatch"&&n>12;
       network.push({batch:n,count:items.length,status:forcedFailure?503:200,malformedRows});
       if(forcedFailure){
@@ -69,12 +83,32 @@ try{
     await page.waitForSelector("#langBtn",{timeout:20000});
     await page.selectOption("#langBtn",targetLanguage);
     await page.waitForURL(new RegExp("(?:[?&])lang="+targetLanguage+"(?:&|$)"),{timeout:18000});
-    // Do not mistake a correct in-progress PARTIAL shell for final READY.
-    // In the failure scenario, wait for the actual surfaced capacity error.
+    // Default translation is quota-safe priority shell only (<=6 batches).
+    // A full DOM pass requires a real user click; exercise that explicit path
+    // for complete and provider-integrity failure acceptance.
+    await page.waitForFunction(()=>
+      document.documentElement.dataset.translationState==="partial" &&
+      document.getElementById("uiTranslationFullPage")?.hidden===false,
+      null,{timeout:90000}
+    );
+    const firstPass=await page.evaluate(()=>({
+      requests:Number(document.documentElement.dataset.translationBatches||"0"),
+      state:document.documentElement.dataset.translationState
+    }));
+    assert.ok(firstPass.requests<=2,"initial full-page translation exceeded TWO bounded provider requests");
+    if(["complete","partial","rtl-partial","row-mismatch"].includes(scenario)){
+      await page.locator("#uiTranslationFullPage").click();
+    }
+    // A PARTIAL status from the *initial* priority pass must not satisfy the
+    // second-pass test. Wait for the explicit full-page action to finish.
     await page.waitForFunction(kind=>{
       const state=document.documentElement.dataset.translationState;
       const status=document.getElementById("uiTranslationStatus")?.textContent||"";
-      return kind==="complete" ? state==="ready" : (state==="partial"&&status.includes("Делумен"));
+      const button=document.getElementById("uiTranslationFullPage");
+      if(kind==="complete") return state==="ready";
+      if(kind==="oversize-priority"||kind==="capacity-unavailable") return state==="partial"&&status.includes("Делумен");
+      return state==="partial"&&status.includes("Делумен")
+        && button?.hidden===false && button?.disabled===false;
     },scenario,{timeout:90000});
     const originalTopLine=await page.evaluate(()=>String(window.__r24OriginalTopLine||""));
     const state=await page.evaluate(()=>({
@@ -87,6 +121,7 @@ try{
       status:document.getElementById("uiTranslationStatus")?.textContent||"",
       shell:document.querySelector("[data-i18n='topLine']")?.textContent||"",
       nav:document.querySelector("[data-i18n='navSources']")?.textContent||"",
+      navArchitecture:document.querySelector("[data-i18n='navArchitecture']")?.textContent||"",
       progress:document.documentElement.dataset.translationBatchesCompleted||"",
       batches:document.documentElement.dataset.translationBatches||""
     }));
@@ -99,22 +134,37 @@ try{
     assert.ok(plannedBatches>0&&plannedBatches<=48,
       "page translation requires "+plannedBatches+" batches, exceeding the 48/hour language cap");
     assert.ok(requests<=48,"browser exceeded the 48/hour language cap");
+    assert.ok(firstPass.requests<=2,"automatic translation exceeded R23 two-batch safety limit");
     if(scenario==="complete"){
       assert.equal(state.state,"ready",JSON.stringify({state,network}));
       assert.equal(state.lang,"sq","completed translation must identify its language");
       assert.equal(state.dir,"ltr","completed Albanian translation must be LTR");
-      assert.ok(state.shell.includes(translatedMarker)||state.nav.includes(translatedMarker),"visible shell remained untranslated");
-      assert.equal(String(state.shell).trim(),(translatedMarker+originalTopLine.slice(0,24)).trim(),
-        "reordered row IDs corrupted the translated top-line source");
+      assert.equal(state.shell,"Portal informativ juridik · AI me burime të verifikueshme · kontroll njerëzor",
+        "reviewed zero-Neuron SQ shell did not survive full translation");
+      assert.equal(state.nav,"Burime juridike","reviewed zero-Neuron SQ navigation changed unexpectedly");
+      assert.ok(state.navArchitecture.includes(translatedMarker),
+        "reordered row IDs corrupted uncurated navigation or provider translation failed");
+      assert.match(originalTopLine,/Правен информациски портал/,
+        "original Macedonian source fingerprint unexpectedly changed");
     }else{
       assert.equal(state.state,"partial",JSON.stringify({state,network}));
       assert.equal(state.scope,"visible_shell_partial");
       assert.equal(state.lang,targetLanguage,"partial shell must keep the selected language");
       assert.equal(state.dir,targetLanguage==="ar"?"rtl":"ltr","partial shell must preserve target direction");
       assert.ok(state.status.includes("Делумен")||state.status.includes("превод"),"partial translation must be disclosed");
-      assert.ok(state.shell.includes(translatedMarker)||state.nav.includes(translatedMarker),"verified first visible shell is not translated");
+      const curatedSQ=targetLanguage==="sq"
+        && state.shell==="Portal informativ juridik · AI me burime të verifikueshme · kontroll njerëzor"
+        && state.nav==="Burime juridike";
+      assert.ok(curatedSQ||state.shell.includes(translatedMarker)||state.nav.includes(translatedMarker),
+        "verified visible shell has neither reviewed static nor provider translation");
       if(scenario==="row-mismatch") assert.ok(network.some(row=>row.malformedRows),
         "missing-ID fixture never exercised response integrity guard");
+    }
+    assert.equal(privateLeaks.length,0,"private case data reached public UI translator");
+    if(scenario==="capacity-unavailable"){
+      assert.ok(requests<=2,"capacity failure caused excessive provider requests");
+      assert.ok(network.every(row=>row.status===503),"capacity-unavailable fixture did not hit provider denial");
+      assert.equal(state.state,"partial","curated Albanian shell must survive provider outage");
     }
     report.push({scenario,...state,translationRequests:requests,failedResponses:network.filter(r=>r.status!==200).length,nonFatalPageErrors:pageErrors.slice(0,5)});
     await context.close();

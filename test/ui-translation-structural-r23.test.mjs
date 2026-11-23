@@ -1,0 +1,38 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const source=readFileSync('index.html','utf8');
+const worker=readFileSync('src/index.js','utf8');
+const start=source.indexOf('const UI_TRANSLATION_CACHE_PREFIX=');
+const end=source.indexOf('function applyLanguage()',start);
+const runtime=source.slice(start,end);
+test('R23: bounded translator, curated shell, private exclusions and row integrity',()=>{
+  assert.ok(start>0&&end>start,'translator markers must exist');
+  assert.match(runtime,/UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v2:"/);
+  assert.match(runtime,/UI_TRANSLATION_STATIC_SQ/);
+  assert.match(runtime,/seedUiStaticShellCache\(cache\)/);
+  assert.match(runtime,/siteLanguage==="en"/);
+  assert.match(runtime,/UI_TRANSLATION_INITIAL_MAX_BATCHES=2/);
+  assert.match(runtime,/UI_TRANSLATION_FULL_PASS_MAX_BATCHES=48/);
+  assert.match(runtime,/uiTranslationFullPassRequested=true/);
+  assert.match(runtime,/updateUiTranslationFullPageControl\(true\)/);
+  assert.match(runtime,/uiTranslationBudgetPaused=true/);
+  assert.match(runtime,/if\(siteLanguage==="mk"\|\|uiTranslationBudgetPaused\) return/);
+  assert.match(runtime,/#aiChatMessages/);
+  assert.match(runtime,/#caseIntelligenceResult/);
+  assert.match(runtime,/#caseDraftResult/);
+  assert.match(runtime,/\[data-private\]/);
+  assert.match(runtime,/\[data-sensitive\]/);
+  assert.match(runtime,/uiTranslationInitialCommitDone\?"partial":"unavailable"/);
+  assert.match(runtime,/byId\.set\(id,translated\)/);
+  assert.match(runtime,/if\(!validRows\|\|byId\.size!==items\.length\)/);
+  assert.doesNotMatch(runtime,/openai\.com\/v1\/responses/);
+});
+test('R23: anonymous paid fallback is absent, and daily translator budget is global',()=>{
+  const fn=worker.slice(worker.indexOf('async function handleUiTranslation('));
+  assert.ok(fn.length>100);
+  assert.doesNotMatch(fn,/translateUiWithOpenAIFallback/);
+  assert.match(fn,/paidFallback:false/);
+  assert.match(fn,/subject:"__all_clients__"/);
+  assert.match(worker,/UI_TRANSLATE_PER_LANGUAGE_HOURLY_LIMIT=48/);
+});
