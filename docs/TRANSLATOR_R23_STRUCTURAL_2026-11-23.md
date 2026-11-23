@@ -21,3 +21,7 @@ The production mainline attempts a very broad UI translation on initial load: ma
 5. HUMAN GATE review and explicit owner approval before any merge, staging or production.
 
 Limitations: This repair cannot create new free Workers AI capacity; 33-language full-page live translation is not proven. The production site is unchanged.
+
+
+## R24 supplemental offline locale pilot (23 Nov 2026)
+The user tested the Cloudflare Preview at EL (Greek) and received 0 working AI translation due to quota/provider unavailability. An offline **draft** Greek phrase map of 381 distinct visible portal strings was added to prove UI translation can proceed with **ZERO** Workers AI calls. This is not a translation of official legal source documents or approval of professional Greek legal terminology. New tests explicitly block /api/ui-translate, verify header + hero + dynamically inserted public text change, private-node exclusion, and MK round-trip; coverage status always PARTIAL pending independent Greek legal-linguistic review. No changes to law corpus, backend, D1 or production. More languages require reviewed static catalogues; 33 fully supported is **NOT VERIFIED**.

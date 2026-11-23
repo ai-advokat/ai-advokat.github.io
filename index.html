@@ -2034,7 +2034,7 @@
               <div class="ai-chat-language-row" id="aiChatLanguagePanel" style="border:1px solid var(--line);border-radius:12px;padding:9px 10px;background:var(--surface);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <label for="aiChatLanguage"><strong>🌍 Translator · Цел интерфејс + AI + глас</strong></label>
                 <select id="aiChatLanguage" aria-label="Јазик за AI објаснување, диктирање и глас"></select>
-                <small>33 јазици · изборот го преведува целиот интерфејс, AI објаснувањето, диктирањето и гласот; правниот извор, цитатот, членот и предметот остануваат source-faithful.</small>
+                <small>33 јазични избори · грчкиот интерфејс користи локален нацрт-пакет без AI квота; AI преводот на другите јазици зависи од достапноста и квотата. Правните извори и доверливите документи не се преведуваат автоматски.</small>
               </div>
               <div class="ai-chat-input">
                 <button class="ai-chat-iconbtn" id="aiChatAttach" type="button" aria-label="Отвори Secure Case Workspace за документи" title="Документи само во Secure Case Workspace">🔒</button>
@@ -2828,6 +2828,13 @@
 <script src="/assets/legal-base.js"></script>
 <script src="/assets/zpp-timeline.js"></script>
 <script src="/assets/guide-router.js?v=20261004-citizen-router-v1"></script>
+<script src="/assets/ui-locale-el-r24-1.js"></script>
+<script src="/assets/ui-locale-el-r24-2.js"></script>
+<script src="/assets/ui-locale-el-r24-3.js"></script>
+<script src="/assets/ui-locale-el-r24-4.js"></script>
+<script>
+window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 јазични избори · грчкиот интерфејс користи локален нацрт-пакет без AI квота; AI преводот на другите јазици зависи од достапноста и квотата. Правните извори и доверливите документи не се преведуваат автоматски."]="33 γλωσσικές επιλογές · το ελληνικό περιβάλλον χρησιμοποιεί τοπικό δοκιμαστικό πακέτο χωρίς όριο AI. Οι άλλες γλώσσες εξαρτώνται από τη διαθεσιμότητα υπηρεσίας. Οι νομικές πηγές και τα εμπιστευτικά έγγραφα δεν μεταφράζονται αυτόματα.");
+</script>
 <script>
 
   window.AI_ADVOCAT_CONFIG = Object.freeze({
@@ -3235,6 +3242,56 @@
   }
 
   async function translateGlobalInterface(){
+    const offlineLocalePack=window.AIADVOKAT_STATIC_LOCALES?.[siteLanguage]||null;
+    // Static language packs translate interface strings without Workers AI,
+    // without quota costs and without transmitting private text.
+    if(siteLanguage!=="mk"&&offlineLocalePack){
+      if(uiTranslationRunning) return;
+      uiTranslationRunning=true;
+      try{
+        const units=collectUiTranslationUnits();
+        let translated=0,missing=0;
+        uiTranslationObserverSuppressUntil=Date.now()+UI_TRANSLATION_OBSERVER_SUPPRESS_MS;
+        for(const unit of units){
+          const source=String(unit.source||"");
+          const normalized=source.replace(/\s+/gu," ").trim();
+          const target=Object.prototype.hasOwnProperty.call(offlineLocalePack,normalized)
+            ? String(offlineLocalePack[normalized]||"").trim() : "";
+          if(!target){missing++;continue;}
+          if(unit.kind==="text"){
+            const leading=source.match(/^\s*/u)?.[0]||"";
+            const trailing=source.match(/\s*$/u)?.[0]||"";
+            const value=leading+target+trailing;
+            unit.node.nodeValue=value;
+            const state=uiTranslationNodeState.get(unit.node);
+            if(state) state.last=value;
+          }else{
+            unit.el.setAttribute(unit.attr,target);
+            const state=uiTranslationAttrState.get(unit.el);
+            if(state?.[unit.attr]) state[unit.attr].last=target;
+          }
+          translated++;
+        }
+        document.documentElement.dataset.translationTarget=siteLanguage;
+        document.documentElement.dataset.translationBatches="0";
+        document.documentElement.dataset.translationBatchesCompleted="0";
+        document.documentElement.dataset.translationPendingUnits=String(missing);
+        document.documentElement.dataset.translationScope="offline_locale_draft";
+        document.documentElement.dataset.translationState=translated>0?"partial":"unavailable";
+        document.documentElement.lang=translated>0?siteLanguage:"mk";
+        document.documentElement.dir=["ar","he","fa","ur"].includes(siteLanguage)?"rtl":"ltr";
+        uiTranslationInitialCommitDone=translated>0;
+        uiTranslationFullPassRequested=false;
+        uiTranslationBudgetPaused=false;
+        updateUiTranslationFullPageControl(false);
+        showUiTranslationStatus(siteLanguage==="el"
+          ? "Τοπικό πακέτο EL: "+translated+"/"+(translated+missing)+" τμήματα · πρόχειρη μετάφραση, απαιτεί νομικό έλεγχο"
+          : "Локален јазичен пакет: "+translated+"/"+(translated+missing)+" сегменти · нацрт");
+      }finally{
+        uiTranslationRunning=false;
+      }
+      return;
+    }
     if(siteLanguage==="mk"||uiTranslationRunning) return;
     uiTranslationRunning=true;
     let translationFailed=false;
