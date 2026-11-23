@@ -19,7 +19,7 @@ test('R24 Greek offline catalogue contains 381 actual Macedonian source strings'
 });
 test('R24 source route uses offline pack before any paid or Workers AI requests',()=>{
   const start=html.indexOf('async function translateGlobalInterface(){');
-  const end=html.indexOf('const units=collectUiTranslationUnits();',start);
+  const end=html.indexOf('    if(siteLanguage==="mk"||uiTranslationRunning) return;',start);
   assert.ok(start>0&&end>start);
   const earlier=html.slice(start,end);
   assert.match(earlier,/window\.AIADVOKAT_STATIC_LOCALES\?\.\[siteLanguage\]/);
