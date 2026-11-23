@@ -5006,7 +5006,36 @@ window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 Ñ
   scheduleGlobalTranslation();
   if(siteLanguage!=="mk"){
     const translationObserver=new MutationObserver(mutations=>{
-      if(uiTranslationRunning||Date.now()<uiTranslationObserverSuppressUntil) return;
+      if(uiTranslationRunning) return;
+      // Static packs must react immediately to genuinely new public UI nodes,
+      // even during the short self-mutation suppression window. The source/last
+      // WeakMap distinguishes our own replacements from application updates.
+      if(siteLanguage==="el"&&window.AIADVOKAT_STATIC_LOCALES?.el){
+        const changedPublicUi=mutations.some(m=>{
+          if(m.type==="childList"){
+            return Array.from(m.addedNodes||[]).some(node=>{
+              const el=node.nodeType===1?node:node.parentElement;
+              return el&&!excludedTranslationElement(el);
+            });
+          }
+          if(m.type==="characterData"){
+            const node=m.target;
+            if(excludedTranslationElement(node?.parentElement)) return false;
+            const state=uiTranslationNodeState.get(node);
+            return !state||state.last!==String(node.nodeValue||"");
+          }
+          if(m.type==="attributes"){
+            const el=m.target;
+            if(excludedTranslationElement(el)) return false;
+            const state=uiTranslationAttrState.get(el)?.[m.attributeName];
+            return !state||state.last!==String(el.getAttribute(m.attributeName)||"");
+          }
+          return false;
+        });
+        if(changedPublicUi) scheduleGlobalTranslation();
+        return;
+      }
+      if(Date.now()<uiTranslationObserverSuppressUntil) return;
       if(mutations.some(m=>m.type==="childList"||m.type==="characterData"||m.type==="attributes")) scheduleGlobalTranslation();
     });
     translationObserver.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder","title","aria-label"]});
