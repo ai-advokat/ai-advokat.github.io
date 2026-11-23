@@ -8,11 +8,13 @@ const contract=fs.readFileSync("contract-intelligence.html","utf8");
 const manifest=JSON.parse(fs.readFileSync("data/ai-contract-dpro14r-manifest.json","utf8"));
 const fullContract=fs.readFileSync("ai-contract-dpro14r.html","utf8");
 
-test("root chat visibly exposes full-interface 33-language Translator",()=>{
+test("root chat exposes 33 language choices with truthful provider limitations",()=>{
   assert.match(home,/Translator · 33 јазици/);
   assert.match(home,/id="aiChatLanguage"/);
   assert.match(home,/🌍 Translator · Цел интерфејс \+ AI \+ глас/);
-  assert.match(home,/изборот го преведува целиот интерфејс/);
+  assert.match(home,/33 јазични избори/);
+  assert.match(home,/грчкиот интерфејс користи локален нацрт-пакет без AI квота/);
+  assert.match(home,/AI преводот на другите јазици зависи од достапноста/);
   const block=chat.slice(chat.indexOf("const AI_ADVOCAT_LANGUAGES"),chat.indexOf("const LANGUAGE_KEY"));
   assert.equal((block.match(/code:"[a-z]{2}"/g)||[]).length,33);
 });

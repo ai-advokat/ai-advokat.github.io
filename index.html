@@ -2034,7 +2034,7 @@
               <div class="ai-chat-language-row" id="aiChatLanguagePanel" style="border:1px solid var(--line);border-radius:12px;padding:9px 10px;background:var(--surface);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <label for="aiChatLanguage"><strong>🌍 Translator · Цел интерфејс + AI + глас</strong></label>
                 <select id="aiChatLanguage" aria-label="Јазик за AI објаснување, диктирање и глас"></select>
-                <small>33 јазици · изборот го преведува целиот интерфејс, AI објаснувањето, диктирањето и гласот; правниот извор, цитатот, членот и предметот остануваат source-faithful.</small>
+                <small>33 јазични избори · грчкиот интерфејс користи локален нацрт-пакет без AI квота; AI преводот на другите јазици зависи од достапноста и квотата. Правните извори и доверливите документи не се преведуваат автоматски.</small>
               </div>
               <div class="ai-chat-input">
                 <button class="ai-chat-iconbtn" id="aiChatAttach" type="button" aria-label="Отвори Secure Case Workspace за документи" title="Документи само во Secure Case Workspace">🔒</button>
@@ -2828,6 +2828,15 @@
 <script src="/assets/legal-base.js"></script>
 <script src="/assets/zpp-timeline.js"></script>
 <script src="/assets/guide-router.js?v=20261004-citizen-router-v1"></script>
+<script src="/assets/ui-locale-el-r24-1.js"></script>
+<script src="/assets/ui-locale-el-r24-2.js"></script>
+<script src="/assets/ui-locale-el-r24-3.js"></script>
+<script src="/assets/ui-locale-el-r24-4.js"></script>
+<script src="/assets/ui-locale-el-r24-5.js"></script>
+<script src="/assets/ui-locale-el-laws-r25.js"></script>
+<script>
+window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 јазични избори · грчкиот интерфејс користи локален нацрт-пакет без AI квота; AI преводот на другите јазици зависи од достапноста и квотата. Правните извори и доверливите документи не се преведуваат автоматски."]="33 γλωσσικές επιλογές · το ελληνικό περιβάλλον χρησιμοποιεί τοπικό δοκιμαστικό πακέτο χωρίς όριο AI. Οι άλλες γλώσσες εξαρτώνται από τη διαθεσιμότητα υπηρεσίας. Οι νομικές πηγές και τα εμπιστευτικά έγγραφα δεν μεταφράζονται αυτόματα.");
+</script>
 <script>
 
   window.AI_ADVOCAT_CONFIG = Object.freeze({
@@ -3064,12 +3073,41 @@
   };
 
 
-  const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v1:";
+  const UI_TRANSLATION_CACHE_PREFIX="aiadvokat-ui-translations-v2:";
+  // Older full-DOM caches could contain snippets from search or case UI.
+  // Discard only those legacy translation entries; never clear auth/session
+  // storage or any other user data as a side effect of this upgrade.
+  try{
+    for(const code of SITE_LANGUAGE_CODES){
+      localStorage.removeItem("aiadvokat-ui-translations-v1:"+code);
+    }
+  }catch{}
+  // Reviewed navigation-only language strings work even when Workers AI has
+  // no capacity. This is not a translation of legal texts or chat content.
+  const UI_TRANSLATION_STATIC_SQ=Object.freeze({
+    [i18n.mk.topLine]:"Portal informativ juridik · AI me burime të verifikueshme · kontroll njerëzor",
+    [i18n.mk.brandSub]:"Portal informativ juridik dhe AI",
+    [i18n.mk.navSources]:"Burime juridike",
+    [i18n.mk.navGuides]:"Udhëzues",
+    [i18n.mk.navGazette]:"Gazeta Zyrtare",
+    [i18n.mk.navLibrary]:"Biblioteka profesionale",
+    [i18n.mk.navGovernance]:"Verifikueshmëria",
+    [i18n.mk.navResearch]:"Hulumtuesi AI",
+    [i18n.mk.navPublications]:"Punime",
+    [i18n.mk.navAuthor]:"Autori",
+    [i18n.mk.navAbout]:"Rreth portalit",
+    [i18n.mk.startResearch]:"Fillo kërkimin juridik",
+    [i18n.mk.heroTitle]:"E drejta, e organizuar. AI nën kontrollin njerëzor."
+  });
   const UI_TRANSLATION_BATCH_ITEMS=24;
   const UI_TRANSLATION_BATCH_CHARS=4800;
   // Three bounded requests concurrently avoid minutes of serial UI translation.
   // Server-side item concurrency and hourly caps remain independently enforced.
   const UI_TRANSLATION_CLIENT_CONCURRENCY=3;
+  // On page load, translate only the priority shell: a full DOM pass may use
+  // ~30 requests and starve microphone/chat of the shared free AI allocation.
+  const UI_TRANSLATION_INITIAL_MAX_BATCHES=2;
+  const UI_TRANSLATION_FULL_PASS_MAX_BATCHES=48;
   const UI_TRANSLATION_MAX_ITEM_CHARS=1200; // matches Worker request validator
   const UI_TRANSLATION_PASS_BUDGET_MS=90000;
   const UI_TRANSLATION_REQUEST_TIMEOUT_MS=25000;
@@ -3084,6 +3122,8 @@
   let uiTranslationObserverSuppressUntil=0;
   let uiTranslationFailureStreak=0;
   let uiTranslationInitialCommitDone=siteLanguage==="mk";
+  let uiTranslationFullPassRequested=false;
+  let uiTranslationBudgetPaused=false;
 
   function applyUiTranslationBackoff(status,retryAfterMs=0){
     uiTranslationFailureStreak=Math.min(uiTranslationFailureStreak+1,6);
@@ -3100,6 +3140,21 @@
   function saveUiTranslationCache(cache){
     try{localStorage.setItem(UI_TRANSLATION_CACHE_PREFIX+siteLanguage,JSON.stringify(cache));}catch{}
   }
+  function seedUiStaticShellCache(cache){
+    const seeded=new Set();
+    const sourceMap=siteLanguage==="sq" ? UI_TRANSLATION_STATIC_SQ : null;
+    if(sourceMap) for(const [source,target] of Object.entries(sourceMap)){
+      if(!cache[source]) cache[source]=target;
+      seeded.add(source);
+    }
+    if(siteLanguage==="en") for(const [key,source] of Object.entries(i18n.mk)){
+      const target=i18n.en?.[key];
+      if(typeof source!=="string"||typeof target!=="string") continue;
+      if(!cache[source]) cache[source]=target;
+      seeded.add(source);
+    }
+    return seeded;
+  }
   function translatableText(value){
     const text=String(value||"").replace(/\s+/g," ").trim();
     if(!text||text.length<2) return false;
@@ -3107,7 +3162,9 @@
     return /[\p{L}]/u.test(text);
   }
   function excludedTranslationElement(el){
-    return !el || !!el.closest("script,style,noscript,code,pre,svg,[data-no-translate]");
+    // Never send conversation history, generated legal answers, private matter text,
+    // user-editable fields or case data to a secondary UI translation provider.
+    return !el || !!el.closest("script,style,noscript,code,pre,svg,[data-no-translate],#caseIntelligenceResult,#caseDraftResult,#casepilotWorkspace,#caseWorkspace,#aiChatMessages,#aiChatHistory,#aiChatAttachments,#aiChatEvidenceBody,#aiChatInput,#legalQuestion,#answerBox,#answerText,#searchResults,#searchStatus,#sourceWorkspace,#workspaceText,[data-private],[data-sensitive],[data-client-data],[data-case-id],[data-matter-id],[contenteditable],[role='textbox']");
   }
   function collectUiTranslationUnits(){
     const units=[];
@@ -3156,7 +3213,94 @@
     status.textContent=String(message||"");
   }
 
+  function updateUiTranslationFullPageControl(visible){
+    if(siteLanguage==="mk") return;
+    const select=document.getElementById("langBtn");
+    if(!select) return;
+    let button=document.getElementById("uiTranslationFullPage");
+    if(!button){
+      button=document.createElement("button");
+      button.id="uiTranslationFullPage";
+      button.type="button";
+      button.setAttribute("data-no-translate","");
+      button.setAttribute("aria-label","Побарај целосен превод со AI; користи дел од бесплатната квота");
+      button.style.cssText="font:inherit;font-size:12px;padding:5px 8px;border:1px solid currentColor;border-radius:8px;background:transparent;cursor:pointer";
+      button.textContent="🌍 Преведи го остатокот (користи AI квота)";
+      button.addEventListener("click",()=>{
+        if(uiTranslationRunning) return;
+        if(Date.now()<uiTranslationCooldownUntil){
+          showUiTranslationStatus("AI преведувачот е на пауза по грешка или ограничување. Обидете се подоцна.");
+          return;
+        }
+        uiTranslationFullPassRequested=true;
+        uiTranslationBudgetPaused=false;
+        button.hidden=true;
+        scheduleGlobalTranslation();
+      });
+      select.insertAdjacentElement("afterend",button);
+    }
+    button.hidden=!visible;
+    button.disabled=uiTranslationRunning;
+  }
+
   async function translateGlobalInterface(){
+    const offlineLocalePack=window.AIADVOKAT_STATIC_LOCALES?.[siteLanguage]||null;
+    // Static language packs translate interface strings without Workers AI,
+    // without quota costs and without transmitting private text.
+    if(siteLanguage!=="mk"&&offlineLocalePack){
+      if(uiTranslationRunning) return;
+      uiTranslationRunning=true;
+      try{
+        const units=collectUiTranslationUnits();
+        let translated=0,missing=0,sourcePreserved=0;
+        uiTranslationObserverSuppressUntil=Date.now()+UI_TRANSLATION_OBSERVER_SUPPRESS_MS;
+        for(const unit of units){
+          const source=String(unit.source||"");
+          const normalized=source.replace(/\s+/gu," ").trim();
+          // Product names, model IDs, language names and citations are not Cyrillic UI labels.
+          // Never count those unchanged identifiers as untranslated Macedonian content.
+          if(!/[Ѐ-ӿ]/u.test(normalized)) continue;
+          // Bibliographic DOI citations and source-bound explanatory notes remain canonical.
+          // Exclude them from the translatable UI denominator, but report them separately.
+          if(/(?:https?:\/\/(?:dx\.)?doi\.org\/10\.|\bDOI\s+10\.\d)/i.test(normalized)){sourcePreserved++;continue;}
+          const target=Object.prototype.hasOwnProperty.call(offlineLocalePack,normalized)
+            ? String(offlineLocalePack[normalized]||"").trim() : "";
+          if(!target){missing++;continue;}
+          if(unit.kind==="text"){
+            const leading=source.match(/^\s*/u)?.[0]||"";
+            const trailing=source.match(/\s*$/u)?.[0]||"";
+            const value=leading+target+trailing;
+            unit.node.nodeValue=value;
+            const state=uiTranslationNodeState.get(unit.node);
+            if(state) state.last=value;
+          }else{
+            unit.el.setAttribute(unit.attr,target);
+            const state=uiTranslationAttrState.get(unit.el);
+            if(state?.[unit.attr]) state[unit.attr].last=target;
+          }
+          translated++;
+        }
+        document.documentElement.dataset.translationTarget=siteLanguage;
+        document.documentElement.dataset.translationBatches="0";
+        document.documentElement.dataset.translationBatchesCompleted="0";
+        document.documentElement.dataset.translationPendingUnits=String(missing);
+        document.documentElement.dataset.translationSourcePreserved=String(sourcePreserved);
+        document.documentElement.dataset.translationScope="offline_locale_draft";
+        document.documentElement.dataset.translationState=translated>0?"partial":"unavailable";
+        document.documentElement.lang=translated>0?siteLanguage:"mk";
+        document.documentElement.dir=["ar","he","fa","ur"].includes(siteLanguage)?"rtl":"ltr";
+        uiTranslationInitialCommitDone=translated>0;
+        uiTranslationFullPassRequested=false;
+        uiTranslationBudgetPaused=false;
+        updateUiTranslationFullPageControl(false);
+        showUiTranslationStatus(siteLanguage==="el"
+          ? "Τοπικό πακέτο EL: "+translated+"/"+(translated+missing)+" τμήματα · "+sourcePreserved+" παραπομπές διατηρήθηκαν στο πρωτότυπο · πρόχειρη μετάφραση, απαιτεί νομικό έλεγχο"
+          : "Локален јазичен пакет: "+translated+"/"+(translated+missing)+" сегменти · нацрт");
+      }finally{
+        uiTranslationRunning=false;
+      }
+      return;
+    }
     if(siteLanguage==="mk"||uiTranslationRunning) return;
     uiTranslationRunning=true;
     let translationFailed=false;
@@ -3166,6 +3310,7 @@
       showUiTranslationStatus("Се подготвува преводот…");
       const units=collectUiTranslationUnits();
       const cache=uiTranslationCache();
+      const curatedSources=seedUiStaticShellCache(cache);
       // The old all-or-nothing page transaction stayed blank for minutes while
       // hundreds of lower-page paragraphs consumed the UI translation budget.
       // Prioritise the visible shell and the explicitly selected language panel.
@@ -3184,9 +3329,12 @@
         const rect=el.getBoundingClientRect();
         return rect.bottom>0 && rect.top<Math.min(window.innerHeight+50,950);
       });
-      const prioritySources=[...new Set([...shellUnits,...viewportUnits].map(u=>u.source))].slice(0,48);
+      const prioritySources=[...new Set([...shellUnits,...viewportUnits].map(u=>u.source))].slice(0,24);
+      // Do not block an otherwise verified visible shell on a >1200-char
+      // priority unit that the translation API correctly refuses to accept.
+      const priorityCommittableSources=prioritySources.filter(source=>String(source).trim().length<=UI_TRANSLATION_MAX_ITEM_CHARS);
       const priorityUnits=units.filter(unit=>prioritySources.includes(unit.source));
-      const pending=[...new Set([...prioritySources,...units.map(x=>x.source)].filter(text=>!cache[text]))];
+      const pending=[...new Set([...prioritySources,...(uiTranslationFullPassRequested?units.map(x=>x.source):[])].filter(text=>!cache[text]))];
       // An oversized DOM paragraph cannot be sent: the Worker historically
       // filtered >1200-character items, shifting response positions. Keep it
       // untranslated and disclose PARTIAL, never misattribute a legal sentence.
@@ -3210,8 +3358,8 @@
         }
       };
       const commitPriorityShell=()=>{
-        if(uiTranslationInitialCommitDone || !prioritySources.length) return;
-        if(prioritySources.some(source=>!cache[source])) return;
+        if(uiTranslationInitialCommitDone || !priorityCommittableSources.length) return;
+        if(priorityCommittableSources.some(source=>!cache[source])) return;
         applyUnits(units.filter(unit=>Boolean(cache[unit.source])));
         uiTranslationInitialCommitDone=true;
         document.documentElement.dataset.translationState="partial";
@@ -3222,6 +3370,20 @@
         const control=document.getElementById("langBtn");
         if(control) control.title="Основниот интерфејс е преведен. Преводот на останатата страница продолжува; не е означен како целосен.";
       };
+      // Curated public navigation strings have zero model cost. Apply only
+      // verified exact matches and mark the page PARTIAL, never fully READY.
+      if(siteLanguage==="sq"&&!uiTranslationInitialCommitDone){
+        const curatedUnits=units.filter(unit=>curatedSources.has(unit.source)&&Boolean(cache[unit.source]));
+        if(curatedUnits.length){
+          applyUnits(curatedUnits);
+          uiTranslationInitialCommitDone=true;
+          document.documentElement.dataset.translationState="partial";
+          document.documentElement.dataset.translationScope="visible_shell_partial";
+          document.documentElement.lang=siteLanguage;
+          document.documentElement.dir="ltr";
+          showUiTranslationStatus("Основните контроли имаат локален превод · останатото бара AI");
+        }
+      }
       commitPriorityShell();
       const batches=[];
       let batch=[],batchChars=0;
@@ -3237,14 +3399,21 @@
         batchChars+=clean.length;
       }
       if(batch.length) batches.push(batch);
+      const passLimit=uiTranslationFullPassRequested ? UI_TRANSLATION_FULL_PASS_MAX_BATCHES : UI_TRANSLATION_INITIAL_MAX_BATCHES;
+      if(batches.length>passLimit){
+        batches.length=passLimit;
+        if(uiTranslationFullPassRequested) translationFailed=true;
+      }
       document.documentElement.dataset.translationBatches=String(batches.length);
       document.documentElement.dataset.translationBatchesCompleted="0";
       document.documentElement.dataset.translationPendingUnits=String(pending.length);
       let completedBatches=0;
       let nextBatchIndex=0;
+      let stopProviderAttempts=false;
       const translationDeadlineAt=Date.now()+UI_TRANSLATION_PASS_BUDGET_MS;
       async function runUiTranslationBatchWorker(){
         for(;;){
+          if(stopProviderAttempts) return;
           const batchIndex=nextBatchIndex++;
           if(batchIndex>=batches.length) return;
           const texts=batches[batchIndex];
@@ -3271,7 +3440,7 @@
               }
               translationFailed=true;
               console.warn("ui_translation_batch_failed",r.status,d?.error||"unknown",batchIndex);
-              if(r.status===429||r.status===503) return;
+              if(r.status===429||r.status===503){stopProviderAttempts=true;return;}
               continue;
             }
             // Protocol invariant: id, count, and nonempty translation must
@@ -3309,6 +3478,7 @@
             if(uiTranslationInitialCommitDone) showUiTranslationStatus("Превод во тек · "+completedBatches+"/"+batches.length+" групи");
           }catch(error){
             translationFailed=true;
+            stopProviderAttempts=true;
             applyUiTranslationBackoff(503,0);
             console.warn("ui_translation_batch_network_failed",batchIndex,String(error?.message||error||"unknown"));
             return;
@@ -3320,7 +3490,8 @@
       const missingSources=[...new Set(units.map(unit=>unit.source).filter(source=>!cache[source]))];
       document.documentElement.dataset.translationPendingUnits=String(missingSources.length);
       if(translationFailed||missingSources.length){
-        if(!translationFailed) applyUiTranslationBackoff(503,0);
+        if(!translationFailed && uiTranslationFullPassRequested) applyUiTranslationBackoff(503,0);
+        uiTranslationBudgetPaused=true;
         // Keep verified visible text, but do not loop indefinitely through
         // quota-limited translation requests after a provider/rate-limit fault.
         // A later user interaction or reload can explicitly retry.
@@ -3348,11 +3519,15 @@
         showUiTranslationStatus(uiTranslationInitialCommitDone
           ? "Делумен превод · "+missingSources.length+" сегменти сè уште недостасуваат"
           : "Преводот е привремено недостапен");
+        updateUiTranslationFullPageControl(true);
         console.warn("ui_translation_atomic_commit_unavailable",siteLanguage,missingSources.length);
         return;
       }
       applyUnits(units);
       uiTranslationInitialCommitDone=true;
+      uiTranslationFullPassRequested=false;
+      uiTranslationBudgetPaused=false;
+      updateUiTranslationFullPageControl(false);
       document.documentElement.dataset.translationState="ready";
       document.documentElement.dataset.translationScope="all_collected_ui_units";
       showUiTranslationStatus("Преводот на страницата е завршен");
@@ -3361,6 +3536,11 @@
       document.documentElement.dir=dir;
     }finally{
       uiTranslationRunning=false;
+      // The "translate remainder" control is created while the current pass
+      // is running. Re-enable it after that pass settles, or it remains
+      // permanently disabled despite appearing in a PARTIAL state.
+      const fullPageButton=document.getElementById("uiTranslationFullPage");
+      if(fullPageButton && !fullPageButton.hidden) fullPageButton.disabled=false;
       if(uiTranslationQueued){
         uiTranslationQueued=false;
         scheduleGlobalTranslation();
@@ -3368,7 +3548,7 @@
     }
   }
   function scheduleGlobalTranslation(){
-    if(siteLanguage==="mk") return;
+    if(siteLanguage==="mk"||uiTranslationBudgetPaused) return;
     if(uiTranslationRunning){uiTranslationQueued=true;return;}
     clearTimeout(scheduleGlobalTranslation.timer);
     const cooldownDelay=Math.max(0,uiTranslationCooldownUntil-Date.now());
@@ -3676,7 +3856,9 @@
 
   function versionTable(v){
     const rows=LB.versionRows(v,lang);
-    return el("table",{class:"versionTable"},el("tbody",{},rows.map(([k,val])=>el("tr",{},el("th",{scope:"row",text:k}),el("td",{text:val})))));
+    // Metadata VALUES belong to official sources and must remain untouched.
+    // Only known human-readable COLUMN LABELS are localised by exact match.
+    return el("table",{class:"versionTable"},el("tbody",{},rows.map(([k,val])=>el("tr",{},el("th",{scope:"row",text:siteLanguage==="el"?(window.AIADVOKAT_STATIC_LOCALES?.el?.[k]||k):k}),el("td",{text:val})))));
   }
 
   function escapeHtml(value){
@@ -3703,7 +3885,11 @@
     mk:{approved:"одобрено",reviewed:"прегледано",pending:"чека проверка",rejected:"одбиено"},
     en:{approved:"approved",reviewed:"reviewed",pending:"pending review",rejected:"rejected"}
   };
-  function reviewLabel(v){ return REVIEW_LABELS[lang][v] || REVIEW_LABELS[lang].pending; }
+  function reviewLabel(v){
+    const mk=REVIEW_LABELS.mk[v] || REVIEW_LABELS.mk.pending;
+    const en=REVIEW_LABELS.en[v] || REVIEW_LABELS.en.pending;
+    return T(mk,en);
+  }
 
   function renderCoverage(instruments){
     const root=$("#coverageTable");
@@ -3782,22 +3968,23 @@
         <summary style="cursor:pointer;list-style:none">
           <div class="resultTop">
             <div>
-              <h4 style="margin:0">${lang==="mk" ? "Член" : "Article"} ${escapeHtml(a.articleNumber)}${a.heading ? " · "+escapeHtml(a.heading) : ""}</h4>
+              <h4 style="margin:0">${T("Член","Article")} <span data-no-translate>${escapeHtml(a.articleNumber)}${a.heading ? " · "+escapeHtml(a.heading) : ""}</span></h4>
               <div class="meta">${escapeHtml(a.sourceIssueNumber || instrument.gazetteReference || "")} · ${escapeHtml(a.sourceIssueDate || "")}</div>
             </div>
             <span class="badge ${articleStatusClass(a)}">${escapeHtml(articleStatusLabel(a))}</span>
           </div>
         </summary>
-        <div style="white-space:pre-wrap;margin-top:14px;line-height:1.65">${escapeHtml(a.text)}</div>
+        <div class="meta" style="margin-top:10px">${T("Оригинален правен текст — не е автоматски преведен","Original legal text — not automatically translated")}</div>
+        <div data-no-translate style="white-space:pre-wrap;margin-top:14px;line-height:1.65">${escapeHtml(a.text)}</div>
         <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
           <a class="btn light" href="${escapeHtml(a.sourceUrl)}" target="_blank" rel="noopener noreferrer">
-            ${lang==="mk" ? "Отвори извор ↗" : "Open source ↗"}
+            ${T("Отвори извор ↗","Open source ↗")}
           </a>
           <button class="btn light askArticleBtn" type="button"
             data-article="${escapeHtml(a.articleNumber)}"
             data-instrument="${escapeHtml(instrument.canonicalKey || "")}"
             data-title="${escapeHtml(instrument.title || "")}">
-            ${lang==="mk" ? "Прашај AI за овој член" : "Ask AI about this article"}
+            ${T("Прашај AI за овој член","Ask AI about this article")}
           </button>
         </div>
       </details>`).join("");
@@ -4377,7 +4564,17 @@
     for(const c of children.flat()){ if(c!==null && c!==undefined && c!==false) node.append(c instanceof Node ? c : document.createTextNode(String(c))); }
     return node;
   }
-  const T=(mk,en)=>lang==="mk" ? mk : en;
+  // R25: exact, vetted UI-only pairs in a static locale pack take precedence.
+  // Unmapped UI labels use the already authored EN value rather than a misleading
+  // claim of complete localisation; source text never enters this helper.
+  const T=(mk,en)=>{
+    if(siteLanguage==="el"){
+      const key=String(mk||"").replace(/\s+/gu," ").trim();
+      const translated=window.AIADVOKAT_STATIC_LOCALES?.el?.[key];
+      return typeof translated==="string"&&translated.trim()?translated:String(en);
+    }
+    return lang==="mk" ? mk : en;
+  };
 
   // Every error code the assistant endpoint can return (see src/index.js handleAssistant and
   // VERSION_ERROR_MESSAGES in src/corpus-versions.js). test/public-layer.test.mjs keeps them in sync.
@@ -4835,7 +5032,36 @@
   scheduleGlobalTranslation();
   if(siteLanguage!=="mk"){
     const translationObserver=new MutationObserver(mutations=>{
-      if(uiTranslationRunning||Date.now()<uiTranslationObserverSuppressUntil) return;
+      if(uiTranslationRunning) return;
+      // Static packs must react immediately to genuinely new public UI nodes,
+      // even during the short self-mutation suppression window. The source/last
+      // WeakMap distinguishes our own replacements from application updates.
+      if(siteLanguage==="el"&&window.AIADVOKAT_STATIC_LOCALES?.el){
+        const changedPublicUi=mutations.some(m=>{
+          if(m.type==="childList"){
+            return Array.from(m.addedNodes||[]).some(node=>{
+              const el=node.nodeType===1?node:node.parentElement;
+              return el&&!excludedTranslationElement(el);
+            });
+          }
+          if(m.type==="characterData"){
+            const node=m.target;
+            if(excludedTranslationElement(node?.parentElement)) return false;
+            const state=uiTranslationNodeState.get(node);
+            return !state||state.last!==String(node.nodeValue||"");
+          }
+          if(m.type==="attributes"){
+            const el=m.target;
+            if(excludedTranslationElement(el)) return false;
+            const state=uiTranslationAttrState.get(el)?.[m.attributeName];
+            return !state||state.last!==String(el.getAttribute(m.attributeName)||"");
+          }
+          return false;
+        });
+        if(changedPublicUi) scheduleGlobalTranslation();
+        return;
+      }
+      if(Date.now()<uiTranslationObserverSuppressUntil) return;
       if(mutations.some(m=>m.type==="childList"||m.type==="characterData"||m.type==="attributes")) scheduleGlobalTranslation();
     });
     translationObserver.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder","title","aria-label"]});
