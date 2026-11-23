@@ -32,3 +32,7 @@ Draft Greek text was prepared for internal UI evaluation, not checked by a nativ
 
 ### Supplemental audit (R24b)
 The browser reported 287 unique missing strings; 149 were non-Cyrillic brand/model names, language labels or source identifiers, and 138 contained Macedonian characters. Another **131** draft Greek interface equivalents were prepared offline, excluding bibliographic citation strings and source-faithful legal references. The candidate now has 512 draft Greek source-to-target pairs. The live-browser coverage number must count Macedonian source segments separately from English brand names / DOI citations. Legal-linguistic approval and all 33-language completeness remain NOT VERIFIED.
+
+
+### R25 Legal workspace UI localisation gate (23 Nov 2026)
+The law registry and law browser live under `#sourceWorkspace` and are deliberately excluded from automatic DOM translation to protect authoritative law text. R25 adds a versioned **draft Greek dictionary only for explicitly paired UI labels**. `T(mk,en)` now uses the exact Greek UI phrase when known, otherwise the existing English label. Article source content, identifiers, official law names, metadata values and original citations do not pass through the dictionary; article text is explicitly marked `data-no-translate`. The law browser displays an original-source notice. Browser test opens the law registry and article browser during a forced Workers AI 503 and confirms Greek labels, preserved Macedonian law name and zero AI translation calls. This is not a certification of Greek legal translation.

@@ -54,6 +54,29 @@ try{
   await page.waitForFunction(()=>document.getElementById('r24-added-label')?.textContent==='Νομικές πηγές',{timeout:10000});
   assert.equal(await page.locator('#r24-private').textContent(),'Правни извори','private node must not be translated');
   assert.equal(aiCalls,0,'dynamic retranslation must remain offline');
+  // R25: the law workspace is excluded from generic DOM translation because
+  // it contains authoritative legal source data. Explicit T(mk,en) UI labels
+  // must be localised using the offline dictionary without translating sources.
+  await page.locator('#lawsCard .cardAction').click();
+  await page.waitForFunction(()=>document.querySelector('#workspaceTitle')?.textContent?.includes('Νόμοι'),{timeout:12000});
+  const lawUi=await page.evaluate(()=>({
+    title:document.querySelector('#workspaceTitle')?.textContent||'',
+    tag:document.querySelector('#workspaceTag')?.textContent||'',
+    note:document.querySelector('#workspaceText')?.textContent||'',
+    body:document.querySelector('#lawRegistryList')?.textContent||'',
+    source:document.querySelector('#lawRegistryList [data-key="mk:zro"]')?.textContent||''
+  }));
+  assert.match(lawUi.title,/Νόμοι/,'law workspace title must be Greek');
+  assert.match(lawUi.tag,/Επίπεδα/,'law workspace hierarchy must be Greek');
+  assert.match(lawUi.note,/Οι νόμοι/,'law workspace explanation must be Greek');
+  assert.match(lawUi.body,/μητρώο|Μητρώο/,'law registry unavailable notice must be Greek');
+  assert.match(lawUi.source,/Закон за работните односи/,'official law title must remain in Macedonian');
+  assert.equal(aiCalls,0,'legal UI localisation must not spend Workers AI quota');
+  await page.locator('#lawRegistryList [data-key="mk:zro"]').click();
+  await page.waitForFunction(()=>document.querySelector('#lawArticleSearchBtn')?.textContent?.includes('Αναζήτηση'),{timeout:12000});
+  assert.match(await page.locator('#lawArticleQuery').getAttribute('placeholder'),/Αναζήτηση άρθρου/);
+  assert.equal(aiCalls,0,'law browser labels must not call AI translator');
+
   await page.selectOption('#langBtn','mk');
   await page.waitForURL(/lang=mk/,{timeout:15000});
   assert.equal(await page.locator('[data-i18n="topLine"]').textContent(),'Правен информациски портал · AI со проверливи извори · човечка контрола');

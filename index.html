@@ -2833,6 +2833,7 @@
 <script src="/assets/ui-locale-el-r24-3.js"></script>
 <script src="/assets/ui-locale-el-r24-4.js"></script>
 <script src="/assets/ui-locale-el-r24-5.js"></script>
+<script src="/assets/ui-locale-el-laws-r25.js"></script>
 <script>
 window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 јазични избори · грчкиот интерфејс користи локален нацрт-пакет без AI квота; AI преводот на другите јазици зависи од достапноста и квотата. Правните извори и доверливите документи не се преведуваат автоматски."]="33 γλωσσικές επιλογές · το ελληνικό περιβάλλον χρησιμοποιεί τοπικό δοκιμαστικό πακέτο χωρίς όριο AI. Οι άλλες γλώσσες εξαρτώνται από τη διαθεσιμότητα υπηρεσίας. Οι νομικές πηγές και τα εμπιστευτικά έγγραφα δεν μεταφράζονται αυτόματα.");
 </script>
@@ -3855,7 +3856,9 @@ window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 �
 
   function versionTable(v){
     const rows=LB.versionRows(v,lang);
-    return el("table",{class:"versionTable"},el("tbody",{},rows.map(([k,val])=>el("tr",{},el("th",{scope:"row",text:k}),el("td",{text:val})))));
+    // Metadata VALUES belong to official sources and must remain untouched.
+    // Only known human-readable COLUMN LABELS are localised by exact match.
+    return el("table",{class:"versionTable"},el("tbody",{},rows.map(([k,val])=>el("tr",{},el("th",{scope:"row",text:siteLanguage==="el"?(window.AIADVOKAT_STATIC_LOCALES?.el?.[k]||k):k}),el("td",{text:val})))));
   }
 
   function escapeHtml(value){
@@ -3882,7 +3885,11 @@ window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 �
     mk:{approved:"одобрено",reviewed:"прегледано",pending:"чека проверка",rejected:"одбиено"},
     en:{approved:"approved",reviewed:"reviewed",pending:"pending review",rejected:"rejected"}
   };
-  function reviewLabel(v){ return REVIEW_LABELS[lang][v] || REVIEW_LABELS[lang].pending; }
+  function reviewLabel(v){
+    const mk=REVIEW_LABELS.mk[v] || REVIEW_LABELS.mk.pending;
+    const en=REVIEW_LABELS.en[v] || REVIEW_LABELS.en.pending;
+    return T(mk,en);
+  }
 
   function renderCoverage(instruments){
     const root=$("#coverageTable");
@@ -3961,22 +3968,23 @@ window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 �
         <summary style="cursor:pointer;list-style:none">
           <div class="resultTop">
             <div>
-              <h4 style="margin:0">${lang==="mk" ? "Член" : "Article"} ${escapeHtml(a.articleNumber)}${a.heading ? " · "+escapeHtml(a.heading) : ""}</h4>
+              <h4 style="margin:0">${T("Член","Article")} <span data-no-translate>${escapeHtml(a.articleNumber)}${a.heading ? " · "+escapeHtml(a.heading) : ""}</span></h4>
               <div class="meta">${escapeHtml(a.sourceIssueNumber || instrument.gazetteReference || "")} · ${escapeHtml(a.sourceIssueDate || "")}</div>
             </div>
             <span class="badge ${articleStatusClass(a)}">${escapeHtml(articleStatusLabel(a))}</span>
           </div>
         </summary>
-        <div style="white-space:pre-wrap;margin-top:14px;line-height:1.65">${escapeHtml(a.text)}</div>
+        <div class="meta" style="margin-top:10px">${T("Оригинален правен текст — не е автоматски преведен","Original legal text — not automatically translated")}</div>
+        <div data-no-translate style="white-space:pre-wrap;margin-top:14px;line-height:1.65">${escapeHtml(a.text)}</div>
         <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
           <a class="btn light" href="${escapeHtml(a.sourceUrl)}" target="_blank" rel="noopener noreferrer">
-            ${lang==="mk" ? "Отвори извор ↗" : "Open source ↗"}
+            ${T("Отвори извор ↗","Open source ↗")}
           </a>
           <button class="btn light askArticleBtn" type="button"
             data-article="${escapeHtml(a.articleNumber)}"
             data-instrument="${escapeHtml(instrument.canonicalKey || "")}"
             data-title="${escapeHtml(instrument.title || "")}">
-            ${lang==="mk" ? "Прашај AI за овој член" : "Ask AI about this article"}
+            ${T("Прашај AI за овој член","Ask AI about this article")}
           </button>
         </div>
       </details>`).join("");
@@ -4556,7 +4564,17 @@ window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 �
     for(const c of children.flat()){ if(c!==null && c!==undefined && c!==false) node.append(c instanceof Node ? c : document.createTextNode(String(c))); }
     return node;
   }
-  const T=(mk,en)=>lang==="mk" ? mk : en;
+  // R25: exact, vetted UI-only pairs in a static locale pack take precedence.
+  // Unmapped UI labels use the already authored EN value rather than a misleading
+  // claim of complete localisation; source text never enters this helper.
+  const T=(mk,en)=>{
+    if(siteLanguage==="el"){
+      const key=String(mk||"").replace(/\s+/gu," ").trim();
+      const translated=window.AIADVOKAT_STATIC_LOCALES?.el?.[key];
+      return typeof translated==="string"&&translated.trim()?translated:String(en);
+    }
+    return lang==="mk" ? mk : en;
+  };
 
   // Every error code the assistant endpoint can return (see src/index.js handleAssistant and
   // VERSION_ERROR_MESSAGES in src/corpus-versions.js). test/public-layer.test.mjs keeps them in sync.
