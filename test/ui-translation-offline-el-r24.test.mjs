@@ -25,7 +25,7 @@ test('R24 source route uses offline pack before any paid or Workers AI requests'
   assert.match(earlier,/window\.AIADVOKAT_STATIC_LOCALES\?\.\[siteLanguage\]/);
   assert.match(earlier,/translationScope="offline_locale_draft"/);
   assert.match(earlier,/translationBatches="0"/);
-  assert.match(earlier,/dataset\.translationState="partial"/);
+  assert.match(earlier,/dataset\.translationState=translated>0\?"partial":"unavailable"/);
   assert.match(earlier,/showUiTranslationStatus/);
   assert.doesNotMatch(earlier,/fetch\(/);
   assert.match(html,/AI преводот на другите јазици зависи од достапноста/);
