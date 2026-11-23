@@ -3251,7 +3251,7 @@ window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 �
       uiTranslationRunning=true;
       try{
         const units=collectUiTranslationUnits();
-        let translated=0,missing=0;
+        let translated=0,missing=0,sourcePreserved=0;
         uiTranslationObserverSuppressUntil=Date.now()+UI_TRANSLATION_OBSERVER_SUPPRESS_MS;
         for(const unit of units){
           const source=String(unit.source||"");
@@ -3259,6 +3259,9 @@ window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 �
           // Product names, model IDs, language names and citations are not Cyrillic UI labels.
           // Never count those unchanged identifiers as untranslated Macedonian content.
           if(!/[Ѐ-ӿ]/u.test(normalized)) continue;
+          // Bibliographic DOI citations and source-bound explanatory notes remain canonical.
+          // Exclude them from the translatable UI denominator, but report them separately.
+          if(/(?:https?:\/\/(?:dx\.)?doi\.org\/10\.|\bDOI\s+10\.\d)/i.test(normalized)){sourcePreserved++;continue;}
           const target=Object.prototype.hasOwnProperty.call(offlineLocalePack,normalized)
             ? String(offlineLocalePack[normalized]||"").trim() : "";
           if(!target){missing++;continue;}
@@ -3280,6 +3283,7 @@ window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 �
         document.documentElement.dataset.translationBatches="0";
         document.documentElement.dataset.translationBatchesCompleted="0";
         document.documentElement.dataset.translationPendingUnits=String(missing);
+        document.documentElement.dataset.translationSourcePreserved=String(sourcePreserved);
         document.documentElement.dataset.translationScope="offline_locale_draft";
         document.documentElement.dataset.translationState=translated>0?"partial":"unavailable";
         document.documentElement.lang=translated>0?siteLanguage:"mk";
@@ -3289,7 +3293,7 @@ window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 �
         uiTranslationBudgetPaused=false;
         updateUiTranslationFullPageControl(false);
         showUiTranslationStatus(siteLanguage==="el"
-          ? "Τοπικό πακέτο EL: "+translated+"/"+(translated+missing)+" τμήματα · πρόχειρη μετάφραση, απαιτεί νομικό έλεγχο"
+          ? "Τοπικό πακέτο EL: "+translated+"/"+(translated+missing)+" τμήματα · "+sourcePreserved+" παραπομπές διατηρήθηκαν στο πρωτότυπο · πρόχειρη μετάφραση, απαιτεί νομικό έλεγχο"
           : "Локален јазичен пакет: "+translated+"/"+(translated+missing)+" сегменти · нацрт");
       }finally{
         uiTranslationRunning=false;

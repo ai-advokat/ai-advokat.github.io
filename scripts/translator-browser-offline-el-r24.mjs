@@ -35,7 +35,8 @@ try{
     title:document.querySelector('[data-i18n="topLine"]')?.textContent,
     hero:document.querySelector('[data-i18n="heroTitle"]')?.textContent,
     status:document.querySelector('#uiTranslationStatus')?.textContent,
-    missing:document.documentElement.dataset.translationPendingUnits
+    missing:document.documentElement.dataset.translationPendingUnits,
+    preserved:document.documentElement.dataset.translationSourcePreserved
   }));
   assert.equal(state.selected,'el');assert.equal(state.lang,'el');
   assert.equal(state.state,'partial');
@@ -43,19 +44,8 @@ try{
   assert.ok(state.title?.includes('Νομική ενημερωτική πύλη'),JSON.stringify(state));
   assert.ok(state.hero?.includes('Το δίκαιο'),JSON.stringify(state));
   assert.equal(aiCalls,0,'Greek offline UI should not consume Workers AI quota');
-
-  // Temporary audit of untranslated, public-only UI strings on synthetic page.
-  const missingKeys=await page.evaluate(()=>{
-    const pack=window.AIADVOKAT_STATIC_LOCALES?.el||{};
-    if(typeof collectUiTranslationUnits!=="function") return [];
-    const keys=new Set();
-    for(const unit of collectUiTranslationUnits()){
-      const value=String(unit.source||"").replace(/\s+/gu," ").trim();
-      if(value.length>1 && !Object.prototype.hasOwnProperty.call(pack,value) && !/^(?:https?:|\d{1,4}[./\-]\d{1,4})/.test(value)) keys.add(value);
-    }
-    return [...keys].slice(0,500);
-  });
-  console.log("R24_PUBLIC_MISSING_UI_KEYS="+JSON.stringify(missingKeys));
+  assert.equal(state.missing,'0','eligible Greek UI must have no untranslated Macedonian labels');
+  assert.ok(Number(state.preserved)>=7,'source-authentic DOI citations must remain intentionally unmodified');
 
   await page.evaluate(()=>{
     const node=document.createElement('span');node.id='r24-added-label';node.textContent='Правни извори';document.body.append(node);
