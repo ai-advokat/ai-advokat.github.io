@@ -2832,6 +2832,7 @@
 <script src="/assets/ui-locale-el-r24-2.js"></script>
 <script src="/assets/ui-locale-el-r24-3.js"></script>
 <script src="/assets/ui-locale-el-r24-4.js"></script>
+<script src="/assets/ui-locale-el-r24-5.js"></script>
 <script>
 window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 јазични избори · грчкиот интерфејс користи локален нацрт-пакет без AI квота; AI преводот на другите јазици зависи од достапноста и квотата. Правните извори и доверливите документи не се преведуваат автоматски."]="33 γλωσσικές επιλογές · το ελληνικό περιβάλλον χρησιμοποιεί τοπικό δοκιμαστικό πακέτο χωρίς όριο AI. Οι άλλες γλώσσες εξαρτώνται από τη διαθεσιμότητα υπηρεσίας. Οι νομικές πηγές και τα εμπιστευτικά έγγραφα δεν μεταφράζονται αυτόματα.");
 </script>
@@ -3255,6 +3256,9 @@ window.AIADVOKAT_STATIC_LOCALES?.el && (window.AIADVOKAT_STATIC_LOCALES.el["33 �
         for(const unit of units){
           const source=String(unit.source||"");
           const normalized=source.replace(/\s+/gu," ").trim();
+          // Product names, model IDs, language names and citations are not Cyrillic UI labels.
+          // Never count those unchanged identifiers as untranslated Macedonian content.
+          if(!/[Ѐ-ӿ]/u.test(normalized)) continue;
           const target=Object.prototype.hasOwnProperty.call(offlineLocalePack,normalized)
             ? String(offlineLocalePack[normalized]||"").trim() : "";
           if(!target){missing++;continue;}

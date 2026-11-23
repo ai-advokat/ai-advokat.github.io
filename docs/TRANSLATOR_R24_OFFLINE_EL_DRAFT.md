@@ -28,3 +28,7 @@ The owner selected `EL · Ελληνικά` on the Cloudflare Preview of Draft P
 Draft Greek text was prepared for internal UI evaluation, not checked by a native Greek legal translator or Zoran. Some phrases may contain legal-language ambiguity; never use as certified translations, official legal guidance, or source authority. Do not merge R24 until independent human legal/language review, e2e preview test, and security/cost cross-PR audit. No changes to law corpus, intake, production database, D1 migrations, or paid provider activation.
 
 **HUMAN GATE: HOLD · LEGAL_HOLD: ACTIVE · PRODUCTION: NO-GO**
+
+
+### Supplemental audit (R24b)
+The browser reported 287 unique missing strings; 149 were non-Cyrillic brand/model names, language labels or source identifiers, and 138 contained Macedonian characters. Another **131** draft Greek interface equivalents were prepared offline, excluding bibliographic citation strings and source-faithful legal references. The candidate now has 512 draft Greek source-to-target pairs. The live-browser coverage number must count Macedonian source segments separately from English brand names / DOI citations. Legal-linguistic approval and all 33-language completeness remain NOT VERIFIED.
