@@ -32,3 +32,6 @@ Exact supplied P16+P02 source changes reconstructed on the pinned main, 17 pre/p
 - OIC-10/OIC-11: working DOCX/PDF only, local browser rendering after server preflight. Professional mode and exact approval remain HOLD.
 - OIC-12: supplier reports 2,217/2,217 local tests and 7/7 browser checks on exact candidate tree. Independent full checkout/build blocked by DNS in review container. No integrated live test.
 All existing OPEN/HOLD tasks remain open where the full acceptance evidence is missing. No migration execution, staging activation, paid provider activation, merge or production.
+
+## 25 November 2026 — incremental independent verification
+OIC-06/A03: both SIM-24/26 PDF inputs independently verified, parsed/OCR and normalized text matches; configured Worker OCR still unverified. TEST-P16/26 is a distinct fixture, exact input PDFs still needed. OIC-08/A06: 9/9 new independent module-only regression tests (see acceptance evidence and test/revision-helper-independent.test.mjs); persistent CAS, real concurrent Worker, rollback endpoint and atomic source/authorization checks remain OPEN. OIC-09/OIC-11: HOLD unchanged; legacy approval/export path requires exact-revision release guard before merge. No runtime changes, no remote migrations or deployment. Continue on PR #739 only.
