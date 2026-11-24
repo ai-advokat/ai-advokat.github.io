@@ -23,7 +23,9 @@
     .file-drop{border:1.5px dashed var(--line);border-radius:14px;padding:16px;background:#f9fbfc;transition:.18s ease}.file-drop.dragover{border-color:var(--gold);background:var(--goldsoft)}.file-drop strong{display:block}.file-drop .selection{margin-top:8px;font-size:.86rem;color:var(--muted);word-break:break-word}
     .analysis-output{white-space:pre-wrap;word-break:break-word;border:1px solid var(--line);border-radius:14px;background:#f8fafb;padding:16px;max-height:720px;overflow:auto;font:0.88rem/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}.analysis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
     .simple-access{max-width:620px;margin:18px auto 0}.privacy-lock{display:flex;gap:10px;align-items:flex-start}.privacy-lock .icon{font-size:1.35rem;line-height:1}.access-help{font-size:.9rem;color:var(--muted);margin-top:8px}.access-help a{font-weight:700}.advanced-access{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}.advanced-access summary{cursor:pointer;color:var(--muted);font-weight:700}.choice-actions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.plain-steps{margin:10px 0 0;padding-left:22px;color:var(--muted)}
-    .hidden{display:none!important}.pill{display:inline-flex;padding:4px 8px;border:1px solid var(--line);border-radius:999px;font-size:.78rem;font-weight:700}
+    .draft-revision{overflow-wrap:anywhere}.draft-revision code{font-size:.78rem}.draft-source-list{overflow-wrap:anywhere}
+    #caseDraftResult{min-height:280px}button:disabled{opacity:.55;cursor:not-allowed}
+    .hidden,[hidden]{display:none!important}.pill{display:inline-flex;padding:4px 8px;border:1px solid var(--line);border-radius:999px;font-size:.78rem;font-weight:700}
     footer{padding:30px 0 45px;color:var(--muted);font-size:.88rem}
     @media(max-width:800px){.grid2,.grid3{grid-template-columns:1fr}}
   </style>
@@ -165,7 +167,7 @@
       <p id="documentStatus" class="statusline muted" aria-live="polite"></p>
       <div class="scroll">
         <table>
-          <thead><tr><th>Slot</th><th>Документ</th><th>Тип</th><th>Страници</th><th>SHA-256</th><th>Storage</th><th>Акции</th></tr></thead>
+          <thead><tr><th>Slot</th><th>Документ</th><th>Тип</th><th>Страници</th><th>SHA-256</th><th>Складирање / извлекување</th><th>Акции</th></tr></thead>
           <tbody id="documentBody"><tr><td colspan="7" class="muted">Нема вчитани документи.</td></tr></tbody>
         </table>
       </div>
@@ -186,6 +188,10 @@
         <div class="metric"><b id="intelligenceLaw">—</b><span>current-law verification</span></div>
       </div>
       <pre id="caseIntelligenceResult" class="analysis-output" hidden></pre>
+      <section id="caseResponseSources" hidden aria-labelledby="caseResponseSourcesTitle">
+        <h3 id="caseResponseSourcesTitle">Правни извори за одговорот на жалба</h3>
+        <ul id="caseResponseSourceList" class="draft-source-list"></ul>
+      </section>
 
       <hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
       <h3>Подготви работен поднесок</h3>
@@ -195,6 +201,7 @@
           <select id="caseDraftType">
             <option value="lawsuit">Тужба</option>
             <option value="appeal">Жалба</option>
+            <option value="response">Одговор на жалба</option>
             <option value="objection">Приговор</option>
             <option value="motion">Предлог / поднесок</option>
             <option value="request">Барање</option>
@@ -211,7 +218,28 @@
       </div>
       <div class="actions"><button id="prepareCaseDraft" class="gold" type="button">Подготви WORKING DRAFT</button></div>
       <p id="caseDraftStatus" class="statusline muted" aria-live="polite"></p>
-      <pre id="caseDraftResult" class="analysis-output" hidden></pre>
+      <section id="caseDraftEditor" hidden aria-labelledby="caseDraftEditorTitle">
+        <h3 id="caseDraftEditorTitle">Работен поднесок</h3>
+        <p class="notice">НЕОДОБРЕН · HUMAN GATE HOLD · LEGAL_HOLD ACTIVE · НЕ Е ЗА ПОДНЕСУВАЊЕ</p>
+        <label for="caseDraftResult">Текст на поднесокот</label>
+        <textarea id="caseDraftResult" rows="14" maxlength="50000" spellcheck="false"></textarea>
+        <label for="caseDraftRevisionNote">Белешка за измената (опционално)</label>
+        <input id="caseDraftRevisionNote" maxlength="200">
+        <div class="actions">
+          <button id="saveCaseDraftRevision" class="primary" type="button" disabled>Зачувај ревизија</button>
+          <button id="downloadCaseDraftWord" class="secondary" type="button" disabled>Работен Word</button>
+          <button id="downloadCaseDraftPdf" class="secondary" type="button" disabled>Работен PDF</button>
+        </div>
+        <p id="caseDraftRevisionStatus" class="statusline muted" role="status"></p>
+        <div id="caseResponseRevisionActions" class="actions" hidden>
+          <button id="reloadCaseResponseRevision" class="secondary" type="button">Отвори последна серверска ревизија</button>
+        </div>
+        <details>
+          <summary>Историја на ревизии</summary>
+          <ol id="caseDraftHistory"></ol>
+          <button id="loadOlderResponseRevisions" class="secondary" type="button" hidden>Прикажи постари ревизии</button>
+        </details>
+      </section>
     </section>
 
     <section class="card">

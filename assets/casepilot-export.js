@@ -184,9 +184,10 @@ export async function caseExportBlob(reportInput,format){
   return new Blob([pdf],{type:caseExportMime("pdf")});
 }
 
-export async function downloadCasePilotExport(reportInput,format,{filename=null}={}){
+export async function downloadCasePilotExport(reportInput,format,{filename=null,beforeDownload}={}){
   const report=reportInput?.exportVersion ? reportInput : normalizeCaseExportReport(reportInput);
   const blob=await caseExportBlob(report,format);
+  beforeDownload?.();
   blobDownload(blob,filename||caseExportFilename(report,format));
   return {ok:true,format,filename:filename||caseExportFilename(report,format),size:blob.size};
 }

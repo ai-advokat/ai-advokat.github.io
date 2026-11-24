@@ -31,7 +31,7 @@ test("exports use the existing governed server endpoint with memory-only members
 });
 
 test("audit is loaded only from the active case-scoped endpoint",()=>{
-  assert.match(js,/\/api\/cases\/"\+encodeURIComponent\(activeCaseId\)\+"\/audit"/);
+  assert.match(js,/workspaceRequest\("audit",undefined,context\)/);
   assert.match(js,/renderAudit/);
 });
 
@@ -39,6 +39,6 @@ test("workspace opening refreshes classifications and audit together",()=>{
   const start=js.indexOf("async function openCaseById");
   const end=js.indexOf('$("loadCases").addEventListener',start);
   const block=js.slice(start,end);
-  assert.match(block,/await loadClassifications\(\)/);
-  assert.match(block,/await loadAudit\(\)/);
+  assert.match(block,/await loadClassifications\(context\)/);
+  assert.match(block,/await loadAudit\(context\)/);
 });

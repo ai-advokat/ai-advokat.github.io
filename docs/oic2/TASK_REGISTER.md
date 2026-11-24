@@ -22,3 +22,13 @@ Date: 2026-11-24. Owner labels: LEGAL = lawyer workflow team; INFRA = Worker/inf
 Historical claims/reference evidence: DEV-D and DEV-C 20/20 and 33/33 special tests, two inherited import failures; later revision-gate 22/22 local; Atomic Gate Preflight report 128/128 local (103 inherited + 25 new), 18 historical legacy mismatches remain reported. These are prior candidate evidence, not integrated Worker PASS. Preserve original archives and rerun applicable tests against candidate pin; no totals across overlapping suites. The 0033/0034/0035/0049 migration review remains open. No code changes, PR, merge, remote operations or approval are authorized by this register.
 
 Update rule: never replace an OPEN/HOLD with PASS without immutable commit, precise test command, logs/artifact hashes, environment, and assigned reviewer. A failed test is not deleted; close with corrective evidence.
+
+## 24 November 2026 — RAPID 07 / P16 / P02 integration update
+Exact supplied P16+P02 source changes reconstructed on the pinned main, 17 pre/post blob transitions validated across 13 final files. Candidate tree matches supplied P02 tree `fb6f85b022684b13c38b89b6fa720955213029cd`. See [integration evidence](RAPID07_P16_P02_INTEGRATION.md). Candidate is prepared for a single draft PR, not merged or deployed.
+- OIC-01/OIC-03: candidate existing CasePilot editor, working response and save/history/rollback wired into Worker routes. Owner-reported RAPID 07 6/6; candidate browser results supplied. Independent browser rerun pending.
+- OIC-02: supplied synthetic decision-digital + appeal-scanned files; mapping to canonical case fixture and legal review pending.
+- OIC-04: RAPID handoff adapter independently rerun 31/31 local mock tests. Historical DEV-C failures/18 mismatches remain open until reconciled; not necessarily the same suite.
+- OIC-07/OIC-08: P16/P02 working response and server revision code reconstructed exactly. Real provider OCR/AI, atomic authorization/snapshot persistence, retention and real R2 not verified.
+- OIC-10/OIC-11: working DOCX/PDF only, local browser rendering after server preflight. Professional mode and exact approval remain HOLD.
+- OIC-12: supplier reports 2,217/2,217 local tests and 7/7 browser checks on exact candidate tree. Independent full checkout/build blocked by DNS in review container. No integrated live test.
+All existing OPEN/HOLD tasks remain open where the full acceptance evidence is missing. No migration execution, staging activation, paid provider activation, merge or production.
