@@ -1,0 +1,60 @@
+{
+  "schema": "oic2.synthetic-case-spec.v1",
+  "id": "SYNTHETIC_CASE_001",
+  "syntheticOnly": true,
+  "notice": "Fictional test facts. No real court, personal data, legal citation or filing. Not an actual legal document. Fixture specification; files and test execution pending.",
+  "documents": [
+    {
+      "fixtureId": "DECISION",
+      "suggestedFilename": "synthetic-decision.pdf",
+      "kind": "scanned Macedonian Cyrillic",
+      "pages": [
+        {
+          "page": 1,
+          "text": "СИНТЕТИЧКИ ТЕСТ — Решение. Предмет ТЕСТ-001. Барање: 12.000 денари. Датум на решение: 12.11.2026. Судот во тест-сценариото го одбива барањето."
+        }
+      ]
+    },
+    {
+      "fixtureId": "APPEAL",
+      "suggestedFilename": "synthetic-appeal.pdf",
+      "kind": "digital PDF",
+      "pages": [
+        {
+          "page": 1,
+          "text": "СИНТЕТИЧКИ ТЕСТ — Жалба против решение ТЕСТ-001. Жалителот тврди дека уплата од 12.000 денари е извршена на 05.11.2026. Доказ за уплата не е приложен. Датум на жалба: 16.11.2026."
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "facts": [
+      {
+        "fixtureId": "DECISION",
+        "page": 1,
+        "claim": "12.000 денари; решение 12.11.2026; барањето е одбиено"
+      },
+      {
+        "fixtureId": "APPEAL",
+        "page": 1,
+        "claim": "жалителот тврди уплата 05.11.2026; жалба 16.11.2026"
+      }
+    ],
+    "disputedOrMissing": [
+      "Уплатата е тврдење, не потврден факт",
+      "Недостига доказ за уплата",
+      "Правна основа, рок и надлежност не се верификувани"
+    ],
+    "question": "Подготви работен одговор на жалбата врз основа на доставените факти, разграничи тврдења од докази и означи непроверени правни основи.",
+    "edit": "Дополни дека доказ за уплата не е приложен и не тврди дека уплата не постои.",
+    "requiredOutputs": [
+      "WORKING ANALYSIS",
+      "WORKING DRAFT — HUMAN GATE REQUIRED",
+      "immutable revised working draft",
+      "working DOCX",
+      "working PDF"
+    ],
+    "negative": "Professional export must be denied while LEGAL_HOLD is active."
+  },
+  "owner": "LEGAL team: approve and generate two synthetic source files and expected outputs. INFRA team: run against local pinned Worker after implementation. No real case or provider activation."
+}
