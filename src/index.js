@@ -2318,29 +2318,22 @@ async function handleCaseWorkspaceApi(request,env,url){
       return json(request,{ok:false,error:"case_export_report_required"},400);
     }
 
-    const currentFingerprint=await caseProfessionalFingerprint(env,caseId,access);
-    const latestGate=await latestCaseHumanGate(env,caseId,currentFingerprint);
-    const professionalRequested=Number(access.professional_use_locked)===0;
-    if(professionalRequested && await responseWorkflowExists(env.DB,caseId)){
-      return json(request,{ok:false,error:"case_response_professional_release_on_hold",professionalUseLocked:true,legalHold:"ACTIVE"},409);
+    const requestedMode=parsed.value.mode;
+    if(requestedMode!==undefined && requestedMode!=="working" && requestedMode!=="professional"){
+      return json(request,{ok:false,error:"case_export_mode_invalid"},400);
     }
-    if(professionalRequested && !latestGate.effectiveApproved){
+    // A case-level decision and a revision review are receipts only for export.
+    // Keep this boundary closed until an exact server-rendered revision has an atomic release path.
+    if(requestedMode==="professional" || (requestedMode===undefined && Number(access.professional_use_locked)===0)){
+      const responseCase=await responseWorkflowExists(env.DB,caseId);
       return json(request,{
         ok:false,
-        error:latestGate.stale
-          ? "case_export_professional_human_gate_stale"
-          : "case_export_professional_human_gate_evidence_missing"
+        error:responseCase ? "case_response_professional_release_on_hold" : "case_export_professional_release_on_hold",
+        professionalUseLocked:true,
+        legalHold:"ACTIVE"
       },409);
     }
-    const mode=professionalRequested ? "professional" : "working";
-    const serverHumanGate=mode==="professional"
-      ? {
-          status:"approved",
-          reviewer:latestGate.reviewer,
-          decidedAt:latestGate.decidedAt,
-          decisionRef:latestGate.decisionId
-        }
-      : {status:"pending",reviewer:"",decidedAt:"",decisionRef:""};
+    const mode="working";
 
     const authorityClassifications=await loadActiveCaseLawClassifications(env,caseId);
     // Reserved namespaces are server-owned so a client cannot spoof lawyer authority
@@ -2375,7 +2368,7 @@ async function handleCaseWorkspaceApi(request,env,url){
         caseId,
         title:reportInput.title||access.title,
         generatedAt:new Date().toISOString()
-      },{mode,serverHumanGate});
+      },{mode,serverHumanGate:{status:"pending"}});
     }catch(error){
       return json(request,{ok:false,error:String(error?.message||"case_export_invalid")},400);
     }
@@ -2383,7 +2376,6 @@ async function handleCaseWorkspaceApi(request,env,url){
     const filename=caseExportFilename(exportModel,format);
     const auditMeta={format,mode,caseVersion:exportModel.caseVersion,authorityClassificationCount:authorityClassifications.length};
     if(format==="pdf" || format==="png" || format==="jpg"){
-      if(mode==="professional" && await responseWorkflowExists(env.DB,caseId)) return json(request,{ok:false,error:"case_response_professional_release_on_hold",professionalUseLocked:true,legalHold:"ACTIVE"},409);
       await recordCaseAudit(env,{
         caseId,accountId:membership.accountId,eventType:"export_generated",
         objectType:"case_export_model",objectId:filename,metadata:auditMeta
@@ -2408,7 +2400,6 @@ async function handleCaseWorkspaceApi(request,env,url){
           : format==="json"
             ? renderCaseExportJson(exportModel)
             : renderCaseExportDocxBytes(exportModel);
-    if(mode==="professional" && await responseWorkflowExists(env.DB,caseId)) return json(request,{ok:false,error:"case_response_professional_release_on_hold",professionalUseLocked:true,legalHold:"ACTIVE"},409);
     await recordCaseAudit(env,{
       caseId,accountId:membership.accountId,eventType:"export_generated",
       objectType:"case_export",objectId:filename,metadata:auditMeta
@@ -11689,7 +11680,7 @@ async function handleCapabilities(request, env) {
       versionCompare: "governed_preview",
       documentUpload: caseWorkspaceStorageReady(env) && caseSchemaReady ? (caseStorageBackend(env)==="d1_fallback" ? "case_scoped_d1_fallback_ready_ingestion_gate_required" : "case_scoped_storage_ready_ingestion_gate_required") : "locked_private_storage",
       caseWorkspace: caseRuntime,
-      caseExports: caseSchemaReady ? "md_txt_docx_csv_json_png_jpg_pdf_live_human_gate_bound" : "locked",
+      caseExports: caseSchemaReady ? "md_txt_docx_csv_json_png_jpg_pdf_working_only" : "locked",
       vectorize: "not_bound",
       workersAI: env.AI ? "bound" : "not_bound",
       caseStorageBackend: caseStorageBackend(env)

@@ -56,3 +56,7 @@ Existing POST /api/cases/{caseId}/human-gate accepts the explicit scope response
 
 ## 25 November 2026 — next review-only atomic design
 Historical response review receipt semantics remain unchanged. ATOMIC_SOURCE_GATE_DESIGN.md proposes the D1 authoritative pointer/epoch and final release CAS boundary for separate review. No API shape, runtime, schema or release authorization changes in this increment.
+
+## 25 November 2026 — CasePilot working-only export boundary
+
+The existing case export route accepts `{format, mode:"working", report}` and emits a working copy with server-owned pending status. A legacy request with no mode still works when the case is locked. An explicit professional request or an old request that previously implied professional mode returns HTTP 409 with `professionalUseLocked:true` and `legalHold:"ACTIVE"`. Both the binary and browser-model paths apply the same guard before rendering or recording an export. Review decisions and the legacy case flag cannot enable professional delivery. Historical review receipts and revision working-export checks retain their existing semantics.

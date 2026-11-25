@@ -162,17 +162,15 @@ test("EXP6 filenames are stable, bounded and format-specific",()=>{
   assert.equal(caseExportFilename(report,"pdf"),"CASE-123e4567-e89b-42d3-a456-426614174000-1.2-casepilot.pdf");
 });
 
-test("EXP7 authenticated case API derives export mode server-side and never trusts client professional status",()=>{
+test("EXP7 authenticated case API exposes working export only",()=>{
   assert.match(worker,/if\(tail==="exports"\)/);
-  assert.match(worker,/professionalRequested=Number\(access\.professional_use_locked\)===0/);
-  assert.match(worker,/latestCaseHumanGate\(env,caseId,currentFingerprint\)/);
-  assert.match(worker,/mode=professionalRequested \? "professional" : "working"/);
-  assert.match(worker,/case_export_professional_human_gate_evidence_missing/);
-  assert.match(worker,/case_export_professional_human_gate_stale/);
+  assert.match(worker,/case_export_professional_release_on_hold/);
+  assert.match(worker,/const mode="working"/);
+  assert.match(worker,/serverHumanGate:\{status:"pending"\}/);
   assert.match(worker,/eventType:"export_generated"/);
   assert.match(worker,/casepilot_canvas_pdf_v1/);
   assert.match(worker,/browser_local_rendering_no_external_service/);
-  assert.match(worker,/caseExports: caseSchemaReady \? "md_txt_docx_csv_json_png_jpg_pdf_live_human_gate_bound"/);
+  assert.match(worker,/caseExports: caseSchemaReady \? "md_txt_docx_csv_json_png_jpg_pdf_working_only"/);
 });
 
 test("EXP8 browser PDF PNG and JPG use local canvas/system fonts and no external conversion service",()=>{

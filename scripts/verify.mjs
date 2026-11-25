@@ -244,11 +244,11 @@ if (!worker.includes('vectorize: "not_bound"')) {
 console.log("AI Advokat structural verification: PASS");
 
 
-if (!worker.includes('caseExports: caseSchemaReady ? "md_txt_docx_csv_json_png_jpg_pdf_live_human_gate_bound" : "locked"')) {
-  throw new Error("Complete Case export capability must remain Human-Gate bound and schema-gated.");
+if (!worker.includes('caseExports: caseSchemaReady ? "md_txt_docx_csv_json_png_jpg_pdf_working_only" : "locked"')) {
+  throw new Error("Case export must remain working-only and schema-gated.");
 }
-if (!worker.includes('case_export_professional_human_gate_evidence_missing')) {
-  throw new Error("Professional CasePilot export must fail closed without recorded Human Gate evidence.");
+if (!worker.includes('case_export_professional_release_on_hold')) {
+  throw new Error("Professional CasePilot export must remain on hold pending the exact-revision release gate.");
 }
 if (!worker.includes('browser_local_rendering_no_external_service')) {
   throw new Error("CasePilot PDF/PNG/JPG must remain local-browser rendered without an external conversion service.");

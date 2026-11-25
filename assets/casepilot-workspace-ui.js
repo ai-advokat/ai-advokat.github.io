@@ -1643,7 +1643,7 @@ function buildExportReport(){
         heading:"Предмет",
         text:[
           matter.legalArea ? "Правна област: "+matter.legalArea : null,
-          "Professional Human Gate: "+(cp?.runtime?.professionalUseLocked===false?"UNLOCKED":"LOCKED"),
+          "Професионален извоз: HOLD",
           "Source-linked documents: "+String(sourceRegistry.length)
         ].filter(Boolean).join("\n"),
         status:"WORKSPACE_METADATA",
@@ -1687,7 +1687,7 @@ async function runExport(format){
       membershipKey:accessKey,
       apiBase:API_BASE
     });
-    $("exportStatus").textContent="Export е подготвен: "+String(result.filename||format)+". Mode се определува server-side според Human Gate.";
+    $("exportStatus").textContent="Работниот извоз е подготвен: "+String(result.filename||format)+" · НЕОДОБРЕН.";
     await loadAudit();
   }catch(error){
     $("exportStatus").textContent="Export не успеа: "+String(error?.message||error);

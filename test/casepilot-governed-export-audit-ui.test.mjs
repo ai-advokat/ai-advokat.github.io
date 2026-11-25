@@ -10,7 +10,7 @@ test("Secure Workspace exposes governed export and audit controls",()=>{
   assert.match(html,/id="exportDocx"/);
   assert.match(html,/id="exportPdf"/);
   assert.match(html,/id="refreshAudit"/);
-  assert.match(html,/оваа страница не може сама да го отклучи Human Gate/i);
+  assert.match(html,/Професионалниот извоз е под HOLD/);
 });
 
 test("export report preserves source hashes and does not invent document bodies",()=>{

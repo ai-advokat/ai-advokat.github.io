@@ -29,13 +29,13 @@ test("Human Gate accepts only bounded decision metadata",()=>{
   assert.doesNotMatch(block,/documentText|fullText|fileBytes|attachmentText/);
 });
 
-test("professional export verifies current fingerprint before approval is effective",()=>{
+test("legacy gate status is independent of the working-only export boundary",()=>{
   const start=worker.indexOf('if(tail==="exports")');
-  const block=worker.slice(start,start+7000);
-  assert.match(block,/caseProfessionalFingerprint\(env,caseId,access\)/);
-  assert.match(block,/latestCaseHumanGate\(env,caseId,currentFingerprint\)/);
-  assert.match(block,/case_export_professional_human_gate_stale/);
-  assert.match(block,/latestGate\.effectiveApproved/);
+  const end=worker.indexOf('if(tail==="audit")',start);
+  const block=worker.slice(start,end);
+  assert.match(block,/case_export_professional_release_on_hold/);
+  assert.match(block,/const mode="working"/);
+  assert.doesNotMatch(block,/latestCaseHumanGate|caseProfessionalFingerprint|effectiveApproved/);
 });
 
 test("new lawyer authority classification re-locks professional use",()=>{
