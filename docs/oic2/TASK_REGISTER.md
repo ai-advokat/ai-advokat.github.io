@@ -38,3 +38,6 @@ OIC-06/A03: both SIM-24/26 PDF inputs independently verified, parsed/OCR and nor
 
 ## 25 November 2026 — legal act heading correction
 OIC-03/OIC-07/OIC-10/A05/A09: corrective source candidate implemented; helper 14/14 independently verified, lawyer and integrated runtime acceptance HOLD. Preserve existing source assertions; no auto rewrite of old revision. OIC-09/OIC-11 exact revision professional approval and claim-to-source navigation remain OPEN/HOLD. See acceptance matrix. Newer supplier P02 working-export archive includes additional comparison/export commits not included in b7c4670; do not reapply the first two commits or overwrite this correction. Reconcile the new two commits separately with exact-revision guards and test evidence.
+
+## 25 November 2026 — package dependency correction
+OIC-03/OIC-10/A05/A09: lawyer reports LOCAL PASS on 4db93ea for both act identities and HTTP 422 mismatch. OIC-04/OIC-12/A10: independently derived explicit public-module packaging correction for Cloudflare/Pages and regression checks; supplied 2,246/2,246 result not independently reproduced. Full suite, deployed asset parity, source navigation and exact-revision Human Gate remain OPEN/HOLD. No new deployment permission.
