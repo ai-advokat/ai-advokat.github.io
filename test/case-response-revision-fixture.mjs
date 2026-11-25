@@ -8,7 +8,7 @@ export const docId="DOC-123e4567-e89b-42d3-a456-426614174010";
 export const draftId="DRAFT-123e4567-e89b-42d3-a456-426614174011";
 export const authKey="p02-LOCAL-SYNTHETIC-ONLY";
 export const revisionPath=`/api/cases/${caseId}/intelligence/response-revisions`;
-export const edited="Синтетички текст за прием. Адвокатска доработка.";
+export const edited="ОДГОВОР НА ЖАЛБА\n\nСинтетички текст за прием. Адвокатска доработка.";
 
 export async function makeRevisionFixture({r2=false}={}){
   const {raw,d1}=createD1();
@@ -46,7 +46,7 @@ export async function makeRevisionFixture({r2=false}={}){
   raw.prepare(`INSERT INTO case_document_slots
       (id,case_id,slot_number,original_name,mime_type,sha256,page_count,storage_state,extraction_state)
       VALUES (?,?,1,'Решение.pdf','application/pdf',?,1,'uploaded','complete')`).run(docId,caseId,documentSha);
-  const draft="Синтетички почетен одговор на жалба.";
+  const draft="ОДГОВОР НА ЖАЛБА\n\nСинтетички почетен одговор на жалба.";
   const audit={
     draftSha256:await caseResponseHash(draft),analysisSha256:await caseResponseHash("Синтетичка анализа"),
     responseSourcesSha256:source.sha256
@@ -86,7 +86,7 @@ export async function makeRevisionFixture({r2=false}={}){
   seedObject(prefix+docId+"/extraction.json",packet);
   const env={DB:d1,CASE_WORKSPACE_ENABLED:"true",
     ...(r2?{CASE_FILES:bucket}:{CASE_D1_FALLBACK_ENABLED:"true"})};
-  const input=(base=null,text=edited)=>({base,draftId,text,note:"Синтетичка забелешка",requestId:crypto.randomUUID()});
+  const input=(base=null,text=edited)=>({base,draftId,text:text.startsWith("ОДГОВОР НА ЖАЛБА\n")?text:"ОДГОВОР НА ЖАЛБА\n\n"+text,note:"Синтетичка забелешка",requestId:crypto.randomUUID()});
   const fetchWorker=request=>worker.fetch(request,env);
   function request(path=revisionPath,body,key=authKey){
     return fetchWorker(new Request("https://worker.invalid"+path,{

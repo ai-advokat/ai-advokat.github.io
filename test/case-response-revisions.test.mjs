@@ -106,3 +106,12 @@ test("R2 cursor pages retain ordered history",async()=>{
   assert.equal(older.head,null);
   assert.equal(older.nextBefore,null);
 });
+
+test("server refuses contradictory and missing act headings before saving a response revision",async()=>{
+  const f=await makeRevisionFixture();
+  for(const [text,error] of [["ЖАЛБА\n\nСинтетички текст.","case_draft_instrument_mismatch"],["Синтетички текст без наслов.","case_draft_instrument_heading_required"]]){
+    const result=await parsed(await f.request(revisionPath,{...f.input(),text}),422);
+    assert.equal(result.error,error);
+  }
+  assert.equal((await parsed(await f.request(),200)).head,null);
+});

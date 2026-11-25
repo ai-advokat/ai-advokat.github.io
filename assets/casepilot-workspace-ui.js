@@ -1,4 +1,5 @@
 import { downloadCasePilotExport, downloadCasePilotExportFromApi } from "./casepilot-export.js";
+import {caseDraftAct,checkCaseDraftAct,caseDraftExportContent} from "../src/case-draft-act.js";
 const $=id=>document.getElementById(id);
 
 const API_BASE=(
@@ -785,6 +786,8 @@ $("prepareCaseDraft").addEventListener("click",async()=>{
       extractionDocuments:isResponse?analysis.extractionDocuments:[],
       legalSources:isResponse?analysis.legalSources:[]
     });
+    const actCheck=checkCaseDraftAct(data.draft,draftType);
+    if(!actCheck.ok){ workingDraft=null; throw new Error(draftActError(actCheck.error)); }
     editor.value=data.draft;
     $("caseDraftRevisionNote").value="";
     $("caseDraftEditor").hidden=false;
@@ -828,10 +831,17 @@ function sameDraft(left,right){
   return Boolean(left && right && left.draftId===right.draftId && left.draftSha256===right.draftSha256);
 }
 
+function draftActError(code){
+  return ({case_draft_instrument_mismatch:"Видот на актот не се совпаѓа со текстот. Исправете го насловот и проверете ја содржината.",case_draft_instrument_heading_required:"Недостига насловот на избраниот вид на акт. Додајте го и проверете го текстот."})[code]||code;
+}
+
 function updateDraftControls(){
   const latest=currentSavedDraft();
   const editor=$("caseDraftResult");
-  const valid=draftMatchesDocuments(workingDraft) && caseDraftPermission();
+  const instrument=checkCaseDraftAct(editor.value,workingDraft?.draftType);
+  const valid=draftMatchesDocuments(workingDraft) && caseDraftPermission() && instrument.ok;
+  $("caseDraftEditorTitle").textContent=caseDraftAct(workingDraft?.draftType)?.title||"Работен поднесок";
+  if(workingDraft && editor.value.trim() && !instrument.ok) $("caseDraftRevisionStatus").textContent=draftActError(instrument.error);
   const busy=Boolean(draftOperation || editor.readOnly);
   const saved=Boolean(sameDraft(latest?.draft,workingDraft) && latest.text===editor.value);
   $("caseResponseRevisionActions").hidden=!isResponseDraft();
@@ -847,7 +857,9 @@ function responseRevisionError(error){
     case_response_revision_conflict:"Друг корисник или друга сесија зачувала понова ревизија. Вашиот текст е во редакторот. Отворете ја последната серверска ревизија за споредба.",
     case_response_document_snapshot_changed:"Документите или нивното извлекување се сменети. Повторете ја анализата и подгответе нов нацрт.",
     case_response_revision_storage_unavailable:"Серверското складиште за ревизии е недостапно. Текстот во редакторот е достапен за повторен обид.",
-    case_response_revision_draft_unverified:"Изворната снимка на нацртот не може да се потврди."
+    case_response_revision_draft_unverified:"Изворната снимка на нацртот не може да се потврди.",
+    case_draft_instrument_mismatch:draftActError("case_draft_instrument_mismatch"),
+    case_draft_instrument_heading_required:draftActError("case_draft_instrument_heading_required")
   })[error.code]||error.message;
 }
 
@@ -1028,6 +1040,8 @@ $("saveCaseDraftRevision").addEventListener("click",async()=>{
     if(!text || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u.test(text)){
       throw new Error("Проверете го текстот на ревизијата.");
     }
+    const instrument=checkCaseDraftAct(text,draft.draftType);
+    if(!instrument.ok) throw new Error(draftActError(instrument.error));
     if(isResponseDraft()){
       if(!responseHeadKnown){
         throw new Error("Прво отворете ја последната серверска ревизија за да го потврдите тековниот статус.");
@@ -1091,6 +1105,8 @@ async function downloadWorkingDraft(format){
   const status=$("caseDraftRevisionStatus");
   const assertCurrentRevision=()=>{
     checkWorkspace(context);
+    const instrument=checkCaseDraftAct(revision.text,draft.draftType);
+    if(!instrument.ok) throw new Error(draftActError(instrument.error));
     if(!sameDraft(draft,workingDraft) || !draftMatchesDocuments(draft) || $("caseDraftResult").value!==revision.text){
       throw new Error("Ревизијата или документите се сменети.");
     }
@@ -1120,7 +1136,7 @@ async function downloadWorkingDraft(format){
     }
     await downloadCasePilotExport({
       caseId:draft.caseId, caseVersion:(server?"server-r":"local-r")+revision.number,
-      title:draft.draftType==="response"?"Одговор на жалба":"Работен правен поднесок",
+      ...caseDraftExportContent(draft.draftType,revision.text),
       generatedAt:revision.savedAt, summary:[
         "НЕОДОБРЕН · HUMAN GATE HOLD · LEGAL_HOLD ACTIVE · НЕ Е ЗА ПОДНЕСУВАЊЕ",
         (server?"Серверска ревизија ":"Локална ревизија ")+revision.number+" · SHA-256: "+revision.sha256,
@@ -1130,7 +1146,6 @@ async function downloadWorkingDraft(format){
           "Снимка на изворите · SHA-256: "+draft.responseSourcesSha256
         ]:[])
       ].join("\n"),
-      sections:[{title:"Текст на поднесокот",items:[{text:revision.text}]}],
       sourceManifest:manifest
     },format,{beforeDownload:assertCurrentRevision});
     status.textContent="Работен извоз од ревизија "+revision.number+" · НЕОДОБРЕН.";

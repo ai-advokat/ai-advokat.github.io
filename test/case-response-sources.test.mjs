@@ -70,7 +70,7 @@ test("snapshot verifies the exact analysis, SHA and case",async()=>{
   }
 });
 
-async function workerFixture({ role="lawyer", docs=[document], source=true, extraction=packet }={}){
+async function workerFixture({ role="lawyer", docs=[document], source=true, extraction=packet, generatedHeading="Одговор на жалба" }={}){
   const snapshot=await fixture();
   const prefix=`case-derived/v1/${caseId}/`;
   const stored=new Map([
@@ -88,7 +88,7 @@ async function workerFixture({ role="lawyer", docs=[document], source=true, extr
       providerCalls++;
       return {response:[
         "РАБОТЕН НАЦРТ — ПОТРЕБНА Е АДВОКАТСКА ПРОВЕРКА",
-        "Одговор на жалба",
+        generatedHeading,
         "Судот го одбил предлогот. Документот и првата страница се наведени за проверка.",
         "Се предлага судот да ги цени наводите и приложените докази при своето одлучување."
       ].join("\n\n")};
@@ -159,10 +159,21 @@ test("actual Worker stores the working draft and exact source receipt with Human
   const payload=await response.json();
   assert.equal(response.status,200,JSON.stringify(payload));
   assert.equal(payload.draftType,"response");
+  assert.match(payload.draft,/^(?:[\s\S]*\n)?Одговор на жалба\s*$/imu);
+  assert.doesNotMatch(payload.draft,/^\s*ЖАЛБА\s*$/imu);
   assert.equal(payload.draftSha256,await caseResponseHash(payload.draft));
   assert.equal(payload.responseSourcesSha256,f.snapshot.sha256);
   assert.equal(payload.humanGate.professionalUseLocked,true);
   assert.equal(payload.filing,"forbidden");
   assert.equal(f.stored.get(f.writes.find(key=>key.endsWith(".sources.json"))),f.snapshot.bytes);
   assert.match(JSON.stringify(f.audit),new RegExp(f.snapshot.sha256));
+});
+
+test("actual Worker rejects a provider appeal heading for a selected response",async()=>{
+  const f=await workerFixture({generatedHeading:"ЖАЛБА"});
+  const response=await f.request();
+  const body=await response.json();
+  assert.equal(response.status,422,JSON.stringify(body));
+  assert.equal(body.error,"case_draft_instrument_mismatch");
+  assert.deepEqual(f.writes,[]);
 });

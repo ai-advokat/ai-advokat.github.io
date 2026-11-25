@@ -246,6 +246,7 @@ import {
   finaliseFormalLegalDraft,
   replaceUngroundedArticleReferences
 } from "./response-quality.js";
+import {caseDraftAct,checkCaseDraftAct} from "./case-draft-act.js";
 import { findZkpCommentaryByArticles, commentaryPromptBlock } from "./zkp-commentary.js";
 import { findScholarlyRecords, scholarlySearchItems, scholarlyPromptBlock, scholarlyContextItems } from "./scholarly-literature.js";
 import { findAuthorialPublicationRecords, authorialPublicationContextItems, authorialPublicationSearchItems, authorialPublicationSources } from "./authorial-publications.js";
@@ -1936,6 +1937,7 @@ async function handleCaseWorkspaceApi(request,env,url){
         ? "Подготви работен одговор на жалба. Разграничи што утврдува побиваната одлука, што тврди жалителот и што произлегува од доказите."
         : "Подготви "+draftType+" како целосен WORKING DRAFT врз основа на приватниот предмет и последната Case Intelligence анализа.",
       ...(responseMode ? ["Правните наводи од работната анализа третирај ги како насоки. Цитирај само од приложените верзиирани правни извори. За непотврдена правна основа, рок или надлежност стави ознака за проверка."] : []),
+      ...(caseDraftAct(draftType)?["Избраниот вид на акт е задолжителен: "+caseDraftAct(draftType).heading+". Не го мешај со спротивниот процесен акт."] : []),
       "USER INSTRUCTION: "+instruction,
       "Користи само source-backed факти од PRIVATE_CASE_DOCUMENT. За секој материјален фактички навод задржи Document ID + page/locator во работните белешки/прилози.",
       "Правна основа, рокови, надлежност и правни лекови наведи само ако се потврдени од governed current-law context; инаку означи VERIFY BEFORE FILING.",
@@ -1998,7 +2000,7 @@ async function handleCaseWorkspaceApi(request,env,url){
           task,
           corpusContext,
           maxOutputTokens:4200,
-          mode:"draft"
+          mode:"draft",draftType
         });
     if(!result.ok) return json(request,{ok:false,error:result.error,detail:result.failureDetail||result.detail||null},503);
     let draftText=String(result.text||"").trim();
@@ -2025,6 +2027,9 @@ async function handleCaseWorkspaceApi(request,env,url){
       },503);
     }
     draftText=draftLanguageRelease.text;
+    const instrumentCheck=checkCaseDraftAct(draftText,draftType,{addMissing:true});
+    if(!instrumentCheck.ok) return json(request,{ok:false,error:instrumentCheck.error},422);
+    draftText=instrumentCheck.text;
     const responseBinding=responseSnapshot ? {
       analysisSha256:responseSnapshot.analysisSha256,
       responseSourcesSha256:body.responseSourcesSha256
@@ -2573,6 +2578,8 @@ async function handleCaseResponseRevisions(request,env,url,{caseId,access,member
       if(exportSha256!==null){
         if(!writer) return fail("case_professional_write_role_required",403);
         if(head?.sha256!==exportSha256) return fail("case_response_revision_conflict",409);
+        const instrument=checkCaseDraftAct(head.text,"response");
+        if(!instrument.ok) return fail(instrument.error,422);
         if(!await responseRevisionSourcesCurrent(env,caseId,head.draft)) return fail("case_response_document_snapshot_changed",409);
         if((await readStoredResponseRevision(env,caseId,head.number+1)).revision) return fail("case_response_revision_conflict",409);
         return success({head});
@@ -2589,6 +2596,8 @@ async function handleCaseResponseRevisions(request,env,url,{caseId,access,member
     if(!parsed.ok) return fail(parsed.error,parsed.status);
     const input=parseResponseRevision(parsed.value);
     if(!input) return fail("case_response_revision_invalid",400);
+    const instrument=checkCaseDraftAct(input.text,"response");
+    if(!instrument.ok) return fail(instrument.error,422);
     const number=(input.base?.number??0)+1;
     const existing=await readStoredResponseRevision(env,caseId,number);
     if(existing.revision){
@@ -4372,7 +4381,7 @@ export function canonicalSourcePreservingFinalRelease(text,userText=""){
   };
 }
 
-async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutputTokens=3600,mode="analysis"}={}){
+async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutputTokens=3600,mode="analysis",draftType=null}={}){
   const startedAt=Date.now();
   if(!freeWorkersAIConfigured(env)) return {ok:false,error:"case_intelligence_provider_not_configured"};
   const context=privateCaseContextText(corpusContext);
@@ -4427,7 +4436,7 @@ async function runPrivateWorkersAISynthesis(env,{task,corpusContext=[],maxOutput
   const finalText=(mode==="draft" || isFormalLegalDraftRequest(task))
     ? finaliseFormalLegalDraft(languagePass.text,{
         userText:task,
-        hasGovernedLegalContext:Boolean(String(context||"").trim())
+        hasGovernedLegalContext:Boolean(String(context||"").trim()),draftType
       })
     : languagePass.text;
   const finalRelease=canonicalMacedonianFinalRelease(finalText,task);
