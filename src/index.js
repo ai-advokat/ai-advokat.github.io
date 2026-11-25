@@ -179,6 +179,7 @@ import {
   listResponseRevisionNumbers, createResponseRevision, verifyResponseRevision, isResponseRevisionRetry
 } from "./case-response-revisions.js";
 import {responseEvidenceRefs,resolveResponseEvidence} from "./case-response-evidence.js";
+import {RESPONSE_REVIEW_SCOPE,parseResponseReview,responseReviewIdentity,sameResponseReviewIdentity,responseWorkflowExists,latestResponseReview,appendResponseReview} from "./case-response-review.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import { extractGazetteIssueNeedles, findGazetteIssueMetadata, formatGazetteIssueMetadataAnswer, gazetteIssueMetadataToContext } from "./gazette-issue-metadata.js";
 import { findGazetteIssueContents, formatGazetteIssueContents } from "./gazette-issue-contents.js";
@@ -881,6 +882,7 @@ async function latestCaseHumanGate(env,caseId,currentFingerprint=null){
     `SELECT id,actor_account_id,metadata_json,created_at
        FROM case_audit_events
       WHERE case_id=? AND event_type='human_gate_recorded'
+        AND (object_type IS NULL OR object_type!='case_response_revision')
       ORDER BY created_at DESC,id DESC
       LIMIT 1`
   ).bind(caseId).first();
@@ -2201,8 +2203,13 @@ async function handleCaseWorkspaceApi(request,env,url){
 
   if(tail==="human-gate"){
     const currentFingerprint=await caseProfessionalFingerprint(env,caseId,access);
+    const responseReviewRequired=await responseWorkflowExists(env.DB,caseId);
 
     if(request.method==="GET" || request.method==="HEAD"){
+      if(responseReviewRequired){
+        const review=["owner","lawyer"].includes(access.role)?await latestResponseReview(env.DB,caseId):null;
+        return json(request,responseReviewEnvelope(caseId,review));
+      }
       const gate=await latestCaseHumanGate(env,caseId,currentFingerprint);
       return json(request,{
         ok:true,
@@ -2227,6 +2234,8 @@ async function handleCaseWorkspaceApi(request,env,url){
       if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
       const body=parsed.value;
       if(!body || typeof body!=="object" || Array.isArray(body)) return json(request,{ok:false,error:"invalid_payload"},400);
+      if(body.scope===RESPONSE_REVIEW_SCOPE) return handleResponseRevisionReview(request,env,{caseId,access,membership,body});
+      if(responseReviewRequired) return json(request,{ok:false,error:"case_response_revision_review_required",professionalUseLocked:true,legalHold:"ACTIVE"},409);
       const allowed=new Set(["decision","reason"]);
       const unexpected=Object.keys(body).filter(key=>!allowed.has(key));
       if(unexpected.length) return json(request,{ok:false,error:"unexpected_field",fields:unexpected},400);
@@ -2312,6 +2321,9 @@ async function handleCaseWorkspaceApi(request,env,url){
     const currentFingerprint=await caseProfessionalFingerprint(env,caseId,access);
     const latestGate=await latestCaseHumanGate(env,caseId,currentFingerprint);
     const professionalRequested=Number(access.professional_use_locked)===0;
+    if(professionalRequested && await responseWorkflowExists(env.DB,caseId)){
+      return json(request,{ok:false,error:"case_response_professional_release_on_hold",professionalUseLocked:true,legalHold:"ACTIVE"},409);
+    }
     if(professionalRequested && !latestGate.effectiveApproved){
       return json(request,{
         ok:false,
@@ -2371,6 +2383,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     const filename=caseExportFilename(exportModel,format);
     const auditMeta={format,mode,caseVersion:exportModel.caseVersion,authorityClassificationCount:authorityClassifications.length};
     if(format==="pdf" || format==="png" || format==="jpg"){
+      if(mode==="professional" && await responseWorkflowExists(env.DB,caseId)) return json(request,{ok:false,error:"case_response_professional_release_on_hold",professionalUseLocked:true,legalHold:"ACTIVE"},409);
       await recordCaseAudit(env,{
         caseId,accountId:membership.accountId,eventType:"export_generated",
         objectType:"case_export_model",objectId:filename,metadata:auditMeta
@@ -2395,6 +2408,7 @@ async function handleCaseWorkspaceApi(request,env,url){
           : format==="json"
             ? renderCaseExportJson(exportModel)
             : renderCaseExportDocxBytes(exportModel);
+    if(mode==="professional" && await responseWorkflowExists(env.DB,caseId)) return json(request,{ok:false,error:"case_response_professional_release_on_hold",professionalUseLocked:true,legalHold:"ACTIVE"},409);
     await recordCaseAudit(env,{
       caseId,accountId:membership.accountId,eventType:"export_generated",
       objectType:"case_export",objectId:filename,metadata:auditMeta
@@ -2455,6 +2469,58 @@ async function handleCaseWorkspaceApi(request,env,url){
   return json(request,{ok:false,error:"case_workspace_route_not_found"},404);
 }
 
+
+function responseReviewEnvelope(caseId,review){
+  return {ok:true,caseId,responseReviewRequired:true,review,professionalUseLocked:true,legalHold:"ACTIVE",
+    gate:{decision:"pending",effectiveApproved:false,reviewOnly:true},
+    doctrine:{explicitDecisionOnly:true,exactRevisionBound:true,appendOnly:true,releaseAuthorized:false},
+    note:"Historical review receipt only. Current authority, atomic source freshness and professional release are not certified."};
+}
+
+async function handleResponseRevisionReview(request,env,{caseId,access,membership,body}){
+  const fail=(error,status)=>json(request,{ok:false,error,professionalUseLocked:true,legalHold:"ACTIVE"},status);
+  if(!["owner","lawyer"].includes(access.role)) return fail("case_professional_write_role_required",403);
+  if(access.status!=="active") return fail("case_response_review_case_not_active",409);
+  const input=parseResponseReview(body);
+  if(!input) return fail("case_response_review_invalid",400);
+  try{
+    const latest=await latestResponseReview(env.DB,caseId);
+    if(input.expectedDecisionId!==(latest?.decisionId??null)) return fail("case_response_review_conflict",409);
+    if(input.decision==="revoked"){
+      // A lawyer may revoke the last recorded approval even after sources/head changed.
+      if(latest?.decision!=="approved" || !sameResponseReviewIdentity(input.revision,latest.revision)) return fail("case_response_review_revocation_target_invalid",409);
+    }else{
+      if(!caseWorkspaceStorageReady(env)) return fail("case_response_revision_storage_unavailable",503);
+      const bucket=caseR2Ready(env)?env.CASE_FILES:null;
+      const numbers=await listResponseRevisionNumbers({caseId,before:null,bucket,db:env.DB});
+      if(numbers[0]!==input.revision.number) return fail("case_response_revision_conflict",409);
+      const {revision}=await readStoredResponseRevision(env,caseId,input.revision.number);
+      if(!revision || !sameResponseReviewIdentity(input.revision,responseReviewIdentity(revision))) return fail("case_response_revision_conflict",409);
+      const instrument=checkCaseDraftAct(revision.text,"response");
+      if(!instrument.ok) return fail(instrument.error,422);
+      const proof=await caseResponseDraftProof(env,caseId,revision.draft.draftId);
+      if(!proof || JSON.stringify(proof)!==JSON.stringify(revision.draft)) return fail("case_response_revision_draft_unverified",409);
+      if(!await responseRevisionSourcesCurrent(env,caseId,proof)) return fail("case_response_document_snapshot_changed",409);
+      const after=await listResponseRevisionNumbers({caseId,before:null,bucket,db:env.DB});
+      if(after[0]!==revision.number) return fail("case_response_revision_conflict",409);
+    }
+    const current=await caseWorkspaceAccess(env,caseId,membership.accountId);
+    if(!current || !["owner","lawyer"].includes(current.role)) return fail("case_professional_write_role_required",403);
+    if(current.status!=="active") return fail("case_response_review_case_not_active",409);
+    const fingerprint=await caseProfessionalFingerprint(env,caseId,current);
+    const decisionId="CAE-"+crypto.randomUUID(),at=new Date().toISOString();
+    const written=await appendResponseReview(env.DB,{caseId,accountId:membership.accountId,
+      keyHash:await sha256Hex(membershipKeyFromRequest(request)),input,fingerprint,decisionId,at});
+    if(!written) return fail("case_response_review_conflict_or_access_changed",409);
+    // Do not unlock the case, change the stored revision, or issue a release token.
+    const receipt={decisionId,decision:input.decision,reason:input.reason,revision:input.revision,
+      previousDecisionId:input.expectedDecisionId,reviewerAccountId:membership.accountId,decidedAt:at,
+      observedCaseFingerprint:fingerprint,releaseAuthorized:false};
+    return json(request,responseReviewEnvelope(caseId,receipt),201);
+  }catch(error){
+    return fail(error?.message==="case_response_review_integrity_failed"?"case_response_review_integrity_failed":"case_response_review_unavailable",503);
+  }
+}
 
 async function caseResponseDraftProof(env,caseId,draftId){
   const event=await env.DB.prepare(

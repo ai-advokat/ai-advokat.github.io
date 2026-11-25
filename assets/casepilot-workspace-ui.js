@@ -1529,6 +1529,18 @@ async function loadHumanGate(context=workspaceContext){
 }
 
 function renderHumanGate(data){
+  if(data?.responseReviewRequired===true){
+    const review=data.review;
+    $("caseGate").textContent="LOCKED";
+    $("humanGateCurrent").textContent="HOLD";
+    $("humanGateStatus").textContent=review
+      ? "Евидентирана одлука: "+review.decision+" · ревизија "+review.revision.number+" · "+review.decidedAt+" · Професионалниот извоз останува заклучен."
+      : "Потребна е изречна одлука за зачуваната ревизија. LEGAL_HOLD ACTIVE.";
+    $("humanGateFingerprint").textContent=review
+      ? "Ревизија SHA-256: "+review.revision.sha256+" · Снимка на изворите: "+review.revision.responseSourcesSha256
+      : "Одлуката се врзува за точната серверска ревизија и нејзините извори.";
+    return;
+  }
   const gate=data?.gate||{};
   const effective=gate.effectiveApproved===true && data.professionalUseLocked===false;
   $("caseGate").textContent=effective?"UNLOCKED":"LOCKED";
@@ -1566,23 +1578,49 @@ $("recordHumanGate").addEventListener("click",async()=>{
     $("humanGateStatus").textContent="Внесете конкретно образложение (најмалку 8 знаци).";
     return;
   }
+  const context=workspaceContext;
+  const target=responseHead;
   $("recordHumanGate").disabled=true;
-  $("humanGateStatus").textContent="Се запишува Human Gate одлуката…";
+  $("humanGateStatus").textContent="Се проверува Human Gate…";
   try{
-    const data=await api("/api/cases/"+encodeURIComponent(activeCaseId)+"/human-gate",{
-      method:"POST",
-      body:{decision,reason}
-    });
+    const gate=await workspaceRequest("human-gate",undefined,context);
+    let body={decision,reason};
+    if(gate.responseReviewRequired===true){
+      if(!caseDraftPermission()) throw new Error("Потребен е пристап на сопственик или адвокат.");
+      if(reason.length>160) throw new Error("Образложението за ревизијата мора да има најмногу 160 знаци.");
+      let revision;
+      if(decision==="revoked"){
+        if(gate.review?.decision!=="approved") throw new Error("Нема последно евидентирано одобрување за повлекување.");
+        revision=gate.review.revision;
+      }else{
+        if(draftOperation || !isResponseDraft() || !target || responseHead?.sha256!==target.sha256 ||
+            !sameDraft(target.draft,workingDraft) || $("caseDraftResult").value!==target.text || !draftMatchesDocuments(workingDraft)){
+          throw new Error("Отворете ја точната зачувана серверска ревизија без незачувани измени.");
+        }
+        revision={number:target.number,sha256:target.sha256,draftId:target.draft.draftId,responseSourcesSha256:target.draft.responseSourcesSha256};
+      }
+      if(!confirm("Изречно евидентирање на одлуката: "+decision+"\nРевизија "+revision.number+
+          "\nSHA-256: "+revision.sha256+"\nСнимка на изворите: "+revision.responseSourcesSha256+
+          "\nLEGAL_HOLD останува активен. Ова не е дозвола за професионален извоз.")){
+        renderHumanGate(gate);
+        return;
+      }
+      body={scope:"response_revision",decision,reason,revision,expectedDecisionId:gate.review?.decisionId??null};
+    }
+    const data=await workspaceRequest("human-gate",{method:"POST",body},context);
     renderHumanGate(data);
     $("humanGateReason").value="";
-    $("humanGateStatus").textContent=decision==="approved"
-      ? "Human Gate е одобрен за тековниот fingerprint. Professional export е отклучен додека предметот не се промени."
-      : "Human Gate одлуката е запишана. Professional export е заклучен.";
-    await loadAudit();
+    if(data.responseReviewRequired!==true){
+      $("humanGateStatus").textContent=data.professionalUseLocked===false && data.gate?.effectiveApproved===true
+        ? "Human Gate е одобрен за тековниот fingerprint. Professional export е отклучен додека предметот не се промени."
+        : "Human Gate одлуката е запишана. Professional export е заклучен.";
+    }
+    await loadAudit(context);
     const list=await api("/api/cases");
+    checkWorkspace(context);
     renderCasePicker(Array.isArray(list.cases)?list.cases:[]);
   }catch(error){
-    $("humanGateStatus").textContent="Human Gate одлуката не е запишана: "+String(error?.message||error);
+    if(context===workspaceContext) $("humanGateStatus").textContent="Human Gate одлуката не е запишана: "+String(error?.message||error);
   }finally{
     $("recordHumanGate").disabled=false;
   }
