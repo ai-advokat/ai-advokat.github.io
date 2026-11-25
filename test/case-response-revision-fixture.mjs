@@ -15,7 +15,7 @@ export async function makeRevisionFixture({r2=false}={}){
   const accountId="p02-test-account";
   const documentSha="a".repeat(64);
   const packet=JSON.stringify({caseId,documentId:docId,sourceSha256:documentSha,
-    extraction:{facts:[{page:1,text:"Синтетичко решение."}]}
+    extraction:{document_type:"appeal",facts:[{id:"F1",page:1,locator:"paragraph 2",status:"source_indication",text:"Жалителот тврди уплата од 12.000 денари."}]}
   });
   const source=await createCaseResponseSnapshot({
     caseId,analysisSha256:await caseResponseHash("Синтетичка анализа"),
@@ -45,7 +45,7 @@ export async function makeRevisionFixture({r2=false}={}){
   }
   raw.prepare(`INSERT INTO case_document_slots
       (id,case_id,slot_number,original_name,mime_type,sha256,page_count,storage_state,extraction_state)
-      VALUES (?,?,1,'Решение.pdf','application/pdf',?,1,'uploaded','complete')`).run(docId,caseId,documentSha);
+      VALUES (?,?,1,'Жалба.pdf','application/pdf',?,1,'uploaded','complete')`).run(docId,caseId,documentSha);
   const draft="ОДГОВОР НА ЖАЛБА\n\nСинтетички почетен одговор на жалба.";
   const audit={
     draftSha256:await caseResponseHash(draft),analysisSha256:await caseResponseHash("Синтетичка анализа"),

@@ -1,5 +1,6 @@
 import { downloadCasePilotExport, downloadCasePilotExportFromApi } from "./casepilot-export.js";
 import {caseDraftAct,checkCaseDraftAct,caseDraftExportContent} from "../src/case-draft-act.js";
+import {responseEvidenceRefs} from "../src/case-response-evidence.js";
 const $=id=>document.getElementById(id);
 
 const API_BASE=(
@@ -835,6 +836,56 @@ function draftActError(code){
   return ({case_draft_instrument_mismatch:"Видот на актот не се совпаѓа со текстот. Исправете го насловот и проверете ја содржината.",case_draft_instrument_heading_required:"Недостига насловот на избраниот вид на акт. Додајте го и проверете го текстот."})[code]||code;
 }
 
+function renderSavedEvidenceLinks(revision,saved){
+  const panel=$("caseDraftEvidence"),list=$("caseDraftEvidenceLinks"),detail=$("caseDraftEvidenceDetail");
+  list.replaceChildren();
+  detail.textContent="";
+  panel.hidden=!saved || !isResponseDraft() || !caseDraftPermission();
+  if(panel.hidden) return;
+  const refs=responseEvidenceRefs(revision.text);
+  if(!refs.length){
+    detail.textContent="Нема експлицитни ознаки на извори во оваа ревизија. Не се претпоставуваат врски.";
+    return;
+  }
+  const context=workspaceContext;
+  let selection=0;
+  const current=()=>context===workspaceContext && isResponseDraft() &&
+    responseHead?.sha256===revision.sha256 && sameDraft(revision.draft,workingDraft) &&
+    $("caseDraftResult").value===revision.text && draftMatchesDocuments(workingDraft) && caseDraftPermission();
+  for(const ref of refs){
+    const item=document.createElement("li"),button=document.createElement("button");
+    button.type="button";
+    button.className="secondary";
+    const line=revision.text.split(/\r?\n/).find(line=>line.includes(ref.marker))||ref.marker;
+    button.textContent="Отвори извор: "+line.slice(0,220);
+    item.append(button);
+    list.append(item);
+    button.addEventListener("click",async()=>{
+      if(!current()) return;
+      const selected=++selection;
+      button.disabled=true;
+      detail.textContent="Се проверува изворот…";
+      try{
+        const query=new URLSearchParams({revisionSha256:revision.sha256,documentId:ref.documentId,factId:ref.factId});
+        const data=await workspaceRequest(responseRevisionRoute+"/"+revision.number+"/evidence?"+query,undefined,context);
+        if(!current() || !button.isConnected || selected!==selection) return;
+        const e=data.evidence,doc=revision.draft.extractionDocuments.find(d=>d.id===ref.documentId);
+        if(data.legalHold!=="ACTIVE" || data.humanGate?.professionalUseLocked!==true ||
+          e?.kind!=="extracted_statement_not_proof" || e.professionalUseLocked!==true || !doc ||
+          e.documentId!==ref.documentId || e.factId!==ref.factId || e.revisionSha256!==revision.sha256 ||
+          e.responseSourcesSha256!==revision.draft.responseSourcesSha256 || e.sourceSha256!==doc.sha256 ||
+          e.extractionSha256!==doc.extractionSha256 || typeof e.text!=="string") throw new Error("Непроверлив извор.");
+        detail.textContent=["ИЗВЛЕЧЕН НАВОД — НЕ Е ПОТВРДА ЗА ВИСТИНИТОСТ",e.text,
+          "Статус на извлекување: "+e.status,"Документ: "+e.documentId+" · "+e.documentType,
+          "Локација: "+(e.page?"стр. "+e.page:"")+(e.locator?" · "+e.locator:""),
+          "SHA-256 на извлекувањето: "+e.extractionSha256,"Проверете го оригиналот во документите на предметот."].join("\n");
+      }catch(error){
+        if(current() && button.isConnected && selected===selection) detail.textContent="Изворот не може да се потврди: "+responseRevisionError(error);
+      }finally{button.disabled=false;}
+    });
+  }
+}
+
 function updateDraftControls(){
   const latest=currentSavedDraft();
   const editor=$("caseDraftResult");
@@ -850,6 +901,7 @@ function updateDraftControls(){
   $("saveCaseDraftRevision").disabled=busy || !valid || !editor.value.trim() || saved;
   $("downloadCaseDraftWord").disabled=busy || !valid || !saved;
   $("downloadCaseDraftPdf").disabled=busy || !valid || !saved;
+  renderSavedEvidenceLinks(latest,valid && saved && !busy);
 }
 
 function responseRevisionError(error){

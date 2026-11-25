@@ -6,6 +6,7 @@ const PUBLIC_SHARED=new Set([
   "src/chat-privacy.js",
   "src/case-export.js",
   "src/case-draft-act.js",
+  "src/case-response-evidence.js",
   "src/legal-analyzer.js",
   "src/case-law-metadata-processor.js",
   "src/echr-findings.js",

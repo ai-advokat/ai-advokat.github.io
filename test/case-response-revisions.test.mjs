@@ -115,3 +115,26 @@ test("server refuses contradictory and missing act headings before saving a resp
   }
   assert.equal((await parsed(await f.request(),200)).head,null);
 });
+
+test("saved response evidence is bound to exact revision and extraction, without professional release",async()=>{
+  const f=await makeRevisionFixture();
+  const docId="DOC-123e4567-e89b-42d3-a456-426614174010";
+  const text="ОДГОВОР НА ЖАЛБА\n\nЖалителот тврди уплата од 12.000 денари. ["+docId+":F1]";
+  const {revision}=await parsed(await f.request(revisionPath,f.input(null,text)),201);
+  const query=new URLSearchParams({revisionSha256:revision.sha256,documentId:docId,factId:"F1"});
+  const path=revisionPath+"/"+revision.number+"/evidence?"+query;
+  const result=await parsed(await f.request(path),200);
+  assert.equal(result.evidence.text,"Жалителот тврди уплата од 12.000 денари.");
+  assert.equal(result.evidence.status,"source_indication");
+  assert.equal(result.evidence.page,1);
+  assert.equal(result.evidence.revisionSha256,revision.sha256);
+  assert.equal(result.legalHold,"ACTIVE");
+  assert.equal(result.humanGate.professionalUseLocked,true);
+  assert.deepEqual((await parsed(await f.request(path),200)).evidence,result.evidence);
+  await parsed(await f.request(path.replace("factId=F1","factId=F2")),404);
+  await parsed(await f.request(path.replace(revision.sha256,"a".repeat(64))),409);
+  await parsed(await f.request(path,undefined,null),401);
+  await parsed(await f.request(path.replace(caseId,otherCaseId)),404);
+  f.seedObject(f.extractionKey,f.packet+" ");
+  await parsed(await f.request(path),409);
+});

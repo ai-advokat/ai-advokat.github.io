@@ -41,3 +41,6 @@ OIC-03/OIC-07/OIC-10/A05/A09: corrective source candidate implemented; helper 14
 
 ## 25 November 2026 — package dependency correction
 OIC-03/OIC-10/A05/A09: lawyer reports LOCAL PASS on 4db93ea for both act identities and HTTP 422 mismatch. OIC-04/OIC-12/A10: independently derived explicit public-module packaging correction for Cloudflare/Pages and regression checks; supplied 2,246/2,246 result not independently reproduced. Full suite, deployed asset parity, source navigation and exact-revision Human Gate remain OPEN/HOLD. No new deployment permission.
+
+## 25 November 2026 — reconstructed evidence navigation
+OIC-03/OIC-07/A04-A06: source candidate for exact saved response evidence lookup; 7/7 independent helper tests. Original supplier patch missing; 10/10 Chromium reported on unavailable working copy. Full local Worker and browser acceptance on exact new commit pending. OIC-09/OIC-11: exact revision/authority approval and professional release remain HOLD; no online activation, migration or merge.

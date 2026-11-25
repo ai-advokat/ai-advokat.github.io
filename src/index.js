@@ -178,6 +178,7 @@ import {
   RESPONSE_REVISION_PAGE_SIZE, SHA256_PATTERN, parseResponseRevision, caseResponseRevisionKey,
   listResponseRevisionNumbers, createResponseRevision, verifyResponseRevision, isResponseRevisionRetry
 } from "./case-response-revisions.js";
+import {responseEvidenceRefs,resolveResponseEvidence} from "./case-response-evidence.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import { extractGazetteIssueNeedles, findGazetteIssueMetadata, formatGazetteIssueMetadataAnswer, gazetteIssueMetadataToContext } from "./gazette-issue-metadata.js";
 import { findGazetteIssueContents, formatGazetteIssueContents } from "./gazette-issue-contents.js";
@@ -1940,6 +1941,7 @@ async function handleCaseWorkspaceApi(request,env,url){
       ...(caseDraftAct(draftType)?["Избраниот вид на акт е задолжителен: "+caseDraftAct(draftType).heading+". Не го мешај со спротивниот процесен акт."] : []),
       "USER INSTRUCTION: "+instruction,
       "Користи само source-backed факти од PRIVATE_CASE_DOCUMENT. За секој материјален фактички навод задржи Document ID + page/locator во работните белешки/прилози.",
+      ...(responseMode?["Задржи ја точната ознака [DOC-UUID:FACT_ID] од приложениот контекст покрај соодветниот навод. Не измислувај идентификатори. Тврдење на жалител не е доказ за уплата. Не додавај ознака ако изворот не го поддржува наводот."]:[]),
       "Правна основа, рокови, надлежност и правни лекови наведи само ако се потврдени од governed current-law context; инаку означи VERIFY BEFORE FILING.",
       "Не сокривај adverse authority, контрадикции или missing evidence.",
       "Не тврди дека документот е поднесен, потпишан или испратен.",
@@ -2557,6 +2559,35 @@ async function handleCaseResponseRevisions(request,env,url,{caseId,access,member
     if(request.method==="GET" || request.method==="HEAD"){
       if(specific){
         const suffix=tail.slice(route.length+1);
+        const evidenceMatch=suffix.match(/^(\d+)\/evidence$/);
+        if(evidenceMatch){
+          if(request.method!=="GET") return methodNotAllowed(request,"GET, OPTIONS");
+          if(!writer) return fail("case_professional_write_role_required",403);
+          const number=Number(evidenceMatch[1]);
+          const revisionSha256=url.searchParams.get("revisionSha256");
+          const documentId=url.searchParams.get("documentId");
+          const factId=url.searchParams.get("factId");
+          if(!Number.isSafeInteger(number) || number<1 || !SHA256_PATTERN.test(revisionSha256||"") ||
+              !caseDocumentId(documentId) || !/^[A-Za-z0-9_.-]{1,120}$/.test(factId||"")) return fail("case_response_evidence_invalid",400);
+          const {revision}=await readStoredResponseRevision(env,caseId,number);
+          if(!revision) return fail("case_response_revision_not_found",404);
+          if(revision.sha256!==revisionSha256) return fail("case_response_revision_conflict",409);
+          if(!responseEvidenceRefs(revision.text).some(ref=>ref.documentId===documentId && ref.factId===factId)){
+            return fail("case_response_evidence_not_cited",404);
+          }
+          const proof=await caseResponseDraftProof(env,caseId,revision.draft.draftId);
+          if(!proof || JSON.stringify(proof)!==JSON.stringify(revision.draft)){
+            return fail("case_response_revision_draft_unverified",409);
+          }
+          if(!await responseRevisionSourcesCurrent(env,caseId,proof)) return fail("case_response_document_snapshot_changed",409);
+          const object=await caseObjectGet(env,"case-derived/v1/"+caseId+"/"+documentId+"/extraction.json");
+          const evidence=object?await resolveResponseEvidence({revision,caseId,documentId,factId,extractionText:await object.text()}):null;
+          if(!evidence) return fail("case_response_evidence_unverified",409);
+          const currentAccess=await caseWorkspaceAccess(env,caseId,membership.accountId);
+          if(!currentAccess || !["owner","lawyer"].includes(currentAccess.role)) return fail("case_professional_write_role_required",403);
+          if(currentAccess.status==="delete_pending") return fail("case_delete_pending",409);
+          return success({evidence});
+        }
         const number=Number(suffix);
         if(!/^\d+$/.test(suffix) || !Number.isSafeInteger(number) || number<1) return fail("case_response_revision_not_found",404);
         const {revision}=await readStoredResponseRevision(env,caseId,number);

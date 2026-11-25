@@ -223,6 +223,12 @@
         <p class="notice">НЕОДОБРЕН · HUMAN GATE HOLD · LEGAL_HOLD ACTIVE · НЕ Е ЗА ПОДНЕСУВАЊЕ</p>
         <label for="caseDraftResult">Текст на поднесокот</label>
         <textarea id="caseDraftResult" rows="14" maxlength="50000" spellcheck="false"></textarea>
+        <section id="caseDraftEvidence" hidden aria-labelledby="caseDraftEvidenceTitle">
+          <h4 id="caseDraftEvidenceTitle">Извори на наводите во зачуваната ревизија</h4>
+          <p class="muted">Извлечен навод не е потврда за вистинитоста. Проверете го оригиналниот документ и локацијата.</p>
+          <ul id="caseDraftEvidenceLinks"></ul>
+          <pre id="caseDraftEvidenceDetail" class="analysis-output" role="status" aria-live="polite"></pre>
+        </section>
         <label for="caseDraftRevisionNote">Белешка за измената (опционално)</label>
         <input id="caseDraftRevisionNote" maxlength="200">
         <div class="actions">
