@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
+import {execFileSync} from "node:child_process";
+import {createHash} from "node:crypto";
+import {mkdtempSync, readFileSync, rmSync, writeFileSync} from "node:fs";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
 import test from "node:test";
 import {caseResponseHash} from "../src/case-response-sources.js";
 import {responseReviewIdentity} from "../src/case-response-review.js";
@@ -15,6 +19,7 @@ import {CASE_RESPONSE_WORKER_POLICY_SHA256} from "../src/case-response-worker-po
 import {
   authKey, caseId, docId, draftId, makeRevisionFixture, otherCaseId, revisionPath
 } from "./case-response-revision-fixture.mjs";
+import {renderSyntheticCaseResponsePdf} from "./case-response-pdf-fixture.mjs";
 
 const schema = readFileSync(new URL("../docs/oic2/PROPOSED_ATOMIC_RESPONSE_STATE.sql", import.meta.url), "utf8");
 const gatePath = `/api/cases/${caseId}/human-gate`;
@@ -403,8 +408,8 @@ test("local midnight changes the applicable version and stales a paused review w
   assert.equal(changes.get().n,before);
 });
 
-async function prepareRenderedExport(f) {
-  const {revision}=await read(await f.request(revisionPath,f.input()),201);
+async function prepareExport(f,input=f.input()) {
+  const {revision}=await read(await f.request(revisionPath,input),201);
   const {review:approved}=await read(await f.request(gatePath,review(revision)),201);
   const identity={caseId,accountId,keyHash:await caseResponseHash(authKey),revision,decisionId:approved.decisionId};
   assert.equal(await captureCaseResponseExportValidation(f.d1,identity),null);
@@ -412,18 +417,23 @@ async function prepareRenderedExport(f) {
   const check=await captureCaseResponseExportValidation(f.d1,identity);
   assert.ok(check);
   const model=normalizeCaseExportReport({
-    caseId,title:"Изолиран синтетички модел",summary:revision.text,caseVersion:revision.sha256
+    caseId,title:"Изолиран синтетички модел",summary:revision.text,caseVersion:revision.sha256,
+    generatedAt:approved.decidedAt
   },{mode:"professional",serverHumanGate:{
     status:"approved",reviewer:"Синтетички преглед",decidedAt:approved.decidedAt,decisionRef:approved.decisionId
   }});
-  return {approved,revision,check,rendered:{
-    format:"docx",modelBytes:new TextEncoder().encode(JSON.stringify(model)),artifactBytes:renderCaseExportDocxBytes(model)
-  }};
+  return {approved,revision,check,model};
+}
+
+function renderExport(model,format,render) {
+  const modelBytes=new TextEncoder().encode(JSON.stringify(model));
+  return {format,modelBytes,artifactBytes:render(JSON.parse(new TextDecoder().decode(modelBytes)))};
 }
 
 test("isolated final validation binds actual server-rendered DOCX bytes while the HTTP route holds professional delivery", async () => {
   const f=await setup(false);
-  const {check,rendered,approved}=await prepareRenderedExport(f);
+  const {check,model,approved}=await prepareExport(f);
+  const rendered=renderExport(model,"docx",renderCaseExportDocxBytes);
   const receipt=await finalizeCaseResponseExportValidation(f.d1,check,rendered);
   assert.equal(receipt.releaseAuthorized,false);
   assert.equal(rendered.artifactBytes[0],0x50);
@@ -438,25 +448,114 @@ test("isolated final validation binds actual server-rendered DOCX bytes while th
   }
 });
 
-test("final conditional export validation refuses late changes after server rendering", async t => {
-  const changes=[
-    ["new head",async (f,{revision})=>read(await f.request(revisionPath,f.input({number:revision.number,sha256:revision.sha256})),201)],
-    ["revoked decision",async (f,{revision,approved})=>read(await f.request(gatePath,review(revision,approved.decisionId,"revoked")),201)],
-    ["changed source",async f=>assert.equal(await f.publishExtraction(f.packet),true)],
-    ["changed authority",f=>f.raw.prepare("UPDATE sources SET title='Updated synthetic authority' WHERE id=?").run(f.authorityId)],
-    ["restored authorization",f=>f.raw.exec(`UPDATE case_workspace_access SET status='revoked' WHERE case_id='${caseId}';
-      UPDATE case_workspace_access SET status='active' WHERE case_id='${caseId}'`)],
-    ["reactivated then cleared hold",f=>f.raw.exec(`UPDATE case_response_export_validation_policy SET hold_active=1,epoch=epoch+1 WHERE slot=1;
-      UPDATE case_response_export_validation_policy SET hold_active=0,epoch=epoch+1 WHERE slot=1`)],
-    ["time-only cutoff",(_f,_data,clock)=>{clock.now=beforeCutover+1;}]
-  ];
-  for (const [name,change] of changes) await t.test(name,async()=>{
+const lateExportChanges=[
+  ["new head",async (f,{revision})=>read(await f.request(revisionPath,f.input({number:revision.number,sha256:revision.sha256})),201)],
+  ["revoked decision",async (f,{revision,approved})=>read(await f.request(gatePath,review(revision,approved.decisionId,"revoked")),201)],
+  ["restored source contents",async f=>{
+    assert.equal(await f.publishExtraction(f.packet.replace("12.000","13.000")),true);
+    assert.equal(await f.publishExtraction(f.packet),true);
+  }],
+  ["changed authority",f=>f.raw.prepare("UPDATE sources SET title='Updated synthetic authority' WHERE id=?").run(f.authorityId)],
+  ["restored authorization",f=>f.raw.exec(`UPDATE case_workspace_access SET status='revoked' WHERE case_id='${caseId}';
+    UPDATE case_workspace_access SET status='active' WHERE case_id='${caseId}'`)],
+  ["reactivated then cleared hold",f=>f.raw.exec(`UPDATE case_response_export_validation_policy SET hold_active=1,epoch=epoch+1 WHERE slot=1;
+    UPDATE case_response_export_validation_policy SET hold_active=0,epoch=epoch+1 WHERE slot=1`)],
+  ["time-only cutoff",(_f,_data,clock)=>{clock.now=beforeCutover+1;}]
+];
+
+test("final conditional DOCX validation refuses late changes after server rendering", async t => {
+  for (const [name,change] of lateExportChanges) await t.test(name,async()=>{
     const clock={now:beforeCutover};
     const f=await setup(false,{clock});
-    const data=await prepareRenderedExport(f);
+    const data=await prepareExport(f);
+    const rendered=renderExport(data.model,"docx",renderCaseExportDocxBytes);
     await change(f,data,clock);
-    assert.equal(await finalizeCaseResponseExportValidation(f.d1,data.check,data.rendered),null);
+    assert.equal(await finalizeCaseResponseExportValidation(f.d1,data.check,rendered),null);
     assert.equal(f.raw.prepare("SELECT COUNT(*) AS n FROM case_response_export_validation_receipts").get().n,0);
+  });
+});
+
+test("isolated server PDF renders selectable Cyrillic and binds the exact bytes to the final D1 write", {
+  skip:process.env.CASE_RESPONSE_PDF_TEST!=="1"
+}, async t=>{
+  const privateNote="PRIVATE_SYNTHETIC_REVIEW_NOTE_DO_NOT_EXPORT";
+  const cyrillic="Ѓорѓи, Ќиро, Љупчо, Његош и Ѕвезда";
+  const special="Синтетички доказ <предлог> & одговор.";
+  const paragraph="Ова е вештачки текст за проверка на редоследот, кирилицата и преминот меѓу страниците.";
+  const longText=[cyrillic,special,...Array(45).fill(paragraph),"Крај на синтетичкиот текст."].join("\n\n");
+  const sha256=bytes=>createHash("sha256").update(bytes).digest("hex");
+
+  await t.test("real multipage PDF, exact receipt digests and professional HTTP hold",async subtest=>{
+    const f=await setup(true);
+    const {check,model,revision,approved}=await prepareExport(f,{...f.input(null,longText),note:privateNote});
+    const rendered=renderExport(model,"pdf",renderSyntheticCaseResponsePdf);
+    const pdf=rendered.artifactBytes;
+    assert.match(pdf.subarray(0,8).toString(),/^%PDF-1\./);
+    const extracted=execFileSync("pdftotext",["-enc","UTF-8","-","-"],{input:pdf,encoding:"utf8"});
+    const pages=extracted.split("\f").filter(page=>page.trim());
+    assert.ok(pages.length>=2);
+    for (const [index,page] of pages.entries()) {
+      assert.ok(page.includes("СИНТЕТИЧКИ ТЕСТ"));
+      assert.ok(page.includes(`Страница ${index+1}`));
+    }
+    assert.ok(extracted.includes(cyrillic));
+    assert.ok(extracted.includes(special));
+    assert.equal(extracted.replace(/\s+/gu," ").split(paragraph).length-1,45);
+    assert.ok(pages.at(-1).includes("Крај на синтетичкиот текст."));
+    assert.ok(!extracted.includes(privateNote));
+    assert.ok(!Buffer.from(rendered.modelBytes).includes(privateNote));
+    const info=execFileSync("pdfinfo",["-"],{input:pdf,encoding:"utf8"});
+    assert.match(info,/Page size:\s+595\.2[78][0-9]* x 841\.89[0-9]* pts \(A4\)/);
+    assert.match(info,/JavaScript:\s+no/);
+    const temp=mkdtempSync(join(tmpdir(),"case-export-pdf-"));
+    subtest.after(()=>rmSync(temp,{recursive:true,force:true}));
+    const sample=join(temp,"fixture.pdf");
+    writeFileSync(sample,pdf);
+    assert.match(execFileSync("pdfdetach",["-list",sample],{encoding:"utf8"}),/^0 embedded files/);
+    const receipt=await finalizeCaseResponseExportValidation(f.d1,check,rendered);
+    assert.ok(receipt);
+    assert.deepEqual(receipt,{
+      receiptId:receipt.receiptId,modelSha256:sha256(rendered.modelBytes),artifactSha256:sha256(pdf),releaseAuthorized:false
+    });
+    const saved=f.raw.prepare(`SELECT decision_id,revision_sha256,format,model_sha256,artifact_sha256
+      FROM case_response_export_validation_receipts WHERE id=?`).get(receipt.receiptId);
+    assert.deepEqual({...saved},{
+      decision_id:approved.decisionId,revision_sha256:revision.sha256,format:"pdf",
+      model_sha256:receipt.modelSha256,artifact_sha256:receipt.artifactSha256
+    });
+    const response=await f.request(`/api/cases/${caseId}/exports`,{format:"pdf",mode:"professional"});
+    assert.equal(response.headers.get("Content-Disposition"),null);
+    assert.match(response.headers.get("Content-Type"),/^application\/json\b/);
+    assert.equal((await read(response,409)).legalHold,"ACTIVE");
+    const evidence=process.env.CASE_RESPONSE_PDF_EVIDENCE_DIR;
+    if(evidence) {
+      writeFileSync(join(evidence,"SYNTHETIC_SERVER_PDF.pdf"),pdf);
+      writeFileSync(join(evidence,"SYNTHETIC_MODEL.json"),rendered.modelBytes);
+      writeFileSync(join(evidence,"D1_VALIDATION_RECEIPT.json"),JSON.stringify({caseId,...saved,...receipt},null,2)+"\n");
+    }
+  });
+
+  for (const [name,change] of lateExportChanges) await t.test(name,{timeout:15000},async subtest=>{
+    const clock={now:beforeCutover};
+    const f=await setup(false,{clock,datedFixture:true});
+    const data=await prepareExport(f);
+    const rendered=renderExport(data.model,"pdf",renderSyntheticCaseResponsePdf);
+    const beforeWrite=pauseBeforeWrite(f,"INSERT INTO case_response_export_validation_receipts");
+    subtest.after(beforeWrite.resume);
+    const pending=finalizeCaseResponseExportValidation(f.d1,data.check,rendered);
+    await Promise.race([beforeWrite.reached,pending.then(()=>assert.fail("D1 write was not reached"))]);
+    const before=f.raw.prepare("SELECT total_changes() AS n").get().n;
+    await change(f,data,clock);
+    beforeWrite.resume();
+    assert.equal(await pending,null);
+    assert.equal(f.raw.prepare("SELECT COUNT(*) AS n FROM case_response_export_validation_receipts").get().n,0);
+    if(name==="time-only cutoff") {
+      assert.equal(f.raw.prepare("SELECT total_changes() AS n").get().n,before);
+      const applicability=(await captureCaseResponseAuthority(f.d1,caseId)).applicability;
+      assert.equal(applicability.referenceDate,"2026-11-26");
+      const selected=await resolveInstrumentVersion(f.env,f.temporalInstrument,{date:applicability.referenceDate});
+      assert.equal(selected.version.version_label,"next");
+    }
   });
 });
 
