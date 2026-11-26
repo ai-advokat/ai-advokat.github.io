@@ -180,6 +180,13 @@ import {
 } from "./case-response-revisions.js";
 import {responseEvidenceRefs,resolveResponseEvidence} from "./case-response-evidence.js";
 import {RESPONSE_REVIEW_SCOPE,parseResponseReview,responseReviewIdentity,sameResponseReviewIdentity,responseWorkflowExists,latestResponseReview,appendResponseReview} from "./case-response-review.js";
+import {
+  MEMBERSHIP_ENTITLEMENT_ORDER, atomicCaseResponseEnabled, captureCaseResponseAuthorization, caseResponseSourceEpoch,
+  caseResponseExtractionHead, publishCaseResponseExtraction,
+  caseResponseRevisionPublication, listPublishedCaseResponseRevisions, publishCaseResponseRevision
+} from "./case-response-state.js";
+import {captureCaseResponseAuthority, caseResponseAuthorityCurrent} from "./case-response-authority.js";
+import {caseExportDeliveryAllowed} from "./case-response-professional-export.js";
 import { findGovernedGazetteChunks, gazetteChunksToContext } from "./gazette-chunks.js";
 import { extractGazetteIssueNeedles, findGazetteIssueMetadata, formatGazetteIssueMetadataAnswer, gazetteIssueMetadataToContext } from "./gazette-issue-metadata.js";
 import { findGazetteIssueContents, formatGazetteIssueContents } from "./gazette-issue-contents.js";
@@ -529,7 +536,7 @@ async function resolveMembership(request, env) {
         AND e.status IN ('trial','active')
         AND (k.expires_at IS NULL OR datetime(k.expires_at) > datetime('now'))
         AND (e.expires_at IS NULL OR datetime(e.expires_at) > datetime('now'))
-      ORDER BY CASE e.status WHEN 'active' THEN 0 ELSE 1 END, e.updated_at DESC
+      ORDER BY ${MEMBERSHIP_ENTITLEMENT_ORDER}
       LIMIT 1`
   ).bind(keyHash).first();
 
@@ -1476,6 +1483,12 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!row || row.storage_state==="deleted") return json(request,{ok:false,error:"case_document_not_found"},404);
     if(row.storage_state!=="uploaded") return json(request,{ok:false,error:"case_document_not_ready_for_extraction",storageState:row.storage_state},409);
 
+    const atomic=atomicCaseResponseEnabled(env);
+    const accountId=membership.accountId;
+    const keyHash=atomic ? await sha256Hex(membershipKeyFromRequest(request)) : null;
+    const authorization=atomic ? await captureCaseResponseAuthorization(env.DB,{caseId,accountId,keyHash}) : null;
+    if(atomic && !authorization) return json(request,{ok:false,error:"case_response_authorization_unavailable"},403);
+    const sourceEpoch=atomic ? await caseResponseSourceEpoch(env.DB,caseId) : null;
     const object=await caseObjectGet(env,row.storage_key);
     if(!object) return json(request,{ok:false,error:"case_document_storage_object_missing"},503);
     if(Number(object.size||0)>CASE_INTELLIGENCE_PROVIDER_MAX_BYTES){
@@ -1488,6 +1501,9 @@ async function handleCaseWorkspaceApi(request,env,url){
     }
 
     const bytes=new Uint8Array(await object.arrayBuffer());
+    if(atomic && await sha256BytesHex(bytes)!==row.sha256){
+      return json(request,{ok:false,error:"case_document_storage_integrity_failed"},503);
+    }
     const extraction=await runPrivateCaseDocumentExtraction(env,{
       documentId,
       fileName:row.original_name,
@@ -1495,13 +1511,12 @@ async function handleCaseWorkspaceApi(request,env,url){
       bytes
     });
     if(!extraction.ok){
-      await env.DB.prepare(
+      if(!atomic) await env.DB.prepare(
         "UPDATE case_document_slots SET extraction_state='failed',updated_at=? WHERE id=? AND case_id=?"
       ).bind(new Date().toISOString(),documentId,caseId).run().catch(()=>{});
       return json(request,{ok:false,error:extraction.error,problems:extraction.problems||null,detail:extraction.detail||null},503);
     }
 
-    const derivedKey=`case-derived/v1/${caseId}/${documentId}/extraction.json`;
     const derivedBytes=new TextEncoder().encode(JSON.stringify({
       version:"CASE_DOCUMENT_EXTRACTION_V1",
       caseId,
@@ -1512,20 +1527,31 @@ async function handleCaseWorkspaceApi(request,env,url){
       extraction:extraction.extraction
     }));
     const derivedSha256=await sha256BytesHex(derivedBytes);
+    const at=new Date().toISOString();
     try{
-      await caseObjectPut(env,derivedKey,derivedBytes,{
-        httpMetadata:{contentType:"application/json"},
-        customMetadata:{caseId,documentId,kind:"case_document_extraction_v1",derivedSha256}
-      });
+      if(atomic){
+        await stageCaseResponseObject(env,caseId,`extractions/${documentId}`,derivedBytes,derivedSha256);
+        const published=await publishCaseResponseExtraction(env.DB,{
+          caseId,documentId,sourceSha256:row.sha256,objectSha256:derivedSha256,expectedEpoch:sourceEpoch,
+          accountId,keyHash,authorization,
+          auditId:"CAE-"+crypto.randomUUID(),at,
+          metadata:safeCaseAuditMetadata({derivedSha256})
+        });
+        if(!published) return json(request,{ok:false,error:"case_response_atomic_state_conflict"},409);
+      }else{
+        await caseObjectPut(env,`case-derived/v1/${caseId}/${documentId}/extraction.json`,derivedBytes,{
+          httpMetadata:{contentType:"application/json"},
+          customMetadata:{caseId,documentId,kind:"case_document_extraction_v1",derivedSha256}
+        });
+      }
     }catch(error){
       console.error("case_extraction_r2_write_failed",String(error?.message||error).slice(0,180));
       return json(request,{ok:false,error:"case_extraction_storage_failed"},503);
     }
 
-    const at=new Date().toISOString();
     await caseObjectDelete(env,`case-derived/v1/${caseId}/analysis/latest.md`).catch(()=>{});
     await caseObjectDelete(env,`case-derived/v1/${caseId}/analysis/response-sources.json`).catch(()=>{});
-    await env.DB.batch([
+    if(!atomic) await env.DB.batch([
       env.DB.prepare(
         "UPDATE case_document_slots SET extraction_state='complete',updated_at=? WHERE id=? AND case_id=?"
       ).bind(at,documentId,caseId),
@@ -1566,7 +1592,9 @@ async function handleCaseWorkspaceApi(request,env,url){
         WHERE id=? AND case_id=?
         LIMIT 1`
     ).bind(documentId,caseId).first();
-    if(!row || row.storage_state==="deleted") return json(request,{ok:false,error:"case_document_not_found"},404);
+    const isDelete=segments.length===1 && request.method==="DELETE";
+    const atomicDelete=isDelete && atomicCaseResponseEnabled(env);
+    if(!row || (row.storage_state==="deleted" && !atomicDelete)) return json(request,{ok:false,error:"case_document_not_found"},404);
 
     if(segments.length===2 && segments[1]==="download"){
       if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
@@ -1585,16 +1613,19 @@ async function handleCaseWorkspaceApi(request,env,url){
       });
     }
 
-    if(segments.length===1 && request.method==="DELETE"){
+    if(isDelete){
       if(!["owner","lawyer"].includes(String(access.role||""))) return json(request,{ok:false,error:"case_document_write_role_required"},403);
       if(access.status==="delete_pending") return json(request,{ok:false,error:"case_delete_pending"},409);
       if(!caseWorkspaceStorageReady(env)) return json(request,{ok:false,error:"private_case_storage_not_ready"},503);
-      await caseObjectDelete(env,row.storage_key);
-      await caseObjectDelete(env,`case-derived/v1/${caseId}/${documentId}/extraction.json`).catch(()=>{});
-      await caseObjectDelete(env,`case-derived/v1/${caseId}/analysis/latest.md`).catch(()=>{});
-      await caseObjectDelete(env,`case-derived/v1/${caseId}/analysis/response-sources.json`).catch(()=>{});
+      const deleteArtifacts=async()=>{
+        if(row.storage_key) await caseObjectDelete(env,row.storage_key);
+        await caseObjectDelete(env,`case-derived/v1/${caseId}/${documentId}/extraction.json`).catch(()=>{});
+        await caseObjectDelete(env,`case-derived/v1/${caseId}/analysis/latest.md`).catch(()=>{});
+        await caseObjectDelete(env,`case-derived/v1/${caseId}/analysis/response-sources.json`).catch(()=>{});
+      };
+      if(!atomicDelete) await deleteArtifacts();
       const at=new Date().toISOString();
-      await env.DB.batch([
+      if(row.storage_state!=="deleted") await env.DB.batch([
         env.DB.prepare(
           `UPDATE case_document_slots
               SET storage_state='deleted',extraction_state='not_started',updated_at=?
@@ -1614,6 +1645,7 @@ async function handleCaseWorkspaceApi(request,env,url){
           safeCaseAuditMetadata({slotNumber:row.slot_number,mimeType:row.mime_type,storageState:"deleted"}),at
         )
       ]);
+      if(atomicDelete) await deleteArtifacts();
       return json(request,{ok:true,caseId,documentId,storageState:"deleted",humanGate:{professionalUseLocked:true}});
     }
 
@@ -1661,6 +1693,7 @@ async function handleCaseWorkspaceApi(request,env,url){
     const freeCaseProviderReady=freeWorkersAIConfigured(env);
     if(!paidCaseProviderReady && !freeCaseProviderReady) return json(request,{ok:false,error:"case_intelligence_provider_not_configured"},503);
 
+    const sourceEpoch=atomicCaseResponseEnabled(env) ? await caseResponseSourceEpoch(env.DB,caseId) : undefined;
     const docsResult=await env.DB.prepare(
       `SELECT id,slot_number,original_name,mime_type,storage_state,extraction_state,page_count,sha256
          FROM case_document_slots
@@ -1683,10 +1716,8 @@ async function handleCaseWorkspaceApi(request,env,url){
     let materialFacts=0;
     let sourceBackedMaterialFacts=0;
     for(const doc of docs){
-      const key=`case-derived/v1/${caseId}/${doc.id}/extraction.json`;
-      const object=await caseObjectGet(env,key);
-      if(!object) return json(request,{ok:false,error:"case_extraction_artifact_missing",documentId:doc.id},503);
-      const extractionText=await object.text();
+      const extractionText=await readCaseDocumentExtraction(env,caseId,doc);
+      if(extractionText===null) return json(request,{ok:false,error:"case_extraction_artifact_missing",documentId:doc.id},503);
       let packet;
       try{packet=JSON.parse(extractionText);}catch{return json(request,{ok:false,error:"case_extraction_artifact_invalid",documentId:doc.id},503);}
       const extraction=packet?.extraction;
@@ -1730,9 +1761,11 @@ async function handleCaseWorkspaceApi(request,env,url){
       "Ова е WORKING ANALYSIS — HUMAN GATE REQUIRED."
     ].join("\n");
 
+    const authority=sourceEpoch===undefined ? undefined : await captureCaseResponseAuthority(env.DB,caseId);
+    if(authority===null) return json(request,{ok:false,error:"case_response_authority_unavailable"},503);
     const initialPlan=buildAgentPlan(task+"\n"+lawQuery,{preferCorpus:true});
     const [articleBundle,caseLawBundle,gazetteBundle]=await Promise.all([
-      governedArticleContext(env,lawQuery,initialPlan),
+      governedArticleContext(env,lawQuery,initialPlan,{currentReferenceDate:authority?.applicability.referenceDate}),
       governedCaseLawContext(env,lawQuery,initialPlan,{limit:6}),
       governedGazetteChunkContext(env,lawQuery)
     ]);
@@ -1791,6 +1824,12 @@ async function handleCaseWorkspaceApi(request,env,url){
       },503);
     }
     analysisText=analysisLanguageRelease.text;
+    if(sourceEpoch!==undefined && await caseResponseSourceEpoch(env.DB,caseId)!==sourceEpoch){
+      return json(request,{ok:false,error:"case_response_atomic_state_conflict"},409);
+    }
+    if(authority && !await caseResponseAuthorityCurrent(env.DB,caseId,authority)){
+      return json(request,{ok:false,error:"case_response_authority_changed"},409);
+    }
 
     const evidenceCoverage=materialFacts===0 ? null : Math.round((sourceBackedMaterialFacts/materialFacts)*10000)/100;
     const currentLawState=articleBundle.state==="matched" ? "governed_article_match" : String(articleBundle.state||"not_verified");
@@ -1802,7 +1841,7 @@ async function handleCaseWorkspaceApi(request,env,url){
       customMetadata:{caseId,kind:"case_intelligence_analysis_v1",analysisSha256,provider:analysisProvider}
     });
     const responseSnapshot=await createCaseResponseSnapshot({
-      caseId, analysisSha256, documents:responseDocuments, legalContext
+      caseId, analysisSha256, documents:responseDocuments, legalContext, sourceEpoch, authority
     });
     const responseSourcesKey=`case-derived/v1/${caseId}/analysis/response-sources.json`;
     if(responseSnapshot){
@@ -1875,11 +1914,12 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!CASE_DRAFT_TYPES.includes(draftType)) return json(request,{ok:false,error:"case_intelligence_invalid_draft_type"},400);
     if(instruction.length<3) return json(request,{ok:false,error:"case_intelligence_draft_instruction_required"},400);
 
+    const responseMode=draftType==="response";
+    const sourceEpoch=responseMode && atomicCaseResponseEnabled(env) ? await caseResponseSourceEpoch(env.DB,caseId) : null;
     const analysisKey=`case-derived/v1/${caseId}/analysis/latest.md`;
     const analysisObject=await caseObjectGet(env,analysisKey);
     if(!analysisObject) return json(request,{ok:false,error:"case_intelligence_analysis_required"},409);
     const analysisText=await analysisObject.text();
-    const responseMode=draftType==="response";
     let responseSnapshot=null;
     let responseSnapshotBytes=null;
     if(responseMode){
@@ -1895,6 +1935,12 @@ async function handleCaseWorkspaceApi(request,env,url){
         });
       }
       if(!responseSnapshot) return json(request,{ok:false,error:"case_response_source_snapshot_changed"},409);
+      if(sourceEpoch!==null && responseSnapshot.sourceEpoch!==sourceEpoch){
+        return json(request,{ok:false,error:"case_response_atomic_state_conflict"},409);
+      }
+      if(sourceEpoch!==null && !await caseResponseAuthorityCurrent(env.DB,caseId,responseSnapshot.authority)){
+        return json(request,{ok:false,error:"case_response_authority_changed"},409);
+      }
     }
 
     const docsResult=await env.DB.prepare(
@@ -1910,9 +1956,8 @@ async function handleCaseWorkspaceApi(request,env,url){
     const privateContexts=[];
     const responseDocuments=[];
     for(const doc of docs){
-      const object=await caseObjectGet(env,`case-derived/v1/${caseId}/${doc.id}/extraction.json`);
-      if(!object) return json(request,{ok:false,error:"case_extraction_artifact_missing",documentId:doc.id},503);
-      const extractionText=await object.text();
+      const extractionText=await readCaseDocumentExtraction(env,caseId,doc);
+      if(extractionText===null) return json(request,{ok:false,error:"case_extraction_artifact_missing",documentId:doc.id},503);
       let packet;
       try{packet=JSON.parse(extractionText);}
       catch{return json(request,{ok:false,error:"case_extraction_artifact_invalid",documentId:doc.id},503);}
@@ -2034,6 +2079,12 @@ async function handleCaseWorkspaceApi(request,env,url){
     const instrumentCheck=checkCaseDraftAct(draftText,draftType,{addMissing:true});
     if(!instrumentCheck.ok) return json(request,{ok:false,error:instrumentCheck.error},422);
     draftText=instrumentCheck.text;
+    if(sourceEpoch!==null && await caseResponseSourceEpoch(env.DB,caseId)!==sourceEpoch){
+      return json(request,{ok:false,error:"case_response_atomic_state_conflict"},409);
+    }
+    if(sourceEpoch!==null && !await caseResponseAuthorityCurrent(env.DB,caseId,responseSnapshot.authority)){
+      return json(request,{ok:false,error:"case_response_authority_changed"},409);
+    }
     const responseBinding=responseSnapshot ? {
       analysisSha256:responseSnapshot.analysisSha256,
       responseSourcesSha256:body.responseSourcesSha256
@@ -2057,7 +2108,7 @@ async function handleCaseWorkspaceApi(request,env,url){
       eventType:"analysis_requested",
       objectType:"case_draft",
       objectId:draftId,
-      metadata:{phase:"draft_preparation",draftType,draftSha256,...responseBinding}
+      metadata:{phase:"draft_preparation",draftType,draftSha256,sourceEpoch,...responseBinding}
     });
     await env.DB.prepare("UPDATE case_workspaces SET professional_use_locked=1,updated_at=? WHERE id=?").bind(at,caseId).run();
 
@@ -2207,7 +2258,8 @@ async function handleCaseWorkspaceApi(request,env,url){
 
     if(request.method==="GET" || request.method==="HEAD"){
       if(responseReviewRequired){
-        const review=["owner","lawyer"].includes(access.role)?await latestResponseReview(env.DB,caseId):null;
+        const review=["owner","lawyer"].includes(access.role)
+          ? await latestResponseReview(env.DB,caseId,{checkEpochs:atomicCaseResponseEnabled(env)}) : null;
         return json(request,responseReviewEnvelope(caseId,review));
       }
       const gate=await latestCaseHumanGate(env,caseId,currentFingerprint);
@@ -2313,11 +2365,6 @@ async function handleCaseWorkspaceApi(request,env,url){
     if(!parsed.ok) return json(request,{ok:false,error:parsed.error},parsed.status);
     const format=String(parsed.value?.format||"").toLowerCase();
     if(!CASE_EXPORT_FORMATS.includes(format)) return json(request,{ok:false,error:"case_export_format_invalid"},400);
-    const reportInput=parsed.value?.report;
-    if(!reportInput || typeof reportInput!=="object" || Array.isArray(reportInput)){
-      return json(request,{ok:false,error:"case_export_report_required"},400);
-    }
-
     const requestedMode=parsed.value.mode;
     if(requestedMode!==undefined && requestedMode!=="working" && requestedMode!=="professional"){
       return json(request,{ok:false,error:"case_export_mode_invalid"},400);
@@ -2334,6 +2381,10 @@ async function handleCaseWorkspaceApi(request,env,url){
       },409);
     }
     const mode="working";
+    const reportInput=parsed.value?.report;
+    if(!reportInput || typeof reportInput!=="object" || Array.isArray(reportInput)){
+      return json(request,{ok:false,error:"case_export_report_required"},400);
+    }
 
     const authorityClassifications=await loadActiveCaseLawClassifications(env,caseId);
     // Reserved namespaces are server-owned so a client cannot spoof lawyer authority
@@ -2371,6 +2422,9 @@ async function handleCaseWorkspaceApi(request,env,url){
       },{mode,serverHumanGate:{status:"pending"}});
     }catch(error){
       return json(request,{ok:false,error:String(error?.message||"case_export_invalid")},400);
+    }
+    if(!caseExportDeliveryAllowed(exportModel)){
+      return json(request,{ok:false,error:"case_export_professional_release_on_hold",professionalUseLocked:true,legalHold:"ACTIVE"},409);
     }
 
     const filename=caseExportFilename(exportModel,format);
@@ -2414,7 +2468,9 @@ async function handleCaseWorkspaceApi(request,env,url){
   if(tail==="audit"){
     if(request.method!=="GET" && request.method!=="HEAD") return methodNotAllowed(request,"GET, HEAD, OPTIONS");
     const result=await env.DB.prepare(
-      `SELECT id,event_type,object_type,object_id,metadata_json,created_at
+      `SELECT id,event_type,object_type,object_id,created_at,
+              CASE WHEN event_type='human_gate_recorded' AND object_type='case_response_revision' AND json_valid(metadata_json)
+                THEN json_remove(metadata_json,'$.authorization','$.authority') ELSE metadata_json END AS metadata_json
          FROM case_audit_events
         WHERE case_id=?
         ORDER BY created_at DESC
@@ -2474,7 +2530,13 @@ async function handleResponseRevisionReview(request,env,{caseId,access,membershi
   if(access.status!=="active") return fail("case_response_review_case_not_active",409);
   const input=parseResponseReview(body);
   if(!input) return fail("case_response_review_invalid",400);
+  const atomic=atomicCaseResponseEnabled(env);
+  let sourceEpoch, authority;
   try{
+    const accountId=membership.accountId;
+    const keyHash=await sha256Hex(membershipKeyFromRequest(request));
+    const authorization=atomic ? await captureCaseResponseAuthorization(env.DB,{caseId,accountId,keyHash}) : undefined;
+    if(atomic && !authorization) return fail("case_response_authorization_unavailable",403);
     const latest=await latestResponseReview(env.DB,caseId);
     if(input.expectedDecisionId!==(latest?.decisionId??null)) return fail("case_response_review_conflict",409);
     if(input.decision==="revoked"){
@@ -2483,30 +2545,38 @@ async function handleResponseRevisionReview(request,env,{caseId,access,membershi
     }else{
       if(!caseWorkspaceStorageReady(env)) return fail("case_response_revision_storage_unavailable",503);
       const bucket=caseR2Ready(env)?env.CASE_FILES:null;
-      const numbers=await listResponseRevisionNumbers({caseId,before:null,bucket,db:env.DB});
+      const numbers=await caseResponseRevisionNumbers(env,caseId,null,bucket);
       if(numbers[0]!==input.revision.number) return fail("case_response_revision_conflict",409);
-      const {revision}=await readStoredResponseRevision(env,caseId,input.revision.number);
+      const {revision,publication}=await readStoredResponseRevision(env,caseId,input.revision.number);
       if(!revision || !sameResponseReviewIdentity(input.revision,responseReviewIdentity(revision))) return fail("case_response_revision_conflict",409);
+      if(atomic){
+        sourceEpoch=await caseResponseSourceEpoch(env.DB,caseId);
+        if(publication.source_epoch!==sourceEpoch) return fail("case_response_atomic_state_conflict",409);
+        authority=revision.draft.authority;
+        if(!await caseResponseAuthorityCurrent(env.DB,caseId,authority)) return fail("case_response_authority_changed",409);
+      }
       const instrument=checkCaseDraftAct(revision.text,"response");
       if(!instrument.ok) return fail(instrument.error,422);
       const proof=await caseResponseDraftProof(env,caseId,revision.draft.draftId);
       if(!proof || JSON.stringify(proof)!==JSON.stringify(revision.draft)) return fail("case_response_revision_draft_unverified",409);
       if(!await responseRevisionSourcesCurrent(env,caseId,proof)) return fail("case_response_document_snapshot_changed",409);
-      const after=await listResponseRevisionNumbers({caseId,before:null,bucket,db:env.DB});
-      if(after[0]!==revision.number) return fail("case_response_revision_conflict",409);
+      if(!atomic){
+        const after=await caseResponseRevisionNumbers(env,caseId,null,bucket);
+        if(after[0]!==revision.number) return fail("case_response_revision_conflict",409);
+      }
     }
     const current=await caseWorkspaceAccess(env,caseId,membership.accountId);
     if(!current || !["owner","lawyer"].includes(current.role)) return fail("case_professional_write_role_required",403);
     if(current.status!=="active") return fail("case_response_review_case_not_active",409);
     const fingerprint=await caseProfessionalFingerprint(env,caseId,current);
     const decisionId="CAE-"+crypto.randomUUID(),at=new Date().toISOString();
-    const written=await appendResponseReview(env.DB,{caseId,accountId:membership.accountId,
-      keyHash:await sha256Hex(membershipKeyFromRequest(request)),input,fingerprint,decisionId,at});
+    const written=await appendResponseReview(env.DB,{caseId,accountId,keyHash,input,fingerprint,decisionId,at,sourceEpoch,authorization,authority});
     if(!written) return fail("case_response_review_conflict_or_access_changed",409);
     // Do not unlock the case, change the stored revision, or issue a release token.
     const receipt={decisionId,decision:input.decision,reason:input.reason,revision:input.revision,
       previousDecisionId:input.expectedDecisionId,reviewerAccountId:membership.accountId,decidedAt:at,
-      observedCaseFingerprint:fingerprint,releaseAuthorized:false};
+      observedCaseFingerprint:fingerprint,...(sourceEpoch===undefined?{}:{sourceEpoch}),
+      ...(atomic?{authorizationStale:false,authorityStale:false}:{}),releaseAuthorized:false};
     return json(request,responseReviewEnvelope(caseId,receipt),201);
   }catch(error){
     return fail(error?.message==="case_response_review_integrity_failed"?"case_response_review_integrity_failed":"case_response_review_unavailable",503);
@@ -2531,9 +2601,13 @@ async function caseResponseDraftProof(env,caseId,draftId){
   if(await caseResponseHash(draftText)!==metadata.draftSha256) return null;
   const receipt=await readCaseResponseReceipt({bytes,expectedSha256:metadata.responseSourcesSha256,caseId});
   if(!receipt || receipt.analysisSha256!==metadata.analysisSha256) return null;
+  if(atomicCaseResponseEnabled(env) && receipt.sourceEpoch!==metadata.sourceEpoch) return null;
   return {
     caseId,draftId,draftType:"response",draftSha256:metadata.draftSha256,
     analysisSha256:metadata.analysisSha256,responseSourcesSha256:metadata.responseSourcesSha256,
+    ...(atomicCaseResponseEnabled(env) && Number.isSafeInteger(metadata.sourceEpoch) && metadata.sourceEpoch>=0
+      ?{sourceEpoch:metadata.sourceEpoch}:{}),
+    ...(atomicCaseResponseEnabled(env) && receipt.authority ? {authority:receipt.authority} : {}),
     documents:JSON.stringify(receipt.documents.map(({id,sha256})=>({id,sha256}))),
     extractionDocuments:receipt.documents,legalSources:caseResponseSourceReferences(receipt.context)
   };
@@ -2548,9 +2622,8 @@ async function responseRevisionSourcesCurrent(env,caseId,draft){
   if(!rows.length || rows.some(row=>row.storage_state!=="uploaded" || row.extraction_state!=="complete") ||
       JSON.stringify(rows.map(({id,sha256})=>({id,sha256})))!==draft.documents) return false;
   const extractions=await Promise.all(rows.map(async row=>{
-    const object=await caseObjectGet(env,`case-derived/v1/${caseId}/${row.id}/extraction.json`);
-    if(!object) return null;
-    const text=await object.text();
+    const text=await readCaseDocumentExtraction(env,caseId,row);
+    if(text===null) return null;
     return caseResponseDocument({...row,caseId},parseJsonObject(text),await caseResponseHash(text));
   }));
   return JSON.stringify(extractions)===JSON.stringify(draft.extractionDocuments);
@@ -2565,19 +2638,42 @@ function parseJsonObject(value){
   }
 }
 
-async function readStoredResponseRevision(env,caseId,number){
-  const object=await caseObjectGet(env,caseResponseRevisionKey(caseId,number));
-  if(!object) return {stored:null,revision:null};
-  const stored=parseJsonObject(await object.text());
-  const revision=await verifyResponseRevision(stored,caseId,number);
-  if(!revision) throw new Error("case_response_revision_integrity_failed");
-  return {stored,revision};
+function caseResponseRevisionNumbers(env,caseId,before,bucket){
+  return atomicCaseResponseEnabled(env)
+    ? listPublishedCaseResponseRevisions(env.DB,caseId,before)
+    : listResponseRevisionNumbers({caseId,before,bucket,db:env.DB});
 }
 
-async function writeNewResponseRevision(env,bucket,caseId,record){
-  const key=caseResponseRevisionKey(caseId,record.number);
+async function readStoredResponseRevision(env,caseId,number){
+  let text,publication;
+  if(atomicCaseResponseEnabled(env)){
+    publication=await caseResponseRevisionPublication(env.DB,caseId,number);
+    if(!publication) return {stored:null,revision:null};
+    const bytes=await readImmutableCaseResponseObject(env,caseId,`revisions/${number}`,publication.object_sha256);
+    text=new TextDecoder().decode(bytes);
+  }else{
+    const object=await caseObjectGet(env,caseResponseRevisionKey(caseId,number));
+    if(!object) return {stored:null,revision:null};
+    text=await object.text();
+  }
+  const stored=parseJsonObject(text);
+  const revision=await verifyResponseRevision(stored,caseId,number);
+  if(!revision || (publication && (revision.sha256!==publication.revision_sha256 ||
+    revision.draft.sourceEpoch!==publication.source_epoch))) throw new Error("case_response_revision_integrity_failed");
+  return {stored,revision,publication};
+}
+
+async function writeNewResponseRevision(env,bucket,caseId,record,keyHash,authorization){
   const bytes=new TextEncoder().encode(JSON.stringify(record));
   if(bytes.byteLength>CASE_D1_OBJECT_CHUNK_BYTES) throw new Error("case_response_revision_size_limit");
+  if(atomicCaseResponseEnabled(env)){
+    const objectSha256=await sha256BytesHex(bytes);
+    await stageCaseResponseObject(env,caseId,`revisions/${record.number}`,bytes,objectSha256);
+    return publishCaseResponseRevision(env.DB,{
+      caseId,accountId:record.accountId,keyHash,authorization,record,objectSha256,sourceEpoch:record.draft.sourceEpoch
+    });
+  }
+  const key=caseResponseRevisionKey(caseId,record.number);
   if(bucket){
     return Boolean(await bucket.put(key,bytes,{
       httpMetadata:{contentType:"application/json"},
@@ -2606,6 +2702,7 @@ async function handleCaseResponseRevisions(request,env,url,{caseId,access,member
     ok:true,caseId,...data,humanGate:{professionalUseLocked:true},legalHold:"ACTIVE"
   },status);
   const writer=["owner","lawyer"].includes(access.role);
+  const atomic=atomicCaseResponseEnabled(env);
   if(access.status==="delete_pending") return fail("case_delete_pending",409);
   const bucket=caseR2Ready(env)?env.CASE_FILES:null;
   if(!caseWorkspaceStorageReady(env) || (bucket && typeof bucket.list!=="function")){
@@ -2637,8 +2734,9 @@ async function handleCaseResponseRevisions(request,env,url,{caseId,access,member
             return fail("case_response_revision_draft_unverified",409);
           }
           if(!await responseRevisionSourcesCurrent(env,caseId,proof)) return fail("case_response_document_snapshot_changed",409);
-          const object=await caseObjectGet(env,"case-derived/v1/"+caseId+"/"+documentId+"/extraction.json");
-          const evidence=object?await resolveResponseEvidence({revision,caseId,documentId,factId,extractionText:await object.text()}):null;
+          const document=proof.extractionDocuments.find(row=>row.id===documentId);
+          const extractionText=document ? await readCaseDocumentExtraction(env,caseId,document) : null;
+          const evidence=extractionText!==null ? await resolveResponseEvidence({revision,caseId,documentId,factId,extractionText}):null;
           if(!evidence) return fail("case_response_evidence_unverified",409);
           const currentAccess=await caseWorkspaceAccess(env,caseId,membership.accountId);
           if(!currentAccess || !["owner","lawyer"].includes(currentAccess.role)) return fail("case_professional_write_role_required",403);
@@ -2657,7 +2755,7 @@ async function handleCaseResponseRevisions(request,env,url,{caseId,access,member
           (exportSha256!==null && (before!==null || !SHA256_PATTERN.test(exportSha256)))){
         return fail("case_response_revision_invalid",400);
       }
-      const numbers=await listResponseRevisionNumbers({caseId,before,bucket,db:env.DB});
+      const numbers=await caseResponseRevisionNumbers(env,caseId,before,bucket);
       const history=numbers.slice(0,RESPONSE_REVISION_PAGE_SIZE);
       const nextBefore=numbers.length>history.length?history.at(-1):null;
       const {revision:head}=before===null && history.length
@@ -2684,9 +2782,14 @@ async function handleCaseResponseRevisions(request,env,url,{caseId,access,member
     if(!parsed.ok) return fail(parsed.error,parsed.status);
     const input=parseResponseRevision(parsed.value);
     if(!input) return fail("case_response_revision_invalid",400);
+    const accountId=membership.accountId;
+    const keyHash=atomic ? await sha256Hex(membershipKeyFromRequest(request)) : null;
+    const authorization=atomic ? await captureCaseResponseAuthorization(env.DB,{caseId,accountId,keyHash}) : null;
+    if(atomic && !authorization) return fail("case_response_authorization_unavailable",403);
     const instrument=checkCaseDraftAct(input.text,"response");
     if(!instrument.ok) return fail(instrument.error,422);
     const number=(input.base?.number??0)+1;
+    if(!Number.isSafeInteger(number)) return fail("case_response_revision_invalid",400);
     const existing=await readStoredResponseRevision(env,caseId,number);
     if(existing.revision){
       return isResponseRevisionRetry(existing.stored,input,membership.accountId)
@@ -2695,15 +2798,23 @@ async function handleCaseResponseRevisions(request,env,url,{caseId,access,member
     if(input.base){
       const {revision:previous}=await readStoredResponseRevision(env,caseId,input.base.number);
       if(previous?.sha256!==input.base.sha256) return fail("case_response_revision_conflict",409);
+    }else if(atomic && (await listResponseRevisionNumbers({caseId,before:null,bucket,db:env.DB})).length){
+      return fail("case_response_atomic_legacy_history",409);
     }
     const draft=await caseResponseDraftProof(env,caseId,input.draftId);
     if(!draft) return fail("case_response_revision_draft_unverified",422);
+    if(atomic && draft.sourceEpoch!==await caseResponseSourceEpoch(env.DB,caseId)){
+      return fail("case_response_atomic_state_conflict",409);
+    }
+    if(atomic && !await caseResponseAuthorityCurrent(env.DB,caseId,draft.authority)){
+      return fail("case_response_authority_changed",409);
+    }
     if(!await responseRevisionSourcesCurrent(env,caseId,draft)) return fail("case_response_document_snapshot_changed",409);
     const currentAccess=await caseWorkspaceAccess(env,caseId,membership.accountId);
     if(!currentAccess || !["owner","lawyer"].includes(currentAccess.role)) return fail("case_professional_write_role_required",403);
     if(currentAccess.status==="delete_pending") return fail("case_delete_pending",409);
     const record=await createResponseRevision({caseId,accountId:membership.accountId,input,draft,savedAt:new Date().toISOString()});
-    if(!await writeNewResponseRevision(env,bucket,caseId,record)){
+    if(!await writeNewResponseRevision(env,bucket,caseId,record,keyHash,authorization)){
       const winner=await readStoredResponseRevision(env,caseId,number);
       return isResponseRevisionRetry(winner.stored,input,membership.accountId)
         ? success({revision:winner.revision,replayed:true}) : fail("case_response_revision_conflict",409);
@@ -2711,7 +2822,7 @@ async function handleCaseResponseRevisions(request,env,url,{caseId,access,member
     const revision=await verifyResponseRevision(record,caseId,number);
     return success({revision,replayed:false},201);
   }catch(error){
-    const code=error?.message==="case_response_revision_integrity_failed"
+    const code=["case_response_revision_integrity_failed","case_response_object_integrity_failed"].includes(error?.message)
       ? "case_response_revision_integrity_failed" : "case_response_revision_storage_unavailable";
     return fail(code,503);
   }
@@ -4316,17 +4427,19 @@ function caseD1FallbackReady(env){
   return env?.CASE_D1_FALLBACK_ENABLED==="true" && !!env?.DB;
 }
 
-async function caseObjectPut(env,key,bytes,{httpMetadata={},customMetadata={}}={}){
+async function caseObjectPut(env,key,bytes,{httpMetadata={},customMetadata={},immutable=false}={}){
   if(!(bytes instanceof Uint8Array)) bytes=new Uint8Array(bytes||[]);
   if(caseR2Ready(env)){
-    await env.CASE_FILES.put(key,bytes,{httpMetadata,customMetadata});
+    const onlyIf=immutable ? {onlyIf:new Headers({"If-None-Match":"*"})} : {};
+    await env.CASE_FILES.put(key,bytes,{httpMetadata,customMetadata,...onlyIf});
     return {backend:"r2",size:bytes.byteLength};
   }
   if(!caseD1FallbackReady(env)) throw new Error("private_case_storage_not_ready");
   if(bytes.byteLength>CASE_D1_FALLBACK_MAX_BYTES) throw new Error("d1_fallback_object_too_large");
   const contentType=String(httpMetadata?.contentType||"application/octet-stream").slice(0,180);
   const metadataJson=JSON.stringify(customMetadata||{}).slice(0,4000);
-  await env.DB.prepare("DELETE FROM case_private_object_chunks WHERE object_key=?").bind(key).run();
+  if(!immutable) await env.DB.prepare("DELETE FROM case_private_object_chunks WHERE object_key=?").bind(key).run();
+  const onConflict=immutable?"ON CONFLICT(object_key,chunk_index) DO NOTHING":"";
   const statements=[];
   let chunkIndex=0;
   for(let offset=0;offset<bytes.byteLength;offset+=CASE_D1_OBJECT_CHUNK_BYTES){
@@ -4334,20 +4447,52 @@ async function caseObjectPut(env,key,bytes,{httpMetadata={},customMetadata={}}={
     statements.push(env.DB.prepare(
       `INSERT INTO case_private_object_chunks
         (object_key,chunk_index,chunk_b64,byte_length,content_type,metadata_json,created_at)
-       VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP)`
+       VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP) ${onConflict}`
     ).bind(key,chunkIndex++,bytesToBase64(part),part.byteLength,contentType,metadataJson));
   }
   if(statements.length===0){
     statements.push(env.DB.prepare(
       `INSERT INTO case_private_object_chunks
         (object_key,chunk_index,chunk_b64,byte_length,content_type,metadata_json,created_at)
-       VALUES (?,0,'',0,?,?,CURRENT_TIMESTAMP)`
+       VALUES (?,0,'',0,?,?,CURRENT_TIMESTAMP) ${onConflict}`
     ).bind(key,contentType,metadataJson));
   }
   for(let i=0;i<statements.length;i+=20){
     await env.DB.batch(statements.slice(i,i+20));
   }
   return {backend:"d1_fallback",size:bytes.byteLength};
+}
+
+function caseResponseObjectKey(caseId,path,sha256){
+  return `case-derived/v2/${caseId}/${path}/${sha256}.json`;
+}
+
+async function readImmutableCaseResponseObject(env,caseId,path,sha256){
+  if(!SHA256_PATTERN.test(sha256)) throw new Error("case_response_object_integrity_failed");
+  const key=caseResponseObjectKey(caseId,path,sha256);
+  const object=await caseObjectGet(env,key);
+  if(!object) throw new Error("case_response_object_integrity_failed");
+  const bytes=new Uint8Array(await object.arrayBuffer());
+  if(await sha256BytesHex(bytes)!==sha256) throw new Error("case_response_object_integrity_failed");
+  return bytes;
+}
+
+async function stageCaseResponseObject(env,caseId,path,bytes,sha256){
+  await caseObjectPut(env,caseResponseObjectKey(caseId,path,sha256),bytes,{
+    httpMetadata:{contentType:"application/json"},immutable:true
+  });
+  await readImmutableCaseResponseObject(env,caseId,path,sha256);
+}
+
+async function readCaseDocumentExtraction(env,caseId,document){
+  if(!atomicCaseResponseEnabled(env)){
+    const object=await caseObjectGet(env,`case-derived/v1/${caseId}/${document.id}/extraction.json`);
+    return object ? object.text() : null;
+  }
+  const head=await caseResponseExtractionHead(env.DB,caseId,document.id);
+  if(!head || head.source_sha256!==document.sha256) return null;
+  const bytes=await readImmutableCaseResponseObject(env,caseId,`extractions/${document.id}`,head.object_sha256);
+  return new TextDecoder().decode(bytes);
 }
 
 async function caseObjectGet(env,key,options={}){
@@ -4887,7 +5032,7 @@ function articleCorpusGateContext(message,{source="AI Advokat article-level lega
   }];
 }
 
-async function governedArticleContext(env,q,basePlan){
+async function governedArticleContext(env,q,basePlan,{currentReferenceDate=null}={}){
   const empty={context:[],legalSources:[],articles:[],state:"not_applicable",instrument:null,version:null,versionBasis:null};
   if(!basePlan?.agents?.includes(AGENT_ROLES.mk.id)) return empty;
 
@@ -4904,7 +5049,7 @@ async function governedArticleContext(env,q,basePlan){
     }
     if(!routing.key || routing.key==="auto") return {...empty,state:"instrument_not_resolved"};
 
-    const queryDate=chatQueryDate(q);
+    const queryDate=chatQueryDate(q) || currentReferenceDate;
     const retrieval=await findRelevantArticlesForChat(env,routing.key,q,5,{date:queryDate,expandReferences:true,maxReferences:12});
     const instrument=retrieval.instrument || null;
     const instrumentTitle=instrument?.title || routing.key;

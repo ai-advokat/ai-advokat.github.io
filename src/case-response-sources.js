@@ -1,4 +1,5 @@
 import { enforceCanonicalContextProvenance } from "./canonical-provenance-gate.js";
+import { validCaseResponseAuthority } from "./case-response-authority.js";
 
 const sha256 = /^[a-f0-9]{64}$/;
 const encoder = new TextEncoder();
@@ -23,11 +24,14 @@ export function caseResponseSourceContext(legalContext) {
   );
 }
 
-export async function createCaseResponseSnapshot({ caseId, analysisSha256, documents, legalContext }) {
+export async function createCaseResponseSnapshot({ caseId, analysisSha256, documents, legalContext, sourceEpoch, authority }) {
   if (!documents.length || documents.some(doc => !doc) || !sha256.test(analysisSha256)) return null;
+  if (sourceEpoch !== undefined && (!Number.isSafeInteger(sourceEpoch) || sourceEpoch < 0)) return null;
+  if (authority !== undefined && !validCaseResponseAuthority(authority)) return null;
   const context = caseResponseSourceContext(legalContext);
   if (!context.length) return null;
-  const snapshot = { caseId, analysisSha256, documents, context };
+  const snapshot = { caseId, analysisSha256, documents, context, ...(sourceEpoch===undefined?{}:{sourceEpoch}),
+    ...(authority===undefined?{}:{authority}) };
   const bytes = JSON.stringify(snapshot);
   return { bytes, sha256:await caseResponseHash(bytes), sources:caseResponseSourceReferences(context) };
 }
@@ -44,6 +48,8 @@ export async function readCaseResponseReceipt({ bytes, expectedSha256, caseId })
   let snapshot;
   try { snapshot = JSON.parse(bytes); } catch { return null; }
   if (snapshot?.caseId !== caseId || !sha256.test(snapshot.analysisSha256) ||
+      (snapshot.sourceEpoch!==undefined && (!Number.isSafeInteger(snapshot.sourceEpoch) || snapshot.sourceEpoch<0)) ||
+      (snapshot.authority!==undefined && !validCaseResponseAuthority(snapshot.authority)) ||
       !Array.isArray(snapshot.documents) || !snapshot.documents.length ||
       !Array.isArray(snapshot.context) || !snapshot.context.length ||
       caseResponseSourceContext(snapshot.context).length !== snapshot.context.length) return null;

@@ -1,4 +1,9 @@
 import fs from "node:fs";
+import { verifyCaseResponseWorkerPolicy } from "./case-response-worker-policy.mjs";
+
+if (!verifyCaseResponseWorkerPolicy()) {
+  throw new Error("Refresh the Worker policy SHA-256 with node scripts/case-response-worker-policy.mjs --write");
+}
 
 const required = [
   "index.html",

@@ -714,7 +714,7 @@ $("analyzeEntireCase").addEventListener("click",async()=>{
     await loadHumanGate(context);
     await loadAudit(context);
   }catch(error){
-    if(context===workspaceContext) $("intelligenceStatus").textContent="Анализата е запрена: "+error.message;
+    if(context===workspaceContext) $("intelligenceStatus").textContent="Анализата е запрена: "+responseRevisionError(error);
   }finally{
     if(context===workspaceContext) $("analyzeEntireCase").disabled=false;
   }
@@ -804,7 +804,7 @@ $("prepareCaseDraft").addEventListener("click",async()=>{
         case_response_source_snapshot_changed:"Изворната снимка е сменета. Повторете ја анализата.",
         case_response_document_snapshot_changed:"Документите или извлекувањата се сменети. Повторете ја анализата.",
         case_response_source_snapshot_required:"Потребна е анализа со проверливи правни извори."
-      }[error.code]||error.message;
+      }[error.code]||responseRevisionError(error);
       $("caseDraftStatus").textContent="Нацртот е блокиран: "+message;
     }
   }finally{
@@ -908,6 +908,11 @@ function responseRevisionError(error){
   return ({
     case_response_revision_conflict:"Друг корисник или друга сесија зачувала понова ревизија. Вашиот текст е во редакторот. Отворете ја последната серверска ревизија за споредба.",
     case_response_document_snapshot_changed:"Документите или нивното извлекување се сменети. Повторете ја анализата и подгответе нов нацрт.",
+    case_response_atomic_state_conflict:"Изворите се ажурирани. Освежете го предметот, повторете ја анализата и отворете нова работна ревизија.",
+    case_response_authority_changed:"Правните извори се ажурирани. Повторете ја анализата пред да продолжите со ревизијата или прегледот.",
+    case_response_authority_unavailable:"Верзијата на правилата за правна анализа чека проверка. Обидете се по потврдата.",
+    case_response_review_conflict_or_access_changed:"Ревизијата, одлуката или пристапот се смениле при запишувањето. Освежете го предметот и проверете ја последната состојба.",
+    case_response_atomic_legacy_history:"Постојните ревизии бараат пренос пред да може да зачувате нова ревизија.",
     case_response_revision_storage_unavailable:"Серверското складиште за ревизии е недостапно. Текстот во редакторот е достапен за повторен обид.",
     case_response_revision_draft_unverified:"Изворната снимка на нацртот не може да се потврди.",
     case_draft_instrument_mismatch:draftActError("case_draft_instrument_mismatch"),
@@ -1534,7 +1539,10 @@ function renderHumanGate(data){
     $("caseGate").textContent="LOCKED";
     $("humanGateCurrent").textContent="HOLD";
     $("humanGateStatus").textContent=review
-      ? "Евидентирана одлука: "+review.decision+" · ревизија "+review.revision.number+" · "+review.decidedAt+" · Професионалниот извоз останува заклучен."
+      ? "Евидентирана одлука: "+review.decision+" · ревизија "+review.revision.number+" · "+review.decidedAt
+        +(review.authorizationStale?" · Овластувањето за оваа одлука е застарено.":"")
+        +(review.authorityStale?" · Правните извори за оваа одлука се застарени.":"")
+        +" · Професионалниот извоз останува заклучен."
       : "Потребна е изречна одлука за зачуваната ревизија. LEGAL_HOLD ACTIVE.";
     $("humanGateFingerprint").textContent=review
       ? "Ревизија SHA-256: "+review.revision.sha256+" · Снимка на изворите: "+review.revision.responseSourcesSha256
@@ -1620,7 +1628,7 @@ $("recordHumanGate").addEventListener("click",async()=>{
     checkWorkspace(context);
     renderCasePicker(Array.isArray(list.cases)?list.cases:[]);
   }catch(error){
-    if(context===workspaceContext) $("humanGateStatus").textContent="Human Gate одлуката не е запишана: "+String(error?.message||error);
+    if(context===workspaceContext) $("humanGateStatus").textContent="Human Gate одлуката не е запишана: "+responseRevisionError(error);
   }finally{
     $("recordHumanGate").disabled=false;
   }

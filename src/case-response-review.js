@@ -1,4 +1,13 @@
 // Review receipt only. This module never authorizes professional release.
+import {
+  CASE_RESPONSE_WRITER, CASE_RESPONSE_AUTHORIZATION_MATCHES, caseResponseAuthorizationBindings,
+  caseResponseAuthorizationCurrent, validResponseAuthorization
+} from "./case-response-state.js";
+import {
+  CASE_RESPONSE_AUTHORITY_MATCHES, caseResponseAuthorityBindings, caseResponseAuthorityCurrent,
+  validCaseResponseAuthority
+} from "./case-response-authority.js";
+
 export const RESPONSE_REVIEW_SCOPE="response_revision";
 const SHA=/^[a-f0-9]{64}$/;
 const UUID="[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
@@ -33,36 +42,61 @@ export async function responseWorkflowExists(db,caseId){
     (object_type='case_draft' AND CASE WHEN json_valid(metadata_json) THEN json_type(metadata_json,'$.responseSourcesSha256') IS NOT NULL ELSE 1 END)
     OR (event_type='human_gate_recorded' AND object_type='case_response_revision')) LIMIT 1`).bind(caseId).first());
 }
-export async function latestResponseReview(db,caseId){
+export async function latestResponseReview(db,caseId,{checkEpochs=false}={}){
   const row=await db.prepare(`SELECT id,actor_account_id,object_id,metadata_json,created_at FROM case_audit_events
     WHERE case_id=? AND event_type='human_gate_recorded' AND object_type='case_response_revision' ORDER BY rowid DESC LIMIT 1`).bind(caseId).first();
   if(!row) return null;
   let meta;try{meta=JSON.parse(row.metadata_json);}catch{throw new Error("case_response_review_integrity_failed");}
   const parsed=parseResponseReview({scope:meta?.scope,decision:meta?.decision,reason:meta?.reason,revision:meta?.revision,expectedDecisionId:meta?.previousDecisionId});
-  if(!parsed || !DECISION.test(row.id) || row.object_id!==parsed.revision.draftId || !row.actor_account_id || !SHA.test(meta.observedCaseFingerprint||"") || meta.releaseAuthorized!==false) throw new Error("case_response_review_integrity_failed");
+  if(!parsed || !DECISION.test(row.id) || row.object_id!==parsed.revision.draftId || !row.actor_account_id ||
+      !SHA.test(meta.observedCaseFingerprint||"") || meta.releaseAuthorized!==false ||
+      (meta.sourceEpoch!==undefined && (!Number.isSafeInteger(meta.sourceEpoch) || meta.sourceEpoch<0)) ||
+      (meta.authorization!==undefined && !validResponseAuthorization(meta.authorization)) ||
+      (meta.authority!==undefined && !validCaseResponseAuthority(meta.authority))) {
+    throw new Error("case_response_review_integrity_failed");
+  }
+  const authorizationStale=checkEpochs
+    ? !meta.authorization || !await caseResponseAuthorizationCurrent(db,caseId,row.actor_account_id,meta.authorization)
+    : undefined;
+  const authorityStale=checkEpochs && parsed.decision!=="revoked"
+    ? !await caseResponseAuthorityCurrent(db,caseId,meta.authority)
+    : false;
   return {decisionId:row.id,decision:parsed.decision,reason:parsed.reason,revision:parsed.revision,previousDecisionId:parsed.expectedDecisionId,
-    reviewerAccountId:row.actor_account_id,decidedAt:row.created_at,observedCaseFingerprint:meta.observedCaseFingerprint,releaseAuthorized:false};
+    reviewerAccountId:row.actor_account_id,decidedAt:row.created_at,observedCaseFingerprint:meta.observedCaseFingerprint,
+    ...(meta.sourceEpoch===undefined?{}:{sourceEpoch:meta.sourceEpoch}),
+    ...(checkEpochs?{authorizationStale,authorityStale}:{}),releaseAuthorized:false};
 }
-// One conditional INSERT on the existing D1 audit table. CAS protects the
-// decision sequence and rechecks account, key, entitlement and case role at write.
-// It does NOT atomically bind external R2/extraction/authority state to this write.
-export async function appendResponseReview(db,{caseId,accountId,keyHash,input,fingerprint,decisionId,at}){
+// A historical receipt. The optional predicate binds a published revision and its
+// source epoch inside the existing decision/authorization compare-and-swap.
+export async function appendResponseReview(db,{caseId,accountId,keyHash,input,fingerprint,decisionId,at,sourceEpoch,authorization,authority}){
   const parsed=parseResponseReview(input);
-  if(!parsed || !SHA.test(keyHash||"") || !SHA.test(fingerprint||"") || !DECISION.test(decisionId||"")) throw new Error("case_response_review_invalid");
+  const guarded=sourceEpoch!==undefined;
+  if(!parsed || !SHA.test(keyHash||"") || !SHA.test(fingerprint||"") || !DECISION.test(decisionId||"") ||
+      (authorization!==undefined && !validResponseAuthorization(authorization)) ||
+      (guarded && (!authorization || !validCaseResponseAuthority(authority) ||
+        !Number.isSafeInteger(sourceEpoch) || sourceEpoch<0 || parsed.decision==="revoked"))) {
+    throw new Error("case_response_review_invalid");
+  }
   const metadata=JSON.stringify({scope:RESPONSE_REVIEW_SCOPE,decision:parsed.decision,reason:parsed.reason,revision:parsed.revision,
-    previousDecisionId:parsed.expectedDecisionId,observedCaseFingerprint:fingerprint,releaseAuthorized:false});
+    previousDecisionId:parsed.expectedDecisionId,observedCaseFingerprint:fingerprint,
+    ...(guarded?{sourceEpoch,authority}:{}),...(authorization?{authorization}:{}),releaseAuthorized:false});
   const result=await db.prepare(`INSERT INTO case_audit_events
     (id,case_id,actor_account_id,event_type,object_type,object_id,metadata_json,created_at)
-    SELECT ?,a.case_id,a.account_id,'human_gate_recorded','case_response_revision',?,?,?
-    FROM case_workspace_access a JOIN case_workspaces w ON w.id=a.case_id JOIN membership_accounts m ON m.id=a.account_id
-    WHERE a.case_id=? AND a.account_id=? AND a.status='active' AND a.role IN ('owner','lawyer')
-      AND w.status='active' AND m.status='active'
-      AND EXISTS (SELECT 1 FROM membership_access_keys k WHERE k.account_id=a.account_id AND k.key_hash=? AND k.status='active'
-        AND (k.expires_at IS NULL OR datetime(k.expires_at)>datetime('now')))
-      AND EXISTS (SELECT 1 FROM membership_entitlements e WHERE e.account_id=a.account_id AND e.plan_code IN ('trial_pro','pro','office')
-        AND e.status IN ('trial','active') AND (e.expires_at IS NULL OR datetime(e.expires_at)>datetime('now')))
-      AND COALESCE((SELECT id FROM case_audit_events WHERE case_id=a.case_id AND event_type='human_gate_recorded'
-        AND object_type='case_response_revision' ORDER BY rowid DESC LIMIT 1),'')=?`)
-    .bind(decisionId,parsed.revision.draftId,metadata,at,caseId,accountId,keyHash,parsed.expectedDecisionId??"").run();
+    SELECT ?,w.id,?,'human_gate_recorded','case_response_revision',?,?,?
+    FROM case_workspaces w WHERE w.id=? AND ${CASE_RESPONSE_WRITER}
+      AND COALESCE((SELECT id FROM case_audit_events WHERE case_id=w.id AND event_type='human_gate_recorded'
+        AND object_type='case_response_revision' ORDER BY rowid DESC LIMIT 1),'')=?
+      ${authorization?`AND ${CASE_RESPONSE_AUTHORIZATION_MATCHES}`:""}
+      ${guarded?`AND EXISTS (
+        SELECT 1 FROM case_response_source_epochs s JOIN case_response_revision_publications p ON p.case_id=s.case_id
+        WHERE s.case_id=w.id AND s.epoch=? AND p.source_epoch=s.epoch AND p.revision_number=?
+          AND p.revision_sha256=? AND NOT EXISTS (
+            SELECT 1 FROM case_response_revision_publications newer
+            WHERE newer.case_id=p.case_id AND newer.revision_number>p.revision_number
+          )
+      ) AND ${CASE_RESPONSE_AUTHORITY_MATCHES}`:""}`)
+    .bind(decisionId,accountId,parsed.revision.draftId,metadata,at,caseId,caseId,accountId,keyHash,parsed.expectedDecisionId??"",
+      ...(authorization?caseResponseAuthorizationBindings(caseId,accountId,authorization):[]),
+      ...(guarded?[sourceEpoch,parsed.revision.number,parsed.revision.sha256,...caseResponseAuthorityBindings(caseId,authority)]:[])).run();
   return result.meta?.changes===1;
 }

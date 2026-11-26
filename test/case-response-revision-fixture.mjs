@@ -10,8 +10,8 @@ export const authKey="p02-LOCAL-SYNTHETIC-ONLY";
 export const revisionPath=`/api/cases/${caseId}/intelligence/response-revisions`;
 export const edited="ОДГОВОР НА ЖАЛБА\n\nСинтетички текст за прием. Адвокатска доработка.";
 
-export async function makeRevisionFixture({r2=false}={}){
-  const {raw,d1}=createD1();
+export async function makeRevisionFixture({r2=false,transactionalBatch=false}={}){
+  const {raw,d1}=createD1({transactionalBatch});
   const accountId="p02-test-account";
   const documentSha="a".repeat(64);
   const packet=JSON.stringify({caseId,documentId:docId,sourceSha256:documentSha,
@@ -57,7 +57,10 @@ export async function makeRevisionFixture({r2=false}={}){
   const conditions=[];
   const bucket={
     async get(key){
-      return objects.has(key)?{text:async()=>objects.get(key)}:null;
+      if(!objects.has(key)) return null;
+      const value=objects.get(key);
+      const bytes=new TextEncoder().encode(value);
+      return {size:bytes.byteLength,text:async()=>value,arrayBuffer:async()=>bytes.buffer};
     },
     async put(key,bytes,options){
       conditions.push(options?.onlyIf?.get("if-none-match"));
