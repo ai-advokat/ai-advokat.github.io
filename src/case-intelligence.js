@@ -22,6 +22,7 @@ export const CASE_INTELLIGENCE_STAGES=Object.freeze([
 export const CASE_DRAFT_TYPES=Object.freeze([
   "lawsuit",
   "appeal",
+  "response",
   "objection",
   "motion",
   "request",

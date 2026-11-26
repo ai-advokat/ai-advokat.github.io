@@ -44,3 +44,35 @@ test("GitHub Pages runtime sync is curated and cannot mutate legal production st
   assert.doesNotMatch(sync,/OPENAI_API_KEY/);
   assert.doesNotMatch(sync,/membership_accounts/);
 });
+
+test("CasePilot working-export module graph is included in curated Pages copy and Git parity checks",()=>{
+  const copyList=sync.match(/^\s*files=\(\s*\n([\s\S]*?)^\s*\)\s*$/m)?.[1];
+  const parityList=sync.match(/^\s*for f in (assets\/[^\n]+); do\s*$/m)?.[1];
+  assert.ok(copyList,"curated copy list missing");
+  assert.ok(parityList,"Git parity list missing");
+  const copy=new Set(copyList.trim().split(/\s+/));
+  const parity=new Set(parityList.trim().split(/\s+/));
+  const ignore=fs.readFileSync(".assetsignore","utf8").split(/\r?\n/);
+  const workspace=fs.readFileSync("assets/casepilot-workspace-ui.js","utf8");
+  const exportClient=fs.readFileSync("assets/casepilot-export.js","utf8");
+  assert.match(workspace,/from "\.\/casepilot-export\.js"/);
+  assert.match(workspace,/from "\.\.\/src\/case-draft-act\.js"/);
+  assert.match(workspace,/from "\.\.\/src\/case-response-evidence\.js"/);
+  assert.match(exportClient,/from "\.\.\/src\/case-export\.js"/);
+  for(const path of ["casepilot-workspace.html","assets/casepilot-workspace-ui.js","assets/casepilot-export.js","src/case-draft-act.js","src/case-response-evidence.js","src/case-export.js"]){
+    assert.ok(copy.has(path),"Pages copy list missing "+path);
+    assert.ok(parity.has(path),"Pages parity list missing "+path);
+  }
+  assert.ok(ignore.includes("src/**"),"private src exclusion removed");
+  for(const path of ["src/case-draft-act.js","src/case-response-evidence.js","src/case-export.js"]){
+    assert.ok(ignore.includes("!"+path),"Cloudflare shared module missing "+path);
+  }
+  for(const path of ["src/index.js","src/case-response-revisions.js","src/case-response-sources.js","src/response-quality.js"]){
+    assert.ok(!ignore.includes("!"+path),"private server module exposed "+path);
+    assert.ok(!copy.has(path),"private server module copied "+path);
+  }
+  assert.match(sync,/node --check src\/case-draft-act\.js/);
+  assert.match(sync,/node --check assets\/casepilot-export\.js/);
+  assert.match(sync,/on:\n  push:\n    branches: \["main"\]\n  workflow_dispatch:/);
+  assert.match(sync,/environment: production/);
+});

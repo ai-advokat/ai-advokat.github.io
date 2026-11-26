@@ -184,9 +184,10 @@ export async function caseExportBlob(reportInput,format){
   return new Blob([pdf],{type:caseExportMime("pdf")});
 }
 
-export async function downloadCasePilotExport(reportInput,format,{filename=null}={}){
+export async function downloadCasePilotExport(reportInput,format,{filename=null,beforeDownload}={}){
   const report=reportInput?.exportVersion ? reportInput : normalizeCaseExportReport(reportInput);
   const blob=await caseExportBlob(report,format);
+  beforeDownload?.();
   blobDownload(blob,filename||caseExportFilename(report,format));
   return {ok:true,format,filename:filename||caseExportFilename(report,format),size:blob.size};
 }
@@ -210,12 +211,15 @@ export async function downloadCasePilotExportFromApi({
       "content-type":"application/json",
       ...(membershipKey?{"authorization":"Bearer "+membershipKey}:{})
     },
-    body:JSON.stringify({format,report})
+    body:JSON.stringify({format,mode:"working",report})
   });
   if(format==="pdf" || format==="png" || format==="jpg"){
     const payload=await response.json().catch(()=>null);
     if(!response.ok || !payload?.ok || !payload?.exportModel){
       throw new Error(payload?.error||("case_export_http_"+response.status));
+    }
+    if(payload.mode!=="working" || payload.exportModel.mode!=="working"){
+      throw new Error("case_export_working_mode_required");
     }
     return downloadCasePilotExport(payload.exportModel,format,{filename:payload.filename||null});
   }
@@ -223,8 +227,11 @@ export async function downloadCasePilotExportFromApi({
     const payload=await response.json().catch(()=>null);
     throw new Error(payload?.error||("case_export_http_"+response.status));
   }
+  if(response.headers.get("x-ai-advokat-export-mode")!=="working"){
+    throw new Error("case_export_working_mode_required");
+  }
   const blob=await response.blob();
-  const fallback=caseExportFilename(normalizeCaseExportReport(report),"working"===report?.mode?format:format);
+  const fallback=caseExportFilename(normalizeCaseExportReport(report),format);
   const filename=dispositionFilename(response.headers.get("content-disposition"))||fallback;
   blobDownload(blob,filename);
   return {ok:true,format,filename,size:blob.size};

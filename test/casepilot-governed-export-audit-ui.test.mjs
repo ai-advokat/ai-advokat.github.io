@@ -10,7 +10,7 @@ test("Secure Workspace exposes governed export and audit controls",()=>{
   assert.match(html,/id="exportDocx"/);
   assert.match(html,/id="exportPdf"/);
   assert.match(html,/id="refreshAudit"/);
-  assert.match(html,/оваа страница не може сама да го отклучи Human Gate/i);
+  assert.match(html,/Професионалниот извоз е под HOLD/);
 });
 
 test("export report preserves source hashes and does not invent document bodies",()=>{
@@ -31,7 +31,7 @@ test("exports use the existing governed server endpoint with memory-only members
 });
 
 test("audit is loaded only from the active case-scoped endpoint",()=>{
-  assert.match(js,/\/api\/cases\/"\+encodeURIComponent\(activeCaseId\)\+"\/audit"/);
+  assert.match(js,/workspaceRequest\("audit",undefined,context\)/);
   assert.match(js,/renderAudit/);
 });
 
@@ -39,6 +39,6 @@ test("workspace opening refreshes classifications and audit together",()=>{
   const start=js.indexOf("async function openCaseById");
   const end=js.indexOf('$("loadCases").addEventListener',start);
   const block=js.slice(start,end);
-  assert.match(block,/await loadClassifications\(\)/);
-  assert.match(block,/await loadAudit\(\)/);
+  assert.match(block,/await loadClassifications\(context\)/);
+  assert.match(block,/await loadAudit\(context\)/);
 });

@@ -1,4 +1,5 @@
 import { DETENTION_PROCEDURAL_TERMINOLOGY_EVIDENCE, isDetentionContext } from "./detention-procedural-terminology.js";
+import { caseDraftAct, isDirectAppealResponseRequest, checkCaseDraftAct } from "./case-draft-act.js";
 
 // Final user-facing response quality helpers.
 // Deterministic postflight only: no source expansion, no new legal reasoning.
@@ -44,6 +45,7 @@ export function isFormalLegalDraftRequest(userText){
   const analyticalTask=ANALYTICAL_TASK_RE.test(text);
   const analyticalSubdraft=ANALYTICAL_SUBDRAFT_RE.test(text);
   if(analyticalTask && analyticalSubdraft) return false;
+  if(isDirectAppealResponseRequest(text)) return true;
 
   // Structured professional intake may express the drafting mandate under
   // a dedicated "Барам:" section instead of using an imperative verb.
@@ -105,7 +107,10 @@ export function shouldUseDeterministicFormalDraftRecovery(text,{userText=""}={})
   return false;
 }
 
-export function requestedFormalDraftHeading(userText){
+export function requestedFormalDraftHeading(userText,{draftType=null}={}){
+  const selected=caseDraftAct(draftType);
+  if(selected) return selected.heading;
+  if(isDirectAppealResponseRequest(userText)) return caseDraftAct("response").heading;
   const text=String(userText||"").normalize("NFKC").toLocaleLowerCase("mk");
   const candidates=[
     [/(?:опомена|opomena)(?:\s+пред\s+(?:поведување\s+)?(?:тужб|tuzb))?/u,"ОПОМЕНА ПРЕД ПОВЕДУВАЊЕ СУДСКА ПОСТАПКА"],
@@ -127,10 +132,19 @@ export function requestedFormalDraftHeading(userText){
   return null;
 }
 
-export function ensureRequestedFormalDraftHeading(text,{userText=""}={}){
+export function ensureRequestedFormalDraftHeading(text,{userText="",draftType=null}={}){
   const clean=String(text||"").trim();
-  const heading=requestedFormalDraftHeading(userText);
+  const heading=requestedFormalDraftHeading(userText,{draftType});
   if(!heading || !clean) return clean;
+  const type=heading===caseDraftAct("response").heading?"response":heading===caseDraftAct("appeal").heading?"appeal":null;
+  if(type){
+    const checked=checkCaseDraftAct(clean,type,{addMissing:true});
+    if(checked.ok) return checked.text;
+    // Preserve contradictory provider text. The CasePilot route rejects it.
+    // In general chat explicitly mark it as not a verified instrument.
+    const notice="ВИДОТ НА АКТОТ НЕ Е ПОТВРДЕН — ПОТРЕБНА Е АДВОКАТСКА ПРОВЕРКА";
+    return caseDraftAct(draftType) || clean.startsWith(notice) ? clean : notice+"\n\n"+clean;
+  }
   const firstLine=clean.split(/\n+/u).find(line=>String(line||"").trim())?.trim()||"";
   if(firstLine.toLocaleUpperCase("mk").startsWith(heading)) return clean;
   return heading+"\n\n"+clean;
@@ -509,7 +523,8 @@ export function deterministicFormalDraftCapacityFallback({userText=""}={}){
 export function finaliseFormalLegalDraft(text,{
   userText="",
   hasGovernedLegalContext=false,
-  governedArticleNumbers=[]
+  governedArticleNumbers=[],
+  draftType=null
 }={}){
   const clean=cleanFormalDraftForExport(text);
   const grounded=replaceUngroundedArticleReferences(clean,{
@@ -517,6 +532,6 @@ export function finaliseFormalLegalDraft(text,{
     hasGovernedLegalContext,
     governedArticleNumbers
   });
-  const instrumentSafe=applyProceduralInstrumentSafety(grounded,{userText});
-  return ensureRequestedFormalDraftHeading(instrumentSafe,{userText});
+  const instrumentSafe=caseDraftAct(draftType)?grounded:applyProceduralInstrumentSafety(grounded,{userText});
+  return ensureRequestedFormalDraftHeading(instrumentSafe,{userText,draftType});
 }

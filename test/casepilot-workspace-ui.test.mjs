@@ -82,7 +82,7 @@ test("private document batch is capped at 20 files and 500 MB each",()=>{
 test("large private files transparently use multipart integrity uploads",()=>{
   assert.match(html,/до 500 MB по документ · до 20 документи/);
   assert.match(js,/uploadLargePrivateFile/);
-  assert.match(js,/documents\/multipart\/init/);
+  assert.match(js,/documents\/multipart\//);
   assert.match(js,/X-Part-SHA256/);
   assert.match(js,/sha256HexFromBuffer/);
   assert.match(js,/file\.size<=25\*1024\*1024/);
@@ -101,8 +101,8 @@ test("Case Intelligence UI exposes whole-case analysis and governed drafting",()
   assert.match(html,/Accuracy-First/);
   assert.match(html,/WORKING DRAFT/);
   assert.match(js,/documents\/"\+encodeURIComponent\(row\.id\)\+"\/extract/);
-  assert.match(js,/\/intelligence\/analyze/);
-  assert.match(js,/\/intelligence\/draft/);
+  assert.match(js,/workspaceRequest\("intelligence\/analyze"/);
+  assert.match(js,/workspaceRequest\("intelligence\/draft"/);
   assert.match(js,/case_document_partitioning_required/);
   assert.match(js,/Professional use останува под Human Gate/);
   assert.match(js,/async function extractPendingCaseDocuments/);
@@ -134,8 +134,8 @@ test("CasePilot draft action self-heals intake and whole-case analysis prerequis
   assert.match(block,/extractPendingCaseDocuments/);
   assert.match(block,/loadIntelligenceReadiness/);
   assert.match(block,/latestAnalysisAvailable/);
-  assert.match(block,/\/intelligence\/analyze/);
-  assert.match(block,/\/intelligence\/draft/);
+  assert.match(block,/workspaceRequest\("intelligence\/analyze"/);
+  assert.match(block,/workspaceRequest\("intelligence\/draft"/);
   assert.match(block,/WORKING DRAFT/);
 });
 

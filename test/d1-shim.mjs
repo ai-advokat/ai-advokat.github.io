@@ -19,7 +19,7 @@ function toSqlValue(value) {
  * (e.g. "0023") so tests can create legacy rows exactly as production has them,
  * then call applyRemaining() to run the newer migrations on top.
  */
-export function createD1({ migrationsDir = "migrations", stopBefore = null } = {}) {
+export function createD1({ migrationsDir = "migrations", stopBefore = null, transactionalBatch = false } = {}) {
   const db = new DatabaseSync(":memory:");
   const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith(".sql")).sort();
   const pending = [];
@@ -32,6 +32,7 @@ export function createD1({ migrationsDir = "migrations", stopBefore = null } = {
   };
 
   const stats = { statements: 0, bySql: new Map() };
+  const batchStatements = new WeakMap();
 
   function prepare(sql) {
     let bindings = [];
@@ -39,6 +40,15 @@ export function createD1({ migrationsDir = "migrations", stopBefore = null } = {
       stats.statements += 1;
       const key = sql.replace(/\s+/g, " ").trim().slice(0, 80);
       stats.bySql.set(key, (stats.bySql.get(key) || 0) + 1);
+    };
+    const runBound = () => {
+      record();
+      if (/\bRETURNING\b/i.test(sql)) {
+        const rows = db.prepare(sql).all(...bindings).map((r) => ({ ...r }));
+        return { results: rows, success: true, meta: { changes: rows.length } };
+      }
+      const info = db.prepare(sql).run(...bindings);
+      return { results: [], success: true, meta: { changes: Number(info.changes) } };
     };
     const statement = {
       bind(...values) {
@@ -61,19 +71,27 @@ export function createD1({ migrationsDir = "migrations", stopBefore = null } = {
       },
       async run() {
         await yieldTurn();
-        record();
-        if (/\bRETURNING\b/i.test(sql)) {
-          const rows = db.prepare(sql).all(...bindings).map((r) => ({ ...r }));
-          return { results: rows, success: true, meta: { changes: rows.length } };
-        }
-        const info = db.prepare(sql).run(...bindings);
-        return { results: [], success: true, meta: { changes: Number(info.changes) } };
+        return runBound();
       }
     };
+    batchStatements.set(statement, runBound);
     return statement;
   }
 
-  return { d1: { prepare }, raw: db, stats, applyRemaining };
+  async function batch(statements) {
+    await yieldTurn();
+    db.exec("BEGIN");
+    try {
+      const results = statements.map(statement => batchStatements.get(statement)());
+      db.exec("COMMIT");
+      return results;
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+
+  return { d1: { prepare, ...(transactionalBatch ? {batch} : {}) }, raw: db, stats, applyRemaining };
 }
 
 /**
