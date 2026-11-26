@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import {runInNewContext} from "node:vm";
 
 const worker=fs.readFileSync(new URL("../src/index.js",import.meta.url),"utf8");
 const workspace=fs.readFileSync(new URL("../src/case-workspace.js",import.meta.url),"utf8");
@@ -55,7 +56,7 @@ test("bounded audit metadata retains fingerprint without private document conten
 test("Secure Workspace exposes Human Gate controls and cannot self-derive approval",()=>{
   assert.match(html,/id="recordHumanGate"/);
   assert.match(html,/id="humanGateDecision"/);
-  assert.match(html,/server-computed fingerprint/);
+  assert.match(html,/отпечатокот пресметан на серверот/);
   const start=ui.indexOf('$("recordHumanGate").addEventListener');
   const end=ui.indexOf("function buildExportReport",start);
   assert.ok(start>0 && end>start);
@@ -71,10 +72,30 @@ test("Secure Workspace exposes Human Gate controls and cannot self-derive approv
   assert.match(block,/if\(!confirm\(/);
   assert.match(block,/body=\{scope:"response_revision",decision,reason,revision,expectedDecisionId:gate\.review\?\.decisionId\?\?null\}/);
   assert.match(block,/workspaceRequest\("human-gate",\{method:"POST",body\},context\)/);
-  assert.match(block,/if\(data\.responseReviewRequired!==true\)/);
-  const render=ui.slice(ui.indexOf("function renderHumanGate("),ui.indexOf('$("refreshHumanGate").addEventListener'));
-  assert.match(render,/if\(data\?\.responseReviewRequired===true\)/);
-  assert.match(render,/\$\("caseGate"\)\.textContent="LOCKED"/);
-  assert.match(render,/\$\("humanGateCurrent"\)\.textContent="HOLD"/);
+  assert.match(block,/renderHumanGate\(data\)/);
   assert.doesNotMatch(ui,/professionalUseLocked\s*=\s*false/);
+});
+
+test("legacy and revision review remain visible while professional issuance stays on HOLD",()=>{
+  assert.match(html,/<b id="caseGate">HOLD<\/b><span>Професионално издавање<\/span>/);
+  assert.match(html,/<b id="humanGateCurrent">Нема одлука<\/b><span>Евидентирана адвокатска одлука<\/span>/);
+  assert.doesNotMatch(ui,/\$\("caseGate"\)|Professional export е отклучен/);
+  const render=ui.slice(ui.indexOf("function renderHumanGate("),ui.indexOf('$("refreshHumanGate").addEventListener'));
+  const elements=new Map(["humanGateCurrent","humanGateStatus","humanGateFingerprint"].map(id=>[id,{}]));
+  const show=runInNewContext(render+"\nrenderHumanGate",{$:id=>elements.get(id)});
+  const text=id=>elements.get(id).textContent;
+  show({professionalUseLocked:false,gate:{effectiveApproved:true,decision:"approved",reviewer:"Тест"}});
+  assert.equal(text("humanGateCurrent"),"Одобрено");
+  assert.match(text("humanGateStatus"),/Тест/);
+  show({gate:{decision:"approved",stale:true}});
+  assert.equal(text("humanGateCurrent"),"Одобрено");
+  assert.match(text("humanGateStatus"),/застарено/);
+  show({responseReviewRequired:true,review:{
+    decision:"approved",revision:{number:2,sha256:"a".repeat(64),responseSourcesSha256:"b".repeat(64)},
+    decidedAt:"2026-11-26",authorizationStale:true,authorityStale:true,releaseAuthorized:false
+  }});
+  assert.equal(text("humanGateCurrent"),"Одобрено");
+  assert.match(text("humanGateStatus"),/Ревизија 2.*Овластувањето.*Правните извори/);
+  show({responseReviewRequired:true,review:null});
+  assert.equal(text("humanGateCurrent"),"Нема одлука");
 });

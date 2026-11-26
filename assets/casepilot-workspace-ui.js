@@ -128,7 +128,9 @@ function resetWorkspace(){
   setWorkspaceVisible(false);
   $("caseTitle").textContent="—";
   $("caseLegalArea").textContent="—";
-  $("caseGate").textContent="LOCKED";
+  $("humanGateCurrent").textContent="Нема одлука";
+  $("humanGateStatus").textContent="";
+  $("humanGateFingerprint").textContent="";
   $("selectedCaseLawId").value="";
   $("classificationReason").value="";
   $("issueKey").value="";
@@ -356,7 +358,6 @@ function renderWorkspace(data){
   const matter=cp.matter||{};
   $("caseTitle").textContent=String(matter.title||data.caseId||"—");
   $("caseLegalArea").textContent=String(matter.legalArea||"—");
-  $("caseGate").textContent=cp?.runtime?.professionalUseLocked===false?"UNLOCKED":"LOCKED";
 
   const body=$("sourceRegistryBody");
   clearNode(body);
@@ -1527,43 +1528,38 @@ async function loadHumanGate(context=workspaceContext){
     renderHumanGate(data);
   }catch(error){
     if(context!==workspaceContext) return;
-    $("caseGate").textContent="LOCKED";
-    $("humanGateCurrent").textContent="LOCKED";
+    $("humanGateCurrent").textContent="Недостапна";
+    $("humanGateFingerprint").textContent="";
     $("humanGateStatus").textContent="Human Gate не е достапен: "+String(error?.message||error);
   }
 }
 
 function renderHumanGate(data){
+  const gate=data?.gate||{};
+  const review=data?.review;
+  const decision=data?.responseReviewRequired===true?review?.decision:gate.decision;
+  const labels={approved:"Одобрено",needs_revision:"Потребна доработка",rejected:"Одбиено",revoked:"Повлечено"};
+  $("humanGateCurrent").textContent=labels[decision]||"Нема одлука";
   if(data?.responseReviewRequired===true){
-    const review=data.review;
-    $("caseGate").textContent="LOCKED";
-    $("humanGateCurrent").textContent="HOLD";
     $("humanGateStatus").textContent=review
-      ? "Евидентирана одлука: "+review.decision+" · ревизија "+review.revision.number+" · "+review.decidedAt
+      ? "Ревизија "+review.revision.number+" · "+review.decidedAt
         +(review.authorizationStale?" · Овластувањето за оваа одлука е застарено.":"")
         +(review.authorityStale?" · Правните извори за оваа одлука се застарени.":"")
-        +" · Професионалниот извоз останува заклучен."
-      : "Потребна е изречна одлука за зачуваната ревизија. LEGAL_HOLD ACTIVE.";
+      : "Потребна е изречна одлука за зачуваната ревизија.";
     $("humanGateFingerprint").textContent=review
       ? "Ревизија SHA-256: "+review.revision.sha256+" · Снимка на изворите: "+review.revision.responseSourcesSha256
       : "Одлуката се врзува за точната серверска ревизија и нејзините извори.";
     return;
   }
-  const gate=data?.gate||{};
-  const effective=gate.effectiveApproved===true && data.professionalUseLocked===false;
-  $("caseGate").textContent=effective?"UNLOCKED":"LOCKED";
-  $("humanGateCurrent").textContent=effective
-    ? "APPROVED"
-    : gate.stale ? "STALE" : String(gate.decision||"pending").toUpperCase();
   $("humanGateStatus").textContent=[
-    gate.reviewer ? "Reviewer: "+gate.reviewer : null,
-    gate.decidedAt ? "Decided: "+gate.decidedAt : null,
-    gate.reason ? "Reason: "+gate.reason : null,
+    gate.reviewer ? "Проверил: "+gate.reviewer : null,
+    gate.decidedAt ? "Запишана на "+gate.decidedAt : null,
+    gate.reason ? "Образложение: "+gate.reason : null,
     gate.stale ? "Одобрувањето е застарено по промена на предметот." : null
-  ].filter(Boolean).join(" · ") || "Нема запишана Human Gate одлука. Professional export е заклучен.";
+  ].filter(Boolean).join(" · ") || "Нема запишана адвокатска одлука за предметот.";
   $("humanGateFingerprint").textContent=gate.currentFingerprint
-    ? "Current fingerprint: "+gate.currentFingerprint
-    : "Current fingerprint: —";
+    ? "Тековен отпечаток на предметот: "+gate.currentFingerprint
+    : "";
 }
 
 $("refreshHumanGate").addEventListener("click",async()=>{
@@ -1618,11 +1614,6 @@ $("recordHumanGate").addEventListener("click",async()=>{
     const data=await workspaceRequest("human-gate",{method:"POST",body},context);
     renderHumanGate(data);
     $("humanGateReason").value="";
-    if(data.responseReviewRequired!==true){
-      $("humanGateStatus").textContent=data.professionalUseLocked===false && data.gate?.effectiveApproved===true
-        ? "Human Gate е одобрен за тековниот fingerprint. Professional export е отклучен додека предметот не се промени."
-        : "Human Gate одлуката е запишана. Professional export е заклучен.";
-    }
     await loadAudit(context);
     const list=await api("/api/cases");
     checkWorkspace(context);
