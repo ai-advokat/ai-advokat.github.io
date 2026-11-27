@@ -1,6 +1,6 @@
 {
   "version": "AI_ADVOCAT_MK_CURRENT_LAW_WATCH_R2",
-  "captured_at": "2026-11-27T14:52:56.167Z",
+  "captured_at": "2026-11-27T23:21:14.605Z",
   "poll_interval_minutes": 30,
   "governance": {
     "source_first": true,
@@ -38,7 +38,7 @@
       "ok": false,
       "status": 403,
       "content_type": "text/html; charset=UTF-8",
-      "page_sha256": "f06532fc3f8ccc2475d972855fc84ea3e2ead9ce910b1742b8a8f99861ef7bab",
+      "page_sha256": "b6a7609d909154e08a9cd94437ffae4ac3d68a677f98f88ed34ef2830744a5e7",
       "normalized_sha256": "e048dde4a4dee1590f8d69a62da8c2452454f387014baf997dc49f6a725a713c",
       "anchor_count": 0
     },
@@ -52,8 +52,8 @@
       "ok": false,
       "status": 403,
       "content_type": "text/html; charset=UTF-8",
-      "page_sha256": "f16f2f95d2eeabab7be634ed677d7c17e04a2d72d9e23785050f3c48e4ea9f06",
-      "normalized_sha256": "a708f52ae1726e65564910a0c1337daa64d6b3b49d8417953f915ff5a654caf6",
+      "page_sha256": "8ec8601603a95f0f7bed5e66671580d9f8a877be068c14f5c1699730f28f5dac",
+      "normalized_sha256": "ab10e64774150b1a51becc7788194438f8656abbfef7aa623f0a90305bdc0c5a",
       "anchor_count": 1
     },
     {
@@ -96,7 +96,7 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "59b9449103793677586285770dc9650eba3d629fac49d6946ba0b861b489cbbc",
+      "page_sha256": "376add3c4cd164e4dffa35b8f1e35524e62d18b2b19ac46e7dfa37f9e70107d9",
       "normalized_sha256": "6ed2b9b3011c4f591d2232f30d7ae80fd58a0cd2e053bea0556e33ad677ecb6f",
       "anchor_count": 0
     },
@@ -110,7 +110,7 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "3ba6ae674230e0bd825e4fbc7a952b08600fab9908296d0fbe44304146ffe949",
+      "page_sha256": "39a7986231b28c3f79fc409feabaf506754a95e12ed8d085cb2dd989437b8ef1",
       "normalized_sha256": "1dd7f482851a054840d905561931ffdc21dffca24a479db75f0bb616ad366959",
       "anchor_count": 0
     },
@@ -124,7 +124,7 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "35f8ba807b223406f24b7476153ea6434704bc244bb3bb036533e3bcbaff4c19",
+      "page_sha256": "3ccdec9bd631a40474d7883e078d2a651a8e71bca35fa625142483bb4fce4aed",
       "normalized_sha256": "1456c634773d583072a98cc74ab2feacf0d180629126886837ddc72a47ca2390",
       "anchor_count": 0
     },
@@ -138,7 +138,7 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "c875b83fd052ebf97e6a96f84f78801162d4f74fb898d1a6e8f35b0f8a063d6f",
+      "page_sha256": "65ebbc53d71d644dd5b75511172cca9740d31444cb80eb89c513a6045ff92e07",
       "normalized_sha256": "290b416668a84ec827c799e5ff4e74c47a4421e567901f798d5eb2243377033d",
       "anchor_count": 0
     },
@@ -152,7 +152,7 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "2e45ed774dad1387a2c15f807e4f2497ead6b35242d03071dc681d5734c8717f",
+      "page_sha256": "318c4e0b2b5b006dcc78b02ee7e2be0b727e3825ca764424856fb43845d3fefd",
       "normalized_sha256": "2e2e4212f250cf5aa3f97c552172427304a7731b1e92ba486a510441ec95fb1d",
       "anchor_count": 0
     },
@@ -166,7 +166,7 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "d3c7c048bcae6b7fad8b6ee498b0d8e1ee9b9b323518be42570b92a7cba04d78",
+      "page_sha256": "e04364397db2c47cedd934cfa689320cc3989de2bc7444cc30528ecc66c066a1",
       "normalized_sha256": "f05bf1e1f675a241c0cd35b4f2ddb2a4be5ae9afff264748d1106bbf454ca171",
       "anchor_count": 0
     },
@@ -180,7 +180,7 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=utf-8",
-      "page_sha256": "8639e89deaf55f6304316f8a4af89ba044ce3b03cc030d4f8772fe6fbd6b2a60",
+      "page_sha256": "89c9438d45eb46e04351e398858ef405356dd6d28ba9f62582b57bd021648c03",
       "normalized_sha256": "3d8b7a0220a2e1266212dc9a06dca2aa878193835e9faf23d79a243422a2c89b",
       "anchor_count": 0
     },
@@ -194,7 +194,7 @@
       "ok": true,
       "status": 200,
       "content_type": "text/html; charset=UTF-8",
-      "page_sha256": "d17308a206029f09c7e144e556008b2db18a844c8caddebec842eb39aa1e3728",
+      "page_sha256": "fc2a6115049717505aa06d05ea7b362d7a527d3679fb090e7f9153ed2d1dbdc1",
       "normalized_sha256": "3ce02d541caf49ab3fb9ac9580c534435f2592f96c96c433f8bbe1dcb8760f23",
       "anchor_count": 39
     },
@@ -323,7 +323,7 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "3ba6ae674230e0bd825e4fbc7a952b08600fab9908296d0fbe44304146ffe949",
+      "page_sha256": "39a7986231b28c3f79fc409feabaf506754a95e12ed8d085cb2dd989437b8ef1",
       "normalized_sha256": "1dd7f482851a054840d905561931ffdc21dffca24a479db75f0bb616ad366959"
     },
     {
@@ -337,7 +337,7 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "35f8ba807b223406f24b7476153ea6434704bc244bb3bb036533e3bcbaff4c19",
+      "page_sha256": "3ccdec9bd631a40474d7883e078d2a651a8e71bca35fa625142483bb4fce4aed",
       "normalized_sha256": "1456c634773d583072a98cc74ab2feacf0d180629126886837ddc72a47ca2390"
     },
     {
@@ -351,7 +351,7 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "8639e89deaf55f6304316f8a4af89ba044ce3b03cc030d4f8772fe6fbd6b2a60",
+      "page_sha256": "89c9438d45eb46e04351e398858ef405356dd6d28ba9f62582b57bd021648c03",
       "normalized_sha256": "3d8b7a0220a2e1266212dc9a06dca2aa878193835e9faf23d79a243422a2c89b"
     },
     {
@@ -365,7 +365,7 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "d3c7c048bcae6b7fad8b6ee498b0d8e1ee9b9b323518be42570b92a7cba04d78",
+      "page_sha256": "e04364397db2c47cedd934cfa689320cc3989de2bc7444cc30528ecc66c066a1",
       "normalized_sha256": "f05bf1e1f675a241c0cd35b4f2ddb2a4be5ae9afff264748d1106bbf454ca171"
     },
     {
@@ -379,7 +379,7 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "59b9449103793677586285770dc9650eba3d629fac49d6946ba0b861b489cbbc",
+      "page_sha256": "376add3c4cd164e4dffa35b8f1e35524e62d18b2b19ac46e7dfa37f9e70107d9",
       "normalized_sha256": "6ed2b9b3011c4f591d2232f30d7ae80fd58a0cd2e053bea0556e33ad677ecb6f"
     },
     {
@@ -393,7 +393,7 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "c875b83fd052ebf97e6a96f84f78801162d4f74fb898d1a6e8f35b0f8a063d6f",
+      "page_sha256": "65ebbc53d71d644dd5b75511172cca9740d31444cb80eb89c513a6045ff92e07",
       "normalized_sha256": "290b416668a84ec827c799e5ff4e74c47a4421e567901f798d5eb2243377033d"
     },
     {
@@ -407,7 +407,7 @@
       "current_law_authority": true,
       "automatic_promotion_allowed": false,
       "human_gate_required": true,
-      "page_sha256": "2e45ed774dad1387a2c15f807e4f2497ead6b35242d03071dc681d5734c8717f",
+      "page_sha256": "318c4e0b2b5b006dcc78b02ee7e2be0b727e3825ca764424856fb43845d3fefd",
       "normalized_sha256": "2e2e4212f250cf5aa3f97c552172427304a7731b1e92ba486a510441ec95fb1d"
     }
   ],
@@ -429,8 +429,8 @@
         "url": "https://www.sobranie.mk/zakon-za-sobranieto-na-rm.nspx",
         "instrument_key": null,
         "change": "CONTENT_FINGERPRINT_CHANGED",
-        "previous_normalized_sha256": "fd5f6890c4d7ca192fa458b413cb82acb55ec51035894c576a842d9e721cbbd5",
-        "current_normalized_sha256": "a708f52ae1726e65564910a0c1337daa64d6b3b49d8417953f915ff5a654caf6"
+        "previous_normalized_sha256": "a708f52ae1726e65564910a0c1337daa64d6b3b49d8417953f915ff5a654caf6",
+        "current_normalized_sha256": "ab10e64774150b1a51becc7788194438f8656abbfef7aa623f0a90305bdc0c5a"
       }
     ],
     "new_candidates": [],
